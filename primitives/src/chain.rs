@@ -1,7 +1,7 @@
-use serde::{Serialize, Deserialize, Deserializer};
+use serde::{Serialize, Deserialize};
 use typeshare::typeshare;
 
-#[derive(Copy, Clone, Debug, Serialize)]
+#[derive(Copy, Clone, Debug, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Codable, CaseIterable")]
 #[serde(rename_all = "lowercase")]
 pub enum Chain {
@@ -24,21 +24,6 @@ pub enum Chain {
 impl PartialEq for Chain {
     fn eq(&self, other: &Self) -> bool {
         return self.as_str() == other.as_str()
-    }
-}
-
-impl<'de> Deserialize<'de> for Chain {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let s: String = Deserialize::deserialize(deserializer)?;
-        let result = Self::new(s.as_str());
-        
-        match result {
-            Some(result) => Ok(result),
-            _ => Err(serde::de::Error::custom(format!("Invalid chain: {}", s))),
-        }
     }
 }
 
