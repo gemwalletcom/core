@@ -1,6 +1,8 @@
 [package]
 name = "primitives"
+edition = { workspace = true }
 version = { workspace = true }
 
 [dependencies]
 typeshare = { workspace = true }
+serde = { workspace = true }
