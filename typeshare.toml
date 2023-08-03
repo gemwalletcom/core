@@ -1,0 +1,11 @@
+[swift]
+prefix = ''
+
+[swift.type_mappings]
+"UInt32" = "UInt64"
+
+[kotlin.type_mappings]
+"Date" = "Long"
+"UInt32" = "Long"
+"UInt64" = "Long"
+"Int64" = "Long"

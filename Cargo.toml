@@ -1,0 +1,17 @@
+[workspace.package]
+version = "1.0.0"
+edition = "2021"
+
+[workspace]
+members = [
+    "bin/generate",
+    "primitives",
+    "blockchain"
+]
+
+default-members = [
+    "bin/generate",
+]
+
+[workspace.dependencies]
+typeshare = "1.0.1"

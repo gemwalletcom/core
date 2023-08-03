@@ -1,0 +1,6 @@
+[package]
+name = "blockchain"
+version = { workspace = true }
+
+[dependencies]
+typeshare = { workspace = true }

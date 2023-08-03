@@ -1,0 +1,14 @@
+/*
+Pending: The transaction has been initiated but is still pending confirmation. It has been broadcasted to the network but has not yet been included in a block.
+Confirmed: The transaction has been included in a block and is considered confirmed. At this stage, it is considered final and irreversible.
+Failed: The transaction has encountered an error or has been rejected for some reason. It did not succeed in completing its intended operation.
+Reverted: The transaction was executed but later reverted due to an error or a specific condition. In this case, the transaction is considered unsuccessful, and any changes it made to the state of the system are rolled back.
+*/
+
+#[typeshare(swift = "Equatable, Codable, CaseIterable")]
+pub enum TransactionState {
+    pending,
+    confirmed,
+    failed,
+    reverted,
+}

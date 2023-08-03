@@ -1,0 +1,6 @@
+[package]
+name = "primitives"
+version = { workspace = true }
+
+[dependencies]
+typeshare = { workspace = true }

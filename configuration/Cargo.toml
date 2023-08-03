@@ -1,0 +1,6 @@
+[package]
+name = "configuration"
+version = { workspace = true }
+
+[dependencies]
+typeshare = { workspace = true }
