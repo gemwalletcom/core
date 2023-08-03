@@ -4,11 +4,11 @@ use serde::Serialize;
 
 #[typeshare(swift="Codable")]
 #[allow(dead_code)]
-struct NameRecord {
-    name: String,
-    chain: Chain,
-    address: String,
-    provider: NameProvider,
+pub struct NameRecord {
+    pub name: String,
+    pub chain: Chain,
+    pub address: String,
+    pub provider: NameProvider,
 }
 
 #[derive(Debug, Serialize)]
