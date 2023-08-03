@@ -1,5 +1,6 @@
 [package]
 name = "configuration"
+edition = { workspace = true }
 version = { workspace = true }
 
 [dependencies]

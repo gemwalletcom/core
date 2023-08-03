@@ -1,8 +1,9 @@
-use serde::{Serializer, Serialize, Deserialize, Deserializer};
+use serde::{Serialize, Deserialize, Deserializer};
 use typeshare::typeshare;
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Serialize)]
 #[typeshare(swift = "Equatable, Codable, CaseIterable")]
+#[serde(rename_all = "lowercase")]
 pub enum Chain {
     Bitcoin,
     Ethereum,
@@ -23,15 +24,6 @@ pub enum Chain {
 impl PartialEq for Chain {
     fn eq(&self, other: &Self) -> bool {
         return self.as_str() == other.as_str()
-    }
-}
-
-impl Serialize for Chain {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        serializer.serialize_str(self.as_str())
     }
 }
 
