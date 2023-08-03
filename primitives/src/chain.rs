@@ -1,4 +1,4 @@
-use serde::{Serializer, Serialize};
+use serde::{Serializer, Serialize, Deserialize, Deserializer};
 use typeshare::typeshare;
 
 #[derive(Copy, Clone, Debug)]
@@ -32,6 +32,21 @@ impl Serialize for Chain {
         S: Serializer,
     {
         serializer.serialize_str(self.as_str())
+    }
+}
+
+impl<'de> Deserialize<'de> for Chain {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s: String = Deserialize::deserialize(deserializer)?;
+        let result = Self::new(s.as_str());
+        
+        match result {
+            Some(result) => Ok(result),
+            _ => Err(serde::de::Error::custom(format!("Invalid chain: {}", s))),
+        }
     }
 }
 
