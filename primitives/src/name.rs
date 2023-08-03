@@ -2,6 +2,7 @@ use typeshare::typeshare;
 use crate::chain::Chain;
 use serde::Serialize;
 
+#[derive(Debug, Serialize)]
 #[typeshare(swift="Codable")]
 #[allow(dead_code)]
 pub struct NameRecord {
