@@ -3,8 +3,8 @@ use typeshare::typeshare;
 
 #[derive(Copy, Clone, Debug, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Codable, Hashable")]
-struct Price {
-    price: f64,
+pub struct Price {
+    pub price: f64,
     #[serde(rename = "priceChangePercentage24h")]
-    price_change_percentage_24h: f64,
+    pub price_change_percentage_24h: f64,
 }
