@@ -13,6 +13,7 @@ pub struct NameRecord {
 }
 
 #[derive(Debug, Serialize)]
+#[typeshare(swift="Codable")]
 #[serde(rename_all = "lowercase")]
 pub enum NameProvider {
     Ud,
