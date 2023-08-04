@@ -1,4 +1,3 @@
-
 use typeshare::typeshare;
 use serde::{Serialize, Deserialize};
 use crate::fiat_provider::FiatProvider;
@@ -11,7 +10,7 @@ pub struct FiatQuote {
     pub fiat_amount: f64,
     pub fiat_currency: String,
     pub crypto_amount: f64,
-    redirect_url: String,
+    pub redirect_url: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

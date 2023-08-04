@@ -4,10 +4,10 @@ use serde::{Serialize, Deserialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare()]
 #[serde(rename_all = "camelCase")]
-struct FiatBuyRequest {
+pub struct FiatBuyRequest {
     #[typeshare(skip)]
-    ip_address: String, 
-    fiat_currency: String,
-    fiat_amount: f64,
-    wallet_address: String,
+    pub ip_address: String, 
+    pub fiat_currency: String,
+    pub fiat_amount: f64,
+    pub wallet_address: String,
 }

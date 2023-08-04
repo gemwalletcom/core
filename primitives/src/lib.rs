@@ -6,6 +6,7 @@ pub mod name;
 pub mod node;
 pub mod price;
 pub mod config;
+pub mod currency;
 pub mod asset_id;
 pub mod asset_type;
 pub mod asset_price;

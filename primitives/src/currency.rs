@@ -1,3 +1,7 @@
+use typeshare::typeshare;
+use serde::{Serialize, Deserialize};
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Codable, CaseIterable")]
 pub enum Currency {
     MXN,
