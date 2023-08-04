@@ -1,23 +1,31 @@
+use typeshare::typeshare;
+use crate::chain::Chain;
+use crate::asset_type::AssetType;
+use serde::{Serialize, Deserialize};
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare]
-struct TokenList {
-    version: i32,
-    assets: Vec<TokenListAsset>,
+pub struct TokenList {
+    pub version: i32,
+    pub assets: Vec<TokenListAsset>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare]
-struct TokenListAsset {
-    chain: Chain,
+pub struct TokenListAsset {
+    pub chain: Chain,
     #[serde(rename = "tokenId")]
-    token_id: String,
-    name: String,
-    symbol: String,
+    pub token_id: String,
+    pub name: String,
+    pub symbol: String,
     #[serde(rename = "type")]
-    asset_type: AssetType,
-    decimals: i32,
+    pub asset_type: AssetType,
+    pub decimals: i32,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare]
-struct TokenListChainVersion {
-    chain: String,
-    version: i32,
+pub struct TokenListChainVersion {
+    pub chain: String,
+    pub version: i32,
 }

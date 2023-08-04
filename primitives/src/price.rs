@@ -1,5 +1,5 @@
-use serde::{Serialize, Deserialize};
 use typeshare::typeshare;
+use serde::{Serialize, Deserialize};
 
 #[derive(Copy, Clone, Debug, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Codable, Hashable")]

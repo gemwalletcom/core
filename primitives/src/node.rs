@@ -1,31 +1,40 @@
+use typeshare::typeshare;
+use serde::{Serialize, Deserialize};
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift="Codable")]
-struct Node {
-    url: String,
-    status: NodeStatus,
-    priority: i32,
+pub struct Node {
+    pub url: String,
+    pub status: NodeStatus,
+    pub priority: i32,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift="Codable")]
-struct ChainNode {
-    chain: String,
-    node: Node
+pub struct ChainNode {
+    pub chain: String,
+    pub node: Node
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift="Codable")]
-struct ChainNodes {
-    chain: String,
-    nodes: Vec<Node>
+pub struct ChainNodes {
+    pub chain: String,
+    pub nodes: Vec<Node>
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift="Codable")]
 #[serde(rename_all = "camelCase")]
-struct NodesResponse {
-    version: i32,
-    nodes: Vec<ChainNodes>
+pub struct NodesResponse {
+    pub version: i32,
+    pub nodes: Vec<ChainNodes>
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Codable, CaseIterable")]
+#[serde(rename_all = "lowercase")]
 pub enum NodeStatus {
-    active,
-    inactive,
+    Active,
+    Inactive,
 }
