@@ -1,7 +1,5 @@
 use std::{fs::{self, DirEntry}, process::Command};
 
-static IOS_DIRECTORY: &str = "../ios/Packages";
-static ANDROID_DIRECTORY: &str = "../android/app/src/main/java/com/wallet/core";
 static ANDROID_PACKAGE_PREFIX: &str = "com.wallet.core";
 static LANGUAGE_SWIFT: &str = "swift";
 static LANGUAGE_KOTLIN: &str = "kotlin";
@@ -20,6 +18,7 @@ fn main() {
     ];
 
     let platform = std::env::args().nth(1).expect("no platform specified");
+    let platform_directory_path =  std::env::args().nth(2).expect("no path specified");
 
     let ignored_files = vec!["lib.rs"];
     
@@ -49,8 +48,8 @@ fn main() {
             //FIX: change input/output file for kotlin
             let input_path = format!("./{}/src/{}", module_name, directory_paths.join("/"));
 
-            let ios_output_path = output_path(Platform::IOS, IOS_DIRECTORY, str_capitlize(module_name).as_str(), ios_new_path);
-            let android_output_path = output_path(Platform::Android, ANDROID_DIRECTORY, module_name.to_lowercase().as_str(), kt_new_path);
+            let ios_output_path = output_path(Platform::IOS, &platform_directory_path, str_capitlize(module_name).as_str(), ios_new_path);
+            let android_output_path = output_path(Platform::Android, &platform_directory_path, module_name.to_lowercase().as_str(), kt_new_path);
             let directory_package = directory_paths_lowercased.clone().join(".");
             let android_package_name = format!("{}.{}{}", ANDROID_PACKAGE_PREFIX, module_name, if directory_package.clone().is_empty() {
                 format!("")
