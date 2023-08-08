@@ -15,3 +15,4 @@ pub mod fiat_quote;
 pub mod fiat_assets;
 pub mod fiat_provider;
 pub mod fiat_quote_request;
+pub mod platform;
