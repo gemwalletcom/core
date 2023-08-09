@@ -19,6 +19,7 @@ pub enum Chain {
     Tron,
     Doge,
     Optimism,
+    Aptos
 }
 
 impl PartialEq for Chain {
@@ -44,7 +45,8 @@ impl Chain {
             "ton" => Some(Self::Ton),
             "tron" => Some(Self::Tron),
             "doge" => Some(Self::Doge),
-            _ => None,
+            "aptos" => Some(Self::Aptos),
+            _ => None, 
         }
     }
 
@@ -64,6 +66,7 @@ impl Chain {
             Self::Ton => "ton",
             Self::Tron => "tron",
             Self::Doge => "doge",
+            Self::Aptos => "aptos",
         }
     }
 }
