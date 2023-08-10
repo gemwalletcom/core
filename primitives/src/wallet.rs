@@ -10,5 +10,6 @@ struct Wallet {
 #[typeshare(swift = "Equatable, Codable")]
 pub enum WalletType {
     multicoin,
+    single,
     view,
 }
