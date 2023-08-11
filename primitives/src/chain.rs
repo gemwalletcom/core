@@ -21,6 +21,7 @@ pub enum Chain {
     Optimism,
     Aptos,
     Base,
+    AvalancheC
 }
 
 impl PartialEq for Chain {
@@ -48,6 +49,7 @@ impl Chain {
             "doge" => Some(Self::Doge),
             "aptos" => Some(Self::Aptos),
             "base" => Some(Self::Base),
+            "avalanchec"=> Some(Self::AvalancheC),
             _ => None, 
         }
     }
@@ -70,6 +72,7 @@ impl Chain {
             Self::Doge => "doge",
             Self::Aptos => "aptos",
             Self::Base => "base",
+            Self::AvalancheC => "avalanchec",
         }
     }
 }
