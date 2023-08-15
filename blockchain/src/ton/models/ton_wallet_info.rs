@@ -1,5 +1,5 @@
 #[typeshare]
 struct TonWalletInfo {
-    seqno: i32,
+    seqno: Option<i32>,
     last_transaction_id: TonTransactionId,
 }
