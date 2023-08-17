@@ -18,6 +18,8 @@ pub struct NameRecord {
 pub enum NameProvider {
     Ud,
     Ens,
+    Sns,
+    Ton,
 }
 
 impl NameProvider {
@@ -25,6 +27,8 @@ impl NameProvider {
         match self {
             Self::Ud => "ud",
             Self::Ens => "ens",
+            Self::Sns => "sns",
+            Self::Ton => "ton",
         }
     }
 }
