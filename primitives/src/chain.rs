@@ -21,7 +21,15 @@ pub enum Chain {
     Optimism,
     Aptos,
     Base,
-    AvalancheC
+    AvalancheC,
+}
+
+#[derive(Copy, Clone, Debug, Serialize, Deserialize)]
+#[typeshare(swift = "Equatable, Codable, CaseIterable")]
+#[serde(rename_all = "lowercase")]
+pub enum BitcoinChain {
+    Bitcoin,
+    Doge
 }
 
 impl PartialEq for Chain {
