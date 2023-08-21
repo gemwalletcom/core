@@ -12,5 +12,6 @@ pub enum BlockchainType {
     Cosmos,
     Ton,
     Tron,
-    Aptos
+    Aptos,
+    Sui,
 }
