@@ -15,5 +15,5 @@ default-members = [
 
 [workspace.dependencies]
 typeshare = "1.0.1"
-serde = { version = "1.0.183", features = ["derive"] }
+serde = { version = "1.0.185", features = ["derive"] }
 serde_json = { version = "1.0.104" } 
