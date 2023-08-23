@@ -5,8 +5,7 @@ struct XRPResult<T> {
 
 #[typeshare]
 struct XRPAccountResult {
-    account_data: XRPAccount,
-    ledger_current_index: i32,
+    account_data: XRPAccount
 }
 
 #[typeshare]
