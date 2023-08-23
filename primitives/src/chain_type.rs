@@ -14,4 +14,5 @@ pub enum BlockchainType {
     Tron,
     Aptos,
     Sui,
+    Ripple,
 }
