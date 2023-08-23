@@ -23,6 +23,7 @@ pub enum Chain {
     Base,
     AvalancheC,
     Sui,
+    Ripple,
 }
 
 #[derive(Copy, Clone, Debug, Serialize, Deserialize)]
@@ -60,6 +61,7 @@ impl Chain {
             "base" => Some(Self::Base),
             "avalanchec"=> Some(Self::AvalancheC),
             "sui"=> Some(Self::Sui),
+            "ripple"=> Some(Self::Ripple),
             _ => None, 
         }
     }
@@ -84,6 +86,7 @@ impl Chain {
             Self::Base => "base",
             Self::AvalancheC => "avalanchec",
             Self::Sui => "sui",
+            Self::Ripple => "ripple",
         }
     }
 }
