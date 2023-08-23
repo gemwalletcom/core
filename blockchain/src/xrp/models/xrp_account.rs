@@ -37,3 +37,8 @@ struct XRPTransactionBroadcast {
 struct XRPTransaction {
     hash: String,
 }
+
+#[typeshare]
+struct XRPTransactionStatus {
+    status: String,
+}
