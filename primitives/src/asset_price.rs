@@ -26,3 +26,19 @@ pub struct AssetPricesRequest {
     pub asset_ids: Vec<String>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[typeshare]
+#[serde(rename_all = "camelCase")]
+pub struct Charts {
+    pub prices: Vec<ChartValue>,
+    pub market_caps: Vec<ChartValue>,
+    pub total_volumes: Vec<ChartValue>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[typeshare]
+#[serde(rename_all = "camelCase")]
+pub struct ChartValue {
+    pub timestamp: i32,
+    pub value: f64,
+}
