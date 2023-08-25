@@ -42,3 +42,31 @@ pub struct ChartValue {
     pub timestamp: i32,
     pub value: f64,
 }
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[typeshare]
+#[serde(rename_all = "lowercase")]
+pub enum ChartPeriod {
+    Hour,
+    Day,
+    Week,
+    Month,
+    Quarter,
+    Year,
+    All,
+}
+
+impl ChartPeriod {
+    pub fn new(period: String) -> Option<Self> {
+        match period.to_lowercase().as_str() {
+            "hour" => Some(Self::Hour),
+            "day" => Some(Self::Day),
+            "week" => Some(Self::Week),
+            "month" => Some(Self::Month),
+            "quarter" => Some(Self::Quarter),
+            "year" => Some(Self::Year),
+            "all" => Some(Self::All),
+            _ => None,
+        }
+    }
+}
