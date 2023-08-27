@@ -1,10 +1,14 @@
 # core
 ![Tests](https://github.com/gemwalletcom/core/workflows/Tests/badge.svg)
 
-## Installation
-To install, add the following to your project's Cargo.toml:
+## Running
 
-```
-primitives = { git = "https://github.com/gemwalletcom/core.git", branch = "main" }
-blockchain = { git = "https://github.com/gemwalletcom/core.git", branch = "main" }
-```
+### Setup Core
+
+Run `make install` to install rust, typeshare
+
+### Setup API Env
+
+- Install Postgres and redis `brew install postgresql@14 redis`
+- - Setup a new `username` + `api` database
+- Install diesel.rs `cargo install diesel_cli --no-default-features --features postgres`
