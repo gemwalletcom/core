@@ -10,6 +10,7 @@ pub mod currency;
 pub mod asset_id;
 pub mod asset_type;
 pub mod asset_price;
+pub mod asset_info;
 pub mod tokenlist;
 pub mod fiat_quote;
 pub mod fiat_assets;
