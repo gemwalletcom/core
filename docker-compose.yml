@@ -1,0 +1,54 @@
+version: '3.8'
+services:
+  app_build:
+    image: app
+    container_name: app_build
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+  api:
+    image: app
+    container_name: api
+    environment:
+        ROCKET_ADDRESS: 0.0.0.0
+        ROCKET_PORT: 8000
+        BINARY: api
+        REDIS_URL: "redis://default:@redis:6379"
+        POSTGRES_URL: "postgres://username:password@postgres/api"
+    ports:
+      - "8000:8000"
+    restart: always
+    depends_on:
+      - app_build
+      - redis
+      - postgres
+
+  deamon:
+    image: app
+    container_name: deamon
+    environment:
+      BINARY: deamon
+      REDIS_URL: "redis://default:@redis:6379"
+      POSTGRES_URL: "postgres://username:password@postgres/api"
+    depends_on:
+      - app_build
+      - redis
+      - postgres
+
+  redis:
+    image: redis:7.0-alpine
+    container_name: redis
+    restart: always
+    ports:
+      - 6379:6379
+
+  postgres:
+    image: postgres:latest
+    container_name: postgres
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_USER: username
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: api

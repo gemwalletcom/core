@@ -1,0 +1,15 @@
+[package]
+name = "pricer"
+edition = { workspace = true }
+version = { workspace = true }
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+tokio = { workspace = true }
+storage = { path = "../storage" }
+redis = { workspace = true }
+reqwest = { workspace = true }
+ethaddr = { workspace = true }
+primitives = { path = "../primitives" }
+chrono = { workspace = true }

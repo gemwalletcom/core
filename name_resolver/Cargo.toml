@@ -1,0 +1,16 @@
+[package]
+name = "name_resolver"
+edition = { workspace = true }
+version = { workspace = true }
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+tokio = { workspace = true }
+reqwest = { workspace = true }
+async-trait = { workspace = true }
+ethers = { workspace = true }
+primitives = { path = "../primitives" }
+ns_address_codec = { git = "https://github.com/gemwalletcom/ns_address_codec.rs", rev = "1d8a271" }
+base64 = { workspace = true }
+ethaddr = { workspace = true }

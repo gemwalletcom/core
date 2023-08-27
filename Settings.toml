@@ -1,0 +1,56 @@
+[postgres]
+url = "postgres://username:password@localhost/api"
+
+[redis]
+url = "redis://default:@localhost:6379"
+
+[coingecko.key]
+secret = ""
+
+[fiat]
+timeout = 3
+
+[moonpay]
+[moonpay.key]
+public = ""
+secret = ""
+
+[transak]
+[transak.key]
+public = ""
+
+[mercuryo]
+[mercuryo.key]
+public = ""
+
+[ramp]
+[ramp.key]
+public = ""
+
+[pricer]
+timer = 120
+
+[plausible]
+url = "https://plausible.gemwallet.com"
+
+[name]
+[name.ens]
+url = "https://eth.llamarpc.com"
+
+[name.ud]
+url = "https://api.unstoppabledomains.com"
+
+[name.ud.key]
+secret = ""
+
+[name.sns]
+url = "https://sns-sdk-proxy.bonfida.workers.dev"
+
+[name.ton]
+url = "https://tonapi.io"
+
+[metrics]
+path = "/metrics"
+
+[assets]
+url = "https://raw.githubusercontent.com/gemwalletcom/assets/master"
