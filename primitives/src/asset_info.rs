@@ -1,6 +1,5 @@
 use typeshare::typeshare;
 use serde::{Serialize, Deserialize};
-use crate::asset_type::AssetType;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare]
@@ -9,7 +8,7 @@ pub struct AssetInfo {
     pub name: String,
     pub symbol: String,
     pub decimals: i32,
-    pub r#type: AssetType,
+    pub r#type: String,
     
     pub status: String,
     pub website: String,
