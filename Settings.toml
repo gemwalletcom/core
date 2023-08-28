@@ -28,7 +28,7 @@ public = ""
 public = ""
 
 [pricer]
-timer = 120
+timer = 60
 
 [plausible]
 url = "https://plausible.gemwallet.com"
