@@ -15,7 +15,7 @@ pub struct AssetId {
 impl AssetId {
     pub fn new(asset_id: &str) -> Option<Self> {
         let parts: Vec<&str> = asset_id.split('_').collect();
-        if parts.len() < 1 || parts.len() > 2 {
+        if parts.is_empty() || parts.len() > 2 {
             return None;
         }
         let chain = Chain::new(parts[0])?;

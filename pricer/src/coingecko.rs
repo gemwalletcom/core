@@ -6,7 +6,7 @@ use std::collections::HashMap;
 
 const COINGECKO_API_URL: &str = "https://api.coingecko.com";
 const COINGECKO_API_PRO_URL: &str = "https://pro-api.coingecko.com";
-const USER_AGENT_VALUE: HeaderValue = HeaderValue::from_static("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36");
+static USER_AGENT_VALUE: HeaderValue = HeaderValue::from_static("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36");
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Coin {
@@ -69,7 +69,7 @@ impl CoinGeckoClient {
     
     fn headers(&self) -> HeaderMap {
         let mut headers = HeaderMap::new();
-        headers.insert(USER_AGENT, USER_AGENT_VALUE);
+        headers.insert(USER_AGENT, USER_AGENT_VALUE.clone());
         headers
     }
 

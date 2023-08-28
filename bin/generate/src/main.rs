@@ -6,7 +6,7 @@ static LANGUAGE_KOTLIN: &str = "kotlin";
 static LANG_KOTLIN_ETX: &str = "kt";
 
 enum Platform {
-    IOS,
+    Ios,
     Android
 }
 
@@ -28,7 +28,7 @@ fn main() {
         for path in paths {
             let vec: Vec<&str> = path.split("/src/").collect();
             let module_name = vec[0];
-            let directory_paths: Vec<&str> = vec[1].split("/").collect();
+            let directory_paths: Vec<&str> = vec[1].split('/').collect();
             let mut directory_paths_capitalized = directory_paths.iter().map(|&x| str_capitlize(x)).collect::<Vec<_>>();
 
             let path: &str = &directory_paths_capitalized.pop().unwrap();//.as_str();
@@ -48,11 +48,11 @@ fn main() {
             //FIX: change input/output file for kotlin
             let input_path = format!("./{}/src/{}", module_name, directory_paths.join("/"));
 
-            let ios_output_path = output_path(Platform::IOS, &platform_directory_path, str_capitlize(module_name).as_str(), ios_new_path);
+            let ios_output_path = output_path(Platform::Ios, &platform_directory_path, str_capitlize(module_name).as_str(), ios_new_path);
             let android_output_path = output_path(Platform::Android, &platform_directory_path, module_name.to_lowercase().as_str(), kt_new_path);
             let directory_package = directory_paths_lowercased.clone().join(".");
             let android_package_name = format!("{}.{}{}", ANDROID_PACKAGE_PREFIX, module_name, if directory_package.clone().is_empty() {
-                format!("")
+                String::new()
             } else {
                 format!(".{}", directory_package)
             });
@@ -77,16 +77,16 @@ fn main() {
 
 fn output_path(platform: Platform, directory: &str, module_name: &str, path: String) -> String {
     match platform{
-    Platform::IOS=> format!("{}/{}/Sources/{}", directory, module_name, path),
+    Platform::Ios=> format!("{}/{}/Sources/{}", directory, module_name, path),
     Platform::Android=> format!("{}/{}/{}", directory, module_name, path)
     }
 }
 
 fn file_name(name: &str, file_extension: &str)-> String {
-    let split: Vec<&str> = name.split(".").collect();
-    let new_split: Vec<&str> = split[0].clone().split("_").collect();
+    let split: Vec<&str> = name.split('.').collect();
+    let new_split: Vec<&str> = split[0].clone().split('_').collect();
     let new_name = new_split.iter().map(|&x| str_capitlize(x)).collect::<Vec<_>>().join("");
-    return format!("{}.{}", new_name, file_extension)
+    format!("{}.{}", new_name, file_extension)
 }
 
 fn generate_files(language: &str, input_path: &str, output_path: &str, package_name: &str) {
@@ -113,15 +113,15 @@ fn get_paths(folder: &str, path: String) -> Vec<String>  {
         }
     }
 
-    return result;
+    result
 }
 
 fn clear_path(path: DirEntry)-> String {
-    return format!("{}", path.path().display())
+    format!("{}", path.path().display())
 }
 
 fn str_capitlize(s: &str) -> String {
-    format!("{}{}", (&s[..1].to_string()).to_uppercase(), &s[1..])
+    format!("{}{}", s[..1].to_string().to_uppercase(), &s[1..])
 }
   
 #[cfg(test)]

@@ -4,7 +4,7 @@ use diesel::pg::PgConnection;
 use crate::models::*;
 use diesel::prelude::*;
 use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
-pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("../migrations");
+pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("../storage/src/migrations");
 use primitives::asset_price::ChartPeriod;
 pub struct DatabaseClient {
     connection: PgConnection,

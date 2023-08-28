@@ -64,17 +64,14 @@ impl PriceUpdater {
                     let coin_map = coins_map.get(market.id.as_str()).unwrap();
                     for (platform, token_id) in coin_map.platforms.clone().into_iter() {
                         let platform = get_chain_for_coingecko_id(platform.as_str());
-                        match platform {
-                            Some(value) => {
-                                let token_id = token_id.unwrap_or_default();
-                                if !token_id.is_empty() {
-                                    let asset_id = get_asset_id(value, token_id);
-                                    prices_map.insert(
-                                        asset_price_map(asset_id, market.clone())
-                                    );
-                                }
+                        if let Some(value) = platform {
+                            let token_id = token_id.unwrap_or_default();
+                            if !token_id.is_empty() {
+                                let asset_id = get_asset_id(value, token_id);
+                                prices_map.insert(
+                                    asset_price_map(asset_id, market.clone())
+                                );
                             }
-                            None=> {}
                         }
                     }
                 }
