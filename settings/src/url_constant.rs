@@ -1,3 +1,5 @@
+use typeshare::typeshare;
+
 #[typeshare]
 pub enum URLConstant {
     #[serde(rename = "https://gemwallet.com")]

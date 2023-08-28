@@ -3836,6 +3836,7 @@ dependencies = [
  "config",
  "serde",
  "serde_json",
+ "typeshare",
 ]
 
 [[package]]

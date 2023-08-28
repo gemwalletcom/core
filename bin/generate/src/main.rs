@@ -14,7 +14,7 @@ fn main() {
     let folders = vec![
         "blockchain",
         "primitives",
-        "configuration",
+        "settings",
     ];
 
     let platform = std::env::args().nth(1).expect("no platform specified");
