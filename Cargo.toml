@@ -3,6 +3,7 @@ version = "1.0.0"
 edition = "2021"
 
 [workspace]
+resolver = "2"
 members = [
     "bin/generate",
     "primitives",
