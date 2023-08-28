@@ -1,0 +1,12 @@
+[package]
+name = "ns_address_codec"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+
+hex = "0.4.3"
+bech32 = "0.9.1"
+bs58 = "0.5.0"
+base64 = { workspace = true }
+ton_smart_contract_address = "0.0.4"

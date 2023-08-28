@@ -11,6 +11,6 @@ reqwest = { workspace = true }
 async-trait = { workspace = true }
 ethers = { workspace = true }
 primitives = { path = "../primitives" }
-ns_address_codec = { git = "https://github.com/gemwalletcom/ns_address_codec.rs", rev = "1d8a271" }
+ns_address_codec = { git = "../ns_address_codec"}
 base64 = { workspace = true }
 ethaddr = { workspace = true }
