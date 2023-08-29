@@ -1,6 +1,7 @@
 #[typeshare]
 struct Transaction {
     id: String,
+    hash: String,
     #[serde(rename = "assetId")]
     asset_id: AssetId,
     from: String,
