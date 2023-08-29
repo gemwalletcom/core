@@ -2428,8 +2428,7 @@ dependencies = [
 
 [[package]]
 name = "ns_address_codec"
-version = "0.1.0"
-source = "git+https://github.com/gemwalletcom/ns_address_codec.rs?rev=1d8a271#1d8a271290aa50eae9152e3806798100dd6d8c3e"
+version = "1.0.0"
 dependencies = [
  "base64 0.21.3",
  "bech32",

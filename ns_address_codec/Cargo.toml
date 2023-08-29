@@ -4,7 +4,6 @@ version = { workspace = true }
 edition = { workspace = true }
 
 [dependencies]
-
 hex = { workspace = true }
 bech32 = { workspace = true }
 bs58 = { workspace = true }
