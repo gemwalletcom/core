@@ -1,7 +1,7 @@
 [package]
 name = "settings"
-edition = { workspace = true }
 version = { workspace = true }
+edition = { workspace = true }
 
 [dependencies]
 typeshare = { workspace = true }
