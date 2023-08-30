@@ -47,6 +47,9 @@ impl PriceUpdater {
                         prices_map.insert(
                             asset_price_map(Chain::SmartChain.as_str().to_string(), market.clone())
                         );
+                        prices_map.insert(
+                            asset_price_map(Chain::OpBNB.as_str().to_string(), market.clone())
+                        );
                     }
                     if value.as_str() == Chain::Ethereum.as_str() {
                         prices_map.insert(
