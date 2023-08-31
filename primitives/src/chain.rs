@@ -27,28 +27,6 @@ pub enum Chain {
     OpBNB,
 }
 
-#[derive(Copy, Clone, Debug, Serialize, Deserialize)]
-#[typeshare(swift = "Equatable, Codable, CaseIterable")]
-#[serde(rename_all = "lowercase")]
-pub enum BitcoinChain {
-    Bitcoin,
-    Doge
-}
-
-#[derive(Copy, Clone, Debug, Serialize, Deserialize)]
-#[typeshare(swift = "Equatable, Codable, CaseIterable")]
-#[serde(rename_all = "lowercase")]
-pub enum EVMChain {
-    Ethereum,
-    SmartChain,
-    Polygon,
-    Arbitrum,
-    Optimism,
-    Base,
-    AvalancheC,
-    OpBNB,
-}
-
 impl PartialEq for Chain {
     fn eq(&self, other: &Self) -> bool {
         return self.as_str() == other.as_str()
