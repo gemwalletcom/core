@@ -29,7 +29,7 @@ serde = { version = "1.0.186", features = ["derive"] }
 serde_json = { version = "1.0.105" } 
 tokio = { version = "1.32.0", features = ["macros", "rt-multi-thread"]}
 reqwest = {version = "0.11.20", features = ["json"]}
-url = { version = "2.4.0" }
+url = { version = "2.4.1" }
 config = { version = "0.13.3" }
 rocket = { version = "=0.5.0-rc.3", features = ["json"] }
 ethaddr = { version = "0.1.2" }
