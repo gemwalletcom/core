@@ -99,6 +99,7 @@ pub struct Name {
     pub ud: UD,
     pub sns: SNS,
     pub ton: TON,
+    pub tree: TREE,
 }
 
 #[derive(Debug, Deserialize)]
@@ -124,6 +125,12 @@ pub struct TON {
 pub struct UD {
     pub url: String,
     pub key: KeySecret,
+}
+
+#[derive(Debug, Deserialize)]
+#[allow(unused)]
+pub struct TREE {
+    pub url: String,
 }
 
 #[derive(Debug, Deserialize)]
