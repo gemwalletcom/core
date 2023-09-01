@@ -4,7 +4,7 @@ use async_trait::async_trait;
 use primitives::chain::Chain;
 use primitives::name::{NameRecord, NameProvider};
 
-use crate::{ens::ENSClient, ud::UDClient, sns::SNSClient, ton::TONClient};
+use crate::{ens::ENSClient, ud::UDClient, sns::SNSClient, ton::TONClient, tree::TreeClient};
 
 #[async_trait]
 pub trait NameClient {
@@ -20,6 +20,7 @@ pub struct Client {
     ud_client: UDClient,
     sns_client: SNSClient,
     ton_client: TONClient,
+    tree_client: TreeClient,
 }
 
 impl Client {
@@ -30,12 +31,14 @@ impl Client {
         ud_api_key: String,
         sns_url: String,
         ton_url: String,
+        tree_api_url: String
     ) -> Self {
         let domains_mapping = Self::domains_mapping();
         let ens_client = ENSClient::new(ens_url);
         let ud_client = UDClient::new(ud_url, ud_api_key);
         let sns_client = SNSClient::new(sns_url);
         let ton_client: TONClient = TONClient::new(ton_url);
+        let tree_client: TreeClient = TreeClient::new(tree_api_url);
 
         Self {
             domains_mapping,
@@ -43,6 +46,7 @@ impl Client {
             ud_client,
             sns_client,
             ton_client,
+            tree_client,
         }
     }
 
@@ -79,6 +83,12 @@ impl Client {
                     return Err("not supported chain".to_string().into())
                 }
                 self.ton_client.resolve(name, chain).await
+            },
+            NameProvider::Tree => {
+                if !TreeClient::chains().contains(&chain) {
+                    return Err("not supported chain".to_string().into())
+                }
+                self.tree_client.resolve(name, chain).await
             }
         }
     }
@@ -100,6 +110,10 @@ impl Client {
 
         for domain in TONClient::domains() {
             result.insert(domain, NameProvider::Ton);
+        }
+
+        for domain in TreeClient::domains() {
+            result.insert(domain, NameProvider::Tree);
         }
 
         result
