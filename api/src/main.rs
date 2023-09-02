@@ -43,6 +43,7 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
         settings.name.ud.key.secret,
         settings.name.sns.url,
         settings.name.ton.url,
+        settings.name.tree.url,
     );
     let plausible_client = PlausibleClient::new(&settings.plausible.url);
     let request_client = FiatClient::request_client(settings.fiat.timeout);

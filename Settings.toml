@@ -50,7 +50,7 @@ url = "https://sns-sdk-proxy.bonfida.workers.dev"
 url = "https://tonapi.io"
 
 [name.tree]
-url = "https://mainnet-api.ethscriptions.com"
+url = "https://api.eths.center"
 
 [metrics]
 path = "/metrics"
