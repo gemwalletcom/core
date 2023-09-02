@@ -20,6 +20,7 @@ pub enum NameProvider {
     Ens,
     Sns,
     Ton,
+    Tree,
 }
 
 impl NameProvider {
@@ -29,6 +30,7 @@ impl NameProvider {
             Self::Ens => "ens",
             Self::Sns => "sns",
             Self::Ton => "ton",
+            Self::Tree => "tree",
         }
     }
 }
