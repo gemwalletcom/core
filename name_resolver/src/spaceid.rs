@@ -9,15 +9,16 @@ use crate::client::NameClient;
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct ResolveRecord {
-    pub owner: String,
+    pub code: i32,
+    pub address: String,
 }
 
-pub struct TreeClient {
+pub struct SpaceIdClient {
     api_url: String,
     client: Client,
 }
 
-impl TreeClient {
+impl SpaceIdClient {
     pub fn new(api_url: String) -> Self {
         let client = Client::new();
         Self {
@@ -28,31 +29,35 @@ impl TreeClient {
 }
 
 #[async_trait]
-impl NameClient for TreeClient {
+impl NameClient for SpaceIdClient {
     
     fn provider() -> NameProvider {
-        NameProvider::Tree
+        NameProvider::SpaceId
     }
 
     async fn resolve(&self, name: &str, chain: Chain) -> Result<NameRecord, Box<dyn Error>> {
-        let url = format!("{}/resolve/{}", self.api_url, name);
+        let tld = name.split('.').clone().last().unwrap_or_default();
+        let url = format!("{}/v1/getAddress?tld={}&domain={}", self.api_url, tld, name);
         let record: ResolveRecord = self.client.get(&url).send().await?.json().await?;
-        let address = record.owner;
+        if record.code != 0  {
+            return Err("SpaceIdClient: code != 0".into());
+        }
+        let address = record.address;
 
         Ok(NameRecord { name: name.to_string(), chain, address, provider: Self::provider() })
     }
 
     fn domains() -> Vec<&'static str> {
         vec![
-            "tree"
+            "bnb",
+            "arb",
         ]
     }
 
     fn chains() -> Vec<Chain> {
         vec![
-            Chain::Ethereum, 
-            Chain::Polygon, 
             Chain::SmartChain,
+            Chain::Arbitrum,
         ]
     }
 }

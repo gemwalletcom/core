@@ -4,7 +4,7 @@ use async_trait::async_trait;
 use primitives::chain::Chain;
 use primitives::name::{NameRecord, NameProvider};
 
-use crate::{ens::ENSClient, ud::UDClient, sns::SNSClient, ton::TONClient, tree::TreeClient};
+use crate::{ens::ENSClient, ud::UDClient, sns::SNSClient, ton::TONClient, tree::TreeClient, spaceid::SpaceIdClient};
 
 #[async_trait]
 pub trait NameClient {
@@ -21,6 +21,7 @@ pub struct Client {
     sns_client: SNSClient,
     ton_client: TONClient,
     tree_client: TreeClient,
+    spaceid_client: SpaceIdClient,
 }
 
 impl Client {
@@ -31,7 +32,8 @@ impl Client {
         ud_api_key: String,
         sns_url: String,
         ton_url: String,
-        tree_api_url: String
+        tree_api_url: String,
+        space_api_url: String,
     ) -> Self {
         let domains_mapping = Self::domains_mapping();
         let ens_client = ENSClient::new(ens_url);
@@ -39,6 +41,7 @@ impl Client {
         let sns_client = SNSClient::new(sns_url);
         let ton_client: TONClient = TONClient::new(ton_url);
         let tree_client: TreeClient = TreeClient::new(tree_api_url);
+        let spaceid_client: SpaceIdClient = SpaceIdClient::new(space_api_url);
 
         Self {
             domains_mapping,
@@ -47,17 +50,13 @@ impl Client {
             sns_client,
             ton_client,
             tree_client,
+            spaceid_client,
         }
     }
 
     pub async fn resolve(&self, name: &str, chain: Chain) -> Result<NameRecord, Box<dyn Error>> {
-        let name_parts = name.split('.');
-        let name_prefix = name_parts.clone().last();
-        
-        println!("name_parts {}", name_parts.count());
-        println!("name_prefix {:?}", name_prefix.clone());
-
-        let provider = self.domains_mapping.get(name_prefix.unwrap()).unwrap();
+        let name_prefix = name.split('.').clone().last().unwrap_or_default();
+        let provider = self.domains_mapping.get(name_prefix).expect("unable to get provider");
 
         match provider {
             NameProvider::Ens => {
@@ -89,7 +88,13 @@ impl Client {
                     return Err("not supported chain".to_string().into())
                 }
                 self.tree_client.resolve(name, chain).await
-            }
+            },
+            NameProvider::SpaceId => {
+                if !SpaceIdClient::chains().contains(&chain) {
+                    return Err("not supported chain".to_string().into())
+                }
+                self.spaceid_client.resolve(name, chain).await
+            },
         }
     }
 
@@ -114,6 +119,10 @@ impl Client {
 
         for domain in TreeClient::domains() {
             result.insert(domain, NameProvider::Tree);
+        }
+
+        for domain in SpaceIdClient::domains() {
+            result.insert(domain, NameProvider::SpaceId);
         }
 
         result

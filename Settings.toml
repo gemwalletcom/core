@@ -52,6 +52,9 @@ url = "https://tonapi.io"
 [name.tree]
 url = "https://api.eths.center"
 
+[name.spaceid]
+url = "https://api.prd.space.id"
+
 [metrics]
 path = "/metrics"
 

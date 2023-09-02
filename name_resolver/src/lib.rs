@@ -4,3 +4,4 @@ pub mod ud;
 pub mod sns;
 pub mod ton;
 pub mod tree;
+pub mod spaceid;
