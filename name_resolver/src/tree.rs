@@ -43,14 +43,16 @@ impl NameClient for TreeClient {
     }
 
     fn domains() -> Vec<&'static str> {
-        vec!["tree"]
+        vec![
+            "tree"
+        ]
     }
 
     fn chains() -> Vec<Chain> {
         vec![
             Chain::Ethereum, 
             Chain::Polygon, 
-            Chain::SmartChain
+            Chain::SmartChain,
         ]
     }
 }
