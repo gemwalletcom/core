@@ -6,6 +6,7 @@ use diesel::prelude::*;
 use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("../storage/src/migrations");
 use primitives::asset_price::ChartPeriod;
+
 pub struct DatabaseClient {
     connection: PgConnection,
 }
@@ -189,6 +190,34 @@ impl DatabaseClient {
                 production.eq(excluded(production)),
                 beta.eq(excluded(beta)),
                 alpha.eq(excluded(alpha)),
+            ))
+            .execute(&mut self.connection)
+    }
+
+    pub fn add_device(&mut self, device: Device) -> Result<usize, diesel::result::Error> {
+        use crate::schema::devices::dsl::*;
+            diesel::insert_into(devices)
+            .values(device)
+            .execute(&mut self.connection)
+    }
+
+    pub fn get_device(&mut self, _device_id: String) -> Result<Device, diesel::result::Error> {
+        use crate::schema::devices::dsl::*;
+        devices
+            .filter(device_id.eq(_device_id))
+            .select(Device::as_select())
+            .first(&mut self.connection)
+    }
+
+    pub fn update_device(&mut self, device: Device) -> Result<usize, diesel::result::Error> {
+        use crate::schema::devices::dsl::*;
+            diesel::insert_into(devices)
+            .values(device)
+            .on_conflict(device_id)
+            .do_update()
+            .set((
+                token.eq(excluded(token)),
+                is_push_enabled.eq(excluded(is_push_enabled)),
             ))
             .execute(&mut self.connection)
     }

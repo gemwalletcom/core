@@ -10,6 +10,7 @@ mod config_client;
 mod plausible_client;
 mod name;
 mod charts;
+mod device;
 
 use fiat::mercuryo::MercuryoClient;
 use fiat::moonpay::MoonPayClient;
@@ -25,6 +26,7 @@ use config_client::Client as ConfigClient;
 use plausible_client:: Client as PlausibleClient;
 use storage::database::DatabaseClient as DatabaseClient;
 use name_resolver::client::Client as NameClient;
+use device::client::DevicesClient;
 use rocket::tokio::sync::Mutex;
 use rocket_prometheus::PrometheusMetrics;
 
@@ -46,11 +48,12 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
         settings.name.tree.url,
         settings.name.spaceid.url,
     );
+    let devices_client = DevicesClient::new(postgres_url).await;
     let plausible_client = PlausibleClient::new(&settings.plausible.url);
     let request_client = FiatClient::request_client(settings.fiat.timeout);
     let transak = TransakClient::new(request_client.clone(), settings.transak.key.public);
     let moonpay = MoonPayClient::new( request_client.clone(),  settings.moonpay.key.public,  settings.moonpay.key.secret);
-    let mercuryo = MercuryoClient::new(request_client.clone(), settings.mercuryo.key.public);
+    let mercuryo = MercuryoClient::new(request_client.clone(),  settings.mercuryo.key.public);
     let ramp = RampClient::new(request_client.clone(), settings.ramp.key.public);
     let fiat_client = FiatClient::new(
         postgres_url,
@@ -76,6 +79,7 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
         .manage(Mutex::new(config_client))
         .manage(Mutex::new(plausible_client))
         .manage(Mutex::new(name_client))
+        .manage(Mutex::new(devices_client))        
         .mount("/", routes![
             status::get_status,
         ])
@@ -89,6 +93,9 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
             nodes::get_nodes,
             config::get_config,
             name::get_name_resolve,
+            device::add_device,
+            device::get_device,
+            device::update_device,
         ])
         .mount(settings.metrics.path, prometheus)
 }

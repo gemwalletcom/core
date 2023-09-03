@@ -146,3 +146,13 @@ impl Price {
         }
     }
 }
+
+#[derive(Debug, Queryable, Selectable, Serialize, Deserialize, Insertable, AsChangeset, Clone)]
+#[diesel(table_name = crate::schema::devices)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+pub struct Device {
+    pub device_id: String,
+    pub platform: i32,
+    pub token: String,  
+    pub is_push_enabled: bool,
+}

@@ -12,6 +12,18 @@ diesel::table! {
 }
 
 diesel::table! {
+    devices (id) {
+        id -> Int4,
+        device_id -> Varchar,
+        is_push_enabled -> Bool,
+        platform -> Int4,
+        token -> Varchar,
+        updated_at -> Timestamp,
+        created_at -> Timestamp,
+    }
+}
+
+diesel::table! {
     fiat_assets (id) {
         id -> Int4,
         asset -> Varchar,
@@ -78,6 +90,7 @@ diesel::table! {
 
 diesel::allow_tables_to_appear_in_same_query!(
     charts,
+    devices,
     fiat_assets,
     fiat_rates,
     nodes,
