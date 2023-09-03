@@ -16,7 +16,7 @@ diesel::table! {
         id -> Int4,
         device_id -> Varchar,
         is_push_enabled -> Bool,
-        platform -> Int4,
+        platform -> Varchar,
         token -> Varchar,
         updated_at -> Timestamp,
         created_at -> Timestamp,

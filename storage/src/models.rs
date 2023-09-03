@@ -152,7 +152,7 @@ impl Price {
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct Device {
     pub device_id: String,
-    pub platform: i32,
+    pub platform: String,
     pub token: String,  
     pub is_push_enabled: bool,
 }

@@ -1,6 +1,7 @@
 extern crate rocket;
 use std::error::Error;
 
+use primitives::platform::Platform;
 use storage::database::DatabaseClient;
 
 pub struct DevicesClient {
@@ -29,7 +30,7 @@ impl DevicesClient {
         Ok(
             primitives::device::Device { 
                 id: device.device_id, 
-                platform: device.platform,
+                platform: Platform::from_str(device.platform.as_str()).unwrap(),
                 token: device.token,
                 is_push_enabled: device.is_push_enabled,
             }
@@ -45,7 +46,7 @@ impl DevicesClient {
     pub fn map_device(&self, device: primitives::device::Device) -> storage::models::Device {
         return storage::models::Device {
             device_id: device.id,
-            platform: device.platform,
+            platform: device.platform.as_str().to_string(),
             token: device.token,
             is_push_enabled: device.is_push_enabled,
         };
