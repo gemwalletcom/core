@@ -40,7 +40,7 @@ rocket_prometheus = { version = "0.10.0-rc.3" }
 # db
 diesel = { version = "2.1.0", features = ["postgres", "chrono"] }
 diesel_migrations = { version = "2.1.0"}
-redis = { version = "0.23.2", features = ["tokio-comp", "json"] }
+redis = { version = "0.23.3", features = ["tokio-comp", "json"] }
 chrono = { version = "0.4.28", features = ["serde"] }
 
 # crypto
