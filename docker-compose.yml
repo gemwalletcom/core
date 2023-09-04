@@ -36,6 +36,16 @@ services:
       - redis
       - postgres
 
+  parser:
+    image: app
+    container_name: deamon
+    environment:
+      BINARY: deamon
+      POSTGRES_URL: "postgres://username:password@postgres/api"
+    depends_on:
+      - app_build
+      - postgres
+
   redis:
     image: redis:7.0-alpine
     container_name: redis

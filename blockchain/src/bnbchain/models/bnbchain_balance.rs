@@ -1,7 +1,10 @@
+use typeshare::typeshare;
+
 #[typeshare]
-struct BNBChainBalance {
-    free: String,
-    frozen: String,
-    locked: String,
-    symbol: String
+#[allow(dead_code)]
+pub struct BNBChainBalance {
+    pub free: String,
+    pub frozen: String,
+    pub locked: String,
+    pub symbol: String
 }

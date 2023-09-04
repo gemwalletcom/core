@@ -60,3 +60,6 @@ path = "/metrics"
 
 [assets]
 url = "https://raw.githubusercontent.com/gemwalletcom/assets/master"
+
+[chains.binance]
+url = "https://dex.binance.org"

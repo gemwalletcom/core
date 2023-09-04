@@ -17,6 +17,7 @@ pub struct Settings {
     pub name: Name,
     pub metrics: Metrics,
     pub assets: Assets,
+    pub chains: Chains
 }
 
 #[derive(Debug, Deserialize)]
@@ -150,6 +151,18 @@ pub struct Metrics {
 #[derive(Debug, Deserialize)]
 #[allow(unused)]
 pub struct Assets {
+    pub url: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[allow(unused)]
+pub struct Chains {
+    pub binance: Chain,
+}
+
+#[derive(Debug, Deserialize)]
+#[allow(unused)]
+pub struct Chain {
     pub url: String,
 }
 

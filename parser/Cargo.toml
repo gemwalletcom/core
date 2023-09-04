@@ -1,0 +1,13 @@
+[package]
+name = "parser"
+version = { workspace = true }
+edition = { workspace = true }
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+primitives = { path = "../primitives" }
+storage = { path = "../storage" }
+settings = { path = "../settings" }
+blockchain = { path = "../blockchain" }
+tokio = { workspace = true }

@@ -55,6 +55,17 @@ diesel::table! {
 }
 
 diesel::table! {
+    parser_state (chain) {
+        chain -> Varchar,
+        current_block -> Int4,
+        latest_block -> Int4,
+        is_enabled -> Bool,
+        updated_at -> Timestamp,
+        created_at -> Timestamp,
+    }
+}
+
+diesel::table! {
     prices (asset_id) {
         asset_id -> Varchar,
         coin_id -> Varchar,
@@ -94,6 +105,7 @@ diesel::allow_tables_to_appear_in_same_query!(
     fiat_assets,
     fiat_rates,
     nodes,
+    parser_state,
     prices,
     tokenlists,
     versions,

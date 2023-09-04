@@ -1,6 +1,7 @@
 use diesel::dsl::sql;
 use diesel::{Connection, upsert::excluded};
 use diesel::pg::PgConnection;
+use primitives::chain::Chain;
 use crate::models::*;
 use diesel::prelude::*;
 use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
@@ -220,6 +221,28 @@ impl DatabaseClient {
                 is_push_enabled.eq(excluded(is_push_enabled)),
             ))
             .execute(&mut self.connection)
+    }
+
+    pub fn get_parser_state(&mut self, _chain: Chain) -> Result<ParserState, diesel::result::Error> {
+        use crate::schema::parser_state::dsl::*;
+        parser_state
+            .filter(chain.eq(_chain.as_str()))
+            .select(ParserState::as_select())
+            .first(&mut self.connection)
+    }
+
+    pub fn set_parser_state_latest_block(&mut self, _chain: Chain, block: i32) -> Result<usize, diesel::result::Error> {
+        use crate::schema::parser_state::dsl::*;
+            diesel::update(parser_state.find(_chain.as_str()))
+                .set(latest_block.eq(block))
+                .execute(&mut self.connection)
+    }
+
+    pub fn set_parser_state_current_block(&mut self, _chain: Chain, block: i32) -> Result<usize, diesel::result::Error> {
+        use crate::schema::parser_state::dsl::*;
+            diesel::update(parser_state.find(_chain.as_str()))
+                .set(current_block.eq(block))
+                .execute(&mut self.connection)
     }
 
     pub fn migrations(&mut self) {

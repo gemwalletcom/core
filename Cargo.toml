@@ -14,13 +14,15 @@ members = [
     "fiat",
     "name_resolver",
     "api_connector",
-    "ns_address_codec"
+    "ns_address_codec",
+    "parser",
 ]
 
 default-members = [
     "bin/generate",
     "deamon",
     "api",
+    "parser"
 ]
 
 [workspace.dependencies]

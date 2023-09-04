@@ -316,6 +316,8 @@ dependencies = [
 name = "blockchain"
 version = "1.0.0"
 dependencies = [
+ "async-trait",
+ "reqwest",
  "serde",
  "serde_json",
  "typeshare",
@@ -2661,6 +2663,19 @@ dependencies = [
  "redox_syscall 0.3.5",
  "smallvec 1.11.0",
  "windows-targets",
+]
+
+[[package]]
+name = "parser"
+version = "1.0.0"
+dependencies = [
+ "blockchain",
+ "primitives",
+ "serde",
+ "serde_json",
+ "settings",
+ "storage",
+ "tokio",
 ]
 
 [[package]]
