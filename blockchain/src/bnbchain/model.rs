@@ -14,14 +14,14 @@ pub struct Block {
 pub struct Transaction {
     pub hash: String,
     pub r#type: String,
-    pub fee: i64,
+    pub fee: i32,
     pub memo: String,
     pub asset: Option<String>,
     pub amount: Option<i64>,
     pub from_addr: String,
     pub to_addr: Option<String>,
-    pub block_height: i64,
-    pub sequence: i64,
+    pub block_height: i32,
+    pub sequence: i32,
 }
 
 #[typeshare]

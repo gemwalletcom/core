@@ -202,6 +202,14 @@ impl DatabaseClient {
             .execute(&mut self.connection)
     }
 
+    pub fn get_device_by_id(&mut self, _id: i32) -> Result<Device, diesel::result::Error> {
+        use crate::schema::devices::dsl::*;
+        devices
+            .filter(id.eq(_id))
+            .select(Device::as_select())
+            .first(&mut self.connection)
+    }
+
     pub fn get_device(&mut self, _device_id: String) -> Result<Device, diesel::result::Error> {
         use crate::schema::devices::dsl::*;
         devices
@@ -218,6 +226,7 @@ impl DatabaseClient {
             .do_update()
             .set((
                 token.eq(excluded(token)),
+                locale.eq(excluded(locale)),
                 is_push_enabled.eq(excluded(is_push_enabled)),
             ))
             .execute(&mut self.connection)
@@ -243,6 +252,48 @@ impl DatabaseClient {
             diesel::update(parser_state.find(_chain.as_str()))
                 .set(current_block.eq(block))
                 .execute(&mut self.connection)
+    }
+
+    pub fn get_subscriptions(&mut self, _chain: Chain, addresses: Vec<String>) -> Result<Vec<Subscription>, diesel::result::Error> {
+        use crate::schema::subscriptions::dsl::*;
+        subscriptions
+            .filter(chain.eq(_chain.as_str()))
+            .filter(address.eq_any(addresses))
+            .select(Subscription::as_select())
+            .load(&mut self.connection)
+    }
+
+    pub fn add_transactions(&mut self, _transactions: Vec<Transaction>) -> Result<usize, diesel::result::Error> {
+        use crate::schema::transactions::dsl::*;
+        diesel::insert_into(transactions)
+            .values(&_transactions)
+            .on_conflict((chain, hash))
+            .do_update()
+            .set((
+                block_number.eq(excluded(block_number)),
+                sequence.eq(excluded(sequence)),
+                fee.eq(excluded(fee)),
+                fee_asset_id.eq(excluded(fee_asset_id)),
+                memo.eq(excluded(memo)),
+                updated_at.eq(excluded(updated_at)),
+            ))
+            .execute(&mut self.connection)
+    }
+
+    pub fn get_asset(&mut self, asset_id: String) -> Result<Asset, diesel::result::Error> {
+        use crate::schema::assets::dsl::*;
+        assets
+            .filter(id.eq(asset_id))
+            .select(Asset::as_select())
+            .first(&mut self.connection)
+    }
+
+    pub fn get_assets(&mut self, asset_ids: Vec<String>) -> Result<Vec<Asset>, diesel::result::Error> {
+        use crate::schema::assets::dsl::*;
+        assets
+            .filter(id.eq_any(asset_ids))
+            .select(Asset::as_select())
+            .load(&mut self.connection)
     }
 
     pub fn migrations(&mut self) {

@@ -63,3 +63,10 @@ url = "https://raw.githubusercontent.com/gemwalletcom/assets/master"
 
 [chains.binance]
 url = "https://dex.binance.org"
+api = "https://api.binance.org"
+
+[pusher]
+url = ""
+
+[pusher.ios]
+topic = ""

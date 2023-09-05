@@ -1,6 +1,22 @@
 // @generated automatically by Diesel CLI.
 
 diesel::table! {
+    assets (id) {
+        #[max_length = 128]
+        id -> Varchar,
+        #[max_length = 16]
+        chain -> Varchar,
+        #[max_length = 64]
+        name -> Varchar,
+        #[max_length = 16]
+        symbol -> Varchar,
+        decimals -> Int4,
+        updated_at -> Timestamp,
+        created_at -> Timestamp,
+    }
+}
+
+diesel::table! {
     charts (id) {
         id -> Int4,
         coin_id -> Varchar,
@@ -14,10 +30,15 @@ diesel::table! {
 diesel::table! {
     devices (id) {
         id -> Int4,
+        #[max_length = 128]
         device_id -> Varchar,
         is_push_enabled -> Bool,
+        #[max_length = 8]
         platform -> Varchar,
+        #[max_length = 128]
         token -> Varchar,
+        #[max_length = 8]
+        locale -> Varchar,
         updated_at -> Timestamp,
         created_at -> Timestamp,
     }
@@ -81,11 +102,54 @@ diesel::table! {
 }
 
 diesel::table! {
+    subscriptions (id) {
+        id -> Int4,
+        device_id -> Int4,
+        chain -> Varchar,
+        #[max_length = 256]
+        address -> Varchar,
+        updated_at -> Timestamp,
+        created_at -> Timestamp,
+    }
+}
+
+diesel::table! {
     tokenlists (id) {
         id -> Int4,
         chain -> Varchar,
         url -> Varchar,
         version -> Int4,
+    }
+}
+
+diesel::table! {
+    transactions (id) {
+        id -> Int4,
+        chain -> Varchar,
+        #[max_length = 256]
+        hash -> Varchar,
+        #[max_length = 256]
+        from_address -> Nullable<Varchar>,
+        #[max_length = 256]
+        to_address -> Nullable<Varchar>,
+        #[max_length = 256]
+        contract -> Nullable<Varchar>,
+        #[max_length = 256]
+        memo -> Nullable<Varchar>,
+        sequence -> Nullable<Int4>,
+        block_number -> Int4,
+        #[max_length = 16]
+        kind -> Varchar,
+        #[max_length = 32]
+        value -> Nullable<Varchar>,
+        #[max_length = 64]
+        asset_id -> Nullable<Varchar>,
+        #[max_length = 32]
+        fee -> Nullable<Varchar>,
+        #[max_length = 64]
+        fee_asset_id -> Nullable<Varchar>,
+        updated_at -> Timestamp,
+        created_at -> Timestamp,
     }
 }
 
@@ -99,7 +163,10 @@ diesel::table! {
     }
 }
 
+diesel::joinable!(subscriptions -> devices (device_id));
+
 diesel::allow_tables_to_appear_in_same_query!(
+    assets,
     charts,
     devices,
     fiat_assets,
@@ -107,6 +174,8 @@ diesel::allow_tables_to_appear_in_same_query!(
     nodes,
     parser_state,
     prices,
+    subscriptions,
     tokenlists,
+    transactions,
     versions,
 );

@@ -3,6 +3,7 @@ use redis::{aio::Connection, AsyncCommands, RedisResult};
 use serde::{de::DeserializeOwned, Serialize};
 
 pub mod database;
+pub use self::database::DatabaseClient;
 pub mod schema;
 pub mod models;
 

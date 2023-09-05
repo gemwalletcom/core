@@ -22,6 +22,19 @@ impl AssetId {
         let token_id = parts.get(1).map(|s| s.to_owned());
         Some(Self { chain, token_id: token_id.map(|s| s.to_owned()) })
     }
+
+    pub fn to_string(&self) -> String {
+        match &self.token_id {
+            Some(token_id) => {
+                return format!("{}_{}", self.chain.as_str(), token_id)
+            }
+            None => self.chain.as_str().to_owned(),
+        }
+    }
+
+    pub fn from_chain(chain: Chain) -> AssetId {
+        AssetId { chain, token_id: None }
+    }
 }
 
 #[cfg(test)]

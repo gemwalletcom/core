@@ -1,26 +1,39 @@
+use typeshare::typeshare;
+use serde::{Serialize, Deserialize};
+use chrono::NaiveDateTime;
+
+use crate::{asset_id::AssetId, transaction_type::TransactionType, transaction_state::TransactionState, transaction_direction::TransactionDirection};
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare]
-struct Transaction {
-    id: String,
-    hash: String,
+pub struct Transaction {
+    pub id: String,
+    pub hash: String,
     #[serde(rename = "assetId")]
-    asset_id: AssetId,
-    from: String,
-    to: String,
-    contract: Option<String>,
+    pub asset_id: AssetId,
+    pub from: String,
+    pub to: String,
+    pub contract: Option<String>,
     #[serde(rename = "type")]
-    transaction_type: TransactionType,
-    state: TransactionState,
+    pub transaction_type: TransactionType,
+    pub state: TransactionState,
     #[serde(rename = "blockNumber")]
-    block_number: i32,
-    sequence: i32,
-    fee: String,
+    pub block_number: i32,
+    pub sequence: i32,
+    pub fee: String,
     #[serde(rename = "feeAssetId")]
-    fee_asset_id: AssetId,
-    value: String,
-    memo: Option<String>,
-    direction: TransactionDirection,
+    pub fee_asset_id: AssetId,
+    pub value: String,
+    pub memo: Option<String>,
+    pub direction: TransactionDirection,
     #[serde(rename = "createdAt")]
-    created_at: Date,
+    pub created_at: NaiveDateTime,
     #[serde(rename = "updatedAt")]
-    updated_at: Date,
+    pub updated_at: NaiveDateTime,
+}
+
+impl Transaction {
+    pub fn addresses(&self) -> Vec<String> {
+        vec![self.from.clone(), self.to.clone()]
+    }
 }

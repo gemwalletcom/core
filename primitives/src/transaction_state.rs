@@ -1,3 +1,6 @@
+use typeshare::typeshare;
+use serde::{Serialize, Deserialize};
+
 /*
 Pending: The transaction has been initiated but is still pending confirmation. It has been broadcasted to the network but has not yet been included in a block.
 Confirmed: The transaction has been included in a block and is considered confirmed. At this stage, it is considered final and irreversible.
@@ -5,10 +8,12 @@ Failed: The transaction has encountered an error or has been rejected for some r
 Reverted: The transaction was executed but later reverted due to an error or a specific condition. In this case, the transaction is considered unsuccessful, and any changes it made to the state of the system are rolled back.
 */
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Codable, CaseIterable")]
+#[serde(rename_all = "lowercase")]
 pub enum TransactionState {
-    pending,
-    confirmed,
-    failed,
-    reverted,
+    Pending,
+    Confirmed,
+    Failed,
+    Reverted,
 }

@@ -17,6 +17,13 @@ impl Platform {
         }
     }
 
+    pub fn as_i32(&self) -> i32 {
+        match self {
+            Platform::IOS => 1,
+            Platform::Android => 2,
+        }
+    }
+
     pub fn from_str(s: &str) -> Option<Platform> {
         match s {
             "ios" => Some(Platform::IOS),

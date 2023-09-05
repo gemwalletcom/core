@@ -6,3 +6,4 @@ edition = { workspace = true }
 [dependencies]
 typeshare = { workspace = true }
 serde = { workspace = true }
+chrono = { workspace = true }

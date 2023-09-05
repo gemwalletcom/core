@@ -1,9 +1,13 @@
 use std::{thread::{sleep, self}, time::Duration};
 
+pub mod pusher;
+
 use blockchain::ChainProvider;
-use primitives::chain::Chain;
+use primitives::{chain::Chain, Transaction};
 use settings::Settings;
-use storage::database::DatabaseClient;
+use storage::DatabaseClient;
+
+use crate::pusher::Pusher;
 
 #[tokio::main]
 pub async fn main() {
@@ -12,9 +16,39 @@ pub async fn main() {
     let settings: Settings = Settings::new().unwrap();
     let mut database_client: DatabaseClient = DatabaseClient::new(&settings.postgres.url);
     let bnbchain_client = blockchain::BNBChainClient::new(
-        settings.chains.binance.url.to_string(),
-        "https://api.binance.org".to_string()
+        settings.chains.binance.url,
+        settings.chains.binance.api
     );
+    let mut pusher = Pusher::new(
+        settings.pusher.url,
+        settings.postgres.url,
+        settings.pusher.ios.topic,
+    );
+
+    // let providers: Vec<Box<dyn ChainProvider>> = vec![
+    //     Box::new(blockchain::BNBChainClient::new(
+    //         settings.chains.binance.url,
+    //         settings.chains.binance.api
+    //     )),
+    //     Box::new(blockchain::BNBChainClient::new(
+    //         settings.chains.binance.url,
+    //         settings.chains.binance.api
+    //     )),
+    // ];
+
+    // for provider in providers {
+    //     tokio::spawn(async move {
+
+    //         println!("launch provider: {:?}", provider.get_chain());
+
+    //         loop {
+    //             let latest_block: i32 = provider.get_latest_block().await.unwrap();
+    //             println!("latest_block: {:?}", latest_block);
+
+    //             //thread::sleep(Duration::from_secs(2))
+    //         }
+    //     });
+    // }
 
     loop {
         let state = database_client.get_parser_state(Chain::Binance).unwrap();
@@ -45,10 +79,35 @@ pub async fn main() {
 
             let transactions = bnbchain_client.get_transactions(next_block).await;
             match transactions {
-                Ok(_) => {
+                Ok(transactions) => {
                     let _ = database_client.set_parser_state_current_block(Chain::Binance, next_block);
 
-                    //println!("transactions: {:?}", transactions);
+                    let addresses = transactions.clone().into_iter().map(|x| x.addresses() ).flatten().collect();
+                    let subscriptions = database_client.get_subscriptions(Chain::Binance, addresses).unwrap();
+                    let mut store_transactions: Vec<Transaction> = vec![];
+
+                    for subscription in subscriptions {
+                        for transaction in transactions.clone() {
+                            if transaction.addresses().contains(&subscription.address) {
+                                let device = database_client.get_device_by_id(subscription.device_id).unwrap();
+                                println!("Push: device: {}, transaction: {:?}", subscription.device_id, transaction.hash);
+
+                                store_transactions.push(transaction.clone());
+
+                                let result = pusher.push(device.as_primitive(), transaction.clone()).await;
+                                match result {
+                                    Ok(result) => { println!("Push: result: {:?}", result); },
+                                    Err(err) => { println!("Push: error: {:?}", err); }
+                                }
+                            }
+                        }
+                    }
+
+                    let db_transactions = store_transactions.into_iter().map(|transaction| {
+                        storage::models::Transaction::from_primitive(transaction)
+                    }).collect();
+
+                    database_client.add_transactions(db_transactions).unwrap();
                 },
                 Err(err) => {
                     println!("get transactions error: {:?}", err);

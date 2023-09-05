@@ -10,5 +10,6 @@ pub struct Device {
     pub id: String,
     pub platform: Platform,
     pub token: String,
+    pub locale: String,
     pub is_push_enabled: bool,
 }

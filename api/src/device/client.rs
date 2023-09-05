@@ -32,6 +32,7 @@ impl DevicesClient {
                 id: device.device_id, 
                 platform: Platform::from_str(device.platform.as_str()).unwrap(),
                 token: device.token,
+                locale: device.locale,
                 is_push_enabled: device.is_push_enabled,
             }
         )
@@ -48,6 +49,7 @@ impl DevicesClient {
             device_id: device.id,
             platform: device.platform.as_str().to_string(),
             token: device.token,
+            locale: device.locale,
             is_push_enabled: device.is_push_enabled,
         };
     }

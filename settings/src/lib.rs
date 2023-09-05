@@ -17,7 +17,8 @@ pub struct Settings {
     pub name: Name,
     pub metrics: Metrics,
     pub assets: Assets,
-    pub chains: Chains
+    pub chains: Chains,
+    pub pusher: Pusher,
 }
 
 #[derive(Debug, Deserialize)]
@@ -157,13 +158,33 @@ pub struct Assets {
 #[derive(Debug, Deserialize)]
 #[allow(unused)]
 pub struct Chains {
-    pub binance: Chain,
+    pub binance: BNBChain,
 }
 
 #[derive(Debug, Deserialize)]
 #[allow(unused)]
 pub struct Chain {
     pub url: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[allow(unused)]
+pub struct BNBChain {
+    pub url: String,
+    pub api: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[allow(unused)]
+pub struct Pusher {
+    pub url: String,
+    pub ios: PusherIOS,
+}
+
+#[derive(Debug, Deserialize)]
+#[allow(unused)]
+pub struct PusherIOS {
+    pub topic: String,
 }
 
 impl Settings {

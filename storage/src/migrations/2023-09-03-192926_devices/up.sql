@@ -1,9 +1,10 @@
 CREATE TABLE devices (
     id SERIAL PRIMARY KEY,
-    device_id VARCHAR NOT NULL,
+    device_id VARCHAR(128) NOT NULL,
     is_push_enabled boolean NOT NULL,
-    platform VARCHAR NOT NULL,
-    token VARCHAR NOT NULL,
+    platform VARCHAR(8) NOT NULL,
+    token VARCHAR(128) NOT NULL,
+    locale VARCHAR(8) NOT NULL,
     updated_at timestamp NOT NULL default current_timestamp,
     created_at timestamp NOT NULL default current_timestamp,
     UNIQUE(device_id)

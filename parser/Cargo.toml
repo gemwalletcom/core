@@ -11,3 +11,5 @@ storage = { path = "../storage" }
 settings = { path = "../settings" }
 blockchain = { path = "../blockchain" }
 tokio = { workspace = true }
+reqwest = { workspace = true }
+rust_decimal = { workspace = true }

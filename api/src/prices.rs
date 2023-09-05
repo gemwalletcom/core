@@ -25,12 +25,7 @@ pub async fn get_assets_prices(request: Json<AssetPricesRequest>, price_client: 
 fn price_response(prices: Vec<Price>) -> Vec<AssetPrice> {
     let mut response = Vec::new();
     for asset_price in prices {
-        let price_response = AssetPrice{
-            asset_id: asset_price.asset_id,
-            price: asset_price.price,
-            price_change_percentage_24h: asset_price.price_change_percentage_24h,
-        };
-        response.push(price_response);
+        response.push(asset_price.as_primitive());
     }
     response
 }
