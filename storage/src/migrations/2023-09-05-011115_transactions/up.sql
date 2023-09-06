@@ -18,4 +18,12 @@ CREATE TABLE transactions (
     UNIQUE(chain, hash)
 );
 
+ALTER TABLE transactions
+      ADD CONSTRAINT fk_asset_id_transactions FOREIGN KEY (asset_id) 
+          REFERENCES assets (id);
+
+ALTER TABLE transactions
+      ADD CONSTRAINT fk_fee_asset_id_transactions FOREIGN KEY (fee_asset_id) 
+          REFERENCES assets (id);
+
 SELECT diesel_manage_updated_at('transactions');
