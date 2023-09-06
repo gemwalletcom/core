@@ -50,7 +50,7 @@ pub async fn main() {
             Err(err) => { println!("update prices cache error: {}", err) }
         }
 
-        let result = tokenlist_client.update_versions().await;
+        let result = tokenlist_client.update().await;
         match result {
             Ok(count) => { println!("update tokenlist versions: {}", count) }
             Err(err) => { println!("update tokenlist versions error: {}", err) }

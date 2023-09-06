@@ -6,6 +6,10 @@ diesel::table! {
         id -> Varchar,
         #[max_length = 16]
         chain -> Varchar,
+        #[max_length = 128]
+        token_id -> Nullable<Varchar>,
+        #[max_length = 16]
+        asset_type -> Varchar,
         #[max_length = 64]
         name -> Varchar,
         #[max_length = 16]

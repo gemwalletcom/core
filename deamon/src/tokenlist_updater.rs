@@ -1,5 +1,5 @@
 use std::error::Error;
-use storage::database::DatabaseClient;
+use storage::{database::DatabaseClient, models::Asset};
 use api_connector::AssetsClient;
 
 pub struct Client<'a> {
@@ -16,11 +16,14 @@ impl<'a> Client<'a> {
         }
     }
 
-    pub async fn update_versions(&mut self) -> Result<usize, Box<dyn Error>> {
+    pub async fn update(&mut self) -> Result<usize, Box<dyn Error>> {
         let lists = self.database.get_tokenlists()?;
         for list in &lists {
-            let version = self.assets_client.get_tokenlist(list.chain.as_str()).await?.version;
-            let _ = self.database.set_tokenlist_version(list.clone().chain, version);
+            let tokenlist = self.assets_client.get_tokenlist(list.chain.as_str()).await?;
+            let _ = self.database.set_tokenlist_version(list.clone().chain, tokenlist.version);
+
+            let assets = tokenlist.assets.into_iter().map(|x| Asset::from_primitive(x)).collect();
+            let _ = self.database.add_assets(assets);
         }
         Ok(lists.len())
     }

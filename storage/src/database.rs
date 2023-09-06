@@ -296,6 +296,14 @@ impl DatabaseClient {
             .load(&mut self.connection)
     }
 
+    pub fn add_assets(&mut self, _assets: Vec<Asset>) -> Result<usize, diesel::result::Error> {
+        use crate::schema::assets::dsl::*;
+        diesel::insert_into(assets)
+            .values(&_assets)
+            .on_conflict_do_nothing()
+            .execute(&mut self.connection)
+    }
+
     pub fn migrations(&mut self) {
         self.connection.run_pending_migrations(MIGRATIONS).unwrap();
     }
