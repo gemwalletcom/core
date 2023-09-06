@@ -9,7 +9,7 @@ use crate::mercuryo::MercuryoClient;
 use crate::ramp::RampClient;
 use primitives::{fiat_quote::FiatQuote, fiat_quote_request::FiatBuyRequest, fiat_provider::FiatProviderName, fiat_assets::FiatAssets};
 //use futures::future::join_all;
-use storage::database::DatabaseClient;
+use storage::DatabaseClient;
 use reqwest::Client as RequestClient;
 
 pub struct Client {

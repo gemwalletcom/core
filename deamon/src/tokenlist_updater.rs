@@ -22,7 +22,10 @@ impl<'a> Client<'a> {
             let tokenlist = self.assets_client.get_tokenlist(list.chain.as_str()).await?;
             let _ = self.database.set_tokenlist_version(list.clone().chain, tokenlist.version);
 
-            let assets = tokenlist.assets.into_iter().map(|x| Asset::from_primitive(x)).collect();
+            let assets = tokenlist.assets
+                .into_iter()
+                .map(|x| Asset::from_primitive(x.to_asset()))
+                .collect();
             let _ = self.database.add_assets(assets);
         }
         Ok(lists.len())

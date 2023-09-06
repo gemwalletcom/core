@@ -39,6 +39,10 @@ impl AssetType {
             Self::TRC20 => "TRC20",
         }
     }
+
+    pub fn to_string(&self) -> String {
+        self.as_str().to_string()
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -1,9 +1,15 @@
+use typeshare::typeshare;
+use serde::{Serialize, Deserialize};
+
+use crate::{asset_id::AssetId, asset_type::AssetType};
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare]
-struct Asset {
-    id: AssetId,
-    name: String,
-    symbol: String,
-    decimals: Int,
+pub struct Asset {
+    pub id: AssetId,
+    pub name: String,
+    pub symbol: String,
+    pub decimals: i32,
     #[serde(rename = "type")]
-    asset_type: AssetType
+    pub asset_type: AssetType
 }

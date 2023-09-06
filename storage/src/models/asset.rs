@@ -1,5 +1,5 @@
 use diesel::prelude::*;
-use primitives::{tokenlist::TokenListAsset, chain::Chain, asset_type::AssetType, asset_id::AssetId};
+use primitives::{chain::Chain, asset_type::AssetType, asset_id::AssetId};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Queryable, Selectable, Serialize, Deserialize, Insertable, AsChangeset, Clone)]
@@ -16,10 +16,9 @@ pub struct Asset {
 }
 
 impl Asset {
-    pub fn as_primitive(&self) -> TokenListAsset {
-        TokenListAsset{
-            chain: Chain::new(&self.chain).unwrap(),
-            token_id: self.token_id.clone().unwrap_or_default(),
+    pub fn as_primitive(&self) -> primitives::asset::Asset {
+        primitives::asset::Asset{
+            id: AssetId {chain: Chain::new(&self.chain).unwrap(), token_id: self.token_id.clone() },
             name: self.name.clone(),
             symbol: self.symbol.clone(),
             asset_type: AssetType::from_str(&self.asset_type).unwrap(),
@@ -27,14 +26,14 @@ impl Asset {
         }
     }
 
-    pub fn from_primitive(asset: TokenListAsset) -> Self {
+    pub fn from_primitive(asset: primitives::asset::Asset) -> Self {
         Self {
-            id: AssetId {chain: asset.chain, token_id: asset.token_id.clone().into() }.to_string(),
-            chain: asset.chain.as_str().to_string(),
-            token_id: Some(asset.token_id),
+            id: asset.id.to_string(),
+            chain: asset.id.chain.to_string(),
+            token_id: asset.id.token_id,
             name: asset.name,
             symbol: asset.symbol,
-            asset_type: asset.asset_type.as_str().to_string(),
+            asset_type: asset.asset_type.to_string(),
             decimals: asset.decimals
         }
     }

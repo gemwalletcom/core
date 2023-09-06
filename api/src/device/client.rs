@@ -2,7 +2,7 @@ extern crate rocket;
 use std::error::Error;
 
 use primitives::platform::Platform;
-use storage::database::DatabaseClient;
+use storage::DatabaseClient;
 
 pub struct DevicesClient {
     database: DatabaseClient,

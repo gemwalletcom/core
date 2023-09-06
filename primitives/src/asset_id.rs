@@ -3,13 +3,22 @@ use serde::{Serialize, Deserialize};
 
 use crate::chain::Chain;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 #[typeshare]
 #[typeshare(swift = "Equatable, Codable, Hashable")]
 pub struct AssetId {
     pub chain: Chain,
     #[serde(rename = "tokenId")]
     pub token_id: Option<String>,
+}
+
+impl Serialize for AssetId {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_str(&self.to_string())
+    }
 }
 
 impl AssetId {

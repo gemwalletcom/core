@@ -84,4 +84,8 @@ impl Chain {
             Self::OpBNB => "opbnb",
         }
     }
+
+    pub fn to_string(&self) -> String {
+        self.as_str().to_string()
+    }
 }

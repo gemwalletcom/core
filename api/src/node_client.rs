@@ -1,6 +1,6 @@
 use std::{error::Error, collections::HashMap};
 use primitives::node::{Node, ChainNodes, NodeStatus, NodesResponse};
-use storage::database::DatabaseClient;
+use storage::DatabaseClient;
 
 pub struct Client {
     database: DatabaseClient,

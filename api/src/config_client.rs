@@ -3,7 +3,7 @@ use primitives::{
     config::{ConfigResponse, ConfigApp, ConfigAppVersion, ConfigAndroidApp, ConfigIOSApp, ConfigVersions}, 
     tokenlist::TokenListChainVersion
 };
-use storage::database::DatabaseClient;
+use storage::DatabaseClient;
 
 pub struct Client {
     database: DatabaseClient,

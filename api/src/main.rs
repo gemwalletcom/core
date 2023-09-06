@@ -11,7 +11,9 @@ mod plausible_client;
 mod name;
 mod charts;
 mod device;
+mod asset;
 
+use asset::client::AssetsClient;
 use fiat::mercuryo::MercuryoClient;
 use fiat::moonpay::MoonPayClient;
 use fiat::transak::TransakClient;
@@ -24,7 +26,7 @@ use pricer::client::Client as PriceClient;
 use fiat::client::Client as FiatClient;
 use config_client::Client as ConfigClient;
 use plausible_client:: Client as PlausibleClient;
-use storage::database::DatabaseClient as DatabaseClient;
+use storage::DatabaseClient as DatabaseClient;
 use name_resolver::client::Client as NameClient;
 use device::client::DevicesClient;
 use rocket::tokio::sync::Mutex;
@@ -49,6 +51,7 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
         settings.name.spaceid.url,
     );
     let devices_client = DevicesClient::new(postgres_url).await;
+    let assets_client = AssetsClient::new(postgres_url).await;
     let plausible_client = PlausibleClient::new(&settings.plausible.url);
     let request_client = FiatClient::request_client(settings.fiat.timeout);
     let transak = TransakClient::new(request_client.clone(), settings.transak.key.public);
@@ -80,6 +83,7 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
         .manage(Mutex::new(plausible_client))
         .manage(Mutex::new(name_client))
         .manage(Mutex::new(devices_client))        
+        .manage(Mutex::new(assets_client))        
         .mount("/", routes![
             status::get_status,
         ])
@@ -96,6 +100,7 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
             device::add_device,
             device::get_device,
             device::update_device,
+            asset::get_asset,
         ])
         .mount(settings.metrics.path, prometheus)
 }
