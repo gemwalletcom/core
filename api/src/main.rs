@@ -12,6 +12,7 @@ mod name;
 mod charts;
 mod device;
 mod asset;
+mod subscription;
 
 use asset::client::AssetsClient;
 use fiat::mercuryo::MercuryoClient;
@@ -29,6 +30,7 @@ use plausible_client:: Client as PlausibleClient;
 use storage::DatabaseClient as DatabaseClient;
 use name_resolver::client::Client as NameClient;
 use device::client::DevicesClient;
+use subscription::client::SubscriptionsClient;
 use rocket::tokio::sync::Mutex;
 use rocket_prometheus::PrometheusMetrics;
 
@@ -51,6 +53,7 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
         settings.name.spaceid.url,
     );
     let devices_client = DevicesClient::new(postgres_url).await;
+    let subscriptions_client = SubscriptionsClient::new(postgres_url).await;
     let assets_client = AssetsClient::new(postgres_url).await;
     let plausible_client = PlausibleClient::new(&settings.plausible.url);
     let request_client = FiatClient::request_client(settings.fiat.timeout);
@@ -83,7 +86,8 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
         .manage(Mutex::new(plausible_client))
         .manage(Mutex::new(name_client))
         .manage(Mutex::new(devices_client))        
-        .manage(Mutex::new(assets_client))        
+        .manage(Mutex::new(assets_client))
+        .manage(Mutex::new(subscriptions_client))        
         .mount("/", routes![
             status::get_status,
         ])
@@ -101,6 +105,9 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
             device::get_device,
             device::update_device,
             asset::get_asset,
+            subscription::add_subscriptions,
+            subscription::get_subscriptions,
+            subscription::delete_subscriptions,
         ])
         .mount(settings.metrics.path, prometheus)
 }

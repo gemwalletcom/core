@@ -3,6 +3,7 @@ use diesel::{Connection, upsert::excluded};
 use diesel::pg::PgConnection;
 use primitives::chain::Chain;
 use crate::models::*;
+use crate::schema::devices;
 use diesel::prelude::*;
 use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("../storage/src/migrations");
@@ -195,7 +196,7 @@ impl DatabaseClient {
             .execute(&mut self.connection)
     }
 
-    pub fn add_device(&mut self, device: Device) -> Result<usize, diesel::result::Error> {
+    pub fn add_device(&mut self, device: UpdateDevice) -> Result<usize, diesel::result::Error> {
         use crate::schema::devices::dsl::*;
             diesel::insert_into(devices)
             .values(device)
@@ -210,7 +211,7 @@ impl DatabaseClient {
             .first(&mut self.connection)
     }
 
-    pub fn get_device(&mut self, _device_id: String) -> Result<Device, diesel::result::Error> {
+    pub fn get_device(&mut self, _device_id: &str) -> Result<Device, diesel::result::Error> {
         use crate::schema::devices::dsl::*;
         devices
             .filter(device_id.eq(_device_id))
@@ -218,7 +219,7 @@ impl DatabaseClient {
             .first(&mut self.connection)
     }
 
-    pub fn update_device(&mut self, device: Device) -> Result<usize, diesel::result::Error> {
+    pub fn update_device(&mut self, device: UpdateDevice) -> Result<usize, diesel::result::Error> {
         use crate::schema::devices::dsl::*;
             diesel::insert_into(devices)
             .values(device)
@@ -254,6 +255,25 @@ impl DatabaseClient {
                 .execute(&mut self.connection)
     }
 
+    pub fn get_subscriptions_by_device_id(&mut self, _device_id: &str) -> Result<Vec<Subscription>, diesel::result::Error> {
+        use crate::schema::subscriptions::dsl::*;
+        subscriptions
+            .inner_join(devices::table)
+            .filter(devices::device_id.eq(_device_id))
+            .select(Subscription::as_select())
+            .load(&mut self.connection)
+    }
+
+    pub fn delete_subscription(&mut self, subscription: Subscription) -> Result<usize, diesel::result::Error> {
+        use crate::schema::subscriptions::dsl::*;
+        return diesel::delete(
+            subscriptions
+            .filter(device_id.eq(subscription.device_id))
+            .filter(chain.eq(subscription.chain))
+            .filter(address.eq(subscription.address))
+        ).execute(&mut self.connection);
+    }
+
     pub fn get_subscriptions(&mut self, _chain: Chain, addresses: Vec<String>) -> Result<Vec<Subscription>, diesel::result::Error> {
         use crate::schema::subscriptions::dsl::*;
         subscriptions
@@ -261,6 +281,14 @@ impl DatabaseClient {
             .filter(address.eq_any(addresses))
             .select(Subscription::as_select())
             .load(&mut self.connection)
+    }
+
+    pub fn add_subscriptions(&mut self, _subscriptions: Vec<Subscription>) -> Result<usize, diesel::result::Error> {
+        use crate::schema::subscriptions::dsl::*;
+        diesel::insert_into(subscriptions)
+            .values(&_subscriptions)
+            .on_conflict_do_nothing()
+            .execute(&mut self.connection)
     }
 
     pub fn add_transactions(&mut self, _transactions: Vec<Transaction>) -> Result<usize, diesel::result::Error> {

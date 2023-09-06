@@ -3,6 +3,7 @@ prefix = ''
 
 [swift.type_mappings]
 "UInt32" = "UInt64"
+"Int32" = "Int"
 "BigInt" = "BigInt"
 "NaiveDateTime" = "Date"
 

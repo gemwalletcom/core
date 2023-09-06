@@ -1,6 +1,7 @@
 // lib.rs
 
 pub mod chain;
+pub use self::chain::Chain;
 pub mod chain_type; 
 pub mod name;
 pub mod node;
@@ -31,3 +32,5 @@ pub mod transaction_state;
 pub use self::transaction_state::TransactionState;
 pub mod transaction_direction;
 pub use self::transaction_direction::TransactionDirection;
+pub mod subscription;
+pub use self::subscription::Subscription;

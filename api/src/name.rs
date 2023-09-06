@@ -12,7 +12,7 @@ pub async fn get_name_resolve(
     chain: &str,
     name_client: &State<Mutex<NameClient>>,
 ) -> Json<NameRecord> {
-    let chain = Chain::new(chain).unwrap();
+    let chain = Chain::from_str(chain).unwrap();
     let name = name_client.lock().await.resolve(name, chain).await.unwrap();
     Json(name)
 }

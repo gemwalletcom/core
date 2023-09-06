@@ -27,7 +27,7 @@ impl AssetId {
         if parts.is_empty() || parts.len() > 2 {
             return None;
         }
-        let chain = Chain::new(parts[0])?;
+        let chain = Chain::from_str(parts[0])?;
         let token_id = parts.get(1).map(|s| s.to_owned());
         Some(Self { chain, token_id: token_id.map(|s| s.to_owned()) })
     }

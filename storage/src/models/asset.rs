@@ -18,7 +18,7 @@ pub struct Asset {
 impl Asset {
     pub fn as_primitive(&self) -> primitives::asset::Asset {
         primitives::asset::Asset{
-            id: AssetId {chain: Chain::new(&self.chain).unwrap(), token_id: self.token_id.clone() },
+            id: AssetId {chain: Chain::from_str(&self.chain).unwrap(), token_id: self.token_id.clone() },
             name: self.name.clone(),
             symbol: self.symbol.clone(),
             asset_type: AssetType::from_str(&self.asset_type).unwrap(),

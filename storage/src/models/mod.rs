@@ -15,6 +15,7 @@ pub use self::asset::Asset;
 pub use self::chart::Chart;
 pub use self::chart::ChartResult;
 pub use self::device::Device;
+pub use self::device::UpdateDevice;
 pub use self::fiat_asset::FiatAsset;
 pub use self::fiat_rate::FiatRate;
 pub use self::node::Node;

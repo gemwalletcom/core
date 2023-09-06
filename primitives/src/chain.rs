@@ -34,7 +34,7 @@ impl PartialEq for Chain {
 }
 
 impl Chain {
-    pub fn new(chain: &str) -> Option<Self> {
+    pub fn from_str(chain: &str) -> Option<Self> {
         match chain {
             "bitcoin" => Some(Self::Bitcoin),
             "binance" => Some(Self::Binance),
