@@ -178,6 +178,7 @@ pub struct BNBChain {
 #[allow(unused)]
 pub struct Pusher {
     pub url: String,
+    pub timeout: u64,
     pub ios: PusherIOS,
 }
 

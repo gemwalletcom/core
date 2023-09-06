@@ -67,6 +67,7 @@ api = "https://api.binance.org"
 
 [pusher]
 url = ""
+timeout = 1
 
 [pusher.ios]
 topic = ""

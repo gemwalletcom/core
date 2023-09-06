@@ -61,13 +61,13 @@ pub async fn main() {
                     
                     println!("parser ahead. current_block: {}, latest_block: {}, await_blocks: {}", state.current_block, state.latest_block, state.await_blocks);
         
-                    thread::sleep(Duration::from_secs(2)); continue;
+                    thread::sleep(Duration::from_secs(settings.pusher.timeout)); continue;
                 }
              },
             Err(err) => {
                 println!("latest_block error: {:?}", err);
 
-                sleep(Duration::from_secs(2)); continue;
+                sleep(Duration::from_secs(settings.pusher.timeout)); continue;
             }
         }
         
