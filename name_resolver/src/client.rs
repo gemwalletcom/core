@@ -4,7 +4,7 @@ use async_trait::async_trait;
 use primitives::chain::Chain;
 use primitives::name::{NameRecord, NameProvider};
 
-use crate::{ens::ENSClient, ud::UDClient, sns::SNSClient, ton::TONClient, tree::TreeClient, spaceid::SpaceIdClient};
+use crate::{ens::ENSClient, ud::UDClient, sns::SNSClient, ton::TONClient, eths::EthsClient, spaceid::SpaceIdClient};
 
 #[async_trait]
 pub trait NameClient {
@@ -20,7 +20,7 @@ pub struct Client {
     ud_client: UDClient,
     sns_client: SNSClient,
     ton_client: TONClient,
-    tree_client: TreeClient,
+    eths_client: EthsClient,
     spaceid_client: SpaceIdClient,
 }
 
@@ -32,7 +32,7 @@ impl Client {
         ud_api_key: String,
         sns_url: String,
         ton_url: String,
-        tree_api_url: String,
+        eths_api_url: String,
         space_api_url: String,
     ) -> Self {
         let domains_mapping = Self::domains_mapping();
@@ -40,7 +40,7 @@ impl Client {
         let ud_client = UDClient::new(ud_url, ud_api_key);
         let sns_client = SNSClient::new(sns_url);
         let ton_client: TONClient = TONClient::new(ton_url);
-        let tree_client: TreeClient = TreeClient::new(tree_api_url);
+        let eths_client: EthsClient = EthsClient::new(eths_api_url);
         let spaceid_client: SpaceIdClient = SpaceIdClient::new(space_api_url);
 
         Self {
@@ -49,7 +49,7 @@ impl Client {
             ud_client,
             sns_client,
             ton_client,
-            tree_client,
+            eths_client,
             spaceid_client,
         }
     }
@@ -83,11 +83,12 @@ impl Client {
                 }
                 self.ton_client.resolve(name, chain).await
             },
-            NameProvider::Tree => {
-                if !TreeClient::chains().contains(&chain) {
+            NameProvider::Tree |
+            NameProvider::Eths => {
+                if !EthsClient::chains().contains(&chain) {
                     return Err("not supported chain".to_string().into())
                 }
-                self.tree_client.resolve(name, chain).await
+                self.eths_client.resolve(name, chain).await
             },
             NameProvider::SpaceId => {
                 if !SpaceIdClient::chains().contains(&chain) {
@@ -117,7 +118,7 @@ impl Client {
             result.insert(domain, NameProvider::Ton);
         }
 
-        for domain in TreeClient::domains() {
+        for domain in EthsClient::domains() {
             result.insert(domain, NameProvider::Tree);
         }
 

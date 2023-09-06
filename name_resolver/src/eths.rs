@@ -12,12 +12,12 @@ pub struct ResolveRecord {
     pub owner: String,
 }
 
-pub struct TreeClient {
+pub struct EthsClient {
     api_url: String,
     client: Client,
 }
 
-impl TreeClient {
+impl EthsClient {
     pub fn new(api_url: String) -> Self {
         let client = Client::new();
         Self {
@@ -28,7 +28,7 @@ impl TreeClient {
 }
 
 #[async_trait]
-impl NameClient for TreeClient {
+impl NameClient for EthsClient {
     
     fn provider() -> NameProvider {
         NameProvider::Tree
@@ -44,7 +44,8 @@ impl NameClient for TreeClient {
 
     fn domains() -> Vec<&'static str> {
         vec![
-            "tree"
+            "tree",
+            "eths",
         ]
     }
 

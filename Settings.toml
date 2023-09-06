@@ -49,7 +49,7 @@ url = "https://sns-sdk-proxy.bonfida.workers.dev"
 [name.ton]
 url = "https://tonapi.io"
 
-[name.tree]
+[name.eths]
 url = "https://api.eths.center"
 
 [name.spaceid]

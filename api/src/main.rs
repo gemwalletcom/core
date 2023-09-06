@@ -47,7 +47,7 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
         settings.name.ud.key.secret,
         settings.name.sns.url,
         settings.name.ton.url,
-        settings.name.tree.url,
+        settings.name.eths.url,
         settings.name.spaceid.url,
     );
     let devices_client = DevicesClient::new(postgres_url).await;

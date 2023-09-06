@@ -101,7 +101,7 @@ pub struct Name {
     pub ud: UD,
     pub sns: SNS,
     pub ton: TON,
-    pub tree: TREE,
+    pub eths: ETHS,
     pub spaceid: SpaceId,
 }
 
@@ -133,7 +133,7 @@ pub struct UD {
 
 #[derive(Debug, Deserialize)]
 #[allow(unused)]
-pub struct TREE {
+pub struct ETHS {
     pub url: String,
 }
 
