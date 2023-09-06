@@ -80,6 +80,7 @@ diesel::table! {
         chain -> Varchar,
         current_block -> Int4,
         latest_block -> Int4,
+        await_blocks -> Int4,
         is_enabled -> Bool,
         updated_at -> Timestamp,
         created_at -> Timestamp,

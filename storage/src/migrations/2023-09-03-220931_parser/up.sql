@@ -1,7 +1,8 @@
 CREATE TABLE parser_state (
     chain VARCHAR NOT NULL PRIMARY KEY,
-    current_block INTEGER NOT NULL,
-    latest_block INTEGER NOT NULL,
+    current_block INTEGER NOT NULL default 0,
+    latest_block INTEGER NOT NULL default 0,
+    await_blocks INTEGER NOT NULL default 0,
     is_enabled boolean NOT NULL default true,
     updated_at timestamp NOT NULL default current_timestamp,
     created_at timestamp NOT NULL default current_timestamp,

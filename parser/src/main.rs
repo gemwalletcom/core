@@ -57,8 +57,9 @@ pub async fn main() {
         match latest_block {
             Ok(latest_block) => {
                 let _ = database_client.set_parser_state_latest_block(Chain::Binance, latest_block);
-                if state.current_block >= state.latest_block {
-                    println!("parser ahead. current_block: {}, latest_block: {}", state.current_block, state.latest_block);
+                if state.current_block + state.await_blocks >= state.latest_block {
+                    
+                    println!("parser ahead. current_block: {}, latest_block: {}, await_blocks: {}", state.current_block, state.latest_block, state.await_blocks);
         
                     thread::sleep(Duration::from_secs(2)); continue;
                 }
