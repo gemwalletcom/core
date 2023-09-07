@@ -4,7 +4,7 @@ use serde::{Serialize, Deserialize};
 use crate::platform::Platform;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare(swift="Codable")]
+#[typeshare(swift="Codable, Equatable")]
 #[serde(rename_all = "camelCase")]
 pub struct Device {
     pub id: String,

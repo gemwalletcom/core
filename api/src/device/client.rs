@@ -25,10 +25,10 @@ impl DevicesClient {
         return self.get_device(device_id.as_str());
     }
 
-    pub fn get_device(&mut self, device_id: &str) -> Result<primitives::device::Device, Box<dyn Error>> {
+    pub fn get_device(&mut self, device_id: &str) -> Result<primitives::Device, Box<dyn Error>> {
         let device = self.database.get_device(device_id)?;
         Ok(
-            primitives::device::Device { 
+            primitives::Device { 
                 id: device.device_id, 
                 platform: Platform::from_str(device.platform.as_str()).unwrap(),
                 token: device.token,

@@ -2,7 +2,7 @@ use typeshare::typeshare;
 use serde::{Serialize, Deserialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare(swift="Codable")]
+#[typeshare(swift="Codable, Equatable")]
 #[serde(rename_all = "lowercase")]
 pub enum Platform  {
     IOS,
