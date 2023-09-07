@@ -233,6 +233,14 @@ impl DatabaseClient {
             .execute(&mut self.connection)
     }
 
+    pub fn delete_device(&mut self, _device_id: &str) -> Result<usize, diesel::result::Error> {
+        use crate::schema::devices::dsl::*;
+        return diesel::delete(
+            devices
+            .filter(device_id.eq(_device_id))
+        ).execute(&mut self.connection);
+    }
+
     pub fn get_parser_state(&mut self, _chain: Chain) -> Result<ParserState, diesel::result::Error> {
         use crate::schema::parser_state::dsl::*;
         parser_state

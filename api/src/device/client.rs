@@ -43,4 +43,8 @@ impl DevicesClient {
         let _ = self.database.update_device(update_device)?;
         return self.get_device(device_id.as_str());
     }
+
+    pub fn delete_device(&mut self, device_id: &str) -> Result<usize, Box<dyn Error>> {
+        return Ok(self.database.delete_device(device_id)?);
+    }
 }

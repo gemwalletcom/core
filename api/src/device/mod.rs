@@ -35,3 +35,12 @@ pub async fn update_device(
     let device = client.lock().await.update_device(device.0).unwrap();
     Json(device)
 }
+
+#[delete("/devices/<device_id>")]
+pub async fn delete_device(
+    device_id: &str,
+    client: &State<Mutex<DevicesClient>>,
+) -> Json<usize> {
+    let result: usize = client.lock().await.delete_device(device_id).unwrap();
+    Json(result)
+}
