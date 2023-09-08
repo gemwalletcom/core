@@ -4,6 +4,8 @@ struct EthereumTransactionReciept {
     status: String,
     gas_used: String,
     effective_gas_price: String,
+    #[serde(rename = "l1Fee")]
+    l1_fee: Option<String>,
 }
 
 #[typeshare]
