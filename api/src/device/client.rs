@@ -1,7 +1,6 @@
 extern crate rocket;
 use std::error::Error;
 
-use primitives::platform::Platform;
 use storage::{DatabaseClient, models::UpdateDevice};
 
 pub struct DevicesClient {
@@ -19,23 +18,14 @@ impl DevicesClient {
     }
 
     pub fn add_device(&mut self, device: primitives::device::Device) -> Result<primitives::device::Device, Box<dyn Error>> {
-        let device_id = device.id.clone();
-        let add_device = UpdateDevice::from_primitive(device);
+        let add_device = UpdateDevice::from_primitive(device.clone());
         let _ = self.database.add_device(add_device)?;
-        return self.get_device(device_id.as_str());
+        return self.get_device(device.id.as_str());
     }
 
     pub fn get_device(&mut self, device_id: &str) -> Result<primitives::Device, Box<dyn Error>> {
         let device = self.database.get_device(device_id)?;
-        Ok(
-            primitives::Device { 
-                id: device.device_id, 
-                platform: Platform::from_str(device.platform.as_str()).unwrap(),
-                token: device.token,
-                locale: device.locale,
-                is_push_enabled: device.is_push_enabled,
-            }
-        )
+        Ok(device.as_primitive())
     }
     pub fn update_device(&mut self, device: primitives::device::Device) -> Result<primitives::device::Device, Box<dyn Error>> {
         let device_id = device.id.clone();
