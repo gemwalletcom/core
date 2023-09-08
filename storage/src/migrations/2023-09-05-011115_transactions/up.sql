@@ -10,9 +10,9 @@ CREATE TABLE transactions (
     block_number INTEGER NOT NULL,
     kind VARCHAR(16) NOT NULL,
     value VARCHAR(32),
-    asset_id VARCHAR(64) REFERENCES assets (id) ON DELETE CASCADE,
+    asset_id VARCHAR REFERENCES assets (id) ON DELETE CASCADE,
     fee VARCHAR(32),
-    fee_asset_id VARCHAR(64) REFERENCES assets (id) ON DELETE CASCADE,
+    fee_asset_id VARCHAR REFERENCES assets (id) ON DELETE CASCADE,
     updated_at timestamp NOT NULL default current_timestamp,
     created_at timestamp NOT NULL default current_timestamp,
     UNIQUE(chain, hash)
