@@ -1,0 +1,75 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Run api",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=api",
+                    "--package=api"
+                ],
+                "filter": {
+                    "name": "api",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Run parser",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=parser",
+                    "--package=parser"
+                ],
+                "filter": {
+                    "name": "parser",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Run deamon",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=deamon",
+                    "--package=deamon"
+                ],
+                "filter": {
+                    "name": "deamon",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Run tests",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--workspace"
+                ]
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+    ]
+}
