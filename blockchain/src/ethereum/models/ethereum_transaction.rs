@@ -1,6 +1,9 @@
 #[typeshare]
-struct EthereumTransaction {
+#[serde(rename_all = "camelCase")]
+struct EthereumTransactionReciept {
     status: String,
+    gas_used: String,
+    effective_gas_price: String,
 }
 
 #[typeshare]

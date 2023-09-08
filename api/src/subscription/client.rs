@@ -25,7 +25,6 @@ impl SubscriptionsClient {
             .map(|x| storage::models::Subscription::from_primitive(x, device.id))
             .collect();
         let result = self.database.add_subscriptions(subscriptions)?;
-        
         return Ok(result)
     }
 
