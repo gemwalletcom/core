@@ -43,6 +43,8 @@ diesel::table! {
         token -> Varchar,
         #[max_length = 8]
         locale -> Varchar,
+        #[max_length = 8]
+        version -> Varchar,
         updated_at -> Timestamp,
         created_at -> Timestamp,
     }

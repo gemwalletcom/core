@@ -104,7 +104,7 @@ pub async fn main() {
                         }
                     }
 
-                    let transactions = transactions_map
+                    let transactions: Vec<storage::models::Transaction> = transactions_map
                         .into_iter()
                         .map(|x| x.1)
                         .collect::<Vec<Transaction>>()

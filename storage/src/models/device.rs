@@ -11,6 +11,7 @@ pub struct Device {
     pub token: String,  
     pub locale: String,
     pub is_push_enabled: bool,
+    pub version: String,
 }
 
 #[derive(Debug, Queryable, Selectable, Serialize, Deserialize, Insertable, AsChangeset, Clone)]
@@ -22,6 +23,7 @@ pub struct UpdateDevice {
     pub token: String,  
     pub locale: String,
     pub is_push_enabled: bool,
+    pub version: String,
 }
 
 impl Device {
@@ -33,6 +35,7 @@ impl Device {
             token: self.token.clone(),
             locale: self.locale.clone(),
             is_push_enabled: self.is_push_enabled,
+            version: self.version.clone().into(),
         }
     }
 }
@@ -45,6 +48,7 @@ impl UpdateDevice {
             token: device.token,
             locale: device.locale,
             is_push_enabled: device.is_push_enabled,
+            version: device.version.unwrap_or_default(),
         }
     }
 }

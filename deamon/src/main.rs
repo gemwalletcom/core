@@ -1,5 +1,6 @@
 mod version_updater;
 mod tokenlist_updater;
+mod device_updater;
 
 use api_connector::AssetsClient;
 use pricer::client::Client;
@@ -7,6 +8,7 @@ use pricer::coingecko:: CoinGeckoClient;
 use pricer::price_updater:: PriceUpdater;
 use crate::version_updater::Client as VersionClient;
 use crate::tokenlist_updater::Client as TokenListClient;
+use crate::device_updater::DeviceUpdater;
 
 use std::thread;
 use std::time::Duration;
@@ -18,6 +20,7 @@ pub async fn main() {
     let coingecko_client = CoinGeckoClient::new(settings.coingecko.key.secret);
     let mut price_updater = PriceUpdater::new(price_client, coingecko_client);
     let mut version_client = VersionClient::new(&settings.postgres.url);
+    let mut device_updater = DeviceUpdater::new(&settings.postgres.url);
     let assets_client = AssetsClient::new(settings.assets.url);
     let mut tokenlist_client  = TokenListClient::new(&settings.postgres.url, &assets_client);
 
@@ -33,6 +36,13 @@ pub async fn main() {
     match ios_version {
         Ok(version) => { println!("ios version: {:?}", version) }
         Err(err) => { println!("ios version error: {}", err) }
+    }
+
+    // update device
+    let result = device_updater.update().await;
+    match result {
+        Ok(result) => { println!("device updater result: {:?}", result) }
+        Err(err) => { println!("device updater result error: {}", err) }
     }
 
     loop {

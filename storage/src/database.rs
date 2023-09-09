@@ -1,3 +1,4 @@
+use chrono::{Utc, Duration};
 use diesel::dsl::sql;
 use diesel::{Connection, upsert::excluded};
 use diesel::pg::PgConnection;
@@ -229,6 +230,7 @@ impl DatabaseClient {
                 token.eq(excluded(token)),
                 locale.eq(excluded(locale)),
                 is_push_enabled.eq(excluded(is_push_enabled)),
+                version.eq(excluded(version)),
             ))
             .execute(&mut self.connection)
     }
@@ -239,6 +241,13 @@ impl DatabaseClient {
             devices
             .filter(device_id.eq(_device_id))
         ).execute(&mut self.connection);
+    }
+
+    pub fn delete_devices_after_days(&mut self, days: i64) -> Result<usize, diesel::result::Error> {
+        use crate::schema::devices::dsl::*;
+        let cutoff_date = Utc::now().naive_utc() - Duration::days(days);
+        diesel::delete(devices.filter(updated_at.lt(cutoff_date)))
+            .execute(&mut self.connection)
     }
 
     pub fn get_parser_state(&mut self, _chain: Chain) -> Result<ParserState, diesel::result::Error> {
