@@ -10,8 +10,6 @@ use storage::DatabaseClient;
 use self::client::PusherClient;
 use self::model::{Notifications, Notification};
 
-
-
 pub struct Pusher {
     ios_topic: String,
     client: PusherClient,
