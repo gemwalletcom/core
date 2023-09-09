@@ -51,12 +51,13 @@ pub async fn main() {
     // }
 
     loop {
-        let state = database_client.get_parser_state(Chain::Binance).unwrap();
+        let chain = Chain::Binance;
+        let state = database_client.get_parser_state(chain).unwrap();
 
         let latest_block = bnbchain_client.get_latest_block().await;
         match latest_block {
             Ok(latest_block) => {
-                let _ = database_client.set_parser_state_latest_block(Chain::Binance, latest_block);
+                let _ = database_client.set_parser_state_latest_block(chain, latest_block);
                 if state.current_block + state.await_blocks >= state.latest_block {
                     
                     println!("parser ahead. current_block: {}, latest_block: {}, await_blocks: {}", state.current_block, state.latest_block, state.await_blocks);
@@ -74,19 +75,16 @@ pub async fn main() {
         println!("current_block: {}, latest_block: {}", state.current_block, state.latest_block);
  
         let mut next_block = state.current_block + 1;
-
+        
         loop {
             println!("next_block: {:?}, to go: {}", next_block, state.latest_block - next_block);
 
             let transactions = bnbchain_client.get_transactions(next_block).await;
             match transactions {
                 Ok(transactions) => {
-                    let _ = database_client.set_parser_state_current_block(Chain::Binance, next_block);
-
+                    let _ = database_client.set_parser_state_current_block(chain, next_block);
                     let addresses = transactions.clone().into_iter().map(|x| x.addresses() ).flatten().collect();
-                    let subscriptions = database_client.get_subscriptions(Chain::Binance, addresses).unwrap();
-                    let mut store_transactions: Vec<Transaction> = vec![];
-
+                    let subscriptions = database_client.get_subscriptions(chain, addresses).unwrap();
                     let mut transactions_map: HashMap<String, Transaction> = HashMap::new();
 
                     for subscription in subscriptions {
