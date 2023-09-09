@@ -1,4 +1,4 @@
-use std::{thread::{sleep, self}, time::Duration};
+use std::{thread::{sleep, self}, time::Duration, collections::HashMap};
 
 pub mod pusher;
 
@@ -87,13 +87,15 @@ pub async fn main() {
                     let subscriptions = database_client.get_subscriptions(Chain::Binance, addresses).unwrap();
                     let mut store_transactions: Vec<Transaction> = vec![];
 
+                    let mut transactions_map: HashMap<String, Transaction> = HashMap::new();
+
                     for subscription in subscriptions {
                         for transaction in transactions.clone() {
                             if transaction.addresses().contains(&subscription.address) {
                                 let device = database_client.get_device_by_id(subscription.device_id).unwrap();
                                 println!("Push: device: {}, transaction: {:?}", subscription.device_id, transaction.hash);
-
-                                store_transactions.push(transaction.clone());
+                                
+                                transactions_map.insert(transaction.clone().id, transaction.clone());
 
                                 let result = pusher.push(device.as_primitive(), transaction.clone()).await;
                                 match result {
@@ -104,11 +106,15 @@ pub async fn main() {
                         }
                     }
 
-                    let db_transactions = store_transactions.into_iter().map(|transaction| {
-                        storage::models::Transaction::from_primitive(transaction)
-                    }).collect();
+                    let transactions = transactions_map
+                        .into_iter()
+                        .map(|x| x.1)
+                        .collect::<Vec<Transaction>>()
+                        .into_iter().map(|x| {
+                            return storage::models::Transaction::from_primitive(x);
+                        }).collect();
 
-                    database_client.add_transactions(db_transactions).unwrap();
+                    database_client.add_transactions(transactions).unwrap();
                 },
                 Err(err) => {
                     println!("get transactions error: {:?}", err);
