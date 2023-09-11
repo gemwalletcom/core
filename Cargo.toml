@@ -47,7 +47,7 @@ chrono = { version = "0.4.30", features = ["serde"] }
 
 # crypto
 ethers = { version = "2.0.10", features = ["rustls"] }
-base64 = { version = "0.21.2" } 
+base64 = { version = "0.21.4" } 
 bech32 = { version = "0.9.1" } 
 bs58 = { version = "0.5.0" } 
 hex = { version = "0.4.3" } 
