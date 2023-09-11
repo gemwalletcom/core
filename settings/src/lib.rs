@@ -18,6 +18,7 @@ pub struct Settings {
     pub metrics: Metrics,
     pub assets: Assets,
     pub chains: Chains,
+    pub parser: Parser,
     pub pusher: Pusher,
 }
 
@@ -176,9 +177,15 @@ pub struct BNBChain {
 
 #[derive(Debug, Deserialize)]
 #[allow(unused)]
+pub struct Parser {
+    pub chain: String,
+    pub timeout: u64,
+}
+
+#[derive(Debug, Deserialize)]
+#[allow(unused)]
 pub struct Pusher {
     pub url: String,
-    pub timeout: u64,
     pub ios: PusherIOS,
 }
 
