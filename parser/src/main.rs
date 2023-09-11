@@ -25,12 +25,13 @@ pub async fn main() {
         timeout: settings.parser.timeout,
     };
     let mut parser = Parser::new(
-        &*provider, 
+        provider, 
         pusher, 
         database_client,
         options,
     );
-    println!("parser start chain: {}", provider.get_chain().as_str());
+    
+    println!("parser start chain: {}", chain.as_str());
 
     parser.start().await;
 }

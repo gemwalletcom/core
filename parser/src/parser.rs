@@ -4,8 +4,8 @@ use blockchain::ChainProvider;
 use storage::DatabaseClient;
 use crate::pusher::Pusher;
 
-pub struct Parser<'a> {
-    provider: Box<&'a dyn ChainProvider>,
+pub struct Parser {
+    provider: Box<dyn ChainProvider>,
     pusher: Pusher,
     database: DatabaseClient,
     options: ParserOptions,
@@ -15,15 +15,15 @@ pub struct ParserOptions {
     pub timeout: u64,
 }
 
-impl<'a> Parser<'a> {
+impl Parser {
     pub fn new(
-        provider: &'a dyn ChainProvider,
+        provider: Box<dyn ChainProvider>,
         pusher: Pusher,
         database: DatabaseClient,
         options: ParserOptions
     ) -> Self {
         Self {
-            provider: Box::new(provider),
+            provider: provider,
             pusher,
             database,
             options,
