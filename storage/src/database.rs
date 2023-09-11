@@ -222,16 +222,9 @@ impl DatabaseClient {
 
     pub fn update_device(&mut self, device: UpdateDevice) -> Result<usize, diesel::result::Error> {
         use crate::schema::devices::dsl::*;
-            diesel::insert_into(devices)
-            .values(device)
-            .on_conflict(device_id)
-            .do_update()
-            .set((
-                token.eq(excluded(token)),
-                locale.eq(excluded(locale)),
-                is_push_enabled.eq(excluded(is_push_enabled)),
-                version.eq(excluded(version)),
-            ))
+        diesel::update(devices)
+            .filter(device_id.eq(device.clone().device_id))
+            .set(device)
             .execute(&mut self.connection)
     }
 
