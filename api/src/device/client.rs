@@ -28,10 +28,9 @@ impl DevicesClient {
         Ok(device.as_primitive())
     }
     pub fn update_device(&mut self, device: primitives::device::Device) -> Result<primitives::device::Device, Box<dyn Error>> {
-        let device_id = device.id.clone();
         let update_device = UpdateDevice::from_primitive(device);
-        let _ = self.database.update_device(update_device)?;
-        return self.get_device(device_id.as_str());
+        let device = self.database.update_device(update_device)?;
+        Ok(device.as_primitive())
     }
 
     pub fn delete_device(&mut self, device_id: &str) -> Result<usize, Box<dyn Error>> {

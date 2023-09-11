@@ -220,12 +220,13 @@ impl DatabaseClient {
             .first(&mut self.connection)
     }
 
-    pub fn update_device(&mut self, device: UpdateDevice) -> Result<usize, diesel::result::Error> {
+    pub fn update_device(&mut self, device: UpdateDevice) -> Result<Device, diesel::result::Error> {
         use crate::schema::devices::dsl::*;
         diesel::update(devices)
             .filter(device_id.eq(device.clone().device_id))
             .set(device)
-            .execute(&mut self.connection)
+            .returning(Device::as_returning())
+            .get_result(&mut self.connection)
     }
 
     pub fn delete_device(&mut self, _device_id: &str) -> Result<usize, diesel::result::Error> {
