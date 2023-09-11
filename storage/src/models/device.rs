@@ -19,6 +19,7 @@ pub struct Device {
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct UpdateDevice {
     pub device_id: String,
+    pub platform: String,
     pub token: String,  
     pub locale: String,
     pub is_push_enabled: bool,
@@ -43,6 +44,7 @@ impl UpdateDevice {
     pub fn from_primitive(device: primitives::Device) -> Self {
         Self {
             device_id: device.id,
+            platform: device.platform.as_str().to_string(),
             token: device.token,
             locale: device.locale,
             is_push_enabled: device.is_push_enabled,

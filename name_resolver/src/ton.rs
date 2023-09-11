@@ -52,7 +52,7 @@ impl NameClient for TONClient {
             .await?;
         // always encode as Bounceable address
         let encoded = ton::TonCodec::encode(response.wallet.address.as_bytes().to_vec());
-        return Ok(NameRecord { name: name.to_string(), chain, address: encoded, provider: Self::provider() })
+        Ok(NameRecord { name: name.to_string(), chain, address: encoded, provider: Self::provider() })
     }
 
     fn domains() -> Vec<&'static str> {

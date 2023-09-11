@@ -28,7 +28,7 @@ impl NameClient for ENSClient {
     async fn resolve(&self, name: &str, chain: Chain) -> Result<NameRecord, Box<dyn Error>> {
         let provider = Provider::<Http>::try_from(&self.url).unwrap();
         let address = provider.resolve_name(name).await?;
-        return Ok(NameRecord { name: name.to_string(), chain, address: format!("{:?}",address), provider: Self::provider() })
+        Ok(NameRecord { name: name.to_string(), chain, address: format!("{:?}",address), provider: Self::provider() })
     }
 
     fn domains() -> Vec<&'static str> {

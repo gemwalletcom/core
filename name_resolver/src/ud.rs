@@ -73,7 +73,7 @@ impl NameClient for UDClient {
         let address = self.map(chain, records);
         match address {
             None => return Err("address not found".into()),
-            Some(address) => return Ok(NameRecord { name: name.to_string(), chain, address, provider: Self::provider() })
+            Some(address) => Ok(NameRecord { name: name.to_string(), chain, address, provider: Self::provider() })
         }
     }
 

@@ -25,7 +25,7 @@ impl SubscriptionsClient {
             .map(|x| storage::models::Subscription::from_primitive(x, device.id))
             .collect();
         let result = self.database.add_subscriptions(subscriptions)?;
-        return Ok(result)
+        Ok(result)
     }
 
     pub fn get_subscriptions(&mut self, device_id: &str) -> Result<Vec<primitives::Subscription>, Box<dyn Error>> {
@@ -34,7 +34,7 @@ impl SubscriptionsClient {
             .into_iter()
             .map(|x| x.as_primitive())
             .collect();
-        return Ok(subscriptions)
+        Ok(subscriptions)
     }
 
     pub fn delete_subscriptions(&mut self, device_id: &str, subscriptions: Vec<Subscription>) -> Result<usize, Box<dyn Error>> {

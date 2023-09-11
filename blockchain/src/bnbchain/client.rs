@@ -70,7 +70,7 @@ impl ChainProvider for BNBChainClient {
             .json::<NodeInfo>()
             .await?;
 
-        return Ok(response.sync_info.latest_block_height.into());
+        Ok(response.sync_info.latest_block_height.into());
     }
 
     async fn get_transactions(&self, block: i32) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
@@ -85,6 +85,6 @@ impl ChainProvider for BNBChainClient {
             .flat_map(|x| self.map_transaction(x))
             .collect::<Vec<primitives::Transaction>>();
 
-        return Ok(transactions);
+        Ok(transactions);
     }
 }

@@ -19,8 +19,8 @@ impl DevicesClient {
 
     pub fn add_device(&mut self, device: primitives::device::Device) -> Result<primitives::device::Device, Box<dyn Error>> {
         let add_device = UpdateDevice::from_primitive(device.clone());
-        let _ = self.database.add_device(add_device)?;
-        return self.get_device(device.id.as_str());
+        let device = self.database.add_device(add_device)?;
+        Ok(device.as_primitive())
     }
 
     pub fn get_device(&mut self, device_id: &str) -> Result<primitives::Device, Box<dyn Error>> {
@@ -34,6 +34,6 @@ impl DevicesClient {
     }
 
     pub fn delete_device(&mut self, device_id: &str) -> Result<usize, Box<dyn Error>> {
-        return Ok(self.database.delete_device(device_id)?);
+        Ok(self.database.delete_device(device_id)?)
     }
 }

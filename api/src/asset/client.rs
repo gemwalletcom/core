@@ -18,6 +18,6 @@ impl AssetsClient {
     }
 
     pub fn get_asset(&mut self, asset_id: &str) -> Result<primitives::Asset, Box<dyn Error>> {
-        return Ok(self.database.get_asset(asset_id.to_string())?.as_primitive())
+        Ok(self.database.get_asset(asset_id.to_string())?.as_primitive())
     }
 }

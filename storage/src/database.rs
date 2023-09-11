@@ -82,7 +82,7 @@ impl DatabaseClient {
             .filter(asset_id.eq(asset_id_value))
             .select(Price::as_select())
             .load(&mut self.connection);
-        return Ok(result.unwrap().first().unwrap().clone().coin_id)
+        Ok(result.unwrap().first().unwrap().clone().coin_id)
     }
 
     pub fn set_prices(&mut self, asset_prices: Vec<Price>) -> Result<usize, diesel::result::Error> {
@@ -197,11 +197,12 @@ impl DatabaseClient {
             .execute(&mut self.connection)
     }
 
-    pub fn add_device(&mut self, device: UpdateDevice) -> Result<usize, diesel::result::Error> {
+    pub fn add_device(&mut self, device: UpdateDevice) -> Result<Device, diesel::result::Error> {
         use crate::schema::devices::dsl::*;
             diesel::insert_into(devices)
             .values(device)
-            .execute(&mut self.connection)
+            .returning(Device::as_returning())
+            .get_result(&mut self.connection)
     }
 
     pub fn get_device_by_id(&mut self, _id: i32) -> Result<Device, diesel::result::Error> {
