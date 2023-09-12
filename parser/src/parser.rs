@@ -1,4 +1,4 @@
-use std::{collections::HashMap, time::Duration, thread::{self, sleep}};
+use std::{collections::HashMap, time::{Duration, Instant}, thread::{self, sleep}};
 
 use blockchain::ChainProvider;
 use storage::DatabaseClient;
@@ -57,6 +57,7 @@ impl Parser {
             let mut next_block = state.current_block + 1;
             
             loop {
+                let start = Instant::now();
                 let transactions = self.provider.get_transactions(next_block.into()).await;
                 match transactions {
                     Ok(transactions) => {
@@ -93,7 +94,7 @@ impl Parser {
     
                         self.database.add_transactions(insert_transactions.clone()).unwrap();
 
-                        println!("parser block complete, chain: {}, block: {:?}, transactions: {}, insert_transactions: {}, to go blocks: {}",  chain.as_str(), next_block, transactions.len(), insert_transactions.len(), state.latest_block - next_block);
+                        println!("parser block complete, chain: {}, block: {:?}, transactions: {}, insert_transactions: {}, to go blocks: {}, time elapsed: {:?}",  chain.as_str(), next_block, transactions.len(), insert_transactions.len(), state.latest_block - next_block, start.elapsed());
                     },
                     Err(err) => {
                         println!("get transactions error: {:?}", err);
