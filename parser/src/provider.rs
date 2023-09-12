@@ -1,7 +1,6 @@
-use blockchain::ChainProvider;
+use blockchain::{ChainProvider, BNBChainClient, SolanaClient};
 use primitives::Chain;
 use settings::Settings;
-
 trait ProviderFactory {
     fn new(&self, chain: Chain, settings: &Settings) -> Box<dyn ChainProvider>;
 }
@@ -11,13 +10,15 @@ pub fn new(chain: Chain, settings: &Settings) -> Box<dyn ChainProvider> {
         Chain::Bitcoin => todo!(),
         Chain::Ethereum => todo!(),
         Chain::Binance => {
-            Box::new(blockchain::BNBChainClient::new(
+            Box::new(BNBChainClient::new(
                 settings.chains.binance.url.clone(),
                 settings.chains.binance.api.clone(),
             ))
         },
         Chain::SmartChain => todo!(),
-        Chain::Solana => todo!(),
+        Chain::Solana => {
+            Box::new(SolanaClient::new(settings.chains.solana.url.clone()))
+        },
         Chain::Polygon => todo!(),
         Chain::Thorchain => todo!(),
         Chain::Cosmos => todo!(),

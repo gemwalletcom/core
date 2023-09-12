@@ -61,7 +61,7 @@ impl ChainProvider for BNBChainClient {
         Chain::Binance
     }
 
-    async fn get_latest_block(&self) -> Result<i32, Box<dyn Error + Send + Sync>> {
+    async fn get_latest_block(&self) -> Result<i64, Box<dyn Error + Send + Sync>> {
         let url = format!("{}/api/v1/node-info", self.url);
         let response = self.client
             .get(url)
@@ -73,7 +73,7 @@ impl ChainProvider for BNBChainClient {
         Ok(response.sync_info.latest_block_height.into())
     }
 
-    async fn get_transactions(&self, block: i32) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
+    async fn get_transactions(&self, block: i64) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
         let url = format!("{}/bc/api/v1/blocks/{}/txs", self.api_url, block);
         let transactions = self.client
             .get(url)

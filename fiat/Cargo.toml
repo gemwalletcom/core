@@ -14,7 +14,7 @@ rust_decimal = { workspace = true }
 hmac = "0.12.1"
 sha2 = "0.10.7"
 base64 = { workspace = true }
-futures = "0.3.28"
+futures = { workspace = true }
 storage = { path = "../storage" }
 async-trait = { workspace = true }
 primitives = { path = "../primitives" }

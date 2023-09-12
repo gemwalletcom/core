@@ -11,3 +11,4 @@ reqwest = { workspace = true }
 async-trait = { workspace = true }
 primitives = { path = "../primitives" }
 chrono = { workspace = true }
+ethers = { workspace = true }

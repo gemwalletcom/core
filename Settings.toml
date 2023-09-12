@@ -65,6 +65,9 @@ url = "https://raw.githubusercontent.com/gemwalletcom/assets/master"
 url = "https://dex.binance.org"
 api = "https://api.binance.org"
 
+[chains.solana]
+url = "https://solana-mainnet.rpc.extrnode.com"
+
 [parser]
 chain = ""
 timeout = 1

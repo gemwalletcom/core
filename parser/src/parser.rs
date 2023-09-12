@@ -11,6 +11,7 @@ pub struct Parser {
     options: ParserOptions,
 }
 
+#[derive(Debug, Clone)]
 pub struct ParserOptions {
     pub timeout: u64,
 }
@@ -38,10 +39,10 @@ impl Parser {
             let latest_block = self.provider.get_latest_block().await;
             match latest_block {
                 Ok(latest_block) => {
-                    let _ = self.database.set_parser_state_latest_block(chain, latest_block);
+                    let _ = self.database.set_parser_state_latest_block(chain, latest_block as i32);
                     if state.current_block + state.await_blocks >= state.latest_block {
                         
-                        println!("parser ahead. current_block: {}, latest_block: {}, await_blocks: {}", state.current_block, state.latest_block, state.await_blocks);
+                        println!("parser ahead: {} current_block: {}, latest_block: {}, await_blocks: {}", chain.as_str(), state.current_block, state.latest_block, state.await_blocks);
             
                         thread::sleep(Duration::from_secs(self.options.timeout)); continue;
                     }
@@ -52,15 +53,11 @@ impl Parser {
                     sleep(Duration::from_secs(self.options.timeout)); continue;
                 }
             }
-            
-            println!("current_block: {}, latest_block: {}", state.current_block, state.latest_block);
-     
+
             let mut next_block = state.current_block + 1;
             
             loop {
-                println!("next_block: {:?}, to go: {}", next_block, state.latest_block - next_block);
-    
-                let transactions = self.provider.get_transactions(next_block).await;
+                let transactions = self.provider.get_transactions(next_block.into()).await;
                 match transactions {
                     Ok(transactions) => {
                         let _ = self.database.set_parser_state_current_block(chain, next_block);
@@ -72,6 +69,7 @@ impl Parser {
                             for transaction in transactions.clone() {
                                 if transaction.addresses().contains(&subscription.address) {
                                     let device = self.database.get_device_by_id(subscription.device_id).unwrap();
+                                    
                                     println!("Push: device: {}, transaction: {:?}", subscription.device_id, transaction.hash);
                                     
                                     transactions_map.insert(transaction.clone().id, transaction.clone());
@@ -93,7 +91,9 @@ impl Parser {
                                 return storage::models::Transaction::from_primitive(x);
                             }).collect();
     
-                        self.database.add_transactions(transactions).unwrap();
+                        self.database.add_transactions(transactions.clone()).unwrap();
+
+                        println!("parser block complete, chain: {}, block: {:?}, transactions: {}, to go blocks: {}",  chain.as_str(), next_block, transactions.len(), state.latest_block - next_block);
                     },
                     Err(err) => {
                         println!("get transactions error: {:?}", err);

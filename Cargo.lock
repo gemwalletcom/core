@@ -318,6 +318,7 @@ version = "1.0.0"
 dependencies = [
  "async-trait",
  "chrono",
+ "ethers",
  "primitives",
  "reqwest",
  "serde",
@@ -2680,6 +2681,7 @@ name = "parser"
 version = "1.0.0"
 dependencies = [
  "blockchain",
+ "futures",
  "primitives",
  "reqwest",
  "rust_decimal",
