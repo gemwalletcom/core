@@ -17,7 +17,7 @@ pub struct Meta {
     pub fee: u64,
     //pub inner_instructions: Vec<String>,
     //pub loaded_addresses: LoadedAddresses,
-    //pub log_messages: Vec<String>,
+    pub log_messages: Vec<String>,
     pub post_balances: Vec<u64>,
     //pub post_token_balances: Vec<String>,
     pub pre_balances: Vec<u64>,

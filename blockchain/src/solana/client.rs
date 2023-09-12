@@ -15,6 +15,7 @@ pub struct SolanaClient {
 }
 
 const MISSING_SLOT_ERROR: i64 = -32007;
+const SYSTEM_PROGRAM_ID: &str = "11111111111111111111111111111111";
 
 impl SolanaClient {
     pub fn new(url: String) -> Self {
@@ -31,37 +32,37 @@ impl SolanaClient {
         let account_keys = transaction.transaction.message.account_keys.clone();
         let signatures = transaction.transaction.signatures.clone();
 
-        if account_keys.len() != 3 || signatures.len() != 1 || account_keys.last().unwrap() != "11111111111111111111111111111111" {    
-            return None
+        // system transfer
+        if (account_keys.len() == 2 || account_keys.len() == 3) && account_keys.last().unwrap() == SYSTEM_PROGRAM_ID && !signatures.is_empty() && transaction.meta.log_messages.len() == 2  {    
+            let chain = self.get_chain();
+            let hash = transaction.transaction.signatures.first().unwrap().to_string();
+            let from = account_keys.first().unwrap().clone();
+            let to = account_keys[account_keys.len() - 1].clone();
+            let fee = transaction.meta.fee;
+            let value = transaction.meta.pre_balances[0] - transaction.meta.post_balances[0] - fee;  
+    
+            let transaction = primitives::Transaction{ 
+                id: chain.to_string(), 
+                hash,
+                asset_id: AssetId::from_chain(chain), 
+                from, 
+                to, 
+                contract: None, 
+                transaction_type: TransactionType::Transfer, 
+                state: TransactionState::Confirmed, 
+                block_number: block_number as i32, 
+                sequence: 0, 
+                fee: fee.to_string(), 
+                fee_asset_id: AssetId::from_chain(chain), 
+                value: value.to_string(), 
+                memo: None,
+                direction: TransactionDirection::SelfTransfer, 
+                created_at: Utc::now().naive_utc(),
+                updated_at: Utc::now().naive_utc(),
+            };
+            return Some(transaction);
         }
-
-        let chain = self.get_chain();
-        let hash = transaction.transaction.signatures.first().unwrap().to_string();
-        let from = account_keys[0].clone();
-        let to = account_keys[1].clone();
-        let fee = transaction.meta.fee;
-        let value = transaction.meta.pre_balances[0] - transaction.meta.post_balances[0] - fee;  
-
-        let transaction = primitives::Transaction{ 
-            id: chain.to_string(), 
-            hash,
-            asset_id: AssetId::from_chain(chain), 
-            from, 
-            to, 
-            contract: None, 
-            transaction_type: TransactionType::Transfer, 
-            state: TransactionState::Confirmed, 
-            block_number: block_number as i32, 
-            sequence: 0, 
-            fee: fee.to_string(), 
-            fee_asset_id: AssetId::from_chain(chain), 
-            value: value.to_string(), 
-            memo: None,
-            direction: TransactionDirection::SelfTransfer, 
-            created_at: Utc::now().naive_utc(),
-            updated_at: Utc::now().naive_utc(),
-        };
-        return Some(transaction);
+        return None 
     }
 }
 

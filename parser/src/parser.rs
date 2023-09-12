@@ -83,7 +83,7 @@ impl Parser {
                             }
                         }
     
-                        let transactions: Vec<storage::models::Transaction> = transactions_map
+                        let insert_transactions: Vec<storage::models::Transaction> = transactions_map
                             .into_iter()
                             .map(|x| x.1)
                             .collect::<Vec<primitives::Transaction>>()
@@ -91,9 +91,9 @@ impl Parser {
                                 return storage::models::Transaction::from_primitive(x);
                             }).collect();
     
-                        self.database.add_transactions(transactions.clone()).unwrap();
+                        self.database.add_transactions(insert_transactions.clone()).unwrap();
 
-                        println!("parser block complete, chain: {}, block: {:?}, transactions: {}, to go blocks: {}",  chain.as_str(), next_block, transactions.len(), state.latest_block - next_block);
+                        println!("parser block complete, chain: {}, block: {:?}, transactions: {}, insert_transactions: {}, to go blocks: {}",  chain.as_str(), next_block, transactions.len(), insert_transactions.len(), state.latest_block - next_block);
                     },
                     Err(err) => {
                         println!("get transactions error: {:?}", err);

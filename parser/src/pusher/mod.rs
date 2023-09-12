@@ -43,7 +43,7 @@ impl Pusher {
                     tokens: vec![device.token],
                     platform: device.platform.as_i32(),
                     title: format!("Transfer {} {}", amount, asset.symbol),
-                    message: "".to_string(),
+                    message: format!("To {}", transaction.to),
                     topic: self.ios_topic.clone(),
                 }
             ]
