@@ -68,14 +68,14 @@ impl Parser {
                 let finish_block = cmp::min(start_block + state.parallel_blocks, state.latest_block - state.await_blocks);
                 let next_blocks = (start_block..finish_block).collect::<Vec<_>>();
                 if next_blocks.len() == 0 {
-                    break
+                    sleep(Duration::from_secs(self.options.timeout)); continue;
                 }
                 let transactions_futures = next_blocks.iter().map(|block| self.provider.get_transactions(block.clone() as i64));
                 let transactions_results = futures::future::join_all(transactions_futures).await.into_iter().filter_map(Result::ok).collect::<Vec<Vec<Transaction>>>();
 
                 if transactions_results.len() != next_blocks.len() {
                     println!("parser fetch transactions in block error: chain: {}, {:?}", chain.as_str(), transactions_results);
-                    break;
+                    sleep(Duration::from_secs(self.options.timeout)); continue;
                 }
                 let transactions = transactions_results.into_iter().flatten().collect::<Vec<Transaction>>();
 
