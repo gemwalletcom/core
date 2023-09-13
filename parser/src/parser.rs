@@ -76,7 +76,7 @@ impl Parser {
                 let state = self.database.get_parser_state(self.chain).unwrap();
                 let start = Instant::now();
                 let start_block =  state.current_block + 1;
-                let finish_block = cmp::min(start_block + state.parallel_blocks, state.latest_block - state.await_blocks);
+                let finish_block = cmp::min(start_block + state.parallel_blocks - 1, state.latest_block - state.await_blocks);
                 let next_blocks = (start_block..=finish_block).collect::<Vec<_>>();
 
                 if next_blocks.len() == 0 {
