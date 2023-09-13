@@ -68,6 +68,9 @@ api = "https://api.binance.org"
 [chains.solana]
 url = "https://solana-mainnet.rpc.extrnode.com"
 
+[chains.ethereum]
+url = "https://eth.llamarpc.com"
+
 [parser]
 chain = ""
 timeout = 1

@@ -161,6 +161,7 @@ pub struct Assets {
 pub struct Chains {
     pub binance: BNBChain,
     pub solana: Chain,
+    pub ethereum: Chain,
 }
 
 #[derive(Debug, Deserialize, Clone)]

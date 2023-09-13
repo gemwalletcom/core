@@ -3,9 +3,11 @@
 mod aptos;
 mod bnbchain;
 mod solana;
+mod ethereum;
 
 pub use self::bnbchain::client::BNBChainClient;
 pub use self::solana::client::SolanaClient;
+pub use self::ethereum::client::EthereumClient;
 
 use async_trait::async_trait;
 use primitives::{chain::Chain, Transaction};

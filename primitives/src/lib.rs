@@ -34,3 +34,5 @@ pub mod transaction_direction;
 pub use self::transaction_direction::TransactionDirection;
 pub mod subscription;
 pub use self::subscription::Subscription;
+pub mod big_int_hex;
+pub use self::big_int_hex::BigIntHex;

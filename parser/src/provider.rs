@@ -1,4 +1,4 @@
-use blockchain::{ChainProvider, BNBChainClient, SolanaClient};
+use blockchain::{ChainProvider, BNBChainClient, SolanaClient, EthereumClient};
 use primitives::Chain;
 use settings::Settings;
 trait ProviderFactory {
@@ -8,7 +8,12 @@ trait ProviderFactory {
 pub fn new(chain: Chain, settings: &Settings) -> Box<dyn ChainProvider> {
     match chain {
         Chain::Bitcoin => todo!(),
-        Chain::Ethereum => todo!(),
+        Chain::Ethereum => {
+            Box::new(EthereumClient::new(
+                Chain::Ethereum,
+                settings.chains.ethereum.url.clone()
+            ))
+        },
         Chain::Binance => {
             Box::new(BNBChainClient::new(
                 settings.chains.binance.url.clone(),

@@ -319,6 +319,10 @@ dependencies = [
  "async-trait",
  "chrono",
  "ethers",
+ "futures",
+ "hex",
+ "num-bigint",
+ "num-traits",
  "primitives",
  "reqwest",
  "serde",
@@ -2469,6 +2473,7 @@ dependencies = [
  "autocfg",
  "num-integer",
  "num-traits",
+ "serde",
 ]
 
 [[package]]
@@ -3003,6 +3008,8 @@ name = "primitives"
 version = "1.0.0"
 dependencies = [
  "chrono",
+ "num-bigint",
+ "num-traits",
  "serde",
  "typeshare",
 ]

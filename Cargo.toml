@@ -52,3 +52,5 @@ base64 = { version = "0.21.4" }
 bech32 = { version = "0.9.1" } 
 bs58 = { version = "0.5.0" } 
 hex = { version = "0.4.3" } 
+num-bigint = { version = "0.4.4", features = ["std", "serde"] } 
+num-traits = { version = "0.2.16" } 

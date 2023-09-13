@@ -75,8 +75,9 @@ impl Parser {
                 for result in transactions_results {
                     match result {
                         Ok(txs) => transactions.extend(txs),
-                        Err(e) => {
-                            println!("Error getting transactions: {:?}", e) 
+                        Err(e) => { 
+                            println!("Error getting transactions: {:?}", e);
+                            break;
                         },
                     }
                 }
@@ -114,7 +115,7 @@ impl Parser {
 
                 self.database.add_transactions(insert_transactions.clone()).unwrap();
 
-                println!("parser block complete, chain: {}, block: {:?}, transactions: {}, insert_transactions: {}, to go blocks: {}, time elapsed: {:?}",  chain.as_str(), next_blocks, transactions.len(), insert_transactions.len(), state.latest_block - finish_block - state.await_blocks, start.elapsed());
+                println!("parser block complete: {}, blocks: {:?} transactions: {} of {}, to go blocks: {}, in: {:?}",  chain.as_str(), next_blocks, transactions.len(), insert_transactions.len(), state.latest_block - finish_block - state.await_blocks, start.elapsed());
             }
         }
     }
