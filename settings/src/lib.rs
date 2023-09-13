@@ -163,6 +163,9 @@ pub struct Chains {
     pub solana: Chain,
     pub ethereum: Chain,
     pub smartchain: Chain,
+    pub polygon: Chain,
+    pub optimism: Chain,
+    pub arbitrum: Chain,
 }
 
 #[derive(Debug, Deserialize, Clone)]

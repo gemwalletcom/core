@@ -14,12 +14,9 @@ pub async fn main() {
     println!("parser init");
 
     let settings: Settings = Settings::new().unwrap();
-    let chains = vec![
-        Chain::Binance,
-        Chain::Solana,
-        Chain::Ethereum,
-        Chain::SmartChain,
-    ];
+
+    let mut database = DatabaseClient::new(&settings.postgres.url.clone());
+    let chains = database.get_parser_state_all().unwrap().into_iter().filter(|x| x.is_enabled).flat_map(|x| Chain::from_str(x.chain.as_str())).collect::<Vec<Chain>>();
 
     let chain_string = std::env::args().nth(1).unwrap_or(settings.parser.chain.clone());
     let parser_options = ParserOptions{

@@ -74,6 +74,15 @@ url = "https://eth.llamarpc.com"
 [chains.smartchain]
 url = "https://binance.llamarpc.com"
 
+[chains.polygon]
+url = "https://polygon.llamarpc.com"
+
+[chains.optimism]
+url = "https://optimism.llamarpc.com"
+
+[chains.arbitrum]
+url = "https://arbitrum.llamarpc.com"
+
 [parser]
 chain = ""
 timeout = 1

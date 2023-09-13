@@ -253,6 +253,13 @@ impl DatabaseClient {
             .first(&mut self.connection)
     }
 
+    pub fn get_parser_state_all(&mut self) -> Result<Vec<ParserState>, diesel::result::Error> {
+        use crate::schema::parser_state::dsl::*;
+        parser_state
+            .select(ParserState::as_select())
+            .load(&mut self.connection)
+    }
+
     pub fn set_parser_state_latest_block(&mut self, _chain: Chain, block: i32) -> Result<usize, diesel::result::Error> {
         use crate::schema::parser_state::dsl::*;
             diesel::update(parser_state.find(_chain.as_str()))
