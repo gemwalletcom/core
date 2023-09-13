@@ -12,3 +12,4 @@ prefix = ''
 "UInt32" = "Long"
 "UInt64" = "Long"
 "Int64" = "Long"
+"NaiveDateTime" = "Long"
