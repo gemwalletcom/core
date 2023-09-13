@@ -318,6 +318,7 @@ version = "1.0.0"
 dependencies = [
  "async-trait",
  "chrono",
+ "ethaddr",
  "ethers",
  "futures",
  "hex",

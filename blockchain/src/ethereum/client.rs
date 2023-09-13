@@ -55,6 +55,10 @@ impl EthereumClient {
         let nonce = transaction.nonce.as_i32();
         let block = transaction.block_number.as_i32();
         let fee = reciept.gas_used.clone().value * reciept.effective_gas_price.clone().value;
+        let from: ethers::types::Address = transaction.from.clone().parse().unwrap();
+        let to: ethers::types::Address = transaction.to.unwrap_or_default().clone().parse().unwrap_or_default();
+        let from = ethers::utils::to_checksum(&from, None);
+        let to = ethers::utils::to_checksum(&to, None);
 
         // system transfer
         if transaction.input == "0x" {
@@ -62,8 +66,8 @@ impl EthereumClient {
                 id: self.chain.to_string(), 
                 hash: transaction.hash.clone(),
                 asset_id: AssetId::from_chain(self.chain), 
-                from: transaction.from.clone(), 
-                to: transaction.to.clone().unwrap_or_default(), 
+                from, 
+                to,
                 contract: None,
                 transaction_type: TransactionType::Transfer, 
                 state, 
