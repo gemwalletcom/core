@@ -50,7 +50,7 @@ impl Parser {
                     }
                  },
                 Err(err) => {
-                    println!("latest_block error: {:?}", err);
+                    println!("parser latest_block chain: {}, error: {:?}", chain.as_str(), err);
     
                     sleep(Duration::from_secs(self.options.timeout)); continue;
                 }
@@ -74,7 +74,7 @@ impl Parser {
                 let transactions_results = futures::future::join_all(transactions_futures).await.into_iter().filter_map(Result::ok).collect::<Vec<Vec<Transaction>>>();
 
                 if transactions_results.len() != next_blocks.len() {
-                    println!("Error getting transactions: {:?}", transactions_results);
+                    println!("parser fetch transactions in block error: chain: {}, {:?}", chain.as_str(), transactions_results);
                     break;
                 }
                 let transactions = transactions_results.into_iter().flatten().collect::<Vec<Transaction>>();
