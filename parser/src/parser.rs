@@ -1,4 +1,4 @@
-use std::{collections::HashMap, time::{Duration, Instant}, thread::{self, sleep}, cmp};
+use std::{collections::HashMap, time::{Duration, Instant}, thread::sleep, cmp};
 
 use blockchain::ChainProvider;
 use storage::DatabaseClient;
@@ -45,7 +45,7 @@ impl Parser {
                         
                         println!("parser ahead: {} current_block: {}, latest_block: {}, await_blocks: {}", chain.as_str(), state.current_block, state.latest_block, state.await_blocks);
             
-                        thread::sleep(Duration::from_secs(self.options.timeout)); continue;
+                        sleep(Duration::from_secs(self.options.timeout)); continue;
                     }
                  },
                 Err(err) => {
@@ -57,6 +57,11 @@ impl Parser {
 
             loop {
                 let state = self.database.get_parser_state(chain).unwrap();
+
+                if !state.is_enabled {
+                    sleep(Duration::from_secs(self.options.timeout)); continue;
+                }
+
                 let start = Instant::now();
                 let start_block =  state.current_block + 1;
                 let finish_block = cmp::min(start_block + state.parallel_blocks, state.latest_block - state.await_blocks);
