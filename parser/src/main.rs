@@ -18,6 +18,7 @@ pub async fn main() {
         Chain::Binance,
         Chain::Solana,
         Chain::Ethereum,
+        Chain::SmartChain,
     ];
 
     let chain_string = std::env::args().nth(1).unwrap_or(settings.parser.chain.clone());

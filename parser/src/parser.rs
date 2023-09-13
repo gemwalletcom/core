@@ -90,12 +90,11 @@ impl Parser {
                         if transaction.addresses().contains(&subscription.address) {
                             let device = self.database.get_device_by_id(subscription.device_id).unwrap();
                             
-                            println!("Push: device: {}, transaction: {:?}", subscription.device_id, transaction.hash);
+                            println!("Push: device: {}, chain: {}, transaction: {:?}", subscription.device_id, chain.as_str(), transaction.hash);
                             
                             transactions_map.insert(transaction.clone().id, transaction.clone());
 
-                            let result = self.pusher.push(device.as_primitive(), transaction.clone()).await;
-                            match result {
+                            match self.pusher.push(device.as_primitive(), transaction.clone()).await {
                                 Ok(result) => { println!("Push: result: {:?}", result); },
                                 Err(err) => { println!("Push: error: {:?}", err); }
                             }
@@ -110,8 +109,11 @@ impl Parser {
                     .into_iter().map(|x| {
                         return storage::models::Transaction::from_primitive(x);
                     }).collect();
-
-                self.database.add_transactions(insert_transactions.clone()).unwrap();
+                
+                match self.database.add_transactions(insert_transactions.clone()) {
+                    Ok(_) => { },
+                    Err(err) => { println!("transaction insert: error: {:?}", err); }
+                }
 
                 println!("parser block complete: {}, blocks: {:?} transactions: {} of {}, to go blocks: {}, in: {:?}",  chain.as_str(), next_blocks, transactions.len(), insert_transactions.len(), state.latest_block - finish_block - state.await_blocks, start.elapsed());
             }

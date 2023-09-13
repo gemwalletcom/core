@@ -98,7 +98,8 @@ impl ChainProvider for EthereumClient {
 
     async fn get_transactions(&self, block_number: i64) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Send + Sync>> {
         let block = self.get_block(block_number).await?;
-        let transactions = block.transactions;
+        // filter out non transfer transactions
+        let transactions = block.transactions.into_iter().filter(|x| x.input == "0x").collect::<Vec<Transaction>>();
         let hashes = transactions.clone().into_iter().map(|x| x.hash).collect();
         let reciepts = self.get_transaction_reciepts(hashes).await?;
 

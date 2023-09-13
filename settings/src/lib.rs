@@ -162,6 +162,7 @@ pub struct Chains {
     pub binance: BNBChain,
     pub solana: Chain,
     pub ethereum: Chain,
+    pub smartchain: Chain,
 }
 
 #[derive(Debug, Deserialize, Clone)]

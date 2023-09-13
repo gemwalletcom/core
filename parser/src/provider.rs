@@ -20,7 +20,12 @@ pub fn new(chain: Chain, settings: &Settings) -> Box<dyn ChainProvider> {
                 settings.chains.binance.api.clone(),
             ))
         },
-        Chain::SmartChain => todo!(),
+        Chain::SmartChain => {
+            Box::new(EthereumClient::new(
+                Chain::SmartChain,
+                settings.chains.smartchain.url.clone()
+            ))
+        },
         Chain::Solana => {
             Box::new(SolanaClient::new(settings.chains.solana.url.clone()))
         },

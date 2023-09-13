@@ -71,6 +71,9 @@ url = "https://solana-mainnet.rpc.extrnode.com"
 [chains.ethereum]
 url = "https://eth.llamarpc.com"
 
+[chains.smartchain]
+url = "https://binance.llamarpc.com"
+
 [parser]
 chain = ""
 timeout = 1
