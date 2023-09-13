@@ -38,7 +38,7 @@ impl Pusher {
         let amount = crypto_amount.to_f64().unwrap_or_default();
 
         let title = format!("Transfer {} {}", amount, asset.symbol);
-        let message = if transaction.from == subscription.address { format!("To {}", transaction.to) } else {format!("From {}", transaction.to) } ;
+        let message = if transaction.from == subscription.address { format!("To {}", transaction.to) } else {format!("From {}", transaction.from) } ;
 
         let notifications = Notifications {
             notifications: vec![
