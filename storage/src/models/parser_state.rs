@@ -9,5 +9,6 @@ pub struct ParserState {
     pub current_block: i32,
     pub latest_block: i32,
     pub await_blocks: i32,
+    pub parallel_blocks: i32,
     pub is_enabled: bool,
 }

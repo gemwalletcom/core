@@ -15,6 +15,7 @@ pub struct SolanaClient {
 }
 
 const MISSING_SLOT_ERROR: i64 = -32007;
+const NOT_AVAILABLE_SLOT_ERROR: i64 = -32004;
 const SYSTEM_PROGRAM_ID: &str = "11111111111111111111111111111111";
 
 impl SolanaClient {
@@ -33,11 +34,11 @@ impl SolanaClient {
         let signatures = transaction.transaction.signatures.clone();
 
         // system transfer
-        if (account_keys.len() == 2 || account_keys.len() == 3) && account_keys.last().unwrap() == SYSTEM_PROGRAM_ID && !signatures.is_empty() && transaction.meta.log_messages.len() == 2  {    
+        if (account_keys.len() == 2 || account_keys.len() == 3) && account_keys.last().unwrap() == SYSTEM_PROGRAM_ID && signatures.len() == 1 && transaction.meta.log_messages.len() == 2  {    
             let chain = self.get_chain();
             let hash = transaction.transaction.signatures.first().unwrap().to_string();
             let from = account_keys.first().unwrap().clone();
-            let to = account_keys[account_keys.len() - 1].clone();
+            let to = account_keys[account_keys.len() - 2].clone();
             let fee = transaction.meta.fee;
             let value = transaction.meta.pre_balances[0] - transaction.meta.post_balances[0] - fee;  
     
@@ -95,21 +96,22 @@ impl ChainProvider for SolanaClient {
                     .into_iter()
                     .flat_map(|x| self.map_transaction(&x, block_number))
                     .collect::<Vec<primitives::Transaction>>();
-                Ok(transactions)   
+                Ok(transactions)
             },
             Err(err) => {
                 match err {
                     RetryClientError::ProviderError(err) => {
-                        let code =  err.as_error_response().unwrap().code;
-                        if code == MISSING_SLOT_ERROR {
-                            return Ok(vec![])
-                        }
+                        if let Some(json_error) =  err.as_error_response() {
+                            if vec![MISSING_SLOT_ERROR, NOT_AVAILABLE_SLOT_ERROR].contains(&json_error.code) {
+                                return Ok(vec![])
+                            }
+                        };
+                        return Err(Box::new(err))
                     },
                     _ => {
                         return Err(Box::new(err))
                     }
                 }
-                Ok(vec![])
             }
         } 
     }
