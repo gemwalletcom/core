@@ -16,17 +16,13 @@ pub async fn main() {
     let settings: Settings = Settings::new().unwrap();
 
     let mut database = DatabaseClient::new(&settings.postgres.url.clone());
-    let chains: Vec<Chain> = database.get_parser_state_all().unwrap().into_iter().filter(|x| x.is_enabled).flat_map(|x| Chain::from_str(x.chain.as_str())).collect();
+    let chains: Vec<Chain> = database.get_parser_state_all().unwrap().into_iter().flat_map(|x| Chain::from_str(x.chain.as_str())).collect();
     let chain_env = std::env::args().nth(1).unwrap_or_default();
+    let chains = if let Some(chain) = Chain::from_str(chain_env.as_str()) { vec![chain] } else { chains };
     let parser_options = ParserOptions{
         timeout: settings.parser.timeout,
     };
-    let chains = if let Some(chain) = Chain::from_str(chain_env.as_str()) {
-        vec![chain]
-    } else {
-        chains
-    };
-
+    
     println!("parser start chains: {:?}", chains.clone().into_iter().map(|x| x.as_str()).collect::<Vec<&str>>());
 
     let mut parsers = Vec::new();
