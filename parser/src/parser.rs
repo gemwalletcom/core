@@ -1,6 +1,7 @@
 use std::{collections::HashMap, time::{Duration, Instant}, thread::sleep, cmp};
 
 use blockchain::ChainProvider;
+use primitives::Transaction;
 use storage::DatabaseClient;
 use crate::pusher::Pusher;
 
@@ -70,17 +71,14 @@ impl Parser {
                     break
                 }
                 let transactions_futures = next_blocks.iter().map(|block| self.provider.get_transactions(block.clone() as i64));
-                let transactions_results = futures::future::join_all(transactions_futures).await;
-                let mut transactions = Vec::new();
-                for result in transactions_results {
-                    match result {
-                        Ok(txs) => transactions.extend(txs),
-                        Err(e) => { 
-                            println!("Error getting transactions: {:?}", e);
-                            break;
-                        },
-                    }
+                let transactions_results = futures::future::join_all(transactions_futures).await.into_iter().filter_map(Result::ok).collect::<Vec<Vec<Transaction>>>();
+
+                if transactions_results.len() != next_blocks.len() {
+                    println!("Error getting transactions: {:?}", transactions_results);
+                    break;
                 }
+                let transactions = transactions_results.into_iter().flatten().collect::<Vec<Transaction>>();
+
                 
                 let _ = self.database.set_parser_state_current_block(chain, next_blocks.last().unwrap().clone() as i32);
                 let addresses = transactions.clone().into_iter().map(|x| x.addresses() ).flatten().collect();
