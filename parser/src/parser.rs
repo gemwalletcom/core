@@ -1,4 +1,5 @@
-use std::{collections::HashMap, time::{Duration, Instant}, thread::sleep, cmp, error::Error};
+use std::{collections::HashMap, time::{Duration, Instant}, cmp, error::Error};
+use tokio::time::sleep;
 
 use blockchain::ChainProvider;
 use primitives::{Transaction, Chain};
@@ -46,7 +47,7 @@ impl Parser {
             let state = self.database.get_parser_state(self.chain).unwrap();
             
             if !state.is_enabled {
-                sleep(Duration::from_secs(self.options.timeout)); continue;
+                sleep(Duration::from_millis(self.options.timeout)).await; continue;
             }
 
             let next_current_block = state.current_block + state.await_blocks;
@@ -56,17 +57,17 @@ impl Parser {
                 match self.provider.get_latest_block().await {
                     Ok(latest_block) => {
                         let _ = self.database.set_parser_state_latest_block(self.chain, latest_block as i32);
-                        if next_current_block >= state.latest_block {
+                        if next_current_block >= latest_block as i32 {
                             
-                            println!("parser ahead: {} current_block: {}, latest_block: {}, await_blocks: {}", self.chain.as_str(), state.current_block, state.latest_block, state.await_blocks);
+                            println!("parser ahead: {} current_block: {}, latest_block: {}, await_blocks: {}", self.chain.as_str(), state.current_block, latest_block, state.await_blocks);
                 
-                            sleep(Duration::from_secs(self.options.timeout)); continue;
+                            sleep(Duration::from_secs(self.options.timeout)).await; continue;
                         }
                      },
                     Err(err) => {
                         println!("parser latest_block chain: {}, error: {:?}", self.chain.as_str(), err);
         
-                        sleep(Duration::from_secs(self.options.timeout)); continue;
+                        sleep(Duration::from_millis(self.options.timeout)).await; continue;
                     }
                 }
             }
