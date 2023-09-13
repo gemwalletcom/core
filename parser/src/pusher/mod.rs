@@ -3,7 +3,7 @@ pub mod client;
 
 use std::error::Error;
 
-use primitives::Transaction;
+use primitives::{Transaction, Subscription};
 use rust_decimal::{Decimal, prelude::*};
 use storage::DatabaseClient;
 
@@ -31,19 +31,22 @@ impl Pusher {
         }
     }
 
-    pub async fn push(&mut self, device: primitives::Device, transaction: Transaction) -> Result<usize, Box<dyn Error>> {
+    pub async fn push(&mut self, device: primitives::Device, transaction: Transaction, subscription: Subscription) -> Result<usize, Box<dyn Error>> {
         let asset = self.database_client.get_asset(transaction.asset_id.to_string())?;
         let mut crypto_amount: Decimal = Decimal::from_str(transaction.value.as_str())?;
         crypto_amount.set_scale(asset.decimals as u32).unwrap_or_default();
         let amount = crypto_amount.to_f64().unwrap_or_default();
+
+        let title = format!("Transfer {} {}", amount, asset.symbol);
+        let message = if transaction.from == subscription.address { format!("To {}", transaction.to) } else {format!("From {}", transaction.to) } ;
 
         let notifications = Notifications {
             notifications: vec![
                 Notification {
                     tokens: vec![device.token],
                     platform: device.platform.as_i32(),
-                    title: format!("Transfer {} {}", amount, asset.symbol),
-                    message: format!("To {}", transaction.to),
+                    title: title,
+                    message: message,
                     topic: self.ios_topic.clone(),
                 }
             ]

@@ -119,7 +119,7 @@ impl Parser {
                     
                     transactions_map.insert(transaction.clone().id, transaction.clone());
 
-                    match self.pusher.push(device.as_primitive(), transaction.clone()).await {
+                    match self.pusher.push(device.as_primitive(), transaction.clone(), subscription.as_primitive() ).await {
                         Ok(result) => { println!("Push: result: {:?}", result); },
                         Err(err) => { println!("Push: error: {:?}", err); }
                     }

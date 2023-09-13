@@ -27,7 +27,7 @@ impl EthereumClient {
     }
 
     async fn get_transaction_reciept(&self, hash: &str) -> Result<TransactionReciept, Box<dyn Error + Send + Sync>> {
-        let reciept: TransactionReciept = JsonRpcClient::request(&self.client, "eth_getTransactionReceipt", vec![json!(hash)]).await?;
+        let reciept: TransactionReciept = JsonRpcClient:: request(&self.client, "eth_getTransactionReceipt", vec![json!(hash)]).await?;
         return Ok(reciept);
     }
 
