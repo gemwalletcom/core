@@ -91,13 +91,15 @@ impl Parser {
                      },
                     Err(err) => { 
                         println!("parser parse_block chain: {}, error: {:?}", self.chain.as_str(), err);
+
+                        sleep(Duration::from_millis(self.options.timeout)).await; continue;
                     }
                 }
             }
         }
     }
 
-    pub async fn parse_blocks(&mut self, blocks: Vec<i32>) -> Result<ParserBlocksResult, Box<dyn Error>> {
+    pub async fn parse_blocks(&mut self, blocks: Vec<i32>) -> Result<ParserBlocksResult, Box<dyn Error + Send + Sync>> {
         let transactions_futures = blocks.iter().map(|block| self.provider.get_transactions(block.clone() as i64));
         let transactions_results = futures::future::join_all(transactions_futures).await.into_iter().filter_map(Result::ok).collect::<Vec<Vec<Transaction>>>();
 
