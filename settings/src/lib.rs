@@ -166,6 +166,9 @@ pub struct Chains {
     pub polygon: Chain,
     pub optimism: Chain,
     pub arbitrum: Chain,
+    pub base: Chain,
+    pub opbnb: Chain,
+    pub avalanchec: Chain,
 }
 
 #[derive(Debug, Deserialize, Clone)]

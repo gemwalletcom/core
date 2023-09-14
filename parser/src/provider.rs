@@ -40,10 +40,19 @@ pub fn new(chain: Chain, settings: &Settings) -> Box<dyn ChainProvider> {
             settings.chains.optimism.url.clone()
         )),
         Chain::Aptos => todo!(),
-        Chain::Base => todo!(),
-        Chain::AvalancheC => todo!(),
+        Chain::Base => Box::new(EthereumClient::new(
+            Chain::Base,
+            settings.chains.base.url.clone()
+        )),
+        Chain::AvalancheC => Box::new(EthereumClient::new(
+            Chain::AvalancheC,
+            settings.chains.avalanchec.url.clone()
+        )),
         Chain::Sui => todo!(),
         Chain::Ripple => todo!(),
-        Chain::OpBNB => todo!(),
+        Chain::OpBNB => Box::new(EthereumClient::new(
+            Chain::OpBNB,
+            settings.chains.opbnb.url.clone()
+        )),
     }
 }

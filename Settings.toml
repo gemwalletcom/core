@@ -83,6 +83,15 @@ url = "https://optimism.llamarpc.com"
 [chains.arbitrum]
 url = "https://arbitrum.llamarpc.com"
 
+[chains.base]
+url = "https://rpc.ankr.com/base"
+
+[chains.opbnb]
+url = "https://opbnb-mainnet-rpc.bnbchain.org"
+
+[chains.avalanchec]
+url = "https://rpc.ankr.com/avalanche"
+
 [parser]
 chain = ""
 timeout = 1
