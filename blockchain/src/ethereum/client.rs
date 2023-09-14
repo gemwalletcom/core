@@ -32,11 +32,8 @@ impl EthereumClient {
     }
 
     async fn get_transaction_reciepts(&self, hashes: Vec<String>) -> Result<Vec<TransactionReciept>, Box<dyn Error + Send + Sync>> {
-        let transactions_futures = hashes.iter().map(|hash| {
-            self.get_transaction_reciept(hash)
-        });
-        let transactions_results = futures::future::join_all(transactions_futures).await;
-        let transactions = transactions_results.into_iter().filter_map(Result::ok).collect::<Vec<TransactionReciept>>();
+        let futures = hashes.iter().map(|hash| { self.get_transaction_reciept(hash) });
+        let transactions = futures::future::join_all(futures).await.into_iter().filter_map(Result::ok).collect::<Vec<TransactionReciept>>();
         if hashes.len() != transactions.len() {
             return Err(Box::from("unable to fetch reciepts"))
         }

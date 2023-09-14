@@ -1,6 +1,5 @@
 use settings::Settings;
 use storage::DatabaseClient;
-use tokio::time::{sleep, Duration};
 
 #[tokio::main]
 async fn main() {

@@ -1,4 +1,4 @@
-use std::{collections::HashMap, time::{Duration, Instant}, cmp, error::Error};
+use std::{collections::HashMap, time::{Duration, Instant}, cmp, error::Error, fmt::format};
 use tokio::time::sleep;
 
 use blockchain::ChainProvider;
@@ -104,10 +104,9 @@ impl Parser {
         let transactions_results = futures::future::join_all(transactions_futures).await.into_iter().filter_map(Result::ok).collect::<Vec<Vec<Transaction>>>();
 
         if transactions_results.len() != blocks.len() {
-            return Err(Box::from("parser fetch transactions in blocks"));
+            return Err(Box::from(format!("parser fetch transactions in blocks: {:?}", blocks)));
         }
         let transactions = transactions_results.into_iter().flatten().collect::<Vec<Transaction>>();
-        
         let addresses = transactions.clone().into_iter().map(|x| x.addresses() ).flatten().collect();
         let subscriptions = self.database.get_subscriptions(self.chain, addresses).unwrap();
         let mut transactions_map: HashMap<String, primitives::Transaction> = HashMap::new();
@@ -128,23 +127,27 @@ impl Parser {
                 }
             }
         }
-
-        let insert_transactions: Vec<storage::models::Transaction> = transactions_map
-            .into_iter()
-            .map(|x| x.1)
-            .collect::<Vec<primitives::Transaction>>()
-            .into_iter().map(|x| {
-                return storage::models::Transaction::from_primitive(x);
-            }).collect();
         
-        match self.database.add_transactions(insert_transactions.clone()) {
+        match self.store_transactions(transactions_map.clone()).await {
             Ok(_) => { },
             Err(err) => { println!("transaction insert: error: {:?}", err); }
         }
 
         return Ok(ParserBlocksResult{
             transactions: transactions.len(), 
-            insert_transactions: insert_transactions.len()
+            insert_transactions: transactions_map.len()
         });
+    }
+
+    pub async fn store_transactions(&mut self, transactions_map: HashMap<String, primitives::Transaction>) -> Result<usize, Box<dyn Error + Send + Sync>> {
+        let insert_transactions: Vec<storage::models::Transaction> = transactions_map
+        .into_iter()
+        .map(|x| x.1)
+        .collect::<Vec<primitives::Transaction>>()
+        .into_iter().map(|x| {
+            return storage::models::Transaction::from_primitive(x);
+        }).collect();
+        let result =  self.database.add_transactions(insert_transactions.clone())?;
+        Ok(result)
     }
 }
