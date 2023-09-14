@@ -87,7 +87,7 @@ impl Parser {
                     Ok(result) => {
                         let _ = self.database.set_parser_state_current_block(self.chain, end_block.into());
                         
-                        println!("parser block complete: {}, blocks: {:?} transactions: {} of {}, to go blocks: {}, in: {:?}",  self.chain.as_str(), next_blocks, result.transactions, result.insert_transactions, state.latest_block - finish_block - state.await_blocks, start.elapsed());
+                        println!("parser block complete: {}, blocks: {:?} transactions: {} of {}, to go blocks: {}, in: {:?}",  self.chain.as_str(), next_blocks, result.transactions, result.insert_transactions, state.latest_block - end_block - state.await_blocks, start.elapsed());
                      },
                     Err(err) => { 
                         println!("parser parse_block chain: {}, error: {:?}", self.chain.as_str(), err);
