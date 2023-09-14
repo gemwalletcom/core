@@ -16,13 +16,15 @@ members = [
     "api_connector",
     "ns_address_codec",
     "parser",
+    "setup",
 ]
 
 default-members = [
     "bin/generate",
     "deamon",
     "api",
-    "parser"
+    "parser",
+    "setup",
 ]
 
 [workspace.dependencies]

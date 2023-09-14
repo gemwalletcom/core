@@ -24,6 +24,18 @@ services:
       - redis
       - postgres
 
+  setup:
+    image: app
+    container_name: setup
+    environment:
+      BINARY: setup
+      REDIS_URL: "redis://default:@redis:6379"
+      POSTGRES_URL: "postgres://username:password@postgres/api"
+    depends_on:
+      - app_build
+      - redis
+      - postgres
+
   deamon:
     image: app
     container_name: deamon
@@ -33,6 +45,7 @@ services:
       POSTGRES_URL: "postgres://username:password@postgres/api"
     depends_on:
       - app_build
+      - setup
       - redis
       - postgres
 
@@ -44,6 +57,7 @@ services:
       POSTGRES_URL: "postgres://username:password@postgres/api"
     depends_on:
       - app_build
+      - setup
       - postgres
 
   redis:

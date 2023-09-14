@@ -3877,6 +3877,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "setup"
+version = "1.0.0"
+dependencies = [
+ "config",
+ "diesel",
+ "primitives",
+ "serde",
+ "serde_json",
+ "settings",
+ "storage",
+ "tokio",
+]
+
+[[package]]
 name = "sha1"
 version = "0.10.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"

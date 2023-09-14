@@ -84,13 +84,13 @@ url = "https://optimism.llamarpc.com"
 url = "https://arbitrum.llamarpc.com"
 
 [chains.base]
-url = "https://mainnet.base.org"
+url = "https://base-mainnet.public.blastapi.io"
 
 [chains.opbnb]
 url = "https://opbnb-mainnet-rpc.bnbchain.org"
 
 [chains.avalanchec]
-url = "https://avalanche-c-chain.publicnode.com"
+url = "https://api.avax.network/ext/bc/C/rpc"
 
 [parser]
 chain = ""

@@ -1,0 +1,15 @@
+[package]
+name = "setup"
+edition = { workspace = true }
+version = { workspace = true }
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+tokio = { workspace = true }
+config = { workspace = true }
+storage = { path = "../storage" }
+settings = { path = "../settings" }
+diesel = { workspace = true }
+# async-trait = { workspace = true }
+primitives = { path = "../primitives" }
