@@ -76,8 +76,8 @@ impl Parser {
                 let state = self.database.get_parser_state(self.chain).unwrap();
                 let start = Instant::now();
                 let start_block =  state.current_block + 1;
-                let finish_block = cmp::min(start_block + state.parallel_blocks - 1, state.latest_block - state.await_blocks);
-                let next_blocks = (start_block..=finish_block).collect::<Vec<_>>();
+                let end_block = cmp::min(start_block + state.parallel_blocks - 1, state.latest_block - state.await_blocks);
+                let next_blocks = (start_block..=end_block).collect::<Vec<_>>();
 
                 if next_blocks.len() == 0 {
                     break
@@ -85,7 +85,7 @@ impl Parser {
                 
                 match self.parse_blocks(next_blocks.clone()).await {
                     Ok(result) => {
-                        let _ = self.database.set_parser_state_current_block(self.chain, next_blocks.last().unwrap().clone() as i32);
+                        let _ = self.database.set_parser_state_current_block(self.chain, end_block.into());
                         
                         println!("parser block complete: {}, blocks: {:?} transactions: {} of {}, to go blocks: {}, in: {:?}",  self.chain.as_str(), next_blocks, result.transactions, result.insert_transactions, state.latest_block - finish_block - state.await_blocks, start.elapsed());
                      },
