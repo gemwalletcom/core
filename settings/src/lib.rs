@@ -169,7 +169,7 @@ pub struct Chains {
     pub base: Chain,
     pub opbnb: Chain,
     pub avalanchec: Chain,
-    pub ton: ChainApi,
+    pub ton: Chain,
 }
 
 #[derive(Debug, Deserialize, Clone)]

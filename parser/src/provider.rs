@@ -46,8 +46,7 @@ pub fn new(chain: Chain, settings: &Settings) -> Box<dyn ChainProvider> {
         )),
         Chain::Ton => Box::new(TonClient::new(
             client,
-            settings.chains.ton.url.clone(),
-            settings.chains.ton.api.clone()
+            settings.chains.ton.url.clone()
         )),
         Chain::Tron => todo!(),
         Chain::Doge => todo!(),

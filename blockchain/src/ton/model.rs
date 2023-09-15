@@ -1,73 +1,52 @@
 use serde::{Serialize, Deserialize};
 
-// node
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct NodeResult<T> {
+pub struct JSONResult<T> {
     pub result: T,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct NodeResultBlockType {
-    pub last: NodeResultBlock,
+pub struct Chainhead {
+    pub last: Block,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct NodeResultBlock {
+pub struct Block {
     pub seqno: i64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct NodeResultShardsType {
-    pub shards: Vec<NodeResultBlock>,
-}
-
-// api
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ChainHead {
-    pub seqno: i32,
+pub struct Shards {
+    pub shards: Vec<Block>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct Transactions {
-    pub transactions: Vec<Transaction>
+pub struct ShortTransactions {
+    pub transactions: Vec<ShortTransaction>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ShortTransaction {
+    pub lt: String,
+    pub account: String,
+    pub hash: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Transaction {
-    pub hash: String,
-    pub total_fees: i64,
-    pub success: bool,
-    pub transaction_type: String,
-    pub in_msg: Option<InMessage>,
+    pub fee: String,
+    pub transaction_id: TransactionId,
     pub out_msgs: Vec<OutMessage>,
-    pub block: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct InMessage {
-    pub bounced: bool,
-    pub destination: Address,
+pub struct TransactionId {
+    pub hash: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OutMessage {
-    pub value: i64,
-    pub bounced: bool,
-    pub source: Address,
-    pub destination: Option<Address>,
-    pub decoded_op_name: Option<String>,
-    pub decoded_body: Option<DecodedBody>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Address {
-    pub address: String,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct DecodedBody {
-    pub text: Option<String>,
+    pub source: String,
+    pub destination: Option<String>,
+    pub value: String,
 }

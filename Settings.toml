@@ -94,7 +94,6 @@ url = "https://api.avax.network/ext/bc/C/rpc"
 
 [chains.ton]
 url = "https://toncenter.com"
-api = "https://tonapi.io"
 
 [parser]
 chain = ""
