@@ -92,9 +92,13 @@ url = "https://opbnb-mainnet-rpc.bnbchain.org"
 [chains.avalanchec]
 url = "https://api.avax.network/ext/bc/C/rpc"
 
+[chains.ton]
+url = "https://toncenter.com"
+api = "https://tonapi.io"
+
 [parser]
 chain = ""
-timeout = 1
+timeout = 1000 # ms
 
 [pusher]
 url = ""

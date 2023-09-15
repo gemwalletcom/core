@@ -2,7 +2,7 @@ use typeshare::typeshare;
 use serde::{Serialize, Deserialize};
 use chrono::NaiveDateTime;
 
-use crate::{asset_id::AssetId, transaction_type::TransactionType, transaction_state::TransactionState, transaction_direction::TransactionDirection};
+use crate::{asset_id::AssetId, transaction_type::TransactionType, transaction_state::TransactionState, transaction_direction::TransactionDirection, Chain};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare]
@@ -33,6 +33,11 @@ pub struct Transaction {
 }
 
 impl Transaction {
+
+    pub fn id_from(chain: Chain, hash: String) -> String {
+        return format!("{}_{}", chain.as_str(), hash);
+    }
+
     pub fn addresses(&self) -> Vec<String> {
         vec![self.from.clone(), self.to.clone()]
     }

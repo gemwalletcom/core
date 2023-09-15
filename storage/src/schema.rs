@@ -86,6 +86,7 @@ diesel::table! {
         chain -> Varchar,
         current_block -> Int4,
         latest_block -> Int4,
+        timeout_between_blocks -> Int4,
         await_blocks -> Int4,
         parallel_blocks -> Int4,
         is_enabled -> Bool,

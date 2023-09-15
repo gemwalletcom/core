@@ -33,6 +33,8 @@ serde = { version = "1.0.186", features = ["derive"] }
 serde_json = { version = "1.0.107" } 
 tokio = { version = "1.32.0", features = ["macros", "rt-multi-thread"]}
 reqwest = {version = "0.11.20", features = ["json"]}
+reqwest-middleware = { version = "0.2.3" }
+reqwest-retry = { version = "0.3.0" }
 url = { version = "2.4.1" }
 config = { version = "0.13.3" }
 rocket = { version = "=0.5.0-rc.3", features = ["json"] }

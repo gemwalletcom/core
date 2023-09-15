@@ -60,7 +60,7 @@ impl EthereumClient {
         // system transfer
         if transaction.input == "0x" {
             let transaction = primitives::Transaction{ 
-                id: self.chain.to_string(), 
+                id: "".to_string(), 
                 hash: transaction.hash.clone(),
                 asset_id: AssetId::from_chain(self.chain), 
                 from, 

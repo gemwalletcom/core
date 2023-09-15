@@ -1,11 +1,22 @@
-use blockchain::{ChainProvider, BNBChainClient, SolanaClient, EthereumClient};
+use blockchain::{ChainProvider, BNBChainClient, SolanaClient, EthereumClient, TonClient};
 use primitives::Chain;
 use settings::Settings;
+
+use reqwest_middleware::ClientBuilder;
+use reqwest_retry::{RetryTransientMiddleware, policies::ExponentialBackoff};
+
 trait ProviderFactory {
     fn new(&self, chain: Chain, settings: &Settings) -> Box<dyn ChainProvider>;
 }
 
 pub fn new(chain: Chain, settings: &Settings) -> Box<dyn ChainProvider> {
+
+    let retry_policy = ExponentialBackoff::builder()
+        .build_with_max_retries(5);
+    let client = ClientBuilder::new(reqwest::Client::new())
+        .with(RetryTransientMiddleware::new_with_policy(retry_policy))
+        .build();
+
     match chain {
         Chain::Bitcoin => todo!(),
         Chain::Ethereum => Box::new(EthereumClient::new(
@@ -13,6 +24,7 @@ pub fn new(chain: Chain, settings: &Settings) -> Box<dyn ChainProvider> {
             settings.chains.ethereum.url.clone()
         )),
         Chain::Binance => Box::new(BNBChainClient::new(
+            client,
             settings.chains.binance.url.clone(),
             settings.chains.binance.api.clone(),
         )),
@@ -32,7 +44,11 @@ pub fn new(chain: Chain, settings: &Settings) -> Box<dyn ChainProvider> {
             Chain::Arbitrum,
             settings.chains.arbitrum.url.clone()
         )),
-        Chain::Ton => todo!(),
+        Chain::Ton => Box::new(TonClient::new(
+            client,
+            settings.chains.ton.url.clone(),
+            settings.chains.ton.api.clone()
+        )),
         Chain::Tron => todo!(),
         Chain::Doge => todo!(),
         Chain::Optimism => Box::new(EthereumClient::new(

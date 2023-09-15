@@ -159,7 +159,7 @@ pub struct Assets {
 #[derive(Debug, Deserialize, Clone)]
 #[allow(unused)]
 pub struct Chains {
-    pub binance: BNBChain,
+    pub binance: ChainApi,
     pub solana: Chain,
     pub ethereum: Chain,
     pub smartchain: Chain,
@@ -169,6 +169,7 @@ pub struct Chains {
     pub base: Chain,
     pub opbnb: Chain,
     pub avalanchec: Chain,
+    pub ton: ChainApi,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -179,7 +180,7 @@ pub struct Chain {
 
 #[derive(Debug, Deserialize, Clone)]
 #[allow(unused)]
-pub struct BNBChain {
+pub struct ChainApi {
     pub url: String,
     pub api: String,
 }

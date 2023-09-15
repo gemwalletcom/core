@@ -1,8 +1,8 @@
-use std::{collections::HashMap, time::{Duration, Instant}, cmp, error::Error, fmt::format};
+use std::{collections::HashMap, time::{Duration, Instant}, cmp, error::Error};
 use tokio::time::sleep;
 
 use blockchain::ChainProvider;
-use primitives::{Transaction, Chain};
+use primitives::Chain;
 use storage::DatabaseClient;
 use crate::pusher::Pusher;
 
@@ -61,7 +61,7 @@ impl Parser {
                             
                             println!("parser ahead: {} current_block: {}, latest_block: {}, await_blocks: {}", self.chain.as_str(), state.current_block, latest_block, state.await_blocks);
                 
-                            sleep(Duration::from_secs(self.options.timeout)).await; continue;
+                            sleep(Duration::from_millis(self.options.timeout)).await; continue;
                         }
                      },
                     Err(err) => {
@@ -90,23 +90,34 @@ impl Parser {
                         println!("parser block complete: {}, blocks: {:?} transactions: {} of {}, to go blocks: {}, in: {:?}",  self.chain.as_str(), next_blocks, result.transactions, result.insert_transactions, state.latest_block - end_block - state.await_blocks, start.elapsed());
                      },
                     Err(err) => { 
-                        println!("parser parse_block chain: {}, error: {:?}", self.chain.as_str(), err);
+                        println!("parser parse_block chain: blocks: {}, {:?}, error: {:?}", self.chain.as_str(), next_blocks, err);
 
                         sleep(Duration::from_millis(self.options.timeout)).await; continue;
                     }
+                }
+                if state.timeout_between_blocks > 0 {
+                    sleep(Duration::from_millis(state.timeout_between_blocks.try_into().unwrap())).await; continue;
                 }
             }
         }
     }
 
     pub async fn parse_blocks(&mut self, blocks: Vec<i32>) -> Result<ParserBlocksResult, Box<dyn Error + Send + Sync>> {
-        let transactions_futures = blocks.iter().map(|block| self.provider.get_transactions(block.clone() as i64));
-        let transactions_results = futures::future::join_all(transactions_futures).await.into_iter().filter_map(Result::ok).collect::<Vec<Vec<Transaction>>>();
+        let futures = blocks.iter().map(|block| self.provider.get_transactions(block.clone() as i64));
+        let future_results = futures::future::join_all(futures).await;
+        let mut transactions = Vec::new();
 
-        if transactions_results.len() != blocks.len() {
-            return Err(Box::from(format!("parser fetch transactions in blocks: {:?}", blocks)));
+        for result in future_results.into_iter() {
+            match result {
+                Ok(result) => {
+                    transactions.extend(result)
+                 },
+                Err(err) => { 
+                    return Err(err); 
+                }
+            }
         }
-        let transactions = transactions_results.into_iter().flatten().collect::<Vec<Transaction>>();
+        //let transactions = results.into_iter().flatten().collect::<Vec<Transaction>>();
         let addresses = transactions.clone().into_iter().map(|x| x.addresses() ).flatten().collect();
         let subscriptions = self.database.get_subscriptions(self.chain, addresses).unwrap();
         let mut transactions_map: HashMap<String, primitives::Transaction> = HashMap::new();

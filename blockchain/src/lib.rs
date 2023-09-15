@@ -4,10 +4,12 @@ mod aptos;
 mod bnbchain;
 mod solana;
 mod ethereum;
+mod ton;
 
 pub use self::bnbchain::client::BNBChainClient;
 pub use self::solana::client::SolanaClient;
 pub use self::ethereum::client::EthereumClient;
+pub use self::ton::client::TonClient;
 
 use async_trait::async_trait;
 use primitives::{chain::Chain, Transaction};

@@ -14,3 +14,5 @@ tokio = { workspace = true }
 reqwest = { workspace = true }
 rust_decimal = { workspace = true }
 futures = { workspace = true }
+reqwest-middleware =  { workspace = true }
+reqwest-retry =  { workspace = true }

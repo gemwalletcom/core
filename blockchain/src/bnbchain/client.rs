@@ -6,17 +6,17 @@ use primitives::{chain::Chain, Transaction, TransactionType, TransactionState, T
 use chrono::Utc;
 
 use super::model::{Block, NodeInfo};
+use reqwest_middleware::ClientWithMiddleware;
 
 pub struct BNBChainClient {
     url: String,
     api_url: String,
     
-    client: reqwest::Client,
+    client: ClientWithMiddleware,
 }
 
 impl BNBChainClient {
-    pub fn new(url: String, api_url: String) -> Self {
-        let client = reqwest::Client::new();
+    pub fn new(client: ClientWithMiddleware, url: String, api_url: String) -> Self {
         Self {
             url,
             api_url,
