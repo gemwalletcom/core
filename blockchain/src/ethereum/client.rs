@@ -27,17 +27,15 @@ impl EthereumClient {
     }
 
     async fn get_transaction_reciept(&self, hash: &str) -> Result<TransactionReciept, Box<dyn Error + Send + Sync>> {
-        let reciept: TransactionReciept = JsonRpcClient:: request(&self.client, "eth_getTransactionReceipt", vec![json!(hash)]).await?;
+        let reciept: TransactionReciept = JsonRpcClient::request(&self.client, "eth_getTransactionReceipt", vec![json!(hash)]).await?;
         return Ok(reciept);
     }
 
     async fn get_transaction_reciepts(&self, hashes: Vec<String>) -> Result<Vec<TransactionReciept>, Box<dyn Error + Send + Sync>> {
-        let futures = hashes.iter().map(|hash| { self.get_transaction_reciept(hash) });
-        let transactions = futures::future::join_all(futures).await.into_iter().filter_map(Result::ok).collect::<Vec<TransactionReciept>>();
-        if hashes.len() != transactions.len() {
-            return Err(Box::from("unable to fetch reciepts"))
-        }
-        return Ok(transactions)
+        let recieipts = futures::future::try_join_all(
+            hashes.iter().map(|hash| { self.get_transaction_reciept(hash) 
+        })).await?;
+        return Ok(recieipts)
     }
 
     async fn get_block(&self, block_number: i64) -> Result<Block, Box<dyn Error + Send + Sync>> {

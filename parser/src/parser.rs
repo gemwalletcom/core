@@ -103,21 +103,11 @@ impl Parser {
     }
 
     pub async fn parse_blocks(&mut self, blocks: Vec<i32>) -> Result<ParserBlocksResult, Box<dyn Error + Send + Sync>> {
-        let futures = blocks.iter().map(|block| self.provider.get_transactions(block.clone() as i64));
-        let future_results = futures::future::join_all(futures).await;
-        let mut transactions = Vec::new();
+        let transactions = futures::future::try_join_all(
+            blocks.iter().map(|block| self.provider.get_transactions(block.clone() as i64))
+        ).await?;
+        let transactions = transactions.into_iter().flatten().collect::<Vec<primitives::Transaction>>();
 
-        for result in future_results.into_iter() {
-            match result {
-                Ok(result) => {
-                    transactions.extend(result)
-                 },
-                Err(err) => { 
-                    return Err(err); 
-                }
-            }
-        }
-        //let transactions = results.into_iter().flatten().collect::<Vec<Transaction>>();
         let addresses = transactions.clone().into_iter().map(|x| x.addresses() ).flatten().collect();
         let subscriptions = self.database.get_subscriptions(self.chain, addresses).unwrap();
         let mut transactions_map: HashMap<String, primitives::Transaction> = HashMap::new();

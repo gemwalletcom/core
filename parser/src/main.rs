@@ -2,7 +2,6 @@ pub mod pusher;
 pub mod parser;
 pub mod provider;
 
-use futures::future::join_all;
 use primitives::Chain;
 use settings::Settings;
 use storage::DatabaseClient;
@@ -35,7 +34,7 @@ pub async fn main() {
         parsers.push(parser);
     }
 
-    join_all(parsers).await;
+    futures::future::join_all(parsers).await;
 }
 
 async fn parser_start(settings: Settings, parser_options: ParserOptions, chain: Chain) {
