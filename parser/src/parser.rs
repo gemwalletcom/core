@@ -17,6 +17,7 @@ pub struct Parser {
 #[derive(Debug, Clone)]
 pub struct ParserOptions {
     pub timeout: u64,
+    pub retry: u64,
 }
 
 #[derive(Debug, Clone)]
@@ -106,12 +107,30 @@ impl Parser {
         }
     }
 
-    pub async fn parse_blocks(&mut self, blocks: Vec<i32>) -> Result<ParserBlocksResult, Box<dyn Error + Send + Sync>> {
-        let transactions = futures::future::try_join_all(
-            blocks.iter().map(|block| self.provider.get_transactions(block.clone() as i64))
-        ).await?;
-        let transactions = transactions.into_iter().flatten().collect::<Vec<primitives::Transaction>>();
+    async fn fetch_blocks(&mut self, blocks: Vec<i32>) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Send + Sync>> {
+        let mut retry_attempts_count = 0;
+        loop {
+            let results = futures::future::try_join_all(
+                blocks.iter().map(|block| self.provider.get_transactions(block.clone() as i64))
+            ).await;
+            match results {
+                Ok(transactions) => {
+                    return Ok(transactions.into_iter().flatten().collect::<Vec<primitives::Transaction>>())
+                },
+                Err(err) => {
+                    if retry_attempts_count >= self.options.retry {
+                        return Err(err);
+                    }
+                    retry_attempts_count += 1;
 
+                    sleep(Duration::from_millis(retry_attempts_count * self.options.timeout * 2)).await;
+                }
+            }
+        }
+    }
+
+    pub async fn parse_blocks(&mut self, blocks: Vec<i32>) -> Result<ParserBlocksResult, Box<dyn Error + Send + Sync>> {
+        let transactions = self.fetch_blocks(blocks.clone()).await?;
         let addresses = transactions.clone().into_iter().map(|x| x.addresses() ).flatten().collect();
         let subscriptions = self.database.get_subscriptions(self.chain, addresses).unwrap();
         let mut transactions_map: HashMap<String, primitives::Transaction> = HashMap::new();

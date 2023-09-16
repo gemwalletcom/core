@@ -106,6 +106,7 @@ url = "https://thornode.ninerealms.com"
 
 [parser]
 chain = ""
+retry = 7
 timeout = 1000 # ms
 chains = [
     "ethereum",

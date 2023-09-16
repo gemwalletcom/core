@@ -20,6 +20,7 @@ pub async fn main() {
     let chains = if let Some(chain) = Chain::from_str(chain_env.as_str()) { vec![chain] } else { chains };
     let parser_options = ParserOptions{
         timeout: settings.parser.timeout,
+        retry: settings.parser.retry,
     };
     
     println!("parser start chains: {:?}", chains.clone().into_iter().map(|x| x.as_str()).collect::<Vec<&str>>());

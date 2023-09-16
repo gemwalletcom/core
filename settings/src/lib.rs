@@ -193,6 +193,7 @@ pub struct ChainApi {
 pub struct Parser {
     pub chain: String,
     pub timeout: u64,
+    pub retry: u64,
     pub chains: Vec<String>,
 }
 
