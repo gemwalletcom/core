@@ -170,6 +170,9 @@ pub struct Chains {
     pub opbnb: Chain,
     pub avalanchec: Chain,
     pub ton: Chain,
+    pub cosmos: Chain,
+    pub osmosis: Chain,
+    pub thorchain: Chain,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -190,6 +193,7 @@ pub struct ChainApi {
 pub struct Parser {
     pub chain: String,
     pub timeout: u64,
+    pub chains: Vec<String>,
 }
 
 #[derive(Debug, Deserialize, Clone)]

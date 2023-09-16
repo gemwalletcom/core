@@ -95,9 +95,34 @@ url = "https://api.avax.network/ext/bc/C/rpc"
 [chains.ton]
 url = "https://toncenter.com"
 
+[chains.cosmos]
+url = "https://cosmos-rest.publicnode.com"
+
+[chains.osmosis]
+url = "https://osmosis-rest.publicnode.com"
+
+[chains.thorchain]
+url = "https://thornode.ninerealms.com"
+
 [parser]
 chain = ""
 timeout = 1000 # ms
+chains = [
+    "ethereum",
+    "binance",
+    "smartchain",
+    "arbitrum",
+    "ton",
+    "avalanchec",
+    "base",
+    "opbnb",
+    "optimism",
+    "polygon",
+    "solana",
+    "cosmos",
+    "osmosis",
+    "thorchain"
+]
 
 [pusher]
 url = ""

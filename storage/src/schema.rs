@@ -34,12 +34,12 @@ diesel::table! {
 diesel::table! {
     devices (id) {
         id -> Int4,
-        #[max_length = 128]
+        #[max_length = 32]
         device_id -> Varchar,
         is_push_enabled -> Bool,
         #[max_length = 8]
         platform -> Varchar,
-        #[max_length = 128]
+        #[max_length = 256]
         token -> Varchar,
         #[max_length = 8]
         locale -> Varchar,
@@ -77,6 +77,7 @@ diesel::table! {
         url -> Varchar,
         status -> Varchar,
         priority -> Int4,
+        updated_at -> Nullable<Timestamp>,
         created_at -> Nullable<Timestamp>,
     }
 }
@@ -86,8 +87,8 @@ diesel::table! {
         chain -> Varchar,
         current_block -> Int4,
         latest_block -> Int4,
-        timeout_between_blocks -> Int4,
         await_blocks -> Int4,
+        timeout_between_blocks -> Int4,
         parallel_blocks -> Int4,
         is_enabled -> Bool,
         updated_at -> Timestamp,
@@ -151,11 +152,9 @@ diesel::table! {
         kind -> Varchar,
         #[max_length = 32]
         value -> Nullable<Varchar>,
-        #[max_length = 64]
         asset_id -> Nullable<Varchar>,
         #[max_length = 32]
         fee -> Nullable<Varchar>,
-        #[max_length = 64]
         fee_asset_id -> Nullable<Varchar>,
         updated_at -> Timestamp,
         created_at -> Timestamp,

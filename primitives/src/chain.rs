@@ -85,6 +85,18 @@ impl Chain {
         }
     }
 
+    pub fn as_denom(&self) -> &'static str {
+        match self {
+            Self::Binance => "BNB",
+            Self::Thorchain => "rune",
+            Self::Cosmos => "uatom",
+            Self::Osmosis => "uosmo",
+            _ => {
+                return ""
+            }
+        }
+    }
+
     pub fn to_string(&self) -> String {
         self.as_str().to_string()
     }

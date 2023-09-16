@@ -5,11 +5,13 @@ mod bnbchain;
 mod solana;
 mod ethereum;
 mod ton;
+mod cosmos;
 
 pub use self::bnbchain::client::BNBChainClient;
 pub use self::solana::client::SolanaClient;
 pub use self::ethereum::client::EthereumClient;
 pub use self::ton::client::TonClient;
+pub use self::cosmos::client::CosmosClient;
 
 use async_trait::async_trait;
 use primitives::{chain::Chain, Transaction};

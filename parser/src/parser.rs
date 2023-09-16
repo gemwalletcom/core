@@ -57,6 +57,10 @@ impl Parser {
                 match self.provider.get_latest_block().await {
                     Ok(latest_block) => {
                         let _ = self.database.set_parser_state_latest_block(self.chain, latest_block as i32);
+                        // initial start
+                        if state.current_block == 0 {
+                            let _ = self.database.set_parser_state_current_block(self.chain, latest_block as i32);
+                        }
                         if next_current_block >= latest_block as i32 {
                             
                             println!("parser ahead: {} current_block: {}, latest_block: {}, await_blocks: {}", self.chain.as_str(), state.current_block, latest_block, state.await_blocks);

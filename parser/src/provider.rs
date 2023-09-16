@@ -1,4 +1,4 @@
-use blockchain::{ChainProvider, BNBChainClient, SolanaClient, EthereumClient, TonClient};
+use blockchain::{ChainProvider, BNBChainClient, SolanaClient, EthereumClient, TonClient, CosmosClient};
 use primitives::Chain;
 use settings::Settings;
 
@@ -37,9 +37,21 @@ pub fn new(chain: Chain, settings: &Settings) -> Box<dyn ChainProvider> {
             Chain::Polygon,
             settings.chains.polygon.url.clone()
         )),
-        Chain::Thorchain => todo!(),
-        Chain::Cosmos => todo!(),
-        Chain::Osmosis => todo!(),
+        Chain::Thorchain => Box::new(CosmosClient::new(
+            Chain::Thorchain,
+            client,
+            settings.chains.thorchain.url.clone()
+        )),
+        Chain::Cosmos => Box::new(CosmosClient::new(
+            Chain::Cosmos,
+            client,
+            settings.chains.cosmos.url.clone()
+        )),
+        Chain::Osmosis => Box::new(CosmosClient::new(
+            Chain::Osmosis,
+            client,
+            settings.chains.osmosis.url.clone()
+        )),
         Chain::Arbitrum => Box::new(EthereumClient::new(
             Chain::Arbitrum,
             settings.chains.arbitrum.url.clone()

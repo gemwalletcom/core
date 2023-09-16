@@ -23,9 +23,9 @@ Run `make install` to install rust, typeshare
 | SmartChain   | ✅            |
 | Solana       | ✅            |
 | Polygon      | ✅            |
-| Thorchain    | 🏗            |
-| Cosmos       | 🏗            |
-| Osmosis      | 🏗            |
+| Thorchain    | ✅            |
+| Cosmos       | ✅            |
+| Osmosis      | ✅            |
 | Arbitrum     | ✅            |
 | Ton          | ✅            |
 | Tron         | 🏗            |

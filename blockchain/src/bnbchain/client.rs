@@ -28,7 +28,7 @@ impl BNBChainClient {
         if transaction.r#type != "TRANSFER" {
             return None;
         }
-        let token_id = if transaction.asset == Some("BNB".to_string()) { None } else { transaction.asset };
+        let token_id = if transaction.asset == Some(self.get_chain().as_denom().to_string()) { None } else { transaction.asset };
         let asset_id = AssetId{chain: self.get_chain(), token_id};
 
         let transaction = primitives::Transaction{
