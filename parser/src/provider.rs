@@ -1,4 +1,4 @@
-use blockchain::{ChainProvider, BNBChainClient, SolanaClient, EthereumClient, TonClient, CosmosClient};
+use blockchain::{ChainProvider, BNBChainClient, SolanaClient, EthereumClient, TonClient, CosmosClient, TronClient};
 use primitives::Chain;
 use settings::Settings;
 
@@ -60,7 +60,10 @@ pub fn new(chain: Chain, settings: &Settings) -> Box<dyn ChainProvider> {
             client,
             settings.chains.ton.url.clone()
         )),
-        Chain::Tron => todo!(),
+        Chain::Tron => Box::new(TronClient::new(
+            client,
+            settings.chains.tron.url.clone()
+        )),
         Chain::Doge => todo!(),
         Chain::Optimism => Box::new(EthereumClient::new(
             Chain::Optimism,

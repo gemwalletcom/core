@@ -173,6 +173,7 @@ pub struct Chains {
     pub cosmos: Chain,
     pub osmosis: Chain,
     pub thorchain: Chain,
+    pub tron: Chain,
 }
 
 #[derive(Debug, Deserialize, Clone)]

@@ -369,6 +369,7 @@ version = "1.0.0"
 dependencies = [
  "async-trait",
  "base64 0.21.4",
+ "bs58",
  "chrono",
  "cosmos-sdk-proto",
  "ethaddr",
