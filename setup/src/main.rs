@@ -1,4 +1,4 @@
-use primitives::Chain;
+use primitives::{Chain, Asset};
 use settings::Settings;
 use storage::DatabaseClient;
 
@@ -15,9 +15,16 @@ async fn main() {
     let chains = settings.parser.chains.into_iter().map(|chain| Chain::from_str(chain.as_str())).flatten().collect::<Vec<_>>();
 
     println!("setup parser state");
-    for chain in chains {
+    for chain in chains.clone() {
         let _ = database_client.add_parser_state(chain);
     }
+
+    println!("setup assets");
+    let assets = chains.into_iter()
+        .map(|x| Asset::from_chain(x))
+        .map(|x| storage::models::Asset::from_primitive(x))
+        .collect::<Vec<_>>();
+    let _ = database_client.add_assets(assets);
 
     println!("setup complete");
 }

@@ -1,6 +1,8 @@
 use serde::{Serialize, Deserialize};
 use typeshare::typeshare;
 
+use crate::AssetId;
+
 #[derive(Copy, Clone, Debug, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Codable, CaseIterable")]
 #[serde(rename_all = "lowercase")]
@@ -95,6 +97,10 @@ impl Chain {
                 return ""
             }
         }
+    }
+
+    pub fn as_asset_id(&self) -> AssetId {
+        return AssetId::from_chain(*self)
     }
 
     pub fn to_string(&self) -> String {

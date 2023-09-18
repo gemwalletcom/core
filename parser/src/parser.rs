@@ -154,7 +154,7 @@ impl Parser {
         
         match self.store_transactions(transactions_map.clone()).await {
             Ok(_) => { },
-            Err(err) => { println!("transaction insert: error: {:?}", err); }
+            Err(err) => { println!("transaction insert: chain: {}, error: {:?}", self.chain.as_str(), err); }
         }
 
         return Ok(ParserBlocksResult{
