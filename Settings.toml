@@ -107,6 +107,9 @@ url = "https://thornode.ninerealms.com"
 [chains.tron]
 url = "https://api.trongrid.io"
 
+[chains.xrp]
+url = "https://s1.ripple.com:51234/"
+
 [parser]
 chain = ""
 retry = 1
@@ -127,6 +130,7 @@ chains = [
     "osmosis",
     "thorchain",
     "tron",
+    "ripple",
 ]
 
 [pusher]

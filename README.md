@@ -28,14 +28,14 @@ Run `make install` to install rust, typeshare
 | Osmosis      | ✅            |
 | Arbitrum     | ✅            |
 | Ton          | ✅            |
-| Tron         | 🏗            |
+| Tron         | ✅            |
 | Doge         | 🏗            |
 | Optimism     | ✅            |
 | Aptos        | 🏗            |
 | Base         | ✅            |
 | AvalancheC   | ✅            |
 | Sui          | 🏗            |
-| Ripple       | 🏗            |
+| Ripple       | ✅            |
 | OpBNB        | ✅            |
 
 List of available chains specified in [primitives package](https://github.com/gemwalletcom/core/blob/main/primitives/src/chain.rs).

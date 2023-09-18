@@ -174,6 +174,7 @@ pub struct Chains {
     pub osmosis: Chain,
     pub thorchain: Chain,
     pub tron: Chain,
+    pub xrp: Chain,
 }
 
 #[derive(Debug, Deserialize, Clone)]

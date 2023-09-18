@@ -7,6 +7,7 @@ mod ethereum;
 mod ton;
 mod cosmos;
 mod tron;
+mod xrp;
 
 pub use self::bnbchain::client::BNBChainClient;
 pub use self::solana::client::SolanaClient;
@@ -14,6 +15,7 @@ pub use self::ethereum::client::EthereumClient;
 pub use self::ton::client::TonClient;
 pub use self::cosmos::client::CosmosClient;
 pub use self::tron::client::TronClient;
+pub use self::xrp::client::XRPClient;
 
 use async_trait::async_trait;
 use primitives::{chain::Chain, Transaction};
