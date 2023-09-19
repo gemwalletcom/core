@@ -1,4 +1,4 @@
-use blockchain::{ChainProvider, BNBChainClient, SolanaClient, EthereumClient, TonClient, CosmosClient, TronClient, XRPClient};
+use blockchain::{ChainProvider, BNBChainClient, SolanaClient, EthereumClient, TonClient, CosmosClient, TronClient, XRPClient, AptosClient};
 use primitives::Chain;
 use settings::Settings;
 
@@ -69,7 +69,10 @@ pub fn new(chain: Chain, settings: &Settings) -> Box<dyn ChainProvider> {
             Chain::Optimism,
             settings.chains.optimism.url.clone()
         )),
-        Chain::Aptos => todo!(),
+        Chain::Aptos => Box::new(AptosClient::new(
+            client,
+            settings.chains.aptos.url.clone()
+        )),
         Chain::Base => Box::new(EthereumClient::new(
             Chain::Base,
             settings.chains.base.url.clone()
@@ -85,7 +88,7 @@ pub fn new(chain: Chain, settings: &Settings) -> Box<dyn ChainProvider> {
         )),
         Chain::OpBNB => Box::new(EthereumClient::new(
             Chain::OpBNB,
-            settings.chains.xrp.url.clone()
+            settings.chains.opbnb.url.clone()
         )),
     }
 }

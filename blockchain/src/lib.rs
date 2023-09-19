@@ -16,6 +16,7 @@ pub use self::ton::client::TonClient;
 pub use self::cosmos::client::CosmosClient;
 pub use self::tron::client::TronClient;
 pub use self::xrp::client::XRPClient;
+pub use self::aptos::client::AptosClient;
 
 use async_trait::async_trait;
 use primitives::{chain::Chain, Transaction};

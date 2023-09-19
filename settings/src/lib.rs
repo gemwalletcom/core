@@ -175,6 +175,8 @@ pub struct Chains {
     pub thorchain: Chain,
     pub tron: Chain,
     pub xrp: Chain,
+    pub aptos: Chain,
+    pub sui: Chain,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -193,7 +195,6 @@ pub struct ChainApi {
 #[derive(Debug, Deserialize, Clone)]
 #[allow(unused)]
 pub struct Parser {
-    pub chain: String,
     pub timeout: u64,
     pub retry: u64,
     pub chains: Vec<String>,
