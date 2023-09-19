@@ -104,7 +104,7 @@ impl ChainProvider for TronClient {
 
     async fn get_transactions(&self, block_number: i64) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Send + Sync>> {
         let block = self.get_block_tranactions(block_number).await?;
-        let transactions = block.transactions;
+        let transactions = block.transactions.unwrap_or_default();
         let reciepts = self.get_block_tranactions_reciepts(block_number).await?;
 
         let transactions = transactions.into_iter().zip(reciepts.iter()).filter_map(|(transaction, receipt)| {

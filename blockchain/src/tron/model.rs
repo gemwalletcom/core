@@ -8,7 +8,7 @@ pub struct Block {
 #[derive(Debug, Deserialize, Serialize)]
 pub struct BlockTransactions {
     pub block_header: BlockHeader,
-    pub transactions: Vec<Transaction>,
+    pub transactions: Option<Vec<Transaction>>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
