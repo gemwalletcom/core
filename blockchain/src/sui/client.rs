@@ -30,6 +30,11 @@ impl SuiClient {
         let computation_cost = BigUint::from_str(gas_used.computation_cost.as_str()).unwrap_or_default();
         let storage_cost = BigUint::from_str(gas_used.storage_cost.as_str()).unwrap_or_default();
         let storage_rebate = BigUint::from_str(gas_used.storage_rebate.as_str()).unwrap_or_default();
+        let cost = computation_cost.clone() + storage_cost.clone();
+        // fee is potentially negative for storage rebate, for now return 0
+        if storage_rebate >= cost {
+            return BigUint::from(0u32)
+        }
         return computation_cost + storage_cost - storage_rebate;
     }
 
@@ -40,7 +45,6 @@ impl SuiClient {
 
         // system transfer
         if balance_changes.len() == 2 && balance_changes[0].coin_type == chain.as_denom() && balance_changes[1].coin_type == chain.as_denom()  {    
-            
             let from = balance_changes[0].owner.address_owner.clone().unwrap_or_default(); 
             let to = balance_changes[1].owner.address_owner.clone().unwrap_or_default();
             let fee = self.get_fee(transaction.effects.gas_used.clone());
