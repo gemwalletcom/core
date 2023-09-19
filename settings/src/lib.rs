@@ -177,6 +177,8 @@ pub struct Chains {
     pub xrp: Chain,
     pub aptos: Chain,
     pub sui: Chain,
+    pub bitcoin: Chain,
+    pub doge: Chain,
 }
 
 #[derive(Debug, Deserialize, Clone)]

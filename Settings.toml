@@ -116,6 +116,12 @@ url = "https://fullnode.mainnet.aptoslabs.com"
 [chains.sui]
 url = "https://sui-rpc.publicnode.com"
 
+[chains.bitcoin]
+url = ""
+
+[chains.doge]
+url = ""
+
 [parser]
 retry = 1
 timeout = 1000 # ms
@@ -138,6 +144,8 @@ chains = [
     "ripple",
     "aptos",
     "sui",
+    "bitcoin",
+    "doge",
 ]
 
 [pusher]

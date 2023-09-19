@@ -1,4 +1,4 @@
-use blockchain::{ChainProvider, BNBChainClient, SolanaClient, EthereumClient, TonClient, CosmosClient, TronClient, XRPClient, AptosClient, SuiClient};
+use blockchain::{ChainProvider, BNBChainClient, SolanaClient, EthereumClient, TonClient, CosmosClient, TronClient, XRPClient, AptosClient, SuiClient, BitcoinClient};
 use primitives::Chain;
 use settings::Settings;
 
@@ -18,7 +18,11 @@ pub fn new(chain: Chain, settings: &Settings) -> Box<dyn ChainProvider> {
         .build();
 
     match chain {
-        Chain::Bitcoin => todo!(),
+        Chain::Bitcoin => Box::new(BitcoinClient::new(
+            Chain::Bitcoin,
+            client,
+            settings.chains.bitcoin.url.clone()
+        )),
         Chain::Ethereum => Box::new(EthereumClient::new(
             Chain::Ethereum,
             settings.chains.ethereum.url.clone()
@@ -64,7 +68,11 @@ pub fn new(chain: Chain, settings: &Settings) -> Box<dyn ChainProvider> {
             client,
             settings.chains.tron.url.clone()
         )),
-        Chain::Doge => todo!(),
+        Chain::Doge => Box::new(BitcoinClient::new(
+            Chain::Doge,
+            client,
+            settings.chains.doge.url.clone()
+        )),
         Chain::Optimism => Box::new(EthereumClient::new(
             Chain::Optimism,
             settings.chains.optimism.url.clone()

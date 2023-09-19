@@ -9,6 +9,7 @@ mod cosmos;
 mod tron;
 mod xrp;
 mod sui;
+mod bitcoin;
 
 pub use self::bnbchain::client::BNBChainClient;
 pub use self::solana::client::SolanaClient;
@@ -19,6 +20,7 @@ pub use self::tron::client::TronClient;
 pub use self::xrp::client::XRPClient;
 pub use self::aptos::client::AptosClient;
 pub use self::sui::client::SuiClient;
+pub use self::bitcoin::client::BitcoinClient;
 
 use async_trait::async_trait;
 use primitives::{chain::Chain, Transaction};
