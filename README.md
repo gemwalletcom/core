@@ -31,10 +31,10 @@ Run `make install` to install rust, typeshare
 | Tron         | ✅            |
 | Doge         | 🏗            |
 | Optimism     | ✅            |
-| Aptos        | 🏗            |
+| Aptos        | ✅            |
 | Base         | ✅            |
 | AvalancheC   | ✅            |
-| Sui          | 🏗            |
+| Sui          | ✅            |
 | Ripple       | ✅            |
 | OpBNB        | ✅            |
 

@@ -137,6 +137,7 @@ chains = [
     "tron",
     "ripple",
     "aptos",
+    "sui",
 ]
 
 [pusher]

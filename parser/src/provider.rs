@@ -1,4 +1,4 @@
-use blockchain::{ChainProvider, BNBChainClient, SolanaClient, EthereumClient, TonClient, CosmosClient, TronClient, XRPClient, AptosClient};
+use blockchain::{ChainProvider, BNBChainClient, SolanaClient, EthereumClient, TonClient, CosmosClient, TronClient, XRPClient, AptosClient, SuiClient};
 use primitives::Chain;
 use settings::Settings;
 
@@ -81,7 +81,9 @@ pub fn new(chain: Chain, settings: &Settings) -> Box<dyn ChainProvider> {
             Chain::AvalancheC,
             settings.chains.avalanchec.url.clone()
         )),
-        Chain::Sui => todo!(),
+        Chain::Sui => Box::new(SuiClient::new(
+            settings.chains.sui.url.clone()
+        )),
         Chain::Ripple => Box::new(XRPClient::new(
             client,
             settings.chains.xrp.url.clone()
