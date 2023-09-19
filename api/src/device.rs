@@ -1,11 +1,9 @@
 extern crate rocket;
 use primitives::device::Device;
 use rocket::serde::json::Json;
-use self::client::DevicesClient;
+use crate::DevicesClient;
 use rocket::State;
 use rocket::tokio::sync::Mutex;
-
-pub mod client;
 
 #[post("/devices", format = "json", data = "<device>")]
 pub async fn add_device(

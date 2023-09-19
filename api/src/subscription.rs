@@ -1,11 +1,9 @@
 extern crate rocket;
 use primitives::Subscription;
 use rocket::serde::json::Json;
-use self::client::SubscriptionsClient;
+use crate::SubscriptionsClient;
 use rocket::State;
 use rocket::tokio::sync::Mutex;
-
-pub mod client;
 
 #[get("/subscriptions/<device_id>")]
 pub async fn get_subscriptions(

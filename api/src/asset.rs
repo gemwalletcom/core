@@ -1,11 +1,9 @@
 extern crate rocket;
 use primitives::Asset;
 use rocket::serde::json::Json;
-use self::client::AssetsClient;
+use crate::AssetsClient;
 use rocket::State;
 use rocket::tokio::sync::Mutex;
-
-pub mod client;
 
 #[get("/assets/<asset_id>")]
 pub async fn get_asset(

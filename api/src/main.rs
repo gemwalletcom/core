@@ -11,10 +11,13 @@ mod plausible_client;
 mod name;
 mod charts;
 mod device;
+mod device_client;
 mod asset;
+mod asset_client;
 mod subscription;
+mod subscription_client;
 
-use asset::client::AssetsClient;
+use asset_client::AssetsClient;
 use fiat::mercuryo::MercuryoClient;
 use fiat::moonpay::MoonPayClient;
 use fiat::transak::TransakClient;
@@ -29,8 +32,8 @@ use config_client::Client as ConfigClient;
 use plausible_client:: Client as PlausibleClient;
 use storage::DatabaseClient as DatabaseClient;
 use name_resolver::client::Client as NameClient;
-use device::client::DevicesClient;
-use subscription::client::SubscriptionsClient;
+use device_client::DevicesClient;
+use subscription_client::SubscriptionsClient;
 use rocket::tokio::sync::Mutex;
 use rocket_prometheus::PrometheusMetrics;
 
