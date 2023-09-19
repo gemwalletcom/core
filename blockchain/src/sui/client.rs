@@ -41,8 +41,8 @@ impl SuiClient {
         // system transfer
         if balance_changes.len() == 2 && balance_changes[0].coin_type == chain.as_denom() && balance_changes[1].coin_type == chain.as_denom()  {    
             
-            let from = balance_changes[0].owner.address_owner.clone(); 
-            let to = balance_changes[1].owner.address_owner.clone();
+            let from = balance_changes[0].owner.address_owner.clone().unwrap_or_default(); 
+            let to = balance_changes[1].owner.address_owner.clone().unwrap_or_default();
             let fee = self.get_fee(transaction.effects.gas_used.clone());
             let value = balance_changes[1].amount.clone();
             let state = if transaction.effects.status.status == "success" { TransactionState::Confirmed } else { TransactionState::Failed} ;        

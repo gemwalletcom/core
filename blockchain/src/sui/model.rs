@@ -26,7 +26,9 @@ pub struct BalanceChange {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Owner {
     #[serde(rename = "AddressOwner")]
-    pub address_owner: String,
+    pub address_owner: Option<String>,
+    #[serde(rename = "ObjectOwner")]
+    pub object_owner: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
