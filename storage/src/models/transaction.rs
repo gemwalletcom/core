@@ -1,4 +1,6 @@
+use chrono::Utc;
 use diesel::prelude::*;
+use primitives::AssetId;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Queryable, Selectable, Serialize, Deserialize, Insertable, AsChangeset, Clone)]
@@ -17,6 +19,7 @@ pub struct Transaction {
     pub from_address: Option<String>,
     pub to_address: Option<String>,
     pub kind: String,
+    pub state: String,
 }
 
 impl Transaction {
@@ -33,7 +36,44 @@ impl Transaction {
             sequence: transaction.sequence.into(),
             from_address: transaction.from.into(),
             to_address: transaction.to.into(),
-            kind: primitives::TransactionType::Transfer.to_string(),
+            kind: transaction.transaction_type.to_string(),
+            state: transaction.state.to_string(),
+        }
+    }
+
+    pub fn as_primitive(&self, addresses: Vec<String>) -> primitives::Transaction {
+        let from_address = self.from_address.clone().unwrap();
+        let to_address = self.to_address.clone().unwrap();
+
+        let direction = if addresses.contains(&from_address)  {
+            primitives::TransactionDirection::Outgoing
+        } else if addresses.contains(&to_address) {
+            primitives::TransactionDirection::Incoming
+        } else {
+            primitives::TransactionDirection::SelfTransfer
+        };
+
+        let asset_id = AssetId::new(self.asset_id.clone().unwrap().as_str()).unwrap();
+        let hash = self.hash.clone();
+
+        return primitives::Transaction{
+            id: primitives::Transaction::id_from(asset_id.chain, hash.clone()),
+            hash: hash.clone(),
+            asset_id: AssetId::new(self.asset_id.clone().unwrap().as_str()).unwrap(),
+            from: from_address.clone(),
+            to: to_address.clone(),
+            contract: None,
+            transaction_type: primitives::TransactionType::from_str(&self.kind.as_str()).unwrap_or_default(),
+            state: primitives::TransactionState::from_str(&self.state.as_str()).unwrap(),
+            block_number: self.block_number.into(),
+            sequence: self.sequence.unwrap_or_default().into(),
+            fee: self.fee.clone().unwrap(),
+            fee_asset_id: AssetId::new(self.fee_asset_id.clone().unwrap().as_str()).unwrap(),
+            value: self.value.clone().unwrap_or_default(),
+            memo: self.memo.clone(),
+            direction,
+            created_at: Utc::now().naive_utc(),
+            updated_at: Utc::now().naive_utc(),
         }
     }
 }

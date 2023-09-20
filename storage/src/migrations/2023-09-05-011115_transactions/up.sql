@@ -8,6 +8,7 @@ CREATE TABLE transactions (
     memo VARCHAR(256),
     sequence INTEGER,
     block_number INTEGER NOT NULL,
+    state VARCHAR(16) NOT NULL,
     kind VARCHAR(16) NOT NULL,
     value VARCHAR(32),
     asset_id VARCHAR REFERENCES assets (id) ON DELETE CASCADE,

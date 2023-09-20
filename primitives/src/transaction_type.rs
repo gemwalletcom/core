@@ -14,4 +14,17 @@ impl TransactionType {
             TransactionType::Transfer => "transfer".to_string(),
         }
     }
+
+    pub fn from_str(value: &str) -> Option<Self> {
+        match value {
+            "transfer" => Some(Self::Transfer),
+            _ => None,
+        }
+    }
+}
+
+impl Default for TransactionType {
+    fn default() -> Self {
+        Self::Transfer
+    }
 }

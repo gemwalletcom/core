@@ -334,6 +334,14 @@ impl DatabaseClient {
             ))
             .execute(&mut self.connection)
     }
+    
+    pub fn get_transactions_by_device_id(&mut self, _device_id: &str, addresses: Vec<String>) -> Result<Vec<Transaction>, diesel::result::Error> {
+        use crate::schema::transactions::dsl::*;
+        transactions
+            .filter(from_address.eq_any(addresses.clone()))
+            .select(Transaction::as_select())
+            .load(&mut self.connection)
+    }
 
     pub fn get_asset(&mut self, asset_id: String) -> Result<Asset, diesel::result::Error> {
         use crate::schema::assets::dsl::*;

@@ -3,7 +3,7 @@ extern crate rocket;
 mod status;
 mod prices;
 mod fiat_quotes;
-mod nodes;
+mod node;
 mod node_client;
 mod config;
 mod config_client;
@@ -16,6 +16,8 @@ mod asset;
 mod asset_client;
 mod subscription;
 mod subscription_client;
+mod transaction;
+mod transaction_client;
 
 use asset_client::AssetsClient;
 use fiat::mercuryo::MercuryoClient;
@@ -36,6 +38,7 @@ use device_client::DevicesClient;
 use subscription_client::SubscriptionsClient;
 use rocket::tokio::sync::Mutex;
 use rocket_prometheus::PrometheusMetrics;
+use transaction_client::TransactionsClient;
 
 async fn rocket(settings: Settings) -> Rocket<Build> {
     let redis_url = settings.redis.url.as_str();
@@ -56,6 +59,7 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
         settings.name.spaceid.url,
     );
     let devices_client = DevicesClient::new(postgres_url).await;
+    let transactions_client = TransactionsClient::new(postgres_url).await;
     let subscriptions_client = SubscriptionsClient::new(postgres_url).await;
     let assets_client = AssetsClient::new(postgres_url).await;
     let plausible_client = PlausibleClient::new(&settings.plausible.url);
@@ -90,7 +94,8 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
         .manage(Mutex::new(name_client))
         .manage(Mutex::new(devices_client))        
         .manage(Mutex::new(assets_client))
-        .manage(Mutex::new(subscriptions_client))        
+        .manage(Mutex::new(subscriptions_client))       
+        .manage(Mutex::new(transactions_client))              
         .mount("/", routes![
             status::get_status,
         ])
@@ -101,7 +106,7 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
             fiat_quotes::get_fiat_quotes,
             fiat_quotes::get_fiat_assets,
             fiat_quotes::get_fiat_rates,
-            nodes::get_nodes,
+            node::get_nodes,
             config::get_config,
             name::get_name_resolve,
             device::add_device,
@@ -112,6 +117,7 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
             subscription::add_subscriptions,
             subscription::get_subscriptions,
             subscription::delete_subscriptions,
+            transaction::get_transactions_by_device_id,
         ])
         .mount(settings.metrics.path, prometheus)
 }

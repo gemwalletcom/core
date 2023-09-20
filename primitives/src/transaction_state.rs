@@ -17,3 +17,24 @@ pub enum TransactionState {
     Failed,
     Reverted,
 }
+
+impl TransactionState {
+    pub fn from_str(value: &str) -> Option<Self> {
+        match value {
+            "pending" => Some(Self::Pending),
+            "confirmed" => Some(Self::Confirmed),
+            "failed" => Some(Self::Failed),
+            "reverted" => Some(Self::Reverted),
+            _ => None,
+        }
+    }
+
+    pub fn to_string(&self) -> String {
+        match self {
+            Self::Pending => "pending".to_string(),
+            Self::Confirmed => "confirmed".to_string(),
+            Self::Failed => "failed".to_string(),
+            Self::Reverted => "reverted".to_string(),
+        }
+    }
+}
