@@ -1,4 +1,4 @@
-use chrono::{Utc, Duration};
+use chrono::{Utc, Duration, NaiveDateTime};
 use diesel::dsl::sql;
 use diesel::{Connection, upsert::excluded};
 use diesel::pg::PgConnection;
@@ -8,7 +8,7 @@ use crate::schema::devices;
 use diesel::prelude::*;
 use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("../storage/src/migrations");
-use primitives::asset_price::ChartPeriod;
+use primitives::{TransactionsFetchOption, ChartPeriod};
 
 pub struct DatabaseClient {
     connection: PgConnection,
@@ -290,6 +290,7 @@ impl DatabaseClient {
             .select(Subscription::as_select())
             .load(&mut self.connection)
     }
+    
 
     pub fn delete_subscription(&mut self, subscription: Subscription) -> Result<usize, diesel::result::Error> {
         use crate::schema::subscriptions::dsl::*;
@@ -335,10 +336,29 @@ impl DatabaseClient {
             .execute(&mut self.connection)
     }
     
-    pub fn get_transactions_by_device_id(&mut self, _device_id: &str, addresses: Vec<String>) -> Result<Vec<Transaction>, diesel::result::Error> {
+    pub fn get_transactions_by_device_id(&mut self, _device_id: &str, addresses: Vec<String>, options: TransactionsFetchOption) -> Result<Vec<Transaction>, diesel::result::Error> {
+        use crate::schema::transactions::dsl::*;
+        
+        let mut query = crate::schema::transactions::table.into_boxed();
+        query = query.filter(from_address.eq_any(addresses.clone()));
+
+        if let Some(_asset_id) = options.asset_id  {
+            query = query.filter(asset_id.eq(_asset_id));
+        }
+
+        if let Some(from_timestamp) = options.from_timestamp  {
+            let datetime = NaiveDateTime::from_timestamp_opt(from_timestamp, 0).unwrap();
+            query = query.filter(created_at.gt(datetime));
+        }
+
+        return query.select(Transaction::as_select())
+            .load(&mut self.connection)
+    }
+
+    pub fn get_transactions_by_hash(&mut self, _hash: &str) -> Result<Vec<Transaction>, diesel::result::Error> {
         use crate::schema::transactions::dsl::*;
         transactions
-            .filter(from_address.eq_any(addresses.clone()))
+            .filter(hash.eq(_hash))
             .select(Transaction::as_select())
             .load(&mut self.connection)
     }

@@ -118,6 +118,7 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
             subscription::get_subscriptions,
             subscription::delete_subscriptions,
             transaction::get_transactions_by_device_id,
+            transaction::get_transactions_by_hash
         ])
         .mount(settings.metrics.path, prometheus)
 }

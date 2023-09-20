@@ -33,7 +33,6 @@ pub struct Transaction {
 }
 
 impl Transaction {
-
     pub fn id_from(chain: Chain, hash: String) -> String {
         return format!("{}_{}", chain.as_str(), hash);
     }
@@ -41,4 +40,11 @@ impl Transaction {
     pub fn addresses(&self) -> Vec<String> {
         vec![self.from.clone(), self.to.clone()]
     }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[typeshare]
+pub struct TransactionsFetchOption<'a>  {
+    pub asset_id: Option<&'a str>,
+    pub from_timestamp: Option<i64>
 }
