@@ -4,7 +4,7 @@ use crate::ChainProvider;
 use async_trait::async_trait;
 use primitives::chain::Chain;
 
-use super::model::Block;
+use super::model::{Block, Status};
 use reqwest_middleware::ClientWithMiddleware;
 
 pub struct BitcoinClient {
@@ -22,8 +22,19 @@ impl BitcoinClient {
         }
     }
 
-    pub async fn get_block(&self) -> Result<Block, Box<dyn Error + Send + Sync>> {
+    pub async fn get_status(&self) -> Result<Status, Box<dyn Error + Send + Sync>> {
         let url = format!("{}/api", self.url);
+        let response = self.client
+            .get(url)
+            .send()
+            .await?
+            .json::<Status>()
+            .await?;
+        return Ok(response);
+    }
+
+    pub async fn get_block(&self, block_number: i64) -> Result<Block, Box<dyn Error + Send + Sync>> {
+        let url = format!("{}/api/v2/block/{}", self.url, block_number);
         let response = self.client
             .get(url)
             .send()
@@ -33,7 +44,10 @@ impl BitcoinClient {
         return Ok(response);
     }
 
-    pub fn map_transaction(&self, _transaction: super::model::Transaction) -> Option<primitives::Transaction> {
+
+    
+
+    pub fn map_transaction(&self, transaction: super::model::Transaction, block_number: i64) -> Option<primitives::Transaction> {
         // let transaction = primitives::Transaction{
         //     id: "".to_string(),
         //     hash: transaction.tx_id,
@@ -65,16 +79,15 @@ impl ChainProvider for BitcoinClient {
     }
 
     async fn get_latest_block(&self) -> Result<i64, Box<dyn Error + Send + Sync>> {
-        let block = self.get_block().await?;
-        Ok(block.blockbook.best_height)
+        let status = self.get_status().await?;
+        Ok(status.blockbook.best_height)
     }
 
-    async fn get_transactions(&self, _block_number: i64) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Send + Sync>> {
-        //TODO: Implement
-        // let transactions = transactions.into_iter()
-        //     .flat_map(|x| self.map_transaction(x, block_number))
-        //     .collect::<Vec<primitives::Transaction>>();
-        // Ok(transactions) 
-        Ok(vec![])
+    async fn get_transactions(&self, block_number: i64) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Send + Sync>> {
+        let transactions = self.get_block(block_number).await?.txs;
+        let transactions = transactions.into_iter()
+            .flat_map(|x| self.map_transaction(x, block_number))
+            .collect::<Vec<primitives::Transaction>>();
+        Ok(transactions)
     }
 }

@@ -1,7 +1,7 @@
 use serde::{Serialize, Deserialize};
 
 #[derive(Debug, Deserialize, Serialize)]
-pub struct Block {
+pub struct Status {
     pub blockbook: Blockbook,
 }
 
@@ -12,5 +12,11 @@ pub struct Blockbook {
 }
 
 #[derive(Debug, Deserialize, Serialize)]
+pub struct Block {
+    pub txs: Vec<Transaction>
+}
+
+#[derive(Debug, Deserialize, Serialize)]
 pub struct Transaction {
+    pub txid: String,
 }
