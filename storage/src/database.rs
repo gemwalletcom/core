@@ -340,7 +340,9 @@ impl DatabaseClient {
         use crate::schema::transactions::dsl::*;
         
         let mut query = crate::schema::transactions::table.into_boxed();
-        query = query.filter(from_address.eq_any(addresses.clone()));
+        query = query
+            .filter(from_address.eq_any(addresses.clone()));
+        
 
         if let Some(_asset_id) = options.asset_id  {
             query = query.filter(asset_id.eq(_asset_id));
@@ -351,7 +353,9 @@ impl DatabaseClient {
             query = query.filter(created_at.gt(datetime));
         }
 
-        return query.select(Transaction::as_select())
+        return query
+            .order(created_at.asc())
+            .select(Transaction::as_select())
             .load(&mut self.connection)
     }
 
@@ -359,6 +363,7 @@ impl DatabaseClient {
         use crate::schema::transactions::dsl::*;
         transactions
             .filter(hash.eq(_hash))
+            .order(created_at.asc())
             .select(Transaction::as_select())
             .load(&mut self.connection)
     }
