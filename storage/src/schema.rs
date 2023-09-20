@@ -44,6 +44,8 @@ diesel::table! {
         #[max_length = 8]
         locale -> Varchar,
         #[max_length = 8]
+        currency -> Varchar,
+        #[max_length = 8]
         version -> Varchar,
         updated_at -> Timestamp,
         created_at -> Timestamp,

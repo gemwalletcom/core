@@ -1,7 +1,4 @@
-extern crate rocket;
 use std::error::Error;
-
-use primitives::Transaction;
 use storage::DatabaseClient;
 
 pub struct TransactionsClient {

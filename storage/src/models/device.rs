@@ -10,6 +10,7 @@ pub struct Device {
     pub platform: String,
     pub token: String,  
     pub locale: String,
+    pub currency: String,
     pub is_push_enabled: bool,
     pub version: String,
 }
@@ -22,6 +23,7 @@ pub struct UpdateDevice {
     pub platform: String,
     pub token: String,  
     pub locale: String,
+    pub currency: String,
     pub is_push_enabled: bool,
     pub version: String,
 }
@@ -34,6 +36,7 @@ impl Device {
             platform,
             token: self.token.clone(),
             locale: self.locale.clone(),
+            currency: self.currency.clone().into(),
             is_push_enabled: self.is_push_enabled,
             version: self.version.clone().into(),
         }
@@ -47,6 +50,7 @@ impl UpdateDevice {
             platform: device.platform.as_str().to_string(),
             token: device.token,
             locale: device.locale,
+            currency: device.currency.unwrap_or_default(),
             is_push_enabled: device.is_push_enabled,
             version: device.version.unwrap_or_default(),
         }

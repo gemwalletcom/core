@@ -44,7 +44,7 @@ impl BitcoinClient {
         return Ok(response);
     }
 
-    pub fn map_transaction(&self, transaction: super::model::Transaction, block_number: i64) -> Option<primitives::Transaction> {
+    pub fn map_transaction(&self, _transaction: super::model::Transaction, _block_number: i64) -> Option<primitives::Transaction> {
         // let transaction = primitives::Transaction{
         //     id: "".to_string(),
         //     hash: transaction.tx_id,
