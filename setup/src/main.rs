@@ -12,7 +12,7 @@ async fn main() {
     let mut database_client: DatabaseClient = DatabaseClient::new(postgres_url);    
     database_client.migrations();
 
-    let chains = settings.parser.chains.into_iter().map(|chain| Chain::from_str(chain.as_str())).flatten().collect::<Vec<_>>();
+    let chains = settings.parser.chains.into_iter().filter_map(|chain| Chain::from_str(chain.as_str())).collect::<Vec<_>>();
 
     println!("setup parser state");
     for chain in chains.clone() {
@@ -21,8 +21,8 @@ async fn main() {
 
     println!("setup assets");
     let assets = chains.into_iter()
-        .map(|x| Asset::from_chain(x))
-        .map(|x| storage::models::Asset::from_primitive(x))
+        .map(Asset::from_chain)
+        .map(storage::models::Asset::from_primitive)
         .collect::<Vec<_>>();
     let _ = database_client.add_assets(assets);
 

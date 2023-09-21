@@ -3,7 +3,7 @@ use std::error::Error;
 use crate::ChainProvider;
 use async_trait::async_trait;
 use chrono::Utc;
-use primitives::{chain::Chain, TransactionType, TransactionState, TransactionDirection, asset_id::AssetId};
+use primitives::{chain::Chain, TransactionType, TransactionState, TransactionDirection};
 use reqwest_middleware::ClientWithMiddleware;
 use super::model::BlockResponse;
 use base64::{engine::general_purpose, Engine as _};
@@ -44,26 +44,24 @@ impl CosmosClient {
                             let value = coins.first()?;
                             let fee = fee.first()?.amount.clone();
                             let memo = body.memo.clone();
-                            let asset_id = AssetId::from_chain(self.get_chain());
-                            let transaction = primitives::Transaction{
-                                id: "".to_string(),
+                            let asset_id = self.get_chain().as_asset_id();
+                            let transaction = primitives::Transaction::new(
                                 hash,
-                                asset_id: asset_id.clone(),
-                                from: message_send.from_address,
-                                to: message_send.to_address,
-                                contract: None,
-                                transaction_type: TransactionType::Transfer,
-                                state: TransactionState::Confirmed,
-                                block_number: block_number as i32,
-                                sequence: sequence as i32,
+                                asset_id.clone(),
+                                message_send.from_address,
+                                message_send.to_address,
+                                None,
+                                TransactionType::Transfer,
+                                TransactionState::Confirmed,
+                                block_number.to_string(),
+                                sequence.to_string(),
                                 fee,
-                                fee_asset_id: asset_id.clone(),
-                                value: value.clone().amount,
-                                memo: Some(memo),
-                                direction: TransactionDirection::SelfTransfer,
-                                created_at: Utc::now().naive_utc(),
-                                updated_at: Utc::now().naive_utc(),
-                            };
+                                asset_id.clone(),
+                                value.clone().amount,
+                                Some(memo),
+                                TransactionDirection::SelfTransfer,
+                                Utc::now().naive_utc(),
+                            );
                             return Some(transaction)
                         },
                         _ => {
@@ -77,7 +75,7 @@ impl CosmosClient {
                 //println!("error: {:?}", e);
             }
         }
-       return None
+       None
    }
 
     pub async fn get_block(&self, block: &str) -> Result<BlockResponse, Box<dyn Error + Send + Sync>> {
@@ -88,7 +86,7 @@ impl CosmosClient {
             .await?
             .json::<BlockResponse>()
             .await?;
-        return Ok(block)
+        Ok(block)
     }
 
 }
@@ -97,7 +95,7 @@ impl CosmosClient {
 impl ChainProvider for CosmosClient {
 
     fn get_chain(&self) -> Chain {
-        return self.chain
+        self.chain
     }
 
     async fn get_latest_block(&self) -> Result<i64, Box<dyn Error + Send + Sync>> {
@@ -109,7 +107,7 @@ impl ChainProvider for CosmosClient {
     async fn get_transactions(&self, block: i64) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Send + Sync>> {
         let response = self.get_block(block.to_string().as_str()).await?;
         let transactions = response.block.data.txs.into_iter().flat_map(|x| {
-            return self.map_transaction(block, x)
+            self.map_transaction(block, x)
         }).collect::<Vec<primitives::Transaction>>();
         Ok(transactions)
     }

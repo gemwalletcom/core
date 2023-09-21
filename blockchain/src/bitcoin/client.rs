@@ -30,7 +30,7 @@ impl BitcoinClient {
             .await?
             .json::<Status>()
             .await?;
-        return Ok(response);
+        Ok(response)
     }
 
     pub async fn get_block(&self, block_number: i64) -> Result<Block, Box<dyn Error + Send + Sync>> {
@@ -41,7 +41,7 @@ impl BitcoinClient {
             .await?
             .json::<Block>()
             .await?;
-        return Ok(response);
+        Ok(response)
     }
 
     pub fn map_transaction(&self, _transaction: super::model::Transaction, _block_number: i64) -> Option<primitives::Transaction> {
@@ -64,7 +64,7 @@ impl BitcoinClient {
         //     created_at: Utc::now().naive_utc(),
         //     updated_at: Utc::now().naive_utc(),
         // };
-       return None;
+       None
    }
 }
 

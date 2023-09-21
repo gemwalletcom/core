@@ -20,7 +20,7 @@ fn main() {
     let platform = std::env::args().nth(1).expect("no platform specified");
     let platform_directory_path =  std::env::args().nth(2).expect("no path specified");
 
-    let ignored_files = vec!["lib.rs", "mod.rs", "client.rs"];
+    let ignored_files = ["lib.rs", "mod.rs", "client.rs", "model.rs", "address.rs", "address_formatter.rs", "big_int_hex.rs"];
     
     for folder in folders {
         let paths = get_paths(folder, format!("{}/src", folder));

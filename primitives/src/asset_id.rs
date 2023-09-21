@@ -35,7 +35,7 @@ impl AssetId {
     pub fn to_string(&self) -> String {
         match &self.token_id {
             Some(token_id) => {
-                return format!("{}_{}", self.chain.as_str(), token_id)
+                format!("{}_{}", self.chain.as_str(), token_id)
             }
             None => self.chain.as_str().to_owned(),
         }

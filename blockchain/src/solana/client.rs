@@ -4,7 +4,7 @@ use crate::{ChainProvider, solana::model::BlockTransactions};
 use async_trait::async_trait;
 use chrono::Utc;
 use ethers::providers::{JsonRpcClient, Http, RetryClientBuilder, RetryClient, RetryClientError, RpcError};
-use primitives::{chain::Chain, Transaction, TransactionType, TransactionState, TransactionDirection, asset_id::AssetId};
+use primitives::{chain::Chain, Transaction, TransactionType, TransactionState, TransactionDirection};
 use reqwest::Url;
 use serde_json::json;
 
@@ -42,28 +42,26 @@ impl SolanaClient {
             let fee = transaction.meta.fee;
             let value = transaction.meta.pre_balances[0] - transaction.meta.post_balances[0] - fee;  
     
-            let transaction = primitives::Transaction{ 
-                id: chain.to_string(), 
+            let transaction = primitives::Transaction::new(
                 hash,
-                asset_id: AssetId::from_chain(chain), 
+                chain.as_asset_id(), 
                 from, 
                 to, 
-                contract: None, 
-                transaction_type: TransactionType::Transfer, 
-                state: TransactionState::Confirmed, 
-                block_number: block_number as i32, 
-                sequence: 0, 
-                fee: fee.to_string(), 
-                fee_asset_id: AssetId::from_chain(chain), 
-                value: value.to_string(), 
-                memo: None,
-                direction: TransactionDirection::SelfTransfer, 
-                created_at: Utc::now().naive_utc(),
-                updated_at: Utc::now().naive_utc(),
-            };
+                None, 
+                TransactionType::Transfer, 
+                TransactionState::Confirmed, 
+                block_number.to_string(), 
+                0.to_string(), 
+                fee.to_string(), 
+                chain.as_asset_id(), 
+                value.to_string(), 
+                None,
+                TransactionDirection::SelfTransfer, 
+                Utc::now().naive_utc(),
+            );
             return Some(transaction);
         }
-        return None 
+        None 
     }
 }
 
@@ -102,7 +100,7 @@ impl ChainProvider for SolanaClient {
                 match err {
                     RetryClientError::ProviderError(err) => {
                         if let Some(json_error) =  err.as_error_response() {
-                            if vec![MISSING_SLOT_ERROR, NOT_AVAILABLE_SLOT_ERROR].contains(&json_error.code) {
+                            if [MISSING_SLOT_ERROR, NOT_AVAILABLE_SLOT_ERROR].contains(&json_error.code) {
                                 return Ok(vec![])
                             }
                         };

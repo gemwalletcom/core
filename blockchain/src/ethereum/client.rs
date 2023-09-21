@@ -4,7 +4,7 @@ use crate::ChainProvider;
 use async_trait::async_trait;
 use chrono::Utc;
 use ethers::providers::{JsonRpcClient, Http, RetryClientBuilder, RetryClient};
-use primitives::{chain::Chain, TransactionType, TransactionState, TransactionDirection, asset_id::AssetId};
+use primitives::{chain::Chain, TransactionType, TransactionState, TransactionDirection};
 use reqwest::Url;
 use serde_json::json;
 use super::model::{Block, Transaction, TransactionReciept};
@@ -28,14 +28,14 @@ impl EthereumClient {
 
     async fn get_transaction_reciept(&self, hash: &str) -> Result<TransactionReciept, Box<dyn Error + Send + Sync>> {
         let reciept: TransactionReciept = JsonRpcClient::request(&self.client, "eth_getTransactionReceipt", vec![json!(hash)]).await?;
-        return Ok(reciept);
+        Ok(reciept)
     }
 
     async fn get_transaction_reciepts(&self, hashes: Vec<String>) -> Result<Vec<TransactionReciept>, Box<dyn Error + Send + Sync>> {
         let recieipts = futures::future::try_join_all(
             hashes.iter().map(|hash| { self.get_transaction_reciept(hash) 
         })).await?;
-        return Ok(recieipts)
+        Ok(recieipts)
     }
 
     async fn get_block(&self, block_number: i64) -> Result<Block, Box<dyn Error + Send + Sync>> {
@@ -57,28 +57,26 @@ impl EthereumClient {
 
         // system transfer
         if transaction.input == "0x" {
-            let transaction = primitives::Transaction{ 
-                id: "".to_string(), 
-                hash: transaction.hash.clone(),
-                asset_id: AssetId::from_chain(self.chain), 
+            let transaction = primitives::Transaction::new( 
+                transaction.hash.clone(),
+                self.chain.as_asset_id(), 
                 from, 
                 to,
-                contract: None,
-                transaction_type: TransactionType::Transfer, 
+                None,
+                TransactionType::Transfer, 
                 state, 
-                block_number: block,
-                sequence: nonce, 
-                fee: fee.to_string(),
-                fee_asset_id: AssetId::from_chain(self.chain), 
+                block.to_string(),
+                nonce.to_string(), 
+                fee.to_string(),
+                self.chain.as_asset_id(), 
                 value,
-                memo: None,
-                direction: TransactionDirection::SelfTransfer, 
-                created_at: Utc::now().naive_utc(),
-                updated_at: Utc::now().naive_utc(),
-            };
+                None,
+                TransactionDirection::SelfTransfer, 
+                Utc::now().naive_utc()
+            );
             return Some(transaction);
         }
-        return None
+        None
     }
 }
 
@@ -86,7 +84,7 @@ impl EthereumClient {
 impl ChainProvider for EthereumClient {
 
     fn get_chain(&self) -> Chain {
-        self.chain.clone()
+        self.chain
     }
 
     async fn get_latest_block(&self) -> Result<i64, Box<dyn Error + Send + Sync>> {
@@ -103,7 +101,7 @@ impl ChainProvider for EthereumClient {
         let reciepts = self.get_transaction_reciepts(hashes).await?;
 
         let transactions = transactions.into_iter().zip(reciepts.iter()).filter_map(|(transaction, receipt)| {
-            return self.map_transaction(transaction, receipt)
+            self.map_transaction(transaction, receipt)
         }).collect::<Vec<primitives::Transaction>>();
 
         return Ok(transactions);

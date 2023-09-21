@@ -49,8 +49,8 @@ impl Pusher {
                 Notification {
                     tokens: vec![device.token],
                     platform: device.platform.as_i32(),
-                    title: title,
-                    message: message,
+                    title,
+                    message,
                     topic: self.ios_topic.clone(),
                 }
             ]

@@ -3,7 +3,7 @@ use std::error::Error;
 use crate::ChainProvider;
 use async_trait::async_trait;
 use chrono::Utc;
-use primitives::{chain::Chain, TransactionType, TransactionState, TransactionDirection, asset_id::AssetId};
+use primitives::{chain::Chain, TransactionType, TransactionState, TransactionDirection};
 use reqwest_middleware::ClientWithMiddleware;
 use serde_json::json;
 
@@ -28,28 +28,26 @@ impl XRPClient {
             match amount {
                 // system transfer
                 super::model::Amount::Str(value) => {
-                    let asset_id = AssetId::from_chain(self.get_chain());
+                    let asset_id = self.get_chain().as_asset_id();
                     let state = if transaction.meta.result == "tesSUCCESS" { TransactionState::Confirmed } else { TransactionState::Failed} ;
                     // add check for delivered amount, for success it should be equal to amount
-                    let transaction = primitives::Transaction{
-                        id: "".to_string(),
-                        hash: transaction.hash,
-                        asset_id: asset_id.clone(),
-                        from: transaction.account.unwrap_or_default(),
-                        to: transaction.destination.unwrap_or_default(),
-                        contract: None,
-                        transaction_type: TransactionType::Transfer,
+                    let transaction = primitives::Transaction::new(
+                        transaction.hash,
+                        asset_id.clone(),
+                        transaction.account.unwrap_or_default(),
+                        transaction.destination.unwrap_or_default(),
+                        None,
+                        TransactionType::Transfer,
                         state,
-                        block_number: block_number as i32,
-                        sequence: transaction.sequence as i32,
-                        fee: transaction.fee.unwrap_or_default(),
-                        fee_asset_id: asset_id,
+                        block_number.to_string(),
+                        transaction.sequence.to_string(),
+                        transaction.fee.unwrap_or_default(),
+                        asset_id,
                         value,
-                        memo: Some(transaction.destination_tag.unwrap_or_default().to_string()),
-                        direction: TransactionDirection::SelfTransfer,
-                        created_at: Utc::now().naive_utc(),
-                        updated_at: Utc::now().naive_utc(),
-                    };
+                        Some(transaction.destination_tag.unwrap_or_default().to_string()),
+                        TransactionDirection::SelfTransfer,
+                        Utc::now().naive_utc()
+                    );
                     return Some(transaction)
                 },
                 // token transfer
@@ -59,7 +57,7 @@ impl XRPClient {
             }
             
         }
-        return None
+        None
     }
 
     pub async fn get_ledger_current(&self) -> Result<LedgerCurrent, Box<dyn Error + Send + Sync>> {
@@ -77,7 +75,7 @@ impl XRPClient {
             .json::<LedgerResult<LedgerCurrent>>()
             .await?;
 
-        return Ok(response.result)
+        Ok(response.result)
     }
 
     pub async fn get_block_transactions(&self, block_number: i64) -> Result<Ledger, Box<dyn Error + Send + Sync>> {
@@ -101,7 +99,7 @@ impl XRPClient {
             .json::<LedgerResult<LedgerData>>()
             .await?;
 
-        return Ok(response.result.ledger)
+        Ok(response.result.ledger)
     }
 }
 

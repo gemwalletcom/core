@@ -31,26 +31,24 @@ impl BNBChainClient {
         let token_id = if transaction.asset == Some(self.get_chain().as_denom().to_string()) { None } else { transaction.asset };
         let asset_id = AssetId{chain: self.get_chain(), token_id};
 
-        let transaction = primitives::Transaction{
-            id: "".to_string(), //transaction.id,
-            hash: transaction.hash,
+        let transaction = primitives::Transaction::new(
+            transaction.hash,
             asset_id,
-            from: transaction.from_addr,
-            to: transaction.to_addr.unwrap_or_default(),
-            contract: None,
-            transaction_type: TransactionType::Transfer,
-            state: TransactionState::Confirmed,
-            block_number: transaction.block_height.into(),
-            sequence: transaction.sequence,
-            fee: transaction.fee.to_string(),
-            fee_asset_id: AssetId::from_chain(self.get_chain()),
-            value: format!("{:?}", transaction.amount.unwrap_or_default()),
-            memo: transaction.memo.into(),
-            direction: TransactionDirection::SelfTransfer,
-            created_at: Utc::now().naive_utc(),
-            updated_at: Utc::now().naive_utc(),
-        };
-        return Some(transaction)
+            transaction.from_addr,
+            transaction.to_addr.unwrap_or_default(),
+            None,
+            TransactionType::Transfer,
+            TransactionState::Confirmed,
+            transaction.block_height.to_string(),
+            transaction.sequence.to_string(),
+            transaction.fee.to_string(),
+            self.get_chain().as_asset_id(),
+            format!("{:?}", transaction.amount.unwrap_or_default()),
+            transaction.memo.into(),
+            TransactionDirection::SelfTransfer,
+            Utc::now().naive_utc()
+        );
+        Some(transaction)
     }
 }
 

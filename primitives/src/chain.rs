@@ -95,13 +95,13 @@ impl Chain {
             Self::Osmosis => "uosmo",
             Self::Sui => "0x2::sui::SUI",
             _ => {
-                return ""
+                ""
             }
         }
     }
 
     pub fn as_asset_id(&self) -> AssetId {
-        return AssetId::from_chain(*self)
+        AssetId::from_chain(*self)
     }
 
     pub fn to_string(&self) -> String {

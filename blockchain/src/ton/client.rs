@@ -4,7 +4,7 @@ use crate::ChainProvider;
 use async_trait::async_trait;
 use chrono::Utc;
 use ns_address_codec::{ton::TonCodec, codec::Codec};
-use primitives::{chain::Chain, TransactionType, TransactionState, TransactionDirection, asset_id::AssetId};
+use primitives::{chain::Chain, TransactionType, TransactionState, TransactionDirection};
 
 use reqwest::Url;
 use reqwest_middleware::ClientWithMiddleware;
@@ -28,35 +28,33 @@ impl TonClient {
         // system transfer
         if transaction.fee != "0" && transaction.out_msgs.len() == 1 {
             let out_message = transaction.out_msgs.first().unwrap();
-            let asset_id = AssetId::from_chain(self.get_chain());
+            let asset_id = self.get_chain().as_asset_id();
             let from = out_message.clone().source; 
             let to = out_message.clone().destination.unwrap_or_default(); 
             let state = TransactionState::Confirmed;
             //TODO: Implement memo
             let memo: Option<String> = None; //out_message.decoded_body.clone().text;
 
-            let transaction = primitives::Transaction{
-                id: "".to_string(),
-                hash: transaction.transaction_id.hash,
-                asset_id: asset_id.clone(),
+            let transaction = primitives::Transaction::new(
+                transaction.transaction_id.hash,
+                asset_id.clone(),
                 from,
                 to,
-                contract: None,
-                transaction_type: TransactionType::Transfer,
+                None,
+                TransactionType::Transfer,
                 state,
-                block_number: 0,
-                sequence: 0,
-                fee: transaction.fee,
-                fee_asset_id: asset_id,
-                value: out_message.value.to_string(),
+                0.to_string(),
+                0.to_string(),
+                transaction.fee,
+                asset_id,
+                out_message.value.to_string(),
                 memo,
-                direction: TransactionDirection::SelfTransfer,
-                created_at: Utc::now().naive_utc(),
-                updated_at: Utc::now().naive_utc(),
-            };
+                TransactionDirection::SelfTransfer,
+                Utc::now().naive_utc()
+            );
             return Some(transaction)
         }
-        return None
+        None
     }
 
     pub async fn get_master_head(&self) -> Result<Chainhead, Box<dyn Error + Send + Sync>> {
@@ -67,7 +65,7 @@ impl TonClient {
             .await?
             .json::<JSONResult<Chainhead>>()
             .await?;
-        return Ok(response.result)
+        Ok(response.result)
     }
 
     pub async fn get_shards(&self, sequence: i64) -> Result<Shards, Box<dyn Error + Send + Sync>> {
@@ -79,7 +77,7 @@ impl TonClient {
             .json::<JSONResult<Shards>>()
             .await?;
 
-        return Ok(response.result)
+        Ok(response.result)
     }
 
     pub async fn get_transactions(&self, workchain: i64, shard: i64, sequence: i64) -> Result<ShortTransactions, Box<dyn Error + Send + Sync>> {
@@ -91,7 +89,7 @@ impl TonClient {
             .json::<JSONResult<ShortTransactions>>()
             .await?;
 
-        return Ok(response.result)
+        Ok(response.result)
     }
     
     pub async fn get_transaction(&self, address: String, _hash: String, lt: String) -> Result<Transaction, Box<dyn Error + Send + Sync>> {
@@ -109,7 +107,7 @@ impl TonClient {
             .await?;
 
         let transaction = response.result.first().ok_or("No transaction found")?;
-        return Ok(transaction.clone())
+        Ok(transaction.clone())
     }
 
 }

@@ -18,23 +18,59 @@ pub struct Transaction {
     pub transaction_type: TransactionType,
     pub state: TransactionState,
     #[serde(rename = "blockNumber")]
-    pub block_number: i32,
-    pub sequence: i32,
+    pub block_number: String,
+    pub sequence: String,
     pub fee: String,
     #[serde(rename = "feeAssetId")]
     pub fee_asset_id: AssetId,
     pub value: String,
     pub memo: Option<String>,
     pub direction: TransactionDirection,
-    #[serde(rename = "createdAt")]
-    pub created_at: NaiveDateTime,
-    #[serde(rename = "updatedAt")]
-    pub updated_at: NaiveDateTime,
+    pub block_created_at: NaiveDateTime,
 }
 
 impl Transaction {
+
+    pub fn new(
+        hash: String,
+        asset_id: AssetId,
+        from: String,
+        to: String,
+        contract: Option<String>,
+        transaction_type: TransactionType,
+        state: TransactionState,
+        block_number: String,
+        sequence: String,
+        fee: String,
+        fee_asset_id: AssetId,
+        value: String,
+        memo: Option<String>,
+        direction: TransactionDirection,
+        block_created_at: NaiveDateTime,
+    ) -> Self {
+        let id = Self::id_from(asset_id.clone().chain, hash.clone());
+        Self {
+            id,
+            hash,
+            asset_id,
+            from,
+            to,
+            contract,
+            transaction_type,
+            state,
+            block_number,
+            sequence,
+            fee,
+            fee_asset_id,
+            value,
+            memo,
+            direction,
+            block_created_at,
+        }
+    }
+
     pub fn id_from(chain: Chain, hash: String) -> String {
-        return format!("{}_{}", chain.as_str(), hash);
+        format!("{}_{}", chain.as_str(), hash)
     }
 
     pub fn addresses(&self) -> Vec<String> {
@@ -44,7 +80,7 @@ impl Transaction {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare]
-pub struct TransactionsFetchOption<'a>  {
-    pub asset_id: Option<&'a str>,
-    pub from_timestamp: Option<i64>
+pub struct TransactionsFetchOption  {
+    pub asset_id: Option<String>,
+    pub from_timestamp: Option<u32>
 }

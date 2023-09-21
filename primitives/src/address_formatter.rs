@@ -10,7 +10,7 @@ impl AddressFormatter {
         }
         let first_four = if address.starts_with("0x") { &address[..6] } else { &address[..4] };
         let last_four = &address[len-4..];
-        return format!("{}...{}", first_four, last_four);
+        format!("{}...{}", first_four, last_four)
     }
 }
 

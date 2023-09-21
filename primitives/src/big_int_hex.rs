@@ -13,11 +13,11 @@ impl BigIntHex {
     }
 
     pub fn as_i64(&self) -> i64 {
-        return self.to_string().parse::<i64>().unwrap_or_default();
+        self.to_string().parse::<i64>().unwrap_or_default()
     }
 
     pub fn as_i32(&self) -> i32 {
-        return self.to_string().parse::<i32>().unwrap_or_default();
+        self.to_string().parse::<i32>().unwrap_or_default()
     }
 }
 

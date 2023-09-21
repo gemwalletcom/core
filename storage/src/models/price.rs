@@ -73,8 +73,8 @@ impl Price {
     pub fn as_primitive(&self) -> AssetPrice {
         AssetPrice{
             asset_id: self.asset_id.clone(),
-            price: self.price.clone(),
-            price_change_percentage_24h: self.price_change_percentage_24h.clone(),
+            price: self.price,
+            price_change_percentage_24h: self.price_change_percentage_24h,
         }
     }
 }

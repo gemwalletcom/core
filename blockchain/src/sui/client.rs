@@ -5,7 +5,7 @@ use async_trait::async_trait;
 use chrono::Utc;
 use ethers::providers::{JsonRpcClient, Http, RetryClientBuilder, RetryClient};
 use num_bigint::BigUint;
-use primitives::{chain::Chain, Transaction, TransactionType, TransactionState, TransactionDirection, asset_id::AssetId};
+use primitives::{chain::Chain, Transaction, TransactionType, TransactionState, TransactionDirection};
 use reqwest::Url;
 use serde_json::json;
 
@@ -35,7 +35,7 @@ impl SuiClient {
         if storage_rebate >= cost {
             return BigUint::from(0u32)
         }
-        return computation_cost + storage_cost - storage_rebate;
+        computation_cost + storage_cost - storage_rebate
     }
 
     fn map_transaction(&self, transaction: super::model::Digest, block_number: i64) -> Option<primitives::Transaction> {
@@ -45,7 +45,7 @@ impl SuiClient {
 
         // system transfer
         if balance_changes.len() == 2 && balance_changes[0].coin_type == chain.as_denom() && balance_changes[1].coin_type == chain.as_denom()  {
-            let (from_change, to_change) = if balance_changes[0].amount.contains("-") {
+            let (from_change, to_change) = if balance_changes[0].amount.contains('-') {
                 (balance_changes[0].clone(), balance_changes[1].clone())
             } else {
                 (balance_changes[1].clone(), balance_changes[0].clone())
@@ -56,28 +56,26 @@ impl SuiClient {
             let value = to_change.amount;
             let state = if transaction.effects.status.status == "success" { TransactionState::Confirmed } else { TransactionState::Failed} ;        
 
-            let transaction = primitives::Transaction{ 
-                id: "".to_string(), 
-                hash: transaction.digest.clone(),
-                asset_id: AssetId::from_chain(chain), 
+            let transaction = primitives::Transaction::new( 
+                transaction.digest.clone(),
+                chain.as_asset_id(), 
                 from, 
                 to, 
-                contract: None, 
-                transaction_type: TransactionType::Transfer, 
+                None, 
+                TransactionType::Transfer, 
                 state, 
-                block_number: block_number as i32, 
-                sequence: 0, 
-                fee: fee.to_string(), 
-                fee_asset_id: AssetId::from_chain(chain), 
-                value: value.to_string(), 
-                memo: None,
-                direction: TransactionDirection::SelfTransfer, 
-                created_at: Utc::now().naive_utc(),
-                updated_at: Utc::now().naive_utc(),
-            };
+                block_number.to_string(), 
+                0.to_string(), 
+                fee.to_string(), 
+                chain.as_asset_id(), 
+                value.to_string(), 
+                None,
+                TransactionDirection::SelfTransfer, 
+                Utc::now().naive_utc(),
+            );
             return Some(transaction);
         }
-        return None 
+        None 
     }
 }
 

@@ -10,11 +10,11 @@ use rocket::tokio::sync::Mutex;
 #[get("/transactions/by_device_id/<device_id>?<asset_id>&<from_timestamp>")]
 pub async fn get_transactions_by_device_id(
     device_id: &str,
-    asset_id: Option<&str>,
-    from_timestamp: Option<i64>,
+    asset_id: Option<String>,
+    from_timestamp: Option<u32>,
     client: &State<Mutex<TransactionsClient>>,
 ) -> Json<Vec<Transaction>> {
-    let options: TransactionsFetchOption<'_> = TransactionsFetchOption{
+    let options: TransactionsFetchOption = TransactionsFetchOption{
         asset_id,
         from_timestamp,
     };

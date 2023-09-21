@@ -84,13 +84,13 @@ impl Parser {
                 let end_block = cmp::min(start_block + state.parallel_blocks - 1, state.latest_block - state.await_blocks);
                 let next_blocks = (start_block..=end_block).collect::<Vec<_>>();
 
-                if next_blocks.len() == 0 {
+                if next_blocks.is_empty() {
                     break
                 }
                 
                 match self.parse_blocks(next_blocks.clone()).await {
                     Ok(result) => {
-                        let _ = self.database.set_parser_state_current_block(self.chain, end_block.into());
+                        let _ = self.database.set_parser_state_current_block(self.chain, end_block);
                         
                         println!("parser block complete: {}, blocks: {:?} transactions: {} of {}, to go blocks: {}, in: {:?}",  self.chain.as_str(), next_blocks, result.transactions, result.insert_transactions, state.latest_block - end_block - state.await_blocks, start.elapsed());
                      },
@@ -111,7 +111,7 @@ impl Parser {
         let mut retry_attempts_count = 0;
         loop {
             let results = futures::future::try_join_all(
-                blocks.iter().map(|block| self.provider.get_transactions(block.clone() as i64))
+                blocks.iter().map(|block| self.provider.get_transactions(*block as i64))
             ).await;
             match results {
                 Ok(transactions) => {
@@ -131,7 +131,7 @@ impl Parser {
 
     pub async fn parse_blocks(&mut self, blocks: Vec<i32>) -> Result<ParserBlocksResult, Box<dyn Error + Send + Sync>> {
         let transactions = self.fetch_blocks(blocks.clone()).await?;
-        let addresses = transactions.clone().into_iter().map(|x| x.addresses() ).flatten().collect();
+        let addresses = transactions.clone().into_iter().flat_map(|x| x.addresses()).collect();
         let subscriptions = self.database.get_subscriptions(self.chain, addresses).unwrap();
         let mut transactions_map: HashMap<String, primitives::Transaction> = HashMap::new();
 
@@ -140,13 +140,13 @@ impl Parser {
                 if transaction.addresses().contains(&subscription.address) {
                     let device = self.database.get_device_by_id(subscription.device_id).unwrap();
                     
-                    println!("Push: device: {}, chain: {}, transaction: {:?}", subscription.device_id, self.chain.as_str(), transaction.hash);
+                    println!("push: device: {}, chain: {}, transaction: {:?}", subscription.device_id, self.chain.as_str(), transaction.hash);
                     
                     transactions_map.insert(transaction.clone().id, transaction.clone());
 
                     match self.pusher.push(device.as_primitive(), transaction.clone(), subscription.as_primitive() ).await {
-                        Ok(result) => { println!("Push: result: {:?}", result); },
-                        Err(err) => { println!("Push: error: {:?}", err); }
+                        Ok(result) => { println!("push: result: {:?}", result); },
+                        Err(err) => { println!("push: error: {:?}", err); }
                     }
                 }
             }
@@ -157,10 +157,10 @@ impl Parser {
             Err(err) => { println!("transaction insert: chain: {}, error: {:?}", self.chain.as_str(), err); }
         }
 
-        return Ok(ParserBlocksResult{
+        Ok(ParserBlocksResult{
             transactions: transactions.len(), 
             insert_transactions: transactions_map.len()
-        });
+        })
     }
 
     pub async fn store_transactions(&mut self, transactions_map: HashMap<String, primitives::Transaction>) -> Result<usize, Box<dyn Error + Send + Sync>> {
@@ -169,7 +169,7 @@ impl Parser {
         .map(|x| x.1)
         .collect::<Vec<primitives::Transaction>>()
         .into_iter().map(|x| {
-            return storage::models::Transaction::from_primitive(x);
+            storage::models::Transaction::from_primitive(x)
         }).collect();
         let result =  self.database.add_transactions(insert_transactions.clone())?;
         Ok(result)

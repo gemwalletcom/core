@@ -232,10 +232,10 @@ impl DatabaseClient {
 
     pub fn delete_device(&mut self, _device_id: &str) -> Result<usize, diesel::result::Error> {
         use crate::schema::devices::dsl::*;
-        return diesel::delete(
+        diesel::delete(
             devices
             .filter(device_id.eq(_device_id))
-        ).execute(&mut self.connection);
+        ).execute(&mut self.connection)
     }
 
     pub fn delete_devices_after_days(&mut self, days: i64) -> Result<usize, diesel::result::Error> {
@@ -294,12 +294,12 @@ impl DatabaseClient {
 
     pub fn delete_subscription(&mut self, subscription: Subscription) -> Result<usize, diesel::result::Error> {
         use crate::schema::subscriptions::dsl::*;
-        return diesel::delete(
+        diesel::delete(
             subscriptions
             .filter(device_id.eq(subscription.device_id))
             .filter(chain.eq(subscription.chain))
             .filter(address.eq(subscription.address))
-        ).execute(&mut self.connection);
+        ).execute(&mut self.connection)
     }
 
     pub fn get_subscriptions(&mut self, _chain: Chain, addresses: Vec<String>) -> Result<Vec<Subscription>, diesel::result::Error> {
@@ -343,17 +343,16 @@ impl DatabaseClient {
         query = query
             .filter(from_address.eq_any(addresses.clone()));
         
-
         if let Some(_asset_id) = options.asset_id  {
             query = query.filter(asset_id.eq(_asset_id));
         }
 
         if let Some(from_timestamp) = options.from_timestamp  {
-            let datetime = NaiveDateTime::from_timestamp_opt(from_timestamp, 0).unwrap();
+            let datetime = NaiveDateTime::from_timestamp_opt(from_timestamp.into(), 0).unwrap();
             query = query.filter(created_at.gt(datetime));
         }
 
-        return query
+        query
             .order(created_at.asc())
             .select(Transaction::as_select())
             .load(&mut self.connection)
