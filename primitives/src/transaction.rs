@@ -26,7 +26,7 @@ pub struct Transaction {
     pub value: String,
     pub memo: Option<String>,
     pub direction: TransactionDirection,
-    #[serde(rename = "blockCreatedAt")]
+    #[serde(rename = "createdAt")]
     pub created_at: NaiveDateTime,
 }
 
