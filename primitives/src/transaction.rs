@@ -26,7 +26,8 @@ pub struct Transaction {
     pub value: String,
     pub memo: Option<String>,
     pub direction: TransactionDirection,
-    pub block_created_at: NaiveDateTime,
+    #[serde(rename = "blockCreatedAt")]
+    pub created_at: NaiveDateTime,
 }
 
 impl Transaction {
@@ -46,7 +47,7 @@ impl Transaction {
         value: String,
         memo: Option<String>,
         direction: TransactionDirection,
-        block_created_at: NaiveDateTime,
+        created_at: NaiveDateTime,
     ) -> Self {
         let id = Self::id_from(asset_id.clone().chain, hash.clone());
         Self {
@@ -65,7 +66,7 @@ impl Transaction {
             value,
             memo,
             direction,
-            block_created_at,
+            created_at,
         }
     }
 
