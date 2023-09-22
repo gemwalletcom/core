@@ -25,7 +25,7 @@ impl BNBChainClient {
     }
 
     pub fn map_transaction(&self, transaction: super::model::Transaction) -> Option<primitives::Transaction> {
-        if transaction.r#type != "TRANSFER" {
+        if transaction.r#type != "TRANSFER" || transaction.from_addr.is_none()  {
             return None;
         }
         let token_id = if transaction.asset == Some(self.get_chain().as_denom().to_string()) { None } else { transaction.asset };
