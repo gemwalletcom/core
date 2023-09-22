@@ -18,7 +18,7 @@ pub struct Transaction {
     pub memo: String,
     pub asset: Option<String>,
     pub amount: Option<i64>,
-    pub from_addr: String,
+    pub from_addr: Option<String>,
     pub to_addr: Option<String>,
     pub block_height: i32,
     pub sequence: i32,

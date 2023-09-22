@@ -34,7 +34,7 @@ impl BNBChainClient {
         let transaction = primitives::Transaction::new(
             transaction.hash,
             asset_id,
-            transaction.from_addr,
+            transaction.from_addr.unwrap_or_default(),
             transaction.to_addr.unwrap_or_default(),
             None,
             TransactionType::Transfer,
