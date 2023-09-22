@@ -17,7 +17,7 @@ Run `make install` to install rust, typeshare
 
 | Chain        | Transfers     | 
 |--------------|---------------|
-| Bitcoin      | 🏗            |
+| Bitcoin      | ✅            |
 | Ethereum     | ✅            |
 | Binance      | ✅            |
 | SmartChain   | ✅            |
@@ -29,7 +29,7 @@ Run `make install` to install rust, typeshare
 | Arbitrum     | ✅            |
 | Ton          | ✅            |
 | Tron         | ✅            |
-| Doge         | 🏗            |
+| Doge         | ✅            |
 | Optimism     | ✅            |
 | Aptos        | ✅            |
 | Base         | ✅            |
