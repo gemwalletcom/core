@@ -14,6 +14,8 @@ async fn main() {
 
     let chains = settings.parser.chains.into_iter().filter_map(|chain| Chain::from_str(chain.as_str())).collect::<Vec<_>>();
 
+    println!("chains: {:?}", chains);
+
     println!("setup parser state");
     for chain in chains.clone() {
         let _ = database_client.add_parser_state(chain);
