@@ -2,7 +2,8 @@ use std::error::Error;
 
 use crate::ChainProvider;
 use async_trait::async_trait;
-use primitives::chain::Chain;
+use chrono::NaiveDateTime;
+use primitives::{chain::Chain, TransactionDirection, TransactionType};
 
 use super::model::{Block, Status};
 use reqwest_middleware::ClientWithMiddleware;
@@ -44,27 +45,37 @@ impl BitcoinClient {
         Ok(response)
     }
 
-    pub fn map_transaction(&self, _transaction: super::model::Transaction, _block_number: i64) -> Option<primitives::Transaction> {
-        // let transaction = primitives::Transaction{
-        //     id: "".to_string(),
-        //     hash: transaction.tx_id,
-        //     asset_id: AssetId::from_chain(self.get_chain()),
-        //     from,
-        //     to,
-        //     contract: None,
-        //     transaction_type: TransactionType::Transfer,
-        //     state,
-        //     block_number: receipt.block_number as i32,
-        //     sequence: 0,
-        //     fee: receipt.fee.unwrap_or_default().to_string(),
-        //     fee_asset_id: AssetId::from_chain(self.get_chain()),
-        //     value: value.parameter.value.amount.unwrap_or_default().to_string(),
-        //     memo: None,
-        //     direction: TransactionDirection::SelfTransfer,
-        //     created_at: Utc::now().naive_utc(),
-        //     updated_at: Utc::now().naive_utc(),
-        // };
-       None
+    pub fn map_transaction(&self, transaction: super::model::Transaction, _block_number: i64) -> Option<primitives::Transaction> {
+        // only allow basic transfer support, from 1 adddress to another.
+        if transaction.vin.first().unwrap().addresses.clone().unwrap_or_default().len() == 0 || 
+            transaction.vout.len() > 2 {
+            return None
+        }
+        let from_addresses = transaction.vin.first().unwrap().addresses.clone().unwrap_or_default();
+        let to_addresses = transaction.vout.first().unwrap().addresses.clone().unwrap_or_default();
+
+        let from = from_addresses.first().unwrap();
+        let to = to_addresses.first().unwrap();
+
+        let transaction = primitives::Transaction::new(
+            transaction.txid,
+            self.get_chain().as_asset_id(),
+            from.to_string(),
+            to.to_string(),
+            None,
+            TransactionType::Transfer,
+            primitives::TransactionState::Confirmed,
+            transaction.block_height.to_string(),
+            0.to_string(),
+            transaction.fees,
+            self.get_chain().as_asset_id(),
+            transaction.value,
+            None,
+            TransactionDirection::SelfTransfer,
+            NaiveDateTime::from_timestamp_opt(transaction.block_time, 0).unwrap(),
+        );
+
+        return Some(transaction);
    }
 }
 
