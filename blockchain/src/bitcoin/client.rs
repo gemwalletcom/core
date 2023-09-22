@@ -54,10 +54,11 @@ impl BitcoinClient {
         let from_addresses = transaction.vin.first().unwrap().addresses.clone().unwrap_or_default();
         // destination usually is the last address, change is the first
         let to_addresses = transaction.vout.last().unwrap().addresses.clone().unwrap_or_default();
+        let value = &transaction.vout.last().unwrap().value;
 
         let from = from_addresses.first().unwrap();
         let to = to_addresses.first().unwrap();
-
+        
         let transaction = primitives::Transaction::new(
             transaction.txid,
             self.get_chain().as_asset_id(),
@@ -70,7 +71,7 @@ impl BitcoinClient {
             0.to_string(),
             transaction.fees,
             self.get_chain().as_asset_id(),
-            transaction.value,
+            value.to_string(),
             None,
             TransactionDirection::SelfTransfer,
             NaiveDateTime::from_timestamp_opt(transaction.block_time, 0).unwrap(),
