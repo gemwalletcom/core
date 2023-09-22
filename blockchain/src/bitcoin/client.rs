@@ -3,6 +3,7 @@ use std::error::Error;
 use crate::ChainProvider;
 use async_trait::async_trait;
 use chrono::NaiveDateTime;
+use ethers::types::transaction;
 use primitives::{chain::Chain, TransactionDirection, TransactionType};
 
 use super::model::{Block, Status};
@@ -52,7 +53,8 @@ impl BitcoinClient {
             return None
         }
         let from_addresses = transaction.vin.first().unwrap().addresses.clone().unwrap_or_default();
-        let to_addresses = transaction.vout.first().unwrap().addresses.clone().unwrap_or_default();
+        // destination usually is the last address, change is the first
+        let to_addresses = transaction.vout.last().unwrap().addresses.clone().unwrap_or_default();
 
         let from = from_addresses.first().unwrap();
         let to = to_addresses.first().unwrap();
