@@ -3,7 +3,6 @@ use std::error::Error;
 use crate::ChainProvider;
 use async_trait::async_trait;
 use chrono::NaiveDateTime;
-use ethers::types::transaction;
 use primitives::{chain::Chain, TransactionDirection, TransactionType};
 
 use super::model::{Block, Status};
