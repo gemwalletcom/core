@@ -17,4 +17,4 @@ name_resolver = {path = "../name_resolver"}
 diesel = { workspace = true }
 async-trait = { workspace = true }
 primitives = { path = "../primitives" }
-rocket_prometheus = { workspace = true }
+prometheus-client = { workspace = true }

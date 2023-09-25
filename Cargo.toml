@@ -41,7 +41,7 @@ rocket = { version = "=0.5.0-rc.3", features = ["json"] }
 ethaddr = { version = "0.1.2" }
 rust_decimal = { version = "1.32" }
 async-trait = { version = "0.1.73"}
-rocket_prometheus = { version = "0.10.0-rc.3" }
+prometheus-client = { version = "0.21.2" }
 futures = "0.3.28"
 
 # db
@@ -61,4 +61,3 @@ num-traits = { version = "0.2.16" }
 cosmos-sdk-proto = {version = "0.19.0" }
 hmac = { version = "0.12.1" }
 sha2 = { version = "0.10.7" }
-

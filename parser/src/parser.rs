@@ -1,5 +1,4 @@
 use std::{collections::HashMap, time::{Duration, Instant}, cmp, error::Error};
-use tokio::time::sleep;
 
 use blockchain::ChainProvider;
 use primitives::Chain;
@@ -48,32 +47,28 @@ impl Parser {
             let state = self.database.get_parser_state(self.chain).unwrap();
             
             if !state.is_enabled {
-                sleep(Duration::from_millis(self.options.timeout)).await; continue;
+                tokio::time::sleep(Duration::from_millis(self.options.timeout)).await; continue;
             }
-
             let next_current_block = state.current_block + state.await_blocks;
 
-            // skip fetching latest block if parsed is not up to date
-            if next_current_block >= state.latest_block  {
-                match self.provider.get_latest_block().await {
-                    Ok(latest_block) => {
-                        let _ = self.database.set_parser_state_latest_block(self.chain, latest_block as i32);
-                        // initial start
-                        if state.current_block == 0 {
-                            let _ = self.database.set_parser_state_current_block(self.chain, latest_block as i32);
-                        }
-                        if next_current_block >= latest_block as i32 {
-                            
-                            println!("parser ahead: {} current_block: {}, latest_block: {}, await_blocks: {}", self.chain.as_str(), state.current_block, latest_block, state.await_blocks);
-                
-                            sleep(Duration::from_millis(self.options.timeout)).await; continue;
-                        }
-                     },
-                    Err(err) => {
-                        println!("parser latest_block chain: {}, error: {:?}", self.chain.as_str(), err);
-        
-                        sleep(Duration::from_millis(self.options.timeout)).await; continue;
+            match self.provider.get_latest_block().await {
+                Ok(latest_block) => {
+                    let _ = self.database.set_parser_state_latest_block(self.chain, latest_block as i32);
+                    // initial start
+                    if state.current_block == 0 {
+                        let _ = self.database.set_parser_state_current_block(self.chain, latest_block as i32);
                     }
+                    if next_current_block >= latest_block as i32 {
+                        
+                        println!("parser ahead: {} current_block: {}, latest_block: {}, await_blocks: {}", self.chain.as_str(), state.current_block, latest_block, state.await_blocks);
+            
+                        tokio::time::sleep(Duration::from_millis(self.options.timeout)).await; continue;
+                    }
+                 },
+                Err(err) => {
+                    println!("parser latest_block chain: {}, error: {:?}", self.chain.as_str(), err);
+    
+                    tokio::time::sleep(Duration::from_millis(self.options.timeout)).await; continue;
                 }
             }
 
@@ -83,6 +78,7 @@ impl Parser {
                 let start_block =  state.current_block + 1;
                 let end_block = cmp::min(start_block + state.parallel_blocks - 1, state.latest_block - state.await_blocks);
                 let next_blocks = (start_block..=end_block).collect::<Vec<_>>();
+                let to_go_blocks = state.latest_block - end_block - state.await_blocks;
 
                 if next_blocks.is_empty() {
                     break
@@ -92,16 +88,20 @@ impl Parser {
                     Ok(result) => {
                         let _ = self.database.set_parser_state_current_block(self.chain, end_block);
                         
-                        println!("parser block complete: {}, blocks: {:?} transactions: {} of {}, to go blocks: {}, in: {:?}",  self.chain.as_str(), next_blocks, result.transactions, result.insert_transactions, state.latest_block - end_block - state.await_blocks, start.elapsed());
+                        println!("parser block complete: {}, blocks: {:?} transactions: {} of {}, to go blocks: {}, in: {:?}",  self.chain.as_str(), next_blocks, result.transactions, result.insert_transactions, to_go_blocks, start.elapsed());
                      },
                     Err(err) => { 
                         println!("parser parse_block chain: blocks: {}, {:?}, error: {:?}", self.chain.as_str(), next_blocks, err);
 
-                        sleep(Duration::from_millis(self.options.timeout)).await; continue;
+                        tokio::time::sleep(Duration::from_millis(self.options.timeout)).await; break;
                     }
                 }
+                // exit loop every n blocks to update latest block
+                if to_go_blocks % 100 == 0 {
+                    break;
+                }
                 if state.timeout_between_blocks > 0 {
-                    sleep(Duration::from_millis(state.timeout_between_blocks.try_into().unwrap())).await; continue;
+                    tokio::time::sleep(Duration::from_millis(state.timeout_between_blocks.try_into().unwrap())).await; continue;
                 }
             }
         }
@@ -123,7 +123,7 @@ impl Parser {
                     }
                     retry_attempts_count += 1;
 
-                    sleep(Duration::from_millis(retry_attempts_count * self.options.timeout * 2)).await;
+                    tokio::time::sleep(Duration::from_millis(retry_attempts_count * self.options.timeout * 2)).await;
                 }
             }
         }

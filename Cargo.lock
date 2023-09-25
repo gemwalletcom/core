@@ -101,8 +101,8 @@ dependencies = [
  "name_resolver",
  "pricer",
  "primitives",
+ "prometheus-client",
  "rocket",
- "rocket_prometheus",
  "serde",
  "serde_json",
  "settings",
@@ -1085,6 +1085,12 @@ name = "dlv-list"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0688c2a7f92e427f44895cd63841bff7b29f8d7a1648b9e7e07a4a365b2e1257"
+
+[[package]]
+name = "dtoa"
+version = "1.0.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dcbb2bf8e87535c23f7a8a321e364ce21462d0ff10cb6407820e8e96dfff6653"
 
 [[package]]
 name = "dunce"
@@ -3237,17 +3243,26 @@ dependencies = [
 ]
 
 [[package]]
-name = "prometheus"
-version = "0.13.3"
+name = "prometheus-client"
+version = "0.21.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "449811d15fbdf5ceb5c1144416066429cf82316e2ec8ce0c1f6f8a02e7bbcf8c"
+checksum = "3c99afa9a01501019ac3a14d71d9f94050346f55ca471ce90c799a15c58f61e2"
 dependencies = [
- "cfg-if",
- "fnv",
- "lazy_static",
- "memchr",
+ "dtoa",
+ "itoa",
  "parking_lot 0.12.1",
- "thiserror",
+ "prometheus-client-derive-encode",
+]
+
+[[package]]
+name = "prometheus-client-derive-encode"
+version = "0.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "440f724eba9f6996b75d63681b0a92b06947f1457076d503a4d2e2c8f56442b8"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.28",
 ]
 
 [[package]]
@@ -3750,16 +3765,6 @@ dependencies = [
  "time",
  "tokio",
  "uncased",
-]
-
-[[package]]
-name = "rocket_prometheus"
-version = "0.10.0-rc.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e3e70efcf6b0234723d0d295b95d64283ed02bb98a8a3f0c8c7ebb5b8da69165"
-dependencies = [
- "prometheus",
- "rocket",
 ]
 
 [[package]]

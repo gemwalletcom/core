@@ -261,7 +261,7 @@ impl DatabaseClient {
             .execute(&mut self.connection)
     }
 
-    pub fn get_parser_state_all(&mut self) -> Result<Vec<ParserState>, diesel::result::Error> {
+    pub fn get_parser_states(&mut self) -> Result<Vec<ParserState>, diesel::result::Error> {
         use crate::schema::parser_state::dsl::*;
         parser_state
             .select(ParserState::as_select())

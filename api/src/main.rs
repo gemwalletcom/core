@@ -18,6 +18,8 @@ mod subscription;
 mod subscription_client;
 mod transaction;
 mod transaction_client;
+mod metrics;
+mod metrics_client;
 
 use asset_client::AssetsClient;
 use fiat::mercuryo::MercuryoClient;
@@ -37,8 +39,8 @@ use name_resolver::client::Client as NameClient;
 use device_client::DevicesClient;
 use subscription_client::SubscriptionsClient;
 use rocket::tokio::sync::Mutex;
-use rocket_prometheus::PrometheusMetrics;
 use transaction_client::TransactionsClient;
+use metrics_client::MetricsClient;
 
 async fn rocket(settings: Settings) -> Rocket<Build> {
     let redis_url = settings.redis.url.as_str();
@@ -61,6 +63,7 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
     let devices_client = DevicesClient::new(postgres_url).await;
     let transactions_client = TransactionsClient::new(postgres_url).await;
     let subscriptions_client = SubscriptionsClient::new(postgres_url).await;
+    let metrics_client = MetricsClient::new(postgres_url).await;
     let assets_client = AssetsClient::new(postgres_url).await;
     let plausible_client = PlausibleClient::new(&settings.plausible.url);
     let request_client = FiatClient::request_client(settings.fiat.timeout);
@@ -75,7 +78,6 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
         mercuryo,
         ramp
     ).await;
-    let prometheus = PrometheusMetrics::new();
 
     rocket::build()
         .attach(AdHoc::on_ignite("Tokio Runtime Configuration", |rocket| async {
@@ -85,7 +87,6 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
                 .expect("Failed to create Tokio runtime");
             rocket.manage(runtime)
         }))
-        .attach(prometheus.clone())
         .manage(Mutex::new(fiat_client))
         .manage(Mutex::new(price_client))
         .manage(Mutex::new(node_client))
@@ -95,7 +96,8 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
         .manage(Mutex::new(devices_client))        
         .manage(Mutex::new(assets_client))
         .manage(Mutex::new(subscriptions_client))       
-        .manage(Mutex::new(transactions_client))              
+        .manage(Mutex::new(transactions_client))   
+        .manage(Mutex::new(metrics_client))              
         .mount("/", routes![
             status::get_status,
         ])
@@ -118,9 +120,11 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
             subscription::get_subscriptions,
             subscription::delete_subscriptions,
             transaction::get_transactions_by_device_id,
-            transaction::get_transactions_by_hash
+            transaction::get_transactions_by_hash,
         ])
-        .mount(settings.metrics.path, prometheus)
+        .mount(settings.metrics.path, routes![
+            metrics::get_metrics,
+        ])
 }
 
 #[tokio::main]
