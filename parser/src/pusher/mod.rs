@@ -32,6 +32,11 @@ impl Pusher {
     }
 
     pub async fn push(&mut self, device: primitives::Device, transaction: Transaction, subscription: Subscription) -> Result<usize, Box<dyn Error>> {
+        // only push if push is enabled and token is set
+        if !device.is_push_enabled || device.token.is_empty() {
+            return Ok(0)
+        }
+
         let asset = self.database_client.get_asset(transaction.asset_id.to_string())?;
         let mut crypto_amount: Decimal = Decimal::from_str(transaction.value.as_str())?;
         crypto_amount.set_scale(asset.decimals as u32).unwrap_or_default();
