@@ -45,7 +45,7 @@ prometheus-client = { version = "0.21.2" }
 futures = "0.3.28"
 
 # db
-diesel = { version = "2.1.0", features = ["postgres", "chrono"] }
+diesel = { version = "2.1.2", features = ["postgres", "chrono"] }
 diesel_migrations = { version = "2.1.0"}
 redis = { version = "0.23.3", features = ["tokio-comp", "json"] }
 chrono = { version = "0.4.31", features = ["serde"] }
