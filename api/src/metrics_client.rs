@@ -1,22 +1,21 @@
+use prometheus_client::metrics::gauge::Gauge;
 use storage::DatabaseClient;
 use prometheus_client::encoding::EncodeLabelSet;
 use prometheus_client::encoding::text::encode;
-use prometheus_client::metrics::counter::Counter;
 use prometheus_client::metrics::family::Family;
 use prometheus_client::registry::Registry;
 
 pub struct MetricsClient {
     registry: Registry,
-    parser_state: Family::<ParserStateLabels, Counter>,
+    parser_latest_block: Family::<ParserStateLabels, Gauge>,
+    parser_current_block: Family::<ParserStateLabels, Gauge>,
+    parser_is_enabled: Family::<ParserStateLabels, Gauge>,
     database: DatabaseClient,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, EncodeLabelSet)]
 struct ParserStateLabels {
-  chain: String,
-  is_enabled: String,
-  current_block: i32,
-  latest_block: i32,
+  chain: String
 }
 
 impl MetricsClient {
@@ -25,14 +24,21 @@ impl MetricsClient {
     ) -> Self {
         let database = DatabaseClient::new(database_url);
 
-        let parser_state = Family::<ParserStateLabels, Counter>::default();
+        let parser_latest_block = Family::<ParserStateLabels, Gauge>::default();
+        let parser_current_block = Family::<ParserStateLabels, Gauge>::default();
+        let parser_is_enabled = Family::<ParserStateLabels, Gauge>::default();
 
         let mut registry = <Registry>::with_prefix("parser");
-        registry.register("state", "Parser state", parser_state.clone());
+        registry.register("state_latest_block", "Parser latest block", parser_latest_block.clone());
+        registry.register("state_current_block", "Parser current block", parser_current_block.clone());
+        registry.register("state_is_enabled", "Parser is enabled", parser_is_enabled.clone());
+
 
         Self {
             registry,
-            parser_state,
+            parser_latest_block,
+            parser_current_block,
+            parser_is_enabled,
             database,
         }
     }
@@ -46,9 +52,9 @@ impl MetricsClient {
 
     pub fn update_parser_states(&mut self) {
         for state in self.database.get_parser_states().unwrap_or_default() {
-            self.parser_state.get_or_create(
-                &ParserStateLabels { chain: state.chain, is_enabled: state.is_enabled.to_string(), latest_block: state.latest_block, current_block: state.current_block },
-            ).get();
+            self.parser_current_block.get_or_create( &ParserStateLabels { chain: state.clone().chain }).set(state.current_block as i64);
+            self.parser_latest_block.get_or_create( &ParserStateLabels { chain: state.clone().chain }).set(state.latest_block as i64);
+            self.parser_is_enabled.get_or_create( &ParserStateLabels { chain: state.clone().chain }).set(state.is_enabled as i64);
         }
     }
 }
