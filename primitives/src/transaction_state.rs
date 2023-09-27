@@ -19,7 +19,7 @@ pub enum TransactionState {
 }
 
 impl TransactionState {
-    pub fn from_str(value: &str) -> Option<Self> {
+    pub fn new(value: &str) -> Option<Self> {
         match value {
             "pending" => Some(Self::Pending),
             "confirmed" => Some(Self::Confirmed),

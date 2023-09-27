@@ -63,7 +63,7 @@ impl Transaction {
             to_address.clone(),
             None,
             primitives::TransactionType::from_str(self.kind.as_str()).unwrap_or_default(),
-            primitives::TransactionState::from_str(self.state.as_str()).unwrap(),
+            primitives::TransactionState::new(self.state.as_str()).unwrap(),
             self.block_number.to_string(),
             self.sequence.unwrap_or_default().to_string(),
             self.fee.clone().unwrap(),

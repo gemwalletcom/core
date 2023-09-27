@@ -50,7 +50,7 @@ impl MetricsClient {
 
         let mut buffer = String::new();
         encode(&mut buffer, &self.registry).unwrap();
-        return buffer
+        buffer
     }
 
     pub fn update_parser_states(&mut self) {

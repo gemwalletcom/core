@@ -7,6 +7,6 @@ use rocket::tokio::sync::Mutex;
 pub async fn get_metrics(
     client: &State<Mutex<MetricsClient>>,
 ) -> String {
-    let data = client.lock().await.get();
-    return data;
+    
+    client.lock().await.get()
 }

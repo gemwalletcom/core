@@ -47,7 +47,7 @@ impl BitcoinClient {
 
     pub fn map_transaction(&self, transaction: super::model::Transaction, _block_number: i64) -> Option<primitives::Transaction> {
         // only allow basic transfer support, from 1 adddress to another.
-        if transaction.vin.first().unwrap().addresses.clone().unwrap_or_default().len() == 0 || 
+        if transaction.vin.first().unwrap().addresses.clone().unwrap_or_default().is_empty() || 
             transaction.vout.len() > 2 {
             return None
         }
@@ -77,7 +77,7 @@ impl BitcoinClient {
             NaiveDateTime::from_timestamp_opt(transaction.block_time, 0).unwrap(),
         );
 
-        return Some(transaction);
+        Some(transaction)
    }
 }
 

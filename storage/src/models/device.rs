@@ -30,7 +30,7 @@ pub struct UpdateDevice {
 
 impl Device {
     pub fn as_primitive(&self) -> primitives::Device {
-        let platform = primitives::Platform::from_str(self.platform.as_str()).unwrap();
+        let platform = primitives::Platform::new(self.platform.as_str()).unwrap();
         primitives::Device {
             id: self.device_id.clone(),
             platform,

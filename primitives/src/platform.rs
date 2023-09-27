@@ -24,7 +24,7 @@ impl Platform {
         }
     }
 
-    pub fn from_str(s: &str) -> Option<Platform> {
+    pub fn new(s: &str) -> Option<Platform> {
         match s {
             "ios" => Some(Platform::IOS),
             "android" => Some(Platform::Android),
