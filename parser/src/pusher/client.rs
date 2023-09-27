@@ -1,4 +1,4 @@
-use super::model::{Notifications, Response};
+use super::model::{Notifications, Response, Notification};
 pub struct PusherClient {
     url: String,
     client: reqwest::Client,
@@ -15,10 +15,14 @@ impl PusherClient {
         }
     }
 
-    pub async fn push(&self, notifications: Notifications) -> Result<usize, reqwest::Error> {
+    pub async fn push(&self, notification: Notification) -> Result<Response, reqwest::Error> {
         let url = format!("{}/api/push", self.url);
 
-        let _ = self.client
+        let notifications = Notifications {
+            notifications: vec![notification]
+        };
+
+        let response = self.client
             .post(&url)
             .json(&notifications)
             .send()
@@ -26,6 +30,6 @@ impl PusherClient {
             .json::<Response>()
             .await?;
     
-        Ok(notifications.notifications.len())
+        Ok(response)
     }
 }

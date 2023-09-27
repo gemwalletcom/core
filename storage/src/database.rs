@@ -238,6 +238,16 @@ impl DatabaseClient {
         ).execute(&mut self.connection)
     }
 
+    pub fn update_device_is_push_enabled(&mut self, _device_id: &str, value: bool) -> Result<usize, diesel::result::Error> {
+        use crate::schema::devices::dsl::*;
+        diesel::update(devices)
+            .filter(device_id.eq(_device_id))
+            .set(
+                is_push_enabled.eq(value)
+            )
+            .execute(&mut self.connection)
+    }
+
     pub fn delete_devices_after_days(&mut self, days: i64) -> Result<usize, diesel::result::Error> {
         use crate::schema::devices::dsl::*;
         let cutoff_date = Utc::now().naive_utc() - Duration::days(days);

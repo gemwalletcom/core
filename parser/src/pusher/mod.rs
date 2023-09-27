@@ -49,18 +49,20 @@ impl Pusher {
             format!("From {}", AddressFormatter::short(transaction.asset_id.chain, transaction.from.as_str())) 
         };
 
-        let notifications = Notifications {
-            notifications: vec![
-                Notification {
-                    tokens: vec![device.token],
-                    platform: device.platform.as_i32(),
-                    title,
-                    message,
-                    topic: self.ios_topic.clone(),
-                }
-            ]
+        let notification = Notification {
+            tokens: vec![device.token],
+            platform: device.platform.as_i32(),
+            title,
+            message,
+            topic: self.ios_topic.clone(),
         };
-        
-        self.client.push(notifications).await.map_err(|e| Box::new(e) as Box<dyn Error>)
+        let response = self.client.push(notification).await?;
+
+        if response.logs.len() > 0 {
+            println!("push logs: {:?}", response.logs);
+            let _ = self.database_client.update_device_is_push_enabled(&device.id, false)?;
+        }
+
+        return Ok(response.counts as usize);
     }
 }
