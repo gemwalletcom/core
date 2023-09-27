@@ -1,3 +1,4 @@
+use chrono::NaiveDateTime;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 
@@ -12,4 +13,5 @@ pub struct ParserState {
     pub timeout_between_blocks: i32,
     pub parallel_blocks: i32,
     pub is_enabled: bool,
+    pub updated_at: NaiveDateTime,
 }

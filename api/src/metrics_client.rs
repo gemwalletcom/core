@@ -10,6 +10,7 @@ pub struct MetricsClient {
     parser_latest_block: Family::<ParserStateLabels, Gauge>,
     parser_current_block: Family::<ParserStateLabels, Gauge>,
     parser_is_enabled: Family::<ParserStateLabels, Gauge>,
+    parser_updated_at: Family::<ParserStateLabels, Gauge>,
     database: DatabaseClient,
 }
 
@@ -27,18 +28,20 @@ impl MetricsClient {
         let parser_latest_block = Family::<ParserStateLabels, Gauge>::default();
         let parser_current_block = Family::<ParserStateLabels, Gauge>::default();
         let parser_is_enabled = Family::<ParserStateLabels, Gauge>::default();
+        let parser_updated_at = Family::<ParserStateLabels, Gauge>::default();
 
         let mut registry = <Registry>::with_prefix("parser");
         registry.register("state_latest_block", "Parser latest block", parser_latest_block.clone());
         registry.register("state_current_block", "Parser current block", parser_current_block.clone());
         registry.register("state_is_enabled", "Parser is enabled", parser_is_enabled.clone());
-
+        registry.register("state_updated_at", "Parser updated at", parser_updated_at.clone());
 
         Self {
             registry,
             parser_latest_block,
             parser_current_block,
             parser_is_enabled,
+            parser_updated_at,
             database,
         }
     }
@@ -55,6 +58,7 @@ impl MetricsClient {
             self.parser_current_block.get_or_create( &ParserStateLabels { chain: state.clone().chain }).set(state.current_block as i64);
             self.parser_latest_block.get_or_create( &ParserStateLabels { chain: state.clone().chain }).set(state.latest_block as i64);
             self.parser_is_enabled.get_or_create( &ParserStateLabels { chain: state.clone().chain }).set(state.is_enabled as i64);
+            self.parser_updated_at.get_or_create( &ParserStateLabels { chain: state.clone().chain }).set(state.updated_at.timestamp());
         }
     }
 }
