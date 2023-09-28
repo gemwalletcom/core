@@ -17,4 +17,5 @@ name_resolver = {path = "../name_resolver"}
 diesel = { workspace = true }
 async-trait = { workspace = true }
 primitives = { path = "../primitives" }
+api_connector = { path = "../api_connector" }
 prometheus-client = { workspace = true }

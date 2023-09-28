@@ -34,7 +34,7 @@ impl SolanaClient {
         let signatures = transaction.transaction.signatures.clone();
 
         // system transfer
-        if (account_keys.len() == 2 || account_keys.len() == 3) && account_keys.last().unwrap() == SYSTEM_PROGRAM_ID && signatures.len() == 1 && transaction.meta.log_messages.len() == 2  {    
+        if (account_keys.len() == 2 || account_keys.len() == 3) && account_keys.last().unwrap() == SYSTEM_PROGRAM_ID && signatures.len() == 1 && transaction.meta.log_messages.len() == 2 {    
             let chain = self.get_chain();
             let hash = transaction.transaction.signatures.first().unwrap().to_string();
             let from = account_keys.first().unwrap().clone();

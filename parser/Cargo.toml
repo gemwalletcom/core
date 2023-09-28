@@ -10,6 +10,7 @@ primitives = { path = "../primitives" }
 storage = { path = "../storage" }
 settings = { path = "../settings" }
 blockchain = { path = "../blockchain" }
+api_connector = { path = "../api_connector" }
 tokio = { workspace = true }
 reqwest = { workspace = true }
 rust_decimal = { workspace = true }

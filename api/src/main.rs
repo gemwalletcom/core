@@ -21,6 +21,7 @@ mod transaction_client;
 mod metrics;
 mod metrics_client;
 
+use api_connector::PusherClient;
 use asset_client::AssetsClient;
 use fiat::mercuryo::MercuryoClient;
 use fiat::moonpay::MoonPayClient;
@@ -60,7 +61,8 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
         settings.name.eths.url,
         settings.name.spaceid.url,
     );
-    let devices_client = DevicesClient::new(postgres_url).await;
+    let pusher_client = PusherClient::new(settings.pusher.url);
+    let devices_client = DevicesClient::new(postgres_url, pusher_client, settings.pusher.ios.topic).await;
     let transactions_client = TransactionsClient::new(postgres_url).await;
     let subscriptions_client = SubscriptionsClient::new(postgres_url).await;
     let metrics_client = MetricsClient::new(postgres_url).await;
@@ -115,6 +117,7 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
             device::get_device,
             device::update_device,
             device::delete_device,
+            device::send_push_notification_device,
             asset::get_asset,
             subscription::add_subscriptions,
             subscription::get_subscriptions,

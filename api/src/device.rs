@@ -34,6 +34,15 @@ pub async fn update_device(
     Json(device)
 }
 
+#[post("/devices/<device_id>/push-notification")]
+pub async fn send_push_notification_device(
+    device_id: &str,
+    client: &State<Mutex<DevicesClient>>,
+) -> Json<bool> {
+    let result = client.lock().await.send_push_notification_device(device_id).await.unwrap();
+    Json(result)
+}
+
 #[delete("/devices/<device_id>")]
 pub async fn delete_device(
     device_id: &str,

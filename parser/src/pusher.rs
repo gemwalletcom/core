@@ -1,14 +1,11 @@
-pub mod model;
-pub mod client;
-
 use std::error::Error;
 
 use primitives::{Transaction, Subscription, AddressFormatter};
 use rust_decimal::{Decimal, prelude::*};
 use storage::DatabaseClient;
 
-use self::client::PusherClient;
-use self::model::{Notifications, Notification};
+use api_connector::PusherClient;
+use api_connector::pusher::model::Notification;
 
 pub struct Pusher {
     ios_topic: String,
