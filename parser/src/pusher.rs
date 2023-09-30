@@ -41,9 +41,9 @@ impl Pusher {
 
         let title = format!("Transfer {} {}", amount, asset.symbol);
         let message = if transaction.from == subscription.address { 
-            format!("To {}", AddressFormatter::short(transaction.asset_id.chain, transaction.to.as_str())) 
+            format!("To {}", AddressFormatter::short(transaction.chain, transaction.to.as_str())) 
         } else {
-            format!("From {}", AddressFormatter::short(transaction.asset_id.chain, transaction.from.as_str())) 
+            format!("From {}", AddressFormatter::short(transaction.chain, transaction.from.as_str())) 
         };
 
         let notification = Notification {

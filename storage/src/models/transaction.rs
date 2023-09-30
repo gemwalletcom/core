@@ -25,7 +25,7 @@ pub struct Transaction {
 impl Transaction {
     pub fn from_primitive(transaction: primitives::Transaction) -> Self {
         Self{
-            chain: transaction.asset_id.chain.as_str().to_string(),
+            chain: transaction.chain.as_str().into(),
             hash: transaction.hash,
             memo: transaction.memo,
             asset_id: transaction.asset_id.to_string().into(),

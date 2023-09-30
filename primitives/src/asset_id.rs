@@ -4,7 +4,6 @@ use serde::{Serialize, Deserialize};
 use crate::chain::Chain;
 
 #[derive(Debug, Clone, Deserialize)]
-#[typeshare]
 #[typeshare(swift = "Equatable, Codable, Hashable")]
 pub struct AssetId {
     pub chain: Chain,
