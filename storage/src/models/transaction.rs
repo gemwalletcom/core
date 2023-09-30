@@ -1,4 +1,4 @@
-use chrono::Utc;
+use chrono::NaiveDateTime;
 use diesel::prelude::*;
 use primitives::AssetId;
 use serde::{Deserialize, Serialize};
@@ -20,6 +20,7 @@ pub struct Transaction {
     pub to_address: Option<String>,
     pub kind: String,
     pub state: String,
+    pub created_at: NaiveDateTime,
 }
 
 impl Transaction {
@@ -38,6 +39,7 @@ impl Transaction {
             to_address: transaction.to.into(),
             kind: transaction.transaction_type.to_string(),
             state: transaction.state.to_string(),
+            created_at: transaction.created_at.naive_utc(),
         }
     }
 
@@ -71,7 +73,7 @@ impl Transaction {
             self.value.clone().unwrap_or_default(),
             self.memo.clone(),
             direction,
-            Utc::now()
+            self.created_at.and_utc(),
         )
     }
 }
