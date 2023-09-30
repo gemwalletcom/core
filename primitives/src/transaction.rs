@@ -9,9 +9,8 @@ use crate::{asset_id::AssetId, transaction_type::TransactionType, transaction_st
 pub struct Transaction {
     pub id: String,
     pub hash: String,
-    pub chain: Chain,
     #[serde(rename = "assetId")]
-    pub asset_id: String,
+    pub asset_id: AssetId,
     pub from: String,
     pub to: String,
     pub contract: Option<String>,
@@ -23,7 +22,7 @@ pub struct Transaction {
     pub sequence: String,
     pub fee: String,
     #[serde(rename = "feeAssetId")]
-    pub fee_asset_id: String,
+    pub fee_asset_id: AssetId,
     pub value: String,
     pub memo: Option<String>,
     pub direction: TransactionDirection,
@@ -60,8 +59,7 @@ impl Transaction {
         Self {
             id,
             hash,
-            chain: asset_id.chain,
-            asset_id: asset_id.to_string(),
+            asset_id,
             from: from_address,
             to: to_address,
             contract,
@@ -70,7 +68,7 @@ impl Transaction {
             block_number,
             sequence,
             fee,
-            fee_asset_id: fee_asset_id.to_string(),
+            fee_asset_id,
             value,
             memo,
             direction,
