@@ -71,7 +71,7 @@ impl SuiClient {
                 value.to_string(), 
                 None,
                 TransactionDirection::SelfTransfer, 
-                Utc::now().naive_utc(),
+                Utc::now(),
             );
             return Some(transaction);
         }

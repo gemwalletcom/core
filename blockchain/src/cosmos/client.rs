@@ -60,7 +60,7 @@ impl CosmosClient {
                                 value.clone().amount,
                                 Some(memo),
                                 TransactionDirection::SelfTransfer,
-                                Utc::now().naive_utc(),
+                                Utc::now(),
                             );
                             return Some(transaction)
                         },

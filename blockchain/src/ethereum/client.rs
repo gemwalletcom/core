@@ -72,7 +72,7 @@ impl EthereumClient {
                 value,
                 None,
                 TransactionDirection::SelfTransfer, 
-                Utc::now().naive_utc()
+                Utc::now()
             );
             return Some(transaction);
         }

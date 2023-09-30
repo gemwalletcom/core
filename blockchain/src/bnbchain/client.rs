@@ -46,7 +46,7 @@ impl BNBChainClient {
             format!("{:?}", transaction.amount.unwrap_or_default()),
             transaction.memo.into(),
             TransactionDirection::SelfTransfer,
-            Utc::now().naive_utc()
+            Utc::now()
         );
         Some(transaction)
     }

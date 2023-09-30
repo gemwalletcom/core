@@ -46,7 +46,7 @@ impl XRPClient {
                         value,
                         Some(transaction.destination_tag.unwrap_or_default().to_string()),
                         TransactionDirection::SelfTransfer,
-                        Utc::now().naive_utc()
+                        Utc::now()
                     );
                     return Some(transaction)
                 },

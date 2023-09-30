@@ -71,7 +71,7 @@ impl Transaction {
             self.value.clone().unwrap_or_default(),
             self.memo.clone(),
             direction,
-            Utc::now().naive_utc()
+            Utc::now()
         )
     }
 }

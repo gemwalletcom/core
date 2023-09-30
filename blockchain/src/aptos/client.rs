@@ -50,7 +50,7 @@ impl AptosClient {
                 value.clone(),
                 None,
                 TransactionDirection::SelfTransfer,
-                Utc::now().naive_utc()
+                Utc::now()
             );        
             return Some(transaction)    
         }

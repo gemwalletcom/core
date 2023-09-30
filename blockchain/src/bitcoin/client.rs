@@ -2,7 +2,7 @@ use std::error::Error;
 
 use crate::ChainProvider;
 use async_trait::async_trait;
-use chrono::NaiveDateTime;
+use chrono::{Utc, TimeZone};
 use primitives::{chain::Chain, TransactionDirection, TransactionType};
 
 use super::model::{Block, Status};
@@ -74,7 +74,7 @@ impl BitcoinClient {
             value.to_string(),
             None,
             TransactionDirection::SelfTransfer,
-            NaiveDateTime::from_timestamp_opt(transaction.block_time, 0).unwrap(),
+            Utc.timestamp_opt(transaction.block_time, 0).unwrap(),
         );
 
         Some(transaction)

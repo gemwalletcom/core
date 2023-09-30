@@ -1,6 +1,7 @@
 use typeshare::typeshare;
 use serde::{Serialize, Deserialize};
-use chrono::NaiveDateTime;
+use chrono::DateTime;
+use chrono::offset::Utc;
 
 use crate::{asset_id::AssetId, transaction_type::TransactionType, transaction_state::TransactionState, transaction_direction::TransactionDirection, Chain};
 
@@ -33,7 +34,7 @@ pub struct Transaction {
     // pub utxo_outputs: Vec<UTXO>,
 
     #[serde(rename = "createdAt")]
-    pub created_at: NaiveDateTime,
+    pub created_at: DateTime<Utc>,
 }
 
 impl Transaction {
@@ -53,7 +54,7 @@ impl Transaction {
         value: String,
         memo: Option<String>,
         direction: TransactionDirection,
-        created_at: NaiveDateTime,
+        created_at: DateTime<Utc>,
     ) -> Self {
         let id = Self::id_from(asset_id.clone().chain, hash.clone());
         Self {

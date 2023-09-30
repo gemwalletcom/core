@@ -258,8 +258,8 @@ impl DatabaseClient {
 
     pub fn delete_devices_after_days(&mut self, days: i64) -> Result<usize, diesel::result::Error> {
         use crate::schema::devices::dsl::*;
-        let cutoff_date = Utc::now().naive_utc() - Duration::days(days);
-        diesel::delete(devices.filter(updated_at.lt(cutoff_date)))
+        let cutoff_date = Utc::now() - Duration::days(days);
+        diesel::delete(devices.filter(updated_at.lt(cutoff_date.naive_utc())))
             .execute(&mut self.connection)
     }
 

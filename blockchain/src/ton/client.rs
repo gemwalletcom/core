@@ -50,7 +50,7 @@ impl TonClient {
                 out_message.value.to_string(),
                 memo,
                 TransactionDirection::SelfTransfer,
-                Utc::now().naive_utc()
+                Utc::now()
             );
             return Some(transaction)
         }
