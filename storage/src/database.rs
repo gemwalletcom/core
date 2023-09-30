@@ -371,7 +371,7 @@ impl DatabaseClient {
         }
 
         query
-            .order(created_at.asc())
+            .order(created_at.desc())
             .select(Transaction::as_select())
             .load(&mut self.connection)
     }
