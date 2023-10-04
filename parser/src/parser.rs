@@ -101,7 +101,7 @@ impl Parser {
                     break;
                 }
                 if state.timeout_between_blocks > 0 {
-                    tokio::time::sleep(Duration::from_millis(state.timeout_between_blocks.try_into().unwrap())).await; continue;
+                    tokio::time::sleep(Duration::from_millis(state.timeout_between_blocks as u64)).await; continue;
                 }
             }
         }
@@ -132,13 +132,13 @@ impl Parser {
     pub async fn parse_blocks(&mut self, blocks: Vec<i32>) -> Result<ParserBlocksResult, Box<dyn Error + Send + Sync>> {
         let transactions = self.fetch_blocks(blocks.clone()).await?;
         let addresses = transactions.clone().into_iter().flat_map(|x| x.addresses()).collect();
-        let subscriptions = self.database.get_subscriptions(self.chain, addresses).unwrap();
+        let subscriptions = self.database.get_subscriptions(self.chain, addresses)?;
         let mut transactions_map: HashMap<String, primitives::Transaction> = HashMap::new();
 
         for subscription in subscriptions {
             for transaction in transactions.clone() {
                 if transaction.addresses().contains(&subscription.address) {
-                    let device = self.database.get_device_by_id(subscription.device_id).unwrap();
+                    let device = self.database.get_device_by_id(subscription.device_id)?;
                     
                     println!("push: device: {}, chain: {}, transaction: {:?}", subscription.device_id, self.chain.as_str(), transaction.hash);
                     

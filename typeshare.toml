@@ -6,6 +6,7 @@ prefix = ''
 "Int32" = "Int"
 "BigInt" = "BigInt"
 "NaiveDateTime" = "Date"
+"DateTime" = "Date"
 
 [kotlin.type_mappings]
 "Date" = "Long"
@@ -13,3 +14,4 @@ prefix = ''
 "UInt64" = "Long"
 "Int64" = "Long"
 "NaiveDateTime" = "Long"
+"DateTime" = "Long"
