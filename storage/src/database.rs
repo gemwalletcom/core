@@ -142,7 +142,7 @@ impl DatabaseClient {
 
     pub fn get_charts_prices(&mut self, coin_id_value: &str, period: &ChartPeriod) -> Result<Vec<ChartResult>, diesel::result::Error> {
         use crate::schema::charts::dsl::*;
-        let date_selection = format!("date_trunc('{}', date)", self.period_sql(period.clone()));
+        let date_selection = format!("date_bin('{}', date, timestamp '2000-01-01')", self.period_sql(period.clone()));
         return charts
             .select(
                 (sql::<diesel::sql_types::Timestamp>(date_selection.as_str()),
@@ -153,21 +153,21 @@ impl DatabaseClient {
                  sql::<diesel::sql_types::Bool>(format!("date >= now() - INTERVAL '{} minutes'", self.period_minutes(period.clone())).as_str()),
             )
             .group_by(
-                sql::<diesel::sql_types::Timestamp>(date_selection.as_str()),
+                sql::<diesel::sql_types::Numeric>("1"),
             )
-            .order(sql::<diesel::sql_types::Timestamp>("date_trunc").desc())
+            .order(sql::<diesel::sql_types::Numeric>("1").desc())
             .load(&mut self.connection);
     }
 
     fn period_sql(&self, period: ChartPeriod) -> &str {
         match period {
-            ChartPeriod::Hour => "minute",
-            ChartPeriod::Day => "minute",
-            ChartPeriod::Week => "hour",
-            ChartPeriod::Month => "hour",
-            ChartPeriod::Quarter => "day",
-            ChartPeriod::Year => "day",
-            ChartPeriod::All => "day",
+            ChartPeriod::Hour => "1 minutes",
+            ChartPeriod::Day => "15 minutes",
+            ChartPeriod::Week => "1 hour",
+            ChartPeriod::Month => "6 hour",
+            ChartPeriod::Quarter => "1 day",
+            ChartPeriod::Year => "3 day",
+            ChartPeriod::All => "3 day",
         }
     }
 
