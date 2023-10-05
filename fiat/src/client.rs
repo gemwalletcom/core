@@ -103,6 +103,18 @@ impl Client {
             }
         }
 
+        if let Some(value) = fiat_mapping_map.get(self.mercuryo.name().as_str()) {
+            let result = self.mercuryo.get_quote(request.clone(), value.clone()).await;
+            match result {
+                Ok(value) => { 
+                    results.push(value)
+                }
+                Err(ee) => { 
+                    println!("error {}", ee);
+                }
+            }
+        }
+
         //let futures = vec![
             //self.moonpay.get_quote(request.clone(), fiat_mapping_map.get("MoonPay").expect("msg").clone()),
             //self.transak.get_quote(request.clone(), fiat_mapping_map.get("Transak").expect("msg").clone()),
