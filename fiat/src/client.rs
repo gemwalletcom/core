@@ -55,8 +55,9 @@ impl Client {
             .collect::<HashSet<_>>()
             .into_iter()
             .collect();
+        let version = self.database.get_fiat_assets_version()?;
         
-        Ok(FiatAssets { version: 1, asset_ids: assets })
+        Ok(FiatAssets { version: version as u32, asset_ids: assets })
     }
 
     pub async fn get_fiat_rates(&mut self) -> Result<FiatRates, Box<dyn Error>> {

@@ -50,7 +50,8 @@ impl Client {
         Ok(self.database.set_charts(charts)?)
     }
 
-    pub fn get_charts_prices(&mut self, coin_id: &str, period: &ChartPeriod, currency: &str) -> Result<Vec<ChartValue>, Box<dyn Error>> {
+    pub fn get_charts_prices(&mut self, coin_id: &str, period: &ChartPeriod, _currency: &str) -> Result<Vec<ChartValue>, Box<dyn Error>> {
+        //TODO: Get rates for currency and calculate prices
         let prices = self.database
             .get_charts_prices(coin_id, period)?
             .into_iter().map(|x| 

@@ -35,20 +35,14 @@ pub async fn get_fiat_quotes(
 pub async fn get_fiat_assets(
     fiat_client: &State<Mutex<FiatClient>>,
 ) -> Json<FiatAssets> {
-    let assets = fiat_client.lock().await.get_assets().await;
-    match assets {
-        Ok(value) => Json(value),
-        Err(_) => Json(FiatAssets{version: 0, asset_ids: vec![]}),
-    }
+    let assets = fiat_client.lock().await.get_assets().await.unwrap();
+    Json(assets)
 }
 
 #[get("/fiat/rates")]
 pub async fn get_fiat_rates(
     fiat_client: &State<Mutex<FiatClient>>,
 ) -> Json<FiatRates> {
-    let rates = fiat_client.lock().await.get_fiat_rates().await;
-    match rates {
-        Ok(value) => Json(value),
-        Err(_) => Json(FiatRates{rates: vec![]}),
-    }
+    let rates = fiat_client.lock().await.get_fiat_rates().await.unwrap();
+    Json(rates)
 }

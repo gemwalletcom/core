@@ -68,6 +68,17 @@ impl DatabaseClient {
             .select(FiatAsset::as_select())
             .load(&mut self.connection)
     }
+
+    pub fn get_fiat_assets_version(&mut self) -> Result<i32, diesel::result::Error> {
+        let version = self.get_fiat_assets()?
+            .iter()
+            .map(|x| x.id)
+            .collect::<Vec<i32>>()
+            .iter()
+            .sum();
+        Ok(version)
+    }
+
     pub fn get_fiat_assets_for_asset_id(&mut self, asset_id: &str) -> Result<Vec<FiatAsset>, diesel::result::Error> {
         use crate::schema::fiat_assets::dsl::*;
         fiat_assets

@@ -21,6 +21,7 @@ impl Client {
 
     pub fn get_config(&mut self) -> Result<ConfigResponse, Box<dyn Error>> {
         let nodes_version = self.database.get_nodes_version()?;
+        let fiat_assets_version = self.database.get_fiat_assets_version()?;
         
         let token_lists_chains = self.database
             .get_tokenlists()?
@@ -42,11 +43,10 @@ impl Client {
             android: ConfigAndroidApp { version: ConfigAppVersion{production: android.production.clone(), beta: android.beta.clone(), alpha: android.alpha.clone()} },
         };
         let response: ConfigResponse = ConfigResponse{
-            //TODO fetch fiat assets version from db
             app,
             versions: ConfigVersions { 
                 nodes: nodes_version,
-                fiat_assets: 1,
+                fiat_assets: fiat_assets_version,
                 token_lists,
                 token_lists_chains,
             }
