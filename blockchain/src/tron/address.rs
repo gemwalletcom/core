@@ -6,7 +6,7 @@ pub struct TronAddress {
 
 impl TronAddress {
     pub fn from_hex(hex_value: &str) -> Option<String>{
-        let decoded = hex::decode(hex_value).unwrap();
+        let decoded = hex::decode(hex_value).ok()?;
         let encoded = bs58::encode(decoded).with_check().into_string();
         Some(encoded)
     }
