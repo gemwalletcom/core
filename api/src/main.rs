@@ -71,7 +71,7 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
     let request_client = FiatClient::request_client(settings.fiat.timeout);
     let transak = TransakClient::new(request_client.clone(), settings.transak.key.public);
     let moonpay = MoonPayClient::new( request_client.clone(),  settings.moonpay.key.public,  settings.moonpay.key.secret);
-    let mercuryo = MercuryoClient::new(request_client.clone(),  settings.mercuryo.key.public);
+    let mercuryo = MercuryoClient::new(request_client.clone(),  settings.mercuryo.key.public, settings.mercuryo.key.secret);
     let ramp = RampClient::new(request_client.clone(), settings.ramp.key.public);
     let fiat_client = FiatClient::new(
         postgres_url,

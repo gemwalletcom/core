@@ -22,6 +22,7 @@ public = ""
 [mercuryo]
 [mercuryo.key]
 public = ""
+secret = ""
 
 [ramp]
 [ramp.key]

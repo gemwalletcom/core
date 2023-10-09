@@ -1562,6 +1562,7 @@ dependencies = [
  "async-trait",
  "base64 0.21.4",
  "futures",
+ "hex",
  "hmac",
  "primitives",
  "redis",
