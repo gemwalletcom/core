@@ -114,7 +114,7 @@ impl Chain {
             Self::Binance => 714,
             Self::Bitcoin => 0,
             Self::Ethereum => 60,
-            Self::SmartChain => 60,
+            Self::SmartChain => 9006,
             Self::Polygon => 60,
             Self::Solana => 501,
             Self::Arbitrum => 60,
