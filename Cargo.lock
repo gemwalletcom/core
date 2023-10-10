@@ -3177,6 +3177,7 @@ dependencies = [
  "num-bigint",
  "num-traits",
  "serde",
+ "strum",
  "typeshare",
 ]
 

@@ -56,6 +56,9 @@ url = "https://api.eths.center"
 [name.spaceid]
 url = "https://api.prd.space.id"
 
+[name.did]
+url = "https://indexer-basic.did.id"
+
 [metrics]
 path = "/metrics"
 

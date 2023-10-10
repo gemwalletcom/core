@@ -23,6 +23,7 @@ pub enum NameProvider {
     Tree,
     SpaceId,
     Eths,
+    Did,
 }
 
 impl NameProvider {
@@ -35,6 +36,7 @@ impl NameProvider {
             Self::Tree => "tree",
             Self::SpaceId => "spaceid",
             Self::Eths => "eths",
+            Self::Did => "did",
         }
     }
 }

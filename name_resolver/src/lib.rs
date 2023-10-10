@@ -5,3 +5,4 @@ pub mod sns;
 pub mod ton;
 pub mod eths;
 pub mod spaceid;
+pub mod did;

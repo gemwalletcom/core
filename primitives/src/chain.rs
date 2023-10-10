@@ -1,9 +1,10 @@
 use serde::{Serialize, Deserialize};
 use typeshare::typeshare;
+use strum::{IntoEnumIterator, EnumIter};
 
 use crate::AssetId;
 
-#[derive(Copy, Clone, Debug, Serialize, Deserialize)]
+#[derive(Copy, Clone, Debug, Serialize, Deserialize, EnumIter)]
 #[typeshare(swift = "Equatable, Codable, CaseIterable")]
 #[serde(rename_all = "lowercase")]
 pub enum Chain {
@@ -106,5 +107,34 @@ impl Chain {
 
     pub fn to_string(&self) -> String {
         self.as_str().to_string()
+    }
+
+    pub fn as_slip44(&self) -> i64 {
+        match self {
+            Self::Binance => 714,
+            Self::Bitcoin => 0,
+            Self::Ethereum => 60,
+            Self::SmartChain => 60,
+            Self::Polygon => 60,
+            Self::Solana => 501,
+            Self::Arbitrum => 60,
+            Self::Optimism => 60,
+            Self::Thorchain => 931,
+            Self::Cosmos => 118,
+            Self::Osmosis => 118,
+            Self::Ton => 607,
+            Self::Tron => 195,
+            Self::Doge => 3,
+            Self::Aptos => 637,
+            Self::Base => 60,
+            Self::AvalancheC => 9005,
+            Self::Sui => 784,
+            Self::Ripple => 144,
+            Self::OpBNB => 60,
+        }
+    }
+
+    pub fn all() -> Vec<Chain> {
+        return Chain::iter().collect::<Vec<_>>();
     }
 }

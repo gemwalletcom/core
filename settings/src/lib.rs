@@ -104,6 +104,7 @@ pub struct Name {
     pub ton: TON,
     pub eths: ETHS,
     pub spaceid: SpaceId,
+    pub did: DID,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -124,7 +125,6 @@ pub struct TON {
     pub url: String,
 }
 
-
 #[derive(Debug, Deserialize, Clone)]
 #[allow(unused)]
 pub struct UD {
@@ -141,6 +141,12 @@ pub struct ETHS {
 #[derive(Debug, Deserialize, Clone)]
 #[allow(unused)]
 pub struct SpaceId {
+    pub url: String,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[allow(unused)]
+pub struct DID {
     pub url: String,
 }
 

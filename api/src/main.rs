@@ -60,6 +60,7 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
         settings.name.ton.url,
         settings.name.eths.url,
         settings.name.spaceid.url,
+        settings.name.did.url,
     );
     let pusher_client = PusherClient::new(settings.pusher.url);
     let devices_client = DevicesClient::new(postgres_url, pusher_client, settings.pusher.ios.topic).await;

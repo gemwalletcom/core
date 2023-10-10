@@ -4,7 +4,7 @@ use async_trait::async_trait;
 use primitives::chain::Chain;
 use primitives::name::{NameRecord, NameProvider};
 
-use crate::{ens::ENSClient, ud::UDClient, sns::SNSClient, ton::TONClient, eths::EthsClient, spaceid::SpaceIdClient};
+use crate::{ens::ENSClient, ud::UDClient, sns::SNSClient, ton::TONClient, eths::EthsClient, spaceid::SpaceIdClient, did::DidClient};
 
 #[async_trait]
 pub trait NameClient {
@@ -22,6 +22,7 @@ pub struct Client {
     ton_client: TONClient,
     eths_client: EthsClient,
     spaceid_client: SpaceIdClient,
+    did_client: DidClient,
 }
 
 impl Client {
@@ -34,6 +35,7 @@ impl Client {
         ton_url: String,
         eths_api_url: String,
         space_api_url: String,
+        did_api_url: String,
     ) -> Self {
         let domains_mapping = Self::domains_mapping();
         let ens_client = ENSClient::new(ens_url);
@@ -42,6 +44,7 @@ impl Client {
         let ton_client: TONClient = TONClient::new(ton_url);
         let eths_client: EthsClient = EthsClient::new(eths_api_url);
         let spaceid_client: SpaceIdClient = SpaceIdClient::new(space_api_url);
+        let did_client: DidClient = DidClient::new(did_api_url);
 
         Self {
             domains_mapping,
@@ -51,6 +54,7 @@ impl Client {
             ton_client,
             eths_client,
             spaceid_client,
+            did_client,
         }
     }
 
@@ -96,6 +100,12 @@ impl Client {
                 }
                 self.spaceid_client.resolve(name, chain).await
             },
+            NameProvider::Did => {
+                if !DidClient::chains().contains(&chain) {
+                    return Err("not supported chain".to_string().into())
+                }
+                self.did_client.resolve(name, chain).await
+            },
         }
     }
 
@@ -124,6 +134,10 @@ impl Client {
 
         for domain in SpaceIdClient::domains() {
             result.insert(domain, NameProvider::SpaceId);
+        }
+
+        for domain in DidClient::domains() {
+            result.insert(domain, NameProvider::Did);
         }
 
         result
