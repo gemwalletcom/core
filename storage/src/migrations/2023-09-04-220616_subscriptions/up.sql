@@ -6,7 +6,7 @@ CREATE TABLE subscriptions (
     address VARCHAR(256) NOT NULL,
     updated_at timestamp NOT NULL DEFAULT current_timestamp,
     created_at timestamp NOT NULL DEFAULT current_timestamp,
-    UNIQUE(device_id, chain, address)
+    UNIQUE(device_id, wallet_index, chain, address)
 );
 
 SELECT diesel_manage_updated_at('subscriptions');
