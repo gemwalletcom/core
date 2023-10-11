@@ -13,6 +13,7 @@ pub struct Device {
     pub currency: String,
     pub is_push_enabled: bool,
     pub version: String,
+    pub subscriptions_version: i32,
 }
 
 #[derive(Debug, Queryable, Selectable, Serialize, Deserialize, Insertable, AsChangeset, Clone)]
@@ -26,6 +27,7 @@ pub struct UpdateDevice {
     pub currency: String,
     pub is_push_enabled: bool,
     pub version: String,
+    pub subscriptions_version: i32,
 }
 
 impl Device {
@@ -39,6 +41,7 @@ impl Device {
             currency: self.currency.clone().into(),
             is_push_enabled: self.is_push_enabled,
             version: self.version.clone().into(),
+            subscriptions_version: self.subscriptions_version.clone().into(),
         }
     }
 }
@@ -53,6 +56,7 @@ impl UpdateDevice {
             currency: device.currency.unwrap_or_default(),
             is_push_enabled: device.is_push_enabled,
             version: device.version.unwrap_or_default(),
+            subscriptions_version: device.subscriptions_version.unwrap_or_default(),
         }
     }
 }

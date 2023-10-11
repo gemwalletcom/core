@@ -14,4 +14,5 @@ pub struct Device {
     pub version: Option<String>,
     pub currency: Option<String>,
     pub is_push_enabled: bool,
+    pub subscriptions_version: Option<i32>,
 }

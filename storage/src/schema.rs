@@ -49,6 +49,7 @@ diesel::table! {
         created_at -> Timestamp,
         #[max_length = 8]
         currency -> Varchar,
+        subscriptions_version -> Int4,
     }
 }
 

@@ -7,6 +7,7 @@ CREATE TABLE devices (
     locale VARCHAR(8) NOT NULL,
     currency VARCHAR(8) NOT NULL,
     version VARCHAR(8) NOT NULL,
+    subscriptions_version INTEGER NOT NULL DEFAULT 0,
     updated_at timestamp NOT NULL default current_timestamp,
     created_at timestamp NOT NULL default current_timestamp,
     UNIQUE(device_id)
