@@ -44,11 +44,11 @@ diesel::table! {
         #[max_length = 8]
         locale -> Varchar,
         #[max_length = 8]
-        currency -> Varchar,
-        #[max_length = 8]
         version -> Varchar,
         updated_at -> Timestamp,
         created_at -> Timestamp,
+        #[max_length = 8]
+        currency -> Varchar,
     }
 }
 
@@ -95,6 +95,7 @@ diesel::table! {
         is_enabled -> Bool,
         updated_at -> Timestamp,
         created_at -> Timestamp,
+        block_created_at -> Timestamp,
     }
 }
 
@@ -122,6 +123,7 @@ diesel::table! {
         address -> Varchar,
         updated_at -> Timestamp,
         created_at -> Timestamp,
+        wallet_index -> Int4,
     }
 }
 
@@ -152,8 +154,6 @@ diesel::table! {
         block_number -> Int4,
         #[max_length = 16]
         kind -> Varchar,
-        #[max_length = 16]
-        state -> Varchar,
         #[max_length = 32]
         value -> Nullable<Varchar>,
         asset_id -> Nullable<Varchar>,
@@ -162,6 +162,8 @@ diesel::table! {
         fee_asset_id -> Nullable<Varchar>,
         updated_at -> Timestamp,
         created_at -> Timestamp,
+        #[max_length = 16]
+        state -> Varchar,
     }
 }
 

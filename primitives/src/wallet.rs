@@ -2,6 +2,7 @@
 struct Wallet {
     id: String,
     name: String,
+    index: i32,
     #[serde(rename = "type")]
     wallet_type: WalletType,
     accounts: Vec<Account>
