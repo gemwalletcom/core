@@ -120,6 +120,7 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
             device::delete_device,
             device::send_push_notification_device,
             asset::get_asset,
+            asset::get_assets_search,
             subscription::add_subscriptions,
             subscription::get_subscriptions,
             subscription::delete_subscriptions,
