@@ -133,6 +133,7 @@ impl Transaction {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare]
 pub struct TransactionsFetchOption  {
+    pub wallet_index: i32,
     pub asset_id: Option<String>,
     pub from_timestamp: Option<u32>
 }

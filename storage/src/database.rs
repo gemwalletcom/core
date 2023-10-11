@@ -319,7 +319,16 @@ impl DatabaseClient {
             .select(Subscription::as_select())
             .load(&mut self.connection)
     }
-    
+
+    pub fn get_subscriptions_by_device_id_wallet_index(&mut self, _device_id: &str, _wallet_index: i32) -> Result<Vec<Subscription>, diesel::result::Error> {
+        use crate::schema::subscriptions::dsl::*;
+        subscriptions
+            .filter(wallet_index.eq(_wallet_index))
+            .inner_join(devices::table)
+            .filter(devices::device_id.eq(_device_id))
+            .select(Subscription::as_select())
+            .load(&mut self.connection)
+    }
 
     pub fn delete_subscription(&mut self, subscription: Subscription) -> Result<usize, diesel::result::Error> {
         use crate::schema::subscriptions::dsl::*;

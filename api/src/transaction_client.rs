@@ -18,7 +18,8 @@ impl TransactionsClient {
     }
 
     pub fn get_transactions_by_device_id(&mut self, device_id: &str, options: TransactionsFetchOption) -> Result<Vec<primitives::Transaction>, Box<dyn Error>> {
-        let addresses = self.database.get_subscriptions_by_device_id(device_id)?.into_iter().map(|x| x.address).collect::<Vec<String>>();
+        let wallet_index = options.wallet_index.clone();
+        let addresses = self.database.get_subscriptions_by_device_id_wallet_index(device_id, wallet_index)?.into_iter().map(|x| x.address).collect::<Vec<String>>();
 
         let transactions = self.database
             .get_transactions_by_device_id(device_id, addresses.clone(), options)?
