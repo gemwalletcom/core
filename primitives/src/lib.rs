@@ -16,6 +16,7 @@ pub mod asset_type;
 pub mod asset_price;
 pub use self::asset_price::{ChartPeriod, ChartValue, Charts};
 pub mod asset_info;
+pub use self::asset_info::{AssetInfos, AssetInfo};
 pub mod tokenlist;
 pub mod fiat_quote;
 pub mod fiat_assets;
