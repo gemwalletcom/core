@@ -379,7 +379,8 @@ impl DatabaseClient {
         
         let mut query = crate::schema::transactions::table.into_boxed();
         query = query
-            .filter(from_address.eq_any(addresses.clone()));
+            .filter(from_address.eq_any(addresses.clone()))
+            .or_filter(to_address.eq_any(addresses));
         
         if let Some(_asset_id) = options.asset_id  {
             query = query.filter(asset_id.eq(_asset_id));
