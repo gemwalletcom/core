@@ -1,3 +1,4 @@
+use primitives::PushNotification;
 use serde::{Serialize, Deserialize};
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -7,6 +8,7 @@ pub struct Notification {
     pub title: String,
     pub message: String,
     pub topic: String,
+    pub data: Option<PushNotification>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

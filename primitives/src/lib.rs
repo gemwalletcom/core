@@ -42,3 +42,6 @@ pub mod address_formatter;
 pub use self::address_formatter::AddressFormatter;
 pub mod utxo;
 pub use self::utxo::UTXO;
+pub mod push_notification;
+pub use self::push_notification::PushNotification;
+pub use self::push_notification::PushNotificationTypes;

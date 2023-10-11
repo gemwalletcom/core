@@ -51,6 +51,7 @@ impl DevicesClient {
             title: "Test Notification".to_string(), 
             message: "Test Message".to_string(), 
             topic: self.pusher_topic.to_string(),
+            data: None,
         };
         let result = self.pusher.push(notification).await?;
         Ok(result.counts > 0)

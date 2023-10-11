@@ -1,6 +1,6 @@
 use std::error::Error;
 
-use primitives::{Transaction, Subscription, AddressFormatter};
+use primitives::{Transaction, Subscription, AddressFormatter, PushNotification, PushNotificationTypes};
 use rust_decimal::{Decimal, prelude::*};
 use storage::DatabaseClient;
 
@@ -46,12 +46,18 @@ impl Pusher {
             format!("From {}", AddressFormatter::short(transaction.asset_id.chain, transaction.from.as_str())) 
         };
 
+        let data = PushNotification {
+            notification_type: PushNotificationTypes::Transaction,
+            data: transaction,
+        };
+
         let notification = Notification {
             tokens: vec![device.token],
             platform: device.platform.as_i32(),
             title,
             message,
             topic: self.ios_topic.clone(),
+            data: Some(data),
         };
         let response = self.client.push(notification).await?;
 
