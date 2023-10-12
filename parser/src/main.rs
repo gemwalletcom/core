@@ -48,5 +48,12 @@ async fn parser_start(settings: Settings, parser_options: ParserOptions, chain: 
     let database_client = DatabaseClient::new(settings.postgres.url.as_str());
     
     let mut parser = Parser::new(provider, pusher, database_client, parser_options);
-    parser.start().await;
+    match parser.start().await {
+        Ok(_) => {
+            println!("parser {} start complete", chain.as_str())
+        },
+        Err(e) => { 
+            println!("parser {} start error: {:?}", chain.as_str(), e) 
+        }
+    }
 }

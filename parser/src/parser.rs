@@ -42,9 +42,9 @@ impl Parser {
         }
     }
 
-    pub async fn start(&mut self) {    
+    pub async fn start(&mut self) -> Result<(), Box<dyn Error + Send + Sync>> {    
         loop {
-            let state = self.database.get_parser_state(self.chain).unwrap();
+            let state = self.database.get_parser_state(self.chain)?;
             
             if !state.is_enabled {
                 tokio::time::sleep(Duration::from_millis(self.options.timeout)).await; continue;
@@ -73,7 +73,7 @@ impl Parser {
             }
 
             loop {
-                let state = self.database.get_parser_state(self.chain).unwrap();
+                let state = self.database.get_parser_state(self.chain)?;
                 let start = Instant::now();
                 let start_block =  state.current_block + 1;
                 let end_block = cmp::min(start_block + state.parallel_blocks - 1, state.latest_block - state.await_blocks);
