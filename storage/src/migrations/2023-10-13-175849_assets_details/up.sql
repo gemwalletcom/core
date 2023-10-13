@@ -11,5 +11,8 @@ CREATE TABLE assets_details (
     reddit VARCHAR(64),
     coingecko VARCHAR(64),
     coinmarketcap VARCHAR(64),
-    discord VARCHAR(64)
+    discord VARCHAR(64),
+
+    updated_at timestamp NOT NULL default current_timestamp,
+    created_at timestamp NOT NULL default current_timestamp
 );

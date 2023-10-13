@@ -1,4 +1,4 @@
-use primitives::asset_price::{ChartValue, ChartPeriod};
+use primitives::{ChartValue, ChartPeriod, Asset, AssetDetails};
 use redis::{aio::Connection, AsyncCommands, RedisResult};
 use storage::{database::DatabaseClient, models::{FiatRate, Chart}};
 use std::{collections::HashMap, error::Error};
@@ -99,5 +99,14 @@ impl Client {
         }).collect();
 
         Ok(prices)
+    }
+
+    // asset, asset details
+    pub async fn update_asset(&mut self, asset: Asset, asset_details: AssetDetails) -> Result<(), Box<dyn Error>> {
+        let details = storage::models::asset::AssetDetail::from_primitive(asset.id.to_string().as_str(), asset_details);
+        let asset = storage::models::asset::Asset::from_primitive(asset);
+        let _ = self.database.add_assets(vec![asset]);
+        let _ = self.database.add_assets_details(vec![details]);
+        return Ok(())
     }
 }

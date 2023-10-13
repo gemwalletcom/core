@@ -76,4 +76,21 @@ impl AssetDetail {
             }
         }
     }
+
+    pub fn from_primitive(asset_id: &str, value: primitives::AssetDetails) -> AssetDetail {
+        AssetDetail {
+            asset_id: asset_id.to_string(),
+            homepage: value.links.homepage,
+            explorer: value.links.explorer,
+            twitter: value.links.twitter,
+            telegram: value.links.telegram,
+            github: value.links.github,
+            youtube: value.links.youtube,
+            facebook: value.links.facebook,
+            reddit: value.links.reddit,
+            coingecko: value.links.coingecko,
+            coinmarketcap: value.links.coinmarketcap,
+            discord: value.links.discord,
+        }
+    }
 }

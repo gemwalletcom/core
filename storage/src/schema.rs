@@ -46,6 +46,8 @@ diesel::table! {
         coinmarketcap -> Nullable<Varchar>,
         #[max_length = 64]
         discord -> Nullable<Varchar>,
+        updated_at -> Timestamp,
+        created_at -> Timestamp,
     }
 }
 

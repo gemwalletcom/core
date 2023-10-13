@@ -21,6 +21,7 @@ pub struct CoinInfo {
     pub id: String,
     pub symbol: String,
     pub name: String,
+    pub asset_platform_id: Option<String>,
     pub preview_listing: bool,
     pub market_cap_rank: Option<i32>,
     pub coingecko_rank: Option<i32>,
@@ -29,6 +30,7 @@ pub struct CoinInfo {
     pub liquidity_score: f32,
     //pub platforms: HashMap<String, Option<String>>,
     pub detail_platforms: HashMap<String, Option<DetailPlatform>>,
+    pub links: CoinMarketLinks,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -47,6 +49,18 @@ pub struct CoinMarket {
     pub market_cap: Option<f64>,
     pub market_cap_rank: Option<i32>,
     pub total_volume: Option<f64>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct CoinMarketLinks {
+    pub homepage: Vec<String>,
+    pub blockchain_site: Vec<String>,
+    pub chat_url: Vec<String>,
+    pub subreddit_url: Option<String>,
+    pub twitter_screen_name: Option<String>,
+    pub facebook_username: Option<String>,
+    pub telegram_channel_identifier: Option<String>,
+    pub repos_url: HashMap<String, Vec<String>>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
