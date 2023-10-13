@@ -125,7 +125,7 @@ impl PriceUpdater {
     pub async fn update_assets(&mut self) -> Result<usize, Box<dyn Error>> {
         let coin_list = self.coin_gecko_client.get_coin_markets(0, 50).await?.into_iter().map(|x| x.id).collect::<Vec<_>>();
 
-        for coin in coin_list {
+        for coin in coin_list.clone() {
             let coin_info = self.coin_gecko_client.get_coin(coin.as_str()).await?;
             
             if coin_info.preview_listing || coin_info.market_cap_rank.unwrap_or(999999) > 100 {
@@ -133,15 +133,12 @@ impl PriceUpdater {
                 continue;
             }
             let result = self.get_assets_from_coin_info(coin_info);
-
             for (asset, asset_details) in result {
-                println!("asset: {:?}\nasset_details: {:?} coin_id: {} \n", asset, asset_details, coin);
-
                 self.price_client.update_asset(asset, asset_details).await?;
             }
         }
 
-        Ok(0)
+        Ok(coin_list.len())
     }
 
     fn get_assets_from_coin_info(&self, coin_info: CoinInfo) -> Vec<(Asset, AssetDetails)> {
