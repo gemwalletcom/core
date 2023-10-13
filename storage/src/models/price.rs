@@ -1,6 +1,6 @@
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
-use primitives::asset_price::AssetPrice;
+use primitives::{AssetPrice, AssetMarket};
 use serde::{Deserialize, Serialize};
 use std::{hash::{Hash, Hasher}, time::{UNIX_EPOCH, SystemTime}};
 
@@ -75,6 +75,16 @@ impl Price {
             asset_id: self.asset_id.clone(),
             price: self.price,
             price_change_percentage_24h: self.price_change_percentage_24h,
+        }
+    }
+
+    pub fn as_market_primitive(&self) -> AssetMarket {
+        AssetMarket{
+            price: self.price,
+            price_change_percentage_24h: self.price_change_percentage_24h,
+            market_cap: self.market_cap,
+            market_cap_rank: Some(self.market_cap_rank),
+            total_volume: self.total_volume,
         }
     }
 }

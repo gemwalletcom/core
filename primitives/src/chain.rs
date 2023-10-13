@@ -2,7 +2,7 @@ use serde::{Serialize, Deserialize};
 use typeshare::typeshare;
 use strum::{IntoEnumIterator, EnumIter};
 
-use crate::AssetId;
+use crate::{AssetId, AssetType};
 
 #[derive(Copy, Clone, Debug, Serialize, Deserialize, EnumIter)]
 #[typeshare(swift = "Equatable, Codable, CaseIterable")]
@@ -131,6 +131,31 @@ impl Chain {
             Self::Sui => 784,
             Self::Ripple => 144,
             Self::OpBNB => 60,
+        }
+    }
+
+    pub fn default_asset_type(&self) -> Option<AssetType> {
+        match self {
+            Self::Binance => Some(AssetType::BEP2),
+            Self::Bitcoin => None,
+            Self::Ethereum => Some(AssetType::ERC20),
+            Self::SmartChain => Some(AssetType::BEP20),
+            Self::Polygon => Some(AssetType::ERC20),
+            Self::Solana => Some(AssetType::SPL),
+            Self::Arbitrum => Some(AssetType::ERC20),
+            Self::Optimism => Some(AssetType::ERC20),
+            Self::Thorchain => None,
+            Self::Cosmos => None,
+            Self::Osmosis => None,
+            Self::Ton => None,
+            Self::Tron => Some(AssetType::TRC20),
+            Self::Doge => None,
+            Self::Aptos => None,
+            Self::Base => Some(AssetType::ERC20),
+            Self::AvalancheC => Some(AssetType::ERC20),
+            Self::Sui => None,
+            Self::Ripple => None,
+            Self::OpBNB => Some(AssetType::BEP20),
         }
     }
 

@@ -24,6 +24,13 @@ pub async fn main() {
     let assets_client = AssetsClient::new(settings.assets.url);
     let mut tokenlist_client  = TokenListClient::new(&settings.postgres.url, &assets_client);
 
+    // // update assets
+    // let result = price_updater.update_assets().await;
+    // match result {
+    //     Ok(count) => { println!("update assets: {}", count) }
+    //     Err(err) => { println!("update assets error: {}", err) }
+    // }
+
     // update rates
     let result = price_updater.update_fiat_rates().await;
     match result {

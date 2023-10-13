@@ -4,6 +4,7 @@ use diesel::{Connection, upsert::excluded};
 use diesel::pg::PgConnection;
 use primitives::chain::Chain;
 use crate::models::*;
+use crate::models::asset::AssetDetail;
 use crate::schema::devices;
 use diesel::prelude::*;
 use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
@@ -118,6 +119,14 @@ impl DatabaseClient {
         prices
             .select(Price::as_select())
             .load(&mut self.connection)
+    }
+
+    pub fn get_price(&mut self, _asset_id: &str) ->  Result<Price, diesel::result::Error> {
+        use crate::schema::prices::dsl::*;
+        prices
+            .filter(asset_id.eq(_asset_id))
+            .select(Price::as_select())
+            .first(&mut self.connection)
     }
 
     pub fn set_fiat_rates(&mut self, rates: Vec<FiatRate>) -> Result<usize, diesel::result::Error> {
@@ -411,6 +420,14 @@ impl DatabaseClient {
         assets
             .filter(id.eq(asset_id))
             .select(Asset::as_select())
+            .first(&mut self.connection)
+    }
+
+    pub fn get_asset_details(&mut self, _asset_id: String) -> Result<AssetDetail, diesel::result::Error> {
+        use crate::schema::assets_details::dsl::*;
+        assets_details
+            .filter(asset_id.eq(_asset_id))
+            .select(AssetDetail::as_select())
             .first(&mut self.connection)
     }
 

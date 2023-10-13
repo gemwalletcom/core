@@ -210,6 +210,12 @@ pub struct Parser {
 
 #[derive(Debug, Deserialize, Clone)]
 #[allow(unused)]
+pub struct Deamon {
+    pub service: String
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[allow(unused)]
 pub struct Pusher {
     pub url: String,
     pub ios: PusherIOS,

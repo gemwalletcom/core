@@ -1,6 +1,7 @@
 extern crate rocket;
 use std::error::Error;
 
+use primitives::AssetFull;
 use storage::DatabaseClient;
 
 pub struct AssetsClient {
@@ -17,8 +18,11 @@ impl AssetsClient {
         }
     }
 
-    pub fn get_asset(&mut self, asset_id: &str) -> Result<primitives::Asset, Box<dyn Error>> {
-        Ok(self.database.get_asset(asset_id.to_string())?.as_primitive())
+    pub fn get_asset_full(&mut self, asset_id: &str) -> Result<AssetFull, Box<dyn Error>> {
+        let asset = self.database.get_asset(asset_id.to_string())?.as_primitive();
+        let market = self.database.get_price(asset_id).ok().map(|x| x.as_market_primitive());
+        let details = self.database.get_asset_details(asset_id.to_string()).ok().map(|x| x.as_primitive());
+        Ok(AssetFull{asset, details, market})
     }
 
     pub fn get_assets_search(&mut self, query: &str) -> Result<Vec<primitives::Asset>, Box<dyn Error>> {

@@ -13,6 +13,17 @@ pub struct AssetPrice {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare]
 #[serde(rename_all = "camelCase")]
+pub struct AssetMarket {
+    pub price: f64,
+    pub price_change_percentage_24h: f64,
+    pub market_cap: f64,
+    pub market_cap_rank: Option<i32>,
+    pub total_volume: f64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[typeshare]
+#[serde(rename_all = "camelCase")]
 pub struct AssetPrices {
     pub currency: String,
     pub prices: Vec<AssetPrice>,

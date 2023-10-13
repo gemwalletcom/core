@@ -1,5 +1,5 @@
 use diesel::prelude::*;
-use primitives::{chain::Chain, asset_type::AssetType, asset_id::AssetId};
+use primitives::{Chain, AssetType, AssetId, AssetLinks};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Queryable, Selectable, Serialize, Deserialize, Insertable, AsChangeset, Clone)]
@@ -35,6 +35,43 @@ impl Asset {
             symbol: asset.symbol,
             asset_type: asset.asset_type.to_string(),
             decimals: asset.decimals
+        }
+    }
+}
+
+#[derive(Debug, Queryable, Selectable, Serialize, Deserialize, Insertable, AsChangeset, Clone)]
+#[diesel(table_name = crate::schema::assets_details)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+pub struct AssetDetail {
+    pub asset_id: String,
+    // links
+    pub homepage: Option<String>,
+    pub explorer: Option<String>,
+    pub twitter: Option<String>,
+    pub telegram: Option<String>,
+    pub github: Option<String>,
+    pub youtube: Option<String>,
+    pub facebook: Option<String>,
+    pub reddit: Option<String>,
+    pub coingecko: Option<String>,
+    pub coinmarketcap: Option<String>,
+}
+
+impl AssetDetail {
+    pub fn as_primitive(&self) -> primitives::AssetDetails {
+        primitives::AssetDetails{
+            links: AssetLinks {
+                homepage: self.homepage.clone(),
+                explorer: self.explorer.clone(),
+                twitter: self.twitter.clone(),
+                telegram: self.telegram.clone(),
+                github: self.github.clone(),
+                youtube: self.youtube.clone(),
+                facebook: self.facebook.clone(),
+                reddit: self.reddit.clone(),
+                coingecko: self.coingecko.clone(),
+                coinmarketcap: self.coinmarketcap.clone(),
+            }
         }
     }
 }

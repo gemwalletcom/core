@@ -1,7 +1,8 @@
 use crate::DEFAULT_FIAT_CURRENCY;
-use crate::coingecko::{CoinGeckoClient, CoinMarket};
+use crate::coingecko::{CoinGeckoClient, CoinMarket, CoinInfo};
 use crate::client:: Client;
 use crate::price_mapper::get_chain_for_coingecko_id;
+use primitives::{Asset, AssetId};
 use primitives::chain::Chain;
 use storage::models::{Price, Chart};
 use std::collections::HashSet;
@@ -123,6 +124,59 @@ impl PriceUpdater {
         let count = self.price_client.set_fiat_rates(rates).await?;
         Ok(count)
     }
+
+    pub async fn update_assets(&mut self) -> Result<usize, Box<dyn Error>> {
+        let coin_list = self.coin_gecko_client.get_coin_list().await?;
+        
+        for coin in coin_list {
+            let chains = vec![Chain::Ethereum];
+            let platforms = coin.platforms.into_iter().flat_map(|x| {
+                get_chain_for_coingecko_id(x.0.as_str())
+            })
+            .filter(|x| chains.contains(x))
+            .collect::<Vec<_>>();
+
+            if platforms.is_empty(){
+                continue;
+            }
+            println!("coin_info: {}", coin.id);
+            let coin_info = self.coin_gecko_client.get_coin(coin.id.as_str()).await?;
+            
+            if coin_info.preview_listing || coin_info.market_cap_rank.unwrap_or(999999) > 100 {
+                //println!("early exit loop for {}", coin_info.id);
+                continue;
+            }
+            let assets = self.get_assets_from_coin_info(coin_info);
+
+            println!("assets: {:?}, coin_id: {} \n", assets, coin.id);
+        }
+
+        Ok(0)
+    }
+
+    fn get_assets_from_coin_info(&self, coin_info: CoinInfo) -> Vec<Asset> {
+        return coin_info.detail_platforms.into_iter().filter_map(|x| {
+            if let (Some(chain), Some(platform)) = (get_chain_for_coingecko_id(x.0.as_str()), x.1) {
+                return Some((chain, platform))
+            }
+            return None
+        })
+        .flat_map(|(chain, platform)| {
+            let token_id = format_token_id(chain, platform.contract_address);
+            let decimals = platform.decimal_place.unwrap_or_default();
+            let asset_id = AssetId{chain, token_id: token_id.into()};
+            let asset = Asset{
+                id: asset_id,
+                name: coin_info.name.clone(),
+                symbol: coin_info.symbol.to_uppercase().clone(),
+                decimals,
+                asset_type: chain.default_asset_type().unwrap(),
+            };
+            return Some(asset)
+        })
+        .collect::<Vec<_>>();
+    }
+
 }
 
 fn asset_price_map(asset_id: String, market: CoinMarket) -> Price {

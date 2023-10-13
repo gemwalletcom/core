@@ -17,6 +17,27 @@ pub struct Coin {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct CoinInfo {
+    pub id: String,
+    pub symbol: String,
+    pub name: String,
+    pub preview_listing: bool,
+    pub market_cap_rank: Option<i32>,
+    pub coingecko_rank: Option<i32>,
+    pub community_score: f32,
+    pub watchlist_portfolio_users: f32,
+    pub liquidity_score: f32,
+    //pub platforms: HashMap<String, Option<String>>,
+    pub detail_platforms: HashMap<String, Option<DetailPlatform>>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct DetailPlatform {
+    pub decimal_place: Option<i32>,
+    pub contract_address: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct CoinMarket {
     pub id: String,
     pub symbol: String,
@@ -96,6 +117,20 @@ impl CoinGeckoClient {
 
         let coin_markets: Vec<CoinMarket> = response.json().await?;
         Ok(coin_markets)
+    }
+
+    pub async fn get_coin(&self, coin: &str) -> Result<CoinInfo, Error> {
+        let url = format!("{}/api/v3/coins/{}?x_cg_pro_api_key={}&market_data=false&community_data=false&tickers=false&localization=false&developer_data=false", self.url, coin, self.api_key);
+
+        //println!("url: {}", url);
+
+        let response = self.client
+            .get(&url)
+            .headers(self.headers())
+            .send().await?;
+
+        let coin: CoinInfo = response.json().await?;
+        Ok(coin)
     }
 
     pub async fn get_fiat_rates(&self) -> Result<Vec<FiatRate>, Error> {

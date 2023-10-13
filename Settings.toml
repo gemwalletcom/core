@@ -157,3 +157,6 @@ url = ""
 
 [pusher.ios]
 topic = ""
+
+[deamon]
+service = ""

@@ -21,6 +21,33 @@ diesel::table! {
 }
 
 diesel::table! {
+    assets_details (asset_id) {
+        #[max_length = 128]
+        asset_id -> Varchar,
+        #[max_length = 64]
+        homepage -> Nullable<Varchar>,
+        #[max_length = 64]
+        explorer -> Nullable<Varchar>,
+        #[max_length = 64]
+        twitter -> Nullable<Varchar>,
+        #[max_length = 64]
+        telegram -> Nullable<Varchar>,
+        #[max_length = 64]
+        github -> Nullable<Varchar>,
+        #[max_length = 64]
+        youtube -> Nullable<Varchar>,
+        #[max_length = 64]
+        facebook -> Nullable<Varchar>,
+        #[max_length = 64]
+        reddit -> Nullable<Varchar>,
+        #[max_length = 64]
+        coingecko -> Nullable<Varchar>,
+        #[max_length = 64]
+        coinmarketcap -> Nullable<Varchar>,
+    }
+}
+
+diesel::table! {
     charts (id) {
         id -> Int4,
         coin_id -> Varchar,
@@ -178,10 +205,12 @@ diesel::table! {
     }
 }
 
+diesel::joinable!(assets_details -> assets (asset_id));
 diesel::joinable!(subscriptions -> devices (device_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
     assets,
+    assets_details,
     charts,
     devices,
     fiat_assets,
