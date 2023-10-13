@@ -55,6 +55,7 @@ pub struct AssetDetail {
     pub reddit: Option<String>,
     pub coingecko: Option<String>,
     pub coinmarketcap: Option<String>,
+    pub discord: Option<String>,
 }
 
 impl AssetDetail {
@@ -71,6 +72,7 @@ impl AssetDetail {
                 reddit: self.reddit.clone(),
                 coingecko: self.coingecko.clone(),
                 coinmarketcap: self.coinmarketcap.clone(),
+                discord: self.discord.clone(),
             }
         }
     }

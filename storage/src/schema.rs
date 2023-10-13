@@ -44,6 +44,8 @@ diesel::table! {
         coingecko -> Nullable<Varchar>,
         #[max_length = 64]
         coinmarketcap -> Nullable<Varchar>,
+        #[max_length = 64]
+        discord -> Nullable<Varchar>,
     }
 }
 

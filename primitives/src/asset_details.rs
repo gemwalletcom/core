@@ -30,4 +30,5 @@ pub struct AssetLinks {
     pub reddit: Option<String>,
     pub coingecko: Option<String>,
     pub coinmarketcap: Option<String>,
+    pub discord: Option<String>,
 }

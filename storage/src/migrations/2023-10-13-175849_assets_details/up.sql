@@ -10,5 +10,6 @@ CREATE TABLE assets_details (
     facebook VARCHAR(64),
     reddit VARCHAR(64),
     coingecko VARCHAR(64),
-    coinmarketcap VARCHAR(64)
+    coinmarketcap VARCHAR(64),
+    discord VARCHAR(64)
 );
