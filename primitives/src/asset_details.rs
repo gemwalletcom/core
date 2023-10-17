@@ -33,3 +33,10 @@ pub struct AssetLinks {
     pub coinmarketcap: Option<String>,
     pub discord: Option<String>,
 }
+
+#[typeshare]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AssetDetailsInfo {
+    pub details: AssetDetails,
+    pub market: AssetMarket,
+}
