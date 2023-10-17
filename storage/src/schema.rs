@@ -143,6 +143,9 @@ diesel::table! {
         last_updated_at -> Timestamp,
         updated_at -> Timestamp,
         created_at -> Timestamp,
+        circulating_supply -> Float8,
+        total_supply -> Float8,
+        max_supply -> Float8,
     }
 }
 

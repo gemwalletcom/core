@@ -110,6 +110,9 @@ impl DatabaseClient {
                 market_cap.eq(excluded(market_cap)),
                 market_cap_rank.eq(excluded(market_cap_rank)),
                 total_volume.eq(excluded(total_volume)),
+                circulating_supply.eq(excluded(circulating_supply)),
+                total_supply.eq(excluded(total_supply)),
+                max_supply.eq(excluded(max_supply)),
             ))
             .execute(&mut self.connection)
     }

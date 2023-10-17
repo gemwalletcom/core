@@ -6,6 +6,9 @@ CREATE TABLE assets (
     name VARCHAR(64) NOT NULL,
     symbol VARCHAR(16) NOT NULL,
     decimals INTEGER NOT NULL,
+
+    rank INTEGER NOT NULL DEFAULT 0,
+
     updated_at timestamp NOT NULL default current_timestamp,
     created_at timestamp NOT NULL default current_timestamp,
     UNIQUE(id)

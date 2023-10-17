@@ -17,6 +17,10 @@ pub struct Price {
     pub market_cap: f64,
     pub market_cap_rank: i32,
     pub total_volume: f64,
+    pub circulating_supply: f64,
+    pub total_supply: f64,
+    pub max_supply: f64,
+
     pub last_updated_at: NaiveDateTime,
 }
 
@@ -42,6 +46,9 @@ impl Price {
         market_cap: f64,
         market_cap_rank: i32,
         total_volume: f64,
+        circulating_supply: f64,
+        total_supply: f64,
+        max_supply: f64,
     ) -> Self {
         let now = SystemTime::now().duration_since(UNIX_EPOCH).expect("system time before Unix epoch");
         let last_updated_at = NaiveDateTime::from_timestamp_opt(now.as_secs() as i64, 0).unwrap();
@@ -55,6 +62,9 @@ impl Price {
             market_cap,
             market_cap_rank,
             total_volume,
+            circulating_supply,
+            total_supply,
+            max_supply
         }
     }
 }
@@ -87,9 +97,12 @@ impl Price {
 
     pub fn as_market_primitive(&self) -> AssetMarket {
         AssetMarket{
-            market_cap: Some(self.market_cap).into(),
+            market_cap: Some(self.market_cap),
             market_cap_rank: Some(self.market_cap_rank),
             total_volume: self.total_volume.into(),
+            circulating_supply: Some(self.circulating_supply),
+            total_supply: Some(self.total_supply),
+            max_supply: Some(self.max_supply),
         }
     }
 }

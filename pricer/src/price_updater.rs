@@ -223,6 +223,9 @@ fn asset_price_map(asset_id: String, market: CoinMarket) -> Price {
         market.market_cap.unwrap_or_default(),
         market.market_cap_rank.unwrap_or_default(),
         market.total_volume.unwrap_or_default(),
+        market.circulating_supply.unwrap_or_default(),
+        market.total_supply.unwrap_or_default(),
+        market.max_supply.unwrap_or_default(),
     )
 }
 
