@@ -1,9 +1,12 @@
-use typeshare::typeshare;
-use serde::{Serialize, Deserialize};
-use chrono::DateTime;
+use crate::{
+    asset_id::AssetId, transaction_direction::TransactionDirection,
+    transaction_state::TransactionState, transaction_type::TransactionType, Chain,
+    transaction_utxo::TransactionInput,
+};
 use chrono::offset::Utc;
-
-use crate::{asset_id::AssetId, transaction_type::TransactionType, transaction_state::TransactionState, transaction_direction::TransactionDirection, Chain};
+use chrono::DateTime;
+use serde::{Deserialize, Serialize};
+use typeshare::typeshare;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare]
@@ -27,18 +30,17 @@ pub struct Transaction {
     pub value: String,
     pub memo: Option<String>,
     pub direction: TransactionDirection,
-    
-    // #[serde(rename = "utxoInputs")]
-    // pub utxo_inputs: Vec<UTXO>,
-    // #[serde(rename = "utxoOutputs")]
-    // pub utxo_outputs: Vec<UTXO>,
+
+    #[serde(rename = "utxoInputs")]
+    pub utxo_inputs: Vec<TransactionInput>,
+    #[serde(rename = "utxoOutputs")]
+    pub utxo_outputs: Vec<TransactionInput>,
 
     #[serde(rename = "createdAt")]
     pub created_at: DateTime<Utc>,
 }
 
 impl Transaction {
-
     pub fn new(
         hash: String,
         asset_id: AssetId,
@@ -73,54 +75,54 @@ impl Transaction {
             value,
             memo,
             direction,
-            // utxo_inputs: vec![],
-            // utxo_outputs: vec![],
+            utxo_inputs: vec![],
+            utxo_outputs: vec![],
             created_at,
         }
     }
 
-    // pub fn new_with_utxo(
-    //     hash: String,
-    //     asset_id: AssetId,
-    //     from: String,
-    //     to: String,
-    //     contract: Option<String>,
-    //     transaction_type: TransactionType,
-    //     state: TransactionState,
-    //     block_number: String,
-    //     sequence: String,
-    //     fee: String,
-    //     fee_asset_id: AssetId,
-    //     value: String,
-    //     memo: Option<String>,
-    //     direction: TransactionDirection,
-    //     utxo_inputs: Vec<UTXO>,
-    //     utxo_outputs: Vec<UTXO>,
-    //     created_at: NaiveDateTime,
-    // ) -> Self {
-    //     let id = Self::id_from(asset_id.clone().chain, hash.clone());
-    //     Self {
-    //         id,
-    //         hash,
-    //         asset_id,
-    //         from,
-    //         to,
-    //         contract,
-    //         transaction_type,
-    //         state,
-    //         block_number,
-    //         sequence,
-    //         fee,
-    //         fee_asset_id,
-    //         value,
-    //         memo,
-    //         direction,
-    //         utxo_inputs,
-    //         utxo_outputs,
-    //         created_at,
-    //     }
-    // }
-    
+    pub fn new_with_utxo(
+        hash: String,
+        asset_id: AssetId,
+        from: String,
+        to: String,
+        contract: Option<String>,
+        transaction_type: TransactionType,
+        state: TransactionState,
+        block_number: String,
+        sequence: String,
+        fee: String,
+        fee_asset_id: AssetId,
+        value: String,
+        memo: Option<String>,
+        direction: TransactionDirection,
+        utxo_inputs: Vec<TransactionInput>,
+        utxo_outputs: Vec<TransactionInput>,
+        created_at: DateTime<Utc>,
+    ) -> Self {
+        let id = Self::id_from(asset_id.clone().chain, hash.clone());
+        Self {
+            id,
+            hash,
+            asset_id,
+            from,
+            to,
+            contract,
+            transaction_type,
+            state,
+            block_number,
+            sequence,
+            fee,
+            fee_asset_id,
+            value,
+            memo,
+            direction,
+            utxo_inputs,
+            utxo_outputs,
+            created_at,
+        }
+    }
+
     pub fn id_from(chain: Chain, hash: String) -> String {
         format!("{}_{}", chain.as_str(), hash)
     }
@@ -132,8 +134,8 @@ impl Transaction {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare]
-pub struct TransactionsFetchOption  {
+pub struct TransactionsFetchOption {
     pub wallet_index: i32,
     pub asset_id: Option<String>,
-    pub from_timestamp: Option<u32>
+    pub from_timestamp: Option<u32>,
 }

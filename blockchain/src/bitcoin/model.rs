@@ -26,13 +26,25 @@ pub struct Transaction {
     pub block_time: i64,
     pub block_height: i64,
     pub vin: Vec<Input>,
-    pub vout: Vec<Input>,
+    pub vout: Vec<Output>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Input {
     pub is_address: bool,
-    pub addresses: Option<Vec<String>>,
+    pub addresses: Option<Vec<String>>, // will be optional for Coinbase Input
     pub value: String,
+    pub n: i64,
+    pub tx_id: Option<String>,          // will be optional for Coinbase Input
+    pub vout: Option<i64>               // will be optional for Coinbase Input
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Output {
+    pub is_address: bool,
+    pub addresses: Vec<String>,
+    pub value: String,
+    pub n: i64
 }
