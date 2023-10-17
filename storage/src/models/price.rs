@@ -78,10 +78,15 @@ impl Price {
         }
     }
 
-    pub fn as_market_primitive(&self) -> AssetMarket {
-        AssetMarket{
+    pub fn as_price_primitive(&self) -> primitives::Price {
+        primitives::Price{
             price: self.price,
             price_change_percentage_24h: self.price_change_percentage_24h,
+        }
+    }
+
+    pub fn as_market_primitive(&self) -> AssetMarket {
+        AssetMarket{
             market_cap: self.market_cap,
             market_cap_rank: Some(self.market_cap_rank),
             total_volume: self.total_volume,
