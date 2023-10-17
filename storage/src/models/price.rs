@@ -87,9 +87,9 @@ impl Price {
 
     pub fn as_market_primitive(&self) -> AssetMarket {
         AssetMarket{
-            market_cap: self.market_cap,
+            market_cap: self.market_cap.into(),
             market_cap_rank: Some(self.market_cap_rank),
-            total_volume: self.total_volume,
+            total_volume: self.total_volume.into(),
         }
     }
 }
