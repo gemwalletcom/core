@@ -50,3 +50,5 @@ pub use self::utxo::UTXO;
 pub mod push_notification;
 pub use self::push_notification::PushNotification;
 pub use self::push_notification::PushNotificationTypes;
+pub mod scan;
+pub use self::scan::ScanAddress;

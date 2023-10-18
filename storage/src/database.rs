@@ -469,6 +469,14 @@ impl DatabaseClient {
             .execute(&mut self.connection)
     }
 
+    pub fn get_scan_address(&mut self, _address: &str) ->  Result<ScanAddress, diesel::result::Error> {
+        use crate::schema::scan_addresses::dsl::*;
+        scan_addresses
+            .filter(address.eq(_address))
+            .select(ScanAddress::as_select())
+            .first(&mut self.connection)
+    }
+
     pub fn migrations(&mut self) {
         self.connection.run_pending_migrations(MIGRATIONS).unwrap();
     }

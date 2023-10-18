@@ -20,6 +20,8 @@ mod transaction;
 mod transaction_client;
 mod metrics;
 mod metrics_client;
+mod scan;
+mod scan_client;
 
 use api_connector::PusherClient;
 use asset_client::AssetsClient;
@@ -42,6 +44,7 @@ use subscription_client::SubscriptionsClient;
 use rocket::tokio::sync::Mutex;
 use transaction_client::TransactionsClient;
 use metrics_client::MetricsClient;
+use scan_client::ScanClient;
 
 async fn rocket(settings: Settings) -> Rocket<Build> {
     let redis_url = settings.redis.url.as_str();
@@ -67,6 +70,7 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
     let transactions_client = TransactionsClient::new(postgres_url).await;
     let subscriptions_client = SubscriptionsClient::new(postgres_url).await;
     let metrics_client = MetricsClient::new(postgres_url).await;
+    let scan_client = ScanClient::new(postgres_url).await;
     let assets_client = AssetsClient::new(postgres_url).await;
     let plausible_client = PlausibleClient::new(&settings.plausible.url);
     let request_client = FiatClient::request_client(settings.fiat.timeout);
@@ -101,6 +105,7 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
         .manage(Mutex::new(subscriptions_client))       
         .manage(Mutex::new(transactions_client))   
         .manage(Mutex::new(metrics_client))              
+        .manage(Mutex::new(scan_client))
         .mount("/", routes![
             status::get_status,
         ])
@@ -126,6 +131,7 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
             subscription::delete_subscriptions,
             transaction::get_transactions_by_device_id,
             transaction::get_transactions_by_hash,
+            scan::get_scan_address,
         ])
         .mount(settings.metrics.path, routes![
             metrics::get_metrics,

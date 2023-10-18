@@ -17,6 +17,7 @@ diesel::table! {
         decimals -> Int4,
         updated_at -> Timestamp,
         created_at -> Timestamp,
+        rank -> Int4,
     }
 }
 
@@ -150,6 +151,24 @@ diesel::table! {
 }
 
 diesel::table! {
+    scan_addresses (id) {
+        id -> Int4,
+        #[max_length = 128]
+        address -> Varchar,
+        #[max_length = 64]
+        name -> Nullable<Varchar>,
+        #[sql_name = "type"]
+        #[max_length = 32]
+        type_ -> Nullable<Varchar>,
+        is_verified -> Bool,
+        is_fradulent -> Bool,
+        is_memo_required -> Bool,
+        updated_at -> Timestamp,
+        created_at -> Timestamp,
+    }
+}
+
+diesel::table! {
     subscriptions (id) {
         id -> Int4,
         device_id -> Int4,
@@ -225,6 +244,7 @@ diesel::allow_tables_to_appear_in_same_query!(
     nodes,
     parser_state,
     prices,
+    scan_addresses,
     subscriptions,
     tokenlists,
     transactions,
