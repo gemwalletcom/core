@@ -2,7 +2,7 @@ use typeshare::typeshare;
 use serde::{Serialize, Deserialize};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-#[typeshare(swift = "Equatable, Codable, Hashable")]
+#[typeshare(swift = "Equatable, Codable")]
 #[serde(rename_all = "camelCase")]
 pub struct ScanAddress {
     pub name: Option<String>,
