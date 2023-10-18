@@ -16,6 +16,7 @@ pub struct TransakQuote {
     pub fiat_currency: String,
     pub crypto_currency: String,
     pub crypto_amount: f64,
+    pub network: String,
 }
 
 #[derive(Debug, Serialize)]
@@ -86,6 +87,7 @@ impl TransakClient {
             .append_pair("fiatAmount", &quote.fiat_amount.to_string())
             .append_pair("fiatCurrency", &quote.fiat_currency)
             .append_pair("cryptoCurrencyCode", &quote.crypto_currency)
+            .append_pair("network", &quote.network.to_string())
             .append_pair("disableWalletAddressForm", "true")
             .append_pair("walletAddress", &address);
 
