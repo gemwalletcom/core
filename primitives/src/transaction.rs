@@ -127,8 +127,33 @@ impl Transaction {
         format!("{}_{}", chain.as_str(), hash)
     }
 
+    pub fn is_utxo_tx(&self) -> bool {
+        self.utxo_inputs.len() > 0 && self.utxo_outputs.len() > 0
+    }
+
+    pub fn input_addresses(&self) -> Vec<String> {
+        self.utxo_inputs
+            .iter()
+            .map(|x| x.addresses.clone())
+            .flatten()
+            .collect()
+    }
+
+    pub fn output_addresses(&self) -> Vec<String> {
+        self.utxo_outputs
+            .iter()
+            .map(|x| x.addresses.clone())
+            .flatten()
+            .collect()
+    }
+
     pub fn addresses(&self) -> Vec<String> {
-        vec![self.from.clone(), self.to.clone()]
+        // Append addresses from utxo inputs and outputs
+        let mut array = vec![self.from.clone(), self.to.clone()];
+        array.extend(self.input_addresses());
+        array.extend(self.output_addresses());
+        array.dedup();
+        array
     }
 }
 

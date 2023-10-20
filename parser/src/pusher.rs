@@ -40,10 +40,10 @@ impl Pusher {
         let amount = crypto_amount.to_f64().unwrap_or_default();
 
         let title = format!("Transfer {} {}", amount, asset.symbol);
-        let message = if transaction.from == subscription.address { 
-            format!("To {}", AddressFormatter::short(transaction.asset_id.chain, transaction.to.as_str())) 
+        let message = if transaction.input_addresses().contains(&subscription.address) || transaction.from == subscription.address {
+            format!("To {}", AddressFormatter::short(transaction.asset_id.chain, transaction.to.as_str()))
         } else {
-            format!("From {}", AddressFormatter::short(transaction.asset_id.chain, transaction.from.as_str())) 
+            format!("From {}", AddressFormatter::short(transaction.asset_id.chain, transaction.from.as_str()))
         };
 
         let data = PushNotification {
