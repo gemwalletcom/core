@@ -1,4 +1,4 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Status {
@@ -13,7 +13,7 @@ pub struct Blockbook {
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Block {
-    pub txs: Vec<Transaction>
+    pub txs: Vec<Transaction>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -36,8 +36,8 @@ pub struct Input {
     pub addresses: Option<Vec<String>>, // will be optional for Coinbase Input
     pub value: String,
     pub n: i64,
-    pub tx_id: Option<String>,          // will be optional for Coinbase Input
-    pub vout: Option<i64>               // will be optional for Coinbase Input
+    pub tx_id: Option<String>, // will be optional for Coinbase Input
+    pub vout: Option<i64>,     // will be optional for Coinbase Input
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -46,5 +46,5 @@ pub struct Output {
     pub is_address: bool,
     pub addresses: Vec<String>,
     pub value: String,
-    pub n: i64
+    pub n: i64,
 }

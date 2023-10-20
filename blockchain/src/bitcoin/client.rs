@@ -23,8 +23,7 @@ impl BitcoinClient {
 
     pub async fn get_status(&self) -> Result<Status, Box<dyn Error + Send + Sync>> {
         let url = format!("{}/api", self.url);
-        let response = self.client.get(url).send().await?.json::<Status>().await?;
-        Ok(response)
+        Ok(self.client.get(url).send().await?.json::<Status>().await?)
     }
 
     pub async fn get_block(
@@ -32,8 +31,7 @@ impl BitcoinClient {
         block_number: i64,
     ) -> Result<Block, Box<dyn Error + Send + Sync>> {
         let url = format!("{}/api/v2/block/{}", self.url, block_number);
-        let response = self.client.get(url).send().await?.json::<Block>().await?;
-        Ok(response)
+        Ok(self.client.get(url).send().await?.json::<Block>().await?)
     }
 
     pub fn map_transaction(
