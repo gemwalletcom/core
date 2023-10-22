@@ -4,7 +4,7 @@ struct WalletConnection {
     wallet: Wallet,
 }
 #[derive(Debug, Serialize)]
-#[typeshare(swift="Codable")]
+#[typeshare(swift="Codable, Hashable")]
 #[serde(rename_all = "lowercase")]
 pub enum WalletConnectionState {
     Started,
