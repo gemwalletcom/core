@@ -12,6 +12,28 @@ pub enum WalletConnectionState {
     Expired,
 }
 
+#[derive(Debug, Serialize)]
+#[typeshare]
+pub enum WalletConnectionMethods {
+    eth_sign,
+    personal_sign,
+    #[serde(rename = "eth_signTypedData")]
+    eth_sign_typed_data,
+    #[serde(rename = "eth_signTransaction")]
+    eth_sign_transaction,
+    #[serde(rename = "eth_sendTransaction")]
+    eth_send_transaction,
+}
+
+#[derive(Debug, Serialize)]
+#[typeshare]
+pub enum WalletConnectionEvents {
+    #[serde(rename = "accountsChanged")]
+    accounts_changed,
+    #[serde(rename = "chainChanged")]
+    chain_changed,
+}
+
 #[typeshare(swift = "Equatable, Codable")]
 #[serde(rename_all = "camelCase")]
 struct WalletConnectionSession {
@@ -26,4 +48,21 @@ struct WalletConnectionSession {
     app_icon: String,
     redirect_native: Option<String>,
     redirect_universal: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+#[typeshare]
+struct SignDigest {
+    #[serde(rename = "type")]
+    sign_type: SignDigestType,
+    data: Data,
+}
+
+#[derive(Debug, Serialize)]
+#[typeshare]
+#[serde(rename_all = "lowercase")]
+pub enum SignDigestType {
+    Sign,
+    Eip191,
+    Eip712,
 }
