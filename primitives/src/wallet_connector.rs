@@ -1,4 +1,4 @@
-#[typeshare(swift = "Equatable, Codable")]
+#[typeshare(swift = "Equatable, Codable, Hashable")]
 struct WalletConnection {
     session: WalletConnectionSession,
     wallet: Wallet,
@@ -34,7 +34,7 @@ pub enum WalletConnectionEvents {
     chain_changed,
 }
 
-#[typeshare(swift = "Equatable, Codable")]
+#[typeshare(swift = "Equatable, Codable, Hashable")]
 #[serde(rename_all = "camelCase")]
 struct WalletConnectionSession {
     id: String,

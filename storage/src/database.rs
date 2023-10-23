@@ -446,6 +446,7 @@ impl DatabaseClient {
         use crate::schema::assets::dsl::*;
         let ilike_expression = format!("{}%", query);
         assets
+            .order(rank.desc())
             .filter(name.ilike(ilike_expression.clone()))
             .or_filter(symbol.ilike(ilike_expression.clone()))
             .or_filter(token_id.ilike(ilike_expression.clone()))
