@@ -386,11 +386,12 @@ impl DatabaseClient {
             .execute(&mut self.connection)
     }
     
-    pub fn get_transactions_by_device_id(&mut self, _device_id: &str, addresses: Vec<String>, options: TransactionsFetchOption) -> Result<Vec<Transaction>, diesel::result::Error> {
+    pub fn get_transactions_by_device_id(&mut self, _device_id: &str, addresses: Vec<String>, chains: Vec<String>, options: TransactionsFetchOption) -> Result<Vec<Transaction>, diesel::result::Error> {
         use crate::schema::transactions::dsl::*;
         
         let mut query = crate::schema::transactions::table.into_boxed();
         query = query
+            .filter(chain.eq_any(chains.clone()))
             .filter(from_address.eq_any(addresses.clone()))
             .or_filter(to_address.eq_any(addresses));
         
