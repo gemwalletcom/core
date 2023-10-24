@@ -40,6 +40,7 @@ struct WalletConnectionSession {
     id: String,
     session_id: String,
     state: WalletConnectionState,
+    chains: [Chain],
     created_at: DateTime<Utc>,
     expire_at: DateTime<Utc>,
     app_name: String,
