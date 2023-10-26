@@ -23,6 +23,8 @@ pub enum WalletConnectionMethods {
     eth_sign_transaction,
     #[serde(rename = "eth_sendTransaction")]
     eth_send_transaction,
+    #[serde(rename = "eth_sendRawTransaction")]
+    eth_send_raw_transaction,
 }
 
 #[derive(Debug, Serialize)]
