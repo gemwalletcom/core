@@ -73,7 +73,7 @@ struct WalletConnectionSessionProposal {
 
 #[derive(Debug, Serialize)]
 #[typeshare]
-struct SignDigest {
+struct SignMessage {
     #[serde(rename = "type")]
     sign_type: SignDigestType,
     data: Data,
