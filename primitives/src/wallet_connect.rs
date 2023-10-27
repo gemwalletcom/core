@@ -1,3 +1,11 @@
+#[derive(Debug, Serialize)]
+#[typeshare]
+#[serde(rename_all = "lowercase")]
+pub enum WallletConnectCAIP2 {
+    #[serde(rename = "eip155")]
+    Eip155,
+}
+
 #[typeshare(swift = "Equatable, Codable, Hashable")]
 #[serde(rename_all = "camelCase")]
 struct WCEthereumTransaction {
