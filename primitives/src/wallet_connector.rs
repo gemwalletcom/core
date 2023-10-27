@@ -32,6 +32,8 @@ pub enum WalletConnectionMethods {
 #[derive(Debug, Serialize)]
 #[typeshare]
 pub enum WalletConnectionEvents {
+    connect,
+    disconnect,
     #[serde(rename = "accountsChanged")]
     accounts_changed,
     #[serde(rename = "chainChanged")]
