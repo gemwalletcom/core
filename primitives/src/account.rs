@@ -1,4 +1,4 @@
-#[typeshare(swift = "Equatable, Codable")]
+#[typeshare(swift = "Equatable, Codable, Hashable")]
 #[serde(rename_all = "camelCase")]
 struct Account {
     chain: Chain,

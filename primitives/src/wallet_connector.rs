@@ -19,6 +19,8 @@ pub enum WalletConnectionMethods {
     personal_sign,
     #[serde(rename = "eth_signTypedData")]
     eth_sign_typed_data,
+    #[serde(rename = "eth_signTypedData_v4")]
+    eth_sign_typed_data_v4,
     #[serde(rename = "eth_signTransaction")]
     eth_sign_transaction,
     #[serde(rename = "eth_sendTransaction")]
@@ -45,12 +47,26 @@ struct WalletConnectionSession {
     chains: [Chain],
     created_at: DateTime<Utc>,
     expire_at: DateTime<Utc>,
-    app_name: String,
-    app_description: String,
-    app_url: String,
-    app_icon: String,
+    metadata: WalletConnectionSessionAppMetadata,
+}
+
+#[typeshare(swift = "Equatable, Codable, Hashable")]
+#[serde(rename_all = "camelCase")]
+struct WalletConnectionSessionAppMetadata {
+    name: String,
+    description: String,
+    url: String,
+    icon: String,
     redirect_native: Option<String>,
     redirect_universal: Option<String>,
+}
+
+#[typeshare(swift = "Equatable, Codable, Hashable")]
+#[serde(rename_all = "camelCase")]
+struct WalletConnectionSessionProposal {
+    wallet: Wallet,
+    accounts: [Account],
+    metadata: WalletConnectionSessionAppMetadata,
 }
 
 #[derive(Debug, Serialize)]
