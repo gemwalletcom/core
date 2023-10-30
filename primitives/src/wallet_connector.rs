@@ -30,7 +30,7 @@ pub enum WalletConnectionMethods {
 }
 
 #[derive(Debug, Serialize)]
-#[typeshare]
+#[typeshare(swift = "Codable, CaseIterable")]
 pub enum WalletConnectionEvents {
     connect,
     disconnect,
