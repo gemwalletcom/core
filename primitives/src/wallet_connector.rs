@@ -13,8 +13,10 @@ pub enum WalletConnectionState {
 }
 
 #[derive(Debug, Serialize)]
-#[typeshare]
+#[typeshare(swift = "Codable, CaseIterable")]
 pub enum WalletConnectionMethods {
+    #[serde(rename = "eth_chainId")]
+    eth_chain_id,
     eth_sign,
     personal_sign,
     #[serde(rename = "eth_signTypedData")]
@@ -27,6 +29,10 @@ pub enum WalletConnectionMethods {
     eth_send_transaction,
     #[serde(rename = "eth_sendRawTransaction")]
     eth_send_raw_transaction,
+    #[serde(rename = "wallet_switchEthereumChain")]
+    wallet_switch_ethereum_chain,
+    #[serde(rename = "wallet_addEthereumChain")]
+    wallet_add_ethereum_chain,
 }
 
 #[derive(Debug, Serialize)]
