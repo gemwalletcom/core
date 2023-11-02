@@ -1,6 +1,5 @@
 pub mod pusher;
 pub mod parser;
-pub mod provider;
 
 use primitives::Chain;
 use settings::Settings;
@@ -39,7 +38,7 @@ pub async fn main() {
 }
 
 async fn parser_start(settings: Settings, parser_options: ParserOptions, chain: Chain) {
-    let provider = provider::new(chain, &settings);
+    let provider = settings_chain::ProviderFactory::new(chain, &settings);
     let pusher = Pusher::new(
         settings.pusher.url.clone(),
         settings.postgres.url.clone(),

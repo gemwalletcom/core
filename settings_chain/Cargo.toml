@@ -1,20 +1,16 @@
 [package]
-name = "parser"
+name = "settings_chain"
 version = { workspace = true }
 edition = { workspace = true }
 
 [dependencies]
+typeshare = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
+config = { workspace = true }
 primitives = { path = "../primitives" }
-storage = { path = "../storage" }
-settings = { path = "../settings" }
-settings_chain = { path = "../settings_chain" }
 blockchain = { path = "../blockchain" }
-api_connector = { path = "../api_connector" }
-tokio = { workspace = true }
+settings = { path = "../settings" }
 reqwest = { workspace = true }
-rust_decimal = { workspace = true }
-futures = { workspace = true }
 reqwest-middleware =  { workspace = true }
 reqwest-retry =  { workspace = true }

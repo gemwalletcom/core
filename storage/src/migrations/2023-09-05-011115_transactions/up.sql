@@ -1,6 +1,6 @@
 CREATE TABLE transactions (
     id SERIAL PRIMARY KEY,
-    chain VARCHAR NOT NULL,
+    chain VARCHAR(16) NOT NULL,
     hash VARCHAR(256) NOT NULL,
     from_address VARCHAR(256),
     to_address VARCHAR(256),

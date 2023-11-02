@@ -17,6 +17,8 @@ members = [
     "ns_address_codec",
     "parser",
     "setup",
+    "settings",
+    "settings_chain",
 ]
 
 default-members = [

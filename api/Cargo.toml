@@ -13,6 +13,7 @@ storage = { path = "../storage" }
 pricer = { path = "../pricer" }
 fiat = { path = "../fiat" }
 settings = { path = "../settings" }
+settings_chain = { path = "../settings_chain" }
 name_resolver = {path = "../name_resolver"}
 diesel = { workspace = true }
 async-trait = { workspace = true }

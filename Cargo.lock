@@ -107,6 +107,7 @@ dependencies = [
  "serde",
  "serde_json",
  "settings",
+ "settings_chain",
  "storage",
  "tokio",
 ]
@@ -2853,6 +2854,7 @@ dependencies = [
  "serde",
  "serde_json",
  "settings",
+ "settings_chain",
  "storage",
  "tokio",
 ]
@@ -4130,6 +4132,22 @@ dependencies = [
  "config",
  "serde",
  "serde_json",
+ "typeshare",
+]
+
+[[package]]
+name = "settings_chain"
+version = "1.0.0"
+dependencies = [
+ "blockchain",
+ "config",
+ "primitives",
+ "reqwest",
+ "reqwest-middleware",
+ "reqwest-retry",
+ "serde",
+ "serde_json",
+ "settings",
  "typeshare",
 ]
 
