@@ -8,7 +8,7 @@ struct Wallet {
     accounts: Vec<Account>
 }
 
-#[typeshare(swift = "Equatable, Codable")]
+#[typeshare(swift = "Equatable, Codable, Hashable")]
 pub enum WalletType {
     multicoin,
     single,

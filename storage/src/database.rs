@@ -386,11 +386,12 @@ impl DatabaseClient {
             .execute(&mut self.connection)
     }
     
-    pub fn get_transactions_by_device_id(&mut self, _device_id: &str, addresses: Vec<String>, options: TransactionsFetchOption) -> Result<Vec<Transaction>, diesel::result::Error> {
+    pub fn get_transactions_by_device_id(&mut self, _device_id: &str, addresses: Vec<String>, chains: Vec<String>, options: TransactionsFetchOption) -> Result<Vec<Transaction>, diesel::result::Error> {
         use crate::schema::transactions::dsl::*;
         
         let mut query = crate::schema::transactions::table.into_boxed();
         query = query
+            .filter(chain.eq_any(chains.clone()))
             .filter(from_address.eq_any(addresses.clone()))
             .or_filter(to_address.eq_any(addresses));
         
@@ -446,6 +447,7 @@ impl DatabaseClient {
         use crate::schema::assets::dsl::*;
         let ilike_expression = format!("{}%", query);
         assets
+            .order(rank.desc())
             .filter(name.ilike(ilike_expression.clone()))
             .or_filter(symbol.ilike(ilike_expression.clone()))
             .or_filter(token_id.ilike(ilike_expression.clone()))
@@ -467,6 +469,14 @@ impl DatabaseClient {
             .values(&_assets_details)
             .on_conflict_do_nothing()
             .execute(&mut self.connection)
+    }
+
+    pub fn get_scan_address(&mut self, _address: &str) ->  Result<ScanAddress, diesel::result::Error> {
+        use crate::schema::scan_addresses::dsl::*;
+        scan_addresses
+            .filter(address.eq(_address))
+            .select(ScanAddress::as_select())
+            .first(&mut self.connection)
     }
 
     pub fn migrations(&mut self) {

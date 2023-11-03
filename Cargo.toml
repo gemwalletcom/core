@@ -17,6 +17,8 @@ members = [
     "ns_address_codec",
     "parser",
     "setup",
+    "settings",
+    "settings_chain",
 ]
 
 default-members = [
@@ -29,11 +31,11 @@ default-members = [
 
 [workspace.dependencies]
 typeshare = "1.0.1"
-serde = { version = "1.0.189", features = ["derive"] }
-serde_json = { version = "1.0.107" } 
+serde = { version = "1.0.190", features = ["derive"] }
+serde_json = { version = "1.0.108" } 
 tokio = { version = "1.33.0", features = ["macros", "rt-multi-thread"]}
 reqwest = {version = "0.11.22", features = ["json"]}
-reqwest-middleware = { version = "0.2.3" }
+reqwest-middleware = { version = "0.2.4" }
 reqwest-retry = { version = "0.3.0" }
 url = { version = "2.4.1" }
 config = { version = "0.13.3" }
@@ -42,7 +44,7 @@ ethaddr = { version = "0.1.2" }
 rust_decimal = { version = "1.32" }
 async-trait = { version = "0.1.74"}
 prometheus-client = { version = "0.21.2" }
-futures = "0.3.28"
+futures = "0.3.29"
 
 # db
 diesel = { version = "2.1.3", features = ["postgres", "chrono"] }
@@ -52,7 +54,7 @@ chrono = { version = "0.4.31", features = ["serde"] }
 
 # crypto
 ethers = { version = "2.0.10", features = ["rustls"] }
-base64 = { version = "0.21.4" } 
+base64 = { version = "0.21.5" } 
 bech32 = { version = "0.9.1" } 
 bs58 = { version = "0.5.0", features = ["check"] } 
 hex = { version = "0.4.3" } 

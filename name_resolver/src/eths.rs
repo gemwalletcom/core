@@ -46,6 +46,7 @@ impl NameClient for EthsClient {
         vec![
             "tree",
             "eths",
+            "honk",
         ]
     }
 

@@ -10,6 +10,7 @@ pub mod subscription;
 pub mod tokenlist;
 pub mod transaction;
 pub mod version;
+pub mod scan;
 
 pub use self::asset::Asset;
 pub use self::chart::Chart;
@@ -25,4 +26,4 @@ pub use self::subscription::Subscription;
 pub use self::tokenlist::TokenList;
 pub use self::transaction::Transaction;
 pub use self::version::Version;
-
+pub use self::scan::ScanAddress;

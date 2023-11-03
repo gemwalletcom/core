@@ -1,7 +1,6 @@
 use diesel::prelude::*;
 use primitives::{Chain, AssetType, AssetId, AssetLinks};
 use serde::{Deserialize, Serialize};
-
 #[derive(Debug, Queryable, Selectable, Serialize, Deserialize, Insertable, AsChangeset, Clone)]
 #[diesel(table_name = crate::schema::assets)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
@@ -13,10 +12,11 @@ pub struct Asset {
     pub symbol: String,
     pub asset_type: String,
     pub decimals: i32,
+    pub rank: i32
 }
 
 impl Asset {
-    pub fn as_primitive(&self) -> primitives::asset::Asset {
+    pub fn as_primitive(&self) -> primitives::Asset {
         primitives::asset::Asset{
             id: AssetId {chain: Chain::from_str(&self.chain).unwrap(), token_id: self.token_id.clone() },
             name: self.name.clone(),
@@ -26,7 +26,13 @@ impl Asset {
         }
     }
 
-    pub fn from_primitive(asset: primitives::asset::Asset) -> Self {
+    pub fn as_score_primitive(&self) -> primitives::AssetScore {
+        primitives::AssetScore{
+            rank: self.rank,
+        }
+    }
+
+    pub fn from_primitive(asset: primitives::Asset) -> Self {
         Self {
             id: asset.id.to_string(),
             chain: asset.id.chain.to_string(),
@@ -34,7 +40,8 @@ impl Asset {
             name: asset.name,
             symbol: asset.symbol,
             asset_type: asset.asset_type.to_string(),
-            decimals: asset.decimals
+            decimals: asset.decimals,
+            rank: 0,
         }
     }
 }

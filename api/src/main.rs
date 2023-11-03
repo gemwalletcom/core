@@ -20,7 +20,10 @@ mod transaction;
 mod transaction_client;
 mod metrics;
 mod metrics_client;
-
+mod scan;
+mod scan_client;
+mod parser;
+mod parser_client;
 use api_connector::PusherClient;
 use asset_client::AssetsClient;
 use fiat::mercuryo::MercuryoClient;
@@ -42,6 +45,8 @@ use subscription_client::SubscriptionsClient;
 use rocket::tokio::sync::Mutex;
 use transaction_client::TransactionsClient;
 use metrics_client::MetricsClient;
+use scan_client::ScanClient;
+use parser_client::ParserClient;
 
 async fn rocket(settings: Settings) -> Rocket<Build> {
     let redis_url = settings.redis.url.as_str();
@@ -49,6 +54,7 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
     let mut database_client: DatabaseClient = DatabaseClient::new(postgres_url);    
     database_client.migrations();
 
+    let settings_clone = settings.clone();
     let price_client = PriceClient::new(redis_url, postgres_url).await.unwrap();
     let node_client = NodeClient::new(database_client).await;
     let config_client = ConfigClient::new(postgres_url).await;
@@ -62,11 +68,14 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
         settings.name.spaceid.url,
         settings.name.did.url,
     );
+    
     let pusher_client = PusherClient::new(settings.pusher.url);
     let devices_client = DevicesClient::new(postgres_url, pusher_client, settings.pusher.ios.topic).await;
     let transactions_client = TransactionsClient::new(postgres_url).await;
     let subscriptions_client = SubscriptionsClient::new(postgres_url).await;
     let metrics_client = MetricsClient::new(postgres_url).await;
+    let scan_client = ScanClient::new(postgres_url).await;
+    let parser_client = ParserClient::new(settings_clone).await;
     let assets_client = AssetsClient::new(postgres_url).await;
     let plausible_client = PlausibleClient::new(&settings.plausible.url);
     let request_client = FiatClient::request_client(settings.fiat.timeout);
@@ -101,6 +110,8 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
         .manage(Mutex::new(subscriptions_client))       
         .manage(Mutex::new(transactions_client))   
         .manage(Mutex::new(metrics_client))              
+        .manage(Mutex::new(scan_client))
+        .manage(Mutex::new(parser_client))
         .mount("/", routes![
             status::get_status,
         ])
@@ -126,6 +137,9 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
             subscription::delete_subscriptions,
             transaction::get_transactions_by_device_id,
             transaction::get_transactions_by_hash,
+            scan::get_scan_address,
+            parser::get_parser_block,
+            parser::get_parser_block_number_latest,
         ])
         .mount(settings.metrics.path, routes![
             metrics::get_metrics,

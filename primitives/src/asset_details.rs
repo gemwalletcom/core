@@ -1,7 +1,7 @@
 use typeshare::typeshare;
 use serde::{Serialize, Deserialize};
 
-use crate::{Asset, AssetMarket, Price};
+use crate::{Asset, AssetMarket, Price, AssetScore};
 
 #[typeshare]
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -9,7 +9,8 @@ pub struct AssetFull {
     pub asset: Asset,
     pub details: Option<AssetDetails>,
     pub price: Option<Price>,
-    pub market: Option<AssetMarket>
+    pub market: Option<AssetMarket>,
+    pub score: AssetScore,
 }
 
 #[typeshare]
