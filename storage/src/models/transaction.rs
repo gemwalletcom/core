@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 #[diesel(table_name = crate::schema::transactions)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct Transaction {
+    pub id: String,
     pub chain: String,
     pub hash: String,
     pub memo: Option<String>,
@@ -26,6 +27,7 @@ pub struct Transaction {
 impl Transaction {
     pub fn from_primitive(transaction: primitives::Transaction) -> Self {
         Self{
+            id: transaction.id.to_string(),
             chain: transaction.asset_id.chain.as_str().to_string(),
             hash: transaction.hash,
             memo: transaction.memo,

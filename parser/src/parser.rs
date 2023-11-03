@@ -137,6 +137,9 @@ impl Parser {
 
         for subscription in subscriptions {
             for transaction in transactions.clone() {
+
+                println!("transaction.addresses(): {:?}", transaction.addresses());
+
                 if transaction.addresses().contains(&subscription.address) {
                     let device = self.database.get_device_by_id(subscription.device_id)?;
                     
@@ -164,14 +167,35 @@ impl Parser {
     }
 
     pub async fn store_transactions(&mut self, transactions_map: HashMap<String, primitives::Transaction>) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        let insert_transactions: Vec<storage::models::Transaction> = transactions_map
+        let insert_transactions: Vec<storage::models::Transaction> = transactions_map.clone()
         .into_iter()
         .map(|x| x.1)
         .collect::<Vec<primitives::Transaction>>()
         .into_iter().map(|x| {
             storage::models::Transaction::from_primitive(x)
         }).collect();
+
         let result =  self.database.add_transactions(insert_transactions.clone())?;
+        // only for utxo
+        if self.chain == Chain::Bitcoin || self.chain == Chain::Doge {
+            let transaction_addresses = transactions_map.clone()
+                .into_iter()
+                .map(|x| x.1)
+                .collect::<Vec<primitives::Transaction>>()
+                .into_iter().map(|transaction| {
+                    return transaction.addresses().into_iter().map(|address| {
+                        storage::models::TransactionAddresses {
+                            transaction_id: transaction.id.clone(),
+                            address,
+                        }
+                    }).collect::<Vec<storage::models::TransactionAddresses>>()
+                    
+                })
+                .flatten()
+                .collect::<Vec<storage::models::TransactionAddresses>>();
+            let _ = self.database.add_transactions_addresses(transaction_addresses.clone())?;
+        }
+        
         Ok(result)
     }
 }

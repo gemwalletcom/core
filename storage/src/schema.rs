@@ -192,7 +192,9 @@ diesel::table! {
 
 diesel::table! {
     transactions (id) {
-        id -> Int4,
+        #[max_length = 256]
+        id -> Varchar,
+        #[max_length = 16]
         chain -> Varchar,
         #[max_length = 256]
         hash -> Varchar,
@@ -207,6 +209,8 @@ diesel::table! {
         sequence -> Nullable<Int4>,
         block_number -> Int4,
         #[max_length = 16]
+        state -> Varchar,
+        #[max_length = 16]
         kind -> Varchar,
         #[max_length = 32]
         value -> Nullable<Varchar>,
@@ -214,10 +218,19 @@ diesel::table! {
         #[max_length = 32]
         fee -> Nullable<Varchar>,
         fee_asset_id -> Nullable<Varchar>,
+        block_created_at -> Timestamp,
         updated_at -> Timestamp,
         created_at -> Timestamp,
-        #[max_length = 16]
-        state -> Varchar,
+    }
+}
+
+diesel::table! {
+    transactions_addresses (id) {
+        id -> Int4,
+        #[max_length = 256]
+        transaction_id -> Varchar,
+        #[max_length = 256]
+        address -> Varchar,
     }
 }
 
@@ -233,6 +246,7 @@ diesel::table! {
 
 diesel::joinable!(assets_details -> assets (asset_id));
 diesel::joinable!(subscriptions -> devices (device_id));
+diesel::joinable!(transactions_addresses -> transactions (transaction_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
     assets,
@@ -248,5 +262,6 @@ diesel::allow_tables_to_appear_in_same_query!(
     subscriptions,
     tokenlists,
     transactions,
+    transactions_addresses,
     versions,
 );

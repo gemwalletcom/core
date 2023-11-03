@@ -63,15 +63,11 @@ impl BitcoinClient {
             return None;
         }
 
-        let value = &outputs.last().unwrap().value;
-        let from = inputs.first().unwrap().addresses.first().unwrap();
-        let to = outputs.first().unwrap().addresses.first().unwrap();
-
         let transaction = primitives::Transaction::new_with_utxo(
             transaction.txid,
             self.get_chain().as_asset_id(),
-            from.to_string(),
-            to.to_string(),
+            None,
+            None,
             None,
             TransactionType::Transfer,
             primitives::TransactionState::Confirmed,
@@ -79,7 +75,7 @@ impl BitcoinClient {
             0.to_string(),
             transaction.fees,
             self.get_chain().as_asset_id(),
-            value.to_string(),
+            "0".to_string(),
             None,
             TransactionDirection::SelfTransfer,
             inputs,
@@ -106,7 +102,7 @@ impl ChainProvider for BitcoinClient {
         &self,
         block_number: i64,
     ) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Send + Sync>> {
-        let transactions = self.get_block(block_number).await?.txs;
+        let transactions = self.get_block(799038).await?.txs;
         let transactions = transactions
             .into_iter()
             .flat_map(|x| self.map_transaction(x, block_number))

@@ -385,6 +385,16 @@ impl DatabaseClient {
             ))
             .execute(&mut self.connection)
     }
+
+    // only used for utxo chains
+    pub fn add_transactions_addresses(&mut self, values: Vec<TransactionAddresses>) -> Result<usize, diesel::result::Error> {
+        use crate::schema::transactions_addresses::dsl::*;
+        diesel::insert_into(transactions_addresses)
+            .values(&values)
+            .on_conflict((transaction_id, address))
+            .do_nothing()
+            .execute(&mut self.connection)
+    }
     
     pub fn get_transactions_by_device_id(&mut self, _device_id: &str, addresses: Vec<String>, chains: Vec<String>, options: TransactionsFetchOption) -> Result<Vec<Transaction>, diesel::result::Error> {
         use crate::schema::transactions::dsl::*;
