@@ -9,6 +9,7 @@ use crate::{AssetId, AssetType};
 #[serde(rename_all = "lowercase")]
 pub enum Chain {
     Bitcoin,
+    Litecoin,
     Ethereum,
     Binance,
     SmartChain,
@@ -40,6 +41,7 @@ impl Chain {
     pub fn from_str(chain: &str) -> Option<Self> {
         match chain {
             "bitcoin" => Some(Self::Bitcoin),
+            "litecoin" => Some(Self::Litecoin),
             "binance" => Some(Self::Binance),
             "ethereum" => Some(Self::Ethereum),
             "smartchain" => Some(Self::SmartChain),
@@ -67,6 +69,7 @@ impl Chain {
         match self {
             Self::Binance => "binance",
             Self::Bitcoin => "bitcoin",
+            Self::Litecoin => "litecoin",
             Self::Ethereum => "ethereum",
             Self::SmartChain => "smartchain",
             Self::Polygon => "polygon",
@@ -138,6 +141,7 @@ impl Chain {
         match self {
             Self::Binance => Some(AssetType::BEP2),
             Self::Bitcoin => None,
+            Self::Litecoin => None,
             Self::Ethereum => Some(AssetType::ERC20),
             Self::SmartChain => Some(AssetType::BEP20),
             Self::Polygon => Some(AssetType::ERC20),

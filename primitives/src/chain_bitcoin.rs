@@ -6,5 +6,6 @@ use typeshare::typeshare;
 #[serde(rename_all = "lowercase")]
 pub enum BitcoinChain {
     Bitcoin,
+    Litecoin,
     Doge
 }
