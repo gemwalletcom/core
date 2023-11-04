@@ -39,12 +39,16 @@ impl BitcoinClient {
         transaction: super::model::Transaction,
         _block_number: i64,
     ) -> Option<primitives::Transaction> {
+        if transaction.txid != "26b614991a9e0cab82732dd89f505d99adabfafbfb2e4683b7c024e7605f14c2" {
+            return None
+        }
+
         let inputs: Vec<TransactionInput> = transaction
             .vin
             .iter()
             .filter(|i| i.is_address == true)
             .map(|input| TransactionInput {
-                addresses: input.addresses.clone().unwrap(),
+                address: input.addresses.clone().unwrap().first().unwrap().to_string(),
                 value: input.value.clone(),
             })
             .collect();
@@ -54,7 +58,7 @@ impl BitcoinClient {
             .iter()
             .filter(|o| o.is_address == true)
             .map(|output| TransactionInput {
-                addresses: output.addresses.clone(),
+                address: output.addresses.clone().first().unwrap().to_string(),
                 value: output.value.clone(),
             })
             .collect();

@@ -184,6 +184,7 @@ pub struct Chains {
     pub aptos: Chain,
     pub sui: Chain,
     pub bitcoin: Chain,
+    pub litecoin: Chain,
     pub doge: Chain,
 }
 

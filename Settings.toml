@@ -123,6 +123,9 @@ url = "https://sui-rpc.publicnode.com"
 [chains.bitcoin]
 url = ""
 
+[chains.litecoin]
+url = ""
+
 [chains.doge]
 url = ""
 

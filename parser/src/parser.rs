@@ -156,7 +156,7 @@ impl Parser {
         }
         
         match self.store_transactions(transactions_map.clone()).await {
-            Ok(_) => { },
+            Ok(_) => {},
             Err(err) => { println!("transaction insert: chain: {}, error: {:?}", self.chain.as_str(), err); }
         }
 
@@ -176,25 +176,23 @@ impl Parser {
         }).collect();
 
         let result =  self.database.add_transactions(insert_transactions.clone())?;
-        // only for utxo
-        if self.chain == Chain::Bitcoin || self.chain == Chain::Doge {
-            let transaction_addresses = transactions_map.clone()
-                .into_iter()
-                .map(|x| x.1)
-                .collect::<Vec<primitives::Transaction>>()
-                .into_iter().map(|transaction| {
-                    return transaction.addresses().into_iter().map(|address| {
-                        storage::models::TransactionAddresses {
-                            transaction_id: transaction.id.clone(),
-                            address,
-                        }
-                    }).collect::<Vec<storage::models::TransactionAddresses>>()
-                    
-                })
-                .flatten()
-                .collect::<Vec<storage::models::TransactionAddresses>>();
-            let _ = self.database.add_transactions_addresses(transaction_addresses.clone())?;
-        }
+        let transaction_addresses = transactions_map.clone()
+            .into_iter()
+            .map(|x| x.1)
+            .collect::<Vec<primitives::Transaction>>()
+            .into_iter().map(|transaction| {
+                return transaction.addresses().into_iter().map(|address| {
+                    storage::models::TransactionAddresses {
+                        transaction_id: transaction.id.clone(),
+                        address,
+                    }
+                }).collect::<Vec<storage::models::TransactionAddresses>>()
+                
+            })
+            .flatten()
+            .filter(|x| !x.address.is_empty())
+            .collect::<Vec<storage::models::TransactionAddresses>>();
+        let _ = self.database.add_transactions_addresses(transaction_addresses.clone())?;
         
         Ok(result)
     }

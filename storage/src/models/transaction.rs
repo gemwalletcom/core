@@ -1,9 +1,17 @@
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
-use primitives::AssetId;
+use primitives::{AssetId, transaction_utxo::TransactionInput, TransactionDirection};
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Queryable, Selectable, Serialize, Deserialize, Insertable, AsChangeset, Clone)]
+// #[derive(FromSqlRow, Serialize, Deserialize, Debug, Default, AsExpression)]
+// #[diesel(sql_type = Jsonb)]
+// pub struct TransactionUTXO {
+    //pub address: String,
+    //pub value: String,
+//}
+
+//AsChangeset
+#[derive(Debug, Queryable, Selectable, Serialize, Deserialize, Insertable, Clone)]
 #[diesel(table_name = crate::schema::transactions)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct Transaction {
@@ -22,6 +30,8 @@ pub struct Transaction {
     pub kind: String,
     pub state: String,
     pub created_at: NaiveDateTime,
+    pub utxo_inputs: Option<serde_json::Value>,
+    pub utxo_outputs: Option<serde_json::Value>,
 }
 
 impl Transaction {
@@ -42,14 +52,21 @@ impl Transaction {
             kind: transaction.transaction_type.to_string(),
             state: transaction.state.to_string(),
             created_at: transaction.created_at.naive_utc(),
+            utxo_inputs: serde_json::to_value(transaction.utxo_inputs).ok(),
+            utxo_outputs: serde_json::to_value(transaction.utxo_outputs).ok(),
         }
     }
 
     pub fn as_primitive(&self, addresses: Vec<String>) -> primitives::Transaction {
-        let from_address = self.from_address.clone().unwrap();
-        let to_address = self.to_address.clone().unwrap();
-
-        let direction = if addresses.contains(&from_address)  {
+        //TODO: Remove addresses from here
+        let asset_id = AssetId::new(self.asset_id.clone().unwrap().as_str()).unwrap();
+        let hash = self.hash.clone();
+        let from = self.from_address.clone().unwrap_or_default();
+        let to_address = self.to_address.clone().unwrap_or_default();
+        let inputs: Option<Vec<TransactionInput>> = serde_json::from_value(self.utxo_inputs.clone().into()).ok();
+        let outputs: Option<Vec<TransactionInput>> = serde_json::from_value(self.utxo_outputs.clone().into()).ok();
+        
+        let direction = if addresses.contains(&from)  {
             primitives::TransactionDirection::Outgoing
         } else if addresses.contains(&to_address) {
             primitives::TransactionDirection::Incoming
@@ -57,14 +74,11 @@ impl Transaction {
             primitives::TransactionDirection::SelfTransfer
         };
 
-        let asset_id = AssetId::new(self.asset_id.clone().unwrap().as_str()).unwrap();
-        let hash = self.hash.clone();
-
-        return primitives::Transaction::new(
+        return primitives::Transaction::new_with_utxo(
             hash.clone(),
             asset_id,
-            from_address.clone(),
-            to_address.clone(),
+            from.clone().into(),
+            to_address.clone().into(),
             None,
             primitives::TransactionType::from_str(self.kind.as_str()).unwrap_or_default(),
             primitives::TransactionState::new(self.state.as_str()).unwrap(),
@@ -75,7 +89,18 @@ impl Transaction {
             self.value.clone().unwrap_or_default(),
             self.memo.clone(),
             direction,
+            inputs.clone().unwrap_or_default(),
+            outputs.clone().unwrap_or_default(),
             self.created_at.and_utc(),
         )
     }
+}
+
+pub struct TransactionC {
+    pub from_address: Option<String>,
+    pub to_address: Option<String>,
+    pub value: String,
+    pub direction: TransactionDirection,
+    pub inputs: Option<Vec<TransactionInput>>,
+    pub outputs: Option<Vec<TransactionInput>>,
 }

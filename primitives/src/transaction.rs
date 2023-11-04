@@ -30,12 +30,10 @@ pub struct Transaction {
     pub value: String,
     pub memo: Option<String>,
     pub direction: TransactionDirection,
-
     #[serde(rename = "utxoInputs")]
     pub utxo_inputs: Vec<TransactionInput>,
     #[serde(rename = "utxoOutputs")]
     pub utxo_outputs: Vec<TransactionInput>,
-
     #[serde(rename = "createdAt")]
     pub created_at: DateTime<Utc>,
 }
@@ -134,16 +132,14 @@ impl Transaction {
     pub fn input_addresses(&self) -> Vec<String> {
         self.utxo_inputs
             .iter()
-            .map(|x| x.addresses.clone())
-            .flatten()
+            .map(|x| x.address.clone())
             .collect()
     }
 
     pub fn output_addresses(&self) -> Vec<String> {
         self.utxo_outputs
             .iter()
-            .map(|x| x.addresses.clone())
-            .flatten()
+            .map(|x| x.address.clone())
             .collect()
     }
 
@@ -155,6 +151,83 @@ impl Transaction {
         array.dedup();
         array
     }
+
+    // addresses - is a list of user addresses
+    pub fn finalize(&self, addresses: Vec<String>) -> Self {
+        let chain = self.asset_id.chain.clone();
+        if !chain.is_utxo() {
+            return self.clone()
+        }
+        let inputs: Option<Vec<TransactionInput>> = self.utxo_inputs.clone().into();
+        let outputs: Option<Vec<TransactionInput>> = self.utxo_outputs.clone().into();
+
+        let inputs_values = inputs.clone().unwrap_or_default();
+        let inputs_addresses = inputs_values.clone().into_iter().map(|x| x.address).collect::<Vec<String>>();
+        let outputs_values = outputs.clone().unwrap_or_default();
+        let outputs_addresses = outputs_values.clone().into_iter().map(|x| x.address).collect::<Vec<String>>();
+
+        let direction = if !addresses.clone().into_iter().filter(|x| inputs_addresses.contains(x)).collect::<Vec<String>>().is_empty()  {
+            TransactionDirection::Outgoing
+        } else {
+            TransactionDirection::Incoming
+        };
+        let from: String = match direction {
+            TransactionDirection::Incoming => {
+                inputs_values.first().unwrap().address.clone()
+            },
+            TransactionDirection::Outgoing | TransactionDirection::SelfTransfer => { 
+                outputs_values.first().unwrap().address.clone()
+            },
+        };
+        let to = match direction {
+            TransactionDirection::Incoming => {
+                outputs_values.first().unwrap().address.clone()
+            },
+            TransactionDirection::Outgoing | TransactionDirection::SelfTransfer => { 
+                inputs_values.first().unwrap().address.clone()
+            },
+        };
+
+        let value: i64 = match direction {
+            TransactionDirection::Incoming => {
+                Self::utxo_calculate_value(outputs_values.clone(), addresses)
+            },
+            TransactionDirection::Outgoing | TransactionDirection::SelfTransfer => { 
+                Self::utxo_calculate_value(inputs_values.clone(), addresses)
+            },
+        };
+
+        return Transaction { 
+            id: self.id.clone(), 
+            hash: self.hash.clone(), 
+            asset_id: self.asset_id.clone(), 
+            from, 
+            to, 
+            contract: self.contract.clone(), 
+            transaction_type: self.transaction_type.clone(), 
+            state: self.state.clone(), 
+            block_number: self.block_number.clone(), 
+            sequence: self.sequence.clone(), 
+            fee: self.fee.clone(), 
+            fee_asset_id: self.fee_asset_id.clone(), 
+            value: value.to_string(), 
+            memo: self.memo.clone(), 
+            direction, 
+            utxo_inputs: self.utxo_inputs.clone(), 
+            utxo_outputs: self.utxo_outputs.clone(), 
+            created_at: self.created_at
+         }
+    }
+
+    fn utxo_calculate_value(values: Vec<TransactionInput>, addresses: Vec<String>) -> i64 {
+        let values = values.clone().into_iter().filter(|x| 
+            addresses.contains(&x.address)
+        ).collect::<Vec<TransactionInput>>();
+        
+        return values.clone().into_iter().map(|x| x.value.parse::<i64>().unwrap()).sum::<i64>();
+    }
+
+
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

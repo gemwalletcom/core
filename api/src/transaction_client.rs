@@ -26,7 +26,9 @@ impl TransactionsClient {
         let transactions = self.database
             .get_transactions_by_device_id(device_id, addresses.clone(), chains.clone(), options)?
             .into_iter()
-            .map(|x| x.as_primitive(addresses.clone()))
+            .map(|x| 
+                x.as_primitive(addresses.clone()).finalize(addresses.clone())
+            )
             .collect();
         Ok(transactions)
     }

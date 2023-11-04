@@ -23,6 +23,11 @@ impl ProviderFactory {
                 client,
                 settings.chains.bitcoin.url.clone()
             )),
+            Chain::Litecoin => Box::new(BitcoinClient::new(
+                Chain::Litecoin,
+                client,
+                settings.chains.litecoin.url.clone()
+            )),
             Chain::Ethereum => Box::new(EthereumClient::new(
                 Chain::Ethereum,
                 settings.chains.ethereum.url.clone()
