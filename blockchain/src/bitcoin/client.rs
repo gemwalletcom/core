@@ -39,10 +39,6 @@ impl BitcoinClient {
         transaction: super::model::Transaction,
         _block_number: i64,
     ) -> Option<primitives::Transaction> {
-        if transaction.txid != "26b614991a9e0cab82732dd89f505d99adabfafbfb2e4683b7c024e7605f14c2" {
-            return None
-        }
-
         let inputs: Vec<TransactionInput> = transaction
             .vin
             .iter()
