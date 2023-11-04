@@ -31,6 +31,13 @@ impl Asset {
                 decimals: 8,
                 asset_type: AssetType::NATIVE,
             },
+            Chain::Litecoin => Asset {
+                id: chain.as_asset_id(),
+                name: "Litecoin".to_string(),
+                symbol: "LTC".to_string(),
+                decimals: 8,
+                asset_type: AssetType::NATIVE,
+            },
             Chain::SmartChain => Asset {
                 id: chain.as_asset_id(),
                 name: "Smart Chain".to_string(),

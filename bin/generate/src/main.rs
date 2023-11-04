@@ -84,7 +84,7 @@ fn output_path(platform: Platform, directory: &str, module_name: &str, path: Str
 
 fn file_name(name: &str, file_extension: &str)-> String {
     let split: Vec<&str> = name.split('.').collect();
-    let new_split: Vec<&str> = split[0].clone().split('_').collect();
+    let new_split: Vec<&str> = split[0].split('_').collect();
     let new_name = new_split.iter().map(|&x| str_capitlize(x)).collect::<Vec<_>>().join("");
     format!("{}.{}", new_name, file_extension)
 }
@@ -106,7 +106,7 @@ fn get_paths(folder: &str, path: String) -> Vec<String>  {
     for path in paths {
         let dir_entry = path.unwrap();
         if dir_entry.path().is_dir() {
-            let path_recursive = get_paths(folder.clone(), clear_path(dir_entry));
+            let path_recursive = get_paths(folder, clear_path(dir_entry));
             result.extend(path_recursive)
         } else {
             result.push(clear_path(dir_entry));

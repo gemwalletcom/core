@@ -3,6 +3,7 @@ use primitives::chain::Chain;
 pub fn get_chain_for_coingecko_id(id: &str) -> Option<Chain> {
     match id {
         "bitcoin" => Some(Chain::Bitcoin),
+        "litecoin" => Some(Chain::Litecoin),
         "binancecoin" => Some(Chain::Binance),
         "ethereum" => Some(Chain::Ethereum),
         "binance-smart-chain" => Some(Chain::SmartChain),
@@ -21,6 +22,7 @@ pub fn get_chain_for_coingecko_id(id: &str) -> Option<Chain> {
         "avalanche-2" => Some(Chain::AvalancheC),
         "sui" => Some(Chain::Sui),
         "ripple" => Some(Chain::Ripple),
+        //"celestia" => Some(Chain::Celestia),
         _ => {
             None
         }

@@ -5,7 +5,7 @@ use diesel::pg::PgConnection;
 use primitives::chain::Chain;
 use crate::models::*;
 use crate::models::asset::AssetDetail;
-use crate::schema::devices;
+use crate::schema::{devices, transactions_addresses};
 use diesel::prelude::*;
 use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("../storage/src/migrations");
@@ -385,29 +385,37 @@ impl DatabaseClient {
             ))
             .execute(&mut self.connection)
     }
+
+    // only used for utxo chains
+    pub fn add_transactions_addresses(&mut self, values: Vec<TransactionAddresses>) -> Result<usize, diesel::result::Error> {
+        use crate::schema::transactions_addresses::dsl::*;
+        diesel::insert_into(transactions_addresses)
+            .values(&values)
+            .on_conflict((transaction_id, address))
+            .do_nothing()
+            .execute(&mut self.connection)
+    }
     
     pub fn get_transactions_by_device_id(&mut self, _device_id: &str, addresses: Vec<String>, chains: Vec<String>, options: TransactionsFetchOption) -> Result<Vec<Transaction>, diesel::result::Error> {
         use crate::schema::transactions::dsl::*;
-        
-        let mut query = crate::schema::transactions::table.into_boxed();
-        query = query
+
+        let mut query = crate::schema::transactions::table.into_boxed()
+            .inner_join(transactions_addresses::table)
             .filter(chain.eq_any(chains.clone()))
-            .filter(from_address.eq_any(addresses.clone()))
-            .or_filter(to_address.eq_any(addresses));
-        
+            .filter(transactions_addresses::address.eq_any(addresses));
+            
         if let Some(_asset_id) = options.asset_id  {
             query = query.filter(asset_id.eq(_asset_id));
         }
 
         if let Some(from_timestamp) = options.from_timestamp  {
-            let datetime = NaiveDateTime::from_timestamp_opt(from_timestamp.into(), 0).unwrap();
+            let datetime: NaiveDateTime = NaiveDateTime::from_timestamp_opt(from_timestamp.into(), 0).unwrap();
             query = query.filter(created_at.gt(datetime));
         }
 
-        query
-            .order(created_at.desc())
+        return query
             .select(Transaction::as_select())
-            .load(&mut self.connection)
+            .load(&mut self.connection);
     }
 
     pub fn get_transactions_by_hash(&mut self, _hash: &str) -> Result<Vec<Transaction>, diesel::result::Error> {

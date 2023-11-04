@@ -112,10 +112,22 @@ impl Chain {
         self.as_str().to_string()
     }
 
+    pub fn is_utxo(&self) -> bool {
+        match self {
+            Self::Bitcoin | 
+            Self::Litecoin | 
+            Self::Doge => true,
+            _ => {
+                false
+            }
+        }
+    }
+
     pub fn as_slip44(&self) -> i64 {
         match self {
             Self::Binance => 714,
             Self::Bitcoin => 0,
+            Self::Litecoin => 2,
             Self::Ethereum => 60,
             Self::SmartChain => 9006,
             Self::Polygon => 60,

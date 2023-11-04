@@ -2,8 +2,10 @@ use std::error::Error;
 
 use crate::ChainProvider;
 use async_trait::async_trait;
-use chrono::{Utc, TimeZone};
-use primitives::{chain::Chain, TransactionDirection, TransactionType};
+use chrono::{TimeZone, Utc};
+use primitives::{
+    chain::Chain, transaction_utxo::TransactionInput, TransactionDirection, TransactionType,
+};
 
 use super::model::{Block, Status};
 use reqwest_middleware::ClientWithMiddleware;
@@ -16,54 +18,56 @@ pub struct BitcoinClient {
 
 impl BitcoinClient {
     pub fn new(chain: Chain, client: ClientWithMiddleware, url: String) -> Self {
-        Self {
-            chain,
-            client,
-            url,
-        }
+        Self { chain, client, url }
     }
 
     pub async fn get_status(&self) -> Result<Status, Box<dyn Error + Send + Sync>> {
         let url = format!("{}/api", self.url);
-        let response = self.client
-            .get(url)
-            .send()
-            .await?
-            .json::<Status>()
-            .await?;
-        Ok(response)
+        Ok(self.client.get(url).send().await?.json::<Status>().await?)
     }
 
-    pub async fn get_block(&self, block_number: i64) -> Result<Block, Box<dyn Error + Send + Sync>> {
+    pub async fn get_block(
+        &self,
+        block_number: i64,
+    ) -> Result<Block, Box<dyn Error + Send + Sync>> {
         let url = format!("{}/api/v2/block/{}", self.url, block_number);
-        let response = self.client
-            .get(url)
-            .send()
-            .await?
-            .json::<Block>()
-            .await?;
-        Ok(response)
+        Ok(self.client.get(url).send().await?.json::<Block>().await?)
     }
 
-    pub fn map_transaction(&self, transaction: super::model::Transaction, _block_number: i64) -> Option<primitives::Transaction> {
-        // only allow basic transfer support, from 1 adddress to another.
-        if transaction.vin.first().unwrap().addresses.clone().unwrap_or_default().is_empty() || 
-            transaction.vout.len() > 2 {
-            return None
-        }
-        let from_addresses = transaction.vin.first().unwrap().addresses.clone().unwrap_or_default();
-        // destination usually is the last address, change is the first
-        let to_addresses = transaction.vout.last().unwrap().addresses.clone().unwrap_or_default();
-        let value = &transaction.vout.last().unwrap().value;
+    pub fn map_transaction(
+        &self,
+        transaction: super::model::Transaction,
+        _block_number: i64,
+    ) -> Option<primitives::Transaction> {
+        let inputs: Vec<TransactionInput> = transaction
+            .vin
+            .iter()
+            .filter(|i| i.is_address == true)
+            .map(|input| TransactionInput {
+                address: input.addresses.clone().unwrap().first().unwrap().to_string(),
+                value: input.value.clone(),
+            })
+            .collect();
 
-        let from = from_addresses.first().unwrap();
-        let to = to_addresses.first().unwrap();
-        
-        let transaction = primitives::Transaction::new(
+        let outputs: Vec<TransactionInput> = transaction
+            .vout
+            .iter()
+            .filter(|o| o.is_address == true)
+            .map(|output| TransactionInput {
+                address: output.addresses.clone().first().unwrap().to_string(),
+                value: output.value.clone(),
+            })
+            .collect();
+
+        if inputs.is_empty() || outputs.is_empty() {
+            return None;
+        }
+
+        let transaction = primitives::Transaction::new_with_utxo(
             transaction.txid,
             self.get_chain().as_asset_id(),
-            from.to_string(),
-            to.to_string(),
+            None,
+            None,
             None,
             TransactionType::Transfer,
             primitives::TransactionState::Confirmed,
@@ -71,19 +75,20 @@ impl BitcoinClient {
             0.to_string(),
             transaction.fees,
             self.get_chain().as_asset_id(),
-            value.to_string(),
+            "0".to_string(),
             None,
             TransactionDirection::SelfTransfer,
+            inputs,
+            outputs,
             Utc.timestamp_opt(transaction.block_time, 0).unwrap(),
         );
 
         Some(transaction)
-   }
+    }
 }
 
 #[async_trait]
 impl ChainProvider for BitcoinClient {
-
     fn get_chain(&self) -> Chain {
         self.chain
     }
@@ -93,9 +98,13 @@ impl ChainProvider for BitcoinClient {
         Ok(status.blockbook.best_height)
     }
 
-    async fn get_transactions(&self, block_number: i64) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Send + Sync>> {
-        let transactions = self.get_block(block_number).await?.txs;
-        let transactions = transactions.into_iter()
+    async fn get_transactions(
+        &self,
+        block_number: i64,
+    ) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Send + Sync>> {
+        let transactions = self.get_block(799038).await?.txs;
+        let transactions = transactions
+            .into_iter()
             .flat_map(|x| self.map_transaction(x, block_number))
             .collect::<Vec<primitives::Transaction>>();
         Ok(transactions)

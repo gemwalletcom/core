@@ -39,6 +39,7 @@ pub mod transaction_state;
 pub use self::transaction_state::TransactionState;
 pub mod transaction_direction;
 pub use self::transaction_direction::TransactionDirection;
+pub mod transaction_utxo;
 pub mod subscription;
 pub use self::subscription::Subscription;
 pub mod big_int_hex;
