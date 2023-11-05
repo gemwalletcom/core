@@ -1,13 +1,15 @@
-use std::error::Error;
+use std::{error::Error, str::FromStr};
 
 use crate::ChainProvider;
 use async_trait::async_trait;
 use chrono::Utc;
 use ethers::providers::{JsonRpcClient, Http, RetryClientBuilder, RetryClient};
-use primitives::{chain::Chain, TransactionType, TransactionState, TransactionDirection};
+use num_traits::Num;
+use primitives::{chain::Chain, TransactionType, TransactionState, TransactionDirection, AssetId};
 use reqwest::Url;
 use serde_json::json;
 use super::model::{Block, Transaction, TransactionReciept};
+use num_bigint::BigUint;
 
 pub struct EthereumClient {
     chain: Chain,
@@ -51,17 +53,16 @@ impl EthereumClient {
         let block = transaction.block_number.as_i32();
         let fee = reciept.gas_used.clone().value * reciept.effective_gas_price.clone().value;
         let from: ethers::types::Address = transaction.from.clone().parse().unwrap();
-        let to: ethers::types::Address = transaction.to.unwrap_or_default().clone().parse().unwrap_or_default();
+        let to: ethers::types::Address = transaction.clone().to.unwrap_or_default().clone().parse().unwrap_or_default();
         let from = ethers::utils::to_checksum(&from, None);
-        let to = ethers::utils::to_checksum(&to, None);
-
+        
         // system transfer
         if transaction.input == "0x" {
             let transaction = primitives::Transaction::new( 
                 transaction.hash.clone(),
                 self.chain.as_asset_id(), 
                 from, 
-                to,
+                ethers::utils::to_checksum(&to, None),
                 None,
                 TransactionType::Transfer, 
                 state, 
@@ -76,6 +77,35 @@ impl EthereumClient {
             );
             return Some(transaction);
         }
+        // ERC20 transfer. Only add confirmed
+        if transaction.input.starts_with("0xa9059cbb") && state == TransactionState::Confirmed {
+            let token_id = ethers::utils::to_checksum(&to, None);
+            let asset_id = AssetId{chain: self.chain, token_id: Some(token_id)};
+            let value: String = transaction.input.chars().skip(74).take(64).collect();
+            let to_address: ethers::types::Address = transaction.input.chars().skip(34).take(40).collect::<String>().parse().unwrap();
+            let to_address = ethers::utils::to_checksum(&to_address, None);
+            let value = BigUint::from_str_radix(value.as_str(), 16).unwrap_or_default();
+
+            let transaction = primitives::Transaction::new( 
+                transaction.hash.clone(),
+                asset_id, 
+                from, 
+                to_address.to_string(),
+                None,
+                TransactionType::Transfer, 
+                state, 
+                block.to_string(),
+                nonce.to_string(), 
+                fee.to_string(),
+                self.chain.as_asset_id(), 
+                value.to_string(),
+                None,
+                TransactionDirection::SelfTransfer, 
+                Utc::now()
+            );
+            return Some(transaction);
+        }
+
         None
     }
 }
@@ -96,7 +126,9 @@ impl ChainProvider for EthereumClient {
     async fn get_transactions(&self, block_number: i64) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Send + Sync>> {
         let block = self.get_block(block_number).await?;
         // filter out non transfer transactions
-        let transactions = block.transactions.into_iter().filter(|x| x.input == "0x").collect::<Vec<Transaction>>();
+        let transactions = block.transactions.into_iter().filter(|x| 
+            x.input == "0x" || x.input.starts_with("0xa9059cbb")
+        ).collect::<Vec<Transaction>>();
         let hashes = transactions.clone().into_iter().map(|x| x.hash).collect();
         let reciepts = self.get_transaction_reciepts(hashes).await?;
 

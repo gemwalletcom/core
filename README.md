@@ -15,27 +15,27 @@ Run `make install` to install rust, typeshare
 
 ### Chain Support
 
-| Chain        | Transfers     | 
-|--------------|---------------|
-| Bitcoin      | ✅            |
-| Ethereum     | ✅            |
-| Binance      | ✅            |
-| SmartChain   | ✅            |
+| Chain        | Transfers     | Token Transfers | 
+|--------------|---------------|-----------------|
+| Bitcoin      | ✅            | --
+| Ethereum     | ✅            | ✅               |
+| Binance      | ✅            | 
+| SmartChain   | ✅            | ✅               |
 | Solana       | ✅            |
-| Polygon      | ✅            |
+| Polygon      | ✅            | ✅               |
 | Thorchain    | ✅            |
 | Cosmos       | ✅            |
 | Osmosis      | ✅            |
-| Arbitrum     | ✅            |
+| Arbitrum     | ✅            | ✅               |
 | Ton          | ✅            |
 | Tron         | ✅            |
 | Doge         | ✅            |
-| Optimism     | ✅            |
+| Optimism     | ✅            | ✅               |
 | Aptos        | ✅            |
-| Base         | ✅            |
-| AvalancheC   | ✅            |
+| Base         | ✅            | ✅               |
+| AvalancheC   | ✅            | ✅               |
 | Sui          | ✅            |
 | Ripple       | ✅            |
-| OpBNB        | ✅            |
+| OpBNB        | ✅            | ✅               |
 
 List of available chains specified in [primitives package](https://github.com/gemwalletcom/core/blob/main/primitives/src/chain.rs).

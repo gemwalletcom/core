@@ -138,8 +138,6 @@ impl Parser {
         for subscription in subscriptions {
             for transaction in transactions.clone() {
 
-                println!("transaction.addresses(): {:?}", transaction.addresses());
-
                 if transaction.addresses().contains(&subscription.address) {
                     let device = self.database.get_device_by_id(subscription.device_id)?;
                     

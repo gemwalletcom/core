@@ -1,6 +1,6 @@
 use std::{error::Error, str::FromStr};
 
-use crate::{ChainProvider};
+use crate::ChainProvider;
 use async_trait::async_trait;
 use chrono::Utc;
 use num_bigint::BigUint;

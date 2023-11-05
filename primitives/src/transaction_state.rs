@@ -8,7 +8,7 @@ Failed: The transaction has encountered an error or has been rejected for some r
 Reverted: The transaction was executed but later reverted due to an error or a specific condition. In this case, the transaction is considered unsuccessful, and any changes it made to the state of the system are rolled back.
 */
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[typeshare(swift = "Equatable, Codable, CaseIterable")]
 #[serde(rename_all = "lowercase")]
 pub enum TransactionState {
