@@ -58,6 +58,7 @@ pub struct ContractParameterValue {
     pub amount: Option<i64>,
     pub owner_address: Option<String>,
     pub to_address: Option<String>,
+    pub contract_address: Option<String>,
 }
 
 pub type BlockTransactionsInfo = Vec<TransactionReceiptData>;
@@ -68,10 +69,17 @@ pub struct TransactionReceiptData {
     pub fee: Option<i64>,
     #[serde(rename = "blockNumber")]
     pub block_number: i64, 
-    pub receipt: TransactionReceipt
+    pub receipt: TransactionReceipt,
+    pub log: Option<Vec<TronLog>>,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct TransactionReceipt {
     pub result: Option<String>,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct TronLog {
+    pub topics: Vec<String>,
+    pub data: String,
 }

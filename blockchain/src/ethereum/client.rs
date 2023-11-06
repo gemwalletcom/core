@@ -1,4 +1,4 @@
-use std::{error::Error, str::FromStr};
+use std::error::Error;
 
 use crate::ChainProvider;
 use async_trait::async_trait;
