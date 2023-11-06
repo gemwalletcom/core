@@ -81,5 +81,5 @@ pub struct TransactionReceipt {
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct TronLog {
     pub topics: Vec<String>,
-    pub data: String,
+    pub data: Option<String>,
 }

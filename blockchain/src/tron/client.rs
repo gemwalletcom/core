@@ -96,7 +96,7 @@ impl TronClient {
                 let token_id = TronAddress::from_hex(value.parameter.value.contract_address.unwrap().as_str()).unwrap_or_default();
                 let from = TronAddress::from_hex(from_string.as_str()).unwrap_or_default();
                 let to = TronAddress::from_hex(to_string.as_str()).unwrap_or_default();
-                let value = BigUint::from_str_radix(&log.data, 16).unwrap();
+                let value = BigUint::from_str_radix(&log.data.clone().unwrap_or_default(), 16).unwrap();
                 let asset_id = AssetId {chain: self.get_chain(), token_id: Some(token_id)};
 
                 let transaction = primitives::Transaction::new(
