@@ -89,10 +89,10 @@ impl TronClient {
             }
             let logs = receipt.log.unwrap_or_default();
             // TRC20 transfers
-            if value.contract_type == TRIGGER_SMART_CONTRACT && logs.len() == 1 && logs.first().unwrap().topics.len() == 3 && logs.first().unwrap().topics.first().unwrap() == "ddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef" {
+            if value.contract_type == TRIGGER_SMART_CONTRACT && logs.len() == 1 && logs.first().unwrap().topics.clone().unwrap_or_default().len() == 3 && logs.first().unwrap().topics.clone().unwrap_or_default().first().unwrap() == "ddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef" {
                 let log = logs.first().unwrap();
-                let from_string = format!("41{}", log.topics[1].clone().chars().skip(24).collect::<String>());
-                let to_string = format!("41{}", log.topics[2].clone().chars().skip(24).collect::<String>());
+                let from_string = format!("41{}", log.topics.clone().unwrap_or_default()[1].clone().chars().skip(24).collect::<String>());
+                let to_string = format!("41{}", log.topics.clone().unwrap_or_default()[2].clone().chars().skip(24).collect::<String>());
                 let token_id = TronAddress::from_hex(value.parameter.value.contract_address.unwrap().as_str()).unwrap_or_default();
                 let from = TronAddress::from_hex(from_string.as_str()).unwrap_or_default();
                 let to = TronAddress::from_hex(to_string.as_str()).unwrap_or_default();
