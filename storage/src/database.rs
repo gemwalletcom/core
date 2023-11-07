@@ -463,6 +463,25 @@ impl DatabaseClient {
             .load(&mut self.connection)
     }
 
+    pub fn get_assets_ids_by_device_id(&mut self, addresses: Vec<String>, from_timestamp: Option<u32>) -> Result<Vec<String>, diesel::result::Error> {
+        use crate::schema::transactions::dsl::*;
+        let mut query = crate::schema::transactions::table.into_boxed()
+            .inner_join(transactions_addresses::table)
+            .filter(transactions_addresses::address.eq_any(addresses));
+            
+        if let Some(from_timestamp) = from_timestamp  {
+            let datetime: NaiveDateTime = NaiveDateTime::from_timestamp_opt(from_timestamp.into(), 0).unwrap();
+            query = query.filter(created_at.gt(datetime));
+        }
+
+        let results: Vec<Option<String>> = query
+            .select(asset_id)
+            //.distinct_on(asset_id)
+            .load(&mut self.connection)?;
+
+        Ok(results.into_iter().flatten().collect())
+    }
+
     pub fn add_assets(&mut self, _assets: Vec<Asset>) -> Result<usize, diesel::result::Error> {
         use crate::schema::assets::dsl::*;
         diesel::insert_into(assets)

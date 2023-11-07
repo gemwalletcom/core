@@ -22,3 +22,14 @@ pub async fn get_assets_search(
     let assets = client.lock().await.get_assets_search(query.as_str()).unwrap();
     Json(assets)
 }
+
+#[get("/assets/by_device_id/<device_id>?<wallet_index>&<from_timestamp>")]
+pub async fn get_assets_ids_by_device_id(
+    device_id: &str,
+    wallet_index: i32,
+    from_timestamp: Option<u32>,
+    client: &State<Mutex<AssetsClient>>,
+) -> Json<Vec<String>> {
+    let assets = client.lock().await.get_assets_ids_by_device_id(device_id, wallet_index, from_timestamp).unwrap();
+    Json(assets)
+}
