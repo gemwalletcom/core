@@ -31,7 +31,7 @@ default-members = [
 
 [workspace.dependencies]
 typeshare = "1.0.1"
-serde = { version = "1.0.190", features = ["derive"] }
+serde = { version = "1.0.192", features = ["derive"] }
 serde_json = { version = "1.0.108" } 
 tokio = { version = "1.33.0", features = ["macros", "rt-multi-thread"]}
 reqwest = {version = "0.11.22", features = ["json"]}
