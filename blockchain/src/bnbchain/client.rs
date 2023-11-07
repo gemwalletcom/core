@@ -2,7 +2,7 @@ use std::error::Error;
 
 use crate::ChainProvider;
 use async_trait::async_trait;
-use primitives::{chain::Chain, Transaction, TransactionType, TransactionState, TransactionDirection, asset_id::AssetId};
+use primitives::{chain::Chain, Transaction, TransactionType, TransactionState, asset_id::AssetId};
 use chrono::Utc;
 
 use super::model::{Block, NodeInfo};
@@ -45,7 +45,6 @@ impl BNBChainClient {
             self.get_chain().as_asset_id(),
             format!("{:?}", transaction.amount.unwrap_or_default()),
             transaction.memo.into(),
-            TransactionDirection::SelfTransfer,
             Utc::now()
         );
         Some(transaction)

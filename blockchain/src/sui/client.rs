@@ -5,7 +5,7 @@ use async_trait::async_trait;
 use chrono::Utc;
 use ethers::providers::{JsonRpcClient, Http, RetryClientBuilder, RetryClient};
 use num_bigint::BigUint;
-use primitives::{chain::Chain, Transaction, TransactionType, TransactionState, TransactionDirection};
+use primitives::{chain::Chain, Transaction, TransactionType, TransactionState};
 use reqwest::Url;
 use serde_json::json;
 
@@ -70,7 +70,6 @@ impl SuiClient {
                 chain.as_asset_id(), 
                 value.to_string(), 
                 None,
-                TransactionDirection::SelfTransfer, 
                 Utc::now(),
             );
             return Some(transaction);

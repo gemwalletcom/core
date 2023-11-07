@@ -4,7 +4,7 @@ use crate::ChainProvider;
 use async_trait::async_trait;
 use chrono::Utc;
 use ns_address_codec::{ton::TonCodec, codec::Codec};
-use primitives::{chain::Chain, TransactionType, TransactionState, TransactionDirection};
+use primitives::{chain::Chain, TransactionType, TransactionState};
 
 use reqwest::Url;
 use reqwest_middleware::ClientWithMiddleware;
@@ -49,7 +49,6 @@ impl TonClient {
                 asset_id,
                 out_message.value.to_string(),
                 memo,
-                TransactionDirection::SelfTransfer,
                 Utc::now()
             );
             return Some(transaction)

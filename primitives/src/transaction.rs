@@ -53,7 +53,6 @@ impl Transaction {
         fee_asset_id: AssetId,
         value: String,
         memo: Option<String>,
-        direction: TransactionDirection,
         created_at: DateTime<Utc>,
     ) -> Self {
         let id = Self::id_from(asset_id.clone().chain, hash.clone());
@@ -72,7 +71,7 @@ impl Transaction {
             fee_asset_id,
             value,
             memo,
-            direction,
+            direction: TransactionDirection::SelfTransfer,
             utxo_inputs: vec![],
             utxo_outputs: vec![],
             created_at,

@@ -3,7 +3,7 @@ use std::error::Error;
 use crate::ChainProvider;
 use async_trait::async_trait;
 use num_traits::Num;
-use primitives::{chain::Chain, TransactionType, TransactionState, TransactionDirection, AssetId};
+use primitives::{chain::Chain, TransactionType, TransactionState, AssetId};
 use chrono::Utc;
 use num_bigint::BigUint;
 
@@ -82,7 +82,6 @@ impl TronClient {
                     self.get_chain().as_asset_id(),
                     value.parameter.value.amount.unwrap_or_default().to_string(),
                     None,
-                    TransactionDirection::SelfTransfer,
                     Utc::now()
                 );
                 return Some(transaction)
@@ -113,7 +112,6 @@ impl TronClient {
                     self.get_chain().as_asset_id(),
                     value.to_string(),
                     None,
-                    TransactionDirection::SelfTransfer,
                     Utc::now()
                 );
                 

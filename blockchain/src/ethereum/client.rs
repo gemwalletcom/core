@@ -5,7 +5,7 @@ use async_trait::async_trait;
 use chrono::Utc;
 use ethers::providers::{JsonRpcClient, Http, RetryClientBuilder, RetryClient};
 use num_traits::Num;
-use primitives::{chain::Chain, TransactionType, TransactionState, TransactionDirection, AssetId};
+use primitives::{chain::Chain, TransactionType, TransactionState, AssetId};
 use reqwest::Url;
 use serde_json::json;
 use super::model::{Block, Transaction, TransactionReciept};
@@ -72,7 +72,6 @@ impl EthereumClient {
                 self.chain.as_asset_id(), 
                 value,
                 None,
-                TransactionDirection::SelfTransfer, 
                 Utc::now()
             );
             return Some(transaction);
@@ -100,7 +99,6 @@ impl EthereumClient {
                 self.chain.as_asset_id(), 
                 value.to_string(),
                 None,
-                TransactionDirection::SelfTransfer, 
                 Utc::now()
             );
             return Some(transaction);

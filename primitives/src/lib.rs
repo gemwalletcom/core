@@ -44,6 +44,7 @@ pub mod subscription;
 pub use self::subscription::Subscription;
 pub mod big_int_hex;
 pub use self::big_int_hex::BigIntHex;
+pub use self::big_int_hex::BigIntValue;
 pub mod address_formatter;
 pub use self::address_formatter::AddressFormatter;
 pub mod utxo;

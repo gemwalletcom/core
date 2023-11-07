@@ -3,7 +3,7 @@ use std::error::Error;
 use crate::ChainProvider;
 use async_trait::async_trait;
 use chrono::Utc;
-use primitives::{chain::Chain, TransactionType, TransactionState, TransactionDirection};
+use primitives::{chain::Chain, TransactionType, TransactionState};
 use reqwest_middleware::ClientWithMiddleware;
 use serde_json::json;
 
@@ -45,7 +45,6 @@ impl XRPClient {
                         asset_id,
                         value,
                         Some(transaction.destination_tag.unwrap_or_default().to_string()),
-                        TransactionDirection::SelfTransfer,
                         Utc::now()
                     );
                     return Some(transaction)

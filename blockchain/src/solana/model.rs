@@ -1,6 +1,8 @@
 
+use num_bigint::BigUint;
 use typeshare::typeshare;
 use serde::{Serialize, Deserialize};
+use primitives::BigIntValue;
 
 #[typeshare]
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -9,21 +11,25 @@ pub struct Block {
     pub blockhash: String,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Meta {
-    //pub compute_units_consumed: u64,
-    //pub err: Option<String>,
     pub fee: u64,
-    //pub inner_instructions: Vec<String>,
-    //pub loaded_addresses: LoadedAddresses,
     pub log_messages: Vec<String>,
-    pub post_balances: Vec<u64>,
-    //pub post_token_balances: Vec<String>,
     pub pre_balances: Vec<u64>,
-    //pub pre_token_balances: Vec<String>,
-    //pub rewards: Option<String>,
-    //pub status: Status,
+    pub post_balances: Vec<u64>,
+    pub pre_token_balances: Vec<TokenBalance>,
+    pub post_token_balances: Vec<TokenBalance>,
+}
+
+impl Meta {
+    pub fn get_pre_token_balance(&self, account_index: i64) -> Option<TokenBalance> {
+        self.pre_token_balances.iter().find(|b| b.account_index == account_index).cloned()
+    }
+
+    pub fn get_post_token_balance(&self, account_index: i64) -> Option<TokenBalance> {
+        self.post_token_balances.iter().find(|b| b.account_index == account_index).cloned()
+    }
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -66,4 +72,27 @@ pub struct BlockTransaction {
 #[serde(rename_all = "camelCase")]
 pub struct BlockTransactions {
     pub transactions: Vec<BlockTransaction>
+}
+
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct TokenBalance {
+    pub account_index: i64,
+    pub mint: String,
+    pub owner: String,
+    pub ui_token_amount: TokenAmount,
+}
+
+impl TokenBalance {
+    pub fn get_amount(&self) -> BigUint {
+        self.ui_token_amount.amount.value.clone()
+    }
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct TokenAmount {
+    pub amount: BigIntValue,
+    pub decimals: i32,
 }

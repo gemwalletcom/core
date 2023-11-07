@@ -3,7 +3,7 @@ use std::error::Error;
 use crate::ChainProvider;
 use async_trait::async_trait;
 use chrono::Utc;
-use primitives::{chain::Chain, TransactionType, TransactionState, TransactionDirection};
+use primitives::{chain::Chain, TransactionType, TransactionState};
 use reqwest_middleware::ClientWithMiddleware;
 use super::model::BlockResponse;
 use base64::{engine::general_purpose, Engine as _};
@@ -59,7 +59,6 @@ impl CosmosClient {
                                 asset_id.clone(),
                                 value.clone().amount,
                                 Some(memo),
-                                TransactionDirection::SelfTransfer,
                                 Utc::now(),
                             );
                             return Some(transaction)

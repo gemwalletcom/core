@@ -4,7 +4,7 @@ use crate::ChainProvider;
 use async_trait::async_trait;
 use chrono::Utc;
 use num_bigint::BigUint;
-use primitives::{chain::Chain, TransactionType, TransactionState, TransactionDirection};
+use primitives::{chain::Chain, TransactionType, TransactionState};
 use reqwest_middleware::ClientWithMiddleware;
 
 use super::model::{Ledger, Block};
@@ -49,7 +49,6 @@ impl AptosClient {
                 asset_id,
                 value.clone(),
                 None,
-                TransactionDirection::SelfTransfer,
                 Utc::now()
             );        
             return Some(transaction)    
