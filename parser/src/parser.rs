@@ -68,7 +68,7 @@ impl Parser {
                 Err(err) => {
                     println!("parser latest_block chain: {}, error: {:?}", self.chain.as_str(), err);
     
-                    tokio::time::sleep(Duration::from_millis(self.options.timeout)).await; continue;
+                    tokio::time::sleep(Duration::from_millis(self.options.timeout * 5)).await; continue;
                 }
             }
 
