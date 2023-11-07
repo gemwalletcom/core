@@ -19,6 +19,13 @@ impl ParserClient {
         return provider.get_transactions(block_number).await
     }
 
+    pub async fn get_block_finalize(&self, chain: Chain, block_number: i64, addresses: Vec<String>) -> Result<Vec<Transaction>, Box<dyn std::error::Error + Send + Sync>> {
+        let transactions = self.get_block(chain, block_number).await?
+            .into_iter()
+            .map(|x| x.finalize(addresses.clone())).collect::<Vec<Transaction>>();
+        return Ok(transactions)
+    }
+
     pub async fn get_block_number_latest(&self, chain: Chain) -> Result<i64, Box<dyn std::error::Error + Send + Sync>> {
         let provider = settings_chain::ProviderFactory::new(chain, &self.settings);
         return provider.get_latest_block().await
