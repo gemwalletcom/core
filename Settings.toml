@@ -31,9 +31,6 @@ public = ""
 [pricer]
 timer = 60
 
-[plausible]
-url = "https://plausible.gemwallet.com"
-
 [name]
 [name.ens]
 url = "https://eth.llamarpc.com"

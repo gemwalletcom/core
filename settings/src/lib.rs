@@ -13,7 +13,6 @@ pub struct Settings {
     pub ramp: Ramp,
     pub coingecko: CoinGecko,
     pub pricer: Pricer,
-    pub plausible: Plausible,
     pub name: Name,
     pub metrics: Metrics,
     pub assets: Assets,
@@ -87,12 +86,6 @@ pub struct CoinGecko {
 #[allow(unused)]
 pub struct Pricer {
     pub timer: u64,
-}
-
-#[derive(Debug, Deserialize, Clone)]
-#[allow(unused)]
-pub struct Plausible {
-    pub url: String,
 }
 
 #[derive(Debug, Deserialize, Clone)]

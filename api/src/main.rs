@@ -7,7 +7,6 @@ mod node;
 mod node_client;
 mod config;
 mod config_client;
-mod plausible_client;
 mod name;
 mod charts;
 mod device;
@@ -24,6 +23,9 @@ mod scan;
 mod scan_client;
 mod parser;
 mod parser_client;
+mod swap;
+mod swap_client;
+
 use api_connector::PusherClient;
 use asset_client::AssetsClient;
 use fiat::mercuryo::MercuryoClient;
@@ -37,7 +39,6 @@ use settings::Settings;
 use pricer::client::Client as PriceClient;
 use fiat::client::Client as FiatClient;
 use config_client::Client as ConfigClient;
-use plausible_client:: Client as PlausibleClient;
 use storage::DatabaseClient as DatabaseClient;
 use name_resolver::client::Client as NameClient;
 use device_client::DevicesClient;
@@ -47,6 +48,7 @@ use transaction_client::TransactionsClient;
 use metrics_client::MetricsClient;
 use scan_client::ScanClient;
 use parser_client::ParserClient;
+use swap_client::SwapClient;
 
 async fn rocket(settings: Settings) -> Rocket<Build> {
     let redis_url = settings.redis.url.as_str();
@@ -77,7 +79,7 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
     let scan_client = ScanClient::new(postgres_url).await;
     let parser_client = ParserClient::new(settings_clone).await;
     let assets_client = AssetsClient::new(postgres_url).await;
-    let plausible_client = PlausibleClient::new(&settings.plausible.url);
+    let swap_client = SwapClient::new(postgres_url).await;
     let request_client = FiatClient::request_client(settings.fiat.timeout);
     let transak = TransakClient::new(request_client.clone(), settings.transak.key.public);
     let moonpay = MoonPayClient::new( request_client.clone(),  settings.moonpay.key.public,  settings.moonpay.key.secret);
@@ -103,7 +105,6 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
         .manage(Mutex::new(price_client))
         .manage(Mutex::new(node_client))
         .manage(Mutex::new(config_client))
-        .manage(Mutex::new(plausible_client))
         .manage(Mutex::new(name_client))
         .manage(Mutex::new(devices_client))        
         .manage(Mutex::new(assets_client))
@@ -112,6 +113,7 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
         .manage(Mutex::new(metrics_client))              
         .manage(Mutex::new(scan_client))
         .manage(Mutex::new(parser_client))
+        .manage(Mutex::new(swap_client))
         .mount("/", routes![
             status::get_status,
         ])
@@ -142,6 +144,7 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
             parser::get_parser_block,
             parser::get_parser_block_finalize,
             parser::get_parser_block_number_latest,
+            swap::get_swap_quote,
         ])
         .mount(settings.metrics.path, routes![
             metrics::get_metrics,
