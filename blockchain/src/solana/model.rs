@@ -15,7 +15,7 @@ pub struct Block {
 #[serde(rename_all = "camelCase")]
 pub struct Meta {
     pub fee: u64,
-    pub log_messages: Vec<String>,
+    pub log_messages: Option<Vec<String>>,
     pub pre_balances: Vec<u64>,
     pub post_balances: Vec<u64>,
     pub pre_token_balances: Vec<TokenBalance>,
@@ -74,7 +74,6 @@ pub struct BlockTransactions {
     pub transactions: Vec<BlockTransaction>
 }
 
-
 #[derive(Debug, Deserialize, Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct TokenBalance {
@@ -93,6 +92,5 @@ impl TokenBalance {
 #[derive(Debug, Deserialize, Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct TokenAmount {
-    pub amount: BigIntValue,
-    pub decimals: i32,
+    pub amount: BigIntValue
 }

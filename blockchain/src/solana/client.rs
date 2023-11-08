@@ -33,7 +33,7 @@ impl SolanaClient {
     fn map_transaction(&self, transaction: &BlockTransaction, block_number: i64) -> Option<primitives::Transaction> {
         let account_keys = transaction.transaction.message.account_keys.clone();
         let signatures = transaction.transaction.signatures.clone();
-
+        let log_messages = transaction.meta.log_messages.clone().unwrap_or_default();
         let hash = transaction.transaction.signatures.first()?.to_string();
         let chain = self.get_chain();
         let fee = transaction.meta.fee;
@@ -42,7 +42,7 @@ impl SolanaClient {
         let fee_asset_id = chain.as_asset_id();
 
         // system transfer
-        if (account_keys.len() == 2 || account_keys.len() == 3) && account_keys.last().unwrap() == SYSTEM_PROGRAM_ID && signatures.len() == 1 && transaction.meta.log_messages.len() == 2 {    
+        if (account_keys.len() == 2 || account_keys.len() == 3) && account_keys.last().unwrap() == SYSTEM_PROGRAM_ID && signatures.len() == 1 && log_messages.len() == 2 {    
             let from = account_keys.first()?.clone();
             let to = account_keys[account_keys.len() - 2].clone();
             let value = transaction.meta.pre_balances[0] - transaction.meta.post_balances[0] - fee;  
