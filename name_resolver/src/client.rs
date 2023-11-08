@@ -4,7 +4,7 @@ use async_trait::async_trait;
 use primitives::chain::Chain;
 use primitives::name::{NameRecord, NameProvider};
 
-use crate::{ens::ENSClient, ud::UDClient, sns::SNSClient, ton::TONClient, eths::EthsClient, spaceid::SpaceIdClient, did::DidClient};
+use crate::{ens::ENSClient, ud::UDClient, sns::SNSClient, ton::TONClient, eths::EthsClient, spaceid::SpaceIdClient, did::DidClient, suins::SuinsClient};
 
 #[async_trait]
 pub trait NameClient {
@@ -23,6 +23,7 @@ pub struct Client {
     eths_client: EthsClient,
     spaceid_client: SpaceIdClient,
     did_client: DidClient,
+    suins_client: SuinsClient,
 }
 
 impl Client {
@@ -36,6 +37,7 @@ impl Client {
         eths_api_url: String,
         space_api_url: String,
         did_api_url: String,
+        suins_api_url: String,
     ) -> Self {
         let domains_mapping = Self::domains_mapping();
         let ens_client = ENSClient::new(ens_url);
@@ -45,6 +47,7 @@ impl Client {
         let eths_client: EthsClient = EthsClient::new(eths_api_url);
         let spaceid_client: SpaceIdClient = SpaceIdClient::new(space_api_url);
         let did_client: DidClient = DidClient::new(did_api_url);
+        let suins_client: SuinsClient = SuinsClient::new(suins_api_url);
 
         Self {
             domains_mapping,
@@ -55,12 +58,16 @@ impl Client {
             eths_client,
             spaceid_client,
             did_client,
+            suins_client,
         }
     }
 
     pub async fn resolve(&self, name: &str, chain: Chain) -> Result<NameRecord, Box<dyn Error>> {
         let name_prefix = name.split('.').clone().last().unwrap_or_default();
         let provider = self.domains_mapping.get(name_prefix).expect("unable to get provider");
+
+        println!("provider: {}", provider.as_str());
+        println!("provider chain: {}", chain.as_str());
 
         match provider {
             NameProvider::Ens => {
@@ -106,6 +113,12 @@ impl Client {
                 }
                 self.did_client.resolve(name, chain).await
             },
+            NameProvider::Suins => {
+                if !SuinsClient::chains().contains(&chain) {
+                    return Err("not supported chain".to_string().into())
+                }
+                self.suins_client.resolve(name, chain).await
+            },
         }
     }
 
@@ -138,6 +151,10 @@ impl Client {
 
         for domain in DidClient::domains() {
             result.insert(domain, NameProvider::Did);
+        }
+
+        for domain in SuinsClient::domains() {
+            result.insert(domain, NameProvider::Suins);
         }
 
         result

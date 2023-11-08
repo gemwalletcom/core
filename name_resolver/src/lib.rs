@@ -6,3 +6,4 @@ pub mod ton;
 pub mod eths;
 pub mod spaceid;
 pub mod did;
+pub mod suins;

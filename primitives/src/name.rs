@@ -24,6 +24,7 @@ pub enum NameProvider {
     SpaceId,
     Eths,
     Did,
+    Suins,
 }
 
 impl NameProvider {
@@ -37,6 +38,7 @@ impl NameProvider {
             Self::SpaceId => "spaceid",
             Self::Eths => "eths",
             Self::Did => "did",
+            Self::Suins => "suins",
         }
     }
 }

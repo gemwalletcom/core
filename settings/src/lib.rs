@@ -91,30 +91,19 @@ pub struct Pricer {
 #[derive(Debug, Deserialize, Clone)]
 #[allow(unused)]
 pub struct Name {
-    pub ens: ENS,
+    pub ens: URL,
     pub ud: UD,
-    pub sns: SNS,
-    pub ton: TON,
-    pub eths: ETHS,
-    pub spaceid: SpaceId,
-    pub did: DID,
+    pub sns: URL,
+    pub ton: URL,
+    pub eths: URL,
+    pub spaceid: URL,
+    pub did: URL,
+    pub suins: URL,
 }
 
 #[derive(Debug, Deserialize, Clone)]
 #[allow(unused)]
-pub struct ENS {
-    pub url: String,
-}
-
-#[derive(Debug, Deserialize, Clone)]
-#[allow(unused)]
-pub struct SNS {
-    pub url: String,
-}
-
-#[derive(Debug, Deserialize, Clone)]
-#[allow(unused)]
-pub struct TON {
+pub struct URL {
     pub url: String,
 }
 
@@ -123,24 +112,6 @@ pub struct TON {
 pub struct UD {
     pub url: String,
     pub key: KeySecret,
-}
-
-#[derive(Debug, Deserialize, Clone)]
-#[allow(unused)]
-pub struct ETHS {
-    pub url: String,
-}
-
-#[derive(Debug, Deserialize, Clone)]
-#[allow(unused)]
-pub struct SpaceId {
-    pub url: String,
-}
-
-#[derive(Debug, Deserialize, Clone)]
-#[allow(unused)]
-pub struct DID {
-    pub url: String,
 }
 
 #[derive(Debug, Deserialize, Clone)]

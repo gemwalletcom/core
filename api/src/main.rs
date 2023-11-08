@@ -69,6 +69,7 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
         settings.name.eths.url,
         settings.name.spaceid.url,
         settings.name.did.url,
+        settings.name.suins.url,
     );
     
     let pusher_client = PusherClient::new(settings.pusher.url);

@@ -56,6 +56,9 @@ url = "https://api.prd.space.id"
 [name.did]
 url = "https://indexer-basic.did.id"
 
+[name.suins]
+url = "https://suins-rpc.mainnet.sui.io"
+
 [metrics]
 path = "/metrics"
 
