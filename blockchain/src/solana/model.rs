@@ -15,7 +15,6 @@ pub struct Block {
 #[serde(rename_all = "camelCase")]
 pub struct Meta {
     pub fee: u64,
-    pub log_messages: Option<Vec<String>>,
     pub pre_balances: Vec<u64>,
     pub post_balances: Vec<u64>,
     pub pre_token_balances: Vec<TokenBalance>,
