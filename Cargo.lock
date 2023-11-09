@@ -109,6 +109,7 @@ dependencies = [
  "settings",
  "settings_chain",
  "storage",
+ "swapper",
  "tokio",
 ]
 
@@ -3179,6 +3180,7 @@ dependencies = [
  "chrono",
  "num-bigint",
  "num-traits",
+ "rocket",
  "serde",
  "strum",
  "typeshare",
@@ -4442,6 +4444,18 @@ dependencies = [
  "thiserror",
  "url",
  "zip",
+]
+
+[[package]]
+name = "swapper"
+version = "1.0.0"
+dependencies = [
+ "primitives",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "serde_urlencoded",
+ "tokio",
 ]
 
 [[package]]

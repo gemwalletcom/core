@@ -19,6 +19,7 @@ pub struct Settings {
     pub chains: Chains,
     pub parser: Parser,
     pub pusher: Pusher,
+    pub swap: Swap,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -190,6 +191,21 @@ pub struct Pusher {
 #[allow(unused)]
 pub struct PusherIOS {
     pub topic: String,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[allow(unused)]
+pub struct Swap {
+    pub oneinch: OneInch,
+    pub fee: f64,
+    pub fee_address: String,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[allow(unused)]
+pub struct OneInch {
+    pub url: String,
+    pub key: String,
 }
 
 impl Settings {

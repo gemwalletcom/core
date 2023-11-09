@@ -1,15 +1,14 @@
 extern crate rocket;
+use primitives::{SwapQuoteResult, SwapQuoteRequest};
 use rocket::serde::json::Json;
-use crate::SwapClient;
 use rocket::State;
 use rocket::tokio::sync::Mutex;
 
-#[get("/swap/quote")]
+#[get("/swap/quote?<quote..>")]
 pub async fn get_swap_quote(
-    //device_id: &str,
-    client: &State<Mutex<SwapClient>>,
-) -> Json<bool> {
-    Json(true)
-    //let subscriptions = client.lock().await.get_subscriptions(device_id).unwrap();
-    //Json(subscriptions)
+    quote: SwapQuoteRequest, 
+    client: &State<Mutex<crate::SwapClient>>,
+) -> Json<SwapQuoteResult> {
+    let quote = client.lock().await.swap_quote(quote).await.unwrap();
+    Json(quote)
 }

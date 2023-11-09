@@ -15,6 +15,10 @@ pub struct Asset {
 }
 
 impl Asset {
+    pub fn chain(&self) -> Chain {
+        self.id.chain
+    }
+
     pub fn from_chain(chain: Chain) -> Asset {
         match chain {
             Chain::Ethereum => Asset {

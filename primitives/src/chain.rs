@@ -108,6 +108,16 @@ impl Chain {
         AssetId::from_chain(*self)
     }
 
+    pub fn network_id(&self) -> &str {
+        match self {
+            Self::Ethereum => "1",
+            Self::SmartChain => "56",
+            _ => {
+                ""
+            }
+        }
+    }
+
     pub fn to_string(&self) -> String {
         self.as_str().to_string()
     }

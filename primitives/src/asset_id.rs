@@ -34,6 +34,10 @@ impl AssetId {
     pub fn from_chain(chain: Chain) -> AssetId {
         AssetId { chain, token_id: None }
     }
+
+    pub fn is_native(&self) -> bool {
+        self.token_id == None
+    }
 }
 
 #[cfg(test)]

@@ -1,5 +1,5 @@
 [package]
-name = "swap"
+name = "swapper"
 edition = { workspace = true }
 version = { workspace = true }
 
@@ -7,3 +7,6 @@ version = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 tokio = { workspace = true }
+reqwest = { workspace = true }
+serde_urlencoded = { workspace = true }
+primitives = { path = "../primitives" }
