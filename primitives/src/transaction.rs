@@ -1,12 +1,22 @@
 use crate::{
     asset_id::AssetId, transaction_direction::TransactionDirection,
-    transaction_state::TransactionState, transaction_type::TransactionType, Chain,
-    transaction_utxo::TransactionInput,
+    transaction_state::TransactionState, transaction_type::TransactionType,
+    transaction_utxo::TransactionInput, Chain,
 };
+
 use chrono::offset::Utc;
 use chrono::DateTime;
 use serde::{Deserialize, Serialize};
+use std::collections::HashSet;
 use typeshare::typeshare;
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[typeshare]
+pub struct TransactionsFetchOption {
+    pub wallet_index: i32,
+    pub asset_id: Option<String>,
+    pub from_timestamp: Option<u32>,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare]
@@ -129,10 +139,7 @@ impl Transaction {
     }
 
     pub fn input_addresses(&self) -> Vec<String> {
-        self.utxo_inputs
-            .iter()
-            .map(|x| x.address.clone())
-            .collect()
+        self.utxo_inputs.iter().map(|x| x.address.clone()).collect()
     }
 
     pub fn output_addresses(&self) -> Vec<String> {
@@ -155,84 +162,106 @@ impl Transaction {
     pub fn finalize(&self, addresses: Vec<String>) -> Self {
         let chain = self.asset_id.chain.clone();
         if !chain.is_utxo() {
-            return self.clone()
+            return self.clone();
         }
-        let inputs: Option<Vec<TransactionInput>> = self.utxo_inputs.clone().into();
-        let outputs: Option<Vec<TransactionInput>> = self.utxo_outputs.clone().into();
 
-        let inputs_values = inputs.clone().unwrap_or_default();
-        let inputs_addresses = inputs_values.clone().into_iter().map(|x| x.address).collect::<Vec<String>>();
-        let outputs_values = outputs.clone().unwrap_or_default();
-        let outputs_addresses = outputs_values.clone().into_iter().map(|x| x.address).collect::<Vec<String>>();
+        let inputs_addresses = self.input_addresses();
+        let outputs_addresses = self.output_addresses();
 
-        let direction = if !addresses.clone().into_iter().filter(|x| inputs_addresses.contains(x)).collect::<Vec<String>>().is_empty()  {
-            TransactionDirection::Outgoing
+        // skip if addresses is empty or coinbase or op_return only
+        if addresses.is_empty() || inputs_addresses.is_empty() || outputs_addresses.is_empty() {
+            return self.clone();
+        }
+
+        // set doesn't keep order
+        let user_set: HashSet<String> = HashSet::from_iter(addresses.clone());
+        let input_set = HashSet::from_iter(inputs_addresses);
+        let output_set = HashSet::from_iter(outputs_addresses.clone());
+
+        // unrelated tx, return self
+        if user_set.is_disjoint(&input_set) && user_set.is_disjoint(&output_set) {
+            return self.clone();
+        }
+
+        let mut direction: TransactionDirection;
+        if user_set.intersection(&input_set).count() > 0 {
+            direction = TransactionDirection::Outgoing;
+            if user_set.is_superset(&output_set) {
+                direction = TransactionDirection::SelfTransfer;
+            }
         } else {
-            TransactionDirection::Incoming
-        };
-        let from: String = match direction {
+            direction = TransactionDirection::Incoming;
+        }
+
+        // from is always picked from first
+        let from = self.utxo_inputs.first().unwrap().address.clone();
+        let to: String;
+        let value: String;
+
+        match direction {
             TransactionDirection::Incoming => {
-                inputs_values.first().unwrap().address.clone()
-            },
-            TransactionDirection::Outgoing | TransactionDirection::SelfTransfer => { 
-                outputs_values.first().unwrap().address.clone()
-            },
-        };
-        let to = match direction {
-            TransactionDirection::Incoming => {
-                outputs_values.first().unwrap().address.clone()
-            },
-            TransactionDirection::Outgoing | TransactionDirection::SelfTransfer => { 
-                inputs_values.first().unwrap().address.clone()
-            },
+                let addrs: Vec<String> = outputs_addresses
+                    .clone()
+                    .into_iter()
+                    .filter(|x| user_set.contains(x))
+                    .collect();
+                to = addrs.first().unwrap().clone();
+                value = Self::utxo_calculate_value(&self.utxo_outputs, addresses).to_string();
+            }
+            TransactionDirection::Outgoing => {
+                let filtered: Vec<String> = outputs_addresses
+                    .clone()
+                    .into_iter()
+                    .filter(|x| !user_set.contains(x))
+                    .collect();
+                to = filtered.first().unwrap().clone();
+                let vals: Vec<TransactionInput> = self
+                    .utxo_outputs
+                    .clone()
+                    .into_iter()
+                    .filter(|x| x.address == to)
+                    .collect();
+                value = vals.first().unwrap().value.clone();
+            }
+            TransactionDirection::SelfTransfer => {
+                to = self.utxo_outputs.first().unwrap().address.clone();
+                value = Self::utxo_calculate_value(&self.utxo_outputs, addresses).to_string()
+            }
         };
 
-        let value: i64 = match direction {
-            TransactionDirection::Incoming => {
-                Self::utxo_calculate_value(outputs_values.clone(), addresses)
-            },
-            TransactionDirection::Outgoing | TransactionDirection::SelfTransfer => { 
-                Self::utxo_calculate_value(inputs_values.clone(), addresses)
-            },
+        return Transaction {
+            id: self.id.clone(),
+            hash: self.hash.clone(),
+            asset_id: self.asset_id.clone(),
+            from,
+            to,
+            contract: self.contract.clone(),
+            transaction_type: self.transaction_type.clone(),
+            state: self.state.clone(),
+            block_number: self.block_number.clone(),
+            sequence: self.sequence.clone(),
+            fee: self.fee.clone(),
+            fee_asset_id: self.fee_asset_id.clone(),
+            value: value.to_string(),
+            memo: self.memo.clone(),
+            direction,
+            utxo_inputs: self.utxo_inputs.clone(),
+            utxo_outputs: self.utxo_outputs.clone(),
+            created_at: self.created_at,
         };
-
-        return Transaction { 
-            id: self.id.clone(), 
-            hash: self.hash.clone(), 
-            asset_id: self.asset_id.clone(), 
-            from, 
-            to, 
-            contract: self.contract.clone(), 
-            transaction_type: self.transaction_type.clone(), 
-            state: self.state.clone(), 
-            block_number: self.block_number.clone(), 
-            sequence: self.sequence.clone(), 
-            fee: self.fee.clone(), 
-            fee_asset_id: self.fee_asset_id.clone(), 
-            value: value.to_string(), 
-            memo: self.memo.clone(), 
-            direction, 
-            utxo_inputs: self.utxo_inputs.clone(), 
-            utxo_outputs: self.utxo_outputs.clone(), 
-            created_at: self.created_at
-         }
     }
 
-    fn utxo_calculate_value(values: Vec<TransactionInput>, addresses: Vec<String>) -> i64 {
-        let values = values.clone().into_iter().filter(|x| 
-            addresses.contains(&x.address)
-        ).collect::<Vec<TransactionInput>>();
-        
-        return values.clone().into_iter().map(|x| x.value.parse::<i64>().unwrap()).sum::<i64>();
+    fn utxo_calculate_value(values: &Vec<TransactionInput>, addresses: Vec<String>) -> i64 {
+        let values = values
+            .clone()
+            .into_iter()
+            .filter(|x| addresses.contains(&x.address))
+            .collect::<Vec<TransactionInput>>();
+
+        return values
+            .clone()
+            .into_iter()
+            .map(|x| x.value.parse::<i64>().unwrap())
+            .sum::<i64>();
     }
-
-
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare]
-pub struct TransactionsFetchOption {
-    pub wallet_index: i32,
-    pub asset_id: Option<String>,
-    pub from_timestamp: Option<u32>,
 }
