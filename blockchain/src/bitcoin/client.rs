@@ -117,7 +117,7 @@ impl ChainProvider for BitcoinClient {
         loop {
             let block = self.get_block(block_number, page, limit).await?;
             transactions.extend(block.txs.clone());
-            if block.txs.len() != limit {
+            if block.page == block.total_pages {
                 break;
             }
             page += 1;

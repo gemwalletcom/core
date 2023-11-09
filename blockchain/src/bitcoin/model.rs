@@ -12,7 +12,10 @@ pub struct Blockbook {
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct Block {
+    pub page: i64,
+    pub total_pages: i64,
     pub txs: Vec<Transaction>,
 }
 
