@@ -155,7 +155,7 @@ impl Transaction {
         array.extend(self.input_addresses());
         array.extend(self.output_addresses());
         array.dedup();
-        array
+        array.into_iter().filter(|x| x != "").collect()
     }
 
     // addresses - is a list of user addresses

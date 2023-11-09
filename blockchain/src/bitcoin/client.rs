@@ -7,7 +7,7 @@ use primitives::{
     chain::Chain, transaction_utxo::TransactionInput, TransactionDirection, TransactionType,
 };
 
-use super::model::{Block, Status};
+use super::model::{Block, Status, Transaction};
 use reqwest_middleware::ClientWithMiddleware;
 
 pub struct BitcoinClient {
@@ -29,8 +29,10 @@ impl BitcoinClient {
     pub async fn get_block(
         &self,
         block_number: i64,
+        page: usize,
+        limit: usize,
     ) -> Result<Block, Box<dyn Error + Send + Sync>> {
-        let url = format!("{}/api/v2/block/{}", self.url, block_number);
+        let url = format!("{}/api/v2/block/{}?page={}&limit={}", self.url, block_number, page, limit);
         let block: Block = self.client.get(url).send().await?.json::<Block>().await?;
         Ok(block)
     }
@@ -109,7 +111,17 @@ impl ChainProvider for BitcoinClient {
         &self,
         block_number: i64,
     ) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Send + Sync>> {
-        let transactions = self.get_block(block_number).await?.txs;
+        let mut page: usize= 1;
+        let limit: usize = 20;
+        let mut transactions: Vec<Transaction> = Vec::new();
+        loop {
+            let block = self.get_block(block_number, page, limit).await?;
+            transactions.extend(block.txs.clone());
+            if block.txs.len() != limit {
+                break;
+            }
+            page += 1;
+        }
         let transactions = transactions
             .into_iter()
             .flat_map(|x| BitcoinClient::map_transaction(self.chain, &x, block_number))

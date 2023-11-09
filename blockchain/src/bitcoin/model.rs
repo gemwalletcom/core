@@ -11,12 +11,12 @@ pub struct Blockbook {
     pub best_height: i64,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Block {
     pub txs: Vec<Transaction>,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Transaction {
     pub txid: String,
@@ -29,7 +29,7 @@ pub struct Transaction {
     pub vout: Vec<Output>,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Input {
     pub is_address: bool,
@@ -40,7 +40,7 @@ pub struct Input {
     pub vout: Option<i64>,     // will be optional for Coinbase Input
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Output {
     pub is_address: bool,

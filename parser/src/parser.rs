@@ -145,7 +145,9 @@ impl Parser {
                     
                     transactions_map.insert(transaction.clone().id, transaction.clone());
 
-                    match self.pusher.push(device.as_primitive(), transaction.clone(), subscription.as_primitive() ).await {
+                    let transaction = transaction.finalize(vec![subscription.address.clone()]).clone();
+
+                    match self.pusher.push(device.as_primitive(), transaction, subscription.as_primitive() ).await {
                         Ok(result) => { println!("push: result: {:?}", result); },
                         Err(err) => { println!("push: error: {:?}", err); }
                     }
