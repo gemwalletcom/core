@@ -31,12 +31,13 @@ impl BitcoinClient {
         block_number: i64,
     ) -> Result<Block, Box<dyn Error + Send + Sync>> {
         let url = format!("{}/api/v2/block/{}", self.url, block_number);
-        Ok(self.client.get(url).send().await?.json::<Block>().await?)
+        let block: Block = self.client.get(url).send().await?.json::<Block>().await?;
+        Ok(block)
     }
 
     pub fn map_transaction(
-        &self,
-        transaction: super::model::Transaction,
+        chain: Chain,
+        transaction: &super::model::Transaction,
         _block_number: i64,
     ) -> Option<primitives::Transaction> {
         let inputs: Vec<TransactionInput> = transaction
@@ -44,7 +45,13 @@ impl BitcoinClient {
             .iter()
             .filter(|i| i.is_address == true)
             .map(|input| TransactionInput {
-                address: input.addresses.clone().unwrap().first().unwrap().to_string(),
+                address: input
+                    .addresses
+                    .clone()
+                    .unwrap()
+                    .first()
+                    .unwrap()
+                    .to_string(),
                 value: input.value.clone(),
             })
             .collect();
@@ -64,8 +71,8 @@ impl BitcoinClient {
         }
 
         let transaction = primitives::Transaction::new_with_utxo(
-            transaction.txid,
-            self.get_chain().as_asset_id(),
+            transaction.txid.clone(),
+            chain.as_asset_id(),
             None,
             None,
             None,
@@ -73,8 +80,8 @@ impl BitcoinClient {
             primitives::TransactionState::Confirmed,
             transaction.block_height.to_string(),
             0.to_string(),
-            transaction.fees,
-            self.get_chain().as_asset_id(),
+            transaction.fees.clone(),
+            chain.as_asset_id(),
             "0".to_string(),
             None,
             TransactionDirection::SelfTransfer,
@@ -102,11 +109,92 @@ impl ChainProvider for BitcoinClient {
         &self,
         block_number: i64,
     ) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Send + Sync>> {
-        let transactions = self.get_block(799038).await?.txs;
+        let transactions = self.get_block(block_number).await?.txs;
         let transactions = transactions
             .into_iter()
-            .flat_map(|x| self.map_transaction(x, block_number))
+            .flat_map(|x| BitcoinClient::map_transaction(self.chain, &x, block_number))
             .collect::<Vec<primitives::Transaction>>();
         Ok(transactions)
+    }
+}
+
+mod tests {
+
+    #[test]
+    fn test_finalize_with_address() {
+        use super::*;
+
+        let file_path = concat!(env!("CARGO_MANIFEST_DIR"), "/testdata/bitcoin/808497.json");
+        let file = std::fs::File::open(file_path).expect("file should open read only");
+        let json: serde_json::Value =
+            serde_json::from_reader(file).expect("file should be proper JSON");
+
+        // Test decoding json into struct
+        let block: super::Block = serde_json::from_value(json).expect("Decoded into Block");
+        assert_eq!(block.txs.len(), 1000);
+
+        let chain = primitives::Chain::Bitcoin;
+        let block_number = block.txs[0].block_height;
+
+        // Test skipping coinbase tx
+        let mut transaction = &block.txs[0];
+        let mapped_tx = BitcoinClient::map_transaction(chain, transaction, block_number);
+        assert!(mapped_tx.is_none());
+
+        transaction = &block.txs[1];
+        let mut mapped = BitcoinClient::map_transaction(chain, transaction, block_number).unwrap();
+
+        assert!(mapped.from.is_empty());
+        assert!(mapped.to.is_empty());
+        assert_eq!(mapped.input_addresses().len(), 1);
+        assert_eq!(mapped.output_addresses().len(), 2);
+        assert_eq!(mapped.direction, TransactionDirection::SelfTransfer);
+
+        let mut from = "3Q43ES6ENXr6h7c7FXDMixYWpZqr6imoJy".to_string();
+        let to = "3MhDkWCqAvhTaCuD99tPsCz82SdgRtjeiB".to_string();
+        let change = "35J3LCAoxvXFEtaJJd3PDEX9KpxQVHR5Ad".to_string();
+        let unknown = "bc1qguju39vdhwm2eu4pxkzhuak2w3azvgf933vpmx".to_string();
+
+        // Test unrelated tx
+        let mut finalized = mapped.finalize(vec![unknown]);
+
+        assert_eq!(finalized.from, "");
+        assert_eq!(finalized.to, "");
+        assert_eq!(finalized.direction, TransactionDirection::SelfTransfer);
+        assert_eq!(finalized.value, "0");
+
+        // Test Outgoing
+        finalized = mapped.finalize(vec![from.clone(), change.clone()]);
+
+        assert_eq!(finalized.from, from);
+        assert_eq!(finalized.to, to);
+        assert_eq!(finalized.direction, TransactionDirection::Outgoing);
+        assert_eq!(finalized.value, "7360247");
+
+        // Test Self
+        finalized = mapped.finalize(vec![from.clone(), to.clone(), change.clone()]);
+
+        assert_eq!(finalized.from, from);
+        assert_eq!(finalized.to, to);
+        assert_eq!(finalized.direction, TransactionDirection::SelfTransfer);
+        assert_eq!(finalized.value, "321732570");
+
+        // Test Incoming
+        finalized = mapped.finalize(vec![change.clone()]);
+        assert_eq!(finalized.from, from);
+        assert_eq!(finalized.to, change);
+        assert_eq!(finalized.direction, TransactionDirection::Incoming);
+        assert_eq!(finalized.value, "314372323");
+
+        // Test Outgoing without change
+        transaction = &block.txs[2];
+        mapped = BitcoinClient::map_transaction(chain, transaction, block_number).unwrap();
+        from = "bc1qguju39vdhwm2eu4pxkzhuak2w3azvgf933vpmx".to_string();
+        finalized = mapped.finalize(vec![from.clone()]);
+
+        assert_eq!(finalized.from, from);
+        assert_eq!(finalized.to, "bc1qyf7kvsmxp6vpgu7str5xz3kx58x8yc6j48pyct");
+        assert_eq!(finalized.direction, TransactionDirection::Outgoing);
+        assert_eq!(finalized.value, "34820917");
     }
 }
