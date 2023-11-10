@@ -133,9 +133,9 @@ url = ""
 url = "https://api.1inch.dev"
 key = ""
 
-[swap]
-fee = 0
-fee_address = ""
+[swap.fee]
+percent = 0.0
+address = ""
 
 [parser]
 retry = 1

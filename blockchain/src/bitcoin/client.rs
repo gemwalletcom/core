@@ -2,7 +2,7 @@ use std::error::Error;
 
 use crate::ChainProvider;
 use async_trait::async_trait;
-use chrono::{TimeZone, Utc};
+use chrono::Utc;
 use primitives::{
     chain::Chain, transaction_utxo::TransactionInput, TransactionDirection, TransactionType,
 };

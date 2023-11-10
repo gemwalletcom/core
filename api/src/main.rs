@@ -81,7 +81,7 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
     let scan_client = ScanClient::new(postgres_url).await;
     let parser_client = ParserClient::new(settings_clone).await;
     let assets_client = AssetsClient::new(postgres_url).await;
-    let oneinch_client = OneInchClient::new(settings.swap.oneinch.url, settings.swap.oneinch.key, settings.swap.fee, settings.swap.fee_address);
+    let oneinch_client = OneInchClient::new(settings.swap.oneinch.url, settings.swap.oneinch.key, settings.swap.fee.percent, settings.swap.fee.address);
     let swapper_client = SwapperClient::new(oneinch_client);
     let swap_client = SwapClient::new( postgres_url, swapper_client).await;
     

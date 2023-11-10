@@ -32,7 +32,6 @@ impl OneInchClient {
         let network_id = quote.from_asset.chain.network_id();
         let src = if quote.from_asset.clone().is_native() { NATIVE_ADDRESS.to_string() } else { quote.from_asset.clone().token_id.unwrap() };
         let dst = if quote.to_asset.clone().is_native() { NATIVE_ADDRESS.to_string() } else { quote.to_asset.clone().token_id.unwrap() };
-
         let quote_request = QuoteRequest{
             src: src.clone(),
             dst,

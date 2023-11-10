@@ -197,8 +197,15 @@ pub struct PusherIOS {
 #[allow(unused)]
 pub struct Swap {
     pub oneinch: OneInch,
-    pub fee: f64,
-    pub fee_address: String,
+    pub fee: SwapFee,
+}
+
+
+#[derive(Debug, Deserialize, Clone)]
+#[allow(unused)]
+pub struct SwapFee {
+    pub percent: f64,
+    pub address: String,
 }
 
 #[derive(Debug, Deserialize, Clone)]
