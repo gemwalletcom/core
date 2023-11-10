@@ -414,6 +414,7 @@ impl DatabaseClient {
         }
 
         return query
+            .order(created_at.desc())
             .select(Transaction::as_select())
             .load(&mut self.connection);
     }
