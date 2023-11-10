@@ -89,7 +89,8 @@ impl BitcoinClient {
             TransactionDirection::SelfTransfer,
             inputs,
             outputs,
-            Utc.timestamp_nanos(transaction.block_time).naive_utc().and_utc(),
+            Utc::now(),
+            //Utc.timestamp_opt(transaction.block_time, 0).unwrap(),
         );
 
         Some(transaction)
