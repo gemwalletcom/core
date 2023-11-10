@@ -29,7 +29,7 @@ pub struct Transaction {
     pub to_address: Option<String>,
     pub kind: String,
     pub state: String,
-    pub created_at: NaiveDateTime,
+    pub block_created_at: NaiveDateTime,
     pub utxo_inputs: Option<serde_json::Value>,
     pub utxo_outputs: Option<serde_json::Value>,
 }
@@ -51,7 +51,7 @@ impl Transaction {
             to_address: transaction.to.into(),
             kind: transaction.transaction_type.to_string(),
             state: transaction.state.to_string(),
-            created_at: transaction.created_at.naive_utc(),
+            block_created_at: transaction.created_at.naive_utc(),
             utxo_inputs: serde_json::to_value(transaction.utxo_inputs).ok(),
             utxo_outputs: serde_json::to_value(transaction.utxo_outputs).ok(),
         }
@@ -91,7 +91,7 @@ impl Transaction {
             direction,
             inputs.clone().unwrap_or_default(),
             outputs.clone().unwrap_or_default(),
-            self.created_at.and_utc(),
+            self.block_created_at.and_utc(),
         )
     }
 }
