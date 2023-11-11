@@ -138,9 +138,6 @@ impl CoinGeckoClient {
 
     pub async fn get_coin(&self, coin: &str) -> Result<CoinInfo, Error> {
         let url = format!("{}/api/v3/coins/{}?x_cg_pro_api_key={}&market_data=false&community_data=false&tickers=false&localization=false&developer_data=false", self.url, coin, self.api_key);
-
-        //println!("url: {}", url);
-
         let response = self.client
             .get(&url)
             .headers(self.headers())

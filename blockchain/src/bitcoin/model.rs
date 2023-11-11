@@ -47,7 +47,7 @@ pub struct Input {
 #[serde(rename_all = "camelCase")]
 pub struct Output {
     pub is_address: bool,
-    pub addresses: Vec<String>,
+    pub addresses: Option<Vec<String>>,
     pub value: String,
     pub n: i64,
 }

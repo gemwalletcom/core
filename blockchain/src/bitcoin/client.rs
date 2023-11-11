@@ -63,7 +63,7 @@ impl BitcoinClient {
             .iter()
             .filter(|o| o.is_address == true)
             .map(|output| TransactionInput {
-                address: output.addresses.clone().first().unwrap().to_string(),
+                address: output.addresses.clone().unwrap_or_default().first().unwrap().to_string(),
                 value: output.value.clone(),
             })
             .collect();
