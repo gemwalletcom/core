@@ -1,4 +1,4 @@
-use primitives::{SwapQuote, SwapQuoteProtocolRequest};
+use primitives::{SwapQuote, SwapQuoteProtocolRequest, ChainType};
 
 use super::model::{QuoteRequest, Allowance, SwapResult, SwapResultTransaction};
 
@@ -44,15 +44,7 @@ impl OneInchClient {
         };
         let swap_quote = self.get_swap_quote(quote_request, network_id).await?;
         
-        if src.clone() != NATIVE_ADDRESS {
-            let allowance = self.get_approve_allowance(network_id, src.as_str(), quote.wallet_address.as_str()).await?;
-            if allowance.allowance == "0" {
-                let approve = self.get_approve_transaction(network_id, src.as_str()).await?;
-                let quote = SwapQuote {data: swap_quote.tx.get_data(), approval: Some(approve.get_data())};
-                return Ok(quote)
-            }
-        }
-        let quote = SwapQuote {data: swap_quote.tx.get_data(), approval: None};
+        let quote = SwapQuote {chain_type: ChainType::Ethereum, data: swap_quote.tx.get_data()};
         return Ok(quote)
     }
 

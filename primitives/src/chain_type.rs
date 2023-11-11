@@ -4,7 +4,7 @@ use serde::{Serialize, Deserialize};
 #[derive(Debug, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Codable, CaseIterable")]
 #[serde(rename_all = "lowercase")]
-pub enum BlockchainType {
+pub enum ChainType {
     Ethereum,
     Bitcoin,
     Binance,

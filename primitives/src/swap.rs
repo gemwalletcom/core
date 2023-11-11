@@ -1,7 +1,7 @@
 use typeshare::typeshare;
 use serde::{Serialize, Deserialize};
 
-use crate::AssetId;
+use crate::{AssetId, ChainType};
 
 #[derive(rocket::form::FromForm)]
 #[derive(Debug, Serialize, Deserialize)]
@@ -32,7 +32,7 @@ pub struct SwapQuoteResult {
 #[derive(Debug, Serialize, Deserialize)]
 #[typeshare(swift="Codable")]
 pub struct SwapQuote {
-    pub approval: Option<SwapQuoteEthereumData>,
+    pub chain_type: ChainType,
     pub data: SwapQuoteEthereumData,
 }
 
