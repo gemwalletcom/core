@@ -2,7 +2,7 @@ extern crate rocket;
 
 use std::error::Error;
 
-use primitives::{SwapQuoteResult, SwapQuoteRequest, SwapQuoteProtocolRequest};
+use primitives::{SwapQuoteResult, SwapQuoteRequest, SwapQuoteProtocolRequest, SwapMode};
 use storage::DatabaseClient;
 use swapper::SwapperClient;
 
@@ -35,8 +35,8 @@ impl SwapClient {
             from_asset: from_asset.id,
             to_asset: to_asset.id,
             wallet_address: request.wallet_address.clone(),
-            from_amount: request.from_amount.clone(),
-            to_amount: request.to_amount.clone(),
+            amount: request.amount.clone(),
+            mode: SwapMode::ExactIn
         };
         let quote = self.client.get_quote(quote_request).await?;
 

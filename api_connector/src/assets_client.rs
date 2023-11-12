@@ -56,7 +56,6 @@ impl AssetsClient {
         } else {
             format!("{}/blockchains/{}/info/info.json", self.assets_url, id.chain.as_str())
         };
-        println!("url: {}", url);
 
         let response = self.client
             .get(&url)

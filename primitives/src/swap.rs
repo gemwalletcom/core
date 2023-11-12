@@ -3,6 +3,18 @@ use serde::{Serialize, Deserialize};
 
 use crate::{AssetId, ChainType};
 
+#[typeshare(swift = "Equatable, Codable")]
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum SwapMode {
+    ExactIn,
+    ExactOut, 
+}
+
+impl Default for SwapMode {
+    fn default() -> Self { SwapMode::ExactIn }
+}
+
 #[derive(rocket::form::FromForm)]
 #[derive(Debug, Serialize, Deserialize)]
 #[typeshare(swift="Codable")]
@@ -10,8 +22,7 @@ pub struct SwapQuoteRequest {
     pub from_asset: String,
     pub to_asset: String,
     pub wallet_address: String,
-    pub from_amount: String,
-    pub to_amount: Option<String>,
+    pub amount: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -19,8 +30,8 @@ pub struct SwapQuoteProtocolRequest {
     pub from_asset: AssetId,
     pub to_asset: AssetId,
     pub wallet_address: String,
-    pub from_amount: String,
-    pub to_amount: Option<String>,
+    pub amount: String,
+    pub mode: SwapMode,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

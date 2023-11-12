@@ -36,7 +36,7 @@ impl OneInchClient {
             src: src.clone(),
             dst,
             from: quote.wallet_address.clone(),
-            amount: quote.from_amount,
+            amount: quote.amount,
             slippage: 1.0,
             disable_estimate: true,
             fee: self.fee,
