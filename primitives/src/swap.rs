@@ -17,11 +17,14 @@ impl Default for SwapMode {
 
 #[derive(rocket::form::FromForm)]
 #[derive(Debug, Serialize, Deserialize)]
-#[typeshare(swift="Codable")]
+#[typeshare()]
 #[serde(rename_all = "camelCase")]
 pub struct SwapQuoteRequest {
+    #[field(name = "fromAsset")]
     pub from_asset: String,
+    #[field(name = "toAsset")]
     pub to_asset: String,
+    #[field(name = "walletAddress")]
     pub wallet_address: String,
     pub amount: String,
 }
