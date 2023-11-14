@@ -42,7 +42,7 @@ url = { version = "2.4.1" }
 config = { version = "0.13.3" }
 rocket = { version = "=0.5.0-rc.3", features = ["json"] }
 ethaddr = { version = "0.1.2" }
-rust_decimal = { version = "1.32" }
+rust_decimal = { version = "1.33" }
 async-trait = { version = "0.1.74"}
 prometheus-client = { version = "0.21.2" }
 futures = "0.3.29"
