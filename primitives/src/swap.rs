@@ -18,6 +18,7 @@ impl Default for SwapMode {
 #[derive(rocket::form::FromForm)]
 #[derive(Debug, Serialize, Deserialize)]
 #[typeshare(swift="Codable")]
+#[serde(rename_all = "camelCase")]
 pub struct SwapQuoteRequest {
     pub from_asset: String,
     pub to_asset: String,
@@ -26,6 +27,7 @@ pub struct SwapQuoteRequest {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct SwapQuoteProtocolRequest {
     pub from_asset: AssetId,
     pub to_asset: AssetId,
