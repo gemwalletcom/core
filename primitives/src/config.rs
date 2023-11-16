@@ -44,6 +44,7 @@ pub struct ConfigAppVersion {
 pub struct ConfigVersions {
     pub nodes: i32,
     pub fiat_assets: i32,
+    pub swap_assets: i32,
     pub token_lists: i32,
     pub token_lists_chains: Vec<TokenListChainVersion>,
 }

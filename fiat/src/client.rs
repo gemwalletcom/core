@@ -51,7 +51,7 @@ impl Client {
         let assets = self.database
             .get_fiat_assets()?
             .into_iter()
-            .map(|x| x.asset)
+            .map(|x| x.asset_id)
             .collect::<HashSet<_>>()
             .into_iter()
             .collect();

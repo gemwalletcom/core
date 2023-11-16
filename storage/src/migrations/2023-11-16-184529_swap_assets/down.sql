@@ -1,0 +1,1 @@
+drop table swap_assets;

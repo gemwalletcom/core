@@ -80,10 +80,10 @@ impl DatabaseClient {
         Ok(version)
     }
 
-    pub fn get_fiat_assets_for_asset_id(&mut self, asset_id: &str) -> Result<Vec<FiatAsset>, diesel::result::Error> {
+    pub fn get_fiat_assets_for_asset_id(&mut self, _asset_id: &str) -> Result<Vec<FiatAsset>, diesel::result::Error> {
         use crate::schema::fiat_assets::dsl::*;
         fiat_assets
-            .filter(asset.eq(asset_id))
+            .filter(asset_id.eq(_asset_id))
             .select(FiatAsset::as_select())
             .load(&mut self.connection)
     }
@@ -505,6 +505,25 @@ impl DatabaseClient {
             .filter(address.eq(_address))
             .select(ScanAddress::as_select())
             .first(&mut self.connection)
+    }
+
+    // swap
+
+    pub fn get_swap_assets(&mut self) -> Result<Vec<SwapAsset>, diesel::result::Error> {
+        use crate::schema::swap_assets::dsl::*;
+        swap_assets
+            .select(SwapAsset::as_select())
+            .load(&mut self.connection)
+    }
+
+    pub fn get_swap_assets_version(&mut self) -> Result<i32, diesel::result::Error> {
+        let version = self.get_swap_assets()?
+            .iter()
+            .map(|x| x.id)
+            .collect::<Vec<i32>>()
+            .iter()
+            .sum();
+        Ok(version)
     }
 
     pub fn migrations(&mut self) {

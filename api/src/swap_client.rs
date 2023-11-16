@@ -1,8 +1,8 @@
 extern crate rocket;
 
-use std::error::Error;
+use std::{error::Error, collections::HashSet};
 
-use primitives::{SwapQuoteResult, SwapQuoteRequest, SwapQuoteProtocolRequest, SwapMode};
+use primitives::{SwapQuoteResult, SwapQuoteRequest, SwapQuoteProtocolRequest, SwapMode, FiatAssets};
 use storage::DatabaseClient;
 use swapper::SwapperClient;
 
@@ -47,5 +47,18 @@ impl SwapClient {
         let quote_request = self.get_quote_request(request)?;
         let quote = self.client.get_quote(quote_request).await?;
         Ok(SwapQuoteResult{quote})
+    }
+
+    pub async fn get_assets(&mut self) -> Result<FiatAssets, Box<dyn Error>> {
+        let assets = self.database
+                .get_swap_assets()?
+                .into_iter()
+                .map(|x| x.asset_id)
+                .collect::<HashSet<_>>()
+                .into_iter()
+                .collect();
+        let version = self.database.get_swap_assets_version()?;
+        
+        Ok(FiatAssets { version: version as u32, asset_ids: assets })
     }
 }

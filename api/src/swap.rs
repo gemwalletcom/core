@@ -1,4 +1,5 @@
 extern crate rocket;
+use primitives::fiat_assets::FiatAssets;
 use primitives::{SwapQuoteResult, SwapQuoteRequest};
 use rocket::serde::json::Json;
 use rocket::State;
@@ -10,5 +11,13 @@ pub async fn get_swap_quote(
     client: &State<Mutex<crate::SwapClient>>,
 ) -> Json<SwapQuoteResult> {
     let quote = client.lock().await.swap_quote(quote).await.unwrap();
+    Json(quote)
+}
+
+#[get("/swap/assets")]
+pub async fn get_swap_assets(
+    client: &State<Mutex<crate::SwapClient>>,
+) -> Json<FiatAssets> {
+    let quote = client.lock().await.get_assets().await.unwrap();
     Json(quote)
 }

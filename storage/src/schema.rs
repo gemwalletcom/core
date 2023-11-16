@@ -88,7 +88,7 @@ diesel::table! {
 diesel::table! {
     fiat_assets (id) {
         id -> Int4,
-        asset -> Varchar,
+        asset_id -> Varchar,
         provider -> Varchar,
         symbol -> Varchar,
         network -> Nullable<Varchar>,
@@ -182,6 +182,16 @@ diesel::table! {
 }
 
 diesel::table! {
+    swap_assets (id) {
+        id -> Int4,
+        #[max_length = 128]
+        asset_id -> Varchar,
+        updated_at -> Timestamp,
+        created_at -> Timestamp,
+    }
+}
+
+diesel::table! {
     tokenlists (id) {
         id -> Int4,
         chain -> Varchar,
@@ -248,6 +258,7 @@ diesel::table! {
 
 diesel::joinable!(assets_details -> assets (asset_id));
 diesel::joinable!(subscriptions -> devices (device_id));
+diesel::joinable!(swap_assets -> assets (asset_id));
 diesel::joinable!(transactions_addresses -> transactions (transaction_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
@@ -262,6 +273,7 @@ diesel::allow_tables_to_appear_in_same_query!(
     prices,
     scan_addresses,
     subscriptions,
+    swap_assets,
     tokenlists,
     transactions,
     transactions_addresses,

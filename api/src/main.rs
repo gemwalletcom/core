@@ -150,6 +150,7 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
             parser::get_parser_block_finalize,
             parser::get_parser_block_number_latest,
             swap::get_swap_quote,
+            swap::get_swap_assets,
         ])
         .mount(settings.metrics.path, routes![
             metrics::get_metrics,

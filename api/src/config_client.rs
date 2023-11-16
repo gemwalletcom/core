@@ -22,6 +22,7 @@ impl Client {
     pub fn get_config(&mut self) -> Result<ConfigResponse, Box<dyn Error>> {
         let nodes_version = self.database.get_nodes_version()?;
         let fiat_assets_version = self.database.get_fiat_assets_version()?;
+        let swap_assets_version = self.database.get_swap_assets_version()?;
         
         let token_lists_chains = self.database
             .get_tokenlists()?
@@ -47,6 +48,7 @@ impl Client {
             versions: ConfigVersions { 
                 nodes: nodes_version,
                 fiat_assets: fiat_assets_version,
+                swap_assets: swap_assets_version,
                 token_lists,
                 token_lists_chains,
             }
