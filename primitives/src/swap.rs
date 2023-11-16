@@ -27,6 +27,8 @@ pub struct SwapQuoteRequest {
     #[field(name = "walletAddress")]
     pub wallet_address: String,
     pub amount: String,
+    #[field(name = "includeData")]
+    pub include_data: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -37,6 +39,7 @@ pub struct SwapQuoteProtocolRequest {
     pub wallet_address: String,
     pub amount: String,
     pub mode: SwapMode,
+    pub include_data: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -47,15 +50,19 @@ pub struct SwapQuoteResult {
 
 #[derive(Debug, Serialize, Deserialize)]
 #[typeshare(swift="Codable")]
+#[serde(rename_all = "camelCase")]
 pub struct SwapQuote {
     pub chain_type: ChainType,
-    pub data: SwapQuoteEthereumData,
+    pub to_amount: String,
+    pub data: Option<SwapQuoteEthereumData>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 #[typeshare(swift="Codable")]
+#[serde(rename_all = "camelCase")]
 pub struct SwapQuoteEthereumData {
     pub to: String,
     pub value: String,
     pub data: String,
+    pub gas_limit: i64,
 }

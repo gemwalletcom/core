@@ -15,20 +15,19 @@ pub struct QuoteRequest {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Allowance {
-    pub allowance: String,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct SwapResult {
-    pub tx: SwapResultTransaction,
+    pub to_amount: String,
+    pub tx: Option<SwapResultTransaction>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct SwapResultTransaction {
     pub to: String,
     pub value: String,
     pub data: String,
+    pub gas: i64,
 }
 
 impl SwapResultTransaction {
@@ -37,6 +36,7 @@ impl SwapResultTransaction {
             to: self.to.clone(),
             value: self.value.clone(),
             data: self.data.clone(),
+            gas_limit: self.gas,
         }
     }
 }

@@ -1,6 +1,6 @@
 use primitives::{SwapQuote, SwapQuoteProtocolRequest, ChainType};
 
-use super::model::{QuoteRequest, Allowance, SwapResult, SwapResultTransaction};
+use super::model::{QuoteRequest, SwapResult};
 
 pub struct OneInchClient {
     api_url: String,
@@ -38,19 +38,29 @@ impl OneInchClient {
             from: quote.wallet_address.clone(),
             amount: quote.amount,
             slippage: 1.0,
-            disable_estimate: true,
+            disable_estimate: false,
             fee: self.fee,
             referrer: self.fee_referral_address.clone(),
         };
-        let swap_quote = self.get_swap_quote(quote_request, network_id).await?;
-        
-        let quote = SwapQuote {chain_type: ChainType::Ethereum, data: swap_quote.tx.get_data()};
+
+        let swap_quote = if quote.include_data {
+            self.get_swap_quote_data(quote_request, network_id).await?
+        } else {
+            self.get_swap_quote(quote_request, network_id).await?
+        };
+
+        let data = swap_quote.tx.unwrap().get_data();
+        let quote = SwapQuote {
+            chain_type: ChainType::Ethereum, 
+            to_amount: swap_quote.to_amount,
+            data: Some(data),
+        };
         return Ok(quote)
     }
 
     pub async fn get_swap_quote(&self, request: QuoteRequest, network_id: &str) -> Result<SwapResult, Box<dyn std::error::Error + Send + Sync>>   {
         let params = serde_urlencoded::to_string(&request)?;
-        let url = format!("{}/swap/{}/{}/swap?{}", self.api_url, self.version, network_id, params);
+        let url = format!("{}/swap/{}/{}/quote?{}", self.api_url, self.version, network_id, params);
         return Ok(self.client
             .get(&url)
             .bearer_auth(self.api_key.as_str())
@@ -60,29 +70,15 @@ impl OneInchClient {
             .await?);
     }
 
-    pub async fn get_approve_allowance(&self, network_id: &str, token_address: &str, wallet_address: &str) -> Result<Allowance, Box<dyn std::error::Error + Send + Sync>> {
-        let params = serde_urlencoded::to_string(&[("tokenAddress", token_address), ("walletAddress", wallet_address)])?;
-        let url = format!("{}/swap/{}/{}/approve/allowance?{}", self.api_url, self.version, network_id, params);
-        let allowance = self.client
+    pub async fn get_swap_quote_data(&self, request: QuoteRequest, network_id: &str) -> Result<SwapResult, Box<dyn std::error::Error + Send + Sync>>   {
+        let params = serde_urlencoded::to_string(&request)?;
+        let url = format!("{}/swap/{}/{}/swap?{}", self.api_url, self.version, network_id, params);
+        return Ok(self.client
             .get(&url)
             .bearer_auth(self.api_key.as_str())
             .send()
             .await?
-            .json::<Allowance>()
-            .await?;
-        Ok(allowance)
-    }
-
-    pub async fn get_approve_transaction(&self, network_id: &str, token_address: &str) -> Result<SwapResultTransaction, Box<dyn std::error::Error + Send + Sync>> {
-        let params = serde_urlencoded::to_string(&[("tokenAddress", token_address)])?;
-        let url = format!("{}/swap/{}/{}/approve/transaction?{}", self.api_url, self.version, network_id, params);
-        let allowance = self.client
-            .get(&url)
-            .bearer_auth(self.api_key.as_str())
-            .send()
-            .await?
-            .json::<SwapResultTransaction>()
-            .await?;
-        Ok(allowance)
+            .json::<SwapResult>()
+            .await?);
     }
 }

@@ -23,10 +23,10 @@ impl SwapClient {
         }
     }
 
-    pub async fn swap_quote(&mut self, request: SwapQuoteRequest) -> Result<SwapQuoteResult, Box<dyn Error + Send + Sync>> {
+    fn get_quote_request(&mut self, request: SwapQuoteRequest) -> Result<SwapQuoteProtocolRequest, Box<dyn Error + Send + Sync>> {
         let from_asset = self.database.get_asset(request.from_asset.to_string())?.as_primitive();
         let to_asset = self.database.get_asset(request.to_asset.to_string())?.as_primitive();
-        
+
         if from_asset.chain() != to_asset.chain() {
             return Err("Cannot swap between different chains".into());
         }
@@ -36,10 +36,16 @@ impl SwapClient {
             to_asset: to_asset.id,
             wallet_address: request.wallet_address.clone(),
             amount: request.amount.clone(),
-            mode: SwapMode::ExactIn
+            mode: SwapMode::ExactIn,
+            include_data: request.include_data,
         };
-        let quote = self.client.get_quote(quote_request).await?;
 
+        return Ok(quote_request)
+    }
+
+    pub async fn swap_quote(&mut self, request: SwapQuoteRequest) -> Result<SwapQuoteResult, Box<dyn Error + Send + Sync>> {
+        let quote_request = self.get_quote_request(request)?;
+        let quote = self.client.get_quote(quote_request).await?;
         Ok(SwapQuoteResult{quote})
     }
 }
