@@ -64,5 +64,5 @@ pub struct SwapQuoteEthereumData {
     pub to: String,
     pub value: String,
     pub data: String,
-    pub gas_limit: i64,
+    pub gas_limit: i32,
 }
