@@ -48,12 +48,12 @@ impl OneInchClient {
         } else {
             self.get_swap_quote(quote_request, network_id).await?
         };
+        let data = if let Some(value) = swap_quote.tx { Some(value.get_data()) } else { None };
 
-        let data = swap_quote.tx.unwrap().get_data();
         let quote = SwapQuote {
             chain_type: ChainType::Ethereum, 
             to_amount: swap_quote.to_amount,
-            data: Some(data),
+            data: data,
         };
         return Ok(quote)
     }
