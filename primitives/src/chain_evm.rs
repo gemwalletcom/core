@@ -13,4 +13,6 @@ pub enum EVMChain {
     Base,
     AvalancheC,
     OpBNB,
+    Fantom,
+    Gnosis,
 }
