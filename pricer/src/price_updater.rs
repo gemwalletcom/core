@@ -123,7 +123,7 @@ impl PriceUpdater {
     }
 
     pub async fn update_assets(&mut self) -> Result<usize, Box<dyn Error>> {
-        let coin_list = self.coin_gecko_client.get_coin_markets(0, 50).await?.into_iter().map(|x| x.id).collect::<Vec<_>>();
+        let coin_list = self.coin_gecko_client.get_coin_markets(0, 100).await?.into_iter().map(|x| x.id).collect::<Vec<_>>();
 
         for coin in coin_list.clone() {
             let coin_info = self.coin_gecko_client.get_coin(coin.as_str()).await?;
