@@ -43,13 +43,13 @@ pub struct SwapQuoteProtocolRequest {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-#[typeshare(swift="Codable")]
+#[typeshare(swift="Codable, Equatable")]
 pub struct SwapQuoteResult {
     pub quote: SwapQuote,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-#[typeshare(swift="Codable")]
+#[typeshare(swift="Codable, Equatable, Hashable")]
 #[serde(rename_all = "camelCase")]
 pub struct SwapQuote {
     pub chain_type: ChainType,
@@ -60,14 +60,14 @@ pub struct SwapQuote {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-#[typeshare(swift="Codable")]
+#[typeshare(swift="Codable, Equatable, Hashable")]
 #[serde(rename_all = "camelCase")]
 pub struct SwapProvider {
     pub name: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-#[typeshare(swift="Codable")]
+#[typeshare(swift="Codable, Equatable, Hashable")]
 #[serde(rename_all = "camelCase")]
 pub struct SwapQuoteEthereumData {
     pub to: String,

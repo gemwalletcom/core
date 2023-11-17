@@ -2,7 +2,7 @@ use typeshare::typeshare;
 use serde::{Serialize, Deserialize};
 
 #[derive(Debug, Serialize, Deserialize)]
-#[typeshare(swift = "Equatable, Codable, CaseIterable")]
+#[typeshare(swift = "Equatable, Codable, CaseIterable, Hashable")]
 #[serde(rename_all = "lowercase")]
 pub enum ChainType {
     Ethereum,
