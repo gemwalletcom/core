@@ -55,7 +55,15 @@ pub struct SwapQuote {
     pub chain_type: ChainType,
     pub to_amount: String,
     pub fee_percent: i32,
+    pub provider: SwapProvider,
     pub data: Option<SwapQuoteEthereumData>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[typeshare(swift="Codable")]
+#[serde(rename_all = "camelCase")]
+pub struct SwapProvider {
+    pub name: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

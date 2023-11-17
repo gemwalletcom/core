@@ -1,4 +1,4 @@
-use primitives::{SwapQuote, SwapQuoteProtocolRequest, ChainType};
+use primitives::{SwapQuote, SwapQuoteProtocolRequest, ChainType, SwapProvider};
 
 use super::model::{QuoteRequest, SwapResult};
 
@@ -28,6 +28,10 @@ impl OneInchClient {
         }
     }
 
+    pub fn provider(&self) -> SwapProvider {
+        SwapProvider { name: "1nch".to_string() }
+    }
+
     pub async fn get_quote(&self, quote: SwapQuoteProtocolRequest) -> Result<SwapQuote, Box<dyn std::error::Error + Send + Sync>> {
         let network_id = quote.from_asset.chain.network_id();
         let src = if quote.from_asset.clone().is_native() { NATIVE_ADDRESS.to_string() } else { quote.from_asset.clone().token_id.unwrap() };
@@ -54,6 +58,7 @@ impl OneInchClient {
             chain_type: ChainType::Ethereum, 
             to_amount: swap_quote.to_amount,
             fee_percent: self.fee as i32,
+            provider: self.provider(),
             data,
         };
         return Ok(quote)

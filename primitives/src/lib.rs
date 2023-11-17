@@ -59,4 +59,4 @@ pub use self::push_notification::PushNotificationTypes;
 pub mod scan;
 pub use self::scan::ScanAddress;
 pub mod swap;
-pub use self::swap::{SwapQuote, SwapQuoteRequest, SwapQuoteProtocolRequest, SwapQuoteResult, SwapQuoteEthereumData, SwapMode};
+pub use self::swap::{SwapQuote, SwapQuoteRequest, SwapQuoteProtocolRequest, SwapQuoteResult, SwapQuoteEthereumData, SwapMode, SwapProvider};
