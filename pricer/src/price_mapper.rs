@@ -22,6 +22,8 @@ pub fn get_chain_for_coingecko_id(id: &str) -> Option<Chain> {
         "avalanche-2" => Some(Chain::AvalancheC),
         "sui" => Some(Chain::Sui),
         "ripple" => Some(Chain::Ripple),
+        "gnosis" => Some(Chain::Gnosis),
+        "fantom" => Some(Chain::Fantom),
         //"celestia" => Some(Chain::Celestia),
         _ => {
             None

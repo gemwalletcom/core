@@ -29,6 +29,8 @@ pub enum Chain {
     Sui,
     Ripple,
     OpBNB,
+    Fantom,
+    Gnosis,
 }
 
 impl PartialEq for Chain {
@@ -61,6 +63,8 @@ impl Chain {
             "sui"=> Some(Self::Sui),
             "ripple"=> Some(Self::Ripple),
             "opbnb"=> Some(Self::OpBNB),
+            "fantom"=> Some(Self::Fantom),
+            "gnosis"=> Some(Self::Gnosis),
             _ => None, 
         }
     }
@@ -88,6 +92,8 @@ impl Chain {
             Self::Sui => "sui",
             Self::Ripple => "ripple",
             Self::OpBNB => "opbnb",
+            Self::Fantom => "fantom",
+            Self::Gnosis => "gnosis",
         }
     }
 
@@ -118,6 +124,8 @@ impl Chain {
             Self::Optimism => "10",
             Self::Polygon => "137",
             Self::OpBNB => "204",
+            Self::Fantom => "250",
+            Self::Gnosis => "100",
             Self::Bitcoin => todo!(),
             Self::Litecoin => todo!(),
             Self::Binance => todo!(),
@@ -151,15 +159,19 @@ impl Chain {
 
     pub fn as_slip44(&self) -> i64 {
         match self {
+            Self::Ethereum |
+            Self::Fantom |
+            Self::OpBNB |
+            Self::Arbitrum |
+            Self::Optimism |
+            Self::Polygon |
+            Self::Base |
+            Self::Gnosis => 60,
             Self::Binance => 714,
             Self::Bitcoin => 0,
             Self::Litecoin => 2,
-            Self::Ethereum => 60,
             Self::SmartChain => 9006,
-            Self::Polygon => 60,
             Self::Solana => 501,
-            Self::Arbitrum => 60,
-            Self::Optimism => 60,
             Self::Thorchain => 931,
             Self::Cosmos => 118,
             Self::Osmosis => 118,
@@ -167,37 +179,37 @@ impl Chain {
             Self::Tron => 195,
             Self::Doge => 3,
             Self::Aptos => 637,
-            Self::Base => 60,
             Self::AvalancheC => 9005,
             Self::Sui => 784,
             Self::Ripple => 144,
-            Self::OpBNB => 60,
         }
     }
 
     pub fn default_asset_type(&self) -> Option<AssetType> {
         match self {
+            Self::Ethereum |
+            Self::Arbitrum |
+            Self::Optimism  |
+            Self::Polygon |
+            Self::Base |
+            Self::AvalancheC |
+            Self::Gnosis |
+            Self::Fantom => Some(AssetType::ERC20),
+            Self::OpBNB |
+            Self::SmartChain=> Some(AssetType::BEP20),
             Self::Binance => Some(AssetType::BEP2),
-            Self::Bitcoin => None,
-            Self::Litecoin => None,
-            Self::Ethereum => Some(AssetType::ERC20),
-            Self::SmartChain => Some(AssetType::BEP20),
-            Self::Polygon => Some(AssetType::ERC20),
             Self::Solana => Some(AssetType::SPL),
-            Self::Arbitrum => Some(AssetType::ERC20),
-            Self::Optimism => Some(AssetType::ERC20),
-            Self::Thorchain => None,
-            Self::Cosmos => None,
-            Self::Osmosis => None,
-            Self::Ton => None,
             Self::Tron => Some(AssetType::TRC20),
-            Self::Doge => None,
-            Self::Aptos => None,
-            Self::Base => Some(AssetType::ERC20),
-            Self::AvalancheC => Some(AssetType::ERC20),
-            Self::Sui => None,
+            Self::Bitcoin |
+            Self::Litecoin |
+            Self::Thorchain |
+            Self::Cosmos |
+            Self::Osmosis |
+            Self::Ton |
+            Self::Doge |
+            Self::Aptos |
+            Self::Sui |
             Self::Ripple => None,
-            Self::OpBNB => Some(AssetType::BEP20),
         }
     }
 

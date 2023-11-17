@@ -46,6 +46,14 @@ impl ProviderFactory {
                 Chain::Polygon,
                 settings.chains.polygon.url.clone()
             )),
+            Chain::Fantom => Box::new(EthereumClient::new(
+                Chain::Fantom,
+                settings.chains.fantom.url.clone()
+            )),
+            Chain::Gnosis => Box::new(EthereumClient::new(
+                Chain::Gnosis,
+                settings.chains.gnosis.url.clone()
+            )),
             Chain::Thorchain => Box::new(CosmosClient::new(
                 Chain::Thorchain,
                 client,

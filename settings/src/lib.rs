@@ -151,6 +151,8 @@ pub struct Chains {
     pub bitcoin: Chain,
     pub litecoin: Chain,
     pub doge: Chain,
+    pub fantom: Chain,
+    pub gnosis: Chain,
 }
 
 #[derive(Debug, Deserialize, Clone)]

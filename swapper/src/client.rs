@@ -21,6 +21,8 @@ impl SwapperClient {
             Chain::Arbitrum |
             Chain::Polygon |
             Chain::Base |
+            Chain::Fantom |
+            Chain::Gnosis |
             Chain::AvalancheC => {
                 return self.oneinch.get_quote(quote).await;
             }

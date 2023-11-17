@@ -168,6 +168,20 @@ impl Asset {
                 decimals: 18,
                 asset_type: AssetType::NATIVE,
             },
+            Chain::Fantom => Asset {
+                id: chain.as_asset_id(),
+                name: "Fantom".to_string(),
+                symbol: "FTM".to_string(),
+                decimals: 18,
+                asset_type: AssetType::NATIVE,
+            },
+            Chain::Gnosis => Asset {
+                id: chain.as_asset_id(),
+                name: "Gnosis Chain".to_string(),
+                symbol: "GNO".to_string(),
+                decimals: 18,
+                asset_type: AssetType::NATIVE,
+            },
         }
     }
 }

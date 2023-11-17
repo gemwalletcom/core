@@ -96,6 +96,12 @@ url = "https://opbnb-mainnet-rpc.bnbchain.org"
 [chains.avalanchec]
 url = "https://api.avax.network/ext/bc/C/rpc"
 
+[chains.fantom]
+url = "https://fantom.publicnode.com"
+
+[chains.gnosis]
+url = "https://gnosis.publicnode.com"
+
 [chains.ton]
 url = "https://toncenter.com"
 
