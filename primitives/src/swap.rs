@@ -54,6 +54,7 @@ pub struct SwapQuoteResult {
 pub struct SwapQuote {
     pub chain_type: ChainType,
     pub to_amount: String,
+    pub fee_percent: i32,
     pub data: Option<SwapQuoteEthereumData>,
 }
 

@@ -53,7 +53,8 @@ impl OneInchClient {
         let quote = SwapQuote {
             chain_type: ChainType::Ethereum, 
             to_amount: swap_quote.to_amount,
-            data: data,
+            fee_percent: self.fee as i32,
+            data,
         };
         return Ok(quote)
     }

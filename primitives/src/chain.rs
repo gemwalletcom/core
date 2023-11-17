@@ -112,9 +112,25 @@ impl Chain {
         match self {
             Self::Ethereum => "1",
             Self::SmartChain => "56",
-            _ => {
-                ""
-            }
+            Self::Arbitrum => "42161",
+            Self::AvalancheC => "43114",
+            Self::Base => "8453",
+            Self::Optimism => "10",
+            Self::Polygon => "137",
+            Self::OpBNB => "204",
+            Self::Bitcoin => todo!(),
+            Self::Litecoin => todo!(),
+            Self::Binance => todo!(),
+            Self::Solana => todo!(),
+            Self::Thorchain => todo!(),
+            Self::Cosmos => todo!(),
+            Self::Osmosis => todo!(),
+            Self::Ton => todo!(),
+            Self::Tron => todo!(),
+            Self::Doge => todo!(),
+            Self::Aptos => todo!(),
+            Self::Sui => todo!(),
+            Self::Ripple => todo!(),
         }
     }
 
