@@ -167,6 +167,8 @@ chains = [
     "sui",
     "bitcoin",
     "doge",
+    "fantom",
+    "gnosis",
 ]
 
 [pusher]
