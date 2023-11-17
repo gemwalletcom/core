@@ -4,7 +4,7 @@ use serde::{Serialize, Deserialize};
 use crate::{AssetId, ChainType};
 
 #[typeshare(swift = "Equatable, Codable")]
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "lowercase")]
 pub enum SwapMode {
     ExactIn,
@@ -31,7 +31,7 @@ pub struct SwapQuoteRequest {
     pub include_data: bool,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct SwapQuoteProtocolRequest {
     pub from_asset: AssetId,
@@ -53,6 +53,7 @@ pub struct SwapQuoteResult {
 #[serde(rename_all = "camelCase")]
 pub struct SwapQuote {
     pub chain_type: ChainType,
+    pub from_amount: String,
     pub to_amount: String,
     pub fee_percent: i32,
     pub provider: SwapProvider,

@@ -40,7 +40,7 @@ impl OneInchClient {
             src: src.clone(),
             dst,
             from: quote.wallet_address.clone(),
-            amount: quote.amount,
+            amount: quote.amount.clone(),
             slippage: 1.0,
             disable_estimate: false,
             fee: self.fee,
@@ -56,6 +56,7 @@ impl OneInchClient {
 
         let quote = SwapQuote {
             chain_type: ChainType::Ethereum, 
+            from_amount: quote.amount.clone(),
             to_amount: swap_quote.to_amount,
             fee_percent: self.fee as i32,
             provider: self.provider(),
