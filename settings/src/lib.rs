@@ -198,10 +198,9 @@ pub struct PusherIOS {
 #[derive(Debug, Deserialize, Clone)]
 #[allow(unused)]
 pub struct Swap {
-    pub oneinch: OneInch,
-    pub fee: SwapFee,
+    pub oneinch: SwapProvider,
+    pub jupiter: SwapProvider,
 }
-
 
 #[derive(Debug, Deserialize, Clone)]
 #[allow(unused)]
@@ -212,9 +211,10 @@ pub struct SwapFee {
 
 #[derive(Debug, Deserialize, Clone)]
 #[allow(unused)]
-pub struct OneInch {
+pub struct SwapProvider {
     pub url: String,
     pub key: String,
+    pub fee: SwapFee
 }
 
 impl Settings {

@@ -139,7 +139,15 @@ url = ""
 url = "https://api.1inch.dev"
 key = ""
 
-[swap.fee]
+[swap.oneinch.fee]
+percent = 0.0
+address = ""
+
+[swap.jupiter]
+url = "https://quote-api.jup.ag"
+key = ""
+
+[swap.jupiter.fee]
 percent = 0.0
 address = ""
 

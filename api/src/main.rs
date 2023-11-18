@@ -49,7 +49,7 @@ use metrics_client::MetricsClient;
 use scan_client::ScanClient;
 use parser_client::ParserClient;
 use swap_client::SwapClient;
-use swapper::{SwapperClient, OneInchClient};
+use swapper::{SwapperClient, OneInchClient, JupiterClient};
 
 async fn rocket(settings: Settings) -> Rocket<Build> {
     let redis_url = settings.redis.url.as_str();
@@ -72,7 +72,7 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
         settings.name.did.url,
         settings.name.suins.url,
     );
-    
+
     let pusher_client = PusherClient::new(settings.pusher.url);
     let devices_client = DevicesClient::new(postgres_url, pusher_client, settings.pusher.ios.topic).await;
     let transactions_client = TransactionsClient::new(postgres_url).await;
@@ -81,10 +81,10 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
     let scan_client = ScanClient::new(postgres_url).await;
     let parser_client = ParserClient::new(settings_clone).await;
     let assets_client = AssetsClient::new(postgres_url).await;
-    let oneinch_client = OneInchClient::new(settings.swap.oneinch.url, settings.swap.oneinch.key, settings.swap.fee.percent, settings.swap.fee.address);
-    let swapper_client = SwapperClient::new(oneinch_client);
+    let oneinch_client = OneInchClient::new(settings.swap.oneinch.url, settings.swap.oneinch.key, settings.swap.oneinch.fee.percent, settings.swap.oneinch.fee.address);
+    let jupiter_client = JupiterClient::new(settings.swap.jupiter.url, settings.swap.jupiter.fee.percent, settings.swap.jupiter.fee.address);
+    let swapper_client = SwapperClient::new(oneinch_client, jupiter_client);
     let swap_client = SwapClient::new( postgres_url, swapper_client).await;
-    
     let request_client = FiatClient::request_client(settings.fiat.timeout);
     let transak = TransakClient::new(request_client.clone(), settings.transak.key.public);
     let moonpay = MoonPayClient::new( request_client.clone(),  settings.moonpay.key.public,  settings.moonpay.key.secret);

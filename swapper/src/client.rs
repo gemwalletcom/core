@@ -1,16 +1,21 @@
 use primitives::{SwapQuoteProtocolRequest, SwapQuote, Chain};
 
-use crate::oneinch::OneInchClient;
+use crate::{OneInchClient, JupiterClient};
 
 pub struct SwapperClient {
     oneinch: OneInchClient,
+    jupiter: JupiterClient,
 }
 
 impl SwapperClient {
     pub fn new(
         oneinch: OneInchClient,
+        jupiter: JupiterClient,
     ) -> Self {
-        Self {oneinch}
+        Self {
+            oneinch,
+            jupiter
+        }
     }  
 
     pub async fn get_quote(&self, quote: SwapQuoteProtocolRequest) -> Result<SwapQuote, Box<dyn std::error::Error + Send + Sync>> {
@@ -29,7 +34,9 @@ impl SwapperClient {
             primitives::Chain::Bitcoin => todo!(),
             primitives::Chain::Litecoin => todo!(),
             primitives::Chain::Binance => todo!(),
-            primitives::Chain::Solana => todo!(),
+            primitives::Chain::Solana => {
+                return self.jupiter.get_quote(quote).await;
+            }
             primitives::Chain::Thorchain => todo!(),
             primitives::Chain::Cosmos => todo!(),
             primitives::Chain::Osmosis => todo!(),

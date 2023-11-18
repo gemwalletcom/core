@@ -58,7 +58,7 @@ impl OneInchClient {
             chain_type: ChainType::Ethereum, 
             from_amount: quote.amount.clone(),
             to_amount: swap_quote.to_amount,
-            fee_percent: self.fee as i32,
+            fee_percent: self.fee as f32,
             provider: self.provider(),
             data,
         };
