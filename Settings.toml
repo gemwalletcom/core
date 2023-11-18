@@ -156,7 +156,6 @@ retry = 1
 timeout = 1000 # ms
 chains = [
     "ethereum",
-    "binance",
     "smartchain",
     "arbitrum",
     "ton",

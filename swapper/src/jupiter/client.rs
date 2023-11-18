@@ -47,8 +47,6 @@ impl JupiterClient {
             None
         };
 
-        print!("fee: {}", self.fee);
-
         let quote = SwapQuote {
             chain_type: ChainType::Solana, 
             from_amount: quote.amount.clone(),

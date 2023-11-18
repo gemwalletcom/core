@@ -1,6 +1,6 @@
 use reqwest_middleware::ClientBuilder;
 use reqwest_retry::{policies::ExponentialBackoff, RetryTransientMiddleware};
-use blockchain::{ChainProvider, BNBChainClient, SolanaClient, EthereumClient, TonClient, CosmosClient, TronClient, XRPClient, AptosClient, SuiClient, BitcoinClient};
+use blockchain::{ChainProvider, SolanaClient, EthereumClient, TonClient, CosmosClient, TronClient, XRPClient, AptosClient, SuiClient, BitcoinClient};
 use settings::Settings;
 use primitives::Chain;
 
@@ -32,11 +32,9 @@ impl ProviderFactory {
                 Chain::Ethereum,
                 settings.chains.ethereum.url.clone()
             )),
-            Chain::Binance => Box::new(BNBChainClient::new(
-                client,
-                settings.chains.binance.url.clone(),
-                settings.chains.binance.api.clone(),
-            )),
+            Chain::Binance => {
+                unimplemented!()
+            },
             Chain::SmartChain => Box::new(EthereumClient::new(
                 Chain::SmartChain,
                 settings.chains.smartchain.url.clone()

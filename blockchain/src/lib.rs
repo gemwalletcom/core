@@ -1,7 +1,6 @@
 // lib.rs
 
 mod aptos;
-mod bnbchain;
 mod solana;
 mod ethereum;
 mod ton;
@@ -11,7 +10,6 @@ mod xrp;
 mod sui;
 mod bitcoin;
 
-pub use self::bnbchain::client::BNBChainClient;
 pub use self::solana::client::SolanaClient;
 pub use self::ethereum::client::EthereumClient;
 pub use self::ton::client::TonClient;
