@@ -2,7 +2,7 @@ use serde::{Serialize, Deserialize};
 use typeshare::typeshare;
 use strum::{IntoEnumIterator, EnumIter};
 
-use crate::{AssetId, AssetType};
+use crate::{AssetId, AssetType, ChainType};
 
 #[derive(Copy, Clone, Debug, Serialize, Deserialize, EnumIter)]
 #[typeshare(swift = "Equatable, Codable, CaseIterable")]
@@ -182,6 +182,34 @@ impl Chain {
             Self::AvalancheC => 9005,
             Self::Sui => 784,
             Self::Ripple => 144,
+        }
+    }
+
+    pub fn chain_type(&self) -> ChainType {
+        match self {
+            Self::Ethereum |
+            Self::Fantom |
+            Self::OpBNB |
+            Self::Arbitrum |
+            Self::Optimism |
+            Self::Polygon |
+            Self::Base |
+            Self::SmartChain |
+            Self::AvalancheC |
+            Self::Gnosis => ChainType::Ethereum,
+            Self::Binance => ChainType::Binance,
+            Self::Bitcoin |
+            Self::Doge |
+            Self::Litecoin => ChainType::Bitcoin,
+            Self::Solana => ChainType::Solana,
+            Self::Thorchain |
+            Self::Cosmos |
+            Self::Osmosis => ChainType::Cosmos,
+            Self::Ton => ChainType::Ton,
+            Self::Tron => ChainType::Tron,
+            Self::Aptos => ChainType::Aptos,
+            Self::Sui => ChainType::Sui,
+            Self::Ripple => ChainType::Ripple,
         }
     }
 

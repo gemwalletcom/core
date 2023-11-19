@@ -1,20 +1,23 @@
 use primitives::{SwapQuoteProtocolRequest, SwapQuote, Chain};
 
-use crate::{OneInchClient, JupiterClient};
+use crate::{OneInchClient, JupiterClient, ThorchainSwapClient};
 
 pub struct SwapperClient {
     oneinch: OneInchClient,
     jupiter: JupiterClient,
+    thorchain: ThorchainSwapClient,
 }
 
 impl SwapperClient {
     pub fn new(
         oneinch: OneInchClient,
         jupiter: JupiterClient,
+        thorchain: ThorchainSwapClient,
     ) -> Self {
         Self {
             oneinch,
-            jupiter
+            jupiter,
+            thorchain,
         }
     }  
 
@@ -31,22 +34,24 @@ impl SwapperClient {
             Chain::AvalancheC => {
                 return self.oneinch.get_quote(quote).await;
             }
-            primitives::Chain::Bitcoin => todo!(),
-            primitives::Chain::Litecoin => todo!(),
-            primitives::Chain::Binance => todo!(),
-            primitives::Chain::Solana => {
+            Chain::Binance => todo!(),
+            Chain::Solana => {
                 return self.jupiter.get_quote(quote).await;
             }
-            primitives::Chain::Thorchain => todo!(),
-            primitives::Chain::Cosmos => todo!(),
-            primitives::Chain::Osmosis => todo!(),
-            primitives::Chain::Ton => todo!(),
-            primitives::Chain::Tron => todo!(),
-            primitives::Chain::Doge => todo!(),
-            primitives::Chain::Aptos => todo!(),
-            primitives::Chain::Sui => todo!(),
-            primitives::Chain::Ripple => todo!(),
-            primitives::Chain::OpBNB => todo!(),
+            Chain::Thorchain |
+            Chain::Doge |
+            Chain::Cosmos | 
+            Chain::Bitcoin |
+            Chain::Litecoin => {
+                return self.thorchain.get_quote(quote).await;
+            },
+            Chain::Osmosis => todo!(),
+            Chain::Ton => todo!(),
+            Chain::Tron => todo!(),
+            Chain::Aptos => todo!(),
+            Chain::Sui => todo!(),
+            Chain::Ripple => todo!(),
+            Chain::OpBNB => todo!(),
         }
     }
 }

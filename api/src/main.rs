@@ -49,7 +49,7 @@ use metrics_client::MetricsClient;
 use scan_client::ScanClient;
 use parser_client::ParserClient;
 use swap_client::SwapClient;
-use swapper::{SwapperClient, OneInchClient, JupiterClient};
+use swapper::{SwapperClient, OneInchClient, JupiterClient, ThorchainSwapClient};
 
 async fn rocket(settings: Settings) -> Rocket<Build> {
     let redis_url = settings.redis.url.as_str();
@@ -83,7 +83,8 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
     let assets_client = AssetsClient::new(postgres_url).await;
     let oneinch_client = OneInchClient::new(settings.swap.oneinch.url, settings.swap.oneinch.key, settings.swap.oneinch.fee.percent, settings.swap.oneinch.fee.address);
     let jupiter_client = JupiterClient::new(settings.swap.jupiter.url, settings.swap.jupiter.fee.percent, settings.swap.jupiter.fee.address);
-    let swapper_client = SwapperClient::new(oneinch_client, jupiter_client);
+    let thorchain_swap_client = ThorchainSwapClient::new(settings.swap.thorchain.url, settings.swap.thorchain.fee.percent, settings.swap.thorchain.fee.address);
+    let swapper_client = SwapperClient::new(oneinch_client, jupiter_client, thorchain_swap_client);
     let swap_client = SwapClient::new( postgres_url, swapper_client).await;
     let request_client = FiatClient::request_client(settings.fiat.timeout);
     let transak = TransakClient::new(request_client.clone(), settings.transak.key.public);

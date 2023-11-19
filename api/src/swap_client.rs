@@ -27,14 +27,15 @@ impl SwapClient {
         let from_asset = self.database.get_asset(request.from_asset.to_string())?.as_primitive();
         let to_asset = self.database.get_asset(request.to_asset.to_string())?.as_primitive();
 
-        if from_asset.chain() != to_asset.chain() {
-            return Err("Cannot swap between different chains".into());
-        }
+        // if from_asset.chain() != to_asset.chain() {
+        //     return Err("Cannot swap between different chains".into());
+        // }
 
         let quote_request = SwapQuoteProtocolRequest{
             from_asset: from_asset.id,
             to_asset: to_asset.id,
             wallet_address: request.wallet_address.clone(),
+            destination_address: request.destination_address.unwrap_or_default().clone(),
             amount: request.amount.clone(),
             mode: SwapMode::ExactIn,
             include_data: request.include_data,

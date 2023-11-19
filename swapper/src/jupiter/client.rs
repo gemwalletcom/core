@@ -37,7 +37,7 @@ impl JupiterClient {
             input_mint,
             output_mint,
             amount: quote.amount.clone(),
-            platform_fee_bps: (self.fee * 10.0) as i32,
+            platform_fee_bps: (self.fee * 100.0) as i32,
         };
         let swap_quote = self.get_swap_quote(quote_request).await?;
         let data = if quote.include_data {

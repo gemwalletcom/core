@@ -26,6 +26,8 @@ pub struct SwapQuoteRequest {
     pub to_asset: String,
     #[field(name = "walletAddress")]
     pub wallet_address: String,
+    #[field(name = "destinationAddress")]
+    pub destination_address: Option<String>,
     pub amount: String,
     #[field(name = "includeData")]
     pub include_data: bool,
@@ -37,6 +39,7 @@ pub struct SwapQuoteProtocolRequest {
     pub from_asset: AssetId,
     pub to_asset: AssetId,
     pub wallet_address: String,
+    pub destination_address: String,
     pub amount: String,
     pub mode: SwapMode,
     pub include_data: bool,
@@ -74,5 +77,6 @@ pub struct SwapQuoteEthereumData {
     pub to: String,
     pub value: String,
     pub data: String,
+    #[typeshare(skip)] //TODO: Delete later
     pub gas_limit: i32,
 }
