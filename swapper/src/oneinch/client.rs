@@ -29,7 +29,7 @@ impl OneInchClient {
     }
 
     pub fn provider(&self) -> SwapProvider {
-        SwapProvider { name: "1nch".to_string() }
+        SwapProvider { name: "1inch".to_string() }
     }
 
     pub async fn get_quote(&self, quote: SwapQuoteProtocolRequest) -> Result<SwapQuote, Box<dyn std::error::Error + Send + Sync>> {
