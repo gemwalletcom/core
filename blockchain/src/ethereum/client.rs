@@ -11,6 +11,9 @@ use serde_json::json;
 use super::model::{Block, Transaction, TransactionReciept};
 use num_bigint::BigUint;
 
+const FUNCTION_ERC20_TRANSFER: &str = "0xa9059cbb";
+const FUNCTION_ERC20_APPROVE: &str = "0x095ea7b3";
+
 pub struct EthereumClient {
     chain: Chain,
     client: RetryClient<Http>,
@@ -77,7 +80,13 @@ impl EthereumClient {
             return Some(transaction);
         }
         // ERC20 transfer. Only add confirmed
-        if transaction.input.starts_with("0xa9059cbb") && state == TransactionState::Confirmed {
+        let input_prefix = transaction.input.chars().take(10).collect::<String>();
+        if (input_prefix.starts_with(FUNCTION_ERC20_TRANSFER) || input_prefix.starts_with(FUNCTION_ERC20_APPROVE)) && state == TransactionState::Confirmed {
+            let transaction_type = match input_prefix.as_str() {
+                FUNCTION_ERC20_TRANSFER => TransactionType::Transfer,
+                FUNCTION_ERC20_APPROVE => TransactionType::TokenApproval,
+                _ => TransactionType::Transfer,
+            };
             let token_id = ethers::utils::to_checksum(&to, None);
             let asset_id = AssetId{chain: self.chain, token_id: Some(token_id)};
             let value: String = transaction.input.chars().skip(74).take(64).collect();
@@ -91,7 +100,7 @@ impl EthereumClient {
                 from, 
                 to_address.to_string(),
                 None,
-                TransactionType::Transfer, 
+                transaction_type, 
                 state, 
                 block.to_string(),
                 nonce.to_string(), 
@@ -125,7 +134,7 @@ impl ChainProvider for EthereumClient {
         let block = self.get_block(block_number).await?;
         // filter out non transfer transactions
         let transactions = block.transactions.into_iter().filter(|x| 
-            x.input == "0x" || x.input.starts_with("0xa9059cbb")
+            x.input == "0x" || x.input.starts_with(FUNCTION_ERC20_TRANSFER) || x.input.starts_with(FUNCTION_ERC20_APPROVE)
         ).collect::<Vec<Transaction>>();
         let hashes = transactions.clone().into_iter().map(|x| x.hash).collect();
         let reciepts = self.get_transaction_reciepts(hashes).await?;
