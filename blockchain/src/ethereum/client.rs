@@ -31,16 +31,26 @@ impl EthereumClient {
     }
 
     async fn get_transaction_reciepts(&self, hashes: Vec<String>) -> Result<Vec<TransactionReciept>, Box<dyn Error + Send + Sync>> {
-        let mut batch = BatchRequestBuilder::new();
-	    for hash in hashes.iter() {
-            batch.insert("eth_getTransactionReceipt", vec![json!(hash)]).unwrap();
+        let hashes_chunks: Vec<Vec<String>> = hashes.chunks(50).map(|s| s.into()).collect();
+        let mut results: Vec<TransactionReciept> = Vec::new();
+        for hashes in hashes_chunks {
+            let mut batch = BatchRequestBuilder::default();
+            for hash in hashes.iter() {
+                batch.insert("eth_getTransactionReceipt", vec![json!(hash)]).unwrap();
+            }
+            
+            let reciepts = self.client
+                .batch_request::<TransactionReciept>(batch)
+                .await?
+                .iter().filter_map(|r| r.as_ref().ok()).cloned()
+                .collect::<Vec<TransactionReciept>>();
+
+            if reciepts.len() != hashes.len() {
+                return Err("Failed to get all transaction reciepts".into());
+            }
+            results.extend(reciepts);
         }
-        let response = self.client.batch_request::<TransactionReciept>(batch).await?;
-        let reciepts = response.iter().filter_map(|r| r.as_ref().ok()).cloned().collect::<Vec<TransactionReciept>>();
-        if reciepts.len() != hashes.len() {
-            return Err("Failed to get all transaction reciepts".into());
-        }
-        Ok(reciepts)
+        Ok(results)
     }
 
     async fn get_block(&self, block_number: i64) -> Result<Block, Box<dyn Error + Send + Sync>> {
