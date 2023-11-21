@@ -33,7 +33,7 @@ impl Provider {
     }
 
     pub async fn get_address(&self, _resolver: &str, _chain: Chain) -> Result<String, Error> {
-        Ok("".to_string())
+        todo!()
     }
 }
 
