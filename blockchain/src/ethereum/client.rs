@@ -52,9 +52,9 @@ impl EthereumClient {
         let nonce = transaction.nonce.as_i32();
         let block = transaction.block_number.as_i32();
         let fee = reciept.gas_used.clone().value * reciept.effective_gas_price.clone().value;
-        let from: ethers::types::Address = transaction.from.clone().parse().unwrap();
-        let to: ethers::types::Address = transaction.clone().to.unwrap_or_default().clone().parse().unwrap_or_default();
-        let from = ethers::utils::to_checksum(&from, None);
+        let from: alloy_primitives::Address = transaction.from.clone().parse().unwrap();
+        let to: alloy_primitives::Address = transaction.clone().to.unwrap_or_default().clone().parse().unwrap_or_default();
+        let from = alloy_primitives::Address::to_checksum(&from, None);
         
         // system transfer
         if transaction.input == "0x" {
@@ -62,7 +62,7 @@ impl EthereumClient {
                 transaction.hash.clone(),
                 self.chain.as_asset_id(), 
                 from, 
-                ethers::utils::to_checksum(&to, None),
+                alloy_primitives::Address::to_checksum(&to, None),
                 None,
                 TransactionType::Transfer, 
                 state, 
@@ -84,11 +84,11 @@ impl EthereumClient {
                 FUNCTION_ERC20_APPROVE => TransactionType::TokenApproval,
                 _ => TransactionType::Transfer,
             };
-            let token_id = ethers::utils::to_checksum(&to, None);
+            let token_id = alloy_primitives::Address::to_checksum(&to, None);
             let asset_id = AssetId{chain: self.chain, token_id: Some(token_id)};
             let value: String = transaction.input.chars().skip(74).take(64).collect();
-            let to_address: ethers::types::Address = transaction.input.chars().skip(34).take(40).collect::<String>().parse().unwrap();
-            let to_address = ethers::utils::to_checksum(&to_address, None);
+            let to_address: alloy_primitives::Address = transaction.input.chars().skip(34).take(40).collect::<String>().parse().unwrap();
+            let to_address = alloy_primitives::Address::to_checksum(&to_address, None);
             let value = BigUint::from_str_radix(value.as_str(), 16).unwrap_or_default();
 
             let transaction = primitives::Transaction::new( 

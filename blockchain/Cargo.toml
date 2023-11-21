@@ -12,7 +12,6 @@ async-trait = { workspace = true }
 primitives = { path = "../primitives" }
 ns_address_codec = { path = "../ns_address_codec" }
 chrono = { workspace = true }
-ethers = { workspace = true }
 hex = { workspace = true }
 futures = { workspace = true }
 num-bigint = { workspace = true }
@@ -25,3 +24,4 @@ base64 = { workspace = true }
 sha2 = { workspace = true }
 bs58 = { workspace = true }
 jsonrpsee = { workspace = true }
+alloy-primitives = { workspace = true }
