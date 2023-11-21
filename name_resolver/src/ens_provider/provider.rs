@@ -26,6 +26,8 @@ impl Provider {
             return Err(Error::Custom(String::from("no resolver set")));
         }
         // TODO: support other chain lookup
+        // TODO: support recursive parent lookup
+        // TODO: support off chain lookup CCIP-Read
         let addr = self.contract.legacy_addr(&resolver, name).await?;
         Ok(addr)
     }
