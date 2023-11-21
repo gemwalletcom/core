@@ -2260,6 +2260,7 @@ dependencies = [
  "num-traits",
  "rocket",
  "serde",
+ "serde_json",
  "strum",
  "typeshare",
 ]

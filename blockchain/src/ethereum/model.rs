@@ -28,18 +28,15 @@ pub struct Transaction {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct TransactionReciept {
-    // pub from: String,
     pub gas_used: BigIntHex,
     pub effective_gas_price: BigIntHex,
-    // pub gas_price: String,
-    // pub max_priority_fee_per_gas: Option<String>,
-    // pub max_fee_per_gas: Option<String>,
-    // pub hash: String,
-    // pub input: String,
-    // pub nonce: String,
-    // pub to: Option<String>,
-    // pub value: String,
+    pub logs: Vec<Log>,
     pub status: String,
-    // #[serde(rename = "type")]
-    // pub transaction_type: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Log {
+    pub address: String,
+    pub topics: Vec<String>,
+    pub data: String,
 }

@@ -157,7 +157,9 @@ impl Parser {
         
         match self.store_transactions(transactions_map.clone()).await {
             Ok(_) => {},
-            Err(err) => { println!("transaction insert: chain: {}, error: {:?}", self.chain.as_str(), err); }
+            Err(err) => { 
+                println!("transaction insert: chain: {}, error: {:?}", self.chain.as_str(), err);
+            }
         }
 
         Ok(ParserBlocksResult{
@@ -167,19 +169,23 @@ impl Parser {
     }
 
     pub async fn store_transactions(&mut self, transactions_map: HashMap<String, primitives::Transaction>) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        let insert_transactions: Vec<storage::models::Transaction> = transactions_map.clone()
-        .into_iter()
-        .map(|x| x.1)
-        .collect::<Vec<primitives::Transaction>>()
-        .into_iter().map(|x| {
-            storage::models::Transaction::from_primitive(x)
-        }).collect();
-
-        let result =  self.database.add_transactions(insert_transactions.clone())?;
-        let transaction_addresses = transactions_map.clone()
+        let primitive_transactions = transactions_map.clone()
             .into_iter()
             .map(|x| x.1)
             .collect::<Vec<primitives::Transaction>>()
+            .into_iter()
+            .filter(|x| {
+                self.database.get_asset(x.asset_id.to_string()).ok().is_some()
+            }).collect::<Vec<primitives::Transaction>>();
+            
+        let transactions = primitive_transactions.clone().into_iter().map(|x| {
+                storage::models::Transaction::from_primitive(x)
+            })
+            .collect::<Vec<storage::models::Transaction>>();
+            
+        let result =  self.database.add_transactions(transactions.clone())?;
+
+        let transaction_addresses = primitive_transactions.clone()
             .into_iter().map(|transaction| {
                 return transaction.addresses().into_iter().map(|address| {
                     storage::models::TransactionAddresses {

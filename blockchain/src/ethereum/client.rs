@@ -12,6 +12,8 @@ use num_bigint::BigUint;
 
 const FUNCTION_ERC20_TRANSFER: &str = "0xa9059cbb";
 const FUNCTION_ERC20_APPROVE: &str = "0x095ea7b3";
+const FUNCTION_1INCH_SWAP: &str = "0x12aa3caf";
+const CONTRACT_1INCH: &str = "0x1111111254EEB25477B68fb85Ed929f73A960582";
 
 pub struct EthereumClient {
     chain: Chain,
@@ -110,6 +112,10 @@ impl EthereumClient {
             return Some(transaction);
         }
 
+        if input_prefix.starts_with(FUNCTION_1INCH_SWAP) && transaction.to.unwrap_or_default() == CONTRACT_1INCH {
+            println!("swap: {}", transaction.hash);
+        }
+
         None
     }
 }
@@ -130,6 +136,11 @@ impl ChainProvider for EthereumClient {
     async fn get_transactions(&self, block_number: i64) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Send + Sync>> {
         let block = self.get_block(block_number).await?;
         let transactions = block.transactions;
+
+        if transactions.is_empty() {
+            return Ok(vec![])
+        }
+
         let hashes = transactions.clone().into_iter().map(|x| x.hash).collect();
         let reciepts = self.get_transaction_reciepts(hashes).await?;
 

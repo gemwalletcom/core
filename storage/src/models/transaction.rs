@@ -32,6 +32,7 @@ pub struct Transaction {
     pub block_created_at: NaiveDateTime,
     pub utxo_inputs: Option<serde_json::Value>,
     pub utxo_outputs: Option<serde_json::Value>,
+    pub metadata: Option<serde_json::Value>,
 }
 
 impl Transaction {
@@ -54,6 +55,7 @@ impl Transaction {
             block_created_at: transaction.created_at.naive_utc(),
             utxo_inputs: serde_json::to_value(transaction.utxo_inputs).ok(),
             utxo_outputs: serde_json::to_value(transaction.utxo_outputs).ok(),
+            metadata: serde_json::to_value(transaction.metadata).ok(),
         }
     }
 

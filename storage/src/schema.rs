@@ -229,6 +229,7 @@ diesel::table! {
         fee -> Nullable<Varchar>,
         utxo_inputs -> Nullable<Jsonb>,
         utxo_outputs -> Nullable<Jsonb>,
+        metadata -> Nullable<Jsonb>,
         fee_asset_id -> Nullable<Varchar>,
         block_created_at -> Timestamp,
         updated_at -> Timestamp,
