@@ -3,24 +3,21 @@ use std::{error::Error, str::FromStr};
 use crate::{ChainProvider, sui::model::Digests};
 use async_trait::async_trait;
 use chrono::Utc;
-use ethers::providers::{JsonRpcClient, Http, RetryClientBuilder, RetryClient};
+use jsonrpsee::{http_client::{HttpClientBuilder, HttpClient}, core::client::ClientT, rpc_params};
 use num_bigint::BigUint;
 use primitives::{chain::Chain, Transaction, TransactionType, TransactionState};
-use reqwest::Url;
 use serde_json::json;
 
 use super::model::GasUsed;
 
 pub struct SuiClient {
-    client: RetryClient<Http>,
+    client: HttpClient,
 }
 
 impl SuiClient {
     pub fn new(url: String) -> Self {
-        let provider = Http::new(Url::parse(url.as_str()).unwrap());
-        let client = RetryClientBuilder::default()
-            .build(provider, Box::<ethers::providers::HttpRateLimitRetryPolicy>::default());
-        
+        let client = HttpClientBuilder::default().build(&url).unwrap();
+
         Self {
             client,
         }
@@ -86,13 +83,13 @@ impl ChainProvider for SuiClient {
     }
 
     async fn get_latest_block(&self) -> Result<i64, Box<dyn Error + Send + Sync>> {
-        let block: String = JsonRpcClient::request(&self.client, "sui_getLatestCheckpointSequenceNumber", ()).await?;
-        Ok(block.parse::<i64>().unwrap_or_default())
+        let block: String = self.client.request( "sui_getLatestCheckpointSequenceNumber", rpc_params![]).await?;
+        Ok(block.parse::<i64>()?)
     }
 
     async fn get_transactions(&self, block_number: i64) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
-        let params = json!([
-            {
+        let params = vec![
+            json!({
                 "filter": {
                     "Checkpoint": block_number.to_string()
                 },
@@ -101,12 +98,13 @@ impl ChainProvider for SuiClient {
                     "showInput": false,
                     "showBalanceChanges":  true
                 }
-            },
-            null,
-            50,
-            true
-        ]);
-        let block: Digests = JsonRpcClient::request(&self.client, "suix_queryTransactionBlocks", params).await?;
+            }),
+            json!(null),
+            json!(50),
+            json!(true)
+        ];
+
+        let block: Digests = self.client.request("suix_queryTransactionBlocks", params).await?;
         let transactions = block.data.into_iter()
             .flat_map(|x| self.map_transaction(x, block_number))
             .collect::<Vec<primitives::Transaction>>();

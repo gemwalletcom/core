@@ -124,7 +124,7 @@ url = "https://s1.ripple.com:51234/"
 url = "https://fullnode.mainnet.aptoslabs.com"
 
 [chains.sui]
-url = "https://sui-rpc.publicnode.com"
+url = "https://suins-rpc.mainnet.sui.io"
 
 [chains.bitcoin]
 url = ""

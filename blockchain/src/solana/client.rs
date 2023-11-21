@@ -3,28 +3,25 @@ use std::error::Error;
 use crate::{ChainProvider, solana::model::BlockTransactions};
 use async_trait::async_trait;
 use chrono::Utc;
-use ethers::providers::{JsonRpcClient, Http, RetryClientBuilder, RetryClient, RetryClientError, RpcError};
+use jsonrpsee::{http_client::{HttpClientBuilder, HttpClient}, core::client::ClientT, rpc_params};
 use primitives::{chain::Chain, Transaction, TransactionType, TransactionState, AssetId};
-use reqwest::Url;
+
 use serde_json::json;
 
 use super::model::BlockTransaction;
 
 pub struct SolanaClient {
-    client: RetryClient<Http>,
+    client: HttpClient,
 }
 
-const MISSING_SLOT_ERROR: i64 = -32007;
-const NOT_AVAILABLE_SLOT_ERROR: i64 = -32004;
+const MISSING_SLOT_ERROR: i32 = -32007;
+const NOT_AVAILABLE_SLOT_ERROR: i32 = -32004;
 const SYSTEM_PROGRAM_ID: &str = "11111111111111111111111111111111";
 const TOKEN_PROGRAM_ID: &str = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA";
 
 impl SolanaClient {
     pub fn new(url: String) -> Self {
-        let provider = Http::new(Url::parse(url.as_str()).unwrap());
-        let client = RetryClientBuilder::default()
-            .build(provider, Box::<ethers::providers::HttpRateLimitRetryPolicy>::default());
-        
+        let client = HttpClientBuilder::default().build(&url).unwrap();
         Self {
             client,
         }
@@ -124,7 +121,7 @@ impl ChainProvider for SolanaClient {
     }
 
     async fn get_latest_block(&self) -> Result<i64, Box<dyn Error + Send + Sync>> {
-        let block: i64 = JsonRpcClient::request(&self.client, "getSlot", ()).await?;
+        let block: i64 = self.client.request("getSlot", rpc_params![]).await?;
         Ok(block)
     }
 
@@ -138,7 +135,7 @@ impl ChainProvider for SolanaClient {
                 "rewards": false
             })
         ];
-        let block: Result<BlockTransactions, RetryClientError> = JsonRpcClient::request(&self.client, "getBlock", params).await;
+        let block: Result<BlockTransactions, jsonrpsee::core::Error> = self.client.request("getBlock", params).await;
         match block {
             Ok(block) => {
                 let transactions = block.transactions
@@ -149,13 +146,12 @@ impl ChainProvider for SolanaClient {
             },
             Err(err) => {
                 match err {
-                    RetryClientError::ProviderError(err) => {
-                        if let Some(json_error) =  err.as_error_response() {
-                            if [MISSING_SLOT_ERROR, NOT_AVAILABLE_SLOT_ERROR].contains(&json_error.code) {
-                                return Ok(vec![])
-                            }
-                        };
-                        return Err(Box::new(err))
+                    jsonrpsee::core::Error::Call(err) => {
+                        if err.code() == MISSING_SLOT_ERROR || err.code() == NOT_AVAILABLE_SLOT_ERROR {
+                            return Ok(vec![]);
+                        } else {
+                            return Err(Box::new(err));
+                        }
                     },
                     _ => {
                         return Err(Box::new(err))

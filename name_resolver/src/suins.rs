@@ -1,20 +1,18 @@
 use primitives::chain::Chain;
 use async_trait::async_trait;
 use std::error::Error;
-use ethers::providers::{JsonRpcClient, Http, RetryClientBuilder, RetryClient};
 use primitives::name::{NameRecord, NameProvider};
 use crate::client::NameClient;
 
+use jsonrpsee::{http_client::{HttpClientBuilder, HttpClient}, core::client::ClientT};
+
 pub struct SuinsClient {
-    client: RetryClient<Http>,
+    client: HttpClient,
 }
 
 impl SuinsClient {
     pub fn new(api_url: String) -> Self {
-        let provider = Http::new(reqwest::Url::parse(api_url.as_str()).unwrap());
-        let client = RetryClientBuilder::default()
-            .build(provider, Box::<ethers::providers::HttpRateLimitRetryPolicy>::default());
-
+        let client = HttpClientBuilder::default().build(&api_url).unwrap();
         Self {
             client,
         }
@@ -29,9 +27,8 @@ impl NameClient for SuinsClient {
     }
 
     async fn resolve(&self, name: &str, chain: Chain) -> Result<NameRecord, Box<dyn Error>> {
-        let address: String = JsonRpcClient::request(&self.client, "suix_resolveNameServiceAddress", vec![serde_json::json!(name)]).await?;
-        //TODO: Fix later to Self::provider()
-        Ok(NameRecord { name: name.to_string(), chain, address, provider: NameProvider::Ens })
+        let address = self.client.request("suix_resolveNameServiceAddress", vec![serde_json::json!(name)]).await?;
+        Ok(NameRecord { name: name.to_string(), chain, address, provider: Self::provider() })
     }
 
     fn domains() -> Vec<&'static str> {
