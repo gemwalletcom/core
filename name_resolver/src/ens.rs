@@ -48,6 +48,8 @@ impl NameClient for ENSClient {
             Chain::Arbitrum,
             Chain::Base,
             Chain::AvalancheC,
+            Chain::Fantom,
+            Chain::Gnosis,
         ]
     }
 }
