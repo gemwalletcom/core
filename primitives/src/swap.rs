@@ -15,9 +15,8 @@ impl Default for SwapMode {
     fn default() -> Self { SwapMode::ExactIn }
 }
 
-#[derive(rocket::form::FromForm)]
-#[derive(Debug, Serialize, Deserialize)]
-#[typeshare()]
+#[derive(rocket::form::FromForm, Debug, Serialize, Deserialize)]
+#[typeshare(swift = "Codable")]
 #[serde(rename_all = "camelCase")]
 pub struct SwapQuoteRequest {
     #[field(name = "fromAsset")]

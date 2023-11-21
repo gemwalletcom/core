@@ -1800,6 +1800,7 @@ dependencies = [
 name = "name_resolver"
 version = "1.0.0"
 dependencies = [
+ "alloy-primitives",
  "async-trait",
  "base64 0.21.5",
  "ethaddr",

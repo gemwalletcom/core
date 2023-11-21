@@ -16,6 +16,7 @@ ethaddr = { workspace = true }
 jsonrpsee = { workspace = true }
 tiny-keccak = { workspace = true }
 hex = { workspace = true }
+alloy-primitives = { workspace = true }
 
 [dev-dependencies]
-tokio-test ={ version = "*" }
+tokio-test = { version = "*" }
