@@ -7,3 +7,4 @@ pub mod eths;
 pub mod spaceid;
 pub mod did;
 pub mod suins;
+pub mod ens_provider;
