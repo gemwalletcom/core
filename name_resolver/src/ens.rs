@@ -30,7 +30,7 @@ impl NameClient for ENSClient {
         Ok(NameRecord {
             name: name.to_string(),
             chain,
-            address: format!("{:?}", address),
+            address,
             provider: Self::provider(),
         })
     }
