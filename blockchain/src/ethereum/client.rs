@@ -5,7 +5,7 @@ use async_trait::async_trait;
 use chrono::Utc;
 use jsonrpsee::{http_client::{HttpClientBuilder, HttpClient}, core::{client::ClientT, params::BatchRequestBuilder}, rpc_params};
 use num_traits::Num;
-use primitives::{chain::Chain, TransactionType, TransactionState, AssetId};
+use primitives::{chain::Chain, TransactionType, TransactionState, AssetId, TransactionSwapMetadata};
 use serde_json::json;
 use super::model::{Block, Transaction, TransactionReciept};
 use num_bigint::BigUint;
@@ -31,7 +31,7 @@ impl EthereumClient {
     }
 
     async fn get_transaction_reciepts(&self, hashes: Vec<String>) -> Result<Vec<TransactionReciept>, Box<dyn Error + Send + Sync>> {
-        let hashes_chunks: Vec<Vec<String>> = hashes.chunks(50).map(|s| s.into()).collect();
+        let hashes_chunks: Vec<Vec<String>> = hashes.chunks(25).map(|s| s.into()).collect();
         let mut results: Vec<TransactionReciept> = Vec::new();
         for hashes in hashes_chunks {
             let mut batch = BatchRequestBuilder::default();
@@ -84,6 +84,7 @@ impl EthereumClient {
                 self.chain.as_asset_id(), 
                 value,
                 None,
+                None,
                 Utc::now()
             );
             return Some(transaction);
@@ -117,13 +118,41 @@ impl EthereumClient {
                 self.chain.as_asset_id(), 
                 value.to_string(),
                 None,
+                None,
                 Utc::now()
             );
             return Some(transaction);
         }
 
         if input_prefix.starts_with(FUNCTION_1INCH_SWAP) && transaction.to.unwrap_or_default() == CONTRACT_1INCH {
-            println!("swap: {}", transaction.hash);
+            // println!("swap: {}", transaction.hash);
+
+            // let swap = TransactionSwapMetadata {
+            //     from_asset: "".to_string(),
+            //     from_value: "".to_string(),
+            //     to_asset: "".to_string(),
+            //     to_value: "".to_string()
+            // };
+            // let asset_id = AssetId{chain: self.chain, token_id: Some(token_id)};
+
+            // let transaction = primitives::Transaction::new( 
+            //     transaction.hash.clone(),
+            //     asset_id, 
+            //     from, 
+            //     from.to_string(),
+            //     None,
+            //     TransactionType::Swap, 
+            //     state, 
+            //     block.to_string(),
+            //     nonce.to_string(), 
+            //     fee.to_string(),
+            //     self.chain.as_asset_id(), 
+            //     value.to_string(),
+            //     None,
+            //     serde_json::to_value(swap).ok(),
+            //     Utc::now()
+            // );
+            // return Some(transaction);
         }
 
         None
@@ -145,7 +174,12 @@ impl ChainProvider for EthereumClient {
 
     async fn get_transactions(&self, block_number: i64) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Send + Sync>> {
         let block = self.get_block(block_number).await?;
-        let transactions = block.transactions;
+        let transactions = block.transactions.into_iter().filter(|x| 
+            x.input == "0x" || 
+            x.input.starts_with(FUNCTION_ERC20_TRANSFER) || 
+            x.input.starts_with(FUNCTION_ERC20_APPROVE) || 
+            x.input.starts_with(FUNCTION_1INCH_SWAP)
+        ).collect::<Vec<Transaction>>();
 
         if transactions.is_empty() {
             return Ok(vec![])

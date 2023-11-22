@@ -45,6 +45,7 @@ impl XRPClient {
                         asset_id,
                         value,
                         Some(transaction.destination_tag.unwrap_or_default().to_string()),
+                        None,
                         Utc::now()
                     );
                     return Some(transaction)

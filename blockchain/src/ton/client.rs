@@ -49,6 +49,7 @@ impl TonClient {
                 asset_id,
                 out_message.value.to_string(),
                 memo,
+                None,
                 Utc::now()
             );
             return Some(transaction)

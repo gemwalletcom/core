@@ -6,6 +6,7 @@ use crate::{
 
 use chrono::offset::Utc;
 use chrono::DateTime;
+use rocket::data::N;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use typeshare::typeshare;
@@ -64,6 +65,7 @@ impl Transaction {
         fee_asset_id: AssetId,
         value: String,
         memo: Option<String>,
+        metadata: Option<serde_json::Value>,
         created_at: DateTime<Utc>,
     ) -> Self {
         let id = Self::id_from(asset_id.clone().chain, hash.clone());
@@ -85,7 +87,7 @@ impl Transaction {
             direction: TransactionDirection::SelfTransfer,
             utxo_inputs: vec![],
             utxo_outputs: vec![],
-            metadata: None,
+            metadata,
             created_at,
         }
     }
@@ -107,6 +109,7 @@ impl Transaction {
         direction: TransactionDirection,
         utxo_inputs: Vec<TransactionInput>,
         utxo_outputs: Vec<TransactionInput>,
+        metadata: Option<serde_json::Value>,
         created_at: DateTime<Utc>,
     ) -> Self {
         let id = Self::id_from(asset_id.clone().chain, hash.clone());
@@ -128,7 +131,7 @@ impl Transaction {
             direction,
             utxo_inputs,
             utxo_outputs,
-            metadata: None,
+            metadata,
             created_at,
         }
     }
@@ -250,7 +253,7 @@ impl Transaction {
             direction,
             utxo_inputs: self.utxo_inputs.clone(),
             utxo_outputs: self.utxo_outputs.clone(),
-            metadata: None,
+            metadata: self.metadata.clone(),
             created_at: self.created_at,
         };
     }

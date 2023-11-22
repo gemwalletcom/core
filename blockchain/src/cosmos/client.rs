@@ -59,6 +59,7 @@ impl CosmosClient {
                                 asset_id.clone(),
                                 value.clone().amount,
                                 Some(memo),
+                                None,
                                 Utc::now(),
                             );
                             return Some(transaction)

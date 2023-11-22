@@ -49,6 +49,7 @@ impl AptosClient {
                 asset_id,
                 value.clone(),
                 None,
+                None,
                 Utc::now()
             );        
             return Some(transaction)    

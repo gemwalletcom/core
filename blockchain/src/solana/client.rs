@@ -57,6 +57,7 @@ impl SolanaClient {
                 fee_asset_id, 
                 value.to_string(), 
                 None,
+                None,
                 Utc::now(),
             );
             return Some(transaction);
@@ -103,6 +104,7 @@ impl SolanaClient {
                 fee.to_string(), 
                 fee_asset_id, 
                 value.to_string(), 
+                None,
                 None,
                 Utc::now(),
             );

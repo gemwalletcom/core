@@ -82,6 +82,7 @@ impl TronClient {
                     self.get_chain().as_asset_id(),
                     value.parameter.value.amount.unwrap_or_default().to_string(),
                     None,
+                    None,
                     Utc::now()
                 );
                 return Some(transaction)
@@ -111,6 +112,7 @@ impl TronClient {
                     fee,
                     self.get_chain().as_asset_id(),
                     value.to_string(),
+                    None,
                     None,
                     Utc::now()
                 );

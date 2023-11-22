@@ -67,6 +67,7 @@ impl SuiClient {
                 chain.as_asset_id(), 
                 value.to_string(), 
                 None,
+                None,
                 Utc::now(),
             );
             return Some(transaction);
