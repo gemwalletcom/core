@@ -62,3 +62,5 @@ pub mod swap;
 pub use self::swap::{SwapQuote, SwapQuoteRequest, SwapQuoteProtocolRequest, SwapQuoteResult, SwapQuoteEthereumData, SwapMode, SwapProvider};
 pub mod transaction_metadata;
 pub use self::transaction_metadata::TransactionSwapMetadata;
+pub mod numer_formatter;
+pub use self::numer_formatter::NumberFormatter;

@@ -1,7 +1,6 @@
 use std::error::Error;
 
-use primitives::{Transaction, Subscription, AddressFormatter, PushNotification, PushNotificationTypes, TransactionType, TransactionSwapMetadata};
-use rust_decimal::{Decimal, prelude::*};
+use primitives::{Transaction, Subscription, AddressFormatter, PushNotification, PushNotificationTypes, TransactionType, TransactionSwapMetadata, NumberFormatter};
 use storage::DatabaseClient;
 
 use api_connector::PusherClient;
@@ -33,10 +32,7 @@ impl Pusher {
         
         match transaction.transaction_type {
             TransactionType::Transfer => {
-                let mut crypto_amount: Decimal = Decimal::from_str(transaction.value.as_str())?;
-                crypto_amount.set_scale(asset.decimals as u32).unwrap_or_default();
-                let amount = crypto_amount.to_f64().unwrap_or_default();
-
+                let amount = NumberFormatter::value(transaction.value.as_str(), asset.decimals).unwrap();
                 let title = format!("Transfer {} {}", amount, asset.symbol);
                 let message = if transaction.input_addresses().contains(&subscription.address) || transaction.from == subscription.address {
                     format!("To {}", AddressFormatter::short(transaction.asset_id.chain, transaction.to.as_str()))
@@ -54,9 +50,11 @@ impl Pusher {
                 let metadata: TransactionSwapMetadata = serde_json::from_value(transaction.metadata.into())?;
                 let from_asset = self.database_client.get_asset(metadata.from_asset.to_string())?;
                 let to_asset = self.database_client.get_asset(metadata.to_asset.to_string())?;
+                let from_amount =  NumberFormatter::value(metadata.from_value.as_str(), from_asset.decimals).unwrap_or_default();
+                let to_amount =  NumberFormatter::value(metadata.to_value.as_str(), from_asset.decimals).unwrap_or_default();
 
                 let title = format!("Swap from {} to {}", from_asset.symbol, to_asset.symbol);
-                let message = "".to_string();
+                let message = format!{"{} {} > {} {}", from_amount, from_asset.symbol, to_amount, to_asset.symbol};
                 Ok(Message{ title, message })
             },
         }
