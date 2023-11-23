@@ -44,7 +44,7 @@ pub struct Transaction {
     pub utxo_inputs: Vec<TransactionInput>,
     #[serde(rename = "utxoOutputs")]
     pub utxo_outputs: Vec<TransactionInput>,
-    pub metadata: Option<serde_json::Value>,
+    pub metadata: serde_json::Value,
     #[serde(rename = "createdAt")]
     pub created_at: DateTime<Utc>,
 }
@@ -86,7 +86,7 @@ impl Transaction {
             direction: TransactionDirection::SelfTransfer,
             utxo_inputs: vec![],
             utxo_outputs: vec![],
-            metadata,
+            metadata: metadata.into(),
             created_at,
         }
     }
@@ -130,7 +130,7 @@ impl Transaction {
             direction,
             utxo_inputs,
             utxo_outputs,
-            metadata,
+            metadata: metadata.into(),
             created_at,
         }
     }

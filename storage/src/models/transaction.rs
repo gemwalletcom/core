@@ -93,7 +93,7 @@ impl Transaction {
             direction,
             inputs.clone().unwrap_or_default(),
             outputs.clone().unwrap_or_default(),
-            self.metadata.clone(),
+            self.metadata.clone().into(),
             self.block_created_at.and_utc(),
         )
     }

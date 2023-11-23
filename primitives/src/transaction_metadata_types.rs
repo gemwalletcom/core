@@ -12,4 +12,3 @@ pub struct TransactionSwapMetadata {
     pub to_asset: AssetId,
     pub to_value: String,
 }
-
