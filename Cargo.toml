@@ -33,7 +33,7 @@ reqwest = { version = "0.11.22", features = ["json"] }
 reqwest-middleware = { version = "0.2.4" }
 reqwest-retry = { version = "0.3.0" }
 url = { version = "2.5.0" }
-config = { version = "0.13.3" }
+config = { version = "0.13.4" }
 rocket = { version = "=0.5.0-rc.3", features = ["json"] }
 ethaddr = { version = "0.1.2" }
 rust_decimal = { version = "1.33" }
