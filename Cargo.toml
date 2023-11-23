@@ -32,7 +32,7 @@ tokio = { version = "1.34.0", features = ["macros", "rt-multi-thread"] }
 reqwest = { version = "0.11.22", features = ["json"] }
 reqwest-middleware = { version = "0.2.4" }
 reqwest-retry = { version = "0.3.0" }
-url = { version = "2.4.1" }
+url = { version = "2.5.0" }
 config = { version = "0.13.3" }
 rocket = { version = "=0.5.0-rc.3", features = ["json"] }
 ethaddr = { version = "0.1.2" }
