@@ -1,4 +1,4 @@
-use std::error::Error;
+use std::{error::Error, str::FromStr};
 
 use crate::ChainProvider;
 use async_trait::async_trait;
@@ -9,11 +9,15 @@ use primitives::{chain::Chain, TransactionType, TransactionState, AssetId, Trans
 use serde_json::json;
 use super::model::{Block, Transaction, TransactionReciept};
 use num_bigint::BigUint;
+use alloy_primitives::Address;
 
 const FUNCTION_ERC20_TRANSFER: &str = "0xa9059cbb";
 const FUNCTION_ERC20_APPROVE: &str = "0x095ea7b3";
 const FUNCTION_1INCH_SWAP: &str = "0x12aa3caf";
 const CONTRACT_1INCH: &str = "0x1111111254EEB25477B68fb85Ed929f73A960582";
+
+const TOPIC_DEPOSIT: &str = "0xe1fffcc4923d04b559f4d29a8bfc6cda04eb5b0d3c460751c2402c5c5cc9109c";
+//const TOPIC_TRANSFER: &str = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
 
 pub struct EthereumClient {
     chain: Chain,
@@ -64,9 +68,9 @@ impl EthereumClient {
         let nonce = transaction.nonce.as_i32();
         let block = transaction.block_number.as_i32();
         let fee = reciept.gas_used.clone().value * reciept.effective_gas_price.clone().value;
-        let from: alloy_primitives::Address = transaction.from.clone().parse().unwrap();
-        let to: alloy_primitives::Address = transaction.clone().to.unwrap_or_default().clone().parse().unwrap_or_default();
-        let from = alloy_primitives::Address::to_checksum(&from, None);
+        let from: Address = transaction.from.clone().parse().unwrap();
+        let to: Address = transaction.clone().to.unwrap_or_default().clone().parse().unwrap_or_default();
+        let from = Address::to_checksum(&from, None);
         
         // system transfer
         if transaction.input == "0x" {
@@ -74,7 +78,7 @@ impl EthereumClient {
                 transaction.hash.clone(),
                 self.chain.as_asset_id(), 
                 from, 
-                alloy_primitives::Address::to_checksum(&to, None),
+                Address::to_checksum(&to, None),
                 None,
                 TransactionType::Transfer, 
                 state, 
@@ -97,18 +101,18 @@ impl EthereumClient {
                 FUNCTION_ERC20_APPROVE => TransactionType::TokenApproval,
                 _ => TransactionType::Transfer,
             };
-            let token_id = alloy_primitives::Address::to_checksum(&to, None);
+            let token_id = Address::to_checksum(&to, None);
             let asset_id = AssetId{chain: self.chain, token_id: Some(token_id)};
             let value: String = transaction.input.chars().skip(74).take(64).collect();
-            let to_address: alloy_primitives::Address = transaction.input.chars().skip(34).take(40).collect::<String>().parse().unwrap();
-            let to_address = alloy_primitives::Address::to_checksum(&to_address, None);
+            let to_address: Address = transaction.input.chars().skip(34).take(40).collect::<String>().parse().ok()?;
+            let to_address = Address::to_checksum(&to_address, None);
             let value = BigUint::from_str_radix(value.as_str(), 16).unwrap_or_default();
 
             let transaction = primitives::Transaction::new( 
                 transaction.hash.clone(),
                 asset_id, 
                 from, 
-                to_address.to_string(),
+                to_address.clone().to_string(),
                 None,
                 transaction_type, 
                 state, 
@@ -124,35 +128,50 @@ impl EthereumClient {
             return Some(transaction);
         }
 
-        if input_prefix.starts_with(FUNCTION_1INCH_SWAP) && transaction.to.unwrap_or_default() == CONTRACT_1INCH {
-            // println!("swap: {}", transaction.hash);
+        if input_prefix.starts_with(FUNCTION_1INCH_SWAP) && to.to_string() == CONTRACT_1INCH && reciept.logs.len() <= 7 {
+            let first_log = reciept.logs.first()?;
+            let last_log = reciept.logs.last()?;
+            let from_value = BigUint::from_str_radix(&first_log.clone().data[2..], 16).ok()?.to_string();
+            let to_value = BigUint::from_str_radix(&last_log.clone().data[2..], 16).ok()?.to_string();
 
-            // let swap = TransactionSwapMetadata {
-            //     from_asset: "".to_string(),
-            //     from_value: "".to_string(),
-            //     to_asset: "".to_string(),
-            //     to_value: "".to_string()
-            // };
-            // let asset_id = AssetId{chain: self.chain, token_id: Some(token_id)};
+            let assets = if first_log.topics[0] == TOPIC_DEPOSIT {
+                (
+                    self.chain.as_asset_id(), 
+                    AssetId{chain: self.chain, token_id: Some(Address::from_str(&last_log.address).unwrap().to_checksum(None))}
+                )
+            } else {
+                (
+                    AssetId{chain: self.chain, token_id: Some(Address::from_str(&first_log.address).unwrap().to_checksum(None))},
+                    self.chain.as_asset_id()
+                )
+            };
 
-            // let transaction = primitives::Transaction::new( 
-            //     transaction.hash.clone(),
-            //     asset_id, 
-            //     from, 
-            //     from.to_string(),
-            //     None,
-            //     TransactionType::Swap, 
-            //     state, 
-            //     block.to_string(),
-            //     nonce.to_string(), 
-            //     fee.to_string(),
-            //     self.chain.as_asset_id(), 
-            //     value.to_string(),
-            //     None,
-            //     serde_json::to_value(swap).ok(),
-            //     Utc::now()
-            // );
-            // return Some(transaction);
+            let swap = TransactionSwapMetadata {
+                from_asset: assets.0.clone(),
+                from_value: from_value.clone(),
+                to_asset: assets.1.clone(),
+                to_value,
+            };
+            let asset_id = assets.clone().0;
+
+            let transaction = primitives::Transaction::new( 
+                transaction.hash.clone(),
+                asset_id, 
+                from.clone(), 
+                from.clone(),
+                to.to_string().into(),
+                TransactionType::Swap, 
+                state, 
+                block.to_string(),
+                nonce.to_string(), 
+                fee.to_string(),
+                self.chain.as_asset_id(), 
+                from_value.to_string(),
+                None,
+                serde_json::to_value(swap).ok(),
+                Utc::now()
+            );
+            return Some(transaction);
         }
 
         None

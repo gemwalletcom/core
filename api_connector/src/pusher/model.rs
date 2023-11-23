@@ -31,3 +31,9 @@ pub struct Log {
     pub token: String,
     pub error: String,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Message {
+    pub title: String,
+    pub message: String,
+}
