@@ -7,6 +7,7 @@ prefix = ''
 "BigInt" = "BigInt"
 "NaiveDateTime" = "Date"
 "DateTime" = "Date"
+"Value" = "TransactionMetadata" # Fix later to be adjustable
 
 [kotlin.type_mappings]
 "Date" = "Long"

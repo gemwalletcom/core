@@ -5,6 +5,7 @@ use crate::AssetId;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare]
+#[serde(rename_all = "camelCase")]
 pub struct TransactionSwapMetadata {
     pub from_asset: AssetId,
     pub from_value: String,
