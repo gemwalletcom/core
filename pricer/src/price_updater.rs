@@ -163,7 +163,7 @@ impl PriceUpdater {
                 if platform.contract_address.is_empty() || platform.decimal_place.is_none() {
                     return None
                 }
-                let token_id = format_token_id(chain, platform.contract_address);
+                let token_id = format_token_id(chain, platform.contract_address)?;
                 let decimals = platform.decimal_place.unwrap_or_default();
                 let asset_id = AssetId{chain, token_id: token_id.into()};
                 let asset = Asset{
