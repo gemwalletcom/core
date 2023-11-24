@@ -467,7 +467,6 @@ dependencies = [
  "bs58",
  "chrono",
  "cosmos-sdk-proto",
- "ethaddr",
  "futures",
  "hex",
  "jsonrpsee",
@@ -973,16 +972,6 @@ checksum = "aa68f1b12764fab894d2755d2518754e71b4fd80ecfb822714a1206c2aab39bf"
 dependencies = [
  "cc",
  "libc",
-]
-
-[[package]]
-name = "ethaddr"
-version = "0.1.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b95bb7621599236a07e6da2fd637dad0daad962bfd9d144e840495493f0bb958"
-dependencies = [
- "serde",
- "sha3",
 ]
 
 [[package]]
@@ -1611,15 +1600,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "keccak"
-version = "0.1.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8f6d5ed8676d904364de097082f4e7d240b571b67989ced0240f08b7f966f940"
-dependencies = [
- "cpufeatures",
-]
-
-[[package]]
 name = "lazy_static"
 version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1803,7 +1783,6 @@ dependencies = [
  "alloy-primitives",
  "async-trait",
  "base64 0.21.5",
- "ethaddr",
  "hex",
  "jsonrpsee",
  "ns_address_codec",
@@ -2228,8 +2207,8 @@ dependencies = [
 name = "pricer"
 version = "1.0.0"
 dependencies = [
+ "alloy-primitives",
  "chrono",
- "ethaddr",
  "primitives",
  "redis",
  "reqwest",
@@ -3211,16 +3190,6 @@ dependencies = [
  "cfg-if",
  "cpufeatures",
  "digest 0.10.7",
-]
-
-[[package]]
-name = "sha3"
-version = "0.10.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "75872d278a8f37ef87fa0ddbda7802605cb18344497949862c0d4dcb291eba60"
-dependencies = [
- "digest 0.10.7",
- "keccak",
 ]
 
 [[package]]

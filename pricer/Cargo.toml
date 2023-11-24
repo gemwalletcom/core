@@ -10,6 +10,6 @@ tokio = { workspace = true }
 storage = { path = "../storage" }
 redis = { workspace = true }
 reqwest = { workspace = true }
-ethaddr = { workspace = true }
 primitives = { path = "../primitives" }
 chrono = { workspace = true }
+alloy-primitives = { workspace = true }

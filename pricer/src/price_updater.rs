@@ -8,6 +8,7 @@ use storage::models::{Price, Chart};
 use std::collections::HashSet;
 use std::error::Error;
 use std::str::FromStr;
+use alloy_primitives::Address;
 
 pub struct PriceUpdater {
     coin_gecko_client: CoinGeckoClient,
@@ -36,10 +37,11 @@ impl PriceUpdater {
             
             match chain {
                 Some(value) => {
-                    let asset_id = get_asset_id(value, "".to_string());
-                    prices_map.insert(
-                        asset_price_map(asset_id, market.clone())
-                    );
+                    if let Some(asset_id) = get_asset_id(value, "".to_string()) {
+                        prices_map.insert(
+                            asset_price_map(asset_id, market.clone())
+                        );
+                    }
                     // special case.
                     if value.as_str() == Chain::Binance.as_str() {
                         prices_map.insert(
@@ -68,10 +70,11 @@ impl PriceUpdater {
                         if let Some(value) = platform {
                             let token_id = token_id.unwrap_or_default();
                             if !token_id.is_empty() {
-                                let asset_id = get_asset_id(value, token_id);
-                                prices_map.insert(
-                                    asset_price_map(asset_id, market.clone())
-                                );
+                                if let Some(asset_id) = get_asset_id(value, token_id) {
+                                    prices_map.insert(
+                                        asset_price_map(asset_id, market.clone())
+                                    );
+                                }
                             }
                         }
                     }
@@ -229,24 +232,43 @@ fn asset_price_map(asset_id: String, market: CoinMarket) -> Price {
     )
 }
 
-fn get_asset_id(chain: Chain, token_id: String) -> String {
+fn get_asset_id(chain: Chain, token_id: String) -> Option<String> {
     if token_id.is_empty() {
-        return chain.as_str().to_string()
+        return Some(chain.as_str().to_string())
     }
-    format!("{}_{}", chain.as_str(), format_token_id(chain, token_id))
+    let token_id = format_token_id(chain, token_id)?;
+    return format!("{}_{}", chain.as_str(), token_id).into()
 }
 
-fn format_token_id(chain: Chain, token_id: String) -> String {
+fn format_token_id(chain: Chain, token_id: String) -> Option<String> {
     match chain {
         Chain::Ethereum |
         Chain::SmartChain |
         Chain::Polygon |
         Chain::Arbitrum |
-        Chain::Optimism => {
-            return ethaddr::Address::from_str(token_id.as_str()).unwrap().to_string();
+        Chain::Optimism |
+        Chain::Base |
+        Chain::AvalancheC |
+        Chain::OpBNB |
+        Chain::Fantom |
+        Chain::Gnosis => {
+            return Some(Address::from_str(&token_id).ok()?.to_checksum(None));
         }
-        _ => {
-            token_id
+        Chain::Bitcoin |
+        Chain::Litecoin |
+        Chain::Binance | 
+        Chain::Solana |
+        Chain::Thorchain |
+        Chain::Cosmos |
+        Chain::Osmosis |
+        Chain::Ton |
+        Chain::Tron |
+        Chain::Doge |
+        Chain::Aptos |
+        Chain::Sui |
+        Chain::Ripple
+        => {
+            return None;
         }
     }
 }

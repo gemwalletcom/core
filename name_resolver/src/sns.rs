@@ -37,10 +37,8 @@ impl SNSClient {
             .json::<ResolveDomain>()
             .await?;
         
-        let bytes = general_purpose::STANDARD.decode(response.result.as_bytes()).unwrap();
-        let hex_string: String = bytes.iter().map(|byte| format!("{:02X}", byte)).collect::<String>();
-        let address = ethaddr::Address::from_str(hex_string.as_str()).unwrap().to_string();
-
+        let bytes = general_purpose::STANDARD.decode(response.result.as_bytes())?;
+        let address = String::from_utf8(bytes)?; 
         Ok(NameRecord { name: name.to_string(), chain: *chain, address, provider: Self::provider() })
     }
 
