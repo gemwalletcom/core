@@ -5,14 +5,12 @@ use crate::asset_type::AssetType;
 use serde::{Serialize, Deserialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare]
 pub struct TokenList {
     pub version: i32,
     pub assets: Vec<TokenListAsset>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare]
 pub struct TokenListAsset {
     pub chain: Chain,
     #[serde(rename = "tokenId")]
@@ -40,7 +38,6 @@ impl TokenListAsset {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare]
 pub struct TokenListChainVersion {
     pub chain: String,
     pub version: i32,
