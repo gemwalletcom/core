@@ -131,8 +131,16 @@ impl EthereumClient {
         if input_prefix.starts_with(FUNCTION_1INCH_SWAP) && to.to_string() == CONTRACT_1INCH && reciept.logs.len() <= 7 {
             let first_log = reciept.logs.first()?;
             let last_log = reciept.logs.last()?;
-            let from_value = BigUint::from_str_radix(&first_log.clone().data[2..], 16).ok()?.to_string();
-            let to_value = BigUint::from_str_radix(&last_log.clone().data[2..], 16).ok()?.to_string();
+            let first_log_value = BigUint::from_str_radix(&first_log.clone().data[2..], 16).ok()?.to_string();
+            let last_log_value = BigUint::from_str_radix(&last_log.clone().data[2..], 16).ok()?.to_string();
+
+            let values: (String, String) = if first_log.topics[0] == TOPIC_DEPOSIT {
+                (value, last_log_value.clone())
+            } else {
+                (first_log_value.clone(), last_log_value.clone())
+            };
+            let from_value = values.0.clone();
+            let to_value = values.1.clone();
 
             let assets = if first_log.topics[0] == TOPIC_DEPOSIT {
                 (
@@ -150,7 +158,7 @@ impl EthereumClient {
                 from_asset: assets.0.clone(),
                 from_value: from_value.clone(),
                 to_asset: assets.1.clone(),
-                to_value,
+                to_value: to_value.clone(),
             };
             let asset_id = assets.clone().0;
 
@@ -166,7 +174,7 @@ impl EthereumClient {
                 nonce.to_string(), 
                 fee.to_string(),
                 self.chain.as_asset_id(), 
-                from_value.to_string(),
+                from_value.clone().to_string(),
                 None,
                 serde_json::to_value(swap).ok(),
                 Utc::now()
