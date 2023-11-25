@@ -69,6 +69,8 @@ impl SolanaClient {
         // SLP transfer. Limit to 7 accounts.
         if account_keys.contains(&TOKEN_PROGRAM_ID.to_string()) && account_keys.len() <= 7 && (pre_token_balances.len() == 1 || pre_token_balances.len() == 2) && post_token_balances.len() == 2 {
 
+            println!("tx: {}", hash.clone());
+
             let token_id = transaction.meta.pre_token_balances.first()?.mint.clone();
             let asset_id = AssetId { chain: self.get_chain(), token_id: Some(token_id) };
 
@@ -83,8 +85,13 @@ impl SolanaClient {
 
             let sender = transaction.meta.get_post_token_balance(sender_account_index)?;
             let recipient = transaction.meta.get_post_token_balance(recipient_account_index)?;
+            let from_value = transaction.meta.get_pre_token_balance(sender_account_index)?.get_amount();
+            let to_value = transaction.meta.get_post_token_balance(sender_account_index)?.get_amount();
 
-            let value = transaction.meta.get_pre_token_balance(sender_account_index)?.get_amount() - transaction.meta.get_post_token_balance(sender_account_index)?.get_amount();
+            if to_value > from_value {
+                return None
+            }
+            let value =  from_value - to_value;
 
             let from = sender.owner.clone();
             let to = recipient.owner.clone();
