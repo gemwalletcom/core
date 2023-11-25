@@ -352,11 +352,13 @@ impl DatabaseClient {
         ).execute(&mut self.connection)
     }
 
+    // distinct_on is used to only select once subscription per user device
     pub fn get_subscriptions(&mut self, _chain: Chain, addresses: Vec<String>) -> Result<Vec<Subscription>, diesel::result::Error> {
         use crate::schema::subscriptions::dsl::*;
         subscriptions
             .filter(chain.eq(_chain.as_str()))
             .filter(address.eq_any(addresses))
+            .distinct_on((device_id, chain, address))
             .select(Subscription::as_select())
             .load(&mut self.connection)
     }
