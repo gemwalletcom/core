@@ -12,12 +12,12 @@ impl Provider {
     pub fn new(url: String) -> Self {
         let client: jsonrpsee::http_client::HttpClient =
             HttpClientBuilder::default().build(url).unwrap();
-        return Provider {
+        Provider {
             contract: Contract {
-                client: client,
+                client,
                 registry: REGISTRY.to_string(),
             },
-        };
+        }
     }
 
     pub async fn resolve_name(&self, name: &str, _chain: Chain) -> Result<String, Error> {

@@ -41,7 +41,7 @@ impl Device {
             currency: self.currency.clone().into(),
             is_push_enabled: self.is_push_enabled,
             version: self.version.clone().into(),
-            subscriptions_version: self.subscriptions_version.clone().into(),
+            subscriptions_version: self.subscriptions_version.into(),
         }
     }
 }

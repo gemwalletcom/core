@@ -140,7 +140,7 @@ impl Transaction {
     }
 
     pub fn is_utxo_tx(&self) -> bool {
-        self.utxo_inputs.len() > 0 && self.utxo_outputs.len() > 0
+        !self.utxo_inputs.is_empty() && !self.utxo_outputs.is_empty()
     }
 
     pub fn input_addresses(&self) -> Vec<String> {
@@ -160,12 +160,12 @@ impl Transaction {
         array.extend(self.input_addresses());
         array.extend(self.output_addresses());
         array.dedup();
-        array.into_iter().filter(|x| x != "").collect()
+        array.into_iter().filter(|x| !x.is_empty()).collect()
     }
 
     // addresses - is a list of user addresses
     pub fn finalize(&self, addresses: Vec<String>) -> Self {
-        let chain = self.asset_id.chain.clone();
+        let chain = self.asset_id.chain;
         if !chain.is_utxo() {
             return self.clone();
         }
@@ -234,7 +234,7 @@ impl Transaction {
             }
         };
 
-        return Transaction {
+        Transaction {
             id: self.id.clone(),
             hash: self.hash.clone(),
             asset_id: self.asset_id.clone(),
@@ -254,7 +254,7 @@ impl Transaction {
             utxo_outputs: self.utxo_outputs.clone(),
             metadata: self.metadata.clone(),
             created_at: self.created_at,
-        };
+        }
     }
 
     fn utxo_calculate_value(values: &Vec<TransactionInput>, addresses: Vec<String>) -> i64 {
@@ -264,10 +264,10 @@ impl Transaction {
             .filter(|x| addresses.contains(&x.address))
             .collect::<Vec<TransactionInput>>();
 
-        return values
+        values
             .clone()
             .into_iter()
             .map(|x| x.value.parse::<i64>().unwrap())
-            .sum::<i64>();
+            .sum::<i64>()
     }
 }

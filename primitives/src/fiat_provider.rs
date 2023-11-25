@@ -28,7 +28,7 @@ impl FiatProviderName {
     }
 
     pub fn as_fiat_provider(&self) -> FiatProvider {
-        return FiatProvider { 
+        FiatProvider { 
             name: self.as_str().to_string(),
             image_url: "".to_string(),
         }

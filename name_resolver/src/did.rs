@@ -74,6 +74,6 @@ impl NameClient for DidClient {
     }
 
     fn chains() -> Vec<Chain> {
-        return Chain::all()
+        Chain::all()
     }
 }

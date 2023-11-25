@@ -29,8 +29,9 @@ impl AssetsClient {
         Ok(AssetFull{asset, details, price, market, score})
     }
 
-    pub fn get_assets_search(&mut self, query: &str) -> Result<Vec<primitives::AssetFull>, Box<dyn Error>> {
-        let assets = self.database.get_assets_search(query)?.into_iter().map(|asset| 
+    pub fn get_assets_search(&mut self, query: &str, chains: Vec<String>) -> Result<Vec<primitives::AssetFull>, Box<dyn Error>> {
+        let min_score = if query.len() > 10 { -100 } else { 10 };
+        let assets = self.database.get_assets_search(query, chains, min_score)?.into_iter().map(|asset| 
             AssetFull{
                 asset: asset.as_primitive(), 
                 details: None,

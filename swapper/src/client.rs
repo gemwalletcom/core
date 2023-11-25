@@ -32,18 +32,18 @@ impl SwapperClient {
             Chain::Fantom |
             Chain::Gnosis |
             Chain::AvalancheC => {
-                return self.oneinch.get_quote(quote).await;
+                self.oneinch.get_quote(quote).await
             }
             Chain::Binance => todo!(),
             Chain::Solana => {
-                return self.jupiter.get_quote(quote).await;
+                self.jupiter.get_quote(quote).await
             }
             Chain::Thorchain |
             Chain::Doge |
             Chain::Cosmos | 
             Chain::Bitcoin |
             Chain::Litecoin => {
-                return self.thorchain.get_quote(quote).await;
+                self.thorchain.get_quote(quote).await
             },
             Chain::Osmosis => todo!(),
             Chain::Ton => todo!(),

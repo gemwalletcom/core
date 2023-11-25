@@ -55,7 +55,7 @@ impl JupiterClient {
             provider: self.provider(),
             data,
         };
-        return Ok(quote)
+        Ok(quote)
     }
 
     pub async fn get_data(&self, quote: SwapQuoteProtocolRequest, quote_response: QuoteResponse) -> Result<SwapQuoteEthereumData, Box<dyn std::error::Error + Send + Sync>> {
@@ -71,28 +71,28 @@ impl JupiterClient {
             value: "".to_string(),
             gas_limit: 0,
         };
-        return Ok(data)
+        Ok(data)
     }
 
     pub async fn get_swap_quote(&self, request: QuoteRequest) -> Result<QuoteResponse, Box<dyn std::error::Error + Send + Sync>>   {
         let params = serde_urlencoded::to_string(&request)?;
         let url = format!("{}/v6/quote?{}", self.api_url, params);
-        return Ok(self.client
+        Ok(self.client
             .get(&url)
             .send()
             .await?
             .json::<QuoteResponse>()
-            .await?);
+            .await?)
     }
 
     pub async fn get_swap_quote_data(&self, request: QuoteDataRequest) -> Result<QuoteDataResponse, Box<dyn std::error::Error + Send + Sync>>   {
         let url = format!("{}/v6/swap", self.api_url);
-        return Ok(self.client
+        Ok(self.client
             .post(&url)
             .json(&request)
             .send()
             .await?
             .json::<QuoteDataResponse>()
-            .await?);
+            .await?)
     }
 }

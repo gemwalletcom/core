@@ -14,7 +14,7 @@ impl Contract {
         let hash = namehash(name);
         let data = encode_resolver(hash);
         let response = self.eth_call(&self.registry, data).await?;
-        let result = response.unwrap_or_default().to_string().replace("\"", "");
+        let result = response.unwrap_or_default().to_string().replace('\"', "");
         if result.is_empty() {
             return Err(Error::Custom(String::from("no resolver set")));
         }
@@ -30,7 +30,7 @@ impl Contract {
         let hash = namehash(name);
         let data = encode_legacy_addr(hash);
         let response = self.eth_call(resolver, data).await?;
-        let result = response.unwrap_or_default().to_string().replace("\"", "");
+        let result = response.unwrap_or_default().to_string().replace('\"', "");
         if result.is_empty() {
             return Err(Error::Custom(String::from("no address")));
         }
@@ -52,7 +52,7 @@ impl Contract {
         let result: Vec<char> = response.chars().collect();
         format!(
             "0x{}",
-            String::from_iter(result[result.len() - 40..].into_iter())
+            String::from_iter(result[result.len() - 40..].iter())
         )
     }
 }
@@ -123,7 +123,7 @@ mod test {
         ];
 
         for (coin, expected) in cases {
-            let encoded: &[u8] = &&encode_coin(coin);
+            let encoded: &[u8] = &encode_coin(coin);
             assert_eq!(encoded, expected.unwrap());
         }
     }

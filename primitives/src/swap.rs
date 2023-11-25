@@ -6,14 +6,14 @@ use crate::{AssetId, ChainType};
 #[typeshare(swift = "Equatable, Codable")]
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "lowercase")]
+#[derive(Default)]
 pub enum SwapMode {
+    #[default]
     ExactIn,
     ExactOut, 
 }
 
-impl Default for SwapMode {
-    fn default() -> Self { SwapMode::ExactIn }
-}
+
 
 #[derive(rocket::form::FromForm, Debug, Serialize, Deserialize)]
 #[typeshare(swift = "Codable")]

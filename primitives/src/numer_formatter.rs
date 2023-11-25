@@ -6,9 +6,9 @@ pub struct NumberFormatter {
 impl NumberFormatter {
     pub fn value(value: &str, decimals: i32) -> Option<String> {
         let mut crypto_amount: Decimal = Decimal::from_str(value).ok()?;
-        let _ = crypto_amount.set_scale(decimals as u32).ok()?;
+        crypto_amount.set_scale(decimals as u32).ok()?;
         let amount: f64 = crypto_amount.to_f64()?;
-        return format!("{}", amount).into()
+        format!("{}", amount).into()
     }
 }
 

@@ -45,7 +45,7 @@ impl BitcoinClient {
         let inputs: Vec<TransactionInput> = transaction
             .vin
             .iter()
-            .filter(|i| i.is_address == true)
+            .filter(|i| i.is_address)
             .map(|input| TransactionInput {
                 address: input
                     .addresses
@@ -61,7 +61,7 @@ impl BitcoinClient {
         let outputs: Vec<TransactionInput> = transaction
             .vout
             .iter()
-            .filter(|o| o.is_address == true)
+            .filter(|o| o.is_address)
             .map(|output| TransactionInput {
                 address: output.addresses.clone().unwrap_or_default().first().unwrap().to_string(),
                 value: output.value.clone(),

@@ -35,7 +35,7 @@ pub enum Chain {
 
 impl PartialEq for Chain {
     fn eq(&self, other: &Self) -> bool {
-        return self.as_str() == other.as_str()
+        self.as_str() == other.as_str()
     }
 }
 
@@ -242,6 +242,6 @@ impl Chain {
     }
 
     pub fn all() -> Vec<Chain> {
-        return Chain::iter().collect::<Vec<_>>();
+        Chain::iter().collect::<Vec<_>>()
     }
 }

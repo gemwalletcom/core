@@ -47,7 +47,7 @@ impl Pusher {
                 Ok(Message{ title, message })
             }
             TransactionType::Swap => {
-                let metadata: TransactionSwapMetadata = serde_json::from_value(transaction.metadata.into())?;
+                let metadata: TransactionSwapMetadata = serde_json::from_value(transaction.metadata)?;
                 let from_asset = self.database_client.get_asset(metadata.from_asset.to_string())?;
                 let to_asset = self.database_client.get_asset(metadata.to_asset.to_string())?;
                 let from_amount =  NumberFormatter::value(metadata.from_value.as_str(), from_asset.decimals).unwrap_or_default();
@@ -81,11 +81,11 @@ impl Pusher {
         };
         let response = self.client.push(notification).await?;
 
-        if response.logs.len() > 0 {
+        if !response.logs.is_empty() {
             println!("push logs: {:?}", response.logs);
             let _ = self.database_client.update_device_is_push_enabled(&device.id, false)?;
         }
 
-        return Ok(response.counts as usize);
+        Ok(response.counts as usize)
     }
 }

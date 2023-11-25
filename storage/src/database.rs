@@ -399,7 +399,7 @@ impl DatabaseClient {
     pub fn get_transactions_by_device_id(&mut self, _device_id: &str, addresses: Vec<String>, chains: Vec<String>, options: TransactionsFetchOption) -> Result<Vec<Transaction>, diesel::result::Error> {
         use crate::schema::transactions::dsl::*;
 
-        let mut query = crate::schema::transactions::table.into_boxed()
+        let mut query = transactions.into_boxed()
             .inner_join(transactions_addresses::table)
             .filter(chain.eq_any(chains.clone()))
             .filter(transactions_addresses::address.eq_any(addresses));
@@ -413,10 +413,10 @@ impl DatabaseClient {
             query = query.filter(created_at.gt(datetime));
         }
 
-        return query
+        query
             .order(created_at.desc())
             .select(Transaction::as_select())
-            .load(&mut self.connection);
+            .load(&mut self.connection)
     }
 
     pub fn get_transactions_by_hash(&mut self, _hash: &str) -> Result<Vec<Transaction>, diesel::result::Error> {
@@ -452,21 +452,31 @@ impl DatabaseClient {
             .load(&mut self.connection)
     }
 
-    pub fn get_assets_search(&mut self, query: &str) -> Result<Vec<Asset>, diesel::result::Error> {
+    pub fn get_assets_search(&mut self, query: &str, chains: Vec<String>, min_score: i32) -> Result<Vec<Asset>, diesel::result::Error> {
         use crate::schema::assets::dsl::*;
         let ilike_expression = format!("{}%", query);
-        assets
+
+        let mut query = assets.into_boxed()
+            .filter(rank.gt(min_score))
+            .filter(
+                name.ilike(ilike_expression.clone())
+                .or(symbol.ilike(ilike_expression.clone()))
+                .or(token_id.ilike(ilike_expression.clone()))
+            );
+
+        if !chains.is_empty() {
+            query = query.filter(chain.eq_any(chains));
+        }
+            
+        query
             .order(rank.desc())
-            .filter(name.ilike(ilike_expression.clone()))
-            .or_filter(symbol.ilike(ilike_expression.clone()))
-            .or_filter(token_id.ilike(ilike_expression.clone()))
             .select(Asset::as_select())
             .load(&mut self.connection)
     }
 
     pub fn get_assets_ids_by_device_id(&mut self, addresses: Vec<String>, from_timestamp: Option<u32>) -> Result<Vec<String>, diesel::result::Error> {
         use crate::schema::transactions::dsl::*;
-        let mut query = crate::schema::transactions::table.into_boxed()
+        let mut query = transactions.into_boxed()
             .inner_join(transactions_addresses::table)
             .filter(transactions_addresses::address.eq_any(addresses));
             

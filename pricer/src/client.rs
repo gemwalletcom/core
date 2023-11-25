@@ -107,6 +107,6 @@ impl Client {
         let asset = storage::models::asset::Asset::from_primitive(asset);
         let _ = self.database.add_assets(vec![asset]);
         let _ = self.database.add_assets_details(vec![details]);
-        return Ok(())
+        Ok(())
     }
 }

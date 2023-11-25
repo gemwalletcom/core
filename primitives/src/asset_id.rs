@@ -36,7 +36,7 @@ impl AssetId {
     }
 
     pub fn is_native(&self) -> bool {
-        self.token_id == None
+        self.token_id.is_none()
     }
 }
 

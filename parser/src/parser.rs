@@ -186,8 +186,8 @@ impl Parser {
         let result =  self.database.add_transactions(transactions.clone())?;
 
         let transaction_addresses = primitive_transactions.clone()
-            .into_iter().map(|transaction| {
-                return transaction.addresses().into_iter().map(|address| {
+            .into_iter().flat_map(|transaction| {
+                transaction.addresses().into_iter().map(|address| {
                     storage::models::TransactionAddresses {
                         transaction_id: transaction.id.clone(),
                         address,
@@ -195,7 +195,6 @@ impl Parser {
                 }).collect::<Vec<storage::models::TransactionAddresses>>()
                 
             })
-            .flatten()
             .filter(|x| !x.address.is_empty())
             .collect::<Vec<storage::models::TransactionAddresses>>();
         let _ = self.database.add_transactions_addresses(transaction_addresses.clone())?;

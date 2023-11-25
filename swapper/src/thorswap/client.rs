@@ -39,14 +39,13 @@ impl ThorchainSwapClient {
             return Err("not native asset".into())
         }
         match asset_id.chain {
-            Chain::Thorchain => return Ok(NATIVE_ADDRESS_RUNE.into()),
-            Chain::Doge => return Ok(NATIVE_ADDRESS_DOGE.into()),
-            Chain::Cosmos => return Ok(NATIVE_ADDRESS_COSMOS.into()),
-            Chain::Bitcoin => return Ok(NATIVE_BITCOIN.into()),
-            Chain::Litecoin => return Ok(NATIVE_LITECOIN.into()),
-            Chain::SmartChain => return Ok(NATIVE_BSC_BNB.into()),
-            _ => return 
-                Err(format!("asset {} not supported", asset_id.to_string()).into()
+            Chain::Thorchain => Ok(NATIVE_ADDRESS_RUNE.into()),
+            Chain::Doge => Ok(NATIVE_ADDRESS_DOGE.into()),
+            Chain::Cosmos => Ok(NATIVE_ADDRESS_COSMOS.into()),
+            Chain::Bitcoin => Ok(NATIVE_BITCOIN.into()),
+            Chain::Litecoin => Ok(NATIVE_LITECOIN.into()),
+            Chain::SmartChain => Ok(NATIVE_BSC_BNB.into()),
+            _ => Err(format!("asset {} not supported", asset_id.to_string()).into()
             )
         }
     }
@@ -85,17 +84,17 @@ impl ThorchainSwapClient {
             provider: self.provider(),
             data,
         };
-        return Ok(quote)
+        Ok(quote)
     }
 
     pub async fn get_swap_quote(&self, request: QuoteRequest) -> Result<QuoteResponse, Box<dyn std::error::Error + Send + Sync>>   {
         let params = serde_urlencoded::to_string(&request)?;
         let url = format!("{}/thorchain/quote/swap?{}", self.api_url, params);
-        return Ok(self.client
+        Ok(self.client
             .get(&url)
             .send()
             .await?
             .json::<QuoteResponse>()
-            .await?);
+            .await?)
     }
 }

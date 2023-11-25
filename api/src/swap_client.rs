@@ -41,7 +41,7 @@ impl SwapClient {
             include_data: request.include_data,
         };
 
-        return Ok(quote_request)
+        Ok(quote_request)
     }
 
     pub async fn swap_quote(&mut self, request: SwapQuoteRequest) -> Result<SwapQuoteResult, Box<dyn Error + Send + Sync>> {

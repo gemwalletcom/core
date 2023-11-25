@@ -21,7 +21,7 @@ impl Client {
 
         let mut nodes_map: HashMap<String, Vec<Node>> = HashMap::new();
         nodes.into_iter().for_each(|node| {
-            nodes_map.entry(node.chain.clone()).or_insert(vec![]).push(Node {
+            nodes_map.entry(node.chain.clone()).or_default().push(Node {
                 url: node.url,
                 status: if node.status == *"active" { NodeStatus::Active } else { NodeStatus::Inactive },
                 priority: node.priority,

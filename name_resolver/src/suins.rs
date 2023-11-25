@@ -12,7 +12,7 @@ pub struct SuinsClient {
 
 impl SuinsClient {
     pub fn new(api_url: String) -> Self {
-        let client = HttpClientBuilder::default().build(&api_url).unwrap();
+        let client = HttpClientBuilder::default().build(api_url).unwrap();
         Self {
             client,
         }

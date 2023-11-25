@@ -52,7 +52,7 @@ impl OneInchClient {
         } else {
             self.get_swap_quote(quote_request, network_id).await?
         };
-        let data = if let Some(value) = swap_quote.tx { Some(value.get_data()) } else { None };
+        let data = swap_quote.tx.map(|value| value.get_data());
 
         let quote = SwapQuote {
             chain_type: ChainType::Ethereum, 
@@ -62,30 +62,30 @@ impl OneInchClient {
             provider: self.provider(),
             data,
         };
-        return Ok(quote)
+        Ok(quote)
     }
 
     pub async fn get_swap_quote(&self, request: QuoteRequest, network_id: &str) -> Result<SwapResult, Box<dyn std::error::Error + Send + Sync>>   {
         let params = serde_urlencoded::to_string(&request)?;
         let url = format!("{}/swap/{}/{}/quote?{}", self.api_url, self.version, network_id, params);
-        return Ok(self.client
+        Ok(self.client
             .get(&url)
             .bearer_auth(self.api_key.as_str())
             .send()
             .await?
             .json::<SwapResult>()
-            .await?);
+            .await?)
     }
 
     pub async fn get_swap_quote_data(&self, request: QuoteRequest, network_id: &str) -> Result<SwapResult, Box<dyn std::error::Error + Send + Sync>>   {
         let params = serde_urlencoded::to_string(&request)?;
         let url = format!("{}/swap/{}/{}/swap?{}", self.api_url, self.version, network_id, params);
-        return Ok(self.client
+        Ok(self.client
             .get(&url)
             .bearer_auth(self.api_key.as_str())
             .send()
             .await?
             .json::<SwapResult>()
-            .await?);
+            .await?)
     }
 }

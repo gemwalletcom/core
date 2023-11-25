@@ -26,7 +26,7 @@ pub struct EthereumClient {
 
 impl EthereumClient {
     pub fn new(chain: Chain, url: String) -> Self {
-        let client = HttpClientBuilder::default().build(&url).unwrap();
+        let client = HttpClientBuilder::default().build(url).unwrap();
         
         Self {
             chain,

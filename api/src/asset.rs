@@ -1,5 +1,5 @@
 extern crate rocket;
-use primitives::AssetFull;
+use primitives::{AssetFull, Chain};
 use rocket::serde::json::Json;
 use crate::AssetsClient;
 use rocket::State;
@@ -14,12 +14,14 @@ pub async fn get_asset(
     Json(asset)
 }
 
-#[get("/assets/search?<query>")]
+#[get("/assets/search?<query>&<chains>")]
 pub async fn get_assets_search(
     query: String,
+    chains: Option<String>,
     client: &State<Mutex<AssetsClient>>,
 ) -> Json<Vec<AssetFull>> {
-    let assets = client.lock().await.get_assets_search(query.as_str()).unwrap();
+    let chains = chains.unwrap_or_default().split(',').flat_map(Chain::from_str).map(|x| x.to_string()).collect();
+    let assets = client.lock().await.get_assets_search(query.as_str(), chains).unwrap();
     Json(assets)
 }
 

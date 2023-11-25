@@ -21,7 +21,7 @@ const TOKEN_PROGRAM_ID: &str = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA";
 
 impl SolanaClient {
     pub fn new(url: String) -> Self {
-        let client = HttpClientBuilder::default().build(&url).unwrap();
+        let client = HttpClientBuilder::default().build(url).unwrap();
         Self {
             client,
         }
@@ -73,15 +73,13 @@ impl SolanaClient {
             let asset_id = AssetId { chain: self.get_chain(), token_id: Some(token_id) };
 
             let sender_account_index: i64 = if transaction.meta.pre_token_balances.len() == 1 {
-                transaction.meta.pre_token_balances.first()?.account_index.clone()
+                transaction.meta.pre_token_balances.first()?.account_index
+            } else if pre_token_balances.first()?.get_amount() >= post_token_balances.first()?.get_amount() {
+                pre_token_balances.first()?.account_index
             } else {
-                if pre_token_balances.first()?.get_amount() >= post_token_balances.first()?.get_amount() {
-                    pre_token_balances.first()?.account_index.clone()
-                } else {
-                    post_token_balances.last()?.account_index.clone()
-                }
+                post_token_balances.last()?.account_index
             };
-            let recipient_account_index = post_token_balances.iter().find(|b| b.account_index != sender_account_index)?.account_index.clone();
+            let recipient_account_index = post_token_balances.iter().find(|b| b.account_index != sender_account_index)?.account_index;
 
             let sender = transaction.meta.get_post_token_balance(sender_account_index)?;
             let recipient = transaction.meta.get_post_token_balance(recipient_account_index)?;

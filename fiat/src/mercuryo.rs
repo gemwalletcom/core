@@ -56,7 +56,7 @@ impl MercuryoClient {
     pub fn new(client: Client, widget_id: String, secret_key: String) -> Self {
         MercuryoClient {
             client,
-            widget_id: widget_id,
+            widget_id,
             secret_key,
         }
     }

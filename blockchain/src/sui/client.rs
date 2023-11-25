@@ -16,7 +16,7 @@ pub struct SuiClient {
 
 impl SuiClient {
     pub fn new(url: String) -> Self {
-        let client = HttpClientBuilder::default().build(&url).unwrap();
+        let client = HttpClientBuilder::default().build(url).unwrap();
 
         Self {
             client,

@@ -151,14 +151,14 @@ impl PriceUpdater {
             if let Some(chain) = get_chain_for_coingecko_id(x.0.as_str()) {
                 return Some((chain, Some(x.1.unwrap())))
             }
-            return None
+            None
         }).collect::<Vec<_>>();
 
         if let Some(chain) = get_chain_for_coingecko_id(coin_info.clone().id.as_str()) {
             values.push((chain, None));
         }
 
-        return values.into_iter().flat_map(|(chain, platform)| {
+        values.into_iter().flat_map(|(chain, platform)| {
             if let (Some(asset_type), Some(platform)) = (chain.default_asset_type(), platform.clone()) {
                 if platform.contract_address.is_empty() || platform.decimal_place.is_none() {
                     return None
@@ -173,7 +173,7 @@ impl PriceUpdater {
                     decimals,
                     asset_type,
                 };
-                return Some(asset);
+                Some(asset)
             } else if platform.is_none() {
                 return Some(Asset::from_chain(chain));
             } else {
@@ -181,7 +181,7 @@ impl PriceUpdater {
             }
         })
         .map(|x| (x, asset_details.clone()))
-        .collect::<Vec<_>>();
+        .collect::<Vec<_>>()
     }
 
     fn get_asset_details(&self, coin_info: CoinInfo) -> AssetDetails {
@@ -198,7 +198,7 @@ impl PriceUpdater {
         let repos = links.clone().repos_url.get("github").cloned().unwrap_or_default();
         let github = repos.into_iter().filter(|x| !x.is_empty()).collect::<Vec<_>>().first().cloned();
 
-        return AssetDetails {
+        AssetDetails {
             links: AssetLinks {
                 homepage,
                 explorer,
@@ -212,7 +212,7 @@ impl PriceUpdater {
                 coinmarketcap: Some(coinmarketcap),
                 discord,
             }
-        };
+        }
     }
 
 }
@@ -237,7 +237,7 @@ fn get_asset_id(chain: Chain, token_id: String) -> Option<String> {
         return Some(chain.as_str().to_string())
     }
     let token_id = format_token_id(chain, token_id)?;
-    return format!("{}_{}", chain.as_str(), token_id).into()
+    format!("{}_{}", chain.as_str(), token_id).into()
 }
 
 fn format_token_id(chain: Chain, token_id: String) -> Option<String> {
@@ -252,7 +252,7 @@ fn format_token_id(chain: Chain, token_id: String) -> Option<String> {
         Chain::OpBNB |
         Chain::Fantom |
         Chain::Gnosis => {
-            return Some(Address::from_str(&token_id).ok()?.to_checksum(None));
+            Some(Address::from_str(&token_id).ok()?.to_checksum(None))
         }
         Chain::Bitcoin |
         Chain::Litecoin |
@@ -268,7 +268,7 @@ fn format_token_id(chain: Chain, token_id: String) -> Option<String> {
         Chain::Sui |
         Chain::Ripple
         => {
-            return None;
+            None
         }
     }
 }
