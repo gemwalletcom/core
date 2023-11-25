@@ -241,6 +241,35 @@ impl Chain {
         }
     }
 
+    // miliseconds
+    pub fn block_time(&self) -> i64 {
+        match self {
+            Self::Ethereum => 12_000,
+            Self::Fantom => 1_000,
+            Self::OpBNB => 1_000,
+            Self::Arbitrum => 1_000,
+            Self::Optimism => 2_000,
+            Self::Polygon => 3_000,
+            Self::Base => 2_000,
+            Self::Gnosis => 5_000,
+            Self::Binance => 500,
+            Self::Bitcoin => 600_000,
+            Self::Litecoin => 120_000,
+            Self::SmartChain => 3_000,
+            Self::Solana => 500,
+            Self::Thorchain => 10_000,
+            Self::Cosmos => 6_000,
+            Self::Osmosis => 6_000,
+            Self::Ton => 5_000,
+            Self::Tron => 3_000,
+            Self::Doge => 60_000,
+            Self::Aptos => 500,
+            Self::AvalancheC => 2_000,
+            Self::Sui => 500,
+            Self::Ripple => 4_000,
+        }
+    }
+
     pub fn all() -> Vec<Chain> {
         Chain::iter().collect::<Vec<_>>()
     }
