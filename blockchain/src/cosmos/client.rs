@@ -33,7 +33,7 @@ impl CosmosClient {
         match tx.body {
             Some(body) => {
                 for message in body.messages {
-                    let hash = hex::encode(Sha256::digest(bytes.clone()));
+                    let hash = hex::encode(Sha256::digest(bytes.clone())).to_uppercase();
                     let sequence = tx.auth_info.clone().unwrap().signer_infos.first()?.sequence;
                     let default_denom = self.chain.as_denom();
                     match message.type_url.as_str() {
