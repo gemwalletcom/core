@@ -22,7 +22,7 @@ impl BitcoinClient {
     }
 
     pub async fn get_status(&self) -> Result<Status, Box<dyn Error + Send + Sync>> {
-        let url = format!("{}/api", self.url);
+        let url = format!("{}/api/", self.url);
         Ok(self.client.get(url).send().await?.json::<Status>().await?)
     }
 
