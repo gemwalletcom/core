@@ -41,11 +41,11 @@ impl FiatClient for MoonPayClient {
         &self,
         request: FiatBuyRequest,
         request_map: FiatMapping,
-    ) -> Result<FiatQuote, Box<dyn std::error::Error>> {
+    ) -> Result<FiatQuote, Box<dyn std::error::Error + Send + Sync>> {
 
         let ip_address_check = self.get_ip_address(request.clone().ip_address).await?;
         if !ip_address_check.is_allowed && !ip_address_check.is_buy_allowed {
-            return Err(Box::from("purchase is not allowed"));
+            return Err("purchase is not allowed".into());
         }
 
         let url = format!(

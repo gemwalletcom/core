@@ -51,7 +51,7 @@ impl FiatClient for TransakClient {
         &self,
         request: FiatBuyRequest,
         request_map: FiatMapping,
-    ) -> Result<FiatQuote, Box<dyn std::error::Error>> {
+    ) -> Result<FiatQuote, Box<dyn std::error::Error + Send + Sync>> {
         let url = format!(
             "{}/api/v2/currencies/price?ipAddress={}&fiatCurrency={}&cryptoCurrency={}&isBuyOrSell=buy&fiatAmount={}&network={}&partnerApiKey={}",
             TRANSAK_API_URL, request.ip_address, request.fiat_currency, request_map.symbol, request.fiat_amount, request_map.network.unwrap_or_default(), self.api_key

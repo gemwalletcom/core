@@ -12,7 +12,7 @@ pub struct RampClient {
     api_key: String,
 }
 
-const RAMP_API_BASE_URL: &str = "https://api-instant.ramp.network";
+const RAMP_API_BASE_URL: &str = "https://api.ramp.network";
 const RAMP_REDIRECT_URL: &str = "https://buy.ramp.network";
 
 #[async_trait]
@@ -25,15 +25,17 @@ impl FiatClient for RampClient {
         &self,
         request: FiatBuyRequest,
         request_map: FiatMapping,
-    ) -> Result<FiatQuote, Box<dyn std::error::Error>> {
+    ) -> Result<FiatQuote, Box<dyn std::error::Error + Send + Sync>> {
         let assets = self.get_assets(request.clone().fiat_currency, request.clone().ip_address).await?.assets;
 
-        if !assets.iter().any(|x| x.crypto_asset_symbol() == request_map.symbol) {
-            return Err(Box::from("asset not supported"));
+        let crypto_asset_symbol = format!("{}_{}", request_map.symbol, request_map.network.unwrap_or_default());
+
+        if !assets.iter().any(|x| x.crypto_asset_symbol() == crypto_asset_symbol) {
+            return Err("asset not supported".into());
         }
 
         let payload = QuoteRequest {
-            crypto_asset_symbol: request_map.symbol,
+            crypto_asset_symbol,
             fiat_currency: request.clone().fiat_currency,
             fiat_value: request.fiat_amount,
         };
@@ -51,7 +53,7 @@ impl RampClient {
         }
     }
 
-    async fn get_assets(&self, currency: String, ip_address: String) -> Result<QuoteAssets, Box<dyn std::error::Error>> {
+    async fn get_assets(&self, currency: String, ip_address: String) -> Result<QuoteAssets, Box<dyn std::error::Error + Send + Sync>> {
         let url = format!(
             "{}/api/host-api/v3/assets?currencyCode={}&userIp={}&withDisabled=false&withHidden=false",
             RAMP_API_BASE_URL, currency, ip_address
@@ -65,7 +67,7 @@ impl RampClient {
         Ok(assets)
     }
 
-    async fn get_client_quote(&self, request: QuoteRequest) -> Result<Quote, Box<dyn std::error::Error>> {
+    async fn get_client_quote(&self, request: QuoteRequest) -> Result<Quote, Box<dyn std::error::Error + Send + Sync>> {
         let url = format!(
             "{}/api/host-api/v3/onramp/quote/all?hostApiKey={}",
             RAMP_API_BASE_URL, self.api_key

@@ -1,5 +1,3 @@
-use std::error::Error;
-
 use reqwest::Client;
 use serde::Deserialize;
 use url::Url;
@@ -40,7 +38,7 @@ impl FiatClient for MercuryoClient {
         &self,
         request: FiatBuyRequest,
         request_map: FiatMapping,
-    ) -> Result<FiatQuote, Box<dyn Error>> {
+    ) -> Result<FiatQuote, Box<dyn std::error::Error + Send + Sync>> {
         let url = format!(
             "{}/v1.6/widget/buy/rate?from={}&to={}&amount={}&widget_id={}",
             MERCURYO_API_BASE_URL, request.fiat_currency, request_map.symbol, request.fiat_amount, self.widget_id

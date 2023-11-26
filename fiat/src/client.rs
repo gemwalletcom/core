@@ -7,7 +7,8 @@ use crate::moonpay::MoonPayClient;
 use crate::transak::TransakClient;
 use crate::mercuryo::MercuryoClient;
 use crate::ramp::RampClient;
-use primitives::{fiat_quote::FiatQuote, fiat_quote_request::FiatBuyRequest, fiat_provider::FiatProviderName, fiat_assets::FiatAssets};
+use futures::future::join_all;
+use primitives::{fiat_quote::FiatQuote, fiat_quote_request::FiatBuyRequest, fiat_assets::FiatAssets};
 //use futures::future::join_all;
 use storage::DatabaseClient;
 use reqwest::Client as RequestClient;
@@ -76,119 +77,37 @@ impl Client {
     }
 
     pub async fn get_quotes(&mut self, request: FiatBuyRequest, fiat_mapping_map: FiatMappingMap) -> Result<Vec<FiatQuote>, Box<dyn Error + Send + Sync>> {
-        let mut results: Vec<FiatQuote> = vec![];
-        
-        //TODO: Implement fetching async quotes.
+        let mut futures = vec![];
+
+        if let Some(value) = fiat_mapping_map.get(self.ramp.name().as_str()) {
+            futures.push(self.ramp.get_quote(request.clone(), value.clone()));
+        }
+
         if let Some(value) = fiat_mapping_map.get(self.moonpay.name().as_str()) {
-            let result = self.moonpay.get_quote(request.clone(), value.clone()).await;
-            match result {
-                Ok(value) => { 
-                    results.push(value)
-                }
-                Err(ee) => { 
-                    println!("error {}", ee);
-                }
-            }
+            futures.push(self.moonpay.get_quote(request.clone(), value.clone()));
         }
 
         if let Some(value) = fiat_mapping_map.get(self.transak.name().as_str()) {
-            let result = self.transak.get_quote(request.clone(), value.clone()).await;
-            match result {
-                Ok(value) => { 
-                    results.push(value)
-                }
-                Err(ee) => { 
-                    println!("error {}", ee);
-                }
-            }
+            futures.push(self.transak.get_quote(request.clone(), value.clone()));
         }
 
         if let Some(value) = fiat_mapping_map.get(self.mercuryo.name().as_str()) {
-            let result = self.mercuryo.get_quote(request.clone(), value.clone()).await;
-            match result {
-                Ok(value) => { 
-                    results.push(value)
-                }
-                Err(ee) => { 
-                    println!("error {}", ee);
-                }
-            }
+            futures.push(self.mercuryo.get_quote(request.clone(), value.clone()));
         }
 
-        //let futures = vec![
-            //self.moonpay.get_quote(request.clone(), fiat_mapping_map.get("MoonPay").expect("msg").clone()),
-            //self.transak.get_quote(request.clone(), fiat_mapping_map.get("Transak").expect("msg").clone()),
-            //self.get_quote(request.clone(), FiatProviderName::Transak, fiat_mapping_map.clone()),
-            //self.get_quote(request.clone(), FiatProviderName::Mercuryo, fiat_mapping_map.clone()),
-            //self.get_quote(request.clone(), FiatProviderName::MoonPay, fiat_mapping_map.clone()),
-            //self.get_quote(request.clone(), FiatProviderName::Ramp, fiat_mapping_map.clone()),
-        //];
-        // let results: Vec<FiatQuote> = join_all(futures)
-        //     .await
-        //     .into_iter()
-        //     .flatten()
-        //     .map(|quote| {
-        //         let mut result = quote.clone();
-        //         result.crypto_amount = precision(quote.crypto_amount, 5);
-        //         return result
-        //     })
-        //     .collect();
+        let results: Vec<FiatQuote> = join_all(futures)
+            .await
+            .into_iter()
+            .flatten()
+            .map(|quote| {
+                let mut result = quote.clone();
+                result.crypto_amount = precision(quote.crypto_amount, 5);
+                return result
+            })
+            .collect();
 
         Ok(results)
     }
-
-    #[allow(dead_code)]
-    async fn get_quote(&self, client: &dyn FiatClient, request: FiatBuyRequest, provider: FiatProviderName, fiat_mapping_map: FiatMappingMap) -> Result<FiatQuote, Box<dyn Error>> {
-        let mapping = fiat_mapping_map.get(provider.as_str()).expect("no mapping for the asset");
-        client.get_quote(request.clone(), mapping.clone()).await
-    }
-    
-    //TODO: Refactor to simplify and later use async traits
-    // async fn get_quote(&self, request: FiatBuyRequest, provider: FiatProviderName, fiat_mapping_map: FiatMappingMap) -> Result<FiatQuote, Box<dyn Error>> {
-    //     let mapping = fiat_mapping_map.get(provider.as_str()).expect("no mapping for the asset");
-    //     match provider {
-    //         FiatProviderName::Mercuryo => {
-    //             return self.mercuryo.get_quote(request.clone(), mapping.clone()).await;
-    //         },
-    //         FiatProviderName::Transak => {
-    //             return self.transak.get_quote(request.clone(), mapping.clone()).await;
-    //         },
-    //         FiatProviderName::MoonPay => {
-    //             return self.moonpay.get_quote(request.clone(), mapping.clone()).await;
-    //         },
-    //         FiatProviderName::Ramp => {
-    //             return self.ramp.get_quote(request.clone(), mapping.clone()).await;
-    //         },
-    //         // FiatProviderName::Mercuryo => {
-    //         //     let value = self.mercuryo
-    //         //         .get_quote(request.clone(), mapping.clone())
-    //         //         .await
-    //         //         .expect("no mercuryo quote");
-    //         //     Ok(value)
-    //         // },
-    //         // FiatProviderName::Transak => {
-    //         //     let value = self.transak
-    //         //         .get_quote(request.clone(), mapping.clone())
-    //         //         .await
-    //         //         .expect("no transak quote");
-    //         //     Ok(value)
-    //         // },
-    //         // FiatProviderName::MoonPay => {
-    //         //     let value = self.moonpay
-    //         //         .get_quote(request.clone(), mapping.clone())
-    //         //         .await
-    //         //         .expect("no moonpay quote");
-    //         //     Ok(value)
-    //         // },
-    //         // FiatProviderName::Ramp => {
-    //         //     let value = self.ramp
-    //         //         .get_quote(request.clone(), mapping.clone())
-    //         //         .await
-    //         //         .expect("no ramp quote");
-    //         //     Ok(value)
-    //         // },
-    //     }
-    // } 
 }
 
 #[allow(dead_code)]
