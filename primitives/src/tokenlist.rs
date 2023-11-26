@@ -1,4 +1,3 @@
-use typeshare::typeshare;
 use crate::Asset;
 use crate::{chain::Chain, AssetId};
 use crate::asset_type::AssetType;
