@@ -10,7 +10,8 @@ use base64::{engine::general_purpose, Engine as _};
 use sha2::{Sha256, Digest};
 use hex;
 
-const MESSAGE_SEND: &str = "/cosmos.bank.v1beta1.MsgSend";
+const MESSAGE_SEND_BETA: &str = "/cosmos.bank.v1beta1.MsgSend";
+const MESSAGE_SEND: &str = "/types.MsgSend"; // thorchain
 
 pub struct CosmosClient {
     chain: Chain,
@@ -36,8 +37,10 @@ impl CosmosClient {
                     let hash = hex::encode(Sha256::digest(bytes.clone())).to_uppercase();
                     let sequence = tx.auth_info.clone().unwrap().signer_infos.first()?.sequence;
                     let default_denom = self.chain.as_denom();
+
                     match message.type_url.as_str() {
-                        MESSAGE_SEND => {
+                        MESSAGE_SEND |
+                        MESSAGE_SEND_BETA => {
                             let message_send: cosmos_sdk_proto::cosmos::bank::v1beta1::MsgSend = cosmos_sdk_proto::prost::Message::decode(&*message.value).ok()?;
                             let fee = tx.auth_info.clone().unwrap().fee?.amount.into_iter().filter(|x| x.denom ==default_denom).collect::<Vec<_>>();
                             let coins = message_send.amount.clone().into_iter().filter(|x| x.denom == default_denom).collect::<Vec<_>>();
