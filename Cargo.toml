@@ -43,7 +43,7 @@ futures = "0.3.29"
 # db
 diesel = { version = "2.1.4", features = ["postgres", "chrono", "serde_json"] }
 diesel_migrations = { version = "2.1.0" }
-redis = { version = "0.23.3", features = ["tokio-comp", "json"] }
+redis = { version = "0.23.4", features = ["tokio-comp", "json"] }
 chrono = { version = "0.4.31", features = ["serde"] }
 
 # crypto
