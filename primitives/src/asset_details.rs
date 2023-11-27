@@ -5,6 +5,7 @@ use crate::{Asset, AssetMarket, Price, AssetScore};
 
 #[typeshare]
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct AssetFull {  
     pub asset: Asset,
     pub details: Option<AssetDetails>,
@@ -15,6 +16,7 @@ pub struct AssetFull {
 
 #[typeshare]
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct AssetDetails {
     pub links: AssetLinks,
 
