@@ -13,7 +13,7 @@ pub struct RampClient {
 }
 
 const RAMP_API_BASE_URL: &str = "https://api.ramp.network";
-const RAMP_REDIRECT_URL: &str = "https://buy.ramp.network";
+const RAMP_REDIRECT_URL: &str = "https://app.ramp.network";
 
 #[async_trait]
 impl FiatClient for RampClient {
