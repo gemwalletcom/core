@@ -95,7 +95,7 @@ impl Client {
             futures.push(self.mercuryo.get_quote(request.clone(), value.clone()));
         }
 
-        let results: Vec<FiatQuote> = join_all(futures)
+        let mut results: Vec<FiatQuote> = join_all(futures)
             .await
             .into_iter()
             .flatten()
@@ -105,6 +105,10 @@ impl Client {
                 return result
             })
             .collect();
+
+        results.sort_by(|a, b| {
+            b.crypto_amount.partial_cmp(&a.crypto_amount).unwrap()
+        });
 
         Ok(results)
     }
