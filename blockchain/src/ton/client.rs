@@ -24,7 +24,7 @@ impl TonClient {
         }
     }
 
-    pub fn map_transaction(&self, transaction: super::model::Transaction) -> Option<primitives::Transaction> {
+    pub fn map_transaction(&self, transaction: super::model::Transaction, block: i64) -> Option<primitives::Transaction> {
         // system transfer
         if transaction.fee != "0" && transaction.out_msgs.len() == 1 {
             let out_message = transaction.out_msgs.first().unwrap();
@@ -43,7 +43,7 @@ impl TonClient {
                 None,
                 TransactionType::Transfer,
                 state,
-                0.to_string(),
+                block.to_string(),
                 0.to_string(),
                 transaction.fee,
                 asset_id,
@@ -134,7 +134,7 @@ impl ChainProvider for TonClient {
         });
         let transactions = futures::future::join_all(futures).await.into_iter().filter_map(Result::ok).collect::<Vec<Transaction>>()
             .into_iter()
-            .flat_map(|x| self.map_transaction(x))
+            .flat_map(|x| self.map_transaction(x, block))
             .collect::<Vec<primitives::Transaction>>();
 
         Ok(transactions)
