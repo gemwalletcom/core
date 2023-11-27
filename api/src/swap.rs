@@ -18,6 +18,6 @@ pub async fn get_swap_quote(
 pub async fn get_swap_assets(
     client: &State<Mutex<crate::SwapClient>>,
 ) -> Json<FiatAssets> {
-    let quote = client.lock().await.get_assets().await.unwrap();
+    let quote = client.lock().await.get_swap_assets().await.unwrap();
     Json(quote)
 }

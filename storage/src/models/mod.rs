@@ -12,7 +12,6 @@ pub mod transaction;
 pub mod version;
 pub mod scan;
 pub mod transaction_addresses;
-pub mod swap_asset;
 
 pub use self::asset::Asset;
 pub use self::chart::Chart;
@@ -30,4 +29,3 @@ pub use self::transaction::Transaction;
 pub use self::version::Version;
 pub use self::scan::ScanAddress;
 pub use self::transaction_addresses::TransactionAddresses;
-pub use self::swap_asset::SwapAsset;

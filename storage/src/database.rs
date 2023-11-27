@@ -521,21 +521,17 @@ impl DatabaseClient {
 
     // swap
 
-    pub fn get_swap_assets(&mut self) -> Result<Vec<SwapAsset>, diesel::result::Error> {
-        use crate::schema::swap_assets::dsl::*;
-        swap_assets
-            .select(SwapAsset::as_select())
+    pub fn get_swap_assets(&mut self) -> Result<Vec<String>, diesel::result::Error> {
+        use crate::schema::assets_details::dsl::*;
+        assets_details
+            .filter(is_swappable.eq(true))
+            .select(asset_id)
             .load(&mut self.connection)
     }
 
     pub fn get_swap_assets_version(&mut self) -> Result<i32, diesel::result::Error> {
-        let version = self.get_swap_assets()?
-            .iter()
-            .map(|x| x.id)
-            .collect::<Vec<i32>>()
-            .iter()
-            .sum();
-        Ok(version)
+        let assets = self.get_swap_assets()?;
+        Ok(assets.len() as i32)
     }
 
     pub fn migrations(&mut self) {
