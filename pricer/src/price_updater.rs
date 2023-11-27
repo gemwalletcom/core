@@ -198,21 +198,21 @@ impl PriceUpdater {
         let repos = links.clone().repos_url.get("github").cloned().unwrap_or_default();
         let github = repos.into_iter().filter(|x| !x.is_empty()).collect::<Vec<_>>().first().cloned();
 
-        AssetDetails {
-            links: AssetLinks {
-                homepage,
-                explorer,
-                twitter,
-                telegram,
-                github,
-                youtube: None,
-                facebook,
-                reddit,
-                coingecko: Some(coingecko),
-                coinmarketcap: Some(coinmarketcap),
-                discord,
-            }
-        }
+        let links = AssetLinks {
+            homepage,
+            explorer,
+            twitter,
+            telegram,
+            github,
+            youtube: None,
+            facebook,
+            reddit,
+            coingecko: Some(coingecko),
+            coinmarketcap: Some(coinmarketcap),
+            discord,
+        };
+
+        AssetDetails::from_links(links)
     }
 
 }

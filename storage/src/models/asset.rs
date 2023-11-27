@@ -63,6 +63,11 @@ pub struct AssetDetail {
     pub coingecko: Option<String>,
     pub coinmarketcap: Option<String>,
     pub discord: Option<String>,
+
+    pub is_buyable: bool,
+    pub is_sellable: bool,
+    pub is_swappable: bool,
+    pub is_stakeable: bool,
 }
 
 impl AssetDetail {
@@ -80,7 +85,11 @@ impl AssetDetail {
                 coingecko: self.coingecko.clone(),
                 coinmarketcap: self.coinmarketcap.clone(),
                 discord: self.discord.clone(),
-            }
+            },
+            is_buyable: self.is_buyable,
+            is_sellable: self.is_sellable,
+            is_swapable: self.is_swappable,
+            is_stakeable: self.is_stakeable,
         }
     }
 
@@ -98,6 +107,10 @@ impl AssetDetail {
             coingecko: value.links.coingecko,
             coinmarketcap: value.links.coinmarketcap,
             discord: value.links.discord,
+            is_buyable: value.is_buyable,
+            is_sellable: value.is_sellable,
+            is_swappable: value.is_swapable,
+            is_stakeable: value.is_stakeable,
         }
     }
 }

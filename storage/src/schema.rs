@@ -49,6 +49,10 @@ diesel::table! {
         discord -> Nullable<Varchar>,
         updated_at -> Timestamp,
         created_at -> Timestamp,
+        is_buyable -> Bool,
+        is_sellable -> Bool,
+        is_swappable -> Bool,
+        is_stakeable -> Bool,
     }
 }
 
@@ -229,11 +233,11 @@ diesel::table! {
         fee -> Nullable<Varchar>,
         utxo_inputs -> Nullable<Jsonb>,
         utxo_outputs -> Nullable<Jsonb>,
-        metadata -> Nullable<Jsonb>,
         fee_asset_id -> Nullable<Varchar>,
         block_created_at -> Timestamp,
         updated_at -> Timestamp,
         created_at -> Timestamp,
+        metadata -> Nullable<Jsonb>,
     }
 }
 

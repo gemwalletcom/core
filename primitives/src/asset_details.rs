@@ -17,6 +17,23 @@ pub struct AssetFull {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AssetDetails {
     pub links: AssetLinks,
+
+    pub is_buyable: bool,
+    pub is_sellable: bool,
+    pub is_swapable: bool,
+    pub is_stakeable: bool,
+}
+
+impl AssetDetails {
+    pub fn from_links(links: AssetLinks) -> Self {
+        AssetDetails{
+            links,
+            is_buyable: false,
+            is_sellable: false,
+            is_swapable: false,
+            is_stakeable: false,
+        }
+    }
 }
 
 #[typeshare]
