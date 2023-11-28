@@ -10,7 +10,7 @@ CREATE TABLE transactions (
     block_number INTEGER NOT NULL,
     state VARCHAR(16) NOT NULL,
     kind VARCHAR(16) NOT NULL,
-    value VARCHAR(32),
+    value VARCHAR(256),
     asset_id VARCHAR REFERENCES assets (id) ON DELETE CASCADE,
     fee VARCHAR(32),
     utxo_inputs jsonb,
