@@ -155,7 +155,8 @@ impl ChainProvider for SolanaClient {
             Err(err) => {
                 match err {
                     jsonrpsee::core::Error::Call(err) => {
-                        if err.code() == MISSING_SLOT_ERROR || err.code() == NOT_AVAILABLE_SLOT_ERROR || CLEANUP_BLOCK_ERROR {
+                        let errors = vec![MISSING_SLOT_ERROR, NOT_AVAILABLE_SLOT_ERROR, CLEANUP_BLOCK_ERROR];
+                        if errors.contains(&err.code()) {
                             return Ok(vec![]);
                         } else {
                             return Err(Box::new(err));
