@@ -14,6 +14,7 @@ pub struct SolanaClient {
     client: HttpClient,
 }
 
+const CLEANUP_BLOCK_ERROR: i32 = -32001;
 const MISSING_SLOT_ERROR: i32 = -32007;
 const NOT_AVAILABLE_SLOT_ERROR: i32 = -32004;
 const SYSTEM_PROGRAM_ID: &str = "11111111111111111111111111111111";
@@ -154,7 +155,7 @@ impl ChainProvider for SolanaClient {
             Err(err) => {
                 match err {
                     jsonrpsee::core::Error::Call(err) => {
-                        if err.code() == MISSING_SLOT_ERROR || err.code() == NOT_AVAILABLE_SLOT_ERROR {
+                        if err.code() == MISSING_SLOT_ERROR || err.code() == NOT_AVAILABLE_SLOT_ERROR || CLEANUP_BLOCK_ERROR {
                             return Ok(vec![]);
                         } else {
                             return Err(Box::new(err));
