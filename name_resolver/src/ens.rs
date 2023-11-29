@@ -4,9 +4,9 @@ use async_trait::async_trait;
 use primitives::{
     chain::Chain,
     name::{NameProvider, NameRecord},
+    EthereumAddress,
 };
 use std::{error::Error, str::FromStr};
-use alloy_primitives::Address;
 
 pub struct ENSClient {
     provider: Provider,
@@ -28,11 +28,10 @@ impl NameClient for ENSClient {
 
     async fn resolve(&self, name: &str, chain: Chain) -> Result<NameRecord, Box<dyn Error>> {
         let address = self.provider.resolve_name(name, chain).await?;
-        let address = Address::from_str(&address)?.to_checksum(None);
         Ok(NameRecord {
             name: name.to_string(),
             chain,
-            address,
+            address: EthereumAddress::from_str(&address)?.to_checksum(),
             provider: Self::provider(),
         })
     }
