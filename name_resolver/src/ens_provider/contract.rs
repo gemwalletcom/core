@@ -1,7 +1,7 @@
-use super::keccak::keccak256;
 use super::namehash::namehash;
 use jsonrpsee::core::{client::ClientT, Error};
 use jsonrpsee::http_client::HttpClient;
+use primitives::keccak::keccak256;
 use serde_json::json;
 
 pub struct Contract {
