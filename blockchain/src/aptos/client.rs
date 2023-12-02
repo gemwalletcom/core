@@ -25,7 +25,7 @@ impl AptosClient {
     pub fn map_transaction(&self, transaction: super::model::Transaction, block_number: i64) -> Option<primitives::Transaction> {
         let events = transaction.clone().events.unwrap_or_default();
 
-        if transaction.transaction_type == "user_transaction" && events.len() == 2 && events[1].event_type == "0x1::coin::DepositEvent" {
+        if transaction.transaction_type == "user_transaction" && (events.len() == 2 || events.len() == 3) && events[1].event_type == "0x1::coin::DepositEvent" {
             let asset_id = self.get_chain().as_asset_id();
             let state = if transaction.success { TransactionState::Confirmed } else { TransactionState::Failed} ;
             let events = transaction.events.unwrap();
