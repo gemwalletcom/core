@@ -27,7 +27,7 @@ Run `make install` to install rust, typeshare
 | Cosmos       | ✅            | 🏗               |
 | Osmosis      | ✅            | 🏗               |
 | Arbitrum     | ✅            | ✅               |
-| Ton          | ✅            | ✅               |
+| Ton          | ✅            | 🏗               |
 | Tron         | ✅            | ✅               |
 | Optimism     | ✅            | ✅               |
 | Aptos        | ✅            | 🏗               |

@@ -98,6 +98,13 @@ impl Asset {
                 decimals: 6,
                 asset_type: AssetType::NATIVE,
             },
+            Chain::Celestia => Asset {
+                id: chain.as_asset_id(),
+                name: "Celestia".to_string(),
+                symbol: "TIA".to_string(),
+                decimals: 6,
+                asset_type: AssetType::NATIVE,
+            },
             Chain::Arbitrum => Asset {
                 id: chain.as_asset_id(),
                 name: "Arbitrum".to_string(),

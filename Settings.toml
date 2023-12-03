@@ -76,7 +76,7 @@ url = "https://api.mainnet-beta.solana.com"
 url = "https://eth.llamarpc.com"
 
 [chains.smartchain]
-url = "https://binance.llamarpc.com"
+url = "https://bsc-dataseed1.bnbchain.org"
 
 [chains.polygon]
 url = "https://polygon.llamarpc.com"
@@ -125,6 +125,9 @@ url = "https://fullnode.mainnet.aptoslabs.com"
 
 [chains.sui]
 url = "https://suins-rpc.mainnet.sui.io"
+
+[chains.celestia]
+url = "https://celestia-rpc.publicnode.com"
 
 [chains.bitcoin]
 url = ""
@@ -176,6 +179,7 @@ chains = [
     "cosmos",
     "osmosis",
     "thorchain",
+    "celestia",
     "tron",
     "ripple",
     "aptos",

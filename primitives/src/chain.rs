@@ -31,6 +31,7 @@ pub enum Chain {
     OpBNB,
     Fantom,
     Gnosis,
+    Celestia,
 }
 
 impl PartialEq for Chain {
@@ -61,7 +62,7 @@ impl Chain {
             "base" => Some(Self::Base),
             "avalanchec"=> Some(Self::AvalancheC),
             "sui"=> Some(Self::Sui),
-            "ripple"=> Some(Self::Ripple),
+            "ripple" | "xrp" => Some(Self::Ripple),
             "opbnb"=> Some(Self::OpBNB),
             "fantom"=> Some(Self::Fantom),
             "gnosis"=> Some(Self::Gnosis),
@@ -94,6 +95,7 @@ impl Chain {
             Self::OpBNB => "opbnb",
             Self::Fantom => "fantom",
             Self::Gnosis => "gnosis",
+            Self::Celestia => "celestia",
         }
     }
 
@@ -139,6 +141,7 @@ impl Chain {
             Self::Aptos => todo!(),
             Self::Sui => todo!(),
             Self::Ripple => todo!(),
+            Self::Celestia => todo!(),
         }
     }
 
@@ -173,8 +176,9 @@ impl Chain {
             Self::SmartChain => 9006,
             Self::Solana => 501,
             Self::Thorchain => 931,
-            Self::Cosmos => 118,
-            Self::Osmosis => 118,
+            Self::Cosmos |
+            Self::Osmosis |
+            Self::Celestia => 118,
             Self::Ton => 607,
             Self::Tron => 195,
             Self::Doge => 3,
@@ -204,7 +208,8 @@ impl Chain {
             Self::Solana => ChainType::Solana,
             Self::Thorchain |
             Self::Cosmos |
-            Self::Osmosis => ChainType::Cosmos,
+            Self::Osmosis | 
+            Self::Celestia => ChainType::Cosmos,
             Self::Ton => ChainType::Ton,
             Self::Tron => ChainType::Tron,
             Self::Aptos => ChainType::Aptos,
@@ -237,7 +242,8 @@ impl Chain {
             Self::Doge |
             Self::Aptos |
             Self::Sui |
-            Self::Ripple => None,
+            Self::Ripple |
+            Self::Celestia => None,
         }
     }
 
@@ -260,6 +266,7 @@ impl Chain {
             Self::Thorchain => 10_000,
             Self::Cosmos => 6_000,
             Self::Osmosis => 6_000,
+            Self::Celestia => 6_000,
             Self::Ton => 5_000,
             Self::Tron => 3_000,
             Self::Doge => 60_000,

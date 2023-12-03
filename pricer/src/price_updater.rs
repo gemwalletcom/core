@@ -361,6 +361,7 @@ fn format_token_id(chain: Chain, token_id: String) -> Option<String> {
         | Chain::Thorchain
         | Chain::Cosmos
         | Chain::Osmosis
+        | Chain::Celestia
         | Chain::Ton
         | Chain::Tron
         | Chain::Doge

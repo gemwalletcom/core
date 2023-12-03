@@ -46,6 +46,7 @@ impl SwapperClient {
                 self.thorchain.get_quote(quote).await
             },
             Chain::Osmosis => todo!(),
+            Chain::Celestia => todo!(),
             Chain::Ton => todo!(),
             Chain::Tron => todo!(),
             Chain::Aptos => todo!(),
