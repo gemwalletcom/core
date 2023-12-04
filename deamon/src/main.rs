@@ -16,7 +16,7 @@ use std::time::Duration;
 #[tokio::main]
 pub async fn main() {
     let settings = settings::Settings::new().unwrap();
-    let price_client = Client::new(&settings.redis.url, &settings.postgres.url).await.unwrap();
+    let price_client = Client::new(&settings.redis.url, &settings.postgres.url, &settings.clickhouse.url).await.unwrap();
     let coingecko_client = CoinGeckoClient::new(settings.coingecko.key.secret);
     let mut price_updater = PriceUpdater::new(price_client, coingecko_client);
     let mut version_client = VersionClient::new(&settings.postgres.url);
@@ -24,7 +24,7 @@ pub async fn main() {
     let assets_client = AssetsClient::new(settings.assets.url);
     let mut tokenlist_client  = TokenListClient::new(&settings.postgres.url, &assets_client);
 
-    // // update assets
+    // update assets
     let result = price_updater.update_assets().await;
     match result {
         Ok(count) => { println!("update assets: {}", count) }

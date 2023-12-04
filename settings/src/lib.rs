@@ -6,6 +6,7 @@ use serde::Deserialize;
 pub struct Settings {
     pub redis: Database,
     pub postgres: Database,
+    pub clickhouse: Database,
     pub fiat: Fiat,
     pub moonpay: MoonPay,
     pub transak: Transak,

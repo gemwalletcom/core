@@ -1,8 +1,11 @@
+[redis]
+url = "redis://default:@localhost:6379"
+
 [postgres]
 url = "postgres://username:password@localhost/api"
 
-[redis]
-url = "redis://default:@localhost:6379"
+[clickhouse]
+url = "http://localhost:8123"
 
 [coingecko.key]
 secret = ""

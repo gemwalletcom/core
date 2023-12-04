@@ -2,6 +2,7 @@ use crate::client::Client;
 use crate::coingecko::{CoinGeckoClient, CoinInfo, CoinMarket};
 use crate::price_mapper::get_chain_for_coingecko_id;
 use crate::DEFAULT_FIAT_CURRENCY;
+use crate::storage::ChartPrice;
 use primitives::chain::Chain;
 use primitives::{Asset, AssetDetails, AssetId, AssetLinks, EthereumAddress};
 use std::collections::HashSet;
@@ -86,9 +87,15 @@ impl PriceUpdater {
         for price in prices.clone() {
             charts_map.insert(price.chart_value());
         }
-        let charts = charts_map.into_iter().collect();
+        let charts: Vec<Chart> = charts_map.into_iter().collect();
 
-        let _ = self.price_client.set_charts(charts).await?;
+        let _ = self.price_client.set_charts(charts.clone()).await?;
+
+        let charts_prices = charts.clone().into_iter().map(|x| 
+            ChartPrice{ coin_id: x.coin_id, price: x.price, created_at: x.date.timestamp() as u64 } 
+        ).collect();
+
+        let _ = self.price_client.set_charts_prices(charts_prices).await?;
 
         Ok(count)
     }

@@ -73,7 +73,22 @@ services:
     ports:
       - 5432:5432
     restart: always
+    #volumes:
+    # - postgres:/var/lib/postgresql/data
     environment:
       POSTGRES_USER: username
       POSTGRES_PASSWORD: password
       POSTGRES_DB: api
+  
+  clickhouse_server:
+    image: yandex/clickhouse-server
+    ports:
+      - "8123:8123"   # HTTP interface
+      - "9000:9000"   # Native interface
+      - "9009:9009"   # TCP interface
+    volumes:
+      - clickhouse:/var/lib/clickhouse
+
+volumes:
+  postgres:
+  clickhouse:

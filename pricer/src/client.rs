@@ -5,21 +5,25 @@ use std::{collections::HashMap, error::Error};
 
 use storage::models::Price;
 
+use crate::{ClickhouseDatabase, storage::ChartPrice};
+
 pub struct Client {
     conn: Connection,
     database: DatabaseClient,
+    clickhouse_database: ClickhouseDatabase,
     prefix: String,
 }
 
 impl Client {
-    pub async fn new(redis_url: &str, database_url: &str) -> RedisResult<Self> {
+    pub async fn new(redis_url: &str, database_url: &str, clichouse_database_url: &str) -> RedisResult<Self> {
         let client = redis::Client::open(redis_url)?;
         let conn = client.get_async_connection().await?;
         let database = DatabaseClient::new(database_url);
-
+        let clickhouse_database = ClickhouseDatabase::new(clichouse_database_url);
         Ok(Self {
             conn,
             database,
+            clickhouse_database,
             prefix: "prices:".to_owned(),
         })
     }
@@ -48,6 +52,11 @@ impl Client {
 
     pub async fn set_charts(&mut self, charts: Vec<Chart>) -> Result<usize, Box<dyn Error>> {
         Ok(self.database.set_charts(charts)?)
+    }
+
+    pub async fn set_charts_prices(&mut self, charts: Vec<ChartPrice>) -> Result<usize, Box<dyn Error>> {
+        let _ = self.clickhouse_database.add_charts(charts).await?;
+        Ok(0)
     }
 
     pub fn get_charts_prices(&mut self, coin_id: &str, period: &ChartPeriod, _currency: &str) -> Result<Vec<ChartValue>, Box<dyn Error>> {
