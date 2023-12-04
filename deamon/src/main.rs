@@ -15,6 +15,7 @@ use std::time::Duration;
 
 #[tokio::main]
 pub async fn main() {
+    println!("deamon init");
     let settings = settings::Settings::new().unwrap();
     let price_client = Client::new(&settings.redis.url, &settings.postgres.url, &settings.clickhouse.url).await.unwrap();
     let coingecko_client = CoinGeckoClient::new(settings.coingecko.key.secret);
