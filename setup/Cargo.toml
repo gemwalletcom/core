@@ -10,6 +10,7 @@ tokio = { workspace = true }
 config = { workspace = true }
 storage = { path = "../storage" }
 settings = { path = "../settings" }
+pricer = { path = "../pricer" }
 diesel = { workspace = true }
 # async-trait = { workspace = true }
 primitives = { path = "../primitives" }

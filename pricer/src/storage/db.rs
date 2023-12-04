@@ -6,6 +6,9 @@ pub struct ClickhouseDatabase {
     client: Client,
 }
 
+const CREATE_TABLES: &str = include_str!("./migration.sql");
+
+//TODO: Migrate to storage crate
 impl ClickhouseDatabase {
     pub fn new(url: &str) -> Self {
         let client = Client::default()
@@ -15,6 +18,10 @@ impl ClickhouseDatabase {
         Self {
             client,
         }
+    }
+
+    pub async fn migrations(&self) -> Result<()> {
+        self.client.query(CREATE_TABLES).execute().await
     }
 
     pub async fn add_charts(&self, charts: Vec<ChartPrice>) -> Result<u64> {

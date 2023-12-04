@@ -1,3 +1,4 @@
+use pricer::ClickhouseDatabase;
 use primitives::{Chain, Asset};
 use settings::Settings;
 use storage::DatabaseClient;
@@ -11,6 +12,11 @@ async fn main() {
     let postgres_url = settings.postgres.url.as_str();
     let mut database_client: DatabaseClient = DatabaseClient::new(postgres_url);    
     database_client.migrations();
+    println!("postgres migrations complete");
+
+    let clickhouse_database = ClickhouseDatabase::new(&settings.clickhouse.url);
+    let _ = clickhouse_database.migrations().await;
+    println!("clickhouse migrations complete");
 
     let chains = settings.parser.chains.into_iter().filter_map(|chain| Chain::from_str(chain.as_str())).collect::<Vec<_>>();
 

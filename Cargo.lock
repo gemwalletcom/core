@@ -3722,6 +3722,7 @@ version = "1.0.0"
 dependencies = [
  "config",
  "diesel",
+ "pricer",
  "primitives",
  "serde",
  "serde_json",
