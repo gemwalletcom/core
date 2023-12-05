@@ -13,7 +13,8 @@ impl ClickhouseDatabase {
     pub fn new(url: &str) -> Self {
         let client = Client::default()
             .with_url(url)
-            .with_database("api");
+            .with_database("api")
+            .with_option("max_partitions_per_insert_block", "10000");
             
         Self {
             client,
