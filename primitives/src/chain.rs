@@ -106,6 +106,7 @@ impl Chain {
             Self::Thorchain => "rune",
             Self::Cosmos => "uatom",
             Self::Osmosis => "uosmo",
+            Self::Celestia => "utia",
             Self::Sui => "0x2::sui::SUI",
             _ => {
                 ""
