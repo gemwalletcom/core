@@ -130,7 +130,7 @@ url = "https://fullnode.mainnet.aptoslabs.com"
 url = "https://suins-rpc.mainnet.sui.io"
 
 [chains.celestia]
-url = "https://celestia-rpc.publicnode.com"
+url = "https://api.celestia.pops.one"
 
 [chains.bitcoin]
 url = ""

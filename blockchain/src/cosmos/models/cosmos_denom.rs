@@ -3,4 +3,5 @@ pub enum CosmosDenom {
     rune,
     uatom,
     uosmo,
+    utia,
 }

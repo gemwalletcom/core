@@ -66,6 +66,7 @@ impl Chain {
             "opbnb"=> Some(Self::OpBNB),
             "fantom"=> Some(Self::Fantom),
             "gnosis"=> Some(Self::Gnosis),
+            "celestia"=> Some(Self::Celestia),
             _ => None, 
         }
     }

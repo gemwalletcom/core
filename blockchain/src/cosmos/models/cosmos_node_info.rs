@@ -5,5 +5,5 @@ struct CosmosNodeInfo {
 
 #[typeshare]
 struct CosmosNodeInfoResponse {
-    node_info: CosmosNodeInfo,
+    default_node_info: CosmosNodeInfo,
 }
