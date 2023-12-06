@@ -1,5 +1,4 @@
 use chrono::{Utc, Duration, NaiveDateTime};
-use diesel::dsl::sql;
 use diesel::{Connection, upsert::excluded};
 use diesel::pg::PgConnection;
 use primitives::chain::Chain;
@@ -9,7 +8,7 @@ use crate::schema::{devices, transactions_addresses};
 use diesel::prelude::*;
 use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("../storage/src/migrations");
-use primitives::{TransactionsFetchOption, ChartPeriod};
+use primitives::TransactionsFetchOption;
 
 pub struct DatabaseClient {
     connection: PgConnection,
@@ -151,59 +150,12 @@ impl DatabaseClient {
             .load(&mut self.connection)
     }
 
-    pub fn set_charts(&mut self, values: Vec<Chart>) -> Result<usize, diesel::result::Error> {
-        use crate::schema::charts::dsl::*;
-        diesel::insert_into(charts)
-            .values(&values)
-            .on_conflict((coin_id, date))
-            .do_update()
-            .set((
-                price.eq(excluded(price)),
-            ))
-            .execute(&mut self.connection)
-    }
-
-    pub fn get_charts_prices(&mut self, coin_id_value: &str, period: &ChartPeriod) -> Result<Vec<ChartResult>, diesel::result::Error> {
-        use crate::schema::charts::dsl::*;
-        let date_selection = format!("date_bin('{}', date, timestamp '2000-01-01')", self.period_sql(period.clone()));
-        return charts
-            .select(
-                (sql::<diesel::sql_types::Timestamp>(date_selection.as_str()),
-                (sql::<diesel::sql_types::Double>("AVG(price)")),
-            ))
-            .filter(coin_id.eq(coin_id_value))
-            .filter(               
-                 sql::<diesel::sql_types::Bool>(format!("date >= now() - INTERVAL '{} minutes'", self.period_minutes(period.clone())).as_str()),
-            )
-            .group_by(
-                sql::<diesel::sql_types::Numeric>("1"),
-            )
-            .order(sql::<diesel::sql_types::Numeric>("1").desc())
-            .load(&mut self.connection);
-    }
-
-    fn period_sql(&self, period: ChartPeriod) -> &str {
-        match period {
-            ChartPeriod::Hour => "1 minutes",
-            ChartPeriod::Day => "15 minutes",
-            ChartPeriod::Week => "1 hour",
-            ChartPeriod::Month => "6 hour",
-            ChartPeriod::Quarter => "1 day",
-            ChartPeriod::Year => "3 day",
-            ChartPeriod::All => "3 day",
-        }
-    }
-
-    fn period_minutes(&self, period: ChartPeriod) -> i32 {
-        match period {
-            ChartPeriod::Hour => 60,
-            ChartPeriod::Day => 1440,
-            ChartPeriod::Week => 10_080,
-            ChartPeriod::Month => 43_200,
-            ChartPeriod::Quarter => 131_400,
-            ChartPeriod::Year => 525_600,
-            ChartPeriod::All => 10_525_600,
-        }
+    pub fn get_fiat_rate(&mut self, currency: &str) ->  Result<FiatRate, diesel::result::Error> {
+        use crate::schema::fiat_rates::dsl::*;
+        fiat_rates
+            .filter(symbol.eq(currency))
+            .select(FiatRate::as_select())
+            .first(&mut self.connection)
     }
 
     pub fn set_version(&mut self, version: Version) -> Result<usize, diesel::result::Error> {

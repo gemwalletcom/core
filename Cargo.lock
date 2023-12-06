@@ -2723,7 +2723,6 @@ name = "pricer"
 version = "1.0.0"
 dependencies = [
  "chrono",
- "clickhouse",
  "primitives",
  "redis",
  "reqwest",
@@ -4061,6 +4060,7 @@ name = "storage"
 version = "1.0.0"
 dependencies = [
  "chrono",
+ "clickhouse",
  "diesel",
  "diesel_migrations",
  "primitives",

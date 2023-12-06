@@ -7,6 +7,9 @@ pub use self::database::DatabaseClient;
 pub mod schema;
 pub mod models;
 
+pub mod clickhouse_database;
+pub use self::clickhouse_database::ClickhouseDatabase;
+
 pub struct RedisClient {
     conn: Connection,
 }

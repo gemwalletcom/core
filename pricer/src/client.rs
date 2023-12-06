@@ -1,11 +1,11 @@
 use primitives::{ChartValue, ChartPeriod, Asset, AssetDetails};
 use redis::{aio::Connection, AsyncCommands, RedisResult};
-use storage::{database::DatabaseClient, models::{FiatRate, Chart}};
+use storage::{DatabaseClient, ClickhouseDatabase, models::{FiatRate, ChartCoinPrice}};
 use std::{collections::HashMap, error::Error};
 
 use storage::models::Price;
 
-use crate::{ClickhouseDatabase, storage::ChartPrice};
+use crate::DEFAULT_FIAT_CURRENCY;
 
 pub struct Client {
     conn: Connection,
@@ -50,23 +50,36 @@ impl Client {
         Ok(self.database.get_fiat_rates()?)
     }
 
-    pub async fn set_charts(&mut self, charts: Vec<Chart>) -> Result<usize, Box<dyn Error>> {
-        Ok(self.database.set_charts(charts)?)
-    }
-
-    pub async fn set_charts_prices(&mut self, charts: Vec<ChartPrice>) -> Result<usize, Box<dyn Error>> {
+    pub async fn set_charts(&mut self, charts: Vec<ChartCoinPrice>) -> Result<usize, Box<dyn Error>> {
         let _ = self.clickhouse_database.add_charts(charts).await?;
         Ok(0)
     }
 
-    pub fn get_charts_prices(&mut self, coin_id: &str, period: &ChartPeriod, _currency: &str) -> Result<Vec<ChartValue>, Box<dyn Error>> {
-        //TODO: Get rates for currency and calculate prices
-        let prices = self.database
-            .get_charts_prices(coin_id, period)?
+    pub async fn get_charts_prices(&mut self, coin_id: &str, period: ChartPeriod, currency: &str) -> Result<Vec<ChartValue>, Box<dyn Error>> {
+        let base_rate = self.database.get_fiat_rate(DEFAULT_FIAT_CURRENCY)?;
+        let rate = self.database.get_fiat_rate(currency)?;
+        let rate_multiplier = rate.rate / base_rate.rate;
+        let interval = self.period_sql(period.clone());
+        let prices = self.clickhouse_database
+            .get_charts(coin_id, interval, period.minutes())
+            .await?
             .into_iter().map(|x| 
-                ChartValue{timestamp: (x.0.timestamp() as i32) , value: x.1}
+                ChartValue{timestamp: x.date as i32, value: x.price * rate_multiplier}
             ).collect();
+
         Ok(prices)
+    }
+
+    fn period_sql(&self, period: ChartPeriod) -> &str {
+        match period {
+            ChartPeriod::Hour => "1 minute",
+            ChartPeriod::Day => "15 minute",
+            ChartPeriod::Week => "1 hour",
+            ChartPeriod::Month => "6 hour",
+            ChartPeriod::Quarter => "1 day",
+            ChartPeriod::Year => "3 day",
+            ChartPeriod::All => "3 day",
+        }
     }
 
     // cache

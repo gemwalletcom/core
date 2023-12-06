@@ -12,4 +12,3 @@ redis = { workspace = true }
 reqwest = { workspace = true }
 primitives = { path = "../primitives" }
 chrono = { workspace = true }
-clickhouse = { workspace = true }

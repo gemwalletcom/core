@@ -2,12 +2,11 @@ use crate::client::Client;
 use crate::coingecko::{CoinGeckoClient, CoinInfo, CoinMarket};
 use crate::price_mapper::get_chain_for_coingecko_id;
 use crate::DEFAULT_FIAT_CURRENCY;
-use crate::storage::ChartPrice;
 use primitives::chain::Chain;
 use primitives::{Asset, AssetDetails, AssetId, AssetLinks, EthereumAddress};
 use std::collections::HashSet;
 use std::error::Error;
-use storage::models::{Chart, Price};
+use storage::models::{Price, ChartCoinPrice};
 
 pub struct PriceUpdater {
     coin_gecko_client: CoinGeckoClient,
@@ -83,19 +82,11 @@ impl PriceUpdater {
         let prices: Vec<Price> = prices_map.into_iter().collect();
         let count = self.price_client.set_prices(prices.clone()).await?;
 
-        let mut charts_map: HashSet<Chart> = HashSet::new();
-        for price in prices.clone() {
-            charts_map.insert(price.chart_value());
-        }
-        let charts: Vec<Chart> = charts_map.into_iter().collect();
-
-        let _ = self.price_client.set_charts(charts.clone()).await?;
-
-        let charts_prices = charts.clone().into_iter().map(|x| 
-            ChartPrice{ coin_id: x.coin_id, price: x.price, created_at: x.date.timestamp() as u64 } 
+        let charts = prices.clone().into_iter().map(|x| 
+            ChartCoinPrice{ coin_id: x.coin_id, price: x.price, created_at: x.last_updated_at.timestamp() as u64 } 
         ).collect();
 
-        let _ = self.price_client.set_charts_prices(charts_prices).await?;
+        let _ = self.price_client.set_charts(charts).await?;
 
         Ok(count)
     }

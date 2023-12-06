@@ -81,4 +81,16 @@ impl ChartPeriod {
             _ => None,
         }
     }
+
+    pub fn minutes(&self) -> i32 {
+        match self {
+            ChartPeriod::Hour => 60,
+            ChartPeriod::Day => 1440,
+            ChartPeriod::Week => 10_080,
+            ChartPeriod::Month => 43_200,
+            ChartPeriod::Quarter => 131_400,
+            ChartPeriod::Year => 525_600,
+            ChartPeriod::All => 10_525_600,
+        }
+    }
 }

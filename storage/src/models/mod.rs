@@ -14,8 +14,7 @@ pub mod scan;
 pub mod transaction_addresses;
 
 pub use self::asset::Asset;
-pub use self::chart::Chart;
-pub use self::chart::ChartResult;
+pub use self::chart::{ChartPrice, ChartCoinPrice};
 pub use self::device::Device;
 pub use self::device::UpdateDevice;
 pub use self::fiat_asset::FiatAsset;
