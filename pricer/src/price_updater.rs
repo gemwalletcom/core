@@ -99,6 +99,10 @@ impl PriceUpdater {
 
             println!("update_charts: {}, count: {:?}", coin_id.id.as_str(), prices.prices.len());
 
+            if prices.prices.len() < 10 {
+                continue;
+            }
+
             let charts = prices.prices.into_iter().map(|x| 
                 ChartCoinPrice{ coin_id: coin_id.id.clone(), price: x[1], created_at: x[0] as u64 } 
             ).collect::<Vec<ChartCoinPrice>>();
