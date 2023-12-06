@@ -166,7 +166,7 @@ percent = 0.0
 address = ""
 
 [parser]
-retry = 1
+retry = 0
 timeout = 1000 # ms
 chains = [
     "ethereum",
