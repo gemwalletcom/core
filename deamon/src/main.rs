@@ -54,11 +54,11 @@ pub async fn main() {
     }
 
     // updates charts
-    let result = price_updater.update_charts().await;
-    match result {
-        Ok(count) => { println!("update charts: {}", count) }
-        Err(err) => { println!("update charts error: {}", err) }
-    }
+    // let result = price_updater.update_charts().await;
+    // match result {
+    //     Ok(count) => { println!("update charts: {}", count) }
+    //     Err(err) => { println!("update charts error: {}", err) }
+    // }
 
     loop {
         // updates prices

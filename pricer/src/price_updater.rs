@@ -96,39 +96,14 @@ impl PriceUpdater {
     pub async fn update_charts(&mut self) -> Result<usize, Box<dyn std::error::Error>> {
         let coin_list = self.coin_gecko_client.get_coin_list().await?;
 
-
-        let mut start = false;
-
         for coin_id in coin_list.clone() {
-            
-            if coin_id.id == "phonon-dao" {
-                start = true;
-                continue;
-            }
+            let prices = self.coin_gecko_client.get_market_chart(coin_id.id.as_str()).await?;
 
-            if start == false {
-                continue;
-            }
+            let charts = prices.prices.clone().into_iter().map(|x| 
+                ChartCoinPrice{ coin_id: coin_id.id.clone(), price: x[1], created_at: x[0] as u64 } 
+            ).collect::<Vec<ChartCoinPrice>>();
 
-            let prices = self.coin_gecko_client.get_market_chart(coin_id.id.as_str()).await;
-
-            match prices {
-                Ok(prices) => {
-                    let charts = prices.prices.clone().into_iter().map(|x| 
-                        ChartCoinPrice{ coin_id: coin_id.id.clone(), price: x[1], created_at: x[0] as u64 } 
-                    ).collect::<Vec<ChartCoinPrice>>();
-        
-                    let _ = self.price_client.set_charts(charts).await?;
-        
-                    println!("update_charts: {}, count: {:?}", coin_id.id.as_str(), prices.prices.len());
-
-                    thread::sleep(Duration::from_millis(100));
-                }
-                Err(err) => {
-                    println!("update charts: {}, error: {:?}", coin_id.id.as_str(), err);
-                    continue;
-                } 
-            }
+            let _ = self.price_client.set_charts(charts).await?;
         }
         Ok(coin_list.len())
     }
