@@ -40,6 +40,11 @@ pub struct DetailPlatform {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct MarketChart {
+    pub prices: Vec<Vec<f64>>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct CoinMarket {
     pub id: String,
     pub symbol: String,
@@ -181,5 +186,17 @@ impl CoinGeckoClient {
         }
 
         Ok(all_coin_markets)
+    }
+
+    pub async fn get_market_chart(&self, coin_id: &str) -> Result<MarketChart, Error> {
+        let url = format!("{}/api/v3/coins/{}/market_chart?vs_currency=usd&days=max&interval=daily&precision=full&x_cg_pro_api_key={}",self.url, coin_id, self.api_key);
+        let response = self.client
+            .get(url)
+            .send()
+            .await?
+            .json::<MarketChart>()
+            .await?;
+
+        return Ok(response);
     }
 }

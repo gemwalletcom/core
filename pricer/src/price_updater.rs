@@ -91,6 +91,23 @@ impl PriceUpdater {
         Ok(count)
     }
 
+    pub async fn update_charts(&mut self) -> Result<usize, Box<dyn std::error::Error>> {
+        let coin_list = self.coin_gecko_client.get_coin_list().await?;
+
+        for coin_id in coin_list.clone() {
+            let prices = self.coin_gecko_client.get_market_chart(coin_id.id.as_str()).await?;
+
+            println!("update_charts: {}, count: {:?}", coin_id.id.as_str(), prices.prices.len());
+
+            let charts = prices.prices.into_iter().map(|x| 
+                ChartCoinPrice{ coin_id: coin_id.id.clone(), price: x[1], created_at: x[0] as u64 } 
+            ).collect::<Vec<ChartCoinPrice>>();
+
+            let _ = self.price_client.set_charts(charts).await?;
+        }
+        Ok(coin_list.len())
+    }
+
     pub async fn update_cache(&mut self) -> Result<usize, Box<dyn Error>> {
         let prices = self.price_client.get_prices()?;
         let rates = self.price_client.get_fiat_rates()?;
