@@ -1,5 +1,5 @@
 FROM lukemathwalker/cargo-chef:latest-rust-1.71.0 AS chef
-WORKDIR app
+WORKDIR /app
 
 FROM chef AS planner
 COPY . .
@@ -14,7 +14,7 @@ COPY . .
 RUN cargo build --release
 
 FROM debian:bullseye AS runtime
-WORKDIR app
+WORKDIR /app
 COPY --from=builder /app/target/release/api /app
 COPY --from=builder /app/target/release/deamon /app
 COPY --from=builder /app/target/release/parser /app
