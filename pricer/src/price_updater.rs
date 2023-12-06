@@ -102,7 +102,15 @@ impl PriceUpdater {
                     let charts = prices.prices.clone().into_iter().map(|x| 
                         ChartCoinPrice{ coin_id: coin_id.id.clone(), price: x[1], created_at: (x[0] as u64) / 1000 } 
                     ).collect::<Vec<ChartCoinPrice>>();
-                    let _ = self.price_client.set_charts(charts).await?;
+                    
+                    match self.price_client.set_charts(charts).await {
+                        Ok(_) => {
+                            println!("set charts {}", coin_id.id.clone());
+                        },
+                        Err(err) => {
+                            println!("set charts error: {}", err);
+                        },
+                    };
 
                     println!("update charts {}", coin_id.id.clone());
                 }
