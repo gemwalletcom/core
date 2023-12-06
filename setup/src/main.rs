@@ -1,7 +1,6 @@
-use pricer::ClickhouseDatabase;
 use primitives::{Chain, Asset};
 use settings::Settings;
-use storage::DatabaseClient;
+use storage::{DatabaseClient, ClickhouseDatabase};
 
 #[tokio::main]
 async fn main() {
