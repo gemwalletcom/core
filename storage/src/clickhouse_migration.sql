@@ -5,5 +5,5 @@ CREATE TABLE IF NOT EXISTS charts
     created_at         DateTime64(0)
 )
 ENGINE = ReplacingMergeTree
-    PARTITION BY (coin_id, toYYYYMMDD(created_at))
+    PARTITION BY (coin_id, toYYYYMM(created_at))
     ORDER BY (coin_id, created_at);
