@@ -57,17 +57,6 @@ diesel::table! {
 }
 
 diesel::table! {
-    charts (id) {
-        id -> Int4,
-        coin_id -> Varchar,
-        date -> Timestamp,
-        price -> Float8,
-        market_cap -> Float8,
-        volume -> Float8,
-    }
-}
-
-diesel::table! {
     devices (id) {
         id -> Int4,
         #[max_length = 32]
@@ -269,7 +258,6 @@ diesel::joinable!(transactions_addresses -> transactions (transaction_id));
 diesel::allow_tables_to_appear_in_same_query!(
     assets,
     assets_details,
-    charts,
     devices,
     fiat_assets,
     fiat_rates,
