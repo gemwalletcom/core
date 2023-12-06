@@ -6,6 +6,8 @@ use primitives::chain::Chain;
 use primitives::{Asset, AssetDetails, AssetId, AssetLinks, EthereumAddress};
 use std::collections::HashSet;
 use std::error::Error;
+use std::thread;
+use std::time::Duration;
 use storage::models::{Price, ChartCoinPrice};
 
 pub struct PriceUpdater {
@@ -108,6 +110,8 @@ impl PriceUpdater {
             ).collect::<Vec<ChartCoinPrice>>();
 
             let _ = self.price_client.set_charts(charts).await?;
+
+            thread::sleep(Duration::from_millis(100));
         }
         Ok(coin_list.len())
     }
