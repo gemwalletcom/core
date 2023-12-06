@@ -6,8 +6,6 @@ use primitives::chain::Chain;
 use primitives::{Asset, AssetDetails, AssetId, AssetLinks, EthereumAddress};
 use std::collections::HashSet;
 use std::error::Error;
-use std::thread;
-use std::time::Duration;
 use storage::models::{Price, ChartCoinPrice};
 
 pub struct PriceUpdater {
@@ -97,13 +95,23 @@ impl PriceUpdater {
         let coin_list = self.coin_gecko_client.get_coin_list().await?;
 
         for coin_id in coin_list.clone() {
-            let prices = self.coin_gecko_client.get_market_chart(coin_id.id.as_str()).await?;
+            let prices = self.coin_gecko_client.get_market_chart(coin_id.id.as_str()).await;
 
-            let charts = prices.prices.clone().into_iter().map(|x| 
-                ChartCoinPrice{ coin_id: coin_id.id.clone(), price: x[1], created_at: x[0] as u64 } 
-            ).collect::<Vec<ChartCoinPrice>>();
+            match prices {
+                Ok(prices) => {
+                    let charts = prices.prices.clone().into_iter().map(|x| 
+                        ChartCoinPrice{ coin_id: coin_id.id.clone(), price: x[1], created_at: (x[0] as u64) / 1000 } 
+                    ).collect::<Vec<ChartCoinPrice>>();
+                    let _ = self.price_client.set_charts(charts).await?;
 
-            let _ = self.price_client.set_charts(charts).await?;
+                    println!("update charts {}", coin_id.id.clone());
+                }
+                Err(err) => {
+                    println!("update charts error: {}", err);
+                    continue;
+                }
+            }
+            
         }
         Ok(coin_list.len())
     }
