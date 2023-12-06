@@ -6,6 +6,8 @@ use primitives::chain::Chain;
 use primitives::{Asset, AssetDetails, AssetId, AssetLinks, EthereumAddress};
 use std::collections::HashSet;
 use std::error::Error;
+use std::thread;
+use std::time::Duration;
 use storage::models::{Price, ChartCoinPrice};
 
 pub struct PriceUpdater {
@@ -113,6 +115,8 @@ impl PriceUpdater {
                     };
 
                     println!("update charts {}", coin_id.id.clone());
+
+                    thread::sleep(Duration::from_millis(100));
                 }
                 Err(err) => {
                     println!("update charts error: {}", err);
