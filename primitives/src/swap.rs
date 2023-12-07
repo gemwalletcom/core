@@ -74,8 +74,6 @@ pub struct SwapQuoteData {
     pub to: String,
     pub value: String,
     pub data: String,
-    #[typeshare(skip)] //TODO: Delete later
-    pub gas_limit: i32,
 }
 
 impl SwapQuoteData {
@@ -84,7 +82,6 @@ impl SwapQuoteData {
             to: String::default(),
             value: String::default(),
             data: str.to_string(),
-            gas_limit: 0,
         }
     }
 }

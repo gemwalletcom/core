@@ -75,7 +75,6 @@ impl ThorchainSwapClient {
             let data = SwapQuoteData {
                 to: quote_swap.inbound_address.unwrap_or_default(),
                 value: quote.amount.clone(),
-                gas_limit: 0,
                 data: quote_swap.memo,
             };
             Some(data)

@@ -36,7 +36,6 @@ impl SwapResultTransaction {
             to: self.to.clone(),
             value: self.value.clone(),
             data: self.data.clone(),
-            gas_limit: self.gas as i32,
         }
     }
 }
