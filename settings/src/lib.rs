@@ -1,4 +1,4 @@
-use config::{Config, ConfigError, File, Environment};
+use config::{Config, ConfigError, Environment, File};
 use serde::Deserialize;
 
 #[derive(Debug, Deserialize, Clone)]
@@ -155,6 +155,7 @@ pub struct Chains {
     pub doge: Chain,
     pub fantom: Chain,
     pub gnosis: Chain,
+    pub injective: Chain,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -181,7 +182,7 @@ pub struct Parser {
 #[derive(Debug, Deserialize, Clone)]
 #[allow(unused)]
 pub struct Deamon {
-    pub service: String
+    pub service: String,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -217,14 +218,18 @@ pub struct SwapFee {
 pub struct SwapProvider {
     pub url: String,
     pub key: String,
-    pub fee: SwapFee
+    pub fee: SwapFee,
 }
 
 impl Settings {
     pub fn new() -> Result<Self, ConfigError> {
         let s = Config::builder()
             .add_source(File::with_name("./Settings"))
-            .add_source(Environment::with_prefix("").prefix_separator("").separator("_"))
+            .add_source(
+                Environment::with_prefix("")
+                    .prefix_separator("")
+                    .separator("_"),
+            )
             .build()?;
         s.try_deserialize()
     }

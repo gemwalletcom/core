@@ -7,8 +7,7 @@ pub fn get_chain_for_coingecko_id(id: &str) -> Option<Chain> {
         "binancecoin" => Some(Chain::Binance),
         "ethereum" => Some(Chain::Ethereum),
         "binance-smart-chain" => Some(Chain::SmartChain),
-        "matic-network" |
-        "polygon-pos" => Some(Chain::Polygon),
+        "matic-network" | "polygon-pos" => Some(Chain::Polygon),
         "solana" => Some(Chain::Solana),
         "arbitrum-one" => Some(Chain::Arbitrum),
         "optimistic-ethereum" => Some(Chain::Optimism),
@@ -25,8 +24,7 @@ pub fn get_chain_for_coingecko_id(id: &str) -> Option<Chain> {
         "gnosis" => Some(Chain::Gnosis),
         "fantom" => Some(Chain::Fantom),
         "celestia" => Some(Chain::Celestia),
-        _ => {
-            None
-        }
+        "injective-protocol" => Some(Chain::Injective),
+        _ => None,
     }
 }

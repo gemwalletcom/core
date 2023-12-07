@@ -8,7 +8,7 @@ use std::collections::HashSet;
 use std::error::Error;
 use std::thread;
 use std::time::Duration;
-use storage::models::{Price, ChartCoinPrice};
+use storage::models::{ChartCoinPrice, Price};
 
 pub struct PriceUpdater {
     coin_gecko_client: CoinGeckoClient,
@@ -84,9 +84,15 @@ impl PriceUpdater {
         let prices: Vec<Price> = prices_map.into_iter().collect();
         let count = self.price_client.set_prices(prices.clone()).await?;
 
-        let charts = prices.clone().into_iter().map(|x| 
-            ChartCoinPrice{ coin_id: x.coin_id, price: x.price, created_at: x.last_updated_at.timestamp() as u64 } 
-        ).collect();
+        let charts = prices
+            .clone()
+            .into_iter()
+            .map(|x| ChartCoinPrice {
+                coin_id: x.coin_id,
+                price: x.price,
+                created_at: x.last_updated_at.timestamp() as u64,
+            })
+            .collect();
 
         let _ = self.price_client.set_charts(charts).await?;
 
@@ -97,21 +103,31 @@ impl PriceUpdater {
         let coin_list = self.coin_gecko_client.get_coin_list().await?;
 
         for coin_id in coin_list.clone() {
-            let prices = self.coin_gecko_client.get_market_chart(coin_id.id.as_str()).await;
+            let prices = self
+                .coin_gecko_client
+                .get_market_chart(coin_id.id.as_str())
+                .await;
 
             match prices {
                 Ok(prices) => {
-                    let charts = prices.prices.clone().into_iter().map(|x| 
-                        ChartCoinPrice{ coin_id: coin_id.id.clone(), price: x[1], created_at: (x[0] as u64) / 1000 } 
-                    ).collect::<Vec<ChartCoinPrice>>();
-                    
+                    let charts = prices
+                        .prices
+                        .clone()
+                        .into_iter()
+                        .map(|x| ChartCoinPrice {
+                            coin_id: coin_id.id.clone(),
+                            price: x[1],
+                            created_at: (x[0] as u64) / 1000,
+                        })
+                        .collect::<Vec<ChartCoinPrice>>();
+
                     match self.price_client.set_charts(charts).await {
                         Ok(_) => {
                             println!("set charts {}", coin_id.id.clone());
-                        },
+                        }
                         Err(err) => {
                             println!("set charts error: {}", err);
-                        },
+                        }
                     };
 
                     println!("update charts {}", coin_id.id.clone());
@@ -123,7 +139,6 @@ impl PriceUpdater {
                     continue;
                 }
             }
-            
         }
         Ok(coin_list.len())
     }
@@ -402,6 +417,7 @@ fn format_token_id(chain: Chain, token_id: String) -> Option<String> {
         | Chain::Doge
         | Chain::Aptos
         | Chain::Sui
-        | Chain::Ripple => None,
+        | Chain::Ripple
+        | Chain::Injective => None,
     }
 }

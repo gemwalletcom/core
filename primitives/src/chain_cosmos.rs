@@ -6,4 +6,5 @@ pub enum CosmosChain {
     Osmosis,
     Celestia,
     Thorchain,
+    Injective,
 }

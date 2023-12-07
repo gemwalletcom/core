@@ -132,6 +132,9 @@ url = "https://suins-rpc.mainnet.sui.io"
 [chains.celestia]
 url = "https://api.celestia.pops.one"
 
+[chains.injective]
+url = "	https://sentry.lcd.injective.network"
+
 [chains.bitcoin]
 url = ""
 
@@ -192,6 +195,7 @@ chains = [
     "doge",
     "fantom",
     "gnosis",
+    "injective",
 ]
 
 [pusher]

@@ -1,6 +1,6 @@
-use primitives::{SwapQuoteProtocolRequest, SwapQuote, Chain};
+use primitives::{Chain, SwapQuote, SwapQuoteProtocolRequest};
 
-use crate::{OneInchClient, JupiterClient, ThorchainSwapClient};
+use crate::{JupiterClient, OneInchClient, ThorchainSwapClient};
 
 pub struct SwapperClient {
     oneinch: OneInchClient,
@@ -19,34 +19,30 @@ impl SwapperClient {
             jupiter,
             thorchain,
         }
-    }  
+    }
 
-    pub async fn get_quote(&self, quote: SwapQuoteProtocolRequest) -> Result<SwapQuote, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn get_quote(
+        &self,
+        quote: SwapQuoteProtocolRequest,
+    ) -> Result<SwapQuote, Box<dyn std::error::Error + Send + Sync>> {
         match quote.from_asset.chain {
-            Chain::Ethereum |
-            Chain::SmartChain |
-            Chain::Optimism |
-            Chain::Arbitrum |
-            Chain::Polygon |
-            Chain::Base |
-            Chain::Fantom |
-            Chain::Gnosis |
-            Chain::AvalancheC => {
-                self.oneinch.get_quote(quote).await
-            }
+            Chain::Ethereum
+            | Chain::SmartChain
+            | Chain::Optimism
+            | Chain::Arbitrum
+            | Chain::Polygon
+            | Chain::Base
+            | Chain::Fantom
+            | Chain::Gnosis
+            | Chain::AvalancheC => self.oneinch.get_quote(quote).await,
             Chain::Binance => todo!(),
-            Chain::Solana => {
-                self.jupiter.get_quote(quote).await
-            }
-            Chain::Thorchain |
-            Chain::Doge |
-            Chain::Cosmos | 
-            Chain::Bitcoin |
-            Chain::Litecoin => {
+            Chain::Solana => self.jupiter.get_quote(quote).await,
+            Chain::Thorchain | Chain::Doge | Chain::Cosmos | Chain::Bitcoin | Chain::Litecoin => {
                 self.thorchain.get_quote(quote).await
-            },
+            }
             Chain::Osmosis => todo!(),
             Chain::Celestia => todo!(),
+            Chain::Injective => todo!(),
             Chain::Ton => todo!(),
             Chain::Tron => todo!(),
             Chain::Aptos => todo!(),

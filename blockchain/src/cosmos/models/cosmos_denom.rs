@@ -4,4 +4,5 @@ pub enum CosmosDenom {
     uatom,
     uosmo,
     utia,
+    inj,
 }

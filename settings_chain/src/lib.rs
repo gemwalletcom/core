@@ -1,50 +1,50 @@
+use blockchain::{
+    AptosClient, BitcoinClient, ChainProvider, CosmosClient, EthereumClient, SolanaClient,
+    SuiClient, TonClient, TronClient, XRPClient,
+};
+use primitives::Chain;
 use reqwest_middleware::ClientBuilder;
 use reqwest_retry::{policies::ExponentialBackoff, RetryTransientMiddleware};
-use blockchain::{ChainProvider, SolanaClient, EthereumClient, TonClient, CosmosClient, TronClient, XRPClient, AptosClient, SuiClient, BitcoinClient};
 use settings::Settings;
-use primitives::Chain;
 
-pub struct ProviderFactory {
-    
-}
+pub struct ProviderFactory {}
 
 impl ProviderFactory {
-
-    pub fn new(chain: Chain, settings: &Settings) -> Box<dyn ChainProvider> {
-        let retry_policy = ExponentialBackoff::builder()
-            .build_with_max_retries(5);
+    pub fn new_provider(chain: Chain, settings: &Settings) -> Box<dyn ChainProvider> {
+        let retry_policy = ExponentialBackoff::builder().build_with_max_retries(5);
         let client = ClientBuilder::new(reqwest::Client::new())
             .with(RetryTransientMiddleware::new_with_policy(retry_policy))
             .build();
         let url = Self::url(chain, settings).to_string();
-    
+
         match chain {
-            Chain::Bitcoin |
-            Chain::Litecoin |
-            Chain::Doge => Box::new(BitcoinClient::new(chain, client, url)),
-            Chain::Ethereum |
-            Chain::SmartChain |
-            Chain::Polygon |
-            Chain::Fantom |
-            Chain::Gnosis |
-            Chain::Arbitrum |
-            Chain::Optimism |
-            Chain::Base |
-            Chain::AvalancheC |
-            Chain::OpBNB => Box::new(EthereumClient::new(chain, url)),
-            Chain::Cosmos| 
-            Chain::Osmosis |
-            Chain::Celestia |
-            Chain::Thorchain => Box::new(CosmosClient::new(chain, client, url)),
+            Chain::Bitcoin | Chain::Litecoin | Chain::Doge => {
+                Box::new(BitcoinClient::new(chain, client, url))
+            }
+            Chain::Ethereum
+            | Chain::SmartChain
+            | Chain::Polygon
+            | Chain::Fantom
+            | Chain::Gnosis
+            | Chain::Arbitrum
+            | Chain::Optimism
+            | Chain::Base
+            | Chain::AvalancheC
+            | Chain::OpBNB => Box::new(EthereumClient::new(chain, url)),
+            Chain::Cosmos
+            | Chain::Osmosis
+            | Chain::Celestia
+            | Chain::Thorchain
+            | Chain::Injective => Box::new(CosmosClient::new(chain, client, url)),
             Chain::Solana => Box::new(SolanaClient::new(url)),
             Chain::Ton => Box::new(TonClient::new(client, url)),
-            Chain::Tron => Box::new(TronClient::new(client,url)),
+            Chain::Tron => Box::new(TronClient::new(client, url)),
             Chain::Aptos => Box::new(AptosClient::new(client, url)),
             Chain::Sui => Box::new(SuiClient::new(url)),
             Chain::Ripple => Box::new(XRPClient::new(client, url)),
             Chain::Binance => {
                 unimplemented!()
-            },
+            }
         }
     }
 
@@ -74,7 +74,7 @@ impl ProviderFactory {
             Chain::Fantom => settings.chains.fantom.url.as_str(),
             Chain::Gnosis => settings.chains.gnosis.url.as_str(),
             Chain::Celestia => settings.chains.celestia.url.as_str(),
+            Chain::Injective => settings.chains.injective.url.as_str(),
         }
     }
 }
-

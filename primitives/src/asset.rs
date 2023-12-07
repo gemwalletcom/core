@@ -1,5 +1,5 @@
+use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
-use serde::{Serialize, Deserialize};
 
 use crate::{asset_id::AssetId, asset_type::AssetType, Chain};
 
@@ -11,7 +11,7 @@ pub struct Asset {
     pub symbol: String,
     pub decimals: i32,
     #[serde(rename = "type")]
-    pub asset_type: AssetType
+    pub asset_type: AssetType,
 }
 
 impl Asset {
@@ -186,6 +186,13 @@ impl Asset {
                 id: chain.as_asset_id(),
                 name: "Gnosis Chain".to_string(),
                 symbol: "GNO".to_string(),
+                decimals: 18,
+                asset_type: AssetType::NATIVE,
+            },
+            Chain::Injective => Asset {
+                id: chain.as_asset_id(),
+                name: "Injective".to_string(),
+                symbol: "INJ".to_string(),
                 decimals: 18,
                 asset_type: AssetType::NATIVE,
             },

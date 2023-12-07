@@ -1,6 +1,6 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
+use strum::{EnumIter, IntoEnumIterator};
 use typeshare::typeshare;
-use strum::{IntoEnumIterator, EnumIter};
 
 use crate::{AssetId, AssetType, ChainType};
 
@@ -32,6 +32,7 @@ pub enum Chain {
     Fantom,
     Gnosis,
     Celestia,
+    Injective,
 }
 
 impl PartialEq for Chain {
@@ -60,14 +61,15 @@ impl Chain {
             "doge" => Some(Self::Doge),
             "aptos" => Some(Self::Aptos),
             "base" => Some(Self::Base),
-            "avalanchec"=> Some(Self::AvalancheC),
-            "sui"=> Some(Self::Sui),
+            "avalanchec" => Some(Self::AvalancheC),
+            "sui" => Some(Self::Sui),
             "ripple" | "xrp" => Some(Self::Ripple),
-            "opbnb"=> Some(Self::OpBNB),
-            "fantom"=> Some(Self::Fantom),
-            "gnosis"=> Some(Self::Gnosis),
-            "celestia"=> Some(Self::Celestia),
-            _ => None, 
+            "opbnb" => Some(Self::OpBNB),
+            "fantom" => Some(Self::Fantom),
+            "gnosis" => Some(Self::Gnosis),
+            "celestia" => Some(Self::Celestia),
+            "injective" => Some(Self::Injective),
+            _ => None,
         }
     }
 
@@ -97,6 +99,7 @@ impl Chain {
             Self::Fantom => "fantom",
             Self::Gnosis => "gnosis",
             Self::Celestia => "celestia",
+            Self::Injective => "injective",
         }
     }
 
@@ -107,10 +110,9 @@ impl Chain {
             Self::Cosmos => "uatom",
             Self::Osmosis => "uosmo",
             Self::Celestia => "utia",
+            Self::Injective => "inj",
             Self::Sui => "0x2::sui::SUI",
-            _ => {
-                ""
-            }
+            _ => "",
         }
     }
 
@@ -144,6 +146,7 @@ impl Chain {
             Self::Sui => todo!(),
             Self::Ripple => todo!(),
             Self::Celestia => todo!(),
+            Self::Injective => todo!(),
         }
     }
 
@@ -153,34 +156,29 @@ impl Chain {
 
     pub fn is_utxo(&self) -> bool {
         match self {
-            Self::Bitcoin | 
-            Self::Litecoin | 
-            Self::Doge => true,
-            _ => {
-                false
-            }
+            Self::Bitcoin | Self::Litecoin | Self::Doge => true,
+            _ => false,
         }
     }
 
     pub fn as_slip44(&self) -> i64 {
         match self {
-            Self::Ethereum |
-            Self::Fantom |
-            Self::OpBNB |
-            Self::Arbitrum |
-            Self::Optimism |
-            Self::Polygon |
-            Self::Base |
-            Self::Gnosis => 60,
+            Self::Ethereum
+            | Self::Fantom
+            | Self::OpBNB
+            | Self::Arbitrum
+            | Self::Optimism
+            | Self::Polygon
+            | Self::Base
+            | Self::Gnosis
+            | Self::Injective => 60,
             Self::Binance => 714,
             Self::Bitcoin => 0,
             Self::Litecoin => 2,
             Self::SmartChain => 9006,
             Self::Solana => 501,
             Self::Thorchain => 931,
-            Self::Cosmos |
-            Self::Osmosis |
-            Self::Celestia => 118,
+            Self::Cosmos | Self::Osmosis | Self::Celestia => 118,
             Self::Ton => 607,
             Self::Tron => 195,
             Self::Doge => 3,
@@ -193,25 +191,22 @@ impl Chain {
 
     pub fn chain_type(&self) -> ChainType {
         match self {
-            Self::Ethereum |
-            Self::Fantom |
-            Self::OpBNB |
-            Self::Arbitrum |
-            Self::Optimism |
-            Self::Polygon |
-            Self::Base |
-            Self::SmartChain |
-            Self::AvalancheC |
-            Self::Gnosis => ChainType::Ethereum,
+            Self::Ethereum
+            | Self::Fantom
+            | Self::OpBNB
+            | Self::Arbitrum
+            | Self::Optimism
+            | Self::Polygon
+            | Self::Base
+            | Self::SmartChain
+            | Self::AvalancheC
+            | Self::Gnosis => ChainType::Ethereum,
             Self::Binance => ChainType::Binance,
-            Self::Bitcoin |
-            Self::Doge |
-            Self::Litecoin => ChainType::Bitcoin,
+            Self::Bitcoin | Self::Doge | Self::Litecoin => ChainType::Bitcoin,
             Self::Solana => ChainType::Solana,
-            Self::Thorchain |
-            Self::Cosmos |
-            Self::Osmosis | 
-            Self::Celestia => ChainType::Cosmos,
+            Self::Thorchain | Self::Cosmos | Self::Osmosis | Self::Celestia | Self::Injective => {
+                ChainType::Cosmos
+            }
             Self::Ton => ChainType::Ton,
             Self::Tron => ChainType::Tron,
             Self::Aptos => ChainType::Aptos,
@@ -222,30 +217,30 @@ impl Chain {
 
     pub fn default_asset_type(&self) -> Option<AssetType> {
         match self {
-            Self::Ethereum |
-            Self::Arbitrum |
-            Self::Optimism  |
-            Self::Polygon |
-            Self::Base |
-            Self::AvalancheC |
-            Self::Gnosis |
-            Self::Fantom => Some(AssetType::ERC20),
-            Self::OpBNB |
-            Self::SmartChain=> Some(AssetType::BEP20),
+            Self::Ethereum
+            | Self::Arbitrum
+            | Self::Optimism
+            | Self::Polygon
+            | Self::Base
+            | Self::AvalancheC
+            | Self::Gnosis
+            | Self::Fantom => Some(AssetType::ERC20),
+            Self::OpBNB | Self::SmartChain => Some(AssetType::BEP20),
             Self::Binance => Some(AssetType::BEP2),
             Self::Solana => Some(AssetType::SPL),
             Self::Tron => Some(AssetType::TRC20),
-            Self::Bitcoin |
-            Self::Litecoin |
-            Self::Thorchain |
-            Self::Cosmos |
-            Self::Osmosis |
-            Self::Ton |
-            Self::Doge |
-            Self::Aptos |
-            Self::Sui |
-            Self::Ripple |
-            Self::Celestia => None,
+            Self::Bitcoin
+            | Self::Litecoin
+            | Self::Thorchain
+            | Self::Cosmos
+            | Self::Osmosis
+            | Self::Ton
+            | Self::Doge
+            | Self::Aptos
+            | Self::Sui
+            | Self::Ripple
+            | Self::Celestia
+            | Self::Injective => None,
         }
     }
 
@@ -269,6 +264,7 @@ impl Chain {
             Self::Cosmos => 6_000,
             Self::Osmosis => 6_000,
             Self::Celestia => 6_000,
+            Self::Injective => 6_000,
             Self::Ton => 5_000,
             Self::Tron => 3_000,
             Self::Doge => 60_000,
