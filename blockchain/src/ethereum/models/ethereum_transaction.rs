@@ -12,5 +12,5 @@ struct EthereumTransactionReciept {
 struct EthereumFeeHistory {
     reward: Vec<Vec<String>>,
     #[serde(rename = "baseFeePerGas")]
-    base_fee_per_gas: Vec<String>
+    base_fee_per_gas: Vec<String>,
 }
