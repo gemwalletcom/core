@@ -62,8 +62,8 @@ pub mod scan;
 pub use self::scan::ScanAddress;
 pub mod swap;
 pub use self::swap::{
-    SwapMode, SwapProvider, SwapQuote, SwapQuoteEthereumData, SwapQuoteProtocolRequest,
-    SwapQuoteRequest, SwapQuoteResult,
+    SwapMode, SwapProvider, SwapQuote, SwapQuoteData, SwapQuoteProtocolRequest, SwapQuoteRequest,
+    SwapQuoteResult,
 };
 pub mod transaction_metadata_types;
 pub use self::transaction_metadata_types::TransactionSwapMetadata;

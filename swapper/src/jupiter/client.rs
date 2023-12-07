@@ -1,7 +1,6 @@
+use primitives::{ChainType, SwapProvider, SwapQuote, SwapQuoteData, SwapQuoteProtocolRequest};
 
-use primitives::{SwapQuote, SwapQuoteProtocolRequest, ChainType, SwapProvider, SwapQuoteEthereumData};
-
-use super::model::{QuoteRequest, QuoteResponse, QuoteDataResponse, QuoteDataRequest};
+use super::model::{QuoteDataRequest, QuoteDataResponse, QuoteRequest, QuoteResponse};
 
 const NATIVE_ADDRESS: &str = "So11111111111111111111111111111111111111112";
 
@@ -14,8 +13,7 @@ pub struct JupiterClient {
 
 impl JupiterClient {
     pub fn new(api_url: String, fee: f64, fee_referral_address: String) -> Self {
-        let client = reqwest::Client::builder()
-            .build().unwrap();
+        let client = reqwest::Client::builder().build().unwrap();
 
         Self {
             client,
@@ -26,14 +24,27 @@ impl JupiterClient {
     }
 
     pub fn provider(&self) -> SwapProvider {
-        SwapProvider { name: "Jupiter".to_string() }
+        SwapProvider {
+            name: "Jupiter".to_string(),
+        }
     }
 
-    pub async fn get_quote(&self, quote: SwapQuoteProtocolRequest) -> Result<SwapQuote, Box<dyn std::error::Error + Send + Sync>> {
-        let input_mint = if quote.from_asset.clone().is_native() { NATIVE_ADDRESS.to_string() } else { quote.from_asset.clone().token_id.unwrap() };
-        let output_mint = if quote.to_asset.clone().is_native() { NATIVE_ADDRESS.to_string() } else { quote.to_asset.clone().token_id.unwrap() };
+    pub async fn get_quote(
+        &self,
+        quote: SwapQuoteProtocolRequest,
+    ) -> Result<SwapQuote, Box<dyn std::error::Error + Send + Sync>> {
+        let input_mint = if quote.from_asset.clone().is_native() {
+            NATIVE_ADDRESS.to_string()
+        } else {
+            quote.from_asset.clone().token_id.unwrap()
+        };
+        let output_mint = if quote.to_asset.clone().is_native() {
+            NATIVE_ADDRESS.to_string()
+        } else {
+            quote.to_asset.clone().token_id.unwrap()
+        };
 
-        let quote_request: QuoteRequest = QuoteRequest{
+        let quote_request: QuoteRequest = QuoteRequest {
             input_mint,
             output_mint,
             amount: quote.amount.clone(),
@@ -48,7 +59,7 @@ impl JupiterClient {
         };
 
         let quote = SwapQuote {
-            chain_type: ChainType::Solana, 
+            chain_type: ChainType::Solana,
             from_amount: quote.amount.clone(),
             to_amount: swap_quote.out_amount.clone(),
             fee_percent: self.fee as f32,
@@ -58,26 +69,29 @@ impl JupiterClient {
         Ok(quote)
     }
 
-    pub async fn get_data(&self, quote: SwapQuoteProtocolRequest, quote_response: QuoteResponse) -> Result<SwapQuoteEthereumData, Box<dyn std::error::Error + Send + Sync>> {
-        let request = QuoteDataRequest{
-            user_public_key: quote.wallet_address, 
+    pub async fn get_data(
+        &self,
+        quote: SwapQuoteProtocolRequest,
+        quote_response: QuoteResponse,
+    ) -> Result<SwapQuoteData, Box<dyn std::error::Error + Send + Sync>> {
+        let request = QuoteDataRequest {
+            user_public_key: quote.wallet_address.clone(),
             fee_account: self.fee_referral_address.clone(),
-            quote_response: quote_response.clone()
+            quote_response: quote_response.clone(),
         };
         let quote_data = self.get_swap_quote_data(request).await?;
-        let data = SwapQuoteEthereumData{
-            data: quote_data.swap_transaction,
-            to: "".to_string(),
-            value: "".to_string(),
-            gas_limit: 0,
-        };
+        let data = SwapQuoteData::from_data(&quote_data.swap_transaction);
         Ok(data)
     }
 
-    pub async fn get_swap_quote(&self, request: QuoteRequest) -> Result<QuoteResponse, Box<dyn std::error::Error + Send + Sync>>   {
+    pub async fn get_swap_quote(
+        &self,
+        request: QuoteRequest,
+    ) -> Result<QuoteResponse, Box<dyn std::error::Error + Send + Sync>> {
         let params = serde_urlencoded::to_string(&request)?;
         let url = format!("{}/v6/quote?{}", self.api_url, params);
-        Ok(self.client
+        Ok(self
+            .client
             .get(&url)
             .send()
             .await?
@@ -85,14 +99,12 @@ impl JupiterClient {
             .await?)
     }
 
-    pub async fn get_swap_quote_data(&self, request: QuoteDataRequest) -> Result<QuoteDataResponse, Box<dyn std::error::Error + Send + Sync>>   {
+    pub async fn get_swap_quote_data(
+        &self,
+        request: QuoteDataRequest,
+    ) -> Result<QuoteDataResponse, Box<dyn std::error::Error + Send + Sync>> {
         let url = format!("{}/v6/swap", self.api_url);
-        Ok(self.client
-            .post(&url)
-            .json(&request)
-            .send()
-            .await?
-            .json::<QuoteDataResponse>()
-            .await?)
+        let response = self.client.post(&url).json(&request).send().await?;
+        Ok(response.json().await?)
     }
 }

@@ -1,4 +1,6 @@
-use primitives::{SwapQuote, SwapQuoteProtocolRequest, SwapProvider, AssetId, Chain, SwapQuoteEthereumData};
+use primitives::{
+    AssetId, Chain, SwapProvider, SwapQuote, SwapQuoteData, SwapQuoteProtocolRequest,
+};
 
 use super::model::{QuoteRequest, QuoteResponse};
 
@@ -17,10 +19,8 @@ const NATIVE_LITECOIN: &str = "LTC.LTC";
 const NATIVE_BSC_BNB: &str = "BSC.BNB";
 
 impl ThorchainSwapClient {
-
     pub fn new(api_url: String, fee: f64, fee_referral_address: String) -> Self {
-        let client = reqwest::Client::builder()
-            .build().unwrap();
+        let client = reqwest::Client::builder().build().unwrap();
 
         Self {
             client,
@@ -31,12 +31,17 @@ impl ThorchainSwapClient {
     }
 
     pub fn provider(&self) -> SwapProvider {
-        SwapProvider { name: "Thorchain".to_string() }
+        SwapProvider {
+            name: "Thorchain".to_string(),
+        }
     }
 
-    pub fn get_asset(&self, asset_id: AssetId) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+    pub fn get_asset(
+        &self,
+        asset_id: AssetId,
+    ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
         if !asset_id.is_native() {
-            return Err("not native asset".into())
+            return Err("not native asset".into());
         }
         match asset_id.chain {
             Chain::Thorchain => Ok(NATIVE_ADDRESS_RUNE.into()),
@@ -45,16 +50,18 @@ impl ThorchainSwapClient {
             Chain::Bitcoin => Ok(NATIVE_BITCOIN.into()),
             Chain::Litecoin => Ok(NATIVE_LITECOIN.into()),
             Chain::SmartChain => Ok(NATIVE_BSC_BNB.into()),
-            _ => Err(format!("asset {} not supported", asset_id.to_string()).into()
-            )
+            _ => Err(format!("asset {} not supported", asset_id.to_string()).into()),
         }
     }
 
-    pub async fn get_quote(&self, quote: SwapQuoteProtocolRequest) -> Result<SwapQuote, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn get_quote(
+        &self,
+        quote: SwapQuoteProtocolRequest,
+    ) -> Result<SwapQuote, Box<dyn std::error::Error + Send + Sync>> {
         let from_asset = self.get_asset(quote.from_asset.clone())?;
         let to_asset = self.get_asset(quote.to_asset.clone())?;
 
-        let request = QuoteRequest{
+        let request = QuoteRequest {
             from_asset,
             to_asset,
             amount: quote.amount.clone(),
@@ -65,7 +72,7 @@ impl ThorchainSwapClient {
         let quote_swap = self.get_swap_quote(request).await?;
 
         let data = if quote.include_data {
-            let data = SwapQuoteEthereumData{
+            let data = SwapQuoteData {
                 to: quote_swap.inbound_address.unwrap_or_default(),
                 value: quote.amount.clone(),
                 gas_limit: 0,
@@ -77,7 +84,7 @@ impl ThorchainSwapClient {
         };
 
         let quote = SwapQuote {
-            chain_type: quote.from_asset.clone().chain.chain_type(), 
+            chain_type: quote.from_asset.clone().chain.chain_type(),
             from_amount: quote.amount.clone(),
             to_amount: quote_swap.expected_amount_out.to_string(),
             fee_percent: self.fee as f32,
@@ -87,10 +94,14 @@ impl ThorchainSwapClient {
         Ok(quote)
     }
 
-    pub async fn get_swap_quote(&self, request: QuoteRequest) -> Result<QuoteResponse, Box<dyn std::error::Error + Send + Sync>>   {
+    pub async fn get_swap_quote(
+        &self,
+        request: QuoteRequest,
+    ) -> Result<QuoteResponse, Box<dyn std::error::Error + Send + Sync>> {
         let params = serde_urlencoded::to_string(&request)?;
         let url = format!("{}/thorchain/quote/swap?{}", self.api_url, params);
-        Ok(self.client
+        Ok(self
+            .client
             .get(&url)
             .send()
             .await?
