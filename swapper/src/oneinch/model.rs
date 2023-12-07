@@ -1,5 +1,5 @@
-use primitives::SwapQuoteEthereumData;
-use serde::{Serialize, Deserialize};
+use primitives::SwapQuoteData;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -31,12 +31,11 @@ pub struct SwapResultTransaction {
 }
 
 impl SwapResultTransaction {
-    pub fn get_data(&self) -> SwapQuoteEthereumData {
-        SwapQuoteEthereumData{
+    pub fn get_data(&self) -> SwapQuoteData {
+        SwapQuoteData {
             to: self.to.clone(),
             value: self.value.clone(),
             data: self.data.clone(),
-            gas_limit: self.gas as i32,
         }
     }
 }

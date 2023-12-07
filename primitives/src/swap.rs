@@ -1,5 +1,5 @@
+use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
-use serde::{Serialize, Deserialize};
 
 use crate::{AssetId, ChainType};
 
@@ -10,10 +10,8 @@ use crate::{AssetId, ChainType};
 pub enum SwapMode {
     #[default]
     ExactIn,
-    ExactOut, 
+    ExactOut,
 }
-
-
 
 #[derive(rocket::form::FromForm, Debug, Serialize, Deserialize)]
 #[typeshare(swift = "Codable")]
@@ -45,13 +43,13 @@ pub struct SwapQuoteProtocolRequest {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-#[typeshare(swift="Codable, Equatable")]
+#[typeshare(swift = "Codable, Equatable")]
 pub struct SwapQuoteResult {
     pub quote: SwapQuote,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-#[typeshare(swift="Codable, Equatable, Hashable")]
+#[typeshare(swift = "Codable, Equatable, Hashable")]
 #[serde(rename_all = "camelCase")]
 pub struct SwapQuote {
     pub chain_type: ChainType,
@@ -59,23 +57,31 @@ pub struct SwapQuote {
     pub to_amount: String,
     pub fee_percent: f32,
     pub provider: SwapProvider,
-    pub data: Option<SwapQuoteEthereumData>,
+    pub data: Option<SwapQuoteData>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-#[typeshare(swift="Codable, Equatable, Hashable")]
+#[typeshare(swift = "Codable, Equatable, Hashable")]
 #[serde(rename_all = "camelCase")]
 pub struct SwapProvider {
     pub name: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-#[typeshare(swift="Codable, Equatable, Hashable")]
+#[typeshare(swift = "Codable, Equatable, Hashable")]
 #[serde(rename_all = "camelCase")]
-pub struct SwapQuoteEthereumData {
+pub struct SwapQuoteData {
     pub to: String,
     pub value: String,
     pub data: String,
-    #[typeshare(skip)] //TODO: Delete later
-    pub gas_limit: i32,
+}
+
+impl SwapQuoteData {
+    pub fn from_data(str: &str) -> Self {
+        Self {
+            to: String::default(),
+            value: String::default(),
+            data: str.to_string(),
+        }
+    }
 }
