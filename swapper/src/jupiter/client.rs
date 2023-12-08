@@ -75,9 +75,10 @@ impl JupiterClient {
         quote_response: QuoteResponse,
     ) -> Result<SwapQuoteData, Box<dyn std::error::Error + Send + Sync>> {
         let request = QuoteDataRequest {
-            user_public_key: quote.wallet_address.clone(),
+            user_public_key: quote.wallet_address,
             fee_account: self.fee_referral_address.clone(),
-            quote_response: quote_response.clone(),
+            quote_response,
+            compute_unit_price_micro_lamports: "auto".into(),
         };
         let quote_data = self.get_swap_quote_data(request).await?;
         let data = SwapQuoteData::from_data(&quote_data.swap_transaction);
