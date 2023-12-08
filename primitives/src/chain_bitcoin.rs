@@ -1,4 +1,4 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
 #[derive(Copy, Clone, Debug, Serialize, Deserialize)]
@@ -7,5 +7,5 @@ use typeshare::typeshare;
 pub enum BitcoinChain {
     Bitcoin,
     Litecoin,
-    Doge
+    Doge,
 }
