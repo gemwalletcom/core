@@ -10,7 +10,6 @@ pub enum AssetType {
     BEP2,
     BEP20,
     SPL,
-    ARBITRUM,
     TRC20,
 }
 
@@ -22,7 +21,6 @@ impl AssetType {
             "BEP2" => Some(Self::BEP2),
             "BEP20" => Some(Self::BEP20),
             "SPL" => Some(Self::SPL),
-            "ARBITRUM" => Some(Self::ARBITRUM),
             "TRC20" => Some(Self::TRC20),
             _ => None,
         }
@@ -35,7 +33,6 @@ impl AssetType {
             Self::BEP2 => "BEP2",
             Self::BEP20 => "BEP20",
             Self::SPL => "SPL",
-            Self::ARBITRUM => "ARBITRUM",
             Self::TRC20 => "TRC20",
         }
     }
