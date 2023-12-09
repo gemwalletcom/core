@@ -48,8 +48,8 @@ impl JupiterClient {
         };
 
         let quote_request: QuoteRequest = QuoteRequest {
-            input_mint: input_mint.clone(),
-            output_mint,
+            input_mint,
+            output_mint: output_mint.clone(),
             amount: quote.amount.clone(),
             platform_fee_bps: (self.fee * 100.0) as i32,
         };
@@ -59,7 +59,7 @@ impl JupiterClient {
                 REFERRAL_PROGRAM_ID,
                 vec!["referral_ata"],
                 &self.fee_referral_address.clone(),
-                input_mint.as_str(),
+                output_mint.as_str(),
             );
 
             let data = self
