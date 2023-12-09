@@ -62,12 +62,6 @@ impl JupiterClient {
                 input_mint.as_str(),
             );
 
-            println!(
-                "&self.fee_referral_address.clone(): {}",
-                &self.fee_referral_address.clone()
-            );
-            println!("fee_account: {}", fee_account);
-
             let data = self
                 .get_data(quote.clone(), swap_quote.clone(), fee_account)
                 .await?;
