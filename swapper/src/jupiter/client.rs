@@ -2,7 +2,10 @@ use primitives::{ChainType, SwapProvider, SwapQuote, SwapQuoteData, SwapQuotePro
 
 use super::model::{QuoteDataRequest, QuoteDataResponse, QuoteRequest, QuoteResponse};
 
+use blockchain::solana::spl_associated_token_account::get_associated_token_address;
+
 const NATIVE_ADDRESS: &str = "So11111111111111111111111111111111111111112";
+const REFERRAL_PROGRAM_ID: &str = "REFER4ZgmyYx9c6He5XfaTMiGfdLwRnkV4RPp9t9iF3";
 
 pub struct JupiterClient {
     api_url: String,
@@ -45,14 +48,29 @@ impl JupiterClient {
         };
 
         let quote_request: QuoteRequest = QuoteRequest {
-            input_mint,
+            input_mint: input_mint.clone(),
             output_mint,
             amount: quote.amount.clone(),
             platform_fee_bps: (self.fee * 100.0) as i32,
         };
         let swap_quote = self.get_swap_quote(quote_request).await?;
         let data = if quote.include_data {
-            let data = self.get_data(quote.clone(), swap_quote.clone()).await?;
+            let fee_account = get_associated_token_address(
+                REFERRAL_PROGRAM_ID,
+                vec!["referral_ata"],
+                &self.fee_referral_address.clone(),
+                input_mint.as_str(),
+            );
+
+            println!(
+                "&self.fee_referral_address.clone(): {}",
+                &self.fee_referral_address.clone()
+            );
+            println!("fee_account: {}", fee_account);
+
+            let data = self
+                .get_data(quote.clone(), swap_quote.clone(), fee_account)
+                .await?;
             Some(data)
         } else {
             None
@@ -73,10 +91,11 @@ impl JupiterClient {
         &self,
         quote: SwapQuoteProtocolRequest,
         quote_response: QuoteResponse,
+        fee_account: String,
     ) -> Result<SwapQuoteData, Box<dyn std::error::Error + Send + Sync>> {
         let request = QuoteDataRequest {
             user_public_key: quote.wallet_address,
-            fee_account: self.fee_referral_address.clone(),
+            fee_account,
             quote_response,
             compute_unit_price_micro_lamports: "auto".into(),
         };

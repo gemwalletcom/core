@@ -4117,6 +4117,7 @@ dependencies = [
 name = "swapper"
 version = "1.0.0"
 dependencies = [
+ "blockchain",
  "primitives",
  "reqwest",
  "serde",

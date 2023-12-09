@@ -215,7 +215,7 @@ diesel::table! {
         state -> Varchar,
         #[max_length = 16]
         kind -> Varchar,
-        #[max_length = 32]
+        #[max_length = 256]
         value -> Nullable<Varchar>,
         asset_id -> Nullable<Varchar>,
         #[max_length = 32]

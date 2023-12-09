@@ -1,5 +1,5 @@
 use diesel::prelude::*;
-use primitives::{Chain, AssetType, AssetId, AssetLinks};
+use primitives::{AssetId, AssetLinks, AssetType, Chain};
 use serde::{Deserialize, Serialize};
 #[derive(Debug, Queryable, Selectable, Serialize, Deserialize, Insertable, AsChangeset, Clone)]
 #[diesel(table_name = crate::schema::assets)]
@@ -12,24 +12,25 @@ pub struct Asset {
     pub symbol: String,
     pub asset_type: String,
     pub decimals: i32,
-    pub rank: i32
+    pub rank: i32,
 }
 
 impl Asset {
     pub fn as_primitive(&self) -> primitives::Asset {
-        primitives::asset::Asset{
-            id: AssetId {chain: Chain::from_str(&self.chain).unwrap(), token_id: self.token_id.clone() },
+        primitives::asset::Asset {
+            id: AssetId {
+                chain: Chain::from_str(&self.chain).unwrap(),
+                token_id: self.token_id.clone(),
+            },
             name: self.name.clone(),
             symbol: self.symbol.clone(),
             asset_type: AssetType::from_str(&self.asset_type).unwrap(),
-            decimals: self.decimals
+            decimals: self.decimals,
         }
     }
 
     pub fn as_score_primitive(&self) -> primitives::AssetScore {
-        primitives::AssetScore{
-            rank: self.rank,
-        }
+        primitives::AssetScore { rank: self.rank }
     }
 
     pub fn from_primitive(asset: primitives::Asset) -> Self {
@@ -72,7 +73,7 @@ pub struct AssetDetail {
 
 impl AssetDetail {
     pub fn as_primitive(&self) -> primitives::AssetDetails {
-        primitives::AssetDetails{
+        primitives::AssetDetails {
             links: AssetLinks {
                 homepage: self.homepage.clone(),
                 explorer: self.explorer.clone(),
