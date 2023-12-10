@@ -5,6 +5,11 @@ struct CosmosAccount {
 }
 
 #[typeshare]
-struct CosmosAccountResponse {
-    account: CosmosAccount,
+struct CosmosAccountResponse<T> {
+    account: T,
+}
+
+#[typeshare]
+struct CosmosIbjectiveAccount {
+    base_account: CosmosAccount,
 }
