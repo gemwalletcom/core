@@ -5,7 +5,13 @@ struct CosmosDelegations {
 
 #[typeshare]
 struct CosmosDelegation {
+    delegation: CosmosDelegationData,
     balance: CosmosBalance,
+}
+
+#[typeshare]
+struct CosmosDelegationData {
+    validator_address: String,
 }
 
 #[typeshare]
@@ -15,6 +21,7 @@ struct CosmosUnboundingDelegations {
 
 #[typeshare]
 struct CosmosUnboundingDelegation {
+    validator_address: String,
     entries: Vec<CosmosUnboudingDelegationEntry>,
 }
 

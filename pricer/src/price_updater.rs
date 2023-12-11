@@ -26,8 +26,7 @@ impl PriceUpdater {
     pub async fn update_prices(&mut self) -> Result<usize, Box<dyn std::error::Error>> {
         let coin_list = self.coin_gecko_client.get_coin_list().await?;
         let coins_map = CoinGeckoClient::convert_coin_vec_to_map(coin_list.clone());
-        let coin_markets = self.coin_gecko_client.get_all_coin_markets(250, 10).await?;
-
+        let coin_markets = self.coin_gecko_client.get_all_coin_markets(250, 12).await?;
         // currently using as a map, until fix duplicated values in the vector.
         let mut prices_map: HashSet<Price> = HashSet::new();
 
@@ -67,6 +66,7 @@ impl PriceUpdater {
                 }
                 None => {
                     let coin_map = coins_map.get(market.id.as_str()).unwrap();
+
                     for (platform, token_id) in coin_map.platforms.clone().into_iter() {
                         let platform = get_chain_for_coingecko_id(platform.as_str());
                         if let Some(value) = platform {
@@ -81,8 +81,9 @@ impl PriceUpdater {
                 }
             }
         }
+
         let prices: Vec<Price> = prices_map.into_iter().collect();
-        let count = self.price_client.set_prices(prices.clone()).await?;
+        let count = self.price_client.set_prices(prices.clone())?;
 
         let charts = prices
             .clone()
@@ -404,16 +405,22 @@ fn format_token_id(chain: Chain, token_id: String) -> Option<String> {
         | Chain::OpBNB
         | Chain::Fantom
         | Chain::Gnosis => Some(EthereumAddress::parse(&token_id)?.to_checksum()),
+        Chain::Solana => Some(token_id),
+        Chain::Tron => {
+            if token_id.len() == 34 && token_id.starts_with('T') {
+                Some(token_id)
+            } else {
+                None
+            }
+        }
         Chain::Bitcoin
         | Chain::Litecoin
         | Chain::Binance
-        | Chain::Solana
         | Chain::Thorchain
         | Chain::Cosmos
         | Chain::Osmosis
         | Chain::Celestia
         | Chain::Ton
-        | Chain::Tron
         | Chain::Doge
         | Chain::Aptos
         | Chain::Sui
