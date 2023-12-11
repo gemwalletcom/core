@@ -10,6 +10,6 @@ struct CosmosAccountResponse<T> {
 }
 
 #[typeshare]
-struct CosmosIbjectiveAccount {
+struct CosmosInjectiveAccount {
     base_account: CosmosAccount,
 }
