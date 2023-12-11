@@ -39,3 +39,20 @@ struct CosmosRewards {
 struct CosmosReward {
     reward: Vec<CosmosBalance>,
 }
+
+#[typeshare]
+struct CosmosValidators {
+    validators: Vec<CosmosValidator>,
+}
+
+#[typeshare]
+struct CosmosValidator {
+    operator_address: String,
+    jailed: bool,
+    description: CosmosValidatorMoniker,
+}
+
+#[typeshare]
+struct CosmosValidatorMoniker {
+    moniker: String,
+}
