@@ -6,8 +6,9 @@ pub struct QuoteRequest {
     pub input_mint: String,
     pub output_mint: String,
     pub amount: String,
-    //pub slippage_bps: i32,
+    pub slippage_bps: i32,
     pub platform_fee_bps: i32,
+    pub only_direct_routes: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
