@@ -6,6 +6,7 @@ use blockchain::solana::spl_associated_token_account::get_associated_token_addre
 
 const NATIVE_ADDRESS: &str = "So11111111111111111111111111111111111111112";
 const REFERRAL_PROGRAM_ID: &str = "REFER4ZgmyYx9c6He5XfaTMiGfdLwRnkV4RPp9t9iF3";
+const PROGRAM_ADDRESS: &str = "JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4";
 
 pub struct JupiterClient {
     api_url: String,
@@ -96,7 +97,11 @@ impl JupiterClient {
             compute_unit_price_micro_lamports: "auto".into(),
         };
         let quote_data = self.get_swap_quote_data(request).await?;
-        let data = SwapQuoteData::from_data(&quote_data.swap_transaction);
+        let data = SwapQuoteData {
+            to: PROGRAM_ADDRESS.to_string(),
+            value: "".to_string(),
+            data: quote_data.swap_transaction,
+        };
         Ok(data)
     }
 
