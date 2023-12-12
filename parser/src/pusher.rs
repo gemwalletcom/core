@@ -1,10 +1,13 @@
 use std::error::Error;
 
-use primitives::{Transaction, Subscription, AddressFormatter, PushNotification, PushNotificationTypes, TransactionType, TransactionSwapMetadata, NumberFormatter};
+use primitives::{
+    AddressFormatter, NumberFormatter, PushNotification, PushNotificationTypes, Subscription,
+    Transaction, TransactionSwapMetadata, TransactionType,
+};
 use storage::DatabaseClient;
 
+use api_connector::pusher::model::{Message, Notification};
 use api_connector::PusherClient;
-use api_connector::pusher::model::{Notification, Message};
 
 pub struct Pusher {
     ios_topic: String,
@@ -13,11 +16,7 @@ pub struct Pusher {
 }
 
 impl Pusher {
-    pub fn new(
-        url: String,
-        database_url: String,
-        ios_topic: String,
-    ) -> Self {
+    pub fn new(url: String, database_url: String, ios_topic: String) -> Self {
         let client = PusherClient::new(url.clone());
         let database_client = DatabaseClient::new(&database_url);
         Self {
@@ -27,43 +26,80 @@ impl Pusher {
         }
     }
 
-    pub fn message(&mut self, transaction: Transaction, subscription: Subscription) -> Result<Message, Box<dyn Error>> {
-        let asset = self.database_client.get_asset(transaction.asset_id.to_string())?;
-        
+    pub fn message(
+        &mut self,
+        transaction: Transaction,
+        subscription: Subscription,
+    ) -> Result<Message, Box<dyn Error>> {
+        let asset = self
+            .database_client
+            .get_asset(transaction.asset_id.to_string())?;
+
         match transaction.transaction_type {
             TransactionType::Transfer => {
-                let amount = NumberFormatter::value(transaction.value.as_str(), asset.decimals).unwrap();
+                let amount =
+                    NumberFormatter::value(transaction.value.as_str(), asset.decimals).unwrap();
                 let title = format!("Transfer {} {}", amount, asset.symbol);
-                let message = if transaction.input_addresses().contains(&subscription.address) || transaction.from == subscription.address {
-                    format!("To {}", AddressFormatter::short(transaction.asset_id.chain, transaction.to.as_str()))
+                let message = if transaction
+                    .input_addresses()
+                    .contains(&subscription.address)
+                    || transaction.from == subscription.address
+                {
+                    format!(
+                        "To {}",
+                        AddressFormatter::short(
+                            transaction.asset_id.chain,
+                            transaction.to.as_str()
+                        )
+                    )
                 } else {
-                    format!("From {}", AddressFormatter::short(transaction.asset_id.chain, transaction.from.as_str()))
+                    format!(
+                        "From {}",
+                        AddressFormatter::short(
+                            transaction.asset_id.chain,
+                            transaction.from.as_str()
+                        )
+                    )
                 };
-                Ok(Message{ title, message })
-            },
+                Ok(Message { title, message })
+            }
             TransactionType::TokenApproval => {
                 let title = format!("Token Approval for {}", asset.symbol);
                 let message = "".to_string();
-                Ok(Message{ title, message })
+                Ok(Message { title, message })
             }
             TransactionType::Swap => {
-                let metadata: TransactionSwapMetadata = serde_json::from_value(transaction.metadata)?;
-                let from_asset = self.database_client.get_asset(metadata.from_asset.to_string())?;
-                let to_asset = self.database_client.get_asset(metadata.to_asset.to_string())?;
-                let from_amount =  NumberFormatter::value(metadata.from_value.as_str(), from_asset.decimals).unwrap_or_default();
-                let to_amount =  NumberFormatter::value(metadata.to_value.as_str(), from_asset.decimals).unwrap_or_default();
+                let metadata: TransactionSwapMetadata =
+                    serde_json::from_value(transaction.metadata)?;
+                let from_asset = self
+                    .database_client
+                    .get_asset(metadata.from_asset.to_string())?;
+                let to_asset = self
+                    .database_client
+                    .get_asset(metadata.to_asset.to_string())?;
+                let from_amount =
+                    NumberFormatter::value(metadata.from_value.as_str(), from_asset.decimals)
+                        .unwrap_or_default();
+                let to_amount =
+                    NumberFormatter::value(metadata.to_value.as_str(), to_asset.decimals)
+                        .unwrap_or_default();
 
                 let title = format!("Swap from {} to {}", from_asset.symbol, to_asset.symbol);
-                let message = format!{"{} {} > {} {}", from_amount, from_asset.symbol, to_amount, to_asset.symbol};
-                Ok(Message{ title, message })
-            },
+                let message = format! {"{} {} > {} {}", from_amount, from_asset.symbol, to_amount, to_asset.symbol};
+                Ok(Message { title, message })
+            }
         }
     }
 
-    pub async fn push(&mut self, device: primitives::Device, transaction: Transaction, subscription: Subscription) -> Result<usize, Box<dyn Error>> {
+    pub async fn push(
+        &mut self,
+        device: primitives::Device,
+        transaction: Transaction,
+        subscription: Subscription,
+    ) -> Result<usize, Box<dyn Error>> {
         // only push if push is enabled and token is set
         if !device.is_push_enabled || device.token.is_empty() {
-            return Ok(0)
+            return Ok(0);
         }
         let message = self.message(transaction.clone(), subscription.clone())?;
         let data = PushNotification {
@@ -83,7 +119,9 @@ impl Pusher {
 
         if !response.logs.is_empty() {
             println!("push logs: {:?}", response.logs);
-            let _ = self.database_client.update_device_is_push_enabled(&device.id, false)?;
+            let _ = self
+                .database_client
+                .update_device_is_push_enabled(&device.id, false)?;
         }
 
         Ok(response.counts as usize)
