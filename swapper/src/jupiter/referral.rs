@@ -24,6 +24,7 @@ pub fn get_referral_account(referral_key: &str, token_mint: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use blockchain::solana::WSOL_TOKEN_ADDRESS;
 
     #[test]
     fn test_get_referral_account() {
@@ -38,7 +39,7 @@ mod tests {
 
         let fee_token_account = get_referral_account(
             "CK8n55Y664YjfifoVYfud8jXuSx9JV4NgVakEaRceVXu",
-            "So11111111111111111111111111111111111111112",
+            WSOL_TOKEN_ADDRESS,
         );
         assert_eq!(
             fee_token_account,
