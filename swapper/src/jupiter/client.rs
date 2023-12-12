@@ -101,11 +101,11 @@ impl JupiterClient {
         &self,
         request: QuoteRequest,
     ) -> Result<QuoteResponse, Box<dyn std::error::Error + Send + Sync>> {
-        let params = serde_urlencoded::to_string(&request)?;
-        let url = format!("{}/v6/quote?{}", self.api_url, params);
+        let url = format!("{}/v6/quote", self.api_url);
         Ok(self
             .client
             .get(&url)
+            .query(&request)
             .send()
             .await?
             .json::<QuoteResponse>()

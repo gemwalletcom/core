@@ -3018,7 +3018,6 @@ dependencies = [
  "primitives",
  "reqwest",
  "serde",
- "serde_urlencoded",
 ]
 
 [[package]]

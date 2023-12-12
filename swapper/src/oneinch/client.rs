@@ -82,14 +82,14 @@ impl OneInchClient {
         request: QuoteRequest,
         network_id: &str,
     ) -> Result<SwapResult, Box<dyn std::error::Error + Send + Sync>> {
-        let params = serde_urlencoded::to_string(&request)?;
         let url = format!(
-            "{}/swap/{}/{}/quote?{}",
-            self.api_url, self.version, network_id, params
+            "{}/swap/{}/{}/quote",
+            self.api_url, self.version, network_id
         );
         Ok(self
             .client
             .get(&url)
+            .query(&request)
             .bearer_auth(self.api_key.as_str())
             .send()
             .await?
@@ -102,14 +102,11 @@ impl OneInchClient {
         request: QuoteRequest,
         network_id: &str,
     ) -> Result<SwapResult, Box<dyn std::error::Error + Send + Sync>> {
-        let params = serde_urlencoded::to_string(&request)?;
-        let url = format!(
-            "{}/swap/{}/{}/swap?{}",
-            self.api_url, self.version, network_id, params
-        );
+        let url = format!("{}/swap/{}/{}/swap", self.api_url, self.version, network_id);
         Ok(self
             .client
             .get(&url)
+            .query(&request)
             .bearer_auth(self.api_key.as_str())
             .send()
             .await?

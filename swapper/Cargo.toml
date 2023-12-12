@@ -6,6 +6,5 @@ version = { workspace = true }
 [dependencies]
 serde = { workspace = true }
 reqwest = { workspace = true }
-serde_urlencoded = { workspace = true }
 primitives = { path = "../primitives" }
 blockchain = { path = "../blockchain" }

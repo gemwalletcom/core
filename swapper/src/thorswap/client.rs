@@ -97,11 +97,11 @@ impl ThorchainSwapClient {
         &self,
         request: QuoteRequest,
     ) -> Result<QuoteResponse, Box<dyn std::error::Error + Send + Sync>> {
-        let params = serde_urlencoded::to_string(&request)?;
-        let url = format!("{}/thorchain/quote/swap?{}", self.api_url, params);
+        let url = format!("{}/thorchain/quote/swap", self.api_url);
         Ok(self
             .client
             .get(&url)
+            .query(&request)
             .send()
             .await?
             .json::<QuoteResponse>()

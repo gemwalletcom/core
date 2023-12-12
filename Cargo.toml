@@ -27,7 +27,6 @@ default-members = ["bin/generate", "deamon", "api", "parser", "setup"]
 typeshare = "1.0.1"
 serde = { version = "1.0.193", features = ["derive"] }
 serde_json = { version = "1.0.108" }
-serde_urlencoded = { version = "0.7.1" }
 tokio = { version = "1.35.0", features = ["macros", "rt-multi-thread"] }
 reqwest = { version = "0.11.22", features = ["json"] }
 reqwest-middleware = { version = "0.2.4" }
