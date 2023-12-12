@@ -158,7 +158,7 @@ impl EthereumClient {
         }
 
         if input_prefix.starts_with(FUNCTION_1INCH_SWAP)
-            && to.to_string() == CONTRACT_1INCH
+            && to == CONTRACT_1INCH
             && reciept.logs.len() <= 9
         {
             let first_log = reciept.logs.first()?;
