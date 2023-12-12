@@ -1,4 +1,4 @@
-use primitives::{SwapQuote, SwapQuoteProtocolRequest, ChainType, SwapProvider};
+use primitives::{ChainType, SwapProvider, SwapQuote, SwapQuoteProtocolRequest};
 
 use super::model::{QuoteRequest, SwapResult};
 
@@ -15,8 +15,7 @@ const NATIVE_ADDRESS: &str = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
 
 impl OneInchClient {
     pub fn new(api_url: String, api_key: String, fee: f64, fee_referral_address: String) -> Self {
-        let client = reqwest::Client::builder()
-            .build().unwrap();
+        let client = reqwest::Client::builder().build().unwrap();
 
         Self {
             client,
@@ -29,14 +28,27 @@ impl OneInchClient {
     }
 
     pub fn provider(&self) -> SwapProvider {
-        SwapProvider { name: "1inch".to_string() }
+        SwapProvider {
+            name: "1inch".to_string(),
+        }
     }
 
-    pub async fn get_quote(&self, quote: SwapQuoteProtocolRequest) -> Result<SwapQuote, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn get_quote(
+        &self,
+        quote: SwapQuoteProtocolRequest,
+    ) -> Result<SwapQuote, Box<dyn std::error::Error + Send + Sync>> {
         let network_id = quote.from_asset.chain.network_id();
-        let src = if quote.from_asset.clone().is_native() { NATIVE_ADDRESS.to_string() } else { quote.from_asset.clone().token_id.unwrap() };
-        let dst = if quote.to_asset.clone().is_native() { NATIVE_ADDRESS.to_string() } else { quote.to_asset.clone().token_id.unwrap() };
-        let quote_request = QuoteRequest{
+        let src = if quote.from_asset.clone().is_native() {
+            NATIVE_ADDRESS.to_string()
+        } else {
+            quote.from_asset.clone().token_id.unwrap()
+        };
+        let dst = if quote.to_asset.clone().is_native() {
+            NATIVE_ADDRESS.to_string()
+        } else {
+            quote.to_asset.clone().token_id.unwrap()
+        };
+        let quote_request = QuoteRequest {
             src: src.clone(),
             dst,
             from: quote.wallet_address.clone(),
@@ -55,7 +67,7 @@ impl OneInchClient {
         let data = swap_quote.tx.map(|value| value.get_data());
 
         let quote = SwapQuote {
-            chain_type: ChainType::Ethereum, 
+            chain_type: ChainType::Ethereum,
             from_amount: quote.amount.clone(),
             to_amount: swap_quote.to_amount,
             fee_percent: self.fee as f32,
@@ -65,10 +77,18 @@ impl OneInchClient {
         Ok(quote)
     }
 
-    pub async fn get_swap_quote(&self, request: QuoteRequest, network_id: &str) -> Result<SwapResult, Box<dyn std::error::Error + Send + Sync>>   {
+    pub async fn get_swap_quote(
+        &self,
+        request: QuoteRequest,
+        network_id: &str,
+    ) -> Result<SwapResult, Box<dyn std::error::Error + Send + Sync>> {
         let params = serde_urlencoded::to_string(&request)?;
-        let url = format!("{}/swap/{}/{}/quote?{}", self.api_url, self.version, network_id, params);
-        Ok(self.client
+        let url = format!(
+            "{}/swap/{}/{}/quote?{}",
+            self.api_url, self.version, network_id, params
+        );
+        Ok(self
+            .client
             .get(&url)
             .bearer_auth(self.api_key.as_str())
             .send()
@@ -77,10 +97,18 @@ impl OneInchClient {
             .await?)
     }
 
-    pub async fn get_swap_quote_data(&self, request: QuoteRequest, network_id: &str) -> Result<SwapResult, Box<dyn std::error::Error + Send + Sync>>   {
+    pub async fn get_swap_quote_data(
+        &self,
+        request: QuoteRequest,
+        network_id: &str,
+    ) -> Result<SwapResult, Box<dyn std::error::Error + Send + Sync>> {
         let params = serde_urlencoded::to_string(&request)?;
-        let url = format!("{}/swap/{}/{}/swap?{}", self.api_url, self.version, network_id, params);
-        Ok(self.client
+        let url = format!(
+            "{}/swap/{}/{}/swap?{}",
+            self.api_url, self.version, network_id, params
+        );
+        Ok(self
+            .client
             .get(&url)
             .bearer_auth(self.api_key.as_str())
             .send()
