@@ -1,3 +1,6 @@
 pub mod client;
+pub mod hash;
 pub mod model;
-pub mod spl_associated_token_account;
+pub mod pubkey;
+
+pub const WSOL_TOKEN_ADDRESS: &str = "So11111111111111111111111111111111111111112";

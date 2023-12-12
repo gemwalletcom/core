@@ -34,16 +34,17 @@ reqwest-middleware = { version = "0.2.4" }
 reqwest-retry = { version = "0.3.0" }
 url = { version = "2.5.0" }
 config = { version = "0.13.4" }
-rocket = { version = "=0.5.0-rc.3", features = ["json"] }
+rocket = { version = "=0.5.0", features = ["json"] }
 rust_decimal = { version = "1.33" }
 async-trait = { version = "0.1.74" }
-prometheus-client = { version = "0.21.2" }
-futures = "0.3.29"
+prometheus-client = { version = "0.22.0" }
+futures = { version = "0.3.29" }
+thiserror = { version = "1.0.50" }
 
 # db
 diesel = { version = "2.1.4", features = ["postgres", "chrono", "serde_json"] }
 diesel_migrations = { version = "2.1.0" }
-redis = { version = "0.23.4", features = ["tokio-comp", "json"] }
+redis = { version = "0.24.0", features = ["tokio-comp", "json"] }
 chrono = { version = "0.4.31", features = ["serde"] }
 clickhouse = { git = "https://github.com/loyd/clickhouse.rs", rev = "d930b66f6772aba5ef049b231fd15a9e6a974854" }
 
@@ -59,6 +60,6 @@ hmac = { version = "0.12.1" }
 sha2 = { version = "0.10.8" }
 strum = { version = "0.25.0", features = ["derive"] }
 jsonrpsee = { version = "0.20.3", features = ["http-client"] }
-solana-sdk = { version = "1.17.9" }
 tiny-keccak = { version = "2.0.2", features = ["keccak"] }
 itoa = { version = "1.0.9" }
+curve25519-dalek = { version = "4.1.1" }
