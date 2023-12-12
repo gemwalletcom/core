@@ -6,7 +6,6 @@ edition = { workspace = true }
 [dependencies]
 serde = { workspace = true }
 serde_json = { workspace = true }
-tokio = { workspace = true }
 redis = { workspace = true }
 diesel = { workspace = true }
 diesel_migrations = { workspace = true }

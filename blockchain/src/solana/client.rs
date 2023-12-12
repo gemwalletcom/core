@@ -17,7 +17,7 @@ use primitives::{
 
 use serde_json::json;
 
-use super::model::BlockTransaction;
+use super::{model::BlockTransaction, WSOL_TOKEN_ADDRESS};
 
 pub struct SolanaClient {
     client: HttpClient,
@@ -27,7 +27,6 @@ const CLEANUP_BLOCK_ERROR: i32 = -32001;
 const MISSING_SLOT_ERROR: i32 = -32007;
 const NOT_AVAILABLE_SLOT_ERROR: i32 = -32004;
 const SYSTEM_PROGRAM_ID: &str = "11111111111111111111111111111111";
-const SOL_TOKEN_ID: &str = "So11111111111111111111111111111111111111112";
 const TOKEN_PROGRAM_ID: &str = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA";
 const JUPITER_PROGRAM_ID: &str = "JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4";
 
@@ -231,7 +230,7 @@ impl SolanaClient {
     }
 
     fn asset_id_from_program(&self, program_id: String) -> AssetId {
-        if program_id == SOL_TOKEN_ID {
+        if program_id == WSOL_TOKEN_ADDRESS {
             return self.get_chain().as_asset_id();
         }
         AssetId {

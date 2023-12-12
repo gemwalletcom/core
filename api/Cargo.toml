@@ -6,7 +6,6 @@ version = { workspace = true }
 [dependencies]
 rocket = { workspace = true }
 serde = { workspace = true }
-serde_json = { workspace = true }
 tokio = { workspace = true }
 config = { workspace = true }
 storage = { path = "../storage" }
@@ -15,9 +14,7 @@ fiat = { path = "../fiat" }
 swapper = { path = "../swapper" }
 settings = { path = "../settings" }
 settings_chain = { path = "../settings_chain" }
-name_resolver = {path = "../name_resolver"}
-diesel = { workspace = true }
-async-trait = { workspace = true }
+name_resolver = { path = "../name_resolver" }
 primitives = { path = "../primitives" }
 api_connector = { path = "../api_connector" }
 prometheus-client = { workspace = true }

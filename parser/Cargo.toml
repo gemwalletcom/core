@@ -4,7 +4,6 @@ version = { workspace = true }
 edition = { workspace = true }
 
 [dependencies]
-serde = { workspace = true }
 serde_json = { workspace = true }
 primitives = { path = "../primitives" }
 storage = { path = "../storage" }
@@ -13,7 +12,4 @@ settings_chain = { path = "../settings_chain" }
 blockchain = { path = "../blockchain" }
 api_connector = { path = "../api_connector" }
 tokio = { workspace = true }
-reqwest = { workspace = true }
 futures = { workspace = true }
-reqwest-middleware =  { workspace = true }
-reqwest-retry =  { workspace = true }

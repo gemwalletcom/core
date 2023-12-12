@@ -22,3 +22,6 @@ test:
 
 fix:
 	cargo clippy --fix --allow-dirty --allow-staged --workspace --quiet
+
+unused:
+	cargo machete

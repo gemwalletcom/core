@@ -5,7 +5,5 @@ version = { workspace = true }
 
 [dependencies]
 serde = { workspace = true }
-serde_json = { workspace = true }
-tokio = { workspace = true }
 reqwest = { workspace = true }
 primitives = { path = "../primitives" }

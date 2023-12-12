@@ -4,12 +4,10 @@ edition = { workspace = true }
 version = { workspace = true }
 
 [dependencies]
-serde = { workspace = true }
 serde_json = { workspace = true }
 tokio = { workspace = true }
 reqwest = { workspace = true }
 pricer = { path = "../pricer" }
-fiat = { path = "../fiat" }
 settings = { path = "../settings" }
 storage = { path = "../storage" }
 api_connector = { path = "../api_connector" }

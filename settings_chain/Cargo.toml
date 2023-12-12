@@ -4,13 +4,9 @@ version = { workspace = true }
 edition = { workspace = true }
 
 [dependencies]
-typeshare = { workspace = true }
-serde = { workspace = true }
-serde_json = { workspace = true }
-config = { workspace = true }
 primitives = { path = "../primitives" }
 blockchain = { path = "../blockchain" }
 settings = { path = "../settings" }
 reqwest = { workspace = true }
-reqwest-middleware =  { workspace = true }
-reqwest-retry =  { workspace = true }
+reqwest-middleware = { workspace = true }
+reqwest-retry = { workspace = true }

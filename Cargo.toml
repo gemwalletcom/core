@@ -50,7 +50,7 @@ clickhouse = { git = "https://github.com/loyd/clickhouse.rs", rev = "d930b66f677
 
 # crypto
 base64 = { version = "0.21.5" }
-bech32 = { version = "0.9.1" }
+#bech32 = { version = "0.9.1" }
 bs58 = { version = "0.5.0", features = ["check"] }
 hex = { version = "0.4.3" }
 num-bigint = { version = "0.4.4", features = ["std", "serde"] }
