@@ -10,6 +10,16 @@ pub struct Delegation {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare]
+#[serde(rename_all = "camelCase")]
+pub struct DelegationBase {
+    pub asset_id: AssetId,
+    pub state: DelegationState,
+    pub balance: String,
+    pub validator_id: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[typeshare]
 pub struct DelegationValidator {
     pub chain: Chain,
     pub id: String,
@@ -22,4 +32,6 @@ pub struct DelegationValidator {
 pub enum DelegationState {
     Active,
     Pending,
+    Undelegating,
+    Rewards,
 }

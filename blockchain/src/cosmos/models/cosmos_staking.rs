@@ -37,6 +37,7 @@ struct CosmosRewards {
 
 #[typeshare]
 struct CosmosReward {
+    validator_address: String,
     reward: Vec<CosmosBalance>,
 }
 
