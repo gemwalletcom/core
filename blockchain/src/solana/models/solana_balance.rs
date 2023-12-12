@@ -1,9 +1,9 @@
 #[typeshare]
 struct SolanaBalance {
-    value: Int
+    value: Int,
 }
 
 #[typeshare]
 struct SolanaBalanceValue {
-    amount: String
+    amount: String,
 }

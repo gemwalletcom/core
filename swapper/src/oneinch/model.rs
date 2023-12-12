@@ -1,4 +1,6 @@
-use primitives::SwapQuoteData;
+use std::str::FromStr;
+
+use primitives::{EthereumAddress, SwapQuoteData};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -33,7 +35,9 @@ pub struct SwapResultTransaction {
 impl SwapResultTransaction {
     pub fn get_data(&self) -> SwapQuoteData {
         SwapQuoteData {
-            to: self.to.clone(),
+            to: EthereumAddress::from_str(&self.to.clone())
+                .unwrap()
+                .to_checksum(),
             value: self.value.clone(),
             data: self.data.clone(),
         }
