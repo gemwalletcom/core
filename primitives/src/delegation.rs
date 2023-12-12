@@ -2,9 +2,7 @@
 #[typeshare]
 #[serde(rename_all = "camelCase")]
 pub struct Delegation {
-    pub asset_id: AssetId,
-    pub state: DelegationState,
-    pub balance: String,
+    pub base: DelegationBase,
     pub validator: DelegationValidator,
 }
 
@@ -15,6 +13,8 @@ pub struct DelegationBase {
     pub asset_id: AssetId,
     pub state: DelegationState,
     pub balance: String,
+    pub completion_date: Option<Date>,
+    pub delegation_id: String,
     pub validator_id: String,
 }
 
