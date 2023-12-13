@@ -4,6 +4,7 @@
 pub struct Delegation {
     pub base: DelegationBase,
     pub validator: DelegationValidator,
+    pub price: Option<Price>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
