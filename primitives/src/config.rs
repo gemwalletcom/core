@@ -1,8 +1,6 @@
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
-use crate::tokenlist::TokenListChainVersion;
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Codable")]
 #[serde(rename_all = "camelCase")]

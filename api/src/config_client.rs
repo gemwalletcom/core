@@ -1,8 +1,5 @@
-use primitives::{
-    config::{
-        ConfigAndroidApp, ConfigApp, ConfigAppVersion, ConfigIOSApp, ConfigResponse, ConfigVersions,
-    },
-    tokenlist::TokenListChainVersion,
+use primitives::config::{
+    ConfigAndroidApp, ConfigApp, ConfigAppVersion, ConfigIOSApp, ConfigResponse, ConfigVersions,
 };
 use std::error::Error;
 use storage::DatabaseClient;

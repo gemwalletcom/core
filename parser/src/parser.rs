@@ -257,7 +257,7 @@ impl Parser {
         let transactions = primitive_transactions
             .clone()
             .into_iter()
-            .map(|x| storage::models::Transaction::from_primitive(x))
+            .map(storage::models::Transaction::from_primitive)
             .collect::<Vec<storage::models::Transaction>>();
 
         let result = self.database.add_transactions(transactions.clone())?;

@@ -102,7 +102,7 @@ impl Client {
             .map(|quote| {
                 let mut result = quote.clone();
                 result.crypto_amount = precision(quote.crypto_amount, 5);
-                return result
+                result
             })
             .collect();
 

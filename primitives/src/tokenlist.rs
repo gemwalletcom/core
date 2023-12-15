@@ -1,7 +1,7 @@
+use crate::asset_type::AssetType;
 use crate::Asset;
 use crate::{chain::Chain, AssetId};
-use crate::asset_type::AssetType;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TokenList {
@@ -34,10 +34,4 @@ impl TokenListAsset {
             decimals: self.decimals,
         }
     }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TokenListChainVersion {
-    pub chain: String,
-    pub version: i32,
 }
