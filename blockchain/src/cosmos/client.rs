@@ -31,22 +31,21 @@ impl CosmosClient {
     ) -> Option<primitives::Transaction> {
         let bytes = general_purpose::STANDARD.decode(transaction).ok()?;
         let tx: cosmos_sdk_proto::cosmos::tx::v1beta1::Tx =
-            cosmos_sdk_proto::prost::Message::decode(&*bytes).unwrap();
+            cosmos_sdk_proto::prost::Message::decode(&*bytes).ok()?;
+
         match tx.body {
             Some(body) => {
                 for message in body.messages {
                     let hash = hex::encode(Sha256::digest(bytes.clone())).to_uppercase();
-                    let sequence = tx.auth_info.clone().unwrap().signer_infos.first()?.sequence;
+                    let tx_auth = tx.auth_info.clone()?;
+                    let sequence = tx_auth.signer_infos.first()?.sequence;
                     let default_denom = self.chain.as_denom();
 
                     match message.type_url.as_str() {
                         MESSAGE_SEND | MESSAGE_SEND_BETA => {
                             let message_send: cosmos_sdk_proto::cosmos::bank::v1beta1::MsgSend =
                                 cosmos_sdk_proto::prost::Message::decode(&*message.value).ok()?;
-                            let fee = tx
-                                .auth_info
-                                .clone()
-                                .unwrap()
+                            let fee = tx_auth
                                 .fee?
                                 .amount
                                 .into_iter()
