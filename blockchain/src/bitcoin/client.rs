@@ -32,7 +32,10 @@ impl BitcoinClient {
         page: usize,
         limit: usize,
     ) -> Result<Block, Box<dyn Error + Send + Sync>> {
-        let url = format!("{}/api/v2/block/{}?page={}&limit={}", self.url, block_number, page, limit);
+        let url = format!(
+            "{}/api/v2/block/{}?page={}&limit={}",
+            self.url, block_number, page, limit
+        );
         let block: Block = self.client.get(url).send().await?.json::<Block>().await?;
         Ok(block)
     }
@@ -63,7 +66,13 @@ impl BitcoinClient {
             .iter()
             .filter(|o| o.is_address)
             .map(|output| TransactionInput {
-                address: output.addresses.clone().unwrap_or_default().first().unwrap().to_string(),
+                address: output
+                    .addresses
+                    .clone()
+                    .unwrap_or_default()
+                    .first()
+                    .unwrap()
+                    .to_string(),
                 value: output.value.clone(),
             })
             .collect();
@@ -113,7 +122,7 @@ impl ChainProvider for BitcoinClient {
         &self,
         block_number: i64,
     ) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Send + Sync>> {
-        let mut page: usize= 1;
+        let mut page: usize = 1;
         let limit: usize = 20;
         let mut transactions: Vec<Transaction> = Vec::new();
         loop {
