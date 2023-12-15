@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use num_bigint::BigUint;
 use num_traits::Num;
-use serde::{Serialize, Deserialize, Serializer, Deserializer};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 #[derive(Debug, Clone)]
 pub struct BigIntHex {
@@ -15,16 +15,12 @@ pub struct BigIntValue {
 }
 
 impl BigIntHex {
-    pub fn to_string(&self) -> String {
-        self.value.to_string()
-    }
-
     pub fn as_i64(&self) -> i64 {
-        self.to_string().parse::<i64>().unwrap_or_default()
+        self.value.to_string().parse::<i64>().unwrap_or_default()
     }
 
     pub fn as_i32(&self) -> i32 {
-        self.to_string().parse::<i32>().unwrap_or_default()
+        self.value.to_string().parse::<i32>().unwrap_or_default()
     }
 }
 

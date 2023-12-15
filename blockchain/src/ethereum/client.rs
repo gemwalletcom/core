@@ -83,7 +83,7 @@ impl EthereumClient {
         } else {
             TransactionState::Failed
         };
-        let value = transaction.value.to_string();
+        let value = transaction.value.value.to_string();
         let nonce = transaction.nonce.as_i32();
         let block = transaction.block_number.as_i32();
         let fee = reciept.get_fee().to_string();

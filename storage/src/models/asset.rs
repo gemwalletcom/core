@@ -42,7 +42,7 @@ impl Asset {
             token_id: asset.id.token_id,
             name: asset.name,
             symbol: asset.symbol,
-            asset_type: asset.asset_type.to_string(),
+            asset_type: asset.asset_type.as_ref().to_string(),
             decimals: asset.decimals,
             rank: 0,
         }
