@@ -1,5 +1,7 @@
+use std::str::FromStr;
+
+use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
-use serde::{Serialize, Deserialize};
 
 use crate::chain::Chain;
 
@@ -17,22 +19,28 @@ impl AssetId {
         if parts.is_empty() || parts.len() > 2 {
             return None;
         }
-        let chain = Chain::from_str(parts[0])?;
+        let chain = Chain::from_str(parts[0]).ok()?;
         let token_id = parts.get(1).map(|s| s.to_owned());
-        Some(Self { chain, token_id: token_id.map(|s| s.to_owned()) })
+        Some(Self {
+            chain,
+            token_id: token_id.map(|s| s.to_owned()),
+        })
     }
 
     pub fn to_string(&self) -> String {
         match &self.token_id {
             Some(token_id) => {
-                format!("{}_{}", self.chain.as_str(), token_id)
+                format!("{}_{}", self.chain.as_ref(), token_id)
             }
-            None => self.chain.as_str().to_owned(),
+            None => self.chain.as_ref().to_owned(),
         }
     }
 
     pub fn from_chain(chain: Chain) -> AssetId {
-        AssetId { chain, token_id: None }
+        AssetId {
+            chain,
+            token_id: None,
+        }
     }
 
     pub fn is_native(&self) -> bool {

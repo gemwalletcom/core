@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 
@@ -15,7 +17,7 @@ impl Subscription {
     pub fn as_primitive(&self) -> primitives::Subscription {
         primitives::Subscription {
             wallet_index: self.wallet_index,
-            chain: primitives::Chain::from_str(self.chain.as_str()).unwrap(),
+            chain: primitives::Chain::from_str(self.chain.as_ref()).unwrap(),
             address: self.address.clone(),
         }
     }
@@ -24,9 +26,8 @@ impl Subscription {
         Self {
             device_id,
             wallet_index: subscription.wallet_index,
-            chain: subscription.chain.to_string(),
+            chain: subscription.chain.as_ref().to_string(),
             address: subscription.address.to_string(),
         }
     }
 }
-

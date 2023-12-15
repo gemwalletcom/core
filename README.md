@@ -34,7 +34,7 @@ Run `make install` to install rust, typeshare
 | Base         | ✅            | ✅               |
 | AvalancheC   | ✅            | ✅               |
 | Sui          | ✅            | 🏗               |
-| Ripple       | ✅            | 🏗               |
+| Xrp       | ✅            | 🏗               |
 | OpBNB        | ✅            | ✅               |
 
 List of available chains specified in [primitives package](https://github.com/gemwalletcom/core/blob/main/primitives/src/chain.rs).

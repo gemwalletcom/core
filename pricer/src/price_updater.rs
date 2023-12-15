@@ -39,27 +39,27 @@ impl PriceUpdater {
                         prices_map.insert(asset_price_map(asset_id, market.clone()));
                     }
                     // special case.
-                    if value.as_str() == Chain::Binance.as_str() {
+                    if value.as_ref() == Chain::Binance.as_ref() {
                         prices_map.insert(asset_price_map(
-                            Chain::SmartChain.as_str().to_string(),
+                            Chain::SmartChain.as_ref().to_string(),
                             market.clone(),
                         ));
                         prices_map.insert(asset_price_map(
-                            Chain::OpBNB.as_str().to_string(),
+                            Chain::OpBNB.as_ref().to_string(),
                             market.clone(),
                         ));
                     }
-                    if value.as_str() == Chain::Ethereum.as_str() {
+                    if value.as_ref() == Chain::Ethereum.as_ref() {
                         prices_map.insert(asset_price_map(
-                            Chain::Arbitrum.as_str().to_string(),
+                            Chain::Arbitrum.as_ref().to_string(),
                             market.clone(),
                         ));
                         prices_map.insert(asset_price_map(
-                            Chain::Optimism.as_str().to_string(),
+                            Chain::Optimism.as_ref().to_string(),
                             market.clone(),
                         ));
                         prices_map.insert(asset_price_map(
-                            Chain::Base.as_str().to_string(),
+                            Chain::Base.as_ref().to_string(),
                             market.clone(),
                         ));
                     }
@@ -387,10 +387,10 @@ fn asset_price_map(asset_id: String, market: CoinMarket) -> Price {
 
 fn get_asset_id(chain: Chain, token_id: String) -> Option<String> {
     if token_id.is_empty() {
-        return Some(chain.as_str().to_string());
+        return Some(chain.as_ref().to_string());
     }
     let token_id = format_token_id(chain, token_id)?;
-    format!("{}_{}", chain.as_str(), token_id).into()
+    format!("{}_{}", chain.as_ref(), token_id).into()
 }
 
 fn format_token_id(chain: Chain, token_id: String) -> Option<String> {
@@ -424,7 +424,7 @@ fn format_token_id(chain: Chain, token_id: String) -> Option<String> {
         | Chain::Doge
         | Chain::Aptos
         | Chain::Sui
-        | Chain::Ripple
+        | Chain::Xrp
         | Chain::Injective => None,
     }
 }

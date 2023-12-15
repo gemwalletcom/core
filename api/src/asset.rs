@@ -1,4 +1,6 @@
 extern crate rocket;
+use std::str::FromStr;
+
 use crate::AssetsClient;
 use primitives::{AssetFull, Chain};
 use rocket::serde::json::Json;

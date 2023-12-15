@@ -68,7 +68,7 @@ impl Parser {
                             .set_parser_state_current_block(self.chain, latest_block as i32);
                     }
                     if next_current_block >= latest_block as i32 {
-                        println!("parser ahead: {} current_block: {}, latest_block: {}, await_blocks: {}", self.chain.as_str(), state.current_block, latest_block, state.await_blocks);
+                        println!("parser ahead: {} current_block: {}, latest_block: {}, await_blocks: {}", self.chain.as_ref(), state.current_block, latest_block, state.await_blocks);
 
                         tokio::time::sleep(Duration::from_millis(self.options.timeout)).await;
                         continue;
@@ -77,7 +77,7 @@ impl Parser {
                 Err(err) => {
                     println!(
                         "parser latest_block chain: {}, error: {:?}",
-                        self.chain.as_str(),
+                        self.chain.as_ref(),
                         err
                     );
 
@@ -107,12 +107,12 @@ impl Parser {
                             .database
                             .set_parser_state_current_block(self.chain, end_block);
 
-                        println!("parser block complete: {}, blocks: {:?} transactions: {} of {}, to go blocks: {}, in: {:?}",  self.chain.as_str(), next_blocks, result.transactions, result.insert_transactions, to_go_blocks, start.elapsed());
+                        println!("parser block complete: {}, blocks: {:?} transactions: {} of {}, to go blocks: {}, in: {:?}",  self.chain.as_ref(), next_blocks, result.transactions, result.insert_transactions, to_go_blocks, start.elapsed());
                     }
                     Err(err) => {
                         println!(
                             "parser parse_block chain: blocks: {}, {:?}, error: {:?}",
-                            self.chain.as_str(),
+                            self.chain.as_ref(),
                             next_blocks,
                             err
                         );
@@ -189,7 +189,7 @@ impl Parser {
                     println!(
                         "push: device: {}, chain: {}, transaction: {:?}",
                         subscription.device_id,
-                        self.chain.as_str(),
+                        self.chain.as_ref(),
                         transaction.hash
                     );
 
@@ -224,7 +224,7 @@ impl Parser {
             Err(err) => {
                 println!(
                     "transaction insert: chain: {}, error: {:?}",
-                    self.chain.as_str(),
+                    self.chain.as_ref(),
                     err
                 );
             }

@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use diesel::prelude::*;
 use primitives::{AssetId, AssetLinks, AssetType, Chain};
 use serde::{Deserialize, Serialize};
@@ -36,7 +38,7 @@ impl Asset {
     pub fn from_primitive(asset: primitives::Asset) -> Self {
         Self {
             id: asset.id.to_string(),
-            chain: asset.id.chain.to_string(),
+            chain: asset.id.chain.as_ref().to_string(),
             token_id: asset.id.token_id,
             name: asset.name,
             symbol: asset.symbol,

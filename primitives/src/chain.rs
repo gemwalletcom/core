@@ -1,12 +1,16 @@
+use std::fmt;
+
 use serde::{Deserialize, Serialize};
 use strum::{EnumIter, IntoEnumIterator};
+use strum_macros::{AsRefStr, EnumString};
 use typeshare::typeshare;
 
 use crate::{AssetId, AssetType, ChainType};
 
-#[derive(Copy, Clone, Debug, Serialize, Deserialize, EnumIter)]
+#[derive(Copy, Clone, Debug, Serialize, Deserialize, EnumIter, AsRefStr, EnumString)]
 #[typeshare(swift = "Equatable, Codable, CaseIterable")]
 #[serde(rename_all = "lowercase")]
+#[strum(serialize_all = "lowercase")]
 pub enum Chain {
     Bitcoin,
     Litecoin,
@@ -27,7 +31,7 @@ pub enum Chain {
     Base,
     AvalancheC,
     Sui,
-    Ripple,
+    Xrp,
     OpBNB,
     Fantom,
     Gnosis,
@@ -37,72 +41,18 @@ pub enum Chain {
 
 impl PartialEq for Chain {
     fn eq(&self, other: &Self) -> bool {
-        self.as_str() == other.as_str()
+        self.as_ref() == other.as_ref()
+    }
+}
+
+impl fmt::Display for Chain {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        // Use `self.number` to refer to each positional data point.
+        write!(f, "{}", self.as_ref())
     }
 }
 
 impl Chain {
-    pub fn from_str(chain: &str) -> Option<Self> {
-        match chain {
-            "bitcoin" => Some(Self::Bitcoin),
-            "litecoin" => Some(Self::Litecoin),
-            "binance" => Some(Self::Binance),
-            "ethereum" => Some(Self::Ethereum),
-            "smartchain" => Some(Self::SmartChain),
-            "polygon" => Some(Self::Polygon),
-            "solana" => Some(Self::Solana),
-            "arbitrum" => Some(Self::Arbitrum),
-            "optimism" => Some(Self::Optimism),
-            "thorchain" => Some(Self::Thorchain),
-            "cosmos" => Some(Self::Cosmos),
-            "osmosis" => Some(Self::Osmosis),
-            "ton" => Some(Self::Ton),
-            "tron" => Some(Self::Tron),
-            "doge" => Some(Self::Doge),
-            "aptos" => Some(Self::Aptos),
-            "base" => Some(Self::Base),
-            "avalanchec" => Some(Self::AvalancheC),
-            "sui" => Some(Self::Sui),
-            "ripple" | "xrp" => Some(Self::Ripple),
-            "opbnb" => Some(Self::OpBNB),
-            "fantom" => Some(Self::Fantom),
-            "gnosis" => Some(Self::Gnosis),
-            "celestia" => Some(Self::Celestia),
-            "injective" => Some(Self::Injective),
-            _ => None,
-        }
-    }
-
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Self::Binance => "binance",
-            Self::Bitcoin => "bitcoin",
-            Self::Litecoin => "litecoin",
-            Self::Ethereum => "ethereum",
-            Self::SmartChain => "smartchain",
-            Self::Polygon => "polygon",
-            Self::Solana => "solana",
-            Self::Arbitrum => "arbitrum",
-            Self::Optimism => "optimism",
-            Self::Thorchain => "thorchain",
-            Self::Cosmos => "cosmos",
-            Self::Osmosis => "osmosis",
-            Self::Ton => "ton",
-            Self::Tron => "tron",
-            Self::Doge => "doge",
-            Self::Aptos => "aptos",
-            Self::Base => "base",
-            Self::AvalancheC => "avalanchec",
-            Self::Sui => "sui",
-            Self::Ripple => "ripple",
-            Self::OpBNB => "opbnb",
-            Self::Fantom => "fantom",
-            Self::Gnosis => "gnosis",
-            Self::Celestia => "celestia",
-            Self::Injective => "injective",
-        }
-    }
-
     pub fn as_denom(&self) -> &'static str {
         match self {
             Self::Binance => "BNB",
@@ -144,21 +94,14 @@ impl Chain {
             Self::Doge => todo!(),
             Self::Aptos => todo!(),
             Self::Sui => todo!(),
-            Self::Ripple => todo!(),
+            Self::Xrp => todo!(),
             Self::Celestia => todo!(),
             Self::Injective => todo!(),
         }
     }
 
-    pub fn to_string(&self) -> String {
-        self.as_str().to_string()
-    }
-
     pub fn is_utxo(&self) -> bool {
-        match self {
-            Self::Bitcoin | Self::Litecoin | Self::Doge => true,
-            _ => false,
-        }
+        matches!(self, Self::Bitcoin | Self::Litecoin | Self::Doge)
     }
 
     pub fn as_slip44(&self) -> i64 {
@@ -185,7 +128,7 @@ impl Chain {
             Self::Aptos => 637,
             Self::AvalancheC => 9005,
             Self::Sui => 784,
-            Self::Ripple => 144,
+            Self::Xrp => 144,
         }
     }
 
@@ -211,7 +154,7 @@ impl Chain {
             Self::Tron => ChainType::Tron,
             Self::Aptos => ChainType::Aptos,
             Self::Sui => ChainType::Sui,
-            Self::Ripple => ChainType::Ripple,
+            Self::Xrp => ChainType::Xrp,
         }
     }
 
@@ -238,7 +181,7 @@ impl Chain {
             | Self::Doge
             | Self::Aptos
             | Self::Sui
-            | Self::Ripple
+            | Self::Xrp
             | Self::Celestia
             | Self::Injective => None,
         }
@@ -271,7 +214,7 @@ impl Chain {
             Self::Aptos => 500,
             Self::AvalancheC => 2_000,
             Self::Sui => 500,
-            Self::Ripple => 4_000,
+            Self::Xrp => 4_000,
         }
     }
 

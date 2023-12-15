@@ -41,7 +41,7 @@ impl ProviderFactory {
             Chain::Tron => Box::new(TronClient::new(client, url)),
             Chain::Aptos => Box::new(AptosClient::new(client, url)),
             Chain::Sui => Box::new(SuiClient::new(url)),
-            Chain::Ripple => Box::new(XRPClient::new(client, url)),
+            Chain::Xrp => Box::new(XRPClient::new(client, url)),
             Chain::Binance => {
                 unimplemented!()
             }
@@ -69,7 +69,7 @@ impl ProviderFactory {
             Chain::Base => settings.chains.base.url.as_str(),
             Chain::AvalancheC => settings.chains.avalanchec.url.as_str(),
             Chain::Sui => settings.chains.sui.url.as_str(),
-            Chain::Ripple => settings.chains.xrp.url.as_str(),
+            Chain::Xrp => settings.chains.xrp.url.as_str(),
             Chain::OpBNB => settings.chains.opbnb.url.as_str(),
             Chain::Fantom => settings.chains.fantom.url.as_str(),
             Chain::Gnosis => settings.chains.gnosis.url.as_str(),

@@ -2010,6 +2010,7 @@ dependencies = [
  "serde",
  "serde_json",
  "strum",
+ "strum_macros",
  "tiny-keccak",
  "typeshare",
 ]

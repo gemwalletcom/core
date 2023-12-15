@@ -136,7 +136,7 @@ impl Transaction {
     }
 
     pub fn id_from(chain: Chain, hash: String) -> String {
-        format!("{}_{}", chain.as_str(), hash)
+        format!("{}_{}", chain.as_ref(), hash)
     }
 
     pub fn is_utxo_tx(&self) -> bool {

@@ -1,13 +1,17 @@
+use std::str::FromStr;
+
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
-use primitives::{AssetId, transaction_utxo::TransactionInput, TransactionDirection};
+use primitives::{
+    transaction_utxo::TransactionInput, AssetId, TransactionDirection, TransactionType,
+};
 use serde::{Deserialize, Serialize};
 
 // #[derive(FromSqlRow, Serialize, Deserialize, Debug, Default, AsExpression)]
 // #[diesel(sql_type = Jsonb)]
 // pub struct TransactionUTXO {
-    //pub address: String,
-    //pub value: String,
+//pub address: String,
+//pub value: String,
 //}
 
 //AsChangeset
@@ -37,9 +41,9 @@ pub struct Transaction {
 
 impl Transaction {
     pub fn from_primitive(transaction: primitives::Transaction) -> Self {
-        Self{
+        Self {
             id: transaction.id.to_string(),
-            chain: transaction.asset_id.chain.as_str().to_string(),
+            chain: transaction.asset_id.chain.as_ref().to_string(),
             hash: transaction.hash,
             memo: transaction.memo,
             asset_id: transaction.asset_id.to_string().into(),
@@ -47,10 +51,14 @@ impl Transaction {
             fee: transaction.fee.into(),
             fee_asset_id: transaction.fee_asset_id.to_string().into(),
             block_number: transaction.block_number.parse::<i32>().unwrap_or_default(),
-            sequence: transaction.sequence.parse::<i32>().unwrap_or_default().into(),
+            sequence: transaction
+                .sequence
+                .parse::<i32>()
+                .unwrap_or_default()
+                .into(),
             from_address: transaction.from.into(),
             to_address: transaction.to.into(),
-            kind: transaction.transaction_type.to_string(),
+            kind: transaction.transaction_type.as_ref().to_string(),
             state: transaction.state.to_string(),
             block_created_at: transaction.created_at.naive_utc(),
             utxo_inputs: serde_json::to_value(transaction.utxo_inputs).ok(),
@@ -65,16 +73,19 @@ impl Transaction {
         let hash = self.hash.clone();
         let from = self.from_address.clone().unwrap_or_default();
         let to_address = self.to_address.clone().unwrap_or_default();
-        let inputs: Option<Vec<TransactionInput>> = serde_json::from_value(self.utxo_inputs.clone().into()).ok();
-        let outputs: Option<Vec<TransactionInput>> = serde_json::from_value(self.utxo_outputs.clone().into()).ok();
-        
-        let direction = if addresses.contains(&from)  {
+        let inputs: Option<Vec<TransactionInput>> =
+            serde_json::from_value(self.utxo_inputs.clone().into()).ok();
+        let outputs: Option<Vec<TransactionInput>> =
+            serde_json::from_value(self.utxo_outputs.clone().into()).ok();
+
+        let direction = if addresses.contains(&from) {
             primitives::TransactionDirection::Outgoing
         } else if addresses.contains(&to_address) {
             primitives::TransactionDirection::Incoming
         } else {
             primitives::TransactionDirection::SelfTransfer
         };
+        let transaction_type = TransactionType::from_str(self.kind.as_str()).ok().unwrap();
 
         return primitives::Transaction::new_with_utxo(
             hash.clone(),
@@ -82,7 +93,7 @@ impl Transaction {
             from.clone().into(),
             to_address.clone().into(),
             None,
-            primitives::TransactionType::from_str(self.kind.as_str()).unwrap_or_default(),
+            transaction_type,
             primitives::TransactionState::new(self.state.as_str()).unwrap(),
             self.block_number.to_string(),
             self.sequence.unwrap_or_default().to_string(),
@@ -95,7 +106,7 @@ impl Transaction {
             outputs.clone().unwrap_or_default(),
             self.metadata.clone(),
             self.block_created_at.and_utc(),
-        )
+        );
     }
 }
 

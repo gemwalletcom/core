@@ -47,7 +47,7 @@ impl SwapperClient {
             Chain::Tron => todo!(),
             Chain::Aptos => todo!(),
             Chain::Sui => todo!(),
-            Chain::Ripple => todo!(),
+            Chain::Xrp => todo!(),
             Chain::OpBNB => todo!(),
         }
     }

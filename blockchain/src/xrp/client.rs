@@ -115,7 +115,7 @@ impl XRPClient {
 #[async_trait]
 impl ChainProvider for XRPClient {
     fn get_chain(&self) -> Chain {
-        Chain::Ripple
+        Chain::Xrp
     }
 
     async fn get_latest_block(&self) -> Result<i64, Box<dyn Error + Send + Sync>> {

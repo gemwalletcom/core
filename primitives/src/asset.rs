@@ -161,7 +161,7 @@ impl Asset {
                 decimals: 9,
                 asset_type: AssetType::NATIVE,
             },
-            Chain::Ripple => Asset {
+            Chain::Xrp => Asset {
                 id: chain.as_asset_id(),
                 name: "XRP".to_string(),
                 symbol: "XRP".to_string(),

@@ -45,7 +45,7 @@ impl ParserClient {
         if let Some(transaction_type) = transaction_type {
             return transactions
                 .into_iter()
-                .filter(|x| x.transaction_type.to_string() == transaction_type)
+                .filter(|x| x.transaction_type.as_ref() == transaction_type)
                 .collect::<Vec<Transaction>>();
         }
 

@@ -246,7 +246,7 @@ impl DatabaseClient {
     ) -> Result<ParserState, diesel::result::Error> {
         use crate::schema::parser_state::dsl::*;
         parser_state
-            .filter(chain.eq(_chain.as_str()))
+            .filter(chain.eq(_chain.as_ref()))
             .select(ParserState::as_select())
             .first(&mut self.connection)
     }
@@ -254,7 +254,7 @@ impl DatabaseClient {
     pub fn add_parser_state(&mut self, _chain: Chain) -> Result<usize, diesel::result::Error> {
         use crate::schema::parser_state::dsl::*;
         diesel::insert_into(parser_state)
-            .values(chain.eq(_chain.as_str()))
+            .values(chain.eq(_chain.as_ref()))
             .on_conflict_do_nothing()
             .execute(&mut self.connection)
     }
@@ -272,7 +272,7 @@ impl DatabaseClient {
         block: i32,
     ) -> Result<usize, diesel::result::Error> {
         use crate::schema::parser_state::dsl::*;
-        diesel::update(parser_state.find(_chain.as_str()))
+        diesel::update(parser_state.find(_chain.as_ref()))
             .set(latest_block.eq(block))
             .execute(&mut self.connection)
     }
@@ -283,7 +283,7 @@ impl DatabaseClient {
         block: i32,
     ) -> Result<usize, diesel::result::Error> {
         use crate::schema::parser_state::dsl::*;
-        diesel::update(parser_state.find(_chain.as_str()))
+        diesel::update(parser_state.find(_chain.as_ref()))
             .set(current_block.eq(block))
             .execute(&mut self.connection)
     }
@@ -336,7 +336,7 @@ impl DatabaseClient {
     ) -> Result<Vec<Subscription>, diesel::result::Error> {
         use crate::schema::subscriptions::dsl::*;
         subscriptions
-            .filter(chain.eq(_chain.as_str()))
+            .filter(chain.eq(_chain.as_ref()))
             .filter(address.eq_any(addresses))
             .distinct_on((device_id, chain, address))
             .select(Subscription::as_select())

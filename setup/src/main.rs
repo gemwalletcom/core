@@ -1,6 +1,8 @@
-use primitives::{Chain, Asset};
+use std::str::FromStr;
+
+use primitives::{Asset, Chain};
 use settings::Settings;
-use storage::{DatabaseClient, ClickhouseDatabase};
+use storage::{ClickhouseDatabase, DatabaseClient};
 
 #[tokio::main]
 async fn main() {
@@ -9,7 +11,7 @@ async fn main() {
     let settings = Settings::new().unwrap();
 
     let postgres_url = settings.postgres.url.as_str();
-    let mut database_client: DatabaseClient = DatabaseClient::new(postgres_url);    
+    let mut database_client: DatabaseClient = DatabaseClient::new(postgres_url);
     database_client.migrations();
     println!("postgres migrations complete");
 
@@ -17,7 +19,12 @@ async fn main() {
     let _ = clickhouse_database.migrations().await;
     println!("clickhouse migrations complete");
 
-    let chains = settings.parser.chains.into_iter().filter_map(|chain| Chain::from_str(chain.as_str())).collect::<Vec<_>>();
+    let chains = settings
+        .parser
+        .chains
+        .into_iter()
+        .flat_map(|chain| Chain::from_str(chain.as_ref()))
+        .collect::<Vec<_>>();
 
     println!("chains: {:?}", chains);
 
@@ -27,7 +34,8 @@ async fn main() {
     }
 
     println!("setup assets");
-    let assets = chains.into_iter()
+    let assets = chains
+        .into_iter()
         .map(Asset::from_chain)
         .map(storage::models::Asset::from_primitive)
         .collect::<Vec<_>>();

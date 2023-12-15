@@ -1,4 +1,6 @@
 extern crate rocket;
+use std::str::FromStr;
+
 use crate::parser_client::ParserClient;
 use primitives::{Chain, Transaction};
 use rocket::serde::json::Json;

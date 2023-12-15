@@ -1,6 +1,8 @@
 pub mod parser;
 pub mod pusher;
 
+use std::str::FromStr;
+
 use primitives::Chain;
 use settings::Settings;
 use storage::DatabaseClient;
@@ -21,10 +23,10 @@ pub async fn main() {
         .get_parser_states()
         .unwrap()
         .into_iter()
-        .flat_map(|x| Chain::from_str(x.chain.as_str()))
+        .flat_map(|x| Chain::from_str(x.chain.as_ref()))
         .collect();
     let chain_env = std::env::args().nth(1).unwrap_or_default();
-    let chains = if let Some(chain) = Chain::from_str(chain_env.as_str()) {
+    let chains = if let Ok(chain) = Chain::from_str(chain_env.as_str()) {
         vec![chain]
     } else {
         chains
@@ -34,14 +36,7 @@ pub async fn main() {
         retry: settings.parser.retry,
     };
 
-    println!(
-        "parser start chains: {:?}",
-        chains
-            .clone()
-            .into_iter()
-            .map(|x| x.as_str())
-            .collect::<Vec<&str>>()
-    );
+    println!("parser start chains: {:?}", chains);
 
     let mut parsers = Vec::new();
     for chain in chains {
@@ -68,10 +63,10 @@ async fn parser_start(settings: Settings, parser_options: ParserOptions, chain: 
     let mut parser = Parser::new(provider, pusher, database_client, parser_options);
     match parser.start().await {
         Ok(_) => {
-            println!("parser {} start complete", chain.as_str())
+            println!("parser {} start complete", chain)
         }
         Err(e) => {
-            println!("parser {} start error: {:?}", chain.as_str(), e)
+            println!("parser {} start error: {:?}", chain, e)
         }
     }
 }

@@ -1,5 +1,5 @@
+use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
-use serde::{Serialize, Deserialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Codable, CaseIterable, Hashable")]
@@ -14,5 +14,5 @@ pub enum ChainType {
     Tron,
     Aptos,
     Sui,
-    Ripple,
+    Xrp,
 }

@@ -2,9 +2,12 @@ use std::{collections::HashMap, error::Error};
 
 use async_trait::async_trait;
 use primitives::chain::Chain;
-use primitives::name::{NameRecord, NameProvider};
+use primitives::name::{NameProvider, NameRecord};
 
-use crate::{ens::ENSClient, ud::UDClient, sns::SNSClient, ton::TONClient, eths::EthsClient, spaceid::SpaceIdClient, did::DidClient, suins::SuinsClient};
+use crate::{
+    did::DidClient, ens::ENSClient, eths::EthsClient, sns::SNSClient, spaceid::SpaceIdClient,
+    suins::SuinsClient, ton::TONClient, ud::UDClient,
+};
 
 #[async_trait]
 pub trait NameClient {
@@ -27,7 +30,6 @@ pub struct Client {
 }
 
 impl Client {
-    
     pub fn new(
         ens_url: String,
         ud_url: String,
@@ -64,61 +66,63 @@ impl Client {
 
     pub async fn resolve(&self, name: &str, chain: Chain) -> Result<NameRecord, Box<dyn Error>> {
         let name_prefix = name.split('.').clone().last().unwrap_or_default();
-        let provider = self.domains_mapping.get(name_prefix).expect("unable to get provider");
+        let provider = self
+            .domains_mapping
+            .get(name_prefix)
+            .expect("unable to get provider");
 
         println!("provider: {}", provider.as_str());
-        println!("provider chain: {}", chain.as_str());
+        println!("provider chain: {}", chain.as_ref());
 
         match provider {
             NameProvider::Ens => {
                 if !ENSClient::chains().contains(&chain) {
-                    return Err("not supported chain".to_string().into())
+                    return Err("not supported chain".to_string().into());
                 }
                 self.ens_client.resolve(name, chain).await
             }
             NameProvider::Ud => {
                 if !UDClient::chains().contains(&chain) {
-                    return Err("not supported chain".to_string().into())
+                    return Err("not supported chain".to_string().into());
                 }
                 self.ud_client.resolve(name, chain).await
             }
             NameProvider::Sns => {
                 if !SNSClient::chains().contains(&chain) {
-                    return Err("not supported chain".to_string().into())
+                    return Err("not supported chain".to_string().into());
                 }
                 self.sns_client.resolve(name, chain).await
-            },
+            }
             NameProvider::Ton => {
                 if !TONClient::chains().contains(&chain) {
-                    return Err("not supported chain".to_string().into())
+                    return Err("not supported chain".to_string().into());
                 }
                 self.ton_client.resolve(name, chain).await
-            },
-            NameProvider::Tree |
-            NameProvider::Eths => {
+            }
+            NameProvider::Tree | NameProvider::Eths => {
                 if !EthsClient::chains().contains(&chain) {
-                    return Err("not supported chain".to_string().into())
+                    return Err("not supported chain".to_string().into());
                 }
                 self.eths_client.resolve(name, chain).await
-            },
+            }
             NameProvider::SpaceId => {
                 if !SpaceIdClient::chains().contains(&chain) {
-                    return Err("not supported chain".to_string().into())
+                    return Err("not supported chain".to_string().into());
                 }
                 self.spaceid_client.resolve(name, chain).await
-            },
+            }
             NameProvider::Did => {
                 if !DidClient::chains().contains(&chain) {
-                    return Err("not supported chain".to_string().into())
+                    return Err("not supported chain".to_string().into());
                 }
                 self.did_client.resolve(name, chain).await
-            },
+            }
             NameProvider::Suins => {
                 if !SuinsClient::chains().contains(&chain) {
-                    return Err("not supported chain".to_string().into())
+                    return Err("not supported chain".to_string().into());
                 }
                 self.suins_client.resolve(name, chain).await
-            },
+            }
         }
     }
 
