@@ -1,3 +1,4 @@
+use num_bigint::BigUint;
 use primitives::BigIntHex;
 use serde::{Deserialize, Serialize};
 
@@ -30,8 +31,19 @@ pub struct Transaction {
 pub struct TransactionReciept {
     pub gas_used: BigIntHex,
     pub effective_gas_price: BigIntHex,
+    pub l1_fee: Option<BigIntHex>,
     pub logs: Vec<Log>,
     pub status: String,
+}
+
+impl TransactionReciept {
+    pub fn get_fee(&self) -> BigUint {
+        let fee = self.gas_used.clone().value * self.effective_gas_price.clone().value;
+        if let Some(l1_fee) = self.l1_fee.clone() {
+            return fee + l1_fee.value;
+        }
+        fee
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

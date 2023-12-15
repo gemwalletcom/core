@@ -7,4 +7,5 @@ struct TransactionExtended {
     price: Option<Price>,
     #[serde(rename = "feePrice")]
     fee_price: Option<Price>,
+    assets: Vec<Asset>,
 }

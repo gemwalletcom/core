@@ -86,7 +86,7 @@ impl EthereumClient {
         let value = transaction.value.to_string();
         let nonce = transaction.nonce.as_i32();
         let block = transaction.block_number.as_i32();
-        let fee = reciept.gas_used.clone().value * reciept.effective_gas_price.clone().value;
+        let fee = reciept.get_fee().to_string();
         let from = EthereumAddress::parse(&transaction.from)?.to_checksum();
         let to = EthereumAddress::parse(&transaction.to.unwrap_or_default())?.to_checksum();
 

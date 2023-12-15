@@ -1,52 +1,48 @@
+use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
-use serde::{Serialize, Deserialize};
 
 use crate::tokenlist::TokenListChainVersion;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare(swift="Codable")]
+#[typeshare(swift = "Codable")]
 #[serde(rename_all = "camelCase")]
 pub struct ConfigResponse {
-   pub app: ConfigApp,
-   pub versions: ConfigVersions,
+    pub app: ConfigApp,
+    pub versions: ConfigVersions,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare(swift="Codable")]
+#[typeshare(swift = "Codable")]
 pub struct ConfigApp {
     pub ios: ConfigIOSApp,
     pub android: ConfigAndroidApp,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare(swift="Codable")]
+#[typeshare(swift = "Codable")]
 pub struct ConfigIOSApp {
-    pub version: ConfigAppVersion
+    pub version: ConfigAppVersion,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare(swift="Codable")]
+#[typeshare(swift = "Codable")]
 pub struct ConfigAndroidApp {
-    pub version: ConfigAppVersion
+    pub version: ConfigAppVersion,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare(swift="Codable")]
+#[typeshare(swift = "Codable")]
 pub struct ConfigAppVersion {
-    pub production: String, 
+    pub production: String,
     pub beta: String,
     pub alpha: String,
 }
 
-#[typeshare(swift="Codable")]
+#[typeshare(swift = "Codable")]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ConfigVersions {
     pub nodes: i32,
     pub fiat_assets: i32,
     pub swap_assets: i32,
-    #[typeshare(skip)]
-    pub token_lists: i32,
-    #[typeshare(skip)]
-    pub token_lists_chains: Vec<TokenListChainVersion>,
 }
