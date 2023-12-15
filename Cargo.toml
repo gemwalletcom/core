@@ -1,6 +1,11 @@
 [workspace.package]
 version = "1.0.0"
 edition = "2021"
+license = "MIT"
+homepage = "https://gemwallet.com/"
+description = "Gem Wallet Core library in Rust"
+repository = "https://github.com/gemwalletcom/core"
+documentation = "https://github.com/gemwalletcom"
 
 [workspace]
 resolver = "2"
