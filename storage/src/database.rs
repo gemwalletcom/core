@@ -488,13 +488,14 @@ impl DatabaseClient {
     pub fn get_assets_ids_by_device_id(
         &mut self,
         addresses: Vec<String>,
-        _chains: Vec<String>,
+        chains: Vec<String>,
         from_timestamp: Option<u32>,
     ) -> Result<Vec<String>, diesel::result::Error> {
         use crate::schema::transactions::dsl::*;
         let mut query = transactions
             .into_boxed()
             .inner_join(transactions_addresses::table)
+            .filter(chain.eq_any(chains.clone()))
             .filter(transactions_addresses::address.eq_any(addresses));
 
         if let Some(from_timestamp) = from_timestamp {
