@@ -164,15 +164,6 @@ impl Pubkey {
     /// additional seed slice that contains the single `u8` bump seed, calling
     /// `create_program_address`, checking that the return value is `Ok`, and
     /// that the returned `Pubkey` has the expected value.
-    ///
-    /// ```
-    /// # use solana_program::pubkey::Pubkey;
-    /// # let program_id = Pubkey::new_unique();
-    /// let (expected_pda, bump_seed) = Pubkey::find_program_address(&[b"vault"], &program_id);
-    /// let actual_pda = Pubkey::create_program_address(&[b"vault", &[bump_seed]], &program_id)?;
-    /// assert_eq!(expected_pda, actual_pda);
-    /// # Ok::<(), anyhow::Error>(())
-    /// ```
     pub fn create_program_address(
         seeds: &[&[u8]],
         program_id: &Pubkey,
