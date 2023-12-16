@@ -1,6 +1,5 @@
-
+use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
-use serde::{Serialize, Deserialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Codable")]
@@ -28,7 +27,7 @@ impl FiatProviderName {
     }
 
     pub fn as_fiat_provider(&self) -> FiatProvider {
-        FiatProvider { 
+        FiatProvider {
             name: self.as_str().to_string(),
             image_url: "".to_string(),
         }

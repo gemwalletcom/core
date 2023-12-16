@@ -1,11 +1,11 @@
-use std::error::Error;
 use redis::{aio::Connection, AsyncCommands, RedisResult};
 use serde::{de::DeserializeOwned, Serialize};
+use std::error::Error;
 
 pub mod database;
 pub use self::database::DatabaseClient;
-pub mod schema;
 pub mod models;
+pub mod schema;
 
 pub mod clickhouse_database;
 pub use self::clickhouse_database::ClickhouseDatabase;
@@ -18,13 +18,15 @@ impl RedisClient {
     pub async fn new(database_url: &str) -> RedisResult<Self> {
         let client = redis::Client::open(database_url)?;
         let conn = client.get_async_connection().await?;
-        
-        Ok(Self {
-            conn,
-        })
+
+        Ok(Self { conn })
     }
 
-    pub async fn set_value<T>(&mut self, key: &str, value: &T) -> Result<(), Box<dyn std::error::Error>>
+    pub async fn set_value<T>(
+        &mut self,
+        key: &str,
+        value: &T,
+    ) -> Result<(), Box<dyn std::error::Error>>
     where
         T: Serialize,
     {
@@ -42,22 +44,17 @@ impl RedisClient {
             Some(serialized) => {
                 let value: T = serde_json::from_str(&serialized)?;
                 Ok(value)
-            },
-            None => {
-                Err("serilization".into())
-            },
+            }
+            None => Err("serilization".into()),
         }
     }
 
     pub async fn get_values<T>(&mut self, prefix: &str) -> Result<Vec<T>, Box<dyn Error>>
-        where
-            T: DeserializeOwned,
+    where
+        T: DeserializeOwned,
     {
         let keys: Vec<String> = self.conn.keys(format!("{}*", prefix)).await?;
-        let response: Vec<Option<String>> = self
-            .conn
-            .mget(keys)
-            .await?;
+        let response: Vec<Option<String>> = self.conn.mget(keys).await?;
         let values: Vec<String> = response.into_iter().flatten().collect();
 
         let mut results: Vec<T> = Vec::new();
@@ -69,10 +66,8 @@ impl RedisClient {
         Ok(results)
     }
 
-    pub async fn get_keys(&mut self, prefix: &str) -> Result<Vec<String>, Box<dyn Error>>  {
+    pub async fn get_keys(&mut self, prefix: &str) -> Result<Vec<String>, Box<dyn Error>> {
         let keys: Vec<String> = self.conn.keys(format!("{}*", prefix)).await?;
         Ok(keys)
     }
 }
-
-

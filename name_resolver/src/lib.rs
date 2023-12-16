@@ -1,10 +1,10 @@
 pub mod client;
-pub mod ens;
-pub mod ud;
-pub mod sns;
-pub mod ton;
-pub mod eths;
-pub mod spaceid;
 pub mod did;
-pub mod suins;
+pub mod ens;
 pub mod ens_provider;
+pub mod eths;
+pub mod sns;
+pub mod spaceid;
+pub mod suins;
+pub mod ton;
+pub mod ud;

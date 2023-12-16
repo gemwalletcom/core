@@ -1,5 +1,5 @@
+use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
-use serde::{Serialize, Deserialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare()]
@@ -7,7 +7,7 @@ use serde::{Serialize, Deserialize};
 pub struct FiatBuyRequest {
     pub asset_id: String,
     #[typeshare(skip)]
-    pub ip_address: String, 
+    pub ip_address: String,
     pub fiat_currency: String,
     pub fiat_amount: f64,
     pub wallet_address: String,

@@ -1,7 +1,7 @@
+use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
-use serde::{Serialize, Deserialize};
 
-#[derive(Debug, Clone, Serialize , Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Codable")]
 #[serde(rename_all = "lowercase")]
 pub struct AssetScore {

@@ -1,9 +1,11 @@
+use crate::model::{FiatClient, FiatMapping};
+use async_trait::async_trait;
+use primitives::{
+    fiat_provider::FiatProviderName, fiat_quote::FiatQuote, fiat_quote_request::FiatBuyRequest,
+};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use url::Url;
-use primitives::{fiat_quote::FiatQuote, fiat_quote_request::FiatBuyRequest, fiat_provider::FiatProviderName};
-use crate::model::{FiatMapping, FiatClient};
-use async_trait::async_trait;
 
 const TRANSAK_API_URL: &str = "https://api.transak.com";
 const TRANSAK_REDIRECT_URL: &str = "https://global.transak.com";
@@ -58,10 +60,13 @@ impl FiatClient for TransakClient {
         );
 
         let response = self.client.get(&url).send().await?;
-        let transak_quote = response.json::<TransakResponse<TransakQuote>>().await?.response;
+        let transak_quote = response
+            .json::<TransakResponse<TransakQuote>>()
+            .await?
+            .response;
 
         Ok(self.get_fiat_quote(request, transak_quote))
-    }    
+    }
 }
 
 impl TransakClient {
@@ -70,7 +75,7 @@ impl TransakClient {
     }
 
     fn get_fiat_quote(&self, request: FiatBuyRequest, quote: TransakQuote) -> FiatQuote {
-        FiatQuote{
+        FiatQuote {
             provider: self.name().as_fiat_provider(),
             fiat_amount: request.fiat_amount,
             fiat_currency: request.fiat_currency,
@@ -82,7 +87,8 @@ impl TransakClient {
     pub fn redirect_url(&self, quote: TransakQuote, address: String) -> String {
         let mut components = Url::parse(TRANSAK_REDIRECT_URL).unwrap();
 
-        components.query_pairs_mut()
+        components
+            .query_pairs_mut()
             .append_pair("apiKey", self.api_key.as_str())
             .append_pair("fiatAmount", &quote.fiat_amount.to_string())
             .append_pair("fiatCurrency", &quote.fiat_currency)
@@ -91,6 +97,6 @@ impl TransakClient {
             .append_pair("disableWalletAddressForm", "true")
             .append_pair("walletAddress", &address);
 
-        return components.as_str().to_string()
+        return components.as_str().to_string();
     }
 }

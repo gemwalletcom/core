@@ -1,7 +1,9 @@
-use std::{collections::HashMap, sync::Arc};
-use primitives::{fiat_quote::FiatQuote, fiat_quote_request::FiatBuyRequest, fiat_provider::FiatProviderName};
-use serde::{Deserialize, Serialize};
 use async_trait::async_trait;
+use primitives::{
+    fiat_provider::FiatProviderName, fiat_quote::FiatQuote, fiat_quote_request::FiatBuyRequest,
+};
+use serde::{Deserialize, Serialize};
+use std::{collections::HashMap, sync::Arc};
 use storage::models::FiatRate;
 
 pub struct FiatRequestMap {
@@ -12,7 +14,7 @@ pub struct FiatRequestMap {
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct FiatRates {
-    pub rates: Vec<FiatRate>
+    pub rates: Vec<FiatRate>,
 }
 
 // mappings
@@ -20,7 +22,7 @@ pub struct FiatRates {
 #[serde(rename_all = "camelCase")]
 pub struct FiatMapping {
     pub symbol: String,
-    pub network: Option<String>
+    pub network: Option<String>,
 }
 
 pub type FiatMappingMap = HashMap<String, FiatMapping>;
@@ -28,7 +30,11 @@ pub type FiatMappingMap = HashMap<String, FiatMapping>;
 #[async_trait]
 pub trait FiatClient {
     fn name(&self) -> FiatProviderName;
-    async fn get_quote(&self, request: FiatBuyRequest, request_map: FiatMapping) -> Result<FiatQuote, Box<dyn std::error::Error + Send + Sync>>;
+    async fn get_quote(
+        &self,
+        request: FiatBuyRequest,
+        request_map: FiatMapping,
+    ) -> Result<FiatQuote, Box<dyn std::error::Error + Send + Sync>>;
 }
 
 #[async_trait]
@@ -40,7 +46,11 @@ where
         (**self).name()
     }
 
-    async fn get_quote(&self, request: FiatBuyRequest, request_map: FiatMapping) -> Result<FiatQuote, Box<dyn std::error::Error + Send + Sync>> {
+    async fn get_quote(
+        &self,
+        request: FiatBuyRequest,
+        request_map: FiatMapping,
+    ) -> Result<FiatQuote, Box<dyn std::error::Error + Send + Sync>> {
         (**self).get_quote(request, request_map).await
     }
 }

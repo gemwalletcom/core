@@ -1,5 +1,5 @@
-use std::{error::Error, collections::HashMap};
-use primitives::node::{Node, ChainNodes, NodeStatus, NodesResponse};
+use primitives::node::{ChainNodes, Node, NodeStatus, NodesResponse};
+use std::{collections::HashMap, error::Error};
 use storage::DatabaseClient;
 
 pub struct Client {
@@ -7,12 +7,8 @@ pub struct Client {
 }
 
 impl Client {
-    pub async fn new(
-        database: DatabaseClient,
-    ) -> Self {
-        Self {
-            database,
-        }
+    pub async fn new(database: DatabaseClient) -> Self {
+        Self { database }
     }
 
     pub async fn get_nodes(&mut self) -> Result<NodesResponse, Box<dyn Error>> {
@@ -23,19 +19,24 @@ impl Client {
         nodes.into_iter().for_each(|node| {
             nodes_map.entry(node.chain.clone()).or_default().push(Node {
                 url: node.url,
-                status: if node.status == *"active" { NodeStatus::Active } else { NodeStatus::Inactive },
+                status: if node.status == *"active" {
+                    NodeStatus::Active
+                } else {
+                    NodeStatus::Inactive
+                },
                 priority: node.priority,
             });
         });
 
-        let nodes = nodes_map.into_iter().map(|x| {
-            ChainNodes{chain: x.0, nodes: x.1} 
-        }).collect();
+        let nodes = nodes_map
+            .into_iter()
+            .map(|x| ChainNodes {
+                chain: x.0,
+                nodes: x.1,
+            })
+            .collect();
 
-        let result = NodesResponse{
-            version,
-            nodes
-        };
+        let result = NodesResponse { version, nodes };
 
         Ok(result)
     }

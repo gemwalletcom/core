@@ -2,16 +2,18 @@ use std::collections::HashSet;
 use std::error::Error;
 use std::time::Duration;
 
-use crate::model::{FiatMappingMap, FiatMapping, FiatClient, FiatRates};
-use crate::moonpay::MoonPayClient;
-use crate::transak::TransakClient;
 use crate::mercuryo::MercuryoClient;
+use crate::model::{FiatClient, FiatMapping, FiatMappingMap, FiatRates};
+use crate::moonpay::MoonPayClient;
 use crate::ramp::RampClient;
+use crate::transak::TransakClient;
 use futures::future::join_all;
-use primitives::{fiat_quote::FiatQuote, fiat_quote_request::FiatBuyRequest, fiat_assets::FiatAssets};
+use primitives::{
+    fiat_assets::FiatAssets, fiat_quote::FiatQuote, fiat_quote_request::FiatBuyRequest,
+};
 //use futures::future::join_all;
-use storage::DatabaseClient;
 use reqwest::Client as RequestClient;
+use storage::DatabaseClient;
 
 pub struct Client {
     database: DatabaseClient,
@@ -26,10 +28,10 @@ pub struct Client {
 impl Client {
     pub async fn new(
         database_url: &str,
-        transak: TransakClient, 
+        transak: TransakClient,
         moonpay: MoonPayClient,
         mercuryo: MercuryoClient,
-        ramp: RampClient
+        ramp: RampClient,
     ) -> Self {
         let database = DatabaseClient::new(database_url);
 
@@ -38,18 +40,20 @@ impl Client {
             transak,
             moonpay,
             mercuryo,
-            ramp
+            ramp,
         }
     }
 
     pub fn request_client(timeout_seconds: u64) -> RequestClient {
         RequestClient::builder()
             .timeout(Duration::from_secs(timeout_seconds))
-            .build().unwrap()
+            .build()
+            .unwrap()
     }
 
     pub async fn get_assets(&mut self) -> Result<FiatAssets, Box<dyn Error>> {
-        let assets = self.database
+        let assets = self
+            .database
             .get_fiat_assets()?
             .into_iter()
             .map(|x| x.asset_id)
@@ -57,8 +61,11 @@ impl Client {
             .into_iter()
             .collect();
         let version = self.database.get_fiat_assets_version()?;
-        
-        Ok(FiatAssets { version: version as u32, asset_ids: assets })
+
+        Ok(FiatAssets {
+            version: version as u32,
+            asset_ids: assets,
+        })
     }
 
     pub async fn get_fiat_rates(&mut self) -> Result<FiatRates, Box<dyn Error>> {
@@ -70,13 +77,23 @@ impl Client {
         let list = self.database.get_fiat_assets_for_asset_id(asset_id)?;
         let mut map: FiatMappingMap = FiatMappingMap::new();
         list.into_iter().for_each(|x| {
-            map.insert(x.provider, FiatMapping{symbol: x.symbol, network: x.network});
+            map.insert(
+                x.provider,
+                FiatMapping {
+                    symbol: x.symbol,
+                    network: x.network,
+                },
+            );
         });
         Ok(map)
         //Ok(map)
     }
 
-    pub async fn get_quotes(&mut self, request: FiatBuyRequest, fiat_mapping_map: FiatMappingMap) -> Result<Vec<FiatQuote>, Box<dyn Error + Send + Sync>> {
+    pub async fn get_quotes(
+        &mut self,
+        request: FiatBuyRequest,
+        fiat_mapping_map: FiatMappingMap,
+    ) -> Result<Vec<FiatQuote>, Box<dyn Error + Send + Sync>> {
         let mut futures = vec![];
 
         if let Some(value) = fiat_mapping_map.get(self.ramp.name().as_str()) {
@@ -106,9 +123,7 @@ impl Client {
             })
             .collect();
 
-        results.sort_by(|a, b| {
-            b.crypto_amount.partial_cmp(&a.crypto_amount).unwrap()
-        });
+        results.sort_by(|a, b| b.crypto_amount.partial_cmp(&a.crypto_amount).unwrap());
 
         Ok(results)
     }
@@ -116,7 +131,9 @@ impl Client {
 
 #[allow(dead_code)]
 fn precision(val: f64, precision: usize) -> f64 {
-    format!("{:.prec$}", val, prec = precision).parse::<f64>().unwrap()
+    format!("{:.prec$}", val, prec = precision)
+        .parse::<f64>()
+        .unwrap()
 }
 
 #[cfg(test)]

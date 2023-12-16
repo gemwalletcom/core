@@ -1,11 +1,13 @@
+use crate::model::{FiatClient, FiatMapping};
+use async_trait::async_trait;
+use hex;
+use primitives::{
+    fiat_provider::FiatProviderName, fiat_quote::FiatQuote, fiat_quote_request::FiatBuyRequest,
+};
 use reqwest::Client;
 use serde::Deserialize;
+use sha2::{Digest, Sha512};
 use url::Url;
-use primitives::{fiat_quote::FiatQuote, fiat_quote_request::FiatBuyRequest, fiat_provider::FiatProviderName};
-use crate::model::{FiatMapping, FiatClient};
-use async_trait::async_trait;
-use sha2::{Sha512, Digest};
-use hex;
 
 const MERCURYO_API_BASE_URL: &str = "https://api.mercuryo.io";
 const MERCURYO_REDIRECT_URL: &str = "https://exchange.mercuryo.io";
@@ -41,10 +43,17 @@ impl FiatClient for MercuryoClient {
     ) -> Result<FiatQuote, Box<dyn std::error::Error + Send + Sync>> {
         let url = format!(
             "{}/v1.6/widget/buy/rate?from={}&to={}&amount={}&widget_id={}",
-            MERCURYO_API_BASE_URL, request.fiat_currency, request_map.symbol, request.fiat_amount, self.widget_id
+            MERCURYO_API_BASE_URL,
+            request.fiat_currency,
+            request_map.symbol,
+            request.fiat_amount,
+            self.widget_id
         );
         let response = self.client.get(&url).send().await?;
-        let quote = response.json::<MercyryoResponse<MercyryoQuote>>().await?.data;
+        let quote = response
+            .json::<MercyryoResponse<MercyryoQuote>>()
+            .await?
+            .data;
 
         Ok(self.get_fiat_quote(request, quote))
     }
@@ -60,7 +69,7 @@ impl MercuryoClient {
     }
 
     fn get_fiat_quote(&self, request: FiatBuyRequest, quote: MercyryoQuote) -> FiatQuote {
-        FiatQuote{
+        FiatQuote {
             provider: self.name().as_fiat_provider(),
             fiat_amount: request.fiat_amount,
             fiat_currency: request.fiat_currency,
@@ -74,13 +83,14 @@ impl MercuryoClient {
         let signature_content = format!("{}{}", address, self.secret_key);
         let signature = hex::encode(Sha512::digest(signature_content));
 
-        components.query_pairs_mut()
+        components
+            .query_pairs_mut()
             .append_pair("widget_id", self.widget_id.as_str())
             .append_pair("fiat_amount", &quote.fiat_amount.to_string())
             .append_pair("currency", &quote.currency)
             .append_pair("address", &address)
             .append_pair("signature", &signature);
-        
-        return components.as_str().to_string()
+
+        return components.as_str().to_string();
     }
 }

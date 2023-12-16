@@ -5,38 +5,37 @@ use typeshare::typeshare;
 #[allow(dead_code)]
 struct AptosResource<T> {
     r#type: String,
-    data: T
+    data: T,
 }
 
 #[typeshare]
 #[allow(dead_code)]
 struct AptosResourceBalance {
-    coin: AptosResourceCoin
+    coin: AptosResourceCoin,
 }
 
 #[typeshare]
 #[allow(dead_code)]
 struct AptosResourceCoin {
-    value: String
+    value: String,
 }
 
 #[typeshare]
 #[allow(dead_code)]
 struct AptosAccount {
-    sequence_number: String
+    sequence_number: String,
 }
-
 
 #[typeshare]
 #[allow(dead_code)]
 struct AptosTransaction {
-    success: bool
+    success: bool,
 }
 
 #[typeshare]
 #[allow(dead_code)]
 struct AptosTransactionBroacast {
-    hash: String
+    hash: String,
 }
 
 #[typeshare]

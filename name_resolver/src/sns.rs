@@ -1,15 +1,18 @@
-use std::error::Error;
-use async_trait::async_trait;
-use primitives::{chain::Chain, name::{NameRecord, NameProvider}};
-use serde::{Serialize, Deserialize};
 use crate::client::NameClient;
-use reqwest::Client;
+use async_trait::async_trait;
 use base64::{engine::general_purpose, Engine as _};
+use primitives::{
+    chain::Chain,
+    name::{NameProvider, NameRecord},
+};
+use reqwest::Client;
+use serde::{Deserialize, Serialize};
+use std::error::Error;
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct ResolveDomain {
     pub s: String,
-    pub result: String
+    pub result: String,
 }
 
 pub struct SNSClient {
@@ -18,33 +21,44 @@ pub struct SNSClient {
 }
 
 impl SNSClient {
-    pub fn new(
-        url: String
-    ) -> Self {
+    pub fn new(url: String) -> Self {
         let client = Client::new();
-        Self {
-            url,
-            client,
-        }
+        Self { url, client }
     }
 
-    async fn resolve_hex_address(&self, name: &str, chain: &Chain, record: &str) -> Result<NameRecord, Box<dyn Error>> {
+    async fn resolve_hex_address(
+        &self,
+        name: &str,
+        chain: &Chain,
+        record: &str,
+    ) -> Result<NameRecord, Box<dyn Error>> {
         let url = format!("{}/record/{}/{}", self.url, name, record);
-        let response = self.client
+        let response = self
+            .client
             .get(&url)
             .send()
             .await?
             .json::<ResolveDomain>()
             .await?;
-        
+
         let bytes = general_purpose::STANDARD.decode(response.result.as_bytes())?;
-        let address = String::from_utf8(bytes)?; 
-        Ok(NameRecord { name: name.to_string(), chain: *chain, address, provider: Self::provider() })
+        let address = String::from_utf8(bytes)?;
+        Ok(NameRecord {
+            name: name.to_string(),
+            chain: *chain,
+            address,
+            provider: Self::provider(),
+        })
     }
 
-    async fn resolve_sol_address(&self, name: &str, chain: &Chain) -> Result<NameRecord, Box<dyn Error>> {
+    async fn resolve_sol_address(
+        &self,
+        name: &str,
+        chain: &Chain,
+    ) -> Result<NameRecord, Box<dyn Error>> {
         let url = format!("{}/resolve/{}", self.url, name);
-        let response = self.client
+        let response = self
+            .client
             .get(&url)
             .send()
             .await?
@@ -52,15 +66,19 @@ impl SNSClient {
             .await?;
 
         if response.s != "ok" {
-            return Err("error".to_string().into())
+            return Err("error".to_string().into());
         }
-        Ok(NameRecord { name: name.to_string(), chain: *chain, address: response.result, provider: Self::provider() })
+        Ok(NameRecord {
+            name: name.to_string(),
+            chain: *chain,
+            address: response.result,
+            provider: Self::provider(),
+        })
     }
 }
 
 #[async_trait]
 impl NameClient for SNSClient {
-   
     fn provider() -> NameProvider {
         NameProvider::Sns
     }
@@ -69,26 +87,19 @@ impl NameClient for SNSClient {
         match chain {
             Chain::Solana => {
                 return self.resolve_sol_address(name, &chain.clone()).await;
-            },
+            }
             Chain::SmartChain => {
                 return self.resolve_hex_address(name, &chain, "BSC").await;
-            },
-            _ => {
-                return Err("error".to_string().into())
             }
+            _ => return Err("error".to_string().into()),
         }
     }
 
     fn domains() -> Vec<&'static str> {
-        vec![
-            "sol"
-        ]
+        vec!["sol"]
     }
 
     fn chains() -> Vec<Chain> {
-        vec![
-            Chain::Solana,
-            Chain::SmartChain,
-        ]
+        vec![Chain::Solana, Chain::SmartChain]
     }
 }
