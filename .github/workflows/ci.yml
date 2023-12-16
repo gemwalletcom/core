@@ -30,4 +30,4 @@ jobs:
     - name: Run tests
       run: cargo test --verbose
     - name: Run Lint
-      run: cargo clippy --all-targets --all-features
+      run: cargo clippy --all-features -- -D warnings
