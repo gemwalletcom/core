@@ -28,13 +28,16 @@ impl TransactionState {
             _ => None,
         }
     }
+}
 
-    pub fn to_string(&self) -> String {
-        match self {
+impl std::fmt::Display for TransactionState {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let str = match self {
             Self::Pending => "pending".to_string(),
             Self::Confirmed => "confirmed".to_string(),
             Self::Failed => "failed".to_string(),
             Self::Reverted => "reverted".to_string(),
-        }
+        };
+        write!(f, "{}", str)
     }
 }

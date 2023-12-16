@@ -153,14 +153,14 @@ fn generate_files(language: &str, input_path: &str, output_path: &str, package_n
         .unwrap();
 }
 
-fn get_paths(folder: &str, path: String) -> Vec<String> {
+fn get_paths(_folder: &str, path: String) -> Vec<String> {
     let paths = fs::read_dir(path).unwrap();
     let mut result: Vec<String> = vec![];
 
     for path in paths {
         let dir_entry = path.unwrap();
         if dir_entry.path().is_dir() {
-            let path_recursive = get_paths(folder, clear_path(dir_entry));
+            let path_recursive = get_paths(_folder, clear_path(dir_entry));
             result.extend(path_recursive)
         } else {
             result.push(clear_path(dir_entry));

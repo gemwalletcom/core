@@ -1,4 +1,4 @@
-use std::str::FromStr;
+use std::{fmt, str::FromStr};
 
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
@@ -13,6 +13,18 @@ pub struct AssetId {
     pub token_id: Option<String>,
 }
 
+impl fmt::Display for AssetId {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let str = match &self.token_id {
+            Some(token_id) => {
+                format!("{}_{}", self.chain.as_ref(), token_id)
+            }
+            None => self.chain.as_ref().to_owned(),
+        };
+        write!(f, "{}", str)
+    }
+}
+
 impl AssetId {
     pub fn new(asset_id: &str) -> Option<Self> {
         let parts: Vec<&str> = asset_id.split('_').collect();
@@ -25,15 +37,6 @@ impl AssetId {
             chain,
             token_id: token_id.map(|s| s.to_owned()),
         })
-    }
-
-    pub fn to_string(&self) -> String {
-        match &self.token_id {
-            Some(token_id) => {
-                format!("{}_{}", self.chain.as_ref(), token_id)
-            }
-            None => self.chain.as_ref().to_owned(),
-        }
     }
 
     pub fn from_chain(chain: Chain) -> AssetId {

@@ -50,7 +50,7 @@ impl ThorchainSwapClient {
             Chain::Bitcoin => Ok(NATIVE_BITCOIN.into()),
             Chain::Litecoin => Ok(NATIVE_LITECOIN.into()),
             Chain::SmartChain => Ok(NATIVE_BSC_BNB.into()),
-            _ => Err(format!("asset {} not supported", asset_id.to_string()).into()),
+            _ => Err(format!("asset {} not supported", asset_id).into()),
         }
     }
 
