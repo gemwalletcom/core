@@ -1,11 +1,11 @@
+use async_trait::async_trait;
 use primitives::chain::Chain;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
-use async_trait::async_trait;
 use std::error::Error;
 
-use primitives::name::{NameRecord, NameProvider};
 use crate::client::NameClient;
+use primitives::name::{NameProvider, NameRecord};
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct ResolveRecord {
@@ -21,16 +21,12 @@ pub struct SpaceIdClient {
 impl SpaceIdClient {
     pub fn new(api_url: String) -> Self {
         let client = Client::new();
-        Self {
-            api_url,
-            client,
-        }
+        Self { api_url, client }
     }
 }
 
 #[async_trait]
 impl NameClient for SpaceIdClient {
-    
     fn provider() -> NameProvider {
         NameProvider::SpaceId
     }
@@ -39,25 +35,24 @@ impl NameClient for SpaceIdClient {
         let tld = name.split('.').clone().last().unwrap_or_default();
         let url = format!("{}/v1/getAddress?tld={}&domain={}", self.api_url, tld, name);
         let record: ResolveRecord = self.client.get(&url).send().await?.json().await?;
-        if record.code != 0  {
+        if record.code != 0 {
             return Err("SpaceIdClient: code != 0".into());
         }
         let address = record.address;
 
-        Ok(NameRecord { name: name.to_string(), chain, address, provider: Self::provider() })
+        Ok(NameRecord {
+            name: name.to_string(),
+            chain,
+            address,
+            provider: Self::provider(),
+        })
     }
 
     fn domains() -> Vec<&'static str> {
-        vec![
-            "bnb",
-            "arb",
-        ]
+        vec!["bnb", "arb"]
     }
 
     fn chains() -> Vec<Chain> {
-        vec![
-            Chain::SmartChain,
-            Chain::Arbitrum,
-        ]
+        vec![Chain::SmartChain, Chain::Arbitrum]
     }
 }

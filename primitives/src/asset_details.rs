@@ -1,12 +1,12 @@
+use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
-use serde::{Serialize, Deserialize};
 
-use crate::{Asset, AssetMarket, Price, AssetScore};
+use crate::{Asset, AssetMarket, AssetScore, Price};
 
 #[typeshare]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct AssetFull {  
+pub struct AssetFull {
     pub asset: Asset,
     pub details: Option<AssetDetails>,
     pub price: Option<Price>,
@@ -28,7 +28,7 @@ pub struct AssetDetails {
 
 impl AssetDetails {
     pub fn from_links(links: AssetLinks) -> Self {
-        AssetDetails{
+        AssetDetails {
             links,
             is_buyable: false,
             is_sellable: false,

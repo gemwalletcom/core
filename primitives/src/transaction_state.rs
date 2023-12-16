@@ -1,5 +1,5 @@
+use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
-use serde::{Serialize, Deserialize};
 
 /*
 Pending: The transaction has been initiated but is still pending confirmation. It has been broadcasted to the network but has not yet been included in a block.
@@ -28,13 +28,16 @@ impl TransactionState {
             _ => None,
         }
     }
+}
 
-    pub fn to_string(&self) -> String {
-        match self {
+impl std::fmt::Display for TransactionState {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let str = match self {
             Self::Pending => "pending".to_string(),
             Self::Confirmed => "confirmed".to_string(),
             Self::Failed => "failed".to_string(),
             Self::Reverted => "reverted".to_string(),
-        }
+        };
+        write!(f, "{}", str)
     }
 }

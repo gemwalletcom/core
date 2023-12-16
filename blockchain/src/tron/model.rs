@@ -1,4 +1,4 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Block {
@@ -68,7 +68,7 @@ pub struct TransactionReceiptData {
     pub id: String,
     pub fee: Option<i64>,
     #[serde(rename = "blockNumber")]
-    pub block_number: i64, 
+    pub block_number: i64,
     pub receipt: TransactionReceipt,
     pub log: Option<Vec<TronLog>>,
 }

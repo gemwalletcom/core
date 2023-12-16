@@ -8,7 +8,7 @@ pub struct Device {
     pub id: i32,
     pub device_id: String,
     pub platform: String,
-    pub token: String,  
+    pub token: String,
     pub locale: String,
     pub currency: String,
     pub is_push_enabled: bool,
@@ -22,7 +22,7 @@ pub struct Device {
 pub struct UpdateDevice {
     pub device_id: String,
     pub platform: String,
-    pub token: String,  
+    pub token: String,
     pub locale: String,
     pub currency: String,
     pub is_push_enabled: bool,

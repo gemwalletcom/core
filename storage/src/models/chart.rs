@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use clickhouse::Row;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Row)]
 pub struct ChartPrice {

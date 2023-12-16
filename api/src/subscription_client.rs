@@ -9,16 +9,16 @@ pub struct SubscriptionsClient {
 }
 
 impl SubscriptionsClient {
-    pub async fn new(
-        database_url: &str
-    ) -> Self {
+    pub async fn new(database_url: &str) -> Self {
         let database = DatabaseClient::new(database_url);
-        Self {
-            database,
-        }
+        Self { database }
     }
 
-    pub fn add_subscriptions(&mut self, device_id: &str, subscriptions: Vec<Subscription>) -> Result<usize, Box<dyn Error>> {
+    pub fn add_subscriptions(
+        &mut self,
+        device_id: &str,
+        subscriptions: Vec<Subscription>,
+    ) -> Result<usize, Box<dyn Error>> {
         let device = self.database.get_device(device_id)?;
         let subscriptions = subscriptions
             .into_iter()
@@ -28,8 +28,12 @@ impl SubscriptionsClient {
         Ok(result)
     }
 
-    pub fn get_subscriptions(&mut self, device_id: &str) -> Result<Vec<primitives::Subscription>, Box<dyn Error>> {
-        let subscriptions = self.database
+    pub fn get_subscriptions(
+        &mut self,
+        device_id: &str,
+    ) -> Result<Vec<primitives::Subscription>, Box<dyn Error>> {
+        let subscriptions = self
+            .database
             .get_subscriptions_by_device_id(device_id)?
             .into_iter()
             .map(|x| x.as_primitive())
@@ -37,7 +41,11 @@ impl SubscriptionsClient {
         Ok(subscriptions)
     }
 
-    pub fn delete_subscriptions(&mut self, device_id: &str, subscriptions: Vec<Subscription>) -> Result<usize, Box<dyn Error>> {
+    pub fn delete_subscriptions(
+        &mut self,
+        device_id: &str,
+        subscriptions: Vec<Subscription>,
+    ) -> Result<usize, Box<dyn Error>> {
         let device = self.database.get_device(device_id)?;
         let values = subscriptions
             .into_iter()

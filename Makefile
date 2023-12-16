@@ -20,6 +20,9 @@ install-diesel:
 test:
 	cargo test --workspace --quiet
 
+format:
+	cargo fmt -q --all
+
 fix:
 	cargo clippy --fix --allow-dirty --allow-staged --workspace --quiet
 

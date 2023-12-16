@@ -1,12 +1,14 @@
+use crate::model::{FiatClient, FiatMapping};
+use async_trait::async_trait;
+use base64::{engine::general_purpose, Engine as _};
+use hmac::{Hmac, Mac};
+use primitives::{
+    fiat_provider::FiatProviderName, fiat_quote::FiatQuote, fiat_quote_request::FiatBuyRequest,
+};
 use reqwest::Client;
 use serde::Deserialize;
-use primitives::{fiat_quote::FiatQuote, fiat_quote_request::FiatBuyRequest, fiat_provider::FiatProviderName};
-use crate::model::{ FiatMapping, FiatClient};
-use url::Url;
 use sha2::Sha256;
-use hmac::{Hmac, Mac};
-use base64::{engine::general_purpose, Engine as _};
-use async_trait::async_trait;
+use url::Url;
 
 const MOONPAY_API_BASE_URL: &str = "https://api.moonpay.com";
 const MOONPAY_REDIRECT_URL: &str = "https://buy.moonpay.com";
@@ -42,7 +44,6 @@ impl FiatClient for MoonPayClient {
         request: FiatBuyRequest,
         request_map: FiatMapping,
     ) -> Result<FiatQuote, Box<dyn std::error::Error + Send + Sync>> {
-
         let ip_address_check = self.get_ip_address(request.clone().ip_address).await?;
         if !ip_address_check.is_allowed && !ip_address_check.is_buy_allowed {
             return Err("purchase is not allowed".into());
@@ -58,7 +59,8 @@ impl FiatClient for MoonPayClient {
             self.api_key,
         );
 
-        let quote = self.client
+        let quote = self
+            .client
             .get(&url)
             .send()
             .await?
@@ -71,18 +73,20 @@ impl FiatClient for MoonPayClient {
 
 impl MoonPayClient {
     pub fn new(client: Client, api_key: String, secret_key: String) -> Self {
-        Self { client, api_key, secret_key}
+        Self {
+            client,
+            api_key,
+            secret_key,
+        }
     }
 
     pub async fn get_ip_address(
         &self,
-        ip_address: String
+        ip_address: String,
     ) -> Result<MoonPayIpAddress, reqwest::Error> {
         let url = format!(
             "{}/v4/ip_address/?ipAddress={}&apiKey={}",
-            MOONPAY_API_BASE_URL,
-            ip_address,
-            self.api_key,
+            MOONPAY_API_BASE_URL, ip_address, self.api_key,
         );
 
         let response = self.client.get(&url).send().await?;
@@ -92,7 +96,7 @@ impl MoonPayClient {
     }
 
     fn get_fiat_quote(&self, request: FiatBuyRequest, quote: MoonPayBuyQuote) -> FiatQuote {
-        FiatQuote{
+        FiatQuote {
             provider: self.name().as_fiat_provider(),
             fiat_amount: request.clone().fiat_amount,
             fiat_currency: request.clone().fiat_currency,
@@ -103,16 +107,22 @@ impl MoonPayClient {
 
     pub fn redirect_url(&self, request: FiatBuyRequest, quote: MoonPayBuyQuote) -> String {
         let mut components = Url::parse(MOONPAY_REDIRECT_URL).unwrap();
-        
-        components.query_pairs_mut()
+
+        components
+            .query_pairs_mut()
             .append_pair("apiKey", &self.api_key)
             .append_pair("currencyCode", &quote.quote_currency_code)
-            .append_pair("baseCurrencyAmount", &request.clone().fiat_amount.to_string())
+            .append_pair(
+                "baseCurrencyAmount",
+                &request.clone().fiat_amount.to_string(),
+            )
             .append_pair("walletAddress", request.wallet_address.as_str());
-        
+
         let query = components.query().unwrap();
         let signature = self.generate_signature(format!("?{}", &query).as_str());
-        components.query_pairs_mut().append_pair("signature", &signature);
+        components
+            .query_pairs_mut()
+            .append_pair("signature", &signature);
         components.as_str().to_string()
     }
 

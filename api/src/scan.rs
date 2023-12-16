@@ -1,9 +1,9 @@
 extern crate rocket;
+use crate::scan_client::ScanClient;
 use primitives::ScanAddress;
 use rocket::serde::json::Json;
-use crate::scan_client::ScanClient;
-use rocket::State;
 use rocket::tokio::sync::Mutex;
+use rocket::State;
 
 #[get("/scan/address/<address>")]
 pub async fn get_scan_address(

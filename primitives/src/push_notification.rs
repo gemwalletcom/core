@@ -1,6 +1,6 @@
-use typeshare::typeshare;
-use serde::{Serialize, Deserialize};
 use crate::Transaction;
+use serde::{Deserialize, Serialize};
+use typeshare::typeshare;
 
 #[typeshare(swift = "Equatable, Codable")]
 #[derive(Debug, Serialize, Deserialize)]

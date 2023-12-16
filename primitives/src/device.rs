@@ -1,10 +1,10 @@
+use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
-use serde::{Serialize, Deserialize};
 
 use crate::platform::Platform;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare(swift="Codable, Equatable")]
+#[typeshare(swift = "Codable, Equatable")]
 #[serde(rename_all = "camelCase")]
 pub struct Device {
     pub id: String,

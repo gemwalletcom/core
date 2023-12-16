@@ -1,5 +1,5 @@
-use std::error::Error;
 use primitives::platform::Platform;
+use std::error::Error;
 use storage::{database::DatabaseClient, models::Version};
 
 pub struct Client {
@@ -9,9 +9,7 @@ pub struct Client {
 impl Client {
     pub fn new(database_url: &str) -> Self {
         let database = DatabaseClient::new(database_url);
-        Self {
-            database
-        }
+        Self { database }
     }
 
     pub async fn update_ios_version(&mut self) -> Result<Version, Box<dyn Error>> {
@@ -21,7 +19,7 @@ impl Client {
             platform: Platform::IOS.as_str().to_string(),
             production: ios_version.clone(),
             beta: ios_version.clone(),
-            alpha: ios_version.clone()
+            alpha: ios_version.clone(),
         };
         let _ = self.database.set_version(version.clone())?;
         Ok(version)

@@ -1,6 +1,6 @@
-use typeshare::typeshare;
-use serde::{Serialize, Deserialize};
 use crate::fiat_provider::FiatProvider;
+use serde::{Deserialize, Serialize};
+use typeshare::typeshare;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Codable")]
@@ -16,5 +16,5 @@ pub struct FiatQuote {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare()]
 pub struct FiatQuotes {
-    pub quotes: Vec<FiatQuote>
+    pub quotes: Vec<FiatQuote>,
 }

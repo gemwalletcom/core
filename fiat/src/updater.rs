@@ -5,8 +5,7 @@ pub struct Updater {
 }
 
 impl Updater {
-    pub async fn new(
-        //database_url: &str,
+    pub async fn new(//database_url: &str,
     ) -> Self {
         //let database = DatabaseClient::new(database_url);
         Self {

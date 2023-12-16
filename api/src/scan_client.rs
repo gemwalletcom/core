@@ -8,13 +8,9 @@ pub struct ScanClient {
 }
 
 impl ScanClient {
-    pub async fn new(
-        database_url: &str
-    ) -> Self {
+    pub async fn new(database_url: &str) -> Self {
         let database = DatabaseClient::new(database_url);
-        Self {
-            database,
-        }
+        Self { database }
     }
 
     pub fn get_scan_address(&mut self, address: &str) -> Result<ScanAddress, Box<dyn Error>> {

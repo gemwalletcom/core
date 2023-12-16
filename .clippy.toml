@@ -1,0 +1,2 @@
+too-many-arguments-threshold = 18 # lower this until we fix current code, ideally 8~10
+type-complexity-threshold = 384

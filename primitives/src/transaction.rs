@@ -257,8 +257,9 @@ impl Transaction {
         }
     }
 
-    fn utxo_calculate_value(values: &Vec<TransactionInput>, addresses: Vec<String>) -> i64 {
+    fn utxo_calculate_value(values: &[TransactionInput], addresses: Vec<String>) -> i64 {
         let values = values
+            .to_owned()
             .clone()
             .into_iter()
             .filter(|x| addresses.contains(&x.address))

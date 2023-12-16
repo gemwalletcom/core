@@ -1,11 +1,11 @@
-use std::{error::Error, collections::HashMap};
+use async_trait::async_trait;
 use primitives::chain::Chain;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
-use async_trait::async_trait;
+use std::{collections::HashMap, error::Error};
 
-use primitives::name::{NameRecord, NameProvider};
 use crate::client::NameClient;
+use primitives::name::{NameProvider, NameRecord};
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct ResolveDomain {
@@ -19,10 +19,7 @@ pub struct UDClient {
 }
 
 impl UDClient {
-    pub fn new(
-        api_url: String,
-        api_key: String
-    ) -> Self {
+    pub fn new(api_url: String, api_key: String) -> Self {
         let client = Client::new();
         Self {
             api_url,
@@ -54,14 +51,14 @@ impl UDClient {
 
 #[async_trait]
 impl NameClient for UDClient {
-    
     fn provider() -> NameProvider {
         NameProvider::Ud
     }
 
     async fn resolve(&self, name: &str, chain: Chain) -> Result<NameRecord, Box<dyn Error>> {
         let url = format!("{}/resolve/domains/{}", self.api_url, name);
-        let response = self.client
+        let response = self
+            .client
             .get(&url)
             .bearer_auth(self.api_key.clone())
             .send()
@@ -73,7 +70,12 @@ impl NameClient for UDClient {
         let address = self.map(chain, records);
         match address {
             None => return Err("address not found".into()),
-            Some(address) => Ok(NameRecord { name: name.to_string(), chain, address, provider: Self::provider() })
+            Some(address) => Ok(NameRecord {
+                name: name.to_string(),
+                chain,
+                address,
+                provider: Self::provider(),
+            }),
         }
     }
 
@@ -95,7 +97,7 @@ impl NameClient for UDClient {
             "anime",
             "manga",
             "binanceus",
-            "zil"
+            "zil",
         ]
     }
 

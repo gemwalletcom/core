@@ -1,11 +1,14 @@
-use ns_address_codec::ton;
-use ns_address_codec::codec::Codec;
-use std::error::Error;
-use async_trait::async_trait;
-use primitives::{chain::Chain, name::{NameRecord, NameProvider}};
-use serde::{Serialize, Deserialize};
 use crate::client::NameClient;
+use async_trait::async_trait;
+use ns_address_codec::codec::Codec;
+use ns_address_codec::ton;
+use primitives::{
+    chain::Chain,
+    name::{NameProvider, NameRecord},
+};
 use reqwest::Client;
+use serde::{Deserialize, Serialize};
+use std::error::Error;
 
 pub struct TONClient {
     url: String,
@@ -13,14 +16,9 @@ pub struct TONClient {
 }
 
 impl TONClient {
-    pub fn new(
-        url: String
-    ) -> Self {
+    pub fn new(url: String) -> Self {
         let client = Client::new();
-        Self {
-            url,
-            client,
-        }
+        Self { url, client }
     }
 }
 
@@ -32,19 +30,19 @@ pub struct ResolveWallet {
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct ResolveResponse {
-    pub wallet: ResolveWallet
+    pub wallet: ResolveWallet,
 }
 
 #[async_trait]
 impl NameClient for TONClient {
-   
     fn provider() -> NameProvider {
         NameProvider::Ton
     }
 
     async fn resolve(&self, name: &str, chain: Chain) -> Result<NameRecord, Box<dyn Error>> {
         let url = format!("{}/v2/dns/{}/resolve", self.url, name);
-        let response = self.client
+        let response = self
+            .client
             .get(&url)
             .send()
             .await?
@@ -52,19 +50,20 @@ impl NameClient for TONClient {
             .await?;
         // always encode as Bounceable address
         let encoded = ton::TonCodec::encode(response.wallet.address.as_bytes().to_vec());
-        Ok(NameRecord { name: name.to_string(), chain, address: encoded, provider: Self::provider() })
+        Ok(NameRecord {
+            name: name.to_string(),
+            chain,
+            address: encoded,
+            provider: Self::provider(),
+        })
     }
 
     fn domains() -> Vec<&'static str> {
-        vec![
-            "ton"
-        ]
+        vec!["ton"]
     }
 
     fn chains() -> Vec<Chain> {
-        vec![
-            Chain::Ton,
-        ]
+        vec![Chain::Ton]
     }
 }
 

@@ -1,9 +1,9 @@
 extern crate rocket;
+use crate::SubscriptionsClient;
 use primitives::Subscription;
 use rocket::serde::json::Json;
-use crate::SubscriptionsClient;
-use rocket::State;
 use rocket::tokio::sync::Mutex;
+use rocket::State;
 
 #[get("/subscriptions/<device_id>")]
 pub async fn get_subscriptions(
@@ -14,24 +14,38 @@ pub async fn get_subscriptions(
     Json(subscriptions)
 }
 
-#[delete("/subscriptions/<device_id>", format = "json", data = "<subscriptions>")]
+#[delete(
+    "/subscriptions/<device_id>",
+    format = "json",
+    data = "<subscriptions>"
+)]
 pub async fn delete_subscriptions(
-    subscriptions: Json<Vec<Subscription>>, 
+    subscriptions: Json<Vec<Subscription>>,
     device_id: &str,
     client: &State<Mutex<SubscriptionsClient>>,
 ) -> Json<usize> {
-    let result = client.lock().await.delete_subscriptions(device_id, subscriptions.0).unwrap();
+    let result = client
+        .lock()
+        .await
+        .delete_subscriptions(device_id, subscriptions.0)
+        .unwrap();
     Json(result)
 }
 
-
-#[post("/subscriptions/<device_id>", format = "json", data = "<subscriptions>")]
+#[post(
+    "/subscriptions/<device_id>",
+    format = "json",
+    data = "<subscriptions>"
+)]
 pub async fn add_subscriptions(
-    subscriptions: Json<Vec<Subscription>>, 
-    #[allow(unused)]
-    device_id: &str,
+    subscriptions: Json<Vec<Subscription>>,
+    #[allow(unused)] device_id: &str,
     client: &State<Mutex<SubscriptionsClient>>,
 ) -> Json<usize> {
-    let subscriptions = client.lock().await.add_subscriptions(device_id, subscriptions.0).unwrap();
+    let subscriptions = client
+        .lock()
+        .await
+        .add_subscriptions(device_id, subscriptions.0)
+        .unwrap();
     Json(subscriptions)
 }

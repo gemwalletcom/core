@@ -8,9 +8,7 @@ pub struct DeviceUpdater {
 impl DeviceUpdater {
     pub fn new(database_url: &str) -> Self {
         let database = DatabaseClient::new(database_url);
-        Self {
-            database
-        }
+        Self { database }
     }
 
     pub async fn update(&mut self) -> Result<usize, Box<dyn Error>> {

@@ -1,11 +1,13 @@
+use crate::model::{FiatClient, FiatMapping};
+use async_trait::async_trait;
+use primitives::{
+    fiat_provider::FiatProviderName, fiat_quote::FiatQuote, fiat_quote_request::FiatBuyRequest,
+};
 use reqwest::{self, Client};
-use serde::Deserialize;
-use url::Url;
-use primitives::{fiat_quote::FiatQuote, fiat_quote_request::FiatBuyRequest, fiat_provider::FiatProviderName};
-use crate::model::{FiatMapping, FiatClient};
 use rust_decimal::prelude::*;
 use rust_decimal::Decimal;
-use async_trait::async_trait;
+use serde::Deserialize;
+use url::Url;
 
 pub struct RampClient {
     client: Client,
@@ -26,11 +28,21 @@ impl FiatClient for RampClient {
         request: FiatBuyRequest,
         request_map: FiatMapping,
     ) -> Result<FiatQuote, Box<dyn std::error::Error + Send + Sync>> {
-        let assets = self.get_assets(request.clone().fiat_currency, request.clone().ip_address).await?.assets;
+        let assets = self
+            .get_assets(request.clone().fiat_currency, request.clone().ip_address)
+            .await?
+            .assets;
 
-        let crypto_asset_symbol = format!("{}_{}", request_map.symbol, request_map.network.unwrap_or_default());
+        let crypto_asset_symbol = format!(
+            "{}_{}",
+            request_map.symbol,
+            request_map.network.unwrap_or_default()
+        );
 
-        if !assets.iter().any(|x| x.crypto_asset_symbol() == crypto_asset_symbol) {
+        if !assets
+            .iter()
+            .any(|x| x.crypto_asset_symbol() == crypto_asset_symbol)
+        {
             return Err("asset not supported".into());
         }
 
@@ -47,18 +59,20 @@ impl FiatClient for RampClient {
 
 impl RampClient {
     pub fn new(client: Client, api_key: String) -> RampClient {
-        RampClient {
-            client,
-            api_key,
-        }
+        RampClient { client, api_key }
     }
 
-    async fn get_assets(&self, currency: String, ip_address: String) -> Result<QuoteAssets, Box<dyn std::error::Error + Send + Sync>> {
+    async fn get_assets(
+        &self,
+        currency: String,
+        ip_address: String,
+    ) -> Result<QuoteAssets, Box<dyn std::error::Error + Send + Sync>> {
         let url = format!(
             "{}/api/host-api/v3/assets?currencyCode={}&userIp={}&withDisabled=false&withHidden=false",
             RAMP_API_BASE_URL, currency, ip_address
         );
-        let assets = self.client
+        let assets = self
+            .client
             .get(&url)
             .send()
             .await?
@@ -67,12 +81,16 @@ impl RampClient {
         Ok(assets)
     }
 
-    async fn get_client_quote(&self, request: QuoteRequest) -> Result<Quote, Box<dyn std::error::Error + Send + Sync>> {
+    async fn get_client_quote(
+        &self,
+        request: QuoteRequest,
+    ) -> Result<Quote, Box<dyn std::error::Error + Send + Sync>> {
         let url = format!(
             "{}/api/host-api/v3/onramp/quote/all?hostApiKey={}",
             RAMP_API_BASE_URL, self.api_key
         );
-        let quote = self.client
+        let quote = self
+            .client
             .post(&url)
             .json(&request)
             .send()
@@ -83,10 +101,13 @@ impl RampClient {
     }
 
     fn get_fiat_quote(&self, request: FiatBuyRequest, quote: Quote) -> FiatQuote {
-        let mut crypto_amount = Decimal::from_str(quote.clone().card_payment.crypto_amount.as_str()).unwrap();
-        crypto_amount.set_scale(quote.asset.decimals).unwrap_or_default();
-        
-        FiatQuote{
+        let mut crypto_amount =
+            Decimal::from_str(quote.clone().card_payment.crypto_amount.as_str()).unwrap();
+        crypto_amount
+            .set_scale(quote.asset.decimals)
+            .unwrap_or_default();
+
+        FiatQuote {
             provider: self.name().as_fiat_provider(),
             fiat_amount: request.clone().fiat_amount,
             fiat_currency: request.clone().fiat_currency,
@@ -97,18 +118,18 @@ impl RampClient {
 
     pub fn redirect_url(&self, request: FiatBuyRequest, quote: Quote) -> String {
         let mut components = Url::parse(RAMP_REDIRECT_URL).unwrap();
-        components.query_pairs_mut()
+        components
+            .query_pairs_mut()
             .append_pair("hostApiKey", &self.api_key)
             .append_pair("defaultAsset", &quote.asset.crypto_asset_symbol())
             .append_pair("swapAsset", &quote.asset.crypto_asset_symbol())
             .append_pair("fiatCurrency", &request.clone().fiat_currency.to_string())
             .append_pair("fiatValue", &request.clone().fiat_amount.to_string())
             .append_pair("userAddress", request.wallet_address.as_str());
-        
+
         components.as_str().to_string()
     }
 }
-
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct Quote {
@@ -134,7 +155,7 @@ pub struct QuoteAsset {
     chain: String,
     decimals: u32,
     //enabled: bool,
-	//hidden: bool,
+    //hidden: bool,
 }
 
 #[derive(Debug, Deserialize, Clone)]
