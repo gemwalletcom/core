@@ -1,5 +1,6 @@
-# core
-![Tests](https://github.com/gemwalletcom/core/workflows/Tests/badge.svg)
+# Gem Wallet Core library in Rust
+
+[![Tests](https://github.com/gemwalletcom/core/actions/workflows/ci.yml/badge.svg)](https://github.com/gemwalletcom/core/actions/workflows/ci.yml) [![Clippy check](https://github.com/gemwalletcom/core/actions/workflows/lint.yml/badge.svg)](https://github.com/gemwalletcom/core/actions/workflows/lint.yml)
 
 ## Running
 
