@@ -1,4 +1,5 @@
 pub mod asset;
+pub mod chain;
 pub mod chart;
 pub mod device;
 pub mod fiat_asset;
@@ -14,6 +15,7 @@ pub mod transaction_addresses;
 pub mod version;
 
 pub use self::asset::Asset;
+pub use self::chain::Chain;
 pub use self::chart::{ChartCoinPrice, ChartPrice};
 pub use self::device::Device;
 pub use self::device::UpdateDevice;

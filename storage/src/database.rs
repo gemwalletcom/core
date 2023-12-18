@@ -557,6 +557,19 @@ impl DatabaseClient {
         Ok(assets.len() as i32)
     }
 
+    pub fn add_chains(&mut self, _chains: Vec<String>) -> Result<usize, diesel::result::Error> {
+        let values = _chains
+            .iter()
+            .map(|chain| super::models::Chain { id: chain.clone() })
+            .collect::<Vec<_>>();
+
+        use crate::schema::chains::dsl::*;
+        diesel::insert_into(chains)
+            .values(values)
+            .on_conflict_do_nothing()
+            .execute(&mut self.connection)
+    }
+
     pub fn migrations(&mut self) {
         self.connection.run_pending_migrations(MIGRATIONS).unwrap();
     }

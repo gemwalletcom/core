@@ -1,6 +1,6 @@
 CREATE TABLE assets (
     id VARCHAR(128) PRIMARY KEY,
-    chain VARCHAR(16) NOT NULL,
+    chain VARCHAR(32) NOT NULL REFERENCES chains (id) ON DELETE CASCADE,
     token_id VARCHAR(128),
     asset_type VARCHAR(16) NOT NULL,
     name VARCHAR(64) NOT NULL,

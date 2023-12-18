@@ -28,6 +28,9 @@ async fn main() {
 
     println!("chains: {:?}", chains);
 
+    println!("setup add chains");
+    let _ = database_client.add_chains(chains.clone().into_iter().map(|x| x.to_string()).collect());
+
     println!("setup parser state");
     for chain in chains.clone() {
         let _ = database_client.add_parser_state(chain);
