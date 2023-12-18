@@ -4,7 +4,7 @@ struct WalletConnection {
     wallet: Wallet,
 }
 #[derive(Debug, Serialize)]
-#[typeshare(swift="Codable, Hashable")]
+#[typeshare(swift = "Codable, Hashable")]
 #[serde(rename_all = "lowercase")]
 pub enum WalletConnectionState {
     Started,
@@ -33,6 +33,10 @@ pub enum WalletConnectionMethods {
     wallet_switch_ethereum_chain,
     #[serde(rename = "wallet_addEthereumChain")]
     wallet_add_ethereum_chain,
+    #[serde(rename = "solana_signMessage")]
+    solana_sign_message,
+    #[serde(rename = "solana_signTransaction")]
+    solana_sign_transaction,
 }
 
 #[derive(Debug, Serialize)]
@@ -92,4 +96,5 @@ pub enum SignDigestType {
     Sign,
     Eip191,
     Eip712,
+    Base58,
 }

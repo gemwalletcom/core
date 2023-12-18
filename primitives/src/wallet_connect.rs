@@ -4,6 +4,8 @@
 pub enum WallletConnectCAIP2 {
     #[serde(rename = "eip155")]
     Eip155,
+    #[serde(rename = "solana")]
+    Solana,
 }
 
 #[typeshare(swift = "Equatable, Codable, Hashable")]
@@ -20,4 +22,23 @@ struct WCEthereumTransaction {
     max_priority_fee_per_gas: Option<String>,
     nonce: Option<String>,
     data: Option<String>,
+}
+
+#[typeshare(swift = "Equatable, Codable, Hashable")]
+#[serde(rename_all = "camelCase")]
+struct WCSolanaTransaction {
+    transaction: String,
+}
+
+#[typeshare(swift = "Equatable, Codable, Hashable")]
+#[serde(rename_all = "camelCase")]
+struct WCSolanaSignMessage {
+    message: String,
+    pubkey: String,
+}
+
+#[typeshare(swift = "Equatable, Codable, Hashable")]
+#[serde(rename_all = "camelCase")]
+struct WCSolanaSignMessageResult {
+    signature: String,
 }

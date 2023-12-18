@@ -51,7 +51,7 @@ impl JupiterClient {
             amount: quote.amount.clone(),
             platform_fee_bps: (self.fee * 100.0) as i32,
             slippage_bps: 100, // 1%
-            only_direct_routes: true,
+            only_direct_routes: false,
         };
         let swap_quote = self.get_swap_quote(quote_request).await?;
         let data = if quote.include_data {
