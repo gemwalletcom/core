@@ -62,6 +62,9 @@ url = "https://indexer-basic.did.id"
 [name.suins]
 url = "https://suins-rpc.mainnet.sui.io"
 
+[name.aptos]
+url = "https://aptosnames.com"
+
 [metrics]
 path = "/metrics"
 

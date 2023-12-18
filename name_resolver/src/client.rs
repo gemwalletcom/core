@@ -5,8 +5,8 @@ use primitives::chain::Chain;
 use primitives::name::{NameProvider, NameRecord};
 
 use crate::{
-    did::DidClient, ens::ENSClient, eths::EthsClient, sns::SNSClient, spaceid::SpaceIdClient,
-    suins::SuinsClient, ton::TONClient, ud::UDClient,
+    aptos::AptosClient, did::DidClient, ens::ENSClient, eths::EthsClient, sns::SNSClient,
+    spaceid::SpaceIdClient, suins::SuinsClient, ton::TONClient, ud::UDClient,
 };
 
 #[async_trait]
@@ -27,6 +27,7 @@ pub struct Client {
     spaceid_client: SpaceIdClient,
     did_client: DidClient,
     suins_client: SuinsClient,
+    aptos_client: AptosClient,
 }
 
 impl Client {
@@ -40,6 +41,7 @@ impl Client {
         space_api_url: String,
         did_api_url: String,
         suins_api_url: String,
+        aptos_api_url: String,
     ) -> Self {
         let domains_mapping = Self::domains_mapping();
         let ens_client = ENSClient::new(ens_url);
@@ -50,6 +52,7 @@ impl Client {
         let spaceid_client: SpaceIdClient = SpaceIdClient::new(space_api_url);
         let did_client: DidClient = DidClient::new(did_api_url);
         let suins_client: SuinsClient = SuinsClient::new(suins_api_url);
+        let aptos_client: AptosClient = AptosClient::new(aptos_api_url);
 
         Self {
             domains_mapping,
@@ -61,6 +64,7 @@ impl Client {
             spaceid_client,
             did_client,
             suins_client,
+            aptos_client,
         }
     }
 
@@ -71,7 +75,7 @@ impl Client {
             .get(name_prefix)
             .expect("unable to get provider");
 
-        println!("provider: {}", provider.as_str());
+        println!("provider: {}", provider.as_ref());
         println!("provider chain: {}", chain.as_ref());
 
         match provider {
@@ -123,6 +127,12 @@ impl Client {
                 }
                 self.suins_client.resolve(name, chain).await
             }
+            NameProvider::Aptos => {
+                if !AptosClient::chains().contains(&chain) {
+                    return Err("not supported chain".to_string().into());
+                }
+                self.aptos_client.resolve(name, chain).await
+            }
         }
     }
 
@@ -159,6 +169,10 @@ impl Client {
 
         for domain in SuinsClient::domains() {
             result.insert(domain, NameProvider::Suins);
+        }
+
+        for domain in AptosClient::domains() {
+            result.insert(domain, NameProvider::Aptos);
         }
 
         result

@@ -101,6 +101,7 @@ pub struct Name {
     pub spaceid: URL,
     pub did: URL,
     pub suins: URL,
+    pub aptos: URL,
 }
 
 #[derive(Debug, Deserialize, Clone)]

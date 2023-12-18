@@ -1,5 +1,6 @@
 use crate::chain::Chain;
 use serde::Serialize;
+use strum_macros::{AsRefStr, EnumString};
 use typeshare::typeshare;
 
 #[derive(Debug, Serialize)]
@@ -12,9 +13,10 @@ pub struct NameRecord {
     pub provider: NameProvider,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, AsRefStr, EnumString)]
 #[typeshare(swift = "Codable")]
 #[serde(rename_all = "lowercase")]
+#[strum(serialize_all = "lowercase")]
 pub enum NameProvider {
     Ud,
     Ens,
@@ -25,20 +27,5 @@ pub enum NameProvider {
     Eths,
     Did,
     Suins,
-}
-
-impl NameProvider {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Self::Ud => "ud",
-            Self::Ens => "ens",
-            Self::Sns => "sns",
-            Self::Ton => "ton",
-            Self::Tree => "tree",
-            Self::SpaceId => "spaceid",
-            Self::Eths => "eths",
-            Self::Did => "did",
-            Self::Suins => "suins",
-        }
-    }
+    Aptos,
 }

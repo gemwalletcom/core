@@ -1,3 +1,4 @@
+pub mod aptos;
 pub mod client;
 pub mod did;
 pub mod ens;
