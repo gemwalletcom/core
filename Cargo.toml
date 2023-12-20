@@ -11,6 +11,7 @@ documentation = "https://github.com/gemwalletcom"
 resolver = "2"
 members = [
     "bin/generate",
+    "bin/uniffi-bindgen",
     "primitives",
     "blockchain",
     "deamon",
@@ -24,6 +25,7 @@ members = [
     "setup",
     "settings",
     "settings_chain",
+    "gemstone",
 ]
 
 default-members = ["bin/generate", "deamon", "api", "parser", "setup"]
@@ -68,3 +70,5 @@ jsonrpsee = { version = "0.21.0", features = ["http-client"] }
 tiny-keccak = { version = "2.0.2", features = ["keccak"] }
 itoa = { version = "1.0.10" }
 curve25519-dalek = { version = "4.1.1" }
+uniffi = { version = "0.25.3" }
+uniffi_bindgen = { version = "0.25" }
