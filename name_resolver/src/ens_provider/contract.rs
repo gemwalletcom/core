@@ -1,5 +1,6 @@
 use super::namehash::namehash;
-use jsonrpsee::core::{client::ClientT, Error};
+use jsonrpsee::core::client::ClientT;
+use jsonrpsee::core::ClientError;
 use jsonrpsee::http_client::HttpClient;
 use primitives::keccak::keccak256;
 use serde_json::json;
@@ -10,34 +11,43 @@ pub struct Contract {
 }
 
 impl Contract {
-    pub async fn resolver(&self, name: &str) -> Result<String, Error> {
+    pub async fn resolver(&self, name: &str) -> Result<String, ClientError> {
         let hash = namehash(name);
         let data = encode_resolver(hash);
         let response = self.eth_call(&self.registry, data).await?;
         let result = response.unwrap_or_default().to_string().replace('\"', "");
         if result.is_empty() {
-            return Err(Error::Custom(String::from("no resolver set")));
+            return Err(ClientError::Custom("no resolver set".into()));
         }
         let addr = self.extract_address(&result);
         Ok(addr)
     }
 
-    pub async fn addr(&self, _resolver: &str, _name: &str, _coin_id: u32) -> Result<String, Error> {
+    pub async fn addr(
+        &self,
+        _resolver: &str,
+        _name: &str,
+        _coin_id: u32,
+    ) -> Result<String, ClientError> {
         todo!()
     }
 
-    pub async fn legacy_addr(&self, resolver: &str, name: &str) -> Result<String, Error> {
+    pub async fn legacy_addr(&self, resolver: &str, name: &str) -> Result<String, ClientError> {
         let hash = namehash(name);
         let data = encode_legacy_addr(hash);
         let response = self.eth_call(resolver, data).await?;
         let result = response.unwrap_or_default().to_string().replace('\"', "");
         if result.is_empty() {
-            return Err(Error::Custom(String::from("no address")));
+            return Err(ClientError::Custom("no address".into()));
         }
         Ok(self.extract_address(&result))
     }
 
-    async fn eth_call(&self, to: &str, data: Vec<u8>) -> Result<Option<serde_json::Value>, Error> {
+    async fn eth_call(
+        &self,
+        to: &str,
+        data: Vec<u8>,
+    ) -> Result<Option<serde_json::Value>, ClientError> {
         let parmas = json!({
             "to": to,
             "data": format!("0x{}", hex::encode(data))
