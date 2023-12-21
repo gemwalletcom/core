@@ -72,3 +72,11 @@ itoa = { version = "1.0.10" }
 curve25519-dalek = { version = "4.1.1" }
 uniffi = { version = "0.25.3" }
 uniffi_bindgen = { version = "0.25" }
+
+[profile.release]
+# https://github.com/johnthagen/min-sized-rust
+strip = true
+codegen-units = 1
+lto = true
+opt-level = "z"
+# debug = true
