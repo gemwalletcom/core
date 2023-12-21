@@ -25,6 +25,7 @@ pub struct SolanaClient {
 
 const CLEANUP_BLOCK_ERROR: i32 = -32001;
 const MISSING_SLOT_ERROR: i32 = -32007;
+const MISSING_OR_SKIPPED_SLOT_ERROR: i32 = -32009;
 const NOT_AVAILABLE_SLOT_ERROR: i32 = -32004;
 const SYSTEM_PROGRAM_ID: &str = "11111111111111111111111111111111";
 const TOKEN_PROGRAM_ID: &str = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA";
@@ -99,8 +100,6 @@ impl SolanaClient {
             && (pre_token_balances.len() == 1 || pre_token_balances.len() == 2)
             && post_token_balances.len() == 2
         {
-            println!("tx: {}", hash.clone());
-
             let token_id = transaction.meta.pre_token_balances.first()?.mint.clone();
             let asset_id = AssetId {
                 chain: self.get_chain(),
@@ -279,6 +278,7 @@ impl ChainProvider for SolanaClient {
                 jsonrpsee::core::ClientError::Call(err) => {
                     let errors = [
                         MISSING_SLOT_ERROR,
+                        MISSING_OR_SKIPPED_SLOT_ERROR,
                         NOT_AVAILABLE_SLOT_ERROR,
                         CLEANUP_BLOCK_ERROR,
                     ];
