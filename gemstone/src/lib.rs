@@ -32,7 +32,7 @@ pub fn set_logging_delegate(delegate: Box<dyn GreetingDelegate>) {
     }
 }
 
-#[uniffi::export]
+// #[uniffi::export]
 pub fn rust_greeting(to: String) -> String {
     if let Some(logger) = LOGGER_INSTANCE.get() {
         logger.greeting_called(to.clone());

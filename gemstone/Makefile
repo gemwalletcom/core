@@ -12,7 +12,6 @@ TARGET_DIR := ../target
 GEN_SWIFT_FOLDER := generated/swift
 GEN_KOTLIN_FOLDER := generated/kotlin
 TARGET_XC_FW_FOLDER := target/spm
-TARGET_GRADLE_FOLDER := target/gradle
 
 prepare-apple:
 	rustup toolchain install nightly
@@ -45,12 +44,14 @@ bindgen-swift:
 	mkdir -p $(GEN_SWIFT_FOLDER)
 	cargo build
 	cargo run -p uniffi-bindgen generate --language swift --lib-file $(TARGET_DIR)/debug/$(DY_LIB_NAME) src/$(UDL_NAME) -o $(GEN_SWIFT_FOLDER)
+	# append framework prefix
 	sed -i '' 's/module\ $(FW_FFI_NAME)/framework\ module\ $(FW_FFI_NAME)/' $(GEN_SWIFT_FOLDER)/$(MODULE_MAP)
 
 bindgen-kotlin:
 	mkdir -p $(GEN_KOTLIN_FOLDER)
 	cargo run -p uniffi-bindgen generate src/$(UDL_NAME) --language kotlin -o $(GEN_KOTLIN_FOLDER)
-	sed -i '' 's/return "uniffi_$(LIB_NAME)"/return "$(LIB_NAME)"/' $(GEN_KOTLIN_FOLDER)/$(LIB_NAME)/$(LIB_NAME).kt
+	# strip uniffi_ prefix
+	sed -i '' 's/return "uniffi_$(FW_NAME)"/return "$(LIB_NAME)"/' $(GEN_KOTLIN_FOLDER)/uniffi/$(FW_NAME)/$(FW_NAME).kt
 
 assemble-frameworks:
 	cd $(TARGET_DIR) && find . -type d -name $(FW_FFI_FILE) | xargs rm -rf
@@ -72,4 +73,6 @@ cp-xcframework-source:
 	cp $(GEN_SWIFT_FOLDER)/${FW_NAME}.swift $(TARGET_XC_FW_FOLDER)/Sources/$(FW_NAME)
 
 android:
-	cd $(TARGET_GRADLE_FOLDER) && ./gradlew cargoBuild --info
+	#make sure you install sdkman and jdk17
+	cp -Rf $(GEN_KOTLIN_FOLDER)/uniffi tests/android/GemTest/app/src/main/java
+	cd tests/android/GemTest && ./gradlew cargoBuild --info
