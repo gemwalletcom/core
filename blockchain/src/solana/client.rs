@@ -264,7 +264,7 @@ impl ChainProvider for SolanaClient {
                 "rewards": false
             }),
         ];
-        let block: Result<BlockTransactions, jsonrpsee::core::Error> =
+        let block: Result<BlockTransactions, jsonrpsee::core::ClientError> =
             self.client.request("getBlock", params).await;
         match block {
             Ok(block) => {
@@ -276,7 +276,7 @@ impl ChainProvider for SolanaClient {
                 Ok(transactions)
             }
             Err(err) => match err {
-                jsonrpsee::core::Error::Call(err) => {
+                jsonrpsee::core::ClientError::Call(err) => {
                     let errors = [
                         MISSING_SLOT_ERROR,
                         NOT_AVAILABLE_SLOT_ERROR,

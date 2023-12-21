@@ -1,5 +1,5 @@
 use super::contract::Contract;
-use jsonrpsee::core::Error;
+use jsonrpsee::core::ClientError;
 use jsonrpsee::http_client::HttpClientBuilder;
 use primitives::Chain;
 
@@ -20,10 +20,10 @@ impl Provider {
         }
     }
 
-    pub async fn resolve_name(&self, name: &str, _chain: Chain) -> Result<String, Error> {
+    pub async fn resolve_name(&self, name: &str, _chain: Chain) -> Result<String, ClientError> {
         let resolver = self.contract.resolver(name).await?;
         if resolver.is_empty() {
-            return Err(Error::Custom(String::from("no resolver set")));
+            return Err(ClientError::Custom(String::from("no resolver set")));
         }
         // TODO: support other chain lookup
         // TODO: support recursive parent lookup
@@ -32,7 +32,7 @@ impl Provider {
         Ok(addr)
     }
 
-    pub async fn get_address(&self, _resolver: &str, _chain: Chain) -> Result<String, Error> {
+    pub async fn get_address(&self, _resolver: &str, _chain: Chain) -> Result<String, ClientError> {
         todo!()
     }
 }
