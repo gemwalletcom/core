@@ -57,6 +57,15 @@ diesel::table! {
 }
 
 diesel::table! {
+    assets_types (id) {
+        #[max_length = 32]
+        id -> Varchar,
+        updated_at -> Timestamp,
+        created_at -> Timestamp,
+    }
+}
+
+diesel::table! {
     chains (id) {
         #[max_length = 32]
         id -> Varchar,
@@ -267,6 +276,7 @@ diesel::joinable!(transactions_addresses -> transactions (transaction_id));
 diesel::allow_tables_to_appear_in_same_query!(
     assets,
     assets_details,
+    assets_types,
     chains,
     devices,
     fiat_assets,

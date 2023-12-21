@@ -8,7 +8,7 @@ use diesel::{upsert::excluded, Connection};
 use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
 use primitives::chain::Chain;
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("../storage/src/migrations");
-use primitives::TransactionsFetchOption;
+use primitives::{AssetType, TransactionsFetchOption};
 
 pub struct DatabaseClient {
     connection: PgConnection,
@@ -516,6 +516,24 @@ impl DatabaseClient {
         use crate::schema::assets::dsl::*;
         diesel::insert_into(assets)
             .values(&_assets)
+            .on_conflict_do_nothing()
+            .execute(&mut self.connection)
+    }
+
+    pub fn add_assets_types(
+        &mut self,
+        values: Vec<AssetType>,
+    ) -> Result<usize, diesel::result::Error> {
+        let values = values
+            .iter()
+            .map(|x| super::models::AssetType {
+                id: x.as_ref().to_owned(),
+            })
+            .collect::<Vec<_>>();
+
+        use crate::schema::assets_types::dsl::*;
+        diesel::insert_into(assets_types)
+            .values(values)
             .on_conflict_do_nothing()
             .execute(&mut self.connection)
     }

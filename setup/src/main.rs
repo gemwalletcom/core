@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use primitives::{Asset, Chain};
+use primitives::{Asset, AssetType, Chain};
 use settings::Settings;
 use storage::{ClickhouseDatabase, DatabaseClient};
 
@@ -35,6 +35,11 @@ async fn main() {
     for chain in chains.clone() {
         let _ = database_client.add_parser_state(chain);
     }
+
+    println!("setup assets_types");
+
+    let assets_types = AssetType::all();
+    let _ = database_client.add_assets_types(assets_types);
 
     println!("setup assets");
     let assets = chains
