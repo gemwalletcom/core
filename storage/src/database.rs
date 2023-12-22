@@ -119,6 +119,7 @@ impl DatabaseClient {
                 circulating_supply.eq(excluded(circulating_supply)),
                 total_supply.eq(excluded(total_supply)),
                 max_supply.eq(excluded(max_supply)),
+                last_updated_at.eq(excluded(last_updated_at)),
             ))
             .execute(&mut self.connection)
     }
