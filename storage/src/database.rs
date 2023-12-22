@@ -506,7 +506,7 @@ impl DatabaseClient {
 
         let results: Vec<String> = query
             .select(asset_id)
-            .distinct()
+            //.distinct_on(asset_id)
             .order(created_at.desc())
             .load(&mut self.connection)?;
 

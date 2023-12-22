@@ -77,9 +77,13 @@ impl AssetsClient {
             .map(|x| x.chain)
             .collect::<Vec<_>>();
 
-        let assets_ids =
-            self.database
-                .get_assets_ids_by_device_id(addresses, chains, from_timestamp)?;
+        let assets_ids = self
+            .database
+            .get_assets_ids_by_device_id(addresses, chains, from_timestamp)?
+            .into_iter()
+            .collect::<std::collections::HashSet<String>>()
+            .into_iter()
+            .collect::<Vec<String>>();
         Ok(assets_ids)
     }
 }
