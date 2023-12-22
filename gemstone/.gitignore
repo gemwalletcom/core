@@ -1,0 +1,5 @@
+*~
+target/
+generated/
+xcuserdata/
+tests/android/GemTest/app/src/main/java/uniffi/
