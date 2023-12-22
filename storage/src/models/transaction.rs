@@ -23,7 +23,7 @@ pub struct Transaction {
     pub chain: String,
     pub hash: String,
     pub memo: Option<String>,
-    pub asset_id: Option<String>,
+    pub asset_id: String,
     pub value: Option<String>,
     pub fee: Option<String>,
     pub fee_asset_id: Option<String>,
@@ -69,7 +69,7 @@ impl Transaction {
 
     pub fn as_primitive(&self, addresses: Vec<String>) -> primitives::Transaction {
         //TODO: Remove addresses from here
-        let asset_id = AssetId::new(self.asset_id.clone().unwrap().as_str()).unwrap();
+        let asset_id = AssetId::new(self.asset_id.clone().as_str()).unwrap();
         let hash = self.hash.clone();
         let from = self.from_address.clone().unwrap_or_default();
         let to_address = self.to_address.clone().unwrap_or_default();

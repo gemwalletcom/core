@@ -504,12 +504,13 @@ impl DatabaseClient {
             query = query.filter(created_at.gt(datetime));
         }
 
-        let results: Vec<Option<String>> = query
+        let results: Vec<String> = query
             .select(asset_id)
             //.distinct_on(asset_id)
+            .order(created_at.desc())
             .load(&mut self.connection)?;
 
-        Ok(results.into_iter().flatten().collect())
+        Ok(results)
     }
 
     pub fn add_assets(&mut self, _assets: Vec<Asset>) -> Result<usize, diesel::result::Error> {

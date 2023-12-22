@@ -235,7 +235,7 @@ diesel::table! {
         kind -> Varchar,
         #[max_length = 256]
         value -> Nullable<Varchar>,
-        asset_id -> Nullable<Varchar>,
+        asset_id -> Varchar,
         #[max_length = 32]
         fee -> Nullable<Varchar>,
         utxo_inputs -> Nullable<Jsonb>,
@@ -268,6 +268,7 @@ diesel::table! {
     }
 }
 
+diesel::joinable!(assets -> assets_types (asset_type));
 diesel::joinable!(assets_details -> assets (asset_id));
 diesel::joinable!(subscriptions -> devices (device_id));
 diesel::joinable!(swap_assets -> assets (asset_id));
