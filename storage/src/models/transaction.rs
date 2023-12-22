@@ -46,7 +46,7 @@ impl Transaction {
             chain: transaction.asset_id.chain.as_ref().to_string(),
             hash: transaction.hash,
             memo: transaction.memo,
-            asset_id: transaction.asset_id.to_string().into(),
+            asset_id: transaction.asset_id.to_string(),
             value: transaction.value.into(),
             fee: transaction.fee.into(),
             fee_asset_id: transaction.fee_asset_id.to_string().into(),
