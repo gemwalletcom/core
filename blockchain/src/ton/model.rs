@@ -1,52 +1,43 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct JSONResult<T> {
-    pub result: T,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Chainhead {
-    pub last: Block,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Block {
     pub seqno: i64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Shards {
-    pub shards: Vec<Block>,
+    pub shards: Vec<Shard>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ShortTransactions {
-    pub transactions: Vec<ShortTransaction>,
+pub struct Shard {
+    pub last_known_block_id: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ShortTransaction {
-    pub lt: String,
-    pub account: String,
-    pub hash: String,
+pub struct Transactions {
+    pub transactions: Vec<Transaction>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Transaction {
-    pub fee: String,
-    pub transaction_id: TransactionId,
-    pub out_msgs: Vec<OutMessage>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TransactionId {
     pub hash: String,
+    pub block: String,
+    pub transaction_type: String,
+    pub total_fees: i64,
+    pub out_msgs: Vec<OutMessage>,
+    pub success: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OutMessage {
-    pub source: String,
-    pub destination: Option<String>,
-    pub value: String,
+    pub source: Address,
+    pub destination: Option<Address>,
+    pub value: i64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Address {
+    pub address: String,
 }

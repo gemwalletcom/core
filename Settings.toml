@@ -109,7 +109,7 @@ url = "https://fantom.publicnode.com"
 url = "https://gnosis.publicnode.com"
 
 [chains.ton]
-url = "https://toncenter.com"
+url = "https://tonapi.io"
 
 [chains.cosmos]
 url = "https://cosmos-rest.publicnode.com"
