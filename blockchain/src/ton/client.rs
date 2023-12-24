@@ -22,7 +22,10 @@ impl TonClient {
 
     pub fn map_transaction(&self, transaction: Transaction) -> Option<primitives::Transaction> {
         // system transfer
-        if transaction.transaction_type == "TransOrd" && transaction.out_msgs.len() == 1 {
+        if transaction.transaction_type == "TransOrd"
+            && transaction.out_msgs.len() == 1
+            && transaction.out_msgs.first()?.op_code.is_none()
+        {
             let asset_id = self.get_chain().as_asset_id();
             let out_message = transaction.out_msgs.first()?;
             let from = TonCodec::encode(out_message.clone().source.address.as_bytes().to_vec());

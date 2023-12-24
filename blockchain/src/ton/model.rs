@@ -35,6 +35,8 @@ pub struct OutMessage {
     pub source: Address,
     pub destination: Option<Address>,
     pub value: i64,
+    pub op_code: Option<String>,
+    pub decoded_op_name: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
