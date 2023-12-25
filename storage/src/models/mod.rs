@@ -13,6 +13,7 @@ pub mod subscription;
 pub mod tokenlist;
 pub mod transaction;
 pub mod transaction_addresses;
+pub mod transaction_assets;
 pub mod version;
 
 pub use self::asset::Asset;
@@ -31,4 +32,5 @@ pub use self::subscription::Subscription;
 pub use self::tokenlist::TokenList;
 pub use self::transaction::Transaction;
 pub use self::transaction_addresses::TransactionAddresses;
+pub use self::transaction_assets::TransactionAssets;
 pub use self::version::Version;

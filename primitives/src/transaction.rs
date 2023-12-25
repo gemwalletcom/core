@@ -1,7 +1,7 @@
 use crate::{
     asset_id::AssetId, transaction_direction::TransactionDirection,
     transaction_state::TransactionState, transaction_type::TransactionType,
-    transaction_utxo::TransactionInput, Chain,
+    transaction_utxo::TransactionInput, Chain, TransactionSwapMetadata,
 };
 
 use chrono::offset::Utc;
@@ -270,5 +270,21 @@ impl Transaction {
             .into_iter()
             .map(|x| x.value.parse::<i64>().unwrap())
             .sum::<i64>()
+    }
+
+    pub fn asset_ids(&self) -> Vec<String> {
+        match self.transaction_type {
+            TransactionType::Transfer => vec![self.asset_id.clone().to_string()],
+            TransactionType::Swap => {
+                let metadata: TransactionSwapMetadata =
+                    serde_json::from_value(self.metadata.clone()).unwrap();
+
+                vec![
+                    metadata.from_asset.to_string(),
+                    metadata.to_asset.to_string(),
+                ]
+            }
+            TransactionType::TokenApproval => vec![self.asset_id.clone().to_string()],
+        }
     }
 }

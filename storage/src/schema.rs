@@ -240,7 +240,7 @@ diesel::table! {
         fee -> Nullable<Varchar>,
         utxo_inputs -> Nullable<Jsonb>,
         utxo_outputs -> Nullable<Jsonb>,
-        fee_asset_id -> Nullable<Varchar>,
+        fee_asset_id -> Varchar,
         block_created_at -> Timestamp,
         updated_at -> Timestamp,
         created_at -> Timestamp,
@@ -259,6 +259,16 @@ diesel::table! {
 }
 
 diesel::table! {
+    transactions_assets (id) {
+        id -> Int4,
+        #[max_length = 256]
+        transaction_id -> Varchar,
+        #[max_length = 256]
+        asset_id -> Varchar,
+    }
+}
+
+diesel::table! {
     versions (id) {
         id -> Int4,
         platform -> Varchar,
@@ -273,6 +283,8 @@ diesel::joinable!(assets_details -> assets (asset_id));
 diesel::joinable!(subscriptions -> devices (device_id));
 diesel::joinable!(swap_assets -> assets (asset_id));
 diesel::joinable!(transactions_addresses -> transactions (transaction_id));
+diesel::joinable!(transactions_assets -> assets (asset_id));
+diesel::joinable!(transactions_assets -> transactions (transaction_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
     assets,
@@ -291,5 +303,6 @@ diesel::allow_tables_to_appear_in_same_query!(
     tokenlists,
     transactions,
     transactions_addresses,
+    transactions_assets,
     versions,
 );

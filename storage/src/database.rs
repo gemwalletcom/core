@@ -2,6 +2,7 @@ use crate::models::asset::AssetDetail;
 use crate::models::*;
 use crate::schema::{devices, transactions_addresses};
 use chrono::{Duration, NaiveDateTime, Utc};
+use diesel::associations::HasTable;
 use diesel::pg::PgConnection;
 use diesel::prelude::*;
 use diesel::{upsert::excluded, Connection};
@@ -357,35 +358,52 @@ impl DatabaseClient {
 
     pub fn add_transactions(
         &mut self,
-        _transactions: Vec<Transaction>,
-    ) -> Result<usize, diesel::result::Error> {
-        use crate::schema::transactions::dsl::*;
-        diesel::insert_into(transactions)
-            .values(&_transactions)
-            .on_conflict((chain, hash))
-            .do_update()
-            .set((
-                block_number.eq(excluded(block_number)),
-                sequence.eq(excluded(sequence)),
-                fee.eq(excluded(fee)),
-                fee_asset_id.eq(excluded(fee_asset_id)),
-                memo.eq(excluded(memo)),
-                updated_at.eq(excluded(updated_at)),
-            ))
-            .execute(&mut self.connection)
-    }
+        transactions_values: Vec<Transaction>,
+        addresses_values: Vec<TransactionAddresses>,
+        assets_values: Vec<TransactionAssets>,
+    ) -> Result<bool, diesel::result::Error> {
+        return self
+            .connection
+            .build_transaction()
+            .read_write()
+            .run::<_, diesel::result::Error, _>(|conn: &mut PgConnection| {
+                use crate::schema::transactions::dsl::*;
+                let _ = diesel::insert_into(transactions::table())
+                    .values(transactions_values)
+                    .on_conflict((chain, hash))
+                    .do_update()
+                    .set((
+                        block_number.eq(excluded(block_number)),
+                        sequence.eq(excluded(sequence)),
+                        fee.eq(excluded(fee)),
+                        fee_asset_id.eq(excluded(fee_asset_id)),
+                        memo.eq(excluded(memo)),
+                        updated_at.eq(excluded(updated_at)),
+                    ))
+                    .execute(conn);
 
-    // only used for utxo chains
-    pub fn add_transactions_addresses(
-        &mut self,
-        values: Vec<TransactionAddresses>,
-    ) -> Result<usize, diesel::result::Error> {
-        use crate::schema::transactions_addresses::dsl::*;
-        diesel::insert_into(transactions_addresses)
-            .values(&values)
-            .on_conflict((transaction_id, address))
-            .do_nothing()
-            .execute(&mut self.connection)
+                use crate::schema::transactions_addresses::dsl::*;
+                let _ = diesel::insert_into(transactions_addresses::table())
+                    .values(&addresses_values)
+                    .on_conflict((
+                        super::schema::transactions_addresses::transaction_id,
+                        super::schema::transactions_addresses::address,
+                    ))
+                    .do_nothing()
+                    .execute(conn);
+
+                use crate::schema::transactions_assets::dsl::*;
+                let _ = diesel::insert_into(transactions_assets::table())
+                    .values(&assets_values)
+                    .on_conflict((
+                        super::schema::transactions_assets::transaction_id,
+                        super::schema::transactions_assets::asset_id,
+                    ))
+                    .do_nothing()
+                    .execute(conn);
+
+                Ok(true)
+            });
     }
 
     pub fn get_transactions_by_device_id(
