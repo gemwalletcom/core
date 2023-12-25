@@ -284,6 +284,7 @@ impl Parser {
                     .asset_ids()
                     .into_iter()
                     .map(|asset_id| storage::models::TransactionAssets {
+                        chain_id: self.chain.as_ref().to_string(),
                         transaction_id: transaction.id.clone(),
                         asset_id,
                     })

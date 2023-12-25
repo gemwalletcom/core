@@ -265,6 +265,8 @@ diesel::table! {
         transaction_id -> Varchar,
         #[max_length = 256]
         asset_id -> Varchar,
+        #[max_length = 32]
+        chain_id -> Varchar,
     }
 }
 
@@ -284,6 +286,7 @@ diesel::joinable!(subscriptions -> devices (device_id));
 diesel::joinable!(swap_assets -> assets (asset_id));
 diesel::joinable!(transactions_addresses -> transactions (transaction_id));
 diesel::joinable!(transactions_assets -> assets (asset_id));
+diesel::joinable!(transactions_assets -> chains (chain_id));
 diesel::joinable!(transactions_assets -> transactions (transaction_id));
 
 diesel::allow_tables_to_appear_in_same_query!(

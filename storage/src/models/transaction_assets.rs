@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 #[diesel(table_name = crate::schema::transactions_assets)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct TransactionAssets {
+    pub chain_id: String,
     pub transaction_id: String,
     pub asset_id: String,
 }
