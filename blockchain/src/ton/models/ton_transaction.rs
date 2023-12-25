@@ -7,3 +7,8 @@ struct TonTransaction {
 struct TonTransactionId {
     hash: String,
 }
+
+#[typeshare]
+struct TonTransactionMessage {
+    hash: String,
+}
