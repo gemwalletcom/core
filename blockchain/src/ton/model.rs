@@ -11,6 +11,15 @@ pub struct Shards {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Blocks {
+    pub blocks: Vec<Block>,
+}
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Block {
+    pub seqno: i64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Shard {
     pub last_known_block_id: String,
 }

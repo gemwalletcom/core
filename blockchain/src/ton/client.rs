@@ -8,7 +8,7 @@ use primitives::{chain::Chain, TransactionState, TransactionType};
 
 use reqwest_middleware::ClientWithMiddleware;
 
-use super::model::{Chainhead, Shards, Transaction, Transactions};
+use super::model::{Blocks, Chainhead, Shards, Transaction, Transactions};
 
 pub struct TonClient {
     url: String,
@@ -21,7 +21,6 @@ impl TonClient {
     }
 
     pub fn map_transaction(&self, transaction: Transaction) -> Option<primitives::Transaction> {
-        // system transfer
         if transaction.transaction_type == "TransOrd"
             && transaction.out_msgs.len() == 1
             && transaction.out_msgs.first()?.op_code.is_none()
@@ -79,6 +78,31 @@ impl TonClient {
         Ok(response)
     }
 
+    pub async fn get_blocks(&self, sequence: i64) -> Result<Blocks, Box<dyn Error + Send + Sync>> {
+        let url = format!("{}/v2/blockchain/masterchain/{}/blocks", self.url, sequence);
+        let response = self.client.get(url).send().await?.json::<Blocks>().await?;
+        Ok(response)
+    }
+
+    pub async fn get_transactions_in_all_blocks(
+        &self,
+        block_id: String,
+    ) -> Result<Transactions, Box<dyn Error + Send + Sync>> {
+        let url = format!(
+            "{}/v2/blockchain/masterchain/{}/transactions",
+            self.url, block_id
+        );
+        let response = self
+            .client
+            .get(url)
+            .send()
+            .await?
+            .json::<Transactions>()
+            .await?;
+
+        Ok(response)
+    }
+
     pub async fn get_block_transactions(
         &self,
         block_id: String,
@@ -114,19 +138,27 @@ impl ChainProvider for TonClient {
         &self,
         block: i64,
     ) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Send + Sync>> {
-        let shards = self.get_shards(block).await?.shards;
+        // let shards = self.get_blocks(block).await?.blocks;
 
-        let futures = shards.into_iter().map(|shard| {
-            return self.get_block_transactions(shard.last_known_block_id);
-        });
+        // let futures = shards.into_iter().map(|shard| {
+        //     return self.get_block_transactions(shard.seqno.to_string());
+        // });
 
-        let transactions = futures::future::join_all(futures)
-            .await
+        // let transactions = futures::future::join_all(futures)
+        //     .await
+        //     .into_iter()
+        //     .filter_map(Result::ok)
+        //     .collect::<Vec<Transactions>>()
+        //     .into_iter()
+        //     .flat_map(|x| x.transactions)
+        //     .flat_map(|x| self.map_transaction(x))
+        //     .collect::<Vec<primitives::Transaction>>();
+
+        let transactions = self
+            .get_transactions_in_all_blocks(block.to_string())
+            .await?
+            .transactions
             .into_iter()
-            .filter_map(Result::ok)
-            .collect::<Vec<Transactions>>()
-            .into_iter()
-            .flat_map(|x| x.transactions)
             .flat_map(|x| self.map_transaction(x))
             .collect::<Vec<primitives::Transaction>>();
 
