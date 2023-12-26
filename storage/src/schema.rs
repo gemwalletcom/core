@@ -251,22 +251,15 @@ diesel::table! {
 diesel::table! {
     transactions_addresses (id) {
         id -> Int4,
-        #[max_length = 256]
-        transaction_id -> Varchar,
-        #[max_length = 256]
-        address -> Varchar,
-    }
-}
-
-diesel::table! {
-    transactions_assets (id) {
-        id -> Int4,
+        #[max_length = 32]
+        chain_id -> Varchar,
         #[max_length = 256]
         transaction_id -> Varchar,
         #[max_length = 256]
         asset_id -> Varchar,
-        #[max_length = 32]
-        chain_id -> Varchar,
+        #[max_length = 256]
+        address -> Varchar,
+        created_at -> Timestamp,
     }
 }
 
@@ -284,10 +277,9 @@ diesel::joinable!(assets -> assets_types (asset_type));
 diesel::joinable!(assets_details -> assets (asset_id));
 diesel::joinable!(subscriptions -> devices (device_id));
 diesel::joinable!(swap_assets -> assets (asset_id));
+diesel::joinable!(transactions_addresses -> assets (asset_id));
+diesel::joinable!(transactions_addresses -> chains (chain_id));
 diesel::joinable!(transactions_addresses -> transactions (transaction_id));
-diesel::joinable!(transactions_assets -> assets (asset_id));
-diesel::joinable!(transactions_assets -> chains (chain_id));
-diesel::joinable!(transactions_assets -> transactions (transaction_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
     assets,
@@ -306,6 +298,5 @@ diesel::allow_tables_to_appear_in_same_query!(
     tokenlists,
     transactions,
     transactions_addresses,
-    transactions_assets,
     versions,
 );

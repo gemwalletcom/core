@@ -360,7 +360,6 @@ impl DatabaseClient {
         &mut self,
         transactions_values: Vec<Transaction>,
         addresses_values: Vec<TransactionAddresses>,
-        assets_values: Vec<TransactionAssets>,
     ) -> Result<bool, diesel::result::Error> {
         return self
             .connection
@@ -388,16 +387,7 @@ impl DatabaseClient {
                     .on_conflict((
                         super::schema::transactions_addresses::transaction_id,
                         super::schema::transactions_addresses::address,
-                    ))
-                    .do_nothing()
-                    .execute(conn);
-
-                use crate::schema::transactions_assets::dsl::*;
-                let _ = diesel::insert_into(transactions_assets::table())
-                    .values(&assets_values)
-                    .on_conflict((
-                        super::schema::transactions_assets::transaction_id,
-                        super::schema::transactions_assets::asset_id,
+                        super::schema::transactions_addresses::asset_id,
                     ))
                     .do_nothing()
                     .execute(conn);
@@ -418,7 +408,7 @@ impl DatabaseClient {
         let mut query = transactions
             .into_boxed()
             .inner_join(transactions_addresses::table)
-            .filter(chain.eq_any(chains.clone()))
+            .filter(transactions_addresses::chain_id.eq_any(chains.clone()))
             .filter(transactions_addresses::address.eq_any(addresses));
 
         if let Some(_asset_id) = options.asset_id {
@@ -510,26 +500,21 @@ impl DatabaseClient {
         chains: Vec<String>,
         from_timestamp: Option<u32>,
     ) -> Result<Vec<String>, diesel::result::Error> {
-        use crate::schema::transactions::dsl::*;
-        let mut query = transactions
-            .into_boxed()
-            .inner_join(transactions_addresses::table)
-            .filter(chain.eq_any(chains.clone()))
-            .filter(transactions_addresses::address.eq_any(addresses));
+        use crate::schema::transactions_addresses::dsl::*;
+        let datetime: NaiveDateTime = if let Some(from_timestamp) = from_timestamp {
+            NaiveDateTime::from_timestamp_opt(from_timestamp.into(), 0).unwrap()
+        } else {
+            NaiveDateTime::from_timestamp_opt(0, 0).unwrap()
+        };
 
-        if let Some(from_timestamp) = from_timestamp {
-            let datetime: NaiveDateTime =
-                NaiveDateTime::from_timestamp_opt(from_timestamp.into(), 0).unwrap();
-            query = query.filter(created_at.gt(datetime));
-        }
-
-        let results: Vec<String> = query
+        transactions_addresses
+            .filter(address.eq_any(addresses))
+            .filter(chain_id.eq_any(chains))
+            .filter(created_at.gt(datetime))
+            .order((asset_id, created_at.desc()))
+            .distinct_on(asset_id)
             .select(asset_id)
-            //.distinct_on(asset_id)
-            .order(created_at.desc())
-            .load(&mut self.connection)?;
-
-        Ok(results)
+            .load(&mut self.connection)
     }
 
     pub fn add_assets(&mut self, _assets: Vec<Asset>) -> Result<usize, diesel::result::Error> {
