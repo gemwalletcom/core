@@ -45,7 +45,7 @@ rust_decimal = { version = "1.33" }
 async-trait = { version = "0.1.75" }
 prometheus-client = { version = "0.22.0" }
 futures = { version = "0.3.30" }
-thiserror = { version = "1.0.51" }
+thiserror = { version = "1.0.52" }
 
 # db
 diesel = { version = "2.1.4", features = ["postgres", "chrono", "serde_json"] }
