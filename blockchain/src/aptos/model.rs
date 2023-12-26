@@ -1,5 +1,8 @@
 use serde::{Deserialize, Serialize};
 
+pub const WITHDRAW_EVENT: &str = "0x1::coin::WithdrawEvent";
+pub const DEPOSIT_EVENT: &str = "0x1::coin::DepositEvent";
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Ledger {
     pub block_height: String,
@@ -30,7 +33,7 @@ pub struct Transaction {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Event {
     pub guid: Guid,
-    pub data: Option<AmountData>,
+    pub data: Option<serde_json::Value>,
     #[serde(rename = "type")]
     pub event_type: String,
 }
@@ -43,4 +46,19 @@ pub struct AmountData {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Guid {
     pub account_address: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum Empty {}
+
+impl Event {
+    pub fn get_amount(&self) -> Option<String> {
+        let data = self.data.clone()?;
+        match self.event_type.as_str() {
+            WITHDRAW_EVENT | DEPOSIT_EVENT => {
+                serde_json::from_value::<AmountData>(data).ok()?.amount
+            }
+            _ => None,
+        }
+    }
 }

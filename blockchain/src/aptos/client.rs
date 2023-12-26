@@ -7,7 +7,7 @@ use num_bigint::BigUint;
 use primitives::{chain::Chain, TransactionState, TransactionType};
 use reqwest_middleware::ClientWithMiddleware;
 
-use super::model::{Block, Ledger};
+use super::model::{Block, Ledger, DEPOSIT_EVENT};
 
 pub struct AptosClient {
     url: String,
@@ -26,19 +26,17 @@ impl AptosClient {
     ) -> Option<primitives::Transaction> {
         let events = transaction.clone().events.unwrap_or_default();
 
-        if transaction.transaction_type == "user_transaction"
-            && (events.len() == 2 || events.len() == 3)
-            && events[1].event_type == "0x1::coin::DepositEvent"
-        {
+        if transaction.transaction_type == "user_transaction" && events.len() <= 4 {
+            let deposit_event = events.iter().find(|x| x.event_type == DEPOSIT_EVENT)?;
+
             let asset_id = self.get_chain().as_asset_id();
             let state = if transaction.success {
                 TransactionState::Confirmed
             } else {
                 TransactionState::Failed
             };
-            let events = transaction.events.unwrap();
-            let to = &events[1].guid.account_address;
-            let value = &events[1].data.clone().unwrap().amount.unwrap_or_default();
+            let to = &deposit_event.guid.account_address;
+            let value = &deposit_event.get_amount()?;
             let gas_used = BigUint::from_str(transaction.gas_used.unwrap_or_default().as_str())
                 .unwrap_or_default();
             let gas_unit_price =
