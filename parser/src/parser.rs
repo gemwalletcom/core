@@ -268,6 +268,10 @@ impl Parser {
             })
             .collect::<Vec<storage::models::TransactionAddresses>>();
 
+        if transactions.is_empty() || transaction_addresses.is_empty() {
+            return Ok(0);
+        }
+
         let _ = self
             .database
             .add_transactions(transactions.clone(), transaction_addresses)?;
