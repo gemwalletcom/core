@@ -11,6 +11,13 @@ struct TronSmartContractCall {
 
 #[typeshare]
 struct TronSmartContractResult {
+    result: TronSmartContractResultMessage,
     constant_result: Vec<String>,
     energy_used: i32,
+}
+
+#[typeshare]
+struct TronSmartContractResultMessage {
+    result: bool,
+    message: Option<String>,
 }
