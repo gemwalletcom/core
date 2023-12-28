@@ -107,6 +107,18 @@ diesel::table! {
 }
 
 diesel::table! {
+    fiat_providers (id) {
+        #[max_length = 32]
+        id -> Varchar,
+        #[max_length = 32]
+        name -> Varchar,
+        enabled -> Bool,
+        updated_at -> Timestamp,
+        created_at -> Timestamp,
+    }
+}
+
+diesel::table! {
     fiat_rates (id) {
         id -> Int4,
         symbol -> Varchar,
@@ -280,6 +292,7 @@ diesel::joinable!(swap_assets -> assets (asset_id));
 diesel::joinable!(transactions_addresses -> assets (asset_id));
 diesel::joinable!(transactions_addresses -> chains (chain_id));
 diesel::joinable!(transactions_addresses -> transactions (transaction_id));
+diesel::joinable!(fiat_assets -> fiat_providers (provider));
 
 diesel::allow_tables_to_appear_in_same_query!(
     assets,
@@ -288,6 +301,7 @@ diesel::allow_tables_to_appear_in_same_query!(
     chains,
     devices,
     fiat_assets,
+    fiat_providers,
     fiat_rates,
     nodes,
     parser_state,

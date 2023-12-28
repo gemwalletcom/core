@@ -76,7 +76,7 @@ impl Client {
     pub fn get_fiat_mapping(&mut self, asset_id: &str) -> Result<FiatMappingMap, Box<dyn Error>> {
         let list = self.database.get_fiat_assets_for_asset_id(asset_id)?;
         let mut map: FiatMappingMap = FiatMappingMap::new();
-        list.into_iter().for_each(|x| {
+        list.into_iter().for_each(|x: storage::models::FiatAsset| {
             map.insert(
                 x.provider,
                 FiatMapping {
@@ -86,7 +86,6 @@ impl Client {
             );
         });
         Ok(map)
-        //Ok(map)
     }
 
     pub async fn get_quotes(
@@ -96,19 +95,19 @@ impl Client {
     ) -> Result<Vec<FiatQuote>, Box<dyn Error + Send + Sync>> {
         let mut futures = vec![];
 
-        if let Some(value) = fiat_mapping_map.get(self.ramp.name().as_str()) {
+        if let Some(value) = fiat_mapping_map.get(self.ramp.name().id().as_str()) {
             futures.push(self.ramp.get_quote(request.clone(), value.clone()));
         }
 
-        if let Some(value) = fiat_mapping_map.get(self.moonpay.name().as_str()) {
+        if let Some(value) = fiat_mapping_map.get(self.moonpay.name().id().as_str()) {
             futures.push(self.moonpay.get_quote(request.clone(), value.clone()));
         }
 
-        // if let Some(value) = fiat_mapping_map.get(self.transak.name().as_str()) {
-        //     futures.push(self.transak.get_quote(request.clone(), value.clone()));
-        // }
+        if let Some(value) = fiat_mapping_map.get(self.transak.name().id().as_str()) {
+            futures.push(self.transak.get_quote(request.clone(), value.clone()));
+        }
 
-        if let Some(value) = fiat_mapping_map.get(self.mercuryo.name().as_str()) {
+        if let Some(value) = fiat_mapping_map.get(self.mercuryo.name().id().as_str()) {
             futures.push(self.mercuryo.get_quote(request.clone(), value.clone()));
         }
 

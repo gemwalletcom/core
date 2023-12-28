@@ -1,5 +1,5 @@
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare]
+#[typeshare(swift = "Equatable, Hashable")]
 #[serde(rename_all = "camelCase")]
 pub struct Delegation {
     pub base: DelegationBase,
@@ -8,7 +8,7 @@ pub struct Delegation {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare]
+#[typeshare(swift = "Equatable, Hashable")]
 #[serde(rename_all = "camelCase")]
 pub struct DelegationBase {
     pub asset_id: AssetId,
@@ -20,7 +20,7 @@ pub struct DelegationBase {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare]
+#[typeshare(swift = "Equatable, Hashable")]
 pub struct DelegationValidator {
     pub chain: Chain,
     pub id: String,

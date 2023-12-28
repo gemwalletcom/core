@@ -10,6 +10,8 @@ pub enum TransactionType {
     Transfer,
     Swap,
     TokenApproval,
+    StakeDelegate,
+    StakeRewards,
 }
 
 impl Default for TransactionType {

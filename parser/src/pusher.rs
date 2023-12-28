@@ -68,6 +68,14 @@ impl Pusher {
                 let message = "".to_string();
                 Ok(Message { title, message })
             }
+            TransactionType::StakeDelegate => Ok(Message {
+                title: format!("Stake {}", asset.symbol),
+                message: "".to_string(),
+            }),
+            TransactionType::StakeRewards => Ok(Message {
+                title: format!("Claim Rewards {}", asset.symbol),
+                message: "".to_string(),
+            }),
             TransactionType::Swap => {
                 let metadata: TransactionSwapMetadata =
                     serde_json::from_value(transaction.metadata)?;

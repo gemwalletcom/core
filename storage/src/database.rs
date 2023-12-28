@@ -1,6 +1,6 @@
 use crate::models::asset::AssetDetail;
 use crate::models::*;
-use crate::schema::{devices, transactions_addresses};
+use crate::schema::{devices, fiat_providers, transactions_addresses};
 use chrono::{Duration, NaiveDateTime, Utc};
 use diesel::associations::HasTable;
 use diesel::pg::PgConnection;
@@ -89,7 +89,9 @@ impl DatabaseClient {
         _asset_id: &str,
     ) -> Result<Vec<FiatAsset>, diesel::result::Error> {
         use crate::schema::fiat_assets::dsl::*;
-        fiat_assets
+        fiat_assets::table()
+            .inner_join(fiat_providers::table)
+            .filter(fiat_providers::enabled.eq(true))
             .filter(asset_id.eq(_asset_id))
             .select(FiatAsset::as_select())
             .load(&mut self.connection)

@@ -284,7 +284,9 @@ impl Transaction {
                     metadata.to_asset.to_string(),
                 ]
             }
-            TransactionType::TokenApproval => vec![self.asset_id.clone().to_string()],
+            TransactionType::TokenApproval
+            | TransactionType::StakeDelegate
+            | TransactionType::StakeRewards => vec![self.asset_id.clone().to_string()],
         }
     }
 }

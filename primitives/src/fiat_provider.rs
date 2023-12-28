@@ -26,6 +26,10 @@ impl FiatProviderName {
         }
     }
 
+    pub fn id(&self) -> String {
+        self.as_str().to_lowercase()
+    }
+
     pub fn as_fiat_provider(&self) -> FiatProvider {
         FiatProvider {
             name: self.as_str().to_string(),

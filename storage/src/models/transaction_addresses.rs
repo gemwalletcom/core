@@ -16,18 +16,19 @@ impl TransactionAddresses {
     pub fn from_primitive(transaction: primitives::Transaction) -> Vec<TransactionAddresses> {
         let transaction_id = transaction.clone().id;
         match transaction.transaction_type {
-            primitives::TransactionType::Transfer | primitives::TransactionType::TokenApproval => {
-                transaction
-                    .addresses()
-                    .into_iter()
-                    .map(|x| Self {
-                        chain_id: transaction.asset_id.chain.as_ref().to_string(),
-                        asset_id: transaction.asset_id.to_string(),
-                        transaction_id: transaction_id.clone(),
-                        address: x,
-                    })
-                    .collect()
-            }
+            primitives::TransactionType::Transfer
+            | primitives::TransactionType::TokenApproval
+            | primitives::TransactionType::StakeDelegate
+            | primitives::TransactionType::StakeRewards => transaction
+                .addresses()
+                .into_iter()
+                .map(|x| Self {
+                    chain_id: transaction.asset_id.chain.as_ref().to_string(),
+                    asset_id: transaction.asset_id.to_string(),
+                    transaction_id: transaction_id.clone(),
+                    address: x,
+                })
+                .collect(),
             primitives::TransactionType::Swap => {
                 let metadata: TransactionSwapMetadata =
                     serde_json::from_value(transaction.metadata.clone()).unwrap();

@@ -12,3 +12,10 @@ pub struct TransactionSwapMetadata {
     pub to_asset: AssetId,
     pub to_value: String,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[typeshare]
+#[serde(rename_all = "camelCase")]
+pub struct TransactionStakeMetadata {
+    pub validator_id: String,
+}
