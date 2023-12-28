@@ -104,9 +104,9 @@ impl Client {
             futures.push(self.moonpay.get_quote(request.clone(), value.clone()));
         }
 
-        if let Some(value) = fiat_mapping_map.get(self.transak.name().as_str()) {
-            futures.push(self.transak.get_quote(request.clone(), value.clone()));
-        }
+        // if let Some(value) = fiat_mapping_map.get(self.transak.name().as_str()) {
+        //     futures.push(self.transak.get_quote(request.clone(), value.clone()));
+        // }
 
         if let Some(value) = fiat_mapping_map.get(self.mercuryo.name().as_str()) {
             futures.push(self.mercuryo.get_quote(request.clone(), value.clone()));
