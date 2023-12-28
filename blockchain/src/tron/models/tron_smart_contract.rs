@@ -6,9 +6,11 @@ struct TronSmartContractCall {
     fee_limit: u32,
     call_value: u32,
     owner_address: String,
+    visible: bool,
 }
 
 #[typeshare]
 struct TronSmartContractResult {
     constant_result: Vec<String>,
+    energy_used: i32,
 }
