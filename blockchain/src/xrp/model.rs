@@ -17,6 +17,7 @@ pub struct LedgerData {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Ledger {
+    pub close_time: i64,
     pub transactions: Vec<Transaction>,
 }
 

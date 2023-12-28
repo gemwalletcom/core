@@ -7,13 +7,11 @@ version = { workspace = true }
 typeshare = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
-reqwest = { workspace = true }
 async-trait = { workspace = true }
 primitives = { path = "../primitives" }
 ns_address_codec = { path = "../ns_address_codec" }
 chrono = { workspace = true }
 hex = { workspace = true }
-futures = { workspace = true }
 num-bigint = { workspace = true }
 num-traits = { workspace = true }
 reqwest-middleware = { workspace = true }

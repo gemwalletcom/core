@@ -2,7 +2,7 @@ use std::error::Error;
 
 use crate::ChainProvider;
 use async_trait::async_trait;
-use chrono::Utc;
+use chrono::NaiveDateTime;
 use primitives::{chain::Chain, TransactionState, TransactionType};
 use reqwest_middleware::ClientWithMiddleware;
 use serde_json::json;
@@ -23,6 +23,7 @@ impl XRPClient {
         &self,
         transaction: super::model::Transaction,
         block_number: i64,
+        block_timestamp: i64,
     ) -> Option<primitives::Transaction> {
         if transaction.transaction_type == "Payment" {
             let amount = transaction.amount.unwrap();
@@ -51,7 +52,9 @@ impl XRPClient {
                         value,
                         Some(transaction.destination_tag.unwrap_or_default().to_string()),
                         None,
-                        Utc::now(),
+                        NaiveDateTime::from_timestamp_opt(block_timestamp, 0)
+                            .unwrap()
+                            .and_utc(),
                     );
                     return Some(transaction);
                 }
@@ -127,13 +130,13 @@ impl ChainProvider for XRPClient {
         &self,
         block_number: i64,
     ) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Send + Sync>> {
-        let transactions = self
-            .get_block_transactions(block_number)
-            .await?
-            .transactions;
+        let block = self.get_block_transactions(block_number).await?;
+        let block_timestamp = 946684800 + block.close_time;
+        let transactions = block.transactions;
+
         let transactions = transactions
             .into_iter()
-            .flat_map(|x| self.map_transaction(x, block_number))
+            .flat_map(|x| self.map_transaction(x, block_number, block_timestamp))
             .collect::<Vec<primitives::Transaction>>();
         Ok(transactions)
     }
