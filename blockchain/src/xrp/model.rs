@@ -39,6 +39,8 @@ pub struct Transaction {
     pub date: Option<i64>,
     #[serde(rename = "DestinationTag")]
     pub destination_tag: Option<i64>,
+    #[serde(rename = "Memos")]
+    pub memos: Option<Vec<TransactionMemo>>,
     #[serde(rename = "metaData")]
     pub meta: TransactionMeta,
 }
@@ -69,4 +71,16 @@ impl Amount {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AmountCurrency {
     pub value: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TransactionMemo {
+    #[serde(rename = "Memo")]
+    pub memo: TransactionMemoData,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TransactionMemoData {
+    #[serde(rename = "MemoData")]
+    pub data: String,
 }

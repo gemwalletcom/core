@@ -25,7 +25,9 @@ impl XRPClient {
         block_number: i64,
         block_timestamp: i64,
     ) -> Option<primitives::Transaction> {
-        if transaction.transaction_type == "Payment" {
+        if transaction.transaction_type == "Payment"
+            && transaction.memos.unwrap_or_default().is_empty()
+        {
             let amount = transaction.amount.unwrap();
             match amount {
                 // system transfer
