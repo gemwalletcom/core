@@ -21,10 +21,14 @@ pub struct DelegationBase {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Hashable")]
+#[serde(rename_all = "camelCase")]
 pub struct DelegationValidator {
     pub chain: Chain,
     pub id: String,
     pub name: String,
+    pub is_active: bool,
+    pub commision: f64,
+    pub apr: f64,
 }
 
 #[derive(Copy, Clone, Debug, Serialize, Deserialize)]

@@ -531,6 +531,7 @@ dependencies = [
  "chrono",
  "cosmos-sdk-proto",
  "curve25519-dalek",
+ "futures",
  "hex",
  "jsonrpsee",
  "ns_address_codec",

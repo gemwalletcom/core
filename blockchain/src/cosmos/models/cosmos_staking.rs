@@ -52,10 +52,22 @@ struct CosmosValidators {
 struct CosmosValidator {
     operator_address: String,
     jailed: bool,
+    status: String,
     description: CosmosValidatorMoniker,
+    commission: CosmosValidatorCommission,
 }
 
 #[typeshare]
 struct CosmosValidatorMoniker {
     moniker: String,
+}
+
+#[typeshare]
+struct CosmosValidatorCommission {
+    commission_rates: CosmosValidatorCommissionRates,
+}
+
+#[typeshare]
+struct CosmosValidatorCommissionRates {
+    rate: String,
 }
