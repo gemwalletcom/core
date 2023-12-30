@@ -16,4 +16,5 @@ struct CosmosTransactionResponse {
 #[typeshare]
 struct CosmosTransactionDataResponse {
     txhash: String,
+    code: i32,
 }
