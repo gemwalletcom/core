@@ -286,6 +286,7 @@ impl Transaction {
             }
             TransactionType::TokenApproval
             | TransactionType::StakeDelegate
+            | TransactionType::StakeUndelegate
             | TransactionType::StakeRewards => vec![self.asset_id.clone().to_string()],
         }
     }

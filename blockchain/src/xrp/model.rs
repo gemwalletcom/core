@@ -82,5 +82,5 @@ pub struct TransactionMemo {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TransactionMemoData {
     #[serde(rename = "MemoData")]
-    pub data: String,
+    pub data: Option<String>,
 }

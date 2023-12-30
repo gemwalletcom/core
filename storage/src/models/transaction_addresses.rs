@@ -19,6 +19,7 @@ impl TransactionAddresses {
             primitives::TransactionType::Transfer
             | primitives::TransactionType::TokenApproval
             | primitives::TransactionType::StakeDelegate
+            | primitives::TransactionType::StakeUndelegate
             | primitives::TransactionType::StakeRewards => transaction
                 .addresses()
                 .into_iter()

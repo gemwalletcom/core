@@ -11,6 +11,7 @@ pub enum TransactionType {
     Swap,
     TokenApproval,
     StakeDelegate,
+    StakeUndelegate,
     StakeRewards,
 }
 
