@@ -10,11 +10,19 @@ use primitives::{chain::Chain, TransactionState, TransactionType};
 use reqwest_middleware::ClientWithMiddleware;
 use sha2::{Digest, Sha256};
 
+const MESSAGE_DELEGATE: &str = "/cosmos.staking.v1beta1.MsgDelegate";
+const MESSAGE_UNDELEGATE: &str = "/cosmos.staking.v1beta1.MsgUndelegate";
 const MESSAGE_SEND_BETA: &str = "/cosmos.bank.v1beta1.MsgSend";
 const MESSAGE_REWARD_BETA: &str = "/cosmos.distribution.v1beta1.MsgWithdrawDelegatorReward";
 const MESSAGE_SEND: &str = "/types.MsgSend"; // thorchain
 
-const MESSAGES: &[&str] = &[MESSAGE_SEND_BETA, MESSAGE_REWARD_BETA, MESSAGE_SEND];
+const MESSAGES: &[&str] = &[
+    MESSAGE_SEND,
+    MESSAGE_SEND_BETA,
+    MESSAGE_DELEGATE,
+    MESSAGE_UNDELEGATE,
+    MESSAGE_REWARD_BETA,
+];
 
 pub struct CosmosClient {
     chain: Chain,
@@ -64,6 +72,21 @@ impl CosmosClient {
         })
     }
 
+    pub fn get_amount(
+        &self,
+        coins: Vec<cosmos_sdk_proto::cosmos::base::v1beta1::Coin>,
+    ) -> Option<String> {
+        Some(
+            coins
+                .into_iter()
+                .filter(|x| x.denom == self.chain.clone().as_denom())
+                .collect::<Vec<_>>()
+                .first()?
+                .amount
+                .clone(),
+        )
+    }
+
     pub fn map_transaction(
         &self,
         transaction: TransactionDecode,
@@ -99,16 +122,37 @@ impl CosmosClient {
                 MESSAGE_SEND | MESSAGE_SEND_BETA => {
                     let message: cosmos_sdk_proto::cosmos::bank::v1beta1::MsgSend =
                         cosmos_sdk_proto::prost::Message::decode(&*message.value).ok()?;
-                    let coins = message
-                        .amount
-                        .into_iter()
-                        .filter(|x| x.denom == default_denom)
-                        .collect::<Vec<_>>();
 
                     transaction_type = TransactionType::Transfer;
-                    value = coins.first()?.amount.clone();
+                    value = message
+                        .amount
+                        .into_iter()
+                        .filter(|x| x.denom == self.chain.clone().as_denom())
+                        .collect::<Vec<_>>()
+                        .first()?
+                        .amount
+                        .clone();
+
                     from_address = message.from_address;
                     to_address = message.to_address;
+                }
+                MESSAGE_DELEGATE => {
+                    let message: cosmos_sdk_proto::cosmos::staking::v1beta1::MsgDelegate =
+                        cosmos_sdk_proto::prost::Message::decode(&*message.value).ok()?;
+
+                    value = message.amount?.amount.clone();
+                    transaction_type = TransactionType::StakeDelegate;
+                    from_address = message.delegator_address;
+                    to_address = message.validator_address;
+                }
+                MESSAGE_UNDELEGATE => {
+                    let message: cosmos_sdk_proto::cosmos::staking::v1beta1::MsgUndelegate =
+                        cosmos_sdk_proto::prost::Message::decode(&*message.value).ok()?;
+
+                    transaction_type = TransactionType::StakeUndelegate;
+                    value = message.amount?.amount.clone();
+                    from_address = message.delegator_address;
+                    to_address = message.validator_address;
                 }
                 MESSAGE_REWARD_BETA => {
                     let message: cosmos_sdk_proto::cosmos::distribution::v1beta1::MsgWithdrawDelegatorReward =
@@ -118,7 +162,6 @@ impl CosmosClient {
                         .get_rewards_value(self.chain.as_denom())
                         .unwrap_or_default()
                         .to_string();
-
                     transaction_type = TransactionType::StakeRewards;
                     from_address = message.delegator_address;
                     to_address = message.validator_address;
