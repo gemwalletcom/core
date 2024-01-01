@@ -30,7 +30,17 @@ pub struct BlockData {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TransactionResponse {
+    pub tx: TransactionResponseTx,
     pub tx_response: TransactionResponseData,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TransactionResponseTx {
+    pub body: TransactionResponseBody,
+}
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TransactionResponseBody {
+    pub messages: Vec<serde_json::Value>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -82,4 +92,30 @@ impl TransactionResponse {
             .sum();
         Some(value)
     }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MessageSend {
+    pub from_address: String,
+    pub to_address: String,
+    pub amount: Vec<Coin>,
+}
+
+impl MessageSend {
+    pub fn get_amount(&self, denom: &str) -> Option<BigInt> {
+        let value = self
+            .amount
+            .clone()
+            .into_iter()
+            .filter(|x| x.denom == denom)
+            .flat_map(|x| BigInt::from_str(&x.amount).ok())
+            .sum();
+        Some(value)
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Coin {
+    pub denom: String,
+    pub amount: String,
 }

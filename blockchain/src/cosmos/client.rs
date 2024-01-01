@@ -1,6 +1,6 @@
 use std::error::Error;
 
-use super::model::{BlockResponse, TransactionResponse};
+use super::model::{BlockResponse, MessageSend, TransactionResponse};
 use crate::ChainProvider;
 use async_trait::async_trait;
 use base64::{engine::general_purpose, Engine as _};
@@ -112,14 +112,24 @@ impl CosmosClient {
             TransactionState::Reverted
         };
 
-        for message in transaction.tx_body.messages {
+        for message in transaction.clone().tx_body.messages {
             let transaction_type: TransactionType;
             let value: String;
             let from_address: String;
             let to_address: String;
 
             match message.type_url.as_str() {
-                MESSAGE_SEND | MESSAGE_SEND_BETA => {
+                MESSAGE_SEND => {
+                    // special handling for thorchain as it uses a different message type and decoding does not work
+                    let message: MessageSend =
+                        serde_json::from_value(reciept.tx.body.messages.first()?.clone()).ok()?;
+
+                    transaction_type = TransactionType::Transfer;
+                    value = message.get_amount(self.chain.as_denom())?.to_string();
+                    from_address = message.from_address;
+                    to_address = message.to_address;
+                }
+                MESSAGE_SEND_BETA => {
                     let message: cosmos_sdk_proto::cosmos::bank::v1beta1::MsgSend =
                         cosmos_sdk_proto::prost::Message::decode(&*message.value).ok()?;
 
