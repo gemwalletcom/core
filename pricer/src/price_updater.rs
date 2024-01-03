@@ -425,6 +425,7 @@ fn format_token_id(chain: Chain, token_id: String) -> Option<String> {
         | Chain::Aptos
         | Chain::Sui
         | Chain::Xrp
-        | Chain::Injective => None,
+        | Chain::Injective
+        | Chain::Sei => None,
     }
 }

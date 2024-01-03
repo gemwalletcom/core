@@ -196,6 +196,13 @@ impl Asset {
                 decimals: 18,
                 asset_type: AssetType::NATIVE,
             },
+            Chain::Sei => Asset {
+                id: chain.as_asset_id(),
+                name: "Sei".to_string(),
+                symbol: "SEI".to_string(),
+                decimals: 6,
+                asset_type: AssetType::NATIVE,
+            },
         }
     }
 }

@@ -157,6 +157,7 @@ pub struct Chains {
     pub fantom: Chain,
     pub gnosis: Chain,
     pub injective: Chain,
+    pub sei: Chain,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -177,7 +178,6 @@ pub struct ChainApi {
 pub struct Parser {
     pub timeout: u64,
     pub retry: u64,
-    pub chains: Vec<String>,
 }
 
 #[derive(Debug, Deserialize, Clone)]

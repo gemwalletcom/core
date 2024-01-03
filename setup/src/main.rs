@@ -19,12 +19,7 @@ async fn main() {
     let _ = clickhouse_database.migrations().await;
     println!("clickhouse migrations complete");
 
-    let chains = settings
-        .parser
-        .chains
-        .into_iter()
-        .flat_map(|chain| Chain::from_str(chain.as_ref()))
-        .collect::<Vec<_>>();
+    let chains = Chain::all();
 
     println!("chains: {:?}", chains);
 

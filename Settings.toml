@@ -138,6 +138,9 @@ url = "https://celestia-rest.publicnode.com"
 [chains.injective]
 url = "	https://injective-rest.publicnode.com"
 
+[chains.sei]
+url = "https://sei-rest.publicnode.com"
+
 [chains.bitcoin]
 url = ""
 
@@ -174,32 +177,6 @@ address = ""
 [parser]
 retry = 0
 timeout = 1000 # ms
-chains = [
-    "ethereum",
-    "smartchain",
-    "arbitrum",
-    "ton",
-    "avalanchec",
-    "base",
-    "opbnb",
-    "optimism",
-    "polygon",
-    "solana",
-    "cosmos",
-    "osmosis",
-    "thorchain",
-    "celestia",
-    "tron",
-    "xrp",
-    "aptos",
-    "sui",
-    "bitcoin",
-    "litecoin",
-    "doge",
-    "fantom",
-    "gnosis",
-    "injective",
-]
 
 [pusher]
 url = ""

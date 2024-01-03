@@ -35,20 +35,21 @@ impl SwapperClient {
             | Chain::Fantom
             | Chain::Gnosis
             | Chain::AvalancheC => self.oneinch.get_quote(quote).await,
-            Chain::Binance => todo!(),
             Chain::Solana => self.jupiter.get_quote(quote).await,
             Chain::Thorchain | Chain::Doge | Chain::Cosmos | Chain::Bitcoin | Chain::Litecoin => {
                 self.thorchain.get_quote(quote).await
             }
-            Chain::Osmosis => todo!(),
-            Chain::Celestia => todo!(),
-            Chain::Injective => todo!(),
-            Chain::Ton => todo!(),
-            Chain::Tron => todo!(),
-            Chain::Aptos => todo!(),
-            Chain::Sui => todo!(),
-            Chain::Xrp => todo!(),
-            Chain::OpBNB => todo!(),
+            Chain::Osmosis
+            | Chain::Celestia
+            | Chain::Binance
+            | Chain::Injective
+            | Chain::Ton
+            | Chain::Tron
+            | Chain::Aptos
+            | Chain::Sui
+            | Chain::Xrp
+            | Chain::OpBNB
+            | Chain::Sei => todo!(),
         }
     }
 }
