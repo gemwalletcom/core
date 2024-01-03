@@ -1,9 +1,14 @@
 #[typeshare]
-struct CosmosNodeInfo {
-    network: String,
+struct CosmosBlockResponse {
+    block: CosmosBlock,
 }
 
 #[typeshare]
-struct CosmosNodeInfoResponse {
-    default_node_info: CosmosNodeInfo,
+struct CosmosBlock {
+    header: CosmosHeader,
+}
+
+#[typeshare]
+struct CosmosHeader {
+    chain_id: String,
 }
