@@ -1,4 +1,4 @@
-FROM lukemathwalker/cargo-chef:latest-rust-1.71.0 AS chef
+FROM lukemathwalker/cargo-chef:latest-rust-1.75.0 AS chef
 WORKDIR /app
 
 FROM chef AS planner
@@ -15,11 +15,13 @@ RUN cargo build --release
 
 FROM debian:bullseye AS runtime
 WORKDIR /app
+
+RUN apt-get update && apt-get install -y openssl ca-certificates libpq-dev postgresql
+
 COPY --from=builder /app/target/release/api /app
 COPY --from=builder /app/target/release/deamon /app
 COPY --from=builder /app/target/release/parser /app
 COPY --from=builder /app/target/release/setup /app
 COPY --from=builder /app/Settings.toml /app
-RUN apt-get update && apt-get install -y openssl ca-certificates libpq-dev postgresql
 
 CMD ["sh", "-c", "/app/${BINARY}"]
