@@ -139,7 +139,7 @@ url = "https://celestia-rest.publicnode.com"
 url = "	https://injective-rest.publicnode.com"
 
 [chains.sei]
-url = "https://sei-rest.publicnode.com"
+url = "https://sei-api.polkachu.com" # https://docs.sei.io/develop/resources
 
 [chains.bitcoin]
 url = ""
