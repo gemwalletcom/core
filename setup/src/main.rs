@@ -1,5 +1,3 @@
-use std::str::FromStr;
-
 use primitives::{Asset, AssetType, Chain};
 use settings::Settings;
 use storage::{ClickhouseDatabase, DatabaseClient};
