@@ -28,7 +28,7 @@ struct CosmosUnboundingDelegation {
 #[typeshare]
 struct CosmosUnboudingDelegationEntry {
     completion_time: String,
-    unbonding_id: String,
+    creation_height: String,
     balance: String,
 }
 
