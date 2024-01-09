@@ -55,7 +55,7 @@ chrono = { version = "0.4.31", features = ["serde"] }
 clickhouse = { git = "https://github.com/loyd/clickhouse.rs", rev = "d930b66f6772aba5ef049b231fd15a9e6a974854" }
 
 # crypto
-base64 = { version = "0.21.5" }
+base64 = { version = "0.21.6" }
 #bech32 = { version = "0.9.1" }
 bs58 = { version = "0.5.0", features = ["check"] }
 hex = { version = "0.4.3" }
