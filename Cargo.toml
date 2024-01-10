@@ -33,7 +33,7 @@ default-members = ["bin/generate", "deamon", "api", "parser", "setup"]
 [workspace.dependencies]
 typeshare = "1.0.1"
 serde = { version = "1.0.195", features = ["derive"] }
-serde_json = { version = "1.0.109" }
+serde_json = { version = "1.0.111" }
 tokio = { version = "1.35.1", features = ["macros", "rt-multi-thread"] }
 reqwest = { version = "0.11.23", features = ["json"] }
 reqwest-middleware = { version = "0.2.4" }
