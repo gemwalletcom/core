@@ -7,3 +7,9 @@ struct AssetData {
     details: Option<AssetDetailsInfo>,
     metadata: AssetMetaData,
 }
+
+#[typeshare(swift = "Equatable, Codable, Hashable")]
+struct AssetAddress {
+    asset: Asset,
+    address: String,
+}
