@@ -6,4 +6,5 @@ pub enum BalanceType {
     staked,
     pending,
     rewards,
+    reserve,
 }
