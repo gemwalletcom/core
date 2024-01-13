@@ -14,6 +14,7 @@ pub struct DelegationBase {
     pub asset_id: AssetId,
     pub state: DelegationState,
     pub balance: String,
+    pub rewards: String,
     pub completion_date: Option<Date>,
     pub delegation_id: String,
     pub validator_id: String,
@@ -38,5 +39,4 @@ pub enum DelegationState {
     Active,
     Pending,
     Undelegating,
-    Rewards,
 }

@@ -71,6 +71,8 @@ pub struct AssetDetail {
     pub is_sellable: bool,
     pub is_swappable: bool,
     pub is_stakeable: bool,
+
+    pub staking_apr: Option<f64>,
 }
 
 impl AssetDetail {
@@ -93,6 +95,7 @@ impl AssetDetail {
             is_sellable: self.is_sellable,
             is_swapable: self.is_swappable,
             is_stakeable: self.is_stakeable,
+            staking_apr: self.staking_apr,
         }
     }
 
@@ -114,6 +117,7 @@ impl AssetDetail {
             is_sellable: value.is_sellable,
             is_swappable: value.is_swapable,
             is_stakeable: value.is_stakeable,
+            staking_apr: value.staking_apr,
         }
     }
 }

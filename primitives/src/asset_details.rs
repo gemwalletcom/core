@@ -24,6 +24,8 @@ pub struct AssetDetails {
     pub is_sellable: bool,
     pub is_swapable: bool,
     pub is_stakeable: bool,
+
+    pub staking_apr: Option<f64>,
 }
 
 impl AssetDetails {
@@ -34,6 +36,7 @@ impl AssetDetails {
             is_sellable: false,
             is_swapable: false,
             is_stakeable: false,
+            staking_apr: None,
         }
     }
 }

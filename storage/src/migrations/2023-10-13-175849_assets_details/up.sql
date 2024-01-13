@@ -18,6 +18,8 @@ CREATE TABLE assets_details (
     is_swappable boolean NOT NULL default false,
     is_stakeable boolean NOT NULL default false,
 
+    staking_apr float,
+
     updated_at timestamp NOT NULL default current_timestamp,
     created_at timestamp NOT NULL default current_timestamp
 );

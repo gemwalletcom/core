@@ -53,6 +53,7 @@ diesel::table! {
         is_sellable -> Bool,
         is_swappable -> Bool,
         is_stakeable -> Bool,
+        staking_apr -> Nullable<Float8>,
     }
 }
 
@@ -287,12 +288,13 @@ diesel::table! {
 
 diesel::joinable!(assets -> assets_types (asset_type));
 diesel::joinable!(assets_details -> assets (asset_id));
+diesel::joinable!(fiat_assets -> assets (asset_id));
+diesel::joinable!(fiat_assets -> fiat_providers (provider));
 diesel::joinable!(subscriptions -> devices (device_id));
 diesel::joinable!(swap_assets -> assets (asset_id));
 diesel::joinable!(transactions_addresses -> assets (asset_id));
 diesel::joinable!(transactions_addresses -> chains (chain_id));
 diesel::joinable!(transactions_addresses -> transactions (transaction_id));
-diesel::joinable!(fiat_assets -> fiat_providers (provider));
 
 diesel::allow_tables_to_appear_in_same_query!(
     assets,
