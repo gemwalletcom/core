@@ -1,3 +1,1 @@
-namespace Gemstone {
-    string rust_greeting(string name);
-};
+namespace Gemstone {};
