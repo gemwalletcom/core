@@ -31,7 +31,7 @@ pub fn get_name_by_host(host: String) -> String {
         "explorer.aptoslabs.com" => "Aptos Explorer",
         "mintscan.io" => "MintScan",
         "www.mintscan.io" => "MintScan",
-        _ => "Not implemented",
+        _ => "",
     };
     name.into()
 }
