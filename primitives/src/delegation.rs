@@ -39,4 +39,5 @@ pub enum DelegationState {
     Active,
     Pending,
     Undelegating,
+    Inactive,
 }
