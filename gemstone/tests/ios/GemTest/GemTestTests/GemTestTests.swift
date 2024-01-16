@@ -20,7 +20,7 @@ final class GemTestTests: XCTestCase {
     }
     
     func testGetExplorerName() {
-        XCTAssertEqual(Gemstone.getNameByHost(host: "etherscan.io"), "Etherscan")
-        XCTAssertEqual(Gemstone.getNameByHost(host: "www.mintscan.io"), "MintScan")
+        XCTAssertEqual(Gemstone.getExplorerNameByHost(host: "etherscan.io"), "Etherscan")
+        XCTAssertEqual(Gemstone.getExplorerNameByHost(host: "www.mintscan.io"), "MintScan")
     }
 }

@@ -16,7 +16,7 @@ pub async fn say_after(ms: u64, who: String) -> String {
 }
 
 #[uniffi::export]
-pub fn get_name_by_host(host: String) -> String {
+pub fn get_explorer_name_by_host(host: String) -> String {
     let name = match host.as_str() {
         "etherscan.io" => "Etherscan",
         "tonscan.org" => "TONScan",
@@ -26,11 +26,9 @@ pub fn get_name_by_host(host: String) -> String {
         "blockchair.com" => "Blockchair",
         "tronscan.org" => "TRONSCAN",
         "basescan.org" => "BaseScan",
-        "explorer.sui.io" => "Sui Explorer",
-        "suiexplorer.com" => "Sui Explorer",
+        "explorer.sui.io" | "suiexplorer.com" => "Sui Explorer",
         "explorer.aptoslabs.com" => "Aptos Explorer",
-        "mintscan.io" => "MintScan",
-        "www.mintscan.io" => "MintScan",
+        "mintscan.io" | "www.mintscan.io" => "MintScan",
         _ => "",
     };
     name.into()
