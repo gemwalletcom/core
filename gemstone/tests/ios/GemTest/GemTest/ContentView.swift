@@ -14,7 +14,7 @@ struct ContentView: View {
             Image(systemName: "globe")
                 .imageScale(.large)
                 .foregroundStyle(.tint)
-            Text(Gemstone.rustGreeting(name: "GEM"))
+            Text("Gemstone lib version: " + Gemstone.libVersion())
         }
         .padding()
         .onAppear {}
