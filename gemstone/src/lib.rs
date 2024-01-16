@@ -16,20 +16,19 @@ pub async fn say_after(ms: u64, who: String) -> String {
 }
 
 #[uniffi::export]
-pub fn get_explorer_name_by_host(host: String) -> String {
-    let name = match host.as_str() {
-        "etherscan.io" => "Etherscan",
-        "tonscan.org" => "TONScan",
-        "solscan.io" => "Solscan",
-        "opbnbscan.com" => "opBNBScan",
-        "bscscan.com" => "BSCScan",
-        "blockchair.com" => "Blockchair",
-        "tronscan.org" => "TRONSCAN",
-        "basescan.org" => "BaseScan",
-        "explorer.sui.io" | "suiexplorer.com" => "Sui Explorer",
-        "explorer.aptoslabs.com" => "Aptos Explorer",
-        "mintscan.io" | "www.mintscan.io" => "MintScan",
-        _ => "",
+pub fn get_explorer_name_by_host(host: String) -> Option<String> {
+    return match host.as_str() {
+        "etherscan.io" => Some("Etherscan".into()),
+        "tonscan.org" => Some("TONScan".into()),
+        "solscan.io" => Some("Solscan".into()),
+        "opbnbscan.com" => Some("opBNBScan".into()),
+        "bscscan.com" => Some("BSCScan".into()),
+        "blockchair.com" => Some("Blockchair".into()),
+        "tronscan.org" => Some("TRONSCAN".into()),
+        "basescan.org" => Some("BaseScan".into()),
+        "explorer.sui.io" | "suiexplorer.com" => Some("Sui Explorer".into()),
+        "explorer.aptoslabs.com" => Some("Aptos Explorer".into()),
+        "mintscan.io" | "www.mintscan.io" => Some("MintScan".into()),
+        _ => None,
     };
-    name.into()
 }
