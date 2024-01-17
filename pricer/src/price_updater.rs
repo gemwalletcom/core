@@ -62,6 +62,10 @@ impl PriceUpdater {
                             Chain::Base.as_ref().to_string(),
                             market.clone(),
                         ));
+                        prices_map.insert(asset_price_map(
+                            Chain::Manta.as_ref().to_string(),
+                            market.clone(),
+                        ));
                     }
                 }
                 None => {
@@ -404,7 +408,8 @@ fn format_token_id(chain: Chain, token_id: String) -> Option<String> {
         | Chain::AvalancheC
         | Chain::OpBNB
         | Chain::Fantom
-        | Chain::Gnosis => Some(EthereumAddress::parse(&token_id)?.to_checksum()),
+        | Chain::Gnosis
+        | Chain::Manta => Some(EthereumAddress::parse(&token_id)?.to_checksum()),
         Chain::Solana => Some(token_id),
         Chain::Tron => {
             if token_id.len() == 34 && token_id.starts_with('T') {

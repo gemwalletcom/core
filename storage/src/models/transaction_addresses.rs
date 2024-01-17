@@ -20,7 +20,8 @@ impl TransactionAddresses {
             | primitives::TransactionType::TokenApproval
             | primitives::TransactionType::StakeDelegate
             | primitives::TransactionType::StakeUndelegate
-            | primitives::TransactionType::StakeRewards => transaction
+            | primitives::TransactionType::StakeRewards
+            | primitives::TransactionType::StakeRedelegate => transaction
                 .addresses()
                 .into_iter()
                 .map(|x| Self {

@@ -203,6 +203,13 @@ impl Asset {
                 decimals: 6,
                 asset_type: AssetType::NATIVE,
             },
+            Chain::Manta => Asset {
+                id: chain.as_asset_id(),
+                name: "Manta".to_string(),
+                symbol: "ETH".to_string(),
+                decimals: 18,
+                asset_type: AssetType::NATIVE,
+            },
         }
     }
 }

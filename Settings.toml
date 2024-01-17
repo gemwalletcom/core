@@ -141,6 +141,9 @@ url = "	https://injective-rest.publicnode.com"
 [chains.sei]
 url = "https://sei-api.polkachu.com" # https://docs.sei.io/develop/resources
 
+[chains.manta]
+url = "https://pacific-rpc.manta.network/http"
+
 [chains.bitcoin]
 url = ""
 

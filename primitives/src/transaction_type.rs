@@ -13,6 +13,7 @@ pub enum TransactionType {
     StakeDelegate,
     StakeUndelegate,
     StakeRewards,
+    StakeRedelegate,
 }
 
 impl Default for TransactionType {

@@ -30,7 +30,8 @@ impl ProviderFactory {
             | Chain::Optimism
             | Chain::Base
             | Chain::AvalancheC
-            | Chain::OpBNB => Box::new(EthereumClient::new(chain, url)),
+            | Chain::OpBNB
+            | Chain::Manta => Box::new(EthereumClient::new(chain, url)),
             Chain::Cosmos
             | Chain::Osmosis
             | Chain::Celestia
@@ -77,6 +78,7 @@ impl ProviderFactory {
             Chain::Celestia => settings.chains.celestia.url.as_str(),
             Chain::Injective => settings.chains.injective.url.as_str(),
             Chain::Sei => settings.chains.sei.url.as_str(),
+            Chain::Manta => settings.chains.manta.url.as_str(),
         }
     }
 }

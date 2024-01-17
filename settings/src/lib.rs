@@ -158,6 +158,7 @@ pub struct Chains {
     pub gnosis: Chain,
     pub injective: Chain,
     pub sei: Chain,
+    pub manta: Chain,
 }
 
 #[derive(Debug, Deserialize, Clone)]

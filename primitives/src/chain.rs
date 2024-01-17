@@ -38,6 +38,7 @@ pub enum Chain {
     Celestia,
     Injective,
     Sei,
+    Manta,
 }
 
 impl PartialEq for Chain {
@@ -84,6 +85,7 @@ impl Chain {
             Self::OpBNB => "204",
             Self::Fantom => "250",
             Self::Gnosis => "100",
+            Self::Manta => "169",
             Self::Bitcoin
             | Self::Litecoin
             | Self::Binance
@@ -117,7 +119,8 @@ impl Chain {
             | Self::Polygon
             | Self::Base
             | Self::Gnosis
-            | Self::Injective => 60,
+            | Self::Injective
+            | Self::Manta => 60,
             Self::Binance => 714,
             Self::Bitcoin => 0,
             Self::Litecoin => 2,
@@ -146,7 +149,8 @@ impl Chain {
             | Self::Base
             | Self::SmartChain
             | Self::AvalancheC
-            | Self::Gnosis => ChainType::Ethereum,
+            | Self::Gnosis
+            | Self::Manta => ChainType::Ethereum,
             Self::Binance => ChainType::Binance,
             Self::Bitcoin | Self::Doge | Self::Litecoin => ChainType::Bitcoin,
             Self::Solana => ChainType::Solana,
@@ -173,7 +177,8 @@ impl Chain {
             | Self::Base
             | Self::AvalancheC
             | Self::Gnosis
-            | Self::Fantom => Some(AssetType::ERC20),
+            | Self::Fantom
+            | Self::Manta => Some(AssetType::ERC20),
             Self::OpBNB | Self::SmartChain => Some(AssetType::BEP20),
             Self::Binance => Some(AssetType::BEP2),
             Self::Solana => Some(AssetType::SPL),
@@ -198,6 +203,7 @@ impl Chain {
     pub fn block_time(&self) -> i64 {
         match self {
             Self::Ethereum => 12_000,
+            Self::Manta => 12_000,
             Self::Fantom => 1_000,
             Self::OpBNB => 1_000,
             Self::Arbitrum => 1_000,

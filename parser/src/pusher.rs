@@ -76,6 +76,10 @@ impl Pusher {
                 title: format!("Unstake {}", asset.symbol),
                 message: "".to_string(),
             }),
+            TransactionType::StakeRedelegate => Ok(Message {
+                title: format!("Redelegate {}", asset.symbol),
+                message: "".to_string(),
+            }),
             TransactionType::StakeRewards => Ok(Message {
                 title: format!("Claim Rewards {}", asset.symbol),
                 message: "".to_string(),
