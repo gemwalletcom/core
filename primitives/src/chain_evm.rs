@@ -15,4 +15,5 @@ pub enum EVMChain {
     OpBNB,
     Fantom,
     Gnosis,
+    Manta,
 }
