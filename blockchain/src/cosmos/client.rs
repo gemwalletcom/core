@@ -12,6 +12,7 @@ use sha2::{Digest, Sha256};
 
 const MESSAGE_DELEGATE: &str = "/cosmos.staking.v1beta1.MsgDelegate";
 const MESSAGE_UNDELEGATE: &str = "/cosmos.staking.v1beta1.MsgUndelegate";
+const MESSAGE_REDELEGATE: &str = "/cosmos.staking.v1beta1.MsgBeginRedelegate";
 const MESSAGE_SEND_BETA: &str = "/cosmos.bank.v1beta1.MsgSend";
 const MESSAGE_REWARD_BETA: &str = "/cosmos.distribution.v1beta1.MsgWithdrawDelegatorReward";
 const MESSAGE_SEND: &str = "/types.MsgSend"; // thorchain
@@ -21,6 +22,7 @@ const MESSAGES: &[&str] = &[
     MESSAGE_SEND_BETA,
     MESSAGE_DELEGATE,
     MESSAGE_UNDELEGATE,
+    MESSAGE_REDELEGATE,
     MESSAGE_REWARD_BETA,
 ];
 
@@ -163,6 +165,15 @@ impl CosmosClient {
                     value = message.amount?.amount.clone();
                     from_address = message.delegator_address;
                     to_address = message.validator_address;
+                }
+                MESSAGE_REDELEGATE => {
+                    let message: cosmos_sdk_proto::cosmos::staking::v1beta1::MsgBeginRedelegate =
+                        cosmos_sdk_proto::prost::Message::decode(&*message.value).ok()?;
+
+                    transaction_type = TransactionType::StakeRedelegate;
+                    value = message.amount?.amount.clone();
+                    from_address = message.delegator_address;
+                    to_address = message.validator_dst_address;
                 }
                 MESSAGE_REWARD_BETA => {
                     let message: cosmos_sdk_proto::cosmos::distribution::v1beta1::MsgWithdrawDelegatorReward =
