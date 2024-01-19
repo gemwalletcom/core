@@ -3,7 +3,7 @@ use std::error::Error;
 use crate::ChainProvider;
 use async_trait::async_trait;
 use chrono::Utc;
-use ns_address_codec::{codec::Codec, ton::TonCodec};
+use naming::{codec::Codec, ton::TonCodec};
 use primitives::{chain::Chain, TransactionState, TransactionType};
 
 use reqwest_middleware::ClientWithMiddleware;

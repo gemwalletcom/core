@@ -1,7 +1,7 @@
 use crate::client::NameClient;
 use async_trait::async_trait;
-use ns_address_codec::codec::Codec;
-use ns_address_codec::ton;
+use naming::codec::Codec;
+use naming::ton;
 use primitives::{
     chain::Chain,
     name::{NameProvider, NameRecord},

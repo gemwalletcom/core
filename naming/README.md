@@ -1,4 +1,4 @@
-## ns_address_code
+## naming
 
 Address/Account codec library mainly for Naming Services in Rust
 

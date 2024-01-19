@@ -1,5 +1,5 @@
 [package]
-name = "ns_address_codec"
+name = "naming"
 version = { workspace = true }
 edition = { workspace = true }
 

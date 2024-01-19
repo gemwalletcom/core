@@ -534,7 +534,7 @@ dependencies = [
  "futures",
  "hex",
  "jsonrpsee",
- "ns_address_codec",
+ "naming",
  "num-bigint",
  "num-traits",
  "primitives",
@@ -2088,12 +2088,20 @@ dependencies = [
  "base64 0.21.7",
  "hex",
  "jsonrpsee",
- "ns_address_codec",
+ "naming",
  "primitives",
  "reqwest",
  "serde",
  "serde_json",
  "tokio-test",
+]
+
+[[package]]
+name = "naming"
+version = "1.0.0"
+dependencies = [
+ "hex",
+ "ton_smart_contract_address",
 ]
 
 [[package]]
@@ -2122,14 +2130,6 @@ checksum = "d273983c5a657a70a3e8f2a01329822f3b8c8172b73826411a55751e404a0a4a"
 dependencies = [
  "memchr",
  "minimal-lexical",
-]
-
-[[package]]
-name = "ns_address_codec"
-version = "1.0.0"
-dependencies = [
- "hex",
- "ton_smart_contract_address",
 ]
 
 [[package]]
