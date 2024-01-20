@@ -1,8 +1,0 @@
-[package]
-name = "ns_address_codec"
-version = { workspace = true }
-edition = { workspace = true }
-
-[dependencies]
-hex = { workspace = true }
-ton_smart_contract_address = "0.0.4"

@@ -20,7 +20,6 @@ members = [
     "fiat",
     "name_resolver",
     "api_connector",
-    "ns_address_codec",
     "parser",
     "setup",
     "settings",
