@@ -16,3 +16,4 @@ prefix = ''
 "Int64" = "Long"
 "NaiveDateTime" = "Long"
 "DateTime" = "Long"
+"Data" = "ByteArray"
