@@ -9,7 +9,7 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 async-trait = { workspace = true }
 primitives = { path = "../primitives" }
-naming = { path = "../naming" }
+name_resolver = { path = "../name_resolver" }
 chrono = { workspace = true }
 hex = { workspace = true }
 num-bigint = { workspace = true }

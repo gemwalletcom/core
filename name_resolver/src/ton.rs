@@ -1,7 +1,6 @@
-use crate::client::NameClient;
+use crate::codec::Codec;
+use crate::{client::NameClient, ton_codec};
 use async_trait::async_trait;
-use naming::codec::Codec;
-use naming::ton;
 use primitives::{
     chain::Chain,
     name::{NameProvider, NameRecord},
@@ -49,7 +48,7 @@ impl NameClient for TONClient {
             .json::<ResolveResponse>()
             .await?;
         // always encode as Bounceable address
-        let encoded = ton::TonCodec::encode(response.wallet.address.as_bytes().to_vec());
+        let encoded = ton_codec::TonCodec::encode(response.wallet.address.as_bytes().to_vec());
         Ok(NameRecord {
             name: name.to_string(),
             chain,
