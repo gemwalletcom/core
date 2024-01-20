@@ -73,7 +73,7 @@ mod tests {
     #[test]
     fn test_encoding() {
         let raw = "0:8e874b7ad9bbebbfc48810b8939c98f50580246f19982040dbcb253c4c3daf78";
-        let address = ton::TonCodec::encode(raw.as_bytes().to_vec());
+        let address = ton_codec::TonCodec::encode(raw.as_bytes().to_vec());
 
         assert_eq!(address, "EQCOh0t62bvrv8SIELiTnJj1BYAkbxmYIEDbyyU8TD2veND8");
     }
