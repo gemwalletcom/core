@@ -29,6 +29,13 @@ struct SolanaStakeAccountDataParsed {
 #[typeshare]
 struct SolanaStakeAccountDataParsedInfo {
     stake: SolanaStakeAccountDataParsedInfoStake,
+    meta: SolanaStakeAccountDataParsedInfoMeta,
+}
+
+#[typeshare]
+#[serde(rename_all = "camelCase")]
+struct SolanaStakeAccountDataParsedInfoMeta {
+    rent_exempt_reserve: String,
 }
 
 #[typeshare]
