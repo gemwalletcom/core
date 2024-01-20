@@ -14,6 +14,7 @@ pub enum AssetType {
     BEP20,
     SPL,
     TRC20,
+    TOKEN,
 }
 
 impl AssetType {
