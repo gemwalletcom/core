@@ -10,3 +10,9 @@ struct SolanaValidator {
     commission: i32,
     epoch_vote_account: bool,
 }
+
+#[typeshare]
+#[serde(rename_all = "camelCase")]
+struct SolanaEpoch {
+    epoch: i32,
+}

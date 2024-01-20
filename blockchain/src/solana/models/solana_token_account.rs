@@ -37,7 +37,10 @@ struct SolanaStakeAccountDataParsedInfoStake {
 }
 
 #[typeshare]
+#[serde(rename_all = "camelCase")]
 struct SolanaStakeAccountDataParsedInfoStakeDelegation {
     voter: String,
     stake: String,
+    activation_epoch: String,
+    deactivation_epoch: String,
 }
