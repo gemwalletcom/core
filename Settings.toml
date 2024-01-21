@@ -182,7 +182,7 @@ retry = 0
 timeout = 1000 # ms
 
 [pusher]
-url = ""
+url = "http://localhost:8088"
 
 [pusher.ios]
 topic = ""

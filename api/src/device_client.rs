@@ -44,6 +44,13 @@ impl DevicesClient {
         Ok(device.as_primitive())
     }
 
+    pub fn get_topic(&self, platform: primitives::Platform) -> Option<String> {
+        match platform {
+            primitives::Platform::Android => None,
+            primitives::Platform::IOS => Some(self.pusher_topic.clone()),
+        }
+    }
+
     pub async fn send_push_notification_device(
         &mut self,
         device_id: &str,
@@ -55,7 +62,7 @@ impl DevicesClient {
             platform: device.platform.as_i32(),
             title: "Test Notification".to_string(),
             message: "Test Message".to_string(),
-            topic: self.pusher_topic.to_string(),
+            topic: self.get_topic(device.platform),
             data: None,
         };
         let result = self.pusher.push(notification).await?;

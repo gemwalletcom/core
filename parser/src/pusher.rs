@@ -107,6 +107,13 @@ impl Pusher {
         }
     }
 
+    pub fn get_topic(&self, platform: primitives::Platform) -> Option<String> {
+        match platform {
+            primitives::Platform::Android => None,
+            primitives::Platform::IOS => Some(self.ios_topic.clone()),
+        }
+    }
+
     pub async fn push(
         &mut self,
         device: primitives::Device,
@@ -117,6 +124,7 @@ impl Pusher {
         if !device.is_push_enabled || device.token.is_empty() {
             return Ok(0);
         }
+
         let message = self.message(transaction.clone(), subscription.clone())?;
         let data = PushNotification {
             notification_type: PushNotificationTypes::Transaction,
@@ -128,7 +136,7 @@ impl Pusher {
             platform: device.platform.as_i32(),
             title: message.title,
             message: message.message,
-            topic: self.ios_topic.clone(),
+            topic: self.get_topic(device.platform),
             data: Some(data),
         };
         let response = self.client.push(notification).await?;

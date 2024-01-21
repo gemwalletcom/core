@@ -7,7 +7,7 @@ pub struct Notification {
     pub platform: i32,
     pub title: String,
     pub message: String,
-    pub topic: String,
+    pub topic: Option<String>,
     pub data: Option<PushNotification>,
 }
 
