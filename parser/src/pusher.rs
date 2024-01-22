@@ -84,6 +84,10 @@ impl Pusher {
                 title: format!("Claim Rewards {}", asset.symbol),
                 message: "".to_string(),
             }),
+            TransactionType::StakeWithdraw => Ok(Message {
+                title: format!("Withdraw Stake {}", asset.symbol),
+                message: "".to_string(),
+            }),
             TransactionType::Swap => {
                 let metadata: TransactionSwapMetadata =
                     serde_json::from_value(transaction.metadata)?;

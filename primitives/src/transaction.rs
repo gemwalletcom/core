@@ -288,7 +288,8 @@ impl Transaction {
             | TransactionType::StakeDelegate
             | TransactionType::StakeUndelegate
             | TransactionType::StakeRewards
-            | TransactionType::StakeRedelegate => vec![self.asset_id.clone().to_string()],
+            | TransactionType::StakeRedelegate
+            | TransactionType::StakeWithdraw => vec![self.asset_id.clone().to_string()],
         }
     }
 }
