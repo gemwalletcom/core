@@ -17,3 +17,4 @@ prefix = ''
 "NaiveDateTime" = "Long"
 "DateTime" = "Long"
 "Data" = "ByteArray"
+"Value" = "String?"
