@@ -18,3 +18,4 @@ prefix = ''
 "DateTime" = "Long"
 "Data" = "ByteArray"
 "Value" = "String?"
+"BigInt" = "String"
