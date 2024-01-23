@@ -1384,6 +1384,9 @@ dependencies = [
 [[package]]
 name = "generate"
 version = "1.0.0"
+dependencies = [
+ "primitives",
+]
 
 [[package]]
 name = "generator"

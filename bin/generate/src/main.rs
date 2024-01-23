@@ -1,6 +1,9 @@
+use primitives::Platform;
+
 use std::{
     fs::{self, DirEntry},
     process::Command,
+    vec,
 };
 
 static ANDROID_PACKAGE_PREFIX: &str = "com.wallet.core";
@@ -8,18 +11,15 @@ static LANGUAGE_SWIFT: &str = "swift";
 static LANGUAGE_KOTLIN: &str = "kotlin";
 static LANG_KOTLIN_ETX: &str = "kt";
 
-enum Platform {
-    Ios,
-    Android,
-}
-
 fn main() {
     let folders = vec!["blockchain", "primitives", "settings"];
 
-    let platform = std::env::args().nth(1).expect("no platform specified");
+    let platform_str = std::env::args().nth(1).expect("no platform specified");
     let platform_directory_path = std::env::args().nth(2).expect("no path specified");
 
-    let ignored_files = [
+    let platform = Platform::new(platform_str.as_str()).unwrap();
+
+    let mut ignored_files: Vec<&'static str> = [
         "lib.rs",
         "mod.rs",
         "client.rs",
@@ -27,7 +27,15 @@ fn main() {
         "address.rs",
         "address_formatter.rs",
         "big_int_hex.rs",
-    ];
+        "hash.rs",
+        "pubkey.rs",
+        "ethereum_address.rs",
+        "keccak.rs",
+    ]
+    .to_vec();
+    ignored_files.append(&mut ignored_files_by_platform(platform.clone()));
+
+    //ignored_files(platform);
 
     for folder in folders {
         let paths = get_paths(folder, format!("{}/src", folder));
@@ -70,7 +78,7 @@ fn main() {
             let input_path = format!("./{}/src/{}", module_name, directory_paths.join("/"));
 
             let ios_output_path = output_path(
-                Platform::Ios,
+                Platform::IOS,
                 &platform_directory_path,
                 str_capitlize(module_name).as_str(),
                 ios_new_path,
@@ -93,9 +101,8 @@ fn main() {
                 }
             );
 
-            let platform_str = platform.as_str();
-            match platform_str {
-                "ios" => {
+            match platform {
+                Platform::IOS => {
                     println!(
                         "Generate file for iOS: {}, output: {}",
                         input_path, ios_output_path
@@ -107,7 +114,7 @@ fn main() {
                         "",
                     );
                 }
-                "android" => {
+                Platform::Android => {
                     println!(
                         "Generate file for Android: {}, output: {}",
                         input_path, android_output_path
@@ -119,7 +126,6 @@ fn main() {
                         android_package_name.as_str(),
                     );
                 }
-                _ => {}
             }
         }
     }
@@ -127,7 +133,7 @@ fn main() {
 
 fn output_path(platform: Platform, directory: &str, module_name: &str, path: String) -> String {
     match platform {
-        Platform::Ios => format!("{}/{}/Sources/{}", directory, module_name, path),
+        Platform::IOS => format!("{}/{}/Sources/{}", directory, module_name, path),
         Platform::Android => format!("{}/{}/{}", directory, module_name, path),
     }
 }
@@ -168,6 +174,14 @@ fn get_paths(_folder: &str, path: String) -> Vec<String> {
     }
 
     result
+}
+
+//TODO: Pass from the command
+fn ignored_files_by_platform(platform: Platform) -> Vec<&'static str> {
+    match platform {
+        Platform::IOS => vec!["balance.rs"],
+        Platform::Android => vec!["asset_data.rs", "balance.rs"],
+    }
 }
 
 fn clear_path(path: DirEntry) -> String {

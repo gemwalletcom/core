@@ -2,3 +2,6 @@
 name = "generate"
 version = { workspace = true }
 edition = { workspace = true }
+
+[dependencies]
+primitives = { path = "../../primitives" }

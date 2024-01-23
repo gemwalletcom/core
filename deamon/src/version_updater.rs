@@ -1,4 +1,4 @@
-use primitives::platform::Platform;
+use primitives::Platform;
 use std::error::Error;
 use storage::{database::DatabaseClient, models::Version};
 
