@@ -410,7 +410,7 @@ fn format_token_id(chain: Chain, token_id: String) -> Option<String> {
         | Chain::Fantom
         | Chain::Gnosis
         | Chain::Manta => Some(EthereumAddress::parse(&token_id)?.to_checksum()),
-        Chain::Solana => Some(token_id),
+        Chain::Solana | Chain::Sui => Some(token_id),
         Chain::Tron => {
             if token_id.len() == 34 && token_id.starts_with('T') {
                 Some(token_id)
@@ -428,7 +428,6 @@ fn format_token_id(chain: Chain, token_id: String) -> Option<String> {
         | Chain::Ton
         | Chain::Doge
         | Chain::Aptos
-        | Chain::Sui
         | Chain::Xrp
         | Chain::Injective
         | Chain::Sei => None,
