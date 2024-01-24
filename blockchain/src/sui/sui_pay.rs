@@ -27,10 +27,25 @@ struct SuiAddStakeRequest {
 
 #[typeshare]
 #[serde(rename_all = "camelCase")]
+struct SuiUnstakeRequest {
+    sender_address: String,
+    delegation_id: String,
+    gas_budget: String,
+}
+
+#[typeshare]
+#[serde(rename_all = "camelCase")]
 struct SuiSplitCoinRequest {
     sender_address: String,
     coin: String,
-    split_count: i32,
+    split_amounts: Vec<String>,
+    gas_budget: String,
+}
+
+#[typeshare]
+#[serde(rename_all = "camelCase")]
+struct SuiBatchRequest {
+    sender_address: String,
     gas_budget: String,
 }
 

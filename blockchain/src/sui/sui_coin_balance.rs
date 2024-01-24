@@ -3,13 +3,14 @@
 struct SuiCoin {
     coin_type: String,
     coin_object_id: String,
+    balance: String,
 }
 
 #[typeshare]
 #[serde(rename_all = "camelCase")]
 struct SuiCoinBalance {
     coin_type: String,
-    total_balance: String, 
+    total_balance: String,
 }
 
 #[typeshare]
@@ -21,7 +22,7 @@ struct SuiTransaction {
 #[typeshare]
 #[serde(rename_all = "camelCase")]
 struct SuiStatus {
-    status: String
+    status: String,
 }
 
 #[typeshare]
