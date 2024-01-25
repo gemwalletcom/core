@@ -35,6 +35,17 @@ struct SuiUnstakeRequest {
 
 #[typeshare]
 #[serde(rename_all = "camelCase")]
+struct SuiMoveCallRequest {
+    sender_address: String,
+    object_id: String,
+    module: String,
+    function: String,
+    arguments: Vec<String>,
+    gas_budget: String,
+}
+
+#[typeshare]
+#[serde(rename_all = "camelCase")]
 struct SuiSplitCoinRequest {
     sender_address: String,
     coin: String,

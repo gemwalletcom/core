@@ -30,6 +30,19 @@ struct SuiStatus {
 struct SuiEffects {
     gas_used: SuiGasUsed,
     status: SuiStatus,
+    created: Vec<SuiObjectChange>,
+}
+
+#[typeshare]
+#[serde(rename_all = "camelCase")]
+struct SuiObjectChange {
+    reference: SuiObjectReference,
+}
+
+#[typeshare]
+#[serde(rename_all = "camelCase")]
+struct SuiObjectReference {
+    object_id: String,
 }
 
 #[typeshare]
