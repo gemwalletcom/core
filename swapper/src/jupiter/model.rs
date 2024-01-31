@@ -67,6 +67,5 @@ pub struct QuoteDataRequest {
     pub user_public_key: String,
     pub fee_account: String,
     pub quote_response: QuoteResponse,
-    pub compute_unit_price_micro_lamports: String,
-    //pub prioritization_fee_lamports: i32,
+    pub prioritization_fee_lamports: i64,
 }
