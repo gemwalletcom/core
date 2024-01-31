@@ -87,7 +87,7 @@ impl JupiterClient {
             fee_account,
             quote_response,
             //compute_unit_price_micro_lamports: "auto".into(),
-            prioritization_fee_lamports: 1_000_000,
+            prioritization_fee_lamports: 5_000_000,
         };
         let quote_data = self.get_swap_quote_data(request).await?;
         let data = SwapQuoteData {
