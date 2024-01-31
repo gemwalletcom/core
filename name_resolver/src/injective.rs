@@ -4,7 +4,7 @@ use primitives::{
     chain::Chain,
     name::{NameProvider, NameRecord},
 };
-use std::{error::Error, str::FromStr};
+use std::error::Error;
 
 pub struct InjectiveNameClient {
     url: String,
@@ -30,6 +30,7 @@ impl NameClient for InjectiveNameClient {
     async fn resolve(&self, name: &str, chain: Chain) -> Result<NameRecord, Box<dyn Error>> {
         let hash = crate::ens_provider::namehash::namehash(name);
 
+        println!("url: {:?}", self.url);
         println!("hash: {:?}", hash);
 
         Ok(NameRecord {
