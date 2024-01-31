@@ -1,6 +1,4 @@
-use super::model::{
-    QuoteDataRequest, QuoteDataResponse, QuoteMultiplier, QuoteRequest, QuoteResponse,
-};
+use super::model::{QuoteDataRequest, QuoteDataResponse, QuoteRequest, QuoteResponse};
 use blockchain::solana::WSOL_TOKEN_ADDRESS;
 use primitives::{ChainType, SwapProvider, SwapQuote, SwapQuoteData, SwapQuoteProtocolRequest};
 
