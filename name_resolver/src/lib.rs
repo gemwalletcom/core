@@ -5,6 +5,7 @@ pub mod did;
 pub mod ens;
 pub mod ens_provider;
 pub mod eths;
+pub mod injective;
 pub mod sns;
 pub mod spaceid;
 pub mod suins;

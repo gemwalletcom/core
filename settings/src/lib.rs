@@ -102,6 +102,7 @@ pub struct Name {
     pub did: URL,
     pub suins: URL,
     pub aptos: URL,
+    pub injective: URL,
 }
 
 #[derive(Debug, Deserialize, Clone)]

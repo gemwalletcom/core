@@ -5,8 +5,9 @@ use primitives::chain::Chain;
 use primitives::name::{NameProvider, NameRecord};
 
 use crate::{
-    aptos::AptosClient, did::DidClient, ens::ENSClient, eths::EthsClient, sns::SNSClient,
-    spaceid::SpaceIdClient, suins::SuinsClient, ton::TONClient, ud::UDClient,
+    aptos::AptosClient, did::DidClient, ens::ENSClient, eths::EthsClient,
+    injective::InjectiveNameClient, sns::SNSClient, spaceid::SpaceIdClient, suins::SuinsClient,
+    ton::TONClient, ud::UDClient,
 };
 
 #[async_trait]
@@ -28,6 +29,7 @@ pub struct Client {
     did_client: DidClient,
     suins_client: SuinsClient,
     aptos_client: AptosClient,
+    injective_client: InjectiveNameClient,
 }
 
 impl Client {
@@ -42,6 +44,7 @@ impl Client {
         did_api_url: String,
         suins_api_url: String,
         aptos_api_url: String,
+        injective_api_url: String,
     ) -> Self {
         let domains_mapping = Self::domains_mapping();
         let ens_client = ENSClient::new(ens_url);
@@ -53,6 +56,7 @@ impl Client {
         let did_client: DidClient = DidClient::new(did_api_url);
         let suins_client: SuinsClient = SuinsClient::new(suins_api_url);
         let aptos_client: AptosClient = AptosClient::new(aptos_api_url);
+        let injective_client: InjectiveNameClient = InjectiveNameClient::new(injective_api_url);
 
         Self {
             domains_mapping,
@@ -65,6 +69,7 @@ impl Client {
             did_client,
             suins_client,
             aptos_client,
+            injective_client,
         }
     }
 
@@ -133,6 +138,12 @@ impl Client {
                 }
                 self.aptos_client.resolve(name, chain).await
             }
+            NameProvider::Injective => {
+                if !InjectiveNameClient::chains().contains(&chain) {
+                    return Err("not supported chain".to_string().into());
+                }
+                self.injective_client.resolve(name, chain).await
+            }
         }
     }
 
@@ -173,6 +184,10 @@ impl Client {
 
         for domain in AptosClient::domains() {
             result.insert(domain, NameProvider::Aptos);
+        }
+
+        for domain in InjectiveNameClient::domains() {
+            result.insert(domain, NameProvider::Injective);
         }
 
         result
