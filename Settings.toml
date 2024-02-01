@@ -65,6 +65,9 @@ url = "https://suins-rpc.mainnet.sui.io"
 [name.aptos]
 url = "https://aptosnames.com"
 
+[name.injective]
+url = "https://injective-rest.publicnode.com"
+
 [metrics]
 path = "/metrics"
 

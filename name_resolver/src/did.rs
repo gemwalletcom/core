@@ -67,12 +67,11 @@ impl NameClient for DidClient {
             .find(|r| r.key == format!("address.{}", chain.as_slip44()))
             .ok_or("address not found")?;
 
-        //TODO: Use provider: self.provider
         Ok(NameRecord {
             name: name.to_string(),
             chain,
             address: record.value.clone(),
-            provider: NameProvider::SpaceId,
+            provider: Self::provider(),
         })
     }
 

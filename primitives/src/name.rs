@@ -28,4 +28,5 @@ pub enum NameProvider {
     Did,
     Suins,
     Aptos,
+    Injective,
 }
