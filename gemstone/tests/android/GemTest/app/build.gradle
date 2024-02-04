@@ -12,7 +12,7 @@ cargo {
     libname = "gemstone"
     pythonCommand = "python3"
     profile = "debug"
-    targets = ["x86_64", "arm64", "arm", "x86"]
+    targets = ["x86_64", "arm64", "arm"]
     extraCargoBuildArguments = ["--lib"]
     verbose = true
 }
@@ -20,6 +20,7 @@ cargo {
 android {
     namespace "com.example.gemtest"
     compileSdk 34
+    ndkVersion = "26.1.10909125"
     defaultConfig {
         applicationId "com.example.gemtest"
         minSdk 24
