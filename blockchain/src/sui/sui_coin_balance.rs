@@ -4,6 +4,8 @@ struct SuiCoin {
     coin_type: String,
     coin_object_id: String,
     balance: String,
+    version: String,
+    digest: String,
 }
 
 #[typeshare]
