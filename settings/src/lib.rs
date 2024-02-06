@@ -19,6 +19,7 @@ pub struct Settings {
     pub assets: Assets,
     pub chains: Chains,
     pub parser: Parser,
+    pub deamon: Deamon,
     pub pusher: Pusher,
     pub swap: Swap,
 }

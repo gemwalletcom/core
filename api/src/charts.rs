@@ -1,5 +1,5 @@
 extern crate rocket;
-use pricer::client::Client as PriceClient;
+use pricer::client::PriceClient;
 use pricer::DEFAULT_FIAT_CURRENCY;
 use primitives::asset_price::{ChartPeriod, Charts};
 use rocket::serde::json::Json;

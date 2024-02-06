@@ -6,7 +6,7 @@ use crate::device_updater::DeviceUpdater;
 use crate::tokenlist_updater::Client as TokenListClient;
 use crate::version_updater::Client as VersionClient;
 use api_connector::AssetsClient;
-use pricer::client::Client;
+use pricer::client::PriceClient;
 use pricer::coingecko::CoinGeckoClient;
 use pricer::price_updater::PriceUpdater;
 
@@ -17,7 +17,7 @@ use std::time::Duration;
 pub async fn main() {
     println!("deamon init");
     let settings = settings::Settings::new().unwrap();
-    let price_client = Client::new(
+    let price_client = PriceClient::new(
         &settings.redis.url,
         &settings.postgres.url,
         &settings.clickhouse.url,

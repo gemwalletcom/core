@@ -39,7 +39,7 @@ use metrics_client::MetricsClient;
 use name_resolver::client::Client as NameClient;
 use node_client::Client as NodeClient;
 use parser_client::ParserClient;
-use pricer::client::Client as PriceClient;
+use pricer::client::PriceClient;
 use rocket::fairing::AdHoc;
 use rocket::tokio::sync::Mutex;
 use rocket::{Build, Rocket};

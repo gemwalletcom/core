@@ -1,4 +1,4 @@
-use crate::client::Client;
+use crate::client::PriceClient;
 use crate::coingecko::{CoinGeckoClient, CoinInfo, CoinMarket};
 use crate::price_mapper::get_chain_for_coingecko_id;
 use crate::DEFAULT_FIAT_CURRENCY;
@@ -12,11 +12,11 @@ use storage::models::{ChartCoinPrice, Price};
 
 pub struct PriceUpdater {
     coin_gecko_client: CoinGeckoClient,
-    price_client: Client,
+    price_client: PriceClient,
 }
 
 impl PriceUpdater {
-    pub fn new(price_client: Client, coin_gecko_client: CoinGeckoClient) -> Self {
+    pub fn new(price_client: PriceClient, coin_gecko_client: CoinGeckoClient) -> Self {
         PriceUpdater {
             coin_gecko_client,
             price_client,
@@ -183,7 +183,7 @@ impl PriceUpdater {
     pub async fn update_assets(&mut self) -> Result<usize, Box<dyn Error>> {
         let coin_list = self
             .coin_gecko_client
-            .get_all_coin_markets(250, 5)
+            .get_all_coin_markets(250, 10)
             .await?
             .into_iter()
             .map(|x| x.id)
@@ -192,7 +192,7 @@ impl PriceUpdater {
         for coin in coin_list.clone() {
             let coin_info = self.coin_gecko_client.get_coin(coin.as_str()).await?;
 
-            if coin_info.preview_listing || coin_info.market_cap_rank.unwrap_or(999999) > 1000 {
+            if coin_info.preview_listing || coin_info.market_cap_rank.unwrap_or(999999) > 2500 {
                 //println!("early exit loop for {}", coin_info.id);
                 continue;
             }

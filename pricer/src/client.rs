@@ -10,14 +10,14 @@ use storage::models::Price;
 
 use crate::DEFAULT_FIAT_CURRENCY;
 
-pub struct Client {
+pub struct PriceClient {
     conn: Connection,
     database: DatabaseClient,
     clickhouse_database: ClickhouseDatabase,
     prefix: String,
 }
 
-impl Client {
+impl PriceClient {
     pub async fn new(
         redis_url: &str,
         database_url: &str,
