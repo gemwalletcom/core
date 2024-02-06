@@ -19,7 +19,8 @@ indexmap = "2.2.2"
 bcs = "0.1.6"
 
 sui-sdk = { git = "https://github.com/mystenlabs/sui", package = "sui-sdk" }
-# shared-crypto = { git = "https://github.com/mystenlabs/sui", package = "shared-crypto" }
+fastcrypto = { git = "https://github.com/MystenLabs/fastcrypto" }
+shared-crypto = { git = "https://github.com/mystenlabs/sui", package = "shared-crypto" }
 
 hex = { workspace = true }
 thiserror = { workspace = true }

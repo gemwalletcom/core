@@ -17,14 +17,21 @@ pub struct SuiStakeInput {
     pub coin: SuiCoin,
 }
 
+#[derive(uniffi::Record)]
+pub struct SuiStakeOutput {
+    pub tx_data: Vec<u8>,
+    pub hash: Vec<u8>,
+}
+
 use bcs;
+use fastcrypto::hash::*;
+use shared_crypto::intent::{Intent, IntentMessage};
 use std::str::FromStr;
 use sui_sdk::types::{
     base_types::{ObjectID, ObjectRef, SequenceNumber, SuiAddress},
-    crypto::{Ed25519SuiSignature, Signature, ToFromBytes},
     digests::ObjectDigest,
     programmable_transaction_builder::ProgrammableTransactionBuilder,
-    transaction::{Argument, Command, ObjectArg, Transaction, TransactionData},
+    transaction::{Argument, Command, ObjectArg, TransactionData},
     Identifier,
 };
 
@@ -33,7 +40,7 @@ static SUI_REQUEST_ADD_STAKE: &str = "request_add_stake";
 static SUI_SYSTEM_ADDRESS: u8 = 0x3;
 static SUI_SYSTEM_STATE_OBJECT_ID: u8 = 0x5;
 
-pub fn encode_split_and_stake(input: &SuiStakeInput) -> Result<Vec<u8>, anyhow::Error> {
+pub fn encode_split_and_stake(input: &SuiStakeInput) -> Result<SuiStakeOutput, anyhow::Error> {
     let object_id = ObjectID::from_hex_literal(&input.coin.coin_object_id)?;
     let object_digest = ObjectDigest::from_str(&input.coin.digest)?;
     let coin_ref: ObjectRef = (
@@ -80,15 +87,14 @@ pub fn encode_split_and_stake(input: &SuiStakeInput) -> Result<Vec<u8>, anyhow::
         input.gas_price,
     );
     let data = &bcs::to_bytes(&tx_data)?;
-    Ok(data.clone())
-}
+    let mut hasher = Blake2b256::default();
+    let message = IntentMessage::new(Intent::sui_transaction(), tx_data.clone());
+    hasher.update(&bcs::to_bytes(&message).expect("Message serialization should not fail"));
 
-pub fn encode_tx_signature(tx: Vec<u8>, sig: Vec<u8>) -> Result<Vec<u8>, anyhow::Error> {
-    let tx_data: TransactionData = bcs::from_bytes(&tx)?;
-    let signature = Ed25519SuiSignature::from_bytes(&sig)?;
-    let tx = Transaction::from_data(tx_data, vec![Signature::Ed25519SuiSignature(signature)]);
-    let data = &bcs::to_bytes(&tx)?;
-    Ok(data.clone())
+    Ok(SuiStakeOutput {
+        tx_data: data.clone(),
+        hash: hasher.finalize().digest.into(),
+    })
 }
 
 #[cfg(test)]
@@ -107,13 +113,17 @@ mod tests {
                 coin_type: "0x2::sui::SUI".into(),
                 coin_object_id:
                     "0x36b8380aa7531d73723657d73a114cfafedf89dc8c76b6752f6daef17e43dda2".into(),
-                version: 63683110,
-                digest: "E3CzP8KM9qQSUfAp6U3VgTXJTTNEZTQzW6qnCbZYyDgN".into(),
-                balance: 12000000000,
+                version: 0x3f4d8e5,
+                digest: "HdfF7hswRuvbXbEXjGjmUCt7gLybhvbPvvK8zZbCqyD8".into(),
+                balance: 10990277896,
             },
         };
         let data = encode_split_and_stake(&input).unwrap();
 
-        assert_eq!(hex::encode(data), "000003000800ca9a3b0000000001010000000000000000000000000000000000000000000000000000000000000005010000000000000001002061953ea72709eed72f4441dd944eec49a11b4acabfc8e04015e89c63be81b6ab020200010100000000000000000000000000000000000000000000000000000000000000000000030a7375695f73797374656d11726571756573745f6164645f7374616b6500030101000300000000010200e6af80fe1b0b42fcd96762e5c70f5e8dae39f8f0ee0f118cac0d55b74e2927c20136b8380aa7531d73723657d73a114cfafedf89dc8c76b6752f6daef17e43dda226bacb030000000020c1b8a5e6599401729381e3d66a166f06653f165ed67575c729446ed74043c94be6af80fe1b0b42fcd96762e5c70f5e8dae39f8f0ee0f118cac0d55b74e2927c2ee02000000000000002d31010000000000");
+        assert_eq!(hex::encode(data.tx_data), "000003000800ca9a3b0000000001010000000000000000000000000000000000000000000000000000000000000005010000000000000001002061953ea72709eed72f4441dd944eec49a11b4acabfc8e04015e89c63be81b6ab020200010100000000000000000000000000000000000000000000000000000000000000000000030a7375695f73797374656d11726571756573745f6164645f7374616b6500030101000300000000010200e6af80fe1b0b42fcd96762e5c70f5e8dae39f8f0ee0f118cac0d55b74e2927c20136b8380aa7531d73723657d73a114cfafedf89dc8c76b6752f6daef17e43dda2e5d8f4030000000020f71f24516bc04cbf877d42faf459514448c8de6cff48faa44b3eef3b26782e8fe6af80fe1b0b42fcd96762e5c70f5e8dae39f8f0ee0f118cac0d55b74e2927c2ee02000000000000002d31010000000000");
+        assert_eq!(
+            hex::encode(data.hash),
+            "66be75b0f86ca3a9f24380adc8d8336d8921d5dbdc78f1b3c24c7d6842ce5911"
+        );
     }
 }
