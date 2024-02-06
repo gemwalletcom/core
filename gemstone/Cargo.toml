@@ -1,7 +1,7 @@
 [package]
 edition = "2021"
 name = "gemstone"
-version = "0.1.0"
+version = "0.1.1"
 
 [lib]
 crate-type = [
@@ -15,7 +15,17 @@ name = "gemstone"
 [dependencies]
 async-std = "1.12.0"
 once_cell = "1.19.0"
+indexmap = "2.2.2"
+bcs = "0.1.6"
+
+sui-sdk = { git = "https://github.com/mystenlabs/sui", package = "sui-sdk" }
+fastcrypto = { git = "https://github.com/MystenLabs/fastcrypto" }
+shared-crypto = { git = "https://github.com/mystenlabs/sui", package = "shared-crypto" }
+
+hex = { workspace = true }
+thiserror = { workspace = true }
 uniffi = { workspace = true }
+anyhow = { workspace = true }
 
 [build-dependencies]
 uniffi = { workspace = true, features = ["build"] }
