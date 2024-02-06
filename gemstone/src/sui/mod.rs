@@ -18,7 +18,6 @@ pub struct SuiStakeInput {
 }
 
 use bcs;
-use shared_crypto::intent::{Intent, IntentMessage};
 use std::str::FromStr;
 use sui_sdk::types::{
     base_types::{ObjectID, ObjectRef, SequenceNumber, SuiAddress},
@@ -79,9 +78,7 @@ pub fn encode_split_and_stake(input: &SuiStakeInput) -> Result<Vec<u8>, anyhow::
         input.gas_budget,
         input.gas_price,
     );
-
-    let message = IntentMessage::new(Intent::sui_transaction(), tx_data);
-    let data = &bcs::to_bytes(&message)?;
+    let data = &bcs::to_bytes(&tx_data)?;
     Ok(data.clone())
 }
 

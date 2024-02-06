@@ -36,3 +36,8 @@ pub fn sui_encode_split_stake(input: &sui::SuiStakeInput) -> Result<Vec<u8>, Gem
         msg: op.to_string(),
     })
 }
+
+#[uniffi::export]
+pub fn sui_encode_tx_signature(tx: Vec<u8>, sig: Vec<u8>) -> Vec<u8> {
+    todo!()
+}
