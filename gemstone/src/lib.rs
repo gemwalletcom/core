@@ -12,7 +12,7 @@ pub fn lib_version() -> String {
 #[derive(Debug, thiserror::Error, uniffi::Error)]
 pub enum GemstoneError {
     #[error("{msg}")]
-    StakeInputError { msg: String },
+    AnyError { msg: String },
 }
 
 #[uniffi::export]
@@ -32,12 +32,14 @@ pub fn explorer_get_name_by_host(host: String) -> Option<String> {
 
 #[uniffi::export]
 pub fn sui_encode_split_stake(input: &sui::SuiStakeInput) -> Result<Vec<u8>, GemstoneError> {
-    sui::encode_split_and_stake(input).map_err(|op| GemstoneError::StakeInputError {
+    sui::encode_split_and_stake(input).map_err(|op| GemstoneError::AnyError {
         msg: op.to_string(),
     })
 }
 
 #[uniffi::export]
-pub fn sui_encode_tx_signature(tx: Vec<u8>, sig: Vec<u8>) -> Vec<u8> {
-    todo!()
+pub fn sui_encode_tx_signature(tx: Vec<u8>, sig: Vec<u8>) -> Result<Vec<u8>, GemstoneError> {
+    sui::encode_tx_signature(tx, sig).map_err(|op| GemstoneError::AnyError {
+        msg: op.to_string(),
+    })
 }
