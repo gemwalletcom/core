@@ -11,7 +11,10 @@ COPY --from=planner /app/recipe.json recipe.json
 RUN cargo chef cook --release --recipe-path recipe.json
 # Build application
 COPY . .
-RUN cargo build --release
+RUN cargo build --release -p api
+RUN cargo build --release -p deamon
+RUN cargo build --release -p parser
+RUN cargo build --release -p setup
 
 FROM debian:bullseye AS runtime
 WORKDIR /app
