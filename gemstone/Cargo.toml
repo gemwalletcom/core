@@ -16,11 +16,11 @@ name = "gemstone"
 async-std = "1.12.0"
 once_cell = "1.19.0"
 indexmap = "2.2.2"
-bcs = "0.1.6"
 
-sui-sdk = { git = "https://github.com/mystenlabs/sui", package = "sui-sdk" }
-fastcrypto = { git = "https://github.com/MystenLabs/fastcrypto" }
-shared-crypto = { git = "https://github.com/mystenlabs/sui", package = "shared-crypto" }
+bcs = "0.1.6"
+fastcrypto = { git = "https://github.com/MystenLabs/fastcrypto", rev = "ea66012b860d9dd152abb7f2156275698ee91126" }
+sui-sdk = { git = "https://github.com/mystenlabs/sui", package = "sui-sdk", rev = "f5b55da420b2ed2c8bea46ff7ab62709d49f9c2e" }
+shared-crypto = { git = "https://github.com/mystenlabs/sui", package = "shared-crypto", rev = "f5b55da420b2ed2c8bea46ff7ab62709d49f9c2e" }
 
 hex = { workspace = true }
 thiserror = { workspace = true }

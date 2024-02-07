@@ -10,7 +10,7 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  unit_test:
+  build_ios:
     runs-on: macos-latest-xlarge
     defaults:
       run:
