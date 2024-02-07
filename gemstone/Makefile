@@ -20,11 +20,12 @@ TARGET_DIR := ../target
 GEN_SWIFT_FOLDER := generated/swift
 GEN_KOTLIN_FOLDER := generated/kotlin
 TARGET_XC_FW_FOLDER := target/spm
+NIGHTLY := nightly-2023-12-23
 
 prepare-apple:
-	rustup toolchain install nightly
+	rustup toolchain install $(NIGHTLY)
 	rustup target add aarch64-apple-ios-sim aarch64-apple-ios x86_64-apple-ios
-	rustup component add rust-src --toolchain nightly
+	rustup component add rust-src --toolchain $(NIGHTLY)
 
 prepare-android:
 	rustup toolchain install stable
@@ -44,8 +45,8 @@ apple:
 build-targets:
 	cargo build --lib --target x86_64-apple-ios --$(BUILD_MODE)
 	cargo build --lib --target aarch64-apple-ios-sim --$(BUILD_MODE)
-	cargo +nightly build -Z build-std --lib --target aarch64-apple-ios-macabi --$(BUILD_MODE)
-	cargo +nightly build -Z build-std --lib --target x86_64-apple-ios-macabi --$(BUILD_MODE)
+	cargo +$(NIGHTLY) build -Z build-std --lib --target aarch64-apple-ios-macabi --$(BUILD_MODE)
+	cargo +$(NIGHTLY) build -Z build-std --lib --target x86_64-apple-ios-macabi --$(BUILD_MODE)
 	cargo build --lib --target aarch64-apple-ios --$(BUILD_MODE)
 
 bindgen-swift:
