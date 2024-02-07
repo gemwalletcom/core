@@ -13,6 +13,7 @@ prefix = ''
 "Date" = "Long"
 "UInt32" = "Long"
 "UInt64" = "Long"
+"Int" = "Long"
 "Int64" = "Long"
 "NaiveDateTime" = "Long"
 "DateTime" = "Long"

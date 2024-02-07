@@ -11,7 +11,7 @@ struct SolanaTokenAccountResult<T> {
 
 #[typeshare]
 struct SolanaStakeAccount {
-    lamports: i32,
+    lamports: Int,
     space: i32,
     data: SolanaStakeAccountData,
 }
