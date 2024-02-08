@@ -12,7 +12,10 @@ use num_bigint::BigUint;
 use primitives::{chain::Chain, Transaction, TransactionState, TransactionType};
 use serde_json::json;
 
-use super::model::GasUsed;
+use super::model::{EventStake, EventUnstake, GasUsed};
+
+const SUI_STAKE_EVENT: &str = "0x3::validator::StakingRequestEvent";
+const SUI_UNSTAKE_EVENT: &str = "0x3::validator::UnstakingRequestEvent";
 
 pub struct SuiClient {
     client: HttpClient,
@@ -45,7 +48,8 @@ impl SuiClient {
         block_number: i64,
     ) -> Option<primitives::Transaction> {
         let balance_changes = transaction.balance_changes.unwrap_or_default();
-
+        let hash = transaction.digest.clone();
+        let fee = self.get_fee(transaction.effects.gas_used.clone());
         let chain = self.get_chain();
 
         // system transfer
@@ -60,7 +64,7 @@ impl SuiClient {
             };
             let from = from_change.owner.address_owner.unwrap_or_default();
             let to = to_change.owner.address_owner.unwrap_or_default();
-            let fee = self.get_fee(transaction.effects.gas_used.clone());
+
             let value = to_change.amount;
             let state = if transaction.effects.status.status == "success" {
                 TransactionState::Confirmed
@@ -69,7 +73,7 @@ impl SuiClient {
             };
 
             let transaction = primitives::Transaction::new(
-                transaction.digest.clone(),
+                hash,
                 chain.as_asset_id(),
                 from,
                 to,
@@ -87,6 +91,62 @@ impl SuiClient {
             );
             return Some(transaction);
         }
+        // stake
+        if transaction.events.len() == 1
+            && transaction.events.first()?.event_type == SUI_STAKE_EVENT
+        {
+            let event = transaction.events.first()?;
+            let event_json = event.parsed_json.clone()?;
+            let stake = serde_json::from_value::<EventStake>(event_json).ok()?;
+
+            let transaction = primitives::Transaction::new(
+                hash,
+                chain.as_asset_id(),
+                stake.staker_address,
+                stake.validator_address,
+                None,
+                TransactionType::StakeDelegate,
+                TransactionState::Confirmed,
+                block_number.to_string(),
+                0.to_string(),
+                fee.to_string(),
+                chain.as_asset_id(),
+                stake.amount,
+                None,
+                None,
+                Utc::now(),
+            );
+            return Some(transaction);
+        }
+        // unstake
+        if transaction.events.len() == 1
+            && transaction.events.first()?.event_type == SUI_UNSTAKE_EVENT
+        {
+            let event = transaction.events.first()?;
+            let event_json = event.parsed_json.clone()?;
+            let stake: EventUnstake = serde_json::from_value::<EventUnstake>(event_json).ok()?;
+            let value = stake.principal_amount; // add reward amount
+
+            let transaction = primitives::Transaction::new(
+                hash,
+                chain.as_asset_id(),
+                stake.staker_address,
+                stake.validator_address,
+                None,
+                TransactionType::StakeUndelegate,
+                TransactionState::Confirmed,
+                block_number.to_string(),
+                0.to_string(),
+                fee.to_string(),
+                chain.as_asset_id(),
+                value,
+                None,
+                None,
+                Utc::now(),
+            );
+            return Some(transaction);
+        }
+
         None
     }
 }
@@ -117,7 +177,8 @@ impl ChainProvider for SuiClient {
                 "options": {
                     "showEffects": true,
                     "showInput": false,
-                    "showBalanceChanges":  true
+                    "showBalanceChanges":  true,
+                    "showEvents": true
                 }
             }),
             json!(null),

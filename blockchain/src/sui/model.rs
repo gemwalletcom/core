@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ResultData<T> {
@@ -13,6 +14,7 @@ pub struct Digest {
     pub effects: Effect,
     #[serde(rename = "balanceChanges")]
     pub balance_changes: Option<Vec<BalanceChange>>,
+    pub events: Vec<Event>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -53,4 +55,27 @@ pub struct GasUsed {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Status {
     pub status: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Event {
+    #[serde(rename = "type")]
+    pub event_type: String,
+    #[serde(rename = "parsedJson")]
+    pub parsed_json: Option<Value>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EventStake {
+    pub amount: String,
+    pub staker_address: String,
+    pub validator_address: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EventUnstake {
+    pub principal_amount: String,
+    pub reward_amount: String,
+    pub staker_address: String,
+    pub validator_address: String,
 }
