@@ -34,11 +34,10 @@ impl Pusher {
         let asset = self
             .database_client
             .get_asset(transaction.asset_id.to_string())?;
+        let amount = NumberFormatter::value(transaction.value.as_str(), asset.decimals).unwrap();
 
         match transaction.transaction_type {
             TransactionType::Transfer => {
-                let amount =
-                    NumberFormatter::value(transaction.value.as_str(), asset.decimals).unwrap();
                 let title = format!("Transfer {} {}", amount, asset.symbol);
                 let message = if transaction
                     .input_addresses()
@@ -61,32 +60,38 @@ impl Pusher {
                         )
                     )
                 };
-                Ok(Message { title, message })
+                Ok(Message {
+                    title,
+                    message: Some(message),
+                })
             }
             TransactionType::TokenApproval => {
                 let title = format!("Token Approval for {}", asset.symbol);
                 let message = "".to_string();
-                Ok(Message { title, message })
+                Ok(Message {
+                    title,
+                    message: Some(message),
+                })
             }
             TransactionType::StakeDelegate => Ok(Message {
-                title: format!("Stake {}", asset.symbol),
-                message: "".to_string(),
+                title: format!("Stake {} {}", amount, asset.symbol),
+                message: None,
             }),
             TransactionType::StakeUndelegate => Ok(Message {
-                title: format!("Unstake {}", asset.symbol),
-                message: "".to_string(),
+                title: format!("Unstake {} {}", amount, asset.symbol),
+                message: None,
             }),
             TransactionType::StakeRedelegate => Ok(Message {
-                title: format!("Redelegate {}", asset.symbol),
-                message: "".to_string(),
+                title: format!("Redelegate {} {}", amount, asset.symbol),
+                message: None,
             }),
             TransactionType::StakeRewards => Ok(Message {
-                title: format!("Claim Rewards {}", asset.symbol),
-                message: "".to_string(),
+                title: format!("Claim Rewards {} {}", amount, asset.symbol),
+                message: None,
             }),
             TransactionType::StakeWithdraw => Ok(Message {
-                title: format!("Withdraw Stake {}", asset.symbol),
-                message: "".to_string(),
+                title: format!("Withdraw Stake {} {}", amount, asset.symbol),
+                message: None,
             }),
             TransactionType::Swap => {
                 let metadata: TransactionSwapMetadata =
@@ -106,7 +111,10 @@ impl Pusher {
 
                 let title = format!("Swap from {} to {}", from_asset.symbol, to_asset.symbol);
                 let message = format! {"{} {} > {} {}", from_amount, from_asset.symbol, to_amount, to_asset.symbol};
-                Ok(Message { title, message })
+                Ok(Message {
+                    title,
+                    message: Some(message),
+                })
             }
         }
     }
@@ -139,7 +147,7 @@ impl Pusher {
             tokens: vec![device.token],
             platform: device.platform.as_i32(),
             title: message.title,
-            message: message.message,
+            message: message.message.unwrap_or_default(),
             topic: self.get_topic(device.platform),
             data: Some(data),
         };

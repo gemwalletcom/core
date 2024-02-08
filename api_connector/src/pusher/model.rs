@@ -35,5 +35,5 @@ pub struct Log {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Message {
     pub title: String,
-    pub message: String,
+    pub message: Option<String>,
 }
