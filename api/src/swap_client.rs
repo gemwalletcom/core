@@ -25,11 +25,11 @@ impl SwapClient {
     ) -> Result<SwapQuoteProtocolRequest, Box<dyn Error + Send + Sync>> {
         let from_asset = self
             .database
-            .get_asset(request.from_asset.to_string())?
+            .get_asset(request.from_asset.as_str())?
             .as_primitive();
         let to_asset = self
             .database
-            .get_asset(request.to_asset.to_string())?
+            .get_asset(request.to_asset.as_str())?
             .as_primitive();
 
         // if from_asset.chain() != to_asset.chain() {

@@ -441,21 +441,18 @@ impl DatabaseClient {
             .load(&mut self.connection)
     }
 
-    pub fn get_asset(&mut self, asset_id: String) -> Result<Asset, diesel::result::Error> {
+    pub fn get_asset(&mut self, id: &str) -> Result<Asset, diesel::result::Error> {
         use crate::schema::assets::dsl::*;
         assets
-            .filter(id.eq(asset_id))
+            .filter(id.eq(id))
             .select(Asset::as_select())
             .first(&mut self.connection)
     }
 
-    pub fn get_asset_details(
-        &mut self,
-        _asset_id: String,
-    ) -> Result<AssetDetail, diesel::result::Error> {
+    pub fn get_asset_details(&mut self, id: &str) -> Result<AssetDetail, diesel::result::Error> {
         use crate::schema::assets_details::dsl::*;
         assets_details
-            .filter(asset_id.eq(_asset_id))
+            .filter(asset_id.eq(id))
             .select(AssetDetail::as_select())
             .first(&mut self.connection)
     }
