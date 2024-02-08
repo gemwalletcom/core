@@ -6,6 +6,8 @@ struct CosmosBroadcastResponse {
 #[typeshare]
 struct CosmosBroadcastResult {
     txhash: String,
+    code: i32,
+    raw_log: String,
 }
 
 #[typeshare]
