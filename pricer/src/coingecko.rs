@@ -31,6 +31,18 @@ pub struct CoinInfo {
     //pub platforms: HashMap<String, Option<String>>,
     pub detail_platforms: HashMap<String, Option<DetailPlatform>>,
     pub links: CoinMarketLinks,
+    pub community_data: Option<CommunityData>,
+    pub developer_data: Option<DeveloperData>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct CommunityData {
+    twitter_followers: Option<i64>,
+}
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct DeveloperData {
+    stars: Option<i64>,
+    subscribers: Option<i64>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -149,7 +161,7 @@ impl CoinGeckoClient {
     }
 
     pub async fn get_coin(&self, coin: &str) -> Result<CoinInfo, Error> {
-        let url = format!("{}/api/v3/coins/{}?x_cg_pro_api_key={}&market_data=false&community_data=false&tickers=false&localization=false&developer_data=false", self.url, coin, self.api_key);
+        let url = format!("{}/api/v3/coins/{}?x_cg_pro_api_key={}&market_data=false&community_data=true&tickers=false&localization=false&developer_data=true", self.url, coin, self.api_key);
         let response = self.client.get(&url).headers(self.headers()).send().await?;
 
         let coin: CoinInfo = response.json().await?;
