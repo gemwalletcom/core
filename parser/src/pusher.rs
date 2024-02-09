@@ -33,7 +33,7 @@ impl Pusher {
     ) -> Result<Message, Box<dyn Error>> {
         let asset = self
             .database_client
-            .get_asset(transaction.asset_id.to_string())?;
+            .get_asset(transaction.asset_id.to_string().as_str())?;
         let amount = NumberFormatter::value(transaction.value.as_str(), asset.decimals).unwrap();
 
         match transaction.transaction_type {
@@ -98,10 +98,10 @@ impl Pusher {
                     serde_json::from_value(transaction.metadata)?;
                 let from_asset = self
                     .database_client
-                    .get_asset(metadata.from_asset.to_string())?;
+                    .get_asset(metadata.from_asset.to_string().as_str())?;
                 let to_asset = self
                     .database_client
-                    .get_asset(metadata.to_asset.to_string())?;
+                    .get_asset(metadata.to_asset.to_string().as_str())?;
                 let from_amount =
                     NumberFormatter::value(metadata.from_value.as_str(), from_asset.decimals)
                         .unwrap_or_default();

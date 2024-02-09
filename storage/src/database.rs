@@ -441,10 +441,10 @@ impl DatabaseClient {
             .load(&mut self.connection)
     }
 
-    pub fn get_asset(&mut self, id: &str) -> Result<Asset, diesel::result::Error> {
+    pub fn get_asset(&mut self, asset_id: &str) -> Result<Asset, diesel::result::Error> {
         use crate::schema::assets::dsl::*;
         assets
-            .filter(id.eq(id))
+            .filter(id.eq(asset_id))
             .select(Asset::as_select())
             .first(&mut self.connection)
     }

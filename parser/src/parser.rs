@@ -248,7 +248,7 @@ impl Parser {
             .into_iter()
             .filter(|x| {
                 self.database
-                    .get_asset(x.asset_id.to_string())
+                    .get_asset(x.asset_id.to_string().as_str())
                     .ok()
                     .is_some()
             })
