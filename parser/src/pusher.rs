@@ -1,8 +1,8 @@
 use std::error::Error;
 
 use primitives::{
-    AddressFormatter, NumberFormatter, PushNotification, PushNotificationTypes, Subscription,
-    Transaction, TransactionSwapMetadata, TransactionType,
+    AddressFormatter, Chain, NumberFormatter, PushNotification, PushNotificationTypes, ScanAddress,
+    Subscription, Transaction, TransactionSwapMetadata, TransactionType,
 };
 use storage::DatabaseClient;
 
@@ -26,6 +26,14 @@ impl Pusher {
         }
     }
 
+    pub fn get_address(&mut self, chain: Chain, address: &str) -> Result<String, Box<dyn Error>> {
+        let result = self.database_client.get_scan_address(chain, address);
+        match result {
+            Ok(address) => Ok(address.name.unwrap_or_default()),
+            Err(_) => Ok(AddressFormatter::short(chain, address)),
+        }
+    }
+
     pub fn message(
         &mut self,
         transaction: Transaction,
@@ -35,6 +43,9 @@ impl Pusher {
             .database_client
             .get_asset(transaction.asset_id.to_string().as_str())?;
         let amount = NumberFormatter::value(transaction.value.as_str(), asset.decimals).unwrap();
+        let chain = transaction.asset_id.chain;
+        let to_address = self.get_address(chain, transaction.to.as_str())?;
+        let from_address = self.get_address(chain, transaction.from.as_str())?;
 
         match transaction.transaction_type {
             TransactionType::Transfer => {
@@ -44,21 +55,9 @@ impl Pusher {
                     .contains(&subscription.address)
                     || transaction.from == subscription.address
                 {
-                    format!(
-                        "To {}",
-                        AddressFormatter::short(
-                            transaction.asset_id.chain,
-                            transaction.to.as_str()
-                        )
-                    )
+                    format!("To {}", to_address)
                 } else {
-                    format!(
-                        "From {}",
-                        AddressFormatter::short(
-                            transaction.asset_id.chain,
-                            transaction.from.as_str()
-                        )
-                    )
+                    format!("From {}", from_address)
                 };
                 Ok(Message {
                     title,

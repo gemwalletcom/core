@@ -177,6 +177,7 @@ diesel::table! {
 diesel::table! {
     scan_addresses (id) {
         id -> Int4,
+        chain -> Varchar,
         #[max_length = 128]
         address -> Varchar,
         #[max_length = 64]
@@ -290,6 +291,7 @@ diesel::joinable!(assets -> assets_types (asset_type));
 diesel::joinable!(assets_details -> assets (asset_id));
 diesel::joinable!(fiat_assets -> assets (asset_id));
 diesel::joinable!(fiat_assets -> fiat_providers (provider));
+diesel::joinable!(scan_addresses -> chains (chain));
 diesel::joinable!(subscriptions -> devices (device_id));
 diesel::joinable!(swap_assets -> assets (asset_id));
 diesel::joinable!(transactions_addresses -> assets (asset_id));

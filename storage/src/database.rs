@@ -555,11 +555,13 @@ impl DatabaseClient {
 
     pub fn get_scan_address(
         &mut self,
-        _address: &str,
+        _chain: Chain,
+        value: &str,
     ) -> Result<ScanAddress, diesel::result::Error> {
         use crate::schema::scan_addresses::dsl::*;
         scan_addresses
-            .filter(address.eq(_address))
+            .filter(chain.eq(_chain.as_ref()))
+            .filter(address.eq(value))
             .select(ScanAddress::as_select())
             .first(&mut self.connection)
     }

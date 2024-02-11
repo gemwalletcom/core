@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 #[diesel(table_name = crate::schema::scan_addresses)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct ScanAddress {
+    pub chain: String,
     pub name: Option<String>,
     pub address: String,
     pub is_verified: bool,

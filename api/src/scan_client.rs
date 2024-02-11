@@ -1,6 +1,6 @@
 use std::error::Error;
 
-use primitives::ScanAddress;
+use primitives::{Chain, ScanAddress};
 use storage::DatabaseClient;
 
 pub struct ScanClient {
@@ -13,7 +13,14 @@ impl ScanClient {
         Self { database }
     }
 
-    pub fn get_scan_address(&mut self, address: &str) -> Result<ScanAddress, Box<dyn Error>> {
-        Ok(self.database.get_scan_address(address)?.as_primitive())
+    pub fn get_scan_address(
+        &mut self,
+        chain: Chain,
+        address: &str,
+    ) -> Result<ScanAddress, Box<dyn Error>> {
+        Ok(self
+            .database
+            .get_scan_address(chain, address)?
+            .as_primitive())
     }
 }
