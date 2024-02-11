@@ -1,7 +1,7 @@
 use std::error::Error;
 
 use primitives::{
-    AddressFormatter, Chain, NumberFormatter, PushNotification, PushNotificationTypes, ScanAddress,
+    AddressFormatter, Chain, NumberFormatter, PushNotification, PushNotificationTypes,
     Subscription, Transaction, TransactionSwapMetadata, TransactionType,
 };
 use storage::DatabaseClient;
