@@ -65,33 +65,72 @@ impl Pusher {
                 })
             }
             TransactionType::TokenApproval => {
-                let title = format!("Token Approval for {}", asset.symbol);
+                let title = if to_address.len() < 12 {
+                    format!("Token Approval of {} for {}", asset.symbol, to_address)
+                } else {
+                    format!("Token Approval for {}", asset.symbol)
+                };
                 let message = "".to_string();
                 Ok(Message {
                     title,
                     message: Some(message),
                 })
             }
-            TransactionType::StakeDelegate => Ok(Message {
-                title: format!("Stake {} {}", amount, asset.symbol),
-                message: None,
-            }),
-            TransactionType::StakeUndelegate => Ok(Message {
-                title: format!("Unstake {} {}", amount, asset.symbol),
-                message: None,
-            }),
-            TransactionType::StakeRedelegate => Ok(Message {
-                title: format!("Redelegate {} {}", amount, asset.symbol),
-                message: None,
-            }),
+            TransactionType::StakeDelegate => {
+                let title = if to_address.len() < 12 {
+                    format!("Stake {} {} to {}", amount, asset.symbol, to_address)
+                } else {
+                    format!("Stake {} {}", amount, asset.symbol)
+                };
+
+                Ok(Message {
+                    title,
+                    message: None,
+                })
+            }
+            TransactionType::StakeUndelegate => {
+                let title = if to_address.len() < 12 {
+                    format!("Unstake {} {} from {}", amount, asset.symbol, to_address)
+                } else {
+                    format!("Unstake {} {}", amount, asset.symbol)
+                };
+
+                Ok(Message {
+                    title,
+                    message: None,
+                })
+            }
+            TransactionType::StakeRedelegate => {
+                let title = if to_address.len() < 12 {
+                    format!("Redelegate {} {} to {}", amount, asset.symbol, to_address)
+                } else {
+                    format!("Redelegate {} {}", amount, asset.symbol)
+                };
+
+                Ok(Message {
+                    title,
+                    message: None,
+                })
+            }
             TransactionType::StakeRewards => Ok(Message {
                 title: format!("Claim Rewards {} {}", amount, asset.symbol),
                 message: None,
             }),
-            TransactionType::StakeWithdraw => Ok(Message {
-                title: format!("Withdraw Stake {} {}", amount, asset.symbol),
-                message: None,
-            }),
+            TransactionType::StakeWithdraw => {
+                let title = if to_address.len() < 12 {
+                    format!(
+                        "Withdraw Stake {} {} from {}",
+                        amount, asset.symbol, to_address
+                    )
+                } else {
+                    format!("Withdraw Stake {} {}", amount, asset.symbol)
+                };
+
+                Ok(Message {
+                    title,
+                    message: None,
+                })
+            }
             TransactionType::Swap => {
                 let metadata: TransactionSwapMetadata =
                     serde_json::from_value(transaction.metadata)?;
