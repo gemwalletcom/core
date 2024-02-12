@@ -51,7 +51,7 @@ anyhow = { version = "1.0" }
 diesel = { version = "2.1.4", features = ["postgres", "chrono", "serde_json"] }
 diesel_migrations = { version = "2.1.0" }
 redis = { version = "0.24.0", features = ["tokio-comp", "json"] }
-chrono = { version = "0.4.33", features = ["serde"] }
+chrono = { version = "0.4.34", features = ["serde"] }
 clickhouse = { git = "https://github.com/loyd/clickhouse.rs", rev = "d930b66f6772aba5ef049b231fd15a9e6a974854" }
 
 # crypto
