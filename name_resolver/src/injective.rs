@@ -24,19 +24,24 @@ pub struct Resolver {
 pub struct ResolverNode {
     node: Vec<u8>,
 }
-// response
 
 #[derive(Debug, Deserialize, Serialize)]
-pub struct ResolverResponse {
+pub struct ResolverAddress {
+    address: ResolverNode,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct ResolverDataResponse {
     data: ResolverData,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct ResolverData {
-    resolver: String,
+    address: String,
 }
 
-const RESOLVE_ADDRESS: &str = "inj1hm8vs8sr2h9nk0x66vctfs528wrp6k3gtgg275";
+//const REGISTER_ADDRESS: &str = "inj1hm8vs8sr2h9nk0x66vctfs528wrp6k3gtgg275";
+const RESOLVER_ADDRESS: &str = "inj1x9m0hceug9qylcyrrtwqtytslv2jrph433thgu";
 
 impl InjectiveNameClient {
     pub fn new(url: String) -> Self {
@@ -53,8 +58,8 @@ impl NameClient for InjectiveNameClient {
 
     async fn resolve(&self, name: &str, chain: Chain) -> Result<NameRecord, Box<dyn Error>> {
         let hash = crate::ens_provider::namehash::namehash(name);
-        let resolve = Resolver {
-            resolver: ResolverNode { node: hash },
+        let resolve = ResolverAddress {
+            address: ResolverNode { node: hash },
         };
 
         let string = serde_json::to_string(&resolve)?;
@@ -62,7 +67,7 @@ impl NameClient for InjectiveNameClient {
 
         let url = format!(
             "{}/cosmwasm/wasm/v1/contract/{}/smart/{}",
-            self.url, RESOLVE_ADDRESS, encoded
+            self.url, RESOLVER_ADDRESS, encoded
         );
 
         let response = self
@@ -70,14 +75,14 @@ impl NameClient for InjectiveNameClient {
             .get(&url)
             .send()
             .await?
-            .json::<ResolverResponse>()
+            .json::<ResolverDataResponse>()
             .await?;
 
         //TODO: Use provider: self.provider
         Ok(NameRecord {
             name: name.to_string(),
             chain,
-            address: response.data.resolver,
+            address: response.data.address,
             provider: NameProvider::SpaceId,
         })
     }
