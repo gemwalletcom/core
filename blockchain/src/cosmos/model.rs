@@ -87,7 +87,16 @@ impl TransactionResponse {
         let value = attbibutes
             .into_iter()
             .filter(|x| x.key == "amount")
-            .map(|x| x.value.to_string().replace(denom, ""))
+            .map(|x| {
+                x.value
+                    .split(',')
+                    .filter(|x| x.contains(denom))
+                    .collect::<Vec<&str>>()
+                    .first()
+                    .unwrap_or(&"0")
+                    .to_string()
+                    .replace(denom, "")
+            })
             .flat_map(|x| BigInt::from_str(&x).ok())
             .sum();
         Some(value)
