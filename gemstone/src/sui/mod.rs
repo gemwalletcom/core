@@ -27,7 +27,7 @@ use bcs;
 use fastcrypto::hash::*;
 use shared_crypto::intent::{Intent, IntentMessage};
 use std::str::FromStr;
-use sui_sdk::types::{
+use sui_types::{
     base_types::{ObjectID, ObjectRef, SequenceNumber, SuiAddress},
     digests::ObjectDigest,
     programmable_transaction_builder::ProgrammableTransactionBuilder,
