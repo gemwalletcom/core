@@ -3,8 +3,12 @@ name: CI on macOS
 on:
   push:
     branches: [ "main" ]
+    paths:
+      - 'gemstone/**'
   pull_request:
     branches: [ "main" ]
+    paths:
+      - 'gemstone/**'
 
 env:
   CARGO_TERM_COLOR: always

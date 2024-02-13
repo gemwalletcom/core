@@ -39,7 +39,7 @@ reqwest-middleware = { version = "0.2.4" }
 reqwest-retry = { version = "0.3.0" }
 url = { version = "2.5.0" }
 config = { version = "0.14.0" }
-rocket = { version = "=0.5.0", features = ["json"] }
+rocket = { version = "0.5.0", features = ["json"] }
 rust_decimal = { version = "1.34" }
 async-trait = { version = "0.1.77" }
 prometheus-client = { version = "0.22.1" }
