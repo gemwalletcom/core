@@ -11,8 +11,8 @@ pub struct Device {
     pub platform: Platform,
     pub token: String,
     pub locale: String,
-    pub version: Option<String>,
-    pub currency: Option<String>,
+    pub version: String,
+    pub currency: String,
     pub is_push_enabled: bool,
-    pub subscriptions_version: Option<i32>,
+    pub subscriptions_version: i32,
 }

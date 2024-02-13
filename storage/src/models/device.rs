@@ -38,10 +38,10 @@ impl Device {
             platform,
             token: self.token.clone(),
             locale: self.locale.clone(),
-            currency: self.currency.clone().into(),
+            currency: self.currency.clone(),
             is_push_enabled: self.is_push_enabled,
-            version: self.version.clone().into(),
-            subscriptions_version: self.subscriptions_version.into(),
+            version: self.version.clone(),
+            subscriptions_version: self.subscriptions_version,
         }
     }
 }
@@ -53,10 +53,10 @@ impl UpdateDevice {
             platform: device.platform.as_str().to_string(),
             token: device.token,
             locale: device.locale,
-            currency: device.currency.unwrap_or_default(),
+            currency: device.currency,
             is_push_enabled: device.is_push_enabled,
-            version: device.version.unwrap_or_default(),
-            subscriptions_version: device.subscriptions_version.unwrap_or_default(),
+            version: device.version,
+            subscriptions_version: device.subscriptions_version,
         }
     }
 }
