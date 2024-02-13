@@ -15,7 +15,7 @@ name = "gemstone"
 [dependencies]
 async-std = "1.12.0"
 once_cell = "1.19.0"
-indexmap = "2.2.2"
+indexmap = "2.2.3"
 
 bcs = "0.1.6"
 fastcrypto = { git = "https://github.com/MystenLabs/fastcrypto", rev = "ea66012b860d9dd152abb7f2156275698ee91126" }
