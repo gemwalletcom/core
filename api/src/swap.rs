@@ -14,6 +14,15 @@ pub async fn get_swap_quote(
     Json(quote)
 }
 
+#[post("/swap/quote", format = "json", data = "<quote>")]
+pub async fn post_swap_quote(
+    quote: Json<SwapQuoteRequest>,
+    client: &State<Mutex<crate::SwapClient>>,
+) -> Json<SwapQuoteResult> {
+    let quote = client.lock().await.swap_quote(quote.0).await.unwrap();
+    Json(quote)
+}
+
 #[get("/swap/assets")]
 pub async fn get_swap_assets(client: &State<Mutex<crate::SwapClient>>) -> Json<FiatAssets> {
     let quote = client.lock().await.get_swap_assets().await.unwrap();

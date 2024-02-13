@@ -39,7 +39,7 @@ pub async fn delete_subscriptions(
 )]
 pub async fn add_subscriptions(
     subscriptions: Json<Vec<Subscription>>,
-    #[allow(unused)] device_id: &str,
+    device_id: &str,
     client: &State<Mutex<SubscriptionsClient>>,
 ) -> Json<usize> {
     let subscriptions = client
