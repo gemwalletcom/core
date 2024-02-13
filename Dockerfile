@@ -1,4 +1,4 @@
-FROM rust:1.7.6 AS chef 
+FROM rust:1.76.0-slim AS chef 
 # We only pay the installation cost once, 
 # it will be cached from the second build onwards
 RUN cargo install cargo-chef 
