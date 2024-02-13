@@ -5,6 +5,11 @@ struct TronTransactionBroadcast {
 }
 
 #[typeshare]
+struct TronTransactionBroadcastError {
+    message: String,
+}
+
+#[typeshare]
 struct TronTransaction {
     ret: Vec<TronTransactionContractRef>,
 }
@@ -17,7 +22,7 @@ struct TronTransactionContractRef {
 #[typeshare]
 struct TronTransactionReceipt {
     #[serde(rename = "blockNumber")]
-    pub block_number: i32, 
+    pub block_number: i32,
     fee: Option<i32>,
     result: Option<String>,
     receipt: Option<TronReceipt>,
