@@ -1,4 +1,4 @@
-FROM rust:1.76.0 AS chef 
+FROM rust:1.76.0-bookworm AS chef 
 # We only pay the installation cost once, 
 # it will be cached from the second build onwards
 RUN cargo install cargo-chef 
@@ -17,7 +17,7 @@ COPY . .
 RUN cargo build --release
 
 # We do not need the Rust toolchain to run the binary!
-FROM debian:bullseye AS runtime
+FROM debian:bookworm AS runtime
 WORKDIR app
 
 COPY --from=builder /app/target/release/api /app
