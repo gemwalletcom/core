@@ -24,8 +24,8 @@ pub struct SuiStakeOutput {
 }
 
 use bcs;
-use fastcrypto::hash::*;
-use shared_crypto::intent::{Intent, IntentMessage};
+use blake2::{digest::consts::U32, Blake2b, Digest};
+type Blake2b256 = Blake2b<U32>;
 use std::str::FromStr;
 use sui_types::{
     base_types::{ObjectID, ObjectRef, SequenceNumber, SuiAddress},
@@ -86,14 +86,16 @@ pub fn encode_split_and_stake(input: &SuiStakeInput) -> Result<SuiStakeOutput, a
         input.gas_budget,
         input.gas_price,
     );
-    let data = &bcs::to_bytes(&tx_data)?;
-    let mut hasher = Blake2b256::default();
-    let message = IntentMessage::new(Intent::sui_transaction(), tx_data.clone());
-    hasher.update(&bcs::to_bytes(&message).expect("Message serialization should not fail"));
+    let data = bcs::to_bytes(&tx_data)?;
+    // let message = IntentMessage::new(Intent::sui_transaction(), tx_data.clone());
+    let mut message = vec![0x0u8, 0x0, 0x0];
+    message.append(&mut data.clone());
+    let mut hasher = Blake2b256::new();
+    hasher.update(&message);
 
     Ok(SuiStakeOutput {
-        tx_data: data.clone(),
-        hash: hasher.finalize().digest.into(),
+        tx_data: data,
+        hash: hasher.finalize().to_vec(),
     })
 }
 
