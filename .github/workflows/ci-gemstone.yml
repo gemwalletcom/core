@@ -15,7 +15,7 @@ env:
 
 jobs:
   build_ios:
-    runs-on: macos-latest
+    runs-on: macos-latest-xlarge
     defaults:
       run:
         working-directory: gemstone
@@ -34,5 +34,3 @@ jobs:
       run: make prepare-apple
     - name: Run tests
       run: cargo test
-    - name: Build frameworks
-      run: make apple
