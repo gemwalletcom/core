@@ -35,4 +35,4 @@ jobs:
     - name: Run tests
       run: cargo test
     - name: Build frameworks
-      run: make apple BUILD_MODE=debug
+      run: make apple
