@@ -42,7 +42,19 @@ pub fn sui_encode_split_stake(
     })
 }
 
+#[derive(uniffi::Object)]
+struct Config {}
 #[uniffi::export]
-pub fn get_validators() -> HashMap<String, Vec<String>> {
-    config::get_validators()
+impl Config {
+    // Constructors need to be annotated as such.
+    // The return value can be either `Self` or `Arc<Self>`
+    // It is treated as the primary constructor, so in most languages this is invoked with
+    #[uniffi::constructor]
+    fn new() -> Self {
+        Self {}
+    }
+
+    fn get_validators(&self) -> HashMap<String, Vec<String>> {
+        config::get_validators()
+    }
 }
