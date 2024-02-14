@@ -1,35 +1,10 @@
-#[derive(uniffi::Record)]
-pub struct SuiCoin {
-    pub coin_type: String,
-    pub coin_object_id: String,
-    pub version: u64,
-    pub digest: String,
-    pub balance: u64,
-}
+pub mod model;
 
-#[derive(uniffi::Record)]
-pub struct SuiStakeInput {
-    pub sender: String,
-    pub validator: String,
-    pub stake_amount: u64,
-    pub gas_budget: u64,
-    pub gas_price: u64,
-    pub coin: SuiCoin,
-}
-
-#[derive(uniffi::Record)]
-pub struct SuiStakeOutput {
-    pub tx_data: Vec<u8>,
-    pub hash: Vec<u8>,
-}
-
-use bcs;
-use blake2::{digest::consts::U32, Blake2b, Digest};
-type Blake2b256 = Blake2b<U32>;
+use anyhow::anyhow;
+use model::{SuiCoin, SuiStakeInput, SuiTransferInput, SuiTxOutput, SuiUnstakeInput};
 use std::str::FromStr;
 use sui_types::{
-    base_types::{ObjectID, ObjectRef, SequenceNumber, SuiAddress},
-    digests::ObjectDigest,
+    base_types::{ObjectID, SequenceNumber, SuiAddress},
     programmable_transaction_builder::ProgrammableTransactionBuilder,
     transaction::{Argument, Command, ObjectArg, TransactionData},
     Identifier,
@@ -37,88 +12,144 @@ use sui_types::{
 
 static SUI_SYSTEM_ID: &str = "sui_system";
 static SUI_REQUEST_ADD_STAKE: &str = "request_add_stake";
+static SUI_REQUEST_WITHDRAW_STAKE: &str = "request_withdraw_stake";
 static SUI_SYSTEM_ADDRESS: u8 = 0x3;
 static SUI_SYSTEM_STATE_OBJECT_ID: u8 = 0x5;
 
-pub fn encode_split_and_stake(input: &SuiStakeInput) -> Result<SuiStakeOutput, anyhow::Error> {
-    let object_id = ObjectID::from_hex_literal(&input.coin.coin_object_id)?;
-    let object_digest = ObjectDigest::from_str(&input.coin.digest)?;
-    let coin_ref: ObjectRef = (
-        object_id,
-        SequenceNumber::from_u64(input.coin.version),
-        object_digest,
+pub fn encode_transfer(input: &SuiTransferInput) -> Result<SuiTxOutput, anyhow::Error> {
+    if input.coins.is_empty() {
+        return Err(anyhow!("empty coins list!"));
+    }
+    let mut sorted: Vec<SuiCoin> = input.coins.clone();
+    sorted.sort_by(|a, b| a.balance.cmp(&b.balance));
+
+    let last_coin = sorted.last().unwrap().object_ref.to_tuple();
+
+    let sender = SuiAddress::from_str(&input.sender)?;
+    let recipient = SuiAddress::from_str(&input.recipient)?;
+
+    let mut ptb = ProgrammableTransactionBuilder::new();
+    if input.send_max {
+        ptb.pay_all_sui(recipient);
+    } else {
+        ptb.pay_sui(vec![recipient], vec![input.amount])?;
+    }
+    let builder = ptb.finish();
+    let tx_data = TransactionData::new_programmable(
+        sender,
+        vec![last_coin],
+        builder,
+        input.gas.budget,
+        input.gas.price,
     );
+    SuiTxOutput::from_tx_data(&tx_data)
+}
+
+pub fn encode_split_and_stake(input: &SuiStakeInput) -> Result<SuiTxOutput, anyhow::Error> {
+    // FIXME handle multiple coins
+    let coin = &input.coins[0];
+    let coin_ref = coin.object_ref.to_tuple();
     let sender = SuiAddress::from_str(&input.sender)?;
     let validator = SuiAddress::from_str(&input.validator)?;
 
     let mut ptb = ProgrammableTransactionBuilder::new();
+
+    // split gas coin
     let split_coint_amount = ptb.pure(input.stake_amount)?;
     ptb.command(Command::SplitCoins(
         Argument::GasCoin,
         vec![split_coint_amount],
     ));
 
-    let obj_arg = ObjectArg::SharedObject {
-        id: ObjectID::from_single_byte(SUI_SYSTEM_STATE_OBJECT_ID),
-        initial_shared_version: SequenceNumber::from_u64(1),
-        mutable: true,
-    };
-
+    // move call request_add_stake
     let move_call = Command::move_call(
         ObjectID::from_single_byte(SUI_SYSTEM_ADDRESS),
         Identifier::new(SUI_SYSTEM_ID).unwrap(),
         Identifier::new(SUI_REQUEST_ADD_STAKE).unwrap(),
         vec![],
         vec![
-            ptb.obj(obj_arg)?,
+            ptb.obj(sui_system_state_object())?,
             Argument::NestedResult(0, 0),
             ptb.pure(validator)?,
         ],
     );
     ptb.command(move_call);
 
-    let builder = ptb.finish();
-
     let tx_data = TransactionData::new_programmable(
         sender,
         vec![coin_ref],
-        builder,
-        input.gas_budget,
-        input.gas_price,
+        ptb.finish(),
+        input.gas.budget,
+        input.gas.price,
     );
-    let data = bcs::to_bytes(&tx_data)?;
-    // let message = IntentMessage::new(Intent::sui_transaction(), tx_data.clone());
-    let mut message = vec![0x0u8, 0x0, 0x0];
-    message.append(&mut data.clone());
-    let mut hasher = Blake2b256::new();
-    hasher.update(&message);
 
-    Ok(SuiStakeOutput {
-        tx_data: data,
-        hash: hasher.finalize().to_vec(),
-    })
+    SuiTxOutput::from_tx_data(&tx_data)
+}
+
+pub fn encode_unstake(input: &SuiUnstakeInput) -> Result<SuiTxOutput, anyhow::Error> {
+    let mut ptb = ProgrammableTransactionBuilder::new();
+
+    let sender = SuiAddress::from_str(&input.sender)?;
+    let staked_sui = ObjectArg::ImmOrOwnedObject(input.staked_sui.to_tuple());
+    let gas_coin = input.gas_coin.object_ref.to_tuple();
+
+    let move_call = Command::move_call(
+        ObjectID::from_single_byte(SUI_SYSTEM_ADDRESS),
+        Identifier::new(SUI_SYSTEM_ID).unwrap(),
+        Identifier::new(SUI_REQUEST_WITHDRAW_STAKE).unwrap(),
+        vec![],
+        vec![ptb.obj(sui_system_state_object())?, ptb.obj(staked_sui)?],
+    );
+    ptb.command(move_call);
+
+    let tx_data = TransactionData::new_programmable(
+        sender,
+        vec![gas_coin],
+        ptb.finish(),
+        input.gas.budget,
+        input.gas.price,
+    );
+
+    SuiTxOutput::from_tx_data(&tx_data)
+}
+
+pub fn sui_system_state_object() -> ObjectArg {
+    ObjectArg::SharedObject {
+        id: ObjectID::from_single_byte(SUI_SYSTEM_STATE_OBJECT_ID),
+        initial_shared_version: SequenceNumber::from_u64(1),
+        mutable: true,
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_encode_transfer() {
+        // FIXME add test
+    }
+
     #[test]
     fn test_encode_split_stake() {
-        let input = SuiStakeInput {
+        let input = model::SuiStakeInput {
             sender: "0xe6af80fe1b0b42fcd96762e5c70f5e8dae39f8f0ee0f118cac0d55b74e2927c2".into(),
             validator: "0x61953ea72709eed72f4441dd944eec49a11b4acabfc8e04015e89c63be81b6ab".into(),
             stake_amount: 1_000_000_000,
-            gas_budget: 20_000_000,
-            gas_price: 750,
-
-            coin: SuiCoin {
-                coin_type: "0x2::sui::SUI".into(),
-                coin_object_id:
-                    "0x36b8380aa7531d73723657d73a114cfafedf89dc8c76b6752f6daef17e43dda2".into(),
-                version: 0x3f4d8e5,
-                digest: "HdfF7hswRuvbXbEXjGjmUCt7gLybhvbPvvK8zZbCqyD8".into(),
-                balance: 10990277896,
+            gas: model::SuiGas {
+                budget: 20_000_000,
+                price: 750,
             },
+            coins: vec![model::SuiCoin {
+                coin_type: "0x2::sui::SUI".into(),
+                balance: 10990277896,
+                object_ref: model::SuiObjectRef {
+                    object_id: "0x36b8380aa7531d73723657d73a114cfafedf89dc8c76b6752f6daef17e43dda2"
+                        .into(),
+                    version: 0x3f4d8e5,
+                    digest: "HdfF7hswRuvbXbEXjGjmUCt7gLybhvbPvvK8zZbCqyD8".into(),
+                },
+            }],
         };
         let data = encode_split_and_stake(&input).unwrap();
 
@@ -127,5 +158,10 @@ mod tests {
             hex::encode(data.hash),
             "66be75b0f86ca3a9f24380adc8d8336d8921d5dbdc78f1b3c24c7d6842ce5911"
         );
+    }
+
+    #[test]
+    fn test_unstake() {
+        // FIXME add test
     }
 }
