@@ -30,7 +30,8 @@ jobs:
         key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
     - name: Run sccache-cache
       uses: mozilla-actions/sccache-action@v0.0.3
-    - name: Install targets
-      run: make prepare-apple
     - name: Run tests
       run: cargo test
+      env:
+        SCCACHE_GHA_ENABLED: "true"
+        RUSTC_WRAPPER: "sccache"
