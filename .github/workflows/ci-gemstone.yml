@@ -1,4 +1,4 @@
-name: CI on macOS
+name: Gemstone CI
 
 on:
   push:
@@ -15,11 +15,10 @@ env:
 
 jobs:
   build_ios:
-    runs-on: macos-latest-xlarge
+    runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ./
-        
+        working-directory: gemstone
     steps:
     - uses: actions/checkout@v3
     - uses: actions/cache@v3
@@ -29,7 +28,9 @@ jobs:
           ~/.cargo/git
           target
         key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-    - name: Build Gemstone
-      run: |
-        make prepare-apple && make apple BUILD_MODE=release
-      working-directory: gemstone
+    - name: Install targets
+      run: make prepare-apple
+    - name: Run tests
+      run: cargo test
+    - name: Build frameworks
+      run: make apple BUILD_MODE=release

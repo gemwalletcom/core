@@ -46,6 +46,7 @@ prometheus-client = { version = "0.22.1" }
 futures = { version = "0.3.30" }
 thiserror = { version = "1.0.57" }
 anyhow = { version = "1.0" }
+indexmap = "2.2.2"
 
 # db
 diesel = { version = "2.1.4", features = ["postgres", "chrono", "serde_json"] }
@@ -56,6 +57,7 @@ clickhouse = { git = "https://github.com/loyd/clickhouse.rs", rev = "d930b66f677
 
 # crypto
 base64 = { version = "0.21.7" }
+blake2 = "0.10.6"
 #bech32 = { version = "0.9.1" }
 bs58 = { version = "0.5.0", features = ["check"] }
 hex = { version = "0.4.3" }
