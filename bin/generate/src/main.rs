@@ -103,10 +103,10 @@ fn main() {
 
             match platform {
                 Platform::IOS => {
-                    println!(
-                        "Generate file for iOS: {}, output: {}",
-                        input_path, ios_output_path
-                    );
+                    // println!(
+                    //     "Generate file for iOS: {}, output: {}",
+                    //     input_path, ios_output_path
+                    // );
                     generate_files(
                         LANGUAGE_SWIFT,
                         input_path.as_str(),
@@ -115,10 +115,10 @@ fn main() {
                     );
                 }
                 Platform::Android => {
-                    println!(
-                        "Generate file for Android: {}, output: {}",
-                        input_path, android_output_path
-                    );
+                    // println!(
+                    //     "Generate file for Android: {}, output: {}",
+                    //     input_path, android_output_path
+                    // );
                     generate_files(
                         LANGUAGE_KOTLIN,
                         input_path.as_str(),
