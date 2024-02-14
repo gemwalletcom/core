@@ -2724,6 +2724,7 @@ dependencies = [
  "hex",
  "indexmap 2.2.3",
  "once_cell",
+ "primitives",
  "sui-types",
  "thiserror",
  "uniffi",

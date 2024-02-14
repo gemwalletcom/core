@@ -1,3 +1,6 @@
+use std::collections::HashMap;
+
+pub mod config;
 pub mod explorer;
 pub mod sui;
 
@@ -37,4 +40,9 @@ pub fn sui_encode_split_stake(
     sui::encode_split_and_stake(input).map_err(|op| GemstoneError::AnyError {
         msg: op.to_string(),
     })
+}
+
+#[uniffi::export]
+pub fn get_validators() -> HashMap<String, Vec<String>> {
+    config::get_validators()
 }
