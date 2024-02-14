@@ -15,17 +15,19 @@ name = "gemstone"
 [dependencies]
 async-std = "1.12.0"
 once_cell = "1.19.0"
-indexmap = "2.2.3"
 
+# Sui
 bcs = "0.1.6"
-fastcrypto = { git = "https://github.com/MystenLabs/fastcrypto", rev = "ea66012b860d9dd152abb7f2156275698ee91126" }
-sui-sdk = { git = "https://github.com/mystenlabs/sui", package = "sui-sdk", rev = "f5b55da420b2ed2c8bea46ff7ab62709d49f9c2e" }
-shared-crypto = { git = "https://github.com/mystenlabs/sui", package = "shared-crypto", rev = "f5b55da420b2ed2c8bea46ff7ab62709d49f9c2e" }
+sui-types = { git = "https://github.com/mystenlabs/sui", package = "sui-types", rev = "f5b55da420b2ed2c8bea46ff7ab62709d49f9c2e" }
+indexmap = { workspace = true }
+blake2 = { workspace = true }
 
 hex = { workspace = true }
 thiserror = { workspace = true }
-uniffi = { workspace = true }
 anyhow = { workspace = true }
+
+# uniffi
+uniffi = { workspace = true }
 
 [build-dependencies]
 uniffi = { workspace = true, features = ["build"] }

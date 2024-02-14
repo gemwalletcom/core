@@ -1,4 +1,4 @@
-name: CI on macOS
+name: Gemstone CI
 
 on:
   push:
@@ -18,8 +18,7 @@ jobs:
     runs-on: macos-latest-xlarge
     defaults:
       run:
-        working-directory: ./
-        
+        working-directory: gemstone
     steps:
     - uses: actions/checkout@v3
     - uses: actions/cache@v3
@@ -29,7 +28,10 @@ jobs:
           ~/.cargo/git
           target
         key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-    - name: Build Gemstone
-      run: |
-        make prepare-apple && make apple BUILD_MODE=release
-      working-directory: gemstone
+    - name: Run sccache-cache
+      uses: mozilla-actions/sccache-action@v0.0.3
+    - name: Run tests
+      run: cargo test
+      env:
+        SCCACHE_GHA_ENABLED: "true"
+        RUSTC_WRAPPER: "sccache"
