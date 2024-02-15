@@ -4,7 +4,7 @@ use anyhow::anyhow;
 use model::{SuiCoin, SuiStakeInput, SuiTransferInput, SuiTxOutput, SuiUnstakeInput};
 use std::str::FromStr;
 use sui_types::{
-    base_types::{ObjectID, SequenceNumber, SuiAddress},
+    base_types::{ObjectID, ObjectRef, SequenceNumber, SuiAddress},
     programmable_transaction_builder::ProgrammableTransactionBuilder,
     transaction::{Argument, Command, ObjectArg, TransactionData},
     Identifier,
@@ -46,13 +46,39 @@ pub fn encode_transfer(input: &SuiTransferInput) -> Result<SuiTxOutput, anyhow::
 }
 
 pub fn encode_split_and_stake(input: &SuiStakeInput) -> Result<SuiTxOutput, anyhow::Error> {
-    // FIXME handle multiple coins
-    let coin = &input.coins[0];
-    let coin_ref = coin.object_ref.to_tuple();
+    if input.coins.is_empty() {
+        return Err(anyhow!("empty coins list!"));
+    }
+
+    let total_amount: u64 = input.coins.iter().map(|x| x.balance).sum();
+    if total_amount < input.stake_amount {
+        return Err(anyhow!(format!(
+            "total amount ({}) is less than the amount ({})to stake",
+            total_amount, input.stake_amount
+        ),));
+    }
+
+    let coin_refs: Vec<ObjectRef> = input
+        .coins
+        .iter()
+        .map(|x| x.object_ref.to_tuple())
+        .collect();
+    let coin_ref = coin_refs[0];
     let sender = SuiAddress::from_str(&input.sender)?;
     let validator = SuiAddress::from_str(&input.validator)?;
 
     let mut ptb = ProgrammableTransactionBuilder::new();
+
+    // merge into first coin if there are multiple coins
+    if coin_refs.len() > 1 {
+        let mut coins = coin_refs.into_iter();
+        let coin = coins.next().unwrap();
+        let coin_arg = ptb.obj(ObjectArg::ImmOrOwnedObject(coin))?;
+        let merge_args: Vec<_> = coins
+            .map(|c| ptb.obj(ObjectArg::ImmOrOwnedObject(c)))
+            .collect::<Result<_, _>>()?;
+        ptb.command(Command::MergeCoins(coin_arg, merge_args));
+    }
 
     // split gas coin
     let split_coint_amount = ptb.pure(input.stake_amount)?;
