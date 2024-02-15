@@ -6,7 +6,7 @@ use async_trait::async_trait;
 use base64::{engine::general_purpose, Engine as _};
 use chrono::Utc;
 use hex;
-use primitives::{chain::Chain, TransactionState, TransactionType};
+use primitives::{AssetId, Chain, TransactionState, TransactionType};
 use reqwest_middleware::ClientWithMiddleware;
 use sha2::{Digest, Sha256};
 
@@ -94,6 +94,7 @@ impl CosmosClient {
         transaction: TransactionDecode,
         reciept: TransactionResponse,
     ) -> Option<primitives::Transaction> {
+        let chain = self.get_chain();
         let tx_auth = transaction.tx.auth_info.clone()?;
         let sequence = tx_auth.signer_infos.first()?.sequence;
         let default_denom = self.chain.as_denom();
@@ -105,7 +106,6 @@ impl CosmosClient {
             .collect::<Vec<_>>();
         let fee = fee.first()?.amount.clone();
         let memo = transaction.tx_body.memo.clone();
-        let asset_id = self.get_chain().as_asset_id();
         let block_number = reciept.tx_response.height.clone();
         let hash = reciept.tx_response.txhash.clone();
         let state = if reciept.tx_response.code == 0 {
@@ -115,36 +115,30 @@ impl CosmosClient {
         };
 
         for message in transaction.clone().tx_body.messages {
+            let asset_id: AssetId;
             let transaction_type: TransactionType;
             let value: String;
             let from_address: String;
             let to_address: String;
 
             match message.type_url.as_str() {
-                MESSAGE_SEND => {
+                MESSAGE_SEND | MESSAGE_SEND_BETA => {
                     // special handling for thorchain as it uses a different message type and decoding does not work
                     let message: MessageSend =
                         serde_json::from_value(reciept.tx.body.messages.first()?.clone()).ok()?;
+                    let amount = message.amount.first()?.clone();
 
+                    asset_id = if amount.denom == self.chain.as_denom() {
+                        self.get_chain().as_asset_id()
+                    } else {
+                        AssetId::from(self.chain, Some(amount.denom.clone()))
+                    };
                     transaction_type = TransactionType::Transfer;
-                    value = message.get_amount(self.chain.as_denom())?.to_string();
-                    from_address = message.from_address;
-                    to_address = message.to_address;
-                }
-                MESSAGE_SEND_BETA => {
-                    let message: cosmos_sdk_proto::cosmos::bank::v1beta1::MsgSend =
-                        cosmos_sdk_proto::prost::Message::decode(&*message.value).ok()?;
-
-                    transaction_type = TransactionType::Transfer;
-                    value = message
-                        .amount
-                        .into_iter()
-                        .filter(|x| x.denom == self.chain.clone().as_denom())
-                        .collect::<Vec<_>>()
-                        .first()?
-                        .amount
-                        .clone();
-
+                    value = if asset_id.is_native() {
+                        message.get_amount(self.chain.as_denom())?.to_string()
+                    } else {
+                        message.get_amount(&asset_id.token_id.clone()?)?.to_string()
+                    };
                     from_address = message.from_address;
                     to_address = message.to_address;
                 }
@@ -152,6 +146,7 @@ impl CosmosClient {
                     let message: cosmos_sdk_proto::cosmos::staking::v1beta1::MsgDelegate =
                         cosmos_sdk_proto::prost::Message::decode(&*message.value).ok()?;
 
+                    asset_id = chain.as_asset_id();
                     value = message.amount?.amount.clone();
                     transaction_type = TransactionType::StakeDelegate;
                     from_address = message.delegator_address;
@@ -161,6 +156,7 @@ impl CosmosClient {
                     let message: cosmos_sdk_proto::cosmos::staking::v1beta1::MsgUndelegate =
                         cosmos_sdk_proto::prost::Message::decode(&*message.value).ok()?;
 
+                    asset_id = chain.as_asset_id();
                     transaction_type = TransactionType::StakeUndelegate;
                     value = message.amount?.amount.clone();
                     from_address = message.delegator_address;
@@ -170,6 +166,7 @@ impl CosmosClient {
                     let message: cosmos_sdk_proto::cosmos::staking::v1beta1::MsgBeginRedelegate =
                         cosmos_sdk_proto::prost::Message::decode(&*message.value).ok()?;
 
+                    asset_id = chain.as_asset_id();
                     transaction_type = TransactionType::StakeRedelegate;
                     value = message.amount?.amount.clone();
                     from_address = message.delegator_address;
@@ -179,6 +176,7 @@ impl CosmosClient {
                     let message: cosmos_sdk_proto::cosmos::distribution::v1beta1::MsgWithdrawDelegatorReward =
                         cosmos_sdk_proto::prost::Message::decode(&*message.value).ok()?;
 
+                    asset_id = chain.as_asset_id();
                     value = reciept
                         .get_rewards_value(self.chain.as_denom())
                         .unwrap_or_default()

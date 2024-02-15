@@ -39,6 +39,10 @@ impl AssetId {
         })
     }
 
+    pub fn from(chain: Chain, token_id: Option<String>) -> AssetId {
+        AssetId { chain, token_id }
+    }
+
     pub fn from_chain(chain: Chain) -> AssetId {
         AssetId {
             chain,
