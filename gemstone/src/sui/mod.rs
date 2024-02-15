@@ -53,9 +53,16 @@ pub fn encode_split_and_stake(input: &SuiStakeInput) -> Result<SuiTxOutput, anyh
     let total_amount: u64 = input.coins.iter().map(|x| x.balance).sum();
     if total_amount < input.stake_amount {
         return Err(anyhow!(format!(
-            "total amount ({}) is less than the amount ({})to stake",
+            "total amount ({}) is less than stake amount ({})",
             total_amount, input.stake_amount
         ),));
+    }
+
+    if total_amount - input.gas.budget < input.stake_amount {
+        return Err(anyhow!(format!(
+            "total amount ({}) is less than stake amount + gas ({}+{})",
+            total_amount, input.stake_amount, input.gas.budget
+        )));
     }
 
     let coin_refs: Vec<ObjectRef> = input
@@ -63,12 +70,12 @@ pub fn encode_split_and_stake(input: &SuiStakeInput) -> Result<SuiTxOutput, anyh
         .iter()
         .map(|x| x.object_ref.to_tuple())
         .collect();
-    let coin_ref = coin_refs[0];
+    let mut gas_coin_ref = coin_refs[0];
     let sender = SuiAddress::from_str(&input.sender)?;
     let validator = SuiAddress::from_str(&input.validator)?;
 
     let mut ptb = ProgrammableTransactionBuilder::new();
-
+    let mut split_argument = Argument::GasCoin;
     // merge into first coin if there are multiple coins
     if coin_refs.len() > 1 {
         let mut coins = coin_refs.into_iter();
@@ -78,14 +85,19 @@ pub fn encode_split_and_stake(input: &SuiStakeInput) -> Result<SuiTxOutput, anyh
             .map(|c| ptb.obj(ObjectArg::ImmOrOwnedObject(c)))
             .collect::<Result<_, _>>()?;
         ptb.command(Command::MergeCoins(coin_arg, merge_args));
+
+        split_argument = coin_arg;
+        gas_coin_ref = coin;
     }
 
     // split gas coin
-    let split_coint_amount = ptb.pure(input.stake_amount)?;
-    ptb.command(Command::SplitCoins(
-        Argument::GasCoin,
-        vec![split_coint_amount],
-    ));
+    let split_stake_amount = ptb.pure(input.stake_amount)?;
+    let Argument::Result(split_primary) = ptb.command(Command::SplitCoins(
+        split_argument,
+        vec![split_stake_amount],
+    )) else {
+        panic!("command should always give a Argument::Result")
+    };
 
     // move call request_add_stake
     let move_call = Command::move_call(
@@ -95,7 +107,7 @@ pub fn encode_split_and_stake(input: &SuiStakeInput) -> Result<SuiTxOutput, anyh
         vec![],
         vec![
             ptb.obj(sui_system_state_object())?,
-            Argument::NestedResult(0, 0),
+            Argument::NestedResult(split_primary, 0),
             ptb.pure(validator)?,
         ],
     );
@@ -103,7 +115,7 @@ pub fn encode_split_and_stake(input: &SuiStakeInput) -> Result<SuiTxOutput, anyh
 
     let tx_data = TransactionData::new_programmable(
         sender,
-        vec![coin_ref],
+        vec![gas_coin_ref],
         ptb.finish(),
         input.gas.budget,
         input.gas.price,
