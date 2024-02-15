@@ -20,10 +20,20 @@ pub fn encode_transfer(input: &SuiTransferInput) -> Result<SuiTxOutput, anyhow::
     if input.coins.is_empty() {
         return Err(anyhow!("empty coins list!"));
     }
-    let mut sorted: Vec<SuiCoin> = input.coins.clone();
-    sorted.sort_by(|a, b| a.balance.cmp(&b.balance));
 
-    let last_coin = sorted.last().unwrap().object_ref.to_tuple();
+    let total_amount: u64 = input.coins.iter().map(|x| x.balance).sum();
+    if total_amount < input.amount {
+        return Err(anyhow!(format!(
+            "total amount ({}) is less than input amount ({})",
+            total_amount, input.amount
+        ),));
+    }
+
+    let coin_refs: Vec<ObjectRef> = input
+        .coins
+        .iter()
+        .map(|x| x.object_ref.to_tuple())
+        .collect();
 
     let sender = SuiAddress::from_str(&input.sender)?;
     let recipient = SuiAddress::from_str(&input.recipient)?;
@@ -37,7 +47,7 @@ pub fn encode_transfer(input: &SuiTransferInput) -> Result<SuiTxOutput, anyhow::
     let builder = ptb.finish();
     let tx_data = TransactionData::new_programmable(
         sender,
-        vec![last_coin],
+        coin_refs,
         builder,
         input.gas.budget,
         input.gas.price,
