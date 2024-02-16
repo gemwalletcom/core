@@ -156,27 +156,52 @@ pub fn sui_system_state_object() -> ObjectArg {
 
 #[cfg(test)]
 mod tests {
+    use self::model::*;
     use super::*;
+    use base64::{engine::general_purpose, Engine as _};
 
     #[test]
     fn test_encode_transfer() {
-        // FIXME add test
+        let input = SuiTransferInput {
+            sender: "0xa9bd0493f9bd1f792a4aedc1f99d54535a75a46c38fd56a8f2c6b7c8d75817a1".into(),
+            recipient: "0xe6af80fe1b0b42fcd96762e5c70f5e8dae39f8f0ee0f118cac0d55b74e2927c2".into(),
+            amount: 8993996480,
+            coins: vec![SuiCoin {
+                coin_type: "0x2::sui::SUI".into(),
+                balance: 8994756360,
+                object_ref: SuiObjectRef {
+                    object_id: "0x9f258c85566d977b4c99bb6019560ba99c796e71291269d8f9f3cc9d9f37db46"
+                        .into(),
+                    digest: "GoAwPNYEBKyAgzmQgnxW23bdhnHaLXcqT3o1nEZo4KPM".into(),
+                    version: 68419468,
+                },
+            }],
+            send_max: true,
+            gas: SuiGas {
+                budget: 25_000_000,
+                price: 750,
+            },
+        };
+
+        let output = encode_transfer(&input).unwrap();
+        let b64_encoded = general_purpose::STANDARD.encode(output.tx_data);
+        assert_eq!(b64_encoded, "AAABACDmr4D+GwtC/NlnYuXHD16Nrjn48O4PEYysDVW3TiknwgEBAQABAACpvQST+b0feSpK7cH5nVRTWnWkbDj9VqjyxrfI11gXoQGfJYyFVm2Xe0yZu2AZVgupnHlucSkSadj588ydnzfbRoz/EwQAAAAAIOqzQffiRRpexyiDEtyjm40KqFMf60ohK5jCJ0z3+Lqwqb0Ek/m9H3kqSu3B+Z1UU1p1pGw4/Vao8sa3yNdYF6HuAgAAAAAAAEB4fQEAAAAAAA==");
     }
 
     #[test]
     fn test_encode_split_stake() {
-        let input = model::SuiStakeInput {
+        let input = SuiStakeInput {
             sender: "0xe6af80fe1b0b42fcd96762e5c70f5e8dae39f8f0ee0f118cac0d55b74e2927c2".into(),
             validator: "0x61953ea72709eed72f4441dd944eec49a11b4acabfc8e04015e89c63be81b6ab".into(),
             stake_amount: 1_000_000_000,
-            gas: model::SuiGas {
+            gas: SuiGas {
                 budget: 20_000_000,
                 price: 750,
             },
-            coins: vec![model::SuiCoin {
+            coins: vec![SuiCoin {
                 coin_type: "0x2::sui::SUI".into(),
                 balance: 10990277896,
-                object_ref: model::SuiObjectRef {
+                object_ref: SuiObjectRef {
                     object_id: "0x36b8380aa7531d73723657d73a114cfafedf89dc8c76b6752f6daef17e43dda2"
                         .into(),
                     version: 0x3f4d8e5,
