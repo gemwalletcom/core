@@ -1,7 +1,7 @@
 pub mod model;
 
 use anyhow::anyhow;
-use model::{SuiCoin, SuiStakeInput, SuiTransferInput, SuiTxOutput, SuiUnstakeInput};
+use model::{SuiStakeInput, SuiTransferInput, SuiTxOutput, SuiUnstakeInput};
 use std::str::FromStr;
 use sui_types::{
     base_types::{ObjectID, ObjectRef, SequenceNumber, SuiAddress},
@@ -22,7 +22,7 @@ pub fn encode_transfer(input: &SuiTransferInput) -> Result<SuiTxOutput, anyhow::
     }
 
     let total_amount: u64 = input.coins.iter().map(|x| x.balance).sum();
-    if total_amount < input.amount {
+    if !input.send_max && total_amount < input.amount {
         return Err(anyhow!(format!(
             "total amount ({}) is less than input amount ({})",
             total_amount, input.amount
