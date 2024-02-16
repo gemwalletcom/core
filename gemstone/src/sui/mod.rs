@@ -220,6 +220,31 @@ mod tests {
 
     #[test]
     fn test_unstake() {
-        // FIXME add test
+        let input = SuiUnstakeInput {
+            sender: "0xe6af80fe1b0b42fcd96762e5c70f5e8dae39f8f0ee0f118cac0d55b74e2927c2".into(),
+            staked_sui: SuiObjectRef {
+                object_id: "0xc8c1666ae68f46b609d40bb51d1ec23dc2e0560f986aae878643b6d215549fcf"
+                    .into(),
+                digest: "CU86BjXRF1XHFRjKBasCYEuaQxhHuyGBpuoJyqsrYoX5".into(),
+                version: 64195796,
+            },
+            gas: SuiGas {
+                budget: 25_000_000,
+                price: 750,
+            },
+            gas_coin: SuiCoin {
+                coin_type: "0x2::sui::SUI".into(),
+                balance: 631668351,
+                object_ref: SuiObjectRef {
+                    object_id: "0x36b8380aa7531d73723657d73a114cfafedf89dc8c76b6752f6daef17e43dda2"
+                        .into(),
+                    version: 68755407,
+                    digest: "FHbvG5i7f8o2VrKpXnqGFHNvGxG7BBKREea5avdPN7ke".into(),
+                },
+            },
+        };
+        let output = encode_unstake(&input).unwrap();
+        let b64_encoded = general_purpose::STANDARD.encode(output.tx_data);
+        assert_eq!(b64_encoded, "AAACAQEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABQEAAAAAAAAAAQEAyMFmauaPRrYJ1Au1HR7CPcLgVg+Yaq6HhkO20hVUn8/UjNMDAAAAACCqY0EI6P2Lzjy4eh4ckx6iz/5S78vLxiOulRCcAgwEcAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMKc3VpX3N5c3RlbRZyZXF1ZXN0X3dpdGhkcmF3X3N0YWtlAAIBAAABAQDmr4D+GwtC/NlnYuXHD16Nrjn48O4PEYysDVW3TiknwgE2uDgKp1Mdc3I2V9c6EUz6/t+J3Ix2tnUvba7xfkPdos8fGQQAAAAAINREZGL0SD9y5n7te55Ju78nQ/PVWycQpwYPm4+JrWej5q+A/hsLQvzZZ2Llxw9eja45+PDuDxGMrA1Vt04pJ8LuAgAAAAAAAEB4fQEAAAAAAA==");
     }
 }
