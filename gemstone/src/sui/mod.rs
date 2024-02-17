@@ -1,7 +1,7 @@
 pub mod model;
 
 use anyhow::anyhow;
-use model::{SuiStakeInput, SuiTransferInput, SuiTxOutput, SuiUnstakeInput};
+use model::*;
 use std::str::FromStr;
 use sui_types::{
     base_types::{ObjectID, ObjectRef, SequenceNumber, SuiAddress},
@@ -17,16 +17,8 @@ static SUI_SYSTEM_ADDRESS: u8 = 0x3;
 static SUI_SYSTEM_STATE_OBJECT_ID: u8 = 0x5;
 
 pub fn encode_transfer(input: &SuiTransferInput) -> Result<SuiTxOutput, anyhow::Error> {
-    if input.coins.is_empty() {
-        return Err(anyhow!("empty coins list!"));
-    }
-
-    let total_amount: u64 = input.coins.iter().map(|x| x.balance).sum();
-    if !input.send_max && total_amount < input.amount {
-        return Err(anyhow!(format!(
-            "total amount ({}) is less than input amount ({})",
-            total_amount, input.amount
-        ),));
+    if let Some(err) = validate_enough_balance(&input.coins, input.amount) {
+        return Err(err);
     }
 
     let coin_refs: Vec<ObjectRef> = input
@@ -44,35 +36,46 @@ pub fn encode_transfer(input: &SuiTransferInput) -> Result<SuiTxOutput, anyhow::
     } else {
         ptb.pay_sui(vec![recipient], vec![input.amount])?;
     }
-    let builder = ptb.finish();
+
     let tx_data = TransactionData::new_programmable(
         sender,
         coin_refs,
-        builder,
+        ptb.finish(),
         input.gas.budget,
         input.gas.price,
     );
     SuiTxOutput::from_tx_data(&tx_data)
 }
 
+pub fn encode_token_transfer(input: &SuiTokenTransferInput) -> Result<SuiTxOutput, anyhow::Error> {
+    if let Some(err) = validate_enough_balance(&input.tokens, input.amount) {
+        return Err(err);
+    }
+    let mut ptb = ProgrammableTransactionBuilder::new();
+    let sender = SuiAddress::from_str(&input.sender)?;
+    let recipient = SuiAddress::from_str(&input.recipient)?;
+    let coin_refs: Vec<ObjectRef> = input
+        .tokens
+        .iter()
+        .map(|x| x.object_ref.to_tuple())
+        .collect();
+    let gas_coin = input.gas_coin.object_ref.to_tuple();
+
+    ptb.pay(coin_refs, vec![recipient], vec![input.amount])?;
+    let tx_data = TransactionData::new_programmable(
+        sender,
+        vec![gas_coin],
+        ptb.finish(),
+        input.gas.budget,
+        input.gas.price,
+    );
+
+    SuiTxOutput::from_tx_data(&tx_data)
+}
+
 pub fn encode_split_and_stake(input: &SuiStakeInput) -> Result<SuiTxOutput, anyhow::Error> {
-    if input.coins.is_empty() {
-        return Err(anyhow!("empty coins list!"));
-    }
-
-    let total_amount: u64 = input.coins.iter().map(|x| x.balance).sum();
-    if total_amount < input.stake_amount {
-        return Err(anyhow!(format!(
-            "total amount ({}) is less than stake amount ({})",
-            total_amount, input.stake_amount
-        ),));
-    }
-
-    if total_amount - input.gas.budget < input.stake_amount {
-        return Err(anyhow!(format!(
-            "total amount ({}) is less than stake amount + gas ({}+{})",
-            total_amount, input.stake_amount, input.gas.budget
-        )));
+    if let Some(err) = validate_enough_balance(&input.coins, input.stake_amount) {
+        return Err(err);
     }
 
     let coin_refs: Vec<ObjectRef> = input
@@ -154,9 +157,23 @@ pub fn sui_system_state_object() -> ObjectArg {
     }
 }
 
+pub fn validate_enough_balance(coins: &Vec<SuiCoin>, amount: u64) -> Option<anyhow::Error> {
+    if coins.is_empty() {
+        return Some(anyhow!("coins list is empty"));
+    }
+
+    let total_amount: u64 = coins.iter().map(|x| x.balance).sum();
+    if total_amount < amount {
+        return Some(anyhow!(format!(
+            "total amount ({}) is less than amount to send ({})",
+            total_amount, amount
+        ),));
+    }
+    return None;
+}
+
 #[cfg(test)]
 mod tests {
-    use self::model::*;
     use super::*;
     use base64::{engine::general_purpose, Engine as _};
 
@@ -186,6 +203,55 @@ mod tests {
         let output = encode_transfer(&input).unwrap();
         let b64_encoded = general_purpose::STANDARD.encode(output.tx_data);
         assert_eq!(b64_encoded, "AAABACDmr4D+GwtC/NlnYuXHD16Nrjn48O4PEYysDVW3TiknwgEBAQABAACpvQST+b0feSpK7cH5nVRTWnWkbDj9VqjyxrfI11gXoQGfJYyFVm2Xe0yZu2AZVgupnHlucSkSadj588ydnzfbRoz/EwQAAAAAIOqzQffiRRpexyiDEtyjm40KqFMf60ohK5jCJ0z3+Lqwqb0Ek/m9H3kqSu3B+Z1UU1p1pGw4/Vao8sa3yNdYF6HuAgAAAAAAAEB4fQEAAAAAAA==");
+    }
+
+    #[test]
+    fn test_encode_token_transfer() {
+        let input = SuiTokenTransferInput {
+            sender: "0xa9bd0493f9bd1f792a4aedc1f99d54535a75a46c38fd56a8f2c6b7c8d75817a1".into(),
+            recipient: "0xe6af80fe1b0b42fcd96762e5c70f5e8dae39f8f0ee0f118cac0d55b74e2927c2".into(),
+            amount: 2400000000,
+            tokens: vec![
+                SuiCoin {
+                    coin_type: "0xe4239cd951f6c53d9c41e25270d80d31f925ad1655e5ba5b543843d4a66975ee::SUIP::SUIP".into(),
+                    balance: 1400000000,
+                    object_ref: SuiObjectRef {
+                        object_id: "0x1a6b6023d363f5dcad026f83ddb9bb0f987c941f10db2ab86571711a1a9a1ee6"
+                        .into(),
+                        digest: "CCFDRi15n2mhBVGAoa594VynBKgSRbgZQZgjT4wxFu7B".into(),
+                        version: 67155000
+                    }
+                },
+                SuiCoin {
+                    coin_type: "0xe4239cd951f6c53d9c41e25270d80d31f925ad1655e5ba5b543843d4a66975ee::SUIP::SUIP".into(),
+                    balance: 1000000000,
+                    object_ref: SuiObjectRef {
+                        object_id: "0x2fd950f33ecdf9e5d797ca3130811e7a973d4c1da5427ac0c910a8c5f6e8b72d"
+                            .into(),
+                        digest: "7CsXhia2TGqy7bXnxH4WLbkzYJBPvCnNVuLvzByvLsRh".into(),
+                        version: 67154999,
+                    },
+                }
+            ],
+            gas: SuiGas {
+                budget: 25_000_000,
+                price: 750,
+            },
+            gas_coin: SuiCoin {
+                coin_type: "0x2::sui::SUI".into(),
+                balance: 100000000,
+                object_ref: SuiObjectRef {
+                    object_id: "0x890f8c604c7cb5cc194dbf4953ad3dbebd81ef7526be351d3514cc3cc26c9c1d"
+                        .into(),
+                    digest: "3a2sHuj9pJg7RHub4w9EPyBtpxVfHzk52M91HErwMQ4J".into(),
+                    version: 69035764,
+                },
+            },
+        };
+
+        let output = encode_token_transfer(&input).unwrap();
+        let b64_encoded = general_purpose::STANDARD.encode(output.tx_data);
+        assert_eq!(b64_encoded, "AAAEAQAaa2Aj02P13K0Cb4PdubsPmHyUHxDbKrhlcXEaGpoe5ji0AAQAAAAAIKZSBGYgBc5PwYeX01SAZHnJYxA3pJRvrUZmR7ToQZTWAQAv2VDzPs355deXyjEwgR56lz1MHaVCesDJEKjF9ui3LTe0AAQAAAAAIFwwpOhb+onitRHRqj+wsEA0nNO2KqqOt8/IVbcC0O7oAAgAGA2PAAAAAAAg5q+A/hsLQvzZZ2Llxw9eja45+PDuDxGMrA1Vt04pJ8IDAwEAAAEBAQACAQAAAQECAAEBAwEAAAABAwCpvQST+b0feSpK7cH5nVRTWnWkbDj9VqjyxrfI11gXoQGJD4xgTHy1zBlNv0lTrT2+vYHvdSa+NR01FMw8wmycHfRmHQQAAAAAICYtptS+v/0HkfChzkJo0QzRDQxhli84CM3mMV/dqUBbqb0Ek/m9H3kqSu3B+Z1UU1p1pGw4/Vao8sa3yNdYF6HuAgAAAAAAAEB4fQEAAAAAAA==");
     }
 
     #[test]

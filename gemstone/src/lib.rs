@@ -49,6 +49,13 @@ pub fn sui_encode_transfer(
 }
 
 #[uniffi::export]
+pub fn sui_encode_token_transfer(
+    input: &sui::model::SuiTokenTransferInput,
+) -> Result<sui::model::SuiTxOutput, GemstoneError> {
+    sui::encode_token_transfer(input).map_err(GemstoneError::from)
+}
+
+#[uniffi::export]
 pub fn sui_encode_split_stake(
     input: &sui::model::SuiStakeInput,
 ) -> Result<sui::model::SuiTxOutput, GemstoneError> {

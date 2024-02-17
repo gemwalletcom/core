@@ -66,6 +66,16 @@ pub struct SuiTransferInput {
 }
 
 #[derive(uniffi::Record)]
+pub struct SuiTokenTransferInput {
+    pub sender: String,
+    pub recipient: String,
+    pub amount: u64,
+    pub tokens: Vec<SuiCoin>,
+    pub gas: SuiGas,
+    pub gas_coin: SuiCoin,
+}
+
+#[derive(uniffi::Record)]
 pub struct SuiTxOutput {
     pub tx_data: Vec<u8>,
     pub hash: Vec<u8>,
