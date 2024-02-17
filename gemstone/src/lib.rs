@@ -18,6 +18,14 @@ pub enum GemstoneError {
     AnyError { msg: String },
 }
 
+impl GemstoneError {
+    fn from(error: anyhow::Error) -> Self {
+        Self::AnyError {
+            msg: error.to_string(),
+        }
+    }
+}
+
 #[uniffi::export]
 pub async fn say_after(ms: u64, who: String) -> String {
     use async_std::future::{pending, timeout};
@@ -34,12 +42,31 @@ pub fn explorer_get_name_by_host(host: String) -> Option<String> {
 }
 
 #[uniffi::export]
+pub fn sui_encode_transfer(
+    input: &sui::model::SuiTransferInput,
+) -> Result<sui::model::SuiTxOutput, GemstoneError> {
+    sui::encode_transfer(input).map_err(GemstoneError::from)
+}
+
+#[uniffi::export]
+pub fn sui_encode_token_transfer(
+    input: &sui::model::SuiTokenTransferInput,
+) -> Result<sui::model::SuiTxOutput, GemstoneError> {
+    sui::encode_token_transfer(input).map_err(GemstoneError::from)
+}
+
+#[uniffi::export]
 pub fn sui_encode_split_stake(
-    input: &sui::SuiStakeInput,
-) -> Result<sui::SuiStakeOutput, GemstoneError> {
-    sui::encode_split_and_stake(input).map_err(|op| GemstoneError::AnyError {
-        msg: op.to_string(),
-    })
+    input: &sui::model::SuiStakeInput,
+) -> Result<sui::model::SuiTxOutput, GemstoneError> {
+    sui::encode_split_and_stake(input).map_err(GemstoneError::from)
+}
+
+#[uniffi::export]
+pub fn sui_encode_unstake(
+    input: &sui::model::SuiUnstakeInput,
+) -> Result<sui::model::SuiTxOutput, GemstoneError> {
+    sui::encode_unstake(input).map_err(GemstoneError::from)
 }
 
 #[derive(uniffi::Object)]

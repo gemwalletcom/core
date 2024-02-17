@@ -23,7 +23,7 @@ bcs = "0.1.6"
 sui-types = { git = "https://github.com/mystenlabs/sui", package = "sui-types", rev = "f5b55da420b2ed2c8bea46ff7ab62709d49f9c2e" }
 indexmap = { workspace = true }
 blake2 = { workspace = true }
-
+base64 = { workspace = true }
 hex = { workspace = true }
 thiserror = { workspace = true }
 anyhow = { workspace = true }

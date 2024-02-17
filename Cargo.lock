@@ -2719,6 +2719,7 @@ version = "0.1.1"
 dependencies = [
  "anyhow",
  "async-std",
+ "base64 0.21.7",
  "bcs",
  "blake2",
  "hex",

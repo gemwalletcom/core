@@ -48,35 +48,35 @@ build-targets:
 
 
 bindgen-swift:
-	mkdir -p $(GEN_SWIFT_FOLDER)
-	cargo build --$(BUILD_MODE)
+	@mkdir -p $(GEN_SWIFT_FOLDER)
+	@cargo build --$(BUILD_MODE)
 	cargo run -p uniffi-bindgen generate src/$(UDL_NAME) --language swift --lib-file $(TARGET_DIR)/$(BUILD_MODE_TARGET)/$(DY_LIB_NAME)  -o $(GEN_SWIFT_FOLDER)
-	# append framework prefix
-	sed -i '' 's/module\ $(FW_FFI_NAME)/framework\ module\ $(FW_FFI_NAME)/' $(GEN_SWIFT_FOLDER)/$(MODULE_MAP)
+	@# append framework prefix
+	@sed -i '' 's/module\ $(FW_FFI_NAME)/framework\ module\ $(FW_FFI_NAME)/' $(GEN_SWIFT_FOLDER)/$(MODULE_MAP)
 
 bindgen-kotlin:
-	mkdir -p $(GEN_KOTLIN_FOLDER)
-	cargo build --$(BUILD_MODE)
+	@mkdir -p $(GEN_KOTLIN_FOLDER)
+	@cargo build --$(BUILD_MODE)
 	cargo run -p uniffi-bindgen generate src/$(UDL_NAME) --language kotlin --lib-file $(TARGET_DIR)/$(BUILD_MODE_TARGET)/$(DY_LIB_NAME) -o $(GEN_KOTLIN_FOLDER)
-	# strip uniffi_ prefix
-	sed -i '' 's/return "uniffi_$(FW_NAME)"/return "$(LIB_NAME)"/' $(GEN_KOTLIN_FOLDER)/uniffi/$(FW_NAME)/$(FW_NAME).kt
+	@# strip uniffi_ prefix
+	@sed -i '' 's/return "uniffi_$(FW_NAME)"/return "$(LIB_NAME)"/' $(GEN_KOTLIN_FOLDER)/uniffi/$(FW_NAME)/$(FW_NAME).kt
 
 assemble-frameworks:
-	cd $(TARGET_DIR) && find . -type d -name $(FW_FFI_FILE) | xargs rm -rf
-	cd $(TARGET_DIR)/aarch64-apple-ios-sim/$(BUILD_MODE_TARGET) && mkdir -p $(FW_FFI_FILE) && cd $(FW_FFI_FILE) && mkdir Headers Modules Resources && cp ../../../../$(LIB_NAME)/$(GEN_SWIFT_FOLDER)/$(MODULE_MAP) ./Modules/module.modulemap && cp ../../../../$(LIB_NAME)/$(GEN_SWIFT_FOLDER)/$(FW_FFI_NAME).h ./Headers && cp ../$(STATIC_LIB_NAME) ./$(FW_FFI_NAME) && cp ../../../../$(LIB_NAME)/src/Info.plist ./Resources
-	cd $(TARGET_DIR)/aarch64-apple-ios/$(BUILD_MODE_TARGET) && mkdir -p $(FW_FFI_FILE) && cd $(FW_FFI_FILE) && mkdir Headers Modules Resources && cp ../../../../$(LIB_NAME)/$(GEN_SWIFT_FOLDER)/$(MODULE_MAP) ./Modules/module.modulemap && cp ../../../../$(LIB_NAME)/$(GEN_SWIFT_FOLDER)/$(FW_FFI_NAME).h ./Headers && cp ../$(STATIC_LIB_NAME) ./$(FW_FFI_NAME) && cp ../../../../$(LIB_NAME)/src/Info.plist ./Resources
-	cd $(TARGET_DIR)/aarch64-apple-ios-macabi/$(BUILD_MODE_TARGET) && mkdir -p $(FW_FFI_FILE) && cd $(FW_FFI_FILE) && mkdir Headers Modules Resources && cp ../../../../$(LIB_NAME)/$(GEN_SWIFT_FOLDER)/$(MODULE_MAP) ./Modules/module.modulemap && cp ../../../../$(LIB_NAME)/$(GEN_SWIFT_FOLDER)/$(FW_FFI_NAME).h ./Headers && cp ../$(STATIC_LIB_NAME) ./$(FW_FFI_NAME) && cp ../../../../$(LIB_NAME)/src/Info.plist ./Resources	
+	@cd $(TARGET_DIR) && find . -type d -name $(FW_FFI_FILE) | xargs rm -rf
+	@cd $(TARGET_DIR)/aarch64-apple-ios-sim/$(BUILD_MODE_TARGET) && mkdir -p $(FW_FFI_FILE) && cd $(FW_FFI_FILE) && mkdir Headers Modules Resources && cp ../../../../$(LIB_NAME)/$(GEN_SWIFT_FOLDER)/$(MODULE_MAP) ./Modules/module.modulemap && cp ../../../../$(LIB_NAME)/$(GEN_SWIFT_FOLDER)/$(FW_FFI_NAME).h ./Headers && cp ../$(STATIC_LIB_NAME) ./$(FW_FFI_NAME) && cp ../../../../$(LIB_NAME)/src/Info.plist ./Resources
+	@cd $(TARGET_DIR)/aarch64-apple-ios/$(BUILD_MODE_TARGET) && mkdir -p $(FW_FFI_FILE) && cd $(FW_FFI_FILE) && mkdir Headers Modules Resources && cp ../../../../$(LIB_NAME)/$(GEN_SWIFT_FOLDER)/$(MODULE_MAP) ./Modules/module.modulemap && cp ../../../../$(LIB_NAME)/$(GEN_SWIFT_FOLDER)/$(FW_FFI_NAME).h ./Headers && cp ../$(STATIC_LIB_NAME) ./$(FW_FFI_NAME) && cp ../../../../$(LIB_NAME)/src/Info.plist ./Resources
+	@cd $(TARGET_DIR)/aarch64-apple-ios-macabi/$(BUILD_MODE_TARGET) && mkdir -p $(FW_FFI_FILE) && cd $(FW_FFI_FILE) && mkdir Headers Modules Resources && cp ../../../../$(LIB_NAME)/$(GEN_SWIFT_FOLDER)/$(MODULE_MAP) ./Modules/module.modulemap && cp ../../../../$(LIB_NAME)/$(GEN_SWIFT_FOLDER)/$(FW_FFI_NAME).h ./Headers && cp ../$(STATIC_LIB_NAME) ./$(FW_FFI_NAME) && cp ../../../../$(LIB_NAME)/src/Info.plist ./Resources	
 
 xcframework:
-	rm -rf $(TARGET_XC_FW_FOLDER)/Sources/$(XC_FW_FFI_NAME) && mkdir -p $(TARGET_XC_FW_FOLDER)/Sources
-	xcodebuild -create-xcframework -framework $(TARGET_DIR)/aarch64-apple-ios/$(BUILD_MODE_TARGET)/$(FW_FFI_FILE) -framework $(TARGET_DIR)/aarch64-apple-ios-sim/$(BUILD_MODE_TARGET)/$(FW_FFI_FILE) -framework $(TARGET_DIR)/aarch64-apple-ios-macabi/$(BUILD_MODE_TARGET)/$(FW_FFI_FILE) -output $(TARGET_XC_FW_FOLDER)/Sources/$(XC_FW_FFI_NAME)
+	@rm -rf $(TARGET_XC_FW_FOLDER)/Sources/$(XC_FW_FFI_NAME) && mkdir -p $(TARGET_XC_FW_FOLDER)/Sources
+	@xcodebuild -create-xcframework -framework $(TARGET_DIR)/aarch64-apple-ios/$(BUILD_MODE_TARGET)/$(FW_FFI_FILE) -framework $(TARGET_DIR)/aarch64-apple-ios-sim/$(BUILD_MODE_TARGET)/$(FW_FFI_FILE) -framework $(TARGET_DIR)/aarch64-apple-ios-macabi/$(BUILD_MODE_TARGET)/$(FW_FFI_FILE) -output $(TARGET_XC_FW_FOLDER)/Sources/$(XC_FW_FFI_NAME)
 
 cp-xcframework-source:
-	mkdir -p $(TARGET_XC_FW_FOLDER)/Sources/$(FW_NAME)
-	cp src/Package.swift $(TARGET_XC_FW_FOLDER)
-	cp $(GEN_SWIFT_FOLDER)/${FW_NAME}.swift $(TARGET_XC_FW_FOLDER)/Sources/$(FW_NAME)
+	@mkdir -p $(TARGET_XC_FW_FOLDER)/Sources/$(FW_NAME)
+	@cp src/Package.swift $(TARGET_XC_FW_FOLDER)
+	@cp $(GEN_SWIFT_FOLDER)/${FW_NAME}.swift $(TARGET_XC_FW_FOLDER)/Sources/$(FW_NAME)
 
 android:
-	#make sure you install sdkman and jdk17
-	cp -Rf $(GEN_KOTLIN_FOLDER)/uniffi tests/android/GemTest/app/src/main/java
+	@# make sure you install sdkman and jdk17
+	@cp -Rf $(GEN_KOTLIN_FOLDER)/uniffi tests/android/GemTest/app/src/main/java
 	cd tests/android/GemTest && ./gradlew cargoBuild --info
