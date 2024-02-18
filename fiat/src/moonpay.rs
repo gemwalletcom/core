@@ -135,22 +135,22 @@ impl MoonPayClient {
     }
 
     pub fn map_asset(asset: Asset) -> Option<FiatProviderAsset> {
+        // include some, bttc missing contract address
+        if ["bttc"].contains(&asset.code.as_str()) {
+            return None;
+        }
         let chain = Self::map_asset_chain(asset.clone())?;
-        let token_id = match asset.clone().metadata?.contract_address {
-            Some(contract_address) => {
-                if [
+        let token_id = asset
+            .clone()
+            .metadata?
+            .contract_address
+            .filter(|contract_address| {
+                ![
                     "0x0000000000000000000000000000000000001010",
                     "0x0000000000000000000000000000000000000000",
                 ]
                 .contains(&contract_address.as_str())
-                {
-                    None
-                } else {
-                    Some(contract_address)
-                }
-            }
-            None => return None,
-        };
+            });
 
         Some(FiatProviderAsset {
             chain,
