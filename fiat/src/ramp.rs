@@ -123,6 +123,7 @@ impl RampClient {
             "COSMOS" => Some(Chain::Cosmos),
             "BTC" => Some(Chain::Bitcoin),
             "DOGE" => Some(Chain::Doge),
+            "FANTOM" => Some(Chain::Fantom),
             _ => None,
         }
     }

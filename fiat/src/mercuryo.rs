@@ -159,6 +159,7 @@ impl MercuryoClient {
             "FANTOM" => Some(Chain::Fantom),
             "DOGECOIN" => Some(Chain::Doge),
             "CELESTIAL" => Some(Chain::Celestia),
+            "NEWTON" => Some(Chain::Ton),
             _ => None,
         }
     }

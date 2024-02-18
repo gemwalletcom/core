@@ -176,6 +176,9 @@ impl MoonPayClient {
             "dogecoin" => Some(Chain::Doge),
             "litecoin" => Some(Chain::Litecoin),
             "ripple" => Some(Chain::Xrp),
+            "sui" => Some(Chain::Sui),
+            "ton" => Some(Chain::Ton),
+            "cosmos" => Some(Chain::Cosmos),
             _ => None,
         }
     }
