@@ -1,5 +1,7 @@
+use crate::model::FiatProviderAsset;
 use crate::model::{FiatClient, FiatMapping};
 use async_trait::async_trait;
+use primitives::Chain;
 use primitives::{
     fiat_provider::FiatProviderName, fiat_quote::FiatQuote, fiat_quote_request::FiatBuyRequest,
 };
@@ -55,6 +57,19 @@ impl FiatClient for RampClient {
 
         Ok(self.get_fiat_quote(request.clone(), quote))
     }
+
+    async fn get_assets(
+        &self,
+    ) -> Result<Vec<FiatProviderAsset>, Box<dyn std::error::Error + Send + Sync>> {
+        let assets = self
+            .get_assets("USD".to_string(), "127.0.0.0".to_string())
+            .await?
+            .assets
+            .into_iter()
+            .flat_map(Self::map_asset)
+            .collect::<Vec<FiatProviderAsset>>();
+        Ok(assets)
+    }
 }
 
 impl RampClient {
@@ -79,6 +94,37 @@ impl RampClient {
             .json::<QuoteAssets>()
             .await?;
         Ok(assets)
+    }
+
+    pub fn map_asset(asset: QuoteAsset) -> Option<FiatProviderAsset> {
+        let chain = Self::map_asset_chain(asset.chain.clone())?;
+        let token_id = asset.address.clone();
+        Some(FiatProviderAsset {
+            chain,
+            token_id,
+            symbol: asset.symbol,
+            network: Some(asset.chain),
+        })
+    }
+
+    pub fn map_asset_chain(chain: String) -> Option<Chain> {
+        match chain.as_str() {
+            "ETH" => Some(Chain::Ethereum),
+            "SOLANA" => Some(Chain::Solana),
+            "OPTIMISM" => Some(Chain::Optimism),
+            "MATIC" => Some(Chain::Polygon),
+            "XRP" => Some(Chain::Xrp),
+            "TRON" => Some(Chain::Tron),
+            "ARBITRUM" => Some(Chain::Arbitrum),
+            "BASE" => Some(Chain::Base),
+            "LTC" => Some(Chain::Litecoin),
+            "AVAX" => Some(Chain::AvalancheC),
+            "BSC" => Some(Chain::SmartChain),
+            "COSMOS" => Some(Chain::Cosmos),
+            "BTC" => Some(Chain::Bitcoin),
+            "DOGE" => Some(Chain::Doge),
+            _ => None,
+        }
     }
 
     async fn get_client_quote(
@@ -151,9 +197,10 @@ pub struct QuoteData {
 #[derive(Debug, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct QuoteAsset {
-    symbol: String,
-    chain: String,
-    decimals: u32,
+    pub symbol: String,
+    pub chain: String,
+    pub decimals: u32,
+    pub address: Option<String>,
     //enabled: bool,
     //hidden: bool,
 }

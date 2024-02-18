@@ -1,10 +1,10 @@
 use async_trait::async_trait;
 use primitives::{
     fiat_provider::FiatProviderName, fiat_quote::FiatQuote, fiat_quote_request::FiatBuyRequest,
+    Chain,
 };
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, sync::Arc};
-use storage::models::FiatRate;
 
 pub struct FiatRequestMap {
     pub crypto_currency: String,
@@ -14,7 +14,7 @@ pub struct FiatRequestMap {
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct FiatRates {
-    pub rates: Vec<FiatRate>,
+    pub rates: Vec<storage::models::FiatRate>,
 }
 
 // mappings
@@ -22,6 +22,14 @@ pub struct FiatRates {
 #[serde(rename_all = "camelCase")]
 pub struct FiatMapping {
     pub symbol: String,
+    pub network: Option<String>,
+}
+
+#[derive(Debug, Clone)]
+pub struct FiatProviderAsset {
+    pub chain: Chain,
+    pub symbol: String,
+    pub token_id: Option<String>,
     pub network: Option<String>,
 }
 
@@ -35,6 +43,9 @@ pub trait FiatClient {
         request: FiatBuyRequest,
         request_map: FiatMapping,
     ) -> Result<FiatQuote, Box<dyn std::error::Error + Send + Sync>>;
+    async fn get_assets(
+        &self,
+    ) -> Result<Vec<FiatProviderAsset>, Box<dyn std::error::Error + Send + Sync>>;
 }
 
 #[async_trait]
@@ -52,5 +63,11 @@ where
         request_map: FiatMapping,
     ) -> Result<FiatQuote, Box<dyn std::error::Error + Send + Sync>> {
         (**self).get_quote(request, request_map).await
+    }
+
+    async fn get_assets(
+        &self,
+    ) -> Result<Vec<FiatProviderAsset>, Box<dyn std::error::Error + Send + Sync>> {
+        (**self).get_assets().await
     }
 }

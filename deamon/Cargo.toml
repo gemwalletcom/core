@@ -12,3 +12,4 @@ settings = { path = "../settings" }
 storage = { path = "../storage" }
 api_connector = { path = "../api_connector" }
 primitives = { path = "../primitives" }
+fiat = { path = "../fiat" }

@@ -1,4 +1,4 @@
-use crate::model::{FiatClient, FiatMapping};
+use crate::model::{FiatClient, FiatMapping, FiatProviderAsset};
 use async_trait::async_trait;
 use primitives::{
     fiat_provider::FiatProviderName, fiat_quote::FiatQuote, fiat_quote_request::FiatBuyRequest,
@@ -66,6 +66,12 @@ impl FiatClient for TransakClient {
             .response;
 
         Ok(self.get_fiat_quote(request, transak_quote))
+    }
+
+    async fn get_assets(
+        &self,
+    ) -> Result<Vec<FiatProviderAsset>, Box<dyn std::error::Error + Send + Sync>> {
+        Ok(vec![])
     }
 }
 

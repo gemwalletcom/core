@@ -15,4 +15,5 @@ futures = { workspace = true }
 storage = { path = "../storage" }
 async-trait = { workspace = true }
 primitives = { path = "../primitives" }
+settings = { path = "../settings" }
 hex = { workspace = true }

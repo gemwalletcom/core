@@ -27,6 +27,7 @@ pub use self::asset_details::{AssetDetails, AssetFull, AssetLinks};
 pub mod fiat_assets;
 pub mod fiat_quote;
 pub mod tokenlist;
+pub use self::fiat_assets::FiatAsset;
 pub use self::fiat_assets::FiatAssets;
 pub mod fiat_provider;
 pub mod fiat_quote_request;

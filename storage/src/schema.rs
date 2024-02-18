@@ -100,7 +100,9 @@ diesel::table! {
 diesel::table! {
     fiat_assets (id) {
         id -> Int4,
+        #[max_length = 128]
         asset_id -> Varchar,
+        #[max_length = 128]
         provider -> Varchar,
         symbol -> Varchar,
         network -> Nullable<Varchar>,

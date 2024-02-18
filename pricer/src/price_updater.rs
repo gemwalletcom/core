@@ -3,7 +3,7 @@ use crate::coingecko::{CoinGeckoClient, CoinInfo, CoinMarket};
 use crate::price_mapper::get_chain_for_coingecko_id;
 use crate::DEFAULT_FIAT_CURRENCY;
 use primitives::chain::Chain;
-use primitives::{Asset, AssetDetails, AssetId, AssetLinks, EthereumAddress};
+use primitives::{Asset, AssetDetails, AssetId, AssetLinks};
 use std::collections::HashSet;
 use std::error::Error;
 use std::thread;
@@ -233,7 +233,7 @@ impl PriceUpdater {
                     if platform.contract_address.is_empty() || platform.decimal_place.is_none() {
                         return None;
                     }
-                    let token_id = format_token_id(chain, platform.contract_address)?;
+                    let token_id = AssetId::format_token_id(chain, platform.contract_address)?;
                     let decimals = platform.decimal_place.unwrap_or_default();
                     let asset_id = AssetId {
                         chain,
@@ -393,43 +393,6 @@ fn get_asset_id(chain: Chain, token_id: String) -> Option<String> {
     if token_id.is_empty() {
         return Some(chain.as_ref().to_string());
     }
-    let token_id = format_token_id(chain, token_id)?;
+    let token_id = AssetId::format_token_id(chain, token_id)?;
     format!("{}_{}", chain.as_ref(), token_id).into()
-}
-
-fn format_token_id(chain: Chain, token_id: String) -> Option<String> {
-    match chain {
-        Chain::Ethereum
-        | Chain::SmartChain
-        | Chain::Polygon
-        | Chain::Arbitrum
-        | Chain::Optimism
-        | Chain::Base
-        | Chain::AvalancheC
-        | Chain::OpBNB
-        | Chain::Fantom
-        | Chain::Gnosis
-        | Chain::Manta => Some(EthereumAddress::parse(&token_id)?.to_checksum()),
-        Chain::Solana | Chain::Sui => Some(token_id),
-        Chain::Tron => {
-            if token_id.len() == 34 && token_id.starts_with('T') {
-                Some(token_id)
-            } else {
-                None
-            }
-        }
-        Chain::Bitcoin
-        | Chain::Litecoin
-        | Chain::Binance
-        | Chain::Thorchain
-        | Chain::Cosmos
-        | Chain::Osmosis
-        | Chain::Celestia
-        | Chain::Ton
-        | Chain::Doge
-        | Chain::Aptos
-        | Chain::Xrp
-        | Chain::Injective
-        | Chain::Sei => None,
-    }
 }

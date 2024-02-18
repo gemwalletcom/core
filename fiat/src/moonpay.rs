@@ -1,9 +1,10 @@
-use crate::model::{FiatClient, FiatMapping};
+use crate::model::{FiatClient, FiatMapping, FiatProviderAsset};
 use async_trait::async_trait;
 use base64::{engine::general_purpose, Engine as _};
 use hmac::{Hmac, Mac};
 use primitives::{
     fiat_provider::FiatProviderName, fiat_quote::FiatQuote, fiat_quote_request::FiatBuyRequest,
+    Chain,
 };
 use reqwest::Client;
 use serde::Deserialize;
@@ -31,6 +32,20 @@ pub struct MoonPayClient {
     client: Client,
     api_key: String,
     secret_key: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Asset {
+    pub code: String,
+    pub metadata: Option<CurrencyMetadata>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CurrencyMetadata {
+    pub contract_address: Option<String>,
+    pub network_code: String,
 }
 
 #[async_trait]
@@ -69,6 +84,18 @@ impl FiatClient for MoonPayClient {
 
         Ok(self.get_fiat_quote(request, quote))
     }
+
+    async fn get_assets(
+        &self,
+    ) -> Result<Vec<FiatProviderAsset>, Box<dyn std::error::Error + Send + Sync>> {
+        let assets = self
+            .get_assets()
+            .await?
+            .into_iter()
+            .flat_map(Self::map_asset)
+            .collect::<Vec<FiatProviderAsset>>();
+        Ok(assets)
+    }
 }
 
 impl MoonPayClient {
@@ -93,6 +120,64 @@ impl MoonPayClient {
         let ip_address_result = response.json::<MoonPayIpAddress>().await?;
 
         Ok(ip_address_result)
+    }
+
+    pub async fn get_assets(&self) -> Result<Vec<Asset>, Box<dyn std::error::Error + Send + Sync>> {
+        let url = format!("{}/v3/currencies", MOONPAY_API_BASE_URL);
+        let assets = self
+            .client
+            .get(&url)
+            .send()
+            .await?
+            .json::<Vec<Asset>>()
+            .await?;
+        Ok(assets)
+    }
+
+    pub fn map_asset(asset: Asset) -> Option<FiatProviderAsset> {
+        let chain = Self::map_asset_chain(asset.clone())?;
+        let token_id = match asset.clone().metadata?.contract_address {
+            Some(contract_address) => {
+                if [
+                    "0x0000000000000000000000000000000000001010",
+                    "0x0000000000000000000000000000000000000000",
+                ]
+                .contains(&contract_address.as_str())
+                {
+                    None
+                } else {
+                    Some(contract_address)
+                }
+            }
+            None => return None,
+        };
+
+        Some(FiatProviderAsset {
+            chain,
+            token_id,
+            symbol: asset.code,
+            network: None,
+        })
+    }
+
+    pub fn map_asset_chain(asset: Asset) -> Option<Chain> {
+        match asset.metadata?.network_code.as_str() {
+            "ethereum" => Some(Chain::Ethereum),
+            "binance_smart_chain" => Some(Chain::SmartChain),
+            "solana" => Some(Chain::Solana),
+            "arbitrum" => Some(Chain::Arbitrum),
+            "base" => Some(Chain::Base),
+            "avalanche_c_chain" => Some(Chain::AvalancheC),
+            "optimism" => Some(Chain::Optimism),
+            "polygon" => Some(Chain::Polygon),
+            "tron" => Some(Chain::Tron),
+            "aptos" => Some(Chain::Aptos),
+            "bitcoin" => Some(Chain::Bitcoin),
+            "dogecoin" => Some(Chain::Doge),
+            "litecoin" => Some(Chain::Litecoin),
+            "ripple" => Some(Chain::Xrp),
+            _ => None,
+        }
     }
 
     fn get_fiat_quote(&self, request: FiatBuyRequest, quote: MoonPayBuyQuote) -> FiatQuote {

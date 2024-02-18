@@ -66,6 +66,18 @@ impl DatabaseClient {
             .execute(&mut self.connection)
     }
 
+    // fiat
+    pub fn add_fiat_assets(
+        &mut self,
+        values: Vec<FiatAsset>,
+    ) -> Result<usize, diesel::result::Error> {
+        use crate::schema::fiat_assets::dsl::*;
+        diesel::insert_into(fiat_assets)
+            .values(values)
+            .on_conflict_do_nothing()
+            .execute(&mut self.connection)
+    }
+
     pub fn get_fiat_assets(&mut self) -> Result<Vec<FiatAsset>, diesel::result::Error> {
         use crate::schema::fiat_assets::dsl::*;
         fiat_assets
@@ -74,14 +86,8 @@ impl DatabaseClient {
     }
 
     pub fn get_fiat_assets_version(&mut self) -> Result<i32, diesel::result::Error> {
-        let version = self
-            .get_fiat_assets()?
-            .iter()
-            .map(|x| x.id)
-            .collect::<Vec<i32>>()
-            .iter()
-            .sum();
-        Ok(version)
+        let version = self.get_fiat_assets()?.len();
+        Ok(version as i32)
     }
 
     pub fn get_fiat_assets_for_asset_id(

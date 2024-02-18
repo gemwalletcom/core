@@ -1,7 +1,7 @@
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Queryable, Selectable, Insertable, AsChangeset, Serialize, Deserialize)]
+#[derive(Debug, Queryable, Selectable, Insertable, AsChangeset, Serialize, Deserialize, Clone)]
 #[diesel(table_name = crate::schema::fiat_rates)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct FiatRate {
@@ -10,15 +10,25 @@ pub struct FiatRate {
     pub rate: f64,
 }
 
-#[derive(Debug, Queryable, Selectable)]
+#[derive(Debug, Queryable, Selectable, Insertable, AsChangeset, Clone)]
 #[diesel(table_name = crate::schema::fiat_assets)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct FiatAsset {
-    pub id: i32,
     pub asset_id: String,
     pub provider: String,
     pub symbol: String,
     pub network: Option<String>,
+}
+
+impl FiatAsset {
+    pub fn from_primitive(asset: primitives::FiatAsset) -> Self {
+        Self {
+            asset_id: asset.asset_id.to_string(),
+            provider: asset.provider,
+            symbol: asset.symbol,
+            network: asset.network,
+        }
+    }
 }
 
 #[derive(Debug, Queryable, Selectable)]

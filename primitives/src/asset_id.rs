@@ -3,7 +3,7 @@ use std::{fmt, str::FromStr};
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
-use crate::chain::Chain;
+use crate::{chain::Chain, EthereumAddress};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Codable, Hashable")]
@@ -52,6 +52,43 @@ impl AssetId {
 
     pub fn is_native(&self) -> bool {
         self.token_id.is_none()
+    }
+
+    pub fn format_token_id(chain: Chain, token_id: String) -> Option<String> {
+        match chain {
+            Chain::Ethereum
+            | Chain::SmartChain
+            | Chain::Polygon
+            | Chain::Arbitrum
+            | Chain::Optimism
+            | Chain::Base
+            | Chain::AvalancheC
+            | Chain::OpBNB
+            | Chain::Fantom
+            | Chain::Gnosis
+            | Chain::Manta => Some(EthereumAddress::parse(&token_id)?.to_checksum()),
+            Chain::Solana | Chain::Sui => Some(token_id),
+            Chain::Tron => {
+                if token_id.len() == 34 && token_id.starts_with('T') {
+                    Some(token_id)
+                } else {
+                    None
+                }
+            }
+            Chain::Bitcoin
+            | Chain::Litecoin
+            | Chain::Binance
+            | Chain::Thorchain
+            | Chain::Cosmos
+            | Chain::Osmosis
+            | Chain::Celestia
+            | Chain::Ton
+            | Chain::Doge
+            | Chain::Aptos
+            | Chain::Xrp
+            | Chain::Injective
+            | Chain::Sei => None,
+        }
     }
 }
 
