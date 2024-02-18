@@ -34,32 +34,19 @@ prepare-android:
 	rustup target add aarch64-linux-android
 	rustup target add armv7-linux-androideabi
 
-apple:
-	@make build-targets
-	@make bindgen-swift
-	@make assemble-frameworks
-	@make xcframework
-	@make cp-xcframework-source
+apple: build-targets bindgen-swift assemble-frameworks xcframework cp-xcframework-source
+
+bindgen: bindgen-swift bindgen-kotlin
 
 build-targets:
-	cargo build --lib --target aarch64-apple-ios-sim --$(BUILD_MODE)
-	cargo build --lib --target aarch64-apple-ios --$(BUILD_MODE)
+	cargo build --target aarch64-apple-ios-sim --target aarch64-apple-ios --$(BUILD_MODE)
 	cargo +$(NIGHTLY) build -Z build-std --lib --target aarch64-apple-ios-macabi --$(BUILD_MODE)
-
 
 bindgen-swift:
 	@mkdir -p $(GEN_SWIFT_FOLDER)
-	@cargo build --$(BUILD_MODE)
 	cargo run -p uniffi-bindgen generate src/$(UDL_NAME) --language swift --lib-file $(TARGET_DIR)/$(BUILD_MODE_TARGET)/$(DY_LIB_NAME)  -o $(GEN_SWIFT_FOLDER)
 	@# append framework prefix
 	@sed -i '' 's/module\ $(FW_FFI_NAME)/framework\ module\ $(FW_FFI_NAME)/' $(GEN_SWIFT_FOLDER)/$(MODULE_MAP)
-
-bindgen-kotlin:
-	@mkdir -p $(GEN_KOTLIN_FOLDER)
-	@cargo build --$(BUILD_MODE)
-	cargo run -p uniffi-bindgen generate src/$(UDL_NAME) --language kotlin --lib-file $(TARGET_DIR)/$(BUILD_MODE_TARGET)/$(DY_LIB_NAME) -o $(GEN_KOTLIN_FOLDER)
-	@# strip uniffi_ prefix
-	@sed -i '' 's/return "uniffi_$(FW_NAME)"/return "$(LIB_NAME)"/' $(GEN_KOTLIN_FOLDER)/uniffi/$(FW_NAME)/$(FW_NAME).kt
 
 assemble-frameworks:
 	@cd $(TARGET_DIR) && find . -type d -name $(FW_FFI_FILE) | xargs rm -rf
@@ -76,7 +63,13 @@ cp-xcframework-source:
 	@cp src/Package.swift $(TARGET_XC_FW_FOLDER)
 	@cp $(GEN_SWIFT_FOLDER)/${FW_NAME}.swift $(TARGET_XC_FW_FOLDER)/Sources/$(FW_NAME)
 
+bindgen-kotlin:
+	@mkdir -p $(GEN_KOTLIN_FOLDER)
+	cargo run -p uniffi-bindgen generate src/$(UDL_NAME) --language kotlin --lib-file $(TARGET_DIR)/$(BUILD_MODE_TARGET)/$(DY_LIB_NAME) -o $(GEN_KOTLIN_FOLDER)
+	@# strip uniffi_ prefix
+	@sed -i '' 's/return "uniffi_$(FW_NAME)"/return "$(LIB_NAME)"/' $(GEN_KOTLIN_FOLDER)/uniffi/$(FW_NAME)/$(FW_NAME).kt
+
 android:
 	@# make sure you install sdkman and jdk17
 	@cp -Rf $(GEN_KOTLIN_FOLDER)/uniffi tests/android/GemTest/app/src/main/java
-	cd tests/android/GemTest && ./gradlew cargoBuild --info
+	@cd tests/android/GemTest && ./gradlew cargoBuild --warn
