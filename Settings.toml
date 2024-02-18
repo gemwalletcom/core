@@ -68,6 +68,9 @@ url = "https://aptosnames.com"
 [name.injective]
 url = "https://injective-rest.publicnode.com"
 
+[name.icns]
+url = "https://lcd-osmosis.keplr.app"
+
 [metrics]
 path = "/metrics"
 

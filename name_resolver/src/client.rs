@@ -5,7 +5,7 @@ use primitives::chain::Chain;
 use primitives::name::{NameProvider, NameRecord};
 
 use crate::{
-    aptos::AptosClient, did::DidClient, ens::ENSClient, eths::EthsClient,
+    aptos::AptosClient, did::DidClient, ens::ENSClient, eths::EthsClient, icns::IcnsClient,
     injective::InjectiveNameClient, sns::SNSClient, spaceid::SpaceIdClient, suins::SuinsClient,
     ton::TONClient, ud::UDClient,
 };
@@ -30,6 +30,7 @@ pub struct Client {
     suins_client: SuinsClient,
     aptos_client: AptosClient,
     injective_client: InjectiveNameClient,
+    icns_client: IcnsClient,
 }
 
 impl Client {
@@ -45,6 +46,7 @@ impl Client {
         suins_api_url: String,
         aptos_api_url: String,
         injective_api_url: String,
+        icns_api_url: String,
     ) -> Self {
         let domains_mapping = Self::domains_mapping();
         let ens_client = ENSClient::new(ens_url);
@@ -57,7 +59,7 @@ impl Client {
         let suins_client: SuinsClient = SuinsClient::new(suins_api_url);
         let aptos_client: AptosClient = AptosClient::new(aptos_api_url);
         let injective_client: InjectiveNameClient = InjectiveNameClient::new(injective_api_url);
-
+        let icns_client: IcnsClient = IcnsClient::new(icns_api_url);
         Self {
             domains_mapping,
             ens_client,
@@ -70,6 +72,7 @@ impl Client {
             suins_client,
             aptos_client,
             injective_client,
+            icns_client,
         }
     }
 
@@ -144,6 +147,12 @@ impl Client {
                 }
                 self.injective_client.resolve(name, chain).await
             }
+            NameProvider::Icns => {
+                if !IcnsClient::chains().contains(&chain) {
+                    return Err("not supported chain".to_string().into());
+                }
+                self.icns_client.resolve(name, chain).await
+            }
         }
     }
 
@@ -188,6 +197,11 @@ impl Client {
 
         for domain in InjectiveNameClient::domains() {
             result.insert(domain, NameProvider::Injective);
+        }
+
+        // Icns also supports `.inj`, needs to change domain mapping to an array of providers
+        for domain in IcnsClient::domains() {
+            result.insert(domain, NameProvider::Icns);
         }
 
         result
