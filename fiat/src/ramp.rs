@@ -37,8 +37,8 @@ impl FiatClient for RampClient {
 
         let crypto_asset_symbol = format!(
             "{}_{}",
+            request_map.network.unwrap_or_default(),
             request_map.symbol,
-            request_map.network.unwrap_or_default()
         );
 
         if !assets
@@ -213,7 +213,7 @@ pub struct QuoteAssets {
 
 impl QuoteAsset {
     pub fn crypto_asset_symbol(&self) -> String {
-        format!("{}_{}", self.symbol, self.chain)
+        format!("{}_{}", self.chain, self.symbol)
     }
 }
 
