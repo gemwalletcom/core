@@ -75,6 +75,7 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
         settings.name.suins.url,
         settings.name.aptos.url,
         settings.name.injective.url,
+        settings.name.icns.url,
     );
 
     let pusher_client = PusherClient::new(settings.pusher.url);
