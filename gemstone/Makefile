@@ -44,6 +44,7 @@ build-targets:
 
 bindgen-swift:
 	@mkdir -p $(GEN_SWIFT_FOLDER)
+	cargo build --$(BUILD_MODE)
 	cargo run -p uniffi-bindgen generate src/$(UDL_NAME) --language swift --lib-file $(TARGET_DIR)/$(BUILD_MODE_TARGET)/$(DY_LIB_NAME)  -o $(GEN_SWIFT_FOLDER)
 	@# append framework prefix
 	@sed -i '' 's/module\ $(FW_FFI_NAME)/framework\ module\ $(FW_FFI_NAME)/' $(GEN_SWIFT_FOLDER)/$(MODULE_MAP)
@@ -65,6 +66,7 @@ cp-xcframework-source:
 
 bindgen-kotlin:
 	@mkdir -p $(GEN_KOTLIN_FOLDER)
+	cargo build --$(BUILD_MODE)
 	cargo run -p uniffi-bindgen generate src/$(UDL_NAME) --language kotlin --lib-file $(TARGET_DIR)/$(BUILD_MODE_TARGET)/$(DY_LIB_NAME) -o $(GEN_KOTLIN_FOLDER)
 	@# strip uniffi_ prefix
 	@sed -i '' 's/return "uniffi_$(FW_NAME)"/return "$(LIB_NAME)"/' $(GEN_KOTLIN_FOLDER)/uniffi/$(FW_NAME)/$(FW_NAME).kt
