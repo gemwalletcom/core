@@ -28,7 +28,7 @@ impl SpaceIdClient {
 #[async_trait]
 impl NameClient for SpaceIdClient {
     fn provider() -> NameProvider {
-        NameProvider::SpaceId
+        NameProvider::Spaceid
     }
 
     async fn resolve(&self, name: &str, chain: Chain) -> Result<NameRecord, Box<dyn Error>> {
