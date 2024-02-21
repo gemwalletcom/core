@@ -1,5 +1,5 @@
 //TODO: remove later once get method is irrelevant
-#![allow(clippy::blocks_in_if_conditions)]
+#![allow(clippy::blocks_in_conditions)]
 
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
