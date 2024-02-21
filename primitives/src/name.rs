@@ -30,4 +30,5 @@ pub enum NameProvider {
     Aptos,
     Injective,
     Icns,
+    Placeholder(String),
 }

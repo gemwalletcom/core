@@ -78,12 +78,11 @@ impl NameClient for InjectiveNameClient {
             .json::<ResolverDataResponse>()
             .await?;
 
-        //TODO: Use provider: self.provider
         Ok(NameRecord {
             name: name.to_string(),
             chain,
             address: response.data.address,
-            provider: NameProvider::SpaceId,
+            provider: Self::provider(),
         })
     }
 
