@@ -153,7 +153,7 @@ impl Client {
                 }
                 self.icns_client.resolve(name, chain).await
             }
-            NameProvider::Placeholder(_) => {
+            NameProvider::Placeholder => {
                 panic!("this should be only used in the case when new provider added to core/backend and app hasn't updated yet")
             }
         }
