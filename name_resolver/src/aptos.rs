@@ -2,7 +2,7 @@ use crate::client::NameClient;
 use async_trait::async_trait;
 use primitives::{
     chain::Chain,
-    name::{NameProvider, NameRecord},
+    name::{NameProvider},
 };
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
@@ -24,7 +24,7 @@ impl AptosClient {
         Self { url, client }
     }
 
-    async fn resolve_name(&self, name: &str) -> Result<String, Box<dyn Error>> {
+    async fn resolve_name(&self, name: &str) -> Result<String, Box<dyn Error + Send + Sync>> {
         let url = format!("{}/api/mainnet/v1/address/{}", self.url, name);
         let response = self
             .client
@@ -40,30 +40,24 @@ impl AptosClient {
 
 #[async_trait]
 impl NameClient for AptosClient {
-    fn provider() -> NameProvider {
+    fn provider(&self) -> NameProvider {
         NameProvider::Aptos
     }
 
-    async fn resolve(&self, name: &str, chain: Chain) -> Result<NameRecord, Box<dyn Error>> {
-        match chain {
-            Chain::Aptos => {
-                let address = self.resolve_name(name).await?;
-                Ok(NameRecord {
-                    name: name.to_string(),
-                    chain,
-                    address,
-                    provider: Self::provider().as_ref().to_string(),
-                })
-            }
-            _ => return Err("error".to_string().into()),
-        }
+    async fn resolve(
+        &self,
+        name: &str,
+        _chain: Chain,
+    ) -> Result<String, Box<dyn Error + Send + Sync>> {
+        let address = self.resolve_name(name).await?;
+        Ok(address)
     }
 
-    fn domains() -> Vec<&'static str> {
+    fn domains(&self) -> Vec<&'static str> {
         vec!["apt"]
     }
 
-    fn chains() -> Vec<Chain> {
+    fn chains(&self) -> Vec<Chain> {
         vec![Chain::Aptos]
     }
 }

@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use std::error::Error;
 
 use crate::client::NameClient;
-use primitives::name::{NameProvider, NameRecord};
+use primitives::name::{NameProvider};
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct ResolveRecord {
@@ -26,28 +26,27 @@ impl EthsClient {
 
 #[async_trait]
 impl NameClient for EthsClient {
-    fn provider() -> NameProvider {
+    fn provider(&self) -> NameProvider {
         NameProvider::Tree
     }
 
-    async fn resolve(&self, name: &str, chain: Chain) -> Result<NameRecord, Box<dyn Error>> {
+    async fn resolve(
+        &self,
+        name: &str,
+        _chain: Chain,
+    ) -> Result<String, Box<dyn Error + Send + Sync>> {
         let url = format!("{}/resolve/{}", self.api_url, name);
         let record: ResolveRecord = self.client.get(&url).send().await?.json().await?;
         let address = record.owner;
 
-        Ok(NameRecord {
-            name: name.to_string(),
-            chain,
-            address,
-            provider: Self::provider().as_ref().to_string(),
-        })
+        Ok(address)
     }
 
-    fn domains() -> Vec<&'static str> {
+    fn domains(&self) -> Vec<&'static str> {
         vec!["tree", "eths", "honk"]
     }
 
-    fn chains() -> Vec<Chain> {
+    fn chains(&self) -> Vec<Chain> {
         vec![Chain::Ethereum, Chain::Polygon, Chain::SmartChain]
     }
 }

@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, error::Error};
 
 use crate::client::NameClient;
-use primitives::name::{NameProvider, NameRecord};
+use primitives::name::{NameProvider};
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct ResolveDomain {
@@ -30,20 +30,20 @@ impl UDClient {
 
     fn map(&self, chain: Chain, records: HashMap<String, String>) -> Option<String> {
         match chain {
-            Chain::Bitcoin => return records.get("crypto.BTC.address").cloned(),
-            Chain::Solana => return records.get("crypto.SOL.address").cloned(),
-            Chain::Ethereum => return records.get("crypto.ETH.address").cloned(),
-            Chain::Polygon => return records.get("crypto.MATIC.version.MATIC.address").cloned(),
-            Chain::Base => return records.get("crypto.ETH.address").cloned(),
-            Chain::Arbitrum => return records.get("crypto.ETH.address").cloned(),
-            Chain::Optimism => return records.get("crypto.ETH.address").cloned(),
-            Chain::AvalancheC => return records.get("crypto.ETH.address").cloned(),
-            Chain::Tron => return records.get("crypto.TRX.address").cloned(),
-            Chain::Cosmos => return records.get("crypto.ATOM.address").cloned(),
-            Chain::Doge => return records.get("crypto.DOGE.address").cloned(),
-            Chain::Binance => return records.get("crypto.BNB.version.BEP2.address").cloned(),
-            Chain::SmartChain => return records.get("crypto.BNB.version.BEP20.address").cloned(),
-            Chain::Aptos => return records.get("crypto.APT.address").cloned(),
+            Chain::Bitcoin => records.get("crypto.BTC.address").cloned(),
+            Chain::Solana => records.get("crypto.SOL.address").cloned(),
+            Chain::Ethereum => records.get("crypto.ETH.address").cloned(),
+            Chain::Polygon => records.get("crypto.MATIC.version.MATIC.address").cloned(),
+            Chain::Base => records.get("crypto.ETH.address").cloned(),
+            Chain::Arbitrum => records.get("crypto.ETH.address").cloned(),
+            Chain::Optimism => records.get("crypto.ETH.address").cloned(),
+            Chain::AvalancheC => records.get("crypto.ETH.address").cloned(),
+            Chain::Tron => records.get("crypto.TRX.address").cloned(),
+            Chain::Cosmos => records.get("crypto.ATOM.address").cloned(),
+            Chain::Doge => records.get("crypto.DOGE.address").cloned(),
+            Chain::Binance => records.get("crypto.BNB.version.BEP2.address").cloned(),
+            Chain::SmartChain => records.get("crypto.BNB.version.BEP20.address").cloned(),
+            Chain::Aptos => records.get("crypto.APT.address").cloned(),
             _ => None,
         }
     }
@@ -51,11 +51,15 @@ impl UDClient {
 
 #[async_trait]
 impl NameClient for UDClient {
-    fn provider() -> NameProvider {
+    fn provider(&self) -> NameProvider {
         NameProvider::Ud
     }
 
-    async fn resolve(&self, name: &str, chain: Chain) -> Result<NameRecord, Box<dyn Error>> {
+    async fn resolve(
+        &self,
+        name: &str,
+        chain: Chain,
+    ) -> Result<String, Box<dyn Error + Send + Sync>> {
         let url = format!("{}/resolve/domains/{}", self.api_url, name);
         let response = self
             .client
@@ -69,17 +73,12 @@ impl NameClient for UDClient {
 
         let address = self.map(chain, records);
         match address {
-            None => return Err("address not found".into()),
-            Some(address) => Ok(NameRecord {
-                name: name.to_string(),
-                chain,
-                address,
-                provider: Self::provider().as_ref().to_string(),
-            }),
+            None => Err("address not found".into()),
+            Some(address) => Ok(address),
         }
     }
 
-    fn domains() -> Vec<&'static str> {
+    fn domains(&self) -> Vec<&'static str> {
         // https://api.unstoppabledomains.com/resolve/supported_tlds
         vec![
             "crypto",
@@ -101,7 +100,7 @@ impl NameClient for UDClient {
         ]
     }
 
-    fn chains() -> Vec<Chain> {
+    fn chains(&self) -> Vec<Chain> {
         vec![
             Chain::Bitcoin,
             Chain::Ethereum,

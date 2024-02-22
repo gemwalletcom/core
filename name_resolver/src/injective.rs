@@ -3,7 +3,7 @@ use async_trait::async_trait;
 use base64::{engine::general_purpose, Engine as _};
 use primitives::{
     chain::Chain,
-    name::{NameProvider, NameRecord},
+    name::{NameProvider},
 };
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
@@ -52,11 +52,15 @@ impl InjectiveNameClient {
 
 #[async_trait]
 impl NameClient for InjectiveNameClient {
-    fn provider() -> NameProvider {
+    fn provider(&self) -> NameProvider {
         NameProvider::Injective
     }
 
-    async fn resolve(&self, name: &str, chain: Chain) -> Result<NameRecord, Box<dyn Error>> {
+    async fn resolve(
+        &self,
+        name: &str,
+        _chain: Chain,
+    ) -> Result<String, Box<dyn Error + Send + Sync>> {
         let hash = crate::ens_provider::namehash::namehash(name);
         let resolve = ResolverAddress {
             address: ResolverNode { node: hash },
@@ -78,19 +82,14 @@ impl NameClient for InjectiveNameClient {
             .json::<ResolverDataResponse>()
             .await?;
 
-        Ok(NameRecord {
-            name: name.to_string(),
-            chain,
-            address: response.data.address,
-            provider: Self::provider().as_ref().to_string(),
-        })
+        Ok(response.data.address)
     }
 
-    fn domains() -> Vec<&'static str> {
+    fn domains(&self) -> Vec<&'static str> {
         vec!["inj"]
     }
 
-    fn chains() -> Vec<Chain> {
+    fn chains(&self) -> Vec<Chain> {
         vec![Chain::Injective]
     }
 }

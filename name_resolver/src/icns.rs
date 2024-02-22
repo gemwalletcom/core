@@ -9,7 +9,7 @@ use std::{collections::HashMap, error::Error};
 use crate::client::NameClient;
 use primitives::{
     chain::Chain,
-    name::{NameProvider, NameRecord},
+    name::{NameProvider},
 };
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -48,11 +48,15 @@ impl IcnsClient {
 
 #[async_trait]
 impl NameClient for IcnsClient {
-    fn provider() -> NameProvider {
+    fn provider(&self) -> NameProvider {
         NameProvider::Icns
     }
 
-    async fn resolve(&self, name: &str, chain: Chain) -> Result<NameRecord, Box<dyn Error>> {
+    async fn resolve(
+        &self,
+        name: &str,
+        chain: Chain,
+    ) -> Result<String, Box<dyn Error + Send + Sync>> {
         let suffix = name.split('.').last().unwrap_or_default();
         if !DOMAIN_MAP.contains_key(suffix) {
             return Err(format!("unsupported domain: {}", suffix).into());
@@ -85,19 +89,14 @@ impl NameClient for IcnsClient {
             .data
             .bech32_address;
 
-        Ok(NameRecord {
-            name: name.into(),
-            chain,
-            address,
-            provider: Self::provider().as_ref().to_string(),
-        })
+        Ok(address)
     }
 
-    fn domains() -> Vec<&'static str> {
-        DOMAIN_MAP.keys().cloned().collect()
+    fn domains(&self) -> Vec<&'static str> {
+        vec![] // DOMAIN_MAP.keys().cloned().collect()
     }
 
-    fn chains() -> Vec<Chain> {
+    fn chains(&self) -> Vec<Chain> {
         DOMAIN_MAP.values().cloned().collect()
     }
 }

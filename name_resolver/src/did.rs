@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use std::error::Error;
 
 use crate::client::NameClient;
-use primitives::name::{NameProvider, NameRecord};
+use primitives::name::{NameProvider};
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Data<T> {
@@ -42,11 +42,15 @@ impl DidClient {
 
 #[async_trait]
 impl NameClient for DidClient {
-    fn provider() -> NameProvider {
+    fn provider(&self) -> NameProvider {
         NameProvider::Did
     }
 
-    async fn resolve(&self, name: &str, chain: Chain) -> Result<NameRecord, Box<dyn Error>> {
+    async fn resolve(
+        &self,
+        name: &str,
+        chain: Chain,
+    ) -> Result<String, Box<dyn Error + Send + Sync>> {
         let url = format!("{}/v2/account/records", self.api_url);
         let account = Account {
             account: name.to_string(),
@@ -67,19 +71,14 @@ impl NameClient for DidClient {
             .find(|r| r.key == format!("address.{}", chain.as_slip44()))
             .ok_or("address not found")?;
 
-        Ok(NameRecord {
-            name: name.to_string(),
-            chain,
-            address: record.value.clone(),
-            provider: Self::provider().as_ref().to_string(),
-        })
+        Ok(record.value.clone())
     }
 
-    fn domains() -> Vec<&'static str> {
+    fn domains(&self) -> Vec<&'static str> {
         vec!["bit"]
     }
 
-    fn chains() -> Vec<Chain> {
+    fn chains(&self) -> Vec<Chain> {
         Chain::all()
     }
 }

@@ -4045,6 +4045,7 @@ dependencies = [
  "reqwest",
  "serde",
  "serde_json",
+ "settings",
  "tokio-test",
  "ton_smart_contract_address",
 ]

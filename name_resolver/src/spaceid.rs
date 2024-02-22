@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use std::error::Error;
 
 use crate::client::NameClient;
-use primitives::name::{NameProvider, NameRecord};
+use primitives::name::{NameProvider};
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct ResolveRecord {
@@ -27,11 +27,15 @@ impl SpaceIdClient {
 
 #[async_trait]
 impl NameClient for SpaceIdClient {
-    fn provider() -> NameProvider {
+    fn provider(&self) -> NameProvider {
         NameProvider::Spaceid
     }
 
-    async fn resolve(&self, name: &str, chain: Chain) -> Result<NameRecord, Box<dyn Error>> {
+    async fn resolve(
+        &self,
+        name: &str,
+        _chain: Chain,
+    ) -> Result<String, Box<dyn Error + Send + Sync>> {
         let tld = name.split('.').clone().last().unwrap_or_default();
         let url = format!("{}/v1/getAddress?tld={}&domain={}", self.api_url, tld, name);
         let record: ResolveRecord = self.client.get(&url).send().await?.json().await?;
@@ -40,19 +44,14 @@ impl NameClient for SpaceIdClient {
         }
         let address = record.address;
 
-        Ok(NameRecord {
-            name: name.to_string(),
-            chain,
-            address,
-            provider: Self::provider().as_ref().to_string(),
-        })
+        Ok(address)
     }
 
-    fn domains() -> Vec<&'static str> {
+    fn domains(&self) -> Vec<&'static str> {
         vec!["bnb", "arb"]
     }
 
-    fn chains() -> Vec<Chain> {
+    fn chains(&self) -> Vec<Chain> {
         vec![Chain::SmartChain, Chain::Arbitrum]
     }
 }

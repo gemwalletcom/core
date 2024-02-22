@@ -37,6 +37,7 @@ use fiat::ramp::RampClient;
 use fiat::transak::TransakClient;
 use metrics_client::MetricsClient;
 use name_resolver::client::Client as NameClient;
+use name_resolver::NameProviderFactory;
 use node_client::Client as NodeClient;
 use parser_client::ParserClient;
 use pricer::client::PriceClient;
@@ -63,20 +64,8 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
         .unwrap();
     let node_client = NodeClient::new(database_client).await;
     let config_client = ConfigClient::new(postgres_url).await;
-    let name_client = NameClient::new(
-        settings.name.ens.url,
-        settings.name.ud.url,
-        settings.name.ud.key.secret,
-        settings.name.sns.url,
-        settings.name.ton.url,
-        settings.name.eths.url,
-        settings.name.spaceid.url,
-        settings.name.did.url,
-        settings.name.suins.url,
-        settings.name.aptos.url,
-        settings.name.injective.url,
-        settings.name.icns.url,
-    );
+    let providers = NameProviderFactory::create_providers(settings_clone.clone());
+    let name_client = NameClient::new(providers);
 
     let pusher_client = PusherClient::new(settings.pusher.url);
     let devices_client =

@@ -1,7 +1,7 @@
 use crate::client::NameClient;
 use async_trait::async_trait;
 use primitives::chain::Chain;
-use primitives::name::{NameProvider, NameRecord};
+use primitives::name::{NameProvider};
 use std::error::Error;
 
 use jsonrpsee::{
@@ -22,11 +22,15 @@ impl SuinsClient {
 
 #[async_trait]
 impl NameClient for SuinsClient {
-    fn provider() -> NameProvider {
+    fn provider(&self) -> NameProvider {
         NameProvider::Suins
     }
 
-    async fn resolve(&self, name: &str, chain: Chain) -> Result<NameRecord, Box<dyn Error>> {
+    async fn resolve(
+        &self,
+        name: &str,
+        _chain: Chain,
+    ) -> Result<String, Box<dyn Error + Send + Sync>> {
         let address = self
             .client
             .request(
@@ -34,19 +38,14 @@ impl NameClient for SuinsClient {
                 vec![serde_json::json!(name)],
             )
             .await?;
-        Ok(NameRecord {
-            name: name.to_string(),
-            chain,
-            address,
-            provider: Self::provider().as_ref().to_string(),
-        })
+        Ok(address)
     }
 
-    fn domains() -> Vec<&'static str> {
+    fn domains(&self) -> Vec<&'static str> {
         vec!["sui"]
     }
 
-    fn chains() -> Vec<Chain> {
+    fn chains(&self) -> Vec<Chain> {
         vec![Chain::Sui]
     }
 }

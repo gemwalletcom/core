@@ -8,11 +8,11 @@ use crate::tokenlist_updater::Client as TokenListClient;
 use crate::version_updater::Client as VersionClient;
 
 use api_connector::AssetsClient;
+use fiat::FiatProviderFactory;
 use fiat_assets_updater::FiatAssetsUpdater;
 use pricer::client::PriceClient;
 use pricer::coingecko::CoinGeckoClient;
 use pricer::price_updater::PriceUpdater;
-
 use std::thread;
 use std::time::Duration;
 
@@ -34,7 +34,7 @@ pub async fn main() {
     let assets_client = AssetsClient::new(settings.assets.url);
     let mut tokenlist_client = TokenListClient::new(&settings.postgres.url, &assets_client);
 
-    let providers = fiat::FiatProviderFactory::new_providers(settings::Settings::new().unwrap());
+    let providers = FiatProviderFactory::new_providers(settings::Settings::new().unwrap());
     let mut fiat_assets_updater = FiatAssetsUpdater::new(&settings.postgres.url, providers);
 
     // update fiat assets

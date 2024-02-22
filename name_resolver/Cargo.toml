@@ -14,6 +14,7 @@ jsonrpsee = { workspace = true }
 hex = { workspace = true }
 ton_smart_contract_address = "0.0.4"
 lazy_static = { workspace = true }
+settings = { path = "../settings" }
 
 [dev-dependencies]
 tokio-test = { version = "*" }

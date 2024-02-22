@@ -3,7 +3,7 @@ use crate::{client::NameClient, ton_codec};
 use async_trait::async_trait;
 use primitives::{
     chain::Chain,
-    name::{NameProvider, NameRecord},
+    name::{NameProvider},
 };
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
@@ -34,11 +34,15 @@ pub struct ResolveResponse {
 
 #[async_trait]
 impl NameClient for TONClient {
-    fn provider() -> NameProvider {
+    fn provider(&self) -> NameProvider {
         NameProvider::Ton
     }
 
-    async fn resolve(&self, name: &str, chain: Chain) -> Result<NameRecord, Box<dyn Error>> {
+    async fn resolve(
+        &self,
+        name: &str,
+        _chain: Chain,
+    ) -> Result<String, Box<dyn Error + Send + Sync>> {
         let url = format!("{}/v2/dns/{}/resolve", self.url, name);
         let response = self
             .client
@@ -49,19 +53,14 @@ impl NameClient for TONClient {
             .await?;
         // always encode as Bounceable address
         let encoded = ton_codec::TonCodec::encode(response.wallet.address.as_bytes().to_vec());
-        Ok(NameRecord {
-            name: name.to_string(),
-            chain,
-            address: encoded,
-            provider: Self::provider().as_ref().to_string(),
-        })
+        Ok(encoded)
     }
 
-    fn domains() -> Vec<&'static str> {
+    fn domains(&self) -> Vec<&'static str> {
         vec!["ton"]
     }
 
-    fn chains() -> Vec<Chain> {
+    fn chains(&self) -> Vec<Chain> {
         vec![Chain::Ton]
     }
 }

@@ -3,7 +3,7 @@ use crate::ens_provider::provider::Provider;
 use async_trait::async_trait;
 use primitives::{
     chain::Chain,
-    name::{NameProvider, NameRecord},
+    name::{NameProvider},
     EthereumAddress,
 };
 use std::{error::Error, str::FromStr};
@@ -22,25 +22,25 @@ impl ENSClient {
 
 #[async_trait]
 impl NameClient for ENSClient {
-    fn provider() -> NameProvider {
+    fn provider(&self) -> NameProvider {
         NameProvider::Ens
     }
 
-    async fn resolve(&self, name: &str, chain: Chain) -> Result<NameRecord, Box<dyn Error>> {
+    async fn resolve(
+        &self,
+        name: &str,
+        chain: Chain,
+    ) -> Result<String, Box<dyn Error + Send + Sync>> {
         let address = self.provider.resolve_name(name, chain).await?;
-        Ok(NameRecord {
-            name: name.to_string(),
-            chain,
-            address: EthereumAddress::from_str(&address)?.to_checksum(),
-            provider: Self::provider().as_ref().to_string(),
-        })
+        let address = EthereumAddress::from_str(&address)?.to_checksum();
+        Ok(address)
     }
 
-    fn domains() -> Vec<&'static str> {
+    fn domains(&self) -> Vec<&'static str> {
         vec!["eth"]
     }
 
-    fn chains() -> Vec<Chain> {
+    fn chains(&self) -> Vec<Chain> {
         vec![
             Chain::Ethereum,
             Chain::SmartChain,
