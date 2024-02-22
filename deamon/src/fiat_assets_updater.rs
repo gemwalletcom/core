@@ -4,11 +4,11 @@ use storage::database::DatabaseClient;
 
 pub struct FiatAssetsUpdater {
     database: DatabaseClient,
-    providers: Vec<Box<dyn FiatClient>>,
+    providers: Vec<Box<dyn FiatClient + Send + Sync>>,
 }
 
 impl FiatAssetsUpdater {
-    pub fn new(database_url: &str, providers: Vec<Box<dyn FiatClient>>) -> Self {
+    pub fn new(database_url: &str, providers: Vec<Box<dyn FiatClient + Send + Sync>>) -> Self {
         let database: DatabaseClient = DatabaseClient::new(database_url);
         Self {
             database,

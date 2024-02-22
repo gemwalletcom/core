@@ -13,7 +13,7 @@ use settings::Settings;
 
 pub struct FiatProviderFactory {}
 impl FiatProviderFactory {
-    pub fn new_providers(settings: Settings) -> Vec<Box<dyn FiatClient>> {
+    pub fn new_providers(settings: Settings) -> Vec<Box<dyn FiatClient + Send + Sync>> {
         let request_client = crate::client::Client::request_client(settings.fiat.timeout);
 
         let moonpay = MoonPayClient::new(

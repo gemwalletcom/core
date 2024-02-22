@@ -2,11 +2,7 @@ use std::collections::HashSet;
 use std::error::Error;
 use std::time::Duration;
 
-use crate::mercuryo::MercuryoClient;
 use crate::model::{FiatClient, FiatMapping, FiatMappingMap, FiatRates};
-use crate::moonpay::MoonPayClient;
-use crate::ramp::RampClient;
-use crate::transak::TransakClient;
 use futures::future::join_all;
 use primitives::{
     fiat_assets::FiatAssets, fiat_quote::FiatQuote, fiat_quote_request::FiatBuyRequest,
@@ -17,30 +13,19 @@ use storage::DatabaseClient;
 
 pub struct Client {
     database: DatabaseClient,
-    transak: TransakClient,
-    moonpay: MoonPayClient,
-    #[allow(dead_code)]
-    mercuryo: MercuryoClient,
-    #[allow(dead_code)]
-    ramp: RampClient,
+    providers: Vec<Box<dyn FiatClient + Send + Sync>>,
 }
 
 impl Client {
     pub async fn new(
         database_url: &str,
-        transak: TransakClient,
-        moonpay: MoonPayClient,
-        mercuryo: MercuryoClient,
-        ramp: RampClient,
+        providers: Vec<Box<dyn FiatClient + Send + Sync>>,
     ) -> Self {
         let database = DatabaseClient::new(database_url);
 
         Self {
             database,
-            transak,
-            moonpay,
-            mercuryo,
-            ramp,
+            providers,
         }
     }
 
@@ -51,7 +36,7 @@ impl Client {
             .unwrap()
     }
 
-    pub async fn get_assets(&mut self) -> Result<FiatAssets, Box<dyn Error>> {
+    pub async fn get_assets(&mut self) -> Result<FiatAssets, Box<dyn Error + Send + Sync>> {
         let assets = self
             .database
             .get_fiat_assets()?
@@ -73,42 +58,37 @@ impl Client {
         Ok(FiatRates { rates })
     }
 
-    pub fn get_fiat_mapping(&mut self, asset_id: &str) -> Result<FiatMappingMap, Box<dyn Error>> {
+    fn get_fiat_mapping(
+        &mut self,
+        asset_id: &str,
+    ) -> Result<FiatMappingMap, Box<dyn Error + Send + Sync>> {
         let list = self.database.get_fiat_assets_for_asset_id(asset_id)?;
-        let mut map: FiatMappingMap = FiatMappingMap::new();
-        list.into_iter().for_each(|x: storage::models::FiatAsset| {
-            map.insert(
-                x.provider,
-                FiatMapping {
-                    symbol: x.symbol,
-                    network: x.network,
-                },
-            );
-        });
+        let map: FiatMappingMap = list
+            .into_iter()
+            .map(|x| {
+                (
+                    x.provider,
+                    FiatMapping {
+                        symbol: x.symbol,
+                        network: x.network,
+                    },
+                )
+            })
+            .collect();
         Ok(map)
     }
 
     pub async fn get_quotes(
         &mut self,
         request: FiatBuyRequest,
-        fiat_mapping_map: FiatMappingMap,
     ) -> Result<Vec<FiatQuote>, Box<dyn Error + Send + Sync>> {
+        let fiat_mapping_map = self.get_fiat_mapping(&request.asset_id)?;
         let mut futures = vec![];
 
-        if let Some(value) = fiat_mapping_map.get(self.ramp.name().id().as_str()) {
-            futures.push(self.ramp.get_quote(request.clone(), value.clone()));
-        }
-
-        if let Some(value) = fiat_mapping_map.get(self.moonpay.name().id().as_str()) {
-            futures.push(self.moonpay.get_quote(request.clone(), value.clone()));
-        }
-
-        if let Some(value) = fiat_mapping_map.get(self.transak.name().id().as_str()) {
-            futures.push(self.transak.get_quote(request.clone(), value.clone()));
-        }
-
-        if let Some(value) = fiat_mapping_map.get(self.mercuryo.name().id().as_str()) {
-            futures.push(self.mercuryo.get_quote(request.clone(), value.clone()));
+        for provider in &self.providers {
+            if let Some(fiat_mapping) = fiat_mapping_map.get(provider.name().id().as_str()) {
+                futures.push(provider.get_quote(request.clone(), fiat_mapping.clone()));
+            }
         }
 
         let mut results: Vec<FiatQuote> = join_all(futures)

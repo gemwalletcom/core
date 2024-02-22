@@ -25,16 +25,7 @@ pub async fn get_fiat_quotes(
         fiat_currency: currency,
         wallet_address,
     };
-    let fiat_mapping = fiat_client
-        .lock()
-        .await
-        .get_fiat_mapping(asset_id.clone().as_str())
-        .unwrap_or_default();
-    let quotes = fiat_client
-        .lock()
-        .await
-        .get_quotes(request, fiat_mapping)
-        .await;
+    let quotes = fiat_client.lock().await.get_quotes(request).await;
     match quotes {
         Ok(value) => Json(FiatQuotes { quotes: value }),
         Err(_) => Json(FiatQuotes { quotes: vec![] }),

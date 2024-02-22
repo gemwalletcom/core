@@ -31,10 +31,7 @@ use asset_client::AssetsClient;
 use config_client::Client as ConfigClient;
 use device_client::DevicesClient;
 use fiat::client::Client as FiatClient;
-use fiat::mercuryo::MercuryoClient;
-use fiat::moonpay::MoonPayClient;
-use fiat::ramp::RampClient;
-use fiat::transak::TransakClient;
+use fiat::FiatProviderFactory;
 use metrics_client::MetricsClient;
 use name_resolver::client::Client as NameClient;
 use name_resolver::NameProviderFactory;
@@ -74,7 +71,7 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
     let subscriptions_client = SubscriptionsClient::new(postgres_url).await;
     let metrics_client = MetricsClient::new(postgres_url).await;
     let scan_client = ScanClient::new(postgres_url).await;
-    let parser_client = ParserClient::new(settings_clone).await;
+    let parser_client = ParserClient::new(settings_clone.clone()).await;
     let assets_client = AssetsClient::new(postgres_url).await;
     let oneinch_client = OneInchClient::new(
         settings.swap.oneinch.url,
@@ -94,20 +91,8 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
     );
     let swapper_client = SwapperClient::new(oneinch_client, jupiter_client, thorchain_swap_client);
     let swap_client = SwapClient::new(postgres_url, swapper_client).await;
-    let request_client = FiatClient::request_client(settings.fiat.timeout);
-    let transak = TransakClient::new(request_client.clone(), settings.transak.key.public);
-    let moonpay = MoonPayClient::new(
-        request_client.clone(),
-        settings.moonpay.key.public,
-        settings.moonpay.key.secret,
-    );
-    let mercuryo = MercuryoClient::new(
-        request_client.clone(),
-        settings.mercuryo.key.public,
-        settings.mercuryo.key.secret,
-    );
-    let ramp = RampClient::new(request_client.clone(), settings.ramp.key.public);
-    let fiat_client = FiatClient::new(postgres_url, transak, moonpay, mercuryo, ramp).await;
+    let providers = FiatProviderFactory::new_providers(settings_clone.clone());
+    let fiat_client = FiatClient::new(postgres_url, providers).await;
 
     rocket::build()
         .attach(AdHoc::on_ignite(
