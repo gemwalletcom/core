@@ -46,6 +46,7 @@ fn main() {
             let directory_paths: Vec<&str> = vec[1].split('/').collect();
             let mut directory_paths_capitalized = directory_paths
                 .iter()
+                .filter(|x| !x.starts_with('.'))
                 .map(|&x| str_capitlize(x))
                 .collect::<Vec<_>>();
 

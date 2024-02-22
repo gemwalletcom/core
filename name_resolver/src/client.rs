@@ -117,7 +117,7 @@ impl Client {
                 }
                 self.eths_client.resolve(name, chain).await
             }
-            NameProvider::SpaceId => {
+            NameProvider::Spaceid => {
                 if !SpaceIdClient::chains().contains(&chain) {
                     return Err("not supported chain".to_string().into());
                 }
@@ -180,7 +180,7 @@ impl Client {
         }
 
         for domain in SpaceIdClient::domains() {
-            result.insert(domain, NameProvider::SpaceId);
+            result.insert(domain, NameProvider::Spaceid);
         }
 
         for domain in DidClient::domains() {

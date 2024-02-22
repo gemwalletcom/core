@@ -32,7 +32,7 @@ struct SuiStatus {
 struct SuiEffects {
     gas_used: SuiGasUsed,
     status: SuiStatus,
-    created: Vec<SuiObjectChange>,
+    created: Option<Vec<SuiObjectChange>>,
 }
 
 #[typeshare]

@@ -1,6 +1,7 @@
 use crate::chain::Chain;
 use serde::Serialize;
-use strum_macros::{AsRefStr, EnumString};
+use strum::EnumString;
+use strum_macros::AsRefStr;
 use typeshare::typeshare;
 
 #[derive(Debug, Serialize)]
@@ -10,7 +11,7 @@ pub struct NameRecord {
     pub name: String,
     pub chain: Chain,
     pub address: String,
-    pub provider: NameProvider,
+    pub provider: String,
 }
 
 #[derive(Debug, Serialize, AsRefStr, EnumString)]
@@ -23,7 +24,7 @@ pub enum NameProvider {
     Sns,
     Ton,
     Tree,
-    SpaceId,
+    Spaceid,
     Eths,
     Did,
     Suins,

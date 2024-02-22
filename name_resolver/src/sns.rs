@@ -47,7 +47,7 @@ impl SNSClient {
             name: name.to_string(),
             chain: *chain,
             address,
-            provider: Self::provider(),
+            provider: Self::provider().as_ref().to_string(),
         })
     }
 
@@ -72,7 +72,7 @@ impl SNSClient {
             name: name.to_string(),
             chain: *chain,
             address: response.result,
-            provider: Self::provider(),
+            provider: Self::provider().as_ref().to_string(),
         })
     }
 }

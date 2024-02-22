@@ -157,7 +157,7 @@ pub fn sui_system_state_object() -> ObjectArg {
     }
 }
 
-pub fn validate_enough_balance(coins: &Vec<SuiCoin>, amount: u64) -> Option<anyhow::Error> {
+pub fn validate_enough_balance(coins: &[SuiCoin], amount: u64) -> Option<anyhow::Error> {
     if coins.is_empty() {
         return Some(anyhow!("coins list is empty"));
     }
@@ -169,7 +169,7 @@ pub fn validate_enough_balance(coins: &Vec<SuiCoin>, amount: u64) -> Option<anyh
             total_amount, amount
         ),));
     }
-    return None;
+    None
 }
 
 #[cfg(test)]
