@@ -38,7 +38,7 @@ impl NameClient for SuinsClient {
             name: name.to_string(),
             chain,
             address,
-            provider: Self::provider(),
+            provider: Self::provider().as_ref().to_string(),
         })
     }
 

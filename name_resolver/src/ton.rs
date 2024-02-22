@@ -53,7 +53,7 @@ impl NameClient for TONClient {
             name: name.to_string(),
             chain,
             address: encoded,
-            provider: Self::provider(),
+            provider: Self::provider().as_ref().to_string(),
         })
     }
 

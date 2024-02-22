@@ -52,7 +52,7 @@ impl NameClient for AptosClient {
                     name: name.to_string(),
                     chain,
                     address,
-                    provider: Self::provider(),
+                    provider: Self::provider().as_ref().to_string(),
                 })
             }
             _ => return Err("error".to_string().into()),

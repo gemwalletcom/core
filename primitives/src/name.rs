@@ -11,7 +11,7 @@ pub struct NameRecord {
     pub name: String,
     pub chain: Chain,
     pub address: String,
-    pub provider: NameProvider,
+    pub provider: String,
 }
 
 #[derive(Debug, Serialize, AsRefStr, EnumString)]
@@ -31,5 +31,4 @@ pub enum NameProvider {
     Aptos,
     Injective,
     Icns,
-    Placeholder,
 }

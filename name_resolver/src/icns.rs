@@ -89,7 +89,7 @@ impl NameClient for IcnsClient {
             name: name.into(),
             chain,
             address,
-            provider: Self::provider(),
+            provider: Self::provider().as_ref().to_string(),
         })
     }
 

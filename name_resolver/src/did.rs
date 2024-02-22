@@ -71,7 +71,7 @@ impl NameClient for DidClient {
             name: name.to_string(),
             chain,
             address: record.value.clone(),
-            provider: Self::provider(),
+            provider: Self::provider().as_ref().to_string(),
         })
     }
 
