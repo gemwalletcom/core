@@ -12,8 +12,9 @@ hmac = { workspace = true }
 sha2 = { workspace = true }
 base64 = { workspace = true }
 futures = { workspace = true }
-storage = { path = "../storage" }
 async-trait = { workspace = true }
-primitives = { path = "../primitives" }
-settings = { path = "../settings" }
 hex = { workspace = true }
+
+settings = { path = "../settings" }
+storage = { path = "../storage" }
+primitives = { path = "../primitives" }

@@ -1,0 +1,16 @@
+[package]
+name = "parser"
+version = { workspace = true }
+edition = { workspace = true }
+
+[dependencies]
+serde_json = { workspace = true }
+tokio = { workspace = true }
+futures = { workspace = true }
+
+primitives = { path = "../../crates/primitives" }
+storage = { path = "../../crates/storage" }
+settings = { path = "../../crates/settings" }
+settings_chain = { path = "../../crates/settings_chain" }
+blockchain = { path = "../../crates/blockchain" }
+api_connector = { path = "../../crates/api_connector" }

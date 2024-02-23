@@ -1784,6 +1784,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "daemon"
+version = "1.0.0"
+dependencies = [
+ "api_connector",
+ "fiat",
+ "pricer",
+ "primitives",
+ "reqwest",
+ "serde_json",
+ "settings",
+ "storage",
+ "tokio",
+]
+
+[[package]]
 name = "darling"
 version = "0.14.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1890,21 +1905,6 @@ checksum = "0047d07f2c89b17dd631c80450d69841a6b5d7fb17278cbc43d7e4cfcf2576f3"
 dependencies = [
  "data-encoding",
  "syn 1.0.109",
-]
-
-[[package]]
-name = "deamon"
-version = "1.0.0"
-dependencies = [
- "api_connector",
- "fiat",
- "pricer",
- "primitives",
- "reqwest",
- "serde_json",
- "settings",
- "storage",
- "tokio",
 ]
 
 [[package]]

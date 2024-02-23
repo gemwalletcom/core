@@ -4,4 +4,4 @@ version = { workspace = true }
 edition = { workspace = true }
 
 [dependencies]
-primitives = { path = "../../primitives" }
+primitives = { path = "../../crates/primitives" }

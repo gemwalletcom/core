@@ -1,0 +1,16 @@
+[package]
+name = "daemon"
+edition = { workspace = true }
+version = { workspace = true }
+
+[dependencies]
+serde_json = { workspace = true }
+tokio = { workspace = true }
+reqwest = { workspace = true }
+
+pricer = { path = "../../crates/pricer" }
+settings = { path = "../../crates/settings" }
+storage = { path = "../../crates/storage" }
+api_connector = { path = "../../crates/api_connector" }
+primitives = { path = "../../crates/primitives" }
+fiat = { path = "../../crates/fiat" }

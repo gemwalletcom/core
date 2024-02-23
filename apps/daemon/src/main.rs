@@ -18,7 +18,7 @@ use std::time::Duration;
 
 #[tokio::main]
 pub async fn main() {
-    println!("deamon init");
+    println!("daemon init");
     let settings = settings::Settings::new().unwrap();
     let price_client = PriceClient::new(
         &settings.redis.url,

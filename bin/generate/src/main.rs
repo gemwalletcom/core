@@ -12,7 +12,7 @@ static LANGUAGE_KOTLIN: &str = "kotlin";
 static LANG_KOTLIN_ETX: &str = "kt";
 
 fn main() {
-    let folders = vec!["blockchain", "primitives", "settings"];
+    let folders = vec!["crates/blockchain", "crates/primitives", "crates/settings"];
 
     let platform_str = std::env::args().nth(1).expect("no platform specified");
     let platform_directory_path = std::env::args().nth(2).expect("no path specified");
@@ -41,8 +41,12 @@ fn main() {
         let paths = get_paths(folder, format!("{}/src", folder));
 
         for path in paths {
+            // Example path:
+            // ./crates/primitives/src/utxo.rs
+            // ./crates/blockchain/src/tron/models/tron_smart_contract.rs
             let vec: Vec<&str> = path.split("/src/").collect();
-            let module_name = vec[0];
+            let first_parts: Vec<&str> = vec[0].split('/').collect();
+            let module_name = first_parts[1];
             let directory_paths: Vec<&str> = vec[1].split('/').collect();
             let mut directory_paths_capitalized = directory_paths
                 .iter()
@@ -76,7 +80,7 @@ fn main() {
                 continue;
             }
             //FIX: change input/output file for kotlin
-            let input_path = format!("./{}/src/{}", module_name, directory_paths.join("/"));
+            let input_path = format!("./{}/src/{}", vec[0], directory_paths.join("/"));
 
             let ios_output_path = output_path(
                 Platform::IOS,

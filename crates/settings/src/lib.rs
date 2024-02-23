@@ -1,3 +1,5 @@
+use std::env;
+
 use config::{Config, ConfigError, Environment, File};
 use serde::Deserialize;
 
@@ -19,7 +21,7 @@ pub struct Settings {
     pub assets: Assets,
     pub chains: Chains,
     pub parser: Parser,
-    pub deamon: Deamon,
+    pub daemon: Daemon,
     pub pusher: Pusher,
     pub swap: Swap,
 }
@@ -178,7 +180,7 @@ pub struct Parser {
 
 #[derive(Debug, Deserialize, Clone)]
 #[allow(unused)]
-pub struct Deamon {
+pub struct Daemon {
     pub service: String,
 }
 
@@ -220,8 +222,10 @@ pub struct SwapProvider {
 
 impl Settings {
     pub fn new() -> Result<Self, ConfigError> {
+        let current_dir = env::current_dir().unwrap();
+        let setting_path = current_dir.join("Settings.toml");
         let s = Config::builder()
-            .add_source(File::with_name("./Settings"))
+            .add_source(File::from(setting_path))
             .add_source(
                 Environment::with_prefix("")
                     .prefix_separator("")

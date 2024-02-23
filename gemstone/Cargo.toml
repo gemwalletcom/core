@@ -13,7 +13,7 @@ crate-type = [
 name = "gemstone"
 
 [dependencies]
-primitives = { path = "../primitives" }
+primitives = { path = "../crates/primitives" }
 
 async-std = "1.12.0"
 once_cell = "1.19.0"

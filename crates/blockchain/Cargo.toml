@@ -8,8 +8,6 @@ typeshare = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 async-trait = { workspace = true }
-primitives = { path = "../primitives" }
-name_resolver = { path = "../name_resolver" }
 chrono = { workspace = true }
 hex = { workspace = true }
 num-bigint = { workspace = true }
@@ -23,3 +21,6 @@ jsonrpsee = { workspace = true }
 curve25519-dalek = { workspace = true }
 thiserror = { workspace = true }
 futures = { workspace = true }
+
+primitives = { path = "../primitives" }
+name_resolver = { path = "../name_resolver" }

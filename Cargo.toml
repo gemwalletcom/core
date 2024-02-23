@@ -12,22 +12,31 @@ resolver = "2"
 members = [
     "bin/generate",
     "bin/uniffi-bindgen",
-    "primitives",
-    "blockchain",
-    "deamon",
-    "api",
-    "pricer",
-    "fiat",
-    "name_resolver",
-    "api_connector",
-    "parser",
-    "setup",
-    "settings",
-    "settings_chain",
+    "bin/setup",
+
+    "apps/api",
+    "apps/daemon",
+    "apps/parser",
+
     "gemstone",
+
+    "crates/primitives",
+    "crates/blockchain",
+    "crates/pricer",
+    "crates/fiat",
+    "crates/name_resolver",
+    "crates/api_connector",
+    "crates/settings",
+    "crates/settings_chain",
 ]
 
-default-members = ["bin/generate", "deamon", "api", "parser", "setup"]
+default-members = [
+    "bin/generate",
+    "bin/setup",
+    "apps/daemon",
+    "apps/api",
+    "apps/parser",
+]
 
 [workspace.dependencies]
 typeshare = "1.0.1"

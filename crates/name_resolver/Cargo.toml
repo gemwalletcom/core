@@ -8,13 +8,14 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 reqwest = { workspace = true }
 async-trait = { workspace = true }
-primitives = { path = "../primitives" }
 base64 = { workspace = true }
 jsonrpsee = { workspace = true }
 hex = { workspace = true }
-ton_smart_contract_address = "0.0.4"
 lazy_static = { workspace = true }
+
+ton_smart_contract_address = "0.0.4"
 settings = { path = "../settings" }
+primitives = { path = "../primitives" }
 
 [dev-dependencies]
 tokio-test = { version = "*" }
