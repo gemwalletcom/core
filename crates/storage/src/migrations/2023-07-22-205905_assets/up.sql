@@ -19,4 +19,6 @@ SELECT diesel_manage_updated_at('assets');
 INSERT INTO "assets" ("id", "chain", "asset_type", "name", "symbol", "decimals") VALUES 
     ('bitcoin', 'bitcoin', 'NATIVE', 'Bitcoin', 'BTC', 8), 
     ('ethereum', 'ethereum', 'NATIVE', 'Ethereum', 'ETH', 18),
-    ('binance', 'binance', 'NATIVE', 'BNB Chain', 'BNB', 8);
+    ('binance', 'binance', 'NATIVE', 'BNB Chain', 'BNB', 8),
+    ('polygon', 'polygon', 'NATIVE', 'Matic Token', 'MATIC', 18),
+    ('ethereum_0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', 'ethereum', 'ERC20', 'USDC', 'USDC', 6);
