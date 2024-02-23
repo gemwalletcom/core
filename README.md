@@ -12,7 +12,8 @@ Run `make install` to install rust, typeshare
 
 ### Setup DB
 
-- Setup a new role `username` and `api` database
+- Create a new database `api` and grant privileges to `username` role
+- Run `diesel migration run` to create tables and do migrations
 
 ### Chain Support
 
