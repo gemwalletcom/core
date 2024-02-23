@@ -51,7 +51,7 @@ services:
 
   parser:
     image: app
-    container_name: daemon
+    container_name: parser
     environment:
       BINARY: daemon
       POSTGRES_URL: "postgres://username:password@postgres/api"
