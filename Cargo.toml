@@ -10,12 +10,12 @@ documentation = "https://github.com/gemwalletcom"
 [workspace]
 resolver = "2"
 members = [
-    "bin/generate",
-    "bin/uniffi-bindgen",
     "apps/api",
     "apps/daemon",
     "apps/parser",
     "apps/setup",
+    "bin/generate",
+    "bin/uniffi-bindgen",
 
     "gemstone",
 
@@ -30,11 +30,11 @@ members = [
 ]
 
 default-members = [
-    "bin/generate",
-    "apps/setup",
-    "apps/daemon",
     "apps/api",
+    "apps/daemon",
     "apps/parser",
+    "apps/setup",
+    "bin/generate",
 ]
 
 [workspace.dependencies]
