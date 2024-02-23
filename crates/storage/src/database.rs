@@ -8,7 +8,7 @@ use diesel::prelude::*;
 use diesel::{upsert::excluded, Connection};
 use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
 use primitives::chain::Chain;
-pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("../storage/src/migrations");
+pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("src/migrations");
 use primitives::{AssetType, TransactionsFetchOption};
 
 pub struct DatabaseClient {
