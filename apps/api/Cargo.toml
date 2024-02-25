@@ -1,0 +1,21 @@
+[package]
+name = "api"
+edition = { workspace = true }
+version = { workspace = true }
+
+[dependencies]
+rocket = { workspace = true }
+serde = { workspace = true }
+tokio = { workspace = true }
+config = { workspace = true }
+prometheus-client = { workspace = true }
+
+storage = { path = "../../crates/storage" }
+pricer = { path = "../../crates/pricer" }
+fiat = { path = "../../crates/fiat" }
+swapper = { path = "../../crates/swapper" }
+settings = { path = "../../crates/settings" }
+settings_chain = { path = "../../crates/settings_chain" }
+name_resolver = { path = "../../crates/name_resolver" }
+primitives = { path = "../../crates/primitives" }
+api_connector = { path = "../../crates/api_connector" }

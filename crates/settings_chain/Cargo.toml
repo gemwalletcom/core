@@ -1,0 +1,13 @@
+[package]
+name = "settings_chain"
+version = { workspace = true }
+edition = { workspace = true }
+
+[dependencies]
+reqwest = { workspace = true }
+reqwest-middleware = { workspace = true }
+reqwest-retry = { workspace = true }
+
+primitives = { path = "../primitives" }
+blockchain = { path = "../blockchain" }
+settings = { path = "../settings" }

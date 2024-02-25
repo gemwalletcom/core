@@ -1,0 +1,10 @@
+[package]
+name = "setup"
+edition = { workspace = true }
+version = { workspace = true }
+
+[dependencies]
+tokio = { workspace = true }
+storage = { path = "../../crates/storage" }
+settings = { path = "../../crates/settings" }
+primitives = { path = "../../crates/primitives" }

@@ -21,7 +21,7 @@ FROM debian:bookworm AS runtime
 WORKDIR /app
 
 COPY --from=builder /app/target/release/api /app
-COPY --from=builder /app/target/release/deamon /app
+COPY --from=builder /app/target/release/daemon /app
 COPY --from=builder /app/target/release/parser /app
 COPY --from=builder /app/target/release/setup /app
 COPY --from=builder /app/Settings.toml /app

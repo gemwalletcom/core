@@ -28,3 +28,6 @@ fix:
 
 unused:
 	cargo machete
+
+migrate:
+	diesel migration run

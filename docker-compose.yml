@@ -36,11 +36,11 @@ services:
       - redis
       - postgres
 
-  deamon:
+  daemon:
     image: app
-    container_name: deamon
+    container_name: daemon
     environment:
-      BINARY: deamon
+      BINARY: daemon
       REDIS_URL: "redis://default:@redis:6379"
       POSTGRES_URL: "postgres://username:password@postgres/api"
     depends_on:
@@ -51,9 +51,9 @@ services:
 
   parser:
     image: app
-    container_name: deamon
+    container_name: parser
     environment:
-      BINARY: deamon
+      BINARY: parser
       POSTGRES_URL: "postgres://username:password@postgres/api"
     depends_on:
       - app_build

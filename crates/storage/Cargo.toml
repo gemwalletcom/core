@@ -1,0 +1,15 @@
+[package]
+name = "storage"
+version = { workspace = true }
+edition = { workspace = true }
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+redis = { workspace = true }
+diesel = { workspace = true }
+diesel_migrations = { workspace = true }
+chrono = { workspace = true }
+clickhouse = { workspace = true }
+
+primitives = { path = "../primitives" }
