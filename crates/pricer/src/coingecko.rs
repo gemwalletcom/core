@@ -33,6 +33,14 @@ pub struct CoinInfo {
     pub links: CoinMarketLinks,
     pub community_data: Option<CommunityData>,
     pub developer_data: Option<DeveloperData>,
+    pub image: Image,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Image {
+    pub thumb: String,
+    pub small: String,
+    pub large: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

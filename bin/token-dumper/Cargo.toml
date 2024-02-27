@@ -1,0 +1,10 @@
+[package]
+name = "token-dumper"
+version = { workspace = true }
+edition = { workspace = true }
+
+[dependencies]
+pricer = { path = "../../crates/pricer" }
+tokio = { workspace = true }
+reqwest = { workspace = true, features = ["stream"] }
+futures-util = { workspace = true }
