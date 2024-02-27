@@ -20,7 +20,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
     println!("Save path: {}", target_path);
 
     let folder = Path::new(target_path);
-
     if !folder.exists() {
         fs::create_dir_all(folder)?;
     }
@@ -45,14 +44,15 @@ async fn handle_coin(
     folder: &Path,
 ) -> Result<(), Box<dyn Error>> {
     let coin_info = client.get_coin(coin_id).await?;
+    println!("process: {}", coin_id);
     if is_native_asset(&coin_info) {
         return handle_native_asset(&coin_info, folder).await;
     }
 
-    for (platform, address) in coin_info.platforms.iter() {
+    for (platform, address) in coin_info.platforms.iter().filter(|(k, _)| !k.is_empty()) {
         let chain = get_chain_for_coingecko_id(platform);
-        if chain.is_none() {
-            println!("<== {} not supported, skip", platform);
+        if chain.is_none() || address.is_empty() {
+            // println!("<== {} not supported, skip", platform);
             continue;
         }
 
@@ -68,7 +68,7 @@ async fn handle_coin(
         path.push("assets");
         path.push(address_folder.clone());
         if path.exists() {
-            println!("<== {}/{} already exists, skip", chain, &address_folder);
+            // println!("<== {}/{} already exists, skip", chain, &address_folder);
             return Ok(());
         }
         fs::create_dir_all(path.clone())?;
@@ -92,7 +92,7 @@ async fn handle_native_asset(coin_info: &CoinInfo, folder: &Path) -> Result<(), 
     let image_url = coin_info.image.large.clone();
     let chain = get_chain_for_coingecko_id(coin_info.id.as_str());
     if chain.is_none() {
-        println!("<== {} not supported, skip", coin_info.id);
+        // println!("<== {} not supported, skip", coin_info.id);
         return Ok(());
     }
     let chain = chain.unwrap();
@@ -101,7 +101,7 @@ async fn handle_native_asset(coin_info: &CoinInfo, folder: &Path) -> Result<(), 
     let mut path = folder.join(chain.to_string());
     path.push("info");
     if path.exists() {
-        println!("<== {} native asset already exists, skip", chain);
+        // println!("<== {} native asset already exists, skip", chain);
         return Ok(());
     }
     fs::create_dir_all(path.clone())?;
