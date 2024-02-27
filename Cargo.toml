@@ -14,7 +14,7 @@ members = [
     "apps/daemon",
     "apps/parser",
     "apps/setup",
-    "bin/token-dumper",
+    "bin/img-downloader",
     "bin/generate",
     "bin/uniffi-bindgen",
 

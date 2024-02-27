@@ -1,10 +1,13 @@
 [package]
-name = "token-dumper"
+name = "img-downloader"
 version = { workspace = true }
 edition = { workspace = true }
 
 [dependencies]
-pricer = { path = "../../crates/pricer" }
 tokio = { workspace = true }
 reqwest = { workspace = true, features = ["stream"] }
 futures-util = { workspace = true }
+
+primitives = { path = "../../crates/primitives" }
+pricer = { path = "../../crates/pricer" }
+settings = { path = "../../crates/settings" }

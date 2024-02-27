@@ -28,7 +28,7 @@ pub struct CoinInfo {
     pub community_score: Option<f32>,
     pub watchlist_portfolio_users: Option<f32>,
     pub liquidity_score: Option<f32>,
-    //pub platforms: HashMap<String, Option<String>>,
+    pub platforms: HashMap<String, String>,
     pub detail_platforms: HashMap<String, Option<DetailPlatform>>,
     pub links: CoinMarketLinks,
     pub community_data: Option<CommunityData>,
