@@ -82,7 +82,7 @@ pub struct CoinMarket {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct CoinMarketLinks {
     pub homepage: Vec<String>,
-    pub blockchain_site: Vec<String>,
+    pub blockchain_site: Vec<Option<String>>,
     pub chat_url: Vec<String>,
     pub subreddit_url: Option<String>,
     pub twitter_screen_name: Option<String>,

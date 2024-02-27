@@ -272,7 +272,7 @@ impl PriceUpdater {
                 .clone()
                 .blockchain_site
                 .into_iter()
-                .filter(|x| !x.is_empty())
+                .filter(|x| !x.clone().unwrap_or("".to_string()).is_empty())
                 .collect::<Vec<_>>()
                 .first()
                 .cloned()
@@ -358,7 +358,7 @@ impl PriceUpdater {
 
         let links = AssetLinks {
             homepage,
-            explorer,
+            explorer: explorer.unwrap_or_default(),
             twitter,
             telegram,
             github,

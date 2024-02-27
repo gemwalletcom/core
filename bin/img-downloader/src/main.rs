@@ -43,8 +43,8 @@ async fn handle_coin(
     client: &CoinGeckoClient,
     folder: &Path,
 ) -> Result<(), Box<dyn Error>> {
-    let coin_info = client.get_coin(coin_id).await?;
     println!("process: {}", coin_id);
+    let coin_info = client.get_coin(coin_id).await?;
     if is_native_asset(&coin_info) {
         return handle_native_asset(&coin_info, folder).await;
     }
