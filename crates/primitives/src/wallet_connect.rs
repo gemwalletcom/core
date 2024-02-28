@@ -1,6 +1,11 @@
-#[derive(Debug, Serialize)]
+use serde::Serialize;
+use strum::{AsRefStr, EnumString};
+use typeshare::typeshare;
+
+#[derive(Debug, Serialize, AsRefStr, EnumString)]
 #[typeshare]
 #[serde(rename_all = "lowercase")]
+#[strum(serialize_all = "lowercase")]
 pub enum WallletConnectCAIP2 {
     #[serde(rename = "eip155")]
     Eip155,
@@ -8,6 +13,7 @@ pub enum WallletConnectCAIP2 {
     Solana,
 }
 
+#[derive(Debug, Serialize)]
 #[typeshare(swift = "Equatable, Codable, Hashable")]
 #[serde(rename_all = "camelCase")]
 struct WCEthereumTransaction {
@@ -24,12 +30,14 @@ struct WCEthereumTransaction {
     data: Option<String>,
 }
 
+#[derive(Debug, Serialize)]
 #[typeshare(swift = "Equatable, Codable, Hashable")]
 #[serde(rename_all = "camelCase")]
 struct WCSolanaTransaction {
     transaction: String,
 }
 
+#[derive(Debug, Serialize)]
 #[typeshare(swift = "Equatable, Codable, Hashable")]
 #[serde(rename_all = "camelCase")]
 struct WCSolanaSignMessage {
@@ -37,6 +45,7 @@ struct WCSolanaSignMessage {
     pubkey: String,
 }
 
+#[derive(Debug, Serialize)]
 #[typeshare(swift = "Equatable, Codable, Hashable")]
 #[serde(rename_all = "camelCase")]
 struct WCSolanaSignMessageResult {

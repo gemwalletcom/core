@@ -1,8 +1,11 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, str::FromStr};
+
+use primitives::Chain;
 
 pub mod config;
 pub mod explorer;
 pub mod sui;
+pub mod wallet_connect;
 
 uniffi::include_scaffolding!("gemstone");
 static LIB_VERSION: &str = "0.1.1";
@@ -83,5 +86,25 @@ impl Config {
 
     fn get_validators(&self) -> HashMap<String, Vec<String>> {
         config::get_validators()
+    }
+}
+
+#[derive(uniffi::Object)]
+struct WalletConnectNamespace {}
+#[uniffi::export]
+impl WalletConnectNamespace {
+    #[uniffi::constructor]
+    fn new() -> Self {
+        Self {}
+    }
+
+    fn get_namespace(&self, chain: String) -> Option<String> {
+        let chain = Chain::from_str(&chain).ok()?;
+        wallet_connect::get_namespace(chain)
+    }
+
+    fn get_reference(&self, chain: String) -> Option<String> {
+        let chain = Chain::from_str(&chain).ok()?;
+        wallet_connect::get_reference(chain)
     }
 }

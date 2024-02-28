@@ -71,3 +71,5 @@ pub use self::transaction_metadata_types::TransactionSwapMetadata;
 pub mod numer_formatter;
 pub use self::numer_formatter::NumberFormatter;
 pub mod keccak;
+pub mod wallet_connect;
+pub use self::wallet_connect::WallletConnectCAIP2;
