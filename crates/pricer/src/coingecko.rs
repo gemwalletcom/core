@@ -28,11 +28,19 @@ pub struct CoinInfo {
     pub community_score: Option<f32>,
     pub watchlist_portfolio_users: Option<f32>,
     pub liquidity_score: Option<f32>,
-    //pub platforms: HashMap<String, Option<String>>,
+    pub platforms: HashMap<String, String>,
     pub detail_platforms: HashMap<String, Option<DetailPlatform>>,
     pub links: CoinMarketLinks,
     pub community_data: Option<CommunityData>,
     pub developer_data: Option<DeveloperData>,
+    pub image: Image,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Image {
+    pub thumb: String,
+    pub small: String,
+    pub large: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -74,7 +82,7 @@ pub struct CoinMarket {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct CoinMarketLinks {
     pub homepage: Vec<String>,
-    pub blockchain_site: Vec<String>,
+    pub blockchain_site: Vec<Option<String>>,
     pub chat_url: Vec<String>,
     pub subreddit_url: Option<String>,
     pub twitter_screen_name: Option<String>,

@@ -1,0 +1,14 @@
+[package]
+name = "img-downloader"
+version = { workspace = true }
+edition = { workspace = true }
+
+[dependencies]
+tokio = { workspace = true }
+reqwest = { workspace = true, features = ["stream"] }
+futures-util = { workspace = true }
+clap = { version = "4.5.1", features = ["derive"] }
+
+primitives = { path = "../../crates/primitives" }
+pricer = { path = "../../crates/pricer" }
+settings = { path = "../../crates/settings" }

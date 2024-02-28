@@ -14,6 +14,7 @@ members = [
     "apps/daemon",
     "apps/parser",
     "apps/setup",
+    "bin/img-downloader",
     "bin/generate",
     "bin/uniffi-bindgen",
 
@@ -56,6 +57,7 @@ thiserror = { version = "1.0.57" }
 anyhow = { version = "1.0" }
 indexmap = "2.2.2"
 lazy_static = "1.4.0"
+futures-util = "0.3.30"
 
 # db
 diesel = { version = "2.1.4", features = ["postgres", "chrono", "serde_json"] }
