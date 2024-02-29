@@ -81,7 +81,7 @@ impl CosmosClient {
         Some(
             coins
                 .into_iter()
-                .filter(|x| x.denom == self.chain.clone().as_denom())
+                .filter(|x| x.denom == self.chain.clone().as_denom().unwrap_or_default())
                 .collect::<Vec<_>>()
                 .first()?
                 .amount
@@ -97,7 +97,7 @@ impl CosmosClient {
         let chain = self.get_chain();
         let tx_auth = transaction.tx.auth_info.clone()?;
         let sequence = tx_auth.signer_infos.first()?.sequence;
-        let default_denom = self.chain.as_denom();
+        let default_denom = self.chain.as_denom().unwrap();
         let fee = tx_auth
             .fee?
             .amount
@@ -128,14 +128,16 @@ impl CosmosClient {
                         serde_json::from_value(reciept.tx.body.messages.first()?.clone()).ok()?;
                     let amount = message.amount.first()?.clone();
 
-                    asset_id = if amount.denom == self.chain.as_denom() {
+                    asset_id = if amount.denom == self.chain.as_denom().unwrap() {
                         self.get_chain().as_asset_id()
                     } else {
                         AssetId::from(self.chain, Some(amount.denom.clone()))
                     };
                     transaction_type = TransactionType::Transfer;
                     value = if asset_id.is_native() {
-                        message.get_amount(self.chain.as_denom())?.to_string()
+                        message
+                            .get_amount(self.chain.as_denom().unwrap())?
+                            .to_string()
                     } else {
                         message.get_amount(&asset_id.token_id.clone()?)?.to_string()
                     };
@@ -178,7 +180,7 @@ impl CosmosClient {
 
                     asset_id = chain.as_asset_id();
                     value = reciept
-                        .get_rewards_value(self.chain.as_denom())
+                        .get_rewards_value(self.chain.as_denom().unwrap())
                         .unwrap_or_default()
                         .to_string();
                     transaction_type = TransactionType::StakeRewards;

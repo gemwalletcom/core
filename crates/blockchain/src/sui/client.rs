@@ -54,8 +54,8 @@ impl SuiClient {
 
         // system transfer
         if balance_changes.len() == 2
-            && balance_changes[0].coin_type == chain.as_denom()
-            && balance_changes[1].coin_type == chain.as_denom()
+            && balance_changes[0].coin_type == chain.as_denom().unwrap()
+            && balance_changes[1].coin_type == chain.as_denom().unwrap()
         {
             let (from_change, to_change) = if balance_changes[0].amount.contains('-') {
                 (balance_changes[0].clone(), balance_changes[1].clone())

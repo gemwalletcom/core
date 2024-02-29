@@ -39,6 +39,7 @@ struct Downloader {
     args: Args,
     client: CoinGeckoClient,
     ignore_chains: Vec<primitives::Chain>,
+    cool_down: Duration,
 }
 
 impl Downloader {
@@ -49,6 +50,7 @@ impl Downloader {
             args,
             client,
             ignore_chains,
+            cool_down: Duration::new(0, 300_000_000),
         }
     }
 
@@ -78,7 +80,7 @@ impl Downloader {
         println!("==> process: {}", coin_id);
         let coin_info = self.client.get_coin(coin_id).await?;
         if self.is_native_asset(&coin_info) {
-            return self.handle_native_asset(&coin_info, folder).await;
+            return Ok(());
         }
 
         for (platform, address) in coin_info.platforms.iter().filter(|(k, _)| !k.is_empty()) {
@@ -95,6 +97,14 @@ impl Downloader {
                 continue;
             }
 
+            if let Some(denom) = chain.as_denom() {
+                if denom == address {
+                    if self.args.verbose {
+                        println!("<== skip native denom: {}", denom);
+                    }
+                    continue;
+                }
+            }
             let mut address_folder = address.clone();
             if chain.chain_type() == primitives::ChainType::Ethereum {
                 address_folder = EthereumAddress::from_str(address)?.to_checksum();
@@ -117,8 +127,7 @@ impl Downloader {
             println!("==> download image for {}/{}", chain, address);
             crate::download_image(&image_url, path.to_str().unwrap()).await?;
 
-            // sleep for 300ms
-            sleep(Duration::new(0, 300_000_000));
+            sleep(self.cool_down);
         }
 
         Ok(())
@@ -126,39 +135,6 @@ impl Downloader {
 
     fn is_native_asset(&self, coin_info: &CoinInfo) -> bool {
         coin_info.platforms.keys().filter(|p| !p.is_empty()).count() == 0
-    }
-
-    async fn handle_native_asset(
-        &self,
-        coin_info: &CoinInfo,
-        folder: &Path,
-    ) -> Result<(), Box<dyn Error>> {
-        let image_url = coin_info.image.large.clone();
-        let chain = get_chain_for_coingecko_id(coin_info.id.as_str());
-        if chain.is_none() {
-            if self.args.verbose {
-                println!("<== {} not supported, skip", coin_info.id);
-            }
-            return Ok(());
-        }
-        let chain = chain.unwrap();
-
-        // build <folder>/ethereum/info/logo.png
-        let mut path = folder.join(chain.to_string());
-        path.push("info");
-        if path.exists() {
-            // println!("<== {} native asset already exists, skip", chain);
-            return Ok(());
-        }
-        fs::create_dir_all(path.clone())?;
-        path = path.join("logo.png");
-        if self.args.verbose {
-            println!("==> download image for native asset: {}", chain);
-        }
-        download_image(&image_url, path.to_str().unwrap()).await?;
-        // sleep for 300ms
-        sleep(Duration::new(0, 300_000_000));
-        Ok(())
     }
 }
 

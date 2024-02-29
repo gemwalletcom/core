@@ -55,17 +55,18 @@ impl fmt::Display for Chain {
 }
 
 impl Chain {
-    pub fn as_denom(&self) -> &str {
+    pub fn as_denom(&self) -> Option<&str> {
         match self {
-            Self::Binance => "BNB",
-            Self::Thorchain => "rune",
-            Self::Cosmos => "uatom",
-            Self::Osmosis => "uosmo",
-            Self::Celestia => "utia",
-            Self::Injective => "inj",
-            Self::Sei => "usei",
-            Self::Sui => "0x2::sui::SUI",
-            _ => unimplemented!(),
+            Self::Binance => Some("BNB"),
+            Self::Thorchain => Some("rune"),
+            Self::Cosmos => Some("uatom"),
+            Self::Osmosis => Some("uosmo"),
+            Self::Celestia => Some("utia"),
+            Self::Injective => Some("inj"),
+            Self::Sei => Some("usei"),
+            Self::Sui => Some("0x2::sui::SUI"),
+            Self::Aptos => Some("0x1::aptos_coin::AptosCoin"),
+            _ => None,
         }
     }
 
