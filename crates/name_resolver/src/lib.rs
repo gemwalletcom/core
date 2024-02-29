@@ -10,13 +10,13 @@ pub mod ens_provider;
 pub mod eths;
 pub mod icns;
 pub mod injective;
+pub mod lens;
 pub mod sns;
 pub mod spaceid;
 pub mod suins;
 pub mod ton;
 pub mod ton_codec;
 pub mod ud;
-
 pub struct NameProviderFactory {}
 
 impl NameProviderFactory {
@@ -38,6 +38,7 @@ impl NameProviderFactory {
                 settings.name.injective.url,
             )),
             Box::new(icns::IcnsClient::new(settings.name.icns.url)),
+            Box::new(lens::LensClient::new(settings.name.lens.url)),
         ]
     }
 }

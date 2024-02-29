@@ -71,6 +71,9 @@ url = "https://injective-rest.publicnode.com"
 [name.icns]
 url = "https://osmosis-rest.publicnode.com"
 
+[name.lens]
+url = "https://api-v2.lens.dev"
+
 [metrics]
 path = "/metrics"
 
