@@ -106,6 +106,7 @@ diesel::table! {
         provider -> Varchar,
         symbol -> Varchar,
         network -> Nullable<Varchar>,
+        enabled -> Bool,
         updated_at -> Timestamp,
         created_at -> Timestamp,
     }

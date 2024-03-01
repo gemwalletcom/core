@@ -2,6 +2,7 @@ use crate::model::{FiatClient, FiatMapping, FiatProviderAsset};
 use async_trait::async_trait;
 use primitives::{
     fiat_provider::FiatProviderName, fiat_quote::FiatQuote, fiat_quote_request::FiatBuyRequest,
+    Chain,
 };
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
@@ -35,6 +36,22 @@ struct TransakPayload<'a> {
 #[derive(Debug, Deserialize)]
 pub struct TransakResponse<T> {
     pub response: T,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Asset {
+    pub coin_id: String,
+    pub symbol: String,
+    pub network: AssetNetwork,
+    pub address: Option<String>,
+    pub is_allowed: bool,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AssetNetwork {
+    pub name: String,
 }
 
 #[derive(Debug, Clone)]
@@ -71,7 +88,13 @@ impl FiatClient for TransakClient {
     async fn get_assets(
         &self,
     ) -> Result<Vec<FiatProviderAsset>, Box<dyn std::error::Error + Send + Sync>> {
-        Ok(vec![])
+        let assets = self
+            .get_assets()
+            .await?
+            .into_iter()
+            .flat_map(Self::map_asset)
+            .collect::<Vec<FiatProviderAsset>>();
+        Ok(assets)
     }
 }
 
@@ -104,5 +127,59 @@ impl TransakClient {
             .append_pair("walletAddress", &address);
 
         return components.as_str().to_string();
+    }
+
+    async fn get_assets(&self) -> Result<Vec<Asset>, Box<dyn std::error::Error + Send + Sync>> {
+        let url = format!("{}/api/v2/currencies/crypto-currencies", TRANSAK_API_URL);
+        let response = self.client.get(&url).send().await?;
+        let assets = response
+            .json::<TransakResponse<Vec<Asset>>>()
+            .await?
+            .response;
+        Ok(assets)
+    }
+
+    pub fn map_asset(asset: Asset) -> Option<FiatProviderAsset> {
+        let chain = Self::map_asset_chain(asset.clone())?;
+        let token_id = asset.clone().address.filter(|contract_address| {
+            !["0x0000000000000000000000000000000000000000"].contains(&contract_address.as_str())
+        });
+
+        Some(FiatProviderAsset {
+            chain,
+            token_id,
+            symbol: asset.symbol,
+            network: Some(asset.network.name),
+            enabled: asset.is_allowed,
+        })
+    }
+
+    pub fn map_asset_chain(asset: Asset) -> Option<Chain> {
+        match asset.network.name.as_str() {
+            "ethereum" => Some(Chain::Ethereum),
+            "polygon" => Some(Chain::Polygon),
+            "aptos" => Some(Chain::Aptos),
+            "sui" => Some(Chain::Sui),
+            "arbitrum" => Some(Chain::Arbitrum),
+            "optimism" => Some(Chain::Optimism),
+            "base" => Some(Chain::Base),
+            "bsc" => Some(Chain::SmartChain),
+            "tron" => Some(Chain::Tron),
+            "solana" => Some(Chain::Solana),
+            "avaxcchain" => Some(Chain::AvalancheC),
+            "ton" => Some(Chain::Ton),
+            "osmosis" => Some(Chain::Osmosis),
+            "fantom" => Some(Chain::Fantom),
+            "mainnet" => match asset.coin_id.as_str() {
+                "bitcoin" => Some(Chain::Bitcoin),
+                "litecoin" => Some(Chain::Litecoin),
+                "ripple" => Some(Chain::Xrp),
+                "dogecoin" => Some(Chain::Doge),
+                "tron" => Some(Chain::Tron),
+                "cosmos" => Some(Chain::Cosmos),
+                _ => None,
+            },
+            _ => None,
+        }
     }
 }

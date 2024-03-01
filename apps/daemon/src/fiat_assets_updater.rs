@@ -88,6 +88,7 @@ impl FiatAssetsUpdater {
             provider,
             symbol: fiat_asset.clone().symbol,
             network: fiat_asset.clone().network,
+            enabled: fiat_asset.clone().enabled,
         };
         Some(asset)
     }

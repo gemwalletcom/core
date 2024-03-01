@@ -18,4 +18,5 @@ pub struct FiatAsset {
     pub provider: String,
     pub symbol: String,
     pub network: Option<String>,
+    pub enabled: bool,
 }

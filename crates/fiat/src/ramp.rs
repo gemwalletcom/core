@@ -104,6 +104,7 @@ impl RampClient {
             token_id,
             symbol: asset.symbol,
             network: Some(asset.chain),
+            enabled: asset.enabled,
         })
     }
 
@@ -204,6 +205,7 @@ pub struct QuoteAsset {
     pub address: Option<String>,
     //enabled: bool,
     //hidden: bool,
+    pub enabled: bool,
 }
 
 #[derive(Debug, Deserialize, Clone)]

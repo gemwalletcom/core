@@ -39,6 +39,7 @@ pub struct MoonPayClient {
 pub struct Asset {
     pub code: String,
     pub metadata: Option<CurrencyMetadata>,
+    pub is_suspended: Option<bool>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -151,12 +152,13 @@ impl MoonPayClient {
                 ]
                 .contains(&contract_address.as_str())
             });
-
+        let enabled = !asset.is_suspended.unwrap_or(true);
         Some(FiatProviderAsset {
             chain,
             token_id,
             symbol: asset.code,
             network: None,
+            enabled,
         })
     }
 

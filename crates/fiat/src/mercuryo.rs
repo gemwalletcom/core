@@ -138,6 +138,7 @@ impl MercuryoClient {
             token_id,
             symbol: asset.currency,
             network: Some(asset.network),
+            enabled: true,
         })
     }
 

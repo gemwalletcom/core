@@ -31,6 +31,7 @@ pub struct FiatProviderAsset {
     pub symbol: String,
     pub token_id: Option<String>,
     pub network: Option<String>,
+    pub enabled: bool,
 }
 
 pub type FiatMappingMap = HashMap<String, FiatMapping>;
