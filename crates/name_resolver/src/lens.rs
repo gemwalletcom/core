@@ -15,7 +15,7 @@ pub struct Data<T> {
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Record {
-    pub handle_to_address: String,
+    pub handle_to_address: Option<String>,
 }
 
 pub struct LensClient {
@@ -64,7 +64,7 @@ impl NameClient for LensClient {
             .data
             .handle_to_address;
 
-        Ok(address)
+        address.ok_or("address not found".into())
     }
 
     fn domains(&self) -> Vec<&'static str> {
