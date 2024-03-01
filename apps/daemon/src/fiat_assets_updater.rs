@@ -76,11 +76,11 @@ impl FiatAssetsUpdater {
         provider: String,
         fiat_asset: FiatProviderAsset,
     ) -> Option<primitives::FiatAsset> {
-        let asset_id = match AssetId::format_token_id(
-            fiat_asset.clone().chain,
-            fiat_asset.clone().token_id.unwrap_or_default(),
-        ) {
-            Some(token_id) => AssetId::from(fiat_asset.chain, Some(token_id)),
+        let asset_id = match fiat_asset.clone().token_id {
+            Some(token_id) => {
+                let token_id = AssetId::format_token_id(fiat_asset.clone().chain, token_id)?;
+                AssetId::from(fiat_asset.chain, Some(token_id))
+            }
             None => AssetId::from_chain(fiat_asset.chain),
         };
         let asset = primitives::FiatAsset {
