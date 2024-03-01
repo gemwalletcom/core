@@ -31,4 +31,5 @@ pub enum NameProvider {
     Aptos,
     Injective,
     Icns,
+    Lens,
 }
