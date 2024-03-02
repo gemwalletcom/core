@@ -18,6 +18,7 @@ pub enum EVMChain {
     Fantom,
     Gnosis,
     Manta,
+    Blast,
 }
 
 impl EVMChain {

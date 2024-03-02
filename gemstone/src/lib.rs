@@ -2,6 +2,7 @@ use std::{collections::HashMap, str::FromStr};
 
 use primitives::Chain;
 
+pub mod asset;
 pub mod config;
 pub mod explorer;
 pub mod sui;
@@ -106,5 +107,13 @@ impl WalletConnectNamespace {
     fn get_reference(&self, chain: String) -> Option<String> {
         let chain = Chain::from_str(&chain).ok()?;
         wallet_connect::get_reference(chain)
+    }
+}
+
+#[uniffi::export]
+pub fn asset_default_rank(chain: String) -> i32 {
+    match Chain::from_str(&chain) {
+        Ok(chain) => asset::default_rank(chain),
+        Err(_) => 10,
     }
 }

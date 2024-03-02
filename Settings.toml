@@ -149,6 +149,9 @@ url = "https://sei-api.polkachu.com" # https://docs.sei.io/develop/resources
 [chains.manta]
 url = "https://pacific-rpc.manta.network/http"
 
+[chains.blast]
+url = "https://rpc.ankr.com/blast"
+
 [chains.bitcoin]
 url = ""
 

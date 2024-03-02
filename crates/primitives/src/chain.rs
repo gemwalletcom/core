@@ -39,6 +39,7 @@ pub enum Chain {
     Injective,
     Sei,
     Manta,
+    Blast,
 }
 
 impl PartialEq for Chain {
@@ -87,6 +88,7 @@ impl Chain {
             Self::Fantom => "250",
             Self::Gnosis => "100",
             Self::Manta => "169",
+            Self::Blast => "81457",
             Self::Bitcoin
             | Self::Litecoin
             | Self::Binance
@@ -121,7 +123,8 @@ impl Chain {
             | Self::Base
             | Self::Gnosis
             | Self::Injective
-            | Self::Manta => 60,
+            | Self::Manta
+            | Self::Blast => 60,
             Self::Binance => 714,
             Self::Bitcoin => 0,
             Self::Litecoin => 2,
@@ -151,7 +154,8 @@ impl Chain {
             | Self::SmartChain
             | Self::AvalancheC
             | Self::Gnosis
-            | Self::Manta => ChainType::Ethereum,
+            | Self::Manta
+            | Self::Blast => ChainType::Ethereum,
             Self::Binance => ChainType::Binance,
             Self::Bitcoin | Self::Doge | Self::Litecoin => ChainType::Bitcoin,
             Self::Solana => ChainType::Solana,
@@ -179,7 +183,8 @@ impl Chain {
             | Self::AvalancheC
             | Self::Gnosis
             | Self::Fantom
-            | Self::Manta => Some(AssetType::ERC20),
+            | Self::Manta
+            | Self::Blast => Some(AssetType::ERC20),
             Self::OpBNB | Self::SmartChain => Some(AssetType::BEP20),
             Self::Binance => Some(AssetType::BEP2),
             Self::Solana => Some(AssetType::SPL),
@@ -208,7 +213,7 @@ impl Chain {
             Self::Fantom => 1_000,
             Self::OpBNB => 1_000,
             Self::Arbitrum => 1_000,
-            Self::Optimism => 2_000,
+            Self::Optimism | Self::Blast => 2_000,
             Self::Polygon => 3_000,
             Self::Base => 2_000,
             Self::Gnosis => 5_000,
@@ -230,6 +235,37 @@ impl Chain {
             Self::Sui => 500,
             Self::Xrp => 4_000,
             Self::Sei => 1_000,
+        }
+    }
+
+    pub fn rank(&self) -> i32 {
+        match self {
+            Self::Bitcoin => 100,
+            Self::Ethereum => 80,
+            Self::Solana => 70,
+            Self::SmartChain => 60,
+            Self::Osmosis | Self::Ton | Self::Tron => 50,
+            Self::Cosmos
+            | Self::Injective
+            | Self::Aptos
+            | Self::Sui
+            | Self::Xrp
+            | Self::Celestia => 45,
+            Self::Manta
+            | Self::Fantom
+            | Self::OpBNB
+            | Self::Arbitrum
+            | Self::Blast
+            | Self::Optimism
+            | Self::Polygon
+            | Self::Base
+            | Self::Gnosis
+            | Self::Thorchain
+            | Self::Doge
+            | Self::AvalancheC
+            | Self::Sei
+            | Self::Litecoin => 40,
+            Self::Binance => 0,
         }
     }
 

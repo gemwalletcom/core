@@ -210,6 +210,13 @@ impl Asset {
                 decimals: 18,
                 asset_type: AssetType::NATIVE,
             },
+            Chain::Blast => Asset {
+                id: chain.as_asset_id(),
+                name: "Blast".to_string(),
+                symbol: "ETH".to_string(),
+                decimals: 18,
+                asset_type: AssetType::NATIVE,
+            },
         }
     }
 }

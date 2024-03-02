@@ -35,7 +35,8 @@ impl SwapperClient {
             | Chain::Fantom
             | Chain::Gnosis
             | Chain::AvalancheC
-            | Chain::Manta => self.oneinch.get_quote(quote).await,
+            | Chain::Manta
+            | Chain::Blast => self.oneinch.get_quote(quote).await,
             Chain::Solana => self.jupiter.get_quote(quote).await,
             Chain::Thorchain | Chain::Doge | Chain::Cosmos | Chain::Bitcoin | Chain::Litecoin => {
                 self.thorchain.get_quote(quote).await

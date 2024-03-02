@@ -14,7 +14,8 @@ pub fn get_namespace(chain: Chain) -> Option<String> {
         | Chain::Gnosis
         | Chain::Optimism
         | Chain::Fantom
-        | Chain::Manta => Some(WallletConnectCAIP2::Eip155.as_ref().to_string()),
+        | Chain::Manta
+        | Chain::Blast => Some(WallletConnectCAIP2::Eip155.as_ref().to_string()),
         Chain::Solana => Some(WallletConnectCAIP2::Solana.as_ref().to_string()),
         Chain::Bitcoin
         | Chain::Litecoin
@@ -47,7 +48,8 @@ pub fn get_reference(chain: Chain) -> Option<String> {
         | Chain::Gnosis
         | Chain::Optimism
         | Chain::Fantom
-        | Chain::Manta => Some(chain.network_id().to_string()),
+        | Chain::Manta
+        | Chain::Blast => Some(chain.network_id().to_string()),
         Chain::Solana => Some("4sGjMW1sUnHzSxGspuhpqLDx6wiyjNtZ".to_string()),
         Chain::Bitcoin
         | Chain::Litecoin

@@ -66,6 +66,10 @@ impl PriceUpdater {
                             Chain::Manta.as_ref().to_string(),
                             market.clone(),
                         ));
+                        prices_map.insert(asset_price_map(
+                            Chain::Blast.as_ref().to_string(),
+                            market.clone(),
+                        ));
                     }
                 }
                 None => {
