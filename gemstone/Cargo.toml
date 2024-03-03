@@ -15,9 +15,6 @@ name = "gemstone"
 [dependencies]
 primitives = { path = "../crates/primitives" }
 
-async-std = "1.12.0"
-once_cell = "1.19.0"
-
 # Sui
 bcs = "0.1.6"
 sui-types = { git = "https://github.com/mystenlabs/sui", package = "sui-types", rev = "f5b55da420b2ed2c8bea46ff7ab62709d49f9c2e" }
@@ -27,6 +24,8 @@ base64 = { workspace = true }
 hex = { workspace = true }
 thiserror = { workspace = true }
 anyhow = { workspace = true }
+strum = { workspace = true }
+strum_macros = { workspace = true }
 
 # uniffi
 uniffi = { workspace = true }

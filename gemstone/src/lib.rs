@@ -3,19 +3,22 @@ use std::{collections::HashMap, str::FromStr};
 use primitives::Chain;
 
 pub mod asset;
+pub mod chain;
 pub mod config;
 pub mod explorer;
 pub mod sui;
 pub mod wallet_connect;
 
 uniffi::include_scaffolding!("gemstone");
-static LIB_VERSION: &str = "0.1.1";
 
+/// The version of the library
+static LIB_VERSION: &str = "0.1.1";
 #[uniffi::export]
 pub fn lib_version() -> String {
     LIB_VERSION.into()
 }
 
+/// GemstoneError
 #[derive(Debug, thiserror::Error, uniffi::Error)]
 pub enum GemstoneError {
     #[error("{msg}")]
@@ -30,21 +33,13 @@ impl GemstoneError {
     }
 }
 
-#[uniffi::export]
-pub async fn say_after(ms: u64, who: String) -> String {
-    use async_std::future::{pending, timeout};
-    let never = pending::<()>();
-    timeout(std::time::Duration::from_millis(ms), never)
-        .await
-        .unwrap_err();
-    format!("Hello, {who}!")
-}
-
+/// Explorer mod
 #[uniffi::export]
 pub fn explorer_get_name_by_host(host: String) -> Option<String> {
     explorer::get_name_by_host(host)
 }
 
+/// Sui mod
 #[uniffi::export]
 pub fn sui_encode_transfer(
     input: &sui::model::SuiTransferInput,
@@ -73,6 +68,7 @@ pub fn sui_encode_unstake(
     sui::encode_unstake(input).map_err(GemstoneError::from)
 }
 
+/// Config mod
 #[derive(uniffi::Object)]
 struct Config {}
 #[uniffi::export]
@@ -90,6 +86,7 @@ impl Config {
     }
 }
 
+/// WalletConnect mod
 #[derive(uniffi::Object)]
 struct WalletConnectNamespace {}
 #[uniffi::export]
