@@ -70,12 +70,16 @@ extension Chain: Codable {
     public init(from decoder: Decoder) throws {
         let container = try decoder.singleValueContainer()
         let string = try container.decode(String.self)
-        self = ChainWrapper.newStr(value: string).value()
+        self.init(string: string)
     }
 }
 
 extension Chain {
     public var string: String {
         return ChainWrapper(value: self).string()
+    }
+
+    public init(string: String) {
+        self = ChainWrapper.newStr(value: string).value()
     }
 }
