@@ -26,6 +26,7 @@ pub fn get_chain_for_coingecko_id(id: &str) -> Option<Chain> {
         "celestia" => Some(Chain::Celestia),
         "injective-protocol" => Some(Chain::Injective),
         "sei-network" => Some(Chain::Sei),
+        "manta-network" => Some(Chain::Manta),
         _ => None,
     }
 }
