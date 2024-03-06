@@ -13,16 +13,17 @@ members = [
     "apps/api",
     "apps/daemon",
     "apps/parser",
+    "apps/pricer",
     "apps/setup",
+
     "bin/img-downloader",
     "bin/generate",
-    "bin/uniffi-bindgen",
 
+    "bin/uniffi-bindgen",
     "gemstone",
 
     "crates/primitives",
     "crates/blockchain",
-    "crates/pricer",
     "crates/fiat",
     "crates/name_resolver",
     "crates/api_connector",
@@ -34,6 +35,7 @@ default-members = [
     "apps/api",
     "apps/daemon",
     "apps/parser",
+    "apps/pricer",
     "apps/setup",
     "bin/generate",
 ]
@@ -45,7 +47,7 @@ serde_json = { version = "1.0.114" }
 tokio = { version = "1.36.0", features = ["macros", "rt-multi-thread"] }
 reqwest = { version = "0.11.24", features = ["json"] }
 reqwest-middleware = { version = "0.2.4" }
-reqwest-retry = { version = "0.3.0" }
+reqwest-retry = { version = "0.4.0" }
 url = { version = "2.5.0" }
 config = { version = "0.14.0" }
 rocket = { version = "0.5.0", features = ["json"] }
@@ -67,7 +69,7 @@ chrono = { version = "0.4.34", features = ["serde"] }
 clickhouse = { git = "https://github.com/loyd/clickhouse.rs", rev = "d930b66f6772aba5ef049b231fd15a9e6a974854" }
 
 # crypto
-base64 = { version = "0.21.7" }
+base64 = { version = "0.22.0" }
 blake2 = "0.10.6"
 #bech32 = { version = "0.9.1" }
 bs58 = { version = "0.5.0", features = ["check"] }

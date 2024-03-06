@@ -1,5 +1,5 @@
 use primitives::{Asset, AssetDetails, ChartPeriod, ChartValue};
-use redis::{aio::Connection, AsyncCommands, RedisResult};
+use redis::{AsyncCommands, RedisResult};
 use std::{collections::HashMap, error::Error};
 use storage::{
     models::{ChartCoinPrice, FiatRate},
@@ -11,28 +11,23 @@ use storage::models::Price;
 use crate::DEFAULT_FIAT_CURRENCY;
 
 pub struct PriceClient {
-    conn: Connection,
+    redis_client: redis::Client,
     database: DatabaseClient,
     clickhouse_database: ClickhouseDatabase,
     prefix: String,
 }
 
 impl PriceClient {
-    pub async fn new(
-        redis_url: &str,
-        database_url: &str,
-        clichouse_database_url: &str,
-    ) -> RedisResult<Self> {
-        let client = redis::Client::open(redis_url)?;
-        let conn = client.get_async_connection().await?;
+    pub fn new(redis_url: &str, database_url: &str, clichouse_database_url: &str) -> Self {
+        let redis_client = redis::Client::open(redis_url).unwrap();
         let database = DatabaseClient::new(database_url);
         let clickhouse_database = ClickhouseDatabase::new(clichouse_database_url);
-        Ok(Self {
-            conn,
+        Self {
+            redis_client,
             database,
             clickhouse_database,
             prefix: "prices:".to_owned(),
-        })
+        }
     }
 
     // db
@@ -132,7 +127,11 @@ impl PriceClient {
             })
             .collect();
 
-        self.conn.mset(serialized.as_slice()).await?;
+        self.redis_client
+            .get_async_connection()
+            .await?
+            .mset(serialized.as_slice())
+            .await?;
 
         Ok(serialized.len())
     }
@@ -146,7 +145,12 @@ impl PriceClient {
             .iter()
             .map(|x| self.asset_key(currency, x.to_string()))
             .collect();
-        let result: Vec<Option<String>> = self.conn.mget(keys).await?;
+        let result: Vec<Option<String>> = self
+            .redis_client
+            .get_async_connection()
+            .await?
+            .mget(keys)
+            .await?;
 
         let values: Vec<String> = result.into_iter().flatten().collect();
         let prices: Vec<Price> = values

@@ -24,6 +24,7 @@ COPY --from=builder /app/target/release/api /app
 COPY --from=builder /app/target/release/daemon /app
 COPY --from=builder /app/target/release/parser /app
 COPY --from=builder /app/target/release/setup /app
+COPY --from=builder /app/target/release/pricer /app
 COPY --from=builder /app/Settings.toml /app
 
 RUN apt-get update && apt-get install -y openssl ca-certificates libpq-dev postgresql

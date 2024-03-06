@@ -56,9 +56,7 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
     database_client.migrations();
 
     let settings_clone = settings.clone();
-    let price_client = PriceClient::new(redis_url, postgres_url, &settings.clickhouse.url)
-        .await
-        .unwrap();
+    let price_client = PriceClient::new(redis_url, postgres_url, &settings.clickhouse.url);
     let node_client = NodeClient::new(database_client).await;
     let config_client = ConfigClient::new(postgres_url).await;
     let providers = NameProviderFactory::create_providers(settings_clone.clone());
