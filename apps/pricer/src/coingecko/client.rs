@@ -66,16 +66,22 @@ impl CoinGeckoClient {
             self.url, per_page, page, self.api_key
         );
         let response = self.client.get(&url).headers(self.headers()).send().await?;
+        response.json().await
+    }
 
-        let coin_markets: Vec<CoinMarket> = response.json().await?;
-        Ok(coin_markets)
+    pub async fn get_coin_markets_id(&self, id: &str) -> Result<Vec<CoinMarket>, Error> {
+        let url = format!(
+            "{}/api/v3/coins/markets?vs_currency=usd&ids={}&order=market_cap_desc&sparkline=false&locale=en&x_cg_pro_api_key={}",
+            self.url, id, self.api_key
+        );
+        let response = self.client.get(&url).headers(self.headers()).send().await?;
+        response.json().await
     }
 
     pub async fn get_coin(&self, coin: &str) -> Result<CoinInfo, Error> {
         let url = format!("{}/api/v3/coins/{}?x_cg_pro_api_key={}&market_data=false&community_data=true&tickers=false&localization=false&developer_data=true", self.url, coin, self.api_key);
         let response = self.client.get(&url).headers(self.headers()).send().await?;
-        let coin: CoinInfo = response.json().await?;
-        Ok(coin)
+        response.json().await
     }
 
     pub async fn get_fiat_rates(&self) -> Result<Vec<FiatRate>, Error> {

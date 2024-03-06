@@ -30,3 +30,24 @@ pub fn get_chain_for_coingecko_id(id: &str) -> Option<Chain> {
         _ => None,
     }
 }
+
+// mapping between l2  to l1 chains
+pub fn get_associated_chains(chain: Chain) -> Vec<Chain> {
+    match chain {
+        Chain::Binance => {
+            vec![Chain::SmartChain, Chain::OpBNB]
+        }
+        Chain::Ethereum => {
+            vec![
+                Chain::Arbitrum,
+                Chain::Optimism,
+                Chain::Base,
+                Chain::Manta,
+                Chain::Blast,
+            ]
+        }
+        _ => {
+            vec![]
+        }
+    }
+}

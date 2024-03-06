@@ -1,6 +1,6 @@
 use crate::client::PriceClient;
-use crate::coingecko::mapper::get_chain_for_coingecko_id;
-use crate::coingecko::{CoinGeckoClient, CoinInfo, CoinMarket};
+use crate::coingecko::mapper::{get_associated_chains, get_chain_for_coingecko_id};
+use crate::coingecko::{Coin, CoinGeckoClient, CoinInfo, CoinMarket};
 use crate::DEFAULT_FIAT_CURRENCY;
 use primitives::chain::Chain;
 use primitives::{Asset, AssetDetails, AssetId, AssetLinks};
@@ -27,67 +27,23 @@ impl PriceUpdater {
         let coin_list = self.coin_gecko_client.get_coin_list().await?;
         let coins_map = CoinGeckoClient::convert_coin_vec_to_map(coin_list.clone());
         let coin_markets = self.coin_gecko_client.get_all_coin_markets(250, 12).await?;
-        // currently using as a map, until fix duplicated values in the vector.
+        //TODO: currently using as a map, until fix duplicated values in the vector.
         let mut prices_map: HashSet<Price> = HashSet::new();
 
         for market in coin_markets {
+            // consolidate with get_prices_for_coin_market to parse all coin and tokens in one function
             let chain = get_chain_for_coingecko_id(market.id.as_str());
 
-            match chain {
-                Some(value) => {
-                    if let Some(asset_id) = get_asset_id(value, "".to_string()) {
-                        prices_map.insert(asset_price_map(asset_id, market.clone()));
-                    }
-                    // special case.
-                    if value.as_ref() == Chain::Binance.as_ref() {
-                        prices_map.insert(asset_price_map(
-                            Chain::SmartChain.as_ref().to_string(),
-                            market.clone(),
-                        ));
-                        prices_map.insert(asset_price_map(
-                            Chain::OpBNB.as_ref().to_string(),
-                            market.clone(),
-                        ));
-                    }
-                    if value.as_ref() == Chain::Ethereum.as_ref() {
-                        prices_map.insert(asset_price_map(
-                            Chain::Arbitrum.as_ref().to_string(),
-                            market.clone(),
-                        ));
-                        prices_map.insert(asset_price_map(
-                            Chain::Optimism.as_ref().to_string(),
-                            market.clone(),
-                        ));
-                        prices_map.insert(asset_price_map(
-                            Chain::Base.as_ref().to_string(),
-                            market.clone(),
-                        ));
-                        prices_map.insert(asset_price_map(
-                            Chain::Manta.as_ref().to_string(),
-                            market.clone(),
-                        ));
-                        prices_map.insert(asset_price_map(
-                            Chain::Blast.as_ref().to_string(),
-                            market.clone(),
-                        ));
-                    }
-                }
-                None => {
-                    let coin_map = coins_map.get(market.id.as_str()).unwrap();
-
-                    for (platform, token_id) in coin_map.platforms.clone().into_iter() {
-                        let platform = get_chain_for_coingecko_id(platform.as_str());
-                        if let Some(value) = platform {
-                            let token_id = token_id.unwrap_or_default();
-                            if !token_id.is_empty() {
-                                if let Some(asset_id) = get_asset_id(value, token_id) {
-                                    prices_map.insert(asset_price_map(asset_id, market.clone()));
-                                }
-                            }
-                        }
-                    }
+            if let Some(chain) = chain {
+                prices_map.insert(asset_price_map(chain.as_ref().to_string(), market.clone()));
+                // special case. chain association
+                for chain in get_associated_chains(chain) {
+                    prices_map.insert(asset_price_map(chain.as_ref().to_string(), market.clone()));
                 }
             }
+            let coin_map = coins_map.get(market.id.as_str()).unwrap();
+            let prices = self.get_prices_for_coin_market(coin_map.clone(), market.clone());
+            prices_map.extend(prices);
         }
 
         let prices: Vec<Price> = prices_map.into_iter().collect();
@@ -106,6 +62,39 @@ impl PriceUpdater {
         let _ = self.price_client.set_charts(charts).await?;
 
         Ok(count)
+    }
+
+    pub async fn update_price(
+        &mut self,
+        id: &str,
+    ) -> Result<Vec<Price>, Box<dyn std::error::Error>> {
+        let markets = self.coin_gecko_client.get_coin_markets_id(id).await?;
+        let market = markets.first().ok_or("market not found")?;
+        let coin_list = self.coin_gecko_client.get_coin_list().await?;
+        let coins_map = CoinGeckoClient::convert_coin_vec_to_map(coin_list.clone());
+        let coin = coins_map.get(market.id.as_str()).unwrap();
+        let prices = self.get_prices_for_coin_market(coin.clone(), market.clone());
+        Ok(prices)
+    }
+    pub fn get_prices_for_coin_market(&mut self, coin: Coin, market: CoinMarket) -> Vec<Price> {
+        return coin
+            .platforms
+            .clone()
+            .into_iter()
+            .flat_map(|(platform, token_id)| {
+                let platform = get_chain_for_coingecko_id(platform.as_str());
+                if let Some(chain) = platform {
+                    let token_id = token_id.unwrap_or_default();
+                    if !token_id.is_empty() {
+                        if let Some(asset_id) = get_asset_id(chain, token_id) {
+                            let price = asset_price_map(asset_id, market.clone());
+                            return Some(price);
+                        }
+                    }
+                }
+                None
+            })
+            .collect::<Vec<_>>();
     }
 
     pub async fn update_charts(&mut self) -> Result<usize, Box<dyn std::error::Error>> {
