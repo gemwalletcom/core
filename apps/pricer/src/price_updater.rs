@@ -1,6 +1,6 @@
 use crate::client::PriceClient;
+use crate::coingecko::mapper::get_chain_for_coingecko_id;
 use crate::coingecko::{CoinGeckoClient, CoinInfo, CoinMarket};
-use crate::price_mapper::get_chain_for_coingecko_id;
 use crate::DEFAULT_FIAT_CURRENCY;
 use primitives::chain::Chain;
 use primitives::{Asset, AssetDetails, AssetId, AssetLinks};
@@ -194,19 +194,19 @@ impl PriceUpdater {
             .collect::<Vec<_>>();
 
         for coin in coin_list.clone() {
-            let coin_info = self.coin_gecko_client.get_coin(coin.as_str()).await?;
-
-            if coin_info.preview_listing || coin_info.market_cap_rank.unwrap_or(999999) > 2500 {
-                //println!("early exit loop for {}", coin_info.id);
-                continue;
-            }
-            let result = self.get_assets_from_coin_info(coin_info);
-            for (asset, asset_details) in result {
-                self.price_client.update_asset(asset, asset_details).await?;
-            }
+            self.update_asset(coin.as_str()).await?;
         }
 
         Ok(coin_list.len())
+    }
+
+    pub async fn update_asset(&mut self, coin: &str) -> Result<bool, Box<dyn Error>> {
+        let coin_info = self.coin_gecko_client.get_coin(coin).await?;
+        let result = self.get_assets_from_coin_info(coin_info);
+        for (asset, asset_details) in result {
+            self.price_client.update_asset(asset, asset_details).await?;
+        }
+        Ok(true)
     }
 
     fn get_assets_from_coin_info(&self, coin_info: CoinInfo) -> Vec<(Asset, AssetDetails)> {
@@ -216,9 +216,10 @@ impl PriceUpdater {
             .clone()
             .detail_platforms
             .into_iter()
-            .filter_map(|x| {
-                if let Some(chain) = get_chain_for_coingecko_id(x.0.as_str()) {
-                    return Some((chain, Some(x.1.unwrap())));
+            .filter_map(|(coin_id, detail_platform)| {
+                let chain = get_chain_for_coingecko_id(coin_id.as_str());
+                if let (Some(chain), Some(detail_platform)) = (chain, detail_platform) {
+                    return Some((chain, Some(detail_platform)));
                 }
                 None
             })

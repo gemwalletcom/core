@@ -12,12 +12,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         &settings.redis.url,
         &settings.postgres.url,
         &settings.clickhouse.url,
-    )
-    .await
-    .unwrap();
-    let mut price_updater = PriceUpdater::new(price_client, coingecko_client);
+    );
 
-    // update assets
+    let mut price_updater: PriceUpdater = PriceUpdater::new(price_client, coingecko_client);
+
+    println!("update assets: start");
+
     let result = price_updater.update_assets().await;
     match result {
         Ok(count) => {
@@ -28,7 +28,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    // update rates
+    println!("update rates: start");
+
     let result = price_updater.update_fiat_rates().await;
     match result {
         Ok(count) => {
@@ -40,17 +41,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // updates charts
-    let result = price_updater.update_charts().await;
-    match result {
-        Ok(count) => {
-            println!("update charts: {}", count)
-        }
-        Err(err) => {
-            println!("update charts error: {}", err)
-        }
-    }
+    // only needed on initial setup
+    // let result = price_updater.update_charts().await;
+    // match result {
+    //     Ok(count) => {
+    //         println!("update charts: {}", count)
+    //     }
+    //     Err(err) => {
+    //         println!("update charts error: {}", err)
+    //     }
+    // }
+
     loop {
-        // updates prices
+        println!("update prices: start");
+
         let result = price_updater.update_prices().await;
         match result {
             Ok(count) => {
@@ -61,7 +65,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         }
 
-        // update cache
+        println!("update prices cache: start");
+
         let result = price_updater.update_cache().await;
         match result {
             Ok(count) => {

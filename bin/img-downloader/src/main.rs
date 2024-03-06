@@ -1,8 +1,8 @@
 use clap::{arg, Parser};
 use futures_util::StreamExt;
 use pricer::{
+    coingecko::mapper::get_chain_for_coingecko_id,
     coingecko::{CoinGeckoClient, CoinInfo},
-    price_mapper::get_chain_for_coingecko_id,
 };
 use primitives::ethereum_address::EthereumAddress;
 use settings::Settings;
