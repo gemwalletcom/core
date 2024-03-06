@@ -8,6 +8,8 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 redis = { workspace = true }
 reqwest = { workspace = true }
+tokio = { workspace = true }
 
 storage = { path = "../../crates/storage" }
 primitives = { path = "../../crates/primitives" }
+settings = { path = "../../crates/settings" }

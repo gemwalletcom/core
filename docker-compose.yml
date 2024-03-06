@@ -59,6 +59,17 @@ services:
       - app_build
       - setup
       - postgres
+      
+  pricer:
+    image: app
+    container_name: pricer
+    environment:
+      BINARY: pricer
+      POSTGRES_URL: "postgres://username:password@postgres/api"
+    depends_on:
+      - app_build
+      - setup
+      - postgres
 
   redis:
     image: redis:7.0-alpine

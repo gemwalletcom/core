@@ -4876,7 +4876,9 @@ dependencies = [
  "reqwest",
  "serde",
  "serde_json",
+ "settings",
  "storage",
+ "tokio",
 ]
 
 [[package]]
