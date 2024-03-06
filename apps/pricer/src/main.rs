@@ -1,10 +1,77 @@
+use pricer::{client::PriceClient, coingecko::CoinGeckoClient, price_updater::PriceUpdater};
 use settings::Settings;
+use std::{thread, time::Duration};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("pricer init");
 
-    let _api_key = Settings::new().unwrap().coingecko.key.secret;
+    let settings = Settings::new().unwrap();
+    let coingecko_client = CoinGeckoClient::new(settings.coingecko.key.secret);
+    let price_client = PriceClient::new(
+        &settings.redis.url,
+        &settings.postgres.url,
+        &settings.clickhouse.url,
+    )
+    .await
+    .unwrap();
+    let mut price_updater = PriceUpdater::new(price_client, coingecko_client);
 
-    Ok(())
+    // update assets
+    let result = price_updater.update_assets().await;
+    match result {
+        Ok(count) => {
+            println!("update assets: {}", count)
+        }
+        Err(err) => {
+            println!("update assets error: {}", err)
+        }
+    }
+
+    // update rates
+    let result = price_updater.update_fiat_rates().await;
+    match result {
+        Ok(count) => {
+            println!("update rates: {}", count)
+        }
+        Err(err) => {
+            println!("update rates error: {}", err)
+        }
+    }
+
+    // updates charts
+    let result = price_updater.update_charts().await;
+    match result {
+        Ok(count) => {
+            println!("update charts: {}", count)
+        }
+        Err(err) => {
+            println!("update charts error: {}", err)
+        }
+    }
+    loop {
+        // updates prices
+        let result = price_updater.update_prices().await;
+        match result {
+            Ok(count) => {
+                println!("update prices: {}", count)
+            }
+            Err(err) => {
+                println!("update prices error: {}", err)
+            }
+        }
+
+        // update cache
+        let result = price_updater.update_cache().await;
+        match result {
+            Ok(count) => {
+                println!("update prices cache: {}", count)
+            }
+            Err(err) => {
+                println!("update prices cache error: {}", err)
+            }
+        }
+
+        thread::sleep(Duration::from_secs(settings.pricer.timer));
+    }
 }
