@@ -35,6 +35,7 @@ default-members = [
     "apps/api",
     "apps/daemon",
     "apps/parser",
+    "apps/pricer",
     "apps/setup",
     "bin/generate",
 ]
