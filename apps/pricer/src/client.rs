@@ -33,7 +33,9 @@ impl PriceClient {
     // db
 
     pub fn get_coin_id(&mut self, asset_id: &str) -> Result<String, Box<dyn Error>> {
-        Ok(self.database.get_coin_id(asset_id)?)
+        let prices = self.database.get_prices_for_asset_id(asset_id)?;
+        let price = prices.first().ok_or("no price for asset_id")?;
+        Ok(price.coin_id.clone())
     }
 
     pub fn set_prices(&mut self, prices: Vec<Price>) -> Result<usize, Box<dyn Error>> {

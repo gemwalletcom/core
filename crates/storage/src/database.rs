@@ -103,13 +103,15 @@ impl DatabaseClient {
             .load(&mut self.connection)
     }
 
-    pub fn get_coin_id(&mut self, asset_id_value: &str) -> Result<String, diesel::result::Error> {
+    pub fn get_prices_for_asset_id(
+        &mut self,
+        asset_id_value: &str,
+    ) -> Result<Vec<Price>, diesel::result::Error> {
         use crate::schema::prices::dsl::*;
-        let result = prices
+        prices
             .filter(asset_id.eq(asset_id_value))
             .select(Price::as_select())
-            .load(&mut self.connection);
-        Ok(result.unwrap().first().unwrap().clone().coin_id)
+            .load(&mut self.connection)
     }
 
     pub fn set_prices(&mut self, asset_prices: Vec<Price>) -> Result<usize, diesel::result::Error> {
