@@ -10,5 +10,5 @@ futures-util = { workspace = true }
 clap = { version = "4.5.1", features = ["derive"] }
 
 primitives = { path = "../../crates/primitives" }
-pricer = { path = "../../crates/pricer" }
+pricer = { path = "../../apps/pricer" }
 settings = { path = "../../crates/settings" }

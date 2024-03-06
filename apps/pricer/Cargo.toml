@@ -9,5 +9,5 @@ serde_json = { workspace = true }
 redis = { workspace = true }
 reqwest = { workspace = true }
 
-storage = { path = "../storage" }
-primitives = { path = "../primitives" }
+storage = { path = "../../crates/storage" }
+primitives = { path = "../../crates/primitives" }
