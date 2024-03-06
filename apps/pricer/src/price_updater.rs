@@ -176,7 +176,7 @@ impl PriceUpdater {
     pub async fn update_assets(&mut self) -> Result<usize, Box<dyn Error>> {
         let coin_list = self
             .coin_gecko_client
-            .get_all_coin_markets(250, 10)
+            .get_all_coin_markets(250, 1)
             .await?
             .into_iter()
             .map(|x| x.id)
