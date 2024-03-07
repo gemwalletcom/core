@@ -10,5 +10,5 @@ futures-util = { workspace = true }
 clap = { version = "4.5.1", features = ["derive"] }
 
 primitives = { path = "../../crates/primitives" }
-pricer = { path = "../../apps/pricer" }
+coingecko = { path = "../../crates/coingecko" }
 settings = { path = "../../crates/settings" }

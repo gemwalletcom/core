@@ -1,0 +1,9 @@
+[package]
+name = "coingecko"
+edition = { workspace = true }
+version = { workspace = true }
+
+[dependencies]
+serde = { workspace = true }
+reqwest = { workspace = true }
+primitives = { path = "../primitives" }

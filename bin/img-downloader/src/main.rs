@@ -1,9 +1,7 @@
 use clap::{arg, Parser};
+use coingecko::get_chain_for_coingecko_id;
+use coingecko::{CoinGeckoClient, CoinInfo};
 use futures_util::StreamExt;
-use pricer::{
-    coingecko::mapper::get_chain_for_coingecko_id,
-    coingecko::{CoinGeckoClient, CoinInfo},
-};
 use primitives::ethereum_address::EthereumAddress;
 use settings::Settings;
 use std::{
@@ -19,7 +17,7 @@ struct Args {
     folder: String,
 
     /// Top number of tokens to download
-    #[arg(short, long)]
+    #[arg(short, long, default_value_t = 50)]
     count: u32,
 
     /// Starting page
@@ -27,8 +25,12 @@ struct Args {
     page: u32,
 
     /// Page size
-    #[arg(long, default_value_t = 100)]
+    #[arg(long, default_value_t = 50)]
     page_size: u32,
+
+    /// ID of the coin
+    #[arg(long)]
+    coin_id: String,
 
     /// Verbose mode
     #[arg(short, long, default_value_t = false)]
@@ -59,6 +61,14 @@ impl Downloader {
         let folder = Path::new(&self.args.folder);
         if !folder.exists() {
             fs::create_dir_all(folder)?;
+        }
+
+        let coin_id = self.args.coin_id.clone();
+        if !coin_id.is_empty() {
+            let market = self.client.get_coin_markets_id(coin_id.as_str()).await?;
+            self.handle_coin(&market.clone().id, folder).await?;
+
+            return Ok(());
         }
 
         let mut page = self.args.page;

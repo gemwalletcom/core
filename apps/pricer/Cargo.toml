@@ -4,12 +4,11 @@ version = { workspace = true }
 edition = { workspace = true }
 
 [dependencies]
-serde = { workspace = true }
 serde_json = { workspace = true }
 redis = { workspace = true }
-reqwest = { workspace = true }
 tokio = { workspace = true }
 
 storage = { path = "../../crates/storage" }
+coingecko = { path = "../../crates/coingecko" }
 primitives = { path = "../../crates/primitives" }
 settings = { path = "../../crates/settings" }

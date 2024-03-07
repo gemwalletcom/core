@@ -1,14 +1,14 @@
 use crate::client::PriceClient;
-use crate::coingecko::mapper::{get_associated_chains, get_chain_for_coingecko_id};
-use crate::coingecko::{Coin, CoinGeckoClient, CoinInfo, CoinMarket};
 use crate::DEFAULT_FIAT_CURRENCY;
+use coingecko::mapper::{get_associated_chains, get_chain_for_coingecko_id};
+use coingecko::{Coin, CoinGeckoClient, CoinInfo, CoinMarket};
 use primitives::chain::Chain;
 use primitives::{Asset, AssetDetails, AssetId, AssetLinks};
 use std::collections::HashSet;
 use std::error::Error;
 use std::thread;
 use std::time::Duration;
-use storage::models::{ChartCoinPrice, Price};
+use storage::models::{ChartCoinPrice, FiatRate, Price};
 
 pub struct PriceUpdater {
     coin_gecko_client: CoinGeckoClient,
@@ -68,8 +68,7 @@ impl PriceUpdater {
         &mut self,
         id: &str,
     ) -> Result<Vec<Price>, Box<dyn std::error::Error>> {
-        let markets = self.coin_gecko_client.get_coin_markets_id(id).await?;
-        let market = markets.first().ok_or("market not found")?;
+        let market = self.coin_gecko_client.get_coin_markets_id(id).await?;
         let coin_list = self.coin_gecko_client.get_coin_list().await?;
         let coins_map = CoinGeckoClient::convert_coin_vec_to_map(coin_list.clone());
         let coin = coins_map.get(market.id.as_str()).unwrap();
@@ -168,7 +167,14 @@ impl PriceUpdater {
     }
 
     pub async fn update_fiat_rates(&mut self) -> Result<usize, Box<dyn Error>> {
-        let rates = self.coin_gecko_client.get_fiat_rates().await?;
+        let rates = self
+            .coin_gecko_client
+            .get_fiat_rates()
+            .await?
+            .into_iter()
+            .map(|x| FiatRate::from_primitive(x))
+            .collect::<Vec<_>>();
+
         let count = self.price_client.set_fiat_rates(rates).await?;
         Ok(count)
     }

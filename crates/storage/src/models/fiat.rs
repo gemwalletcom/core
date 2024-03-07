@@ -10,6 +10,16 @@ pub struct FiatRate {
     pub rate: f64,
 }
 
+impl FiatRate {
+    pub fn from_primitive(rate: primitives::FiatRate) -> Self {
+        FiatRate {
+            symbol: rate.symbol,
+            name: rate.name,
+            rate: rate.rate,
+        }
+    }
+}
+
 #[derive(Debug, Queryable, Selectable, Insertable, AsChangeset, Clone)]
 #[diesel(table_name = crate::schema::fiat_assets)]
 #[diesel(check_for_backend(diesel::pg::Pg))]

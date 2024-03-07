@@ -31,6 +31,8 @@ pub use self::fiat_assets::FiatAsset;
 pub use self::fiat_assets::FiatAssets;
 pub mod fiat_provider;
 pub mod fiat_quote_request;
+pub mod fiat_rate;
+pub use self::fiat_rate::FiatRate;
 pub mod platform;
 pub use self::platform::Platform;
 pub mod device;

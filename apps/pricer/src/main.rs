@@ -1,4 +1,5 @@
-use pricer::{client::PriceClient, coingecko::CoinGeckoClient, price_updater::PriceUpdater};
+use coingecko::CoinGeckoClient;
+use pricer::{client::PriceClient, price_updater::PriceUpdater};
 use settings::Settings;
 use std::{thread, time::Duration};
 

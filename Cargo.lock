@@ -1515,6 +1515,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "coingecko"
+version = "1.0.0"
+dependencies = [
+ "primitives",
+ "reqwest",
+ "serde",
+]
+
+[[package]]
 name = "colorchoice"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1808,7 +1817,6 @@ version = "1.0.0"
 dependencies = [
  "api_connector",
  "fiat",
- "pricer",
  "primitives",
  "reqwest",
  "serde_json",
@@ -2744,8 +2752,6 @@ dependencies = [
  "bcs",
  "blake2",
  "hex",
- "indexmap 2.2.3",
- "once_cell",
  "primitives",
  "sui-types",
  "thiserror",
@@ -3140,8 +3146,8 @@ name = "img-downloader"
 version = "1.0.0"
 dependencies = [
  "clap",
+ "coingecko",
  "futures-util",
- "pricer",
  "primitives",
  "reqwest",
  "settings",
@@ -4886,10 +4892,9 @@ dependencies = [
 name = "pricer"
 version = "1.0.0"
 dependencies = [
+ "coingecko",
  "primitives",
  "redis",
- "reqwest",
- "serde",
  "serde_json",
  "settings",
  "storage",

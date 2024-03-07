@@ -1,8 +1,8 @@
 use super::model::{Coin, CoinInfo, CoinMarket, ExchangeRates, MarketChart};
+use primitives::FiatRate;
 use reqwest::header::{HeaderMap, HeaderValue, USER_AGENT};
 use reqwest::Error;
 use std::collections::HashMap;
-use storage::models::FiatRate;
 
 const COINGECKO_API_URL: &str = "https://api.coingecko.com";
 const COINGECKO_API_PRO_URL: &str = "https://pro-api.coingecko.com";
@@ -69,13 +69,28 @@ impl CoinGeckoClient {
         response.json().await
     }
 
-    pub async fn get_coin_markets_id(&self, id: &str) -> Result<Vec<CoinMarket>, Error> {
+    pub async fn get_coin_markets_id(
+        &self,
+        id: &str,
+    ) -> Result<CoinMarket, Box<dyn std::error::Error>> {
         let url = format!(
             "{}/api/v3/coins/markets?vs_currency=usd&ids={}&order=market_cap_desc&sparkline=false&locale=en&x_cg_pro_api_key={}",
             self.url, id, self.api_key
         );
-        let response = self.client.get(&url).headers(self.headers()).send().await?;
-        response.json().await
+        let response = self
+            .client
+            .get(&url)
+            .headers(self.headers())
+            .send()
+            .await?
+            .json::<Vec<CoinMarket>>()
+            .await?;
+
+        if let Some(market) = response.first() {
+            Ok(market.clone())
+        } else {
+            Err("market not found".into())
+        }
     }
 
     pub async fn get_coin(&self, coin: &str) -> Result<CoinInfo, Error> {
