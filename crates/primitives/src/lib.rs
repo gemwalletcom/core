@@ -7,6 +7,7 @@ pub use self::chain_type::ChainType;
 pub mod chain_evm;
 pub use self::chain_evm::EVMChain;
 pub mod name;
+pub use self::name::NameProvider;
 pub mod node;
 pub mod price;
 pub use self::price::Price;

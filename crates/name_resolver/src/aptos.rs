@@ -1,9 +1,6 @@
 use crate::client::NameClient;
 use async_trait::async_trait;
-use primitives::{
-    chain::Chain,
-    name::{NameProvider},
-};
+use primitives::{Chain, NameProvider};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use std::error::Error;

@@ -1,10 +1,7 @@
 use crate::codec::Codec;
 use crate::{client::NameClient, ton_codec};
 use async_trait::async_trait;
-use primitives::{
-    chain::Chain,
-    name::{NameProvider},
-};
+use primitives::{Chain, NameProvider};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use std::error::Error;

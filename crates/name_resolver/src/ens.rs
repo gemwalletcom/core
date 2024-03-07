@@ -1,11 +1,7 @@
 use crate::client::NameClient;
 use crate::ens_provider::provider::Provider;
 use async_trait::async_trait;
-use primitives::{
-    chain::Chain,
-    name::{NameProvider},
-    EthereumAddress,
-};
+use primitives::{chain::Chain, name::NameProvider, EthereumAddress};
 use std::{error::Error, str::FromStr};
 
 pub struct ENSClient {

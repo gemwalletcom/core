@@ -172,7 +172,7 @@ impl PriceUpdater {
             .get_fiat_rates()
             .await?
             .into_iter()
-            .map(|x| FiatRate::from_primitive(x))
+            .map(FiatRate::from_primitive)
             .collect::<Vec<_>>();
 
         let count = self.price_client.set_fiat_rates(rates).await?;

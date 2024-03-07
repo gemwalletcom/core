@@ -1,10 +1,7 @@
 use crate::client::NameClient;
 use async_trait::async_trait;
 use base64::{engine::general_purpose, Engine as _};
-use primitives::{
-    chain::Chain,
-    name::{NameProvider},
-};
+use primitives::{Chain, NameProvider};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use std::error::Error;

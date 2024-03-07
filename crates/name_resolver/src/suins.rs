@@ -1,7 +1,7 @@
 use crate::client::NameClient;
 use async_trait::async_trait;
 use primitives::chain::Chain;
-use primitives::name::{NameProvider};
+use primitives::NameProvider;
 use std::error::Error;
 
 use jsonrpsee::{

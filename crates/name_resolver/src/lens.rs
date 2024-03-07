@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use std::error::Error;
 
 use crate::client::NameClient;
-use primitives::{chain::Chain, name::NameProvider};
+use primitives::{Chain, NameProvider};
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Data<T> {
