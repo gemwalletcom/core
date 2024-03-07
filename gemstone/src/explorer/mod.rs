@@ -18,7 +18,7 @@ pub fn get_name_by_host(host: String) -> Option<String> {
         "tronscan.org" => Some("TRONSCAN".into()),
         "basescan.org" => Some("BaseScan".into()),
         "blastscan.io" => Some("BlastScan".into()),
-        "explorer.sui.io" | "suiexplorer.com" => Some("Sui Explorer".into()),
+        "explorer.sui.io" | "suiexplorer.com" | "suiscan.xyz" => Some("Sui Explorer".into()),
         "explorer.aptoslabs.com" => Some("Aptos Explorer".into()),
         "mintscan.io" | "www.mintscan.io" => Some("MintScan".into()),
         _ => None,
