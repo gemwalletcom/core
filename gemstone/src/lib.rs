@@ -40,9 +40,28 @@ pub async fn say_after(ms: u64, who: String) -> String {
     format!("Hello, {who}!")
 }
 
+#[derive(uniffi::Object)]
+struct Explorer {}
 #[uniffi::export]
-pub fn explorer_get_name_by_host(host: String) -> Option<String> {
-    explorer::get_name_by_host(host)
+impl Explorer {
+    #[uniffi::constructor]
+    fn new() -> Self {
+        Self {}
+    }
+
+    pub fn get_name_by_host(&self, host: String) -> Option<String> {
+        explorer::get_name_by_host(host)
+    }
+
+    pub fn get_transaction_url(&self, chain: String, transaction_id: String) -> String {
+        let chain = Chain::from_str(&chain).unwrap();
+        explorer::get_explorer_transaction_url(chain, &transaction_id)
+    }
+
+    pub fn get_address_url(&self, chain: String, address: String) -> String {
+        let chain = Chain::from_str(&chain).unwrap();
+        explorer::get_explorer_address_url(chain, &address)
+    }
 }
 
 #[uniffi::export]
