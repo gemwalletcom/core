@@ -1,7 +1,7 @@
 use coingecko::CoinGeckoClient;
 use pricer::{client::PriceClient, price_updater::PriceUpdater};
 use settings::Settings;
-use std::{thread, time::Duration};
+use std::{error::Error, thread, time::Duration};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -18,66 +18,33 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut price_updater: PriceUpdater = PriceUpdater::new(price_client, coingecko_client);
 
     println!("update assets: start");
-
-    let result = price_updater.update_assets().await;
-    match result {
-        Ok(count) => {
-            println!("update assets: {}", count)
-        }
-        Err(err) => {
-            println!("update assets error: {}", err)
-        }
-    }
+    log_method_call("update assets", price_updater.update_assets().await);
 
     println!("update rates: start");
+    log_method_call("update rates", price_updater.update_fiat_rates().await);
 
-    let result = price_updater.update_fiat_rates().await;
-    match result {
-        Ok(count) => {
-            println!("update rates: {}", count)
-        }
-        Err(err) => {
-            println!("update rates error: {}", err)
-        }
-    }
-
-    // updates charts
-    // only needed on initial setup
-    // let result = price_updater.update_charts().await;
-    // match result {
-    //     Ok(count) => {
-    //         println!("update charts: {}", count)
-    //     }
-    //     Err(err) => {
-    //         println!("update charts error: {}", err)
-    //     }
-    // }
+    // updates charts， only needed on initial setup
+    // log_method_call("update charts", price_updater.update_charts().await);
 
     loop {
         println!("update prices: start");
 
-        let result = price_updater.update_prices().await;
-        match result {
-            Ok(count) => {
-                println!("update prices: {}", count)
-            }
-            Err(err) => {
-                println!("update prices error: {}", err)
-            }
-        }
+        log_method_call("update prices", price_updater.update_prices().await);
 
         println!("update prices cache: start");
-
-        let result = price_updater.update_cache().await;
-        match result {
-            Ok(count) => {
-                println!("update prices cache: {}", count)
-            }
-            Err(err) => {
-                println!("update prices cache error: {}", err)
-            }
-        }
+        log_method_call("update prices cache", price_updater.update_cache().await);
 
         thread::sleep(Duration::from_secs(settings.pricer.timer));
+    }
+}
+
+fn log_method_call(method: &str, result: Result<usize, Box<dyn Error>>) {
+    match result {
+        Ok(count) => {
+            println!("{}: {}", method, count)
+        }
+        Err(err) => {
+            println!("{} error: {}", method, err)
+        }
     }
 }
