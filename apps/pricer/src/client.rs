@@ -130,7 +130,7 @@ impl PriceClient {
             .collect();
 
         self.redis_client
-            .get_async_connection()
+            .get_multiplexed_async_connection()
             .await?
             .mset(serialized.as_slice())
             .await?;
@@ -149,7 +149,7 @@ impl PriceClient {
             .collect();
         let result: Vec<Option<String>> = self
             .redis_client
-            .get_async_connection()
+            .get_multiplexed_async_connection()
             .await?
             .mget(keys)
             .await?;

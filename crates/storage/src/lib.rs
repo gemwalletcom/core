@@ -1,4 +1,4 @@
-use redis::{aio::Connection, AsyncCommands, RedisResult};
+use redis::{aio::MultiplexedConnection, AsyncCommands, RedisResult};
 use serde::{de::DeserializeOwned, Serialize};
 use std::error::Error;
 
@@ -11,13 +11,13 @@ pub mod clickhouse_database;
 pub use self::clickhouse_database::ClickhouseDatabase;
 
 pub struct RedisClient {
-    conn: Connection,
+    conn: MultiplexedConnection,
 }
 
 impl RedisClient {
     pub async fn new(database_url: &str) -> RedisResult<Self> {
         let client = redis::Client::open(database_url)?;
-        let conn = client.get_async_connection().await?;
+        let conn = client.get_multiplexed_async_connection().await?;
 
         Ok(Self { conn })
     }
