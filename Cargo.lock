@@ -2469,7 +2469,6 @@ dependencies = [
  "futures",
  "hex",
  "hmac",
- "num-bigint 0.4.4",
  "primitives",
  "reqwest",
  "serde",
