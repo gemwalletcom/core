@@ -13,7 +13,6 @@ num-traits = { workspace = true }
 bigdecimal = { workspace = true }
 strum = { workspace = true }
 strum_macros = { workspace = true }
-rust_decimal = { workspace = true }
 # make it optional feature
 rocket = { workspace = true }
 hex = { workspace = true }

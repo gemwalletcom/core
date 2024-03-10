@@ -1,15 +1,18 @@
 use bigdecimal::BigDecimal;
 use num_bigint::BigInt;
-use num_traits::FromPrimitive;
 use std::str::FromStr;
 
 pub struct NumberFormatter {}
 
 impl NumberFormatter {
-    pub fn value(value: &str, decimals: i32) -> Option<String> {
+    pub fn big_decimal_value(value: &str, decimals: u32) -> Option<BigDecimal> {
         let mut decimal = BigDecimal::from_str(value).ok()?;
-        let exp = BigInt::from_i32(10)?.pow(decimals as u32);
+        let exp = BigInt::from(10).pow(decimals);
         decimal = decimal / BigDecimal::from(exp);
+        Some(decimal)
+    }
+    pub fn value(value: &str, decimals: i32) -> Option<String> {
+        let decimal = Self::big_decimal_value(value, decimals as u32)?;
         Some(decimal.to_string())
     }
 }

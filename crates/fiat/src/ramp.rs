@@ -1,13 +1,13 @@
 use crate::model::FiatProviderAsset;
 use crate::model::{FiatClient, FiatMapping};
 use async_trait::async_trait;
+use bigdecimal::ToPrimitive;
 use primitives::Chain;
 use primitives::{
     fiat_provider::FiatProviderName, fiat_quote::FiatQuote, fiat_quote_request::FiatBuyRequest,
+    number_formatter::NumberFormatter,
 };
 use reqwest::{self, Client};
-use rust_decimal::prelude::*;
-use rust_decimal::Decimal;
 use serde::Deserialize;
 use url::Url;
 
@@ -149,11 +149,11 @@ impl RampClient {
     }
 
     fn get_fiat_quote(&self, request: FiatBuyRequest, quote: Quote) -> FiatQuote {
-        let mut crypto_amount =
-            Decimal::from_str(quote.clone().card_payment.crypto_amount.as_str()).unwrap();
-        crypto_amount
-            .set_scale(quote.asset.decimals)
-            .unwrap_or_default();
+        let crypto_amount = NumberFormatter::big_decimal_value(
+            quote.clone().card_payment.crypto_amount.as_str(),
+            quote.asset.decimals,
+        )
+        .unwrap_or_default();
 
         FiatQuote {
             provider: self.name().as_fiat_provider(),
