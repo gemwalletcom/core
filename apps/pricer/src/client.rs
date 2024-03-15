@@ -1,3 +1,4 @@
+use chrono::NaiveDateTime;
 use primitives::{Asset, AssetDetails, AssetScore, ChartPeriod, ChartValue};
 use redis::{AsyncCommands, RedisResult};
 use std::{collections::HashMap, error::Error};
@@ -180,5 +181,12 @@ impl PriceClient {
         let _ = self.database.add_assets_details(vec![details]);
         let _ = self.database.update_asset_rank(asset_id, asset_score.rank);
         Ok(())
+    }
+
+    pub fn delete_prices_updated_at_before(
+        &mut self,
+        time: NaiveDateTime,
+    ) -> Result<usize, Box<dyn Error>> {
+        Ok(self.database.delete_prices_updated_at_before(time)?)
     }
 }

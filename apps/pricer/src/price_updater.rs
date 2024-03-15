@@ -1,5 +1,6 @@
 use crate::client::PriceClient;
 use crate::DEFAULT_FIAT_CURRENCY;
+use chrono::{Duration, Utc};
 use coingecko::mapper::{get_associated_chains, get_chain_for_coingecko_id};
 use coingecko::{Coin, CoinGeckoClient, CoinMarket};
 use primitives::chain::Chain;
@@ -7,7 +8,6 @@ use primitives::AssetId;
 use std::collections::HashSet;
 use std::error::Error;
 use std::thread;
-use std::time::Duration;
 use storage::models::{ChartCoinPrice, FiatRate, Price};
 
 pub struct PriceUpdater {
@@ -75,6 +75,7 @@ impl PriceUpdater {
         let prices = self.get_prices_for_coin_market(coin.clone(), market.clone());
         Ok(prices)
     }
+
     pub fn get_prices_for_coin_market(&mut self, coin: Coin, market: CoinMarket) -> Vec<Price> {
         return coin
             .platforms
@@ -129,7 +130,7 @@ impl PriceUpdater {
 
                     println!("update charts {}", coin_id.id.clone());
 
-                    thread::sleep(Duration::from_millis(100));
+                    thread::sleep(std::time::Duration::from_millis(100));
                 }
                 Err(err) => {
                     println!("update charts error: {}", err);
@@ -177,6 +178,12 @@ impl PriceUpdater {
 
         let count = self.price_client.set_fiat_rates(rates).await?;
         Ok(count)
+    }
+
+    pub async fn clean(&mut self, days: i64) -> Result<usize, Box<dyn std::error::Error>> {
+        let time = Utc::now() - Duration::days(days);
+        self.price_client
+            .delete_prices_updated_at_before(time.naive_utc())
     }
 }
 

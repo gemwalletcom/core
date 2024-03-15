@@ -148,6 +148,14 @@ impl DatabaseClient {
             .first(&mut self.connection)
     }
 
+    pub fn delete_prices_updated_at_before(
+        &mut self,
+        time: NaiveDateTime,
+    ) -> Result<usize, diesel::result::Error> {
+        use crate::schema::prices::dsl::*;
+        diesel::delete(prices.filter(last_updated_at.lt(time))).execute(&mut self.connection)
+    }
+
     pub fn set_fiat_rates(&mut self, rates: Vec<FiatRate>) -> Result<usize, diesel::result::Error> {
         use crate::schema::fiat_rates::dsl::*;
         diesel::insert_into(fiat_rates)
