@@ -3,7 +3,7 @@ use strum::{EnumIter, IntoEnumIterator};
 use strum_macros::{AsRefStr, EnumString};
 use typeshare::typeshare;
 
-#[derive(Debug, Clone, Serialize, Deserialize, AsRefStr, EnumString, EnumIter)]
+#[derive(Debug, Clone, Serialize, Deserialize, AsRefStr, EnumString, EnumIter, PartialEq)]
 #[typeshare(swift = "Equatable, Codable, CaseIterable")]
 #[serde(rename_all = "UPPERCASE")]
 #[strum(serialize_all = "UPPERCASE")]

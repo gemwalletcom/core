@@ -4,7 +4,7 @@ diesel::table! {
     assets (id) {
         #[max_length = 128]
         id -> Varchar,
-        #[max_length = 32]
+        #[max_length = 16]
         chain -> Varchar,
         #[max_length = 128]
         token_id -> Nullable<Varchar>,
@@ -15,9 +15,10 @@ diesel::table! {
         #[max_length = 16]
         symbol -> Varchar,
         decimals -> Int4,
-        rank -> Int4,
         updated_at -> Timestamp,
         created_at -> Timestamp,
+        rank -> Int4,
+        enabled -> Bool,
     }
 }
 
@@ -25,35 +26,35 @@ diesel::table! {
     assets_details (asset_id) {
         #[max_length = 128]
         asset_id -> Varchar,
-        #[max_length = 128]
+        #[max_length = 64]
         homepage -> Nullable<Varchar>,
-        #[max_length = 128]
+        #[max_length = 64]
         explorer -> Nullable<Varchar>,
-        #[max_length = 128]
+        #[max_length = 64]
         twitter -> Nullable<Varchar>,
-        #[max_length = 128]
+        #[max_length = 64]
         telegram -> Nullable<Varchar>,
-        #[max_length = 128]
+        #[max_length = 64]
         github -> Nullable<Varchar>,
-        #[max_length = 128]
+        #[max_length = 64]
         youtube -> Nullable<Varchar>,
-        #[max_length = 128]
+        #[max_length = 64]
         facebook -> Nullable<Varchar>,
-        #[max_length = 128]
+        #[max_length = 64]
         reddit -> Nullable<Varchar>,
-        #[max_length = 128]
+        #[max_length = 64]
         coingecko -> Nullable<Varchar>,
-        #[max_length = 128]
+        #[max_length = 64]
         coinmarketcap -> Nullable<Varchar>,
-        #[max_length = 128]
+        #[max_length = 64]
         discord -> Nullable<Varchar>,
+        updated_at -> Timestamp,
+        created_at -> Timestamp,
         is_buyable -> Bool,
         is_sellable -> Bool,
         is_swappable -> Bool,
         is_stakeable -> Bool,
         staking_apr -> Nullable<Float8>,
-        updated_at -> Timestamp,
-        created_at -> Timestamp,
     }
 }
 
@@ -88,12 +89,12 @@ diesel::table! {
         #[max_length = 8]
         locale -> Varchar,
         #[max_length = 8]
-        currency -> Varchar,
-        #[max_length = 8]
         version -> Varchar,
-        subscriptions_version -> Int4,
         updated_at -> Timestamp,
         created_at -> Timestamp,
+        #[max_length = 8]
+        currency -> Varchar,
+        subscriptions_version -> Int4,
     }
 }
 
@@ -106,9 +107,9 @@ diesel::table! {
         provider -> Varchar,
         symbol -> Varchar,
         network -> Nullable<Varchar>,
-        enabled -> Bool,
         updated_at -> Timestamp,
         created_at -> Timestamp,
+        enabled -> Bool,
     }
 }
 
@@ -157,6 +158,7 @@ diesel::table! {
         is_enabled -> Bool,
         updated_at -> Timestamp,
         created_at -> Timestamp,
+        block_created_at -> Timestamp,
     }
 }
 
@@ -169,12 +171,12 @@ diesel::table! {
         market_cap -> Float8,
         market_cap_rank -> Int4,
         total_volume -> Float8,
-        circulating_supply -> Float8,
-        total_supply -> Float8,
-        max_supply -> Float8,
         last_updated_at -> Timestamp,
         updated_at -> Timestamp,
         created_at -> Timestamp,
+        circulating_supply -> Float8,
+        total_supply -> Float8,
+        max_supply -> Float8,
     }
 }
 
@@ -201,10 +203,20 @@ diesel::table! {
     subscriptions (id) {
         id -> Int4,
         device_id -> Int4,
-        wallet_index -> Int4,
         chain -> Varchar,
         #[max_length = 256]
         address -> Varchar,
+        updated_at -> Timestamp,
+        created_at -> Timestamp,
+        wallet_index -> Int4,
+    }
+}
+
+diesel::table! {
+    swap_assets (id) {
+        id -> Int4,
+        #[max_length = 128]
+        asset_id -> Varchar,
         updated_at -> Timestamp,
         created_at -> Timestamp,
     }
@@ -248,11 +260,11 @@ diesel::table! {
         fee -> Nullable<Varchar>,
         utxo_inputs -> Nullable<Jsonb>,
         utxo_outputs -> Nullable<Jsonb>,
-        metadata -> Nullable<Jsonb>,
         fee_asset_id -> Varchar,
         block_created_at -> Timestamp,
         updated_at -> Timestamp,
         created_at -> Timestamp,
+        metadata -> Nullable<Jsonb>,
     }
 }
 
@@ -282,17 +294,12 @@ diesel::table! {
 }
 
 diesel::joinable!(assets -> assets_types (asset_type));
-diesel::joinable!(assets -> chains (chain));
 diesel::joinable!(assets_details -> assets (asset_id));
 diesel::joinable!(fiat_assets -> assets (asset_id));
 diesel::joinable!(fiat_assets -> fiat_providers (provider));
-diesel::joinable!(nodes -> chains (chain));
-diesel::joinable!(parser_state -> chains (chain));
 diesel::joinable!(scan_addresses -> chains (chain));
-diesel::joinable!(subscriptions -> chains (chain));
 diesel::joinable!(subscriptions -> devices (device_id));
-diesel::joinable!(tokenlists -> chains (chain));
-diesel::joinable!(transactions -> chains (chain));
+diesel::joinable!(swap_assets -> assets (asset_id));
 diesel::joinable!(transactions_addresses -> assets (asset_id));
 diesel::joinable!(transactions_addresses -> chains (chain_id));
 diesel::joinable!(transactions_addresses -> transactions (transaction_id));
@@ -311,6 +318,7 @@ diesel::allow_tables_to_appear_in_same_query!(
     prices,
     scan_addresses,
     subscriptions,
+    swap_assets,
     tokenlists,
     transactions,
     transactions_addresses,

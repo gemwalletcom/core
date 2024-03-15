@@ -496,6 +496,7 @@ impl DatabaseClient {
         }
 
         query
+            .filter(enabled.eq(true))
             .order(rank.desc())
             .select(Asset::as_select())
             .load(&mut self.connection)
@@ -524,11 +525,24 @@ impl DatabaseClient {
             .load(&mut self.connection)
     }
 
-    pub fn add_assets(&mut self, _assets: Vec<Asset>) -> Result<usize, diesel::result::Error> {
+    pub fn add_assets(&mut self, values: Vec<Asset>) -> Result<usize, diesel::result::Error> {
         use crate::schema::assets::dsl::*;
         diesel::insert_into(assets)
-            .values(&_assets)
+            .values(values)
             .on_conflict_do_nothing()
+            .execute(&mut self.connection)
+    }
+
+    pub fn update_asset_rank(
+        &mut self,
+        asset_id: &str,
+        _rank: i32,
+    ) -> Result<usize, diesel::result::Error> {
+        use crate::schema::assets::dsl::*;
+        diesel::update(assets)
+            .filter(id.eq(asset_id))
+            .filter(rank.eq(0))
+            .set(rank.eq(_rank))
             .execute(&mut self.connection)
     }
 

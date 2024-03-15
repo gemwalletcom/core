@@ -124,17 +124,20 @@ impl CoinGeckoClient {
     pub async fn get_all_coin_markets(
         &self,
         per_page: u32,
-        limit_page: u32,
+        pages: u32,
     ) -> Result<Vec<CoinMarket>, Error> {
         let mut all_coin_markets = Vec::new();
         let mut page = 1;
 
         loop {
             let coin_markets = self.get_coin_markets(page, per_page).await?;
-            if coin_markets.is_empty() || page == limit_page {
+
+            all_coin_markets.extend(coin_markets.clone());
+
+            if coin_markets.is_empty() || page == pages {
                 break;
             }
-            all_coin_markets.extend(coin_markets);
+
             page += 1;
         }
 

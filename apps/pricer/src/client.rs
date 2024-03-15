@@ -1,4 +1,4 @@
-use primitives::{Asset, AssetDetails, ChartPeriod, ChartValue};
+use primitives::{Asset, AssetDetails, AssetScore, ChartPeriod, ChartValue};
 use redis::{AsyncCommands, RedisResult};
 use std::{collections::HashMap, error::Error};
 use storage::{
@@ -167,6 +167,7 @@ impl PriceClient {
     pub async fn update_asset(
         &mut self,
         asset: Asset,
+        asset_score: AssetScore,
         asset_details: AssetDetails,
     ) -> Result<(), Box<dyn Error>> {
         let details = storage::models::asset::AssetDetail::from_primitive(
@@ -174,8 +175,10 @@ impl PriceClient {
             asset_details,
         );
         let asset = storage::models::asset::Asset::from_primitive(asset);
-        let _ = self.database.add_assets(vec![asset]);
+        let asset_id = asset.id.as_str();
+        let _ = self.database.add_assets(vec![asset.clone()]);
         let _ = self.database.add_assets_details(vec![details]);
+        let _ = self.database.update_asset_rank(asset_id, asset_score.rank);
         Ok(())
     }
 }
