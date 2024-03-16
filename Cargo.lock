@@ -1117,24 +1117,6 @@ dependencies = [
 name = "blockchain"
 version = "1.0.0"
 dependencies = [
- "async-trait",
- "base64 0.22.0",
- "bs58 0.5.0",
- "chrono",
- "cosmos-sdk-proto",
- "curve25519-dalek",
- "futures",
- "hex",
- "jsonrpsee",
- "name_resolver",
- "num-bigint 0.4.4",
- "num-traits",
- "primitives",
- "reqwest-middleware",
- "serde",
- "serde_json",
- "sha2 0.10.8",
- "thiserror",
  "typeshare",
 ]
 
@@ -2716,6 +2698,63 @@ dependencies = [
 ]
 
 [[package]]
+name = "gem_chain_rpc"
+version = "1.0.0"
+dependencies = [
+ "async-trait",
+ "base64 0.22.0",
+ "bs58 0.5.0",
+ "chrono",
+ "cosmos-sdk-proto",
+ "futures",
+ "gem_evm",
+ "gem_solana",
+ "hex",
+ "jsonrpsee",
+ "name_resolver",
+ "num-bigint 0.4.4",
+ "num-traits",
+ "primitives",
+ "reqwest-middleware",
+ "serde",
+ "serde_json",
+ "sha2 0.10.8",
+]
+
+[[package]]
+name = "gem_cosmos"
+version = "1.0.0"
+dependencies = [
+ "bech32",
+]
+
+[[package]]
+name = "gem_evm"
+version = "1.0.0"
+dependencies = [
+ "gem_hash",
+ "hex",
+ "itoa",
+]
+
+[[package]]
+name = "gem_hash"
+version = "1.0.0"
+dependencies = [
+ "tiny-keccak",
+]
+
+[[package]]
+name = "gem_solana"
+version = "1.0.0"
+dependencies = [
+ "bs58 0.5.0",
+ "curve25519-dalek",
+ "sha2 0.10.8",
+ "thiserror",
+]
+
+[[package]]
 name = "gemstone"
 version = "0.1.1"
 dependencies = [
@@ -2723,8 +2762,8 @@ dependencies = [
  "async-std",
  "base64 0.22.0",
  "bcs",
- "bech32",
  "blake2",
+ "gem_cosmos",
  "hex",
  "primitives",
  "sui-types",
@@ -3122,6 +3161,7 @@ dependencies = [
  "clap",
  "coingecko",
  "futures-util",
+ "gem_evm",
  "primitives",
  "reqwest",
  "settings",
@@ -4052,6 +4092,8 @@ version = "1.0.0"
 dependencies = [
  "async-trait",
  "base64 0.22.0",
+ "gem_evm",
+ "gem_hash",
  "hex",
  "jsonrpsee",
  "lazy_static",
@@ -4513,8 +4555,8 @@ name = "parser"
 version = "1.0.0"
 dependencies = [
  "api_connector",
- "blockchain",
  "futures",
+ "gem_chain_rpc",
  "primitives",
  "serde_json",
  "settings",
@@ -4903,8 +4945,7 @@ version = "1.0.0"
 dependencies = [
  "bigdecimal",
  "chrono",
- "hex",
- "itoa",
+ "gem_evm",
  "num-bigint 0.4.4",
  "num-traits",
  "rocket",
@@ -4912,7 +4953,6 @@ dependencies = [
  "serde_json",
  "strum 0.26.1",
  "strum_macros 0.26.1",
- "tiny-keccak",
  "typeshare",
 ]
 
@@ -6156,7 +6196,7 @@ dependencies = [
 name = "settings_chain"
 version = "1.0.0"
 dependencies = [
- "blockchain",
+ "gem_chain_rpc",
  "primitives",
  "reqwest",
  "reqwest-middleware",
@@ -6639,7 +6679,8 @@ dependencies = [
 name = "swapper"
 version = "1.0.0"
 dependencies = [
- "blockchain",
+ "gem_evm",
+ "gem_solana",
  "primitives",
  "reqwest",
  "serde",

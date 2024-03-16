@@ -1,0 +1,11 @@
+[package]
+name = "gem_solana"
+version = { workspace = true }
+edition = { workspace = true }
+
+[dependencies]
+
+curve25519-dalek = { workspace = true }
+thiserror = { workspace = true }
+sha2 = { workspace = true }
+bs58 = { workspace = true }

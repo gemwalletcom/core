@@ -3,7 +3,8 @@ use std::{fmt, str::FromStr};
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
-use crate::{chain::Chain, EthereumAddress};
+use crate::chain::Chain;
+use gem_evm::address::EthereumAddress;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Codable, Hashable")]

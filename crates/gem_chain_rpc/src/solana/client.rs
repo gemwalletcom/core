@@ -15,9 +15,9 @@ use primitives::{
     chain::Chain, AssetId, Transaction, TransactionState, TransactionSwapMetadata, TransactionType,
 };
 
+use super::model::BlockTransaction;
+use gem_solana::WSOL_TOKEN_ADDRESS;
 use serde_json::json;
-
-use super::{model::BlockTransaction, WSOL_TOKEN_ADDRESS};
 
 pub struct SolanaClient {
     client: HttpClient,

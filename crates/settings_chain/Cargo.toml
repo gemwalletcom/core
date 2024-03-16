@@ -9,5 +9,5 @@ reqwest-middleware = { workspace = true }
 reqwest-retry = { workspace = true }
 
 primitives = { path = "../primitives" }
-blockchain = { path = "../blockchain" }
+gem_chain_rpc = { path = "../gem_chain_rpc" }
 settings = { path = "../settings" }

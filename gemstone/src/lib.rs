@@ -1,6 +1,5 @@
-use std::{collections::HashMap, str::FromStr};
-
 use primitives::Chain;
+use std::{collections::HashMap, str::FromStr};
 
 pub mod asset;
 pub mod config;
@@ -135,4 +134,13 @@ pub fn asset_default_rank(chain: String) -> i32 {
         Ok(chain) => asset::default_rank(chain),
         Err(_) => 10,
     }
+}
+
+#[uniffi::export]
+pub fn cosmos_convert_hrp(address: String, hrp: String) -> Result<String, GemstoneError> {
+    gem_cosmos::converter::convert_cosmos_address(address.as_str(), hrp.as_str()).map_err(|err| {
+        GemstoneError::AnyError {
+            msg: err.to_string(),
+        }
+    })
 }

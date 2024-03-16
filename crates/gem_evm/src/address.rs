@@ -1,5 +1,5 @@
 /// Taken from https://github.com/alloy-rs/core/blob/main/crates/primitives/src/bits/address.rs
-use super::keccak::keccak256;
+use gem_hash::keccak::keccak256;
 use std::str::FromStr;
 
 /// Error type for address checksum validation.
@@ -120,7 +120,7 @@ impl EthereumAddress {
 
 #[cfg(test)]
 mod tests {
-    use crate::EthereumAddress;
+    use super::EthereumAddress;
 
     #[test]
     fn checksum() {

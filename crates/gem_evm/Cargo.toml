@@ -1,0 +1,10 @@
+[package]
+name = "gem_evm"
+version = { workspace = true }
+edition = { workspace = true }
+
+[dependencies]
+
+hex = { workspace = true }
+itoa = { workspace = true }
+gem_hash = { path = "../gem_hash" }

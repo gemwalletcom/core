@@ -15,6 +15,4 @@ strum = { workspace = true }
 strum_macros = { workspace = true }
 # make it optional feature
 rocket = { workspace = true }
-hex = { workspace = true }
-itoa = { workspace = true }
-tiny-keccak = { workspace = true }
+gem_evm = { path = "../gem_evm" }

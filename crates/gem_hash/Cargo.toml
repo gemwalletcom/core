@@ -1,0 +1,7 @@
+[package]
+name = "gem_hash"
+version = { workspace = true }
+edition = { workspace = true }
+
+[dependencies]
+tiny-keccak = { workspace = true }

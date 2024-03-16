@@ -6,7 +6,7 @@ use std::{
 };
 
 use crate::pusher::Pusher;
-use blockchain::ChainProvider;
+use gem_chain_rpc::ChainProvider;
 use primitives::Chain;
 use storage::DatabaseClient;
 
