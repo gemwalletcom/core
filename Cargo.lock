@@ -2723,6 +2723,7 @@ dependencies = [
  "async-std",
  "base64 0.22.0",
  "bcs",
+ "bech32",
  "blake2",
  "hex",
  "primitives",
