@@ -1,4 +1,4 @@
-use blockchain::solana::pubkey::Pubkey;
+use gem_solana::pubkey::Pubkey;
 
 const REFERRAL_ATA: &str = "referral_ata";
 const REFERRAL_PROGRAM: &str = "REFER4ZgmyYx9c6He5XfaTMiGfdLwRnkV4RPp9t9iF3";
@@ -24,7 +24,7 @@ pub fn get_referral_account(referral_key: &str, token_mint: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use blockchain::solana::WSOL_TOKEN_ADDRESS;
+    use gem_solana::WSOL_TOKEN_ADDRESS;
 
     #[test]
     fn test_get_referral_account() {

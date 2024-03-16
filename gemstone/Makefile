@@ -36,6 +36,13 @@ prepare-android:
 
 apple: build-targets bindgen-swift assemble-frameworks xcframework cp-xcframework-source
 
+test-ios:
+	@xcodebuild -project tests/ios/GemTest/GemTest.xcodeproj \
+	-scheme GemTest \
+	-sdk iphonesimulator \
+	-destination "platform=iOS Simulator,name=iPhone 15,OS=17.2" \
+	test | xcbeautify
+
 bindgen: bindgen-swift bindgen-kotlin
 
 build-targets:

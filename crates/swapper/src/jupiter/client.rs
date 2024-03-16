@@ -1,5 +1,5 @@
 use super::model::{QuoteDataRequest, QuoteDataResponse, QuoteRequest, QuoteResponse};
-use blockchain::solana::WSOL_TOKEN_ADDRESS;
+use gem_solana::WSOL_TOKEN_ADDRESS;
 use primitives::{ChainType, SwapProvider, SwapQuote, SwapQuoteData, SwapQuoteProtocolRequest};
 
 const PROGRAM_ADDRESS: &str = "JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4";

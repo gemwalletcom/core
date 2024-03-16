@@ -29,6 +29,11 @@ members = [
     "crates/api_connector",
     "crates/settings",
     "crates/settings_chain",
+    "crates/gem_hash",
+    "crates/gem_evm",
+    "crates/gem_solana",
+    "crates/gem_cosmos",
+    "crates/gem_chain_rpc",
 ]
 
 default-members = [
@@ -70,7 +75,7 @@ clickhouse = { git = "https://github.com/loyd/clickhouse.rs", rev = "d930b66f677
 # crypto
 base64 = { version = "0.22.0" }
 blake2 = "0.10.6"
-#bech32 = { version = "0.9.1" }
+bech32 = { version = "0.9.1" }
 bs58 = { version = "0.5.0", features = ["check"] }
 hex = { version = "0.4.3" }
 num-bigint = { version = "0.4.4", features = ["std", "serde"] }

@@ -4,6 +4,7 @@ use super::model::{Block, Transaction, TransactionReciept};
 use crate::ChainProvider;
 use async_trait::async_trait;
 use chrono::Utc;
+use gem_evm::address::EthereumAddress;
 use jsonrpsee::{
     core::{client::ClientT, params::BatchRequestBuilder},
     http_client::{HttpClient, HttpClientBuilder},
@@ -12,8 +13,7 @@ use jsonrpsee::{
 use num_bigint::BigUint;
 use num_traits::Num;
 use primitives::{
-    chain::Chain, AssetId, EthereumAddress, TransactionState, TransactionSwapMetadata,
-    TransactionType,
+    chain::Chain, AssetId, TransactionState, TransactionSwapMetadata, TransactionType,
 };
 use serde_json::json;
 

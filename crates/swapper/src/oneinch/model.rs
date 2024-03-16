@@ -1,6 +1,7 @@
 use std::str::FromStr;
 
-use primitives::{EthereumAddress, SwapQuoteData};
+use gem_evm::address::EthereumAddress;
+use primitives::SwapQuoteData;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

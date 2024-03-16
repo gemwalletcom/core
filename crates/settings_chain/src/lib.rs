@@ -1,4 +1,4 @@
-use blockchain::{
+use gem_chain_rpc::{
     AptosClient, BitcoinClient, ChainProvider, CosmosClient, EthereumClient, SolanaClient,
     SuiClient, TonClient, TronClient, XRPClient,
 };

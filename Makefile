@@ -5,6 +5,7 @@ install: install-rust install-typeshare install-diesel
 install-rust:
 	@echo Install Rust
 	@curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+	@cargo install cargo-machete
 
 install-typeshare:
 	@echo Install typeshare-cli

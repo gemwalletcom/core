@@ -1,4 +1,4 @@
-use primitives::keccak::keccak256;
+use gem_hash::keccak::keccak256;
 
 pub fn namehash(name: &str) -> Vec<u8> {
     if name.is_empty() {

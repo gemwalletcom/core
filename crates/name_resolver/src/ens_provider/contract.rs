@@ -1,8 +1,8 @@
 use super::namehash::namehash;
+use gem_hash::keccak::keccak256;
 use jsonrpsee::core::client::ClientT;
 use jsonrpsee::core::ClientError;
 use jsonrpsee::http_client::HttpClient;
-use primitives::keccak::keccak256;
 use serde_json::json;
 
 pub struct Contract {

@@ -16,6 +16,8 @@ lazy_static = { workspace = true }
 ton_smart_contract_address = "0.0.4"
 settings = { path = "../settings" }
 primitives = { path = "../primitives" }
+gem_hash = { path = "../gem_hash" }
+gem_evm = { path = "../gem_evm" }
 
 [dev-dependencies]
 tokio-test = { version = "*" }

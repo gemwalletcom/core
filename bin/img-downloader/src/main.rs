@@ -2,7 +2,7 @@ use clap::{arg, Parser};
 use coingecko::get_chain_for_coingecko_id;
 use coingecko::{CoinGeckoClient, CoinInfo};
 use futures_util::StreamExt;
-use primitives::ethereum_address::EthereumAddress;
+use gem_evm::address::EthereumAddress;
 use settings::Settings;
 use std::{
     error::Error, fs, io::Write, path::Path, str::FromStr, thread::sleep, time::Duration, vec,
