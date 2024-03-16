@@ -20,10 +20,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("clean outdated asset: start");
 
-    let result = price_updater.clean(7).await;
-    match result {
+    match price_updater
+        .clean_outdated_assets(settings.pricer.outdated)
+        .await
+    {
         Ok(count) => {
-            println!("clean outdated assets: {}", count)
+            println!("clean outdated assets: {},", count)
         }
         Err(err) => {
             println!("clean outdated assets error: {}", err)
@@ -32,8 +34,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("update assets: start");
 
-    let result = asset_updater.update_assets().await;
-    match result {
+    match asset_updater.update_assets().await {
         Ok(count) => {
             println!("update assets: {}", count)
         }
@@ -44,8 +45,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("update rates: start");
 
-    let result = price_updater.update_fiat_rates().await;
-    match result {
+    match price_updater.update_fiat_rates().await {
         Ok(count) => {
             println!("update rates: {}", count)
         }
@@ -69,8 +69,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     loop {
         println!("update prices: start");
 
-        let result = price_updater.update_prices().await;
-        match result {
+        match price_updater.update_prices().await {
             Ok(count) => {
                 println!("update prices: {}", count)
             }
@@ -81,8 +80,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         println!("update prices cache: start");
 
-        let result = price_updater.update_cache().await;
-        match result {
+        match price_updater.update_cache().await {
             Ok(count) => {
                 println!("update prices cache: {}", count)
             }

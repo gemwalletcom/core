@@ -33,6 +33,7 @@ public = ""
 
 [pricer]
 timer = 60
+outdated = 604800 # 7 days
 
 [name]
 [name.ens]
