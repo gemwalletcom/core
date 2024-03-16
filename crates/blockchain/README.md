@@ -1,3 +1,3 @@
 # Blockchain
 
-Bascis blockchain models annotated with TypeShare.
+Basic blockchain models annotated with TypeShare.
