@@ -1,5 +1,5 @@
 use coingecko::CoinGeckoClient;
-use pricer::{client::PriceClient, price_updater::PriceUpdater};
+use pricer::{asset_updater::AssetUpdater, client::PriceClient, price_updater::PriceUpdater};
 use settings::Settings;
 use std::{thread, time::Duration};
 
@@ -15,11 +15,24 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         &settings.clickhouse.url,
     );
 
-    let mut price_updater: PriceUpdater = PriceUpdater::new(price_client, coingecko_client);
+    let mut price_updater = PriceUpdater::new(price_client, coingecko_client.clone());
+    let mut asset_updater = AssetUpdater::new(coingecko_client.clone(), &settings.postgres.url);
+
+    println!("clean outdated asset: start");
+
+    let result = price_updater.clean(7).await;
+    match result {
+        Ok(count) => {
+            println!("clean outdated assets: {}", count)
+        }
+        Err(err) => {
+            println!("clean outdated assets error: {}", err)
+        }
+    }
 
     println!("update assets: start");
 
-    let result = price_updater.update_assets().await;
+    let result = asset_updater.update_assets().await;
     match result {
         Ok(count) => {
             println!("update assets: {}", count)

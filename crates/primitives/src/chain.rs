@@ -242,15 +242,14 @@ impl Chain {
         match self {
             Self::Bitcoin => 100,
             Self::Ethereum => 80,
-            Self::Solana => 70,
-            Self::SmartChain => 60,
+            Self::Solana | Self::SmartChain => 70,
             Self::Osmosis | Self::Ton | Self::Tron => 50,
             Self::Cosmos
             | Self::Injective
             | Self::Aptos
             | Self::Sui
             | Self::Xrp
-            | Self::Celestia => 45,
+            | Self::Celestia => 40,
             Self::Manta
             | Self::Fantom
             | Self::OpBNB
@@ -264,7 +263,7 @@ impl Chain {
             | Self::Doge
             | Self::AvalancheC
             | Self::Sei
-            | Self::Litecoin => 40,
+            | Self::Litecoin => 30,
             Self::Binance => 0,
         }
     }

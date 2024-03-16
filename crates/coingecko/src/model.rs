@@ -38,12 +38,12 @@ pub struct Image {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct CommunityData {
-    twitter_followers: Option<i64>,
+    pub twitter_followers: Option<i64>,
 }
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct DeveloperData {
-    stars: Option<i64>,
-    subscribers: Option<i64>,
+    pub stars: Option<i64>,
+    pub subscribers: Option<i64>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

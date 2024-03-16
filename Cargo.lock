@@ -4866,6 +4866,7 @@ dependencies = [
 name = "pricer"
 version = "1.0.0"
 dependencies = [
+ "chrono",
  "coingecko",
  "primitives",
  "redis",

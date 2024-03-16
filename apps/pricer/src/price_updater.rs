@@ -1,13 +1,13 @@
 use crate::client::PriceClient;
 use crate::DEFAULT_FIAT_CURRENCY;
+use chrono::{Duration, Utc};
 use coingecko::mapper::{get_associated_chains, get_chain_for_coingecko_id};
-use coingecko::{Coin, CoinGeckoClient, CoinInfo, CoinMarket};
+use coingecko::{Coin, CoinGeckoClient, CoinMarket};
 use primitives::chain::Chain;
-use primitives::{Asset, AssetDetails, AssetId, AssetLinks};
+use primitives::AssetId;
 use std::collections::HashSet;
 use std::error::Error;
 use std::thread;
-use std::time::Duration;
 use storage::models::{ChartCoinPrice, FiatRate, Price};
 
 pub struct PriceUpdater {
@@ -75,6 +75,7 @@ impl PriceUpdater {
         let prices = self.get_prices_for_coin_market(coin.clone(), market.clone());
         Ok(prices)
     }
+
     pub fn get_prices_for_coin_market(&mut self, coin: Coin, market: CoinMarket) -> Vec<Price> {
         return coin
             .platforms
@@ -129,7 +130,7 @@ impl PriceUpdater {
 
                     println!("update charts {}", coin_id.id.clone());
 
-                    thread::sleep(Duration::from_millis(100));
+                    thread::sleep(std::time::Duration::from_millis(100));
                 }
                 Err(err) => {
                     println!("update charts error: {}", err);
@@ -179,198 +180,10 @@ impl PriceUpdater {
         Ok(count)
     }
 
-    pub async fn update_assets(&mut self) -> Result<usize, Box<dyn Error>> {
-        let coin_list = self
-            .coin_gecko_client
-            .get_all_coin_markets(250, 1)
-            .await?
-            .into_iter()
-            .map(|x| x.id)
-            .collect::<Vec<_>>();
-
-        for coin in coin_list.clone() {
-            self.update_asset(coin.as_str()).await?;
-        }
-
-        Ok(coin_list.len())
-    }
-
-    pub async fn update_asset(&mut self, coin: &str) -> Result<bool, Box<dyn Error>> {
-        let coin_info = self.coin_gecko_client.get_coin(coin).await?;
-        let result = self.get_assets_from_coin_info(coin_info);
-        for (asset, asset_details) in result {
-            self.price_client.update_asset(asset, asset_details).await?;
-        }
-        Ok(true)
-    }
-
-    fn get_assets_from_coin_info(&self, coin_info: CoinInfo) -> Vec<(Asset, AssetDetails)> {
-        let asset_details = self.get_asset_details(coin_info.clone());
-
-        let mut values = coin_info
-            .clone()
-            .detail_platforms
-            .into_iter()
-            .filter_map(|(coin_id, detail_platform)| {
-                let chain = get_chain_for_coingecko_id(coin_id.as_str());
-                if let (Some(chain), Some(detail_platform)) = (chain, detail_platform) {
-                    return Some((chain, Some(detail_platform)));
-                }
-                None
-            })
-            .collect::<Vec<_>>();
-
-        if let Some(chain) = get_chain_for_coingecko_id(coin_info.clone().id.as_str()) {
-            values.push((chain, None));
-        }
-
-        values
-            .into_iter()
-            .flat_map(|(chain, platform)| {
-                if let (Some(asset_type), Some(platform)) =
-                    (chain.default_asset_type(), platform.clone())
-                {
-                    if platform.contract_address.is_empty() || platform.decimal_place.is_none() {
-                        return None;
-                    }
-                    let token_id = AssetId::format_token_id(chain, platform.contract_address)?;
-                    let decimals = platform.decimal_place.unwrap_or_default();
-                    let asset_id = AssetId {
-                        chain,
-                        token_id: token_id.into(),
-                    };
-                    let asset = Asset {
-                        id: asset_id,
-                        name: coin_info.clone().name,
-                        symbol: coin_info.clone().symbol.to_uppercase(),
-                        decimals,
-                        asset_type,
-                    };
-                    Some(asset)
-                } else if platform.is_none() {
-                    return Some(Asset::from_chain(chain));
-                } else {
-                    None
-                }
-            })
-            .map(|x| (x, asset_details.clone()))
-            .collect::<Vec<_>>()
-    }
-
-    fn get_asset_details(&self, coin_info: CoinInfo) -> AssetDetails {
-        let links = coin_info.links.clone();
-        let homepage = links
-            .clone()
-            .homepage
-            .into_iter()
-            .filter(|x| !x.is_empty())
-            .collect::<Vec<_>>()
-            .first()
-            .cloned();
-        let explorer = if coin_info.asset_platform_id.is_none() {
-            links
-                .clone()
-                .blockchain_site
-                .into_iter()
-                .filter(|x| !x.clone().unwrap_or("".to_string()).is_empty())
-                .collect::<Vec<_>>()
-                .first()
-                .cloned()
-        } else {
-            None
-        };
-        let twitter = if links
-            .clone()
-            .twitter_screen_name
-            .unwrap_or_default()
-            .is_empty()
-        {
-            None
-        } else {
-            Some(format!(
-                "https://x.com/{}",
-                links.clone().twitter_screen_name.unwrap_or_default()
-            ))
-        };
-        let facebook = if links
-            .clone()
-            .facebook_username
-            .unwrap_or_default()
-            .is_empty()
-        {
-            None
-        } else {
-            Some(format!(
-                "https://facebook.com/{}",
-                links.clone().facebook_username.unwrap_or_default()
-            ))
-        };
-        let telegram = if links
-            .clone()
-            .telegram_channel_identifier
-            .unwrap_or_default()
-            .is_empty()
-        {
-            None
-        } else {
-            Some(format!(
-                "https://t.me/{}",
-                links
-                    .clone()
-                    .telegram_channel_identifier
-                    .unwrap_or_default()
-            ))
-        };
-        let reddit = if links.clone().subreddit_url.unwrap_or_default() == "https://www.reddit.com"
-        {
-            None
-        } else {
-            links.clone().subreddit_url
-        };
-        let coingecko = format!(
-            "https://www.coingecko.com/coins/{}",
-            coin_info.id.to_lowercase()
-        );
-        let coinmarketcap = format!(
-            "https://coinmarketcap.com/currencies/{}",
-            coin_info.id.to_lowercase()
-        );
-        let discord = links
-            .clone()
-            .chat_url
-            .into_iter()
-            .filter(|x| x.contains("discord.com"))
-            .collect::<Vec<_>>()
-            .first()
-            .cloned();
-        let repos = links
-            .clone()
-            .repos_url
-            .get("github")
-            .cloned()
-            .unwrap_or_default();
-        let github = repos
-            .into_iter()
-            .filter(|x| !x.is_empty())
-            .collect::<Vec<_>>()
-            .first()
-            .cloned();
-
-        let links = AssetLinks {
-            homepage,
-            explorer: explorer.unwrap_or_default(),
-            twitter,
-            telegram,
-            github,
-            youtube: None,
-            facebook,
-            reddit,
-            coingecko: Some(coingecko),
-            coinmarketcap: Some(coinmarketcap),
-            discord,
-        };
-
-        AssetDetails::from_links(links)
+    pub async fn clean(&mut self, days: i64) -> Result<usize, Box<dyn std::error::Error>> {
+        let time = Utc::now() - Duration::days(days);
+        self.price_client
+            .delete_prices_updated_at_before(time.naive_utc())
     }
 }
 
