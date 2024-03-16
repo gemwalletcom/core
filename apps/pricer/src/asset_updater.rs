@@ -22,7 +22,6 @@ impl AssetUpdater {
             .database
             .get_prices()?
             .into_iter()
-            .filter(|x| x.market_cap_rank > 0 && x.market_cap_rank < 1000)
             .map(|x| x.coin_id)
             .collect::<HashSet<_>>()
             .into_iter()

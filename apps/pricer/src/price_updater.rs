@@ -180,8 +180,11 @@ impl PriceUpdater {
         Ok(count)
     }
 
-    pub async fn clean(&mut self, days: i64) -> Result<usize, Box<dyn std::error::Error>> {
-        let time = Utc::now() - Duration::days(days);
+    pub async fn clean_outdated_assets(
+        &mut self,
+        seconds: u64,
+    ) -> Result<usize, Box<dyn std::error::Error>> {
+        let time = Utc::now() - Duration::seconds(seconds as i64);
         self.price_client
             .delete_prices_updated_at_before(time.naive_utc())
     }

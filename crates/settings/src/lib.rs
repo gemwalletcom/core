@@ -91,6 +91,7 @@ pub struct CoinGecko {
 #[allow(unused)]
 pub struct Pricer {
     pub timer: u64,
+    pub outdated: u64,
 }
 
 #[derive(Debug, Deserialize, Clone)]
