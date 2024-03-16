@@ -8,5 +8,8 @@
         "activityBar.background": "#3E2918",
         "titleBar.activeBackground": "#573922",
         "titleBar.activeForeground": "#FCFAF8"
-    }
+    },
+    "cSpell.words": [
+        "rsponsbility"
+    ]
 }
