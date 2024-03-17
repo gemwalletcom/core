@@ -13,10 +13,12 @@ pub async fn get_asset(asset_id: &str, client: &State<Mutex<AssetsClient>>) -> J
     Json(asset)
 }
 
-#[get("/assets/search?<query>&<chains>")]
+#[get("/assets/search?<query>&<chains>&<limit>&<offset>")]
 pub async fn get_assets_search(
     query: String,
     chains: Option<String>,
+    limit: Option<i64>,
+    offset: Option<i64>,
     client: &State<Mutex<AssetsClient>>,
 ) -> Json<Vec<AssetFull>> {
     let chains = chains
@@ -28,7 +30,12 @@ pub async fn get_assets_search(
     let assets = client
         .lock()
         .await
-        .get_assets_search(query.as_str(), chains)
+        .get_assets_search(
+            query.as_str(),
+            chains,
+            limit.unwrap_or(50),
+            offset.unwrap_or(0),
+        )
         .unwrap();
     Json(assets)
 }
