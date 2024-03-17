@@ -40,11 +40,13 @@ impl AssetsClient {
         &mut self,
         query: &str,
         chains: Vec<String>,
+        limit: i64,
+        offset: i64,
     ) -> Result<Vec<primitives::AssetFull>, Box<dyn Error>> {
         let min_score = if query.len() > 10 { -100 } else { 10 };
         let assets = self
             .database
-            .get_assets_search(query, chains, min_score)?
+            .get_assets_search(query, chains, min_score, limit, offset)?
             .into_iter()
             .map(|asset| AssetFull {
                 asset: asset.as_primitive(),

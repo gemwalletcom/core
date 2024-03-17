@@ -486,18 +486,23 @@ impl DatabaseClient {
 
     pub fn get_assets_search(
         &mut self,
-        query: &str,
+        search_query: &str,
         chains: Vec<String>,
         min_score: i32,
+        limit: i64,
+        offset: i64,
     ) -> Result<Vec<Asset>, diesel::result::Error> {
         use crate::schema::assets::dsl::*;
-        let ilike_expression = format!("{}%", query);
 
-        let mut query = assets.into_boxed().filter(rank.gt(min_score)).filter(
-            name.ilike(ilike_expression.clone())
-                .or(symbol.ilike(ilike_expression.clone()))
-                .or(token_id.ilike(ilike_expression.clone())),
-        );
+        let mut query = assets.into_boxed();
+        if !search_query.is_empty() {
+            let ilike_expression = format!("{}%", search_query);
+            query = query.filter(rank.gt(min_score)).filter(
+                name.ilike(ilike_expression.clone())
+                    .or(symbol.ilike(ilike_expression.clone()))
+                    .or(token_id.ilike(ilike_expression.clone())),
+            )
+        }
 
         if !chains.is_empty() {
             query = query.filter(chain.eq_any(chains));
@@ -506,6 +511,8 @@ impl DatabaseClient {
         query
             .filter(enabled.eq(true))
             .order(rank.desc())
+            .limit(limit)
+            .offset(offset)
             .select(Asset::as_select())
             .load(&mut self.connection)
     }
