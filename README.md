@@ -27,7 +27,7 @@ The underlying cryptography / keystore for Gem Wallet is implemented using [Trus
 graph LR
     client[Gem Wallet (iOS/Android)]
     core-lib[gem wallet core library monorepo]
-    trust-core[trust wallet core]
+    trust-core[Trust Wallet Core]
     client-- pricing, notification and ... -->core-lib
     client-- cryptography such as seed generation and ... -->trust-core
 ```
