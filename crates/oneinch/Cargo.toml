@@ -1,13 +1,11 @@
 [package]
-name = "swapper"
+name = "oneinch"
 edition = { workspace = true }
 version = { workspace = true }
 
 [dependencies]
 serde = { workspace = true }
 reqwest = { workspace = true }
-
 primitives = { path = "../primitives" }
-gem_solana = { path = "../gem_solana" }
 gem_evm = { path = "../gem_evm" }
-oneinch = { path = "../oneinch" }
+gem_solana = { path = "../gem_solana" }

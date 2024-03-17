@@ -1,5 +1,6 @@
 mod device_updater;
 mod fiat_assets_updater;
+mod oneinch_updater;
 mod tokenlist_updater;
 mod version_updater;
 
@@ -25,9 +26,18 @@ pub async fn main() {
     let providers = FiatProviderFactory::new_providers(settings::Settings::new().unwrap());
     let mut fiat_assets_updater = FiatAssetsUpdater::new(&settings.postgres.url, providers);
 
+    let mut oneinch_updater = oneinch_updater::Client::new(
+        oneinch::OneInchClient::new(
+            settings.swap.oneinch.url,
+            settings.swap.oneinch.key,
+            0.0,
+            "".to_string(),
+        ),
+        &settings.postgres.url,
+    );
+
     // update fiat assets
-    let result = fiat_assets_updater.update_fiat_assets().await;
-    match result {
+    match fiat_assets_updater.update_fiat_assets().await {
         Ok(count) => {
             println!("update fiat assets: {}", count)
         }
@@ -36,9 +46,18 @@ pub async fn main() {
         }
     }
 
+    // update oneinch swap tokenlist
+
+    match oneinch_updater.update_swap_tokenlist().await {
+        Ok(_) => {
+            println!("update oneinch swap tokenlist: complete")
+        }
+        Err(err) => {
+            println!("update oneinch swap tokenlist error: {}", err)
+        }
+    }
     // update version
-    let ios_version = version_client.update_ios_version().await;
-    match ios_version {
+    match version_client.update_ios_version().await {
         Ok(version) => {
             println!("ios version: {:?}", version)
         }

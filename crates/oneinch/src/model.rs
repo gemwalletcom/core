@@ -1,4 +1,4 @@
-use std::str::FromStr;
+use std::{collections::HashMap, str::FromStr};
 
 use gem_evm::address::EthereumAddress;
 use primitives::SwapQuoteData;
@@ -44,3 +44,11 @@ impl SwapResultTransaction {
         }
     }
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Token {
+    pub chain_id: i64,
+}
+
+pub type Tokenlist = HashMap<String, Token>;

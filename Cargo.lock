@@ -1766,6 +1766,7 @@ version = "1.0.0"
 dependencies = [
  "api_connector",
  "fiat",
+ "oneinch",
  "primitives",
  "reqwest",
  "serde_json",
@@ -4361,6 +4362,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3fdb12b2476b595f9358c5161aa467c2438859caa136dec86c26fdd2efe17b92"
 
 [[package]]
+name = "oneinch"
+version = "1.0.0"
+dependencies = [
+ "gem_evm",
+ "gem_solana",
+ "primitives",
+ "reqwest",
+ "serde",
+]
+
+[[package]]
 name = "oneshot-uniffi"
 version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6688,6 +6700,7 @@ version = "1.0.0"
 dependencies = [
  "gem_evm",
  "gem_solana",
+ "oneinch",
  "primitives",
  "reqwest",
  "serde",

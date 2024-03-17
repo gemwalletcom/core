@@ -574,12 +574,26 @@ impl DatabaseClient {
 
     pub fn add_assets_details(
         &mut self,
-        _assets_details: Vec<AssetDetail>,
+        values: Vec<AssetDetail>,
     ) -> Result<usize, diesel::result::Error> {
         use crate::schema::assets_details::dsl::*;
         diesel::insert_into(assets_details)
-            .values(&_assets_details)
-            .on_conflict_do_nothing()
+            .values(values)
+            .on_conflict(asset_id)
+            .do_update()
+            .set((
+                homepage.eq(excluded(homepage)),
+                explorer.eq(excluded(explorer)),
+                twitter.eq(excluded(twitter)),
+                telegram.eq(excluded(telegram)),
+                github.eq(excluded(github)),
+                youtube.eq(excluded(youtube)),
+                facebook.eq(excluded(facebook)),
+                reddit.eq(excluded(reddit)),
+                coingecko.eq(excluded(coingecko)),
+                coinmarketcap.eq(excluded(coinmarketcap)),
+                discord.eq(excluded(discord)),
+            ))
             .execute(&mut self.connection)
     }
 
@@ -609,6 +623,17 @@ impl DatabaseClient {
     pub fn get_swap_assets_version(&mut self) -> Result<i32, diesel::result::Error> {
         let assets = self.get_swap_assets()?;
         Ok(assets.len() as i32)
+    }
+
+    pub fn set_swap_enabled(
+        &mut self,
+        asset_ids: Vec<String>,
+    ) -> Result<usize, diesel::result::Error> {
+        use crate::schema::assets_details::dsl::*;
+        diesel::update(assets_details)
+            .filter(asset_id.eq_any(&asset_ids))
+            .set(is_swappable.eq(true))
+            .execute(&mut self.connection)
     }
 
     pub fn add_chains(&mut self, _chains: Vec<String>) -> Result<usize, diesel::result::Error> {

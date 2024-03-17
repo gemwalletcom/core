@@ -1,6 +1,9 @@
-use primitives::{ChainType, SwapProvider, SwapQuote, SwapQuoteProtocolRequest};
+use std::str::FromStr;
 
-use super::model::{QuoteRequest, SwapResult};
+use gem_evm::address::EthereumAddress;
+use primitives::{AssetId, Chain, ChainType, SwapProvider, SwapQuote, SwapQuoteProtocolRequest};
+
+use super::model::{QuoteRequest, SwapResult, Tokenlist};
 
 pub struct OneInchClient {
     api_url: String,
@@ -31,6 +34,48 @@ impl OneInchClient {
         SwapProvider {
             name: "1inch".to_string(),
         }
+    }
+
+    pub fn chains(&self) -> Vec<Chain> {
+        vec![
+            Chain::Ethereum,
+            Chain::Arbitrum,
+            Chain::Optimism,
+            Chain::Polygon,
+            Chain::SmartChain,
+            Chain::AvalancheC,
+            Chain::Base,
+            Chain::Fantom,
+            Chain::Gnosis,
+        ]
+    }
+
+    pub async fn get_tokenlist(
+        &self,
+        chain_id: &str,
+    ) -> Result<Tokenlist, Box<dyn std::error::Error>> {
+        let url = format!("{}/token/v1.2/{chain_id}", self.api_url);
+        Ok(self
+            .client
+            .get(&url)
+            .bearer_auth(self.api_key.as_str())
+            .send()
+            .await?
+            .json::<Tokenlist>()
+            .await?)
+    }
+
+    pub fn get_asset_ids_for_tokenlist(&self, chain: Chain, tokenlist: Tokenlist) -> Vec<AssetId> {
+        tokenlist
+            .into_iter()
+            .flat_map(|x| match EthereumAddress::from_str(&x.0) {
+                Ok(token_id) => Some(AssetId {
+                    chain,
+                    token_id: Some(token_id.to_checksum()),
+                }),
+                Err(_) => None,
+            })
+            .collect::<Vec<AssetId>>()
     }
 
     pub async fn get_quote(

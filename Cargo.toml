@@ -25,6 +25,7 @@ members = [
     "crates/primitives",
     "crates/blockchain",
     "crates/fiat",
+    "crates/oneinch",
     "crates/name_resolver",
     "crates/api_connector",
     "crates/settings",

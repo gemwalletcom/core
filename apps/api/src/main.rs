@@ -46,7 +46,7 @@ use settings::Settings;
 use storage::DatabaseClient;
 use subscription_client::SubscriptionsClient;
 use swap_client::SwapClient;
-use swapper::{JupiterClient, OneInchClient, SwapperClient, ThorchainSwapClient};
+use swapper::{Swapper, SwapperClientConfiguration, SwapperConfiguration};
 use transaction_client::TransactionsClient;
 
 async fn rocket(settings: Settings) -> Rocket<Build> {
@@ -71,23 +71,27 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
     let scan_client = ScanClient::new(postgres_url).await;
     let parser_client = ParserClient::new(settings_clone.clone()).await;
     let assets_client = AssetsClient::new(postgres_url).await;
-    let oneinch_client = OneInchClient::new(
-        settings.swap.oneinch.url,
-        settings.swap.oneinch.key,
-        settings.swap.oneinch.fee.percent,
-        settings.swap.oneinch.fee.address,
-    );
-    let jupiter_client = JupiterClient::new(
-        settings.swap.jupiter.url,
-        settings.swap.jupiter.fee.percent,
-        settings.swap.jupiter.fee.address,
-    );
-    let thorchain_swap_client = ThorchainSwapClient::new(
-        settings.swap.thorchain.url,
-        settings.swap.thorchain.fee.percent,
-        settings.swap.thorchain.fee.address,
-    );
-    let swapper_client = SwapperClient::new(oneinch_client, jupiter_client, thorchain_swap_client);
+    let swapper_configuration = SwapperConfiguration {
+        oneinch: SwapperClientConfiguration {
+            url: settings.swap.oneinch.url,
+            key: settings.swap.oneinch.key,
+            fee_percent: settings.swap.oneinch.fee.percent,
+            fee_address: settings.swap.oneinch.fee.address,
+        },
+        jupiter: SwapperClientConfiguration {
+            url: settings.swap.jupiter.url,
+            key: "".to_string(),
+            fee_percent: settings.swap.jupiter.fee.percent,
+            fee_address: settings.swap.jupiter.fee.address,
+        },
+        thorchain: SwapperClientConfiguration {
+            url: settings.swap.thorchain.url,
+            key: "".to_string(),
+            fee_percent: settings.swap.thorchain.fee.percent,
+            fee_address: settings.swap.thorchain.fee.address,
+        },
+    };
+    let swapper_client = Swapper::build(swapper_configuration);
     let swap_client = SwapClient::new(postgres_url, swapper_client).await;
     let providers = FiatProviderFactory::new_providers(settings_clone.clone());
     let fiat_client = FiatClient::new(postgres_url, providers).await;

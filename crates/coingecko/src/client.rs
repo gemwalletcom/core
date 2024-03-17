@@ -1,3 +1,5 @@
+use crate::model::{SearchTrending, SearchTrendingItemCoin};
+
 use super::model::{Coin, CoinInfo, CoinMarket, ExchangeRates, MarketChart};
 use primitives::FiatRate;
 use reqwest::header::{HeaderMap, HeaderValue, USER_AGENT};
@@ -44,6 +46,16 @@ impl CoinGeckoClient {
         let mut headers = HeaderMap::new();
         headers.insert(USER_AGENT, USER_AGENT_VALUE.clone());
         headers
+    }
+
+    pub async fn get_search_trending(&self) -> Result<Vec<SearchTrendingItemCoin>, Error> {
+        let url = format!(
+            "{}/api/v3/search/trending?x_cg_pro_api_key={}",
+            self.url, self.api_key
+        );
+        let response = self.client.get(&url).headers(self.headers()).send().await?;
+        let coins: SearchTrending = response.json().await?;
+        Ok(coins.coins.into_iter().map(|x| x.item).collect())
     }
 
     pub async fn get_coin_list(&self) -> Result<Vec<Coin>, Error> {

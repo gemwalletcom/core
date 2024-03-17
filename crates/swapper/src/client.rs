@@ -1,6 +1,7 @@
+use oneinch::OneInchClient;
 use primitives::{Chain, SwapQuote, SwapQuoteProtocolRequest};
 
-use crate::{JupiterClient, OneInchClient, ThorchainSwapClient};
+use crate::{JupiterClient, ThorchainSwapClient};
 
 pub struct SwapperClient {
     oneinch: OneInchClient,

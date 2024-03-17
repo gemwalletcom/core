@@ -13,3 +13,4 @@ storage = { path = "../../crates/storage" }
 api_connector = { path = "../../crates/api_connector" }
 primitives = { path = "../../crates/primitives" }
 fiat = { path = "../../crates/fiat" }
+oneinch = { path = "../../crates/oneinch" }

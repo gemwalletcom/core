@@ -97,3 +97,23 @@ pub struct ExchangeRate {
     pub name: String,
     pub value: f64,
 }
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct SearchTrending {
+    pub coins: Vec<SearchTrendingItem>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct SearchTrendingItem {
+    pub item: SearchTrendingItemCoin,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct SearchTrendingItemCoin {
+    pub id: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct SearchTrendingPrice {
+    pub id: String,
+}
