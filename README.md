@@ -25,7 +25,7 @@ The cryptography for the Gem wallet is implemented using [trust-wallet-core](htt
 
 ```mermaid
 graph LR
-    client[gem client like: swift or kotlin]
+    client[Gem Wallet (iOS/Android)]
     core-lib[gem wallet core library monorepo]
     trust-core[trust wallet core]
     client-- pricing, notification and ... -->core-lib
