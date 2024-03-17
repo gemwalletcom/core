@@ -31,6 +31,8 @@ fn main() {
         "pubkey.rs",
         "ethereum_address.rs",
         "keccak.rs",
+        "fiat_rate.rs",
+        "number_formatter.rs",
     ]
     .to_vec();
     ignored_files.append(&mut ignored_files_by_platform(platform.clone()));
