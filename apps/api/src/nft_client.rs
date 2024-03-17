@@ -19,7 +19,7 @@ impl NFTClient {
         device_id: &str,
         wallet_index: i32,
     ) -> Result<Vec<NFTCollection>, Box<dyn Error>> {
-        let subscriptions = self.get_subscriptions(device_id, wallet_index)?;
+        let _subscriptions = self.get_subscriptions(device_id, wallet_index)?;
         //TODO: subscriptions contains all of the addresses of the user. Fetch across all chains their nft
         Ok(vec![])
     }
@@ -27,10 +27,10 @@ impl NFTClient {
     pub async fn get_nft_collectibles(
         &mut self,
         device_id: &str,
-        collection_id: &str,
+        _collection_id: &str,
         wallet_index: i32,
     ) -> Result<Vec<NFTCollectible>, Box<dyn Error>> {
-        let subscriptions = self.get_subscriptions(device_id, wallet_index)?;
+        let _subscriptions = self.get_subscriptions(device_id, wallet_index)?;
         //TODO: Get all the collectibles of the user.
         Ok(vec![])
     }
