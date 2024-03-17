@@ -1,10 +1,8 @@
-# Gem Wallet Core library in Rust
+# Gem Core Library
 
 [![Tests](https://github.com/gemwalletcom/core/actions/workflows/ci.yml/badge.svg)](https://github.com/gemwalletcom/core/actions/workflows/ci.yml)
 [![Clippy check](https://github.com/gemwalletcom/core/actions/workflows/lint.yml/badge.svg)](https://github.com/gemwalletcom/core/actions/workflows/lint.yml)
 [![Gemstone CI](https://github.com/gemwalletcom/core/actions/workflows/ci-gemstone.yml/badge.svg)](https://github.com/gemwalletcom/core/actions/workflows/ci-gemstone.yml)
-
-# Gem Core Library
 
 The Gem Core library is a Rust monorepo that serves as the backend infrastructure and cross platform libraries for the Gem Wallet on Android and iOS. It handles various tasks, including:
 
@@ -15,7 +13,7 @@ The Gem Core library is a Rust monorepo that serves as the backend infrastructur
 - Crypto primitives
 - More
 
-## Gemstone 
+## Gemstone
 
 The Gemstone is a cross-platform library for Swift and Kotlin.
 
@@ -25,7 +23,7 @@ The underlying cryptography / keystore for Gem Wallet is implemented using [Trus
 
 ```mermaid
 graph LR
-    client[Gem Wallet (iOS/Android)]
+    client[Gem Wallet iOS / Android]
     core-lib[Gem Wallet Core]
     trust-core[Trust Wallet Core]
     client-- pricing, notification and ... -->core-lib
