@@ -1,9 +1,12 @@
 /// This function simply decodes the bech32 address and encodes it with a different hrp.
 /// The caller is responsible for validating the data and hrp, more specifically, in the case of
 /// Cosmos, the encoded data is sha256 hash of the public key.
-pub fn convert_cosmos_address(address: &str, hrp: &str) -> Result<String, bech32::Error> {
-    let (_, data, variant) = bech32::decode(address)?;
-    bech32::encode(hrp, data, variant)
+pub fn convert_cosmos_address(address: &str, hrp: &str) -> Result<String, anyhow::Error> {
+    let (_, decoded) = bech32::decode(address)?;
+    let new_hrp = bech32::hrp::Hrp::parse(hrp)?;
+    let encoded = bech32::encode::<bech32::Bech32>(new_hrp, decoded.as_slice())?;
+
+    Ok(encoded)
 }
 
 #[cfg(test)]
