@@ -29,7 +29,7 @@ struct Args {
     page_size: u32,
 
     /// ID of the coin
-    #[arg(long)]
+    #[arg(long, default_value = "")]
     coin_id: String,
 
     /// Verbose mode
