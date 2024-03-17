@@ -4366,7 +4366,6 @@ name = "oneinch"
 version = "1.0.0"
 dependencies = [
  "gem_evm",
- "gem_solana",
  "primitives",
  "reqwest",
  "serde",
@@ -6698,7 +6697,6 @@ dependencies = [
 name = "swapper"
 version = "1.0.0"
 dependencies = [
- "gem_evm",
  "gem_solana",
  "oneinch",
  "primitives",
