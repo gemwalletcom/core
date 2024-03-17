@@ -6,7 +6,14 @@
 
 # Gem Core Library
 
-The Gem Core Library is a Rust monorepo utilized within the Gem wallet. The Android and iOS versions of the wallet utilize this core as backend infrastructure, performing tasks such as push notifications, pricing, assets information, and more.
+The Gem Core library is a Rust monorepo that serves as the backend infrastructure and cross platform libraries for the Gem Wallet on Android and iOS. It handles various tasks, including:
+
+- Push notifications
+- Pricing information
+- Asset updating
+- Shared modes using TypeShare
+- Crypto primitives
+- More
 
 ## Gemstone 
 
