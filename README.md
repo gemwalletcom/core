@@ -21,7 +21,7 @@ The Gemstone is a cross-platform library for Swift and Kotlin.
 
 ## Cryptography
 
-The cryptography for the Gem wallet is implemented using [trust-wallet-core](https://github.com/trustwallet/wallet-core).
+The underlying cryptography / keystore for Gem Wallet is implemented using [Trust Wallet Core](https://github.com/trustwallet/wallet-core) for now.
 
 ```mermaid
 graph LR
