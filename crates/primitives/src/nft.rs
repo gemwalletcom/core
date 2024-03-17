@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use strum::{AsRefStr, EnumString};
 use typeshare::typeshare;
 
 use crate::Chain;
@@ -27,7 +28,7 @@ pub struct NFTCollectible {
     pub chain: Chain,
     pub image: NFTImage,
     #[serde(rename = "type")]
-    pub collectible_type: String, // ERC712, ERC1155
+    pub collectible_type: NFTType,
     pub attributes: Vec<NFTAttrubute>,
     pub explorer_url: String,
 }
@@ -47,4 +48,14 @@ pub struct NFTImage {
 pub struct NFTAttrubute {
     pub name: String,
     pub value: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, AsRefStr, EnumString)]
+#[typeshare(swift = "Codable")]
+#[serde(rename_all = "lowercase")]
+#[strum(serialize_all = "lowercase")]
+pub enum NFTType {
+    ERC721,
+    ERC1155,
+    SPL,
 }
