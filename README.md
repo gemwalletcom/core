@@ -36,12 +36,14 @@ graph LR
 
 ### Setup Core
 
-Run `make install` to install rust, typeshare
+Run `just install` to install rust, typeshare.
+
+> Note: we are using [just file](https://just.systems/man/en); [instead of make file](https://github.com/gemwalletcom/core/issues/139), you can download it using `cargo install just`.
 
 ### Setup DB
 
-- Create a new database `api` and grant privileges to `username` role
-- Run `diesel migration run` to create tables and do migrations
+- Create a new database `api` and grant privileges to `username` role.
+- Run `diesel migration run` to create tables and do migrations.
 
 ### Supported Chains
 

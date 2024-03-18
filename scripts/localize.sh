@@ -19,7 +19,8 @@ android_data='{
   "export_sort": "first_added",
   "bundle_structure": "values_%LANG_ISO%/strings.%FORMAT%"
 }'
-android_localization_dir="android/app/src/main/res"
+
+# android_localization_dir="android/app/src/main/res" #! unused for now.
 
 json_obj_key() {
     key="${1}"

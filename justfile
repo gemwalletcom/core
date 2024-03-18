@@ -1,3 +1,6 @@
+default:
+  @just --list
+  
 install: install-rust install-typeshare install-diesel
 	@echo Install Rust
 	@curl curl https://sh.rustup.rs -sSf | sh -s -- -y
