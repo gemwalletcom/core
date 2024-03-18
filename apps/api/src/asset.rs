@@ -13,6 +13,21 @@ pub async fn get_asset(asset_id: &str, client: &State<Mutex<AssetsClient>>) -> J
     Json(asset)
 }
 
+#[post("/assets", format = "json", data = "<asset_ids>")]
+pub async fn get_assets(
+    asset_ids: Json<Vec<String>>,
+    client: &State<Mutex<AssetsClient>>,
+) -> Json<Vec<AssetFull>> {
+    let assets = client.lock().await.get_assets(asset_ids.0).unwrap();
+    Json(assets)
+}
+
+#[get("/assets/list")]
+pub async fn get_assets_list(client: &State<Mutex<AssetsClient>>) -> Json<Vec<AssetFull>> {
+    let assets = client.lock().await.get_assets_list().unwrap();
+    Json(assets)
+}
+
 #[get("/assets/search?<query>&<chains>&<limit>&<offset>")]
 pub async fn get_assets_search(
     query: String,

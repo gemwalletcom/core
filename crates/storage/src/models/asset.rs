@@ -47,6 +47,16 @@ impl Asset {
             rank: 0,
         }
     }
+
+    pub fn as_primitive_full(&self) -> primitives::AssetFull {
+        primitives::AssetFull {
+            asset: self.as_primitive(),
+            details: None,
+            price: None,
+            market: None,
+            score: self.as_score_primitive(),
+        }
+    }
 }
 
 #[derive(Debug, Queryable, Selectable, Serialize, Deserialize, Insertable, AsChangeset, Clone)]
