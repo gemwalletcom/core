@@ -61,6 +61,11 @@ impl Explorer {
         let chain = Chain::from_str(&chain).unwrap();
         explorer::get_explorer_address_url(chain, &address)
     }
+
+    pub fn get_token_url(&self, chain: String, address: String) -> Option<String> {
+        let chain = Chain::from_str(&chain).unwrap();
+        explorer::get_explorer_token_url(chain, &address)
+    }
 }
 
 #[uniffi::export]
