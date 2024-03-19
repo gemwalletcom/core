@@ -20,6 +20,7 @@ jobs:
       run:
         working-directory: gemstone
     steps:
+      - run: sudo snap install --edge --classic just
       - uses: actions/checkout@v3
       - uses: actions/cache@v3
         with:
@@ -37,5 +38,5 @@ jobs:
           RUSTC_WRAPPER: "sccache"
       - name: Test iOS
         run: |
-          make prepare-apple && make apple
-          make test-ios
+          just prepare-apple && just apple
+          just test-ios
