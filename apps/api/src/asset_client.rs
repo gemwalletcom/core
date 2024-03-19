@@ -14,6 +14,16 @@ impl AssetsClient {
         Self { database }
     }
 
+    pub fn get_assets_list(&mut self) -> Result<Vec<AssetFull>, Box<dyn Error>> {
+        let assets = self.database.get_assets_list()?;
+        Ok(assets.into_iter().map(|x| x.as_primitive_full()).collect())
+    }
+
+    pub fn get_assets(&mut self, asset_ids: Vec<String>) -> Result<Vec<AssetFull>, Box<dyn Error>> {
+        let assets = self.database.get_assets(asset_ids)?;
+        Ok(assets.into_iter().map(|x| x.as_primitive_full()).collect())
+    }
+
     pub fn get_asset_full(&mut self, asset_id: &str) -> Result<AssetFull, Box<dyn Error>> {
         let asset = self.database.get_asset(asset_id)?;
         let asset_price = self.database.get_price(asset_id).ok();

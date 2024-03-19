@@ -8,4 +8,3 @@ serde = { workspace = true }
 reqwest = { workspace = true }
 primitives = { path = "../primitives" }
 gem_evm = { path = "../gem_evm" }
-gem_solana = { path = "../gem_solana" }
