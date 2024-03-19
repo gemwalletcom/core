@@ -8,7 +8,7 @@ use primitives::{chain::Chain, TransactionState, TransactionType};
 
 use reqwest_middleware::ClientWithMiddleware;
 
-use super::model::{Blocks, Chainhead, Shards, Transaction, Transactions};
+use super::model::{Blocks, Chainhead, Nft, Shards, Transaction, Transactions};
 
 pub struct TonClient {
     url: String,
@@ -118,6 +118,13 @@ impl TonClient {
             .await?
             .json::<Transactions>()
             .await?;
+
+        Ok(response)
+    }
+
+    pub async fn get_nft(&self, nft_address: String) -> Result<Nft, Box<dyn Error + Send + Sync>> {
+        let url = format!("{}/v2/nfts/{}", self.url, nft_address);
+        let response = self.client.get(url).send().await?.json::<Nft>().await?;
 
         Ok(response)
     }
