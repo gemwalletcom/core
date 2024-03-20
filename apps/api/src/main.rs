@@ -12,6 +12,7 @@ mod metrics;
 mod metrics_client;
 mod name;
 mod nft;
+mod nft;
 mod nft_client;
 mod node;
 mod node_client;
@@ -163,6 +164,8 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
                 swap::get_swap_assets,
                 nft::get_nft_collections,
                 nft::get_nft_collectibles,
+                nft::get_nft_collections_by_chain_address,
+                nft::get_nft_collectibles_by_chain_address,
             ],
         )
         .mount(settings.metrics.path, routes![metrics::get_metrics,])

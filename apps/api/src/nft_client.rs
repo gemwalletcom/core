@@ -1,6 +1,6 @@
 use std::error::Error;
 
-use primitives::{NFTCollectible, NFTCollection};
+use primitives::{Chain, NFTCollectible, NFTCollection};
 use storage::DatabaseClient;
 
 pub struct NFTClient {
@@ -47,5 +47,24 @@ impl NFTClient {
             .map(|x| x.as_primitive())
             .collect();
         Ok(subscriptions)
+    }
+
+    pub async fn get_nft_collections_by_address(
+        &mut self,
+        chain: Chain,
+        address: &str,
+    ) -> Result<Vec<NFTCollection>, Box<dyn Error>> {
+        //TODO: Fetching from ChainNFTProvider
+        Ok(vec![])
+    }
+
+    pub async fn get_nft_collectibles_by_address(
+        &mut self,
+        chain: Chain,
+        collection_id: &str,
+        address: &str,
+    ) -> Result<Vec<NFTCollectible>, Box<dyn Error>> {
+        //TODO: Fetching from ChainNFTProvider
+        Ok(vec![])
     }
 }
