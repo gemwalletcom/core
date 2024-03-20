@@ -11,11 +11,14 @@ mod fiat_quotes;
 mod metrics;
 mod metrics_client;
 mod name;
+mod nft;
+mod nft_client;
 mod node;
 mod node_client;
 mod parser;
 mod parser_client;
 mod prices;
+mod response;
 mod scan;
 mod scan_client;
 mod status;
@@ -35,6 +38,7 @@ use fiat::FiatProviderFactory;
 use metrics_client::MetricsClient;
 use name_resolver::client::Client as NameClient;
 use name_resolver::NameProviderFactory;
+use nft_client::NFTClient;
 use node_client::Client as NodeClient;
 use parser_client::ParserClient;
 use pricer::client::PriceClient;
@@ -95,6 +99,7 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
     let swap_client = SwapClient::new(postgres_url, swapper_client).await;
     let providers = FiatProviderFactory::new_providers(settings_clone.clone());
     let fiat_client = FiatClient::new(postgres_url, providers).await;
+    let nft_client = NFTClient::new(postgres_url).await;
 
     rocket::build()
         .attach(AdHoc::on_ignite(
@@ -120,6 +125,7 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
         .manage(Mutex::new(scan_client))
         .manage(Mutex::new(parser_client))
         .manage(Mutex::new(swap_client))
+        .manage(Mutex::new(nft_client))
         .mount("/", routes![status::get_status,])
         .mount(
             "/v1",
@@ -155,6 +161,10 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
                 swap::get_swap_quote,
                 swap::post_swap_quote,
                 swap::get_swap_assets,
+                nft::get_nft_collections,
+                nft::get_nft_collectibles,
+                nft::get_nft_collections_by_chain_address,
+                nft::get_nft_collectibles_by_chain_address,
             ],
         )
         .mount(settings.metrics.path, routes![metrics::get_metrics,])

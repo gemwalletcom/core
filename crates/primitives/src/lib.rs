@@ -74,4 +74,4 @@ pub use self::number_formatter::NumberFormatter;
 pub mod wallet_connect;
 pub use self::wallet_connect::WallletConnectCAIP2;
 pub mod nft;
-pub use nft::{NFTCollection, NFT};
+pub use self::nft::{NFTAttrubute, NFTCollectible, NFTCollection, NFTImage};
