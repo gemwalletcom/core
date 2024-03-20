@@ -4,7 +4,10 @@ use crate::{ChainNFTProvider, ChainProvider};
 use async_trait::async_trait;
 use chrono::Utc;
 use name_resolver::{codec::Codec, ton_codec::TonCodec};
-use primitives::{chain::Chain, TransactionState, TransactionType};
+use primitives::{
+    chain::{self, Chain},
+    NFTAttrubute, TransactionState, TransactionType,
+};
 
 use reqwest_middleware::ClientWithMiddleware;
 
@@ -60,14 +63,32 @@ impl TonClient {
         None
     }
 
-    pub fn map_nft(&self, nft: Nft) -> Option<primitives::NFT> {
-        let nft = primitives::NFT::new(
-            primitives::chain::Chain::Ton,
-            nft.name,
-            nft.address,
-            nft.collection.description,
-            nft.collection.address.address,
-        );
+    pub fn map_nft(&self, nft: Nft) -> Option<primitives::NFTCollectible> {
+        let mut attributes = Vec::new();
+
+        for na in nft.metadata.attributes.iter() {
+            let atr = NFTAttrubute {
+                name: na.trait_type.clone(),
+                value: na.value.clone(),
+            };
+            attributes.push(atr);
+        }
+
+        let nft = primitives::NFTCollectible {
+            attributes,
+            chain: chain::Chain::Ton,
+            collectible_type: primitives::nft::NFTType::TON,
+            collection_id: nft.collection.address.address,
+            description: nft.metadata.description,
+            id: nft.address.clone(),
+            image: primitives::NFTImage {
+                image_url: nft.metadata.image,
+                preview_image_url: nft.previews[0].url.clone(),
+                original_source_url: "".into(),
+            },
+            name: nft.metadata.name,
+            explorer_url: format!("https://tonviewer.com/{}", nft.address),
+        };
         Some(nft)
     }
 
@@ -198,13 +219,14 @@ impl ChainNFTProvider for TonClient {
     async fn get_collectibles(
         &self,
         account_address: String,
-    ) -> Result<Vec<primitives::NFT>, Box<dyn std::error::Error + Send + Sync>> {
+    ) -> Result<Vec<primitives::nft::NFTCollectible>, Box<dyn std::error::Error + Send + Sync>>
+    {
         let collectibles = self
             .get_nfts(account_address)
             .await?
             .into_iter()
             .flat_map(|n| self.map_nft(n))
-            .collect::<Vec<primitives::NFT>>();
+            .collect::<Vec<primitives::NFTCollectible>>();
 
         Ok(collectibles)
     }

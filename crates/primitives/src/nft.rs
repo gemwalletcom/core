@@ -58,4 +58,5 @@ pub enum NFTType {
     ERC721,
     ERC1155,
     SPL,
+    TON,
 }
