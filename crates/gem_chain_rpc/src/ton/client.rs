@@ -1,6 +1,6 @@
 use std::error::Error;
 
-use crate::ChainProvider;
+use crate::{ChainNFTProvider, ChainProvider};
 use async_trait::async_trait;
 use chrono::Utc;
 use name_resolver::{codec::Codec, ton_codec::TonCodec};
@@ -58,6 +58,17 @@ impl TonClient {
             return Some(transaction);
         }
         None
+    }
+
+    pub fn map_nft(&self, nft: Nft) -> Option<primitives::NFT> {
+        let nft = primitives::NFT::new(
+            primitives::chain::Chain::Ton,
+            nft.name,
+            nft.address,
+            nft.collection.description,
+            nft.collection.address.address,
+        );
+        Some(nft)
     }
 
     pub async fn get_master_head(&self) -> Result<Chainhead, Box<dyn Error + Send + Sync>> {
@@ -122,9 +133,18 @@ impl TonClient {
         Ok(response)
     }
 
-    pub async fn get_nft(&self, nft_address: String) -> Result<Nft, Box<dyn Error + Send + Sync>> {
-        let url = format!("{}/v2/nfts/{}", self.url, nft_address);
-        let response = self.client.get(url).send().await?.json::<Nft>().await?;
+    pub async fn get_nfts(
+        &self,
+        account_address: String,
+    ) -> Result<Vec<Nft>, Box<dyn Error + Send + Sync>> {
+        let url = format!("{}/v2/accounts/{}/nfts", self.url, account_address);
+        let response = self
+            .client
+            .get(url)
+            .send()
+            .await?
+            .json::<Vec<Nft>>()
+            .await?;
 
         Ok(response)
     }
@@ -170,5 +190,22 @@ impl ChainProvider for TonClient {
             .collect::<Vec<primitives::Transaction>>();
 
         Ok(transactions)
+    }
+}
+
+#[async_trait]
+impl ChainNFTProvider for TonClient {
+    async fn get_collectibles(
+        &self,
+        account_address: String,
+    ) -> Result<Vec<primitives::NFT>, Box<dyn std::error::Error + Send + Sync>> {
+        let collectibles = self
+            .get_nfts(account_address)
+            .await?
+            .into_iter()
+            .flat_map(|n| self.map_nft(n))
+            .collect::<Vec<primitives::NFT>>();
+
+        Ok(collectibles)
     }
 }

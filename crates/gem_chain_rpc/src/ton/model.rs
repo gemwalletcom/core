@@ -81,6 +81,8 @@ pub struct NftPreview {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Nft {
     pub index: u8,
+    pub address: String,
+    pub name: String,
     pub owner: Account,
     pub collection: Collection,
     pub verified: bool,
