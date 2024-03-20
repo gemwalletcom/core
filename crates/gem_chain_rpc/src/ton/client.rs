@@ -4,10 +4,7 @@ use crate::{ChainNFTProvider, ChainProvider};
 use async_trait::async_trait;
 use chrono::Utc;
 use name_resolver::{codec::Codec, ton_codec::TonCodec};
-use primitives::{
-    chain::{self, Chain},
-    NFTAttrubute, TransactionState, TransactionType,
-};
+use primitives::{chain::Chain, NFTAttrubute, NFTCollectible, TransactionState, TransactionType};
 
 use reqwest_middleware::ClientWithMiddleware;
 
@@ -63,7 +60,7 @@ impl TonClient {
         None
     }
 
-    pub fn map_nft(&self, nft: Nft) -> Option<primitives::NFTCollectible> {
+    pub fn map_nft(&self, nft: Nft) -> Option<NFTCollectible> {
         let mut attributes = Vec::new();
 
         for na in nft.metadata.attributes.iter() {
@@ -74,9 +71,9 @@ impl TonClient {
             attributes.push(atr);
         }
 
-        let nft = primitives::NFTCollectible {
+        let nft = NFTCollectible {
             attributes,
-            chain: chain::Chain::Ton,
+            chain: self.get_chain(),
             collectible_type: primitives::nft::NFTType::TON,
             collection_id: nft.collection.address.address,
             description: nft.metadata.description,
@@ -219,14 +216,13 @@ impl ChainNFTProvider for TonClient {
     async fn get_collectibles(
         &self,
         account_address: String,
-    ) -> Result<Vec<primitives::nft::NFTCollectible>, Box<dyn std::error::Error + Send + Sync>>
-    {
+    ) -> Result<Vec<NFTCollectible>, Box<dyn std::error::Error + Send + Sync>> {
         let collectibles = self
             .get_nfts(account_address)
             .await?
             .into_iter()
             .flat_map(|n| self.map_nft(n))
-            .collect::<Vec<primitives::NFTCollectible>>();
+            .collect::<Vec<NFTCollectible>>();
 
         Ok(collectibles)
     }
