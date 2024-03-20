@@ -4,7 +4,7 @@ use crate::{ChainNFTProvider, ChainProvider};
 use async_trait::async_trait;
 use chrono::Utc;
 use name_resolver::{codec::Codec, ton_codec::TonCodec};
-use primitives::{chain::Chain, NFTAttrubute, NFTCollectible, TransactionState, TransactionType};
+use primitives::{Chain, NFTAttrubute, NFTCollectible, TransactionState, TransactionType};
 
 use reqwest_middleware::ClientWithMiddleware;
 
