@@ -10,11 +10,11 @@ struct Explorer<'a> {
 
 pub fn get_name_by_host(host: String) -> Option<String> {
     return match host.as_str() {
-        "etherscan.io" => Some("Etherscan".into()),
+        "etherscan.io" | "optimistic.etherscan.io" => Some("Etherscan".into()),
         "tonscan.org" => Some("TONScan".into()),
         "solscan.io" => Some("Solscan".into()),
         "opbnbscan.com" => Some("opBNBScan".into()),
-        "bscscan.com" => Some("BSCScan".into()),
+        "bscscan.com" | "opbnb.bscscan.com" => Some("BscScan".into()),
         "blockchair.com" => Some("Blockchair".into()),
         "tronscan.org" => Some("TRONSCAN".into()),
         "basescan.org" => Some("BaseScan".into()),
