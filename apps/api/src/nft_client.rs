@@ -51,8 +51,8 @@ impl NFTClient {
 
     pub async fn get_nft_collections_by_address(
         &mut self,
-        chain: Chain,
-        address: &str,
+        _chain: Chain,
+        _address: &str,
     ) -> Result<Vec<NFTCollection>, Box<dyn Error>> {
         //TODO: Fetching from ChainNFTProvider
         Ok(vec![])
@@ -60,9 +60,9 @@ impl NFTClient {
 
     pub async fn get_nft_collectibles_by_address(
         &mut self,
-        chain: Chain,
-        collection_id: &str,
-        address: &str,
+        _chain: Chain,
+        _collection_id: &str,
+        _address: &str,
     ) -> Result<Vec<NFTCollectible>, Box<dyn Error>> {
         //TODO: Fetching from ChainNFTProvider
         Ok(vec![])

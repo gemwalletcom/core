@@ -62,7 +62,7 @@ pub async fn get_nft_collections_by_chain_address(
     }
 }
 
-#[get("/nft/collections_by_chain_address/<chain>/<collection_id>?<address>")]
+#[get("/nft/collectibles_by_chain_address/<chain>/<collection_id>?<address>")]
 pub async fn get_nft_collectibles_by_chain_address(
     chain: &str,
     collection_id: &str,
