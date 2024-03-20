@@ -12,7 +12,6 @@ mod metrics;
 mod metrics_client;
 mod name;
 mod nft;
-mod nft;
 mod nft_client;
 mod node;
 mod node_client;
