@@ -23,8 +23,23 @@ impl PriceUpdater {
         }
     }
 
+    pub async fn get_coin_list(&mut self) -> Result<Vec<Coin>, Box<dyn std::error::Error>> {
+        match self.price_client.get_coins_list().await {
+            Ok(value) => {
+                let coin_list = serde_json::from_str::<Vec<Coin>>(&value)?;
+                Ok(coin_list)
+            }
+            Err(_) => {
+                let coin_list = self.coin_gecko_client.get_coin_list().await?;
+                let string = serde_json::to_string(&coin_list)?;
+                self.price_client.set_coins_list(string).await?;
+                Ok(coin_list)
+            }
+        }
+    }
+
     pub async fn update_prices(&mut self) -> Result<usize, Box<dyn std::error::Error>> {
-        let coin_list = self.coin_gecko_client.get_coin_list().await?;
+        let coin_list = self.get_coin_list().await?;
         let coins_map = CoinGeckoClient::convert_coin_vec_to_map(coin_list.clone());
         let coin_markets = self.coin_gecko_client.get_all_coin_markets(250, 15).await?;
         //TODO: currently using as a map, until fix duplicated values in the vector.
@@ -69,7 +84,7 @@ impl PriceUpdater {
         id: &str,
     ) -> Result<Vec<Price>, Box<dyn std::error::Error>> {
         let market = self.coin_gecko_client.get_coin_markets_id(id).await?;
-        let coin_list = self.coin_gecko_client.get_coin_list().await?;
+        let coin_list = self.get_coin_list().await?;
         let coins_map = CoinGeckoClient::convert_coin_vec_to_map(coin_list.clone());
         let coin = coins_map.get(market.id.as_str()).unwrap();
         let prices = self.get_prices_for_coin_market(coin.clone(), market.clone());
@@ -98,7 +113,7 @@ impl PriceUpdater {
     }
 
     pub async fn update_charts(&mut self) -> Result<usize, Box<dyn std::error::Error>> {
-        let coin_list = self.coin_gecko_client.get_coin_list().await?;
+        let coin_list = self.get_coin_list().await?;
 
         for coin_id in coin_list.clone() {
             let prices = self

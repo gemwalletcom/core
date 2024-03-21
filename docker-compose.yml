@@ -11,11 +11,11 @@ services:
     image: app
     container_name: api
     environment:
-        ROCKET_ADDRESS: 0.0.0.0
-        ROCKET_PORT: 8000
-        BINARY: api
-        REDIS_URL: "redis://default:@redis:6379"
-        POSTGRES_URL: "postgres://username:password@postgres/api"
+      ROCKET_ADDRESS: 0.0.0.0
+      ROCKET_PORT: 8000
+      BINARY: api
+      REDIS_URL: "redis://default:@redis:6379"
+      POSTGRES_URL: "postgres://username:password@postgres/api"
     ports:
       - "8000:8000"
     restart: always
@@ -59,7 +59,7 @@ services:
       - app_build
       - setup
       - postgres
-      
+
   pricer:
     image: app
     container_name: pricer
@@ -90,13 +90,13 @@ services:
       POSTGRES_USER: username
       POSTGRES_PASSWORD: password
       POSTGRES_DB: api
-  
+
   clickhouse_server:
     image: yandex/clickhouse-server
     ports:
-      - "8123:8123"   # HTTP interface
-      - "9000:9000"   # Native interface
-      - "9009:9009"   # TCP interface
+      - 8123:8123 # HTTP interface
+      - 9000:9000 # Native interface
+      - 9009:9009 # TCP interface
     volumes:
       - clickhouse:/var/lib/clickhouse
 
