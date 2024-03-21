@@ -21,7 +21,7 @@ pub use self::tron::client::TronClient;
 pub use self::xrp::client::XRPClient;
 
 use async_trait::async_trait;
-use primitives::{chain::Chain, NFTCollectible, Transaction};
+use primitives::{chain::Chain, NFTCollectible, NFTCollection, Transaction};
 
 use std::sync::Arc;
 
@@ -62,6 +62,11 @@ pub trait ChainNFTProvider: Send + Sync {
         &self,
         account_address: String,
     ) -> Result<Vec<NFTCollectible>, Box<dyn std::error::Error + Send + Sync>>;
+
+    async fn get_collections(
+        &self,
+        account_address: String,
+    ) -> Result<Vec<NFTCollection>, Box<dyn std::error::Error + Send + Sync>>;
 }
 
 #[async_trait]
@@ -74,5 +79,12 @@ where
         account_address: String,
     ) -> Result<Vec<NFTCollectible>, Box<dyn std::error::Error + Send + Sync>> {
         (**self).get_collectibles(account_address).await
+    }
+
+    async fn get_collections(
+        &self,
+        account_address: String,
+    ) -> Result<Vec<NFTCollection>, Box<dyn std::error::Error + Send + Sync>> {
+        (**self).get_collections(account_address).await
     }
 }

@@ -4,7 +4,9 @@ use crate::{ChainNFTProvider, ChainProvider};
 use async_trait::async_trait;
 use chrono::Utc;
 use name_resolver::{codec::Codec, ton_codec::TonCodec};
-use primitives::{Chain, NFTAttrubute, NFTCollectible, TransactionState, TransactionType};
+use primitives::{
+    Chain, NFTAttrubute, NFTCollectible, NFTCollection, TransactionState, TransactionType,
+};
 
 use reqwest_middleware::ClientWithMiddleware;
 
@@ -225,5 +227,12 @@ impl ChainNFTProvider for TonClient {
             .collect::<Vec<NFTCollectible>>();
 
         Ok(collectibles)
+    }
+
+    async fn get_collections(
+        &self,
+        _account_address: String,
+    ) -> Result<Vec<NFTCollection>, Box<dyn std::error::Error + Send + Sync>> {
+        Ok(Vec::new())
     }
 }
