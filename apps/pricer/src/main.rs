@@ -1,5 +1,5 @@
 use coingecko::CoinGeckoClient;
-use pricer::{asset_updater::AssetUpdater, client::PriceClient, price_updater::PriceUpdater};
+use pricer::{client::PriceClient, price_updater::PriceUpdater};
 use settings::Settings;
 use std::{thread, time::Duration};
 
