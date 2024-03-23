@@ -89,6 +89,7 @@ impl AssetId {
             | Chain::Aptos
             | Chain::Xrp
             | Chain::Injective
+            | Chain::Noble
             | Chain::Sei => None,
         }
     }

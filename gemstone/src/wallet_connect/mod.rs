@@ -17,21 +17,26 @@ pub fn get_namespace(chain: Chain) -> Option<String> {
         | Chain::Manta
         | Chain::Blast => Some(WallletConnectCAIP2::Eip155.as_ref().to_string()),
         Chain::Solana => Some(WallletConnectCAIP2::Solana.as_ref().to_string()),
+        Chain::Cosmos
+        | Chain::Osmosis
+        | Chain::Celestia
+        | Chain::Injective
+        | Chain::Noble
+        | Chain::Sei => Some(format!(
+            "{}:{}",
+            WallletConnectCAIP2::Cosmos.as_ref(),
+            chain.network_id()
+        )), // cosmos:cosmoshub-4
         Chain::Bitcoin
         | Chain::Litecoin
         | Chain::Binance
         | Chain::Thorchain
-        | Chain::Cosmos
-        | Chain::Osmosis
         | Chain::Ton
         | Chain::Tron
         | Chain::Doge
         | Chain::Aptos
         | Chain::Sui
-        | Chain::Xrp
-        | Chain::Celestia
-        | Chain::Injective
-        | Chain::Sei => None,
+        | Chain::Xrp => None,
     }
 }
 
@@ -51,20 +56,25 @@ pub fn get_reference(chain: Chain) -> Option<String> {
         | Chain::Manta
         | Chain::Blast => Some(chain.network_id().to_string()),
         Chain::Solana => Some("4sGjMW1sUnHzSxGspuhpqLDx6wiyjNtZ".to_string()),
+        Chain::Cosmos
+        | Chain::Osmosis
+        | Chain::Celestia
+        | Chain::Noble
+        | Chain::Sei
+        | Chain::Injective => Some(format!(
+            "{}/slip44:{}",
+            get_namespace(chain).unwrap(),
+            chain.as_slip44()
+        )), // cosmos:cosmoshub-4/slip44:118
         Chain::Bitcoin
         | Chain::Litecoin
         | Chain::Binance
         | Chain::Thorchain
-        | Chain::Cosmos
-        | Chain::Osmosis
         | Chain::Ton
         | Chain::Tron
         | Chain::Doge
         | Chain::Aptos
         | Chain::Sui
-        | Chain::Xrp
-        | Chain::Celestia
-        | Chain::Injective
-        | Chain::Sei => None,
+        | Chain::Xrp => None,
     }
 }

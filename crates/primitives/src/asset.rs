@@ -217,6 +217,13 @@ impl Asset {
                 decimals: 18,
                 asset_type: AssetType::NATIVE,
             },
+            Chain::Noble => Asset {
+                id: chain.as_asset_id(),
+                name: "Noble".to_string(),
+                symbol: "USDC".to_string(),
+                decimals: 6,
+                asset_type: AssetType::NATIVE,
+            },
         }
     }
 }

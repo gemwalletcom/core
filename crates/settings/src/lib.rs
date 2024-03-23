@@ -166,6 +166,7 @@ pub struct Chains {
     pub sei: Chain,
     pub manta: Chain,
     pub blast: Chain,
+    pub noble: Chain,
 }
 
 #[derive(Debug, Deserialize, Clone)]

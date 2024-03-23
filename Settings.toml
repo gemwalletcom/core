@@ -153,6 +153,9 @@ url = "https://pacific-rpc.manta.network/http"
 [chains.blast]
 url = "https://rpc.ankr.com/blast"
 
+[chains.noble]
+url = "https://rest.cosmos.directory/noble"
+
 [chains.bitcoin]
 url = ""
 
