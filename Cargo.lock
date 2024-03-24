@@ -3067,7 +3067,7 @@ dependencies = [
  "httpdate",
  "itoa",
  "pin-project-lite",
- "socket2 0.4.10",
+ "socket2 0.5.5",
  "tokio",
  "tower-service",
  "tracing",
@@ -6364,6 +6364,16 @@ checksum = "16d69225bde7a69b235da73377861095455d298f2b970996eec25ddbb42b3d1e"
 dependencies = [
  "bitmaps",
  "typenum",
+]
+
+[[package]]
+name = "skip_api"
+version = "1.0.0"
+dependencies = [
+ "primitives",
+ "reqwest",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
