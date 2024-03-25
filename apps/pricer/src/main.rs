@@ -16,7 +16,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     let mut price_updater = PriceUpdater::new(price_client, coingecko_client.clone());
-    //let mut asset_updater = AssetUpdater::new(coingecko_client.clone(), &settings.postgres.url);
 
     println!("clean outdated asset: start");
 
@@ -31,16 +30,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             println!("clean outdated assets error: {}", err)
         }
     }
-
-    //println!("update assets: start");
-    // match asset_updater.update_assets().await {
-    //     Ok(count) => {
-    //         println!("update assets: {}", count)
-    //     }
-    //     Err(err) => {
-    //         println!("update assets error: {}", err)
-    //     }
-    // }
 
     println!("update rates: start");
 

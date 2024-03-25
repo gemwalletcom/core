@@ -538,6 +538,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "assetor"
+version = "1.0.0"
+dependencies = [
+ "coingecko",
+ "primitives",
+ "settings",
+ "storage",
+]
+
+[[package]]
 name = "async-channel"
 version = "1.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1268,6 +1278,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a2bd12c1caf447e69cd4528f47f94d203fd2582878ecb9e9465484c4148a8223"
 dependencies = [
  "serde",
+]
+
+[[package]]
+name = "cacher"
+version = "1.0.0"
+dependencies = [
+ "redis",
 ]
 
 [[package]]
@@ -4930,6 +4947,7 @@ dependencies = [
 name = "pricer"
 version = "1.0.0"
 dependencies = [
+ "cacher",
  "chrono",
  "coingecko",
  "primitives",

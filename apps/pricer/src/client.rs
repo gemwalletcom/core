@@ -7,14 +7,14 @@ use storage::{
     ClickhouseDatabase, DatabaseClient,
 };
 
+use crate::DEFAULT_FIAT_CURRENCY;
+use cacher::CacherClient;
 use storage::models::Price;
-
-use crate::{cache::CacheClient, DEFAULT_FIAT_CURRENCY};
 const COINS_LIST_KEY: &str = "coins_list";
 
 pub struct PriceClient {
     redis_client: redis::Client,
-    cache_client: CacheClient,
+    cache_client: CacherClient,
     database: DatabaseClient,
     clickhouse_database: ClickhouseDatabase,
     prefix: String,
@@ -27,7 +27,7 @@ impl PriceClient {
         let clickhouse_database = ClickhouseDatabase::new(clichouse_database_url);
         Self {
             redis_client,
-            cache_client: CacheClient::new(redis_url),
+            cache_client: CacherClient::new(redis_url),
             database,
             clickhouse_database,
             prefix: "prices:".to_owned(),

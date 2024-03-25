@@ -14,6 +14,7 @@ members = [
     "apps/daemon",
     "apps/parser",
     "apps/pricer",
+    "apps/assetor",
     "apps/setup",
 
     "bin/img-downloader",
@@ -25,6 +26,7 @@ members = [
     "crates/primitives",
     "crates/blockchain",
     "crates/fiat",
+    "crates/cacher",
     "crates/oneinch",
     "crates/name_resolver",
     "crates/api_connector",
@@ -42,6 +44,7 @@ default-members = [
     "apps/daemon",
     "apps/parser",
     "apps/pricer",
+    "apps/assetor",
     "apps/setup",
     "bin/generate",
 ]
