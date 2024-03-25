@@ -1,5 +1,6 @@
 use primitives::chain::Chain;
 
+// Full list https://api.coingecko.com/api/v3/asset_platforms
 pub fn get_chain_for_coingecko_platform_id(id: &str) -> Option<Chain> {
     match id {
         "ethereum" => Some(Chain::Ethereum),
