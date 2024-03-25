@@ -1,7 +1,9 @@
 use crate::client::PriceClient;
 use crate::DEFAULT_FIAT_CURRENCY;
 use chrono::{Duration, Utc};
-use coingecko::mapper::{get_associated_chains, get_chain_for_coingecko_id};
+use coingecko::mapper::{
+    get_associated_chains, get_chain_for_coingecko_id, get_chain_for_coingecko_platform_id,
+};
 use coingecko::{Coin, CoinGeckoClient, CoinMarket};
 use primitives::chain::Chain;
 use primitives::AssetId;
@@ -97,7 +99,7 @@ impl PriceUpdater {
             .clone()
             .into_iter()
             .flat_map(|(platform, token_id)| {
-                let platform = get_chain_for_coingecko_id(platform.as_str());
+                let platform = get_chain_for_coingecko_platform_id(platform.as_str());
                 if let Some(chain) = platform {
                     let token_id = token_id.unwrap_or_default();
                     if !token_id.is_empty() {

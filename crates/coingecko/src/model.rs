@@ -17,15 +17,11 @@ pub struct CoinInfo {
     pub asset_platform_id: Option<String>,
     pub preview_listing: bool,
     pub market_cap_rank: Option<i32>,
-    pub coingecko_rank: Option<i32>,
-    pub community_score: Option<f32>,
     pub watchlist_portfolio_users: Option<f32>,
-    pub liquidity_score: Option<f32>,
     pub platforms: HashMap<String, String>,
     pub detail_platforms: HashMap<String, Option<DetailPlatform>>,
     pub links: CoinMarketLinks,
     pub community_data: Option<CommunityData>,
-    pub developer_data: Option<DeveloperData>,
     pub image: Image,
 }
 
