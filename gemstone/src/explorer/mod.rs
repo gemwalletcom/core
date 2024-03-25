@@ -217,6 +217,12 @@ fn get_explorer(chain: Chain) -> Explorer<'static> {
             account_url: "/address/",
             token_url: Some("/token/"),
         },
+        Chain::Noble => Explorer {
+            host: "https://mintscan.io/noble",
+            transaction_url: "/tx/",
+            account_url: "/address/",
+            token_url: None,
+        },
     }
 }
 

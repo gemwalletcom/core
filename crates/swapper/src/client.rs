@@ -52,6 +52,7 @@ impl SwapperClient {
             | Chain::Sui
             | Chain::Xrp
             | Chain::OpBNB
+            | Chain::Noble
             | Chain::Sei => todo!(),
         }
     }
