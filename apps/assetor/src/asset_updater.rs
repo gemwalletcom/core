@@ -1,5 +1,5 @@
 use coingecko::mapper::get_chain_for_coingecko_id;
-use coingecko::{CoinGeckoClient, CoinInfo};
+use coingecko::{get_chain_for_coingecko_platform_id, CoinGeckoClient, CoinInfo};
 use primitives::{Asset, AssetDetails, AssetId, AssetLinks, AssetScore, AssetType};
 use std::collections::HashSet;
 use std::error::Error;
@@ -36,7 +36,7 @@ impl AssetUpdater {
                     }
                 }
                 Err(err) => {
-                    println!("error getting coin info: {}", err);
+                    println!("error getting coin info for coin {}: {}", coin.clone(), err);
                 }
             }
         }
@@ -54,7 +54,7 @@ impl AssetUpdater {
             .detail_platforms
             .into_iter()
             .filter_map(|(coin_id, detail_platform)| {
-                let chain = get_chain_for_coingecko_id(coin_id.as_str());
+                let chain = get_chain_for_coingecko_platform_id(coin_id.as_str());
                 if let (Some(chain), Some(detail_platform)) = (chain, detail_platform) {
                     return Some((chain, Some(detail_platform)));
                 }
