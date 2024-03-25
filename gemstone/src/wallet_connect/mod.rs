@@ -61,11 +61,9 @@ pub fn get_reference(chain: Chain) -> Option<String> {
         | Chain::Celestia
         | Chain::Noble
         | Chain::Sei
-        | Chain::Injective => Some(format!(
-            "{}/slip44:{}",
-            get_namespace(chain).unwrap(),
-            chain.as_slip44()
-        )), // cosmos:cosmoshub-4/slip44:118
+        | Chain::Injective => {
+            get_namespace(chain).map(|namespace| format!("{}:{}", namespace, chain.network_id()))
+        }
         Chain::Bitcoin
         | Chain::Litecoin
         | Chain::Binance
