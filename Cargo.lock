@@ -545,6 +545,7 @@ dependencies = [
  "primitives",
  "settings",
  "storage",
+ "tokio",
 ]
 
 [[package]]
