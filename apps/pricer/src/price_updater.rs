@@ -26,7 +26,7 @@ impl PriceUpdater {
     }
 
     pub async fn get_coin_list(&mut self) -> Result<Vec<Coin>, Box<dyn std::error::Error>> {
-        match self.price_client.get_coins_list().await {
+        match self.price_client.get_coingecko_coins_list().await {
             Ok(value) => {
                 let coin_list = serde_json::from_str::<Vec<Coin>>(&value)?;
                 Ok(coin_list)
@@ -34,7 +34,7 @@ impl PriceUpdater {
             Err(_) => {
                 let coin_list = self.coin_gecko_client.get_coin_list().await?;
                 let string = serde_json::to_string(&coin_list)?;
-                self.price_client.set_coins_list(string).await?;
+                self.price_client.set_coingecko_coins_list(string).await?;
                 Ok(coin_list)
             }
         }

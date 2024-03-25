@@ -1,6 +1,6 @@
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
-use primitives::{AssetMarket, AssetPrice};
+use primitives::{AssetMarket, AssetPrice, PriceFull};
 use serde::{Deserialize, Serialize};
 use std::{
     hash::{Hash, Hasher},
@@ -96,6 +96,15 @@ impl Price {
             circulating_supply: Some(self.circulating_supply),
             total_supply: Some(self.total_supply),
             max_supply: Some(self.max_supply),
+        }
+    }
+
+    pub fn as_price_full_primitive(&self) -> PriceFull {
+        PriceFull {
+            asset_id: self.asset_id.clone(),
+            coin_id: self.coin_id.clone(),
+            price: self.price,
+            price_change_percentage_24h: self.price_change_percentage_24h,
         }
     }
 }

@@ -10,7 +10,7 @@ pub mod name;
 pub use self::name::NameProvider;
 pub mod node;
 pub mod price;
-pub use self::price::Price;
+pub use self::price::{Price, PriceFull};
 pub mod asset;
 pub mod config;
 pub mod currency;
