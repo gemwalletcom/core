@@ -28,16 +28,18 @@ impl AssetUpdater {
             .collect();
 
         for coin in coin_list.clone() {
-            let coin_info = self
-                .coin_gecko_client
-                .get_coin(coin.clone().as_str())
-                .await?;
-            let result = self.get_assets_from_coin_info(coin_info);
-            for (asset, asset_score, asset_details) in result {
-                self.update_asset(asset, asset_score, asset_details).await?;
+            match self.coin_gecko_client.get_coin(coin.clone().as_str()).await {
+                Ok(coin_info) => {
+                    let result = self.get_assets_from_coin_info(coin_info);
+                    for (asset, asset_score, asset_details) in result {
+                        let _ = self.update_asset(asset, asset_score, asset_details).await;
+                    }
+                }
+                Err(err) => {
+                    println!("error getting coin info: {}", err);
+                }
             }
         }
-
         Ok(coin_list.len())
     }
 
