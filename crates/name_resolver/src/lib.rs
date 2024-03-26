@@ -2,6 +2,7 @@ use client::NameClient;
 use settings::Settings;
 
 pub mod aptos;
+pub mod base;
 pub mod client;
 pub mod codec;
 pub mod did;
@@ -39,6 +40,7 @@ impl NameProviderFactory {
             )),
             Box::new(icns::IcnsClient::new(settings.name.icns.url)),
             Box::new(lens::LensClient::new(settings.name.lens.url)),
+            Box::new(base::BNSClient::new(settings.name.base.url)),
         ]
     }
 }
