@@ -5,6 +5,7 @@ edition = { workspace = true }
 
 [dependencies]
 tokio = { workspace = true }
+serde = { workspace = true }
 reqwest = { workspace = true, features = ["stream"] }
 futures-util = { workspace = true }
 clap = { version = "4.5.1", features = ["derive"] }

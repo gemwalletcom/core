@@ -3196,6 +3196,7 @@ dependencies = [
  "gem_evm",
  "primitives",
  "reqwest",
+ "serde",
  "settings",
  "tokio",
 ]
