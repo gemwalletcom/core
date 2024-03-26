@@ -1,14 +1,13 @@
 mod cli_args;
-mod cli_model;
-
-use clap::Parser;
 use cli_args::Args;
+mod cli_model;
 
 use coingecko::get_chain_for_coingecko_platform_id;
 use coingecko::{CoinGeckoClient, CoinInfo};
 use gem_evm::address::EthereumAddress;
 use settings::Settings;
 
+use clap::Parser;
 use futures_util::StreamExt;
 use std::{
     error::Error, fs, io::Write, path::Path, str::FromStr, thread::sleep, time::Duration, vec,
@@ -62,7 +61,7 @@ impl Downloader {
 
     async fn handle_coin_id(&self, coin_id: &str, folder: &Path) -> Result<(), Box<dyn Error>> {
         let market = self.client.get_coin_markets_id(coin_id).await?;
-        self.handle_coin(&market.clone().id, folder).await?;
+        self.handle_coin(&market.id, folder).await?;
         Ok(())
     }
 
@@ -70,7 +69,7 @@ impl Downloader {
         let ids: Vec<String> = coin_ids.split(',').map(|x| x.trim().to_string()).collect();
         for coin_id in ids {
             let market = self.client.get_coin_markets_id(coin_id.as_str()).await?;
-            self.handle_coin(&market.clone().id, folder).await?;
+            self.handle_coin(&market.id, folder).await?;
         }
         Ok(())
     }
