@@ -75,6 +75,9 @@ url = "https://osmosis-rest.publicnode.com"
 [name.lens]
 url = "https://api-v2.lens.dev"
 
+[name.base]
+url = "https://resolver-api.basename.app"
+
 [metrics]
 path = "/metrics"
 
