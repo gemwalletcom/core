@@ -52,6 +52,7 @@ impl NameClient for BNSClient {
     }
 }
 
+#[cfg(test)]
 mod tests {
     use super::*;
     use tokio_test::block_on;
