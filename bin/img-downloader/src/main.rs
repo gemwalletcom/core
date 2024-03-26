@@ -41,13 +41,13 @@ impl Downloader {
             fs::create_dir_all(folder)?;
         }
 
-        if !self.args.coin_id.clone().is_empty() {
+        if !self.args.coin_id.is_empty() {
             return self
                 .handle_coin_id(self.args.coin_id.as_str(), folder)
                 .await;
         }
 
-        if !self.args.coin_ids.clone().is_empty() {
+        if !self.args.coin_ids.is_empty() {
             return self
                 .handle_coin_ids(self.args.coin_ids.clone(), folder)
                 .await;
