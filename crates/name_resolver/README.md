@@ -9,7 +9,7 @@
 - [x] [Unstoppable Domains](https://unstoppabledomains.com/)
 - - .crypto
 - [x] [Solana Name Service](https://www.sns.id/)
-- - .so
+- - .sol
 - [x] [TON Domains](https://dns.ton.org/)
 - - .ton
 - [x] [Aptos Names](https://www.aptosnames.com/)
