@@ -52,3 +52,49 @@ pub struct OutMessage {
 pub struct Address {
     pub address: String,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Account {
+    pub address: Address,
+    pub name: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NftCollection {
+    pub address: Address,
+    pub name: String,
+    pub description: String,
+    pub previews: NftPreview,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NftPreview {
+    pub resolution: String,
+    pub url: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NftMetadata {
+    pub name: String,
+    pub image: String,
+    pub description: String,
+    pub attributes: Vec<NftAttribute>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NftAttribute {
+    pub trait_type: String,
+    pub value: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Nft {
+    pub index: u8,
+    pub address: String,
+    pub owner: Account,
+    pub collection: NftCollection,
+    pub dns: String,
+    pub metadata: NftMetadata,
+    pub previews: Vec<NftPreview>,
+    pub approved_by: Vec<String>,
+}

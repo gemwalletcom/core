@@ -1,14 +1,16 @@
-use std::error::Error;
+use std::{collections::HashMap, error::Error};
 
-use crate::ChainProvider;
+use crate::{ChainNFTProvider, ChainProvider};
 use async_trait::async_trait;
 use chrono::Utc;
 use name_resolver::{codec::Codec, ton_codec::TonCodec};
-use primitives::{chain::Chain, TransactionState, TransactionType};
+use primitives::{
+    Chain, NFTAttrubute, NFTCollectible, NFTCollection, NFTImage, TransactionState, TransactionType,
+};
 
 use reqwest_middleware::ClientWithMiddleware;
 
-use super::model::{Blocks, Chainhead, Shards, Transaction, Transactions};
+use super::model::{Blocks, Chainhead, Nft, NftCollection, Shards, Transaction, Transactions};
 
 pub struct TonClient {
     url: String,
@@ -58,6 +60,35 @@ impl TonClient {
             return Some(transaction);
         }
         None
+    }
+
+    pub fn map_nft(&self, nft: Nft) -> Option<NFTCollectible> {
+        let mut attributes = Vec::new();
+
+        for na in nft.metadata.attributes.iter() {
+            let atr = NFTAttrubute {
+                name: na.trait_type.clone(),
+                value: na.value.clone(),
+            };
+            attributes.push(atr);
+        }
+
+        let nft = NFTCollectible {
+            attributes,
+            chain: self.get_chain(),
+            collectible_type: primitives::nft::NFTType::TON,
+            collection_id: nft.collection.address.address,
+            description: nft.metadata.description,
+            id: nft.address.clone(),
+            image: primitives::NFTImage {
+                image_url: nft.metadata.image,
+                preview_image_url: nft.previews[0].url.clone(),
+                original_source_url: "".into(),
+            },
+            name: nft.metadata.name,
+            explorer_url: format!("https://tonviewer.com/{}", nft.address),
+        };
+        Some(nft)
     }
 
     pub async fn get_master_head(&self) -> Result<Chainhead, Box<dyn Error + Send + Sync>> {
@@ -121,6 +152,38 @@ impl TonClient {
 
         Ok(response)
     }
+
+    pub async fn get_nfts(
+        &self,
+        account_address: String,
+    ) -> Result<Vec<Nft>, Box<dyn Error + Send + Sync>> {
+        let url = format!("{}/v2/accounts/{}/nfts", self.url, account_address);
+        let response = self
+            .client
+            .get(url)
+            .send()
+            .await?
+            .json::<Vec<Nft>>()
+            .await?;
+
+        Ok(response)
+    }
+
+    pub async fn get_collection(
+        &self,
+        collection_address: String,
+    ) -> Result<NftCollection, Box<dyn Error + Send + Sync>> {
+        let url = format!("{}/v2/nfts/collections/{}", self.url, collection_address);
+        let response = self
+            .client
+            .get(url)
+            .send()
+            .await?
+            .json::<NftCollection>()
+            .await?;
+
+        Ok(response)
+    }
 }
 
 #[async_trait]
@@ -163,5 +226,63 @@ impl ChainProvider for TonClient {
             .collect::<Vec<primitives::Transaction>>();
 
         Ok(transactions)
+    }
+}
+
+#[async_trait]
+impl ChainNFTProvider for TonClient {
+    async fn get_collectibles(
+        &self,
+        account_address: String,
+    ) -> Result<Vec<NFTCollectible>, Box<dyn std::error::Error + Send + Sync>> {
+        let collectibles = self
+            .get_nfts(account_address)
+            .await?
+            .into_iter()
+            .flat_map(|n| self.map_nft(n))
+            .collect::<Vec<NFTCollectible>>();
+
+        Ok(collectibles)
+    }
+
+    async fn get_collections(
+        &self,
+        account_address: String,
+    ) -> Result<Vec<NFTCollection>, Box<dyn std::error::Error + Send + Sync>> {
+        let mut collections_address: HashMap<String, usize> = HashMap::new();
+        let mut collections: Vec<NFTCollection> = Vec::new();
+
+        let collectibles = self
+            .get_nfts(account_address)
+            .await?
+            .into_iter()
+            .flat_map(|n| self.map_nft(n))
+            .collect::<Vec<NFTCollectible>>();
+
+        for (i, nc) in collectibles.iter().enumerate() {
+            collections_address.insert(nc.collection_id.clone(), i);
+        }
+
+        for (ca, _i) in collections_address.into_iter() {
+            let collection = self.get_collection(ca).await?;
+
+            let nc = NFTCollection {
+                chain: self.get_chain(),
+                description: collection.description,
+                name: collection.name,
+                id: collection.address.address.clone(),
+                count: 0,
+                image: NFTImage {
+                    image_url: collection.previews.url.clone(),
+                    original_source_url: collection.previews.url.clone(),
+                    preview_image_url: collection.previews.url,
+                },
+                explorer_url: format!("https://tonviewer.com/{}", collection.address.address),
+            };
+
+            collections.push(nc);
+        }
+
+        Ok(collections)
     }
 }
