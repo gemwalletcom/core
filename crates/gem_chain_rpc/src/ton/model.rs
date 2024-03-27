@@ -60,10 +60,11 @@ pub struct Account {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Collection {
+pub struct NftCollection {
     pub address: Address,
     pub name: String,
     pub description: String,
+    pub previews: NftPreview,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -91,7 +92,7 @@ pub struct Nft {
     pub index: u8,
     pub address: String,
     pub owner: Account,
-    pub collection: Collection,
+    pub collection: NftCollection,
     pub dns: String,
     pub metadata: NftMetadata,
     pub previews: Vec<NftPreview>,
