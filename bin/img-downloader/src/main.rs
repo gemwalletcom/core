@@ -60,16 +60,14 @@ impl Downloader {
     }
 
     async fn handle_coin_id(&self, coin_id: &str, folder: &Path) -> Result<(), Box<dyn Error>> {
-        let market = self.client.get_coin_markets_id(coin_id).await?;
-        self.handle_coin(&market.id, folder).await?;
+        self.handle_coin(coin_id, folder).await?;
         Ok(())
     }
 
     async fn handle_coin_ids(&self, coin_ids: String, folder: &Path) -> Result<(), Box<dyn Error>> {
         let ids: Vec<String> = coin_ids.split(',').map(|x| x.trim().to_string()).collect();
         for coin_id in ids {
-            let market = self.client.get_coin_markets_id(coin_id.as_str()).await?;
-            self.handle_coin(&market.id, folder).await?;
+            self.handle_coin(&coin_id, folder).await?;
         }
         Ok(())
     }
@@ -77,7 +75,10 @@ impl Downloader {
     async fn handle_coin_url(&self, url: &str, folder: &Path) -> Result<(), Box<dyn Error>> {
         let response: cli_model::Response = reqwest::get(url).await?.json().await?;
         for price in response.results {
-            self.handle_coin_id(&price.coin_id, folder).await?;
+            match self.handle_coin_id(&price.coin_id, folder).await {
+                Ok(_) => continue,
+                Err(e) => println!("<== {} error: {}", price.coin_id, e),
+            }
         }
         Ok(())
     }

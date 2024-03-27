@@ -101,7 +101,7 @@ impl CoinGeckoClient {
         if let Some(market) = response.first() {
             Ok(market.clone())
         } else {
-            Err("market not found".into())
+            Err(format!("market {} not found", id).into())
         }
     }
 
