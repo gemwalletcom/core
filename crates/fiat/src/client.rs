@@ -2,7 +2,7 @@ use std::collections::HashSet;
 use std::error::Error;
 use std::time::Duration;
 
-use crate::model::{FiatClient, FiatMapping, FiatMappingMap, FiatRates};
+use crate::model::{FiatMapping, FiatMappingMap, FiatProvider, FiatRates};
 use futures::future::join_all;
 use primitives::{
     fiat_assets::FiatAssets, fiat_quote::FiatQuote, fiat_quote_request::FiatBuyRequest,
@@ -13,13 +13,13 @@ use storage::DatabaseClient;
 
 pub struct Client {
     database: DatabaseClient,
-    providers: Vec<Box<dyn FiatClient + Send + Sync>>,
+    providers: Vec<Box<dyn FiatProvider + Send + Sync>>,
 }
 
 impl Client {
     pub async fn new(
         database_url: &str,
-        providers: Vec<Box<dyn FiatClient + Send + Sync>>,
+        providers: Vec<Box<dyn FiatProvider + Send + Sync>>,
     ) -> Self {
         let database = DatabaseClient::new(database_url);
 

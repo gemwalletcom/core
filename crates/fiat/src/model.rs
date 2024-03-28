@@ -37,7 +37,7 @@ pub struct FiatProviderAsset {
 pub type FiatMappingMap = HashMap<String, FiatMapping>;
 
 #[async_trait]
-pub trait FiatClient {
+pub trait FiatProvider {
     fn name(&self) -> FiatProviderName;
     async fn get_quote(
         &self,
@@ -47,12 +47,15 @@ pub trait FiatClient {
     async fn get_assets(
         &self,
     ) -> Result<Vec<FiatProviderAsset>, Box<dyn std::error::Error + Send + Sync>>;
+    async fn get_transactions(
+        &self,
+    ) -> Result<Vec<String>, Box<dyn std::error::Error + Send + Sync>>;
 }
 
 #[async_trait]
-impl<T: Send + Sync> FiatClient for Arc<T>
+impl<T: Send + Sync> FiatProvider for Arc<T>
 where
-    T: FiatClient + ?Sized,
+    T: FiatProvider + ?Sized,
 {
     fn name(&self) -> FiatProviderName {
         (**self).name()
@@ -70,5 +73,11 @@ where
         &self,
     ) -> Result<Vec<FiatProviderAsset>, Box<dyn std::error::Error + Send + Sync>> {
         (**self).get_assets().await
+    }
+
+    async fn get_transactions(
+        &self,
+    ) -> Result<Vec<String>, Box<dyn std::error::Error + Send + Sync>> {
+        (**self).get_transactions().await
     }
 }

@@ -7,14 +7,14 @@ use storage::{
     ClickhouseDatabase, DatabaseClient,
 };
 
+use crate::DEFAULT_FIAT_CURRENCY;
+use cacher::CacherClient;
 use storage::models::Price;
-
-use crate::{cache::CacheClient, DEFAULT_FIAT_CURRENCY};
 const COINS_LIST_KEY: &str = "coins_list";
 
 pub struct PriceClient {
     redis_client: redis::Client,
-    cache_client: CacheClient,
+    cache_client: CacherClient,
     database: DatabaseClient,
     clickhouse_database: ClickhouseDatabase,
     prefix: String,
@@ -27,7 +27,7 @@ impl PriceClient {
         let clickhouse_database = ClickhouseDatabase::new(clichouse_database_url);
         Self {
             redis_client,
-            cache_client: CacheClient::new(redis_url),
+            cache_client: CacherClient::new(redis_url),
             database,
             clickhouse_database,
             prefix: "prices:".to_owned(),
@@ -107,13 +107,25 @@ impl PriceClient {
 
     // cache
 
-    pub async fn set_coins_list(&mut self, value: String) -> Result<(), Box<dyn Error>> {
+    pub async fn get_prices_list(&mut self) -> Result<Vec<primitives::PriceFull>, Box<dyn Error>> {
+        let list = self
+            .database
+            .get_prices()?
+            .into_iter()
+            .map(|x| x.as_price_full_primitive())
+            .collect();
+        Ok(list)
+    }
+
+    // cache coingecko
+
+    pub async fn set_coingecko_coins_list(&mut self, value: String) -> Result<(), Box<dyn Error>> {
         self.cache_client
             .set_value_with_expiration(COINS_LIST_KEY, value, 3600)
             .await
     }
 
-    pub async fn get_coins_list(&mut self) -> Result<String, Box<dyn Error>> {
+    pub async fn get_coingecko_coins_list(&mut self) -> Result<String, Box<dyn Error>> {
         self.cache_client.get_value(COINS_LIST_KEY).await
     }
 

@@ -1,7 +1,9 @@
 use crate::client::PriceClient;
 use crate::DEFAULT_FIAT_CURRENCY;
 use chrono::{Duration, Utc};
-use coingecko::mapper::{get_associated_chains, get_chain_for_coingecko_id};
+use coingecko::mapper::{
+    get_associated_chains, get_chain_for_coingecko_id, get_chain_for_coingecko_platform_id,
+};
 use coingecko::{Coin, CoinGeckoClient, CoinMarket};
 use primitives::chain::Chain;
 use primitives::AssetId;
@@ -24,7 +26,7 @@ impl PriceUpdater {
     }
 
     pub async fn get_coin_list(&mut self) -> Result<Vec<Coin>, Box<dyn std::error::Error>> {
-        match self.price_client.get_coins_list().await {
+        match self.price_client.get_coingecko_coins_list().await {
             Ok(value) => {
                 let coin_list = serde_json::from_str::<Vec<Coin>>(&value)?;
                 Ok(coin_list)
@@ -32,7 +34,7 @@ impl PriceUpdater {
             Err(_) => {
                 let coin_list = self.coin_gecko_client.get_coin_list().await?;
                 let string = serde_json::to_string(&coin_list)?;
-                self.price_client.set_coins_list(string).await?;
+                self.price_client.set_coingecko_coins_list(string).await?;
                 Ok(coin_list)
             }
         }
@@ -97,7 +99,7 @@ impl PriceUpdater {
             .clone()
             .into_iter()
             .flat_map(|(platform, token_id)| {
-                let platform = get_chain_for_coingecko_id(platform.as_str());
+                let platform = get_chain_for_coingecko_platform_id(platform.as_str());
                 if let Some(chain) = platform {
                     let token_id = token_id.unwrap_or_default();
                     if !token_id.is_empty() {

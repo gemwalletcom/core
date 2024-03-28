@@ -33,7 +33,7 @@ pub struct EthereumClient {
 impl EthereumClient {
     pub fn new(chain: Chain, url: String) -> Self {
         let client = HttpClientBuilder::default()
-            .max_response_size(100 * 1024 * 1024) // 100MB
+            .max_response_size(256 * 1024 * 1024) // 256MB
             .build(url)
             .unwrap();
 

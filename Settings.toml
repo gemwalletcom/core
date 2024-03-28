@@ -75,6 +75,9 @@ url = "https://osmosis-rest.publicnode.com"
 [name.lens]
 url = "https://api-v2.lens.dev"
 
+[name.base]
+url = "https://resolver-api.basename.app"
+
 [metrics]
 path = "/metrics"
 
@@ -152,6 +155,9 @@ url = "https://pacific-rpc.manta.network/http"
 
 [chains.blast]
 url = "https://rpc.ankr.com/blast"
+
+[chains.noble]
+url = "https://rest.cosmos.directory/noble"
 
 [chains.bitcoin]
 url = ""

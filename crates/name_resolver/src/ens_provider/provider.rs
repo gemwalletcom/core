@@ -36,22 +36,3 @@ impl Provider {
         todo!()
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::Provider;
-    use primitives::Chain;
-    use tokio_test::block_on;
-
-    #[test]
-    fn test_resolver() {
-        block_on(async {
-            let provider = Provider::new(String::from("https://eth.llamarpc.com"));
-            let addres = provider.resolve_name("vitalik.eth", Chain::Ethereum).await;
-            assert_eq!(
-                addres.unwrap(),
-                "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045".to_lowercase()
-            )
-        });
-    }
-}

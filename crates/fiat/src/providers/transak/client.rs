@@ -1,79 +1,37 @@
-use crate::model::{FiatClient, FiatMapping, FiatProviderAsset};
-use async_trait::async_trait;
-use primitives::{
-    fiat_provider::FiatProviderName, fiat_quote::FiatQuote, fiat_quote_request::FiatBuyRequest,
-    Chain,
-};
+use crate::model::{FiatProvider, FiatProviderAsset};
+use primitives::{Chain, FiatBuyRequest, FiatProviderName, FiatQuote};
 use reqwest::Client;
-use serde::{Deserialize, Serialize};
 use url::Url;
+
+use super::model::{Asset, TransakQuote, TransakResponse};
 
 const TRANSAK_API_URL: &str = "https://api.transak.com";
 const TRANSAK_REDIRECT_URL: &str = "https://global.transak.com";
 
-#[derive(Debug, Clone, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct TransakQuote {
-    pub quote_id: String,
-    pub fiat_amount: f64,
-    pub fiat_currency: String,
-    pub crypto_currency: String,
-    pub crypto_amount: f64,
-    pub network: String,
-}
-
-#[derive(Debug, Serialize)]
-struct TransakPayload<'a> {
-    ip_address: &'a str,
-    fiat_currency: &'a str,
-    crypto_currency: &'a str,
-    is_buy_or_sell: &'a str,
-    fiat_amount: f64,
-    network: &'a str,
-    partner_api_key: &'a str,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct TransakResponse<T> {
-    pub response: T,
-}
-
-#[derive(Debug, Clone, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct Asset {
-    pub coin_id: String,
-    pub symbol: String,
-    pub network: AssetNetwork,
-    pub address: Option<String>,
-    pub is_allowed: bool,
-}
-
-#[derive(Debug, Clone, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct AssetNetwork {
-    pub name: String,
-}
-
 #[derive(Debug, Clone)]
 pub struct TransakClient {
-    client: Client,
-    api_key: String,
+    pub client: Client,
+    pub api_key: String,
 }
 
-#[async_trait]
-impl FiatClient for TransakClient {
-    fn name(&self) -> FiatProviderName {
-        FiatProviderName::Transak
+impl TransakClient {
+    pub const NAME: FiatProviderName = FiatProviderName::Transak;
+
+    pub fn new(client: Client, api_key: String) -> Self {
+        TransakClient { client, api_key }
     }
 
-    async fn get_quote(
+    pub async fn get_buy_quote(
         &self,
-        request: FiatBuyRequest,
-        request_map: FiatMapping,
-    ) -> Result<FiatQuote, Box<dyn std::error::Error + Send + Sync>> {
+        symbol: String,
+        fiat_currency: String,
+        fiat_amount: f64,
+        network: String,
+        ip_address: String,
+    ) -> Result<TransakQuote, reqwest::Error> {
         let url = format!(
             "{}/api/v2/currencies/price?ipAddress={}&fiatCurrency={}&cryptoCurrency={}&isBuyOrSell=buy&fiatAmount={}&network={}&partnerApiKey={}",
-            TRANSAK_API_URL, request.ip_address, request.fiat_currency, request_map.symbol, request.fiat_amount, request_map.network.unwrap_or_default(), self.api_key
+            TRANSAK_API_URL, ip_address, fiat_currency, symbol, fiat_amount, network, self.api_key
         );
 
         let response = self.client.get(&url).send().await?;
@@ -81,29 +39,10 @@ impl FiatClient for TransakClient {
             .json::<TransakResponse<TransakQuote>>()
             .await?
             .response;
-
-        Ok(self.get_fiat_quote(request, transak_quote))
+        Ok(transak_quote)
     }
 
-    async fn get_assets(
-        &self,
-    ) -> Result<Vec<FiatProviderAsset>, Box<dyn std::error::Error + Send + Sync>> {
-        let assets = self
-            .get_assets()
-            .await?
-            .into_iter()
-            .flat_map(Self::map_asset)
-            .collect::<Vec<FiatProviderAsset>>();
-        Ok(assets)
-    }
-}
-
-impl TransakClient {
-    pub fn new(client: Client, api_key: String) -> Self {
-        TransakClient { client, api_key }
-    }
-
-    fn get_fiat_quote(&self, request: FiatBuyRequest, quote: TransakQuote) -> FiatQuote {
+    pub fn get_fiat_quote(&self, request: FiatBuyRequest, quote: TransakQuote) -> FiatQuote {
         FiatQuote {
             provider: self.name().as_fiat_provider(),
             fiat_amount: request.fiat_amount,
@@ -129,7 +68,7 @@ impl TransakClient {
         return components.as_str().to_string();
     }
 
-    async fn get_assets(&self) -> Result<Vec<Asset>, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn get_supported_assets(&self) -> Result<Vec<Asset>, reqwest::Error> {
         let url = format!("{}/api/v2/currencies/crypto-currencies", TRANSAK_API_URL);
         let response = self.client.get(&url).send().await?;
         let assets = response

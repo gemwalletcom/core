@@ -538,6 +538,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "assetor"
+version = "1.0.0"
+dependencies = [
+ "coingecko",
+ "primitives",
+ "settings",
+ "storage",
+ "tokio",
+]
+
+[[package]]
 name = "async-channel"
 version = "1.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1271,6 +1282,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "cacher"
+version = "1.0.0"
+dependencies = [
+ "redis",
+]
+
+[[package]]
 name = "camino"
 version = "1.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1535,7 +1553,7 @@ dependencies = [
 [[package]]
 name = "consensus-config"
 version = "0.1.0"
-source = "git+https://github.com/mystenlabs/sui?tag=mainnet-v1.20.1#cdd690331047d8c19eccc784e1d27ba42a0ed428"
+source = "git+https://github.com/mystenlabs/sui?tag=mainnet-v1.21.1#a67a73bcfab3eab5568b7d8f8393bcb9e5bddc5b"
 dependencies = [
  "fastcrypto",
  "mysten-network",
@@ -2210,7 +2228,7 @@ dependencies = [
 [[package]]
 name = "enum-compat-util"
 version = "0.1.0"
-source = "git+https://github.com/mystenlabs/sui?tag=mainnet-v1.20.1#cdd690331047d8c19eccc784e1d27ba42a0ed428"
+source = "git+https://github.com/mystenlabs/sui?tag=mainnet-v1.21.1#a67a73bcfab3eab5568b7d8f8393bcb9e5bddc5b"
 dependencies = [
  "serde_yaml",
 ]
@@ -2289,7 +2307,7 @@ dependencies = [
 [[package]]
 name = "fastcrypto"
 version = "0.1.7"
-source = "git+https://github.com/MystenLabs/fastcrypto?rev=ea66012b860d9dd152abb7f2156275698ee91126#ea66012b860d9dd152abb7f2156275698ee91126"
+source = "git+https://github.com/MystenLabs/fastcrypto?rev=a499d84d07cbe33014531249f6ceeff85664502d#a499d84d07cbe33014531249f6ceeff85664502d"
 dependencies = [
  "aes",
  "aes-gcm",
@@ -2332,7 +2350,6 @@ dependencies = [
  "schemars",
  "secp256k1",
  "serde",
- "serde_bytes",
  "serde_json",
  "serde_with",
  "sha2 0.10.8",
@@ -2348,10 +2365,8 @@ dependencies = [
 [[package]]
 name = "fastcrypto-derive"
 version = "0.1.3"
-source = "git+https://github.com/MystenLabs/fastcrypto?rev=ea66012b860d9dd152abb7f2156275698ee91126#ea66012b860d9dd152abb7f2156275698ee91126"
+source = "git+https://github.com/MystenLabs/fastcrypto?rev=a499d84d07cbe33014531249f6ceeff85664502d#a499d84d07cbe33014531249f6ceeff85664502d"
 dependencies = [
- "convert_case 0.6.0",
- "proc-macro2 1.0.76",
  "quote 1.0.35",
  "syn 1.0.109",
 ]
@@ -2359,13 +2374,11 @@ dependencies = [
 [[package]]
 name = "fastcrypto-tbls"
 version = "0.1.0"
-source = "git+https://github.com/MystenLabs/fastcrypto?rev=ea66012b860d9dd152abb7f2156275698ee91126#ea66012b860d9dd152abb7f2156275698ee91126"
+source = "git+https://github.com/MystenLabs/fastcrypto?rev=a499d84d07cbe33014531249f6ceeff85664502d#a499d84d07cbe33014531249f6ceeff85664502d"
 dependencies = [
  "bcs",
- "bincode",
  "digest 0.10.7",
  "fastcrypto",
- "fastcrypto-derive",
  "hex",
  "itertools 0.10.5",
  "rand",
@@ -2374,13 +2387,12 @@ dependencies = [
  "tap",
  "tracing",
  "typenum",
- "zeroize",
 ]
 
 [[package]]
 name = "fastcrypto-zkp"
 version = "0.1.2"
-source = "git+https://github.com/MystenLabs/fastcrypto?rev=ea66012b860d9dd152abb7f2156275698ee91126#ea66012b860d9dd152abb7f2156275698ee91126"
+source = "git+https://github.com/MystenLabs/fastcrypto?rev=a499d84d07cbe33014531249f6ceeff85664502d#a499d84d07cbe33014531249f6ceeff85664502d"
 dependencies = [
  "ark-bls12-381",
  "ark-bn254",
@@ -2390,7 +2402,6 @@ dependencies = [
  "ark-relations",
  "ark-serialize",
  "ark-snark",
- "bcs",
  "blst",
  "byte-slice-cast",
  "derive_more",
@@ -2401,9 +2412,7 @@ dependencies = [
  "neptune",
  "num-bigint 0.4.4",
  "once_cell",
- "regex",
  "reqwest",
- "rustls-webpki",
  "schemars",
  "serde",
  "serde_json",
@@ -3178,6 +3187,7 @@ dependencies = [
  "gem_evm",
  "primitives",
  "reqwest",
+ "serde",
  "settings",
  "tokio",
 ]
@@ -3661,12 +3671,12 @@ dependencies = [
 [[package]]
 name = "move-abstract-stack"
 version = "0.0.1"
-source = "git+https://github.com/mystenlabs/sui?tag=mainnet-v1.20.1#cdd690331047d8c19eccc784e1d27ba42a0ed428"
+source = "git+https://github.com/mystenlabs/sui?tag=mainnet-v1.21.1#a67a73bcfab3eab5568b7d8f8393bcb9e5bddc5b"
 
 [[package]]
 name = "move-binary-format"
 version = "0.0.3"
-source = "git+https://github.com/mystenlabs/sui?tag=mainnet-v1.20.1#cdd690331047d8c19eccc784e1d27ba42a0ed428"
+source = "git+https://github.com/mystenlabs/sui?tag=mainnet-v1.21.1#a67a73bcfab3eab5568b7d8f8393bcb9e5bddc5b"
 dependencies = [
  "anyhow",
  "enum-compat-util",
@@ -3680,12 +3690,12 @@ dependencies = [
 [[package]]
 name = "move-borrow-graph"
 version = "0.0.1"
-source = "git+https://github.com/mystenlabs/sui?tag=mainnet-v1.20.1#cdd690331047d8c19eccc784e1d27ba42a0ed428"
+source = "git+https://github.com/mystenlabs/sui?tag=mainnet-v1.21.1#a67a73bcfab3eab5568b7d8f8393bcb9e5bddc5b"
 
 [[package]]
 name = "move-bytecode-source-map"
 version = "0.1.0"
-source = "git+https://github.com/mystenlabs/sui?tag=mainnet-v1.20.1#cdd690331047d8c19eccc784e1d27ba42a0ed428"
+source = "git+https://github.com/mystenlabs/sui?tag=mainnet-v1.21.1#a67a73bcfab3eab5568b7d8f8393bcb9e5bddc5b"
 dependencies = [
  "anyhow",
  "bcs",
@@ -3700,7 +3710,7 @@ dependencies = [
 [[package]]
 name = "move-bytecode-utils"
 version = "0.1.0"
-source = "git+https://github.com/mystenlabs/sui?tag=mainnet-v1.20.1#cdd690331047d8c19eccc784e1d27ba42a0ed428"
+source = "git+https://github.com/mystenlabs/sui?tag=mainnet-v1.21.1#a67a73bcfab3eab5568b7d8f8393bcb9e5bddc5b"
 dependencies = [
  "anyhow",
  "move-binary-format",
@@ -3712,7 +3722,7 @@ dependencies = [
 [[package]]
 name = "move-bytecode-verifier"
 version = "0.1.0"
-source = "git+https://github.com/mystenlabs/sui?tag=mainnet-v1.20.1#cdd690331047d8c19eccc784e1d27ba42a0ed428"
+source = "git+https://github.com/mystenlabs/sui?tag=mainnet-v1.21.1#a67a73bcfab3eab5568b7d8f8393bcb9e5bddc5b"
 dependencies = [
  "move-abstract-stack",
  "move-binary-format",
@@ -3725,7 +3735,7 @@ dependencies = [
 [[package]]
 name = "move-command-line-common"
 version = "0.1.0"
-source = "git+https://github.com/mystenlabs/sui?tag=mainnet-v1.20.1#cdd690331047d8c19eccc784e1d27ba42a0ed428"
+source = "git+https://github.com/mystenlabs/sui?tag=mainnet-v1.21.1#a67a73bcfab3eab5568b7d8f8393bcb9e5bddc5b"
 dependencies = [
  "anyhow",
  "difference",
@@ -3743,7 +3753,7 @@ dependencies = [
 [[package]]
 name = "move-compiler"
 version = "0.0.1"
-source = "git+https://github.com/mystenlabs/sui?tag=mainnet-v1.20.1#cdd690331047d8c19eccc784e1d27ba42a0ed428"
+source = "git+https://github.com/mystenlabs/sui?tag=mainnet-v1.21.1#a67a73bcfab3eab5568b7d8f8393bcb9e5bddc5b"
 dependencies = [
  "anyhow",
  "bcs",
@@ -3759,6 +3769,7 @@ dependencies = [
  "move-core-types",
  "move-ir-to-bytecode",
  "move-ir-types",
+ "move-proc-macros",
  "move-symbol-pool",
  "once_cell",
  "pathdiff",
@@ -3773,7 +3784,7 @@ dependencies = [
 [[package]]
 name = "move-core-types"
 version = "0.0.4"
-source = "git+https://github.com/mystenlabs/sui?tag=mainnet-v1.20.1#cdd690331047d8c19eccc784e1d27ba42a0ed428"
+source = "git+https://github.com/mystenlabs/sui?tag=mainnet-v1.21.1#a67a73bcfab3eab5568b7d8f8393bcb9e5bddc5b"
 dependencies = [
  "anyhow",
  "bcs",
@@ -3794,7 +3805,7 @@ dependencies = [
 [[package]]
 name = "move-coverage"
 version = "0.1.0"
-source = "git+https://github.com/mystenlabs/sui?tag=mainnet-v1.20.1#cdd690331047d8c19eccc784e1d27ba42a0ed428"
+source = "git+https://github.com/mystenlabs/sui?tag=mainnet-v1.21.1#a67a73bcfab3eab5568b7d8f8393bcb9e5bddc5b"
 dependencies = [
  "anyhow",
  "bcs",
@@ -3813,7 +3824,7 @@ dependencies = [
 [[package]]
 name = "move-disassembler"
 version = "0.1.0"
-source = "git+https://github.com/mystenlabs/sui?tag=mainnet-v1.20.1#cdd690331047d8c19eccc784e1d27ba42a0ed428"
+source = "git+https://github.com/mystenlabs/sui?tag=mainnet-v1.21.1#a67a73bcfab3eab5568b7d8f8393bcb9e5bddc5b"
 dependencies = [
  "anyhow",
  "bcs",
@@ -3832,7 +3843,7 @@ dependencies = [
 [[package]]
 name = "move-ir-to-bytecode"
 version = "0.1.0"
-source = "git+https://github.com/mystenlabs/sui?tag=mainnet-v1.20.1#cdd690331047d8c19eccc784e1d27ba42a0ed428"
+source = "git+https://github.com/mystenlabs/sui?tag=mainnet-v1.21.1#a67a73bcfab3eab5568b7d8f8393bcb9e5bddc5b"
 dependencies = [
  "anyhow",
  "codespan-reporting",
@@ -3850,7 +3861,7 @@ dependencies = [
 [[package]]
 name = "move-ir-to-bytecode-syntax"
 version = "0.1.0"
-source = "git+https://github.com/mystenlabs/sui?tag=mainnet-v1.20.1#cdd690331047d8c19eccc784e1d27ba42a0ed428"
+source = "git+https://github.com/mystenlabs/sui?tag=mainnet-v1.21.1#a67a73bcfab3eab5568b7d8f8393bcb9e5bddc5b"
 dependencies = [
  "anyhow",
  "hex",
@@ -3863,7 +3874,7 @@ dependencies = [
 [[package]]
 name = "move-ir-types"
 version = "0.1.0"
-source = "git+https://github.com/mystenlabs/sui?tag=mainnet-v1.20.1#cdd690331047d8c19eccc784e1d27ba42a0ed428"
+source = "git+https://github.com/mystenlabs/sui?tag=mainnet-v1.21.1#a67a73bcfab3eab5568b7d8f8393bcb9e5bddc5b"
 dependencies = [
  "hex",
  "move-command-line-common",
@@ -3876,7 +3887,7 @@ dependencies = [
 [[package]]
 name = "move-proc-macros"
 version = "0.1.0"
-source = "git+https://github.com/mystenlabs/sui?tag=mainnet-v1.20.1#cdd690331047d8c19eccc784e1d27ba42a0ed428"
+source = "git+https://github.com/mystenlabs/sui?tag=mainnet-v1.21.1#a67a73bcfab3eab5568b7d8f8393bcb9e5bddc5b"
 dependencies = [
  "enum-compat-util",
  "quote 1.0.35",
@@ -3886,7 +3897,7 @@ dependencies = [
 [[package]]
 name = "move-symbol-pool"
 version = "0.1.0"
-source = "git+https://github.com/mystenlabs/sui?tag=mainnet-v1.20.1#cdd690331047d8c19eccc784e1d27ba42a0ed428"
+source = "git+https://github.com/mystenlabs/sui?tag=mainnet-v1.21.1#a67a73bcfab3eab5568b7d8f8393bcb9e5bddc5b"
 dependencies = [
  "once_cell",
  "phf",
@@ -3896,7 +3907,7 @@ dependencies = [
 [[package]]
 name = "move-vm-config"
 version = "0.1.0"
-source = "git+https://github.com/mystenlabs/sui?tag=mainnet-v1.20.1#cdd690331047d8c19eccc784e1d27ba42a0ed428"
+source = "git+https://github.com/mystenlabs/sui?tag=mainnet-v1.21.1#a67a73bcfab3eab5568b7d8f8393bcb9e5bddc5b"
 dependencies = [
  "move-binary-format",
  "once_cell",
@@ -3905,7 +3916,7 @@ dependencies = [
 [[package]]
 name = "move-vm-profiler"
 version = "0.1.0"
-source = "git+https://github.com/mystenlabs/sui?tag=mainnet-v1.20.1#cdd690331047d8c19eccc784e1d27ba42a0ed428"
+source = "git+https://github.com/mystenlabs/sui?tag=mainnet-v1.21.1#a67a73bcfab3eab5568b7d8f8393bcb9e5bddc5b"
 dependencies = [
  "move-vm-config",
  "once_cell",
@@ -3917,7 +3928,7 @@ dependencies = [
 [[package]]
 name = "move-vm-test-utils"
 version = "0.1.0"
-source = "git+https://github.com/mystenlabs/sui?tag=mainnet-v1.20.1#cdd690331047d8c19eccc784e1d27ba42a0ed428"
+source = "git+https://github.com/mystenlabs/sui?tag=mainnet-v1.21.1#a67a73bcfab3eab5568b7d8f8393bcb9e5bddc5b"
 dependencies = [
  "anyhow",
  "move-binary-format",
@@ -3931,7 +3942,7 @@ dependencies = [
 [[package]]
 name = "move-vm-types"
 version = "0.1.0"
-source = "git+https://github.com/mystenlabs/sui?tag=mainnet-v1.20.1#cdd690331047d8c19eccc784e1d27ba42a0ed428"
+source = "git+https://github.com/mystenlabs/sui?tag=mainnet-v1.21.1#a67a73bcfab3eab5568b7d8f8393bcb9e5bddc5b"
 dependencies = [
  "bcs",
  "move-binary-format",
@@ -4030,7 +4041,7 @@ dependencies = [
 [[package]]
 name = "mysten-metrics"
 version = "0.7.0"
-source = "git+https://github.com/mystenlabs/sui?tag=mainnet-v1.20.1#cdd690331047d8c19eccc784e1d27ba42a0ed428"
+source = "git+https://github.com/mystenlabs/sui?tag=mainnet-v1.21.1#a67a73bcfab3eab5568b7d8f8393bcb9e5bddc5b"
 dependencies = [
  "async-trait",
  "axum",
@@ -4050,7 +4061,7 @@ dependencies = [
 [[package]]
 name = "mysten-network"
 version = "0.2.0"
-source = "git+https://github.com/mystenlabs/sui?tag=mainnet-v1.20.1#cdd690331047d8c19eccc784e1d27ba42a0ed428"
+source = "git+https://github.com/mystenlabs/sui?tag=mainnet-v1.21.1#a67a73bcfab3eab5568b7d8f8393bcb9e5bddc5b"
 dependencies = [
  "anemo",
  "bcs",
@@ -4074,7 +4085,7 @@ dependencies = [
 [[package]]
 name = "mysten-util-mem"
 version = "0.11.0"
-source = "git+https://github.com/mystenlabs/sui?tag=mainnet-v1.20.1#cdd690331047d8c19eccc784e1d27ba42a0ed428"
+source = "git+https://github.com/mystenlabs/sui?tag=mainnet-v1.21.1#a67a73bcfab3eab5568b7d8f8393bcb9e5bddc5b"
 dependencies = [
  "cfg-if",
  "ed25519-consensus",
@@ -4093,7 +4104,7 @@ dependencies = [
 [[package]]
 name = "mysten-util-mem-derive"
 version = "0.1.0"
-source = "git+https://github.com/mystenlabs/sui?tag=mainnet-v1.20.1#cdd690331047d8c19eccc784e1d27ba42a0ed428"
+source = "git+https://github.com/mystenlabs/sui?tag=mainnet-v1.21.1#a67a73bcfab3eab5568b7d8f8393bcb9e5bddc5b"
 dependencies = [
  "proc-macro2 1.0.76",
  "syn 1.0.109",
@@ -4123,10 +4134,9 @@ dependencies = [
 [[package]]
 name = "narwhal-config"
 version = "0.1.0"
-source = "git+https://github.com/mystenlabs/sui?tag=mainnet-v1.20.1#cdd690331047d8c19eccc784e1d27ba42a0ed428"
+source = "git+https://github.com/mystenlabs/sui?tag=mainnet-v1.21.1#a67a73bcfab3eab5568b7d8f8393bcb9e5bddc5b"
 dependencies = [
  "fastcrypto",
- "fastcrypto-tbls",
  "match_opt",
  "mysten-network",
  "mysten-util-mem",
@@ -4141,11 +4151,10 @@ dependencies = [
 [[package]]
 name = "narwhal-crypto"
 version = "0.1.0"
-source = "git+https://github.com/mystenlabs/sui?tag=mainnet-v1.20.1#cdd690331047d8c19eccc784e1d27ba42a0ed428"
+source = "git+https://github.com/mystenlabs/sui?tag=mainnet-v1.21.1#a67a73bcfab3eab5568b7d8f8393bcb9e5bddc5b"
 dependencies = [
  "bcs",
  "fastcrypto",
- "fastcrypto-tbls",
  "serde",
  "shared-crypto",
 ]
@@ -4930,6 +4939,7 @@ dependencies = [
 name = "pricer"
 version = "1.0.0"
 dependencies = [
+ "cacher",
  "chrono",
  "coingecko",
  "primitives",
@@ -5084,7 +5094,7 @@ dependencies = [
 [[package]]
 name = "prometheus-closure-metric"
 version = "0.1.0"
-source = "git+https://github.com/mystenlabs/sui?tag=mainnet-v1.20.1#cdd690331047d8c19eccc784e1d27ba42a0ed428"
+source = "git+https://github.com/mystenlabs/sui?tag=mainnet-v1.21.1#a67a73bcfab3eab5568b7d8f8393bcb9e5bddc5b"
 dependencies = [
  "anyhow",
  "prometheus",
@@ -6310,7 +6320,7 @@ dependencies = [
 [[package]]
 name = "shared-crypto"
 version = "0.0.0"
-source = "git+https://github.com/mystenlabs/sui?tag=mainnet-v1.20.1#cdd690331047d8c19eccc784e1d27ba42a0ed428"
+source = "git+https://github.com/mystenlabs/sui?tag=mainnet-v1.21.1#a67a73bcfab3eab5568b7d8f8393bcb9e5bddc5b"
 dependencies = [
  "bcs",
  "eyre",
@@ -6586,7 +6596,7 @@ checksum = "734676eb262c623cec13c3155096e08d1f8f29adce39ba17948b18dad1e54142"
 [[package]]
 name = "sui-enum-compat-util"
 version = "0.1.0"
-source = "git+https://github.com/mystenlabs/sui?tag=mainnet-v1.20.1#cdd690331047d8c19eccc784e1d27ba42a0ed428"
+source = "git+https://github.com/mystenlabs/sui?tag=mainnet-v1.21.1#a67a73bcfab3eab5568b7d8f8393bcb9e5bddc5b"
 dependencies = [
  "serde_yaml",
 ]
@@ -6594,7 +6604,7 @@ dependencies = [
 [[package]]
 name = "sui-macros"
 version = "0.7.0"
-source = "git+https://github.com/mystenlabs/sui?tag=mainnet-v1.20.1#cdd690331047d8c19eccc784e1d27ba42a0ed428"
+source = "git+https://github.com/mystenlabs/sui?tag=mainnet-v1.21.1#a67a73bcfab3eab5568b7d8f8393bcb9e5bddc5b"
 dependencies = [
  "futures",
  "once_cell",
@@ -6605,7 +6615,7 @@ dependencies = [
 [[package]]
 name = "sui-proc-macros"
 version = "0.7.0"
-source = "git+https://github.com/mystenlabs/sui?tag=mainnet-v1.20.1#cdd690331047d8c19eccc784e1d27ba42a0ed428"
+source = "git+https://github.com/mystenlabs/sui?tag=mainnet-v1.21.1#a67a73bcfab3eab5568b7d8f8393bcb9e5bddc5b"
 dependencies = [
  "msim-macros",
  "proc-macro2 1.0.76",
@@ -6617,7 +6627,7 @@ dependencies = [
 [[package]]
 name = "sui-protocol-config"
 version = "0.1.0"
-source = "git+https://github.com/mystenlabs/sui?tag=mainnet-v1.20.1#cdd690331047d8c19eccc784e1d27ba42a0ed428"
+source = "git+https://github.com/mystenlabs/sui?tag=mainnet-v1.21.1#a67a73bcfab3eab5568b7d8f8393bcb9e5bddc5b"
 dependencies = [
  "clap",
  "insta",
@@ -6631,7 +6641,7 @@ dependencies = [
 [[package]]
 name = "sui-protocol-config-macros"
 version = "0.1.0"
-source = "git+https://github.com/mystenlabs/sui?tag=mainnet-v1.20.1#cdd690331047d8c19eccc784e1d27ba42a0ed428"
+source = "git+https://github.com/mystenlabs/sui?tag=mainnet-v1.21.1#a67a73bcfab3eab5568b7d8f8393bcb9e5bddc5b"
 dependencies = [
  "proc-macro2 1.0.76",
  "quote 1.0.35",
@@ -6641,7 +6651,7 @@ dependencies = [
 [[package]]
 name = "sui-types"
 version = "0.1.0"
-source = "git+https://github.com/mystenlabs/sui?tag=mainnet-v1.20.1#cdd690331047d8c19eccc784e1d27ba42a0ed428"
+source = "git+https://github.com/mystenlabs/sui?tag=mainnet-v1.21.1#a67a73bcfab3eab5568b7d8f8393bcb9e5bddc5b"
 dependencies = [
  "anemo",
  "anyhow",
@@ -7347,7 +7357,7 @@ dependencies = [
 [[package]]
 name = "typed-store-error"
 version = "0.4.0"
-source = "git+https://github.com/mystenlabs/sui?tag=mainnet-v1.20.1#cdd690331047d8c19eccc784e1d27ba42a0ed428"
+source = "git+https://github.com/mystenlabs/sui?tag=mainnet-v1.21.1#a67a73bcfab3eab5568b7d8f8393bcb9e5bddc5b"
 dependencies = [
  "serde",
  "thiserror",

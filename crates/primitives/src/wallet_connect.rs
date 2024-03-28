@@ -11,6 +11,8 @@ pub enum WallletConnectCAIP2 {
     Eip155,
     #[serde(rename = "solana")]
     Solana,
+    #[serde(rename = "cosmos")]
+    Cosmos,
 }
 
 #[derive(Debug, Serialize)]

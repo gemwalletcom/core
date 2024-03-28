@@ -1,5 +1,5 @@
 extern crate rocket;
-use fiat::client::Client as FiatClient;
+use fiat::client::Client as FiatProvider;
 use fiat::model::FiatRates;
 use primitives::{
     fiat_assets::FiatAssets, fiat_quote::FiatQuotes, fiat_quote_request::FiatBuyRequest,
@@ -16,7 +16,7 @@ pub async fn get_fiat_quotes(
     wallet_address: String,
     ip_address: Option<String>,
     ip: std::net::IpAddr,
-    fiat_client: &State<Mutex<FiatClient>>,
+    fiat_client: &State<Mutex<FiatProvider>>,
 ) -> Json<FiatQuotes> {
     let request: FiatBuyRequest = FiatBuyRequest {
         asset_id: asset_id.clone(),
@@ -33,13 +33,13 @@ pub async fn get_fiat_quotes(
 }
 
 #[get("/fiat/assets")]
-pub async fn get_fiat_assets(fiat_client: &State<Mutex<FiatClient>>) -> Json<FiatAssets> {
+pub async fn get_fiat_assets(fiat_client: &State<Mutex<FiatProvider>>) -> Json<FiatAssets> {
     let assets = fiat_client.lock().await.get_assets().await.unwrap();
     Json(assets)
 }
 
 #[get("/fiat/rates")]
-pub async fn get_fiat_rates(fiat_client: &State<Mutex<FiatClient>>) -> Json<FiatRates> {
+pub async fn get_fiat_rates(fiat_client: &State<Mutex<FiatProvider>>) -> Json<FiatRates> {
     let rates = fiat_client.lock().await.get_fiat_rates().await.unwrap();
     Json(rates)
 }

@@ -40,6 +40,7 @@ pub enum Chain {
     Sei,
     Manta,
     Blast,
+    Noble,
 }
 
 impl PartialEq for Chain {
@@ -65,6 +66,7 @@ impl Chain {
             Self::Celestia => Some("utia"),
             Self::Injective => Some("inj"),
             Self::Sei => Some("usei"),
+            Self::Noble => Some("uusdc"),
             Self::Sui => Some("0x2::sui::SUI"),
             Self::Aptos => Some("0x1::aptos_coin::AptosCoin"),
             _ => None,
@@ -89,22 +91,23 @@ impl Chain {
             Self::Gnosis => "100",
             Self::Manta => "169",
             Self::Blast => "81457",
+            Self::Cosmos => "cosmoshub-4",
+            Self::Osmosis => "osmosis-1",
+            Self::Celestia => "celestia",
+            Self::Noble => "noble-1",
+            Self::Injective => "injective-1",
+            Self::Sei => "pacific-1",
             Self::Bitcoin
             | Self::Litecoin
             | Self::Binance
             | Self::Solana
             | Self::Thorchain
-            | Self::Cosmos
-            | Self::Osmosis
             | Self::Ton
             | Self::Tron
             | Self::Doge
             | Self::Aptos
             | Self::Sui
-            | Self::Xrp
-            | Self::Celestia
-            | Self::Injective
-            | Self::Sei => unimplemented!(),
+            | Self::Xrp => unimplemented!(),
         }
     }
 
@@ -131,7 +134,7 @@ impl Chain {
             Self::SmartChain => 9006,
             Self::Solana => 501,
             Self::Thorchain => 931,
-            Self::Cosmos | Self::Osmosis | Self::Celestia | Self::Sei => 118,
+            Self::Cosmos | Self::Osmosis | Self::Celestia | Self::Noble | Self::Sei => 118,
             Self::Ton => 607,
             Self::Tron => 195,
             Self::Doge => 3,
@@ -164,6 +167,7 @@ impl Chain {
             | Self::Osmosis
             | Self::Celestia
             | Self::Injective
+            | Self::Noble
             | Self::Sei => ChainType::Cosmos,
             Self::Ton => ChainType::Ton,
             Self::Tron => ChainType::Tron,
@@ -201,6 +205,7 @@ impl Chain {
             | Self::Xrp
             | Self::Celestia
             | Self::Injective
+            | Self::Noble
             | Self::Sei => None,
         }
     }
@@ -235,6 +240,7 @@ impl Chain {
             Self::Sui => 500,
             Self::Xrp => 4_000,
             Self::Sei => 1_000,
+            Self::Noble => 6_000,
         }
     }
 
@@ -263,6 +269,7 @@ impl Chain {
             | Self::Doge
             | Self::AvalancheC
             | Self::Sei
+            | Self::Noble
             | Self::Litecoin => 30,
             Self::Binance => 0,
         }

@@ -3,11 +3,11 @@ use std::error::Error;
 use redis::AsyncCommands;
 
 // Work in progress. In the future use it for caching any temporary data.
-pub struct CacheClient {
+pub struct CacherClient {
     client: redis::Client,
 }
 
-impl CacheClient {
+impl CacherClient {
     pub fn new(redis_url: &str) -> Self {
         let client = redis::Client::open(redis_url).unwrap();
         Self { client }

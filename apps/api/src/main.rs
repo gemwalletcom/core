@@ -33,7 +33,7 @@ use api_connector::PusherClient;
 use asset_client::AssetsClient;
 use config_client::Client as ConfigClient;
 use device_client::DevicesClient;
-use fiat::client::Client as FiatClient;
+use fiat::client::Client as FiatProvider;
 use fiat::FiatProviderFactory;
 use metrics_client::MetricsClient;
 use name_resolver::client::Client as NameClient;
@@ -98,7 +98,7 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
     let swapper_client = Swapper::build(swapper_configuration);
     let swap_client = SwapClient::new(postgres_url, swapper_client).await;
     let providers = FiatProviderFactory::new_providers(settings_clone.clone());
-    let fiat_client = FiatClient::new(postgres_url, providers).await;
+    let fiat_client = FiatProvider::new(postgres_url, providers).await;
     let nft_client = NFTClient::new(postgres_url).await;
 
     rocket::build()
@@ -132,6 +132,7 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
             routes![
                 prices::get_asset_price,
                 prices::get_assets_prices,
+                prices::get_prices_list,
                 charts::get_charts,
                 fiat_quotes::get_fiat_quotes,
                 fiat_quotes::get_fiat_assets,

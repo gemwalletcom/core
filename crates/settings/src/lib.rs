@@ -109,6 +109,7 @@ pub struct Name {
     pub injective: URL,
     pub icns: URL,
     pub lens: URL,
+    pub base: URL,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -166,6 +167,7 @@ pub struct Chains {
     pub sei: Chain,
     pub manta: Chain,
     pub blast: Chain,
+    pub noble: Chain,
 }
 
 #[derive(Debug, Deserialize, Clone)]

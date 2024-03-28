@@ -1,42 +1,19 @@
-use clap::{arg, Parser};
-use coingecko::get_chain_for_coingecko_id;
+mod cli_args;
+use cli_args::Args;
+mod cli_model;
+
+use coingecko::get_chain_for_coingecko_platform_id;
 use coingecko::{CoinGeckoClient, CoinInfo};
-use futures_util::StreamExt;
 use gem_evm::address::EthereumAddress;
 use settings::Settings;
+
+use clap::Parser;
+use futures_util::StreamExt;
 use std::{
     error::Error, fs, io::Write, path::Path, str::FromStr, thread::sleep, time::Duration, vec,
 };
 
 /// Assets image downloader from coingecko
-#[derive(Parser, Debug)]
-#[command(version, about, long_about = None)]
-struct Args {
-    /// Path to save images
-    #[arg(short, long)]
-    folder: String,
-
-    /// Top number of tokens to download
-    #[arg(short, long, default_value_t = 50)]
-    count: u32,
-
-    /// Starting page
-    #[arg(short, long, default_value_t = 1)]
-    page: u32,
-
-    /// Page size
-    #[arg(long, default_value_t = 50)]
-    page_size: u32,
-
-    /// ID of the coin
-    #[arg(long, default_value = "")]
-    coin_id: String,
-
-    /// Verbose mode
-    #[arg(short, long, default_value_t = false)]
-    verbose: bool,
-}
-
 struct Downloader {
     args: Args,
     client: CoinGeckoClient,
@@ -63,14 +40,50 @@ impl Downloader {
             fs::create_dir_all(folder)?;
         }
 
-        let coin_id = self.args.coin_id.clone();
-        if !coin_id.is_empty() {
-            let market = self.client.get_coin_markets_id(coin_id.as_str()).await?;
-            self.handle_coin(&market.clone().id, folder).await?;
-
-            return Ok(());
+        if !self.args.coin_id.is_empty() {
+            return self
+                .handle_coin_id(self.args.coin_id.as_str(), folder)
+                .await;
         }
 
+        if !self.args.coin_ids.is_empty() {
+            return self
+                .handle_coin_ids(self.args.coin_ids.clone(), folder)
+                .await;
+        }
+
+        if !self.args.coin_ids_url.is_empty() {
+            return self.handle_coin_url(&self.args.coin_ids_url, folder).await;
+        }
+
+        self.handle_coingecto_top(folder).await
+    }
+
+    async fn handle_coin_id(&self, coin_id: &str, folder: &Path) -> Result<(), Box<dyn Error>> {
+        self.handle_coin(coin_id, folder).await?;
+        Ok(())
+    }
+
+    async fn handle_coin_ids(&self, coin_ids: String, folder: &Path) -> Result<(), Box<dyn Error>> {
+        let ids: Vec<String> = coin_ids.split(',').map(|x| x.trim().to_string()).collect();
+        for coin_id in ids {
+            self.handle_coin(&coin_id, folder).await?;
+        }
+        Ok(())
+    }
+
+    async fn handle_coin_url(&self, url: &str, folder: &Path) -> Result<(), Box<dyn Error>> {
+        let response: cli_model::Response = reqwest::get(url).await?.json().await?;
+        for price in response.results {
+            match self.handle_coin_id(&price.coin_id, folder).await {
+                Ok(_) => continue,
+                Err(e) => println!("<== {} error: {}", price.coin_id, e),
+            }
+        }
+        Ok(())
+    }
+
+    async fn handle_coingecto_top(&self, folder: &Path) -> Result<(), Box<dyn Error>> {
         let mut page = self.args.page;
         let total_pages = self.args.count.div_ceil(self.args.page_size);
         while page <= total_pages {
@@ -94,7 +107,7 @@ impl Downloader {
         }
 
         for (platform, address) in coin_info.platforms.iter().filter(|(k, _)| !k.is_empty()) {
-            let chain = get_chain_for_coingecko_id(platform);
+            let chain = get_chain_for_coingecko_platform_id(platform);
             if chain.is_none() || address.is_empty() {
                 if self.args.verbose {
                     println!("<== {} not supported, skip", platform);
@@ -150,7 +163,7 @@ impl Downloader {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    let args = Args::parse();
+    let args = cli_args::Args::parse();
     let api_key = Settings::new().unwrap().coingecko.key.secret;
     let downloader = Downloader::new(args, api_key);
 

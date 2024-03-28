@@ -1,32 +1,14 @@
-use crate::model::{FiatClient, FiatMapping, FiatProviderAsset};
-use async_trait::async_trait;
+use crate::model::FiatProviderAsset;
+
+use super::model::{Asset, MoonPayBuyQuote, MoonPayIpAddress};
 use base64::{engine::general_purpose, Engine as _};
 use hmac::{Hmac, Mac};
 use primitives::{
-    fiat_provider::FiatProviderName, fiat_quote::FiatQuote, fiat_quote_request::FiatBuyRequest,
-    Chain,
+    fiat_quote::FiatQuote, fiat_quote_request::FiatBuyRequest, Chain, FiatProviderName,
 };
 use reqwest::Client;
-use serde::Deserialize;
 use sha2::Sha256;
 use url::Url;
-
-const MOONPAY_API_BASE_URL: &str = "https://api.moonpay.com";
-const MOONPAY_REDIRECT_URL: &str = "https://buy.moonpay.com";
-
-#[derive(Debug, Clone, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct MoonPayBuyQuote {
-    pub quote_currency_amount: f64,
-    pub quote_currency_code: String,
-}
-
-#[derive(Debug, Clone, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct MoonPayIpAddress {
-    pub is_buy_allowed: bool,
-    pub is_allowed: bool,
-}
 
 pub struct MoonPayClient {
     client: Client,
@@ -34,72 +16,12 @@ pub struct MoonPayClient {
     secret_key: String,
 }
 
-#[derive(Debug, Clone, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct Asset {
-    pub code: String,
-    pub metadata: Option<CurrencyMetadata>,
-    pub is_suspended: Option<bool>,
-}
-
-#[derive(Debug, Clone, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct CurrencyMetadata {
-    pub contract_address: Option<String>,
-    pub network_code: String,
-}
-
-#[async_trait]
-impl FiatClient for MoonPayClient {
-    fn name(&self) -> FiatProviderName {
-        FiatProviderName::MoonPay
-    }
-
-    async fn get_quote(
-        &self,
-        request: FiatBuyRequest,
-        request_map: FiatMapping,
-    ) -> Result<FiatQuote, Box<dyn std::error::Error + Send + Sync>> {
-        let ip_address_check = self.get_ip_address(request.clone().ip_address).await?;
-        if !ip_address_check.is_allowed && !ip_address_check.is_buy_allowed {
-            return Err("purchase is not allowed".into());
-        }
-
-        let url = format!(
-            "{}/v3/currencies/{}/buy_quote/?baseCurrencyCode={}&baseCurrencyAmount={}&areFeesIncluded={}&apiKey={}",
-            MOONPAY_API_BASE_URL,
-            request_map.symbol.to_lowercase(),
-            request.fiat_currency.to_lowercase(),
-            request.fiat_amount,
-            "true",
-            self.api_key,
-        );
-
-        let quote = self
-            .client
-            .get(&url)
-            .send()
-            .await?
-            .json::<MoonPayBuyQuote>()
-            .await?;
-
-        Ok(self.get_fiat_quote(request, quote))
-    }
-
-    async fn get_assets(
-        &self,
-    ) -> Result<Vec<FiatProviderAsset>, Box<dyn std::error::Error + Send + Sync>> {
-        let assets = self
-            .get_assets()
-            .await?
-            .into_iter()
-            .flat_map(Self::map_asset)
-            .collect::<Vec<FiatProviderAsset>>();
-        Ok(assets)
-    }
-}
+const MOONPAY_API_BASE_URL: &str = "https://api.moonpay.com";
+const MOONPAY_REDIRECT_URL: &str = "https://buy.moonpay.com";
 
 impl MoonPayClient {
+    pub const NAME: FiatProviderName = FiatProviderName::MoonPay;
+
     pub fn new(client: Client, api_key: String, secret_key: String) -> Self {
         Self {
             client,
@@ -123,6 +45,32 @@ impl MoonPayClient {
         Ok(ip_address_result)
     }
 
+    pub async fn get_buy_quote(
+        &self,
+        symbol: String,
+        fiat_currency: String,
+        fiat_amount: f64,
+    ) -> Result<MoonPayBuyQuote, reqwest::Error> {
+        let url = format!(
+            "{}/v3/currencies/{}/buy_quote/?baseCurrencyCode={}&baseCurrencyAmount={}&areFeesIncluded={}&apiKey={}",
+            MOONPAY_API_BASE_URL,
+            symbol,
+            fiat_currency,
+            fiat_amount,
+            "true",
+            self.api_key,
+        );
+
+        let quote = self
+            .client
+            .get(&url)
+            .send()
+            .await?
+            .json::<MoonPayBuyQuote>()
+            .await?;
+        Ok(quote)
+    }
+
     pub async fn get_assets(&self) -> Result<Vec<Asset>, Box<dyn std::error::Error + Send + Sync>> {
         let url = format!("{}/v3/currencies", MOONPAY_API_BASE_URL);
         let assets = self
@@ -133,6 +81,21 @@ impl MoonPayClient {
             .json::<Vec<Asset>>()
             .await?;
         Ok(assets)
+    }
+
+    pub async fn get_transactions(
+        &self,
+    ) -> Result<Vec<String>, Box<dyn std::error::Error + Send + Sync>> {
+        // let url = format!("{}/v1/transactions", MOONPAY_API_BASE_URL);
+        // let assets = self
+        //     .client
+        //     .get(&url)
+        //     .send()
+        //     .await?
+        //     .json::<Vec<Asset>>()
+        //     .await?;
+        // Ok(assets)
+        Ok(vec![])
     }
 
     pub fn map_asset(asset: Asset) -> Option<FiatProviderAsset> {
@@ -185,9 +148,9 @@ impl MoonPayClient {
         }
     }
 
-    fn get_fiat_quote(&self, request: FiatBuyRequest, quote: MoonPayBuyQuote) -> FiatQuote {
+    pub fn get_fiat_quote(&self, request: FiatBuyRequest, quote: MoonPayBuyQuote) -> FiatQuote {
         FiatQuote {
-            provider: self.name().as_fiat_provider(),
+            provider: Self::NAME.as_fiat_provider(),
             fiat_amount: request.clone().fiat_amount,
             fiat_currency: request.clone().fiat_currency,
             crypto_amount: quote.quote_currency_amount,
