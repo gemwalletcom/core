@@ -192,6 +192,14 @@ key = ""
 percent = 0.0
 address = ""
 
+[swap.skip]
+url = "https://api.skip.money"
+key = ""
+
+[swap.skip.fee]
+percent = 0
+address = ""
+
 [parser]
 retry = 0
 timeout = 1000 # ms
