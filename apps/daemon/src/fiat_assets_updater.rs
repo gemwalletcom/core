@@ -1,14 +1,14 @@
-use fiat::model::{FiatClient, FiatProviderAsset};
+use fiat::model::{FiatProvider, FiatProviderAsset};
 use primitives::AssetId;
 use storage::database::DatabaseClient;
 
 pub struct FiatAssetsUpdater {
     database: DatabaseClient,
-    providers: Vec<Box<dyn FiatClient + Send + Sync>>,
+    providers: Vec<Box<dyn FiatProvider + Send + Sync>>,
 }
 
 impl FiatAssetsUpdater {
-    pub fn new(database_url: &str, providers: Vec<Box<dyn FiatClient + Send + Sync>>) -> Self {
+    pub fn new(database_url: &str, providers: Vec<Box<dyn FiatProvider + Send + Sync>>) -> Self {
         let database: DatabaseClient = DatabaseClient::new(database_url);
         Self {
             database,

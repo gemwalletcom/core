@@ -1,90 +1,24 @@
-use crate::model::{FiatClient, FiatMapping, FiatProviderAsset};
-use async_trait::async_trait;
+use crate::model::{FiatMapping, FiatProvider, FiatProviderAsset};
 use hex;
-use primitives::{
-    fiat_provider::FiatProviderName, fiat_quote::FiatQuote, fiat_quote_request::FiatBuyRequest,
-    Chain,
-};
+use primitives::{Chain, FiatBuyRequest, FiatProviderName, FiatQuote};
 use reqwest::Client;
-use serde::Deserialize;
 use sha2::{Digest, Sha512};
 use url::Url;
 
+use super::model::{Asset, Currencies, MercyryoQuote, Response};
+
 const MERCURYO_API_BASE_URL: &str = "https://api.mercuryo.io";
 const MERCURYO_REDIRECT_URL: &str = "https://exchange.mercuryo.io";
-#[derive(Debug, Deserialize)]
-pub struct Response<T> {
-    pub data: T,
-}
-
-#[derive(Debug, Deserialize, Clone)]
-pub struct MercyryoQuote {
-    pub amount: String,
-    pub currency: String,
-    pub fiat_amount: String,
-}
-
-#[derive(Debug, Deserialize, Clone)]
-pub struct Currencies {
-    pub config: Config,
-}
-
-#[derive(Debug, Deserialize, Clone)]
-pub struct Config {
-    pub crypto_currencies: Vec<Asset>,
-}
-
-#[derive(Debug, Deserialize, Clone)]
-pub struct Asset {
-    pub currency: String,
-    pub network: String,
-    pub contract: String,
-}
-
 pub struct MercuryoClient {
-    client: Client,
+    pub client: Client,
     // widget
-    widget_id: String,
-    secret_key: String,
-}
-
-#[async_trait]
-impl FiatClient for MercuryoClient {
-    fn name(&self) -> FiatProviderName {
-        FiatProviderName::Mercuryo
-    }
-
-    async fn get_quote(
-        &self,
-        request: FiatBuyRequest,
-        request_map: FiatMapping,
-    ) -> Result<FiatQuote, Box<dyn std::error::Error + Send + Sync>> {
-        let quote = self
-            .get_quote_buy(
-                request.fiat_currency.clone(),
-                request_map.symbol.clone(),
-                request.fiat_amount,
-                request_map.network.clone().unwrap_or_default(),
-            )
-            .await?;
-
-        Ok(self.get_fiat_quote(request, request_map.clone(), quote))
-    }
-
-    async fn get_assets(
-        &self,
-    ) -> Result<Vec<FiatProviderAsset>, Box<dyn std::error::Error + Send + Sync>> {
-        let assets = self
-            .get_assets()
-            .await?
-            .into_iter()
-            .flat_map(Self::map_asset)
-            .collect::<Vec<FiatProviderAsset>>();
-        Ok(assets)
-    }
+    pub widget_id: String,
+    pub secret_key: String,
 }
 
 impl MercuryoClient {
+    pub const NAME: FiatProviderName = FiatProviderName::Mercuryo;
+
     pub fn new(client: Client, widget_id: String, secret_key: String) -> Self {
         MercuryoClient {
             client,
@@ -165,7 +99,7 @@ impl MercuryoClient {
         }
     }
 
-    fn get_fiat_quote(
+    pub fn get_fiat_quote(
         &self,
         request: FiatBuyRequest,
         request_map: FiatMapping,

@@ -1,15 +1,11 @@
-use crate::model::FiatProviderAsset;
-use crate::model::{FiatClient, FiatMapping};
-use async_trait::async_trait;
 use bigdecimal::ToPrimitive;
-use primitives::Chain;
-use primitives::{
-    fiat_provider::FiatProviderName, fiat_quote::FiatQuote, fiat_quote_request::FiatBuyRequest,
-    number_formatter::NumberFormatter,
-};
-use reqwest::{self, Client};
-use serde::Deserialize;
+use primitives::{Chain, FiatBuyRequest, FiatProviderName, FiatQuote, NumberFormatter};
+use reqwest::Client;
 use url::Url;
+
+use crate::model::FiatProviderAsset;
+
+use super::model::{Quote, QuoteAsset, QuoteAssets, QuoteRequest};
 
 pub struct RampClient {
     client: Client,
@@ -19,65 +15,14 @@ pub struct RampClient {
 const RAMP_API_BASE_URL: &str = "https://api.ramp.network";
 const RAMP_REDIRECT_URL: &str = "https://app.ramp.network";
 
-#[async_trait]
-impl FiatClient for RampClient {
-    fn name(&self) -> FiatProviderName {
-        FiatProviderName::Ramp
-    }
-
-    async fn get_quote(
-        &self,
-        request: FiatBuyRequest,
-        request_map: FiatMapping,
-    ) -> Result<FiatQuote, Box<dyn std::error::Error + Send + Sync>> {
-        let assets = self
-            .get_assets(request.clone().fiat_currency, request.clone().ip_address)
-            .await?
-            .assets;
-
-        let crypto_asset_symbol = format!(
-            "{}_{}",
-            request_map.network.unwrap_or_default(),
-            request_map.symbol,
-        );
-
-        if !assets
-            .iter()
-            .any(|x| x.crypto_asset_symbol() == crypto_asset_symbol)
-        {
-            return Err("asset not supported".into());
-        }
-
-        let payload = QuoteRequest {
-            crypto_asset_symbol,
-            fiat_currency: request.clone().fiat_currency,
-            fiat_value: request.fiat_amount,
-        };
-        let quote = self.get_client_quote(payload).await?;
-
-        Ok(self.get_fiat_quote(request.clone(), quote))
-    }
-
-    async fn get_assets(
-        &self,
-    ) -> Result<Vec<FiatProviderAsset>, Box<dyn std::error::Error + Send + Sync>> {
-        let assets = self
-            .get_assets("USD".to_string(), "127.0.0.0".to_string())
-            .await?
-            .assets
-            .into_iter()
-            .flat_map(Self::map_asset)
-            .collect::<Vec<FiatProviderAsset>>();
-        Ok(assets)
-    }
-}
-
 impl RampClient {
+    pub const NAME: FiatProviderName = FiatProviderName::Ramp;
+
     pub fn new(client: Client, api_key: String) -> RampClient {
         RampClient { client, api_key }
     }
 
-    async fn get_assets(
+    pub async fn get_supported_assets(
         &self,
         currency: String,
         ip_address: String,
@@ -129,7 +74,7 @@ impl RampClient {
         }
     }
 
-    async fn get_client_quote(
+    pub async fn get_client_quote(
         &self,
         request: QuoteRequest,
     ) -> Result<Quote, Box<dyn std::error::Error + Send + Sync>> {
@@ -148,7 +93,7 @@ impl RampClient {
         Ok(quote)
     }
 
-    fn get_fiat_quote(&self, request: FiatBuyRequest, quote: Quote) -> FiatQuote {
+    pub fn get_fiat_quote(&self, request: FiatBuyRequest, quote: Quote) -> FiatQuote {
         let crypto_amount = NumberFormatter::big_decimal_value(
             quote.clone().card_payment.crypto_amount.as_str(),
             quote.asset.decimals,
@@ -156,7 +101,7 @@ impl RampClient {
         .unwrap_or_default();
 
         FiatQuote {
-            provider: self.name().as_fiat_provider(),
+            provider: Self::NAME.as_fiat_provider(),
             fiat_amount: request.clone().fiat_amount,
             fiat_currency: request.clone().fiat_currency,
             crypto_amount: crypto_amount.to_f64().unwrap_or_default(),
@@ -177,52 +122,4 @@ impl RampClient {
 
         components.as_str().to_string()
     }
-}
-
-#[derive(Debug, Deserialize, Clone)]
-pub struct Quote {
-    #[serde(rename = "CARD_PAYMENT")]
-    card_payment: QuoteData,
-    asset: QuoteAsset,
-}
-
-#[derive(Debug, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct QuoteData {
-    //fiat_currency: String,
-    crypto_amount: String,
-    //fiat_value: u32,
-    //base_ramp_fee: f64,
-    //applied_fee: f64,
-}
-
-#[derive(Debug, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct QuoteAsset {
-    pub symbol: String,
-    pub chain: String,
-    pub decimals: u32,
-    pub address: Option<String>,
-    //enabled: bool,
-    //hidden: bool,
-    pub enabled: bool,
-}
-
-#[derive(Debug, Deserialize, Clone)]
-pub struct QuoteAssets {
-    assets: Vec<QuoteAsset>,
-}
-
-impl QuoteAsset {
-    pub fn crypto_asset_symbol(&self) -> String {
-        format!("{}_{}", self.chain, self.symbol)
-    }
-}
-
-#[derive(serde::Serialize)]
-#[serde(rename_all = "camelCase")]
-struct QuoteRequest {
-    crypto_asset_symbol: String,
-    fiat_currency: String,
-    fiat_value: f64,
 }
