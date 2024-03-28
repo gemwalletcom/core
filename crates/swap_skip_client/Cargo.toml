@@ -6,5 +6,6 @@ edition = { workspace = true }
 [dependencies]
 serde = { workspace = true }
 serde_json = { workspace = true }
-primitives = { path = "../primitives" }
 reqwest = { workspace = true }
+primitives = { path = "../primitives" }
+gem_cosmos = { path = "../gem_cosmos" }

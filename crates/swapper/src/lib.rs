@@ -48,6 +48,7 @@ impl Swapper {
             configuration.skip.url,
             configuration.skip.key, // client_id
             (configuration.skip.fee_percent * 100.0) as u32,
+            configuration.skip.fee_address,
         );
         SwapperClient::new(
             oneinch_client,

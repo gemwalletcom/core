@@ -6705,6 +6705,7 @@ dependencies = [
 name = "swap_skip_client"
 version = "1.0.0"
 dependencies = [
+ "gem_cosmos",
  "primitives",
  "reqwest",
  "serde",
