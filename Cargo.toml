@@ -32,7 +32,7 @@ members = [
     "crates/api_connector",
     "crates/settings",
     "crates/settings_chain",
-    "crates/skip_api",
+    "crates/swap_skip_client",
     "crates/gem_hash",
     "crates/gem_evm",
     "crates/gem_solana",

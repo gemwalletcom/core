@@ -6377,16 +6377,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "skip_api"
-version = "1.0.0"
-dependencies = [
- "primitives",
- "reqwest",
- "serde",
- "serde_json",
-]
-
-[[package]]
 name = "slab"
 version = "0.4.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6712,6 +6702,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "swap_skip_client"
+version = "1.0.0"
+dependencies = [
+ "primitives",
+ "reqwest",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "swapper"
 version = "1.0.0"
 dependencies = [
@@ -6720,7 +6720,7 @@ dependencies = [
  "primitives",
  "reqwest",
  "serde",
- "skip_api",
+ "swap_skip_client",
 ]
 
 [[package]]
@@ -7036,9 +7036,9 @@ dependencies = [
 
 [[package]]
 name = "tokio-test"
-version = "0.4.3"
+version = "0.4.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e89b3cbabd3ae862100094ae433e1def582cf86451b4e9bf83aa7ac1d8a7d719"
+checksum = "2468baabc3311435b55dd935f702f42cd1b8abb7e754fb7dfb16bd36aa88f9f7"
 dependencies = [
  "async-stream",
  "bytes",

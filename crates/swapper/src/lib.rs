@@ -6,7 +6,7 @@ pub mod jupiter;
 pub use self::jupiter::JupiterClient;
 pub mod thorswap;
 pub use self::thorswap::ThorchainSwapClient;
-pub use skip_api::client::SkipApi;
+pub use swap_skip_client::client::SkipApi;
 
 pub struct SwapperConfiguration {
     pub oneinch: SwapperClientConfiguration,

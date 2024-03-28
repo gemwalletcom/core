@@ -1,5 +1,5 @@
 [package]
-name = "skip_api"
+name = "swap_skip_client"
 version = { workspace = true }
 edition = { workspace = true }
 

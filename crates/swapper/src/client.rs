@@ -1,6 +1,6 @@
 use oneinch::OneInchClient;
 use primitives::{Chain, SwapQuote, SwapQuoteProtocolRequest};
-use skip_api::client::SkipApi;
+use swap_skip_client::client::SkipApi;
 
 use crate::{JupiterClient, ThorchainSwapClient};
 
