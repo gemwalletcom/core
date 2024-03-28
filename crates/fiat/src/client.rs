@@ -2,12 +2,14 @@ use std::collections::HashSet;
 use std::error::Error;
 use std::time::Duration;
 
-use crate::model::{FiatMapping, FiatMappingMap, FiatProvider, FiatRates};
+use crate::{
+    model::{FiatMapping, FiatMappingMap, FiatRates},
+    FiatProvider,
+};
 use futures::future::join_all;
 use primitives::{
     fiat_assets::FiatAssets, fiat_quote::FiatQuote, fiat_quote_request::FiatBuyRequest,
 };
-//use futures::future::join_all;
 use reqwest::Client as RequestClient;
 use storage::DatabaseClient;
 

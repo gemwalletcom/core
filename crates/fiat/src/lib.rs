@@ -1,11 +1,9 @@
 pub mod client;
 pub mod model;
+pub mod provider;
+pub use provider::FiatProvider;
 pub mod providers;
-pub mod updater;
-use crate::{
-    model::FiatProvider,
-    providers::{MercuryoClient, MoonPayClient, RampClient, TransakClient},
-};
+use crate::providers::{MercuryoClient, MoonPayClient, RampClient, TransakClient};
 use settings::Settings;
 
 pub struct FiatProviderFactory {}

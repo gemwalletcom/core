@@ -1,4 +1,4 @@
-use crate::model::{FiatMapping, FiatProvider, FiatProviderAsset};
+use crate::model::{FiatMapping, FiatProviderAsset};
 use hex;
 use primitives::{Chain, FiatBuyRequest, FiatProviderName, FiatQuote};
 use reqwest::Client;
@@ -106,7 +106,7 @@ impl MercuryoClient {
         quote: MercyryoQuote,
     ) -> FiatQuote {
         FiatQuote {
-            provider: self.name().as_fiat_provider(),
+            provider: Self::NAME.as_fiat_provider(),
             fiat_amount: request.fiat_amount,
             fiat_currency: request.fiat_currency,
             crypto_amount: quote.clone().amount.parse::<f64>().unwrap_or_default(),
