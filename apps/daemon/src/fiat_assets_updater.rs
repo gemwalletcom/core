@@ -1,4 +1,4 @@
-use fiat::model::{FiatProvider, FiatProviderAsset};
+use fiat::{model::FiatProviderAsset, FiatProvider};
 use primitives::AssetId;
 use storage::database::DatabaseClient;
 
