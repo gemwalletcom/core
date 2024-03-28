@@ -1,5 +1,6 @@
 use oneinch::OneInchClient;
 use primitives::{Chain, SwapQuote, SwapQuoteProtocolRequest};
+use skip_api::client::SkipApi;
 
 use crate::{JupiterClient, ThorchainSwapClient};
 
@@ -7,6 +8,7 @@ pub struct SwapperClient {
     oneinch: OneInchClient,
     jupiter: JupiterClient,
     thorchain: ThorchainSwapClient,
+    skip: SkipApi,
 }
 
 impl SwapperClient {
@@ -14,11 +16,13 @@ impl SwapperClient {
         oneinch: OneInchClient,
         jupiter: JupiterClient,
         thorchain: ThorchainSwapClient,
+        skip: SkipApi,
     ) -> Self {
         Self {
             oneinch,
             jupiter,
             thorchain,
+            skip,
         }
     }
 
@@ -26,6 +30,7 @@ impl SwapperClient {
         &self,
         quote: SwapQuoteProtocolRequest,
     ) -> Result<SwapQuote, Box<dyn std::error::Error + Send + Sync>> {
+        // Need to fetch quote from different providers and return the best one
         match quote.from_asset.chain {
             Chain::Ethereum
             | Chain::SmartChain
@@ -42,18 +47,16 @@ impl SwapperClient {
             Chain::Thorchain | Chain::Doge | Chain::Cosmos | Chain::Bitcoin | Chain::Litecoin => {
                 self.thorchain.get_quote(quote).await
             }
-            Chain::Osmosis
-            | Chain::Celestia
-            | Chain::Binance
-            | Chain::Injective
+            Chain::Osmosis | Chain::Celestia | Chain::Injective | Chain::Noble | Chain::Sei => {
+                self.skip.get_quote(quote).await
+            }
+            Chain::Binance
             | Chain::Ton
             | Chain::Tron
             | Chain::Aptos
             | Chain::Sui
             | Chain::Xrp
-            | Chain::OpBNB
-            | Chain::Noble
-            | Chain::Sei => todo!(),
+            | Chain::OpBNB => todo!(),
         }
     }
 }

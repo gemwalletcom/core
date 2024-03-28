@@ -6720,6 +6720,7 @@ dependencies = [
  "primitives",
  "reqwest",
  "serde",
+ "skip_api",
 ]
 
 [[package]]

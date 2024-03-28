@@ -8,7 +8,6 @@ mod tests {
 
     #[test]
     fn test_resolver_eth() {
-        // this test is ignored from UT casue it connects to the real network
         block_on(async {
             let provider = Provider::new(String::from("https://eth.llamarpc.com"));
             let addres = provider.resolve_name("vitalik.eth", Chain::Ethereum).await;

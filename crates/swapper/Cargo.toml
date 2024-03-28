@@ -10,3 +10,4 @@ reqwest = { workspace = true }
 primitives = { path = "../primitives" }
 gem_solana = { path = "../gem_solana" }
 oneinch = { path = "../oneinch" }
+skip_api = { path = "../skip_api" }

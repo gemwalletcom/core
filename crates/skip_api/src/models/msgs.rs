@@ -9,6 +9,7 @@ pub struct MsgRequest {
     pub dest_asset_chain_id: String,
     pub amount_in: String,
     pub amount_out: String,
+    pub estimated_amount_out: String,
     pub operations: serde_json::Value,
     pub address_list: Vec<String>,
     pub slippage_tolerance_percent: String,

@@ -6,11 +6,13 @@ pub mod jupiter;
 pub use self::jupiter::JupiterClient;
 pub mod thorswap;
 pub use self::thorswap::ThorchainSwapClient;
+pub use skip_api::client::SkipApi;
 
 pub struct SwapperConfiguration {
     pub oneinch: SwapperClientConfiguration,
     pub jupiter: SwapperClientConfiguration,
     pub thorchain: SwapperClientConfiguration,
+    pub skip: SwapperClientConfiguration,
 }
 
 pub struct SwapperClientConfiguration {
@@ -42,6 +44,16 @@ impl Swapper {
             configuration.thorchain.fee_percent,
             configuration.thorchain.fee_address,
         );
-        SwapperClient::new(oneinch_client, jupiter_client, thorchain_swap_client)
+        let skip_swap_client = SkipApi::new(
+            configuration.skip.url,
+            configuration.skip.key, // client_id
+            (configuration.skip.fee_percent * 100.0) as u32,
+        );
+        SwapperClient::new(
+            oneinch_client,
+            jupiter_client,
+            thorchain_swap_client,
+            skip_swap_client,
+        )
     }
 }
