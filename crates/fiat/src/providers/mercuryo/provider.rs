@@ -50,7 +50,7 @@ impl FiatProvider for MercuryoClient {
         &self,
         data: serde_json::Value,
     ) -> Result<FiatTransaction, Box<dyn std::error::Error + Send + Sync>> {
-        let data = serde_json::from_value::<Webhook>(data)?.payload.data;
+        let data = serde_json::from_value::<Webhook>(data)?.data;
 
         // https://github.com/mercuryoio/api-migration-docs/blob/master/Widget_API_Mercuryo_v1.6.md#3-transaction-status-types
         let status = match data.status.as_str() {

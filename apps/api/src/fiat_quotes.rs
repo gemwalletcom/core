@@ -50,7 +50,11 @@ pub async fn create_fiat_webhook(
     data: Json<serde_json::Value>,
     fiat_client: &State<Mutex<FiatProvider>>,
 ) -> Json<bool> {
-    println!("webhook: {}, data: {:?}", provider, data);
+    print!(
+        "webhook: {}, data: {:?}",
+        provider,
+        serde_json::to_string_pretty(&data.0)
+    );
     let result = fiat_client
         .lock()
         .await

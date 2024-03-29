@@ -31,7 +31,7 @@ pub struct Asset {
 
 #[derive(Debug, Deserialize)]
 pub struct Webhook {
-    pub payload: Response<WebhookData>,
+    pub data: WebhookData,
 }
 
 #[derive(Debug, Deserialize)]
