@@ -56,7 +56,7 @@ impl FiatProvider for MercuryoClient {
         let status = match data.status.as_str() {
             "new" | "pending" | "order_scheduled" => FiatTransactionStatus::Pending,
             "cancelled" | "order_failed" | "descriptor_failed" => FiatTransactionStatus::Failed,
-            "paid" => FiatTransactionStatus::Complete,
+            "paid" | "completed" | "succeeded" => FiatTransactionStatus::Complete,
             _ => FiatTransactionStatus::Unknown,
         };
 
