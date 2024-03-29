@@ -51,10 +51,13 @@ impl FiatProvider for MercuryoClient {
         data: serde_json::Value,
     ) -> Result<FiatTransaction, Box<dyn std::error::Error + Send + Sync>> {
         let data = serde_json::from_value::<Webhook>(data)?.payload.data;
+
+        // https://github.com/mercuryoio/api-migration-docs/blob/master/Widget_API_Mercuryo_v1.6.md#3-transaction-status-types
         let status = match data.status.as_str() {
-            "pending" => FiatTransactionStatus::Pending,
-            "failed" => FiatTransactionStatus::Failed,
-            _ => FiatTransactionStatus::Complete,
+            "new" | "pending" | "order_scheduled" => FiatTransactionStatus::Pending,
+            "cancelled" | "order_failed" | "descriptor_failed" => FiatTransactionStatus::Failed,
+            "paid" => FiatTransactionStatus::Complete,
+            _ => FiatTransactionStatus::Unknown,
         };
 
         let transaction = FiatTransaction {

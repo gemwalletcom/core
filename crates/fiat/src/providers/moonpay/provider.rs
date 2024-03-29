@@ -55,24 +55,25 @@ impl FiatProvider for MoonPayClient {
         &self,
         data: serde_json::Value,
     ) -> Result<FiatTransaction, Box<dyn std::error::Error + Send + Sync>> {
-        let payload = serde_json::from_value::<Data<Webhook>>(data)?.data;
-        let asset = Self::map_asset(payload.currency).unwrap();
+        let payload = serde_json::from_value::<Data<Webhook>>(data)?;
+        let asset = Self::map_asset(payload.data.currency).unwrap();
         let asset_id = AssetId::from(asset.chain, asset.token_id);
 
-        let status = match payload.status.as_str() {
-            "pending" => FiatTransactionStatus::Pending,
-            "failed" => FiatTransactionStatus::Failed,
-            _ => FiatTransactionStatus::Complete,
+        let status = match payload.transaction_type.as_str() {
+            "transaction_created" => FiatTransactionStatus::Pending,
+            "transaction_failed" => FiatTransactionStatus::Failed,
+            "transaction_updated" => FiatTransactionStatus::Complete,
+            _ => FiatTransactionStatus::Unknown,
         };
 
         let transaction = FiatTransaction {
             asset_id: Some(asset_id),
             symbol: asset.symbol,
             provider_id: Self::NAME.id(),
-            transaction_id: payload.id,
+            transaction_id: payload.data.id,
             status,
-            fiat_amount: payload.base_currency_amount,
-            fiat_currency: payload.base_currency.code.to_uppercase(),
+            fiat_amount: payload.data.base_currency_amount,
+            fiat_currency: payload.data.base_currency.code.to_uppercase(),
         };
 
         Ok(transaction)

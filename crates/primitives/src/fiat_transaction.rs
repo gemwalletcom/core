@@ -22,4 +22,5 @@ pub enum FiatTransactionStatus {
     Complete,
     Pending,
     Failed,
+    Unknown,
 }

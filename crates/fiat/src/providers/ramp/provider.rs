@@ -77,9 +77,12 @@ impl FiatProvider for RampClient {
         let asset = Self::map_asset(payload.crypto.asset_info.clone()).unwrap();
         let asset_id = AssetId::from(asset.chain, asset.token_id);
 
+        // https://docs.ramp.network/sdk-reference#ramp-sale-transaction-object
         let status = match payload.fiat.status.as_str() {
-            "not-started" => FiatTransactionStatus::Pending,
-            _ => FiatTransactionStatus::Complete,
+            "not-started" | "initiated" | "delayed" => FiatTransactionStatus::Pending,
+            "failed" => FiatTransactionStatus::Failed,
+            "completed" => FiatTransactionStatus::Complete,
+            _ => FiatTransactionStatus::Unknown,
         };
 
         let fiat_amount = NumberFormatter::value(
