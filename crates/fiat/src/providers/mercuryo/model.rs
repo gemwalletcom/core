@@ -41,4 +41,5 @@ pub struct WebhookData {
     pub fiat_amount: String,
     pub fiat_currency: String,
     pub currency: String,
+    pub merchant_transaction_id: Option<String>,
 }

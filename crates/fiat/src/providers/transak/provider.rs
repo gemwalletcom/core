@@ -45,7 +45,7 @@ impl FiatProvider for TransakClient {
 
     async fn webhook(
         &self,
-        data: serde_json::Value,
+        _data: serde_json::Value,
     ) -> Result<FiatTransaction, Box<dyn std::error::Error + Send + Sync>> {
         unimplemented!()
     }

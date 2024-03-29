@@ -2,7 +2,6 @@ use primitives::{
     AssetId, FiatBuyRequest, FiatProviderName, FiatQuote, FiatTransaction, FiatTransactionStatus,
     NumberFormatter,
 };
-use url::form_urlencoded::parse;
 
 use crate::{
     model::{FiatMapping, FiatProviderAsset},
