@@ -66,7 +66,7 @@ impl FiatProvider for MercuryoClient {
             provider_id: Self::NAME.id(),
             transaction_id: data.id,
             status,
-            fiat_amount: data.amount.parse::<f64>()?,
+            fiat_amount: data.fiat_amount.parse::<f64>()?,
             fiat_currency: data.fiat_currency,
         };
 

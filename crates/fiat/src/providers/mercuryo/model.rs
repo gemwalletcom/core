@@ -38,7 +38,7 @@ pub struct Webhook {
 pub struct WebhookData {
     pub id: String,
     pub status: String,
-    pub amount: String,
+    pub fiat_amount: String,
     pub fiat_currency: String,
     pub currency: String,
 }
