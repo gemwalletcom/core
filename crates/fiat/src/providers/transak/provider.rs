@@ -3,7 +3,7 @@ use crate::{
     FiatProvider,
 };
 use async_trait::async_trait;
-use primitives::{FiatBuyRequest, FiatProviderName, FiatQuote};
+use primitives::{FiatBuyRequest, FiatProviderName, FiatQuote, FiatTransaction};
 
 use super::client::TransakClient;
 
@@ -41,5 +41,12 @@ impl FiatProvider for TransakClient {
             .flat_map(Self::map_asset)
             .collect::<Vec<FiatProviderAsset>>();
         Ok(assets)
+    }
+
+    async fn webhook(
+        &self,
+        data: serde_json::Value,
+    ) -> Result<FiatTransaction, Box<dyn std::error::Error + Send + Sync>> {
+        unimplemented!()
     }
 }

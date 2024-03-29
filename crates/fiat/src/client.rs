@@ -55,6 +55,25 @@ impl Client {
         })
     }
 
+    pub async fn create_fiat_webhook(
+        &mut self,
+        provider_name: &str,
+        data: serde_json::Value,
+    ) -> Result<bool, Box<dyn std::error::Error + Send + Sync>> {
+        for provider in &self.providers {
+            if provider.name().id() == provider_name {
+                let transaction = provider.webhook(data).await?;
+                let transaction =
+                    storage::models::FiatTransaction::from_primitive(transaction.clone());
+
+                let _ = self.database.add_fiat_transactions(vec![transaction])?;
+
+                return Ok(true);
+            }
+        }
+        Ok(false)
+    }
+
     pub async fn get_fiat_rates(&mut self) -> Result<FiatRates, Box<dyn Error>> {
         let rates = self.database.get_fiat_rates()?;
         Ok(FiatRates { rates })

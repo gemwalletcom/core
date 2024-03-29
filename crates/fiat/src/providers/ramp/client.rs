@@ -49,7 +49,7 @@ impl RampClient {
             token_id,
             symbol: asset.symbol,
             network: Some(asset.chain),
-            enabled: asset.enabled,
+            enabled: asset.enabled.unwrap_or(false),
         })
     }
 
@@ -118,7 +118,11 @@ impl RampClient {
             .append_pair("swapAsset", &quote.asset.crypto_asset_symbol())
             .append_pair("fiatCurrency", &request.clone().fiat_currency.to_string())
             .append_pair("fiatValue", &request.clone().fiat_amount.to_string())
-            .append_pair("userAddress", request.wallet_address.as_str());
+            .append_pair("userAddress", request.wallet_address.as_str())
+            .append_pair(
+                "webhookStatusUrl",
+                "https://api.gemwallet.com/v1/fiat/webhooks/ramp",
+            );
 
         components.as_str().to_string()
     }

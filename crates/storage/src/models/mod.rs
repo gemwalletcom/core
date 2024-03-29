@@ -20,7 +20,7 @@ pub use self::chain::Chain;
 pub use self::chart::{ChartCoinPrice, ChartPrice};
 pub use self::device::Device;
 pub use self::device::UpdateDevice;
-pub use self::fiat::{FiatAsset, FiatProvider, FiatRate};
+pub use self::fiat::{FiatAsset, FiatProvider, FiatRate, FiatTransaction};
 pub use self::node::Node;
 pub use self::parser_state::ParserState;
 pub use self::price::Price;

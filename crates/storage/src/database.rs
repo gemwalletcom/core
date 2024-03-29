@@ -78,6 +78,19 @@ impl DatabaseClient {
             .execute(&mut self.connection)
     }
 
+    pub fn add_fiat_transactions(
+        &mut self,
+        values: Vec<FiatTransaction>,
+    ) -> Result<usize, diesel::result::Error> {
+        use crate::schema::fiat_transactions::dsl::*;
+        diesel::insert_into(fiat_transactions)
+            .values(values)
+            .on_conflict((provider_id, transaction_id))
+            .do_update()
+            .set((status.eq(excluded(status)),))
+            .execute(&mut self.connection)
+    }
+
     pub fn get_fiat_assets(&mut self) -> Result<Vec<FiatAsset>, diesel::result::Error> {
         use crate::schema::fiat_assets::dsl::*;
         fiat_assets

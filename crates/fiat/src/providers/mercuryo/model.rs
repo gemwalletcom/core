@@ -28,3 +28,17 @@ pub struct Asset {
     pub network: String,
     pub contract: String,
 }
+
+#[derive(Debug, Deserialize)]
+pub struct Webhook {
+    pub payload: Response<WebhookData>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct WebhookData {
+    pub id: String,
+    pub status: String,
+    pub amount: String,
+    pub fiat_currency: String,
+    pub currency: String,
+}

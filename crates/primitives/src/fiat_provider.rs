@@ -9,6 +9,7 @@ pub struct FiatProvider {
     pub image_url: String,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum FiatProviderName {
     Mercuryo,
     Transak,

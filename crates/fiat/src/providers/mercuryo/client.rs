@@ -122,10 +122,12 @@ impl MercuryoClient {
         let mut components = Url::parse(MERCURYO_REDIRECT_URL).unwrap();
         let signature_content = format!("{}{}", address, self.secret_key);
         let signature = hex::encode(Sha512::digest(signature_content));
+        let id = uuid::Uuid::new_v4().to_string();
 
         components
             .query_pairs_mut()
             .append_pair("widget_id", self.widget_id.as_str())
+            .append_pair("merchant_transaction_id", id.as_str())
             .append_pair("fiat_amount", &quote.fiat_amount.to_string())
             .append_pair("currency", &quote.currency)
             .append_pair("address", &address)

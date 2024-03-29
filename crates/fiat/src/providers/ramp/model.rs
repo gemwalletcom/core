@@ -1,4 +1,4 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct Quote {
@@ -24,9 +24,7 @@ pub struct QuoteAsset {
     pub chain: String,
     pub decimals: u32,
     pub address: Option<String>,
-    //enabled: bool,
-    //hidden: bool,
-    pub enabled: bool,
+    pub enabled: Option<bool>,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -40,10 +38,39 @@ impl QuoteAsset {
     }
 }
 
-#[derive(serde::Serialize)]
+#[derive(Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct QuoteRequest {
     pub crypto_asset_symbol: String,
     pub fiat_currency: String,
     pub fiat_value: f64,
+}
+
+#[derive(Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct Webhook {
+    pub payload: WebhookPayload,
+}
+
+#[derive(Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct WebhookPayload {
+    pub id: String,
+    pub fiat: Fiat,
+    pub crypto: WebhookPayloadCrypto,
+}
+
+#[derive(Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct WebhookPayloadCrypto {
+    pub amount: String,
+    pub asset_info: QuoteAsset,
+}
+
+#[derive(Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct Fiat {
+    pub amount: String,
+    pub currency_symbol: String,
+    pub status: String,
 }

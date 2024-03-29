@@ -137,6 +137,7 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
                 fiat_quotes::get_fiat_quotes,
                 fiat_quotes::get_fiat_assets,
                 fiat_quotes::get_fiat_rates,
+                fiat_quotes::create_fiat_webhook,
                 node::get_nodes,
                 config::get_config,
                 name::get_name_resolve,

@@ -51,3 +51,30 @@ pub struct FiatProvider {
     pub name: String,
     pub enabled: bool,
 }
+
+#[derive(Debug, Queryable, Selectable, Insertable, AsChangeset, Clone)]
+#[diesel(table_name = crate::schema::fiat_transactions)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+pub struct FiatTransaction {
+    pub asset_id: Option<String>,
+    pub symbol: String,
+    pub provider_id: String,
+    pub transaction_id: String,
+    pub status: String,
+    pub fiat_amount: f64,
+    pub fiat_currency: String,
+}
+
+impl FiatTransaction {
+    pub fn from_primitive(transaction: primitives::FiatTransaction) -> Self {
+        Self {
+            asset_id: transaction.asset_id.map(|x| x.to_string()),
+            symbol: transaction.symbol,
+            provider_id: transaction.provider_id,
+            transaction_id: transaction.transaction_id,
+            status: transaction.status.as_ref().to_string(),
+            fiat_amount: transaction.fiat_amount,
+            fiat_currency: transaction.fiat_currency,
+        }
+    }
+}

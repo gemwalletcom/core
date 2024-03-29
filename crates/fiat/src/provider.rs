@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use primitives::{FiatBuyRequest, FiatProviderName, FiatQuote};
+use primitives::{FiatBuyRequest, FiatProviderName, FiatQuote, FiatTransaction};
 
 use crate::model::{FiatMapping, FiatProviderAsset};
 
@@ -16,6 +16,11 @@ pub trait FiatProvider {
     async fn get_assets(
         &self,
     ) -> Result<Vec<FiatProviderAsset>, Box<dyn std::error::Error + Send + Sync>>;
+
+    async fn webhook(
+        &self,
+        data: serde_json::Value,
+    ) -> Result<FiatTransaction, Box<dyn std::error::Error + Send + Sync>>;
 }
 
 #[async_trait]
@@ -39,5 +44,12 @@ where
         &self,
     ) -> Result<Vec<FiatProviderAsset>, Box<dyn std::error::Error + Send + Sync>> {
         (**self).get_assets().await
+    }
+
+    async fn webhook(
+        &self,
+        data: serde_json::Value,
+    ) -> Result<FiatTransaction, Box<dyn std::error::Error + Send + Sync>> {
+        (**self).webhook(data).await
     }
 }

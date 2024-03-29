@@ -49,5 +49,9 @@ mod tests {
         // Test case 5: Invalid input
         let result = NumberFormatter::value("abc", 2);
         assert_eq!(result, None);
+
+        // Test case 6: Output return small value
+        let result = NumberFormatter::value("1640000000000000", 18).unwrap();
+        assert_eq!(result, "0.00164");
     }
 }

@@ -1,4 +1,8 @@
-use primitives::{FiatBuyRequest, FiatProviderName, FiatQuote};
+use primitives::{
+    AssetId, FiatBuyRequest, FiatProviderName, FiatQuote, FiatTransaction, FiatTransactionStatus,
+    NumberFormatter,
+};
+use url::form_urlencoded::parse;
 
 use crate::{
     model::{FiatMapping, FiatProviderAsset},
@@ -7,7 +11,10 @@ use crate::{
 
 use async_trait::async_trait;
 
-use super::{client::RampClient, model::QuoteRequest};
+use super::{
+    client::RampClient,
+    model::{QuoteRequest, Webhook},
+};
 
 #[async_trait]
 impl FiatProvider for RampClient {
@@ -59,5 +66,39 @@ impl FiatProvider for RampClient {
             .flat_map(Self::map_asset)
             .collect::<Vec<FiatProviderAsset>>();
         Ok(assets)
+    }
+
+    // full transaction: https://docs.ramp.network/webhooks#example-using-expressjs
+    async fn webhook(
+        &self,
+        data: serde_json::Value,
+    ) -> Result<FiatTransaction, Box<dyn std::error::Error + Send + Sync>> {
+        let payload = serde_json::from_value::<Webhook>(data)?.payload;
+        let asset = Self::map_asset(payload.crypto.asset_info.clone()).unwrap();
+        let asset_id = AssetId::from(asset.chain, asset.token_id);
+
+        let status = match payload.fiat.status.as_str() {
+            "not-started" => FiatTransactionStatus::Pending,
+            _ => FiatTransactionStatus::Complete,
+        };
+
+        let fiat_amount = NumberFormatter::value(
+            payload.crypto.amount.as_str(),
+            payload.crypto.asset_info.decimals as i32,
+        )
+        .unwrap_or_default()
+        .parse::<f64>()?;
+
+        let transaction = FiatTransaction {
+            asset_id: Some(asset_id),
+            symbol: asset.symbol,
+            provider_id: Self::NAME.id(),
+            transaction_id: payload.id,
+            status,
+            fiat_amount,
+            fiat_currency: payload.fiat.currency_symbol,
+        };
+
+        Ok(transaction)
     }
 }

@@ -1,10 +1,13 @@
 use crate::{
     model::{FiatMapping, FiatProviderAsset},
+    providers::moonpay::model::{Data, Webhook},
     FiatProvider,
 };
 use async_trait::async_trait;
 
-use primitives::{FiatBuyRequest, FiatProviderName, FiatQuote};
+use primitives::{
+    AssetId, FiatBuyRequest, FiatProviderName, FiatQuote, FiatTransaction, FiatTransactionStatus,
+};
 
 use super::client::MoonPayClient;
 
@@ -45,5 +48,33 @@ impl FiatProvider for MoonPayClient {
             .flat_map(Self::map_asset)
             .collect::<Vec<FiatProviderAsset>>();
         Ok(assets)
+    }
+
+    // full transaction: https://dev.moonpay.com/reference/reference-webhooks-buy
+    async fn webhook(
+        &self,
+        data: serde_json::Value,
+    ) -> Result<FiatTransaction, Box<dyn std::error::Error + Send + Sync>> {
+        let payload = serde_json::from_value::<Data<Webhook>>(data)?.data;
+        let asset = Self::map_asset(payload.currency).unwrap();
+        let asset_id = AssetId::from(asset.chain, asset.token_id);
+
+        let status = match payload.status.as_str() {
+            "pending" => FiatTransactionStatus::Pending,
+            "failed" => FiatTransactionStatus::Failed,
+            _ => FiatTransactionStatus::Complete,
+        };
+
+        let transaction = FiatTransaction {
+            asset_id: Some(asset_id),
+            symbol: asset.symbol,
+            provider_id: Self::NAME.id(),
+            transaction_id: payload.id,
+            status,
+            fiat_amount: payload.base_currency_amount,
+            fiat_currency: payload.base_currency.code.to_uppercase(),
+        };
+
+        Ok(transaction)
     }
 }

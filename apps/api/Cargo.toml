@@ -6,6 +6,7 @@ version = { workspace = true }
 [dependencies]
 rocket = { workspace = true }
 serde = { workspace = true }
+serde_json = { workspace = true }
 tokio = { workspace = true }
 config = { workspace = true }
 prometheus-client = { workspace = true }
