@@ -95,10 +95,13 @@ impl FiatProvider for RampClient {
             asset_id: Some(asset_id),
             symbol: asset.symbol,
             provider_id: Self::NAME.id(),
-            transaction_id: payload.id,
+            provider_transaction_id: payload.id,
             status,
             fiat_amount,
             fiat_currency: payload.fiat.currency_symbol,
+            //TODO: fill hash and address
+            transaction_hash: None,
+            address: None,
         };
 
         Ok(transaction)

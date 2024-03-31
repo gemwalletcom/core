@@ -8,11 +8,13 @@ use crate::AssetId;
 pub struct FiatTransaction {
     pub asset_id: Option<AssetId>,
     pub provider_id: String,
-    pub transaction_id: String,
+    pub provider_transaction_id: String,
     pub status: FiatTransactionStatus,
     pub symbol: String,
     pub fiat_amount: f64,
     pub fiat_currency: String,
+    pub transaction_hash: Option<String>,
+    pub address: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, AsRefStr, EnumString)]

@@ -70,10 +70,12 @@ impl FiatProvider for MoonPayClient {
             asset_id: Some(asset_id),
             symbol: asset.symbol,
             provider_id: Self::NAME.id(),
-            transaction_id: payload.data.id,
+            provider_transaction_id: payload.data.id,
             status,
             fiat_amount: payload.data.base_currency_amount,
             fiat_currency: payload.data.base_currency.code.to_uppercase(),
+            transaction_hash: payload.data.crypto_transaction_id,
+            address: payload.data.wallet_address,
         };
 
         Ok(transaction)

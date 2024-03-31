@@ -8,12 +8,14 @@ CREATE TABLE fiat_transactions (
     fiat_amount float NOT NULL DEFAULT 0,
     fiat_currency VARCHAR(32) NOT NULL,
     status VARCHAR(32) NOT NULL,
-    transaction_id VARCHAR(128) NOT NULL,
+    provider_transaction_id VARCHAR(128) NOT NULL,
+    transaction_hash VARCHAR(128),
+    address VARCHAR(128),
 
     updated_at timestamp NOT NULL default current_timestamp,
     created_at timestamp NOT NULL default current_timestamp,
 
-    UNIQUE NULLS NOT DISTINCT(provider_id, transaction_id)
+    UNIQUE NULLS NOT DISTINCT(provider_id, provider_transaction_id)
 );
 
 SELECT diesel_manage_updated_at('fiat_transactions');
