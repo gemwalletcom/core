@@ -70,6 +70,8 @@ impl RampClient {
             "BTC" => Some(Chain::Bitcoin),
             "DOGE" => Some(Chain::Doge),
             "FANTOM" => Some(Chain::Fantom),
+            "TON" => Some(Chain::Ton),
+            "XDAI" => Some(Chain::Gnosis),
             _ => None,
         }
     }
