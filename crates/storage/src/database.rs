@@ -85,9 +85,13 @@ impl DatabaseClient {
         use crate::schema::fiat_transactions::dsl::*;
         diesel::insert_into(fiat_transactions)
             .values(values)
-            .on_conflict((provider_id, transaction_id))
+            .on_conflict((provider_id, provider_transaction_id))
             .do_update()
-            .set((status.eq(excluded(status)),))
+            .set((
+                status.eq(excluded(status)),
+                transaction_hash.eq(excluded(transaction_hash)),
+                address.eq(excluded(address)),
+            ))
             .execute(&mut self.connection)
     }
 

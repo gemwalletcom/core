@@ -59,10 +59,12 @@ pub struct FiatTransaction {
     pub asset_id: Option<String>,
     pub symbol: String,
     pub provider_id: String,
-    pub transaction_id: String,
+    pub provider_transaction_id: String,
     pub status: String,
     pub fiat_amount: f64,
     pub fiat_currency: String,
+    pub address: Option<String>,
+    pub transaction_hash: Option<String>,
 }
 
 impl FiatTransaction {
@@ -71,10 +73,12 @@ impl FiatTransaction {
             asset_id: transaction.asset_id.map(|x| x.to_string()),
             symbol: transaction.symbol,
             provider_id: transaction.provider_id,
-            transaction_id: transaction.transaction_id,
+            provider_transaction_id: transaction.provider_transaction_id,
             status: transaction.status.as_ref().to_string(),
             fiat_amount: transaction.fiat_amount,
             fiat_currency: transaction.fiat_currency,
+            transaction_hash: transaction.transaction_hash,
+            address: transaction.address,
         }
     }
 }

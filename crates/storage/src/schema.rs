@@ -150,7 +150,11 @@ diesel::table! {
         #[max_length = 32]
         status -> Varchar,
         #[max_length = 128]
-        transaction_id -> Varchar,
+        provider_transaction_id -> Varchar,
+        #[max_length = 128]
+        transaction_hash -> Nullable<Varchar>,
+        #[max_length = 128]
+        address -> Nullable<Varchar>,
         updated_at -> Timestamp,
         created_at -> Timestamp,
     }

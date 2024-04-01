@@ -109,6 +109,8 @@ impl TransakClient {
             "ton" => Some(Chain::Ton),
             "osmosis" => Some(Chain::Osmosis),
             "fantom" => Some(Chain::Fantom),
+            "injective" => Some(Chain::Injective),
+            "sei" => Some(Chain::Sei),
             "mainnet" => match asset.coin_id.as_str() {
                 "bitcoin" => Some(Chain::Bitcoin),
                 "litecoin" => Some(Chain::Litecoin),
