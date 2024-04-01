@@ -27,7 +27,7 @@ members = [
     "crates/blockchain",
     "crates/fiat",
     "crates/cacher",
-    "crates/oneinch",
+    "crates/swap_oneinch",
     "crates/name_resolver",
     "crates/api_connector",
     "crates/settings",
@@ -37,6 +37,7 @@ members = [
     "crates/gem_solana",
     "crates/gem_cosmos",
     "crates/gem_chain_rpc",
+    "crates/swap_provider",
 ]
 
 default-members = [

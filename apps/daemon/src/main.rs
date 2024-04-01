@@ -27,7 +27,7 @@ pub async fn main() {
     let mut fiat_assets_updater = FiatAssetsUpdater::new(&settings.postgres.url, providers);
 
     let mut oneinch_updater = oneinch_updater::Client::new(
-        oneinch::OneInchClient::new(
+        swap_oneinch::OneInchClient::new(
             settings.swap.oneinch.url,
             settings.swap.oneinch.key,
             0.0,

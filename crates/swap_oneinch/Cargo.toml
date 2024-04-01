@@ -1,5 +1,5 @@
 [package]
-name = "oneinch"
+name = "swap_oneinch"
 edition = { workspace = true }
 version = { workspace = true }
 
