@@ -66,17 +66,23 @@ impl FiatProvider for MoonPayClient {
             _ => FiatTransactionStatus::Unknown,
         };
 
+        let currency_amount = payload.data.base_currency_amount;
+        let fee_provider = payload.data.fee_amount.unwrap_or_default();
+        let fee_network = payload.data.network_fee_amount.unwrap_or_default();
+        let fee_partner = payload.data.extra_fee_amount.unwrap_or_default();
+        let fiat_amount = currency_amount + fee_provider + fee_network + fee_partner;
+
         let transaction = FiatTransaction {
             asset_id: Some(asset_id),
             symbol: asset.symbol,
             provider_id: Self::NAME.id(),
             provider_transaction_id: payload.data.id,
             status,
-            fiat_amount: payload.data.base_currency_amount,
+            fiat_amount,
             fiat_currency: payload.data.base_currency.code.to_uppercase(),
             transaction_hash: payload.data.crypto_transaction_id,
             address: payload.data.wallet_address,
-            fee_provider: payload.data.fee_amount.unwrap_or_default(),
+            fee_provider,
             fee_network: payload.data.network_fee_amount.unwrap_or_default(),
             fee_partner: payload.data.extra_fee_amount.unwrap_or_default(),
         };
