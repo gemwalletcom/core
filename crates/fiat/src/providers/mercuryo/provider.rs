@@ -66,10 +66,21 @@ impl FiatProvider for MercuryoClient {
             provider_id: Self::NAME.id(),
             provider_transaction_id: data.merchant_transaction_id.unwrap_or(data.id),
             status,
-            fiat_amount: data.fiat_amount.parse::<f64>()?,
+            fiat_amount: data.fiat_amount.parse::<f64>().unwrap_or_default(),
             fiat_currency: data.fiat_currency,
             transaction_hash: data.tx.clone().map(|x| x.id),
             address: data.tx.clone().map(|x| x.address),
+            fee_provider: data
+                .fee
+                .unwrap_or_default()
+                .parse::<f64>()
+                .unwrap_or_default(),
+            fee_network: 0.0,
+            fee_partner: data
+                .partner_fee
+                .unwrap_or_default()
+                .parse::<f64>()
+                .unwrap_or_default(),
         };
 
         Ok(transaction)

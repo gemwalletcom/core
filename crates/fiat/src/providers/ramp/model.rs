@@ -58,6 +58,7 @@ pub struct WebhookPayload {
     pub id: String,
     pub fiat: Fiat,
     pub crypto: WebhookPayloadCrypto,
+    pub fees: Fee,
 }
 
 #[derive(Deserialize, Clone)]
@@ -73,4 +74,10 @@ pub struct Fiat {
     pub amount: String,
     pub currency_symbol: String,
     pub status: String,
+}
+
+#[derive(Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct Fee {
+    pub amount: String,
 }

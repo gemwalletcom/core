@@ -91,6 +91,9 @@ impl DatabaseClient {
                 status.eq(excluded(status)),
                 transaction_hash.eq(excluded(transaction_hash)),
                 address.eq(excluded(address)),
+                fee_provider.eq(excluded(fee_provider)),
+                fee_network.eq(excluded(fee_network)),
+                fee_partner.eq(excluded(fee_partner)),
             ))
             .execute(&mut self.connection)
     }
@@ -215,7 +218,7 @@ impl DatabaseClient {
     pub fn add_device(&mut self, device: UpdateDevice) -> Result<Device, diesel::result::Error> {
         use crate::schema::devices::dsl::*;
         diesel::insert_into(devices)
-            .values(device)
+            .values(&device)
             .returning(Device::as_returning())
             .get_result(&mut self.connection)
     }

@@ -102,6 +102,9 @@ impl FiatProvider for RampClient {
             //TODO: fill hash and address
             transaction_hash: None,
             address: None,
+            fee_provider: payload.fees.amount.parse::<f64>().unwrap_or_default(),
+            fee_network: 0.0,
+            fee_partner: 0.0,
         };
 
         Ok(transaction)

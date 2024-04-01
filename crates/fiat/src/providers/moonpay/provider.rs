@@ -76,6 +76,9 @@ impl FiatProvider for MoonPayClient {
             fiat_currency: payload.data.base_currency.code.to_uppercase(),
             transaction_hash: payload.data.crypto_transaction_id,
             address: payload.data.wallet_address,
+            fee_provider: payload.data.fee_amount.unwrap_or_default(),
+            fee_network: payload.data.network_fee_amount.unwrap_or_default(),
+            fee_partner: payload.data.extra_fee_amount.unwrap_or_default(),
         };
 
         Ok(transaction)

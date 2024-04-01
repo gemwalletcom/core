@@ -39,6 +39,8 @@ pub struct WebhookData {
     pub id: String,
     pub status: String,
     pub fiat_amount: String,
+    pub fee: Option<String>,
+    pub partner_fee: Option<String>,
     pub fiat_currency: String,
     pub currency: String,
     pub merchant_transaction_id: Option<String>,

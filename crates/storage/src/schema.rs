@@ -149,12 +149,15 @@ diesel::table! {
         fiat_currency -> Varchar,
         #[max_length = 32]
         status -> Varchar,
-        #[max_length = 128]
+        #[max_length = 256]
         provider_transaction_id -> Varchar,
-        #[max_length = 128]
+        #[max_length = 256]
         transaction_hash -> Nullable<Varchar>,
-        #[max_length = 128]
+        #[max_length = 256]
         address -> Nullable<Varchar>,
+        fee_network -> Float8,
+        fee_partner -> Float8,
+        fee_provider -> Float8,
         updated_at -> Timestamp,
         created_at -> Timestamp,
     }

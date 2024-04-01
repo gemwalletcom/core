@@ -47,6 +47,9 @@ pub struct Webhook {
     pub currency: Asset,
     pub wallet_address: Option<String>,
     pub crypto_transaction_id: Option<String>,
+    pub network_fee_amount: Option<f64>,
+    pub extra_fee_amount: Option<f64>,
+    pub fee_amount: Option<f64>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
