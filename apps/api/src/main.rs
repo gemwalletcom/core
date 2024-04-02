@@ -94,6 +94,12 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
             fee_percent: settings.swap.thorchain.fee.percent,
             fee_address: settings.swap.thorchain.fee.address,
         },
+        aftermath: SwapperClientConfiguration {
+            url: settings.swap.aftermath.url,
+            key: "".to_string(),
+            fee_percent: settings.swap.aftermath.fee.percent,
+            fee_address: settings.swap.aftermath.fee.address,
+        },
     };
     let swapper_client = Swapper::build(swapper_configuration);
     let swap_client = SwapClient::new(postgres_url, swapper_client).await;

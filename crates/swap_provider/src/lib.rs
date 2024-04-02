@@ -1,6 +1,7 @@
 use async_trait::async_trait;
 
-pub const SWAP_SLIPPAGE: f32 = 0.01;
+pub const DEFAULT_SWAP_SLIPPAGE: f32 = 0.01;
+pub type ProviderList = Vec<Box<dyn SwapProvider + Send + Sync>>;
 pub type SwapError = Box<dyn std::error::Error + Send + Sync>;
 
 #[async_trait]
