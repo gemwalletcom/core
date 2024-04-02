@@ -49,35 +49,22 @@ pub struct QuoteRequest {
 #[derive(Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Webhook {
-    pub payload: WebhookPayload,
+    #[serde(rename = "type")]
+    pub webhook_type: String,
+    pub purchase: WebhookPurchase,
 }
 
 #[derive(Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct WebhookPayload {
-    pub id: String,
-    pub fiat: Fiat,
-    pub crypto: WebhookPayloadCrypto,
-    pub fees: Fee,
-}
-
-#[derive(Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct WebhookPayloadCrypto {
-    pub amount: String,
-    pub asset_info: QuoteAsset,
-}
-
-#[derive(Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct Fiat {
-    pub amount: String,
-    pub currency_symbol: String,
+pub struct WebhookPurchase {
+    pub purchase_view_token: String,
+    pub fiat_currency: String,
+    pub fiat_value: f64,
+    pub applied_fee: f64,
+    pub base_ramp_fee: f64,
+    pub host_fee_cut: f64,
+    pub network_fee: f64,
+    pub asset: QuoteAsset,
+    pub receiver_address: Option<String>,
     pub status: String,
-}
-
-#[derive(Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct Fee {
-    pub amount: String,
 }

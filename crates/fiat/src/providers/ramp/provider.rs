@@ -1,6 +1,5 @@
 use primitives::{
     AssetId, FiatBuyRequest, FiatProviderName, FiatQuote, FiatTransaction, FiatTransactionStatus,
-    NumberFormatter,
 };
 
 use crate::{
@@ -72,39 +71,31 @@ impl FiatProvider for RampClient {
         &self,
         data: serde_json::Value,
     ) -> Result<FiatTransaction, Box<dyn std::error::Error + Send + Sync>> {
-        let payload = serde_json::from_value::<Webhook>(data)?.payload;
-        let asset = Self::map_asset(payload.crypto.asset_info.clone()).unwrap();
+        let payload = serde_json::from_value::<Webhook>(data)?.purchase;
+        let asset = Self::map_asset(payload.asset.clone()).unwrap();
         let asset_id = AssetId::from(asset.chain, asset.token_id);
 
         // https://docs.ramp.network/sdk-reference#ramp-sale-transaction-object
-        let status = match payload.fiat.status.as_str() {
-            "not-started" | "initiated" | "delayed" => FiatTransactionStatus::Pending,
-            "failed" => FiatTransactionStatus::Failed,
-            "completed" => FiatTransactionStatus::Complete,
+        let status = match payload.status.as_str() {
+            "CREATED" => FiatTransactionStatus::Pending,
+            "RETURNED" | "EXPIRED" => FiatTransactionStatus::Failed,
+            "RELEASED" => FiatTransactionStatus::Complete,
             _ => FiatTransactionStatus::Unknown,
         };
-
-        let fiat_amount = NumberFormatter::value(
-            payload.crypto.amount.as_str(),
-            payload.crypto.asset_info.decimals as i32,
-        )
-        .unwrap_or_default()
-        .parse::<f64>()?;
 
         let transaction = FiatTransaction {
             asset_id: Some(asset_id),
             symbol: asset.symbol,
             provider_id: Self::NAME.id(),
-            provider_transaction_id: payload.id,
+            provider_transaction_id: payload.purchase_view_token,
             status,
-            fiat_amount,
-            fiat_currency: payload.fiat.currency_symbol,
-            //TODO: fill hash and address
+            fiat_amount: payload.fiat_value,
+            fiat_currency: payload.fiat_currency,
             transaction_hash: None,
-            address: None,
-            fee_provider: payload.fees.amount.parse::<f64>().unwrap_or_default(),
-            fee_network: 0.0,
-            fee_partner: 0.0,
+            address: payload.receiver_address,
+            fee_provider: payload.base_ramp_fee,
+            fee_network: payload.network_fee,
+            fee_partner: payload.host_fee_cut,
         };
 
         Ok(transaction)
