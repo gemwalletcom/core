@@ -731,9 +731,9 @@ checksum = "fbb36e985947064623dbd357f727af08ffd077f93d696782f3c56365fa2e2799"
 
 [[package]]
 name = "async-trait"
-version = "0.1.77"
+version = "0.1.79"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c980ee35e870bd1a4d2c8294d4c04d0499e67bca1e4b5cefcc693c2fa00caea9"
+checksum = "a507401cad91ec6a857ed5513a2073c82a9b9048762b885bb98655b306964681"
 dependencies = [
  "proc-macro2 1.0.76",
  "quote 1.0.35",
@@ -1785,12 +1785,12 @@ version = "1.0.0"
 dependencies = [
  "api_connector",
  "fiat",
- "oneinch",
  "primitives",
  "reqwest",
  "serde_json",
  "settings",
  "storage",
+ "swap_oneinch",
  "tokio",
 ]
 
@@ -4378,16 +4378,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3fdb12b2476b595f9358c5161aa467c2438859caa136dec86c26fdd2efe17b92"
 
 [[package]]
-name = "oneinch"
-version = "1.0.0"
-dependencies = [
- "gem_evm",
- "primitives",
- "reqwest",
- "serde",
-]
-
-[[package]]
 name = "oneshot-uniffi"
 version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6053,9 +6043,9 @@ dependencies = [
 
 [[package]]
 name = "serde"
-version = "1.0.196"
+version = "1.0.197"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "870026e60fa08c69f064aa766c10f10b1d62db9ccd4d0abb206472bee0ce3b32"
+checksum = "3fb1c873e1b9b056a4dc4c0c198b24c3ffa059243875552b2bd0933b1aee4ce2"
 dependencies = [
  "serde_derive",
 ]
@@ -6092,9 +6082,9 @@ dependencies = [
 
 [[package]]
 name = "serde_derive"
-version = "1.0.196"
+version = "1.0.197"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "33c85360c95e7d137454dc81d9a4ed2b8efd8fbe19cee57357b32b9771fccb67"
+checksum = "7eb0b34b42edc17f6b7cac84a52a1c5f0e1bb2227e997ca9011ea3dd34e8610b"
 dependencies = [
  "proc-macro2 1.0.76",
  "quote 1.0.35",
@@ -6125,9 +6115,9 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.114"
+version = "1.0.115"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c5f09b1bd632ef549eaa9f60a1f8de742bdbc698e6cee2095fc84dde5f549ae0"
+checksum = "12dc5c46daa8e9fdf4f5e71b6cf9a53f2487da0e86e55808e2d35539666497dd"
 dependencies = [
  "indexmap 2.2.3",
  "itoa",
@@ -6705,14 +6695,34 @@ dependencies = [
 ]
 
 [[package]]
+name = "swap_oneinch"
+version = "1.0.0"
+dependencies = [
+ "async-trait",
+ "gem_evm",
+ "primitives",
+ "reqwest",
+ "serde",
+ "swap_provider",
+]
+
+[[package]]
+name = "swap_provider"
+version = "1.0.0"
+dependencies = [
+ "async-trait",
+ "primitives",
+]
+
+[[package]]
 name = "swapper"
 version = "1.0.0"
 dependencies = [
  "gem_solana",
- "oneinch",
  "primitives",
  "reqwest",
  "serde",
+ "swap_oneinch",
 ]
 
 [[package]]

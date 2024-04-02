@@ -1,5 +1,5 @@
 pub mod client;
-use oneinch::OneInchClient;
+use swap_oneinch::OneInchClient;
 
 pub use self::client::SwapperClient;
 pub mod jupiter;

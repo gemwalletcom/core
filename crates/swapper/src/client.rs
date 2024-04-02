@@ -1,5 +1,5 @@
-use oneinch::OneInchClient;
 use primitives::{Chain, SwapQuote, SwapQuoteProtocolRequest};
+use swap_oneinch::OneInchClient;
 
 use crate::{JupiterClient, ThorchainSwapClient};
 

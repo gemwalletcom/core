@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
 use gem_evm::address::EthereumAddress;
-use primitives::{AssetId, Chain, ChainType, SwapProvider, SwapQuote, SwapQuoteProtocolRequest};
+use primitives::{AssetId, Chain, ChainType, SwapQuote, SwapQuoteProtocolRequest};
 
 use super::model::{QuoteRequest, SwapResult, Tokenlist};
 
@@ -15,6 +15,7 @@ pub struct OneInchClient {
 }
 
 const NATIVE_ADDRESS: &str = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
+pub const PROVIDER_NAME: &str = "1inch";
 
 impl OneInchClient {
     pub fn new(api_url: String, api_key: String, fee: f64, fee_referral_address: String) -> Self {
@@ -27,12 +28,6 @@ impl OneInchClient {
             fee,
             fee_referral_address,
             version: "v5.2".to_string(),
-        }
-    }
-
-    pub fn provider(&self) -> SwapProvider {
-        SwapProvider {
-            name: "1inch".to_string(),
         }
     }
 
@@ -116,7 +111,7 @@ impl OneInchClient {
             from_amount: quote.amount.clone(),
             to_amount: swap_quote.to_amount,
             fee_percent: self.fee as f32,
-            provider: self.provider(),
+            provider: PROVIDER_NAME.into(),
             data,
         };
         Ok(quote)
