@@ -6,6 +6,7 @@ pub type SwapError = Box<dyn std::error::Error + Send + Sync>;
 #[async_trait]
 pub trait SwapProvider {
     fn provider(&self) -> primitives::SwapProvider;
+    fn supported_chains(&self) -> Vec<primitives::Chain>;
     async fn get_quote(
         &self,
         request: primitives::SwapQuoteProtocolRequest,

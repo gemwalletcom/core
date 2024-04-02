@@ -6,5 +6,7 @@ version = { workspace = true }
 [dependencies]
 serde = { workspace = true }
 reqwest = { workspace = true }
+async-trait = { workspace = true }
 primitives = { path = "../primitives" }
 gem_evm = { path = "../gem_evm" }
+swap_provider = { path = "../swap_provider" }
