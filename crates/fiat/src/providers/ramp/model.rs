@@ -27,6 +27,20 @@ pub struct QuoteAsset {
     pub enabled: Option<bool>,
 }
 
+impl QuoteAsset {
+    pub fn token_id(&self) -> Option<String> {
+        return if let Some(address) = &self.address {
+            if address.is_empty() {
+                None
+            } else {
+                Some(address.clone())
+            }
+        } else {
+            None
+        };
+    }
+}
+
 #[derive(Debug, Deserialize, Clone)]
 pub struct QuoteAssets {
     pub assets: Vec<QuoteAsset>,
@@ -66,5 +80,6 @@ pub struct WebhookPurchase {
     pub network_fee: f64,
     pub asset: QuoteAsset,
     pub receiver_address: Option<String>,
+    pub final_tx_hash: Option<String>,
     pub status: String,
 }
