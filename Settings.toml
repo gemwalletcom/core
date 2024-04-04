@@ -31,6 +31,12 @@ secret = ""
 [ramp.key]
 public = ""
 
+[banxa]
+url = ""
+[banxa.key]
+public = ""
+secret = ""
+
 [pricer]
 timer = 60
 outdated = 604800 # 7 days

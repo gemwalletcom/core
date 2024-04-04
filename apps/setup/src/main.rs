@@ -1,4 +1,4 @@
-use primitives::{Asset, AssetType, Chain};
+use primitives::{fiat_provider::FiatProvider, Asset, AssetType, Chain, FiatProviderName};
 use settings::Settings;
 use storage::{ClickhouseDatabase, DatabaseClient};
 
@@ -41,6 +41,13 @@ async fn main() {
         .map(storage::models::Asset::from_primitive)
         .collect::<Vec<_>>();
     let _ = database_client.add_assets(assets);
+
+    println!("setup fiat providers");
+    let providers = FiatProviderName::all()
+        .into_iter()
+        .map(storage::models::FiatProvider::from_primitive)
+        .collect::<Vec<_>>();
+    let _ = database_client.add_fiat_providers(providers);
 
     println!("setup complete");
 }
