@@ -1,4 +1,4 @@
-use primitives::{fiat_provider::FiatProvider, Asset, AssetType, Chain, FiatProviderName};
+use primitives::{Asset, AssetType, Chain, FiatProviderName};
 use settings::Settings;
 use storage::{ClickhouseDatabase, DatabaseClient};
 
