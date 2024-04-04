@@ -29,7 +29,7 @@ pub struct QuoteAsset {
 
 impl QuoteAsset {
     pub fn token_id(&self) -> Option<String> {
-        return if let Some(address) = &self.address {
+        if let Some(address) = &self.address {
             if address.is_empty() {
                 None
             } else {
@@ -37,7 +37,7 @@ impl QuoteAsset {
             }
         } else {
             None
-        };
+        }
     }
 }
 
