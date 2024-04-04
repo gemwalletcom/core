@@ -2,7 +2,7 @@ use async_trait::async_trait;
 
 use crate::api::AftermathApi;
 use crate::models::{ExternalFee, TradeQuote, TradeQuoteResponse, TradeTx};
-use primitives::{Chain, SwapQuote, SwapQuoteData, SwapQuoteProtocolRequest};
+use primitives::{AssetId, Chain, SwapQuote, SwapQuoteData, SwapQuoteProtocolRequest};
 use reqwest_enum::provider::{JsonProviderType, Provider};
 use swap_provider::{SwapError, SwapProvider, DEFAULT_SWAP_SLIPPAGE};
 
@@ -51,7 +51,7 @@ impl SwapProvider for AftermathProvider {
             );
             let tx_response: String = self.provider.request_json(AftermathApi::Tx(tx)).await?;
             data = Some(SwapQuoteData {
-                to: request.to_asset.token_id.clone().unwrap_or_default(),
+                to: "".into(), // to address is encoded in tx data
                 value: response.coin_out.amount.clone(),
                 data: tx_response,
             });
@@ -68,6 +68,13 @@ impl SwapProvider for AftermathProvider {
     }
 }
 
+fn get_coin_type(asset_id: &AssetId) -> String {
+    if let Some(asset) = &asset_id.token_id {
+        return asset.clone();
+    }
+    asset_id.chain.as_denom().unwrap_or_default().to_string()
+}
+
 impl TradeQuote {
     pub fn from(
         request: &SwapQuoteProtocolRequest,
@@ -75,8 +82,8 @@ impl TradeQuote {
         fee_percentage: f32,
     ) -> Self {
         TradeQuote {
-            coin_in_type: request.from_asset.token_id.clone().unwrap_or_default(),
-            coin_out_type: request.to_asset.token_id.clone().unwrap_or_default(),
+            coin_in_type: get_coin_type(&request.from_asset),
+            coin_out_type: get_coin_type(&request.to_asset),
             coin_in_amount: request.amount.clone(),
             external_fee: ExternalFee {
                 recipient: fee_address.clone(),

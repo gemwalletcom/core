@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-
+use serde_json::Value;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TradeQuote {
@@ -68,4 +68,5 @@ pub struct Path {
     pub coin_out: CoinOut,
     pub spot_price: f64,
     pub protocol_name: String,
+    pub pool: Value,
 }
