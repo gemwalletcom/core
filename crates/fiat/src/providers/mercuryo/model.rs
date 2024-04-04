@@ -49,6 +49,6 @@ pub struct WebhookData {
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct Transaction {
-    pub id: String,
-    pub address: String,
+    pub id: Option<String>,
+    pub address: Option<String>,
 }

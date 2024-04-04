@@ -91,9 +91,6 @@ impl DatabaseClient {
                 status.eq(excluded(status)),
                 transaction_hash.eq(excluded(transaction_hash)),
                 address.eq(excluded(address)),
-                fee_provider.eq(excluded(fee_provider)),
-                fee_network.eq(excluded(fee_network)),
-                fee_partner.eq(excluded(fee_partner)),
             ))
             .execute(&mut self.connection)
     }

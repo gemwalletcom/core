@@ -68,8 +68,8 @@ impl FiatProvider for MercuryoClient {
             status,
             fiat_amount: data.fiat_amount.parse::<f64>().unwrap_or_default(),
             fiat_currency: data.fiat_currency,
-            transaction_hash: data.tx.clone().map(|x| x.id),
-            address: data.tx.clone().map(|x| x.address),
+            transaction_hash: data.tx.clone().and_then(|x| x.id),
+            address: data.tx.clone().and_then(|x| x.address),
             fee_provider: data
                 .fee
                 .unwrap_or_default()
