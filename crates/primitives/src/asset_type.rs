@@ -16,7 +16,6 @@ pub enum AssetType {
     TRC20,
     TOKEN,
     IBC,
-    SUICOIN,
 }
 
 impl AssetType {

@@ -5671,11 +5671,11 @@ dependencies = [
 
 [[package]]
 name = "reqwest-enum"
-version = "0.1.0"
+version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "407a64e363514a356733a3f3b7d5c90b2d65058296e0d86c3f1d585ef617fd57"
+checksum = "c57444575cf4e68e08c16b41b43e485b8caa7566a04149385343da67035cf1fc"
 dependencies = [
- "async-trait",
+ "futures",
  "reqwest 0.12.2",
  "serde",
  "serde_json",
