@@ -34,11 +34,11 @@ impl FiatProvider for BanxaClient {
             wallet_address: request.wallet_address.to_string().clone(),
             return_url_on_success: "https://gemwallet.com".to_string(),
         };
-        let prices = self
-            .get_prices(&request.fiat_currency, &request_map.symbol)
-            .await?;
+        let (prices, quote) = tokio::try_join!(
+            self.get_prices(&request.fiat_currency, &request_map.symbol),
+            self.get_quote_buy(order_request)
+        )?;
         let price = prices.prices.first().unwrap().clone();
-        let quote = self.get_quote_buy(order_request).await?;
 
         Ok(self.get_fiat_quote(request, price, quote))
     }
