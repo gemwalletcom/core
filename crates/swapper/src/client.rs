@@ -1,5 +1,6 @@
 use primitives::{Chain, SwapQuote, SwapQuoteProtocolRequest};
 use swap_oneinch::OneInchClient;
+use swap_provider::ProviderList;
 
 use crate::{JupiterClient, ThorchainSwapClient};
 
@@ -7,6 +8,7 @@ pub struct SwapperClient {
     oneinch: OneInchClient,
     jupiter: JupiterClient,
     thorchain: ThorchainSwapClient,
+    providers: ProviderList,
 }
 
 impl SwapperClient {
@@ -14,11 +16,13 @@ impl SwapperClient {
         oneinch: OneInchClient,
         jupiter: JupiterClient,
         thorchain: ThorchainSwapClient,
+        providers: ProviderList,
     ) -> Self {
         Self {
             oneinch,
             jupiter,
             thorchain,
+            providers,
         }
     }
 
@@ -26,7 +30,16 @@ impl SwapperClient {
         &self,
         quote: SwapQuoteProtocolRequest,
     ) -> Result<SwapQuote, Box<dyn std::error::Error + Send + Sync>> {
-        match quote.from_asset.chain {
+        let source_chain = quote.from_asset.chain;
+        let result = self
+            .providers
+            .iter()
+            .find(|x| x.supported_chains().contains(&source_chain));
+        if let Some(provider) = result {
+            return provider.get_quote(quote).await;
+        }
+
+        match source_chain {
             Chain::Ethereum
             | Chain::SmartChain
             | Chain::Optimism

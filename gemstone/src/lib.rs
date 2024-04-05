@@ -96,6 +96,11 @@ pub fn sui_encode_unstake(
     sui::encode_unstake(input).map_err(GemstoneError::from)
 }
 
+#[uniffi::export]
+pub fn sui_validate_and_hash(encoded: String) -> Result<sui::model::SuiTxOutput, GemstoneError> {
+    sui::validate_and_hash(&encoded).map_err(GemstoneError::from)
+}
+
 #[derive(uniffi::Object)]
 struct Config {}
 #[uniffi::export]

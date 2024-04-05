@@ -216,6 +216,7 @@ pub struct Swap {
     pub oneinch: SwapProvider,
     pub jupiter: SwapProvider,
     pub thorchain: SwapProvider,
+    pub aftermath: SwapProvider,
 }
 
 #[derive(Debug, Deserialize, Clone)]

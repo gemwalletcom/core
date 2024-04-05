@@ -1,7 +1,8 @@
 pub mod client;
-use swap_oneinch::OneInchClient;
-
 pub use self::client::SwapperClient;
+use swap_aftermath::provider::AftermathProvider;
+use swap_oneinch::OneInchClient;
+use swap_provider::ProviderList;
 pub mod jupiter;
 pub use self::jupiter::JupiterClient;
 pub mod thorswap;
@@ -11,6 +12,7 @@ pub struct SwapperConfiguration {
     pub oneinch: SwapperClientConfiguration,
     pub jupiter: SwapperClientConfiguration,
     pub thorchain: SwapperClientConfiguration,
+    pub aftermath: SwapperClientConfiguration,
 }
 
 pub struct SwapperClientConfiguration {
@@ -42,6 +44,17 @@ impl Swapper {
             configuration.thorchain.fee_percent,
             configuration.thorchain.fee_address,
         );
-        SwapperClient::new(oneinch_client, jupiter_client, thorchain_swap_client)
+
+        let providers: ProviderList = vec![Box::new(AftermathProvider::new(
+            configuration.aftermath.fee_address,
+            configuration.aftermath.fee_percent as f32,
+        ))];
+
+        SwapperClient::new(
+            oneinch_client,
+            jupiter_client,
+            thorchain_swap_client,
+            providers,
+        )
     }
 }
