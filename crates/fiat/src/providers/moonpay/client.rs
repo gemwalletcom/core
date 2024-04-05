@@ -1,4 +1,4 @@
-use crate::model::FiatProviderAsset;
+use crate::model::{filter_token_id, FiatProviderAsset};
 
 use super::model::{Asset, MoonPayBuyQuote, MoonPayIpAddress};
 use base64::{engine::general_purpose, Engine as _};
@@ -104,17 +104,7 @@ impl MoonPayClient {
             return None;
         }
         let chain = Self::map_asset_chain(asset.clone())?;
-        let token_id = asset
-            .clone()
-            .metadata?
-            .contract_address
-            .filter(|contract_address| {
-                ![
-                    "0x0000000000000000000000000000000000001010",
-                    "0x0000000000000000000000000000000000000000",
-                ]
-                .contains(&contract_address.as_str())
-            });
+        let token_id = filter_token_id(asset.clone().metadata?.contract_address);
         let enabled = !asset.is_suspended.unwrap_or(true);
         Some(FiatProviderAsset {
             chain,

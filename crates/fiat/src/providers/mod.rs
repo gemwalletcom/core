@@ -9,3 +9,6 @@ pub use self::mercuryo::client::MercuryoClient;
 
 pub mod transak;
 pub use self::transak::client::TransakClient;
+
+pub mod banxa;
+pub use self::banxa::client::BanxaClient;
