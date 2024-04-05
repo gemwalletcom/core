@@ -24,17 +24,18 @@ impl FiatProvider for BanxaClient {
         request: FiatBuyRequest,
         request_map: FiatMapping,
     ) -> Result<FiatQuote, Box<dyn std::error::Error + Send + Sync>> {
+        let account_reference = format!("{}-{}", request.asset_id, request.wallet_address);
         let order_request = OrderRequest {
-            account_reference: "test12312312312312312".to_string(),
-            source: request.fiat_currency.clone(),
+            account_reference,
+            source: request.fiat_currency.to_string().clone(),
             source_amount: request.fiat_amount.to_string(),
             target: request_map.symbol.clone(),
             blockchain: request_map.network.clone().unwrap_or_default(),
-            wallet_address: request.wallet_address.clone(),
-            return_url_on_success: "https://gemwallet.com/success".to_string(),
+            wallet_address: request.wallet_address.to_string().clone(),
+            return_url_on_success: "https://gemwallet.com".to_string(),
         };
         let prices = self
-            .get_prices(request.fiat_currency.as_str(), &request_map.symbol)
+            .get_prices(&request.fiat_currency, &request_map.symbol)
             .await?;
         let price = prices.prices.first().unwrap().clone();
         let quote = self.get_quote_buy(order_request).await?;
