@@ -51,7 +51,7 @@ impl SwapProvider for AftermathProvider {
             );
             let tx_response: String = self.provider.request_json(AftermathApi::Tx(tx)).await?;
             data = Some(SwapQuoteData {
-                to: "".into(), // to address is encoded in tx data
+                to: "".into(), // tx is programmable tx, there is no single to address
                 value: response.coin_out.amount.clone(),
                 data: tx_response,
             });
