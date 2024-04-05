@@ -77,7 +77,7 @@ impl FiatProvider for RampClient {
 
         // https://docs.ramp.network/sdk-reference#ramp-sale-transaction-object
         let status = match payload.status.as_str() {
-            "CREATED" => FiatTransactionStatus::Pending,
+            "CREATED" | "INITIALIZED" => FiatTransactionStatus::Pending,
             "RETURNED" | "EXPIRED" => FiatTransactionStatus::Failed,
             "RELEASED" => FiatTransactionStatus::Complete,
             _ => FiatTransactionStatus::Unknown,
@@ -91,13 +91,12 @@ impl FiatProvider for RampClient {
             status,
             fiat_amount: payload.fiat_value,
             fiat_currency: payload.fiat_currency,
-            transaction_hash: None,
+            transaction_hash: payload.final_tx_hash,
             address: payload.receiver_address,
             fee_provider: payload.base_ramp_fee,
             fee_network: payload.network_fee,
             fee_partner: payload.host_fee_cut,
         };
-
         Ok(transaction)
     }
 }

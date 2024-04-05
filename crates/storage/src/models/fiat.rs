@@ -43,13 +43,23 @@ impl FiatAsset {
     }
 }
 
-#[derive(Debug, Queryable, Selectable)]
+#[derive(Debug, Queryable, Selectable, Insertable, AsChangeset, Clone)]
 #[diesel(table_name = crate::schema::fiat_providers)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct FiatProvider {
     pub id: String,
     pub name: String,
     pub enabled: bool,
+}
+
+impl FiatProvider {
+    pub fn from_primitive(provider: primitives::FiatProviderName) -> Self {
+        Self {
+            id: provider.id(),
+            name: provider.as_str().to_string(),
+            enabled: true,
+        }
+    }
 }
 
 #[derive(Debug, Queryable, Selectable, Insertable, AsChangeset, Clone)]
