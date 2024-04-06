@@ -5,6 +5,7 @@ version = { workspace = true }
 
 [dependencies]
 serde = { workspace = true }
+serde_json = { workspace = true }
 reqwest = { workspace = true }
 url = { workspace = true }
 hmac = { workspace = true }
@@ -14,6 +15,8 @@ futures = { workspace = true }
 async-trait = { workspace = true }
 hex = { workspace = true }
 bigdecimal = { workspace = true }
+uuid = { workspace = true }
+tokio = { workspace = true }
 
 settings = { path = "../settings" }
 storage = { path = "../storage" }

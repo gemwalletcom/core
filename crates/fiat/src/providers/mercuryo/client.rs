@@ -1,4 +1,4 @@
-use crate::model::{FiatMapping, FiatProvider, FiatProviderAsset};
+use crate::model::{FiatMapping, FiatProviderAsset};
 use hex;
 use primitives::{Chain, FiatBuyRequest, FiatProviderName, FiatQuote};
 use reqwest::Client;
@@ -106,7 +106,7 @@ impl MercuryoClient {
         quote: MercyryoQuote,
     ) -> FiatQuote {
         FiatQuote {
-            provider: self.name().as_fiat_provider(),
+            provider: Self::NAME.as_fiat_provider(),
             fiat_amount: request.fiat_amount,
             fiat_currency: request.fiat_currency,
             crypto_amount: quote.clone().amount.parse::<f64>().unwrap_or_default(),
@@ -122,10 +122,12 @@ impl MercuryoClient {
         let mut components = Url::parse(MERCURYO_REDIRECT_URL).unwrap();
         let signature_content = format!("{}{}", address, self.secret_key);
         let signature = hex::encode(Sha512::digest(signature_content));
+        let id = uuid::Uuid::new_v4().to_string();
 
         components
             .query_pairs_mut()
             .append_pair("widget_id", self.widget_id.as_str())
+            .append_pair("merchant_transaction_id", id.as_str())
             .append_pair("fiat_amount", &quote.fiat_amount.to_string())
             .append_pair("currency", &quote.currency)
             .append_pair("address", &address)

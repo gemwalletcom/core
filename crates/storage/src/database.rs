@@ -78,6 +78,34 @@ impl DatabaseClient {
             .execute(&mut self.connection)
     }
 
+    pub fn add_fiat_providers(
+        &mut self,
+        values: Vec<FiatProvider>,
+    ) -> Result<usize, diesel::result::Error> {
+        use crate::schema::fiat_providers::dsl::*;
+        diesel::insert_into(fiat_providers)
+            .values(values)
+            .on_conflict_do_nothing()
+            .execute(&mut self.connection)
+    }
+
+    pub fn add_fiat_transactions(
+        &mut self,
+        values: Vec<FiatTransaction>,
+    ) -> Result<usize, diesel::result::Error> {
+        use crate::schema::fiat_transactions::dsl::*;
+        diesel::insert_into(fiat_transactions)
+            .values(values)
+            .on_conflict((provider_id, provider_transaction_id))
+            .do_update()
+            .set((
+                status.eq(excluded(status)),
+                transaction_hash.eq(excluded(transaction_hash)),
+                address.eq(excluded(address)),
+            ))
+            .execute(&mut self.connection)
+    }
+
     pub fn get_fiat_assets(&mut self) -> Result<Vec<FiatAsset>, diesel::result::Error> {
         use crate::schema::fiat_assets::dsl::*;
         fiat_assets
@@ -198,7 +226,7 @@ impl DatabaseClient {
     pub fn add_device(&mut self, device: UpdateDevice) -> Result<Device, diesel::result::Error> {
         use crate::schema::devices::dsl::*;
         diesel::insert_into(devices)
-            .values(device)
+            .values(&device)
             .returning(Device::as_returning())
             .get_result(&mut self.connection)
     }

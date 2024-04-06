@@ -70,6 +70,14 @@ pub struct SwapProvider {
     pub name: String,
 }
 
+impl From<&'static str> for SwapProvider {
+    fn from(name: &'static str) -> Self {
+        SwapProvider {
+            name: name.to_string(),
+        }
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 #[typeshare(swift = "Codable, Equatable, Hashable")]
 #[serde(rename_all = "camelCase")]

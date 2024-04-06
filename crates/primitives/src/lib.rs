@@ -28,6 +28,8 @@ pub use self::asset_details::{AssetDetails, AssetFull, AssetLinks};
 pub mod fiat_assets;
 pub mod fiat_quote;
 pub use self::fiat_quote::FiatQuote;
+pub mod fiat_transaction;
+pub use self::fiat_transaction::{FiatTransaction, FiatTransactionStatus};
 pub mod tokenlist;
 pub use self::fiat_assets::FiatAsset;
 pub use self::fiat_assets::FiatAssets;

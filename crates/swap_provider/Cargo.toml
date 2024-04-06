@@ -1,0 +1,8 @@
+[package]
+name = "swap_provider"
+version = { workspace = true }
+edition = { workspace = true }
+
+[dependencies]
+primitives = { path = "../primitives" }
+async-trait = { workspace = true }

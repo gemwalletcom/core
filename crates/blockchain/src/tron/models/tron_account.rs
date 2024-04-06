@@ -14,7 +14,7 @@ struct TronAccount {
 #[serde(rename_all = "camelCase")]
 struct TronAccountUsage {
     free_net_used: Option<i32>,
-    free_net_limit: i32,
+    free_net_limit: Option<i32>,
 }
 
 #[typeshare]

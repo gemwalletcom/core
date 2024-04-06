@@ -1,6 +1,7 @@
 pub mod model;
 
 use anyhow::anyhow;
+use base64::{engine::general_purpose, Engine as _};
 use model::*;
 use std::str::FromStr;
 use sui_types::{
@@ -149,6 +150,17 @@ pub fn encode_unstake(input: &SuiUnstakeInput) -> Result<SuiTxOutput, anyhow::Er
     SuiTxOutput::from_tx_data(&tx_data)
 }
 
+pub(crate) fn decode_transaction(_tx: &str) -> Result<TransactionData, anyhow::Error> {
+    let bytes = general_purpose::STANDARD.decode(_tx)?;
+    let tx_data = bcs::from_bytes::<TransactionData>(&bytes)?;
+    Ok(tx_data)
+}
+
+pub fn validate_and_hash(encoded: &str) -> Result<SuiTxOutput, anyhow::Error> {
+    let tx_data = decode_transaction(encoded)?;
+    SuiTxOutput::from_tx_data(&tx_data)
+}
+
 pub fn sui_system_state_object() -> ObjectArg {
     ObjectArg::SharedObject {
         id: ObjectID::from_single_byte(SUI_SYSTEM_STATE_OBJECT_ID),
@@ -174,8 +186,9 @@ pub fn validate_enough_balance(coins: &[SuiCoin], amount: u64) -> Option<anyhow:
 
 #[cfg(test)]
 mod tests {
+    use sui_types::transaction::TransactionKind;
+
     use super::*;
-    use base64::{engine::general_purpose, Engine as _};
 
     #[test]
     fn test_encode_transfer() {
@@ -312,5 +325,29 @@ mod tests {
         let output = encode_unstake(&input).unwrap();
         let b64_encoded = general_purpose::STANDARD.encode(output.tx_data);
         assert_eq!(b64_encoded, "AAACAQEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABQEAAAAAAAAAAQEAyMFmauaPRrYJ1Au1HR7CPcLgVg+Yaq6HhkO20hVUn8/UjNMDAAAAACCqY0EI6P2Lzjy4eh4ckx6iz/5S78vLxiOulRCcAgwEcAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMKc3VpX3N5c3RlbRZyZXF1ZXN0X3dpdGhkcmF3X3N0YWtlAAIBAAABAQDmr4D+GwtC/NlnYuXHD16Nrjn48O4PEYysDVW3TiknwgE2uDgKp1Mdc3I2V9c6EUz6/t+J3Ix2tnUvba7xfkPdos8fGQQAAAAAINREZGL0SD9y5n7te55Ju78nQ/PVWycQpwYPm4+JrWej5q+A/hsLQvzZZ2Llxw9eja45+PDuDxGMrA1Vt04pJ8LuAgAAAAAAAEB4fQEAAAAAAA==");
+    }
+
+    #[test]
+    fn test_decode_transaction() {
+        let tx = "AAAPAAhkx5NBAAAAAAAIKUO8sgMAAAAAAQAAAQAAAQAACGTHk0EAAAAAAQFexM/GvrUlJRacMqd+FsKIt7/Lm4mCielL8xCFcLPvpBbjZwAAAAAAAQEB2qRikmMsPE2PMfI+oPmzaij/NnfpaEmA5EOEA6Z6PY8uBRgAAAAAAAABAYBJ0AkRYmmsBO4UIGt6/YtktYASefhUAe5LOXefgJE0zicvAAAAAAABAQEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABgEAAAAAAAAAAAEB8ZTZsbytly5Fp91n3Umz7h4zV6AKUIUMUs1Ru0UOE7QXwmUAAAAAAAABASjkmd/16GSi6v5HYmmk9QNfHBbzONp74YsQNJmr8nHO7fIyAAAAAAABAQHwxA1nsHgADhgDIzTDMlxHueyfPZrkEovoINVGY9FOO+/yMgAAAAAAAQEBNdNbDlsXdZPYw6gBRiSFVy/DCGHmzpalWvbcRzBwknju8jIAAAAAAAAAIJP2W4wWwmM0O79mz5+O72nLHbyS0T8MMxsNyut2tKq2BgIAAQEAAADcFXIbqoK6ZIItWFpzSaFQj3bZSugOiZsG5INpwld1Dghzd2FwX2NhcBFvYnRhaW5fcm91dGVyX2NhcAIHAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIDc3VpA1NVSQAH5COc2VH2xT2cQeJScNgNMfklrRZV5bpbVDhD1KZpde4EU1VJUARTVUlQAAUCAAABAQABAgABAwABBAAA3BVyG6qCumSCLVhac0mhUI922UroDombBuSDacJXdQ4Ic3dhcF9jYXANaW5pdGlhdGVfcGF0aAEHAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIDc3VpA1NVSQACAgEAAQUAAB7GqMWsC4uXwofNNLn8apS1OgfJMKhQWVJnncjUs3gKBnJvdXRlchBzd2FwX2JfdG9fYV9ieV9iAwcAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgNzdWkDU1VJAAfkI5zZUfbFPZxB4lJw2A0x+SWtFlXlultUOEPUpml17gRTVUlQBFNVSVAABwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACA3N1aQNTVUkABgEGAAIBAAEHAAEIAAICAAEJAADcFXIbqoK6ZIItWFpzSaFQj3bZSugOiZsG5INpwld1Dghzd2FwX2NhcBFyZXR1cm5fcm91dGVyX2NhcAIHAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIDc3VpA1NVSQAH5COc2VH2xT2cQeJScNgNMfklrRZV5bpbVDhD1KZpde4EU1VJUARTVUlQAAYCAQACAwABCgABCwABDAABDQABAQIDAAEOAJP2W4wWwmM0O79mz5+O72nLHbyS0T8MMxsNyut2tKq2AQAX1Cs2B1S8591qpdZjDUOB/CBDy2V8/6tqhBbwbdyxj734BAAAAAAg6yrtiW5R0TC68GDMmZye6U+KDjfZlq21n3bztRGzXjuT9luMFsJjNDu/Zs+fju9pyx28ktE/DDMbDcrrdrSqtu4CAAAAAAAA3P9fAAAAAAAA";
+        let tx_data = decode_transaction(tx).unwrap();
+        let TransactionData::V1(data) = tx_data;
+
+        assert_eq!(
+            data.sender.to_string(),
+            "0x93f65b8c16c263343bbf66cf9f8eef69cb1dbc92d13f0c331b0dcaeb76b4aab6"
+        );
+        match data.kind {
+            TransactionKind::ProgrammableTransaction(programmable) => {
+                assert_eq!(programmable.commands.len(), 6);
+            }
+            _ => panic!("wrong kind"),
+        }
+
+        let output = validate_and_hash(tx).unwrap();
+        assert_eq!(
+            hex::encode(output.hash),
+            "883f6f54145fdaf357e3d404a8353b1f6eda265bc2b28ec8178631e092c24e3b"
+        );
     }
 }

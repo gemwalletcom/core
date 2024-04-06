@@ -1,7 +1,7 @@
 use std::{error::Error, thread, time::Duration};
 
-use oneinch::OneInchClient;
 use storage::DatabaseClient;
+use swap_oneinch::OneInchClient;
 
 pub struct Client {
     client: OneInchClient,

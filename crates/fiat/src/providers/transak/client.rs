@@ -1,4 +1,4 @@
-use crate::model::{FiatProvider, FiatProviderAsset};
+use crate::model::FiatProviderAsset;
 use primitives::{Chain, FiatBuyRequest, FiatProviderName, FiatQuote};
 use reqwest::Client;
 use url::Url;
@@ -44,7 +44,7 @@ impl TransakClient {
 
     pub fn get_fiat_quote(&self, request: FiatBuyRequest, quote: TransakQuote) -> FiatQuote {
         FiatQuote {
-            provider: self.name().as_fiat_provider(),
+            provider: Self::NAME.as_fiat_provider(),
             fiat_amount: request.fiat_amount,
             fiat_currency: request.fiat_currency,
             crypto_amount: quote.crypto_amount,
@@ -109,6 +109,8 @@ impl TransakClient {
             "ton" => Some(Chain::Ton),
             "osmosis" => Some(Chain::Osmosis),
             "fantom" => Some(Chain::Fantom),
+            "injective" => Some(Chain::Injective),
+            "sei" => Some(Chain::Sei),
             "mainnet" => match asset.coin_id.as_str() {
                 "bitcoin" => Some(Chain::Bitcoin),
                 "litecoin" => Some(Chain::Litecoin),

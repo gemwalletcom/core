@@ -94,6 +94,12 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
             fee_percent: settings.swap.thorchain.fee.percent,
             fee_address: settings.swap.thorchain.fee.address,
         },
+        aftermath: SwapperClientConfiguration {
+            url: settings.swap.aftermath.url,
+            key: "".to_string(),
+            fee_percent: settings.swap.aftermath.fee.percent,
+            fee_address: settings.swap.aftermath.fee.address,
+        },
         skip: SwapperClientConfiguration {
             url: settings.swap.skip.url,
             key: settings.swap.skip.key,
@@ -143,6 +149,7 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
                 fiat_quotes::get_fiat_quotes,
                 fiat_quotes::get_fiat_assets,
                 fiat_quotes::get_fiat_rates,
+                fiat_quotes::create_fiat_webhook,
                 node::get_nodes,
                 config::get_config,
                 name::get_name_resolve,

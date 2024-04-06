@@ -1,11 +1,9 @@
 pub mod client;
 pub mod model;
+pub mod provider;
+pub use provider::FiatProvider;
 pub mod providers;
-pub mod updater;
-use crate::{
-    model::FiatProvider,
-    providers::{MercuryoClient, MoonPayClient, RampClient, TransakClient},
-};
+use crate::providers::{BanxaClient, MercuryoClient, MoonPayClient, RampClient, TransakClient};
 use settings::Settings;
 
 pub struct FiatProviderFactory {}
@@ -25,12 +23,19 @@ impl FiatProviderFactory {
             settings.mercuryo.key.secret.clone(),
         );
         let transak = TransakClient::new(request_client.clone(), settings.transak.key.public);
+        let banxa = BanxaClient::new(
+            request_client.clone(),
+            settings.banxa.url,
+            settings.banxa.key.public,
+            settings.banxa.key.secret,
+        );
 
         vec![
             Box::new(moonpay),
             Box::new(ramp),
             Box::new(mercuryo),
             Box::new(transak),
+            Box::new(banxa),
         ]
     }
 }

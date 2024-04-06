@@ -2,12 +2,14 @@ use std::collections::HashSet;
 use std::error::Error;
 use std::time::Duration;
 
-use crate::model::{FiatMapping, FiatMappingMap, FiatProvider, FiatRates};
+use crate::{
+    model::{FiatMapping, FiatMappingMap, FiatRates},
+    FiatProvider,
+};
 use futures::future::join_all;
 use primitives::{
     fiat_assets::FiatAssets, fiat_quote::FiatQuote, fiat_quote_request::FiatBuyRequest,
 };
-//use futures::future::join_all;
 use reqwest::Client as RequestClient;
 use storage::DatabaseClient;
 
@@ -51,6 +53,25 @@ impl Client {
             version: version as u32,
             asset_ids: assets,
         })
+    }
+
+    pub async fn create_fiat_webhook(
+        &mut self,
+        provider_name: &str,
+        data: serde_json::Value,
+    ) -> Result<bool, Box<dyn std::error::Error + Send + Sync>> {
+        for provider in &self.providers {
+            if provider.name().id() == provider_name {
+                let transaction = provider.webhook(data).await?;
+                let transaction =
+                    storage::models::FiatTransaction::from_primitive(transaction.clone());
+
+                let _ = self.database.add_fiat_transactions(vec![transaction])?;
+
+                return Ok(true);
+            }
+        }
+        Ok(false)
     }
 
     pub async fn get_fiat_rates(&mut self) -> Result<FiatRates, Box<dyn Error>> {

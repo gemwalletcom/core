@@ -1,0 +1,13 @@
+[package]
+name = "swap_aftermath"
+version = { workspace = true }
+edition = { workspace = true }
+
+[dependencies]
+reqwest-enum = { version = "0.1.1", features = ["jsonrpc"] }
+serde = { workspace = true }
+serde_json = { workspace = true }
+reqwest = { workspace = true }
+async-trait = { workspace = true }
+primitives = { path = "../primitives" }
+swap_provider = { path = "../swap_provider" }

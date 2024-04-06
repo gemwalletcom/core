@@ -136,6 +136,34 @@ diesel::table! {
 }
 
 diesel::table! {
+    fiat_transactions (id) {
+        id -> Int4,
+        #[max_length = 128]
+        provider_id -> Varchar,
+        #[max_length = 128]
+        asset_id -> Nullable<Varchar>,
+        #[max_length = 32]
+        symbol -> Varchar,
+        fiat_amount -> Float8,
+        #[max_length = 32]
+        fiat_currency -> Varchar,
+        #[max_length = 32]
+        status -> Varchar,
+        #[max_length = 256]
+        provider_transaction_id -> Varchar,
+        #[max_length = 256]
+        transaction_hash -> Nullable<Varchar>,
+        #[max_length = 256]
+        address -> Nullable<Varchar>,
+        fee_network -> Float8,
+        fee_partner -> Float8,
+        fee_provider -> Float8,
+        updated_at -> Timestamp,
+        created_at -> Timestamp,
+    }
+}
+
+diesel::table! {
     nodes (id) {
         id -> Int4,
         chain -> Varchar,
@@ -297,6 +325,8 @@ diesel::joinable!(assets -> assets_types (asset_type));
 diesel::joinable!(assets_details -> assets (asset_id));
 diesel::joinable!(fiat_assets -> assets (asset_id));
 diesel::joinable!(fiat_assets -> fiat_providers (provider));
+diesel::joinable!(fiat_transactions -> assets (asset_id));
+diesel::joinable!(fiat_transactions -> fiat_providers (provider_id));
 diesel::joinable!(scan_addresses -> chains (chain));
 diesel::joinable!(subscriptions -> devices (device_id));
 diesel::joinable!(swap_assets -> assets (asset_id));
@@ -313,6 +343,7 @@ diesel::allow_tables_to_appear_in_same_query!(
     fiat_assets,
     fiat_providers,
     fiat_rates,
+    fiat_transactions,
     nodes,
     parser_state,
     prices,

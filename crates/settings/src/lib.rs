@@ -14,6 +14,7 @@ pub struct Settings {
     pub transak: Transak,
     pub mercuryo: Mercuryo,
     pub ramp: Ramp,
+    pub banxa: Banxa,
     pub coingecko: CoinGecko,
     pub pricer: Pricer,
     pub name: Name,
@@ -79,6 +80,13 @@ pub struct Mercuryo {
 #[allow(unused)]
 pub struct Ramp {
     pub key: KeyPublic,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[allow(unused)]
+pub struct Banxa {
+    pub url: String,
+    pub key: Key,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -208,6 +216,7 @@ pub struct Swap {
     pub oneinch: SwapProvider,
     pub jupiter: SwapProvider,
     pub thorchain: SwapProvider,
+    pub aftermath: SwapProvider,
     pub skip: SwapProvider,
 }
 

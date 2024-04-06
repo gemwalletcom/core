@@ -43,13 +43,13 @@ impl RampClient {
 
     pub fn map_asset(asset: QuoteAsset) -> Option<FiatProviderAsset> {
         let chain = Self::map_asset_chain(asset.chain.clone())?;
-        let token_id = asset.address.clone();
+        let token_id = asset.token_id();
         Some(FiatProviderAsset {
             chain,
             token_id,
             symbol: asset.symbol,
             network: Some(asset.chain),
-            enabled: asset.enabled,
+            enabled: asset.enabled.unwrap_or(false),
         })
     }
 
@@ -70,6 +70,8 @@ impl RampClient {
             "BTC" => Some(Chain::Bitcoin),
             "DOGE" => Some(Chain::Doge),
             "FANTOM" => Some(Chain::Fantom),
+            "TON" => Some(Chain::Ton),
+            "XDAI" => Some(Chain::Gnosis),
             _ => None,
         }
     }
@@ -118,7 +120,11 @@ impl RampClient {
             .append_pair("swapAsset", &quote.asset.crypto_asset_symbol())
             .append_pair("fiatCurrency", &request.clone().fiat_currency.to_string())
             .append_pair("fiatValue", &request.clone().fiat_amount.to_string())
-            .append_pair("userAddress", request.wallet_address.as_str());
+            .append_pair("userAddress", request.wallet_address.as_str())
+            .append_pair(
+                "webhookStatusUrl",
+                "https://api.gemwallet.com/v1/fiat/webhooks/ramp",
+            );
 
         components.as_str().to_string()
     }

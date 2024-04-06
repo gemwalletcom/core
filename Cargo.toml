@@ -27,7 +27,6 @@ members = [
     "crates/blockchain",
     "crates/fiat",
     "crates/cacher",
-    "crates/oneinch",
     "crates/name_resolver",
     "crates/api_connector",
     "crates/settings",
@@ -38,6 +37,10 @@ members = [
     "crates/gem_solana",
     "crates/gem_cosmos",
     "crates/gem_chain_rpc",
+
+    "crates/swap_oneinch",
+    "crates/swap_aftermath",
+    "crates/swap_provider",
 ]
 
 default-members = [
@@ -69,6 +72,7 @@ anyhow = { version = "1.0" }
 indexmap = "2.2.2"
 lazy_static = "1.4.0"
 futures-util = "0.3.30"
+uuid = { version = "1.8.0", features = ["v4"] }
 
 # db
 diesel = { version = "2.1.4", features = ["postgres", "chrono", "serde_json"] }

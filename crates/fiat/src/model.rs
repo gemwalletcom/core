@@ -1,10 +1,6 @@
-use async_trait::async_trait;
-use primitives::{
-    fiat_provider::FiatProviderName, fiat_quote::FiatQuote, fiat_quote_request::FiatBuyRequest,
-    Chain,
-};
+use primitives::Chain;
 use serde::{Deserialize, Serialize};
-use std::{collections::HashMap, sync::Arc};
+use std::collections::HashMap;
 
 pub struct FiatRequestMap {
     pub crypto_currency: String,
@@ -36,48 +32,14 @@ pub struct FiatProviderAsset {
 
 pub type FiatMappingMap = HashMap<String, FiatMapping>;
 
-#[async_trait]
-pub trait FiatProvider {
-    fn name(&self) -> FiatProviderName;
-    async fn get_quote(
-        &self,
-        request: FiatBuyRequest,
-        request_map: FiatMapping,
-    ) -> Result<FiatQuote, Box<dyn std::error::Error + Send + Sync>>;
-    async fn get_assets(
-        &self,
-    ) -> Result<Vec<FiatProviderAsset>, Box<dyn std::error::Error + Send + Sync>>;
-    async fn get_transactions(
-        &self,
-    ) -> Result<Vec<String>, Box<dyn std::error::Error + Send + Sync>>;
-}
-
-#[async_trait]
-impl<T: Send + Sync> FiatProvider for Arc<T>
-where
-    T: FiatProvider + ?Sized,
-{
-    fn name(&self) -> FiatProviderName {
-        (**self).name()
-    }
-
-    async fn get_quote(
-        &self,
-        request: FiatBuyRequest,
-        request_map: FiatMapping,
-    ) -> Result<FiatQuote, Box<dyn std::error::Error + Send + Sync>> {
-        (**self).get_quote(request, request_map).await
-    }
-
-    async fn get_assets(
-        &self,
-    ) -> Result<Vec<FiatProviderAsset>, Box<dyn std::error::Error + Send + Sync>> {
-        (**self).get_assets().await
-    }
-
-    async fn get_transactions(
-        &self,
-    ) -> Result<Vec<String>, Box<dyn std::error::Error + Send + Sync>> {
-        (**self).get_transactions().await
-    }
+// used to filter out fiat tokens that have specific token ids for native coins
+pub fn filter_token_id(token_id: Option<String>) -> Option<String> {
+    token_id.filter(|contract_address| {
+        ![
+            "0x0000000000000000000000000000000000001010", // matic
+            "0x0000000000000000000000000000000000000000",
+            "0x471ece3750da237f93b8e339c536989b8978a438", // celo
+        ]
+        .contains(&contract_address.as_str())
+    })
 }

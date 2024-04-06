@@ -1,4 +1,4 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct Quote {
@@ -24,9 +24,21 @@ pub struct QuoteAsset {
     pub chain: String,
     pub decimals: u32,
     pub address: Option<String>,
-    //enabled: bool,
-    //hidden: bool,
-    pub enabled: bool,
+    pub enabled: Option<bool>,
+}
+
+impl QuoteAsset {
+    pub fn token_id(&self) -> Option<String> {
+        if let Some(address) = &self.address {
+            if address.is_empty() {
+                None
+            } else {
+                Some(address.clone())
+            }
+        } else {
+            None
+        }
+    }
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -40,10 +52,34 @@ impl QuoteAsset {
     }
 }
 
-#[derive(serde::Serialize)]
+#[derive(Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct QuoteRequest {
     pub crypto_asset_symbol: String,
     pub fiat_currency: String,
     pub fiat_value: f64,
+}
+
+#[derive(Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct Webhook {
+    #[serde(rename = "type")]
+    pub webhook_type: String,
+    pub purchase: WebhookPurchase,
+}
+
+#[derive(Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct WebhookPurchase {
+    pub purchase_view_token: String,
+    pub fiat_currency: String,
+    pub fiat_value: f64,
+    pub applied_fee: f64,
+    pub base_ramp_fee: f64,
+    pub host_fee_cut: f64,
+    pub network_fee: f64,
+    pub asset: QuoteAsset,
+    pub receiver_address: Option<String>,
+    pub final_tx_hash: Option<String>,
+    pub status: String,
 }

@@ -43,3 +43,23 @@ pub async fn get_fiat_rates(fiat_client: &State<Mutex<FiatProvider>>) -> Json<Fi
     let rates = fiat_client.lock().await.get_fiat_rates().await.unwrap();
     Json(rates)
 }
+
+#[post("/fiat/webhooks/<provider>", format = "json", data = "<data>")]
+pub async fn create_fiat_webhook(
+    provider: &str,
+    data: Json<serde_json::Value>,
+    fiat_client: &State<Mutex<FiatProvider>>,
+) -> Json<bool> {
+    print!(
+        "webhook: {}, data: {:?}",
+        provider,
+        serde_json::to_string_pretty(&data.0)
+    );
+    let result = fiat_client
+        .lock()
+        .await
+        .create_fiat_webhook(provider, data.into_inner())
+        .await
+        .unwrap();
+    Json(result)
+}

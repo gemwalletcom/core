@@ -1,6 +1,7 @@
 extern crate rocket;
 use crate::DevicesClient;
 use primitives::device::Device;
+use rocket::http::Status;
 use rocket::serde::json::Json;
 use rocket::tokio::sync::Mutex;
 use rocket::State;
@@ -15,9 +16,16 @@ pub async fn add_device(
 }
 
 #[get("/devices/<device_id>")]
-pub async fn get_device(device_id: &str, client: &State<Mutex<DevicesClient>>) -> Json<Device> {
-    let device = client.lock().await.get_device(device_id).unwrap();
-    Json(device)
+pub async fn get_device(
+    device_id: &str,
+    client: &State<Mutex<DevicesClient>>,
+) -> Result<Json<Device>, Status> {
+    let device = client.lock().await.get_device(device_id);
+
+    match device {
+        Ok(device) => Ok(Json(device)),
+        Err(_) => Err(Status::NotFound),
+    }
 }
 
 #[put("/devices/<device_id>", format = "json", data = "<device>")]

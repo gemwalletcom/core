@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use strum::{EnumIter, IntoEnumIterator};
 use typeshare::typeshare;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -9,11 +10,13 @@ pub struct FiatProvider {
     pub image_url: String,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, EnumIter)]
 pub enum FiatProviderName {
     Mercuryo,
     Transak,
     MoonPay,
     Ramp,
+    Banxa,
 }
 
 impl FiatProviderName {
@@ -23,6 +26,7 @@ impl FiatProviderName {
             FiatProviderName::Transak => "Transak",
             FiatProviderName::MoonPay => "MoonPay",
             FiatProviderName::Ramp => "Ramp",
+            FiatProviderName::Banxa => "Banxa",
         }
     }
 
@@ -35,5 +39,9 @@ impl FiatProviderName {
             name: self.as_str().to_string(),
             image_url: "".to_string(),
         }
+    }
+
+    pub fn all() -> Vec<FiatProviderName> {
+        FiatProviderName::iter().collect::<Vec<_>>()
     }
 }

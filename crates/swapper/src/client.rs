@@ -1,5 +1,6 @@
-use oneinch::OneInchClient;
 use primitives::{Chain, SwapQuote, SwapQuoteProtocolRequest};
+use swap_oneinch::OneInchClient;
+use swap_provider::ProviderList;
 use swap_skip_client::client::SkipApi;
 
 use crate::{JupiterClient, ThorchainSwapClient};
@@ -8,7 +9,7 @@ pub struct SwapperClient {
     oneinch: OneInchClient,
     jupiter: JupiterClient,
     thorchain: ThorchainSwapClient,
-    skip: SkipApi,
+    providers: ProviderList,
 }
 
 impl SwapperClient {
@@ -16,13 +17,13 @@ impl SwapperClient {
         oneinch: OneInchClient,
         jupiter: JupiterClient,
         thorchain: ThorchainSwapClient,
-        skip: SkipApi,
+        providers: ProviderList,
     ) -> Self {
         Self {
             oneinch,
             jupiter,
             thorchain,
-            skip,
+            providers,
         }
     }
 
@@ -30,8 +31,16 @@ impl SwapperClient {
         &self,
         quote: SwapQuoteProtocolRequest,
     ) -> Result<SwapQuote, Box<dyn std::error::Error + Send + Sync>> {
-        // Need to fetch quote from different providers and return the best one
-        match quote.from_asset.chain {
+        let source_chain = quote.from_asset.chain;
+        let result = self
+            .providers
+            .iter()
+            .find(|x| x.supported_chains().contains(&source_chain));
+        if let Some(provider) = result {
+            return provider.get_quote(quote).await;
+        }
+
+        match source_chain {
             Chain::Ethereum
             | Chain::SmartChain
             | Chain::Optimism
@@ -47,10 +56,12 @@ impl SwapperClient {
             Chain::Thorchain | Chain::Doge | Chain::Cosmos | Chain::Bitcoin | Chain::Litecoin => {
                 self.thorchain.get_quote(quote).await
             }
-            Chain::Osmosis | Chain::Celestia | Chain::Injective | Chain::Noble | Chain::Sei => {
-                self.skip.get_quote(quote).await
-            }
-            Chain::Binance
+            Chain::Osmosis
+            | Chain::Celestia
+            | Chain::Injective
+            | Chain::Noble
+            | Chain::Sei
+            | Chain::Binance
             | Chain::Ton
             | Chain::Tron
             | Chain::Aptos
