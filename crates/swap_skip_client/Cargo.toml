@@ -7,5 +7,8 @@ edition = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 reqwest = { workspace = true }
+reqwest-enum = { workspace = true }
 primitives = { path = "../primitives" }
 gem_cosmos = { path = "../gem_cosmos" }
+swap_provider = { path = "../swap_provider" }
+async-trait = { workspace = true }

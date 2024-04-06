@@ -60,6 +60,7 @@ serde_json = { version = "1.0.114" }
 tokio = { version = "1.36.0", features = ["macros", "rt-multi-thread"] }
 reqwest = { version = "0.11.24", features = ["json"] }
 reqwest-middleware = { version = "0.2.4" }
+reqwest-enum = { version = "0.1.1", features = ["jsonrpc"] }
 reqwest-retry = { version = "0.4.0" }
 url = { version = "2.5.0" }
 config = { version = "0.14.0" }

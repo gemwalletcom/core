@@ -1,69 +1,38 @@
+use crate::api::SkipApi;
 use crate::models::route::{
     RouteRequest, RouteResponse, RouteWithDataRequest, RouteWithDataResponse,
 };
-use primitives::{Chain, SwapProvider, SwapQuote, SwapQuoteData, SwapQuoteProtocolRequest};
+use async_trait::async_trait;
+use primitives::{Chain, SwapQuote, SwapQuoteData, SwapQuoteProtocolRequest};
+use reqwest_enum::provider::{JsonProviderType, Provider};
 use std::collections::HashMap;
-pub struct SkipApi {
-    client: reqwest::Client,
-    base_url: String,
+use swap_provider::{SwapError, SwapProvider, DEFAULT_SWAP_SLIPPAGE};
+
+pub struct SkipProvider {
+    provider: Provider<SkipApi>,
     client_id: String,
     fee_bps: u32,
-    fee_address: String, // FIXME need to convert based on dex, e.g. for osmosis, use osmo1
+    _fee_address: String, // FIXME need to convert based on dex, e.g. for osmosis, use osmo1
 }
 
-impl SkipApi {
-    pub fn new(base_url: String, client_id: String, fee_bps: u32, fee_address: String) -> Self {
-        let client = reqwest::Client::builder().build().unwrap();
+impl SkipProvider {
+    pub fn new(client_id: String, fee_bps: u32, fee_address: String) -> Self {
         Self {
-            client,
-            base_url,
+            provider: Provider::<SkipApi>::default(),
             client_id,
             fee_bps,
-            fee_address,
+            _fee_address: fee_address,
         }
-    }
-
-    pub async fn get_route(
-        &self,
-        request: RouteRequest,
-    ) -> Result<RouteResponse, Box<dyn std::error::Error + Send + Sync>> {
-        let url = format!("{}/v2/fungible/route", self.base_url);
-        let response = self
-            .client
-            .post(&url)
-            .json(&request)
-            .send()
-            .await?
-            .json::<RouteResponse>()
-            .await?;
-        Ok(response)
-    }
-
-    pub async fn get_msgs_direct(
-        &self,
-        request: RouteWithDataRequest,
-    ) -> Result<RouteWithDataResponse, Box<dyn std::error::Error + Send + Sync>> {
-        let url = format!("{}/v2/fungible/msgs_direct", self.base_url);
-        let response = self
-            .client
-            .post(&url)
-            .json(&request)
-            .send()
-            .await?
-            .json::<RouteWithDataResponse>()
-            .await?;
-        Ok(response)
     }
 }
 
-impl SkipApi {
-    pub fn provider(&self) -> SwapProvider {
-        SwapProvider {
-            name: "Skip".to_string(),
-        }
+#[async_trait]
+impl SwapProvider for SkipProvider {
+    fn provider(&self) -> primitives::SwapProvider {
+        "Skip".into()
     }
 
-    pub fn chains(&self) -> Vec<Chain> {
+    fn supported_chains(&self) -> Vec<primitives::Chain> {
         vec![
             Chain::Cosmos,
             Chain::Osmosis,
@@ -74,15 +43,21 @@ impl SkipApi {
         ]
     }
 
-    pub async fn get_quote(
+    async fn get_quote(
         &self,
-        request: SwapQuoteProtocolRequest,
-    ) -> Result<SwapQuote, Box<dyn std::error::Error + Send + Sync>> {
+        request: primitives::SwapQuoteProtocolRequest,
+    ) -> Result<primitives::SwapQuote, SwapError> {
         // FIXME add affiliate, chain_ids_to_addresses, fee address
         if request.include_data {
-            let skip_request: RouteWithDataRequest =
-                RouteWithDataRequest::from(&request, "1".to_string(), self.client_id.clone());
-            let response = self.get_msgs_direct(skip_request).await?;
+            let skip_request: RouteWithDataRequest = RouteWithDataRequest::from(
+                &request,
+                DEFAULT_SWAP_SLIPPAGE.to_string(),
+                self.client_id.clone(),
+            );
+            let response: RouteWithDataResponse = self
+                .provider
+                .request_json(SkipApi::MsgsDirect(skip_request))
+                .await?;
             let quote = SwapQuote {
                 chain_type: request.from_asset.chain.chain_type(),
                 from_amount: response.route.amount_in.clone().to_string(),
@@ -97,13 +72,15 @@ impl SkipApi {
             };
             return Ok(quote);
         }
-
         let mut skip_request =
             RouteRequest::from(&request, self.fee_bps.to_string(), self.client_id.clone());
         skip_request.cumulative_affiliate_fee_bps = self.fee_bps.to_string();
         skip_request.client_id = self.client_id.clone();
 
-        let response = self.get_route(skip_request).await?;
+        let response: RouteResponse = self
+            .provider
+            .request_json(SkipApi::Route(skip_request))
+            .await?;
         let quote = SwapQuote {
             chain_type: request.clone().from_asset.chain.chain_type(),
             from_amount: response.amount_in.clone().to_string(),
