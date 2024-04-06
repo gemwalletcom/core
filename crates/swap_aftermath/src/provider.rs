@@ -52,15 +52,15 @@ impl SwapProvider for AftermathProvider {
             let tx_response: String = self.provider.request_json(AftermathApi::Tx(tx)).await?;
             data = Some(SwapQuoteData {
                 to: "".into(), // tx is programmable tx, there is no single to address
-                value: response.coin_out.amount.clone(),
+                value: response.coin_out.amount.replace('n', " "),
                 data: tx_response,
             });
         }
 
         Ok(SwapQuote {
             chain_type: request.from_asset.chain.chain_type(),
-            from_amount: response.coin_in.amount,
-            to_amount: response.coin_out.amount,
+            from_amount: response.coin_in.amount.replace('n', ""),
+            to_amount: response.coin_out.amount.replace('n', " "),
             fee_percent: self.fee_percentage,
             provider: self.provider(),
             data,
