@@ -23,6 +23,8 @@ pub fn get_chain_for_coingecko_platform_id(id: &str) -> Option<Chain> {
         "opbnb" => Some(Chain::OpBNB),
         "mantle" => Some(Chain::Mantle),
         "celo" => Some(Chain::Celo),
+        "zksync" => Some(Chain::ZkSync),
+        "linea" => Some(Chain::Linea),
         _ => None,
     }
 }
