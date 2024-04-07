@@ -78,7 +78,7 @@ impl FiatProvider for RampClient {
         // https://docs.ramp.network/sdk-reference#ramp-sale-transaction-object
         let status = match payload.status.as_str() {
             "CREATED" | "INITIALIZED" => FiatTransactionStatus::Pending,
-            "RETURNED" | "EXPIRED" => FiatTransactionStatus::Failed,
+            "RETURNED" | "EXPIRED" | "CANCELLED" => FiatTransactionStatus::Failed,
             "RELEASED" => FiatTransactionStatus::Complete,
             _ => FiatTransactionStatus::Unknown,
         };
