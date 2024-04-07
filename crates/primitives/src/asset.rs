@@ -226,7 +226,7 @@ impl Asset {
             },
             Chain::ZkSync => Asset {
                 id: chain.as_asset_id(),
-                name: "ZkSync".to_string(),
+                name: "zkSync".to_string(),
                 symbol: "ETH".to_string(),
                 decimals: 18,
                 asset_type: AssetType::NATIVE,
