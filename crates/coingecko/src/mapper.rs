@@ -21,6 +21,8 @@ pub fn get_chain_for_coingecko_platform_id(id: &str) -> Option<Chain> {
         "aptos" => Some(Chain::Aptos),
         "suiche" => Some(Chain::Sui),
         "opbnb" => Some(Chain::OpBNB),
+        "mantle" => Some(Chain::Mantle),
+        "celo" => Some(Chain::Celo),
         _ => None,
     }
 }
@@ -49,6 +51,8 @@ pub fn get_chain_for_coingecko_id(id: &str) -> Option<Chain> {
         "injective" | "injective-protocol" => Some(Chain::Injective),
         "sei-network" => Some(Chain::Sei),
         "manta-network" => Some(Chain::Manta),
+        "mantle" => Some(Chain::Mantle),
+        "celo" => Some(Chain::Celo),
         _ => None,
     }
 }
@@ -66,6 +70,8 @@ pub fn get_associated_chains(chain: Chain) -> Vec<Chain> {
                 Chain::Base,
                 Chain::Manta,
                 Chain::Blast,
+                Chain::ZkSync,
+                Chain::Linea,
             ]
         }
         _ => {

@@ -19,6 +19,10 @@ pub enum EVMChain {
     Gnosis,
     Manta,
     Blast,
+    ZkSync,
+    Linea,
+    Mantle,
+    Celo,
 }
 
 impl EVMChain {

@@ -224,6 +224,34 @@ impl Asset {
                 decimals: 6,
                 asset_type: AssetType::NATIVE,
             },
+            Chain::ZkSync => Asset {
+                id: chain.as_asset_id(),
+                name: "ZkSync".to_string(),
+                symbol: "ETH".to_string(),
+                decimals: 18,
+                asset_type: AssetType::NATIVE,
+            },
+            Chain::Linea => Asset {
+                id: chain.as_asset_id(),
+                name: "Linea".to_string(),
+                symbol: "ETH".to_string(),
+                decimals: 18,
+                asset_type: AssetType::NATIVE,
+            },
+            Chain::Mantle => Asset {
+                id: chain.as_asset_id(),
+                name: "Mantle".to_string(),
+                symbol: "MNT".to_string(),
+                decimals: 18,
+                asset_type: AssetType::NATIVE,
+            },
+            Chain::Celo => Asset {
+                id: chain.as_asset_id(),
+                name: "Celo".to_string(),
+                symbol: "CELO".to_string(),
+                decimals: 18,
+                asset_type: AssetType::NATIVE,
+            },
         }
     }
 }

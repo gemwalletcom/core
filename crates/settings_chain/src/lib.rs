@@ -32,7 +32,11 @@ impl ProviderFactory {
             | Chain::AvalancheC
             | Chain::OpBNB
             | Chain::Manta
-            | Chain::Blast => Box::new(EthereumClient::new(chain, url)),
+            | Chain::Blast
+            | Chain::ZkSync
+            | Chain::Linea
+            | Chain::Mantle
+            | Chain::Celo => Box::new(EthereumClient::new(chain, url)),
             Chain::Cosmos
             | Chain::Osmosis
             | Chain::Celestia
@@ -83,6 +87,10 @@ impl ProviderFactory {
             Chain::Manta => settings.chains.manta.url.as_str(),
             Chain::Blast => settings.chains.blast.url.as_str(),
             Chain::Noble => settings.chains.noble.url.as_str(),
+            Chain::ZkSync => settings.chains.zksyncera.url.as_str(),
+            Chain::Linea => settings.chains.linea.url.as_str(),
+            Chain::Mantle => settings.chains.mantle.url.as_str(),
+            Chain::Celo => settings.chains.celo.url.as_str(),
         }
     }
 }

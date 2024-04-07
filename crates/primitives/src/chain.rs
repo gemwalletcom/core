@@ -41,6 +41,10 @@ pub enum Chain {
     Manta,
     Blast,
     Noble,
+    ZkSync,
+    Linea,
+    Mantle,
+    Celo,
 }
 
 impl PartialEq for Chain {
@@ -97,6 +101,10 @@ impl Chain {
             Self::Noble => "noble-1",
             Self::Injective => "injective-1",
             Self::Sei => "pacific-1",
+            Self::ZkSync => "324",
+            Self::Linea => "59144",
+            Self::Mantle => "5000",
+            Self::Celo => "42220",
             Self::Bitcoin
             | Self::Litecoin
             | Self::Binance
@@ -127,7 +135,11 @@ impl Chain {
             | Self::Gnosis
             | Self::Injective
             | Self::Manta
-            | Self::Blast => 60,
+            | Self::Blast
+            | Self::ZkSync
+            | Self::Linea
+            | Self::Mantle
+            | Self::Celo => 60,
             Self::Binance => 714,
             Self::Bitcoin => 0,
             Self::Litecoin => 2,
@@ -158,7 +170,11 @@ impl Chain {
             | Self::AvalancheC
             | Self::Gnosis
             | Self::Manta
-            | Self::Blast => ChainType::Ethereum,
+            | Self::Blast
+            | Self::ZkSync
+            | Self::Linea
+            | Self::Mantle
+            | Self::Celo => ChainType::Ethereum,
             Self::Binance => ChainType::Binance,
             Self::Bitcoin | Self::Doge | Self::Litecoin => ChainType::Bitcoin,
             Self::Solana => ChainType::Solana,
@@ -188,7 +204,11 @@ impl Chain {
             | Self::Gnosis
             | Self::Fantom
             | Self::Manta
-            | Self::Blast => Some(AssetType::ERC20),
+            | Self::Blast
+            | Self::ZkSync
+            | Self::Linea
+            | Self::Mantle
+            | Self::Celo => Some(AssetType::ERC20),
             Self::OpBNB | Self::SmartChain => Some(AssetType::BEP20),
             Self::Binance => Some(AssetType::BEP2),
             Self::Solana => Some(AssetType::SPL),
@@ -241,6 +261,10 @@ impl Chain {
             Self::Xrp => 4_000,
             Self::Sei => 1_000,
             Self::Noble => 6_000,
+            Self::ZkSync => 1_000,
+            Self::Linea => 1_000,
+            Self::Mantle => 1_000,
+            Self::Celo => 1_000,
         }
     }
 
@@ -270,7 +294,11 @@ impl Chain {
             | Self::AvalancheC
             | Self::Sei
             | Self::Noble
-            | Self::Litecoin => 30,
+            | Self::Litecoin
+            | Self::ZkSync
+            | Self::Linea
+            | Self::Mantle
+            | Self::Celo => 30,
             Self::Binance => 0,
         }
     }

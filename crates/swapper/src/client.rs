@@ -50,7 +50,11 @@ impl SwapperClient {
             | Chain::Gnosis
             | Chain::AvalancheC
             | Chain::Manta
-            | Chain::Blast => self.oneinch.get_quote(quote).await,
+            | Chain::Blast
+            | Chain::ZkSync
+            | Chain::Linea
+            | Chain::Mantle
+            | Chain::Celo => self.oneinch.get_quote(quote).await,
             Chain::Solana => self.jupiter.get_quote(quote).await,
             Chain::Thorchain | Chain::Doge | Chain::Cosmos | Chain::Bitcoin | Chain::Litecoin => {
                 self.thorchain.get_quote(quote).await

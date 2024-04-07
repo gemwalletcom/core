@@ -165,6 +165,18 @@ url = "https://rpc.ankr.com/blast"
 [chains.noble]
 url = "https://rest.cosmos.directory/noble"
 
+[chains.zksync]
+url = "https://rpc.ankr.com/zksync_era"
+
+[chains.linea]
+url = "https://rpc.ankr.com/blast"
+
+[chains.mantle]
+url = "https://rpc.ankr.com/mantle"
+
+[chains.celo]
+url = "https://rpc.ankr.com/celo"
+
 [chains.bitcoin]
 url = ""
 

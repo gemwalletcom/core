@@ -176,6 +176,10 @@ pub struct Chains {
     pub manta: Chain,
     pub blast: Chain,
     pub noble: Chain,
+    pub zksyncera: Chain,
+    pub linea: Chain,
+    pub mantle: Chain,
+    pub celo: Chain,
 }
 
 #[derive(Debug, Deserialize, Clone)]

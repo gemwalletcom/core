@@ -68,7 +68,11 @@ impl AssetId {
             | Chain::Fantom
             | Chain::Gnosis
             | Chain::Manta
-            | Chain::Blast => Some(EthereumAddress::parse(&token_id)?.to_checksum()),
+            | Chain::Blast
+            | Chain::ZkSync
+            | Chain::Linea
+            | Chain::Mantle
+            | Chain::Celo => Some(EthereumAddress::parse(&token_id)?.to_checksum()),
             Chain::Solana | Chain::Sui => Some(token_id),
             Chain::Tron => {
                 if token_id.len() == 34 && token_id.starts_with('T') {
