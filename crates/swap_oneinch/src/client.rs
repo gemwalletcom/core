@@ -42,6 +42,7 @@ impl OneInchClient {
             Chain::Base,
             Chain::Fantom,
             Chain::Gnosis,
+            Chain::ZkSync,
         ]
     }
 
