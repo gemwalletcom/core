@@ -61,16 +61,16 @@ impl SwapperClient {
             }
             Chain::Osmosis
             | Chain::Celestia
-            | Chain::Binance
             | Chain::Injective
+            | Chain::Noble
+            | Chain::Sei
+            | Chain::Binance
             | Chain::Ton
             | Chain::Tron
             | Chain::Aptos
             | Chain::Sui
             | Chain::Xrp
-            | Chain::OpBNB
-            | Chain::Noble
-            | Chain::Sei => todo!(),
+            | Chain::OpBNB => todo!(),
         }
     }
 }

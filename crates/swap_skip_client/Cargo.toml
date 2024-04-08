@@ -1,13 +1,14 @@
 [package]
-name = "swap_aftermath"
+name = "swap_skip_client"
 version = { workspace = true }
 edition = { workspace = true }
 
 [dependencies]
-reqwest-enum = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 reqwest = { workspace = true }
-async-trait = { workspace = true }
+reqwest-enum = { workspace = true }
 primitives = { path = "../primitives" }
+gem_cosmos = { path = "../gem_cosmos" }
 swap_provider = { path = "../swap_provider" }
+async-trait = { workspace = true }

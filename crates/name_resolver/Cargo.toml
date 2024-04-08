@@ -20,7 +20,7 @@ gem_hash = { path = "../gem_hash" }
 gem_evm = { path = "../gem_evm" }
 
 [dev-dependencies]
-tokio-test = { version = "*" }
+tokio-test = { version = "0.4.4" }
 
 [[test]]
 name = "integration_test"

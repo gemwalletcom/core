@@ -221,6 +221,7 @@ pub struct Swap {
     pub jupiter: SwapProvider,
     pub thorchain: SwapProvider,
     pub aftermath: SwapProvider,
+    pub skip: SwapProvider,
 }
 
 #[derive(Debug, Deserialize, Clone)]
