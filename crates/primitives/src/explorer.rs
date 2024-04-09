@@ -209,6 +209,12 @@ impl<'a> Explorer<'a> {
                 account_url: "/address/",
                 token_url: None,
             },
+            Chain::Near => Explorer {
+                host: "https://nearblocks.io",
+                transaction_url: "/txns/",
+                account_url: "/address/",
+                token_url: None,
+            },
         }
     }
 

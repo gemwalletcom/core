@@ -134,6 +134,7 @@ impl MoonPayClient {
             "sui" => Some(Chain::Sui),
             "ton" => Some(Chain::Ton),
             "cosmos" => Some(Chain::Cosmos),
+            "near" => Some(Chain::Near),
             _ => None,
         }
     }

@@ -118,6 +118,7 @@ impl TransakClient {
                 "dogecoin" => Some(Chain::Doge),
                 "tron" => Some(Chain::Tron),
                 "cosmos" => Some(Chain::Cosmos),
+                "near" => Some(Chain::Near),
                 _ => None,
             },
             _ => None,

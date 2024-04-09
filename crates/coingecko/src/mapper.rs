@@ -25,6 +25,7 @@ pub fn get_chain_for_coingecko_platform_id(id: &str) -> Option<Chain> {
         "celo" => Some(Chain::Celo),
         "zksync" => Some(Chain::ZkSync),
         "linea" => Some(Chain::Linea),
+        "near" => Some(Chain::Near),
         _ => None,
     }
 }
@@ -55,6 +56,7 @@ pub fn get_chain_for_coingecko_id(id: &str) -> Option<Chain> {
         "manta-network" => Some(Chain::Manta),
         "mantle" => Some(Chain::Mantle),
         "celo" => Some(Chain::Celo),
+        "near" => Some(Chain::Near),
         _ => None,
     }
 }

@@ -94,7 +94,8 @@ impl AssetId {
             | Chain::Xrp
             | Chain::Injective
             | Chain::Noble
-            | Chain::Sei => None,
+            | Chain::Sei
+            | Chain::Near => None,
         }
     }
 }

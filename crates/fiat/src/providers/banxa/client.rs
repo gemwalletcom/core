@@ -166,6 +166,7 @@ impl BanxaClient {
             "APT" => Some(Chain::Aptos),
             "TON" => Some(Chain::Ton),
             "SUI" => Some(Chain::Sui),
+            "NEAR" => Some(Chain::Near),
             _ => None,
         }
     }

@@ -180,6 +180,7 @@ pub struct Chains {
     pub linea: Chain,
     pub mantle: Chain,
     pub celo: Chain,
+    pub near: Chain,
 }
 
 #[derive(Debug, Deserialize, Clone)]

@@ -45,6 +45,7 @@ pub enum Chain {
     Linea,
     Mantle,
     Celo,
+    Near,
 }
 
 impl PartialEq for Chain {
@@ -105,6 +106,7 @@ impl Chain {
             Self::Linea => "59144",
             Self::Mantle => "5000",
             Self::Celo => "42220",
+            Self::Near => "1",
             Self::Bitcoin
             | Self::Litecoin
             | Self::Binance
@@ -154,6 +156,7 @@ impl Chain {
             Self::AvalancheC => 9005,
             Self::Sui => 784,
             Self::Xrp => 144,
+            Self::Near => 397,
         }
     }
 
@@ -190,6 +193,7 @@ impl Chain {
             Self::Aptos => ChainType::Aptos,
             Self::Sui => ChainType::Sui,
             Self::Xrp => ChainType::Xrp,
+            Self::Near => ChainType::Near,
         }
     }
 
@@ -226,7 +230,8 @@ impl Chain {
             | Self::Celestia
             | Self::Injective
             | Self::Noble
-            | Self::Sei => None,
+            | Self::Sei
+            | Self::Near => None,
         }
     }
 
@@ -265,6 +270,7 @@ impl Chain {
             Self::Linea => 1_000,
             Self::Mantle => 1_000,
             Self::Celo => 1_000,
+            Self::Near => 1_000,
         }
     }
 
@@ -298,7 +304,8 @@ impl Chain {
             | Self::ZkSync
             | Self::Linea
             | Self::Mantle
-            | Self::Celo => 30,
+            | Self::Celo
+            | Self::Near => 30,
             Self::Binance => 0,
         }
     }

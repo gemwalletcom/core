@@ -15,4 +15,5 @@ pub enum ChainType {
     Aptos,
     Sui,
     Xrp,
+    Near,
 }

@@ -177,6 +177,9 @@ url = "https://rpc.ankr.com/mantle"
 [chains.celo]
 url = "https://rpc.ankr.com/celo"
 
+[chains.near]
+url = "https://rpc.nearprotocol.com"
+
 [chains.bitcoin]
 url = ""
 

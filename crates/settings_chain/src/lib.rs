@@ -1,6 +1,6 @@
 use gem_chain_rpc::{
-    AptosClient, BitcoinClient, ChainProvider, CosmosClient, EthereumClient, SolanaClient,
-    SuiClient, TonClient, TronClient, XRPClient,
+    AptosClient, BitcoinClient, ChainProvider, CosmosClient, EthereumClient, NearClient,
+    SolanaClient, SuiClient, TonClient, TronClient, XRPClient,
 };
 use primitives::Chain;
 use reqwest_middleware::ClientBuilder;
@@ -50,6 +50,7 @@ impl ProviderFactory {
             Chain::Aptos => Box::new(AptosClient::new(client, url)),
             Chain::Sui => Box::new(SuiClient::new(url)),
             Chain::Xrp => Box::new(XRPClient::new(client, url)),
+            Chain::Near => Box::new(NearClient::new(url)),
             Chain::Binance => {
                 unimplemented!()
             }
@@ -91,6 +92,7 @@ impl ProviderFactory {
             Chain::Linea => settings.chains.linea.url.as_str(),
             Chain::Mantle => settings.chains.mantle.url.as_str(),
             Chain::Celo => settings.chains.celo.url.as_str(),
+            Chain::Near => settings.chains.near.url.as_str(),
         }
     }
 }

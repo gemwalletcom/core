@@ -72,6 +72,7 @@ impl RampClient {
             "FANTOM" => Some(Chain::Fantom),
             "TON" => Some(Chain::Ton),
             "XDAI" => Some(Chain::Gnosis),
+            "NEAR" => Some(Chain::Near),
             _ => None,
         }
     }

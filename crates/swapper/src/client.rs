@@ -70,7 +70,8 @@ impl SwapperClient {
             | Chain::Xrp
             | Chain::OpBNB
             | Chain::Noble
-            | Chain::Sei => todo!(),
+            | Chain::Sei
+            | Chain::Near => todo!(),
         }
     }
 }

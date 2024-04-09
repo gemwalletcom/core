@@ -40,7 +40,8 @@ pub fn get_namespace(chain: Chain) -> Option<String> {
         | Chain::Doge
         | Chain::Aptos
         | Chain::Sui
-        | Chain::Xrp => None,
+        | Chain::Xrp
+        | Chain::Near => None,
     }
 }
 
@@ -81,6 +82,7 @@ pub fn get_reference(chain: Chain) -> Option<String> {
         | Chain::Doge
         | Chain::Aptos
         | Chain::Sui
-        | Chain::Xrp => None,
+        | Chain::Xrp
+        | Chain::Near => None,
     }
 }

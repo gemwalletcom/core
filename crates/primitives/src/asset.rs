@@ -252,6 +252,13 @@ impl Asset {
                 decimals: 18,
                 asset_type: AssetType::NATIVE,
             },
+            Chain::Near => Asset {
+                id: chain.as_asset_id(),
+                name: "Near".to_string(),
+                symbol: "NEAR".to_string(),
+                decimals: 24,
+                asset_type: AssetType::NATIVE,
+            },
         }
     }
 }
