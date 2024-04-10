@@ -41,7 +41,7 @@ impl PriceUpdater {
     pub async fn update_prices(&mut self) -> Result<usize, Box<dyn std::error::Error>> {
         let coin_list = self.get_coin_list().await?;
         let coins_map = CoinGeckoClient::convert_coin_vec_to_map(coin_list.clone());
-        let coin_markets = self.coin_gecko_client.get_all_coin_markets(250, 15).await?;
+        let coin_markets = self.coin_gecko_client.get_all_coin_markets(250, 1).await?;
         //TODO: currently using as a map, until fix duplicated values in the vector.
         let mut prices_map: HashSet<Price> = HashSet::new();
 
@@ -51,14 +51,19 @@ impl PriceUpdater {
                 prices_map.insert(asset_price_map(chain.as_ref().to_string(), market.clone()));
             }
         }
+        println!("Chain::all(): {:?}", Chain::all().len());
+        println!("prices_map: {:?}", prices_map);
 
-        for market in coin_markets {
-            let coin_map = coins_map.get(market.id.as_str()).unwrap();
-            let prices = self.get_prices_for_coin_market(coin_map.clone(), market.clone());
-            prices_map.extend(prices);
-        }
+        // for market in coin_markets {
+        //     let coin_map = coins_map.get(market.id.as_str()).unwrap();
+        //     let prices = self.get_prices_for_coin_market(coin_map.clone(), market.clone());
+        //     prices_map.extend(prices);
+        // }
 
         let prices: Vec<Price> = prices_map.into_iter().collect();
+
+        println!("prices: {:?}", prices);
+
         let count = self.price_client.set_prices(prices.clone())?;
 
         let charts = prices
