@@ -141,9 +141,15 @@ impl WalletConnectNamespace {
 #[uniffi::export]
 pub fn asset_default_rank(chain: String) -> i32 {
     match Chain::from_str(&chain) {
-        Ok(chain) => asset::default_rank(chain),
+        Ok(chain) => asset::get_default_rank(chain),
         Err(_) => 10,
     }
+}
+
+#[uniffi::export]
+pub fn asset_wrapper(chain: String) -> asset::AssetWrapper {
+    let chain = Chain::from_str(&chain).unwrap();
+    asset::get_asset(chain)
 }
 
 #[uniffi::export]
