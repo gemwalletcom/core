@@ -1,9 +1,4 @@
-use std::collections::HashMap;
-
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
-
-pub const TRANSFER_ACTION: &str = "Transfer";
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Block {
@@ -33,10 +28,21 @@ pub struct Transaction {
     pub signer_id: String,
     pub receiver_id: String,
     pub nonce: i64,
-    pub actions: Vec<HashMap<String, Value>>,
+    pub actions: Vec<Action>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct TransactionDeposit {
-    pub deposit: String,
+pub enum Action {
+    CreateAccount,
+    Transfer {
+        deposit: String,
+    },
+    #[serde(untagged)]
+    Other(serde_json::Value),
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct AccessKey {
+    pub nonce: i64,
+    pub permission: String,
 }

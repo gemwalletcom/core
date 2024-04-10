@@ -9,7 +9,7 @@ use jsonrpsee::{
 };
 use primitives::{chain::Chain, Transaction, TransactionState, TransactionType};
 
-use super::model::{Block, BlockHeader, Chunk, TransactionDeposit, TRANSFER_ACTION};
+use super::model::{Action, Block, BlockHeader, Chunk};
 
 pub struct NearClient {
     client: HttpClient,
@@ -56,29 +56,30 @@ impl NearClient {
         header: BlockHeader,
         transaction: super::model::Transaction,
     ) -> Option<primitives::Transaction> {
-        if transaction.actions.len() == 1 {
-            let asset_id = self.get_chain().as_asset_id();
-            if let Some(value) = transaction.actions[0].get(TRANSFER_ACTION) {
-                let deposit: TransactionDeposit = serde_json::from_value(value.clone()).ok()?;
-
-                let transaction = primitives::Transaction::new(
-                    transaction.hash,
-                    asset_id.clone(),
-                    transaction.signer_id,
-                    transaction.receiver_id,
-                    None,
-                    TransactionType::Transfer,
-                    TransactionState::Confirmed,
-                    header.height.to_string(),
-                    transaction.nonce.to_string(),
-                    "830000000000000000000".to_string(),
-                    asset_id,
-                    deposit.deposit,
-                    None,
-                    None,
-                    Utc::now(),
-                );
-                return Some(transaction);
+        if transaction.actions.len() == 1 || transaction.actions.len() == 2 {
+            match &transaction.actions.last()? {
+                Action::Transfer { deposit } => {
+                    let asset_id = self.get_chain().as_asset_id();
+                    let transaction = primitives::Transaction::new(
+                        transaction.hash,
+                        asset_id.clone(),
+                        transaction.signer_id,
+                        transaction.receiver_id,
+                        None,
+                        TransactionType::Transfer,
+                        TransactionState::Confirmed,
+                        header.height.to_string(),
+                        transaction.nonce.to_string(),
+                        "830000000000000000000".to_string(),
+                        asset_id,
+                        deposit.clone(),
+                        None,
+                        None,
+                        Utc::now(),
+                    );
+                    return Some(transaction);
+                }
+                Action::CreateAccount | Action::Other(_) => return None,
             }
         }
         None
