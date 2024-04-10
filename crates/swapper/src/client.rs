@@ -61,7 +61,6 @@ impl SwapperClient {
             }
             Chain::Osmosis
             | Chain::Celestia
-            | Chain::Binance
             | Chain::Injective
             | Chain::Ton
             | Chain::Tron

@@ -51,9 +51,6 @@ impl ProviderFactory {
             Chain::Sui => Box::new(SuiClient::new(url)),
             Chain::Xrp => Box::new(XRPClient::new(client, url)),
             Chain::Near => Box::new(NearClient::new(url)),
-            Chain::Binance => {
-                unimplemented!()
-            }
         }
     }
 
@@ -62,7 +59,6 @@ impl ProviderFactory {
             Chain::Bitcoin => settings.chains.bitcoin.url.as_str(),
             Chain::Litecoin => settings.chains.litecoin.url.as_str(),
             Chain::Ethereum => settings.chains.ethereum.url.as_str(),
-            Chain::Binance => "",
             Chain::SmartChain => settings.chains.smartchain.url.as_str(),
             Chain::Solana => settings.chains.solana.url.as_str(),
             Chain::Polygon => settings.chains.polygon.url.as_str(),

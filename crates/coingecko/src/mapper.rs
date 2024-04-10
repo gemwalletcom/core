@@ -41,7 +41,7 @@ pub fn get_coingecko_market_id_for_chain(chain: Chain) -> &'static str {
         | Chain::ZkSync
         | Chain::Blast
         | Chain::Linea => "ethereum",
-        Chain::Binance | Chain::OpBNB | Chain::SmartChain => "binancecoin",
+        Chain::SmartChain | Chain::OpBNB => "binancecoin",
         Chain::Solana => "solana",
         Chain::Polygon => "matic-network",
         Chain::Thorchain => "thorchain",

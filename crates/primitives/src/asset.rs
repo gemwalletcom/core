@@ -70,13 +70,6 @@ impl Asset {
                 decimals: 9,
                 asset_type: AssetType::NATIVE,
             },
-            Chain::Binance => Asset {
-                id: chain.as_asset_id(),
-                name: "BNB".to_string(),
-                symbol: "BNB".to_string(),
-                decimals: 8,
-                asset_type: AssetType::NATIVE,
-            },
             Chain::Thorchain => Asset {
                 id: chain.as_asset_id(),
                 name: "Thorchain".to_string(),

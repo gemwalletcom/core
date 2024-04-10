@@ -10,7 +10,6 @@ use typeshare::typeshare;
 pub enum AssetType {
     NATIVE,
     ERC20,
-    BEP2,
     BEP20,
     SPL,
     TRC20,

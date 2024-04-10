@@ -29,12 +29,6 @@ impl<'a> Explorer<'a> {
                 account_url: "/address/",
                 token_url: Some("/token/"),
             },
-            Chain::Binance => Explorer {
-                host: "https://explorer.binance.org",
-                transaction_url: "/tx/",
-                account_url: "/address/",
-                token_url: Some("/asset/"),
-            },
             Chain::SmartChain => Explorer {
                 host: "https://bscscan.com",
                 transaction_url: "/tx/",

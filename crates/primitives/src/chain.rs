@@ -15,7 +15,6 @@ pub enum Chain {
     Bitcoin,
     Litecoin,
     Ethereum,
-    Binance,
     SmartChain,
     Solana,
     Polygon,
@@ -64,7 +63,6 @@ impl fmt::Display for Chain {
 impl Chain {
     pub fn as_denom(&self) -> Option<&str> {
         match self {
-            Self::Binance => Some("BNB"),
             Self::Thorchain => Some("rune"),
             Self::Cosmos => Some("uatom"),
             Self::Osmosis => Some("uosmo"),
@@ -109,7 +107,6 @@ impl Chain {
             Self::Near => "1",
             Self::Bitcoin
             | Self::Litecoin
-            | Self::Binance
             | Self::Solana
             | Self::Thorchain
             | Self::Ton
@@ -142,7 +139,6 @@ impl Chain {
             | Self::Linea
             | Self::Mantle
             | Self::Celo => 60,
-            Self::Binance => 714,
             Self::Bitcoin => 0,
             Self::Litecoin => 2,
             Self::SmartChain => 9006,
@@ -178,7 +174,6 @@ impl Chain {
             | Self::Linea
             | Self::Mantle
             | Self::Celo => ChainType::Ethereum,
-            Self::Binance => ChainType::Binance,
             Self::Bitcoin | Self::Doge | Self::Litecoin => ChainType::Bitcoin,
             Self::Solana => ChainType::Solana,
             Self::Thorchain
@@ -214,7 +209,6 @@ impl Chain {
             | Self::Mantle
             | Self::Celo => Some(AssetType::ERC20),
             Self::OpBNB | Self::SmartChain => Some(AssetType::BEP20),
-            Self::Binance => Some(AssetType::BEP2),
             Self::Solana => Some(AssetType::SPL),
             Self::Tron => Some(AssetType::TRC20),
             Self::Bitcoin
@@ -247,7 +241,6 @@ impl Chain {
             Self::Polygon => 3_000,
             Self::Base => 2_000,
             Self::Gnosis => 5_000,
-            Self::Binance => 500,
             Self::Bitcoin => 600_000,
             Self::Litecoin => 120_000,
             Self::SmartChain => 3_000,
@@ -306,7 +299,6 @@ impl Chain {
             | Self::Mantle
             | Self::Celo
             | Self::Near => 30,
-            Self::Binance => 0,
         }
     }
 

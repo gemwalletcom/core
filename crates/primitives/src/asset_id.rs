@@ -83,7 +83,6 @@ impl AssetId {
             }
             Chain::Bitcoin
             | Chain::Litecoin
-            | Chain::Binance
             | Chain::Thorchain
             | Chain::Cosmos
             | Chain::Osmosis

@@ -9,26 +9,21 @@ use settings::Settings;
 
 use clap::Parser;
 use futures_util::StreamExt;
-use std::{
-    error::Error, fs, io::Write, path::Path, str::FromStr, thread::sleep, time::Duration, vec,
-};
+use std::{error::Error, fs, io::Write, path::Path, str::FromStr, thread::sleep, time::Duration};
 
 /// Assets image downloader from coingecko
 struct Downloader {
     args: Args,
     client: CoinGeckoClient,
-    ignore_chains: Vec<primitives::Chain>,
     cool_down: Duration,
 }
 
 impl Downloader {
     fn new(args: Args, api_key: String) -> Self {
         let client = CoinGeckoClient::new(api_key);
-        let ignore_chains = vec![primitives::Chain::Binance];
         Self {
             args,
             client,
-            ignore_chains,
             cool_down: Duration::new(0, 300_000_000),
         }
     }
@@ -116,9 +111,6 @@ impl Downloader {
             }
 
             let chain = chain.unwrap();
-            if self.ignore_chains.contains(&chain) {
-                continue;
-            }
 
             if let Some(denom) = chain.as_denom() {
                 if denom == address {

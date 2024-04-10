@@ -51,7 +51,6 @@ Run `make install` to install rust, typeshare
 | Litecoin     | ✅            | --              |
 | Doge         | ✅            | --              |
 | Ethereum     | ✅            | ✅               |
-| Binance      | ✅            | ✅               |
 | SmartChain   | ✅            | ✅               |
 | Solana       | ✅            | ✅               |
 | Polygon      | ✅            | ✅               |

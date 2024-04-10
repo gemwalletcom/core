@@ -7,7 +7,6 @@ use typeshare::typeshare;
 pub enum ChainType {
     Ethereum,
     Bitcoin,
-    Binance,
     Solana,
     Cosmos,
     Ton,

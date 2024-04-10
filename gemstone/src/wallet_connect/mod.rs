@@ -33,7 +33,6 @@ pub fn get_namespace(chain: Chain) -> Option<String> {
         )), // cosmos:cosmoshub-4
         Chain::Bitcoin
         | Chain::Litecoin
-        | Chain::Binance
         | Chain::Thorchain
         | Chain::Ton
         | Chain::Tron
@@ -75,7 +74,6 @@ pub fn get_reference(chain: Chain) -> Option<String> {
         }
         Chain::Bitcoin
         | Chain::Litecoin
-        | Chain::Binance
         | Chain::Thorchain
         | Chain::Ton
         | Chain::Tron
