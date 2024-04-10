@@ -1,13 +1,14 @@
 use std::error::Error;
 
-use crate::ChainProvider;
 use async_trait::async_trait;
 use chrono::Utc;
 use jsonrpsee::{
     core::{client::ClientT, params::ObjectParams},
     http_client::{HttpClient, HttpClientBuilder},
 };
-use primitives::{chain::Chain, Transaction, TransactionState, TransactionType};
+use primitives::{Chain, Transaction, TransactionState, TransactionType};
+
+use crate::ChainProvider;
 
 use super::model::{Action, Block, BlockHeader, Chunk};
 
@@ -101,24 +102,40 @@ impl ChainProvider for NearClient {
         &self,
         block_number: i64,
     ) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
-        let block = self.get_block(block_number).await?;
-        let chunks = futures::future::try_join_all(
-            block
-                .chunks
-                .into_iter()
-                .map(|chunk| self.get_chunk(block.header.height, chunk.shard_id)),
-        )
-        .await?;
+        let block = self.get_block(block_number).await;
+        match block {
+            Ok(block) => {
+                let chunks = futures::future::try_join_all(
+                    block
+                        .chunks
+                        .into_iter()
+                        .map(|chunk| self.get_chunk(block.header.height, chunk.shard_id)),
+                )
+                .await?;
 
-        let transactions = chunks
-            .into_iter()
-            .flat_map(|x| {
-                x.transactions
+                let transactions = chunks
                     .into_iter()
-                    .flat_map(|x| self.map_transaction(block.header.clone(), x))
-            })
-            .collect();
-
-        Ok(transactions)
+                    .flat_map(|x| {
+                        x.transactions
+                            .into_iter()
+                            .flat_map(|x| self.map_transaction(block.header.clone(), x))
+                    })
+                    .collect();
+                Ok(transactions)
+            }
+            Err(_) => {
+                //skipping block for now, need to check error for missing block
+                // jsonrpsee::core::ClientError::Call(err) => {
+                //     let errors = [-32000];
+                //     if errors.contains(&err.code()) {
+                //         unimplemented!("Block not found")
+                //     } else {
+                //         Err(Box::new(err))
+                //     }
+                // }
+                // _ => Err(Box::new(err)),
+                Ok(vec![])
+            }
+        }
     }
 }
