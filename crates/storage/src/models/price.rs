@@ -27,7 +27,7 @@ pub struct Price {
 
 impl PartialEq for Price {
     fn eq(&self, other: &Self) -> bool {
-        self.asset_id == other.asset_id
+        self.asset_id == other.asset_id && self.coin_id == other.coin_id
     }
 }
 impl Eq for Price {}
@@ -35,6 +35,7 @@ impl Eq for Price {}
 impl Hash for Price {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.asset_id.hash(state);
+        self.coin_id.hash(state);
     }
 }
 
