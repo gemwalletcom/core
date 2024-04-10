@@ -51,19 +51,14 @@ impl PriceUpdater {
                 prices_map.insert(asset_price_map(chain.as_ref().to_string(), market.clone()));
             }
         }
-        println!("Chain::all(): {:?}", Chain::all().len());
-        println!("prices_map: {:?}", prices_map);
 
-        // for market in coin_markets {
-        //     let coin_map = coins_map.get(market.id.as_str()).unwrap();
-        //     let prices = self.get_prices_for_coin_market(coin_map.clone(), market.clone());
-        //     prices_map.extend(prices);
-        // }
+        for market in coin_markets {
+            let coin_map = coins_map.get(market.id.as_str()).unwrap();
+            let prices = self.get_prices_for_coin_market(coin_map.clone(), market.clone());
+            prices_map.extend(prices);
+        }
 
         let prices: Vec<Price> = prices_map.into_iter().collect();
-
-        println!("prices: {:?}", prices);
-
         let count = self.price_client.set_prices(prices.clone())?;
 
         let charts = prices
