@@ -39,7 +39,8 @@ pub fn get_coingecko_market_id_for_chain(chain: Chain) -> &'static str {
         | Chain::Arbitrum
         | Chain::Optimism
         | Chain::ZkSync
-        | Chain::Blast => "ethereum",
+        | Chain::Blast
+        | Chain::Linea => "ethereum",
         Chain::Binance | Chain::OpBNB | Chain::SmartChain => "binancecoin",
         Chain::Solana => "solana",
         Chain::Polygon => "matic-network",
@@ -56,11 +57,10 @@ pub fn get_coingecko_market_id_for_chain(chain: Chain) -> &'static str {
         Chain::Fantom => "fantom",
         Chain::Gnosis => "gnosis",
         Chain::Celestia => "celestia",
-        Chain::Injective => "injective",
+        Chain::Injective => "injective-protocol",
         Chain::Sei => "sei-network",
         Chain::Manta => "manta-network",
         Chain::Noble => "usd-coin",
-        Chain::Linea => "linea",
         Chain::Mantle => "mantle",
         Chain::Celo => "celo",
         Chain::Near => "near",
