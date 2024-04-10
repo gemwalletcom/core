@@ -1,9 +1,7 @@
 use crate::client::PriceClient;
 use crate::DEFAULT_FIAT_CURRENCY;
 use chrono::{Duration, Utc};
-use coingecko::mapper::{
-    get_associated_chains, get_chain_for_coingecko_id, get_chain_for_coingecko_platform_id,
-};
+use coingecko::mapper::{get_chain_for_coingecko_platform_id, get_coingecko_market_id_for_chain};
 use coingecko::{Coin, CoinGeckoClient, CoinMarket};
 use primitives::chain::Chain;
 use primitives::AssetId;
@@ -47,17 +45,14 @@ impl PriceUpdater {
         //TODO: currently using as a map, until fix duplicated values in the vector.
         let mut prices_map: HashSet<Price> = HashSet::new();
 
-        for market in coin_markets {
-            // consolidate with get_prices_for_coin_market to parse all coin and tokens in one function
-            let chain = get_chain_for_coingecko_id(market.id.as_str());
-
-            if let Some(chain) = chain {
+        for chain in Chain::all() {
+            let market_id = get_coingecko_market_id_for_chain(chain);
+            if let Some(market) = coin_markets.iter().find(|x| x.id == market_id) {
                 prices_map.insert(asset_price_map(chain.as_ref().to_string(), market.clone()));
-                // special case. chain association
-                for chain in get_associated_chains(chain) {
-                    prices_map.insert(asset_price_map(chain.as_ref().to_string(), market.clone()));
-                }
             }
+        }
+
+        for market in coin_markets {
             let coin_map = coins_map.get(market.id.as_str()).unwrap();
             let prices = self.get_prices_for_coin_market(coin_map.clone(), market.clone());
             prices_map.extend(prices);

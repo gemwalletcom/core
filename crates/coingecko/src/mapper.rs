@@ -30,56 +30,39 @@ pub fn get_chain_for_coingecko_platform_id(id: &str) -> Option<Chain> {
     }
 }
 
-pub fn get_chain_for_coingecko_id(id: &str) -> Option<Chain> {
-    match id {
-        "bitcoin" => Some(Chain::Bitcoin),
-        "litecoin" => Some(Chain::Litecoin),
-        "binancecoin" => Some(Chain::Binance),
-        "ethereum" => Some(Chain::Ethereum),
-        "matic-network" => Some(Chain::Polygon),
-        "solana" => Some(Chain::Solana),
-        "thorchain" => Some(Chain::Thorchain),
-        "cosmos" => Some(Chain::Cosmos),
-        "osmosis" => Some(Chain::Osmosis),
-        "the-open-network" => Some(Chain::Ton),
-        "tron" => Some(Chain::Tron),
-        "dogecoin" => Some(Chain::Doge),
-        "aptos" => Some(Chain::Aptos),
-        "avalanche-2" => Some(Chain::AvalancheC),
-        "sui" => Some(Chain::Sui),
-        "ripple" => Some(Chain::Xrp),
-        "gnosis" => Some(Chain::Gnosis),
-        "fantom" => Some(Chain::Fantom),
-        "celestia" => Some(Chain::Celestia),
-        "injective" | "injective-protocol" => Some(Chain::Injective),
-        "sei-network" => Some(Chain::Sei),
-        "manta-network" => Some(Chain::Manta),
-        "mantle" => Some(Chain::Mantle),
-        "celo" => Some(Chain::Celo),
-        "near" => Some(Chain::Near),
-        _ => None,
-    }
-}
-
-// mapping between l2  to l1 chains
-pub fn get_associated_chains(chain: Chain) -> Vec<Chain> {
+pub fn get_coingecko_market_id_for_chain(chain: Chain) -> &'static str {
     match chain {
-        Chain::Binance => {
-            vec![Chain::SmartChain, Chain::OpBNB]
-        }
-        Chain::Ethereum => {
-            vec![
-                Chain::Arbitrum,
-                Chain::Optimism,
-                Chain::Base,
-                Chain::Manta,
-                Chain::Blast,
-                Chain::ZkSync,
-                Chain::Linea,
-            ]
-        }
-        _ => {
-            vec![]
-        }
+        Chain::Bitcoin => "bitcoin",
+        Chain::Litecoin => "litecoin",
+        Chain::Ethereum
+        | Chain::Base
+        | Chain::Arbitrum
+        | Chain::Optimism
+        | Chain::ZkSync
+        | Chain::Blast => "ethereum",
+        Chain::Binance | Chain::OpBNB | Chain::SmartChain => "binancecoin",
+        Chain::Solana => "solana",
+        Chain::Polygon => "matic-network",
+        Chain::Thorchain => "thorchain",
+        Chain::Cosmos => "cosmos",
+        Chain::Osmosis => "osmosis",
+        Chain::Ton => "the-open-network",
+        Chain::Tron => "tron",
+        Chain::Doge => "dogecoin",
+        Chain::Aptos => "aptos",
+        Chain::AvalancheC => "avalanche-2",
+        Chain::Sui => "sui",
+        Chain::Xrp => "ripple",
+        Chain::Fantom => "fantom",
+        Chain::Gnosis => "gnosis",
+        Chain::Celestia => "celestia",
+        Chain::Injective => "injective",
+        Chain::Sei => "sei-network",
+        Chain::Manta => "manta-network",
+        Chain::Noble => "usd-coin",
+        Chain::Linea => "linea",
+        Chain::Mantle => "mantle",
+        Chain::Celo => "celo",
+        Chain::Near => "near",
     }
 }

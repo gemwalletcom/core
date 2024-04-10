@@ -1,4 +1,3 @@
-use coingecko::mapper::get_chain_for_coingecko_id;
 use coingecko::{get_chain_for_coingecko_platform_id, CoinGeckoClient, CoinInfo};
 use primitives::{Asset, AssetDetails, AssetId, AssetLinks, AssetScore, AssetType};
 use std::collections::HashSet;
@@ -49,7 +48,7 @@ impl AssetUpdater {
     ) -> Vec<(Asset, AssetScore, AssetDetails)> {
         let asset_details = self.get_asset_details(coin_info.clone());
 
-        let mut values = coin_info
+        let values = coin_info
             .clone()
             .detail_platforms
             .into_iter()
@@ -61,10 +60,6 @@ impl AssetUpdater {
                 None
             })
             .collect::<Vec<_>>();
-
-        if let Some(chain) = get_chain_for_coingecko_id(coin_info.clone().id.as_str()) {
-            values.push((chain, None));
-        }
 
         values
             .into_iter()
@@ -89,8 +84,6 @@ impl AssetUpdater {
                         asset_type,
                     };
                     Some(asset)
-                } else if platform.is_none() {
-                    return Some(Asset::from_chain(chain));
                 } else {
                     None
                 }
