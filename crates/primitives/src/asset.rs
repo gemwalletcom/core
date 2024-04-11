@@ -252,6 +252,20 @@ impl Asset {
                 decimals: 24,
                 asset_type: AssetType::NATIVE,
             },
+            Chain::Dymension => Asset {
+                id: chain.as_asset_id(),
+                name: "Dymension".to_string(),
+                symbol: "DYM".to_string(),
+                decimals: 18,
+                asset_type: AssetType::NATIVE,
+            },
+            Chain::Saga => Asset {
+                id: chain.as_asset_id(),
+                name: "Saga".to_string(),
+                symbol: "SAGA".to_string(),
+                decimals: 6,
+                asset_type: AssetType::NATIVE,
+            },
         }
     }
 }

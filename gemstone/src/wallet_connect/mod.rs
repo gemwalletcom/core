@@ -26,7 +26,9 @@ pub fn get_namespace(chain: Chain) -> Option<String> {
         | Chain::Celestia
         | Chain::Injective
         | Chain::Noble
-        | Chain::Sei => Some(format!(
+        | Chain::Sei
+        | Chain::Dymension
+        | Chain::Saga => Some(format!(
             "{}:{}",
             WallletConnectCAIP2::Cosmos.as_ref(),
             chain.network_id()
@@ -69,7 +71,9 @@ pub fn get_reference(chain: Chain) -> Option<String> {
         | Chain::Celestia
         | Chain::Noble
         | Chain::Sei
-        | Chain::Injective => {
+        | Chain::Injective
+        | Chain::Dymension
+        | Chain::Saga => {
             get_namespace(chain).map(|namespace| format!("{}:{}", namespace, chain.network_id()))
         }
         Chain::Bitcoin
