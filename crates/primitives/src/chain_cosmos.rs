@@ -9,6 +9,8 @@ pub enum CosmosChain {
     Injective,
     Sei,
     Noble,
+    Dymension,
+    Saga,
 }
 
 #[typeshare(swift = "Equatable, Codable, CaseIterable")]
@@ -20,4 +22,6 @@ pub enum CosmosDenom {
     inj,
     usei,
     uusdc,
+    adym,
+    usaga,
 }
