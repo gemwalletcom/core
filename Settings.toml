@@ -180,6 +180,12 @@ url = "https://rpc.ankr.com/celo"
 [chains.near]
 url = "https://rpc.mainnet.near.org"
 
+[chains.dimension]
+url = "https://rest.cosmos.directory/dymension"
+
+[chains.saga]
+url = "https://lcd-saga.keplr.app"
+
 [chains.bitcoin]
 url = ""
 
