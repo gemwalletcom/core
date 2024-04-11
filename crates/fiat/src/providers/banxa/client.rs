@@ -158,7 +158,7 @@ impl BanxaClient {
             "BSC" => Some(Chain::SmartChain),
             "SOL" => Some(Chain::Solana),
             "MATIC" => Some(Chain::Polygon),
-            "ATOM " => Some(Chain::Cosmos),
+            "ATOM" => Some(Chain::Cosmos),
             "AVAX-C" => Some(Chain::AvalancheC),
             "XRP" => Some(Chain::Xrp),
             "LTC" => Some(Chain::Litecoin),
@@ -169,6 +169,7 @@ impl BanxaClient {
             "SUI" => Some(Chain::Sui),
             "NEAR" => Some(Chain::Near),
             "CELO" => Some(Chain::Celo),
+            "THORCHAIN" => Some(Chain::Thorchain),
             _ => None,
         }
     }

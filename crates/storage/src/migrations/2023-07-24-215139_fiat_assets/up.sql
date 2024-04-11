@@ -7,6 +7,7 @@ CREATE TABLE fiat_assets (
   network VARCHAR(128) NULL,
   token_id VARCHAR(128) NULL,
   enabled BOOLEAN NOT NULL DEFAULT TRUE,
+  hidden BOOLEAN NOT NULL DEFAULT FALSE,
   updated_at timestamp NOT NULL default current_timestamp,
   created_at timestamp NOT NULL default current_timestamp
 );
