@@ -160,7 +160,7 @@ impl Chain {
             | Self::Aptos
             | Self::Sui
             | Self::Xrp
-            | Self::Near => unimplemented!(),
+            | Self::Near => "",
         }
     }
 

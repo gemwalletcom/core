@@ -2742,6 +2742,7 @@ dependencies = [
  "gem_cosmos",
  "hex",
  "primitives",
+ "strum 0.26.1",
  "sui-types",
  "thiserror",
  "uniffi",

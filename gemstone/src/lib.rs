@@ -21,8 +21,24 @@ pub enum GemstoneError {
     AnyError { msg: String },
 }
 
-impl GemstoneError {
+impl From<anyhow::Error> for GemstoneError {
     fn from(error: anyhow::Error) -> Self {
+        Self::AnyError {
+            msg: error.to_string(),
+        }
+    }
+}
+
+impl From<strum::ParseError> for GemstoneError {
+    fn from(error: strum::ParseError) -> Self {
+        Self::AnyError {
+            msg: error.to_string(),
+        }
+    }
+}
+
+impl From<&str> for GemstoneError {
+    fn from(error: &str) -> Self {
         Self::AnyError {
             msg: error.to_string(),
         }
@@ -148,15 +164,27 @@ pub fn asset_default_rank(chain: String) -> i32 {
 
 #[uniffi::export]
 pub fn asset_wrapper(chain: String) -> asset::AssetWrapper {
-    let chain = Chain::from_str(&chain).unwrap();
+    let chain =
+        Chain::from_str(&chain).unwrap_or_else(|_| panic!("unknown primitives::Chain {}", chain));
     asset::get_asset(chain)
 }
 
 #[uniffi::export]
 pub fn cosmos_convert_hrp(address: String, hrp: String) -> Result<String, GemstoneError> {
-    gem_cosmos::converter::convert_cosmos_address(address.as_str(), hrp.as_str()).map_err(|err| {
-        GemstoneError::AnyError {
-            msg: err.to_string(),
-        }
-    })
+    gem_cosmos::converter::convert_cosmos_address(address.as_str(), hrp.as_str())
+        .map_err(GemstoneError::from)
+}
+
+#[uniffi::export]
+pub fn cosmos_convert_hrp_by_chain(
+    address: String,
+    chain: String,
+) -> Result<String, GemstoneError> {
+    let chain = Chain::from_str(&chain)?;
+    let hrp = chain.hrp();
+    if hrp.is_empty() {
+        return Err("hrp not found".into());
+    }
+    gem_cosmos::converter::convert_cosmos_address(address.as_str(), hrp)
+        .map_err(GemstoneError::from)
 }
