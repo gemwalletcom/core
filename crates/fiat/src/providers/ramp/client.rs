@@ -42,9 +42,10 @@ impl RampClient {
     }
 
     pub fn map_asset(asset: QuoteAsset) -> Option<FiatProviderAsset> {
-        let chain = Self::map_asset_chain(asset.chain.clone())?;
+        let chain = Self::map_asset_chain(asset.chain.clone());
         let token_id = asset.token_id();
         Some(FiatProviderAsset {
+            id: asset.crypto_asset_symbol(),
             chain,
             token_id,
             symbol: asset.symbol,
@@ -73,6 +74,9 @@ impl RampClient {
             "TON" => Some(Chain::Ton),
             "XDAI" => Some(Chain::Gnosis),
             "NEAR" => Some(Chain::Near),
+            "ZKSYNCERA" => Some(Chain::ZkSync),
+            "LINEA" => Some(Chain::Linea),
+            "CELO" => Some(Chain::Celo),
             _ => None,
         }
     }

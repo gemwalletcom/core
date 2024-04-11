@@ -79,12 +79,13 @@ impl TransakClient {
     }
 
     pub fn map_asset(asset: Asset) -> Option<FiatProviderAsset> {
-        let chain = Self::map_asset_chain(asset.clone())?;
+        let chain = Self::map_asset_chain(asset.clone());
         let token_id = asset.clone().address.filter(|contract_address| {
             !["0x0000000000000000000000000000000000000000"].contains(&contract_address.as_str())
         });
 
         Some(FiatProviderAsset {
+            id: asset.clone().coin_id,
             chain,
             token_id,
             symbol: asset.symbol,
@@ -111,6 +112,10 @@ impl TransakClient {
             "fantom" => Some(Chain::Fantom),
             "injective" => Some(Chain::Injective),
             "sei" => Some(Chain::Sei),
+            "linea" => Some(Chain::Linea),
+            "zksync" => Some(Chain::ZkSync),
+            "celo" => Some(Chain::Celo),
+            "mantle" => Some(Chain::Mantle),
             "mainnet" => match asset.coin_id.as_str() {
                 "bitcoin" => Some(Chain::Bitcoin),
                 "litecoin" => Some(Chain::Litecoin),

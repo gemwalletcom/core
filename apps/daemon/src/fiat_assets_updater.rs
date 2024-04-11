@@ -34,29 +34,27 @@ impl FiatAssetsUpdater {
                     let assets = assets
                         .clone()
                         .iter()
-                        .flat_map(|x| self.map_fiat_asset(provider.name().id(), x.clone()))
+                        .map(|x| self.map_fiat_asset(provider.name().id(), x.clone()))
                         .collect::<Vec<primitives::FiatAsset>>();
-
-                    let asset_ids = assets
-                        .clone()
-                        .into_iter()
-                        .map(|x| x.asset_id.to_string())
-                        .collect::<Vec<String>>();
-
-                    let existing_assets_ids = self
-                        .database
-                        .get_assets(asset_ids)?
-                        .into_iter()
-                        .map(|x: storage::models::Asset| x.id)
-                        .collect::<Vec<String>>();
 
                     let insert_assets = assets
                         .into_iter()
                         .map(storage::models::FiatAsset::from_primitive)
-                        .filter(|x| existing_assets_ids.contains(&x.asset_id))
                         .collect::<Vec<storage::models::FiatAsset>>();
 
-                    self.database.add_fiat_assets(insert_assets.clone())?;
+                    for asset in insert_assets.clone() {
+                        match self.database.add_fiat_assets(vec![asset.clone()]) {
+                            Ok(_) => {}
+                            Err(err) => {
+                                println!(
+                                    "add_fiat_assets for provider: {}, {:?} error: {}",
+                                    provider.name().as_str(),
+                                    asset.asset_id,
+                                    err
+                                );
+                            }
+                        }
+                    }
                 }
                 Err(err) => {
                     println!(
@@ -75,21 +73,24 @@ impl FiatAssetsUpdater {
         &self,
         provider: String,
         fiat_asset: FiatProviderAsset,
-    ) -> Option<primitives::FiatAsset> {
-        let asset_id = match fiat_asset.clone().token_id {
-            Some(token_id) => {
-                let token_id = AssetId::format_token_id(fiat_asset.clone().chain, token_id)?;
-                AssetId::from(fiat_asset.chain, Some(token_id))
-            }
-            None => AssetId::from_chain(fiat_asset.chain),
+    ) -> primitives::FiatAsset {
+        let asset_id: Option<AssetId> = match fiat_asset.clone().chain {
+            Some(chain) => match fiat_asset.clone().token_id {
+                Some(token_id) => AssetId::format_token_id(chain, token_id)
+                    .map(|formatted_token_id| AssetId::from(chain, Some(formatted_token_id))),
+                None => Some(chain.as_asset_id()),
+            },
+            None => None,
         };
-        let asset = primitives::FiatAsset {
+
+        primitives::FiatAsset {
+            id: fiat_asset.clone().id,
             asset_id,
             provider,
             symbol: fiat_asset.clone().symbol,
             network: fiat_asset.clone().network,
+            token_id: fiat_asset.clone().token_id,
             enabled: fiat_asset.clone().enabled,
-        };
-        Some(asset)
+        }
     }
 }

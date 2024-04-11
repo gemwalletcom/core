@@ -131,20 +131,21 @@ impl BanxaClient {
 
     pub fn map_asset(asset: Asset) -> Vec<FiatProviderAsset> {
         asset
+            .clone()
             .blockchains
             .into_iter()
-            .flat_map(|blockchain| {
-                if let Some(chain) = Self::map_asset_chain(blockchain.code.clone()) {
-                    let token_id = filter_token_id(blockchain.contract_id);
-                    return Some(FiatProviderAsset {
-                        chain,
-                        token_id,
-                        symbol: asset.coin_code.clone(),
-                        network: Some(blockchain.code),
-                        enabled: true,
-                    });
+            .map(|blockchain| {
+                let chain = Self::map_asset_chain(blockchain.clone().code.clone());
+                let token_id = filter_token_id(blockchain.clone().contract_id);
+                let id = asset.clone().coin_code + "-" + blockchain.clone().code.as_str();
+                FiatProviderAsset {
+                    id,
+                    chain,
+                    token_id,
+                    symbol: asset.clone().coin_code.clone(),
+                    network: Some(blockchain.code),
+                    enabled: true,
                 }
-                None
             })
             .collect()
     }
@@ -167,6 +168,7 @@ impl BanxaClient {
             "TON" => Some(Chain::Ton),
             "SUI" => Some(Chain::Sui),
             "NEAR" => Some(Chain::Near),
+            "CELO" => Some(Chain::Celo),
             _ => None,
         }
     }

@@ -24,20 +24,27 @@ impl FiatRate {
 #[diesel(table_name = crate::schema::fiat_assets)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct FiatAsset {
-    pub asset_id: String,
+    pub id: String,
+    pub asset_id: Option<String>,
     pub provider: String,
+    pub code: String,
     pub symbol: String,
     pub network: Option<String>,
+    pub token_id: Option<String>,
     pub enabled: bool,
 }
 
 impl FiatAsset {
     pub fn from_primitive(asset: primitives::FiatAsset) -> Self {
+        let id = format!("{}_{}", asset.provider, asset.id).to_lowercase();
         Self {
-            asset_id: asset.asset_id.to_string(),
+            id,
+            asset_id: asset.asset_id.map(|x| x.to_string()),
             provider: asset.provider,
+            code: asset.id,
             symbol: asset.symbol,
             network: asset.network,
+            token_id: asset.token_id,
             enabled: asset.enabled,
         }
     }

@@ -61,16 +61,17 @@ impl MercuryoClient {
     }
 
     pub fn map_asset(asset: Asset) -> Option<FiatProviderAsset> {
-        let chain = Self::map_asset_chain(asset.network.clone())?;
+        let chain = Self::map_asset_chain(asset.network.clone());
         let token_id = if asset.contract.is_empty() {
             None
         } else {
             Some(asset.contract.clone())
         };
         Some(FiatProviderAsset {
+            id: asset.clone().currency + "_" + asset.network.as_str(),
             chain,
             token_id,
-            symbol: asset.currency,
+            symbol: asset.clone().currency,
             network: Some(asset.network),
             enabled: true,
         })

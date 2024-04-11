@@ -79,7 +79,7 @@ impl FiatProvider for BanxaClient {
         };
         let assset_id = Self::map_asset(asset)
             .first()
-            .map(|asset| AssetId::from(asset.chain, asset.token_id.clone()));
+            .map(|asset| AssetId::from(asset.chain.unwrap(), asset.token_id.clone()));
 
         let transaction = FiatTransaction {
             asset_id: assset_id,

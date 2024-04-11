@@ -43,10 +43,11 @@ impl Client {
             .database
             .get_fiat_assets()?
             .into_iter()
-            .map(|x| x.asset_id)
+            .flat_map(|x| x.asset_id)
             .collect::<HashSet<_>>()
             .into_iter()
             .collect();
+
         let version = self.database.get_fiat_assets_version()?;
 
         Ok(FiatAssets {

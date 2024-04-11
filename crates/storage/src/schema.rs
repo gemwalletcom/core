@@ -100,16 +100,23 @@ diesel::table! {
 
 diesel::table! {
     fiat_assets (id) {
-        id -> Int4,
         #[max_length = 128]
-        asset_id -> Varchar,
+        id -> Varchar,
+        #[max_length = 128]
+        asset_id -> Nullable<Varchar>,
         #[max_length = 128]
         provider -> Varchar,
+        #[max_length = 128]
+        code -> Varchar,
+        #[max_length = 128]
         symbol -> Varchar,
+        #[max_length = 128]
         network -> Nullable<Varchar>,
+        #[max_length = 128]
+        token_id -> Nullable<Varchar>,
+        enabled -> Bool,
         updated_at -> Timestamp,
         created_at -> Timestamp,
-        enabled -> Bool,
     }
 }
 
@@ -155,9 +162,9 @@ diesel::table! {
         transaction_hash -> Nullable<Varchar>,
         #[max_length = 256]
         address -> Nullable<Varchar>,
+        fee_provider -> Float8,
         fee_network -> Float8,
         fee_partner -> Float8,
-        fee_provider -> Float8,
         updated_at -> Timestamp,
         created_at -> Timestamp,
     }
@@ -186,7 +193,6 @@ diesel::table! {
         is_enabled -> Bool,
         updated_at -> Timestamp,
         created_at -> Timestamp,
-        block_created_at -> Timestamp,
     }
 }
 
@@ -327,6 +333,7 @@ diesel::joinable!(fiat_assets -> assets (asset_id));
 diesel::joinable!(fiat_assets -> fiat_providers (provider));
 diesel::joinable!(fiat_transactions -> assets (asset_id));
 diesel::joinable!(fiat_transactions -> fiat_providers (provider_id));
+diesel::joinable!(parser_state -> chains (chain));
 diesel::joinable!(scan_addresses -> chains (chain));
 diesel::joinable!(subscriptions -> devices (device_id));
 diesel::joinable!(swap_assets -> assets (asset_id));
