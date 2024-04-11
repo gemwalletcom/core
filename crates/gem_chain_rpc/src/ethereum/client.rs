@@ -44,7 +44,7 @@ impl EthereumClient {
         &self,
         hashes: Vec<String>,
     ) -> Result<Vec<TransactionReciept>, Box<dyn Error + Send + Sync>> {
-        let hashes_chunks: Vec<Vec<String>> = hashes.chunks(25).map(|s| s.into()).collect();
+        let hashes_chunks: Vec<Vec<String>> = hashes.chunks(10).map(|s| s.into()).collect();
         let mut results: Vec<TransactionReciept> = Vec::new();
         for hashes in hashes_chunks {
             let mut batch = BatchRequestBuilder::default();
