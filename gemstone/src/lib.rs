@@ -1,4 +1,4 @@
-use primitives::Chain;
+use primitives::{Chain, CosmosChain};
 use std::{collections::HashMap, str::FromStr};
 
 pub mod asset;
@@ -180,7 +180,7 @@ pub fn cosmos_convert_hrp_by_chain(
     address: String,
     chain: String,
 ) -> Result<String, GemstoneError> {
-    let chain = Chain::from_str(&chain)?;
+    let chain = CosmosChain::from_str(&chain)?;
     let hrp = chain.hrp();
     if hrp.is_empty() {
         return Err("hrp not found".into());

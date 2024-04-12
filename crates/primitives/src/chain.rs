@@ -124,46 +124,6 @@ impl Chain {
         }
     }
 
-    pub fn hrp(&self) -> &str {
-        match self {
-            Self::Cosmos => "cosmos",
-            Self::Osmosis => "osmo",
-            Self::Celestia => "celestia",
-            Self::Noble => "noble",
-            Self::Injective => "inj",
-            Self::Sei => "sei",
-            Self::Dymension => "dym",
-            Self::Saga => "saga",
-            Self::Ethereum
-            | Self::SmartChain
-            | Self::Arbitrum
-            | Self::AvalancheC
-            | Self::Base
-            | Self::Optimism
-            | Self::Polygon
-            | Self::OpBNB
-            | Self::Fantom
-            | Self::Gnosis
-            | Self::Manta
-            | Self::Blast
-            | Self::ZkSync
-            | Self::Linea
-            | Self::Mantle
-            | Self::Celo
-            | Self::Bitcoin
-            | Self::Litecoin
-            | Self::Solana
-            | Self::Thorchain
-            | Self::Ton
-            | Self::Tron
-            | Self::Doge
-            | Self::Aptos
-            | Self::Sui
-            | Self::Xrp
-            | Self::Near => "",
-        }
-    }
-
     pub fn is_utxo(&self) -> bool {
         matches!(self, Self::Bitcoin | Self::Litecoin | Self::Doge)
     }
