@@ -339,7 +339,7 @@ mod tests {
         let chain = Chain::Dymension;
         let usdc_ibc = "ibc/aWJjL0IzNTA0RTA5MjQ1NkJBNjE4Q0MyOEFDNjcxQTcxRkIwOEM2Q0EwRkQwQkU3QzhBNUI1QTNFMkREOTMzQ0M5RTQ=";
         assert_eq!(
-            Explorer::get_explorer_address_url(chain, usdc_ibc),
+            Explorer::get_explorer_token_url(chain, usdc_ibc),
             "https://www.mintscan.io/dymension/assets/ibc/aWJjL0IzNTA0RTA5MjQ1NkJBNjE4Q0MyOEFDNjcxQTcxRkIwOEM2Q0EwRkQwQkU3QzhBNUI1QTNFMkREOTMzQ0M5RTQ="
         );
     }

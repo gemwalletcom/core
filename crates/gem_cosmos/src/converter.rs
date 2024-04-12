@@ -16,8 +16,8 @@ mod tests {
 
     #[test]
     fn test_cosmos_osmosis_convert() {
-        let address = "cosmos1fxygpgus4nd5jmfl5j7fh5y8hyy53z8u95dzx7";
-        let expected = "osmo1fxygpgus4nd5jmfl5j7fh5y8hyy53z8ud07jsv";
+        let address = "cosmos1klqxmgk6hlqkam2zz2uv3gtxq5qmvawqndcsev";
+        let expected = "osmo1klqxmgk6hlqkam2zz2uv3gtxq5qmvawqmktq07";
 
         let output_address = convert_cosmos_address(address, CosmosChain::Osmosis.hrp()).unwrap();
         assert_eq!(expected, output_address);
@@ -25,8 +25,8 @@ mod tests {
 
     #[test]
     fn test_injective_dymension_convert() {
-        let address = "inj1kgq0kzzatjh0lzv73n0nyvyen6npladdz62dtr";
-        let expected = "dym1kgq0kzzatjh0lzv73n0nyvyen6npladd6w30u4";
+        let address = "inj1r6elwxfkwu4zzjrpnddyvyllwraa6y6e3z0mnx";
+        let expected = "dym1r6elwxfkwu4zzjrpnddyvyllwraa6y6efk5eys";
 
         let output_address = convert_cosmos_address(address, CosmosChain::Dymension.hrp()).unwrap();
         assert_eq!(expected, output_address);
@@ -34,8 +34,8 @@ mod tests {
 
     #[test]
     fn test_cosmos_saga_convert() {
-        let address = "cosmos1fxygpgus4nd5jmfl5j7fh5y8hyy53z8u95dzx7";
-        let expected = "saga1fxygpgus4nd5jmfl5j7fh5y8hyy53z8um85spc";
+        let address = "cosmos1klqxmgk6hlqkam2zz2uv3gtxq5qmvawqndcsev";
+        let expected = "saga1klqxmgk6hlqkam2zz2uv3gtxq5qmvawqd7pz72";
 
         let output_address = convert_cosmos_address(address, CosmosChain::Saga.hrp()).unwrap();
         assert_eq!(expected, output_address);
