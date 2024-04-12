@@ -326,7 +326,7 @@ mod tests {
     }
 
     #[test]
-    fn test_get_explorer_token_url_dymension() {
+    fn test_get_explorer_address_url_dymension() {
         let chain = Chain::Dymension;
         assert_eq!(
             Explorer::get_explorer_address_url(chain, "dym1nxswr2xhky3k0rt65paatpzjw8mg5d5rmylu3z"),
@@ -335,7 +335,17 @@ mod tests {
     }
 
     #[test]
-    fn test_get_explorer_token_url_saga() {
+    fn test_get_explorer_token_url_dymension() {
+        let chain = Chain::Dymension;
+        let usdc_ibc = "ibc/aWJjL0IzNTA0RTA5MjQ1NkJBNjE4Q0MyOEFDNjcxQTcxRkIwOEM2Q0EwRkQwQkU3QzhBNUI1QTNFMkREOTMzQ0M5RTQ=";
+        assert_eq!(
+            Explorer::get_explorer_address_url(chain, usdc_ibc),
+            "https://www.mintscan.io/dymension/assets/ibc/aWJjL0IzNTA0RTA5MjQ1NkJBNjE4Q0MyOEFDNjcxQTcxRkIwOEM2Q0EwRkQwQkU3QzhBNUI1QTNFMkREOTMzQ0M5RTQ="
+        );
+    }
+
+    #[test]
+    fn test_get_explorer_tx_url_saga() {
         let chain = Chain::Saga;
         assert_eq!(
             Explorer::get_explorer_transaction_url(chain, "DB9E5ABA4574984000533B9522927CEED31814FA94AD39464D54CF2D4EFBF30E"),
