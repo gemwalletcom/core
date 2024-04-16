@@ -43,9 +43,7 @@ impl ProviderFactory {
             | Chain::Thorchain
             | Chain::Injective
             | Chain::Noble
-            | Chain::Sei
-            | Chain::Dymension
-            | Chain::Saga => Box::new(CosmosClient::new(chain, client, url)),
+            | Chain::Sei => Box::new(CosmosClient::new(chain, client, url)),
             Chain::Solana => Box::new(SolanaClient::new(url)),
             Chain::Ton => Box::new(TonClient::new(client, url)),
             Chain::Tron => Box::new(TronClient::new(client, url)),
@@ -91,8 +89,6 @@ impl ProviderFactory {
             Chain::Mantle => settings.chains.mantle.url.as_str(),
             Chain::Celo => settings.chains.celo.url.as_str(),
             Chain::Near => settings.chains.near.url.as_str(),
-            Chain::Dymension => settings.chains.dimension.url.as_str(),
-            Chain::Saga => settings.chains.saga.url.as_str(),
         }
     }
 }

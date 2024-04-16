@@ -70,9 +70,7 @@ impl SwapperClient {
             | Chain::OpBNB
             | Chain::Noble
             | Chain::Sei
-            | Chain::Near
-            | Chain::Dymension
-            | Chain::Saga => todo!(),
+            | Chain::Near => todo!(),
         }
     }
 }

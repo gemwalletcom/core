@@ -26,7 +26,6 @@ pub fn get_chain_for_coingecko_platform_id(id: &str) -> Option<Chain> {
         "zksync" => Some(Chain::ZkSync),
         "linea" => Some(Chain::Linea),
         "near" => Some(Chain::Near),
-        "dymension" => Some(Chain::Dymension),
         _ => None,
     }
 }
@@ -65,7 +64,5 @@ pub fn get_coingecko_market_id_for_chain(chain: Chain) -> &'static str {
         Chain::Mantle => "mantle",
         Chain::Celo => "celo",
         Chain::Near => "near",
-        Chain::Dymension => "dymension",
-        Chain::Saga => "saga-2",
     }
 }
