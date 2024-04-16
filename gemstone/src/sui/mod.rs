@@ -79,6 +79,11 @@ pub fn encode_split_and_stake(input: &SuiStakeInput) -> Result<SuiTxOutput, anyh
         return Err(err);
     }
 
+    let stake_chain = primitives::StakeChain::Sui;
+    if input.stake_amount < stake_chain.get_min_stake_amount() {
+        return Err(anyhow!("stake amount is too small"));
+    }
+
     let coin_refs: Vec<ObjectRef> = input
         .coins
         .iter()
@@ -269,7 +274,7 @@ mod tests {
 
     #[test]
     fn test_encode_split_stake() {
-        let input = SuiStakeInput {
+        let mut input = SuiStakeInput {
             sender: "0xe6af80fe1b0b42fcd96762e5c70f5e8dae39f8f0ee0f118cac0d55b74e2927c2".into(),
             validator: "0x61953ea72709eed72f4441dd944eec49a11b4acabfc8e04015e89c63be81b6ab".into(),
             stake_amount: 1_000_000_000,
@@ -295,6 +300,10 @@ mod tests {
             hex::encode(data.hash),
             "66be75b0f86ca3a9f24380adc8d8336d8921d5dbdc78f1b3c24c7d6842ce5911"
         );
+
+        input.stake_amount = 100_000_000;
+        let result = encode_split_and_stake(&input);
+        assert!(result.is_err());
     }
 
     #[test]
