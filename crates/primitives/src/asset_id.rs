@@ -94,9 +94,7 @@ impl AssetId {
             | Chain::Injective
             | Chain::Noble
             | Chain::Sei
-            | Chain::Near
-            | Chain::Dymension
-            | Chain::Saga => None,
+            | Chain::Near => None,
         }
     }
 }

@@ -181,8 +181,6 @@ pub struct Chains {
     pub mantle: Chain,
     pub celo: Chain,
     pub near: Chain,
-    pub dimension: Chain,
-    pub saga: Chain,
 }
 
 #[derive(Debug, Deserialize, Clone)]
