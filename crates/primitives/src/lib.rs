@@ -4,8 +4,6 @@ pub mod chain;
 pub use self::chain::Chain;
 pub mod chain_stake;
 pub use self::chain_stake::StakeChain;
-pub mod chain_cosmos;
-pub use self::chain_cosmos::CosmosChain;
 pub mod chain_type;
 pub use self::chain_type::ChainType;
 pub mod chain_evm;

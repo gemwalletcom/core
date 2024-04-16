@@ -12,32 +12,13 @@ pub fn convert_cosmos_address(address: &str, hrp: &str) -> Result<String, anyhow
 #[cfg(test)]
 mod tests {
     use super::*;
-    use primitives::CosmosChain;
 
     #[test]
-    fn test_cosmos_osmosis_convert() {
-        let address = "cosmos1klqxmgk6hlqkam2zz2uv3gtxq5qmvawqndcsev";
-        let expected = "osmo1klqxmgk6hlqkam2zz2uv3gtxq5qmvawqmktq07";
+    fn test_cosmos_address_convert() {
+        let cosmos_address = "cosmos1h3laqcrmul79zwtw6j63ncsl0adfj07wgupylj";
+        let expected = "osmosis1h3laqcrmul79zwtw6j63ncsl0adfj07wm8vf00";
 
-        let output_address = convert_cosmos_address(address, CosmosChain::Osmosis.hrp()).unwrap();
-        assert_eq!(expected, output_address);
-    }
-
-    #[test]
-    fn test_injective_dymension_convert() {
-        let address = "inj1r6elwxfkwu4zzjrpnddyvyllwraa6y6e3z0mnx";
-        let expected = "dym1r6elwxfkwu4zzjrpnddyvyllwraa6y6efk5eys";
-
-        let output_address = convert_cosmos_address(address, CosmosChain::Dymension.hrp()).unwrap();
-        assert_eq!(expected, output_address);
-    }
-
-    #[test]
-    fn test_cosmos_saga_convert() {
-        let address = "cosmos1klqxmgk6hlqkam2zz2uv3gtxq5qmvawqndcsev";
-        let expected = "saga1klqxmgk6hlqkam2zz2uv3gtxq5qmvawqd7pz72";
-
-        let output_address = convert_cosmos_address(address, CosmosChain::Saga.hrp()).unwrap();
+        let output_address = convert_cosmos_address(cosmos_address, "osmosis").unwrap();
         assert_eq!(expected, output_address);
     }
 
