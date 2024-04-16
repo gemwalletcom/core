@@ -7,3 +7,6 @@ edition = { workspace = true }
 
 bech32 = { workspace = true }
 anyhow = { workspace = true }
+
+[dev-dependencies]
+primitives = { path = "../primitives" }

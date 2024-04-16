@@ -62,7 +62,14 @@ final class GemTestTests: XCTestCase {
 
     func testConvertHRP() throws {
         let address = "cosmos1fxygpgus4nd5jmfl5j7fh5y8hyy53z8u95dzx7"
-
         XCTAssertEqual(try cosmosConvertHrp(address: address, hrp: "noble"), "noble1fxygpgus4nd5jmfl5j7fh5y8hyy53z8udhc27s")
+    }
+
+    func testConvertHPRByChain() throws {
+        let address = "cosmos1fxygpgus4nd5jmfl5j7fh5y8hyy53z8u95dzx7"
+        let converted = try cosmosConvertHrpByChain(address: address, chain: "saga")
+
+        XCTAssertEqual(converted, "saga1fxygpgus4nd5jmfl5j7fh5y8hyy53z8um85spc")
+        XCTAssertThrowsError(try cosmosConvertHrpByChain(address: address, chain: "test123"))
     }
 }

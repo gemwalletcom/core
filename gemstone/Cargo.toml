@@ -15,6 +15,7 @@ name = "gemstone"
 [dependencies]
 primitives = { path = "../crates/primitives" }
 gem_cosmos = { path = "../crates/gem_cosmos" }
+strum = { workspace = true }
 
 # Sui
 bcs = "0.1.6"

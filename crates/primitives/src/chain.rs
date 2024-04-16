@@ -45,6 +45,8 @@ pub enum Chain {
     Mantle,
     Celo,
     Near,
+    Dymension,
+    Saga,
 }
 
 impl PartialEq for Chain {
@@ -72,6 +74,8 @@ impl Chain {
             Self::Noble => Some("uusdc"),
             Self::Sui => Some("0x2::sui::SUI"),
             Self::Aptos => Some("0x1::aptos_coin::AptosCoin"),
+            Self::Dymension => Some("adym"),
+            Self::Saga => Some("usaga"),
             _ => None,
         }
     }
@@ -100,6 +104,8 @@ impl Chain {
             Self::Noble => "noble-1",
             Self::Injective => "injective-1",
             Self::Sei => "pacific-1",
+            Self::Dymension => "dymension_1100-1",
+            Self::Saga => "ssc-1",
             Self::ZkSync => "324",
             Self::Linea => "59144",
             Self::Mantle => "5000",
@@ -138,13 +144,19 @@ impl Chain {
             | Self::ZkSync
             | Self::Linea
             | Self::Mantle
-            | Self::Celo => 60,
+            | Self::Celo
+            | Self::Dymension => 60,
             Self::Bitcoin => 0,
             Self::Litecoin => 2,
             Self::SmartChain => 9006,
             Self::Solana => 501,
             Self::Thorchain => 931,
-            Self::Cosmos | Self::Osmosis | Self::Celestia | Self::Noble | Self::Sei => 118,
+            Self::Cosmos
+            | Self::Osmosis
+            | Self::Celestia
+            | Self::Noble
+            | Self::Sei
+            | Self::Saga => 118,
             Self::Ton => 607,
             Self::Tron => 195,
             Self::Doge => 3,
@@ -182,7 +194,9 @@ impl Chain {
             | Self::Celestia
             | Self::Injective
             | Self::Noble
-            | Self::Sei => ChainType::Cosmos,
+            | Self::Sei
+            | Self::Dymension
+            | Self::Saga => ChainType::Cosmos,
             Self::Ton => ChainType::Ton,
             Self::Tron => ChainType::Tron,
             Self::Aptos => ChainType::Aptos,
@@ -225,7 +239,9 @@ impl Chain {
             | Self::Injective
             | Self::Noble
             | Self::Sei
-            | Self::Near => None,
+            | Self::Near
+            | Self::Dymension
+            | Self::Saga => None,
         }
     }
 
@@ -264,6 +280,8 @@ impl Chain {
             Self::Mantle => 1_000,
             Self::Celo => 1_000,
             Self::Near => 1_000,
+            Self::Dymension => 6_000,
+            Self::Saga => 6_000,
         }
     }
 
@@ -298,7 +316,9 @@ impl Chain {
             | Self::Linea
             | Self::Mantle
             | Self::Celo
-            | Self::Near => 30,
+            | Self::Near
+            | Self::Dymension
+            | Self::Saga => 30,
         }
     }
 

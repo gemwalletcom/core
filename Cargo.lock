@@ -2701,6 +2701,7 @@ version = "1.0.0"
 dependencies = [
  "anyhow",
  "bech32 0.11.0",
+ "primitives",
 ]
 
 [[package]]
@@ -2741,6 +2742,7 @@ dependencies = [
  "gem_cosmos",
  "hex",
  "primitives",
+ "strum 0.26.1",
  "sui-types",
  "thiserror",
  "uniffi",
