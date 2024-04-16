@@ -61,16 +61,17 @@ impl MercuryoClient {
     }
 
     pub fn map_asset(asset: Asset) -> Option<FiatProviderAsset> {
-        let chain = Self::map_asset_chain(asset.network.clone())?;
+        let chain = Self::map_asset_chain(asset.network.clone());
         let token_id = if asset.contract.is_empty() {
             None
         } else {
             Some(asset.contract.clone())
         };
         Some(FiatProviderAsset {
+            id: asset.clone().currency + "_" + asset.network.as_str(),
             chain,
             token_id,
-            symbol: asset.currency,
+            symbol: asset.clone().currency,
             network: Some(asset.network),
             enabled: true,
         })
@@ -87,15 +88,16 @@ impl MercuryoClient {
             "BINANCESMARTCHAIN" => Some(Chain::SmartChain),
             "SOLANA" => Some(Chain::Solana),
             "POLYGON" => Some(Chain::Polygon),
-            "COSMOS " => Some(Chain::Cosmos),
+            "COSMOS" => Some(Chain::Cosmos),
             "AVALANCHE" => Some(Chain::AvalancheC),
             "RIPPLE" => Some(Chain::Xrp),
             "LITECOIN" => Some(Chain::Litecoin),
             "FANTOM" => Some(Chain::Fantom),
             "DOGECOIN" => Some(Chain::Doge),
-            "CELESTIAL" => Some(Chain::Celestia),
+            "CELESTIA" => Some(Chain::Celestia),
             "NEWTON" => Some(Chain::Ton),
-            "NEAR" => Some(Chain::Near),
+            "NEAR_PROTOCOL" => Some(Chain::Near),
+            "LINEA" => Some(Chain::Linea),
             _ => None,
         }
     }

@@ -14,9 +14,11 @@ pub struct FiatAssets {
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct FiatAsset {
-    pub asset_id: AssetId,
+    pub id: String,
+    pub asset_id: Option<AssetId>,
     pub provider: String,
     pub symbol: String,
     pub network: Option<String>,
+    pub token_id: Option<String>,
     pub enabled: bool,
 }

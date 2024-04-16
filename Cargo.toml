@@ -58,9 +58,9 @@ typeshare = "1.0.1"
 serde = { version = "1.0.196", features = ["derive"] }
 serde_json = { version = "1.0.114" }
 tokio = { version = "1.36.0", features = ["macros", "rt-multi-thread"] }
-reqwest = { version = "0.11.24", features = ["json"] }
-reqwest-middleware = { version = "0.2.4" }
-reqwest-retry = { version = "0.4.0" }
+reqwest = { version = "0.12.3", features = ["json"] }
+reqwest-middleware = { version = "0.3.0" }
+reqwest-retry = { version = "0.5.0" }
 url = { version = "2.5.0" }
 config = { version = "0.14.0" }
 rocket = { version = "0.5.0", features = ["json"] }
@@ -90,7 +90,7 @@ hex = { version = "0.4.3" }
 num-bigint = { version = "0.4.4", features = ["std", "serde"] }
 num-traits = { version = "0.2.18" }
 bigdecimal = "0.4"
-cosmos-sdk-proto = { version = "0.20.0" }
+cosmos-sdk-proto = { version = "0.21.1" }
 hmac = { version = "0.12.1" }
 sha2 = { version = "0.10.8" }
 strum = { version = "0.26.1", features = ["derive"] }
@@ -99,5 +99,5 @@ jsonrpsee = { version = "0.22.1", features = ["http-client"] }
 tiny-keccak = { version = "2.0.2", features = ["keccak"] }
 itoa = { version = "1.0.10" }
 curve25519-dalek = { version = "4.1.2" }
-uniffi = { version = "0.26.1" }
-uniffi_bindgen = { version = "0.26.1" }
+uniffi = { version = "0.27.1" }
+uniffi_bindgen = { version = "0.27.1" }

@@ -23,7 +23,8 @@ pub struct FiatMapping {
 
 #[derive(Debug, Clone)]
 pub struct FiatProviderAsset {
-    pub chain: Chain,
+    pub id: String,
+    pub chain: Option<Chain>,
     pub symbol: String,
     pub token_id: Option<String>,
     pub network: Option<String>,

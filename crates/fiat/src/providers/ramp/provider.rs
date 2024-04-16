@@ -73,7 +73,7 @@ impl FiatProvider for RampClient {
     ) -> Result<FiatTransaction, Box<dyn std::error::Error + Send + Sync>> {
         let payload = serde_json::from_value::<Webhook>(data)?.purchase;
         let asset = Self::map_asset(payload.asset.clone()).unwrap();
-        let asset_id = AssetId::from(asset.chain, asset.token_id);
+        let asset_id = AssetId::from(asset.chain.unwrap(), asset.token_id);
 
         // https://docs.ramp.network/sdk-reference#ramp-sale-transaction-object
         let status = match payload.status.as_str() {

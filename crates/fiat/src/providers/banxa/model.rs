@@ -10,7 +10,7 @@ pub struct Coins {
     pub coins: Vec<Asset>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct Asset {
     pub coin_code: String,
     pub blockchains: Vec<Blockchain>,
