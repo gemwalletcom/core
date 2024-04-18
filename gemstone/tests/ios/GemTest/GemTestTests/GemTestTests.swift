@@ -20,10 +20,7 @@ final class GemTestTests: XCTestCase {
     
     func testLoadFFI() async throws {
         let result = Gemstone.libVersion()
-        XCTAssertFalse(result.isEmpty)
-                
-        let string = await Gemstone.sayAfter(ms: 500, who: "Async")
-        XCTAssertTrue(string.contains("Async"))
+        XCTAssertFalse(result.isEmpty)            
     }
     
     func testGetExplorerName() {

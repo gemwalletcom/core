@@ -20,7 +20,7 @@ TARGET_DIR := ../target
 GEN_SWIFT_FOLDER := generated/swift
 GEN_KOTLIN_FOLDER := generated/kotlin
 TARGET_XC_FW_FOLDER := target/spm
-NIGHTLY := nightly-2024-04-18
+NIGHTLY := nightly-2023-12-23
 
 prepare-apple:
 	rustup toolchain install $(NIGHTLY)
