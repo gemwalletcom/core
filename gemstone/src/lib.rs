@@ -170,3 +170,8 @@ pub fn cosmos_convert_hrp(address: String, hrp: String) -> Result<String, Gemsto
 pub fn solana_decode_metadata(base64_str: String) -> Result<MplMetadata, GemstoneError> {
     solana::decode_mpl_metadata(base64_str).map_err(GemstoneError::from)
 }
+
+#[uniffi::export]
+pub fn solana_derive_metadata_pda(mint: String) -> Result<String, GemstoneError> {
+    solana::derive_metadata_pda(mint.as_str()).map_err(GemstoneError::from)
+}
