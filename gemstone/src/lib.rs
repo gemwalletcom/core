@@ -4,6 +4,8 @@ use std::{collections::HashMap, str::FromStr};
 pub mod asset;
 pub mod config;
 pub mod explorer;
+pub mod solana;
+use solana::MplMetadata;
 pub mod sui;
 pub mod wallet_connect;
 
@@ -21,7 +23,7 @@ pub enum GemstoneError {
     AnyError { msg: String },
 }
 
-impl GemstoneError {
+impl From<anyhow::Error> for GemstoneError {
     fn from(error: anyhow::Error) -> Self {
         Self::AnyError {
             msg: error.to_string(),
@@ -29,14 +31,20 @@ impl GemstoneError {
     }
 }
 
-#[uniffi::export]
-pub async fn say_after(ms: u64, who: String) -> String {
-    use async_std::future::{pending, timeout};
-    let never = pending::<()>();
-    timeout(std::time::Duration::from_millis(ms), never)
-        .await
-        .unwrap_err();
-    format!("Hello, {who}!")
+impl From<&str> for GemstoneError {
+    fn from(error: &str) -> Self {
+        Self::AnyError {
+            msg: error.to_string(),
+        }
+    }
+}
+
+impl From<Box<dyn std::error::Error>> for GemstoneError {
+    fn from(error: Box<dyn std::error::Error>) -> Self {
+        Self::AnyError {
+            msg: error.to_string(),
+        }
+    }
 }
 
 #[derive(uniffi::Object)]
@@ -154,9 +162,16 @@ pub fn asset_wrapper(chain: String) -> asset::AssetWrapper {
 
 #[uniffi::export]
 pub fn cosmos_convert_hrp(address: String, hrp: String) -> Result<String, GemstoneError> {
-    gem_cosmos::converter::convert_cosmos_address(address.as_str(), hrp.as_str()).map_err(|err| {
-        GemstoneError::AnyError {
-            msg: err.to_string(),
-        }
-    })
+    gem_cosmos::converter::convert_cosmos_address(address.as_str(), hrp.as_str())
+        .map_err(GemstoneError::from)
+}
+
+#[uniffi::export]
+pub fn solana_decode_metadata(base64_str: String) -> Result<MplMetadata, GemstoneError> {
+    solana::decode_mpl_metadata(base64_str).map_err(GemstoneError::from)
+}
+
+#[uniffi::export]
+pub fn solana_derive_metadata_pda(mint: String) -> Result<String, GemstoneError> {
+    solana::derive_metadata_pda(mint.as_str()).map_err(GemstoneError::from)
 }

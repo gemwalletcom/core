@@ -15,6 +15,7 @@ name = "gemstone"
 [dependencies]
 primitives = { path = "../crates/primitives" }
 gem_cosmos = { path = "../crates/gem_cosmos" }
+gem_solana = { path = "../crates/gem_solana" }
 
 # Sui
 bcs = "0.1.6"
@@ -26,7 +27,7 @@ hex = { workspace = true }
 # uniffi
 uniffi = { workspace = true }
 thiserror = { workspace = true }
-async-std = "1.12.0"
+# async-std = "1.12.0"
 anyhow = { workspace = true }
 
 [build-dependencies]

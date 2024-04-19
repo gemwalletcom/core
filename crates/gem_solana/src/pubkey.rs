@@ -2,6 +2,7 @@
 // We're using latest curve25519-dalek 4.x here
 
 use {
+    borsh::{BorshDeserialize, BorshSerialize},
     std::{convert::TryFrom, fmt, mem, str::FromStr},
     thiserror::Error,
 };
@@ -46,6 +47,7 @@ impl From<u64> for PubkeyError {
     }
 }
 
+#[derive(BorshSerialize, BorshDeserialize, Clone, Eq, PartialEq)]
 pub struct Pubkey(pub(crate) [u8; 32]);
 
 impl TryFrom<&str> for Pubkey {
