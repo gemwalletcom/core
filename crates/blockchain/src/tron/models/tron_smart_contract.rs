@@ -2,11 +2,11 @@
 struct TronSmartContractCall {
     contract_address: String,
     function_selector: String,
-    parameter: String,
-    fee_limit: u32,
-    call_value: u32,
+    parameter: Option<String>,
+    fee_limit: Option<u32>,
+    call_value: Option<u32>,
     owner_address: String,
-    visible: bool,
+    visible: Option<bool>,
 }
 
 #[typeshare]
