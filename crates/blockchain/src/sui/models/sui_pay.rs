@@ -97,3 +97,11 @@ struct SuiValidator {
     address: String,
     apy: f64,
 }
+
+#[typeshare]
+#[serde(rename_all = "camelCase")]
+struct SuiCoinMetadata {
+    decimals: i32,
+    name: String,
+    symbol: String,
+}
