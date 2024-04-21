@@ -15,6 +15,7 @@ pub enum AssetType {
     TRC20,
     TOKEN,
     IBC,
+    JETTON,
 }
 
 impl AssetType {
