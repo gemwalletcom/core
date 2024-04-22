@@ -98,6 +98,7 @@ impl MercuryoClient {
             "NEWTON" => Some(Chain::Ton),
             "NEAR_PROTOCOL" => Some(Chain::Near),
             "LINEA" => Some(Chain::Linea),
+            "ZKSYNC" => Some(Chain::ZkSync),
             _ => None,
         }
     }
