@@ -49,8 +49,7 @@ impl NameClient for TONClient {
             .json::<ResolveResponse>()
             .await?;
         // always encode as Bounceable address
-        let encoded = ton_codec::TonCodec::encode(response.wallet.address.as_bytes().to_vec());
-        Ok(encoded)
+        ton_codec::TonCodec::encode(response.wallet.address.as_bytes().to_vec())
     }
 
     fn domains(&self) -> Vec<&'static str> {
@@ -69,7 +68,7 @@ mod tests {
     #[test]
     fn test_encoding() {
         let raw = "0:8e874b7ad9bbebbfc48810b8939c98f50580246f19982040dbcb253c4c3daf78";
-        let address = ton_codec::TonCodec::encode(raw.as_bytes().to_vec());
+        let address = ton_codec::TonCodec::encode(raw.as_bytes().to_vec()).unwrap();
 
         assert_eq!(address, "EQCOh0t62bvrv8SIELiTnJj1BYAkbxmYIEDbyyU8TD2veND8");
     }
