@@ -19,7 +19,6 @@ pub use parser::*;
 pub use raw::*;
 use sha2::{Digest, Sha256};
 pub use slice::*;
-pub use state_init::*;
 pub use util::*;
 
 mod bag_of_cells;
@@ -30,7 +29,6 @@ mod error;
 mod parser;
 mod raw;
 mod slice;
-mod state_init;
 mod util;
 
 pub type ArcCell = Arc<Cell>;

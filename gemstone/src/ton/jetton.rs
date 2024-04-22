@@ -16,7 +16,7 @@ pub fn encode_get_wallet_address_slice(
 }
 
 /// Decode Cell data from smc.runResult to bounceable address
-pub fn decode_address_data(data: &str, len: u64) -> Result<String, Box<dyn std::error::Error>> {
+pub fn decode_data_to_address(data: &str, len: u64) -> Result<String, Box<dyn std::error::Error>> {
     let cell = Cell {
         data: STANDARD.decode(data)?,
         bit_len: usize::try_from(len)?,
@@ -53,12 +53,12 @@ mod tests {
     #[test]
     fn test_decode_address_data() {
         let data = "gA057dpDOFWrunYZ0EZRwnbhuaQwX9taKLFu/2/cN8gDQA==";
-        let result = decode_address_data(data, 267).unwrap();
+        let result = decode_data_to_address(data, 267).unwrap();
 
         assert_eq!(result, "EQBpz27SGcKtXdOwzoIyjhO3Dc0hgv7a0UWLd_t-4b5AGrg6");
 
         let data = "gBpa/IXTav3vLvznbIUL0fFS7uTxUc4ZWs74s3fPGz7uIA==";
-        let result = decode_address_data(data, 267).unwrap();
+        let result = decode_data_to_address(data, 267).unwrap();
 
         assert_eq!(result, "EQDS1-Qum1fveXfnO2QoXo-Kl3cnio5wytZ3xZu-eNn3cbsY");
     }

@@ -300,10 +300,13 @@ mod tests {
     fn write_bit() -> anyhow::Result<()> {
         let mut writer = CellBuilder::new();
         let cell = writer.store_bit(true)?.build()?;
+
         assert_eq!(cell.data, [0b1000_0000]);
         assert_eq!(cell.bit_len, 1);
+
         let mut reader = cell.parser();
         let result = reader.load_bit()?;
+
         assert!(result);
         Ok(())
     }
@@ -313,10 +316,13 @@ mod tests {
         let value = 234u8;
         let mut writer = CellBuilder::new();
         let cell = writer.store_u8(8, value)?.build()?;
+
         assert_eq!(cell.data, [0b1110_1010]);
         assert_eq!(cell.bit_len, 8);
+
         let mut reader = cell.parser();
         let result = reader.load_u8(8)?;
+
         assert_eq!(result, value);
         Ok(())
     }
@@ -326,10 +332,13 @@ mod tests {
         let value = 0xFAD45AADu32;
         let mut writer = CellBuilder::new();
         let cell = writer.store_u32(32, value)?.build()?;
+
         assert_eq!(cell.data, [0xFA, 0xD4, 0x5A, 0xAD]);
         assert_eq!(cell.bit_len, 32);
+
         let mut reader = cell.parser();
         let result = reader.load_u32(32)?;
+
         assert_eq!(result, value);
         Ok(())
     }
@@ -339,10 +348,13 @@ mod tests {
         let value = 0xFAD45AADAA12FF45;
         let mut writer = CellBuilder::new();
         let cell = writer.store_u64(64, value)?.build()?;
+
         assert_eq!(cell.data, [0xFA, 0xD4, 0x5A, 0xAD, 0xAA, 0x12, 0xFF, 0x45]);
         assert_eq!(cell.bit_len, 64);
+
         let mut reader = cell.parser();
         let result = reader.load_u64(64)?;
+
         assert_eq!(result, value);
         Ok(())
     }
@@ -352,10 +364,13 @@ mod tests {
         let value = [0xFA, 0xD4, 0x5A, 0xAD, 0xAA, 0x12, 0xFF, 0x45];
         let mut writer = CellBuilder::new();
         let cell = writer.store_slice(&value)?.build()?;
+
         assert_eq!(cell.data, value);
         assert_eq!(cell.bit_len, 64);
+
         let mut reader = cell.parser();
         let bytes = reader.load_bytes(8)?;
+
         assert_eq!(bytes, value);
         Ok(())
     }
@@ -367,11 +382,14 @@ mod tests {
             let mut writer = CellBuilder::new();
             let cell = writer.store_string(text)?.build()?;
             let text_bytes = text.as_bytes();
+
             assert_eq!(cell.data, text_bytes);
             assert_eq!(cell.bit_len, text_bytes.len() * 8);
+
             let mut reader = cell.parser();
             let remaining_bytes = reader.remaining_bytes();
             let result = reader.load_utf8(remaining_bytes)?;
+
             assert_eq!(result, text);
         }
         Ok(())
@@ -380,9 +398,9 @@ mod tests {
     #[test]
     fn write_address() -> anyhow::Result<()> {
         let addr = TonAddress::from_base64_url("EQDk2VTvn04SUKJrW7rXahzdF8_Qi6utb0wj43InCu9vdjrR")?;
-
         let mut writer = CellBuilder::new();
         let cell = writer.store_address(&addr)?.build()?;
+
         assert_eq!(
             cell.data,
             [
@@ -391,8 +409,10 @@ mod tests {
             ]
         );
         assert_eq!(cell.bit_len, 2 + 1 + 8 + 32 * 8);
+
         let mut reader = cell.parser();
         let result = reader.load_address()?;
+
         assert_eq!(result, addr);
         Ok(())
     }

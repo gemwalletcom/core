@@ -183,7 +183,7 @@ pub fn ton_encode_get_wallet_address(address: String) -> Result<String, Gemstone
 
 #[uniffi::export]
 pub fn ton_decode_jetton_address(base64_data: String, len: u64) -> Result<String, GemstoneError> {
-    ton::jetton::decode_address_data(&base64_data, len).map_err(GemstoneError::from)
+    ton::jetton::decode_data_to_address(&base64_data, len).map_err(GemstoneError::from)
 }
 
 #[uniffi::export]
