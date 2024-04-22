@@ -16,6 +16,7 @@ pub enum AssetType {
     TOKEN,
     IBC,
     JETTON,
+    SYNTH,
 }
 
 impl AssetType {
