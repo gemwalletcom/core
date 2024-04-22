@@ -2638,6 +2638,7 @@ dependencies = [
  "blake2",
  "gem_cosmos",
  "gem_solana",
+ "gem_ton",
  "hex",
  "primitives",
  "sui-types",
