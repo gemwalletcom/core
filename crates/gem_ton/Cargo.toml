@@ -1,0 +1,19 @@
+[package]
+name = "gem_ton"
+version = { workspace = true }
+edition = { workspace = true }
+
+[dependencies]
+
+thiserror = { workspace = true }
+base64 = { workspace = true }
+bitstream-io = "1"
+num-bigint = { workspace = true }
+num-traits = { workspace = true }
+sha2 = { workspace = true }
+hex = { workspace = true }
+lazy_static = { workspace = true }
+crc = "3"
+serde = { workspace = true }
+serde_json = { workspace = true }
+anyhow = { workspace = true }

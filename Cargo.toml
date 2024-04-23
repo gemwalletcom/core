@@ -37,6 +37,7 @@ members = [
     "crates/gem_solana",
     "crates/gem_cosmos",
     "crates/gem_chain_rpc",
+    "crates/gem_ton",
 
     "crates/swap_oneinch",
     "crates/swap_aftermath",

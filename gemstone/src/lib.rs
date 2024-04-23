@@ -7,6 +7,7 @@ pub mod explorer;
 pub mod solana;
 use solana::MplMetadata;
 pub mod sui;
+pub mod ton;
 pub mod wallet_connect;
 
 uniffi::include_scaffolding!("gemstone");
@@ -162,8 +163,7 @@ pub fn asset_wrapper(chain: String) -> asset::AssetWrapper {
 
 #[uniffi::export]
 pub fn cosmos_convert_hrp(address: String, hrp: String) -> Result<String, GemstoneError> {
-    gem_cosmos::converter::convert_cosmos_address(address.as_str(), hrp.as_str())
-        .map_err(GemstoneError::from)
+    gem_cosmos::converter::convert_cosmos_address(&address, &hrp).map_err(GemstoneError::from)
 }
 
 #[uniffi::export]
@@ -173,5 +173,25 @@ pub fn solana_decode_metadata(base64_str: String) -> Result<MplMetadata, Gemston
 
 #[uniffi::export]
 pub fn solana_derive_metadata_pda(mint: String) -> Result<String, GemstoneError> {
-    solana::derive_metadata_pda(mint.as_str()).map_err(GemstoneError::from)
+    solana::derive_metadata_pda(&mint).map_err(GemstoneError::from)
+}
+
+#[uniffi::export]
+pub fn ton_encode_get_wallet_address(address: String) -> Result<String, GemstoneError> {
+    ton::jetton::encode_get_wallet_address_slice(&address).map_err(GemstoneError::from)
+}
+
+#[uniffi::export]
+pub fn ton_decode_jetton_address(base64_data: String, len: u64) -> Result<String, GemstoneError> {
+    ton::jetton::decode_data_to_address(&base64_data, len).map_err(GemstoneError::from)
+}
+
+#[uniffi::export]
+pub fn ton_hex_to_base64_address(hex_str: String) -> Result<String, GemstoneError> {
+    ton::address::hex_to_base64_address(hex_str).map_err(GemstoneError::from)
+}
+
+#[uniffi::export]
+pub fn ton_base64_to_hex_address(base64_str: String) -> Result<String, GemstoneError> {
+    ton::address::base64_to_hex_address(base64_str).map_err(GemstoneError::from)
 }

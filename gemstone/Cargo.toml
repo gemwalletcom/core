@@ -16,8 +16,9 @@ name = "gemstone"
 primitives = { path = "../crates/primitives" }
 gem_cosmos = { path = "../crates/gem_cosmos" }
 gem_solana = { path = "../crates/gem_solana" }
+gem_ton = { path = "../crates/gem_ton" }
 
-# Sui
+# TODO: move to gem_sui
 bcs = "0.1.6"
 sui-types = { git = "https://github.com/mystenlabs/sui", package = "sui-types", tag = "mainnet-v1.22.0" }
 blake2 = { workspace = true }

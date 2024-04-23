@@ -20,6 +20,7 @@ jsonrpsee = { workspace = true }
 futures = { workspace = true }
 
 primitives = { path = "../primitives" }
-name_resolver = { path = "../name_resolver" }
+
 gem_evm = { path = "../gem_evm" }
 gem_solana = { path = "../gem_solana" }
+gem_ton = { path = "../gem_ton" }
