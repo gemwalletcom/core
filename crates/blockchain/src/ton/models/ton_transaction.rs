@@ -19,6 +19,11 @@ struct TonJettonToken {
 }
 
 #[typeshare]
+struct TonJettonBalance {
+    balance: UInt64,
+}
+
+#[typeshare]
 struct TonJettonTokenContent {
     #[serde(rename = "type")]
     content_type: String,
