@@ -6,7 +6,7 @@ struct TronAccountRequest {
 
 #[typeshare]
 struct TronAccount {
-    balance: Option<u32>,
+    balance: Option<UInt64>,
     address: Option<String>,
 }
 
