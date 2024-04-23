@@ -26,6 +26,7 @@ pub fn get_chain_for_coingecko_platform_id(id: &str) -> Option<Chain> {
         "zksync" => Some(Chain::ZkSync),
         "linea" => Some(Chain::Linea),
         "near" => Some(Chain::Near),
+        "the-open-network" => Some(Chain::Ton),
         _ => None,
     }
 }
