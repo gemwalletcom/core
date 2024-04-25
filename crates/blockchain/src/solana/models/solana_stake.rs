@@ -15,4 +15,6 @@ struct SolanaValidator {
 #[serde(rename_all = "camelCase")]
 struct SolanaEpoch {
     epoch: i32,
+    slot_index: i32,
+    slots_in_epoch: i32,
 }

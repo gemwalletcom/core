@@ -76,6 +76,14 @@ struct SuiStakeDelegation {
 
 #[typeshare]
 #[serde(rename_all = "camelCase")]
+struct SuiSystemState {
+    epoch: String,
+    epoch_start_timestamp_ms: String,
+    epoch_duration_ms: String,
+}
+
+#[typeshare]
+#[serde(rename_all = "camelCase")]
 struct SuiStake {
     staked_sui_id: String,
     status: String,
