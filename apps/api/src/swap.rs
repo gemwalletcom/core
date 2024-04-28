@@ -1,4 +1,5 @@
 extern crate rocket;
+use crate::response::ResponseError;
 use primitives::fiat_assets::FiatAssets;
 use primitives::{SwapQuoteRequest, SwapQuoteResult};
 use rocket::serde::json::Json;
@@ -9,18 +10,28 @@ use rocket::State;
 pub async fn get_swap_quote(
     quote: SwapQuoteRequest,
     client: &State<Mutex<crate::SwapClient>>,
-) -> Json<SwapQuoteResult> {
-    let quote = client.lock().await.swap_quote(quote).await.unwrap();
-    Json(quote)
+) -> Result<Json<SwapQuoteResult>, Json<ResponseError>> {
+    client
+        .lock()
+        .await
+        .swap_quote(quote)
+        .await
+        .map(Json)
+        .map_err(|err| Json(err.into()))
 }
 
 #[post("/swap/quote", format = "json", data = "<quote>")]
 pub async fn post_swap_quote(
     quote: Json<SwapQuoteRequest>,
     client: &State<Mutex<crate::SwapClient>>,
-) -> Json<SwapQuoteResult> {
-    let quote = client.lock().await.swap_quote(quote.0).await.unwrap();
-    Json(quote)
+) -> Result<Json<SwapQuoteResult>, Json<ResponseError>> {
+    client
+        .lock()
+        .await
+        .swap_quote(quote.0)
+        .await
+        .map(Json)
+        .map_err(|err| Json(err.into()))
 }
 
 #[get("/swap/assets")]

@@ -6713,6 +6713,7 @@ dependencies = [
 name = "swap_aftermath"
 version = "1.0.0"
 dependencies = [
+ "anyhow",
  "async-trait",
  "primitives",
  "reqwest 0.12.3",

@@ -2,8 +2,9 @@ use async_trait::async_trait;
 
 use crate::api::AftermathApi;
 use crate::models::{ExternalFee, TradeQuote, TradeQuoteResponse, TradeTx};
+use anyhow::anyhow;
 use primitives::{AssetId, Chain, SwapQuote, SwapQuoteData, SwapQuoteProtocolRequest};
-use reqwest_enum::provider::{JsonProviderType, Provider};
+use reqwest_enum::provider::{JsonProviderType, Provider, ProviderType};
 use swap_provider::{SwapError, SwapProvider, DEFAULT_SWAP_SLIPPAGE};
 
 pub struct AftermathProvider {
@@ -37,11 +38,13 @@ impl SwapProvider for AftermathProvider {
 
     async fn get_quote(&self, request: SwapQuoteProtocolRequest) -> Result<SwapQuote, SwapError> {
         let quote = TradeQuote::from(&request, self.fee_address.clone(), self.fee_percentage);
-        let response: TradeQuoteResponse = self
-            .provider
-            .request_json(AftermathApi::Quote(quote))
-            .await?;
-
+        let http_response = self.provider.request(AftermathApi::Quote(quote)).await?;
+        let status = http_response.status();
+        let body = http_response.text().await?;
+        if status != 200 {
+            return Err(anyhow!("status: {}, body: {}", status, body).into());
+        }
+        let response: TradeQuoteResponse = serde_json::from_str(&body)?;
         let mut data: Option<SwapQuoteData> = None;
         if request.include_data {
             let tx = TradeTx::from(

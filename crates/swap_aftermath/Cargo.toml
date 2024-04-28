@@ -11,3 +11,4 @@ reqwest = { workspace = true }
 async-trait = { workspace = true }
 primitives = { path = "../primitives" }
 swap_provider = { path = "../swap_provider" }
+anyhow = { workspace = true }
