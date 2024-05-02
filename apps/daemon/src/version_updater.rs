@@ -13,7 +13,7 @@ impl Client {
     }
 
     pub async fn update_ios_version(&mut self) -> Result<Version, Box<dyn Error>> {
-        let ios_version = self.get_app_store_version().await.unwrap();
+        let ios_version = self.get_app_store_version().await?;
         let version = Version {
             id: 0,
             platform: Platform::IOS.as_str().to_string(),

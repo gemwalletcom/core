@@ -289,11 +289,22 @@ impl DatabaseClient {
             .execute(&mut self.connection)
     }
 
-    pub fn delete_devices_after_days(&mut self, days: i64) -> Result<usize, diesel::result::Error> {
-        use crate::schema::devices::dsl::*;
+    // Delete subscriptions for inactive devices
+    pub fn delete_devices_subscriptions_after_days(
+        &mut self,
+        days: i64,
+    ) -> Result<usize, diesel::result::Error> {
         let cutoff_date = Utc::now() - Duration::days(days);
-        diesel::delete(devices.filter(updated_at.lt(cutoff_date.naive_utc())))
-            .execute(&mut self.connection)
+
+        let device_ids_query = crate::schema::devices::table
+            .filter(crate::schema::devices::updated_at.lt(cutoff_date.naive_utc()))
+            .select(crate::schema::devices::id);
+
+        diesel::delete(
+            crate::schema::subscriptions::table
+                .filter(crate::schema::subscriptions::device_id.eq_any(device_ids_query)),
+        )
+        .execute(&mut self.connection)
     }
 
     pub fn get_parser_state(

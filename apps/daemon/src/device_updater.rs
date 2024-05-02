@@ -12,6 +12,6 @@ impl DeviceUpdater {
     }
 
     pub async fn update(&mut self) -> Result<usize, Box<dyn Error>> {
-        Ok(self.database.delete_devices_after_days(120)?)
+        Ok(self.database.delete_devices_subscriptions_after_days(120)?)
     }
 }
