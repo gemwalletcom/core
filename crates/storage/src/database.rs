@@ -1,6 +1,6 @@
 use crate::models::asset::AssetDetail;
 use crate::models::*;
-use crate::schema::{devices, fiat_providers, transactions_addresses};
+use crate::schema::{devices, fiat_providers, prices_assets, transactions_addresses};
 use chrono::{Duration, NaiveDateTime, Utc};
 use diesel::associations::HasTable;
 use diesel::pg::PgConnection;
@@ -10,6 +10,8 @@ use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
 use primitives::chain::Chain;
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("src/migrations");
 use primitives::{AssetType, TransactionsFetchOption};
+
+use self::price::PriceAsset;
 
 pub struct DatabaseClient {
     connection: PgConnection,
@@ -139,26 +141,14 @@ impl DatabaseClient {
             .load(&mut self.connection)
     }
 
-    pub fn get_prices_for_asset_id(
-        &mut self,
-        asset_id_value: &str,
-    ) -> Result<Vec<Price>, diesel::result::Error> {
-        use crate::schema::prices::dsl::*;
-        prices
-            .filter(asset_id.eq(asset_id_value))
-            .select(Price::as_select())
-            .load(&mut self.connection)
-    }
-
-    pub fn set_prices(&mut self, asset_prices: Vec<Price>) -> Result<usize, diesel::result::Error> {
+    pub fn set_prices(&mut self, values: Vec<Price>) -> Result<usize, diesel::result::Error> {
         use crate::schema::prices::dsl::*;
         diesel::insert_into(prices)
-            .values(&asset_prices)
-            .on_conflict(asset_id)
+            .values(&values)
+            .on_conflict(id)
             .do_update()
             .set((
                 price.eq(excluded(price)),
-                coin_id.eq(excluded(coin_id)),
                 price_change_percentage_24h.eq(excluded(price_change_percentage_24h)),
                 market_cap.eq(excluded(market_cap)),
                 market_cap_rank.eq(excluded(market_cap_rank)),
@@ -171,17 +161,47 @@ impl DatabaseClient {
             .execute(&mut self.connection)
     }
 
+    pub fn set_prices_assets(
+        &mut self,
+        values: Vec<PriceAsset>,
+    ) -> Result<usize, diesel::result::Error> {
+        use crate::schema::prices_assets::dsl::*;
+        diesel::insert_into(prices_assets)
+            .values(&values)
+            .on_conflict_do_nothing()
+            .execute(&mut self.connection)
+    }
+
     pub fn get_prices(&mut self) -> Result<Vec<Price>, diesel::result::Error> {
         use crate::schema::prices::dsl::*;
         prices.select(Price::as_select()).load(&mut self.connection)
     }
 
-    pub fn get_price(&mut self, _asset_id: &str) -> Result<Price, diesel::result::Error> {
+    pub fn get_prices_assets(&mut self) -> Result<Vec<PriceAsset>, diesel::result::Error> {
+        use crate::schema::prices_assets::dsl::*;
+        prices_assets
+            .select(PriceAsset::as_select())
+            .load(&mut self.connection)
+    }
+
+    pub fn get_price(&mut self, asset_id: &str) -> Result<Price, diesel::result::Error> {
         use crate::schema::prices::dsl::*;
         prices
-            .filter(asset_id.eq(_asset_id))
+            .inner_join(prices_assets::table)
+            .filter(prices_assets::asset_id.eq(asset_id))
             .select(Price::as_select())
             .first(&mut self.connection)
+    }
+
+    pub fn get_prices_id_for_asset_id(
+        &mut self,
+        id: &str,
+    ) -> Result<Vec<PriceAsset>, diesel::result::Error> {
+        use crate::schema::prices_assets::dsl::*;
+        prices_assets
+            .filter(asset_id.eq(id))
+            .select(PriceAsset::as_select())
+            .load(&mut self.connection)
     }
 
     pub fn delete_prices_updated_at_before(

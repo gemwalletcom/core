@@ -5,9 +5,10 @@ use coingecko::mapper::{get_chain_for_coingecko_platform_id, get_coingecko_marke
 use coingecko::{Coin, CoinGeckoClient, CoinMarket};
 use primitives::chain::Chain;
 use primitives::AssetId;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::error::Error;
 use std::thread;
+use storage::models::price::{PriceAsset, PriceCache};
 use storage::models::{ChartCoinPrice, FiatRate, Price};
 
 pub struct PriceUpdater {
@@ -24,48 +25,41 @@ impl PriceUpdater {
     }
 
     pub async fn get_coin_list(&mut self) -> Result<Vec<Coin>, Box<dyn std::error::Error>> {
-        match self.price_client.get_coingecko_coins_list().await {
-            Ok(value) => {
-                let coin_list = serde_json::from_str::<Vec<Coin>>(&value)?;
-                Ok(coin_list)
-            }
-            Err(_) => {
-                let coin_list = self.coin_gecko_client.get_coin_list().await?;
-                let string = serde_json::to_string(&coin_list)?;
-                self.price_client.set_coingecko_coins_list(string).await?;
-                Ok(coin_list)
-            }
-        }
+        Ok(self.coin_gecko_client.get_coin_list().await?)
+    }
+
+    pub async fn update_prices_assets(&mut self) -> Result<usize, Box<dyn std::error::Error>> {
+        let coin_list = self.get_coin_list().await?;
+        // assets
+        let mut assets = coin_list
+            .into_iter()
+            .flat_map(|x| self.get_prices_assets_for_coin(x))
+            .collect::<Vec<_>>();
+        // native assets
+        assets.extend(Chain::all().into_iter().map(|x| PriceAsset {
+            asset_id: x.as_ref().to_string(),
+            price_id: get_coingecko_market_id_for_chain(x).to_string(),
+        }));
+        self.price_client.set_prices_assets(assets)
     }
 
     pub async fn update_prices(&mut self) -> Result<usize, Box<dyn std::error::Error>> {
-        let coin_list = self.get_coin_list().await?;
-        let coins_map = CoinGeckoClient::convert_coin_vec_to_map(coin_list.clone());
         let coin_markets = self.coin_gecko_client.get_all_coin_markets(250, 15).await?;
-        //TODO: currently using as a map, until fix duplicated values in the vector.
-        let mut prices_map: HashSet<Price> = HashSet::new();
 
-        for chain in Chain::all() {
-            let market_id = get_coingecko_market_id_for_chain(chain);
-            if let Some(market) = coin_markets.iter().find(|x| x.id == market_id) {
-                prices_map.insert(asset_price_map(chain.as_ref().to_string(), market.clone()));
-            }
-        }
+        let prices = coin_markets
+            .into_iter()
+            .map(|market| price_for_market(market.clone()))
+            .collect::<HashSet<Price>>()
+            .into_iter()
+            .collect::<Vec<Price>>();
 
-        for market in coin_markets {
-            let coin_map = coins_map.get(market.id.as_str()).unwrap();
-            let prices = self.get_prices_for_coin_market(coin_map.clone(), market.clone());
-            prices_map.extend(prices);
-        }
-
-        let prices: Vec<Price> = prices_map.into_iter().collect();
         let count = self.price_client.set_prices(prices.clone())?;
 
         let charts = prices
             .clone()
             .into_iter()
             .map(|x| ChartCoinPrice {
-                coin_id: x.coin_id,
+                coin_id: x.id,
                 price: x.price,
                 created_at: x.last_updated_at.timestamp() as u64,
             })
@@ -76,19 +70,7 @@ impl PriceUpdater {
         Ok(count)
     }
 
-    pub async fn update_price(
-        &mut self,
-        id: &str,
-    ) -> Result<Vec<Price>, Box<dyn std::error::Error>> {
-        let market = self.coin_gecko_client.get_coin_markets_id(id).await?;
-        let coin_list = self.get_coin_list().await?;
-        let coins_map = CoinGeckoClient::convert_coin_vec_to_map(coin_list.clone());
-        let coin = coins_map.get(market.id.as_str()).unwrap();
-        let prices = self.get_prices_for_coin_market(coin.clone(), market.clone());
-        Ok(prices)
-    }
-
-    pub fn get_prices_for_coin_market(&mut self, coin: Coin, market: CoinMarket) -> Vec<Price> {
+    pub fn get_prices_assets_for_coin(&mut self, coin: Coin) -> Vec<PriceAsset> {
         return coin
             .platforms
             .clone()
@@ -99,8 +81,10 @@ impl PriceUpdater {
                     let token_id = token_id.unwrap_or_default();
                     if !token_id.is_empty() {
                         if let Some(asset_id) = get_asset_id(chain, token_id) {
-                            let price = asset_price_map(asset_id, market.clone());
-                            return Some(price);
+                            return Some(PriceAsset {
+                                asset_id,
+                                price_id: coin.id.clone(),
+                            });
                         }
                     }
                 }
@@ -153,9 +137,23 @@ impl PriceUpdater {
         Ok(coin_list.len())
     }
 
-    pub async fn update_cache(&mut self) -> Result<usize, Box<dyn Error>> {
-        let prices = self.price_client.get_prices()?;
-        let rates = self.price_client.get_fiat_rates()?;
+    pub async fn update_prices_cache(&mut self) -> Result<usize, Box<dyn Error>> {
+        let (prices_assets, prices, rates) = (
+            self.price_client.get_prices_assets()?,
+            self.price_client.get_prices()?,
+            self.price_client.get_fiat_rates()?,
+        );
+
+        let prices_assets_map: HashMap<String, HashSet<String>> =
+            prices_assets
+                .into_iter()
+                .fold(HashMap::new(), |mut map, price_asset| {
+                    map.entry(price_asset.price_id.clone())
+                        .or_default()
+                        .insert(price_asset.asset_id);
+                    map
+                });
+
         let base_rate = rates
             .iter()
             .find(|x| x.symbol == DEFAULT_FIAT_CURRENCY)
@@ -163,20 +161,31 @@ impl PriceUpdater {
             .unwrap();
 
         for rate in rates.iter() {
-            let mut rate_prices: Vec<Price> = vec![];
-            for price in &prices {
-                let mut new_price = price.clone();
-                let rate_multiplier = rate.rate / base_rate;
-                new_price.price = price.price * rate_multiplier;
-                new_price.market_cap = price.market_cap * rate_multiplier;
-                new_price.total_volume = price.total_volume * rate_multiplier;
-                rate_prices.push(new_price)
-            }
+            let prices = prices
+                .clone()
+                .into_iter()
+                .flat_map(|price| {
+                    let new_price = Price::for_rate(price, base_rate, rate.clone());
+
+                    if let Some(asset_ids) = prices_assets_map.get(new_price.id.as_str()) {
+                        return asset_ids
+                            .iter()
+                            .map(|asset_id| PriceCache {
+                                price: new_price.clone(),
+                                asset_id: asset_id.clone(),
+                            })
+                            .collect::<Vec<PriceCache>>();
+                    }
+                    vec![]
+                })
+                .collect();
+
             self.price_client
-                .set_cache_prices(rate.symbol.as_str(), rate_prices)
+                .set_cache_prices(rate.symbol.as_str(), prices)
                 .await?;
         }
-        Ok(prices.len())
+
+        Ok(0)
     }
 
     pub async fn update_fiat_rates(&mut self) -> Result<usize, Box<dyn Error>> {
@@ -202,9 +211,8 @@ impl PriceUpdater {
     }
 }
 
-fn asset_price_map(asset_id: String, market: CoinMarket) -> Price {
+fn price_for_market(market: CoinMarket) -> Price {
     Price::new(
-        asset_id,
         market.id,
         market.current_price.unwrap_or_default(),
         market.price_change_percentage_24h.unwrap_or_default(),

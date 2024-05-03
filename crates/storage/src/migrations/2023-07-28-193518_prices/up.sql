@@ -1,6 +1,5 @@
 CREATE TABLE prices (
-    asset_id VARCHAR PRIMARY KEY NOT NULL,
-    coin_id VARCHAR NOT NULL,
+    id VARCHAR(64) PRIMARY KEY NOT NULL,
     price float NOT NULL DEFAULT 0,
     price_change_percentage_24h float NOT NULL DEFAULT 0,
     market_cap float NOT NULL DEFAULT 0,
@@ -11,6 +10,7 @@ CREATE TABLE prices (
     max_supply float NOT NULL DEFAULT 0,
     last_updated_at timestamp NOT NULL,
     updated_at timestamp NOT NULL default current_timestamp,
-    created_at timestamp NOT NULL default current_timestamp,
-    UNIQUE(asset_id)
+    created_at timestamp NOT NULL default current_timestamp
 );
+
+SELECT diesel_manage_updated_at('prices');

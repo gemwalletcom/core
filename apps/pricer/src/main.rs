@@ -54,6 +54,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     //     }
     // }
 
+    println!("update prices assets: start");
+
+    match price_updater.update_prices_assets().await {
+        Ok(count) => {
+            println!("update prices assets: {}", count)
+        }
+        Err(err) => {
+            println!("update prices assets error: {}", err)
+        }
+    }
+
     loop {
         println!("update prices: start");
 
@@ -68,7 +79,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         println!("update prices cache: start");
 
-        match price_updater.update_cache().await {
+        match price_updater.update_prices_cache().await {
             Ok(count) => {
                 println!("update prices cache: {}", count)
             }

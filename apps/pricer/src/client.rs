@@ -1,16 +1,18 @@
 use chrono::NaiveDateTime;
 use primitives::{Asset, AssetDetails, AssetScore, ChartPeriod, ChartValue};
 use redis::{AsyncCommands, RedisResult};
-use std::{collections::HashMap, error::Error};
+use std::error::Error;
 use storage::{
-    models::{ChartCoinPrice, FiatRate},
+    models::{
+        price::{PriceAsset, PriceCache},
+        ChartCoinPrice, FiatRate,
+    },
     ClickhouseDatabase, DatabaseClient,
 };
 
 use crate::DEFAULT_FIAT_CURRENCY;
 use cacher::CacherClient;
 use storage::models::Price;
-const COINS_LIST_KEY: &str = "coins_list";
 
 pub struct PriceClient {
     redis_client: redis::Client,
@@ -37,9 +39,9 @@ impl PriceClient {
     // db
 
     pub fn get_coin_id(&mut self, asset_id: &str) -> Result<String, Box<dyn Error>> {
-        let prices = self.database.get_prices_for_asset_id(asset_id)?;
+        let prices = self.database.get_prices_id_for_asset_id(asset_id)?;
         let price = prices.first().ok_or("no price for asset_id")?;
-        Ok(price.coin_id.clone())
+        Ok(price.price_id.clone())
     }
 
     pub fn set_prices(&mut self, prices: Vec<Price>) -> Result<usize, Box<dyn Error>> {
@@ -49,8 +51,39 @@ impl PriceClient {
         Ok(prices.len())
     }
 
+    pub fn set_prices_assets(&mut self, values: Vec<PriceAsset>) -> Result<usize, Box<dyn Error>> {
+        // filter non existing prices and assets
+        let existing_assets_ids = self
+            .database
+            .get_assets(values.iter().map(|x| x.asset_id.clone()).collect())?
+            .iter()
+            .map(|x| x.id.clone())
+            .collect::<Vec<_>>();
+
+        let existing_prices_ids = self
+            .database
+            .get_prices()?
+            .iter()
+            .map(|x| x.id.clone())
+            .collect::<Vec<_>>();
+
+        let values = values
+            .into_iter()
+            .filter(|x| {
+                existing_assets_ids.contains(&x.asset_id)
+                    && existing_prices_ids.contains(&x.price_id)
+            })
+            .collect::<Vec<_>>();
+
+        Ok(self.database.set_prices_assets(values)?)
+    }
+
     pub fn get_prices(&mut self) -> Result<Vec<Price>, Box<dyn Error>> {
         Ok(self.database.get_prices()?)
+    }
+
+    pub fn get_prices_assets(&mut self) -> Result<Vec<PriceAsset>, Box<dyn Error>> {
+        Ok(self.database.get_prices_assets()?)
     }
 
     pub async fn set_fiat_rates(&mut self, rates: Vec<FiatRate>) -> Result<usize, Box<dyn Error>> {
@@ -107,68 +140,33 @@ impl PriceClient {
 
     // cache
 
-    pub async fn get_prices_list(&mut self) -> Result<Vec<primitives::PriceFull>, Box<dyn Error>> {
-        let list = self
-            .database
-            .get_prices()?
-            .into_iter()
-            .map(|x| x.as_price_full_primitive())
-            .collect();
-        Ok(list)
-    }
-
-    // cache coingecko
-
-    pub async fn set_coingecko_coins_list(&mut self, value: String) -> Result<(), Box<dyn Error>> {
-        self.cache_client
-            .set_value_with_expiration(COINS_LIST_KEY, value, 3600)
-            .await
-    }
-
-    pub async fn get_coingecko_coins_list(&mut self) -> Result<String, Box<dyn Error>> {
-        self.cache_client.get_value(COINS_LIST_KEY).await
-    }
-
-    pub fn convert_asset_price_vec_to_map(coins: Vec<Price>) -> HashMap<String, Price> {
-        coins
-            .into_iter()
-            .map(|coin| (coin.asset_id.clone(), coin))
-            .collect()
-    }
-
-    pub fn asset_key(&mut self, currency: &str, asset: String) -> String {
-        format!("{}{}:{}", self.prefix, currency, asset)
+    pub fn asset_key(&mut self, currency: &str, asset_id: String) -> String {
+        format!("{}{}:{}", self.prefix, currency, asset_id)
     }
 
     pub async fn set_cache_prices(
         &mut self,
         currency: &str,
-        prices: Vec<Price>,
-    ) -> RedisResult<usize> {
-        let serialized: Vec<(String, String)> = prices
+        prices: Vec<PriceCache>,
+    ) -> Result<usize, Box<dyn Error>> {
+        let values: Vec<(String, String)> = prices
             .iter()
             .map(|x| {
                 (
                     self.asset_key(currency, x.asset_id.clone()),
-                    serde_json::to_string(x).unwrap(),
+                    serde_json::to_string(&x).unwrap(),
                 )
             })
             .collect();
 
-        self.redis_client
-            .get_multiplexed_async_connection()
-            .await?
-            .mset(serialized.as_slice())
-            .await?;
-
-        Ok(serialized.len())
+        self.cache_client.set_values(values).await
     }
 
     pub async fn get_cache_prices(
         &mut self,
         currency: &str,
         assets: Vec<&str>,
-    ) -> RedisResult<Vec<Price>> {
+    ) -> RedisResult<Vec<PriceCache>> {
         let keys: Vec<String> = assets
             .iter()
             .map(|x| self.asset_key(currency, x.to_string()))
@@ -180,8 +178,10 @@ impl PriceClient {
             .mget(keys)
             .await?;
 
-        let values: Vec<String> = result.into_iter().flatten().collect();
-        let prices: Vec<Price> = values
+        let prices: Vec<PriceCache> = result
+            .into_iter()
+            .flatten()
+            .collect::<Vec<String>>()
             .iter()
             .filter_map(|x| serde_json::from_str(x).unwrap_or(None))
             .collect();

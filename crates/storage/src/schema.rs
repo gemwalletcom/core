@@ -197,7 +197,36 @@ diesel::table! {
 }
 
 diesel::table! {
-    prices (asset_id) {
+    prices (id) {
+        #[max_length = 64]
+        id -> Varchar,
+        price -> Float8,
+        price_change_percentage_24h -> Float8,
+        market_cap -> Float8,
+        market_cap_rank -> Int4,
+        total_volume -> Float8,
+        circulating_supply -> Float8,
+        total_supply -> Float8,
+        max_supply -> Float8,
+        last_updated_at -> Timestamp,
+        updated_at -> Timestamp,
+        created_at -> Timestamp,
+    }
+}
+
+diesel::table! {
+    prices_assets (asset_id) {
+        #[max_length = 256]
+        asset_id -> Varchar,
+        #[max_length = 32]
+        price_id -> Varchar,
+        updated_at -> Timestamp,
+        created_at -> Timestamp,
+    }
+}
+
+diesel::table! {
+    prices_old (asset_id) {
         asset_id -> Varchar,
         coin_id -> Varchar,
         price -> Float8,
@@ -334,6 +363,7 @@ diesel::joinable!(fiat_assets -> fiat_providers (provider));
 diesel::joinable!(fiat_transactions -> assets (asset_id));
 diesel::joinable!(fiat_transactions -> fiat_providers (provider_id));
 diesel::joinable!(parser_state -> chains (chain));
+diesel::joinable!(prices_assets -> prices (price_id));
 diesel::joinable!(scan_addresses -> chains (chain));
 diesel::joinable!(subscriptions -> devices (device_id));
 diesel::joinable!(swap_assets -> assets (asset_id));
@@ -354,6 +384,8 @@ diesel::allow_tables_to_appear_in_same_query!(
     nodes,
     parser_state,
     prices,
+    prices_assets,
+    prices_old,
     scan_addresses,
     subscriptions,
     swap_assets,

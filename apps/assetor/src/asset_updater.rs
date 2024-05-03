@@ -21,7 +21,7 @@ impl AssetUpdater {
             .database
             .get_prices()?
             .into_iter()
-            .map(|x| x.coin_id)
+            .map(|x| x.id)
             .collect::<HashSet<_>>()
             .into_iter()
             .collect();

@@ -13,6 +13,18 @@ impl CacherClient {
         Self { client }
     }
 
+    pub async fn set_values(
+        &mut self,
+        values: Vec<(String, String)>,
+    ) -> Result<usize, Box<dyn Error>> {
+        self.client
+            .get_multiplexed_async_connection()
+            .await?
+            .mset(values.as_slice())
+            .await?;
+        Ok(values.len())
+    }
+
     pub async fn set_value_with_expiration(
         &mut self,
         key: &str,

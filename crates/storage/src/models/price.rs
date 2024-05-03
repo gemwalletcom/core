@@ -1,18 +1,19 @@
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
-use primitives::{AssetMarket, AssetPrice, PriceFull};
+use primitives::AssetMarket;
 use serde::{Deserialize, Serialize};
 use std::{
     hash::{Hash, Hasher},
     time::{SystemTime, UNIX_EPOCH},
 };
 
+use super::FiatRate;
+
 #[derive(Debug, Queryable, Selectable, Serialize, Deserialize, Insertable, AsChangeset, Clone)]
 #[diesel(table_name = crate::schema::prices)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct Price {
-    pub asset_id: String,
-    pub coin_id: String,
+    pub id: String,
     pub price: f64,
     pub price_change_percentage_24h: f64,
     pub market_cap: f64,
@@ -21,28 +22,55 @@ pub struct Price {
     pub circulating_supply: f64,
     pub total_supply: f64,
     pub max_supply: f64,
-
     pub last_updated_at: NaiveDateTime,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct PriceCache {
+    pub price: Price,
+    pub asset_id: String,
+}
+
+impl PriceCache {
+    pub fn as_primitive(&self) -> primitives::AssetPrice {
+        primitives::AssetPrice {
+            asset_id: self.asset_id.clone(),
+            price: self.price.price,
+            price_change_percentage_24h: self.price.price_change_percentage_24h,
+        }
+    }
+}
+
+#[derive(Debug, Queryable, Selectable, Serialize, Deserialize, Insertable, AsChangeset, Clone)]
+#[diesel(table_name = crate::schema::prices_assets)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+pub struct PriceAsset {
+    pub asset_id: String,
+    pub price_id: String,
+}
+
+impl PartialEq for PriceAsset {
+    fn eq(&self, other: &Self) -> bool {
+        self.asset_id == other.asset_id && self.price_id == other.price_id
+    }
 }
 
 impl PartialEq for Price {
     fn eq(&self, other: &Self) -> bool {
-        self.asset_id == other.asset_id && self.coin_id == other.coin_id
+        self.id == other.id
     }
 }
 impl Eq for Price {}
 
 impl Hash for Price {
     fn hash<H: Hasher>(&self, state: &mut H) {
-        self.asset_id.hash(state);
-        self.coin_id.hash(state);
+        self.id.hash(state);
     }
 }
 
 impl Price {
     pub fn new(
-        asset_id: String,
-        coin_id: String,
+        id: String,
         price: f64,
         price_change_percentage_24h: f64,
         market_cap: f64,
@@ -58,8 +86,7 @@ impl Price {
         let last_updated_at = NaiveDateTime::from_timestamp_opt(now.as_secs() as i64, 0).unwrap();
 
         Price {
-            asset_id,
-            coin_id,
+            id,
             price,
             price_change_percentage_24h,
             last_updated_at,
@@ -71,17 +98,18 @@ impl Price {
             max_supply,
         }
     }
+
+    pub fn for_rate(price: Price, base_rate: f64, rate: FiatRate) -> Price {
+        let mut new_price = price.clone();
+        let rate_multiplier = rate.rate / base_rate;
+        new_price.price = price.price * rate_multiplier;
+        new_price.market_cap = price.market_cap * rate_multiplier;
+        new_price.total_volume = price.total_volume * rate_multiplier;
+        new_price
+    }
 }
 
 impl Price {
-    pub fn as_primitive(&self) -> AssetPrice {
-        AssetPrice {
-            asset_id: self.asset_id.clone(),
-            price: self.price,
-            price_change_percentage_24h: self.price_change_percentage_24h,
-        }
-    }
-
     pub fn as_price_primitive(&self) -> primitives::Price {
         primitives::Price {
             price: self.price,
@@ -97,15 +125,6 @@ impl Price {
             circulating_supply: Some(self.circulating_supply),
             total_supply: Some(self.total_supply),
             max_supply: Some(self.max_supply),
-        }
-    }
-
-    pub fn as_price_full_primitive(&self) -> PriceFull {
-        PriceFull {
-            asset_id: self.asset_id.clone(),
-            coin_id: self.coin_id.clone(),
-            price: self.price,
-            price_change_percentage_24h: self.price_change_percentage_24h,
         }
     }
 }

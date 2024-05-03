@@ -138,7 +138,6 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
             routes![
                 prices::get_asset_price,
                 prices::get_assets_prices,
-                prices::get_prices_list,
                 charts::get_charts,
                 fiat_quotes::get_fiat_quotes,
                 fiat_quotes::get_fiat_assets,
