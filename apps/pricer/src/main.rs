@@ -44,13 +44,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // updates charts
     // only needed on initial setup
-    // let result = price_updater.update_charts().await;
+    // let result = price_updater.update_charts_all().await;
     // match result {
     //     Ok(count) => {
-    //         println!("update charts: {}", count)
+    //         println!("update charts all: {}", count)
     //     }
     //     Err(err) => {
-    //         println!("update charts error: {}", err)
+    //         println!("update charts all error: {}", err)
     //     }
     // }
 
@@ -65,15 +65,37 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
+    println!("update prices all: start");
+
+    match price_updater.update_prices_all().await {
+        Ok(count) => {
+            println!("update prices all: {}", count)
+        }
+        Err(err) => {
+            println!("update prices all error: {}", err)
+        }
+    }
+
     loop {
         println!("update prices: start");
 
-        match price_updater.update_prices().await {
+        match price_updater.update_prices(15).await {
             Ok(count) => {
                 println!("update prices: {}", count)
             }
             Err(err) => {
                 println!("update prices error: {}", err)
+            }
+        }
+
+        println!("update charts: start");
+
+        match price_updater.update_charts().await {
+            Ok(count) => {
+                println!("update charts: {}", count)
+            }
+            Err(err) => {
+                println!("update charts error: {}", err)
             }
         }
 

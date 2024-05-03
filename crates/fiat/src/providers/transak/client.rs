@@ -116,6 +116,7 @@ impl TransakClient {
             "zksync" => Some(Chain::ZkSync),
             "celo" => Some(Chain::Celo),
             "mantle" => Some(Chain::Mantle),
+            "opBNB" => Some(Chain::OpBNB),
             "mainnet" => match asset.coin_id.as_str() {
                 "bitcoin" => Some(Chain::Bitcoin),
                 "litecoin" => Some(Chain::Litecoin),

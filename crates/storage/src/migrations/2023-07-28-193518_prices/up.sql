@@ -1,5 +1,5 @@
 CREATE TABLE prices (
-    id VARCHAR(64) PRIMARY KEY NOT NULL,
+    id VARCHAR(256) PRIMARY KEY NOT NULL,
     price float NOT NULL DEFAULT 0,
     price_change_percentage_24h float NOT NULL DEFAULT 0,
     market_cap float NOT NULL DEFAULT 0,

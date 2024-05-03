@@ -43,8 +43,15 @@ impl PriceUpdater {
         self.price_client.set_prices_assets(assets)
     }
 
-    pub async fn update_prices(&mut self) -> Result<usize, Box<dyn std::error::Error>> {
-        let coin_markets = self.coin_gecko_client.get_all_coin_markets(250, 15).await?;
+    pub async fn update_prices_all(&mut self) -> Result<usize, Box<dyn std::error::Error>> {
+        self.update_prices(std::u32::MAX).await
+    }
+
+    pub async fn update_prices(&mut self, pages: u32) -> Result<usize, Box<dyn std::error::Error>> {
+        let coin_markets = self
+            .coin_gecko_client
+            .get_all_coin_markets(250, pages)
+            .await?;
 
         let prices = coin_markets
             .into_iter()
@@ -53,21 +60,22 @@ impl PriceUpdater {
             .into_iter()
             .collect::<Vec<Price>>();
 
-        let count = self.price_client.set_prices(prices.clone())?;
+        self.price_client.set_prices(prices)
+    }
 
+    pub async fn update_charts(&mut self) -> Result<usize, Box<dyn std::error::Error>> {
+        let prices = self.price_client.get_prices()?;
         let charts = prices
             .clone()
             .into_iter()
-            .map(|x| ChartCoinPrice {
-                coin_id: x.id,
-                price: x.price,
-                created_at: x.last_updated_at.timestamp() as u64,
-            })
-            .collect();
+            .map(|x| x.as_chartcoin())
+            .collect::<Vec<ChartCoinPrice>>();
 
-        let _ = self.price_client.set_charts(charts).await?;
+        for chunk in charts.chunks(1000) {
+            self.price_client.set_charts(chunk.to_vec()).await?;
+        }
 
-        Ok(count)
+        Ok(charts.len())
     }
 
     pub fn get_prices_assets_for_coin(&mut self, coin: Coin) -> Vec<PriceAsset> {
@@ -93,7 +101,7 @@ impl PriceUpdater {
             .collect::<Vec<_>>();
     }
 
-    pub async fn update_charts(&mut self) -> Result<usize, Box<dyn std::error::Error>> {
+    pub async fn update_charts_all(&mut self) -> Result<usize, Box<dyn std::error::Error>> {
         let coin_list = self.get_coin_list().await?;
 
         for coin_id in coin_list.clone() {

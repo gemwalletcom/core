@@ -7,7 +7,7 @@ pub struct ChartPrice {
     pub date: i32,
 }
 
-#[derive(Debug, Serialize, Deserialize, Row)]
+#[derive(Debug, Serialize, Deserialize, Row, Clone)]
 pub struct ChartCoinPrice {
     pub coin_id: String,
     pub price: f64,

@@ -7,7 +7,7 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
-use super::FiatRate;
+use super::{ChartCoinPrice, FiatRate};
 
 #[derive(Debug, Queryable, Selectable, Serialize, Deserialize, Insertable, AsChangeset, Clone)]
 #[diesel(table_name = crate::schema::prices)]
@@ -125,6 +125,14 @@ impl Price {
             circulating_supply: Some(self.circulating_supply),
             total_supply: Some(self.total_supply),
             max_supply: Some(self.max_supply),
+        }
+    }
+
+    pub fn as_chartcoin(&self) -> ChartCoinPrice {
+        ChartCoinPrice {
+            coin_id: self.id.clone(),
+            price: self.price,
+            created_at: self.last_updated_at.timestamp() as u64,
         }
     }
 }
