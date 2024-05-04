@@ -116,6 +116,10 @@ impl AssetUpdater {
             rank += 2;
         } else if market_cap_rank < 2000 {
             rank += 1;
+        } else if market_cap_rank < 4000 {
+            rank += -2;
+        } else if market_cap_rank < 5000 {
+            rank += -4;
         }
 
         if coin_info.platforms.len() > 6 {

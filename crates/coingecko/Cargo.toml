@@ -7,3 +7,4 @@ version = { workspace = true }
 serde = { workspace = true }
 reqwest = { workspace = true }
 primitives = { path = "../primitives" }
+chrono = { workspace = true }

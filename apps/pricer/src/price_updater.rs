@@ -230,6 +230,7 @@ fn price_for_market(market: CoinMarket) -> Price {
         market.circulating_supply.unwrap_or_default(),
         market.total_supply.unwrap_or_default(),
         market.max_supply.unwrap_or_default(),
+        market.last_updated.map(|x| x.naive_local()),
     )
 }
 

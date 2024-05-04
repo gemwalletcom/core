@@ -198,7 +198,7 @@ diesel::table! {
 
 diesel::table! {
     prices (id) {
-        #[max_length = 64]
+        #[max_length = 256]
         id -> Varchar,
         price -> Float8,
         price_change_percentage_24h -> Float8,
@@ -208,7 +208,7 @@ diesel::table! {
         circulating_supply -> Float8,
         total_supply -> Float8,
         max_supply -> Float8,
-        last_updated_at -> Timestamp,
+        last_updated_at -> Nullable<Timestamp>,
         updated_at -> Timestamp,
         created_at -> Timestamp,
     }
@@ -218,7 +218,7 @@ diesel::table! {
     prices_assets (asset_id) {
         #[max_length = 256]
         asset_id -> Varchar,
-        #[max_length = 32]
+        #[max_length = 256]
         price_id -> Varchar,
         updated_at -> Timestamp,
         created_at -> Timestamp,
@@ -363,6 +363,7 @@ diesel::joinable!(fiat_assets -> fiat_providers (provider));
 diesel::joinable!(fiat_transactions -> assets (asset_id));
 diesel::joinable!(fiat_transactions -> fiat_providers (provider_id));
 diesel::joinable!(parser_state -> chains (chain));
+diesel::joinable!(prices_assets -> assets (asset_id));
 diesel::joinable!(prices_assets -> prices (price_id));
 diesel::joinable!(scan_addresses -> chains (chain));
 diesel::joinable!(subscriptions -> devices (device_id));

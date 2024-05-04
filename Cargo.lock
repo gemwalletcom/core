@@ -1342,6 +1342,7 @@ dependencies = [
 name = "coingecko"
 version = "1.0.0"
 dependencies = [
+ "chrono",
  "primitives",
  "reqwest 0.12.3",
  "serde",

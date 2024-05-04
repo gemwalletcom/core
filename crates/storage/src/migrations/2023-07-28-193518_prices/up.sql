@@ -8,7 +8,7 @@ CREATE TABLE prices (
     circulating_supply float NOT NULL DEFAULT 0,
     total_supply float NOT NULL DEFAULT 0,
     max_supply float NOT NULL DEFAULT 0,
-    last_updated_at timestamp NOT NULL,
+    last_updated_at timestamp,
     updated_at timestamp NOT NULL default current_timestamp,
     created_at timestamp NOT NULL default current_timestamp
 );

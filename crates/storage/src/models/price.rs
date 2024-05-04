@@ -2,10 +2,7 @@ use chrono::NaiveDateTime;
 use diesel::prelude::*;
 use primitives::AssetMarket;
 use serde::{Deserialize, Serialize};
-use std::{
-    hash::{Hash, Hasher},
-    time::{SystemTime, UNIX_EPOCH},
-};
+use std::hash::{Hash, Hasher};
 
 use super::{ChartCoinPrice, FiatRate};
 
@@ -22,7 +19,7 @@ pub struct Price {
     pub circulating_supply: f64,
     pub total_supply: f64,
     pub max_supply: f64,
-    pub last_updated_at: NaiveDateTime,
+    pub last_updated_at: Option<NaiveDateTime>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -79,12 +76,8 @@ impl Price {
         circulating_supply: f64,
         total_supply: f64,
         max_supply: f64,
+        last_updated_at: Option<NaiveDateTime>,
     ) -> Self {
-        let now = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .expect("system time before Unix epoch");
-        let last_updated_at = NaiveDateTime::from_timestamp_opt(now.as_secs() as i64, 0).unwrap();
-
         Price {
             id,
             price,
@@ -132,7 +125,7 @@ impl Price {
         ChartCoinPrice {
             coin_id: self.id.clone(),
             price: self.price,
-            created_at: self.last_updated_at.timestamp() as u64,
+            created_at: self.last_updated_at.unwrap_or_default().timestamp() as u64,
         }
     }
 }
