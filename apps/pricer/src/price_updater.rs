@@ -29,18 +29,27 @@ impl PriceUpdater {
     }
 
     pub async fn update_prices_assets(&mut self) -> Result<usize, Box<dyn std::error::Error>> {
-        let coin_list = self.get_coin_list().await?;
+        // native assets
+        let chains_assets = Chain::all()
+            .into_iter()
+            .map(|x| PriceAsset {
+                asset_id: x.as_ref().to_string(),
+                price_id: get_coingecko_market_id_for_chain(x).to_string(),
+            })
+            .collect::<Vec<_>>();
+        self.price_client.set_prices_assets(chains_assets.clone())?;
+
         // assets
-        let mut assets = coin_list
+        let coin_list = self.get_coin_list().await?;
+
+        let assets = coin_list
             .into_iter()
             .flat_map(|x| self.get_prices_assets_for_coin(x))
             .collect::<Vec<_>>();
-        // native assets
-        assets.extend(Chain::all().into_iter().map(|x| PriceAsset {
-            asset_id: x.as_ref().to_string(),
-            price_id: get_coingecko_market_id_for_chain(x).to_string(),
-        }));
-        self.price_client.set_prices_assets(assets)
+
+        self.price_client.set_prices_assets(assets.clone())?;
+
+        Ok(chains_assets.len() + assets.len())
     }
 
     pub async fn update_prices_all(&mut self) -> Result<usize, Box<dyn std::error::Error>> {
@@ -72,7 +81,7 @@ impl PriceUpdater {
             .map(|x| x.as_chartcoin())
             .collect::<Vec<ChartCoinPrice>>();
 
-        for chunk in charts.chunks(1000) {
+        for chunk in charts.chunks(500) {
             self.price_client.set_charts(chunk.to_vec()).await?;
         }
 
