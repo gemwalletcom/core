@@ -68,6 +68,7 @@ impl PriceUpdater {
         let charts = prices
             .clone()
             .into_iter()
+            .filter(|x| x.last_updated_at.is_some())
             .map(|x| x.as_chartcoin())
             .collect::<Vec<ChartCoinPrice>>();
 

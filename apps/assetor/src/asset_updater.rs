@@ -21,6 +21,7 @@ impl AssetUpdater {
             .database
             .get_prices()?
             .into_iter()
+            .filter(|x| x.last_updated_at.is_some())
             .map(|x| x.id)
             .collect::<HashSet<_>>()
             .into_iter()
