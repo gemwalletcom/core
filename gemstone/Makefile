@@ -14,7 +14,14 @@ FW_NAME := Gemstone
 FW_FFI_NAME := $(FW_NAME)FFI
 FW_FFI_FILE := $(FW_FFI_NAME).framework
 XC_FW_FFI_NAME := $(FW_FFI_NAME).xcframework
-MODULE_MAP := $(FW_FFI_NAME).modulemap
+
+define MODULE_MAP2
+framework module GemstoneFFI {
+    header "GemstoneFFI.h"
+    export *
+}
+endef
+export MODULE_MAP2
 
 TARGET_DIR := ../target
 GEN_SWIFT_FOLDER := generated/swift
@@ -56,9 +63,9 @@ bindgen-swift:
 
 assemble-frameworks:
 	@cd $(TARGET_DIR) && find . -type d -name $(FW_FFI_FILE) | xargs rm -rf
-	@cd $(TARGET_DIR)/aarch64-apple-ios-sim/$(BUILD_MODE_TARGET) && mkdir -p $(FW_FFI_FILE) && cd $(FW_FFI_FILE) && mkdir Headers Modules Resources && cp ../../../../$(LIB_NAME)/$(GEN_SWIFT_FOLDER)/$(MODULE_MAP) ./Modules/module.modulemap && cp ../../../../$(LIB_NAME)/$(GEN_SWIFT_FOLDER)/$(FW_FFI_NAME).h ./Headers && cp ../$(STATIC_LIB_NAME) ./$(FW_FFI_NAME) && cp ../../../../$(LIB_NAME)/src/Info.plist ./Resources
-	@cd $(TARGET_DIR)/aarch64-apple-ios/$(BUILD_MODE_TARGET) && mkdir -p $(FW_FFI_FILE) && cd $(FW_FFI_FILE) && mkdir Headers Modules Resources && cp ../../../../$(LIB_NAME)/$(GEN_SWIFT_FOLDER)/$(MODULE_MAP) ./Modules/module.modulemap && cp ../../../../$(LIB_NAME)/$(GEN_SWIFT_FOLDER)/$(FW_FFI_NAME).h ./Headers && cp ../$(STATIC_LIB_NAME) ./$(FW_FFI_NAME) && cp ../../../../$(LIB_NAME)/src/Info.plist ./Resources
-	@cd $(TARGET_DIR)/aarch64-apple-ios-macabi/$(BUILD_MODE_TARGET) && mkdir -p $(FW_FFI_FILE) && cd $(FW_FFI_FILE) && mkdir Headers Modules Resources && cp ../../../../$(LIB_NAME)/$(GEN_SWIFT_FOLDER)/$(MODULE_MAP) ./Modules/module.modulemap && cp ../../../../$(LIB_NAME)/$(GEN_SWIFT_FOLDER)/$(FW_FFI_NAME).h ./Headers && cp ../$(STATIC_LIB_NAME) ./$(FW_FFI_NAME) && cp ../../../../$(LIB_NAME)/src/Info.plist ./Resources	
+	@cd $(TARGET_DIR)/aarch64-apple-ios-sim/$(BUILD_MODE_TARGET) && mkdir -p $(FW_FFI_FILE) && cd $(FW_FFI_FILE) && mkdir Headers Modules Resources && echo "$$MODULE_MAP2" > ./Modules/module.modulemap && cp ../../../../$(LIB_NAME)/$(GEN_SWIFT_FOLDER)/$(FW_FFI_NAME).h ./Headers && cp ../$(STATIC_LIB_NAME) ./$(FW_FFI_NAME) && cp ../../../../$(LIB_NAME)/src/Info.plist ./Resources
+	@cd $(TARGET_DIR)/aarch64-apple-ios/$(BUILD_MODE_TARGET) && mkdir -p $(FW_FFI_FILE) && cd $(FW_FFI_FILE) && mkdir Headers Modules Resources && echo "$$MODULE_MAP2" > ./Modules/module.modulemap && cp ../../../../$(LIB_NAME)/$(GEN_SWIFT_FOLDER)/$(FW_FFI_NAME).h ./Headers && cp ../$(STATIC_LIB_NAME) ./$(FW_FFI_NAME) && cp ../../../../$(LIB_NAME)/src/Info.plist ./Resources
+	@cd $(TARGET_DIR)/aarch64-apple-ios-macabi/$(BUILD_MODE_TARGET) && mkdir -p $(FW_FFI_FILE) && cd $(FW_FFI_FILE) && mkdir Headers Modules Resources && echo "$$MODULE_MAP2" > ./Modules/module.modulemap && cp ../../../../$(LIB_NAME)/$(GEN_SWIFT_FOLDER)/$(FW_FFI_NAME).h ./Headers && cp ../$(STATIC_LIB_NAME) ./$(FW_FFI_NAME) && cp ../../../../$(LIB_NAME)/src/Info.plist ./Resources	
 
 xcframework:
 	@rm -rf $(TARGET_XC_FW_FOLDER)/Sources/$(XC_FW_FFI_NAME) && mkdir -p $(TARGET_XC_FW_FOLDER)/Sources
