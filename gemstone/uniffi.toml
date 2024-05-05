@@ -1,0 +1,5 @@
+[bindings.kotlin]
+cdylib_name = "gemstone"
+
+[bindings.swift]
+ffi_module_name = "Gemstone"
