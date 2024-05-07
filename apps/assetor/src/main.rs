@@ -5,7 +5,7 @@ use std::{thread, time::Duration};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    println!("pricer init");
+    println!("assetor init");
 
     let settings = Settings::new().unwrap();
     let coingecko_client = CoinGeckoClient::new(settings.coingecko.key.secret);

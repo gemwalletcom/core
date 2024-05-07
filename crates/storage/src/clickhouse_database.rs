@@ -1,21 +1,18 @@
 use clickhouse::{error::Result, Client};
 
-use crate::models::{ChartCoinPrice, ChartPrice};
+use crate::models::{CreateChart, GetChart};
 
 pub struct ClickhouseDatabase {
     client: Client,
 }
 
-const CREATE_TABLES: &str = include_str!("./clickhouse_migration.sql");
+pub const CREATE_TABLES: &str = include_str!("./clickhouse_migration.sql");
+pub const CHARTS_TABLE_NAME: &str = "charts";
 
 //TODO: Migrate to storage crate
 impl ClickhouseDatabase {
     pub fn new(url: &str) -> Self {
-        let client = Client::default()
-            .with_url(url)
-            .with_database("api")
-            .with_option("max_partitions_per_insert_block", "10000");
-
+        let client = Client::default().with_url(url).with_database("api");
         Self { client }
     }
 
@@ -23,13 +20,17 @@ impl ClickhouseDatabase {
         self.client.query(CREATE_TABLES).execute().await
     }
 
-    pub async fn add_charts(&self, charts: Vec<ChartCoinPrice>) -> Result<u64> {
-        let mut inserter = self.client.inserter("charts")?.with_max_rows(100);
+    pub async fn add_charts(&self, charts: Vec<CreateChart>) -> Result<usize> {
+        let mut inserter = self
+            .client
+            .inserter(CHARTS_TABLE_NAME)?
+            .with_max_entries(50);
 
-        for chart in charts {
-            inserter.write(&chart)?;
+        for chart in charts.clone() {
+            inserter.write(&chart).await?;
         }
-        Ok(inserter.end().await?.rows)
+        inserter.end().await?;
+        Ok(charts.len())
     }
 
     pub async fn get_charts(
@@ -37,27 +38,27 @@ impl ClickhouseDatabase {
         coin_id: &str,
         period: &str,
         period_limit: i32,
-    ) -> Result<Vec<ChartPrice>> {
+    ) -> Result<Vec<GetChart>> {
         let vec = self
             .client
             .query(
                 "
-                SELECT
-                    avg(price),
-                    toStartOfInterval(created_at, INTERVAL ?) as date
-                FROM
-                    charts
-                WHERE
-                    coin_id = ?
-                    AND created_at >= subtractMinutes (now(), ?)
-                group BY (coin_id, date)
-                ORDER BY date DESC
-            ",
+            SELECT
+                avg(price) as price,
+                toStartOfInterval(ts, INTERVAL ?) as date
+            FROM
+                charts
+            WHERE
+                coin_id = ?
+                AND ts >= subtractMinutes (now(), ?)
+            group BY (coin_id, date)
+            ORDER BY date DESC
+        ",
             )
             .bind(period)
             .bind(coin_id)
             .bind(period_limit)
-            .fetch_all::<ChartPrice>()
+            .fetch_all::<GetChart>()
             .await?;
         Ok(vec)
     }

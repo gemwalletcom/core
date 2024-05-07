@@ -9,11 +9,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let settings = Settings::new().unwrap();
     let coingecko_client = CoinGeckoClient::new(settings.coingecko.key.secret);
-    let price_client = PriceClient::new(
-        &settings.redis.url,
-        &settings.postgres.url,
-        &settings.clickhouse.url,
-    );
+    let price_client = PriceClient::new(&settings.redis.url, &settings.postgres.url);
 
     let mut price_updater = PriceUpdater::new(price_client, coingecko_client.clone());
 
@@ -42,18 +38,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    // updates charts
-    // only needed on initial setup
-    // let result = price_updater.update_charts_all().await;
-    // match result {
-    //     Ok(count) => {
-    //         println!("update charts all: {}", count)
-    //     }
-    //     Err(err) => {
-    //         println!("update charts all error: {}", err)
-    //     }
-    // }
-
     println!("update prices assets: start");
 
     match price_updater.update_prices_assets().await {
@@ -65,37 +49,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    println!("update prices all: start");
-
-    match price_updater.update_prices_all().await {
-        Ok(count) => {
-            println!("update prices all: {}", count)
-        }
-        Err(err) => {
-            println!("update prices all error: {}", err)
-        }
-    }
-
     loop {
         println!("update prices: start");
 
-        match price_updater.update_prices(15).await {
+        match price_updater.update_prices(25).await {
             Ok(count) => {
                 println!("update prices: {}", count)
             }
             Err(err) => {
                 println!("update prices error: {}", err)
-            }
-        }
-
-        println!("update charts: start");
-
-        match price_updater.update_charts().await {
-            Ok(count) => {
-                println!("update charts: {}", count)
-            }
-            Err(err) => {
-                println!("update charts error: {}", err)
             }
         }
 

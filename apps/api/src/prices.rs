@@ -1,7 +1,7 @@
 extern crate rocket;
 use pricer::client::PriceClient;
-use pricer::DEFAULT_FIAT_CURRENCY;
 use primitives::asset_price::{AssetPrices, AssetPricesRequest};
+use primitives::DEFAULT_FIAT_CURRENCY;
 use rocket::serde::json::Json;
 use rocket::tokio::sync::Mutex;
 use rocket::State;
@@ -29,14 +29,12 @@ pub async fn get_assets_prices(
         .clone()
         .unwrap_or(DEFAULT_FIAT_CURRENCY.to_string());
     let asset_ids = request.asset_ids.iter().map(|x| x.as_str()).collect();
-    let prices_result = price_client
+    let prices = price_client
         .lock()
         .await
         .get_cache_prices(currency.clone().as_str(), asset_ids)
         .await
-        .unwrap_or_default();
-
-    let prices = prices_result
+        .unwrap_or_default()
         .into_iter()
         .map(|x| x.as_primitive())
         .collect();

@@ -1,0 +1,17 @@
+[package]
+name = "charter"
+version = { workspace = true }
+edition = { workspace = true }
+
+[dependencies]
+serde_json = { workspace = true }
+redis = { workspace = true }
+tokio = { workspace = true }
+chrono = { workspace = true }
+
+cacher = { path = "../../crates/cacher" }
+storage = { path = "../../crates/storage" }
+pricer = { path = "../pricer" }
+coingecko = { path = "../../crates/coingecko" }
+primitives = { path = "../../crates/primitives" }
+settings = { path = "../../crates/settings" }

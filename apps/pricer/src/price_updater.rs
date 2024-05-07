@@ -1,15 +1,13 @@
 use crate::client::PriceClient;
-use crate::DEFAULT_FIAT_CURRENCY;
 use chrono::{Duration, Utc};
 use coingecko::mapper::{get_chain_for_coingecko_platform_id, get_coingecko_market_id_for_chain};
 use coingecko::{Coin, CoinGeckoClient, CoinMarket};
 use primitives::chain::Chain;
-use primitives::AssetId;
+use primitives::{AssetId, DEFAULT_FIAT_CURRENCY};
 use std::collections::{HashMap, HashSet};
 use std::error::Error;
-use std::thread;
 use storage::models::price::{PriceAsset, PriceCache};
-use storage::models::{ChartCoinPrice, FiatRate, Price};
+use storage::models::{FiatRate, Price};
 
 pub struct PriceUpdater {
     coin_gecko_client: CoinGeckoClient,
@@ -72,22 +70,6 @@ impl PriceUpdater {
         self.price_client.set_prices(prices)
     }
 
-    pub async fn update_charts(&mut self) -> Result<usize, Box<dyn std::error::Error>> {
-        let prices = self.price_client.get_prices()?;
-        let charts = prices
-            .clone()
-            .into_iter()
-            .filter(|x| x.last_updated_at.is_some())
-            .map(|x| x.as_chartcoin())
-            .collect::<Vec<ChartCoinPrice>>();
-
-        for chunk in charts.chunks(500) {
-            self.price_client.set_charts(chunk.to_vec()).await?;
-        }
-
-        Ok(charts.len())
-    }
-
     pub fn get_prices_assets_for_coin(&mut self, coin: Coin) -> Vec<PriceAsset> {
         return coin
             .platforms
@@ -109,50 +91,6 @@ impl PriceUpdater {
                 None
             })
             .collect::<Vec<_>>();
-    }
-
-    pub async fn update_charts_all(&mut self) -> Result<usize, Box<dyn std::error::Error>> {
-        let coin_list = self.get_coin_list().await?;
-
-        for coin_id in coin_list.clone() {
-            let prices = self
-                .coin_gecko_client
-                .get_market_chart(coin_id.id.as_str())
-                .await;
-
-            match prices {
-                Ok(prices) => {
-                    let charts = prices
-                        .prices
-                        .clone()
-                        .into_iter()
-                        .map(|x| ChartCoinPrice {
-                            coin_id: coin_id.id.clone(),
-                            price: x[1],
-                            created_at: (x[0] as u64) / 1000,
-                        })
-                        .collect::<Vec<ChartCoinPrice>>();
-
-                    match self.price_client.set_charts(charts).await {
-                        Ok(_) => {
-                            println!("set charts {}", coin_id.id.clone());
-                        }
-                        Err(err) => {
-                            println!("set charts error: {}", err);
-                        }
-                    };
-
-                    println!("update charts {}", coin_id.id.clone());
-
-                    thread::sleep(std::time::Duration::from_millis(100));
-                }
-                Err(err) => {
-                    println!("update charts error: {}", err);
-                    continue;
-                }
-            }
-        }
-        Ok(coin_list.len())
     }
 
     pub async fn update_prices_cache(&mut self) -> Result<usize, Box<dyn Error>> {
@@ -203,7 +141,7 @@ impl PriceUpdater {
                 .await?;
         }
 
-        Ok(0)
+        Ok(prices.len())
     }
 
     pub async fn update_fiat_rates(&mut self) -> Result<usize, Box<dyn Error>> {

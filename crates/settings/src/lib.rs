@@ -17,6 +17,7 @@ pub struct Settings {
     pub banxa: Banxa,
     pub coingecko: CoinGecko,
     pub pricer: Pricer,
+    pub charter: Charter,
     pub name: Name,
     pub metrics: Metrics,
     pub assets: Assets,
@@ -100,6 +101,12 @@ pub struct CoinGecko {
 pub struct Pricer {
     pub timer: u64,
     pub outdated: u64,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[allow(unused)]
+pub struct Charter {
+    pub timer: u64,
 }
 
 #[derive(Debug, Deserialize, Clone)]

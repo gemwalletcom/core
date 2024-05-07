@@ -84,3 +84,5 @@ pub mod nft;
 pub use self::nft::{NFTAttrubute, NFTCollectible, NFTCollection, NFTImage};
 pub mod explorer;
 pub use self::explorer::Explorer;
+
+pub const DEFAULT_FIAT_CURRENCY: &str = "USD";

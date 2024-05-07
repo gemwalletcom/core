@@ -52,7 +52,13 @@ pub struct Charts {
 #[serde(rename_all = "camelCase")]
 pub struct ChartValue {
     pub timestamp: i32,
-    pub value: f64,
+    pub value: f32,
+}
+
+impl PartialEq for ChartValue {
+    fn eq(&self, other: &Self) -> bool {
+        self.timestamp == other.timestamp && self.value == other.value
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

@@ -1,16 +1,15 @@
 use chrono::NaiveDateTime;
-use primitives::{Asset, AssetDetails, AssetScore, ChartPeriod, ChartValue};
+use primitives::{Asset, AssetDetails, AssetScore};
 use redis::{AsyncCommands, RedisResult};
 use std::error::Error;
 use storage::{
     models::{
         price::{PriceAsset, PriceCache},
-        ChartCoinPrice, FiatRate,
+        FiatRate,
     },
-    ClickhouseDatabase, DatabaseClient,
+    DatabaseClient,
 };
 
-use crate::DEFAULT_FIAT_CURRENCY;
 use cacher::CacherClient;
 use storage::models::Price;
 
@@ -18,20 +17,17 @@ pub struct PriceClient {
     redis_client: redis::Client,
     cache_client: CacherClient,
     database: DatabaseClient,
-    clickhouse_database: ClickhouseDatabase,
     prefix: String,
 }
 
 impl PriceClient {
-    pub fn new(redis_url: &str, database_url: &str, clichouse_database_url: &str) -> Self {
+    pub fn new(redis_url: &str, database_url: &str) -> Self {
         let redis_client = redis::Client::open(redis_url).unwrap();
         let database = DatabaseClient::new(database_url);
-        let clickhouse_database = ClickhouseDatabase::new(clichouse_database_url);
         Self {
             redis_client,
             cache_client: CacherClient::new(redis_url),
             database,
-            clickhouse_database,
             prefix: "prices:".to_owned(),
         }
     }
@@ -92,50 +88,6 @@ impl PriceClient {
 
     pub fn get_fiat_rates(&mut self) -> Result<Vec<FiatRate>, Box<dyn Error>> {
         Ok(self.database.get_fiat_rates()?)
-    }
-
-    pub async fn set_charts(
-        &mut self,
-        charts: Vec<ChartCoinPrice>,
-    ) -> Result<usize, Box<dyn Error>> {
-        let _ = self.clickhouse_database.add_charts(charts).await?;
-        Ok(0)
-    }
-
-    pub async fn get_charts_prices(
-        &mut self,
-        coin_id: &str,
-        period: ChartPeriod,
-        currency: &str,
-    ) -> Result<Vec<ChartValue>, Box<dyn Error>> {
-        let base_rate = self.database.get_fiat_rate(DEFAULT_FIAT_CURRENCY)?;
-        let rate = self.database.get_fiat_rate(currency)?;
-        let rate_multiplier = rate.rate / base_rate.rate;
-        let interval = self.period_sql(period.clone());
-        let prices = self
-            .clickhouse_database
-            .get_charts(coin_id, interval, period.minutes())
-            .await?
-            .into_iter()
-            .map(|x| ChartValue {
-                timestamp: x.date,
-                value: x.price * rate_multiplier,
-            })
-            .collect();
-
-        Ok(prices)
-    }
-
-    fn period_sql(&self, period: ChartPeriod) -> &str {
-        match period {
-            ChartPeriod::Hour => "1 minute",
-            ChartPeriod::Day => "15 minute",
-            ChartPeriod::Week => "1 hour",
-            ChartPeriod::Month => "6 hour",
-            ChartPeriod::Quarter => "1 day",
-            ChartPeriod::Year => "3 day",
-            ChartPeriod::All => "3 day",
-        }
     }
 
     // cache

@@ -17,7 +17,7 @@ pub mod version;
 pub use self::asset::Asset;
 pub use self::asset_type::AssetType;
 pub use self::chain::Chain;
-pub use self::chart::{ChartCoinPrice, ChartPrice};
+pub use self::chart::{CreateChart, GetChart};
 pub use self::device::Device;
 pub use self::device::UpdateDevice;
 pub use self::fiat::{FiatAsset, FiatProvider, FiatRate, FiatTransaction};

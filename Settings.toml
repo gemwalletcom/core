@@ -41,6 +41,9 @@ secret = ""
 timer = 60
 outdated = 604800 # 7 days
 
+[charter]
+timer = 60
+
 [name]
 [name.ens]
 url = "https://eth.llamarpc.com"

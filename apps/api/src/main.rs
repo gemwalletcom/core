@@ -31,6 +31,7 @@ mod transaction_client;
 
 use api_connector::PusherClient;
 use asset_client::AssetsClient;
+use charter::client::ChartsClient;
 use config_client::Client as ConfigClient;
 use device_client::DevicesClient;
 use fiat::client::Client as FiatProvider;
@@ -60,7 +61,8 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
     database_client.migrations();
 
     let settings_clone = settings.clone();
-    let price_client = PriceClient::new(redis_url, postgres_url, &settings.clickhouse.url);
+    let price_client = PriceClient::new(redis_url, postgres_url);
+    let charts_client = ChartsClient::new(postgres_url, &settings.clickhouse.url);
     let node_client = NodeClient::new(database_client).await;
     let config_client = ConfigClient::new(postgres_url).await;
     let providers = NameProviderFactory::create_providers(settings_clone.clone());
@@ -120,6 +122,7 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
         ))
         .manage(Mutex::new(fiat_client))
         .manage(Mutex::new(price_client))
+        .manage(Mutex::new(charts_client))
         .manage(Mutex::new(node_client))
         .manage(Mutex::new(config_client))
         .manage(Mutex::new(name_client))
