@@ -15,7 +15,7 @@ env:
 
 jobs:
   build_ios:
-    runs-on: macos-latest-xlarge
+    runs-on: macos-latest
     defaults:
       run:
         working-directory: gemstone
