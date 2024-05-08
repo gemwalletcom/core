@@ -20,7 +20,7 @@ gem_ton = { path = "../crates/gem_ton" }
 
 # TODO: move to gem_sui
 bcs = "0.1.6"
-sui-types = { git = "https://github.com/mystenlabs/sui", package = "sui-types", tag = "mainnet-v1.23.1" }
+sui-types = { git = "https://github.com/mystenlabs/sui", package = "sui-types", tag = "mainnet-v1.24.1" }
 blake2 = { workspace = true }
 base64 = { workspace = true }
 hex = { workspace = true }
