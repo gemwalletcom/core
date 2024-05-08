@@ -1,0 +1,6 @@
+[bindings.kotlin]
+cdylib_name = "gemstone"
+
+[bindings.swift]
+ffi_module_name = "GemstoneFFI"
+generate_module_map = false
