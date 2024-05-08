@@ -276,6 +276,19 @@ diesel::table! {
 }
 
 diesel::table! {
+    subscriptions_addresses_exclude (address) {
+        #[max_length = 128]
+        address -> Varchar,
+        #[max_length = 32]
+        chain -> Varchar,
+        #[max_length = 64]
+        name -> Varchar,
+        updated_at -> Timestamp,
+        created_at -> Timestamp,
+    }
+}
+
+diesel::table! {
     swap_assets (id) {
         id -> Int4,
         #[max_length = 128]
@@ -367,6 +380,7 @@ diesel::joinable!(prices_assets -> assets (asset_id));
 diesel::joinable!(prices_assets -> prices (price_id));
 diesel::joinable!(scan_addresses -> chains (chain));
 diesel::joinable!(subscriptions -> devices (device_id));
+diesel::joinable!(subscriptions_addresses_exclude -> chains (chain));
 diesel::joinable!(swap_assets -> assets (asset_id));
 diesel::joinable!(transactions_addresses -> assets (asset_id));
 diesel::joinable!(transactions_addresses -> chains (chain_id));
@@ -389,6 +403,7 @@ diesel::allow_tables_to_appear_in_same_query!(
     prices_old,
     scan_addresses,
     subscriptions,
+    subscriptions_addresses_exclude,
     swap_assets,
     tokenlists,
     transactions,

@@ -422,11 +422,27 @@ impl DatabaseClient {
         addresses: Vec<String>,
     ) -> Result<Vec<Subscription>, diesel::result::Error> {
         use crate::schema::subscriptions::dsl::*;
+
+        // exlcude addresses from subscriptions
+        let exclude_addresses = self.get_subscriptions_exclude_addresses(addresses.clone())?;
+
         subscriptions
             .filter(chain.eq(_chain.as_ref()))
             .filter(address.eq_any(addresses))
+            .filter(address.ne_all(exclude_addresses))
             .distinct_on((device_id, chain, address))
             .select(Subscription::as_select())
+            .load(&mut self.connection)
+    }
+
+    pub fn get_subscriptions_exclude_addresses(
+        &mut self,
+        addresses: Vec<String>,
+    ) -> Result<Vec<String>, diesel::result::Error> {
+        use crate::schema::subscriptions_addresses_exclude::dsl::*;
+        subscriptions_addresses_exclude
+            .filter(address.eq_any(addresses))
+            .select(address)
             .load(&mut self.connection)
     }
 
