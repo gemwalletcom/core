@@ -72,10 +72,10 @@ impl<'a> Explorer<'a> {
                 token_url: Some("/token/"),
             },
             Chain::Ton => Explorer {
-                host: "https://tonscan.org",
-                transaction_url: "/tx/",
-                account_url: "/address/",
-                token_url: None,
+                host: "https://tonviewer.com",
+                transaction_url: "/transaction/",
+                account_url: "/",
+                token_url: Some("/"),
             },
             Chain::Tron => Explorer {
                 host: "https://tronscan.org",
@@ -310,6 +310,34 @@ mod tests {
         assert_eq!(
             Explorer::get_explorer_token_url(chain, "0x1234567890abcdef"),
             Some("https://etherscan.io/token/0x1234567890abcdef".to_string())
+        );
+    }
+    #[test]
+    fn test_get_explorer_token_url_ton() {
+        let chain = Chain::Ton;
+        assert_eq!(
+            Explorer::get_explorer_address_url(
+                chain,
+                "EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs"
+            ),
+            "https://tonviewer.com/EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs"
+        );
+        assert_eq!(
+            Explorer::get_explorer_transaction_url(
+                chain,
+                "cefe5c6d145976c434280648fae28dfdfee58002e8c4e36195550ed6cdb22aa0"
+            ),
+            "https://tonviewer.com/transaction/cefe5c6d145976c434280648fae28dfdfee58002e8c4e36195550ed6cdb22aa0"
+        );
+        assert_eq!(
+            Explorer::get_explorer_token_url(
+                chain,
+                "EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs"
+            ),
+            Some(
+                "https://tonviewer.com/EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs"
+                    .to_string()
+            )
         );
     }
 }
