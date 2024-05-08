@@ -17,7 +17,6 @@ CREATE TABLE transactions (
     utxo_outputs jsonb,
     metadata jsonb,
     fee_asset_id VARCHAR NOT NULL REFERENCES assets (id) ON DELETE CASCADE,
-    block_created_at timestamp NOT NULL default current_timestamp,
     updated_at timestamp NOT NULL default current_timestamp,
     created_at timestamp NOT NULL default current_timestamp,
     UNIQUE(chain, hash)

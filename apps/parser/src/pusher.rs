@@ -133,8 +133,8 @@ impl Pusher {
                 })
             }
             TransactionType::Swap => {
-                let metadata: TransactionSwapMetadata =
-                    serde_json::from_value(transaction.metadata)?;
+                let metadata = transaction.metadata.ok_or("Missing metadata")?;
+                let metadata: TransactionSwapMetadata = serde_json::from_value(metadata)?;
                 let from_asset = self
                     .database_client
                     .get_asset(metadata.from_asset.to_string().as_str())?;

@@ -34,7 +34,7 @@ impl TransactionAddresses {
                 .collect(),
             primitives::TransactionType::Swap => {
                 let metadata: TransactionSwapMetadata =
-                    serde_json::from_value(transaction.metadata.clone()).unwrap();
+                    serde_json::from_value(transaction.metadata.clone().unwrap()).unwrap();
                 let from_asset = metadata.from_asset.clone();
                 let to_asset = metadata.to_asset.clone();
                 vec![

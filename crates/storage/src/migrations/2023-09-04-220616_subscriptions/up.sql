@@ -10,3 +10,6 @@ CREATE TABLE subscriptions (
 );
 
 SELECT diesel_manage_updated_at('subscriptions');
+
+CREATE INDEX subscriptions_address_idx ON subscriptions (address DESC);
+CREATE INDEX subscriptions_chain_idx ON subscriptions (chain DESC);

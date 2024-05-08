@@ -7,7 +7,7 @@ use crate::{
 use chrono::offset::Utc;
 use chrono::DateTime;
 use serde::{Deserialize, Serialize};
-use std::collections::HashSet;
+use std::{collections::HashSet, vec};
 use typeshare::typeshare;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -44,7 +44,7 @@ pub struct Transaction {
     pub utxo_inputs: Vec<TransactionInput>,
     #[serde(rename = "utxoOutputs")]
     pub utxo_outputs: Vec<TransactionInput>,
-    pub metadata: serde_json::Value,
+    pub metadata: Option<serde_json::Value>,
     #[serde(rename = "createdAt")]
     pub created_at: DateTime<Utc>,
 }
@@ -86,7 +86,7 @@ impl Transaction {
             direction: TransactionDirection::SelfTransfer,
             utxo_inputs: vec![],
             utxo_outputs: vec![],
-            metadata: metadata.into(),
+            metadata,
             created_at,
         }
     }
@@ -106,8 +106,8 @@ impl Transaction {
         value: String,
         memo: Option<String>,
         direction: TransactionDirection,
-        utxo_inputs: Vec<TransactionInput>,
-        utxo_outputs: Vec<TransactionInput>,
+        utxo_inputs: Option<Vec<TransactionInput>>,
+        utxo_outputs: Option<Vec<TransactionInput>>,
         metadata: Option<serde_json::Value>,
         created_at: DateTime<Utc>,
     ) -> Self {
@@ -128,9 +128,9 @@ impl Transaction {
             value,
             memo,
             direction,
-            utxo_inputs,
-            utxo_outputs,
-            metadata: metadata.into(),
+            utxo_inputs: utxo_inputs.unwrap_or_default(),
+            utxo_outputs: utxo_outputs.unwrap_or_default(),
+            metadata,
             created_at,
         }
     }
@@ -275,15 +275,19 @@ impl Transaction {
     pub fn asset_ids(&self) -> Vec<String> {
         match self.transaction_type {
             TransactionType::Transfer => vec![self.asset_id.clone().to_string()],
-            TransactionType::Swap => {
-                let metadata: TransactionSwapMetadata =
-                    serde_json::from_value(self.metadata.clone()).unwrap();
-
-                vec![
-                    metadata.from_asset.to_string(),
-                    metadata.to_asset.to_string(),
-                ]
-            }
+            TransactionType::Swap => self
+                .metadata
+                .clone()
+                .and_then(|metadata| {
+                    serde_json::from_value::<TransactionSwapMetadata>(metadata).ok()
+                })
+                .map(|metadata| {
+                    vec![
+                        metadata.from_asset.to_string(),
+                        metadata.to_asset.to_string(),
+                    ]
+                })
+                .unwrap_or_default(),
             TransactionType::TokenApproval
             | TransactionType::StakeDelegate
             | TransactionType::StakeUndelegate
