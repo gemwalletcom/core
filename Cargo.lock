@@ -2713,6 +2713,7 @@ dependencies = [
  "anyhow",
  "hex",
  "itoa",
+ "uniffi",
 ]
 
 [[package]]
@@ -2801,6 +2802,7 @@ dependencies = [
  "base64 0.22.0",
  "bcs",
  "blake2",
+ "gem_bsc",
  "gem_cosmos",
  "gem_solana",
  "gem_ton",

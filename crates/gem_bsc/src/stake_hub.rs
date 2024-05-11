@@ -1,4 +1,3 @@
-use alloy_core::primitives::U256;
 use alloy_core::{sol, sol_types::SolCall};
 
 sol! {
@@ -21,6 +20,7 @@ sol! {
     }
 }
 
+#[derive(uniffi::Record, Debug)]
 pub struct BscValidator {
     pub operator_address: String,
     pub moniker: String,
@@ -28,10 +28,11 @@ pub struct BscValidator {
     pub jailed: bool,
 }
 
+#[derive(uniffi::Record, Debug)]
 pub struct BscDelegation {
     pub delegator_address: String,
     pub validator_address: String,
-    pub amount: U256,
+    pub amount: String,
 }
 
 pub fn decode_validators_return(result: &[u8]) -> Result<Vec<BscValidator>, anyhow::Error> {
@@ -59,7 +60,7 @@ pub fn decode_delegations_return(result: &[u8]) -> Result<Vec<BscDelegation>, an
         .map(|delegation| BscDelegation {
             delegator_address: delegation.delegatorAddress.to_string(),
             validator_address: delegation.validatorAddress.to_string(),
-            amount: delegation.amount,
+            amount: delegation.amount.to_string(),
         })
         .collect();
     Ok(delegations)
@@ -95,6 +96,6 @@ mod tests {
             delegations[0].validator_address,
             "0x343dA7Ff0446247ca47AA41e2A25c5Bbb230ED0A"
         );
-        assert_eq!(delegations[0].amount.to_string(), "1011395372346842863");
+        assert_eq!(delegations[0].amount, "1011395372346842863");
     }
 }

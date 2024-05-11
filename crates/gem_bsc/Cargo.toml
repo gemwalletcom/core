@@ -9,4 +9,7 @@ hex = { workspace = true }
 itoa = { workspace = true }
 anyhow = { workspace = true }
 alloy-core = { version = "0.7.0", features = ["sol-types", "json-abi"] }
-# uniffi = { wokspace = true }
+uniffi = { workspace = true }
+
+[build-dependencies]
+uniffi = { workspace = true, features = ["build"] }
