@@ -1,0 +1,12 @@
+[package]
+name = "gem_bsc"
+version = { workspace = true }
+edition = { workspace = true }
+
+[dependencies]
+
+hex = { workspace = true }
+itoa = { workspace = true }
+anyhow = { workspace = true }
+alloy-core = { version = "0.7.0", features = ["sol-types", "json-abi"] }
+# uniffi = { wokspace = true }
