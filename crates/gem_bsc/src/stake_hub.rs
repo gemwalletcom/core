@@ -20,7 +20,6 @@ sol! {
     }
 }
 
-#[derive(uniffi::Record, Debug)]
 pub struct BscValidator {
     pub operator_address: String,
     pub moniker: String,
@@ -28,7 +27,6 @@ pub struct BscValidator {
     pub jailed: bool,
 }
 
-#[derive(uniffi::Record, Debug)]
 pub struct BscDelegation {
     pub delegator_address: String,
     pub validator_address: String,

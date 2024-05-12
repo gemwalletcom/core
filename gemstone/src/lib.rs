@@ -1,7 +1,4 @@
-use gem_bsc::{
-    stake_hub,
-    stake_hub::{BscDelegation, BscValidator},
-};
+pub mod bsc;
 use primitives::Chain;
 use std::{collections::HashMap, str::FromStr};
 
@@ -201,11 +198,15 @@ pub fn ton_base64_to_hex_address(base64_str: String) -> Result<String, GemstoneE
 }
 
 #[uniffi::export]
-pub fn bsc_decode_validators_return(result: Vec<u8>) -> Result<Vec<BscValidator>, GemstoneError> {
-    stake_hub::decode_validators_return(&result).map_err(GemstoneError::from)
+pub fn bsc_decode_validators_return(
+    result: Vec<u8>,
+) -> Result<Vec<bsc::BscValidator>, GemstoneError> {
+    bsc::decode_validators_return(&result).map_err(GemstoneError::from)
 }
 
 #[uniffi::export]
-pub fn bsc_decode_delegations_return(result: Vec<u8>) -> Result<Vec<BscDelegation>, GemstoneError> {
-    stake_hub::decode_delegations_return(&result).map_err(GemstoneError::from)
+pub fn bsc_decode_delegations_return(
+    result: Vec<u8>,
+) -> Result<Vec<bsc::BscDelegation>, GemstoneError> {
+    bsc::decode_delegations_return(&result).map_err(GemstoneError::from)
 }

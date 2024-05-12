@@ -60,7 +60,7 @@ build-targets:
 bindgen-swift:
 	@mkdir -p $(GEN_SWIFT_FOLDER)
 	cargo build --$(BUILD_MODE)
-	cargo run -p uniffi-bindgen generate src/$(UDL_NAME) --language swift --lib-file $(TARGET_DIR)/$(BUILD_MODE_TARGET)/$(DY_LIB_NAME)  -o $(GEN_SWIFT_FOLDER)
+	cargo run -p uniffi-bindgen generate --library --language swift --crate $(LIB_NAME) $(TARGET_DIR)/$(BUILD_MODE_TARGET)/$(DY_LIB_NAME) -o $(GEN_SWIFT_FOLDER)
 
 assemble-frameworks:
 	@cd $(TARGET_DIR) && find . -type d -name $(FW_FFI_FILE) | xargs rm -rf
