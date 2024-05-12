@@ -10,7 +10,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let settings = Settings::new().unwrap();
     let coingecko_client = CoinGeckoClient::new(settings.coingecko.key.secret);
     let price_client = PriceClient::new(&settings.redis.url, &settings.postgres.url);
-
     let mut price_updater = PriceUpdater::new(price_client, coingecko_client.clone());
 
     println!("clean outdated asset: start");
@@ -26,8 +25,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             println!("clean outdated assets error: {}", err)
         }
     }
-
-    println!("update rates: start");
 
     match price_updater.update_fiat_rates().await {
         Ok(count) => {
@@ -49,15 +46,26 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    loop {
-        println!("update prices: start");
+    println!("update prices: start");
 
-        match price_updater.update_prices(25).await {
+    match price_updater.update_prices(30).await {
+        Ok(count) => {
+            println!("update prices: {}", count)
+        }
+        Err(err) => {
+            println!("update prices error: {}", err)
+        }
+    }
+
+    loop {
+        println!("update simple prices: start");
+
+        match price_updater.update_prices_simple().await {
             Ok(count) => {
-                println!("update prices: {}", count)
+                println!("update simple prices: {}", count)
             }
             Err(err) => {
-                println!("update prices error: {}", err)
+                println!("update simple prices error: {}", err)
             }
         }
 

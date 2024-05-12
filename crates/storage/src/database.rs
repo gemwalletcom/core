@@ -161,6 +161,25 @@ impl DatabaseClient {
             .execute(&mut self.connection)
     }
 
+    pub fn set_prices_simple(
+        &mut self,
+        values: Vec<Price>,
+    ) -> Result<usize, diesel::result::Error> {
+        use crate::schema::prices::dsl::*;
+        diesel::insert_into(prices)
+            .values(&values)
+            .on_conflict(id)
+            .do_update()
+            .set((
+                price.eq(excluded(price)),
+                price_change_percentage_24h.eq(excluded(price_change_percentage_24h)),
+                market_cap.eq(excluded(market_cap)),
+                total_volume.eq(excluded(total_volume)),
+                last_updated_at.eq(excluded(last_updated_at)),
+            ))
+            .execute(&mut self.connection)
+    }
+
     pub fn set_prices_assets(
         &mut self,
         values: Vec<PriceAsset>,
@@ -209,7 +228,8 @@ impl DatabaseClient {
         time: NaiveDateTime,
     ) -> Result<usize, diesel::result::Error> {
         use crate::schema::prices::dsl::*;
-        diesel::delete(prices.filter(last_updated_at.lt(time))).execute(&mut self.connection)
+        diesel::delete(prices.filter(last_updated_at.lt(time).or(last_updated_at.is_null())))
+            .execute(&mut self.connection)
     }
 
     pub fn set_fiat_rates(&mut self, rates: Vec<FiatRate>) -> Result<usize, diesel::result::Error> {

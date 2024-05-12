@@ -20,6 +20,8 @@ pub struct PriceClient {
     prefix: String,
 }
 
+const PRICES_INSERT_BATCH_LIMIT: usize = 1000;
+
 impl PriceClient {
     pub fn new(redis_url: &str, database_url: &str) -> Self {
         let redis_client = redis::Client::open(redis_url).unwrap();
@@ -41,8 +43,15 @@ impl PriceClient {
     }
 
     pub fn set_prices(&mut self, prices: Vec<Price>) -> Result<usize, Box<dyn Error>> {
-        for chunk in prices.chunks(1000).clone() {
+        for chunk in prices.chunks(PRICES_INSERT_BATCH_LIMIT).clone() {
             self.database.set_prices(chunk.to_vec())?;
+        }
+        Ok(prices.len())
+    }
+
+    pub fn set_prices_simple(&mut self, prices: Vec<Price>) -> Result<usize, Box<dyn Error>> {
+        for chunk in prices.chunks(PRICES_INSERT_BATCH_LIMIT).clone() {
+            self.database.set_prices_simple(chunk.to_vec())?;
         }
         Ok(prices.len())
     }
@@ -76,6 +85,15 @@ impl PriceClient {
 
     pub fn get_prices(&mut self) -> Result<Vec<Price>, Box<dyn Error>> {
         Ok(self.database.get_prices()?)
+    }
+
+    pub fn get_prices_ids(&mut self) -> Result<Vec<String>, Box<dyn Error>> {
+        Ok(self
+            .database
+            .get_prices()?
+            .into_iter()
+            .map(|x| x.id)
+            .collect())
     }
 
     pub fn get_prices_assets(&mut self) -> Result<Vec<PriceAsset>, Box<dyn Error>> {

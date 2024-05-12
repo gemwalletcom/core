@@ -31,7 +31,6 @@ impl AssetUpdater {
             match self.coin_gecko_client.get_coin(&coin).await {
                 Ok(coin_info) => {
                     let result = self.get_assets_from_coin_info(coin_info);
-                    println!("result: {:?}", result);
                     for (asset, asset_score, asset_details) in result {
                         let _ = self.update_asset(asset, asset_score, asset_details).await;
                     }
