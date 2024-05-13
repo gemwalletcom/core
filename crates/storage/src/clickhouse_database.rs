@@ -52,7 +52,7 @@ impl ClickhouseDatabase {
                 coin_id = ?
                 AND ts >= subtractMinutes (now(), ?)
             group BY (coin_id, date)
-            ORDER BY date DESC
+            ORDER BY date ASC
         ",
             )
             .bind(period)
