@@ -12,6 +12,7 @@ pub struct BscValidator {
     pub operator_address: String,
     pub moniker: String,
     pub commission: u64,
+    pub apy: u64,
     pub jailed: bool,
 }
 
@@ -31,6 +32,7 @@ impl From<stake_hub::BscValidator> for BscValidator {
             operator_address: value.operator_address,
             moniker: value.moniker,
             commission: value.commission,
+            apy: value.apy,
             jailed: value.jailed,
         }
     }
