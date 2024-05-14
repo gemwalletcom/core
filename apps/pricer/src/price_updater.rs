@@ -1,7 +1,7 @@
 use crate::client::PriceClient;
-use chrono::{Duration, Utc};
+use chrono::{Duration, NaiveDateTime, Utc};
 use coingecko::mapper::{get_chain_for_coingecko_platform_id, get_coingecko_market_id_for_chain};
-use coingecko::{Coin, CoinGeckoClient, CoinMarket};
+use coingecko::{Coin, CoinGeckoClient, CoinMarket, SimplePrice};
 use primitives::chain::Chain;
 use primitives::{AssetId, DEFAULT_FIAT_CURRENCY};
 use std::collections::{HashMap, HashSet};
@@ -54,6 +54,25 @@ impl PriceUpdater {
         self.update_prices(std::u32::MAX).await
     }
 
+    pub async fn update_prices_simple(&mut self) -> Result<usize, Box<dyn std::error::Error>> {
+        let ids = self.price_client.get_prices_ids()?;
+        let ids_chunks = ids.chunks(500);
+        for ids in ids_chunks {
+            let prices = self
+                .coin_gecko_client
+                .get_prices_by_ids(ids.to_vec(), DEFAULT_FIAT_CURRENCY)
+                .await?;
+            let prices = prices
+                .into_iter()
+                .map(|(id, price)| price_for_simple_price(id.as_str(), price))
+                .collect::<Vec<Price>>();
+
+            let _ = self.price_client.set_prices_simple(prices);
+        }
+
+        Ok(ids.len())
+    }
+
     pub async fn update_prices(&mut self, pages: u32) -> Result<usize, Box<dyn std::error::Error>> {
         let coin_markets = self
             .coin_gecko_client
@@ -63,6 +82,7 @@ impl PriceUpdater {
         let prices = coin_markets
             .into_iter()
             .map(|market| price_for_market(market.clone()))
+            .filter(|x| x.last_updated_at.is_some())
             .collect::<HashSet<Price>>()
             .into_iter()
             .collect::<Vec<Price>>();
@@ -179,6 +199,25 @@ fn price_for_market(market: CoinMarket) -> Price {
         market.total_supply.unwrap_or_default(),
         market.max_supply.unwrap_or_default(),
         market.last_updated.map(|x| x.naive_local()),
+    )
+}
+
+fn price_for_simple_price(id: &str, price: SimplePrice) -> Price {
+    let last_updated_at = price
+        .last_updated_at
+        .and_then(|x| NaiveDateTime::from_timestamp_opt(x as i64, 0));
+
+    Price::new(
+        id.to_string(),
+        price.usd.unwrap_or_default(),
+        price.usd_24h_change.unwrap_or_default(),
+        price.usd_market_cap.unwrap_or_default(),
+        0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        last_updated_at,
     )
 }
 

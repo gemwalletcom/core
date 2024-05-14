@@ -211,15 +211,15 @@ impl Chain {
             Self::OpBNB | Self::SmartChain => Some(AssetType::BEP20),
             Self::Solana => Some(AssetType::SPL),
             Self::Tron => Some(AssetType::TRC20),
+            Self::Ton => Some(AssetType::JETTON),
+            Self::Sui => Some(AssetType::TOKEN),
             Self::Bitcoin
             | Self::Litecoin
             | Self::Thorchain
             | Self::Cosmos
             | Self::Osmosis
-            | Self::Ton
             | Self::Doge
             | Self::Aptos
-            | Self::Sui
             | Self::Xrp
             | Self::Celestia
             | Self::Injective
