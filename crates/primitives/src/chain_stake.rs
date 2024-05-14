@@ -14,6 +14,7 @@ pub enum StakeChain {
     Celestia,
     Solana,
     Sui,
+    SmartChain,
 }
 
 impl StakeChain {
@@ -26,6 +27,7 @@ impl StakeChain {
             StakeChain::Solana => 259200,
             StakeChain::Sui => 86400,
             StakeChain::Osmosis => 1_036_800,
+            StakeChain::SmartChain => 604800,
         }
     }
 
@@ -39,6 +41,7 @@ impl StakeChain {
             | StakeChain::Osmosis => 0,
             StakeChain::Solana => 10_000_000, // 0.01 SOL
             StakeChain::Sui => 1_000_000_000, // 1 SUI
+            StakeChain::SmartChain => 1_000_000_000_000_000_000, // 1 BNB
         }
     }
 }
