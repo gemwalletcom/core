@@ -15,6 +15,7 @@ sol! {
             address delegatorAddress;
             address validatorAddress;
             uint256 amount;
+            uint256 shares;
         }
         function getValidators(uint16 offset, uint16 limit) external view returns (Validator[] memory);
         function getDelegations(address delegator, uint16 offset, uint16 limit) external view returns (Delegation[] memory);
@@ -33,6 +34,7 @@ pub struct BscDelegation {
     pub delegator_address: String,
     pub validator_address: String,
     pub amount: String,
+    pub shares: String,
 }
 
 pub fn decode_validators_return(result: &[u8]) -> Result<Vec<BscValidator>, anyhow::Error> {
@@ -62,6 +64,7 @@ pub fn decode_delegations_return(result: &[u8]) -> Result<Vec<BscDelegation>, an
             delegator_address: delegation.delegatorAddress.to_string(),
             validator_address: delegation.validatorAddress.to_string(),
             amount: delegation.amount.to_string(),
+            shares: delegation.shares.to_string(),
         })
         .collect();
     Ok(delegations)
@@ -87,17 +90,18 @@ mod tests {
 
     #[test]
     fn test_decode_delegations_return() {
-        let result = hex::decode("00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000001000000000000000000000000ee448667ffc3d15ca023a6deef2d0faf084c0716000000000000000000000000343da7ff0446247ca47aa41e2a25c5bbb230ed0a0000000000000000000000000000000000000000000000000e0932bb88351eef").unwrap();
+        let result = hex::decode("00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000002000000000000000000000000ee448667ffc3d15ca023a6deef2d0faf084c0716000000000000000000000000773760b0708a5cc369c346993a0c225d8e4043b10000000000000000000000000000000000000000000000000de0b6b3b015a6430000000000000000000000000000000000000000000000000dd62dce1850f388000000000000000000000000ee448667ffc3d15ca023a6deef2d0faf084c0716000000000000000000000000343da7ff0446247ca47aa41e2a25c5bbb230ed0a0000000000000000000000000000000000000000000000000e09ef1d9101a1740000000000000000000000000000000000000000000000000e028d70463b87f8").unwrap();
         let delegations = decode_delegations_return(&result).unwrap();
-        assert_eq!(delegations.len(), 1);
+        assert_eq!(delegations.len(), 2);
         assert_eq!(
-            delegations[0].delegator_address,
+            delegations[1].delegator_address,
             "0xee448667ffc3D15ca023A6deEf2D0fAf084C0716"
         );
         assert_eq!(
-            delegations[0].validator_address,
+            delegations[1].validator_address,
             "0x343dA7Ff0446247ca47AA41e2A25c5Bbb230ED0A"
         );
-        assert_eq!(delegations[0].amount, "1011395372346842863");
+        assert_eq!(delegations[1].amount, "1011602501587280244");
+        assert_eq!(delegations[1].shares, "1009524779838572536");
     }
 }

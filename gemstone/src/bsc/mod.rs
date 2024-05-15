@@ -5,6 +5,7 @@ pub struct BscDelegation {
     pub delegator_address: String,
     pub validator_address: String,
     pub amount: String,
+    pub shares: String,
 }
 
 #[derive(uniffi::Record, Debug)]
