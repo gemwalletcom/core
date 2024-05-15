@@ -23,6 +23,7 @@ impl From<stake_hub::BscDelegation> for BscDelegation {
             delegator_address: value.delegator_address,
             validator_address: value.validator_address,
             amount: value.amount,
+            shares: value.shares,
         }
     }
 }
