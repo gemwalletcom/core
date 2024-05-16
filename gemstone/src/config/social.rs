@@ -1,5 +1,5 @@
 #[derive(uniffi::Enum, Clone)]
-pub enum SocialItem {
+pub enum SocialUrl {
     X,
     Discord,
     Reddit,
@@ -8,13 +8,13 @@ pub enum SocialItem {
     YouTube,
 }
 
-pub fn get_social_url(item: SocialItem) -> &'static str {
+pub fn get_social_url(item: SocialUrl) -> &'static str {
     match item {
-        SocialItem::X => "https://x.com/GemWalletApp",
-        SocialItem::Discord => "https://discord.gg/aWkq5sj7SY",
-        SocialItem::Reddit => "https://www.reddit.com/r/GemWalletApp/",
-        SocialItem::Telegram => "https://t.me/gemwallet",
-        SocialItem::GitHub => "https://github.com/gemwalletcom",
-        SocialItem::YouTube => "https://www.youtube.com/@gemwallet",
+        SocialUrl::X => "https://x.com/GemWalletApp",
+        SocialUrl::Discord => "https://discord.gg/aWkq5sj7SY",
+        SocialUrl::Reddit => "https://www.reddit.com/r/GemWalletApp/",
+        SocialUrl::Telegram => "https://t.me/gemwallet",
+        SocialUrl::GitHub => "https://github.com/gemwalletcom",
+        SocialUrl::YouTube => "https://www.youtube.com/@gemwallet",
     }
 }

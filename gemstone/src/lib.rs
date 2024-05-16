@@ -1,4 +1,4 @@
-use config::{docs::DocsItem, social::SocialItem};
+use config::{docs::DocsUrl, public::PublicUrl, social::SocialUrl};
 use primitives::Chain;
 use std::{collections::HashMap, str::FromStr};
 
@@ -127,12 +127,16 @@ impl Config {
         config::get_validators()
     }
 
-    fn get_docs_url(&self, item: DocsItem) -> String {
+    fn get_docs_url(&self, item: DocsUrl) -> String {
         config::get_docs_url(item)
     }
 
-    fn get_social_url(&self, item: SocialItem) -> String {
+    fn get_social_url(&self, item: SocialUrl) -> String {
         config::get_social_url(item).to_string()
+    }
+
+    fn get_public_url(&self, item: PublicUrl) -> String {
+        config::get_public_url(item).to_string()
     }
 }
 

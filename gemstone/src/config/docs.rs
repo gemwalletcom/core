@@ -1,5 +1,5 @@
 #[derive(uniffi::Enum, Clone)]
-pub enum DocsItem {
+pub enum DocsUrl {
     WhatIsWatchWallet,
     WhatIsSecretPhrase,
     WhatIsPrivateKey,
@@ -7,16 +7,15 @@ pub enum DocsItem {
 
     TransactionStatus,
 }
-
 const DOCS_URL: &str = "https://docs.gemwallet.com";
 
-pub fn get_docs_url(item: DocsItem) -> String {
+pub fn get_docs_url(item: DocsUrl) -> String {
     let path = match item {
-        DocsItem::WhatIsWatchWallet => "/faqs/watch-wallet/",
-        DocsItem::WhatIsSecretPhrase => "/faqs/secret-recovery-phrase/",
-        DocsItem::WhatIsPrivateKey => "/faqs/private-key/",
-        DocsItem::HowToSecureSecretPhrase => "/faqs/secure-recovery-phrase/",
-        DocsItem::TransactionStatus => "/faqs/transaction-status/",
+        DocsUrl::WhatIsWatchWallet => "/faqs/watch-wallet/",
+        DocsUrl::WhatIsSecretPhrase => "/faqs/secret-recovery-phrase/",
+        DocsUrl::WhatIsPrivateKey => "/faqs/private-key/",
+        DocsUrl::HowToSecureSecretPhrase => "/faqs/secure-recovery-phrase/",
+        DocsUrl::TransactionStatus => "/faqs/transaction-status/",
     };
     format!("{}{}", DOCS_URL, path)
 }
@@ -28,7 +27,7 @@ mod tests {
     #[test]
     fn test_get_docs_url() {
         assert_eq!(
-            get_docs_url(DocsItem::WhatIsSecretPhrase),
+            get_docs_url(DocsUrl::WhatIsSecretPhrase),
             "https://docs.gemwallet.com/faqs/secret-recovery-phrase/"
         );
     }
