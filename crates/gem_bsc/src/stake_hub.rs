@@ -17,8 +17,18 @@ sol! {
             uint256 amount;
             uint256 shares;
         }
+
+        struct Undelegation {
+            address delegatorAddress;
+            address validatorAddress;
+            uint256 amount;
+            uint256 shares;
+            uint256 unlockTime;
+        }
+
         function getValidators(uint16 offset, uint16 limit) external view returns (Validator[] memory);
         function getDelegations(address delegator, uint16 offset, uint16 limit) external view returns (Delegation[] memory);
+        function getUndelegations(address delegator, uint16 offset, uint16 limit) external view returns (Undelegation[] memory);
     }
 }
 
@@ -35,6 +45,14 @@ pub struct BscDelegation {
     pub validator_address: String,
     pub amount: String,
     pub shares: String,
+}
+
+pub struct BscUndelegation {
+    pub delegator_address: String,
+    pub validator_address: String,
+    pub amount: String,
+    pub shares: String,
+    pub unlock_time: String,
 }
 
 pub fn decode_validators_return(result: &[u8]) -> Result<Vec<BscValidator>, anyhow::Error> {
@@ -70,6 +88,23 @@ pub fn decode_delegations_return(result: &[u8]) -> Result<Vec<BscDelegation>, an
     Ok(delegations)
 }
 
+pub fn decode_undelegations_return(result: &[u8]) -> Result<Vec<BscUndelegation>, anyhow::Error> {
+    let decoded = IHubReader::getUndelegationsCall::abi_decode_returns(result, true)
+        .map_err(anyhow::Error::msg)?
+        ._0;
+    let undelegations = decoded
+        .iter()
+        .map(|undelegation| BscUndelegation {
+            delegator_address: undelegation.delegatorAddress.to_string(),
+            validator_address: undelegation.validatorAddress.to_string(),
+            amount: undelegation.amount.to_string(),
+            shares: undelegation.shares.to_string(),
+            unlock_time: undelegation.unlockTime.to_string(),
+        })
+        .collect();
+    Ok(undelegations)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -103,5 +138,23 @@ mod tests {
         );
         assert_eq!(delegations[1].amount, "1011602501587280244");
         assert_eq!(delegations[1].shares, "1009524779838572536");
+    }
+
+    #[test]
+    fn test_decode_undelegations_return() {
+        let result = hex::decode("00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000001000000000000000000000000ee448667ffc3d15ca023a6deef2d0faf084c0716000000000000000000000000343da7ff0446247ca47aa41e2a25c5bbb230ed0a000000000000000000000000000000000000000000000000016345785d89ffff00000000000000000000000000000000000000000000000001628aab7a64b3dc00000000000000000000000000000000000000000000000000000000664e7431").unwrap();
+        let undelegations = decode_undelegations_return(&result).unwrap();
+        assert_eq!(undelegations.len(), 1);
+        assert_eq!(
+            undelegations[0].delegator_address,
+            "0xee448667ffc3D15ca023A6deEf2D0fAf084C0716"
+        );
+        assert_eq!(
+            undelegations[0].validator_address,
+            "0x343dA7Ff0446247ca47AA41e2A25c5Bbb230ED0A"
+        );
+        assert_eq!(undelegations[0].amount, "99999999999999999");
+        assert_eq!(undelegations[0].shares, "99794610853032924");
+        assert_eq!(undelegations[0].unlock_time, "1716417585");
     }
 }
