@@ -210,3 +210,10 @@ pub fn bsc_decode_delegations_return(
 ) -> Result<Vec<bsc::BscDelegation>, GemstoneError> {
     bsc::decode_delegations_return(&result).map_err(GemstoneError::from)
 }
+
+#[uniffi::export]
+pub fn bsc_decode_undelegations_return(
+    result: Vec<u8>,
+) -> Result<Vec<bsc::BscDelegation>, GemstoneError> {
+    bsc::decode_undelegations_return(&result).map_err(GemstoneError::from)
+}
