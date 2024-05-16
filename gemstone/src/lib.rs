@@ -1,3 +1,4 @@
+use config::docs::DocsItem;
 use primitives::Chain;
 use std::{collections::HashMap, str::FromStr};
 
@@ -124,6 +125,10 @@ impl Config {
 
     fn get_validators(&self) -> HashMap<String, Vec<String>> {
         config::get_validators()
+    }
+
+    fn get_docs_url(&self, item: DocsItem) -> String {
+        config::get_docs_url(item)
     }
 }
 
