@@ -1,4 +1,4 @@
-use config::docs::DocsItem;
+use config::{docs::DocsItem, social::SocialItem};
 use primitives::Chain;
 use std::{collections::HashMap, str::FromStr};
 
@@ -129,6 +129,10 @@ impl Config {
 
     fn get_docs_url(&self, item: DocsItem) -> String {
         config::get_docs_url(item)
+    }
+
+    fn get_social_url(&self, item: SocialItem) -> String {
+        config::get_social_url(item).to_string()
     }
 }
 
