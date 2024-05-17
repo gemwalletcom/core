@@ -1,5 +1,5 @@
+use anyhow::Error;
 use gem_bsc::stake_hub;
-
 #[derive(uniffi::Enum, Debug)]
 pub enum BscDelegationStatus {
     Active,
@@ -63,17 +63,17 @@ impl From<stake_hub::BscValidator> for BscValidator {
     }
 }
 
-pub fn decode_delegations_return(result: &[u8]) -> Result<Vec<BscDelegation>, anyhow::Error> {
+pub fn decode_delegations_return(result: &[u8]) -> Result<Vec<BscDelegation>, Error> {
     stake_hub::decode_delegations_return(result)
         .map(|value| value.into_iter().map(BscDelegation::from).collect())
 }
 
-pub fn decode_undelegations_return(result: &[u8]) -> Result<Vec<BscDelegation>, anyhow::Error> {
+pub fn decode_undelegations_return(result: &[u8]) -> Result<Vec<BscDelegation>, Error> {
     stake_hub::decode_undelegations_return(result)
         .map(|value| value.into_iter().map(BscDelegation::from).collect())
 }
 
-pub fn decode_validators_return(result: &[u8]) -> Result<Vec<BscValidator>, anyhow::Error> {
+pub fn decode_validators_return(result: &[u8]) -> Result<Vec<BscValidator>, Error> {
     stake_hub::decode_validators_return(result)
         .map(|value| value.into_iter().map(BscValidator::from).collect())
 }

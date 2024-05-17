@@ -37,21 +37,11 @@ sol! {
 sol! {
     #[derive(Debug, PartialEq)]
     interface IStakeHub {
-        function delegate(
-            address operatorAddress,
-            bool delegateVotePower
-        ) external payable whenNotPaused notInBlackList validatorExist(operatorAddress);
-        function undelegate(
-            address operatorAddress,
-            uint256 shares
-        ) external whenNotPaused notInBlackList validatorExist(operatorAddress);
-        function redelegate(
-            address srcValidator,
-            address dstValidator,
-            uint256 shares,
-            bool delegateVotePower
-        );
-        function claim(address operatorAddress, uint256 requestNumber) external whenNotPaused notInBlackList;
+        function delegate(address operatorAddress, bool delegateVotePower) external payable;
+        function undelegate(address operatorAddress, uint256 shares) external;
+        function redelegate(address srcValidator, address dstValidator, uint256 shares, bool delegateVotePower) external;
+        function claim(address operatorAddress, uint256 requestNumber) external;
+        function claimBatch(address[] calldata operatorAddresses,uint256[] calldata requestNumbers) external;
     }
 }
 
@@ -206,6 +196,25 @@ pub fn encode_claim_call(operator_address: &str, request_number: u64) -> Result<
     Ok(call.abi_encode())
 }
 
+pub fn encode_claim_batch_call(
+    operator_addresses: Vec<String>,
+    request_numbers: Vec<u64>,
+) -> Result<Vec<u8>, Error> {
+    let operator_addresses = operator_addresses
+        .iter()
+        .map(|x| Address::from_str(x).map_err(Error::msg))
+        .collect::<Result<Vec<Address>, Error>>()?;
+    let request_numbers = request_numbers
+        .iter()
+        .map(|x| U256::from(*x))
+        .collect::<Vec<U256>>();
+    let call = IStakeHub::claimBatchCall {
+        operatorAddresses: operator_addresses,
+        requestNumbers: request_numbers,
+    };
+    Ok(call.abi_encode())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -257,5 +266,48 @@ mod tests {
         assert_eq!(undelegations[0].amount, "99999999999999999");
         assert_eq!(undelegations[0].shares, "99794610853032924");
         assert_eq!(undelegations[0].unlock_time, "1716417585");
+    }
+
+    #[test]
+    fn test_encode_delegatie_call() {
+        let data =
+            encode_delegate_call("0x773760b0708a5Cc369c346993a0c225D8e4043B1", false).unwrap();
+
+        assert_eq!(hex::encode(data), "982ef0a7000000000000000000000000773760b0708a5cc369c346993a0c225d8e4043b10000000000000000000000000000000000000000000000000000000000000000");
+    }
+
+    #[test]
+    fn test_encode_undelegatie_call() {
+        let data = encode_undelegate_call(
+            "0x343dA7Ff0446247ca47AA41e2A25c5Bbb230ED0A",
+            "99794610853032924",
+        )
+        .unwrap();
+
+        assert_eq!(hex::encode(data), "4d99dd16000000000000000000000000343da7ff0446247ca47aa41e2a25c5bbb230ed0a00000000000000000000000000000000000000000000000001628aab7a64b3dc");
+    }
+
+    #[test]
+    fn test_encode_redelegatie_call() {
+        let data = encode_redelegate_call(
+            "0x773760b0708a5Cc369c346993a0c225D8e4043B1",
+            "0x343dA7Ff0446247ca47AA41e2A25c5Bbb230ED0A",
+            "1196258548170776928",
+            false,
+        )
+        .unwrap();
+
+        assert_eq!(hex::encode(data), "59491871000000000000000000000000773760b0708a5cc369c346993a0c225d8e4043b1000000000000000000000000343da7ff0446247ca47aa41e2a25c5bbb230ed0a0000000000000000000000000000000000000000000000001099f6cfbf3e61600000000000000000000000000000000000000000000000000000000000000000");
+    }
+
+    #[test]
+    fn test_encode_claim_batch_call() {
+        let data = encode_claim_batch_call(
+            vec!["0xE5572297718e1943A92BfEde2E67A060439e8EFd".to_string()],
+            vec![0],
+        )
+        .unwrap();
+
+        assert_eq!(hex::encode(data), "d7c2dfc8000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000001000000000000000000000000e5572297718e1943a92bfede2e67a060439e8efd00000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000");
     }
 }
