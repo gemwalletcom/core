@@ -1,7 +1,7 @@
 use crate::models::asset::AssetDetail;
 use crate::models::*;
 use crate::schema::{devices, fiat_providers, prices_assets, transactions_addresses};
-use chrono::{Duration, NaiveDateTime, Utc};
+use chrono::{DateTime, Duration, NaiveDateTime, Utc};
 use diesel::associations::HasTable;
 use diesel::pg::PgConnection;
 use diesel::prelude::*;
@@ -537,8 +537,9 @@ impl DatabaseClient {
         }
 
         if let Some(from_timestamp) = options.from_timestamp {
-            let datetime: NaiveDateTime =
-                NaiveDateTime::from_timestamp_opt(from_timestamp.into(), 0).unwrap();
+            let datetime = DateTime::from_timestamp(from_timestamp.into(), 0)
+                .unwrap()
+                .naive_utc();
             query = query.filter(created_at.gt(datetime));
         }
 
@@ -636,10 +637,12 @@ impl DatabaseClient {
         from_timestamp: Option<u32>,
     ) -> Result<Vec<String>, diesel::result::Error> {
         use crate::schema::transactions_addresses::dsl::*;
-        let datetime: NaiveDateTime = if let Some(from_timestamp) = from_timestamp {
-            NaiveDateTime::from_timestamp_opt(from_timestamp.into(), 0).unwrap()
+        let datetime = if let Some(from_timestamp) = from_timestamp {
+            DateTime::from_timestamp(from_timestamp.into(), 0)
+                .unwrap()
+                .naive_utc()
         } else {
-            NaiveDateTime::from_timestamp_opt(0, 0).unwrap()
+            DateTime::from_timestamp(0, 0).unwrap().naive_utc()
         };
 
         transactions_addresses

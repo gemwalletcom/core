@@ -1,8 +1,9 @@
-pub mod bsc;
+use config::{docs::DocsUrl, public::PublicUrl, social::SocialUrl};
 use primitives::Chain;
 use std::{collections::HashMap, str::FromStr};
 
 pub mod asset;
+pub mod bsc;
 pub mod config;
 pub mod explorer;
 pub mod solana;
@@ -125,6 +126,18 @@ impl Config {
 
     fn get_validators(&self) -> HashMap<String, Vec<String>> {
         config::get_validators()
+    }
+
+    fn get_docs_url(&self, item: DocsUrl) -> String {
+        config::get_docs_url(item)
+    }
+
+    fn get_social_url(&self, item: SocialUrl) -> String {
+        config::get_social_url(item).to_string()
+    }
+
+    fn get_public_url(&self, item: PublicUrl) -> String {
+        config::get_public_url(item).to_string()
     }
 }
 

@@ -114,7 +114,7 @@ impl MetricsClient {
                 .get_or_create(&ParserStateLabels {
                     chain: state.clone().chain,
                 })
-                .set(state.updated_at.timestamp());
+                .set(state.updated_at.and_utc().timestamp());
         }
     }
 
@@ -131,7 +131,13 @@ impl MetricsClient {
                 .get_or_create(&PricerStateLabels {
                     asset_id: price.clone().id,
                 })
-                .set(price.last_updated_at.unwrap_or_default().timestamp());
+                .set(
+                    price
+                        .last_updated_at
+                        .unwrap_or_default()
+                        .and_utc()
+                        .timestamp(),
+                );
 
             self.pricer_price
                 .get_or_create(&PricerStateLabels {

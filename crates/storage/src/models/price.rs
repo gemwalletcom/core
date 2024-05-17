@@ -125,7 +125,11 @@ impl Price {
         CreateChart {
             coin_id: self.id.clone(),
             price: self.price as f32,
-            ts: self.last_updated_at.unwrap_or_default().timestamp() as u32,
+            ts: self
+                .last_updated_at
+                .unwrap_or_default()
+                .and_utc()
+                .timestamp() as u32,
         }
     }
 }

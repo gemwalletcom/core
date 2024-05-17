@@ -1,5 +1,5 @@
 use crate::client::PriceClient;
-use chrono::{Duration, NaiveDateTime, Utc};
+use chrono::{DateTime, Duration, Utc};
 use coingecko::mapper::{get_chain_for_coingecko_platform_id, get_coingecko_market_id_for_chain};
 use coingecko::{Coin, CoinGeckoClient, CoinMarket, SimplePrice};
 use primitives::chain::Chain;
@@ -205,7 +205,8 @@ fn price_for_market(market: CoinMarket) -> Price {
 fn price_for_simple_price(id: &str, price: SimplePrice) -> Price {
     let last_updated_at = price
         .last_updated_at
-        .and_then(|x| NaiveDateTime::from_timestamp_opt(x as i64, 0));
+        .and_then(|x| DateTime::from_timestamp(x as i64, 0))
+        .map(|x| x.naive_utc());
 
     Price::new(
         id.to_string(),

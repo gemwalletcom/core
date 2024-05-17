@@ -25,4 +25,6 @@ jobs:
             target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
       - name: Run Lint
-        run: cargo clippy -- -D warnings
+        run: |
+          cargo clippy --version
+          cargo clippy -- -D warnings

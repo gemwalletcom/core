@@ -3,7 +3,7 @@ use std::error::Error;
 use std::time::Duration;
 
 use crate::{
-    model::{FiatMapping, FiatMappingMap, FiatRates},
+    model::{FiatMapping, FiatMappingMap},
     FiatProvider,
 };
 use futures::future::join_all;
@@ -73,11 +73,6 @@ impl Client {
             }
         }
         Ok(false)
-    }
-
-    pub async fn get_fiat_rates(&mut self) -> Result<FiatRates, Box<dyn Error>> {
-        let rates = self.database.get_fiat_rates()?;
-        Ok(FiatRates { rates })
     }
 
     fn get_fiat_mapping(

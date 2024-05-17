@@ -2,7 +2,7 @@ use std::error::Error;
 
 use crate::ChainProvider;
 use async_trait::async_trait;
-use chrono::NaiveDateTime;
+use chrono::DateTime;
 use primitives::{chain::Chain, TransactionState, TransactionType};
 use reqwest_middleware::ClientWithMiddleware;
 use serde_json::json;
@@ -54,9 +54,7 @@ impl XRPClient {
                         value,
                         Some(transaction.destination_tag.unwrap_or_default().to_string()),
                         None,
-                        NaiveDateTime::from_timestamp_opt(block_timestamp, 0)
-                            .unwrap()
-                            .and_utc(),
+                        DateTime::from_timestamp(block_timestamp, 0).unwrap(),
                     );
                     return Some(transaction);
                 }

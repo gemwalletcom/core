@@ -1,4 +1,4 @@
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -9,17 +9,6 @@ pub struct TransakQuote {
     pub crypto_currency: String,
     pub crypto_amount: f64,
     pub network: String,
-}
-
-#[derive(Debug, Serialize)]
-struct TransakPayload<'a> {
-    ip_address: &'a str,
-    fiat_currency: &'a str,
-    crypto_currency: &'a str,
-    is_buy_or_sell: &'a str,
-    fiat_amount: f64,
-    network: &'a str,
-    partner_api_key: &'a str,
 }
 
 #[derive(Debug, Deserialize)]
