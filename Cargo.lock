@@ -165,11 +165,11 @@ dependencies = [
  "alloy-sol-macro-input",
  "const-hex",
  "heck 0.4.1",
- "indexmap 2.2.3",
+ "indexmap 2.2.6",
  "proc-macro-error",
- "proc-macro2 1.0.76",
- "quote 1.0.35",
- "syn 2.0.48",
+ "proc-macro2 1.0.82",
+ "quote 1.0.36",
+ "syn 2.0.64",
  "syn-solidity",
  "tiny-keccak",
 ]
@@ -184,10 +184,10 @@ dependencies = [
  "const-hex",
  "dunce",
  "heck 0.5.0",
- "proc-macro2 1.0.76",
- "quote 1.0.35",
+ "proc-macro2 1.0.82",
+ "quote 1.0.36",
  "serde_json",
- "syn 2.0.48",
+ "syn 2.0.64",
  "syn-solidity",
 ]
 
@@ -7021,9 +7021,9 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5aa0cefd02f532035d83cfec82647c6eb53140b0485220760e669f4bad489e36"
 dependencies = [
  "paste",
- "proc-macro2 1.0.76",
- "quote 1.0.35",
- "syn 2.0.48",
+ "proc-macro2 1.0.82",
+ "quote 1.0.36",
+ "syn 2.0.64",
 ]
 
 [[package]]
@@ -8403,12 +8403,6 @@ checksum = "c3c52e9c97a68071b23e836c9380edae937f17b9c4667bd021973efc689f618d"
 dependencies = [
  "memchr",
 ]
-
-[[package]]
-name = "winnow"
-version = "0.6.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c3c52e9c97a68071b23e836c9380edae937f17b9c4667bd021973efc689f618d"
 
 [[package]]
 name = "winreg"
