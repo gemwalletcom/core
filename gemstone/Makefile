@@ -48,7 +48,7 @@ test-ios:
 	@xcodebuild -project tests/ios/GemTest/GemTest.xcodeproj \
 	-scheme GemTest \
 	-sdk iphonesimulator \
-	-destination "platform=iOS Simulator,name=iPhone 15,OS=17.2" \
+	-destination "platform=iOS Simulator,name=iPhone 15" \
 	test | xcbeautify
 
 bindgen: bindgen-swift bindgen-kotlin
@@ -88,3 +88,4 @@ android:
 	@# make sure you install sdkman and jdk17
 	@cp -Rf $(GEN_KOTLIN_FOLDER)/uniffi tests/android/GemTest/app/src/main/java
 	@cd tests/android/GemTest && ./gradlew cargoBuild --warn
+
