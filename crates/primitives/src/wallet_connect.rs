@@ -15,6 +15,7 @@ pub enum WallletConnectCAIP2 {
     Cosmos,
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Serialize)]
 #[typeshare(swift = "Equatable, Codable, Hashable")]
 #[serde(rename_all = "camelCase")]
@@ -32,6 +33,7 @@ struct WCEthereumTransaction {
     data: Option<String>,
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Serialize)]
 #[typeshare(swift = "Equatable, Codable, Hashable")]
 #[serde(rename_all = "camelCase")]
@@ -39,6 +41,7 @@ struct WCSolanaTransaction {
     transaction: String,
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Serialize)]
 #[typeshare(swift = "Equatable, Codable, Hashable")]
 #[serde(rename_all = "camelCase")]
@@ -47,6 +50,7 @@ struct WCSolanaSignMessage {
     pubkey: String,
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Serialize)]
 #[typeshare(swift = "Equatable, Codable, Hashable")]
 #[serde(rename_all = "camelCase")]
