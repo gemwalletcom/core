@@ -1,6 +1,6 @@
 pub mod model;
 
-use anyhow::anyhow;
+use anyhow::{anyhow, Error};
 use base64::{engine::general_purpose, Engine as _};
 use model::*;
 use std::str::FromStr;
@@ -17,7 +17,7 @@ static SUI_REQUEST_WITHDRAW_STAKE: &str = "request_withdraw_stake";
 static SUI_SYSTEM_ADDRESS: u8 = 0x3;
 static SUI_SYSTEM_STATE_OBJECT_ID: u8 = 0x5;
 
-pub fn encode_transfer(input: &SuiTransferInput) -> Result<SuiTxOutput, anyhow::Error> {
+pub fn encode_transfer(input: &SuiTransferInput) -> Result<SuiTxOutput, Error> {
     if let Some(err) = validate_enough_balance(&input.coins, input.amount) {
         return Err(err);
     }
@@ -48,7 +48,7 @@ pub fn encode_transfer(input: &SuiTransferInput) -> Result<SuiTxOutput, anyhow::
     SuiTxOutput::from_tx_data(&tx_data)
 }
 
-pub fn encode_token_transfer(input: &SuiTokenTransferInput) -> Result<SuiTxOutput, anyhow::Error> {
+pub fn encode_token_transfer(input: &SuiTokenTransferInput) -> Result<SuiTxOutput, Error> {
     if let Some(err) = validate_enough_balance(&input.tokens, input.amount) {
         return Err(err);
     }
@@ -74,7 +74,7 @@ pub fn encode_token_transfer(input: &SuiTokenTransferInput) -> Result<SuiTxOutpu
     SuiTxOutput::from_tx_data(&tx_data)
 }
 
-pub fn encode_split_and_stake(input: &SuiStakeInput) -> Result<SuiTxOutput, anyhow::Error> {
+pub fn encode_split_and_stake(input: &SuiStakeInput) -> Result<SuiTxOutput, Error> {
     if let Some(err) = validate_enough_balance(&input.coins, input.stake_amount) {
         return Err(err);
     }
@@ -128,7 +128,7 @@ pub fn encode_split_and_stake(input: &SuiStakeInput) -> Result<SuiTxOutput, anyh
     SuiTxOutput::from_tx_data(&tx_data)
 }
 
-pub fn encode_unstake(input: &SuiUnstakeInput) -> Result<SuiTxOutput, anyhow::Error> {
+pub fn encode_unstake(input: &SuiUnstakeInput) -> Result<SuiTxOutput, Error> {
     let mut ptb = ProgrammableTransactionBuilder::new();
 
     let sender = SuiAddress::from_str(&input.sender)?;
@@ -155,13 +155,13 @@ pub fn encode_unstake(input: &SuiUnstakeInput) -> Result<SuiTxOutput, anyhow::Er
     SuiTxOutput::from_tx_data(&tx_data)
 }
 
-pub(crate) fn decode_transaction(_tx: &str) -> Result<TransactionData, anyhow::Error> {
+pub(crate) fn decode_transaction(_tx: &str) -> Result<TransactionData, Error> {
     let bytes = general_purpose::STANDARD.decode(_tx)?;
     let tx_data = bcs::from_bytes::<TransactionData>(&bytes)?;
     Ok(tx_data)
 }
 
-pub fn validate_and_hash(encoded: &str) -> Result<SuiTxOutput, anyhow::Error> {
+pub fn validate_and_hash(encoded: &str) -> Result<SuiTxOutput, Error> {
     let tx_data = decode_transaction(encoded)?;
     SuiTxOutput::from_tx_data(&tx_data)
 }
@@ -174,7 +174,7 @@ pub fn sui_system_state_object() -> ObjectArg {
     }
 }
 
-pub fn validate_enough_balance(coins: &[SuiCoin], amount: u64) -> Option<anyhow::Error> {
+pub fn validate_enough_balance(coins: &[SuiCoin], amount: u64) -> Option<Error> {
     if coins.is_empty() {
         return Some(anyhow!("coins list is empty"));
     }

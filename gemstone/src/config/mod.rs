@@ -1,8 +1,11 @@
 pub mod docs;
 pub mod public;
 pub mod social;
+pub mod stake;
 pub mod validators;
 pub use self::docs::get_docs_url;
 pub use self::public::get_public_url;
 pub use self::social::get_social_url;
+pub use self::stake::get_min_stake_amount;
+pub use self::stake::get_stake_lock_time;
 pub use self::validators::get_validators;

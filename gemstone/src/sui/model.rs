@@ -1,3 +1,4 @@
+use anyhow::Error;
 use bcs;
 use blake2::{digest::consts::U32, Blake2b, Digest};
 use std::str::FromStr;
@@ -82,7 +83,7 @@ pub struct SuiTxOutput {
 }
 
 impl SuiTxOutput {
-    pub fn from_tx_data(tx_data: &TransactionData) -> Result<Self, anyhow::Error> {
+    pub fn from_tx_data(tx_data: &TransactionData) -> Result<Self, Error> {
         let data = bcs::to_bytes(&tx_data)?;
         // manually build IntentMessage::new(Intent::sui_transaction(), tx_data.clone());
         let mut message = vec![0x0u8, 0x0, 0x0];
