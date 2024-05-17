@@ -1,5 +1,7 @@
+use alloy_core::primitives::{Address, U256};
 use alloy_core::{sol, sol_types::SolCall};
-
+use anyhow::Error;
+use std::str::FromStr;
 sol! {
     #[derive(Debug, PartialEq)]
     interface IHubReader {
@@ -32,6 +34,27 @@ sol! {
     }
 }
 
+sol! {
+    #[derive(Debug, PartialEq)]
+    interface IStakeHub {
+        function delegate(
+            address operatorAddress,
+            bool delegateVotePower
+        ) external payable whenNotPaused notInBlackList validatorExist(operatorAddress);
+        function undelegate(
+            address operatorAddress,
+            uint256 shares
+        ) external whenNotPaused notInBlackList validatorExist(operatorAddress);
+        function redelegate(
+            address srcValidator,
+            address dstValidator,
+            uint256 shares,
+            bool delegateVotePower
+        );
+        function claim(address operatorAddress, uint256 requestNumber) external whenNotPaused notInBlackList;
+    }
+}
+
 pub struct BscValidator {
     pub operator_address: String,
     pub moniker: String,
@@ -55,9 +78,14 @@ pub struct BscUndelegation {
     pub unlock_time: String,
 }
 
-pub fn decode_validators_return(result: &[u8]) -> Result<Vec<BscValidator>, anyhow::Error> {
+pub fn encode_validators_call(offset: u16, limit: u16) -> Vec<u8> {
+    let call = IHubReader::getValidatorsCall { offset, limit };
+    call.abi_encode()
+}
+
+pub fn decode_validators_return(result: &[u8]) -> Result<Vec<BscValidator>, Error> {
     let decoded = IHubReader::getValidatorsCall::abi_decode_returns(result, true)
-        .map_err(anyhow::Error::msg)?
+        .map_err(Error::msg)?
         ._0;
     let validators = decoded
         .iter()
@@ -72,7 +100,17 @@ pub fn decode_validators_return(result: &[u8]) -> Result<Vec<BscValidator>, anyh
     Ok(validators)
 }
 
-pub fn decode_delegations_return(result: &[u8]) -> Result<Vec<BscDelegation>, anyhow::Error> {
+pub fn encode_delegations_call(delegator: &str, offset: u16, limit: u16) -> Result<Vec<u8>, Error> {
+    let delegator = Address::from_str(delegator).map_err(Error::msg)?;
+    let call = IHubReader::getDelegationsCall {
+        delegator,
+        offset,
+        limit,
+    };
+    Ok(call.abi_encode())
+}
+
+pub fn decode_delegations_return(result: &[u8]) -> Result<Vec<BscDelegation>, Error> {
     let decoded = IHubReader::getDelegationsCall::abi_decode_returns(result, true)
         .map_err(anyhow::Error::msg)?
         ._0;
@@ -88,9 +126,23 @@ pub fn decode_delegations_return(result: &[u8]) -> Result<Vec<BscDelegation>, an
     Ok(delegations)
 }
 
-pub fn decode_undelegations_return(result: &[u8]) -> Result<Vec<BscUndelegation>, anyhow::Error> {
+pub fn encode_undelegations_call(
+    delegator: &str,
+    offset: u16,
+    limit: u16,
+) -> Result<Vec<u8>, Error> {
+    let delegator = Address::from_str(delegator).map_err(Error::msg)?;
+    let call = IHubReader::getUndelegationsCall {
+        delegator,
+        offset,
+        limit,
+    };
+    Ok(call.abi_encode())
+}
+
+pub fn decode_undelegations_return(result: &[u8]) -> Result<Vec<BscUndelegation>, Error> {
     let decoded = IHubReader::getUndelegationsCall::abi_decode_returns(result, true)
-        .map_err(anyhow::Error::msg)?
+        .map_err(Error::msg)?
         ._0;
     let undelegations = decoded
         .iter()
@@ -103,6 +155,55 @@ pub fn decode_undelegations_return(result: &[u8]) -> Result<Vec<BscUndelegation>
         })
         .collect();
     Ok(undelegations)
+}
+
+pub fn encode_delegate_call(
+    operator_address: &str,
+    delegate_vote_power: bool,
+) -> Result<Vec<u8>, Error> {
+    let operator_address = Address::from_str(operator_address).map_err(Error::msg)?;
+    let call = IStakeHub::delegateCall {
+        operatorAddress: operator_address,
+        delegateVotePower: delegate_vote_power,
+    };
+    Ok(call.abi_encode())
+}
+
+pub fn encode_undelegate_call(operator_address: &str, shares: &str) -> Result<Vec<u8>, Error> {
+    let address = Address::from_str(operator_address).map_err(Error::msg)?;
+    let amount = U256::from_str(shares).map_err(anyhow::Error::msg)?;
+    let call = IStakeHub::undelegateCall {
+        operatorAddress: address,
+        shares: amount,
+    };
+    Ok(call.abi_encode())
+}
+
+pub fn encode_redelegate_call(
+    src_validator: &str,
+    dst_validator: &str,
+    shares: &str,
+    delegate_vote_power: bool,
+) -> Result<Vec<u8>, Error> {
+    let src_validator = Address::from_str(src_validator).map_err(Error::msg)?;
+    let dst_validator = Address::from_str(dst_validator).map_err(Error::msg)?;
+    let amount = U256::from_str(shares).map_err(Error::msg)?;
+    let call = IStakeHub::redelegateCall {
+        srcValidator: src_validator,
+        dstValidator: dst_validator,
+        shares: amount,
+        delegateVotePower: delegate_vote_power,
+    };
+    Ok(call.abi_encode())
+}
+
+pub fn encode_claim_call(operator_address: &str, request_number: u64) -> Result<Vec<u8>, Error> {
+    let operator_address = Address::from_str(operator_address).map_err(Error::msg)?;
+    let call = IStakeHub::claimCall {
+        operatorAddress: operator_address,
+        requestNumber: U256::from(request_number),
+    };
+    Ok(call.abi_encode())
 }
 
 #[cfg(test)]

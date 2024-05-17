@@ -1,7 +1,7 @@
 use config::{docs::DocsUrl, public::PublicUrl, social::SocialUrl};
+use gem_bsc::stake_hub;
 use primitives::Chain;
 use std::{collections::HashMap, str::FromStr};
-
 pub mod asset;
 pub mod bsc;
 pub mod config;
@@ -13,13 +13,14 @@ pub mod ton;
 pub mod wallet_connect;
 
 uniffi::include_scaffolding!("gemstone");
-static LIB_VERSION: &str = "0.1.1";
+static LIB_VERSION: &str = "0.2.1";
 
 #[uniffi::export]
 pub fn lib_version() -> String {
     LIB_VERSION.into()
 }
 
+/// GemstoneError
 #[derive(Debug, thiserror::Error, uniffi::Error)]
 pub enum GemstoneError {
     #[error("{msg}")]
@@ -50,6 +51,7 @@ impl From<Box<dyn std::error::Error>> for GemstoneError {
     }
 }
 
+/// Explorer
 #[derive(uniffi::Object)]
 struct Explorer {}
 #[uniffi::export]
@@ -79,6 +81,7 @@ impl Explorer {
     }
 }
 
+/// Sui
 #[uniffi::export]
 pub fn sui_encode_transfer(
     input: &sui::model::SuiTransferInput,
@@ -112,13 +115,11 @@ pub fn sui_validate_and_hash(encoded: String) -> Result<sui::model::SuiTxOutput,
     sui::validate_and_hash(&encoded).map_err(GemstoneError::from)
 }
 
+/// Config
 #[derive(uniffi::Object)]
 struct Config {}
 #[uniffi::export]
 impl Config {
-    // Constructors need to be annotated as such.
-    // The return value can be either `Self` or `Arc<Self>`
-    // It is treated as the primary constructor, so in most languages this is invoked with
     #[uniffi::constructor]
     fn new() -> Self {
         Self {}
@@ -126,6 +127,14 @@ impl Config {
 
     fn get_validators(&self) -> HashMap<String, Vec<String>> {
         config::get_validators()
+    }
+
+    fn get_stake_locktime(&self, chain: String) -> u64 {
+        config::get_stake_lock_time(&chain)
+    }
+
+    fn get_min_stake_amount(&self, chain: String) -> u64 {
+        config::get_min_stake_amount(&chain)
     }
 
     fn get_docs_url(&self, item: DocsUrl) -> String {
@@ -141,6 +150,7 @@ impl Config {
     }
 }
 
+/// WalletConnect
 #[derive(uniffi::Object)]
 struct WalletConnectNamespace {}
 #[uniffi::export]
@@ -161,6 +171,7 @@ impl WalletConnectNamespace {
     }
 }
 
+/// Asset
 #[uniffi::export]
 pub fn asset_default_rank(chain: String) -> i32 {
     match Chain::from_str(&chain) {
@@ -175,11 +186,13 @@ pub fn asset_wrapper(chain: String) -> asset::AssetWrapper {
     asset::get_asset(chain)
 }
 
+/// Cosmos
 #[uniffi::export]
 pub fn cosmos_convert_hrp(address: String, hrp: String) -> Result<String, GemstoneError> {
     gem_cosmos::converter::convert_cosmos_address(&address, &hrp).map_err(GemstoneError::from)
 }
 
+/// Solana
 #[uniffi::export]
 pub fn solana_decode_metadata(base64_str: String) -> Result<MplMetadata, GemstoneError> {
     solana::decode_mpl_metadata(base64_str).map_err(GemstoneError::from)
@@ -190,6 +203,7 @@ pub fn solana_derive_metadata_pda(mint: String) -> Result<String, GemstoneError>
     solana::derive_metadata_pda(&mint).map_err(GemstoneError::from)
 }
 
+/// Ton
 #[uniffi::export]
 pub fn ton_encode_get_wallet_address(address: String) -> Result<String, GemstoneError> {
     ton::jetton::encode_get_wallet_address_slice(&address).map_err(GemstoneError::from)
@@ -210,11 +224,26 @@ pub fn ton_base64_to_hex_address(base64_str: String) -> Result<String, GemstoneE
     ton::address::base64_to_hex_address(base64_str).map_err(GemstoneError::from)
 }
 
+/// Bsc
+#[uniffi::export]
+pub fn bsc_encode_validators_call(offset: u16, limit: u16) -> Vec<u8> {
+    stake_hub::encode_validators_call(offset, limit)
+}
+
 #[uniffi::export]
 pub fn bsc_decode_validators_return(
     result: Vec<u8>,
 ) -> Result<Vec<bsc::BscValidator>, GemstoneError> {
     bsc::decode_validators_return(&result).map_err(GemstoneError::from)
+}
+
+#[uniffi::export]
+pub fn bsc_encode_delegations_call(
+    delegator: &str,
+    offset: u16,
+    limit: u16,
+) -> Result<Vec<u8>, GemstoneError> {
+    stake_hub::encode_delegations_call(delegator, offset, limit).map_err(GemstoneError::from)
 }
 
 #[uniffi::export]
@@ -225,8 +254,53 @@ pub fn bsc_decode_delegations_return(
 }
 
 #[uniffi::export]
+pub fn bsc_encode_undelegations_call(
+    delegator: &str,
+    offset: u16,
+    limit: u16,
+) -> Result<Vec<u8>, GemstoneError> {
+    stake_hub::encode_undelegations_call(delegator, offset, limit).map_err(GemstoneError::from)
+}
+
+#[uniffi::export]
 pub fn bsc_decode_undelegations_return(
     result: Vec<u8>,
 ) -> Result<Vec<bsc::BscDelegation>, GemstoneError> {
     bsc::decode_undelegations_return(&result).map_err(GemstoneError::from)
+}
+
+#[uniffi::export]
+pub fn bsc_encode_delegate_call(
+    operator_address: String,
+    delegate_vote_power: bool,
+) -> Result<Vec<u8>, GemstoneError> {
+    stake_hub::encode_delegate_call(&operator_address, delegate_vote_power)
+        .map_err(GemstoneError::from)
+}
+
+#[uniffi::export]
+pub fn bsc_encode_undelegate_call(
+    operator_address: String,
+    shares: String,
+) -> Result<Vec<u8>, GemstoneError> {
+    stake_hub::encode_undelegate_call(&operator_address, &shares).map_err(GemstoneError::from)
+}
+
+#[uniffi::export]
+pub fn bsc_encode_redelegate_call(
+    src_validator: String,
+    dst_validator: String,
+    shares: String,
+    delegate_vote_power: bool,
+) -> Result<Vec<u8>, GemstoneError> {
+    stake_hub::encode_redelegate_call(&src_validator, &dst_validator, &shares, delegate_vote_power)
+        .map_err(GemstoneError::from)
+}
+
+#[uniffi::export]
+pub fn bsc_encode_claim_call(
+    operator_address: String,
+    request_number: u64,
+) -> Result<Vec<u8>, GemstoneError> {
+    stake_hub::encode_claim_call(&operator_address, request_number).map_err(GemstoneError::from)
 }
