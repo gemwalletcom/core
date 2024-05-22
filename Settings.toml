@@ -37,6 +37,10 @@ url = ""
 public = ""
 secret = ""
 
+[kado]
+[kado.key]
+secret = ""
+
 [pricer]
 timer = 60
 outdated = 604800 # 7 days

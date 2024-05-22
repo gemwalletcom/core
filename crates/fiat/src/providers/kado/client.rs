@@ -1,0 +1,166 @@
+use crate::model::{filter_token_id, FiatMapping, FiatProviderAsset};
+use primitives::{Chain, FiatBuyRequest, FiatProviderName, FiatQuote};
+use reqwest::Client;
+use url::Url;
+
+use super::model::{Asset, Blockchain, Blockchains, Quote, QuoteData, QuoteQuery, Response};
+
+const API_BASE_URL: &str = "https://api.kado.money";
+const REDIRECT_URL: &str = "https://app.kado.money";
+
+pub struct KadoClient {
+    pub client: Client,
+    pub api_key: String,
+}
+
+impl KadoClient {
+    pub const NAME: FiatProviderName = FiatProviderName::Kado;
+
+    pub fn new(client: Client, api_key: String) -> Self {
+        KadoClient { client, api_key }
+    }
+
+    pub async fn get_quote_buy(
+        &self,
+        fiat_currency: String,
+        symbol: String,
+        fiat_amount: f64,
+        network: String,
+    ) -> Result<QuoteData, Box<dyn std::error::Error + Send + Sync>> {
+        let url = format!("{}/v2/ramp/quote", API_BASE_URL);
+        let query = QuoteQuery {
+            transaction_type: "buy".to_string(),
+            blockchain: network,
+            asset: symbol,
+            amount: fiat_amount,
+            currency: fiat_currency,
+        };
+        let quote = self
+            .client
+            .get(&url)
+            .query(&query)
+            .send()
+            .await?
+            .json::<Response<QuoteData>>()
+            .await?;
+        Ok(quote.data)
+    }
+
+    // pub async fn get_assets(&self) -> Result<Vec<Asset>, Box<dyn std::error::Error + Send + Sync>> {
+    //     let url = format!("{}/v1/ramp/supported-assets", API_BASE_URL);
+    //     let response = self
+    //         .client
+    //         .get(&url)
+    //         .send()
+    //         .await?
+    //         .json::<Response<Assets>>()
+    //         .await?;
+    //     Ok(response.data.assets)
+    // }
+
+    pub async fn get_blockchains(
+        &self,
+    ) -> Result<Vec<Blockchain>, Box<dyn std::error::Error + Send + Sync>> {
+        let url = format!("{}/v1/ramp/blockchains", API_BASE_URL);
+        let response = self
+            .client
+            .get(&url)
+            .send()
+            .await?
+            .json::<Response<Blockchains>>()
+            .await?;
+        Ok(response.data.blockchains)
+    }
+
+    pub fn map_blockchain(blockchain: Blockchain) -> Vec<FiatProviderAsset> {
+        blockchain
+            .clone()
+            .associated_assets
+            .into_iter()
+            .flat_map(|x| Self::map_asset(blockchain.clone(), x))
+            .collect()
+    }
+
+    pub fn map_asset(blockchain: Blockchain, asset: Asset) -> Option<FiatProviderAsset> {
+        let chain = Self::map_asset_chain(blockchain.network.clone());
+        let token_id = if asset.address.is_none() {
+            None
+        } else {
+            Some(asset.address.clone().unwrap())
+        };
+        let token_id = filter_token_id(token_id);
+        Some(FiatProviderAsset {
+            id: asset.clone().symbol + "_" + blockchain.network.as_str(),
+            chain,
+            token_id,
+            symbol: asset.clone().symbol,
+            network: Some(blockchain.network),
+            enabled: true,
+        })
+    }
+
+    pub fn map_asset_chain(chain: String) -> Option<Chain> {
+        match chain.as_str() {
+            "bitcoin" => Some(Chain::Bitcoin),
+            "litecoin" => Some(Chain::Litecoin),
+            "ethereum" => Some(Chain::Ethereum),
+            "optimism" => Some(Chain::Optimism),
+            "polygon" => Some(Chain::Polygon),
+            "base" => Some(Chain::Base),
+            "arbitrum" => Some(Chain::Arbitrum),
+            "avalanche" => Some(Chain::AvalancheC),
+            "solana" => Some(Chain::Solana),
+            "osmosis" => Some(Chain::Osmosis),
+            "cosmos hub" => Some(Chain::Cosmos),
+            "ripple" => Some(Chain::Xrp),
+            "celestia" => Some(Chain::Celestia),
+            "injective" => Some(Chain::Injective),
+            _ => None,
+        }
+    }
+
+    pub fn get_fiat_quote(
+        &self,
+        request: FiatBuyRequest,
+        request_map: FiatMapping,
+        quote: Quote,
+    ) -> FiatQuote {
+        FiatQuote {
+            provider: Self::NAME.as_fiat_provider(),
+            fiat_amount: request.fiat_amount,
+            fiat_currency: request.clone().fiat_currency,
+            crypto_amount: quote.clone().receive_unit_count_after_fees.amount,
+            redirect_url: self.redirect_url(
+                request.fiat_currency,
+                request.fiat_amount,
+                request_map.clone(),
+                request.wallet_address,
+            ),
+        }
+    }
+
+    pub fn redirect_url(
+        &self,
+        fiat_currency: String,
+        fiat_amount: f64,
+        fiat_mapping: FiatMapping,
+        address: String,
+    ) -> String {
+        let mut components = Url::parse(REDIRECT_URL).unwrap();
+        components
+            .query_pairs_mut()
+            .append_pair("apiKey", self.api_key.as_str())
+            .append_pair("product", "BUY")
+            .append_pair("onPayAmount", &fiat_amount.to_string())
+            .append_pair("onPayCurrency", &fiat_currency)
+            .append_pair("onRevCurrency", &fiat_mapping.symbol)
+            .append_pair("onToAddress", &address)
+            .append_pair(
+                "network",
+                &fiat_mapping.network.unwrap_or_default().to_uppercase(),
+            )
+            .append_pair("mode", "minimal");
+
+        return components.as_str().to_string();
+    }
+}

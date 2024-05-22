@@ -3,7 +3,9 @@ pub mod model;
 pub mod provider;
 pub use provider::FiatProvider;
 pub mod providers;
-use crate::providers::{BanxaClient, MercuryoClient, MoonPayClient, RampClient, TransakClient};
+use crate::providers::{
+    BanxaClient, KadoClient, MercuryoClient, MoonPayClient, RampClient, TransakClient,
+};
 use settings::Settings;
 
 pub struct FiatProviderFactory {}
@@ -29,6 +31,7 @@ impl FiatProviderFactory {
             settings.banxa.key.public,
             settings.banxa.key.secret,
         );
+        let kado = KadoClient::new(request_client.clone(), settings.kado.key.secret);
 
         vec![
             Box::new(moonpay),
@@ -36,6 +39,7 @@ impl FiatProviderFactory {
             Box::new(mercuryo),
             Box::new(transak),
             Box::new(banxa),
+            Box::new(kado),
         ]
     }
 }
