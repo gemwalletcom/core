@@ -131,20 +131,20 @@ impl KadoClient {
             fiat_currency: request.clone().fiat_currency,
             crypto_amount: quote.clone().receive_unit_count_after_fees.amount,
             redirect_url: self.redirect_url(
-                request.fiat_currency,
+                request.fiat_currency.as_str(),
                 request.fiat_amount,
                 request_map.clone(),
-                request.wallet_address,
+                request.wallet_address.as_str(),
             ),
         }
     }
 
     pub fn redirect_url(
         &self,
-        fiat_currency: String,
+        fiat_currency: &str,
         fiat_amount: f64,
         fiat_mapping: FiatMapping,
-        address: String,
+        address: &str,
     ) -> String {
         let mut components = Url::parse(REDIRECT_URL).unwrap();
         components
@@ -152,9 +152,9 @@ impl KadoClient {
             .append_pair("apiKey", self.api_key.as_str())
             .append_pair("product", "BUY")
             .append_pair("onPayAmount", &fiat_amount.to_string())
-            .append_pair("onPayCurrency", &fiat_currency)
+            .append_pair("onPayCurrency", fiat_currency)
             .append_pair("onRevCurrency", &fiat_mapping.symbol)
-            .append_pair("onToAddress", &address)
+            .append_pair("onToAddress", address)
             .append_pair(
                 "network",
                 &fiat_mapping.network.unwrap_or_default().to_uppercase(),
@@ -162,5 +162,28 @@ impl KadoClient {
             .append_pair("mode", "minimal");
 
         return components.as_str().to_string();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_redirect_url() {
+        let client = KadoClient {
+            client: Client::new(),
+            api_key: "API_KEY".to_string(),
+        };
+        let fiat_mapping = FiatMapping {
+            symbol: "ETH".to_string(),
+            network: Some("ethereum".to_string()),
+        };
+
+        let expected_url = "https://app.kado.money/?apiKey=API_KEY&product=BUY&onPayAmount=100&onPayCurrency=USD&onRevCurrency=ETH&onToAddress=0x1234567890abcdef&network=ETHEREUM&mode=minimal";
+
+        let actual_url = client.redirect_url("USD", 100.0, fiat_mapping, "0x1234567890abcdef");
+
+        assert_eq!(actual_url, expected_url);
     }
 }

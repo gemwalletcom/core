@@ -1,4 +1,4 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize)]
 pub struct Response<T> {
@@ -6,10 +6,19 @@ pub struct Response<T> {
 }
 
 #[derive(Debug, Deserialize, Clone)]
-pub struct MercyryoQuote {
+pub struct Quote {
     pub amount: String,
     pub currency: String,
     pub fiat_amount: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct QuoteQuery {
+    pub from: String,
+    pub to: String,
+    pub amount: f64,
+    pub network: String,
+    pub widget_id: String,
 }
 
 #[derive(Debug, Deserialize, Clone)]

@@ -5,7 +5,7 @@ use reqwest::Client;
 use sha2::{Digest, Sha512};
 use url::Url;
 
-use super::model::{Asset, Currencies, MercyryoQuote, Response};
+use super::model::{Asset, Currencies, Quote, QuoteQuery, Response};
 
 const MERCURYO_API_BASE_URL: &str = "https://api.mercuryo.io";
 const MERCURYO_REDIRECT_URL: &str = "https://exchange.mercuryo.io";
@@ -33,17 +33,22 @@ impl MercuryoClient {
         symbol: String,
         fiat_amount: f64,
         network: String,
-    ) -> Result<MercyryoQuote, Box<dyn std::error::Error + Send + Sync>> {
-        let url = format!(
-            "{}/v1.6/widget/buy/rate?from={}&to={}&amount={}&network={}&widget_id={}",
-            MERCURYO_API_BASE_URL, fiat_currency, symbol, fiat_amount, network, self.widget_id
-        );
+    ) -> Result<Quote, Box<dyn std::error::Error + Send + Sync>> {
+        let query = QuoteQuery {
+            from: fiat_currency.clone(),
+            to: symbol.clone(),
+            amount: fiat_amount,
+            network: network.clone(),
+            widget_id: self.widget_id.clone(),
+        };
+        let url = format!("{}/v1.6/widget/buy/rate", MERCURYO_API_BASE_URL);
         let quote = self
             .client
-            .get(&url)
+            .get(url.as_str())
+            .query(&query)
             .send()
             .await?
-            .json::<Response<MercyryoQuote>>()
+            .json::<Response<Quote>>()
             .await?;
         Ok(quote.data)
     }
@@ -107,7 +112,7 @@ impl MercuryoClient {
         &self,
         request: FiatBuyRequest,
         request_map: FiatMapping,
-        quote: MercyryoQuote,
+        quote: Quote,
     ) -> FiatQuote {
         FiatQuote {
             provider: Self::NAME.as_fiat_provider(),
@@ -122,7 +127,7 @@ impl MercuryoClient {
         }
     }
 
-    pub fn redirect_url(&self, quote: MercyryoQuote, network: String, address: String) -> String {
+    pub fn redirect_url(&self, quote: Quote, network: String, address: String) -> String {
         let mut components = Url::parse(MERCURYO_REDIRECT_URL).unwrap();
         let signature_content = format!("{}{}", address, self.secret_key);
         let signature = hex::encode(Sha512::digest(signature_content));

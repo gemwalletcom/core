@@ -45,7 +45,6 @@ impl FiatProvider for KadoClient {
         Ok(assets)
     }
 
-    // full transaction: https://github.com/mercuryoio/api-migration-docs/blob/master/Widget_API_Mercuryo_v1.6.md#22-callbacks-response-body
     async fn webhook(
         &self,
         data: serde_json::Value,
