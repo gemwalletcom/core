@@ -8,6 +8,7 @@ pub mod config;
 pub mod explorer;
 pub mod solana;
 use solana::MplMetadata;
+pub mod chain;
 pub mod sui;
 pub mod ton;
 pub mod wallet_connect;
@@ -169,6 +170,13 @@ impl WalletConnectNamespace {
         let chain = Chain::from_str(&chain).ok()?;
         wallet_connect::get_reference(chain)
     }
+}
+
+/// Chain
+#[uniffi::export]
+pub fn chain_transaction_timeout_seconds(chain: String) -> f64 {
+    let chain = Chain::from_str(&chain).unwrap();
+    chain::chain_transaction_timeout_seconds(chain)
 }
 
 /// Asset
