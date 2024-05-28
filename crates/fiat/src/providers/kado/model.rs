@@ -69,7 +69,7 @@ pub struct Quote {
 #[derive(Debug, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Amount {
-    pub amount: f64,
+    pub amount: Option<f64>,
     pub unit: String,
 }
 

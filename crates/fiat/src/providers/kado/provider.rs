@@ -62,12 +62,12 @@ impl FiatProvider for KadoClient {
             provider_id: Self::NAME.id(),
             provider_transaction_id: data.data.id,
             status,
-            fiat_amount: data.data.buy_amount.amount,
+            fiat_amount: data.data.buy_amount.amount.unwrap_or_default(),
             fiat_currency: data.data.currency_type,
             transaction_hash: Some(data.data.tx_hash),
             address: Some(data.data.wallet_address),
-            fee_provider: data.data.processing_fee.amount,
-            fee_network: data.data.gas_fee.amount,
+            fee_provider: data.data.processing_fee.amount.unwrap_or_default(),
+            fee_network: data.data.gas_fee.amount.unwrap_or_default(),
             fee_partner: 0.0,
         };
 

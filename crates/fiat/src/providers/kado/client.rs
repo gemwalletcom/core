@@ -129,7 +129,11 @@ impl KadoClient {
             provider: Self::NAME.as_fiat_provider(),
             fiat_amount: request.fiat_amount,
             fiat_currency: request.clone().fiat_currency,
-            crypto_amount: quote.clone().receive_unit_count_after_fees.amount,
+            crypto_amount: quote
+                .clone()
+                .receive_unit_count_after_fees
+                .amount
+                .unwrap_or_default(),
             redirect_url: self.redirect_url(
                 request.fiat_currency.as_str(),
                 request.fiat_amount,
