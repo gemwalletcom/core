@@ -10,7 +10,7 @@ use crate::{
 
 use super::{
     client::BanxaClient,
-    model::{Asset, OrderRequest, Webhook},
+    model::{Asset, Webhook},
 };
 
 #[async_trait]
@@ -24,23 +24,12 @@ impl FiatProvider for BanxaClient {
         request: FiatBuyRequest,
         request_map: FiatMapping,
     ) -> Result<FiatQuote, Box<dyn std::error::Error + Send + Sync>> {
-        let account_reference = format!("{}-{}", request.asset_id, request.wallet_address);
-        let order_request = OrderRequest {
-            account_reference,
-            source: request.fiat_currency.to_string().clone(),
-            source_amount: request.fiat_amount.to_string(),
-            target: request_map.symbol.clone(),
-            blockchain: request_map.network.clone().unwrap_or_default(),
-            wallet_address: request.wallet_address.to_string().clone(),
-            return_url_on_success: "https://gemwallet.com".to_string(),
-        };
-        let (prices, quote) = tokio::try_join!(
-            self.get_prices(&request.fiat_currency, &request_map.symbol),
-            self.get_quote_buy(order_request)
-        )?;
-        let price = prices.prices.first().unwrap().clone();
+        let prices = self
+            .get_prices(&request.fiat_currency, &request_map.symbol)
+            .await?;
+        let price = prices.prices.first().cloned().ok_or("No price available")?;
 
-        Ok(self.get_fiat_quote(request, price, quote))
+        Ok(self.get_fiat_quote(request, request_map, price))
     }
 
     async fn get_assets(

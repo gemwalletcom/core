@@ -1,9 +1,10 @@
 use std::time::SystemTime;
 
-use crate::model::{filter_token_id, FiatProviderAsset};
+use crate::model::{filter_token_id, FiatMapping, FiatProviderAsset};
 use hex;
 use primitives::{Chain, FiatBuyRequest, FiatProviderName, FiatQuote};
 use reqwest::Client;
+use url::Url;
 
 use super::model::{
     Asset, Coins, Order, OrderData, OrderDetails, OrderRequest, Price, Prices, Response,
@@ -174,18 +175,38 @@ impl BanxaClient {
         }
     }
 
-    pub fn get_fiat_quote(&self, request: FiatBuyRequest, price: Price, order: Order) -> FiatQuote {
+    pub fn get_fiat_quote(
+        &self,
+        request: FiatBuyRequest,
+        fiat_mapping: FiatMapping,
+        price: Price,
+    ) -> FiatQuote {
         let price_fiat_amount = price.fiat_amount.parse::<f64>().unwrap_or_default();
         let fee_amount = price.fee_amount.parse::<f64>().unwrap_or_default();
         let network_fee = price.network_fee.parse::<f64>().unwrap_or_default();
         let crypto_amount = request.fiat_amount / (price_fiat_amount + fee_amount + network_fee);
+        let redirect_url = self.get_redirect_url(request.clone(), fiat_mapping);
 
         FiatQuote {
             provider: Self::NAME.as_fiat_provider(),
             fiat_amount: request.fiat_amount,
             fiat_currency: request.fiat_currency,
             crypto_amount,
-            redirect_url: order.checkout_url,
+            redirect_url,
         }
+    }
+
+    pub fn get_redirect_url(&self, request: FiatBuyRequest, fiat_mapping: FiatMapping) -> String {
+        let mut components = Url::parse(&self.url).unwrap();
+
+        components
+            .query_pairs_mut()
+            .append_pair("coinType", &fiat_mapping.symbol)
+            .append_pair("blockchain", &fiat_mapping.network.unwrap_or_default())
+            .append_pair("fiatType", request.fiat_currency.as_str())
+            .append_pair("fiatAmount", &request.fiat_amount.to_string())
+            .append_pair("walletAddress", &request.wallet_address);
+
+        return components.as_str().to_string();
     }
 }
