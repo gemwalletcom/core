@@ -104,16 +104,42 @@ mod tests {
         let result = encode_submit_with_referral(referral)?;
 
         assert_eq!(
-            result,
-            hex::decode("a1903eab0000000000000000000000004c49d4bd6a571827b4a556a0e1e3071da6231b9d")
-                .unwrap()
+            hex::encode(result),
+            "a1903eab0000000000000000000000004c49d4bd6a571827b4a556a0e1e3071da6231b9d"
         );
 
         let result = encode_submit_with_referral("")?;
         assert_eq!(
-            result,
-            hex::decode("a1903eab0000000000000000000000000000000000000000000000000000000000000000")
-                .unwrap()
+            hex::encode(result),
+            "a1903eab0000000000000000000000000000000000000000000000000000000000000000"
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_encode_request_withdrawals_with_permit() -> Result<(), Error> {
+        // https://etherscan.io/tx/0x96920c52e2d3c6f50b99863f541541a4023e438afed873618b4aa73c25abbf9a
+        let permit = Permit {
+            value: "101381038929079186".to_string(),
+            deadline:
+                "115792089237316195423570985008687907853269984665640564039457584007913129639935"
+                    .to_string(),
+            v: 28,
+            r: hex::decode("189dada4c2af64022607fa643de95fd2503d46161e39a89df2dfffe0cded151e")
+                .unwrap(),
+            s: hex::decode("606e38989dd407af9c52a262ec6ca85398b2aa4ab5c7378ab2797a25818d50f5")
+                .unwrap(),
+        };
+        let result = encode_request_withdrawals_with_permit(
+            vec!["101381038929079186".to_string()],
+            "0x5014f5CF5f9F14033316c333245B66189A709537",
+            &permit,
+        )?;
+
+        assert_eq!(
+            hex::encode(result),
+            "acf41e4d00000000000000000000000000000000000000000000000000000000000000e00000000000000000000000005014f5cf5f9f14033316c333245b66189a70953700000000000000000000000000000000000000000000000001682d848c53eb92ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff000000000000000000000000000000000000000000000000000000000000001c189dada4c2af64022607fa643de95fd2503d46161e39a89df2dfffe0cded151e606e38989dd407af9c52a262ec6ca85398b2aa4ab5c7378ab2797a25818d50f5000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000001682d848c53eb92"
         );
 
         Ok(())
