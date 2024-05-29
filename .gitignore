@@ -3,3 +3,4 @@ target
 .env
 .idea/
 .vscode/
+.vscode/settings.json
