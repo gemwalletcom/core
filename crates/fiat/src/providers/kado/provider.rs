@@ -58,7 +58,7 @@ impl FiatProvider for KadoClient {
 
         let transaction = FiatTransaction {
             asset_id: None,
-            symbol: data.data.receive_amount.unit,
+            symbol: data.data.receive_amount.unit.unwrap_or_default(),
             provider_id: Self::NAME.id(),
             provider_transaction_id: data.data.id,
             status,
