@@ -6,7 +6,8 @@ use config::{
     stake::StakeChainConfig,
     wallet_connect::WalletConnectConfig,
 };
-use gem_bsc::stake_hub;
+pub mod eth;
+use eth::ERC2612Permit;
 use payment::PaymentWrapper;
 use primitives::{Chain, StakeChain};
 use std::{collections::HashMap, str::FromStr};
@@ -15,6 +16,7 @@ pub mod bsc;
 pub mod config;
 pub mod explorer;
 pub mod solana;
+use gem_bsc::stake_hub;
 use solana::MplMetadata;
 pub mod chain;
 pub mod payment;
@@ -343,4 +345,25 @@ pub fn bsc_encode_claim_call(
 #[uniffi::export]
 pub fn payment_decode_url(string: &str) -> Result<PaymentWrapper, GemstoneError> {
     payment::decode_url(string).map_err(GemstoneError::from)
+}
+
+#[uniffi::export]
+pub fn eth_encode_submit_with_referral(referral: String) -> Result<Vec<u8>, GemstoneError> {
+    eth::encode_submit_with_referral(&referral).map_err(GemstoneError::from)
+}
+
+#[uniffi::export]
+pub fn eth_encode_request_withdrawals_with_permit(
+    amounts: Vec<String>,
+    owner: String,
+    permit: ERC2612Permit,
+) -> Result<Vec<u8>, GemstoneError> {
+    eth::encode_request_withdrawals_with_permit(amounts, owner, permit).map_err(GemstoneError::from)
+}
+
+#[uniffi::export]
+pub fn eth_decode_request_withdrawals_return(
+    result: Vec<u8>,
+) -> Result<Vec<String>, GemstoneError> {
+    eth::decode_request_withdrawals_return(&result).map_err(GemstoneError::from)
 }
