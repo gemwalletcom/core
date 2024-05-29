@@ -367,3 +367,8 @@ pub fn eth_decode_request_withdrawals_return(
 ) -> Result<Vec<String>, GemstoneError> {
     eth::decode_request_withdrawals_return(&result).map_err(GemstoneError::from)
 }
+
+#[uniffi::export]
+pub fn eth_encode_claim_withdrawal(request_id: String) -> Result<Vec<u8>, GemstoneError> {
+    eth::encode_claim_withdrawal(&request_id).map_err(GemstoneError::from)
+}

@@ -20,6 +20,10 @@ pub fn encode_request_withdrawals_with_permit(
     lido::encode_request_withdrawals_with_permit(amounts, &owner, &permit.into())
 }
 
+pub fn encode_claim_withdrawal(request_id: &str) -> Result<Vec<u8>, Error> {
+    lido::encode_claim_withdrawal(request_id)
+}
+
 pub fn decode_request_withdrawals_return(result: &[u8]) -> Result<Vec<String>, Error> {
     lido::decode_request_withdrawals_return(result)
 }
