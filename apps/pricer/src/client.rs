@@ -59,14 +59,14 @@ impl PriceClient {
 
     pub fn set_prices_assets(&mut self, values: Vec<PriceAsset>) -> Result<usize, Box<dyn Error>> {
         // filter non existing prices and assets
-        let existing_assets_ids = self
+        let assets_ids = self
             .database
             .get_assets(values.iter().map(|x| x.asset_id.clone()).collect())?
             .iter()
             .map(|x| x.id.clone())
             .collect::<Vec<_>>();
 
-        let existing_prices_ids = self
+        let prices_ids = self
             .database
             .get_prices()?
             .iter()
@@ -75,10 +75,7 @@ impl PriceClient {
 
         let values = values
             .into_iter()
-            .filter(|x| {
-                existing_assets_ids.contains(&x.asset_id)
-                    && existing_prices_ids.contains(&x.price_id)
-            })
+            .filter(|x| assets_ids.contains(&x.asset_id) && prices_ids.contains(&x.price_id))
             .collect::<Vec<_>>();
 
         for chunk in values.chunks(PRICES_ASSETS_INSERT_BATCH_LIMIT).clone() {

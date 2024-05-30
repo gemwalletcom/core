@@ -48,11 +48,6 @@ pub struct TransactionResponseData {
     pub code: i64,
     pub height: String,
     pub txhash: String,
-    pub logs: Vec<TransactionResponseLogs>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TransactionResponseLogs {
     pub events: Vec<TransactionEvent>,
 }
 
@@ -71,20 +66,16 @@ pub struct TransactionEventAtribute {
 
 impl TransactionResponse {
     pub fn get_rewards_value(&self, denom: &str) -> Option<BigInt> {
-        let attbibutes = self
+        let attributes = self
             .tx_response
-            .logs
+            .events
             .clone()
             .into_iter()
-            .flat_map(|x| {
-                x.events
-                    .into_iter()
-                    .filter(|x| x.event_type == super::model::EVENTS_WITHDRAW_REWARDS_TYPE)
-            })
+            .filter(|x| x.event_type == super::model::EVENTS_WITHDRAW_REWARDS_TYPE)
             .flat_map(|x| x.attributes)
             .collect::<Vec<_>>();
 
-        let value = attbibutes
+        let value = attributes
             .into_iter()
             .filter(|x| x.key == "amount")
             .map(|x| {
