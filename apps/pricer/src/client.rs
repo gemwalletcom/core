@@ -1,5 +1,5 @@
 use chrono::NaiveDateTime;
-use primitives::{Asset, AssetDetails, AssetScore};
+use primitives::{asset_price::AssetPrices, Asset, AssetDetails, AssetMarketPrice, AssetScore};
 use redis::{AsyncCommands, RedisResult};
 use std::error::Error;
 use storage::{
@@ -115,6 +115,20 @@ impl PriceClient {
         format!("{}{}:{}", self.prefix, currency, asset_id)
     }
 
+    pub async fn get_asset_price(
+        &mut self,
+        asset_id: &str,
+        currency: &str,
+    ) -> Result<AssetMarketPrice, Box<dyn Error>> {
+        let prices = self.get_cache_prices(currency, vec![asset_id]).await?;
+        let price = prices.first().cloned().ok_or("No price available")?;
+
+        Ok(AssetMarketPrice {
+            price: Some(price.as_price_primitive()),
+            market: Some(price.as_market()),
+        })
+    }
+
     pub async fn set_cache_prices(
         &mut self,
         currency: &str,
@@ -136,9 +150,9 @@ impl PriceClient {
     pub async fn get_cache_prices(
         &mut self,
         currency: &str,
-        assets: Vec<&str>,
+        asset_ids: Vec<&str>,
     ) -> RedisResult<Vec<PriceCache>> {
-        let keys: Vec<String> = assets
+        let keys: Vec<String> = asset_ids
             .iter()
             .map(|x| self.asset_key(currency, x.to_string()))
             .collect();
@@ -158,6 +172,25 @@ impl PriceClient {
             .collect();
 
         Ok(prices)
+    }
+
+    pub async fn get_asset_prices(
+        &mut self,
+        currency: &str,
+        asset_ids: Vec<&str>,
+    ) -> Result<AssetPrices, Box<dyn Error>> {
+        let prices = self
+            .get_cache_prices(currency, asset_ids)
+            .await
+            .unwrap_or_default()
+            .into_iter()
+            .map(|x| x.as_asset_price_primitive())
+            .collect();
+
+        Ok(AssetPrices {
+            currency: currency.to_string(),
+            prices,
+        })
     }
 
     // asset, asset details

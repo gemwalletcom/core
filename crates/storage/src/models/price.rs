@@ -29,11 +29,28 @@ pub struct PriceCache {
 }
 
 impl PriceCache {
-    pub fn as_primitive(&self) -> primitives::AssetPrice {
+    pub fn as_price_primitive(&self) -> primitives::Price {
+        primitives::Price {
+            price: self.price.price,
+            price_change_percentage_24h: self.price.price_change_percentage_24h,
+        }
+    }
+    pub fn as_asset_price_primitive(&self) -> primitives::AssetPrice {
         primitives::AssetPrice {
             asset_id: self.asset_id.clone(),
             price: self.price.price,
             price_change_percentage_24h: self.price.price_change_percentage_24h,
+        }
+    }
+
+    pub fn as_market(&self) -> AssetMarket {
+        AssetMarket {
+            market_cap: Some(self.price.market_cap),
+            market_cap_rank: Some(self.price.market_cap_rank),
+            total_volume: Some(self.price.total_volume),
+            circulating_supply: Some(self.price.circulating_supply),
+            total_supply: Some(self.price.total_supply),
+            max_supply: Some(self.price.max_supply),
         }
     }
 }

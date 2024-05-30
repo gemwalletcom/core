@@ -139,7 +139,7 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
         .mount(
             "/v1",
             routes![
-                prices::get_asset_price,
+                prices::get_price,
                 prices::get_assets_prices,
                 charts::get_charts,
                 fiat_quotes::get_fiat_quotes,

@@ -17,6 +17,14 @@ pub struct AssetFull {
 #[typeshare]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct AssetMarketPrice {
+    pub price: Option<Price>,
+    pub market: Option<AssetMarket>,
+}
+
+#[typeshare]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct AssetDetails {
     pub links: AssetLinks,
 
