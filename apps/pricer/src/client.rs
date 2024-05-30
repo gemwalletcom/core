@@ -21,6 +21,7 @@ pub struct PriceClient {
 }
 
 const PRICES_INSERT_BATCH_LIMIT: usize = 1000;
+const PRICES_ASSETS_INSERT_BATCH_LIMIT: usize = 1000;
 
 impl PriceClient {
     pub fn new(redis_url: &str, database_url: &str) -> Self {
@@ -80,7 +81,10 @@ impl PriceClient {
             })
             .collect::<Vec<_>>();
 
-        Ok(self.database.set_prices_assets(values)?)
+        for chunk in values.chunks(PRICES_ASSETS_INSERT_BATCH_LIMIT).clone() {
+            self.database.set_prices_assets(chunk.to_vec())?;
+        }
+        Ok(values.len())
     }
 
     pub fn get_prices(&mut self) -> Result<Vec<Price>, Box<dyn Error>> {
