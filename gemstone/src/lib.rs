@@ -6,17 +6,17 @@ use config::{
     stake::StakeChainConfig,
     wallet_connect::WalletConnectConfig,
 };
-pub mod eth;
-use eth::ERC2612Permit;
 use payment::PaymentWrapper;
 use primitives::{Chain, StakeChain};
+pub mod lido;
+use gem_bsc::stake_hub;
+use lido::{ERC2612Permit, LidoWithdrawalRequest};
 use std::{collections::HashMap, str::FromStr};
 pub mod asset;
 pub mod bsc;
 pub mod config;
 pub mod explorer;
 pub mod solana;
-use gem_bsc::stake_hub;
 use solana::MplMetadata;
 pub mod chain;
 pub mod payment;
@@ -348,27 +348,50 @@ pub fn payment_decode_url(string: &str) -> Result<PaymentWrapper, GemstoneError>
 }
 
 #[uniffi::export]
-pub fn eth_encode_submit_with_referral(referral: String) -> Result<Vec<u8>, GemstoneError> {
-    eth::encode_submit_with_referral(&referral).map_err(GemstoneError::from)
+pub fn lido_encode_submit(referral: String) -> Result<Vec<u8>, GemstoneError> {
+    lido::encode_submit_with_referral(&referral).map_err(GemstoneError::from)
 }
 
 #[uniffi::export]
-pub fn eth_encode_request_withdrawals_with_permit(
+pub fn lido_encode_request_withdrawals(
     amounts: Vec<String>,
     owner: String,
     permit: ERC2612Permit,
 ) -> Result<Vec<u8>, GemstoneError> {
-    eth::encode_request_withdrawals_with_permit(amounts, owner, permit).map_err(GemstoneError::from)
+    lido::encode_request_withdrawals_with_permit(amounts, owner, permit)
+        .map_err(GemstoneError::from)
 }
 
 #[uniffi::export]
-pub fn eth_decode_request_withdrawals_return(
+pub fn lido_decode_request_withdrawals_return(
     result: Vec<u8>,
 ) -> Result<Vec<String>, GemstoneError> {
-    eth::decode_request_withdrawals_return(&result).map_err(GemstoneError::from)
+    lido::decode_request_withdrawals_return(&result).map_err(GemstoneError::from)
 }
 
 #[uniffi::export]
-pub fn eth_encode_claim_withdrawal(request_id: String) -> Result<Vec<u8>, GemstoneError> {
-    eth::encode_claim_withdrawal(&request_id).map_err(GemstoneError::from)
+pub fn lido_encode_claim_withdrawal(request_id: String) -> Result<Vec<u8>, GemstoneError> {
+    lido::encode_claim_withdrawal(&request_id).map_err(GemstoneError::from)
+}
+
+#[uniffi::export]
+pub fn lido_encode_withdrawal_request_ids(owner: String) -> Result<Vec<u8>, GemstoneError> {
+    lido::encode_get_withdrawal_request_ids(&owner).map_err(GemstoneError::from)
+}
+
+#[uniffi::export]
+pub fn lido_decode_withdrawal_request_ids(result: Vec<u8>) -> Result<Vec<String>, GemstoneError> {
+    lido::decode_get_withdrawal_request_ids(&result).map_err(GemstoneError::from)
+}
+
+#[uniffi::export]
+pub fn lido_encode_withdrawal_statuses(request_ids: Vec<String>) -> Result<Vec<u8>, GemstoneError> {
+    lido::encode_get_withdrawal_request_status(&request_ids).map_err(GemstoneError::from)
+}
+
+#[uniffi::export]
+pub fn lido_decode_get_withdrawal_statuses(
+    result: Vec<u8>,
+) -> Result<Vec<LidoWithdrawalRequest>, GemstoneError> {
+    lido::decode_get_withdrawal_request_status(&result).map_err(GemstoneError::from)
 }
