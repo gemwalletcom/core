@@ -16,6 +16,8 @@ pub fn map_asset_chain(chain: String) -> Option<Chain> {
         "ripple" => Some(Chain::Xrp),
         "celestia" => Some(Chain::Celestia),
         "injective" => Some(Chain::Injective),
+        "sei" => Some(Chain::Sei),
+        "noble" => Some(Chain::Noble),
         _ => None,
     }
 }
