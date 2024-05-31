@@ -4,7 +4,7 @@ use gem_evm::{erc2612::Permit, lido, lido::WithdrawalRequestStatus};
 #[derive(uniffi::Record, Debug)]
 pub struct ERC2612Permit {
     pub value: String,
-    pub deadline: String,
+    pub deadline: u64,
     pub signature: Vec<u8>,
 }
 
@@ -13,7 +13,7 @@ pub struct LidoWithdrawalRequest {
     pub amount: String,
     pub shares: String,
     pub owner: String,
-    pub timestamp: String,
+    pub timestamp: u64,
     pub is_finalized: bool,
     pub is_claimed: bool,
 }
@@ -24,7 +24,7 @@ impl From<WithdrawalRequestStatus> for LidoWithdrawalRequest {
             amount: value.amountOfStETH.to_string(),
             shares: value.amountOfShares.to_string(),
             owner: value.owner.to_string(),
-            timestamp: value.timestamp.to_string(),
+            timestamp: value.timestamp.to_string().parse::<u64>().unwrap(),
             is_finalized: value.isFinalized,
             is_claimed: value.isClaimed,
         }

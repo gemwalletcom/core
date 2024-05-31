@@ -77,7 +77,7 @@ pub fn encode_request_withdrawals_with_permit(
         _owner: Address::from_str(owner).map_err(Error::msg)?,
         _permit: PermitInput {
             value: U256::from_str(&permit.value).map_err(Error::msg)?,
-            deadline: U256::from_str(&permit.deadline).map_err(Error::msg)?,
+            deadline: U256::from(permit.deadline),
             v: permit.v,
             r: FixedBytes::from_slice(&r),
             s: FixedBytes::from_slice(&s),
@@ -235,7 +235,7 @@ mod tests {
             "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7"
         );
         assert_eq!(requests[0].timestamp.to_string(), "1716949259");
-        assert_eq!(requests[0].isFinalized, true);
-        assert_eq!(requests[0].isClaimed, false);
+        assert!(requests[0].isFinalized);
+        assert!(!requests[0].isClaimed);
     }
 }
