@@ -8,6 +8,6 @@ edition = { workspace = true }
 hex = { workspace = true }
 itoa = { workspace = true }
 anyhow = { workspace = true }
-alloy-core = { workspace = true, features = ["sol-types", "json-abi"] }
+alloy-core = { workspace = true }
 
 gem_hash = { path = "../gem_hash" }
