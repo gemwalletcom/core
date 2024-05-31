@@ -74,7 +74,7 @@ impl From<ERC2612Permit> for Permit {
     fn from(permit: ERC2612Permit) -> Self {
         Permit {
             value: permit.value,
-            deadline: permit.deadline,
+            deadline: permit.deadline.to_string(),
             v: permit.signature[64],
             r: permit.signature[0..32].to_vec(),
             s: permit.signature[32..64].to_vec(),
