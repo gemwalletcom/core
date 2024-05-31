@@ -2,7 +2,7 @@ use std::time::SystemTime;
 
 use crate::model::{filter_token_id, FiatMapping, FiatProviderAsset};
 use hex;
-use primitives::{Chain, FiatBuyRequest, FiatProviderName, FiatQuote};
+use primitives::{FiatBuyRequest, FiatProviderName, FiatQuote};
 use reqwest::Client;
 use url::Url;
 
@@ -136,7 +136,7 @@ impl BanxaClient {
             .blockchains
             .into_iter()
             .map(|blockchain| {
-                let chain = Self::map_asset_chain(blockchain.clone().code.clone());
+                let chain = super::mapper::map_asset_chain(blockchain.clone().code.clone());
                 let token_id = filter_token_id(blockchain.clone().contract_id);
                 let id = asset.clone().coin_code + "-" + blockchain.clone().code.as_str();
                 FiatProviderAsset {
@@ -149,30 +149,6 @@ impl BanxaClient {
                 }
             })
             .collect()
-    }
-
-    pub fn map_asset_chain(chain: String) -> Option<Chain> {
-        match chain.as_str() {
-            "BTC" => Some(Chain::Bitcoin),
-            "ETH" => Some(Chain::Ethereum),
-            "TRON" => Some(Chain::Tron),
-            "BSC" => Some(Chain::SmartChain),
-            "SOL" => Some(Chain::Solana),
-            "MATIC" => Some(Chain::Polygon),
-            "ATOM" => Some(Chain::Cosmos),
-            "AVAX-C" => Some(Chain::AvalancheC),
-            "XRP" => Some(Chain::Xrp),
-            "LTC" => Some(Chain::Litecoin),
-            "FTM" => Some(Chain::Fantom),
-            "DOGE" => Some(Chain::Doge),
-            "APT" => Some(Chain::Aptos),
-            "TON" => Some(Chain::Ton),
-            "SUI" => Some(Chain::Sui),
-            "NEAR" => Some(Chain::Near),
-            "CELO" => Some(Chain::Celo),
-            "THORCHAIN" => Some(Chain::Thorchain),
-            _ => None,
-        }
     }
 
     pub fn get_fiat_quote(

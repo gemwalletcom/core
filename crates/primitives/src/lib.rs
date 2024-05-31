@@ -85,4 +85,7 @@ pub use self::nft::{NFTAttrubute, NFTCollectible, NFTCollection, NFTImage};
 pub mod explorer;
 pub use self::explorer::Explorer;
 
+pub mod chain_cosmos;
+pub use self::chain_cosmos::CosmosDenom;
+
 pub const DEFAULT_FIAT_CURRENCY: &str = "USD";

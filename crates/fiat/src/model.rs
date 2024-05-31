@@ -1,4 +1,4 @@
-use primitives::Chain;
+use primitives::{Chain, CosmosDenom};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -40,6 +40,9 @@ pub fn filter_token_id(token_id: Option<String>) -> Option<String> {
             "0x0000000000000000000000000000000000001010", // matic
             "0x0000000000000000000000000000000000000000",
             "0x471ece3750da237f93b8e339c536989b8978a438", // celo
+            CosmosDenom::Uosmo.as_ref(),                  // osmosis
+            CosmosDenom::Usei.as_ref(),                   //sei
+            CosmosDenom::Inj.as_ref(),                    // osmosis
         ]
         .contains(&contract_address.as_str())
     })

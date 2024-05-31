@@ -1,6 +1,6 @@
 use crate::model::{FiatMapping, FiatProviderAsset};
 use hex;
-use primitives::{Chain, FiatBuyRequest, FiatProviderName, FiatQuote};
+use primitives::{FiatBuyRequest, FiatProviderName, FiatQuote};
 use reqwest::Client;
 use sha2::{Digest, Sha512};
 use url::Url;
@@ -66,7 +66,7 @@ impl MercuryoClient {
     }
 
     pub fn map_asset(asset: Asset) -> Option<FiatProviderAsset> {
-        let chain = Self::map_asset_chain(asset.network.clone());
+        let chain = super::mapper::map_asset_chain(asset.network.clone());
         let token_id = if asset.contract.is_empty() {
             None
         } else {
@@ -80,32 +80,6 @@ impl MercuryoClient {
             network: Some(asset.network),
             enabled: true,
         })
-    }
-
-    pub fn map_asset_chain(chain: String) -> Option<Chain> {
-        match chain.as_str() {
-            "BITCOIN" => Some(Chain::Bitcoin),
-            "ETHEREUM" => Some(Chain::Ethereum),
-            "OPTIMISM" => Some(Chain::Optimism),
-            "ARBITRUM" => Some(Chain::Arbitrum),
-            "BASE" => Some(Chain::Base),
-            "TRON" => Some(Chain::Tron),
-            "BINANCESMARTCHAIN" => Some(Chain::SmartChain),
-            "SOLANA" => Some(Chain::Solana),
-            "POLYGON" => Some(Chain::Polygon),
-            "COSMOS" => Some(Chain::Cosmos),
-            "AVALANCHE" => Some(Chain::AvalancheC),
-            "RIPPLE" => Some(Chain::Xrp),
-            "LITECOIN" => Some(Chain::Litecoin),
-            "FANTOM" => Some(Chain::Fantom),
-            "DOGECOIN" => Some(Chain::Doge),
-            "CELESTIA" => Some(Chain::Celestia),
-            "NEWTON" => Some(Chain::Ton),
-            "NEAR_PROTOCOL" => Some(Chain::Near),
-            "LINEA" => Some(Chain::Linea),
-            "ZKSYNC" => Some(Chain::ZkSync),
-            _ => None,
-        }
     }
 
     pub fn get_fiat_quote(

@@ -1,9 +1,12 @@
 use crate::model::{filter_token_id, FiatMapping, FiatProviderAsset};
-use primitives::{Chain, FiatBuyRequest, FiatProviderName, FiatQuote};
+use primitives::{FiatBuyRequest, FiatProviderName, FiatQuote};
 use reqwest::Client;
 use url::Url;
 
-use super::model::{Asset, Blockchain, Blockchains, Quote, QuoteData, QuoteQuery, Response};
+use super::{
+    mapper,
+    model::{Asset, Blockchain, Blockchains, Quote, QuoteData, QuoteQuery, Response},
+};
 
 const API_BASE_URL: &str = "https://api.kado.money";
 const REDIRECT_URL: &str = "https://app.kado.money";
@@ -82,7 +85,7 @@ impl KadoClient {
     }
 
     pub fn map_asset(blockchain: Blockchain, asset: Asset) -> Option<FiatProviderAsset> {
-        let chain = Self::map_asset_chain(blockchain.network.clone());
+        let chain = mapper::map_asset_chain(blockchain.network.clone());
         let token_id = if asset.address.is_none() {
             None
         } else {
@@ -97,26 +100,6 @@ impl KadoClient {
             network: Some(blockchain.network),
             enabled: true,
         })
-    }
-
-    pub fn map_asset_chain(chain: String) -> Option<Chain> {
-        match chain.as_str() {
-            "bitcoin" => Some(Chain::Bitcoin),
-            "litecoin" => Some(Chain::Litecoin),
-            "ethereum" => Some(Chain::Ethereum),
-            "optimism" => Some(Chain::Optimism),
-            "polygon" => Some(Chain::Polygon),
-            "base" => Some(Chain::Base),
-            "arbitrum" => Some(Chain::Arbitrum),
-            "avalanche" => Some(Chain::AvalancheC),
-            "solana" => Some(Chain::Solana),
-            "osmosis" => Some(Chain::Osmosis),
-            "cosmos hub" => Some(Chain::Cosmos),
-            "ripple" => Some(Chain::Xrp),
-            "celestia" => Some(Chain::Celestia),
-            "injective" => Some(Chain::Injective),
-            _ => None,
-        }
     }
 
     pub fn get_fiat_quote(
