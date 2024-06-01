@@ -27,7 +27,7 @@ impl StakeChain {
             }
             StakeChain::Solana => 259200,
             StakeChain::Sui => 86400,
-            StakeChain::Osmosis => 1_036_800,
+            StakeChain::Osmosis => 1_209_600,
             StakeChain::SmartChain => 604800,
         }
     }
