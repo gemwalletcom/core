@@ -1,6 +1,5 @@
 LIB_NAME := gemstone
 STATIC_LIB_NAME := lib$(LIB_NAME).a
-DY_LIB_NAME := lib$(LIB_NAME).dylib
 UDL_NAME := $(LIB_NAME).udl
 BUILD_MODE :=
 
@@ -8,6 +7,13 @@ ifeq ($(BUILD_MODE),)
 BUILD_MODE_TARGET := debug
 else
 BUILD_MODE_TARGET := $(BUILD_MODE)
+endif
+
+OS_NAME := $(shell uname -s | tr A-Z a-z)
+ifeq ($(OS_NAME), darwin)
+	DY_LIB_NAME := lib$(LIB_NAME).dylib
+else
+	DY_LIB_NAME := lib$(LIB_NAME).so
 endif
 
 FW_NAME := Gemstone
