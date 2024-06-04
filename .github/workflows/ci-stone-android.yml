@@ -3,8 +3,12 @@ name: Gemstone Android
 on:
   push:
     branches: ["main"]
+    paths:
+      - "gemstone/**"
   pull_request:
     branches: ["main"]
+    paths:
+      - "gemstone/**"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

@@ -2,7 +2,8 @@
 
 [![Tests](https://github.com/gemwalletcom/core/actions/workflows/ci.yml/badge.svg)](https://github.com/gemwalletcom/core/actions/workflows/ci.yml)
 [![Clippy check](https://github.com/gemwalletcom/core/actions/workflows/lint.yml/badge.svg)](https://github.com/gemwalletcom/core/actions/workflows/lint.yml)
-[![Gemstone CI](https://github.com/gemwalletcom/core/actions/workflows/ci-gemstone.yml/badge.svg)](https://github.com/gemwalletcom/core/actions/workflows/ci-gemstone.yml)
+[![Gemstone iOS](https://github.com/gemwalletcom/core/actions/workflows/ci-stone-ios.yml/badge.svg)](https://github.com/gemwalletcom/core/actions/workflows/ci-stone-ios.yml)
+[![Gemstone Android](https://github.com/gemwalletcom/core/actions/workflows/ci-stone-android.yml/badge.svg)](https://github.com/gemwalletcom/core/actions/workflows/ci-stone-android.yml)
 
 The Gem Core library is a Rust monorepo that serves as the backend infrastructure and cross platform libraries for the Gem Wallet on Android and iOS. It handles various tasks, including:
 
