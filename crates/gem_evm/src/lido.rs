@@ -148,7 +148,7 @@ pub fn decode_request_withdrawals_return(result: &[u8]) -> Result<Vec<String>, E
 #[cfg(test)]
 mod tests {
     use super::*;
-
+    use crate::erc2612::Permit;
     #[test]
     fn test_encode_submit_with_referral() {
         let referral = "0x4C49d4Bd6a571827B4A556a0e1e3071DA6231B9D";
@@ -169,16 +169,17 @@ mod tests {
     #[test]
     fn test_encode_request_withdrawals_with_permit() {
         // https://etherscan.io/tx/0x96920c52e2d3c6f50b99863f541541a4023e438afed873618b4aa73c25abbf9a
+
+        let signature = hex::decode("189dada4c2af64022607fa643de95fd2503d46161e39a89df2dfffe0cded151e606e38989dd407af9c52a262ec6ca85398b2aa4ab5c7378ab2797a25818d50f51c")
+            .unwrap();
         let permit = Permit {
             value: "101381038929079186".to_string(),
             deadline:
                 "115792089237316195423570985008687907853269984665640564039457584007913129639935"
                     .to_string(),
-            v: 28,
-            r: hex::decode("189dada4c2af64022607fa643de95fd2503d46161e39a89df2dfffe0cded151e")
-                .unwrap(),
-            s: hex::decode("606e38989dd407af9c52a262ec6ca85398b2aa4ab5c7378ab2797a25818d50f5")
-                .unwrap(),
+            v: signature[64],
+            r: signature[0..32].to_vec(),
+            s: signature[32..64].to_vec(),
         };
         let result = encode_request_withdrawals_with_permit(
             vec!["101381038929079186".to_string()],
