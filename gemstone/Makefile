@@ -1,6 +1,5 @@
 LIB_NAME := gemstone
 STATIC_LIB_NAME := lib$(LIB_NAME).a
-DY_LIB_NAME := lib$(LIB_NAME).dylib
 UDL_NAME := $(LIB_NAME).udl
 BUILD_MODE :=
 
@@ -8,6 +7,13 @@ ifeq ($(BUILD_MODE),)
 BUILD_MODE_TARGET := debug
 else
 BUILD_MODE_TARGET := $(BUILD_MODE)
+endif
+
+OS_NAME := $(shell uname -s | tr A-Z a-z)
+ifeq ($(OS_NAME), darwin)
+	DY_LIB_NAME := lib$(LIB_NAME).dylib
+else
+	DY_LIB_NAME := lib$(LIB_NAME).so
 endif
 
 FW_NAME := Gemstone
@@ -29,6 +35,9 @@ GEN_SWIFT_FOLDER := generated/swift
 GEN_KOTLIN_FOLDER := generated/kotlin
 TARGET_XC_FW_FOLDER := target/spm
 NIGHTLY := nightly-2023-12-23
+
+ANDROID_HOME ?= ~/Library/Android/sdk
+SDK_MANAGER = ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager
 
 prepare-apple:
 	rustup toolchain install $(NIGHTLY)
@@ -79,6 +88,9 @@ cp-xcframework-source:
 	@cp src/Package.swift $(TARGET_XC_FW_FOLDER)
 	@cp $(GEN_SWIFT_FOLDER)/${FW_NAME}.swift $(TARGET_XC_FW_FOLDER)/Sources/$(FW_NAME)
 
+install-ndk:
+	${SDK_MANAGER} "ndk;26.1.10909125"
+
 bindgen-kotlin:
 	@mkdir -p $(GEN_KOTLIN_FOLDER)
 	cargo build --$(BUILD_MODE)
@@ -88,4 +100,3 @@ android:
 	@# make sure you install sdkman and jdk17
 	@cp -Rf $(GEN_KOTLIN_FOLDER)/uniffi tests/android/GemTest/app/src/main/java
 	@cd tests/android/GemTest && ./gradlew cargoBuild --warn
-

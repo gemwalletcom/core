@@ -12,7 +12,7 @@ cargo {
     libname = "gemstone"
     pythonCommand = "python3"
     profile = "debug"
-    targets = ["x86_64", "arm64", "arm"]
+    targets = ["x86_64", "arm64"]
     extraCargoBuildArguments = ["--lib"]
     verbose = true
 }
