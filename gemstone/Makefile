@@ -36,6 +36,9 @@ GEN_KOTLIN_FOLDER := generated/kotlin
 TARGET_XC_FW_FOLDER := target/spm
 NIGHTLY := nightly-2023-12-23
 
+ANDROID_HOME ?= ~/Library/Android/sdk
+SDK_MANAGER = ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager
+
 prepare-apple:
 	rustup toolchain install $(NIGHTLY)
 	rustup target add aarch64-apple-ios-sim aarch64-apple-ios
@@ -84,6 +87,9 @@ cp-xcframework-source:
 	@mkdir -p $(TARGET_XC_FW_FOLDER)/Sources/$(FW_NAME)
 	@cp src/Package.swift $(TARGET_XC_FW_FOLDER)
 	@cp $(GEN_SWIFT_FOLDER)/${FW_NAME}.swift $(TARGET_XC_FW_FOLDER)/Sources/$(FW_NAME)
+
+install-ndk:
+	${SDK_MANAGER} "ndk;26.1.10909125"
 
 bindgen-kotlin:
 	@mkdir -p $(GEN_KOTLIN_FOLDER)

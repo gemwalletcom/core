@@ -16,7 +16,7 @@ env:
   RUSTC_WRAPPER: "sccache"
 
 jobs:
-  build_ios:
+  build_android:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -32,6 +32,12 @@ jobs:
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
+
+      - name: Setup NDK
+        run: make install-ndk
+
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v3
 
       - uses: actions/cache@v3
         with:
