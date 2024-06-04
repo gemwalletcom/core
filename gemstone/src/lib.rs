@@ -1,5 +1,6 @@
 use config::{docs::DocsUrl, public::PublicUrl, social::SocialUrl};
 use gem_bsc::stake_hub;
+use payment::PaymentWrapper;
 use primitives::Chain;
 use std::{collections::HashMap, str::FromStr};
 pub mod asset;
@@ -9,6 +10,7 @@ pub mod explorer;
 pub mod solana;
 use solana::MplMetadata;
 pub mod chain;
+pub mod payment;
 pub mod sui;
 pub mod ton;
 pub mod wallet_connect;
@@ -311,4 +313,9 @@ pub fn bsc_encode_claim_call(
     request_number: u64,
 ) -> Result<Vec<u8>, GemstoneError> {
     stake_hub::encode_claim_call(&operator_address, request_number).map_err(GemstoneError::from)
+}
+
+#[uniffi::export]
+pub fn payment_decode_url(string: &str) -> Result<PaymentWrapper, GemstoneError> {
+    payment::decode_url(string).map_err(GemstoneError::from)
 }

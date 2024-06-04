@@ -16,3 +16,4 @@ strum_macros = { workspace = true }
 # make it optional feature
 rocket = { workspace = true }
 gem_evm = { path = "../gem_evm" }
+anyhow = { workspace = true }
