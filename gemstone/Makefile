@@ -99,4 +99,4 @@ bindgen-kotlin:
 android:
 	@# make sure you install sdkman and jdk17
 	@cp -Rf $(GEN_KOTLIN_FOLDER)/uniffi tests/android/GemTest/app/src/main/java
-	@cd tests/android/GemTest && ./gradlew assembleDebug --warn
+	@cd tests/android/GemTest && touch local.properties && ./gradlew assembleDebug --warn
