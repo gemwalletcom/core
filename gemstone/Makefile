@@ -47,9 +47,9 @@ prepare-apple:
 prepare-android:
 	rustup toolchain install stable
 	rustup target add x86_64-linux-android
-	rustup target add x86_64-unknown-linux-gnu
 	rustup target add aarch64-linux-android
 	rustup target add armv7-linux-androideabi
+	cargo install cargo-ndk
 
 apple: build-targets bindgen-swift assemble-frameworks xcframework cp-xcframework-source
 
@@ -63,8 +63,8 @@ test-ios:
 bindgen: bindgen-swift bindgen-kotlin
 
 build-targets:
-	cargo build --target aarch64-apple-ios-sim --target aarch64-apple-ios --$(BUILD_MODE)
-	cargo +$(NIGHTLY) build -Z build-std --lib --target aarch64-apple-ios-macabi --$(BUILD_MODE)
+	cargo build --timings --target aarch64-apple-ios-sim --target aarch64-apple-ios --$(BUILD_MODE)
+	cargo +$(NIGHTLY) build --timings -Z build-std --lib --target aarch64-apple-ios-macabi --$(BUILD_MODE)
 
 bindgen-swift:
 	@mkdir -p $(GEN_SWIFT_FOLDER)
@@ -94,9 +94,9 @@ install-ndk:
 bindgen-kotlin:
 	@mkdir -p $(GEN_KOTLIN_FOLDER)
 	cargo build --$(BUILD_MODE)
-	cargo run -p uniffi-bindgen generate src/$(UDL_NAME) --language kotlin --lib-file $(TARGET_DIR)/$(BUILD_MODE_TARGET)/$(DY_LIB_NAME) -o $(GEN_KOTLIN_FOLDER)
+	cargo run -p uniffi-bindgen generate --library --language kotlin --crate $(LIB_NAME) $(TARGET_DIR)/$(BUILD_MODE_TARGET)/$(DY_LIB_NAME) -o $(GEN_KOTLIN_FOLDER)
 
 android:
 	@# make sure you install sdkman and jdk17
 	@cp -Rf $(GEN_KOTLIN_FOLDER)/uniffi tests/android/GemTest/app/src/main/java
-	@cd tests/android/GemTest && ./gradlew cargoBuild --warn
+	@cd tests/android/GemTest && touch local.properties && ./gradlew assembleDebug --warn

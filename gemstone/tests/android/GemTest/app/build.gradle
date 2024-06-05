@@ -1,20 +1,15 @@
 plugins {
     id "com.android.application"
     id "org.jetbrains.kotlin.android"
+    id 'com.github.willir.rust.cargo-ndk-android'
 }
 
-apply plugin: "org.mozilla.rust-android-gradle.rust-android"
-
-cargo {
-    prebuiltToolchains = true
-    targetDirectory = "$rootDir/../../../../target" // workspace target folder
-    module = "$rootDir/../../.." // Cargo.toml folder
-    libname = "gemstone"
-    pythonCommand = "python3"
-    profile = "debug"
-    targets = ["x86_64", "arm64"]
+cargoNdk {
+    targets = ["arm64", "x86_64"]
+    module = "/../../.." // Cargo.toml
+    targetDirectory = "../target"
+    librariesNames = ["libgemstone.so"]
     extraCargoBuildArguments = ["--lib"]
-    verbose = true
 }
 
 android {
@@ -53,11 +48,6 @@ android {
     composeOptions {
         kotlinCompilerExtensionVersion "1.5.1"
     }
-    packaging {
-        resources {
-            excludes += "/META-INF/{AL2.0,LGPL2.1}"
-        }
-    }
 }
 
 dependencies {
@@ -65,7 +55,7 @@ dependencies {
     implementation "net.java.dev.jna:jna:5.14.0@aar"
 
     implementation "androidx.core:core-ktx:1.13.1"
-    implementation "androidx.lifecycle:lifecycle-runtime-ktx:2.7.0"
+    implementation "androidx.lifecycle:lifecycle-runtime-ktx:2.8.1"
     implementation "androidx.activity:activity-compose:1.9.0"
     implementation platform("androidx.compose:compose-bom:2024.05.00")
     implementation "androidx.compose.ui:ui"
@@ -80,16 +70,3 @@ dependencies {
     debugImplementation "androidx.compose.ui:ui-tooling"
     debugImplementation "androidx.compose.ui:ui-test-manifest"
 }
-
-afterEvaluate {
-    // The `cargoBuild` task isn't available until after evaluation.
-    android.applicationVariants.configureEach { variant ->
-        def productFlavor = ""
-        variant.productFlavors.each {
-            productFlavor += "${it.name.capitalize()}"
-        }
-        def buildType = "${variant.buildType.name.capitalize()}"
-        tasks["generate${productFlavor}${buildType}Assets"].dependsOn(tasks["cargoBuild"])
-    }
-}
-
