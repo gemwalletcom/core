@@ -196,7 +196,18 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_encode_transfer() {
+    fn test_parse_address() -> Result<(), anyhow::Error> {
+        let address = "0xe6af80fe1b0b42fcd96762e5c70f5e8dae39f8f0ee0f118cac0d55b74e2927c2";
+        let result = SuiAddress::from_str(address)?;
+        assert_eq!(
+            result.to_string(),
+            "0xe6af80fe1b0b42fcd96762e5c70f5e8dae39f8f0ee0f118cac0d55b74e2927c2"
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn test_encode_transfer() -> Result<(), anyhow::Error> {
         let input = SuiTransferInput {
             sender: "0xa9bd0493f9bd1f792a4aedc1f99d54535a75a46c38fd56a8f2c6b7c8d75817a1".into(),
             recipient: "0xe6af80fe1b0b42fcd96762e5c70f5e8dae39f8f0ee0f118cac0d55b74e2927c2".into(),
@@ -218,9 +229,10 @@ mod tests {
             },
         };
 
-        let output = encode_transfer(&input).unwrap();
+        let output = encode_transfer(&input)?;
         let b64_encoded = general_purpose::STANDARD.encode(output.tx_data);
         assert_eq!(b64_encoded, "AAABACDmr4D+GwtC/NlnYuXHD16Nrjn48O4PEYysDVW3TiknwgEBAQABAACpvQST+b0feSpK7cH5nVRTWnWkbDj9VqjyxrfI11gXoQGfJYyFVm2Xe0yZu2AZVgupnHlucSkSadj588ydnzfbRoz/EwQAAAAAIOqzQffiRRpexyiDEtyjm40KqFMf60ohK5jCJ0z3+Lqwqb0Ek/m9H3kqSu3B+Z1UU1p1pGw4/Vao8sa3yNdYF6HuAgAAAAAAAEB4fQEAAAAAAA==");
+        Ok(())
     }
 
     #[test]
@@ -350,7 +362,6 @@ mod tests {
             TransactionKind::ProgrammableTransaction(programmable) => {
                 assert_eq!(programmable.commands.len(), 6);
             }
-            _ => panic!("wrong kind"),
         }
 
         let output = validate_and_hash(tx).unwrap();

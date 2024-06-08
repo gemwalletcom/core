@@ -44,6 +44,8 @@ members = [
     "crates/swap_oneinch",
     "crates/swap_aftermath",
     "crates/swap_provider",
+
+    "crates/sui-types",
 ]
 
 default-members = [
