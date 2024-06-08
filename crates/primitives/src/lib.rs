@@ -90,3 +90,5 @@ pub use self::chain_cosmos::CosmosDenom;
 pub mod payment_decoder;
 pub use self::payment_decoder::{Payment, PaymentURLDecoder};
 pub const DEFAULT_FIAT_CURRENCY: &str = "USD";
+pub mod image_formatter;
+pub use self::image_formatter::ImageFormatter;
