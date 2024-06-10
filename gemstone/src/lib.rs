@@ -6,7 +6,7 @@ use config::{
 };
 use gem_bsc::stake_hub;
 use payment::PaymentWrapper;
-use primitives::{AssetId, Chain, StakeChain};
+use primitives::{Chain, StakeChain};
 use std::{collections::HashMap, str::FromStr};
 pub mod asset;
 pub mod bsc;
@@ -154,9 +154,8 @@ impl Config {
         config::get_public_url(item).to_string()
     }
 
-    fn image_formatter_asset_url(&self, id: &str) -> String {
-        let asset_id = AssetId::new(id).unwrap();
-        primitives::ImageFormatter::get_asset_url(ASSETS_URL, asset_id)
+    fn image_formatter_asset_url(&self, chain: &str, token_id: Option<String>) -> String {
+        primitives::ImageFormatter::get_asset_url(ASSETS_URL, chain, token_id.as_deref())
     }
 
     fn image_formatter_validator_url(&self, chain: &str, id: &str) -> String {

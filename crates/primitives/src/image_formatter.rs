@@ -3,14 +3,15 @@ use crate::AssetId;
 pub struct ImageFormatter {}
 
 impl ImageFormatter {
-    pub fn get_asset_url(url: &str, asset_id: AssetId) -> String {
-        match asset_id.token_id {
-            Some(token_id) => format!(
-                "{}/blockchains/{}/assets/{}/logo.png",
-                url, asset_id.chain, token_id
-            ),
-            None => format!("{}/blockchains/{}/logo.png", url, asset_id.chain),
+    pub fn get_asset_url(url: &str, chain: &str, token_id: Option<&str>) -> String {
+        match token_id {
+            Some(token_id) => format!("{}/blockchains/{}/assets/{}/logo.png", url, chain, token_id),
+            None => format!("{}/blockchains/{}/logo.png", url, chain),
         }
+    }
+
+    pub fn get_asset_url_for_asset_id(url: &str, asset_id: AssetId) -> String {
+        Self::get_asset_url(url, asset_id.chain.as_ref(), asset_id.token_id.as_deref())
     }
 
     pub fn get_validator_url(url: &str, chain: &str, id: &str) -> String {
@@ -28,12 +29,12 @@ mod tests {
     #[test]
     fn test_get_asset_url() {
         assert_eq!(
-            ImageFormatter::get_asset_url(URL, AssetId::from_chain(Chain::Ethereum)),
+            ImageFormatter::get_asset_url_for_asset_id(URL, AssetId::from_chain(Chain::Ethereum)),
             "https://example.com/blockchains/ethereum/logo.png"
         );
 
         assert_eq!(
-            ImageFormatter::get_asset_url(
+            ImageFormatter::get_asset_url_for_asset_id(
                 URL,
                 AssetId::from(Chain::Ethereum, Some(String::from("1")))
             ),
