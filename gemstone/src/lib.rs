@@ -3,6 +3,7 @@ use config::{
     public::{PublicUrl, ASSETS_URL},
     social::SocialUrl,
     stake::StakeChainConfig,
+    wallet_connect::WalletConnectConfig,
 };
 use gem_bsc::stake_hub;
 use payment::PaymentWrapper;
@@ -152,6 +153,10 @@ impl Config {
 
     fn get_public_url(&self, item: PublicUrl) -> String {
         config::get_public_url(item).to_string()
+    }
+
+    fn get_wallet_connect_config(&self) -> WalletConnectConfig {
+        config::get_wallet_connect_config()
     }
 
     fn image_formatter_asset_url(&self, chain: &str, token_id: Option<String>) -> String {
