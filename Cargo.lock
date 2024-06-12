@@ -2659,6 +2659,8 @@ dependencies = [
 name = "gem_evm"
 version = "1.0.0"
 dependencies = [
+ "alloy-core",
+ "anyhow",
  "gem_hash",
  "hex",
  "itoa",
@@ -2711,6 +2713,7 @@ dependencies = [
  "blake2",
  "gem_bsc",
  "gem_cosmos",
+ "gem_evm",
  "gem_solana",
  "gem_ton",
  "hex",

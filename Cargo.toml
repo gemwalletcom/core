@@ -106,3 +106,4 @@ curve25519-dalek = { version = "4.1.2" }
 borsh = { version = "1.4.0", features = ["derive"] }
 uniffi = { version = "0.27.1" }
 uniffi_bindgen = { version = "0.27.1" }
+alloy-core = { version = "0.7.0", features = ["sol-types", "json-abi"] }
