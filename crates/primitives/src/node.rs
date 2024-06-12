@@ -38,13 +38,3 @@ pub enum NodeStatus {
     Active,
     Inactive,
 }
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare(swift = "Equatable, Codable, CaseIterable")]
-#[serde(rename_all = "lowercase")]
-pub enum NodePriority {
-    High = 10,
-    Medium = 5,
-    Low = 1,
-    Inactive = -1,
-}
