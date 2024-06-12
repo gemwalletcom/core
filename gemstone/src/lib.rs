@@ -1,5 +1,6 @@
 use config::{
     docs::DocsUrl,
+    node::Node,
     public::{PublicUrl, ASSETS_URL},
     social::SocialUrl,
     stake::StakeChainConfig,
@@ -157,6 +158,15 @@ impl Config {
 
     fn get_wallet_connect_config(&self) -> WalletConnectConfig {
         config::get_wallet_connect_config()
+    }
+
+    fn get_nodes(&self) -> HashMap<String, Vec<Node>> {
+        config::get_nodes()
+    }
+
+    fn get_nodes_for_chain(&self, chain: &str) -> Vec<Node> {
+        let chain = Chain::from_str(chain).unwrap();
+        config::get_nodes_for_chain(chain)
     }
 
     fn image_formatter_asset_url(&self, chain: &str, token_id: Option<String>) -> String {
