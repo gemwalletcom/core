@@ -15,10 +15,10 @@ diesel::table! {
         #[max_length = 16]
         symbol -> Varchar,
         decimals -> Int4,
+        enabled -> Bool,
         rank -> Int4,
         updated_at -> Timestamp,
         created_at -> Timestamp,
-        enabled -> Bool,
     }
 }
 
@@ -311,7 +311,6 @@ diesel::table! {
         utxo_outputs -> Nullable<Jsonb>,
         metadata -> Nullable<Jsonb>,
         fee_asset_id -> Varchar,
-        block_created_at -> Timestamp,
         updated_at -> Timestamp,
         created_at -> Timestamp,
     }
