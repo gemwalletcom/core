@@ -241,7 +241,6 @@ diesel::table! {
         is_memo_required -> Bool,
         updated_at -> Timestamp,
         created_at -> Timestamp,
-        is_skip_parsing -> Bool,
     }
 }
 
