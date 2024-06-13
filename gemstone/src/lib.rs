@@ -1,3 +1,4 @@
+use chain::ChainConfig;
 use config::{
     docs::DocsUrl,
     node::Node,
@@ -158,6 +159,11 @@ impl Config {
         config::get_public_url(item).to_string()
     }
 
+    fn get_chain_config(&self, chain: String) -> ChainConfig {
+        let chain = Chain::from_str(&chain).unwrap();
+        chain::get_chain_config(chain)
+    }
+
     fn get_wallet_connect_config(&self) -> WalletConnectConfig {
         config::get_wallet_connect_config()
     }
@@ -199,13 +205,6 @@ impl WalletConnectNamespace {
         let chain = Chain::from_str(&chain).ok()?;
         wallet_connect::get_reference(chain)
     }
-}
-
-/// Chain
-#[uniffi::export]
-pub fn chain_transaction_timeout_seconds(chain: String) -> f64 {
-    let chain = Chain::from_str(&chain).unwrap();
-    chain::chain_transaction_timeout_seconds(chain)
 }
 
 /// Asset
