@@ -99,13 +99,22 @@ diesel::table! {
 
 diesel::table! {
     fiat_assets (id) {
-        id -> Int4,
         #[max_length = 128]
-        asset_id -> Varchar,
+        id -> Varchar,
+        #[max_length = 128]
+        asset_id -> Nullable<Varchar>,
         #[max_length = 128]
         provider -> Varchar,
+        #[max_length = 128]
+        code -> Varchar,
+        #[max_length = 128]
         symbol -> Varchar,
+        #[max_length = 128]
         network -> Nullable<Varchar>,
+        #[max_length = 128]
+        token_id -> Nullable<Varchar>,
+        enabled -> Bool,
+        hidden -> Bool,
         updated_at -> Timestamp,
         created_at -> Timestamp,
     }

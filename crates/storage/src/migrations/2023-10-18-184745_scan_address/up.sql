@@ -9,7 +9,6 @@ CREATE TABLE scan_addresses (
     is_memo_required boolean NOT NULL DEFAULT false,
     updated_at timestamp NOT NULL default current_timestamp,
     created_at timestamp NOT NULL default current_timestamp,
-    is_skip_parsing boolean NOT NULL DEFAULT false,
     UNIQUE(chain, address)
 );
 
@@ -18,4 +17,3 @@ SELECT diesel_manage_updated_at('scan_addresses');
 CREATE INDEX scan_addresses_address_idx ON scan_addresses (address);
 CREATE INDEX scan_addresses_chain_idx ON scan_addresses (chain);
 CREATE INDEX scan_addresses_type_idx ON scan_addresses (type);
-CREATE INDEX scan_addresses_is_skip_parsing_idx ON scan_addresses (is_skip_parsing);
