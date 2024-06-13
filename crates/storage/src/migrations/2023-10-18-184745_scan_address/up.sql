@@ -9,6 +9,7 @@ CREATE TABLE scan_addresses (
     is_memo_required boolean NOT NULL DEFAULT false,
     updated_at timestamp NOT NULL default current_timestamp,
     created_at timestamp NOT NULL default current_timestamp,
+    is_skip_parsing boolean NOT NULL DEFAULT false,
     UNIQUE(chain, address)
 );
 
