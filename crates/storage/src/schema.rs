@@ -18,6 +18,7 @@ diesel::table! {
         rank -> Int4,
         updated_at -> Timestamp,
         created_at -> Timestamp,
+        enabled -> Bool,
     }
 }
 
