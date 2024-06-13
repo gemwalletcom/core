@@ -49,5 +49,7 @@ jobs:
         run: cargo install diesel_cli --no-default-features --features postgres
       - name: Run migration
         run: |
-          diesel setup --database-url='postgres://postgres:postgres@localhost/postgres'
+          diesel setup
           diesel migration run
+        env:
+          DATABASE_URL: "postgres://postgres:postgres@localhost/postgres"
