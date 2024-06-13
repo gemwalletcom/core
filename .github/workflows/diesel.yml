@@ -53,3 +53,5 @@ jobs:
           diesel migration run
         env:
           DATABASE_URL: "postgres://postgres:postgres@localhost/postgres"
+      - name: Check schema
+        run: git diff --quiet --exit-code crates/storage/src/schema.rs
