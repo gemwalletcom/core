@@ -1,55 +1,55 @@
 use crate::block_explorer::{BlockExplorer, Metadata};
 
-pub struct SuiScan {
+pub struct AptosExplorer {
     pub meta: Metadata,
 }
 
-impl SuiScan {
-    pub fn new() -> Self {
-        Self {
+impl AptosExplorer {
+    pub fn new() -> Box<Self> {
+        Box::new(Self {
             meta: Metadata {
-                name: "SuiScan",
-                base_url: "https://suiscan.xyz/mainnet",
+                name: "Aptos",
+                base_url: "https://explorer.aptoslabs.com",
             },
-        }
+        })
     }
 }
 
-impl BlockExplorer for SuiScan {
+impl BlockExplorer for AptosExplorer {
     fn name(&self) -> String {
         self.meta.name.into()
     }
     fn get_tx_url(&self, hash: &str) -> String {
-        format!("{}/tx/{}", self.meta.base_url, hash)
+        format!("{}/txn/{}", self.meta.base_url, hash)
     }
     fn get_address_url(&self, address: &str) -> String {
         format!("{}/account/{}", self.meta.base_url, address)
     }
     fn get_token_url(&self, _token: &str) -> Option<String> {
-        Some(format!("{}/account/{}", self.meta.base_url, _token))
+        None
     }
 }
 
-pub struct SuiVision {
+pub struct AptosScan {
     pub meta: Metadata,
 }
 
-impl SuiVision {
-    pub fn new() -> Self {
-        Self {
+impl AptosScan {
+    pub fn new() -> Box<Self> {
+        Box::new(Self {
             meta: Metadata {
-                name: "SuiVision",
-                base_url: "https://suivision.xyz",
+                name: "AptosScan",
+                base_url: "https://aptoscan.com",
             },
-        }
+        })
     }
 }
-impl BlockExplorer for SuiVision {
+impl BlockExplorer for AptosScan {
     fn name(&self) -> String {
         self.meta.name.into()
     }
     fn get_tx_url(&self, hash: &str) -> String {
-        format!("{}/txblock/{}", self.meta.base_url, hash)
+        format!("{}/transaction/{}", self.meta.base_url, hash)
     }
     fn get_address_url(&self, address: &str) -> String {
         format!("{}/account/{}", self.meta.base_url, address)

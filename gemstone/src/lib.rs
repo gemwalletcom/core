@@ -156,7 +156,7 @@ impl Config {
     }
 
     fn get_block_explorers(&self, chain: &str) -> Vec<String> {
-        block_explorer::get_block_explorers_by_chain(chain)
+        primitives::block_explorer::get_block_explorers_by_chain(chain)
             .into_iter()
             .map(|x| x.name())
             .collect()

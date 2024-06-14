@@ -1,20 +1,17 @@
 use crate::block_explorer::{BlockExplorer, Metadata};
 
-static ZKSYNC_NAME: &str = "zkSync.io";
-static ZKSYNC_BASE_URL: &str = "https://explorer.zksync.io";
-
 pub struct ZkSync {
     pub meta: Metadata,
 }
 
 impl ZkSync {
-    pub fn new() -> Self {
-        Self {
+    pub fn new() -> Box<Self> {
+        Box::new(Self {
             meta: Metadata {
-                name: ZKSYNC_NAME,
-                base_url: ZKSYNC_BASE_URL,
+                name: "zkSync.io",
+                base_url: "https://explorer.zksync.io",
             },
-        }
+        })
     }
 }
 

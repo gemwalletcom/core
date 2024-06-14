@@ -5,13 +5,13 @@ pub struct TronScan {
 }
 
 impl TronScan {
-    pub fn new() -> Self {
-        Self {
+    pub fn new() -> Box<Self> {
+        Box::new(Self {
             meta: Metadata {
                 name: "TRONSCAN",
                 base_url: "https://tronscan.org",
             },
-        }
+        })
     }
 }
 

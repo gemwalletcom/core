@@ -1,24 +1,21 @@
 use crate::block_explorer::{BlockExplorer, Metadata};
-use primitives::Chain;
-pub struct BlockScout {
+
+pub struct Mempool {
     pub meta: Metadata,
 }
 
-impl BlockScout {
-    pub fn new(chain: Chain) -> Self {
-        match chain {
-            Chain::Celo => Self {
-                meta: Metadata {
-                    name: "BlockScout",
-                    base_url: "https://explorer.celo.org/mainnet",
-                },
+impl Mempool {
+    pub fn new() -> Box<Self> {
+        Box::new(Self {
+            meta: Metadata {
+                name: "Mempool",
+                base_url: "https://mempool.space",
             },
-            _ => todo!(),
-        }
+        })
     }
 }
 
-impl BlockExplorer for BlockScout {
+impl BlockExplorer for Mempool {
     fn name(&self) -> String {
         self.meta.name.into()
     }
@@ -29,6 +26,6 @@ impl BlockExplorer for BlockScout {
         format!("{}/address/{}", self.meta.base_url, address)
     }
     fn get_token_url(&self, _token: &str) -> Option<String> {
-        Some(format!("{}/token/{}", self.meta.base_url, _token))
+        None
     }
 }

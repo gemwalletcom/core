@@ -1,24 +1,21 @@
 use crate::block_explorer::{BlockExplorer, Metadata};
 
-static MANTLE_NAME: &str = "Mantle Explorer";
-static MANTLE_BASE_URL: &str = "https://explorer.mantle.xyz";
-
-pub struct MantleExplorer {
+pub struct Viewblock {
     pub meta: Metadata,
 }
 
-impl MantleExplorer {
-    pub fn new() -> Self {
-        Self {
+impl Viewblock {
+    pub fn new() -> Box<Self> {
+        Box::new(Self {
             meta: Metadata {
-                name: MANTLE_NAME,
-                base_url: MANTLE_BASE_URL,
+                name: "Viewblock",
+                base_url: "https://viewblock.io/thorchain",
             },
-        }
+        })
     }
 }
 
-impl BlockExplorer for MantleExplorer {
+impl BlockExplorer for Viewblock {
     fn name(&self) -> String {
         self.meta.name.into()
     }
@@ -29,6 +26,6 @@ impl BlockExplorer for MantleExplorer {
         format!("{}/address/{}", self.meta.base_url, address)
     }
     fn get_token_url(&self, _token: &str) -> Option<String> {
-        Some(format!("{}/token/{}", self.meta.base_url, _token))
+        None
     }
 }

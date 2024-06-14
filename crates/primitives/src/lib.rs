@@ -90,3 +90,5 @@ pub use self::payment_decoder::{Payment, PaymentURLDecoder};
 pub const DEFAULT_FIAT_CURRENCY: &str = "USD";
 pub mod image_formatter;
 pub use self::image_formatter::ImageFormatter;
+pub mod block_explorer;
+pub mod explorers;

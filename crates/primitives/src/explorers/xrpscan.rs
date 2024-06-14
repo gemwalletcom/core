@@ -5,13 +5,13 @@ pub struct XrpScan {
 }
 
 impl XrpScan {
-    pub fn new() -> Self {
-        Self {
+    pub fn new() -> Box<Self> {
+        Box::new(Self {
             meta: Metadata {
                 name: "XrpScan",
                 base_url: "https://xrpscan.com",
             },
-        }
+        })
     }
 }
 

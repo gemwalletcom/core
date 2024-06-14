@@ -1,20 +1,17 @@
 use crate::block_explorer::{BlockExplorer, Metadata};
 
-static TONVIEWER_NAME: &str = "TonViewer";
-static TONVIEWER_BASE_URL: &str = "https://tonviewer.com";
-
 pub struct TonViewer {
     pub meta: Metadata,
 }
 
 impl TonViewer {
-    pub fn new() -> Self {
-        Self {
+    pub fn new() -> Box<Self> {
+        Box::new(Self {
             meta: Metadata {
-                name: TONVIEWER_NAME,
-                base_url: TONVIEWER_BASE_URL,
+                name: "TonViewer",
+                base_url: "https://tonviewer.com",
             },
-        }
+        })
     }
 }
 

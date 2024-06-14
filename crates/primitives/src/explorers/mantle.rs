@@ -1,21 +1,21 @@
 use crate::block_explorer::{BlockExplorer, Metadata};
 
-pub struct Mempool {
+pub struct MantleExplorer {
     pub meta: Metadata,
 }
 
-impl Mempool {
-    pub fn new() -> Self {
-        Self {
+impl MantleExplorer {
+    pub fn new() -> Box<Self> {
+        Box::new(Self {
             meta: Metadata {
-                name: "Mempool",
-                base_url: "https://mempool.space",
+                name: "Mantle Explorer",
+                base_url: "https://explorer.mantle.xyz",
             },
-        }
+        })
     }
 }
 
-impl BlockExplorer for Mempool {
+impl BlockExplorer for MantleExplorer {
     fn name(&self) -> String {
         self.meta.name.into()
     }
@@ -26,6 +26,6 @@ impl BlockExplorer for Mempool {
         format!("{}/address/{}", self.meta.base_url, address)
     }
     fn get_token_url(&self, _token: &str) -> Option<String> {
-        None
+        Some(format!("{}/token/{}", self.meta.base_url, _token))
     }
 }

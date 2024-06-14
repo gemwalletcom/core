@@ -1,21 +1,20 @@
 use crate::block_explorer::{BlockExplorer, Metadata};
-
-pub struct Viewblock {
+pub struct BlockScout {
     pub meta: Metadata,
 }
 
-impl Viewblock {
-    pub fn new() -> Self {
-        Self {
+impl BlockScout {
+    pub fn new_celo() -> Box<Self> {
+        Box::new(Self {
             meta: Metadata {
-                name: "Viewblock",
-                base_url: "https://viewblock.io/thorchain",
+                name: "BlockScout",
+                base_url: "https://explorer.celo.org/mainnet",
             },
-        }
+        })
     }
 }
 
-impl BlockExplorer for Viewblock {
+impl BlockExplorer for BlockScout {
     fn name(&self) -> String {
         self.meta.name.into()
     }
@@ -26,6 +25,6 @@ impl BlockExplorer for Viewblock {
         format!("{}/address/{}", self.meta.base_url, address)
     }
     fn get_token_url(&self, _token: &str) -> Option<String> {
-        None
+        Some(format!("{}/token/{}", self.meta.base_url, _token))
     }
 }

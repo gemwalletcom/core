@@ -1,158 +1,110 @@
 use crate::block_explorer::{BlockExplorer, Metadata};
-use primitives::Chain;
+use crate::chain_evm::EVMChain;
 
 pub struct EtherScan {
     pub meta: Metadata,
-    pub account_path: &'static str,
-    pub token_path: &'static str,
 }
 
 impl EtherScan {
-    pub fn new_evm(chain: primitives::Chain) -> Self {
-        let account_path = "address";
-        let token_path = "token";
-        match chain {
-            Chain::Ethereum => Self {
+    pub fn new(chain: EVMChain) -> Box<Self> {
+        Box::new(match chain {
+            EVMChain::Ethereum => Self {
                 meta: Metadata {
                     name: "Etherscan",
                     base_url: "https://etherscan.io",
                 },
-                account_path,
-                token_path,
             },
-            Chain::SmartChain => Self {
+            EVMChain::SmartChain => Self {
                 meta: Metadata {
                     name: "BscScan",
                     base_url: "https://bscscan.com",
                 },
-                account_path,
-                token_path,
             },
-            Chain::Polygon => Self {
+            EVMChain::Polygon => Self {
                 meta: Metadata {
                     name: "PolygonScan",
                     base_url: "https://polygonscan.com",
                 },
-                account_path,
-                token_path,
             },
-            Chain::Arbitrum => Self {
+            EVMChain::Arbitrum => Self {
                 meta: Metadata {
                     name: "ArbiScan",
                     base_url: "https://arbiscan.io",
                 },
-                account_path,
-                token_path,
             },
-            Chain::Optimism => Self {
+            EVMChain::Optimism => Self {
                 meta: Metadata {
                     name: "Etherscan",
                     base_url: "https://optimistic.etherscan.io",
                 },
-                account_path,
-                token_path,
             },
-            Chain::Base => Self {
+            EVMChain::Base => Self {
                 meta: Metadata {
                     name: "BaseScan",
                     base_url: "https://basescan.org",
                 },
-                account_path,
-                token_path,
             },
-            Chain::AvalancheC => Self {
+            EVMChain::AvalancheC => Self {
                 meta: Metadata {
                     name: "SnowTrace",
                     base_url: "https://snowtrace.io",
                 },
-                account_path,
-                token_path,
             },
-            Chain::OpBNB => Self {
+            EVMChain::OpBNB => Self {
                 meta: Metadata {
                     name: "opBNBScan",
                     base_url: "https://opbnb.bscscan.com",
                 },
-                account_path,
-                token_path,
             },
-            Chain::Fantom => Self {
+            EVMChain::Fantom => Self {
                 meta: Metadata {
                     name: "FTMScan",
                     base_url: "https://ftmscan.com",
                 },
-                account_path,
-                token_path,
             },
-            Chain::Gnosis => Self {
+            EVMChain::Gnosis => Self {
                 meta: Metadata {
                     name: "GnosisScan",
                     base_url: "https://gnosisscan.io",
                 },
-                account_path,
-                token_path,
             },
-            Chain::Manta => Self {
+            EVMChain::Manta => Self {
                 meta: Metadata {
                     name: "Pacific Explorer",
                     base_url: "https://pacific-explorer.manta.network",
                 },
-                account_path,
-                token_path,
             },
-            Chain::Blast => Self {
+            EVMChain::Blast => Self {
                 meta: Metadata {
                     name: "BlastScan",
                     base_url: "https://blastscan.io",
                 },
-                account_path,
-                token_path,
             },
-            Chain::Linea => Self {
+            EVMChain::Linea => Self {
                 meta: Metadata {
                     name: "LineaScan",
                     base_url: "https://lineascan.build",
                 },
-                account_path,
-                token_path,
             },
-            Chain::ZkSync => Self {
+            EVMChain::ZkSync => Self {
                 meta: Metadata {
                     name: "zkSync Era Explorer",
                     base_url: "https://era.zksync.network",
                 },
-                account_path,
-                token_path,
             },
-            Chain::Celo => Self {
+            EVMChain::Celo => Self {
                 meta: Metadata {
                     name: "CeloScan",
                     base_url: "https://celoscan.io",
                 },
-                account_path,
-                token_path,
             },
-            Chain::Mantle => Self {
+            EVMChain::Mantle => Self {
                 meta: Metadata {
                     name: "MantleScan",
                     base_url: "https://mantlescan.xyz/",
                 },
-                account_path,
-                token_path,
             },
-            _ => todo!(),
-        }
-    }
-
-    pub fn solana() -> Self {
-        Self {
-            meta: Metadata {
-                name: "Solscan",
-                base_url: "https://solscan.io",
-            },
-            account_path: "account",
-            token_path: "token",
-        }
+        })
     }
 }
 
@@ -164,12 +116,9 @@ impl BlockExplorer for EtherScan {
         format!("{}/tx/{}", self.meta.base_url, hash)
     }
     fn get_address_url(&self, address: &str) -> String {
-        format!("{}/{}/{}", self.meta.base_url, self.account_path, address)
+        format!("{}/address/{}", self.meta.base_url, address)
     }
     fn get_token_url(&self, token: &str) -> Option<String> {
-        Some(format!(
-            "{}/{}/{}",
-            self.meta.base_url, self.token_path, token
-        ))
+        Some(format!("{}/token/{}", self.meta.base_url, token))
     }
 }

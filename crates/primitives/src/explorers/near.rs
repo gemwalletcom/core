@@ -5,13 +5,13 @@ pub struct NearBlocks {
 }
 
 impl NearBlocks {
-    pub fn new() -> Self {
-        Self {
+    pub fn new() -> Box<Self> {
+        Box::new(Self {
             meta: Metadata {
                 name: "Near",
                 base_url: "https://nearblocks.io",
             },
-        }
+        })
     }
 }
 
