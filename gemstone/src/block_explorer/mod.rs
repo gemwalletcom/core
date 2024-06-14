@@ -187,7 +187,7 @@ mod tests {
         let explorers = get_block_explorers(chain);
 
         assert_eq!(explorers.len(), 1);
-        assert_eq!(explorers[0].name(), "MintScan");
+        assert_eq!(explorers[0].name(), "Mintscan");
 
         let explorer = Explorer::new(chain.as_ref());
         let account_url = explorer.get_address_url(

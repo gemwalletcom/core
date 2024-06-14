@@ -2,10 +2,11 @@ use crate::chain::Chain;
 use crate::chain_evm::EVMChain;
 use crate::explorers::{
     AptosExplorer, AptosScan, BlockScout, Blockchair, EtherScan, MantleExplorer, Mempool, MintScan,
-    NearBlocks, SolanaFM, Solscan, SuiScan, SuiVision, TonViewer, TronScan, Viewblock, XrpScan,
-    ZkSync,
+    NearBlocks, SolanaFM, Solscan, SuiScan, SuiVision, TonScan, TonViewer, TronScan, Viewblock,
+    XrpScan, ZkSync,
 };
 use std::str::FromStr;
+use typeshare::typeshare;
 
 pub trait BlockExplorer: Send + Sync {
     fn name(&self) -> String;
@@ -16,6 +17,13 @@ pub trait BlockExplorer: Send + Sync {
 pub struct Metadata {
     pub name: &'static str,
     pub base_url: &'static str,
+}
+
+#[typeshare(swift = "Equatable, Codable, Hashable")]
+#[allow(dead_code)]
+struct BlockExplorerLink {
+    name: String,
+    link: String,
 }
 
 pub fn get_block_explorers_by_chain(chain: &str) -> Vec<Box<dyn BlockExplorer>> {
@@ -60,7 +68,7 @@ pub fn get_block_explorers(chain: Chain) -> Vec<Box<dyn BlockExplorer>> {
         Chain::Noble => vec![MintScan::new_noble()],
         Chain::Mantle => vec![MantleExplorer::new(), EtherScan::new(EVMChain::Mantle)],
 
-        Chain::Ton => vec![TonViewer::new()],
+        Chain::Ton => vec![TonViewer::new(), TonScan::new()],
         Chain::Tron => vec![TronScan::new()],
         Chain::Xrp => vec![XrpScan::new()],
         Chain::Aptos => vec![AptosExplorer::new(), AptosScan::new()],
