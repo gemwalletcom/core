@@ -82,8 +82,6 @@ pub mod wallet_connect;
 pub use self::wallet_connect::WallletConnectCAIP2;
 pub mod nft;
 pub use self::nft::{NFTAttrubute, NFTCollectible, NFTCollection, NFTImage};
-pub mod explorer;
-pub use self::explorer::Explorer;
 
 pub mod chain_cosmos;
 pub use self::chain_cosmos::CosmosDenom;
@@ -92,3 +90,5 @@ pub use self::payment_decoder::{Payment, PaymentURLDecoder};
 pub const DEFAULT_FIAT_CURRENCY: &str = "USD";
 pub mod image_formatter;
 pub use self::image_formatter::ImageFormatter;
+pub mod block_explorer;
+pub mod explorers;

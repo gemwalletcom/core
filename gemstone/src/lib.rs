@@ -16,9 +16,9 @@ use std::{collections::HashMap, str::FromStr};
 pub mod asset;
 pub mod bsc;
 pub mod config;
-pub mod explorer;
 pub mod solana;
 use solana::MplMetadata;
+pub mod block_explorer;
 pub mod chain;
 pub mod payment;
 pub mod sui;
@@ -61,36 +61,6 @@ impl From<Box<dyn std::error::Error>> for GemstoneError {
         Self::AnyError {
             msg: error.to_string(),
         }
-    }
-}
-
-/// Explorer
-#[derive(uniffi::Object)]
-struct Explorer {}
-#[uniffi::export]
-impl Explorer {
-    #[uniffi::constructor]
-    fn new() -> Self {
-        Self {}
-    }
-
-    pub fn get_name_by_host(&self, host: String) -> Option<String> {
-        explorer::get_name_by_host(host)
-    }
-
-    pub fn get_transaction_url(&self, chain: String, transaction_id: String) -> String {
-        let chain = Chain::from_str(&chain).unwrap();
-        explorer::get_explorer_transaction_url(chain, &transaction_id)
-    }
-
-    pub fn get_address_url(&self, chain: String, address: String) -> String {
-        let chain = Chain::from_str(&chain).unwrap();
-        explorer::get_explorer_address_url(chain, &address)
-    }
-
-    pub fn get_token_url(&self, chain: String, address: String) -> Option<String> {
-        let chain = Chain::from_str(&chain).unwrap();
-        explorer::get_explorer_token_url(chain, &address)
     }
 }
 
@@ -183,6 +153,13 @@ impl Config {
 
     fn image_formatter_validator_url(&self, chain: &str, id: &str) -> String {
         primitives::ImageFormatter::get_validator_url(ASSETS_URL, chain, id)
+    }
+
+    fn get_block_explorers(&self, chain: &str) -> Vec<String> {
+        primitives::block_explorer::get_block_explorers_by_chain(chain)
+            .into_iter()
+            .map(|x| x.name())
+            .collect()
     }
 }
 
