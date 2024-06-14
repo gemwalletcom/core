@@ -8,7 +8,7 @@ impl TronScan {
     pub fn new() -> Self {
         Self {
             meta: Metadata {
-                name: "TronScan",
+                name: "TRONSCAN",
                 base_url: "https://tronscan.org",
             },
         }
@@ -20,12 +20,12 @@ impl BlockExplorer for TronScan {
         self.meta.name.into()
     }
     fn get_tx_url(&self, hash: &str) -> String {
-        format!("{}//#/transaction//{}", self.meta.base_url, hash)
+        format!("{}/#/transaction/{}", self.meta.base_url, hash)
     }
     fn get_address_url(&self, address: &str) -> String {
-        format!("{}//#/address//{}", self.meta.base_url, address)
+        format!("{}/#/address/{}", self.meta.base_url, address)
     }
     fn get_token_url(&self, _token: &str) -> Option<String> {
-        Some(format!("{}//#/token20//{}", self.meta.base_url, _token))
+        Some(format!("{}/#/token20/{}", self.meta.base_url, _token))
     }
 }

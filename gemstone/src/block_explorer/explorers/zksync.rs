@@ -1,6 +1,6 @@
 use crate::block_explorer::{BlockExplorer, Metadata};
 
-static ZKSYNC_NAME: &str = "zkSync";
+static ZKSYNC_NAME: &str = "zkSync.io";
 static ZKSYNC_BASE_URL: &str = "https://explorer.zksync.io";
 
 pub struct ZkSync {

@@ -8,7 +8,7 @@ impl SuiScan {
     pub fn new() -> Self {
         Self {
             meta: Metadata {
-                name: "Sui",
+                name: "SuiScan",
                 base_url: "https://suiscan.xyz/mainnet",
             },
         }
@@ -38,7 +38,7 @@ impl SuiVision {
     pub fn new() -> Self {
         Self {
             meta: Metadata {
-                name: "Sui Explorer",
+                name: "SuiVision",
                 base_url: "https://suivision.xyz",
             },
         }

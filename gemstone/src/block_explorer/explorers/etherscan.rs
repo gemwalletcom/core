@@ -14,7 +14,7 @@ impl EtherScan {
         match chain {
             Chain::Ethereum => Self {
                 meta: Metadata {
-                    name: "EtherScan",
+                    name: "Etherscan",
                     base_url: "https://etherscan.io",
                 },
                 account_path,
@@ -38,7 +38,7 @@ impl EtherScan {
             },
             Chain::Arbitrum => Self {
                 meta: Metadata {
-                    name: "EtherScan",
+                    name: "ArbiScan",
                     base_url: "https://arbiscan.io",
                 },
                 account_path,
@@ -46,7 +46,7 @@ impl EtherScan {
             },
             Chain::Optimism => Self {
                 meta: Metadata {
-                    name: "EtherScan",
+                    name: "Etherscan",
                     base_url: "https://optimistic.etherscan.io",
                 },
                 account_path,
@@ -70,7 +70,7 @@ impl EtherScan {
             },
             Chain::OpBNB => Self {
                 meta: Metadata {
-                    name: "OpBNBScan",
+                    name: "opBNBScan",
                     base_url: "https://opbnb.bscscan.com",
                 },
                 account_path,

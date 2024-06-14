@@ -2,7 +2,7 @@ use crate::block_explorer::{BlockExplorer, Metadata};
 use primitives::Chain;
 
 static MINTSCAN_NAME: &str = "MintScan";
-static MINTSCAN_BASE_URL: &str = "https://mintscan.io/";
+static MINTSCAN_BASE_URL: &str = "https://mintscan.io";
 
 pub struct MintScan {
     pub meta: Metadata,
@@ -64,10 +64,10 @@ impl BlockExplorer for MintScan {
         self.meta.name.into()
     }
     fn get_tx_url(&self, hash: &str) -> String {
-        format!("{}/tx/{}", self.meta.base_url, hash)
+        format!("{}/{}/tx/{}", self.meta.base_url, self.chain, hash)
     }
     fn get_address_url(&self, address: &str) -> String {
-        format!("{}/address/{}", self.meta.base_url, address)
+        format!("{}/{}/account/{}", self.meta.base_url, self.chain, address)
     }
     fn get_token_url(&self, _token: &str) -> Option<String> {
         None
