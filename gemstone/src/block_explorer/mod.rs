@@ -109,7 +109,7 @@ mod tests {
         let chain = Chain::Ton;
         let explorers = get_block_explorers(chain);
 
-        assert_eq!(explorers.len(), 1);
+        assert_eq!(explorers.len(), 2);
         assert_eq!(explorers[0].name(), "TonViewer");
 
         let explorer = Explorer::new(chain.as_ref());
