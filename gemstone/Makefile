@@ -75,7 +75,7 @@ assemble-frameworks:
 	@cd $(TARGET_DIR) && find . -type d -name $(FW_FFI_FILE) | xargs rm -rf
 	@for target in aarch64-apple-ios-sim aarch64-apple-ios aarch64-apple-ios-macabi; do \
 		pushd $(TARGET_DIR)/$$target/$(BUILD_MODE_TARGET) > /dev/null && \
-		mkdir -p $(FW_FFI_FILE) && cd $(FW_FFI_FILE) && mkdir Headers Modules Resources && echo "$$MODULE_MAP" > ./Modules/module.modulemap && cp ../../../../$(LIB_NAME)/$(GEN_SWIFT_FOLDER)/$(FW_FFI_NAME).h ./Headers && cp ../$(STATIC_LIB_NAME) ./$(FW_FFI_NAME) && cp ../../../../$(LIB_NAME)/src/Info.plist ./Resources; \
+		mkdir -p $(FW_FFI_FILE) && cd $(FW_FFI_FILE) && mkdir Headers Modules && echo "$$MODULE_MAP" > ./Modules/module.modulemap && cp ../../../../$(LIB_NAME)/$(GEN_SWIFT_FOLDER)/$(FW_FFI_NAME).h ./Headers && cp ../$(STATIC_LIB_NAME) ./$(FW_FFI_NAME) && cp ../../../../$(LIB_NAME)/src/Info.plist ./; \
 		popd > /dev/null; \
 	done
 
