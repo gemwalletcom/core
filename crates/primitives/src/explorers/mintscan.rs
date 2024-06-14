@@ -1,6 +1,6 @@
 use crate::block_explorer::{BlockExplorer, Metadata};
 
-static MINTSCAN_NAME: &str = "MintScan";
+static MINTSCAN_NAME: &str = "Mintscan";
 
 macro_rules! mintscan_url {
     ($chain:expr) => {

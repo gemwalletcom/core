@@ -28,3 +28,5 @@ pub mod blockscout;
 pub use blockscout::BlockScout;
 pub mod near;
 pub use near::NearBlocks;
+pub mod tonscan;
+pub use tonscan::TonScan;
