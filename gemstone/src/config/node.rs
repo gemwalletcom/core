@@ -2,12 +2,6 @@ use std::collections::HashMap;
 
 use primitives::Chain;
 
-// #[derive(uniffi::Record, Debug, Clone, PartialEq)]
-// pub struct NodeWrapped {
-//     pub url: String,
-//     pub status: NodeStatus,
-// }
-
 // Sources:
 // https://chainlist.org
 
@@ -79,10 +73,8 @@ pub fn get_nodes_for_chain(chain: Chain) -> Vec<Node> {
         ],
         Chain::Arbitrum => vec![
             Node::new("https://arb1.arbitrum.io/rpc", NodePriority::High),
-            Node::new(
-                "https://arbitrum-one.public.blastapi.io",
-                NodePriority::High,
-            ),
+            Node::new("https://arbitrum.drpc.org", NodePriority::High),
+            Node::new("https://arbitrum-one.publicnode.com	", NodePriority::High),
         ],
         Chain::Ton => vec![Node::new("https://toncenter.com", NodePriority::High)],
         Chain::Tron => vec![
@@ -94,13 +86,10 @@ pub fn get_nodes_for_chain(chain: Chain) -> Vec<Node> {
             Node::new("https://mainnet.optimism.io", NodePriority::High),
             Node::new("https://rpc.ankr.com/optimism", NodePriority::High),
         ],
-        Chain::Aptos => vec![
-            Node::new("https://fullnode.mainnet.aptoslabs.com", NodePriority::High),
-            Node::new(
-                "https://aptos-mainnet.public.blastapi.io",
-                NodePriority::High,
-            ),
-        ],
+        Chain::Aptos => vec![Node::new(
+            "https://fullnode.mainnet.aptoslabs.com",
+            NodePriority::High,
+        )],
         Chain::Base => vec![
             Node::new("https://mainnet.base.org", NodePriority::High),
             Node::new("https://rpc.ankr.com/base", NodePriority::High),
@@ -109,10 +98,10 @@ pub fn get_nodes_for_chain(chain: Chain) -> Vec<Node> {
             Node::new("https://avalanche.drpc.org", NodePriority::High),
             Node::new("https://rpc.ankr.com/avalanche", NodePriority::High),
         ],
-        Chain::Sui => vec![
-            Node::new("https://sui-rpc.publicnode.com", NodePriority::High),
-            Node::new("https://sui-mainnet.public.blastapi.io", NodePriority::High),
-        ],
+        Chain::Sui => vec![Node::new(
+            "https://sui-rpc.publicnode.com",
+            NodePriority::High,
+        )],
         Chain::Xrp => vec![
             Node::new("https://s1.ripple.com:51234", NodePriority::High),
             Node::new("https://s2.ripple.com:51234", NodePriority::High),
@@ -154,10 +143,10 @@ pub fn get_nodes_for_chain(chain: Chain) -> Vec<Node> {
             NodePriority::High,
         )],
         Chain::ZkSync => vec![
-            Node::new("https://zksync.drpc.org	", NodePriority::High),
-            Node::new("https://mainnet.era.zksync.io	", NodePriority::High),
+            Node::new("https://zksync.drpc.org", NodePriority::High),
+            Node::new("https://mainnet.era.zksync.io", NodePriority::High),
         ],
-        Chain::Linea => vec![Node::new("https://linea.drpc.org	", NodePriority::High)],
+        Chain::Linea => vec![Node::new("https://linea.drpc.org", NodePriority::High)],
         Chain::Mantle => vec![Node::new("https://rpc.ankr.com/mantle", NodePriority::High)],
         Chain::Celo => vec![Node::new("https://rpc.ankr.com/celo", NodePriority::High)],
         Chain::Near => vec![Node::new(
