@@ -6,15 +6,17 @@ pub enum SocialUrl {
     Telegram,
     GitHub,
     YouTube,
+    Facebook,
+    Homepage,
 }
 
-pub fn get_social_url(item: SocialUrl) -> &'static str {
+pub fn get_social_url(item: SocialUrl) -> Option<&'static str> {
     match item {
-        SocialUrl::X => "https://x.com/GemWalletApp",
-        SocialUrl::Discord => "https://discord.gg/aWkq5sj7SY",
-        SocialUrl::Reddit => "https://www.reddit.com/r/GemWalletApp/",
-        SocialUrl::Telegram => "https://t.me/gemwallet",
-        SocialUrl::GitHub => "https://github.com/gemwalletcom",
-        SocialUrl::YouTube => "https://www.youtube.com/@gemwallet",
+        SocialUrl::X => Some("https://x.com/GemWalletApp"),
+        SocialUrl::Discord => Some("https://discord.gg/aWkq5sj7SY"),
+        SocialUrl::Telegram => Some("https://t.me/gemwallet"),
+        SocialUrl::GitHub => Some("https://github.com/gemwalletcom"),
+        SocialUrl::YouTube => Some("https://www.youtube.com/@gemwallet"),
+        SocialUrl::Reddit | SocialUrl::Facebook | SocialUrl::Homepage => None,
     }
 }

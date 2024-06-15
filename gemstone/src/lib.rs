@@ -121,8 +121,8 @@ impl Config {
         config::get_docs_url(item)
     }
 
-    fn get_social_url(&self, item: SocialUrl) -> String {
-        config::get_social_url(item).to_string()
+    fn get_social_url(&self, item: SocialUrl) -> Option<String> {
+        config::get_social_url(item).map(|x| x.to_string())
     }
 
     fn get_public_url(&self, item: PublicUrl) -> String {
