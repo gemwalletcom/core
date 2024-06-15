@@ -52,7 +52,7 @@ pub fn get_block_explorers(chain: Chain) -> Vec<Box<dyn BlockExplorer>> {
         Chain::OpBNB => vec![EtherScan::new(EVMChain::OpBNB)],
         Chain::Fantom => vec![EtherScan::new(EVMChain::Fantom)],
         Chain::Gnosis => vec![EtherScan::new(EVMChain::Gnosis)],
-        Chain::Manta => vec![EtherScan::new(EVMChain::Manta)],
+        Chain::Manta => vec![BlockScout::new_manta(), EtherScan::new(EVMChain::Manta)],
         Chain::Blast => vec![EtherScan::new(EVMChain::Blast)],
         Chain::Linea => vec![EtherScan::new(EVMChain::Linea)],
         Chain::Celo => vec![BlockScout::new_celo(), EtherScan::new(EVMChain::Celo)],

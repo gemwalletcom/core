@@ -70,8 +70,8 @@ impl EtherScan {
             },
             EVMChain::Manta => Self {
                 meta: Metadata {
-                    name: "Pacific Explorer",
-                    base_url: "https://pacific-explorer.manta.network",
+                    name: "Socialscan",
+                    base_url: "https://manta.socialscan.io",
                 },
             },
             EVMChain::Blast => Self {
