@@ -12,6 +12,15 @@ impl BlockScout {
             },
         })
     }
+
+    pub fn new_manta() -> Box<Self> {
+        Box::new(Self {
+            meta: Metadata {
+                name: "Pacific Explorer",
+                base_url: "https://pacific-explorer.manta.network",
+            },
+        })
+    }
 }
 
 impl BlockExplorer for BlockScout {
