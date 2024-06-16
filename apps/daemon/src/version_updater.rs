@@ -1,9 +1,33 @@
 use primitives::Platform;
+use serde::{Deserialize, Serialize};
 use std::error::Error;
 use storage::{database::DatabaseClient, models::Version};
 
 pub struct Client {
     database: DatabaseClient,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ITunesLookupResponse {
+    pub results: Vec<ITunesLoopUpResult>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ITunesLoopUpResult {
+    pub version: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GitHubRepository {
+    pub name: String,
+    pub draft: bool,
+    pub prerelease: bool,
+    pub assets: Vec<GitHubRepositoryAsset>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GitHubRepositoryAsset {
+    pub name: String,
 }
 
 impl Client {
@@ -25,22 +49,43 @@ impl Client {
         Ok(version)
     }
 
-    pub async fn get_app_store_version(&self) -> Result<String, Box<dyn Error>> {
-        let url = "https://itunes.apple.com/lookup?bundleId=com.gemwallet.ios";
-        let resp = reqwest::get(url).await?;
-        let json = resp.json::<serde_json::Value>().await?;
-        let version = json["results"][0]["version"].as_str().unwrap_or_default();
-        Ok(version.to_string())
+    pub async fn update_apk_version(&mut self) -> Result<Version, Box<dyn Error>> {
+        let version = self.get_github_apk_version().await?;
+        let version = Version {
+            id: 0,
+            platform: Platform::Android.as_str().to_string(),
+            production: version.clone(),
+            beta: version.clone(),
+            alpha: version.clone(),
+        };
+        let _ = self.database.set_version(version.clone())?;
+        Ok(version)
     }
 
-    // pub async fn get_google_play_version(&self) -> Result<String, Box<dyn Error>> {
-    //     let url = "https://play.google.com/store/apps/details?id=com.gemwallet.android";
-    //     let resp = reqwest::get(url).await?;
-    //     let body = resp.text().await?;
-    //     let version = body.split("Current Version").collect::<Vec<&str>>()[1]
-    //         .split("<div class=\"BgcNfc\">")[1]
-    //         .split("</div>")[0]
-    //         .trim();
-    //     Ok(version.to_string())
-    // }
+    pub async fn get_app_store_version(&self) -> Result<String, Box<dyn Error>> {
+        let url = "https://itunes.apple.com/lookup?bundleId=com.gemwallet.ios";
+        let response = reqwest::get(url)
+            .await?
+            .json::<ITunesLookupResponse>()
+            .await?;
+        let result = response.results.first().expect("expect result");
+        Ok(result.version.to_string())
+    }
+
+    pub async fn get_github_apk_version(&self) -> Result<String, Box<dyn Error>> {
+        let url = "https://api.github.com/repos/gemwalletcom/gem-android/releases";
+        let client = reqwest::Client::builder().user_agent("").build()?;
+        let response = client
+            .get(url)
+            .send()
+            .await?
+            .json::<Vec<GitHubRepository>>()
+            .await?;
+        let results = response
+            .into_iter()
+            .filter(|x| !x.draft && !x.prerelease)
+            .collect::<Vec<_>>();
+        let result = results.first().expect("expect github repository");
+        Ok(result.name.clone())
+    }
 }

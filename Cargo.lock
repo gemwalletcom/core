@@ -1750,6 +1750,7 @@ dependencies = [
  "fiat",
  "primitives",
  "reqwest 0.12.4",
+ "serde",
  "serde_json",
  "settings",
  "storage",
