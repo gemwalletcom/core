@@ -2,6 +2,7 @@ LIB_NAME := gemstone
 STATIC_LIB_NAME := lib$(LIB_NAME).a
 UDL_NAME := $(LIB_NAME).udl
 BUILD_MODE :=
+IPHONEOS_DEPLOYMENT_TARGET := 16.0
 
 ifeq ($(BUILD_MODE),)
 BUILD_MODE_TARGET := debug
@@ -63,8 +64,9 @@ test-ios:
 bindgen: bindgen-swift bindgen-kotlin
 
 build-targets:
-	cargo build --timings --target aarch64-apple-ios-sim --target aarch64-apple-ios --$(BUILD_MODE)
-	cargo +$(NIGHTLY) build --timings -Z build-std --lib --target aarch64-apple-ios-macabi --$(BUILD_MODE)
+	@echo "iOS deployment target ${IPHONEOS_DEPLOYMENT_TARGET}"
+	IPHONEOS_DEPLOYMENT_TARGET=${IPHONEOS_DEPLOYMENT_TARGET} cargo build --timings --target aarch64-apple-ios-sim --target aarch64-apple-ios --$(BUILD_MODE)
+	IPHONEOS_DEPLOYMENT_TARGET=${IPHONEOS_DEPLOYMENT_TARGET} cargo +$(NIGHTLY) build --timings -Z build-std --lib --target aarch64-apple-ios-macabi --$(BUILD_MODE)
 
 bindgen-swift:
 	@mkdir -p $(GEN_SWIFT_FOLDER)
