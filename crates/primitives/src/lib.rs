@@ -91,4 +91,6 @@ pub const DEFAULT_FIAT_CURRENCY: &str = "USD";
 pub mod image_formatter;
 pub use self::image_formatter::ImageFormatter;
 pub mod block_explorer;
+pub mod eip712;
+pub mod erc2612;
 pub mod explorers;
