@@ -57,6 +57,132 @@ impl Blockchair {
             },
         })
     }
+
+    pub fn new_bnb() -> Box<Self> {
+        Box::new(Self {
+            meta: Metadata {
+                name: BLOCKCHAIR_NAME,
+                base_url: blockchair_url!("bnb"),
+            },
+        })
+    }
+
+    pub fn new_polygon() -> Box<Self> {
+        Box::new(Self {
+            meta: Metadata {
+                name: BLOCKCHAIR_NAME,
+                base_url: blockchair_url!("polygon"),
+            },
+        })
+    }
+
+    pub fn new_arbitrum() -> Box<Self> {
+        Box::new(Self {
+            meta: Metadata {
+                name: BLOCKCHAIR_NAME,
+                base_url: blockchair_url!("arbitrum-one"),
+            },
+        })
+    }
+
+    pub fn new_optimism() -> Box<Self> {
+        Box::new(Self {
+            meta: Metadata {
+                name: BLOCKCHAIR_NAME,
+                base_url: blockchair_url!("optimism"),
+            },
+        })
+    }
+
+    pub fn new_avalanche() -> Box<Self> {
+        Box::new(Self {
+            meta: Metadata {
+                name: BLOCKCHAIR_NAME,
+                base_url: blockchair_url!("avalanche"),
+            },
+        })
+    }
+
+    pub fn new_opbnb() -> Box<Self> {
+        Box::new(Self {
+            meta: Metadata {
+                name: BLOCKCHAIR_NAME,
+                base_url: blockchair_url!("opbnb"),
+            },
+        })
+    }
+
+    pub fn new_fantom() -> Box<Self> {
+        Box::new(Self {
+            meta: Metadata {
+                name: BLOCKCHAIR_NAME,
+                base_url: blockchair_url!("fantom"),
+            },
+        })
+    }
+
+    pub fn new_gnosis() -> Box<Self> {
+        Box::new(Self {
+            meta: Metadata {
+                name: BLOCKCHAIR_NAME,
+                base_url: blockchair_url!("gnosis-chain"),
+            },
+        })
+    }
+
+    pub fn new_linea() -> Box<Self> {
+        Box::new(Self {
+            meta: Metadata {
+                name: BLOCKCHAIR_NAME,
+                base_url: blockchair_url!("linea"),
+            },
+        })
+    }
+
+    pub fn new_solana() -> Box<Self> {
+        Box::new(Self {
+            meta: Metadata {
+                name: BLOCKCHAIR_NAME,
+                base_url: blockchair_url!("solana"),
+            },
+        })
+    }
+
+    pub fn new_ton() -> Box<Self> {
+        Box::new(Self {
+            meta: Metadata {
+                name: BLOCKCHAIR_NAME,
+                base_url: blockchair_url!("ton"),
+            },
+        })
+    }
+
+    pub fn new_tron() -> Box<Self> {
+        Box::new(Self {
+            meta: Metadata {
+                name: BLOCKCHAIR_NAME,
+                base_url: blockchair_url!("tron"),
+            },
+        })
+    }
+
+    pub fn new_xrp() -> Box<Self> {
+        Box::new(Self {
+            meta: Metadata {
+                name: BLOCKCHAIR_NAME,
+                base_url: blockchair_url!("xrp-ledger"),
+            },
+        })
+    }
+
+    pub fn new_aptos() -> Box<Self> {
+        Box::new(Self {
+            meta: Metadata {
+                name: BLOCKCHAIR_NAME,
+                base_url: blockchair_url!("aptos"),
+            },
+        })
+    }
 }
 
 impl BlockExplorer for Blockchair {
