@@ -4,7 +4,7 @@ static MINTSCAN_NAME: &str = "Mintscan";
 
 macro_rules! mintscan_url {
     ($chain:expr) => {
-        concat!("https://mintscan.io/", $chain)
+        concat!("https://www.mintscan.io/", $chain)
     };
 }
 
@@ -62,7 +62,7 @@ impl MintScan {
         Box::new(Self {
             meta: Metadata {
                 name: MINTSCAN_NAME,
-                base_url: mintscan_url!("mantle"),
+                base_url: mintscan_url!("noble"),
             },
         })
     }
@@ -76,9 +76,9 @@ impl BlockExplorer for MintScan {
         format!("{}/tx/{}", self.meta.base_url, hash)
     }
     fn get_address_url(&self, address: &str) -> String {
-        format!("{}/account/{}", self.meta.base_url, address)
+        format!("{}/address/{}", self.meta.base_url, address)
     }
     fn get_token_url(&self, _token: &str) -> Option<String> {
-        None
+        format!("{}/assets/{}", self.meta.base_url, _token).into()
     }
 }

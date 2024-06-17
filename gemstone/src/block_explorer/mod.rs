@@ -76,6 +76,7 @@ mod tests {
 
         assert_eq!(explorers.len(), 2);
         assert_eq!(explorers[0].name(), "Etherscan");
+        assert_eq!(explorers[1].name(), "Blockchair");
 
         let explorer = Explorer::new(chain.as_ref());
         let account_url = explorer.get_address_url(
@@ -109,8 +110,10 @@ mod tests {
         let chain = Chain::Ton;
         let explorers = get_block_explorers(chain);
 
-        assert_eq!(explorers.len(), 2);
+        assert_eq!(explorers.len(), 3);
         assert_eq!(explorers[0].name(), "TonViewer");
+        assert_eq!(explorers[1].name(), "Tonscan");
+        assert_eq!(explorers[2].name(), "Blockchair");
 
         let explorer = Explorer::new(chain.as_ref());
         let account_url = explorer.get_address_url(
@@ -143,7 +146,7 @@ mod tests {
         let chain = Chain::Solana;
         let explorers = get_block_explorers(chain);
 
-        assert_eq!(explorers.len(), 2);
+        assert_eq!(explorers.len(), 3);
         assert_eq!(explorers[0].name(), "SolanaFM");
         assert_eq!(explorers[1].name(), "Solscan");
 
@@ -198,15 +201,53 @@ mod tests {
             &explorers[0].name(),
             "CFB4B38D75DB9D9055A7D4A2A76C67B8A27C37124C4E5663BEE104589E726763",
         );
+        let asset_url = explorer
+            .get_token_url(
+                &explorers[0].name(),
+                "ibc/0025F8A87464A471E66B234C4F93AEC5B4DA3D42D7986451A059273426290DD5",
+            )
+            .unwrap();
 
         assert_eq!(
             account_url,
-            "https://mintscan.io/cosmos/account/cosmos1fxygpgus4nd5jmfl5j7fh5y8hyy53z8u95dzx7"
+            "https://www.mintscan.io/cosmos/address/cosmos1fxygpgus4nd5jmfl5j7fh5y8hyy53z8u95dzx7"
         );
         assert_eq!(
             tx_url,
-            "https://mintscan.io/cosmos/tx/CFB4B38D75DB9D9055A7D4A2A76C67B8A27C37124C4E5663BEE104589E726763"
+            "https://www.mintscan.io/cosmos/tx/CFB4B38D75DB9D9055A7D4A2A76C67B8A27C37124C4E5663BEE104589E726763"
+        );
+        assert_eq!(
+            asset_url,
+            "https://www.mintscan.io/cosmos/assets/ibc/0025F8A87464A471E66B234C4F93AEC5B4DA3D42D7986451A059273426290DD5"
         )
+    }
+
+    #[test]
+    fn test_noble_explorer() {
+        let chain = Chain::Noble;
+        let explorers = get_block_explorers(chain);
+
+        assert_eq!(explorers.len(), 1);
+        assert_eq!(explorers[0].name(), "Mintscan");
+
+        let explorer = Explorer::new(chain.as_ref());
+        let account_url = explorer.get_address_url(
+            &explorers[0].name(),
+            "noble17w8y9eujrz4m08nn0h349s5h2rs8uz5hqe02z4",
+        );
+        let tx_url = explorer.get_transaction_url(
+            &explorers[0].name(),
+            "22F0B4F48A85925A668D64134B7377476DC5BAE3CF7CC38AFC0E17E5F7D90001",
+        );
+
+        assert_eq!(
+            account_url,
+            "https://www.mintscan.io/noble/address/noble17w8y9eujrz4m08nn0h349s5h2rs8uz5hqe02z4"
+        );
+        assert_eq!(
+            tx_url,
+            "https://www.mintscan.io/noble/tx/22F0B4F48A85925A668D64134B7377476DC5BAE3CF7CC38AFC0E17E5F7D90001"
+        );
     }
 
     #[test]
@@ -256,7 +297,7 @@ mod tests {
         let chain = Chain::Tron;
         let explorers = get_block_explorers(chain);
 
-        assert_eq!(explorers.len(), 1);
+        assert_eq!(explorers.len(), 2);
         assert_eq!(explorers[0].name(), "TRONSCAN");
 
         let explorer = Explorer::new(chain.as_ref());
