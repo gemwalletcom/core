@@ -23,7 +23,7 @@ impl Target for AftermathApi {
     fn path(&self) -> &'static str {
         match self {
             AftermathApi::Quote(_) => "/router/trade-route",
-            AftermathApi::Tx(_) => "/router/transactions/trade-base64",
+            AftermathApi::Tx(_) => "/router/transactions/trade-base64-v2",
         }
     }
 
