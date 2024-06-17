@@ -84,14 +84,20 @@ impl TradeQuote {
         fee_address: String,
         fee_percentage: f32,
     ) -> Self {
+        let external_fee = if fee_address.is_empty() {
+            None
+        } else {
+            Some(ExternalFee {
+                recipient: fee_address,
+                fee_percentage,
+            })
+        };
+
         TradeQuote {
             coin_in_type: get_coin_type(&request.from_asset),
             coin_out_type: get_coin_type(&request.to_asset),
             coin_in_amount: request.amount.clone(),
-            external_fee: ExternalFee {
-                recipient: fee_address.clone(),
-                fee_percentage,
-            },
+            external_fee,
         }
     }
 }

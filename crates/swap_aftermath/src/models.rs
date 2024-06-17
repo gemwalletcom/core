@@ -6,7 +6,8 @@ pub struct TradeQuote {
     pub coin_in_type: String,
     pub coin_out_type: String,
     pub coin_in_amount: String,
-    pub external_fee: ExternalFee,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub external_fee: Option<ExternalFee>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
