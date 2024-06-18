@@ -4801,6 +4801,7 @@ name = "parser"
 version = "1.0.0"
 dependencies = [
  "api_connector",
+ "chrono",
  "futures",
  "gem_chain_rpc",
  "primitives",
