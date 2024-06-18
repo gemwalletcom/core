@@ -2,6 +2,7 @@ use primitives::node::{ChainNodes, Node, NodeStatus, NodesResponse};
 use std::{collections::HashMap, error::Error};
 use storage::DatabaseClient;
 
+#[allow(dead_code)]
 pub struct Client {
     database: DatabaseClient,
 }
@@ -11,6 +12,7 @@ impl Client {
         Self { database }
     }
 
+    #[allow(dead_code)]
     pub async fn get_nodes(&mut self) -> Result<NodesResponse, Box<dyn Error>> {
         let nodes = self.database.get_nodes()?;
         let version = self.database.get_nodes_version()?;
