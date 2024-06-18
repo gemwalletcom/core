@@ -1247,7 +1247,6 @@ dependencies = [
 [[package]]
 name = "enum-compat-util"
 version = "0.1.0"
-source = "git+https://github.com/mystenlabs/sui?tag=mainnet-v1.26.2#f531168c745260b60a4ec4906c9f2b22240d872d"
 dependencies = [
  "serde_yaml",
 ]
@@ -1255,7 +1254,7 @@ dependencies = [
 [[package]]
 name = "enum-compat-util"
 version = "0.1.0"
-source = "git+https://github.com/move-language/move-sui#82e94dfbe71d78f2e74463654a52d1041d738b28"
+source = "git+https://github.com/mystenlabs/sui?tag=mainnet-v1.26.2#f531168c745260b60a4ec4906c9f2b22240d872d"
 dependencies = [
  "serde_yaml",
 ]
@@ -2401,6 +2400,28 @@ dependencies = [
 [[package]]
 name = "move-core-types"
 version = "0.0.4"
+dependencies = [
+ "anyhow",
+ "bcs",
+ "enum-compat-util 0.1.0",
+ "ethnum",
+ "hex",
+ "leb128",
+ "move-proc-macros 0.1.0",
+ "num",
+ "once_cell",
+ "primitive-types",
+ "rand",
+ "ref-cast",
+ "serde",
+ "serde_bytes",
+ "thiserror",
+ "uint",
+]
+
+[[package]]
+name = "move-core-types"
+version = "0.0.4"
 source = "git+https://github.com/mystenlabs/sui?tag=mainnet-v1.26.2#f531168c745260b60a4ec4906c9f2b22240d872d"
 dependencies = [
  "anyhow",
@@ -2422,26 +2443,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "move-core-types"
-version = "0.0.4"
-source = "git+https://github.com/move-language/move-sui#82e94dfbe71d78f2e74463654a52d1041d738b28"
+name = "move-proc-macros"
+version = "0.1.0"
 dependencies = [
- "anyhow",
- "bcs",
- "enum-compat-util 0.1.0 (git+https://github.com/move-language/move-sui)",
- "ethnum",
- "hex",
- "leb128",
- "move-proc-macros 0.1.0 (git+https://github.com/move-language/move-sui)",
- "num",
- "once_cell",
- "primitive-types",
- "rand",
- "ref-cast",
- "serde",
- "serde_bytes",
- "thiserror",
- "uint",
+ "enum-compat-util 0.1.0",
+ "quote",
+ "syn 2.0.64",
 ]
 
 [[package]]
@@ -2450,16 +2457,6 @@ version = "0.1.0"
 source = "git+https://github.com/mystenlabs/sui?tag=mainnet-v1.26.2#f531168c745260b60a4ec4906c9f2b22240d872d"
 dependencies = [
  "enum-compat-util 0.1.0 (git+https://github.com/mystenlabs/sui?tag=mainnet-v1.26.2)",
- "quote",
- "syn 2.0.64",
-]
-
-[[package]]
-name = "move-proc-macros"
-version = "0.1.0"
-source = "git+https://github.com/move-language/move-sui#82e94dfbe71d78f2e74463654a52d1041d738b28"
-dependencies = [
- "enum-compat-util 0.1.0 (git+https://github.com/move-language/move-sui)",
  "quote",
  "syn 2.0.64",
 ]
@@ -4193,7 +4190,7 @@ dependencies = [
  "bs58",
  "hex",
  "indexmap 2.2.6",
- "move-core-types 0.0.4 (git+https://github.com/move-language/move-sui)",
+ "move-core-types 0.0.4",
  "rand",
  "schemars",
  "serde",

@@ -9,6 +9,7 @@ documentation = "https://github.com/gemwalletcom"
 
 [workspace]
 resolver = "2"
+exclude = ["external-crates"]
 members = [
     "apps/api",
     "apps/daemon",
