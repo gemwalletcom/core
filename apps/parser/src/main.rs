@@ -1,16 +1,16 @@
 pub mod parser;
+pub use parser::Parser;
+pub mod parser_options;
+pub use parser_options::ParserOptions;
 pub mod pusher;
+pub use pusher::Pusher;
+pub mod parser_proxy;
 
 use std::str::FromStr;
 
 use primitives::Chain;
 use settings::Settings;
 use storage::DatabaseClient;
-
-use crate::{
-    parser::{Parser, ParserOptions},
-    pusher::Pusher,
-};
 
 #[tokio::main]
 pub async fn main() {
