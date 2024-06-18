@@ -12,7 +12,7 @@ env:
   RUSTC_WRAPPER: "sccache"
 
 jobs:
-  unit_test:
+  check_schema:
     runs-on: ubuntu-latest
     defaults:
       run:
