@@ -77,6 +77,7 @@ indexmap = "2.2.2"
 lazy_static = "1.4.0"
 futures-util = "0.3.30"
 uuid = { version = "1.8.0", features = ["v4"] }
+rand = { version = "0.8.5" }
 
 # db
 diesel = { version = "2.1.4", features = ["postgres", "chrono", "serde_json"] }

@@ -6,7 +6,6 @@ use std::{
 };
 
 use crate::{ParserOptions, Pusher};
-use chrono::Utc;
 use gem_chain_rpc::ChainProvider;
 use primitives::Chain;
 use storage::DatabaseClient;

@@ -4801,10 +4801,12 @@ name = "parser"
 version = "1.0.0"
 dependencies = [
  "api_connector",
+ "async-trait",
  "chrono",
  "futures",
  "gem_chain_rpc",
  "primitives",
+ "rand",
  "serde_json",
  "settings",
  "settings_chain",

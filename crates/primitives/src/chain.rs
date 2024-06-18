@@ -7,7 +7,9 @@ use typeshare::typeshare;
 
 use crate::{AssetId, AssetType, ChainType};
 
-#[derive(Copy, Clone, Debug, Serialize, Deserialize, EnumIter, AsRefStr, EnumString)]
+#[derive(
+    Copy, Clone, Debug, Serialize, Deserialize, EnumIter, AsRefStr, EnumString, PartialEq, Eq, Hash,
+)]
 #[typeshare(swift = "Equatable, Codable, CaseIterable")]
 #[serde(rename_all = "lowercase")]
 #[strum(serialize_all = "lowercase")]
@@ -45,12 +47,6 @@ pub enum Chain {
     Mantle,
     Celo,
     Near,
-}
-
-impl PartialEq for Chain {
-    fn eq(&self, other: &Self) -> bool {
-        self.as_ref() == other.as_ref()
-    }
 }
 
 impl fmt::Display for Chain {

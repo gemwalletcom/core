@@ -1,3 +1,5 @@
+use core::str;
+
 use gem_chain_rpc::{
     AptosClient, BitcoinClient, ChainProvider, CosmosClient, EthereumClient, NearClient,
     SolanaClient, SuiClient, TonClient, TronClient, XRPClient,
@@ -10,12 +12,17 @@ use settings::Settings;
 pub struct ProviderFactory {}
 
 impl ProviderFactory {
-    pub fn new_provider(chain: Chain, settings: &Settings) -> Box<dyn ChainProvider> {
+    pub fn new_from_settings(chain: Chain, settings: &Settings) -> Box<dyn ChainProvider> {
+        let url = Self::url(chain, settings);
+        Self::new_provider(chain, url)
+    }
+
+    pub fn new_provider(chain: Chain, url: &str) -> Box<dyn ChainProvider> {
         let retry_policy = ExponentialBackoff::builder().build_with_max_retries(5);
         let client = ClientBuilder::new(reqwest::Client::new())
             .with(RetryTransientMiddleware::new_with_policy(retry_policy))
             .build();
-        let url = Self::url(chain, settings).to_string();
+        let url = url.to_string();
 
         match chain {
             Chain::Bitcoin | Chain::Litecoin | Chain::Doge => {
