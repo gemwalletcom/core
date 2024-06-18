@@ -9,7 +9,7 @@ pub mod parser_proxy;
 
 use std::{collections::HashMap, str::FromStr};
 
-use primitives::{node::Node, Chain};
+use primitives::Chain;
 use settings::Settings;
 use storage::DatabaseClient;
 
@@ -54,7 +54,12 @@ pub async fn main() {
     for chain in chains {
         let settings = settings.clone();
         let parser_options = parser_options.clone();
-        let node_urls = nodes_map[&chain.to_string()].clone();
+        let node_urls = nodes_map
+            .clone()
+            .get(chain.as_ref())
+            .cloned()
+            .unwrap_or_default();
+
         let parser = tokio::spawn(async move {
             parser_start(settings, parser_options, chain, node_urls).await;
         });
