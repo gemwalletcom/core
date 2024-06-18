@@ -10,29 +10,26 @@ use primitives::Chain;
 
 #[derive(Clone, Debug)]
 pub struct ParserProxyUrlConfig {
-    pub default: String,
     pub urls: Vec<String>,
 }
 
 pub struct ParserProxy {
     pub chain: Chain,
-    pub provider: Box<dyn ChainProvider>,
     pub providers: Vec<Box<dyn ChainProvider>>,
-    pub urls: Vec<String>,
+    pub providers_urls: Vec<String>,
     provider_current_index: Arc<Mutex<usize>>,
 }
 impl ParserProxy {
     pub fn new(chain: Chain, config: ParserProxyUrlConfig) -> Self {
         Self {
             chain,
-            provider: ParserProxy::new_provider(chain, config.default.as_str()),
             providers: config
                 .urls
                 .clone()
                 .into_iter()
                 .map(|x| ParserProxy::new_provider(chain, &x))
                 .collect(),
-            urls: config.urls,
+            providers_urls: config.urls,
             provider_current_index: Arc::new(Mutex::new(0)),
         }
     }
@@ -51,7 +48,7 @@ impl ParserProxy {
 
         println!(
             "parser proxy switching for chain: {}, from: {}, to: {}",
-            self.chain, self.urls[current_index], self.urls[new_index]
+            self.chain, self.providers_urls[current_index], self.providers_urls[new_index]
         );
 
         *self.provider_current_index.lock().unwrap() = new_index;

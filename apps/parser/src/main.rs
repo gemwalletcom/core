@@ -82,13 +82,13 @@ async fn parser_start(
     );
     let database_client = DatabaseClient::new(settings.postgres.url.as_str());
 
-    // provider
     let url = settings_chain::ProviderFactory::url(chain, &settings);
-    let config = ParserProxyUrlConfig {
-        default: url.to_string(),
-        urls: node_urls,
+    let node_urls = if node_urls.is_empty() {
+        vec![url.to_string()]
+    } else {
+        node_urls
     };
-
+    let config = ParserProxyUrlConfig { urls: node_urls };
     let proxy = ParserProxy::new(chain, config);
 
     let mut parser = Parser::new(Box::new(proxy), pusher, database_client, parser_options);
