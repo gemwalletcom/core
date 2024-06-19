@@ -24,6 +24,10 @@ test:
 format:
 	cargo fmt -q --all
 
+lint:
+	cargo clippy --version
+	cargo clippy -- -D warnings
+
 fix:
 	cargo clippy --fix --allow-dirty --allow-staged --workspace --quiet
 
