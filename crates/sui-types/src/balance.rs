@@ -2,20 +2,25 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::error::{ExecutionError, ExecutionErrorKind};
+use crate::sui_serde::BigInt;
+use crate::sui_serde::Readable;
 use crate::SUI_FRAMEWORK_ADDRESS;
 use move_core_types::annotated_value::{MoveFieldLayout, MoveStructLayout, MoveTypeLayout};
 use move_core_types::ident_str;
 use move_core_types::identifier::IdentStr;
 use move_core_types::language_storage::{StructTag, TypeTag};
 use serde::{Deserialize, Serialize};
+use serde_with::serde_as;
 
 pub const BALANCE_MODULE_NAME: &IdentStr = ident_str!("balance");
 pub const BALANCE_STRUCT_NAME: &IdentStr = ident_str!("Balance");
 pub const BALANCE_CREATE_REWARDS_FUNCTION_NAME: &IdentStr = ident_str!("create_staking_rewards");
 pub const BALANCE_DESTROY_REBATES_FUNCTION_NAME: &IdentStr = ident_str!("destroy_storage_rebates");
 
+#[serde_as]
 #[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq)]
 pub struct Supply {
+    #[serde_as(as = "Readable<BigInt<u64>, _>")]
     pub value: u64,
 }
 

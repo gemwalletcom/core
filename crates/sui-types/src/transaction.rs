@@ -829,6 +829,7 @@ pub fn write_sep<T: Display>(
     Ok(())
 }
 
+#[allow(dead_code)]
 impl ProgrammableTransaction {
     pub fn input_objects(&self) -> UserInputResult<Vec<InputObjectKind>> {
         let ProgrammableTransaction { inputs, commands } = self;

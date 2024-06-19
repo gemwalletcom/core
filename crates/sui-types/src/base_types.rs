@@ -3,20 +3,22 @@
 
 use crate::coin::{Coin, CoinMetadata, TreasuryCap, COIN_MODULE_NAME, COIN_STRUCT_NAME};
 use crate::error::SuiError;
+use crate::fastcrypto::encoding::{Encoding, Hex};
 use crate::gas_coin::{GasCoin, GAS};
 use crate::governance::{StakedSui, STAKED_SUI_STRUCT_NAME, STAKING_POOL_MODULE_NAME};
+use crate::sui_serde::{HexAccountAddress, Readable};
 use crate::SUI_SYSTEM_ADDRESS;
 use anyhow::{anyhow, Error};
-use hex as Hex;
 use move_core_types::{
     account_address::AccountAddress,
     identifier::IdentStr,
     language_storage::{ModuleId, StructTag, TypeTag},
 };
 use serde::{Deserialize, Serialize};
+use serde_with::serde_as;
 use std::{fmt, str::FromStr};
 
-pub use crate::digests::{ObjectDigest, TransactionDigest};
+pub use crate::digests::ObjectDigest;
 
 const SUI_FRAMEWORK_ADDRESS: AccountAddress = address_from_single_byte(2);
 
@@ -26,8 +28,9 @@ const fn address_from_single_byte(b: u8) -> AccountAddress {
     AccountAddress::new(addr)
 }
 
+#[serde_as]
 #[derive(Eq, PartialEq, Clone, Copy, PartialOrd, Ord, Hash, Serialize, Deserialize)]
-pub struct ObjectID(AccountAddress);
+pub struct ObjectID(#[serde_as(as = "Readable<HexAccountAddress, _>")] AccountAddress);
 
 #[derive(
     Eq, PartialEq, Ord, PartialOrd, Copy, Clone, Hash, Default, Debug, Serialize, Deserialize,
@@ -85,8 +88,9 @@ pub type ObjectRef = (ObjectID, SequenceNumber, ObjectDigest);
 
 pub const SUI_ADDRESS_LENGTH: usize = ObjectID::LENGTH;
 
+#[serde_as]
 #[derive(Eq, Default, PartialEq, Ord, PartialOrd, Copy, Clone, Hash, Serialize, Deserialize)]
-pub struct SuiAddress([u8; SUI_ADDRESS_LENGTH]);
+pub struct SuiAddress(#[serde_as(as = "Readable<Hex, _>")] [u8; SUI_ADDRESS_LENGTH]);
 
 impl SuiAddress {
     pub const ZERO: Self = Self([0u8; SUI_ADDRESS_LENGTH]);

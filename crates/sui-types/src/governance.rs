@@ -7,9 +7,9 @@ use crate::id::{ID, UID};
 use crate::SUI_SYSTEM_ADDRESS;
 use move_core_types::{ident_str, identifier::IdentStr, language_storage::StructTag};
 use serde::{Deserialize, Serialize};
+
 pub const STAKING_POOL_MODULE_NAME: &IdentStr = ident_str!("staking_pool");
 pub const STAKED_SUI_STRUCT_NAME: &IdentStr = ident_str!("StakedSui");
-
 pub const ADD_STAKE_MUL_COIN_FUN_NAME: &IdentStr = ident_str!("request_add_stake_mul_coin");
 pub const ADD_STAKE_FUN_NAME: &IdentStr = ident_str!("request_add_stake");
 pub const WITHDRAW_STAKE_FUN_NAME: &IdentStr = ident_str!("request_withdraw_stake");
