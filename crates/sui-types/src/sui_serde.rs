@@ -11,7 +11,6 @@ use std::str::FromStr;
 use crate::fastcrypto::encoding::Hex;
 use move_core_types::account_address::AccountAddress;
 use move_core_types::language_storage::{StructTag, TypeTag};
-use schemars::JsonSchema;
 use serde;
 use serde::de::{Deserializer, Error};
 use serde::ser::Serializer;
@@ -127,12 +126,8 @@ fn to_sui_type_tag_string(value: &TypeTag) -> Result<String, fmt::Error> {
 }
 
 #[serde_as]
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Copy, JsonSchema)]
-pub struct BigInt<T>(
-    #[schemars(with = "String")]
-    #[serde_as(as = "DisplayFromStr")]
-    T,
-)
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Copy)]
+pub struct BigInt<T>(#[serde_as(as = "DisplayFromStr")] T)
 where
     T: Display + FromStr,
     <T as FromStr>::Err: Display;
@@ -206,8 +201,8 @@ where
 }
 
 #[serde_as]
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Copy, JsonSchema)]
-pub struct SequenceNumber(#[schemars(with = "BigInt<u64>")] u64);
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Copy)]
+pub struct SequenceNumber(u64);
 
 impl SerializeAs<crate::base_types::SequenceNumber> for SequenceNumber {
     fn serialize_as<S>(

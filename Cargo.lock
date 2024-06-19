@@ -4192,7 +4192,6 @@ dependencies = [
  "indexmap 2.2.6",
  "move-core-types 0.0.4",
  "rand",
- "schemars",
  "serde",
  "serde_repr",
  "serde_with",

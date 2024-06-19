@@ -117,7 +117,7 @@ impl Pubkey {
         // Perform the calculation inline, calling this from within a program is
         // not supported
 
-        let mut bump_seed = [std::u8::MAX];
+        let mut bump_seed = [u8::MAX];
         for _ in 0..std::u8::MAX {
             {
                 let mut seeds_with_bump = seeds.to_vec();
