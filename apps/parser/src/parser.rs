@@ -5,7 +5,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-use crate::pusher::Pusher;
+use crate::{ParserOptions, Pusher};
 use gem_chain_rpc::ChainProvider;
 use primitives::Chain;
 use storage::DatabaseClient;
@@ -16,12 +16,6 @@ pub struct Parser {
     pusher: Pusher,
     database: DatabaseClient,
     options: ParserOptions,
-}
-
-#[derive(Debug, Clone)]
-pub struct ParserOptions {
-    pub timeout: u64,
-    pub retry: u64,
 }
 
 #[derive(Debug, Clone)]
@@ -198,6 +192,17 @@ impl Parser {
                     let transaction = transaction
                         .finalize(vec![subscription.address.clone()])
                         .clone();
+
+                    if self
+                        .options
+                        .is_transaction_outdated(transaction.asset_id.chain, transaction.created_at)
+                    {
+                        println!(
+                            "outdated transaction: {}, created_at: {}",
+                            transaction.id, transaction.created_at
+                        );
+                        continue;
+                    }
 
                     match self
                         .pusher

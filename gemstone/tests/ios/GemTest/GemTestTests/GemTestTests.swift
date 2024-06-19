@@ -39,9 +39,17 @@ final class GemTestTests: XCTestCase {
     }
 
     func testGetExplorerName() {
-        let explorer = Explorer()
-        XCTAssertEqual(explorer.getNameByHost(host: "etherscan.io"), "Etherscan")
-        XCTAssertEqual(explorer.getNameByHost(host: "www.mintscan.io"), "MintScan")
+        let chain = "bitcoin" // Primitive::Chain::Bitcion as_str()
+        let explorers = Config().getBlockExplorers(chain: chain)
+
+        XCTAssertEqual(explorers.count, 2)
+        XCTAssertEqual(explorers[1], "Mempool")
+
+        let explorer = Explorer(chain: chain)
+        let txUrl = explorer.getTransactionUrl(explorerName: explorers[1], transactionId: "813d80363c09b1c4d3f0c6ce3382a048b320edefb573a8aedbc7ddd4c65cf7e4")
+
+        XCTAssertEqual(txUrl, "https://mempool.space/tx/813d80363c09b1c4d3f0c6ce3382a048b320edefb573a8aedbc7ddd4c65cf7e4")
+
     }
 
     func testSplitStake() throws {
@@ -79,12 +87,12 @@ final class GemTestTests: XCTestCase {
     }
 
     func testDecodingBscDelegations() throws {
-        let result = Data(hex:  "00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000001000000000000000000000000ee448667ffc3d15ca023a6deef2d0faf084c0716000000000000000000000000343da7ff0446247ca47aa41e2a25c5bbb230ed0a0000000000000000000000000000000000000000000000000e0932bb88351eef")!
+        let result = Data(hex:  "00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000002000000000000000000000000ee448667ffc3d15ca023a6deef2d0faf084c0716000000000000000000000000773760b0708a5cc369c346993a0c225d8e4043b10000000000000000000000000000000000000000000000000de0b6b3b015a6430000000000000000000000000000000000000000000000000dd62dce1850f388000000000000000000000000ee448667ffc3d15ca023a6deef2d0faf084c0716000000000000000000000000343da7ff0446247ca47aa41e2a25c5bbb230ed0a0000000000000000000000000000000000000000000000000e09ef1d9101a1740000000000000000000000000000000000000000000000000e028d70463b87f8")!
 
         let delegations = try Gemstone.bscDecodeDelegationsReturn(result: result)
 
-        XCTAssertEqual(delegations.count, 1)
-        XCTAssertEqual(delegations[0].validatorAddress, "0x343dA7Ff0446247ca47AA41e2A25c5Bbb230ED0A")
-        XCTAssertEqual(delegations[0].amount, "1011395372346842863")
+        XCTAssertEqual(delegations.count, 2)
+        XCTAssertEqual(delegations[1].validatorAddress, "0x343dA7Ff0446247ca47AA41e2A25c5Bbb230ED0A")
+        XCTAssertEqual(delegations[1].amount, "1011602501587280244")
     }
 }

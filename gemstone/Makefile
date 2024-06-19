@@ -2,6 +2,7 @@ LIB_NAME := gemstone
 STATIC_LIB_NAME := lib$(LIB_NAME).a
 UDL_NAME := $(LIB_NAME).udl
 BUILD_MODE :=
+IPHONEOS_DEPLOYMENT_TARGET := 16.0
 
 ifeq ($(BUILD_MODE),)
 BUILD_MODE_TARGET := debug
@@ -63,8 +64,9 @@ test-ios:
 bindgen: bindgen-swift bindgen-kotlin
 
 build-targets:
-	cargo build --timings --target aarch64-apple-ios-sim --target aarch64-apple-ios --$(BUILD_MODE)
-	cargo +$(NIGHTLY) build --timings -Z build-std --lib --target aarch64-apple-ios-macabi --$(BUILD_MODE)
+	@echo "iOS deployment target ${IPHONEOS_DEPLOYMENT_TARGET}"
+	IPHONEOS_DEPLOYMENT_TARGET=${IPHONEOS_DEPLOYMENT_TARGET} cargo build --timings --target aarch64-apple-ios-sim --target aarch64-apple-ios --$(BUILD_MODE)
+	IPHONEOS_DEPLOYMENT_TARGET=${IPHONEOS_DEPLOYMENT_TARGET} cargo +$(NIGHTLY) build --timings -Z build-std --lib --target aarch64-apple-ios-macabi --$(BUILD_MODE)
 
 bindgen-swift:
 	@mkdir -p $(GEN_SWIFT_FOLDER)
@@ -75,7 +77,7 @@ assemble-frameworks:
 	@cd $(TARGET_DIR) && find . -type d -name $(FW_FFI_FILE) | xargs rm -rf
 	@for target in aarch64-apple-ios-sim aarch64-apple-ios aarch64-apple-ios-macabi; do \
 		pushd $(TARGET_DIR)/$$target/$(BUILD_MODE_TARGET) > /dev/null && \
-		mkdir -p $(FW_FFI_FILE) && cd $(FW_FFI_FILE) && mkdir Headers Modules Resources && echo "$$MODULE_MAP" > ./Modules/module.modulemap && cp ../../../../$(LIB_NAME)/$(GEN_SWIFT_FOLDER)/$(FW_FFI_NAME).h ./Headers && cp ../$(STATIC_LIB_NAME) ./$(FW_FFI_NAME) && cp ../../../../$(LIB_NAME)/src/Info.plist ./Resources; \
+		mkdir -p $(FW_FFI_FILE) && cd $(FW_FFI_FILE) && mkdir Headers Modules && echo "$$MODULE_MAP" > ./Modules/module.modulemap && cp ../../../../$(LIB_NAME)/$(GEN_SWIFT_FOLDER)/$(FW_FFI_NAME).h ./Headers && cp ../$(STATIC_LIB_NAME) ./$(FW_FFI_NAME) && cp ../../../../$(LIB_NAME)/src/Info.plist ./; \
 		popd > /dev/null; \
 	done
 

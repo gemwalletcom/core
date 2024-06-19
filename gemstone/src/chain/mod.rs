@@ -1,6 +1,27 @@
 use primitives::Chain;
 
-pub fn chain_transaction_timeout_seconds(chain: Chain) -> f64 {
+#[derive(uniffi::Record, Debug, Clone, PartialEq)]
+pub struct ChainConfig {
+    pub network_id: Option<String>,
+    pub transaction_timeout: f64,
+    pub slip_44: i32,
+    pub rank: i32,
+    pub denom: Option<String>,
+    pub default_asset_type: Option<String>,
+}
+
+pub fn get_chain_config(chain: Chain) -> ChainConfig {
+    return ChainConfig {
+        network_id: Some(chain.network_id().to_string()),
+        transaction_timeout: chain_transaction_timeout_seconds(chain),
+        slip_44: chain.as_slip44() as i32,
+        rank: chain.rank(),
+        denom: chain.as_denom().map(|x| x.to_string()),
+        default_asset_type: chain.default_asset_type().map(|x| x.as_ref().to_string()),
+    };
+}
+
+fn chain_transaction_timeout_seconds(chain: Chain) -> f64 {
     match chain {
         Chain::Bitcoin => 28800_f64,
         Chain::Litecoin | Chain::Doge => 7200_f64,

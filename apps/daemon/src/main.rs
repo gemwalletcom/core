@@ -56,19 +56,26 @@ pub async fn main() {
             println!("update oneinch swap tokenlist error: {}", err)
         }
     }
-    // update version
+
     match version_client.update_ios_version().await {
         Ok(version) => {
-            println!("ios version: {:?}", version)
+            println!("update ios version: {:?}", version)
         }
         Err(err) => {
-            println!("ios version error: {}", err)
+            println!("update ios version error: {}", err)
         }
     }
 
-    // update device
-    let result = device_updater.update().await;
-    match result {
+    match version_client.update_apk_version().await {
+        Ok(version) => {
+            println!("update apk version: {:?}", version)
+        }
+        Err(err) => {
+            println!("update apk error: {}", err)
+        }
+    }
+
+    match device_updater.update().await {
         Ok(result) => {
             println!("device updater result: {:?}", result)
         }

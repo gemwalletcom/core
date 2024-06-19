@@ -16,7 +16,7 @@ impl ParserClient {
         block_number: i64,
         transaction_type: Option<&str>,
     ) -> Result<Vec<Transaction>, Box<dyn std::error::Error + Send + Sync>> {
-        let provider = settings_chain::ProviderFactory::new_provider(chain, &self.settings);
+        let provider = settings_chain::ProviderFactory::new_from_settings(chain, &self.settings);
         let transactions = provider.get_transactions(block_number).await?;
         Ok(self.filter_transactions(transactions, transaction_type))
     }
@@ -56,7 +56,7 @@ impl ParserClient {
         &self,
         chain: Chain,
     ) -> Result<i64, Box<dyn std::error::Error + Send + Sync>> {
-        let provider = settings_chain::ProviderFactory::new_provider(chain, &self.settings);
+        let provider = settings_chain::ProviderFactory::new_from_settings(chain, &self.settings);
         provider.get_latest_block().await
     }
 }

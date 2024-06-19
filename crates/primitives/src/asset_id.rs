@@ -1,4 +1,4 @@
-use std::{fmt, str::FromStr};
+use std::fmt;
 
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
@@ -28,16 +28,23 @@ impl fmt::Display for AssetId {
 
 impl AssetId {
     pub fn new(asset_id: &str) -> Option<Self> {
-        let parts: Vec<&str> = asset_id.split('_').collect();
-        if parts.is_empty() || parts.len() > 2 {
-            return None;
+        let split: Vec<&str> = asset_id.split('_').collect();
+        if split.len() == 1 {
+            if let Ok(chain) = asset_id.parse::<Chain>() {
+                return Some(AssetId {
+                    chain,
+                    token_id: None,
+                });
+            }
+        } else if split.len() >= 2 {
+            if let Ok(chain) = split[0].parse::<Chain>() {
+                return Some(AssetId {
+                    chain,
+                    token_id: Some(split[1..split.len()].join("_")),
+                });
+            }
         }
-        let chain = Chain::from_str(parts[0]).ok()?;
-        let token_id = parts.get(1).map(|s| s.to_owned());
-        Some(Self {
-            chain,
-            token_id: token_id.map(|s| s.to_owned()),
-        })
+        None
     }
 
     pub fn from(chain: Chain, token_id: Option<String>) -> AssetId {
@@ -114,5 +121,16 @@ mod tests {
         let asset_id = AssetId::new("ethereum_0x1234567890abcdef").unwrap();
         assert_eq!(asset_id.chain, Chain::Ethereum);
         assert_eq!(asset_id.token_id, Some("0x1234567890abcdef".to_owned()));
+    }
+
+    #[test]
+    fn test_new_asset_id_with_coin_and_token_extra_underscore() {
+        let asset_id =
+            AssetId::new("ton_EQAvlWFDxGF2lXm67y4yzC17wYKD9A0guwPkMs1gOsM__NOT").unwrap();
+        assert_eq!(asset_id.chain, Chain::Ton);
+        assert_eq!(
+            asset_id.token_id,
+            Some("EQAvlWFDxGF2lXm67y4yzC17wYKD9A0guwPkMs1gOsM__NOT".to_owned())
+        );
     }
 }

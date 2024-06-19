@@ -1,17 +1,19 @@
 use primitives::StakeChain;
-use std::str::FromStr;
 
-pub fn get_stake_lock_time(chain: &str) -> u64 {
-    match StakeChain::from_str(chain) {
-        Ok(chain) => chain.get_lock_time(),
-        Err(_) => 0,
-    }
+#[derive(uniffi::Record, Debug, Clone, PartialEq)]
+pub struct StakeChainConfig {
+    pub time_lock: u64,
+    pub min_amount: u64,
+    pub change_amount_on_unstake: bool,
+    pub redelegate: bool,
 }
 
-pub fn get_min_stake_amount(chain: &str) -> u64 {
-    match StakeChain::from_str(chain) {
-        Ok(chain) => chain.get_min_stake_amount(),
-        Err(_) => 0,
+pub fn get_stake_config(chain: StakeChain) -> StakeChainConfig {
+    StakeChainConfig {
+        time_lock: chain.get_lock_time(),
+        min_amount: chain.get_min_stake_amount(),
+        change_amount_on_unstake: chain.get_change_amount_on_unstake(),
+        redelegate: chain.get_redelegate(),
     }
 }
 
@@ -20,17 +22,15 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_get_stake_lock_time() {
-        assert_eq!(get_stake_lock_time("sui"), 86400);
-        assert_eq!(get_stake_lock_time("smartchain"), 604800);
-    }
-
-    #[test]
-    fn test_get_min_stake_amount() {
-        assert_eq!(get_min_stake_amount("sui"), 1_000_000_000);
+    fn test_get_stake_config() {
         assert_eq!(
-            get_min_stake_amount("smartchain"),
-            1_000_000_000_000_000_000
+            get_stake_config(StakeChain::Sui),
+            StakeChainConfig {
+                time_lock: 86400,
+                min_amount: 1000000000,
+                change_amount_on_unstake: false,
+                redelegate: false,
+            }
         );
     }
 }

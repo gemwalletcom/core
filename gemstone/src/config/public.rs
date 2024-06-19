@@ -11,10 +11,12 @@ pub enum PublicUrl {
     APK,
 }
 
+pub const ASSETS_URL: &str = "https://assets.gemwallet.com";
+
 pub fn get_public_url(item: PublicUrl) -> &'static str {
     match item {
         PublicUrl::Website => "https://gemwallet.com",
-        PublicUrl::Assets => "https://assets.gemwallet.com",
+        PublicUrl::Assets => ASSETS_URL,
         PublicUrl::PrivacyPolicy => "https://gemwallet.com/privacy",
         PublicUrl::TermsOfService => "https://gemwallet.com/terms",
         PublicUrl::CodebaseIos => "https://github.com/gemwalletcom/gem-ios/",

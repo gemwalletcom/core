@@ -158,7 +158,7 @@ url = "https://suins-rpc.mainnet.sui.io"
 url = "https://celestia-rest.publicnode.com"
 
 [chains.injective]
-url = "	https://injective-rest.publicnode.com"
+url = "https://injective-rest.publicnode.com"
 
 [chains.sei]
 url = "https://sei-api.polkachu.com" # https://docs.sei.io/develop/resources
@@ -167,7 +167,7 @@ url = "https://sei-api.polkachu.com" # https://docs.sei.io/develop/resources
 url = "https://pacific-rpc.manta.network/http"
 
 [chains.blast]
-url = "https://rpc.ankr.com/blast"
+url = "https://rpc.blastblockchain.com"
 
 [chains.noble]
 url = "https://rest.cosmos.directory/noble"
@@ -176,7 +176,7 @@ url = "https://rest.cosmos.directory/noble"
 url = "https://rpc.ankr.com/zksync_era"
 
 [chains.linea]
-url = "https://rpc.ankr.com/blast"
+url = "https://linea.drpc.org"
 
 [chains.mantle]
 url = "https://rpc.ankr.com/mantle"

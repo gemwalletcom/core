@@ -62,25 +62,20 @@ pub fn get_reference(chain: Chain) -> Option<String> {
         | Chain::ZkSync
         | Chain::Linea
         | Chain::Mantle
-        | Chain::Celo => Some(chain.network_id().to_string()),
+        | Chain::Celo
+        | Chain::Bitcoin
+        | Chain::Litecoin
+        | Chain::Doge => Some(chain.network_id().to_string()),
         Chain::Solana => Some("4sGjMW1sUnHzSxGspuhpqLDx6wiyjNtZ".to_string()),
         Chain::Cosmos
         | Chain::Osmosis
         | Chain::Celestia
         | Chain::Noble
         | Chain::Sei
-        | Chain::Injective => {
+        | Chain::Injective
+        | Chain::Thorchain => {
             get_namespace(chain).map(|namespace| format!("{}:{}", namespace, chain.network_id()))
         }
-        Chain::Bitcoin
-        | Chain::Litecoin
-        | Chain::Thorchain
-        | Chain::Ton
-        | Chain::Tron
-        | Chain::Doge
-        | Chain::Aptos
-        | Chain::Sui
-        | Chain::Xrp
-        | Chain::Near => None,
+        Chain::Ton | Chain::Tron | Chain::Aptos | Chain::Sui | Chain::Xrp | Chain::Near => None,
     }
 }
