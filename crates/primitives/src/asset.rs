@@ -178,7 +178,7 @@ impl Asset {
             Chain::Gnosis => Asset {
                 id: chain.as_asset_id(),
                 name: "Gnosis Chain".to_string(),
-                symbol: "xDAI".to_string(),
+                symbol: "xDai".to_string(),
                 decimals: 18,
                 asset_type: AssetType::NATIVE,
             },
