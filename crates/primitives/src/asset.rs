@@ -178,7 +178,7 @@ impl Asset {
             Chain::Gnosis => Asset {
                 id: chain.as_asset_id(),
                 name: "Gnosis Chain".to_string(),
-                symbol: "GNO".to_string(),
+                symbol: "xDai".to_string(),
                 decimals: 18,
                 asset_type: AssetType::NATIVE,
             },
@@ -253,5 +253,17 @@ impl Asset {
                 asset_type: AssetType::NATIVE,
             },
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_asset_id() {
+        let asset = Asset::from_chain(Chain::Gnosis);
+
+        assert_eq!(asset.symbol, "xDai");
     }
 }
