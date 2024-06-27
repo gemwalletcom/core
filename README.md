@@ -1,7 +1,6 @@
 # Gem Core Library
 
 [![Tests](https://github.com/gemwalletcom/core/actions/workflows/ci.yml/badge.svg)](https://github.com/gemwalletcom/core/actions/workflows/ci.yml)
-[![Clippy check](https://github.com/gemwalletcom/core/actions/workflows/lint.yml/badge.svg)](https://github.com/gemwalletcom/core/actions/workflows/lint.yml)
 [![Gemstone iOS](https://github.com/gemwalletcom/core/actions/workflows/ci-stone-ios.yml/badge.svg)](https://github.com/gemwalletcom/core/actions/workflows/ci-stone-ios.yml)
 [![Gemstone Android](https://github.com/gemwalletcom/core/actions/workflows/ci-stone-android.yml/badge.svg)](https://github.com/gemwalletcom/core/actions/workflows/ci-stone-android.yml)
 

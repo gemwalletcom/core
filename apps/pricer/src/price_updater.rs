@@ -51,7 +51,7 @@ impl PriceUpdater {
     }
 
     pub async fn update_prices_all(&mut self) -> Result<usize, Box<dyn std::error::Error>> {
-        self.update_prices(std::u32::MAX).await
+        self.update_prices(u32::MAX).await
     }
 
     pub async fn update_prices_simple(&mut self) -> Result<usize, Box<dyn std::error::Error>> {
