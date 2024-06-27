@@ -9,7 +9,6 @@ documentation = "https://github.com/gemwalletcom"
 
 [workspace]
 resolver = "2"
-exclude = ["external-crates"]
 members = [
     "apps/api",
     "apps/daemon",
@@ -33,10 +32,18 @@ members = [
     "crates/api_connector",
     "crates/settings",
     "crates/settings_chain",
-    "crates/sui-types",
 
-    "crates/gem_*",
-    "crates/swap_*",
+    "crates/gem_hash",
+    "crates/gem_evm",
+    "crates/gem_solana",
+    "crates/gem_cosmos",
+    "crates/gem_chain_rpc",
+    "crates/gem_ton",
+    "crates/gem_bsc",
+
+    "crates/swap_oneinch",
+    "crates/swap_aftermath",
+    "crates/swap_provider",
 ]
 
 default-members = [

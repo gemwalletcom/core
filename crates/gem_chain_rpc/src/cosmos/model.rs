@@ -61,7 +61,7 @@ pub struct TransactionEvent {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TransactionEventAtribute {
     pub key: String,
-    pub value: String,
+    pub value: Option<String>,
 }
 
 impl TransactionResponse {
@@ -78,15 +78,16 @@ impl TransactionResponse {
         let value = attributes
             .into_iter()
             .filter(|x| x.key == "amount")
-            .map(|x| {
-                x.value
-                    .split(',')
-                    .filter(|x| x.contains(denom))
-                    .collect::<Vec<&str>>()
-                    .first()
-                    .unwrap_or(&"0")
-                    .to_string()
-                    .replace(denom, "")
+            .flat_map(|x| {
+                x.value.map(|x| {
+                    x.split(',')
+                        .filter(|x| x.contains(denom))
+                        .collect::<Vec<&str>>()
+                        .first()
+                        .unwrap_or(&"0")
+                        .to_string()
+                        .replace(denom, "")
+                })
             })
             .flat_map(|x| BigInt::from_str(&x).ok())
             .sum();
