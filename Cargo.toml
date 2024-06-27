@@ -33,17 +33,8 @@ members = [
     "crates/settings",
     "crates/settings_chain",
 
-    "crates/gem_hash",
-    "crates/gem_evm",
-    "crates/gem_solana",
-    "crates/gem_cosmos",
-    "crates/gem_chain_rpc",
-    "crates/gem_ton",
-    "crates/gem_bsc",
-
-    "crates/swap_oneinch",
-    "crates/swap_aftermath",
-    "crates/swap_provider",
+    "crates/gem_*",
+    "crates/swap_*",
 ]
 
 default-members = [
