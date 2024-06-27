@@ -28,65 +28,65 @@ pub enum EVMChain {
 
 impl EVMChain {
     pub fn all() -> Vec<EVMChain> {
-        EVMChain::iter().collect::<Vec<_>>()
+        Self::iter().collect::<Vec<_>>()
     }
 
     pub fn min_priority_fee(&self) -> u64 {
         match self {
-            EVMChain::Ethereum => 1000000000, // https://etherscan.io/gastracker
-            EVMChain::SmartChain => 1000000000, // https://bscscan.com/gastracker
-            EVMChain::Polygon => 30000000000, // https://polygonscan.com/gastracker
-            EVMChain::Arbitrum => 10000000, // https://arbiscan.io/address/0x000000000000000000000000000000000000006C#readContract getMinimumGasPrice
-            EVMChain::Optimism => 10000000, // https://optimistic.etherscan.io/chart/gasprice
-            EVMChain::Base => 100000000,    // https://basescan.org/chart/gasprice
-            EVMChain::AvalancheC => 25000000000, // https://snowscan.xyz/gastracker
-            EVMChain::OpBNB => 1000000,     // https://opbnbscan.com/statistics
-            EVMChain::Fantom => 3500000000, // https://ftmscan.com/gastracker
-            EVMChain::Gnosis => 3000000000, // https://gnosisscan.io/gastracker
-            EVMChain::Blast => 200000000,   // https://blastscan.io/chart/gasprice
-            EVMChain::ZkSync => 20000000,   // https://era.zksync.network/chart/gasprice
-            EVMChain::Linea => 50000000,    // https://lineascan.build/gastracker
-            EVMChain::Mantle | EVMChain::Celo | EVMChain::Manta => 10000000,
+            Self::Ethereum => 1_000_000_000,   // https://etherscan.io/gastracker
+            Self::SmartChain => 1_000_000_000, // https://bscscan.com/gastracker
+            Self::Polygon => 30_000_000_000,   // https://polygonscan.com/gastracker
+            Self::Arbitrum => 10_000_000, // https://arbiscan.io/address/0x000000000000000000000000000000000000006C#readContract getMinimumGasPrice
+            Self::Optimism => 10_000_000, // https://optimistic.etherscan.io/chart/gasprice
+            Self::Base => 100_000_000,    // https://basescan.org/chart/gasprice
+            Self::AvalancheC => 25_000_000_000, // https://snowscan.xyz/gastracker
+            Self::OpBNB => 1_000_000,     // https://opbnbscan.com/statistics
+            Self::Fantom => 3_500_000_000, // https://ftmscan.com/gastracker
+            Self::Gnosis => 3_000_000_000, // https://gnosisscan.io/gastracker
+            Self::Blast => 200_000_000,   // https://blastscan.io/chart/gasprice
+            Self::ZkSync => 20_000_000,   // https://era.zksync.network/chart/gasprice
+            Self::Linea => 50_000_000,    // https://lineascan.build/gastracker
+            Self::Mantle | Self::Celo | Self::Manta => 10_000_000,
         }
     }
 
     pub fn is_opstack(&self) -> bool {
         match self {
-            EVMChain::Ethereum
-            | EVMChain::SmartChain
-            | EVMChain::Polygon
-            | EVMChain::Arbitrum
-            | EVMChain::AvalancheC
-            | EVMChain::Fantom
-            | EVMChain::Gnosis
-            | EVMChain::Manta
-            | EVMChain::Blast
-            | EVMChain::ZkSync
-            | EVMChain::Linea
-            | EVMChain::Mantle
-            | EVMChain::Celo => false,
-            EVMChain::Optimism | EVMChain::Base | EVMChain::OpBNB => true,
+            Self::Ethereum
+            | Self::SmartChain
+            | Self::Polygon
+            | Self::Arbitrum
+            | Self::AvalancheC
+            | Self::Fantom
+            | Self::Gnosis
+            | Self::Manta
+            | Self::Blast
+            | Self::ZkSync
+            | Self::Linea
+            | Self::Mantle
+            | Self::Celo => false,
+            Self::Optimism | Self::Base | Self::OpBNB => true,
         }
     }
 
     pub fn to_chain(&self) -> Chain {
         match self {
-            EVMChain::Ethereum => Chain::Ethereum,
-            EVMChain::SmartChain => Chain::SmartChain,
-            EVMChain::Polygon => Chain::Polygon,
-            EVMChain::Arbitrum => Chain::Arbitrum,
-            EVMChain::Optimism => Chain::Optimism,
-            EVMChain::Base => Chain::Base,
-            EVMChain::AvalancheC => Chain::AvalancheC,
-            EVMChain::OpBNB => Chain::OpBNB,
-            EVMChain::Fantom => Chain::Fantom,
-            EVMChain::Gnosis => Chain::Gnosis,
-            EVMChain::Manta => Chain::Manta,
-            EVMChain::Blast => Chain::Blast,
-            EVMChain::ZkSync => Chain::ZkSync,
-            EVMChain::Linea => Chain::Linea,
-            EVMChain::Mantle => Chain::Mantle,
-            EVMChain::Celo => Chain::Celo,
+            Self::Ethereum => Chain::Ethereum,
+            Self::SmartChain => Chain::SmartChain,
+            Self::Polygon => Chain::Polygon,
+            Self::Arbitrum => Chain::Arbitrum,
+            Self::Optimism => Chain::Optimism,
+            Self::Base => Chain::Base,
+            Self::AvalancheC => Chain::AvalancheC,
+            Self::OpBNB => Chain::OpBNB,
+            Self::Fantom => Chain::Fantom,
+            Self::Gnosis => Chain::Gnosis,
+            Self::Manta => Chain::Manta,
+            Self::Blast => Chain::Blast,
+            Self::ZkSync => Chain::ZkSync,
+            Self::Linea => Chain::Linea,
+            Self::Mantle => Chain::Mantle,
+            Self::Celo => Chain::Celo,
         }
     }
 }
