@@ -1,17 +1,8 @@
-use chain::ChainConfig;
-use config::{
-    docs::DocsUrl,
-    node::Node,
-    public::{PublicUrl, ASSETS_URL},
-    social::SocialUrl,
-    stake::StakeChainConfig,
-    wallet_connect::WalletConnectConfig,
-};
 use payment::PaymentWrapper;
-use primitives::{Chain, StakeChain};
+use primitives::Chain;
 pub mod lido;
 use gem_bsc::stake_hub;
-use std::{collections::HashMap, str::FromStr};
+use std::str::FromStr;
 pub mod asset;
 pub mod bsc;
 pub mod config;
@@ -95,71 +86,6 @@ pub fn sui_encode_unstake(
 #[uniffi::export]
 pub fn sui_validate_and_hash(encoded: String) -> Result<sui::model::SuiTxOutput, GemstoneError> {
     sui::validate_and_hash(&encoded).map_err(GemstoneError::from)
-}
-
-/// Config
-#[derive(uniffi::Object)]
-struct Config {}
-#[uniffi::export]
-impl Config {
-    #[uniffi::constructor]
-    fn new() -> Self {
-        Self {}
-    }
-
-    fn get_validators(&self) -> HashMap<String, Vec<String>> {
-        config::get_validators()
-    }
-
-    fn get_stake_config(&self, chain: &str) -> StakeChainConfig {
-        let chain = StakeChain::from_str(chain).unwrap();
-        config::get_stake_config(chain)
-    }
-
-    fn get_docs_url(&self, item: DocsUrl) -> String {
-        config::get_docs_url(item)
-    }
-
-    fn get_social_url(&self, item: SocialUrl) -> Option<String> {
-        config::get_social_url(item).map(|x| x.to_string())
-    }
-
-    fn get_public_url(&self, item: PublicUrl) -> String {
-        config::get_public_url(item).to_string()
-    }
-
-    fn get_chain_config(&self, chain: String) -> ChainConfig {
-        let chain = Chain::from_str(&chain).unwrap();
-        chain::get_chain_config(chain)
-    }
-
-    fn get_wallet_connect_config(&self) -> WalletConnectConfig {
-        config::get_wallet_connect_config()
-    }
-
-    fn get_nodes(&self) -> HashMap<String, Vec<Node>> {
-        config::get_nodes()
-    }
-
-    fn get_nodes_for_chain(&self, chain: &str) -> Vec<Node> {
-        let chain = Chain::from_str(chain).unwrap();
-        config::get_nodes_for_chain(chain)
-    }
-
-    fn image_formatter_asset_url(&self, chain: &str, token_id: Option<String>) -> String {
-        primitives::ImageFormatter::get_asset_url(ASSETS_URL, chain, token_id.as_deref())
-    }
-
-    fn image_formatter_validator_url(&self, chain: &str, id: &str) -> String {
-        primitives::ImageFormatter::get_validator_url(ASSETS_URL, chain, id)
-    }
-
-    fn get_block_explorers(&self, chain: &str) -> Vec<String> {
-        primitives::block_explorer::get_block_explorers_by_chain(chain)
-            .into_iter()
-            .map(|x| x.name())
-            .collect()
-    }
 }
 
 /// WalletConnect
