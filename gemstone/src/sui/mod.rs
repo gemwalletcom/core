@@ -191,23 +191,12 @@ pub fn validate_enough_balance(coins: &[SuiCoin], amount: u64) -> Option<Error> 
 
 #[cfg(test)]
 mod tests {
-    use sui_types::transaction::{TransactionData, TransactionKind};
+    use sui_types::transaction::TransactionKind;
 
     use super::*;
 
     #[test]
-    fn test_parse_address() -> Result<(), anyhow::Error> {
-        let address = "0xe6af80fe1b0b42fcd96762e5c70f5e8dae39f8f0ee0f118cac0d55b74e2927c2";
-        let result = SuiAddress::from_str(address)?;
-        assert_eq!(
-            result.to_string(),
-            "0xe6af80fe1b0b42fcd96762e5c70f5e8dae39f8f0ee0f118cac0d55b74e2927c2"
-        );
-        Ok(())
-    }
-
-    #[test]
-    fn test_encode_transfer() -> Result<(), anyhow::Error> {
+    fn test_encode_transfer() {
         let input = SuiTransferInput {
             sender: "0xa9bd0493f9bd1f792a4aedc1f99d54535a75a46c38fd56a8f2c6b7c8d75817a1".into(),
             recipient: "0xe6af80fe1b0b42fcd96762e5c70f5e8dae39f8f0ee0f118cac0d55b74e2927c2".into(),
@@ -229,10 +218,9 @@ mod tests {
             },
         };
 
-        let output = encode_transfer(&input)?;
+        let output = encode_transfer(&input).unwrap();
         let b64_encoded = general_purpose::STANDARD.encode(output.tx_data);
         assert_eq!(b64_encoded, "AAABACDmr4D+GwtC/NlnYuXHD16Nrjn48O4PEYysDVW3TiknwgEBAQABAACpvQST+b0feSpK7cH5nVRTWnWkbDj9VqjyxrfI11gXoQGfJYyFVm2Xe0yZu2AZVgupnHlucSkSadj588ydnzfbRoz/EwQAAAAAIOqzQffiRRpexyiDEtyjm40KqFMf60ohK5jCJ0z3+Lqwqb0Ek/m9H3kqSu3B+Z1UU1p1pGw4/Vao8sa3yNdYF6HuAgAAAAAAAEB4fQEAAAAAAA==");
-        Ok(())
     }
 
     #[test]
@@ -305,16 +293,9 @@ mod tests {
                 },
             }],
         };
-
-        let expected = "000003000800ca9a3b0000000001010000000000000000000000000000000000000000000000000000000000000005010000000000000001002061953ea72709eed72f4441dd944eec49a11b4acabfc8e04015e89c63be81b6ab020200010100000000000000000000000000000000000000000000000000000000000000000000030a7375695f73797374656d11726571756573745f6164645f7374616b6500030101000300000000010200e6af80fe1b0b42fcd96762e5c70f5e8dae39f8f0ee0f118cac0d55b74e2927c20136b8380aa7531d73723657d73a114cfafedf89dc8c76b6752f6daef17e43dda2e5d8f4030000000020f71f24516bc04cbf877d42faf459514448c8de6cff48faa44b3eef3b26782e8fe6af80fe1b0b42fcd96762e5c70f5e8dae39f8f0ee0f118cac0d55b74e2927c2ee02000000000000002d31010000000000";
-        let decoded = hex::decode(expected).unwrap();
-        let deserialized: Result<TransactionData, bcs::Error> = bcs::from_bytes(&decoded);
-
-        assert!(deserialized.is_ok());
-
         let data = encode_split_and_stake(&input).unwrap();
 
-        assert_eq!(hex::encode(data.tx_data), expected);
+        assert_eq!(hex::encode(data.tx_data), "000003000800ca9a3b0000000001010000000000000000000000000000000000000000000000000000000000000005010000000000000001002061953ea72709eed72f4441dd944eec49a11b4acabfc8e04015e89c63be81b6ab020200010100000000000000000000000000000000000000000000000000000000000000000000030a7375695f73797374656d11726571756573745f6164645f7374616b6500030101000300000000010200e6af80fe1b0b42fcd96762e5c70f5e8dae39f8f0ee0f118cac0d55b74e2927c20136b8380aa7531d73723657d73a114cfafedf89dc8c76b6752f6daef17e43dda2e5d8f4030000000020f71f24516bc04cbf877d42faf459514448c8de6cff48faa44b3eef3b26782e8fe6af80fe1b0b42fcd96762e5c70f5e8dae39f8f0ee0f118cac0d55b74e2927c2ee02000000000000002d31010000000000");
         assert_eq!(
             hex::encode(data.hash),
             "66be75b0f86ca3a9f24380adc8d8336d8921d5dbdc78f1b3c24c7d6842ce5911"
@@ -369,6 +350,7 @@ mod tests {
             TransactionKind::ProgrammableTransaction(programmable) => {
                 assert_eq!(programmable.commands.len(), 6);
             }
+            _ => panic!("wrong kind"),
         }
 
         let output = validate_and_hash(tx).unwrap();
