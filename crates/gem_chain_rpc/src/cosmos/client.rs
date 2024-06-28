@@ -97,7 +97,7 @@ impl CosmosClient {
         let chain = self.get_chain();
         let tx_auth = transaction.tx.auth_info.clone()?;
         let sequence = tx_auth.signer_infos.first()?.sequence;
-        let default_denom = self.chain.as_denom().unwrap();
+        let default_denom = self.chain.as_denom()?;
         let fee = tx_auth
             .fee?
             .amount
@@ -128,16 +128,14 @@ impl CosmosClient {
                         serde_json::from_value(reciept.tx.body.messages.first()?.clone()).ok()?;
                     let amount = message.amount.first()?.clone();
 
-                    asset_id = if amount.denom == self.chain.as_denom().unwrap() {
+                    asset_id = if amount.denom == self.chain.as_denom()? {
                         self.get_chain().as_asset_id()
                     } else {
                         AssetId::from(self.chain, Some(amount.denom.clone()))
                     };
                     transaction_type = TransactionType::Transfer;
                     value = if asset_id.is_native() {
-                        message
-                            .get_amount(self.chain.as_denom().unwrap())?
-                            .to_string()
+                        message.get_amount(self.chain.as_denom()?)?.to_string()
                     } else {
                         message.get_amount(&asset_id.token_id.clone()?)?.to_string()
                     };
@@ -180,7 +178,7 @@ impl CosmosClient {
 
                     asset_id = chain.as_asset_id();
                     value = reciept
-                        .get_rewards_value(self.chain.as_denom().unwrap())
+                        .get_rewards_value(self.chain.as_denom()?)
                         .unwrap_or_default()
                         .to_string();
                     transaction_type = TransactionType::StakeRewards;

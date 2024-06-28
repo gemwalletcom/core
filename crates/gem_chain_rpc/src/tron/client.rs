@@ -123,22 +123,8 @@ impl TronClient {
             // TRC20 transfers
             if value.contract_type == TRIGGER_SMART_CONTRACT
                 && logs.len() == 1
-                && logs
-                    .first()
-                    .unwrap()
-                    .topics
-                    .clone()
-                    .unwrap_or_default()
-                    .len()
-                    == 3
-                && logs
-                    .first()
-                    .unwrap()
-                    .topics
-                    .clone()
-                    .unwrap_or_default()
-                    .first()
-                    .unwrap()
+                && logs.first()?.topics.clone().unwrap_or_default().len() == 3
+                && logs.first()?.topics.clone().unwrap_or_default().first()?
                     == "ddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
             {
                 let log = logs.first()?;
@@ -159,7 +145,7 @@ impl TronClient {
                         .collect::<String>()
                 );
                 let token_id =
-                    TronAddress::from_hex(value.parameter.value.contract_address.unwrap().as_str())
+                    TronAddress::from_hex(value.parameter.value.contract_address?.as_str())
                         .unwrap_or_default();
                 let from = TronAddress::from_hex(from_string.as_str()).unwrap_or_default();
                 let to = TronAddress::from_hex(to_string.as_str()).unwrap_or_default();

@@ -49,9 +49,7 @@ impl EthereumClient {
         for hashes in hashes_chunks {
             let mut batch = BatchRequestBuilder::default();
             for hash in hashes.iter() {
-                batch
-                    .insert("eth_getTransactionReceipt", vec![json!(hash)])
-                    .unwrap();
+                batch.insert("eth_getTransactionReceipt", vec![json!(hash)])?;
             }
 
             let reciepts = self

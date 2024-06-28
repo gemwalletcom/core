@@ -28,7 +28,7 @@ impl XRPClient {
         if transaction.transaction_type == "Payment"
             && transaction.memos.unwrap_or_default().is_empty()
         {
-            let amount = transaction.amount.unwrap();
+            let amount = transaction.amount?;
             match amount {
                 // system transfer
                 super::model::Amount::Str(value) => {
@@ -54,7 +54,7 @@ impl XRPClient {
                         value,
                         Some(transaction.destination_tag.unwrap_or_default().to_string()),
                         None,
-                        DateTime::from_timestamp(block_timestamp, 0).unwrap(),
+                        DateTime::from_timestamp(block_timestamp, 0)?,
                     );
                     return Some(transaction);
                 }

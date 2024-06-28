@@ -187,13 +187,13 @@ impl SolanaClient {
                     let input = transfer_instructions.first()?.clone();
                     let output = transfer_instructions.last()?.clone();
 
-                    let from_address = input.info.authority.unwrap();
+                    let from_address = input.info.authority?;
                     let to_address = from_address.clone();
 
-                    let from_asset = self.asset_id_from_program(input.info.mint.unwrap());
-                    let to_asset = self.asset_id_from_program(output.info.mint.unwrap());
-                    let from_value = input.info.token_amount.unwrap().amount.value.to_string();
-                    let to_value = output.info.token_amount.unwrap().amount.value.to_string();
+                    let from_asset = self.asset_id_from_program(input.info.mint?);
+                    let to_asset = self.asset_id_from_program(output.info.mint?);
+                    let from_value = input.info.token_amount?.amount.value.to_string();
+                    let to_value = output.info.token_amount?.amount.value.to_string();
 
                     let swap = TransactionSwapMetadata {
                         from_asset: from_asset.clone(),
