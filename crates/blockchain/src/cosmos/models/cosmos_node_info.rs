@@ -11,6 +11,7 @@ struct CosmosBlock {
 #[typeshare]
 struct CosmosHeader {
     chain_id: String,
+    height: String,
 }
 
 #[typeshare]
