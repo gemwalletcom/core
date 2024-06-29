@@ -26,6 +26,21 @@ pub struct SwapResult {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct ErrorResponse {
+    pub error: String,
+    pub status_code: u64,
+    pub description: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum SwapResponse {
+    Success(SwapResult),
+    Error(ErrorResponse),
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct SwapResultTransaction {
     pub to: String,
     pub value: String,

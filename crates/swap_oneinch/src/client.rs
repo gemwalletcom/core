@@ -1,9 +1,8 @@
 use std::str::FromStr;
 
+use super::model::{QuoteRequest, SwapResponse, SwapResult, Tokenlist};
 use gem_evm::address::EthereumAddress;
 use primitives::{AssetId, Chain, ChainType, SwapQuote, SwapQuoteProtocolRequest};
-
-use super::model::{QuoteRequest, SwapResult, Tokenlist};
 
 pub struct OneInchClient {
     api_url: String,
@@ -144,14 +143,25 @@ impl OneInchClient {
         network_id: &str,
     ) -> Result<SwapResult, Box<dyn std::error::Error + Send + Sync>> {
         let url = format!("{}/swap/{}/{}/swap", self.api_url, self.version, network_id);
-        Ok(self
+        let response = self
             .client
             .get(&url)
             .query(&request)
             .bearer_auth(self.api_key.as_str())
             .send()
             .await?
-            .json::<SwapResult>()
-            .await?)
+            .json::<SwapResponse>()
+            .await?;
+        let result = match response {
+            SwapResponse::Success(result) => result,
+            SwapResponse::Error(error) => {
+                return Err(format!(
+                    "{} ({}): {}",
+                    error.error, error.status_code, error.description
+                )
+                .into())
+            }
+        };
+        Ok(result)
     }
 }
