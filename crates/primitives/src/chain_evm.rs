@@ -69,6 +69,22 @@ impl EVMChain {
         }
     }
 
+    pub fn oneinch(&self) -> &'static str {
+        match self {
+            Self::Ethereum
+            | Self::SmartChain
+            | Self::Polygon
+            | Self::Arbitrum
+            | Self::AvalancheC
+            | Self::Fantom
+            | Self::Gnosis
+            | Self::Optimism
+            | Self::Base => "0x1111111254EEB25477B68fb85Ed929f73A960582",
+            Self::ZkSync => "0x6e2B76966cbD9cF4cC2Fa0D76d24d5241E0ABC2F",
+            Self::Manta | Self::Blast | Self::Linea | Self::Mantle | Self::OpBNB | Self::Celo => "", // 1inch does not support Manta
+        }
+    }
+
     pub fn to_chain(&self) -> Chain {
         match self {
             Self::Ethereum => Chain::Ethereum,
