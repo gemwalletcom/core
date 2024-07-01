@@ -46,7 +46,10 @@ impl OneInchClient {
         ]
     }
 
-    pub async fn get_tokenlist(&self, chain_id: &str) -> Result<Tokenlist, SwapError> {
+    pub async fn get_tokenlist(
+        &self,
+        chain_id: &str,
+    ) -> Result<Tokenlist, Box<dyn std::error::Error>> {
         let url = format!("{}/token/v1.2/{chain_id}", self.api_url);
         Ok(self
             .client
