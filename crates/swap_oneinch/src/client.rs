@@ -1,8 +1,9 @@
 use std::str::FromStr;
 
-use super::model::{QuoteRequest, SwapResponse, SwapResult, Tokenlist};
+use super::model::{QuoteRequest, SwapResponse, SwapResult, SwapSpender, Tokenlist};
 use gem_evm::address::EthereumAddress;
-use primitives::{AssetId, Chain, ChainType, SwapQuote, SwapQuoteProtocolRequest};
+use primitives::{AssetId, Chain, ChainType, SwapQuote, SwapQuoteData, SwapQuoteProtocolRequest};
+use swap_provider::SwapError;
 
 pub struct OneInchClient {
     api_url: String,
@@ -45,10 +46,7 @@ impl OneInchClient {
         ]
     }
 
-    pub async fn get_tokenlist(
-        &self,
-        chain_id: &str,
-    ) -> Result<Tokenlist, Box<dyn std::error::Error>> {
+    pub async fn get_tokenlist(&self, chain_id: &str) -> Result<Tokenlist, SwapError> {
         let url = format!("{}/token/v1.2/{chain_id}", self.api_url);
         Ok(self
             .client
@@ -73,10 +71,7 @@ impl OneInchClient {
             .collect::<Vec<AssetId>>()
     }
 
-    pub async fn get_quote(
-        &self,
-        quote: SwapQuoteProtocolRequest,
-    ) -> Result<SwapQuote, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn get_quote(&self, quote: SwapQuoteProtocolRequest) -> Result<SwapQuote, SwapError> {
         let network_id = quote.from_asset.chain.network_id();
         let src = if quote.from_asset.clone().is_native() {
             NATIVE_ADDRESS.to_string()
@@ -99,17 +94,28 @@ impl OneInchClient {
             referrer: self.fee_referral_address.clone(),
         };
 
-        let swap_quote = if quote.include_data {
-            self.get_swap_quote_data(quote_request, network_id).await?
+        let data: Option<SwapQuoteData>;
+        let to_amount: String;
+        if quote.include_data {
+            let swap_quote = self.get_swap_quote_data(quote_request, network_id).await?;
+            data = swap_quote.tx.map(|value| value.get_data());
+            to_amount = swap_quote.to_amount;
         } else {
-            self.get_swap_quote(quote_request, network_id).await?
+            let tuple = self
+                .get_swap_quote_and_spender(quote_request, network_id)
+                .await?;
+            to_amount = tuple.0.to_amount;
+            data = Some(SwapQuoteData {
+                to: tuple.1,
+                value: "".to_string(),
+                data: "".to_string(),
+            });
         };
-        let data = swap_quote.tx.map(|value| value.get_data());
 
         let quote = SwapQuote {
             chain_type: ChainType::Ethereum,
             from_amount: quote.amount.clone(),
-            to_amount: swap_quote.to_amount,
+            to_amount,
             fee_percent: self.fee as f32,
             provider: PROVIDER_NAME.into(),
             data,
@@ -117,11 +123,22 @@ impl OneInchClient {
         Ok(quote)
     }
 
+    pub async fn get_swap_quote_and_spender(
+        &self,
+        request: QuoteRequest,
+        network_id: &str,
+    ) -> Result<(SwapResult, String), SwapError> {
+        let spender = self.get_swap_spender(network_id).await?;
+        let quote = self.get_swap_quote(request, network_id).await?;
+
+        Ok((quote, spender))
+    }
+
     pub async fn get_swap_quote(
         &self,
         request: QuoteRequest,
         network_id: &str,
-    ) -> Result<SwapResult, Box<dyn std::error::Error + Send + Sync>> {
+    ) -> Result<SwapResult, SwapError> {
         let url = format!(
             "{}/swap/{}/{}/quote",
             self.api_url, self.version, network_id
@@ -137,11 +154,27 @@ impl OneInchClient {
             .await?)
     }
 
+    pub async fn get_swap_spender(&self, network_id: &str) -> Result<String, SwapError> {
+        let url = format!(
+            "{}/swap/{}/{}/approve/spender",
+            self.api_url, self.version, network_id
+        );
+        Ok(self
+            .client
+            .get(&url)
+            .bearer_auth(self.api_key.as_str())
+            .send()
+            .await?
+            .json::<SwapSpender>()
+            .await?
+            .address)
+    }
+
     pub async fn get_swap_quote_data(
         &self,
         request: QuoteRequest,
         network_id: &str,
-    ) -> Result<SwapResult, Box<dyn std::error::Error + Send + Sync>> {
+    ) -> Result<SwapResult, SwapError> {
         let url = format!("{}/swap/{}/{}/swap", self.api_url, self.version, network_id);
         let response = self
             .client
