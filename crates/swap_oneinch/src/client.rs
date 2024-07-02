@@ -1,10 +1,9 @@
-use std::str::FromStr;
-
 use super::model::{QuoteRequest, SwapResponse, SwapResult, SwapSpender, Tokenlist};
 use gem_evm::address::EthereumAddress;
 use primitives::{
     swap::SwapApprovalData, AssetId, Chain, ChainType, SwapQuote, SwapQuoteProtocolRequest,
 };
+use std::str::FromStr;
 use swap_provider::SwapError;
 
 pub struct OneInchClient {
@@ -99,21 +98,23 @@ impl OneInchClient {
             referrer: self.fee_referral_address.clone(),
         };
 
-        let swap_quote = if quote.include_data {
-            self.get_swap_quote_data(quote_request, network_id).await?
+        let swap_quote: SwapResult;
+        let approval: Option<SwapApprovalData>;
+
+        if quote.include_data {
+            swap_quote = self.get_swap_quote_data(quote_request, network_id).await?;
+            approval = None;
         } else {
-            self.get_swap_quote(quote_request, network_id).await?
+            let results = futures::join!(
+                self.get_swap_quote(quote_request.clone(), network_id),
+                self.get_swap_spender(network_id)
+            );
+            swap_quote = results.0?;
+            approval = Some(SwapApprovalData {
+                spender: results.1?,
+            });
         };
         let data = swap_quote.tx.map(|value| value.get_data());
-
-        let approval = if quote.include_data {
-            // quote with data api call checks approval
-            None
-        } else {
-            Some(SwapApprovalData {
-                spender: self.get_swap_spender(network_id).await?,
-            })
-        };
 
         let quote = SwapQuote {
             chain_type: ChainType::Ethereum,
@@ -152,7 +153,6 @@ impl OneInchClient {
             "{}/swap/{}/{}/approve/spender",
             self.api_url, self.version, network_id
         );
-        std::thread::sleep(std::time::Duration::from_millis(1000));
         Ok(self
             .client
             .get(&url)
