@@ -4,9 +4,10 @@ edition = { workspace = true }
 version = { workspace = true }
 
 [dependencies]
-serde = { workspace = true }
-reqwest = { workspace = true }
-async-trait = { workspace = true }
+serde.workspace = true
+reqwest.workspace = true
+async-trait.workspace = true
+futures.workspace = true
 primitives = { path = "../primitives" }
 gem_evm = { path = "../gem_evm" }
 swap_provider = { path = "../swap_provider" }

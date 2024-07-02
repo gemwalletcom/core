@@ -1,8 +1,10 @@
-use std::str::FromStr;
-
-use super::model::{QuoteRequest, SwapResponse, SwapResult, Tokenlist};
+use super::model::{QuoteRequest, SwapResponse, SwapResult, SwapSpender, Tokenlist};
 use gem_evm::address::EthereumAddress;
-use primitives::{AssetId, Chain, ChainType, SwapQuote, SwapQuoteProtocolRequest};
+use primitives::{
+    swap::SwapApprovalData, AssetId, Chain, ChainType, SwapQuote, SwapQuoteProtocolRequest,
+};
+use std::str::FromStr;
+use swap_provider::SwapError;
 
 pub struct OneInchClient {
     api_url: String,
@@ -73,10 +75,7 @@ impl OneInchClient {
             .collect::<Vec<AssetId>>()
     }
 
-    pub async fn get_quote(
-        &self,
-        quote: SwapQuoteProtocolRequest,
-    ) -> Result<SwapQuote, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn get_quote(&self, quote: SwapQuoteProtocolRequest) -> Result<SwapQuote, SwapError> {
         let network_id = quote.from_asset.chain.network_id();
         let src = if quote.from_asset.clone().is_native() {
             NATIVE_ADDRESS.to_string()
@@ -99,10 +98,21 @@ impl OneInchClient {
             referrer: self.fee_referral_address.clone(),
         };
 
-        let swap_quote = if quote.include_data {
-            self.get_swap_quote_data(quote_request, network_id).await?
+        let swap_quote: SwapResult;
+        let approval: Option<SwapApprovalData>;
+
+        if quote.include_data {
+            swap_quote = self.get_swap_quote_data(quote_request, network_id).await?;
+            approval = None;
         } else {
-            self.get_swap_quote(quote_request, network_id).await?
+            let results = futures::join!(
+                self.get_swap_quote(quote_request.clone(), network_id),
+                self.get_swap_spender(network_id)
+            );
+            swap_quote = results.0?;
+            approval = Some(SwapApprovalData {
+                spender: results.1?,
+            });
         };
         let data = swap_quote.tx.map(|value| value.get_data());
 
@@ -113,6 +123,7 @@ impl OneInchClient {
             fee_percent: self.fee as f32,
             provider: PROVIDER_NAME.into(),
             data,
+            approval,
         };
         Ok(quote)
     }
@@ -121,7 +132,7 @@ impl OneInchClient {
         &self,
         request: QuoteRequest,
         network_id: &str,
-    ) -> Result<SwapResult, Box<dyn std::error::Error + Send + Sync>> {
+    ) -> Result<SwapResult, SwapError> {
         let url = format!(
             "{}/swap/{}/{}/quote",
             self.api_url, self.version, network_id
@@ -137,11 +148,27 @@ impl OneInchClient {
             .await?)
     }
 
+    pub async fn get_swap_spender(&self, network_id: &str) -> Result<String, SwapError> {
+        let url = format!(
+            "{}/swap/{}/{}/approve/spender",
+            self.api_url, self.version, network_id
+        );
+        Ok(self
+            .client
+            .get(&url)
+            .bearer_auth(self.api_key.as_str())
+            .send()
+            .await?
+            .json::<SwapSpender>()
+            .await?
+            .address)
+    }
+
     pub async fn get_swap_quote_data(
         &self,
         request: QuoteRequest,
         network_id: &str,
-    ) -> Result<SwapResult, Box<dyn std::error::Error + Send + Sync>> {
+    ) -> Result<SwapResult, SwapError> {
         let url = format!("{}/swap/{}/{}/swap", self.api_url, self.version, network_id);
         let response = self
             .client

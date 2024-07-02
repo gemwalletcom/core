@@ -25,6 +25,11 @@ pub struct SwapResult {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SwapSpender {
+    pub address: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ErrorResponse {
     pub error: String,

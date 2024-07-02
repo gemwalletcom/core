@@ -51,6 +51,13 @@ pub struct SwapQuoteResult {
     pub quote: SwapQuote,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[typeshare(swift = "Codable, Equatable, Hashable")]
+#[serde(rename_all = "camelCase")]
+pub struct SwapApprovalData {
+    pub spender: String,
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 #[typeshare(swift = "Codable, Equatable, Hashable")]
 #[serde(rename_all = "camelCase")]
@@ -61,6 +68,8 @@ pub struct SwapQuote {
     pub fee_percent: f32,
     pub provider: SwapProvider,
     pub data: Option<SwapQuoteData>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub approval: Option<SwapApprovalData>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
