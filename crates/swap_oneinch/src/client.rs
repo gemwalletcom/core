@@ -99,7 +99,7 @@ impl OneInchClient {
             referrer: self.fee_referral_address.clone(),
         };
 
-        let swap_quote: SwapResult = if quote.include_data {
+        let swap_quote = if quote.include_data {
             self.get_swap_quote_data(quote_request, network_id).await?
         } else {
             self.get_swap_quote(quote_request, network_id).await?
