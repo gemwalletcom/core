@@ -1,4 +1,4 @@
-name: Gemstone iOS
+name: iOS CI
 
 on:
   push:
