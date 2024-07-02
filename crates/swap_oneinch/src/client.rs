@@ -2,7 +2,9 @@ use std::str::FromStr;
 
 use super::model::{QuoteRequest, SwapResponse, SwapResult, SwapSpender, Tokenlist};
 use gem_evm::address::EthereumAddress;
-use primitives::{AssetId, Chain, ChainType, SwapQuote, SwapQuoteData, SwapQuoteProtocolRequest};
+use primitives::{
+    swap::SwapApprovalData, AssetId, Chain, ChainType, SwapQuote, SwapQuoteProtocolRequest,
+};
 use swap_provider::SwapError;
 
 pub struct OneInchClient {
@@ -97,44 +99,32 @@ impl OneInchClient {
             referrer: self.fee_referral_address.clone(),
         };
 
-        let data: Option<SwapQuoteData>;
-        let to_amount: String;
-        if quote.include_data {
-            let swap_quote = self.get_swap_quote_data(quote_request, network_id).await?;
-            data = swap_quote.tx.map(|value| value.get_data());
-            to_amount = swap_quote.to_amount;
+        let swap_quote: SwapResult = if quote.include_data {
+            self.get_swap_quote_data(quote_request, network_id).await?
         } else {
-            let tuple = self
-                .get_swap_quote_and_spender(quote_request, network_id)
-                .await?;
-            to_amount = tuple.0.to_amount;
-            data = Some(SwapQuoteData {
-                to: tuple.1,
-                value: "".to_string(),
-                data: "".to_string(),
-            });
+            self.get_swap_quote(quote_request, network_id).await?
+        };
+        let data = swap_quote.tx.map(|value| value.get_data());
+
+        let approval = if quote.include_data {
+            // quote with data api call checks approval
+            None
+        } else {
+            Some(SwapApprovalData {
+                spender: self.get_swap_spender(network_id).await?,
+            })
         };
 
         let quote = SwapQuote {
             chain_type: ChainType::Ethereum,
             from_amount: quote.amount.clone(),
-            to_amount,
+            to_amount: swap_quote.to_amount,
             fee_percent: self.fee as f32,
             provider: PROVIDER_NAME.into(),
             data,
+            approval,
         };
         Ok(quote)
-    }
-
-    pub async fn get_swap_quote_and_spender(
-        &self,
-        request: QuoteRequest,
-        network_id: &str,
-    ) -> Result<(SwapResult, String), SwapError> {
-        let spender = self.get_swap_spender(network_id).await?;
-        let quote = self.get_swap_quote(request, network_id).await?;
-
-        Ok((quote, spender))
     }
 
     pub async fn get_swap_quote(
@@ -162,6 +152,7 @@ impl OneInchClient {
             "{}/swap/{}/{}/approve/spender",
             self.api_url, self.version, network_id
         );
+        std::thread::sleep(std::time::Duration::from_millis(1000));
         Ok(self
             .client
             .get(&url)
