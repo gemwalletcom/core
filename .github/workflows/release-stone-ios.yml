@@ -22,9 +22,6 @@ env:
 jobs:
   upload_ios_framework:
     runs-on: macos-latest
-    defaults:
-      run:
-        working-directory: gemstone
     steps:
       - name: Set version tag
         run: |
@@ -56,14 +53,17 @@ jobs:
         run: |
           make prepare-apple
           make apple BUILD_MODE=${{ env.BUILD_MODE }} IPHONEOS_DEPLOYMENT_TARGET=${{ env.IPHONEOS_DEPLOYMENT_TARGET }}
+        working-directory: gemstone
 
       - name: Zip iOS framework
         run: |
           cd target/spm
           tar -cjvf Gemstone-spm.tar.bz2 Package.swift Sources
+        working-directory: gemstone
 
       - name: Upload to release
         run: |
           gh release upload ${{ env.VER_NAME }} target/spm/Gemstone-spm.tar.bz2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        working-directory: gemstone
