@@ -4,6 +4,7 @@ use primitives::{
     swap::SwapApprovalData, AssetId, Chain, ChainType, EVMChain, SwapQuote,
     SwapQuoteProtocolRequest,
 };
+use std::str::FromStr;
 use swap_provider::SwapError;
 pub struct OneInchClient {
     api_url: String,
