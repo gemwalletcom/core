@@ -4,6 +4,8 @@ on:
   push:
     tags:
       - "*"
+    paths:
+      - ".workflows/release-stone-ios.yml"
   workflow_dispatch:
     inputs:
       ref_name:
