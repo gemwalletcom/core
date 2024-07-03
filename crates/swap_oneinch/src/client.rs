@@ -1,11 +1,10 @@
-use super::model::{QuoteRequest, SwapResponse, SwapResult, SwapSpender, Tokenlist};
+use super::model::{QuoteRequest, SwapResponse, SwapResult, Tokenlist};
 use gem_evm::address::EthereumAddress;
 use primitives::{
-    swap::SwapApprovalData, AssetId, Chain, ChainType, SwapQuote, SwapQuoteProtocolRequest,
+    swap::SwapApprovalData, AssetId, Chain, ChainType, EVMChain, SwapQuote,
+    SwapQuoteProtocolRequest,
 };
-use std::str::FromStr;
 use swap_provider::SwapError;
-
 pub struct OneInchClient {
     api_url: String,
     api_key: String,
@@ -105,13 +104,11 @@ impl OneInchClient {
             swap_quote = self.get_swap_quote_data(quote_request, network_id).await?;
             approval = None;
         } else {
-            let results = futures::join!(
-                self.get_swap_quote(quote_request.clone(), network_id),
-                self.get_swap_spender(network_id)
-            );
-            swap_quote = results.0?;
+            swap_quote = self
+                .get_swap_quote(quote_request.clone(), network_id)
+                .await?;
             approval = Some(SwapApprovalData {
-                spender: results.1?,
+                spender: self.get_swap_spender(quote.from_asset.chain)?,
             });
         };
         let data = swap_quote.tx.map(|value| value.get_data());
@@ -148,20 +145,14 @@ impl OneInchClient {
             .await?)
     }
 
-    pub async fn get_swap_spender(&self, network_id: &str) -> Result<String, SwapError> {
-        let url = format!(
-            "{}/swap/{}/{}/approve/spender",
-            self.api_url, self.version, network_id
-        );
-        Ok(self
-            .client
-            .get(&url)
-            .bearer_auth(self.api_key.as_str())
-            .send()
-            .await?
-            .json::<SwapSpender>()
-            .await?
-            .address)
+    pub fn get_swap_spender(&self, chain: Chain) -> Result<String, SwapError> {
+        let evm_chain = EVMChain::from_chain(chain).ok_or("not evm compatible chain")?;
+        let spender = evm_chain
+            .oneinch()
+            .first()
+            .ok_or("1inch does not support this chain")?
+            .to_string();
+        Ok(spender)
     }
 
     pub async fn get_swap_quote_data(

@@ -1,7 +1,6 @@
-use std::vec;
-
 use crate::Chain;
 use serde::{Deserialize, Serialize};
+use std::vec;
 use strum::{EnumIter, IntoEnumIterator};
 use strum_macros::{AsRefStr, EnumString};
 use typeshare::typeshare;
@@ -86,6 +85,26 @@ impl EVMChain {
             Self::Manta | Self::Blast | Self::Linea | Self::Mantle | Self::OpBNB | Self::Celo => {
                 vec![]
             } // 1inch does not support Manta
+        }
+    }
+
+    pub fn from_chain(chain: Chain) -> Option<Self> {
+        match chain {
+            Chain::Ethereum => Some(Self::Ethereum),
+            Chain::SmartChain => Some(Self::SmartChain),
+            Chain::Polygon => Some(Self::Polygon),
+            Chain::Arbitrum => Some(Self::Arbitrum),
+            Chain::Optimism => Some(Self::Optimism),
+            Chain::Base => Some(Self::Base),
+            Chain::AvalancheC => Some(Self::AvalancheC),
+            Chain::OpBNB => Some(Self::OpBNB),
+            Chain::Fantom => Some(Self::Fantom),
+            Chain::Gnosis => Some(Self::Gnosis),
+            Chain::ZkSync => Some(Self::ZkSync),
+            Chain::Linea => Some(Self::Linea),
+            Chain::Manta => Some(Self::Manta),
+            Chain::Celo => Some(Self::Celo),
+            _ => None,
         }
     }
 
