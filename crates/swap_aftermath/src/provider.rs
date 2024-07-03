@@ -67,6 +67,7 @@ impl SwapProvider for AftermathProvider {
             fee_percent: self.fee_percentage,
             provider: self.provider(),
             data,
+            approval: None,
         })
     }
 }

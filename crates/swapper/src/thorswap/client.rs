@@ -89,6 +89,7 @@ impl ThorchainSwapClient {
             fee_percent: self.fee as f32,
             provider: self.provider(),
             data,
+            approval: None,
         };
         Ok(quote)
     }
