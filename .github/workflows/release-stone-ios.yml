@@ -28,11 +28,12 @@ jobs:
     steps:
       - name: Set version tag
         run: |
-          if [ "${{ github.event.inputs.ref_name }}" ]; then
+          if [ ${{ github.event.inputs.ref_name }} ]; then
             echo "VER_NAME=${{ github.event.inputs.ref_name }}" >> $GITHUB_ENV
-          elif [ "${{ github.ref_name }}" == "master" ]; then
+          elif [ ${{ github.ref_type == 'tag' }} ]; then
             echo "VER_NAME=${{ github.ref_name }}" >> $GITHUB_ENV
           else
+            echo "no ref_name or tag"
             exit 1
           fi
 
