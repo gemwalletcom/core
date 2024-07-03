@@ -21,7 +21,7 @@ env:
 
 jobs:
   upload_ios_framework:
-    runs-on: macos-latest-large
+    runs-on: macos-latest
     defaults:
       run:
         working-directory: gemstone
