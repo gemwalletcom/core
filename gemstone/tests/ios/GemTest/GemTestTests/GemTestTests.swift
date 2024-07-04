@@ -95,4 +95,11 @@ final class GemTestTests: XCTestCase {
         XCTAssertEqual(delegations[1].validatorAddress, "0x343dA7Ff0446247ca47AA41e2A25c5Bbb230ED0A")
         XCTAssertEqual(delegations[1].amount, "1011602501587280244")
     }
+
+    func testGetEvmChainConfig() throws {
+        let config = Config().getEvmChainConfig(chain: "zksync")
+
+        XCTAssertFalse(config.isOpstack)        
+        XCTAssertEqual(config.oneinch.count, 1)
+    }
 }
