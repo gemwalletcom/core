@@ -59,11 +59,12 @@ jobs:
         run: |
           cd target/spm
           tar -cjvf Gemstone-spm.tar.bz2 Package.swift Sources
+          ls -tlh
         working-directory: gemstone
 
       - name: Upload to release
         run: |
-          gh release upload ${{ env.VER_NAME }} target/spm/Gemstone-spm.tar.bz2
+          gh release create ${{ env.VER_NAME }} target/spm/Gemstone-spm.tar.bz2 --title ${{ env.VER_NAME }} --notes "Gemstone iOS framework" --draft
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         working-directory: gemstone
