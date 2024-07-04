@@ -8,6 +8,7 @@ use typeshare::typeshare;
 #[derive(Copy, Clone, Debug, Serialize, Deserialize, EnumIter, AsRefStr, EnumString)]
 #[typeshare(swift = "Equatable, Codable, CaseIterable")]
 #[serde(rename_all = "lowercase")]
+#[strum(serialize_all = "lowercase")]
 pub enum EVMChain {
     Ethereum,
     SmartChain,
