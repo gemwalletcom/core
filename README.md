@@ -68,4 +68,4 @@ Run `make install` to install rust, typeshare
 | Xrp          | ✅            | 🏗               |
 | OpBNB        | ✅            | ✅               |
 
-List of available chains specified in [primitives package](https://github.com/gemwalletcom/core/blob/main/primitives/src/chain.rs).
+List of available chains specified in [primitives package](https://github.com/gemwalletcom/core/blob/main/crates/primitives/src/chain.rs).

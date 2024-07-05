@@ -317,4 +317,31 @@ mod tests {
             "https://tronscan.org/#/transaction/4e55fe0a528240152ab566dc11ce593a30c1d2cfd0fc91f0c555887639eab2db"
         );
     }
+
+    #[test]
+    fn test_runescan() {
+        let explorers = get_block_explorers(Chain::Thorchain);
+
+        assert_eq!(explorers.len(), 2);
+        assert_eq!(explorers[1].name(), "RuneScan");
+
+        let explorer = Explorer::new(Chain::Thorchain.as_ref());
+        let account_url: String = explorer.get_address_url(
+            &explorers[1].name(),
+            "thor166n4w5039meulfa3p6ydg60ve6ueac7tlt0jws",
+        );
+        let tx_url = explorer.get_transaction_url(
+            &explorers[1].name(),
+            "FF82C517ECFDCA71A6CD3501063D76995C67509B2AFC012D2BCE61C130C05E98",
+        );
+
+        assert_eq!(
+            account_url,
+            "https://runescan.io/address/thor166n4w5039meulfa3p6ydg60ve6ueac7tlt0jws"
+        );
+        assert_eq!(
+            tx_url,
+            "https://runescan.io/tx/FF82C517ECFDCA71A6CD3501063D76995C67509B2AFC012D2BCE61C130C05E98"
+        );
+    }
 }
