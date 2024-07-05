@@ -71,7 +71,7 @@ impl EVMChain {
         }
     }
 
-    pub fn oneinch(&self) -> Vec<&'static str> {
+    pub fn whitelist_contracts(&self) -> Vec<&'static str> {
         match self {
             Self::Ethereum
             | Self::SmartChain
@@ -81,11 +81,11 @@ impl EVMChain {
             | Self::Fantom
             | Self::Gnosis
             | Self::Optimism
-            | Self::Base => vec!["0x1111111254EEB25477B68fb85Ed929f73A960582"],
-            Self::ZkSync => vec!["0x6e2B76966cbD9cF4cC2Fa0D76d24d5241E0ABC2F"],
+            | Self::Base => vec!["0x1111111254EEB25477B68fb85Ed929f73A960582"], // 1inch
+            Self::ZkSync => vec!["0x6e2B76966cbD9cF4cC2Fa0D76d24d5241E0ABC2F"], // 1inch
             Self::Manta | Self::Blast | Self::Linea | Self::Mantle | Self::OpBNB | Self::Celo => {
                 vec![]
-            } // 1inch does not support Manta
+            }
         }
     }
 
