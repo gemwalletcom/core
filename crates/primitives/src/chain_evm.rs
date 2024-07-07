@@ -71,7 +71,7 @@ impl EVMChain {
         }
     }
 
-    pub fn whitelist_contracts(&self) -> Vec<&'static str> {
+    pub fn swap_whitelist_contracts(&self) -> Vec<&'static str> {
         match self {
             Self::Ethereum
             | Self::SmartChain

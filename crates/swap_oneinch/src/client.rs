@@ -149,7 +149,7 @@ impl OneInchClient {
     pub fn get_swap_spender(&self, chain: Chain) -> Result<String, SwapError> {
         let evm_chain = EVMChain::from_chain(chain).ok_or("not evm compatible chain")?;
         let spender = evm_chain
-            .whitelist_contracts()
+            .swap_whitelist_contracts()
             .first()
             .ok_or("1inch does not support this chain")?
             .to_string();
