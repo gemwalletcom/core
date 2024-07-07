@@ -100,6 +100,6 @@ final class GemTestTests: XCTestCase {
         let config = Config().getEvmChainConfig(chain: "zksync")
 
         XCTAssertFalse(config.isOpstack)        
-        XCTAssertEqual(config.oneinch.count, 1)
+        XCTAssertEqual(config.swapWhitelistContracts.count, 1)
     }
 }
