@@ -57,7 +57,7 @@ pub fn get_coingecko_market_id_for_chain(chain: Chain) -> &'static str {
         Chain::Sui => "sui",
         Chain::Xrp => "ripple",
         Chain::Fantom => "fantom",
-        Chain::Gnosis => "gnosis",
+        Chain::Gnosis => "xdai",
         Chain::Celestia => "celestia",
         Chain::Injective => "injective-protocol",
         Chain::Sei => "sei-network",
