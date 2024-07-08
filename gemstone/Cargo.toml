@@ -22,7 +22,7 @@ gem_evm = { path = "../crates/gem_evm" }
 
 # TODO: move to gem_sui
 bcs = "0.1.6"
-sui-types = { git = "https://github.com/mystenlabs/sui", package = "sui-types", tag = "mainnet-v1.26.2" }
+sui-types = { git = "https://github.com/mystenlabs/sui", package = "sui-types", tag = "mainnet-v1.27.4" }
 blake2 = { workspace = true }
 base64 = { workspace = true }
 hex = { workspace = true }
