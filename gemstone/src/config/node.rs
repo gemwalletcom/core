@@ -74,7 +74,7 @@ pub fn get_nodes_for_chain(chain: Chain) -> Vec<Node> {
         Chain::Arbitrum => vec![
             Node::new("https://arb1.arbitrum.io/rpc", NodePriority::High),
             Node::new("https://arbitrum.drpc.org", NodePriority::High),
-            Node::new("https://arbitrum-one.publicnode.com	", NodePriority::High),
+            Node::new("https://arbitrum-one.publicnode.com", NodePriority::High),
         ],
         Chain::Ton => vec![Node::new("https://toncenter.com", NodePriority::High)],
         Chain::Tron => vec![
