@@ -1,9 +1,9 @@
 use super::model::{QuoteDataRequest, QuoteDataResponse, QuoteRequest, QuoteResponse};
 use gem_solana::WSOL_TOKEN_ADDRESS;
-use primitives::{ChainType, SwapProvider, SwapQuote, SwapQuoteData, SwapQuoteProtocolRequest};
+use primitives::{ChainType, SwapQuote, SwapQuoteData, SwapQuoteProtocolRequest};
 
-const PROGRAM_ADDRESS: &str = "JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4";
-const JUPITER: &str = "Jupiter";
+pub const PROGRAM_ADDRESS: &str = "JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4";
+pub const JUPITER: &str = "Jupiter";
 
 pub struct JupiterClient {
     api_url: String,
@@ -21,12 +21,6 @@ impl JupiterClient {
             api_url,
             fee,
             fee_referral_key,
-        }
-    }
-
-    pub fn provider(&self) -> SwapProvider {
-        SwapProvider {
-            name: String::from(JUPITER),
         }
     }
 
@@ -70,7 +64,7 @@ impl JupiterClient {
             from_amount: quote.amount.clone(),
             to_amount: swap_quote.out_amount.clone(),
             fee_percent: self.fee as f32,
-            provider: self.provider(),
+            provider: JUPITER.into(),
             data,
             approval: None,
         };

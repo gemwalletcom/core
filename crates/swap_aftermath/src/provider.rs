@@ -24,6 +24,10 @@ impl AftermathProvider {
             fee_percentage,
         }
     }
+
+    pub fn new_box(fee_address: String, fee_percentage: f32) -> Box<Self> {
+        Box::new(Self::new(fee_address, fee_percentage))
+    }
 }
 
 #[async_trait]

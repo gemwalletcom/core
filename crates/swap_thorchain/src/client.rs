@@ -1,8 +1,8 @@
-use primitives::{
-    AssetId, Chain, SwapProvider, SwapQuote, SwapQuoteData, SwapQuoteProtocolRequest,
-};
+use primitives::{AssetId, Chain, SwapQuote, SwapQuoteData, SwapQuoteProtocolRequest};
 
 use super::model::{QuoteRequest, QuoteResponse};
+use super::provider::PROVIDER_NAME;
+use swap_provider::SwapError;
 
 pub struct ThorchainSwapClient {
     api_url: String,
@@ -30,16 +30,7 @@ impl ThorchainSwapClient {
         }
     }
 
-    pub fn provider(&self) -> SwapProvider {
-        SwapProvider {
-            name: "Thorchain".to_string(),
-        }
-    }
-
-    pub fn get_asset(
-        &self,
-        asset_id: AssetId,
-    ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+    pub fn get_asset(&self, asset_id: AssetId) -> Result<String, SwapError> {
         if !asset_id.is_native() {
             return Err("not native asset".into());
         }
@@ -54,10 +45,7 @@ impl ThorchainSwapClient {
         }
     }
 
-    pub async fn get_quote(
-        &self,
-        quote: SwapQuoteProtocolRequest,
-    ) -> Result<SwapQuote, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn get_quote(&self, quote: SwapQuoteProtocolRequest) -> Result<SwapQuote, SwapError> {
         let from_asset = self.get_asset(quote.from_asset.clone())?;
         let to_asset = self.get_asset(quote.to_asset.clone())?;
 
@@ -87,17 +75,14 @@ impl ThorchainSwapClient {
             from_amount: quote.amount.clone(),
             to_amount: quote_swap.expected_amount_out.to_string(),
             fee_percent: self.fee as f32,
-            provider: self.provider(),
+            provider: PROVIDER_NAME.into(),
             data,
             approval: None,
         };
         Ok(quote)
     }
 
-    pub async fn get_swap_quote(
-        &self,
-        request: QuoteRequest,
-    ) -> Result<QuoteResponse, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn get_swap_quote(&self, request: QuoteRequest) -> Result<QuoteResponse, SwapError> {
         let url = format!("{}/thorchain/quote/swap", self.api_url);
         Ok(self
             .client

@@ -6,9 +6,10 @@ version = { workspace = true }
 [dependencies]
 serde = { workspace = true }
 reqwest = { workspace = true }
-
 primitives = { path = "../primitives" }
-gem_solana = { path = "../gem_solana" }
+
 swap_oneinch = { path = "../swap_oneinch" }
 swap_aftermath = { path = "../swap_aftermath" }
 swap_provider = { path = "../swap_provider" }
+swap_jupiter = { path = "../swap_jupiter" }
+swap_thorchain = { path = "../swap_thorchain" }
