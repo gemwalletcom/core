@@ -15,10 +15,6 @@ impl ThorchainProvider {
             client: ThorchainSwapClient::new(api_url, fee, fee_referral_address),
         }
     }
-
-    pub fn new_box(api_url: String, fee: f64, fee_referral_address: String) -> Box<Self> {
-        Box::new(Self::new(api_url, fee, fee_referral_address))
-    }
 }
 
 #[async_trait]

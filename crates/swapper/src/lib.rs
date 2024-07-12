@@ -39,15 +39,15 @@ impl Swapper {
         );
 
         let providers: ProviderList = vec![
-            AftermathProvider::new_box(
+            Box::new(AftermathProvider::new(
                 configuration.aftermath.fee_address,
                 configuration.aftermath.fee_percent as f32,
-            ),
-            ThorchainProvider::new_box(
+            )),
+            Box::new(ThorchainProvider::new(
                 configuration.thorchain.url,
                 configuration.thorchain.fee_percent,
                 configuration.thorchain.fee_address,
-            ),
+            )),
         ];
 
         SwapperClient::new(oneinch_client, jupiter_client, providers)
