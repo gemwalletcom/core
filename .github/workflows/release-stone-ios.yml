@@ -1,0 +1,70 @@
+name: iOS Framework
+
+on:
+  push:
+    tags:
+      - "*"
+    paths:
+      - ".workflows/release-stone-ios.yml"
+  workflow_dispatch:
+    inputs:
+      ref_name:
+        description: "github ref name (tag)"
+        required: true
+
+env:
+  CARGO_TERM_COLOR: always
+  SCCACHE_GHA_ENABLED: "true"
+  RUSTC_WRAPPER: "sccache"
+  BUILD_MODE: "release"
+  IPHONEOS_DEPLOYMENT_TARGET: "17.0"
+
+jobs:
+  upload_ios_framework:
+    runs-on: macos-latest
+    steps:
+      - name: Set version tag
+        run: |
+          if [ ${{ github.event.inputs.ref_name }} ]; then
+            echo "VER_NAME=${{ github.event.inputs.ref_name }}" >> $GITHUB_ENV
+          elif [ ${{ github.ref_type == 'tag' }} ]; then
+            echo "VER_NAME=${{ github.ref_name }}" >> $GITHUB_ENV
+          else
+            echo "no ref_name or tag"
+            exit 1
+          fi
+
+      - uses: actions/checkout@v3
+        with:
+          ref: ${{ env.VER_NAME }}
+
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Run sccache-cache
+        uses: mozilla-actions/sccache-action@v0.0.3
+
+      - name: Build iOS frameworks
+        run: |
+          make prepare-apple
+          make apple BUILD_MODE=${{ env.BUILD_MODE }} IPHONEOS_DEPLOYMENT_TARGET=${{ env.IPHONEOS_DEPLOYMENT_TARGET }}
+        working-directory: gemstone
+
+      - name: Zip iOS framework
+        run: |
+          cd target/spm
+          tar -cjvf Gemstone-spm.tar.bz2 Package.swift Sources
+          ls -tlh
+        working-directory: gemstone
+
+      - name: Upload to release
+        run: |
+          gh release create ${{ env.VER_NAME }} target/spm/Gemstone-spm.tar.bz2 --title ${{ env.VER_NAME }} --notes "Gemstone iOS framework" --draft
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        working-directory: gemstone
