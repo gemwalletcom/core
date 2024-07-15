@@ -5,7 +5,7 @@ use typeshare::typeshare;
 #[typeshare(swift = "Codable")]
 pub struct Node {
     pub url: String,
-    pub status: NodeStatus,
+    pub status: NodeState,
     pub priority: i32,
 }
 
@@ -34,7 +34,7 @@ pub struct NodesResponse {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Codable, CaseIterable")]
 #[serde(rename_all = "lowercase")]
-pub enum NodeStatus {
+pub enum NodeState {
     Active,
     Inactive,
 }

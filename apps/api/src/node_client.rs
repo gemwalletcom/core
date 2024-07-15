@@ -1,4 +1,4 @@
-use primitives::node::{ChainNodes, Node, NodeStatus, NodesResponse};
+use primitives::node::{ChainNodes, Node, NodeState, NodesResponse};
 use std::{collections::HashMap, error::Error};
 use storage::DatabaseClient;
 
@@ -22,9 +22,9 @@ impl Client {
             nodes_map.entry(node.chain.clone()).or_default().push(Node {
                 url: node.url,
                 status: if node.status == *"active" {
-                    NodeStatus::Active
+                    NodeState::Active
                 } else {
-                    NodeStatus::Inactive
+                    NodeState::Inactive
                 },
                 priority: node.priority,
             });
