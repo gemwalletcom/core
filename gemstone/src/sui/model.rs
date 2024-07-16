@@ -1,12 +1,5 @@
-use anyhow::Error;
-use bcs;
-use blake2::{digest::consts::U32, Blake2b, Digest};
-use std::str::FromStr;
-type Blake2b256 = Blake2b<U32>;
-use sui_types::{
-    base_types::{ObjectID, ObjectRef, SequenceNumber},
-    digests::ObjectDigest,
-    transaction::TransactionData,
+use gem_sui::model::{
+    Coin, Gas, Object, StakeInput, TokenTransferInput, TransferInput, TxOutput, UnstakeInput,
 };
 
 #[derive(uniffi::Record, Clone)]
@@ -16,6 +9,22 @@ pub struct SuiCoin {
     pub object_ref: SuiObjectRef,
 }
 
+impl From<SuiCoin> for Coin {
+    fn from(value: SuiCoin) -> Self {
+        Coin {
+            coin_type: value.coin_type,
+            balance: value.balance,
+            object: value.object_ref.into(),
+        }
+    }
+}
+
+impl From<&SuiCoin> for Coin {
+    fn from(value: &SuiCoin) -> Self {
+        value.to_owned().into()
+    }
+}
+
 #[derive(uniffi::Record, Clone)]
 pub struct SuiObjectRef {
     pub object_id: String,
@@ -23,23 +32,32 @@ pub struct SuiObjectRef {
     pub version: u64,
 }
 
-impl SuiObjectRef {
-    pub fn to_tuple(&self) -> ObjectRef {
-        (
-            ObjectID::from_hex_literal(&self.object_id).unwrap(),
-            SequenceNumber::from_u64(self.version),
-            ObjectDigest::from_str(&self.digest).unwrap(),
-        )
+impl From<SuiObjectRef> for Object {
+    fn from(value: SuiObjectRef) -> Self {
+        Object {
+            object_id: value.object_id,
+            digest: value.digest,
+            version: value.version,
+        }
     }
 }
 
-#[derive(uniffi::Record)]
+#[derive(uniffi::Record, Clone)]
 pub struct SuiGas {
     pub budget: u64,
     pub price: u64,
 }
 
-#[derive(uniffi::Record)]
+impl From<SuiGas> for Gas {
+    fn from(value: SuiGas) -> Self {
+        Gas {
+            budget: value.budget,
+            price: value.price,
+        }
+    }
+}
+
+#[derive(uniffi::Record, Clone)]
 pub struct SuiStakeInput {
     pub sender: String,
     pub validator: String,
@@ -48,7 +66,19 @@ pub struct SuiStakeInput {
     pub coins: Vec<SuiCoin>,
 }
 
-#[derive(uniffi::Record)]
+impl From<&SuiStakeInput> for StakeInput {
+    fn from(value: &SuiStakeInput) -> Self {
+        Self {
+            sender: value.sender.clone(),
+            validator: value.validator.clone(),
+            stake_amount: value.stake_amount,
+            gas: value.gas.clone().into(),
+            coins: value.coins.clone().into_iter().map(Into::into).collect(),
+        }
+    }
+}
+
+#[derive(uniffi::Record, Clone)]
 pub struct SuiUnstakeInput {
     pub sender: String,
     pub staked_sui: SuiObjectRef,
@@ -56,7 +86,18 @@ pub struct SuiUnstakeInput {
     pub gas_coin: SuiCoin,
 }
 
-#[derive(uniffi::Record)]
+impl From<&SuiUnstakeInput> for UnstakeInput {
+    fn from(value: &SuiUnstakeInput) -> Self {
+        Self {
+            sender: value.sender.clone(),
+            staked_sui: value.staked_sui.clone().into(),
+            gas: value.gas.clone().into(),
+            gas_coin: value.gas_coin.clone().into(),
+        }
+    }
+}
+
+#[derive(uniffi::Record, Clone)]
 pub struct SuiTransferInput {
     pub sender: String,
     pub recipient: String,
@@ -66,7 +107,20 @@ pub struct SuiTransferInput {
     pub gas: SuiGas,
 }
 
-#[derive(uniffi::Record)]
+impl From<&SuiTransferInput> for TransferInput {
+    fn from(value: &SuiTransferInput) -> Self {
+        Self {
+            sender: value.sender.clone(),
+            recipient: value.recipient.clone(),
+            amount: value.amount,
+            coins: value.coins.clone().into_iter().map(Into::into).collect(),
+            send_max: value.send_max,
+            gas: value.gas.clone().into(),
+        }
+    }
+}
+
+#[derive(uniffi::Record, Clone)]
 pub struct SuiTokenTransferInput {
     pub sender: String,
     pub recipient: String,
@@ -76,24 +130,30 @@ pub struct SuiTokenTransferInput {
     pub gas_coin: SuiCoin,
 }
 
-#[derive(uniffi::Record)]
+impl From<&SuiTokenTransferInput> for TokenTransferInput {
+    fn from(value: &SuiTokenTransferInput) -> Self {
+        Self {
+            sender: value.sender.clone(),
+            recipient: value.recipient.clone(),
+            amount: value.amount,
+            tokens: value.tokens.clone().into_iter().map(Into::into).collect(),
+            gas: value.gas.clone().into(),
+            gas_coin: value.gas_coin.clone().into(),
+        }
+    }
+}
+
+#[derive(uniffi::Record, Clone)]
 pub struct SuiTxOutput {
     pub tx_data: Vec<u8>,
     pub hash: Vec<u8>,
 }
 
-impl SuiTxOutput {
-    pub fn from_tx_data(tx_data: &TransactionData) -> Result<Self, Error> {
-        let data = bcs::to_bytes(&tx_data)?;
-        // manually build IntentMessage::new(Intent::sui_transaction(), tx_data.clone());
-        let mut message = vec![0x0u8, 0x0, 0x0];
-        message.append(&mut data.clone());
-        let mut hasher = Blake2b256::new();
-        hasher.update(&message);
-
-        Ok(Self {
-            tx_data: data,
-            hash: hasher.finalize().to_vec(),
-        })
+impl From<TxOutput> for SuiTxOutput {
+    fn from(value: TxOutput) -> Self {
+        Self {
+            tx_data: value.tx_data,
+            hash: value.hash,
+        }
     }
 }
