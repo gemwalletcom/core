@@ -1,27 +1,19 @@
 use primitives::{Chain, SwapQuote, SwapQuoteProtocolRequest};
+use swap_jupiter::JupiterClient;
 use swap_oneinch::OneInchClient;
 use swap_provider::ProviderList;
-
-use crate::{JupiterClient, ThorchainSwapClient};
 
 pub struct SwapperClient {
     oneinch: OneInchClient,
     jupiter: JupiterClient,
-    thorchain: ThorchainSwapClient,
     providers: ProviderList,
 }
 
 impl SwapperClient {
-    pub fn new(
-        oneinch: OneInchClient,
-        jupiter: JupiterClient,
-        thorchain: ThorchainSwapClient,
-        providers: ProviderList,
-    ) -> Self {
+    pub fn new(oneinch: OneInchClient, jupiter: JupiterClient, providers: ProviderList) -> Self {
         Self {
             oneinch,
             jupiter,
-            thorchain,
             providers,
         }
     }
@@ -56,21 +48,25 @@ impl SwapperClient {
             | Chain::Mantle
             | Chain::Celo => self.oneinch.get_quote(quote).await,
             Chain::Solana => self.jupiter.get_quote(quote).await,
-            Chain::Thorchain | Chain::Doge | Chain::Cosmos | Chain::Bitcoin | Chain::Litecoin => {
-                self.thorchain.get_quote(quote).await
-            }
             Chain::Osmosis
             | Chain::Celestia
             | Chain::Injective
             | Chain::Ton
             | Chain::Tron
             | Chain::Aptos
-            | Chain::Sui
             | Chain::Xrp
             | Chain::OpBNB
             | Chain::Noble
             | Chain::Sei
             | Chain::Near => todo!(),
+            Chain::Sui
+            | Chain::Thorchain
+            | Chain::Doge
+            | Chain::Cosmos
+            | Chain::Bitcoin
+            | Chain::Litecoin => {
+                panic!("implementation already migrated")
+            }
         }
     }
 }

@@ -1,0 +1,13 @@
+[package]
+name = "swap_jupiter"
+edition = { workspace = true }
+version = { workspace = true }
+
+[dependencies]
+serde.workspace = true
+reqwest.workspace = true
+async-trait.workspace = true
+
+primitives = { path = "../primitives" }
+gem_solana = { path = "../gem_solana" }
+swap_provider = { path = "../swap_provider" }

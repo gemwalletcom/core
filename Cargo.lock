@@ -7001,6 +7001,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "swap_jupiter"
+version = "1.0.0"
+dependencies = [
+ "async-trait",
+ "gem_solana",
+ "primitives",
+ "reqwest 0.12.4",
+ "serde",
+ "swap_provider",
+]
+
+[[package]]
 name = "swap_oneinch"
 version = "1.0.0"
 dependencies = [
@@ -7022,16 +7034,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "swap_thorchain"
+version = "1.0.0"
+dependencies = [
+ "async-trait",
+ "primitives",
+ "reqwest 0.12.4",
+ "serde",
+ "swap_provider",
+]
+
+[[package]]
 name = "swapper"
 version = "1.0.0"
 dependencies = [
- "gem_solana",
  "primitives",
  "reqwest 0.12.4",
  "serde",
  "swap_aftermath",
+ "swap_jupiter",
  "swap_oneinch",
  "swap_provider",
+ "swap_thorchain",
 ]
 
 [[package]]

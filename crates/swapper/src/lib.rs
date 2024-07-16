@@ -1,12 +1,10 @@
 pub mod client;
-pub use self::client::SwapperClient;
+pub use crate::client::SwapperClient;
 use swap_aftermath::provider::AftermathProvider;
+use swap_jupiter::client::JupiterClient;
 use swap_oneinch::OneInchClient;
 use swap_provider::ProviderList;
-pub mod jupiter;
-pub use self::jupiter::JupiterClient;
-pub mod thorswap;
-pub use self::thorswap::ThorchainSwapClient;
+use swap_thorchain::provider::ThorchainProvider;
 
 pub struct SwapperConfiguration {
     pub oneinch: SwapperClientConfiguration,
@@ -39,22 +37,19 @@ impl Swapper {
             configuration.jupiter.fee_percent,
             configuration.jupiter.fee_address,
         );
-        let thorchain_swap_client = ThorchainSwapClient::new(
-            configuration.thorchain.url,
-            configuration.thorchain.fee_percent,
-            configuration.thorchain.fee_address,
-        );
 
-        let providers: ProviderList = vec![Box::new(AftermathProvider::new(
-            configuration.aftermath.fee_address,
-            configuration.aftermath.fee_percent as f32,
-        ))];
+        let providers: ProviderList = vec![
+            Box::new(AftermathProvider::new(
+                configuration.aftermath.fee_address,
+                configuration.aftermath.fee_percent as f32,
+            )),
+            Box::new(ThorchainProvider::new(
+                configuration.thorchain.url,
+                configuration.thorchain.fee_percent,
+                configuration.thorchain.fee_address,
+            )),
+        ];
 
-        SwapperClient::new(
-            oneinch_client,
-            jupiter_client,
-            thorchain_swap_client,
-            providers,
-        )
+        SwapperClient::new(oneinch_client, jupiter_client, providers)
     }
 }
