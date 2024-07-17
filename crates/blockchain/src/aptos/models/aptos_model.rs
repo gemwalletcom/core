@@ -44,3 +44,10 @@ struct AptosGasFee {
     gas_estimate: i32,
     prioritized_gas_estimate: i32,
 }
+
+#[typeshare]
+#[allow(dead_code)]
+struct AptosLedger {
+    chain_id: i32,
+    ledger_version: String,
+}

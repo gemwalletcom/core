@@ -21,13 +21,13 @@ struct NearError {
 
 #[typeshare]
 struct NearBlock {
-    //height: i32,
     header: NearBlockHeader,
 }
 
 #[typeshare]
 struct NearBlockHeader {
     hash: String,
+    height: Int,
 }
 
 #[typeshare]

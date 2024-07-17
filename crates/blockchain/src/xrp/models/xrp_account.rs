@@ -1,11 +1,11 @@
 #[typeshare]
 struct XRPResult<T> {
-    result: T
+    result: T,
 }
 
 #[typeshare]
 struct XRPAccountResult {
-    account_data: XRPAccount
+    account_data: XRPAccount,
 }
 
 #[typeshare]
@@ -41,4 +41,9 @@ struct XRPTransaction {
 #[typeshare]
 struct XRPTransactionStatus {
     status: String,
+}
+
+#[typeshare]
+struct XRPLatestBlock {
+    ledger_current_index: Int,
 }
