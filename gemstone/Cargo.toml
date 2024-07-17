@@ -19,19 +19,14 @@ gem_solana = { path = "../crates/gem_solana" }
 gem_ton = { path = "../crates/gem_ton" }
 gem_bsc = { path = "../crates/gem_bsc" }
 gem_evm = { path = "../crates/gem_evm" }
-
-# TODO: move to gem_sui
-bcs = "0.1.6"
-sui-types = { git = "https://github.com/mystenlabs/sui", package = "sui-types", tag = "mainnet-v1.27.4" }
-blake2 = { workspace = true }
-base64 = { workspace = true }
-hex = { workspace = true }
+gem_sui = { path = "../crates/gem_sui" }
 
 # uniffi
-uniffi = { workspace = true }
-thiserror = { workspace = true }
-# async-std = "1.12.0"
-anyhow = { workspace = true }
+uniffi.workspace = true
+thiserror.workspace = true
+
+anyhow.workspace = true
+base64.workspace = true
 
 [build-dependencies]
 uniffi = { workspace = true, features = ["build"] }

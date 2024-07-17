@@ -54,40 +54,6 @@ impl From<Box<dyn std::error::Error>> for GemstoneError {
     }
 }
 
-/// Sui
-#[uniffi::export]
-pub fn sui_encode_transfer(
-    input: &sui::model::SuiTransferInput,
-) -> Result<sui::model::SuiTxOutput, GemstoneError> {
-    sui::encode_transfer(input).map_err(GemstoneError::from)
-}
-
-#[uniffi::export]
-pub fn sui_encode_token_transfer(
-    input: &sui::model::SuiTokenTransferInput,
-) -> Result<sui::model::SuiTxOutput, GemstoneError> {
-    sui::encode_token_transfer(input).map_err(GemstoneError::from)
-}
-
-#[uniffi::export]
-pub fn sui_encode_split_stake(
-    input: &sui::model::SuiStakeInput,
-) -> Result<sui::model::SuiTxOutput, GemstoneError> {
-    sui::encode_split_and_stake(input).map_err(GemstoneError::from)
-}
-
-#[uniffi::export]
-pub fn sui_encode_unstake(
-    input: &sui::model::SuiUnstakeInput,
-) -> Result<sui::model::SuiTxOutput, GemstoneError> {
-    sui::encode_unstake(input).map_err(GemstoneError::from)
-}
-
-#[uniffi::export]
-pub fn sui_validate_and_hash(encoded: String) -> Result<sui::model::SuiTxOutput, GemstoneError> {
-    sui::validate_and_hash(&encoded).map_err(GemstoneError::from)
-}
-
 /// WalletConnect
 #[derive(uniffi::Object)]
 struct WalletConnectNamespace {}
