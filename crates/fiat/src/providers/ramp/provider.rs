@@ -95,9 +95,9 @@ impl FiatProvider for RampClient {
             fiat_currency: payload.fiat_currency,
             transaction_hash: payload.final_tx_hash,
             address: payload.receiver_address,
-            fee_provider: payload.base_ramp_fee,
-            fee_network: payload.network_fee,
-            fee_partner: payload.host_fee_cut,
+            fee_provider: Some(payload.base_ramp_fee),
+            fee_network: Some(payload.network_fee),
+            fee_partner: Some(payload.host_fee_cut),
         };
         Ok(transaction)
     }

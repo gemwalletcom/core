@@ -15,9 +15,9 @@ pub struct FiatTransaction {
     pub fiat_currency: String,
     pub transaction_hash: Option<String>,
     pub address: Option<String>,
-    pub fee_provider: f64,
-    pub fee_network: f64,
-    pub fee_partner: f64,
+    pub fee_provider: Option<f64>,
+    pub fee_network: Option<f64>,
+    pub fee_partner: Option<f64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, AsRefStr, EnumString)]

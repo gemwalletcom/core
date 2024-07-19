@@ -80,9 +80,9 @@ impl FiatProvider for BanxaClient {
             fiat_currency: order.fiat_code,
             transaction_hash: order.tx_hash,
             address: Some(order.wallet_address),
-            fee_provider: order.fee.unwrap_or_default(),
-            fee_network: order.network_fee.unwrap_or_default(),
-            fee_partner: order.merchant_fee.unwrap_or_default(),
+            fee_provider: order.fee,
+            fee_network: order.network_fee,
+            fee_partner: order.merchant_fee,
         };
 
         Ok(transaction)

@@ -67,7 +67,7 @@ impl Client {
                 let transaction =
                     storage::models::FiatTransaction::from_primitive(transaction.clone());
 
-                let _ = self.database.add_fiat_transactions(vec![transaction])?;
+                let _ = self.database.add_fiat_transaction(transaction)?;
 
                 return Ok(true);
             }

@@ -99,20 +99,26 @@ impl DatabaseClient {
             .execute(&mut self.connection)
     }
 
-    pub fn add_fiat_transactions(
+    pub fn add_fiat_transaction(
         &mut self,
-        values: Vec<FiatTransaction>,
+        transaction: FiatTransaction,
     ) -> Result<usize, diesel::result::Error> {
         use crate::schema::fiat_transactions::dsl::*;
+
+        let update = FiatTransactionUpdate {
+            status: transaction.status.clone(),
+            transaction_hash: transaction.transaction_hash.clone(),
+            address: transaction.address.clone(),
+            fee_provider: transaction.fee_provider,
+            fee_partner: transaction.fee_partner,
+            fee_network: transaction.fee_network,
+        };
+
         diesel::insert_into(fiat_transactions)
-            .values(values)
+            .values(&transaction)
             .on_conflict((provider_id, provider_transaction_id))
             .do_update()
-            .set((
-                status.eq(excluded(status)),
-                transaction_hash.eq(excluded(transaction_hash)),
-                address.eq(excluded(address)),
-            ))
+            .set(update)
             .execute(&mut self.connection)
     }
 

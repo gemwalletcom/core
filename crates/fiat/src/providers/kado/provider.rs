@@ -66,9 +66,9 @@ impl FiatProvider for KadoClient {
             fiat_currency: data.data.currency_type,
             transaction_hash: Some(data.data.tx_hash),
             address: Some(data.data.wallet_address),
-            fee_provider: data.data.processing_fee.amount.unwrap_or_default(),
-            fee_network: data.data.gas_fee.amount.unwrap_or_default(),
-            fee_partner: 0.0,
+            fee_provider: data.data.processing_fee.amount,
+            fee_network: data.data.gas_fee.amount,
+            fee_partner: None,
         };
 
         Ok(transaction)
