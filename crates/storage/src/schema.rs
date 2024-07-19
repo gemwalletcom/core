@@ -4,7 +4,7 @@ diesel::table! {
     assets (id) {
         #[max_length = 128]
         id -> Varchar,
-        #[max_length = 16]
+        #[max_length = 32]
         chain -> Varchar,
         #[max_length = 128]
         token_id -> Nullable<Varchar>,
@@ -26,27 +26,27 @@ diesel::table! {
     assets_details (asset_id) {
         #[max_length = 128]
         asset_id -> Varchar,
-        #[max_length = 64]
+        #[max_length = 128]
         homepage -> Nullable<Varchar>,
-        #[max_length = 64]
+        #[max_length = 128]
         explorer -> Nullable<Varchar>,
-        #[max_length = 64]
+        #[max_length = 128]
         twitter -> Nullable<Varchar>,
-        #[max_length = 64]
+        #[max_length = 128]
         telegram -> Nullable<Varchar>,
-        #[max_length = 64]
+        #[max_length = 128]
         github -> Nullable<Varchar>,
-        #[max_length = 64]
+        #[max_length = 128]
         youtube -> Nullable<Varchar>,
-        #[max_length = 64]
+        #[max_length = 128]
         facebook -> Nullable<Varchar>,
-        #[max_length = 64]
+        #[max_length = 128]
         reddit -> Nullable<Varchar>,
-        #[max_length = 64]
+        #[max_length = 128]
         coingecko -> Nullable<Varchar>,
-        #[max_length = 64]
+        #[max_length = 128]
         coinmarketcap -> Nullable<Varchar>,
-        #[max_length = 64]
+        #[max_length = 128]
         discord -> Nullable<Varchar>,
         updated_at -> Timestamp,
         created_at -> Timestamp,
@@ -115,20 +115,6 @@ diesel::table! {
         #[max_length = 128]
         token_id -> Nullable<Varchar>,
         enabled -> Bool,
-        updated_at -> Timestamp,
-        created_at -> Timestamp,
-    }
-}
-
-diesel::table! {
-    fiat_chains (id) {
-        id -> Int4,
-        #[max_length = 128]
-        chain_id -> Varchar,
-        #[max_length = 128]
-        provider_id -> Varchar,
-        #[max_length = 128]
-        name -> Varchar,
         updated_at -> Timestamp,
         created_at -> Timestamp,
     }
@@ -278,7 +264,7 @@ diesel::table! {
         #[max_length = 32]
         chain -> Varchar,
         #[max_length = 64]
-        name -> Varchar,
+        name -> Nullable<Varchar>,
         updated_at -> Timestamp,
         created_at -> Timestamp,
     }
@@ -333,7 +319,6 @@ diesel::table! {
         utxo_inputs -> Nullable<Jsonb>,
         utxo_outputs -> Nullable<Jsonb>,
         fee_asset_id -> Varchar,
-        block_created_at -> Timestamp,
         updated_at -> Timestamp,
         created_at -> Timestamp,
         metadata -> Nullable<Jsonb>,
@@ -369,8 +354,6 @@ diesel::joinable!(assets -> assets_types (asset_type));
 diesel::joinable!(assets_details -> assets (asset_id));
 diesel::joinable!(fiat_assets -> assets (asset_id));
 diesel::joinable!(fiat_assets -> fiat_providers (provider));
-diesel::joinable!(fiat_chains -> chains (chain_id));
-diesel::joinable!(fiat_chains -> fiat_providers (provider_id));
 diesel::joinable!(fiat_transactions -> assets (asset_id));
 diesel::joinable!(fiat_transactions -> fiat_providers (provider_id));
 diesel::joinable!(parser_state -> chains (chain));
@@ -391,7 +374,6 @@ diesel::allow_tables_to_appear_in_same_query!(
     chains,
     devices,
     fiat_assets,
-    fiat_chains,
     fiat_providers,
     fiat_rates,
     fiat_transactions,
