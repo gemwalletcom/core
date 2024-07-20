@@ -15,10 +15,10 @@ diesel::table! {
         #[max_length = 16]
         symbol -> Varchar,
         decimals -> Int4,
+        enabled -> Bool,
+        rank -> Int4,
         updated_at -> Timestamp,
         created_at -> Timestamp,
-        rank -> Int4,
-        enabled -> Bool,
     }
 }
 
@@ -48,13 +48,13 @@ diesel::table! {
         coinmarketcap -> Nullable<Varchar>,
         #[max_length = 128]
         discord -> Nullable<Varchar>,
-        updated_at -> Timestamp,
-        created_at -> Timestamp,
         is_buyable -> Bool,
         is_sellable -> Bool,
         is_swappable -> Bool,
         is_stakeable -> Bool,
         staking_apr -> Nullable<Float8>,
+        updated_at -> Timestamp,
+        created_at -> Timestamp,
     }
 }
 
@@ -89,12 +89,12 @@ diesel::table! {
         #[max_length = 8]
         locale -> Varchar,
         #[max_length = 8]
+        currency -> Varchar,
+        #[max_length = 8]
         version -> Varchar,
+        subscriptions_version -> Int4,
         updated_at -> Timestamp,
         created_at -> Timestamp,
-        #[max_length = 8]
-        currency -> Varchar,
-        subscriptions_version -> Int4,
     }
 }
 
@@ -115,6 +115,7 @@ diesel::table! {
         #[max_length = 128]
         token_id -> Nullable<Varchar>,
         enabled -> Bool,
+        hidden -> Bool,
         updated_at -> Timestamp,
         created_at -> Timestamp,
     }
@@ -162,9 +163,9 @@ diesel::table! {
         transaction_hash -> Nullable<Varchar>,
         #[max_length = 256]
         address -> Nullable<Varchar>,
-        fee_provider -> Nullable<Float8>,
-        fee_network -> Nullable<Float8>,
-        fee_partner -> Nullable<Float8>,
+        fee_provider -> Float8,
+        fee_network -> Float8,
+        fee_partner -> Float8,
         updated_at -> Timestamp,
         created_at -> Timestamp,
     }
@@ -248,12 +249,12 @@ diesel::table! {
     subscriptions (id) {
         id -> Int4,
         device_id -> Int4,
+        wallet_index -> Int4,
         chain -> Varchar,
         #[max_length = 256]
         address -> Varchar,
         updated_at -> Timestamp,
         created_at -> Timestamp,
-        wallet_index -> Int4,
     }
 }
 
@@ -265,16 +266,6 @@ diesel::table! {
         chain -> Varchar,
         #[max_length = 64]
         name -> Nullable<Varchar>,
-        updated_at -> Timestamp,
-        created_at -> Timestamp,
-    }
-}
-
-diesel::table! {
-    swap_assets (id) {
-        id -> Int4,
-        #[max_length = 128]
-        asset_id -> Varchar,
         updated_at -> Timestamp,
         created_at -> Timestamp,
     }
@@ -318,10 +309,10 @@ diesel::table! {
         fee -> Nullable<Varchar>,
         utxo_inputs -> Nullable<Jsonb>,
         utxo_outputs -> Nullable<Jsonb>,
+        metadata -> Nullable<Jsonb>,
         fee_asset_id -> Varchar,
         updated_at -> Timestamp,
         created_at -> Timestamp,
-        metadata -> Nullable<Jsonb>,
     }
 }
 
@@ -351,18 +342,21 @@ diesel::table! {
 }
 
 diesel::joinable!(assets -> assets_types (asset_type));
+diesel::joinable!(assets -> chains (chain));
 diesel::joinable!(assets_details -> assets (asset_id));
 diesel::joinable!(fiat_assets -> assets (asset_id));
 diesel::joinable!(fiat_assets -> fiat_providers (provider));
 diesel::joinable!(fiat_transactions -> assets (asset_id));
 diesel::joinable!(fiat_transactions -> fiat_providers (provider_id));
+diesel::joinable!(nodes -> chains (chain));
 diesel::joinable!(parser_state -> chains (chain));
-diesel::joinable!(prices_assets -> assets (asset_id));
 diesel::joinable!(prices_assets -> prices (price_id));
 diesel::joinable!(scan_addresses -> chains (chain));
+diesel::joinable!(subscriptions -> chains (chain));
 diesel::joinable!(subscriptions -> devices (device_id));
 diesel::joinable!(subscriptions_addresses_exclude -> chains (chain));
-diesel::joinable!(swap_assets -> assets (asset_id));
+diesel::joinable!(tokenlists -> chains (chain));
+diesel::joinable!(transactions -> chains (chain));
 diesel::joinable!(transactions_addresses -> assets (asset_id));
 diesel::joinable!(transactions_addresses -> chains (chain_id));
 diesel::joinable!(transactions_addresses -> transactions (transaction_id));
@@ -384,7 +378,6 @@ diesel::allow_tables_to_appear_in_same_query!(
     scan_addresses,
     subscriptions,
     subscriptions_addresses_exclude,
-    swap_assets,
     tokenlists,
     transactions,
     transactions_addresses,
