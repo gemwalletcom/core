@@ -12,6 +12,7 @@ struct Wallet {
 pub enum WalletType {
     multicoin,
     single,
+    private_key,
     view,
 }
 
