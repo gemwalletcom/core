@@ -9,6 +9,7 @@ struct Wallet {
 }
 
 #[typeshare(swift = "Equatable, Codable, Hashable")]
+#[serde(rename_all = "camelCase")]
 pub enum WalletType {
     multicoin,
     single,
