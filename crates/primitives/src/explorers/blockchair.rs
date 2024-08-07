@@ -35,7 +35,7 @@ impl Blockchair {
         Box::new(Self {
             meta: Metadata {
                 name: BLOCKCHAIR_NAME,
-                base_url: blockchair_url!("doge"),
+                base_url: blockchair_url!("dogecoin"),
             },
         })
     }
