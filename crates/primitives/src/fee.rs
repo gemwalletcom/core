@@ -4,3 +4,9 @@ pub enum FeePriority {
     normal,
     fast,
 }
+
+#[typeshare(swift = "Equatable, Codable, CaseIterable")]
+pub enum FeeUnitType {
+    satVb,
+    satB,
+}
