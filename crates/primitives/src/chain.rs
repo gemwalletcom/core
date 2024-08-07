@@ -224,6 +224,13 @@ impl Chain {
         }
     }
 
+    pub fn account_activation_fee(&self) -> Option<i32> {
+        match self {
+            Self::Xrp => Some(10_000_000), // https://xrpl.org/docs/concepts/accounts/reserves#base-reserve-and-owner-reserve
+            _ => None,
+        }
+    }
+
     // miliseconds
     pub fn block_time(&self) -> i64 {
         match self {

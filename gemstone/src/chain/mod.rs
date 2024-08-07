@@ -8,6 +8,7 @@ pub struct ChainConfig {
     pub rank: i32,
     pub denom: Option<String>,
     pub default_asset_type: Option<String>,
+    pub account_activation_fee: Option<i32>,
 }
 
 pub fn get_chain_config(chain: Chain) -> ChainConfig {
@@ -18,6 +19,7 @@ pub fn get_chain_config(chain: Chain) -> ChainConfig {
         rank: chain.rank(),
         denom: chain.as_denom().map(|x| x.to_string()),
         default_asset_type: chain.default_asset_type().map(|x| x.as_ref().to_string()),
+        account_activation_fee: chain.account_activation_fee(),
     };
 }
 
