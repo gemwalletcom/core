@@ -1,7 +1,6 @@
 #[typeshare(swift = "Equatable, Codable")]
 #[serde(rename_all = "camelCase")]
 pub struct Banner {
-    id: Option<Int>,
     wallet: Option<Wallet>,
     asset: Option<Asset>,
     event: BannerEvent,
