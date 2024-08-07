@@ -7,7 +7,7 @@ use parser_proxy::{ParserProxy, ParserProxyUrlConfig};
 pub use pusher::Pusher;
 pub mod parser_proxy;
 
-use std::{collections::HashMap, str::FromStr};
+use std::{collections::HashMap, str::FromStr, time::Duration};
 
 use primitives::Chain;
 use settings::Settings;
@@ -91,13 +91,22 @@ async fn parser_start(
     let config = ParserProxyUrlConfig { urls: node_urls };
     let proxy = ParserProxy::new(chain, config);
 
-    let mut parser = Parser::new(Box::new(proxy), pusher, database_client, parser_options);
-    match parser.start().await {
-        Ok(_) => {
-            println!("parser {} start complete", chain)
+    let mut parser = Parser::new(
+        Box::new(proxy),
+        pusher,
+        database_client,
+        parser_options.clone(),
+    );
+    loop {
+        match parser.start().await {
+            Ok(_) => {
+                println!("parser start complete, chain: {}", chain)
+            }
+            Err(e) => {
+                println!("parser start error, chain: {}, error: {:?}", chain, e);
+            }
         }
-        Err(e) => {
-            println!("parser {} start error: {:?}", chain, e)
-        }
+        tokio::time::sleep(Duration::from_millis(parser_options.timeout)).await;
+        println!("parser restart timeout, chain: {}", chain);
     }
 }
