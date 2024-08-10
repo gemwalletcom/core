@@ -1,6 +1,5 @@
 use crate::client::NameClient;
 use async_trait::async_trait;
-use base64::{engine::general_purpose, Engine as _};
 use primitives::{Chain, NameProvider};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
@@ -10,6 +9,17 @@ use std::error::Error;
 pub struct ResolveDomain {
     pub s: String,
     pub result: String,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct ResolveRecord {
+    pub s: String,
+    pub result: ResolveRecordResult,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct ResolveRecordResult {
+    pub deserialized: String,
 }
 
 pub struct SNSClient {
@@ -26,21 +36,22 @@ impl SNSClient {
     async fn resolve_hex_address(
         &self,
         name: &str,
-        _chain: &Chain,
         record: &str,
     ) -> Result<String, Box<dyn Error + Send + Sync>> {
-        let url = format!("{}/record/{}/{}", self.url, name, record);
+        let url = format!("{}/record-v2/{}/{}", self.url, name, record);
         let response = self
             .client
             .get(&url)
             .send()
             .await?
-            .json::<ResolveDomain>()
+            .json::<ResolveRecord>()
             .await?;
 
-        let bytes = general_purpose::STANDARD.decode(response.result.as_bytes())?;
-        let address = String::from_utf8(bytes)?;
-        Ok(address)
+        if response.s != "ok" {
+            return Err("error".to_string().into());
+        }
+
+        Ok(response.result.deserialized)
     }
 
     async fn resolve_sol_address(
@@ -80,7 +91,7 @@ impl NameClient for SNSClient {
                 return self.resolve_sol_address(name, &chain.clone()).await;
             }
             Chain::SmartChain => {
-                return self.resolve_hex_address(name, &chain, "BSC").await;
+                return self.resolve_hex_address(name, "BSC").await;
             }
             _ => return Err("error".to_string().into()),
         }
