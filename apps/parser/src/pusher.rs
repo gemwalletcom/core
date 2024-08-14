@@ -50,12 +50,18 @@ impl Pusher {
 
         match transaction.transaction_type {
             TransactionType::Transfer => {
-                let title = format!("Transfer {} {}", amount, asset.symbol);
-                let message = if transaction
+                let is_sent = transaction
                     .input_addresses()
                     .contains(&subscription.address)
-                    || transaction.from == subscription.address
-                {
+                    || transaction.from == subscription.address;
+
+                let title = if is_sent {
+                    format!("💸 Sent: {} {}", amount, asset.symbol)
+                } else {
+                    format!("💰 Received: {} {}", amount, asset.symbol)
+                };
+
+                let message = if is_sent {
                     format!("To {}", to_address)
                 } else {
                     format!("From {}", from_address)
@@ -67,9 +73,9 @@ impl Pusher {
             }
             TransactionType::TokenApproval => {
                 let title = if to_address.len() < 12 {
-                    format!("Token Approval of {} for {}", asset.symbol, to_address)
+                    format!("✅ Token Approval of {} for {}", asset.symbol, to_address)
                 } else {
-                    format!("Token Approval for {}", asset.symbol)
+                    format!("✅ Token Approval for {}", asset.symbol)
                 };
                 let message = "".to_string();
                 Ok(Message {
@@ -114,7 +120,7 @@ impl Pusher {
                 })
             }
             TransactionType::StakeRewards => Ok(Message {
-                title: format!("Claim Rewards {} {}", amount, asset.symbol),
+                title: format!("🤑 Claim Rewards {} {}", amount, asset.symbol),
                 message: None,
             }),
             TransactionType::StakeWithdraw => {
@@ -148,7 +154,7 @@ impl Pusher {
                     NumberFormatter::value(metadata.to_value.as_str(), to_asset.decimals)
                         .unwrap_or_default();
 
-                let title = format!("Swap from {} to {}", from_asset.symbol, to_asset.symbol);
+                let title = format!("🔄 Swap from {} to {}", from_asset.symbol, to_asset.symbol);
                 let message = format! {"{} {} > {} {}", from_amount, from_asset.symbol, to_amount, to_asset.symbol};
                 Ok(Message {
                     title,
