@@ -45,3 +45,8 @@ struct NearBroadcastResult {
 struct NearBroadcastTransaction {
     hash: String,
 }
+
+#[typeshare]
+struct NearGenesisConfig {
+    chain_id: String,
+}

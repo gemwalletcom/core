@@ -2,7 +2,7 @@ use primitives::Chain;
 
 #[derive(uniffi::Record, Debug, Clone, PartialEq)]
 pub struct ChainConfig {
-    pub network_id: Option<String>,
+    pub network_id: String,
     pub transaction_timeout: f64,
     pub slip_44: i32,
     pub rank: i32,
@@ -13,7 +13,7 @@ pub struct ChainConfig {
 
 pub fn get_chain_config(chain: Chain) -> ChainConfig {
     return ChainConfig {
-        network_id: Some(chain.network_id().to_string()),
+        network_id: chain.network_id().to_string(),
         transaction_timeout: chain_transaction_timeout_seconds(chain),
         slip_44: chain.as_slip44() as i32,
         rank: chain.rank(),
