@@ -48,13 +48,10 @@ pub fn get_nodes_for_chain(chain: Chain) -> Vec<Node> {
             Node::new("https://binance.llamarpc.com", NodePriority::High),
             Node::new("https://bsc.publicnode.com", NodePriority::High),
         ],
-        Chain::Solana => vec![
-            Node::new(
-                "https://solana-mainnet.rpc.extrnode.com",
-                NodePriority::High,
-            ),
-            Node::new("https://api.mainnet-beta.solana.com", NodePriority::High),
-        ],
+        Chain::Solana => vec![Node::new(
+            "https://api.mainnet-beta.solana.com",
+            NodePriority::High,
+        )],
         Chain::Polygon => vec![
             Node::new("https://polygon.llamarpc.com", NodePriority::High),
             Node::new("https://polygon-rpc.com", NodePriority::High),
