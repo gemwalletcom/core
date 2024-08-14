@@ -1,3 +1,4 @@
+pub mod bitcoin_chain;
 pub mod docs;
 pub mod evm_chain;
 pub mod node;
@@ -8,9 +9,10 @@ pub mod validators;
 pub mod wallet_connect;
 
 use crate::chain::ChainConfig;
-use primitives::{Chain, EVMChain, StakeChain};
+use primitives::{BitcoinChain, Chain, EVMChain, StakeChain};
 use std::{collections::HashMap, str::FromStr};
 use {
+    bitcoin_chain::{get_bitcoin_chain_config, BitcoinChainConfig},
     docs::{get_docs_url, DocsUrl},
     evm_chain::{get_evm_chain_config, EVMChainConfig},
     node::{get_nodes, get_nodes_for_chain, Node},
@@ -60,6 +62,11 @@ impl Config {
     fn get_evm_chain_config(&self, chain: String) -> EVMChainConfig {
         let chain = EVMChain::from_str(&chain).unwrap();
         get_evm_chain_config(chain)
+    }
+
+    fn get_bitcoin_chain_config(&self, chain: String) -> BitcoinChainConfig {
+        let chain = BitcoinChain::from_str(&chain).unwrap();
+        get_bitcoin_chain_config(chain)
     }
 
     fn get_wallet_connect_config(&self) -> WalletConnectConfig {
