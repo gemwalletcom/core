@@ -10,6 +10,7 @@ ios_data='{
   "format": "strings",
   "export_empty_as": "base",
   "export_sort": "first_added",
+  "exclude_tags": ["backend"],
   "bundle_structure": "%LANG_ISO%.lproj/Localizable.%FORMAT%"
 }'
 # Android
@@ -17,9 +18,18 @@ android_data='{
   "format": "xml",
   "export_empty_as": "base",
   "export_sort": "first_added",
+  "exclude_tags": ["backend"],
   "bundle_structure": "values_%LANG_ISO%/strings.%FORMAT%"
 }'
-android_localization_dir="android/app/src/main/res"
+# Core
+core_data='{
+"format": "properties",
+"export_empty_as": "base",
+"export_sort": "first_added",
+"original_filenames": false,
+"include_tags": ["backend"],
+"bundle_structure": "%LANG_ISO%/localization.ftl"
+}'
 
 json_obj_key() {
     key="${1}"
@@ -29,14 +39,14 @@ json_obj_key() {
 download_bundle() {
     temp_file=$(mktemp)
     echo "Downloading bundle ${1} config..."
-    
+
     bundle_url=$(curl --silent --request POST \
     --url https://api.lokalise.com/api2/projects/$project_id/files/download \
     --header "content-type: application/json" \
     --header "x-api-token: $token" \
     --data "${2}" | json_obj_key "bundle_url"
     )
-    
+
     echo "Downloading ${1} bundle file..."
     curl --silent $bundle_url -o ${temp_file}
 
@@ -53,5 +63,8 @@ case $1 in
   ;;
   "android")
     download_bundle "android" "$android_data" $2
+  ;;
+  "core")
+    download_bundle "core" "$core_data" $2
   ;;
 esac
