@@ -1,0 +1,10 @@
+[package]
+name = "localizer"
+version = "1.0.0"
+edition = { workspace = true }
+
+[dependencies]
+i18n-embed = { version = "0.15.0", features = ["fluent-system", "autoreload"] }
+i18n-embed-fl = { version = "0.9.1" }
+once_cell = { version = "1.19.0" }
+rust-embed = { version = "8.5.0" }

@@ -1,5 +1,6 @@
 use std::error::Error;
 
+use localizer::LanguageLocalizer;
 use primitives::{
     AddressFormatter, Chain, NumberFormatter, PushNotification, PushNotificationTypes,
     Subscription, Transaction, TransactionSwapMetadata, TransactionType,
@@ -36,6 +37,7 @@ impl Pusher {
 
     pub fn message(
         &mut self,
+        localizer: LanguageLocalizer,
         transaction: Transaction,
         subscription: Subscription,
     ) -> Result<Message, Box<dyn Error>> {
@@ -55,17 +57,17 @@ impl Pusher {
                     .contains(&subscription.address)
                     || transaction.from == subscription.address;
 
-                let title = if is_sent {
-                    format!("💸 Sent: {} {}", amount, asset.symbol)
-                } else {
-                    format!("💰 Received: {} {}", amount, asset.symbol)
-                };
+                let title = localizer.notification_transfer_title(
+                    is_sent,
+                    self.get_value(amount, asset.symbol).as_str(),
+                );
 
-                let message = if is_sent {
-                    format!("To {}", to_address)
-                } else {
-                    format!("From {}", from_address)
-                };
+                let message = localizer.notification_transfer_description(
+                    is_sent,
+                    to_address.as_str(),
+                    from_address.as_str(),
+                );
+
                 Ok(Message {
                     title,
                     message: Some(message),
@@ -85,7 +87,11 @@ impl Pusher {
             }
             TransactionType::StakeDelegate => {
                 let title = if to_address.len() < 12 {
-                    format!("Stake {} {} to {}", amount, asset.symbol, to_address)
+                    format!(
+                        "Stake {} to {}",
+                        self.get_value(amount, asset.symbol),
+                        to_address
+                    )
                 } else {
                     format!("Stake {} {}", amount, asset.symbol)
                 };
@@ -97,9 +103,13 @@ impl Pusher {
             }
             TransactionType::StakeUndelegate => {
                 let title = if to_address.len() < 12 {
-                    format!("Unstake {} {} from {}", amount, asset.symbol, to_address)
+                    format!(
+                        "Unstake {} from {}",
+                        self.get_value(amount, asset.symbol),
+                        to_address
+                    )
                 } else {
-                    format!("Unstake {} {}", amount, asset.symbol)
+                    format!("Unstake {}", self.get_value(amount, asset.symbol))
                 };
 
                 Ok(Message {
@@ -109,9 +119,13 @@ impl Pusher {
             }
             TransactionType::StakeRedelegate => {
                 let title = if to_address.len() < 12 {
-                    format!("Redelegate {} {} to {}", amount, asset.symbol, to_address)
+                    format!(
+                        "Redelegate {} to {}",
+                        self.get_value(amount, asset.symbol),
+                        to_address
+                    )
                 } else {
-                    format!("Redelegate {} {}", amount, asset.symbol)
+                    format!("Redelegate {}", self.get_value(amount, asset.symbol))
                 };
 
                 Ok(Message {
@@ -120,14 +134,15 @@ impl Pusher {
                 })
             }
             TransactionType::StakeRewards => Ok(Message {
-                title: format!("🤑 Claim Rewards {} {}", amount, asset.symbol),
+                title: format!("🤑 Claim Rewards {}", self.get_value(amount, asset.symbol)),
                 message: None,
             }),
             TransactionType::StakeWithdraw => {
                 let title = if to_address.len() < 12 {
                     format!(
-                        "Withdraw Stake {} {} from {}",
-                        amount, asset.symbol, to_address
+                        "Withdraw Stake {} from {}",
+                        self.get_value(amount, asset.symbol),
+                        to_address
                     )
                 } else {
                     format!("Withdraw Stake {} {}", amount, asset.symbol)
@@ -155,13 +170,17 @@ impl Pusher {
                         .unwrap_or_default();
 
                 let title = format!("🔄 Swap from {} to {}", from_asset.symbol, to_asset.symbol);
-                let message = format! {"{} {} > {} {}", from_amount, from_asset.symbol, to_amount, to_asset.symbol};
+                let message = format! {"{} > {}", self.get_value(from_amount, from_asset.symbol), self.get_value(to_amount, to_asset.symbol)};
                 Ok(Message {
                     title,
                     message: Some(message),
                 })
             }
         }
+    }
+
+    pub fn get_value(&self, amount: String, symbol: String) -> String {
+        format! {"{} {}", amount, symbol}
     }
 
     pub fn get_topic(&self, platform: primitives::Platform) -> Option<String> {
@@ -181,8 +200,8 @@ impl Pusher {
         if !device.is_push_enabled || device.token.is_empty() {
             return Ok(0);
         }
-
-        let message = self.message(transaction.clone(), subscription.clone())?;
+        let localizer = LanguageLocalizer::new_with_language(&device.locale);
+        let message = self.message(localizer, transaction.clone(), subscription.clone())?;
         let data = PushNotification {
             notification_type: PushNotificationTypes::Transaction,
             data: transaction,

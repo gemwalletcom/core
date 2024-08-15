@@ -35,6 +35,8 @@ members = [
 
     "crates/gem_*",
     "crates/swap_*",
+
+    "crates/localizer",
 ]
 
 default-members = [

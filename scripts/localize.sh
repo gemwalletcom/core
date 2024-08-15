@@ -4,13 +4,14 @@ set -e
 
 # public read only
 token="d27a64f96c062117da75b13ce34519a84a89d203"
-project_id="94865410644ee707546334.60736699"
+mobile_project_id="94865410644ee707546334.60736699"
+core_project_id="2608747066be591cd57427.16218028"
+
 # iOS
 ios_data='{
   "format": "strings",
   "export_empty_as": "base",
   "export_sort": "first_added",
-  "exclude_tags": ["backend"],
   "bundle_structure": "%LANG_ISO%.lproj/Localizable.%FORMAT%"
 }'
 # Android
@@ -18,7 +19,6 @@ android_data='{
   "format": "xml",
   "export_empty_as": "base",
   "export_sort": "first_added",
-  "exclude_tags": ["backend"],
   "bundle_structure": "values_%LANG_ISO%/strings.%FORMAT%"
 }'
 # Core
@@ -27,8 +27,7 @@ core_data='{
 "export_empty_as": "base",
 "export_sort": "first_added",
 "original_filenames": false,
-"include_tags": ["backend"],
-"bundle_structure": "%LANG_ISO%/localization.ftl"
+"bundle_structure": "%LANG_ISO%/localizer.ftl"
 }'
 
 json_obj_key() {
@@ -41,7 +40,7 @@ download_bundle() {
     echo "Downloading bundle ${1} config..."
 
     bundle_url=$(curl --silent --request POST \
-    --url https://api.lokalise.com/api2/projects/$project_id/files/download \
+    --url https://api.lokalise.com/api2/projects/$4/files/download \
     --header "content-type: application/json" \
     --header "x-api-token: $token" \
     --data "${2}" | json_obj_key "bundle_url"
@@ -59,12 +58,12 @@ download_bundle() {
 
 case $1 in
   "ios")
-    download_bundle "ios" "$ios_data" $2
+    download_bundle "ios" "$ios_data" $2 $mobile_project_id
   ;;
   "android")
-    download_bundle "android" "$android_data" $2
+    download_bundle "android" "$android_data" $2 $mobile_project_id
   ;;
   "core")
-    download_bundle "core" "$core_data" $2
+    download_bundle "core" "$core_data" $2 $core_project_id
   ;;
 esac
