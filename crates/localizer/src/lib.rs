@@ -101,4 +101,107 @@ impl LanguageLocalizer {
             )
         }
     }
+
+    pub fn notification_token_approval_title(&self, token: &str, address: &str) -> String {
+        fl!(
+            self.loader.as_ref(),
+            "notification_token_approval_title",
+            token = token,
+            address = address
+        )
+    }
+
+    pub fn notification_stake_title(&self, value: &str, validator: &str) -> String {
+        if validator.len() < 12 {
+            fl!(
+                self.loader.as_ref(),
+                "notification_stake_validator_title",
+                value = value,
+                validator = validator
+            )
+        } else {
+            fl!(
+                self.loader.as_ref(),
+                "notification_stake_title",
+                value = value
+            )
+        }
+    }
+
+    pub fn notification_unstake_title(&self, value: &str, validator: &str) -> String {
+        if validator.len() < 12 {
+            fl!(
+                self.loader.as_ref(),
+                "notification_unstake_validator_title",
+                value = value,
+                validator = validator
+            )
+        } else {
+            fl!(
+                self.loader.as_ref(),
+                "notification_unstake_title",
+                value = value
+            )
+        }
+    }
+
+    pub fn notification_redelegate_title(&self, value: &str, validator: &str) -> String {
+        if validator.len() < 12 {
+            fl!(
+                self.loader.as_ref(),
+                "notification_redelegate_validator_title",
+                value = value,
+                validator = validator
+            )
+        } else {
+            fl!(
+                self.loader.as_ref(),
+                "notification_redelegate_title",
+                value = value
+            )
+        }
+    }
+
+    pub fn notification_withdraw_stake_title(&self, value: &str, validator: &str) -> String {
+        if validator.len() < 12 {
+            fl!(
+                self.loader.as_ref(),
+                "notification_withdraw_stake_validator_title",
+                value = value,
+                validator = validator
+            )
+        } else {
+            fl!(
+                self.loader.as_ref(),
+                "notification_withdraw_stake_title",
+                value = value
+            )
+        }
+    }
+
+    pub fn notification_claim_rewards_title(&self, value: &str) -> String {
+        fl!(
+            self.loader.as_ref(),
+            "notification_claim_rewards_title",
+            value = value
+        )
+    }
+
+    pub fn notification_swap_title(&self, from_symbol: &str, to_symbol: &str) -> String {
+        fl!(
+            self.loader.as_ref(),
+            "notification_swap_title",
+            from_symbol = from_symbol,
+            to_symbol = to_symbol
+        )
+    }
+
+    pub fn notification_swap_description(&self, from_value: &str, to_value: &str) -> String {
+        fl!(
+            self.loader.as_ref(),
+            "notification_swap_description",
+            from_value = from_value,
+            to_value = to_value
+        )
+    }
 }
