@@ -17,3 +17,4 @@ settings = { path = "../../crates/settings" }
 settings_chain = { path = "../../crates/settings_chain" }
 gem_chain_rpc = { path = "../../crates/gem_chain_rpc" }
 api_connector = { path = "../../crates/api_connector" }
+localizer = { path = "../../crates/localizer" }
