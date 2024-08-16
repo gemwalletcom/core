@@ -27,6 +27,20 @@ core_data='{
 "export_empty_as": "base",
 "export_sort": "first_added",
 "original_filenames": false,
+"language_mapping": [
+    {
+      "original_language_iso": "zh_CN",
+      "custom_language_iso": "zh-Hans"
+    },
+    {
+      "original_language_iso": "zh_TW",
+      "custom_language_iso": "zh-Hant"
+    },
+    {
+      "original_language_iso": "pt_BR",
+      "custom_language_iso": "pt-BR"
+    }
+],
 "bundle_structure": "%LANG_ISO%/localizer.ftl"
 }'
 

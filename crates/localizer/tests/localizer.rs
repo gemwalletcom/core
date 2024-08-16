@@ -10,6 +10,10 @@ fn test_specific_language() {
     localizer.select_language("de").unwrap();
 
     assert_eq!(&localizer.test(), "Prüfen");
+
+    localizer.select_language("pt-BR").unwrap();
+
+    assert_eq!(&localizer.test(), "Teste");
 }
 
 #[test]
@@ -25,4 +29,9 @@ fn test_pass_argment() {
         &localizer.notification_transfer_title(true, "1 BTC"),
         "💸 Enviado: \u{2068}1 BTC\u{2069}"
     );
+}
+
+#[test]
+fn test_language_identifier() {
+    assert_eq!(LanguageLocalizer::language_identifier("en_US"), "en");
 }
