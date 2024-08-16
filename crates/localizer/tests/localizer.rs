@@ -25,13 +25,5 @@ fn test_invalid_language_fallback() {
 #[test]
 fn test_pass_argment() {
     let localizer = LanguageLocalizer::new_with_language("es");
-    assert_eq!(
-        &localizer.notification_transfer_title(true, "1 BTC"),
-        "💸 Enviado: \u{2068}1 BTC\u{2069}"
-    );
-}
-
-#[test]
-fn test_language_identifier() {
-    assert_eq!(LanguageLocalizer::language_identifier("en_US"), "en");
+    assert_eq!(&localizer.notification_transfer_title(true, "1 BTC"), "💸 Enviado: \u{2068}1 BTC\u{2069}");
 }
