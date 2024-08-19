@@ -14,10 +14,8 @@ pub struct Metadata {
     /// Account discriminator.
     pub key: Key,
     /// Address of the update authority.
-    #[cfg_attr(feature = "serde-feature", serde(with = "As::<DisplayFromStr>"))]
     pub update_authority: Pubkey,
     /// Address of the mint.
-    #[cfg_attr(feature = "serde-feature", serde(with = "As::<DisplayFromStr>"))]
     pub mint: Pubkey,
     /// Asset data.
     pub data: Data,

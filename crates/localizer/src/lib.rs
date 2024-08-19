@@ -29,6 +29,12 @@ pub struct LanguageLocalizer {
     localizer: DefaultLocalizer<'static>,
 }
 
+impl Default for LanguageLocalizer {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl LanguageLocalizer {
     pub fn new() -> Self {
         let loader = Arc::new(fluent_language_loader!());
@@ -45,7 +51,7 @@ impl LanguageLocalizer {
     pub fn new_with_language(language: &str) -> Self {
         let localizer = Self::new();
         localizer.select_language(language).unwrap_or_default();
-        return localizer;
+        localizer
     }
 
     pub fn select_language(&self, language: &str) -> Result<bool, Box<dyn std::error::Error + Send + Sync>> {
@@ -88,7 +94,12 @@ impl LanguageLocalizer {
 
     pub fn notification_unstake_title(&self, value: &str, validator: &str) -> String {
         if validator.len() < 12 {
-            fl!(self.loader.as_ref(), "notification_unstake_validator_title", value = value, validator = validator)
+            fl!(
+                self.loader.as_ref(),
+                "notification_unstake_validator_title",
+                value = value,
+                validator = validator
+            )
         } else {
             fl!(self.loader.as_ref(), "notification_unstake_title", value = value)
         }
@@ -96,7 +107,12 @@ impl LanguageLocalizer {
 
     pub fn notification_redelegate_title(&self, value: &str, validator: &str) -> String {
         if validator.len() < 12 {
-            fl!(self.loader.as_ref(), "notification_redelegate_validator_title", value = value, validator = validator)
+            fl!(
+                self.loader.as_ref(),
+                "notification_redelegate_validator_title",
+                value = value,
+                validator = validator
+            )
         } else {
             fl!(self.loader.as_ref(), "notification_redelegate_title", value = value)
         }
@@ -104,7 +120,12 @@ impl LanguageLocalizer {
 
     pub fn notification_withdraw_stake_title(&self, value: &str, validator: &str) -> String {
         if validator.len() < 12 {
-            fl!(self.loader.as_ref(), "notification_withdraw_stake_validator_title", value = value, validator = validator)
+            fl!(
+                self.loader.as_ref(),
+                "notification_withdraw_stake_validator_title",
+                value = value,
+                validator = validator
+            )
         } else {
             fl!(self.loader.as_ref(), "notification_withdraw_stake_title", value = value)
         }
@@ -115,10 +136,20 @@ impl LanguageLocalizer {
     }
 
     pub fn notification_swap_title(&self, from_symbol: &str, to_symbol: &str) -> String {
-        fl!(self.loader.as_ref(), "notification_swap_title", from_symbol = from_symbol, to_symbol = to_symbol)
+        fl!(
+            self.loader.as_ref(),
+            "notification_swap_title",
+            from_symbol = from_symbol,
+            to_symbol = to_symbol
+        )
     }
 
     pub fn notification_swap_description(&self, from_value: &str, to_value: &str) -> String {
-        fl!(self.loader.as_ref(), "notification_swap_description", from_value = from_value, to_value = to_value)
+        fl!(
+            self.loader.as_ref(),
+            "notification_swap_description",
+            from_value = from_value,
+            to_value = to_value
+        )
     }
 }
