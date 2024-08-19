@@ -35,6 +35,8 @@ members = [
 
     "crates/gem_*",
     "crates/swap_*",
+
+    "crates/localizer",
 ]
 
 default-members = [
@@ -99,3 +101,9 @@ borsh = { version = "1.4.0", features = ["derive"] }
 uniffi = { version = "0.28.0" }
 uniffi_bindgen = { version = "0.28.0" }
 alloy-core = { version = "0.7.0", features = ["sol-types", "json-abi"] }
+
+# localizer
+i18n-embed = { version = "0.15.0", features = ["fluent-system", "autoreload"] }
+i18n-embed-fl = { version = "0.9.1" }
+once_cell = { version = "1.19.0" }
+rust-embed = { version = "8.5.0" }

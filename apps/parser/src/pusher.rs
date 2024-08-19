@@ -1,5 +1,6 @@
 use std::error::Error;
 
+use localizer::LanguageLocalizer;
 use primitives::{
     AddressFormatter, Chain, NumberFormatter, PushNotification, PushNotificationTypes,
     Subscription, Transaction, TransactionSwapMetadata, TransactionType,
@@ -36,6 +37,7 @@ impl Pusher {
 
     pub fn message(
         &mut self,
+        localizer: LanguageLocalizer,
         transaction: Transaction,
         subscription: Subscription,
     ) -> Result<Message, Box<dyn Error>> {
@@ -50,88 +52,66 @@ impl Pusher {
 
         match transaction.transaction_type {
             TransactionType::Transfer => {
-                let title = format!("Transfer {} {}", amount, asset.symbol);
-                let message = if transaction
+                let is_sent = transaction
                     .input_addresses()
                     .contains(&subscription.address)
-                    || transaction.from == subscription.address
-                {
-                    format!("To {}", to_address)
-                } else {
-                    format!("From {}", from_address)
-                };
+                    || transaction.from == subscription.address;
+
+                let title = localizer.notification_transfer_title(
+                    is_sent,
+                    self.get_value(amount, asset.symbol).as_str(),
+                );
+
+                let message = localizer.notification_transfer_description(
+                    is_sent,
+                    to_address.as_str(),
+                    from_address.as_str(),
+                );
+
                 Ok(Message {
                     title,
                     message: Some(message),
                 })
             }
-            TransactionType::TokenApproval => {
-                let title = if to_address.len() < 12 {
-                    format!("Token Approval of {} for {}", asset.symbol, to_address)
-                } else {
-                    format!("Token Approval for {}", asset.symbol)
-                };
-                let message = "".to_string();
-                Ok(Message {
-                    title,
-                    message: Some(message),
-                })
-            }
-            TransactionType::StakeDelegate => {
-                let title = if to_address.len() < 12 {
-                    format!("Stake {} {} to {}", amount, asset.symbol, to_address)
-                } else {
-                    format!("Stake {} {}", amount, asset.symbol)
-                };
-
-                Ok(Message {
-                    title,
-                    message: None,
-                })
-            }
-            TransactionType::StakeUndelegate => {
-                let title = if to_address.len() < 12 {
-                    format!("Unstake {} {} from {}", amount, asset.symbol, to_address)
-                } else {
-                    format!("Unstake {} {}", amount, asset.symbol)
-                };
-
-                Ok(Message {
-                    title,
-                    message: None,
-                })
-            }
-            TransactionType::StakeRedelegate => {
-                let title = if to_address.len() < 12 {
-                    format!("Redelegate {} {} to {}", amount, asset.symbol, to_address)
-                } else {
-                    format!("Redelegate {} {}", amount, asset.symbol)
-                };
-
-                Ok(Message {
-                    title,
-                    message: None,
-                })
-            }
-            TransactionType::StakeRewards => Ok(Message {
-                title: format!("Claim Rewards {} {}", amount, asset.symbol),
+            TransactionType::TokenApproval => Ok(Message {
+                title: localizer
+                    .notification_token_approval_title(asset.symbol.as_str(), to_address.as_str()),
                 message: None,
             }),
-            TransactionType::StakeWithdraw => {
-                let title = if to_address.len() < 12 {
-                    format!(
-                        "Withdraw Stake {} {} from {}",
-                        amount, asset.symbol, to_address
-                    )
-                } else {
-                    format!("Withdraw Stake {} {}", amount, asset.symbol)
-                };
-
-                Ok(Message {
-                    title,
-                    message: None,
-                })
-            }
+            TransactionType::StakeDelegate => Ok(Message {
+                title: localizer.notification_stake_title(
+                    self.get_value(amount, asset.symbol).as_str(),
+                    to_address.as_str(),
+                ),
+                message: None,
+            }),
+            TransactionType::StakeUndelegate => Ok(Message {
+                title: localizer.notification_unstake_title(
+                    self.get_value(amount, asset.symbol).as_str(),
+                    to_address.as_str(),
+                ),
+                message: None,
+            }),
+            TransactionType::StakeRedelegate => Ok(Message {
+                title: localizer.notification_redelegate_title(
+                    self.get_value(amount, asset.symbol).as_str(),
+                    to_address.as_str(),
+                ),
+                message: None,
+            }),
+            TransactionType::StakeRewards => Ok(Message {
+                title: localizer.notification_claim_rewards_title(
+                    self.get_value(amount, asset.symbol).as_str(),
+                ),
+                message: None,
+            }),
+            TransactionType::StakeWithdraw => Ok(Message {
+                title: localizer.notification_withdraw_stake_title(
+                    self.get_value(amount, asset.symbol).as_str(),
+                    to_address.as_str(),
+                ),
+                message: None,
+            }),
             TransactionType::Swap => {
                 let metadata = transaction.metadata.ok_or("Missing metadata")?;
                 let metadata: TransactionSwapMetadata = serde_json::from_value(metadata)?;
@@ -148,14 +128,22 @@ impl Pusher {
                     NumberFormatter::value(metadata.to_value.as_str(), to_asset.decimals)
                         .unwrap_or_default();
 
-                let title = format!("Swap from {} to {}", from_asset.symbol, to_asset.symbol);
-                let message = format! {"{} {} > {} {}", from_amount, from_asset.symbol, to_amount, to_asset.symbol};
                 Ok(Message {
-                    title,
-                    message: Some(message),
+                    title: localizer.notification_swap_title(
+                        from_asset.symbol.as_str(),
+                        to_asset.symbol.as_str(),
+                    ),
+                    message: Some(localizer.notification_swap_description(
+                        self.get_value(from_amount, from_asset.symbol).as_str(),
+                        self.get_value(to_amount, to_asset.symbol).as_str(),
+                    )),
                 })
             }
         }
+    }
+
+    pub fn get_value(&self, amount: String, symbol: String) -> String {
+        format! {"{} {}", amount, symbol}
     }
 
     pub fn get_topic(&self, platform: primitives::Platform) -> Option<String> {
@@ -175,8 +163,8 @@ impl Pusher {
         if !device.is_push_enabled || device.token.is_empty() {
             return Ok(0);
         }
-
-        let message = self.message(transaction.clone(), subscription.clone())?;
+        let localizer = LanguageLocalizer::new_with_language(&device.locale);
+        let message = self.message(localizer, transaction.clone(), subscription.clone())?;
         let data = PushNotification {
             notification_type: PushNotificationTypes::Transaction,
             data: transaction,

@@ -35,3 +35,6 @@ unused:
 
 migrate:
 	diesel migration run
+
+localize:
+	@sh scripts/localize.sh core crates/localizer/i18n

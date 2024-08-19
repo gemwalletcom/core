@@ -101,15 +101,15 @@ impl Chain {
             Self::Linea => "59144",
             Self::Mantle => "5000",
             Self::Celo => "42220",
-            Self::Near => "1",
+            Self::Near => "mainnet",
             Self::Bitcoin => "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f",
             Self::Litecoin => "12a765e31ffd4059bada1e25190f6e98c99d9714d334efa41a195a7e7e04bfe2",
             Self::Doge => "1a91e3dace36e2be3bf030a65679fe821aa1d6ef92e7c9902eb318182c355691",
             Self::Solana => "5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d",
-            //Self::Ton => "F6OpKZKqvqeFp6CQmFomXNMfMj2EnaUSOXN+Mh+wVWk=",
+            Self::Ton => "F6OpKZKqvqeFp6CQmFomXNMfMj2EnaUSOXN+Mh+wVWk=",
             Self::Sui => "35834a8a", // https://docs.sui.io/sui-api-ref#sui_getchainidentifier
             Self::Aptos => "1",
-            Self::Ton | Self::Tron | Self::Xrp => "",
+            Self::Tron | Self::Xrp => "",
         }
     }
 
