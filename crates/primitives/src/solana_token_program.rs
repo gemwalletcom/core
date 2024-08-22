@@ -1,5 +1,5 @@
 #[typeshare(swift = "Equatable, Codable, Hashable")]
-pub enum SolanaTokenProgram {
+pub enum SolanaTokenProgramId {
     Token,
     Token2022,
 }
