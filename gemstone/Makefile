@@ -35,7 +35,7 @@ TARGET_DIR := ../target
 GEN_SWIFT_FOLDER := generated/swift
 GEN_KOTLIN_FOLDER := generated/kotlin
 TARGET_XC_FW_FOLDER := target/spm
-NIGHTLY := nightly-2023-12-23
+NIGHTLY := nightly-2024-08-21
 
 ANDROID_HOME ?= ~/Library/Android/sdk
 SDK_MANAGER = ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager
