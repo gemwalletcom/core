@@ -9,7 +9,8 @@ pub mod validators;
 pub mod wallet_connect;
 
 use crate::chain::ChainConfig;
-use primitives::{BitcoinChain, Chain, EVMChain, StakeChain};
+use gem_solana;
+use primitives::{BitcoinChain, Chain, EVMChain, SolanaTokenProgramId, StakeChain};
 use std::{collections::HashMap, str::FromStr};
 use {
     bitcoin_chain::{get_bitcoin_chain_config, BitcoinChainConfig},
@@ -95,5 +96,10 @@ impl Config {
             .into_iter()
             .map(|x| x.name())
             .collect()
+    }
+
+    fn get_solana_token_program(&self, id: &str) -> String {
+        let id = SolanaTokenProgramId::from_str(id).unwrap();
+        gem_solana::get_token_program_by_id(id).to_string()
     }
 }
