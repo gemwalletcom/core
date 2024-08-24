@@ -102,4 +102,8 @@ impl Config {
         let id = SolanaTokenProgramId::from_str(id).unwrap();
         gem_solana::get_token_program_by_id(id).to_string()
     }
+
+    fn get_solana_token_program_id(&self, address: &str) -> Option<String> {
+        gem_solana::get_token_program_id_by_address(address).map(|x| x.as_ref().to_string())
+    }
 }
