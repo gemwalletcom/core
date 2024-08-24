@@ -12,6 +12,7 @@ pub struct Banner {
 pub enum BannerEvent {
     stake,
     account_activation,
+    enable_notifications,
 }
 
 #[typeshare(swift = "Equatable, Codable, CaseIterable")]
