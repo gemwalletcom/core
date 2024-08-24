@@ -72,10 +72,7 @@ pub use self::push_notification::PushNotificationTypes;
 pub mod scan;
 pub use self::scan::ScanAddress;
 pub mod swap;
-pub use self::swap::{
-    SwapMode, SwapProvider, SwapQuote, SwapQuoteData, SwapQuoteProtocolRequest, SwapQuoteRequest,
-    SwapQuoteResult,
-};
+pub use self::swap::{SwapMode, SwapProvider, SwapQuote, SwapQuoteData, SwapQuoteProtocolRequest, SwapQuoteRequest, SwapQuoteResult};
 pub mod transaction_metadata_types;
 pub use self::transaction_metadata_types::TransactionSwapMetadata;
 pub mod number_formatter;
@@ -97,3 +94,5 @@ pub mod eip712;
 pub mod encoding_type;
 pub mod erc2612;
 pub mod explorers;
+pub mod solana_token_program;
+pub use self::solana_token_program::SolanaTokenProgramId;

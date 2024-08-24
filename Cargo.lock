@@ -2905,6 +2905,7 @@ dependencies = [
  "borsh",
  "bs58 0.5.1",
  "curve25519-dalek",
+ "primitives",
  "sha2 0.10.8",
  "thiserror",
 ]
