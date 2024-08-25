@@ -36,14 +36,16 @@ GEN_SWIFT_FOLDER := generated/swift
 GEN_KOTLIN_FOLDER := generated/kotlin
 TARGET_XC_FW_FOLDER := target/spm
 NIGHTLY := nightly-2024-08-21
+NIGHTLY_RESULT=$(shell rustup toolchain list | grep $(NIGHTLY))
 
 ANDROID_HOME ?= ~/Library/Android/sdk
 SDK_MANAGER = ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager
 
-prepare-apple:
-	rustup toolchain install $(NIGHTLY)
+prepare-apple: install-nightly
 	rustup target add aarch64-apple-ios-sim aarch64-apple-ios
-	rustup component add rust-src --toolchain $(NIGHTLY)
+
+install-nightly:
+	@test -n "${NIGHTLY_RESULT}" || (echo "Installing nightly"; rustup toolchain install ${NIGHTLY} && rustup component add rust-src --toolchain $(NIGHTLY))
 
 prepare-android:
 	rustup toolchain install stable
@@ -63,7 +65,7 @@ test-ios:
 
 bindgen: bindgen-swift bindgen-kotlin
 
-build-targets:
+build-targets: install-nightly
 	@echo "iOS deployment target ${IPHONEOS_DEPLOYMENT_TARGET}"
 	IPHONEOS_DEPLOYMENT_TARGET=${IPHONEOS_DEPLOYMENT_TARGET} cargo build --timings --target aarch64-apple-ios-sim --target aarch64-apple-ios --$(BUILD_MODE)
 	IPHONEOS_DEPLOYMENT_TARGET=${IPHONEOS_DEPLOYMENT_TARGET} cargo +$(NIGHTLY) build --timings -Z build-std --lib --target aarch64-apple-ios-macabi --$(BUILD_MODE)
