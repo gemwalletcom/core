@@ -6,6 +6,9 @@ struct Wallet {
     #[serde(rename = "type")]
     wallet_type: WalletType,
     accounts: Vec<Account>,
+    order: i32,
+    #[serde(rename = "isPinned")]
+    is_pinned: bool,
 }
 
 #[typeshare(swift = "Equatable, Codable, Hashable")]
