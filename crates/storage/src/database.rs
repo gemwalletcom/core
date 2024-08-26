@@ -19,8 +19,7 @@ pub struct DatabaseClient {
 
 impl DatabaseClient {
     pub fn new(database_url: &str) -> Self {
-        let connection = PgConnection::establish(database_url)
-            .unwrap_or_else(|_| panic!("Error connecting to {}", database_url));
+        let connection = PgConnection::establish(database_url).unwrap_or_else(|_| panic!("Error connecting to {}", database_url));
 
         Self { connection }
     }
@@ -30,37 +29,17 @@ impl DatabaseClient {
         nodes.select(Node::as_select()).load(&mut self.connection)
     }
 
-    pub fn get_nodes_version(&mut self) -> Result<i32, diesel::result::Error> {
-        let version = self
-            .get_nodes()?
-            .iter()
-            .map(|x| x.id)
-            .collect::<Vec<i32>>()
-            .iter()
-            .sum();
-        Ok(version)
-    }
-
     pub fn get_versions(&mut self) -> Result<Vec<Version>, diesel::result::Error> {
         use crate::schema::versions::dsl::*;
-        versions
-            .order(id.asc())
-            .select(Version::as_select())
-            .load(&mut self.connection)
+        versions.order(id.asc()).select(Version::as_select()).load(&mut self.connection)
     }
 
     pub fn get_tokenlists(&mut self) -> Result<Vec<TokenList>, diesel::result::Error> {
         use crate::schema::tokenlists::dsl::*;
-        tokenlists
-            .select(TokenList::as_select())
-            .load(&mut self.connection)
+        tokenlists.select(TokenList::as_select()).load(&mut self.connection)
     }
 
-    pub fn set_tokenlist_version(
-        &mut self,
-        _chain: String,
-        _version: i32,
-    ) -> Result<usize, diesel::result::Error> {
+    pub fn set_tokenlist_version(&mut self, _chain: String, _version: i32) -> Result<usize, diesel::result::Error> {
         use crate::schema::tokenlists::dsl::*;
         diesel::update(tokenlists)
             .filter(chain.eq(_chain))
@@ -69,10 +48,7 @@ impl DatabaseClient {
     }
 
     // fiat
-    pub fn add_fiat_assets(
-        &mut self,
-        values: Vec<FiatAsset>,
-    ) -> Result<usize, diesel::result::Error> {
+    pub fn add_fiat_assets(&mut self, values: Vec<FiatAsset>) -> Result<usize, diesel::result::Error> {
         use crate::schema::fiat_assets::dsl::*;
         diesel::insert_into(fiat_assets)
             .values(values)
@@ -88,10 +64,7 @@ impl DatabaseClient {
             .execute(&mut self.connection)
     }
 
-    pub fn add_fiat_providers(
-        &mut self,
-        values: Vec<FiatProvider>,
-    ) -> Result<usize, diesel::result::Error> {
+    pub fn add_fiat_providers(&mut self, values: Vec<FiatProvider>) -> Result<usize, diesel::result::Error> {
         use crate::schema::fiat_providers::dsl::*;
         diesel::insert_into(fiat_providers)
             .values(values)
@@ -99,10 +72,7 @@ impl DatabaseClient {
             .execute(&mut self.connection)
     }
 
-    pub fn add_fiat_transaction(
-        &mut self,
-        transaction: FiatTransaction,
-    ) -> Result<usize, diesel::result::Error> {
+    pub fn add_fiat_transaction(&mut self, transaction: FiatTransaction) -> Result<usize, diesel::result::Error> {
         use crate::schema::fiat_transactions::dsl::*;
 
         let update = FiatTransactionUpdate {
@@ -124,9 +94,7 @@ impl DatabaseClient {
 
     pub fn get_fiat_assets(&mut self) -> Result<Vec<FiatAsset>, diesel::result::Error> {
         use crate::schema::fiat_assets::dsl::*;
-        fiat_assets
-            .select(FiatAsset::as_select())
-            .load(&mut self.connection)
+        fiat_assets.select(FiatAsset::as_select()).load(&mut self.connection)
     }
 
     pub fn get_fiat_assets_version(&mut self) -> Result<i32, diesel::result::Error> {
@@ -134,10 +102,7 @@ impl DatabaseClient {
         Ok(version as i32)
     }
 
-    pub fn get_fiat_assets_for_asset_id(
-        &mut self,
-        _asset_id: &str,
-    ) -> Result<Vec<FiatAsset>, diesel::result::Error> {
+    pub fn get_fiat_assets_for_asset_id(&mut self, _asset_id: &str) -> Result<Vec<FiatAsset>, diesel::result::Error> {
         use crate::schema::fiat_assets::dsl::*;
         fiat_assets::table()
             .inner_join(fiat_providers::table)
@@ -167,10 +132,7 @@ impl DatabaseClient {
             .execute(&mut self.connection)
     }
 
-    pub fn set_prices_simple(
-        &mut self,
-        values: Vec<Price>,
-    ) -> Result<usize, diesel::result::Error> {
+    pub fn set_prices_simple(&mut self, values: Vec<Price>) -> Result<usize, diesel::result::Error> {
         use crate::schema::prices::dsl::*;
         diesel::insert_into(prices)
             .values(&values)
@@ -186,10 +148,7 @@ impl DatabaseClient {
             .execute(&mut self.connection)
     }
 
-    pub fn set_prices_assets(
-        &mut self,
-        values: Vec<PriceAsset>,
-    ) -> Result<usize, diesel::result::Error> {
+    pub fn set_prices_assets(&mut self, values: Vec<PriceAsset>) -> Result<usize, diesel::result::Error> {
         use crate::schema::prices_assets::dsl::*;
         diesel::insert_into(prices_assets)
             .values(&values)
@@ -204,9 +163,7 @@ impl DatabaseClient {
 
     pub fn get_prices_assets(&mut self) -> Result<Vec<PriceAsset>, diesel::result::Error> {
         use crate::schema::prices_assets::dsl::*;
-        prices_assets
-            .select(PriceAsset::as_select())
-            .load(&mut self.connection)
+        prices_assets.select(PriceAsset::as_select()).load(&mut self.connection)
     }
 
     pub fn get_price(&mut self, asset_id: &str) -> Result<Price, diesel::result::Error> {
@@ -218,24 +175,14 @@ impl DatabaseClient {
             .first(&mut self.connection)
     }
 
-    pub fn get_prices_id_for_asset_id(
-        &mut self,
-        id: &str,
-    ) -> Result<Vec<PriceAsset>, diesel::result::Error> {
+    pub fn get_prices_id_for_asset_id(&mut self, id: &str) -> Result<Vec<PriceAsset>, diesel::result::Error> {
         use crate::schema::prices_assets::dsl::*;
-        prices_assets
-            .filter(asset_id.eq(id))
-            .select(PriceAsset::as_select())
-            .load(&mut self.connection)
+        prices_assets.filter(asset_id.eq(id)).select(PriceAsset::as_select()).load(&mut self.connection)
     }
 
-    pub fn delete_prices_updated_at_before(
-        &mut self,
-        time: NaiveDateTime,
-    ) -> Result<usize, diesel::result::Error> {
+    pub fn delete_prices_updated_at_before(&mut self, time: NaiveDateTime) -> Result<usize, diesel::result::Error> {
         use crate::schema::prices::dsl::*;
-        diesel::delete(prices.filter(last_updated_at.lt(time).or(last_updated_at.is_null())))
-            .execute(&mut self.connection)
+        diesel::delete(prices.filter(last_updated_at.lt(time).or(last_updated_at.is_null()))).execute(&mut self.connection)
     }
 
     pub fn set_fiat_rates(&mut self, rates: Vec<FiatRate>) -> Result<usize, diesel::result::Error> {
@@ -250,17 +197,12 @@ impl DatabaseClient {
 
     pub fn get_fiat_rates(&mut self) -> Result<Vec<FiatRate>, diesel::result::Error> {
         use crate::schema::fiat_rates::dsl::*;
-        fiat_rates
-            .select(FiatRate::as_select())
-            .load(&mut self.connection)
+        fiat_rates.select(FiatRate::as_select()).load(&mut self.connection)
     }
 
     pub fn get_fiat_rate(&mut self, currency: &str) -> Result<FiatRate, diesel::result::Error> {
         use crate::schema::fiat_rates::dsl::*;
-        fiat_rates
-            .filter(symbol.eq(currency))
-            .select(FiatRate::as_select())
-            .first(&mut self.connection)
+        fiat_rates.filter(symbol.eq(currency)).select(FiatRate::as_select()).first(&mut self.connection)
     }
 
     pub fn set_version(&mut self, version: Version) -> Result<usize, diesel::result::Error> {
@@ -269,11 +211,7 @@ impl DatabaseClient {
             .values(&version)
             .on_conflict(platform)
             .do_update()
-            .set((
-                production.eq(excluded(production)),
-                beta.eq(excluded(beta)),
-                alpha.eq(excluded(alpha)),
-            ))
+            .set((production.eq(excluded(production)), beta.eq(excluded(beta)), alpha.eq(excluded(alpha))))
             .execute(&mut self.connection)
     }
 
@@ -287,26 +225,17 @@ impl DatabaseClient {
 
     pub fn get_device_by_id(&mut self, _id: i32) -> Result<Device, diesel::result::Error> {
         use crate::schema::devices::dsl::*;
-        devices
-            .filter(id.eq(_id))
-            .select(Device::as_select())
-            .first(&mut self.connection)
+        devices.filter(id.eq(_id)).select(Device::as_select()).first(&mut self.connection)
     }
 
     pub fn get_device(&mut self, _device_id: &str) -> Result<Device, diesel::result::Error> {
         use crate::schema::devices::dsl::*;
-        devices
-            .filter(device_id.eq(_device_id))
-            .select(Device::as_select())
-            .first(&mut self.connection)
+        devices.filter(device_id.eq(_device_id)).select(Device::as_select()).first(&mut self.connection)
     }
 
     pub fn get_device_token(&mut self, _device_id: &str) -> Result<String, diesel::result::Error> {
         use crate::schema::devices::dsl::*;
-        devices
-            .filter(device_id.eq(_device_id))
-            .select(token)
-            .first(&mut self.connection)
+        devices.filter(device_id.eq(_device_id)).select(token).first(&mut self.connection)
     }
 
     pub fn update_device(&mut self, device: UpdateDevice) -> Result<Device, diesel::result::Error> {
@@ -323,11 +252,7 @@ impl DatabaseClient {
         diesel::delete(devices.filter(device_id.eq(_device_id))).execute(&mut self.connection)
     }
 
-    pub fn update_device_is_push_enabled(
-        &mut self,
-        _device_id: &str,
-        value: bool,
-    ) -> Result<usize, diesel::result::Error> {
+    pub fn update_device_is_push_enabled(&mut self, _device_id: &str, value: bool) -> Result<usize, diesel::result::Error> {
         use crate::schema::devices::dsl::*;
         diesel::update(devices)
             .filter(device_id.eq(_device_id))
@@ -336,27 +261,18 @@ impl DatabaseClient {
     }
 
     // Delete subscriptions for inactive devices
-    pub fn delete_devices_subscriptions_after_days(
-        &mut self,
-        days: i64,
-    ) -> Result<usize, diesel::result::Error> {
+    pub fn delete_devices_subscriptions_after_days(&mut self, days: i64) -> Result<usize, diesel::result::Error> {
         let cutoff_date = Utc::now() - Duration::days(days);
 
         let device_ids_query = crate::schema::devices::table
             .filter(crate::schema::devices::updated_at.lt(cutoff_date.naive_utc()))
             .select(crate::schema::devices::id);
 
-        diesel::delete(
-            crate::schema::subscriptions::table
-                .filter(crate::schema::subscriptions::device_id.eq_any(device_ids_query)),
-        )
-        .execute(&mut self.connection)
+        diesel::delete(crate::schema::subscriptions::table.filter(crate::schema::subscriptions::device_id.eq_any(device_ids_query)))
+            .execute(&mut self.connection)
     }
 
-    pub fn get_parser_state(
-        &mut self,
-        _chain: Chain,
-    ) -> Result<ParserState, diesel::result::Error> {
+    pub fn get_parser_state(&mut self, _chain: Chain) -> Result<ParserState, diesel::result::Error> {
         use crate::schema::parser_state::dsl::*;
         parser_state
             .filter(chain.eq(_chain.as_ref()))
@@ -374,37 +290,24 @@ impl DatabaseClient {
 
     pub fn get_parser_states(&mut self) -> Result<Vec<ParserState>, diesel::result::Error> {
         use crate::schema::parser_state::dsl::*;
-        parser_state
-            .select(ParserState::as_select())
-            .load(&mut self.connection)
+        parser_state.select(ParserState::as_select()).load(&mut self.connection)
     }
 
-    pub fn set_parser_state_latest_block(
-        &mut self,
-        _chain: Chain,
-        block: i32,
-    ) -> Result<usize, diesel::result::Error> {
+    pub fn set_parser_state_latest_block(&mut self, _chain: Chain, block: i32) -> Result<usize, diesel::result::Error> {
         use crate::schema::parser_state::dsl::*;
         diesel::update(parser_state.find(_chain.as_ref()))
             .set(latest_block.eq(block))
             .execute(&mut self.connection)
     }
 
-    pub fn set_parser_state_current_block(
-        &mut self,
-        _chain: Chain,
-        block: i32,
-    ) -> Result<usize, diesel::result::Error> {
+    pub fn set_parser_state_current_block(&mut self, _chain: Chain, block: i32) -> Result<usize, diesel::result::Error> {
         use crate::schema::parser_state::dsl::*;
         diesel::update(parser_state.find(_chain.as_ref()))
             .set(current_block.eq(block))
             .execute(&mut self.connection)
     }
 
-    pub fn get_subscriptions_by_device_id(
-        &mut self,
-        _device_id: &str,
-    ) -> Result<Vec<Subscription>, diesel::result::Error> {
+    pub fn get_subscriptions_by_device_id(&mut self, _device_id: &str) -> Result<Vec<Subscription>, diesel::result::Error> {
         use crate::schema::subscriptions::dsl::*;
         subscriptions
             .inner_join(devices::table)
@@ -413,11 +316,7 @@ impl DatabaseClient {
             .load(&mut self.connection)
     }
 
-    pub fn get_subscriptions_by_device_id_wallet_index(
-        &mut self,
-        _device_id: &str,
-        _wallet_index: i32,
-    ) -> Result<Vec<Subscription>, diesel::result::Error> {
+    pub fn get_subscriptions_by_device_id_wallet_index(&mut self, _device_id: &str, _wallet_index: i32) -> Result<Vec<Subscription>, diesel::result::Error> {
         use crate::schema::subscriptions::dsl::*;
         subscriptions
             .filter(wallet_index.eq(_wallet_index))
@@ -427,10 +326,7 @@ impl DatabaseClient {
             .load(&mut self.connection)
     }
 
-    pub fn delete_subscription(
-        &mut self,
-        subscription: Subscription,
-    ) -> Result<usize, diesel::result::Error> {
+    pub fn delete_subscription(&mut self, subscription: Subscription) -> Result<usize, diesel::result::Error> {
         use crate::schema::subscriptions::dsl::*;
         diesel::delete(
             subscriptions
@@ -442,11 +338,7 @@ impl DatabaseClient {
     }
 
     // distinct_on is used to only select once subscription per user device
-    pub fn get_subscriptions(
-        &mut self,
-        _chain: Chain,
-        addresses: Vec<String>,
-    ) -> Result<Vec<Subscription>, diesel::result::Error> {
+    pub fn get_subscriptions(&mut self, _chain: Chain, addresses: Vec<String>) -> Result<Vec<Subscription>, diesel::result::Error> {
         use crate::schema::subscriptions::dsl::*;
 
         // exlcude addresses from subscriptions
@@ -461,10 +353,7 @@ impl DatabaseClient {
             .load(&mut self.connection)
     }
 
-    pub fn get_subscriptions_exclude_addresses(
-        &mut self,
-        addresses: Vec<String>,
-    ) -> Result<Vec<String>, diesel::result::Error> {
+    pub fn get_subscriptions_exclude_addresses(&mut self, addresses: Vec<String>) -> Result<Vec<String>, diesel::result::Error> {
         use crate::schema::subscriptions_addresses_exclude::dsl::*;
         subscriptions_addresses_exclude
             .filter(address.eq_any(addresses))
@@ -472,10 +361,7 @@ impl DatabaseClient {
             .load(&mut self.connection)
     }
 
-    pub fn add_subscriptions(
-        &mut self,
-        _subscriptions: Vec<Subscription>,
-    ) -> Result<usize, diesel::result::Error> {
+    pub fn add_subscriptions(&mut self, _subscriptions: Vec<Subscription>) -> Result<usize, diesel::result::Error> {
         use crate::schema::subscriptions::dsl::*;
         diesel::insert_into(subscriptions)
             .values(&_subscriptions)
@@ -543,22 +429,14 @@ impl DatabaseClient {
         }
 
         if let Some(from_timestamp) = options.from_timestamp {
-            let datetime = DateTime::from_timestamp(from_timestamp.into(), 0)
-                .unwrap()
-                .naive_utc();
+            let datetime = DateTime::from_timestamp(from_timestamp.into(), 0).unwrap().naive_utc();
             query = query.filter(created_at.gt(datetime));
         }
 
-        query
-            .order(created_at.desc())
-            .select(Transaction::as_select())
-            .load(&mut self.connection)
+        query.order(created_at.desc()).select(Transaction::as_select()).load(&mut self.connection)
     }
 
-    pub fn get_transactions_by_hash(
-        &mut self,
-        _hash: &str,
-    ) -> Result<Vec<Transaction>, diesel::result::Error> {
+    pub fn get_transactions_by_hash(&mut self, _hash: &str) -> Result<Vec<Transaction>, diesel::result::Error> {
         use crate::schema::transactions::dsl::*;
         transactions
             .filter(hash.eq(_hash))
@@ -569,10 +447,7 @@ impl DatabaseClient {
 
     pub fn get_asset(&mut self, asset_id: &str) -> Result<Asset, diesel::result::Error> {
         use crate::schema::assets::dsl::*;
-        assets
-            .filter(id.eq(asset_id))
-            .select(Asset::as_select())
-            .first(&mut self.connection)
+        assets.filter(id.eq(asset_id)).select(Asset::as_select()).first(&mut self.connection)
     }
 
     pub fn get_asset_details(&mut self, id: &str) -> Result<AssetDetail, diesel::result::Error> {
@@ -583,10 +458,7 @@ impl DatabaseClient {
             .first(&mut self.connection)
     }
 
-    pub fn get_assets(
-        &mut self,
-        asset_ids: Vec<String>,
-    ) -> Result<Vec<Asset>, diesel::result::Error> {
+    pub fn get_assets(&mut self, asset_ids: Vec<String>) -> Result<Vec<Asset>, diesel::result::Error> {
         use crate::schema::assets::dsl::*;
         assets
             .filter(id.eq_any(asset_ids))
@@ -597,10 +469,7 @@ impl DatabaseClient {
 
     pub fn get_assets_list(&mut self) -> Result<Vec<Asset>, diesel::result::Error> {
         use crate::schema::assets::dsl::*;
-        assets
-            .filter(enabled.eq(true))
-            .select(Asset::as_select())
-            .load(&mut self.connection)
+        assets.filter(enabled.eq(true)).select(Asset::as_select()).load(&mut self.connection)
     }
 
     pub fn get_assets_search(
@@ -644,9 +513,7 @@ impl DatabaseClient {
     ) -> Result<Vec<String>, diesel::result::Error> {
         use crate::schema::transactions_addresses::dsl::*;
         let datetime = if let Some(from_timestamp) = from_timestamp {
-            DateTime::from_timestamp(from_timestamp.into(), 0)
-                .unwrap()
-                .naive_utc()
+            DateTime::from_timestamp(from_timestamp.into(), 0).unwrap().naive_utc()
         } else {
             DateTime::from_timestamp(0, 0).unwrap().naive_utc()
         };
@@ -669,11 +536,7 @@ impl DatabaseClient {
             .execute(&mut self.connection)
     }
 
-    pub fn update_asset_rank(
-        &mut self,
-        asset_id: &str,
-        _rank: i32,
-    ) -> Result<usize, diesel::result::Error> {
+    pub fn update_asset_rank(&mut self, asset_id: &str, _rank: i32) -> Result<usize, diesel::result::Error> {
         use crate::schema::assets::dsl::*;
         diesel::update(assets)
             .filter(id.eq(asset_id))
@@ -682,15 +545,10 @@ impl DatabaseClient {
             .execute(&mut self.connection)
     }
 
-    pub fn add_assets_types(
-        &mut self,
-        values: Vec<AssetType>,
-    ) -> Result<usize, diesel::result::Error> {
+    pub fn add_assets_types(&mut self, values: Vec<AssetType>) -> Result<usize, diesel::result::Error> {
         let values = values
             .iter()
-            .map(|x| super::models::AssetType {
-                id: x.as_ref().to_owned(),
-            })
+            .map(|x| super::models::AssetType { id: x.as_ref().to_owned() })
             .collect::<Vec<_>>();
 
         use crate::schema::assets_types::dsl::*;
@@ -700,10 +558,7 @@ impl DatabaseClient {
             .execute(&mut self.connection)
     }
 
-    pub fn add_assets_details(
-        &mut self,
-        values: Vec<AssetDetail>,
-    ) -> Result<usize, diesel::result::Error> {
+    pub fn add_assets_details(&mut self, values: Vec<AssetDetail>) -> Result<usize, diesel::result::Error> {
         use crate::schema::assets_details::dsl::*;
         diesel::insert_into(assets_details)
             .values(values)
@@ -725,11 +580,7 @@ impl DatabaseClient {
             .execute(&mut self.connection)
     }
 
-    pub fn get_scan_address(
-        &mut self,
-        _chain: Chain,
-        value: &str,
-    ) -> Result<ScanAddress, diesel::result::Error> {
+    pub fn get_scan_address(&mut self, _chain: Chain, value: &str) -> Result<ScanAddress, diesel::result::Error> {
         use crate::schema::scan_addresses::dsl::*;
         scan_addresses
             .filter(chain.eq(_chain.as_ref()))
@@ -742,10 +593,7 @@ impl DatabaseClient {
 
     pub fn get_swap_assets(&mut self) -> Result<Vec<String>, diesel::result::Error> {
         use crate::schema::assets_details::dsl::*;
-        assets_details
-            .filter(is_swappable.eq(true))
-            .select(asset_id)
-            .load(&mut self.connection)
+        assets_details.filter(is_swappable.eq(true)).select(asset_id).load(&mut self.connection)
     }
 
     pub fn get_swap_assets_version(&mut self) -> Result<i32, diesel::result::Error> {
@@ -753,10 +601,7 @@ impl DatabaseClient {
         Ok(assets.len() as i32)
     }
 
-    pub fn set_swap_enabled(
-        &mut self,
-        asset_ids: Vec<String>,
-    ) -> Result<usize, diesel::result::Error> {
+    pub fn set_swap_enabled(&mut self, asset_ids: Vec<String>) -> Result<usize, diesel::result::Error> {
         use crate::schema::assets_details::dsl::*;
         diesel::update(assets_details)
             .filter(asset_id.eq_any(&asset_ids))
@@ -765,10 +610,7 @@ impl DatabaseClient {
     }
 
     pub fn add_chains(&mut self, _chains: Vec<String>) -> Result<usize, diesel::result::Error> {
-        let values = _chains
-            .iter()
-            .map(|chain| super::models::Chain { id: chain.clone() })
-            .collect::<Vec<_>>();
+        let values = _chains.iter().map(|chain| super::models::Chain { id: chain.clone() }).collect::<Vec<_>>();
 
         use crate::schema::chains::dsl::*;
         diesel::insert_into(chains)

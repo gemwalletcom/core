@@ -13,8 +13,6 @@ mod metrics_client;
 mod name;
 mod nft;
 mod nft_client;
-mod node;
-mod node_client;
 mod parser;
 mod parser_client;
 mod prices;
@@ -40,7 +38,6 @@ use metrics_client::MetricsClient;
 use name_resolver::client::Client as NameClient;
 use name_resolver::NameProviderFactory;
 use nft_client::NFTClient;
-use node_client::Client as NodeClient;
 use parser_client::ParserClient;
 use pricer::client::PriceClient;
 use rocket::fairing::AdHoc;
@@ -63,14 +60,12 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
     let settings_clone = settings.clone();
     let price_client = PriceClient::new(redis_url, postgres_url);
     let charts_client = ChartsClient::new(postgres_url, &settings.clickhouse.url);
-    let node_client = NodeClient::new(database_client).await;
     let config_client = ConfigClient::new(postgres_url).await;
     let providers = NameProviderFactory::create_providers(settings_clone.clone());
     let name_client = NameClient::new(providers);
 
     let pusher_client = PusherClient::new(settings.pusher.url);
-    let devices_client =
-        DevicesClient::new(postgres_url, pusher_client, settings.pusher.ios.topic).await;
+    let devices_client = DevicesClient::new(postgres_url, pusher_client, settings.pusher.ios.topic).await;
     let transactions_client = TransactionsClient::new(postgres_url).await;
     let subscriptions_client = SubscriptionsClient::new(postgres_url).await;
     let metrics_client = MetricsClient::new(postgres_url).await;
@@ -110,20 +105,16 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
     let nft_client = NFTClient::new(postgres_url).await;
 
     rocket::build()
-        .attach(AdHoc::on_ignite(
-            "Tokio Runtime Configuration",
-            |rocket| async {
-                let runtime = tokio::runtime::Builder::new_multi_thread()
-                    .enable_all()
-                    .build()
-                    .expect("Failed to create Tokio runtime");
-                rocket.manage(runtime)
-            },
-        ))
+        .attach(AdHoc::on_ignite("Tokio Runtime Configuration", |rocket| async {
+            let runtime = tokio::runtime::Builder::new_multi_thread()
+                .enable_all()
+                .build()
+                .expect("Failed to create Tokio runtime");
+            rocket.manage(runtime)
+        }))
         .manage(Mutex::new(fiat_client))
         .manage(Mutex::new(price_client))
         .manage(Mutex::new(charts_client))
-        .manage(Mutex::new(node_client))
         .manage(Mutex::new(config_client))
         .manage(Mutex::new(name_client))
         .manage(Mutex::new(devices_client))
@@ -147,7 +138,6 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
                 fiat_quotes::get_fiat_on_ramp_quotes,
                 fiat_quotes::get_fiat_on_ramp_assets,
                 fiat_quotes::create_fiat_webhook,
-                node::get_nodes,
                 config::get_config,
                 name::get_name_resolve,
                 device::add_device,
