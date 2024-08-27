@@ -22,14 +22,14 @@ impl PaymentURLDecoder {
 
         if chunks.len() == 2 {
             let scheme = chunks[0];
+            if scheme == ETHEREUM_SCHEME {
+                let transaction_request = TransactionRequest::parse(string)?;
+                return Ok(transaction_request.into());
+            }
+
             let path: &str = chunks[1];
             let path_chunks: Vec<&str> = path.split('?').collect();
-            let address = if scheme == ETHEREUM_SCHEME {
-                let transaction_request = TransactionRequest::parse(path)?;
-                return Ok(transaction_request.into());
-            } else {
-                path_chunks[0].to_string()
-            };
+            let address = path_chunks[0].to_string();
             let asset_id = Self::decode_scheme(scheme);
 
             if path_chunks.len() == 1 {
@@ -89,6 +89,7 @@ impl From<TransactionRequest> for Payment {
         let address: String;
         let mut amount: Option<String>;
         let asset_id: Option<AssetId>;
+        let memo = val.parameters.get("memo").map(|x| x.to_string());
         // ERC20
         if val.function_name == Some("transfer".to_string()) {
             address = val.parameters.get("address").map(|x| x.to_string()).unwrap_or("".to_string());
@@ -105,7 +106,7 @@ impl From<TransactionRequest> for Payment {
         Self {
             address,
             amount,
-            memo: None,
+            memo,
             asset_id,
         }
     }
@@ -114,7 +115,7 @@ impl From<TransactionRequest> for Payment {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::primitives::Chain;
+    use crate::Chain;
 
     #[test]
     fn test_address() {
@@ -137,7 +138,7 @@ mod tests {
                 address: "HA4hQMs22nCuRN7iLDBsBkboz2SnLM1WkNtzLo6xEDY5".to_string(),
                 amount: None,
                 memo: None,
-                asset_id: Some(AssetId::from(Chain::Solana, None)),
+                asset_id: None,
             }
         );
         assert_eq!(
@@ -195,7 +196,7 @@ mod tests {
     }
 
     #[test]
-    fn test_eip681() {
+    fn test_erc681() {
         assert_eq!(
             PaymentURLDecoder::decode("ethereum:0xcB3028d6120802148f03d6c884D6AD6A210Df62A@0x38").unwrap(),
             Payment {
