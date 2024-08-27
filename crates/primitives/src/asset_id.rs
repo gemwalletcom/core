@@ -6,7 +6,7 @@ use typeshare::typeshare;
 use crate::chain::Chain;
 use gem_evm::address::EthereumAddress;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[typeshare(swift = "Equatable, Codable, Hashable")]
 pub struct AssetId {
     pub chain: Chain,
@@ -31,10 +31,7 @@ impl AssetId {
         let split: Vec<&str> = asset_id.split('_').collect();
         if split.len() == 1 {
             if let Ok(chain) = asset_id.parse::<Chain>() {
-                return Some(AssetId {
-                    chain,
-                    token_id: None,
-                });
+                return Some(AssetId { chain, token_id: None });
             }
         } else if split.len() >= 2 {
             if let Ok(chain) = split[0].parse::<Chain>() {
@@ -52,10 +49,7 @@ impl AssetId {
     }
 
     pub fn from_chain(chain: Chain) -> AssetId {
-        AssetId {
-            chain,
-            token_id: None,
-        }
+        AssetId { chain, token_id: None }
     }
 
     pub fn is_native(&self) -> bool {
@@ -125,12 +119,8 @@ mod tests {
 
     #[test]
     fn test_new_asset_id_with_coin_and_token_extra_underscore() {
-        let asset_id =
-            AssetId::new("ton_EQAvlWFDxGF2lXm67y4yzC17wYKD9A0guwPkMs1gOsM__NOT").unwrap();
+        let asset_id = AssetId::new("ton_EQAvlWFDxGF2lXm67y4yzC17wYKD9A0guwPkMs1gOsM__NOT").unwrap();
         assert_eq!(asset_id.chain, Chain::Ton);
-        assert_eq!(
-            asset_id.token_id,
-            Some("EQAvlWFDxGF2lXm67y4yzC17wYKD9A0guwPkMs1gOsM__NOT".to_owned())
-        );
+        assert_eq!(asset_id.token_id, Some("EQAvlWFDxGF2lXm67y4yzC17wYKD9A0guwPkMs1gOsM__NOT".to_owned()));
     }
 }

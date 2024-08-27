@@ -35,7 +35,7 @@ impl TransactionRequest {
         let main_parts: Vec<&str> = parts[0].split('/').collect();
 
         // The first part should be the target address with optional chain id and pay prefix
-        let mut target_address = main_parts.get(0).ok_or(anyhow!("Missing target address"))?.to_string();
+        let mut target_address = main_parts.first().ok_or(anyhow!("Missing target address"))?.to_string();
 
         let target_parts = target_address.split('@').collect::<Vec<&str>>();
         let mut chain_id = None;
@@ -97,6 +97,17 @@ mod tests {
         let uri = "bitcoin:175tWpb8K1S7NmH4Zx6rewF9WQrcZv245W";
         let erc681 = TransactionRequest::parse(uri);
         assert!(erc681.is_err());
+    }
+
+    #[test]
+    fn test_ens_name_uri() {
+        let uri = "ethereum:pay-gemwallet.eth@1";
+        let erc681 = TransactionRequest::parse(uri).unwrap();
+        assert_eq!(erc681.target_address, "gemwallet.eth");
+        assert_eq!(erc681.prefix.unwrap(), "pay");
+        assert_eq!(erc681.chain_id, Some(1));
+        assert_eq!(erc681.function_name, None);
+        assert_eq!(erc681.parameters.len(), 0);
     }
 
     #[test]

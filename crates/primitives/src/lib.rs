@@ -96,3 +96,4 @@ pub mod erc2612;
 pub mod explorers;
 pub mod solana_token_program;
 pub use self::solana_token_program::SolanaTokenProgramId;
+pub mod erc681;
