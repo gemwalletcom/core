@@ -7,9 +7,7 @@ use typeshare::typeshare;
 
 use crate::{AssetId, AssetType, ChainType};
 
-#[derive(
-    Copy, Clone, Debug, Serialize, Deserialize, EnumIter, AsRefStr, EnumString, PartialEq, Eq, Hash,
-)]
+#[derive(Copy, Clone, Debug, Serialize, Deserialize, EnumIter, AsRefStr, EnumString, PartialEq, Eq, Hash)]
 #[typeshare(swift = "Equatable, Codable, CaseIterable")]
 #[serde(rename_all = "lowercase")]
 #[strum(serialize_all = "lowercase")]
@@ -113,6 +111,11 @@ impl Chain {
         }
     }
 
+    pub fn from_chain_id(chain_id: u64) -> Option<Self> {
+        let network_id = chain_id.to_string();
+        Self::iter().find(|&chain| chain.network_id() == network_id)
+    }
+
     pub fn is_utxo(&self) -> bool {
         matches!(self, Self::Bitcoin | Self::Litecoin | Self::Doge)
     }
@@ -171,13 +174,7 @@ impl Chain {
             | Self::Celo => ChainType::Ethereum,
             Self::Bitcoin | Self::Doge | Self::Litecoin => ChainType::Bitcoin,
             Self::Solana => ChainType::Solana,
-            Self::Thorchain
-            | Self::Cosmos
-            | Self::Osmosis
-            | Self::Celestia
-            | Self::Injective
-            | Self::Noble
-            | Self::Sei => ChainType::Cosmos,
+            Self::Thorchain | Self::Cosmos | Self::Osmosis | Self::Celestia | Self::Injective | Self::Noble | Self::Sei => ChainType::Cosmos,
             Self::Ton => ChainType::Ton,
             Self::Tron => ChainType::Tron,
             Self::Aptos => ChainType::Aptos,
@@ -275,12 +272,7 @@ impl Chain {
             Self::Ethereum => 80,
             Self::Solana | Self::SmartChain => 70,
             Self::Osmosis | Self::Ton | Self::Tron => 50,
-            Self::Cosmos
-            | Self::Injective
-            | Self::Aptos
-            | Self::Sui
-            | Self::Xrp
-            | Self::Celestia => 40,
+            Self::Cosmos | Self::Injective | Self::Aptos | Self::Sui | Self::Xrp | Self::Celestia => 40,
             Self::Manta
             | Self::Fantom
             | Self::OpBNB

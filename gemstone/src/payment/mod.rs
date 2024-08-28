@@ -7,7 +7,7 @@ pub struct PaymentWrapper {
     pub address: String,
     pub amount: Option<String>,
     pub memo: Option<String>,
-    pub chain: Option<String>,
+    pub asset_id: Option<String>,
 }
 
 impl PaymentWrapper {
@@ -16,7 +16,7 @@ impl PaymentWrapper {
             address: payment.address,
             amount: payment.amount,
             memo: payment.memo,
-            chain: payment.chain.map(|c| c.to_string()),
+            asset_id: payment.asset_id.map(|c| c.to_string()),
         }
     }
 }
@@ -33,13 +33,12 @@ mod tests {
     #[test]
     fn test_address() {
         assert_eq!(
-            decode_url("solana:3u3ta6yXYgpheLGc2GVF3QkLHAUwBrvX71Eg8XXjJHGw?amount=0.42301")
-                .unwrap(),
+            decode_url("solana:3u3ta6yXYgpheLGc2GVF3QkLHAUwBrvX71Eg8XXjJHGw?amount=0.42301").unwrap(),
             PaymentWrapper {
                 address: "3u3ta6yXYgpheLGc2GVF3QkLHAUwBrvX71Eg8XXjJHGw".to_string(),
                 amount: Some("0.42301".to_string()),
                 memo: None,
-                chain: None,
+                asset_id: Some("solana".to_string()),
             }
         );
     }
