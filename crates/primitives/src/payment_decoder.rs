@@ -90,18 +90,23 @@ impl From<TransactionRequest> for Payment {
         let mut amount: Option<String>;
         let asset_id: Option<AssetId>;
         let memo = val.parameters.get("memo").map(|x| x.to_string());
+        let mut chain = Chain::Ethereum;
+        if let Some(chain_id) = val.chain_id {
+            chain = Chain::from_chain_id(chain_id).unwrap_or(Chain::Ethereum);
+        }
+
         // ERC20
         if val.function_name == Some("transfer".to_string()) {
             address = val.parameters.get("address").map(|x| x.to_string()).unwrap_or("".to_string());
             amount = val.parameters.get("uint256").map(|x| x.to_string());
-            asset_id = Some(AssetId::from(Chain::Ethereum, Some(val.target_address)));
+            asset_id = Some(AssetId::from(chain, Some(val.target_address)));
         } else {
             address = val.target_address;
             amount = val.parameters.get("value").map(|x| x.to_string());
             if amount.is_none() {
                 amount = val.parameters.get("amount").map(|x| x.to_string());
             }
-            asset_id = Some(AssetId::from(Chain::Ethereum, None));
+            asset_id = Some(AssetId::from(chain, None));
         };
         Self {
             address,
@@ -198,7 +203,7 @@ mod tests {
     #[test]
     fn test_erc681() {
         assert_eq!(
-            PaymentURLDecoder::decode("ethereum:0xcB3028d6120802148f03d6c884D6AD6A210Df62A@0x38").unwrap(),
+            PaymentURLDecoder::decode("ethereum:0xcB3028d6120802148f03d6c884D6AD6A210Df62A@1").unwrap(),
             Payment {
                 address: "0xcB3028d6120802148f03d6c884D6AD6A210Df62A".to_string(),
                 amount: None,
@@ -212,7 +217,7 @@ mod tests {
                 address: "0xcB3028d6120802148f03d6c884D6AD6A210Df62A".to_string(),
                 amount: Some("1.23".to_string()),
                 memo: None,
-                asset_id: Some(AssetId::from(Chain::Ethereum, None)),
+                asset_id: Some(AssetId::from(Chain::SmartChain, None)),
             }
         );
     }

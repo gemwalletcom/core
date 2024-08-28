@@ -18,7 +18,7 @@ impl TransactionRequest {
         // Split the URI into the scheme and the main part
         let splits = uri.split(':').collect::<Vec<&str>>();
         if splits.len() != 2 {
-            return Err(anyhow!("Invalid uri with multiple ':'"));
+            return Err(anyhow!("Invalid uri without expected ':'"));
         }
 
         // Validate the scheme
@@ -40,7 +40,11 @@ impl TransactionRequest {
         let target_parts = target_address.split('@').collect::<Vec<&str>>();
         let mut chain_id = None;
         if target_parts.len() == 2 {
-            chain_id = target_parts[1].parse().ok();
+            if target_parts[1].starts_with("0x") {
+                chain_id = u64::from_str_radix(target_parts[1].replace("0x", "").as_str(), 16).ok();
+            } else {
+                chain_id = target_parts[1].parse().ok();
+            }
             target_address = target_parts[0].to_string();
         }
 
@@ -112,11 +116,11 @@ mod tests {
 
     #[test]
     fn test_chain_id_uri() {
-        let uri = "ethereum:pay-0x32Be343B94f860124dC4fEe278FDCBD38C102D88@1";
+        let uri = "ethereum:pay-0x32Be343B94f860124dC4fEe278FDCBD38C102D88@0x38";
         let erc681 = TransactionRequest::parse(uri).unwrap();
         assert_eq!(erc681.target_address, "0x32Be343B94f860124dC4fEe278FDCBD38C102D88");
         assert_eq!(erc681.prefix.unwrap(), "pay");
-        assert_eq!(erc681.chain_id, Some(1));
+        assert_eq!(erc681.chain_id, Some(56));
         assert_eq!(erc681.function_name, None);
         assert_eq!(erc681.parameters.len(), 0);
     }
