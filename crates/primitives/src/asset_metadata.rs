@@ -8,4 +8,6 @@ struct AssetMetaData {
     is_swap_enabled: bool,
     #[serde(rename = "isStakeEnabled")]
     is_stake_enabled: bool,
+    #[serde(rename = "isPinned")]
+    is_pinned: bool,
 }
