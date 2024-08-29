@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Error};
+use anyhow::{anyhow, Result};
 use std::collections::HashMap;
 
 pub const ETHEREUM_SCHEME: &str = "ethereum";
@@ -14,7 +14,7 @@ pub struct TransactionRequest {
 }
 
 impl TransactionRequest {
-    pub fn parse(uri: &str) -> Result<Self, Error> {
+    pub fn parse(uri: &str) -> Result<Self> {
         // Split the URI into the scheme and the main part
         let splits = uri.split(':').collect::<Vec<&str>>();
         if splits.len() != 2 {
@@ -37,6 +37,7 @@ impl TransactionRequest {
         // The first part should be the target address with optional chain id and pay prefix
         let mut target_address = main_parts.first().ok_or(anyhow!("Missing target address"))?.to_string();
 
+        // Parse chain id in integer and 0x format
         let target_parts = target_address.split('@').collect::<Vec<&str>>();
         let mut chain_id = None;
         if target_parts.len() == 2 {
@@ -60,14 +61,9 @@ impl TransactionRequest {
 
         // Parse the query string into key-value pairs
         let mut parameters = HashMap::new();
-        let pairs = query_string.split('&');
-
-        for pair in pairs {
-            let kv: Vec<&str> = pair.split('=').collect();
-            if kv.len() == 2 {
-                let key = kv[0].to_string();
-                let value = kv[1].to_string();
-                parameters.insert(key, value);
+        for pair in query_string.split('&') {
+            if let Some((key, value)) = pair.split_once('=') {
+                parameters.insert(key.to_string(), value.to_string());
             }
         }
 
@@ -145,7 +141,7 @@ mod tests {
         assert_eq!(erc681.target_address, "0x89205a3a3b2a69de6dbf7f01ed13b2108b2c43e7");
         assert_eq!(erc681.prefix, None);
         assert_eq!(erc681.chain_id, None);
-        assert_eq!(erc681.function_name, Some("transfer".to_string()));
+        assert_eq!(erc681.function_name.unwrap(), "transfer");
         assert_eq!(erc681.parameters.get("address").unwrap(), "0x8e23ee67d1332ad560396262c48ffbb01f93d052");
         assert_eq!(erc681.parameters.get("uint256").unwrap(), "1");
     }

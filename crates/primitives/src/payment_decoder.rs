@@ -1,7 +1,11 @@
-use crate::asset_id::AssetId;
-use crate::erc681::{TransactionRequest, ETHEREUM_SCHEME};
-use crate::Chain;
-use anyhow::Error;
+use crate::{
+    asset_id::AssetId,
+    erc681::{TransactionRequest, ETHEREUM_SCHEME},
+    solana_pay,
+    solana_pay::{PayTransfer as SolanaPayTransfer, SOLANA_PAY_SCHEME},
+    Chain,
+};
+use anyhow::{anyhow, Result};
 use std::collections::HashMap;
 use std::str::FromStr;
 
@@ -17,7 +21,7 @@ pub struct Payment {
 pub struct PaymentURLDecoder;
 
 impl PaymentURLDecoder {
-    pub fn decode(string: &str) -> Result<Payment, Error> {
+    pub fn decode(string: &str) -> Result<Payment> {
         let chunks: Vec<&str> = string.split(':').collect();
 
         if chunks.len() == 2 {
@@ -25,6 +29,13 @@ impl PaymentURLDecoder {
             if scheme == ETHEREUM_SCHEME {
                 let transaction_request = TransactionRequest::parse(string)?;
                 return Ok(transaction_request.into());
+            }
+            if scheme == SOLANA_PAY_SCHEME {
+                let pay_url = solana_pay::parse(string)?;
+                if let solana_pay::RequestType::Transfer(pay_url) = pay_url {
+                    return Ok(pay_url.into());
+                }
+                return Err(anyhow!("Solana Pay link isn't supported yet"));
             }
 
             let path: &str = chunks[1];
@@ -52,7 +63,7 @@ impl PaymentURLDecoder {
                     asset_id,
                 });
             } else {
-                return Err(Error::msg("BIP21 format is incorrect"));
+                return Err(anyhow!("BIP21 format is incorrect"));
             }
         }
 
@@ -113,6 +124,17 @@ impl From<TransactionRequest> for Payment {
             amount,
             memo,
             asset_id,
+        }
+    }
+}
+
+impl From<SolanaPayTransfer> for Payment {
+    fn from(val: SolanaPayTransfer) -> Self {
+        Self {
+            address: val.recipient,
+            amount: val.amount,
+            memo: val.memo,
+            asset_id: Some(AssetId::from(Chain::Solana, val.spl_token.map(|x| x.to_string()))),
         }
     }
 }
