@@ -169,6 +169,7 @@ mod tests {
                 amount: None,
                 memo: None,
                 asset_id: None,
+                request_link: None,
             }
         );
     }
@@ -182,6 +183,7 @@ mod tests {
                 amount: None,
                 memo: None,
                 asset_id: None,
+                request_link: None,
             }
         );
         assert_eq!(
@@ -191,6 +193,7 @@ mod tests {
                 amount: Some("0.266232".to_string()),
                 memo: None,
                 asset_id: Some(AssetId::from(Chain::Solana, None)),
+                request_link: None,
             }
         );
     }
@@ -204,6 +207,7 @@ mod tests {
                 amount: Some("0.00001".to_string()),
                 memo: None,
                 asset_id: Some(AssetId::from(Chain::Bitcoin, None)),
+                request_link: None,
             }
         );
 
@@ -214,6 +218,7 @@ mod tests {
                 amount: Some("0.01233".to_string()),
                 memo: Some("test".to_string()),
                 asset_id: Some(AssetId::from(Chain::Ethereum, None)),
+                request_link: None,
             }
         );
 
@@ -224,6 +229,7 @@ mod tests {
                 amount: Some("0.42301".to_string()),
                 memo: None,
                 asset_id: Some(AssetId::from(Chain::Solana, None)),
+                request_link: None,
             }
         );
 
@@ -234,6 +240,7 @@ mod tests {
                 amount: Some("0.00001".to_string()),
                 memo: None,
                 asset_id: Some(AssetId::from(Chain::Ton, None)),
+                request_link: None,
             }
         );
     }
@@ -247,6 +254,7 @@ mod tests {
                 amount: None,
                 memo: None,
                 asset_id: Some(AssetId::from(Chain::Ethereum, None)),
+                request_link: None,
             }
         );
         assert_eq!(
@@ -256,6 +264,7 @@ mod tests {
                 amount: Some("1.23".to_string()),
                 memo: None,
                 asset_id: Some(AssetId::from(Chain::SmartChain, None)),
+                request_link: None,
             }
         );
     }
