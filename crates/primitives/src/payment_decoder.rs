@@ -1,7 +1,11 @@
-use crate::asset_id::AssetId;
-use crate::erc681::{TransactionRequest, ETHEREUM_SCHEME};
-use crate::Chain;
-use anyhow::Error;
+use crate::{
+    asset_id::AssetId,
+    erc681::{TransactionRequest, ETHEREUM_SCHEME},
+    solana_pay,
+    solana_pay::{PayTransfer as SolanaPayTransfer, SOLANA_PAY_SCHEME},
+    Chain,
+};
+use anyhow::{anyhow, Result};
 use std::collections::HashMap;
 use std::str::FromStr;
 
@@ -11,13 +15,14 @@ pub struct Payment {
     pub amount: Option<String>,
     pub memo: Option<String>,
     pub asset_id: Option<AssetId>,
+    pub request_link: Option<String>,
 }
 
 #[derive(Debug)]
 pub struct PaymentURLDecoder;
 
 impl PaymentURLDecoder {
-    pub fn decode(string: &str) -> Result<Payment, Error> {
+    pub fn decode(string: &str) -> Result<Payment> {
         let chunks: Vec<&str> = string.split(':').collect();
 
         if chunks.len() == 2 {
@@ -25,6 +30,23 @@ impl PaymentURLDecoder {
             if scheme == ETHEREUM_SCHEME {
                 let transaction_request = TransactionRequest::parse(string)?;
                 return Ok(transaction_request.into());
+            }
+            if scheme == SOLANA_PAY_SCHEME {
+                let pay_request = solana_pay::parse(string)?;
+                match pay_request {
+                    solana_pay::RequestType::Transfer(transfer) => {
+                        return Ok(transfer.into());
+                    }
+                    solana_pay::RequestType::Transaction(link) => {
+                        return Ok(Payment {
+                            address: "".to_string(),
+                            amount: None,
+                            memo: None,
+                            asset_id: None,
+                            request_link: Some(link),
+                        });
+                    }
+                }
             }
 
             let path: &str = chunks[1];
@@ -38,6 +60,7 @@ impl PaymentURLDecoder {
                     amount: None,
                     memo: None,
                     asset_id,
+                    request_link: None,
                 });
             } else if path_chunks.len() == 2 {
                 let query = path_chunks[1];
@@ -50,9 +73,10 @@ impl PaymentURLDecoder {
                     amount,
                     memo,
                     asset_id,
+                    request_link: None,
                 });
             } else {
-                return Err(Error::msg("BIP21 format is incorrect"));
+                return Err(anyhow!("BIP21 format is incorrect"));
             }
         }
 
@@ -61,6 +85,7 @@ impl PaymentURLDecoder {
             amount: None,
             memo: None,
             asset_id: None,
+            request_link: None,
         })
     }
 
@@ -113,6 +138,19 @@ impl From<TransactionRequest> for Payment {
             amount,
             memo,
             asset_id,
+            request_link: None,
+        }
+    }
+}
+
+impl From<SolanaPayTransfer> for Payment {
+    fn from(val: SolanaPayTransfer) -> Self {
+        Self {
+            address: val.recipient,
+            amount: val.amount,
+            memo: val.memo,
+            asset_id: Some(AssetId::from(Chain::Solana, val.spl_token.map(|x| x.to_string()))),
+            request_link: None,
         }
     }
 }
@@ -131,6 +169,7 @@ mod tests {
                 amount: None,
                 memo: None,
                 asset_id: None,
+                request_link: None,
             }
         );
     }
@@ -144,6 +183,7 @@ mod tests {
                 amount: None,
                 memo: None,
                 asset_id: None,
+                request_link: None,
             }
         );
         assert_eq!(
@@ -153,6 +193,17 @@ mod tests {
                 amount: Some("0.266232".to_string()),
                 memo: None,
                 asset_id: Some(AssetId::from(Chain::Solana, None)),
+                request_link: None,
+            }
+        );
+        assert_eq!(
+            PaymentURLDecoder::decode("solana:https%3A%2F%2Fapi.spherepay.co%2Fv1%2Fpublic%2FpaymentLink%2Fpay%2FpaymentLink_1df6564b6b4d43eaa077b732ad9b6ab9%3Fstate%3DAlabama%26country%3DUSA%26lineItems%3D%255B%257B%2522id%2522%253A%2522lineItem_82032b8ea67244e692cd322051e35689%2522%252C%2522quantity%2522%253A500%257D%255D%26solanaPayReference%3D4Vqsq8WhoTbFu8Lw2DbbtnCiHXXmBRN6afF8HkgxrXs7%26paymentReference%3DOZ_UxaOrU_F8fM5GhlrE2%26network%3Dsol%26skipPreflight%3Dfalse").unwrap(),
+            Payment {
+                address: "".to_string(),
+                amount: None,
+                memo: None,
+                asset_id: None,
+                request_link: Some("https://api.spherepay.co/v1/public/paymentLink/pay/paymentLink_1df6564b6b4d43eaa077b732ad9b6ab9?state=Alabama&country=USA&lineItems=%5B%7B%22id%22%3A%22lineItem_82032b8ea67244e692cd322051e35689%22%2C%22quantity%22%3A500%7D%5D&solanaPayReference=4Vqsq8WhoTbFu8Lw2DbbtnCiHXXmBRN6afF8HkgxrXs7&paymentReference=OZ_UxaOrU_F8fM5GhlrE2&network=sol&skipPreflight=false".to_string()),
             }
         );
     }
@@ -166,6 +217,7 @@ mod tests {
                 amount: Some("0.00001".to_string()),
                 memo: None,
                 asset_id: Some(AssetId::from(Chain::Bitcoin, None)),
+                request_link: None,
             }
         );
 
@@ -176,6 +228,7 @@ mod tests {
                 amount: Some("0.01233".to_string()),
                 memo: Some("test".to_string()),
                 asset_id: Some(AssetId::from(Chain::Ethereum, None)),
+                request_link: None,
             }
         );
 
@@ -186,6 +239,7 @@ mod tests {
                 amount: Some("0.42301".to_string()),
                 memo: None,
                 asset_id: Some(AssetId::from(Chain::Solana, None)),
+                request_link: None,
             }
         );
 
@@ -196,6 +250,7 @@ mod tests {
                 amount: Some("0.00001".to_string()),
                 memo: None,
                 asset_id: Some(AssetId::from(Chain::Ton, None)),
+                request_link: None,
             }
         );
     }
@@ -209,6 +264,7 @@ mod tests {
                 amount: None,
                 memo: None,
                 asset_id: Some(AssetId::from(Chain::Ethereum, None)),
+                request_link: None,
             }
         );
         assert_eq!(
@@ -218,6 +274,7 @@ mod tests {
                 amount: Some("1.23".to_string()),
                 memo: None,
                 asset_id: Some(AssetId::from(Chain::SmartChain, None)),
+                request_link: None,
             }
         );
     }

@@ -17,3 +17,5 @@ strum_macros = { workspace = true }
 rocket = { workspace = true }
 gem_evm = { path = "../gem_evm" }
 anyhow = { workspace = true }
+urlencoding = { workspace = true }
+url = { workspace = true }

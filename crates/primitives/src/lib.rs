@@ -97,3 +97,4 @@ pub mod explorers;
 pub mod solana_token_program;
 pub use self::solana_token_program::SolanaTokenProgramId;
 pub mod erc681;
+pub mod solana_pay;
