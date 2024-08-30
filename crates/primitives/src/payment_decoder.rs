@@ -15,6 +15,7 @@ pub struct Payment {
     pub amount: Option<String>,
     pub memo: Option<String>,
     pub asset_id: Option<AssetId>,
+    pub request_link: Option<String>,
 }
 
 #[derive(Debug)]
@@ -31,11 +32,21 @@ impl PaymentURLDecoder {
                 return Ok(transaction_request.into());
             }
             if scheme == SOLANA_PAY_SCHEME {
-                let pay_url = solana_pay::parse(string)?;
-                if let solana_pay::RequestType::Transfer(pay_url) = pay_url {
-                    return Ok(pay_url.into());
+                let pay_request = solana_pay::parse(string)?;
+                match pay_request {
+                    solana_pay::RequestType::Transfer(transfer) => {
+                        return Ok(transfer.into());
+                    }
+                    solana_pay::RequestType::Transaction(link) => {
+                        return Ok(Payment {
+                            address: "".to_string(),
+                            amount: None,
+                            memo: None,
+                            asset_id: None,
+                            request_link: Some(link),
+                        });
+                    }
                 }
-                return Err(anyhow!("Solana Pay link isn't supported yet"));
             }
 
             let path: &str = chunks[1];
@@ -49,6 +60,7 @@ impl PaymentURLDecoder {
                     amount: None,
                     memo: None,
                     asset_id,
+                    request_link: None,
                 });
             } else if path_chunks.len() == 2 {
                 let query = path_chunks[1];
@@ -61,6 +73,7 @@ impl PaymentURLDecoder {
                     amount,
                     memo,
                     asset_id,
+                    request_link: None,
                 });
             } else {
                 return Err(anyhow!("BIP21 format is incorrect"));
@@ -72,6 +85,7 @@ impl PaymentURLDecoder {
             amount: None,
             memo: None,
             asset_id: None,
+            request_link: None,
         })
     }
 
@@ -124,6 +138,7 @@ impl From<TransactionRequest> for Payment {
             amount,
             memo,
             asset_id,
+            request_link: None,
         }
     }
 }
@@ -135,6 +150,7 @@ impl From<SolanaPayTransfer> for Payment {
             amount: val.amount,
             memo: val.memo,
             asset_id: Some(AssetId::from(Chain::Solana, val.spl_token.map(|x| x.to_string()))),
+            request_link: None,
         }
     }
 }
