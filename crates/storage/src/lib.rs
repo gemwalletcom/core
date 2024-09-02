@@ -4,11 +4,11 @@ use std::error::Error;
 
 pub mod database;
 pub use self::database::DatabaseClient;
+pub mod clickhouse;
 pub mod models;
 pub mod schema;
 
-pub mod clickhouse_database;
-pub use self::clickhouse_database::ClickhouseDatabase;
+pub use self::clickhouse::clickhouse_database::ClickhouseDatabase;
 
 pub struct RedisClient {
     conn: MultiplexedConnection,
@@ -22,11 +22,7 @@ impl RedisClient {
         Ok(Self { conn })
     }
 
-    pub async fn set_value<T>(
-        &mut self,
-        key: &str,
-        value: &T,
-    ) -> Result<(), Box<dyn std::error::Error>>
+    pub async fn set_value<T>(&mut self, key: &str, value: &T) -> Result<(), Box<dyn std::error::Error>>
     where
         T: Serialize,
     {

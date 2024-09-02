@@ -1,0 +1,172 @@
+redis:
+  url: "redis://default:@localhost:6379"
+postgres:
+  url: "postgres://username:password@localhost/api"
+clickhouse:
+  url: "http://localhost:8123"
+coingecko:
+  key:
+    secret: ""
+fiat:
+  timeout: 3
+moonpay:
+  key:
+    public: ""
+    secret: ""
+transak:
+  key:
+    public: ""
+mercuryo:
+  key:
+    public: ""
+    secret: ""
+ramp:
+  key:
+    public: ""
+banxa:
+  url: ""
+  key:
+    public: ""
+    secret: ""
+kado:
+  key:
+    secret: ""
+pricer:
+  timer: 60
+  outdated: 604800
+charter:
+  timer: 60
+name:
+  ens:
+    url: "https://eth.llamarpc.com"
+  ud:
+    url: "https://api.unstoppabledomains.com"
+    key:
+      secret: ""
+  sns:
+    url: "https://sns-sdk-proxy.bonfida.workers.dev"
+  ton:
+    url: "https://tonapi.io"
+  eths:
+    url: "https://api.eths.center"
+  spaceid:
+    url: "https://api.prd.space.id"
+  did:
+    url: "https://indexer-basic.did.id"
+  suins:
+    url: "https://suins-rpc.mainnet.sui.io"
+  aptos:
+    url: "https://aptosnames.com"
+  injective:
+    url: "https://injective-rest.publicnode.com"
+  icns:
+    url: "https://osmosis-rest.publicnode.com"
+  lens:
+    url: "https://api-v2.lens.dev"
+  base:
+    url: "https://resolver-api.basename.app"
+metrics:
+  path: /metrics
+assets:
+  url: "https://raw.githubusercontent.com/gemwalletcom/assets/master"
+chains:
+  solana:
+    url: "https://api.mainnet-beta.solana.com"
+  ethereum:
+    url: "https://eth.llamarpc.com"
+  smartchain:
+    url: "https://bsc-dataseed1.bnbchain.org"
+  polygon:
+    url: "https://polygon.llamarpc.com"
+  optimism:
+    url: "https://mainnet.optimism.io"
+  arbitrum:
+    url: "https://arbitrum.llamarpc.com"
+  base:
+    url: "https://base.drpc.org"
+  opbnb:
+    url: "https://opbnb-mainnet-rpc.bnbchain.org"
+  avalanchec:
+    url: "https://api.avax.network/ext/bc/C/rpc"
+  fantom:
+    url: "https://fantom.publicnode.com"
+  gnosis:
+    url: "https://gnosis.publicnode.com"
+  ton:
+    url: "https://tonapi.io"
+  cosmos:
+    url: "https://cosmos-rest.publicnode.com"
+  osmosis:
+    url: "https://osmosis-rest.publicnode.com"
+  thorchain:
+    url: "https://thornode.ninerealms.com"
+  tron:
+    url: "https://api.trongrid.io"
+  xrp:
+    url: "https://s1.ripple.com:51234/"
+  aptos:
+    url: "https://fullnode.mainnet.aptoslabs.com"
+  sui:
+    url: "https://suins-rpc.mainnet.sui.io"
+  celestia:
+    url: "https://celestia-rest.publicnode.com"
+  injective:
+    url: "https://injective-rest.publicnode.com"
+  sei:
+    url: "https://sei-api.polkachu.com"
+  manta:
+    url: "https://pacific-rpc.manta.network/http"
+  blast:
+    url: "https://rpc.blastblockchain.com"
+  noble:
+    url: "https://rest.cosmos.directory/noble"
+  zksync:
+    url: "https://rpc.ankr.com/zksync_era"
+  linea:
+    url: "https://linea.drpc.org"
+  mantle:
+    url: "https://rpc.ankr.com/mantle"
+  celo:
+    url: "https://rpc.ankr.com/celo"
+  near:
+    url: "https://rpc.mainnet.near.org"
+  bitcoin:
+    url: ""
+  litecoin:
+    url: ""
+  doge:
+    url: ""
+swap:
+  oneinch:
+    url: "https://api.1inch.dev"
+    key: ""
+    fee:
+      percent: 0
+      address: ""
+  jupiter:
+    url: "https://quote-api.jup.ag"
+    key: ""
+    fee:
+      percent: 0
+      address: ""
+  thorchain:
+    url: "https://thornode.ninerealms.com"
+    key: ""
+    fee:
+      percent: 0
+      address: ""
+  aftermath:
+    url: "https://aftermath.finance/api"
+    key: ""
+    fee:
+      percent: 0
+      address: ""
+parser:
+  retry: 0
+  timeout: 1000
+pusher:
+  url: "http://localhost:8088"
+  ios:
+    topic: ""
+daemon:
+  service: ""

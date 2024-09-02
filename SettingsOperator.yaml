@@ -1,0 +1,9 @@
+appstore:
+  keys:
+    - crypto wallet
+  apps:
+    - id: 6448712670
+      name: Gem
+  languages:
+    - name: United States
+      code: us

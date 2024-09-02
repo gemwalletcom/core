@@ -1,6 +1,6 @@
 use clickhouse::{error::Result, Client};
 
-use crate::models::{CreateChart, GetChart};
+use crate::models::{chart::Position, CreateChart, GetChart};
 
 pub struct ClickhouseDatabase {
     client: Client,
@@ -8,6 +8,7 @@ pub struct ClickhouseDatabase {
 
 pub const CREATE_TABLES: &str = include_str!("./clickhouse_migration.sql");
 pub const CHARTS_TABLE_NAME: &str = "charts";
+pub const POSITIONS_TABLE_NAME: &str = "positions";
 
 //TODO: Migrate to storage crate
 impl ClickhouseDatabase {
@@ -21,10 +22,7 @@ impl ClickhouseDatabase {
     }
 
     pub async fn add_charts(&self, charts: Vec<CreateChart>) -> Result<usize> {
-        let mut inserter = self
-            .client
-            .inserter(CHARTS_TABLE_NAME)?
-            .with_max_entries(50);
+        let mut inserter = self.client.inserter(CHARTS_TABLE_NAME)?.with_max_entries(50);
 
         for chart in charts.clone() {
             inserter.write(&chart).await?;
@@ -33,12 +31,17 @@ impl ClickhouseDatabase {
         Ok(charts.len())
     }
 
-    pub async fn get_charts(
-        &self,
-        coin_id: &str,
-        period: &str,
-        period_limit: i32,
-    ) -> Result<Vec<GetChart>> {
+    pub async fn add_positions(&self, positions: Vec<Position>) -> Result<usize> {
+        let mut inserter = self.client.inserter(POSITIONS_TABLE_NAME)?.with_max_entries(50);
+
+        for value in positions.clone() {
+            inserter.write(&value).await?;
+        }
+        inserter.end().await?;
+        Ok(positions.len())
+    }
+
+    pub async fn get_charts(&self, coin_id: &str, period: &str, period_limit: i32) -> Result<Vec<GetChart>> {
         let vec = self
             .client
             .query(

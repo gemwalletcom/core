@@ -5100,6 +5100,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "operator"
+version = "1.0.0"
+dependencies = [
+ "api_connector",
+ "chrono",
+ "reqwest",
+ "serde_json",
+ "settings",
+ "storage",
+ "tokio",
+]
+
+[[package]]
 name = "ordered-multimap"
 version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
