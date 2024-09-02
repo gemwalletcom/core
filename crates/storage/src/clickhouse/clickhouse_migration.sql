@@ -25,3 +25,15 @@ CREATE TABLE IF NOT EXISTS positions
 )
 ENGINE = MergeTree
 ORDER BY (store, app, keyword, country, ts);
+
+CREATE TABLE IF NOT EXISTS appstore_information
+(
+    store            LowCardinality(String),
+    app              LowCardinality(String),
+    country          LowCardinality(String),
+    ratings          Float32 CODEC(ZSTD(1)),
+    average_rating   Float32 CODEC(ZSTD(1)),
+    ts               Date CODEC(DoubleDelta, ZSTD(1))
+)
+ENGINE = MergeTree
+ORDER BY (store, app, country, ts);
