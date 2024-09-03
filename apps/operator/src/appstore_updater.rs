@@ -26,6 +26,7 @@ impl AppstoreUpdater {
                             store: "appstore".to_string(),
                             app: app.name.to_string(),
                             country: language.name.to_string(),
+                            title: response.track_name,
                             ratings: response.user_rating_count,
                             average_rating: response.average_user_rating,
                         };

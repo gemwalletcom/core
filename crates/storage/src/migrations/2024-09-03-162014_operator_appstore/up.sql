@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS operator_appstore_information (
     store           VARCHAR(32) NOT NULL,
     app             VARCHAR(128) NOT NULL,
     country         VARCHAR(64) NOT NULL,
+    title           VARCHAR(128) NOT NULL,
     ratings         FLOAT,
     average_rating  FLOAT,
     updated_at timestamp NOT NULL default current_timestamp,

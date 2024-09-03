@@ -24,4 +24,5 @@ pub struct App {
     pub version: Option<String>,
     pub user_rating_count: Option<f64>,
     pub average_user_rating: Option<f64>,
+    pub track_name: String,
 }

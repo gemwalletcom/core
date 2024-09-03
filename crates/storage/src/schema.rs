@@ -192,6 +192,8 @@ diesel::table! {
         app -> Varchar,
         #[max_length = 64]
         country -> Varchar,
+        #[max_length = 128]
+        title -> Varchar,
         ratings -> Nullable<Float8>,
         average_rating -> Nullable<Float8>,
         updated_at -> Timestamp,
