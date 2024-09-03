@@ -1,5 +1,5 @@
 use api_connector::AppStoreClient;
-use storage::ClickhouseDatabase;
+use storage::{DatabaseClient};
 
 pub mod appstore_updater;
 pub use appstore_updater::AppstoreUpdater;
@@ -15,8 +15,9 @@ pub async fn main() {
     let apps = settings_operator.appstore.apps;
     let languages = settings_operator.appstore.languages;
     let client = AppStoreClient::new();
-    let clickhouse_database = ClickhouseDatabase::new(&settings.clickhouse.url);
-    let appstore_updater = AppstoreUpdater::new(client, clickhouse_database);
+
+    let database = DatabaseClient::new(&settings.postgres.url.clone());
+    let mut appstore_updater = AppstoreUpdater::new(client, database);
 
     loop {
         appstore_updater.update_positions(keys.clone(), apps.clone(), languages.clone()).await;

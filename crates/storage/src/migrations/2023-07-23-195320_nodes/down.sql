@@ -1,1 +1,1 @@
-DROP TABLE nodes
+DROP TABLE nodes;

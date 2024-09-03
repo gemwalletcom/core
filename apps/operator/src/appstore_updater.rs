@@ -1,25 +1,23 @@
 use api_connector::AppStoreClient;
-use chrono::prelude::*;
 use settings::{OperatorAppStoreApp, OperatorAppStoreLanguage};
 use storage::{
-    models::chart::{AppStoreInformation, Position},
-    ClickhouseDatabase,
+    models::operator::{AppStoreInformation, AppStorePosition},
+    DatabaseClient,
 };
 
 pub struct AppstoreUpdater {
     client: AppStoreClient,
-    clickhouse_database: ClickhouseDatabase,
+    database: DatabaseClient,
 }
 
 impl AppstoreUpdater {
-    pub fn new(client: AppStoreClient, clickhouse_database: ClickhouseDatabase) -> Self {
-        Self { client, clickhouse_database }
+    pub fn new(client: AppStoreClient, database: DatabaseClient) -> Self {
+        Self { client, database }
     }
 
-    pub async fn update_details(&self, apps: Vec<OperatorAppStoreApp>, languages: Vec<OperatorAppStoreLanguage>) {
+    pub async fn update_details(&mut self, apps: Vec<OperatorAppStoreApp>, languages: Vec<OperatorAppStoreLanguage>) {
         for app in apps {
             let mut values: Vec<AppStoreInformation> = Vec::new();
-            let ts = Utc::now().timestamp();
 
             for language in languages.clone() {
                 match self.client.lookup(app.id, &language.code).await {
@@ -28,9 +26,8 @@ impl AppstoreUpdater {
                             store: "appstore".to_string(),
                             app: app.name.to_string(),
                             country: language.name.to_string(),
-                            ratings: response.user_rating_count.unwrap_or(0.0) as f32,
-                            average_rating: response.average_user_rating.unwrap_or(0.0) as f32,
-                            ts: (ts / 86400) as u16,
+                            ratings: response.user_rating_count,
+                            average_rating: response.average_user_rating,
                         };
                         values.push(information)
                     }
@@ -40,7 +37,7 @@ impl AppstoreUpdater {
                 }
             }
 
-            match self.clickhouse_database.add_appstore_information(values.clone()).await {
+            match self.database.add_appstore_information(values.clone()) {
                 Ok(_) => {
                     //println!("Inserted {} positions", positions.len());
                 }
@@ -51,10 +48,9 @@ impl AppstoreUpdater {
         }
     }
 
-    pub async fn update_positions(&self, keys: Vec<String>, apps: Vec<OperatorAppStoreApp>, languages: Vec<OperatorAppStoreLanguage>) {
+    pub async fn update_positions(&mut self, keys: Vec<String>, apps: Vec<OperatorAppStoreApp>, languages: Vec<OperatorAppStoreLanguage>) {
         for key in keys {
-            let mut positions: Vec<Position> = Vec::new();
-            let ts = Utc::now().timestamp();
+            let mut positions: Vec<AppStorePosition> = Vec::new();
 
             println!("Update key: {}", key);
 
@@ -66,13 +62,12 @@ impl AppstoreUpdater {
                         for (position, result) in response.results.iter().enumerate() {
                             match apps.clone().into_iter().find(|a| a.id == result.track_id) {
                                 Some(app) => {
-                                    let position = Position {
+                                    let position = AppStorePosition {
                                         store: "appstore".to_string(),
                                         app: app.name.to_string(),
                                         keyword: key.to_string(),
                                         country: language.name.to_string(),
-                                        position: (position + 1) as u32,
-                                        ts: (ts / 86400) as u16,
+                                        position: (position + 1) as i32,
                                     };
 
                                     positions.push(position)
@@ -87,7 +82,7 @@ impl AppstoreUpdater {
                 }
             }
 
-            match self.clickhouse_database.add_positions(positions.clone()).await {
+            match self.database.add_appstore_positions(positions.clone()) {
                 Ok(_) => {
                     //println!("Inserted {} positions", positions.len());
                 }

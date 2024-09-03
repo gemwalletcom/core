@@ -1,5 +1,5 @@
 CREATE TABLE prices_assets (
-    asset_id VARCHAR(256) PRIMARY KEY NOT NULL,
+    asset_id VARCHAR(256) PRIMARY KEY NOT NULL REFERENCES assets (id) ON DELETE CASCADE,
     price_id VARCHAR(256) NOT NULL REFERENCES prices (id) ON DELETE CASCADE,
 
     updated_at timestamp NOT NULL default current_timestamp,

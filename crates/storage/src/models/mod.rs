@@ -13,6 +13,7 @@ pub mod tokenlist;
 pub mod transaction;
 pub mod transaction_addresses;
 pub mod version;
+pub mod operator;
 
 pub use self::asset::Asset;
 pub use self::asset_type::AssetType;
@@ -30,3 +31,4 @@ pub use self::tokenlist::TokenList;
 pub use self::transaction::Transaction;
 pub use self::transaction_addresses::TransactionAddresses;
 pub use self::version::Version;
+pub use self::operator::{AppStorePosition, AppStoreInformation};

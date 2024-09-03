@@ -1,0 +1,2 @@
+drop table operator_appstore_positions;
+drop table operator_appstore_information;
