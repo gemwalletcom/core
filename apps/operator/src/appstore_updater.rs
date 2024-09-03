@@ -27,6 +27,7 @@ impl AppstoreUpdater {
                             app: app.name.to_string(),
                             country: language.name.to_string(),
                             title: response.track_name,
+                            version: response.version,
                             ratings: response.user_rating_count,
                             average_rating: response.average_user_rating,
                         };
@@ -53,7 +54,7 @@ impl AppstoreUpdater {
         for key in keys {
             let mut positions: Vec<AppStorePosition> = Vec::new();
 
-            println!("Update key: {}", key);
+            println!("Update positions key: {}", key);
 
             for language in languages.clone() {
                 match self.client.search_apps(key.as_str(), &language.code, 200).await {

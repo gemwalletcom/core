@@ -21,7 +21,7 @@ pub struct AppStoreResponse {
 #[serde(rename_all = "camelCase")]
 pub struct App {
     pub track_id: u64,
-    pub version: Option<String>,
+    pub version: String,
     pub user_rating_count: Option<f64>,
     pub average_user_rating: Option<f64>,
     pub track_name: String,

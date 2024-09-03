@@ -20,9 +20,9 @@ pub async fn main() {
     let mut appstore_updater = AppstoreUpdater::new(client, database);
 
     loop {
-        appstore_updater.update_positions(keys.clone(), apps.clone(), languages.clone()).await;
-
         appstore_updater.update_details(apps.clone(), languages.clone()).await;
+
+        appstore_updater.update_positions(keys.clone(), apps.clone(), languages.clone()).await;
 
         tokio::time::sleep(tokio::time::Duration::from_secs(86400)).await;
     }

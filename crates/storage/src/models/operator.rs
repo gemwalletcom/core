@@ -20,6 +20,7 @@ pub struct AppStoreInformation {
     pub app: String,
     pub country: String,
     pub title: String,
+    pub version: String,
     pub ratings: Option<f64>,
     pub average_rating: Option<f64>,
 }
