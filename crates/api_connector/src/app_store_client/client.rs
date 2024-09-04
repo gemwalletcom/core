@@ -30,3 +30,9 @@ impl AppStoreClient {
         Ok(response)
     }
 }
+
+impl Default for AppStoreClient {
+    fn default() -> Self {
+        Self::new()
+    }
+}

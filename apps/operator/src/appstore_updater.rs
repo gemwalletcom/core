@@ -62,19 +62,16 @@ impl AppstoreUpdater {
                         println!("Found key: {}, language: {}, results: {}", key, language.code, response.results.len());
 
                         for (position, result) in response.results.iter().enumerate() {
-                            match apps.clone().into_iter().find(|a| a.id == result.track_id) {
-                                Some(app) => {
-                                    let position = AppStorePosition {
-                                        store: "appstore".to_string(),
-                                        app: app.name.to_string(),
-                                        keyword: key.to_string(),
-                                        country: language.name.to_string(),
-                                        position: (position + 1) as i32,
-                                    };
+                            if let Some(app) = apps.clone().into_iter().find(|a| a.id == result.track_id) {
+                                let position = AppStorePosition {
+                                    store: "appstore".to_string(),
+                                    app: app.name.to_string(),
+                                    keyword: key.to_string(),
+                                    country: language.name.to_string(),
+                                    position: (position + 1) as i32,
+                                };
 
-                                    positions.push(position)
-                                }
-                                _ => (),
+                                positions.push(position)
                             }
                         }
                     }
