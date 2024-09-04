@@ -21,7 +21,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Clean space
-        run: free_disk_space.sh
+        run: ./free_disk_space.sh
         working-directory: scripts
 
       - uses: actions/cache@v3
