@@ -1,4 +1,6 @@
 appstore:
+  refresh_interval_ms: 86400
+  timeout_ms: 500
   keys:
     - crypto wallet
   apps:
