@@ -25,7 +25,6 @@ df -h
 echo "Removing large packages"
 sudo apt-get remove -y '^dotnet-.*'
 sudo apt-get remove -y '^llvm-.*'
-sudo apt-get remove -y 'php.*'
 sudo apt-get remove -y '^mongodb-.*'
 sudo apt-get remove -y '^mysql-.*'
 sudo apt-get remove -y azure-cli google-cloud-sdk hhvm google-chrome-stable firefox powershell mono-devel libgl1-mesa-dri
