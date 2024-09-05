@@ -108,16 +108,15 @@ impl AppstoreUpdater {
             for language in languages.clone() {
                 match self.client.reviews(app.id, &language.code).await {
                     Ok(response) => {
-                        match response.feed.entry {
-                            Some(entry) => match entry {
+                        if let Some(entry) = response.feed.entry {
+                            match entry {
                                 AppStoreReviewEntries::Single(review) => values.push(Self::review(app.name.clone(), language.name.clone(), review)),
                                 AppStoreReviewEntries::Multiple(reviews) => {
                                     for review in reviews {
                                         values.push(Self::review(app.name.clone(), language.name.clone(), review))
                                     }
                                 }
-                            },
-                            None => {}
+                            }
                         }
 
                         println!("Update reviews. Found app: {}, language: {}", app.name, language.code);
