@@ -16,7 +16,7 @@ install-diesel:
 	brew link postgresql@15
 	export LDFLAGS="-L/opt/homebrew/opt/libpq/lib"
 	export CPPFLAGS="-I/opt/homebrew/opt/libpq/include"
-	cargo install diesel_cli --no-default-features --features postgres
+	cargo install diesel_cli --no-default-features --features postgres --version 2.2.0 --force
 
 test:
 	cargo test --workspace --quiet
