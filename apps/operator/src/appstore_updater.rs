@@ -24,6 +24,8 @@ impl AppstoreUpdater {
             let mut values: Vec<AppStoreInformation> = Vec::new();
 
             for language in languages.clone() {
+                println!("Update details. Start for language: {}", language.code);
+
                 match self.client.lookup(app.id, &language.code).await {
                     Ok(response) => {
                         let information = AppStoreInformation {
@@ -63,6 +65,8 @@ impl AppstoreUpdater {
             let mut positions: Vec<AppStorePosition> = Vec::new();
 
             for language in languages.clone() {
+                println!("Update positions. Start for language: {}, key: {}", language.code, key);
+
                 match self.client.search_apps(key.as_str(), &language.code, 200).await {
                     Ok(response) => {
                         for (position, result) in response.results.iter().enumerate() {
@@ -106,6 +110,8 @@ impl AppstoreUpdater {
             let mut values: Vec<AppStoreReview> = Vec::new();
 
             for language in languages.clone() {
+                println!("Update reviews. Start for language: {}", language.code);
+
                 match self.client.reviews(app.id, &language.code).await {
                     Ok(response) => {
                         if let Some(entry) = response.feed.entry {
