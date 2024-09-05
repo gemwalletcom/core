@@ -26,6 +26,6 @@ pub async fn main() {
 
         appstore_updater.update_reviews(apps.clone(), languages.clone()).await;
 
-        tokio::time::sleep(tokio::time::Duration::from_secs(settings_operator.appstore.refresh_interval_ms)).await;
+        tokio::time::sleep(tokio::time::Duration::from_millis(settings_operator.appstore.refresh_interval_ms)).await;
     }
 }
