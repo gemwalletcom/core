@@ -1,4 +1,4 @@
-install: install-rust install-typeshare install-diesel
+install: install-rust install-typeshare install-postgres install-diesel
 	@echo Install Rust
 	@curl curl https://sh.rustup.rs -sSf | sh -s -- -y
 
@@ -12,11 +12,13 @@ install-typeshare:
 	@cargo install typeshare-cli --version 1.11.0 --force
 
 install-diesel:
+	@cargo install diesel_cli --no-default-features --features postgres --version 2.2.4 --force
+
+install-postgres:
 	brew install libpq postgresql@15
 	brew link postgresql@15
 	export LDFLAGS="-L/opt/homebrew/opt/libpq/lib"
 	export CPPFLAGS="-I/opt/homebrew/opt/libpq/include"
-	cargo install diesel_cli --no-default-features --features postgres --version 2.2.0 --force
 
 test:
 	cargo test --workspace --quiet
