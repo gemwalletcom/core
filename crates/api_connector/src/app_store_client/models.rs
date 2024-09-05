@@ -26,3 +26,47 @@ pub struct App {
     pub average_user_rating: Option<f64>,
     pub track_name: String,
 }
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppStoreReviews {
+    pub feed: AppStoreFeed,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppStoreFeed {
+    pub entry: Option<AppStoreReviewEntries>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(untagged)]
+pub enum AppStoreReviewEntries {
+    Single(AppStoreReviewEntry),
+    Multiple(Vec<AppStoreReviewEntry>),
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppStoreReviewEntry {
+    #[serde(rename = "im:rating")]
+    pub rating: AppStoreReviewLabel,
+    #[serde(rename = "im:version")]
+    pub version: AppStoreReviewLabel,
+    pub id: AppStoreReviewLabel,
+    pub title: AppStoreReviewLabel,
+    pub content: AppStoreReviewLabel,
+    pub author: AppStoreReviewAuthor,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppStoreReviewLabel {
+    pub label: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppStoreReviewAuthor {
+    pub name: AppStoreReviewLabel,
+}

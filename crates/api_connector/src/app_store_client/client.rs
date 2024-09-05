@@ -1,4 +1,4 @@
-use super::models::{App, AppStoreError, AppStoreResponse};
+use super::models::{App, AppStoreError, AppStoreResponse, AppStoreReviews};
 pub struct AppStoreClient {
     base_url: String,
     client: reqwest::Client,
@@ -27,6 +27,12 @@ impl AppStoreClient {
         let url = format!("{}/search", self.base_url);
         let query = [("term", term), ("country", country), ("entity", "software"), ("limit", &limit.to_string())];
         let response = self.client.get(&url).query(&query).send().await?.json::<AppStoreResponse>().await?;
+        Ok(response)
+    }
+
+    pub async fn reviews(&self, app_id: u64, country: &str) -> Result<AppStoreReviews, AppStoreError> {
+        let url = format!("{}/{}/rss/customerreviews/id={}/mostRecent/json", self.base_url, country, app_id);
+        let response = self.client.get(&url).send().await?.json::<AppStoreReviews>().await?;
         Ok(response)
     }
 }

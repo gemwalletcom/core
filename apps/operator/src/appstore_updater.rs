@@ -1,7 +1,10 @@
-use api_connector::AppStoreClient;
+use api_connector::{
+    app_store_client::models::{AppStoreReviewEntries, AppStoreReviewEntry},
+    AppStoreClient,
+};
 use settings::{OperatorAppStoreApp, OperatorAppStoreLanguage};
 use storage::{
-    models::operator::{AppStoreInformation, AppStorePosition},
+    models::operator::{AppStoreInformation, AppStorePosition, AppStoreReview},
     DatabaseClient,
 };
 
@@ -95,6 +98,60 @@ impl AppstoreUpdater {
                     eprintln!("Failed to insert positions: {}", e);
                 }
             }
+        }
+    }
+
+    pub async fn update_reviews(&mut self, apps: Vec<OperatorAppStoreApp>, languages: Vec<OperatorAppStoreLanguage>) {
+        for app in apps {
+            let mut values: Vec<AppStoreReview> = Vec::new();
+
+            for language in languages.clone() {
+                match self.client.reviews(app.id, &language.code).await {
+                    Ok(response) => {
+                        match response.feed.entry {
+                            Some(entry) => match entry {
+                                AppStoreReviewEntries::Single(review) => values.push(Self::review(app.name.clone(), language.name.clone(), review)),
+                                AppStoreReviewEntries::Multiple(reviews) => {
+                                    for review in reviews {
+                                        values.push(Self::review(app.name.clone(), language.name.clone(), review))
+                                    }
+                                }
+                            },
+                            None => {}
+                        }
+
+                        println!("Update reviews. Found app: {}, language: {}", app.name, language.code);
+                    }
+                    Err(e) => {
+                        eprintln!("Update reviews. Failed to look up app {}, language: {}, {:?}", app.name, language.code, e);
+                    }
+                }
+
+                tokio::time::sleep(tokio::time::Duration::from_millis(self.timeout_ms)).await;
+            }
+
+            match self.database.add_appstore_reviews(values.clone()) {
+                Ok(_) => {
+                    //println!("Inserted {} appstore reviews", positions.len());
+                }
+                Err(e) => {
+                    eprintln!("Failed to insert appstore reviews: {}", e);
+                }
+            }
+        }
+    }
+
+    fn review(app_name: String, country: String, review: AppStoreReviewEntry) -> AppStoreReview {
+        AppStoreReview {
+            store: "appstore".to_string(),
+            app: app_name.to_string(),
+            country: country.to_string(),
+            title: review.title.label,
+            version: review.version.label,
+            review_id: review.id.label,
+            content: review.content.label,
+            author: review.author.name.label,
+            rating: review.rating.label.parse::<i32>().unwrap_or(0),
         }
     }
 }

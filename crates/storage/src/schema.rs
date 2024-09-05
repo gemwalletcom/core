@@ -15,10 +15,10 @@ diesel::table! {
         #[max_length = 16]
         symbol -> Varchar,
         decimals -> Int4,
-        enabled -> Bool,
-        rank -> Int4,
         updated_at -> Timestamp,
         created_at -> Timestamp,
+        rank -> Int4,
+        enabled -> Bool,
     }
 }
 
@@ -48,13 +48,13 @@ diesel::table! {
         coinmarketcap -> Nullable<Varchar>,
         #[max_length = 128]
         discord -> Nullable<Varchar>,
+        updated_at -> Timestamp,
+        created_at -> Timestamp,
         is_buyable -> Bool,
         is_sellable -> Bool,
         is_swappable -> Bool,
         is_stakeable -> Bool,
         staking_apr -> Nullable<Float8>,
-        updated_at -> Timestamp,
-        created_at -> Timestamp,
     }
 }
 
@@ -89,12 +89,12 @@ diesel::table! {
         #[max_length = 8]
         locale -> Varchar,
         #[max_length = 8]
-        currency -> Varchar,
-        #[max_length = 8]
         version -> Varchar,
-        subscriptions_version -> Int4,
         updated_at -> Timestamp,
         created_at -> Timestamp,
+        #[max_length = 8]
+        currency -> Varchar,
+        subscriptions_version -> Int4,
     }
 }
 
@@ -115,9 +115,9 @@ diesel::table! {
         #[max_length = 128]
         token_id -> Nullable<Varchar>,
         enabled -> Bool,
-        hidden -> Bool,
         updated_at -> Timestamp,
         created_at -> Timestamp,
+        hidden -> Bool,
     }
 }
 
@@ -221,6 +221,31 @@ diesel::table! {
 }
 
 diesel::table! {
+    operator_appstore_reviews (id) {
+        id -> Int4,
+        #[max_length = 32]
+        store -> Varchar,
+        #[max_length = 128]
+        app -> Varchar,
+        #[max_length = 64]
+        country -> Varchar,
+        #[max_length = 32]
+        review_id -> Varchar,
+        #[max_length = 256]
+        title -> Varchar,
+        #[max_length = 4096]
+        content -> Varchar,
+        #[max_length = 128]
+        author -> Varchar,
+        #[max_length = 64]
+        version -> Varchar,
+        rating -> Int4,
+        updated_at -> Timestamp,
+        created_at -> Timestamp,
+    }
+}
+
+diesel::table! {
     parser_state (chain) {
         chain -> Varchar,
         current_block -> Int4,
@@ -286,12 +311,12 @@ diesel::table! {
     subscriptions (id) {
         id -> Int4,
         device_id -> Int4,
-        wallet_index -> Int4,
         chain -> Varchar,
         #[max_length = 256]
         address -> Varchar,
         updated_at -> Timestamp,
         created_at -> Timestamp,
+        wallet_index -> Int4,
     }
 }
 
@@ -346,10 +371,10 @@ diesel::table! {
         fee -> Nullable<Varchar>,
         utxo_inputs -> Nullable<Jsonb>,
         utxo_outputs -> Nullable<Jsonb>,
-        metadata -> Nullable<Jsonb>,
         fee_asset_id -> Varchar,
         updated_at -> Timestamp,
         created_at -> Timestamp,
+        metadata -> Nullable<Jsonb>,
     }
 }
 
@@ -412,6 +437,7 @@ diesel::allow_tables_to_appear_in_same_query!(
     nodes,
     operator_appstore_information,
     operator_appstore_positions,
+    operator_appstore_reviews,
     parser_state,
     prices,
     prices_assets,
