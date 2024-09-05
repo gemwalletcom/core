@@ -85,13 +85,13 @@ impl AppstoreUpdater {
                                     app.name, language.code, key, position
                                 );
                             }
-                            tokio::time::sleep(tokio::time::Duration::from_millis(self.timeout_ms)).await;
                         }
                     }
                     Err(e) => {
                         eprintln!("Update positions. Failed to fetch apps, keyword: {}, language: {}: {:?}", key, language.code, e);
                     }
                 }
+                tokio::time::sleep(tokio::time::Duration::from_millis(self.timeout_ms)).await;
             }
 
             match self.database.add_appstore_positions(positions.clone()) {
