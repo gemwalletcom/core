@@ -46,7 +46,7 @@ jobs:
       - name: Run sccache-cache
         uses: mozilla-actions/sccache-action@v0.0.3
       - name: Install diesel
-        run: cargo install diesel_cli --no-default-features --features postgres
+        run: make install-diesel
       - name: Run migration
         run: |
           diesel setup
