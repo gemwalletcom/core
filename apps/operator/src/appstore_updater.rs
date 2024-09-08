@@ -91,7 +91,6 @@ impl AppstoreUpdater {
                         eprintln!("Update positions. Failed to fetch apps, keyword: {}, language: {}: {:?}", key, language.code, e);
                     }
                 }
-                tokio::time::sleep(tokio::time::Duration::from_millis(self.timeout_ms)).await;
             }
 
             match self.database.add_appstore_positions(positions.clone()) {
@@ -102,6 +101,8 @@ impl AppstoreUpdater {
                     eprintln!("Failed to insert positions: {}", e);
                 }
             }
+
+            tokio::time::sleep(tokio::time::Duration::from_millis(self.timeout_ms)).await;
         }
     }
 
@@ -131,7 +132,6 @@ impl AppstoreUpdater {
                         eprintln!("Update reviews. Failed to look up app {}, language: {}, {:?}", app.name, language.code, e);
                     }
                 }
-
                 tokio::time::sleep(tokio::time::Duration::from_millis(self.timeout_ms)).await;
             }
 
