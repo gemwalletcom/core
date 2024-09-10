@@ -1,5 +1,6 @@
 #[derive(uniffi::Enum, Clone)]
 pub enum DocsUrl {
+    Start,
     WhatIsWatchWallet,
     WhatIsSecretPhrase,
     WhatIsPrivateKey,
@@ -12,6 +13,7 @@ const DOCS_URL: &str = "https://docs.gemwallet.com";
 
 pub fn get_docs_url(item: DocsUrl) -> String {
     let path = match item {
+        DocsUrl::Start => "/",
         DocsUrl::WhatIsWatchWallet => "/faq/watch-wallet/",
         DocsUrl::WhatIsSecretPhrase => "/faq/secret-recovery-phrase/",
         DocsUrl::WhatIsPrivateKey => "/faq/private-key/",
