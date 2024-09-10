@@ -36,8 +36,10 @@ impl AppstoreUpdater {
                             version: response.version,
                             ratings: response.user_rating_count,
                             average_rating: response.average_user_rating,
+                            release_date: response.release_date.naive_utc(),
+                            current_version_release_date: response.current_version_release_date.naive_utc(),
                         };
-                        values.push(information);
+                        values.push(information.clone());
 
                         println!("Update details. Found app: {}, language: {}", app.name, language.code);
                     }

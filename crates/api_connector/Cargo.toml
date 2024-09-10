@@ -6,4 +6,5 @@ version = { workspace = true }
 [dependencies]
 serde = { workspace = true }
 reqwest = { workspace = true }
+chrono = { workspace = true }
 primitives = { path = "../primitives" }

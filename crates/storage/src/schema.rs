@@ -15,10 +15,10 @@ diesel::table! {
         #[max_length = 16]
         symbol -> Varchar,
         decimals -> Int4,
-        enabled -> Bool,
-        rank -> Int4,
         updated_at -> Timestamp,
         created_at -> Timestamp,
+        rank -> Int4,
+        enabled -> Bool,
     }
 }
 
@@ -48,13 +48,13 @@ diesel::table! {
         coinmarketcap -> Nullable<Varchar>,
         #[max_length = 128]
         discord -> Nullable<Varchar>,
+        updated_at -> Timestamp,
+        created_at -> Timestamp,
         is_buyable -> Bool,
         is_sellable -> Bool,
         is_swappable -> Bool,
         is_stakeable -> Bool,
         staking_apr -> Nullable<Float8>,
-        updated_at -> Timestamp,
-        created_at -> Timestamp,
     }
 }
 
@@ -89,12 +89,12 @@ diesel::table! {
         #[max_length = 8]
         locale -> Varchar,
         #[max_length = 8]
-        currency -> Varchar,
-        #[max_length = 8]
         version -> Varchar,
-        subscriptions_version -> Int4,
         updated_at -> Timestamp,
         created_at -> Timestamp,
+        #[max_length = 8]
+        currency -> Varchar,
+        subscriptions_version -> Int4,
     }
 }
 
@@ -115,9 +115,9 @@ diesel::table! {
         #[max_length = 128]
         token_id -> Nullable<Varchar>,
         enabled -> Bool,
-        hidden -> Bool,
         updated_at -> Timestamp,
         created_at -> Timestamp,
+        hidden -> Bool,
     }
 }
 
@@ -198,6 +198,8 @@ diesel::table! {
         version -> Varchar,
         ratings -> Nullable<Float8>,
         average_rating -> Nullable<Float8>,
+        release_date -> Timestamp,
+        current_version_release_date -> Timestamp,
         updated_at -> Timestamp,
         created_at -> Timestamp,
     }
@@ -311,12 +313,12 @@ diesel::table! {
     subscriptions (id) {
         id -> Int4,
         device_id -> Int4,
-        wallet_index -> Int4,
         chain -> Varchar,
         #[max_length = 256]
         address -> Varchar,
         updated_at -> Timestamp,
         created_at -> Timestamp,
+        wallet_index -> Int4,
     }
 }
 
@@ -371,10 +373,10 @@ diesel::table! {
         fee -> Nullable<Varchar>,
         utxo_inputs -> Nullable<Jsonb>,
         utxo_outputs -> Nullable<Jsonb>,
-        metadata -> Nullable<Jsonb>,
         fee_asset_id -> Varchar,
         updated_at -> Timestamp,
         created_at -> Timestamp,
+        metadata -> Nullable<Jsonb>,
     }
 }
 

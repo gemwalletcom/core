@@ -1,3 +1,4 @@
+use chrono::NaiveDateTime;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 
@@ -23,6 +24,9 @@ pub struct AppStoreInformation {
     pub version: String,
     pub ratings: Option<f64>,
     pub average_rating: Option<f64>,
+
+    pub release_date: NaiveDateTime,
+    pub current_version_release_date: NaiveDateTime,
 }
 
 #[derive(Debug, Queryable, Selectable, Insertable, AsChangeset, Serialize, Deserialize, Clone)]

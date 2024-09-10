@@ -343,6 +343,7 @@ dependencies = [
 name = "api_connector"
 version = "1.0.0"
 dependencies = [
+ "chrono",
  "primitives",
  "reqwest",
  "serde",
