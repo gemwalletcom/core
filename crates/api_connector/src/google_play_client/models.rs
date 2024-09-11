@@ -9,7 +9,7 @@ pub struct AppInformation {
     pub description: String,
     pub summary: String,
     pub score: Option<f64>,
-    pub ratings: f64,
+    pub ratings: Option<f64>,
     pub updated: i64,
     pub app_id: String,
     pub version: String,

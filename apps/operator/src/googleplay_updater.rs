@@ -33,7 +33,7 @@ impl GooglePlayUpdater {
                             country: language.country.to_string(),
                             title: response.title.clone(),
                             version: response.version.clone(),
-                            ratings: Some(response.ratings),
+                            ratings: Some(response.ratings.unwrap_or_default()),
                             average_rating: Some(response.score.unwrap_or_default()),
                             release_date: response.release_date().naive_utc(),
                             current_version_release_date: response.updated_date().naive_utc(),
