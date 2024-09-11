@@ -148,18 +148,15 @@ where
     F: Fn() -> Fut + Send + Sync + 'static,
     Fut: std::future::Future<Output = ()> + Send + 'static,
 {
-    let start = Instant::now();
-    let mut interval = tokio::time::interval_at(start, interval_duration);
-
     loop {
-        interval.tick().await;
-        println!("Start job {}...", name);
+        let now = Instant::now();
 
-        // Run the async task with a timeout, but without expecting any output
-        let result = tokio::time::timeout(interval_duration, job_fn()).await;
-        match result {
-            Ok(_) => println!("{} finished successfully", name),
-            Err(_) => println!("{} timed out.", name),
-        }
+        println!("Job start: {}", name);
+
+        job_fn().await;
+
+        println!("Job done in {} seconds: {}", now.elapsed().as_secs(), name);
+
+        tokio::time::sleep(interval_duration).await;
     }
 }

@@ -21,7 +21,11 @@ impl GooglePlayUpdater {
             let mut values: Vec<AppStoreInformation> = Vec::new();
 
             for language in languages.clone() {
-                match self.client.lookup(app.package_id.clone(), &language.country_code, &language.language_code).await {
+                match self
+                    .client
+                    .lookup(app.package_id.clone(), &language.country_code, &language.language_code)
+                    .await
+                {
                     Ok(response) => {
                         let information = AppStoreInformation {
                             store: "googleplay".to_string(),
@@ -30,7 +34,7 @@ impl GooglePlayUpdater {
                             title: response.title.clone(),
                             version: response.version.clone(),
                             ratings: Some(response.ratings),
-                            average_rating: Some(response.score),
+                            average_rating: Some(response.score.unwrap_or_default()),
                             release_date: response.release_date().naive_utc(),
                             current_version_release_date: response.updated_date().naive_utc(),
                         };
@@ -62,7 +66,11 @@ impl GooglePlayUpdater {
         for key in keys {
             let mut positions: Vec<AppStorePosition> = Vec::new();
             for language in languages.clone() {
-                match self.client.search_apps(key.as_str(), &language.country_code, &language.language_code, 250).await {
+                match self
+                    .client
+                    .search_apps(key.as_str(), &language.country_code, &language.language_code, 250)
+                    .await
+                {
                     Ok(response) => {
                         for (position, result) in response.iter().enumerate() {
                             if let Some(app) = apps.clone().into_iter().find(|a| a.package_id == result.app_id) {
@@ -104,7 +112,11 @@ impl GooglePlayUpdater {
             let mut values: Vec<AppStoreReview> = Vec::new();
 
             for language in languages.clone() {
-                match self.client.reviews(app.package_id.as_str(), &language.country_code, &language.language_code).await {
+                match self
+                    .client
+                    .reviews(app.package_id.as_str(), &language.country_code, &language.language_code)
+                    .await
+                {
                     Ok(response) => {
                         for review in response {
                             values.push(Self::review(app.name.clone(), language.country.clone(), review))
@@ -141,7 +153,7 @@ impl GooglePlayUpdater {
             review_id: review.id,
             content: review.text,
             author: review.user_name,
-            rating: review.score as i32,
+            rating: review.score.unwrap_or_default() as i32,
         }
     }
 }

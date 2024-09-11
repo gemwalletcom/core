@@ -8,7 +8,7 @@ pub struct AppInformation {
     pub title: String,
     pub description: String,
     pub summary: String,
-    pub score: f64,
+    pub score: Option<f64>,
     pub ratings: f64,
     pub updated: i64,
     pub app_id: String,
@@ -41,7 +41,7 @@ pub struct AppSearch {
 pub struct Review {
     pub id: String,
     pub user_name: String,
-    pub score: i64,
+    pub score: Option<i64>,
     pub text: String,
     pub version: Option<String>,
     pub date: DateTime<Utc>,
