@@ -7,6 +7,7 @@ use serde::Deserialize;
 #[allow(unused)]
 pub struct SettingsOperator {
     pub appstore: OperatorAppStore,
+    pub googleplay: OperatorGooglePlay,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -24,13 +25,24 @@ pub struct OperatorAppStore {
 pub struct OperatorAppStoreApp {
     pub name: String,
     pub id: u64,
+    pub package_id: String,
 }
 
 #[derive(Debug, Deserialize, Clone)]
 #[allow(unused)]
 pub struct OperatorAppStoreLanguage {
-    pub name: String,
-    pub code: String,
+    pub country: String,
+    pub country_code: String,
+    pub language_code: String,
+}
+
+// google play
+#[derive(Debug, Deserialize, Clone)]
+#[allow(unused)]
+pub struct OperatorGooglePlay {
+    pub url: String,
+    pub refresh_interval_ms: u64,
+    pub timeout_ms: u64,
 }
 
 impl SettingsOperator {

@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS operator_appstore_reviews (
     store           VARCHAR(32) NOT NULL,
     app             VARCHAR(128) NOT NULL,
     country         VARCHAR(64) NOT NULL,
-    review_id       VARCHAR(32) NOT NULL,
+    review_id       VARCHAR(64) NOT NULL,
     title           VARCHAR(256) NOT NULL,
     content         VARCHAR(4096) NOT NULL,
     author          VARCHAR(128) NOT NULL,

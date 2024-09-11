@@ -3,11 +3,22 @@ appstore:
   timeout_ms: 500
   keys:
     - crypto wallet
+    - ton wallet
+    - gem wallet
   apps:
-    - id: 6448712670
-      name: Gem
+    - name: Gem
+      id: 6448712670
+      package_id: com.gemwallet.android
+
   languages:
-    - name: United States
-      code: us
-    - name: United Kingdom
-      code: gb
+    - country: United States
+      country_code: us
+      language_code: en
+    - country: United Kingdom
+      country_code: gb
+      language_code: en
+
+googleplay:
+  url: http://localhost:3000
+  refresh_interval_ms: 86400
+  timeout_ms: 500
