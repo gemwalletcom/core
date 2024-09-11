@@ -156,7 +156,7 @@ where
         println!("Start job {}...", name);
 
         // Run the async task with a timeout, but without expecting any output
-        let result = tokio::time::timeout(Duration::from_secs(10), job_fn()).await;
+        let result = tokio::time::timeout(interval_duration, job_fn()).await;
         match result {
             Ok(_) => println!("{} finished successfully", name),
             Err(_) => println!("{} timed out.", name),
