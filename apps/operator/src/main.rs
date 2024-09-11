@@ -151,7 +151,7 @@ where
     loop {
         let now = Instant::now();
 
-        println!("Job start: {}", name);
+        println!("Job start: {}, interval: {} seconds", name, interval_duration.as_secs());
 
         job_fn().await;
 
