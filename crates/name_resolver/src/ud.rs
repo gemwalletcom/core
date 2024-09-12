@@ -21,11 +21,7 @@ pub struct UDClient {
 impl UDClient {
     pub fn new(api_url: String, api_key: String) -> Self {
         let client = Client::new();
-        Self {
-            api_url,
-            api_key,
-            client,
-        }
+        Self { api_url, api_key, client }
     }
 
     fn map(&self, chain: Chain, records: HashMap<String, String>) -> Option<String> {
@@ -54,11 +50,7 @@ impl NameClient for UDClient {
         NameProvider::Ud
     }
 
-    async fn resolve(
-        &self,
-        name: &str,
-        chain: Chain,
-    ) -> Result<String, Box<dyn Error + Send + Sync>> {
+    async fn resolve(&self, name: &str, chain: Chain) -> Result<String, Box<dyn Error + Send + Sync>> {
         let url = format!("{}/resolve/domains/{}", self.api_url, name);
         let response = self
             .client
@@ -96,6 +88,7 @@ impl NameClient for UDClient {
             "manga",
             "binanceus",
             "zil",
+            "unstoppable",
         ]
     }
 
