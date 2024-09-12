@@ -1,0 +1,41 @@
+list:
+    just --list
+
+install-typeshare:
+    @echo Install typeshare-cli
+    cargo install typeshare-cli --version 1.11.0 --force
+
+install-postgres:
+	brew install libpq postgresql@15
+	brew link postgresql@15
+	export LDFLAGS="-L/opt/homebrew/opt/libpq/lib"
+	export CPPFLAGS="-I/opt/homebrew/opt/libpq/include"
+
+install-diesel:
+    @echo Install Diesel
+    cargo install diesel_cli --no-default-features --features postgres --version 2.2.4 --force
+
+test:
+    cargo test --workspace --quiet
+
+test-all:
+    cargo test --all --verbose
+
+format:
+    cargo fmt -q --all
+
+lint:
+    cargo clippy --version
+    cargo clippy -- -D warnings
+
+unused:
+    cargo install cargo-machete
+    cargo machete
+
+migrate:
+    diesel migration run
+
+localize:
+    @sh scripts/localize.sh core crates/localizer/i18n
+
+mod gemstone

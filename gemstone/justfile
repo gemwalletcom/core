@@ -1,0 +1,37 @@
+list:
+    just --list
+
+install-nightly:
+    #!/usr/bin/env bash
+    NIGHTLY="nightly-2024-08-21"
+    if [ -z "$(rustup toolchain list | grep $NIGHTLY)" ]; then
+        echo "Installing nightly"
+        rustup toolchain install $NIGHTLY && rustup component add rust-src --toolchain $NIGHTLY
+    fi
+
+install-ndk:
+    #!/usr/bin/env bash
+    ANDROID_HOME="${ANDROID_HOME:=~/Library/Android/sdk}"
+    SDK_MANAGER=${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager
+    NDK="ndk;26.1.10909125"
+
+    echo "Installing ndk"
+    $SDK_MANAGER --install $NDK
+
+
+install-ios-targets: install-nightly
+    rustup target add aarch64-apple-ios-sim aarch64-apple-ios
+
+install-android-targets:
+	rustup toolchain install stable
+	rustup target add x86_64-linux-android
+	rustup target add aarch64-linux-android
+	rustup target add armv7-linux-androideabi
+	cargo install cargo-ndk
+
+test-ios:
+    @xcodebuild -project tests/ios/GemTest/GemTest.xcodeproj \
+    -scheme GemTest \
+    -sdk iphonesimulator \
+    -destination "platform=iOS Simulator,name=iPhone 15" \
+    test | xcbeautify

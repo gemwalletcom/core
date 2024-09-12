@@ -49,9 +49,12 @@ jobs:
       - name: Run sccache-cache
         uses: mozilla-actions/sccache-action@v0.0.3
 
+      - name: Install just
+        run: cargo install just
+
       - name: Build iOS frameworks
         run: |
-          make prepare-apple
+          just install-ios-targets
           make apple BUILD_MODE=${{ env.BUILD_MODE }} IPHONEOS_DEPLOYMENT_TARGET=${{ env.IPHONEOS_DEPLOYMENT_TARGET }}
         working-directory: gemstone
 

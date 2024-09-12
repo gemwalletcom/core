@@ -35,37 +35,12 @@ TARGET_DIR := ../target
 GEN_SWIFT_FOLDER := generated/swift
 GEN_KOTLIN_FOLDER := generated/kotlin
 TARGET_XC_FW_FOLDER := target/spm
-NIGHTLY := nightly-2024-08-21
-NIGHTLY_RESULT=$(shell rustup toolchain list | grep $(NIGHTLY))
-
-ANDROID_HOME ?= ~/Library/Android/sdk
-SDK_MANAGER = ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager
-
-prepare-apple: install-nightly
-	rustup target add aarch64-apple-ios-sim aarch64-apple-ios
-
-install-nightly:
-	@test -n "${NIGHTLY_RESULT}" || (echo "Installing nightly"; rustup toolchain install ${NIGHTLY} && rustup component add rust-src --toolchain $(NIGHTLY))
-
-prepare-android:
-	rustup toolchain install stable
-	rustup target add x86_64-linux-android
-	rustup target add aarch64-linux-android
-	rustup target add armv7-linux-androideabi
-	cargo install cargo-ndk
 
 apple: build-targets bindgen-swift assemble-frameworks xcframework cp-xcframework-source
 
-test-ios:
-	@xcodebuild -project tests/ios/GemTest/GemTest.xcodeproj \
-	-scheme GemTest \
-	-sdk iphonesimulator \
-	-destination "platform=iOS Simulator,name=iPhone 15" \
-	test | xcbeautify
-
 bindgen: bindgen-swift bindgen-kotlin
 
-build-targets: install-nightly
+build-targets:
 	@echo "iOS deployment target ${IPHONEOS_DEPLOYMENT_TARGET}"
 	IPHONEOS_DEPLOYMENT_TARGET=${IPHONEOS_DEPLOYMENT_TARGET} cargo build --timings --target aarch64-apple-ios-sim --target aarch64-apple-ios --$(BUILD_MODE)
 	IPHONEOS_DEPLOYMENT_TARGET=${IPHONEOS_DEPLOYMENT_TARGET} cargo +$(NIGHTLY) build --timings -Z build-std --lib --target aarch64-apple-ios-macabi --$(BUILD_MODE)
@@ -91,9 +66,6 @@ cp-xcframework-source:
 	@mkdir -p $(TARGET_XC_FW_FOLDER)/Sources/$(FW_NAME)
 	@cp src/Package.swift $(TARGET_XC_FW_FOLDER)
 	@cp $(GEN_SWIFT_FOLDER)/${FW_NAME}.swift $(TARGET_XC_FW_FOLDER)/Sources/$(FW_NAME)
-
-install-ndk:
-	${SDK_MANAGER} "ndk;26.1.10909125"
 
 bindgen-kotlin:
 	@mkdir -p $(GEN_KOTLIN_FOLDER)
