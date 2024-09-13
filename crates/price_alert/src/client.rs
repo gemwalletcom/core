@@ -1,4 +1,6 @@
-use primitives::{Asset, Device, Price, PriceAlertSubsriptions};
+use api_connector::pusher::model::Notification;
+use localizer::LanguageLocalizer;
+use primitives::{Asset, Device, NumberFormatter, Price, PriceAlertSubsriptions};
 use std::collections::{HashMap, HashSet};
 use std::error::Error;
 use storage::{models::PriceAlert, DatabaseClient};
@@ -90,5 +92,37 @@ impl PriceAlertClient {
         }
         self.database.update_price_alerts_set_notified_at(device_ids.into_iter().collect(), now)?;
         Ok(results)
+    }
+
+    pub fn get_notifications_for_price_alerts(&mut self, notifications: Vec<PriceAlertNotification>, topic: String) -> Vec<Notification> {
+        let mut results = vec![];
+
+        let formatter = NumberFormatter::new();
+
+        for price_alert in notifications {
+            let price = formatter.currency(price_alert.price.price, &price_alert.device.currency);
+            if price.is_none() {
+                println!("Unknown currency symbol: {}", &price_alert.device.currency);
+                continue;
+            }
+            let price_change = formatter.percent(price_alert.price.price_change_percentage_24h, price_alert.device.locale.as_str());
+
+            let message = LanguageLocalizer::new_with_language(&price_alert.device.locale).price_alert_up(
+                &price_alert.asset.full_name(),
+                price.unwrap().as_str(),
+                price_change.as_str(),
+            );
+
+            let notification = Notification {
+                tokens: vec![price_alert.device.token.clone()],
+                platform: price_alert.device.platform.as_i32(),
+                title: message.title,
+                message: message.description,
+                topic: Some(topic.clone()),
+                data: None,
+            };
+            results.push(notification);
+        }
+        return results;
     }
 }

@@ -9,3 +9,4 @@ chrono = { workspace = true }
 primitives = { path = "../primitives" }
 storage = { path = "../storage" }
 api_connector = { path = "../api_connector" }
+localizer = { path = "../../crates/localizer" }

@@ -102,7 +102,6 @@ dependencies = [
  "api_connector",
  "chrono",
  "job_runner",
- "localizer",
  "price_alert",
  "primitives",
  "serde_json",
@@ -5610,6 +5609,7 @@ version = "1.0.0"
 dependencies = [
  "api_connector",
  "chrono",
+ "localizer",
  "primitives",
  "serde",
  "storage",
@@ -5662,6 +5662,7 @@ dependencies = [
  "num-bigint 0.4.5",
  "num-traits",
  "rocket",
+ "rusty-money",
  "serde",
  "serde_json",
  "strum 0.26.2",
@@ -6510,6 +6511,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "rust_decimal"
+version = "1.36.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b082d80e3e3cc52b2ed634388d436fe1f4de6af5786cc2de9ba9737527bdf555"
+dependencies = [
+ "arrayvec",
+ "num-traits",
+]
+
+[[package]]
 name = "rustc-demangle"
 version = "0.1.24"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6690,6 +6701,14 @@ dependencies = [
  "quick-error",
  "tempfile",
  "wait-timeout",
+]
+
+[[package]]
+name = "rusty-money"
+version = "0.4.1"
+source = "git+https://github.com/varunsrin/rusty_money.git?rev=bbc0150#bbc0150742a0fff905225ff11ee09388e9babdcc"
+dependencies = [
+ "rust_decimal",
 ]
 
 [[package]]

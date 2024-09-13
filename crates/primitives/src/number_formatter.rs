@@ -1,19 +1,26 @@
-use bigdecimal::BigDecimal;
-use num_bigint::BigInt;
-use std::str::FromStr;
+use rusty_money::{iso, Formatter, Money, Params};
 
 pub struct NumberFormatter {}
 
 impl NumberFormatter {
-    pub fn big_decimal_value(value: &str, decimals: u32) -> Option<BigDecimal> {
-        let mut decimal = BigDecimal::from_str(value).ok()?;
-        let exp = BigInt::from(10).pow(decimals);
-        decimal = decimal / BigDecimal::from(exp);
-        Some(decimal)
+    pub fn new() -> Self {
+        NumberFormatter {}
     }
-    pub fn value(value: &str, decimals: i32) -> Option<String> {
-        let decimal = Self::big_decimal_value(value, decimals as u32)?;
-        Some(decimal.to_string())
+
+    pub fn currency(&self, value: f64, currency: &str) -> Option<String> {
+        let money = Money::from_str(value.to_string().as_str(), iso::USD).ok()?;
+        let iso_currency = iso::find(&currency).unwrap_or(iso::USD);
+
+        let params = Params {
+            symbol: Some(iso_currency.symbol),
+            code: Some(iso_currency.iso_alpha_code),
+            ..Default::default()
+        };
+        return Some(Formatter::money(&money, params));
+    }
+
+    pub fn percent(&self, value: f64, _locale: &str) -> String {
+        return format!("{:.2}%", value);
     }
 }
 
@@ -22,36 +29,23 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_value() {
-        // Test case 1: Valid input
-        let result = NumberFormatter::value("123456", 3).unwrap();
-        assert_eq!(result, "123.456");
+    fn test_currency() {
+        let formatter = NumberFormatter::new();
+        assert_eq!(formatter.currency(1000.0, "USD"), Some("$1,000.00".to_string()));
+        assert_eq!(formatter.currency(9999.99, "USD"), Some("$9,999.99".to_string()));
+        assert_eq!(formatter.currency(9999.99, "EUR"), Some("€9,999.99".to_string()));
+        assert_eq!(formatter.currency(9999.99, "CNY"), Some("¥9,999.99".to_string()));
+        assert_eq!(formatter.currency(01.99, "GBP"), Some("£1.99".to_string()));
+        assert_eq!(formatter.currency(19.01, "JPY"), Some("¥19.01".to_string()));
+        assert_eq!(formatter.currency(0.39, "USD"), Some("$0.39".to_string()));
+        assert_eq!(formatter.currency(0.0039, "USD"), Some("$0.0039".to_string()));
+        assert_eq!(formatter.currency(69.420, "USD"), Some("$69.42".to_string()));
+    }
 
-        // Test case 2: Input with more decimals than specified
-        let result = NumberFormatter::value("789123456", 4).unwrap();
-        assert_eq!(result, "78912.3456");
-
-        // Test case 3: Input with fewer decimals than specified
-        let result = NumberFormatter::value("4567", 4).unwrap();
-        assert_eq!(result, "0.4567");
-
-        // Test case 4: u256 input
-        let result = NumberFormatter::value(
-            "115792089237316195423570985008687907853269984665640564039457000000000000000000",
-            18,
-        )
-        .unwrap();
-        assert_eq!(
-            result,
-            "115792089237316195423570985008687907853269984665640564039457"
-        );
-
-        // Test case 5: Invalid input
-        let result = NumberFormatter::value("abc", 2);
-        assert_eq!(result, None);
-
-        // Test case 6: Output return small value
-        let result = NumberFormatter::value("1640000000000000", 18).unwrap();
-        assert_eq!(result, "0.00164");
+    #[test]
+    fn test_number() {
+        let formatter = NumberFormatter::new();
+        assert_eq!(formatter.percent(0.12, "en"), "0.12%");
+        assert_eq!(formatter.percent(129.99, "en"), "129.99%");
     }
 }

@@ -1,5 +1,5 @@
 use bigdecimal::ToPrimitive;
-use primitives::{Chain, FiatBuyRequest, FiatProviderName, FiatQuote, NumberFormatter};
+use primitives::{Chain, FiatBuyRequest, FiatProviderName, FiatQuote, BigNumberFormatter};
 use reqwest::Client;
 use url::Url;
 
@@ -101,7 +101,7 @@ impl RampClient {
     }
 
     pub fn get_fiat_quote(&self, request: FiatBuyRequest, quote: Quote) -> FiatQuote {
-        let crypto_amount = NumberFormatter::big_decimal_value(
+        let crypto_amount = BigNumberFormatter::big_decimal_value(
             quote.clone().card_payment.crypto_amount.as_str(),
             quote.asset.decimals,
         )

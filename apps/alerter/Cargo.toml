@@ -13,5 +13,4 @@ primitives = { path = "../../crates/primitives" }
 settings = { path = "../../crates/settings" }
 price_alert = { path = "../../crates/price_alert" }
 api_connector = { path = "../../crates/api_connector" }
-localizer = { path = "../../crates/localizer" }
 job_runner = { path = "../../crates/job_runner" }

@@ -2,7 +2,7 @@ use std::error::Error;
 
 use localizer::LanguageLocalizer;
 use primitives::{
-    AddressFormatter, Chain, NumberFormatter, PushNotification, PushNotificationTypes,
+    AddressFormatter, Chain, BigNumberFormatter, PushNotification, PushNotificationTypes,
     Subscription, Transaction, TransactionSwapMetadata, TransactionType,
 };
 use storage::DatabaseClient;
@@ -45,7 +45,7 @@ impl Pusher {
             .database_client
             .get_asset(transaction.asset_id.to_string().as_str())?;
         let amount =
-            NumberFormatter::value(transaction.value.as_str(), asset.decimals).unwrap_or_default();
+            BigNumberFormatter::value(transaction.value.as_str(), asset.decimals).unwrap_or_default();
         let chain = transaction.asset_id.chain;
         let to_address = self.get_address(chain, transaction.to.as_str())?;
         let from_address = self.get_address(chain, transaction.from.as_str())?;
@@ -122,10 +122,10 @@ impl Pusher {
                     .database_client
                     .get_asset(metadata.to_asset.to_string().as_str())?;
                 let from_amount =
-                    NumberFormatter::value(metadata.from_value.as_str(), from_asset.decimals)
+                    BigNumberFormatter::value(metadata.from_value.as_str(), from_asset.decimals)
                         .unwrap_or_default();
                 let to_amount =
-                    NumberFormatter::value(metadata.to_value.as_str(), to_asset.decimals)
+                    BigNumberFormatter::value(metadata.to_value.as_str(), to_asset.decimals)
                         .unwrap_or_default();
 
                 Ok(Message {

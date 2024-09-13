@@ -1,5 +1,4 @@
-use api_connector::{pusher::model::Notification, PusherClient};
-use localizer::LanguageLocalizer;
+use api_connector::PusherClient;
 use price_alert::{client::PriceAlertRules, PriceAlertClient};
 use settings::AlerterRules;
 
@@ -29,30 +28,18 @@ impl PriceAlertSender {
 
         println!("alerter found devices to alert: {:?}", price_alert_notifications.len());
 
-        for price_alert_notification in price_alert_notifications {
-            let mut notifications = vec![];
+        let notifications = self
+            .price_alert_client
+            .get_notifications_for_price_alerts(price_alert_notifications, self.topic.clone());
 
-            let message = LanguageLocalizer::new_with_language(&price_alert_notification.device.locale).price_alert_up(
-                &price_alert_notification.asset.full_name(),
-                price_alert_notification.price.price.to_string().as_str(),
-                price_alert_notification.price.price_change_percentage_24h.to_string().as_str(),
-            );
+        if notifications.len() == 0 {
+            return Ok(());
+        }
 
-            let notification = Notification {
-                tokens: vec![price_alert_notification.device.token.clone()],
-                platform: price_alert_notification.device.platform.as_i32(),
-                title: message.title,
-                message: message.description,
-                topic: Some(self.topic.clone()),
-                data: None,
-            };
-            notifications.push(notification);
-
-            match self.pusher_client.push_notifications(notifications).await {
-                Ok(_) => {}
-                Err(e) => {
-                    println!("alerter failed to send notification: {:?}", e);
-                }
+        match self.pusher_client.push_notifications(notifications).await {
+            Ok(_) => {}
+            Err(e) => {
+                println!("alerter failed to send notification: {:?}", e);
             }
         }
 

@@ -19,3 +19,4 @@ gem_evm = { path = "../gem_evm" }
 anyhow = { workspace = true }
 urlencoding = { workspace = true }
 url = { workspace = true }
+rusty-money = { workspace = true }

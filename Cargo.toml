@@ -114,3 +114,8 @@ i18n-embed = { version = "0.15.0", features = ["fluent-system", "autoreload"] }
 i18n-embed-fl = { version = "0.9.1" }
 once_cell = { version = "1.19.0" }
 rust-embed = { version = "8.5.0" }
+
+# numbers
+rusty-money = { git = "https://github.com/varunsrin/rusty_money.git", rev = "bbc0150", features = [
+    "iso",
+] }
