@@ -1,10 +1,10 @@
 use std::env;
 
+pub mod operator;
+pub use operator::{OperatorAppStoreApp, OperatorAppStoreLanguage, SettingsOperator};
+
 use config::{Config, ConfigError, Environment, File};
 use serde::Deserialize;
-
-pub mod operator;
-pub use operator::{SettingsOperator, OperatorAppStoreApp, OperatorAppStoreLanguage};
 
 #[derive(Debug, Deserialize, Clone)]
 #[allow(unused)]
@@ -30,6 +30,7 @@ pub struct Settings {
     pub daemon: Daemon,
     pub pusher: Pusher,
     pub swap: Swap,
+    pub alerter: Alerter,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -254,6 +255,19 @@ pub struct SwapProvider {
     pub url: String,
     pub key: String,
     pub fee: SwapFee,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[allow(unused)]
+pub struct Alerter {
+    pub update_interval_seconds: u64,
+    pub rules: AlerterRules,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[allow(unused)]
+pub struct AlerterRules {
+    pub price_increase_percent: f64,
 }
 
 impl Settings {

@@ -29,6 +29,11 @@ pub struct LanguageLocalizer {
     localizer: DefaultLocalizer<'static>,
 }
 
+pub struct LanguageNotification {
+    pub title: String,
+    pub description: String,
+}
+
 impl Default for LanguageLocalizer {
     fn default() -> Self {
         Self::new()
@@ -60,6 +65,19 @@ impl LanguageLocalizer {
         Ok(true)
     }
 
+    pub fn price_alert_up(&self, symbol: &str, price: &str, price_change: &str) -> LanguageNotification {
+        LanguageNotification {
+            title: fl!(self.loader.as_ref(), "notification_price_alert_up_title", symbol = symbol),
+            description: fl!(
+                self.loader.as_ref(),
+                "notification_price_alert_up_description",
+                price = price,
+                price_change = price_change
+            ),
+        }
+    }
+
+    // notifications
     pub fn test(&self) -> String {
         fl!(self.loader.as_ref(), "notification_test")
     }

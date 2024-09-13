@@ -96,6 +96,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "alerter"
+version = "1.0.0"
+dependencies = [
+ "api_connector",
+ "chrono",
+ "job_runner",
+ "localizer",
+ "price_alert",
+ "primitives",
+ "serde_json",
+ "settings",
+ "storage",
+ "tokio",
+]
+
+[[package]]
 name = "aliasable"
 version = "0.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -326,6 +342,7 @@ dependencies = [
  "config",
  "fiat",
  "name_resolver",
+ "price_alert",
  "pricer",
  "primitives",
  "prometheus-client",
@@ -3783,6 +3800,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "49f1f14873335454500d59611f1cf4a4b0f786f9ac11f4312a78e4cf2566695b"
 
 [[package]]
+name = "job_runner"
+version = "1.0.0"
+dependencies = [
+ "tokio",
+]
+
+[[package]]
 name = "jobserver"
 version = "0.1.32"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5107,6 +5131,7 @@ version = "1.0.0"
 dependencies = [
  "api_connector",
  "chrono",
+ "job_runner",
  "reqwest",
  "serde_json",
  "settings",
@@ -5577,6 +5602,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "31c0052426df997c0cbd30789eb44ca097e3541717a7b8fa36b1c464ee7edebd"
 dependencies = [
  "vcpkg",
+]
+
+[[package]]
+name = "price_alert"
+version = "1.0.0"
+dependencies = [
+ "api_connector",
+ "chrono",
+ "primitives",
+ "serde",
+ "storage",
 ]
 
 [[package]]

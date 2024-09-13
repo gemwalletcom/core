@@ -2,6 +2,7 @@ CREATE TABLE devices (
     id SERIAL PRIMARY KEY,
     device_id VARCHAR(32) NOT NULL,
     is_push_enabled boolean NOT NULL,
+    is_price_alerts_enabled boolean NOT NULL DEFAULT false,
     platform VARCHAR(8) NOT NULL,
     token VARCHAR(256) NOT NULL,
     locale VARCHAR(8) NOT NULL,

@@ -19,6 +19,10 @@ impl Asset {
         self.id.chain
     }
 
+    pub fn full_name(&self) -> String {
+        format!("{} ({})", self.name, self.symbol)
+    }
+
     pub fn from_chain(chain: Chain) -> Asset {
         match chain {
             Chain::Ethereum => Asset {

@@ -7,6 +7,7 @@ use typeshare::typeshare;
 #[serde(rename_all = "lowercase")]
 pub enum PushNotificationTypes {
     Transaction,
+    PriceAlertClient,
 }
 
 #[typeshare(swift = "Equatable, Codable")]

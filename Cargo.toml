@@ -14,6 +14,7 @@ members = [
     "apps/daemon",
     "apps/parser",
     "apps/pricer",
+    "apps/alerter",
     "apps/charter",
     "apps/assetor",
     "apps/setup",
@@ -33,11 +34,13 @@ members = [
     "crates/api_connector",
     "crates/settings",
     "crates/settings_chain",
+    "crates/price_alert",
 
     "crates/gem_*",
     "crates/swap_*",
 
     "crates/localizer",
+    "crates/job_runner",
 ]
 
 default-members = [
@@ -45,6 +48,7 @@ default-members = [
     "apps/daemon",
     "apps/parser",
     "apps/pricer",
+    "apps/alerter",
     "apps/charter",
     "apps/assetor",
     "apps/setup",

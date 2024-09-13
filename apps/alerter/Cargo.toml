@@ -1,0 +1,17 @@
+[package]
+name = "alerter"
+version = { workspace = true }
+edition = { workspace = true }
+
+[dependencies]
+serde_json = { workspace = true }
+tokio = { workspace = true }
+chrono = { workspace = true }
+
+storage = { path = "../../crates/storage" }
+primitives = { path = "../../crates/primitives" }
+settings = { path = "../../crates/settings" }
+price_alert = { path = "../../crates/price_alert" }
+api_connector = { path = "../../crates/api_connector" }
+localizer = { path = "../../crates/localizer" }
+job_runner = { path = "../../crates/job_runner" }

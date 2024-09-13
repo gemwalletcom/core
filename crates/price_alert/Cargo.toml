@@ -1,0 +1,11 @@
+[package]
+name = "price_alert"
+edition = { workspace = true }
+version = { workspace = true }
+
+[dependencies]
+serde = { workspace = true }
+chrono = { workspace = true }
+primitives = { path = "../primitives" }
+storage = { path = "../storage" }
+api_connector = { path = "../api_connector" }

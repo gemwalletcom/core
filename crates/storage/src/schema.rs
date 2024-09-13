@@ -95,6 +95,7 @@ diesel::table! {
         #[max_length = 8]
         currency -> Varchar,
         subscriptions_version -> Int4,
+        is_price_alerts_enabled -> Bool,
     }
 }
 
@@ -231,7 +232,7 @@ diesel::table! {
         app -> Varchar,
         #[max_length = 64]
         country -> Varchar,
-        #[max_length = 32]
+        #[max_length = 64]
         review_id -> Varchar,
         #[max_length = 256]
         title -> Varchar,
@@ -256,6 +257,18 @@ diesel::table! {
         timeout_between_blocks -> Int4,
         parallel_blocks -> Int4,
         is_enabled -> Bool,
+        updated_at -> Timestamp,
+        created_at -> Timestamp,
+    }
+}
+
+diesel::table! {
+    price_alerts (id) {
+        id -> Int4,
+        device_id -> Int4,
+        #[max_length = 128]
+        asset_id -> Varchar,
+        last_notified_at -> Nullable<Timestamp>,
         updated_at -> Timestamp,
         created_at -> Timestamp,
     }
@@ -414,6 +427,8 @@ diesel::joinable!(fiat_transactions -> assets (asset_id));
 diesel::joinable!(fiat_transactions -> fiat_providers (provider_id));
 diesel::joinable!(nodes -> chains (chain));
 diesel::joinable!(parser_state -> chains (chain));
+diesel::joinable!(price_alerts -> assets (asset_id));
+diesel::joinable!(price_alerts -> devices (device_id));
 diesel::joinable!(prices_assets -> assets (asset_id));
 diesel::joinable!(prices_assets -> prices (price_id));
 diesel::joinable!(scan_addresses -> chains (chain));
@@ -441,6 +456,7 @@ diesel::allow_tables_to_appear_in_same_query!(
     operator_appstore_positions,
     operator_appstore_reviews,
     parser_state,
+    price_alerts,
     prices,
     prices_assets,
     scan_addresses,

@@ -15,6 +15,7 @@ mod nft;
 mod nft_client;
 mod parser;
 mod parser_client;
+mod price_alerts;
 mod prices;
 mod response;
 mod scan;
@@ -39,6 +40,7 @@ use name_resolver::client::Client as NameClient;
 use name_resolver::NameProviderFactory;
 use nft_client::NFTClient;
 use parser_client::ParserClient;
+use price_alert::PriceAlertClient;
 use pricer::client::PriceClient;
 use rocket::fairing::AdHoc;
 use rocket::tokio::sync::Mutex;
@@ -61,6 +63,7 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
     let price_client = PriceClient::new(redis_url, postgres_url);
     let charts_client = ChartsClient::new(postgres_url, &settings.clickhouse.url);
     let config_client = ConfigClient::new(postgres_url).await;
+    let price_alert_client = PriceAlertClient::new(postgres_url).await;
     let providers = NameProviderFactory::create_providers(settings_clone.clone());
     let name_client = NameClient::new(providers);
 
@@ -126,6 +129,7 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
         .manage(Mutex::new(parser_client))
         .manage(Mutex::new(swap_client))
         .manage(Mutex::new(nft_client))
+        .manage(Mutex::new(price_alert_client))
         .mount("/", routes![status::get_status,])
         .mount(
             "/v1",
@@ -166,6 +170,9 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
                 nft::get_nft_collectibles,
                 nft::get_nft_collections_by_chain_address,
                 nft::get_nft_collectibles_by_chain_address,
+                price_alerts::get_price_alerts,
+                price_alerts::add_price_alerts,
+                price_alerts::delete_price_alerts,
             ],
         )
         .mount(settings.metrics.path, routes![metrics::get_metrics,])

@@ -12,3 +12,4 @@ chrono = { workspace = true }
 settings = { path = "../../crates/settings" }
 storage = { path = "../../crates/storage" }
 api_connector = { path = "../../crates/api_connector" }
+job_runner = { path = "../../crates/job_runner" }

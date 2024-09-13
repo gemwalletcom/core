@@ -12,6 +12,7 @@ pub struct Device {
     pub locale: String,
     pub currency: String,
     pub is_push_enabled: bool,
+    pub is_price_alerts_enabled: bool,
     pub version: String,
     pub subscriptions_version: i32,
 }
@@ -40,6 +41,7 @@ impl Device {
             locale: self.locale.clone(),
             currency: self.currency.clone(),
             is_push_enabled: self.is_push_enabled,
+            is_price_alerts_enabled: Some(self.is_price_alerts_enabled),
             version: self.version.clone(),
             subscriptions_version: self.subscriptions_version,
         }

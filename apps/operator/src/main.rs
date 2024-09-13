@@ -1,9 +1,10 @@
 use std::sync::Arc;
 
 use api_connector::{AppStoreClient, GooglePlayClient};
+use job_runner::run_job;
 use storage::DatabaseClient;
 use tokio::task;
-use tokio::time::{Duration, Instant};
+use tokio::time::Duration;
 
 pub mod appstore_updater;
 pub use appstore_updater::AppstoreUpdater;
@@ -141,22 +142,4 @@ pub async fn main() {
         google_play_update_positions_job,
         google_play_update_reviews_job
     );
-}
-
-async fn run_job<F, Fut>(name: &'static str, interval_duration: Duration, job_fn: F)
-where
-    F: Fn() -> Fut + Send + Sync + 'static,
-    Fut: std::future::Future<Output = ()> + Send + 'static,
-{
-    loop {
-        let now = Instant::now();
-
-        println!("Job start: {}, interval: {} seconds", name, interval_duration.as_secs());
-
-        job_fn().await;
-
-        println!("Job done in {} seconds: {}", now.elapsed().as_secs(), name);
-
-        tokio::time::sleep(interval_duration).await;
-    }
 }

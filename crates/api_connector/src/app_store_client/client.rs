@@ -4,6 +4,12 @@ pub struct AppStoreClient {
     client: reqwest::Client,
 }
 
+impl Default for AppStoreClient {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl AppStoreClient {
     pub fn new() -> Self {
         AppStoreClient {
@@ -34,11 +40,5 @@ impl AppStoreClient {
         let url = format!("{}/{}/rss/customerreviews/id={}/mostRecent/json", self.base_url, country, app_id);
         let response = self.client.get(&url).send().await?.json::<AppStoreReviews>().await?;
         Ok(response)
-    }
-}
-
-impl Default for AppStoreClient {
-    fn default() -> Self {
-        Self::new()
     }
 }
