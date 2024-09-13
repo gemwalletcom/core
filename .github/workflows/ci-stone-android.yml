@@ -47,9 +47,6 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Install just
-        run: cargo install just
-
       - name: Setup NDK
         run: just gemstone install-ndk
 
@@ -66,6 +63,9 @@ jobs:
 
       - name: Run sccache-cache
         uses: mozilla-actions/sccache-action@v0.0.3
+
+      - name: Install just
+        run: cargo install just
 
       - name: Build Android Bindings
         run: |
