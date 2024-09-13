@@ -15,22 +15,29 @@ install-diesel:
     @echo Install Diesel
     cargo install diesel_cli --no-default-features --features postgres --version 2.2.4 --force
 
-test:
+test-workspace:
     cargo test --workspace --quiet
 
 test-all:
     cargo test --all --verbose
 
+test CRATE:
+    cargo test --package {{CRATE}} --workspace
+
 format:
     cargo fmt -q --all
 
 lint:
-    cargo clippy --version
+    @cargo clippy --version
     cargo clippy -- -D warnings
 
 unused:
     cargo install cargo-machete
     cargo machete
+
+bloat:
+    cargo install cargo-bloat --no-default-features
+    cargo bloat --release --crates
 
 migrate:
     diesel migration run

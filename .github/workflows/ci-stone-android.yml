@@ -71,4 +71,4 @@ jobs:
         run: |
           df -h
           just gemstone install-android-targets
-          make bindgen-kotlin && make android
+          just bindgen-kotlin && just build-android

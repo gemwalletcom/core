@@ -27,7 +27,7 @@ impl RedisClient {
         T: Serialize,
     {
         let serialized = serde_json::to_string(value)?;
-        self.conn.set(key, serialized).await?;
+        self.conn.set::<&str, String, ()>(key, serialized).await?;
         Ok(())
     }
 
