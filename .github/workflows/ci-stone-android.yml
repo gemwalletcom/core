@@ -62,7 +62,7 @@ jobs:
         run: cargo install just
 
       - name: Setup NDK
-        run: just gemstone install-ndk
+        run: just install-ndk
 
       - name: Setup Gradle
         uses: gradle/gradle-build-action@v3
@@ -70,5 +70,5 @@ jobs:
       - name: Build Android Bindings
         run: |
           df -h
-          just gemstone install-android-targets
+          just install-android-targets
           just bindgen-kotlin && just build-android
