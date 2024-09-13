@@ -28,6 +28,7 @@ COPY --from=builder /app/target/release/pricer /app
 COPY --from=builder /app/target/release/assetor /app
 COPY --from=builder /app/target/release/charter /app
 COPY --from=builder /app/target/release/operator /app
+COPY --from=builder /app/target/release/alerter /app
 COPY --from=builder /app/Settings.yaml /app
 COPY --from=builder /app/SettingsOperator.yaml /app
 
