@@ -89,7 +89,6 @@ pub struct SimplePriceQuery {
     pub include_24hr_vol: bool,
     pub include_24hr_change: bool,
     pub include_last_updated_at: bool,
-    pub precision: i32,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

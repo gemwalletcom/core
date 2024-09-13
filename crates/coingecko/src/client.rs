@@ -71,7 +71,6 @@ impl CoinGeckoClient {
             include_24hr_vol: true,
             include_24hr_change: true,
             include_last_updated_at: true,
-            precision: 4,
         };
         let response = self.client.get(&url).query(&query).headers(self.headers()).send().await?;
         Ok(response.json().await?)
