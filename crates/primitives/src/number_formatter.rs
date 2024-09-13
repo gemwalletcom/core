@@ -11,9 +11,12 @@ impl NumberFormatter {
         let money = Money::from_str(value.to_string().as_str(), iso::USD).ok()?;
         let iso_currency = iso::find(&currency).unwrap_or(iso::USD);
 
+        let rounding = if value > 1.0 { 2 } else { 4 };
+
         let params = Params {
             symbol: Some(iso_currency.symbol),
             code: Some(iso_currency.iso_alpha_code),
+            rounding: Some(rounding),
             ..Default::default()
         };
         return Some(Formatter::money(&money, params));
@@ -32,6 +35,8 @@ mod tests {
     fn test_currency() {
         let formatter = NumberFormatter::new();
         assert_eq!(formatter.currency(1000.0, "USD"), Some("$1,000.00".to_string()));
+        assert_eq!(formatter.currency(60127.9263, "USD"), Some("$60,127.93".to_string()));
+        assert_eq!(formatter.currency(0.123456, "USD"), Some("$0.1235".to_string()));
         assert_eq!(formatter.currency(9999.99, "USD"), Some("$9,999.99".to_string()));
         assert_eq!(formatter.currency(9999.99, "EUR"), Some("€9,999.99".to_string()));
         assert_eq!(formatter.currency(9999.99, "CNY"), Some("¥9,999.99".to_string()));
