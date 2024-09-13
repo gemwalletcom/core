@@ -54,7 +54,7 @@ export TARGET_XC_FW_FOLDER := "target/spm"
 export FW_FFI_NAME := FW_NAME + "FFI"
 export FW_FFI_FILE := FW_FFI_NAME + ".framework"
 export XC_FW_FFI_NAME := "FW_FFI_NAME" + ".xcframework"
-export DEPLOYMENT_TARGET := "16.0"
+export DEPLOYMENT_TARGET := env_var_or_default("IPHONEOS_DEPLOYMENT_TARGET", "16.0")
 
 build-ios: build-targets bindgen-swift assemble-frameworks xcframework cp-xcframework-source
 

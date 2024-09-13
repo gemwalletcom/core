@@ -23,12 +23,7 @@ impl ParserProxy {
     pub fn new(chain: Chain, config: ParserProxyUrlConfig) -> Self {
         Self {
             chain,
-            providers: config
-                .urls
-                .clone()
-                .into_iter()
-                .map(|x| ParserProxy::new_provider(chain, &x))
-                .collect(),
+            providers: config.urls.clone().into_iter().map(|x| ParserProxy::new_provider(chain, &x)).collect(),
             providers_urls: config.urls,
             provider_current_index: Arc::new(Mutex::new(0)),
         }
@@ -44,7 +39,7 @@ impl ParserProxy {
         }
         let current_index = *self.provider_current_index.lock().unwrap();
         let new_index = thread_rng().gen_range(0..self.providers.len());
-        //TODO: Make sure it's not the same as current index
+        //TODO: Ensure it's not the same as current index
 
         println!(
             "parser proxy switching for chain: {}, from: {}, to: {}",
@@ -71,15 +66,9 @@ impl ChainProvider for ParserProxy {
         }
     }
 
-    async fn get_transactions(
-        &self,
-        block_number: i64,
-    ) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Send + Sync>> {
+    async fn get_transactions(&self, block_number: i64) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Send + Sync>> {
         let provider_index = *self.provider_current_index.lock().unwrap();
-        match self.providers[provider_index]
-            .get_transactions(block_number)
-            .await
-        {
+        match self.providers[provider_index].get_transactions(block_number).await {
             Ok(txs) => Ok(txs),
             Err(err) => Err(self.handle_error(err)),
         }
