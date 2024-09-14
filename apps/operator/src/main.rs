@@ -3,7 +3,6 @@ use std::sync::Arc;
 use api_connector::{AppStoreClient, GooglePlayClient};
 use job_runner::run_job;
 use storage::DatabaseClient;
-use tokio::task;
 use tokio::time::Duration;
 
 pub mod appstore_updater;
@@ -21,7 +20,7 @@ pub async fn main() {
     let appstore = Arc::new(settings_operator.appstore.clone());
     let googleplay = Arc::new(settings_operator.googleplay.clone());
 
-    let google_play_update_details_job = task::spawn(run_job("Google Play. Update datails", Duration::from_millis(googleplay.refresh_interval_ms), {
+    let google_play_update_details_job = run_job("Google Play. Update datails", Duration::from_millis(googleplay.refresh_interval_ms), {
         let settings = Arc::new(settings.clone());
         let appstore = Arc::new(settings_operator.appstore.clone());
         let googleplay = Arc::new(settings_operator.googleplay.clone());
@@ -37,56 +36,48 @@ pub async fn main() {
                 googleplay_updater.update_details(appstore.apps.clone(), appstore.languages.clone()).await;
             }
         }
-    }));
+    });
 
-    let google_play_update_positions_job = task::spawn(run_job(
-        "Google Play. Update positions",
-        Duration::from_millis(googleplay.refresh_interval_ms),
-        {
-            let settings = Arc::new(settings.clone());
-            let appstore = Arc::new(settings_operator.appstore.clone());
-            let googleplay = Arc::new(settings_operator.googleplay.clone());
+    let google_play_update_positions_job = run_job("Google Play. Update positions", Duration::from_millis(googleplay.refresh_interval_ms), {
+        let settings = Arc::new(settings.clone());
+        let appstore = Arc::new(settings_operator.appstore.clone());
+        let googleplay = Arc::new(settings_operator.googleplay.clone());
 
-            move || {
-                let settings = Arc::clone(&settings);
-                let appstore = Arc::clone(&appstore);
-                let googleplay = Arc::clone(&googleplay);
+        move || {
+            let settings = Arc::clone(&settings);
+            let appstore = Arc::clone(&appstore);
+            let googleplay = Arc::clone(&googleplay);
 
-                async move {
-                    let googleplay_client = GooglePlayClient::new(googleplay.url.clone());
-                    let mut googleplay_updater = GooglePlayUpdater::new(googleplay_client, DatabaseClient::new(&settings.postgres.url), googleplay.timeout_ms);
+            async move {
+                let googleplay_client = GooglePlayClient::new(googleplay.url.clone());
+                let mut googleplay_updater = GooglePlayUpdater::new(googleplay_client, DatabaseClient::new(&settings.postgres.url), googleplay.timeout_ms);
 
-                    googleplay_updater
-                        .update_positions(appstore.keys.clone(), appstore.apps.clone(), appstore.languages.clone())
-                        .await;
-                }
+                googleplay_updater
+                    .update_positions(appstore.keys.clone(), appstore.apps.clone(), appstore.languages.clone())
+                    .await;
             }
-        },
-    ));
-    let google_play_update_reviews_job = task::spawn(run_job(
-        "Google Play. Update positions",
-        Duration::from_millis(googleplay.refresh_interval_ms),
-        {
-            let settings = Arc::new(settings.clone());
-            let appstore = Arc::new(settings_operator.appstore.clone());
-            let googleplay = Arc::new(settings_operator.googleplay.clone());
+        }
+    });
+    let google_play_update_reviews_job = run_job("Google Play. Update positions", Duration::from_millis(googleplay.refresh_interval_ms), {
+        let settings = Arc::new(settings.clone());
+        let appstore = Arc::new(settings_operator.appstore.clone());
+        let googleplay = Arc::new(settings_operator.googleplay.clone());
 
-            move || {
-                let settings = Arc::clone(&settings);
-                let appstore = Arc::clone(&appstore);
-                let googleplay = Arc::clone(&googleplay);
+        move || {
+            let settings = Arc::clone(&settings);
+            let appstore = Arc::clone(&appstore);
+            let googleplay = Arc::clone(&googleplay);
 
-                async move {
-                    let googleplay_client = GooglePlayClient::new(googleplay.url.clone());
-                    let mut googleplay_updater = GooglePlayUpdater::new(googleplay_client, DatabaseClient::new(&settings.postgres.url), googleplay.timeout_ms);
+            async move {
+                let googleplay_client = GooglePlayClient::new(googleplay.url.clone());
+                let mut googleplay_updater = GooglePlayUpdater::new(googleplay_client, DatabaseClient::new(&settings.postgres.url), googleplay.timeout_ms);
 
-                    googleplay_updater.update_reviews(appstore.apps.clone(), appstore.languages.clone()).await;
-                }
+                googleplay_updater.update_reviews(appstore.apps.clone(), appstore.languages.clone()).await;
             }
-        },
-    ));
+        }
+    });
 
-    let app_store_update_details_job = task::spawn(run_job("App Store. Update datails", Duration::from_millis(appstore.refresh_interval_ms), {
+    let app_store_update_details_job = run_job("App Store. Update datails", Duration::from_millis(appstore.refresh_interval_ms), {
         let settings = Arc::new(settings.clone());
         let appstore = Arc::new(settings_operator.appstore.clone());
         move || {
@@ -99,9 +90,9 @@ pub async fn main() {
                 appstore_updater.update_details(appstore.apps.clone(), appstore.languages.clone()).await;
             }
         }
-    }));
+    });
 
-    let app_store_update_positions_job = task::spawn(run_job("App Store. Update positions", Duration::from_millis(appstore.refresh_interval_ms), {
+    let app_store_update_positions_job = run_job("App Store. Update positions", Duration::from_millis(appstore.refresh_interval_ms), {
         let settings = Arc::new(settings.clone());
         let appstore = Arc::new(settings_operator.appstore.clone());
 
@@ -117,8 +108,8 @@ pub async fn main() {
                     .await;
             }
         }
-    }));
-    let app_store_update_reviews_job = task::spawn(run_job("App Store. Update reviews", Duration::from_millis(appstore.refresh_interval_ms), {
+    });
+    let app_store_update_reviews_job = run_job("App Store. Update reviews", Duration::from_millis(appstore.refresh_interval_ms), {
         let settings = Arc::new(settings.clone());
         let appstore = Arc::new(settings_operator.appstore.clone());
 
@@ -132,7 +123,7 @@ pub async fn main() {
                 appstore_updater.update_reviews(appstore.apps.clone(), appstore.languages.clone()).await;
             }
         }
-    }));
+    });
 
     let _ = tokio::join!(
         app_store_update_details_job,

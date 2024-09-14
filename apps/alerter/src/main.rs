@@ -1,5 +1,4 @@
 use std::{sync::Arc, time::Duration};
-use tokio::task;
 mod price_alerts_sender;
 use job_runner::run_job;
 use price_alerts_sender::PriceAlertSender;
@@ -14,8 +13,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let settings = Settings::new().unwrap();
 
-    let price_alerts_job = task::spawn(run_job("Price Alerts", Duration::from_secs(settings.alerter.update_interval_seconds), {
-        let settings = Arc::new(settings.clone());
+    let price_alerts_job = run_job("Price Alerts", Duration::from_secs(settings.alerter.update_interval_seconds), {
+        let settings = Arc::new(settings.clone()); // Clone the Arc to move into the job
         move || {
             let settings = Arc::clone(&settings);
 
@@ -27,10 +26,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
                 let mut price_alerts_sender = PriceAlertSender::new(price_alert_client, pusher_client, rules, topic);
 
-                let _ = price_alerts_sender.run().await;
+                let _ = price_alerts_sender.run().await; // Run the price alert sender
             }
         }
-    }));
+    });
 
     let _ = tokio::join!(price_alerts_job);
 
