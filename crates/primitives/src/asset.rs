@@ -56,7 +56,7 @@ impl Asset {
             Chain::Polygon => Asset {
                 id: chain.as_asset_id(),
                 name: "Polygon".to_string(),
-                symbol: "MATIC".to_string(),
+                symbol: "POL".to_string(),
                 decimals: 18,
                 asset_type: AssetType::NATIVE,
             },
