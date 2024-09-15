@@ -1,9 +1,6 @@
 use super::model::{QuoteRequest, SwapResponse, SwapResult, Tokenlist};
 use gem_evm::address::EthereumAddress;
-use primitives::{
-    swap::SwapApprovalData, AssetId, Chain, ChainType, EVMChain, SwapQuote,
-    SwapQuoteProtocolRequest,
-};
+use primitives::{swap::SwapApprovalData, AssetId, Chain, ChainType, EVMChain, SwapQuote, SwapQuoteProtocolRequest};
 use std::str::FromStr;
 use swap_provider::SwapError;
 pub struct OneInchClient {
@@ -19,13 +16,13 @@ const NATIVE_ADDRESS: &str = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
 pub const PROVIDER_NAME: &str = "1inch";
 
 impl OneInchClient {
-    pub fn new(api_url: String, api_key: String, fee: f64, fee_referral_address: String) -> Self {
+    pub fn new(api_url: &str, api_key: &str, fee: f64, fee_referral_address: String) -> Self {
         let client = reqwest::Client::builder().build().unwrap();
 
         Self {
             client,
-            api_url,
-            api_key,
+            api_url: api_url.to_string(),
+            api_key: api_key.to_string(),
             fee,
             fee_referral_address,
             version: "v5.2".to_string(),
@@ -47,10 +44,7 @@ impl OneInchClient {
         ]
     }
 
-    pub async fn get_tokenlist(
-        &self,
-        chain_id: &str,
-    ) -> Result<Tokenlist, Box<dyn std::error::Error>> {
+    pub async fn get_tokenlist(&self, chain_id: &str) -> Result<Tokenlist, Box<dyn std::error::Error + Send + Sync>> {
         let url = format!("{}/token/v1.2/{chain_id}", self.api_url);
         Ok(self
             .client
@@ -105,9 +99,7 @@ impl OneInchClient {
             swap_quote = self.get_swap_quote_data(quote_request, network_id).await?;
             approval = None;
         } else {
-            swap_quote = self
-                .get_swap_quote(quote_request.clone(), network_id)
-                .await?;
+            swap_quote = self.get_swap_quote(quote_request.clone(), network_id).await?;
             approval = Some(SwapApprovalData {
                 spender: self.get_swap_spender(quote.from_asset.chain)?,
             });
@@ -126,15 +118,8 @@ impl OneInchClient {
         Ok(quote)
     }
 
-    pub async fn get_swap_quote(
-        &self,
-        request: QuoteRequest,
-        network_id: &str,
-    ) -> Result<SwapResult, SwapError> {
-        let url = format!(
-            "{}/swap/{}/{}/quote",
-            self.api_url, self.version, network_id
-        );
+    pub async fn get_swap_quote(&self, request: QuoteRequest, network_id: &str) -> Result<SwapResult, SwapError> {
+        let url = format!("{}/swap/{}/{}/quote", self.api_url, self.version, network_id);
         Ok(self
             .client
             .get(&url)
@@ -156,11 +141,7 @@ impl OneInchClient {
         Ok(spender)
     }
 
-    pub async fn get_swap_quote_data(
-        &self,
-        request: QuoteRequest,
-        network_id: &str,
-    ) -> Result<SwapResult, SwapError> {
+    pub async fn get_swap_quote_data(&self, request: QuoteRequest, network_id: &str) -> Result<SwapResult, SwapError> {
         let url = format!("{}/swap/{}/{}/swap", self.api_url, self.version, network_id);
         let response = self
             .client
@@ -173,13 +154,7 @@ impl OneInchClient {
             .await?;
         let result = match response {
             SwapResponse::Success(result) => result,
-            SwapResponse::Error(error) => {
-                return Err(format!(
-                    "{} ({}): {}",
-                    error.error, error.status_code, error.description
-                )
-                .into())
-            }
+            SwapResponse::Error(error) => return Err(format!("{} ({}): {}", error.error, error.status_code, error.description).into()),
         };
         Ok(result)
     }

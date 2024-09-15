@@ -1,28 +1,24 @@
 use assetor::AssetUpdater;
 use coingecko::CoinGeckoClient;
+use job_runner::run_job;
 use settings::Settings;
-use std::{thread, time::Duration};
+use std::{sync::Arc, time::Duration};
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() {
     println!("assetor init");
 
     let settings = Settings::new().unwrap();
-    let coingecko_client = CoinGeckoClient::new(settings.coingecko.key.secret);
-    let mut asset_updater = AssetUpdater::new(coingecko_client.clone(), &settings.postgres.url);
 
-    loop {
-        println!("update assets: start");
-
-        match asset_updater.update_assets().await {
-            Ok(count) => {
-                println!("update assets: {}", count)
-            }
-            Err(err) => {
-                println!("update assets error: {}", err)
-            }
+    let update_assets = run_job("Update assets assets", Duration::from_secs(86400), {
+        let settings = Arc::new(settings.clone());
+        move || {
+            let settings = Arc::clone(&settings);
+            let coingecko_client = CoinGeckoClient::new(&settings.coingecko.key.secret);
+            let mut asset_updater = AssetUpdater::new(coingecko_client.clone(), &settings.postgres.url);
+            async move { asset_updater.update_assets().await }
         }
+    });
 
-        thread::sleep(Duration::from_secs(81600));
-    }
+    let _ = tokio::join!(update_assets);
 }

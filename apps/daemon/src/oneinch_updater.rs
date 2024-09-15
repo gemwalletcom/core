@@ -16,7 +16,7 @@ impl Client {
         }
     }
 
-    pub async fn update_swap_tokenlist(&mut self) -> Result<usize, Box<dyn Error>> {
+    pub async fn update_swap_tokenlist(&mut self) -> Result<usize, Box<dyn Error + Send + Sync>> {
         let chains = self.client.chains();
 
         for chain in chains {

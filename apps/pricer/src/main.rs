@@ -1,85 +1,83 @@
 use coingecko::CoinGeckoClient;
+use job_runner::run_job;
 use pricer::{client::PriceClient, price_updater::PriceUpdater};
 use settings::Settings;
-use std::{thread, time::Duration};
+use std::{sync::Arc, time::Duration};
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() {
     println!("pricer init");
 
     let settings = Settings::new().unwrap();
-    let coingecko_client = CoinGeckoClient::new(settings.coingecko.key.secret);
-    let price_client = PriceClient::new(&settings.redis.url, &settings.postgres.url);
-    let mut price_updater = PriceUpdater::new(price_client, coingecko_client.clone());
 
-    println!("clean outdated asset: start");
-
-    match price_updater
-        .clean_outdated_assets(settings.pricer.outdated)
-        .await
-    {
-        Ok(count) => {
-            println!("clean outdated assets: {},", count)
+    let clean_updated_assets = run_job("Clean outdated assets", Duration::from_secs(86400), {
+        let settings = Arc::new(settings.clone());
+        move || {
+            let settings = Arc::clone(&settings);
+            async move { price_updater_factory(&settings).clean_outdated_assets(settings.pricer.outdated).await }
         }
-        Err(err) => {
-            println!("clean outdated assets error: {}", err)
+    });
+    let update_fiat_assets = run_job("Update fiat assets", Duration::from_secs(86400), {
+        let settings = Arc::new(settings.clone());
+        move || {
+            let settings = Arc::clone(&settings);
+            async move { price_updater_factory(&settings.clone()).update_fiat_rates().await }
         }
-    }
+    });
 
-    match price_updater.update_fiat_rates().await {
-        Ok(count) => {
-            println!("update rates: {}", count)
+    let update_prices_assets = run_job("Update prices assets", Duration::from_secs(86400), {
+        let settings = Arc::new(settings.clone());
+        move || {
+            let settings = Arc::clone(&settings);
+            async move { price_updater_factory(&settings.clone()).update_prices_assets().await }
         }
-        Err(err) => {
-            println!("update rates error: {}", err)
+    });
+
+    let update_prices_assets_pages = run_job("Update prices assets 30 pages", Duration::from_secs(86400), {
+        let settings = Arc::new(settings.clone());
+        move || {
+            let settings = Arc::clone(&settings);
+            async move { price_updater_factory(&settings.clone()).update_prices(30).await }
         }
-    }
+    });
 
-    println!("update prices assets: start");
-
-    match price_updater.update_prices_assets().await {
-        Ok(count) => {
-            println!("update prices assets: {}", count)
+    let update_prices_high_market_cap = run_job("Update prices high market cap", Duration::from_secs(settings.pricer.timer), {
+        let settings = Arc::new(settings.clone());
+        move || {
+            let settings = Arc::clone(&settings);
+            async move { price_updater_factory(&settings.clone()).update_prices_simple_high_market_cap().await }
         }
-        Err(err) => {
-            println!("update prices assets error: {}", err)
+    });
+
+    let update_prices_top_market_cap = run_job("Update prices low market cap", Duration::from_secs(settings.pricer.timer * 5), {
+        let settings = Arc::new(settings.clone());
+        move || {
+            let settings = Arc::clone(&settings);
+            async move { price_updater_factory(&settings.clone()).update_prices_simple_low_market_cap().await }
         }
-    }
+    });
 
-    println!("update prices: start");
-
-    match price_updater.update_prices(30).await {
-        Ok(count) => {
-            println!("update prices: {}", count)
+    let update_prices_cache = run_job("Update prices cache", Duration::from_secs(30), {
+        let settings = Arc::new(settings.clone());
+        move || {
+            let settings = Arc::clone(&settings);
+            async move { price_updater_factory(&settings.clone()).update_prices_cache().await }
         }
-        Err(err) => {
-            println!("update prices error: {}", err)
-        }
-    }
+    });
 
-    loop {
-        println!("update simple prices: start");
+    let _ = tokio::join!(
+        clean_updated_assets,
+        update_fiat_assets,
+        update_prices_assets,
+        update_prices_assets_pages,
+        update_prices_high_market_cap,
+        update_prices_top_market_cap,
+        update_prices_cache,
+    );
+}
 
-        match price_updater.update_prices_simple().await {
-            Ok(count) => {
-                println!("update simple prices: {}", count)
-            }
-            Err(err) => {
-                println!("update simple prices error: {}", err)
-            }
-        }
-
-        println!("update prices cache: start");
-
-        match price_updater.update_prices_cache().await {
-            Ok(count) => {
-                println!("update prices cache: {}", count)
-            }
-            Err(err) => {
-                println!("update prices cache error: {}", err)
-            }
-        }
-
-        thread::sleep(Duration::from_secs(settings.pricer.timer));
-    }
+fn price_updater_factory(settings: &Settings) -> PriceUpdater {
+    let coingecko_client = CoinGeckoClient::new(&settings.coingecko.key.secret.clone());
+    let price_client = PriceClient::new(&settings.redis.url, &settings.postgres.url.clone());
+    PriceUpdater::new(price_client, coingecko_client.clone())
 }

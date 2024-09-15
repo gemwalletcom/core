@@ -17,10 +17,14 @@ pub struct CoinGeckoClient {
 }
 
 impl CoinGeckoClient {
-    pub fn new(api_key: String) -> Self {
+    pub fn new(api_key: &str) -> Self {
         let client = reqwest::Client::new();
-        let url = Self::url_for_api_key(api_key.clone());
-        Self { client, url, api_key }
+        let url = Self::url_for_api_key(api_key.to_string().clone());
+        Self {
+            client,
+            url,
+            api_key: api_key.to_string(),
+        }
     }
 
     fn url_for_api_key(api_key: String) -> String {
@@ -62,7 +66,7 @@ impl CoinGeckoClient {
         response.json().await
     }
 
-    pub async fn get_prices_by_ids(&self, ids: Vec<String>, currency: &str) -> Result<SimplePrices, Box<dyn std::error::Error>> {
+    pub async fn get_prices_by_ids(&self, ids: Vec<String>, currency: &str) -> Result<SimplePrices, Box<dyn std::error::Error + Send + Sync>> {
         let url = format!("{}/api/v3/simple/price", self.url);
         let query = SimplePriceQuery {
             ids: ids.join(","),

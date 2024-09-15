@@ -19,7 +19,7 @@ impl PriceAlertSender {
         }
     }
 
-    pub async fn run(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+    pub async fn run(&mut self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
         let rules = PriceAlertRules {
             price_change_increase: self.rules.price_increase_percent,
         };
@@ -33,16 +33,16 @@ impl PriceAlertSender {
             .get_notifications_for_price_alerts(price_alert_notifications, self.topic.clone());
 
         if notifications.len() == 0 {
-            return Ok(());
+            return Ok(0);
         }
 
-        match self.pusher_client.push_notifications(notifications).await {
+        match self.pusher_client.push_notifications(notifications.clone()).await {
             Ok(_) => {}
             Err(e) => {
                 println!("alerter failed to send notification: {:?}", e);
             }
         }
 
-        Ok(())
+        Ok(notifications.len())
     }
 }

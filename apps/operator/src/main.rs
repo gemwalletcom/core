@@ -33,7 +33,7 @@ pub async fn main() {
                 let googleplay_client = GooglePlayClient::new(googleplay.url.clone());
                 let mut googleplay_updater = GooglePlayUpdater::new(googleplay_client, DatabaseClient::new(&settings.postgres.url), googleplay.timeout_ms);
 
-                googleplay_updater.update_details(appstore.apps.clone(), appstore.languages.clone()).await;
+                googleplay_updater.update_details(appstore.apps.clone(), appstore.languages.clone()).await
             }
         }
     });
@@ -54,7 +54,7 @@ pub async fn main() {
 
                 googleplay_updater
                     .update_positions(appstore.keys.clone(), appstore.apps.clone(), appstore.languages.clone())
-                    .await;
+                    .await
             }
         }
     });
@@ -72,7 +72,7 @@ pub async fn main() {
                 let googleplay_client = GooglePlayClient::new(googleplay.url.clone());
                 let mut googleplay_updater = GooglePlayUpdater::new(googleplay_client, DatabaseClient::new(&settings.postgres.url), googleplay.timeout_ms);
 
-                googleplay_updater.update_reviews(appstore.apps.clone(), appstore.languages.clone()).await;
+                googleplay_updater.update_reviews(appstore.apps.clone(), appstore.languages.clone()).await
             }
         }
     });
@@ -87,7 +87,7 @@ pub async fn main() {
             async move {
                 let mut appstore_updater = AppstoreUpdater::new(AppStoreClient::new(), DatabaseClient::new(&settings.postgres.url), appstore.timeout_ms);
 
-                appstore_updater.update_details(appstore.apps.clone(), appstore.languages.clone()).await;
+                appstore_updater.update_details(appstore.apps.clone(), appstore.languages.clone()).await
             }
         }
     });
@@ -105,7 +105,7 @@ pub async fn main() {
 
                 appstore_updater
                     .update_positions(appstore.keys.clone(), appstore.apps.clone(), appstore.languages.clone())
-                    .await;
+                    .await
             }
         }
     });
@@ -120,7 +120,7 @@ pub async fn main() {
             async move {
                 let mut appstore_updater = AppstoreUpdater::new(AppStoreClient::new(), DatabaseClient::new(&settings.postgres.url), appstore.timeout_ms);
 
-                appstore_updater.update_reviews(appstore.apps.clone(), appstore.languages.clone()).await;
+                appstore_updater.update_reviews(appstore.apps.clone(), appstore.languages.clone()).await
             }
         }
     });

@@ -14,11 +14,7 @@ pub struct ChartsUpdater {
 }
 
 impl ChartsUpdater {
-    pub fn new(
-        charts_client: ChartsClient,
-        prices_client: PriceClient,
-        coin_gecko_client: CoinGeckoClient,
-    ) -> Self {
+    pub fn new(charts_client: ChartsClient, prices_client: PriceClient, coin_gecko_client: CoinGeckoClient) -> Self {
         Self {
             coin_gecko_client,
             prices_client,
@@ -34,10 +30,7 @@ impl ChartsUpdater {
         let coin_list = self.get_coin_list().await?;
 
         for coin_id in coin_list.clone() {
-            let prices = self
-                .coin_gecko_client
-                .get_market_chart(coin_id.id.as_str())
-                .await;
+            let prices = self.coin_gecko_client.get_market_chart(coin_id.id.as_str()).await;
 
             match prices {
                 Ok(prices) => {
@@ -75,7 +68,7 @@ impl ChartsUpdater {
         Ok(coin_list.len())
     }
 
-    pub async fn update_charts(&mut self) -> Result<usize, Box<dyn std::error::Error>> {
+    pub async fn update_charts(&mut self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
         let prices = self.prices_client.get_prices()?;
         let charts = prices
             .clone()

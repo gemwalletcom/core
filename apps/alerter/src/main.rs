@@ -8,7 +8,7 @@ use price_alert::PriceAlertClient;
 use settings::Settings;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() {
     println!("alerter init");
 
     let settings = Settings::new().unwrap();
@@ -21,17 +21,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             async move {
                 let price_alert_client = PriceAlertClient::new(&settings.postgres.url).await;
                 let pusher_client = PusherClient::new(settings.pusher.url.clone());
-                let topic = settings.pusher.ios.topic.clone();
-                let rules = settings.alerter.rules.clone();
 
-                let mut price_alerts_sender = PriceAlertSender::new(price_alert_client, pusher_client, rules, topic);
-
-                let _ = price_alerts_sender.run().await; // Run the price alert sender
+                PriceAlertSender::new(
+                    price_alert_client,
+                    pusher_client,
+                    settings.alerter.rules.clone(),
+                    settings.pusher.ios.topic.clone(),
+                )
+                .run()
+                .await
             }
         }
     });
 
     let _ = tokio::join!(price_alerts_job);
-
-    Ok(())
 }

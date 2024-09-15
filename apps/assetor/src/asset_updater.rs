@@ -16,7 +16,7 @@ impl AssetUpdater {
         }
     }
 
-    pub async fn update_assets(&mut self) -> Result<usize, Box<dyn Error>> {
+    pub async fn update_assets(&mut self) -> Result<usize, Box<dyn Error + Send + Sync>> {
         let coin_list = self
             .database
             .get_prices()?
@@ -43,10 +43,7 @@ impl AssetUpdater {
         Ok(coin_list.len())
     }
 
-    fn get_assets_from_coin_info(
-        &self,
-        coin_info: CoinInfo,
-    ) -> Vec<(Asset, AssetScore, AssetDetails)> {
+    fn get_assets_from_coin_info(&self, coin_info: CoinInfo) -> Vec<(Asset, AssetScore, AssetDetails)> {
         let asset_details = self.get_asset_details(coin_info.clone());
 
         let values = coin_info
@@ -65,9 +62,7 @@ impl AssetUpdater {
         values
             .into_iter()
             .flat_map(|(chain, platform)| {
-                if let (Some(asset_type), Some(platform)) =
-                    (chain.default_asset_type(), platform.clone())
-                {
+                if let (Some(asset_type), Some(platform)) = (chain.default_asset_type(), platform.clone()) {
                     if platform.contract_address.is_empty() || platform.decimal_place.is_none() {
                         return None;
                     }
@@ -89,21 +84,13 @@ impl AssetUpdater {
                     None
                 }
             })
-            .map(|x| {
-                (
-                    x.clone(),
-                    self.get_asset_score(x.clone(), coin_info.clone()),
-                    asset_details.clone(),
-                )
-            })
+            .map(|x| (x.clone(), self.get_asset_score(x.clone(), coin_info.clone()), asset_details.clone()))
             .collect::<Vec<_>>()
     }
 
     fn get_asset_score(&self, asset: Asset, coin_info: CoinInfo) -> AssetScore {
         if asset.asset_type == AssetType::NATIVE {
-            return AssetScore {
-                rank: asset.chain().rank(),
-            };
+            return AssetScore { rank: asset.chain().rank() };
         }
         let mut rank = 12;
 
@@ -170,62 +157,28 @@ impl AssetUpdater {
         } else {
             None
         };
-        let twitter = if links
-            .clone()
-            .twitter_screen_name
-            .unwrap_or_default()
-            .is_empty()
-        {
+        let twitter = if links.clone().twitter_screen_name.unwrap_or_default().is_empty() {
             None
         } else {
-            Some(format!(
-                "https://x.com/{}",
-                links.clone().twitter_screen_name.unwrap_or_default()
-            ))
+            Some(format!("https://x.com/{}", links.clone().twitter_screen_name.unwrap_or_default()))
         };
-        let facebook = if links
-            .clone()
-            .facebook_username
-            .unwrap_or_default()
-            .is_empty()
-        {
+        let facebook = if links.clone().facebook_username.unwrap_or_default().is_empty() {
             None
         } else {
-            Some(format!(
-                "https://facebook.com/{}",
-                links.clone().facebook_username.unwrap_or_default()
-            ))
+            Some(format!("https://facebook.com/{}", links.clone().facebook_username.unwrap_or_default()))
         };
-        let telegram = if links
-            .clone()
-            .telegram_channel_identifier
-            .unwrap_or_default()
-            .is_empty()
-        {
+        let telegram = if links.clone().telegram_channel_identifier.unwrap_or_default().is_empty() {
             None
         } else {
-            Some(format!(
-                "https://t.me/{}",
-                links
-                    .clone()
-                    .telegram_channel_identifier
-                    .unwrap_or_default()
-            ))
+            Some(format!("https://t.me/{}", links.clone().telegram_channel_identifier.unwrap_or_default()))
         };
-        let reddit = if links.clone().subreddit_url.unwrap_or_default() == "https://www.reddit.com"
-        {
+        let reddit = if links.clone().subreddit_url.unwrap_or_default() == "https://www.reddit.com" {
             None
         } else {
             links.clone().subreddit_url
         };
-        let coingecko = format!(
-            "https://www.coingecko.com/coins/{}",
-            coin_info.id.to_lowercase()
-        );
-        let coinmarketcap = format!(
-            "https://coinmarketcap.com/currencies/{}",
-            coin_info.id.to_lowercase()
-        );
+        let coingecko = format!("https://www.coingecko.com/coins/{}", coin_info.id.to_lowercase());
+        let coinmarketcap = format!("https://coinmarketcap.com/currencies/{}", coin_info.id.to_lowercase());
         let discord = links
             .clone()
             .chat_url
@@ -234,18 +187,8 @@ impl AssetUpdater {
             .collect::<Vec<_>>()
             .first()
             .cloned();
-        let repos = links
-            .clone()
-            .repos_url
-            .get("github")
-            .cloned()
-            .unwrap_or_default();
-        let github = repos
-            .into_iter()
-            .filter(|x| !x.is_empty())
-            .collect::<Vec<_>>()
-            .first()
-            .cloned();
+        let repos = links.clone().repos_url.get("github").cloned().unwrap_or_default();
+        let github = repos.into_iter().filter(|x| !x.is_empty()).collect::<Vec<_>>().first().cloned();
 
         let links = AssetLinks {
             homepage,
@@ -265,16 +208,8 @@ impl AssetUpdater {
     }
 
     // asset, asset details
-    pub async fn update_asset(
-        &mut self,
-        asset: Asset,
-        asset_score: AssetScore,
-        asset_details: AssetDetails,
-    ) -> Result<(), Box<dyn Error>> {
-        let details = storage::models::asset::AssetDetail::from_primitive(
-            asset.id.to_string().as_str(),
-            asset_details,
-        );
+    pub async fn update_asset(&mut self, asset: Asset, asset_score: AssetScore, asset_details: AssetDetails) -> Result<(), Box<dyn Error>> {
+        let details = storage::models::asset::AssetDetail::from_primitive(asset.id.to_string().as_str(), asset_details);
         let asset = storage::models::asset::Asset::from_primitive(asset);
         let asset_id = asset.id.as_str();
         let _ = self.database.add_assets(vec![asset.clone()]);

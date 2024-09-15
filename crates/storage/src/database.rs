@@ -158,7 +158,7 @@ impl DatabaseClient {
 
     pub fn get_prices(&mut self) -> Result<Vec<Price>, diesel::result::Error> {
         use crate::schema::prices::dsl::*;
-        prices.select(Price::as_select()).load(&mut self.connection)
+        prices.order(market_cap.desc()).select(Price::as_select()).load(&mut self.connection)
     }
 
     pub fn get_prices_assets(&mut self) -> Result<Vec<PriceAsset>, diesel::result::Error> {

@@ -43,7 +43,7 @@ impl PriceClient {
         Ok(price.price_id.clone())
     }
 
-    pub fn set_prices(&mut self, prices: Vec<Price>) -> Result<usize, Box<dyn Error>> {
+    pub fn set_prices(&mut self, prices: Vec<Price>) -> Result<usize, Box<dyn Error + Send + Sync>> {
         for chunk in prices.chunks(PRICES_INSERT_BATCH_LIMIT).clone() {
             self.database.set_prices(chunk.to_vec())?;
         }
@@ -57,7 +57,7 @@ impl PriceClient {
         Ok(prices.len())
     }
 
-    pub fn set_prices_assets(&mut self, values: Vec<PriceAsset>) -> Result<usize, Box<dyn Error>> {
+    pub fn set_prices_assets(&mut self, values: Vec<PriceAsset>) -> Result<usize, Box<dyn Error + Send + Sync>> {
         // filter non existing prices and assets
         let assets_ids = self
             .database
@@ -66,12 +66,7 @@ impl PriceClient {
             .map(|x| x.id.clone())
             .collect::<Vec<_>>();
 
-        let prices_ids = self
-            .database
-            .get_prices()?
-            .iter()
-            .map(|x| x.id.clone())
-            .collect::<Vec<_>>();
+        let prices_ids = self.database.get_prices()?.iter().map(|x| x.id.clone()).collect::<Vec<_>>();
 
         let values = values
             .into_iter()
@@ -84,28 +79,23 @@ impl PriceClient {
         Ok(values.len())
     }
 
-    pub fn get_prices(&mut self) -> Result<Vec<Price>, Box<dyn Error>> {
+    pub fn get_prices(&mut self) -> Result<Vec<Price>, Box<dyn Error + Send + Sync>> {
         Ok(self.database.get_prices()?)
     }
 
-    pub fn get_prices_ids(&mut self) -> Result<Vec<String>, Box<dyn Error>> {
-        Ok(self
-            .database
-            .get_prices()?
-            .into_iter()
-            .map(|x| x.id)
-            .collect())
+    pub fn get_prices_ids(&mut self) -> Result<Vec<String>, Box<dyn Error + Send + Sync>> {
+        Ok(self.database.get_prices()?.into_iter().map(|x| x.id).collect())
     }
 
-    pub fn get_prices_assets(&mut self) -> Result<Vec<PriceAsset>, Box<dyn Error>> {
+    pub fn get_prices_assets(&mut self) -> Result<Vec<PriceAsset>, Box<dyn Error + Send + Sync>> {
         Ok(self.database.get_prices_assets()?)
     }
 
-    pub async fn set_fiat_rates(&mut self, rates: Vec<FiatRate>) -> Result<usize, Box<dyn Error>> {
+    pub async fn set_fiat_rates(&mut self, rates: Vec<FiatRate>) -> Result<usize, Box<dyn Error + Send + Sync>> {
         Ok(self.database.set_fiat_rates(rates)?)
     }
 
-    pub fn get_fiat_rates(&mut self) -> Result<Vec<FiatRate>, Box<dyn Error>> {
+    pub fn get_fiat_rates(&mut self) -> Result<Vec<FiatRate>, Box<dyn Error + Send + Sync>> {
         Ok(self.database.get_fiat_rates()?)
     }
 
@@ -115,11 +105,7 @@ impl PriceClient {
         format!("{}{}:{}", self.prefix, currency, asset_id)
     }
 
-    pub async fn get_asset_price(
-        &mut self,
-        asset_id: &str,
-        currency: &str,
-    ) -> Result<AssetMarketPrice, Box<dyn Error>> {
+    pub async fn get_asset_price(&mut self, asset_id: &str, currency: &str) -> Result<AssetMarketPrice, Box<dyn Error>> {
         let prices = self.get_cache_prices(currency, vec![asset_id]).await?;
         let price = prices.first().cloned().ok_or("No price available")?;
 
@@ -129,39 +115,18 @@ impl PriceClient {
         })
     }
 
-    pub async fn set_cache_prices(
-        &mut self,
-        currency: &str,
-        prices: Vec<PriceCache>,
-    ) -> Result<usize, Box<dyn Error>> {
+    pub async fn set_cache_prices(&mut self, currency: &str, prices: Vec<PriceCache>) -> Result<usize, Box<dyn Error + Send + Sync>> {
         let values: Vec<(String, String)> = prices
             .iter()
-            .map(|x| {
-                (
-                    self.asset_key(currency, x.asset_id.clone()),
-                    serde_json::to_string(&x).unwrap(),
-                )
-            })
+            .map(|x| (self.asset_key(currency, x.asset_id.clone()), serde_json::to_string(&x).unwrap()))
             .collect();
 
         self.cache_client.set_values(values).await
     }
 
-    pub async fn get_cache_prices(
-        &mut self,
-        currency: &str,
-        asset_ids: Vec<&str>,
-    ) -> RedisResult<Vec<PriceCache>> {
-        let keys: Vec<String> = asset_ids
-            .iter()
-            .map(|x| self.asset_key(currency, x.to_string()))
-            .collect();
-        let result: Vec<Option<String>> = self
-            .redis_client
-            .get_multiplexed_async_connection()
-            .await?
-            .mget(keys)
-            .await?;
+    pub async fn get_cache_prices(&mut self, currency: &str, asset_ids: Vec<&str>) -> RedisResult<Vec<PriceCache>> {
+        let keys: Vec<String> = asset_ids.iter().map(|x| self.asset_key(currency, x.to_string())).collect();
+        let result: Vec<Option<String>> = self.redis_client.get_multiplexed_async_connection().await?.mget(keys).await?;
 
         let prices: Vec<PriceCache> = result
             .into_iter()
@@ -174,11 +139,7 @@ impl PriceClient {
         Ok(prices)
     }
 
-    pub async fn get_asset_prices(
-        &mut self,
-        currency: &str,
-        asset_ids: Vec<&str>,
-    ) -> Result<AssetPrices, Box<dyn Error>> {
+    pub async fn get_asset_prices(&mut self, currency: &str, asset_ids: Vec<&str>) -> Result<AssetPrices, Box<dyn Error>> {
         let prices = self
             .get_cache_prices(currency, asset_ids)
             .await
@@ -194,16 +155,8 @@ impl PriceClient {
     }
 
     // asset, asset details
-    pub async fn update_asset(
-        &mut self,
-        asset: Asset,
-        asset_score: AssetScore,
-        asset_details: AssetDetails,
-    ) -> Result<(), Box<dyn Error>> {
-        let details = storage::models::asset::AssetDetail::from_primitive(
-            asset.id.to_string().as_str(),
-            asset_details,
-        );
+    pub async fn update_asset(&mut self, asset: Asset, asset_score: AssetScore, asset_details: AssetDetails) -> Result<(), Box<dyn Error>> {
+        let details = storage::models::asset::AssetDetail::from_primitive(asset.id.to_string().as_str(), asset_details);
         let asset = storage::models::asset::Asset::from_primitive(asset);
         let asset_id = asset.id.as_str();
         let _ = self.database.add_assets(vec![asset.clone()]);
@@ -212,10 +165,7 @@ impl PriceClient {
         Ok(())
     }
 
-    pub fn delete_prices_updated_at_before(
-        &mut self,
-        time: NaiveDateTime,
-    ) -> Result<usize, Box<dyn Error>> {
+    pub fn delete_prices_updated_at_before(&mut self, time: NaiveDateTime) -> Result<usize, Box<dyn Error + Send + Sync>> {
         Ok(self.database.delete_prices_updated_at_before(time)?)
     }
 }

@@ -15,3 +15,4 @@ api_connector = { path = "../../crates/api_connector" }
 primitives = { path = "../../crates/primitives" }
 fiat = { path = "../../crates/fiat" }
 swap_oneinch = { path = "../../crates/swap_oneinch" }
+job_runner = { path = "../../crates/job_runner" }

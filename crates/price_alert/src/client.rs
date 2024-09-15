@@ -52,7 +52,7 @@ impl PriceAlertClient {
         Ok(self.database.delete_price_alerts(device.id, asset_ids)?)
     }
 
-    pub async fn get_devices_to_alert(&mut self, rules: PriceAlertRules) -> Result<Vec<PriceAlertNotification>, Box<dyn Error>> {
+    pub async fn get_devices_to_alert(&mut self, rules: PriceAlertRules) -> Result<Vec<PriceAlertNotification>, Box<dyn Error + Send + Sync>> {
         let now = chrono::Utc::now().naive_utc();
         let after_notified_at = now - chrono::Duration::hours(24);
 

@@ -36,7 +36,7 @@ impl Client {
         Self { database }
     }
 
-    pub async fn update_ios_version(&mut self) -> Result<Version, Box<dyn Error>> {
+    pub async fn update_ios_version(&mut self) -> Result<Version, Box<dyn Error + Send + Sync>> {
         let ios_version = self.get_app_store_version().await?;
         let version = Version {
             id: 0,
@@ -49,7 +49,7 @@ impl Client {
         Ok(version)
     }
 
-    pub async fn update_apk_version(&mut self) -> Result<Version, Box<dyn Error>> {
+    pub async fn update_apk_version(&mut self) -> Result<Version, Box<dyn Error + Send + Sync>> {
         let version = self.get_github_apk_version().await?;
         let version = Version {
             id: 0,
@@ -62,29 +62,18 @@ impl Client {
         Ok(version)
     }
 
-    pub async fn get_app_store_version(&self) -> Result<String, Box<dyn Error>> {
+    pub async fn get_app_store_version(&mut self) -> Result<String, Box<dyn Error + Send + Sync>> {
         let url = "https://itunes.apple.com/lookup?bundleId=com.gemwallet.ios";
-        let response = reqwest::get(url)
-            .await?
-            .json::<ITunesLookupResponse>()
-            .await?;
+        let response = reqwest::get(url).await?.json::<ITunesLookupResponse>().await?;
         let result = response.results.first().expect("expect result");
         Ok(result.version.to_string())
     }
 
-    pub async fn get_github_apk_version(&self) -> Result<String, Box<dyn Error>> {
+    pub async fn get_github_apk_version(&mut self) -> Result<String, Box<dyn Error + Send + Sync>> {
         let url = "https://api.github.com/repos/gemwalletcom/gem-android/releases";
         let client = reqwest::Client::builder().user_agent("").build()?;
-        let response = client
-            .get(url)
-            .send()
-            .await?
-            .json::<Vec<GitHubRepository>>()
-            .await?;
-        let results = response
-            .into_iter()
-            .filter(|x| !x.draft && !x.prerelease)
-            .collect::<Vec<_>>();
+        let response = client.get(url).send().await?.json::<Vec<GitHubRepository>>().await?;
+        let results = response.into_iter().filter(|x| !x.draft && !x.prerelease).collect::<Vec<_>>();
         let result = results.first().expect("expect github repository");
         Ok(result.name.clone())
     }

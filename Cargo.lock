@@ -664,6 +664,7 @@ name = "assetor"
 version = "1.0.0"
 dependencies = [
  "coingecko",
+ "job_runner",
  "primitives",
  "settings",
  "storage",
@@ -1384,6 +1385,7 @@ dependencies = [
  "cacher",
  "chrono",
  "coingecko",
+ "job_runner",
  "pricer",
  "primitives",
  "redis",
@@ -1883,6 +1885,7 @@ version = "1.0.0"
 dependencies = [
  "api_connector",
  "fiat",
+ "job_runner",
  "primitives",
  "reqwest",
  "serde",
@@ -5622,6 +5625,7 @@ dependencies = [
  "cacher",
  "chrono",
  "coingecko",
+ "job_runner",
  "primitives",
  "redis",
  "serde_json",

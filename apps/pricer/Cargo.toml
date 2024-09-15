@@ -14,3 +14,4 @@ storage = { path = "../../crates/storage" }
 coingecko = { path = "../../crates/coingecko" }
 primitives = { path = "../../crates/primitives" }
 settings = { path = "../../crates/settings" }
+job_runner = { path = "../../crates/job_runner" }
