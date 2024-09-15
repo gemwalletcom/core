@@ -32,7 +32,7 @@ install-android-targets:
     cargo install cargo-ndk
 
 test-ios:
-    @xcodebuild -project tests/ios/GemTest/GemTest.xcodeproj \
+    @set -o pipefail && xcodebuild -project tests/ios/GemTest/GemTest.xcodeproj \
     -scheme GemTest \
     -sdk iphonesimulator \
     -destination "platform=iOS Simulator,name=iPhone 15" \
