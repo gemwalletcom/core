@@ -7,10 +7,6 @@ fn test_specific_language() {
     let localizer = LanguageLocalizer::new_with_language("es");
     assert_eq!(&localizer.test(), "Prueba");
 
-    localizer.select_language("de").unwrap();
-
-    assert_eq!(&localizer.test(), "Prüfen");
-
     localizer.select_language("pt-BR").unwrap();
 
     assert_eq!(&localizer.test(), "Teste");

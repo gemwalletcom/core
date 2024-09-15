@@ -20,7 +20,7 @@ struct Downloader {
 
 impl Downloader {
     fn new(args: Args, api_key: String) -> Self {
-        let client = CoinGeckoClient::new(api_key);
+        let client = CoinGeckoClient::new(api_key.as_str());
         Self {
             args,
             client,
@@ -36,15 +36,11 @@ impl Downloader {
         }
 
         if !self.args.coin_id.is_empty() {
-            return self
-                .handle_coin_id(self.args.coin_id.as_str(), folder)
-                .await;
+            return self.handle_coin_id(self.args.coin_id.as_str(), folder).await;
         }
 
         if !self.args.coin_ids.is_empty() {
-            return self
-                .handle_coin_ids(self.args.coin_ids.clone(), folder)
-                .await;
+            return self.handle_coin_ids(self.args.coin_ids.clone(), folder).await;
         }
 
         if !self.args.coin_ids_url.is_empty() {
@@ -82,10 +78,7 @@ impl Downloader {
         let mut page = self.args.page;
         let total_pages = self.args.count.div_ceil(self.args.page_size);
         while page <= total_pages {
-            let markets = self
-                .client
-                .get_coin_markets(page, self.args.page_size)
-                .await?;
+            let markets = self.client.get_coin_markets(page, self.args.page_size).await?;
             for market in markets {
                 self.handle_coin(&market.id, folder).await?;
             }

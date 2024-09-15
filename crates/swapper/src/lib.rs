@@ -27,16 +27,12 @@ pub struct Swapper {}
 impl Swapper {
     pub fn build(configuration: SwapperConfiguration) -> SwapperClient {
         let oneinch_client = OneInchClient::new(
-            configuration.oneinch.url,
-            configuration.oneinch.key,
+            configuration.oneinch.url.as_str(),
+            configuration.oneinch.key.as_str(),
             configuration.oneinch.fee_percent,
             configuration.oneinch.fee_address,
         );
-        let jupiter_client = JupiterClient::new(
-            configuration.jupiter.url,
-            configuration.jupiter.fee_percent,
-            configuration.jupiter.fee_address,
-        );
+        let jupiter_client = JupiterClient::new(configuration.jupiter.url, configuration.jupiter.fee_percent, configuration.jupiter.fee_address);
 
         let providers: ProviderList = vec![
             Box::new(AftermathProvider::new(
