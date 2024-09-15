@@ -1,4 +1,4 @@
-name: iOS CI
+name: Gemstone iOS
 
 on:
   push:
@@ -36,10 +36,14 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
       - name: Run sccache-cache
         uses: mozilla-actions/sccache-action@v0.0.3
+
+      - name: Install just
+        run: cargo install just
+
       - name: Run tests
         run: cargo test
 
       - name: Test iOS
         run: |
-          make prepare-apple && make apple
-          make test-ios
+          just install-ios-targets
+          just build-ios && just test-ios

@@ -123,6 +123,6 @@ impl PriceAlertClient {
             };
             results.push(notification);
         }
-        return results;
+        results
     }
 }

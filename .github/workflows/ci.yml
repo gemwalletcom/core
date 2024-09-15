@@ -30,4 +30,5 @@ jobs:
       - name: Run sccache-cache
         uses: mozilla-actions/sccache-action@v0.0.3
       - name: Run tests
-        run: cargo test --all --verbose
+        run: |
+          cargo install just && just test-all

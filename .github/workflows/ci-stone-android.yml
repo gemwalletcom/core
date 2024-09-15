@@ -47,12 +47,6 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Setup NDK
-        run: make install-ndk
-
-      - name: Setup Gradle
-        uses: gradle/gradle-build-action@v3
-
       - uses: actions/cache@v3
         with:
           path: |
@@ -64,8 +58,17 @@ jobs:
       - name: Run sccache-cache
         uses: mozilla-actions/sccache-action@v0.0.3
 
+      - name: Install just
+        run: cargo install just
+
+      - name: Setup NDK
+        run: just install-ndk
+
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v3
+
       - name: Build Android Bindings
         run: |
           df -h
-          make prepare-android && make bindgen-kotlin
-          make android
+          just install-android-targets
+          just bindgen-kotlin && just build-android

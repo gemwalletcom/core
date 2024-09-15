@@ -49,10 +49,13 @@ jobs:
       - name: Run sccache-cache
         uses: mozilla-actions/sccache-action@v0.0.3
 
+      - name: Install just
+        run: cargo install just
+
       - name: Build iOS frameworks
         run: |
-          make prepare-apple
-          make apple BUILD_MODE=${{ env.BUILD_MODE }} IPHONEOS_DEPLOYMENT_TARGET=${{ env.IPHONEOS_DEPLOYMENT_TARGET }}
+          just install-ios-targets
+          export BUILD_MODE=${{ env.BUILD_MODE }} IPHONEOS_DEPLOYMENT_TARGET=${{ env.IPHONEOS_DEPLOYMENT_TARGET }} && just build-ios
         working-directory: gemstone
 
       - name: Zip iOS framework

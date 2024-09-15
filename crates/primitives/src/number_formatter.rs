@@ -9,7 +9,7 @@ impl NumberFormatter {
 
     pub fn currency(&self, value: f64, currency: &str) -> Option<String> {
         let money = Money::from_str(value.to_string().as_str(), iso::USD).ok()?;
-        let iso_currency = iso::find(&currency).unwrap_or(iso::USD);
+        let iso_currency = iso::find(currency).unwrap_or(iso::USD);
 
         let rounding = if value < 0.0001 {
             9
@@ -27,11 +27,17 @@ impl NumberFormatter {
             rounding: Some(rounding),
             ..Default::default()
         };
-        return Some(Formatter::money(&money, params));
+        Some(Formatter::money(&money, params))
     }
 
     pub fn percent(&self, value: f64, _locale: &str) -> String {
-        return format!("{:.2}%", value);
+        format!("{:.2}%", value)
+    }
+}
+
+impl Default for NumberFormatter {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
