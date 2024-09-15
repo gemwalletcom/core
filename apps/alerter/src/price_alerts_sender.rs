@@ -32,7 +32,7 @@ impl PriceAlertSender {
             .price_alert_client
             .get_notifications_for_price_alerts(price_alert_notifications, self.topic.clone());
 
-        if notifications.len() == 0 {
+        if notifications.is_empty() {
             return Ok(0);
         }
 

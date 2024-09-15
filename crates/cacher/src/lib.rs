@@ -18,7 +18,7 @@ impl CacherClient {
         Ok(result)
     }
 
-    pub async fn set_value_with_expiration(&mut self, key: &str, value: String, seconds: i64) -> Result<(), Box<dyn dyn Error + Send + Sync>> {
+    pub async fn set_value_with_expiration(&mut self, key: &str, value: String, seconds: i64) -> Result<(), Box<dyn Error + Send + Sync>> {
         let mut connection = self.client.get_multiplexed_async_connection().await?;
         connection.set::<&str, String, ()>(key, value).await?;
         connection.expire::<&str, String>(key, seconds).await?;
