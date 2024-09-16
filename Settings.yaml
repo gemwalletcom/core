@@ -161,6 +161,14 @@ swap:
     fee:
       percent: 0
       address: ""
+security:
+  goplus:
+    url: "https://api.gopluslabs.io"
+    key: ""
+  hashdit:
+    url: "https://api.hashdit.io"
+    key: ""
+
 parser:
   retry: 0
   timeout: 1000

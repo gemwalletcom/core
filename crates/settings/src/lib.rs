@@ -31,6 +31,7 @@ pub struct Settings {
     pub pusher: Pusher,
     pub swap: Swap,
     pub alerter: Alerter,
+    pub security: Security,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -244,6 +245,13 @@ pub struct Swap {
 
 #[derive(Debug, Deserialize, Clone)]
 #[allow(unused)]
+pub struct Security {
+    pub hashdit: SecurityProvider,
+    pub goplus: SecurityProvider,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[allow(unused)]
 pub struct SwapFee {
     pub percent: f64,
     pub address: String,
@@ -255,6 +263,13 @@ pub struct SwapProvider {
     pub url: String,
     pub key: String,
     pub fee: SwapFee,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[allow(unused)]
+pub struct SecurityProvider {
+    pub url: String,
+    pub api_key: String,
 }
 
 #[derive(Debug, Deserialize, Clone)]
