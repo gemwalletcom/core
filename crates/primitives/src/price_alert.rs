@@ -7,6 +7,7 @@ use typeshare::typeshare;
 pub struct PriceAlert {
     pub asset_id: String,
     pub price: Option<f64>,
+    pub price_percent_change: Option<f64>,
 }
 
 pub type PriceAlerts = Vec<PriceAlert>;

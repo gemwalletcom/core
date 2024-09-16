@@ -10,6 +10,7 @@ pub struct PriceAlert {
     pub device_id: i32,
     pub asset_id: String,
     pub price: Option<f64>,
+    pub price_percent_change: Option<f64>,
     pub last_notified_at: Option<NaiveDateTime>,
 }
 
@@ -18,6 +19,7 @@ impl PriceAlert {
         primitives::PriceAlert {
             asset_id: self.asset_id.clone(),
             price: self.price,
+            price_percent_change: self.price_percent_change,
         }
     }
 
@@ -27,6 +29,7 @@ impl PriceAlert {
             device_id,
             asset_id: primitive.asset_id,
             price: primitive.price,
+            price_percent_change: primitive.price_percent_change,
             last_notified_at: None,
         }
     }

@@ -1,3 +1,4 @@
+use chrono::Local;
 use tokio::task;
 use tokio::task::JoinHandle;
 use tokio::time::{Duration, Instant};
@@ -13,13 +14,24 @@ where
         loop {
             let now = Instant::now();
 
-            println!("Job start: {}, interval: {} seconds", name, interval_duration.as_secs());
+            println!(
+                "{}: start: {}, interval: {} seconds",
+                Local::now().format("%Y-%m-%d %H:%M:%S.%3f"),
+                name,
+                interval_duration.as_secs()
+            );
 
             // Await the job function and capture the result
             let result = job_fn().await;
 
             // Print the successful result
-            println!("Job done in {} seconds: {}. Result: {:?}", now.elapsed().as_secs(), name, result);
+            println!(
+                "{}: done in {} seconds: {}. Result: {:?}",
+                Local::now().format("%Y-%m-%d %H:%M:%S.%3f"),
+                now.elapsed().as_secs(),
+                name,
+                result
+            );
 
             tokio::time::sleep(interval_duration).await;
         }

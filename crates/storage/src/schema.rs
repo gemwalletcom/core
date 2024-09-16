@@ -269,6 +269,7 @@ diesel::table! {
         #[max_length = 128]
         asset_id -> Varchar,
         price -> Nullable<Float8>,
+        price_percent_change -> Nullable<Float8>,
         last_notified_at -> Nullable<Timestamp>,
         updated_at -> Timestamp,
         created_at -> Timestamp,
