@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS price_alerts (
 
     device_id            INTEGER NOT NULL REFERENCES devices (id) ON DELETE CASCADE,
     asset_id             VARCHAR(128) NOT NULL REFERENCES assets (id)  ON DELETE CASCADE,
+    price                float,
     last_notified_at     timestamp,
 
     updated_at           timestamp NOT NULL default current_timestamp,

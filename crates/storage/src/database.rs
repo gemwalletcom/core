@@ -675,10 +675,10 @@ impl DatabaseClient {
         diesel::delete(price_alerts.filter(device_id.eq(_device_id).and(asset_id.eq_any(asset_ids)))).execute(&mut self.connection)
     }
 
-    pub fn update_price_alerts_set_notified_at(&mut self, device_ids: Vec<i32>, _last_notified_at: NaiveDateTime) -> Result<usize, diesel::result::Error> {
+    pub fn update_price_alerts_set_notified_at(&mut self, ids: Vec<i32>, _last_notified_at: NaiveDateTime) -> Result<usize, diesel::result::Error> {
         use crate::schema::price_alerts::dsl::*;
         diesel::update(price_alerts)
-            .filter(device_id.eq_any(&device_ids))
+            .filter(id.eq_any(&ids))
             .set(last_notified_at.eq(_last_notified_at))
             .execute(&mut self.connection)
     }

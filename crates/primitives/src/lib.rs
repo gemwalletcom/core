@@ -84,7 +84,7 @@ pub use self::wallet_connect::WallletConnectCAIP2;
 pub mod nft;
 pub use self::nft::{NFTAttrubute, NFTCollectible, NFTCollection, NFTImage};
 pub mod price_alert;
-pub use self::price_alert::{PriceAlertSubsription, PriceAlertSubsriptions};
+pub use self::price_alert::{PriceAlert, PriceAlerts};
 
 pub mod chain_cosmos;
 pub use self::chain_cosmos::CosmosDenom;

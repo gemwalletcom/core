@@ -26,8 +26,6 @@ impl PriceAlertSender {
 
         let price_alert_notifications = self.price_alert_client.get_devices_to_alert(rules).await?;
 
-        println!("alerter found devices to alert: {:?}", price_alert_notifications.len());
-
         let notifications = self
             .price_alert_client
             .get_notifications_for_price_alerts(price_alert_notifications, self.topic.clone());
