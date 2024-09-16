@@ -149,10 +149,14 @@ impl PriceUpdater {
                 .collect();
 
             if prices.is_empty() {
-                return Ok(0);
+                continue;
             }
-
-            self.price_client.set_cache_prices(rate.symbol.as_str(), prices).await?;
+            match self.price_client.set_cache_prices(rate.symbol.as_str(), prices).await {
+                Ok(_) => {}
+                Err(e) => {
+                    println!("Error setting cache prices for {}: {}", rate.symbol, e);
+                }
+            }
         }
 
         Ok(prices.len())
