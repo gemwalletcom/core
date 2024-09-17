@@ -21,8 +21,8 @@ jobs:
       - name: Clean space
         run: ./free_disk_space.sh
         working-directory: scripts
-        
+
       - name: Docker Build
-        run: 
+        run: |
           cargo clean
           docker build --tag core .
