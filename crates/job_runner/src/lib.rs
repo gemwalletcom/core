@@ -15,20 +15,18 @@ where
             let now = Instant::now();
 
             println!(
-                "{}: start: {}, interval: {} seconds",
+                "{}: start: {}, interval: {}s",
                 Local::now().format("%Y-%m-%d %H:%M:%S.%3f"),
                 name,
                 interval_duration.as_secs()
             );
 
-            // Await the job function and capture the result
             let result = job_fn().await;
 
-            // Print the successful result
             println!(
-                "{}: done in {} seconds: {}. Result: {:?}",
+                "{}: done in {}ms: {}. Result: {:?}",
                 Local::now().format("%Y-%m-%d %H:%M:%S.%3f"),
-                now.elapsed().as_secs(),
+                now.elapsed().as_millis(),
                 name,
                 result
             );
