@@ -27,6 +27,7 @@ pub struct UpdateDevice {
     pub locale: String,
     pub currency: String,
     pub is_push_enabled: bool,
+    pub is_price_alerts_enabled: bool,
     pub version: String,
     pub subscriptions_version: i32,
 }
@@ -57,6 +58,7 @@ impl UpdateDevice {
             locale: device.locale,
             currency: device.currency,
             is_push_enabled: device.is_push_enabled,
+            is_price_alerts_enabled: device.is_price_alerts_enabled.unwrap_or(false),
             version: device.version,
             subscriptions_version: device.subscriptions_version,
         }
