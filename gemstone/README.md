@@ -1,3 +1,3 @@
 # Gemstone
 
-Gemstone is an esential library used by Gem Wallet clients (mainly iOS and Android).
+Gemstone is the essential cross platform library used by Gem Wallet clients (mainly iOS and Android).
