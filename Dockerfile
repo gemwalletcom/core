@@ -1,4 +1,4 @@
-FROM cargo-chef:0.1.67-rust-bookworm AS chef
+FROM lukemathwalker/cargo-chef:0.1.67-rust-bookworm AS chef
 # We only pay the installation cost once,
 # it will be cached from the second build onwards
 WORKDIR /app
