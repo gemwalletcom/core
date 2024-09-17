@@ -14,12 +14,12 @@ impl CacherClient {
     }
 
     pub async fn set_values(&mut self, values: Vec<(String, String)>) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        let _ = self
-            .client
+        self.client
             .get_multiplexed_async_connection()
             .await?
             .mset::<String, String, ()>(values.as_slice())
             .await?;
+        // redis always returns "OK" instead of usize for the number of inserts
         Ok(values.len())
     }
 
