@@ -54,10 +54,10 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Auto tag
-        # if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: anothrNick/github-tag-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           WITH_V: true
           DEFAULT_BUMP: patch          
-          DRY_RUN: true
+          DRY_RUN: false
