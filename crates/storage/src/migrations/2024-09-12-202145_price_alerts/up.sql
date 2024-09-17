@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS price_alerts (
     updated_at           timestamp NOT NULL default current_timestamp,
     created_at           timestamp NOT NULL default current_timestamp,
 
-    UNIQUE NULLS NOT DISTINCT(device_id, asset_id, price)
+    UNIQUE NULLS NOT DISTINCT(device_id, asset_id, price, price_percent_change)
 );
 
 SELECT diesel_manage_updated_at('price_alerts');
