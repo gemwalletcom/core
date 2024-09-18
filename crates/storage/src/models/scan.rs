@@ -9,7 +9,7 @@ pub struct ScanAddress {
     pub name: Option<String>,
     pub address: String,
     pub is_verified: bool,
-    pub is_fradulent: bool,
+    pub is_fraudulent: bool,
     pub is_memo_required: bool,
 }
 
@@ -19,7 +19,7 @@ impl ScanAddress {
             name: self.name.clone(),
             address: self.address.clone(),
             is_verified: self.is_verified,
-            is_fradulent: self.is_fradulent,
+            is_fraudulent: self.is_fraudulent,
             is_memo_required: self.is_memo_required,
         }
     }

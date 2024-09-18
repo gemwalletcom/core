@@ -8,6 +8,6 @@ pub struct ScanAddress {
     pub name: Option<String>,
     pub address: String,
     pub is_verified: bool,
-    pub is_fradulent: bool,
+    pub is_fraudulent: bool,
     pub is_memo_required: bool,
 }
