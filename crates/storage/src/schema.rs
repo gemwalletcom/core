@@ -94,8 +94,8 @@ diesel::table! {
         created_at -> Timestamp,
         #[max_length = 8]
         currency -> Varchar,
-        is_price_alerts_enabled -> Bool,
         subscriptions_version -> Int4,
+        is_price_alerts_enabled -> Bool,
     }
 }
 
