@@ -268,6 +268,7 @@ pub struct Alerter {
 #[allow(unused)]
 pub struct AlerterRules {
     pub price_increase_percent: f64,
+    pub price_decrease_percent: f64,
 }
 
 impl Settings {

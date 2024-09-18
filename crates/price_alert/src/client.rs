@@ -1,6 +1,6 @@
 use api_connector::pusher::model::Notification;
 use localizer::{LanguageLocalizer, LanguageNotification};
-use primitives::{Asset, Device, NumberFormatter, Price, PriceAlertType, PriceAlerts};
+use primitives::{Asset, Device, NumberFormatter, Price, PriceAlertDirection, PriceAlertType, PriceAlerts};
 use std::collections::{HashMap, HashSet};
 use std::error::Error;
 use storage::{models::PriceAlert, DatabaseClient};
@@ -21,6 +21,7 @@ pub struct PriceAlertNotification {
 #[derive(Clone, Debug)]
 pub struct PriceAlertRules {
     pub price_change_increase: f64,
+    pub price_change_decrease: f64,
 }
 
 impl PriceAlertClient {
@@ -72,31 +73,35 @@ impl PriceAlertClient {
         for price in prices {
             if let Some(asset_ids) = prices_assets_map.get(&price.id) {
                 for price_alert in price_alerts.clone() {
-                    if price.clone().price_change_percentage_24h > rules.price_change_increase {
-                        if asset_ids.clone().contains(&price_alert.asset_id) {
-                            price_alert_ids.insert(price_alert.id);
-                            let notification = self.price_alert_notifiction(&price, price_alert, PriceAlertType::PriceChangesUp)?;
-                            results.push(notification);
-                        }
-                    } else if let Some(price_alert_price) = price_alert.price {
-                        // price goes up/down
-                        if let Some(direction) = price_alert.as_primitive().price_direction {
-                            match direction {
-                                primitives::PriceAlertDirection::Up => {
-                                    if price.clone().price > price_alert_price && asset_ids.clone().contains(&price_alert.asset_id) {
-                                        price_alert_ids.insert(price_alert.id);
-                                        let notification = self.price_alert_notifiction(&price, price_alert, PriceAlertType::PriceUp)?;
-                                        results.push(notification);
+                    if asset_ids.clone().contains(&price_alert.asset_id) {
+                        if let Some(price_alert_price) = price_alert.price {
+                            // price goes up/down
+                            if let Some(direction) = price_alert.as_primitive().price_direction {
+                                match direction {
+                                    PriceAlertDirection::Up => {
+                                        if price.clone().price > price_alert_price {
+                                            price_alert_ids.insert(price_alert.id);
+                                            let notification = self.price_alert_notifiction(&price, price_alert, PriceAlertType::PriceUp)?;
+                                            results.push(notification);
+                                        }
                                     }
-                                }
-                                primitives::PriceAlertDirection::Down => {
-                                    if price.clone().price < price_alert_price && asset_ids.clone().contains(&price_alert.asset_id) {
-                                        price_alert_ids.insert(price_alert.id);
-                                        let notification = self.price_alert_notifiction(&price, price_alert, PriceAlertType::PriceDown)?;
-                                        results.push(notification);
+                                    PriceAlertDirection::Down => {
+                                        if price.clone().price < price_alert_price {
+                                            price_alert_ids.insert(price_alert.id);
+                                            let notification = self.price_alert_notifiction(&price, price_alert, PriceAlertType::PriceDown)?;
+                                            results.push(notification);
+                                        }
                                     }
                                 }
                             }
+                        } else if price.clone().price_change_percentage_24h > rules.price_change_increase {
+                            price_alert_ids.insert(price_alert.id);
+                            let notification = self.price_alert_notifiction(&price, price_alert, PriceAlertType::PriceChangesUp)?;
+                            results.push(notification);
+                        } else if price.clone().price_change_percentage_24h > -rules.price_change_decrease {
+                            price_alert_ids.insert(price_alert.id);
+                            let notification = self.price_alert_notifiction(&price, price_alert, PriceAlertType::PriceChangesDown)?;
+                            results.push(notification);
                         }
                     }
                 }
@@ -137,17 +142,15 @@ impl PriceAlertClient {
             }
             let price_change = formatter.percent(price_alert.price.price_change_percentage_24h, price_alert.device.locale.as_str());
 
+            let language_localizer = LanguageLocalizer::new_with_language(&price_alert.device.locale);
             let notification_message: LanguageNotification = match price_alert.alert_type {
-                PriceAlertType::PriceChangesUp => LanguageLocalizer::new_with_language(&price_alert.device.locale).price_alert_up(
-                    &price_alert.asset.full_name(),
-                    price.unwrap().as_str(),
-                    price_change.as_str(),
-                ),
-                PriceAlertType::PriceUp
-                | PriceAlertType::PriceChangesDown
-                | PriceAlertType::PriceDown
-                | PriceAlertType::PricePercentChangeUp
-                | PriceAlertType::PricePercentChangeDown => {
+                PriceAlertType::PriceChangesUp => {
+                    language_localizer.price_alert_up(&price_alert.asset.full_name(), price.unwrap().as_str(), price_change.as_str())
+                }
+                PriceAlertType::PriceChangesDown => {
+                    language_localizer.price_alert_down(&price_alert.asset.full_name(), price.unwrap().as_str(), price_change.as_str())
+                }
+                PriceAlertType::PriceUp | PriceAlertType::PriceDown | PriceAlertType::PricePercentChangeUp | PriceAlertType::PricePercentChangeDown => {
                     unimplemented!()
                 }
             };

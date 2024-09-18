@@ -66,6 +66,7 @@ mod tests {
     fn test_number() {
         let formatter = NumberFormatter::new();
         assert_eq!(formatter.percent(0.12, "en"), "0.12%");
+        assert_eq!(formatter.percent(-6.12, "en"), "-6.12%");
         assert_eq!(formatter.percent(129.99, "en"), "129.99%");
     }
 }

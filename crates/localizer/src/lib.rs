@@ -77,6 +77,18 @@ impl LanguageLocalizer {
         }
     }
 
+    pub fn price_alert_down(&self, symbol: &str, price: &str, price_change: &str) -> LanguageNotification {
+        LanguageNotification {
+            title: fl!(self.loader.as_ref(), "notification_price_alert_down_title", symbol = symbol),
+            description: fl!(
+                self.loader.as_ref(),
+                "notification_price_alert_down_description",
+                price = price,
+                price_change = price_change
+            ),
+        }
+    }
+
     // notifications
     pub fn test(&self) -> String {
         fl!(self.loader.as_ref(), "notification_test")

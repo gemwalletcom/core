@@ -22,6 +22,7 @@ impl PriceAlertSender {
     pub async fn run(&mut self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
         let rules = PriceAlertRules {
             price_change_increase: self.rules.price_increase_percent,
+            price_change_decrease: self.rules.price_decrease_percent,
         };
 
         let price_alert_notifications = self.price_alert_client.get_devices_to_alert(rules).await?;
