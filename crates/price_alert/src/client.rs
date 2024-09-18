@@ -1,6 +1,6 @@
 use api_connector::pusher::model::Notification;
-use localizer::LanguageLocalizer;
-use primitives::{Asset, Device, NumberFormatter, Price, PriceAlerts};
+use localizer::{LanguageLocalizer, LanguageNotification};
+use primitives::{Asset, Device, NumberFormatter, Price, PriceAlertType, PriceAlerts};
 use std::collections::{HashMap, HashSet};
 use std::error::Error;
 use storage::{models::PriceAlert, DatabaseClient};
@@ -15,6 +15,7 @@ pub struct PriceAlertNotification {
     pub device: Device,
     pub asset: Asset,
     pub price: Price,
+    pub alert_type: PriceAlertType,
 }
 
 #[derive(Clone, Debug)]
@@ -69,22 +70,37 @@ impl PriceAlertClient {
         let mut price_alert_ids: HashSet<i32> = HashSet::new();
 
         for price in prices {
-            if price.price_change_percentage_24h > rules.price_change_increase {
-                if let Some(asset_ids) = prices_assets_map.get(&price.id) {
-                    for price_alert in price_alerts.clone() {
+            if let Some(asset_ids) = prices_assets_map.get(&price.id) {
+                for price_alert in price_alerts.clone() {
+                    if price.clone().price_change_percentage_24h > rules.price_change_increase {
                         if asset_ids.clone().contains(&price_alert.asset_id) {
-                            price_alert_ids.insert(price_alert.id);
-
-                            let asset = self.database.get_asset(&price_alert.asset_id)?.as_primitive();
-                            let device = self.database.get_device_by_id(price_alert.device_id)?.as_primitive();
-
-                            let notification = PriceAlertNotification {
-                                device,
-                                asset,
-                                price: price.as_price_primitive(),
-                            };
-
+                            price_alert_ids.insert(price_alert.id.clone());
+                            let notification = self.price_alert_notifiction(&price, price_alert, PriceAlertType::PriceChangesUp)?;
                             results.push(notification);
+                        }
+                    } else if let Some(price_alert_price) = price_alert.price {
+                        // price goes up/down
+                        if let Some(direction) = price_alert.as_primitive().price_direction {
+                            match direction {
+                                primitives::PriceAlertDirection::Up => {
+                                    if price.clone().price > price_alert_price {
+                                        if asset_ids.clone().contains(&price_alert.asset_id) {
+                                            price_alert_ids.insert(price_alert.id.clone());
+                                            let notification = self.price_alert_notifiction(&price, price_alert, PriceAlertType::PriceUp)?;
+                                            results.push(notification);
+                                        }
+                                    }
+                                }
+                                primitives::PriceAlertDirection::Down => {
+                                    if price.clone().price < price_alert_price {
+                                        if asset_ids.clone().contains(&price_alert.asset_id) {
+                                            price_alert_ids.insert(price_alert.id.clone());
+                                            let notification = self.price_alert_notifiction(&price, price_alert, PriceAlertType::PriceDown)?;
+                                            results.push(notification);
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -92,6 +108,24 @@ impl PriceAlertClient {
         }
         self.database.update_price_alerts_set_notified_at(price_alert_ids.into_iter().collect(), now)?;
         Ok(results)
+    }
+
+    fn price_alert_notifiction(
+        &mut self,
+        price: &storage::models::Price,
+        price_alert: PriceAlert,
+        alert_type: PriceAlertType,
+    ) -> Result<PriceAlertNotification, Box<dyn Error + Send + Sync>> {
+        let asset = self.database.get_asset(&price_alert.asset_id)?.as_primitive();
+        let device = self.database.get_device_by_id(price_alert.device_id)?.as_primitive();
+
+        let notification = PriceAlertNotification {
+            device,
+            asset,
+            price: price.as_price_primitive(),
+            alert_type,
+        };
+        Ok(notification)
     }
 
     pub fn get_notifications_for_price_alerts(&mut self, notifications: Vec<PriceAlertNotification>, topic: String) -> Vec<Notification> {
@@ -107,17 +141,26 @@ impl PriceAlertClient {
             }
             let price_change = formatter.percent(price_alert.price.price_change_percentage_24h, price_alert.device.locale.as_str());
 
-            let message = LanguageLocalizer::new_with_language(&price_alert.device.locale).price_alert_up(
-                &price_alert.asset.full_name(),
-                price.unwrap().as_str(),
-                price_change.as_str(),
-            );
+            let notification_message: LanguageNotification = match price_alert.alert_type {
+                PriceAlertType::PriceChangesUp => LanguageLocalizer::new_with_language(&price_alert.device.locale).price_alert_up(
+                    &price_alert.asset.full_name(),
+                    price.unwrap().as_str(),
+                    price_change.as_str(),
+                ),
+                PriceAlertType::PriceUp
+                | PriceAlertType::PriceChangesDown
+                | PriceAlertType::PriceDown
+                | PriceAlertType::PricePercentChangeUp
+                | PriceAlertType::PricePercentChangeDown => {
+                    unimplemented!()
+                }
+            };
 
             let notification = Notification {
                 tokens: vec![price_alert.device.token.clone()],
                 platform: price_alert.device.platform.as_i32(),
-                title: message.title,
-                message: message.description,
+                title: notification_message.title,
+                message: notification_message.description,
                 topic: Some(topic.clone()),
                 data: None,
             };
