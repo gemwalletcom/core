@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
+use crate::{Asset, AssetDetailsInfo, PriceAlert};
+
 #[derive(Copy, Clone, Debug, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Codable, Hashable")]
 #[serde(rename_all = "camelCase")]
@@ -16,4 +18,13 @@ pub struct PriceFull {
     pub coin_id: String,
     pub price: f64,
     pub price_change_percentage_24h: f64,
+}
+
+#[allow(dead_code)]
+#[typeshare]
+struct PriceData {
+    asset: Asset,
+    price: Option<Price>,
+    price_alert: Option<PriceAlert>,
+    details: Option<AssetDetailsInfo>,
 }
