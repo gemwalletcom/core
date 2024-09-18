@@ -98,7 +98,7 @@ impl PriceAlertClient {
                             price_alert_ids.insert(price_alert.id);
                             let notification = self.price_alert_notifiction(&price, price_alert, PriceAlertType::PriceChangesUp)?;
                             results.push(notification);
-                        } else if price.clone().price_change_percentage_24h > -rules.price_change_decrease {
+                        } else if price.clone().price_change_percentage_24h < -rules.price_change_decrease {
                             price_alert_ids.insert(price_alert.id);
                             let notification = self.price_alert_notifiction(&price, price_alert, PriceAlertType::PriceChangesDown)?;
                             results.push(notification);
