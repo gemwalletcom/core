@@ -268,6 +268,8 @@ diesel::table! {
         device_id -> Int4,
         #[max_length = 128]
         asset_id -> Varchar,
+        #[max_length = 16]
+        price_direction -> Nullable<Varchar>,
         price -> Nullable<Float8>,
         price_percent_change -> Nullable<Float8>,
         last_notified_at -> Nullable<Timestamp>,
