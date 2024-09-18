@@ -21,6 +21,8 @@ pub struct PriceFull {
 }
 
 #[allow(dead_code)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 #[typeshare]
 struct PriceData {
     asset: Asset,
