@@ -319,7 +319,7 @@ diesel::table! {
         #[max_length = 32]
         type_ -> Nullable<Varchar>,
         is_verified -> Bool,
-        is_fradulent -> Bool,
+        is_fraudulent -> Bool,
         is_memo_required -> Bool,
         updated_at -> Timestamp,
         created_at -> Timestamp,

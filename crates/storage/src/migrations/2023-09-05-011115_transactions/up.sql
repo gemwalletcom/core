@@ -15,10 +15,10 @@ CREATE TABLE transactions (
     fee VARCHAR(32),
     utxo_inputs jsonb,
     utxo_outputs jsonb,
-    metadata jsonb,
     fee_asset_id VARCHAR NOT NULL REFERENCES assets (id) ON DELETE CASCADE,
     updated_at timestamp NOT NULL default current_timestamp,
     created_at timestamp NOT NULL default current_timestamp,
+    metadata jsonb,
     UNIQUE(chain, hash)
 );
 

@@ -74,7 +74,7 @@ impl PriceAlertClient {
                 for price_alert in price_alerts.clone() {
                     if price.clone().price_change_percentage_24h > rules.price_change_increase {
                         if asset_ids.clone().contains(&price_alert.asset_id) {
-                            price_alert_ids.insert(price_alert.id.clone());
+                            price_alert_ids.insert(price_alert.id);
                             let notification = self.price_alert_notifiction(&price, price_alert, PriceAlertType::PriceChangesUp)?;
                             results.push(notification);
                         }
@@ -83,21 +83,17 @@ impl PriceAlertClient {
                         if let Some(direction) = price_alert.as_primitive().price_direction {
                             match direction {
                                 primitives::PriceAlertDirection::Up => {
-                                    if price.clone().price > price_alert_price {
-                                        if asset_ids.clone().contains(&price_alert.asset_id) {
-                                            price_alert_ids.insert(price_alert.id.clone());
-                                            let notification = self.price_alert_notifiction(&price, price_alert, PriceAlertType::PriceUp)?;
-                                            results.push(notification);
-                                        }
+                                    if price.clone().price > price_alert_price && asset_ids.clone().contains(&price_alert.asset_id) {
+                                        price_alert_ids.insert(price_alert.id);
+                                        let notification = self.price_alert_notifiction(&price, price_alert, PriceAlertType::PriceUp)?;
+                                        results.push(notification);
                                     }
                                 }
                                 primitives::PriceAlertDirection::Down => {
-                                    if price.clone().price < price_alert_price {
-                                        if asset_ids.clone().contains(&price_alert.asset_id) {
-                                            price_alert_ids.insert(price_alert.id.clone());
-                                            let notification = self.price_alert_notifiction(&price, price_alert, PriceAlertType::PriceDown)?;
-                                            results.push(notification);
-                                        }
+                                    if price.clone().price < price_alert_price && asset_ids.clone().contains(&price_alert.asset_id) {
+                                        price_alert_ids.insert(price_alert.id);
+                                        let notification = self.price_alert_notifiction(&price, price_alert, PriceAlertType::PriceDown)?;
+                                        results.push(notification);
                                     }
                                 }
                             }
