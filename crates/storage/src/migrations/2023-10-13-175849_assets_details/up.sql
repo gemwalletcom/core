@@ -12,16 +12,14 @@ CREATE TABLE assets_details (
     coingecko VARCHAR(128),
     coinmarketcap VARCHAR(128),
     discord VARCHAR(128),
-
+    updated_at timestamp NOT NULL default current_timestamp,
+    created_at timestamp NOT NULL default current_timestamp,
     is_buyable boolean NOT NULL default false,
     is_sellable boolean NOT NULL default false,
     is_swappable boolean NOT NULL default false,
     is_stakeable boolean NOT NULL default false,
 
-    staking_apr float,
-
-    updated_at timestamp NOT NULL default current_timestamp,
-    created_at timestamp NOT NULL default current_timestamp
+    staking_apr float
 );
 
 SELECT diesel_manage_updated_at('assets_details');

@@ -6,10 +6,10 @@ CREATE TABLE fiat_assets (
   symbol VARCHAR(128) NOT NULL,
   network VARCHAR(128) NULL,
   token_id VARCHAR(128) NULL,
-  enabled BOOLEAN NOT NULL DEFAULT TRUE,
-  hidden BOOLEAN NOT NULL DEFAULT FALSE,
+  enabled BOOLEAN NOT NULL DEFAULT TRUE,  
   updated_at timestamp NOT NULL default current_timestamp,
-  created_at timestamp NOT NULL default current_timestamp
+  created_at timestamp NOT NULL default current_timestamp,
+  hidden BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 SELECT diesel_manage_updated_at('fiat_assets');
