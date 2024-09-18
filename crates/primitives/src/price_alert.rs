@@ -11,7 +11,7 @@ pub struct PriceAlert {
     pub asset_id: String,
     pub price: Option<f64>,
     pub price_percent_change: Option<f64>,
-    pub price_direction: Option<PriceDirection>,
+    pub price_direction: Option<PriceAlertDirection>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -27,7 +27,7 @@ pub struct PriceAlertData {
 #[typeshare(swift = "Equatable, Codable, Hashable")]
 #[serde(rename_all = "lowercase")]
 #[strum(serialize_all = "lowercase")]
-pub enum PriceDirection {
+pub enum PriceAlertDirection {
     Up,
     Down,
 }

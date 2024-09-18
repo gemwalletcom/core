@@ -82,7 +82,7 @@ impl PriceAlertClient {
                         // price goes up/down
                         if let Some(direction) = price_alert.as_primitive().price_direction {
                             match direction {
-                                primitives::PriceDirection::Up => {
+                                primitives::PriceAlertDirection::Up => {
                                     if price.clone().price > price_alert_price {
                                         if asset_ids.clone().contains(&price_alert.asset_id) {
                                             price_alert_ids.insert(price_alert.id.clone());
@@ -91,7 +91,7 @@ impl PriceAlertClient {
                                         }
                                     }
                                 }
-                                primitives::PriceDirection::Down => {
+                                primitives::PriceAlertDirection::Down => {
                                     if price.clone().price < price_alert_price {
                                         if asset_ids.clone().contains(&price_alert.asset_id) {
                                             price_alert_ids.insert(price_alert.id.clone());
