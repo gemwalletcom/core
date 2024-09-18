@@ -8,8 +8,8 @@ CREATE TABLE assets (
     decimals INTEGER NOT NULL,
     updated_at timestamp NOT NULL default current_timestamp,
     created_at timestamp NOT NULL default current_timestamp,
-    enabled BOOLEAN NOT NULL DEFAULT TRUE,
     rank INTEGER NOT NULL DEFAULT 0,
+    enabled BOOLEAN NOT NULL DEFAULT TRUE,
     UNIQUE(id)
 );
 

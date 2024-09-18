@@ -17,8 +17,8 @@ diesel::table! {
         decimals -> Int4,
         updated_at -> Timestamp,
         created_at -> Timestamp,
-        enabled -> Bool,
         rank -> Int4,
+        enabled -> Bool,
     }
 }
 
@@ -82,7 +82,6 @@ diesel::table! {
         #[max_length = 32]
         device_id -> Varchar,
         is_push_enabled -> Bool,
-        is_price_alerts_enabled -> Bool,
         #[max_length = 8]
         platform -> Varchar,
         #[max_length = 256]
@@ -90,12 +89,13 @@ diesel::table! {
         #[max_length = 8]
         locale -> Varchar,
         #[max_length = 8]
-        currency -> Varchar,
-        #[max_length = 8]
         version -> Varchar,
-        subscriptions_version -> Int4,
         updated_at -> Timestamp,
         created_at -> Timestamp,
+        #[max_length = 8]
+        currency -> Varchar,
+        is_price_alerts_enabled -> Bool,
+        subscriptions_version -> Int4,
     }
 }
 
