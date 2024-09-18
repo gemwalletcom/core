@@ -14,6 +14,16 @@ pub struct PriceAlert {
     pub last_notified_at: Option<NaiveDateTime>,
 }
 
+#[derive(Debug, Queryable, Selectable, Serialize, Deserialize, Insertable, AsChangeset, Clone)]
+#[diesel(table_name = crate::schema::price_alerts)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+pub struct NewPriceAlert {
+    pub device_id: i32,
+    pub asset_id: String,
+    pub price: Option<f64>,
+    pub price_percent_change: Option<f64>,
+}
+
 impl PriceAlert {
     pub fn as_primitive(&self) -> primitives::PriceAlert {
         primitives::PriceAlert {
@@ -23,14 +33,12 @@ impl PriceAlert {
         }
     }
 
-    pub fn from_primitive(primitive: primitives::PriceAlert, device_id: i32) -> Self {
-        Self {
-            id: 0,
+    pub fn new_price_alert(primitive: primitives::PriceAlert, device_id: i32) -> NewPriceAlert {
+        NewPriceAlert {
             device_id,
-            asset_id: primitive.asset_id,
+            asset_id: primitive.asset_id.clone(),
             price: primitive.price,
             price_percent_change: primitive.price_percent_change,
-            last_notified_at: None,
         }
     }
 }

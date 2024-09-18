@@ -8,6 +8,7 @@ use diesel::prelude::*;
 use diesel::{upsert::excluded, Connection};
 use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
 use operator::{AppStoreInformation, AppStorePosition, AppStoreReview};
+use price_alert::NewPriceAlert;
 use primitives::chain::Chain;
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("src/migrations");
 use self::price::PriceAsset;
@@ -662,7 +663,7 @@ impl DatabaseClient {
             .load(&mut self.connection)
     }
 
-    pub fn add_price_alerts(&mut self, values: Vec<PriceAlert>) -> Result<usize, diesel::result::Error> {
+    pub fn add_price_alerts(&mut self, values: Vec<NewPriceAlert>) -> Result<usize, diesel::result::Error> {
         use crate::schema::price_alerts::dsl::*;
         diesel::insert_into(price_alerts)
             .values(values)

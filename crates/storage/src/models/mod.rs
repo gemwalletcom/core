@@ -27,7 +27,7 @@ pub use self::node::Node;
 pub use self::operator::{AppStoreInformation, AppStorePosition};
 pub use self::parser_state::ParserState;
 pub use self::price::Price;
-pub use self::price_alert::PriceAlert;
+pub use self::price_alert::{NewPriceAlert, PriceAlert};
 pub use self::scan::ScanAddress;
 pub use self::subscription::Subscription;
 pub use self::tokenlist::TokenList;

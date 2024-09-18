@@ -41,7 +41,7 @@ impl PriceAlertClient {
 
     pub async fn add_price_alerts(&mut self, device_id: &str, price_alerts: PriceAlerts) -> Result<usize, Box<dyn Error>> {
         let device = self.database.get_device(device_id)?;
-        let values = price_alerts.into_iter().map(|x| PriceAlert::from_primitive(x, device.id)).collect::<_>();
+        let values = price_alerts.into_iter().map(|x| PriceAlert::new_price_alert(x, device.id)).collect::<_>();
         Ok(self.database.add_price_alerts(values)?)
     }
 
