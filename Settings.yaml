@@ -167,7 +167,8 @@ security:
     key: ""
   hashdit:
     url: "https://api.hashdit.io"
-    key: ""
+    app_id: ""
+    app_secret: ""
 
 parser:
   retry: 0

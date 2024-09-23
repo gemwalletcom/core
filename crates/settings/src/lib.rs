@@ -269,7 +269,8 @@ pub struct SwapProvider {
 #[allow(unused)]
 pub struct SecurityProvider {
     pub url: String,
-    pub api_key: String,
+    pub api_id: String,
+    pub api_secret: String,
 }
 
 #[derive(Debug, Deserialize, Clone)]

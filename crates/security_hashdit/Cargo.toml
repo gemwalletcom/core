@@ -7,6 +7,11 @@ edition = "2021"
 async-trait = "0.1"
 serde = { workspace = true }
 security_provider = { path = "../security_provider" }
+hex = { workspace = true }
+hmac = { workspace = true }
+rand = { workspace = true }
+sha2 = { workspace = true }
+reqwest-enum = { workspace = true }
 
 tokio = { workspace = true }
 reqwest = { workspace = true }
