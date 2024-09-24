@@ -37,13 +37,13 @@ pub async fn main() {
         }
     });
 
-    // let update_apk_version = run_job("update apk version", Duration::from_secs(43200), {
-    //     let settings = Arc::new(settings.clone());
-    //     move || {
-    //         let mut version_client = VersionClient::new(&settings.postgres.url);
-    //         async move { version_client.update_apk_version().await }
-    //     }
-    // });
+    let update_apk_version = run_job("update apk version", Duration::from_secs(43200), {
+        let settings = Arc::new(settings.clone());
+        move || {
+            let mut version_client = VersionClient::new(&settings.postgres.url);
+            async move { version_client.update_apk_version().await }
+        }
+    });
 
     let update_oneinch_tokenlist = run_job("update 1inch token list", Duration::from_secs(86400), {
         let settings = Arc::new(settings.clone());
@@ -76,7 +76,7 @@ pub async fn main() {
     let _ = tokio::join!(
         update_fiat_assets,
         update_appstore_version,
-        //update_apk_version,
+        update_apk_version,
         update_oneinch_tokenlist,
         device_updater,
         token_list_updater

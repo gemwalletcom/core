@@ -308,6 +308,17 @@ diesel::table! {
 }
 
 diesel::table! {
+    releases (id) {
+        id -> Int4,
+        #[max_length = 32]
+        platform_store -> Varchar,
+        #[max_length = 32]
+        version -> Varchar,
+        upgrade_required -> Bool,
+    }
+}
+
+diesel::table! {
     scan_addresses (id) {
         id -> Int4,
         chain -> Varchar,
@@ -412,16 +423,6 @@ diesel::table! {
     }
 }
 
-diesel::table! {
-    versions (id) {
-        id -> Int4,
-        platform -> Varchar,
-        production -> Varchar,
-        beta -> Varchar,
-        alpha -> Varchar,
-    }
-}
-
 diesel::joinable!(assets -> assets_types (asset_type));
 diesel::joinable!(assets -> chains (chain));
 diesel::joinable!(assets_details -> assets (asset_id));
@@ -463,11 +464,11 @@ diesel::allow_tables_to_appear_in_same_query!(
     price_alerts,
     prices,
     prices_assets,
+    releases,
     scan_addresses,
     subscriptions,
     subscriptions_addresses_exclude,
     tokenlists,
     transactions,
     transactions_addresses,
-    versions,
 );

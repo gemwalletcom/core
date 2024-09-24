@@ -1,11 +1,15 @@
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
+use crate::PlatformStore;
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Codable")]
 #[serde(rename_all = "camelCase")]
 pub struct ConfigResponse {
     pub app: ConfigApp,
+    pub releases: Vec<Release>,
+    //TODO: Remove later
     pub versions: ConfigVersions,
 }
 
@@ -14,6 +18,14 @@ pub struct ConfigResponse {
 pub struct ConfigApp {
     pub ios: ConfigIOSApp,
     pub android: ConfigAndroidApp,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[typeshare(swift = "Codable")]
+pub struct Release {
+    pub version: String,
+    pub store: PlatformStore,
+    pub upgrade_required: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

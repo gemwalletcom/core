@@ -1,4 +1,4 @@
-use primitives::{Asset, AssetType, Chain, FiatProviderName};
+use primitives::{Asset, AssetType, Chain, FiatProviderName, PlatformStore};
 use settings::Settings;
 use storage::{ClickhouseDatabase, DatabaseClient};
 
@@ -48,6 +48,19 @@ async fn main() {
         .map(storage::models::FiatProvider::from_primitive)
         .collect::<Vec<_>>();
     let _ = database_client.add_fiat_providers(providers);
+
+    println!("setup releases");
+
+    let releases = PlatformStore::all()
+        .into_iter()
+        .map(|x| storage::models::Release {
+            platform_store: x.as_ref().to_string(),
+            version: "1.0.0".to_string(),
+            upgrade_required: false,
+        })
+        .collect::<Vec<_>>();
+
+    let _ = database_client.set_releases(releases);
 
     println!("setup complete");
 }

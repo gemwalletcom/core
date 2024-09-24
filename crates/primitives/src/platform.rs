@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use strum::{AsRefStr, EnumIter, EnumString, IntoEnumIterator};
 use typeshare::typeshare;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -7,6 +8,26 @@ use typeshare::typeshare;
 pub enum Platform {
     IOS,
     Android,
+}
+
+#[derive(Copy, Clone, Debug, Serialize, Deserialize, EnumIter, AsRefStr, EnumString, PartialEq, Eq, Hash)]
+#[typeshare(swift = "Equatable, Codable, CaseIterable")]
+#[serde(rename_all = "camelCase")]
+#[strum(serialize_all = "camelCase")]
+pub enum PlatformStore {
+    AppStore,
+    GooglePlay,
+    Fdroid,
+    Huawei,
+    SolanaDAppStore,
+    SamsungStore,
+    ApkUniversal,
+}
+
+impl PlatformStore {
+    pub fn all() -> Vec<PlatformStore> {
+        PlatformStore::iter().collect()
+    }
 }
 
 impl Platform {

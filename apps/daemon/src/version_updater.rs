@@ -1,7 +1,7 @@
-use primitives::Platform;
+use primitives::{config::Release, PlatformStore};
 use serde::{Deserialize, Serialize};
 use std::error::Error;
-use storage::{database::DatabaseClient, models::Version};
+use storage::database::DatabaseClient;
 
 pub struct Client {
     database: DatabaseClient,
@@ -36,30 +36,31 @@ impl Client {
         Self { database }
     }
 
-    pub async fn update_ios_version(&mut self) -> Result<Version, Box<dyn Error + Send + Sync>> {
-        let ios_version = self.get_app_store_version().await?;
-        let version = Version {
-            id: 0,
-            platform: Platform::IOS.as_str().to_string(),
-            production: ios_version.clone(),
-            beta: ios_version.clone(),
-            alpha: ios_version.clone(),
+    pub async fn update_ios_version(&mut self) -> Result<Release, Box<dyn Error + Send + Sync>> {
+        let version = self.get_app_store_version().await?;
+        let release = Release {
+            store: PlatformStore::AppStore,
+            version: version.clone(),
+            upgrade_required: false,
         };
-        let _ = self.database.set_version(version.clone())?;
-        Ok(version)
+        self.set_release(release)
     }
 
-    pub async fn update_apk_version(&mut self) -> Result<Version, Box<dyn Error + Send + Sync>> {
+    pub async fn update_apk_version(&mut self) -> Result<Release, Box<dyn Error + Send + Sync>> {
         let version = self.get_github_apk_version().await?;
-        let version = Version {
-            id: 0,
-            platform: Platform::Android.as_str().to_string(),
-            production: version.clone(),
-            beta: version.clone(),
-            alpha: version.clone(),
+        let release = Release {
+            store: PlatformStore::ApkUniversal,
+            version: version.clone(),
+            upgrade_required: false,
         };
-        let _ = self.database.set_version(version.clone())?;
-        Ok(version)
+        self.set_release(release)
+    }
+
+    fn set_release(&mut self, release: Release) -> Result<Release, Box<dyn Error + Send + Sync>> {
+        let _ = self
+            .database
+            .set_releases(vec![storage::models::Release::from_primitive(release.clone()).clone()])?;
+        Ok(release)
     }
 
     pub async fn get_app_store_version(&mut self) -> Result<String, Box<dyn Error + Send + Sync>> {

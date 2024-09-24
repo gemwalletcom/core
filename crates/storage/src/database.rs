@@ -30,9 +30,9 @@ impl DatabaseClient {
         nodes.select(Node::as_select()).load(&mut self.connection)
     }
 
-    pub fn get_versions(&mut self) -> Result<Vec<Version>, diesel::result::Error> {
-        use crate::schema::versions::dsl::*;
-        versions.order(id.asc()).select(Version::as_select()).load(&mut self.connection)
+    pub fn get_releases(&mut self) -> Result<Vec<Release>, diesel::result::Error> {
+        use crate::schema::releases::dsl::*;
+        releases.order(id.asc()).select(Release::as_select()).load(&mut self.connection)
     }
 
     pub fn get_tokenlists(&mut self) -> Result<Vec<TokenList>, diesel::result::Error> {
@@ -206,13 +206,13 @@ impl DatabaseClient {
         fiat_rates.filter(symbol.eq(currency)).select(FiatRate::as_select()).first(&mut self.connection)
     }
 
-    pub fn set_version(&mut self, version: Version) -> Result<usize, diesel::result::Error> {
-        use crate::schema::versions::dsl::*;
-        diesel::insert_into(versions)
-            .values(&version)
-            .on_conflict(platform)
+    pub fn set_releases(&mut self, release: Vec<Release>) -> Result<usize, diesel::result::Error> {
+        use crate::schema::releases::dsl::*;
+        diesel::insert_into(releases)
+            .values(&release)
+            .on_conflict(platform_store)
             .do_update()
-            .set((production.eq(excluded(production)), beta.eq(excluded(beta)), alpha.eq(excluded(alpha))))
+            .set(version.eq(excluded(version)))
             .execute(&mut self.connection)
     }
 
