@@ -22,6 +22,7 @@ pub struct ConfigApp {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Codable")]
+#[serde(rename_all = "camelCase")]
 pub struct Release {
     pub version: String,
     pub store: PlatformStore,
