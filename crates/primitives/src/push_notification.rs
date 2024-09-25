@@ -27,15 +27,6 @@ pub struct PushNotificationPayloadType {
     pub notification_type: PushNotificationTypes,
 }
 
-// Used to decode notification type and payload data
-#[typeshare(swift = "Equatable, Codable")]
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct PushNotificationPayload<T: Serialize> {
-    #[serde(rename = "type")]
-    pub notification_type: PushNotificationTypes,
-    pub data: T,
-}
-
 #[typeshare(swift = "Equatable, Codable")]
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct PushNotificationTransaction {
