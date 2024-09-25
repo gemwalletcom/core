@@ -60,7 +60,7 @@ async fn main() {
         })
         .collect::<Vec<_>>();
 
-    let _ = database_client.set_releases(releases);
+    let _ = database_client.add_releases(releases);
 
     println!("setup complete");
 }

@@ -192,7 +192,7 @@ impl DatabaseClient {
             .values(&rates)
             .on_conflict(symbol)
             .do_update()
-            .set((rate.eq(excluded(rate)),))
+            .set(rate.eq(excluded(rate)))
             .execute(&mut self.connection)
     }
 
@@ -206,10 +206,18 @@ impl DatabaseClient {
         fiat_rates.filter(symbol.eq(currency)).select(FiatRate::as_select()).first(&mut self.connection)
     }
 
-    pub fn set_releases(&mut self, release: Vec<Release>) -> Result<usize, diesel::result::Error> {
+    pub fn add_releases(&mut self, values: Vec<Release>) -> Result<usize, diesel::result::Error> {
         use crate::schema::releases::dsl::*;
         diesel::insert_into(releases)
-            .values(&release)
+            .values(&values)
+            .on_conflict_do_nothing()
+            .execute(&mut self.connection)
+    }
+
+    pub fn update_releases(&mut self, values: Vec<Release>) -> Result<usize, diesel::result::Error> {
+        use crate::schema::releases::dsl::*;
+        diesel::insert_into(releases)
+            .values(&values)
             .on_conflict(platform_store)
             .do_update()
             .set(version.eq(excluded(version)))
