@@ -73,6 +73,27 @@ impl Client {
                 }
             }
         }
+
+        if name.starts_with('+') {
+            let realm_name = &name[1..];
+            for provider in self.providers.iter() {
+                if provider.chains().contains(&chain) && provider.domains().contains(&"+") {
+                    match provider.resolve(realm_name, chain).await {
+                        Ok(address) => {
+                            let record = NameRecord {
+                                provider: provider.provider().as_ref().to_string(),
+                                address,
+                                name: name.to_string(),
+                                chain,
+                            };
+                            return Ok(record);
+                        }
+                        Err(e) => return Err(e),
+                    }
+                }
+            }
+        }
+
         Err(format!("No provider found for name: {}", name).into())
     }
 }
