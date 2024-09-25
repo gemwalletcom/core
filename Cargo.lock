@@ -5593,7 +5593,6 @@ dependencies = [
  "gem_evm",
  "num-bigint 0.4.6",
  "num-traits",
- "rocket",
  "rusty-money",
  "serde",
  "serde_json",

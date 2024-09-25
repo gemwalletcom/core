@@ -6,32 +6,9 @@ use rocket::serde::json::Json;
 use rocket::tokio::sync::Mutex;
 use rocket::State;
 
-#[get("/swap/quote?<quote..>")]
-pub async fn get_swap_quote(
-    quote: SwapQuoteRequest,
-    client: &State<Mutex<crate::SwapClient>>,
-) -> Result<Json<SwapQuoteResult>, Json<ResponseError>> {
-    client
-        .lock()
-        .await
-        .swap_quote(quote)
-        .await
-        .map(Json)
-        .map_err(|err| Json(err.into()))
-}
-
 #[post("/swap/quote", format = "json", data = "<quote>")]
-pub async fn post_swap_quote(
-    quote: Json<SwapQuoteRequest>,
-    client: &State<Mutex<crate::SwapClient>>,
-) -> Result<Json<SwapQuoteResult>, Json<ResponseError>> {
-    client
-        .lock()
-        .await
-        .swap_quote(quote.0)
-        .await
-        .map(Json)
-        .map_err(|err| Json(err.into()))
+pub async fn post_swap_quote(quote: Json<SwapQuoteRequest>, client: &State<Mutex<crate::SwapClient>>) -> Result<Json<SwapQuoteResult>, Json<ResponseError>> {
+    client.lock().await.swap_quote(quote.0).await.map(Json).map_err(|err| Json(err.into()))
 }
 
 #[get("/swap/assets")]

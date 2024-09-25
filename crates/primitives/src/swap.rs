@@ -16,20 +16,15 @@ pub enum SwapMode {
     ExactOut,
 }
 
-#[derive(rocket::form::FromForm, Debug, Serialize, Deserialize)]
 #[typeshare(swift = "Codable")]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct SwapQuoteRequest {
-    #[field(name = "fromAsset")]
     pub from_asset: String,
-    #[field(name = "toAsset")]
     pub to_asset: String,
-    #[field(name = "walletAddress")]
     pub wallet_address: String,
-    #[field(name = "destinationAddress")]
     pub destination_address: Option<String>,
     pub amount: String,
-    #[field(name = "includeData")]
     pub include_data: bool,
 }
 
@@ -81,9 +76,7 @@ pub struct SwapProvider {
 
 impl From<&'static str> for SwapProvider {
     fn from(name: &'static str) -> Self {
-        SwapProvider {
-            name: name.to_string(),
-        }
+        SwapProvider { name: name.to_string() }
     }
 }
 
