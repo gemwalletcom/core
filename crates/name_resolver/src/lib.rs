@@ -18,6 +18,8 @@ pub mod suins;
 pub mod ton;
 pub mod ton_codec;
 pub mod ud;
+pub mod realm;
+
 pub struct NameProviderFactory {}
 
 impl NameProviderFactory {
@@ -41,6 +43,7 @@ impl NameProviderFactory {
             Box::new(icns::IcnsClient::new(settings.name.icns.url)),
             Box::new(lens::LensClient::new(settings.name.lens.url)),
             Box::new(base::BNSClient::new(settings.name.base.url)),
+            Box::new(realm::RealmClient::new()),
         ]
     }
 }
