@@ -10,6 +10,7 @@ pub enum PushNotificationTypes {
     Test,        // Test payload
     Transaction, // PushNotificationTransaction (Transaction)
     PriceAlert,  // PriceAlert payload
+    BuyAsset,    // PushNotificationBuyAsset payload
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -33,4 +34,11 @@ pub struct PushNotificationPayloadType {
 pub struct PushNotificationTransaction {
     pub wallet_index: i32,
     pub transaction: Transaction,
+}
+
+#[typeshare(swift = "Equatable, Codable")]
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct PushNotificationBuyAsset {
+    pub asset_id: String,
 }
