@@ -3,6 +3,7 @@ CREATE TABLE devices (
     device_id VARCHAR(32) NOT NULL,
     is_push_enabled boolean NOT NULL,
     platform VARCHAR(8) NOT NULL,
+    platform_store VARCHAR(32),
     token VARCHAR(256) NOT NULL,
     locale VARCHAR(8) NOT NULL,
     version VARCHAR(8) NOT NULL,

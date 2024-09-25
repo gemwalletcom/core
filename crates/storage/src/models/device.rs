@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 
@@ -8,6 +10,7 @@ pub struct Device {
     pub id: i32,
     pub device_id: String,
     pub platform: String,
+    pub platform_store: Option<String>,
     pub token: String,
     pub locale: String,
     pub currency: String,
@@ -23,6 +26,7 @@ pub struct Device {
 pub struct UpdateDevice {
     pub device_id: String,
     pub platform: String,
+    pub platform_store: Option<String>,
     pub token: String,
     pub locale: String,
     pub currency: String,
@@ -35,9 +39,12 @@ pub struct UpdateDevice {
 impl Device {
     pub fn as_primitive(&self) -> primitives::Device {
         let platform = primitives::Platform::new(self.platform.as_str()).unwrap();
+        let platform_store = primitives::PlatformStore::from_str(self.platform_store.clone().unwrap_or_default().as_str()).ok();
+
         primitives::Device {
             id: self.device_id.clone(),
             platform,
+            platform_store,
             token: self.token.clone(),
             locale: self.locale.clone(),
             currency: self.currency.clone(),
@@ -54,6 +61,7 @@ impl UpdateDevice {
         Self {
             device_id: device.id,
             platform: device.platform.as_str().to_string(),
+            platform_store: device.platform_store.map(|x| x.as_ref().to_string()),
             token: device.token,
             locale: device.locale,
             currency: device.currency,

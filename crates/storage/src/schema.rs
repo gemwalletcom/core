@@ -84,6 +84,8 @@ diesel::table! {
         is_push_enabled -> Bool,
         #[max_length = 8]
         platform -> Varchar,
+        #[max_length = 32]
+        platform_store -> Nullable<Varchar>,
         #[max_length = 256]
         token -> Varchar,
         #[max_length = 8]
