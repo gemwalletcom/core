@@ -114,13 +114,14 @@ impl Pusher {
         let localizer = LanguageLocalizer::new_with_language(&device.locale);
         let message = self.message(localizer, transaction.clone(), subscription.clone())?;
 
-        let wallet_transaction = PushNotificationTransaction {
+        let notification_transaction = PushNotificationTransaction {
             wallet_index: subscription.wallet_index,
-            transaction: transaction.clone(),
+            transaction_id: transaction.id,
+            asset_id: transaction.asset_id.to_string(),
         };
         let data = PushNotification {
             notification_type: PushNotificationTypes::Transaction,
-            data: serde_json::to_value(&wallet_transaction).ok(),
+            data: serde_json::to_value(&notification_transaction).ok(),
         };
         let notification = Notification {
             tokens: vec![device.token],

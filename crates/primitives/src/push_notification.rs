@@ -1,8 +1,6 @@
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
-use crate::Transaction;
-
 #[typeshare(swift = "Equatable, Codable")]
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -33,7 +31,8 @@ pub struct PushNotificationPayloadType {
 #[serde(rename_all = "camelCase")]
 pub struct PushNotificationTransaction {
     pub wallet_index: i32,
-    pub transaction: Transaction,
+    pub asset_id: String,
+    pub transaction_id: String,
 }
 
 #[typeshare(swift = "Equatable, Codable")]
