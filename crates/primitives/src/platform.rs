@@ -12,14 +12,14 @@ pub enum Platform {
 
 #[derive(Copy, Clone, Debug, Serialize, Deserialize, EnumIter, AsRefStr, EnumString, PartialEq, Eq, Hash)]
 #[typeshare(swift = "Equatable, Codable, CaseIterable")]
-#[serde(rename_all = "camelCase")]
-#[strum(serialize_all = "camelCase")]
+#[serde(rename_all = "snake_case")]
+#[strum(serialize_all = "snake_case")]
 pub enum PlatformStore {
     AppStore,
     GooglePlay,
     Fdroid,
     Huawei,
-    SolanaDAppStore,
+    SolanaStore,
     SamsungStore,
     ApkUniversal,
 }

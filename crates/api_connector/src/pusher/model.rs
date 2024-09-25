@@ -1,17 +1,17 @@
 use primitives::PushNotification;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Clone)]
 pub struct Notification {
     pub tokens: Vec<String>,
     pub platform: i32,
     pub title: String,
     pub message: String,
     pub topic: Option<String>,
-    pub data: Option<PushNotification>,
+    pub data: PushNotification,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize)]
 pub struct Notifications {
     pub notifications: Vec<Notification>,
 }

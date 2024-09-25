@@ -1,6 +1,6 @@
 use api_connector::pusher::model::Notification;
 use localizer::{LanguageLocalizer, LanguageNotification};
-use primitives::{Asset, Device, NumberFormatter, Price, PriceAlertDirection, PriceAlertType, PriceAlerts};
+use primitives::{Asset, Device, NumberFormatter, Price, PriceAlertDirection, PriceAlertType, PriceAlerts, PushNotification, PushNotificationTypes};
 use std::collections::{HashMap, HashSet};
 use std::error::Error;
 use storage::{models::PriceAlert, DatabaseClient};
@@ -16,6 +16,7 @@ pub struct PriceAlertNotification {
     pub asset: Asset,
     pub price: Price,
     pub alert_type: PriceAlertType,
+    pub price_alert: PriceAlert,
 }
 
 #[derive(Clone, Debug)]
@@ -125,6 +126,7 @@ impl PriceAlertClient {
             asset,
             price: price.as_price_primitive(),
             alert_type,
+            price_alert,
         };
         Ok(notification)
     }
@@ -154,14 +156,17 @@ impl PriceAlertClient {
                     unimplemented!()
                 }
             };
-
+            let data = PushNotification {
+                data: serde_json::to_value(&price_alert.price_alert).ok(),
+                notification_type: PushNotificationTypes::PriceAlert,
+            };
             let notification = Notification {
                 tokens: vec![price_alert.device.token.clone()],
                 platform: price_alert.device.platform.as_i32(),
                 title: notification_message.title,
                 message: notification_message.description,
                 topic: Some(topic.clone()),
-                data: None,
+                data,
             };
             results.push(notification);
         }

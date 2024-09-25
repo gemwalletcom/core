@@ -352,6 +352,7 @@ dependencies = [
  "primitives",
  "reqwest",
  "serde",
+ "serde_json",
 ]
 
 [[package]]
@@ -5541,6 +5542,7 @@ dependencies = [
  "localizer",
  "primitives",
  "serde",
+ "serde_json",
  "storage",
 ]
 
