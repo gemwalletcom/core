@@ -5,7 +5,7 @@ use crate::Transaction;
 
 #[typeshare(swift = "Equatable, Codable")]
 #[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(rename_all = "snake_case")]
+#[serde(rename_all = "camelCase")]
 pub enum PushNotificationTypes {
     Test,        // Test payload
     Transaction, // PushNotificationTransaction (Transaction)
@@ -29,6 +29,7 @@ pub struct PushNotificationPayloadType {
 
 #[typeshare(swift = "Equatable, Codable")]
 #[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct PushNotificationTransaction {
     pub wallet_index: i32,
     pub transaction: Transaction,
