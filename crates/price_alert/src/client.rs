@@ -1,6 +1,9 @@
 use api_connector::pusher::model::Notification;
 use localizer::{LanguageLocalizer, LanguageNotification};
-use primitives::{Asset, Device, NumberFormatter, Price, PriceAlertDirection, PriceAlertType, PriceAlerts, PushNotification, PushNotificationTypes};
+use primitives::{
+    Asset, Device, NumberFormatter, Price, PriceAlertDirection, PriceAlertType, PriceAlerts, PushNotification, PushNotificationPriceAlert,
+    PushNotificationTypes,
+};
 use std::collections::{HashMap, HashSet};
 use std::error::Error;
 use storage::{models::PriceAlert, DatabaseClient};
@@ -156,8 +159,11 @@ impl PriceAlertClient {
                     unimplemented!()
                 }
             };
+            let price_alert_data = PushNotificationPriceAlert {
+                asset_id: price_alert.asset.id.to_string(),
+            };
             let data = PushNotification {
-                data: serde_json::to_value(&price_alert.price_alert).ok(),
+                data: serde_json::to_value(&price_alert_data).ok(),
                 notification_type: PushNotificationTypes::PriceAlert,
             };
             let notification = Notification {

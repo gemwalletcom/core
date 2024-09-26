@@ -68,7 +68,7 @@ pub use self::address_formatter::AddressFormatter;
 pub mod utxo;
 pub use self::utxo::UTXO;
 pub mod push_notification;
-pub use self::push_notification::{PushNotification, PushNotificationTransaction, PushNotificationTypes};
+pub use self::push_notification::{PushNotification, PushNotificationPriceAlert, PushNotificationTransaction, PushNotificationTypes};
 pub mod scan;
 pub use self::scan::ScanAddress;
 pub mod swap;
