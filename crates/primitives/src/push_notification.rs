@@ -7,8 +7,9 @@ use typeshare::typeshare;
 pub enum PushNotificationTypes {
     Test,        // Test payload
     Transaction, // PushNotificationTransaction (Transaction)
-    PriceAlert,  // PushNotificationPriceAlert payload
+    PriceAlert,  // PriceAlert payload
     BuyAsset,    // PushNotificationBuyAsset payload
+    SwapAsset,   // PushNotificationSwapAsset payload
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -45,6 +46,7 @@ pub struct PushNotificationBuyAsset {
 #[typeshare(swift = "Equatable, Codable")]
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct PushNotificationPriceAlert {
-    pub asset_id: String,
+pub struct PushNotificationSwapAsset {
+    pub from_asset_id: String,
+    pub to_asset_id: String,
 }
