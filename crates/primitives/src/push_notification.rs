@@ -47,8 +47,7 @@ pub struct PushNotificationBuyAsset {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct PushNotificationPriceAlert {
-    pub from_asset_id: String,
-    pub to_asset_id: String,
+    pub asset_id: String,
 }
 
 #[typeshare(swift = "Equatable, Codable")]
