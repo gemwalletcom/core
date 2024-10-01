@@ -4,15 +4,14 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-async-trait = "0.1"
+async-trait = { workspace = true }
+uuid = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
-security_provider = { path = "../security_provider" }
 hex = { workspace = true }
 hmac = { workspace = true }
-rand = { workspace = true }
 sha2 = { workspace = true }
 reqwest-enum = { workspace = true }
-
-tokio = { workspace = true }
 reqwest = { workspace = true }
+
+security_provider = { path = "../security_provider" }

@@ -3,7 +3,6 @@ use crate::models::{ScanAddressResponse, ScanURLResponse};
 
 use async_trait::async_trait;
 use hmac::{Hmac, Mac};
-use rand::Rng;
 use reqwest_enum::target::Target;
 use security_provider::{ScanResult, ScanTarget, SecurityProvider};
 use sha2::Sha256;
@@ -41,8 +40,12 @@ impl HashDitProvider {
         let query = target.query().iter().map(|(k, v)| format!("{}={}", k, v)).collect::<Vec<_>>().join("&");
         let body = target.body().inner.as_bytes().unwrap_or_default().to_owned();
 
-        let timestamp = SystemTime::now().duration_since(UNIX_EPOCH).expect("Time went backwards").as_secs().to_string();
-        let nonce: String = rand::thread_rng().gen_range(0..9999999).to_string();
+        let timestamp = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("Time went backwards")
+            .as_millis()
+            .to_string();
+        let nonce: String = uuid::Uuid::new_v4().to_string();
         let method: &str = "POST";
 
         // Generate message for signature
