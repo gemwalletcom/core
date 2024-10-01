@@ -20,7 +20,7 @@ impl ScanClient {
             target: ScanTarget::Address(target.clone()),
             metadata: Some(Metadata {
                 name: Some(scan_address.name.unwrap_or_default()),
-                provider: "Gem Wallet".to_string(),
+                provider: "Gem".to_string(),
                 verified: scan_address.is_verified,
                 required_memo: scan_address.is_memo_required,
             }),
@@ -32,14 +32,28 @@ impl ScanClient {
 
         // Check internal db first
         if let ScanTarget::Address(target) = &scan_request.target {
-            let result = self.get_scan_address(target)?;
-            results.push(result);
+            let result = self.get_scan_address(target);
+            match result {
+                Err(e) => {
+                    println!("Error getting scan address: {}", e);
+                }
+                Ok(result) => {
+                    results.push(result);
+                }
+            }
         }
 
         // Iterate over security providers
         for provider in self.security_providers.iter() {
-            let result = provider.scan(&scan_request.target).await?;
-            results.push(result);
+            let result = provider.scan(&scan_request.target).await;
+            match result {
+                Err(e) => {
+                    println!("{} error scanning: {}", provider.name(), e);
+                }
+                Ok(result) => {
+                    results.push(result);
+                }
+            }
         }
 
         Ok(results)

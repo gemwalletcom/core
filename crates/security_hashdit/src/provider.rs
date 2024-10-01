@@ -49,11 +49,12 @@ impl HashDitProvider {
         let msg_for_sig = self.generate_msg_for_sig(&timestamp, &nonce, method, target.path(), &query, &body);
         let sig = self.compute_sig(&msg_for_sig);
 
-        request = request.header("Content-Type", "application/json");
+        request = request.header("Content-Type", "application/json;charset=UTF-8");
         request = request.header("X-Signature-appid", &self.app_id);
         request = request.header("X-Signature-signature", sig);
         request = request.header("X-Signature-timestamp", timestamp);
         request = request.header("X-Signature-nonce", nonce);
+        request = request.body(body);
         request
     }
 

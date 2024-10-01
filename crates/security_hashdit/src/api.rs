@@ -12,7 +12,7 @@ pub enum HashDitApi {
 
 impl Target for HashDitApi {
     fn base_url(&self) -> &'static str {
-        "https://api.hashdit.io/"
+        "https://api.hashdit.io"
     }
 
     fn method(&self) -> HTTPMethod {
@@ -32,7 +32,7 @@ impl Target for HashDitApi {
 
     fn headers(&self) -> HashMap<&'static str, &'static str> {
         let mut headers = HashMap::new();
-        headers.insert("Content-Type", "application/json");
+        headers.insert("Content-Type", "application/json;charset=UTF-8");
         headers
     }
 
