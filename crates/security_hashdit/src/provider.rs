@@ -45,7 +45,7 @@ impl HashDitProvider {
             .expect("Time went backwards")
             .as_millis()
             .to_string();
-        let nonce: String = uuid::Uuid::new_v4().to_string();
+        let nonce: String = uuid::Uuid::new_v4().to_string().replace("-", "");
         let method: &str = "POST";
 
         // Generate message for signature
