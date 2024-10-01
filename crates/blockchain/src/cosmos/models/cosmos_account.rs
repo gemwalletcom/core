@@ -5,6 +5,7 @@ struct CosmosAccount {
 }
 
 #[typeshare(swift = "Sendable")]
+#[typeshare(swiftGenericConstraints = "T: Sendable")]
 struct CosmosAccountResponse<T> {
     account: T,
 }

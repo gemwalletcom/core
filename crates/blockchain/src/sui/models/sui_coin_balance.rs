@@ -57,6 +57,7 @@ struct SuiGasUsed {
 }
 
 #[typeshare(swift = "Sendable")]
+#[typeshare(swiftGenericConstraints = "T: Sendable")]
 #[serde(rename_all = "camelCase")]
 struct SuiData<T> {
     data: T,

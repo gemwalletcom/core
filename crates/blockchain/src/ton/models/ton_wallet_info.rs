@@ -4,6 +4,7 @@ struct TonWalletInfo {
     last_transaction_id: TonTransactionId,
 }
 #[typeshare(swift = "Sendable")]
+#[typeshare(swiftGenericConstraints = "T: Sendable")]
 struct TonResult<T> {
     result: T,
 }

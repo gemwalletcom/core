@@ -1,4 +1,5 @@
 #[typeshare(swift = "Sendable")]
+#[typeshare(swiftGenericConstraints = "T: Sendable")]
 struct XRPResult<T> {
     result: T,
 }

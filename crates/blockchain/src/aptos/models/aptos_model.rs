@@ -2,6 +2,7 @@ use typeshare::typeshare;
 //use serde::{Serialize, Deserialize};
 
 #[typeshare(swift = "Sendable")]
+#[typeshare(swiftGenericConstraints = "T: Sendable")]
 #[allow(dead_code)]
 struct AptosResource<T> {
     r#type: String,

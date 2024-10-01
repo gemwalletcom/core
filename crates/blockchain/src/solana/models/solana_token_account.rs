@@ -4,6 +4,7 @@ struct SolanaTokenAccount {
 }
 
 #[typeshare(swift = "Sendable")]
+#[typeshare(swiftGenericConstraints = "T: Sendable")]
 struct SolanaTokenAccountResult<T> {
     account: T,
     pubkey: String,
