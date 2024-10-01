@@ -8,8 +8,8 @@ pub struct SecurityProviderFactory {}
 impl SecurityProviderFactory {
     pub fn create_providers(settings: &Settings) -> Vec<Box<dyn SecurityProvider + Send + Sync>> {
         vec![
-            Box::new(GoPlusProvider::new(&settings.security.goplus.url, &settings.security.goplus.api_id)),
-            Box::new(HashDitProvider::new(&settings.security.hashdit.api_id, &settings.security.hashdit.api_secret)),
+            Box::new(GoPlusProvider::new(&settings.security.goplus.url, &settings.security.goplus.app_id)),
+            Box::new(HashDitProvider::new(&settings.security.hashdit.app_id, &settings.security.hashdit.app_secret)),
         ]
     }
 }

@@ -9,6 +9,7 @@ pub struct AddressTarget {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
 #[serde(untagged)]
 pub enum ScanTarget {
     Address(AddressTarget),
@@ -43,4 +44,35 @@ pub trait SecurityProvider: Send + Sync {
 
     fn name(&self) -> &'static str;
     async fn scan(&self, target: &ScanTarget) -> Result<ScanResult, Box<dyn std::error::Error + Send + Sync>>;
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn test_address_target() {
+        let address_target = AddressTarget {
+            address: "0x1234567890abcdef".to_string(),
+            chain: primitives::Chain::Ethereum,
+        };
+        let target = ScanTarget::Address(address_target);
+        let request = ScanRequest { target: target.clone() };
+
+        let json = serde_json::to_string(&request).unwrap();
+        let expected = r#"{"target":{"address":"0x1234567890abcdef","chain":"ethereum"}}"#;
+
+        assert_eq!(json, expected);
+    }
+
+    #[test]
+    fn test_url_target() {
+        let url_target = "https://example.com".to_string();
+        let target = ScanTarget::URL(url_target);
+        let request = ScanRequest { target };
+
+        let json = serde_json::to_string(&request).unwrap();
+        let expected = r#"{"target":"https://example.com"}"#;
+
+        assert_eq!(json, expected);
+    }
 }

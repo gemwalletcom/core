@@ -6837,6 +6837,7 @@ dependencies = [
  "async-trait",
  "primitives",
  "serde",
+ "serde_json",
 ]
 
 [[package]]
