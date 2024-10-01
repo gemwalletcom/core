@@ -1,5 +1,6 @@
 use async_trait::async_trait;
-use security_provider::{ScanResult, SecurityProvider};
+use security_provider::{ScanResult, ScanTarget, SecurityProvider};
+use std::result::Result;
 
 pub struct GoPlusProvider {
     // Add any necessary fields
@@ -7,16 +8,15 @@ pub struct GoPlusProvider {
 
 #[async_trait]
 impl SecurityProvider for GoPlusProvider {
-    fn new(url: &str, api_key: &str) -> Self {
+    fn new(_url: &str, _api_key: &str) -> Self {
         GoPlusProvider {}
     }
 
-    async fn scan(&self, target: &str, target_type: &str) -> ScanResult {
-        // Implement GoPlus-specific scanning logic
-        ScanResult {
-            is_malicious: false,
-            risk_score: 0,
-            details: "GoPlus scan completed.".to_string(),
-        }
+    fn name(&self) -> &'static str {
+        "GoPlus"
+    }
+
+    async fn scan(&self, _target: &ScanTarget) -> Result<ScanResult, Box<dyn std::error::Error + Send + Sync>> {
+        Err(Box::from("GoPlus scan not implemented"))
     }
 }

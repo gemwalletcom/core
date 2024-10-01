@@ -6808,10 +6808,9 @@ name = "security_goplus"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "reqwest",
+ "reqwest-enum",
  "security_provider",
  "serde",
- "tokio",
 ]
 
 [[package]]
@@ -6826,6 +6825,7 @@ dependencies = [
  "reqwest-enum",
  "security_provider",
  "serde",
+ "serde_json",
  "sha2 0.10.8",
  "tokio",
 ]
@@ -6835,6 +6835,7 @@ name = "security_provider"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "primitives",
  "serde",
 ]
 

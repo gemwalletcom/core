@@ -1,5 +1,4 @@
-use primitives::{Chain, ScanAddress};
-use security_provider::{ScanRequest, ScanResult, SecurityProvider};
+use security_provider::{AddressTarget, Metadata, ScanRequest, ScanResult, ScanTarget, SecurityProvider};
 use std::error::Error;
 use storage::DatabaseClient;
 
@@ -14,25 +13,35 @@ impl ScanClient {
         Self { database, security_providers }
     }
 
-    pub fn get_scan_address(&mut self, chain: Chain, address: &str) -> Result<ScanAddress, Box<dyn Error>> {
-        Ok(self.database.get_scan_address(chain, address)?.as_primitive())
+    pub fn get_scan_address(&mut self, target: &AddressTarget) -> Result<ScanResult, Box<dyn Error + Send + Sync>> {
+        let scan_address = self.database.get_scan_address(target.chain, &target.address)?.as_primitive();
+        Ok(ScanResult {
+            is_malicious: scan_address.is_fraudulent,
+            target: ScanTarget::Address(target.clone()),
+            metadata: Some(Metadata {
+                name: Some(scan_address.name.unwrap_or_default()),
+                provider: "Gem Wallet".to_string(),
+                verified: scan_address.is_verified,
+                required_memo: scan_address.is_memo_required,
+            }),
+        })
     }
 
-    pub async fn scan_security(&mut self, scan_request: ScanRequest) -> Result<ScanResult, Box<dyn Error>> {
+    pub async fn scan_security(&mut self, scan_request: ScanRequest) -> Result<Vec<ScanResult>, Box<dyn Error + Send + Sync>> {
         let mut results = Vec::new();
 
-        for provider in self.security_providers.iter() {
-            let result = provider.scan(&scan_request.target, &scan_request.target_type).await;
+        // Check internal db first
+        if let ScanTarget::Address(target) = &scan_request.target {
+            let result = self.get_scan_address(target)?;
             results.push(result);
         }
 
-        // Combine results from multiple providers (you may want to implement a more sophisticated logic here)
-        let combined_result = ScanResult {
-            is_malicious: results.iter().any(|r| r.is_malicious),
-            risk_score: results.iter().map(|r| r.risk_score).max().unwrap_or(0),
-            details: results.iter().map(|r| r.details.clone()).collect::<Vec<_>>().join(" | "),
-        };
+        // Iterate over security providers
+        for provider in self.security_providers.iter() {
+            let result = provider.scan(&scan_request.target).await?;
+            results.push(result);
+        }
 
-        Ok(combined_result)
+        Ok(results)
     }
 }

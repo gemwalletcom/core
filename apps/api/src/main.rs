@@ -163,7 +163,6 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
                 subscription::delete_subscriptions,
                 transaction::get_transactions_by_device_id,
                 transaction::get_transactions_by_hash,
-                scan::get_scan_address,
                 parser::get_parser_block,
                 parser::get_parser_block_finalize,
                 parser::get_parser_block_number_latest,

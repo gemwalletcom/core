@@ -6,13 +6,13 @@ use reqwest_enum::{
 use std::collections::HashMap;
 
 pub enum HashDitApi {
-    DetectAddress,
-    DetectURL,
+    DetectAddress(String, String),
+    DetectURL(String),
 }
 
 impl Target for HashDitApi {
     fn base_url(&self) -> &'static str {
-        "https://api.hashdit.io/security-api/public/chain"
+        "https://api.hashdit.io/"
     }
 
     fn method(&self) -> HTTPMethod {
@@ -21,8 +21,8 @@ impl Target for HashDitApi {
 
     fn path(&self) -> &'static str {
         match self {
-            HashDitApi::DetectAddress => "/v1/detect/address",
-            HashDitApi::DetectURL => "/v1/detect/url",
+            HashDitApi::DetectAddress(_, _) => "/security-api/public/chain/v1/detect/address",
+            HashDitApi::DetectURL(_) => "/security-api/public/chain/v1/detect/url",
         }
     }
 
@@ -37,6 +37,20 @@ impl Target for HashDitApi {
     }
 
     fn body(&self) -> HTTPBody {
-        todo!()
+        match self {
+            HashDitApi::DetectAddress(address, chain) => {
+                let body = serde_json::json!({
+                    "address": address,
+                    "chain_id": chain,
+                });
+                HTTPBody::from(&body)
+            }
+            HashDitApi::DetectURL(url) => {
+                let body = serde_json::json!({
+                    "url": url,
+                });
+                HTTPBody::from(&body)
+            }
+        }
     }
 }

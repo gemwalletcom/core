@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 async-trait = "0.1"
 serde = { workspace = true }
+serde_json = { workspace = true }
 security_provider = { path = "../security_provider" }
 hex = { workspace = true }
 hmac = { workspace = true }

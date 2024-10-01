@@ -164,7 +164,8 @@ swap:
 security:
   goplus:
     url: "https://api.gopluslabs.io"
-    key: ""
+    app_id: ""
+    app_secret: ""
   hashdit:
     url: "https://api.hashdit.io"
     app_id: ""
