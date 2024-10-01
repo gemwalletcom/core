@@ -1,49 +1,49 @@
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 struct SolanaTokenAccount {
     pubkey: String,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 struct SolanaTokenAccountResult<T> {
     account: T,
     pubkey: String,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 struct SolanaStakeAccount {
     lamports: Int,
     space: i32,
     data: SolanaStakeAccountData,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 struct SolanaStakeAccountData {
     parsed: SolanaStakeAccountDataParsed,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 struct SolanaStakeAccountDataParsed {
     info: SolanaStakeAccountDataParsedInfo,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 struct SolanaStakeAccountDataParsedInfo {
     stake: SolanaStakeAccountDataParsedInfoStake,
     meta: SolanaStakeAccountDataParsedInfoMeta,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 #[serde(rename_all = "camelCase")]
 struct SolanaStakeAccountDataParsedInfoMeta {
     rent_exempt_reserve: String,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 struct SolanaStakeAccountDataParsedInfoStake {
     delegation: SolanaStakeAccountDataParsedInfoStakeDelegation,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 #[serde(rename_all = "camelCase")]
 struct SolanaStakeAccountDataParsedInfoStakeDelegation {
     voter: String,

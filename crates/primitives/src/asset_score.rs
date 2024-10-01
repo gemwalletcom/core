@@ -2,14 +2,14 @@ use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare(swift = "Equatable, Codable")]
+#[typeshare(swift = "Equatable, Sendable")]
 #[serde(rename_all = "lowercase")]
 pub struct AssetScore {
     pub rank: i32,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare(swift = "Equatable, Codable, CaseIterable")]
+#[typeshare(swift = "Equatable, CaseIterable, Sendable")]
 #[serde(rename_all = "lowercase")]
 pub enum AssetRank {
     High = 100,

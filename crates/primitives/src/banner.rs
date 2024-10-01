@@ -1,4 +1,4 @@
-#[typeshare(swift = "Equatable, Codable")]
+#[typeshare(swift = "Equatable, Sendable")]
 #[serde(rename_all = "camelCase")]
 pub struct Banner {
     wallet: Option<Wallet>,
@@ -7,7 +7,7 @@ pub struct Banner {
     state: BannerState,
 }
 
-#[typeshare(swift = "Equatable, Codable, CaseIterable")]
+#[typeshare(swift = "Equatable, CaseIterable, Sendable")]
 #[serde(rename_all = "camelCase")]
 pub enum BannerEvent {
     stake,
@@ -15,7 +15,7 @@ pub enum BannerEvent {
     enable_notifications,
 }
 
-#[typeshare(swift = "Equatable, Codable, CaseIterable")]
+#[typeshare(swift = "Equatable, CaseIterable, Sendable")]
 #[serde(rename_all = "camelCase")]
 pub enum BannerState {
     active,

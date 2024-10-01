@@ -1,4 +1,4 @@
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 struct TronSmartContractCall {
     contract_address: String,
     function_selector: String,
@@ -9,14 +9,14 @@ struct TronSmartContractCall {
     visible: Option<bool>,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 struct TronSmartContractResult {
     result: TronSmartContractResultMessage,
     constant_result: Vec<String>,
     energy_used: i32,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 struct TronSmartContractResultMessage {
     result: bool,
     message: Option<String>,

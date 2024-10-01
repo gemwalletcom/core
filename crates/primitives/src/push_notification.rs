@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
-#[typeshare(swift = "Equatable, Codable")]
+#[typeshare(swift = "Equatable, Sendable")]
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub enum PushNotificationTypes {
@@ -20,14 +20,14 @@ pub struct PushNotification {
 }
 
 // Only used to decode notification type
-#[typeshare(swift = "Equatable, Codable")]
+#[typeshare(swift = "Equatable, Sendable")]
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct PushNotificationPayloadType {
     #[serde(rename = "type")]
     pub notification_type: PushNotificationTypes,
 }
 
-#[typeshare(swift = "Equatable, Codable")]
+#[typeshare(swift = "Equatable, Sendable")]
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct PushNotificationTransaction {
@@ -36,21 +36,21 @@ pub struct PushNotificationTransaction {
     pub transaction_id: String,
 }
 
-#[typeshare(swift = "Equatable, Codable")]
+#[typeshare(swift = "Equatable, Sendable")]
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct PushNotificationBuyAsset {
     pub asset_id: String,
 }
 
-#[typeshare(swift = "Equatable, Codable")]
+#[typeshare(swift = "Equatable, Sendable")]
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct PushNotificationPriceAlert {
     pub asset_id: String,
 }
 
-#[typeshare(swift = "Equatable, Codable")]
+#[typeshare(swift = "Equatable, Sendable")]
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct PushNotificationSwapAsset {

@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 #[serde(rename_all = "camelCase")]
 pub struct AssetPrice {
     pub asset_id: String,
@@ -11,7 +11,7 @@ pub struct AssetPrice {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 #[serde(rename_all = "camelCase")]
 pub struct AssetMarket {
     pub market_cap: Option<f64>,
@@ -23,7 +23,7 @@ pub struct AssetMarket {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 #[serde(rename_all = "camelCase")]
 pub struct AssetPrices {
     pub currency: String,
@@ -31,7 +31,7 @@ pub struct AssetPrices {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare(swift = "Equatable")]
+#[typeshare(swift = "Equatable, Sendable")]
 #[serde(rename_all = "camelCase")]
 pub struct AssetPricesRequest {
     pub currency: Option<String>,
@@ -39,7 +39,7 @@ pub struct AssetPricesRequest {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 #[serde(rename_all = "camelCase")]
 pub struct Charts {
     pub prices: Vec<ChartValue>,
@@ -48,7 +48,7 @@ pub struct Charts {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 #[serde(rename_all = "camelCase")]
 pub struct ChartValue {
     pub timestamp: i32,
@@ -62,7 +62,7 @@ impl PartialEq for ChartValue {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 #[serde(rename_all = "lowercase")]
 pub enum ChartPeriod {
     Hour,

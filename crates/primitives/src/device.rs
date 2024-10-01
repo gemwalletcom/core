@@ -4,7 +4,7 @@ use typeshare::typeshare;
 use crate::{platform::Platform, PlatformStore};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare(swift = "Codable, Equatable")]
+#[typeshare(swift = "Equatable, Sendable")]
 #[serde(rename_all = "camelCase")]
 pub struct Device {
     pub id: String,

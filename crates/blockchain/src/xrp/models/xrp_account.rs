@@ -1,14 +1,14 @@
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 struct XRPResult<T> {
     result: T,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 struct XRPAccountResult {
     account_data: XRPAccount,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 struct XRPAccount {
     #[serde(rename = "Balance")]
     balance: String,
@@ -16,34 +16,34 @@ struct XRPAccount {
     sequence: i32,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 struct XRPFee {
     drops: XRPDrops,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 struct XRPDrops {
     median_fee: String,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 struct XRPTransactionBroadcast {
     accepted: bool,
     engine_result_message: Option<String>,
     tx_json: Option<XRPTransaction>,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 struct XRPTransaction {
     hash: String,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 struct XRPTransactionStatus {
     status: String,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 struct XRPLatestBlock {
     ledger_current_index: Int,
 }

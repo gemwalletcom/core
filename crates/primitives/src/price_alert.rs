@@ -5,7 +5,7 @@ use typeshare::typeshare;
 use crate::{Asset, Price};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-#[typeshare(swift = "Equatable, Codable, Hashable")]
+#[typeshare(swift = "Equatable, Hashable, Sendable")]
 #[serde(rename_all = "camelCase")]
 pub struct PriceAlert {
     pub asset_id: String,
@@ -15,7 +15,7 @@ pub struct PriceAlert {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-#[typeshare(swift = "Equatable, Codable, Hashable")]
+#[typeshare(swift = "Equatable, Hashable, Sendable")]
 #[serde(rename_all = "camelCase")]
 pub struct PriceAlertData {
     pub asset: Asset,
@@ -24,7 +24,7 @@ pub struct PriceAlertData {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, AsRefStr, EnumString, PartialEq)]
-#[typeshare(swift = "Equatable, Codable, Hashable")]
+#[typeshare(swift = "Equatable, Hashable, Sendable")]
 #[serde(rename_all = "lowercase")]
 #[strum(serialize_all = "lowercase")]
 pub enum PriceAlertDirection {

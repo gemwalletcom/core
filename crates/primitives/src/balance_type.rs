@@ -1,4 +1,4 @@
-#[typeshare(swift = "Equatable, Codable, CaseIterable")]
+#[typeshare(swift = "Equatable, CaseIterable, Sendable")]
 pub enum BalanceType {
     available,
     locked,

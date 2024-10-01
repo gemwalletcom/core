@@ -3,7 +3,7 @@ use strum::{AsRefStr, EnumIter, EnumString, IntoEnumIterator};
 use typeshare::typeshare;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare(swift = "Codable, Equatable")]
+#[typeshare(swift = "Equatable, Sendable")]
 #[serde(rename_all = "lowercase")]
 pub enum Platform {
     IOS,
@@ -11,7 +11,7 @@ pub enum Platform {
 }
 
 #[derive(Copy, Clone, Debug, Serialize, Deserialize, EnumIter, AsRefStr, EnumString, PartialEq, Eq, Hash)]
-#[typeshare(swift = "Equatable, Codable, CaseIterable")]
+#[typeshare(swift = "Equatable, CaseIterable, Sendable")]
 #[serde(rename_all = "camelCase")]
 #[strum(serialize_all = "camelCase")]
 pub enum PlatformStore {

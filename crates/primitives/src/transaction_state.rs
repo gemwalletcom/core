@@ -9,7 +9,7 @@ Reverted: The transaction was executed but later reverted due to an error or a s
 */
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-#[typeshare(swift = "Equatable, Codable, CaseIterable")]
+#[typeshare(swift = "Equatable, CaseIterable, Sendable")]
 #[serde(rename_all = "lowercase")]
 pub enum TransactionState {
     Pending,

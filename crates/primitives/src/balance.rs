@@ -1,4 +1,4 @@
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 struct Balance {
     available: BigInt,
     frozen: BigInt,

@@ -7,7 +7,7 @@ use crate::chain::Chain;
 use gem_evm::address::EthereumAddress;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-#[typeshare(swift = "Equatable, Codable, Hashable")]
+#[typeshare(swift = "Equatable, Hashable, Sendable")]
 pub struct AssetId {
     pub chain: Chain,
     #[serde(rename = "tokenId")]

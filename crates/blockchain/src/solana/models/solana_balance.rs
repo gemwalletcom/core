@@ -1,9 +1,9 @@
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 struct SolanaBalance {
     value: Int,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 struct SolanaBalanceValue {
     amount: String,
 }

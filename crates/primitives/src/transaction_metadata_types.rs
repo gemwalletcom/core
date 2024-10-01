@@ -4,7 +4,7 @@ use typeshare::typeshare;
 use crate::AssetId;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 #[serde(rename_all = "camelCase")]
 pub struct TransactionSwapMetadata {
     pub from_asset: AssetId,

@@ -1,4 +1,4 @@
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 struct TransactionExtended {
     transaction: Transaction,
     asset: Asset,

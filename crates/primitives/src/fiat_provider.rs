@@ -3,7 +3,7 @@ use strum::{EnumIter, IntoEnumIterator};
 use typeshare::typeshare;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare(swift = "Equatable, Codable")]
+#[typeshare(swift = "Equatable, Sendable")]
 #[serde(rename_all = "camelCase")]
 pub struct FiatProvider {
     pub name: String,

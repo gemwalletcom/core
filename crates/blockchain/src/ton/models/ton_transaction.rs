@@ -1,36 +1,36 @@
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 struct TonTransaction {
     transaction_id: TonTransactionId,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 struct TonTransactionId {
     hash: String,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 struct TonTransactionMessage {
     hash: String,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 struct TonJettonToken {
     jetton_content: TonJettonTokenContent,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 struct TonJettonBalance {
     balance: UInt64,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 struct TonJettonTokenContent {
     #[serde(rename = "type")]
     content_type: String,
     data: TonJettonTokenContentData,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 struct TonJettonTokenContentData {
     name: String,
     symbol: String,

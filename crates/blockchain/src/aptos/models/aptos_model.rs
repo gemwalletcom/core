@@ -1,51 +1,51 @@
 use typeshare::typeshare;
 //use serde::{Serialize, Deserialize};
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 #[allow(dead_code)]
 struct AptosResource<T> {
     r#type: String,
     data: T,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 #[allow(dead_code)]
 struct AptosResourceBalance {
     coin: AptosResourceCoin,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 #[allow(dead_code)]
 struct AptosResourceCoin {
     value: String,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 #[allow(dead_code)]
 struct AptosAccount {
     sequence_number: String,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 #[allow(dead_code)]
 struct AptosTransaction {
     success: bool,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 #[allow(dead_code)]
 struct AptosTransactionBroacast {
     hash: String,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 #[allow(dead_code)]
 struct AptosGasFee {
     gas_estimate: i32,
     prioritized_gas_estimate: i32,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 #[allow(dead_code)]
 struct AptosLedger {
     chain_id: i32,

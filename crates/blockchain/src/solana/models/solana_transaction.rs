@@ -1,13 +1,13 @@
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 struct SolanaTransaction {
     meta: SolanaTransactionMeta,
     slot: i32,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 struct SolanaTransactionMeta {
     err: Option<SolanaTransactionError>,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 struct SolanaTransactionError {}

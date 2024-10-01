@@ -6,7 +6,7 @@ use crate::Chain;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-#[typeshare(swift = "Codable")]
+#[typeshare(swift = "Sendable")]
 pub struct NFTCollection {
     pub id: String,
     pub name: String,
@@ -19,7 +19,7 @@ pub struct NFTCollection {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-#[typeshare(swift = "Codable")]
+#[typeshare(swift = "Sendable")]
 pub struct NFTCollectible {
     pub id: String,
     pub collection_id: String,
@@ -35,7 +35,7 @@ pub struct NFTCollectible {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-#[typeshare(swift = "Codable")]
+#[typeshare(swift = "Sendable")]
 pub struct NFTImage {
     pub image_url: String,
     pub preview_image_url: String,
@@ -44,14 +44,14 @@ pub struct NFTImage {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-#[typeshare(swift = "Codable")]
+#[typeshare(swift = "Sendable")]
 pub struct NFTAttrubute {
     pub name: String,
     pub value: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, AsRefStr, EnumString)]
-#[typeshare(swift = "Codable")]
+#[typeshare(swift = "Sendable")]
 #[serde(rename_all = "lowercase")]
 #[strum(serialize_all = "lowercase")]
 pub enum NFTType {

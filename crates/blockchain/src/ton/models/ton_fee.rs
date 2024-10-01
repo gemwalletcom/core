@@ -1,17 +1,16 @@
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 struct TonEstimateFee {
     address: String,
     body: String,
     ignore_chksig: bool,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 struct TonFees {
     source_fees: TonFee,
 }
 
-
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 struct TonFee {
     in_fwd_fee: i32,
     storage_fee: i32,

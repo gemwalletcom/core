@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-#[typeshare(swift = "Equatable, Codable")]
+#[typeshare(swift = "Equatable, Sendable")]
 pub struct EIP712Domain {
     pub name: String,
     pub version: String,
@@ -13,7 +13,7 @@ pub struct EIP712Domain {
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-#[typeshare(swift = "Equatable, Codable")]
+#[typeshare(swift = "Equatable, Sendable")]
 pub struct EIP712Type {
     pub name: String,
     pub r#type: String,

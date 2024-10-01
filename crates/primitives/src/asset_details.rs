@@ -3,7 +3,7 @@ use typeshare::typeshare;
 
 use crate::{Asset, AssetMarket, AssetScore, Price};
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AssetFull {
@@ -14,7 +14,7 @@ pub struct AssetFull {
     pub score: AssetScore,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AssetMarketPrice {
@@ -22,7 +22,7 @@ pub struct AssetMarketPrice {
     pub market: Option<AssetMarket>,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AssetDetails {
@@ -49,7 +49,7 @@ impl AssetDetails {
     }
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AssetLinks {
     pub homepage: Option<String>,
@@ -65,7 +65,7 @@ pub struct AssetLinks {
     pub discord: Option<String>,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AssetDetailsInfo {
     pub details: AssetDetails,

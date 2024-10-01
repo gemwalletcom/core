@@ -1,9 +1,9 @@
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 struct SolanaValidators {
     current: Vec<SolanaValidator>,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 #[serde(rename_all = "camelCase")]
 struct SolanaValidator {
     vote_pubkey: String,
@@ -11,7 +11,7 @@ struct SolanaValidator {
     epoch_vote_account: bool,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 #[serde(rename_all = "camelCase")]
 struct SolanaEpoch {
     epoch: i32,

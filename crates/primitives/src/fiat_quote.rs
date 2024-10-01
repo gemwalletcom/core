@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare(swift = "Equatable, Codable")]
+#[typeshare(swift = "Equatable, Sendable")]
 #[serde(rename_all = "camelCase")]
 pub struct FiatQuote {
     pub provider: FiatProvider,
@@ -14,7 +14,7 @@ pub struct FiatQuote {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare()]
+#[typeshare(swift = "Sendable")]
 pub struct FiatQuotes {
     pub quotes: Vec<FiatQuote>,
 }

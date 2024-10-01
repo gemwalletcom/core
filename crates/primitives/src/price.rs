@@ -4,7 +4,7 @@ use typeshare::typeshare;
 use crate::{Asset, AssetDetailsInfo, PriceAlert};
 
 #[derive(Copy, Clone, Debug, Serialize, Deserialize)]
-#[typeshare(swift = "Equatable, Codable, Hashable")]
+#[typeshare(swift = "Equatable, Hashable, Sendable")]
 #[serde(rename_all = "camelCase")]
 pub struct Price {
     pub price: f64,
@@ -23,7 +23,7 @@ pub struct PriceFull {
 #[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 struct PriceData {
     asset: Asset,
     price: Option<Price>,

@@ -1,4 +1,4 @@
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 #[serde(rename_all = "camelCase")]
 struct SuiCoin {
     coin_type: String,
@@ -8,26 +8,26 @@ struct SuiCoin {
     digest: String,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 #[serde(rename_all = "camelCase")]
 struct SuiCoinBalance {
     coin_type: String,
     total_balance: String,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 #[serde(rename_all = "camelCase")]
 struct SuiTransaction {
     effects: SuiEffects,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 #[serde(rename_all = "camelCase")]
 struct SuiStatus {
     status: String,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 #[serde(rename_all = "camelCase")]
 struct SuiEffects {
     gas_used: SuiGasUsed,
@@ -35,19 +35,19 @@ struct SuiEffects {
     created: Option<Vec<SuiObjectChange>>,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 #[serde(rename_all = "camelCase")]
 struct SuiObjectChange {
     reference: SuiObjectReference,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 #[serde(rename_all = "camelCase")]
 struct SuiObjectReference {
     object_id: String,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 #[serde(rename_all = "camelCase")]
 struct SuiGasUsed {
     computationCost: String,
@@ -56,7 +56,7 @@ struct SuiGasUsed {
     nonRefundableStorageFee: String,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 #[serde(rename_all = "camelCase")]
 struct SuiData<T> {
     data: T,

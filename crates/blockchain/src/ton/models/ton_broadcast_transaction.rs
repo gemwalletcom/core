@@ -1,4 +1,4 @@
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 struct TonBroadcastTransaction {
-    hash: String
+    hash: String,
 }

@@ -1,5 +1,5 @@
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare(swift = "Equatable, Hashable")]
+#[typeshare(swift = "Equatable, Hashable, Sendable")]
 #[serde(rename_all = "camelCase")]
 pub struct Delegation {
     pub base: DelegationBase,
@@ -8,7 +8,7 @@ pub struct Delegation {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare(swift = "Equatable, Hashable")]
+#[typeshare(swift = "Equatable, Hashable, Sendable")]
 #[serde(rename_all = "camelCase")]
 pub struct DelegationBase {
     pub asset_id: AssetId,
@@ -22,7 +22,7 @@ pub struct DelegationBase {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare(swift = "Equatable, Hashable")]
+#[typeshare(swift = "Equatable, Hashable, Sendable")]
 #[serde(rename_all = "camelCase")]
 pub struct DelegationValidator {
     pub chain: Chain,
@@ -34,7 +34,7 @@ pub struct DelegationValidator {
 }
 
 #[derive(Copy, Clone, Debug, Serialize, Deserialize)]
-#[typeshare(swift = "Equatable, Codable, CaseIterable")]
+#[typeshare(swift = "Equatable, CaseIterable, Sendable")]
 #[serde(rename_all = "lowercase")]
 pub enum DelegationState {
     Active,

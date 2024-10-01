@@ -1,54 +1,54 @@
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 struct CosmosDelegations {
     delegation_responses: Vec<CosmosDelegation>,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 struct CosmosDelegation {
     delegation: CosmosDelegationData,
     balance: CosmosBalance,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 struct CosmosDelegationData {
     validator_address: String,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 struct CosmosUnboundingDelegations {
     unbonding_responses: Vec<CosmosUnboundingDelegation>,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 struct CosmosUnboundingDelegation {
     validator_address: String,
     entries: Vec<CosmosUnboudingDelegationEntry>,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 struct CosmosUnboudingDelegationEntry {
     completion_time: String,
     creation_height: String,
     balance: String,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 struct CosmosRewards {
     rewards: Vec<CosmosReward>,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 struct CosmosReward {
     validator_address: String,
     reward: Vec<CosmosBalance>,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 struct CosmosValidators {
     validators: Vec<CosmosValidator>,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 struct CosmosValidator {
     operator_address: String,
     jailed: bool,
@@ -57,17 +57,17 @@ struct CosmosValidator {
     commission: CosmosValidatorCommission,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 struct CosmosValidatorMoniker {
     moniker: String,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 struct CosmosValidatorCommission {
     commission_rates: CosmosValidatorCommissionRates,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 struct CosmosValidatorCommissionRates {
     rate: String,
 }

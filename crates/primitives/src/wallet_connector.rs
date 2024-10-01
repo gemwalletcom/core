@@ -1,10 +1,10 @@
-#[typeshare(swift = "Equatable, Codable, Hashable")]
+#[typeshare(swift = "Equatable, Hashable, Sendable")]
 struct WalletConnection {
     session: WalletConnectionSession,
     wallet: Wallet,
 }
 #[derive(Debug, Serialize)]
-#[typeshare(swift = "Codable, Hashable")]
+#[typeshare(swift = "Hashable, Sendable")]
 #[serde(rename_all = "lowercase")]
 pub enum WalletConnectionState {
     Started,
@@ -13,7 +13,7 @@ pub enum WalletConnectionState {
 }
 
 #[derive(Debug, Serialize)]
-#[typeshare(swift = "Codable, CaseIterable")]
+#[typeshare(swift = "CaseIterable, Sendable")]
 pub enum WalletConnectionMethods {
     #[serde(rename = "eth_chainId")]
     eth_chain_id,
@@ -40,7 +40,7 @@ pub enum WalletConnectionMethods {
 }
 
 #[derive(Debug, Serialize)]
-#[typeshare(swift = "Codable, CaseIterable")]
+#[typeshare(swift = "CaseIterable, Sendable")]
 pub enum WalletConnectionEvents {
     connect,
     disconnect,
@@ -50,7 +50,7 @@ pub enum WalletConnectionEvents {
     chain_changed,
 }
 
-#[typeshare(swift = "Equatable, Codable, Hashable")]
+#[typeshare(swift = "Equatable, Hashable, Sendable")]
 #[serde(rename_all = "camelCase")]
 struct WalletConnectionSession {
     id: String,
@@ -62,7 +62,7 @@ struct WalletConnectionSession {
     metadata: WalletConnectionSessionAppMetadata,
 }
 
-#[typeshare(swift = "Equatable, Codable, Hashable")]
+#[typeshare(swift = "Equatable, Hashable, Sendable")]
 #[serde(rename_all = "camelCase")]
 struct WalletConnectionSessionAppMetadata {
     name: String,
@@ -73,7 +73,7 @@ struct WalletConnectionSessionAppMetadata {
     redirect_universal: Option<String>,
 }
 
-#[typeshare(swift = "Equatable, Codable, Hashable")]
+#[typeshare(swift = "Equatable, Hashable, Sendable")]
 #[serde(rename_all = "camelCase")]
 struct WalletConnectionSessionProposal {
     wallet: Wallet,
@@ -82,7 +82,7 @@ struct WalletConnectionSessionProposal {
 }
 
 #[derive(Debug, Serialize)]
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 struct SignMessage {
     #[serde(rename = "type")]
     sign_type: SignDigestType,
@@ -90,7 +90,7 @@ struct SignMessage {
 }
 
 #[derive(Debug, Serialize)]
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 #[serde(rename_all = "lowercase")]
 pub enum SignDigestType {
     Sign,

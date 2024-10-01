@@ -6,7 +6,7 @@ use typeshare::typeshare;
 
 use crate::{AssetId, ChainType};
 
-#[typeshare(swift = "Equatable, Codable")]
+#[typeshare(swift = "Equatable, Sendable")]
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "lowercase")]
 #[derive(Default)]
@@ -16,7 +16,7 @@ pub enum SwapMode {
     ExactOut,
 }
 
-#[typeshare(swift = "Codable")]
+#[typeshare(swift = "Sendable")]
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct SwapQuoteRequest {
@@ -41,20 +41,20 @@ pub struct SwapQuoteProtocolRequest {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-#[typeshare(swift = "Codable, Equatable")]
+#[typeshare(swift = "Equatable, Sendable")]
 pub struct SwapQuoteResult {
     pub quote: SwapQuote,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare(swift = "Codable, Equatable, Hashable")]
+#[typeshare(swift = "Equatable, Hashable, Sendable")]
 #[serde(rename_all = "camelCase")]
 pub struct SwapApprovalData {
     pub spender: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-#[typeshare(swift = "Codable, Equatable, Hashable")]
+#[typeshare(swift = "Equatable, Hashable, Sendable")]
 #[serde(rename_all = "camelCase")]
 pub struct SwapQuote {
     pub chain_type: ChainType,
@@ -68,7 +68,7 @@ pub struct SwapQuote {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-#[typeshare(swift = "Codable, Equatable, Hashable")]
+#[typeshare(swift = "Equatable, Hashable, Sendable")]
 #[serde(rename_all = "camelCase")]
 pub struct SwapProvider {
     pub name: String,
@@ -81,7 +81,7 @@ impl From<&'static str> for SwapProvider {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-#[typeshare(swift = "Codable, Equatable, Hashable")]
+#[typeshare(swift = "Equatable, Hashable, Sendable")]
 #[serde(rename_all = "camelCase")]
 pub struct SwapQuoteData {
     pub to: String,

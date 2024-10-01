@@ -1,16 +1,16 @@
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 struct TronBlock {
     #[serde(rename = "block_header")]
     block_header: TronHeaderRawData,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 struct TronHeaderRawData {
     raw_data: TronHeader,
 }
 //TODO: Need to support u64 by typeshare
 type UInt64 = u64;
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 struct TronHeader {
     number: UInt64,
     version: UInt64,

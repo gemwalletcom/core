@@ -1,10 +1,10 @@
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 #[serde(rename_all = "camelCase")]
 struct SuiPay {
     tx_bytes: String,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 #[serde(rename_all = "camelCase")]
 struct SuiPayRequest {
     sender_address: String,
@@ -15,7 +15,7 @@ struct SuiPayRequest {
     gas_budget: String,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 #[serde(rename_all = "camelCase")]
 struct SuiAddStakeRequest {
     sender_address: String,
@@ -25,7 +25,7 @@ struct SuiAddStakeRequest {
     gas_budget: String,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 #[serde(rename_all = "camelCase")]
 struct SuiUnstakeRequest {
     sender_address: String,
@@ -33,7 +33,7 @@ struct SuiUnstakeRequest {
     gas_budget: String,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 #[serde(rename_all = "camelCase")]
 struct SuiMoveCallRequest {
     sender_address: String,
@@ -44,7 +44,7 @@ struct SuiMoveCallRequest {
     gas_budget: String,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 #[serde(rename_all = "camelCase")]
 struct SuiSplitCoinRequest {
     sender_address: String,
@@ -53,20 +53,20 @@ struct SuiSplitCoinRequest {
     gas_budget: String,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 #[serde(rename_all = "camelCase")]
 struct SuiBatchRequest {
     sender_address: String,
     gas_budget: String,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 #[serde(rename_all = "camelCase")]
 struct SuiBroadcastTransaction {
     digest: String,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 #[serde(rename_all = "camelCase")]
 struct SuiStakeDelegation {
     validator_address: String,
@@ -74,7 +74,7 @@ struct SuiStakeDelegation {
     stakes: Vec<SuiStake>,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 #[serde(rename_all = "camelCase")]
 struct SuiSystemState {
     epoch: String,
@@ -82,7 +82,7 @@ struct SuiSystemState {
     epoch_duration_ms: String,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 #[serde(rename_all = "camelCase")]
 struct SuiStake {
     staked_sui_id: String,
@@ -93,20 +93,20 @@ struct SuiStake {
     estimated_reward: Option<String>,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 #[serde(rename_all = "camelCase")]
 struct SuiValidators {
     apys: Vec<SuiValidator>,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 #[serde(rename_all = "camelCase")]
 struct SuiValidator {
     address: String,
     apy: f64,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 #[serde(rename_all = "camelCase")]
 struct SuiCoinMetadata {
     decimals: i32,

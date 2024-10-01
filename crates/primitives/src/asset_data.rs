@@ -1,4 +1,4 @@
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 struct AssetData {
     asset: Asset,
     balance: Balance,
@@ -9,7 +9,7 @@ struct AssetData {
     metadata: AssetMetaData,
 }
 
-#[typeshare(swift = "Equatable, Codable, Hashable")]
+#[typeshare(swift = "Equatable, Hashable, Sendable")]
 struct AssetAddress {
     asset: Asset,
     address: String,

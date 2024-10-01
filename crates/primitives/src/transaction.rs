@@ -11,7 +11,7 @@ use std::{collections::HashSet, vec};
 use typeshare::typeshare;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 pub struct TransactionsFetchOption {
     pub wallet_index: i32,
     pub asset_id: Option<String>,
@@ -19,7 +19,7 @@ pub struct TransactionsFetchOption {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 pub struct Transaction {
     pub id: String,
     pub hash: String,

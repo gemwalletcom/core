@@ -1,4 +1,4 @@
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 #[serde(rename_all = "camelCase")]
 struct EthereumTransactionReciept {
     status: String,
@@ -8,7 +8,7 @@ struct EthereumTransactionReciept {
     l1_fee: Option<String>,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 struct EthereumFeeHistory {
     reward: Vec<Vec<String>>,
     #[serde(rename = "baseFeePerGas")]

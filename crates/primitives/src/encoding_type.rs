@@ -1,7 +1,7 @@
 use typeshare::typeshare;
 
 #[derive(Clone, Debug, PartialEq)]
-#[typeshare(swift = "Equatable, Codable, CaseIterable")]
+#[typeshare(swift = "Equatable, CaseIterable, Sendable")]
 pub enum EncodingType {
     Hex,
     Base58,

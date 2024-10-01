@@ -5,7 +5,7 @@ use typeshare::typeshare;
 use crate::eip712::{EIP712Domain, EIP712Type};
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-#[typeshare(swift = "Equatable, Codable")]
+#[typeshare(swift = "Equatable, Sendable")]
 pub struct ERC2612Permit {
     pub owner: String,
     pub spender: String,
@@ -15,7 +15,7 @@ pub struct ERC2612Permit {
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-#[typeshare(swift = "Equatable, Codable")]
+#[typeshare(swift = "Equatable, Sendable")]
 pub struct ERC2612Types {
     #[serde(rename = "EIP712Domain")]
     pub eip712Domain: Vec<EIP712Type>,
@@ -24,7 +24,7 @@ pub struct ERC2612Types {
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-#[typeshare(swift = "Equatable, Codable")]
+#[typeshare(swift = "Equatable, Sendable")]
 pub struct ERC2612PermitMessage {
     pub types: ERC2612Types,
     #[serde(rename = "primaryType")]
@@ -152,9 +152,6 @@ mod tests {
         }
         "#;
 
-        assert_eq!(
-            message,
-            serde_json::from_str::<ERC2612PermitMessage>(expected).unwrap()
-        );
+        assert_eq!(message, serde_json::from_str::<ERC2612PermitMessage>(expected).unwrap());
     }
 }

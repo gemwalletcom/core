@@ -1,25 +1,25 @@
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 struct TronTransactionBroadcast {
     result: bool,
     txid: String,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 struct TronTransactionBroadcastError {
     message: String,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 struct TronTransaction {
     ret: Vec<TronTransactionContractRef>,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 struct TronTransactionContractRef {
     contractRet: String,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 struct TronTransactionReceipt {
     #[serde(rename = "blockNumber")]
     pub block_number: i32,
@@ -28,7 +28,7 @@ struct TronTransactionReceipt {
     receipt: Option<TronReceipt>,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 struct TronReceipt {
     result: Option<String>,
 }

@@ -1,9 +1,9 @@
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 struct CosmosBalances {
-    balances: Vec<CosmosBalance>
+    balances: Vec<CosmosBalance>,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 struct CosmosBalance {
     denom: String,
     amount: String,

@@ -4,7 +4,7 @@ use typeshare::typeshare;
 use crate::chain::Chain;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-#[typeshare(swift = "Equatable, Codable, Hashable")]
+#[typeshare(swift = "Equatable, Hashable, Sendable")]
 pub struct Subscription {
     pub wallet_index: i32,
     pub chain: Chain,

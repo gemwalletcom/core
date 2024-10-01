@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare(swift = "Codable")]
+#[typeshare(swift = "Sendable")]
 pub struct Node {
     pub url: String,
     pub status: NodeState,
@@ -10,21 +10,21 @@ pub struct Node {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare(swift = "Codable")]
+#[typeshare(swift = "Sendable")]
 pub struct ChainNode {
     pub chain: String,
     pub node: Node,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare(swift = "Codable")]
+#[typeshare(swift = "Sendable")]
 pub struct ChainNodes {
     pub chain: String,
     pub nodes: Vec<Node>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare(swift = "Codable")]
+#[typeshare(swift = "Sendable")]
 #[serde(rename_all = "camelCase")]
 pub struct NodesResponse {
     pub version: i32,
@@ -32,7 +32,7 @@ pub struct NodesResponse {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare(swift = "Equatable, Codable, CaseIterable")]
+#[typeshare(swift = "Equatable, CaseIterable, Sendable")]
 #[serde(rename_all = "lowercase")]
 pub enum NodeState {
     Active,

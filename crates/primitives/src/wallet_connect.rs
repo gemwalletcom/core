@@ -3,7 +3,7 @@ use strum::{AsRefStr, EnumString};
 use typeshare::typeshare;
 
 #[derive(Debug, Serialize, AsRefStr, EnumString)]
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 #[serde(rename_all = "lowercase")]
 #[strum(serialize_all = "lowercase")]
 pub enum WallletConnectCAIP2 {
@@ -17,7 +17,7 @@ pub enum WallletConnectCAIP2 {
 
 #[allow(dead_code)]
 #[derive(Debug, Serialize)]
-#[typeshare(swift = "Equatable, Codable, Hashable")]
+#[typeshare(swift = "Equatable, Hashable, Sendable")]
 #[serde(rename_all = "camelCase")]
 struct WCEthereumTransaction {
     chain_id: Option<String>,
@@ -35,7 +35,7 @@ struct WCEthereumTransaction {
 
 #[allow(dead_code)]
 #[derive(Debug, Serialize)]
-#[typeshare(swift = "Equatable, Codable, Hashable")]
+#[typeshare(swift = "Equatable, Hashable, Sendable")]
 #[serde(rename_all = "camelCase")]
 struct WCSolanaTransaction {
     transaction: String,
@@ -43,7 +43,7 @@ struct WCSolanaTransaction {
 
 #[allow(dead_code)]
 #[derive(Debug, Serialize)]
-#[typeshare(swift = "Equatable, Codable, Hashable")]
+#[typeshare(swift = "Equatable, Hashable, Sendable")]
 #[serde(rename_all = "camelCase")]
 struct WCSolanaSignMessage {
     message: String,
@@ -52,7 +52,7 @@ struct WCSolanaSignMessage {
 
 #[allow(dead_code)]
 #[derive(Debug, Serialize)]
-#[typeshare(swift = "Equatable, Codable, Hashable")]
+#[typeshare(swift = "Equatable, Hashable, Sendable")]
 #[serde(rename_all = "camelCase")]
 struct WCSolanaSignMessageResult {
     signature: String,

@@ -1,9 +1,9 @@
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 struct BitcoinNodeInfo {
     blockbook: BitcoinBlockbook,
 }
 
-#[typeshare]
+#[typeshare(swift = "Sendable")]
 struct BitcoinBlockbook {
     #[serde(rename = "inSync")]
     in_sync: bool,

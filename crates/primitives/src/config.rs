@@ -4,7 +4,7 @@ use typeshare::typeshare;
 use crate::PlatformStore;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare(swift = "Codable")]
+#[typeshare(swift = "Sendable")]
 #[serde(rename_all = "camelCase")]
 pub struct ConfigResponse {
     pub app: ConfigApp,
@@ -14,14 +14,14 @@ pub struct ConfigResponse {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare(swift = "Codable")]
+#[typeshare(swift = "Sendable")]
 pub struct ConfigApp {
     pub ios: ConfigIOSApp,
     pub android: ConfigAndroidApp,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare(swift = "Codable")]
+#[typeshare(swift = "Sendable")]
 #[serde(rename_all = "camelCase")]
 pub struct Release {
     pub version: String,
@@ -30,26 +30,26 @@ pub struct Release {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare(swift = "Codable")]
+#[typeshare(swift = "Sendable")]
 pub struct ConfigIOSApp {
     pub version: ConfigAppVersion,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare(swift = "Codable")]
+#[typeshare(swift = "Sendable")]
 pub struct ConfigAndroidApp {
     pub version: ConfigAppVersion,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare(swift = "Codable")]
+#[typeshare(swift = "Sendable")]
 pub struct ConfigAppVersion {
     pub production: String,
     pub beta: String,
     pub alpha: String,
 }
 
-#[typeshare(swift = "Codable")]
+#[typeshare(swift = "Sendable")]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ConfigVersions {

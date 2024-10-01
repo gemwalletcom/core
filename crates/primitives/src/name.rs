@@ -5,7 +5,7 @@ use strum_macros::AsRefStr;
 use typeshare::typeshare;
 
 #[derive(Debug, Serialize)]
-#[typeshare(swift = "Codable")]
+#[typeshare(swift = "Sendable")]
 #[allow(dead_code)]
 pub struct NameRecord {
     pub name: String,
@@ -15,7 +15,7 @@ pub struct NameRecord {
 }
 
 #[derive(Debug, Serialize, AsRefStr, EnumString)]
-#[typeshare(swift = "Codable")]
+#[typeshare(swift = "Sendable")]
 #[serde(rename_all = "lowercase")]
 #[strum(serialize_all = "lowercase")]
 pub enum NameProvider {

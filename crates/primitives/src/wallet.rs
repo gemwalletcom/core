@@ -1,4 +1,4 @@
-#[typeshare(swift = "Equatable, Codable")]
+#[typeshare(swift = "Equatable, Sendable")]
 struct Wallet {
     id: String,
     name: String,
@@ -11,7 +11,7 @@ struct Wallet {
     is_pinned: bool,
 }
 
-#[typeshare(swift = "Equatable, Codable, Hashable")]
+#[typeshare(swift = "Equatable, Hashable, Sendable")]
 #[serde(rename_all = "camelCase")]
 pub enum WalletType {
     multicoin,
@@ -20,7 +20,7 @@ pub enum WalletType {
     view,
 }
 
-#[typeshare(swift = "Equatable, Codable")]
+#[typeshare(swift = "Equatable, Sendable")]
 struct WalletId {
     id: String,
 }
