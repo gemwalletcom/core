@@ -1,13 +1,15 @@
 use crate::api::HashDitApi;
-use crate::models::{ScanAddressResponse, ScanURLResponse};
+use crate::models::DetectResponse;
 
 use async_trait::async_trait;
 use hmac::{Hmac, Mac};
 use reqwest_enum::target::Target;
-use security_provider::{ScanResult, ScanTarget, SecurityProvider};
+use security_provider::{Metadata, ScanResult, ScanTarget, SecurityProvider};
 use sha2::Sha256;
 use std::time::{SystemTime, UNIX_EPOCH};
 type HmacSha256 = Hmac<Sha256>;
+
+static PROVIDER_NAME: &str = "HashDit";
 
 pub struct HashDitProvider {
     client: reqwest::Client,
@@ -37,8 +39,9 @@ impl HashDitProvider {
         let url = format!("{}{}", target.base_url(), target.path());
         let mut request = self.client.request(target.method().into(), url);
 
-        let query = target.query().iter().map(|(k, v)| format!("{}={}", k, v)).collect::<Vec<_>>().join("&");
-        let body = target.body().inner.as_bytes().unwrap_or_default().to_owned();
+        let query = target.query();
+        let query_str = target.query_string();
+        let body = target.body().to_bytes();
 
         let timestamp = SystemTime::now()
             .duration_since(UNIX_EPOCH)
@@ -46,12 +49,13 @@ impl HashDitProvider {
             .as_millis()
             .to_string();
         let nonce: String = uuid::Uuid::new_v4().to_string().replace("-", "");
-        let method: &str = "POST";
+        let method = target.method().to_string();
 
         // Generate message for signature
-        let msg_for_sig = self.generate_msg_for_sig(&timestamp, &nonce, method, target.path(), &query, &body);
+        let msg_for_sig = self.generate_msg_for_sig(&timestamp, &nonce, &method, target.path(), &query_str, &body);
         let sig = self.compute_sig(&msg_for_sig);
 
+        request = request.query(&query);
         request = request.header("Content-Type", "application/json;charset=UTF-8");
         request = request.header("X-Signature-appid", &self.app_id);
         request = request.header("X-Signature-signature", sig);
@@ -78,7 +82,7 @@ impl SecurityProvider for HashDitProvider {
     }
 
     fn name(&self) -> &'static str {
-        "HashDit"
+        PROVIDER_NAME
     }
 
     async fn scan(&self, target: &ScanTarget) -> std::result::Result<ScanResult, Box<dyn std::error::Error + Send + Sync>> {
@@ -88,16 +92,23 @@ impl SecurityProvider for HashDitProvider {
         };
         let request = self.build_request(api);
         let response = self.client.execute(request.build()?).await?;
-        let is_malicious: bool;
+        let mut is_malicious = false;
+        let metadata = Some(Metadata {
+            name: None,
+            provider: self.name().to_string(),
+            verified: false,
+            required_memo: false,
+        });
 
-        match target {
-            ScanTarget::Address(_) => {
-                let body = response.json::<ScanAddressResponse>().await?;
-                is_malicious = body.code == "1";
-            }
-            ScanTarget::URL(_) => {
-                let body = response.json::<ScanURLResponse>().await?;
-                is_malicious = body.code == "1";
+        let body = response.json::<DetectResponse>().await?;
+        if let Some(error_data) = body.error_data {
+            return Err(Box::from(error_data));
+        }
+        if let Some(data) = body.data {
+            if data.has_result {
+                is_malicious = data.risk_level >= 3;
+            } else {
+                return Err(Box::from("No data found"));
             }
         }
 
@@ -105,7 +116,7 @@ impl SecurityProvider for HashDitProvider {
         Ok(ScanResult {
             is_malicious,
             target: target.clone(),
-            metadata: None,
+            metadata,
         })
     }
 }

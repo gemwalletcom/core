@@ -20,14 +20,20 @@ impl Target for HashDitApi {
     }
 
     fn path(&self) -> &'static str {
-        match self {
-            HashDitApi::DetectAddress(_, _) => "/security-api/public/chain/v1/detect/address",
-            HashDitApi::DetectURL(_) => "/security-api/public/chain/v1/detect/url",
-        }
+        "/security-api/public/app/v1/detect"
     }
 
     fn query(&self) -> HashMap<&'static str, &'static str> {
-        HashMap::default()
+        let mut query = HashMap::new();
+        match self {
+            HashDitApi::DetectAddress(_, _) => {
+                query.insert("business", "gem_wallet_address_detection");
+            }
+            HashDitApi::DetectURL(_) => {
+                query.insert("business", "gem_wallet_url_detection");
+            }
+        }
+        query
     }
 
     fn headers(&self) -> HashMap<&'static str, &'static str> {
@@ -52,5 +58,10 @@ impl Target for HashDitApi {
                 HTTPBody::from(&body)
             }
         }
+    }
+
+    fn authentication(&self) -> Option<reqwest_enum::http::AuthMethod> {
+        // not standard auth
+        None
     }
 }
