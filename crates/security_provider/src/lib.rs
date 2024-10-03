@@ -19,12 +19,20 @@ pub enum ScanTarget {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ScanRequest {
     pub target: ScanTarget,
+    #[serde(rename = "type")]
+    pub target_type: ScanTargetType,
+}
+
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "lowercase")]
+pub enum ScanTargetType {
+    Address,
+    URL,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Metadata {
     pub name: Option<String>,
-    pub provider: String,
     pub verified: bool,
     pub required_memo: bool,
 }
@@ -34,6 +42,7 @@ pub struct ScanResult {
     pub is_malicious: bool,
     pub target: ScanTarget,
     pub metadata: Option<Metadata>,
+    pub provider: String,
 }
 
 #[async_trait]
@@ -56,10 +65,13 @@ mod tests {
             chain: primitives::Chain::Ethereum,
         };
         let target = ScanTarget::Address(address_target);
-        let request = ScanRequest { target: target.clone() };
+        let request = ScanRequest {
+            target,
+            target_type: ScanTargetType::Address,
+        };
 
         let json = serde_json::to_string(&request).unwrap();
-        let expected = r#"{"target":{"address":"0x1234567890abcdef","chain":"ethereum"}}"#;
+        let expected = r#"{"target":{"address":"0x1234567890abcdef","chain":"ethereum"},"type":"address"}"#;
 
         assert_eq!(json, expected);
     }
@@ -68,10 +80,13 @@ mod tests {
     fn test_url_target() {
         let url_target = "https://example.com".to_string();
         let target = ScanTarget::URL(url_target);
-        let request = ScanRequest { target };
+        let request = ScanRequest {
+            target,
+            target_type: ScanTargetType::URL,
+        };
 
         let json = serde_json::to_string(&request).unwrap();
-        let expected = r#"{"target":"https://example.com"}"#;
+        let expected = r#"{"target":"https://example.com","type":"url"}"#;
 
         assert_eq!(json, expected);
     }

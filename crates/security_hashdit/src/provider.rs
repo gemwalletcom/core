@@ -4,7 +4,7 @@ use crate::models::DetectResponse;
 use async_trait::async_trait;
 use hmac::{Hmac, Mac};
 use reqwest_enum::target::Target;
-use security_provider::{Metadata, ScanResult, ScanTarget, SecurityProvider};
+use security_provider::{ScanResult, ScanTarget, SecurityProvider};
 use sha2::Sha256;
 use std::time::{SystemTime, UNIX_EPOCH};
 type HmacSha256 = Hmac<Sha256>;
@@ -93,12 +93,6 @@ impl SecurityProvider for HashDitProvider {
         let request = self.build_request(api);
         let response = self.client.execute(request.build()?).await?;
         let mut is_malicious = false;
-        let metadata = Some(Metadata {
-            name: None,
-            provider: self.name().to_string(),
-            verified: false,
-            required_memo: false,
-        });
 
         let body = response.json::<DetectResponse>().await?;
         if let Some(error_data) = body.error_data {
@@ -115,8 +109,9 @@ impl SecurityProvider for HashDitProvider {
         // Implement HashDit-specific scanning logic
         Ok(ScanResult {
             is_malicious,
+            provider: PROVIDER_NAME.into(),
             target: target.clone(),
-            metadata,
+            metadata: None,
         })
     }
 }

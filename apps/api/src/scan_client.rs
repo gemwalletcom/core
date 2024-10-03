@@ -20,10 +20,10 @@ impl ScanClient {
             target: ScanTarget::Address(target.clone()),
             metadata: Some(Metadata {
                 name: Some(scan_address.name.unwrap_or_default()),
-                provider: "Gem".to_string(),
                 verified: scan_address.is_verified,
                 required_memo: scan_address.is_memo_required,
             }),
+            provider: "Gem".to_string(),
         })
     }
 
