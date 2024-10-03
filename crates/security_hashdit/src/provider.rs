@@ -100,6 +100,12 @@ impl SecurityProvider for HashDitProvider {
         }
         if let Some(data) = body.data {
             if data.has_result {
+                // 0 - Very Low Risk
+                // 1 - Some Risk
+                // 2 - Low Risk
+                // 3 - Medium Risk
+                // 4 - High Risk
+                // 5 - Significant Risk
                 is_malicious = data.risk_level >= 3;
             } else {
                 return Err(Box::from("No data found"));
