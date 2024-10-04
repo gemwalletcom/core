@@ -6808,9 +6808,10 @@ name = "security_goplus"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "reqwest-enum",
+ "reqwest",
  "security_provider",
  "serde",
+ "serde_json",
 ]
 
 [[package]]

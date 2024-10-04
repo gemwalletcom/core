@@ -116,7 +116,6 @@ impl SecurityProvider for HashDitProvider {
         Ok(ScanResult {
             is_malicious,
             provider: PROVIDER_NAME.into(),
-            target: target.clone(),
             metadata: None,
         })
     }

@@ -2,6 +2,8 @@ use security_provider::{AddressTarget, Metadata, ScanRequest, ScanResult, ScanTa
 use std::error::Error;
 use storage::DatabaseClient;
 
+static PROVIDER_NAME: &str = "Gem";
+
 pub struct ScanClient {
     database: DatabaseClient,
     pub security_providers: Vec<Box<dyn SecurityProvider + Send + Sync>>,
@@ -17,13 +19,12 @@ impl ScanClient {
         let scan_address = self.database.get_scan_address(target.chain, &target.address)?.as_primitive();
         Ok(ScanResult {
             is_malicious: scan_address.is_fraudulent,
-            target: ScanTarget::Address(target.clone()),
             metadata: Some(Metadata {
                 name: Some(scan_address.name.unwrap_or_default()),
                 verified: scan_address.is_verified,
                 required_memo: scan_address.is_memo_required,
             }),
-            provider: "Gem".to_string(),
+            provider: PROVIDER_NAME.into(),
         })
     }
 
@@ -33,13 +34,8 @@ impl ScanClient {
         // Check internal db first
         if let ScanTarget::Address(target) = &scan_request.target {
             let result = self.get_scan_address(target);
-            match result {
-                Err(e) => {
-                    println!("Error getting scan address: {}", e);
-                }
-                Ok(result) => {
-                    results.push(result);
-                }
+            if let Ok(result) = result {
+                results.push(result);
             }
         }
 
