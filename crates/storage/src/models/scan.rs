@@ -12,15 +12,3 @@ pub struct ScanAddress {
     pub is_fraudulent: bool,
     pub is_memo_required: bool,
 }
-
-impl ScanAddress {
-    pub fn as_primitive(&self) -> primitives::ScanAddress {
-        primitives::ScanAddress {
-            name: self.name.clone(),
-            address: self.address.clone(),
-            is_verified: self.is_verified,
-            is_fraudulent: self.is_fraudulent,
-            is_memo_required: self.is_memo_required,
-        }
-    }
-}

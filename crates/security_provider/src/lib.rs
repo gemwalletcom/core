@@ -1,4 +1,5 @@
 use async_trait::async_trait;
+use primitives::{SecurityMetadata, SecurityResponse};
 use serde::{Deserialize, Serialize};
 use std::result::Result;
 
@@ -30,18 +31,11 @@ pub enum ScanTargetType {
     URL,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct Metadata {
-    pub name: Option<String>,
-    pub verified: bool,
-    pub required_memo: bool,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Default, Serialize, Deserialize)]
 pub struct ScanResult {
     pub is_malicious: bool,
     pub reason: Option<String>,
-    pub metadata: Option<Metadata>,
+    pub metadata: Option<SecurityMetadata>,
     pub provider: String,
 }
 
@@ -53,6 +47,17 @@ pub trait SecurityProvider: Send + Sync {
 
     fn name(&self) -> &'static str;
     async fn scan(&self, target: &ScanTarget) -> Result<ScanResult, Box<dyn std::error::Error + Send + Sync>>;
+}
+
+impl From<ScanResult> for SecurityResponse {
+    fn from(value: ScanResult) -> Self {
+        Self {
+            malicious: value.is_malicious,
+            reason: value.reason.unwrap_or_default(),
+            provider: value.provider,
+            metadata: value.metadata,
+        }
+    }
 }
 
 #[cfg(test)]
