@@ -1,8 +1,10 @@
+use rocket::futures::future;
 use security_provider::{AddressTarget, Metadata, ScanRequest, ScanResult, ScanTarget, SecurityProvider};
 use std::error::Error;
 use storage::DatabaseClient;
 
 static PROVIDER_NAME: &str = "Gem";
+static REASON: &str = "Moderation";
 
 pub struct ScanClient {
     database: DatabaseClient,
@@ -19,6 +21,7 @@ impl ScanClient {
         let scan_address = self.database.get_scan_address(target.chain, &target.address)?.as_primitive();
         Ok(ScanResult {
             is_malicious: scan_address.is_fraudulent,
+            reason: Some(REASON.into()),
             metadata: Some(Metadata {
                 name: Some(scan_address.name.unwrap_or_default()),
                 verified: scan_address.is_verified,
@@ -39,19 +42,20 @@ impl ScanClient {
             }
         }
 
-        // Iterate over security providers
-        for provider in self.security_providers.iter() {
-            let result = provider.scan(&scan_request.target).await;
-            match result {
+        let scanned = future::join_all(self.security_providers.iter().map(|provider| provider.scan(&scan_request.target)))
+            .await
+            .into_iter()
+            .filter_map(|result| match result {
                 Err(e) => {
-                    println!("{} error scanning: {}", provider.name(), e);
+                    println!("error scanning: {}", e);
+                    None
                 }
-                Ok(result) => {
-                    results.push(result);
-                }
-            }
-        }
+                Ok(result) => Some(result),
+            });
 
+        for result in scanned {
+            results.push(result);
+        }
         Ok(results)
     }
 }

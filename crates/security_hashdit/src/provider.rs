@@ -93,6 +93,7 @@ impl SecurityProvider for HashDitProvider {
         let request = self.build_request(api);
         let response = self.client.execute(request.build()?).await?;
         let mut is_malicious = false;
+        let mut reason: Option<String> = None;
 
         let body = response.json::<DetectResponse>().await?;
         if let Some(error_data) = body.error_data {
@@ -107,6 +108,7 @@ impl SecurityProvider for HashDitProvider {
                 // 4 - High Risk
                 // 5 - Significant Risk
                 is_malicious = data.risk_level >= 3;
+                reason = Some(format!("Risk level: {}", data.risk_level));
             } else {
                 return Err(Box::from("No data found"));
             }
@@ -115,6 +117,7 @@ impl SecurityProvider for HashDitProvider {
         // Implement HashDit-specific scanning logic
         Ok(ScanResult {
             is_malicious,
+            reason,
             provider: PROVIDER_NAME.into(),
             metadata: None,
         })

@@ -40,6 +40,7 @@ pub struct Metadata {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ScanResult {
     pub is_malicious: bool,
+    pub reason: Option<String>,
     pub metadata: Option<Metadata>,
     pub provider: String,
 }

@@ -63,6 +63,8 @@ impl SecurityProvider for GoPlusProvider {
         }
 
         let mut is_malicious = false;
+        let mut reason: Option<String> = None;
+
         let keys: &[&str] = match target {
             ScanTarget::Address(_) => MALICIOUS_ADDRESS_KEYS,
             ScanTarget::URL(_) => MALICIOUS_URL_KEYS,
@@ -75,6 +77,7 @@ impl SecurityProvider for GoPlusProvider {
                 let value = result.get(key).unwrap_or(&safe_value);
                 if *value.to_string() == malicious_value {
                     is_malicious = true;
+                    reason = Some(format!("Category: {}", key));
                     break;
                 }
             }
@@ -82,6 +85,7 @@ impl SecurityProvider for GoPlusProvider {
 
         Ok(ScanResult {
             is_malicious,
+            reason,
             provider: self.name().into(),
             metadata: None,
         })
