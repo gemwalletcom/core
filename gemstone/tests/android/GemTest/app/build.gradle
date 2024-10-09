@@ -1,15 +1,6 @@
 plugins {
     id "com.android.application"
     id "org.jetbrains.kotlin.android"
-    id 'com.github.willir.rust.cargo-ndk-android'
-}
-
-cargoNdk {
-    targets = ["arm64", "x86_64"]
-    module = "/../../.." // Cargo.toml
-    targetDirectory = "../target"
-    librariesNames = ["libgemstone.so"]
-    extraCargoBuildArguments = ["--lib"]
 }
 
 android {
