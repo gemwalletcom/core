@@ -4,7 +4,7 @@ use crate::models::DetectResponse;
 use async_trait::async_trait;
 use hmac::{Hmac, Mac};
 use reqwest_enum::target::Target;
-use security_provider::{ScanResult, ScanTarget, SecurityProvider};
+use security_provider::{ScanResult, ScanTarget, SecurityProvider, DEFAULT_TIMEOUT};
 use sha2::Sha256;
 use std::time::{SystemTime, UNIX_EPOCH};
 type HmacSha256 = Hmac<Sha256>;
@@ -55,13 +55,15 @@ impl HashDitProvider {
         let msg_for_sig = self.generate_msg_for_sig(&timestamp, &nonce, &method, target.path(), &query_str, &body);
         let sig = self.compute_sig(&msg_for_sig);
 
-        request = request.query(&query);
-        request = request.header("Content-Type", "application/json;charset=UTF-8");
-        request = request.header("X-Signature-appid", &self.app_id);
-        request = request.header("X-Signature-signature", sig);
-        request = request.header("X-Signature-timestamp", timestamp);
-        request = request.header("X-Signature-nonce", nonce);
-        request = request.body(body);
+        request = request
+            .header("Content-Type", "application/json;charset=UTF-8")
+            .header("X-Signature-appid", &self.app_id)
+            .header("X-Signature-signature", sig)
+            .header("X-Signature-timestamp", timestamp)
+            .header("X-Signature-nonce", nonce)
+            .timeout(DEFAULT_TIMEOUT)
+            .query(&query)
+            .body(body);
         request
     }
 

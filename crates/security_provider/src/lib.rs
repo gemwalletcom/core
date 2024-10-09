@@ -1,7 +1,10 @@
 use async_trait::async_trait;
 use primitives::{SecurityMetadata, SecurityResponse};
 use serde::{Deserialize, Serialize};
-use std::result::Result;
+use std::{result::Result, time::Duration};
+
+// Default timeout for security provider requests in milliseconds
+pub const DEFAULT_TIMEOUT: Duration = std::time::Duration::from_millis(1000);
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AddressTarget {

@@ -1,6 +1,6 @@
 use crate::models::SecurityResponse;
 use async_trait::async_trait;
-use security_provider::{ScanResult, ScanTarget, SecurityProvider};
+use security_provider::{ScanResult, ScanTarget, SecurityProvider, DEFAULT_TIMEOUT};
 use serde_json::json;
 use std::result::Result;
 
@@ -57,7 +57,15 @@ impl SecurityProvider for GoPlusProvider {
             ScanTarget::URL(url) => [("url", url.as_str())],
         };
 
-        let response = self.client.get(&url).query(&query).send().await?.json::<SecurityResponse>().await?;
+        let response = self
+            .client
+            .get(&url)
+            .query(&query)
+            .timeout(DEFAULT_TIMEOUT)
+            .send()
+            .await?
+            .json::<SecurityResponse>()
+            .await?;
         if response.code != 1 {
             return Err(response.message.into());
         }
