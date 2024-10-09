@@ -19,5 +19,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "android"
+rootProject.name = "gemstone-android"
 include(":gemstone")

@@ -11,7 +11,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.gemtest.ui.theme.GemTestTheme
-import uniffi.Gemstone.*
 
 class MainActivity : ComponentActivity() {
 
@@ -28,7 +27,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    Greeting("Gemstone lib version:"+ libVersion())
+                    Greeting("Gemstone lib version: " + "FIXME")
                 }
             }
         }

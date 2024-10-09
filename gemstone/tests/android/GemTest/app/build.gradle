@@ -43,7 +43,8 @@ android {
 
 dependencies {
     // uniffi needs jna
-    implementation "net.java.dev.jna:jna:5.14.0@aar"
+    implementation "net.java.dev.jna:jna:5.15.0@aar"
+    implementation project(':gemstone-android')
 
     implementation "androidx.core:core-ktx:1.13.1"
     implementation "androidx.lifecycle:lifecycle-runtime-ktx:2.8.1"
