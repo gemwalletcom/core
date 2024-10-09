@@ -335,6 +335,9 @@ dependencies = [
  "primitives",
  "prometheus-client",
  "rocket",
+ "security_goplus",
+ "security_hashdit",
+ "security_provider",
  "serde",
  "serde_json",
  "settings",
@@ -6152,9 +6155,9 @@ dependencies = [
 
 [[package]]
 name = "reqwest-enum"
-version = "0.1.1"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c57444575cf4e68e08c16b41b43e485b8caa7566a04149385343da67035cf1fc"
+checksum = "9894236d9619aac842c367f834fd03027fdb9056930ff853b0dda39c3a5ccc3e"
 dependencies = [
  "futures",
  "reqwest",
@@ -6798,6 +6801,43 @@ checksum = "317936bbbd05227752583946b9e66d7ce3b489f84e11a94a510b4437fef407d7"
 dependencies = [
  "core-foundation-sys",
  "libc",
+]
+
+[[package]]
+name = "security_goplus"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "reqwest",
+ "security_provider",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "security_hashdit"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "hex",
+ "hmac",
+ "reqwest",
+ "reqwest-enum",
+ "security_provider",
+ "serde",
+ "serde_json",
+ "sha2 0.10.8",
+ "uuid",
+]
+
+[[package]]
+name = "security_provider"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "primitives",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

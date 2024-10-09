@@ -18,8 +18,8 @@ mod parser_client;
 mod price_alerts;
 mod prices;
 mod response;
-mod scan;
-mod scan_client;
+mod security_providers;
+mod security_scan;
 mod status;
 mod subscription;
 mod subscription_client;
@@ -45,7 +45,8 @@ use pricer::client::PriceClient;
 use rocket::fairing::AdHoc;
 use rocket::tokio::sync::Mutex;
 use rocket::{Build, Rocket};
-use scan_client::ScanClient;
+use security_providers::SecurityProviderFactory;
+use security_scan::SecurityScanClient;
 use settings::Settings;
 use storage::DatabaseClient;
 use subscription_client::SubscriptionsClient;
@@ -72,7 +73,9 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
     let transactions_client = TransactionsClient::new(postgres_url).await;
     let subscriptions_client = SubscriptionsClient::new(postgres_url).await;
     let metrics_client = MetricsClient::new(postgres_url).await;
-    let scan_client = ScanClient::new(postgres_url).await;
+
+    let security_providers = SecurityProviderFactory::create_providers(&settings_clone);
+    let scan_client = SecurityScanClient::new(postgres_url, security_providers).await;
     let parser_client = ParserClient::new(settings_clone.clone()).await;
     let assets_client = AssetsClient::new(postgres_url).await;
     let swapper_configuration = SwapperConfiguration {
@@ -159,7 +162,6 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
                 subscription::delete_subscriptions,
                 transaction::get_transactions_by_device_id,
                 transaction::get_transactions_by_hash,
-                scan::get_scan_address,
                 parser::get_parser_block,
                 parser::get_parser_block_finalize,
                 parser::get_parser_block_number_latest,
@@ -172,6 +174,7 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
                 price_alerts::get_price_alerts,
                 price_alerts::add_price_alerts,
                 price_alerts::delete_price_alerts,
+                security_scan::scan,
             ],
         )
         .mount(settings.metrics.path, routes![metrics::get_metrics,])

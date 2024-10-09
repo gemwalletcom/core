@@ -1,0 +1,12 @@
+[package]
+name = "security_provider"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+async-trait = { workspace = true }
+serde = { workspace = true }
+primitives = { path = "../primitives" }
+
+[dev-dependencies]
+serde_json = { workspace = true }

@@ -43,4 +43,8 @@ impl Target for AftermathApi {
             AftermathApi::Tx(tx) => HTTPBody::from(tx),
         }
     }
+
+    fn authentication(&self) -> Option<reqwest_enum::http::AuthMethod> {
+        None
+    }
 }
