@@ -1,6 +1,6 @@
 plugins {
-    alias(libs.plugins.android.library)
-    alias(libs.plugins.kotlin.android)
+    id("com.android.library")
+    id("org.jetbrains.kotlin.android")
     id("maven-publish")
     id("com.github.willir.rust.cargo-ndk-android")
 }
@@ -45,24 +45,12 @@ cargoNdk {
 
 dependencies {
     api("net.java.dev.jna:jna:5.15.0@aar"){ artifact { type = "aar" } }
-    publishing {
-        repositories {
-            maven {
-                name = "GitHubPackages"
-                url = uri("https://maven.pkg.github.com/OWNER/REPOSITORY")
-                credentials {
-                    username = project.findProperty("github.username") as String? ?: System.getenv("USERNAME")
-                    password = project.findProperty("github.token") as String? ?: System.getenv("TOKEN")
-                }
-            }
-        }
-    }
-    implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.appcompat)
 
-    testImplementation(libs.junit)
-    androidTestImplementation(libs.androidx.junit)
-    androidTestImplementation(libs.androidx.espresso.core)
+    implementation("androidx.core:core-ktx:1.13.1")
+    implementation("androidx.appcompat:appcompat:1.7.0")
+
+    androidTestImplementation("androidx.test.ext:junit:1.2.1")
+    androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
 }
 
 afterEvaluate {
