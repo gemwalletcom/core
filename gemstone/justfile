@@ -111,5 +111,4 @@ build-android:
     #!/usr/bin/env bash
     # sdkman and jdk17
     cp -Rf ${GEN_KOTLIN_FOLDER}/uniffi android/gemstone/src/main/java
-    cd android && touch local.properties && ./gradlew assembleDebug --warn
-
+    cd android && touch local.properties && ./gradlew publishToMavenLocal

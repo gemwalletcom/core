@@ -10,10 +10,9 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        mavenLocal()
     }
 }
 
 rootProject.name = "GemTest"
 include ':app'
-include ':gemstone-android'
-project(':gemstone-android').projectDir = new File(settingsDir, '../../../android/gemstone')
