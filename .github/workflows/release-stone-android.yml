@@ -1,0 +1,77 @@
+name: Publish to Github Packages
+
+on:
+  push:
+    tags:
+      - "*"
+    paths:
+      - ".workflows/release-stone-android.yml"
+  workflow_dispatch:
+    inputs:
+      ref_name:
+        description: "github ref name (tag)"
+        required: true
+
+env:
+  CARGO_TERM_COLOR: always
+  SCCACHE_GHA_ENABLED: "true"
+  RUSTC_WRAPPER: "sccache"
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: gemstone
+    steps:
+      - name: Set version tag
+        run: |
+          if [ ${{ github.event.inputs.ref_name }} ]; then
+            echo "VER_NAME=${{ github.event.inputs.ref_name }}" >> $GITHUB_ENV
+          elif [ ${{ github.ref_type == 'tag' }} ]; then
+            echo "VER_NAME=${{ github.ref_name }}" >> $GITHUB_ENV
+          else
+            echo "no ref_name or tag"
+            exit 1
+          fi
+
+      - uses: actions/checkout@v3
+        with:
+          ref: ${{ env.VER_NAME }}
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: "17"
+          distribution: "zulu"
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Run sccache-cache
+        uses: mozilla-actions/sccache-action@v0.0.3
+
+      - name: Install just
+        run: cargo install just
+
+      - name: Setup NDK
+        run: just install-ndk
+
+      - name: Build Android Bindings
+        run: |
+          just install-android-targets && just bindgen-kotlin
+
+      - name: Publish to Github Packages
+        run: |
+          just publish-android
+        env:
+          GITHUB_USER: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

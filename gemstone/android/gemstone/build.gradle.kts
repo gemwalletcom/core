@@ -59,7 +59,7 @@ afterEvaluate {
                 from(components["release"])
                 groupId = "com.gemwallet.gemstone"
                 artifactId = "gemstone"
-                version = "1.0.0"
+                version = System.getenv("VER_NAME") ?: "1.0.0"
             }
         }
     }

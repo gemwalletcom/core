@@ -106,9 +106,12 @@ bindgen-kotlin:
     mkdir -p ${GEN_KOTLIN_FOLDER}
     cargo build --${BUILD_MODE}
     cargo run -p uniffi-bindgen generate --library --language kotlin --crate ${LIB_NAME} ${TARGET_DIR}/${BUILD_MODE_TARGET}/${DY_LIB_NAME} -o ${GEN_KOTLIN_FOLDER}
+    cp -Rf ${GEN_KOTLIN_FOLDER}/uniffi android/gemstone/src/main/java
 
 build-android:
     #!/usr/bin/env bash
-    # sdkman and jdk17
-    cp -Rf ${GEN_KOTLIN_FOLDER}/uniffi android/gemstone/src/main/java
     cd android && touch local.properties && ./gradlew publishToMavenLocal
+
+publish-android:
+    #!/usr/bin/env bash
+    cd android && touch local.properties && ./gradlew publishReleasePublicationToGPRRepository
