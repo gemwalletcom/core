@@ -31,6 +31,8 @@ struct AptosAccount {
 #[allow(dead_code)]
 struct AptosTransaction {
     success: bool,
+    gas_used: String,
+    gas_unit_price: String,
 }
 
 #[typeshare(swift = "Sendable")]
@@ -51,4 +53,16 @@ struct AptosGasFee {
 struct AptosLedger {
     chain_id: i32,
     ledger_version: String,
+}
+
+#[typeshare(swift = "Sendable")]
+#[allow(dead_code)]
+struct AptosError {
+    message: String,
+    error_code: String,
+}
+
+#[typeshare(swift = "Equatable, Sendable")]
+pub enum AptosErrorCode {
+    account_not_found,
 }
