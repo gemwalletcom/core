@@ -19,3 +19,9 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+-keep class uniffi.** { *; }
+-keep class uniffi.Gemstone.** { *; }
+-keep class com.sun.jna.** { *; }
+-keep class * implements java.nio.** { *; }
+-keep class java.nio.** { *; }
