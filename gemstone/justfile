@@ -110,5 +110,5 @@ bindgen-kotlin:
 build-android:
     #!/usr/bin/env bash
     # sdkman and jdk17
-    cp -Rf ${GEN_KOTLIN_FOLDER}/uniffi tests/android/GemTest/app/src/main/java 
-    cd tests/android/GemTest && touch local.properties && ./gradlew assembleDebug --warn
+    cp -Rf ${GEN_KOTLIN_FOLDER}/uniffi android/gemstone/src/main/java
+    cd android && touch local.properties && ./gradlew publishToMavenLocal
