@@ -5,7 +5,7 @@ on:
     tags:
       - "*"
     paths:
-      - ".workflows/release-stone-android.yml"
+      - ".github/workflows/release-stone-android.yml"
   workflow_dispatch:
     inputs:
       ref_name:
