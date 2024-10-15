@@ -1,9 +1,4 @@
-//
-//  GemTestTests.swift
-//  GemTestTests
-//
-//  Created by magician on 20/12/23.
-//
+// Copyright (c). Gem Wallet. All rights reserved.
 
 import XCTest
 import Gemstone
