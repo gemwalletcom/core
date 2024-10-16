@@ -3,15 +3,17 @@ package com.example.gemtest
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import com.example.gemtest.ui.theme.GemTestTheme
+import kotlinx.coroutines.runBlocking
 import uniffi.Gemstone.*
+
+val Warp = AlienProviderWarp(NativeProvider())
 
 class MainActivity : ComponentActivity() {
 
@@ -28,7 +30,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    Greeting("Gemstone lib version: " + libVersion())
+                    ContentView("Gemstone lib version: " + libVersion())
                 }
             }
         }
@@ -36,17 +38,41 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
+fun ContentView(text: String, modifier: Modifier = Modifier) {
+    Column(modifier = Modifier.fillMaxSize()) {
+        Text(
+            text = text,
+            modifier = modifier
+        )
+        Button(
+            onClick = { fetchData() },
+            modifier = Modifier.size(width = 120.dp, height = 80.dp)
+        ) {
+            Text(text = "Fetch Data")
+        }
+    }
+}
+
+fun fetchData() {
+    println("Kotlin <> Rust")
+    runBlocking {
+        val target = AlienTarget(
+            url = "https://httpbin.org/get?foo=bar",
+            method = "GET",
+            headers = hashMapOf(
+                "X-Header" to "X-Value"
+            ),
+            body = null
+        )
+        val data = Warp.teleport(target)
+        println(String(data))
+    }
 }
 
 @Preview(showBackground = true)
 @Composable
 fun GreetingPreview() {
     GemTestTheme {
-        Greeting("Android")
+        ContentView("Android")
     }
 }
