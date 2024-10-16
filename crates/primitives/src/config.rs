@@ -7,6 +7,7 @@ use crate::PlatformStore;
 #[typeshare(swift = "Sendable")]
 #[serde(rename_all = "camelCase")]
 pub struct ConfigResponse {
+    #[typeshare(skip)]
     pub app: ConfigApp,
     pub releases: Vec<Release>,
     //TODO: Remove later
