@@ -29,12 +29,16 @@ struct ContentView: View {
     }
 
     func fetchData() async throws {
-        let headers = ["X-Header": "X-Value"]
+        let headers = [
+            "X-Header": "X-Value",
+            "Content-Type": "application/json"
+        ]
+        let body = try JSONEncoder().encode(["foo": "bar"])
         let target = AlienTarget(
-            url: "https://httpbin.org/get?foo=bar",
-            method: "GET",
+            url: "https://httpbin.org/post?foo=bar",
+            method: "POST",
             headers: headers,
-            body: nil
+            body: body
         )
         let data = try await warp.teleport(target: target)
         let json = try JSONSerialization.jsonObject(with: data)
