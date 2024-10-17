@@ -13,6 +13,7 @@
 		4843F3882B32C18400CA5DA8 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4843F3872B32C18400CA5DA8 /* Preview Assets.xcassets */; };
 		4843F3922B32C18400CA5DA8 /* GemTestTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4843F3912B32C18400CA5DA8 /* GemTestTests.swift */; };
 		4843F3AC2B32C1B300CA5DA8 /* Gemstone in Frameworks */ = {isa = PBXBuildFile; productRef = 4843F3AB2B32C1B300CA5DA8 /* Gemstone */; };
+		DF024FDB2CBE71F00044D11F /* Provider.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF024FDA2CBE71F00044D11F /* Provider.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -33,6 +34,7 @@
 		4843F3872B32C18400CA5DA8 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		4843F38D2B32C18400CA5DA8 /* GemTestTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = GemTestTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		4843F3912B32C18400CA5DA8 /* GemTestTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GemTestTests.swift; sourceTree = "<group>"; };
+		DF024FDA2CBE71F00044D11F /* Provider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Provider.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -75,8 +77,9 @@
 		4843F37F2B32C18300CA5DA8 /* GemTest */ = {
 			isa = PBXGroup;
 			children = (
-				4843F3802B32C18300CA5DA8 /* GemTestApp.swift */,
+				DF024FDA2CBE71F00044D11F /* Provider.swift */,
 				4843F3822B32C18300CA5DA8 /* ContentView.swift */,
+				4843F3802B32C18300CA5DA8 /* GemTestApp.swift */,
 				4843F3842B32C18400CA5DA8 /* Assets.xcassets */,
 				4843F3862B32C18400CA5DA8 /* Preview Content */,
 			);
@@ -148,7 +151,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1500;
-				LastUpgradeCheck = 1500;
+				LastUpgradeCheck = 1600;
 				TargetAttributes = {
 					4843F37C2B32C18300CA5DA8 = {
 						CreatedOnToolsVersion = 15.0.1;
@@ -206,6 +209,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				4843F3832B32C18300CA5DA8 /* ContentView.swift in Sources */,
+				DF024FDB2CBE71F00044D11F /* Provider.swift in Sources */,
 				4843F3812B32C18300CA5DA8 /* GemTestApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -409,7 +413,6 @@
 		4843F3A52B32C18400CA5DA8 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -428,7 +431,6 @@
 		4843F3A62B32C18400CA5DA8 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;

@@ -10,6 +10,7 @@ pub mod solana;
 use solana::MplMetadata;
 pub mod block_explorer;
 pub mod chain;
+pub mod network;
 pub mod payment;
 pub mod sui;
 pub mod ton;
@@ -32,25 +33,19 @@ pub enum GemstoneError {
 
 impl From<anyhow::Error> for GemstoneError {
     fn from(error: anyhow::Error) -> Self {
-        Self::AnyError {
-            msg: error.to_string(),
-        }
+        Self::AnyError { msg: error.to_string() }
     }
 }
 
 impl From<&str> for GemstoneError {
     fn from(error: &str) -> Self {
-        Self::AnyError {
-            msg: error.to_string(),
-        }
+        Self::AnyError { msg: error.to_string() }
     }
 }
 
 impl From<Box<dyn std::error::Error>> for GemstoneError {
     fn from(error: Box<dyn std::error::Error>) -> Self {
-        Self::AnyError {
-            msg: error.to_string(),
-        }
+        Self::AnyError { msg: error.to_string() }
     }
 }
 
@@ -135,77 +130,47 @@ pub fn bsc_encode_validators_call(offset: u16, limit: u16) -> Vec<u8> {
 }
 
 #[uniffi::export]
-pub fn bsc_decode_validators_return(
-    result: Vec<u8>,
-) -> Result<Vec<bsc::BscValidator>, GemstoneError> {
+pub fn bsc_decode_validators_return(result: Vec<u8>) -> Result<Vec<bsc::BscValidator>, GemstoneError> {
     bsc::decode_validators_return(&result).map_err(GemstoneError::from)
 }
 
 #[uniffi::export]
-pub fn bsc_encode_delegations_call(
-    delegator: &str,
-    offset: u16,
-    limit: u16,
-) -> Result<Vec<u8>, GemstoneError> {
+pub fn bsc_encode_delegations_call(delegator: &str, offset: u16, limit: u16) -> Result<Vec<u8>, GemstoneError> {
     stake_hub::encode_delegations_call(delegator, offset, limit).map_err(GemstoneError::from)
 }
 
 #[uniffi::export]
-pub fn bsc_decode_delegations_return(
-    result: Vec<u8>,
-) -> Result<Vec<bsc::BscDelegation>, GemstoneError> {
+pub fn bsc_decode_delegations_return(result: Vec<u8>) -> Result<Vec<bsc::BscDelegation>, GemstoneError> {
     bsc::decode_delegations_return(&result).map_err(GemstoneError::from)
 }
 
 #[uniffi::export]
-pub fn bsc_encode_undelegations_call(
-    delegator: &str,
-    offset: u16,
-    limit: u16,
-) -> Result<Vec<u8>, GemstoneError> {
+pub fn bsc_encode_undelegations_call(delegator: &str, offset: u16, limit: u16) -> Result<Vec<u8>, GemstoneError> {
     stake_hub::encode_undelegations_call(delegator, offset, limit).map_err(GemstoneError::from)
 }
 
 #[uniffi::export]
-pub fn bsc_decode_undelegations_return(
-    result: Vec<u8>,
-) -> Result<Vec<bsc::BscDelegation>, GemstoneError> {
+pub fn bsc_decode_undelegations_return(result: Vec<u8>) -> Result<Vec<bsc::BscDelegation>, GemstoneError> {
     bsc::decode_undelegations_return(&result).map_err(GemstoneError::from)
 }
 
 #[uniffi::export]
-pub fn bsc_encode_delegate_call(
-    operator_address: String,
-    delegate_vote_power: bool,
-) -> Result<Vec<u8>, GemstoneError> {
-    stake_hub::encode_delegate_call(&operator_address, delegate_vote_power)
-        .map_err(GemstoneError::from)
+pub fn bsc_encode_delegate_call(operator_address: String, delegate_vote_power: bool) -> Result<Vec<u8>, GemstoneError> {
+    stake_hub::encode_delegate_call(&operator_address, delegate_vote_power).map_err(GemstoneError::from)
 }
 
 #[uniffi::export]
-pub fn bsc_encode_undelegate_call(
-    operator_address: String,
-    shares: String,
-) -> Result<Vec<u8>, GemstoneError> {
+pub fn bsc_encode_undelegate_call(operator_address: String, shares: String) -> Result<Vec<u8>, GemstoneError> {
     stake_hub::encode_undelegate_call(&operator_address, &shares).map_err(GemstoneError::from)
 }
 
 #[uniffi::export]
-pub fn bsc_encode_redelegate_call(
-    src_validator: String,
-    dst_validator: String,
-    shares: String,
-    delegate_vote_power: bool,
-) -> Result<Vec<u8>, GemstoneError> {
-    stake_hub::encode_redelegate_call(&src_validator, &dst_validator, &shares, delegate_vote_power)
-        .map_err(GemstoneError::from)
+pub fn bsc_encode_redelegate_call(src_validator: String, dst_validator: String, shares: String, delegate_vote_power: bool) -> Result<Vec<u8>, GemstoneError> {
+    stake_hub::encode_redelegate_call(&src_validator, &dst_validator, &shares, delegate_vote_power).map_err(GemstoneError::from)
 }
 
 #[uniffi::export]
-pub fn bsc_encode_claim_call(
-    operator_address: String,
-    request_number: u64,
-) -> Result<Vec<u8>, GemstoneError> {
+pub fn bsc_encode_claim_call(operator_address: String, request_number: u64) -> Result<Vec<u8>, GemstoneError> {
     stake_hub::encode_claim_call(&operator_address, request_number).map_err(GemstoneError::from)
 }
 
