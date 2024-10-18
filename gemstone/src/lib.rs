@@ -13,10 +13,11 @@ pub mod chain;
 pub mod network;
 pub mod payment;
 pub mod sui;
+pub mod swapper;
 pub mod ton;
 pub mod wallet_connect;
 
-uniffi::include_scaffolding!("gemstone");
+uniffi::setup_scaffolding!("gemstone");
 static LIB_VERSION: &str = "0.2.1";
 
 #[uniffi::export]

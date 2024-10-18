@@ -18,9 +18,14 @@ struct ContentView: View {
                 .imageScale(.large)
                 .foregroundStyle(.tint)
             Text("Gemstone lib version: " + Gemstone.libVersion())
-            Button("Fetch data") {
+            Button("Post Data") {
                 Task.detached {
                     try await self.fetchData()
+                }
+            }
+            Button("Fetch Quote") {
+                Task.detached {
+                    try await self.fetchQuote()
                 }
             }
         }
@@ -43,6 +48,29 @@ struct ContentView: View {
         let data = try await warp.teleport(target: target)
         let json = try JSONSerialization.jsonObject(with: data)
         print(json)
+    }
+
+    func fetchQuote() async throws {
+        let json = """
+        {
+        "fromAsset": {
+            "chain": "ethereum",
+            "tokenId": null
+        },
+        "toAsset": {
+            "chain": "ethereum",
+            "tokenId": null
+        },
+        "walletAddress": "0x1234567890abcdef",
+        "destinationAddress": "0x1234567890abcdef",
+        "amount": "0.0",
+        "mode": "exactin",
+        "includeData": false
+        }
+        """
+        let swapper = GemSwapper(networkProvider: NativeProvider())
+        let quote = await swapper.fetchQuote(request: json)
+        print(quote)
     }
 }
 
