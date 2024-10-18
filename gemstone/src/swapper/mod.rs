@@ -2,6 +2,7 @@ use crate::network::AlienProvider;
 use async_trait::async_trait;
 use primitives::{Chain, ChainType, SwapProvider, SwapQuote, SwapQuoteProtocolRequest};
 use std::{fmt::Debug, str::FromStr, sync::Arc};
+mod uniswap;
 
 #[uniffi::export(with_foreign)]
 #[async_trait]
