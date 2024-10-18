@@ -1,6 +1,12 @@
 list:
     just --list
 
+install: install-typeshare install-postgres install-diesel
+
+install-rust:
+    @echo Install rust
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+
 install-typeshare:
     @echo Install typeshare-cli
     cargo install typeshare-cli --version 1.11.0 --force
@@ -44,5 +50,8 @@ migrate:
 
 localize:
     @sh scripts/localize.sh core crates/localizer/i18n
+
+setup-services:
+    docker-compose up -d redis postgres clickhouse
 
 mod gemstone
