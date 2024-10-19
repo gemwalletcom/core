@@ -29,11 +29,9 @@ impl SuiClient {
     }
 
     fn get_fee(&self, gas_used: GasUsed) -> BigUint {
-        let computation_cost =
-            BigUint::from_str(gas_used.computation_cost.as_str()).unwrap_or_default();
+        let computation_cost = BigUint::from_str(gas_used.computation_cost.as_str()).unwrap_or_default();
         let storage_cost = BigUint::from_str(gas_used.storage_cost.as_str()).unwrap_or_default();
-        let storage_rebate =
-            BigUint::from_str(gas_used.storage_rebate.as_str()).unwrap_or_default();
+        let storage_rebate = BigUint::from_str(gas_used.storage_rebate.as_str()).unwrap_or_default();
         let cost = computation_cost.clone() + storage_cost.clone();
         // fee is potentially negative for storage rebate, for now return 0
         if storage_rebate >= cost {
@@ -42,28 +40,26 @@ impl SuiClient {
         computation_cost + storage_cost - storage_rebate
     }
 
-    fn map_transaction(
-        &self,
-        transaction: super::model::Digest,
-        block_number: i64,
-    ) -> Option<primitives::Transaction> {
+    fn map_transaction(&self, transaction: super::model::Digest, block_number: i64) -> Option<primitives::Transaction> {
         let balance_changes = transaction.balance_changes.unwrap_or_default();
         let hash = transaction.digest.clone();
         let fee = self.get_fee(transaction.effects.gas_used.clone());
         let chain = self.get_chain();
 
         // system transfer
-        if balance_changes.len() == 2
-            && balance_changes[0].coin_type == chain.as_denom()?
-            && balance_changes[1].coin_type == chain.as_denom()?
-        {
+        if balance_changes.len() == 2 && balance_changes[0].coin_type == chain.as_denom()? && balance_changes[1].coin_type == chain.as_denom()? {
             let (from_change, to_change) = if balance_changes[0].amount.contains('-') {
                 (balance_changes[0].clone(), balance_changes[1].clone())
             } else {
                 (balance_changes[1].clone(), balance_changes[0].clone())
             };
-            let from = from_change.owner.address_owner.unwrap_or_default();
-            let to = to_change.owner.address_owner.unwrap_or_default();
+
+            let from = from_change.owner.get_address_owner();
+            let to = to_change.owner.get_address_owner();
+
+            if from.is_none() || to.is_none() {
+                return None;
+            }
 
             let value = to_change.amount;
             let state = if transaction.effects.status.status == "success" {
@@ -75,8 +71,8 @@ impl SuiClient {
             let transaction = primitives::Transaction::new(
                 hash,
                 chain.as_asset_id(),
-                from,
-                to,
+                from: from.unwrap_or_default(),
+                to: to.unwrap_or_default(),
                 None,
                 TransactionType::Transfer,
                 state,
@@ -92,9 +88,7 @@ impl SuiClient {
             return Some(transaction);
         }
         // stake
-        if transaction.events.len() == 1
-            && transaction.events.first()?.event_type == SUI_STAKE_EVENT
-        {
+        if transaction.events.len() == 1 && transaction.events.first()?.event_type == SUI_STAKE_EVENT {
             let event = transaction.events.first()?;
             let event_json = event.parsed_json.clone()?;
             let stake = serde_json::from_value::<EventStake>(event_json).ok()?;
@@ -119,9 +113,7 @@ impl SuiClient {
             return Some(transaction);
         }
         // unstake
-        if transaction.events.len() == 1
-            && transaction.events.first()?.event_type == SUI_UNSTAKE_EVENT
-        {
+        if transaction.events.len() == 1 && transaction.events.first()?.event_type == SUI_UNSTAKE_EVENT {
             let event = transaction.events.first()?;
             let event_json = event.parsed_json.clone()?;
             let stake: EventUnstake = serde_json::from_value::<EventUnstake>(event_json).ok()?;
@@ -158,17 +150,11 @@ impl ChainProvider for SuiClient {
     }
 
     async fn get_latest_block(&self) -> Result<i64, Box<dyn Error + Send + Sync>> {
-        let block: String = self
-            .client
-            .request("sui_getLatestCheckpointSequenceNumber", rpc_params![])
-            .await?;
+        let block: String = self.client.request("sui_getLatestCheckpointSequenceNumber", rpc_params![]).await?;
         Ok(block.parse::<i64>()?)
     }
 
-    async fn get_transactions(
-        &self,
-        block_number: i64,
-    ) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
+    async fn get_transactions(&self, block_number: i64) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
         let params = vec![
             json!({
                 "filter": {
@@ -186,10 +172,7 @@ impl ChainProvider for SuiClient {
             json!(true),
         ];
 
-        let block: Digests = self
-            .client
-            .request("suix_queryTransactionBlocks", params)
-            .await?;
+        let block: Digests = self.client.request("suix_queryTransactionBlocks", params).await?;
         let transactions = block
             .data
             .into_iter()
