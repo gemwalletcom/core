@@ -1,15 +1,6 @@
 list:
     just --list
 
-export NIGHTLY := "nightly-2024-08-21"
-
-install-nightly:
-    #!/usr/bin/env bash
-    if [ -z "$(rustup toolchain list | grep $NIGHTLY)" ]; then
-        echo "Installing nightly"
-        rustup toolchain install $NIGHTLY && rustup component add rust-src --toolchain $NIGHTLY
-    fi
-
 export ANDROID_HOME := env_var_or_default("ANDROID_HOME", "~/Library/Android/sdk")
 
 install-ndk:
@@ -20,15 +11,11 @@ install-ndk:
     echo "Installing ndk"
     $SDK_MANAGER --install $NDK
 
-
-install-ios-targets: install-nightly
-    rustup target add aarch64-apple-ios-sim aarch64-apple-ios
+install-ios-targets:
+    rustup target add aarch64-apple-ios-sim aarch64-apple-ios aarch64-apple-ios-macabi
 
 install-android-targets:
-    rustup toolchain install stable
-    rustup target add x86_64-linux-android
-    rustup target add aarch64-linux-android
-    rustup target add armv7-linux-androideabi
+    rustup target add x86_64-linux-android aarch64-linux-android armv7-linux-androideabi
     cargo install cargo-ndk
 
 test-ios:
@@ -61,8 +48,7 @@ build-ios: build-targets bindgen-swift assemble-frameworks xcframework cp-xcfram
 build-targets:
     #!/usr/bin/env bash
     echo "iOS deployment target ${DEPLOYMENT_TARGET}, BUILD_MODE_TARGET: ${BUILD_MODE_TARGET}"
-    IPHONEOS_DEPLOYMENT_TARGET=${DEPLOYMENT_TARGET} cargo build --timings --target aarch64-apple-ios-sim --target aarch64-apple-ios --${BUILD_MODE}
-    IPHONEOS_DEPLOYMENT_TARGET=${DEPLOYMENT_TARGET} cargo +${NIGHTLY} build --timings -Z build-std --lib --target aarch64-apple-ios-macabi --${BUILD_MODE}
+    IPHONEOS_DEPLOYMENT_TARGET=${DEPLOYMENT_TARGET} cargo build --timings --target aarch64-apple-ios-sim --target aarch64-apple-ios --target aarch64-apple-ios-macabi --${BUILD_MODE}
 
 bindgen-swift:
     #!/usr/bin/env bash
