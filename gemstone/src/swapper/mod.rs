@@ -4,39 +4,48 @@ use primitives::{Chain, ChainType, SwapProvider, SwapQuote, SwapQuoteProtocolReq
 use std::{fmt::Debug, str::FromStr, sync::Arc};
 mod uniswap;
 
-#[uniffi::export(with_foreign)]
+#[derive(Debug, thiserror::Error, uniffi::Error)]
+pub enum GemSwapperError {
+    #[error("Not supported chain")]
+    NotSupportedChain,
+    #[error("RPC error")]
+    NetworkError,
+    #[error("No quote available")]
+    NoQuoteAvailable,
+}
+
 #[async_trait]
 pub trait GemSwapperTrait: Send + Sync + Debug {
-    async fn fetch_quote(&self, request: SwapQuoteProtocolRequest) -> SwapQuote;
+    async fn fetch_quote(&self, request: SwapQuoteProtocolRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapQuote, GemSwapperError>;
 }
 
 #[derive(Debug, uniffi::Object)]
 pub struct GemSwapper {
-    pub network_provider: Arc<dyn AlienProvider>,
+    pub rpc_provider: Arc<dyn AlienProvider>,
+    pub swappers: Vec<Box<dyn GemSwapperTrait>>,
 }
 
 #[uniffi::export]
 impl GemSwapper {
     #[uniffi::constructor]
-    fn new(network_provider: Arc<dyn AlienProvider>) -> Self {
-        Self { network_provider }
-    }
-}
-
-#[uniffi::export]
-#[async_trait]
-impl GemSwapperTrait for GemSwapper {
-    async fn fetch_quote(&self, _request: SwapQuoteProtocolRequest) -> SwapQuote {
-        // TODO: Implement
-        SwapQuote {
-            chain_type: ChainType::Ethereum,
-            from_amount: "0.0".to_string(),
-            to_amount: "0.0".to_string(),
-            fee_percent: 0.0,
-            provider: SwapProvider { name: "1inch".to_string() },
-            data: None,
-            approval: None,
+    fn new(rpc_provider: Arc<dyn AlienProvider>) -> Self {
+        Self {
+            rpc_provider,
+            swappers: vec![Box::new(uniswap::UniswapV3::new())],
         }
+    }
+
+    async fn fetch_quote(&self, request: SwapQuoteProtocolRequest) -> Result<SwapQuote, GemSwapperError> {
+        for swapper in self.swappers.iter() {
+            let quote = swapper.fetch_quote(request.clone(), self.rpc_provider.clone()).await;
+            match quote {
+                Ok(quote) => return Ok(quote),
+                Err(err) => {
+                    println!("error swapping: {}, {:?}", err, err);
+                }
+            }
+        }
+        Err(GemSwapperError::NoQuoteAvailable)
     }
 }
 
