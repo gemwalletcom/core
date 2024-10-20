@@ -71,8 +71,8 @@ impl SuiClient {
             let transaction = primitives::Transaction::new(
                 hash,
                 chain.as_asset_id(),
-                from: from.unwrap_or_default(),
-                to: to.unwrap_or_default(),
+                from.unwrap_or_default(),
+                to.unwrap_or_default(),
                 None,
                 TransactionType::Transfer,
                 state,
