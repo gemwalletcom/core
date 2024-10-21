@@ -1,12 +1,16 @@
 use crate::{
+    asset,
+    config::evm_chain,
     network::{AlienProvider, AlienTarget},
     swapper::{GemSwapperError, GemSwapperTrait},
 };
-use alloy_core::primitives::Uint;
-use alloy_core::sol_types::SolCall;
+use alloy_core::{
+    primitives::{Bytes, Uint},
+    sol_types::{abi::token, SolCall},
+};
 use async_trait::async_trait;
 use gem_evm::uniswap::IQuoterV2;
-use primitives::{Chain, ChainType, SwapQuote, SwapQuoteData, SwapQuoteProtocolRequest};
+use primitives::{AssetId, Chain, ChainType, EVMChain, SwapQuote, SwapQuoteData, SwapQuoteProtocolRequest};
 use std::{fmt::Debug, str::FromStr, sync::Arc};
 
 static UNISWAP: &str = "Uniswap";
@@ -25,6 +29,25 @@ impl UniswapV3 {
             Chain::Ethereum | Chain::Polygon | Chain::AvalancheC | Chain::Arbitrum | Chain::Optimism | Chain::Base | Chain::SmartChain
         )
     }
+
+    fn get_asset_address(asset: &AssetId, evm_chain: EVMChain) -> String {
+        match &asset.token_id {
+            Some(token_id) => token_id.to_string(),
+            None => evm_chain.weth_contract().unwrap().to_string(),
+        }
+    }
+
+    fn build_path(request: &SwapQuoteProtocolRequest, evm_chain: EVMChain) -> Result<Bytes, GemSwapperError> {
+        let token_in = Self::get_asset_address(&request.from_asset, evm_chain);
+        let token_out = Self::get_asset_address(&request.to_asset, evm_chain);
+        let bytes_in = hex::decode(&token_in).map_err(|_| GemSwapperError::InvalidAddress)?;
+        let bytes_out = hex::decode(&token_out).map_err(|_| GemSwapperError::InvalidAddress)?;
+
+        let mut bytes: Vec<u8> = vec![];
+        bytes.extend(bytes_in);
+        bytes.extend(bytes_out);
+        Ok(Bytes::from(bytes))
+    }
 }
 
 #[async_trait]
@@ -34,9 +57,15 @@ impl GemSwapperTrait for UniswapV3 {
             return Err(GemSwapperError::NotSupportedChain);
         }
 
-        // FIXME: concat path, handle weth
+        let evm_chain = EVMChain::from_chain(request.from_asset.chain).ok_or(GemSwapperError::NotSupportedChain)?;
+
+        if evm_chain.weth_contract().is_none() {
+            return Err(GemSwapperError::NotSupportedChain);
+        }
+
+        let path = Self::build_path(&request, evm_chain)?;
         let quoter_v2 = IQuoterV2::quoteExactInputCall {
-            path: vec![].into(),
+            path,
             amountIn: Uint::from_str(&request.amount).unwrap(),
         };
         let calldata = quoter_v2.abi_encode();

@@ -68,8 +68,8 @@ struct ContentView: View {
         "includeData": false
         }
         """
-        let swapper = GemSwapper(networkProvider: NativeProvider())
-        let quote = await swapper.fetchQuote(request: json)
+        let swapper = GemSwapper(rpcProvider: NativeProvider())
+        let quote = try await swapper.fetchQuote(request: json)
         print(quote)
     }
 }

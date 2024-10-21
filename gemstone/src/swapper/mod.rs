@@ -8,6 +8,8 @@ mod uniswap;
 pub enum GemSwapperError {
     #[error("Not supported chain")]
     NotSupportedChain,
+    #[error("Invalid address")]
+    InvalidAddress,
     #[error("RPC error")]
     NetworkError,
     #[error("No quote available")]

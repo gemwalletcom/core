@@ -3310,6 +3310,7 @@ dependencies = [
  "gem_solana",
  "gem_sui",
  "gem_ton",
+ "hex",
  "primitives",
  "serde_json",
  "thiserror",
