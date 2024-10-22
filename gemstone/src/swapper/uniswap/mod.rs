@@ -1,19 +1,45 @@
 use crate::{
-    asset,
-    config::evm_chain,
-    network::{AlienProvider, AlienTarget},
+    network::{AlienProvider, JsonRpcRequest, JsonRpcResponse, JsonRpcResult},
     swapper::{GemSwapperError, GemSwapperTrait},
 };
+use gem_evm::{
+    jsonrpc::{BlockParameter, EthereumRpc, TransactionObject},
+    uniswap::IQuoterV2,
+};
+use primitives::{AssetId, Chain, ChainType, EVMChain, SwapQuote, SwapQuoteData, SwapQuoteProtocolRequest};
+
 use alloy_core::{
     primitives::{Bytes, Uint},
-    sol_types::{abi::token, SolCall},
+    sol_types::SolCall,
 };
 use async_trait::async_trait;
-use gem_evm::uniswap::IQuoterV2;
-use primitives::{AssetId, Chain, ChainType, EVMChain, SwapQuote, SwapQuoteData, SwapQuoteProtocolRequest};
 use std::{fmt::Debug, str::FromStr, sync::Arc};
 
+mod deployment;
+
 static UNISWAP: &str = "Uniswap";
+
+impl From<&EthereumRpc> for JsonRpcRequest {
+    fn from(val: &EthereumRpc) -> Self {
+        match val {
+            EthereumRpc::GasPrice => JsonRpcRequest {
+                method: val.method_name().into(),
+                params: None,
+                id: 1,
+            },
+            EthereumRpc::GetBalance(address) => JsonRpcRequest {
+                method: val.method_name().into(),
+                params: Some(serde_json::to_vec(address).unwrap()),
+                id: 1,
+            },
+            EthereumRpc::Call(transaction, _block) => JsonRpcRequest {
+                method: val.method_name().into(),
+                params: Some(serde_json::to_vec(transaction).unwrap()),
+                id: 1,
+            },
+        }
+    }
+}
 
 #[derive(Debug)]
 pub struct UniswapV3 {}
@@ -48,42 +74,56 @@ impl UniswapV3 {
         bytes.extend(bytes_out);
         Ok(Bytes::from(bytes))
     }
+
+    async fn jsonrpc_call(&self, request: EthereumRpc, provider: Arc<dyn AlienProvider>, chain: Chain) -> Result<JsonRpcResponse, GemSwapperError> {
+        let req = JsonRpcRequest::from(&request);
+        let result = provider.jsonrpc_call(vec![req], chain).await;
+        match result {
+            Ok(results) => {
+                let result = results.first().ok_or(GemSwapperError::NetworkError { message: "No result".into() })?;
+                match result {
+                    JsonRpcResult::Value(value) => Ok(value.clone()),
+                    JsonRpcResult::Error(err) => Err(GemSwapperError::NetworkError { message: err.message.clone() }),
+                }
+            }
+            Err(err) => Err(GemSwapperError::NetworkError { message: err.to_string() }),
+        }
+    }
 }
 
 #[async_trait]
 impl GemSwapperTrait for UniswapV3 {
-    async fn fetch_quote(&self, request: SwapQuoteProtocolRequest, rpc_provider: Arc<dyn AlienProvider>) -> Result<SwapQuote, GemSwapperError> {
+    async fn fetch_quote(&self, request: SwapQuoteProtocolRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapQuote, GemSwapperError> {
+        // Prevent swaps on unsupported chains
         if !self.support_chain(request.from_asset.chain) {
             return Err(GemSwapperError::NotSupportedChain);
         }
 
         let evm_chain = EVMChain::from_chain(request.from_asset.chain).ok_or(GemSwapperError::NotSupportedChain)?;
+        let deployment = deployment::get_deployment_by_chain(request.from_asset.chain).ok_or(GemSwapperError::NotSupportedChain)?;
 
-        if evm_chain.weth_contract().is_none() {
-            return Err(GemSwapperError::NotSupportedChain);
-        }
+        evm_chain.weth_contract().ok_or(GemSwapperError::NotSupportedChain)?;
 
+        // Build path for QuoterV2
         let path = Self::build_path(&request, evm_chain)?;
         let quoter_v2 = IQuoterV2::quoteExactInputCall {
             path,
             amountIn: Uint::from_str(&request.amount).unwrap(),
         };
-        let calldata = quoter_v2.abi_encode();
 
-        // FIXME: add AlienEthereumRPC
-        let target = AlienTarget {
-            url: "".into(),
-            method: "POST".into(),
-            headers: None,
-            body: Some(calldata),
-        };
-        let result = rpc_provider.request(target).await.map_err(|_| GemSwapperError::NetworkError)?;
+        let calldata = quoter_v2.abi_encode();
+        let eth_call = EthereumRpc::Call(
+            TransactionObject::new_call(&request.wallet_address, deployment.quoter_v2, Some(calldata)),
+            BlockParameter::Latest,
+        );
+        let response = self.jsonrpc_call(eth_call, provider, request.from_asset.chain).await?;
+        let result = response.result.ok_or(GemSwapperError::NetworkError { message: "No result".into() })?;
 
         let quote = IQuoterV2::quoteExactInputCall::abi_decode_returns(&result, true)
-            .map_err(|_| GemSwapperError::NetworkError)?
+            .map_err(|err| GemSwapperError::ABIError { message: err.to_string() })?
             .amountOut;
 
-        // FIXME: add data
+        // FIXME: encode swap data
         let swap_data: Option<SwapQuoteData> = None;
         if request.include_data {
             todo!("call universal router to encode data");

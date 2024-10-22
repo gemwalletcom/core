@@ -14,7 +14,7 @@ public actor NativeProvider {
 extension AlienTarget {
     func asRequest() throws -> URLRequest {
         guard let url = URL(string: self.url) else {
-            let error = AlienError.InvalidUrl(url: self.url)
+            let error = AlienError.RequestError(message: "invalid url: \(self.url)")
             throw error
         }
         var request = URLRequest(url: url)
@@ -34,5 +34,21 @@ extension NativeProvider: AlienProvider {
         let req = try target.asRequest()
         let (data, _) = try await session.data(for: req)
         return data
+    }
+
+    public func jsonrpcCall(requests: [JsonRpcRequest], chain: Chain) async throws -> [JsonRpcResult] {
+        var results = [JsonRpcResult]()
+        for request in requests {
+            results.append(
+                .value(
+                    JsonRpcResponse(
+                        result: Data(),
+                        error: nil,
+                        id: request.id
+                    )
+                )
+            )
+        }
+        return results
     }
 }

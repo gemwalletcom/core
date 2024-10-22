@@ -1,24 +1,18 @@
-use async_trait::async_trait;
-use std::{collections::HashMap, fmt::Debug, sync::Arc};
+use std::{fmt::Debug, sync::Arc};
+
+pub mod jsonrpc;
+pub use jsonrpc::{JsonRpcError, JsonRpcRequest, JsonRpcResponse, JsonRpcResult};
+pub mod target;
+pub use target::AlienTarget;
+pub mod provider;
+pub use provider::AlienProvider;
 
 #[derive(Debug, uniffi::Error, thiserror::Error)]
 pub enum AlienError {
-    #[error("URL is invalid: {url}")]
-    InvalidURL { url: String },
-}
-
-#[derive(Debug, uniffi::Record)]
-pub struct AlienTarget {
-    pub url: String,
-    pub method: String,
-    pub headers: Option<HashMap<String, String>>,
-    pub body: Option<Vec<u8>>,
-}
-
-#[uniffi::export(with_foreign)]
-#[async_trait]
-pub trait AlienProvider: Send + Sync + Debug {
-    async fn request(&self, target: AlienTarget) -> Result<Vec<u8>, AlienError>;
+    #[error("Request is invalid: {message}")]
+    RequestError { message: String },
+    #[error("Request error: {message}")]
+    ResponseError { message: String },
 }
 
 #[derive(Debug, uniffi::Object)]
@@ -56,6 +50,10 @@ mod tests {
             let never = pending::<()>();
             let _ = timeout(Duration::from_millis(200), never).await;
             Ok(self.response.as_bytes().to_vec())
+        }
+
+        async fn jsonrpc_call(&self, _requests: Vec<JsonRpcRequest>, _chain: primitives::Chain) -> Result<Vec<JsonRpcResult>, AlienError> {
+            todo!()
         }
     }
 
