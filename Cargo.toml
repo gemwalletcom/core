@@ -18,7 +18,6 @@ members = [
     "apps/charter",
     "apps/assetor",
     "apps/setup",
-    "apps/operator",
 
     "bin/img-downloader",
     "bin/generate",
@@ -53,7 +52,6 @@ default-members = [
     "apps/charter",
     "apps/assetor",
     "apps/setup",
-    "apps/operator",
     "bin/generate",
 ]
 

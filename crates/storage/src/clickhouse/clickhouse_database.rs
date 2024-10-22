@@ -1,9 +1,6 @@
 use clickhouse::{error::Result, Client};
 
-use crate::models::{
-    chart::{AppStoreInformation, Position},
-    CreateChart, GetChart,
-};
+use crate::models::{CreateChart, GetChart};
 
 pub struct ClickhouseDatabase {
     client: Client,
@@ -11,8 +8,6 @@ pub struct ClickhouseDatabase {
 
 pub const CREATE_TABLES: &str = include_str!("./clickhouse_migration.sql");
 pub const CHARTS_TABLE_NAME: &str = "charts";
-pub const POSITIONS_TABLE_NAME: &str = "positions";
-pub const APPSTORE_INFORMATION_TABLE_NAME: &str = "appstore_information";
 
 //TODO: Migrate to storage crate
 impl ClickhouseDatabase {
@@ -33,26 +28,6 @@ impl ClickhouseDatabase {
         }
         inserter.end().await?;
         Ok(charts.len())
-    }
-
-    pub async fn add_positions(&self, positions: Vec<Position>) -> Result<usize> {
-        let mut inserter = self.client.inserter(POSITIONS_TABLE_NAME)?.with_max_entries(50);
-
-        for value in positions.clone() {
-            inserter.write(&value).await?;
-        }
-        inserter.end().await?;
-        Ok(positions.len())
-    }
-
-    pub async fn add_appstore_information(&self, values: Vec<AppStoreInformation>) -> Result<usize> {
-        let mut inserter = self.client.inserter(APPSTORE_INFORMATION_TABLE_NAME)?.with_max_entries(50);
-
-        for value in values.clone() {
-            inserter.write(&value).await?;
-        }
-        inserter.end().await?;
-        Ok(values.len())
     }
 
     pub async fn get_charts(&self, coin_id: &str, period: &str, period_limit: i32) -> Result<Vec<GetChart>> {
