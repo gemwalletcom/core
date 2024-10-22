@@ -80,13 +80,13 @@ impl UniswapV3 {
         let result = provider.jsonrpc_call(vec![req], chain).await;
         match result {
             Ok(results) => {
-                let result = results.first().ok_or(GemSwapperError::NetworkError { message: "No result".into() })?;
+                let result = results.first().ok_or(GemSwapperError::NetworkError { msg: "No result".into() })?;
                 match result {
                     JsonRpcResult::Value(value) => Ok(value.clone()),
-                    JsonRpcResult::Error(err) => Err(GemSwapperError::NetworkError { message: err.message.clone() }),
+                    JsonRpcResult::Error(err) => Err(GemSwapperError::NetworkError { msg: err.message.clone() }),
                 }
             }
-            Err(err) => Err(GemSwapperError::NetworkError { message: err.to_string() }),
+            Err(err) => Err(GemSwapperError::NetworkError { msg: err.to_string() }),
         }
     }
 }
@@ -117,10 +117,10 @@ impl GemSwapperTrait for UniswapV3 {
             BlockParameter::Latest,
         );
         let response = self.jsonrpc_call(eth_call, provider, request.from_asset.chain).await?;
-        let result = response.result.ok_or(GemSwapperError::NetworkError { message: "No result".into() })?;
+        let result = response.result.ok_or(GemSwapperError::NetworkError { msg: "No result".into() })?;
 
         let quote = IQuoterV2::quoteExactInputCall::abi_decode_returns(&result, true)
-            .map_err(|err| GemSwapperError::ABIError { message: err.to_string() })?
+            .map_err(|err| GemSwapperError::ABIError { msg: err.to_string() })?
             .amountOut;
 
         // FIXME: encode swap data

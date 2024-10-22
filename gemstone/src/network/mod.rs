@@ -9,10 +9,10 @@ pub use provider::AlienProvider;
 
 #[derive(Debug, uniffi::Error, thiserror::Error)]
 pub enum AlienError {
-    #[error("Request is invalid: {message}")]
-    RequestError { message: String },
-    #[error("Request error: {message}")]
-    ResponseError { message: String },
+    #[error("Request is invalid: {msg}")]
+    RequestError { msg: String },
+    #[error("Request error: {msg}")]
+    ResponseError { msg: String },
 }
 
 #[derive(Debug, uniffi::Object)]

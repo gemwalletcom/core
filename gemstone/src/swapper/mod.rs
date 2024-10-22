@@ -11,10 +11,10 @@ pub enum GemSwapperError {
     NotSupportedChain,
     #[error("Invalid address")]
     InvalidAddress,
-    #[error("RPC error: {message}")]
-    NetworkError { message: String },
-    #[error("ABI error: {message}")]
-    ABIError { message: String },
+    #[error("RPC error: {msg}")]
+    NetworkError { msg: String },
+    #[error("ABI error: {msg}")]
+    ABIError { msg: String },
     #[error("No quote available")]
     NoQuoteAvailable,
 }
