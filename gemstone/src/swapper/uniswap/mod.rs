@@ -27,16 +27,22 @@ impl From<&EthereumRpc> for JsonRpcRequest {
                 params: None,
                 id: 1,
             },
-            EthereumRpc::GetBalance(address) => JsonRpcRequest {
-                method: val.method_name().into(),
-                params: Some(serde_json::to_vec(address).unwrap()),
-                id: 1,
-            },
-            EthereumRpc::Call(transaction, _block) => JsonRpcRequest {
-                method: val.method_name().into(),
-                params: Some(serde_json::to_vec(transaction).unwrap()),
-                id: 1,
-            },
+            EthereumRpc::GetBalance(address) => {
+                let params: Vec<String> = vec![address.to_string()];
+                JsonRpcRequest {
+                    method: val.method_name().into(),
+                    params: Some(serde_json::to_string(&params).unwrap()),
+                    id: 1,
+                }
+            }
+            EthereumRpc::Call(transaction, _block) => {
+                let params = vec![transaction];
+                JsonRpcRequest {
+                    method: val.method_name().into(),
+                    params: Some(serde_json::to_string(&params).unwrap()),
+                    id: 1,
+                }
+            }
         }
     }
 }

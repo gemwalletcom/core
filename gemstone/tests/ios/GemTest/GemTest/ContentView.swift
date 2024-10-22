@@ -28,6 +28,11 @@ struct ContentView: View {
                     try await self.fetchQuote()
                 }
             }
+            Button("Gas Price") {
+                Task.detached {
+                    try await self.fetchGasPrice()
+                }
+            }
         }
         .padding()
         .onAppear {}
@@ -71,6 +76,18 @@ struct ContentView: View {
         let swapper = GemSwapper(rpcProvider: NativeProvider())
         let quote = try await swapper.fetchQuote(request: json)
         print(quote)
+    }
+
+    func fetchGasPrice() async throws {
+        let provider = NativeProvider()
+        let request = JsonRpcRequest(
+            method: "eth_gasPrice",
+            params: nil,
+            id: 1
+        )
+        let results = try await provider.jsonrpcCall(requests: [request], chain: "ethereum")
+
+        print(results)
     }
 }
 

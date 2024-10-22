@@ -97,4 +97,38 @@ final class GemTestTests: XCTestCase {
         XCTAssertFalse(config.isOpstack)        
         XCTAssertEqual(config.swapWhitelistContracts.count, 1)
     }
+
+
+    func testEncodeJsonRpcRequest() throws {
+        let params = ["0x95222290DD7278Aa3Ddd389Cc1E1d165CC4BAfe5", "latest"]
+        let data = try JSONSerialization.data(withJSONObject: params, options: [])
+        let string = String(data: data, encoding: .utf8)!
+
+        let request = JsonRpcRequest(method: "eth_getBalance", params: string, id: 1)
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        let encoded = try encoder.encode(request)
+        let expected = """
+        {"id":1,"jsonrpc":"2.0","method":"eth_getBalance","params":["0x95222290DD7278Aa3Ddd389Cc1E1d165CC4BAfe5","latest"]}
+        """
+
+        XCTAssertEqual(String(data: encoded, encoding: .utf8), expected)
+    }
+
+    func testDeocdingJsonRpcResult() throws {
+        let response = """
+        {"jsonrpc": "2.0","id": 1,"result": "0x21e3bb1a6"}
+        """
+
+        let result = try JSONDecoder().decode(JsonRpcResult.self, from: response.data(using: .utf8)!)
+        guard
+            case .value(let response) = result,
+            let data = response.result
+        else {
+            XCTFail("unexpected response: \(response)")
+            return
+        }
+
+        XCTAssertEqual(String(data: data, encoding: .utf8), "0x21e3bb1a6")
+    }
 }

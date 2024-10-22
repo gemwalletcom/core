@@ -7,6 +7,7 @@ pub struct UniswapV3Deployment {
 }
 
 pub fn get_deployment_by_chain(chain: Chain) -> Option<UniswapV3Deployment> {
+    // https://docs.uniswap.org/contracts/v3/reference/deployments/celo-deployments
     match chain {
         Chain::Ethereum => Some(UniswapV3Deployment {
             quoter_v2: "0x61fFE014bA17989E743c5F6cB21bF9697530B21e",

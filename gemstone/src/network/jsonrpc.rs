@@ -1,8 +1,8 @@
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct JsonRpcRequest {
     pub method: String,
-    pub params: Option<Vec<u8>>,
-    pub id: u32,
+    pub params: Option<String>, // json string
+    pub id: u64,
 }
 
 #[derive(Debug, Clone, uniffi::Record)]
@@ -13,9 +13,9 @@ pub struct JsonRpcError {
 
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct JsonRpcResponse {
-    pub result: Option<Vec<u8>>,
+    pub result: Option<Vec<u8>>, // decoded hex string
     pub error: Option<JsonRpcError>,
-    pub id: u32,
+    pub id: u64,
 }
 
 #[derive(Debug, Clone, uniffi::Enum)]
