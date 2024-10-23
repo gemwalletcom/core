@@ -71,17 +71,6 @@ services:
       - setup
       - postgres
 
-  assetor:
-    image: app
-    container_name: assetor
-    environment:
-      BINARY: assetor
-      POSTGRES_URL: "postgres://username:password@postgres/api"
-    depends_on:
-      - app_build
-      - setup
-      - postgres
-
   redis:
     image: redis:7.0-alpine
     container_name: redis

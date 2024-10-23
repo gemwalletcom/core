@@ -1,7 +1,6 @@
-use crate::client::ChartsClient;
-
+use crate::chart_client::ChartClient;
+use crate::price_client::PriceClient;
 use coingecko::{Coin, CoinGeckoClient};
-use pricer::client::PriceClient;
 
 use std::thread;
 
@@ -9,12 +8,12 @@ use storage::models::CreateChart;
 
 pub struct ChartsUpdater {
     coin_gecko_client: CoinGeckoClient,
-    charts_client: ChartsClient,
+    charts_client: ChartClient,
     prices_client: PriceClient,
 }
 
 impl ChartsUpdater {
-    pub fn new(charts_client: ChartsClient, prices_client: PriceClient, coin_gecko_client: CoinGeckoClient) -> Self {
+    pub fn new(charts_client: ChartClient, prices_client: PriceClient, coin_gecko_client: CoinGeckoClient) -> Self {
         Self {
             coin_gecko_client,
             prices_client,

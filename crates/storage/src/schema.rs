@@ -187,70 +187,6 @@ diesel::table! {
 }
 
 diesel::table! {
-    operator_appstore_information (id) {
-        id -> Int4,
-        #[max_length = 32]
-        store -> Varchar,
-        #[max_length = 128]
-        app -> Varchar,
-        #[max_length = 64]
-        country -> Varchar,
-        #[max_length = 128]
-        title -> Varchar,
-        #[max_length = 64]
-        version -> Varchar,
-        ratings -> Nullable<Float8>,
-        average_rating -> Nullable<Float8>,
-        release_date -> Timestamp,
-        current_version_release_date -> Timestamp,
-        updated_at -> Timestamp,
-        created_at -> Timestamp,
-    }
-}
-
-diesel::table! {
-    operator_appstore_positions (id) {
-        id -> Int4,
-        #[max_length = 32]
-        store -> Varchar,
-        #[max_length = 128]
-        app -> Varchar,
-        #[max_length = 128]
-        keyword -> Varchar,
-        #[max_length = 64]
-        country -> Varchar,
-        position -> Int4,
-        updated_at -> Timestamp,
-        created_at -> Timestamp,
-    }
-}
-
-diesel::table! {
-    operator_appstore_reviews (id) {
-        id -> Int4,
-        #[max_length = 32]
-        store -> Varchar,
-        #[max_length = 128]
-        app -> Varchar,
-        #[max_length = 64]
-        country -> Varchar,
-        #[max_length = 64]
-        review_id -> Varchar,
-        #[max_length = 256]
-        title -> Varchar,
-        #[max_length = 4096]
-        content -> Varchar,
-        #[max_length = 128]
-        author -> Varchar,
-        #[max_length = 64]
-        version -> Varchar,
-        rating -> Int4,
-        updated_at -> Timestamp,
-        created_at -> Timestamp,
-    }
-}
-
-diesel::table! {
     parser_state (chain) {
         chain -> Varchar,
         current_block -> Int4,
@@ -459,9 +395,6 @@ diesel::allow_tables_to_appear_in_same_query!(
     fiat_rates,
     fiat_transactions,
     nodes,
-    operator_appstore_information,
-    operator_appstore_positions,
-    operator_appstore_reviews,
     parser_state,
     price_alerts,
     prices,

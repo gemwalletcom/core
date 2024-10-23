@@ -2,12 +2,12 @@ use primitives::{ChartPeriod, ChartValue, DEFAULT_FIAT_CURRENCY};
 use std::error::Error;
 use storage::{models::CreateChart, ClickhouseDatabase, DatabaseClient};
 
-pub struct ChartsClient {
+pub struct ChartClient {
     database: DatabaseClient,
     clickhouse_database: ClickhouseDatabase,
 }
 
-impl ChartsClient {
+impl ChartClient {
     pub fn new(database_url: &str, clichouse_database_url: &str) -> Self {
         let database = DatabaseClient::new(database_url);
         let clickhouse_database = ClickhouseDatabase::new(clichouse_database_url);

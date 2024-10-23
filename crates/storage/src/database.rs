@@ -7,7 +7,6 @@ use diesel::pg::PgConnection;
 use diesel::prelude::*;
 use diesel::{upsert::excluded, Connection};
 use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
-use operator::{AppStoreInformation, AppStorePosition, AppStoreReview};
 use price_alert::NewPriceAlert;
 use primitives::chain::Chain;
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("src/migrations");
@@ -623,32 +622,6 @@ impl DatabaseClient {
 
         use crate::schema::chains::dsl::*;
         diesel::insert_into(chains)
-            .values(values)
-            .on_conflict_do_nothing()
-            .execute(&mut self.connection)
-    }
-
-    // operator method
-
-    pub fn add_appstore_positions(&mut self, values: Vec<AppStorePosition>) -> Result<usize, diesel::result::Error> {
-        use crate::schema::operator_appstore_positions::dsl::*;
-        diesel::insert_into(operator_appstore_positions)
-            .values(values)
-            .on_conflict_do_nothing()
-            .execute(&mut self.connection)
-    }
-
-    pub fn add_appstore_information(&mut self, values: Vec<AppStoreInformation>) -> Result<usize, diesel::result::Error> {
-        use crate::schema::operator_appstore_information::dsl::*;
-        diesel::insert_into(operator_appstore_information)
-            .values(values)
-            .on_conflict_do_nothing()
-            .execute(&mut self.connection)
-    }
-
-    pub fn add_appstore_reviews(&mut self, values: Vec<AppStoreReview>) -> Result<usize, diesel::result::Error> {
-        use crate::schema::operator_appstore_reviews::dsl::*;
-        diesel::insert_into(operator_appstore_reviews)
             .values(values)
             .on_conflict_do_nothing()
             .execute(&mut self.connection)

@@ -1,6 +1,6 @@
 use coingecko::CoinGeckoClient;
 use job_runner::run_job;
-use pricer::{client::PriceClient, price_updater::PriceUpdater};
+use pricer::{asset_updater::AssetUpdater, chart_client::ChartClient, charts_updater::ChartsUpdater, price_client::PriceClient, price_updater::PriceUpdater};
 use settings::Settings;
 use std::{sync::Arc, time::Duration};
 
@@ -65,6 +65,28 @@ async fn main() {
         }
     });
 
+    let update_charts = run_job("Update charts", Duration::from_secs(settings.charter.timer), {
+        let settings = Arc::new(settings.clone());
+        move || {
+            let settings = Arc::clone(&settings);
+            let coingecko_client = CoinGeckoClient::new(&settings.coingecko.key.secret);
+            let charts_client = ChartClient::new(&settings.postgres.url, &settings.clickhouse.url);
+            let price_client = PriceClient::new(&settings.redis.url, &settings.postgres.url);
+            let mut charts_updater = ChartsUpdater::new(charts_client, price_client, coingecko_client);
+            async move { charts_updater.update_charts().await }
+        }
+    });
+
+    let update_assets = run_job("Update assets assets", Duration::from_secs(86400), {
+        let settings = Arc::new(settings.clone());
+        move || {
+            let settings = Arc::clone(&settings);
+            let coingecko_client = CoinGeckoClient::new(&settings.coingecko.key.secret);
+            let mut asset_updater = AssetUpdater::new(coingecko_client.clone(), &settings.postgres.url);
+            async move { asset_updater.update_assets().await }
+        }
+    });
+
     let _ = tokio::join!(
         clean_updated_assets,
         update_fiat_assets,
@@ -73,6 +95,8 @@ async fn main() {
         update_prices_high_market_cap,
         update_prices_top_market_cap,
         update_prices_cache,
+        update_charts,
+        update_assets,
     );
 }
 
