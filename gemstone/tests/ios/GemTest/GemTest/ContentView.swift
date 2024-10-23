@@ -25,12 +25,22 @@ struct ContentView: View {
             }
             Button("Fetch Quote") {
                 Task.detached {
-                    try await self.fetchQuote()
+                    do {
+                        try await self.fetchQuote()
+                    }
+                    catch {
+                        print(error)
+                    }
                 }
             }
             Button("Gas Price") {
                 Task.detached {
-                    try await self.fetchGasPrice()
+                    do {
+                        try await self.fetchGasPrice()
+                    }
+                    catch {
+                        print(error)
+                    }
                 }
             }
         }
@@ -56,7 +66,7 @@ struct ContentView: View {
     }
 
     func fetchQuote() async throws {
-        let json = """
+        let string = """
         {
         "fromAsset": {
             "chain": "ethereum",
@@ -64,17 +74,18 @@ struct ContentView: View {
         },
         "toAsset": {
             "chain": "ethereum",
-            "tokenId": null
+            "tokenId": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
         },
-        "walletAddress": "0x1234567890abcdef",
-        "destinationAddress": "0x1234567890abcdef",
-        "amount": "0.0",
+        "walletAddress": "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7",
+        "destinationAddress": "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7",
+        "amount": "10000000000000000",
         "mode": "exactin",
         "includeData": false
         }
         """
+
         let swapper = GemSwapper(rpcProvider: NativeProvider())
-        let quote = try await swapper.fetchQuote(request: json)
+        let quote = try await swapper.fetchQuote(request: string)
         print(quote)
     }
 

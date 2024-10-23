@@ -2,23 +2,27 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TransactionObject {
-    pub from: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub from: Option<String>,
     pub to: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub gas: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none", rename = "gasPrice")]
     pub gas_price: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
-    pub data: Option<Vec<u8>>,
+    pub data: String,
 }
 
 impl TransactionObject {
-    pub fn new_call(from: &str, to: &str, data: Option<Vec<u8>>) -> Self {
+    pub fn new_call(from: &str, to: &str, data: Vec<u8>) -> Self {
         Self {
-            from: from.to_string(),
+            from: Some(from.to_string()),
             to: to.to_string(),
             gas: None,
             gas_price: None,
             value: None,
-            data,
+            data: format!("0x{}", hex::encode(data)),
         }
     }
 }
@@ -68,5 +72,25 @@ impl EthereumRpc {
             EthereumRpc::GetBalance(_) => "eth_getBalance",
             EthereumRpc::Call(_, _) => "eth_call",
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_encode_call() {
+        let request = TransactionObject::new_call(
+            "0x46340b20830761efd32832a74d7169b29feb9758",
+            "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+            vec![],
+        );
+        let encoded = serde_json::to_string(&request).unwrap();
+
+        assert_eq!(
+            encoded,
+            r#"{"from":"0x46340b20830761efd32832a74d7169b29feb9758","to":"0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48","data":"0x"}"#
+        );
     }
 }

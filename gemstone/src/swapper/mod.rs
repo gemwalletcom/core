@@ -56,10 +56,10 @@ impl GemSwapper {
 
 #[cfg(test)]
 mod tests {
-    use primitives::{AssetId, Chain, SwapQuoteProtocolRequest};
+    use primitives::{AssetId, Chain, SwapMode, SwapQuoteProtocolRequest};
     use serde_json;
     #[test]
-    fn test_swap_provider() {
+    fn test_encode_quote_request() {
         let request = SwapQuoteProtocolRequest {
             from_asset: AssetId::from(Chain::Ethereum, None),
             to_asset: AssetId::from(Chain::Ethereum, None),
@@ -75,6 +75,25 @@ mod tests {
         assert_eq!(
             json,
             r#"{"fromAsset":{"chain":"ethereum","tokenId":null},"toAsset":{"chain":"ethereum","tokenId":null},"walletAddress":"0x1234567890abcdef","destinationAddress":"0x1234567890abcdef","amount":"0.0","mode":"exactin","includeData":false}"#
+        );
+    }
+
+    #[test]
+    fn test_decode_quote_request() {
+        let json = r#"{"fromAsset":{"chain":"ethereum","tokenId":null},"toAsset":{"chain":"ethereum","tokenId":"0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"},"walletAddress":"0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7","destinationAddress":"0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7","amount":"10000000000000000","mode":"exactin","includeData":false}"#;
+        let request: SwapQuoteProtocolRequest = serde_json::from_str(json).unwrap();
+
+        assert_eq!(
+            request,
+            SwapQuoteProtocolRequest {
+                from_asset: AssetId::from(Chain::Ethereum, None),
+                to_asset: AssetId::from(Chain::Ethereum, Some("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48".into())),
+                wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
+                destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
+                amount: "10000000000000000".into(),
+                mode: SwapMode::ExactIn,
+                include_data: false,
+            }
         );
     }
 }

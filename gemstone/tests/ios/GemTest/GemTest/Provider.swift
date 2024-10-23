@@ -34,33 +34,26 @@ extension AlienTarget {
     }
 }
 
-extension JsonRpcRequest: @retroactive Encodable {
-    enum CodingKeys: String, CodingKey {
-        case jsonrpc
-        case id
-        case method
-        case params
-    }
-    
-    public func encode(to encoder: any Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode("2.0", forKey: .jsonrpc)
-        try container.encode(self.id, forKey: .id)
-        try container.encode(self.method, forKey: .method)
-
-        if let params = self.params {
-            let decoded = try JSONDecoder().decode([String].self, from: params.data(using: .utf8)!)
-            try container.encode(decoded, forKey: .params)
+extension JsonRpcRequest {
+    func encode() throws -> Data {
+        var json: [String: Any] = [
+            "jsonrpc": "2.0",
+            "id": self.id,
+            "method": self.method
+        ]
+        if let params = params {
+            json["params"] = try JSONSerialization.jsonObject(with: Data(params.utf8))
         } else {
-            try container.encodeNil(forKey: .params)
+            json["params"] = NSNull()
         }
+        return try JSONSerialization.data(withJSONObject: json, options: [.sortedKeys])
     }
-    
+
     func asRequest(url: URL) throws -> URLRequest {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.allHTTPHeaderFields = ["Content-Type": "application/json"]
-        request.httpBody = try JSONEncoder().encode(self)
+        request.httpBody = try encode()
         return request
     }
 }
@@ -77,12 +70,11 @@ extension JsonRpcResult: @retroactive Decodable {
         let id = try container.decode(UInt64.self, forKey: .id)
         if let result = try? container.decodeIfPresent(String.self, forKey: .result) {
             self = .value(JsonRpcResponse(result: result.data(using: .utf8), error: nil, id: id))
-            return
-        }
-        if let error = try? container.decodeIfPresent(JsonRpcError.self, forKey: .error) {
+        } else if let error = try? container.decodeIfPresent(JsonRpcError.self, forKey: .error) {
             self = .error(error)
+        } else {
+            throw DecodingError.dataCorruptedError(forKey: .result, in: container, debugDescription: "")
         }
-        throw DecodingError.dataCorruptedError(forKey: .result, in: container, debugDescription: "")
     }
 }
 

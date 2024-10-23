@@ -4,27 +4,6 @@ import XCTest
 import Gemstone
 @testable import GemTest
 
-extension Data {
-
-    init?(hex: String) {
-        guard hex.count.isMultiple(of: 2) else {
-            return nil
-        }
-
-        let chars = hex.map { $0 }
-        let bytes = stride(from: 0, to: chars.count, by: 2)
-            .map { String(chars[$0]) + String(chars[$0 + 1]) }
-            .compactMap { UInt8($0, radix: 16) }
-
-        guard hex.count / bytes.count == 2 else { return nil }
-        self.init(bytes)
-      }
-
-    func hexString() -> String {
-        return map { String(format: "%02hhx", $0) }.joined()
-    }
-}
-
 final class GemTestTests: XCTestCase {
 
 
@@ -105,9 +84,7 @@ final class GemTestTests: XCTestCase {
         let string = String(data: data, encoding: .utf8)!
 
         let request = JsonRpcRequest(method: "eth_getBalance", params: string, id: 1)
-        let encoder = JSONEncoder()
-        encoder.outputFormatting = [.sortedKeys]
-        let encoded = try encoder.encode(request)
+        let encoded = try request.encode()
         let expected = """
         {"id":1,"jsonrpc":"2.0","method":"eth_getBalance","params":["0x95222290DD7278Aa3Ddd389Cc1E1d165CC4BAfe5","latest"]}
         """
@@ -130,5 +107,29 @@ final class GemTestTests: XCTestCase {
         }
 
         XCTAssertEqual(String(data: data, encoding: .utf8), "0x21e3bb1a6")
+    }
+
+    func testDecodingJsonRpcError() throws {
+        let response = """
+        {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "error": {
+                "code": 3,
+                "data": "0x08c379a000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000015746f416464726573735f6f75744f66426f756e64730000000000000000000000",
+                "message": "execution reverted: revert: toAddress_outOfBounds"
+            }
+        }
+        """
+
+        let result = try JSONDecoder().decode(JsonRpcResult.self, from: response.data(using: .utf8)!)
+        guard
+            case .error(let error) = result
+        else {
+            XCTFail("unexpected response: \(response)")
+            return
+        }
+
+        XCTAssertEqual(error, JsonRpcError(code: 3, message: "execution reverted: revert: toAddress_outOfBounds"))
     }
 }

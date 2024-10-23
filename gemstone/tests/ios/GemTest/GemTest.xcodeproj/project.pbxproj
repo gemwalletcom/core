@@ -14,6 +14,7 @@
 		4843F3922B32C18400CA5DA8 /* GemTestTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4843F3912B32C18400CA5DA8 /* GemTestTests.swift */; };
 		4843F3AC2B32C1B300CA5DA8 /* Gemstone in Frameworks */ = {isa = PBXBuildFile; productRef = 4843F3AB2B32C1B300CA5DA8 /* Gemstone */; };
 		DF024FDB2CBE71F00044D11F /* Provider.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF024FDA2CBE71F00044D11F /* Provider.swift */; };
+		DF0C08022CC89AD200D2A524 /* Data+Hex.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF0C08012CC89ACD00D2A524 /* Data+Hex.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -35,6 +36,7 @@
 		4843F38D2B32C18400CA5DA8 /* GemTestTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = GemTestTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		4843F3912B32C18400CA5DA8 /* GemTestTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GemTestTests.swift; sourceTree = "<group>"; };
 		DF024FDA2CBE71F00044D11F /* Provider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Provider.swift; sourceTree = "<group>"; };
+		DF0C08012CC89ACD00D2A524 /* Data+Hex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Data+Hex.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -77,6 +79,7 @@
 		4843F37F2B32C18300CA5DA8 /* GemTest */ = {
 			isa = PBXGroup;
 			children = (
+				DF0C08012CC89ACD00D2A524 /* Data+Hex.swift */,
 				DF024FDA2CBE71F00044D11F /* Provider.swift */,
 				4843F3822B32C18300CA5DA8 /* ContentView.swift */,
 				4843F3802B32C18300CA5DA8 /* GemTestApp.swift */,
@@ -211,6 +214,7 @@
 				4843F3832B32C18300CA5DA8 /* ContentView.swift in Sources */,
 				DF024FDB2CBE71F00044D11F /* Provider.swift in Sources */,
 				4843F3812B32C18300CA5DA8 /* GemTestApp.swift in Sources */,
+				DF0C08022CC89AD200D2A524 /* Data+Hex.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

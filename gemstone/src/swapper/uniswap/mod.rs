@@ -3,6 +3,7 @@ use crate::{
     swapper::{GemSwapperError, GemSwapperTrait},
 };
 use gem_evm::{
+    address::EthereumAddress,
     jsonrpc::{BlockParameter, EthereumRpc, TransactionObject},
     uniswap::IQuoterV2,
 };
@@ -62,22 +63,25 @@ impl UniswapV3 {
         )
     }
 
-    fn get_asset_address(asset: &AssetId, evm_chain: EVMChain) -> String {
-        match &asset.token_id {
+    fn get_asset_address(asset: &AssetId, evm_chain: EVMChain) -> Result<EthereumAddress, GemSwapperError> {
+        let str = match &asset.token_id {
             Some(token_id) => token_id.to_string(),
             None => evm_chain.weth_contract().unwrap().to_string(),
+        };
+        let address = EthereumAddress::parse(&str);
+        match address {
+            Some(address) => Ok(address),
+            None => Err(GemSwapperError::InvalidAddress),
         }
     }
 
     fn build_path(request: &SwapQuoteProtocolRequest, evm_chain: EVMChain) -> Result<Bytes, GemSwapperError> {
-        let token_in = Self::get_asset_address(&request.from_asset, evm_chain);
-        let token_out = Self::get_asset_address(&request.to_asset, evm_chain);
-        let bytes_in = hex::decode(&token_in).map_err(|_| GemSwapperError::InvalidAddress)?;
-        let bytes_out = hex::decode(&token_out).map_err(|_| GemSwapperError::InvalidAddress)?;
+        let token_in = Self::get_asset_address(&request.from_asset, evm_chain)?;
+        let token_out = Self::get_asset_address(&request.to_asset, evm_chain)?;
 
         let mut bytes: Vec<u8> = vec![];
-        bytes.extend(bytes_in);
-        bytes.extend(bytes_out);
+        bytes.extend(&token_in.bytes);
+        bytes.extend(&token_out.bytes);
         Ok(Bytes::from(bytes))
     }
 
@@ -119,7 +123,7 @@ impl GemSwapperTrait for UniswapV3 {
 
         let calldata = quoter_v2.abi_encode();
         let eth_call = EthereumRpc::Call(
-            TransactionObject::new_call(&request.wallet_address, deployment.quoter_v2, Some(calldata)),
+            TransactionObject::new_call(&request.wallet_address, deployment.quoter_v2, calldata),
             BlockParameter::Latest,
         );
         let response = self.jsonrpc_call(eth_call, provider, request.from_asset.chain).await?;
