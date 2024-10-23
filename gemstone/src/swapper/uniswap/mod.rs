@@ -5,7 +5,7 @@ use crate::{
 use gem_evm::{
     address::EthereumAddress,
     jsonrpc::{BlockParameter, EthereumRpc, TransactionObject},
-    uniswap::IQuoterV2,
+    uniswap::{FeeTier, IQuoterV2},
 };
 use primitives::{AssetId, Chain, ChainType, EVMChain, SwapQuote, SwapQuoteData, SwapQuoteProtocolRequest};
 
@@ -13,6 +13,8 @@ use alloy_core::{
     primitives::{Bytes, Uint},
     sol_types::SolCall,
 };
+use alloy_primitives::aliases::U24;
+
 use async_trait::async_trait;
 use std::{fmt::Debug, str::FromStr, sync::Arc};
 
@@ -75,13 +77,21 @@ impl UniswapV3 {
         }
     }
 
-    fn build_path(request: &SwapQuoteProtocolRequest, evm_chain: EVMChain) -> Result<Bytes, GemSwapperError> {
+    fn build_path(request: &SwapQuoteProtocolRequest, evm_chain: EVMChain, fee_tier: FeeTier) -> Result<Bytes, GemSwapperError> {
         let token_in = Self::get_asset_address(&request.from_asset, evm_chain)?;
         let token_out = Self::get_asset_address(&request.to_asset, evm_chain)?;
 
+        Self::build_path_with_token(token_in, token_out, fee_tier)
+    }
+
+    fn build_path_with_token(token_in: EthereumAddress, token_out: EthereumAddress, fee_tier: FeeTier) -> Result<Bytes, GemSwapperError> {
         let mut bytes: Vec<u8> = vec![];
+        let fee = U24::from(fee_tier as u32);
+
         bytes.extend(&token_in.bytes);
+        bytes.extend(&fee.to_be_bytes_vec());
         bytes.extend(&token_out.bytes);
+
         Ok(Bytes::from(bytes))
     }
 
@@ -115,7 +125,7 @@ impl GemSwapperTrait for UniswapV3 {
         evm_chain.weth_contract().ok_or(GemSwapperError::NotSupportedChain)?;
 
         // Build path for QuoterV2
-        let path = Self::build_path(&request, evm_chain)?;
+        let path = Self::build_path(&request, evm_chain, FeeTier::Low)?;
         let quoter_v2 = IQuoterV2::quoteExactInputCall {
             path,
             amountIn: Uint::from_str(&request.amount).unwrap(),
@@ -148,5 +158,24 @@ impl GemSwapperTrait for UniswapV3 {
             data: swap_data,
             approval: None,
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_build_path() {
+        // Optimism WETH
+        let token0 = EthereumAddress::parse("0x4200000000000000000000000000000000000006").unwrap();
+        // USDC
+        let token1 = EthereumAddress::parse("0x0b2c639c533813f4aa9d7837caf62653d097ff85").unwrap();
+        let bytes = UniswapV3::build_path_with_token(token0, token1, FeeTier::Low).unwrap();
+
+        assert_eq!(
+            hex::encode(bytes),
+            "42000000000000000000000000000000000000060001f40b2c639c533813f4aa9d7837caf62653d097ff85"
+        )
     }
 }

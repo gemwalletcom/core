@@ -109,7 +109,8 @@ itoa = { version = "1.0.10" }
 curve25519-dalek = { version = "4.1.3" }
 borsh = { version = "1.4.0", features = ["derive"] }
 uniffi = { version = "0.28.2" }
-alloy-core = { version = "0.8.8", features = ["sol-types", "json-abi"] }
+alloy-core = { version = "0.8.9", features = ["sol-types", "json-abi"] }
+alloy-primitives = "0.8.9"
 
 # localizer
 i18n-embed = { version = "0.15.0", features = ["fluent-system", "autoreload"] }
