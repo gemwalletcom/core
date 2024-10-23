@@ -5,7 +5,7 @@ use crate::{
 use gem_evm::{
     address::EthereumAddress,
     jsonrpc::{BlockParameter, EthereumRpc, TransactionObject},
-    uniswap::{FeeTier, IQuoterV2},
+    uniswap::{contract::IQuoterV2, deployment::get_deployment_by_chain, FeeTier},
 };
 use primitives::{AssetId, Chain, ChainType, EVMChain, SwapQuote, SwapQuoteData, SwapQuoteProtocolRequest};
 
@@ -14,11 +14,8 @@ use alloy_core::{
     sol_types::SolCall,
 };
 use alloy_primitives::aliases::U24;
-
 use async_trait::async_trait;
 use std::{fmt::Debug, str::FromStr, sync::Arc};
-
-mod deployment;
 
 static UNISWAP: &str = "Uniswap";
 
@@ -120,7 +117,7 @@ impl GemSwapperTrait for UniswapV3 {
         }
 
         let evm_chain = EVMChain::from_chain(request.from_asset.chain).ok_or(GemSwapperError::NotSupportedChain)?;
-        let deployment = deployment::get_deployment_by_chain(request.from_asset.chain).ok_or(GemSwapperError::NotSupportedChain)?;
+        let deployment = get_deployment_by_chain(request.from_asset.chain).ok_or(GemSwapperError::NotSupportedChain)?;
 
         evm_chain.weth_contract().ok_or(GemSwapperError::NotSupportedChain)?;
 

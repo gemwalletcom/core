@@ -15,3 +15,4 @@ coingecko = { path = "../../crates/coingecko" }
 primitives = { path = "../../crates/primitives" }
 settings = { path = "../../crates/settings" }
 job_runner = { path = "../../crates/job_runner" }
+asset_id_ext = { path = "../../crates/asset_id_ext" }

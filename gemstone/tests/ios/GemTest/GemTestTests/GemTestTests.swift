@@ -106,7 +106,7 @@ final class GemTestTests: XCTestCase {
             return
         }
 
-        XCTAssertEqual(String(data: data, encoding: .utf8), "0x21e3bb1a6")
+        XCTAssertEqual(data, "0x21e3bb1a6")
     }
 
     func testDecodingJsonRpcError() throws {

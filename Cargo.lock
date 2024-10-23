@@ -383,6 +383,7 @@ name = "api"
 version = "1.0.0"
 dependencies = [
  "api_connector",
+ "asset_id_ext",
  "charter",
  "config",
  "fiat",
@@ -758,9 +759,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "asset_id_ext"
+version = "1.0.0"
+dependencies = [
+ "gem_evm",
+ "primitives",
+]
+
+[[package]]
 name = "assetor"
 version = "1.0.0"
 dependencies = [
+ "asset_id_ext",
  "coingecko",
  "job_runner",
  "primitives",
@@ -2134,6 +2144,7 @@ name = "daemon"
 version = "1.0.0"
 dependencies = [
  "api_connector",
+ "asset_id_ext",
  "fiat",
  "job_runner",
  "primitives",
@@ -3241,6 +3252,7 @@ dependencies = [
  "gem_hash",
  "hex",
  "itoa",
+ "primitives",
  "serde",
  "serde_json",
 ]
@@ -6041,6 +6053,7 @@ dependencies = [
 name = "pricer"
 version = "1.0.0"
 dependencies = [
+ "asset_id_ext",
  "cacher",
  "chrono",
  "coingecko",
@@ -6092,7 +6105,6 @@ dependencies = [
  "anyhow",
  "bigdecimal",
  "chrono",
- "gem_evm",
  "num-bigint 0.4.6",
  "num-traits",
  "rusty-money",
