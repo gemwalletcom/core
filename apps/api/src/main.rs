@@ -30,7 +30,6 @@ mod transaction_client;
 
 use api_connector::PusherClient;
 use asset_client::AssetsClient;
-use charter::client::ChartsClient;
 use config_client::Client as ConfigClient;
 use device_client::DevicesClient;
 use fiat::client::Client as FiatProvider;
@@ -41,7 +40,8 @@ use name_resolver::NameProviderFactory;
 use nft_client::NFTClient;
 use parser_client::ParserClient;
 use price_alert::PriceAlertClient;
-use pricer::client::PriceClient;
+use pricer::chart_client::ChartClient;
+use pricer::price_client::PriceClient;
 use rocket::fairing::AdHoc;
 use rocket::tokio::sync::Mutex;
 use rocket::{Build, Rocket};
@@ -62,7 +62,7 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
 
     let settings_clone = settings.clone();
     let price_client = PriceClient::new(redis_url, postgres_url);
-    let charts_client = ChartsClient::new(postgres_url, &settings.clickhouse.url);
+    let charts_client = ChartClient::new(postgres_url, &settings.clickhouse.url);
     let config_client = ConfigClient::new(postgres_url).await;
     let price_alert_client = PriceAlertClient::new(postgres_url).await;
     let providers = NameProviderFactory::create_providers(settings_clone.clone());

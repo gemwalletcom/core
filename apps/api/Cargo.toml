@@ -13,7 +13,6 @@ prometheus-client = { workspace = true }
 
 storage = { path = "../../crates/storage" }
 pricer = { path = "../pricer" }
-charter = { path = "../charter" }
 fiat = { path = "../../crates/fiat" }
 swapper = { path = "../../crates/swapper" }
 settings = { path = "../../crates/settings" }

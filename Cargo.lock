@@ -326,7 +326,6 @@ name = "api"
 version = "1.0.0"
 dependencies = [
  "api_connector",
- "charter",
  "config",
  "fiat",
  "name_resolver",
@@ -638,18 +637,6 @@ dependencies = [
  "proc-macro2 1.0.82",
  "quote 1.0.36",
  "syn 1.0.109",
-]
-
-[[package]]
-name = "assetor"
-version = "1.0.0"
-dependencies = [
- "coingecko",
- "job_runner",
- "primitives",
- "settings",
- "storage",
- "tokio",
 ]
 
 [[package]]
@@ -1490,23 +1477,6 @@ name = "cfg_aliases"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fd16c4719339c4530435d38e511904438d07cce7950afa3718a84ac36c10e89e"
-
-[[package]]
-name = "charter"
-version = "1.0.0"
-dependencies = [
- "cacher",
- "chrono",
- "coingecko",
- "job_runner",
- "pricer",
- "primitives",
- "redis",
- "serde_json",
- "settings",
- "storage",
- "tokio",
-]
 
 [[package]]
 name = "chrono"

@@ -25,8 +25,6 @@ COPY --from=builder /app/target/release/daemon /app
 COPY --from=builder /app/target/release/parser /app
 COPY --from=builder /app/target/release/setup /app
 COPY --from=builder /app/target/release/pricer /app
-COPY --from=builder /app/target/release/assetor /app
-COPY --from=builder /app/target/release/charter /app
 COPY --from=builder /app/target/release/alerter /app
 COPY --from=builder /app/Settings.yaml /app
 

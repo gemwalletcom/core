@@ -15,8 +15,6 @@ members = [
     "apps/parser",
     "apps/pricer",
     "apps/alerter",
-    "apps/charter",
-    "apps/assetor",
     "apps/setup",
 
     "bin/img-downloader",
@@ -49,8 +47,6 @@ default-members = [
     "apps/parser",
     "apps/pricer",
     "apps/alerter",
-    "apps/charter",
-    "apps/assetor",
     "apps/setup",
     "bin/generate",
 ]

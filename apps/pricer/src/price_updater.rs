@@ -1,4 +1,4 @@
-use crate::client::PriceClient;
+use crate::price_client::PriceClient;
 use chrono::{DateTime, Duration, Utc};
 use coingecko::mapper::{get_chain_for_coingecko_platform_id, get_coingecko_market_id_for_chain};
 use coingecko::{Coin, CoinGeckoClient, CoinMarket, SimplePrice};
