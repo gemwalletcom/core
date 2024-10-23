@@ -69,7 +69,7 @@ extension JsonRpcResult: @retroactive Decodable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let id = try container.decode(UInt64.self, forKey: .id)
         if let result = try? container.decodeIfPresent(String.self, forKey: .result) {
-            self = .value(JsonRpcResponse(result: result.data(using: .utf8), error: nil, id: id))
+            self = .value(JsonRpcResponse(result: result, error: nil, id: id))
         } else if let error = try? container.decodeIfPresent(JsonRpcError.self, forKey: .error) {
             self = .error(error)
         } else {
@@ -94,6 +94,7 @@ extension JsonRpcError: @retroactive Decodable {
 
 extension NativeProvider: AlienProvider {
     public func request(target: AlienTarget) async throws -> Data {
+        print("==> handle request: \(target)")
         let req = try target.asRequest()
         let (data, _) = try await session.data(for: req)
         return data
@@ -103,11 +104,16 @@ extension NativeProvider: AlienProvider {
         let url = nodeConfig[chain]!
         var results = [JsonRpcResult]()
         for request in requests {
+            print("==> handle request: \(request.method)")
             let req = try request.asRequest(url: url)
+            if let body = req.httpBody {
+                print("==> encoded request body: \(String(decoding: body, as: UTF8.self))")
+            }
             let (data, response) = try await session.data(for: req)
             if (response as? HTTPURLResponse)?.statusCode != 200 {
                 throw AlienError.ResponseError(msg: "invalid response: \(response)")
             }
+            print("<== response: \(String(decoding: data, as: UTF8.self))")
             let result = try JSONDecoder().decode(JsonRpcResult.self, from: data)
             results.append(result)
         }

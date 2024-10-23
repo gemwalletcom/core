@@ -17,6 +17,8 @@ pub enum GemSwapperError {
     ABIError { msg: String },
     #[error("No quote available")]
     NoQuoteAvailable,
+    #[error("Not implemented")]
+    NotImplemented,
 }
 
 #[async_trait]
@@ -46,7 +48,7 @@ impl GemSwapper {
             match quote {
                 Ok(quote) => return Ok(quote),
                 Err(err) => {
-                    println!("error swapping: {}, {:?}", err, err);
+                    println!("<== fetch_quote error: {:?}", err);
                 }
             }
         }

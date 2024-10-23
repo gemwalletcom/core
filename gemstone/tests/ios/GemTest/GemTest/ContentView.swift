@@ -66,6 +66,7 @@ struct ContentView: View {
     }
 
     func fetchQuote() async throws {
+        // ETH -> USDC
         let string = """
         {
         "fromAsset": {

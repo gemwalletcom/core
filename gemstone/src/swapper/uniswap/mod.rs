@@ -10,7 +10,7 @@ use gem_evm::{
 use primitives::{AssetId, Chain, ChainType, EVMChain, SwapQuote, SwapQuoteData, SwapQuoteProtocolRequest};
 
 use alloy_core::{
-    primitives::{Bytes, Uint},
+    primitives::{hex::decode as HexDecode, Bytes, Uint},
     sol_types::SolCall,
 };
 use alloy_primitives::aliases::U24;
@@ -138,15 +138,14 @@ impl GemSwapperTrait for UniswapV3 {
         );
         let response = self.jsonrpc_call(eth_call, provider, request.from_asset.chain).await?;
         let result = response.result.ok_or(GemSwapperError::NetworkError { msg: "No result".into() })?;
-
-        let quote = IQuoterV2::quoteExactInputCall::abi_decode_returns(&result, true)
+        let decoded = HexDecode(&result).unwrap();
+        let quote = IQuoterV2::quoteExactInputCall::abi_decode_returns(&decoded, true)
             .map_err(|err| GemSwapperError::ABIError { msg: err.to_string() })?
             .amountOut;
 
-        // FIXME: encode swap data
         let swap_data: Option<SwapQuoteData> = None;
         if request.include_data {
-            todo!("call universal router to encode data");
+            return Err(GemSwapperError::NotImplemented);
         }
 
         Ok(SwapQuote {
@@ -164,6 +163,8 @@ impl GemSwapperTrait for UniswapV3 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use alloy_core::{hex::decode as HexDecode, hex::encode_prefixed as HexEncode};
+    use alloy_primitives::aliases::U256;
 
     #[test]
     fn test_build_path() {
@@ -174,8 +175,18 @@ mod tests {
         let bytes = UniswapV3::build_path_with_token(token0, token1, FeeTier::Low).unwrap();
 
         assert_eq!(
-            hex::encode(bytes),
-            "42000000000000000000000000000000000000060001f40b2c639c533813f4aa9d7837caf62653d097ff85"
+            HexEncode(bytes),
+            "0x42000000000000000000000000000000000000060001f40b2c639c533813f4aa9d7837caf62653d097ff85"
         )
+    }
+
+    #[test]
+    fn test_decode_quoter_v2_response() {
+        let result = "0x0000000000000000000000000000000000000000000000000000000001884eee000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000000000000000c00000000000000000000000000000000000000000000000000000000000014b1e00000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000004d04db53840b0aec247bb9bd3ffc00000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000001";
+        let decoded = HexDecode(result).unwrap();
+        let quote = IQuoterV2::quoteExactInputCall::abi_decode_returns(&decoded, false).unwrap();
+
+        assert_eq!(quote.amountOut, U256::from(25710318));
+        assert_eq!(quote.gasEstimate, U256::from(84766));
     }
 }

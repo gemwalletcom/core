@@ -13,7 +13,7 @@ pub struct JsonRpcError {
 
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct JsonRpcResponse {
-    pub result: Option<Vec<u8>>, // decoded hex string
+    pub result: Option<String>,
     pub error: Option<JsonRpcError>,
     pub id: u64,
 }
