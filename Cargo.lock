@@ -766,19 +766,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "assetor"
-version = "1.0.0"
-dependencies = [
- "asset_id_ext",
- "coingecko",
- "job_runner",
- "primitives",
- "settings",
- "storage",
- "tokio",
-]
-
-[[package]]
 name = "async-channel"
 version = "1.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
