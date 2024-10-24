@@ -1,4 +1,4 @@
-use primitives::{block_explorer::{get_block_explorers, get_block_explorer},  chain::Chain};
+use primitives::{block_explorer::{get_block_explorer},  chain::Chain};
 use std::str::FromStr;
 
 #[derive(uniffi::Object)]
@@ -34,6 +34,7 @@ impl Explorer {
 
 #[cfg(test)]
 mod tests {
+    use primitives::block_explorer::get_block_explorers;
     use super::*;
 
     #[test]
