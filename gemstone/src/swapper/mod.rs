@@ -11,6 +11,8 @@ pub enum GemSwapperError {
     NotSupportedChain,
     #[error("Invalid address")]
     InvalidAddress,
+    #[error("Invalid amount")]
+    InvalidAmount,
     #[error("RPC error: {msg}")]
     NetworkError { msg: String },
     #[error("ABI error: {msg}")]
@@ -22,29 +24,42 @@ pub enum GemSwapperError {
 }
 
 #[async_trait]
-pub trait GemSwapperTrait: Send + Sync + Debug {
-    async fn fetch_quote(&self, request: SwapQuoteProtocolRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapQuote, GemSwapperError>;
+pub trait GemSwapProvider: Send + Sync + Debug {
+    async fn fetch_quote(
+        &self,
+        request: &SwapQuoteProtocolRequest,
+        provider: Arc<dyn AlienProvider>,
+        fee_options: Option<GemSwapFeeOptions>,
+    ) -> Result<SwapQuote, GemSwapperError>;
+}
+
+#[derive(Debug, Clone, uniffi::Record)]
+pub struct GemSwapFeeOptions {
+    pub fee_bps: u32,
+    pub fee_address: String,
 }
 
 #[derive(Debug, uniffi::Object)]
 pub struct GemSwapper {
     pub rpc_provider: Arc<dyn AlienProvider>,
-    pub swappers: Vec<Box<dyn GemSwapperTrait>>,
+    pub swappers: Vec<Box<dyn GemSwapProvider>>,
+    pub fee_options: Option<GemSwapFeeOptions>,
 }
 
 #[uniffi::export]
 impl GemSwapper {
     #[uniffi::constructor]
-    fn new(rpc_provider: Arc<dyn AlienProvider>) -> Self {
+    fn new(rpc_provider: Arc<dyn AlienProvider>, fee_options: Option<GemSwapFeeOptions>) -> Self {
         Self {
             rpc_provider,
             swappers: vec![Box::new(uniswap::UniswapV3::new())],
+            fee_options,
         }
     }
 
     async fn fetch_quote(&self, request: SwapQuoteProtocolRequest) -> Result<SwapQuote, GemSwapperError> {
         for swapper in self.swappers.iter() {
-            let quote = swapper.fetch_quote(request.clone(), self.rpc_provider.clone()).await;
+            let quote = swapper.fetch_quote(&request, self.rpc_provider.clone(), self.fee_options.clone()).await;
             match quote {
                 Ok(quote) => return Ok(quote),
                 Err(err) => {

@@ -16,82 +16,6 @@ public actor NativeProvider {
     }
 }
 
-extension AlienTarget {
-    func asRequest() throws -> URLRequest {
-        guard let url = URL(string: self.url) else {
-            let error = AlienError.RequestError(msg: "invalid url: \(self.url)")
-            throw error
-        }
-        var request = URLRequest(url: url)
-        request.httpMethod = self.method.description
-        if let headers = self.headers {
-            request.allHTTPHeaderFields = headers
-        }
-        if let body = self.body {
-            request.httpBody = body
-        }
-        return request
-    }
-}
-
-extension JsonRpcRequest {
-    func encode() throws -> Data {
-        var json: [String: Any] = [
-            "jsonrpc": "2.0",
-            "id": self.id,
-            "method": self.method
-        ]
-        if let params = params {
-            json["params"] = try JSONSerialization.jsonObject(with: Data(params.utf8))
-        } else {
-            json["params"] = NSNull()
-        }
-        return try JSONSerialization.data(withJSONObject: json, options: [.sortedKeys])
-    }
-
-    func asRequest(url: URL) throws -> URLRequest {
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.allHTTPHeaderFields = ["Content-Type": "application/json"]
-        request.httpBody = try encode()
-        return request
-    }
-}
-
-extension JsonRpcResult: @retroactive Decodable {
-    enum CodingKeys: String, CodingKey {
-        case id
-        case result
-        case error
-    }
-    
-    public init(from decoder: any Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        let id = try container.decode(UInt64.self, forKey: .id)
-        if let result = try? container.decodeIfPresent(String.self, forKey: .result) {
-            self = .value(JsonRpcResponse(result: result, error: nil, id: id))
-        } else if let error = try? container.decodeIfPresent(JsonRpcError.self, forKey: .error) {
-            self = .error(error)
-        } else {
-            throw DecodingError.dataCorruptedError(forKey: .result, in: container, debugDescription: "")
-        }
-    }
-}
-
-extension JsonRpcError: @retroactive Decodable {
-    enum CodingKeys: String, CodingKey {
-        case code
-        case message
-    }
-    
-    public init(from decoder: any Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        let code = try container.decode(Int32.self, forKey: .code)
-        let message = try container.decode(String.self, forKey: .message)
-        self = .init(code: code, message: message)
-    }
-}
-
 extension NativeProvider: AlienProvider {
     public func request(target: AlienTarget) async throws -> Data {
         print("==> handle request: \(target)")
@@ -102,21 +26,32 @@ extension NativeProvider: AlienProvider {
 
     public func jsonrpcCall(requests: [JsonRpcRequest], chain: Chain) async throws -> [JsonRpcResult] {
         let url = nodeConfig[chain]!
-        var results = [JsonRpcResult]()
-        for request in requests {
-            print("==> handle request: \(request.method)")
-            let req = try request.asRequest(url: url)
-            if let body = req.httpBody {
-                print("==> encoded request body: \(String(decoding: body, as: UTF8.self))")
+        let targets = requests.map { JsonRpcTarget(request: $0, url: url) }
+        return try await withThrowingTaskGroup(of: JsonRpcResult.self) { group in
+            var results = [JsonRpcResult]()
+
+            for target in targets {
+                group.addTask {
+                    let (data, response) = try await self.session.data(for: target.asRequest())
+                    if (response as? HTTPURLResponse)?.statusCode != 200 {
+                        throw AlienError.ResponseError(msg: "invalid response: \(response)")
+                    }
+                    print("<== response: \(String(decoding: data, as: UTF8.self))")
+                    return try JSONDecoder().decode(JsonRpcResult.self, from: data)
+                }
             }
-            let (data, response) = try await session.data(for: req)
-            if (response as? HTTPURLResponse)?.statusCode != 200 {
-                throw AlienError.ResponseError(msg: "invalid response: \(response)")
+            for try await result in group {
+                results.append(result)
             }
-            print("<== response: \(String(decoding: data, as: UTF8.self))")
-            let result = try JSONDecoder().decode(JsonRpcResult.self, from: data)
-            results.append(result)
+
+            return results
         }
-        return results
+    }
+
+    public func batchJsonrpcCall(requests: [JsonRpcRequest], chain: Chain) async throws -> [JsonRpcResult] {
+        let url = nodeConfig[chain]!
+        let req = try requests.asRequest(url: url)
+        let (data, _) = try await session.data(for: req)
+        return try JSONDecoder().decode([JsonRpcResult].self, from: data)
     }
 }

@@ -15,6 +15,8 @@
 		4843F3AC2B32C1B300CA5DA8 /* Gemstone in Frameworks */ = {isa = PBXBuildFile; productRef = 4843F3AB2B32C1B300CA5DA8 /* Gemstone */; };
 		DF024FDB2CBE71F00044D11F /* Provider.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF024FDA2CBE71F00044D11F /* Provider.swift */; };
 		DF0C08022CC89AD200D2A524 /* Data+Hex.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF0C08012CC89ACD00D2A524 /* Data+Hex.swift */; };
+		DF0C08052CCA661F00D2A524 /* URLRequest+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF0C08042CCA661400D2A524 /* URLRequest+Extension.swift */; };
+		DF0C08072CCA667300D2A524 /* Gemstone+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF0C08062CCA666400D2A524 /* Gemstone+Extension.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -37,6 +39,8 @@
 		4843F3912B32C18400CA5DA8 /* GemTestTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GemTestTests.swift; sourceTree = "<group>"; };
 		DF024FDA2CBE71F00044D11F /* Provider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Provider.swift; sourceTree = "<group>"; };
 		DF0C08012CC89ACD00D2A524 /* Data+Hex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Data+Hex.swift"; sourceTree = "<group>"; };
+		DF0C08042CCA661400D2A524 /* URLRequest+Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "URLRequest+Extension.swift"; sourceTree = "<group>"; };
+		DF0C08062CCA666400D2A524 /* Gemstone+Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Gemstone+Extension.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -79,7 +83,7 @@
 		4843F37F2B32C18300CA5DA8 /* GemTest */ = {
 			isa = PBXGroup;
 			children = (
-				DF0C08012CC89ACD00D2A524 /* Data+Hex.swift */,
+				DF0C08082CCA66B700D2A524 /* Extension */,
 				DF024FDA2CBE71F00044D11F /* Provider.swift */,
 				4843F3822B32C18300CA5DA8 /* ContentView.swift */,
 				4843F3802B32C18300CA5DA8 /* GemTestApp.swift */,
@@ -103,6 +107,16 @@
 				4843F3912B32C18400CA5DA8 /* GemTestTests.swift */,
 			);
 			path = GemTestTests;
+			sourceTree = "<group>";
+		};
+		DF0C08082CCA66B700D2A524 /* Extension */ = {
+			isa = PBXGroup;
+			children = (
+				DF0C08062CCA666400D2A524 /* Gemstone+Extension.swift */,
+				DF0C08042CCA661400D2A524 /* URLRequest+Extension.swift */,
+				DF0C08012CC89ACD00D2A524 /* Data+Hex.swift */,
+			);
+			path = Extension;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -211,10 +225,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DF0C08052CCA661F00D2A524 /* URLRequest+Extension.swift in Sources */,
 				4843F3832B32C18300CA5DA8 /* ContentView.swift in Sources */,
 				DF024FDB2CBE71F00044D11F /* Provider.swift in Sources */,
 				4843F3812B32C18300CA5DA8 /* GemTestApp.swift in Sources */,
 				DF0C08022CC89AD200D2A524 /* Data+Hex.swift in Sources */,
+				DF0C08072CCA667300D2A524 /* Gemstone+Extension.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -297,6 +313,8 @@
 				SDKROOT = iphoneos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
 			};
 			name = Debug;
 		};
@@ -352,6 +370,8 @@
 				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;
 				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
 				VALIDATE_PRODUCT = YES;
 			};
 			name = Release;
@@ -380,7 +400,6 @@
 				PRODUCT_BUNDLE_IDENTIFIER = gemwallet.GemTest;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
@@ -409,7 +428,6 @@
 				PRODUCT_BUNDLE_IDENTIFIER = gemwallet.GemTest;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;

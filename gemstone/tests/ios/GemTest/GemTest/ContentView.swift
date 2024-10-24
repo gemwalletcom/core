@@ -5,12 +5,7 @@ import Gemstone
 
 struct ContentView: View {
 
-    let warp: AlienProviderWarp
-
-    init() {
-        let warp = AlienProviderWarp(provider: NativeProvider())
-        self.warp = warp
-    }
+    let provider = NativeProvider()
 
     var body: some View {
         VStack {
@@ -60,6 +55,7 @@ struct ContentView: View {
             headers: headers,
             body: body
         )
+        let warp = AlienProviderWarp(provider: provider)
         let data = try await warp.teleport(target: target)
         let json = try JSONSerialization.jsonObject(with: data)
         print(json)
@@ -85,19 +81,31 @@ struct ContentView: View {
         }
         """
 
-        let swapper = GemSwapper(rpcProvider: NativeProvider())
+        let swapper = GemSwapper(rpcProvider: NativeProvider(), feeOptions: nil)
         let quote = try await swapper.fetchQuote(request: string)
         print(quote)
     }
 
     func fetchGasPrice() async throws {
         let provider = NativeProvider()
-        let request = JsonRpcRequest(
-            method: "eth_gasPrice",
-            params: nil,
-            id: 1
-        )
-        let results = try await provider.jsonrpcCall(requests: [request], chain: "ethereum")
+        let requests = [
+            JsonRpcRequest(
+                method: "eth_gasPrice",
+                params: nil,
+                id: 1
+            ),
+            JsonRpcRequest(
+                method: "eth_blockNumber",
+                params: nil,
+                id: 2
+            ),
+            JsonRpcRequest(
+                method: "eth_chainId",
+                params: nil,
+                id: 3
+            ),
+        ]
+        let results = try await provider.batchJsonrpcCall(requests: requests, chain: "ethereum")
 
         print(results)
     }

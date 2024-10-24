@@ -1,16 +1,21 @@
 use crate::{
     network::{AlienProvider, JsonRpcRequest, JsonRpcResponse, JsonRpcResult},
-    swapper::{GemSwapperError, GemSwapperTrait},
+    swapper::{GemSwapFeeOptions, GemSwapProvider, GemSwapperError},
 };
 use gem_evm::{
     address::EthereumAddress,
     jsonrpc::{BlockParameter, EthereumRpc, TransactionObject},
-    uniswap::{contract::IQuoterV2, deployment::get_deployment_by_chain, FeeTier},
+    uniswap::{
+        command::{Sweep, UniversalRouterCommand, V3SwapExactIn, WrapEth},
+        contract::IQuoterV2,
+        deployment::{get_deployment_by_chain, V3Deployment},
+        FeeTier,
+    },
 };
-use primitives::{AssetId, Chain, ChainType, EVMChain, SwapQuote, SwapQuoteData, SwapQuoteProtocolRequest};
+use primitives::{AssetId, Chain, ChainType, EVMChain, SwapMode, SwapQuote, SwapQuoteData, SwapQuoteProtocolRequest};
 
 use alloy_core::{
-    primitives::{hex::decode as HexDecode, Bytes, Uint},
+    primitives::{hex::decode as HexDecode, hex::encode_prefixed as HexEncode, Address, Bytes, U256},
     sol_types::SolCall,
 };
 use alloy_primitives::aliases::U24;
@@ -67,21 +72,11 @@ impl UniswapV3 {
             Some(token_id) => token_id.to_string(),
             None => evm_chain.weth_contract().unwrap().to_string(),
         };
-        let address = EthereumAddress::parse(&str);
-        match address {
-            Some(address) => Ok(address),
-            None => Err(GemSwapperError::InvalidAddress),
-        }
+        let parsed = EthereumAddress::parse(&str).ok_or_else(|| GemSwapperError::InvalidAddress)?;
+        Ok(parsed)
     }
 
-    fn build_path(request: &SwapQuoteProtocolRequest, evm_chain: EVMChain, fee_tier: FeeTier) -> Result<Bytes, GemSwapperError> {
-        let token_in = Self::get_asset_address(&request.from_asset, evm_chain)?;
-        let token_out = Self::get_asset_address(&request.to_asset, evm_chain)?;
-
-        Self::build_path_with_token(token_in, token_out, fee_tier)
-    }
-
-    fn build_path_with_token(token_in: EthereumAddress, token_out: EthereumAddress, fee_tier: FeeTier) -> Result<Bytes, GemSwapperError> {
+    fn build_path_with_token(token_in: &EthereumAddress, token_out: &EthereumAddress, fee_tier: FeeTier) -> Result<Bytes, GemSwapperError> {
         let mut bytes: Vec<u8> = vec![];
         let fee = U24::from(fee_tier as u32);
 
@@ -90,6 +85,52 @@ impl UniswapV3 {
         bytes.extend(&token_out.bytes);
 
         Ok(Bytes::from(bytes))
+    }
+
+    fn build_commands(
+        request: &SwapQuoteProtocolRequest,
+        path: &Bytes,
+        _token_in: &EthereumAddress,
+        token_out: &EthereumAddress,
+        amount_in: U256,
+        amount_out: U256,
+        deployment: &V3Deployment,
+        fee_options: Option<GemSwapFeeOptions>,
+    ) -> Result<(U256, Vec<u8>), GemSwapperError> {
+        let mut commands: Vec<UniversalRouterCommand> = vec![];
+        let recipient = Address::from_str(deployment.universal_router).unwrap();
+        if request.from_asset.is_native() {
+            // Wrap ETH
+            commands.push(UniversalRouterCommand::WRAP_ETH(WrapEth {
+                recipient,
+                amount_min: amount_in,
+            }));
+        }
+        match request.mode {
+            SwapMode::ExactIn => {
+                // insert V3_SWAP_EXACT_IN
+                commands.push(UniversalRouterCommand::V3_SWAP_EXACT_IN(V3SwapExactIn {
+                    recipient,
+                    amount_in,
+                    amount_out_min: amount_out,
+                    path: path.clone(),
+                    payer_is_user: false,
+                }))
+            }
+            SwapMode::ExactOut => {
+                // insert V3_SWAP_EXACT_OUT
+            }
+        }
+        if let Some(_fee_options) = fee_options {
+            // insert PAY_PORTION
+        }
+
+        commands.push(UniversalRouterCommand::SWEEP(Sweep {
+            token: Address::from_slice(&token_out.bytes),
+            amount_min: amount_out,
+            recipient,
+        }));
+        Err(GemSwapperError::NotImplemented)
     }
 
     async fn jsonrpc_call(&self, request: EthereumRpc, provider: Arc<dyn AlienProvider>, chain: Chain) -> Result<JsonRpcResponse, GemSwapperError> {
@@ -109,8 +150,13 @@ impl UniswapV3 {
 }
 
 #[async_trait]
-impl GemSwapperTrait for UniswapV3 {
-    async fn fetch_quote(&self, request: SwapQuoteProtocolRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapQuote, GemSwapperError> {
+impl GemSwapProvider for UniswapV3 {
+    async fn fetch_quote(
+        &self,
+        request: &SwapQuoteProtocolRequest,
+        provider: Arc<dyn AlienProvider>,
+        fee_options: Option<GemSwapFeeOptions>,
+    ) -> Result<SwapQuote, GemSwapperError> {
         // Prevent swaps on unsupported chains
         if !self.support_chain(request.from_asset.chain) {
             return Err(GemSwapperError::NotSupportedChain);
@@ -118,17 +164,30 @@ impl GemSwapperTrait for UniswapV3 {
 
         let evm_chain = EVMChain::from_chain(request.from_asset.chain).ok_or(GemSwapperError::NotSupportedChain)?;
         let deployment = get_deployment_by_chain(request.from_asset.chain).ok_or(GemSwapperError::NotSupportedChain)?;
-
         evm_chain.weth_contract().ok_or(GemSwapperError::NotSupportedChain)?;
 
         // Build path for QuoterV2
-        let path = Self::build_path(&request, evm_chain, FeeTier::Low)?;
-        let quoter_v2 = IQuoterV2::quoteExactInputCall {
-            path,
-            amountIn: Uint::from_str(&request.amount).unwrap(),
+        let token_in = Self::get_asset_address(&request.from_asset, evm_chain)?;
+        let token_out = Self::get_asset_address(&request.to_asset, evm_chain)?;
+        let amount = U256::from_str(&request.amount).map_err(|_| GemSwapperError::InvalidAmount)?;
+        let path = Self::build_path_with_token(&token_in, &token_out, FeeTier::Low)?; // FIXME: loop through all fee tiers
+        let calldata: Vec<u8> = match request.mode {
+            SwapMode::ExactIn => {
+                let input_call = IQuoterV2::quoteExactInputCall {
+                    path: path.clone(),
+                    amountIn: amount,
+                };
+                input_call.abi_encode()
+            }
+            SwapMode::ExactOut => {
+                let output_call = IQuoterV2::quoteExactOutputCall {
+                    path: path.clone(),
+                    amountOut: amount,
+                };
+                output_call.abi_encode()
+            }
         };
 
-        let calldata = quoter_v2.abi_encode();
         let eth_call = EthereumRpc::Call(
             TransactionObject::new_call(&request.wallet_address, deployment.quoter_v2, calldata),
             BlockParameter::Latest,
@@ -140,9 +199,14 @@ impl GemSwapperTrait for UniswapV3 {
             .map_err(|err| GemSwapperError::ABIError { msg: err.to_string() })?
             .amountOut;
 
-        let swap_data: Option<SwapQuoteData> = None;
+        let mut swap_data: Option<SwapQuoteData> = None;
         if request.include_data {
-            return Err(GemSwapperError::NotImplemented);
+            let (value, data) = Self::build_commands(&request, &path, &token_in, &token_out, amount, quote, &deployment, fee_options)?;
+            swap_data = Some(SwapQuoteData {
+                to: deployment.universal_router.into(),
+                value: value.to_string(),
+                data: HexEncode(data),
+            });
         }
 
         Ok(SwapQuote {
@@ -169,7 +233,7 @@ mod tests {
         let token0 = EthereumAddress::parse("0x4200000000000000000000000000000000000006").unwrap();
         // USDC
         let token1 = EthereumAddress::parse("0x0b2c639c533813f4aa9d7837caf62653d097ff85").unwrap();
-        let bytes = UniswapV3::build_path_with_token(token0, token1, FeeTier::Low).unwrap();
+        let bytes = UniswapV3::build_path_with_token(&token0, &token1, FeeTier::Low).unwrap();
 
         assert_eq!(
             HexEncode(bytes),
