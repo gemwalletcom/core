@@ -8,6 +8,11 @@ struct TronAccountRequest {
 struct TronAccount {
     balance: Option<UInt64>,
     address: Option<String>,
+    active_permission: Option<Vec<TronAccountPermission>>,
+}
+#[typeshare(swift = "Sendable")]
+struct TronAccountPermission {
+    id: i32,
 }
 
 #[typeshare(swift = "Sendable")]

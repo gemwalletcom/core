@@ -28,4 +28,7 @@ impl BlockExplorer for TonScan {
     fn get_token_url(&self, token: &str) -> Option<String> {
         format!("{}/jetton/{}", self.meta.base_url, token).into()
     }
+    fn get_validator_url(&self, validator: &str) -> Option<String> {
+        self.get_address_url(validator).into()
+    }
 }

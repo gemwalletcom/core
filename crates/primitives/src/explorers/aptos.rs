@@ -28,6 +28,10 @@ impl BlockExplorer for AptosExplorer {
     fn get_token_url(&self, _token: &str) -> Option<String> {
         None
     }
+
+    fn get_validator_url(&self, validator: &str) -> Option<String> {
+        self.get_address_url(validator).into()
+    }
 }
 
 pub struct AptosScan {
@@ -56,5 +60,9 @@ impl BlockExplorer for AptosScan {
     }
     fn get_token_url(&self, _token: &str) -> Option<String> {
         Some(format!("{}/coin/{}", self.meta.base_url, _token))
+    }
+
+    fn get_validator_url(&self, validator: &str) -> Option<String> {
+        self.get_address_url(validator).into()
     }
 }

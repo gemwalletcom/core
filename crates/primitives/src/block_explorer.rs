@@ -12,6 +12,7 @@ pub trait BlockExplorer: Send + Sync {
     fn get_tx_url(&self, hash: &str) -> String;
     fn get_address_url(&self, address: &str) -> String;
     fn get_token_url(&self, token: &str) -> Option<String>;
+    fn get_validator_url(&self, validator: &str) -> Option<String>;
 }
 pub struct Metadata {
     pub name: &'static str,

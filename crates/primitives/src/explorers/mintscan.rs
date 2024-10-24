@@ -81,4 +81,7 @@ impl BlockExplorer for MintScan {
     fn get_token_url(&self, _token: &str) -> Option<String> {
         format!("{}/assets/{}", self.meta.base_url, _token).into()
     }
+    fn get_validator_url(&self, validator: &str) -> Option<String> {
+        format!("{}/validators/{}", self.meta.base_url, validator).into()
+    }
 }

@@ -28,4 +28,7 @@ impl BlockExplorer for TronScan {
     fn get_token_url(&self, _token: &str) -> Option<String> {
         Some(format!("{}/#/token20/{}", self.meta.base_url, _token))
     }
+    fn get_validator_url(&self, validator: &str) -> Option<String> {
+        self.get_address_url(validator).into()
+    }
 }
