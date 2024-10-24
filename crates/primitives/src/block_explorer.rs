@@ -33,6 +33,13 @@ pub fn get_block_explorers_by_chain(chain: &str) -> Vec<Box<dyn BlockExplorer>> 
     get_block_explorers(chain)
 }
 
+pub fn get_block_explorer(chain: Chain, name: &str) -> Box<dyn BlockExplorer> {
+    get_block_explorers(chain)
+        .into_iter()
+        .find(|x| x.name() == name)
+        .unwrap()
+}
+
 pub fn get_block_explorers(chain: Chain) -> Vec<Box<dyn BlockExplorer>> {
     match chain {
         Chain::Bitcoin => vec![Blockchair::new_bitcoin(), Mempool::new()],

@@ -1,6 +1,5 @@
-use primitives::{block_explorer::get_block_explorers, chain::Chain};
+use primitives::{block_explorer::{get_block_explorers, get_block_explorer},  chain::Chain};
 use std::str::FromStr;
-use primitives::block_explorer::BlockExplorer;
 
 #[derive(uniffi::Object)]
 pub struct Explorer {
@@ -15,27 +14,21 @@ impl Explorer {
             chain: Chain::from_str(chain).unwrap(),
         }
     }
-    fn get_block_explorer(&self, name: &str) -> Box<dyn BlockExplorer> {
-        get_block_explorers(self.chain)
-            .into_iter()
-            .find(|x| x.name() == name)
-            .unwrap()
-    }
 
     pub fn get_transaction_url(&self, explorer_name: &str, transaction_id: &str) -> String {
-        self.get_block_explorer(explorer_name).get_tx_url(transaction_id)
+        get_block_explorer(self.chain, explorer_name).get_tx_url(transaction_id)
     }
 
     pub fn get_address_url(&self, explorer_name: &str, address: &str) -> String {
-        self.get_block_explorer(explorer_name).get_address_url(address)
+        get_block_explorer(self.chain, explorer_name).get_address_url(address)
     }
 
     pub fn get_token_url(&self, explorer_name: &str, address: &str) -> Option<String> {
-        self.get_block_explorer(explorer_name).get_token_url(address)
+        get_block_explorer(self.chain, explorer_name).get_token_url(address)
     }
 
     pub fn get_validator_url(&self, explorer_name: &str, address: &str) -> Option<String> {
-        self.get_block_explorer(explorer_name).get_validator_url(address)
+        get_block_explorer(self.chain, explorer_name).get_validator_url(address)
     }
 }
 
