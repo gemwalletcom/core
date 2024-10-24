@@ -18,6 +18,7 @@ env:
   CARGO_TERM_COLOR: always
   SCCACHE_GHA_ENABLED: "true"
   RUSTC_WRAPPER: "sccache"
+  RUST_TOOLCHAIN_VERSION: 1.82.0
 
 jobs:
   build_ios:
@@ -29,7 +30,7 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
-          toolchain: 1.82.0
+          toolchain: ${{env.RUST_TOOLCHAIN_VERSION}}
       - name: Run sccache-cache
         uses: mozilla-actions/sccache-action@v0.0.3
 

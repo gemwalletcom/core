@@ -198,4 +198,6 @@ impl BlockExplorer for Blockchair {
     fn get_token_url(&self, _token: &str) -> Option<String> {
         None
     }
+
+    fn get_validator_url(&self, _validator: &str) -> Option<String> {  None }
 }

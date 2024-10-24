@@ -12,6 +12,7 @@ pub trait BlockExplorer: Send + Sync {
     fn get_tx_url(&self, hash: &str) -> String;
     fn get_address_url(&self, address: &str) -> String;
     fn get_token_url(&self, token: &str) -> Option<String>;
+    fn get_validator_url(&self, validator: &str) -> Option<String>;
 }
 pub struct Metadata {
     pub name: &'static str,
@@ -30,6 +31,13 @@ pub fn get_block_explorers_by_chain(chain: &str) -> Vec<Box<dyn BlockExplorer>> 
         return vec![];
     };
     get_block_explorers(chain)
+}
+
+pub fn get_block_explorer(chain: Chain, name: &str) -> Box<dyn BlockExplorer> {
+    get_block_explorers(chain)
+        .into_iter()
+        .find(|x| x.name() == name)
+        .unwrap()
 }
 
 pub fn get_block_explorers(chain: Chain) -> Vec<Box<dyn BlockExplorer>> {

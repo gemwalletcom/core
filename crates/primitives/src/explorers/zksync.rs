@@ -28,4 +28,5 @@ impl BlockExplorer for ZkSync {
     fn get_token_url(&self, _token: &str) -> Option<String> {
         Some(self.get_address_url(_token))
     }
+    fn get_validator_url(&self, _validator: &str) -> Option<String> {  None }
 }

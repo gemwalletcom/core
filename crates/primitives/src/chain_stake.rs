@@ -17,6 +17,7 @@ pub enum StakeChain {
     Sui,
     SmartChain,
     Ethereum,
+    Tron,
 }
 
 impl StakeChain {
@@ -26,7 +27,7 @@ impl StakeChain {
             Self::Cosmos | Self::Injective | Self::Sei | Self::Celestia => 1_814_400,
             Self::Solana => 259200,
             Self::Sui => 86400,
-            Self::Osmosis => 1_209_600,
+            Self::Osmosis | Self::Tron => 1_209_600,
             Self::SmartChain => 604800,
             Self::Ethereum => 86400, // ~1 day https://stake.lido.fi/withdrawals/request#withdrawalsPeriod
         }
@@ -39,13 +40,14 @@ impl StakeChain {
             Self::Solana => 10_000_000,                    // 0.01 SOL
             Self::Sui => 1_000_000_000,                    // 1 SUI
             Self::SmartChain => 1_000_000_000_000_000_000, // 1 BNB
+            Self::Tron => 1_000_000,                       // 1 TRX
         }
     }
 
     /// Get if chain support ability to change amount on unstake
     pub fn get_change_amount_on_unstake(&self) -> bool {
         match self {
-            Self::Cosmos | Self::Osmosis | Self::Injective | Self::Sei | Self::Celestia | Self::Solana | Self::SmartChain | Self::Ethereum => true,
+            Self::Cosmos | Self::Osmosis | Self::Injective | Self::Sei | Self::Celestia | Self::Solana | Self::SmartChain | Self::Ethereum |Self::Tron=> true,
             Self::Sui => false,
         }
     }
@@ -53,7 +55,7 @@ impl StakeChain {
     /// Get if chain support redelegate
     pub fn get_redelegate(&self) -> bool {
         match self {
-            Self::Cosmos | Self::Osmosis | Self::Injective | Self::Sei | Self::Celestia | Self::SmartChain => true,
+            Self::Cosmos | Self::Osmosis | Self::Injective | Self::Sei | Self::Celestia | Self::SmartChain | Self::Tron => true,
             Self::Sui | Self::Solana | Self::Ethereum => false,
         }
     }
