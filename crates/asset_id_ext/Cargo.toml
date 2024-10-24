@@ -1,0 +1,8 @@
+[package]
+name = "asset_id_ext"
+version = { workspace = true }
+edition = { workspace = true }
+
+[dependencies]
+primitives = { path = "../primitives" }
+gem_evm = { path = "../gem_evm" }

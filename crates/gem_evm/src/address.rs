@@ -33,7 +33,7 @@ impl std::fmt::Display for AddressError {
 
 #[derive(Default)]
 pub struct EthereumAddress {
-    bytes: Vec<u8>,
+    pub bytes: Vec<u8>,
 }
 
 impl FromStr for EthereumAddress {
@@ -89,12 +89,8 @@ impl EthereumAddress {
 
                 // SAFETY: prefix_len <= 20; len <= 62; storage.len() == 62
                 unsafe {
-                    storage
-                        .get_unchecked_mut(..prefix_len)
-                        .copy_from_slice(prefix_str.as_bytes());
-                    storage
-                        .get_unchecked_mut(prefix_len..len)
-                        .copy_from_slice(buf);
+                    storage.get_unchecked_mut(..prefix_len).copy_from_slice(prefix_str.as_bytes());
+                    storage.get_unchecked_mut(prefix_len..len).copy_from_slice(buf);
                     storage.get_unchecked(..len)
                 }
             }
@@ -127,10 +123,7 @@ mod tests {
         let eth1 = "0x000000000022d473030f116ddee9f6b43ac78ba3";
         let addr1 = EthereumAddress::parse(eth1).unwrap();
 
-        assert_eq!(
-            addr1.to_checksum(),
-            "0x000000000022D473030F116dDEE9F6B43aC78BA3"
-        );
+        assert_eq!(addr1.to_checksum(), "0x000000000022D473030F116dDEE9F6B43aC78BA3");
     }
 
     // https://eips.ethereum.org/EIPS/eip-1191

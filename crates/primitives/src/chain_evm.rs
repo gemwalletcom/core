@@ -89,6 +89,23 @@ impl EVMChain {
         }
     }
 
+    pub fn weth_contract(&self) -> Option<&str> {
+        match self {
+            Self::Ethereum => Some("0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"),
+            Self::SmartChain => Some("0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c"),
+            Self::Polygon => Some("0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270"),
+            Self::Arbitrum => Some("0x82aF49447D8a07e3bd95BD0d56f35241523fBab1"),
+            Self::Optimism | Self::Base | Self::OpBNB => Some("0x4200000000000000000000000000000000000006"),
+            Self::AvalancheC => Some("0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7"),
+            Self::Fantom => Some("0x21be370D5312f44cB42ce377BC9b8a0cEF1A4C83"),
+            Self::Gnosis => Some("0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d"),
+            Self::ZkSync => Some("0x5AEa5775959fBC2557Cc8789bC1bf90A239D9a91"),
+            Self::Blast => Some("0x4300000000000000000000000000000000000004"),
+            Self::Celo => Some("0x471EcE3750Da237f93B8E339c536989b8978a438"),
+            Self::Manta | Self::Linea | Self::Mantle => None,
+        }
+    }
+
     pub fn from_chain(chain: Chain) -> Option<Self> {
         match chain {
             Chain::Ethereum => Some(Self::Ethereum),
