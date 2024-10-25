@@ -49,6 +49,7 @@ default-members = [
     "apps/alerter",
     "apps/setup",
     "bin/generate",
+    "gemstone",
 ]
 
 [workspace.dependencies]
