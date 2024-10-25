@@ -3,6 +3,7 @@
 pub struct Banner {
     wallet: Option<Wallet>,
     asset: Option<Asset>,
+    chain: Option<Chain>,
     event: BannerEvent,
     state: BannerState,
 }
@@ -13,6 +14,7 @@ pub enum BannerEvent {
     stake,
     account_activation,
     enable_notifications,
+    account_blocked_multisignature,
 }
 
 #[typeshare(swift = "Equatable, CaseIterable, Sendable")]
