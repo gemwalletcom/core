@@ -32,7 +32,7 @@ members = [
     "crates/settings",
     "crates/settings_chain",
     "crates/price_alert",
-    "crates/asset_id_ext",
+    "crates/chain_primitives",
 
     "crates/security_*",
     "crates/gem_*",

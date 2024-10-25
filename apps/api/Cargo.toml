@@ -21,7 +21,7 @@ name_resolver = { path = "../../crates/name_resolver" }
 primitives = { path = "../../crates/primitives" }
 api_connector = { path = "../../crates/api_connector" }
 price_alert = { path = "../../crates/price_alert" }
-asset_id_ext = { path = "../../crates/asset_id_ext" }
+chain_primitives = { path = "../../crates/chain_primitives" }
 
 security_provider = { path = "../../crates/security_provider" }
 security_hashdit = { path = "../../crates/security_hashdit" }

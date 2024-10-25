@@ -1,5 +1,5 @@
 [package]
-name = "asset_id_ext"
+name = "chain_primitives"
 version = { workspace = true }
 edition = { workspace = true }
 

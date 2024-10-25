@@ -1,4 +1,4 @@
-use asset_id_ext::format_token_id;
+use chain_primitives::format_token_id;
 use fiat::{model::FiatProviderAsset, FiatProvider};
 use primitives::AssetId;
 use storage::database::DatabaseClient;

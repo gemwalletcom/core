@@ -1,4 +1,4 @@
-use asset_id_ext::format_token_id;
+use chain_primitives::format_token_id;
 use coingecko::{get_chain_for_coingecko_platform_id, CoinGeckoClient, CoinInfo};
 use primitives::{Asset, AssetDetails, AssetId, AssetLinks, AssetScore, AssetType};
 use std::collections::HashSet;

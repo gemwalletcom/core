@@ -383,7 +383,7 @@ name = "api"
 version = "1.0.0"
 dependencies = [
  "api_connector",
- "asset_id_ext",
+ "chain_primitives",
  "config",
  "fiat",
  "name_resolver",
@@ -755,14 +755,6 @@ dependencies = [
  "proc-macro2 1.0.82",
  "quote 1.0.36",
  "syn 1.0.109",
-]
-
-[[package]]
-name = "asset_id_ext"
-version = "1.0.0"
-dependencies = [
- "gem_evm",
- "primitives",
 ]
 
 [[package]]
@@ -1616,6 +1608,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fd16c4719339c4530435d38e511904438d07cce7950afa3718a84ac36c10e89e"
 
 [[package]]
+name = "chain_primitives"
+version = "1.0.0"
+dependencies = [
+ "gem_evm",
+ "primitives",
+]
+
+[[package]]
 name = "chrono"
 version = "0.4.38"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2113,7 +2113,7 @@ name = "daemon"
 version = "1.0.0"
 dependencies = [
  "api_connector",
- "asset_id_ext",
+ "chain_primitives",
  "fiat",
  "job_runner",
  "primitives",
@@ -6008,8 +6008,8 @@ dependencies = [
 name = "pricer"
 version = "1.0.0"
 dependencies = [
- "asset_id_ext",
  "cacher",
+ "chain_primitives",
  "chrono",
  "coingecko",
  "job_runner",

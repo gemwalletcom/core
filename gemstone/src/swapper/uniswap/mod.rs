@@ -72,8 +72,7 @@ impl UniswapV3 {
             Some(token_id) => token_id.to_string(),
             None => evm_chain.weth_contract().unwrap().to_string(),
         };
-        let parsed = EthereumAddress::parse(&str).ok_or_else(|| GemSwapperError::InvalidAddress)?;
-        Ok(parsed)
+        EthereumAddress::parse(&str).ok_or(GemSwapperError::InvalidAddress)
     }
 
     fn build_path_with_token(token_in: &EthereumAddress, token_out: &EthereumAddress, fee_tier: FeeTier) -> Result<Bytes, GemSwapperError> {
