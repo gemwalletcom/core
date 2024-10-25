@@ -20,7 +20,7 @@ struct TronAccount {
 }
 #[typeshare(swift = "Sendable")]
 struct TronAccountPermission {
-    id: i32,
+    threshold: i32,
 }
 
 #[typeshare(swift = "Sendable")]
