@@ -11,16 +11,16 @@ pub struct Banner {
 #[typeshare(swift = "Equatable, CaseIterable, Sendable")]
 #[serde(rename_all = "camelCase")]
 pub enum BannerEvent {
-    stake,
-    account_activation,
-    enable_notifications,
-    account_blocked_multisignature,
+    Stake,
+    AccountActivation,
+    EnableNotifications,
+    AccountBlockedMultiSignature,
 }
 
 #[typeshare(swift = "Equatable, CaseIterable, Sendable")]
 #[serde(rename_all = "camelCase")]
 pub enum BannerState {
-    active,
-    cancelled,
-    always_active,
+    Active,
+    Cancelled,
+    AlwaysActive,
 }
