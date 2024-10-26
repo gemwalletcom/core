@@ -252,10 +252,12 @@ impl Parser {
             .collect::<Vec<primitives::Transaction>>()
             .into_iter()
             .filter(|x| {
-                self.database
-                    .get_asset(x.asset_id.to_string().as_str())
-                    .ok()
-                    .is_some()
+                let asset_ids = x.asset_ids();
+                if let Ok(assets) = self.database.get_assets(asset_ids.clone()) {
+                    assets.len() == asset_ids.len()
+                } else {
+                    false
+                }
             })
             .collect::<Vec<primitives::Transaction>>();
 
