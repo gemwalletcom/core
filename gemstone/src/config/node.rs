@@ -42,7 +42,7 @@ pub fn get_nodes_for_chain(chain: Chain) -> Vec<Node> {
             Node::new("https://eth.llamarpc.com", NodePriority::High),
             Node::new("https://ethereum.publicnode.com", NodePriority::High),
             Node::new("https://rpc.ankr.com/eth", NodePriority::High),
-            Node::new("https://eth.drpc.org", NodePriority::High),
+            Node::new("https://ethereum-rpc.polkachu.com", NodePriority::High),
         ],
         Chain::SmartChain => vec![
             Node::new("https://binance.llamarpc.com", NodePriority::High),
@@ -56,15 +56,17 @@ pub fn get_nodes_for_chain(chain: Chain) -> Vec<Node> {
         Chain::Thorchain => vec![],
         Chain::Cosmos => vec![
             Node::new("https://cosmos-rest.publicnode.com", NodePriority::High),
+            Node::new("https://cosmos-api.polkachu.com", NodePriority::High),
             Node::new("https://rest.cosmos.directory/cosmoshub", NodePriority::High),
         ],
         Chain::Osmosis => vec![
             Node::new("https://osmosis-rest.publicnode.com", NodePriority::High),
             Node::new("https://lcd-osmosis.blockapsis.com", NodePriority::High),
+            Node::new("https://osmosis-api.polkachu.com", NodePriority::High),
         ],
         Chain::Arbitrum => vec![
             Node::new("https://arb1.arbitrum.io/rpc", NodePriority::High),
-            Node::new("https://arbitrum.drpc.org", NodePriority::High),
+            Node::new("https://arbitrum-rpc.polkachu.com", NodePriority::High),
             Node::new("https://arbitrum-one.publicnode.com", NodePriority::High),
         ],
         Chain::Ton => vec![Node::new("https://toncenter.com", NodePriority::High)],
@@ -76,11 +78,16 @@ pub fn get_nodes_for_chain(chain: Chain) -> Vec<Node> {
         Chain::Optimism => vec![
             Node::new("https://mainnet.optimism.io", NodePriority::High),
             Node::new("https://rpc.ankr.com/optimism", NodePriority::High),
+            Node::new("https://optimism-rpc.polkachu.com", NodePriority::High),
         ],
-        Chain::Aptos => vec![Node::new("https://fullnode.mainnet.aptoslabs.com", NodePriority::High)],
+        Chain::Aptos => vec![
+            Node::new("https://fullnode.mainnet.aptoslabs.com", NodePriority::High),
+            Node::new("https://aptos-fullnode.polkachu.com", NodePriority::High),
+        ],
         Chain::Base => vec![
             Node::new("https://mainnet.base.org", NodePriority::High),
             Node::new("https://rpc.ankr.com/base", NodePriority::High),
+            Node::new("https://base-rpc.polkachu.com", NodePriority::High),
         ],
         Chain::AvalancheC => vec![
             Node::new("https://avalanche.drpc.org", NodePriority::High),
@@ -104,23 +111,38 @@ pub fn get_nodes_for_chain(chain: Chain) -> Vec<Node> {
             Node::new("https://gnosis.drpc.org", NodePriority::High),
             Node::new("https://rpc.ankr.com/gnosis", NodePriority::High),
         ],
-        Chain::Celestia => vec![Node::new("https://celestia-rest.publicnode.com", NodePriority::High)],
-        Chain::Injective => vec![Node::new("https://injective-rest.publicnode.com", NodePriority::High)],
+        Chain::Celestia => vec![
+            Node::new("https://celestia-rest.publicnode.com", NodePriority::High),
+            Node::new("https://celestia-api.polkachu.com", NodePriority::High)
+        ],
+        Chain::Injective => vec![
+            Node::new("https://injective-rest.publicnode.com", NodePriority::High),
+            Node::new("https://injective-api.polkachu.com", NodePriority::High),
+        ],
         Chain::Sei => vec![
             Node::new("https://rest.sei-apis.com", NodePriority::High),
             Node::new("https://api-sei.stingray.plus", NodePriority::High),
+            Node::new("https://sei-api.polkachu.com", NodePriority::High),
         ],
         Chain::Manta => vec![
             Node::new("https://pacific-rpc.manta.network/http", NodePriority::High),
             Node::new("https://manta-pacific.drpc.org", NodePriority::High),
         ],
-        Chain::Blast => vec![Node::new("https://rpc.blastblockchain.com", NodePriority::High)],
-        Chain::Noble => vec![Node::new("https://rest.cosmos.directory/noble", NodePriority::High)],
+        Chain::Blast => vec![
+            Node::new("https://rpc.blastblockchain.com", NodePriority::High),
+            Node::new("https://blast-rpc.polkachu.com", NodePriority::High),
+        ],
+        Chain::Noble => vec![
+            Node::new("https://rest.cosmos.directory/noble", NodePriority::High),
+
+        ],
         Chain::ZkSync => vec![
             Node::new("https://zksync.drpc.org", NodePriority::High),
             Node::new("https://mainnet.era.zksync.io", NodePriority::High),
         ],
-        Chain::Linea => vec![Node::new("https://linea.drpc.org", NodePriority::High)],
+        Chain::Linea => vec![
+            Node::new("https://linea-rpc.polkachu.com", NodePriority::High),
+        ],
         Chain::Mantle => vec![Node::new("https://rpc.ankr.com/mantle", NodePriority::High)],
         Chain::Celo => vec![Node::new("https://rpc.ankr.com/celo", NodePriority::High)],
         Chain::Near => vec![Node::new("https://rpc.mainnet.near.org", NodePriority::High)],
