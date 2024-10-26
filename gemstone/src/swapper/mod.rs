@@ -9,8 +9,8 @@ mod uniswap;
 pub enum GemSwapperError {
     #[error("Not supported chain")]
     NotSupportedChain,
-    #[error("Invalid address")]
-    InvalidAddress,
+    #[error("Invalid address {address}")]
+    InvalidAddress { address: String },
     #[error("Invalid amount")]
     InvalidAmount,
     #[error("RPC error: {msg}")]

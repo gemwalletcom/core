@@ -6,23 +6,31 @@ use gem_evm::{
     address::EthereumAddress,
     jsonrpc::{BlockParameter, EthereumRpc, TransactionObject},
     uniswap::{
-        command::{Sweep, UniversalRouterCommand, V3SwapExactIn, WrapEth},
+        command::{encode_commands, PayPortion, Sweep, UniversalRouterCommand, V3SwapExactIn, WrapEth, ADDRESS_THIS, MSG_SENDER},
         contract::IQuoterV2,
-        deployment::{get_deployment_by_chain, V3Deployment},
+        deployment::get_deployment_by_chain,
         FeeTier,
     },
 };
 use primitives::{AssetId, Chain, ChainType, EVMChain, SwapMode, SwapQuote, SwapQuoteData, SwapQuoteProtocolRequest};
 
 use alloy_core::{
-    primitives::{hex::decode as HexDecode, hex::encode_prefixed as HexEncode, Address, Bytes, U256},
+    primitives::{
+        hex::{decode as HexDecode, encode_prefixed as HexEncode},
+        Address, Bytes, U160, U256,
+    },
     sol_types::SolCall,
 };
 use alloy_primitives::aliases::U24;
 use async_trait::async_trait;
-use std::{fmt::Debug, str::FromStr, sync::Arc};
-
+use std::{
+    fmt::Debug,
+    str::FromStr,
+    sync::Arc,
+    time::{SystemTime, UNIX_EPOCH},
+};
 static UNISWAP: &str = "Uniswap";
+static DEFAULT_DEADLINE: u64 = 3600;
 
 impl From<&EthereumRpc> for JsonRpcRequest {
     fn from(val: &EthereumRpc) -> Self {
@@ -72,7 +80,7 @@ impl UniswapV3 {
             Some(token_id) => token_id.to_string(),
             None => evm_chain.weth_contract().unwrap().to_string(),
         };
-        EthereumAddress::parse(&str).ok_or(GemSwapperError::InvalidAddress)
+        EthereumAddress::parse(&str).ok_or(GemSwapperError::InvalidAddress { address: str })
     }
 
     fn build_path_with_token(token_in: &EthereumAddress, token_out: &EthereumAddress, fee_tier: FeeTier) -> Result<Bytes, GemSwapperError> {
@@ -87,29 +95,29 @@ impl UniswapV3 {
     }
 
     fn build_commands(
-        request: &SwapQuoteProtocolRequest,
-        path: &Bytes,
         _token_in: &EthereumAddress,
         token_out: &EthereumAddress,
         amount_in: U256,
         amount_out: U256,
-        deployment: &V3Deployment,
+        mode: SwapMode,
+        path: &Bytes,
+        wrap_input_eth: bool,
+        unwrap_output_weth: bool,
         fee_options: Option<GemSwapFeeOptions>,
-    ) -> Result<(U256, Vec<u8>), GemSwapperError> {
+    ) -> Result<Vec<UniversalRouterCommand>, GemSwapperError> {
         let mut commands: Vec<UniversalRouterCommand> = vec![];
-        let recipient = Address::from_str(deployment.universal_router).unwrap();
-        if request.from_asset.is_native() {
+        if wrap_input_eth {
             // Wrap ETH
             commands.push(UniversalRouterCommand::WRAP_ETH(WrapEth {
-                recipient,
+                recipient: Address::from_str(ADDRESS_THIS).unwrap(),
                 amount_min: amount_in,
             }));
         }
-        match request.mode {
+        match mode {
             SwapMode::ExactIn => {
                 // insert V3_SWAP_EXACT_IN
                 commands.push(UniversalRouterCommand::V3_SWAP_EXACT_IN(V3SwapExactIn {
-                    recipient,
+                    recipient: Address::from_str(ADDRESS_THIS).unwrap(),
                     amount_in,
                     amount_out_min: amount_out,
                     path: path.clone(),
@@ -120,16 +128,25 @@ impl UniswapV3 {
                 // insert V3_SWAP_EXACT_OUT
             }
         }
-        if let Some(_fee_options) = fee_options {
+        if let Some(fee_options) = fee_options {
             // insert PAY_PORTION
+            commands.push(UniversalRouterCommand::PAY_PORTION(PayPortion {
+                token: Address::from_slice(&token_out.bytes),
+                recipient: Address::from_str(fee_options.fee_address.as_str()).unwrap(),
+                bips: U256::from(fee_options.fee_bps),
+            }));
+        }
+
+        if unwrap_output_weth {
+            // insert UNWRAP_WETH
         }
 
         commands.push(UniversalRouterCommand::SWEEP(Sweep {
             token: Address::from_slice(&token_out.bytes),
-            amount_min: amount_out,
-            recipient,
+            recipient: Address::from_str(MSG_SENDER).unwrap(),
+            amount_min: U160::from(amount_out),
         }));
-        Err(GemSwapperError::NotImplemented)
+        Ok(commands)
     }
 
     async fn jsonrpc_call(&self, request: EthereumRpc, provider: Arc<dyn AlienProvider>, chain: Chain) -> Result<JsonRpcResponse, GemSwapperError> {
@@ -165,23 +182,27 @@ impl GemSwapProvider for UniswapV3 {
         let deployment = get_deployment_by_chain(request.from_asset.chain).ok_or(GemSwapperError::NotSupportedChain)?;
         evm_chain.weth_contract().ok_or(GemSwapperError::NotSupportedChain)?;
 
+        let recipient = EthereumAddress::parse(&request.destination_address).ok_or(GemSwapperError::InvalidAddress {
+            address: request.destination_address.clone(),
+        })?;
+
         // Build path for QuoterV2
         let token_in = Self::get_asset_address(&request.from_asset, evm_chain)?;
         let token_out = Self::get_asset_address(&request.to_asset, evm_chain)?;
-        let amount = U256::from_str(&request.amount).map_err(|_| GemSwapperError::InvalidAmount)?;
+        let amount_in = U256::from_str(&request.amount).map_err(|_| GemSwapperError::InvalidAmount)?;
         let path = Self::build_path_with_token(&token_in, &token_out, FeeTier::Low)?; // FIXME: loop through all fee tiers
         let calldata: Vec<u8> = match request.mode {
             SwapMode::ExactIn => {
                 let input_call = IQuoterV2::quoteExactInputCall {
                     path: path.clone(),
-                    amountIn: amount,
+                    amountIn: amount_in,
                 };
                 input_call.abi_encode()
             }
             SwapMode::ExactOut => {
                 let output_call = IQuoterV2::quoteExactOutputCall {
                     path: path.clone(),
-                    amountOut: amount,
+                    amountOut: amount_in,
                 };
                 output_call.abi_encode()
             }
@@ -194,24 +215,39 @@ impl GemSwapProvider for UniswapV3 {
         let response = self.jsonrpc_call(eth_call, provider, request.from_asset.chain).await?;
         let result = response.result.ok_or(GemSwapperError::NetworkError { msg: "No result".into() })?;
         let decoded = HexDecode(&result).unwrap();
-        let quote = IQuoterV2::quoteExactInputCall::abi_decode_returns(&decoded, true)
+        let amount_out = IQuoterV2::quoteExactInputCall::abi_decode_returns(&decoded, true)
             .map_err(|err| GemSwapperError::ABIError { msg: err.to_string() })?
             .amountOut;
 
         let mut swap_data: Option<SwapQuoteData> = None;
         if request.include_data {
-            let (value, data) = Self::build_commands(&request, &path, &token_in, &token_out, amount, quote, &deployment, fee_options)?;
+            let wrap_input_eth = request.from_asset.is_native();
+            let unwrap_output_weth = request.to_asset.is_native();
+            let value = if wrap_input_eth { request.amount.clone() } else { String::from("0x0") };
+            let commands = Self::build_commands(
+                &token_in,
+                &token_out,
+                amount_in,
+                amount_out,
+                request.mode.clone(),
+                &path,
+                wrap_input_eth,
+                unwrap_output_weth,
+                fee_options,
+            )?;
+            let deadline = SystemTime::now().duration_since(UNIX_EPOCH).expect("Time went backwards").as_secs() + DEFAULT_DEADLINE;
+            let encoded = encode_commands(&commands, U256::from(deadline));
             swap_data = Some(SwapQuoteData {
                 to: deployment.universal_router.into(),
-                value: value.to_string(),
-                data: HexEncode(data),
+                value,
+                data: HexEncode(encoded),
             });
         }
 
         Ok(SwapQuote {
             chain_type: ChainType::Ethereum,
             from_amount: request.amount.clone(),
-            to_amount: quote.to_string(),
+            to_amount: amount_out.to_string(),
             fee_percent: 0.0,
             provider: UNISWAP.into(),
             data: swap_data,

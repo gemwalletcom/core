@@ -192,9 +192,9 @@ dependencies = [
 
 [[package]]
 name = "alloy-rlp"
-version = "0.3.8"
+version = "0.3.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "26154390b1d205a4a7ac7352aa2eb4f81f391399d4e2f546fb81a2f8bb383f62"
+checksum = "da0822426598f95e45dd1ea32a738dac057529a709ee645fcc516ffa4cbde08f"
 dependencies = [
  "arrayvec",
  "bytes",
@@ -3217,6 +3217,7 @@ name = "gem_evm"
 version = "1.0.0"
 dependencies = [
  "alloy-core",
+ "alloy-sol-types",
  "anyhow",
  "gem_hash",
  "hex",
