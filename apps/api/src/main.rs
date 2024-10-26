@@ -47,8 +47,8 @@ use rocket::tokio::sync::Mutex;
 use rocket::{Build, Rocket};
 use security_providers::SecurityProviderFactory;
 use security_scan::SecurityScanClient;
-use settings::Settings;
-use storage::DatabaseClient;
+use settings::{Settings};
+use storage::{ClickhouseClient, DatabaseClient};
 use subscription_client::SubscriptionsClient;
 use swap_client::SwapClient;
 use swapper::{Swapper, SwapperClientConfiguration, SwapperConfiguration};
@@ -62,7 +62,8 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
 
     let settings_clone = settings.clone();
     let price_client = PriceClient::new(redis_url, postgres_url);
-    let charts_client = ChartClient::new(postgres_url, &settings.clickhouse.url);
+    let clickhouse_client = ClickhouseClient::new(&settings_clone.clickhouse.url, &settings_clone.clickhouse.database);
+    let charts_client = ChartClient::new(postgres_url, clickhouse_client);
     let config_client = ConfigClient::new(postgres_url).await;
     let price_alert_client = PriceAlertClient::new(postgres_url).await;
     let providers = NameProviderFactory::create_providers(settings_clone.clone());

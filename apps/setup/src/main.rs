@@ -1,6 +1,6 @@
 use primitives::{Asset, AssetType, Chain, FiatProviderName, PlatformStore};
 use settings::Settings;
-use storage::{ClickhouseDatabase, DatabaseClient};
+use storage::{ClickhouseClient, DatabaseClient};
 
 #[tokio::main]
 async fn main() {
@@ -13,7 +13,7 @@ async fn main() {
     database_client.migrations();
     println!("postgres migrations complete");
 
-    let clickhouse_database = ClickhouseDatabase::new(&settings.clickhouse.url);
+    let clickhouse_database = ClickhouseClient::new(&settings.clickhouse.url, &settings.clickhouse.database);
     let _ = clickhouse_database.migrations().await;
     println!("clickhouse migrations complete");
 

@@ -8,7 +8,7 @@ pub mod clickhouse;
 pub mod models;
 pub mod schema;
 
-pub use self::clickhouse::clickhouse_database::ClickhouseDatabase;
+pub use self::clickhouse::clickhouse_database::ClickhouseClient;
 
 pub struct RedisClient {
     conn: MultiplexedConnection,

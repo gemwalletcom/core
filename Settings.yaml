@@ -4,6 +4,7 @@ postgres:
   url: "postgres://username:password@localhost/api"
 clickhouse:
   url: "http://localhost:8123"
+  database: default
 coingecko:
   key:
     secret: ""

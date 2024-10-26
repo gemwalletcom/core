@@ -11,7 +11,7 @@ use serde::Deserialize;
 pub struct Settings {
     pub redis: Database,
     pub postgres: Database,
-    pub clickhouse: Database,
+    pub clickhouse: ClickhouseDatabase,
     pub fiat: Fiat,
     pub moonpay: MoonPay,
     pub transak: Transak,
@@ -44,6 +44,13 @@ pub struct Fiat {
 #[allow(unused)]
 pub struct Database {
     pub url: String,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[allow(unused)]
+pub struct ClickhouseDatabase {
+    pub url: String,
+    pub database: String,
 }
 
 #[derive(Debug, Deserialize, Clone)]
