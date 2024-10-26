@@ -75,7 +75,6 @@ pub fn get_nodes_for_chain(chain: Chain) -> Vec<Node> {
         ],
         Chain::Doge => vec![],
         Chain::Optimism => vec![
-            Node::new("https://mainnet.optimism.io", NodePriority::High),
             Node::new("https://rpc.ankr.com/optimism", NodePriority::High),
             Node::new("https://optimism-rpc.polkachu.com", NodePriority::High),
         ],
