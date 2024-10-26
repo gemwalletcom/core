@@ -61,7 +61,6 @@ pub fn get_nodes_for_chain(chain: Chain) -> Vec<Node> {
         ],
         Chain::Osmosis => vec![
             Node::new("https://osmosis-rest.publicnode.com", NodePriority::High),
-            Node::new("https://lcd-osmosis.blockapsis.com", NodePriority::High),
             Node::new("https://osmosis-api.polkachu.com", NodePriority::High),
         ],
         Chain::Arbitrum => vec![
@@ -129,12 +128,11 @@ pub fn get_nodes_for_chain(chain: Chain) -> Vec<Node> {
             Node::new("https://manta-pacific.drpc.org", NodePriority::High),
         ],
         Chain::Blast => vec![
-            Node::new("https://rpc.blastblockchain.com", NodePriority::High),
             Node::new("https://blast-rpc.polkachu.com", NodePriority::High),
         ],
         Chain::Noble => vec![
             Node::new("https://rest.cosmos.directory/noble", NodePriority::High),
-
+            Node::new("https://noble-api.polkachu.com", NodePriority::High),
         ],
         Chain::ZkSync => vec![
             Node::new("https://zksync.drpc.org", NodePriority::High),
