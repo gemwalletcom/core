@@ -82,9 +82,9 @@ extension JsonRpcResult: @retroactive Decodable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let id = try container.decode(UInt64.self, forKey: .id)
         if let result = try? container.decodeIfPresent(String.self, forKey: .result) {
-            self = .value(JsonRpcResponse(result: result, error: nil, id: id))
+            self = .value(JsonRpcResponse(result: result, id: id))
         } else if let error = try? container.decodeIfPresent(JsonRpcError.self, forKey: .error) {
-            self = .error(error)
+            self = .error(JsonRpcErrorResponse(error: error, id: id))
         } else {
             throw DecodingError.dataCorruptedError(forKey: .result, in: container, debugDescription: "")
         }

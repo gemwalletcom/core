@@ -3,7 +3,7 @@ pub mod contract;
 pub mod deployment;
 
 // hundredths of bps (e.g. 0.3% is 3000)
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum FeeTier {
     Lowest = 100,
     Low = 500,

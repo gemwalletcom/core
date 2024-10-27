@@ -1,4 +1,5 @@
 use crate::{
+    debug_println,
     network::{AlienProvider, JsonRpcRequest, JsonRpcResponse, JsonRpcResult},
     swapper::{GemSwapFeeOptions, GemSwapProvider, GemSwapperError},
 };
@@ -32,20 +33,20 @@ use std::{
 static UNISWAP: &str = "Uniswap";
 static DEFAULT_DEADLINE: u64 = 3600;
 
-impl From<&EthereumRpc> for JsonRpcRequest {
-    fn from(val: &EthereumRpc) -> Self {
+impl JsonRpcRequest {
+    fn from(val: &EthereumRpc, id: u64) -> Self {
         match val {
             EthereumRpc::GasPrice => JsonRpcRequest {
                 method: val.method_name().into(),
                 params: None,
-                id: 1,
+                id,
             },
             EthereumRpc::GetBalance(address) => {
                 let params: Vec<String> = vec![address.to_string()];
                 JsonRpcRequest {
                     method: val.method_name().into(),
                     params: Some(serde_json::to_string(&params).unwrap()),
-                    id: 1,
+                    id,
                 }
             }
             EthereumRpc::Call(transaction, _block) => {
@@ -53,7 +54,7 @@ impl From<&EthereumRpc> for JsonRpcRequest {
                 JsonRpcRequest {
                     method: val.method_name().into(),
                     params: Some(serde_json::to_string(&params).unwrap()),
-                    id: 1,
+                    id,
                 }
             }
         }
@@ -83,29 +84,66 @@ impl UniswapV3 {
         EthereumAddress::parse(&str).ok_or(GemSwapperError::InvalidAddress { address: str })
     }
 
-    fn build_path_with_token(token_in: &EthereumAddress, token_out: &EthereumAddress, fee_tier: FeeTier) -> Result<Bytes, GemSwapperError> {
+    fn build_path_with_token(token_in: &EthereumAddress, token_out: &EthereumAddress, fee_tier: &FeeTier) -> Bytes {
         let mut bytes: Vec<u8> = vec![];
-        let fee = U24::from(fee_tier as u32);
+        let fee = U24::from(fee_tier.clone() as u32);
 
         bytes.extend(&token_in.bytes);
         bytes.extend(&fee.to_be_bytes_vec());
         bytes.extend(&token_out.bytes);
 
-        Ok(Bytes::from(bytes))
+        Bytes::from(bytes)
+    }
+
+    fn build_quoter_request(request: &SwapQuoteProtocolRequest, quoter_v2: &str, amount_in: U256, path: &Bytes) -> EthereumRpc {
+        let calldata: Vec<u8> = match request.mode {
+            SwapMode::ExactIn => {
+                let input_call = IQuoterV2::quoteExactInputCall {
+                    path: path.clone(),
+                    amountIn: amount_in,
+                };
+                input_call.abi_encode()
+            }
+            SwapMode::ExactOut => {
+                let output_call = IQuoterV2::quoteExactOutputCall {
+                    path: path.clone(),
+                    amountOut: amount_in,
+                };
+                output_call.abi_encode()
+            }
+        };
+
+        EthereumRpc::Call(
+            TransactionObject::new_call(&request.wallet_address, quoter_v2, calldata),
+            BlockParameter::Latest,
+        )
+    }
+
+    fn decode_quoter_response(response: &JsonRpcResponse) -> Result<U256, GemSwapperError> {
+        let result = response.clone().result.ok_or(GemSwapperError::NetworkError { msg: "No result".into() })?;
+        let decoded = HexDecode(&result).map_err(|_| GemSwapperError::NetworkError {
+            msg: "Failed to decode hex result".into(),
+        })?;
+        let quoter_return = IQuoterV2::quoteExactInputCall::abi_decode_returns(&decoded, true)
+            .map_err(|err| GemSwapperError::ABIError { msg: err.to_string() })?
+            .amountOut;
+        Ok(quoter_return)
     }
 
     fn build_commands(
-        _token_in: &EthereumAddress,
+        token_in: &EthereumAddress,
         token_out: &EthereumAddress,
         amount_in: U256,
         amount_out: U256,
         mode: SwapMode,
-        path: &Bytes,
+        fee_tier: &FeeTier,
         wrap_input_eth: bool,
         unwrap_output_weth: bool,
         fee_options: Option<GemSwapFeeOptions>,
     ) -> Result<Vec<UniversalRouterCommand>, GemSwapperError> {
+        let path = Self::build_path_with_token(token_in, token_out, fee_tier);
         let mut commands: Vec<UniversalRouterCommand> = vec![];
+
         if wrap_input_eth {
             // Wrap ETH
             commands.push(UniversalRouterCommand::WRAP_ETH(WrapEth {
@@ -139,6 +177,7 @@ impl UniswapV3 {
 
         if unwrap_output_weth {
             // insert UNWRAP_WETH
+            todo!()
         }
 
         commands.push(UniversalRouterCommand::SWEEP(Sweep {
@@ -149,18 +188,31 @@ impl UniswapV3 {
         Ok(commands)
     }
 
-    async fn jsonrpc_call(&self, request: EthereumRpc, provider: Arc<dyn AlienProvider>, chain: Chain) -> Result<JsonRpcResponse, GemSwapperError> {
-        let req = JsonRpcRequest::from(&request);
-        let result = provider.jsonrpc_call(vec![req], chain).await;
-        match result {
-            Ok(results) => {
-                let result = results.first().ok_or(GemSwapperError::NetworkError { msg: "No result".into() })?;
-                match result {
-                    JsonRpcResult::Value(value) => Ok(value.clone()),
-                    JsonRpcResult::Error(err) => Err(GemSwapperError::NetworkError { msg: err.message.clone() }),
-                }
-            }
-            Err(err) => Err(GemSwapperError::NetworkError { msg: err.to_string() }),
+    async fn jsonrpc_call(&self, requests: &[EthereumRpc], provider: Arc<dyn AlienProvider>, chain: Chain) -> Result<Vec<JsonRpcResponse>, GemSwapperError> {
+        let rpc_calls: Vec<JsonRpcRequest> = requests
+            .iter()
+            .enumerate()
+            .map(|(index, request)| JsonRpcRequest::from(request, index as u64 + 1))
+            .collect();
+        let results = provider
+            .jsonrpc_call(rpc_calls, chain)
+            .await
+            .map_err(|err| GemSwapperError::NetworkError { msg: err.to_string() })?;
+
+        let responses: Vec<JsonRpcResponse> = results
+            .into_iter()
+            .filter_map(|result| match result {
+                JsonRpcResult::Value(value) => Some(value),
+                JsonRpcResult::Error(_) => None,
+            })
+            .collect();
+
+        if !responses.is_empty() {
+            Ok(responses)
+        } else {
+            Err(GemSwapperError::NetworkError {
+                msg: "All jsonrpc requests failed".into(),
+            })
         }
     }
 }
@@ -186,49 +238,44 @@ impl GemSwapProvider for UniswapV3 {
         let token_in = Self::get_asset_address(&request.from_asset, evm_chain)?;
         let token_out = Self::get_asset_address(&request.to_asset, evm_chain)?;
         let amount_in = U256::from_str(&request.amount).map_err(|_| GemSwapperError::InvalidAmount)?;
-        let path = Self::build_path_with_token(&token_in, &token_out, FeeTier::Low)?; // FIXME: loop through all fee tiers
-        let calldata: Vec<u8> = match request.mode {
-            SwapMode::ExactIn => {
-                let input_call = IQuoterV2::quoteExactInputCall {
-                    path: path.clone(),
-                    amountIn: amount_in,
-                };
-                input_call.abi_encode()
-            }
-            SwapMode::ExactOut => {
-                let output_call = IQuoterV2::quoteExactOutputCall {
-                    path: path.clone(),
-                    amountOut: amount_in,
-                };
-                output_call.abi_encode()
-            }
-        };
 
-        let eth_call = EthereumRpc::Call(
-            TransactionObject::new_call(&request.wallet_address, deployment.quoter_v2, calldata),
-            BlockParameter::Latest,
-        );
-        let response = self.jsonrpc_call(eth_call, provider, request.from_asset.chain).await?;
-        let result = response.result.ok_or(GemSwapperError::NetworkError { msg: "No result".into() })?;
-        let decoded = HexDecode(&result).unwrap();
-        let amount_out = IQuoterV2::quoteExactInputCall::abi_decode_returns(&decoded, true)
-            .map_err(|err| GemSwapperError::ABIError { msg: err.to_string() })?
-            .amountOut;
+        let fee_tiers = [FeeTier::Lowest, FeeTier::Low, FeeTier::Medium];
+        let eth_calls: Vec<EthereumRpc> = fee_tiers
+            .iter()
+            .map(|fee_tier| {
+                let path = Self::build_path_with_token(&token_in, &token_out, fee_tier);
+                Self::build_quoter_request(request, deployment.quoter_v2, amount_in, &path)
+            })
+            .collect();
+
+        let responses = self.jsonrpc_call(&eth_calls, provider, request.from_asset.chain).await?;
+
+        let mut max_amount_out = U256::from(0);
+        let mut fee_tier_idx = 0;
+        for response in responses.iter() {
+            let amount_out = Self::decode_quoter_response(response)?;
+            if amount_out > max_amount_out {
+                max_amount_out = amount_out;
+                fee_tier_idx = response.id as usize - 1;
+            }
+        }
+        let fee_tier = &fee_tiers[fee_tier_idx];
+
+        debug_println!("fee tier: {:?}", fee_tier);
 
         let mut swap_data: Option<SwapQuoteData> = None;
         if request.include_data {
-            let wrap_input_eth = request.from_asset.is_native();
-            let unwrap_output_weth = request.to_asset.is_native();
+            let wrap_input_eth = request.from_asset.is_native() && request.mode == SwapMode::ExactIn;
             let value = if wrap_input_eth { request.amount.clone() } else { String::from("0x0") };
             let commands = Self::build_commands(
                 &token_in,
                 &token_out,
                 amount_in,
-                amount_out,
+                max_amount_out,
                 request.mode.clone(),
-                &path,
+                fee_tier,
                 wrap_input_eth,
-                unwrap_output_weth,
+                request.to_asset.is_native(),
                 fee_options,
             )?;
             let deadline = SystemTime::now().duration_since(UNIX_EPOCH).expect("Time went backwards").as_secs() + DEFAULT_DEADLINE;
@@ -243,7 +290,7 @@ impl GemSwapProvider for UniswapV3 {
         Ok(SwapQuote {
             chain_type: ChainType::Ethereum,
             from_amount: request.amount.clone(),
-            to_amount: amount_out.to_string(),
+            to_amount: max_amount_out.to_string(),
             fee_percent: 0.0,
             provider: UNISWAP.into(),
             data: swap_data,
@@ -264,7 +311,7 @@ mod tests {
         let token0 = EthereumAddress::parse("0x4200000000000000000000000000000000000006").unwrap();
         // USDC
         let token1 = EthereumAddress::parse("0x0b2c639c533813f4aa9d7837caf62653d097ff85").unwrap();
-        let bytes = UniswapV3::build_path_with_token(&token0, &token1, FeeTier::Low).unwrap();
+        let bytes = UniswapV3::build_path_with_token(&token0, &token1, &FeeTier::Low);
 
         assert_eq!(
             HexEncode(bytes),

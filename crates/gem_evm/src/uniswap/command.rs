@@ -59,6 +59,7 @@ impl V3SwapExactOut {
 
 type SweepType = (sol_data::Address, sol_data::Address, sol_data::Uint<160>);
 type PayPortionType = (sol_data::Address, sol_data::Address, sol_data::Uint<256>);
+type TransferType = PayPortionType;
 type WrapEthType = (sol_data::Address, sol_data::Uint<256>);
 type UnwrapWethType = WrapEthType;
 
@@ -81,6 +82,13 @@ pub struct Transfer {
     pub token: Address,
     pub recipient: Address,
     pub value: U256,
+}
+
+impl Transfer {
+    pub fn abi_encode(&self) -> Vec<u8> {
+        let data = (self.token, self.recipient, self.value);
+        TransferType::abi_encode_sequence(&data)
+    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -145,9 +153,12 @@ impl UniversalRouterCommand {
     pub fn encode(&self) -> Vec<u8> {
         match self {
             Self::V3_SWAP_EXACT_IN(command) => command.abi_encode(),
+            Self::V3_SWAP_EXACT_OUT(command) => command.abi_encode(),
             Self::SWEEP(command) => command.abi_encode(),
+            Self::TRANSFER(command) => command.abi_encode(),
             Self::PAY_PORTION(command) => command.abi_encode(),
             Self::WRAP_ETH(command) => command.abi_encode(),
+            Self::UNWRAP_WETH(command) => command.abi_encode(),
             _ => {
                 todo!()
             }
@@ -176,7 +187,7 @@ mod tests {
     use std::str::FromStr;
 
     #[test]
-    fn test_encode_commands() {
+    fn test_encode_commands_eth_token() {
         // Replicate https://optimistic.etherscan.io/tx/0xcc56d922ad307e9ffff9935f7f28f8cdb7de7e1d0e83d3c6f8520c5eeed69e41
         let amount_in = U256::from(1000000000000000u64);
         // WETH / USDC 0.05% pool (5 bps)

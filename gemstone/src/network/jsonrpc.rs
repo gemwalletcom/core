@@ -14,12 +14,17 @@ pub struct JsonRpcError {
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct JsonRpcResponse {
     pub result: Option<String>,
-    pub error: Option<JsonRpcError>,
+    pub id: u64,
+}
+
+#[derive(Debug, Clone, uniffi::Record)]
+pub struct JsonRpcErrorResponse {
+    pub error: JsonRpcError,
     pub id: u64,
 }
 
 #[derive(Debug, Clone, uniffi::Enum)]
 pub enum JsonRpcResult {
     Value(JsonRpcResponse),
-    Error(JsonRpcError),
+    Error(JsonRpcErrorResponse),
 }

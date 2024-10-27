@@ -130,6 +130,6 @@ final class GemTestTests: XCTestCase {
             return
         }
 
-        XCTAssertEqual(error, JsonRpcError(code: 3, message: "execution reverted: revert: toAddress_outOfBounds"))
+        XCTAssertEqual(error.error, JsonRpcError(code: 3, message: "execution reverted: revert: toAddress_outOfBounds"))
     }
 }
