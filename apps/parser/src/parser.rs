@@ -287,9 +287,9 @@ impl Parser {
                 return Ok(primitive_transactions.len());
             }
 
-            let _ = self
+            self
                 .database
-                .add_transactions(transactions.clone(), transaction_addresses.clone());
+                .add_transactions(transactions.clone(), transaction_addresses.clone())?;
         }
 
         Ok(primitive_transactions.len())

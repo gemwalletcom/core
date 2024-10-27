@@ -421,7 +421,7 @@ impl DatabaseClient {
                     return Err(error);
                 }
 
-                Ok(false)
+                Ok(true)
             });
     }
 
