@@ -119,7 +119,7 @@ impl UniswapV3 {
                 commands.push(UniversalRouterCommand::V3_SWAP_EXACT_IN(V3SwapExactIn {
                     recipient: Address::from_str(ADDRESS_THIS).unwrap(),
                     amount_in,
-                    amount_out_min: amount_out,
+                    amount_out_min: U256::from(0),
                     path: path.clone(),
                     payer_is_user: false,
                 }))
@@ -181,10 +181,6 @@ impl GemSwapProvider for UniswapV3 {
         let evm_chain = EVMChain::from_chain(request.from_asset.chain).ok_or(GemSwapperError::NotSupportedChain)?;
         let deployment = get_deployment_by_chain(request.from_asset.chain).ok_or(GemSwapperError::NotSupportedChain)?;
         evm_chain.weth_contract().ok_or(GemSwapperError::NotSupportedChain)?;
-
-        let recipient = EthereumAddress::parse(&request.destination_address).ok_or(GemSwapperError::InvalidAddress {
-            address: request.destination_address.clone(),
-        })?;
 
         // Build path for QuoterV2
         let token_in = Self::get_asset_address(&request.from_asset, evm_chain)?;

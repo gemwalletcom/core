@@ -108,6 +108,7 @@ uniffi = { version = "0.28.2" }
 alloy-core = { version = "0.8.9", features = ["sol-types", "json-abi"] }
 alloy-primitives = "0.8.9"
 alloy-sol-types = "0.8.9"
+alloy-rlp = "0.3.8"
 
 # localizer
 i18n-embed = { version = "0.15.0", features = ["fluent-system", "autoreload"] }

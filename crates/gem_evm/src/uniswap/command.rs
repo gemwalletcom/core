@@ -37,7 +37,7 @@ pub struct V3SwapExactIn {
 impl V3SwapExactIn {
     pub fn abi_encode(&self) -> Vec<u8> {
         let data = (self.recipient, self.amount_in, self.amount_out_min, self.path.clone(), self.payer_is_user);
-        V3SwapExactType::abi_encode(&data)
+        V3SwapExactType::abi_encode_sequence(&data)
     }
 }
 
@@ -53,7 +53,7 @@ pub struct V3SwapExactOut {
 impl V3SwapExactOut {
     pub fn abi_encode(&self) -> Vec<u8> {
         let data = (self.recipient, self.amount_out, self.amount_in_max, self.path.clone(), self.payer_is_user);
-        V3SwapExactType::abi_encode(&data)
+        V3SwapExactType::abi_encode_sequence(&data)
     }
 }
 
@@ -72,7 +72,7 @@ pub struct Sweep {
 impl Sweep {
     pub fn abi_encode(&self) -> Vec<u8> {
         let data = (self.token, self.recipient, self.amount_min);
-        SweepType::abi_encode(&data)
+        SweepType::abi_encode_sequence(&data)
     }
 }
 
@@ -93,7 +93,7 @@ pub struct PayPortion {
 impl PayPortion {
     pub fn abi_encode(&self) -> Vec<u8> {
         let data = (self.token, self.recipient, self.bips);
-        PayPortionType::abi_encode(&data)
+        PayPortionType::abi_encode_sequence(&data)
     }
 }
 
@@ -106,7 +106,7 @@ pub struct WrapEth {
 impl WrapEth {
     pub fn abi_encode(&self) -> Vec<u8> {
         let data = (self.recipient, self.amount_min);
-        WrapEthType::abi_encode(&data)
+        WrapEthType::abi_encode_sequence(&data)
     }
 }
 
@@ -119,7 +119,7 @@ pub struct UnwrapWeth {
 impl UnwrapWeth {
     pub fn abi_encode(&self) -> Vec<u8> {
         let data = (self.recipient, self.amount_min);
-        UnwrapWethType::abi_encode(&data)
+        UnwrapWethType::abi_encode_sequence(&data)
     }
 }
 
@@ -177,11 +177,15 @@ mod tests {
 
     #[test]
     fn test_encode_commands() {
-        // Swap 0.001 ETH to USDC
+        // Replicate https://optimistic.etherscan.io/tx/0xcc56d922ad307e9ffff9935f7f28f8cdb7de7e1d0e83d3c6f8520c5eeed69e41
         let amount_in = U256::from(1000000000000000u64);
+        // WETH / USDC 0.05% pool (5 bps)
         let path = HexDecode("0x42000000000000000000000000000000000000060001f40b2c639c533813f4aa9d7837caf62653d097ff85").unwrap();
         let fee_receiver = Address::from_str("0x7ffc3dbf3b2b50ff3a1d5523bc24bb5043837b14").unwrap();
         let token_usdc = Address::from_str("0x0b2c639c533813f4aa9d7837caf62653d097ff85").unwrap();
+        let amount_min = 2597593; // quote amount x (1 - slippage 0.5% - ref fee 0.25%)
+        let ref_fee_bp = 25; // 0.25%
+
         let commands: Vec<UniversalRouterCommand> = vec![
             UniversalRouterCommand::WRAP_ETH(WrapEth {
                 recipient: Address::from_str(ADDRESS_THIS).unwrap(),
@@ -197,21 +201,19 @@ mod tests {
             UniversalRouterCommand::PAY_PORTION(PayPortion {
                 token: token_usdc,
                 recipient: fee_receiver,
-                bips: U256::from(25),
+                bips: U256::from(ref_fee_bp),
             }),
             UniversalRouterCommand::SWEEP(Sweep {
                 token: token_usdc,
                 recipient: Address::from_str(MSG_SENDER).unwrap(),
-                amount_min: U160::from(2597593),
+                amount_min: U160::from(amount_min),
             }),
         ];
 
         let deadline = U256::from(1729227095);
         let expected = "0x3593564c000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000006711e95700000000000000000000000000000000000000000000000000000000000000040b000604000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000000000000000e0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000002800000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000038d7ea4c680000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000038d7ea4c68000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000a00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002b42000000000000000000000000000000000000060001f40b2c639c533813f4aa9d7837caf62653d097ff8500000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000600000000000000000000000000b2c639c533813f4aa9d7837caf62653d097ff850000000000000000000000007ffc3dbf3b2b50ff3a1d5523bc24bb5043837b14000000000000000000000000000000000000000000000000000000000000001900000000000000000000000000000000000000000000000000000000000000600000000000000000000000000b2c639c533813f4aa9d7837caf62653d097ff850000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000027a2d9";
-
         let encoded = encode_commands(&commands, deadline);
 
-        // FIXME: fix encoding
-        assert_ne!(HexEncode(encoded), expected);
+        assert_eq!(HexEncode(encoded), expected);
     }
 }
