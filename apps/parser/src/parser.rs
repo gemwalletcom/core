@@ -101,7 +101,7 @@ impl Parser {
                             .database
                             .set_parser_state_current_block(self.chain, end_block);
 
-                        println!("parser block complete: {}, blocks: {:?} transactions: {} of {}, to go blocks: {}, in: {:?}",  self.chain.as_ref(), next_blocks, result.transactions, result.insert_transactions, to_go_blocks, start.elapsed());
+                        println!("parser block complete: {}, blocks: {:?} transactions: {} of {}, to go blocks: {}, in: {:?}", self.chain.as_ref(), next_blocks, result.transactions, result.insert_transactions, to_go_blocks, start.elapsed());
                     }
                     Err(err) => {
                         println!(
@@ -139,7 +139,7 @@ impl Parser {
                     .iter()
                     .map(|block| self.provider.get_transactions(*block as i64)),
             )
-            .await;
+                .await;
             match results {
                 Ok(transactions) => {
                     return Ok(transactions
@@ -156,7 +156,7 @@ impl Parser {
                     tokio::time::sleep(Duration::from_millis(
                         retry_attempts_count * self.options.timeout * 2,
                     ))
-                    .await;
+                        .await;
                 }
             }
         }
@@ -174,6 +174,11 @@ impl Parser {
             .collect();
         let subscriptions = self.database.get_subscriptions(self.chain, addresses)?;
         let mut transactions_map: HashMap<String, primitives::Transaction> = HashMap::new();
+
+        // Debugging only, insert all transactions
+        // for transaction in transactions.clone().into_iter() {
+        //     transactions_map.insert(transaction.clone().id, transaction.clone());
+        // }
 
         for subscription in subscriptions {
             for transaction in transactions.clone() {
@@ -261,28 +266,32 @@ impl Parser {
             })
             .collect::<Vec<primitives::Transaction>>();
 
-        let transactions = primitive_transactions
-            .clone()
-            .into_iter()
-            .map(storage::models::Transaction::from_primitive)
-            .collect::<Vec<storage::models::Transaction>>();
+        let transaction_chunks = primitive_transactions.chunks(300);
 
-        let transaction_addresses = primitive_transactions
-            .clone()
-            .into_iter()
-            .flat_map(|transaction| {
-                storage::models::TransactionAddresses::from_primitive(transaction)
-            })
-            .collect::<Vec<storage::models::TransactionAddresses>>();
+        for chunk in transaction_chunks {
+            let transactions = chunk.to_vec()
+                .clone()
+                .into_iter()
+                .map(storage::models::Transaction::from_primitive)
+                .collect::<Vec<storage::models::Transaction>>();
 
-        if transactions.is_empty() || transaction_addresses.is_empty() {
-            return Ok(0);
+            let transaction_addresses = chunk.to_vec()
+                .clone()
+                .into_iter()
+                .flat_map(|transaction| {
+                    storage::models::TransactionAddresses::from_primitive(transaction)
+                })
+                .collect::<Vec<storage::models::TransactionAddresses>>();
+
+            if transactions.is_empty() || transaction_addresses.is_empty() {
+                return Ok(primitive_transactions.len());
+            }
+
+            let _ = self
+                .database
+                .add_transactions(transactions.clone(), transaction_addresses.clone());
         }
 
-        let _ = self
-            .database
-            .add_transactions(transactions.clone(), transaction_addresses)?;
-
-        Ok(transactions.len())
+        Ok(primitive_transactions.len())
     }
 }
