@@ -3,6 +3,7 @@
 pub struct Banner {
     wallet: Option<Wallet>,
     asset: Option<Asset>,
+    chain: Option<Chain>,
     event: BannerEvent,
     state: BannerState,
 }
@@ -10,15 +11,16 @@ pub struct Banner {
 #[typeshare(swift = "Equatable, CaseIterable, Sendable")]
 #[serde(rename_all = "camelCase")]
 pub enum BannerEvent {
-    stake,
-    account_activation,
-    enable_notifications,
+    Stake,
+    AccountActivation,
+    EnableNotifications,
+    AccountBlockedMultiSignature,
 }
 
 #[typeshare(swift = "Equatable, CaseIterable, Sendable")]
 #[serde(rename_all = "camelCase")]
 pub enum BannerState {
-    active,
-    cancelled,
-    always_active,
+    Active,
+    Cancelled,
+    AlwaysActive,
 }

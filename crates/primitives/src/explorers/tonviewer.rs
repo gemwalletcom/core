@@ -28,4 +28,7 @@ impl BlockExplorer for TonViewer {
     fn get_token_url(&self, _token: &str) -> Option<String> {
         Some(self.get_address_url(_token))
     }
+    fn get_validator_url(&self, validator: &str) -> Option<String> {
+        self.get_address_url(validator).into()
+    }
 }

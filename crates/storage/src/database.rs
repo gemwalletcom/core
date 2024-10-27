@@ -342,7 +342,7 @@ impl DatabaseClient {
                 .filter(chain.eq(subscription.chain))
                 .filter(address.eq(subscription.address)),
         )
-        .execute(&mut self.connection)
+            .execute(&mut self.connection)
     }
 
     // distinct_on is used to only select once subscription per user device
@@ -388,7 +388,7 @@ impl DatabaseClient {
             .read_write()
             .run::<_, diesel::result::Error, _>(|conn: &mut PgConnection| {
                 use crate::schema::transactions::dsl::*;
-                let _ = diesel::insert_into(transactions::table())
+                let query1 = diesel::insert_into(transactions::table())
                     .values(transactions_values)
                     .on_conflict((chain, hash))
                     .do_update()
@@ -402,8 +402,12 @@ impl DatabaseClient {
                     ))
                     .execute(conn);
 
+                if let Some(error) = query1.err() {
+                    return Err(error);
+                }
+
                 use crate::schema::transactions_addresses::dsl::*;
-                let _ = diesel::insert_into(transactions_addresses::table())
+                let query2 = diesel::insert_into(transactions_addresses::table())
                     .values(&addresses_values)
                     .on_conflict((
                         super::schema::transactions_addresses::transaction_id,
@@ -412,6 +416,10 @@ impl DatabaseClient {
                     ))
                     .do_nothing()
                     .execute(conn);
+
+                if let Some(error) = query2.err() {
+                    return Err(error);
+                }
 
                 Ok(true)
             });

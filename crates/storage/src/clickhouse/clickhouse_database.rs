@@ -1,18 +1,17 @@
-use clickhouse::{error::Result, Client};
-
+use clickhouse::{error::Result, Client, Row};
+use serde::Serialize;
 use crate::models::{CreateChart, GetChart};
 
-pub struct ClickhouseDatabase {
+pub struct ClickhouseClient {
     client: Client,
 }
 
 pub const CREATE_TABLES: &str = include_str!("./clickhouse_migration.sql");
 pub const CHARTS_TABLE_NAME: &str = "charts";
 
-//TODO: Migrate to storage crate
-impl ClickhouseDatabase {
-    pub fn new(url: &str) -> Self {
-        let client = Client::default().with_url(url).with_database("api");
+impl ClickhouseClient {
+    pub fn new(url: &str, database: &str) -> Self {
+        let client = Client::default().with_url(url).with_database(database);
         Self { client }
     }
 
@@ -21,13 +20,16 @@ impl ClickhouseDatabase {
     }
 
     pub async fn add_charts(&self, charts: Vec<CreateChart>) -> Result<usize> {
-        let mut inserter = self.client.inserter(CHARTS_TABLE_NAME)?.with_max_entries(50);
+        self.add_items(CHARTS_TABLE_NAME, charts).await
+    }
 
-        for chart in charts.clone() {
-            inserter.write(&chart).await?;
+    pub async fn add_items<T: Serialize + Clone + Row>(&self, table_name: &str, values: Vec<T>) -> Result<usize> {
+        let mut inserter = self.client.inserter(table_name)?.with_max_entries(50);
+        for value in values.clone() {
+            inserter.write(&value).await?;
         }
         inserter.end().await?;
-        Ok(charts.len())
+        Ok(values.len())
     }
 
     pub async fn get_charts(&self, coin_id: &str, period: &str, period_limit: i32) -> Result<Vec<GetChart>> {

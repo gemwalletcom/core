@@ -1,4 +1,4 @@
-use primitives::{block_explorer::get_block_explorers, chain::Chain};
+use primitives::{block_explorer::{get_block_explorer},  chain::Chain};
 use std::str::FromStr;
 
 #[derive(uniffi::Object)]
@@ -16,32 +16,25 @@ impl Explorer {
     }
 
     pub fn get_transaction_url(&self, explorer_name: &str, transaction_id: &str) -> String {
-        get_block_explorers(self.chain)
-            .into_iter()
-            .find(|x| x.name() == explorer_name)
-            .unwrap()
-            .get_tx_url(transaction_id)
+        get_block_explorer(self.chain, explorer_name).get_tx_url(transaction_id)
     }
 
     pub fn get_address_url(&self, explorer_name: &str, address: &str) -> String {
-        get_block_explorers(self.chain)
-            .into_iter()
-            .find(|x| x.name() == explorer_name)
-            .unwrap()
-            .get_address_url(address)
+        get_block_explorer(self.chain, explorer_name).get_address_url(address)
     }
 
     pub fn get_token_url(&self, explorer_name: &str, address: &str) -> Option<String> {
-        get_block_explorers(self.chain)
-            .into_iter()
-            .find(|x| x.name() == explorer_name)
-            .unwrap()
-            .get_token_url(address)
+        get_block_explorer(self.chain, explorer_name).get_token_url(address)
+    }
+
+    pub fn get_validator_url(&self, explorer_name: &str, address: &str) -> Option<String> {
+        get_block_explorer(self.chain, explorer_name).get_validator_url(address)
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use primitives::block_explorer::get_block_explorers;
     use super::*;
 
     #[test]
@@ -274,6 +267,13 @@ mod tests {
                 "ArS7DzeHUA54ccRG12SqEZwt7snQePcanZ77Mkm2KRos",
             ),
             "https://suiscan.xyz/mainnet/tx/ArS7DzeHUA54ccRG12SqEZwt7snQePcanZ77Mkm2KRos"
+        );
+        assert_eq!(
+            explorer.get_validator_url(
+                &explorers[0].name(),
+                "0x61953ea72709eed72f4441dd944eec49a11b4acabfc8e04015e89c63be81b6ab",
+            ).unwrap(),
+            "https://suiscan.xyz/mainnet/validator/0x61953ea72709eed72f4441dd944eec49a11b4acabfc8e04015e89c63be81b6ab"
         );
 
         assert_eq!(

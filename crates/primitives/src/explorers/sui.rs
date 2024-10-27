@@ -25,8 +25,11 @@ impl BlockExplorer for SuiScan {
     fn get_address_url(&self, address: &str) -> String {
         format!("{}/account/{}", self.meta.base_url, address)
     }
-    fn get_token_url(&self, _token: &str) -> Option<String> {
-        Some(format!("{}/account/{}", self.meta.base_url, _token))
+    fn get_token_url(&self, token: &str) -> Option<String> {
+        format!("{}/account/{}", self.meta.base_url, token).into()
+    }
+    fn get_validator_url(&self, validator: &str) -> Option<String> {
+        format!("{}/validator/{}", self.meta.base_url, validator).into()
     }
 }
 
@@ -54,7 +57,11 @@ impl BlockExplorer for SuiVision {
     fn get_address_url(&self, address: &str) -> String {
         format!("{}/account/{}", self.meta.base_url, address)
     }
-    fn get_token_url(&self, _token: &str) -> Option<String> {
-        Some(format!("{}/coin/{}", self.meta.base_url, _token))
+    fn get_token_url(&self, token: &str) -> Option<String> {
+        format!("{}/coin/{}", self.meta.base_url, token).into()
+    }
+
+    fn get_validator_url(&self, validator: &str) -> Option<String> {
+        format!("{}/validator/{}", self.meta.base_url, validator).into()
     }
 }

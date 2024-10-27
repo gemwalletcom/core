@@ -3,6 +3,7 @@ use job_runner::run_job;
 use pricer::{asset_updater::AssetUpdater, chart_client::ChartClient, charts_updater::ChartsUpdater, price_client::PriceClient, price_updater::PriceUpdater};
 use settings::Settings;
 use std::{sync::Arc, time::Duration};
+use storage::ClickhouseClient;
 
 #[tokio::main]
 async fn main() {
@@ -70,7 +71,8 @@ async fn main() {
         move || {
             let settings = Arc::clone(&settings);
             let coingecko_client = CoinGeckoClient::new(&settings.coingecko.key.secret);
-            let charts_client = ChartClient::new(&settings.postgres.url, &settings.clickhouse.url);
+            let clickhouse_database = ClickhouseClient::new(&settings.clickhouse.url, &settings.clickhouse.database);
+            let charts_client = ChartClient::new(&settings.postgres.url, clickhouse_database);
             let price_client = PriceClient::new(&settings.redis.url, &settings.postgres.url);
             let mut charts_updater = ChartsUpdater::new(charts_client, price_client, coingecko_client);
             async move { charts_updater.update_charts().await }

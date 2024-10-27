@@ -36,7 +36,7 @@ graph LR
 
 ### Setup Core
 
-Run `make install` to install rust, typeshare
+Run `just install` to install rust, typeshare
 
 ### Setup DB
 
