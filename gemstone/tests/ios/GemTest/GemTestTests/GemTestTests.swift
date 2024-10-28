@@ -92,7 +92,7 @@ final class GemTestTests: XCTestCase {
         XCTAssertEqual(String(data: encoded, encoding: .utf8), expected)
     }
 
-    func testDeocdingJsonRpcResult() throws {
+    func testDecodingJsonRpcResult() throws {
         let response = """
         {"jsonrpc": "2.0","id": 1,"result": "0x21e3bb1a6"}
         """

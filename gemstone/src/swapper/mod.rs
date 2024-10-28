@@ -1,9 +1,13 @@
+use crate::debug_println;
 use crate::network::AlienProvider;
 use async_trait::async_trait;
 use primitives::{SwapQuote, SwapQuoteProtocolRequest};
 use std::{fmt::Debug, sync::Arc};
 mod custom_types;
+mod slippage;
 mod uniswap;
+
+static DEFAULT_SLIPPAGE_BPS: u32 = 300;
 
 #[derive(Debug, thiserror::Error, uniffi::Error)]
 pub enum GemSwapperError {
@@ -29,41 +33,52 @@ pub trait GemSwapProvider: Send + Sync + Debug {
         &self,
         request: &SwapQuoteProtocolRequest,
         provider: Arc<dyn AlienProvider>,
-        fee_options: Option<GemSwapFeeOptions>,
+        swap_options: &GemSwapOptions,
     ) -> Result<SwapQuote, GemSwapperError>;
 }
 
 #[derive(Debug, Clone, uniffi::Record)]
-pub struct GemSwapFeeOptions {
+pub struct GemSwapOptions {
+    pub slippage_bps: u32,
     pub fee_bps: u32,
     pub fee_address: String,
+}
+
+impl Default for GemSwapOptions {
+    fn default() -> Self {
+        Self {
+            slippage_bps: DEFAULT_SLIPPAGE_BPS,
+            fee_bps: 0,
+            fee_address: String::from(""),
+        }
+    }
 }
 
 #[derive(Debug, uniffi::Object)]
 pub struct GemSwapper {
     pub rpc_provider: Arc<dyn AlienProvider>,
     pub swappers: Vec<Box<dyn GemSwapProvider>>,
-    pub fee_options: Option<GemSwapFeeOptions>,
 }
 
 #[uniffi::export]
 impl GemSwapper {
     #[uniffi::constructor]
-    fn new(rpc_provider: Arc<dyn AlienProvider>, fee_options: Option<GemSwapFeeOptions>) -> Self {
+    fn new(rpc_provider: Arc<dyn AlienProvider>) -> Self {
         Self {
             rpc_provider,
             swappers: vec![Box::new(uniswap::UniswapV3::new())],
-            fee_options,
         }
     }
 
-    async fn fetch_quote(&self, request: SwapQuoteProtocolRequest) -> Result<SwapQuote, GemSwapperError> {
+    async fn fetch_quote(&self, request: SwapQuoteProtocolRequest, swap_options: Option<GemSwapOptions>) -> Result<SwapQuote, GemSwapperError> {
+        let swap_options = swap_options.unwrap_or_default();
+
         for swapper in self.swappers.iter() {
-            let quote = swapper.fetch_quote(&request, self.rpc_provider.clone(), self.fee_options.clone()).await;
+            let quote = swapper.fetch_quote(&request, self.rpc_provider.clone(), &swap_options).await;
             match quote {
                 Ok(quote) => return Ok(quote),
                 Err(err) => {
-                    println!("<== fetch_quote error: {:?}", err);
+                    debug_println!("<== fetch_quote error: {:?}", err);
                 }
             }
         }
