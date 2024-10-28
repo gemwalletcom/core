@@ -47,7 +47,7 @@ use rocket::tokio::sync::Mutex;
 use rocket::{Build, Rocket};
 use security_providers::SecurityProviderFactory;
 use security_scan::SecurityScanClient;
-use settings::{Settings};
+use settings::Settings;
 use storage::{ClickhouseClient, DatabaseClient};
 use subscription_client::SubscriptionsClient;
 use swap_client::SwapClient;
@@ -80,12 +80,6 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
     let parser_client = ParserClient::new(settings_clone.clone()).await;
     let assets_client = AssetsClient::new(postgres_url).await;
     let swapper_configuration = SwapperConfiguration {
-        oneinch: SwapperClientConfiguration {
-            url: settings.swap.oneinch.url,
-            key: settings.swap.oneinch.key,
-            fee_percent: settings.swap.oneinch.fee.percent,
-            fee_address: settings.swap.oneinch.fee.address,
-        },
         jupiter: SwapperClientConfiguration {
             url: settings.swap.jupiter.url,
             key: "".to_string(),

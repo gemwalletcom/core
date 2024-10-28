@@ -1,6 +1,5 @@
 mod device_updater;
 mod fiat_assets_updater;
-mod oneinch_updater;
 mod tokenlist_updater;
 mod version_updater;
 mod transaction_updater;
@@ -49,17 +48,6 @@ pub async fn main() {
         }
     });
 
-    let update_oneinch_tokenlist = run_job("update 1inch token list", Duration::from_secs(86400), {
-        let settings = Arc::new(settings.clone());
-        move || {
-            let mut oneinch_updater = oneinch_updater::Client::new(
-                swap_oneinch::OneInchClient::new(&settings.swap.oneinch.url, &settings.swap.oneinch.key, 0.0, "".to_string()),
-                &settings.postgres.url,
-            );
-            async move { oneinch_updater.update_swap_tokenlist().await }
-        }
-    });
-
     let device_updater = run_job("device updater", Duration::from_secs(86400), {
         let settings = Arc::new(settings.clone());
         move || {
@@ -99,7 +87,6 @@ pub async fn main() {
                 Box::pin(update_fiat_assets),
                 Box::pin(update_appstore_version),
                 Box::pin(update_apk_version),
-                Box::pin(update_oneinch_tokenlist),
                 Box::pin(device_updater),
                 Box::pin(token_list_updater),
                 Box::pin(transaction_updater),

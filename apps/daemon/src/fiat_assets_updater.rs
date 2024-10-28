@@ -47,8 +47,9 @@ impl FiatAssetsUpdater {
                             Ok(_) => {}
                             Err(err) => {
                                 println!(
-                                    "add_fiat_assets for provider: {}, {:?} error: {}",
+                                    "add_fiat_assets for provider: {}, {:?}:{:?} error: {}",
                                     provider.name().as_str(),
+                                    asset.code,
                                     asset.asset_id,
                                     err
                                 );

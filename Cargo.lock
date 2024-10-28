@@ -1985,7 +1985,6 @@ dependencies = [
  "serde_json",
  "settings",
  "storage",
- "swap_oneinch",
  "tokio",
 ]
 
@@ -7816,19 +7815,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "swap_oneinch"
-version = "1.0.0"
-dependencies = [
- "async-trait",
- "futures",
- "gem_evm",
- "primitives",
- "reqwest",
- "serde",
- "swap_provider",
-]
-
-[[package]]
 name = "swap_provider"
 version = "1.0.0"
 dependencies = [
@@ -7856,7 +7842,6 @@ dependencies = [
  "serde",
  "swap_aftermath",
  "swap_jupiter",
- "swap_oneinch",
  "swap_provider",
  "swap_thorchain",
 ]
