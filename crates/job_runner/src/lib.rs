@@ -1,16 +1,14 @@
 use chrono::Local;
-use tokio::task;
-use tokio::task::JoinHandle;
+use std::future::Future;
 use tokio::time::{Duration, Instant};
 
-// Refactor to accept a generic output type `R` from the job function
-pub fn run_job<F, Fut, R>(name: &'static str, interval_duration: Duration, job_fn: F) -> JoinHandle<()>
+pub fn run_job<F, Fut, R>(name: &'static str, interval_duration: Duration, job_fn: F) -> impl Future<Output=()>
 where
     F: Fn() -> Fut + Send + Sync + 'static,
-    Fut: std::future::Future<Output = R> + Send + 'static,
-    R: std::fmt::Debug + Send + 'static, // The result type must implement Debug for printing
+    Fut: Future<Output=R> + Send + 'static,
+    R: std::fmt::Debug + Send + 'static,
 {
-    task::spawn(async move {
+    async move {
         loop {
             let now = Instant::now();
 
@@ -33,5 +31,5 @@ where
 
             tokio::time::sleep(interval_duration).await;
         }
-    })
+    }
 }

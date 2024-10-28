@@ -1977,6 +1977,7 @@ version = "1.0.0"
 dependencies = [
  "api_connector",
  "fiat",
+ "futures",
  "job_runner",
  "primitives",
  "reqwest",

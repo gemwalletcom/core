@@ -13,6 +13,14 @@ pub struct Subscription {
     pub address: String,
 }
 
+#[derive(Debug, Queryable, Selectable, Serialize, Deserialize, Insertable, AsChangeset, Clone)]
+#[diesel(table_name = crate::schema::subscriptions_addresses_exclude)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+pub struct SubscriptionAddressExclude {
+    pub address: String,
+    pub chain: String,
+}
+
 impl Subscription {
     pub fn as_primitive(&self) -> primitives::Subscription {
         primitives::Subscription {
