@@ -7,7 +7,7 @@ use gem_evm::{
     address::EthereumAddress,
     jsonrpc::{BlockParameter, EthereumRpc, TransactionObject},
     uniswap::{
-        command::{encode_commands, PayPortion, Sweep, UniversalRouterCommand, V3SwapExactIn, WrapEth, ADDRESS_THIS, MSG_SENDER},
+        command::{encode_commands, PayPortion, Sweep, UniversalRouterCommand, UnwrapWeth, V3SwapExactIn, V3SwapExactOut, WrapEth, ADDRESS_THIS, MSG_SENDER},
         contract::IQuoterV2,
         deployment::get_deployment_by_chain,
         FeeTier,
@@ -18,7 +18,7 @@ use primitives::{AssetId, Chain, ChainType, EVMChain, SwapMode, SwapQuote, SwapQ
 use alloy_core::{
     primitives::{
         hex::{decode as HexDecode, encode_prefixed as HexEncode},
-        Address, Bytes, U160, U256,
+        Address, Bytes, U256,
     },
     sol_types::SolCall,
 };
@@ -139,6 +139,7 @@ impl UniswapV3 {
         fee_tier: &FeeTier,
         wrap_input_eth: bool,
         unwrap_output_weth: bool,
+        recipient: &EthereumAddress,
         fee_options: Option<GemSwapFeeOptions>,
     ) -> Result<Vec<UniversalRouterCommand>, GemSwapperError> {
         let path = Self::build_path_with_token(token_in, token_out, fee_tier);
@@ -150,7 +151,12 @@ impl UniswapV3 {
                 recipient: Address::from_str(ADDRESS_THIS).unwrap(),
                 amount_min: amount_in,
             }));
+        } else {
+            // FIXME insert Permit2
+            todo!("permit2 not implemented");
         }
+        // FIXME set proper payer_is_user
+        let payer_is_user = false;
         match mode {
             SwapMode::ExactIn => {
                 // insert V3_SWAP_EXACT_IN
@@ -159,31 +165,56 @@ impl UniswapV3 {
                     amount_in,
                     amount_out_min: U256::from(0),
                     path: path.clone(),
-                    payer_is_user: false,
+                    payer_is_user,
                 }))
             }
             SwapMode::ExactOut => {
-                // insert V3_SWAP_EXACT_OUT
+                // FIXME insert V3_SWAP_EXACT_OUT
+                commands.push(UniversalRouterCommand::V3_SWAP_EXACT_OUT(V3SwapExactOut {
+                    recipient: Address::from_str(ADDRESS_THIS).unwrap(),
+                    amount_out: amount_in,
+                    amount_in_max: amount_in,
+                    path: path.clone(),
+                    payer_is_user,
+                }));
+                todo!("swap exact out not implemented");
             }
         }
         if let Some(fee_options) = fee_options {
-            // insert PAY_PORTION
-            commands.push(UniversalRouterCommand::PAY_PORTION(PayPortion {
-                token: Address::from_slice(&token_out.bytes),
-                recipient: Address::from_str(fee_options.fee_address.as_str()).unwrap(),
-                bips: U256::from(fee_options.fee_bps),
-            }));
+            match mode {
+                SwapMode::ExactIn => {
+                    // insert PAY_PORTION
+                    commands.push(UniversalRouterCommand::PAY_PORTION(PayPortion {
+                        token: Address::from_slice(&token_out.bytes),
+                        recipient: Address::from_str(fee_options.fee_address.as_str()).unwrap(),
+                        bips: U256::from(fee_options.fee_bps),
+                    }));
+                }
+                SwapMode::ExactOut => {
+                    // insert TRANSFER
+                    todo!("transfer not implemented");
+                }
+            }
         }
 
         if unwrap_output_weth {
             // insert UNWRAP_WETH
-            todo!()
+            commands.push(UniversalRouterCommand::UNWRAP_WETH(UnwrapWeth {
+                recipient: Address::from_slice(&recipient.bytes),
+                amount_min: U256::from(0),
+            }));
         }
+
+        let sweep_recipient: Address = if unwrap_output_weth {
+            Address::from_str(MSG_SENDER).unwrap()
+        } else {
+            Address::from_slice(&recipient.bytes)
+        };
 
         commands.push(UniversalRouterCommand::SWEEP(Sweep {
             token: Address::from_slice(&token_out.bytes),
-            recipient: Address::from_str(MSG_SENDER).unwrap(),
-            amount_min: U160::from(amount_out),
+            recipient: sweep_recipient,
+            amount_min: U256::from(amount_out),
         }));
         Ok(commands)
     }
@@ -232,7 +263,10 @@ impl GemSwapProvider for UniswapV3 {
 
         let evm_chain = EVMChain::from_chain(request.from_asset.chain).ok_or(GemSwapperError::NotSupportedChain)?;
         let deployment = get_deployment_by_chain(request.from_asset.chain).ok_or(GemSwapperError::NotSupportedChain)?;
-        evm_chain.weth_contract().ok_or(GemSwapperError::NotSupportedChain)?;
+        let recipient = EthereumAddress::parse(&request.wallet_address).ok_or(GemSwapperError::InvalidAddress {
+            address: request.wallet_address.clone(),
+        })?;
+        _ = evm_chain.weth_contract().ok_or(GemSwapperError::NotSupportedChain)?;
 
         // Build path for QuoterV2
         let token_in = Self::get_asset_address(&request.from_asset, evm_chain)?;
@@ -276,6 +310,7 @@ impl GemSwapProvider for UniswapV3 {
                 fee_tier,
                 wrap_input_eth,
                 request.to_asset.is_native(),
+                &recipient,
                 fee_options,
             )?;
             let deadline = SystemTime::now().duration_since(UNIX_EPOCH).expect("Time went backwards").as_secs() + DEFAULT_DEADLINE;

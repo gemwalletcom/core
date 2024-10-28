@@ -3217,6 +3217,7 @@ name = "gem_evm"
 version = "1.0.0"
 dependencies = [
  "alloy-core",
+ "alloy-primitives",
  "alloy-sol-types",
  "anyhow",
  "gem_hash",

@@ -77,7 +77,7 @@ struct ContentView: View {
         "destinationAddress": "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7",
         "amount": "10000000000000000",
         "mode": "exactin",
-        "includeData": false
+        "includeData": true
         }
         """
 
