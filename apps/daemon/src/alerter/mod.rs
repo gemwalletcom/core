@@ -1,20 +1,19 @@
-use std::{sync::Arc, time::Duration};
 mod price_alerts_sender;
+
 use job_runner::run_job;
 use price_alerts_sender::PriceAlertSender;
+use std::future::Future;
+use std::pin::Pin;
+use std::sync::Arc;
+use std::time::Duration;
 
 use api_connector::PusherClient;
 use price_alert::PriceAlertClient;
 use settings::Settings;
 
-#[tokio::main]
-async fn main() {
-    println!("alerter init");
-
-    let settings = Settings::new().unwrap();
-
+pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output=()> + Send>>> {
     let price_alerts_job = run_job("Price Alerts", Duration::from_secs(settings.alerter.update_interval_seconds), {
-        let settings = Arc::new(settings.clone()); // Clone the Arc to move into the job
+        let settings = Arc::new(settings.clone());
         move || {
             let settings = Arc::clone(&settings);
 
@@ -27,12 +26,13 @@ async fn main() {
                     pusher_client,
                     settings.alerter.rules.clone(),
                     settings.pusher.ios.topic.clone(),
-                )
-                .run()
-                .await
+                ).run()
+                    .await
             }
         }
     });
 
-    let _ = tokio::join!(price_alerts_job);
+    vec![
+        Box::pin(price_alerts_job),
+    ]
 }

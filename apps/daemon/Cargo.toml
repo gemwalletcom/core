@@ -12,6 +12,7 @@ reqwest = { workspace = true }
 settings = { path = "../../crates/settings" }
 storage = { path = "../../crates/storage" }
 api_connector = { path = "../../crates/api_connector" }
+price_alert = { path = "../../crates/price_alert" }
 primitives = { path = "../../crates/primitives" }
 fiat = { path = "../../crates/fiat" }
 job_runner = { path = "../../crates/job_runner" }

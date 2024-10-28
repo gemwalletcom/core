@@ -85,21 +85,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "alerter"
-version = "1.0.0"
-dependencies = [
- "api_connector",
- "chrono",
- "job_runner",
- "price_alert",
- "primitives",
- "serde_json",
- "settings",
- "storage",
- "tokio",
-]
-
-[[package]]
 name = "aliasable"
 version = "0.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1979,6 +1964,7 @@ dependencies = [
  "fiat",
  "futures",
  "job_runner",
+ "price_alert",
  "primitives",
  "reqwest",
  "serde",
