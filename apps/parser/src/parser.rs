@@ -233,8 +233,9 @@ impl Parser {
             Ok(_) => {}
             Err(err) => {
                 println!(
-                    "transaction insert: chain: {}, error: {:?}",
+                    "transaction insert: chain: {}, blocks: {:?}, error: {:?}",
                     self.chain.as_ref(),
+                    blocks,
                     err
                 );
             }

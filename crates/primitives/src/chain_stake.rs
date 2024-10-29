@@ -53,10 +53,24 @@ impl StakeChain {
     }
 
     /// Get if chain support redelegate
-    pub fn get_redelegate(&self) -> bool {
+    pub fn get_can_redelegate(&self) -> bool {
         match self {
             Self::Cosmos | Self::Osmosis | Self::Injective | Self::Sei | Self::Celestia | Self::SmartChain | Self::Tron => true,
             Self::Sui | Self::Solana | Self::Ethereum => false,
+        }
+    }
+
+    pub fn get_can_withdraw(&self) -> bool {
+        match self {
+            Self::Solana => true,
+            Self::Cosmos | Self::Osmosis | Self::Injective | Self::Sei | Self::Celestia | Self::SmartChain | Self::Tron | Self::Sui | Self::Ethereum => false,
+        }
+    }
+
+    pub fn get_can_claim_rewards(&self) -> bool {
+        match self {
+            Self::Cosmos | Self::Osmosis | Self::Injective | Self::Sei | Self::Celestia | Self::Tron => true,
+            Self::SmartChain | Self::Sui | Self::Solana | Self::Ethereum => false,
         }
     }
 }

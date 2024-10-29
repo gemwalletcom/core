@@ -8,7 +8,6 @@ serde = { workspace = true }
 reqwest = { workspace = true }
 primitives = { path = "../primitives" }
 
-swap_oneinch = { path = "../swap_oneinch" }
 swap_aftermath = { path = "../swap_aftermath" }
 swap_provider = { path = "../swap_provider" }
 swap_jupiter = { path = "../swap_jupiter" }

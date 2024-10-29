@@ -3,6 +3,7 @@ use crate::models::*;
 use crate::schema::{devices, fiat_providers, prices_assets, transactions_addresses};
 use chrono::{DateTime, Duration, NaiveDateTime, Utc};
 use diesel::associations::HasTable;
+use diesel::dsl::count;
 use diesel::pg::PgConnection;
 use diesel::prelude::*;
 use diesel::{upsert::excluded, Connection};
@@ -460,6 +461,51 @@ impl DatabaseClient {
             .select(Transaction::as_select())
             .load(&mut self.connection)
     }
+
+    pub fn get_transactions_addresses(&mut self, min_count: i64, limit: i64) -> Result<Vec<AddressChainIdResult>, diesel::result::Error> {
+        use crate::schema::transactions_addresses::dsl::*;
+        transactions_addresses
+            .select((address, chain_id))
+            .group_by((address, chain_id))
+            .having(count(address).gt(min_count))
+            .order_by(count(address).desc())
+            .limit(limit)
+            .load::<AddressChainIdResult>(&mut self.connection)
+    }
+
+    pub fn add_subscriptions_address_exclude(&mut self, values: Vec<SubscriptionAddressExclude>) -> Result<usize, diesel::result::Error> {
+        use crate::schema::subscriptions_addresses_exclude::dsl::*;
+        diesel::insert_into(subscriptions_addresses_exclude)
+            .values(values)
+            .on_conflict_do_nothing()
+            .execute(&mut self.connection)
+    }
+
+    pub fn delete_transactions_addresses(&mut self, addresses: Vec<String>) -> Result<usize, diesel::result::Error> {
+        use crate::schema::transactions_addresses::dsl::*;
+        diesel::delete(transactions_addresses)
+            .filter(address.eq_any(addresses))
+            .execute(&mut self.connection)
+    }
+
+    pub fn get_transactions_without_addresses(&mut self, limit: i64) -> Result<Vec<String>, diesel::result::Error> {
+        use crate::schema::transactions::dsl::*;
+        use crate::schema::transactions_addresses::dsl as addr;
+
+        transactions
+            .left_outer_join(addr::transactions_addresses.on(id.eq(addr::transaction_id)))
+            .filter(addr::transaction_id.is_null())
+            .select(id)
+            .limit(limit)
+            .load(&mut self.connection)
+    }
+
+    pub fn delete_transactions_by_ids(&mut self, ids: Vec<String>) -> Result<usize, diesel::result::Error> {
+        use crate::schema::transactions::dsl::*;
+        diesel::delete(transactions.filter(id.eq_any(ids)))
+            .execute(&mut self.connection)
+    }
+
 
     pub fn get_asset(&mut self, asset_id: &str) -> Result<Asset, diesel::result::Error> {
         use crate::schema::assets::dsl::*;

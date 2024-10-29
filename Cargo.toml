@@ -14,7 +14,6 @@ members = [
     "apps/daemon",
     "apps/parser",
     "apps/pricer",
-    "apps/alerter",
     "apps/setup",
 
     "bin/img-downloader",
@@ -47,7 +46,6 @@ default-members = [
     "apps/daemon",
     "apps/parser",
     "apps/pricer",
-    "apps/alerter",
     "apps/setup",
     "bin/generate",
     "gemstone",

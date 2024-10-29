@@ -138,12 +138,6 @@ chains:
   doge:
     url: ""
 swap:
-  oneinch:
-    url: "https://api.1inch.dev"
-    key: ""
-    fee:
-      percent: 0
-      address: ""
   jupiter:
     url: "https://quote-api.jup.ag"
     key: ""

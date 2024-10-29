@@ -244,7 +244,6 @@ pub struct PusherIOS {
 #[derive(Debug, Deserialize, Clone)]
 #[allow(unused)]
 pub struct Swap {
-    pub oneinch: SwapProvider,
     pub jupiter: SwapProvider,
     pub thorchain: SwapProvider,
     pub aftermath: SwapProvider,

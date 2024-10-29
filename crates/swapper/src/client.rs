@@ -1,18 +1,15 @@
 use primitives::{Chain, SwapQuote, SwapQuoteProtocolRequest};
 use swap_jupiter::JupiterClient;
-use swap_oneinch::OneInchClient;
 use swap_provider::ProviderList;
 
 pub struct SwapperClient {
-    oneinch: OneInchClient,
     jupiter: JupiterClient,
     providers: ProviderList,
 }
 
 impl SwapperClient {
-    pub fn new(oneinch: OneInchClient, jupiter: JupiterClient, providers: ProviderList) -> Self {
+    pub fn new(jupiter: JupiterClient, providers: ProviderList) -> Self {
         Self {
-            oneinch,
             jupiter,
             providers,
         }
@@ -32,7 +29,19 @@ impl SwapperClient {
         }
 
         match source_chain {
-            Chain::Ethereum
+            Chain::Solana => self.jupiter.get_quote(quote).await,
+            Chain::Osmosis
+            | Chain::Celestia
+            | Chain::Injective
+            | Chain::Ton
+            | Chain::Tron
+            | Chain::Aptos
+            | Chain::Xrp
+            | Chain::OpBNB
+            | Chain::Noble
+            | Chain::Sei
+            | Chain::Near
+            | Chain::Ethereum
             | Chain::SmartChain
             | Chain::Optimism
             | Chain::Arbitrum
@@ -46,19 +55,7 @@ impl SwapperClient {
             | Chain::ZkSync
             | Chain::Linea
             | Chain::Mantle
-            | Chain::Celo => self.oneinch.get_quote(quote).await,
-            Chain::Solana => self.jupiter.get_quote(quote).await,
-            Chain::Osmosis
-            | Chain::Celestia
-            | Chain::Injective
-            | Chain::Ton
-            | Chain::Tron
-            | Chain::Aptos
-            | Chain::Xrp
-            | Chain::OpBNB
-            | Chain::Noble
-            | Chain::Sei
-            | Chain::Near => todo!(),
+            | Chain::Celo => todo!(),
             Chain::Sui
             | Chain::Thorchain
             | Chain::Doge

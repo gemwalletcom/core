@@ -2,12 +2,10 @@ pub mod client;
 pub use crate::client::SwapperClient;
 use swap_aftermath::provider::AftermathProvider;
 use swap_jupiter::client::JupiterClient;
-use swap_oneinch::OneInchClient;
 use swap_provider::ProviderList;
 use swap_thorchain::provider::ThorchainProvider;
 
 pub struct SwapperConfiguration {
-    pub oneinch: SwapperClientConfiguration,
     pub jupiter: SwapperClientConfiguration,
     pub thorchain: SwapperClientConfiguration,
     pub aftermath: SwapperClientConfiguration,
@@ -20,18 +18,10 @@ pub struct SwapperClientConfiguration {
     pub fee_address: String,
 }
 
-pub struct SwapperOneinchConfiguration {}
-
 pub struct Swapper {}
 
 impl Swapper {
     pub fn build(configuration: SwapperConfiguration) -> SwapperClient {
-        let oneinch_client = OneInchClient::new(
-            configuration.oneinch.url.as_str(),
-            configuration.oneinch.key.as_str(),
-            configuration.oneinch.fee_percent,
-            configuration.oneinch.fee_address,
-        );
         let jupiter_client = JupiterClient::new(configuration.jupiter.url, configuration.jupiter.fee_percent, configuration.jupiter.fee_address);
 
         let providers: ProviderList = vec![
@@ -46,6 +36,6 @@ impl Swapper {
             )),
         ];
 
-        SwapperClient::new(oneinch_client, jupiter_client, providers)
+        SwapperClient::new(jupiter_client, providers)
     }
 }

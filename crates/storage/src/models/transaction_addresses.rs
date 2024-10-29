@@ -55,3 +55,9 @@ impl TransactionAddresses {
         }
     }
 }
+
+#[derive(Queryable, Debug, Clone)]
+pub struct AddressChainIdResult {
+    pub address: String,
+    pub chain_id: String,
+}

@@ -1,17 +1,20 @@
 mod device_updater;
 mod fiat_assets_updater;
-mod oneinch_updater;
 mod tokenlist_updater;
 mod version_updater;
+mod transaction_updater;
+mod alerter;
 
 use crate::device_updater::DeviceUpdater;
 use crate::tokenlist_updater::Client as TokenListClient;
+use crate::transaction_updater::TransactionUpdater;
 use crate::version_updater::Client as VersionClient;
-
 use api_connector::AssetsClient;
 use fiat::FiatProviderFactory;
 use fiat_assets_updater::FiatAssetsUpdater;
 use job_runner::run_job;
+use std::future::Future;
+use std::pin::Pin;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -19,6 +22,7 @@ use std::time::Duration;
 pub async fn main() {
     println!("daemon init");
     let settings = settings::Settings::new().unwrap();
+    let service = std::env::args().nth(1).unwrap_or_default();
 
     let update_fiat_assets = run_job("update fiat assets", Duration::from_secs(3600), {
         let settings = Arc::new(settings.clone());
@@ -45,17 +49,6 @@ pub async fn main() {
         }
     });
 
-    let update_oneinch_tokenlist = run_job("update 1inch token list", Duration::from_secs(86400), {
-        let settings = Arc::new(settings.clone());
-        move || {
-            let mut oneinch_updater = oneinch_updater::Client::new(
-                swap_oneinch::OneInchClient::new(&settings.swap.oneinch.url, &settings.swap.oneinch.key, 0.0, "".to_string()),
-                &settings.postgres.url,
-            );
-            async move { oneinch_updater.update_swap_tokenlist().await }
-        }
-    });
-
     let device_updater = run_job("device updater", Duration::from_secs(86400), {
         let settings = Arc::new(settings.clone());
         move || {
@@ -73,12 +66,31 @@ pub async fn main() {
         }
     });
 
-    let _ = tokio::join!(
-        update_fiat_assets,
-        update_appstore_version,
-        update_apk_version,
-        update_oneinch_tokenlist,
-        device_updater,
-        token_list_updater
-    );
+    let transaction_updater = run_job("transaction update", Duration::from_secs(86400), {
+        let settings = Arc::new(settings.clone());
+        move || {
+            let mut transaction_updater = TransactionUpdater::new(&settings.postgres.url);
+            async move { transaction_updater.update().await }
+        }
+    });
+
+
+    // Pin the futures when creating the services vector
+    let services: Vec<Pin<Box<dyn Future<Output=()> + Send>>> = match service.as_str() {
+        "alerter" => {
+            alerter::jobs(settings.clone()).await
+        }
+        _ => {
+            vec![
+                Box::pin(update_fiat_assets),
+                Box::pin(update_appstore_version),
+                Box::pin(update_apk_version),
+                Box::pin(device_updater),
+                Box::pin(token_list_updater),
+                Box::pin(transaction_updater),
+            ]
+        }
+    };
+
+    let _ = futures::future::join_all(services).await;
 }

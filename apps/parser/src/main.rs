@@ -27,6 +27,7 @@ pub async fn main() {
         .flat_map(|x| Chain::from_str(x.chain.as_ref()))
         .collect();
     let chain_env = std::env::args().nth(1).unwrap_or_default();
+
     let chains = if let Ok(chain) = Chain::from_str(chain_env.as_str()) {
         vec![chain]
     } else {
