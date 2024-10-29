@@ -35,7 +35,7 @@ mod tests {
                 change_amount_on_unstake: false,
                 can_redelegate: false,
                 can_withdraw: false,
-                can_claim_rewards: true
+                can_claim_rewards: false
             }
         );
     }

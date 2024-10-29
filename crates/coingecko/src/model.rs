@@ -67,6 +67,10 @@ pub struct CoinMarket {
     pub circulating_supply: Option<f64>,
     pub total_supply: Option<f64>,
     pub max_supply: Option<f64>,
+    pub ath: Option<f64>,
+    pub ath_date: Option<DateTime<Utc>>,
+    pub atl: Option<f64>,
+    pub atl_date: Option<DateTime<Utc>>,
     pub last_updated: Option<DateTime<Utc>>,
 }
 
