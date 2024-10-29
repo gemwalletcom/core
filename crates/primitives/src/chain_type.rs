@@ -1,7 +1,8 @@
 use serde::{Deserialize, Serialize};
+use strum::{AsRefStr, EnumString};
 use typeshare::typeshare;
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, AsRefStr, EnumString)]
 #[typeshare(swift = "Equatable, CaseIterable, Hashable, Sendable")]
 #[serde(rename_all = "lowercase")]
 pub enum ChainType {

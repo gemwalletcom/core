@@ -3284,6 +3284,7 @@ dependencies = [
  "gem_ton",
  "hex",
  "primitives",
+ "serde",
  "serde_json",
  "thiserror",
  "tokio",

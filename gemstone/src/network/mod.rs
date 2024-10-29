@@ -5,7 +5,7 @@ pub use jsonrpc::{JsonRpcError, JsonRpcRequest, JsonRpcResponse, JsonRpcResult};
 pub mod target;
 pub use target::AlienTarget;
 pub mod provider;
-pub use provider::AlienProvider;
+pub use provider::{AlienProvider, Data};
 
 #[derive(Debug, uniffi::Error, thiserror::Error)]
 pub enum AlienError {
@@ -27,8 +27,8 @@ impl AlienProviderWarp {
         Self { provider }
     }
 
-    pub async fn teleport(&self, target: AlienTarget) -> Result<Vec<u8>, AlienError> {
-        self.provider.request(target).await
+    pub async fn teleport(&self, targets: Vec<AlienTarget>) -> Result<Vec<Data>, AlienError> {
+        self.provider.request(targets).await
     }
 }
 
@@ -46,14 +46,14 @@ mod tests {
 
     #[async_trait]
     impl AlienProvider for AlienProviderMock {
-        async fn request(&self, _target: AlienTarget) -> Result<Vec<u8>, AlienError> {
+        async fn request(&self, _targets: Vec<AlienTarget>) -> Result<Vec<Data>, AlienError> {
             let never = pending::<()>();
             let _ = timeout(Duration::from_millis(200), never).await;
-            Ok(self.response.as_bytes().to_vec())
+            Ok(vec![self.response.as_bytes().to_vec()])
         }
 
-        async fn jsonrpc_call(&self, _requests: Vec<JsonRpcRequest>, _chain: primitives::Chain) -> Result<Vec<JsonRpcResult>, AlienError> {
-            todo!()
+        async fn get_endpoint(&self, _chain: primitives::Chain) -> Result<String, AlienError> {
+            Ok(String::from("http://localhost:8080"))
         }
     }
 
@@ -71,8 +71,9 @@ mod tests {
             headers: None,
             body: None,
         };
-        let bytes = warp.teleport(target).await.unwrap();
-        let string = String::from_utf8(bytes).unwrap();
+        let data_vec = warp.teleport(vec![target]).await.unwrap();
+        let bytes = data_vec.first().unwrap();
+        let string = String::from_utf8(bytes.clone()).unwrap();
 
         assert_eq!("Hello", string);
     }

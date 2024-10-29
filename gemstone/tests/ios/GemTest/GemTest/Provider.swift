@@ -17,27 +17,23 @@ public actor NativeProvider {
 }
 
 extension NativeProvider: AlienProvider {
-    public func request(target: AlienTarget) async throws -> Data {
-        print("==> handle request: \(target)")
-        let req = try target.asRequest()
-        let (data, _) = try await session.data(for: req)
-        return data
+    public func getEndpoint(chain: Chain) async throws -> String {
+        return nodeConfig[chain]!.absoluteString
     }
 
-    public func jsonrpcCall(requests: [JsonRpcRequest], chain: Chain) async throws -> [JsonRpcResult] {
-        let url = nodeConfig[chain]!
-        let targets = requests.map { JsonRpcTarget(request: $0, url: url) }
-        return try await withThrowingTaskGroup(of: JsonRpcResult.self) { group in
-            var results = [JsonRpcResult]()
+    public func request(targets: [AlienTarget]) async throws -> [Data] {
+        return try await withThrowingTaskGroup(of: Data.self) { group in
+            var results = [Data]()
 
             for target in targets {
                 group.addTask {
+                    print("==> handle request: \(target)")
                     let (data, response) = try await self.session.data(for: target.asRequest())
                     if (response as? HTTPURLResponse)?.statusCode != 200 {
                         throw AlienError.ResponseError(msg: "invalid response: \(response)")
                     }
                     print("<== response: \(String(decoding: data, as: UTF8.self))")
-                    return try JSONDecoder().decode(JsonRpcResult.self, from: data)
+                    return data
                 }
             }
             for try await result in group {
@@ -46,12 +42,5 @@ extension NativeProvider: AlienProvider {
 
             return results
         }
-    }
-
-    public func batchJsonrpcCall(requests: [JsonRpcRequest], chain: Chain) async throws -> [JsonRpcResult] {
-        let url = nodeConfig[chain]!
-        let req = try requests.asRequest(url: url)
-        let (data, _) = try await session.data(for: req)
-        return try JSONDecoder().decode([JsonRpcResult].self, from: data)
     }
 }

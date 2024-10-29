@@ -1,7 +1,7 @@
 use crate::{
     debug_println,
-    network::{AlienProvider, JsonRpcRequest, JsonRpcResponse, JsonRpcResult},
-    swapper::{slippage::apply_slippage_in_bp, GemSwapOptions, GemSwapProvider, GemSwapperError},
+    network::{jsonrpc::batch_into_target, AlienProvider, JsonRpcRequest, JsonRpcResponse, JsonRpcResult},
+    swapper::{models::*, slippage::apply_slippage_in_bp, GemSwapProvider, GemSwapperError},
 };
 use gem_evm::{
     address::EthereumAddress,
@@ -13,7 +13,7 @@ use gem_evm::{
         FeeTier,
     },
 };
-use primitives::{AssetId, Chain, ChainType, EVMChain, SwapMode, SwapQuote, SwapQuoteData, SwapQuoteProtocolRequest};
+use primitives::{AssetId, Chain, ChainType, EVMChain};
 
 use alloy_core::{
     primitives::{
@@ -24,6 +24,7 @@ use alloy_core::{
 };
 use alloy_primitives::aliases::U24;
 use async_trait::async_trait;
+use serde_json::Value;
 use std::{
     fmt::Debug,
     str::FromStr,
@@ -36,29 +37,19 @@ static DEFAULT_DEADLINE: u64 = 3600;
 
 impl JsonRpcRequest {
     fn from(val: &EthereumRpc, id: u64) -> Self {
-        match val {
-            EthereumRpc::GasPrice => JsonRpcRequest {
-                method: val.method_name().into(),
-                params: None,
-                id,
-            },
+        let method = val.method_name();
+        let params: Vec<Value> = match val {
+            EthereumRpc::GasPrice => vec![],
             EthereumRpc::GetBalance(address) => {
-                let params: Vec<String> = vec![address.to_string()];
-                JsonRpcRequest {
-                    method: val.method_name().into(),
-                    params: Some(serde_json::to_string(&params).unwrap()),
-                    id,
-                }
+                vec![Value::String(address.to_string())]
             }
-            EthereumRpc::Call(transaction, _block) => {
-                let params = vec![transaction];
-                JsonRpcRequest {
-                    method: val.method_name().into(),
-                    params: Some(serde_json::to_string(&params).unwrap()),
-                    id,
-                }
+            EthereumRpc::Call(tx, block) => {
+                let value = serde_json::to_value(tx).unwrap();
+                vec![value, block.into()]
             }
-        }
+        };
+
+        JsonRpcRequest::new(id, method, params)
     }
 }
 
@@ -96,16 +87,25 @@ impl UniswapV3 {
         Bytes::from(bytes)
     }
 
-    fn build_quoter_request(request: &SwapQuoteProtocolRequest, quoter_v2: &str, amount_in: U256, path: &Bytes) -> EthereumRpc {
+    fn parse_request(request: &GemSwapRequest) -> Result<(EVMChain, EthereumAddress, EthereumAddress, U256), GemSwapperError> {
+        let evm_chain = EVMChain::from_chain(request.from_asset.chain).ok_or(GemSwapperError::NotSupportedChain)?;
+        let token_in = Self::get_asset_address(&request.from_asset, evm_chain)?;
+        let token_out = Self::get_asset_address(&request.to_asset, evm_chain)?;
+        let amount_in = U256::from_str(&request.amount).map_err(|_| GemSwapperError::InvalidAmount)?;
+
+        Ok((evm_chain, token_in, token_out, amount_in))
+    }
+
+    fn build_quoter_request(request: &GemSwapRequest, quoter_v2: &str, amount_in: U256, path: &Bytes) -> EthereumRpc {
         let calldata: Vec<u8> = match request.mode {
-            SwapMode::ExactIn => {
+            GemSwapMode::ExactIn => {
                 let input_call = IQuoterV2::quoteExactInputCall {
                     path: path.clone(),
                     amountIn: amount_in,
                 };
                 input_call.abi_encode()
             }
-            SwapMode::ExactOut => {
+            GemSwapMode::ExactOut => {
                 let output_call = IQuoterV2::quoteExactOutputCall {
                     path: path.clone(),
                     amountOut: amount_in,
@@ -120,9 +120,8 @@ impl UniswapV3 {
         )
     }
 
-    fn decode_quoter_response(response: &JsonRpcResponse) -> Result<U256, GemSwapperError> {
-        let result = response.clone().result.ok_or(GemSwapperError::NetworkError { msg: "No result".into() })?;
-        let decoded = HexDecode(&result).map_err(|_| GemSwapperError::NetworkError {
+    fn decode_quoter_response(response: &JsonRpcResponse<String>) -> Result<U256, GemSwapperError> {
+        let decoded = HexDecode(&response.result).map_err(|_| GemSwapperError::NetworkError {
             msg: "Failed to decode hex result".into(),
         })?;
         let quoter_return = IQuoterV2::quoteExactInputCall::abi_decode_returns(&decoded, true)
@@ -132,15 +131,15 @@ impl UniswapV3 {
     }
 
     fn build_commands(
-        request: &SwapQuoteProtocolRequest,
+        request: &GemSwapRequest,
         token_in: &EthereumAddress,
         token_out: &EthereumAddress,
         amount_in: U256,
         quote_amount: U256,
         fee_tier: &FeeTier,
         permit: Option<Permit2Permit>,
-        options: &GemSwapOptions,
     ) -> Result<Vec<UniversalRouterCommand>, GemSwapperError> {
+        let options = request.options.clone().unwrap_or_default();
         let recipient = Address::from_str(&request.wallet_address).map_err(|_| GemSwapperError::InvalidAddress {
             address: request.wallet_address.clone(),
         })?;
@@ -155,7 +154,7 @@ impl UniswapV3 {
         let mut commands: Vec<UniversalRouterCommand> = vec![];
 
         match mode {
-            SwapMode::ExactIn => {
+            GemSwapMode::ExactIn => {
                 let amount_out = apply_slippage_in_bp(&quote_amount, options.slippage_bps + options.fee_bps);
                 if wrap_input_eth {
                     // Wrap ETH, recipient is this_address
@@ -214,25 +213,41 @@ impl UniswapV3 {
                     }));
                 }
             }
-            SwapMode::ExactOut => {
+            GemSwapMode::ExactOut => {
                 todo!("swap exact out not implemented");
             }
         }
         Ok(commands)
     }
 
-    async fn jsonrpc_call(&self, requests: &[EthereumRpc], provider: Arc<dyn AlienProvider>, chain: Chain) -> Result<Vec<JsonRpcResponse>, GemSwapperError> {
-        let rpc_calls: Vec<JsonRpcRequest> = requests
+    async fn jsonrpc_call(
+        &self,
+        rpc_calls: &[EthereumRpc],
+        provider: Arc<dyn AlienProvider>,
+        chain: Chain,
+    ) -> Result<Vec<JsonRpcResponse<String>>, GemSwapperError> {
+        let requests: Vec<JsonRpcRequest> = rpc_calls
             .iter()
             .enumerate()
             .map(|(index, request)| JsonRpcRequest::from(request, index as u64 + 1))
             .collect();
-        let results = provider
-            .jsonrpc_call(rpc_calls, chain)
+
+        let endpoint = provider
+            .get_endpoint(chain)
             .await
             .map_err(|err| GemSwapperError::NetworkError { msg: err.to_string() })?;
 
-        let responses: Vec<JsonRpcResponse> = results
+        let targets = vec![batch_into_target(&requests, &endpoint)];
+
+        let data_vec = provider
+            .request(targets)
+            .await
+            .map_err(|err| GemSwapperError::NetworkError { msg: err.to_string() })?;
+
+        let data = data_vec.first().ok_or(GemSwapperError::NetworkError { msg: "No result".into() })?;
+        let results: Vec<JsonRpcResult<String>> = serde_json::from_slice(data).map_err(|err| GemSwapperError::NetworkError { msg: err.to_string() })?;
+
+        let responses: Vec<JsonRpcResponse<String>> = results
             .into_iter()
             .filter_map(|result| match result {
                 JsonRpcResult::Value(value) => Some(value),
@@ -252,12 +267,7 @@ impl UniswapV3 {
 
 #[async_trait]
 impl GemSwapProvider for UniswapV3 {
-    async fn fetch_quote(
-        &self,
-        request: &SwapQuoteProtocolRequest,
-        provider: Arc<dyn AlienProvider>,
-        fee_options: &GemSwapOptions,
-    ) -> Result<SwapQuote, GemSwapperError> {
+    async fn fetch_quote(&self, request: &GemSwapRequest, provider: Arc<dyn AlienProvider>) -> Result<GemSwapQuote, GemSwapperError> {
         // Prevent swaps on unsupported chains
         if !self.support_chain(request.from_asset.chain) {
             return Err(GemSwapperError::NotSupportedChain);
@@ -296,32 +306,49 @@ impl GemSwapProvider for UniswapV3 {
 
         debug_println!("fee tier: {:?}", fee_tier);
 
-        let mut swap_data: Option<SwapQuoteData> = None;
-        if request.include_data {
-            let wrap_input_eth = request.from_asset.is_native() && request.mode == SwapMode::ExactIn;
-            let value = if wrap_input_eth { request.amount.clone() } else { String::from("0x0") };
-
-            // FIXME fetch permit2 allowance and request signature
-            let permit: Option<Permit2Permit> = None;
-
-            let commands = Self::build_commands(request, &token_in, &token_out, amount_in, max_amount_out, fee_tier, permit, fee_options)?;
-            let deadline = SystemTime::now().duration_since(UNIX_EPOCH).expect("Time went backwards").as_secs() + DEFAULT_DEADLINE;
-            let encoded = encode_commands(&commands, U256::from(deadline));
-            swap_data = Some(SwapQuoteData {
-                to: deployment.universal_router.into(),
-                value,
-                data: HexEncode(encoded),
-            });
-        }
-
-        Ok(SwapQuote {
+        // FIXME check permit2 approval
+        Ok(GemSwapQuote {
             chain_type: ChainType::Ethereum,
             from_amount: request.amount.clone(),
             to_amount: max_amount_out.to_string(),
-            fee_percent: 0.0,
-            provider: UNISWAP.into(),
-            data: swap_data,
+            provider: GemProviderData {
+                name: UNISWAP.into(),
+                route: GemSwapRoute {
+                    route_type: String::from("v3-pool"),
+                    input: token_in.to_checksum(),
+                    output: token_out.to_checksum(),
+                    fee: (fee_tier.to_owned() as u32).to_string(),
+                },
+            },
             approval: None,
+        })
+    }
+
+    async fn fetch_quote_data(
+        &self,
+        request: &GemSwapRequest,
+        quote: &GemSwapQuote,
+        _provider: Arc<dyn AlienProvider>,
+        _approval: Option<GemApprovalData>,
+    ) -> Result<GemSwapQuoteData, GemSwapperError> {
+        let (_, token_in, token_out, amount_in) = Self::parse_request(request)?;
+        let deployment = get_deployment_by_chain(request.from_asset.chain).ok_or(GemSwapperError::NotSupportedChain)?;
+        let to_amount = U256::from_str(&quote.to_amount).map_err(|_| GemSwapperError::InvalidAmount)?;
+
+        // FIXME convert to permit2
+        let permit: Option<Permit2Permit> = None;
+        let fee_tier = FeeTier::try_from(quote.provider.route.fee.as_str()).map_err(|_| GemSwapperError::InvalidAmount)?;
+
+        let commands = Self::build_commands(request, &token_in, &token_out, amount_in, to_amount, &fee_tier, permit)?;
+        let deadline = SystemTime::now().duration_since(UNIX_EPOCH).expect("Time went backwards").as_secs() + DEFAULT_DEADLINE;
+        let encoded = encode_commands(&commands, U256::from(deadline));
+
+        let wrap_input_eth = request.from_asset.is_native();
+        let value = if wrap_input_eth { request.amount.clone() } else { String::from("0x0") };
+        Ok(GemSwapQuoteData {
+            to: deployment.universal_router.into(),
+            value,
+            data: HexEncode(encoded),
         })
     }
 }
@@ -354,5 +381,49 @@ mod tests {
 
         assert_eq!(quote.amountOut, U256::from(25710318));
         assert_eq!(quote.gasEstimate, U256::from(84766));
+    }
+
+    #[test]
+    fn test_build_commands() {
+        let mut request = GemSwapRequest {
+            // ETH -> USDC
+            from_asset: AssetId::from(Chain::Ethereum, None),
+            to_asset: AssetId::from(Chain::Ethereum, Some("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48".into())),
+            wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
+            destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
+            amount: "10000000000000000".into(),
+            mode: GemSwapMode::ExactIn,
+            options: None,
+        };
+
+        let token_in = EthereumAddress::parse("0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2").unwrap();
+        let token_out = EthereumAddress::parse("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48").unwrap();
+        let amount_in = U256::from(1000000000000000u64);
+        let fee_tier = FeeTier::Low;
+
+        // without fee
+        let commands = UniswapV3::build_commands(&request, &token_in, &token_out, amount_in, U256::from(0), &fee_tier, None).unwrap();
+
+        assert_eq!(commands.len(), 2);
+
+        assert!(matches!(commands[0], UniversalRouterCommand::WRAP_ETH(_)));
+        assert!(matches!(commands[1], UniversalRouterCommand::V3_SWAP_EXACT_IN(_)));
+
+        let options = GemSwapOptions {
+            slippage_bps: 100,
+            fee_bps: 25,
+            fee_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
+            preferred_providers: vec![],
+        };
+        request.options = Some(options);
+
+        let commands = UniswapV3::build_commands(&request, &token_in, &token_out, amount_in, U256::from(0), &fee_tier, None).unwrap();
+
+        assert_eq!(commands.len(), 4);
+
+        assert!(matches!(commands[0], UniversalRouterCommand::WRAP_ETH(_)));
+        assert!(matches!(commands[1], UniversalRouterCommand::V3_SWAP_EXACT_IN(_)));
+        assert!(matches!(commands[2], UniversalRouterCommand::PAY_PORTION(_)));
+        assert!(matches!(commands[3], UniversalRouterCommand::SWEEP(_)));
     }
 }
