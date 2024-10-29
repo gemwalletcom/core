@@ -7,10 +7,10 @@ use parser_proxy::{ParserProxy, ParserProxyUrlConfig};
 pub use pusher::Pusher;
 pub mod parser_proxy;
 
-use std::{collections::HashMap, str::FromStr, time::Duration};
-
+use api_connector::PusherClient;
 use primitives::Chain;
 use settings::Settings;
+use std::{collections::HashMap, str::FromStr, time::Duration};
 use storage::DatabaseClient;
 
 #[tokio::main]
@@ -76,10 +76,10 @@ async fn parser_start(
     chain: Chain,
     node_urls: Vec<String>,
 ) {
+    let pusher_client = PusherClient::new(settings.pusher.url.clone(), settings.pusher.ios.topic.clone());
     let pusher = Pusher::new(
-        settings.pusher.url.clone(),
         settings.postgres.url.clone(),
-        settings.pusher.ios.topic.clone(),
+        pusher_client
     );
     let database_client = DatabaseClient::new(settings.postgres.url.as_str());
 

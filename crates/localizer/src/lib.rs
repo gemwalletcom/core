@@ -60,8 +60,8 @@ impl LanguageLocalizer {
     }
 
     pub fn select_language(&self, language: &str) -> Result<bool, Box<dyn std::error::Error + Send + Sync>> {
-        let langid = language.parse()?;
-        self.localizer.select(&[langid])?;
+        let lang_id = language.parse()?;
+        self.localizer.select(&[lang_id])?;
         Ok(true)
     }
 

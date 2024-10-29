@@ -19,13 +19,12 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output=()> + Sen
 
             async move {
                 let price_alert_client = PriceAlertClient::new(&settings.postgres.url).await;
-                let pusher_client = PusherClient::new(settings.pusher.url.clone());
+                let pusher_client = PusherClient::new(settings.pusher.url.clone(), settings.pusher.ios.topic.clone());
 
                 PriceAlertSender::new(
                     price_alert_client,
                     pusher_client,
-                    settings.alerter.rules.clone(),
-                    settings.pusher.ios.topic.clone(),
+                    settings.alerter.rules.clone()
                 ).run_observer()
                     .await
             }

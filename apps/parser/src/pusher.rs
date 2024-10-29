@@ -7,22 +7,19 @@ use primitives::{
 };
 use storage::DatabaseClient;
 
-use api_connector::pusher::model::{Message, Notification};
+use api_connector::pusher::model::Message;
 use api_connector::PusherClient;
 
 pub struct Pusher {
-    ios_topic: String,
     client: PusherClient,
     database_client: DatabaseClient,
 }
 
 impl Pusher {
-    pub fn new(url: String, database_url: String, ios_topic: String) -> Self {
-        let client = PusherClient::new(url.clone());
+    pub fn new(database_url: String, pusher_client: PusherClient) -> Self {
         let database_client = DatabaseClient::new(&database_url);
         Self {
-            ios_topic,
-            client,
+            client: pusher_client,
             database_client,
         }
     }
@@ -99,13 +96,6 @@ impl Pusher {
         format! {"{} {}", amount, symbol}
     }
 
-    pub fn get_topic(&self, platform: primitives::Platform) -> Option<String> {
-        match platform {
-            primitives::Platform::Android => None,
-            primitives::Platform::IOS => Some(self.ios_topic.clone()),
-        }
-    }
-
     pub async fn push(&mut self, device: primitives::Device, transaction: Transaction, subscription: Subscription) -> Result<usize, Box<dyn Error>> {
         // only push if push is enabled and token is set
         if !device.is_push_enabled || device.token.is_empty() {
@@ -123,14 +113,15 @@ impl Pusher {
             notification_type: PushNotificationTypes::Transaction,
             data: serde_json::to_value(&notification_transaction).ok(),
         };
-        let notification = Notification {
-            tokens: vec![device.token],
-            platform: device.platform.as_i32(),
-            title: message.title,
-            message: message.message.unwrap_or_default(),
-            topic: self.get_topic(device.platform),
+
+        let notification = self.client.new_notification(
+            device.token.as_str(),
+            device.platform,
+            message.title.as_str(),
+            message.message.unwrap_or_default().as_str(),
             data,
-        };
+        );
+
         let response = self.client.push(notification).await?;
 
         if !response.logs.is_empty() {

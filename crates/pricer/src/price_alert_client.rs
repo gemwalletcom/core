@@ -145,7 +145,7 @@ impl PriceAlertClient {
         Ok(notification)
     }
 
-    pub fn get_notifications_for_price_alerts(&mut self, notifications: Vec<PriceAlertNotification>, topic: String) -> Vec<Notification> {
+    pub fn get_notifications_for_price_alerts(&mut self, notifications: Vec<PriceAlertNotification>) -> Vec<Notification> {
         let mut results = vec![];
 
         let formatter = NumberFormatter::new();
@@ -180,14 +180,13 @@ impl PriceAlertClient {
                 data: serde_json::to_value(&price_alert_data).ok(),
                 notification_type: PushNotificationTypes::PriceAlert,
             };
-            let notification = Notification {
-                tokens: vec![price_alert.device.token.clone()],
-                platform: price_alert.device.platform.as_i32(),
-                title: notification_message.title,
-                message: notification_message.description,
-                topic: Some(topic.clone()),
+            let notification = Notification::new(
+                vec![price_alert.device.token.clone()],
+                price_alert.device.platform.as_i32(),
+                notification_message.title,
+                notification_message.description,
                 data,
-            };
+            );
             results.push(notification);
         }
         results

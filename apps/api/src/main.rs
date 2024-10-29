@@ -69,8 +69,8 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
     let providers = NameProviderFactory::create_providers(settings_clone.clone());
     let name_client = NameClient::new(providers);
 
-    let pusher_client = PusherClient::new(settings.pusher.url);
-    let devices_client = DevicesClient::new(postgres_url, pusher_client, settings.pusher.ios.topic).await;
+    let pusher_client = PusherClient::new(settings.pusher.url, settings.pusher.ios.topic);
+    let devices_client = DevicesClient::new(postgres_url, pusher_client).await;
     let transactions_client = TransactionsClient::new(postgres_url).await;
     let subscriptions_client = SubscriptionsClient::new(postgres_url).await;
     let metrics_client = MetricsClient::new(postgres_url).await;

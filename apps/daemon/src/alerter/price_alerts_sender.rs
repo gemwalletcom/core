@@ -7,16 +7,14 @@ use settings::AlerterRules;
 pub struct PriceAlertSender {
     price_alert_client: PriceAlertClient,
     pusher_client: PusherClient,
-    topic: String,
     rules: AlerterRules,
 }
 
 impl PriceAlertSender {
-    pub fn new(price_alert_client: PriceAlertClient, pusher_client: PusherClient, rules: AlerterRules, topic: String) -> Self {
+    pub fn new(price_alert_client: PriceAlertClient, pusher_client: PusherClient, rules: AlerterRules) -> Self {
         Self {
             price_alert_client,
             pusher_client,
-            topic,
             rules,
         }
     }
@@ -31,7 +29,7 @@ impl PriceAlertSender {
 
         let notifications = self
             .price_alert_client
-            .get_notifications_for_price_alerts(price_alert_notifications, self.topic.clone());
+            .get_notifications_for_price_alerts(price_alert_notifications);
 
         self.notify(notifications).await
     }
