@@ -12,7 +12,7 @@ config = { workspace = true }
 prometheus-client = { workspace = true }
 
 storage = { path = "../../crates/storage" }
-pricer = { path = "../pricer" }
+pricer = { path = "../../crates/pricer" }
 fiat = { path = "../../crates/fiat" }
 swapper = { path = "../../crates/swapper" }
 settings = { path = "../../crates/settings" }
@@ -20,7 +20,6 @@ settings_chain = { path = "../../crates/settings_chain" }
 name_resolver = { path = "../../crates/name_resolver" }
 primitives = { path = "../../crates/primitives" }
 api_connector = { path = "../../crates/api_connector" }
-price_alert = { path = "../../crates/price_alert" }
 
 security_provider = { path = "../../crates/security_provider" }
 security_hashdit = { path = "../../crates/security_hashdit" }

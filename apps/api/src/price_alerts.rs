@@ -4,7 +4,7 @@ use rocket::serde::json::Json;
 use rocket::tokio::sync::Mutex;
 use rocket::State;
 
-pub use price_alert::PriceAlertClient;
+pub use pricer::PriceAlertClient;
 
 #[get("/price_alerts/<device_id>")]
 pub async fn get_price_alerts(device_id: &str, client: &State<Mutex<PriceAlertClient>>) -> Json<PriceAlerts> {

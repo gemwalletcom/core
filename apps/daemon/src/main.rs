@@ -4,6 +4,7 @@ mod tokenlist_updater;
 mod version_updater;
 mod transaction_updater;
 mod alerter;
+mod pricer;
 
 use crate::device_updater::DeviceUpdater;
 use crate::tokenlist_updater::Client as TokenListClient;
@@ -21,8 +22,12 @@ use std::time::Duration;
 #[tokio::main]
 pub async fn main() {
     println!("daemon init");
-    let settings = settings::Settings::new().unwrap();
+
     let service = std::env::args().nth(1).unwrap_or_default();
+
+    println!("daemon start service: {service}");
+
+    let settings = settings::Settings::new().unwrap();
 
     let update_fiat_assets = run_job("update fiat assets", Duration::from_secs(3600), {
         let settings = Arc::new(settings.clone());
@@ -79,6 +84,9 @@ pub async fn main() {
     let services: Vec<Pin<Box<dyn Future<Output=()> + Send>>> = match service.as_str() {
         "alerter" => {
             alerter::jobs(settings.clone()).await
+        }
+        "pricer" => {
+            pricer::jobs(settings.clone()).await
         }
         _ => {
             vec![

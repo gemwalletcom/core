@@ -1,8 +1,5 @@
-use crate::chart_client::ChartClient;
-use crate::price_client::PriceClient;
-use coingecko::{Coin, CoinGeckoClient};
-
-use std::thread;
+use coingecko::CoinGeckoClient;
+use pricer::{ChartClient, PriceClient};
 
 use storage::models::CreateChart;
 
@@ -21,12 +18,9 @@ impl ChartsUpdater {
         }
     }
 
-    pub async fn get_coin_list(&mut self) -> Result<Vec<Coin>, Box<dyn std::error::Error>> {
-        Ok(self.coin_gecko_client.get_coin_list().await?)
-    }
-
+    #[allow(unused)]
     pub async fn update_charts_all(&mut self) -> Result<usize, Box<dyn std::error::Error>> {
-        let coin_list = self.get_coin_list().await?;
+        let coin_list = self.coin_gecko_client.get_coin_list().await?;
 
         for coin_id in coin_list.clone() {
             let prices = self.coin_gecko_client.get_market_chart(coin_id.id.as_str()).await;
@@ -56,7 +50,7 @@ impl ChartsUpdater {
 
                     println!("update charts {}", coin_id.id.clone());
 
-                    thread::sleep(std::time::Duration::from_millis(100));
+                    std::thread::sleep(std::time::Duration::from_millis(100));
                 }
                 Err(err) => {
                     println!("update charts error: {}", err);

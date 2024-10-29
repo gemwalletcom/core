@@ -89,7 +89,7 @@ impl LanguageLocalizer {
         }
     }
 
-    pub fn price_alert_all_time_high(&self, symbol: &str, price: &str, price_change: &str) -> LanguageNotification {
+    pub fn price_alert_all_time_high(&self, symbol: &str, price: &str) -> LanguageNotification {
         LanguageNotification {
             title: fl!(self.loader.as_ref(), "notification_price_alert_all_time_high_title", symbol = symbol),
             description: fl!(

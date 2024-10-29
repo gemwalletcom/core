@@ -8,7 +8,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use api_connector::PusherClient;
-use price_alert::PriceAlertClient;
+use pricer::PriceAlertClient;
 use settings::Settings;
 
 pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output=()> + Send>>> {
@@ -31,7 +31,7 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output=()> + Sen
             }
         }
     });
-    
+
     vec![
         Box::pin(price_alerts_job),
     ]

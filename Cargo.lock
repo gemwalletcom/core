@@ -314,7 +314,6 @@ dependencies = [
  "config",
  "fiat",
  "name_resolver",
- "price_alert",
  "pricer",
  "primitives",
  "prometheus-client",
@@ -1961,10 +1960,12 @@ name = "daemon"
 version = "1.0.0"
 dependencies = [
  "api_connector",
+ "chrono",
+ "coingecko",
  "fiat",
  "futures",
  "job_runner",
- "price_alert",
+ "pricer",
  "primitives",
  "reqwest",
  "serde",
@@ -5715,32 +5716,18 @@ dependencies = [
 ]
 
 [[package]]
-name = "price_alert"
-version = "1.0.0"
-dependencies = [
- "api_connector",
- "chrono",
- "localizer",
- "primitives",
- "serde",
- "serde_json",
- "storage",
-]
-
-[[package]]
 name = "pricer"
 version = "1.0.0"
 dependencies = [
+ "api_connector",
  "cacher",
  "chrono",
- "coingecko",
- "job_runner",
+ "localizer",
  "primitives",
  "redis",
+ "serde",
  "serde_json",
- "settings",
  "storage",
- "tokio",
 ]
 
 [[package]]

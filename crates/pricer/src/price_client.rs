@@ -1,17 +1,16 @@
 use chrono::NaiveDateTime;
-use primitives::{asset_price::AssetPrices, Asset, AssetDetails, AssetMarketPrice, AssetScore};
+use primitives::{Asset, AssetDetails, AssetMarketPrice, AssetPrices, AssetScore};
 use redis::{AsyncCommands, RedisResult};
 use std::error::Error;
 use storage::{
     models::{
-        price::{PriceAsset, PriceCache},
-        FiatRate,
+        FiatRate, Price,
+        PriceAsset, PriceCache,
     },
     DatabaseClient,
 };
 
 use cacher::CacherClient;
-use storage::models::Price;
 
 pub struct PriceClient {
     redis_client: redis::Client,

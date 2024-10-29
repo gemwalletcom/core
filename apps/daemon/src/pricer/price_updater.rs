@@ -1,7 +1,7 @@
-use crate::price_client::PriceClient;
 use chrono::{DateTime, Duration, Utc};
 use coingecko::mapper::{get_chain_for_coingecko_platform_id, get_coingecko_market_id_for_chain};
 use coingecko::{Coin, CoinGeckoClient, CoinMarket, SimplePrice};
+use pricer::PriceClient;
 use primitives::chain::Chain;
 use primitives::{AssetId, DEFAULT_FIAT_CURRENCY};
 use std::collections::{HashMap, HashSet};
@@ -46,11 +46,7 @@ impl PriceUpdater {
 
         Ok(chains_assets.len() + assets.len())
     }
-
-    pub async fn update_prices_all(&mut self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
-        self.update_prices(u32::MAX).await
-    }
-
+    
     pub async fn update_prices_simple_high_market_cap(&mut self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
         let ids = self.price_client.get_prices_ids()?.into_iter().take(500).collect::<Vec<_>>();
         self.update_prices_simple_ids(ids).await

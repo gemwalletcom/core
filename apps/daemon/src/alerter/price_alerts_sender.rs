@@ -1,6 +1,7 @@
 use api_connector::pusher::model::Notification;
 use api_connector::PusherClient;
-use price_alert::{client::PriceAlertRules, PriceAlertClient};
+use pricer::price_alert_client::PriceAlertRules;
+use pricer::PriceAlertClient;
 use settings::AlerterRules;
 
 pub struct PriceAlertSender {
