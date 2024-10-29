@@ -34,7 +34,7 @@ async fn main() {
         }
     });
 
-    let update_prices_assets_pages = run_job("Update prices assets 30 pages", Duration::from_secs(86400), {
+    let update_prices_assets_pages = run_job("Update prices assets 30 pages", Duration::from_secs(settings.pricer.timer * 30), {
         let settings = Arc::new(settings.clone());
         move || {
             let settings = Arc::clone(&settings);
