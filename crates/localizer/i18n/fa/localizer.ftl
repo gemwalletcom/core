@@ -19,3 +19,5 @@ notification_price_alert_up_title = 📈 {$symbol} هشدار قیمت
 notification_price_alert_up_description = قیمت با {$price_change} به {$price} افزایش یافت
 notification_price_alert_down_title = 📉 {$symbol} هشدار قیمت
 notification_price_alert_down_description = قیمت با {$price_change} به {$price} کاهش یافت
+notification_price_alert_all_time_high_title = 🔥 {$symbol} بالاترین زمان
+notification_price_alert_all_time_high_description = {$symbol} به بالاترین حد خود در {$price} رسیده است.

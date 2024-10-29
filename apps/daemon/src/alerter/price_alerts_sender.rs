@@ -1,3 +1,4 @@
+use api_connector::pusher::model::Notification;
 use api_connector::PusherClient;
 use price_alert::{client::PriceAlertRules, PriceAlertClient};
 use settings::AlerterRules;
@@ -19,7 +20,7 @@ impl PriceAlertSender {
         }
     }
 
-    pub async fn run(&mut self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn run_observer(&mut self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
         let rules = PriceAlertRules {
             price_change_increase: self.rules.price_increase_percent,
             price_change_decrease: self.rules.price_decrease_percent,
@@ -31,6 +32,10 @@ impl PriceAlertSender {
             .price_alert_client
             .get_notifications_for_price_alerts(price_alert_notifications, self.topic.clone());
 
+        self.notify(notifications).await
+    }
+
+    pub async fn notify(&mut self, notifications: Vec<Notification>) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
         if notifications.is_empty() {
             return Ok(0);
         }

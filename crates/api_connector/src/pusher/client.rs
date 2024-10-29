@@ -1,4 +1,5 @@
 use super::model::{Notification, Notifications, Response};
+
 pub struct PusherClient {
     url: String,
     client: reqwest::Client,

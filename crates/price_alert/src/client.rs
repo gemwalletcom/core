@@ -1,4 +1,5 @@
 use api_connector::pusher::model::Notification;
+use chrono::{Duration, NaiveDateTime, Utc};
 use localizer::{LanguageLocalizer, LanguageNotification};
 use primitives::{
     Asset, Device, NumberFormatter, Price, PriceAlertDirection, PriceAlertType, PriceAlerts, PushNotification, PushNotificationPriceAlert,
@@ -85,14 +86,14 @@ impl PriceAlertClient {
                                     PriceAlertDirection::Up => {
                                         if price.clone().price > price_alert_price {
                                             price_alert_ids.insert(price_alert.id);
-                                            let notification = self.price_alert_notifiction(&price, price_alert, PriceAlertType::PriceUp)?;
+                                            let notification = self.price_alert_notification(&price, price_alert, PriceAlertType::PriceUp)?;
                                             results.push(notification);
                                         }
                                     }
                                     PriceAlertDirection::Down => {
                                         if price.clone().price < price_alert_price {
                                             price_alert_ids.insert(price_alert.id);
-                                            let notification = self.price_alert_notifiction(&price, price_alert, PriceAlertType::PriceDown)?;
+                                            let notification = self.price_alert_notification(&price, price_alert, PriceAlertType::PriceDown)?;
                                             results.push(notification);
                                         }
                                     }
@@ -100,12 +101,17 @@ impl PriceAlertClient {
                             }
                         } else if price.clone().price_change_percentage_24h > rules.price_change_increase {
                             price_alert_ids.insert(price_alert.id);
-                            let notification = self.price_alert_notifiction(&price, price_alert, PriceAlertType::PriceChangesUp)?;
+                            let notification = self.price_alert_notification(&price, price_alert, PriceAlertType::PriceChangesUp)?;
                             results.push(notification);
                         } else if price.clone().price_change_percentage_24h < -rules.price_change_decrease {
                             price_alert_ids.insert(price_alert.id);
-                            let notification = self.price_alert_notifiction(&price, price_alert, PriceAlertType::PriceChangesDown)?;
+                            let notification = self.price_alert_notification(&price, price_alert, PriceAlertType::PriceChangesDown)?;
                             results.push(notification);
+                        } else if let Some(all_time_high_date) = price.clone().all_time_high_date {
+                            if Self::is_within_past(all_time_high_date, Duration::hours(12)) {
+                                let notification = self.price_alert_notification(&price, price_alert, PriceAlertType::AllTimeHigh)?;
+                                results.push(notification);
+                            }
                         }
                     }
                 }
@@ -115,7 +121,11 @@ impl PriceAlertClient {
         Ok(results)
     }
 
-    fn price_alert_notifiction(
+    fn is_within_past(date_time: NaiveDateTime, duration: Duration) -> bool {
+        date_time >= (Utc::now().naive_utc() - duration) && date_time <= Utc::now().naive_utc()
+    }
+
+    fn price_alert_notification(
         &mut self,
         price: &storage::models::Price,
         price_alert: PriceAlert,
@@ -154,6 +164,9 @@ impl PriceAlertClient {
                 }
                 PriceAlertType::PriceChangesDown => {
                     language_localizer.price_alert_down(&price_alert.asset.full_name(), price.unwrap().as_str(), price_change.as_str())
+                }
+                PriceAlertType::AllTimeHigh => {
+                    language_localizer.price_alert_all_time_high(&price_alert.asset.name, price.unwrap().as_str(), price_change.as_str())
                 }
                 PriceAlertType::PriceUp | PriceAlertType::PriceDown | PriceAlertType::PricePercentChangeUp | PriceAlertType::PricePercentChangeDown => {
                     unimplemented!()

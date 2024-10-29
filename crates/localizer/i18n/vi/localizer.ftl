@@ -19,3 +19,5 @@ notification_price_alert_up_title = 📈 {$symbol} Cảnh báo giá
 notification_price_alert_up_description = Giá tăng {$price_change} thành {$price}
 notification_price_alert_down_title = 📉 {$symbol} Cảnh báo giá
 notification_price_alert_down_description = Giá giảm {$price_change} xuống {$price}
+notification_price_alert_all_time_high_title = 🔥 {$symbol} Mức cao nhất mọi thời đại
+notification_price_alert_all_time_high_description = {$symbol} đã đạt mức cao kỷ lục mới tại {$price}.

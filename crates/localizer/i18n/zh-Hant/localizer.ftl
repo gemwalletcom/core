@@ -19,3 +19,5 @@ notification_price_alert_up_title = 📈 {$symbol}價格提醒
 notification_price_alert_up_description = 物價上漲了{$price_change}至{$price}
 notification_price_alert_down_title = 📉 {$symbol}價格提醒
 notification_price_alert_down_description = 價格下降了{$price_change}至{$price}
+notification_price_alert_all_time_high_title = 🔥 {$symbol}歷史新高
+notification_price_alert_all_time_high_description = {$symbol}已達歷史新高，售價為{$price} 。

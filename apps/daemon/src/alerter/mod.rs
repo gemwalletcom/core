@@ -26,12 +26,12 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output=()> + Sen
                     pusher_client,
                     settings.alerter.rules.clone(),
                     settings.pusher.ios.topic.clone(),
-                ).run()
+                ).run_observer()
                     .await
             }
         }
     });
-
+    
     vec![
         Box::pin(price_alerts_job),
     ]

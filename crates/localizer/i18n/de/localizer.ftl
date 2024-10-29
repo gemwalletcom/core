@@ -19,3 +19,5 @@ notification_price_alert_up_title = 📈 {$symbol} Preisalarm
 notification_price_alert_up_description = Preis erhöht um {$price_change} auf {$price}
 notification_price_alert_down_title = 📉 {$symbol} Preisalarm
 notification_price_alert_down_description = Preis um {$price_change} auf {$price} gesenkt
+notification_price_alert_all_time_high_title = 🔥 {$symbol} Allzeithoch
+notification_price_alert_all_time_high_description = {$symbol} hat mit {$price} ein neues Allzeithoch erreicht.
