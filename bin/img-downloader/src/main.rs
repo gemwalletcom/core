@@ -47,7 +47,7 @@ impl Downloader {
             return self.handle_coin_url(&self.args.coin_ids_url, folder).await;
         }
 
-        self.handle_coingecto_top(folder).await
+        self.handle_coingecko_top(folder).await
     }
 
     async fn handle_coin_id(&self, coin_id: &str, folder: &Path) -> Result<(), Box<dyn Error>> {
@@ -74,7 +74,7 @@ impl Downloader {
         Ok(())
     }
 
-    async fn handle_coingecto_top(&self, folder: &Path) -> Result<(), Box<dyn Error>> {
+    async fn handle_coingecko_top(&self, folder: &Path) -> Result<(), Box<dyn Error>> {
         let mut page = self.args.page;
         let total_pages = self.args.count.div_ceil(self.args.page_size);
         while page <= total_pages {
