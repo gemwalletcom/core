@@ -1,9 +1,9 @@
 use std::error::Error;
 
-use crate::ChainProvider;
+use crate::{ChainBlockProvider, ChainTokenDataProvider};
 use async_trait::async_trait;
 use chrono::DateTime;
-use primitives::{chain::Chain, TransactionState, TransactionType};
+use primitives::{chain::Chain, Asset, TransactionState, TransactionType};
 use reqwest_middleware::ClientWithMiddleware;
 use serde_json::json;
 
@@ -116,7 +116,7 @@ impl XRPClient {
 }
 
 #[async_trait]
-impl ChainProvider for XRPClient {
+impl ChainBlockProvider for XRPClient {
     fn get_chain(&self) -> Chain {
         Chain::Xrp
     }
@@ -139,5 +139,12 @@ impl ChainProvider for XRPClient {
             .flat_map(|x| self.map_transaction(x, block_number, block_timestamp))
             .collect::<Vec<primitives::Transaction>>();
         Ok(transactions)
+    }
+}
+
+#[async_trait]
+impl ChainTokenDataProvider for XRPClient {
+    async fn get_token_data(&self, _chain: Chain, _token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
+        unimplemented!()
     }
 }

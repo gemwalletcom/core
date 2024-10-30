@@ -1,6 +1,6 @@
 use std::{error::Error, str::FromStr};
 
-use crate::{sui::model::Digests, ChainProvider};
+use crate::{sui::model::Digests, ChainBlockProvider, ChainTokenDataProvider};
 use async_trait::async_trait;
 use chrono::Utc;
 use jsonrpsee::{
@@ -9,7 +9,7 @@ use jsonrpsee::{
     rpc_params,
 };
 use num_bigint::BigUint;
-use primitives::{chain::Chain, Transaction, TransactionState, TransactionType};
+use primitives::{chain::Chain, Asset, Transaction, TransactionState, TransactionType};
 use serde_json::json;
 
 use super::model::{EventStake, EventUnstake, GasUsed};
@@ -144,7 +144,7 @@ impl SuiClient {
 }
 
 #[async_trait]
-impl ChainProvider for SuiClient {
+impl ChainBlockProvider for SuiClient {
     fn get_chain(&self) -> Chain {
         Chain::Sui
     }
@@ -179,5 +179,12 @@ impl ChainProvider for SuiClient {
             .flat_map(|x| self.map_transaction(x, block_number))
             .collect::<Vec<primitives::Transaction>>();
         return Ok(transactions);
+    }
+}
+
+#[async_trait]
+impl ChainTokenDataProvider for SuiClient {
+    async fn get_token_data(&self, _chain: Chain, _token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
+        unimplemented!()
     }
 }

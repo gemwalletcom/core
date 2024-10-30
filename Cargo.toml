@@ -102,6 +102,7 @@ borsh = { version = "1.4.0", features = ["derive"] }
 uniffi = { version = "0.28.0" }
 uniffi_bindgen = { version = "0.28.0" }
 alloy-core = { version = "0.7.0", features = ["sol-types", "json-abi"] }
+alloy-sol-types = { version = "0.8.9" }
 
 # localizer
 i18n-embed = { version = "0.15.0", features = ["fluent-system", "autoreload"] }
@@ -113,3 +114,4 @@ rust-embed = { version = "8.5.0" }
 rusty-money = { git = "https://github.com/varunsrin/rusty_money.git", rev = "bbc0150", features = [
     "iso",
 ] }
+

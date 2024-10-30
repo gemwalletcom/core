@@ -1,8 +1,10 @@
 extern crate rocket;
+
 use std::str::FromStr;
 
+use crate::asset_client::AssetsChainProvider;
 use crate::AssetsClient;
-use primitives::{AssetFull, Chain};
+use primitives::{Asset, AssetFull, AssetId, Chain};
 use rocket::serde::json::Json;
 use rocket::tokio::sync::Mutex;
 use rocket::State;
@@ -20,6 +22,22 @@ pub async fn get_assets(
 ) -> Json<Vec<AssetFull>> {
     let assets = client.lock().await.get_assets(asset_ids.0).unwrap();
     Json(assets)
+}
+
+#[post("/assets/add", format = "json", data = "<asset_id>")]
+pub async fn add_asset(
+    asset_id: Json<AssetId>,
+    client: &State<Mutex<AssetsClient>>,
+    assets_chain_provider: &State<Mutex<AssetsChainProvider>>,
+) -> Json<Asset> {
+    let asset_id = asset_id.0;
+
+    let asset = assets_chain_provider.lock().await.get_token_data(asset_id.chain, asset_id.token_id.clone().unwrap()).await.unwrap();
+
+    client.lock().await.add_asset(asset.clone()).unwrap();
+    client.lock().await.update_asset_rank(asset.id.to_string().as_str(), 15).unwrap();
+
+    Json(asset)
 }
 
 #[get("/assets/list")]

@@ -28,6 +28,7 @@ mod swap_client;
 mod transaction;
 mod transaction_client;
 
+use crate::asset_client::AssetsChainProvider;
 use api_connector::PusherClient;
 use asset_client::AssetsClient;
 use config_client::Client as ConfigClient;
@@ -48,6 +49,7 @@ use rocket::{Build, Rocket};
 use security_providers::SecurityProviderFactory;
 use security_scan::SecurityScanClient;
 use settings::Settings;
+use settings_chain::ProviderFactory;
 use storage::{ClickhouseClient, DatabaseClient};
 use subscription_client::SubscriptionsClient;
 use swap_client::SwapClient;
@@ -68,6 +70,9 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
     let price_alert_client = PriceAlertClient::new(postgres_url).await;
     let providers = NameProviderFactory::create_providers(settings_clone.clone());
     let name_client = NameClient::new(providers);
+
+    let providers = ProviderFactory::new_providers(&settings);
+    let assets_chain_provider = AssetsChainProvider::new(providers);
 
     let pusher_client = PusherClient::new(settings.pusher.url, settings.pusher.ios.topic);
     let devices_client = DevicesClient::new(postgres_url, pusher_client).await;
@@ -128,6 +133,7 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
         .manage(Mutex::new(swap_client))
         .manage(Mutex::new(nft_client))
         .manage(Mutex::new(price_alert_client))
+        .manage(Mutex::new(assets_chain_provider))
         .mount("/", routes![status::get_status,])
         .mount(
             "/v1",
@@ -148,6 +154,7 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
                 device::delete_device,
                 device::send_push_notification_device,
                 asset::get_asset,
+                asset::add_asset,
                 asset::get_assets,
                 asset::get_assets_list,
                 asset::get_assets_search,

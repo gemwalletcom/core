@@ -6,13 +6,13 @@ use std::{
 };
 
 use crate::{ParserOptions, Pusher};
-use gem_chain_rpc::ChainProvider;
+use gem_chain_rpc::ChainBlockProvider;
 use primitives::Chain;
 use storage::DatabaseClient;
 
 pub struct Parser {
     chain: Chain,
-    provider: Box<dyn ChainProvider>,
+    provider: Box<dyn ChainBlockProvider>,
     pusher: Pusher,
     database: DatabaseClient,
     options: ParserOptions,
@@ -26,7 +26,7 @@ pub struct ParserBlocksResult {
 
 impl Parser {
     pub fn new(
-        provider: Box<dyn ChainProvider>,
+        provider: Box<dyn ChainBlockProvider>,
         pusher: Pusher,
         database: DatabaseClient,
         options: ParserOptions,
