@@ -353,12 +353,15 @@ diesel::table! {
 diesel::table! {
     transactions_addresses (id) {
         id -> Int4,
+        #[max_length = 32]
+        chain_id -> Varchar,
         #[max_length = 256]
         transaction_id -> Varchar,
         #[max_length = 256]
         asset_id -> Varchar,
         #[max_length = 256]
         address -> Varchar,
+        created_at -> Timestamp,
     }
 }
 
@@ -382,6 +385,7 @@ diesel::joinable!(subscriptions_addresses_exclude -> chains (chain));
 diesel::joinable!(tokenlists -> chains (chain));
 diesel::joinable!(transactions -> chains (chain));
 diesel::joinable!(transactions_addresses -> assets (asset_id));
+diesel::joinable!(transactions_addresses -> chains (chain_id));
 diesel::joinable!(transactions_addresses -> transactions (transaction_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
