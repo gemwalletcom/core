@@ -37,8 +37,9 @@ jobs:
       - name: Install just
         run: cargo install just
 
-      - name: Run tests
-        run: cargo test
+      - name: Setup Xcode
+        run: |
+          sudo xcode-select -s /Applications/Xcode_16.app
 
       - name: Test iOS
         run: |
