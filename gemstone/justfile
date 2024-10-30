@@ -39,6 +39,7 @@ export BUILD_MODE := env_var_or_default("BUILD_MODE", "")
 export TARGET_DIR := "../target"
 export GEN_SWIFT_FOLDER := "generated/swift"
 export GEN_KOTLIN_FOLDER := "generated/kotlin"
+export ANDROID_MODULE_FOLDER := "android/gemstone/src/main/java"
 
 export TARGET_XC_FW_FOLDER := "target/spm"
 export FW_FFI_NAME := FW_NAME + "FFI"
@@ -92,11 +93,11 @@ cp-xcframework-source:
 bindgen-kotlin:
     #!/usr/bin/env bash
     echo "Bindgen kotlin BUILD_MODE_TARGET: ${BUILD_MODE_TARGET}"
-    rm -rf ${GEN_KOTLIN_FOLDER} android/gemstone/src/main/java/uniffi
-    mkdir -p ${GEN_KOTLIN_FOLDER}
+    rm -rf ${GEN_KOTLIN_FOLDER} ${ANDROID_MODULE_FOLDER}/uniffi
+    mkdir -p ${GEN_KOTLIN_FOLDER} ${ANDROID_MODULE_FOLDER}
     cargo build --${BUILD_MODE}
     cargo run -p uniffi-bindgen generate --library --language kotlin --crate ${LIB_NAME} ${TARGET_DIR}/${BUILD_MODE_TARGET}/${DY_LIB_NAME} -o ${GEN_KOTLIN_FOLDER}
-    cp -Rf ${GEN_KOTLIN_FOLDER}/uniffi android/gemstone/src/main/java
+    cp -Rf ${GEN_KOTLIN_FOLDER}/uniffi ${ANDROID_MODULE_FOLDER}
 
 build-android: bindgen-kotlin
     #!/usr/bin/env bash
