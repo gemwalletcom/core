@@ -108,6 +108,7 @@ impl PriceAlertClient {
                             let notification = self.price_alert_notification(&price, price_alert, PriceAlertType::PriceChangesDown)?;
                             results.push(notification);
                         } else if Self::is_within_past(price.clone().all_time_high_date, Duration::hours(12)) {
+                            price_alert_ids.insert(price_alert.id);
                             let notification = self.price_alert_notification(&price, price_alert, PriceAlertType::AllTimeHigh)?;
                             results.push(notification);
                         }
