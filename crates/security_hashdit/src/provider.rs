@@ -52,7 +52,7 @@ impl HashDitProvider {
         let method = target.method().to_string();
 
         // Generate message for signature
-        let msg_for_sig = self.generate_msg_for_sig(&timestamp, &nonce, &method, target.path(), &query_str, &body);
+        let msg_for_sig = self.generate_msg_for_sig(&timestamp, &nonce, &method, &target.path(), &query_str, &body);
         let sig = self.compute_sig(&msg_for_sig);
 
         request = request

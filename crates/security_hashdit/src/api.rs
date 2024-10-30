@@ -3,7 +3,7 @@ use reqwest_enum::{
     target::Target,
 };
 
-use std::collections::HashMap;
+use std::{collections::HashMap, time::Duration};
 
 pub enum HashDitApi {
     DetectAddress(String, String),
@@ -19,8 +19,8 @@ impl Target for HashDitApi {
         HTTPMethod::POST
     }
 
-    fn path(&self) -> &'static str {
-        "/security-api/public/app/v1/detect"
+    fn path(&self) -> String {
+        "/security-api/public/app/v1/detect".into()
     }
 
     fn query(&self) -> HashMap<&'static str, &'static str> {
@@ -60,8 +60,11 @@ impl Target for HashDitApi {
         }
     }
 
+    fn timeout(&self) -> Option<Duration> {
+        None
+    }
+
     fn authentication(&self) -> Option<reqwest_enum::http::AuthMethod> {
-        // not standard auth
         None
     }
 }
