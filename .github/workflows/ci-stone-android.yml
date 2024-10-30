@@ -71,4 +71,4 @@ jobs:
         run: |
           df -h
           just install-android-targets
-          just bindgen-kotlin && just build-android
+          just just build-android
