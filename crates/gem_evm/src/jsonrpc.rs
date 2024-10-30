@@ -15,7 +15,17 @@ pub struct TransactionObject {
 }
 
 impl TransactionObject {
-    pub fn new_call(from: &str, to: &str, data: Vec<u8>) -> Self {
+    pub fn new_call(to: &str, data: Vec<u8>) -> Self {
+        Self {
+            from: None,
+            to: to.to_string(),
+            gas: None,
+            gas_price: None,
+            value: None,
+            data: format!("0x{}", hex::encode(data)),
+        }
+    }
+    pub fn new_call_with_from(from: &str, to: &str, data: Vec<u8>) -> Self {
         Self {
             from: Some(from.to_string()),
             to: to.to_string(),
@@ -81,7 +91,7 @@ mod tests {
 
     #[test]
     fn test_encode_call() {
-        let request = TransactionObject::new_call(
+        let request = TransactionObject::new_call_with_from(
             "0x46340b20830761efd32832a74d7169b29feb9758",
             "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
             vec![],

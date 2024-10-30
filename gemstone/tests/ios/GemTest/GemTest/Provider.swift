@@ -27,12 +27,12 @@ extension NativeProvider: AlienProvider {
 
             for target in targets {
                 group.addTask {
-                    print("==> handle request: \(target)")
+                    print("==> handle request:\n\(target)")
                     let (data, response) = try await self.session.data(for: target.asRequest())
                     if (response as? HTTPURLResponse)?.statusCode != 200 {
                         throw AlienError.ResponseError(msg: "invalid response: \(response)")
                     }
-                    print("<== response: \(String(decoding: data, as: UTF8.self))")
+                    print("<== response:\n\(String(decoding: data, as: UTF8.self))")
                     return data
                 }
             }

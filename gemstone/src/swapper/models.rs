@@ -1,5 +1,8 @@
+use alloy_core::primitives::{Address, Bytes, U256};
+use alloy_primitives::aliases::{U160, U48};
+use gem_evm::{permit2::IAllowanceTransfer, uniswap::command::Permit2Permit};
 use primitives::{AssetId, ChainType};
-use std::fmt::Debug;
+use std::{fmt::Debug, str::FromStr};
 
 static DEFAULT_SLIPPAGE_BPS: u32 = 300;
 
@@ -63,12 +66,22 @@ pub struct GemSwapQuote {
     pub from_amount: String,
     pub to_amount: String,
     pub provider: GemProviderData,
-    pub approval: Option<GemApprovalData>,
+    pub approval: GemApprovalType,
+    pub request: GemSwapRequest,
+}
+
+#[derive(Debug, Clone, uniffi::Enum)]
+pub enum GemApprovalType {
+    Approve(GemApproveData),
+    Permit2(GemApproveData),
+    None,
 }
 
 #[derive(Debug, Clone, uniffi::Record)]
-pub struct GemApprovalData {
+pub struct GemApproveData {
+    pub token: String,
     pub spender: String,
+    pub amount: String,
 }
 
 #[derive(Debug, Clone, uniffi::Record)]
@@ -90,4 +103,49 @@ pub struct GemSwapRoute {
     pub input: String,
     pub output: String,
     pub fee: String,
+}
+
+#[derive(Debug, Clone, uniffi::Record)]
+pub struct Permit2Detail {
+    pub token: String,
+    pub amount: String,
+    pub expiration: u64,
+    pub nonce: u64,
+}
+
+#[derive(Debug, Clone, uniffi::Record)]
+pub struct PermitSingle {
+    pub details: Permit2Detail,
+    pub spender: String,
+    pub sig_deadline: u64,
+}
+
+impl From<PermitSingle> for IAllowanceTransfer::PermitSingle {
+    fn from(val: PermitSingle) -> Self {
+        IAllowanceTransfer::PermitSingle {
+            details: IAllowanceTransfer::PermitDetails {
+                token: Address::parse_checksummed(val.details.token, None).unwrap(),
+                amount: U160::from_str(&val.details.amount).unwrap(),
+                expiration: U48::from(val.details.expiration),
+                nonce: U48::from(val.details.nonce),
+            },
+            spender: Address::parse_checksummed(val.spender, None).unwrap(),
+            sigDeadline: U256::from(val.sig_deadline),
+        }
+    }
+}
+
+#[derive(Debug, Clone, uniffi::Record)]
+pub struct GemPermit2Data {
+    pub permit_single: PermitSingle,
+    pub signature: Vec<u8>,
+}
+
+impl From<GemPermit2Data> for Permit2Permit {
+    fn from(val: GemPermit2Data) -> Self {
+        Permit2Permit {
+            permit_single: val.permit_single.into(),
+            signature: Bytes::from(val.signature),
+        }
+    }
 }

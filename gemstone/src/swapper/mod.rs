@@ -12,13 +12,13 @@ use models::*;
 
 #[async_trait]
 pub trait GemSwapProvider: Send + Sync + Debug {
+    fn name(&self) -> &'static str;
     async fn fetch_quote(&self, request: &GemSwapRequest, provider: Arc<dyn AlienProvider>) -> Result<GemSwapQuote, GemSwapperError>;
     async fn fetch_quote_data(
         &self,
-        request: &GemSwapRequest,
         quote: &GemSwapQuote,
         provider: Arc<dyn AlienProvider>,
-        approval: Option<GemApprovalData>,
+        permit2: Option<GemPermit2Data>,
     ) -> Result<GemSwapQuoteData, GemSwapperError>;
 }
 
@@ -49,5 +49,14 @@ impl GemSwapper {
             }
         }
         Err(GemSwapperError::NoQuoteAvailable)
+    }
+
+    async fn fetch_quote_data(&self, quote: &GemSwapQuote, permit2: Option<GemPermit2Data>) -> Result<GemSwapQuoteData, GemSwapperError> {
+        let swapper = self
+            .swappers
+            .iter()
+            .find(|x| x.name() == quote.provider.name.as_str())
+            .ok_or(GemSwapperError::NotImplemented)?;
+        swapper.fetch_quote_data(quote, self.rpc_provider.clone(), permit2).await
     }
 }
