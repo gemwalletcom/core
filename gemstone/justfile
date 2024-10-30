@@ -1,6 +1,9 @@
 list:
     just --list
 
+build:
+    cargo build
+
 export ANDROID_HOME := env_var_or_default("ANDROID_HOME", "~/Library/Android/sdk")
 
 install-ndk:
@@ -89,6 +92,7 @@ cp-xcframework-source:
 bindgen-kotlin:
     #!/usr/bin/env bash
     echo "Bindgen kotlin BUILD_MODE_TARGET: ${BUILD_MODE_TARGET}"
+    rm -rf ${GEN_KOTLIN_FOLDER} android/gemstone/src/main/java/uniffi
     mkdir -p ${GEN_KOTLIN_FOLDER}
     cargo build --${BUILD_MODE}
     cargo run -p uniffi-bindgen generate --library --language kotlin --crate ${LIB_NAME} ${TARGET_DIR}/${BUILD_MODE_TARGET}/${DY_LIB_NAME} -o ${GEN_KOTLIN_FOLDER}
@@ -96,6 +100,7 @@ bindgen-kotlin:
 
 build-android:
     #!/usr/bin/env bash
+    rm -rf ~/.m2/repository/com/gemwallet/gemstone/gemstone
     cd android && touch local.properties && ./gradlew publishToMavenLocal
 
 publish-android:
