@@ -17,7 +17,7 @@ impl PusherClient {
     pub async fn push_notifications(&self, notifications: Vec<Notification>) -> Result<Response, reqwest::Error> {
         let url = format!("{}/api/push", self.url);
         let notifications = notifications.into_iter().map(|x|
-            x.clone().with_topic(self.get_topic(x.platform.clone()))
+            x.clone().with_topic(self.get_topic(x.platform))
         ).collect();
         let notifications = Notifications { notifications };
 
