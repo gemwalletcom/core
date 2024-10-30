@@ -1,6 +1,9 @@
 list:
     just --list
 
+build:
+    cargo build
+
 install: install-typeshare install-postgres install-diesel
 
 install-rust:
