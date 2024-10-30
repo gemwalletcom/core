@@ -19,3 +19,5 @@ notification_price_alert_up_title = 📈 {$symbol} Сповіщення про �
 notification_price_alert_up_description = Ціна зросла на {$price_change} до {$price}
 notification_price_alert_down_title = 📉 {$symbol} Сповіщення про ціни
 notification_price_alert_down_description = Ціна знижена на {$price_change} до {$price}
+notification_price_alert_all_time_high_title = 🔥 {$symbol} Максимум за весь час
+notification_price_alert_all_time_high_description = {$symbol} досяг нового історичного максимуму за {$price}.

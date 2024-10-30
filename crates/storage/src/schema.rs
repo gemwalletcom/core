@@ -231,6 +231,10 @@ diesel::table! {
         last_updated_at -> Nullable<Timestamp>,
         updated_at -> Timestamp,
         created_at -> Timestamp,
+        all_time_high_date -> Nullable<Timestamp>,
+        all_time_low_date -> Nullable<Timestamp>,
+        all_time_high -> Float8,
+        all_time_low -> Float8,
     }
 }
 

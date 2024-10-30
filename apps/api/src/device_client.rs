@@ -1,24 +1,20 @@
 extern crate rocket;
-use std::error::Error;
-
-use api_connector::pusher::model::Notification;
 use api_connector::PusherClient;
 use primitives::PushNotification;
+use std::error::Error;
 use storage::{models::UpdateDevice, DatabaseClient};
 
 pub struct DevicesClient {
     database: DatabaseClient,
     pusher: PusherClient,
-    pusher_topic: String,
 }
 
 impl DevicesClient {
-    pub async fn new(database_url: &str, pusher: PusherClient, pusher_topic: String) -> Self {
+    pub async fn new(database_url: &str, pusher: PusherClient) -> Self {
         let database = DatabaseClient::new(database_url);
         Self {
             database,
-            pusher,
-            pusher_topic,
+            pusher
         }
     }
 
@@ -39,27 +35,20 @@ impl DevicesClient {
         Ok(device.as_primitive())
     }
 
-    pub fn get_topic(&self, platform: primitives::Platform) -> Option<String> {
-        match platform {
-            primitives::Platform::Android => None,
-            primitives::Platform::IOS => Some(self.pusher_topic.clone()),
-        }
-    }
-
     pub async fn send_push_notification_device(&mut self, device_id: &str) -> Result<bool, Box<dyn Error>> {
         let device = self.get_device(device_id)?;
         let device_token = self.database.get_device_token(device_id)?;
-        let notification = Notification {
-            tokens: vec![device_token],
-            platform: device.platform.as_i32(),
-            title: "Test Notification".to_string(),
-            message: "Test Message".to_string(),
-            topic: self.get_topic(device.platform),
-            data: PushNotification {
+
+        let notification = self.pusher.new_notification(
+            device_token.as_str(),
+            device.platform,
+            "Test Notification",
+            "Test Message",
+            PushNotification {
                 notification_type: primitives::PushNotificationTypes::Test,
                 data: None,
             },
-        };
+        );
         let result = self.pusher.push(notification).await?;
         Ok(result.counts > 0)
     }

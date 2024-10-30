@@ -19,3 +19,5 @@ notification_price_alert_up_title = 📈 {$symbol} मूल्य चेता�
 notification_price_alert_up_description = कीमत {$price_change} से बढ़कर {$price} हो गई
 notification_price_alert_down_title = 📉 {$symbol} मूल्य चेतावनी
 notification_price_alert_down_description = कीमत {$price_change} से घटकर {$price} हो गई
+notification_price_alert_all_time_high_title = 🔥 {$symbol} सर्वकालिक उच्चतम
+notification_price_alert_all_time_high_description = {$symbol} एक नए सर्वकालिक उच्च स्तर {$price} पर पहुंच गया है।

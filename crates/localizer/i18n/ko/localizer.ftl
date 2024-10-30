@@ -19,3 +19,5 @@ notification_price_alert_up_title = 📈 {$symbol} 가격 알림
 notification_price_alert_up_description = 가격이 {$price_change} 상승하여 {$price} 로 변경되었습니다.
 notification_price_alert_down_title = 📉 {$symbol} 가격 알림
 notification_price_alert_down_description = 가격이 {$price_change} 하락하여 {$price} 로 변경되었습니다.
+notification_price_alert_all_time_high_title = 🔥 {$symbol} 역대 최고
+notification_price_alert_all_time_high_description = {$symbol} {$price} 에서 새로운 최고가를 기록했습니다.

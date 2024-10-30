@@ -1,15 +1,22 @@
+mod asset_updater;
+mod charts_updater;
+mod price_updater;
+
+use crate::pricer::asset_updater::AssetUpdater;
+use crate::pricer::charts_updater::ChartsUpdater;
+use crate::pricer::price_updater::PriceUpdater;
 use coingecko::CoinGeckoClient;
 use job_runner::run_job;
-use pricer::{asset_updater::AssetUpdater, chart_client::ChartClient, charts_updater::ChartsUpdater, price_client::PriceClient, price_updater::PriceUpdater};
+use pricer::{ChartClient, PriceClient};
 use settings::Settings;
-use std::{sync::Arc, time::Duration};
+use std::future::Future;
+use std::pin::Pin;
+use std::sync::Arc;
+use std::time::Duration;
 use storage::ClickhouseClient;
 
-#[tokio::main]
-async fn main() {
-    println!("pricer init");
-
-    let settings = Settings::new().unwrap();
+pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output=()> + Send>>> {
+    let coingecko_client = CoinGeckoClient::new(&settings.coingecko.key.secret);
 
     let clean_updated_assets = run_job("Clean outdated assets", Duration::from_secs(86400), {
         let settings = Arc::new(settings.clone());
@@ -34,7 +41,7 @@ async fn main() {
         }
     });
 
-    let update_prices_assets_pages = run_job("Update prices assets 30 pages", Duration::from_secs(86400), {
+    let update_prices_assets_pages = run_job("Update prices assets 30 pages", Duration::from_secs(settings.pricer.timer * 30), {
         let settings = Arc::new(settings.clone());
         move || {
             let settings = Arc::clone(&settings);
@@ -67,39 +74,38 @@ async fn main() {
     });
 
     let update_charts = run_job("Update charts", Duration::from_secs(settings.charter.timer), {
-        let settings = Arc::new(settings.clone());
+        let settings = settings.clone();
+        let coingecko_client = coingecko_client.clone();
         move || {
-            let settings = Arc::clone(&settings);
-            let coingecko_client = CoinGeckoClient::new(&settings.coingecko.key.secret);
             let clickhouse_database = ClickhouseClient::new(&settings.clickhouse.url, &settings.clickhouse.database);
             let charts_client = ChartClient::new(&settings.postgres.url, clickhouse_database);
             let price_client = PriceClient::new(&settings.redis.url, &settings.postgres.url);
-            let mut charts_updater = ChartsUpdater::new(charts_client, price_client, coingecko_client);
+            let mut charts_updater = ChartsUpdater::new(charts_client, price_client, coingecko_client.clone());
             async move { charts_updater.update_charts().await }
         }
     });
 
+
     let update_assets = run_job("Update assets assets", Duration::from_secs(86400), {
-        let settings = Arc::new(settings.clone());
+        let settings = settings.clone();
+        let coingecko_client = coingecko_client.clone();
         move || {
-            let settings = Arc::clone(&settings);
-            let coingecko_client = CoinGeckoClient::new(&settings.coingecko.key.secret);
             let mut asset_updater = AssetUpdater::new(coingecko_client.clone(), &settings.postgres.url);
             async move { asset_updater.update_assets().await }
         }
     });
 
-    let _ = tokio::join!(
-        clean_updated_assets,
-        update_fiat_assets,
-        update_prices_assets,
-        update_prices_assets_pages,
-        update_prices_high_market_cap,
-        update_prices_top_market_cap,
-        update_prices_cache,
-        update_charts,
-        update_assets,
-    );
+    vec![
+        Box::pin(clean_updated_assets),
+        Box::pin(update_fiat_assets),
+        Box::pin(update_prices_assets),
+        Box::pin(update_prices_assets_pages),
+        Box::pin(update_prices_high_market_cap),
+        Box::pin(update_prices_top_market_cap),
+        Box::pin(update_prices_cache),
+        Box::pin(update_charts),
+        Box::pin(update_assets),
+    ]
 }
 
 fn price_updater_factory(settings: &Settings) -> PriceUpdater {

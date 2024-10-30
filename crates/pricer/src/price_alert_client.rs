@@ -1,4 +1,5 @@
 use api_connector::pusher::model::Notification;
+use chrono::{Duration, NaiveDateTime, Utc};
 use localizer::{LanguageLocalizer, LanguageNotification};
 use primitives::{
     Asset, Device, NumberFormatter, Price, PriceAlertDirection, PriceAlertType, PriceAlerts, PushNotification, PushNotificationPriceAlert,
@@ -85,14 +86,14 @@ impl PriceAlertClient {
                                     PriceAlertDirection::Up => {
                                         if price.clone().price > price_alert_price {
                                             price_alert_ids.insert(price_alert.id);
-                                            let notification = self.price_alert_notifiction(&price, price_alert, PriceAlertType::PriceUp)?;
+                                            let notification = self.price_alert_notification(&price, price_alert, PriceAlertType::PriceUp)?;
                                             results.push(notification);
                                         }
                                     }
                                     PriceAlertDirection::Down => {
                                         if price.clone().price < price_alert_price {
                                             price_alert_ids.insert(price_alert.id);
-                                            let notification = self.price_alert_notifiction(&price, price_alert, PriceAlertType::PriceDown)?;
+                                            let notification = self.price_alert_notification(&price, price_alert, PriceAlertType::PriceDown)?;
                                             results.push(notification);
                                         }
                                     }
@@ -100,11 +101,15 @@ impl PriceAlertClient {
                             }
                         } else if price.clone().price_change_percentage_24h > rules.price_change_increase {
                             price_alert_ids.insert(price_alert.id);
-                            let notification = self.price_alert_notifiction(&price, price_alert, PriceAlertType::PriceChangesUp)?;
+                            let notification = self.price_alert_notification(&price, price_alert, PriceAlertType::PriceChangesUp)?;
                             results.push(notification);
                         } else if price.clone().price_change_percentage_24h < -rules.price_change_decrease {
                             price_alert_ids.insert(price_alert.id);
-                            let notification = self.price_alert_notifiction(&price, price_alert, PriceAlertType::PriceChangesDown)?;
+                            let notification = self.price_alert_notification(&price, price_alert, PriceAlertType::PriceChangesDown)?;
+                            results.push(notification);
+                        } else if Self::is_within_past(price.clone().all_time_high_date, Duration::hours(12)) {
+                            price_alert_ids.insert(price_alert.id);
+                            let notification = self.price_alert_notification(&price, price_alert, PriceAlertType::AllTimeHigh)?;
                             results.push(notification);
                         }
                     }
@@ -115,7 +120,14 @@ impl PriceAlertClient {
         Ok(results)
     }
 
-    fn price_alert_notifiction(
+    fn is_within_past(date_time: Option<NaiveDateTime>, duration: Duration) -> bool {
+        if let Some(date_time) = date_time {
+            return date_time >= (Utc::now().naive_utc() - duration) && date_time <= Utc::now().naive_utc()
+        }
+        false
+    }
+
+    fn price_alert_notification(
         &mut self,
         price: &storage::models::Price,
         price_alert: PriceAlert,
@@ -134,7 +146,7 @@ impl PriceAlertClient {
         Ok(notification)
     }
 
-    pub fn get_notifications_for_price_alerts(&mut self, notifications: Vec<PriceAlertNotification>, topic: String) -> Vec<Notification> {
+    pub fn get_notifications_for_price_alerts(&mut self, notifications: Vec<PriceAlertNotification>) -> Vec<Notification> {
         let mut results = vec![];
 
         let formatter = NumberFormatter::new();
@@ -155,6 +167,9 @@ impl PriceAlertClient {
                 PriceAlertType::PriceChangesDown => {
                     language_localizer.price_alert_down(&price_alert.asset.full_name(), price.unwrap().as_str(), price_change.as_str())
                 }
+                PriceAlertType::AllTimeHigh => {
+                    language_localizer.price_alert_all_time_high(&price_alert.asset.name, price.unwrap().as_str())
+                }
                 PriceAlertType::PriceUp | PriceAlertType::PriceDown | PriceAlertType::PricePercentChangeUp | PriceAlertType::PricePercentChangeDown => {
                     unimplemented!()
                 }
@@ -166,14 +181,13 @@ impl PriceAlertClient {
                 data: serde_json::to_value(&price_alert_data).ok(),
                 notification_type: PushNotificationTypes::PriceAlert,
             };
-            let notification = Notification {
-                tokens: vec![price_alert.device.token.clone()],
-                platform: price_alert.device.platform.as_i32(),
-                title: notification_message.title,
-                message: notification_message.description,
-                topic: Some(topic.clone()),
+            let notification = Notification::new(
+                vec![price_alert.device.token.clone()],
+                price_alert.device.platform.as_i32(),
+                notification_message.title,
+                notification_message.description,
                 data,
-            };
+            );
             results.push(notification);
         }
         results

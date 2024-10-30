@@ -60,8 +60,8 @@ impl LanguageLocalizer {
     }
 
     pub fn select_language(&self, language: &str) -> Result<bool, Box<dyn std::error::Error + Send + Sync>> {
-        let langid = language.parse()?;
-        self.localizer.select(&[langid])?;
+        let lang_id = language.parse()?;
+        self.localizer.select(&[lang_id])?;
         Ok(true)
     }
 
@@ -85,6 +85,18 @@ impl LanguageLocalizer {
                 "notification_price_alert_down_description",
                 price = price,
                 price_change = price_change
+            ),
+        }
+    }
+
+    pub fn price_alert_all_time_high(&self, symbol: &str, price: &str) -> LanguageNotification {
+        LanguageNotification {
+            title: fl!(self.loader.as_ref(), "notification_price_alert_all_time_high_title", symbol = symbol),
+            description: fl!(
+                self.loader.as_ref(),
+                "notification_price_alert_all_time_high_description",
+                symbol = symbol,
+                price = price
             ),
         }
     }

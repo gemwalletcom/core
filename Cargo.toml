@@ -13,7 +13,6 @@ members = [
     "apps/api",
     "apps/daemon",
     "apps/parser",
-    "apps/pricer",
     "apps/setup",
 
     "bin/img-downloader",
@@ -30,7 +29,7 @@ members = [
     "crates/api_connector",
     "crates/settings",
     "crates/settings_chain",
-    "crates/price_alert",
+    "crates/pricer",
     "crates/chain_primitives",
 
     "crates/security_*",
@@ -45,7 +44,6 @@ default-members = [
     "apps/api",
     "apps/daemon",
     "apps/parser",
-    "apps/pricer",
     "apps/setup",
     "bin/generate",
     "gemstone",

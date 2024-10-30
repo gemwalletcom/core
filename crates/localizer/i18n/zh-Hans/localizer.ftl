@@ -19,3 +19,5 @@ notification_price_alert_up_title = 📈 {$symbol}价格警报
 notification_price_alert_up_description = 价格上涨{$price_change}至{$price}
 notification_price_alert_down_title = 📉 {$symbol}价格警报
 notification_price_alert_down_description = 价格下降{$price_change}至{$price}
+notification_price_alert_all_time_high_title = 🔥 {$symbol}历史最高
+notification_price_alert_all_time_high_description = {$symbol}价格已达到{$price}的历史新高。

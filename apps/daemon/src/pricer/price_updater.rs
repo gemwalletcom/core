@@ -1,8 +1,8 @@
-use crate::price_client::PriceClient;
 use chain_primitives::format_token_id;
 use chrono::{DateTime, Duration, Utc};
 use coingecko::mapper::{get_chain_for_coingecko_platform_id, get_coingecko_market_id_for_chain};
 use coingecko::{Coin, CoinGeckoClient, CoinMarket, SimplePrice};
+use pricer::PriceClient;
 use primitives::chain::Chain;
 use primitives::DEFAULT_FIAT_CURRENCY;
 use std::collections::{HashMap, HashSet};
@@ -46,10 +46,6 @@ impl PriceUpdater {
         self.price_client.set_prices_assets(assets.clone())?;
 
         Ok(chains_assets.len() + assets.len())
-    }
-
-    pub async fn update_prices_all(&mut self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
-        self.update_prices(u32::MAX).await
     }
 
     pub async fn update_prices_simple_high_market_cap(&mut self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
@@ -187,6 +183,10 @@ fn price_for_market(market: CoinMarket) -> Price {
         market.id,
         market.current_price.unwrap_or_default(),
         market.price_change_percentage_24h.unwrap_or_default(),
+        market.ath.unwrap_or_default(),
+        market.ath_date.map(|x| x.naive_local()),
+        market.atl.unwrap_or_default(),
+        market.atl_date.map(|x| x.naive_local()),
         market.market_cap.unwrap_or_default(),
         market.market_cap_rank.unwrap_or_default(),
         market.total_volume.unwrap_or_default(),
@@ -204,6 +204,10 @@ fn price_for_simple_price(id: &str, price: SimplePrice) -> Price {
         id.to_string(),
         price.usd.unwrap_or_default(),
         price.usd_24h_change.unwrap_or_default(),
+        0.0,
+        None,
+        0.0,
+        None,
         price.usd_market_cap.unwrap_or_default(),
         0,
         0.0,

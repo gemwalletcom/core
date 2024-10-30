@@ -122,6 +122,10 @@ impl DatabaseClient {
             .set((
                 price.eq(excluded(price)),
                 price_change_percentage_24h.eq(excluded(price_change_percentage_24h)),
+                all_time_high.eq(excluded(all_time_high)),
+                all_time_high_date.eq(excluded(all_time_high_date)),
+                all_time_low.eq(excluded(all_time_low)),
+                all_time_low_date.eq(excluded(all_time_low_date)),
                 market_cap.eq(excluded(market_cap)),
                 market_cap_rank.eq(excluded(market_cap_rank)),
                 total_volume.eq(excluded(total_volume)),

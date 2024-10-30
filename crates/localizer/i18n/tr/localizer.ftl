@@ -19,3 +19,5 @@ notification_price_alert_up_title = 📈 {$symbol} Fiyat Uyarısı
 notification_price_alert_up_description = Fiyat {$price_change} artarak {$price} oldu
 notification_price_alert_down_title = 📉 {$symbol} Fiyat Uyarısı
 notification_price_alert_down_description = Fiyat {$price_change} düşerek {$price} oldu
+notification_price_alert_all_time_high_title = 🔥 {$symbol} Tüm Zamanların En Yüksek Seviyesi
+notification_price_alert_all_time_high_description = {$symbol} {$price} seviyesinde yeni bir tüm zamanların en yüksek seviyesine ulaştı.

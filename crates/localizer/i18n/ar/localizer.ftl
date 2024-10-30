@@ -19,3 +19,5 @@ notification_price_alert_up_title = 📈 تنبيه سعر {$symbol}
 notification_price_alert_up_description = تم زيادة السعر بمقدار {$price_change} إلى {$price}
 notification_price_alert_down_title = 📉 {$symbol} تنبيه السعر
 notification_price_alert_down_description = تم تخفيض السعر بمقدار {$price_change} إلى {$price}
+notification_price_alert_all_time_high_title = 🔥 {$symbol} أعلى مستوى على الإطلاق
+notification_price_alert_all_time_high_description = وصل {$symbol} إلى أعلى مستوى له على الإطلاق عند {$price}.

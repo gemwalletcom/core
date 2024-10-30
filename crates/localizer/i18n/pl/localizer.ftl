@@ -19,3 +19,5 @@ notification_price_alert_up_title = 📈 Alert cenowy {$symbol}
 notification_price_alert_up_description = Cena wzrosła o {$price_change} do {$price}
 notification_price_alert_down_title = 📉 Alert cenowy {$symbol}
 notification_price_alert_down_description = Cena obniżona o {$price_change} do {$price}
+notification_price_alert_all_time_high_title = 🔥 {$symbol} najwyższy poziom wszech czasów
+notification_price_alert_all_time_high_description = {$symbol} osiągnął nowy, najwyższy poziom wszech czasów na poziomie {$price}.

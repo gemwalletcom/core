@@ -43,10 +43,12 @@ pub fn get_nodes_for_chain(chain: Chain) -> Vec<Node> {
             Node::new("https://ethereum.publicnode.com", NodePriority::High),
             Node::new("https://rpc.ankr.com/eth", NodePriority::High),
             Node::new("https://ethereum-rpc.polkachu.com", NodePriority::High),
+            Node::new("https://eth.merkle.io", NodePriority::High),
         ],
         Chain::SmartChain => vec![
             Node::new("https://binance.llamarpc.com", NodePriority::High),
             Node::new("https://bsc.publicnode.com", NodePriority::High),
+            Node::new("https://bsc.merkle.io", NodePriority::High),
         ],
         Chain::Solana => vec![Node::new("https://api.mainnet-beta.solana.com", NodePriority::High)],
         Chain::Polygon => vec![
@@ -86,6 +88,7 @@ pub fn get_nodes_for_chain(chain: Chain) -> Vec<Node> {
             Node::new("https://mainnet.base.org", NodePriority::High),
             Node::new("https://rpc.ankr.com/base", NodePriority::High),
             Node::new("https://base-rpc.polkachu.com", NodePriority::High),
+            Node::new("https://base.merkle.io", NodePriority::High),
         ],
         Chain::AvalancheC => vec![
             Node::new("https://avalanche.drpc.org", NodePriority::High),

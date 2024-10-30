@@ -19,3 +19,5 @@ notification_price_alert_up_title = 📈 {$symbol} การแจ้งเต�
 notification_price_alert_up_description = ราคาเพิ่มขึ้น {$price_change} เป็น {$price}
 notification_price_alert_down_title = 📉 {$symbol} การแจ้งเตือนราคา
 notification_price_alert_down_description = ราคาลดลง {$price_change} เป็น {$price}
+notification_price_alert_all_time_high_title = 🔥 {$symbol} สูงสุดตลอดกาล
+notification_price_alert_all_time_high_description = {$symbol} ได้ทำสถิติสูงสุดตลอดกาลใหม่ที่ {$price}

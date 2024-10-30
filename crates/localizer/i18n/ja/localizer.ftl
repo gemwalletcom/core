@@ -19,3 +19,5 @@ notification_price_alert_up_title = 📈 {$symbol}価格アラート
 notification_price_alert_up_description = 価格が{$price_change}増加して{$price}になりました
 notification_price_alert_down_title = 📉 {$symbol}価格アラート
 notification_price_alert_down_description = 価格が{$price_change}から{$price}に下がりました
+notification_price_alert_all_time_high_title = 🔥 {$symbol}史上最高値
+notification_price_alert_all_time_high_description = {$symbol} {$price}で史上最高値に達しました。

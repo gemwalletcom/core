@@ -24,7 +24,7 @@ pub use self::device::UpdateDevice;
 pub use self::fiat::{FiatAsset, FiatProvider, FiatRate, FiatTransaction, FiatTransactionUpdate};
 pub use self::node::Node;
 pub use self::parser_state::ParserState;
-pub use self::price::Price;
+pub use self::price::{Price, PriceAsset, PriceCache};
 pub use self::price_alert::{NewPriceAlert, PriceAlert};
 pub use self::release::Release;
 pub use self::scan::ScanAddress;

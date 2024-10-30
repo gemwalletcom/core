@@ -19,3 +19,5 @@ notification_price_alert_up_title = 📈 {$symbol} Peringatan Harga
 notification_price_alert_up_description = Harga naik sebesar {$price_change} menjadi {$price}
 notification_price_alert_down_title = 📉 {$symbol} Peringatan Harga
 notification_price_alert_down_description = Harga turun sebesar {$price_change} menjadi {$price}
+notification_price_alert_all_time_high_title = 🔥 {$symbol} Tertinggi Sepanjang Masa
+notification_price_alert_all_time_high_description = {$symbol} telah mencapai titik tertinggi baru sepanjang masa di {$price}.

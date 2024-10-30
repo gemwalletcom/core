@@ -19,3 +19,5 @@ notification_price_alert_up_title = 📈 {$symbol} התראת מחיר
 notification_price_alert_up_description = המחיר עלה ב- {$price_change} ל- {$price}
 notification_price_alert_down_title = 📉 {$symbol} התראת מחיר
 notification_price_alert_down_description = המחיר ירד ב- {$price_change} ל- {$price}
+notification_price_alert_all_time_high_title = 🔥 {$symbol} שיא כל הזמנים
+notification_price_alert_all_time_high_description = {$symbol} הגיע לשיא כל הזמנים ב- {$price}.
