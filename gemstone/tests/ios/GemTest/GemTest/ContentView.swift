@@ -64,8 +64,9 @@ struct ContentView: View {
         )
 
         let swapper = GemSwapper(rpcProvider: NativeProvider())
-        let quote = try await swapper.fetchQuote(request: request)
-
+        guard let quote = try await swapper.fetchQuote(request: request).first else {
+            return print("<== fetchQuote: nil")
+        }
         print("<== fetchQuote:\n", quote)
 
         let data = try await swapper.fetchQuoteData(quote: quote, permit2: nil)
