@@ -1,11 +1,11 @@
 use std::error::Error;
 
-use crate::ChainProvider;
+use crate::{ChainBlockProvider, ChainTokenDataProvider};
 use async_trait::async_trait;
 use chrono::Utc;
 use num_bigint::BigUint;
 use num_traits::Num;
-use primitives::{chain::Chain, AssetId, TransactionState, TransactionType};
+use primitives::{chain::Chain, Asset, AssetId, TransactionState, TransactionType};
 
 use super::{
     address::TronAddress,
@@ -182,7 +182,7 @@ impl TronClient {
 }
 
 #[async_trait]
-impl ChainProvider for TronClient {
+impl ChainBlockProvider for TronClient {
     fn get_chain(&self) -> Chain {
         Chain::Tron
     }
@@ -207,5 +207,12 @@ impl ChainProvider for TronClient {
             .collect::<Vec<primitives::Transaction>>();
 
         Ok(transactions)
+    }
+}
+
+#[async_trait]
+impl ChainTokenDataProvider for TronClient {
+    async fn get_token_data(&self, _chain: Chain, _token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
+        unimplemented!()
     }
 }

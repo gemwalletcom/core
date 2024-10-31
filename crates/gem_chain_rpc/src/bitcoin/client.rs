@@ -1,11 +1,9 @@
 use std::error::Error;
 
-use crate::ChainProvider;
+use crate::{ChainBlockProvider, ChainTokenDataProvider};
 use async_trait::async_trait;
 use chrono::Utc;
-use primitives::{
-    chain::Chain, transaction_utxo::TransactionInput, TransactionDirection, TransactionType,
-};
+use primitives::{chain::Chain, transaction_utxo::TransactionInput, Asset, TransactionDirection, TransactionType};
 
 use super::model::{Block, Status, Transaction};
 use reqwest_middleware::ClientWithMiddleware;
@@ -108,7 +106,7 @@ impl BitcoinClient {
 }
 
 #[async_trait]
-impl ChainProvider for BitcoinClient {
+impl ChainBlockProvider for BitcoinClient {
     fn get_chain(&self) -> Chain {
         self.chain
     }
@@ -138,6 +136,13 @@ impl ChainProvider for BitcoinClient {
             .flat_map(|x| BitcoinClient::map_transaction(self.chain, &x, block_number))
             .collect::<Vec<primitives::Transaction>>();
         Ok(transactions)
+    }
+}
+
+#[async_trait]
+impl ChainTokenDataProvider for BitcoinClient {
+    async fn get_token_data(&self, _chain: Chain, _token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
+        unimplemented!()
     }
 }
 

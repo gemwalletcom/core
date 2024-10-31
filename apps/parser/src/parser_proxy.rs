@@ -5,7 +5,7 @@ use std::{
 };
 
 use async_trait::async_trait;
-use gem_chain_rpc::ChainProvider;
+use gem_chain_rpc::{ChainBlockProvider, ChainProvider};
 use primitives::Chain;
 
 #[derive(Clone, Debug)]
@@ -29,6 +29,7 @@ impl ParserProxy {
         }
     }
 
+    // Support ChainBlockProvider once trait_upcasting is enabled
     pub fn new_provider(chain: Chain, url: &str) -> Box<dyn ChainProvider> {
         settings_chain::ProviderFactory::new_provider(chain, url)
     }
@@ -53,7 +54,7 @@ impl ParserProxy {
 }
 
 #[async_trait]
-impl ChainProvider for ParserProxy {
+impl ChainBlockProvider for ParserProxy {
     fn get_chain(&self) -> Chain {
         self.chain
     }

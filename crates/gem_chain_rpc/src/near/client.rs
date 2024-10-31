@@ -6,9 +6,9 @@ use jsonrpsee::{
     core::{client::ClientT, params::ObjectParams},
     http_client::{HttpClient, HttpClientBuilder},
 };
-use primitives::{Chain, Transaction, TransactionState, TransactionType};
+use primitives::{Asset, Chain, Transaction, TransactionState, TransactionType};
 
-use crate::ChainProvider;
+use crate::{ChainBlockProvider, ChainTokenDataProvider};
 
 use super::model::{Action, Block, BlockHeader, Chunk};
 
@@ -88,7 +88,7 @@ impl NearClient {
 }
 
 #[async_trait]
-impl ChainProvider for NearClient {
+impl ChainBlockProvider for NearClient {
     fn get_chain(&self) -> Chain {
         Chain::Near
     }
@@ -137,5 +137,12 @@ impl ChainProvider for NearClient {
                 Ok(vec![])
             }
         }
+    }
+}
+
+#[async_trait]
+impl ChainTokenDataProvider for NearClient {
+    async fn get_token_data(&self, _chain: Chain, _token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
+        unimplemented!()
     }
 }

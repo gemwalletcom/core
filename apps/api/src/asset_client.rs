@@ -1,7 +1,8 @@
 extern crate rocket;
 use std::error::Error;
 
-use primitives::AssetFull;
+use primitives::{Asset, AssetFull, Chain};
+use settings_chain::ChainProviders;
 use storage::DatabaseClient;
 
 pub struct AssetsClient {
@@ -12,6 +13,19 @@ impl AssetsClient {
     pub async fn new(database_url: &str) -> Self {
         let database = DatabaseClient::new(database_url);
         Self { database }
+    }
+
+    pub fn add_asset(&mut self, asset: Asset) -> Result<usize, Box<dyn Error>> {
+        Ok(self.database.add_assets(vec![storage::models::Asset::from_primitive(asset)])?)
+    }
+
+    pub fn update_asset_rank(&mut self, asset_id: &str, rank: i32) -> Result<usize, Box<dyn Error>> {
+        Ok(self.database.update_asset_rank(asset_id, rank)?)
+    }
+
+    #[allow(unused)]
+    pub fn get_asset(&mut self, asset_id: &str) -> Result<Asset, Box<dyn Error>> {
+        Ok(self.database.get_asset(asset_id)?.as_primitive())
     }
 
     pub fn get_assets_list(&mut self) -> Result<Vec<AssetFull>, Box<dyn Error>> {
@@ -94,5 +108,19 @@ impl AssetsClient {
             self.database
                 .get_assets_ids_by_device_id(addresses, chains, from_timestamp)?;
         Ok(assets_ids)
+    }
+}
+
+pub struct AssetsChainProvider {
+    providers: ChainProviders,
+}
+
+impl AssetsChainProvider {
+    pub fn new(providers: ChainProviders) -> Self {
+        Self { providers }
+    }
+
+    pub async fn get_token_data(&self, chain: Chain, token_id: String) -> Result<Asset, Box<dyn std::error::Error + Send + Sync>> {
+        self.providers.get_token_data(chain, token_id).await
     }
 }

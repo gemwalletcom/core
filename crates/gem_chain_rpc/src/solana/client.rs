@@ -1,9 +1,6 @@
 use std::error::Error;
 
-use crate::{
-    solana::model::{BlockTransactions, InstructionParsed},
-    ChainProvider,
-};
+use crate::{solana::model::{BlockTransactions, InstructionParsed}, ChainBlockProvider, ChainTokenDataProvider};
 use async_trait::async_trait;
 use chrono::Utc;
 use jsonrpsee::{
@@ -11,9 +8,7 @@ use jsonrpsee::{
     http_client::{HttpClient, HttpClientBuilder},
     rpc_params,
 };
-use primitives::{
-    chain::Chain, AssetId, Transaction, TransactionState, TransactionSwapMetadata, TransactionType,
-};
+use primitives::{chain::Chain, Asset, AssetId, Transaction, TransactionState, TransactionSwapMetadata, TransactionType};
 
 use super::model::BlockTransaction;
 use gem_solana::WSOL_TOKEN_ADDRESS;
@@ -240,7 +235,7 @@ impl SolanaClient {
 }
 
 #[async_trait]
-impl ChainProvider for SolanaClient {
+impl ChainBlockProvider for SolanaClient {
     fn get_chain(&self) -> Chain {
         Chain::Solana
     }
@@ -291,5 +286,12 @@ impl ChainProvider for SolanaClient {
                 _ => return Err(Box::new(err)),
             },
         }
+    }
+}
+
+#[async_trait]
+impl ChainTokenDataProvider for SolanaClient {
+    async fn get_token_data(&self, _chain: Chain, _token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
+        unimplemented!()
     }
 }

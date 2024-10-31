@@ -3194,6 +3194,8 @@ dependencies = [
 name = "gem_chain_rpc"
 version = "1.0.0"
 dependencies = [
+ "alloy-core",
+ "alloy-sol-types",
  "async-trait",
  "base64 0.22.1",
  "bs58 0.5.1",

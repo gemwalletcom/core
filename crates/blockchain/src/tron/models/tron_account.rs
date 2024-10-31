@@ -10,14 +10,12 @@ struct TronAccount {
     address: Option<String>,
     active_permission: Option<Vec<TronAccountPermission>>,
     votes: Option<Vec<TronVote>>,
-    allowance: Option<UInt64>,
-    net_usage: Option<i32>,
-    free_net_usage: Option<i32>,
     #[serde(rename = "frozenV2")]
     frozen_v2: Option<Vec<TronFrozen>>,
     #[serde(rename = "unfrozenV2")]
     unfrozen_v2: Option<Vec<TronUnfrozen>>,
 }
+
 #[typeshare(swift = "Sendable")]
 struct TronAccountPermission {
     threshold: i32,
@@ -40,6 +38,7 @@ struct TronVote {
     vote_address: String,
     vote_count: UInt64,
 }
+
 #[typeshare(swift = "Sendable")]
 struct TronFrozen{
     #[serde(rename = "type")]
@@ -53,3 +52,7 @@ struct TronUnfrozen{
     unfreeze_expire_time: Option<UInt64>,
 }
 
+#[typeshare(swift = "Sendable")]
+struct TronReward {
+    reward: Option<UInt64>,
+}

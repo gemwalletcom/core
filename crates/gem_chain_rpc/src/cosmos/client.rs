@@ -1,12 +1,12 @@
 use std::error::Error;
 
 use super::model::{BlockResponse, MessageSend, TransactionResponse};
-use crate::ChainProvider;
+use crate::{ChainBlockProvider, ChainTokenDataProvider};
 use async_trait::async_trait;
 use base64::{engine::general_purpose, Engine as _};
 use chrono::Utc;
 use hex;
-use primitives::{AssetId, Chain, TransactionState, TransactionType};
+use primitives::{Asset, AssetId, Chain, TransactionState, TransactionType};
 use reqwest_middleware::ClientWithMiddleware;
 use sha2::{Digest, Sha256};
 
@@ -246,7 +246,7 @@ impl CosmosClient {
 }
 
 #[async_trait]
-impl ChainProvider for CosmosClient {
+impl ChainBlockProvider for CosmosClient {
     fn get_chain(&self) -> Chain {
         self.chain
     }
@@ -283,5 +283,12 @@ impl ChainProvider for CosmosClient {
             .collect::<Vec<primitives::Transaction>>();
 
         Ok(transactions)
+    }
+}
+
+#[async_trait]
+impl ChainTokenDataProvider for CosmosClient {
+    async fn get_token_data(&self, _chain: Chain, _token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
+        unimplemented!()
     }
 }

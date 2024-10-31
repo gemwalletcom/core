@@ -1,10 +1,12 @@
-use std::error::Error;
-
 use super::model::{Block, Transaction, TransactionReciept};
-use crate::ChainProvider;
+use crate::ethereum::erc20;
+use crate::{ChainBlockProvider, ChainTokenDataProvider};
+use alloy_core::primitives::hex;
+use alloy_core::sol_types::SolCall;
 use async_trait::async_trait;
 use chrono::Utc;
 use gem_evm::address::EthereumAddress;
+use hex::FromHex;
 use jsonrpsee::{
     core::{client::ClientT, params::BatchRequestBuilder},
     http_client::{HttpClient, HttpClientBuilder},
@@ -12,11 +14,14 @@ use jsonrpsee::{
 };
 use num_bigint::BigUint;
 use num_traits::Num;
-use primitives::{
-    chain::Chain, AssetId, TransactionState, TransactionSwapMetadata, TransactionType,
-};
+use primitives::{chain::Chain, Asset, AssetId, TransactionState, TransactionSwapMetadata, TransactionType};
+use serde::de::DeserializeOwned;
 use serde_json::json;
+use std::error::Error;
 
+const FUNCTION_ERC20_NAME: &str = "0x06fdde03";
+const FUNCTION_ERC20_SYMBOL: &str = "0x95d89b41";
+const FUNCTION_ERC20_DECIMALS: &str = "0x313ce567";
 const FUNCTION_ERC20_TRANSFER: &str = "0xa9059cbb";
 const FUNCTION_ERC20_APPROVE: &str = "0x095ea7b3";
 const FUNCTION_1INCH_SWAP: &str = "0x12aa3caf";
@@ -40,6 +45,19 @@ impl EthereumClient {
         Self { chain, client }
     }
 
+    async fn eth_call<T: DeserializeOwned>(&self, contract: &str, data: &str) -> Result<T, Box<dyn Error + Send + Sync>> {
+        let res = self
+            .client
+            .request("eth_call", vec![
+                json!({
+                "to": contract,
+                "data": data,
+            }), json!("latest"),
+            ])
+            .await?;
+        Ok(res)
+    }
+
     async fn get_transaction_reciepts(
         &self,
         hashes: Vec<String>,
@@ -52,7 +70,7 @@ impl EthereumClient {
                 batch.insert("eth_getTransactionReceipt", vec![json!(hash)])?;
             }
 
-            let reciepts = self
+            let receipts = self
                 .client
                 .batch_request::<TransactionReciept>(batch)
                 .await?
@@ -61,10 +79,10 @@ impl EthereumClient {
                 .cloned()
                 .collect::<Vec<TransactionReciept>>();
 
-            if reciepts.len() != hashes.len() {
+            if receipts.len() != hashes.len() {
                 return Err("Failed to get all transaction reciepts".into());
             }
-            results.extend(reciepts);
+            results.extend(receipts);
         }
         Ok(results)
     }
@@ -77,9 +95,9 @@ impl EthereumClient {
     fn map_transaction(
         &self,
         transaction: Transaction,
-        reciept: &TransactionReciept,
+        receipt: &TransactionReciept,
     ) -> Option<primitives::Transaction> {
-        let state = if reciept.status == "0x1" {
+        let state = if receipt.status == "0x1" {
             TransactionState::Confirmed
         } else {
             TransactionState::Failed
@@ -87,7 +105,7 @@ impl EthereumClient {
         let value = transaction.value.value.to_string();
         let nonce = transaction.nonce.as_i32();
         let block = transaction.block_number.as_i32();
-        let fee = reciept.get_fee().to_string();
+        let fee = receipt.get_fee().to_string();
         let from = EthereumAddress::parse(&transaction.from)?.to_checksum();
         let to = EthereumAddress::parse(&transaction.to.unwrap_or_default())?.to_checksum();
 
@@ -160,10 +178,10 @@ impl EthereumClient {
 
         if input_prefix.starts_with(FUNCTION_1INCH_SWAP)
             && to == CONTRACT_1INCH
-            && reciept.logs.len() <= 9
+            && receipt.logs.len() <= 9
         {
-            let first_log = reciept.logs.first()?;
-            let last_log = reciept.logs.last()?;
+            let first_log = receipt.logs.first()?;
+            let last_log = receipt.logs.last()?;
             let first_log_value = BigUint::from_str_radix(&first_log.clone().data[2..], 16)
                 .ok()?
                 .to_string();
@@ -230,7 +248,7 @@ impl EthereumClient {
 }
 
 #[async_trait]
-impl ChainProvider for EthereumClient {
+impl ChainBlockProvider for EthereumClient {
     fn get_chain(&self) -> Chain {
         self.chain
     }
@@ -265,14 +283,35 @@ impl ChainProvider for EthereumClient {
         }
 
         let hashes = transactions.clone().into_iter().map(|x| x.hash).collect();
-        let reciepts = self.get_transaction_reciepts(hashes).await?;
+        let receipts = self.get_transaction_reciepts(hashes).await?;
 
         let transactions = transactions
             .into_iter()
-            .zip(reciepts.iter())
+            .zip(receipts.iter())
             .filter_map(|(transaction, receipt)| self.map_transaction(transaction, receipt))
             .collect::<Vec<primitives::Transaction>>();
 
         return Ok(transactions);
+    }
+}
+
+#[async_trait]
+impl ChainTokenDataProvider for EthereumClient {
+    async fn get_token_data(&self, chain: Chain, token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
+        let name: String = self.eth_call(token_id.as_str(), FUNCTION_ERC20_NAME).await?;
+        let symbol: String = self.eth_call(token_id.as_str(), FUNCTION_ERC20_SYMBOL).await?;
+        let decimals: String = self.eth_call(token_id.as_str(), FUNCTION_ERC20_DECIMALS).await?;
+
+        let name: String = erc20::nameCall::abi_decode_returns(&Vec::from_hex(name)?, true).unwrap()._0;
+        let symbol: String = erc20::symbolCall::abi_decode_returns(&Vec::from_hex(symbol)?, true).unwrap()._0;
+        let decimals: u8 = erc20::decimalsCall::abi_decode_returns(&Vec::from_hex(decimals)?, true).unwrap()._0;
+
+        Ok(Asset {
+            id: AssetId { chain, token_id: token_id.into() },
+            name,
+            symbol,
+            decimals: decimals as i32,
+            asset_type: chain.default_asset_type().unwrap(),
+        })
     }
 }

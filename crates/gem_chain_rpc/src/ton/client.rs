@@ -1,10 +1,10 @@
 use std::error::Error;
 
-use crate::ChainProvider;
+use crate::{ChainBlockProvider, ChainTokenDataProvider};
 use async_trait::async_trait;
 use chrono::Utc;
 use gem_ton::address::TonAddress;
-use primitives::{chain::Chain, TransactionState, TransactionType};
+use primitives::{chain::Chain, Asset, TransactionState, TransactionType};
 
 use reqwest_middleware::ClientWithMiddleware;
 
@@ -132,7 +132,7 @@ impl TonClient {
 }
 
 #[async_trait]
-impl ChainProvider for TonClient {
+impl ChainBlockProvider for TonClient {
     fn get_chain(&self) -> Chain {
         Chain::Ton
     }
@@ -171,5 +171,12 @@ impl ChainProvider for TonClient {
             .collect::<Vec<primitives::Transaction>>();
 
         Ok(transactions)
+    }
+}
+
+#[async_trait]
+impl ChainTokenDataProvider for TonClient {
+    async fn get_token_data(&self, _chain: Chain, _token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
+        unimplemented!()
     }
 }
