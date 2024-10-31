@@ -4,6 +4,9 @@ list:
 build:
     cargo build
 
+test:
+    cargo test
+
 export ANDROID_HOME := env_var_or_default("ANDROID_HOME", "~/Library/Android/sdk")
 
 install-ndk:

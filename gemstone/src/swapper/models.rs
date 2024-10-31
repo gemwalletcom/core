@@ -42,10 +42,24 @@ pub struct GemSwapRequest {
 }
 
 #[derive(Debug, Clone, uniffi::Record)]
+pub struct GemSwapFee {
+    pub bps: u32,
+    pub address: String,
+}
+
+impl Default for GemSwapFee {
+    fn default() -> Self {
+        Self {
+            bps: 0,
+            address: String::from(""),
+        }
+    }
+}
+
+#[derive(Debug, Clone, uniffi::Record)]
 pub struct GemSwapOptions {
     pub slippage_bps: u32,
-    pub fee_bps: u32,
-    pub fee_address: String,
+    pub fee: Option<GemSwapFee>,
     pub preferred_providers: Vec<String>,
 }
 
@@ -53,9 +67,8 @@ impl Default for GemSwapOptions {
     fn default() -> Self {
         Self {
             slippage_bps: DEFAULT_SLIPPAGE_BPS,
+            fee: None,
             preferred_providers: vec![],
-            fee_bps: 0,
-            fee_address: String::from(""),
         }
     }
 }
@@ -63,25 +76,25 @@ impl Default for GemSwapOptions {
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct GemSwapQuote {
     pub chain_type: ChainType,
-    pub from_amount: String,
-    pub to_amount: String,
+    pub from_value: String,
+    pub to_value: String,
     pub provider: GemProviderData,
-    pub approval: GemApprovalType,
+    pub approval: ApprovalType,
     pub request: GemSwapRequest,
 }
 
 #[derive(Debug, Clone, uniffi::Enum)]
-pub enum GemApprovalType {
-    Approve(GemApproveData),
-    Permit2(GemApproveData),
+pub enum ApprovalType {
+    Approve(ApprovalData),
+    Permit2(ApprovalData),
     None,
 }
 
 #[derive(Debug, Clone, uniffi::Record)]
-pub struct GemApproveData {
+pub struct ApprovalData {
     pub token: String,
     pub spender: String,
-    pub amount: String,
+    pub value: String,
 }
 
 #[derive(Debug, Clone, uniffi::Record)]
@@ -94,15 +107,15 @@ pub struct GemSwapQuoteData {
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct GemProviderData {
     pub name: String,
-    pub route: GemSwapRoute,
+    pub routes: Vec<SwapRoute>,
 }
 
 #[derive(Debug, Clone, uniffi::Record)]
-pub struct GemSwapRoute {
+pub struct SwapRoute {
     pub route_type: String,
     pub input: String,
     pub output: String,
-    pub fee: String,
+    pub fee_tier: String,
 }
 
 #[derive(Debug, Clone, uniffi::Record)]

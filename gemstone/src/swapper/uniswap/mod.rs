@@ -1,5 +1,4 @@
 use crate::{
-    debug_println,
     network::{jsonrpc::batch_into_target, AlienProvider, JsonRpcRequest, JsonRpcResponse, JsonRpcResult},
     swapper::{models::*, slippage::apply_slippage_in_bp, GemSwapProvider, GemSwapperError},
 };
@@ -78,9 +77,9 @@ impl UniswapV3 {
         EthereumAddress::parse(&str).ok_or(GemSwapperError::InvalidAddress { address: str })
     }
 
-    fn build_path_with_token(token_in: &EthereumAddress, token_out: &EthereumAddress, fee_tier: &FeeTier) -> Bytes {
+    fn build_path_with_token(token_in: &EthereumAddress, token_out: &EthereumAddress, fee_tier: FeeTier) -> Bytes {
         let mut bytes: Vec<u8> = vec![];
-        let fee = U24::from(fee_tier.clone() as u32);
+        let fee = U24::from(fee_tier as u32);
 
         bytes.extend(&token_in.bytes);
         bytes.extend(&fee.to_be_bytes_vec());
@@ -138,10 +137,11 @@ impl UniswapV3 {
         token_out: &EthereumAddress,
         amount_in: U256,
         quote_amount: U256,
-        fee_tier: &FeeTier,
+        fee_tier: FeeTier,
         permit: Option<Permit2Permit>,
     ) -> Result<Vec<UniversalRouterCommand>, GemSwapperError> {
         let options = request.options.clone().unwrap_or_default();
+        let fee_options = options.fee.unwrap_or_default();
         let recipient = Address::from_str(&request.wallet_address).map_err(|_| GemSwapperError::InvalidAddress {
             address: request.wallet_address.clone(),
         })?;
@@ -149,7 +149,7 @@ impl UniswapV3 {
         let mode = request.mode.clone();
         let wrap_input_eth = request.from_asset.is_native();
         let unwrap_output_weth = request.to_asset.is_native();
-        let pay_fees = options.fee_bps > 0;
+        let pay_fees = fee_options.bps > 0;
 
         let path = Self::build_path_with_token(token_in, token_out, fee_tier);
 
@@ -157,7 +157,7 @@ impl UniswapV3 {
 
         match mode {
             GemSwapMode::ExactIn => {
-                let amount_out = apply_slippage_in_bp(&quote_amount, options.slippage_bps + options.fee_bps);
+                let amount_out = apply_slippage_in_bp(&quote_amount, options.slippage_bps + fee_options.bps);
                 if wrap_input_eth {
                     // Wrap ETH, recipient is this_address
                     commands.push(UniversalRouterCommand::WRAP_ETH(WrapEth {
@@ -184,8 +184,8 @@ impl UniswapV3 {
                     // insert PAY_PORTION to fee_address
                     commands.push(UniversalRouterCommand::PAY_PORTION(PayPortion {
                         token: Address::from_slice(&token_out.bytes),
-                        recipient: Address::from_str(options.fee_address.as_str()).unwrap(),
-                        bips: U256::from(options.fee_bps),
+                        recipient: Address::from_str(fee_options.address.as_str()).unwrap(),
+                        bips: U256::from(fee_options.bps),
                     }));
 
                     if !unwrap_output_weth {
@@ -229,7 +229,7 @@ impl UniswapV3 {
         amount: U256,
         chain: Chain,
         provider: Arc<dyn AlienProvider>,
-    ) -> Result<GemApprovalType, GemSwapperError> {
+    ) -> Result<ApprovalType, GemSwapperError> {
         let deployment = get_deployment_by_chain(chain).ok_or(GemSwapperError::NotSupportedChain)?;
         // Check token allowance, spender is permit2
         let allowance_data = IERC20::allowanceCall {
@@ -247,10 +247,10 @@ impl UniswapV3 {
             })?
             ._0;
         if allowance < amount {
-            return Ok(GemApprovalType::Approve(GemApproveData {
+            return Ok(ApprovalType::Approve(ApprovalData {
                 token: token.to_string(),
                 spender: deployment.permit2.to_string(),
-                amount: amount.to_string(),
+                value: amount.to_string(),
             }));
         }
 
@@ -273,14 +273,14 @@ impl UniswapV3 {
         let expiration: u64 = allowance._2.try_into().unwrap();
 
         if U256::from(allowance._0) < amount || expiration < timestamp {
-            return Ok(GemApprovalType::Permit2(GemApproveData {
+            return Ok(ApprovalType::Permit2(ApprovalData {
                 token: token.to_string(),
                 spender: deployment.universal_router.to_string(),
-                amount: amount.to_string(),
+                value: amount.to_string(),
             }));
         }
 
-        Ok(GemApprovalType::None)
+        Ok(ApprovalType::None)
     }
 
     async fn jsonrpc_call(
@@ -348,11 +348,11 @@ impl GemSwapProvider for UniswapV3 {
         _ = evm_chain.weth_contract().ok_or(GemSwapperError::NotSupportedChain)?;
 
         // Build path for QuoterV2
-        let fee_tiers = [FeeTier::Lowest, FeeTier::Low, FeeTier::Medium];
+        let fee_tiers: Vec<FeeTier> = vec![FeeTier::Lowest, FeeTier::Low, FeeTier::Medium];
         let eth_calls: Vec<EthereumRpc> = fee_tiers
             .iter()
             .map(|fee_tier| {
-                let path = Self::build_path_with_token(&token_in, &token_out, fee_tier);
+                let path = Self::build_path_with_token(&token_in, &token_out, fee_tier.clone());
                 Self::build_quoter_request(request, deployment.quoter_v2, amount_in, &path)
             })
             .collect();
@@ -368,11 +368,8 @@ impl GemSwapProvider for UniswapV3 {
                 fee_tier_idx = response.id as usize - 1;
             }
         }
-        let fee_tier = &fee_tiers[fee_tier_idx];
-
-        debug_println!("fee tier: {:?}", fee_tier);
-
-        let mut approval_type = GemApprovalType::None;
+        let fee_tier: u32 = fee_tiers[fee_tier_idx].clone() as u32;
+        let mut approval_type = ApprovalType::None;
         if !request.from_asset.is_native() {
             // Check allowances
             approval_type = self
@@ -382,16 +379,16 @@ impl GemSwapProvider for UniswapV3 {
 
         Ok(GemSwapQuote {
             chain_type: ChainType::Ethereum,
-            from_amount: request.amount.clone(),
-            to_amount: max_amount_out.to_string(),
+            from_value: request.amount.clone(),
+            to_value: max_amount_out.to_string(),
             provider: GemProviderData {
                 name: self.name().into(),
-                route: GemSwapRoute {
+                routes: vec![SwapRoute {
                     route_type: String::from("v3-pool"),
                     input: token_in.to_checksum(),
                     output: token_out.to_checksum(),
-                    fee: (fee_tier.to_owned() as u32).to_string(),
-                },
+                    fee_tier: fee_tier.to_string(),
+                }],
             },
             approval: approval_type,
             request: request.clone(),
@@ -407,12 +404,12 @@ impl GemSwapProvider for UniswapV3 {
         let request = &quote.request;
         let (_, token_in, token_out, amount_in) = Self::parse_request(request)?;
         let deployment = get_deployment_by_chain(request.from_asset.chain).ok_or(GemSwapperError::NotSupportedChain)?;
-        let to_amount = U256::from_str(&quote.to_amount).map_err(|_| GemSwapperError::InvalidAmount)?;
+        let to_amount = U256::from_str(&quote.to_value).map_err(|_| GemSwapperError::InvalidAmount)?;
 
         let permit: Option<Permit2Permit> = permit2.map(|x| x.into());
-        let fee_tier = FeeTier::try_from(quote.provider.route.fee.as_str()).map_err(|_| GemSwapperError::InvalidAmount)?;
+        let fee_tier = FeeTier::try_from(quote.provider.routes[0].fee_tier.as_str()).map_err(|_| GemSwapperError::InvalidAmount)?;
 
-        let commands = Self::build_commands(request, &token_in, &token_out, amount_in, to_amount, &fee_tier, permit)?;
+        let commands = Self::build_commands(request, &token_in, &token_out, amount_in, to_amount, fee_tier, permit)?;
         let deadline = SystemTime::now().duration_since(UNIX_EPOCH).expect("Time went backwards").as_secs() + DEFAULT_DEADLINE;
         let encoded = encode_commands(&commands, U256::from(deadline));
 
@@ -438,7 +435,7 @@ mod tests {
         let token0 = EthereumAddress::parse("0x4200000000000000000000000000000000000006").unwrap();
         // USDC
         let token1 = EthereumAddress::parse("0x0b2c639c533813f4aa9d7837caf62653d097ff85").unwrap();
-        let bytes = UniswapV3::build_path_with_token(&token0, &token1, &FeeTier::Low);
+        let bytes = UniswapV3::build_path_with_token(&token0, &token1, FeeTier::Low);
 
         assert_eq!(
             HexEncode(bytes),
@@ -475,7 +472,7 @@ mod tests {
         let fee_tier = FeeTier::Low;
 
         // without fee
-        let commands = UniswapV3::build_commands(&request, &token_in, &token_out, amount_in, U256::from(0), &fee_tier, None).unwrap();
+        let commands = UniswapV3::build_commands(&request, &token_in, &token_out, amount_in, U256::from(0), fee_tier, None).unwrap();
 
         assert_eq!(commands.len(), 2);
 
@@ -484,13 +481,15 @@ mod tests {
 
         let options = GemSwapOptions {
             slippage_bps: 100,
-            fee_bps: 25,
-            fee_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
+            fee: Some(GemSwapFee {
+                bps: 25,
+                address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
+            }),
             preferred_providers: vec![],
         };
         request.options = Some(options);
 
-        let commands = UniswapV3::build_commands(&request, &token_in, &token_out, amount_in, U256::from(0), &fee_tier, None).unwrap();
+        let commands = UniswapV3::build_commands(&request, &token_in, &token_out, amount_in, U256::from(0), fee_tier.clone(), None).unwrap();
 
         assert_eq!(commands.len(), 4);
 
