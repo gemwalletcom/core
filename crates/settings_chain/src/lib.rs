@@ -1,6 +1,8 @@
 use core::str;
 
-use gem_chain_rpc::{AptosClient, BitcoinClient, ChainProvider, CosmosClient, EthereumClient, NearClient, SolanaClient, SuiClient, TonClient, TronClient, XRPClient};
+use gem_chain_rpc::{
+    AptosClient, BitcoinClient, ChainProvider, CosmosClient, EthereumClient, NearClient, SolanaClient, SuiClient, TonClient, TronClient, XRPClient,
+};
 use primitives::{Asset, Chain};
 use reqwest_middleware::ClientBuilder;
 use reqwest_retry::{policies::ExponentialBackoff, RetryTransientMiddleware};
@@ -15,7 +17,7 @@ impl ProviderFactory {
     }
 
     pub fn new_providers(settings: &Settings) -> ChainProviders {
-        let providers = Chain::all().iter().map(|x| Self::new_from_settings(x.clone(), &settings.clone())).collect();
+        let providers = Chain::all().iter().map(|x| Self::new_from_settings(*x, &settings.clone())).collect();
         ChainProviders::new(providers)
     }
 
@@ -27,9 +29,7 @@ impl ProviderFactory {
         let url = url.to_string();
 
         match chain {
-            Chain::Bitcoin | Chain::Litecoin | Chain::Doge => {
-                Box::new(BitcoinClient::new(chain, client, url))
-            }
+            Chain::Bitcoin | Chain::Litecoin | Chain::Doge => Box::new(BitcoinClient::new(chain, client, url)),
             Chain::Ethereum
             | Chain::SmartChain
             | Chain::Polygon
@@ -46,13 +46,9 @@ impl ProviderFactory {
             | Chain::Linea
             | Chain::Mantle
             | Chain::Celo => Box::new(EthereumClient::new(chain, url)),
-            Chain::Cosmos
-            | Chain::Osmosis
-            | Chain::Celestia
-            | Chain::Thorchain
-            | Chain::Injective
-            | Chain::Noble
-            | Chain::Sei => Box::new(CosmosClient::new(chain, client, url)),
+            Chain::Cosmos | Chain::Osmosis | Chain::Celestia | Chain::Thorchain | Chain::Injective | Chain::Noble | Chain::Sei => {
+                Box::new(CosmosClient::new(chain, client, url))
+            }
             Chain::Solana => Box::new(SolanaClient::new(url)),
             Chain::Ton => Box::new(TonClient::new(client, url)),
             Chain::Tron => Box::new(TronClient::new(client, url)),
@@ -112,6 +108,11 @@ impl ChainProviders {
     }
 
     pub async fn get_token_data(&self, chain: Chain, token_id: String) -> Result<Asset, Box<dyn std::error::Error + Send + Sync>> {
-        self.providers.iter().find(|x| x.get_chain() == chain).unwrap().get_token_data(chain, token_id.clone()).await
+        self.providers
+            .iter()
+            .find(|x| x.get_chain() == chain)
+            .unwrap()
+            .get_token_data(chain, token_id.clone())
+            .await
     }
 }
