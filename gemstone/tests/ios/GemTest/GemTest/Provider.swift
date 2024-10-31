@@ -17,7 +17,7 @@ public actor NativeProvider {
 }
 
 extension NativeProvider: AlienProvider {
-    public func getEndpoint(chain: Chain) async throws -> String {
+    nonisolated public func getEndpoint(chain: Chain) throws -> String {
         return nodeConfig[chain]!.absoluteString
     }
 
