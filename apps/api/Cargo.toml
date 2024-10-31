@@ -14,7 +14,6 @@ prometheus-client = { workspace = true }
 storage = { path = "../../crates/storage" }
 pricer = { path = "../../crates/pricer" }
 fiat = { path = "../../crates/fiat" }
-swapper = { path = "../../crates/swapper" }
 settings = { path = "../../crates/settings" }
 settings_chain = { path = "../../crates/settings_chain" }
 name_resolver = { path = "../../crates/name_resolver" }

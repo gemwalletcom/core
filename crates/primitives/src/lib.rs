@@ -72,8 +72,6 @@ pub use self::push_notification::{PushNotification, PushNotificationPriceAlert, 
 pub mod security_scan;
 pub use self::security_scan::SecurityMetadata;
 pub use self::security_scan::SecurityResponse;
-pub mod swap;
-pub use self::swap::{SwapApprovalData, SwapMode, SwapProvider, SwapQuote, SwapQuoteData, SwapQuoteProtocolRequest, SwapQuoteRequest, SwapQuoteResult};
 pub mod transaction_metadata_types;
 pub use self::transaction_metadata_types::TransactionSwapMetadata;
 pub mod big_number_formatter;

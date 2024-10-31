@@ -390,7 +390,6 @@ dependencies = [
  "settings",
  "settings_chain",
  "storage",
- "swapper",
  "tokio",
 ]
 
@@ -8162,40 +8161,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "swap_aftermath"
-version = "1.0.0"
-dependencies = [
- "anyhow",
- "async-trait",
- "primitives",
- "reqwest",
- "reqwest-enum",
- "serde",
- "serde_json",
- "swap_provider",
-]
-
-[[package]]
-name = "swap_jupiter"
-version = "1.0.0"
-dependencies = [
- "async-trait",
- "gem_solana",
- "primitives",
- "reqwest",
- "serde",
- "swap_provider",
-]
-
-[[package]]
-name = "swap_provider"
-version = "1.0.0"
-dependencies = [
- "async-trait",
- "primitives",
-]
-
-[[package]]
 name = "swap_thorchain"
 version = "1.0.0"
 dependencies = [
@@ -8203,20 +8168,6 @@ dependencies = [
  "primitives",
  "reqwest",
  "serde",
- "swap_provider",
-]
-
-[[package]]
-name = "swapper"
-version = "1.0.0"
-dependencies = [
- "primitives",
- "reqwest",
- "serde",
- "swap_aftermath",
- "swap_jupiter",
- "swap_provider",
- "swap_thorchain",
 ]
 
 [[package]]

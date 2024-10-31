@@ -53,7 +53,6 @@ use settings_chain::ProviderFactory;
 use storage::{ClickhouseClient, DatabaseClient};
 use subscription_client::SubscriptionsClient;
 use swap_client::SwapClient;
-use swapper::{Swapper, SwapperClientConfiguration, SwapperConfiguration};
 use transaction_client::TransactionsClient;
 
 async fn rocket(settings: Settings) -> Rocket<Build> {
@@ -84,28 +83,7 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
     let scan_client = SecurityScanClient::new(postgres_url, security_providers).await;
     let parser_client = ParserClient::new(settings_clone.clone()).await;
     let assets_client = AssetsClient::new(postgres_url).await;
-    let swapper_configuration = SwapperConfiguration {
-        jupiter: SwapperClientConfiguration {
-            url: settings.swap.jupiter.url,
-            key: "".to_string(),
-            fee_percent: settings.swap.jupiter.fee.percent,
-            fee_address: settings.swap.jupiter.fee.address,
-        },
-        thorchain: SwapperClientConfiguration {
-            url: settings.swap.thorchain.url,
-            key: "".to_string(),
-            fee_percent: settings.swap.thorchain.fee.percent,
-            fee_address: settings.swap.thorchain.fee.address,
-        },
-        aftermath: SwapperClientConfiguration {
-            url: settings.swap.aftermath.url,
-            key: "".to_string(),
-            fee_percent: settings.swap.aftermath.fee.percent,
-            fee_address: settings.swap.aftermath.fee.address,
-        },
-    };
-    let swapper_client = Swapper::build(swapper_configuration);
-    let swap_client = SwapClient::new(postgres_url, swapper_client).await;
+    let swap_client = SwapClient::new(postgres_url).await;
     let providers = FiatProviderFactory::new_providers(settings_clone.clone());
     let fiat_client = FiatProvider::new(postgres_url, providers).await;
     let nft_client = NFTClient::new(postgres_url).await;
@@ -167,7 +145,6 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
                 parser::get_parser_block,
                 parser::get_parser_block_finalize,
                 parser::get_parser_block_number_latest,
-                swap::post_swap_quote,
                 swap::get_swap_assets,
                 nft::get_nft_collections,
                 nft::get_nft_collectibles,

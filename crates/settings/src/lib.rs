@@ -1,8 +1,5 @@
 use std::env;
 
-pub mod operator;
-pub use operator::{OperatorAppStoreApp, OperatorAppStoreLanguage, SettingsOperator};
-
 use config::{Config, ConfigError, Environment, File};
 use serde::Deserialize;
 
