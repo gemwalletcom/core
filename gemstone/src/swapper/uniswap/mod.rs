@@ -469,10 +469,9 @@ mod tests {
         let token_in = EthereumAddress::parse("0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2").unwrap();
         let token_out = EthereumAddress::parse("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48").unwrap();
         let amount_in = U256::from(1000000000000000u64);
-        let fee_tier = FeeTier::Low;
 
         // without fee
-        let commands = UniswapV3::build_commands(&request, &token_in, &token_out, amount_in, U256::from(0), fee_tier, None).unwrap();
+        let commands = UniswapV3::build_commands(&request, &token_in, &token_out, amount_in, U256::from(0), FeeTier::Low, None).unwrap();
 
         assert_eq!(commands.len(), 2);
 
@@ -489,7 +488,7 @@ mod tests {
         };
         request.options = Some(options);
 
-        let commands = UniswapV3::build_commands(&request, &token_in, &token_out, amount_in, U256::from(0), fee_tier.clone(), None).unwrap();
+        let commands = UniswapV3::build_commands(&request, &token_in, &token_out, amount_in, U256::from(0), FeeTier::Low, None).unwrap();
 
         assert_eq!(commands.len(), 4);
 
