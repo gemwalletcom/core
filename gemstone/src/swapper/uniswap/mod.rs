@@ -1,6 +1,6 @@
 use crate::{
     network::{jsonrpc::batch_into_target, AlienProvider, JsonRpcRequest, JsonRpcResponse, JsonRpcResult},
-    swapper::{models::*, slippage::apply_slippage_in_bp, GemSwapProvider, GemSwapperError},
+    swapper::{models::*, slippage::apply_slippage_in_bp, GemSwapProvider, SwapperError},
 };
 use gem_evm::{
     address::EthereumAddress,
@@ -69,12 +69,12 @@ impl UniswapV3 {
         )
     }
 
-    fn get_asset_address(asset: &AssetId, evm_chain: EVMChain) -> Result<EthereumAddress, GemSwapperError> {
+    fn get_asset_address(asset: &AssetId, evm_chain: EVMChain) -> Result<EthereumAddress, SwapperError> {
         let str = match &asset.token_id {
             Some(token_id) => token_id.to_string(),
             None => evm_chain.weth_contract().unwrap().to_string(),
         };
-        EthereumAddress::parse(&str).ok_or(GemSwapperError::InvalidAddress { address: str })
+        EthereumAddress::parse(&str).ok_or(SwapperError::InvalidAddress { address: str })
     }
 
     fn build_path_with_token(token_in: &EthereumAddress, token_out: &EthereumAddress, fee_tier: FeeTier) -> Bytes {
@@ -88,11 +88,11 @@ impl UniswapV3 {
         Bytes::from(bytes)
     }
 
-    fn parse_request(request: &SwapQuoteRequest) -> Result<(EVMChain, EthereumAddress, EthereumAddress, U256), GemSwapperError> {
-        let evm_chain = EVMChain::from_chain(request.from_asset.chain).ok_or(GemSwapperError::NotSupportedChain)?;
+    fn parse_request(request: &SwapQuoteRequest) -> Result<(EVMChain, EthereumAddress, EthereumAddress, U256), SwapperError> {
+        let evm_chain = EVMChain::from_chain(request.from_asset.chain).ok_or(SwapperError::NotSupportedChain)?;
         let token_in = Self::get_asset_address(&request.from_asset, evm_chain)?;
         let token_out = Self::get_asset_address(&request.to_asset, evm_chain)?;
-        let amount_in = U256::from_str(&request.amount).map_err(|_| GemSwapperError::InvalidAmount)?;
+        let amount_in = U256::from_str(&request.amount).map_err(|_| SwapperError::InvalidAmount)?;
 
         Ok((evm_chain, token_in, token_out, amount_in))
     }
@@ -121,12 +121,12 @@ impl UniswapV3 {
         )
     }
 
-    fn decode_quoter_response(response: &JsonRpcResponse<String>) -> Result<U256, GemSwapperError> {
-        let decoded = HexDecode(&response.result).map_err(|_| GemSwapperError::NetworkError {
+    fn decode_quoter_response(response: &JsonRpcResponse<String>) -> Result<U256, SwapperError> {
+        let decoded = HexDecode(&response.result).map_err(|_| SwapperError::NetworkError {
             msg: "Failed to decode hex result".into(),
         })?;
         let quoter_return = IQuoterV2::quoteExactInputCall::abi_decode_returns(&decoded, true)
-            .map_err(|err| GemSwapperError::ABIError { msg: err.to_string() })?
+            .map_err(|err| SwapperError::ABIError { msg: err.to_string() })?
             .amountOut;
         Ok(quoter_return)
     }
@@ -139,10 +139,10 @@ impl UniswapV3 {
         quote_amount: U256,
         fee_tier: FeeTier,
         permit: Option<Permit2Permit>,
-    ) -> Result<Vec<UniversalRouterCommand>, GemSwapperError> {
+    ) -> Result<Vec<UniversalRouterCommand>, SwapperError> {
         let options = request.options.clone().unwrap_or_default();
         let fee_options = options.fee.unwrap_or_default();
-        let recipient = Address::from_str(&request.wallet_address).map_err(|_| GemSwapperError::InvalidAddress {
+        let recipient = Address::from_str(&request.wallet_address).map_err(|_| SwapperError::InvalidAddress {
             address: request.wallet_address.clone(),
         })?;
 
@@ -229,8 +229,8 @@ impl UniswapV3 {
         amount: U256,
         chain: Chain,
         provider: Arc<dyn AlienProvider>,
-    ) -> Result<ApprovalType, GemSwapperError> {
-        let deployment = get_deployment_by_chain(chain).ok_or(GemSwapperError::NotSupportedChain)?;
+    ) -> Result<ApprovalType, SwapperError> {
+        let deployment = get_deployment_by_chain(chain).ok_or(SwapperError::NotSupportedChain)?;
         // Check token allowance, spender is permit2
         let allowance_data = IERC20::allowanceCall {
             owner: wallet_address,
@@ -242,7 +242,7 @@ impl UniswapV3 {
         let responses = self.jsonrpc_call(&[allowance_call], provider.clone(), chain).await?;
         let decoded = HexDecode(&responses[0].result).unwrap();
         let allowance = IERC20::allowanceCall::abi_decode_returns(&decoded, false)
-            .map_err(|_| GemSwapperError::ABIError {
+            .map_err(|_| SwapperError::ABIError {
                 msg: "Invalid erc20 allowance response".into(),
             })?
             ._0;
@@ -265,7 +265,7 @@ impl UniswapV3 {
 
         let responses = self.jsonrpc_call(&[permit2_call], provider, chain).await?;
         let decoded = HexDecode(&responses[0].result).unwrap();
-        let allowance = IAllowanceTransfer::allowanceCall::abi_decode_returns(&decoded, false).map_err(|_| GemSwapperError::ABIError {
+        let allowance = IAllowanceTransfer::allowanceCall::abi_decode_returns(&decoded, false).map_err(|_| SwapperError::ABIError {
             msg: "Invalid permit2 allowance response".into(),
         })?;
 
@@ -288,7 +288,7 @@ impl UniswapV3 {
         rpc_calls: &[EthereumRpc],
         provider: Arc<dyn AlienProvider>,
         chain: Chain,
-    ) -> Result<Vec<JsonRpcResponse<String>>, GemSwapperError> {
+    ) -> Result<Vec<JsonRpcResponse<String>>, SwapperError> {
         let requests: Vec<JsonRpcRequest> = rpc_calls
             .iter()
             .enumerate()
@@ -297,17 +297,17 @@ impl UniswapV3 {
 
         let endpoint = provider
             .get_endpoint(chain)
-            .map_err(|err| GemSwapperError::NetworkError { msg: err.to_string() })?;
+            .map_err(|err| SwapperError::NetworkError { msg: err.to_string() })?;
 
         let targets = vec![batch_into_target(&requests, &endpoint)];
 
         let data_vec = provider
             .request(targets)
             .await
-            .map_err(|err| GemSwapperError::NetworkError { msg: err.to_string() })?;
+            .map_err(|err| SwapperError::NetworkError { msg: err.to_string() })?;
 
-        let data = data_vec.first().ok_or(GemSwapperError::NetworkError { msg: "No result".into() })?;
-        let results: Vec<JsonRpcResult<String>> = serde_json::from_slice(data).map_err(|err| GemSwapperError::NetworkError { msg: err.to_string() })?;
+        let data = data_vec.first().ok_or(SwapperError::NetworkError { msg: "No result".into() })?;
+        let results: Vec<JsonRpcResult<String>> = serde_json::from_slice(data).map_err(|err| SwapperError::NetworkError { msg: err.to_string() })?;
 
         let responses: Vec<JsonRpcResponse<String>> = results
             .into_iter()
@@ -320,7 +320,7 @@ impl UniswapV3 {
         if !responses.is_empty() {
             Ok(responses)
         } else {
-            Err(GemSwapperError::NetworkError {
+            Err(SwapperError::NetworkError {
                 msg: "All jsonrpc requests failed".into(),
             })
         }
@@ -333,18 +333,18 @@ impl GemSwapProvider for UniswapV3 {
         UNISWAP
     }
 
-    async fn fetch_quote(&self, request: &SwapQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<GemSwapQuote, GemSwapperError> {
+    async fn fetch_quote(&self, request: &SwapQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapQuote, SwapperError> {
         // Prevent swaps on unsupported chains
         if !self.support_chain(request.from_asset.chain) {
-            return Err(GemSwapperError::NotSupportedChain);
+            return Err(SwapperError::NotSupportedChain);
         }
 
-        let wallet_address = Address::parse_checksummed(&request.wallet_address, None).map_err(|_| GemSwapperError::InvalidAddress {
+        let wallet_address = Address::parse_checksummed(&request.wallet_address, None).map_err(|_| SwapperError::InvalidAddress {
             address: request.wallet_address.clone(),
         })?;
-        let deployment = get_deployment_by_chain(request.from_asset.chain).ok_or(GemSwapperError::NotSupportedChain)?;
+        let deployment = get_deployment_by_chain(request.from_asset.chain).ok_or(SwapperError::NotSupportedChain)?;
         let (evm_chain, token_in, token_out, amount_in) = Self::parse_request(request)?;
-        _ = evm_chain.weth_contract().ok_or(GemSwapperError::NotSupportedChain)?;
+        _ = evm_chain.weth_contract().ok_or(SwapperError::NotSupportedChain)?;
 
         // Build path for QuoterV2
         let fee_tiers: Vec<FeeTier> = vec![FeeTier::Lowest, FeeTier::Low, FeeTier::Medium];
@@ -376,11 +376,11 @@ impl GemSwapProvider for UniswapV3 {
                 .await?;
         }
 
-        Ok(GemSwapQuote {
+        Ok(SwapQuote {
             chain_type: ChainType::Ethereum,
             from_value: request.amount.clone(),
             to_value: max_amount_out.to_string(),
-            provider: GemProviderData {
+            provider: SwapProviderData {
                 name: self.name().into(),
                 routes: vec![SwapRoute {
                     route_type: String::from("v3-pool"),
@@ -396,17 +396,17 @@ impl GemSwapProvider for UniswapV3 {
 
     async fn fetch_quote_data(
         &self,
-        quote: &GemSwapQuote,
+        quote: &SwapQuote,
         _provider: Arc<dyn AlienProvider>,
-        permit2: Option<GemPermit2Data>,
-    ) -> Result<GemSwapQuoteData, GemSwapperError> {
+        permit2: Option<Permit2Data>,
+    ) -> Result<SwapQuoteData, SwapperError> {
         let request = &quote.request;
         let (_, token_in, token_out, amount_in) = Self::parse_request(request)?;
-        let deployment = get_deployment_by_chain(request.from_asset.chain).ok_or(GemSwapperError::NotSupportedChain)?;
-        let to_amount = U256::from_str(&quote.to_value).map_err(|_| GemSwapperError::InvalidAmount)?;
+        let deployment = get_deployment_by_chain(request.from_asset.chain).ok_or(SwapperError::NotSupportedChain)?;
+        let to_amount = U256::from_str(&quote.to_value).map_err(|_| SwapperError::InvalidAmount)?;
 
         let permit: Option<Permit2Permit> = permit2.map(|x| x.into());
-        let fee_tier = FeeTier::try_from(quote.provider.routes[0].fee_tier.as_str()).map_err(|_| GemSwapperError::InvalidAmount)?;
+        let fee_tier = FeeTier::try_from(quote.provider.routes[0].fee_tier.as_str()).map_err(|_| SwapperError::InvalidAmount)?;
 
         let commands = Self::build_commands(request, &token_in, &token_out, amount_in, to_amount, fee_tier, permit)?;
         let deadline = SystemTime::now().duration_since(UNIX_EPOCH).expect("Time went backwards").as_secs() + DEFAULT_DEADLINE;
@@ -414,7 +414,7 @@ impl GemSwapProvider for UniswapV3 {
 
         let wrap_input_eth = request.from_asset.is_native();
         let value = if wrap_input_eth { request.amount.clone() } else { String::from("0x0") };
-        Ok(GemSwapQuoteData {
+        Ok(SwapQuoteData {
             to: deployment.universal_router.into(),
             value,
             data: HexEncode(encoded),

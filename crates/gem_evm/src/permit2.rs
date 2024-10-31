@@ -1,4 +1,6 @@
 use alloy_core::sol;
+use primitives::eip712::EIP712Type;
+use serde::{Deserialize, Serialize};
 
 // https://github.com/Uniswap/permit2/blob/main/src/interfaces/IAllowanceTransfer.sol
 sol! {
@@ -33,5 +35,68 @@ sol! {
         /// @notice The mapping is indexed in the above order see: allowance[ownerAddress][tokenAddress][spenderAddress]
         /// @dev The packed slot holds the allowed amount, expiration at which the allowed amount is no longer valid, and current nonce thats updated on any signature based approvals.
         function allowance(address, address, address) external view returns (uint160, uint48, uint48);
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Permit2Types {
+    #[serde(rename = "EIP712Domain")]
+    pub eip712_domain: Vec<EIP712Type>,
+    #[serde(rename = "PermitSingle")]
+    pub single_types: Vec<EIP712Type>,
+    #[serde(rename = "PermitDetails")]
+    pub details_types: Vec<EIP712Type>,
+}
+
+impl Default for Permit2Types {
+    fn default() -> Self {
+        Self {
+            eip712_domain: vec![
+                EIP712Type {
+                    name: "name".into(),
+                    r#type: "string".into(),
+                },
+                EIP712Type {
+                    name: "chainId".into(),
+                    r#type: "uint256".into(),
+                },
+                EIP712Type {
+                    name: "verifyingContract".into(),
+                    r#type: "address".into(),
+                },
+            ],
+            single_types: vec![
+                EIP712Type {
+                    name: "details".into(),
+                    r#type: "PermitDetails".into(),
+                },
+                EIP712Type {
+                    name: "spender".into(),
+                    r#type: "address".into(),
+                },
+                EIP712Type {
+                    name: "sigDeadline".into(),
+                    r#type: "uint256".into(),
+                },
+            ],
+            details_types: vec![
+                EIP712Type {
+                    name: "token".into(),
+                    r#type: "address".into(),
+                },
+                EIP712Type {
+                    name: "amount".into(),
+                    r#type: "uint160".into(),
+                },
+                EIP712Type {
+                    name: "expiration".into(),
+                    r#type: "uint48".into(),
+                },
+                EIP712Type {
+                    name: "nonce".into(),
+                    r#type: "uint48".into(),
+                },
+            ],
+        }
     }
 }

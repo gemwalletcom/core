@@ -5,6 +5,7 @@ use typeshare::typeshare;
 #[typeshare(swift = "Equatable, Sendable")]
 pub struct EIP712Domain {
     pub name: String,
+    #[serde(skip_serializing_if = "String::is_empty")]
     pub version: String,
     #[serde(rename = "chainId")]
     pub chain_id: u32,

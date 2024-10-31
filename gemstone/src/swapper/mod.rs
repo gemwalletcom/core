@@ -13,13 +13,8 @@ use models::*;
 #[async_trait]
 pub trait GemSwapProvider: Send + Sync + Debug {
     fn name(&self) -> &'static str;
-    async fn fetch_quote(&self, request: &SwapQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<GemSwapQuote, GemSwapperError>;
-    async fn fetch_quote_data(
-        &self,
-        quote: &GemSwapQuote,
-        provider: Arc<dyn AlienProvider>,
-        permit2: Option<GemPermit2Data>,
-    ) -> Result<GemSwapQuoteData, GemSwapperError>;
+    async fn fetch_quote(&self, request: &SwapQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapQuote, SwapperError>;
+    async fn fetch_quote_data(&self, quote: &SwapQuote, provider: Arc<dyn AlienProvider>, permit2: Option<Permit2Data>) -> Result<SwapQuoteData, SwapperError>;
 }
 
 #[derive(Debug, uniffi::Object)]
@@ -38,25 +33,25 @@ impl GemSwapper {
         }
     }
 
-    async fn fetch_quote(&self, request: SwapQuoteRequest) -> Result<GemSwapQuote, GemSwapperError> {
+    async fn fetch_quote(&self, request: SwapQuoteRequest) -> Result<Vec<SwapQuote>, SwapperError> {
         for swapper in self.swappers.iter() {
-            let quote = swapper.fetch_quote(&request, self.rpc_provider.clone()).await;
-            match quote {
-                Ok(quote) => return Ok(quote),
+            let quotes = swapper.fetch_quote(&request, self.rpc_provider.clone()).await;
+            match quotes {
+                Ok(val) => return Ok(vec![val]),
                 Err(_err) => {
                     debug_println!("<== fetch_quote error: {:?}", _err);
                 }
             }
         }
-        Err(GemSwapperError::NoQuoteAvailable)
+        Err(SwapperError::NoQuoteAvailable)
     }
 
-    async fn fetch_quote_data(&self, quote: &GemSwapQuote, permit2: Option<GemPermit2Data>) -> Result<GemSwapQuoteData, GemSwapperError> {
+    async fn fetch_quote_data(&self, quote: &SwapQuote, permit2: Option<Permit2Data>) -> Result<SwapQuoteData, SwapperError> {
         let swapper = self
             .swappers
             .iter()
             .find(|x| x.name() == quote.provider.name.as_str())
-            .ok_or(GemSwapperError::NotImplemented)?;
+            .ok_or(SwapperError::NotImplemented)?;
         swapper.fetch_quote_data(quote, self.rpc_provider.clone(), permit2).await
     }
 }
