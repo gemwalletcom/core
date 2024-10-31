@@ -7,7 +7,7 @@ use typeshare::typeshare;
 use crate::{AssetId, ChainType};
 
 #[typeshare(swift = "Equatable, Sendable")]
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 #[serde(rename_all = "lowercase")]
 #[derive(Default)]
 pub enum SwapMode {
@@ -28,7 +28,7 @@ pub struct SwapQuoteRequest {
     pub include_data: bool,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct SwapQuoteProtocolRequest {
     pub from_asset: AssetId,

@@ -13,11 +13,17 @@ pub mod chain;
 pub mod network;
 pub mod payment;
 pub mod sui;
+pub mod swapper;
 pub mod ton;
 pub mod wallet_connect;
 
-uniffi::include_scaffolding!("gemstone");
+uniffi::setup_scaffolding!("gemstone");
 static LIB_VERSION: &str = "0.2.1";
+
+#[macro_export]
+macro_rules! debug_println {
+    ($($arg:tt)*) => (#[cfg(debug_assertions)] println!($($arg)*));
+}
 
 #[uniffi::export]
 pub fn lib_version() -> String {

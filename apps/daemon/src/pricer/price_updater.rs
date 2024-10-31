@@ -1,9 +1,10 @@
+use chain_primitives::format_token_id;
 use chrono::{DateTime, Duration, Utc};
 use coingecko::mapper::{get_chain_for_coingecko_platform_id, get_coingecko_market_id_for_chain};
 use coingecko::{Coin, CoinGeckoClient, CoinMarket, SimplePrice};
 use pricer::PriceClient;
 use primitives::chain::Chain;
-use primitives::{AssetId, DEFAULT_FIAT_CURRENCY};
+use primitives::DEFAULT_FIAT_CURRENCY;
 use std::collections::{HashMap, HashSet};
 use std::error::Error;
 use storage::models::price::{PriceAsset, PriceCache};
@@ -46,7 +47,7 @@ impl PriceUpdater {
 
         Ok(chains_assets.len() + assets.len())
     }
-    
+
     pub async fn update_prices_simple_high_market_cap(&mut self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
         let ids = self.price_client.get_prices_ids()?.into_iter().take(500).collect::<Vec<_>>();
         self.update_prices_simple_ids(ids).await
@@ -221,6 +222,6 @@ fn get_asset_id(chain: Chain, token_id: String) -> Option<String> {
     if token_id.is_empty() {
         return Some(chain.as_ref().to_string());
     }
-    let token_id = AssetId::format_token_id(chain, token_id)?;
+    let token_id = format_token_id(chain, token_id)?;
     format!("{}_{}", chain.as_ref(), token_id).into()
 }

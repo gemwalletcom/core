@@ -4,7 +4,7 @@ use reqwest_enum::{
     target::Target,
 };
 
-use std::collections::HashMap;
+use std::{collections::HashMap, time::Duration};
 
 pub enum AftermathApi {
     Quote(TradeQuote),
@@ -20,11 +20,12 @@ impl Target for AftermathApi {
         HTTPMethod::POST
     }
 
-    fn path(&self) -> &'static str {
+    fn path(&self) -> String {
         match self {
             AftermathApi::Quote(_) => "/router/trade-route",
             AftermathApi::Tx(_) => "/router/transactions/trade-base64-v2",
         }
+        .into()
     }
 
     fn query(&self) -> std::collections::HashMap<&'static str, &'static str> {
@@ -42,6 +43,10 @@ impl Target for AftermathApi {
             AftermathApi::Quote(quote) => HTTPBody::from(quote),
             AftermathApi::Tx(tx) => HTTPBody::from(tx),
         }
+    }
+
+    fn timeout(&self) -> Option<Duration> {
+        None
     }
 
     fn authentication(&self) -> Option<reqwest_enum::http::AuthMethod> {

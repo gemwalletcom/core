@@ -5,12 +5,7 @@ import Gemstone
 
 struct ContentView: View {
 
-    let warp: AlienProviderWarp
-
-    init() {
-        let warp = AlienProviderWarp(provider: NativeProvider())
-        self.warp = warp
-    }
+    let provider = NativeProvider()
 
     var body: some View {
         VStack {
@@ -18,9 +13,19 @@ struct ContentView: View {
                 .imageScale(.large)
                 .foregroundStyle(.tint)
             Text("Gemstone lib version: " + Gemstone.libVersion())
-            Button("Fetch data") {
+            Button("Post Data") {
                 Task.detached {
                     try await self.fetchData()
+                }
+            }
+            Button("Fetch Quote") {
+                Task.detached {
+                    do {
+                        try await self.fetchQuote()
+                    }
+                    catch {
+                        print(error)
+                    }
                 }
             }
         }
@@ -40,9 +45,31 @@ struct ContentView: View {
             headers: headers,
             body: body
         )
-        let data = try await warp.teleport(target: target)
-        let json = try JSONSerialization.jsonObject(with: data)
+        let warp = AlienProviderWarp(provider: provider)
+        let data = try await warp.teleport(targets: [target])
+        let json = try JSONSerialization.jsonObject(with: data[0])
         print(json)
+    }
+
+    func fetchQuote() async throws {
+        // ETH -> USDC
+        let request = SwapQuoteRequest(
+            fromAsset: "ethereum",
+            toAsset: "ethereum_0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+            walletAddress: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7",
+            destinationAddress: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7",
+            amount: "100000000000000000",
+            mode: .exactIn,
+            options: nil
+        )
+
+        let swapper = GemSwapper(rpcProvider: NativeProvider())
+        let quote = try await swapper.fetchQuote(request: request)
+
+        print("<== fetchQuote:\n", quote)
+
+        let data = try await swapper.fetchQuoteData(quote: quote, permit2: nil)
+        print("<== fetchQuoteData:\n", data)
     }
 }
 

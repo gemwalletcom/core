@@ -1,0 +1,8 @@
+[package]
+name = "chain_primitives"
+version = { workspace = true }
+edition = { workspace = true }
+
+[dependencies]
+primitives = { path = "../primitives" }
+gem_evm = { path = "../gem_evm" }

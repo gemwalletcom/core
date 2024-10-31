@@ -1,3 +1,4 @@
+use chain_primitives::format_token_id;
 use coingecko::{get_chain_for_coingecko_platform_id, CoinGeckoClient, CoinInfo};
 use primitives::{Asset, AssetDetails, AssetId, AssetLinks, AssetScore, AssetType};
 use std::collections::HashSet;
@@ -66,7 +67,7 @@ impl AssetUpdater {
                     if platform.contract_address.is_empty() || platform.decimal_place.is_none() {
                         return None;
                     }
-                    let token_id = AssetId::format_token_id(chain, platform.contract_address)?;
+                    let token_id = format_token_id(chain, platform.contract_address)?;
                     let decimals = platform.decimal_place.unwrap_or_default();
                     let asset_id = AssetId {
                         chain,
