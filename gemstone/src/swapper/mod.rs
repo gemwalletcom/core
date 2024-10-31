@@ -13,7 +13,7 @@ use models::*;
 #[async_trait]
 pub trait GemSwapProvider: Send + Sync + Debug {
     fn name(&self) -> &'static str;
-    async fn fetch_quote(&self, request: &GemSwapRequest, provider: Arc<dyn AlienProvider>) -> Result<GemSwapQuote, GemSwapperError>;
+    async fn fetch_quote(&self, request: &SwapQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<GemSwapQuote, GemSwapperError>;
     async fn fetch_quote_data(
         &self,
         quote: &GemSwapQuote,
@@ -38,7 +38,7 @@ impl GemSwapper {
         }
     }
 
-    async fn fetch_quote(&self, request: GemSwapRequest) -> Result<GemSwapQuote, GemSwapperError> {
+    async fn fetch_quote(&self, request: SwapQuoteRequest) -> Result<GemSwapQuote, GemSwapperError> {
         for swapper in self.swappers.iter() {
             let quote = swapper.fetch_quote(&request, self.rpc_provider.clone()).await;
             match quote {

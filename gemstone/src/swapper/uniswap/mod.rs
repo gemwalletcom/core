@@ -88,7 +88,7 @@ impl UniswapV3 {
         Bytes::from(bytes)
     }
 
-    fn parse_request(request: &GemSwapRequest) -> Result<(EVMChain, EthereumAddress, EthereumAddress, U256), GemSwapperError> {
+    fn parse_request(request: &SwapQuoteRequest) -> Result<(EVMChain, EthereumAddress, EthereumAddress, U256), GemSwapperError> {
         let evm_chain = EVMChain::from_chain(request.from_asset.chain).ok_or(GemSwapperError::NotSupportedChain)?;
         let token_in = Self::get_asset_address(&request.from_asset, evm_chain)?;
         let token_out = Self::get_asset_address(&request.to_asset, evm_chain)?;
@@ -97,7 +97,7 @@ impl UniswapV3 {
         Ok((evm_chain, token_in, token_out, amount_in))
     }
 
-    fn build_quoter_request(request: &GemSwapRequest, quoter_v2: &str, amount_in: U256, path: &Bytes) -> EthereumRpc {
+    fn build_quoter_request(request: &SwapQuoteRequest, quoter_v2: &str, amount_in: U256, path: &Bytes) -> EthereumRpc {
         let calldata: Vec<u8> = match request.mode {
             GemSwapMode::ExactIn => {
                 let input_call = IQuoterV2::quoteExactInputCall {
@@ -132,7 +132,7 @@ impl UniswapV3 {
     }
 
     fn build_commands(
-        request: &GemSwapRequest,
+        request: &SwapQuoteRequest,
         token_in: &EthereumAddress,
         token_out: &EthereumAddress,
         amount_in: U256,
@@ -334,7 +334,7 @@ impl GemSwapProvider for UniswapV3 {
         UNISWAP
     }
 
-    async fn fetch_quote(&self, request: &GemSwapRequest, provider: Arc<dyn AlienProvider>) -> Result<GemSwapQuote, GemSwapperError> {
+    async fn fetch_quote(&self, request: &SwapQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<GemSwapQuote, GemSwapperError> {
         // Prevent swaps on unsupported chains
         if !self.support_chain(request.from_asset.chain) {
             return Err(GemSwapperError::NotSupportedChain);
@@ -455,7 +455,7 @@ mod tests {
 
     #[test]
     fn test_build_commands() {
-        let mut request = GemSwapRequest {
+        let mut request = SwapQuoteRequest {
             // ETH -> USDC
             from_asset: AssetId::from(Chain::Ethereum, None),
             to_asset: AssetId::from(Chain::Ethereum, Some("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48".into())),

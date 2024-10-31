@@ -4,9 +4,6 @@ list:
 build:
     cargo build
 
-test:
-    cargo test
-
 install: install-typeshare install-postgres install-diesel
 
 install-rust:

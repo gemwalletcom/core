@@ -31,7 +31,7 @@ pub enum GemSwapMode {
 }
 
 #[derive(Debug, Clone, uniffi::Record)]
-pub struct GemSwapRequest {
+pub struct SwapQuoteRequest {
     pub from_asset: AssetId,
     pub to_asset: AssetId,
     pub wallet_address: String,
@@ -41,19 +41,10 @@ pub struct GemSwapRequest {
     pub options: Option<GemSwapOptions>,
 }
 
-#[derive(Debug, Clone, uniffi::Record)]
+#[derive(Debug, Default, Clone, uniffi::Record)]
 pub struct GemSwapFee {
     pub bps: u32,
     pub address: String,
-}
-
-impl Default for GemSwapFee {
-    fn default() -> Self {
-        Self {
-            bps: 0,
-            address: String::from(""),
-        }
-    }
 }
 
 #[derive(Debug, Clone, uniffi::Record)]
@@ -80,7 +71,7 @@ pub struct GemSwapQuote {
     pub to_value: String,
     pub provider: GemProviderData,
     pub approval: ApprovalType,
-    pub request: GemSwapRequest,
+    pub request: SwapQuoteRequest,
 }
 
 #[derive(Debug, Clone, uniffi::Enum)]
