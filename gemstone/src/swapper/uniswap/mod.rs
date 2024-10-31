@@ -297,7 +297,6 @@ impl UniswapV3 {
 
         let endpoint = provider
             .get_endpoint(chain)
-            .await
             .map_err(|err| GemSwapperError::NetworkError { msg: err.to_string() })?;
 
         let targets = vec![batch_into_target(&requests, &endpoint)];

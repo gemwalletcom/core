@@ -43,8 +43,8 @@ impl GemSwapper {
             let quote = swapper.fetch_quote(&request, self.rpc_provider.clone()).await;
             match quote {
                 Ok(quote) => return Ok(quote),
-                Err(err) => {
-                    debug_println!("<== fetch_quote error: {:?}", err);
+                Err(_err) => {
+                    debug_println!("<== fetch_quote error: {:?}", _err);
                 }
             }
         }

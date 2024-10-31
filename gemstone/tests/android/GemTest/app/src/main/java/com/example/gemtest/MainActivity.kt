@@ -11,7 +11,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.gemtest.ui.theme.GemTestTheme
 import kotlinx.coroutines.runBlocking
-import uniffi.Gemstone.*
+import uniffi.gemstone.*
 
 val Warp = AlienProviderWarp(NativeProvider())
 
@@ -64,8 +64,8 @@ fun fetchData() {
             ),
             body = null
         )
-        val data = Warp.teleport(target)
-        println(String(data))
+        val data = Warp.teleport(listOf(target))
+        println(String(data[0]))
     }
 }
 

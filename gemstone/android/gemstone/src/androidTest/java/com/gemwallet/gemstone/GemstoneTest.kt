@@ -5,7 +5,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 import org.junit.Assert.*
-import uniffi.Gemstone.*
+import uniffi.gemstone.*
 
 @RunWith(AndroidJUnit4::class)
 class GemstoneTest {
