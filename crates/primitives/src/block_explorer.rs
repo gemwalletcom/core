@@ -1,7 +1,7 @@
 use crate::chain::Chain;
 use crate::chain_evm::EVMChain;
 use crate::explorers::{
-    AptosExplorer, AptosScan, BlockScout, Blockchair, EtherScan, MantleExplorer, Mempool, MintScan, NearBlocks, RuneScan, SolanaFM, Solscan, SuiScan,
+    AptosExplorer, AptosScan, BlockScout, Blockchair, Blocksec, EtherScan, MantleExplorer, Mempool, MintScan, NearBlocks, RuneScan, SolanaFM, Solscan, SuiScan,
     SuiVision, TonScan, TonViewer, TronScan, Viewblock, XrpScan, ZkSync,
 };
 use std::str::FromStr;
@@ -34,10 +34,7 @@ pub fn get_block_explorers_by_chain(chain: &str) -> Vec<Box<dyn BlockExplorer>> 
 }
 
 pub fn get_block_explorer(chain: Chain, name: &str) -> Box<dyn BlockExplorer> {
-    get_block_explorers(chain)
-        .into_iter()
-        .find(|x| x.name() == name)
-        .unwrap()
+    get_block_explorers(chain).into_iter().find(|x| x.name() == name).unwrap()
 }
 
 pub fn get_block_explorers(chain: Chain) -> Vec<Box<dyn BlockExplorer>> {
@@ -46,12 +43,12 @@ pub fn get_block_explorers(chain: Chain) -> Vec<Box<dyn BlockExplorer>> {
         Chain::Litecoin => vec![Blockchair::new_litecoin()],
         Chain::Doge => vec![Blockchair::new_doge()],
 
-        Chain::Ethereum => vec![EtherScan::new(EVMChain::Ethereum), Blockchair::new_ethereum()],
-        Chain::SmartChain => vec![EtherScan::new(EVMChain::SmartChain), Blockchair::new_bnb()],
-        Chain::Polygon => vec![EtherScan::new(EVMChain::Polygon), Blockchair::new_polygon()],
-        Chain::Arbitrum => vec![EtherScan::new(EVMChain::Arbitrum), Blockchair::new_arbitrum()],
-        Chain::Optimism => vec![EtherScan::new(EVMChain::Optimism), Blockchair::new_optimism()],
-        Chain::Base => vec![EtherScan::new(EVMChain::Base), Blockchair::new_base()],
+        Chain::Ethereum => vec![EtherScan::new(EVMChain::Ethereum), Blockchair::new_ethereum(), Blocksec::new_ethereum()],
+        Chain::SmartChain => vec![EtherScan::new(EVMChain::SmartChain), Blockchair::new_bnb(), Blocksec::new_bsc()],
+        Chain::Polygon => vec![EtherScan::new(EVMChain::Polygon), Blockchair::new_polygon(), Blocksec::new_polygon()],
+        Chain::Arbitrum => vec![EtherScan::new(EVMChain::Arbitrum), Blockchair::new_arbitrum(), Blocksec::new_arbitrum()],
+        Chain::Optimism => vec![EtherScan::new(EVMChain::Optimism), Blockchair::new_optimism(), Blocksec::new_optimism()],
+        Chain::Base => vec![EtherScan::new(EVMChain::Base), Blockchair::new_base(), Blocksec::new_ethereum()],
         Chain::AvalancheC => vec![EtherScan::new(EVMChain::AvalancheC), Blockchair::new_avalanche()],
         Chain::OpBNB => vec![EtherScan::new(EVMChain::OpBNB), Blockchair::new_opbnb()],
         Chain::Fantom => vec![EtherScan::new(EVMChain::Fantom), Blockchair::new_fantom()],
