@@ -2,7 +2,6 @@ use alloy_core::primitives::{Address, Bytes, U256};
 use alloy_primitives::aliases::{U160, U48};
 use serde::{Deserialize, Serialize, Serializer};
 use std::{
-    collections::HashMap,
     fmt::{Debug, Display},
     str::FromStr,
 };
