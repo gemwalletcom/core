@@ -58,7 +58,7 @@ struct ContentView: View {
             toAsset: "ethereum_0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
             walletAddress: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7",
             destinationAddress: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7",
-            amount: "100000000000000000",
+            value: "100000000000000000",
             mode: .exactIn,
             options: nil
         )
