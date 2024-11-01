@@ -261,7 +261,7 @@ mod tests {
                         token: token_usdc,
                         amount: U160::from_str("1461501637330902918203684832716283019655932542975").unwrap(),
                         expiration: U48::from(1732667593),
-                        nonce: U48::from(0u64),
+                        nonce: U48::from(0),
                     },
                     spender: router,
                     sigDeadline: U256::from(1730077393),
