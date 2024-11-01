@@ -33,7 +33,7 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
-static UNISWAP: &str = "Uniswap";
+static UNISWAP: &str = "Uniswap v3";
 static DEFAULT_DEADLINE: u64 = 3600;
 
 impl JsonRpcRequest {
@@ -92,7 +92,7 @@ impl UniswapV3 {
         let evm_chain = EVMChain::from_chain(request.from_asset.chain).ok_or(SwapperError::NotSupportedChain)?;
         let token_in = Self::get_asset_address(&request.from_asset, evm_chain)?;
         let token_out = Self::get_asset_address(&request.to_asset, evm_chain)?;
-        let amount_in = U256::from_str(&request.amount).map_err(|_| SwapperError::InvalidAmount)?;
+        let amount_in = U256::from_str(&request.value).map_err(|_| SwapperError::InvalidAmount)?;
 
         Ok((evm_chain, token_in, token_out, amount_in))
     }
@@ -378,7 +378,7 @@ impl GemSwapProvider for UniswapV3 {
 
         Ok(SwapQuote {
             chain_type: ChainType::Ethereum,
-            from_value: request.amount.clone(),
+            from_value: request.value.clone(),
             to_value: max_amount_out.to_string(),
             provider: SwapProviderData {
                 name: self.name().into(),
@@ -413,7 +413,7 @@ impl GemSwapProvider for UniswapV3 {
         let encoded = encode_commands(&commands, U256::from(deadline));
 
         let wrap_input_eth = request.from_asset.is_native();
-        let value = if wrap_input_eth { request.amount.clone() } else { String::from("0x0") };
+        let value = if wrap_input_eth { request.value.clone() } else { String::from("0x0") };
         Ok(SwapQuoteData {
             to: deployment.universal_router.into(),
             value,
@@ -453,14 +453,14 @@ mod tests {
     }
 
     #[test]
-    fn test_build_commands() {
+    fn test_build_commands_eth_to_token() {
         let mut request = SwapQuoteRequest {
             // ETH -> USDC
             from_asset: AssetId::from(Chain::Ethereum, None),
             to_asset: AssetId::from(Chain::Ethereum, Some("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48".into())),
             wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
             destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
-            amount: "10000000000000000".into(),
+            value: "10000000000000000".into(),
             mode: GemSwapMode::ExactIn,
             options: None,
         };
@@ -495,5 +495,149 @@ mod tests {
         assert!(matches!(commands[1], UniversalRouterCommand::V3_SWAP_EXACT_IN(_)));
         assert!(matches!(commands[2], UniversalRouterCommand::PAY_PORTION(_)));
         assert!(matches!(commands[3], UniversalRouterCommand::SWEEP(_)));
+    }
+
+    #[test]
+    fn test_build_commands_usdc_to_usdt() {
+        let request = SwapQuoteRequest {
+            // USDC -> USDT
+            from_asset: AssetId::from(Chain::Optimism, Some("0x0b2c639c533813f4aa9d7837caf62653d097ff85".into())),
+            to_asset: AssetId::from(Chain::Optimism, Some("0x94b008aa00579c1307b0ef2c499ad98a8ce58e58".into())),
+            wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
+            destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
+            value: "6500000".into(),
+            mode: GemSwapMode::ExactIn,
+            options: None,
+        };
+
+        let token_in = EthereumAddress::parse(request.from_asset.token_id.as_ref().unwrap()).unwrap();
+        let token_out = EthereumAddress::parse(request.to_asset.token_id.as_ref().unwrap()).unwrap();
+        let amount_in = U256::from_str(&request.value).unwrap();
+
+        let permit2_data = Permit2Data {
+            permit_single: PermitSingle {
+                details: Permit2Detail {
+                    token: "0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85".into(),
+                    amount: "1461501637330902918203684832716283019655932542975".into(),
+                    expiration: 1732667593,
+                    nonce: 0,
+                },
+                spender: "0xCb1355ff08Ab38bBCE60111F1bb2B784bE25D7e8".into(),
+                sig_deadline: 1730077393,
+            },
+            signature: hex::decode(
+                "8f32d2e66506a4f424b1b23309ed75d338534d0912129a8aa3381fab4eb8032f160e0988f10f512b19a58c2a689416366c61cc0c483c3b5322dc91f8b60107671b",
+            )
+            .unwrap(),
+        };
+
+        let commands = UniswapV3::build_commands(
+            &request,
+            &token_in,
+            &token_out,
+            amount_in,
+            U256::from(6507936),
+            FeeTier::Low,
+            Some(permit2_data.into()),
+        )
+        .unwrap();
+
+        assert_eq!(commands.len(), 2);
+
+        assert!(matches!(commands[0], UniversalRouterCommand::PERMIT2_PERMIT(_)));
+        assert!(matches!(commands[1], UniversalRouterCommand::V3_SWAP_EXACT_IN(_)));
+    }
+
+    #[test]
+    fn test_build_commands_usdc_to_aave() {
+        let request = SwapQuoteRequest {
+            // USDC -> AAVE
+            from_asset: AssetId::from(Chain::Optimism, Some("0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85".into())),
+            to_asset: AssetId::from(Chain::Optimism, Some("0x76fb31fb4af56892a25e32cfc43de717950c9278".into())),
+            wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
+            destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
+            value: "5064985".into(),
+            mode: GemSwapMode::ExactIn,
+            options: Some(GemSwapOptions {
+                slippage_bps: 100,
+                fee: Some(GemSwapFee {
+                    bps: 25,
+                    address: "0x3d83ec320541ae96c4c91e9202643870458fb290".into(),
+                }),
+                preferred_providers: vec![],
+            }),
+        };
+
+        let token_in = EthereumAddress::parse(request.from_asset.token_id.as_ref().unwrap()).unwrap();
+        let token_out = EthereumAddress::parse(request.to_asset.token_id.as_ref().unwrap()).unwrap();
+        let amount_in = U256::from_str(&request.value).unwrap();
+
+        let commands = UniswapV3::build_commands(&request, &token_in, &token_out, amount_in, U256::from(33377662359182269u64), FeeTier::Low, None).unwrap();
+
+        assert_eq!(commands.len(), 3);
+
+        assert!(matches!(commands[0], UniversalRouterCommand::V3_SWAP_EXACT_IN(_)));
+        assert!(matches!(commands[1], UniversalRouterCommand::PAY_PORTION(_)));
+        assert!(matches!(commands[2], UniversalRouterCommand::SWEEP(_)));
+    }
+
+    #[test]
+    fn test_build_commands_usdce_to_eth() {
+        let request = SwapQuoteRequest {
+            // USDCE -> ETH
+            from_asset: AssetId::from(Chain::Optimism, Some("0x7F5c764cBc14f9669B88837ca1490cCa17c31607".into())),
+            to_asset: AssetId::from(Chain::Ethereum, None),
+            wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
+            destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
+            value: "10000000".into(),
+            mode: GemSwapMode::ExactIn,
+            options: Some(GemSwapOptions {
+                slippage_bps: 100,
+                fee: Some(GemSwapFee {
+                    bps: 25,
+                    address: "0x3d83ec320541aE96C4C91E9202643870458fB290".into(),
+                }),
+                preferred_providers: vec![],
+            }),
+        };
+
+        let token_in = EthereumAddress::parse(request.from_asset.token_id.as_ref().unwrap()).unwrap();
+        let token_out = EthereumAddress::parse("0x4200000000000000000000000000000000000006").unwrap();
+        let amount_in = U256::from_str(&request.value).unwrap();
+
+        let permit2_data = Permit2Data {
+            permit_single: PermitSingle {
+                details: Permit2Detail {
+                    token: request.from_asset.token_id.clone().unwrap(),
+                    amount: "1461501637330902918203684832716283019655932542975".into(),
+                    expiration: 1732667502,
+                    nonce: 0,
+                },
+                spender: "0xCb1355ff08Ab38bBCE60111F1bb2B784bE25D7e8".into(),
+                sig_deadline: 1730077302,
+            },
+            signature: hex::decode(
+                "00e96ed0f5bf5cca62dc9d9753960d83c8be83224456559a1e93a66d972a019f6f328a470f8257d3950b4cb7cd0024d789b4fcd9e80c4eb43d82a38d9e5332f31b",
+            )
+            .unwrap(),
+        };
+
+        let commands = UniswapV3::build_commands(
+            &request,
+            &token_in,
+            &token_out,
+            amount_in,
+            U256::from(3997001989341576u64),
+            FeeTier::Low,
+            Some(permit2_data.into()),
+        )
+        .unwrap();
+
+        assert_eq!(commands.len(), 4);
+
+        assert!(matches!(commands[0], UniversalRouterCommand::PERMIT2_PERMIT(_)));
+        assert!(matches!(commands[1], UniversalRouterCommand::V3_SWAP_EXACT_IN(_)));
+        assert!(matches!(commands[2], UniversalRouterCommand::PAY_PORTION(_)));
+        assert!(matches!(commands[3], UniversalRouterCommand::UNWRAP_WETH(_)));
     }
 }

@@ -44,7 +44,7 @@ pub struct SwapQuoteRequest {
     pub to_asset: AssetId,
     pub wallet_address: String,
     pub destination_address: String,
-    pub amount: String,
+    pub value: String,
     pub mode: GemSwapMode,
     pub options: Option<GemSwapOptions>,
 }

@@ -1,6 +1,5 @@
 use crate::Chain;
 use serde::{Deserialize, Serialize};
-use std::vec;
 use strum::{EnumIter, IntoEnumIterator};
 use strum_macros::{AsRefStr, EnumString};
 use typeshare::typeshare;
@@ -68,24 +67,6 @@ impl EVMChain {
             | Self::Mantle
             | Self::Celo => false,
             Self::Optimism | Self::Base | Self::OpBNB => true,
-        }
-    }
-
-    pub fn swap_whitelist_contracts(&self) -> Vec<&'static str> {
-        match self {
-            Self::Ethereum
-            | Self::SmartChain
-            | Self::Polygon
-            | Self::Arbitrum
-            | Self::AvalancheC
-            | Self::Fantom
-            | Self::Gnosis
-            | Self::Optimism
-            | Self::Base => vec!["0x1111111254EEB25477B68fb85Ed929f73A960582"], // 1inch
-            Self::ZkSync => vec!["0x6e2B76966cbD9cF4cC2Fa0D76d24d5241E0ABC2F"], // 1inch
-            Self::Manta | Self::Blast | Self::Linea | Self::Mantle | Self::OpBNB | Self::Celo => {
-                vec![]
-            }
         }
     }
 
