@@ -147,7 +147,6 @@ pub fn get_nodes_for_chain(chain: Chain) -> Vec<Node> {
         Chain::Celo => vec![Node::new("https://rpc.ankr.com/celo", NodePriority::High)],
         Chain::Near => vec![Node::new("https://rpc.mainnet.near.org", NodePriority::High)],
         Chain::World => vec![
-            Node::new("https://worldchain-mainnet.g.alchemy.com/public", NodePriority::High),
             Node::new("https://worldchain-mainnet.gateway.tenderly.co", NodePriority::High)
         ],
     }
