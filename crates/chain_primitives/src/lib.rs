@@ -18,7 +18,8 @@ pub fn format_token_id(chain: Chain, token_id: String) -> Option<String> {
         | Chain::ZkSync
         | Chain::Linea
         | Chain::Mantle
-        | Chain::Celo => Some(EthereumAddress::parse(&token_id)?.to_checksum()),
+        | Chain::Celo
+        | Chain::World => Some(EthereumAddress::parse(&token_id)?.to_checksum()),
         Chain::Solana | Chain::Sui | Chain::Ton => Some(token_id),
         Chain::Tron => {
             if token_id.len() == 34 && token_id.starts_with('T') {

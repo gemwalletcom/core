@@ -101,7 +101,13 @@ impl EtherScan {
             EVMChain::Mantle => Self {
                 meta: Metadata {
                     name: "MantleScan",
-                    base_url: "https://mantlescan.xyz/",
+                    base_url: "https://mantlescan.xyz",
+                },
+            },
+            EVMChain::World => Self {
+                meta: Metadata {
+                    name: "WorldScan",
+                    base_url: "https://worldscan.org",
                 },
             },
         })

@@ -256,6 +256,13 @@ impl Asset {
                 decimals: 24,
                 asset_type: AssetType::NATIVE,
             },
+            Chain::World => Asset {
+                id: chain.as_asset_id(),
+                name: "World".to_string(),
+                symbol: "ETH".to_string(),
+                decimals: 18,
+                asset_type: AssetType::NATIVE,
+            },
         }
     }
 }

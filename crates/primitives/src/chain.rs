@@ -45,6 +45,7 @@ pub enum Chain {
     Mantle,
     Celo,
     Near,
+    World,
 }
 
 impl fmt::Display for Chain {
@@ -88,6 +89,7 @@ impl Chain {
             Self::Gnosis => "100",
             Self::Manta => "169",
             Self::Blast => "81457",
+            Self::World => "480",
             Self::Cosmos => "cosmoshub-4",
             Self::Osmosis => "osmosis-1",
             Self::Celestia => "celestia",
@@ -136,7 +138,7 @@ impl Chain {
             | Self::ZkSync
             | Self::Linea
             | Self::Mantle
-            | Self::Celo => 60,
+            | Self::Celo | Self::World => 60,
             Self::Bitcoin => 0,
             Self::Litecoin => 2,
             Self::SmartChain => 9006,
@@ -171,7 +173,7 @@ impl Chain {
             | Self::ZkSync
             | Self::Linea
             | Self::Mantle
-            | Self::Celo => ChainType::Ethereum,
+            | Self::Celo | Self::World => ChainType::Ethereum,
             Self::Bitcoin | Self::Doge | Self::Litecoin => ChainType::Bitcoin,
             Self::Solana => ChainType::Solana,
             Self::Thorchain | Self::Cosmos | Self::Osmosis | Self::Celestia | Self::Injective | Self::Noble | Self::Sei => ChainType::Cosmos,
@@ -199,7 +201,7 @@ impl Chain {
             | Self::ZkSync
             | Self::Linea
             | Self::Mantle
-            | Self::Celo => Some(AssetType::ERC20),
+            | Self::Celo | Self::World => Some(AssetType::ERC20),
             Self::OpBNB | Self::SmartChain => Some(AssetType::BEP20),
             Self::Solana => Some(AssetType::SPL),
             Self::Tron => Some(AssetType::TRC20),
@@ -236,7 +238,7 @@ impl Chain {
             Self::Fantom => 1_000,
             Self::OpBNB => 1_000,
             Self::Arbitrum => 1_000,
-            Self::Optimism | Self::Blast => 2_000,
+            Self::Optimism | Self::Blast | Self::World => 2_000,
             Self::Polygon => 3_000,
             Self::Base => 2_000,
             Self::Gnosis => 5_000,
@@ -292,7 +294,8 @@ impl Chain {
             | Self::Linea
             | Self::Mantle
             | Self::Celo
-            | Self::Near => 30,
+            | Self::Near
+            | Self::World => 30,
         }
     }
 

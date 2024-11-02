@@ -137,6 +137,8 @@ chains:
     url: ""
   doge:
     url: ""
+  world:
+    url: https://worldchain-mainnet.gateway.tenderly.co
 swap:
   jupiter:
     url: "https://quote-api.jup.ag"

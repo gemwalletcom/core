@@ -60,6 +60,11 @@ pub fn get_deployment_by_chain(chain: Chain) -> Option<V3Deployment> {
             permit2: "0x000000000022d473030f116ddee9f6b43ac78ba3",
             universal_router: "0x643770E279d5D0733F21d6DC03A8efbABf3255B4",
         }),
+        Chain::World => Some(V3Deployment {
+            quoter_v2: "0x10158D43e6cc414deE1Bd1eB0EfC6a5cBCfF244c",
+            permit2: "0x000000000022d473030f116ddee9f6b43ac78ba3",
+            universal_router: "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D",
+        }),
         _ => None,
     }
 }

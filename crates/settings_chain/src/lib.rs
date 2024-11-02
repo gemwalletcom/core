@@ -45,7 +45,8 @@ impl ProviderFactory {
             | Chain::ZkSync
             | Chain::Linea
             | Chain::Mantle
-            | Chain::Celo => Box::new(EthereumClient::new(chain, url)),
+            | Chain::Celo
+            | Chain::World => Box::new(EthereumClient::new(chain, url)),
             Chain::Cosmos | Chain::Osmosis | Chain::Celestia | Chain::Thorchain | Chain::Injective | Chain::Noble | Chain::Sei => {
                 Box::new(CosmosClient::new(chain, client, url))
             }
@@ -94,6 +95,7 @@ impl ProviderFactory {
             Chain::Mantle => settings.chains.mantle.url.as_str(),
             Chain::Celo => settings.chains.celo.url.as_str(),
             Chain::Near => settings.chains.near.url.as_str(),
+            Chain::World => settings.chains.world.url.as_str(),
         }
     }
 }

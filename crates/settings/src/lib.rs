@@ -204,6 +204,7 @@ pub struct Chains {
     pub mantle: Chain,
     pub celo: Chain,
     pub near: Chain,
+    pub world: Chain,
 }
 
 #[derive(Debug, Deserialize, Clone)]
