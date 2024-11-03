@@ -94,6 +94,7 @@ pub struct ApprovalData {
     pub token: String,
     pub spender: String,
     pub value: String,
+    pub permit2_nonce: Option<u64>, // Optional permit2 nonce
 }
 
 #[derive(Debug, Clone, uniffi::Record)]
@@ -115,6 +116,7 @@ pub struct SwapRoute {
     pub input: String,
     pub output: String,
     pub fee_tier: String,
+    pub gas_estimate: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, uniffi::Record)]
@@ -183,9 +185,9 @@ where
 }
 
 #[uniffi::export]
-pub fn permit2_data_to_eip712_json(chain: Chain, data: PermitSingle) -> String {
+pub fn permit2_data_to_eip712_json(chain: Chain, data: PermitSingle) -> Result<String, SwapperError> {
     let chain_id = chain.network_id();
-    let contract = get_deployment_by_chain(chain).unwrap().permit2;
+    let contract = get_deployment_by_chain(chain).ok_or(SwapperError::NotImplemented)?.permit2;
     let message = Permit2Message {
         domain: EIP712Domain {
             name: "Permit2".to_string(),
@@ -197,7 +199,10 @@ pub fn permit2_data_to_eip712_json(chain: Chain, data: PermitSingle) -> String {
         primary_type: "PermitSingle".into(),
         message: data,
     };
-    serde_json::to_string(&message).unwrap()
+    let json = serde_json::to_string(&message).map_err(|_| SwapperError::ABIError {
+        msg: "failed to serialize EIP712 message to JSON".into(),
+    })?;
+    Ok(json)
 }
 
 #[cfg(test)]
@@ -216,7 +221,7 @@ mod tests {
             sig_deadline: 1730190354,
         };
 
-        let json = permit2_data_to_eip712_json(Chain::Ethereum, data);
+        let json = permit2_data_to_eip712_json(Chain::Ethereum, data).unwrap();
         assert_eq!(
             json,
             r#"{"domain":{"name":"Permit2","chainId":1,"verifyingContract":"0x000000000022D473030F116dDEE9F6B43aC78BA3"},"types":{"EIP712Domain":[{"name":"name","type":"string"},{"name":"chainId","type":"uint256"},{"name":"verifyingContract","type":"address"}],"PermitSingle":[{"name":"details","type":"PermitDetails"},{"name":"spender","type":"address"},{"name":"sigDeadline","type":"uint256"}],"PermitDetails":[{"name":"token","type":"address"},{"name":"amount","type":"uint160"},{"name":"expiration","type":"uint48"},{"name":"nonce","type":"uint48"}]},"primaryType":"PermitSingle","message":{"details":{"token":"0xdAC17F958D2ee523a2206206994597C13D831ec7","amount":"1461501637330902918203684832716283019655932542975","expiration":"1732780554","nonce":"0"},"spender":"0x3fC91A3afd70395Cd496C647d5a6CC9D4B2b7FAD","sigDeadline":"1730190354"}}"#
