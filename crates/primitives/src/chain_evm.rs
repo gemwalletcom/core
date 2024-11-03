@@ -94,25 +94,7 @@ impl EVMChain {
     }
 
     pub fn to_chain(&self) -> Chain {
-        match self {
-            Self::Ethereum => Chain::Ethereum,
-            Self::SmartChain => Chain::SmartChain,
-            Self::Polygon => Chain::Polygon,
-            Self::Arbitrum => Chain::Arbitrum,
-            Self::Optimism => Chain::Optimism,
-            Self::Base => Chain::Base,
-            Self::AvalancheC => Chain::AvalancheC,
-            Self::OpBNB => Chain::OpBNB,
-            Self::Fantom => Chain::Fantom,
-            Self::Gnosis => Chain::Gnosis,
-            Self::Manta => Chain::Manta,
-            Self::Blast => Chain::Blast,
-            Self::ZkSync => Chain::ZkSync,
-            Self::Linea => Chain::Linea,
-            Self::Mantle => Chain::Mantle,
-            Self::Celo => Chain::Celo,
-            Self::World => Chain::World,
-        }
+        Chain::from_str(self.as_ref()).unwrap()
     }
 }
 

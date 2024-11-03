@@ -63,10 +63,7 @@ impl UniswapV3 {
     }
 
     pub fn support_chain(&self, chain: Chain) -> bool {
-        matches!(
-            chain,
-            Chain::Ethereum | Chain::Polygon | Chain::AvalancheC | Chain::Arbitrum | Chain::Optimism | Chain::Base | Chain::SmartChain
-        )
+        get_deployment_by_chain(chain).is_some()
     }
 
     fn get_asset_address(asset: &AssetId, evm_chain: EVMChain) -> Result<EthereumAddress, SwapperError> {
