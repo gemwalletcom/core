@@ -81,7 +81,7 @@ struct ContentView: View {
         }
         print("<== fetchQuote:\n", quote)
 
-        let data = try await swapper.fetchQuoteData(quote: quote, permit2: nil)
+        let data = try await swapper.fetchQuoteData(quote: quote, data: .none)
         print("<== fetchQuoteData:\n", data)
     }
 }

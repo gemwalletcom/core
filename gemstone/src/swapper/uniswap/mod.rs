@@ -249,7 +249,6 @@ impl UniswapV3 {
                 token: token.to_string(),
                 spender: deployment.permit2.to_string(),
                 value: amount.to_string(),
-                permit2_nonce: None,
             }));
         }
 
@@ -274,13 +273,13 @@ impl UniswapV3 {
         })?;
 
         if U256::from(allowance_return._0) < amount || expiration < timestamp {
-            return Ok(ApprovalType::Permit2(ApprovalData {
+            return Ok(ApprovalType::Permit2(Permit2ApprovalData {
                 token: token.to_string(),
                 spender: deployment.universal_router.to_string(),
                 value: amount.to_string(),
-                permit2_nonce: Some(allowance_return._2.try_into().map_err(|_| SwapperError::ABIError {
+                permit2_nonce: allowance_return._2.try_into().map_err(|_| SwapperError::ABIError {
                     msg: "failed to convert nonce to u64".into(),
-                })?),
+                })?,
             }));
         }
 
@@ -401,18 +400,16 @@ impl GemSwapProvider for UniswapV3 {
         })
     }
 
-    async fn fetch_quote_data(
-        &self,
-        quote: &SwapQuote,
-        _provider: Arc<dyn AlienProvider>,
-        permit2: Option<Permit2Data>,
-    ) -> Result<SwapQuoteData, SwapperError> {
+    async fn fetch_quote_data(&self, quote: &SwapQuote, _provider: Arc<dyn AlienProvider>, data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError> {
         let request = &quote.request;
         let (_, token_in, token_out, amount_in) = Self::parse_request(request)?;
         let deployment = get_deployment_by_chain(request.from_asset.chain).ok_or(SwapperError::NotSupportedChain)?;
         let to_amount = U256::from_str(&quote.to_value).map_err(|_| SwapperError::InvalidAmount)?;
 
-        let permit: Option<Permit2Permit> = permit2.map(|x| x.into());
+        let permit: Option<Permit2Permit> = match data {
+            FetchQuoteData::Permit2(data) => Some(data.into()),
+            FetchQuoteData::None => None,
+        };
         let fee_tier = FeeTier::try_from(quote.provider.routes[0].fee_tier.as_str()).map_err(|_| SwapperError::InvalidAmount)?;
 
         let commands = Self::build_commands(request, &token_in, &token_out, amount_in, to_amount, fee_tier, permit)?;
@@ -432,6 +429,7 @@ impl GemSwapProvider for UniswapV3 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::swapper::permit2_data::*;
     use alloy_core::{hex::decode as HexDecode, hex::encode_prefixed as HexEncode};
     use alloy_primitives::aliases::U256;
 
