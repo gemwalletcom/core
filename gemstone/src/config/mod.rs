@@ -7,6 +7,7 @@ pub mod social;
 pub mod stake;
 pub mod validators;
 pub mod wallet_connect;
+pub mod swap_config;
 
 use crate::chain::ChainConfig;
 use gem_solana;
@@ -20,8 +21,9 @@ use {
     public::{get_public_url, PublicUrl, ASSETS_URL},
     social::{get_social_url, SocialUrl},
     stake::{get_stake_config, StakeChainConfig},
+    swap_config::{get_swap_config, SwapConfig},
     validators::get_validators,
-    wallet_connect::{get_wallet_connect_config, WalletConnectConfig},
+    wallet_connect::{get_wallet_connect_config, WalletConnectConfig}
 };
 
 /// Config
@@ -41,6 +43,10 @@ impl Config {
     fn get_stake_config(&self, chain: &str) -> StakeChainConfig {
         let chain = StakeChain::from_str(chain).unwrap();
         get_stake_config(chain)
+    }
+
+    fn get_swap_config(&self) -> SwapConfig {
+        get_swap_config()
     }
 
     fn get_docs_url(&self, item: DocsUrl) -> String {
