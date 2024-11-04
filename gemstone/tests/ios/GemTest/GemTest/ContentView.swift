@@ -7,6 +7,26 @@ struct ContentView: View {
 
     let provider = NativeProvider()
 
+    let eth2usdcRequest: SwapQuoteRequest = SwapQuoteRequest(
+        fromAsset: "ethereum",
+        toAsset: "ethereum_0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        walletAddress: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7",
+        destinationAddress: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7",
+        value: "100000000000000000", // 0.01 ETH
+        mode: .exactIn,
+        options: nil
+    )
+
+    let usdc2ethRequest: SwapQuoteRequest = SwapQuoteRequest(
+        fromAsset: "ethereum_0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        toAsset: "ethereum",
+        walletAddress: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7",
+        destinationAddress: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7",
+        value: "100000000", // 100 USDC
+        mode: .exactIn,
+        options: nil
+    )
+
     var body: some View {
         VStack {
             Image(systemName: "diamond")
@@ -53,15 +73,7 @@ struct ContentView: View {
 
     func fetchQuote() async throws {
         // ETH -> USDC
-        let request = SwapQuoteRequest(
-            fromAsset: "ethereum",
-            toAsset: "ethereum_0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-            walletAddress: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7",
-            destinationAddress: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7",
-            value: "100000000000000000",
-            mode: .exactIn,
-            options: nil
-        )
+        let request = self.usdc2ethRequest
 
         let swapper = GemSwapper(rpcProvider: NativeProvider())
         guard let quote = try await swapper.fetchQuote(request: request).first else {
@@ -69,7 +81,7 @@ struct ContentView: View {
         }
         print("<== fetchQuote:\n", quote)
 
-        let data = try await swapper.fetchQuoteData(quote: quote, permit2: nil)
+        let data = try await swapper.fetchQuoteData(quote: quote, data: .none)
         print("<== fetchQuoteData:\n", data)
     }
 }

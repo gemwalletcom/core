@@ -6,6 +6,7 @@ use std::{fmt::Debug, sync::Arc};
 
 mod custom_types;
 mod models;
+mod permit2_data;
 mod slippage;
 mod uniswap;
 use models::*;
@@ -14,7 +15,7 @@ use models::*;
 pub trait GemSwapProvider: Send + Sync + Debug {
     fn name(&self) -> &'static str;
     async fn fetch_quote(&self, request: &SwapQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapQuote, SwapperError>;
-    async fn fetch_quote_data(&self, quote: &SwapQuote, provider: Arc<dyn AlienProvider>, permit2: Option<Permit2Data>) -> Result<SwapQuoteData, SwapperError>;
+    async fn fetch_quote_data(&self, quote: &SwapQuote, provider: Arc<dyn AlienProvider>, data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError>;
 }
 
 #[derive(Debug, uniffi::Object)]
@@ -46,12 +47,12 @@ impl GemSwapper {
         Err(SwapperError::NoQuoteAvailable)
     }
 
-    async fn fetch_quote_data(&self, quote: &SwapQuote, permit2: Option<Permit2Data>) -> Result<SwapQuoteData, SwapperError> {
+    async fn fetch_quote_data(&self, quote: &SwapQuote, data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError> {
         let swapper = self
             .swappers
             .iter()
             .find(|x| x.name() == quote.provider.name.as_str())
             .ok_or(SwapperError::NotImplemented)?;
-        swapper.fetch_quote_data(quote, self.rpc_provider.clone(), permit2).await
+        swapper.fetch_quote_data(quote, self.rpc_provider.clone(), data).await
     }
 }
