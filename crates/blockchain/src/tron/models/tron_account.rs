@@ -56,3 +56,17 @@ struct TronUnfrozen{
 struct TronReward {
     reward: Option<UInt64>,
 }
+
+#[typeshare(swift = "Sendable")]
+struct WitnessesList {
+    witnesses: Vec<WitnessAccount>,
+}
+
+#[typeshare(swift = "Sendable")]
+#[serde(rename_all = "camelCase")]
+struct WitnessAccount {
+    address: String,
+    vote_count: Option<UInt64>,
+    url: String,
+    is_jobs: Option<bool>,
+}
