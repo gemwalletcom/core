@@ -33,7 +33,7 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
-static UNISWAP: &str = "Uniswap v3";
+static UNISWAP: &str = "Uniswap-v3";
 static DEFAULT_DEADLINE: u64 = 3600;
 
 impl JsonRpcRequest {
@@ -350,7 +350,7 @@ impl GemSwapProvider for UniswapV3 {
         _ = evm_chain.weth_contract().ok_or(SwapperError::NotSupportedChain)?;
 
         // Build path for QuoterV2
-        let fee_tiers: Vec<FeeTier> = vec![FeeTier::Lowest, FeeTier::Low, FeeTier::Medium];
+        let fee_tiers: Vec<FeeTier> = vec![FeeTier::Lowest, FeeTier::Low, FeeTier::Medium, FeeTier::High];
         let eth_calls: Vec<EthereumRpc> = fee_tiers
             .iter()
             .map(|fee_tier| {

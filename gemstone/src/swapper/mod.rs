@@ -34,6 +34,10 @@ impl GemSwapper {
         }
     }
 
+    fn get_providers(&self) -> Vec<String> {
+        self.swappers.iter().map(|x| x.name().to_string()).collect()
+    }
+
     async fn fetch_quote(&self, request: SwapQuoteRequest) -> Result<Vec<SwapQuote>, SwapperError> {
         for swapper in self.swappers.iter() {
             let quotes = swapper.fetch_quote(&request, self.rpc_provider.clone()).await;
