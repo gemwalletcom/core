@@ -1,4 +1,4 @@
-use primitives::Chain;
+use primitives::{Chain, EVMChain};
 
 #[derive(uniffi::Record, Debug, Clone, PartialEq)]
 pub struct WalletConnectConfig {
@@ -6,23 +6,10 @@ pub struct WalletConnectConfig {
 }
 
 pub fn get_wallet_connect_config() -> WalletConnectConfig {
-    let chains = vec![
-        Chain::Ethereum,
-        Chain::SmartChain,
-        Chain::OpBNB,
-        Chain::Base,
-        Chain::AvalancheC,
-        Chain::Polygon,
-        Chain::Arbitrum,
-        Chain::Optimism,
-        Chain::Fantom,
-        Chain::Gnosis,
-        Chain::Solana,
-        Chain::Manta,
-        Chain::Blast,
-        Chain::Mantle,
-        Chain::ZkSync,
-    ];
+    let chains: Vec<Chain> = vec![
+        vec![Chain::Solana],
+        EVMChain::all().iter().map(|x| x.to_chain()).collect(),
+    ].concat();
 
     WalletConnectConfig {
         chains: chains.into_iter().map(|x| x.to_string()).collect(),
