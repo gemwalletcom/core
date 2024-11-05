@@ -21,6 +21,17 @@ pub struct QuoteQuery {
     pub widget_id: String,
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct QuoteSellQuery {
+    pub from: String,
+    pub to: String,
+    #[serde(rename = "type")]
+    pub quote_type: String,
+    pub amount: f64,
+    pub network: String,
+    pub widget_id: String,
+}
+
 #[derive(Debug, Deserialize, Clone)]
 pub struct Currencies {
     pub config: Config,

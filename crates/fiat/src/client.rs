@@ -7,6 +7,7 @@ use crate::{
     FiatProvider,
 };
 use futures::future::join_all;
+use primitives::fiat_quote_request::FiatSellRequest;
 use primitives::{
     fiat_assets::FiatAssets, fiat_quote::FiatQuote, fiat_quote_request::FiatBuyRequest,
 };
@@ -95,7 +96,7 @@ impl Client {
         Ok(map)
     }
 
-    pub async fn get_quotes(
+    pub async fn get_buy_quotes(
         &mut self,
         request: FiatBuyRequest,
     ) -> Result<Vec<FiatQuote>, Box<dyn Error + Send + Sync>> {
@@ -104,7 +105,33 @@ impl Client {
 
         for provider in &self.providers {
             if let Some(fiat_mapping) = fiat_mapping_map.get(provider.name().id().as_str()) {
-                futures.push(provider.get_quote(request.clone(), fiat_mapping.clone()));
+                futures.push(provider.get_buy_quote(request.clone(), fiat_mapping.clone()));
+            }
+        }
+
+        let mut results: Vec<FiatQuote> = join_all(futures)
+            .await
+            .into_iter()
+            .flatten()
+            .map(|quote| {
+                let mut result = quote.clone();
+                result.crypto_amount = precision(quote.crypto_amount, 5);
+                result
+            })
+            .collect();
+
+        results.sort_by(|a, b| b.crypto_amount.partial_cmp(&a.crypto_amount).unwrap());
+
+        Ok(results)
+    }
+
+    pub async fn get_sell_quotes(&mut self, request: FiatSellRequest) -> Result<Vec<FiatQuote>, Box<dyn Error + Send + Sync>> {
+        let fiat_mapping_map = self.get_fiat_mapping(&request.asset_id)?;
+        let mut futures = vec![];
+
+        for provider in &self.providers {
+            if let Some(fiat_mapping) = fiat_mapping_map.get(provider.name().id().as_str()) {
+                futures.push(provider.get_sell_quote(request.clone(), fiat_mapping.clone()));
             }
         }
 

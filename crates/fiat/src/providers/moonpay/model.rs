@@ -2,7 +2,7 @@ use serde::Deserialize;
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct MoonPayBuyQuote {
+pub struct MoonPayQuote {
     pub quote_currency_amount: f64,
     pub quote_currency_code: String,
 }

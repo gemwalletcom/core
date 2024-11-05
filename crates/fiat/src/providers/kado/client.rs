@@ -1,12 +1,12 @@
-use crate::model::{filter_token_id, FiatMapping, FiatProviderAsset};
-use primitives::{FiatBuyRequest, FiatProviderName, FiatQuote};
-use reqwest::Client;
-use url::Url;
-
 use super::{
     mapper,
     model::{Asset, Blockchain, Blockchains, Quote, QuoteData, QuoteQuery, Response},
 };
+use crate::model::{filter_token_id, FiatMapping, FiatProviderAsset};
+use primitives::fiat_quote::FiatQuoteType;
+use primitives::{FiatBuyRequest, FiatProviderName, FiatQuote};
+use reqwest::Client;
+use url::Url;
 
 const API_BASE_URL: &str = "https://api.kado.money";
 const REDIRECT_URL: &str = "https://app.kado.money";
@@ -110,6 +110,7 @@ impl KadoClient {
     ) -> FiatQuote {
         FiatQuote {
             provider: Self::NAME.as_fiat_provider(),
+            quote_type: FiatQuoteType::Buy,
             fiat_amount: request.fiat_amount,
             fiat_currency: request.clone().fiat_currency,
             crypto_amount: quote

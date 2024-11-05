@@ -4,12 +4,13 @@ use crate::{
     FiatProvider,
 };
 use async_trait::async_trait;
+use std::error::Error;
 
+use super::client::MoonPayClient;
+use primitives::fiat_quote_request::FiatSellRequest;
 use primitives::{
     AssetId, FiatBuyRequest, FiatProviderName, FiatQuote, FiatTransaction, FiatTransactionStatus,
 };
-
-use super::client::MoonPayClient;
 
 #[async_trait]
 impl FiatProvider for MoonPayClient {
@@ -17,7 +18,7 @@ impl FiatProvider for MoonPayClient {
         Self::NAME
     }
 
-    async fn get_quote(
+    async fn get_buy_quote(
         &self,
         request: FiatBuyRequest,
         request_map: FiatMapping,
@@ -36,6 +37,18 @@ impl FiatProvider for MoonPayClient {
             .await?;
 
         Ok(self.get_fiat_quote(request, quote))
+    }
+
+    async fn get_sell_quote(&self, _request: FiatSellRequest, _request_map: FiatMapping) -> Result<FiatQuote, Box<dyn Error + Send + Sync>> {
+        // println!("request: {:?}", request);
+        // let quote = self.get_sell_quote(
+        //     request_map.symbol.to_lowercase(),
+        //     request.fiat_currency.to_lowercase(),
+        //     request.crypto_amount,
+        // ).await;
+        // println!("quote: {:?}", quote);
+
+        Err(Box::from("not supported"))
     }
 
     async fn get_assets(

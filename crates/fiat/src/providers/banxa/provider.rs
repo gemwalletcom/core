@@ -1,12 +1,13 @@
-use async_trait::async_trait;
-use primitives::{
-    AssetId, FiatBuyRequest, FiatProviderName, FiatQuote, FiatTransaction, FiatTransactionStatus,
-};
-
 use crate::{
     model::{FiatMapping, FiatProviderAsset},
     FiatProvider,
 };
+use async_trait::async_trait;
+use primitives::fiat_quote_request::FiatSellRequest;
+use primitives::{
+    AssetId, FiatBuyRequest, FiatProviderName, FiatQuote, FiatTransaction, FiatTransactionStatus,
+};
+use std::error::Error;
 
 use super::{
     client::BanxaClient,
@@ -19,7 +20,7 @@ impl FiatProvider for BanxaClient {
         Self::NAME
     }
 
-    async fn get_quote(
+    async fn get_buy_quote(
         &self,
         request: FiatBuyRequest,
         request_map: FiatMapping,
@@ -30,6 +31,10 @@ impl FiatProvider for BanxaClient {
         let price = prices.prices.first().cloned().ok_or("No price available")?;
 
         Ok(self.get_fiat_quote(request, request_map, price))
+    }
+
+    async fn get_sell_quote(&self, _request: FiatSellRequest, _request_map: FiatMapping) -> Result<FiatQuote, Box<dyn Error + Send + Sync>> {
+        Err(Box::from("not supported"))
     }
 
     async fn get_assets(

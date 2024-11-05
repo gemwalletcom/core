@@ -1,18 +1,19 @@
 use primitives::{
     AssetId, FiatBuyRequest, FiatProviderName, FiatQuote, FiatTransaction, FiatTransactionStatus,
 };
+use std::error::Error;
 
 use crate::{
     model::{FiatMapping, FiatProviderAsset},
     FiatProvider,
 };
 
-use async_trait::async_trait;
-
 use super::{
     client::RampClient,
     model::{QuoteRequest, Webhook},
 };
+use async_trait::async_trait;
+use primitives::fiat_quote_request::FiatSellRequest;
 
 #[async_trait]
 impl FiatProvider for RampClient {
@@ -20,7 +21,7 @@ impl FiatProvider for RampClient {
         Self::NAME
     }
 
-    async fn get_quote(
+    async fn get_buy_quote(
         &self,
         request: FiatBuyRequest,
         request_map: FiatMapping,
@@ -51,6 +52,10 @@ impl FiatProvider for RampClient {
         let quote = self.get_client_quote(payload).await?;
 
         Ok(self.get_fiat_quote(request.clone(), quote))
+    }
+
+    async fn get_sell_quote(&self, _request: FiatSellRequest, _request_map: FiatMapping) -> Result<FiatQuote, Box<dyn Error + Send + Sync>> {
+        Err(Box::from("not supported"))
     }
 
     async fn get_assets(

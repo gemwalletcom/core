@@ -1,12 +1,13 @@
-use async_trait::async_trait;
-use primitives::{
-    FiatBuyRequest, FiatProviderName, FiatQuote, FiatTransaction, FiatTransactionStatus,
-};
-
 use crate::{
     model::{FiatMapping, FiatProviderAsset},
     FiatProvider,
 };
+use async_trait::async_trait;
+use primitives::fiat_quote_request::FiatSellRequest;
+use primitives::{
+    FiatBuyRequest, FiatProviderName, FiatQuote, FiatTransaction, FiatTransactionStatus,
+};
+use std::error::Error;
 
 use super::{client::KadoClient, model::Webhook};
 
@@ -16,7 +17,7 @@ impl FiatProvider for KadoClient {
         Self::NAME
     }
 
-    async fn get_quote(
+    async fn get_buy_quote(
         &self,
         request: FiatBuyRequest,
         request_map: FiatMapping,
@@ -31,6 +32,10 @@ impl FiatProvider for KadoClient {
             .await?;
 
         Ok(self.get_fiat_quote(request, request_map.clone(), quote.quote))
+    }
+
+    async fn get_sell_quote(&self, _request: FiatSellRequest, _request_map: FiatMapping) -> Result<FiatQuote, Box<dyn Error + Send + Sync>> {
+        Err(Box::from("not supported"))
     }
 
     async fn get_assets(
