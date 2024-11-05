@@ -38,6 +38,9 @@ struct ContentView: View {
                     try await self.fetchData()
                 }
             }
+            Button("List Providers") {
+                self.fetchProviders()
+            }
             Button("Fetch Quote") {
                 Task.detached {
                     do {
@@ -75,7 +78,7 @@ struct ContentView: View {
         // ETH -> USDC
         let request = self.usdc2ethRequest
 
-        let swapper = GemSwapper(rpcProvider: NativeProvider())
+        let swapper = GemSwapper(rpcProvider: self.provider)
         guard let quote = try await swapper.fetchQuote(request: request).first else {
             return print("<== fetchQuote: nil")
         }
@@ -83,6 +86,11 @@ struct ContentView: View {
 
         let data = try await swapper.fetchQuoteData(quote: quote, data: .none)
         print("<== fetchQuoteData:\n", data)
+    }
+
+    func fetchProviders() {
+        let swapper = GemSwapper(rpcProvider: self.provider)
+        print("<== getProviders:\n", swapper.getProviders())
     }
 }
 
