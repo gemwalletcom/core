@@ -47,7 +47,7 @@ impl Client {
     }
 
     pub async fn get_off_ramp_assets(&mut self) -> Result<FiatAssets, Box<dyn Error + Send + Sync>> {
-        let assets = self.get_on_ramp_assets.await?;
+        let assets = self.get_on_ramp_assets().await?;
         Ok(FiatAssets {
             version: assets.version,
             asset_ids: assets.asset_ids.into_iter().filter(|id| !id.contains('_')).collect(),
