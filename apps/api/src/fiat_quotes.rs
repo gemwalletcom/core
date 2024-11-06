@@ -1,9 +1,7 @@
 extern crate rocket;
 use fiat::client::Client as FiatProvider;
 use primitives::fiat_quote_request::FiatSellRequest;
-use primitives::{
-    fiat_assets::FiatAssets, fiat_quote::FiatQuotes, fiat_quote_request::FiatBuyRequest,
-};
+use primitives::{fiat_assets::FiatAssets, fiat_quote::FiatQuotes, fiat_quote_request::FiatBuyRequest};
 use rocket::serde::json::Json;
 use rocket::tokio::sync::Mutex;
 use rocket::State;
@@ -59,32 +57,19 @@ pub async fn get_fiat_off_ramp_quotes(
 
 #[get("/fiat/on_ramp/assets")]
 pub async fn get_fiat_on_ramp_assets(fiat_client: &State<Mutex<FiatProvider>>) -> Json<FiatAssets> {
-    get_fiat_assets(fiat_client).await
+    let assets = fiat_client.lock().await.get_on_ramp_assets().await.unwrap();
+    Json(assets)
 }
 
-
-#[get("/fiat/assets")]
-pub async fn get_fiat_assets(fiat_client: &State<Mutex<FiatProvider>>) -> Json<FiatAssets> {
-    let assets = fiat_client.lock().await.get_assets().await.unwrap();
+#[get("/fiat/off_ramp/assets")]
+pub async fn get_fiat_off_ramp_assets(fiat_client: &State<Mutex<FiatProvider>>) -> Json<FiatAssets> {
+    let assets = fiat_client.lock().await.get_off_ramp_assets().await.unwrap();
     Json(assets)
 }
 
 #[post("/fiat/webhooks/<provider>", format = "json", data = "<data>")]
-pub async fn create_fiat_webhook(
-    provider: &str,
-    data: Json<serde_json::Value>,
-    fiat_client: &State<Mutex<FiatProvider>>,
-) -> Json<bool> {
-    print!(
-        "webhook: {}, data: {:?}",
-        provider,
-        serde_json::to_string_pretty(&data.0)
-    );
-    let result = fiat_client
-        .lock()
-        .await
-        .create_fiat_webhook(provider, data.into_inner())
-        .await
-        .unwrap();
+pub async fn create_fiat_webhook(provider: &str, data: Json<serde_json::Value>, fiat_client: &State<Mutex<FiatProvider>>) -> Json<bool> {
+    print!("webhook: {}, data: {:?}", provider, serde_json::to_string_pretty(&data.0));
+    let result = fiat_client.lock().await.create_fiat_webhook(provider, data.into_inner()).await.unwrap();
     Json(result)
 }

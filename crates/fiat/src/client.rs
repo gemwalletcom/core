@@ -8,9 +8,7 @@ use crate::{
 };
 use futures::future::join_all;
 use primitives::fiat_quote_request::FiatSellRequest;
-use primitives::{
-    fiat_assets::FiatAssets, fiat_quote::FiatQuote, fiat_quote_request::FiatBuyRequest,
-};
+use primitives::{fiat_assets::FiatAssets, fiat_quote::FiatQuote, fiat_quote_request::FiatBuyRequest};
 use reqwest::Client as RequestClient;
 use storage::DatabaseClient;
 
@@ -20,26 +18,17 @@ pub struct Client {
 }
 
 impl Client {
-    pub async fn new(
-        database_url: &str,
-        providers: Vec<Box<dyn FiatProvider + Send + Sync>>,
-    ) -> Self {
+    pub async fn new(database_url: &str, providers: Vec<Box<dyn FiatProvider + Send + Sync>>) -> Self {
         let database = DatabaseClient::new(database_url);
 
-        Self {
-            database,
-            providers,
-        }
+        Self { database, providers }
     }
 
     pub fn request_client(timeout_seconds: u64) -> RequestClient {
-        RequestClient::builder()
-            .timeout(Duration::from_secs(timeout_seconds))
-            .build()
-            .unwrap()
+        RequestClient::builder().timeout(Duration::from_secs(timeout_seconds)).build().unwrap()
     }
 
-    pub async fn get_assets(&mut self) -> Result<FiatAssets, Box<dyn Error + Send + Sync>> {
+    pub async fn get_on_ramp_assets(&mut self) -> Result<FiatAssets, Box<dyn Error + Send + Sync>> {
         let assets = self
             .database
             .get_fiat_assets()?
@@ -57,16 +46,19 @@ impl Client {
         })
     }
 
-    pub async fn create_fiat_webhook(
-        &mut self,
-        provider_name: &str,
-        data: serde_json::Value,
-    ) -> Result<bool, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn get_off_ramp_assets(&mut self) -> Result<FiatAssets, Box<dyn Error + Send + Sync>> {
+        let assets = self.get_on_ramp_assets.await?;
+        Ok(FiatAssets {
+            version: assets.version,
+            asset_ids: assets.asset_ids.into_iter().filter(|id| !id.contains('_')).collect(),
+        })
+    }
+
+    pub async fn create_fiat_webhook(&mut self, provider_name: &str, data: serde_json::Value) -> Result<bool, Box<dyn std::error::Error + Send + Sync>> {
         for provider in &self.providers {
             if provider.name().id() == provider_name {
                 let transaction = provider.webhook(data).await?;
-                let transaction =
-                    storage::models::FiatTransaction::from_primitive(transaction.clone());
+                let transaction = storage::models::FiatTransaction::from_primitive(transaction.clone());
 
                 let _ = self.database.add_fiat_transaction(transaction)?;
 
@@ -76,10 +68,7 @@ impl Client {
         Ok(false)
     }
 
-    fn get_fiat_mapping(
-        &mut self,
-        asset_id: &str,
-    ) -> Result<FiatMappingMap, Box<dyn Error + Send + Sync>> {
+    fn get_fiat_mapping(&mut self, asset_id: &str) -> Result<FiatMappingMap, Box<dyn Error + Send + Sync>> {
         let list = self.database.get_fiat_assets_for_asset_id(asset_id)?;
         let map: FiatMappingMap = list
             .into_iter()
@@ -96,10 +85,7 @@ impl Client {
         Ok(map)
     }
 
-    pub async fn get_buy_quotes(
-        &mut self,
-        request: FiatBuyRequest,
-    ) -> Result<Vec<FiatQuote>, Box<dyn Error + Send + Sync>> {
+    pub async fn get_buy_quotes(&mut self, request: FiatBuyRequest) -> Result<Vec<FiatQuote>, Box<dyn Error + Send + Sync>> {
         let fiat_mapping_map = self.get_fiat_mapping(&request.asset_id)?;
         let mut futures = vec![];
 
@@ -154,9 +140,7 @@ impl Client {
 
 #[allow(dead_code)]
 fn precision(val: f64, precision: usize) -> f64 {
-    format!("{:.prec$}", val, prec = precision)
-        .parse::<f64>()
-        .unwrap()
+    format!("{:.prec$}", val, prec = precision).parse::<f64>().unwrap()
 }
 
 #[cfg(test)]
