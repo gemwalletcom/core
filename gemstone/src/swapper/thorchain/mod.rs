@@ -29,6 +29,24 @@ impl ThorChain {
             _ => hex::encode(memo.as_bytes()),
         }
     }
+
+    fn value_from(&self, value: String, decimals: i32) -> BigInt {
+        let decimals = decimals - 8;
+        if decimals > 0 {
+            BigInt::from_str(value.as_str()).unwrap() / BigInt::from(10).pow(decimals as u32)
+        } else {
+            BigInt::from_str(value.as_str()).unwrap() * BigInt::from(10).pow(decimals.unsigned_abs())
+        }
+    }
+
+    fn value_to(&self, value: String, decimals: i32) -> BigInt {
+        let decimals = decimals - 8;
+        if decimals > 0 {
+            BigInt::from_str(value.as_str()).unwrap() * BigInt::from(10).pow((decimals).unsigned_abs())
+        } else {
+            BigInt::from_str(value.as_str()).unwrap() / BigInt::from(10).pow((decimals).unsigned_abs())
+        }
+    }
 }
 
 #[async_trait]
@@ -51,10 +69,10 @@ impl GemSwapProvider for ThorChain {
             .map_err(|err| SwapperError::NetworkError { msg: err.to_string() })?;
         let client = ThorChainSwapClient::new(provider);
 
-        let from_decimals = Asset::from_chain(request.clone().from_asset.chain).decimals as u32;
-        let to_decimals = Asset::from_chain(request.clone().to_asset.chain).decimals as u32;
+        let from_decimals = Asset::from_chain(request.clone().from_asset.chain).decimals;
+        let to_decimals = Asset::from_chain(request.clone().to_asset.chain).decimals;
 
-        let value = BigInt::from_str(request.clone().value.as_str()).unwrap() / BigInt::from(10).pow(from_decimals - 8);
+        let value = self.value_from(request.clone().value, from_decimals);
 
         let quote = client
             .get_quote(
@@ -67,7 +85,7 @@ impl GemSwapProvider for ThorChain {
             )
             .await?;
 
-        let to_value = BigInt::from_str(quote.expected_amount_out.as_str()).unwrap() * BigInt::from(10).pow(to_decimals - 8);
+        let to_value = self.value_to(quote.expected_amount_out, to_decimals);
 
         let quote = SwapQuote {
             chain_type: ChainType::Ethereum,
@@ -102,5 +120,48 @@ impl GemSwapProvider for ThorChain {
         };
 
         Ok(data)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_value_from() {
+        let thorchain = ThorChain::new();
+
+        let value = "1000000000".to_string();
+
+        let result = thorchain.value_from(value.clone(), 18);
+        assert_eq!(result, BigInt::from_str("0").unwrap());
+
+        let result = thorchain.value_from(value.clone(), 10);
+        assert_eq!(result, BigInt::from_str("10000000").unwrap());
+
+        let result = thorchain.value_from(value.clone(), 6);
+        assert_eq!(result, BigInt::from_str("100000000000").unwrap());
+
+        let result = thorchain.value_from(value.clone(), 8);
+        assert_eq!(result, BigInt::from(1000000000));
+    }
+
+    #[test]
+    fn test_value_to() {
+        let thorchain = ThorChain::new();
+
+        let value = "10000000".to_string();
+
+        let result = thorchain.value_to(value.clone(), 18);
+        assert_eq!(result, BigInt::from_str("100000000000000000").unwrap());
+
+        let result = thorchain.value_to(value.clone(), 10);
+        assert_eq!(result, BigInt::from(1000000000));
+
+        let result = thorchain.value_to(value.clone(), 6);
+        assert_eq!(result, BigInt::from(100000));
+
+        let result = thorchain.value_to(value.clone(), 8);
+        assert_eq!(result, BigInt::from(10000000));
     }
 }
