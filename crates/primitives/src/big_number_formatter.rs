@@ -15,6 +15,11 @@ impl BigNumberFormatter {
         let decimal = Self::big_decimal_value(value, decimals as u32)?;
         Some(decimal.to_string())
     }
+
+    pub fn divide(value: &str, decimals: u32) -> String {
+        let result = BigInt::from_str(value.to_string().as_str()).unwrap() / BigInt::from(10).pow(decimals);
+        result.to_string()
+    }
 }
 
 #[cfg(test)]

@@ -81,7 +81,7 @@ where
 #[uniffi::export]
 pub fn permit2_data_to_eip712_json(chain: Chain, data: PermitSingle) -> Result<String, SwapperError> {
     let chain_id = chain.network_id();
-    let contract = get_deployment_by_chain(chain).ok_or(SwapperError::NotImplemented)?.permit2;
+    let contract = get_deployment_by_chain(&chain).ok_or(SwapperError::NotImplemented)?.permit2;
     let message = Permit2Message {
         domain: EIP712Domain {
             name: "Permit2".to_string(),
