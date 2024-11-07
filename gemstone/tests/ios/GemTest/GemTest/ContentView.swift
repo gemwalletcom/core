@@ -64,7 +64,7 @@ struct ContentView: View {
         let body = try JSONEncoder().encode(["foo": "bar"])
         let target = AlienTarget(
             url: "https://httpbin.org/post?foo=bar",
-            method: "POST",
+            method: .post,
             headers: headers,
             body: body
         )

@@ -9,7 +9,7 @@ extension AlienTarget: URLRequestConvertible {
             throw error
         }
         var request = URLRequest(url: url)
-        request.httpMethod = self.method.description
+        request.httpMethod = alienMethodToString(method: self.method)
         if let headers = self.headers {
             request.allHTTPHeaderFields = headers
         }

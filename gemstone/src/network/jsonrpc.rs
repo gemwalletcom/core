@@ -1,4 +1,4 @@
-use super::AlienTarget;
+use super::{target::AlienHttpMethod, AlienTarget};
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, fmt::Debug};
 
@@ -51,7 +51,7 @@ pub fn batch_into_target(requests: &[JsonRpcRequest], endpoint: &str) -> AlienTa
     let bytes = serde_json::to_vec(requests).unwrap();
     AlienTarget {
         url: endpoint.into(),
-        method: "POST".into(),
+        method: AlienHttpMethod::Post,
         headers: Some(headers),
         body: Some(bytes),
     }
@@ -74,7 +74,7 @@ mod tests {
         let target = batch_into_target(&requests, endpoint);
 
         assert_eq!(target.url, endpoint);
-        assert_eq!(target.method, "POST");
+        assert_eq!(target.method, AlienHttpMethod::Post);
         assert_eq!(target.headers.unwrap().get("Content-Type").unwrap(), "application/json");
         assert_eq!(
             String::from_utf8(target.body.unwrap()).unwrap(),
