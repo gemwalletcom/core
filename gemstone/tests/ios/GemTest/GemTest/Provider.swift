@@ -10,7 +10,8 @@ public actor NativeProvider {
     init(session: URLSession = .shared) {
         self.nodeConfig = [
             "ethereum": URL(string: "https://eth.llamarpc.com")!,
-            "optimism": URL(string: "https://optimism.llamarpc.com")!
+            "optimism": URL(string: "https://optimism.llamarpc.com")!,
+            "solana": URL(string: "https://api.mainnet-beta.solana.com/")!
         ]
         self.session = session
     }

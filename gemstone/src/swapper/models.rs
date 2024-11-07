@@ -1,6 +1,8 @@
 use primitives::{AssetId, ChainType};
 use std::fmt::Debug;
 
+use crate::network::{jsonrpc::JsonRpcError, AlienError};
+
 use super::permit2_data::Permit2Data;
 
 static DEFAULT_SLIPPAGE_BPS: u32 = 300;
@@ -21,6 +23,18 @@ pub enum SwapperError {
     NoQuoteAvailable,
     #[error("Not implemented")]
     NotImplemented,
+}
+
+impl From<AlienError> for SwapperError {
+    fn from(err: AlienError) -> Self {
+        Self::NetworkError { msg: err.to_string() }
+    }
+}
+
+impl From<JsonRpcError> for SwapperError {
+    fn from(err: JsonRpcError) -> Self {
+        Self::NetworkError { msg: err.to_string() }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, uniffi::Enum)]

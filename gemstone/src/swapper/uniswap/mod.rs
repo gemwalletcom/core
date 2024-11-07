@@ -1,5 +1,8 @@
 use crate::{
-    network::{jsonrpc::batch_into_target, AlienProvider, JsonRpcRequest, JsonRpcResponse, JsonRpcResult},
+    network::{
+        jsonrpc::{batch_jsonrpc_call, jsonrpc_call},
+        AlienProvider, JsonRpcRequest, JsonRpcRequestConvert, JsonRpcResponse,
+    },
     swapper::{models::*, slippage::apply_slippage_in_bp, GemSwapProvider, SwapperError},
 };
 use gem_evm::{
@@ -36,10 +39,10 @@ use std::{
 static UNISWAP: &str = "Uniswap-v3";
 static DEFAULT_DEADLINE: u64 = 3600;
 
-impl JsonRpcRequest {
-    fn from(val: &EthereumRpc, id: u64) -> Self {
-        let method = val.method_name();
-        let params: Vec<Value> = match val {
+impl JsonRpcRequestConvert for EthereumRpc {
+    fn to_req(&self, id: u64) -> JsonRpcRequest {
+        let method = self.method_name();
+        let params: Vec<Value> = match self {
             EthereumRpc::GasPrice => vec![],
             EthereumRpc::GetBalance(address) => {
                 vec![Value::String(address.to_string())]
@@ -237,8 +240,9 @@ impl UniswapV3 {
         .abi_encode();
         let allowance_call = EthereumRpc::Call(TransactionObject::new_call(token, allowance_data), BlockParameter::Latest);
 
-        let responses = self.jsonrpc_call(&[allowance_call], provider.clone(), chain).await?;
-        let decoded = HexDecode(&responses[0].result).unwrap();
+        let response = jsonrpc_call(&allowance_call, provider.clone(), chain).await.map_err(SwapperError::from)?;
+        let result = response.extract_string().map_err(SwapperError::from)?;
+        let decoded = HexDecode(result).unwrap();
         let allowance = IERC20::allowanceCall::abi_decode_returns(&decoded, false)
             .map_err(|_| SwapperError::ABIError {
                 msg: "Invalid erc20 allowance response".into(),
@@ -261,8 +265,9 @@ impl UniswapV3 {
         .abi_encode();
         let permit2_call = EthereumRpc::Call(TransactionObject::new_call(deployment.permit2, permit2_data), BlockParameter::Latest);
 
-        let responses = self.jsonrpc_call(&[permit2_call], provider, chain).await?;
-        let decoded = HexDecode(&responses[0].result).unwrap();
+        let response = jsonrpc_call(&permit2_call, provider.clone(), chain).await.map_err(SwapperError::from)?;
+        let result = response.extract_string().map_err(SwapperError::from)?;
+        let decoded = HexDecode(result).unwrap();
         let allowance_return = IAllowanceTransfer::allowanceCall::abi_decode_returns(&decoded, false).map_err(|_| SwapperError::ABIError {
             msg: "Invalid permit2 allowance response".into(),
         })?;
@@ -284,49 +289,6 @@ impl UniswapV3 {
         }
 
         Ok(ApprovalType::None)
-    }
-
-    async fn jsonrpc_call(
-        &self,
-        rpc_calls: &[EthereumRpc],
-        provider: Arc<dyn AlienProvider>,
-        chain: Chain,
-    ) -> Result<Vec<JsonRpcResponse<String>>, SwapperError> {
-        let requests: Vec<JsonRpcRequest> = rpc_calls
-            .iter()
-            .enumerate()
-            .map(|(index, request)| JsonRpcRequest::from(request, index as u64 + 1))
-            .collect();
-
-        let endpoint = provider
-            .get_endpoint(chain)
-            .map_err(|err| SwapperError::NetworkError { msg: err.to_string() })?;
-
-        let targets = vec![batch_into_target(&requests, &endpoint)];
-
-        let data_vec = provider
-            .batch_request(targets)
-            .await
-            .map_err(|err| SwapperError::NetworkError { msg: err.to_string() })?;
-
-        let data = data_vec.first().ok_or(SwapperError::NetworkError { msg: "No result".into() })?;
-        let results: Vec<JsonRpcResult<String>> = serde_json::from_slice(data).map_err(|err| SwapperError::NetworkError { msg: err.to_string() })?;
-
-        let responses: Vec<JsonRpcResponse<String>> = results
-            .into_iter()
-            .filter_map(|result| match result {
-                JsonRpcResult::Value(value) => Some(value),
-                JsonRpcResult::Error(_) => None,
-            })
-            .collect();
-
-        if !responses.is_empty() {
-            Ok(responses)
-        } else {
-            Err(SwapperError::NetworkError {
-                msg: "All jsonrpc requests failed".into(),
-            })
-        }
     }
 }
 
@@ -359,7 +321,9 @@ impl GemSwapProvider for UniswapV3 {
             })
             .collect();
 
-        let responses = self.jsonrpc_call(&eth_calls, provider.clone(), request.from_asset.chain).await?;
+        let responses = batch_jsonrpc_call(&eth_calls, provider.clone(), request.from_asset.chain)
+            .await
+            .map_err(SwapperError::from)?;
 
         let mut max_amount_out = U256::from(0);
         let mut fee_tier_idx = 0;

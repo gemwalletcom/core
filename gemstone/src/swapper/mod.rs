@@ -6,6 +6,7 @@ use std::{fmt::Debug, sync::Arc};
 
 mod custom_types;
 mod models;
+mod orca;
 mod permit2_data;
 mod slippage;
 mod uniswap;
@@ -30,7 +31,7 @@ impl GemSwapper {
     fn new(rpc_provider: Arc<dyn AlienProvider>) -> Self {
         Self {
             rpc_provider,
-            swappers: vec![Box::new(uniswap::UniswapV3::new())],
+            swappers: vec![Box::new(uniswap::UniswapV3::new()), Box::new(orca::Orca::default())],
         }
     }
 

@@ -1,6 +1,11 @@
-use super::{target::AlienHttpMethod, AlienTarget};
-use serde::{Deserialize, Serialize};
-use std::{collections::HashMap, fmt::Debug};
+use super::{target::AlienHttpMethod, AlienError, AlienProvider, AlienTarget};
+use primitives::Chain;
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use std::{
+    collections::HashMap,
+    fmt::{Debug, Display},
+    sync::Arc,
+};
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct JsonRpcRequest {
@@ -8,6 +13,10 @@ pub struct JsonRpcRequest {
     pub id: u64,
     pub method: String,
     pub params: Vec<serde_json::Value>,
+}
+
+pub trait JsonRpcRequestConvert {
+    fn to_req(&self, id: u64) -> JsonRpcRequest;
 }
 
 impl JsonRpcRequest {
@@ -25,6 +34,18 @@ impl JsonRpcRequest {
 pub struct JsonRpcError {
     pub code: i32,
     pub message: String,
+}
+
+impl Display for JsonRpcError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{} ({})", self.message, self.code)
+    }
+}
+
+impl From<JsonRpcError> for AlienError {
+    fn from(err: JsonRpcError) -> Self {
+        Self::ResponseError { msg: err.message }
+    }
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -46,7 +67,19 @@ pub enum JsonRpcResult<T> {
     Error(JsonRpcErrorResponse),
 }
 
-pub fn batch_into_target(requests: &[JsonRpcRequest], endpoint: &str) -> AlienTarget {
+impl JsonRpcResult<String> {
+    pub fn extract_string(&self) -> Result<String, JsonRpcError> {
+        match self {
+            JsonRpcResult::Value(value) => Ok(value.result.clone()),
+            JsonRpcResult::Error(error) => Err(error.error.clone()),
+        }
+    }
+}
+
+pub fn batch_into_target<T>(requests: &T, endpoint: &str) -> AlienTarget
+where
+    T: ?Sized + Serialize,
+{
     let headers = HashMap::from([("Content-Type".into(), "application/json".into())]);
     let bytes = serde_json::to_vec(requests).unwrap();
     AlienTarget {
@@ -54,6 +87,50 @@ pub fn batch_into_target(requests: &[JsonRpcRequest], endpoint: &str) -> AlienTa
         method: AlienHttpMethod::Post,
         headers: Some(headers),
         body: Some(bytes),
+    }
+}
+
+pub async fn jsonrpc_call<T, U>(call: &T, provider: Arc<dyn AlienProvider>, chain: Chain) -> Result<JsonRpcResult<U>, AlienError>
+where
+    T: JsonRpcRequestConvert,
+    U: DeserializeOwned,
+{
+    let request = call.to_req(1);
+    let endpoint = provider.get_endpoint(chain)?;
+    let target = batch_into_target(&request, &endpoint);
+    let data = provider.request(target).await?;
+    let result: JsonRpcResult<U> = serde_json::from_slice(&data).map_err(|err| AlienError::ResponseError { msg: err.to_string() })?;
+    Ok(result)
+}
+
+pub async fn batch_jsonrpc_call<T>(rpc_calls: &[T], provider: Arc<dyn AlienProvider>, chain: Chain) -> Result<Vec<JsonRpcResponse<String>>, AlienError>
+where
+    T: JsonRpcRequestConvert,
+{
+    let requests: Vec<JsonRpcRequest> = rpc_calls.iter().enumerate().map(|(index, request)| request.to_req(index as u64 + 1)).collect();
+
+    let endpoint = provider.get_endpoint(chain)?;
+    let targets = vec![batch_into_target(&requests, &endpoint)];
+
+    let data_array = provider.batch_request(targets).await?;
+    let data = data_array.first().ok_or(AlienError::ResponseError { msg: "No result".into() })?;
+
+    let results: Vec<JsonRpcResult<String>> = serde_json::from_slice(data).map_err(|err| AlienError::ResponseError { msg: err.to_string() })?;
+
+    let responses = results
+        .into_iter()
+        .filter_map(|result| match result {
+            JsonRpcResult::Value(value) => Some(value),
+            JsonRpcResult::Error(_) => None,
+        })
+        .collect::<Vec<JsonRpcResponse<String>>>();
+
+    if !responses.is_empty() {
+        Ok(responses)
+    } else {
+        Err(AlienError::ResponseError {
+            msg: "All jsonrpc requests failed".into(),
+        })
     }
 }
 
