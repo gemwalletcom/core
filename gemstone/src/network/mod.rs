@@ -3,7 +3,7 @@ use std::{fmt::Debug, sync::Arc};
 pub mod jsonrpc;
 pub use jsonrpc::{JsonRpcError, JsonRpcRequest, JsonRpcResponse, JsonRpcResult};
 pub mod target;
-pub use target::AlienTarget;
+pub use target::{AlienHttpMethod, AlienTarget};
 pub mod provider;
 pub use provider::{AlienProvider, Data};
 
@@ -28,7 +28,7 @@ impl AlienProviderWarp {
     }
 
     pub async fn teleport(&self, targets: Vec<AlienTarget>) -> Result<Vec<Data>, AlienError> {
-        self.provider.request(targets).await
+        self.provider.batch_request(targets).await
     }
 }
 
@@ -37,7 +37,7 @@ mod tests {
     use super::*;
     use async_std::future::{pending, timeout};
     use async_trait::async_trait;
-    use std::time::Duration;
+    use std::{time::Duration, vec};
 
     #[derive(Debug)]
     pub struct AlienProviderMock {
@@ -46,7 +46,12 @@ mod tests {
 
     #[async_trait]
     impl AlienProvider for AlienProviderMock {
-        async fn request(&self, _targets: Vec<AlienTarget>) -> Result<Vec<Data>, AlienError> {
+        async fn request(&self, _target: AlienTarget) -> Result<Data, AlienError> {
+            let responses = self.batch_request(vec![_target]).await;
+            responses.map(|responses| responses.first().unwrap().clone())
+        }
+
+        async fn batch_request(&self, _targets: Vec<AlienTarget>) -> Result<Vec<Data>, AlienError> {
             let never = pending::<()>();
             let _ = timeout(Duration::from_millis(200), never).await;
             Ok(vec![self.response.as_bytes().to_vec()])
@@ -67,7 +72,7 @@ mod tests {
         };
         let target = AlienTarget {
             url: String::from("https://example.com"),
-            method: String::from("GET"),
+            method: AlienHttpMethod::Get,
             headers: None,
             body: None,
         };

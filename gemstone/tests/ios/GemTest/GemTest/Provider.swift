@@ -21,7 +21,17 @@ extension NativeProvider: AlienProvider {
         return nodeConfig[chain]!.absoluteString
     }
 
-    public func request(targets: [AlienTarget]) async throws -> [Data] {
+    public func request(target: Gemstone.AlienTarget) async throws -> Data {
+        let results = try await self.batchRequest(targets: [target])
+        guard
+            results.count == 1
+        else {
+            throw AlienError.ResponseError(msg: "invalid response: \(target)")
+        }
+        return results[0]
+    }
+
+    public func batchRequest(targets: [AlienTarget]) async throws -> [Data] {
         return try await withThrowingTaskGroup(of: Data.self) { group in
             var results = [Data]()
 
