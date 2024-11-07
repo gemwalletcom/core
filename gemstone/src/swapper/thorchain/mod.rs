@@ -57,7 +57,14 @@ impl GemSwapProvider for ThorChain {
         let value = BigInt::from_str(request.clone().value.as_str()).unwrap() / BigInt::from(10).pow(from_decimals - 8);
 
         let quote = client
-            .get_quote(endpoint.as_str(), request.clone().from_asset, request.to_asset.clone(), value.to_string())
+            .get_quote(
+                endpoint.as_str(),
+                request.clone().from_asset,
+                request.to_asset.clone(),
+                value.to_string(),
+                "g1".to_string(),
+                50,
+            )
             .await?;
 
         let to_value = BigInt::from_str(quote.expected_amount_out.as_str()).unwrap() * BigInt::from(10).pow(to_decimals - 8);

@@ -16,15 +16,23 @@ impl ThorChainSwapClient {
         Self { provider }
     }
 
-    pub async fn get_quote(&self, endpoint: &str, from_asset: AssetId, to_asset: AssetId, value: String) -> Result<QuoteSwapResponse, SwapperError> {
+    pub async fn get_quote(
+        &self,
+        endpoint: &str,
+        from_asset: AssetId,
+        to_asset: AssetId,
+        value: String,
+        affiliate: String,
+        affiliate_bps: i64,
+    ) -> Result<QuoteSwapResponse, SwapperError> {
         let from_asset = ThorChainAsset::from_chain(&from_asset.chain).ok_or(SwapperError::NotSupportedChain)?;
         let to_asset = ThorChainAsset::from_chain(&to_asset.chain).ok_or(SwapperError::NotSupportedChain)?;
         let params = QuoteSwapRequest {
             from_asset: from_asset.short_name().to_string(),
             to_asset: to_asset.short_name().to_string(),
             amount: value,
-            affiliate: "g1".to_string(),
-            affiliate_bps: 50,
+            affiliate,
+            affiliate_bps,
         };
         let query = serde_urlencoded::to_string(params).unwrap();
         let url = format!("{}{}?{}", endpoint, "/thorchain/quote/swap", query);
