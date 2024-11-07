@@ -64,6 +64,8 @@ impl ThorChainSwapClient {
 
 #[cfg(test)]
 mod tests {
+    use primitives::Chain;
+
     use super::*;
 
     #[tokio::test]
