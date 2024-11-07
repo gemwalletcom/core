@@ -1,4 +1,4 @@
-use crate::network::{AlienProvider, AlienTarget};
+use crate::network::{AlienHttpMethod, AlienProvider, AlienTarget};
 use crate::swapper::models::SwapperError;
 use crate::swapper::thorchain::model::{QuoteSwapRequest, QuoteSwapResponse};
 use primitives::AssetId;
@@ -39,18 +39,18 @@ impl ThorChainSwapClient {
 
         let target = AlienTarget {
             url,
-            method: "GET".into(),
+            method: AlienHttpMethod::Get,
             headers: None,
             body: None,
         };
 
         let data = self
             .provider
-            .request(vec![target])
+            .request(target)
             .await
             .map_err(|err| SwapperError::NetworkError { msg: err.to_string() })?;
 
-        let result: QuoteSwapResponse = serde_json::from_slice(data.first().unwrap()).map_err(|err| SwapperError::NetworkError { msg: err.to_string() })?;
+        let result: QuoteSwapResponse = serde_json::from_slice(&data).map_err(|err| SwapperError::NetworkError { msg: err.to_string() })?;
 
         Ok(result)
     }
