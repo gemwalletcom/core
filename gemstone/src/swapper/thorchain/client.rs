@@ -1,7 +1,7 @@
 use crate::network::{AlienProvider, AlienTarget};
 use crate::swapper::models::SwapperError;
 use crate::swapper::thorchain::model::{QuoteSwapRequest, QuoteSwapResponse};
-use primitives::{Asset, AssetId, Chain};
+use primitives::AssetId;
 use std::sync::Arc;
 
 use super::model::ThorChainAsset;

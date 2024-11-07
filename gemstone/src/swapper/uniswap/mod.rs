@@ -224,7 +224,7 @@ impl UniswapV3 {
         chain: &Chain,
         provider: Arc<dyn AlienProvider>,
     ) -> Result<ApprovalType, SwapperError> {
-        let deployment = get_deployment_by_chain(&chain).ok_or(SwapperError::NotSupportedChain)?;
+        let deployment = get_deployment_by_chain(chain).ok_or(SwapperError::NotSupportedChain)?;
         // Check token allowance, spender is permit2
         let allowance_data = IERC20::allowanceCall {
             owner: wallet_address,
@@ -257,7 +257,7 @@ impl UniswapV3 {
         .abi_encode();
         let permit2_call = EthereumRpc::Call(TransactionObject::new_call(deployment.permit2, permit2_data), BlockParameter::Latest);
 
-        let responses = self.jsonrpc_call(&[permit2_call], provider, &chain).await?;
+        let responses = self.jsonrpc_call(&[permit2_call], provider, chain).await?;
         let decoded = HexDecode(&responses[0].result).unwrap();
         let allowance_return = IAllowanceTransfer::allowanceCall::abi_decode_returns(&decoded, false).map_err(|_| SwapperError::ABIError {
             msg: "Invalid permit2 allowance response".into(),
