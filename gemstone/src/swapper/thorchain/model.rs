@@ -16,14 +16,14 @@ pub enum ThorChainAsset {
 impl ThorChainAsset {
     pub fn short_name(&self) -> &str {
         match self {
-            ThorChainAsset::Doge => "d",               // DOGE.DOGE
-            ThorChainAsset::Thorchain => "r",          // THOR.RUNE
-            ThorChainAsset::Ethereum => "e",           // "ETH.ETH"
-            ThorChainAsset::Cosmos => "g",             // GAIA.ATOM
-            ThorChainAsset::Bitcoin => "b",            // BTC.BTC
-            ThorChainAsset::Litecoin => "l",           // LTC.LTC
-            ThorChainAsset::SmartChain => "s",         // BSC.BNB
-            ThorChainAsset::AvalancheC => "AVAX.AVAX", // AVAX.AVAX. not sure
+            ThorChainAsset::Doge => "d",       // DOGE.DOGE
+            ThorChainAsset::Thorchain => "r",  // THOR.RUNE
+            ThorChainAsset::Ethereum => "e",   // "ETH.ETH"
+            ThorChainAsset::Cosmos => "g",     // GAIA.ATOM
+            ThorChainAsset::Bitcoin => "b",    // BTC.BTC
+            ThorChainAsset::Litecoin => "l",   // LTC.LTC
+            ThorChainAsset::SmartChain => "s", // BSC.BNB
+            ThorChainAsset::AvalancheC => "a", // AVAX.AVAX
         }
     }
 
