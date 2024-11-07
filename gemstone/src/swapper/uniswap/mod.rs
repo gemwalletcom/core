@@ -301,7 +301,7 @@ impl UniswapV3 {
         let targets = vec![batch_into_target(&requests, &endpoint)];
 
         let data_vec = provider
-            .request(targets)
+            .batch_request(targets)
             .await
             .map_err(|err| SwapperError::NetworkError { msg: err.to_string() })?;
 
@@ -417,7 +417,7 @@ impl GemSwapProvider for UniswapV3 {
         let encoded = encode_commands(&commands, U256::from(deadline));
 
         let wrap_input_eth = request.from_asset.is_native();
-        let value = if wrap_input_eth { request.value.clone() } else { String::from("0x0") };
+        let value = if wrap_input_eth { request.value.clone() } else { String::from("0") };
         Ok(SwapQuoteData {
             to: deployment.universal_router.into(),
             value,
