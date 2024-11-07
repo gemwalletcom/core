@@ -135,7 +135,7 @@ impl UniswapV3 {
         permit: Option<Permit2Permit>,
     ) -> Result<Vec<UniversalRouterCommand>, SwapperError> {
         let options = request.options.clone().unwrap_or_default();
-        let fee_options = options.fee.unwrap_or_default();
+        let fee_options = options.fee.unwrap_or_default().evm;
         let recipient = Address::from_str(&request.wallet_address).map_err(|_| SwapperError::InvalidAddress {
             address: request.wallet_address.clone(),
         })?;
@@ -429,7 +429,10 @@ impl GemSwapProvider for UniswapV3 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::swapper::permit2_data::*;
+    use crate::{
+        config::swap_config::{SwapReferralFee, SwapReferralFees},
+        swapper::permit2_data::*,
+    };
     use alloy_core::{hex::decode as HexDecode, hex::encode_prefixed as HexEncode};
     use alloy_primitives::aliases::U256;
 
@@ -484,10 +487,10 @@ mod tests {
 
         let options = GemSwapOptions {
             slippage_bps: 100,
-            fee: Some(GemSwapFee {
+            fee: Some(SwapReferralFees::evm(SwapReferralFee {
                 bps: 25,
-                address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
-            }),
+                address: "0x3d83ec320541ae96c4c91e9202643870458fb290".into(),
+            })),
             preferred_providers: vec![],
         };
         request.options = Some(options);
@@ -565,10 +568,10 @@ mod tests {
             mode: GemSwapMode::ExactIn,
             options: Some(GemSwapOptions {
                 slippage_bps: 100,
-                fee: Some(GemSwapFee {
+                fee: Some(SwapReferralFees::evm(SwapReferralFee {
                     bps: 25,
                     address: "0x3d83ec320541ae96c4c91e9202643870458fb290".into(),
-                }),
+                })),
                 preferred_providers: vec![],
             }),
         };
@@ -598,10 +601,10 @@ mod tests {
             mode: GemSwapMode::ExactIn,
             options: Some(GemSwapOptions {
                 slippage_bps: 100,
-                fee: Some(GemSwapFee {
+                fee: Some(SwapReferralFees::evm(SwapReferralFee {
                     bps: 25,
-                    address: "0x3d83ec320541aE96C4C91E9202643870458fB290".into(),
-                }),
+                    address: "0x3d83ec320541ae96c4c91e9202643870458fb290".into(),
+                })),
                 preferred_providers: vec![],
             }),
         };

@@ -73,6 +73,7 @@ impl GemSwapProvider for ThorChain {
         let to_decimals = Asset::from_chain(request.clone().to_asset.chain).decimals;
 
         let value = self.value_from(request.clone().value, from_decimals);
+        let fee = request.options.clone().unwrap_or_default().fee.unwrap_or_default().thorchain;
 
         let quote = client
             .get_quote(
@@ -80,8 +81,8 @@ impl GemSwapProvider for ThorChain {
                 request.clone().from_asset,
                 request.to_asset.clone(),
                 value.to_string(),
-                "g1".to_string(),
-                50,
+                fee.address,
+                fee.bps.into(),
             )
             .await?;
 
@@ -109,7 +110,9 @@ impl GemSwapProvider for ThorChain {
     }
 
     async fn fetch_quote_data(&self, quote: &SwapQuote, _provider: Arc<dyn AlienProvider>, _data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError> {
-        let memo = ThorChainSwapClient::get_memo(quote.request.to_asset.clone(), quote.request.destination_address.clone(), "g1".to_string(), 50).unwrap();
+        let fee = quote.request.options.clone().unwrap_or_default().fee.unwrap_or_default().thorchain;
+        let memo = ThorChainSwapClient::get_memo(quote.request.to_asset.clone(), quote.request.destination_address.clone(), fee.address, fee.bps).unwrap();
+
         let to = quote.provider.routes.first().unwrap().route_type.clone();
         let data: String = self.data(quote.request.from_asset.clone().chain, memo);
 
