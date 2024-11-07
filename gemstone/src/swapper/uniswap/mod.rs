@@ -241,7 +241,7 @@ impl UniswapV3 {
         let allowance_call = EthereumRpc::Call(TransactionObject::new_call(token, allowance_data), BlockParameter::Latest);
 
         let response = jsonrpc_call(&allowance_call, provider.clone(), chain).await.map_err(SwapperError::from)?;
-        let result = response.extract_string().map_err(SwapperError::from)?;
+        let result: String = response.extract_result().map_err(SwapperError::from)?;
         let decoded = HexDecode(result).unwrap();
         let allowance = IERC20::allowanceCall::abi_decode_returns(&decoded, false)
             .map_err(|_| SwapperError::ABIError {
@@ -266,7 +266,7 @@ impl UniswapV3 {
         let permit2_call = EthereumRpc::Call(TransactionObject::new_call(deployment.permit2, permit2_data), BlockParameter::Latest);
 
         let response = jsonrpc_call(&permit2_call, provider.clone(), chain).await.map_err(SwapperError::from)?;
-        let result = response.extract_string().map_err(SwapperError::from)?;
+        let result: String = response.extract_result().map_err(SwapperError::from)?;
         let decoded = HexDecode(result).unwrap();
         let allowance_return = IAllowanceTransfer::allowanceCall::abi_decode_returns(&decoded, false).map_err(|_| SwapperError::ABIError {
             msg: "Invalid permit2 allowance response".into(),

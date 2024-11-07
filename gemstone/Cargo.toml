@@ -33,6 +33,7 @@ async-trait.workspace = true
 alloy-core.workspace = true
 alloy-primitives.workspace = true
 hex.workspace = true
+borsh.workspace = true
 
 [build-dependencies]
 uniffi = { workspace = true, features = ["build"] }
