@@ -22,26 +22,12 @@ pub fn get_namespace(chain: Chain) -> Option<String> {
         | Chain::Celo
         | Chain::World => Some(WallletConnectCAIP2::Eip155.as_ref().to_string()),
         Chain::Solana => Some(WallletConnectCAIP2::Solana.as_ref().to_string()),
-        Chain::Cosmos
-        | Chain::Osmosis
-        | Chain::Celestia
-        | Chain::Injective
-        | Chain::Noble
-        | Chain::Sei => Some(format!(
-            "{}:{}",
-            WallletConnectCAIP2::Cosmos.as_ref(),
-            chain.network_id()
-        )), // cosmos:cosmoshub-4
-        Chain::Bitcoin
-        | Chain::Litecoin
-        | Chain::Thorchain
-        | Chain::Ton
-        | Chain::Tron
-        | Chain::Doge
-        | Chain::Aptos
-        | Chain::Sui
-        | Chain::Xrp
-        | Chain::Near => None,
+        Chain::Cosmos | Chain::Osmosis | Chain::Celestia | Chain::Injective | Chain::Noble | Chain::Sei => {
+            Some(format!("{}:{}", WallletConnectCAIP2::Cosmos.as_ref(), chain.network_id()))
+        } // cosmos:cosmoshub-4
+        Chain::Bitcoin | Chain::Litecoin | Chain::Thorchain | Chain::Ton | Chain::Tron | Chain::Doge | Chain::Aptos | Chain::Sui | Chain::Xrp | Chain::Near => {
+            None
+        }
     }
 }
 
@@ -69,13 +55,7 @@ pub fn get_reference(chain: Chain) -> Option<String> {
         | Chain::Doge
         | Chain::World => Some(chain.network_id().to_string()),
         Chain::Solana => Some("4sGjMW1sUnHzSxGspuhpqLDx6wiyjNtZ".to_string()),
-        Chain::Cosmos
-        | Chain::Osmosis
-        | Chain::Celestia
-        | Chain::Noble
-        | Chain::Sei
-        | Chain::Injective
-        | Chain::Thorchain => {
+        Chain::Cosmos | Chain::Osmosis | Chain::Celestia | Chain::Noble | Chain::Sei | Chain::Injective | Chain::Thorchain => {
             get_namespace(chain).map(|namespace| format!("{}:{}", namespace, chain.network_id()))
         }
         Chain::Ton | Chain::Tron | Chain::Aptos | Chain::Sui | Chain::Xrp | Chain::Near => None,

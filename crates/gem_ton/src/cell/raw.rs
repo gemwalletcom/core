@@ -38,8 +38,7 @@ impl RawBagOfCells {
     pub(crate) fn parse(serial: &[u8]) -> Result<RawBagOfCells, TonCellError> {
         let cursor = Cursor::new(serial);
 
-        let mut reader: ByteReader<Cursor<&[u8]>, BigEndian> =
-            ByteReader::endian(cursor, BigEndian);
+        let mut reader: ByteReader<Cursor<&[u8]>, BigEndian> = ByteReader::endian(cursor, BigEndian);
         // serialized_boc#b5ee9c72
         let magic = reader.read::<u32>().map_boc_deserialization_error()?;
 
@@ -56,10 +55,7 @@ impl RawBagOfCells {
                 (has_idx, has_crc32c, has_cache_bits, size)
             }
             magic => {
-                return Err(TonCellError::boc_deserialization_error(format!(
-                    "Unsupported cell magic number: {:#}",
-                    magic
-                )));
+                return Err(TonCellError::boc_deserialization_error(format!("Unsupported cell magic number: {:#}", magic)));
             }
         };
         //   off_bytes:(## 8) { off_bytes <= 8 }
@@ -110,10 +106,7 @@ impl RawBagOfCells {
 
         let root_count = self.roots.len();
         if root_count > 1 {
-            return Err(TonCellError::boc_serialization_error(format!(
-                "Single root expected, got {}",
-                root_count
-            )));
+            return Err(TonCellError::boc_serialization_error(format!("Single root expected, got {}", root_count)));
         }
 
         let num_ref_bits = 32 - (self.cells.len() as u32).leading_zeros();
@@ -131,9 +124,7 @@ impl RawBagOfCells {
 
         let mut writer = BitWriter::endian(Vec::new(), BigEndian);
 
-        writer
-            .write(32, GENERIC_BOC_MAGIC)
-            .map_boc_serialization_error()?;
+        writer.write(32, GENERIC_BOC_MAGIC).map_boc_serialization_error()?;
 
         //write flags byte
         let has_idx = false;
@@ -141,44 +132,26 @@ impl RawBagOfCells {
         let flags: u8 = 0;
         writer.write_bit(has_idx).map_boc_serialization_error()?;
         writer.write_bit(has_crc32).map_boc_serialization_error()?;
-        writer
-            .write_bit(has_cache_bits)
-            .map_boc_serialization_error()?;
+        writer.write_bit(has_cache_bits).map_boc_serialization_error()?;
         writer.write(2, flags).map_boc_serialization_error()?;
-        writer
-            .write(3, num_ref_bytes)
-            .map_boc_serialization_error()?;
-        writer
-            .write(8, num_offset_bytes)
-            .map_boc_serialization_error()?;
-        writer
-            .write(8 * num_ref_bytes, self.cells.len() as u32)
-            .map_boc_serialization_error()?;
-        writer
-            .write(8 * num_ref_bytes, 1)
-            .map_boc_serialization_error()?; // One root for now
-        writer
-            .write(8 * num_ref_bytes, 0)
-            .map_boc_serialization_error()?; // Complete BOCs only
-        writer
-            .write(8 * num_offset_bytes, full_size)
-            .map_boc_serialization_error()?;
-        writer
-            .write(8 * num_ref_bytes, 0)
-            .map_boc_serialization_error()?; // Root should have index 0
+        writer.write(3, num_ref_bytes).map_boc_serialization_error()?;
+        writer.write(8, num_offset_bytes).map_boc_serialization_error()?;
+        writer.write(8 * num_ref_bytes, self.cells.len() as u32).map_boc_serialization_error()?;
+        writer.write(8 * num_ref_bytes, 1).map_boc_serialization_error()?; // One root for now
+        writer.write(8 * num_ref_bytes, 0).map_boc_serialization_error()?; // Complete BOCs only
+        writer.write(8 * num_offset_bytes, full_size).map_boc_serialization_error()?;
+        writer.write(8 * num_ref_bytes, 0).map_boc_serialization_error()?; // Root should have index 0
 
         for cell in &self.cells {
             write_raw_cell(&mut writer, cell, num_ref_bytes)?;
         }
 
         if has_crc32 {
-            let bytes = writer.writer().ok_or_else(|| {
-                TonCellError::boc_serialization_error("Stream is not byte-aligned")
-            })?;
+            let bytes = writer
+                .writer()
+                .ok_or_else(|| TonCellError::boc_serialization_error("Stream is not byte-aligned"))?;
             let cs = CRC_32_ISCSI.checksum(bytes.as_slice());
-            writer
-                .write_bytes(cs.to_le_bytes().as_slice())
-                .map_boc_serialization_error()?;
+            writer.write_bytes(cs.to_le_bytes().as_slice()).map_boc_serialization_error()?;
         }
         writer.byte_align().map_boc_serialization_error()?;
         let res = writer
@@ -188,10 +161,7 @@ impl RawBagOfCells {
     }
 }
 
-fn read_cell(
-    reader: &mut ByteReader<Cursor<&[u8]>, BigEndian>,
-    size: u8,
-) -> Result<RawCell, TonCellError> {
+fn read_cell(reader: &mut ByteReader<Cursor<&[u8]>, BigEndian>, size: u8) -> Result<RawCell, TonCellError> {
     let d1 = reader.read::<u8>().map_boc_deserialization_error()?;
     let d2 = reader.read::<u8>().map_boc_deserialization_error()?;
 
@@ -201,9 +171,7 @@ fn read_cell(
     let data_size = ((d2 >> 1) + (d2 & 1)).into();
     let full_bytes = (d2 & 0x01) == 0;
 
-    let mut data = reader
-        .read_to_vec(data_size)
-        .map_boc_deserialization_error()?;
+    let mut data = reader.read_to_vec(data_size).map_boc_deserialization_error()?;
 
     let data_len = data.len();
     let padding_len = if data_len > 0 && !full_bytes {
@@ -239,11 +207,7 @@ fn raw_cell_size(cell: &RawCell, ref_size_bytes: u32) -> u32 {
     2 + data_len as u32 + cell.references.len() as u32 * ref_size_bytes
 }
 
-fn write_raw_cell(
-    writer: &mut BitWriter<Vec<u8>, BigEndian>,
-    cell: &RawCell,
-    ref_size_bytes: u32,
-) -> Result<(), TonCellError> {
+fn write_raw_cell(writer: &mut BitWriter<Vec<u8>, BigEndian>, cell: &RawCell, ref_size_bytes: u32) -> Result<(), TonCellError> {
     let level = 0u32; // TODO: Support
     let is_exotic = 0u32; // TODO: Support
     let num_refs = cell.references.len() as u32;
@@ -258,9 +222,7 @@ fn write_raw_cell(
     writer.write(8, d1).map_boc_serialization_error()?;
     writer.write(8, d2).map_boc_serialization_error()?;
     if !full_bytes {
-        writer
-            .write_bytes(&data[..data_len - 1])
-            .map_boc_serialization_error()?;
+        writer.write_bytes(&data[..data_len - 1]).map_boc_serialization_error()?;
         let last_byte = data[data_len - 1];
         let l = last_byte | 1 << (8 - padding_bits - 1);
         writer.write(8, l).map_boc_serialization_error()?;
@@ -269,22 +231,15 @@ fn write_raw_cell(
     }
 
     for r in cell.references.as_slice() {
-        writer
-            .write(8 * ref_size_bytes, *r as u32)
-            .map_boc_serialization_error()?;
+        writer.write(8 * ref_size_bytes, *r as u32).map_boc_serialization_error()?;
         // One root for now
     }
 
     Ok(())
 }
 
-fn read_var_size(
-    reader: &mut ByteReader<Cursor<&[u8]>, BigEndian>,
-    n: u8,
-) -> Result<usize, TonCellError> {
-    let bytes = reader
-        .read_to_vec(n.into())
-        .map_boc_deserialization_error()?;
+fn read_var_size(reader: &mut ByteReader<Cursor<&[u8]>, BigEndian>, n: u8) -> Result<usize, TonCellError> {
+    let bytes = reader.read_to_vec(n.into()).map_boc_deserialization_error()?;
 
     let mut result = 0;
     for &byte in &bytes {

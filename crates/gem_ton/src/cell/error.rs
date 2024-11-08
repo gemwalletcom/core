@@ -66,20 +66,14 @@ impl TonCellError {
     where
         T: ToString,
     {
-        TonCellError::BagOfCellsSerializationError(format!(
-            "BoC serialization error: {}",
-            e.to_string()
-        ))
+        TonCellError::BagOfCellsSerializationError(format!("BoC serialization error: {}", e.to_string()))
     }
 
     pub fn boc_deserialization_error<T>(e: T) -> TonCellError
     where
         T: ToString,
     {
-        TonCellError::BagOfCellsDeserializationError(format!(
-            "BoC deserialization error: {}",
-            e.to_string()
-        ))
+        TonCellError::BagOfCellsDeserializationError(format!("BoC deserialization error: {}", e.to_string()))
     }
 
     pub fn cell_builder_error<T>(e: T) -> TonCellError

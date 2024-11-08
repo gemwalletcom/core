@@ -22,22 +22,12 @@ impl RampClient {
         RampClient { client, api_key }
     }
 
-    pub async fn get_supported_assets(
-        &self,
-        currency: String,
-        ip_address: String,
-    ) -> Result<QuoteAssets, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn get_supported_assets(&self, currency: String, ip_address: String) -> Result<QuoteAssets, Box<dyn std::error::Error + Send + Sync>> {
         let url = format!(
             "{}/api/host-api/v3/assets?currencyCode={}&userIp={}&withDisabled=false&withHidden=false",
             RAMP_API_BASE_URL, currency, ip_address
         );
-        let assets = self
-            .client
-            .get(&url)
-            .send()
-            .await?
-            .json::<QuoteAssets>()
-            .await?;
+        let assets = self.client.get(&url).send().await?.json::<QuoteAssets>().await?;
         Ok(assets)
     }
 
@@ -81,31 +71,14 @@ impl RampClient {
         }
     }
 
-    pub async fn get_client_quote(
-        &self,
-        request: QuoteRequest,
-    ) -> Result<Quote, Box<dyn std::error::Error + Send + Sync>> {
-        let url = format!(
-            "{}/api/host-api/v3/onramp/quote/all?hostApiKey={}",
-            RAMP_API_BASE_URL, self.api_key
-        );
-        let quote = self
-            .client
-            .post(&url)
-            .json(&request)
-            .send()
-            .await?
-            .json::<Quote>()
-            .await?;
+    pub async fn get_client_quote(&self, request: QuoteRequest) -> Result<Quote, Box<dyn std::error::Error + Send + Sync>> {
+        let url = format!("{}/api/host-api/v3/onramp/quote/all?hostApiKey={}", RAMP_API_BASE_URL, self.api_key);
+        let quote = self.client.post(&url).json(&request).send().await?.json::<Quote>().await?;
         Ok(quote)
     }
 
     pub fn get_fiat_quote(&self, request: FiatBuyRequest, quote: Quote) -> FiatQuote {
-        let crypto_amount = BigNumberFormatter::big_decimal_value(
-            quote.clone().card_payment.crypto_amount.as_str(),
-            quote.asset.decimals,
-        )
-        .unwrap_or_default();
+        let crypto_amount = BigNumberFormatter::big_decimal_value(quote.clone().card_payment.crypto_amount.as_str(), quote.asset.decimals).unwrap_or_default();
 
         FiatQuote {
             provider: Self::NAME.as_fiat_provider(),
@@ -127,10 +100,7 @@ impl RampClient {
             .append_pair("fiatCurrency", &request.clone().fiat_currency.to_string())
             .append_pair("fiatValue", &request.clone().fiat_amount.to_string())
             .append_pair("userAddress", request.wallet_address.as_str())
-            .append_pair(
-                "webhookStatusUrl",
-                "https://api.gemwallet.com/v1/fiat/webhooks/ramp",
-            );
+            .append_pair("webhookStatusUrl", "https://api.gemwallet.com/v1/fiat/webhooks/ramp");
 
         components.as_str().to_string()
     }

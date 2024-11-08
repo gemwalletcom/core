@@ -35,10 +35,7 @@ impl TransakClient {
         );
 
         let response = self.client.get(&url).send().await?;
-        let transak_quote = response
-            .json::<TransakResponse<TransakQuote>>()
-            .await?
-            .response;
+        let transak_quote = response.json::<TransakResponse<TransakQuote>>().await?.response;
         Ok(transak_quote)
     }
 
@@ -72,18 +69,16 @@ impl TransakClient {
     pub async fn get_supported_assets(&self) -> Result<Vec<Asset>, reqwest::Error> {
         let url = format!("{}/api/v2/currencies/crypto-currencies", TRANSAK_API_URL);
         let response = self.client.get(&url).send().await?;
-        let assets = response
-            .json::<TransakResponse<Vec<Asset>>>()
-            .await?
-            .response;
+        let assets = response.json::<TransakResponse<Vec<Asset>>>().await?.response;
         Ok(assets)
     }
 
     pub fn map_asset(asset: Asset) -> Option<FiatProviderAsset> {
         let chain = super::mapper::map_asset_chain(asset.clone());
-        let token_id = asset.clone().address.filter(|contract_address| {
-            !["0x0000000000000000000000000000000000000000"].contains(&contract_address.as_str())
-        });
+        let token_id = asset
+            .clone()
+            .address
+            .filter(|contract_address| !["0x0000000000000000000000000000000000000000"].contains(&contract_address.as_str()));
 
         Some(FiatProviderAsset {
             id: asset.clone().coin_id,

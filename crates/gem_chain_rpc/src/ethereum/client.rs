@@ -48,20 +48,21 @@ impl EthereumClient {
     async fn eth_call<T: DeserializeOwned>(&self, contract: &str, data: &str) -> Result<T, Box<dyn Error + Send + Sync>> {
         let res = self
             .client
-            .request("eth_call", vec![
-                json!({
-                "to": contract,
-                "data": data,
-            }), json!("latest"),
-            ])
+            .request(
+                "eth_call",
+                vec![
+                    json!({
+                        "to": contract,
+                        "data": data,
+                    }),
+                    json!("latest"),
+                ],
+            )
             .await?;
         Ok(res)
     }
 
-    async fn get_transaction_reciepts(
-        &self,
-        hashes: Vec<String>,
-    ) -> Result<Vec<TransactionReciept>, Box<dyn Error + Send + Sync>> {
+    async fn get_transaction_reciepts(&self, hashes: Vec<String>) -> Result<Vec<TransactionReciept>, Box<dyn Error + Send + Sync>> {
         let hashes_chunks: Vec<Vec<String>> = hashes.chunks(10).map(|s| s.into()).collect();
         let mut results: Vec<TransactionReciept> = Vec::new();
         for hashes in hashes_chunks {
@@ -92,11 +93,7 @@ impl EthereumClient {
         Ok(self.client.request("eth_getBlockByNumber", params).await?)
     }
 
-    fn map_transaction(
-        &self,
-        transaction: Transaction,
-        receipt: &TransactionReciept,
-    ) -> Option<primitives::Transaction> {
+    fn map_transaction(&self, transaction: Transaction, receipt: &TransactionReciept) -> Option<primitives::Transaction> {
         let state = if receipt.status == "0x1" {
             TransactionState::Confirmed
         } else {
@@ -132,10 +129,7 @@ impl EthereumClient {
         }
         // ERC20 transfer. Only add confirmed
         let input_prefix = transaction.input.chars().take(10).collect::<String>();
-        if (input_prefix.starts_with(FUNCTION_ERC20_TRANSFER)
-            || input_prefix.starts_with(FUNCTION_ERC20_APPROVE))
-            && state == TransactionState::Confirmed
-        {
+        if (input_prefix.starts_with(FUNCTION_ERC20_TRANSFER) || input_prefix.starts_with(FUNCTION_ERC20_APPROVE)) && state == TransactionState::Confirmed {
             let transaction_type = match input_prefix.as_str() {
                 FUNCTION_ERC20_TRANSFER => TransactionType::Transfer,
                 FUNCTION_ERC20_APPROVE => TransactionType::TokenApproval,
@@ -147,12 +141,7 @@ impl EthereumClient {
                 token_id: Some(token_id),
             };
             let value: String = transaction.input.chars().skip(74).take(64).collect();
-            let to_address: String = transaction
-                .input
-                .chars()
-                .skip(34)
-                .take(40)
-                .collect::<String>();
+            let to_address: String = transaction.input.chars().skip(34).take(40).collect::<String>();
             let to_address = EthereumAddress::parse(&to_address)?.to_checksum();
             let value = BigUint::from_str_radix(value.as_str(), 16).unwrap_or_default();
 
@@ -176,18 +165,11 @@ impl EthereumClient {
             return Some(transaction);
         }
 
-        if input_prefix.starts_with(FUNCTION_1INCH_SWAP)
-            && to == CONTRACT_1INCH
-            && receipt.logs.len() <= 9
-        {
+        if input_prefix.starts_with(FUNCTION_1INCH_SWAP) && to == CONTRACT_1INCH && receipt.logs.len() <= 9 {
             let first_log = receipt.logs.first()?;
             let last_log = receipt.logs.last()?;
-            let first_log_value = BigUint::from_str_radix(&first_log.clone().data[2..], 16)
-                .ok()?
-                .to_string();
-            let last_log_value = BigUint::from_str_radix(&last_log.clone().data[2..], 16)
-                .ok()?
-                .to_string();
+            let first_log_value = BigUint::from_str_radix(&first_log.clone().data[2..], 16).ok()?.to_string();
+            let last_log_value = BigUint::from_str_radix(&last_log.clone().data[2..], 16).ok()?.to_string();
 
             let values: (String, String) = if first_log.topics[0] == TOPIC_DEPOSIT {
                 (value, last_log_value.clone())
@@ -254,18 +236,12 @@ impl ChainBlockProvider for EthereumClient {
     }
 
     async fn get_latest_block(&self) -> Result<i64, Box<dyn Error + Send + Sync>> {
-        let block: String = self
-            .client
-            .request("eth_blockNumber", rpc_params![])
-            .await?;
+        let block: String = self.client.request("eth_blockNumber", rpc_params![]).await?;
         let block_number = i64::from_str_radix(&block[2..], 16)?;
         Ok(block_number)
     }
 
-    async fn get_transactions(
-        &self,
-        block_number: i64,
-    ) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Send + Sync>> {
+    async fn get_transactions(&self, block_number: i64) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Send + Sync>> {
         let block = self.get_block(block_number).await?;
         let transactions = block
             .transactions
@@ -307,7 +283,10 @@ impl ChainTokenDataProvider for EthereumClient {
         let decimals: u8 = erc20::decimalsCall::abi_decode_returns(&Vec::from_hex(decimals)?, true).unwrap()._0;
 
         Ok(Asset {
-            id: AssetId { chain, token_id: token_id.into() },
+            id: AssetId {
+                chain,
+                token_id: token_id.into(),
+            },
             name,
             symbol,
             decimals: decimals as i32,

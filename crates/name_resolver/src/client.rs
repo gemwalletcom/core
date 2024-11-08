@@ -7,11 +7,7 @@ use primitives::name::{NameProvider, NameRecord};
 
 #[async_trait]
 pub trait NameClient {
-    async fn resolve(
-        &self,
-        name: &str,
-        chain: Chain,
-    ) -> Result<String, Box<dyn Error + Send + Sync>>;
+    async fn resolve(&self, name: &str, chain: Chain) -> Result<String, Box<dyn Error + Send + Sync>>;
     fn provider(&self) -> NameProvider;
     fn domains(&self) -> Vec<&'static str>;
     fn chains(&self) -> Vec<Chain>;
@@ -22,11 +18,7 @@ impl<T: Send + Sync> NameClient for Arc<T>
 where
     T: NameClient + ?Sized,
 {
-    async fn resolve(
-        &self,
-        name: &str,
-        chain: Chain,
-    ) -> Result<String, Box<dyn Error + Send + Sync>> {
+    async fn resolve(&self, name: &str, chain: Chain) -> Result<String, Box<dyn Error + Send + Sync>> {
         (**self).resolve(name, chain).await
     }
 
@@ -51,11 +43,7 @@ impl Client {
         Self { providers }
     }
 
-    pub async fn resolve(
-        &self,
-        name: &str,
-        chain: Chain,
-    ) -> Result<NameRecord, Box<dyn Error + Send + Sync>> {
+    pub async fn resolve(&self, name: &str, chain: Chain) -> Result<NameRecord, Box<dyn Error + Send + Sync>> {
         let name_prefix = name.split('.').clone().last().unwrap_or_default();
         for provider in self.providers.iter() {
             if provider.chains().contains(&chain) && provider.domains().contains(&name_prefix) {

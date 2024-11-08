@@ -7,7 +7,7 @@ pub struct V3Deployment {
     pub universal_router: &'static str,
 }
 
-pub fn get_deployment_by_chain(chain: Chain) -> Option<V3Deployment> {
+pub fn get_deployment_by_chain(chain: &Chain) -> Option<V3Deployment> {
     // https://docs.uniswap.org/contracts/v3/reference/deployments/
     match chain {
         Chain::Ethereum => Some(V3Deployment {

@@ -73,9 +73,7 @@ impl FromStr for Pubkey {
         if s.len() > MAX_BASE58_LEN {
             return Err(ParsePubkeyError::WrongSize);
         }
-        let pubkey_vec = bs58::decode(s)
-            .into_vec()
-            .map_err(|_| ParsePubkeyError::Invalid)?;
+        let pubkey_vec = bs58::decode(s).into_vec().map_err(|_| ParsePubkeyError::Invalid)?;
         if pubkey_vec.len() != mem::size_of::<Pubkey>() {
             Err(ParsePubkeyError::WrongSize)
         } else {
@@ -166,10 +164,7 @@ impl Pubkey {
     /// additional seed slice that contains the single `u8` bump seed, calling
     /// `create_program_address`, checking that the return value is `Ok`, and
     /// that the returned `Pubkey` has the expected value.
-    pub fn create_program_address(
-        seeds: &[&[u8]],
-        program_id: &Pubkey,
-    ) -> Result<Pubkey, PubkeyError> {
+    pub fn create_program_address(seeds: &[&[u8]], program_id: &Pubkey) -> Result<Pubkey, PubkeyError> {
         if seeds.len() > MAX_SEEDS {
             return Err(PubkeyError::MaxSeedLengthExceeded);
         }

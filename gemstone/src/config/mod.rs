@@ -5,9 +5,9 @@ pub mod node;
 pub mod public;
 pub mod social;
 pub mod stake;
+pub mod swap_config;
 pub mod validators;
 pub mod wallet_connect;
-pub mod swap_config;
 
 use crate::chain::ChainConfig;
 use gem_solana;
@@ -23,7 +23,7 @@ use {
     stake::{get_stake_config, StakeChainConfig},
     swap_config::{get_swap_config, SwapConfig},
     validators::get_validators,
-    wallet_connect::{get_wallet_connect_config, WalletConnectConfig}
+    wallet_connect::{get_wallet_connect_config, WalletConnectConfig},
 };
 
 /// Config

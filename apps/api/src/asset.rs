@@ -16,23 +16,21 @@ pub async fn get_asset(asset_id: &str, client: &State<Mutex<AssetsClient>>) -> J
 }
 
 #[post("/assets", format = "json", data = "<asset_ids>")]
-pub async fn get_assets(
-    asset_ids: Json<Vec<String>>,
-    client: &State<Mutex<AssetsClient>>,
-) -> Json<Vec<AssetFull>> {
+pub async fn get_assets(asset_ids: Json<Vec<String>>, client: &State<Mutex<AssetsClient>>) -> Json<Vec<AssetFull>> {
     let assets = client.lock().await.get_assets(asset_ids.0).unwrap();
     Json(assets)
 }
 
 #[post("/assets/add", format = "json", data = "<asset_id>")]
-pub async fn add_asset(
-    asset_id: Json<AssetId>,
-    client: &State<Mutex<AssetsClient>>,
-    assets_chain_provider: &State<Mutex<AssetsChainProvider>>,
-) -> Json<Asset> {
+pub async fn add_asset(asset_id: Json<AssetId>, client: &State<Mutex<AssetsClient>>, assets_chain_provider: &State<Mutex<AssetsChainProvider>>) -> Json<Asset> {
     let asset_id = asset_id.0;
 
-    let asset = assets_chain_provider.lock().await.get_token_data(asset_id.chain, asset_id.token_id.clone().unwrap()).await.unwrap();
+    let asset = assets_chain_provider
+        .lock()
+        .await
+        .get_token_data(asset_id.chain, asset_id.token_id.clone().unwrap())
+        .await
+        .unwrap();
 
     client.lock().await.add_asset(asset.clone()).unwrap();
     client.lock().await.update_asset_rank(asset.id.to_string().as_str(), 15).unwrap();
@@ -54,21 +52,11 @@ pub async fn get_assets_search(
     offset: Option<i64>,
     client: &State<Mutex<AssetsClient>>,
 ) -> Json<Vec<AssetFull>> {
-    let chains = chains
-        .unwrap_or_default()
-        .split(',')
-        .flat_map(Chain::from_str)
-        .map(|x| x.to_string())
-        .collect();
+    let chains = chains.unwrap_or_default().split(',').flat_map(Chain::from_str).map(|x| x.to_string()).collect();
     let assets = client
         .lock()
         .await
-        .get_assets_search(
-            query.as_str(),
-            chains,
-            limit.unwrap_or(50),
-            offset.unwrap_or(0),
-        )
+        .get_assets_search(query.as_str(), chains, limit.unwrap_or(50), offset.unwrap_or(0))
         .unwrap();
     Json(assets)
 }

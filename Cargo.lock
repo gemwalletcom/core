@@ -3310,12 +3310,15 @@ dependencies = [
  "gem_sui",
  "gem_ton",
  "hex",
+ "num-bigint 0.4.6",
  "primitives",
  "serde",
  "serde_json",
+ "serde_urlencoded",
  "thiserror",
  "tokio",
  "uniffi",
+ "url",
 ]
 
 [[package]]
@@ -8160,16 +8163,6 @@ dependencies = [
  "tonic 0.12.3",
  "tracing",
  "typed-store-error",
-]
-
-[[package]]
-name = "swap_thorchain"
-version = "1.0.0"
-dependencies = [
- "async-trait",
- "primitives",
- "reqwest",
- "serde",
 ]
 
 [[package]]

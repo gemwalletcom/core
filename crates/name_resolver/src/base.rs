@@ -33,11 +33,7 @@ impl NameClient for BNSClient {
         NameProvider::Bns
     }
 
-    async fn resolve(
-        &self,
-        name: &str,
-        _chain: Chain,
-    ) -> Result<String, Box<dyn Error + Send + Sync>> {
+    async fn resolve(&self, name: &str, _chain: Chain) -> Result<String, Box<dyn Error + Send + Sync>> {
         let url = format!("{}/v1/names/{}", self.api_url, name);
         let response: Response = self.client.get(&url).send().await?.json().await?;
         Ok(response.address)

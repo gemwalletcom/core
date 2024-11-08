@@ -35,14 +35,9 @@ pub fn get_coingecko_market_id_for_chain(chain: Chain) -> &'static str {
     match chain {
         Chain::Bitcoin => "bitcoin",
         Chain::Litecoin => "litecoin",
-        Chain::Ethereum
-        | Chain::Base
-        | Chain::Arbitrum
-        | Chain::Optimism
-        | Chain::ZkSync
-        | Chain::Blast
-        | Chain::Linea
-        | Chain::Manta | Chain::World => "ethereum",
+        Chain::Ethereum | Chain::Base | Chain::Arbitrum | Chain::Optimism | Chain::ZkSync | Chain::Blast | Chain::Linea | Chain::Manta | Chain::World => {
+            "ethereum"
+        }
         Chain::SmartChain | Chain::OpBNB => "binancecoin",
         Chain::Solana => "solana",
         Chain::Polygon => "matic-network",

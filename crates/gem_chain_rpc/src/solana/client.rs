@@ -1,6 +1,9 @@
 use std::error::Error;
 
-use crate::{solana::model::{BlockTransactions, InstructionParsed}, ChainBlockProvider, ChainTokenDataProvider};
+use crate::{
+    solana::model::{BlockTransactions, InstructionParsed},
+    ChainBlockProvider, ChainTokenDataProvider,
+};
 use async_trait::async_trait;
 use chrono::Utc;
 use jsonrpsee::{
@@ -36,11 +39,7 @@ impl SolanaClient {
         Self { client }
     }
 
-    fn map_transaction(
-        &self,
-        transaction: &BlockTransaction,
-        block_number: i64,
-    ) -> Option<primitives::Transaction> {
+    fn map_transaction(&self, transaction: &BlockTransaction, block_number: i64) -> Option<primitives::Transaction> {
         let account_keys = transaction
             .transaction
             .message
@@ -57,10 +56,7 @@ impl SolanaClient {
         let state = TransactionState::Confirmed;
         let fee_asset_id = chain.as_asset_id();
         // system transfer
-        if (account_keys.len() == 2 || account_keys.len() == 3)
-            && account_keys.last()? == SYSTEM_PROGRAM_ID
-            && signatures.len() == 1
-        {
+        if (account_keys.len() == 2 || account_keys.len() == 3) && account_keys.last()? == SYSTEM_PROGRAM_ID && signatures.len() == 1 {
             let from = account_keys.first()?.clone();
             let to = account_keys[account_keys.len() - 2].clone();
 
@@ -103,32 +99,17 @@ impl SolanaClient {
 
             let sender_account_index: i64 = if transaction.meta.pre_token_balances.len() == 1 {
                 transaction.meta.pre_token_balances.first()?.account_index
-            } else if pre_token_balances.first()?.get_amount()
-                >= post_token_balances.first()?.get_amount()
-            {
+            } else if pre_token_balances.first()?.get_amount() >= post_token_balances.first()?.get_amount() {
                 pre_token_balances.first()?.account_index
             } else {
                 post_token_balances.last()?.account_index
             };
-            let recipient_account_index = post_token_balances
-                .iter()
-                .find(|b| b.account_index != sender_account_index)?
-                .account_index;
+            let recipient_account_index = post_token_balances.iter().find(|b| b.account_index != sender_account_index)?.account_index;
 
-            let sender = transaction
-                .meta
-                .get_post_token_balance(sender_account_index)?;
-            let recipient = transaction
-                .meta
-                .get_post_token_balance(recipient_account_index)?;
-            let from_value = transaction
-                .meta
-                .get_pre_token_balance(sender_account_index)?
-                .get_amount();
-            let to_value = transaction
-                .meta
-                .get_post_token_balance(sender_account_index)?
-                .get_amount();
+            let sender = transaction.meta.get_post_token_balance(sender_account_index)?;
+            let recipient = transaction.meta.get_post_token_balance(recipient_account_index)?;
+            let from_value = transaction.meta.get_pre_token_balance(sender_account_index)?.get_amount();
+            let to_value = transaction.meta.get_post_token_balance(sender_account_index)?.get_amount();
 
             if to_value > from_value {
                 return None;
@@ -245,10 +226,7 @@ impl ChainBlockProvider for SolanaClient {
         Ok(block)
     }
 
-    async fn get_transactions(
-        &self,
-        block_number: i64,
-    ) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
+    async fn get_transactions(&self, block_number: i64) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
         let params = vec![
             json!(block_number),
             json!({
@@ -258,8 +236,7 @@ impl ChainBlockProvider for SolanaClient {
                 "rewards": false
             }),
         ];
-        let block: Result<BlockTransactions, jsonrpsee::core::ClientError> =
-            self.client.request("getBlock", params).await;
+        let block: Result<BlockTransactions, jsonrpsee::core::ClientError> = self.client.request("getBlock", params).await;
         match block {
             Ok(block) => {
                 let transactions = block
@@ -271,12 +248,7 @@ impl ChainBlockProvider for SolanaClient {
             }
             Err(err) => match err {
                 jsonrpsee::core::ClientError::Call(err) => {
-                    let errors = [
-                        MISSING_SLOT_ERROR,
-                        MISSING_OR_SKIPPED_SLOT_ERROR,
-                        NOT_AVAILABLE_SLOT_ERROR,
-                        CLEANUP_BLOCK_ERROR,
-                    ];
+                    let errors = [MISSING_SLOT_ERROR, MISSING_OR_SKIPPED_SLOT_ERROR, NOT_AVAILABLE_SLOT_ERROR, CLEANUP_BLOCK_ERROR];
                     if errors.contains(&err.code()) {
                         return Ok(vec![]);
                     } else {

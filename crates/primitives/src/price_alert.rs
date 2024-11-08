@@ -40,7 +40,7 @@ pub enum PriceAlertType {
     PriceDown,
     PricePercentChangeUp,
     PricePercentChangeDown,
-    AllTimeHigh
+    AllTimeHigh,
 }
 
 pub type PriceAlerts = Vec<PriceAlert>;

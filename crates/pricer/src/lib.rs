@@ -1,5 +1,5 @@
-pub mod price_alert_client;
 pub mod chart_client;
+pub mod price_alert_client;
 pub mod price_client;
 
 pub use chart_client::ChartClient;

@@ -122,7 +122,7 @@ impl PriceAlertClient {
 
     fn is_within_past(date_time: Option<NaiveDateTime>, duration: Duration) -> bool {
         if let Some(date_time) = date_time {
-            return date_time >= (Utc::now().naive_utc() - duration) && date_time <= Utc::now().naive_utc()
+            return date_time >= (Utc::now().naive_utc() - duration) && date_time <= Utc::now().naive_utc();
         }
         false
     }
@@ -167,9 +167,7 @@ impl PriceAlertClient {
                 PriceAlertType::PriceChangesDown => {
                     language_localizer.price_alert_down(&price_alert.asset.full_name(), price.unwrap().as_str(), price_change.as_str())
                 }
-                PriceAlertType::AllTimeHigh => {
-                    language_localizer.price_alert_all_time_high(&price_alert.asset.name, price.unwrap().as_str())
-                }
+                PriceAlertType::AllTimeHigh => language_localizer.price_alert_all_time_high(&price_alert.asset.name, price.unwrap().as_str()),
                 PriceAlertType::PriceUp | PriceAlertType::PriceDown | PriceAlertType::PricePercentChangeUp | PriceAlertType::PricePercentChangeDown => {
                     unimplemented!()
                 }

@@ -4,9 +4,7 @@ use crate::{
 };
 use async_trait::async_trait;
 use primitives::fiat_quote_request::FiatSellRequest;
-use primitives::{
-    FiatBuyRequest, FiatProviderName, FiatQuote, FiatTransaction, FiatTransactionStatus,
-};
+use primitives::{FiatBuyRequest, FiatProviderName, FiatQuote, FiatTransaction, FiatTransactionStatus};
 use std::error::Error;
 
 use super::{client::MercuryoClient, model::Webhook};
@@ -17,11 +15,7 @@ impl FiatProvider for MercuryoClient {
         Self::NAME
     }
 
-    async fn get_buy_quote(
-        &self,
-        request: FiatBuyRequest,
-        request_map: FiatMapping,
-    ) -> Result<FiatQuote, Box<dyn std::error::Error + Send + Sync>> {
+    async fn get_buy_quote(&self, request: FiatBuyRequest, request_map: FiatMapping) -> Result<FiatQuote, Box<dyn std::error::Error + Send + Sync>> {
         let quote = self
             .get_quote_buy(
                 request.fiat_currency.clone(),
@@ -35,18 +29,18 @@ impl FiatProvider for MercuryoClient {
     }
 
     async fn get_sell_quote(&self, request: FiatSellRequest, request_map: FiatMapping) -> Result<FiatQuote, Box<dyn Error + Send + Sync>> {
-        let quote = self.get_quote_sell(
-            request.fiat_currency.clone(),
-            request_map.symbol.clone(),
-            request.crypto_amount,
-            request_map.network.clone().unwrap_or_default(),
-        ).await?;
+        let quote = self
+            .get_quote_sell(
+                request.fiat_currency.clone(),
+                request_map.symbol.clone(),
+                request.crypto_amount,
+                request_map.network.clone().unwrap_or_default(),
+            )
+            .await?;
         Ok(self.get_fiat_sell_quote(request, request_map, quote))
     }
 
-    async fn get_assets(
-        &self,
-    ) -> Result<Vec<FiatProviderAsset>, Box<dyn std::error::Error + Send + Sync>> {
+    async fn get_assets(&self) -> Result<Vec<FiatProviderAsset>, Box<dyn std::error::Error + Send + Sync>> {
         let assets = self
             .get_assets()
             .await?
@@ -57,10 +51,7 @@ impl FiatProvider for MercuryoClient {
     }
 
     // full transaction: https://github.com/mercuryoio/api-migration-docs/blob/master/Widget_API_Mercuryo_v1.6.md#22-callbacks-response-body
-    async fn webhook(
-        &self,
-        data: serde_json::Value,
-    ) -> Result<FiatTransaction, Box<dyn std::error::Error + Send + Sync>> {
+    async fn webhook(&self, data: serde_json::Value) -> Result<FiatTransaction, Box<dyn std::error::Error + Send + Sync>> {
         let data = serde_json::from_value::<Webhook>(data)?.data;
 
         // https://github.com/mercuryoio/api-migration-docs/blob/master/Widget_API_Mercuryo_v1.6.md#3-transaction-status-types

@@ -38,14 +38,7 @@ impl KadoClient {
             amount: fiat_amount,
             currency: fiat_currency,
         };
-        let quote = self
-            .client
-            .get(&url)
-            .query(&query)
-            .send()
-            .await?
-            .json::<Response<QuoteData>>()
-            .await?;
+        let quote = self.client.get(&url).query(&query).send().await?.json::<Response<QuoteData>>().await?;
         Ok(quote.data)
     }
 
@@ -61,17 +54,9 @@ impl KadoClient {
     //     Ok(response.data.assets)
     // }
 
-    pub async fn get_blockchains(
-        &self,
-    ) -> Result<Vec<Blockchain>, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn get_blockchains(&self) -> Result<Vec<Blockchain>, Box<dyn std::error::Error + Send + Sync>> {
         let url = format!("{}/v1/ramp/blockchains", API_BASE_URL);
-        let response = self
-            .client
-            .get(&url)
-            .send()
-            .await?
-            .json::<Response<Blockchains>>()
-            .await?;
+        let response = self.client.get(&url).send().await?.json::<Response<Blockchains>>().await?;
         Ok(response.data.blockchains)
     }
 
@@ -102,22 +87,13 @@ impl KadoClient {
         })
     }
 
-    pub fn get_fiat_quote(
-        &self,
-        request: FiatBuyRequest,
-        request_map: FiatMapping,
-        quote: Quote,
-    ) -> FiatQuote {
+    pub fn get_fiat_quote(&self, request: FiatBuyRequest, request_map: FiatMapping, quote: Quote) -> FiatQuote {
         FiatQuote {
             provider: Self::NAME.as_fiat_provider(),
             quote_type: FiatQuoteType::Buy,
             fiat_amount: request.fiat_amount,
             fiat_currency: request.clone().fiat_currency,
-            crypto_amount: quote
-                .clone()
-                .receive_unit_count_after_fees
-                .amount
-                .unwrap_or_default(),
+            crypto_amount: quote.clone().receive_unit_count_after_fees.amount.unwrap_or_default(),
             redirect_url: self.redirect_url(
                 request.fiat_currency.as_str(),
                 request.fiat_amount,
@@ -127,13 +103,7 @@ impl KadoClient {
         }
     }
 
-    pub fn redirect_url(
-        &self,
-        fiat_currency: &str,
-        fiat_amount: f64,
-        fiat_mapping: FiatMapping,
-        address: &str,
-    ) -> String {
+    pub fn redirect_url(&self, fiat_currency: &str, fiat_amount: f64, fiat_mapping: FiatMapping, address: &str) -> String {
         let mut components = Url::parse(REDIRECT_URL).unwrap();
         components
             .query_pairs_mut()
@@ -143,10 +113,7 @@ impl KadoClient {
             .append_pair("onPayCurrency", fiat_currency)
             .append_pair("onRevCurrency", &fiat_mapping.symbol)
             .append_pair("onToAddress", address)
-            .append_pair(
-                "network",
-                &fiat_mapping.network.unwrap_or_default().to_uppercase(),
-            )
+            .append_pair("network", &fiat_mapping.network.unwrap_or_default().to_uppercase())
             .append_pair("mode", "minimal");
 
         return components.as_str().to_string();

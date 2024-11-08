@@ -28,7 +28,9 @@ impl BlockExplorer for Viewblock {
     fn get_token_url(&self, _token: &str) -> Option<String> {
         None
     }
-    fn get_validator_url(&self, _validator: &str) -> Option<String> {  None }
+    fn get_validator_url(&self, _validator: &str) -> Option<String> {
+        None
+    }
 }
 
 pub struct RuneScan {
@@ -59,5 +61,7 @@ impl BlockExplorer for RuneScan {
         None
     }
 
-    fn get_validator_url(&self, _validator: &str) -> Option<String> { None }
+    fn get_validator_url(&self, _validator: &str) -> Option<String> {
+        None
+    }
 }

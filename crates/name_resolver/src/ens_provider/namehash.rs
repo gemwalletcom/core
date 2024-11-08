@@ -19,18 +19,9 @@ mod test {
     fn test_namehash() {
         // Test cases from https://github.com/ethereum/ercs/blob/master/ERCS/erc-137.md
         let cases = vec![
-            (
-                "",
-                hex::decode("0000000000000000000000000000000000000000000000000000000000000000"),
-            ),
-            (
-                "eth",
-                hex::decode("93cdeb708b7545dc668eb9280176169d1c33cfd8ed6f04690a0bcc88a93fc4ae"),
-            ),
-            (
-                "foo.eth",
-                hex::decode("de9b09fd7c5f901e23a3f19fecc54828e9c848539801e86591bd9801b019f84f"),
-            ),
+            ("", hex::decode("0000000000000000000000000000000000000000000000000000000000000000")),
+            ("eth", hex::decode("93cdeb708b7545dc668eb9280176169d1c33cfd8ed6f04690a0bcc88a93fc4ae")),
+            ("foo.eth", hex::decode("de9b09fd7c5f901e23a3f19fecc54828e9c848539801e86591bd9801b019f84f")),
         ];
 
         for (name, expected_namehash) in cases {

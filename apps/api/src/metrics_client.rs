@@ -43,32 +43,12 @@ impl MetricsClient {
         let pricer_price = Family::<PricerStateLabels, Gauge<f64, AtomicU64>>::default();
 
         let mut registry = <Registry>::default();
-        registry.register(
-            "parser_state_latest_block",
-            "Parser latest block",
-            parser_latest_block.clone(),
-        );
-        registry.register(
-            "parser_state_current_block",
-            "Parser current block",
-            parser_current_block.clone(),
-        );
-        registry.register(
-            "parser_state_is_enabled",
-            "Parser is enabled",
-            parser_is_enabled.clone(),
-        );
-        registry.register(
-            "parser_state_updated_at",
-            "Parser updated at",
-            parser_updated_at.clone(),
-        );
+        registry.register("parser_state_latest_block", "Parser latest block", parser_latest_block.clone());
+        registry.register("parser_state_current_block", "Parser current block", parser_current_block.clone());
+        registry.register("parser_state_is_enabled", "Parser is enabled", parser_is_enabled.clone());
+        registry.register("parser_state_updated_at", "Parser updated at", parser_updated_at.clone());
         // pricer
-        registry.register(
-            "pricer_updated_at",
-            "Pricer updated at",
-            pricer_updated_at.clone(),
-        );
+        registry.register("pricer_updated_at", "Pricer updated at", pricer_updated_at.clone());
         registry.register("pricer_price", "Pricer price", pricer_price.clone());
 
         Self {
@@ -96,24 +76,16 @@ impl MetricsClient {
 
         for state in states {
             self.parser_current_block
-                .get_or_create(&ParserStateLabels {
-                    chain: state.clone().chain,
-                })
+                .get_or_create(&ParserStateLabels { chain: state.clone().chain })
                 .set(state.current_block as i64);
             self.parser_latest_block
-                .get_or_create(&ParserStateLabels {
-                    chain: state.clone().chain,
-                })
+                .get_or_create(&ParserStateLabels { chain: state.clone().chain })
                 .set(state.latest_block as i64);
             self.parser_is_enabled
-                .get_or_create(&ParserStateLabels {
-                    chain: state.clone().chain,
-                })
+                .get_or_create(&ParserStateLabels { chain: state.clone().chain })
                 .set(state.is_enabled as i64);
             self.parser_updated_at
-                .get_or_create(&ParserStateLabels {
-                    chain: state.clone().chain,
-                })
+                .get_or_create(&ParserStateLabels { chain: state.clone().chain })
                 .set(state.updated_at.and_utc().timestamp());
         }
     }
@@ -128,21 +100,11 @@ impl MetricsClient {
 
         for price in prices {
             self.pricer_updated_at
-                .get_or_create(&PricerStateLabels {
-                    asset_id: price.clone().id,
-                })
-                .set(
-                    price
-                        .last_updated_at
-                        .unwrap_or_default()
-                        .and_utc()
-                        .timestamp(),
-                );
+                .get_or_create(&PricerStateLabels { asset_id: price.clone().id })
+                .set(price.last_updated_at.unwrap_or_default().and_utc().timestamp());
 
             self.pricer_price
-                .get_or_create(&PricerStateLabels {
-                    asset_id: price.clone().id,
-                })
+                .get_or_create(&PricerStateLabels { asset_id: price.clone().id })
                 .set(price.price);
         }
     }

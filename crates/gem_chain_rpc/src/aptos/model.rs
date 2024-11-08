@@ -55,9 +55,7 @@ impl Event {
     pub fn get_amount(&self) -> Option<String> {
         let data = self.data.clone()?;
         match self.event_type.as_str() {
-            WITHDRAW_EVENT | DEPOSIT_EVENT => {
-                serde_json::from_value::<AmountData>(data).ok()?.amount
-            }
+            WITHDRAW_EVENT | DEPOSIT_EVENT => serde_json::from_value::<AmountData>(data).ok()?.amount,
             _ => None,
         }
     }

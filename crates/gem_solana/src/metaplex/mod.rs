@@ -57,10 +57,7 @@ mod tests {
         let metadata = decode_metadata(string.into()).unwrap();
 
         assert_eq!(metadata.key, Key::MetadataV1);
-        assert_eq!(
-            metadata.mint.to_string(),
-            "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
-        );
+        assert_eq!(metadata.mint.to_string(), "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v");
 
         assert_eq!(metadata.data.uri.trim_matches(char::from(0)), "");
         assert_eq!(metadata.data.symbol.trim_matches(char::from(0)), "USDC");
@@ -72,17 +69,11 @@ mod tests {
         let mut mint = Pubkey::from_str("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v").unwrap();
         let (pda, _) = Metadata::find_pda(mint).unwrap();
 
-        assert_eq!(
-            pda.to_string(),
-            "5x38Kp4hvdomTCnCrAny4UtMUt5rQBdB6px2K1Ui45Wq"
-        );
+        assert_eq!(pda.to_string(), "5x38Kp4hvdomTCnCrAny4UtMUt5rQBdB6px2K1Ui45Wq");
 
         mint = Pubkey::from_str("MEW1gQWJ3nEXg2qgERiKu7FAFj79PHvQVREQUzScPP5").unwrap();
         let (pda, _) = Metadata::find_pda(mint).unwrap();
 
-        assert_eq!(
-            pda.to_string(),
-            "5G95zJ9w6ESv7AFWqLKNfbZAoKBADjpVm9MT1cQm8Dpw"
-        );
+        assert_eq!(pda.to_string(), "5G95zJ9w6ESv7AFWqLKNfbZAoKBADjpVm9MT1cQm8Dpw");
     }
 }

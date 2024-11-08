@@ -42,43 +42,25 @@ impl TonAddress {
         let parts: Vec<&str> = s.split(':').collect();
 
         if parts.len() != 2 {
-            return Err(TonAddressParseError::new(
-                s,
-                "Invalid hex address string: wrong address format",
-            ));
+            return Err(TonAddressParseError::new(s, "Invalid hex address string: wrong address format"));
         }
 
         let maybe_wc = parts[0].parse::<i32>();
         let wc = match maybe_wc {
             Ok(wc) => wc,
-            Err(_) => {
-                return Err(TonAddressParseError::new(
-                    s,
-                    "Invalid hex address string: parse int error",
-                ))
-            }
+            Err(_) => return Err(TonAddressParseError::new(s, "Invalid hex address string: parse int error")),
         };
 
         let maybe_decoded_hash_part = hex::decode(parts[1]);
         let decoded_hash_part = match maybe_decoded_hash_part {
             Ok(decoded_hash_part) => decoded_hash_part,
-            Err(_) => {
-                return Err(TonAddressParseError::new(
-                    s,
-                    "Invalid hex address string: base64 decode error",
-                ))
-            }
+            Err(_) => return Err(TonAddressParseError::new(s, "Invalid hex address string: base64 decode error")),
         };
 
         let maybe_hash_part = decoded_hash_part.as_slice().try_into();
         let hash_part = match maybe_hash_part {
             Ok(hash_part) => hash_part,
-            Err(_) => {
-                return Err(TonAddressParseError::new(
-                    s,
-                    "Invalid hex address string: unexpected error",
-                ))
-            }
+            Err(_) => return Err(TonAddressParseError::new(s, "Invalid hex address string: unexpected error")),
         };
 
         let addr = TonAddress::new(wc, &hash_part);
@@ -93,34 +75,19 @@ impl TonAddress {
     ///
     /// # Returns
     /// the address, non-bounceable flag, non-production flag.
-    pub fn from_base64_url_flags(
-        s: &str,
-    ) -> Result<(TonAddress, bool, bool), TonAddressParseError> {
+    pub fn from_base64_url_flags(s: &str) -> Result<(TonAddress, bool, bool), TonAddressParseError> {
         if s.len() != 48 {
-            return Err(TonAddressParseError::new(
-                s,
-                "Invalid base64url address: Wrong length",
-            ));
+            return Err(TonAddressParseError::new(s, "Invalid base64url address: Wrong length"));
         }
         let maybe_bytes = URL_SAFE_NO_PAD.decode(s);
         let bytes = match maybe_bytes {
             Ok(bytes) => bytes,
-            Err(_) => {
-                return Err(TonAddressParseError::new(
-                    s,
-                    "Invalid base64url address: Base64 decode error",
-                ))
-            }
+            Err(_) => return Err(TonAddressParseError::new(s, "Invalid base64url address: Base64 decode error")),
         };
         let maybe_slice = bytes.as_slice().try_into();
         let slice = match maybe_slice {
             Ok(slice) => slice,
-            Err(_) => {
-                return Err(TonAddressParseError::new(
-                    s,
-                    "Invalid base64url address: Unexpected error",
-                ))
-            }
+            Err(_) => return Err(TonAddressParseError::new(s, "Invalid base64url address: Unexpected error")),
         };
 
         Self::from_base64_src(slice, s)
@@ -134,35 +101,20 @@ impl TonAddress {
     ///
     /// # Returns
     /// the address, non-bounceable flag, non-production flag.
-    pub fn from_base64_std_flags(
-        s: &str,
-    ) -> Result<(TonAddress, bool, bool), TonAddressParseError> {
+    pub fn from_base64_std_flags(s: &str) -> Result<(TonAddress, bool, bool), TonAddressParseError> {
         if s.len() != 48 {
-            return Err(TonAddressParseError::new(
-                s,
-                "Invalid base64std address: Invalid length",
-            ));
+            return Err(TonAddressParseError::new(s, "Invalid base64std address: Invalid length"));
         }
 
         let maybe_vec = STANDARD_NO_PAD.decode(s);
         let vec = match maybe_vec {
             Ok(bytes) => bytes,
-            Err(_) => {
-                return Err(TonAddressParseError::new(
-                    s,
-                    "Invalid base64std address: Base64 decode error",
-                ))
-            }
+            Err(_) => return Err(TonAddressParseError::new(s, "Invalid base64std address: Base64 decode error")),
         };
         let maybe_bytes = vec.as_slice().try_into();
         let bytes = match maybe_bytes {
             Ok(b) => b,
-            Err(_) => {
-                return Err(TonAddressParseError::new(
-                    s,
-                    "Invalid base64std: Unexpected error",
-                ))
-            }
+            Err(_) => return Err(TonAddressParseError::new(s, "Invalid base64std: Unexpected error")),
         };
 
         Self::from_base64_src(bytes, s)
@@ -172,37 +124,23 @@ impl TonAddress {
     ///
     /// # Returns
     /// the address, non-bounceable flag, non-production flag.
-    fn from_base64_src(
-        bytes: &[u8; 36],
-        src: &str,
-    ) -> Result<(TonAddress, bool, bool), TonAddressParseError> {
+    fn from_base64_src(bytes: &[u8; 36], src: &str) -> Result<(TonAddress, bool, bool), TonAddressParseError> {
         let (non_production, non_bounceable) = match bytes[0] {
             0x11 => (false, false),
             0x51 => (false, true),
             0x91 => (true, false),
             0xD1 => (true, true),
-            _ => {
-                return Err(TonAddressParseError::new(
-                    src,
-                    "Invalid base64src address: Wrong tag byte",
-                ))
-            }
+            _ => return Err(TonAddressParseError::new(src, "Invalid base64src address: Wrong tag byte")),
         };
         let workchain = bytes[1] as i8 as i32;
         let calc_crc = CRC_16_XMODEM.checksum(&bytes[0..34]);
         let addr_crc = ((bytes[34] as u16) << 8) | bytes[35] as u16;
         if calc_crc != addr_crc {
-            return Err(TonAddressParseError::new(
-                src,
-                "Invalid base64src address: CRC mismatch",
-            ));
+            return Err(TonAddressParseError::new(src, "Invalid base64src address: CRC mismatch"));
         }
         let mut hash_part = [0_u8; 32];
         hash_part.clone_from_slice(&bytes[2..34]);
-        let addr = TonAddress {
-            workchain,
-            hash_part,
-        };
+        let addr = TonAddress { workchain, hash_part };
         Ok((addr, non_bounceable, non_production))
     }
 
@@ -327,83 +265,53 @@ mod tests {
 
     #[test]
     fn format_works() -> anyhow::Result<()> {
-        let bytes: [u8; 32] =
-            hex::decode("e4d954ef9f4e1250a26b5bbad76a1cdd17cfd08babad6f4c23e372270aef6f76")?
-                .as_slice()
-                .try_into()?;
+        let bytes: [u8; 32] = hex::decode("e4d954ef9f4e1250a26b5bbad76a1cdd17cfd08babad6f4c23e372270aef6f76")?
+            .as_slice()
+            .try_into()?;
         let addr = TonAddress::new(0, &bytes);
-        assert_eq!(
-            addr.to_hex(),
-            "0:e4d954ef9f4e1250a26b5bbad76a1cdd17cfd08babad6f4c23e372270aef6f76"
-        );
-        assert_eq!(
-            addr.to_base64_url(),
-            "EQDk2VTvn04SUKJrW7rXahzdF8_Qi6utb0wj43InCu9vdjrR"
-        );
-        assert_eq!(
-            addr.to_base64_std(),
-            "EQDk2VTvn04SUKJrW7rXahzdF8/Qi6utb0wj43InCu9vdjrR"
-        );
+        assert_eq!(addr.to_hex(), "0:e4d954ef9f4e1250a26b5bbad76a1cdd17cfd08babad6f4c23e372270aef6f76");
+        assert_eq!(addr.to_base64_url(), "EQDk2VTvn04SUKJrW7rXahzdF8_Qi6utb0wj43InCu9vdjrR");
+        assert_eq!(addr.to_base64_std(), "EQDk2VTvn04SUKJrW7rXahzdF8/Qi6utb0wj43InCu9vdjrR");
         Ok(())
     }
 
     #[test]
     fn parse_format_works() -> anyhow::Result<()> {
-        let bytes: [u8; 32] =
-            hex::decode("e4d954ef9f4e1250a26b5bbad76a1cdd17cfd08babad6f4c23e372270aef6f76")?
-                .as_slice()
-                .try_into()?;
+        let bytes: [u8; 32] = hex::decode("e4d954ef9f4e1250a26b5bbad76a1cdd17cfd08babad6f4c23e372270aef6f76")?
+            .as_slice()
+            .try_into()?;
         let addr = TonAddress::new(0, &bytes);
         assert_eq!(
-            TonAddress::from_hex_str(
-                "0:e4d954ef9f4e1250a26b5bbad76a1cdd17cfd08babad6f4c23e372270aef6f76"
-            )?,
+            TonAddress::from_hex_str("0:e4d954ef9f4e1250a26b5bbad76a1cdd17cfd08babad6f4c23e372270aef6f76")?,
             addr
         );
-        assert_eq!(
-            TonAddress::from_base64_url("EQDk2VTvn04SUKJrW7rXahzdF8_Qi6utb0wj43InCu9vdjrR")?,
-            addr
-        );
-        assert_eq!(
-            TonAddress::from_base64_std("EQDk2VTvn04SUKJrW7rXahzdF8/Qi6utb0wj43InCu9vdjrR")?,
-            addr
-        );
+        assert_eq!(TonAddress::from_base64_url("EQDk2VTvn04SUKJrW7rXahzdF8_Qi6utb0wj43InCu9vdjrR")?, addr);
+        assert_eq!(TonAddress::from_base64_std("EQDk2VTvn04SUKJrW7rXahzdF8/Qi6utb0wj43InCu9vdjrR")?, addr);
         Ok(())
     }
 
     #[test]
     fn parse_works() -> anyhow::Result<()> {
-        let bytes: [u8; 32] =
-            hex::decode("e4d954ef9f4e1250a26b5bbad76a1cdd17cfd08babad6f4c23e372270aef6f76")?
-                .as_slice()
-                .try_into()?;
+        let bytes: [u8; 32] = hex::decode("e4d954ef9f4e1250a26b5bbad76a1cdd17cfd08babad6f4c23e372270aef6f76")?
+            .as_slice()
+            .try_into()?;
         let addr = TonAddress::new(0, &bytes);
         assert_eq!(
-            "0:e4d954ef9f4e1250a26b5bbad76a1cdd17cfd08babad6f4c23e372270aef6f76"
-                .parse::<TonAddress>()?,
+            "0:e4d954ef9f4e1250a26b5bbad76a1cdd17cfd08babad6f4c23e372270aef6f76".parse::<TonAddress>()?,
             addr
         );
-        assert_eq!(
-            "EQDk2VTvn04SUKJrW7rXahzdF8_Qi6utb0wj43InCu9vdjrR".parse::<TonAddress>()?,
-            addr
-        );
-        assert_eq!(
-            "EQDk2VTvn04SUKJrW7rXahzdF8/Qi6utb0wj43InCu9vdjrR".parse::<TonAddress>()?,
-            addr
-        );
+        assert_eq!("EQDk2VTvn04SUKJrW7rXahzdF8_Qi6utb0wj43InCu9vdjrR".parse::<TonAddress>()?, addr);
+        assert_eq!("EQDk2VTvn04SUKJrW7rXahzdF8/Qi6utb0wj43InCu9vdjrR".parse::<TonAddress>()?, addr);
         Ok(())
     }
 
     #[test]
     fn try_from_works() -> anyhow::Result<()> {
-        let bytes: [u8; 32] =
-            hex::decode("e4d954ef9f4e1250a26b5bbad76a1cdd17cfd08babad6f4c23e372270aef6f76")?
-                .as_slice()
-                .try_into()?;
-        let addr = TonAddress::new(0, &bytes);
-        let res: TonAddress = "EQDk2VTvn04SUKJrW7rXahzdF8_Qi6utb0wj43InCu9vdjrR"
-            .to_string()
+        let bytes: [u8; 32] = hex::decode("e4d954ef9f4e1250a26b5bbad76a1cdd17cfd08babad6f4c23e372270aef6f76")?
+            .as_slice()
             .try_into()?;
+        let addr = TonAddress::new(0, &bytes);
+        let res: TonAddress = "EQDk2VTvn04SUKJrW7rXahzdF8_Qi6utb0wj43InCu9vdjrR".to_string().try_into()?;
         assert_eq!(res, addr);
         Ok(())
     }
@@ -424,8 +332,7 @@ mod tests {
 
         assert_eq!(serial.as_str(), expected);
 
-        let res = "0:e4d954ef9f4e1250a26b5bbad76a1cdd17cfd08babad6f4c23e372270aef6f76"
-            .parse::<TonAddress>()?;
+        let res = "0:e4d954ef9f4e1250a26b5bbad76a1cdd17cfd08babad6f4c23e372270aef6f76".parse::<TonAddress>()?;
         let serial = serde_json::to_string(&res).unwrap();
 
         assert_eq!(serial.as_str(), expected);
@@ -461,8 +368,7 @@ mod tests {
 
         assert_eq!(deserial, expected);
 
-        let address =
-            String::from("0:e4d954ef9f4e1250a26b5bbad76a1cdd17cfd08babad6f4c23e372270aef6f76");
+        let address = String::from("0:e4d954ef9f4e1250a26b5bbad76a1cdd17cfd08babad6f4c23e372270aef6f76");
         let deserial: TonAddress = serde_json::from_value(Value::String(address.clone()))?;
         let expected = address.clone().parse()?;
 

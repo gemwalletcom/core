@@ -1,10 +1,10 @@
+mod alerter;
 mod device_updater;
 mod fiat_assets_updater;
-mod tokenlist_updater;
-mod version_updater;
-mod transaction_updater;
-mod alerter;
 mod pricer;
+mod tokenlist_updater;
+mod transaction_updater;
+mod version_updater;
 
 use crate::device_updater::DeviceUpdater;
 use crate::tokenlist_updater::Client as TokenListClient;
@@ -79,15 +79,10 @@ pub async fn main() {
         }
     });
 
-
     // Pin the futures when creating the services vector
-    let services: Vec<Pin<Box<dyn Future<Output=()> + Send>>> = match service.as_str() {
-        "alerter" => {
-            alerter::jobs(settings.clone()).await
-        }
-        "pricer" => {
-            pricer::jobs(settings.clone()).await
-        }
+    let services: Vec<Pin<Box<dyn Future<Output = ()> + Send>>> = match service.as_str() {
+        "alerter" => alerter::jobs(settings.clone()).await,
+        "pricer" => pricer::jobs(settings.clone()).await,
         _ => {
             vec![
                 Box::pin(update_fiat_assets),

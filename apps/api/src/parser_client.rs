@@ -37,11 +37,7 @@ impl ParserClient {
         Ok(self.filter_transactions(transactions, transaction_type))
     }
 
-    pub fn filter_transactions(
-        &self,
-        transactions: Vec<Transaction>,
-        transaction_type: Option<&str>,
-    ) -> Vec<Transaction> {
+    pub fn filter_transactions(&self, transactions: Vec<Transaction>, transaction_type: Option<&str>) -> Vec<Transaction> {
         if let Some(transaction_type) = transaction_type {
             return transactions
                 .into_iter()
@@ -52,10 +48,7 @@ impl ParserClient {
         transactions
     }
 
-    pub async fn get_block_number_latest(
-        &self,
-        chain: Chain,
-    ) -> Result<i64, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn get_block_number_latest(&self, chain: Chain) -> Result<i64, Box<dyn std::error::Error + Send + Sync>> {
         let provider = settings_chain::ProviderFactory::new_from_settings(chain, &self.settings);
         provider.get_latest_block().await
     }

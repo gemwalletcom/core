@@ -33,51 +33,35 @@ impl CellParser<'_> {
     }
 
     pub fn load_u8(&mut self, bit_len: usize) -> Result<u8, TonCellError> {
-        self.bit_reader
-            .read::<u8>(bit_len as u32)
-            .map_cell_parser_error()
+        self.bit_reader.read::<u8>(bit_len as u32).map_cell_parser_error()
     }
 
     pub fn load_i8(&mut self, bit_len: usize) -> Result<i8, TonCellError> {
-        self.bit_reader
-            .read::<i8>(bit_len as u32)
-            .map_cell_parser_error()
+        self.bit_reader.read::<i8>(bit_len as u32).map_cell_parser_error()
     }
 
     pub fn load_u16(&mut self, bit_len: usize) -> Result<u16, TonCellError> {
-        self.bit_reader
-            .read::<u16>(bit_len as u32)
-            .map_cell_parser_error()
+        self.bit_reader.read::<u16>(bit_len as u32).map_cell_parser_error()
     }
 
     pub fn load_i16(&mut self, bit_len: usize) -> Result<i16, TonCellError> {
-        self.bit_reader
-            .read::<i16>(bit_len as u32)
-            .map_cell_parser_error()
+        self.bit_reader.read::<i16>(bit_len as u32).map_cell_parser_error()
     }
 
     pub fn load_u32(&mut self, bit_len: usize) -> Result<u32, TonCellError> {
-        self.bit_reader
-            .read::<u32>(bit_len as u32)
-            .map_cell_parser_error()
+        self.bit_reader.read::<u32>(bit_len as u32).map_cell_parser_error()
     }
 
     pub fn load_i32(&mut self, bit_len: usize) -> Result<i32, TonCellError> {
-        self.bit_reader
-            .read::<i32>(bit_len as u32)
-            .map_cell_parser_error()
+        self.bit_reader.read::<i32>(bit_len as u32).map_cell_parser_error()
     }
 
     pub fn load_u64(&mut self, bit_len: usize) -> Result<u64, TonCellError> {
-        self.bit_reader
-            .read::<u64>(bit_len as u32)
-            .map_cell_parser_error()
+        self.bit_reader.read::<u64>(bit_len as u32).map_cell_parser_error()
     }
 
     pub fn load_i64(&mut self, bit_len: usize) -> Result<i64, TonCellError> {
-        self.bit_reader
-            .read::<i64>(bit_len as u32)
-            .map_cell_parser_error()
+        self.bit_reader.read::<i64>(bit_len as u32).map_cell_parser_error()
     }
 
     pub fn load_uint(&mut self, bit_len: usize) -> Result<BigUint, TonCellError> {
@@ -99,11 +83,7 @@ impl CellParser<'_> {
         let high_word_bits = if bit_len % 32 == 0 { 32 } else { bit_len % 32 };
         let mut words: Vec<u32> = vec![0_u32; num_words];
         let high_word = self.load_u32(high_word_bits)?;
-        let sign = if (high_word & (1 << 31)) == 0 {
-            Sign::Plus
-        } else {
-            Sign::Minus
-        };
+        let sign = if (high_word & (1 << 31)) == 0 { Sign::Plus } else { Sign::Minus };
         words[num_words - 1] = high_word;
         for i in (0..num_words - 1).rev() {
             let word = self.load_u32(32)?;
@@ -127,11 +107,7 @@ impl CellParser<'_> {
         Ok(res)
     }
 
-    pub fn load_bits_to_slice(
-        &mut self,
-        num_bits: usize,
-        slice: &mut [u8],
-    ) -> Result<(), TonCellError> {
+    pub fn load_bits_to_slice(&mut self, num_bits: usize, slice: &mut [u8]) -> Result<(), TonCellError> {
         self.bit_reader.read_bits(num_bits, slice)?;
         Ok(())
     }
@@ -170,9 +146,7 @@ impl CellParser<'_> {
                 let _res1 = self.bit_reader.read::<u8>(1).map_cell_parser_error()?;
                 let wc = self.bit_reader.read::<u8>(8).map_cell_parser_error()?;
                 let mut hash_part = [0_u8; 32];
-                self.bit_reader
-                    .read_bytes(&mut hash_part)
-                    .map_cell_parser_error()?;
+                self.bit_reader.read_bytes(&mut hash_part).map_cell_parser_error()?;
                 let addr = TonAddress::new(wc as i32, &hash_part);
                 Ok(addr)
             }
@@ -198,8 +172,6 @@ impl CellParser<'_> {
     }
 
     pub fn skip_bits(&mut self, num_bits: usize) -> Result<(), TonCellError> {
-        self.bit_reader
-            .skip(num_bits as u32)
-            .map_cell_parser_error()
+        self.bit_reader.skip(num_bits as u32).map_cell_parser_error()
     }
 }

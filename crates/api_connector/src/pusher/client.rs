@@ -5,7 +5,7 @@ use primitives::{Platform, PushNotification};
 pub struct PusherClient {
     url: String,
     client: reqwest::Client,
-    topic: String
+    topic: String,
 }
 
 impl PusherClient {
@@ -16,9 +16,7 @@ impl PusherClient {
 
     pub async fn push_notifications(&self, notifications: Vec<Notification>) -> Result<Response, reqwest::Error> {
         let url = format!("{}/api/push", self.url);
-        let notifications = notifications.into_iter().map(|x|
-            x.clone().with_topic(self.get_topic(x.platform))
-        ).collect();
+        let notifications = notifications.into_iter().map(|x| x.clone().with_topic(self.get_topic(x.platform))).collect();
         let notifications = Notifications { notifications };
 
         let response = self.client.post(&url).json(&notifications).send().await?.json::<Response>().await?;
@@ -26,21 +24,8 @@ impl PusherClient {
         Ok(response)
     }
 
-    pub fn new_notification(
-        &self,
-        token: &str,
-        platform: Platform,
-        title: &str,
-        body: &str,
-        data: PushNotification,
-    ) -> Notification {
-        Notification::new(
-            vec![token.to_owned()],
-            platform.as_i32(),
-            title.to_owned(),
-            body.to_owned(),
-            data,
-        )
+    pub fn new_notification(&self, token: &str, platform: Platform, title: &str, body: &str, data: PushNotification) -> Notification {
+        Notification::new(vec![token.to_owned()], platform.as_i32(), title.to_owned(), body.to_owned(), data)
     }
 
     //Remove in the future
@@ -48,7 +33,7 @@ impl PusherClient {
         match platform {
             1 => Some(self.topic.clone()), // ios
             2 => None,
-            _ => None
+            _ => None,
         }
     }
 

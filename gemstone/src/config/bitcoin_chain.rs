@@ -21,21 +21,9 @@ pub fn get_bitcoin_chain_config(chain: BitcoinChain) -> BitcoinChainConfig {
 impl BitcoinChainConfig {
     fn get_blocks_fee_priority(chain: BitcoinChain) -> BlocksFeePriority {
         match chain {
-            BitcoinChain::Bitcoin => BlocksFeePriority {
-                slow: 6,
-                normal: 3,
-                fast: 1,
-            },
-            BitcoinChain::Litecoin => BlocksFeePriority {
-                slow: 6,
-                normal: 3,
-                fast: 1,
-            },
-            BitcoinChain::Doge => BlocksFeePriority {
-                slow: 8,
-                normal: 4,
-                fast: 2,
-            },
+            BitcoinChain::Bitcoin => BlocksFeePriority { slow: 6, normal: 3, fast: 1 },
+            BitcoinChain::Litecoin => BlocksFeePriority { slow: 6, normal: 3, fast: 1 },
+            BitcoinChain::Doge => BlocksFeePriority { slow: 8, normal: 4, fast: 2 },
         }
     }
 }

@@ -27,9 +27,7 @@ impl PriceAlertSender {
 
         let price_alert_notifications = self.price_alert_client.get_devices_to_alert(rules).await?;
 
-        let notifications = self
-            .price_alert_client
-            .get_notifications_for_price_alerts(price_alert_notifications);
+        let notifications = self.price_alert_client.get_notifications_for_price_alerts(price_alert_notifications);
 
         self.notify(notifications).await
     }

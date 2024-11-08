@@ -26,10 +26,7 @@ impl TonClient {
     }
 
     pub fn map_transaction(&self, transaction: Transaction) -> Option<primitives::Transaction> {
-        if transaction.transaction_type == "TransOrd"
-            && transaction.out_msgs.len() == 1
-            && transaction.out_msgs.first()?.op_code.is_none()
-        {
+        if transaction.transaction_type == "TransOrd" && transaction.out_msgs.len() == 1 && transaction.out_msgs.first()?.op_code.is_none() {
             let asset_id = self.get_chain().as_asset_id();
             let out_message = transaction.out_msgs.first()?;
             let from = Self::parse_address(&out_message.source.address)?;
@@ -70,13 +67,7 @@ impl TonClient {
 
     pub async fn get_master_head(&self) -> Result<Chainhead, Box<dyn Error + Send + Sync>> {
         let url = format!("{}/v2/blockchain/masterchain-head", self.url);
-        let response = self
-            .client
-            .get(url)
-            .send()
-            .await?
-            .json::<Chainhead>()
-            .await?;
+        let response = self.client.get(url).send().await?.json::<Chainhead>().await?;
         Ok(response)
     }
 
@@ -92,40 +83,16 @@ impl TonClient {
         Ok(response)
     }
 
-    pub async fn get_transactions_in_all_blocks(
-        &self,
-        block_id: String,
-    ) -> Result<Transactions, Box<dyn Error + Send + Sync>> {
-        let url = format!(
-            "{}/v2/blockchain/masterchain/{}/transactions",
-            self.url, block_id
-        );
-        let response = self
-            .client
-            .get(url)
-            .send()
-            .await?
-            .json::<Transactions>()
-            .await?;
+    pub async fn get_transactions_in_all_blocks(&self, block_id: String) -> Result<Transactions, Box<dyn Error + Send + Sync>> {
+        let url = format!("{}/v2/blockchain/masterchain/{}/transactions", self.url, block_id);
+        let response = self.client.get(url).send().await?.json::<Transactions>().await?;
 
         Ok(response)
     }
 
-    pub async fn get_block_transactions(
-        &self,
-        block_id: String,
-    ) -> Result<Transactions, Box<dyn Error + Send + Sync>> {
-        let url = format!(
-            "{}/v2/blockchain/blocks/{}/transactions",
-            self.url, block_id
-        );
-        let response = self
-            .client
-            .get(url)
-            .send()
-            .await?
-            .json::<Transactions>()
-            .await?;
+    pub async fn get_block_transactions(&self, block_id: String) -> Result<Transactions, Box<dyn Error + Send + Sync>> {
+        let url = format!("{}/v2/blockchain/blocks/{}/transactions", self.url, block_id);
+        let response = self.client.get(url).send().await?.json::<Transactions>().await?;
 
         Ok(response)
     }
@@ -142,10 +109,7 @@ impl ChainBlockProvider for TonClient {
         Ok(chainhead.seqno)
     }
 
-    async fn get_transactions(
-        &self,
-        block: i64,
-    ) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Send + Sync>> {
+    async fn get_transactions(&self, block: i64) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Send + Sync>> {
         // let shards = self.get_blocks(block).await?.blocks;
 
         // let futures = shards.into_iter().map(|shard| {

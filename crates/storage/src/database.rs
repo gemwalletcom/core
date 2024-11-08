@@ -347,7 +347,7 @@ impl DatabaseClient {
                 .filter(chain.eq(subscription.chain))
                 .filter(address.eq(subscription.address)),
         )
-            .execute(&mut self.connection)
+        .execute(&mut self.connection)
     }
 
     // distinct_on is used to only select once subscription per user device
@@ -506,10 +506,8 @@ impl DatabaseClient {
 
     pub fn delete_transactions_by_ids(&mut self, ids: Vec<String>) -> Result<usize, diesel::result::Error> {
         use crate::schema::transactions::dsl::*;
-        diesel::delete(transactions.filter(id.eq_any(ids)))
-            .execute(&mut self.connection)
+        diesel::delete(transactions.filter(id.eq_any(ids))).execute(&mut self.connection)
     }
-
 
     pub fn get_asset(&mut self, asset_id: &str) -> Result<Asset, diesel::result::Error> {
         use crate::schema::assets::dsl::*;

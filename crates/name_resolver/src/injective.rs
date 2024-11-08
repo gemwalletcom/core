@@ -53,11 +53,7 @@ impl NameClient for InjectiveNameClient {
         NameProvider::Injective
     }
 
-    async fn resolve(
-        &self,
-        name: &str,
-        _chain: Chain,
-    ) -> Result<String, Box<dyn Error + Send + Sync>> {
+    async fn resolve(&self, name: &str, _chain: Chain) -> Result<String, Box<dyn Error + Send + Sync>> {
         let hash = crate::ens_provider::namehash::namehash(name);
         let resolve = ResolverAddress {
             address: ResolverNode { node: hash },
@@ -66,18 +62,9 @@ impl NameClient for InjectiveNameClient {
         let string = serde_json::to_string(&resolve)?;
         let encoded = general_purpose::STANDARD.encode(string).to_string();
 
-        let url = format!(
-            "{}/cosmwasm/wasm/v1/contract/{}/smart/{}",
-            self.url, RESOLVER_ADDRESS, encoded
-        );
+        let url = format!("{}/cosmwasm/wasm/v1/contract/{}/smart/{}", self.url, RESOLVER_ADDRESS, encoded);
 
-        let response = self
-            .client
-            .get(&url)
-            .send()
-            .await?
-            .json::<ResolverDataResponse>()
-            .await?;
+        let response = self.client.get(&url).send().await?.json::<ResolverDataResponse>().await?;
 
         Ok(response.data.address)
     }

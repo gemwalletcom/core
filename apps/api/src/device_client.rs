@@ -12,10 +12,7 @@ pub struct DevicesClient {
 impl DevicesClient {
     pub async fn new(database_url: &str, pusher: PusherClient) -> Self {
         let database = DatabaseClient::new(database_url);
-        Self {
-            database,
-            pusher
-        }
+        Self { database, pusher }
     }
 
     pub fn add_device(&mut self, device: primitives::device::Device) -> Result<primitives::device::Device, Box<dyn Error>> {

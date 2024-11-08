@@ -2,9 +2,7 @@ use std::str::FromStr;
 
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
-use primitives::{
-    transaction_utxo::TransactionInput, AssetId, TransactionDirection, TransactionType,
-};
+use primitives::{transaction_utxo::TransactionInput, AssetId, TransactionDirection, TransactionType};
 use serde::{Deserialize, Serialize};
 
 // #[derive(FromSqlRow, Serialize, Deserialize, Debug, Default, AsExpression)]
@@ -51,11 +49,7 @@ impl Transaction {
             fee: transaction.fee.into(),
             fee_asset_id: transaction.fee_asset_id.to_string(),
             block_number: transaction.block_number.parse::<i32>().unwrap_or_default(),
-            sequence: transaction
-                .sequence
-                .parse::<i32>()
-                .unwrap_or_default()
-                .into(),
+            sequence: transaction.sequence.parse::<i32>().unwrap_or_default().into(),
             from_address: transaction.from.into(),
             to_address: transaction.to.into(),
             kind: transaction.transaction_type.as_ref().to_string(),
@@ -73,10 +67,8 @@ impl Transaction {
         let hash = self.hash.clone();
         let from = self.from_address.clone().unwrap_or_default();
         let to_address = self.to_address.clone().unwrap_or_default();
-        let inputs: Option<Vec<TransactionInput>> =
-            serde_json::from_value(self.utxo_inputs.clone().into()).ok();
-        let outputs: Option<Vec<TransactionInput>> =
-            serde_json::from_value(self.utxo_outputs.clone().into()).ok();
+        let inputs: Option<Vec<TransactionInput>> = serde_json::from_value(self.utxo_inputs.clone().into()).ok();
+        let outputs: Option<Vec<TransactionInput>> = serde_json::from_value(self.utxo_outputs.clone().into()).ok();
 
         let direction = if addresses.contains(&from) {
             primitives::TransactionDirection::Outgoing

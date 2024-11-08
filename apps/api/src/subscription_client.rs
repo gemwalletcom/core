@@ -14,11 +14,7 @@ impl SubscriptionsClient {
         Self { database }
     }
 
-    pub fn add_subscriptions(
-        &mut self,
-        device_id: &str,
-        subscriptions: Vec<Subscription>,
-    ) -> Result<usize, Box<dyn Error>> {
+    pub fn add_subscriptions(&mut self, device_id: &str, subscriptions: Vec<Subscription>) -> Result<usize, Box<dyn Error>> {
         let device = self.database.get_device(device_id)?;
         let subscriptions = subscriptions
             .into_iter()
@@ -28,10 +24,7 @@ impl SubscriptionsClient {
         Ok(result)
     }
 
-    pub fn get_subscriptions(
-        &mut self,
-        device_id: &str,
-    ) -> Result<Vec<primitives::Subscription>, Box<dyn Error>> {
+    pub fn get_subscriptions(&mut self, device_id: &str) -> Result<Vec<primitives::Subscription>, Box<dyn Error>> {
         let subscriptions = self
             .database
             .get_subscriptions_by_device_id(device_id)?
@@ -41,11 +34,7 @@ impl SubscriptionsClient {
         Ok(subscriptions)
     }
 
-    pub fn delete_subscriptions(
-        &mut self,
-        device_id: &str,
-        subscriptions: Vec<Subscription>,
-    ) -> Result<usize, Box<dyn Error>> {
+    pub fn delete_subscriptions(&mut self, device_id: &str, subscriptions: Vec<Subscription>) -> Result<usize, Box<dyn Error>> {
         let device = self.database.get_device(device_id)?;
         let values = subscriptions
             .into_iter()

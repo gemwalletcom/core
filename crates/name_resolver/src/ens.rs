@@ -11,9 +11,7 @@ pub struct ENSClient {
 
 impl ENSClient {
     pub fn new(url: String) -> Self {
-        Self {
-            provider: Provider::new(url),
-        }
+        Self { provider: Provider::new(url) }
     }
 }
 
@@ -23,11 +21,7 @@ impl NameClient for ENSClient {
         NameProvider::Ens
     }
 
-    async fn resolve(
-        &self,
-        name: &str,
-        chain: Chain,
-    ) -> Result<String, Box<dyn Error + Send + Sync>> {
+    async fn resolve(&self, name: &str, chain: Chain) -> Result<String, Box<dyn Error + Send + Sync>> {
         let address = self.provider.resolve_name(name, chain).await?;
         let address = EthereumAddress::from_str(&address)?.to_checksum();
         Ok(address)

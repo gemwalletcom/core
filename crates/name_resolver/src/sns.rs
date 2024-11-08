@@ -33,19 +33,9 @@ impl SNSClient {
         Self { url, client }
     }
 
-    async fn resolve_hex_address(
-        &self,
-        name: &str,
-        record: &str,
-    ) -> Result<String, Box<dyn Error + Send + Sync>> {
+    async fn resolve_hex_address(&self, name: &str, record: &str) -> Result<String, Box<dyn Error + Send + Sync>> {
         let url = format!("{}/record-v2/{}/{}", self.url, name, record);
-        let response = self
-            .client
-            .get(&url)
-            .send()
-            .await?
-            .json::<ResolveRecord>()
-            .await?;
+        let response = self.client.get(&url).send().await?.json::<ResolveRecord>().await?;
 
         if response.s != "ok" {
             return Err("error".to_string().into());
@@ -54,19 +44,9 @@ impl SNSClient {
         Ok(response.result.deserialized)
     }
 
-    async fn resolve_sol_address(
-        &self,
-        name: &str,
-        _chain: &Chain,
-    ) -> Result<String, Box<dyn Error + Send + Sync>> {
+    async fn resolve_sol_address(&self, name: &str, _chain: &Chain) -> Result<String, Box<dyn Error + Send + Sync>> {
         let url = format!("{}/resolve/{}", self.url, name);
-        let response = self
-            .client
-            .get(&url)
-            .send()
-            .await?
-            .json::<ResolveDomain>()
-            .await?;
+        let response = self.client.get(&url).send().await?.json::<ResolveDomain>().await?;
 
         if response.s != "ok" {
             return Err("error".to_string().into());
@@ -81,11 +61,7 @@ impl NameClient for SNSClient {
         NameProvider::Sns
     }
 
-    async fn resolve(
-        &self,
-        name: &str,
-        chain: Chain,
-    ) -> Result<String, Box<dyn Error + Send + Sync>> {
+    async fn resolve(&self, name: &str, chain: Chain) -> Result<String, Box<dyn Error + Send + Sync>> {
         match chain {
             Chain::Solana => {
                 return self.resolve_sol_address(name, &chain.clone()).await;

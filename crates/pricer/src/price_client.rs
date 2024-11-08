@@ -3,10 +3,7 @@ use primitives::{Asset, AssetDetails, AssetMarketPrice, AssetPrices, AssetScore}
 use redis::{AsyncCommands, RedisResult};
 use std::error::Error;
 use storage::{
-    models::{
-        FiatRate, Price,
-        PriceAsset, PriceCache,
-    },
+    models::{FiatRate, Price, PriceAsset, PriceCache},
     DatabaseClient,
 };
 

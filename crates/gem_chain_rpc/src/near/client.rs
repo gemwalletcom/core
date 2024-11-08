@@ -40,11 +40,7 @@ impl NearClient {
         Ok(block)
     }
 
-    async fn get_chunk(
-        &self,
-        block: i64,
-        shard_id: i64,
-    ) -> Result<Chunk, Box<dyn Error + Send + Sync>> {
+    async fn get_chunk(&self, block: i64, shard_id: i64) -> Result<Chunk, Box<dyn Error + Send + Sync>> {
         let mut params = ObjectParams::new();
         params.insert("block_id", block)?;
         params.insert("shard_id", shard_id)?;
@@ -52,11 +48,7 @@ impl NearClient {
         Ok(chunk)
     }
 
-    fn map_transaction(
-        &self,
-        header: BlockHeader,
-        transaction: super::model::Transaction,
-    ) -> Option<primitives::Transaction> {
+    fn map_transaction(&self, header: BlockHeader, transaction: super::model::Transaction) -> Option<primitives::Transaction> {
         if transaction.actions.len() == 1 || transaction.actions.len() == 2 {
             match &transaction.actions.last()? {
                 Action::Transfer { deposit } => {
@@ -98,28 +90,15 @@ impl ChainBlockProvider for NearClient {
         Ok(block.header.height)
     }
 
-    async fn get_transactions(
-        &self,
-        block_number: i64,
-    ) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
+    async fn get_transactions(&self, block_number: i64) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
         let block = self.get_block(block_number).await;
         match block {
             Ok(block) => {
-                let chunks = futures::future::try_join_all(
-                    block
-                        .chunks
-                        .into_iter()
-                        .map(|chunk| self.get_chunk(block.header.height, chunk.shard_id)),
-                )
-                .await?;
+                let chunks = futures::future::try_join_all(block.chunks.into_iter().map(|chunk| self.get_chunk(block.header.height, chunk.shard_id))).await?;
 
                 let transactions = chunks
                     .into_iter()
-                    .flat_map(|x| {
-                        x.transactions
-                            .into_iter()
-                            .flat_map(|x| self.map_transaction(block.header.clone(), x))
-                    })
+                    .flat_map(|x| x.transactions.into_iter().flat_map(|x| self.map_transaction(block.header.clone(), x)))
                     .collect();
                 Ok(transactions)
             }

@@ -36,19 +36,12 @@ impl NameClient for LensClient {
         NameProvider::Lens
     }
 
-    async fn resolve(
-        &self,
-        name: &str,
-        _chain: Chain,
-    ) -> Result<String, Box<dyn Error + Send + Sync>> {
+    async fn resolve(&self, name: &str, _chain: Chain) -> Result<String, Box<dyn Error + Send + Sync>> {
         let mut parts = name.split('.').collect::<Vec<&str>>();
         parts.reverse();
         let handle = parts.join("/");
 
-        let query = format!(
-            "query {{handleToAddress(request: {{handle: \"{}\" }} )}}",
-            handle
-        );
+        let query = format!("query {{handleToAddress(request: {{handle: \"{}\" }} )}}", handle);
         let query = serde_json::json!({
             "query": query,
         });

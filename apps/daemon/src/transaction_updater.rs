@@ -14,10 +14,14 @@ impl TransactionUpdater {
     }
     pub async fn update(&mut self) -> Result<HashMap<String, usize>, Box<dyn Error + Send + Sync>> {
         let addresses_result = self.database.get_transactions_addresses(5000, 5)?;
-        let subscriptions_exclude = addresses_result.clone().into_iter().map(|x| SubscriptionAddressExclude {
-            address: x.address,
-            chain: x.chain_id,
-        }).collect();
+        let subscriptions_exclude = addresses_result
+            .clone()
+            .into_iter()
+            .map(|x| SubscriptionAddressExclude {
+                address: x.address,
+                chain: x.chain_id,
+            })
+            .collect();
         let subscriptions_excluded_added = self.database.add_subscriptions_address_exclude(subscriptions_exclude)?;
 
         let addresses = addresses_result.clone().into_iter().map(|x| x.address).collect::<Vec<_>>();

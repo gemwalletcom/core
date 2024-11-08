@@ -9,12 +9,16 @@ mod models;
 mod orca;
 mod permit2_data;
 mod slippage;
+mod thorchain;
 mod uniswap;
+
 use models::*;
+use primitives::Chain;
 
 #[async_trait]
 pub trait GemSwapProvider: Send + Sync + Debug {
     fn name(&self) -> &'static str;
+    async fn supported_chains(&self) -> Result<Vec<Chain>, SwapperError>;
     async fn fetch_quote(&self, request: &SwapQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapQuote, SwapperError>;
     async fn fetch_quote_data(&self, quote: &SwapQuote, provider: Arc<dyn AlienProvider>, data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError>;
 }
@@ -31,7 +35,11 @@ impl GemSwapper {
     fn new(rpc_provider: Arc<dyn AlienProvider>) -> Self {
         Self {
             rpc_provider,
-            swappers: vec![Box::new(uniswap::UniswapV3::new()), Box::new(orca::Orca::default())],
+            swappers: vec![
+                Box::new(uniswap::UniswapV3::new()),
+                Box::new(thorchain::ThorChain::new()),
+                Box::new(orca::Orca::default()),
+            ],
         }
     }
 
