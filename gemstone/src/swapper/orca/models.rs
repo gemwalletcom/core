@@ -1,10 +1,12 @@
-use crate::debug_println;
+use super::WHIRLPOOL_CONFIG;
 use base64::{engine::general_purpose::STANDARD, Engine};
 use borsh::{BorshDeserialize, BorshSerialize};
 use gem_solana::pubkey::Pubkey;
 use serde::{Deserialize, Serialize};
+use std::str::FromStr;
 
 pub const NUM_REWARDS: usize = 3;
+pub const TICK_ARRAY_SIZE: usize = 88;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ProgramAccount {
@@ -26,13 +28,26 @@ pub struct ValueResult<T> {
 
 #[derive(Debug, Clone, BorshSerialize, BorshDeserialize)]
 pub struct FeeTier {
+    pub discriminator: [u8; 8],
     pub whirlpools_config: Pubkey,
     pub tick_spacing: u16,
     pub default_fee_rate: u16,
 }
 
+impl FeeTier {
+    pub fn new(tick_spacing: u16, default_fee_rate: u16) -> Self {
+        Self {
+            discriminator: [0; 8],
+            whirlpools_config: Pubkey::from_str(WHIRLPOOL_CONFIG).unwrap(),
+            tick_spacing,
+            default_fee_rate,
+        }
+    }
+}
+
 #[derive(Debug, Clone, BorshSerialize, BorshDeserialize)]
 pub struct WhirlpoolsConfig {
+    pub discriminator: [u8; 8],
     pub fee_authority: Pubkey,
     pub collect_protocol_fees_authority: Pubkey,
     pub reward_emissions_super_authority: Pubkey,
@@ -42,6 +57,7 @@ pub struct WhirlpoolsConfig {
 
 #[derive(Debug, Clone, BorshSerialize, BorshDeserialize)]
 pub struct Whirlpool {
+    pub discriminator: [u8; 8],
     pub whirlpools_config: Pubkey, // 32
     pub whirlpool_bump: [u8; 1],   // 1
 
@@ -98,14 +114,27 @@ pub struct WhirlpoolRewardInfo {
     pub growth_global_x64: u128,
 }
 
+#[derive(Debug, Clone, BorshSerialize, BorshDeserialize)]
+pub struct Tick {
+    pub initialized: bool,
+    pub liquidity_net: i128,
+    pub liquidity_gross: u128,
+    pub fee_growth_outside_a: u128,
+    pub fee_growth_outside_b: u128,
+    pub reward_growths_outside: [u128; 3],
+}
+
+#[derive(Debug, Clone, BorshSerialize, BorshDeserialize)]
+pub struct TickArray {
+    pub discriminator: [u8; 8],
+    pub start_tick_index: i32,
+    pub ticks: [Tick; TICK_ARRAY_SIZE],
+    pub whirlpool: Pubkey,
+}
+
 pub fn try_borsh_decode<T: BorshDeserialize>(base64_str: &str) -> Result<T, anyhow::Error> {
     let bytes = STANDARD.decode(base64_str)?;
-    debug_println!("try_borsh_decode bytes:{:?}", bytes.len());
-    if bytes.len() < 8 {
-        return Err(anyhow::anyhow!("invalid length"));
-    }
-    let data = &bytes[8..];
-    T::try_from_slice(data).map_err(|e| anyhow::anyhow!("borsh deserialize error: {:?}", e))
+    T::try_from_slice(&bytes).map_err(|e| anyhow::anyhow!("borsh deserialize error: {:?}", e))
 }
 
 #[cfg(test)]

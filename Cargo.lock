@@ -3311,6 +3311,7 @@ dependencies = [
  "gem_ton",
  "hex",
  "num-bigint 0.4.6",
+ "orca_whirlpools_core",
  "primitives",
  "serde",
  "serde_json",
@@ -5508,6 +5509,28 @@ dependencies = [
  "libc",
  "pkg-config",
  "vcpkg",
+]
+
+[[package]]
+name = "orca_whirlpools_core"
+version = "0.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3b53906b65e681b830dedaa1557337a47fcaae7f4aa96b84a272c8b46a5e5070"
+dependencies = [
+ "ethnum",
+ "libm",
+ "orca_whirlpools_macros",
+]
+
+[[package]]
+name = "orca_whirlpools_macros"
+version = "0.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a4ad17f053eaf610199304b61fa89eb3ce5fd3cc9224130e8e790a44b2e61215"
+dependencies = [
+ "proc-macro2 1.0.89",
+ "quote 1.0.37",
+ "syn 2.0.85",
 ]
 
 [[package]]

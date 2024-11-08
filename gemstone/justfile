@@ -55,7 +55,7 @@ build-ios: build-targets bindgen-swift assemble-frameworks xcframework cp-xcfram
 build-targets:
     #!/usr/bin/env bash
     echo "iOS deployment target ${DEPLOYMENT_TARGET}, BUILD_MODE_TARGET: ${BUILD_MODE_TARGET}"
-    IPHONEOS_DEPLOYMENT_TARGET=${DEPLOYMENT_TARGET} cargo build --timings --target aarch64-apple-ios-sim --target aarch64-apple-ios --target aarch64-apple-ios-macabi --${BUILD_MODE}
+    IPHONEOS_DEPLOYMENT_TARGET=${DEPLOYMENT_TARGET} cargo build --target aarch64-apple-ios-sim --target aarch64-apple-ios --target aarch64-apple-ios-macabi --${BUILD_MODE}
 
 bindgen-swift:
     #!/usr/bin/env bash

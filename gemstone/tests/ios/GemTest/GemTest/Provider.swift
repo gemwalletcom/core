@@ -11,7 +11,9 @@ public actor NativeProvider {
         self.nodeConfig = [
             "ethereum": URL(string: "https://eth.llamarpc.com")!,
             "optimism": URL(string: "https://optimism.llamarpc.com")!,
-            "solana": URL(string: "https://api.mainnet-beta.solana.com/")!
+            "thorchain": URL(string: "https://thornode.ninerealms.com")!,
+            "solana": URL(string: "https://mainnet.helius-rpc.com/?api-key=cdbe907b-0da3-4871-ba01-06a1ecda3a3a")!
+
         ]
         self.session = session
     }
@@ -19,7 +21,10 @@ public actor NativeProvider {
 
 extension NativeProvider: AlienProvider {
     nonisolated public func getEndpoint(chain: Chain) throws -> String {
-        return nodeConfig[chain]!.absoluteString
+        guard let url = nodeConfig[chain] else {
+            throw AlienError.RequestError(msg: "\(chain) is not supported.")
+        }
+        return url.absoluteString
     }
 
     public func request(target: Gemstone.AlienTarget) async throws -> Data {
@@ -38,12 +43,12 @@ extension NativeProvider: AlienProvider {
 
             for target in targets {
                 group.addTask {
-                    print("==> handle request:\n\(target)")
+                    print("==> handle request: \(target)")
                     let (data, response) = try await self.session.data(for: target.asRequest())
                     if (response as? HTTPURLResponse)?.statusCode != 200 {
                         throw AlienError.ResponseError(msg: "invalid response: \(response)")
                     }
-                    print("<== response:\n\(String(decoding: data, as: UTF8.self))")
+                    print("<== response size: \(data.count)")
                     return data
                 }
             }
