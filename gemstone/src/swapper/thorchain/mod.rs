@@ -25,7 +25,7 @@ impl ThorChain {
 
     fn data(&self, chain: Chain, memo: String) -> String {
         match chain {
-            Chain::Thorchain | Chain::Litecoin | Chain::Doge | Chain::Bitcoin => memo,
+            Chain::Thorchain | Chain::Litecoin | Chain::Doge | Chain::Bitcoin | Chain::Cosmos => memo,
             _ => hex::encode(memo.as_bytes()),
         }
     }
