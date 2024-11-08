@@ -19,15 +19,8 @@ impl XRPClient {
         Self { url, client }
     }
 
-    pub fn map_transaction(
-        &self,
-        transaction: super::model::Transaction,
-        block_number: i64,
-        block_timestamp: i64,
-    ) -> Option<primitives::Transaction> {
-        if transaction.transaction_type == "Payment"
-            && transaction.memos.unwrap_or_default().is_empty()
-        {
+    pub fn map_transaction(&self, transaction: super::model::Transaction, block_number: i64, block_timestamp: i64) -> Option<primitives::Transaction> {
+        if transaction.transaction_type == "Payment" && transaction.memos.unwrap_or_default().is_empty() {
             let amount = transaction.amount?;
             match amount {
                 // system transfer
@@ -86,10 +79,7 @@ impl XRPClient {
         Ok(response.result)
     }
 
-    pub async fn get_block_transactions(
-        &self,
-        block_number: i64,
-    ) -> Result<Ledger, Box<dyn Error + Send + Sync>> {
+    pub async fn get_block_transactions(&self, block_number: i64) -> Result<Ledger, Box<dyn Error + Send + Sync>> {
         let params = json!(
             {
                 "method": "ledger",
@@ -126,10 +116,7 @@ impl ChainBlockProvider for XRPClient {
         Ok(ledger.ledger_current_index)
     }
 
-    async fn get_transactions(
-        &self,
-        block_number: i64,
-    ) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Send + Sync>> {
+    async fn get_transactions(&self, block_number: i64) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Send + Sync>> {
         let block = self.get_block_transactions(block_number).await?;
         let block_timestamp = 946684800 + block.close_time;
         let transactions = block.transactions;

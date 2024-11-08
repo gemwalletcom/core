@@ -20,19 +20,12 @@ pub async fn get_transactions_by_device_id(
         asset_id,
         from_timestamp,
     };
-    let transactions = client
-        .lock()
-        .await
-        .get_transactions_by_device_id(device_id, options)
-        .unwrap();
+    let transactions = client.lock().await.get_transactions_by_device_id(device_id, options).unwrap();
     Json(transactions)
 }
 
 #[get("/transactions/by_hash/<hash>")]
-pub async fn get_transactions_by_hash(
-    hash: &str,
-    client: &State<Mutex<TransactionsClient>>,
-) -> Json<Vec<Transaction>> {
+pub async fn get_transactions_by_hash(hash: &str, client: &State<Mutex<TransactionsClient>>) -> Json<Vec<Transaction>> {
     let transactions = client.lock().await.get_transactions_by_hash(hash).unwrap();
     Json(transactions)
 }

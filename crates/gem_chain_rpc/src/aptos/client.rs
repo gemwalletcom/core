@@ -19,11 +19,7 @@ impl AptosClient {
         Self { url, client }
     }
 
-    pub fn map_transaction(
-        &self,
-        transaction: super::model::Transaction,
-        block_number: i64,
-    ) -> Option<primitives::Transaction> {
+    pub fn map_transaction(&self, transaction: super::model::Transaction, block_number: i64) -> Option<primitives::Transaction> {
         let events = transaction.clone().events.unwrap_or_default();
 
         if transaction.transaction_type == "user_transaction" && events.len() <= 4 {
@@ -37,11 +33,8 @@ impl AptosClient {
             };
             let to = &deposit_event.guid.account_address;
             let value = &deposit_event.get_amount()?;
-            let gas_used = BigUint::from_str(transaction.gas_used.unwrap_or_default().as_str())
-                .unwrap_or_default();
-            let gas_unit_price =
-                BigUint::from_str(transaction.gas_unit_price.unwrap_or_default().as_str())
-                    .unwrap_or_default();
+            let gas_used = BigUint::from_str(transaction.gas_used.unwrap_or_default().as_str()).unwrap_or_default();
+            let gas_unit_price = BigUint::from_str(transaction.gas_unit_price.unwrap_or_default().as_str()).unwrap_or_default();
             let fee = gas_used * gas_unit_price;
 
             let transaction = primitives::Transaction::new(
@@ -72,14 +65,8 @@ impl AptosClient {
         Ok(response)
     }
 
-    pub async fn get_block_transactions(
-        &self,
-        block_number: i64,
-    ) -> Result<Block, Box<dyn Error + Send + Sync>> {
-        let url = format!(
-            "{}/v1/blocks/by_height/{}?with_transactions=true",
-            self.url, block_number
-        );
+    pub async fn get_block_transactions(&self, block_number: i64) -> Result<Block, Box<dyn Error + Send + Sync>> {
+        let url = format!("{}/v1/blocks/by_height/{}?with_transactions=true", self.url, block_number);
         let response = self.client.get(url).send().await?.json::<Block>().await?;
 
         Ok(response)
@@ -97,14 +84,8 @@ impl ChainBlockProvider for AptosClient {
         Ok(ledger.block_height.parse::<i64>().unwrap_or_default())
     }
 
-    async fn get_transactions(
-        &self,
-        block_number: i64,
-    ) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Send + Sync>> {
-        let transactions = self
-            .get_block_transactions(block_number)
-            .await?
-            .transactions;
+    async fn get_transactions(&self, block_number: i64) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Send + Sync>> {
+        let transactions = self.get_block_transactions(block_number).await?.transactions;
         let transactions = transactions
             .into_iter()
             .flat_map(|x| self.map_transaction(x, block_number))

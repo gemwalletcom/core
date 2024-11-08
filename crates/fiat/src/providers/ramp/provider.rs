@@ -1,6 +1,4 @@
-use primitives::{
-    AssetId, FiatBuyRequest, FiatProviderName, FiatQuote, FiatTransaction, FiatTransactionStatus,
-};
+use primitives::{AssetId, FiatBuyRequest, FiatProviderName, FiatQuote, FiatTransaction, FiatTransactionStatus};
 use std::error::Error;
 
 use crate::{
@@ -21,26 +19,15 @@ impl FiatProvider for RampClient {
         Self::NAME
     }
 
-    async fn get_buy_quote(
-        &self,
-        request: FiatBuyRequest,
-        request_map: FiatMapping,
-    ) -> Result<FiatQuote, Box<dyn std::error::Error + Send + Sync>> {
+    async fn get_buy_quote(&self, request: FiatBuyRequest, request_map: FiatMapping) -> Result<FiatQuote, Box<dyn std::error::Error + Send + Sync>> {
         let assets = self
             .get_supported_assets(request.clone().fiat_currency, request.clone().ip_address)
             .await?
             .assets;
 
-        let crypto_asset_symbol = format!(
-            "{}_{}",
-            request_map.network.unwrap_or_default(),
-            request_map.symbol,
-        );
+        let crypto_asset_symbol = format!("{}_{}", request_map.network.unwrap_or_default(), request_map.symbol,);
 
-        if !assets
-            .iter()
-            .any(|x| x.crypto_asset_symbol() == crypto_asset_symbol)
-        {
+        if !assets.iter().any(|x| x.crypto_asset_symbol() == crypto_asset_symbol) {
             return Err("asset not supported".into());
         }
 
@@ -58,9 +45,7 @@ impl FiatProvider for RampClient {
         Err(Box::from("not supported"))
     }
 
-    async fn get_assets(
-        &self,
-    ) -> Result<Vec<FiatProviderAsset>, Box<dyn std::error::Error + Send + Sync>> {
+    async fn get_assets(&self) -> Result<Vec<FiatProviderAsset>, Box<dyn std::error::Error + Send + Sync>> {
         let assets = self
             .get_supported_assets("USD".to_string(), "127.0.0.0".to_string())
             .await?
@@ -72,10 +57,7 @@ impl FiatProvider for RampClient {
     }
 
     // full transaction: https://docs.ramp.network/webhooks#example-using-expressjs
-    async fn webhook(
-        &self,
-        data: serde_json::Value,
-    ) -> Result<FiatTransaction, Box<dyn std::error::Error + Send + Sync>> {
+    async fn webhook(&self, data: serde_json::Value) -> Result<FiatTransaction, Box<dyn std::error::Error + Send + Sync>> {
         let payload = serde_json::from_value::<Webhook>(data)?.purchase;
         let asset = Self::map_asset(payload.asset.clone()).unwrap();
         let asset_id = AssetId::from(asset.chain.unwrap(), asset.token_id);
@@ -83,9 +65,7 @@ impl FiatProvider for RampClient {
         // https://docs.ramp.network/sdk-reference#ramp-sale-transaction-object
         let status = match payload.status.as_str() {
             "CREATED" | "INITIALIZED" | "FIAT_PENDING" => FiatTransactionStatus::Pending,
-            "RETURNED" | "EXPIRED" | "CANCELLED" | "REVIEW_REJECTED" | "FIAT_RETURNED" => {
-                FiatTransactionStatus::Failed
-            }
+            "RETURNED" | "EXPIRED" | "CANCELLED" | "REVIEW_REJECTED" | "FIAT_RETURNED" => FiatTransactionStatus::Failed,
             "RELEASED" => FiatTransactionStatus::Complete,
             _ => FiatTransactionStatus::Unknown,
         };

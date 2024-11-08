@@ -35,19 +35,9 @@ impl NameClient for TONClient {
         NameProvider::Ton
     }
 
-    async fn resolve(
-        &self,
-        name: &str,
-        _chain: Chain,
-    ) -> Result<String, Box<dyn Error + Send + Sync>> {
+    async fn resolve(&self, name: &str, _chain: Chain) -> Result<String, Box<dyn Error + Send + Sync>> {
         let url = format!("{}/v2/dns/{}/resolve", self.url, name);
-        let response = self
-            .client
-            .get(&url)
-            .send()
-            .await?
-            .json::<ResolveResponse>()
-            .await?;
+        let response = self.client.get(&url).send().await?.json::<ResolveResponse>().await?;
         // always encode as Bounceable address
         ton_codec::TonCodec::encode(response.wallet.address.as_bytes().to_vec())
     }

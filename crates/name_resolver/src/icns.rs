@@ -49,11 +49,7 @@ impl NameClient for IcnsClient {
         NameProvider::Icns
     }
 
-    async fn resolve(
-        &self,
-        name: &str,
-        chain: Chain,
-    ) -> Result<String, Box<dyn Error + Send + Sync>> {
+    async fn resolve(&self, name: &str, chain: Chain) -> Result<String, Box<dyn Error + Send + Sync>> {
         let suffix = name.split('.').last().unwrap_or_default();
         if !DOMAIN_MAP.contains_key(suffix) {
             return Err(format!("unsupported domain: {}", suffix).into());
@@ -72,19 +68,8 @@ impl NameClient for IcnsClient {
         });
 
         let b64 = general_purpose::STANDARD.encode(query.to_string());
-        let url = format!(
-            "{}/cosmwasm/wasm/v1/contract/{}/smart/{}",
-            self.api_url, RESOLVER, b64
-        );
-        let address = self
-            .client
-            .get(&url)
-            .send()
-            .await?
-            .json::<Data<Record>>()
-            .await?
-            .data
-            .bech32_address;
+        let url = format!("{}/cosmwasm/wasm/v1/contract/{}/smart/{}", self.api_url, RESOLVER, b64);
+        let address = self.client.get(&url).send().await?.json::<Data<Record>>().await?.data.bech32_address;
 
         Ok(address)
     }

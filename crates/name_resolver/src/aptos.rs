@@ -23,13 +23,7 @@ impl AptosClient {
 
     async fn resolve_name(&self, name: &str) -> Result<String, Box<dyn Error + Send + Sync>> {
         let url = format!("{}/api/mainnet/v1/address/{}", self.url, name);
-        let response = self
-            .client
-            .get(&url)
-            .send()
-            .await?
-            .json::<ResolveName>()
-            .await?;
+        let response = self.client.get(&url).send().await?.json::<ResolveName>().await?;
 
         Ok(response.address)
     }
@@ -41,11 +35,7 @@ impl NameClient for AptosClient {
         NameProvider::Aptos
     }
 
-    async fn resolve(
-        &self,
-        name: &str,
-        _chain: Chain,
-    ) -> Result<String, Box<dyn Error + Send + Sync>> {
+    async fn resolve(&self, name: &str, _chain: Chain) -> Result<String, Box<dyn Error + Send + Sync>> {
         let address = self.resolve_name(name).await?;
         Ok(address)
     }

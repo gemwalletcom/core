@@ -53,9 +53,6 @@ mod tests {
         let bytes2 = TonCodec::decode(raw).unwrap();
 
         assert_eq!(bytes, bytes2);
-        assert_eq!(
-            hex::encode(bytes),
-            "8e874b7ad9bbebbfc48810b8939c98f50580246f19982040dbcb253c4c3daf78"
-        );
+        assert_eq!(hex::encode(bytes), "8e874b7ad9bbebbfc48810b8939c98f50580246f19982040dbcb253c4c3daf78");
     }
 }

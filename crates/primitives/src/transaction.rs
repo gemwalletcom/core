@@ -1,6 +1,5 @@
 use crate::{
-    asset_id::AssetId, transaction_direction::TransactionDirection,
-    transaction_state::TransactionState, transaction_type::TransactionType,
+    asset_id::AssetId, transaction_direction::TransactionDirection, transaction_state::TransactionState, transaction_type::TransactionType,
     transaction_utxo::TransactionInput, Chain, TransactionSwapMetadata,
 };
 
@@ -148,10 +147,7 @@ impl Transaction {
     }
 
     pub fn output_addresses(&self) -> Vec<String> {
-        self.utxo_outputs
-            .iter()
-            .map(|x| x.address.clone())
-            .collect()
+        self.utxo_outputs.iter().map(|x| x.address.clone()).collect()
     }
 
     pub fn addresses(&self) -> Vec<String> {
@@ -205,27 +201,14 @@ impl Transaction {
 
         match direction {
             TransactionDirection::Incoming => {
-                let addrs: Vec<String> = outputs_addresses
-                    .clone()
-                    .into_iter()
-                    .filter(|x| user_set.contains(x))
-                    .collect();
+                let addrs: Vec<String> = outputs_addresses.clone().into_iter().filter(|x| user_set.contains(x)).collect();
                 to = addrs.first().unwrap().clone();
                 value = Self::utxo_calculate_value(&self.utxo_outputs, addresses).to_string();
             }
             TransactionDirection::Outgoing => {
-                let filtered: Vec<String> = outputs_addresses
-                    .clone()
-                    .into_iter()
-                    .filter(|x| !user_set.contains(x))
-                    .collect();
+                let filtered: Vec<String> = outputs_addresses.clone().into_iter().filter(|x| !user_set.contains(x)).collect();
                 to = filtered.first().unwrap().clone();
-                let vals: Vec<TransactionInput> = self
-                    .utxo_outputs
-                    .clone()
-                    .into_iter()
-                    .filter(|x| x.address == to)
-                    .collect();
+                let vals: Vec<TransactionInput> = self.utxo_outputs.clone().into_iter().filter(|x| x.address == to).collect();
                 value = vals.first().unwrap().value.clone();
             }
             TransactionDirection::SelfTransfer => {
@@ -265,11 +248,7 @@ impl Transaction {
             .filter(|x| addresses.contains(&x.address))
             .collect::<Vec<TransactionInput>>();
 
-        values
-            .clone()
-            .into_iter()
-            .map(|x| x.value.parse::<i64>().unwrap())
-            .sum::<i64>()
+        values.clone().into_iter().map(|x| x.value.parse::<i64>().unwrap()).sum::<i64>()
     }
 
     pub fn asset_ids(&self) -> Vec<String> {
@@ -278,15 +257,8 @@ impl Transaction {
             TransactionType::Swap => self
                 .metadata
                 .clone()
-                .and_then(|metadata| {
-                    serde_json::from_value::<TransactionSwapMetadata>(metadata).ok()
-                })
-                .map(|metadata| {
-                    vec![
-                        metadata.from_asset.to_string(),
-                        metadata.to_asset.to_string(),
-                    ]
-                })
+                .and_then(|metadata| serde_json::from_value::<TransactionSwapMetadata>(metadata).ok())
+                .map(|metadata| vec![metadata.from_asset.to_string(), metadata.to_asset.to_string()])
                 .unwrap_or_default(),
             TransactionType::TokenApproval
             | TransactionType::StakeDelegate

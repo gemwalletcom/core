@@ -4,9 +4,7 @@ use crate::{
 };
 use async_trait::async_trait;
 use primitives::fiat_quote_request::FiatSellRequest;
-use primitives::{
-    AssetId, FiatBuyRequest, FiatProviderName, FiatQuote, FiatTransaction, FiatTransactionStatus,
-};
+use primitives::{AssetId, FiatBuyRequest, FiatProviderName, FiatQuote, FiatTransaction, FiatTransactionStatus};
 use std::error::Error;
 
 use super::{
@@ -20,14 +18,8 @@ impl FiatProvider for BanxaClient {
         Self::NAME
     }
 
-    async fn get_buy_quote(
-        &self,
-        request: FiatBuyRequest,
-        request_map: FiatMapping,
-    ) -> Result<FiatQuote, Box<dyn std::error::Error + Send + Sync>> {
-        let prices = self
-            .get_prices(&request.fiat_currency, &request_map.symbol)
-            .await?;
+    async fn get_buy_quote(&self, request: FiatBuyRequest, request_map: FiatMapping) -> Result<FiatQuote, Box<dyn std::error::Error + Send + Sync>> {
+        let prices = self.get_prices(&request.fiat_currency, &request_map.symbol).await?;
         let price = prices.prices.first().cloned().ok_or("No price available")?;
 
         Ok(self.get_fiat_quote(request, request_map, price))
@@ -37,9 +29,7 @@ impl FiatProvider for BanxaClient {
         Err(Box::from("not supported"))
     }
 
-    async fn get_assets(
-        &self,
-    ) -> Result<Vec<FiatProviderAsset>, Box<dyn std::error::Error + Send + Sync>> {
+    async fn get_assets(&self) -> Result<Vec<FiatProviderAsset>, Box<dyn std::error::Error + Send + Sync>> {
         let assets = self
             .get_assets()
             .await?
@@ -50,17 +40,13 @@ impl FiatProvider for BanxaClient {
     }
 
     // https://docs.banxa.com/docs/webhooks
-    async fn webhook(
-        &self,
-        data: serde_json::Value,
-    ) -> Result<FiatTransaction, Box<dyn std::error::Error + Send + Sync>> {
+    async fn webhook(&self, data: serde_json::Value) -> Result<FiatTransaction, Box<dyn std::error::Error + Send + Sync>> {
         let data = serde_json::from_value::<Webhook>(data)?;
         let order = self.get_order(&data.order_id).await?;
 
         // https://docs.banxa.com/docs/order-status
         let status = match data.status.as_str() {
-            "pendingPayment" | "waitingPayment" | "paymentReceived" | "inProgress"
-            | "coinTransferred" | "cryptoTransferred" | "extraVerification" => {
+            "pendingPayment" | "waitingPayment" | "paymentReceived" | "inProgress" | "coinTransferred" | "cryptoTransferred" | "extraVerification" => {
                 FiatTransactionStatus::Pending
             }
             "cancelled" | "declined" | "expired" | "refunded" => FiatTransactionStatus::Failed,

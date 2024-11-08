@@ -8,9 +8,7 @@ use std::error::Error;
 
 use super::client::MoonPayClient;
 use primitives::fiat_quote_request::FiatSellRequest;
-use primitives::{
-    AssetId, FiatBuyRequest, FiatProviderName, FiatQuote, FiatTransaction, FiatTransactionStatus,
-};
+use primitives::{AssetId, FiatBuyRequest, FiatProviderName, FiatQuote, FiatTransaction, FiatTransactionStatus};
 
 #[async_trait]
 impl FiatProvider for MoonPayClient {
@@ -18,22 +16,14 @@ impl FiatProvider for MoonPayClient {
         Self::NAME
     }
 
-    async fn get_buy_quote(
-        &self,
-        request: FiatBuyRequest,
-        request_map: FiatMapping,
-    ) -> Result<FiatQuote, Box<dyn std::error::Error + Send + Sync>> {
+    async fn get_buy_quote(&self, request: FiatBuyRequest, request_map: FiatMapping) -> Result<FiatQuote, Box<dyn std::error::Error + Send + Sync>> {
         let ip_address_check = self.get_ip_address(request.clone().ip_address).await?;
         if !ip_address_check.is_allowed && !ip_address_check.is_buy_allowed {
             return Err("purchase is not allowed".into());
         }
 
         let quote = self
-            .get_buy_quote(
-                request_map.symbol.to_lowercase(),
-                request.fiat_currency.to_lowercase(),
-                request.fiat_amount,
-            )
+            .get_buy_quote(request_map.symbol.to_lowercase(), request.fiat_currency.to_lowercase(), request.fiat_amount)
             .await?;
 
         Ok(self.get_fiat_quote(request, quote))
@@ -51,9 +41,7 @@ impl FiatProvider for MoonPayClient {
         Err(Box::from("not supported"))
     }
 
-    async fn get_assets(
-        &self,
-    ) -> Result<Vec<FiatProviderAsset>, Box<dyn std::error::Error + Send + Sync>> {
+    async fn get_assets(&self) -> Result<Vec<FiatProviderAsset>, Box<dyn std::error::Error + Send + Sync>> {
         let assets = self
             .get_assets()
             .await?
@@ -64,10 +52,7 @@ impl FiatProvider for MoonPayClient {
     }
 
     // full transaction: https://dev.moonpay.com/reference/reference-webhooks-buy
-    async fn webhook(
-        &self,
-        data: serde_json::Value,
-    ) -> Result<FiatTransaction, Box<dyn std::error::Error + Send + Sync>> {
+    async fn webhook(&self, data: serde_json::Value) -> Result<FiatTransaction, Box<dyn std::error::Error + Send + Sync>> {
         let payload = serde_json::from_value::<Data<Webhook>>(data)?;
         let asset = Self::map_asset(payload.data.currency).unwrap();
         let asset_id = AssetId::from(asset.chain.unwrap(), asset.token_id);

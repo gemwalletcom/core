@@ -34,10 +34,7 @@ mod tests {
         );
 
         assert_eq!(
-            ImageFormatter::get_asset_url_for_asset_id(
-                URL,
-                AssetId::from(Chain::Ethereum, Some(String::from("1")))
-            ),
+            ImageFormatter::get_asset_url_for_asset_id(URL, AssetId::from(Chain::Ethereum, Some(String::from("1")))),
             "https://example.com/blockchains/ethereum/assets/1/logo.png"
         );
     }

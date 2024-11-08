@@ -15,7 +15,7 @@ use std::sync::Arc;
 use std::time::Duration;
 use storage::ClickhouseClient;
 
-pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output=()> + Send>>> {
+pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + Send>>> {
     let coingecko_client = CoinGeckoClient::new(&settings.coingecko.key.secret);
 
     let clean_updated_assets = run_job("Clean outdated assets", Duration::from_secs(86400), {
@@ -84,7 +84,6 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output=()> + Sen
             async move { charts_updater.update_charts().await }
         }
     });
-
 
     let update_assets = run_job("Update assets assets", Duration::from_secs(86400), {
         let settings = settings.clone();

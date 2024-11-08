@@ -34,10 +34,7 @@ impl<T: ChainBlockProvider + ChainTokenDataProvider> ChainProvider for T {}
 pub trait ChainBlockProvider: Send + Sync {
     fn get_chain(&self) -> Chain;
     async fn get_latest_block(&self) -> Result<i64, Box<dyn std::error::Error + Send + Sync>>;
-    async fn get_transactions(
-        &self,
-        block_number: i64,
-    ) -> Result<Vec<Transaction>, Box<dyn std::error::Error + Send + Sync>>;
+    async fn get_transactions(&self, block_number: i64) -> Result<Vec<Transaction>, Box<dyn std::error::Error + Send + Sync>>;
 }
 
 #[async_trait]
@@ -58,14 +55,10 @@ where
         (**self).get_latest_block().await
     }
 
-    async fn get_transactions(
-        &self,
-        block_number: i64,
-    ) -> Result<Vec<Transaction>, Box<dyn std::error::Error + Send + Sync>> {
+    async fn get_transactions(&self, block_number: i64) -> Result<Vec<Transaction>, Box<dyn std::error::Error + Send + Sync>> {
         (**self).get_transactions(block_number).await
     }
 }
-
 
 #[async_trait]
 impl<T: Send + Sync> ChainTokenDataProvider for Arc<T>
@@ -76,4 +69,3 @@ where
         (**self).get_token_data(chain, token_id).await
     }
 }
-

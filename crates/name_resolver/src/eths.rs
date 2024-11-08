@@ -30,11 +30,7 @@ impl NameClient for EthsClient {
         NameProvider::Tree
     }
 
-    async fn resolve(
-        &self,
-        name: &str,
-        _chain: Chain,
-    ) -> Result<String, Box<dyn Error + Send + Sync>> {
+    async fn resolve(&self, name: &str, _chain: Chain) -> Result<String, Box<dyn Error + Send + Sync>> {
         let url = format!("{}/resolve/{}", self.api_url, name);
         let record: ResolveRecord = self.client.get(&url).send().await?.json().await?;
         let address = record.owner;

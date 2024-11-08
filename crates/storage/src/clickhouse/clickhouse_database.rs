@@ -1,6 +1,6 @@
+use crate::models::{CreateChart, GetChart};
 use clickhouse::{error::Result, Client, Row};
 use serde::Serialize;
-use crate::models::{CreateChart, GetChart};
 
 pub struct ClickhouseClient {
     client: Client,

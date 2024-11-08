@@ -59,43 +59,22 @@ fn main() {
             let path: &str = &directory_paths_capitalized.pop().unwrap(); //.as_str();
                                                                           //FIX: Change extension for kotlin
             let ios_new_file_name = file_name(path, LANGUAGE_SWIFT);
-            let ios_new_path = format!(
-                "{}/{}",
-                directory_paths_capitalized.clone().join("/"),
-                ios_new_file_name.as_str()
-            );
+            let ios_new_path = format!("{}/{}", directory_paths_capitalized.clone().join("/"), ios_new_file_name.as_str());
 
             // TODO: Add name space and all folders to lower case.
             // TODO: Add to each file package core.blockshain.someblockchain.modelfilename
             // TODO: Put all file to root package core???
-            let directory_paths_lowercased: Vec<String> = directory_paths_capitalized
-                .iter()
-                .map(|x| x.to_lowercase())
-                .collect();
+            let directory_paths_lowercased: Vec<String> = directory_paths_capitalized.iter().map(|x| x.to_lowercase()).collect();
             let kt_new_file_name = file_name(path, LANG_KOTLIN_ETX);
-            let kt_new_path = format!(
-                "{}/{}",
-                directory_paths_lowercased.clone().join("/"),
-                kt_new_file_name
-            );
+            let kt_new_path = format!("{}/{}", directory_paths_lowercased.clone().join("/"), kt_new_file_name);
             if ignored_files.contains(directory_paths.last().unwrap()) {
                 continue;
             }
             //FIX: change input/output file for kotlin
             let input_path = format!("./{}/src/{}", vec[0], directory_paths.join("/"));
 
-            let ios_output_path = output_path(
-                Platform::IOS,
-                &platform_directory_path,
-                str_capitlize(module_name).as_str(),
-                ios_new_path,
-            );
-            let android_output_path = output_path(
-                Platform::Android,
-                &platform_directory_path,
-                module_name.to_lowercase().as_str(),
-                kt_new_path,
-            );
+            let ios_output_path = output_path(Platform::IOS, &platform_directory_path, str_capitlize(module_name).as_str(), ios_new_path);
+            let android_output_path = output_path(Platform::Android, &platform_directory_path, module_name.to_lowercase().as_str(), kt_new_path);
             let directory_package = directory_paths_lowercased.clone().join(".");
             let android_package_name = format!(
                 "{}.{}{}",
@@ -114,12 +93,7 @@ fn main() {
                     //     "Generate file for iOS: {}, output: {}",
                     //     input_path, ios_output_path
                     // );
-                    generate_files(
-                        LANGUAGE_SWIFT,
-                        input_path.as_str(),
-                        ios_output_path.as_str(),
-                        "",
-                    );
+                    generate_files(LANGUAGE_SWIFT, input_path.as_str(), ios_output_path.as_str(), "");
                 }
                 Platform::Android => {
                     // println!(
@@ -148,11 +122,7 @@ fn output_path(platform: Platform, directory: &str, module_name: &str, path: Str
 fn file_name(name: &str, file_extension: &str) -> String {
     let split: Vec<&str> = name.split('.').collect();
     let new_split: Vec<&str> = split[0].split('_').collect();
-    let new_name = new_split
-        .iter()
-        .map(|&x| str_capitlize(x))
-        .collect::<Vec<_>>()
-        .join("");
+    let new_name = new_split.iter().map(|&x| str_capitlize(x)).collect::<Vec<_>>().join("");
     format!("{}.{}", new_name, file_extension)
 }
 
@@ -206,10 +176,7 @@ mod tests {
     #[test]
     fn test_file_name() {
         assert_eq!(file_name("token.rs", LANGUAGE_SWIFT), "Token.swift");
-        assert_eq!(
-            file_name("token_type.rs", LANGUAGE_SWIFT),
-            "TokenType.swift"
-        );
+        assert_eq!(file_name("token_type.rs", LANGUAGE_SWIFT), "TokenType.swift");
     }
 
     #[test]

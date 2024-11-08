@@ -24,37 +24,19 @@ impl BitcoinClient {
         Ok(self.client.get(url).send().await?.json::<Status>().await?)
     }
 
-    pub async fn get_block(
-        &self,
-        block_number: i64,
-        page: usize,
-        limit: usize,
-    ) -> Result<Block, Box<dyn Error + Send + Sync>> {
-        let url = format!(
-            "{}/api/v2/block/{}?page={}&limit={}",
-            self.url, block_number, page, limit
-        );
+    pub async fn get_block(&self, block_number: i64, page: usize, limit: usize) -> Result<Block, Box<dyn Error + Send + Sync>> {
+        let url = format!("{}/api/v2/block/{}?page={}&limit={}", self.url, block_number, page, limit);
         let block: Block = self.client.get(url).send().await?.json::<Block>().await?;
         Ok(block)
     }
 
-    pub fn map_transaction(
-        chain: Chain,
-        transaction: &super::model::Transaction,
-        _block_number: i64,
-    ) -> Option<primitives::Transaction> {
+    pub fn map_transaction(chain: Chain, transaction: &super::model::Transaction, _block_number: i64) -> Option<primitives::Transaction> {
         let inputs: Vec<TransactionInput> = transaction
             .vin
             .iter()
             .filter(|i| i.is_address)
             .map(|input| TransactionInput {
-                address: input
-                    .addresses
-                    .clone()
-                    .unwrap()
-                    .first()
-                    .unwrap()
-                    .to_string(),
+                address: input.addresses.clone().unwrap().first().unwrap().to_string(),
                 value: input.value.clone(),
             })
             .collect();
@@ -64,13 +46,7 @@ impl BitcoinClient {
             .iter()
             .filter(|o| o.is_address)
             .map(|output| TransactionInput {
-                address: output
-                    .addresses
-                    .clone()
-                    .unwrap_or_default()
-                    .first()
-                    .unwrap()
-                    .to_string(),
+                address: output.addresses.clone().unwrap_or_default().first().unwrap().to_string(),
                 value: output.value.clone(),
             })
             .collect();
@@ -116,10 +92,7 @@ impl ChainBlockProvider for BitcoinClient {
         Ok(status.blockbook.best_height)
     }
 
-    async fn get_transactions(
-        &self,
-        block_number: i64,
-    ) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Send + Sync>> {
+    async fn get_transactions(&self, block_number: i64) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Send + Sync>> {
         let mut page: usize = 1;
         let limit: usize = 20;
         let mut transactions: Vec<Transaction> = Vec::new();
@@ -154,8 +127,7 @@ mod tests {
 
         let file_path = concat!(env!("CARGO_MANIFEST_DIR"), "/testdata/bitcoin/808497.json");
         let file = std::fs::File::open(file_path).expect("file should open read only");
-        let json: serde_json::Value =
-            serde_json::from_reader(file).expect("file should be proper JSON");
+        let json: serde_json::Value = serde_json::from_reader(file).expect("file should be proper JSON");
 
         // Test decoding json into struct
         let block: super::Block = serde_json::from_value(json).expect("Decoded into Block");

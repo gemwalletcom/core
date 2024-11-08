@@ -49,19 +49,12 @@ pub fn lido_encode_submit(referral: String) -> Result<Vec<u8>, GemstoneError> {
 }
 
 #[uniffi::export]
-pub fn lido_encode_request_withdrawals(
-    amounts: Vec<String>,
-    owner: String,
-    permit: ERC2612Permit,
-) -> Result<Vec<u8>, GemstoneError> {
-    lido::encode_request_withdrawals_with_permit(amounts, &owner, &permit.into())
-        .map_err(GemstoneError::from)
+pub fn lido_encode_request_withdrawals(amounts: Vec<String>, owner: String, permit: ERC2612Permit) -> Result<Vec<u8>, GemstoneError> {
+    lido::encode_request_withdrawals_with_permit(amounts, &owner, &permit.into()).map_err(GemstoneError::from)
 }
 
 #[uniffi::export]
-pub fn lido_decode_request_withdrawals_return(
-    result: Vec<u8>,
-) -> Result<Vec<String>, GemstoneError> {
+pub fn lido_decode_request_withdrawals_return(result: Vec<u8>) -> Result<Vec<String>, GemstoneError> {
     lido::decode_request_withdrawals_return(&result).map_err(GemstoneError::from)
 }
 
@@ -86,9 +79,7 @@ pub fn lido_encode_withdrawal_statuses(request_ids: Vec<String>) -> Result<Vec<u
 }
 
 #[uniffi::export]
-pub fn lido_decode_get_withdrawal_statuses(
-    result: Vec<u8>,
-) -> Result<Vec<LidoWithdrawalRequest>, GemstoneError> {
+pub fn lido_decode_get_withdrawal_statuses(result: Vec<u8>) -> Result<Vec<LidoWithdrawalRequest>, GemstoneError> {
     lido::decode_get_withdrawal_request_status(&result)
         .map(|x| x.into_iter().map(LidoWithdrawalRequest::from).collect())
         .map_err(GemstoneError::from)

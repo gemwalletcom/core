@@ -13,11 +13,7 @@ pub async fn get_nft_collections(
     wallet_index: i32,
     client: &State<Mutex<NFTClient>>,
 ) -> Result<Json<ResponseResults<NFTCollection>>, NotFound<String>> {
-    let result = client
-        .lock()
-        .await
-        .get_nft_collections(device_id, wallet_index)
-        .await;
+    let result = client.lock().await.get_nft_collections(device_id, wallet_index).await;
     match result {
         Ok(results) => Ok(Json(ResponseResults { results })),
         Err(err) => Err(NotFound(err.to_string())),
@@ -31,11 +27,7 @@ pub async fn get_nft_collectibles(
     wallet_index: i32,
     client: &State<Mutex<NFTClient>>,
 ) -> Result<Json<ResponseResults<NFTCollectible>>, NotFound<String>> {
-    let result = client
-        .lock()
-        .await
-        .get_nft_collectibles(device_id, collection_id, wallet_index)
-        .await;
+    let result = client.lock().await.get_nft_collectibles(device_id, collection_id, wallet_index).await;
     match result {
         Ok(results) => Ok(Json(ResponseResults { results })),
         Err(err) => Err(NotFound(err.to_string())),
@@ -51,11 +43,7 @@ pub async fn get_nft_collections_by_chain_address(
     client: &State<Mutex<NFTClient>>,
 ) -> Result<Json<ResponseResults<NFTCollection>>, NotFound<String>> {
     let chain = Chain::from_str(chain).unwrap();
-    let result = client
-        .lock()
-        .await
-        .get_nft_collections_by_address(chain, address)
-        .await;
+    let result = client.lock().await.get_nft_collections_by_address(chain, address).await;
     match result {
         Ok(results) => Ok(Json(ResponseResults { results })),
         Err(err) => Err(NotFound(err.to_string())),
@@ -70,11 +58,7 @@ pub async fn get_nft_collectibles_by_chain_address(
     client: &State<Mutex<NFTClient>>,
 ) -> Result<Json<ResponseResults<NFTCollectible>>, NotFound<String>> {
     let chain = Chain::from_str(chain).unwrap();
-    let result = client
-        .lock()
-        .await
-        .get_nft_collectibles_by_address(chain, collection_id, address)
-        .await;
+    let result = client.lock().await.get_nft_collectibles_by_address(chain, collection_id, address).await;
     match result {
         Ok(results) => Ok(Json(ResponseResults { results })),
         Err(err) => Err(NotFound(err.to_string())),

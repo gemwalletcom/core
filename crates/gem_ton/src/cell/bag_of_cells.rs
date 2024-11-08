@@ -12,9 +12,7 @@ pub struct BagOfCells {
 
 impl BagOfCells {
     pub fn new(roots: &[ArcCell]) -> BagOfCells {
-        BagOfCells {
-            roots: roots.to_vec(),
-        }
+        BagOfCells { roots: roots.to_vec() }
     }
 
     pub fn from_root(root: Cell) -> BagOfCells {
@@ -32,13 +30,9 @@ impl BagOfCells {
     }
 
     pub fn root(&self, idx: usize) -> Result<&ArcCell, TonCellError> {
-        self.roots.get(idx).ok_or_else(|| {
-            TonCellError::boc_deserialization_error(format!(
-                "Invalid root index: {}, BoC contains {} roots",
-                idx,
-                self.roots.len()
-            ))
-        })
+        self.roots
+            .get(idx)
+            .ok_or_else(|| TonCellError::boc_deserialization_error(format!("Invalid root index: {}, BoC contains {} roots", idx, self.roots.len())))
     }
 
     pub fn single_root(&self) -> Result<&ArcCell, TonCellError> {
@@ -46,10 +40,7 @@ impl BagOfCells {
         if root_count == 1 {
             Ok(&self.roots[0])
         } else {
-            Err(TonCellError::CellParserError(format!(
-                "Single root expected, got {}",
-                root_count
-            )))
+            Err(TonCellError::CellParserError(format!("Single root expected, got {}", root_count)))
         }
     }
 
@@ -66,19 +57,13 @@ impl BagOfCells {
             };
             for r in &raw_cell.references {
                 if *r <= i {
-                    return Err(TonCellError::boc_deserialization_error(
-                        "References to previous cells are not supported",
-                    ));
+                    return Err(TonCellError::boc_deserialization_error("References to previous cells are not supported"));
                 }
                 cell.references.push(cells[num_cells - 1 - r].clone());
             }
             cells.push(Arc::new(cell));
         }
-        let roots: Vec<ArcCell> = raw
-            .roots
-            .iter()
-            .map(|r| cells[num_cells - 1 - r].clone())
-            .collect();
+        let roots: Vec<ArcCell> = raw.roots.iter().map(|r| cells[num_cells - 1 - r].clone()).collect();
         Ok(BagOfCells { roots })
     }
 
@@ -99,18 +84,12 @@ impl BagOfCells {
     }
 
     /// Traverses all cells, fills all_cells set and inbound references map.
-    fn traverse_cell_tree(
-        cell: &ArcCell,
-        all_cells: &mut HashSet<ArcCell>,
-        in_refs: &mut HashMap<ArcCell, HashSet<ArcCell>>,
-    ) -> Result<(), TonCellError> {
+    fn traverse_cell_tree(cell: &ArcCell, all_cells: &mut HashSet<ArcCell>, in_refs: &mut HashMap<ArcCell, HashSet<ArcCell>>) -> Result<(), TonCellError> {
         if !all_cells.contains(cell) {
             all_cells.insert(cell.clone());
             for r in &cell.references {
                 if r == cell {
-                    return Err(TonCellError::BagOfCellsDeserializationError(
-                        "Cell must not reference itself".to_string(),
-                    ));
+                    return Err(TonCellError::BagOfCellsDeserializationError("Cell must not reference itself".to_string()));
                 }
                 let maybe_refs = in_refs.get_mut(&r.clone());
                 match maybe_refs {
@@ -166,11 +145,7 @@ impl BagOfCells {
         }
         let mut cells: Vec<RawCell> = Vec::new();
         for cell in &ordered_cells {
-            let refs: Vec<usize> = cell
-                .references
-                .iter()
-                .map(|c| *indices.get(c).unwrap())
-                .collect();
+            let refs: Vec<usize> = cell.references.iter().map(|c| *indices.get(c).unwrap()).collect();
             let raw = RawCell {
                 data: cell.data.clone(),
                 bit_len: cell.bit_len,
@@ -179,11 +154,7 @@ impl BagOfCells {
             };
             cells.push(raw);
         }
-        let roots: Vec<usize> = self
-            .roots
-            .iter()
-            .map(|c| *indices.get(c).unwrap())
-            .collect();
+        let roots: Vec<usize> = self.roots.iter().map(|c| *indices.get(c).unwrap()).collect();
         Ok(RawBagOfCells { cells, roots })
     }
 }
@@ -195,14 +166,8 @@ mod tests {
     #[test]
     fn it_constructs_raw() -> anyhow::Result<()> {
         let leaf = CellBuilder::new().store_byte(10)?.build()?;
-        let inter = CellBuilder::new()
-            .store_byte(20)?
-            .store_child(leaf)?
-            .build()?;
-        let root = CellBuilder::new()
-            .store_byte(30)?
-            .store_child(inter)?
-            .build()?;
+        let inter = CellBuilder::new().store_byte(20)?.store_child(leaf)?.build()?;
+        let root = CellBuilder::new().store_byte(30)?.store_child(inter)?.build()?;
         let boc = BagOfCells::from_root(root);
         let _raw = boc.to_raw()?;
         Ok(())

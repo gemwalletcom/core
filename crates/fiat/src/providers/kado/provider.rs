@@ -4,9 +4,7 @@ use crate::{
 };
 use async_trait::async_trait;
 use primitives::fiat_quote_request::FiatSellRequest;
-use primitives::{
-    FiatBuyRequest, FiatProviderName, FiatQuote, FiatTransaction, FiatTransactionStatus,
-};
+use primitives::{FiatBuyRequest, FiatProviderName, FiatQuote, FiatTransaction, FiatTransactionStatus};
 use std::error::Error;
 
 use super::{client::KadoClient, model::Webhook};
@@ -17,11 +15,7 @@ impl FiatProvider for KadoClient {
         Self::NAME
     }
 
-    async fn get_buy_quote(
-        &self,
-        request: FiatBuyRequest,
-        request_map: FiatMapping,
-    ) -> Result<FiatQuote, Box<dyn std::error::Error + Send + Sync>> {
+    async fn get_buy_quote(&self, request: FiatBuyRequest, request_map: FiatMapping) -> Result<FiatQuote, Box<dyn std::error::Error + Send + Sync>> {
         let quote = self
             .get_quote_buy(
                 request.fiat_currency.clone(),
@@ -38,9 +32,7 @@ impl FiatProvider for KadoClient {
         Err(Box::from("not supported"))
     }
 
-    async fn get_assets(
-        &self,
-    ) -> Result<Vec<FiatProviderAsset>, Box<dyn std::error::Error + Send + Sync>> {
+    async fn get_assets(&self) -> Result<Vec<FiatProviderAsset>, Box<dyn std::error::Error + Send + Sync>> {
         let assets = self
             .get_blockchains()
             .await?
@@ -50,10 +42,7 @@ impl FiatProvider for KadoClient {
         Ok(assets)
     }
 
-    async fn webhook(
-        &self,
-        data: serde_json::Value,
-    ) -> Result<FiatTransaction, Box<dyn std::error::Error + Send + Sync>> {
+    async fn webhook(&self, data: serde_json::Value) -> Result<FiatTransaction, Box<dyn std::error::Error + Send + Sync>> {
         let data = serde_json::from_value::<Webhook>(data)?;
         let status = match data.webhook_type.as_str() {
             "order_pending" | "order_processing" => FiatTransactionStatus::Pending,

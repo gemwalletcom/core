@@ -44,13 +44,9 @@ impl Cell {
     pub fn parser(&self) -> CellParser {
         let bit_len = self.bit_len;
         let cursor = Cursor::new(&self.data);
-        let bit_reader: BitReader<Cursor<&Vec<u8>>, BigEndian> =
-            BitReader::endian(cursor, BigEndian);
+        let bit_reader: BitReader<Cursor<&Vec<u8>>, BigEndian> = BitReader::endian(cursor, BigEndian);
 
-        CellParser {
-            bit_len,
-            bit_reader,
-        }
+        CellParser { bit_len, bit_reader }
     }
 
     #[allow(clippy::let_and_return)]
@@ -124,34 +120,22 @@ impl Cell {
         let mut writer = BitWriter::endian(Vec::new(), BigEndian);
         let val = self.get_refs_descriptor();
         writer.write(8, val).map_boc_serialization_error()?;
-        writer
-            .write(8, self.get_bits_descriptor())
-            .map_boc_serialization_error()?;
+        writer.write(8, self.get_bits_descriptor()).map_boc_serialization_error()?;
         if !full_bytes {
-            writer
-                .write_bytes(&self.data[..data_len - 1])
-                .map_boc_serialization_error()?;
+            writer.write_bytes(&self.data[..data_len - 1]).map_boc_serialization_error()?;
             let last_byte = self.data[data_len - 1];
             let l = last_byte | 1 << (8 - rest_bits - 1);
             writer.write(8, l).map_boc_serialization_error()?;
         } else {
-            writer
-                .write_bytes(&self.data)
-                .map_boc_serialization_error()?;
+            writer.write_bytes(&self.data).map_boc_serialization_error()?;
         }
 
         for r in &self.references {
-            writer
-                .write(8, (r.get_max_depth() / 256) as u8)
-                .map_boc_serialization_error()?;
-            writer
-                .write(8, (r.get_max_depth() % 256) as u8)
-                .map_boc_serialization_error()?;
+            writer.write(8, (r.get_max_depth() / 256) as u8).map_boc_serialization_error()?;
+            writer.write(8, (r.get_max_depth() % 256) as u8).map_boc_serialization_error()?;
         }
         for r in &self.references {
-            writer
-                .write_bytes(&r.cell_hash()?)
-                .map_boc_serialization_error()?;
+            writer.write_bytes(&r.cell_hash()?).map_boc_serialization_error()?;
         }
         let result = writer
             .writer()
@@ -180,11 +164,7 @@ impl Cell {
     /// ``` cons#_ {bn:#} {n:#} b:(bits bn) next:^(SnakeData ~n) = SnakeData ~(n + 1); ```
     pub fn load_snake_formatted_dict(&self) -> Result<HashMap<[u8; 32], Vec<u8>>, TonCellError> {
         //todo: #79 key in hashmap must be [u8;32]
-        let dict_loader = GenericDictLoader::new(
-            key_extractor_256bit,
-            value_extractor_snake_formatted_string,
-            256,
-        );
+        let dict_loader = GenericDictLoader::new(key_extractor_256bit, value_extractor_snake_formatted_string, 256);
         self.load_generic_dict(&dict_loader)
     }
 
@@ -223,9 +203,7 @@ impl Cell {
             let first_byte = reader.load_uint(8)?.to_u32().unwrap();
 
             if first_cell && first_byte != 0 {
-                return Err(TonCellError::boc_deserialization_error(
-                    "Invalid snake format",
-                ));
+                return Err(TonCellError::boc_deserialization_error("Invalid snake format"));
             }
             let remaining_bytes = reader.remaining_bytes();
             let mut data = reader.load_bytes(remaining_bytes)?;
@@ -257,12 +235,7 @@ impl Cell {
     }
 
     ///Port of https://github.com/ton-community/ton/blob/17b7e9e6154131399d57507b0c4a178752342fd8/src/boc/dict/parseDict.ts#L55
-    fn dict_to_hashmap<K, V, L>(
-        &self,
-        prefix: BitString,
-        map: &mut HashMap<K, V>,
-        dict_loader: &L,
-    ) -> Result<(), TonCellError>
+    fn dict_to_hashmap<K, V, L>(&self, prefix: BitString, map: &mut HashMap<K, V>, dict_loader: &L) -> Result<(), TonCellError>
     where
         K: Hash + Eq,
         L: DictLoader<K, V>,
@@ -285,11 +258,7 @@ impl Cell {
             if !lb1 {
                 // Long label detected
                 prefix_length = parser
-                    .load_uint(
-                        ((dict_loader.key_bit_len() - pp.bit_len() + 1) as f32)
-                            .log2()
-                            .ceil() as usize,
-                    )?
+                    .load_uint(((dict_loader.key_bit_len() - pp.bit_len() + 1) as f32).log2().ceil() as usize)?
                     .to_usize()
                     .unwrap();
                 if prefix_length != 0 {
@@ -300,11 +269,7 @@ impl Cell {
                 // Same label detected
                 let bit = parser.load_bit()?;
                 prefix_length = parser
-                    .load_uint(
-                        ((dict_loader.key_bit_len() - pp.bit_len() + 1) as f32)
-                            .log2()
-                            .ceil() as usize,
-                    )?
+                    .load_uint(((dict_loader.key_bit_len() - pp.bit_len() + 1) as f32).log2().ceil() as usize)?
                     .to_usize()
                     .unwrap();
                 if bit {
@@ -344,20 +309,12 @@ impl fmt::Debug for Cell {
         writeln!(
             f,
             "Cell{{ data: [{}], bit_len: {}, references: [\n",
-            self.data
-                .iter()
-                .map(|&byte| format!("{:02X}", byte))
-                .collect::<Vec<_>>()
-                .join(""),
+            self.data.iter().map(|&byte| format!("{:02X}", byte)).collect::<Vec<_>>().join(""),
             self.bit_len,
         )?;
 
         for reference in &self.references {
-            writeln!(
-                f,
-                "    {}\n",
-                format!("{:?}", reference).replace('\n', "\n    ")
-            )?;
+            writeln!(f, "    {}\n", format!("{:?}", reference).replace('\n', "\n    "))?;
         }
 
         write!(f, "] }}")

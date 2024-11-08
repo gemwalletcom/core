@@ -32,48 +32,20 @@ impl TronClient {
         Ok(response)
     }
 
-    pub async fn get_block_tranactions(
-        &self,
-        block: i64,
-    ) -> Result<BlockTransactions, Box<dyn Error + Send + Sync>> {
+    pub async fn get_block_tranactions(&self, block: i64) -> Result<BlockTransactions, Box<dyn Error + Send + Sync>> {
         let url = format!("{}/walletsolidity/getblockbynum?num={}", self.url, block);
-        let response = self
-            .client
-            .get(&url)
-            .send()
-            .await?
-            .json::<BlockTransactions>()
-            .await?;
+        let response = self.client.get(&url).send().await?.json::<BlockTransactions>().await?;
         Ok(response)
     }
 
-    pub async fn get_block_tranactions_reciepts(
-        &self,
-        block: i64,
-    ) -> Result<BlockTransactionsInfo, Box<dyn Error + Send + Sync>> {
-        let url = format!(
-            "{}/walletsolidity/gettransactioninfobyblocknum?num={}",
-            self.url, block
-        );
-        let response = self
-            .client
-            .get(&url)
-            .send()
-            .await?
-            .json::<BlockTransactionsInfo>()
-            .await?;
+    pub async fn get_block_tranactions_reciepts(&self, block: i64) -> Result<BlockTransactionsInfo, Box<dyn Error + Send + Sync>> {
+        let url = format!("{}/walletsolidity/gettransactioninfobyblocknum?num={}", self.url, block);
+        let response = self.client.get(&url).send().await?.json::<BlockTransactionsInfo>().await?;
         Ok(response)
     }
 
-    pub fn map_transaction(
-        &self,
-        transaction: Transaction,
-        receipt: TransactionReceiptData,
-    ) -> Option<primitives::Transaction> {
-        if let (Some(value), Some(contract_result)) = (
-            transaction.raw_data.contract.first().cloned(),
-            transaction.ret.first().cloned(),
-        ) {
+    pub fn map_transaction(&self, transaction: Transaction, receipt: TransactionReceiptData) -> Option<primitives::Transaction> {
+        if let (Some(value), Some(contract_result)) = (transaction.raw_data.contract.first().cloned(), transaction.ret.first().cloned()) {
             let state: TransactionState = if contract_result.contract_ret.clone() == "SUCCESS" {
                 TransactionState::Confirmed
             } else {
@@ -81,24 +53,8 @@ impl TronClient {
             };
             let fee = receipt.fee.unwrap_or_default().to_string();
             if value.contract_type == TRANSFER_CONTRACT && !transaction.ret.is_empty() {
-                let from = TronAddress::from_hex(
-                    value
-                        .parameter
-                        .value
-                        .owner_address
-                        .unwrap_or_default()
-                        .as_str(),
-                )
-                .unwrap_or_default();
-                let to = TronAddress::from_hex(
-                    value
-                        .parameter
-                        .value
-                        .to_address
-                        .unwrap_or_default()
-                        .as_str(),
-                )
-                .unwrap_or_default();
+                let from = TronAddress::from_hex(value.parameter.value.owner_address.unwrap_or_default().as_str()).unwrap_or_default();
+                let to = TronAddress::from_hex(value.parameter.value.to_address.unwrap_or_default().as_str()).unwrap_or_default();
 
                 let transaction = primitives::Transaction::new(
                     transaction.tx_id,
@@ -124,33 +80,15 @@ impl TronClient {
             if value.contract_type == TRIGGER_SMART_CONTRACT
                 && logs.len() == 1
                 && logs.first()?.topics.clone().unwrap_or_default().len() == 3
-                && logs.first()?.topics.clone().unwrap_or_default().first()?
-                    == "ddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
+                && logs.first()?.topics.clone().unwrap_or_default().first()? == "ddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
             {
                 let log = logs.first()?;
-                let from_string = format!(
-                    "41{}",
-                    log.topics.clone().unwrap_or_default()[1]
-                        .clone()
-                        .chars()
-                        .skip(24)
-                        .collect::<String>()
-                );
-                let to_string = format!(
-                    "41{}",
-                    log.topics.clone().unwrap_or_default()[2]
-                        .clone()
-                        .chars()
-                        .skip(24)
-                        .collect::<String>()
-                );
-                let token_id =
-                    TronAddress::from_hex(value.parameter.value.contract_address?.as_str())
-                        .unwrap_or_default();
+                let from_string = format!("41{}", log.topics.clone().unwrap_or_default()[1].clone().chars().skip(24).collect::<String>());
+                let to_string = format!("41{}", log.topics.clone().unwrap_or_default()[2].clone().chars().skip(24).collect::<String>());
+                let token_id = TronAddress::from_hex(value.parameter.value.contract_address?.as_str()).unwrap_or_default();
                 let from = TronAddress::from_hex(from_string.as_str()).unwrap_or_default();
                 let to = TronAddress::from_hex(to_string.as_str()).unwrap_or_default();
-                let value =
-                    BigUint::from_str_radix(&log.data.clone().unwrap_or_default(), 16).unwrap();
+                let value = BigUint::from_str_radix(&log.data.clone().unwrap_or_default(), 16).unwrap();
                 let asset_id = AssetId {
                     chain: self.get_chain(),
                     token_id: Some(token_id),
@@ -192,10 +130,7 @@ impl ChainBlockProvider for TronClient {
         Ok(block.block_header.raw_data.number)
     }
 
-    async fn get_transactions(
-        &self,
-        block_number: i64,
-    ) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Send + Sync>> {
+    async fn get_transactions(&self, block_number: i64) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Send + Sync>> {
         let block = self.get_block_tranactions(block_number).await?;
         let transactions = block.transactions.unwrap_or_default();
         let reciepts = self.get_block_tranactions_reciepts(block_number).await?;

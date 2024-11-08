@@ -4,9 +4,7 @@ use gem_ton::address::TonAddress;
 use gem_ton::cell::{BagOfCells, Cell, CellBuilder};
 
 /// Encode user address to tvm.Slice for get_wallet_address smart contract call
-pub fn encode_get_wallet_address_slice(
-    address: &str,
-) -> Result<String, Box<dyn std::error::Error>> {
+pub fn encode_get_wallet_address_slice(address: &str) -> Result<String, Box<dyn std::error::Error>> {
     let mut writer = CellBuilder::new();
     let addr = TonAddress::from_base64_url(address)?;
     let cell = writer.store_address(&addr)?.build()?;
@@ -36,18 +34,12 @@ mod tests {
         let address = "UQAzoUpalAaXnVm5MoiYWRZguLFzY0KxFjLv3MkRq5BXz3VV";
         let result = encode_get_wallet_address_slice(address).unwrap();
 
-        assert_eq!(
-            result,
-            "te6cckEBAQEAJAAAQ4AGdClLUoDS86s3JlETCyLMFxYubGhWIsZd+5kiNXIK+fAmffsx"
-        );
+        assert_eq!(result, "te6cckEBAQEAJAAAQ4AGdClLUoDS86s3JlETCyLMFxYubGhWIsZd+5kiNXIK+fAmffsx");
 
         let address = "EQBvI0aFLnw2QbZgjMPCLRdtRHxhUyinQudg6sdiohIwg5jL";
         let result = encode_get_wallet_address_slice(address).unwrap();
 
-        assert_eq!(
-            result,
-            "te6cckEBAQEAJAAAQ4AN5GjQpc+GyDbMEZh4RaLtqI+MKmUU6FzsHVjsVEJGEHDW8Lb+"
-        );
+        assert_eq!(result, "te6cckEBAQEAJAAAQ4AN5GjQpc+GyDbMEZh4RaLtqI+MKmUU6FzsHVjsVEJGEHDW8Lb+");
     }
 
     #[test]

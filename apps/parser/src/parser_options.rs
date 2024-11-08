@@ -8,11 +8,7 @@ pub struct ParserOptions {
 }
 
 impl ParserOptions {
-    pub fn is_transaction_outdated(
-        &self,
-        chain: Chain,
-        transaction_created_at: DateTime<Utc>,
-    ) -> bool {
+    pub fn is_transaction_outdated(&self, chain: Chain, transaction_created_at: DateTime<Utc>) -> bool {
         Utc::now() - transaction_created_at > Duration::milliseconds(self.outdated(chain))
     }
 

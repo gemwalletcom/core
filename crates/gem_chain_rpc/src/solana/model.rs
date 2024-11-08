@@ -51,17 +51,11 @@ pub struct InstructionInfo {
 
 impl Meta {
     pub fn get_pre_token_balance(&self, account_index: i64) -> Option<TokenBalance> {
-        self.pre_token_balances
-            .iter()
-            .find(|b| b.account_index == account_index)
-            .cloned()
+        self.pre_token_balances.iter().find(|b| b.account_index == account_index).cloned()
     }
 
     pub fn get_post_token_balance(&self, account_index: i64) -> Option<TokenBalance> {
-        self.post_token_balances
-            .iter()
-            .find(|b| b.account_index == account_index)
-            .cloned()
+        self.post_token_balances.iter().find(|b| b.account_index == account_index).cloned()
     }
 }
 

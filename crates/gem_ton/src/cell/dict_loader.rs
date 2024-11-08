@@ -19,52 +19,40 @@ pub fn key_extractor_u8(bit_len: usize, key: &[u8]) -> Result<u8, TonCellError> 
     if bit_len == 8 {
         Ok(key[0])
     } else {
-        Err(TonCellError::CellParserError(format!(
-            "Invalid key len: {}, expected 8 bits",
-            bit_len
-        )))
+        Err(TonCellError::CellParserError(format!("Invalid key len: {}, expected 8 bits", bit_len)))
     }
 }
 
 pub fn key_extractor_u16(bit_len: usize, key: &[u8]) -> Result<u16, TonCellError> {
     if bit_len == 16 {
-        let arr: &[u8; 2] = key.try_into().map_err(|_| {
-            TonCellError::CellParserError("Insufficient bytes in the dictionary key.".to_string())
-        })?;
+        let arr: &[u8; 2] = key
+            .try_into()
+            .map_err(|_| TonCellError::CellParserError("Insufficient bytes in the dictionary key.".to_string()))?;
         Ok(u16::from_be_bytes(*arr))
     } else {
-        Err(TonCellError::CellParserError(format!(
-            "Invalid key len: {}, expected 16 bits",
-            bit_len
-        )))
+        Err(TonCellError::CellParserError(format!("Invalid key len: {}, expected 16 bits", bit_len)))
     }
 }
 
 pub fn key_extractor_u32(bit_len: usize, key: &[u8]) -> Result<u32, TonCellError> {
     if bit_len == 32 {
-        let arr: &[u8; 4] = key.try_into().map_err(|_| {
-            TonCellError::CellParserError("Insufficient bytes in the dictionary key.".to_string())
-        })?;
+        let arr: &[u8; 4] = key
+            .try_into()
+            .map_err(|_| TonCellError::CellParserError("Insufficient bytes in the dictionary key.".to_string()))?;
         Ok(u32::from_be_bytes(*arr))
     } else {
-        Err(TonCellError::CellParserError(format!(
-            "Invalid key len: {}, expected 32 bits",
-            bit_len
-        )))
+        Err(TonCellError::CellParserError(format!("Invalid key len: {}, expected 32 bits", bit_len)))
     }
 }
 
 pub fn key_extractor_u64(bit_len: usize, key: &[u8]) -> Result<u64, TonCellError> {
     if bit_len == 64 {
-        let arr: &[u8; 8] = key.try_into().map_err(|_| {
-            TonCellError::CellParserError("Insufficient bytes in the dictionary key.".to_string())
-        })?;
+        let arr: &[u8; 8] = key
+            .try_into()
+            .map_err(|_| TonCellError::CellParserError("Insufficient bytes in the dictionary key.".to_string()))?;
         Ok(u64::from_be_bytes(*arr))
     } else {
-        Err(TonCellError::CellParserError(format!(
-            "Invalid key len: {}, expected 64 bits",
-            bit_len
-        )))
+        Err(TonCellError::CellParserError(format!("Invalid key len: {}, expected 64 bits", bit_len)))
     }
 }
 
@@ -72,10 +60,7 @@ pub fn key_extractor_256bit(bit_len: usize, key: &[u8]) -> Result<[u8; 32], TonC
     if bit_len == 256 {
         TryInto::<[u8; 32]>::try_into(key).map_err(|e| TonCellError::InternalError(e.to_string()))
     } else {
-        Err(TonCellError::CellParserError(format!(
-            "Invalid key len: {}, expected 256 bits",
-            bit_len
-        )))
+        Err(TonCellError::CellParserError(format!("Invalid key len: {}, expected 256 bits", bit_len)))
     }
 }
 pub fn key_extractor_uint(bit_len: usize, key: &[u8]) -> Result<BigUint, TonCellError> {
@@ -91,9 +76,7 @@ pub fn key_extractor_decimal_string(bit_len: usize, key: &[u8]) -> Result<String
     Ok(key_extractor_uint(bit_len, key)?.to_str_radix(10))
 }
 
-pub fn value_extractor_snake_formatted_string(
-    cell_slice: &CellSlice,
-) -> Result<Vec<u8>, TonCellError> {
+pub fn value_extractor_snake_formatted_string(cell_slice: &CellSlice) -> Result<Vec<u8>, TonCellError> {
     let mut buffer = Vec::new();
     cell_slice.reference(0)?.parse_snake_data(&mut buffer)?;
     Ok(buffer)
@@ -126,11 +109,7 @@ where
     KX: FnOnce(usize, &[u8]) -> Result<K, TonCellError> + Copy,
     VX: FnOnce(&CellSlice) -> Result<V, TonCellError>,
 {
-    pub fn new(
-        key_extractor: KX,
-        value_extractor: VX,
-        bit_len: usize,
-    ) -> GenericDictLoader<K, V, KX, VX> {
+    pub fn new(key_extractor: KX, value_extractor: VX, bit_len: usize) -> GenericDictLoader<K, V, KX, VX> {
         GenericDictLoader {
             key_extractor,
             value_extractor,

@@ -18,8 +18,6 @@ pub fn get_social_url(item: SocialUrl) -> Option<&'static str> {
         SocialUrl::Telegram => Some("https://t.me/gemwallet"),
         SocialUrl::GitHub => Some("https://github.com/gemwalletcom"),
         SocialUrl::YouTube => Some("https://www.youtube.com/@gemwallet"),
-        SocialUrl::Reddit | SocialUrl::Facebook | SocialUrl::Homepage | SocialUrl::Coingecko => {
-            None
-        }
+        SocialUrl::Reddit | SocialUrl::Facebook | SocialUrl::Homepage | SocialUrl::Coingecko => None,
     }
 }

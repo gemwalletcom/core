@@ -50,27 +50,15 @@ pub fn encode_submit_with_referral(referral: &str) -> Result<Vec<u8>, Error> {
     Ok(call.abi_encode())
 }
 
-pub fn encode_request_withdrawals_with_permit(
-    amounts: Vec<String>,
-    owner: &str,
-    permit: &Permit,
-) -> Result<Vec<u8>, Error> {
+pub fn encode_request_withdrawals_with_permit(amounts: Vec<String>, owner: &str, permit: &Permit) -> Result<Vec<u8>, Error> {
     let mut _amounts = vec![];
     for amount in amounts.iter() {
         let uint256 = U256::from_str(amount).map_err(Error::msg)?;
         _amounts.push(uint256);
     }
 
-    let r: [u8; 32] = permit
-        .r
-        .clone()
-        .try_into()
-        .map_err(|e| anyhow::anyhow!("invalid r in signature {:?}", e))?;
-    let s: [u8; 32] = permit
-        .s
-        .clone()
-        .try_into()
-        .map_err(|e| anyhow::anyhow!("invalid s in signature {:?}", e))?;
+    let r: [u8; 32] = permit.r.clone().try_into().map_err(|e| anyhow::anyhow!("invalid r in signature {:?}", e))?;
+    let s: [u8; 32] = permit.s.clone().try_into().map_err(|e| anyhow::anyhow!("invalid s in signature {:?}", e))?;
 
     let call = WithdrawalQueueERC721::requestWithdrawalsWithPermitCall {
         _amounts,
@@ -94,14 +82,8 @@ pub fn encode_get_withdrawal_request_ids(owner: &str) -> Result<Vec<u8>, Error> 
 }
 
 pub fn decode_get_withdrawal_request_ids(result: &[u8]) -> Result<Vec<String>, Error> {
-    let decoded =
-        WithdrawalQueueERC721::getWithdrawalRequestsCall::abi_decode_returns(result, true)
-            .map_err(Error::msg)?;
-    let requests = decoded
-        .requestsIds
-        .into_iter()
-        .map(|x| x.to_string())
-        .collect();
+    let decoded = WithdrawalQueueERC721::getWithdrawalRequestsCall::abi_decode_returns(result, true).map_err(Error::msg)?;
+    let requests = decoded.requestsIds.into_iter().map(|x| x.to_string()).collect();
     Ok(requests)
 }
 
@@ -112,37 +94,24 @@ pub fn encode_get_withdrawal_request_status(request_ids: &[String]) -> Result<Ve
         _request_ids.push(uint256);
     }
 
-    let call = WithdrawalQueueERC721::getWithdrawalStatusCall {
-        _requestIds: _request_ids,
-    };
+    let call = WithdrawalQueueERC721::getWithdrawalStatusCall { _requestIds: _request_ids };
     Ok(call.abi_encode())
 }
 
-pub fn decode_get_withdrawal_request_status(
-    result: &[u8],
-) -> Result<Vec<WithdrawalRequestStatus>, Error> {
-    let decoded = WithdrawalQueueERC721::getWithdrawalStatusCall::abi_decode_returns(result, true)
-        .map_err(Error::msg)?;
+pub fn decode_get_withdrawal_request_status(result: &[u8]) -> Result<Vec<WithdrawalRequestStatus>, Error> {
+    let decoded = WithdrawalQueueERC721::getWithdrawalStatusCall::abi_decode_returns(result, true).map_err(Error::msg)?;
     Ok(decoded.statuses)
 }
 
 pub fn encode_claim_withdrawal(request_id: &str) -> Result<Vec<u8>, Error> {
     let request_id = U256::from_str(request_id).map_err(Error::msg)?;
-    let call = WithdrawalQueueERC721::claimWithdrawalCall {
-        _requestId: request_id,
-    };
+    let call = WithdrawalQueueERC721::claimWithdrawalCall { _requestId: request_id };
     Ok(call.abi_encode())
 }
 
 pub fn decode_request_withdrawals_return(result: &[u8]) -> Result<Vec<String>, Error> {
-    let decoded =
-        WithdrawalQueueERC721::requestWithdrawalsWithPermitCall::abi_decode_returns(result, true)
-            .map_err(Error::msg)?;
-    Ok(decoded
-        .requestIds
-        .into_iter()
-        .map(|x| x.to_string())
-        .collect())
+    let decoded = WithdrawalQueueERC721::requestWithdrawalsWithPermitCall::abi_decode_returns(result, true).map_err(Error::msg)?;
+    Ok(decoded.requestIds.into_iter().map(|x| x.to_string()).collect())
 }
 
 #[cfg(test)]
@@ -154,39 +123,28 @@ mod tests {
         let referral = "0x4C49d4Bd6a571827B4A556a0e1e3071DA6231B9D";
         let result = encode_submit_with_referral(referral).unwrap();
 
-        assert_eq!(
-            hex::encode(result),
-            "a1903eab0000000000000000000000004c49d4bd6a571827b4a556a0e1e3071da6231b9d"
-        );
+        assert_eq!(hex::encode(result), "a1903eab0000000000000000000000004c49d4bd6a571827b4a556a0e1e3071da6231b9d");
 
         let result = encode_submit_with_referral("").unwrap();
-        assert_eq!(
-            hex::encode(result),
-            "a1903eab0000000000000000000000000000000000000000000000000000000000000000"
-        );
+        assert_eq!(hex::encode(result), "a1903eab0000000000000000000000000000000000000000000000000000000000000000");
     }
 
     #[test]
     fn test_encode_request_withdrawals_with_permit() {
         // https://etherscan.io/tx/0x96920c52e2d3c6f50b99863f541541a4023e438afed873618b4aa73c25abbf9a
 
-        let signature = hex::decode("189dada4c2af64022607fa643de95fd2503d46161e39a89df2dfffe0cded151e606e38989dd407af9c52a262ec6ca85398b2aa4ab5c7378ab2797a25818d50f51c")
-            .unwrap();
+        let signature =
+            hex::decode("189dada4c2af64022607fa643de95fd2503d46161e39a89df2dfffe0cded151e606e38989dd407af9c52a262ec6ca85398b2aa4ab5c7378ab2797a25818d50f51c")
+                .unwrap();
         let permit = Permit {
             value: "101381038929079186".to_string(),
-            deadline:
-                "115792089237316195423570985008687907853269984665640564039457584007913129639935"
-                    .to_string(),
+            deadline: "115792089237316195423570985008687907853269984665640564039457584007913129639935".to_string(),
             v: signature[64],
             r: signature[0..32].to_vec(),
             s: signature[32..64].to_vec(),
         };
-        let result = encode_request_withdrawals_with_permit(
-            vec!["101381038929079186".to_string()],
-            "0x5014f5CF5f9F14033316c333245B66189A709537",
-            &permit,
-        )
-        .unwrap();
+        let result =
+            encode_request_withdrawals_with_permit(vec!["101381038929079186".to_string()], "0x5014f5CF5f9F14033316c333245B66189A709537", &permit).unwrap();
 
         assert_eq!(
             hex::encode(result),
@@ -196,14 +154,9 @@ mod tests {
 
     #[test]
     fn test_encode_get_withdrawal_request_ids() {
-        let result =
-            encode_get_withdrawal_request_ids("0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7")
-                .unwrap();
+        let result = encode_get_withdrawal_request_ids("0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7").unwrap();
 
-        assert_eq!(
-            hex::encode(result),
-            "7d031b65000000000000000000000000514bcb1f9aabb904e6106bd1052b66d2706dbbb7"
-        );
+        assert_eq!(hex::encode(result), "7d031b65000000000000000000000000514bcb1f9aabb904e6106bd1052b66d2706dbbb7");
     }
 
     #[test]
@@ -231,10 +184,7 @@ mod tests {
 
         assert_eq!(requests[0].amountOfStETH.to_string(), "10008145313963299");
         assert_eq!(requests[0].amountOfShares.to_string(), "8568628620995913");
-        assert_eq!(
-            requests[0].owner.to_string(),
-            "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7"
-        );
+        assert_eq!(requests[0].owner.to_string(), "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7");
         assert_eq!(requests[0].timestamp.to_string(), "1716949259");
         assert!(requests[0].isFinalized);
         assert!(!requests[0].isClaimed);

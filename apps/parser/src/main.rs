@@ -43,10 +43,7 @@ pub async fn main() {
 
     let mut nodes_map: HashMap<String, Vec<String>> = HashMap::new();
     nodes.into_iter().for_each(|node| {
-        nodes_map
-            .entry(node.chain.clone())
-            .or_default()
-            .push(node.url);
+        nodes_map.entry(node.chain.clone()).or_default().push(node.url);
     });
 
     println!("parser start chains: {:?}", chains);
@@ -55,11 +52,7 @@ pub async fn main() {
     for chain in chains {
         let settings = settings.clone();
         let parser_options = parser_options.clone();
-        let node_urls = nodes_map
-            .clone()
-            .get(chain.as_ref())
-            .cloned()
-            .unwrap_or_default();
+        let node_urls = nodes_map.clone().get(chain.as_ref()).cloned().unwrap_or_default();
 
         let parser = tokio::spawn(async move {
             parser_start(settings, parser_options, chain, node_urls).await;
@@ -70,34 +63,17 @@ pub async fn main() {
     futures::future::join_all(parsers).await;
 }
 
-async fn parser_start(
-    settings: Settings,
-    parser_options: ParserOptions,
-    chain: Chain,
-    node_urls: Vec<String>,
-) {
+async fn parser_start(settings: Settings, parser_options: ParserOptions, chain: Chain, node_urls: Vec<String>) {
     let pusher_client = PusherClient::new(settings.pusher.url.clone(), settings.pusher.ios.topic.clone());
-    let pusher = Pusher::new(
-        settings.postgres.url.clone(),
-        pusher_client
-    );
+    let pusher = Pusher::new(settings.postgres.url.clone(), pusher_client);
     let database_client = DatabaseClient::new(settings.postgres.url.as_str());
 
     let url = settings_chain::ProviderFactory::url(chain, &settings);
-    let node_urls = if node_urls.is_empty() {
-        vec![url.to_string()]
-    } else {
-        node_urls
-    };
+    let node_urls = if node_urls.is_empty() { vec![url.to_string()] } else { node_urls };
     let config = ParserProxyUrlConfig { urls: node_urls };
     let proxy = ParserProxy::new(chain, config);
 
-    let mut parser = Parser::new(
-        Box::new(proxy),
-        pusher,
-        database_client,
-        parser_options.clone(),
-    );
+    let mut parser = Parser::new(Box::new(proxy), pusher, database_client, parser_options.clone());
     loop {
         match parser.start().await {
             Ok(_) => {

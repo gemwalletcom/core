@@ -34,13 +34,7 @@ pub fn encode_transfer(input: &TransferInput) -> Result<TxOutput, Error> {
         ptb.pay_sui(vec![recipient], vec![input.amount])?;
     }
 
-    let tx_data = TransactionData::new_programmable(
-        sender,
-        coin_refs,
-        ptb.finish(),
-        input.gas.budget,
-        input.gas.price,
-    );
+    let tx_data = TransactionData::new_programmable(sender, coin_refs, ptb.finish(), input.gas.budget, input.gas.price);
     TxOutput::from_tx_data(&tx_data)
 }
 
@@ -55,13 +49,7 @@ pub fn encode_token_transfer(input: &TokenTransferInput) -> Result<TxOutput, Err
     let gas_coin = input.gas_coin.object.to_ref();
 
     ptb.pay(coin_refs, vec![recipient], vec![input.amount])?;
-    let tx_data = TransactionData::new_programmable(
-        sender,
-        vec![gas_coin],
-        ptb.finish(),
-        input.gas.budget,
-        input.gas.price,
-    );
+    let tx_data = TransactionData::new_programmable(sender, vec![gas_coin], ptb.finish(), input.gas.budget, input.gas.price);
 
     TxOutput::from_tx_data(&tx_data)
 }
@@ -84,10 +72,7 @@ pub fn encode_split_and_stake(input: &StakeInput) -> Result<TxOutput, Error> {
 
     // split new coin to stake
     let split_stake_amount = ptb.pure(input.stake_amount)?;
-    let Argument::Result(idx) = ptb.command(Command::SplitCoins(
-        Argument::GasCoin,
-        vec![split_stake_amount],
-    )) else {
+    let Argument::Result(idx) = ptb.command(Command::SplitCoins(Argument::GasCoin, vec![split_stake_amount])) else {
         panic!("command should always give a Argument::Result")
     };
 
@@ -97,21 +82,11 @@ pub fn encode_split_and_stake(input: &StakeInput) -> Result<TxOutput, Error> {
         Identifier::new(SUI_SYSTEM_ID).unwrap(),
         Identifier::new(SUI_REQUEST_ADD_STAKE).unwrap(),
         vec![],
-        vec![
-            ptb.obj(sui_system_state_object())?,
-            Argument::NestedResult(idx, 0),
-            ptb.pure(validator)?,
-        ],
+        vec![ptb.obj(sui_system_state_object())?, Argument::NestedResult(idx, 0), ptb.pure(validator)?],
     );
     ptb.command(move_call);
 
-    let tx_data = TransactionData::new_programmable(
-        sender,
-        coin_refs,
-        ptb.finish(),
-        input.gas.budget,
-        input.gas.price,
-    );
+    let tx_data = TransactionData::new_programmable(sender, coin_refs, ptb.finish(), input.gas.budget, input.gas.price);
 
     TxOutput::from_tx_data(&tx_data)
 }
@@ -132,13 +107,7 @@ pub fn encode_unstake(input: &UnstakeInput) -> Result<TxOutput, Error> {
     );
     ptb.command(move_call);
 
-    let tx_data = TransactionData::new_programmable(
-        sender,
-        vec![gas_coin],
-        ptb.finish(),
-        input.gas.budget,
-        input.gas.price,
-    );
+    let tx_data = TransactionData::new_programmable(sender, vec![gas_coin], ptb.finish(), input.gas.budget, input.gas.price);
 
     TxOutput::from_tx_data(&tx_data)
 }
@@ -169,10 +138,7 @@ pub fn validate_enough_balance(coins: &[Coin], amount: u64) -> Option<Error> {
 
     let total_amount: u64 = coins.iter().map(|x| x.balance).sum();
     if total_amount < amount {
-        return Some(anyhow!(format!(
-            "total amount ({}) is less than amount to send ({})",
-            total_amount, amount
-        ),));
+        return Some(anyhow!(format!("total amount ({}) is less than amount to send ({})", total_amount, amount),));
     }
     None
 }
@@ -193,8 +159,7 @@ mod tests {
                 coin_type: "0x2::sui::SUI".into(),
                 balance: 8994756360,
                 object: Object {
-                    object_id: "0x9f258c85566d977b4c99bb6019560ba99c796e71291269d8f9f3cc9d9f37db46"
-                        .into(),
+                    object_id: "0x9f258c85566d977b4c99bb6019560ba99c796e71291269d8f9f3cc9d9f37db46".into(),
                     digest: "GoAwPNYEBKyAgzmQgnxW23bdhnHaLXcqT3o1nEZo4KPM".into(),
                     version: 68419468,
                 },
@@ -222,22 +187,20 @@ mod tests {
                     coin_type: "0xe4239cd951f6c53d9c41e25270d80d31f925ad1655e5ba5b543843d4a66975ee::SUIP::SUIP".into(),
                     balance: 1400000000,
                     object: Object {
-                        object_id: "0x1a6b6023d363f5dcad026f83ddb9bb0f987c941f10db2ab86571711a1a9a1ee6"
-                        .into(),
+                        object_id: "0x1a6b6023d363f5dcad026f83ddb9bb0f987c941f10db2ab86571711a1a9a1ee6".into(),
                         digest: "CCFDRi15n2mhBVGAoa594VynBKgSRbgZQZgjT4wxFu7B".into(),
-                        version: 67155000
-                    }
+                        version: 67155000,
+                    },
                 },
                 Coin {
                     coin_type: "0xe4239cd951f6c53d9c41e25270d80d31f925ad1655e5ba5b543843d4a66975ee::SUIP::SUIP".into(),
                     balance: 1000000000,
                     object: Object {
-                        object_id: "0x2fd950f33ecdf9e5d797ca3130811e7a973d4c1da5427ac0c910a8c5f6e8b72d"
-                            .into(),
+                        object_id: "0x2fd950f33ecdf9e5d797ca3130811e7a973d4c1da5427ac0c910a8c5f6e8b72d".into(),
                         digest: "7CsXhia2TGqy7bXnxH4WLbkzYJBPvCnNVuLvzByvLsRh".into(),
                         version: 67154999,
                     },
-                }
+                },
             ],
             gas: Gas {
                 budget: 25_000_000,
@@ -247,8 +210,7 @@ mod tests {
                 coin_type: "0x2::sui::SUI".into(),
                 balance: 100000000,
                 object: Object {
-                    object_id: "0x890f8c604c7cb5cc194dbf4953ad3dbebd81ef7526be351d3514cc3cc26c9c1d"
-                        .into(),
+                    object_id: "0x890f8c604c7cb5cc194dbf4953ad3dbebd81ef7526be351d3514cc3cc26c9c1d".into(),
                     digest: "3a2sHuj9pJg7RHub4w9EPyBtpxVfHzk52M91HErwMQ4J".into(),
                     version: 69035764,
                 },
@@ -274,8 +236,7 @@ mod tests {
                 coin_type: "0x2::sui::SUI".into(),
                 balance: 10990277896,
                 object: Object {
-                    object_id: "0x36b8380aa7531d73723657d73a114cfafedf89dc8c76b6752f6daef17e43dda2"
-                        .into(),
+                    object_id: "0x36b8380aa7531d73723657d73a114cfafedf89dc8c76b6752f6daef17e43dda2".into(),
                     version: 0x3f4d8e5,
                     digest: "HdfF7hswRuvbXbEXjGjmUCt7gLybhvbPvvK8zZbCqyD8".into(),
                 },
@@ -284,10 +245,7 @@ mod tests {
         let data = encode_split_and_stake(&input).unwrap();
 
         assert_eq!(hex::encode(data.tx_data), "000003000800ca9a3b0000000001010000000000000000000000000000000000000000000000000000000000000005010000000000000001002061953ea72709eed72f4441dd944eec49a11b4acabfc8e04015e89c63be81b6ab020200010100000000000000000000000000000000000000000000000000000000000000000000030a7375695f73797374656d11726571756573745f6164645f7374616b6500030101000300000000010200e6af80fe1b0b42fcd96762e5c70f5e8dae39f8f0ee0f118cac0d55b74e2927c20136b8380aa7531d73723657d73a114cfafedf89dc8c76b6752f6daef17e43dda2e5d8f4030000000020f71f24516bc04cbf877d42faf459514448c8de6cff48faa44b3eef3b26782e8fe6af80fe1b0b42fcd96762e5c70f5e8dae39f8f0ee0f118cac0d55b74e2927c2ee02000000000000002d31010000000000");
-        assert_eq!(
-            hex::encode(data.hash),
-            "66be75b0f86ca3a9f24380adc8d8336d8921d5dbdc78f1b3c24c7d6842ce5911"
-        );
+        assert_eq!(hex::encode(data.hash), "66be75b0f86ca3a9f24380adc8d8336d8921d5dbdc78f1b3c24c7d6842ce5911");
 
         input.stake_amount = 100_000_000;
         let result = encode_split_and_stake(&input);
@@ -299,8 +257,7 @@ mod tests {
         let input = UnstakeInput {
             sender: "0xe6af80fe1b0b42fcd96762e5c70f5e8dae39f8f0ee0f118cac0d55b74e2927c2".into(),
             staked_sui: Object {
-                object_id: "0xc8c1666ae68f46b609d40bb51d1ec23dc2e0560f986aae878643b6d215549fcf"
-                    .into(),
+                object_id: "0xc8c1666ae68f46b609d40bb51d1ec23dc2e0560f986aae878643b6d215549fcf".into(),
                 digest: "CU86BjXRF1XHFRjKBasCYEuaQxhHuyGBpuoJyqsrYoX5".into(),
                 version: 64195796,
             },
@@ -312,8 +269,7 @@ mod tests {
                 coin_type: "0x2::sui::SUI".into(),
                 balance: 631668351,
                 object: Object {
-                    object_id: "0x36b8380aa7531d73723657d73a114cfafedf89dc8c76b6752f6daef17e43dda2"
-                        .into(),
+                    object_id: "0x36b8380aa7531d73723657d73a114cfafedf89dc8c76b6752f6daef17e43dda2".into(),
                     version: 68755407,
                     digest: "FHbvG5i7f8o2VrKpXnqGFHNvGxG7BBKREea5avdPN7ke".into(),
                 },
@@ -330,10 +286,7 @@ mod tests {
         let tx_data = decode_transaction(tx).unwrap();
         let TransactionData::V1(data) = tx_data;
 
-        assert_eq!(
-            data.sender.to_string(),
-            "0x93f65b8c16c263343bbf66cf9f8eef69cb1dbc92d13f0c331b0dcaeb76b4aab6"
-        );
+        assert_eq!(data.sender.to_string(), "0x93f65b8c16c263343bbf66cf9f8eef69cb1dbc92d13f0c331b0dcaeb76b4aab6");
         match data.kind {
             TransactionKind::ProgrammableTransaction(programmable) => {
                 assert_eq!(programmable.commands.len(), 6);
@@ -342,9 +295,6 @@ mod tests {
         }
 
         let output = validate_and_hash(tx).unwrap();
-        assert_eq!(
-            hex::encode(output.hash),
-            "883f6f54145fdaf357e3d404a8353b1f6eda265bc2b28ec8178631e092c24e3b"
-        );
+        assert_eq!(hex::encode(output.hash), "883f6f54145fdaf357e3d404a8353b1f6eda265bc2b28ec8178631e092c24e3b");
     }
 }

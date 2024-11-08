@@ -11,7 +11,7 @@ use api_connector::PusherClient;
 use pricer::PriceAlertClient;
 use settings::Settings;
 
-pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output=()> + Send>>> {
+pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + Send>>> {
     let price_alerts_job = run_job("Price Alerts", Duration::from_secs(settings.alerter.update_interval_seconds), {
         let settings = Arc::new(settings.clone());
         move || {
@@ -21,17 +21,12 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output=()> + Sen
                 let price_alert_client = PriceAlertClient::new(&settings.postgres.url).await;
                 let pusher_client = PusherClient::new(settings.pusher.url.clone(), settings.pusher.ios.topic.clone());
 
-                PriceAlertSender::new(
-                    price_alert_client,
-                    pusher_client,
-                    settings.alerter.rules.clone()
-                ).run_observer()
+                PriceAlertSender::new(price_alert_client, pusher_client, settings.alerter.rules.clone())
+                    .run_observer()
                     .await
             }
         }
     });
 
-    vec![
-        Box::pin(price_alerts_job),
-    ]
+    vec![Box::pin(price_alerts_job)]
 }

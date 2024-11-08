@@ -23,12 +23,7 @@ impl Contract {
         Ok(addr)
     }
 
-    pub async fn addr(
-        &self,
-        _resolver: &str,
-        _name: &str,
-        _coin_id: u32,
-    ) -> Result<String, ClientError> {
+    pub async fn addr(&self, _resolver: &str, _name: &str, _coin_id: u32) -> Result<String, ClientError> {
         todo!()
     }
 
@@ -43,27 +38,18 @@ impl Contract {
         Ok(self.extract_address(&result))
     }
 
-    async fn eth_call(
-        &self,
-        to: &str,
-        data: Vec<u8>,
-    ) -> Result<Option<serde_json::Value>, ClientError> {
+    async fn eth_call(&self, to: &str, data: Vec<u8>) -> Result<Option<serde_json::Value>, ClientError> {
         let parmas = json!({
             "to": to,
             "data": format!("0x{}", hex::encode(data))
         });
-        self.client
-            .request("eth_call", vec![parmas, json!("latest")])
-            .await
+        self.client.request("eth_call", vec![parmas, json!("latest")]).await
     }
 
     fn extract_address(&self, response: &str) -> String {
         // take last 20 bytes
         let result: Vec<char> = response.chars().collect();
-        format!(
-            "0x{}",
-            String::from_iter(result[result.len() - 40..].iter())
-        )
+        format!("0x{}", String::from_iter(result[result.len() - 40..].iter()))
     }
 }
 
@@ -122,14 +108,8 @@ mod test {
     #[test]
     fn test_encode_coin() {
         let cases = vec![
-            (
-                60u64,
-                hex::decode("000000000000000000000000000000000000000000000000000000000000003c"),
-            ),
-            (
-                0,
-                hex::decode("0000000000000000000000000000000000000000000000000000000000000000"),
-            ),
+            (60u64, hex::decode("000000000000000000000000000000000000000000000000000000000000003c")),
+            (0, hex::decode("0000000000000000000000000000000000000000000000000000000000000000")),
         ];
 
         for (coin, expected) in cases {

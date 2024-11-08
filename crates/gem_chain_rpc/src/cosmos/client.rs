@@ -51,8 +51,7 @@ impl CosmosClient {
 
     pub fn map_transaction_decode(&self, body: String) -> Option<TransactionDecode> {
         let bytes = general_purpose::STANDARD.decode(body.clone()).ok()?;
-        let tx: cosmos_sdk_proto::cosmos::tx::v1beta1::Tx =
-            cosmos_sdk_proto::prost::Message::decode(&*bytes).ok()?;
+        let tx: cosmos_sdk_proto::cosmos::tx::v1beta1::Tx = cosmos_sdk_proto::prost::Message::decode(&*bytes).ok()?;
         let tx_body = tx.clone().body?;
 
         // only decode supported transactions.
@@ -74,10 +73,7 @@ impl CosmosClient {
         })
     }
 
-    pub fn get_amount(
-        &self,
-        coins: Vec<cosmos_sdk_proto::cosmos::base::v1beta1::Coin>,
-    ) -> Option<String> {
+    pub fn get_amount(&self, coins: Vec<cosmos_sdk_proto::cosmos::base::v1beta1::Coin>) -> Option<String> {
         Some(
             coins
                 .into_iter()
@@ -89,21 +85,12 @@ impl CosmosClient {
         )
     }
 
-    pub fn map_transaction(
-        &self,
-        transaction: TransactionDecode,
-        reciept: TransactionResponse,
-    ) -> Option<primitives::Transaction> {
+    pub fn map_transaction(&self, transaction: TransactionDecode, reciept: TransactionResponse) -> Option<primitives::Transaction> {
         let chain = self.get_chain();
         let tx_auth = transaction.tx.auth_info.clone()?;
         let sequence = tx_auth.signer_infos.first()?.sequence;
         let default_denom = self.chain.as_denom()?;
-        let fee = tx_auth
-            .fee?
-            .amount
-            .into_iter()
-            .filter(|x| x.denom == default_denom)
-            .collect::<Vec<_>>();
+        let fee = tx_auth.fee?.amount.into_iter().filter(|x| x.denom == default_denom).collect::<Vec<_>>();
         let fee = fee.first()?.amount.clone();
         let memo = transaction.tx_body.memo.clone();
         let block_number = reciept.tx_response.height.clone();
@@ -124,8 +111,7 @@ impl CosmosClient {
             match message.type_url.as_str() {
                 MESSAGE_SEND | MESSAGE_SEND_BETA => {
                     // special handling for thorchain as it uses a different message type and decoding does not work
-                    let message: MessageSend =
-                        serde_json::from_value(reciept.tx.body.messages.first()?.clone()).ok()?;
+                    let message: MessageSend = serde_json::from_value(reciept.tx.body.messages.first()?.clone()).ok()?;
                     let amount = message.amount.first()?.clone();
 
                     asset_id = if amount.denom == self.chain.as_denom()? {
@@ -143,8 +129,7 @@ impl CosmosClient {
                     to_address = message.to_address;
                 }
                 MESSAGE_DELEGATE => {
-                    let message: cosmos_sdk_proto::cosmos::staking::v1beta1::MsgDelegate =
-                        cosmos_sdk_proto::prost::Message::decode(&*message.value).ok()?;
+                    let message: cosmos_sdk_proto::cosmos::staking::v1beta1::MsgDelegate = cosmos_sdk_proto::prost::Message::decode(&*message.value).ok()?;
 
                     asset_id = chain.as_asset_id();
                     value = message.amount?.amount.clone();
@@ -153,8 +138,7 @@ impl CosmosClient {
                     to_address = message.validator_address;
                 }
                 MESSAGE_UNDELEGATE => {
-                    let message: cosmos_sdk_proto::cosmos::staking::v1beta1::MsgUndelegate =
-                        cosmos_sdk_proto::prost::Message::decode(&*message.value).ok()?;
+                    let message: cosmos_sdk_proto::cosmos::staking::v1beta1::MsgUndelegate = cosmos_sdk_proto::prost::Message::decode(&*message.value).ok()?;
 
                     asset_id = chain.as_asset_id();
                     transaction_type = TransactionType::StakeUndelegate;
@@ -177,10 +161,7 @@ impl CosmosClient {
                         cosmos_sdk_proto::prost::Message::decode(&*message.value).ok()?;
 
                     asset_id = chain.as_asset_id();
-                    value = reciept
-                        .get_rewards_value(self.chain.as_denom()?)
-                        .unwrap_or_default()
-                        .to_string();
+                    value = reciept.get_rewards_value(self.chain.as_denom()?).unwrap_or_default().to_string();
                     transaction_type = TransactionType::StakeRewards;
                     from_address = message.delegator_address;
                     to_address = message.validator_address;
@@ -211,36 +192,15 @@ impl CosmosClient {
         None
     }
 
-    pub async fn get_transaction(
-        &self,
-        hash: String,
-    ) -> Result<TransactionResponse, Box<dyn Error + Send + Sync>> {
+    pub async fn get_transaction(&self, hash: String) -> Result<TransactionResponse, Box<dyn Error + Send + Sync>> {
         let url = format!("{}/cosmos/tx/v1beta1/txs/{}", self.url, hash);
-        let transaction = self
-            .client
-            .get(url)
-            .send()
-            .await?
-            .json::<TransactionResponse>()
-            .await?;
+        let transaction = self.client.get(url).send().await?.json::<TransactionResponse>().await?;
         Ok(transaction)
     }
 
-    pub async fn get_block(
-        &self,
-        block: &str,
-    ) -> Result<BlockResponse, Box<dyn Error + Send + Sync>> {
-        let url = format!(
-            "{}/cosmos/base/tendermint/v1beta1/blocks/{}",
-            self.url, block
-        );
-        let block = self
-            .client
-            .get(url)
-            .send()
-            .await?
-            .json::<BlockResponse>()
-            .await?;
+    pub async fn get_block(&self, block: &str) -> Result<BlockResponse, Box<dyn Error + Send + Sync>> {
+        let url = format!("{}/cosmos/base/tendermint/v1beta1/blocks/{}", self.url, block);
+        let block = self.client.get(url).send().await?.json::<BlockResponse>().await?;
         Ok(block)
     }
 }
@@ -257,10 +217,7 @@ impl ChainBlockProvider for CosmosClient {
         return Ok(block_number);
     }
 
-    async fn get_transactions(
-        &self,
-        block: i64,
-    ) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Send + Sync>> {
+    async fn get_transactions(&self, block: i64) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Send + Sync>> {
         let response = self.get_block(block.to_string().as_str()).await?;
         let transactions = response.block.data.txs;
 
@@ -269,10 +226,7 @@ impl ChainBlockProvider for CosmosClient {
             .into_iter()
             .flat_map(|x| self.map_transaction_decode(x))
             .collect::<Vec<_>>();
-        let txs_futures = txs
-            .clone()
-            .into_iter()
-            .map(|x| self.get_transaction(x.hash));
+        let txs_futures = txs.clone().into_iter().map(|x| self.get_transaction(x.hash));
         let reciepts = futures::future::try_join_all(txs_futures).await?;
 
         let transactions = txs

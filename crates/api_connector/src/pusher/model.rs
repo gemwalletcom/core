@@ -12,13 +12,7 @@ pub struct Notification {
 }
 
 impl Notification {
-    pub fn new(
-        tokens: Vec<String>,
-        platform: i32,
-        title: String,
-        message: String,
-        data: PushNotification,
-    ) -> Self {
+    pub fn new(tokens: Vec<String>, platform: i32, title: String, message: String, data: PushNotification) -> Self {
         Self {
             tokens,
             platform,

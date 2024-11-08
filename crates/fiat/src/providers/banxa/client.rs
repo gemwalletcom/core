@@ -6,9 +6,7 @@ use primitives::{FiatBuyRequest, FiatProviderName, FiatQuote};
 use reqwest::Client;
 use url::Url;
 
-use super::model::{
-    Asset, Coins, Order, OrderData, OrderDetails, OrderRequest, Price, Prices, Response,
-};
+use super::model::{Asset, Coins, Order, OrderData, OrderDetails, OrderRequest, Price, Prices, Response};
 use hmac::{Hmac, Mac};
 use primitives::fiat_quote::FiatQuoteType;
 use sha2::Sha256;
@@ -33,10 +31,7 @@ impl BanxaClient {
     }
 
     pub fn get_authorization(&self, method: &str, query: &str, data: Option<&str>) -> String {
-        let nonce = SystemTime::now()
-            .duration_since(SystemTime::UNIX_EPOCH)
-            .unwrap()
-            .as_secs();
+        let nonce = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs();
 
         let payload = match data {
             Some(data) => format!("{}\n{}\n{}\n{}", method, query, nonce, data),
@@ -45,15 +40,9 @@ impl BanxaClient {
         Self::generate_hmac(&self.merchant_key, &self.secret_key, &payload, nonce)
     }
 
-    pub fn generate_hmac(
-        merchant_key: &str,
-        secret_key: &str,
-        payload: &str,
-        nonce: u64,
-    ) -> String {
+    pub fn generate_hmac(merchant_key: &str, secret_key: &str, payload: &str, nonce: u64) -> String {
         type HmacSha256 = Hmac<Sha256>;
-        let mut mac = HmacSha256::new_from_slice(secret_key.as_bytes())
-            .expect("HMAC can take key of any size");
+        let mut mac = HmacSha256::new_from_slice(secret_key.as_bytes()).expect("HMAC can take key of any size");
         mac.update(payload.as_bytes());
         let signature = mac.finalize().into_bytes();
         format!("{}:{}:{}", merchant_key, hex::encode(signature), nonce)
@@ -63,21 +52,11 @@ impl BanxaClient {
         let query = "/api/coins/buy";
         let authorization = self.get_authorization("GET", query, None);
         let url = format!("{}{}", self.url, query);
-        let response = self
-            .client
-            .get(&url)
-            .bearer_auth(authorization)
-            .send()
-            .await?
-            .json::<Response<Coins>>()
-            .await?;
+        let response = self.client.get(&url).bearer_auth(authorization).send().await?.json::<Response<Coins>>().await?;
         Ok(response.data.coins)
     }
 
-    pub async fn get_quote_buy(
-        &self,
-        request: OrderRequest,
-    ) -> Result<Order, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn get_quote_buy(&self, request: OrderRequest) -> Result<Order, Box<dyn std::error::Error + Send + Sync>> {
         let query = "/api/orders";
         let data = serde_json::to_string(&request)?;
         let authorization = self.get_authorization("POST", query, Some(&data));
@@ -94,10 +73,7 @@ impl BanxaClient {
         Ok(quote.data.order)
     }
 
-    pub async fn get_order(
-        &self,
-        order_id: &str,
-    ) -> Result<OrderDetails, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn get_order(&self, order_id: &str) -> Result<OrderDetails, Box<dyn std::error::Error + Send + Sync>> {
         let query = format!("/api/orders/{}", order_id);
         let authorization = self.get_authorization("GET", &query, None);
         let url = format!("{}{}", self.url, query);
@@ -112,11 +88,7 @@ impl BanxaClient {
         Ok(response.data.order)
     }
 
-    pub async fn get_prices(
-        &self,
-        source: &str,
-        target: &str,
-    ) -> Result<Prices, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn get_prices(&self, source: &str, target: &str) -> Result<Prices, Box<dyn std::error::Error + Send + Sync>> {
         let query = format!("/api/prices?source={}&target={}", source, target);
         let authorization = self.get_authorization("GET", &query, None);
         let url = format!("{}{}", self.url, query);
@@ -152,12 +124,7 @@ impl BanxaClient {
             .collect()
     }
 
-    pub fn get_fiat_quote(
-        &self,
-        request: FiatBuyRequest,
-        fiat_mapping: FiatMapping,
-        price: Price,
-    ) -> FiatQuote {
+    pub fn get_fiat_quote(&self, request: FiatBuyRequest, fiat_mapping: FiatMapping, price: Price) -> FiatQuote {
         let price_fiat_amount = price.fiat_amount.parse::<f64>().unwrap_or_default();
         let fee_amount = price.fee_amount.parse::<f64>().unwrap_or_default();
         let network_fee = price.network_fee.parse::<f64>().unwrap_or_default();

@@ -25,12 +25,7 @@ pub struct ParserBlocksResult {
 }
 
 impl Parser {
-    pub fn new(
-        provider: Box<dyn ChainBlockProvider>,
-        pusher: Pusher,
-        database: DatabaseClient,
-        options: ParserOptions,
-    ) -> Self {
+    pub fn new(provider: Box<dyn ChainBlockProvider>, pusher: Pusher, database: DatabaseClient, options: ParserOptions) -> Self {
         Self {
             chain: provider.get_chain(),
             provider,
@@ -52,28 +47,26 @@ impl Parser {
 
             match self.provider.get_latest_block().await {
                 Ok(latest_block) => {
-                    let _ = self
-                        .database
-                        .set_parser_state_latest_block(self.chain, latest_block as i32);
+                    let _ = self.database.set_parser_state_latest_block(self.chain, latest_block as i32);
                     // initial start
                     if state.current_block == 0 {
-                        let _ = self
-                            .database
-                            .set_parser_state_current_block(self.chain, latest_block as i32);
+                        let _ = self.database.set_parser_state_current_block(self.chain, latest_block as i32);
                     }
                     if next_current_block >= latest_block as i32 {
-                        println!("parser ahead: {} current_block: {}, latest_block: {}, await_blocks: {}", self.chain.as_ref(), state.current_block, latest_block, state.await_blocks);
+                        println!(
+                            "parser ahead: {} current_block: {}, latest_block: {}, await_blocks: {}",
+                            self.chain.as_ref(),
+                            state.current_block,
+                            latest_block,
+                            state.await_blocks
+                        );
 
                         tokio::time::sleep(Duration::from_millis(self.options.timeout)).await;
                         continue;
                     }
                 }
                 Err(err) => {
-                    println!(
-                        "parser latest_block chain: {}, error: {:?}",
-                        self.chain.as_ref(),
-                        err
-                    );
+                    println!("parser latest_block chain: {}, error: {:?}", self.chain.as_ref(), err);
 
                     tokio::time::sleep(Duration::from_millis(self.options.timeout * 5)).await;
                     continue;
@@ -84,10 +77,7 @@ impl Parser {
                 let state = self.database.get_parser_state(self.chain)?;
                 let start = Instant::now();
                 let start_block = state.current_block + 1;
-                let end_block = cmp::min(
-                    start_block + state.parallel_blocks - 1,
-                    state.latest_block - state.await_blocks,
-                );
+                let end_block = cmp::min(start_block + state.parallel_blocks - 1, state.latest_block - state.await_blocks);
                 let next_blocks = (start_block..=end_block).collect::<Vec<_>>();
                 let to_go_blocks = state.latest_block - end_block - state.await_blocks;
 
@@ -97,19 +87,20 @@ impl Parser {
 
                 match self.parse_blocks(next_blocks.clone()).await {
                     Ok(result) => {
-                        let _ = self
-                            .database
-                            .set_parser_state_current_block(self.chain, end_block);
+                        let _ = self.database.set_parser_state_current_block(self.chain, end_block);
 
-                        println!("parser block complete: {}, blocks: {:?} transactions: {} of {}, to go blocks: {}, in: {:?}", self.chain.as_ref(), next_blocks, result.transactions, result.insert_transactions, to_go_blocks, start.elapsed());
-                    }
-                    Err(err) => {
                         println!(
-                            "parser parse_block chain: blocks: {}, {:?}, error: {:?}",
+                            "parser block complete: {}, blocks: {:?} transactions: {} of {}, to go blocks: {}, in: {:?}",
                             self.chain.as_ref(),
                             next_blocks,
-                            err
+                            result.transactions,
+                            result.insert_transactions,
+                            to_go_blocks,
+                            start.elapsed()
                         );
+                    }
+                    Err(err) => {
+                        println!("parser parse_block chain: blocks: {}, {:?}, error: {:?}", self.chain.as_ref(), next_blocks, err);
 
                         tokio::time::sleep(Duration::from_millis(self.options.timeout)).await;
                         break;
@@ -120,58 +111,34 @@ impl Parser {
                     break;
                 }
                 if state.timeout_between_blocks > 0 {
-                    tokio::time::sleep(Duration::from_millis(state.timeout_between_blocks as u64))
-                        .await;
+                    tokio::time::sleep(Duration::from_millis(state.timeout_between_blocks as u64)).await;
                     continue;
                 }
             }
         }
     }
 
-    async fn fetch_blocks(
-        &mut self,
-        blocks: Vec<i32>,
-    ) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Send + Sync>> {
+    async fn fetch_blocks(&mut self, blocks: Vec<i32>) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Send + Sync>> {
         let mut retry_attempts_count = 0;
         loop {
-            let results = futures::future::try_join_all(
-                blocks
-                    .iter()
-                    .map(|block| self.provider.get_transactions(*block as i64)),
-            )
-                .await;
+            let results = futures::future::try_join_all(blocks.iter().map(|block| self.provider.get_transactions(*block as i64))).await;
             match results {
-                Ok(transactions) => {
-                    return Ok(transactions
-                        .into_iter()
-                        .flatten()
-                        .collect::<Vec<primitives::Transaction>>())
-                }
+                Ok(transactions) => return Ok(transactions.into_iter().flatten().collect::<Vec<primitives::Transaction>>()),
                 Err(err) => {
                     if retry_attempts_count >= self.options.retry {
                         return Err(err);
                     }
                     retry_attempts_count += 1;
 
-                    tokio::time::sleep(Duration::from_millis(
-                        retry_attempts_count * self.options.timeout * 2,
-                    ))
-                        .await;
+                    tokio::time::sleep(Duration::from_millis(retry_attempts_count * self.options.timeout * 2)).await;
                 }
             }
         }
     }
 
-    pub async fn parse_blocks(
-        &mut self,
-        blocks: Vec<i32>,
-    ) -> Result<ParserBlocksResult, Box<dyn Error + Send + Sync>> {
+    pub async fn parse_blocks(&mut self, blocks: Vec<i32>) -> Result<ParserBlocksResult, Box<dyn Error + Send + Sync>> {
         let transactions = self.fetch_blocks(blocks.clone()).await?;
-        let addresses = transactions
-            .clone()
-            .into_iter()
-            .flat_map(|x| x.addresses())
-            .collect();
+        let addresses = transactions.clone().into_iter().flat_map(|x| x.addresses()).collect();
         let subscriptions = self.database.get_subscriptions(self.chain, addresses)?;
         let mut transactions_map: HashMap<String, primitives::Transaction> = HashMap::new();
 
@@ -194,30 +161,14 @@ impl Parser {
 
                     transactions_map.insert(transaction.clone().id, transaction.clone());
 
-                    let transaction = transaction
-                        .finalize(vec![subscription.address.clone()])
-                        .clone();
+                    let transaction = transaction.finalize(vec![subscription.address.clone()]).clone();
 
-                    if self
-                        .options
-                        .is_transaction_outdated(transaction.asset_id.chain, transaction.created_at)
-                    {
-                        println!(
-                            "outdated transaction: {}, created_at: {}",
-                            transaction.id, transaction.created_at
-                        );
+                    if self.options.is_transaction_outdated(transaction.asset_id.chain, transaction.created_at) {
+                        println!("outdated transaction: {}, created_at: {}", transaction.id, transaction.created_at);
                         continue;
                     }
 
-                    match self
-                        .pusher
-                        .push(
-                            device.as_primitive(),
-                            transaction,
-                            subscription.as_primitive(),
-                        )
-                        .await
-                    {
+                    match self.pusher.push(device.as_primitive(), transaction, subscription.as_primitive()).await {
                         Ok(result) => {
                             println!("push: result: {:?}", result);
                         }
@@ -232,12 +183,7 @@ impl Parser {
         match self.store_transactions(transactions_map.clone()).await {
             Ok(_) => {}
             Err(err) => {
-                println!(
-                    "transaction insert: chain: {}, blocks: {:?}, error: {:?}",
-                    self.chain.as_ref(),
-                    blocks,
-                    err
-                );
+                println!("transaction insert: chain: {}, blocks: {:?}, error: {:?}", self.chain.as_ref(), blocks, err);
             }
         }
 
@@ -247,10 +193,7 @@ impl Parser {
         })
     }
 
-    pub async fn store_transactions(
-        &mut self,
-        transactions_map: HashMap<String, primitives::Transaction>,
-    ) -> Result<usize, Box<dyn Error + Send + Sync>> {
+    pub async fn store_transactions(&mut self, transactions_map: HashMap<String, primitives::Transaction>) -> Result<usize, Box<dyn Error + Send + Sync>> {
         let primitive_transactions = transactions_map
             .clone()
             .into_iter()
@@ -270,27 +213,25 @@ impl Parser {
         let transaction_chunks = primitive_transactions.chunks(300);
 
         for chunk in transaction_chunks {
-            let transactions = chunk.to_vec()
+            let transactions = chunk
+                .to_vec()
                 .clone()
                 .into_iter()
                 .map(storage::models::Transaction::from_primitive)
                 .collect::<Vec<storage::models::Transaction>>();
 
-            let transaction_addresses = chunk.to_vec()
+            let transaction_addresses = chunk
+                .to_vec()
                 .clone()
                 .into_iter()
-                .flat_map(|transaction| {
-                    storage::models::TransactionAddresses::from_primitive(transaction)
-                })
+                .flat_map(|transaction| storage::models::TransactionAddresses::from_primitive(transaction))
                 .collect::<Vec<storage::models::TransactionAddresses>>();
 
             if transactions.is_empty() || transaction_addresses.is_empty() {
                 return Ok(primitive_transactions.len());
             }
 
-            self
-                .database
-                .add_transactions(transactions.clone(), transaction_addresses.clone())?;
+            self.database.add_transactions(transactions.clone(), transaction_addresses.clone())?;
         }
 
         Ok(primitive_transactions.len())

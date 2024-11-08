@@ -10,8 +10,7 @@ pub struct Provider {
 
 impl Provider {
     pub fn new(url: String) -> Self {
-        let client: jsonrpsee::http_client::HttpClient =
-            HttpClientBuilder::default().build(url).unwrap();
+        let client: jsonrpsee::http_client::HttpClient = HttpClientBuilder::default().build(url).unwrap();
         Provider {
             contract: Contract {
                 client,

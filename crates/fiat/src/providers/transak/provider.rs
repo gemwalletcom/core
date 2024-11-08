@@ -14,11 +14,7 @@ impl FiatProvider for TransakClient {
         Self::NAME
     }
 
-    async fn get_buy_quote(
-        &self,
-        request: FiatBuyRequest,
-        request_map: FiatMapping,
-    ) -> Result<FiatQuote, Box<dyn std::error::Error + Send + Sync>> {
+    async fn get_buy_quote(&self, request: FiatBuyRequest, request_map: FiatMapping) -> Result<FiatQuote, Box<dyn std::error::Error + Send + Sync>> {
         let quote = self
             .get_buy_quote(
                 request_map.symbol.clone(),
@@ -36,9 +32,7 @@ impl FiatProvider for TransakClient {
         Err(Box::from("not supported"))
     }
 
-    async fn get_assets(
-        &self,
-    ) -> Result<Vec<FiatProviderAsset>, Box<dyn std::error::Error + Send + Sync>> {
+    async fn get_assets(&self) -> Result<Vec<FiatProviderAsset>, Box<dyn std::error::Error + Send + Sync>> {
         let assets = self
             .get_supported_assets()
             .await?
@@ -48,10 +42,7 @@ impl FiatProvider for TransakClient {
         Ok(assets)
     }
 
-    async fn webhook(
-        &self,
-        _data: serde_json::Value,
-    ) -> Result<FiatTransaction, Box<dyn std::error::Error + Send + Sync>> {
+    async fn webhook(&self, _data: serde_json::Value) -> Result<FiatTransaction, Box<dyn std::error::Error + Send + Sync>> {
         unimplemented!()
     }
 }

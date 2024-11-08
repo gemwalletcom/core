@@ -31,53 +31,38 @@ impl CellBuilder {
     }
 
     pub fn store_u8(&mut self, bit_len: usize, val: u8) -> Result<&mut Self, TonCellError> {
-        self.bit_writer
-            .write(bit_len as u32, val)
-            .map_cell_builder_error()?;
+        self.bit_writer.write(bit_len as u32, val).map_cell_builder_error()?;
         Ok(self)
     }
 
     pub fn store_i8(&mut self, bit_len: usize, val: i8) -> Result<&mut Self, TonCellError> {
-        self.bit_writer
-            .write(bit_len as u32, val)
-            .map_cell_builder_error()?;
+        self.bit_writer.write(bit_len as u32, val).map_cell_builder_error()?;
         Ok(self)
     }
 
     pub fn store_u32(&mut self, bit_len: usize, val: u32) -> Result<&mut Self, TonCellError> {
-        self.bit_writer
-            .write(bit_len as u32, val)
-            .map_cell_builder_error()?;
+        self.bit_writer.write(bit_len as u32, val).map_cell_builder_error()?;
         Ok(self)
     }
 
     pub fn store_i32(&mut self, bit_len: usize, val: i32) -> Result<&mut Self, TonCellError> {
-        self.bit_writer
-            .write(bit_len as u32, val)
-            .map_cell_builder_error()?;
+        self.bit_writer.write(bit_len as u32, val).map_cell_builder_error()?;
         Ok(self)
     }
 
     pub fn store_u64(&mut self, bit_len: usize, val: u64) -> Result<&mut Self, TonCellError> {
-        self.bit_writer
-            .write(bit_len as u32, val)
-            .map_cell_builder_error()?;
+        self.bit_writer.write(bit_len as u32, val).map_cell_builder_error()?;
         Ok(self)
     }
 
     pub fn store_i64(&mut self, bit_len: usize, val: i64) -> Result<&mut Self, TonCellError> {
-        self.bit_writer
-            .write(bit_len as u32, val)
-            .map_cell_builder_error()?;
+        self.bit_writer.write(bit_len as u32, val).map_cell_builder_error()?;
         Ok(self)
     }
 
     pub fn store_uint(&mut self, bit_len: usize, val: &BigUint) -> Result<&mut Self, TonCellError> {
         if val.bits() as usize > bit_len {
-            return Err(TonCellError::cell_builder_error(format!(
-                "Value {} doesn't fit in {} bits",
-                val, bit_len
-            )));
+            return Err(TonCellError::cell_builder_error(format!("Value {} doesn't fit in {} bits", val, bit_len)));
         }
         let bytes = val.to_bytes_be();
         let num_full_bytes = bit_len / 8;
@@ -89,11 +74,7 @@ impl CellBuilder {
             )));
         }
         if num_bits_in_high_byte > 0 {
-            let high_byte: u8 = if bytes.len() == num_full_bytes + 1 {
-                bytes[0]
-            } else {
-                0
-            };
+            let high_byte: u8 = if bytes.len() == num_full_bytes + 1 { bytes[0] } else { 0 };
             self.store_u8(num_bits_in_high_byte, high_byte)?;
         }
         let num_empty_bytes = num_full_bytes - bytes.len();
@@ -108,10 +89,7 @@ impl CellBuilder {
 
     pub fn store_int(&mut self, bit_len: usize, val: &BigInt) -> Result<&mut Self, TonCellError> {
         if val.bits() as usize > bit_len {
-            return Err(TonCellError::cell_builder_error(format!(
-                "Value {} doesn't fit in {} bits",
-                val, bit_len
-            )));
+            return Err(TonCellError::cell_builder_error(format!("Value {} doesn't fit in {} bits", val, bit_len)));
         }
         let bytes = val.to_signed_bytes_be();
         let num_full_bytes = bit_len / 8;
@@ -123,11 +101,7 @@ impl CellBuilder {
             )));
         }
         if num_bits_in_high_byte > 0 {
-            let high_byte: u8 = if bytes.len() == num_full_bytes + 1 {
-                bytes[0]
-            } else {
-                0
-            };
+            let high_byte: u8 = if bytes.len() == num_full_bytes + 1 { bytes[0] } else { 0 };
             self.store_u8(num_bits_in_high_byte, high_byte)?;
         }
         let num_empty_bytes = num_full_bytes - bytes.len();
@@ -225,10 +199,7 @@ impl CellBuilder {
         self.store_reference(&Arc::new(cell))
     }
 
-    pub fn store_remaining_bits(
-        &mut self,
-        parser: &mut CellParser,
-    ) -> Result<&mut Self, TonCellError> {
+    pub fn store_remaining_bits(&mut self, parser: &mut CellParser) -> Result<&mut Self, TonCellError> {
         let num_full_bytes = parser.remaining_bits() / 8;
         let bytes = parser.load_bytes(num_full_bytes)?;
         self.store_slice(bytes.as_slice())?;
@@ -278,9 +249,7 @@ impl CellBuilder {
                 references: self.references.clone(),
             })
         } else {
-            Err(TonCellError::CellBuilderError(
-                "Stream is not byte-aligned".to_string(),
-            ))
+            Err(TonCellError::CellBuilderError("Stream is not byte-aligned".to_string()))
         }
     }
 }
@@ -404,8 +373,8 @@ mod tests {
         assert_eq!(
             cell.data,
             [
-                128, 28, 155, 42, 157, 243, 233, 194, 74, 20, 77, 107, 119, 90, 237, 67, 155, 162,
-                249, 250, 17, 117, 117, 173, 233, 132, 124, 110, 68, 225, 93, 237, 238, 192
+                128, 28, 155, 42, 157, 243, 233, 194, 74, 20, 77, 107, 119, 90, 237, 67, 155, 162, 249, 250, 17, 117, 117, 173, 233, 132, 124, 110, 68, 225,
+                93, 237, 238, 192
             ]
         );
         assert_eq!(cell.bit_len, 2 + 1 + 8 + 32 * 8);

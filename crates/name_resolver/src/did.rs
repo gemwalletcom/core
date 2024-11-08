@@ -46,25 +46,10 @@ impl NameClient for DidClient {
         NameProvider::Did
     }
 
-    async fn resolve(
-        &self,
-        name: &str,
-        chain: Chain,
-    ) -> Result<String, Box<dyn Error + Send + Sync>> {
+    async fn resolve(&self, name: &str, chain: Chain) -> Result<String, Box<dyn Error + Send + Sync>> {
         let url = format!("{}/v2/account/records", self.api_url);
-        let account = Account {
-            account: name.to_string(),
-        };
-        let records = self
-            .client
-            .post(&url)
-            .json(&account)
-            .send()
-            .await?
-            .json::<Data<Records>>()
-            .await?
-            .data
-            .records;
+        let account = Account { account: name.to_string() };
+        let records = self.client.post(&url).json(&account).send().await?.json::<Data<Records>>().await?.data.records;
 
         let record = records
             .iter()

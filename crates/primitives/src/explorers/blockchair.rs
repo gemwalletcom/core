@@ -199,5 +199,7 @@ impl BlockExplorer for Blockchair {
         None
     }
 
-    fn get_validator_url(&self, _validator: &str) -> Option<String> {  None }
+    fn get_validator_url(&self, _validator: &str) -> Option<String> {
+        None
+    }
 }

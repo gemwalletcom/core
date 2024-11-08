@@ -138,7 +138,8 @@ impl Chain {
             | Self::ZkSync
             | Self::Linea
             | Self::Mantle
-            | Self::Celo | Self::World => 60,
+            | Self::Celo
+            | Self::World => 60,
             Self::Bitcoin => 0,
             Self::Litecoin => 2,
             Self::SmartChain => 9006,
@@ -173,7 +174,8 @@ impl Chain {
             | Self::ZkSync
             | Self::Linea
             | Self::Mantle
-            | Self::Celo | Self::World => ChainType::Ethereum,
+            | Self::Celo
+            | Self::World => ChainType::Ethereum,
             Self::Bitcoin | Self::Doge | Self::Litecoin => ChainType::Bitcoin,
             Self::Solana => ChainType::Solana,
             Self::Thorchain | Self::Cosmos | Self::Osmosis | Self::Celestia | Self::Injective | Self::Noble | Self::Sei => ChainType::Cosmos,
@@ -201,7 +203,8 @@ impl Chain {
             | Self::ZkSync
             | Self::Linea
             | Self::Mantle
-            | Self::Celo | Self::World => Some(AssetType::ERC20),
+            | Self::Celo
+            | Self::World => Some(AssetType::ERC20),
             Self::OpBNB | Self::SmartChain => Some(AssetType::BEP20),
             Self::Solana => Some(AssetType::SPL),
             Self::Tron => Some(AssetType::TRC20),
