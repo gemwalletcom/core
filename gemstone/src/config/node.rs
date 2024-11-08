@@ -29,24 +29,19 @@ impl Node {
 }
 
 pub fn get_nodes() -> HashMap<String, Vec<Node>> {
-    Chain::all()
-        .into_iter()
-        .map(|chain| (chain.to_string(), get_nodes_for_chain(chain)))
-        .collect()
+    Chain::all().into_iter().map(|chain| (chain.to_string(), get_nodes_for_chain(chain))).collect()
 }
 
 pub fn get_nodes_for_chain(chain: Chain) -> Vec<Node> {
     match chain {
         Chain::Bitcoin | Chain::Litecoin => vec![],
         Chain::Ethereum => vec![
-            Node::new("https://eth.llamarpc.com", NodePriority::High),
             Node::new("https://ethereum.publicnode.com", NodePriority::High),
             Node::new("https://rpc.ankr.com/eth", NodePriority::High),
             Node::new("https://ethereum-rpc.polkachu.com", NodePriority::High),
             Node::new("https://eth.merkle.io", NodePriority::High),
         ],
         Chain::SmartChain => vec![
-            Node::new("https://binance.llamarpc.com", NodePriority::High),
             Node::new("https://bsc.publicnode.com", NodePriority::High),
             Node::new("https://bsc.merkle.io", NodePriority::High),
         ],
@@ -114,7 +109,7 @@ pub fn get_nodes_for_chain(chain: Chain) -> Vec<Node> {
         ],
         Chain::Celestia => vec![
             Node::new("https://celestia-rest.publicnode.com", NodePriority::High),
-            Node::new("https://celestia-api.polkachu.com", NodePriority::High)
+            Node::new("https://celestia-api.polkachu.com", NodePriority::High),
         ],
         Chain::Injective => vec![
             Node::new("https://injective-rest.publicnode.com", NodePriority::High),
@@ -129,9 +124,7 @@ pub fn get_nodes_for_chain(chain: Chain) -> Vec<Node> {
             Node::new("https://pacific-rpc.manta.network/http", NodePriority::High),
             Node::new("https://manta-pacific.drpc.org", NodePriority::High),
         ],
-        Chain::Blast => vec![
-            Node::new("https://blast-rpc.polkachu.com", NodePriority::High),
-        ],
+        Chain::Blast => vec![Node::new("https://blast-rpc.polkachu.com", NodePriority::High)],
         Chain::Noble => vec![
             Node::new("https://rest.cosmos.directory/noble", NodePriority::High),
             Node::new("https://noble-api.polkachu.com", NodePriority::High),
@@ -140,14 +133,10 @@ pub fn get_nodes_for_chain(chain: Chain) -> Vec<Node> {
             Node::new("https://zksync.drpc.org", NodePriority::High),
             Node::new("https://mainnet.era.zksync.io", NodePriority::High),
         ],
-        Chain::Linea => vec![
-            Node::new("https://linea-rpc.polkachu.com", NodePriority::High),
-        ],
+        Chain::Linea => vec![Node::new("https://linea-rpc.polkachu.com", NodePriority::High)],
         Chain::Mantle => vec![Node::new("https://rpc.ankr.com/mantle", NodePriority::High)],
         Chain::Celo => vec![Node::new("https://rpc.ankr.com/celo", NodePriority::High)],
         Chain::Near => vec![Node::new("https://rpc.mainnet.near.org", NodePriority::High)],
-        Chain::World => vec![
-            Node::new("https://worldchain-mainnet.gateway.tenderly.co", NodePriority::High)
-        ],
+        Chain::World => vec![Node::new("https://worldchain-mainnet.gateway.tenderly.co", NodePriority::High)],
     }
 }

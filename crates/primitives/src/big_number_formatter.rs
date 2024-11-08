@@ -15,11 +15,6 @@ impl BigNumberFormatter {
         let decimal = Self::big_decimal_value(value, decimals as u32)?;
         Some(decimal.to_string())
     }
-
-    pub fn divide(value: &str, decimals: u32) -> String {
-        let result = BigInt::from_str(value.to_string().as_str()).unwrap() / BigInt::from(10).pow(decimals);
-        result.to_string()
-    }
 }
 
 #[cfg(test)]
@@ -41,15 +36,8 @@ mod tests {
         assert_eq!(result, "0.4567");
 
         // Test case 4: u256 input
-        let result = BigNumberFormatter::value(
-            "115792089237316195423570985008687907853269984665640564039457000000000000000000",
-            18,
-        )
-        .unwrap();
-        assert_eq!(
-            result,
-            "115792089237316195423570985008687907853269984665640564039457"
-        );
+        let result = BigNumberFormatter::value("115792089237316195423570985008687907853269984665640564039457000000000000000000", 18).unwrap();
+        assert_eq!(result, "115792089237316195423570985008687907853269984665640564039457");
 
         // Test case 5: Invalid input
         let result = BigNumberFormatter::value("abc", 2);
