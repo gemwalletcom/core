@@ -37,6 +37,10 @@ impl GemSwapProvider for Orca {
         ORCA_NAME
     }
 
+    async fn supported_chains(&self) -> Result<Vec<Chain>, SwapperError> {
+        Ok(vec![Chain::Solana])
+    }
+
     async fn fetch_quote(&self, request: &SwapQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapQuote, SwapperError> {
         if request.from_asset.chain != Chain::Solana || request.to_asset.chain != Chain::Solana {
             return Err(SwapperError::NotSupportedChain);
@@ -75,7 +79,7 @@ impl GemSwapProvider for Orca {
 impl Orca {
     pub async fn fetch_fee_tiers(&self, provider: Arc<dyn AlienProvider>) -> Result<Vec<FeeTier>, SwapperError> {
         let call = SolanaRpc::GetProgramAccounts(self.whirlpoo_program.to_string(), Self::get_program_filters());
-        let response: JsonRpcResult<Vec<ProgramAccount>> = jsonrpc_call(&call, provider, self.chain).await?;
+        let response: JsonRpcResult<Vec<ProgramAccount>> = jsonrpc_call(&call, provider, &self.chain).await?;
         let result = response.extract_result()?;
         let fee_tiers = result.iter().filter_map(|x| try_borsh_decode(x.account.data[0].as_str()).ok()).collect();
         Ok(fee_tiers)
@@ -94,7 +98,7 @@ impl Orca {
             .filter_map(|x| self.get_pool_address(token_mint_1, token_mint_2, x.tick_spacing))
             .collect::<Vec<_>>();
         let call = SolanaRpc::GetMultipleAccounts(pool_addresses.clone());
-        let response: JsonRpcResult<ValueResult<Vec<Option<AccountData>>>> = jsonrpc_call(&call, provider, chain).await?;
+        let response: JsonRpcResult<ValueResult<Vec<Option<AccountData>>>> = jsonrpc_call(&call, provider, &chain).await?;
         let result = response.extract_result()?.value;
 
         let mut pools: Vec<Whirlpool> = vec![];

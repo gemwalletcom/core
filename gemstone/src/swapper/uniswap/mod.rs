@@ -321,7 +321,7 @@ impl GemSwapProvider for UniswapV3 {
             })
             .collect();
 
-        let responses = batch_jsonrpc_call(&eth_calls, provider.clone(), request.from_asset.chain)
+        let responses = batch_jsonrpc_call(&eth_calls, provider.clone(), &request.from_asset.chain)
             .await
             .map_err(SwapperError::from)?;
 

@@ -37,6 +37,7 @@ mod tests {
     use super::*;
     use async_std::future::{pending, timeout};
     use async_trait::async_trait;
+    use primitives::Chain;
     use std::{time::Duration, vec};
 
     #[derive(Debug)]
@@ -57,7 +58,7 @@ mod tests {
             Ok(vec![self.response.as_bytes().to_vec()])
         }
 
-        fn get_endpoint(&self, _chain: primitives::Chain) -> Result<String, AlienError> {
+        fn get_endpoint(&self, _chain: Chain) -> Result<String, AlienError> {
             Ok(String::from("http://localhost:8080"))
         }
     }
