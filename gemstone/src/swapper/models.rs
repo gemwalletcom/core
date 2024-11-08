@@ -1,6 +1,8 @@
 use primitives::{AssetId, ChainType};
 use std::fmt::Debug;
 
+use crate::config::swap_config::SwapReferralFees;
+
 use super::permit2_data::Permit2Data;
 
 static DEFAULT_SLIPPAGE_BPS: u32 = 300;
@@ -40,16 +42,10 @@ pub struct SwapQuoteRequest {
     pub options: Option<GemSwapOptions>,
 }
 
-#[derive(Debug, Default, Clone, uniffi::Record)]
-pub struct GemSwapFee {
-    pub bps: u32,
-    pub address: String,
-}
-
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct GemSwapOptions {
     pub slippage_bps: u32,
-    pub fee: Option<GemSwapFee>,
+    pub fee: Option<SwapReferralFees>,
     pub preferred_providers: Vec<String>,
 }
 

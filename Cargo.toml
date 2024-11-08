@@ -34,7 +34,6 @@ members = [
 
     "crates/security_*",
     "crates/gem_*",
-    "crates/swap_*",
 
     "crates/localizer",
     "crates/job_runner",
@@ -53,6 +52,7 @@ default-members = [
 typeshare = "1.0.3"
 serde = { version = "1.0.196", features = ["derive"] }
 serde_json = { version = "1.0.114" }
+serde_urlencoded = { version = "0.7.1" }
 tokio = { version = "1.36.0", features = ["macros", "rt-multi-thread"] }
 reqwest = { version = "0.12.3", features = ["json"] }
 reqwest-middleware = { version = "0.3.0" }
