@@ -71,6 +71,9 @@ struct ContentView: View {
                     }
                 }
             }
+            Button("Decode Tick Array Test") {
+                self.decodeTickArray()
+            }
         }
         .padding()
         .onAppear {}
@@ -108,6 +111,18 @@ struct ContentView: View {
     func fetchProviders() {
         let swapper = GemSwapper(rpcProvider: self.provider)
         print("<== getProviders:\n", swapper.getProviders())
+    }
+
+    func decodeTickArray() {
+        Task.detached {
+            do {
+                let ok = try await Gemstone.decodeTickArray()
+                print("decodeTickArray is \(ok)")
+            }
+            catch {
+                print(error)
+            }
+        }
     }
 }
 

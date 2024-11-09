@@ -1,0 +1,18 @@
+{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "getMultipleAccounts",
+    "params": [
+        [
+            "3M9oTcoC5viBCNuJEKgwCrQDEbE3Rh6CpTGP5C2jGHzU",
+            "38d2DowiQEn1BUxqHWt38yp4pZHjDzU87hynZ7dLnmYJ",
+            "EpmYr9EDCdiZgPmdfTeEupXMyPoBKbwkPrutSPUJLua",
+            "Dbj8nbAEZPpQvNqhDRGVrwQ2Y2gejNrnGFJ1xPS38TXJ",
+            "BtCDvZXqLLJyzh8bJWYW4hLPdJZi7cQWJ1CWwU9sA2G6"
+        ],
+        {
+            "commitment": "confirmed",
+            "encoding": "base64"
+        }
+    ]
+}

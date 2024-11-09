@@ -50,6 +50,7 @@ impl GemSwapProvider for Orca {
         if request.from_asset.chain != Chain::Solana || request.to_asset.chain != Chain::Solana {
             return Err(SwapperError::NotSupportedChain);
         }
+
         let amount_in = request.value.parse::<u64>().map_err(|_| SwapperError::InvalidAmount)?;
         let options = request.options.clone().unwrap_or_default();
         let slippage_bps = options.slippage_bps as u16;
@@ -72,7 +73,11 @@ impl GemSwapProvider for Orca {
         println!("pool_address: {:?}", pool_address);
 
         let _token_accounts = self.fetch_token_accounts(&pool.token_mint_a, &pool.token_mint_b, provider.clone()).await?;
-        let tick_arrays = self.fetch_tick_arrays(&pool_address, pool, provider.clone()).await?;
+        let tick_array = self.fetch_tick_arrays(&pool_address, pool, provider.clone()).await?;
+
+        let tick_array_facades = tick_array.into_iter().map(|x| TickArrayFacade::from(&x)).collect::<Vec<_>>();
+        let result: [TickArrayFacade; 5] = std::array::from_fn(|i| tick_array_facades[i]);
+        let tick_arrays = TickArrays::from(result);
 
         let quote = swap_quote_by_input_token(amount_in, true, slippage_bps, pool.into(), tick_arrays, None, None).map_err(|c| SwapperError::NetworkError {
             msg: format!("swap_quote_by_input_token error: {:?}", c),
@@ -140,7 +145,7 @@ impl Orca {
         Ok(pools)
     }
 
-    pub async fn fetch_tick_arrays(&self, pool_address: &Pubkey, pool: &Whirlpool, provider: Arc<dyn AlienProvider>) -> Result<TickArrays, SwapperError> {
+    pub async fn fetch_tick_arrays(&self, pool_address: &Pubkey, pool: &Whirlpool, provider: Arc<dyn AlienProvider>) -> Result<Vec<TickArray>, SwapperError> {
         let start_index = get_tick_array_start_tick_index(pool.tick_current_index, pool.tick_spacing);
         let offset = (pool.tick_spacing as i32) * (TICK_ARRAY_SIZE as i32);
         let tick_arrays = [
@@ -164,26 +169,14 @@ impl Orca {
         let call = SolanaRpc::GetMultipleAccounts(tick_addresses);
         let response: JsonRpcResult<ValueResult<Vec<AccountData>>> = jsonrpc_call(&call, provider, &self.chain).await?;
         let tick_accounts = response.extract_result()?.value;
-
-        println!("tick_accounts: {:?}", tick_accounts.len());
-
-        let mut tick_arrays: Vec<TickArrayFacade> = vec![];
-
-        for tick_account in tick_accounts.iter() {
-            let tick = try_borsh_decode::<TickArray>(tick_account.data[0].as_str()).map_err(|e| SwapperError::ABIError { msg: e.to_string() })?;
-            tick_arrays.push(TickArrayFacade::from(&tick));
+        let base64_strs: Vec<String> = tick_accounts.iter().map(|x| x.data[0].clone()).collect();
+        let mut tick_array: Vec<TickArray> = vec![];
+        for base64_str in base64_strs.iter() {
+            let tick = try_borsh_decode::<TickArray>(base64_str).unwrap();
+            tick_array.push(tick);
         }
 
-        println!("tick_arrays: {:?}", tick_arrays.len());
-
-        if tick_arrays.is_empty() {
-            return Err(SwapperError::ABIError {
-                msg: "fetch_tick_arrays error".into(),
-            });
-        }
-        Ok(tick_arrays[0].into())
-        // let result: [TickArrayFacade; 5] = std::array::from_fn(|i| TickArrayFacade::from(&tick_arrays[i]));
-        // Ok(result.into())
+        Ok(tick_array)
     }
 
     pub async fn fetch_token_accounts(
@@ -284,6 +277,28 @@ impl From<&Tick> for TickFacade {
     }
 }
 
+pub fn test_decode_arrays() -> Result<Vec<TickArray>, SwapperError> {
+    let data = include_str!("test/tick_array_response.json");
+    let response: JsonRpcResult<ValueResult<Vec<AccountData>>> = serde_json::from_slice(data.as_bytes()).unwrap();
+    let tick_accounts = response.extract_result().unwrap().value;
+    let base64_strs: Vec<String> = tick_accounts.iter().map(|x| x.data[0].clone()).collect();
+    let mut tick_array: Vec<TickArray> = vec![];
+    for base64_str in base64_strs.iter() {
+        let tick: TickArray = try_borsh_decode(base64_str).unwrap();
+        tick_array.push(tick);
+    }
+    Ok(tick_array)
+}
+
+#[uniffi::export]
+async fn decode_tick_array() -> Result<bool, SwapperError> {
+    let tick_array = test_decode_arrays().unwrap();
+    let tick_array_facades = tick_array.into_iter().map(|x| TickArrayFacade::from(&x)).collect::<Vec<_>>();
+    let result: [TickArrayFacade; 5] = std::array::from_fn(|i| tick_array_facades[i]);
+    let _tick_arrays = TickArrays::from(result);
+    Ok(true)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -304,16 +319,8 @@ mod tests {
 
     #[test]
     fn test_decode_tick_array() {
-        let data = include_str!("test/tick_array.json");
+        let tick_array = test_decode_arrays().unwrap();
 
-        let response: JsonRpcResult<ValueResult<Vec<AccountData>>> = serde_json::from_slice(data.as_bytes()).unwrap();
-        let tick_accounts = response.extract_result().unwrap().value;
-
-        let tick_arrays = tick_accounts
-            .iter()
-            .filter_map(|x| try_borsh_decode::<TickArray>(x.data[0].as_str()).ok())
-            .collect::<Vec<_>>();
-
-        assert_eq!(tick_arrays.len(), 5);
+        assert_eq!(tick_array.len(), 5);
     }
 }

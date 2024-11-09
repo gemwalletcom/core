@@ -30,6 +30,7 @@ pub fn get_oracle_address(whirlpool: &Pubkey) -> Option<(Pubkey, u8)> {
     Pubkey::try_find_program_address(seeds, &whirlpool_program)
 }
 
+#[allow(dead_code)]
 pub fn get_tick_array_address(whirlpool: &Pubkey, start_tick_index: i32) -> Option<(Pubkey, u8)> {
     let start_tick_index_str = start_tick_index.to_string();
     let seeds = &[b"tick_array", whirlpool.as_ref(), start_tick_index_str.as_bytes()];
