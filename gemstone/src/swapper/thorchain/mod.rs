@@ -1,7 +1,10 @@
+mod asset;
+mod chain;
 mod client;
 mod model;
 
-use model::ThorChainAsset;
+use asset::THORChainAsset;
+use chain::THORChainName;
 use num_bigint::BigInt;
 use std::str::FromStr;
 
@@ -10,7 +13,7 @@ use crate::swapper::models::{ApprovalType, FetchQuoteData, SwapProviderData, Swa
 use crate::swapper::thorchain::client::ThorChainSwapClient;
 use crate::swapper::GemSwapProvider;
 use async_trait::async_trait;
-use primitives::{Asset, Chain, ChainType};
+use primitives::{Chain, ChainType};
 use std::sync::Arc;
 
 use super::SwapRoute;
@@ -25,7 +28,7 @@ impl ThorChain {
 
     fn data(&self, chain: Chain, memo: String) -> String {
         match chain {
-            Chain::Thorchain | Chain::Litecoin | Chain::Doge | Chain::Bitcoin => memo,
+            Chain::Thorchain | Chain::Litecoin | Chain::Doge | Chain::Bitcoin | Chain::Cosmos => memo,
             _ => hex::encode(memo.as_bytes()),
         }
     }
@@ -58,7 +61,7 @@ impl GemSwapProvider for ThorChain {
     async fn supported_chains(&self) -> Result<Vec<Chain>, SwapperError> {
         let chains: Vec<Chain> = Chain::all()
             .into_iter()
-            .filter_map(|chain| ThorChainAsset::from_chain(&chain).map(|name| name.chain()))
+            .filter_map(|chain| THORChainName::from_chain(&chain).map(|name| name.chain()))
             .collect();
         Ok(chains)
     }
@@ -69,24 +72,25 @@ impl GemSwapProvider for ThorChain {
             .map_err(|err| SwapperError::NetworkError { msg: err.to_string() })?;
         let client = ThorChainSwapClient::new(provider);
 
-        let from_decimals = Asset::from_chain(request.clone().from_asset.chain).decimals;
-        let to_decimals = Asset::from_chain(request.clone().to_asset.chain).decimals;
+        //TODO: currently do not support from_asset_id(). As it requires approval for thorchain router
+        let from_asset = THORChainAsset::from_chain(request.clone().from_asset.chain).ok_or(SwapperError::NotSupportedAsset)?;
+        let to_asset = THORChainAsset::from_asset_id(request.clone().to_asset).ok_or(SwapperError::NotSupportedAsset)?;
 
-        let value = self.value_from(request.clone().value, from_decimals);
+        let value = self.value_from(request.clone().value, from_asset.decimals as i32);
         let fee = request.options.clone().unwrap_or_default().fee.unwrap_or_default().thorchain;
 
         let quote = client
             .get_quote(
                 endpoint.as_str(),
-                request.clone().from_asset,
-                request.to_asset.clone(),
+                from_asset.clone(),
+                to_asset.clone(),
                 value.to_string(),
                 fee.address,
                 fee.bps.into(),
             )
             .await?;
 
-        let to_value = self.value_to(quote.expected_amount_out, to_decimals);
+        let to_value = self.value_to(quote.expected_amount_out, to_asset.decimals as i32);
 
         let quote = SwapQuote {
             chain_type: ChainType::Ethereum,
@@ -111,7 +115,9 @@ impl GemSwapProvider for ThorChain {
 
     async fn fetch_quote_data(&self, quote: &SwapQuote, _provider: Arc<dyn AlienProvider>, _data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError> {
         let fee = quote.request.options.clone().unwrap_or_default().fee.unwrap_or_default().thorchain;
-        let memo = ThorChainSwapClient::get_memo(quote.request.to_asset.clone(), quote.request.destination_address.clone(), fee.address, fee.bps).unwrap();
+
+        let to_asset = THORChainAsset::from_asset_id(quote.clone().request.to_asset).ok_or(SwapperError::NotSupportedAsset)?;
+        let memo = to_asset.get_memo(quote.request.destination_address.clone(), fee.address, fee.bps).unwrap();
 
         let to = quote.provider.routes.first().unwrap().route_type.clone();
         let data: String = self.data(quote.request.from_asset.clone().chain, memo);

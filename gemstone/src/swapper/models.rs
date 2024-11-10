@@ -10,6 +10,8 @@ static DEFAULT_SLIPPAGE_BPS: u32 = 300;
 pub enum SwapperError {
     #[error("Not supported chain")]
     NotSupportedChain,
+    #[error("Not supported asset")]
+    NotSupportedAsset,
     #[error("Invalid address {address}")]
     InvalidAddress { address: String },
     #[error("Invalid amount")]
