@@ -74,6 +74,7 @@ impl FiatProvider {
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct FiatTransaction {
     pub asset_id: Option<String>,
+    pub transaction_type: String,
     pub symbol: String,
     pub provider_id: String,
     pub provider_transaction_id: String,
@@ -91,6 +92,7 @@ impl FiatTransaction {
     pub fn from_primitive(transaction: primitives::FiatTransaction) -> Self {
         Self {
             asset_id: transaction.asset_id.map(|x| x.to_string()),
+            transaction_type: transaction.transaction_type.as_ref().to_string(),
             symbol: transaction.symbol,
             provider_id: transaction.provider_id,
             provider_transaction_id: transaction.provider_transaction_id,

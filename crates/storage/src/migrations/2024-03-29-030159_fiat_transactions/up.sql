@@ -1,6 +1,8 @@
 CREATE TABLE fiat_transactions (
     id SERIAL PRIMARY KEY,
 
+    transaction_type: VARCHAR(128) NOT NULL default 'buy',
+
     provider_id VARCHAR(128) NOT NULL REFERENCES fiat_providers (id) ON DELETE CASCADE,
     asset_id VARCHAR(128) REFERENCES assets (id) ON DELETE CASCADE,
 

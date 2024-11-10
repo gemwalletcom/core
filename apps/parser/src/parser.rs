@@ -224,7 +224,7 @@ impl Parser {
                 .to_vec()
                 .clone()
                 .into_iter()
-                .flat_map(|transaction| storage::models::TransactionAddresses::from_primitive(transaction))
+                .flat_map(storage::models::TransactionAddresses::from_primitive)
                 .collect::<Vec<storage::models::TransactionAddresses>>();
 
             if transactions.is_empty() || transaction_addresses.is_empty() {

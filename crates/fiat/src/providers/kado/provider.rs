@@ -3,7 +3,7 @@ use crate::{
     FiatProvider,
 };
 use async_trait::async_trait;
-use primitives::fiat_quote_request::FiatSellRequest;
+use primitives::{fiat_quote_request::FiatSellRequest, FiatTransactionType};
 use primitives::{FiatBuyRequest, FiatProviderName, FiatQuote, FiatTransaction, FiatTransactionStatus};
 use std::error::Error;
 
@@ -49,9 +49,11 @@ impl FiatProvider for KadoClient {
             "order_completed" => FiatTransactionStatus::Complete,
             _ => FiatTransactionStatus::Unknown,
         };
+        let transaction_type = FiatTransactionType::Buy;
 
         let transaction = FiatTransaction {
             asset_id: None,
+            transaction_type,
             symbol: data.data.receive_amount.unit.unwrap_or_default(),
             provider_id: Self::NAME.id(),
             provider_transaction_id: data.data.id,

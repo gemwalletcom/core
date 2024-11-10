@@ -1,6 +1,6 @@
 use crate::model::FiatProviderAsset;
 use bigdecimal::ToPrimitive;
-use primitives::fiat_quote::FiatQuoteType;
+use primitives::FiatTransactionType;
 use primitives::{BigNumberFormatter, Chain, FiatBuyRequest, FiatProviderName, FiatQuote};
 use reqwest::Client;
 use url::Url;
@@ -82,7 +82,7 @@ impl RampClient {
 
         FiatQuote {
             provider: Self::NAME.as_fiat_provider(),
-            quote_type: FiatQuoteType::Buy,
+            quote_type: FiatTransactionType::Buy,
             fiat_amount: request.clone().fiat_amount,
             fiat_currency: request.clone().fiat_currency,
             crypto_amount: crypto_amount.to_f64().unwrap_or_default(),

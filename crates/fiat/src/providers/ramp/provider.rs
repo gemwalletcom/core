@@ -1,4 +1,4 @@
-use primitives::{AssetId, FiatBuyRequest, FiatProviderName, FiatQuote, FiatTransaction, FiatTransactionStatus};
+use primitives::{AssetId, FiatBuyRequest, FiatProviderName, FiatQuote, FiatTransaction, FiatTransactionStatus, FiatTransactionType};
 use std::error::Error;
 
 use crate::{
@@ -69,9 +69,11 @@ impl FiatProvider for RampClient {
             "RELEASED" => FiatTransactionStatus::Complete,
             _ => FiatTransactionStatus::Unknown,
         };
+        let transaction_type = FiatTransactionType::Buy;
 
         let transaction = FiatTransaction {
             asset_id: Some(asset_id),
+            transaction_type,
             symbol: asset.symbol,
             provider_id: Self::NAME.id(),
             provider_transaction_id: payload.purchase_view_token,

@@ -8,7 +8,7 @@ use url::Url;
 
 use super::model::{Asset, Coins, Order, OrderData, OrderDetails, OrderRequest, Price, Prices, Response};
 use hmac::{Hmac, Mac};
-use primitives::fiat_quote::FiatQuoteType;
+use primitives::FiatTransactionType;
 use sha2::Sha256;
 
 pub struct BanxaClient {
@@ -133,7 +133,7 @@ impl BanxaClient {
 
         FiatQuote {
             provider: Self::NAME.as_fiat_provider(),
-            quote_type: FiatQuoteType::Buy,
+            quote_type: FiatTransactionType::Buy,
             fiat_amount: request.fiat_amount,
             fiat_currency: request.fiat_currency,
             crypto_amount,
