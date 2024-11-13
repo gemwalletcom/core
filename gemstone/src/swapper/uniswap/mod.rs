@@ -33,7 +33,6 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
-static UNISWAP: &str = "Uniswap-v3";
 static DEFAULT_DEADLINE: u64 = 3600;
 
 impl JsonRpcRequest {
@@ -328,8 +327,8 @@ impl UniswapV3 {
 
 #[async_trait]
 impl GemSwapProvider for UniswapV3 {
-    fn name(&self) -> &'static str {
-        UNISWAP
+    fn provider(&self) -> SwapProvider {
+        SwapProvider::UniswapV3
     }
 
     async fn supported_chains(&self) -> Result<Vec<Chain>, SwapperError> {
@@ -386,7 +385,7 @@ impl GemSwapProvider for UniswapV3 {
             from_value: request.value.clone(),
             to_value: max_amount_out.to_string(),
             provider: SwapProviderData {
-                name: self.name().into(),
+                provider: self.provider(),
                 routes: vec![SwapRoute {
                     route_type: String::from("v3-pool"),
                     input: token_in.to_checksum(),
@@ -423,6 +422,12 @@ impl GemSwapProvider for UniswapV3 {
             value,
             data: HexEncode(encoded),
         })
+    }
+
+    async fn get_transaction_status(&self, _chain: Chain, _transaction_hash: &str, _provider: Arc<dyn AlienProvider>) -> Result<bool, SwapperError> {
+        // Implement the logic to get the transaction status here
+        // For now, we will return Ok(true) as a placeholder
+        Ok(true)
     }
 }
 

@@ -1,4 +1,4 @@
-use primitives::{Asset, AssetId, Chain};
+use primitives::{Asset, AssetId};
 
 use super::chain::THORChainName;
 
@@ -17,10 +17,6 @@ impl THORChainAsset {
         } else {
             self.chain.short_name().to_string()
         }
-    }
-
-    pub fn from_chain(chain: Chain) -> Option<THORChainAsset> {
-        Some(THORChainName::from_chain(&chain)?.as_asset())
     }
 
     pub fn from_asset_id(asset_id: AssetId) -> Option<THORChainAsset> {

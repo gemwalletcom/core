@@ -9,14 +9,13 @@ use num_bigint::BigInt;
 use std::str::FromStr;
 
 use crate::network::AlienProvider;
-use crate::swapper::models::{ApprovalType, FetchQuoteData, SwapProviderData, SwapQuote, SwapQuoteData, SwapQuoteRequest, SwapperError};
 use crate::swapper::thorchain::client::ThorChainSwapClient;
 use crate::swapper::GemSwapProvider;
 use async_trait::async_trait;
 use primitives::{Chain, ChainType};
 use std::sync::Arc;
 
-use super::SwapRoute;
+use super::{ApprovalType, FetchQuoteData, SwapProvider, SwapProviderData, SwapQuote, SwapQuoteData, SwapQuoteRequest, SwapRoute, SwapperError};
 
 #[derive(Debug)]
 pub struct ThorChain {}
@@ -54,8 +53,8 @@ impl ThorChain {
 
 #[async_trait]
 impl GemSwapProvider for ThorChain {
-    fn name(&self) -> &'static str {
-        "THORChain"
+    fn provider(&self) -> SwapProvider {
+        SwapProvider::Thorchain
     }
 
     async fn supported_chains(&self) -> Result<Vec<Chain>, SwapperError> {
@@ -73,7 +72,11 @@ impl GemSwapProvider for ThorChain {
         let client = ThorChainSwapClient::new(provider);
 
         //TODO: currently do not support from_asset_id(). As it requires approval for thorchain router
-        let from_asset = THORChainAsset::from_chain(request.clone().from_asset.chain).ok_or(SwapperError::NotSupportedAsset)?;
+        if request.clone().from_asset.token_id.is_some() {
+            return Err(SwapperError::NotSupportedAsset);
+        }
+
+        let from_asset = THORChainAsset::from_asset_id(request.clone().from_asset).ok_or(SwapperError::NotSupportedAsset)?;
         let to_asset = THORChainAsset::from_asset_id(request.clone().to_asset).ok_or(SwapperError::NotSupportedAsset)?;
 
         let value = self.value_from(request.clone().value, from_asset.decimals as i32);
@@ -97,7 +100,7 @@ impl GemSwapProvider for ThorChain {
             from_value: request.clone().value,
             to_value: to_value.to_string(),
             provider: SwapProviderData {
-                name: self.name().to_string(),
+                provider: self.provider(),
                 routes: vec![SwapRoute {
                     route_type: quote.inbound_address.unwrap_or_default(),
                     input: request.clone().from_asset.to_string(),
@@ -129,6 +132,17 @@ impl GemSwapProvider for ThorChain {
         };
 
         Ok(data)
+    }
+
+    async fn get_transaction_status(&self, _chain: Chain, transaction_hash: &str, provider: Arc<dyn AlienProvider>) -> Result<bool, SwapperError> {
+        let endpoint = provider
+            .get_endpoint(Chain::Thorchain)
+            .map_err(|err| SwapperError::NetworkError { msg: err.to_string() })?;
+        let client = ThorChainSwapClient::new(provider);
+
+        let status = client.get_transaction_status(&endpoint, transaction_hash).await?;
+
+        Ok(status.observed_tx.status == "done")
     }
 }
 

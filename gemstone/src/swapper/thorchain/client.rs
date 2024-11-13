@@ -4,6 +4,7 @@ use crate::swapper::thorchain::model::{QuoteSwapRequest, QuoteSwapResponse};
 use std::sync::Arc;
 
 use super::asset::THORChainAsset;
+use super::model::Transaction;
 
 #[derive(Debug)]
 pub struct ThorChainSwapClient {
@@ -48,6 +49,25 @@ impl ThorChainSwapClient {
             .map_err(|err| SwapperError::NetworkError { msg: err.to_string() })?;
 
         let result: QuoteSwapResponse = serde_json::from_slice(&data).map_err(|err| SwapperError::NetworkError { msg: err.to_string() })?;
+
+        Ok(result)
+    }
+
+    pub async fn get_transaction_status(&self, endpoint: &str, transaction_hash: &str) -> Result<Transaction, SwapperError> {
+        let target = AlienTarget {
+            url: format!("{}/thorchain/tx/{}", endpoint, transaction_hash),
+            method: AlienHttpMethod::Get,
+            headers: None,
+            body: None,
+        };
+
+        let data = self
+            .provider
+            .request(target)
+            .await
+            .map_err(|err| SwapperError::NetworkError { msg: err.to_string() })?;
+
+        let result: Transaction = serde_json::from_slice(&data).map_err(|err| SwapperError::NetworkError { msg: err.to_string() })?;
 
         Ok(result)
     }

@@ -13,6 +13,8 @@ pub enum SwapperError {
     NotSupportedChain,
     #[error("Not supported asset")]
     NotSupportedAsset,
+    #[error("Not supported pair")]
+    NotSupportedPair,
     #[error("Invalid address {address}")]
     InvalidAddress { address: String },
     #[error("Invalid amount")]
@@ -31,6 +33,20 @@ pub enum SwapperError {
 pub enum GemSwapMode {
     ExactIn,
     ExactOut,
+}
+
+#[derive(Debug, Clone, PartialEq, uniffi::Enum)]
+pub enum SwapProvider {
+    UniswapV3,
+    Thorchain,
+}
+impl SwapProvider {
+    pub fn name(&self) -> &str {
+        match self {
+            Self::UniswapV3 => "Uniswap v3",
+            Self::Thorchain => "THORChain",
+        }
+    }
 }
 
 #[derive(Debug, Clone, uniffi::Record)]
@@ -102,7 +118,7 @@ pub struct SwapQuoteData {
 
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct SwapProviderData {
-    pub name: String,
+    pub provider: SwapProvider,
     pub routes: Vec<SwapRoute>,
 }
 

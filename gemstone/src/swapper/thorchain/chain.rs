@@ -1,6 +1,4 @@
-use primitives::{Asset, Chain};
-
-use super::asset::THORChainAsset;
+use primitives::Chain;
 
 #[derive(Clone)]
 pub enum THORChainName {
@@ -52,16 +50,6 @@ impl THORChainName {
             THORChainName::Litecoin => Chain::Litecoin,
             THORChainName::SmartChain => Chain::SmartChain,
             THORChainName::AvalancheC => Chain::AvalancheC,
-        }
-    }
-
-    pub fn as_asset(&self) -> THORChainAsset {
-        let asset = Asset::from_chain(self.chain());
-        THORChainAsset {
-            symbol: asset.symbol,
-            chain: self.clone(),
-            token_id: None,
-            decimals: asset.decimals as u32,
         }
     }
 

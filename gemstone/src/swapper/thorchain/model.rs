@@ -18,3 +18,13 @@ pub struct QuoteSwapResponse {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct QuoteFees {}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Transaction {
+    pub observed_tx: TransactionObserved,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TransactionObserved {
+    pub status: String, // done
+}
