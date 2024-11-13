@@ -7,6 +7,8 @@ pub struct QuoteSwapRequest {
     pub amount: String,
     pub affiliate: String,
     pub affiliate_bps: i64,
+    pub streaming_interval: i64,
+    pub streaming_quantity: i64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

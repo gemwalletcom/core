@@ -31,6 +31,8 @@ impl ThorChainSwapClient {
             amount: value,
             affiliate,
             affiliate_bps,
+            streaming_interval: 1,
+            streaming_quantity: 0,
         };
         let query = serde_urlencoded::to_string(params).unwrap();
         let url = format!("{}{}?{}", endpoint, "/thorchain/quote/swap", query);
