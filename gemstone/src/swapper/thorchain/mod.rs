@@ -57,12 +57,11 @@ impl GemSwapProvider for ThorChain {
         SwapProvider::Thorchain
     }
 
-    async fn supported_chains(&self) -> Result<Vec<Chain>, SwapperError> {
-        let chains: Vec<Chain> = Chain::all()
+    fn supported_chains(&self) -> Vec<Chain> {
+        Chain::all()
             .into_iter()
             .filter_map(|chain| THORChainName::from_chain(&chain).map(|name| name.chain()))
-            .collect();
-        Ok(chains)
+            .collect()
     }
 
     async fn fetch_quote(&self, request: &SwapQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapQuote, SwapperError> {

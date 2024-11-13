@@ -331,8 +331,8 @@ impl GemSwapProvider for UniswapV3 {
         SwapProvider::UniswapV3
     }
 
-    async fn supported_chains(&self) -> Result<Vec<Chain>, SwapperError> {
-        Ok(Chain::all().iter().filter(|x| self.support_chain(x)).cloned().collect())
+    fn supported_chains(&self) -> Vec<Chain> {
+        Chain::all().iter().filter(|x| self.support_chain(x)).cloned().collect()
     }
 
     async fn fetch_quote(&self, request: &SwapQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapQuote, SwapperError> {

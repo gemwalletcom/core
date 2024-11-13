@@ -13,11 +13,12 @@ mod uniswap;
 
 use models::*;
 use primitives::Chain;
+use std::collections::HashSet;
 
 #[async_trait]
 pub trait GemSwapProvider: Send + Sync + Debug {
     fn provider(&self) -> SwapProvider;
-    async fn supported_chains(&self) -> Result<Vec<Chain>, SwapperError>;
+    fn supported_chains(&self) -> Vec<Chain>;
     async fn fetch_quote(&self, request: &SwapQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapQuote, SwapperError>;
     async fn fetch_quote_data(&self, quote: &SwapQuote, provider: Arc<dyn AlienProvider>, data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError>;
     async fn get_transaction_status(&self, chain: Chain, transaction_hash: &str, provider: Arc<dyn AlienProvider>) -> Result<bool, SwapperError>;
@@ -39,8 +40,17 @@ impl GemSwapper {
         }
     }
 
-    fn get_providers(&self) -> Vec<String> {
-        self.swappers.iter().map(|x| x.provider().name().to_string()).collect()
+    fn supported_chains(&self) -> Vec<Chain> {
+        self.swappers
+            .iter()
+            .flat_map(|x| x.supported_chains())
+            .collect::<HashSet<_>>()
+            .into_iter()
+            .collect()
+    }
+
+    fn get_providers(&self) -> Vec<SwapProvider> {
+        self.swappers.iter().map(|x| x.provider()).collect()
     }
 
     async fn fetch_quote(&self, request: SwapQuoteRequest) -> Result<Vec<SwapQuote>, SwapperError> {

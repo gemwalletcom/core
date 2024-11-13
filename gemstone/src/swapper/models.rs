@@ -69,7 +69,7 @@ pub struct SwapQuoteRequest {
 pub struct GemSwapOptions {
     pub slippage_bps: u32,
     pub fee: Option<SwapReferralFees>,
-    pub preferred_providers: Vec<String>,
+    pub preferred_providers: Vec<SwapProvider>,
 }
 
 impl Default for GemSwapOptions {
