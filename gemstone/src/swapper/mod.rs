@@ -64,7 +64,7 @@ impl GemSwapper {
         let swapper = self
             .swappers
             .iter()
-            .find(|x| x.provider() == quote.provider.provider)
+            .find(|x| x.provider() == quote.data.provider)
             .ok_or(SwapperError::NotImplemented)?;
         swapper.fetch_quote_data(quote, self.rpc_provider.clone(), data).await
     }

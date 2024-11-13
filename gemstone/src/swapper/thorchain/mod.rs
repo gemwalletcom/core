@@ -99,7 +99,7 @@ impl GemSwapProvider for ThorChain {
             chain_type: ChainType::Ethereum,
             from_value: request.clone().value,
             to_value: to_value.to_string(),
-            provider: SwapProviderData {
+            data: SwapProviderData {
                 provider: self.provider(),
                 routes: vec![SwapRoute {
                     route_type: quote.inbound_address.unwrap_or_default(),
@@ -122,7 +122,7 @@ impl GemSwapProvider for ThorChain {
         let to_asset = THORChainAsset::from_asset_id(quote.clone().request.to_asset).ok_or(SwapperError::NotSupportedAsset)?;
         let memo = to_asset.get_memo(quote.request.destination_address.clone(), fee.address, fee.bps).unwrap();
 
-        let to = quote.provider.routes.first().unwrap().route_type.clone();
+        let to = quote.data.routes.first().unwrap().route_type.clone();
         let data: String = self.data(quote.request.from_asset.clone().chain, memo);
 
         let data = SwapQuoteData {

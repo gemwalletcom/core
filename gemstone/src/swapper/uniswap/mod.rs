@@ -384,7 +384,7 @@ impl GemSwapProvider for UniswapV3 {
             chain_type: ChainType::Ethereum,
             from_value: request.value.clone(),
             to_value: max_amount_out.to_string(),
-            provider: SwapProviderData {
+            data: SwapProviderData {
                 provider: self.provider(),
                 routes: vec![SwapRoute {
                     route_type: String::from("v3-pool"),
@@ -409,7 +409,7 @@ impl GemSwapProvider for UniswapV3 {
             FetchQuoteData::Permit2(data) => Some(data.into()),
             FetchQuoteData::None => None,
         };
-        let fee_tier = FeeTier::try_from(quote.provider.routes[0].fee_tier.as_str()).map_err(|_| SwapperError::InvalidAmount)?;
+        let fee_tier = FeeTier::try_from(quote.data.routes[0].fee_tier.as_str()).map_err(|_| SwapperError::InvalidAmount)?;
 
         let commands = Self::build_commands(request, &token_in, &token_out, amount_in, to_amount, fee_tier, permit)?;
         let deadline = SystemTime::now().duration_since(UNIX_EPOCH).expect("Time went backwards").as_secs() + DEFAULT_DEADLINE;

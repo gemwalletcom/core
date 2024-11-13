@@ -49,6 +49,11 @@ impl SwapProvider {
     }
 }
 
+#[uniffi::export]
+fn swap_provider_name_to_string(provider: SwapProvider) -> String {
+    provider.name().to_string()
+}
+
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct SwapQuoteRequest {
     pub from_asset: AssetId,
@@ -82,7 +87,7 @@ pub struct SwapQuote {
     pub chain_type: ChainType,
     pub from_value: String,
     pub to_value: String,
-    pub provider: SwapProviderData,
+    pub data: SwapProviderData,
     pub approval: ApprovalType,
     pub request: SwapQuoteRequest,
 }
