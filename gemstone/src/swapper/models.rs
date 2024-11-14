@@ -1,4 +1,4 @@
-use primitives::{AssetId, ChainType};
+use primitives::AssetId;
 use std::fmt::Debug;
 
 use crate::config::swap_config::SwapReferralFees;
@@ -84,7 +84,6 @@ impl Default for GemSwapOptions {
 
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct SwapQuote {
-    pub chain_type: ChainType,
     pub from_value: String,
     pub to_value: String,
     pub data: SwapProviderData,

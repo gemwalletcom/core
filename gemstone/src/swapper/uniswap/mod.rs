@@ -14,7 +14,7 @@ use gem_evm::{
         FeeTier,
     },
 };
-use primitives::{AssetId, Chain, ChainType, EVMChain};
+use primitives::{AssetId, Chain, EVMChain};
 
 use alloy_core::{
     primitives::{
@@ -381,7 +381,6 @@ impl GemSwapProvider for UniswapV3 {
         }
 
         Ok(SwapQuote {
-            chain_type: ChainType::Ethereum,
             from_value: request.value.clone(),
             to_value: max_amount_out.to_string(),
             data: SwapProviderData {

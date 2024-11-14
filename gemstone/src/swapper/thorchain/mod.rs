@@ -12,7 +12,7 @@ use crate::network::AlienProvider;
 use crate::swapper::thorchain::client::ThorChainSwapClient;
 use crate::swapper::GemSwapProvider;
 use async_trait::async_trait;
-use primitives::{Chain, ChainType};
+use primitives::Chain;
 use std::sync::Arc;
 
 use super::{ApprovalType, FetchQuoteData, SwapProvider, SwapProviderData, SwapQuote, SwapQuoteData, SwapQuoteRequest, SwapRoute, SwapperError};
@@ -95,7 +95,6 @@ impl GemSwapProvider for ThorChain {
         let to_value = self.value_to(quote.expected_amount_out, to_asset.decimals as i32);
 
         let quote = SwapQuote {
-            chain_type: ChainType::Ethereum,
             from_value: request.clone().value,
             to_value: to_value.to_string(),
             data: SwapProviderData {
