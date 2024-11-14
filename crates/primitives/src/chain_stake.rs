@@ -62,8 +62,8 @@ impl StakeChain {
 
     pub fn get_can_withdraw(&self) -> bool {
         match self {
-            Self::Solana | Self::Tron => true,
-            Self::Cosmos | Self::Osmosis | Self::Injective | Self::Sei | Self::Celestia | Self::SmartChain | Self::Sui | Self::Ethereum => false,
+            Self::Solana | Self::Tron | Self::SmartChain => true,
+            Self::Cosmos | Self::Osmosis | Self::Injective | Self::Sei | Self::Celestia | Self::Sui | Self::Ethereum => false,
         }
     }
 
