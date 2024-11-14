@@ -83,8 +83,17 @@ impl THORChainAsset {
     }
 
     // https://dev.thorchain.org/concepts/memos.html#swap
-    pub fn get_memo(&self, destination_address: String, fee_address: String, bps: u32) -> Option<String> {
-        Some(format!("=:{}:{}::{}:{}", self.asset_name(), destination_address, fee_address, bps))
+    pub fn get_memo(&self, destination_address: String, minimum: i64, interval: i64, quantity: i64, fee_address: String, bps: u32) -> Option<String> {
+        Some(format!(
+            "=:{}:{}:{}/{}/{}:{}:{}",
+            self.asset_name(),
+            destination_address,
+            minimum,
+            interval,
+            quantity,
+            fee_address,
+            bps
+        ))
     }
 }
 
@@ -140,32 +149,32 @@ mod tests {
     #[test]
     fn test_get_memo() {
         let destination_address = "0x1234567890abcdef".to_string();
-        let fee_address = "1".to_string();
+        let fee_address = "g1".to_string();
         let bps = 50;
 
         assert_eq!(
             THORChainAsset::from_asset_id(Chain::SmartChain.as_asset_id())
                 .unwrap()
-                .get_memo(destination_address.clone(), fee_address.clone(), bps),
-            Some("=:s:0x1234567890abcdef::1:50".into())
+                .get_memo(destination_address.clone(), 0, 1, 0, fee_address.clone(), bps),
+            Some("=:s:0x1234567890abcdef:0/1/0:g1:50".into())
         );
         assert_eq!(
             THORChainAsset::from_asset_id(Chain::Ethereum.as_asset_id())
                 .unwrap()
-                .get_memo(destination_address.clone(), fee_address.clone(), bps),
-            Some("=:e:0x1234567890abcdef::1:50".into())
+                .get_memo(destination_address.clone(), 0, 1, 0, fee_address.clone(), bps),
+            Some("=:e:0x1234567890abcdef:0/1/0:g1:50".into())
         );
         assert_eq!(
             THORChainAsset::from_asset_id(Chain::Doge.as_asset_id())
                 .unwrap()
-                .get_memo(destination_address.clone(), fee_address.clone(), bps),
-            Some("=:d:0x1234567890abcdef::1:50".into())
+                .get_memo(destination_address.clone(), 0, 1, 0, fee_address.clone(), bps),
+            Some("=:d:0x1234567890abcdef:0/1/0:g1:50".into())
         );
         assert_eq!(
             THORChainAsset::from_asset_id(AssetId::from(Chain::Ethereum, Some("0xdAC17F958D2ee523a2206206994597C13D831ec7".to_string())))
                 .unwrap()
-                .get_memo(destination_address.clone(), fee_address.clone(), bps),
-            Some("=:ETH.USDT:0x1234567890abcdef::1:50".into())
+                .get_memo(destination_address.clone(), 0, 1, 0, fee_address.clone(), bps),
+            Some("=:ETH.USDT:0x1234567890abcdef:0/1/0:g1:50".into())
         );
     }
 }

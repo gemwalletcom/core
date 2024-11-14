@@ -22,6 +22,8 @@ impl ThorChainSwapClient {
         from_asset: THORChainAsset,
         to_asset: THORChainAsset,
         value: String,
+        streaming_interval: i64,
+        streaming_quantity: i64,
         affiliate: String,
         affiliate_bps: i64,
     ) -> Result<QuoteSwapResponse, SwapperError> {
@@ -31,8 +33,8 @@ impl ThorChainSwapClient {
             amount: value,
             affiliate,
             affiliate_bps,
-            streaming_interval: 1,
-            streaming_quantity: 0,
+            streaming_interval,
+            streaming_quantity,
         };
         let query = serde_urlencoded::to_string(params).unwrap();
         let url = format!("{}{}?{}", endpoint, "/thorchain/quote/swap", query);

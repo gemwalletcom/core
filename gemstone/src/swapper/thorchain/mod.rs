@@ -20,6 +20,10 @@ use super::{ApprovalType, FetchQuoteData, SwapProvider, SwapProviderData, SwapQu
 #[derive(Debug)]
 pub struct ThorChain {}
 
+const QUOTE_MINIMUM: i64 = 0;
+const QUOTE_INTERVAL: i64 = 1;
+const QUOTE_QUANTITY: i64 = 0;
+
 impl ThorChain {
     pub fn new() -> Self {
         Self {}
@@ -87,6 +91,8 @@ impl GemSwapProvider for ThorChain {
                 from_asset.clone(),
                 to_asset.clone(),
                 value.to_string(),
+                QUOTE_INTERVAL,
+                QUOTE_QUANTITY,
                 fee.address,
                 fee.bps.into(),
             )
@@ -118,7 +124,16 @@ impl GemSwapProvider for ThorChain {
         let fee = quote.request.options.clone().unwrap_or_default().fee.unwrap_or_default().thorchain;
 
         let to_asset = THORChainAsset::from_asset_id(quote.clone().request.to_asset).ok_or(SwapperError::NotSupportedAsset)?;
-        let memo = to_asset.get_memo(quote.request.destination_address.clone(), fee.address, fee.bps).unwrap();
+        let memo = to_asset
+            .get_memo(
+                quote.request.destination_address.clone(),
+                QUOTE_MINIMUM,
+                QUOTE_INTERVAL,
+                QUOTE_QUANTITY,
+                fee.address,
+                fee.bps,
+            )
+            .unwrap();
 
         let to = quote.data.routes.first().unwrap().route_type.clone();
         let data: String = self.data(quote.request.from_asset.clone().chain, memo);
