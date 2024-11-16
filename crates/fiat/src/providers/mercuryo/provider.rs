@@ -3,7 +3,7 @@ use crate::{
     FiatProvider,
 };
 use async_trait::async_trait;
-use primitives::fiat_quote_request::FiatSellRequest;
+use primitives::{fiat_quote_request::FiatSellRequest, fiat_transaction::FiatTransactionType};
 use primitives::{FiatBuyRequest, FiatProviderName, FiatQuote, FiatTransaction, FiatTransactionStatus};
 use std::error::Error;
 
@@ -61,9 +61,11 @@ impl FiatProvider for MercuryoClient {
             "paid" | "completed" | "succeeded" => FiatTransactionStatus::Complete,
             _ => FiatTransactionStatus::Unknown,
         };
+        let transaction_type = FiatTransactionType::Buy;
 
         let transaction = FiatTransaction {
             asset_id: None,
+            transaction_type,
             symbol: data.currency,
             provider_id: Self::NAME.id(),
             provider_transaction_id: data.merchant_transaction_id.unwrap_or(data.id),

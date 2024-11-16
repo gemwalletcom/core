@@ -12,6 +12,8 @@ pub enum SwapperError {
     NotSupportedChain,
     #[error("Not supported asset")]
     NotSupportedAsset,
+    #[error("Not supported pair")]
+    NotSupportedPair,
     #[error("Invalid address {address}")]
     InvalidAddress { address: String },
     #[error("Invalid amount")]
@@ -44,6 +46,25 @@ pub enum GemSwapMode {
     ExactOut,
 }
 
+#[derive(Debug, Clone, PartialEq, uniffi::Enum)]
+pub enum SwapProvider {
+    UniswapV3,
+    Thorchain,
+}
+impl SwapProvider {
+    pub fn name(&self) -> &str {
+        match self {
+            Self::UniswapV3 => "Uniswap v3",
+            Self::Thorchain => "THORChain",
+        }
+    }
+}
+
+#[uniffi::export]
+fn swap_provider_name_to_string(provider: SwapProvider) -> String {
+    provider.name().to_string()
+}
+
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct SwapQuoteRequest {
     pub from_asset: AssetId,
@@ -59,7 +80,7 @@ pub struct SwapQuoteRequest {
 pub struct GemSwapOptions {
     pub slippage_bps: u32,
     pub fee: Option<SwapReferralFees>,
-    pub preferred_providers: Vec<String>,
+    pub preferred_providers: Vec<SwapProvider>,
 }
 
 impl Default for GemSwapOptions {
@@ -74,10 +95,9 @@ impl Default for GemSwapOptions {
 
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct SwapQuote {
-    pub chain_type: ChainType,
     pub from_value: String,
     pub to_value: String,
-    pub provider: SwapProviderData,
+    pub data: SwapProviderData,
     pub approval: ApprovalType,
     pub request: SwapQuoteRequest,
 }
@@ -113,7 +133,7 @@ pub struct SwapQuoteData {
 
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct SwapProviderData {
-    pub name: String,
+    pub provider: SwapProvider,
     pub routes: Vec<SwapRoute>,
 }
 

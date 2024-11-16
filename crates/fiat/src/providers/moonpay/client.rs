@@ -3,7 +3,7 @@ use crate::model::{filter_token_id, FiatProviderAsset};
 use super::model::{Asset, MoonPayIpAddress, MoonPayQuote};
 use base64::{engine::general_purpose, Engine as _};
 use hmac::{Hmac, Mac};
-use primitives::fiat_quote::FiatQuoteType;
+use primitives::FiatTransactionType;
 use primitives::{fiat_quote::FiatQuote, fiat_quote_request::FiatBuyRequest, Chain, FiatProviderName};
 use reqwest::Client;
 use sha2::Sha256;
@@ -119,7 +119,7 @@ impl MoonPayClient {
     pub fn get_fiat_quote(&self, request: FiatBuyRequest, quote: MoonPayQuote) -> FiatQuote {
         FiatQuote {
             provider: Self::NAME.as_fiat_provider(),
-            quote_type: FiatQuoteType::Buy,
+            quote_type: FiatTransactionType::Buy,
             fiat_amount: request.clone().fiat_amount,
             fiat_currency: request.clone().fiat_currency,
             crypto_amount: quote.quote_currency_amount,

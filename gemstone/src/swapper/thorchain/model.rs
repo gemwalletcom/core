@@ -7,6 +7,8 @@ pub struct QuoteSwapRequest {
     pub amount: String,
     pub affiliate: String,
     pub affiliate_bps: i64,
+    pub streaming_interval: i64,
+    pub streaming_quantity: i64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -18,3 +20,13 @@ pub struct QuoteSwapResponse {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct QuoteFees {}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Transaction {
+    pub observed_tx: TransactionObserved,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TransactionObserved {
+    pub status: String, // done
+}

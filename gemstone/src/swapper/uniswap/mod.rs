@@ -17,7 +17,7 @@ use gem_evm::{
         FeeTier,
     },
 };
-use primitives::{AssetId, Chain, ChainType, EVMChain};
+use primitives::{AssetId, Chain, EVMChain};
 
 use alloy_core::{
     primitives::{
@@ -36,7 +36,6 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
-static UNISWAP: &str = "Uniswap-v3";
 static DEFAULT_DEADLINE: u64 = 3600;
 
 impl JsonRpcRequestConvert for EthereumRpc {
@@ -290,12 +289,12 @@ impl UniswapV3 {
 
 #[async_trait]
 impl GemSwapProvider for UniswapV3 {
-    fn name(&self) -> &'static str {
-        UNISWAP
+    fn provider(&self) -> SwapProvider {
+        SwapProvider::UniswapV3
     }
 
-    async fn supported_chains(&self) -> Result<Vec<Chain>, SwapperError> {
-        Ok(Chain::all().iter().filter(|x| self.support_chain(x)).cloned().collect())
+    fn supported_chains(&self) -> Vec<Chain> {
+        Chain::all().iter().filter(|x| self.support_chain(x)).cloned().collect()
     }
 
     async fn fetch_quote(&self, request: &SwapQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapQuote, SwapperError> {
@@ -346,11 +345,10 @@ impl GemSwapProvider for UniswapV3 {
         }
 
         Ok(SwapQuote {
-            chain_type: ChainType::Ethereum,
             from_value: request.value.clone(),
             to_value: max_amount_out.to_string(),
-            provider: SwapProviderData {
-                name: self.name().into(),
+            data: SwapProviderData {
+                provider: self.provider(),
                 routes: vec![SwapRoute {
                     route_type: String::from("v3-pool"),
                     input: token_in.to_checksum(),
@@ -374,7 +372,7 @@ impl GemSwapProvider for UniswapV3 {
             FetchQuoteData::Permit2(data) => Some(data.into()),
             FetchQuoteData::None => None,
         };
-        let fee_tier = FeeTier::try_from(quote.provider.routes[0].fee_tier.as_str()).map_err(|_| SwapperError::InvalidAmount)?;
+        let fee_tier = FeeTier::try_from(quote.data.routes[0].fee_tier.as_str()).map_err(|_| SwapperError::InvalidAmount)?;
 
         let commands = Self::build_commands(request, &token_in, &token_out, amount_in, to_amount, fee_tier, permit)?;
         let deadline = SystemTime::now().duration_since(UNIX_EPOCH).expect("Time went backwards").as_secs() + DEFAULT_DEADLINE;
@@ -387,6 +385,12 @@ impl GemSwapProvider for UniswapV3 {
             value,
             data: HexEncode(encoded),
         })
+    }
+
+    async fn get_transaction_status(&self, _chain: Chain, _transaction_hash: &str, _provider: Arc<dyn AlienProvider>) -> Result<bool, SwapperError> {
+        // Implement the logic to get the transaction status here
+        // For now, we will return Ok(true) as a placeholder
+        Ok(true)
     }
 }
 

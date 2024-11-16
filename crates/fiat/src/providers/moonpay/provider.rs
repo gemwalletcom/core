@@ -7,7 +7,7 @@ use async_trait::async_trait;
 use std::error::Error;
 
 use super::client::MoonPayClient;
-use primitives::fiat_quote_request::FiatSellRequest;
+use primitives::{fiat_quote_request::FiatSellRequest, FiatTransactionType};
 use primitives::{AssetId, FiatBuyRequest, FiatProviderName, FiatQuote, FiatTransaction, FiatTransactionStatus};
 
 #[async_trait]
@@ -69,9 +69,11 @@ impl FiatProvider for MoonPayClient {
         let fee_network = payload.data.network_fee_amount.unwrap_or_default();
         let fee_partner = payload.data.extra_fee_amount.unwrap_or_default();
         let fiat_amount = currency_amount + fee_provider + fee_network + fee_partner;
+        let transaction_type = FiatTransactionType::Buy;
 
         let transaction = FiatTransaction {
             asset_id: Some(asset_id),
+            transaction_type,
             symbol: asset.symbol,
             provider_id: Self::NAME.id(),
             provider_transaction_id: payload.data.id,

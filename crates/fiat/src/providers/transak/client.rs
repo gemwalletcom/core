@@ -1,6 +1,6 @@
 use super::model::{Asset, TransakQuote, TransakResponse};
 use crate::model::FiatProviderAsset;
-use primitives::fiat_quote::FiatQuoteType;
+use primitives::FiatTransactionType;
 use primitives::{FiatBuyRequest, FiatProviderName, FiatQuote};
 use reqwest::Client;
 use url::Url;
@@ -42,7 +42,7 @@ impl TransakClient {
     pub fn get_fiat_quote(&self, request: FiatBuyRequest, quote: TransakQuote) -> FiatQuote {
         FiatQuote {
             provider: Self::NAME.as_fiat_provider(),
-            quote_type: FiatQuoteType::Buy,
+            quote_type: FiatTransactionType::Buy,
             fiat_amount: request.fiat_amount,
             fiat_currency: request.fiat_currency,
             crypto_amount: quote.crypto_amount,

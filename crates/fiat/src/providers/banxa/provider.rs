@@ -3,7 +3,7 @@ use crate::{
     FiatProvider,
 };
 use async_trait::async_trait;
-use primitives::fiat_quote_request::FiatSellRequest;
+use primitives::{fiat_quote_request::FiatSellRequest, FiatTransactionType};
 use primitives::{AssetId, FiatBuyRequest, FiatProviderName, FiatQuote, FiatTransaction, FiatTransactionStatus};
 use std::error::Error;
 
@@ -60,9 +60,11 @@ impl FiatProvider for BanxaClient {
         let assset_id = Self::map_asset(asset)
             .first()
             .map(|asset| AssetId::from(asset.chain.unwrap(), asset.token_id.clone()));
+        let transaction_type = FiatTransactionType::Buy;
 
         let transaction = FiatTransaction {
             asset_id: assset_id,
+            transaction_type,
             symbol: order.coin_code,
             provider_id: Self::NAME.id(),
             provider_transaction_id: order.id,

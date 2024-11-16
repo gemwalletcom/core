@@ -50,7 +50,10 @@ pub fn get_nodes_for_chain(chain: Chain) -> Vec<Node> {
             Node::new("https://polygon.llamarpc.com", NodePriority::High),
             Node::new("https://polygon-rpc.com", NodePriority::High),
         ],
-        Chain::Thorchain => vec![],
+        Chain::Thorchain => vec![
+            Node::new("https://thornode.thorchain.liquify.com", NodePriority::High),
+            Node::new("https://thornode.ninerealms.com", NodePriority::Low),
+        ],
         Chain::Cosmos => vec![
             Node::new("https://cosmos-rest.publicnode.com", NodePriority::High),
             Node::new("https://cosmos-api.polkachu.com", NodePriority::High),

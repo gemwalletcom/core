@@ -8,6 +8,7 @@ test:
     cargo test
 
 export ANDROID_HOME := env_var_or_default("ANDROID_HOME", "~/Library/Android/sdk")
+export HOST_ARCH := arch()
 
 install-ndk:
     #!/usr/bin/env bash
@@ -18,7 +19,11 @@ install-ndk:
     $SDK_MANAGER --install $NDK
 
 install-ios-targets:
+    #!/usr/bin/env bash
     rustup target add aarch64-apple-ios-sim aarch64-apple-ios aarch64-apple-ios-macabi
+    if [ ${HOST_ARCH} == "x86_64" ]; then \
+        rustup target add x86_64-apple-ios; \
+    fi
 
 install-android-targets:
     rustup target add x86_64-linux-android aarch64-linux-android armv7-linux-androideabi
@@ -54,8 +59,12 @@ build-ios: build-targets bindgen-swift assemble-frameworks xcframework cp-xcfram
 
 build-targets:
     #!/usr/bin/env bash
-    echo "iOS deployment target ${DEPLOYMENT_TARGET}, BUILD_MODE_TARGET: ${BUILD_MODE_TARGET}"
-    IPHONEOS_DEPLOYMENT_TARGET=${DEPLOYMENT_TARGET} cargo build --target aarch64-apple-ios-sim --target aarch64-apple-ios --target aarch64-apple-ios-macabi --${BUILD_MODE}
+    echo "Host: ${HOST_ARCH}, iOS deployment target ${DEPLOYMENT_TARGET}, BUILD_MODE_TARGET: ${BUILD_MODE_TARGET}"
+    if [ ${HOST_ARCH} == "x86_64" ]; then \
+        IPHONEOS_DEPLOYMENT_TARGET=${DEPLOYMENT_TARGET} cargo build --timings --target x86_64-apple-ios --${BUILD_MODE}
+    else \
+        IPHONEOS_DEPLOYMENT_TARGET=${DEPLOYMENT_TARGET} cargo build --timings --target aarch64-apple-ios-sim --target aarch64-apple-ios --target aarch64-apple-ios-macabi --${BUILD_MODE}
+    fi
 
 bindgen-swift:
     #!/usr/bin/env bash
@@ -76,7 +85,11 @@ assemble-frameworks:
     EOF
     )
     cd ${TARGET_DIR} && find . -type d -name ${FW_FFI_FILE} | xargs rm -rf
-    for target in aarch64-apple-ios-sim aarch64-apple-ios aarch64-apple-ios-macabi; do \
+    targets=(aarch64-apple-ios-sim aarch64-apple-ios aarch64-apple-ios-macabi)
+    if [ ${HOST_ARCH} == "x86_64" ]; then
+        targets=(x86_64-apple-ios)
+    fi
+    for target in ${targets[@]}; do \
         pushd ${TARGET_DIR}/${target}/${BUILD_MODE_TARGET} > /dev/null && \
         mkdir -p ${FW_FFI_FILE} && cd ${FW_FFI_FILE} && mkdir Headers Modules && echo "$MODULE_MAP" > ./Modules/module.modulemap && cp ../../../../${LIB_NAME}/${GEN_SWIFT_FOLDER}/${FW_FFI_NAME}.h ./Headers && cp ../${STATIC_LIB_NAME} ./${FW_FFI_NAME} && cp ../../../../${LIB_NAME}/src/Info.plist ./; \
         popd > /dev/null; \
@@ -85,7 +98,11 @@ assemble-frameworks:
 xcframework:
     #!/usr/bin/env bash
     rm -rf ${TARGET_XC_FW_FOLDER}/Sources/${XC_FW_FFI_NAME} && mkdir -p ${TARGET_XC_FW_FOLDER}/Sources
-    xcodebuild -create-xcframework -framework ${TARGET_DIR}/aarch64-apple-ios/${BUILD_MODE_TARGET}/${FW_FFI_FILE} -framework ${TARGET_DIR}/aarch64-apple-ios-sim/${BUILD_MODE_TARGET}/${FW_FFI_FILE} -framework ${TARGET_DIR}/aarch64-apple-ios-macabi/${BUILD_MODE_TARGET}/${FW_FFI_FILE} -output ${TARGET_XC_FW_FOLDER}/Sources/${XC_FW_FFI_NAME}
+    if [ ${HOST_ARCH} == "x86_64" ]; then \
+        xcodebuild -create-xcframework -framework ${TARGET_DIR}/x86_64-apple-ios/${BUILD_MODE_TARGET}/${FW_FFI_FILE} -output ${TARGET_XC_FW_FOLDER}/Sources/${XC_FW_FFI_NAME}; \
+    else \
+        xcodebuild -create-xcframework -framework ${TARGET_DIR}/aarch64-apple-ios/${BUILD_MODE_TARGET}/${FW_FFI_FILE} -framework ${TARGET_DIR}/aarch64-apple-ios-sim/${BUILD_MODE_TARGET}/${FW_FFI_FILE} -framework ${TARGET_DIR}/aarch64-apple-ios-macabi/${BUILD_MODE_TARGET}/${FW_FFI_FILE} -output ${TARGET_XC_FW_FOLDER}/Sources/${XC_FW_FFI_NAME}; \
+    fi
 
 cp-xcframework-source:
     #!/usr/bin/env bash

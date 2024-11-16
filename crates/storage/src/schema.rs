@@ -143,6 +143,7 @@ diesel::table! {
         name -> Varchar,
         rate -> Float8,
         created_at -> Timestamp,
+        updated_at -> Timestamp,
     }
 }
 
@@ -171,6 +172,8 @@ diesel::table! {
         fee_partner -> Nullable<Float8>,
         updated_at -> Timestamp,
         created_at -> Timestamp,
+        #[max_length = 32]
+        transaction_type -> Varchar,
     }
 }
 

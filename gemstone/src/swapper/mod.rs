@@ -14,13 +14,15 @@ mod uniswap;
 
 use models::*;
 use primitives::Chain;
+use std::collections::HashSet;
 
 #[async_trait]
 pub trait GemSwapProvider: Send + Sync + Debug {
-    fn name(&self) -> &'static str;
-    async fn supported_chains(&self) -> Result<Vec<Chain>, SwapperError>;
+    fn provider(&self) -> SwapProvider;
+    fn supported_chains(&self) -> Vec<Chain>;
     async fn fetch_quote(&self, request: &SwapQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapQuote, SwapperError>;
     async fn fetch_quote_data(&self, quote: &SwapQuote, provider: Arc<dyn AlienProvider>, data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError>;
+    async fn get_transaction_status(&self, chain: Chain, transaction_hash: &str, provider: Arc<dyn AlienProvider>) -> Result<bool, SwapperError>;
 }
 
 #[derive(Debug, uniffi::Object)]
@@ -43,11 +45,24 @@ impl GemSwapper {
         }
     }
 
-    fn get_providers(&self) -> Vec<String> {
-        self.swappers.iter().map(|x| x.name().to_string()).collect()
+    fn supported_chains(&self) -> Vec<Chain> {
+        self.swappers
+            .iter()
+            .flat_map(|x| x.supported_chains())
+            .collect::<HashSet<_>>()
+            .into_iter()
+            .collect()
+    }
+
+    fn get_providers(&self) -> Vec<SwapProvider> {
+        self.swappers.iter().map(|x| x.provider()).collect()
     }
 
     async fn fetch_quote(&self, request: SwapQuoteRequest) -> Result<Vec<SwapQuote>, SwapperError> {
+        if request.from_asset == request.to_asset {
+            return Err(SwapperError::NotSupportedPair);
+        }
+
         for swapper in self.swappers.iter() {
             let quotes = swapper.fetch_quote(&request, self.rpc_provider.clone()).await;
             match quotes {
@@ -64,8 +79,18 @@ impl GemSwapper {
         let swapper = self
             .swappers
             .iter()
-            .find(|x| x.name() == quote.provider.name.as_str())
+            .find(|x| x.provider() == quote.data.provider)
             .ok_or(SwapperError::NotImplemented)?;
         swapper.fetch_quote_data(quote, self.rpc_provider.clone(), data).await
+    }
+
+    async fn get_transaction_status(&self, chain: Chain, swap_provider: SwapProvider, transaction_hash: &str) -> Result<bool, SwapperError> {
+        let swapper = self
+            .swappers
+            .iter()
+            .find(|x| x.provider() == swap_provider)
+            .ok_or(SwapperError::NotImplemented)?;
+
+        swapper.get_transaction_status(chain, transaction_hash, self.rpc_provider.clone()).await
     }
 }

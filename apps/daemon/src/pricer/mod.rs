@@ -25,7 +25,7 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
             async move { price_updater_factory(&settings).clean_outdated_assets(settings.pricer.outdated).await }
         }
     });
-    let update_fiat_assets = run_job("Update fiat assets", Duration::from_secs(86400), {
+    let update_fiat_assets = run_job("Update fiat assets", Duration::from_secs(360), {
         let settings = Arc::new(settings.clone());
         move || {
             let settings = Arc::clone(&settings);
