@@ -1,7 +1,7 @@
 use super::permit2_data::Permit2Data;
 use crate::config::swap_config::SwapReferralFees;
 use crate::network::{jsonrpc::JsonRpcError, AlienError};
-use primitives::{AssetId, ChainType};
+use primitives::AssetId;
 use std::fmt::Debug;
 
 static DEFAULT_SLIPPAGE_BPS: u32 = 300;
@@ -50,12 +50,14 @@ pub enum GemSwapMode {
 pub enum SwapProvider {
     UniswapV3,
     Thorchain,
+    Orca,
 }
 impl SwapProvider {
     pub fn name(&self) -> &str {
         match self {
             Self::UniswapV3 => "Uniswap v3",
             Self::Thorchain => "THORChain",
+            Self::Orca => "Orca Whirlpool",
         }
     }
 }

@@ -388,8 +388,7 @@ impl GemSwapProvider for UniswapV3 {
     }
 
     async fn get_transaction_status(&self, _chain: Chain, _transaction_hash: &str, _provider: Arc<dyn AlienProvider>) -> Result<bool, SwapperError> {
-        // Implement the logic to get the transaction status here
-        // For now, we will return Ok(true) as a placeholder
+        // TODO: the transaction status from the RPC
         Ok(true)
     }
 }

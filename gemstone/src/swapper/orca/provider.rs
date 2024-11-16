@@ -1,6 +1,6 @@
 use super::fee_tiers::get_fee_tiers;
 use super::whirlpool::{get_tick_array_address, get_whirlpool_address};
-use super::{models::*, FEE_TIER_DISCRIMINATOR, ORCA_NAME, WHIRLPOOL_CONFIG, WHIRLPOOL_PROGRAM};
+use super::{models::*, FEE_TIER_DISCRIMINATOR, WHIRLPOOL_CONFIG, WHIRLPOOL_PROGRAM};
 use crate::network::JsonRpcResult;
 use crate::{
     network::{jsonrpc::jsonrpc_call, AlienProvider},
@@ -38,12 +38,12 @@ impl Default for Orca {
 
 #[async_trait]
 impl GemSwapProvider for Orca {
-    fn name(&self) -> &'static str {
-        ORCA_NAME
+    fn provider(&self) -> SwapProvider {
+        SwapProvider::Orca
     }
 
-    async fn supported_chains(&self) -> Result<Vec<Chain>, SwapperError> {
-        Ok(vec![Chain::Solana])
+    fn supported_chains(&self) -> Vec<Chain> {
+        vec![Chain::Solana]
     }
 
     async fn fetch_quote(&self, request: &SwapQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapQuote, SwapperError> {
@@ -84,11 +84,10 @@ impl GemSwapProvider for Orca {
         })?;
 
         Ok(SwapQuote {
-            chain_type: request.from_asset.chain.chain_type(),
             from_value: request.value.clone(),
             to_value: quote.token_est_out.to_string(),
-            provider: SwapProviderData {
-                name: self.name().into(),
+            data: SwapProviderData {
+                provider: self.provider(),
                 routes: vec![SwapRoute {
                     route_type: "whirlpool".into(),
                     input: from_asset.to_string(),
@@ -104,6 +103,11 @@ impl GemSwapProvider for Orca {
 
     async fn fetch_quote_data(&self, _quote: &SwapQuote, _provider: Arc<dyn AlienProvider>, _data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError> {
         todo!()
+    }
+
+    async fn get_transaction_status(&self, _chain: Chain, _transaction_hash: &str, _provider: Arc<dyn AlienProvider>) -> Result<bool, SwapperError> {
+        // TODO: the transaction status from the RPC
+        Ok(true)
     }
 }
 

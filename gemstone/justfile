@@ -4,6 +4,10 @@ list:
 build:
     cargo build
 
+lint:
+    @cargo clippy --version
+    cargo clippy -- -D warnings
+
 test:
     cargo test
 
