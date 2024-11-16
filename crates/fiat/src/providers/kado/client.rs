@@ -3,7 +3,7 @@ use super::{
     model::{Asset, Blockchain, Blockchains, Quote, QuoteData, QuoteQuery, Response},
 };
 use crate::model::{filter_token_id, FiatMapping, FiatProviderAsset};
-use primitives::fiat_quote::FiatQuoteType;
+use primitives::FiatTransactionType;
 use primitives::{FiatBuyRequest, FiatProviderName, FiatQuote};
 use reqwest::Client;
 use url::Url;
@@ -90,7 +90,7 @@ impl KadoClient {
     pub fn get_fiat_quote(&self, request: FiatBuyRequest, request_map: FiatMapping, quote: Quote) -> FiatQuote {
         FiatQuote {
             provider: Self::NAME.as_fiat_provider(),
-            quote_type: FiatQuoteType::Buy,
+            quote_type: FiatTransactionType::Buy,
             fiat_amount: request.fiat_amount,
             fiat_currency: request.clone().fiat_currency,
             crypto_amount: quote.clone().receive_unit_count_after_fees.amount.unwrap_or_default(),

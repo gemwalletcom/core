@@ -1,12 +1,13 @@
+use crate::AssetId;
 use serde::{Deserialize, Serialize};
 use strum::{AsRefStr, EnumString};
-
-use crate::AssetId;
+use typeshare::typeshare;
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct FiatTransaction {
     pub asset_id: Option<AssetId>,
+    pub transaction_type: FiatTransactionType,
     pub provider_id: String,
     pub provider_transaction_id: String,
     pub status: FiatTransactionStatus,
@@ -28,4 +29,13 @@ pub enum FiatTransactionStatus {
     Pending,
     Failed,
     Unknown,
+}
+
+#[typeshare(swift = "Equatable, Sendable")]
+#[derive(Debug, Clone, Serialize, Deserialize, AsRefStr, EnumString)]
+#[serde(rename_all = "lowercase")]
+#[strum(serialize_all = "lowercase")]
+pub enum FiatTransactionType {
+    Buy,
+    Sell,
 }
