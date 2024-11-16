@@ -143,6 +143,7 @@ diesel::table! {
         name -> Varchar,
         rate -> Float8,
         created_at -> Timestamp,
+        updated_at -> Timestamp,
     }
 }
 

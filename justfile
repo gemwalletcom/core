@@ -12,7 +12,7 @@ install-rust:
 
 install-typeshare:
     @echo Install typeshare-cli
-    cargo install typeshare-cli --version 1.11.0 --force
+    cargo install typeshare-cli --version 1.12.0 --force
 
 install-postgres:
 	brew install libpq postgresql@15
