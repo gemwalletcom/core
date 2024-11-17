@@ -295,12 +295,20 @@ pub fn test_decode_arrays() -> Result<Vec<TickArray>, SwapperError> {
 }
 
 #[uniffi::export]
-async fn decode_tick_array() -> Result<bool, SwapperError> {
+async fn decode_tick_array() -> Result<u64, SwapperError> {
     let tick_array = test_decode_arrays().unwrap();
     let tick_array_facades = tick_array.into_iter().map(|x| TickArrayFacade::from(&x)).collect::<Vec<_>>();
     let result: [TickArrayFacade; 5] = std::array::from_fn(|i| tick_array_facades[i]);
-    let _tick_arrays = TickArrays::from(result);
-    Ok(true)
+    let tick_arrays = TickArrays::from(result);
+    let amount_in = 1000000;
+    let slippage_bps = 100;
+    let base64_str = "P5XRDOGAYwkT5EH4ORPKaLBjT7Al/eqohzfoQRDRJV41ezN33e4czf4BAAEAZAABAPidqZ5fIwAAAAAAAAAAAACjuAdX+Trn/wAAAAAAAAAA+P///1O/HAAAAAAA3y8cAAAAAAAXkkg7bIoqh7dHHYFPlZH5OVyECpzj2fTVun06S4p0nmUsaIGkTdFrz+MYnhYfOgyz4zQ1cmq2FBWRoO4tzuiUY92FEEzxAQAAAAAAAAAAAM4BDmCv7bInF71jGS9UFFo/llozu4LSxwKess4eIIJkPy5AymtnaszpL/DB7lvH9eripWxKGREM6eGZTxFvw4LsxIIJHPEBAAAAAAAAAAAAdmIsZwAAAAAXkkg7bIoqh7dHHYFPlZH5OVyECpzj2fTVun06S4p0niZgmq1j03IXXG1fM6HZvXY2IXujofTSqQbIBaFajuR/vR0xrxfe/zwmhIFgCsr+SxQJjA/hQbf0oc34STRkRAMAAAAAAAAAAAAAAAAAAAAA1UwtgntDGQAAAAAAAAAAAAwA0K/rhhTafxmroC1A8YxpJYX2UCDfztPV5fmpwMThA8hYP14GHa5nRacL5ZcsWCGrc2hIYoozCeT8FCU7/Ru9HTGvF97/PCaEgWAKyv5LFAmMD+FBt/ShzfhJNGREAwAAAAAAAAAAAAAAAAAAAAC80iMq3qADAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAL0dMa8X3v88JoSBYArK/ksUCYwP4UG39KHN+Ek0ZEQDAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
+    let pool: Whirlpool = try_borsh_decode(base64_str).unwrap();
+
+    let quote = swap_quote_by_input_token(amount_in, true, slippage_bps, (&pool).into(), tick_arrays, None, None).map_err(|c| SwapperError::NetworkError {
+        msg: format!("swap_quote_by_input_token error: {:?}", c),
+    })?;
+    Ok(quote.token_min_out)
 }
 
 #[cfg(test)]
