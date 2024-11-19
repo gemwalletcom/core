@@ -54,6 +54,9 @@ pub struct ConfigAppVersion {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ConfigVersions {
+    #[typeshare(skip)]
     pub fiat_assets: i32,
+    pub fiat_on_ramp_assets: i32,
+    pub fiat_off_ramp_assets: i32,
     pub swap_assets: i32,
 }

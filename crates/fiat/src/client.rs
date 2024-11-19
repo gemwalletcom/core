@@ -1,4 +1,3 @@
-use std::collections::HashSet;
 use std::error::Error;
 use std::time::Duration;
 
@@ -29,28 +28,18 @@ impl Client {
     }
 
     pub async fn get_on_ramp_assets(&mut self) -> Result<FiatAssets, Box<dyn Error + Send + Sync>> {
-        let assets = self
-            .database
-            .get_fiat_assets()?
-            .into_iter()
-            .flat_map(|x| x.asset_id)
-            .collect::<HashSet<_>>()
-            .into_iter()
-            .collect();
-
-        let version = self.database.get_fiat_assets_version()?;
-
+        let assets = self.database.get_fiat_assets_is_buyable()?;
         Ok(FiatAssets {
-            version: version as u32,
+            version: assets.clone().len() as u32,
             asset_ids: assets,
         })
     }
 
     pub async fn get_off_ramp_assets(&mut self) -> Result<FiatAssets, Box<dyn Error + Send + Sync>> {
-        let assets = self.get_on_ramp_assets().await?;
+        let assets = self.database.get_fiat_assets_is_sellable()?;
         Ok(FiatAssets {
-            version: assets.version,
-            asset_ids: assets.asset_ids.into_iter().filter(|id| !id.contains('_')).collect(),
+            version: assets.clone().len() as u32,
+            asset_ids: assets,
         })
     }
 

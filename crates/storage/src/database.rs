@@ -98,9 +98,14 @@ impl DatabaseClient {
         fiat_assets.select(FiatAsset::as_select()).load(&mut self.connection)
     }
 
-    pub fn get_fiat_assets_version(&mut self) -> Result<i32, diesel::result::Error> {
-        let version = self.get_fiat_assets()?.len();
-        Ok(version as i32)
+    pub fn get_fiat_assets_is_buyable(&mut self) -> Result<Vec<String>, diesel::result::Error> {
+        use crate::schema::assets_details::dsl::*;
+        assets_details.filter(is_buyable.eq(true)).select(asset_id).load(&mut self.connection)
+    }
+
+    pub fn get_fiat_assets_is_sellable(&mut self) -> Result<Vec<String>, diesel::result::Error> {
+        use crate::schema::assets_details::dsl::*;
+        assets_details.filter(is_sellable.eq(true)).select(asset_id).load(&mut self.connection)
     }
 
     pub fn get_fiat_assets_for_asset_id(&mut self, _asset_id: &str) -> Result<Vec<FiatAsset>, diesel::result::Error> {

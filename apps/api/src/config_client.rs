@@ -16,7 +16,9 @@ impl Client {
     }
 
     pub fn get_config(&mut self) -> Result<ConfigResponse, Box<dyn Error>> {
-        let fiat_assets_version = self.database.get_fiat_assets_version()?;
+        let fiat_on_ramp_assets = self.database.get_fiat_assets_is_buyable()?.len() as i32;
+        let fiat_off_ramp_assets = self.database.get_fiat_assets_is_sellable()?.len() as i32;
+
         let swap_assets_version = self.database.get_swap_assets_version()?;
 
         let releases = self.database.get_releases()?;
@@ -54,7 +56,9 @@ impl Client {
             app,
             releases,
             versions: ConfigVersions {
-                fiat_assets: fiat_assets_version,
+                fiat_assets: fiat_on_ramp_assets,
+                fiat_on_ramp_assets,
+                fiat_off_ramp_assets,
                 swap_assets: swap_assets_version,
             },
         };
