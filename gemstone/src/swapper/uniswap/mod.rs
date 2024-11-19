@@ -56,14 +56,10 @@ impl JsonRpcRequestConvert for EthereumRpc {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct UniswapV3 {}
 
 impl UniswapV3 {
-    pub fn new() -> Self {
-        Self {}
-    }
-
     pub fn support_chain(&self, chain: &Chain) -> bool {
         get_deployment_by_chain(chain).is_some()
     }

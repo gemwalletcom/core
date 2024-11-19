@@ -17,7 +17,7 @@ use std::sync::Arc;
 
 use super::{ApprovalType, FetchQuoteData, SwapProvider, SwapProviderData, SwapQuote, SwapQuoteData, SwapQuoteRequest, SwapRoute, SwapperError};
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct ThorChain {}
 
 const QUOTE_MINIMUM: i64 = 0;
@@ -25,10 +25,6 @@ const QUOTE_INTERVAL: i64 = 1;
 const QUOTE_QUANTITY: i64 = 0;
 
 impl ThorChain {
-    pub fn new() -> Self {
-        Self {}
-    }
-
     fn data(&self, chain: Chain, memo: String) -> String {
         match chain {
             Chain::Thorchain | Chain::Litecoin | Chain::Doge | Chain::Bitcoin | Chain::Cosmos => memo,
@@ -165,7 +161,7 @@ mod tests {
 
     #[test]
     fn test_value_from() {
-        let thorchain = ThorChain::new();
+        let thorchain = ThorChain::default();
 
         let value = "1000000000".to_string();
 
@@ -184,7 +180,7 @@ mod tests {
 
     #[test]
     fn test_value_to() {
-        let thorchain = ThorChain::new();
+        let thorchain = ThorChain::default();
 
         let value = "10000000".to_string();
 

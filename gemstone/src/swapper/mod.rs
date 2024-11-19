@@ -39,8 +39,8 @@ impl GemSwapper {
         Self {
             rpc_provider,
             swappers: vec![
-                Box::new(uniswap::UniswapV3::new()),
-                Box::new(thorchain::ThorChain::new()),
+                Box::new(uniswap::UniswapV3::default()),
+                Box::new(thorchain::ThorChain::default()),
                 Box::new(orca::Orca::default()),
             ],
         }
