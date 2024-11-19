@@ -1,5 +1,5 @@
 list:
-    just --list
+    @just --list
 
 build:
     cargo build
@@ -10,6 +10,9 @@ lint:
 
 test:
     cargo test
+
+integration-test:
+    cargo test --test integration_test
 
 export ANDROID_HOME := env_var_or_default("ANDROID_HOME", "~/Library/Android/sdk")
 export HOST_ARCH := arch()

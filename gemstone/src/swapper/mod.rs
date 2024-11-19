@@ -5,14 +5,15 @@ use async_trait::async_trait;
 use std::{fmt::Debug, sync::Arc};
 
 mod custom_types;
-mod models;
-mod orca;
 mod permit2_data;
-mod slippage;
-mod thorchain;
-mod uniswap;
 
-use models::*;
+pub mod models;
+pub mod orca;
+pub mod slippage;
+pub mod thorchain;
+pub mod uniswap;
+
+pub use models::*;
 use primitives::Chain;
 use std::collections::HashSet;
 

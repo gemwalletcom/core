@@ -1,6 +1,6 @@
 use super::models::FeeTier;
 
-pub fn get_fee_tiers() -> Vec<FeeTier> {
+pub fn get_all_fee_tiers() -> Vec<FeeTier> {
     let fee_tiers = vec![
         FeeTier::new(1, 100),
         FeeTier::new(2, 200),
@@ -14,4 +14,8 @@ pub fn get_fee_tiers() -> Vec<FeeTier> {
         FeeTier::new(256, 20000),
     ];
     fee_tiers
+}
+
+pub fn get_splash_pool_fee_tiers() -> FeeTier {
+    FeeTier::new(32896, 10000)
 }

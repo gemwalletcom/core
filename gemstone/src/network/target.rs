@@ -1,6 +1,6 @@
 use std::{collections::HashMap, fmt::Debug};
 
-#[derive(Debug, uniffi::Record)]
+#[derive(Debug, Clone, uniffi::Record)]
 pub struct AlienTarget {
     pub url: String,
     pub method: AlienHttpMethod,
@@ -8,7 +8,7 @@ pub struct AlienTarget {
     pub body: Option<Vec<u8>>,
 }
 
-#[derive(Debug, PartialEq, uniffi::Enum)]
+#[derive(Debug, Clone, PartialEq, uniffi::Enum)]
 pub enum AlienHttpMethod {
     Get,
     Post,

@@ -1,4 +1,4 @@
-use super::fee_tiers::get_fee_tiers;
+use super::fee_tiers::{get_all_fee_tiers, get_splash_pool_fee_tiers};
 use super::whirlpool::{get_tick_array_address, get_whirlpool_address};
 use super::{models::*, FEE_TIER_DISCRIMINATOR, WHIRLPOOL_CONFIG, WHIRLPOOL_PROGRAM};
 use crate::network::JsonRpcResult;
@@ -21,7 +21,7 @@ use std::{cmp::Ordering, iter::zip, str::FromStr, sync::Arc, vec};
 
 #[derive(Debug)]
 pub struct Orca {
-    pub whirlpoo_program: Pubkey,
+    pub whirlpool_program: Pubkey,
     pub whirlpool_config: Pubkey,
     pub chain: Chain,
 }
@@ -29,7 +29,7 @@ pub struct Orca {
 impl Default for Orca {
     fn default() -> Self {
         Self {
-            whirlpoo_program: Pubkey::from_str(WHIRLPOOL_PROGRAM).unwrap(),
+            whirlpool_program: Pubkey::from_str(WHIRLPOOL_PROGRAM).unwrap(),
             whirlpool_config: Pubkey::from_str(WHIRLPOOL_CONFIG).unwrap(),
             chain: Chain::Solana,
         }
@@ -57,8 +57,9 @@ impl GemSwapProvider for Orca {
 
         let from_asset = Self::get_asset_address(request.from_asset.clone())?;
         let to_asset = Self::get_asset_address(request.to_asset.clone())?;
+        let fee_tiers = get_all_fee_tiers();
         let mut pools = self
-            .fetch_whirlpools(&from_asset, &to_asset, provider.clone(), request.from_asset.chain)
+            .fetch_whirlpools(&from_asset, &to_asset, fee_tiers, provider.clone(), request.from_asset.chain)
             .await?;
 
         if pools.is_empty() {
@@ -72,7 +73,7 @@ impl GemSwapProvider for Orca {
         println!("first_pool: {:?}", pool);
         println!("pool_address: {:?}", pool_address);
 
-        let _token_accounts = self.fetch_token_accounts(&pool.token_mint_a, &pool.token_mint_b, provider.clone()).await?;
+        // let _token_accounts = self.fetch_token_accounts(&pool.token_mint_a, &pool.token_mint_b, provider.clone()).await?;
         let tick_array = self.fetch_tick_arrays(&pool_address, pool, provider.clone()).await?;
 
         let tick_array_facades = tick_array.into_iter().map(|x| TickArrayFacade::from(&x)).collect::<Vec<_>>();
@@ -114,21 +115,35 @@ impl GemSwapProvider for Orca {
 impl Orca {
     #[allow(unused)]
     pub async fn fetch_fee_tiers(&self, provider: Arc<dyn AlienProvider>) -> Result<Vec<FeeTier>, SwapperError> {
-        let call = SolanaRpc::GetProgramAccounts(self.whirlpoo_program.to_string(), Self::get_program_filters());
+        let call = SolanaRpc::GetProgramAccounts(self.whirlpool_program.to_string(), Self::get_program_filters());
         let response: JsonRpcResult<Vec<ProgramAccount>> = jsonrpc_call(&call, provider, &self.chain).await?;
         let result = response.extract_result()?;
         let fee_tiers: Vec<FeeTier> = result.iter().filter_map(|x| try_borsh_decode(x.account.data[0].as_str()).ok()).collect();
         Ok(fee_tiers)
     }
 
-    pub async fn fetch_whirlpools(
+    #[allow(unused)]
+    pub async fn fetch_splash_pool(
         &self,
         token_mint_1: &Pubkey,
         token_mint_2: &Pubkey,
         provider: Arc<dyn AlienProvider>,
         chain: Chain,
+    ) -> Result<Whirlpool, SwapperError> {
+        let fee_tiers = vec![get_splash_pool_fee_tiers()];
+        let result = self.fetch_whirlpools(token_mint_1, token_mint_2, fee_tiers, provider, chain).await?;
+        let pool = result.first().ok_or(SwapperError::NotSupportedPair)?;
+        Ok(pool.1.clone())
+    }
+
+    pub async fn fetch_whirlpools(
+        &self,
+        token_mint_1: &Pubkey,
+        token_mint_2: &Pubkey,
+        fee_tiers: Vec<FeeTier>,
+        provider: Arc<dyn AlienProvider>,
+        chain: Chain,
     ) -> Result<Vec<(String, Whirlpool)>, SwapperError> {
-        let fee_tiers = get_fee_tiers();
         let pool_addresses = fee_tiers
             .iter()
             .filter_map(|x| self.get_pool_address(token_mint_1, token_mint_2, x.tick_spacing))
@@ -179,6 +194,8 @@ impl Orca {
             let tick = try_borsh_decode::<TickArray>(base64_str).unwrap();
             tick_array.push(tick);
         }
+
+        if tick_array.len() < 6 {}
 
         Ok(tick_array)
     }
@@ -281,7 +298,7 @@ impl From<&Tick> for TickFacade {
     }
 }
 
-pub fn test_decode_arrays() -> Result<Vec<TickArray>, SwapperError> {
+pub fn test_swap_quote_by_input() -> Result<u64, SwapperError> {
     let data = include_str!("test/tick_array_response.json");
     let response: JsonRpcResult<ValueResult<Vec<AccountData>>> = serde_json::from_slice(data.as_bytes()).unwrap();
     let tick_accounts = response.extract_result().unwrap().value;
@@ -291,24 +308,26 @@ pub fn test_decode_arrays() -> Result<Vec<TickArray>, SwapperError> {
         let tick: TickArray = try_borsh_decode(base64_str).unwrap();
         tick_array.push(tick);
     }
-    Ok(tick_array)
-}
 
-#[uniffi::export]
-async fn decode_tick_array() -> Result<u64, SwapperError> {
-    let tick_array = test_decode_arrays().unwrap();
     let tick_array_facades = tick_array.into_iter().map(|x| TickArrayFacade::from(&x)).collect::<Vec<_>>();
     let result: [TickArrayFacade; 5] = std::array::from_fn(|i| tick_array_facades[i]);
     let tick_arrays = TickArrays::from(result);
+
     let amount_in = 1000000;
     let slippage_bps = 100;
     let base64_str = "P5XRDOGAYwkT5EH4ORPKaLBjT7Al/eqohzfoQRDRJV41ezN33e4czf4BAAEAZAABAPidqZ5fIwAAAAAAAAAAAACjuAdX+Trn/wAAAAAAAAAA+P///1O/HAAAAAAA3y8cAAAAAAAXkkg7bIoqh7dHHYFPlZH5OVyECpzj2fTVun06S4p0nmUsaIGkTdFrz+MYnhYfOgyz4zQ1cmq2FBWRoO4tzuiUY92FEEzxAQAAAAAAAAAAAM4BDmCv7bInF71jGS9UFFo/llozu4LSxwKess4eIIJkPy5AymtnaszpL/DB7lvH9eripWxKGREM6eGZTxFvw4LsxIIJHPEBAAAAAAAAAAAAdmIsZwAAAAAXkkg7bIoqh7dHHYFPlZH5OVyECpzj2fTVun06S4p0niZgmq1j03IXXG1fM6HZvXY2IXujofTSqQbIBaFajuR/vR0xrxfe/zwmhIFgCsr+SxQJjA/hQbf0oc34STRkRAMAAAAAAAAAAAAAAAAAAAAA1UwtgntDGQAAAAAAAAAAAAwA0K/rhhTafxmroC1A8YxpJYX2UCDfztPV5fmpwMThA8hYP14GHa5nRacL5ZcsWCGrc2hIYoozCeT8FCU7/Ru9HTGvF97/PCaEgWAKyv5LFAmMD+FBt/ShzfhJNGREAwAAAAAAAAAAAAAAAAAAAAC80iMq3qADAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAL0dMa8X3v88JoSBYArK/ksUCYwP4UG39KHN+Ek0ZEQDAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
     let pool: Whirlpool = try_borsh_decode(base64_str).unwrap();
 
-    let quote = swap_quote_by_input_token(amount_in, true, slippage_bps, (&pool).into(), tick_arrays, None, None).map_err(|c| SwapperError::NetworkError {
-        msg: format!("swap_quote_by_input_token error: {:?}", c),
-    })?;
+    let quote =
+        swap_quote_by_input_token(amount_in, true, slippage_bps, (&pool).into(), tick_arrays, None, None).map_err(|c| SwapperError::ComputeQuoteError {
+            msg: format!("swap_quote_by_input_token error: {:?}", c),
+        })?;
     Ok(quote.token_min_out)
+}
+
+#[uniffi::export]
+async fn swap_quote_by_input() -> Result<u64, SwapperError> {
+    test_swap_quote_by_input()
 }
 
 #[cfg(test)]
@@ -327,12 +346,5 @@ mod tests {
         let tick_array_address = get_tick_array_address(&pool, start_index).unwrap();
 
         assert_eq!(tick_array_address.0.to_string(), "3M9oTcoC5viBCNuJEKgwCrQDEbE3Rh6CpTGP5C2jGHzU");
-    }
-
-    #[test]
-    fn test_decode_tick_array() {
-        let tick_array = test_decode_arrays().unwrap();
-
-        assert_eq!(tick_array.len(), 5);
     }
 }

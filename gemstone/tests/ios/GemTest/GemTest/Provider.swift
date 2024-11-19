@@ -12,7 +12,7 @@ public actor NativeProvider {
             "ethereum": URL(string: "https://eth.llamarpc.com")!,
             "optimism": URL(string: "https://optimism.llamarpc.com")!,
             "thorchain": URL(string: "https://thornode.ninerealms.com")!,
-            "solana": URL(string: "https://mainnet.helius-rpc.com/?api-key=cdbe907b-0da3-4871-ba01-06a1ecda3a3a")!
+            "solana": URL(string: "https://api.mainnet-beta.solana.com")!
 
         ]
         self.session = session

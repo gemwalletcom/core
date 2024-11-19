@@ -37,11 +37,17 @@ hex.workspace = true
 url.workspace = true
 num-bigint.workspace = true
 borsh.workspace = true
-orca_whirlpools_core = "0.2.2"
+orca_whirlpools_core = "0.3.0"
 
 [build-dependencies]
 uniffi = { workspace = true, features = ["build"] }
 
 [dev-dependencies]
 async-std.workspace = true
-tokio = { workspace = true }
+tokio.workspace = true
+reqwest.workspace = true
+futures.workspace = true
+
+[[test]]
+name = "integration_test"
+test = false

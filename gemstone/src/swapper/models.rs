@@ -22,6 +22,9 @@ pub enum SwapperError {
     NetworkError { msg: String },
     #[error("ABI error: {msg}")]
     ABIError { msg: String },
+    #[error("Compute quote error: {msg}")]
+    ComputeQuoteError { msg: String },
+
     #[error("No quote available")]
     NoQuoteAvailable,
     #[error("Not implemented")]

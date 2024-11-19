@@ -3303,6 +3303,7 @@ dependencies = [
  "async-trait",
  "base64 0.22.1",
  "borsh",
+ "futures",
  "gem_bsc",
  "gem_cosmos",
  "gem_evm",
@@ -3313,6 +3314,7 @@ dependencies = [
  "num-bigint 0.4.6",
  "orca_whirlpools_core",
  "primitives",
+ "reqwest",
  "serde",
  "serde_json",
  "serde_urlencoded",
@@ -5513,9 +5515,9 @@ dependencies = [
 
 [[package]]
 name = "orca_whirlpools_core"
-version = "0.2.2"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3b53906b65e681b830dedaa1557337a47fcaae7f4aa96b84a272c8b46a5e5070"
+checksum = "31518f76be79adb31bbda42e9e61107a72a6e0b7647183952cf5bdb62e84229a"
 dependencies = [
  "ethnum",
  "libm",
@@ -5524,9 +5526,9 @@ dependencies = [
 
 [[package]]
 name = "orca_whirlpools_macros"
-version = "0.2.2"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a4ad17f053eaf610199304b61fa89eb3ce5fd3cc9224130e8e790a44b2e61215"
+checksum = "e14b3fc4c10d309828eb89e2427fc7dbc96e39725ce3b67c86e83d14887083bb"
 dependencies = [
  "proc-macro2 1.0.89",
  "quote 1.0.37",
