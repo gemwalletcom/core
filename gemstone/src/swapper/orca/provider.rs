@@ -1,4 +1,4 @@
-use super::fee_tiers::{get_all_fee_tiers, get_splash_pool_fee_tiers};
+use super::fee_tiers::get_splash_pool_fee_tiers;
 use super::whirlpool::{get_tick_array_address, get_whirlpool_address};
 use super::{models::*, FEE_TIER_DISCRIMINATOR, WHIRLPOOL_CONFIG, WHIRLPOOL_PROGRAM};
 use crate::network::JsonRpcResult;
@@ -57,7 +57,7 @@ impl GemSwapProvider for Orca {
 
         let from_asset = Self::get_asset_address(request.from_asset.clone())?;
         let to_asset = Self::get_asset_address(request.to_asset.clone())?;
-        let fee_tiers = get_all_fee_tiers();
+        let fee_tiers = self.fetch_fee_tiers(provider.clone()).await?;
         let mut pools = self
             .fetch_whirlpools(&from_asset, &to_asset, fee_tiers, provider.clone(), request.from_asset.chain)
             .await?;
@@ -168,11 +168,11 @@ impl Orca {
         let start_index = get_tick_array_start_tick_index(pool.tick_current_index, pool.tick_spacing);
         let offset = (pool.tick_spacing as i32) * (TICK_ARRAY_SIZE as i32);
         let tick_arrays = [
+            start_index - 2 * offset,
+            start_index - offset,
             start_index,
             start_index + offset,
             start_index + 2 * offset,
-            start_index - offset,
-            start_index - 2 * offset,
         ];
         println!("tick_arrays: {:?}", tick_arrays);
         let tick_addresses: Vec<String> = tick_arrays
@@ -194,8 +194,6 @@ impl Orca {
             let tick = try_borsh_decode::<TickArray>(base64_str).unwrap();
             tick_array.push(tick);
         }
-
-        if tick_array.len() < 6 {}
 
         Ok(tick_array)
     }
@@ -310,13 +308,26 @@ pub fn test_swap_quote_by_input() -> Result<u64, SwapperError> {
     }
 
     let tick_array_facades = tick_array.into_iter().map(|x| TickArrayFacade::from(&x)).collect::<Vec<_>>();
+    for tick_array_facade in tick_array_facades.iter() {
+        println!(
+            "tick_array_facade start_tick_index: {:?}, ticks: {:?}",
+            tick_array_facade.start_tick_index,
+            tick_array_facade.ticks.len()
+        );
+    }
+
     let result: [TickArrayFacade; 5] = std::array::from_fn(|i| tick_array_facades[i]);
     let tick_arrays = TickArrays::from(result);
 
     let amount_in = 1000000;
     let slippage_bps = 100;
-    let base64_str = "P5XRDOGAYwkT5EH4ORPKaLBjT7Al/eqohzfoQRDRJV41ezN33e4czf4BAAEAZAABAPidqZ5fIwAAAAAAAAAAAACjuAdX+Trn/wAAAAAAAAAA+P///1O/HAAAAAAA3y8cAAAAAAAXkkg7bIoqh7dHHYFPlZH5OVyECpzj2fTVun06S4p0nmUsaIGkTdFrz+MYnhYfOgyz4zQ1cmq2FBWRoO4tzuiUY92FEEzxAQAAAAAAAAAAAM4BDmCv7bInF71jGS9UFFo/llozu4LSxwKess4eIIJkPy5AymtnaszpL/DB7lvH9eripWxKGREM6eGZTxFvw4LsxIIJHPEBAAAAAAAAAAAAdmIsZwAAAAAXkkg7bIoqh7dHHYFPlZH5OVyECpzj2fTVun06S4p0niZgmq1j03IXXG1fM6HZvXY2IXujofTSqQbIBaFajuR/vR0xrxfe/zwmhIFgCsr+SxQJjA/hQbf0oc34STRkRAMAAAAAAAAAAAAAAAAAAAAA1UwtgntDGQAAAAAAAAAAAAwA0K/rhhTafxmroC1A8YxpJYX2UCDfztPV5fmpwMThA8hYP14GHa5nRacL5ZcsWCGrc2hIYoozCeT8FCU7/Ru9HTGvF97/PCaEgWAKyv5LFAmMD+FBt/ShzfhJNGREAwAAAAAAAAAAAAAAAAAAAAC80iMq3qADAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAL0dMa8X3v88JoSBYArK/ksUCYwP4UG39KHN+Ek0ZEQDAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
+    let base64_str = "P5XRDOGAYwkT5EH4ORPKaLBjT7Al/eqohzfoQRDRJV41ezN33e4czf8EAAQAkAEBACUn6rOx9gIAAAAAAAAAAADZ0q3a01wPfgAAAAAAAAAApsj///QCNRYAAAAA7MHhBAAAAAAGm4hX/quBhPtof2NGGMA12sQ53BrrO1WYoPAAAAAAAchN8kM4mDvkqFswl7r0C8lXEQjSiawAs2jfF11Edc96okZrwvdXv2MAAAAAAAAAAMb6evO+2606PWXzaqvJdDGxu+TC0vbg5HymAgNFL11hFl+VcsWpaqUC3VEQVKJqbSWO98HW1sGu4SkZFNxRAjLtNOmyVWgdCwAAAAAAAAAAaZY8ZwAAAAAMANCv64YU2n8Zq6AtQPGMaSWF9lAg387T1eX5qcDE4Q8bkJQIzrVDfhKReyB9qZTQ6FenQB4SLAPfa/fG1/wqvR0xrxfe/zwmhIFgCsr+SxQJjA/hQbf0oc34STRkRAMAAAAAAAAAAAAAAAAAAAAAIxHh3tFPDkQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAC9HTGvF97/PCaEgWAKyv5LFAmMD+FBt/ShzfhJNGREAwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAL0dMa8X3v88JoSBYArK/ksUCYwP4UG39KHN+Ek0ZEQDAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
     let pool: Whirlpool = try_borsh_decode(base64_str).unwrap();
+
+    println!(
+        "pool tick space: {:?}, pool tick current index: {:?}",
+        pool.tick_spacing, pool.tick_current_index
+    );
 
     let quote =
         swap_quote_by_input_token(amount_in, true, slippage_bps, (&pool).into(), tick_arrays, None, None).map_err(|c| SwapperError::ComputeQuoteError {
@@ -333,6 +344,13 @@ async fn swap_quote_by_input() -> Result<u64, SwapperError> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_compute_quote() {
+        let quote = test_swap_quote_by_input();
+
+        assert_eq!(quote.unwrap(), 239958);
+    }
 
     #[test]
     fn test_get_tick_array_start_tick_index() {

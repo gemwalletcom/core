@@ -1,5 +1,6 @@
 use super::models::FeeTier;
 
+#[allow(unused)]
 pub fn get_all_fee_tiers() -> Vec<FeeTier> {
     let fee_tiers = vec![
         FeeTier::new(1, 100),
