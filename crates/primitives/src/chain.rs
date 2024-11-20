@@ -291,7 +291,6 @@ impl Chain {
             | Self::Doge
             | Self::AvalancheC
             | Self::Sei
-            | Self::Noble
             | Self::Litecoin
             | Self::ZkSync
             | Self::Linea
@@ -299,6 +298,7 @@ impl Chain {
             | Self::Celo
             | Self::Near
             | Self::World => 30,
+            Self::Noble => 20,
         }
     }
 
