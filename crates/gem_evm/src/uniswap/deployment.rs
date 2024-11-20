@@ -74,9 +74,19 @@ pub fn get_pancakeswap_router_deployment_by_chain(chain: &Chain) -> Option<V3Dep
     // https://docs.pancakeswap.finance/developers/smart-contracts/pancakeswap-exchange/v3-contracts#address
     match chain {
         Chain::SmartChain => Some(V3Deployment {
-            quoter_v2: "0xb27308f9f90d607463bb33eA1BeBb41C27CE5AB6",
-            universal_router: "0x10ED43C718714eb63d5aA57B78B54704E256024E",
-            permit2: "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D",
+            quoter_v2: "0xB048Bbc1Ee6b733FFfCFb9e9CeF7375518e25997",
+            universal_router: "0x1A0A18AC4BECDDbd6389559687d1A73d8927E416",
+            permit2: "0x31c2F6fcFf4F8759b3Bd5Bf0e1084A055615c768",
+        }),
+        Chain::OpBNB => Some(V3Deployment {
+            quoter_v2: "0xB048Bbc1Ee6b733FFfCFb9e9CeF7375518e25997",
+            universal_router: "0xB89a6778D1efE7a5b7096757A21b810CC2886fa1",
+            permit2: "0x31c2F6fcFf4F8759b3Bd5Bf0e1084A055615c768",
+        }),
+        Chain::Arbitrum | Chain::Linea | Chain::Base => Some(V3Deployment {
+            quoter_v2: "0xB048Bbc1Ee6b733FFfCFb9e9CeF7375518e25997",
+            universal_router: "0xFE6508f0015C778Bdcc1fB5465bA5ebE224C9912",
+            permit2: "0x31c2F6fcFf4F8759b3Bd5Bf0e1084A055615c768",
         }),
         _ => None,
     }

@@ -1,4 +1,3 @@
-use crate::debug_println;
 use crate::network::AlienProvider;
 
 use async_trait::async_trait;
@@ -63,7 +62,12 @@ impl GemSwapper {
         }
 
         let quotes_futures = self.swappers.iter().map(|x| x.fetch_quote(&request, self.rpc_provider.clone()));
-        let quotes = futures::future::try_join_all(quotes_futures).await?;
+
+        let quotes = futures::future::join_all(quotes_futures.into_iter().map(|fut| async { fut.await.ok() }))
+            .await
+            .into_iter()
+            .flatten()
+            .collect::<Vec<_>>();
 
         if quotes.is_empty() {
             return Err(SwapperError::NoQuoteAvailable);
