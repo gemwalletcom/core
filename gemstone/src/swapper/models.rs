@@ -39,6 +39,7 @@ pub enum GemSwapMode {
 pub enum SwapProvider {
     UniswapV3,
     PancakeSwapV3,
+    Aerodrome,
     Thorchain,
 }
 impl SwapProvider {
@@ -46,6 +47,7 @@ impl SwapProvider {
         match self {
             Self::UniswapV3 => "Uniswap v3",
             Self::PancakeSwapV3 => "PancakeSwap v3",
+            Self::Aerodrome => "Aerodrome",
             Self::Thorchain => "THORChain",
         }
     }

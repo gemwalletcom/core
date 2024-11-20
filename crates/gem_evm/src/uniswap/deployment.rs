@@ -91,3 +91,14 @@ pub fn get_pancakeswap_router_deployment_by_chain(chain: &Chain) -> Option<V3Dep
         _ => None,
     }
 }
+
+pub fn get_aerodrome_router_deployment_by_chain(chain: &Chain) -> Option<V3Deployment> {
+    match chain {
+        Chain::Base => Some(V3Deployment {
+            quoter_v2: "0x254cF9E1E6e233aa1AC962CB9B05b2cfeAaE15b0",
+            universal_router: "0x6Cb442acF35158D5eDa88fe602221b67B400Be3E",
+            permit2: "0x000000000022D473030F116dDEE9F6B43aC78BA3",
+        }),
+        _ => None,
+    }
+}

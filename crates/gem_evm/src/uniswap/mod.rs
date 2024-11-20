@@ -9,7 +9,9 @@ pub enum FeeTier {
     FiveHundred = 500,
     TwoThousandFiveHundred = 2500,
     ThreeThousand = 3000,
+    SixThousand = 6000,
     TenThousand = 10000,
+    TwentyThousand = 20000,
 }
 
 impl TryFrom<&str> for FeeTier {
@@ -21,7 +23,9 @@ impl TryFrom<&str> for FeeTier {
             "500" => Ok(FeeTier::FiveHundred),
             "2500" => Ok(FeeTier::TwoThousandFiveHundred),
             "3000" => Ok(FeeTier::ThreeThousand),
+            "6000" => Ok(FeeTier::SixThousand),
             "10000" => Ok(FeeTier::TenThousand),
+            "20000" => Ok(FeeTier::TwentyThousand),
             _ => Err(anyhow::anyhow!("invalid fee tier: {}", value)),
         }
     }

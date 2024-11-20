@@ -1,3 +1,4 @@
+mod aerodrome_router;
 mod pancakeswap_router;
 mod uniswap_router;
 
@@ -75,8 +76,13 @@ impl UniswapV3 {
     pub fn new_uniswap() -> Self {
         Self::new(Box::new(uniswap_router::UniswapUniversalRouter {}))
     }
-    pub fn new_panckaeswap() -> Self {
+
+    pub fn new_pancakeswap() -> Self {
         Self::new(Box::new(pancakeswap_router::PancakeSwapUniversalRouter {}))
+    }
+
+    pub fn new_aerodrome() -> Self {
+        Self::new(Box::new(aerodrome_router::AerodromeUniversalRouter {}))
     }
 
     pub fn support_chain(&self, chain: &Chain) -> bool {
