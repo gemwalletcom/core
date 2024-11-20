@@ -9,7 +9,7 @@ use std::{
 
 use gem_evm::{
     permit2::{IAllowanceTransfer, Permit2Types},
-    uniswap::{command::Permit2Permit, deployment::get_deployment_by_chain},
+    uniswap::command::Permit2Permit,
 };
 use primitives::{eip712::EIP712Domain, Chain};
 
@@ -79,9 +79,8 @@ where
 }
 
 #[uniffi::export]
-pub fn permit2_data_to_eip712_json(chain: Chain, data: PermitSingle) -> Result<String, SwapperError> {
+pub fn permit2_data_to_eip712_json(chain: Chain, data: PermitSingle, contract: &str) -> Result<String, SwapperError> {
     let chain_id = chain.network_id();
-    let contract = get_deployment_by_chain(&chain).ok_or(SwapperError::NotImplemented)?.permit2;
     let message = Permit2Message {
         domain: EIP712Domain {
             name: "Permit2".to_string(),
@@ -101,6 +100,8 @@ pub fn permit2_data_to_eip712_json(chain: Chain, data: PermitSingle) -> Result<S
 
 #[cfg(test)]
 mod tests {
+    use gem_evm::uniswap::deployment::get_uniswap_router_deployment_by_chain;
+
     use super::*;
     #[test]
     fn test_permit2_data_eip712_json() {
@@ -115,7 +116,7 @@ mod tests {
             sig_deadline: 1730190354,
         };
 
-        let json = permit2_data_to_eip712_json(Chain::Ethereum, data).unwrap();
+        let json = permit2_data_to_eip712_json(Chain::Ethereum, data, get_uniswap_router_deployment_by_chain(&Chain::Ethereum).unwrap().permit2).unwrap();
         assert_eq!(
             json,
             r#"{"domain":{"name":"Permit2","chainId":1,"verifyingContract":"0x000000000022D473030F116dDEE9F6B43aC78BA3"},"types":{"EIP712Domain":[{"name":"name","type":"string"},{"name":"chainId","type":"uint256"},{"name":"verifyingContract","type":"address"}],"PermitSingle":[{"name":"details","type":"PermitDetails"},{"name":"spender","type":"address"},{"name":"sigDeadline","type":"uint256"}],"PermitDetails":[{"name":"token","type":"address"},{"name":"amount","type":"uint160"},{"name":"expiration","type":"uint48"},{"name":"nonce","type":"uint48"}]},"primaryType":"PermitSingle","message":{"details":{"token":"0xdAC17F958D2ee523a2206206994597C13D831ec7","amount":"1461501637330902918203684832716283019655932542975","expiration":"1732780554","nonce":"0"},"spender":"0x3fC91A3afd70395Cd496C647d5a6CC9D4B2b7FAD","sigDeadline":"1730190354"}}"#

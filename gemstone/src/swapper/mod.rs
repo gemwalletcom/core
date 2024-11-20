@@ -1,4 +1,3 @@
-use crate::debug_println;
 use crate::network::AlienProvider;
 
 use async_trait::async_trait;
@@ -11,7 +10,7 @@ pub mod models;
 pub mod orca;
 pub mod slippage;
 pub mod thorchain;
-pub mod uniswap;
+pub mod universal_router;
 
 pub use models::*;
 use primitives::Chain;
@@ -39,9 +38,9 @@ impl GemSwapper {
         Self {
             rpc_provider,
             swappers: vec![
-                Box::new(uniswap::UniswapV3::default()),
-                Box::new(thorchain::ThorChain::default()),
-                Box::new(orca::Orca::default()),
+                Box::new(universal_router::UniswapV3::new_uniswap()),
+                Box::new(universal_router::UniswapV3::new_panckaeswap()),
+                Box::new(thorchain::ThorChain::new()),
             ],
         }
     }
@@ -64,16 +63,19 @@ impl GemSwapper {
             return Err(SwapperError::NotSupportedPair);
         }
 
-        for swapper in self.swappers.iter() {
-            let quotes = swapper.fetch_quote(&request, self.rpc_provider.clone()).await;
-            match quotes {
-                Ok(val) => return Ok(vec![val]),
-                Err(_err) => {
-                    debug_println!("<== fetch_quote error: {:?}", _err);
-                }
-            }
+        let quotes_futures = self.swappers.iter().map(|x| x.fetch_quote(&request, self.rpc_provider.clone()));
+
+        let quotes = futures::future::join_all(quotes_futures.into_iter().map(|fut| async { fut.await.ok() }))
+            .await
+            .into_iter()
+            .flatten()
+            .collect::<Vec<_>>();
+
+        if quotes.is_empty() {
+            return Err(SwapperError::NoQuoteAvailable);
         }
-        Err(SwapperError::NoQuoteAvailable)
+
+        Ok(quotes)
     }
 
     async fn fetch_quote_data(&self, quote: &SwapQuote, data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError> {

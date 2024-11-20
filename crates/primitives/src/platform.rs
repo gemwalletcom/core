@@ -22,6 +22,7 @@ pub enum PlatformStore {
     SolanaStore,
     SamsungStore,
     ApkUniversal,
+    Local,
 }
 
 impl PlatformStore {

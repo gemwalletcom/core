@@ -1,3 +1,6 @@
+mod pancakeswap_router;
+mod uniswap_router;
+
 use crate::{
     network::{
         jsonrpc::{batch_jsonrpc_call, jsonrpc_call},
@@ -13,7 +16,7 @@ use gem_evm::{
     uniswap::{
         command::{encode_commands, PayPortion, Permit2Permit, Sweep, UniversalRouterCommand, UnwrapWeth, V3SwapExactIn, WrapEth, ADDRESS_THIS},
         contract::IQuoterV2,
-        deployment::get_deployment_by_chain,
+        deployment::V3Deployment,
         FeeTier,
     },
 };
@@ -56,12 +59,31 @@ impl JsonRpcRequestConvert for EthereumRpc {
     }
 }
 
-#[derive(Debug, Default)]
-pub struct UniswapV3 {}
+pub trait UniversalRouterProvider: Send + Sync + Debug {
+    fn provider(&self) -> SwapProvider;
+    fn get_tiers(&self) -> Vec<FeeTier>;
+    fn get_deployment_by_chain(&self, chain: &Chain) -> Option<V3Deployment>;
+}
+
+#[derive(Debug)]
+pub struct UniswapV3 {
+    provider: Box<dyn UniversalRouterProvider>,
+}
 
 impl UniswapV3 {
+    pub fn new(provider: Box<dyn UniversalRouterProvider>) -> Self {
+        Self { provider }
+    }
+
+    pub fn new_uniswap() -> Self {
+        Self::new(Box::new(uniswap_router::UniswapUniversalRouter {}))
+    }
+    pub fn new_panckaeswap() -> Self {
+        Self::new(Box::new(pancakeswap_router::PancakeSwapUniversalRouter {}))
+    }
+
     pub fn support_chain(&self, chain: &Chain) -> bool {
-        get_deployment_by_chain(chain).is_some()
+        self.provider.get_deployment_by_chain(chain).is_some()
     }
 
     fn get_asset_address(asset: &AssetId, evm_chain: EVMChain) -> Result<EthereumAddress, SwapperError> {
@@ -222,7 +244,7 @@ impl UniswapV3 {
         chain: &Chain,
         provider: Arc<dyn AlienProvider>,
     ) -> Result<ApprovalType, SwapperError> {
-        let deployment = get_deployment_by_chain(chain).ok_or(SwapperError::NotSupportedChain)?;
+        let deployment = self.provider.get_deployment_by_chain(chain).ok_or(SwapperError::NotSupportedChain)?;
         // Check token allowance, spender is permit2
         let allowance_data = IERC20::allowanceCall {
             owner: wallet_address,
@@ -273,6 +295,7 @@ impl UniswapV3 {
                 token: token.to_string(),
                 spender: deployment.universal_router.to_string(),
                 value: amount.to_string(),
+                permit2_contract: deployment.permit2.to_string(),
                 permit2_nonce: allowance_return._2.try_into().map_err(|_| SwapperError::ABIError {
                     msg: "failed to convert nonce to u64".into(),
                 })?,
@@ -286,7 +309,7 @@ impl UniswapV3 {
 #[async_trait]
 impl GemSwapProvider for UniswapV3 {
     fn provider(&self) -> SwapProvider {
-        SwapProvider::UniswapV3
+        self.provider.provider()
     }
 
     fn supported_chains(&self) -> Vec<Chain> {
@@ -302,12 +325,15 @@ impl GemSwapProvider for UniswapV3 {
         let wallet_address = Address::parse_checksummed(&request.wallet_address, None).map_err(|_| SwapperError::InvalidAddress {
             address: request.wallet_address.clone(),
         })?;
-        let deployment = get_deployment_by_chain(&request.from_asset.chain).ok_or(SwapperError::NotSupportedChain)?;
+        let deployment = self
+            .provider
+            .get_deployment_by_chain(&request.from_asset.chain)
+            .ok_or(SwapperError::NotSupportedChain)?;
         let (evm_chain, token_in, token_out, amount_in) = Self::parse_request(request)?;
         _ = evm_chain.weth_contract().ok_or(SwapperError::NotSupportedChain)?;
 
         // Build path for QuoterV2
-        let fee_tiers: Vec<FeeTier> = vec![FeeTier::Lowest, FeeTier::Low, FeeTier::Medium, FeeTier::High];
+        let fee_tiers = self.provider.get_tiers();
         let eth_calls: Vec<EthereumRpc> = fee_tiers
             .iter()
             .map(|fee_tier| {
@@ -361,7 +387,10 @@ impl GemSwapProvider for UniswapV3 {
     async fn fetch_quote_data(&self, quote: &SwapQuote, _provider: Arc<dyn AlienProvider>, data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError> {
         let request = &quote.request;
         let (_, token_in, token_out, amount_in) = Self::parse_request(request)?;
-        let deployment = get_deployment_by_chain(&request.from_asset.chain).ok_or(SwapperError::NotSupportedChain)?;
+        let deployment = self
+            .provider
+            .get_deployment_by_chain(&request.from_asset.chain)
+            .ok_or(SwapperError::NotSupportedChain)?;
         let to_amount = U256::from_str(&quote.to_value).map_err(|_| SwapperError::InvalidAmount)?;
 
         let permit: Option<Permit2Permit> = match data {
@@ -405,7 +434,7 @@ mod tests {
         let token0 = EthereumAddress::parse("0x4200000000000000000000000000000000000006").unwrap();
         // USDC
         let token1 = EthereumAddress::parse("0x0b2c639c533813f4aa9d7837caf62653d097ff85").unwrap();
-        let bytes = UniswapV3::build_path_with_token(&token0, &token1, FeeTier::Low);
+        let bytes = UniswapV3::build_path_with_token(&token0, &token1, FeeTier::FiveHundred);
 
         assert_eq!(
             HexEncode(bytes),
@@ -441,7 +470,7 @@ mod tests {
         let amount_in = U256::from(1000000000000000u64);
 
         // without fee
-        let commands = UniswapV3::build_commands(&request, &token_in, &token_out, amount_in, U256::from(0), FeeTier::Low, None).unwrap();
+        let commands = UniswapV3::build_commands(&request, &token_in, &token_out, amount_in, U256::from(0), FeeTier::FiveHundred, None).unwrap();
 
         assert_eq!(commands.len(), 2);
 
@@ -458,7 +487,7 @@ mod tests {
         };
         request.options = Some(options);
 
-        let commands = UniswapV3::build_commands(&request, &token_in, &token_out, amount_in, U256::from(0), FeeTier::Low, None).unwrap();
+        let commands = UniswapV3::build_commands(&request, &token_in, &token_out, amount_in, U256::from(0), FeeTier::FiveHundred, None).unwrap();
 
         assert_eq!(commands.len(), 4);
 
@@ -508,7 +537,7 @@ mod tests {
             &token_out,
             amount_in,
             U256::from(6507936),
-            FeeTier::Low,
+            FeeTier::FiveHundred,
             Some(permit2_data.into()),
         )
         .unwrap();
@@ -543,7 +572,16 @@ mod tests {
         let token_out = EthereumAddress::parse(request.to_asset.token_id.as_ref().unwrap()).unwrap();
         let amount_in = U256::from_str(&request.value).unwrap();
 
-        let commands = UniswapV3::build_commands(&request, &token_in, &token_out, amount_in, U256::from(33377662359182269u64), FeeTier::Low, None).unwrap();
+        let commands = UniswapV3::build_commands(
+            &request,
+            &token_in,
+            &token_out,
+            amount_in,
+            U256::from(33377662359182269u64),
+            FeeTier::FiveHundred,
+            None,
+        )
+        .unwrap();
 
         assert_eq!(commands.len(), 3);
 
@@ -599,7 +637,7 @@ mod tests {
             &token_out,
             amount_in,
             U256::from(3997001989341576u64),
-            FeeTier::Low,
+            FeeTier::FiveHundred,
             Some(permit2_data.into()),
         )
         .unwrap();

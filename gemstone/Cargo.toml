@@ -36,6 +36,7 @@ alloy-primitives.workspace = true
 hex.workspace = true
 url.workspace = true
 num-bigint.workspace = true
+futures.workspace = true
 borsh.workspace = true
 orca_whirlpools_core = "0.3.1"
 
