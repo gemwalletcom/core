@@ -296,57 +296,39 @@ impl From<&Tick> for TickFacade {
     }
 }
 
-pub fn test_swap_quote_by_input() -> Result<u64, SwapperError> {
-    let data = include_str!("test/tick_array_response.json");
-    let response: JsonRpcResult<ValueResult<Vec<AccountData>>> = serde_json::from_slice(data.as_bytes()).unwrap();
-    let tick_accounts = response.extract_result().unwrap().value;
-    let base64_strs: Vec<String> = tick_accounts.iter().map(|x| x.data[0].clone()).collect();
-    let mut tick_array: Vec<TickArray> = vec![];
-    for base64_str in base64_strs.iter() {
-        let tick: TickArray = try_borsh_decode(base64_str).unwrap();
-        tick_array.push(tick);
-    }
-
-    tick_array.sort_by_key(|x| x.start_tick_index);
-
-    let tick_array_facades = tick_array.into_iter().map(|x| TickArrayFacade::from(&x)).collect::<Vec<_>>();
-    for tick_array_facade in tick_array_facades.iter() {
-        println!("tick_array_facade start_tick_index: {:?}", tick_array_facade.start_tick_index,);
-    }
-
-    let result: [TickArrayFacade; 5] = std::array::from_fn(|i| tick_array_facades[i]);
-    let tick_arrays = TickArrays::from(result);
-
-    let amount_in = 1000000;
-    let slippage_bps = 100;
-    let base64_str = "P5XRDOGAYwkT5EH4ORPKaLBjT7Al/eqohzfoQRDRJV41ezN33e4czf8EAAQAkAEBACUn6rOx9gIAAAAAAAAAAADZ0q3a01wPfgAAAAAAAAAApsj///QCNRYAAAAA7MHhBAAAAAAGm4hX/quBhPtof2NGGMA12sQ53BrrO1WYoPAAAAAAAchN8kM4mDvkqFswl7r0C8lXEQjSiawAs2jfF11Edc96okZrwvdXv2MAAAAAAAAAAMb6evO+2606PWXzaqvJdDGxu+TC0vbg5HymAgNFL11hFl+VcsWpaqUC3VEQVKJqbSWO98HW1sGu4SkZFNxRAjLtNOmyVWgdCwAAAAAAAAAAaZY8ZwAAAAAMANCv64YU2n8Zq6AtQPGMaSWF9lAg387T1eX5qcDE4Q8bkJQIzrVDfhKReyB9qZTQ6FenQB4SLAPfa/fG1/wqvR0xrxfe/zwmhIFgCsr+SxQJjA/hQbf0oc34STRkRAMAAAAAAAAAAAAAAAAAAAAAIxHh3tFPDkQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAC9HTGvF97/PCaEgWAKyv5LFAmMD+FBt/ShzfhJNGREAwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAL0dMa8X3v88JoSBYArK/ksUCYwP4UG39KHN+Ek0ZEQDAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
-    let pool: Whirlpool = try_borsh_decode(base64_str).unwrap();
-
-    println!(
-        "pool tick space: {:?}, pool tick current index: {:?}",
-        pool.tick_spacing, pool.tick_current_index
-    );
-
-    let quote =
-        swap_quote_by_input_token(amount_in, true, slippage_bps, (&pool).into(), tick_arrays, None, None).map_err(|c| SwapperError::ComputeQuoteError {
-            msg: format!("swap_quote_by_input_token error: {:?}", c),
-        })?;
-    Ok(quote.token_min_out)
-}
-
-#[uniffi::export]
-async fn swap_quote_by_input() -> Result<u64, SwapperError> {
-    test_swap_quote_by_input()
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn test_compute_quote() -> Result<(), SwapperError> {
-        let quote = test_swap_quote_by_input()?;
-        assert_eq!(quote, 239958);
+    fn test_swap_quote_by_input_token() -> Result<(), SwapperError> {
+        let data = include_str!("test/tick_array_response.json");
+        let response: JsonRpcResult<ValueResult<Vec<AccountData>>> = serde_json::from_slice(data.as_bytes()).unwrap();
+        let tick_accounts = response.extract_result().unwrap().value;
+        let base64_strs: Vec<String> = tick_accounts.iter().map(|x| x.data[0].clone()).collect();
+        let mut tick_array: Vec<TickArray> = vec![];
+        for base64_str in base64_strs.iter() {
+            let tick: TickArray = try_borsh_decode(base64_str).unwrap();
+            tick_array.push(tick);
+        }
+
+        tick_array.sort_by_key(|x| x.start_tick_index);
+
+        let tick_array_facades = tick_array.into_iter().map(|x| TickArrayFacade::from(&x)).collect::<Vec<_>>();
+
+        let result: [TickArrayFacade; 5] = std::array::from_fn(|i| tick_array_facades[i]);
+        let tick_arrays = TickArrays::from(result);
+
+        let amount_in = 1000000;
+        let slippage_bps = 100;
+        let base64_str = "P5XRDOGAYwkT5EH4ORPKaLBjT7Al/eqohzfoQRDRJV41ezN33e4czf8EAAQAkAEBACUn6rOx9gIAAAAAAAAAAADZ0q3a01wPfgAAAAAAAAAApsj///QCNRYAAAAA7MHhBAAAAAAGm4hX/quBhPtof2NGGMA12sQ53BrrO1WYoPAAAAAAAchN8kM4mDvkqFswl7r0C8lXEQjSiawAs2jfF11Edc96okZrwvdXv2MAAAAAAAAAAMb6evO+2606PWXzaqvJdDGxu+TC0vbg5HymAgNFL11hFl+VcsWpaqUC3VEQVKJqbSWO98HW1sGu4SkZFNxRAjLtNOmyVWgdCwAAAAAAAAAAaZY8ZwAAAAAMANCv64YU2n8Zq6AtQPGMaSWF9lAg387T1eX5qcDE4Q8bkJQIzrVDfhKReyB9qZTQ6FenQB4SLAPfa/fG1/wqvR0xrxfe/zwmhIFgCsr+SxQJjA/hQbf0oc34STRkRAMAAAAAAAAAAAAAAAAAAAAAIxHh3tFPDkQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAC9HTGvF97/PCaEgWAKyv5LFAmMD+FBt/ShzfhJNGREAwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAL0dMa8X3v88JoSBYArK/ksUCYwP4UG39KHN+Ek0ZEQDAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
+        let pool: Whirlpool = try_borsh_decode(base64_str).unwrap();
+
+        let quote =
+            swap_quote_by_input_token(amount_in, true, slippage_bps, (&pool).into(), tick_arrays, None, None).map_err(|c| SwapperError::ComputeQuoteError {
+                msg: format!("swap_quote_by_input_token error: {:?}", c),
+            })?;
+        assert_eq!(quote.token_min_out, 239958);
         Ok(())
     }
 
