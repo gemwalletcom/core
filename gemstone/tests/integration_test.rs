@@ -110,6 +110,7 @@ mod tests {
         let quote = swap_provider.fetch_quote(&request, network_provider.clone()).await?;
 
         assert_eq!(quote.from_value, "1000000");
+        assert!(quote.to_value > 0);
 
         Ok(())
     }

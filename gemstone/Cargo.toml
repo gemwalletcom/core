@@ -37,7 +37,7 @@ hex.workspace = true
 url.workspace = true
 num-bigint.workspace = true
 borsh.workspace = true
-orca_whirlpools_core = "0.3.0"
+orca_whirlpools_core = "0.3.1"
 
 [build-dependencies]
 uniffi = { workspace = true, features = ["build"] }

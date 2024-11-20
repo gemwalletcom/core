@@ -5515,9 +5515,9 @@ dependencies = [
 
 [[package]]
 name = "orca_whirlpools_core"
-version = "0.3.0"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "31518f76be79adb31bbda42e9e61107a72a6e0b7647183952cf5bdb62e84229a"
+checksum = "7f45f8de382a0eba20e345851a1982fac84be02307efb3be959e40ef6e059a46"
 dependencies = [
  "ethnum",
  "libm",
@@ -5526,9 +5526,9 @@ dependencies = [
 
 [[package]]
 name = "orca_whirlpools_macros"
-version = "0.3.0"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e14b3fc4c10d309828eb89e2427fc7dbc96e39725ce3b67c86e83d14887083bb"
+checksum = "16c4fca1580bc8fd5ef85c3b35e6f5fddb15e94ba891020ac38c45383fb457f0"
 dependencies = [
  "proc-macro2 1.0.89",
  "quote 1.0.37",
