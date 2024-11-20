@@ -7,8 +7,8 @@ pub struct V3Deployment {
     pub universal_router: &'static str,
 }
 
-pub fn get_deployment_by_chain(chain: &Chain) -> Option<V3Deployment> {
-    // https://docs.uniswap.org/contracts/v3/reference/deployments/
+pub fn get_uniswap_router_deployment_by_chain(chain: &Chain) -> Option<V3Deployment> {
+    //https://docs.uniswap.org/contracts/v3/reference/deployments/
     match chain {
         Chain::Ethereum => Some(V3Deployment {
             quoter_v2: "0x61fFE014bA17989E743c5F6cB21bF9697530B21e",
@@ -64,6 +64,29 @@ pub fn get_deployment_by_chain(chain: &Chain) -> Option<V3Deployment> {
             quoter_v2: "0x10158D43e6cc414deE1Bd1eB0EfC6a5cBCfF244c",
             permit2: "0x000000000022d473030f116ddee9f6b43ac78ba3",
             universal_router: "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D",
+        }),
+        _ => None,
+    }
+}
+
+pub fn get_pancakeswap_router_deployment_by_chain(chain: &Chain) -> Option<V3Deployment> {
+    // https://developer.pancakeswap.finance/contracts/universal-router/addresses
+    // https://docs.pancakeswap.finance/developers/smart-contracts/pancakeswap-exchange/v3-contracts#address
+    match chain {
+        Chain::SmartChain => Some(V3Deployment {
+            quoter_v2: "0xB048Bbc1Ee6b733FFfCFb9e9CeF7375518e25997",
+            universal_router: "0x1A0A18AC4BECDDbd6389559687d1A73d8927E416",
+            permit2: "0x31c2F6fcFf4F8759b3Bd5Bf0e1084A055615c768",
+        }),
+        Chain::OpBNB => Some(V3Deployment {
+            quoter_v2: "0xB048Bbc1Ee6b733FFfCFb9e9CeF7375518e25997",
+            universal_router: "0xB89a6778D1efE7a5b7096757A21b810CC2886fa1",
+            permit2: "0x31c2F6fcFf4F8759b3Bd5Bf0e1084A055615c768",
+        }),
+        Chain::Arbitrum | Chain::Linea | Chain::Base => Some(V3Deployment {
+            quoter_v2: "0xB048Bbc1Ee6b733FFfCFb9e9CeF7375518e25997",
+            universal_router: "0xFE6508f0015C778Bdcc1fB5465bA5ebE224C9912",
+            permit2: "0x31c2F6fcFf4F8759b3Bd5Bf0e1084A055615c768",
         }),
         _ => None,
     }

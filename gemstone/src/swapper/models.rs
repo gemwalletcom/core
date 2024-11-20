@@ -38,12 +38,14 @@ pub enum GemSwapMode {
 #[derive(Debug, Clone, PartialEq, uniffi::Enum)]
 pub enum SwapProvider {
     UniswapV3,
+    PancakeSwapV3,
     Thorchain,
 }
 impl SwapProvider {
     pub fn name(&self) -> &str {
         match self {
             Self::UniswapV3 => "Uniswap v3",
+            Self::PancakeSwapV3 => "PancakeSwap v3",
             Self::Thorchain => "THORChain",
         }
     }
@@ -110,6 +112,7 @@ pub struct Permit2ApprovalData {
     pub token: String,
     pub spender: String,
     pub value: String,
+    pub permit2_contract: String,
     pub permit2_nonce: u64,
 }
 

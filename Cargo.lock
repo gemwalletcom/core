@@ -3301,6 +3301,7 @@ dependencies = [
  "async-std",
  "async-trait",
  "base64 0.22.1",
+ "futures",
  "gem_bsc",
  "gem_cosmos",
  "gem_evm",
