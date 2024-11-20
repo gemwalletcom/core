@@ -96,7 +96,7 @@ impl Chain {
             Self::Noble => "noble-1",
             Self::Injective => "injective-1",
             Self::Sei => "pacific-1",
-            Self::Thorchain => "thorchain-mainnet-v1",
+            Self::Thorchain => "thorchain-1",
             Self::ZkSync => "324",
             Self::Linea => "59144",
             Self::Mantle => "5000",
