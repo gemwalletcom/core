@@ -9,7 +9,7 @@ mod models;
 mod permit2_data;
 mod slippage;
 mod thorchain;
-mod uniswap;
+mod universal_router;
 
 use models::*;
 use primitives::Chain;
@@ -36,7 +36,11 @@ impl GemSwapper {
     fn new(rpc_provider: Arc<dyn AlienProvider>) -> Self {
         Self {
             rpc_provider,
-            swappers: vec![Box::new(uniswap::UniswapV3::new()), Box::new(thorchain::ThorChain::new())],
+            swappers: vec![
+                Box::new(universal_router::UniswapV3::new_uniswap()),
+                Box::new(universal_router::UniswapV3::new_panckaeswap()),
+                Box::new(thorchain::ThorChain::new()),
+            ],
         }
     }
 
@@ -58,16 +62,14 @@ impl GemSwapper {
             return Err(SwapperError::NotSupportedPair);
         }
 
-        for swapper in self.swappers.iter() {
-            let quotes = swapper.fetch_quote(&request, self.rpc_provider.clone()).await;
-            match quotes {
-                Ok(val) => return Ok(vec![val]),
-                Err(_err) => {
-                    debug_println!("<== fetch_quote error: {:?}", _err);
-                }
-            }
+        let quotes_futures = self.swappers.iter().map(|x| x.fetch_quote(&request, self.rpc_provider.clone()));
+        let quotes = futures::future::try_join_all(quotes_futures).await?;
+
+        if quotes.is_empty() {
+            return Err(SwapperError::NoQuoteAvailable);
         }
-        Err(SwapperError::NoQuoteAvailable)
+
+        Ok(quotes)
     }
 
     async fn fetch_quote_data(&self, quote: &SwapQuote, data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError> {

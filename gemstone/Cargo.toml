@@ -36,6 +36,7 @@ alloy-primitives.workspace = true
 hex.workspace = true
 url.workspace = true
 num-bigint.workspace = true
+futures.workspace = true
 
 [build-dependencies]
 uniffi = { workspace = true, features = ["build"] }

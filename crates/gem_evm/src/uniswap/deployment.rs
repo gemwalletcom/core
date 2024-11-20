@@ -7,8 +7,8 @@ pub struct V3Deployment {
     pub universal_router: &'static str,
 }
 
-pub fn get_deployment_by_chain(chain: &Chain) -> Option<V3Deployment> {
-    // https://docs.uniswap.org/contracts/v3/reference/deployments/
+pub fn get_uniswap_router_deployment_by_chain(chain: &Chain) -> Option<V3Deployment> {
+    //https://docs.uniswap.org/contracts/v3/reference/deployments/
     match chain {
         Chain::Ethereum => Some(V3Deployment {
             quoter_v2: "0x61fFE014bA17989E743c5F6cB21bF9697530B21e",
@@ -64,6 +64,19 @@ pub fn get_deployment_by_chain(chain: &Chain) -> Option<V3Deployment> {
             quoter_v2: "0x10158D43e6cc414deE1Bd1eB0EfC6a5cBCfF244c",
             permit2: "0x000000000022d473030f116ddee9f6b43ac78ba3",
             universal_router: "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D",
+        }),
+        _ => None,
+    }
+}
+
+pub fn get_pancakeswap_router_deployment_by_chain(chain: &Chain) -> Option<V3Deployment> {
+    // https://developer.pancakeswap.finance/contracts/universal-router/addresses
+    // https://docs.pancakeswap.finance/developers/smart-contracts/pancakeswap-exchange/v3-contracts#address
+    match chain {
+        Chain::SmartChain => Some(V3Deployment {
+            quoter_v2: "0xb27308f9f90d607463bb33eA1BeBb41C27CE5AB6",
+            universal_router: "0x10ED43C718714eb63d5aA57B78B54704E256024E",
+            permit2: "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D",
         }),
         _ => None,
     }
