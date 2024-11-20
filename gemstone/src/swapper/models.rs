@@ -1,9 +1,8 @@
+use super::permit2_data::Permit2Data;
+use crate::config::swap_config::SwapReferralFees;
+use crate::network::{jsonrpc::JsonRpcError, AlienError};
 use primitives::AssetId;
 use std::fmt::Debug;
-
-use crate::config::swap_config::SwapReferralFees;
-
-use super::permit2_data::Permit2Data;
 
 static DEFAULT_SLIPPAGE_BPS: u32 = 300;
 
@@ -23,10 +22,25 @@ pub enum SwapperError {
     NetworkError { msg: String },
     #[error("ABI error: {msg}")]
     ABIError { msg: String },
+    #[error("Compute quote error: {msg}")]
+    ComputeQuoteError { msg: String },
+
     #[error("No quote available")]
     NoQuoteAvailable,
     #[error("Not implemented")]
     NotImplemented,
+}
+
+impl From<AlienError> for SwapperError {
+    fn from(err: AlienError) -> Self {
+        Self::NetworkError { msg: err.to_string() }
+    }
+}
+
+impl From<JsonRpcError> for SwapperError {
+    fn from(err: JsonRpcError) -> Self {
+        Self::NetworkError { msg: err.to_string() }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, uniffi::Enum)]
@@ -40,6 +54,7 @@ pub enum SwapProvider {
     UniswapV3,
     PancakeSwapV3,
     Thorchain,
+    Orca,
 }
 impl SwapProvider {
     pub fn name(&self) -> &str {
@@ -47,6 +62,7 @@ impl SwapProvider {
             Self::UniswapV3 => "Uniswap v3",
             Self::PancakeSwapV3 => "PancakeSwap v3",
             Self::Thorchain => "THORChain",
+            Self::Orca => "Orca Whirlpool",
         }
     }
 }

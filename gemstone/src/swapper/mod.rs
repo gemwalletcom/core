@@ -4,13 +4,15 @@ use async_trait::async_trait;
 use std::{fmt::Debug, sync::Arc};
 
 mod custom_types;
-mod models;
 mod permit2_data;
-mod slippage;
-mod thorchain;
-mod universal_router;
 
-use models::*;
+pub mod models;
+pub mod orca;
+pub mod slippage;
+pub mod thorchain;
+pub mod universal_router;
+
+pub use models::*;
 use primitives::Chain;
 use std::collections::HashSet;
 
@@ -37,8 +39,8 @@ impl GemSwapper {
             rpc_provider,
             swappers: vec![
                 Box::new(universal_router::UniswapV3::new_uniswap()),
-                Box::new(universal_router::UniswapV3::new_panckaeswap()),
-                Box::new(thorchain::ThorChain::new()),
+                Box::new(universal_router::UniswapV3::new_pancakeswap()),
+                Box::new(thorchain::ThorChain::default()),
             ],
         }
     }

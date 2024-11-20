@@ -27,6 +27,16 @@ struct ContentView: View {
         options: nil
     )
 
+    let sol2usdcRequest: SwapQuoteRequest = SwapQuoteRequest(
+        fromAsset: "solana",
+        toAsset: "solana_EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        walletAddress: "A21o4asMbFHYadqXdLusT9Bvx9xaC5YV9gcaidjqtdXC",
+        destinationAddress: "A21o4asMbFHYadqXdLusT9Bvx9xaC5YV9gcaidjqtdXC",
+        value: "1000000000", // 1 SOL
+        mode: .exactIn,
+        options: nil
+    )
+
     var body: some View {
         VStack {
             Image(systemName: "diamond")
@@ -41,10 +51,20 @@ struct ContentView: View {
             Button("List Providers") {
                 self.fetchProviders()
             }
-            Button("Fetch Quote") {
+            Button("Fetch ETH Quote") {
                 Task.detached {
                     do {
-                        try await self.fetchQuote()
+                        try await self.fetchQuote(self.eth2usdcRequest)
+                    }
+                    catch {
+                        print(error)
+                    }
+                }
+            }
+            Button("Fetch SOL Quote") {
+                Task.detached {
+                    do {
+                        try await self.fetchQuote(self.sol2usdcRequest)
                     }
                     catch {
                         print(error)
@@ -74,10 +94,7 @@ struct ContentView: View {
         print(json)
     }
 
-    func fetchQuote() async throws {
-        // ETH -> USDC
-        let request = self.usdc2ethRequest
-
+    func fetchQuote(_ request: SwapQuoteRequest) async throws {
         let swapper = GemSwapper(rpcProvider: self.provider)
         guard let quote = try await swapper.fetchQuote(request: request).first else {
             return print("<== fetchQuote: nil")
