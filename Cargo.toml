@@ -101,8 +101,8 @@ itoa = { version = "1.0.10" }
 curve25519-dalek = { version = "4.1.3" }
 borsh = { version = "1.4.0", features = ["derive"] }
 
-uniffi = { version = "0.28.2" }
-uniffi_bindgen = { version = "0.28.2" }
+uniffi = { version = "0.28.3" }
+uniffi_bindgen = { version = "0.28.3" }
 
 alloy-core = { version = "0.8.9", features = ["sol-types", "json-abi", "rlp"] }
 alloy-primitives = "0.8.9"

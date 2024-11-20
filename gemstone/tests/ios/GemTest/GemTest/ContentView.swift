@@ -114,10 +114,10 @@ struct ContentView: View {
     }
 
     func decodeTickArray() {
-        Task.detached {
+        Task {
             do {
-                let ok = try await Gemstone.swapQuoteByInput()
-                print("decodeTickArray is \(ok)")
+                let quote = try await Gemstone.swapQuoteByInput()
+                print("swapQuoteByInput quote \(quote)")
             }
             catch {
                 print(error)

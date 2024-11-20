@@ -307,13 +307,11 @@ pub fn test_swap_quote_by_input() -> Result<u64, SwapperError> {
         tick_array.push(tick);
     }
 
+    tick_array.sort_by_key(|x| x.start_tick_index);
+
     let tick_array_facades = tick_array.into_iter().map(|x| TickArrayFacade::from(&x)).collect::<Vec<_>>();
     for tick_array_facade in tick_array_facades.iter() {
-        println!(
-            "tick_array_facade start_tick_index: {:?}, ticks: {:?}",
-            tick_array_facade.start_tick_index,
-            tick_array_facade.ticks.len()
-        );
+        println!("tick_array_facade start_tick_index: {:?}", tick_array_facade.start_tick_index,);
     }
 
     let result: [TickArrayFacade; 5] = std::array::from_fn(|i| tick_array_facades[i]);
@@ -346,10 +344,10 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_compute_quote() {
-        let quote = test_swap_quote_by_input();
-
-        assert_eq!(quote.unwrap(), 239958);
+    fn test_compute_quote() -> Result<(), SwapperError> {
+        let quote = test_swap_quote_by_input()?;
+        assert_eq!(quote, 239958);
+        Ok(())
     }
 
     #[test]
