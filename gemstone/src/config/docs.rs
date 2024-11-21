@@ -9,6 +9,7 @@ pub enum DocsUrl {
     NetworkFees,
     StakingLockTime,
     TronMultiSignature,
+    RootedDevice,
 }
 const DOCS_URL: &str = "https://docs.gemwallet.com";
 
@@ -23,6 +24,7 @@ pub fn get_docs_url(item: DocsUrl) -> String {
         DocsUrl::NetworkFees => "/faq/network-fees/",
         DocsUrl::StakingLockTime => "/faq/lock-time/",
         DocsUrl::TronMultiSignature => "/guides/trx-multisig-scam/",
+        DocsUrl::RootedDevice => "/guides/secure-wallet/rooted-device/",
     };
     format!("{}{}", DOCS_URL, path)
 }
