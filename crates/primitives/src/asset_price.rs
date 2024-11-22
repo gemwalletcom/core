@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
+use crate::Price;
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Sendable")]
 #[serde(rename_all = "camelCase")]
@@ -42,6 +44,8 @@ pub struct AssetPricesRequest {
 #[typeshare(swift = "Sendable")]
 #[serde(rename_all = "camelCase")]
 pub struct Charts {
+    pub price: Option<Price>,
+    pub market: Option<AssetMarket>,
     pub prices: Vec<ChartValue>,
     pub market_caps: Vec<ChartValue>,
     pub total_volumes: Vec<ChartValue>,
