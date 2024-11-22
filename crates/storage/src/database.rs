@@ -1,4 +1,4 @@
-use crate::models::asset::AssetDetail;
+use crate::models::asset::AssetLink;
 use crate::models::*;
 use crate::schema::{devices, fiat_providers, prices_assets, transactions_addresses};
 use chrono::{DateTime, Duration, NaiveDateTime, Utc};
@@ -519,26 +519,23 @@ impl DatabaseClient {
         assets.filter(id.eq(asset_id)).select(Asset::as_select()).first(&mut self.connection)
     }
 
-    pub fn get_asset_details(&mut self, id: &str) -> Result<AssetDetail, diesel::result::Error> {
-        use crate::schema::assets_details::dsl::*;
-        assets_details
-            .filter(asset_id.eq(id))
-            .select(AssetDetail::as_select())
-            .first(&mut self.connection)
+    pub fn get_asset_links(&mut self, id: &str) -> Result<Vec<AssetLink>, diesel::result::Error> {
+        use crate::schema::assets_links::dsl::*;
+        assets_links.filter(asset_id.eq(id)).select(AssetLink::as_select()).load(&mut self.connection)
     }
 
     pub fn get_assets(&mut self, asset_ids: Vec<String>) -> Result<Vec<Asset>, diesel::result::Error> {
         use crate::schema::assets::dsl::*;
         assets
             .filter(id.eq_any(asset_ids))
-            .filter(enabled.eq(true))
+            .filter(is_enabled.eq(true))
             .select(Asset::as_select())
             .load(&mut self.connection)
     }
 
     pub fn get_assets_list(&mut self) -> Result<Vec<Asset>, diesel::result::Error> {
         use crate::schema::assets::dsl::*;
-        assets.filter(enabled.eq(true)).select(Asset::as_select()).load(&mut self.connection)
+        assets.filter(is_enabled.eq(true)).select(Asset::as_select()).load(&mut self.connection)
     }
 
     pub fn get_assets_search(
@@ -566,7 +563,7 @@ impl DatabaseClient {
         }
 
         query
-            .filter(enabled.eq(true))
+            .filter(is_enabled.eq(true))
             .order(rank.desc())
             .limit(limit)
             .offset(offset)
@@ -627,25 +624,13 @@ impl DatabaseClient {
             .execute(&mut self.connection)
     }
 
-    pub fn add_assets_details(&mut self, values: Vec<AssetDetail>) -> Result<usize, diesel::result::Error> {
-        use crate::schema::assets_details::dsl::*;
-        diesel::insert_into(assets_details)
+    pub fn add_assets_links(&mut self, values: Vec<AssetLink>) -> Result<usize, diesel::result::Error> {
+        use crate::schema::assets_links::dsl::*;
+        diesel::insert_into(assets_links)
             .values(values)
-            .on_conflict(asset_id)
+            .on_conflict((asset_id, name))
             .do_update()
-            .set((
-                homepage.eq(excluded(homepage)),
-                explorer.eq(excluded(explorer)),
-                twitter.eq(excluded(twitter)),
-                telegram.eq(excluded(telegram)),
-                github.eq(excluded(github)),
-                youtube.eq(excluded(youtube)),
-                facebook.eq(excluded(facebook)),
-                reddit.eq(excluded(reddit)),
-                coingecko.eq(excluded(coingecko)),
-                coinmarketcap.eq(excluded(coinmarketcap)),
-                discord.eq(excluded(discord)),
-            ))
+            .set((url.eq(excluded(url)),))
             .execute(&mut self.connection)
     }
 

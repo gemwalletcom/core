@@ -9,7 +9,14 @@ CREATE TABLE assets (
     updated_at timestamp NOT NULL default current_timestamp,
     created_at timestamp NOT NULL default current_timestamp,
     rank INTEGER NOT NULL DEFAULT 0,
-    enabled BOOLEAN NOT NULL DEFAULT TRUE,
+
+    is_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+    is_buyable boolean NOT NULL default false,
+    is_sellable boolean NOT NULL default false,
+    is_swappable boolean NOT NULL default false,
+    is_stakeable boolean NOT NULL default false,
+    staking_apr float,
+    
     UNIQUE(id)
 );
 

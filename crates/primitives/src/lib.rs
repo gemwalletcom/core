@@ -29,7 +29,7 @@ pub use self::asset_type::{AssetSubtype, AssetType};
 pub mod asset_price;
 pub use self::asset_price::{AssetMarket, AssetPrice, AssetPrices, AssetPricesRequest, ChartPeriod, ChartValue, Charts};
 pub mod asset_details;
-pub use self::asset_details::{AssetDetails, AssetDetailsInfo, AssetFull, AssetLinks, AssetMarketPrice};
+pub use self::asset_details::{AssetDetails, AssetDetailsInfo, AssetFull, AssetLink, AssetLinks, AssetMarketPrice, AssetProperties};
 pub mod fiat_assets;
 pub mod fiat_quote;
 pub use self::fiat_quote::FiatQuote;
