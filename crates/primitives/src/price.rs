@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
-use crate::{Asset, AssetDetailsInfo, PriceAlert};
+use crate::{Asset, AssetLink, AssetMarket, PriceAlert};
 
 #[derive(Copy, Clone, Debug, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Hashable, Sendable")]
@@ -40,7 +40,8 @@ struct PriceData {
     asset: Asset,
     price: Option<Price>,
     price_alert: Option<PriceAlert>,
-    details: Option<AssetDetailsInfo>,
+    market: Option<AssetMarket>,
+    links: Vec<AssetLink>,
 }
 
 #[cfg(test)]

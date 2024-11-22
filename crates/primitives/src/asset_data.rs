@@ -5,7 +5,6 @@ struct AssetData {
     account: Account,
     price: Option<Price>,
     price_alert: Option<PriceAlert>,
-    details: Option<AssetDetailsInfo>,
     metadata: AssetMetaData,
 }
 

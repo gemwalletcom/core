@@ -1,8 +1,7 @@
 use chain_primitives::format_token_id;
 use coingecko::{get_chain_for_coingecko_platform_id, CoinGeckoClient, CoinInfo};
 use primitives::asset_details::{
-    ASSET_LINK_COINGECKO, ASSET_LINK_DISCORD, ASSET_LINK_FACEBOOK, ASSET_LINK_GITHUB, ASSET_LINK_HOMEPAGE, ASSET_LINK_REDDIT, ASSET_LINK_TELEGRAM,
-    ASSET_LINK_TWITTER,
+    ASSET_LINK_COINGECKO, ASSET_LINK_DISCORD, ASSET_LINK_FACEBOOK, ASSET_LINK_GITHUB, ASSET_LINK_REDDIT, ASSET_LINK_TELEGRAM, ASSET_LINK_WEBSITE, ASSET_LINK_X,
 };
 use primitives::{Asset, AssetId, AssetLink, AssetScore, AssetType};
 use std::collections::HashSet;
@@ -147,7 +146,7 @@ impl AssetUpdater {
 
         if let Some(value) = links.clone().twitter_screen_name {
             results.push(AssetLink {
-                name: ASSET_LINK_TWITTER.to_string(),
+                name: ASSET_LINK_X.to_string(),
                 url: format!("https://x.com/{}", value),
             });
         }
@@ -162,7 +161,7 @@ impl AssetUpdater {
             .cloned()
         {
             results.push(AssetLink {
-                name: ASSET_LINK_HOMEPAGE.to_string(),
+                name: ASSET_LINK_WEBSITE.to_string(),
                 url: value,
             });
         }

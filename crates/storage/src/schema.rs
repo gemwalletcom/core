@@ -64,7 +64,8 @@ diesel::table! {
 }
 
 diesel::table! {
-    assets_links (asset_id) {
+    assets_links (id) {
+        id -> Int4,
         #[max_length = 128]
         asset_id -> Varchar,
         #[max_length = 128]

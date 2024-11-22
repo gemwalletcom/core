@@ -80,9 +80,9 @@ pub struct AssetProperties {
     pub staking_apr: Option<f64>,
 }
 
-pub const ASSET_LINK_TWITTER: &str = "twitter";
+pub const ASSET_LINK_X: &str = "x";
 pub const ASSET_LINK_FACEBOOK: &str = "facebook";
-pub const ASSET_LINK_HOMEPAGE: &str = "homepage";
+pub const ASSET_LINK_WEBSITE: &str = "website";
 pub const ASSET_LINK_EXPLORER: &str = "explorer";
 pub const ASSET_LINK_TELEGRAM: &str = "telegram";
 pub const ASSET_LINK_GITHUB: &str = "github";

@@ -12,4 +12,6 @@ struct AssetMetaData {
     is_stake_enabled: bool,
     #[serde(rename = "isPinned")]
     is_pinned: bool,
+    #[serde(rename = "stakingApr")]
+    staking_apr: Option<f64>,
 }

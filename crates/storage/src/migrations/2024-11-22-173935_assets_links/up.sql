@@ -1,6 +1,7 @@
--- Your SQL goes here
 CREATE TABLE assets_links (
-    asset_id VARCHAR(128) NOT NULL PRIMARY KEY REFERENCES assets (id) ON DELETE CASCADE,
+    id SERIAL PRIMARY KEY,
+
+    asset_id VARCHAR(128) NOT NULL REFERENCES assets (id) ON DELETE CASCADE,
     
     name VARCHAR(128) NOT NULL,
     url VARCHAR(256) NOT NULL,
