@@ -16,6 +16,18 @@ pub struct AssetFull {
     pub score: AssetScore,
 }
 
+#[typeshare(swift = "Sendable")]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AssetBasic {
+    pub asset: Asset,
+    //TODO: Remove from this in the future
+    #[typeshare(skip)]
+    pub details: Option<AssetDetails>,
+    pub properties: AssetProperties,
+    pub score: AssetScore,
+}
+
 #[typeshare(skip)]
 #[typeshare(swift = "Sendable")]
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]

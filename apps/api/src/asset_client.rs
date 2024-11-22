@@ -1,7 +1,7 @@
 extern crate rocket;
 use std::{error::Error, vec};
 
-use primitives::{Asset, AssetFull, Chain};
+use primitives::{Asset, AssetBasic, AssetFull, Chain};
 use settings_chain::ChainProviders;
 use storage::DatabaseClient;
 
@@ -28,36 +28,13 @@ impl AssetsClient {
         Ok(self.database.get_asset(asset_id)?.as_primitive())
     }
 
-    pub fn get_assets_list(&mut self) -> Result<Vec<AssetFull>, Box<dyn Error>> {
-        let assets = self
-            .database
-            .get_assets_list()?
-            .into_iter()
-            .map(|asset| AssetFull {
-                asset: asset.as_primitive(),
-                properties: asset.as_property_primitive(),
-                details: Some(asset.as_details_primitive()),
-                links: vec![],
-                score: asset.as_score_primitive(),
-            })
-            .collect();
+    pub fn get_assets_list(&mut self) -> Result<Vec<AssetBasic>, Box<dyn Error>> {
+        let assets = self.database.get_assets_list()?.into_iter().map(|x| x.as_basic_primitive()).collect();
         Ok(assets)
     }
 
-    pub fn get_assets(&mut self, asset_ids: Vec<String>) -> Result<Vec<AssetFull>, Box<dyn Error>> {
-        let assets = self
-            .database
-            .get_assets(asset_ids)?
-            .into_iter()
-            .map(|asset: storage::models::Asset| AssetFull {
-                asset: asset.as_primitive(),
-                properties: asset.as_property_primitive(),
-                details: Some(asset.as_details_primitive()),
-                links: vec![],
-                score: asset.as_score_primitive(),
-            })
-            .collect();
-
+    pub fn get_assets(&mut self, asset_ids: Vec<String>) -> Result<Vec<AssetBasic>, Box<dyn Error>> {
+        let assets = self.database.get_assets(asset_ids)?.into_iter().map(|x| x.as_basic_primitive()).collect();
         Ok(assets)
     }
 
@@ -74,21 +51,14 @@ impl AssetsClient {
         })
     }
 
-    pub fn get_assets_search(&mut self, query: &str, chains: Vec<String>, limit: i64, offset: i64) -> Result<Vec<primitives::AssetFull>, Box<dyn Error>> {
+    pub fn get_assets_search(&mut self, query: &str, chains: Vec<String>, limit: i64, offset: i64) -> Result<Vec<primitives::AssetBasic>, Box<dyn Error>> {
         let min_score = if query.len() > 10 { -100 } else { 10 };
         let assets = self
             .database
             .get_assets_search(query, chains, min_score, limit, offset)?
             .into_iter()
-            .map(|asset| AssetFull {
-                asset: asset.as_primitive(),
-                properties: asset.as_property_primitive(),
-                details: Some(asset.as_details_primitive()),
-                links: vec![],
-                score: asset.as_score_primitive(),
-            })
+            .map(|x| x.as_basic_primitive())
             .collect();
-
         Ok(assets)
     }
 

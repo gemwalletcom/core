@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
 use diesel::prelude::*;
-use primitives::{asset_details::AssetLinks, AssetId, AssetType, Chain};
+use primitives::{asset_details::AssetLinks, AssetBasic, AssetId, AssetType, Chain};
 use serde::{Deserialize, Serialize};
 #[derive(Debug, Queryable, Selectable, Serialize, Deserialize, Insertable, AsChangeset, Clone)]
 #[diesel(table_name = crate::schema::assets)]
@@ -35,6 +35,15 @@ impl Asset {
             symbol: self.symbol.clone(),
             asset_type: AssetType::from_str(&self.asset_type).unwrap(),
             decimals: self.decimals,
+        }
+    }
+
+    pub fn as_basic_primitive(&self) -> primitives::AssetBasic {
+        AssetBasic {
+            asset: self.as_primitive(),
+            properties: self.as_property_primitive(),
+            details: Some(self.as_details_primitive()),
+            score: self.as_score_primitive(),
         }
     }
 
