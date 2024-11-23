@@ -6,6 +6,7 @@ use primitives::asset_details::{
 use primitives::{Asset, AssetId, AssetLink, AssetScore, AssetType};
 use std::collections::HashSet;
 use std::error::Error;
+use std::str::pattern::Pattern;
 use storage::DatabaseClient;
 pub struct AssetUpdater {
     coin_gecko_client: CoinGeckoClient,
@@ -160,30 +161,19 @@ impl AssetUpdater {
             .first()
             .cloned()
         {
-            results.push(AssetLink {
-                name: ASSET_LINK_WEBSITE.to_string(),
-                url: value,
-            });
-        }
-
-        if let Some(value) = links.clone().facebook_username {
-            results.push(AssetLink {
-                name: ASSET_LINK_FACEBOOK.to_string(),
-                url: format!("https://facebook.com/{}", value),
-            });
+            let exclude_domains = ["https://t.me"];
+            if !value.is_empty() && !exclude_domains.iter().any(|&domain| value.contains(domain)) {
+                results.push(AssetLink {
+                    name: ASSET_LINK_WEBSITE.to_string(),
+                    url: value,
+                });
+            }
         }
 
         if let Some(value) = links.clone().telegram_channel_identifier {
             results.push(AssetLink {
                 name: ASSET_LINK_TELEGRAM.to_string(),
                 url: format!("https://t.me/{}", value),
-            });
-        };
-
-        if let Some(value) = links.clone().subreddit_url {
-            results.push(AssetLink {
-                name: ASSET_LINK_REDDIT.to_string(),
-                url: value,
             });
         };
 
