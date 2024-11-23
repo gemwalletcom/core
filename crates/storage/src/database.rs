@@ -99,13 +99,13 @@ impl DatabaseClient {
     }
 
     pub fn get_fiat_assets_is_buyable(&mut self) -> Result<Vec<String>, diesel::result::Error> {
-        use crate::schema::assets_details::dsl::*;
-        assets_details.filter(is_buyable.eq(true)).select(asset_id).load(&mut self.connection)
+        use crate::schema::assets::dsl::*;
+        assets.filter(is_buyable.eq(true)).select(id).load(&mut self.connection)
     }
 
     pub fn get_fiat_assets_is_sellable(&mut self) -> Result<Vec<String>, diesel::result::Error> {
-        use crate::schema::assets_details::dsl::*;
-        assets_details.filter(is_sellable.eq(true)).select(asset_id).load(&mut self.connection)
+        use crate::schema::assets::dsl::*;
+        assets.filter(is_sellable.eq(true)).select(id).load(&mut self.connection)
     }
 
     pub fn get_fiat_assets_for_asset_id(&mut self, _asset_id: &str) -> Result<Vec<FiatAsset>, diesel::result::Error> {
@@ -649,8 +649,8 @@ impl DatabaseClient {
     // swap
 
     pub fn get_swap_assets(&mut self) -> Result<Vec<String>, diesel::result::Error> {
-        use crate::schema::assets_details::dsl::*;
-        assets_details.filter(is_swappable.eq(true)).select(asset_id).load(&mut self.connection)
+        use crate::schema::assets::dsl::*;
+        assets.filter(is_swappable.eq(true)).select(id).load(&mut self.connection)
     }
 
     pub fn get_swap_assets_version(&mut self) -> Result<i32, diesel::result::Error> {
@@ -659,9 +659,9 @@ impl DatabaseClient {
     }
 
     pub fn set_swap_enabled(&mut self, asset_ids: Vec<String>) -> Result<usize, diesel::result::Error> {
-        use crate::schema::assets_details::dsl::*;
-        diesel::update(assets_details)
-            .filter(asset_id.eq_any(&asset_ids))
+        use crate::schema::assets::dsl::*;
+        diesel::update(assets)
+            .filter(id.eq_any(&asset_ids))
             .set(is_swappable.eq(true))
             .execute(&mut self.connection)
     }

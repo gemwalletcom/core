@@ -1,1 +1,0 @@
-drop table assets_details;
