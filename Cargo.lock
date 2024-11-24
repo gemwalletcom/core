@@ -1784,6 +1784,7 @@ name = "coingecko"
 version = "1.0.0"
 dependencies = [
  "chrono",
+ "lazy_static",
  "primitives",
  "reqwest",
  "serde",

@@ -1,8 +1,9 @@
 use chain_primitives::format_token_id;
-use coingecko::{get_chain_for_coingecko_platform_id, CoinGeckoClient, CoinInfo};
+use coingecko::mapper::COINGECKO_CHAIN_MAP;
+use coingecko::{get_chain_for_coingecko_platform_id, get_coingecko_market_id_for_chain, CoinGeckoClient, CoinInfo};
 use primitives::asset_details::{ASSET_LINK_COINGECKO, ASSET_LINK_DISCORD, ASSET_LINK_GITHUB, ASSET_LINK_TELEGRAM, ASSET_LINK_WEBSITE, ASSET_LINK_X};
-use primitives::{Asset, AssetId, AssetLink, AssetScore, AssetType};
-use std::collections::HashSet;
+use primitives::{Asset, AssetId, AssetLink, AssetScore, AssetType, Chain};
+use std::collections::{HashMap, HashSet};
 use std::error::Error;
 use storage::DatabaseClient;
 pub struct AssetUpdater {
@@ -32,9 +33,18 @@ impl AssetUpdater {
         for coin in coin_list.clone() {
             match self.coin_gecko_client.get_coin(&coin).await {
                 Ok(coin_info) => {
-                    let result = self.get_assets_from_coin_info(coin_info);
-                    for (asset, asset_score, asset_details) in result {
-                        let _ = self.update_asset(asset, asset_score, asset_details).await;
+                    let result = self.get_assets_from_coin_info(coin_info.clone());
+
+                    let asset_links = self.get_asset_links(coin_info.clone());
+
+                    if result.is_empty() {
+                        if let Some(chain) = COINGECKO_CHAIN_MAP.get(&coin) {
+                            let _ = self.update_links(&chain.as_asset_id().to_string(), asset_links).await;
+                        }
+                    } else {
+                        for (asset, asset_score) in result {
+                            let _ = self.update_asset(asset, asset_score, asset_links.clone()).await;
+                        }
                     }
                 }
                 Err(err) => {
@@ -45,9 +55,7 @@ impl AssetUpdater {
         Ok(coin_list.len())
     }
 
-    fn get_assets_from_coin_info(&self, coin_info: CoinInfo) -> Vec<(Asset, AssetScore, Vec<AssetLink>)> {
-        let asset_links = self.get_asset_links(coin_info.clone());
-
+    fn get_assets_from_coin_info(&self, coin_info: CoinInfo) -> Vec<(Asset, AssetScore)> {
         let values = coin_info
             .clone()
             .detail_platforms
@@ -86,7 +94,7 @@ impl AssetUpdater {
                     None
                 }
             })
-            .map(|x| (x.clone(), self.get_asset_score(x.clone(), coin_info.clone()), asset_links.clone()))
+            .map(|x| (x.clone(), self.get_asset_score(x.clone(), coin_info.clone())))
             .collect::<Vec<_>>()
     }
 
@@ -219,14 +227,19 @@ impl AssetUpdater {
     pub async fn update_asset(&mut self, asset: Asset, asset_score: AssetScore, asset_links: Vec<AssetLink>) -> Result<(), Box<dyn Error>> {
         let asset = storage::models::asset::Asset::from_primitive(asset);
         let asset_id = asset.id.as_str();
+
+        let _ = self.database.add_assets(vec![asset.clone()]);
+        let _ = self.database.update_asset_rank(asset_id, asset_score.rank);
+        let _ = self.update_links(asset_id, asset_links.clone()).await;
+        Ok(())
+    }
+
+    pub async fn update_links(&mut self, asset_id: &str, asset_links: Vec<AssetLink>) -> Result<(), Box<dyn Error>> {
         let asset_links = asset_links
             .into_iter()
             .map(|x| storage::models::asset::AssetLink::from_primitive(asset_id, x))
             .collect::<Vec<_>>();
-
-        let _ = self.database.add_assets(vec![asset.clone()]);
         let _ = self.database.add_assets_links(asset_links);
-        let _ = self.database.update_asset_rank(asset_id, asset_score.rank);
         Ok(())
     }
 }
