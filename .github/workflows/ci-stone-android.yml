@@ -56,6 +56,9 @@ jobs:
       - name: Install just
         run: cargo install just
 
+      - name: Install openssl
+        run: sudo apt-get install -y libssl-dev
+
       - name: Setup NDK
         run: just install-ndk
 

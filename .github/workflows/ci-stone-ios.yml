@@ -38,6 +38,9 @@ jobs:
       - name: Install just
         run: cargo install just
 
+      - name: Install openssl
+        run: brew install openssl
+
       - name: Setup Xcode
         run: |
           sudo xcode-select -s /Applications/Xcode_16.app
