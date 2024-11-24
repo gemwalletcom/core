@@ -1,22 +1,30 @@
-use super::fee_tiers::get_splash_pool_fee_tiers;
-use super::whirlpool::{get_tick_array_address, get_whirlpool_address};
-use super::{models::*, FEE_TIER_DISCRIMINATOR, WHIRLPOOL_CONFIG, WHIRLPOOL_PROGRAM};
-use crate::network::JsonRpcResult;
+use super::{
+    fee_tiers::get_splash_pool_fee_tiers,
+    instructions::{SwapV2Arguments, SwapV2Instruction},
+    models::*,
+    whirlpool::{get_tick_array_address, get_whirlpool_address},
+    FEE_TIER_DISCRIMINATOR, WHIRLPOOL_CONFIG, WHIRLPOOL_PROGRAM,
+};
 use crate::{
-    network::{jsonrpc::jsonrpc_call, AlienProvider},
-    swapper::{models::*, GemSwapProvider, SwapperError},
+    network::{jsonrpc::jsonrpc_call, AlienProvider, JsonRpcResult},
+    swapper::{models::*, orca::whirlpool::get_oracle_address, GemSwapProvider, SwapperError},
 };
 use async_trait::async_trait;
+use base64::{engine::general_purpose::STANDARD, Engine};
 use gem_solana::{
     get_asset_address,
     jsonrpc::{Filter, Memcmp, SolanaRpc, ENCODING_BASE58},
-    pubkey::Pubkey,
+    MEMO_PROGRAM, WSOL_TOKEN_ADDRESS,
 };
 use orca_whirlpools_core::{
     get_tick_array_start_tick_index, swap_quote_by_input_token, TickArrayFacade, TickArrays, TickFacade, WhirlpoolFacade, WhirlpoolRewardInfoFacade,
     TICK_ARRAY_SIZE,
 };
 use primitives::Chain;
+use primitives::{AssetId, Chain};
+use solana_program::message::Message;
+use solana_sdk::{instruction::AccountMeta, pubkey::Pubkey, transaction::Transaction};
+
 use std::{cmp::Ordering, iter::zip, str::FromStr, sync::Arc, vec};
 
 #[derive(Debug)]
@@ -74,16 +82,20 @@ impl GemSwapProvider for Orca {
         pools.sort_by(|(_, a), (_, b)| b.liquidity.cmp(&a.liquidity).then(a.fee_rate.cmp(&b.fee_rate)));
         let (pool_address, pool) = pools.first().unwrap();
         let pool_address = Pubkey::from_str(pool_address).unwrap();
-        println!("first_pool: {:?}", pool);
-        println!("pool_address: {:?}", pool_address);
 
-        // let _token_accounts = self.fetch_token_accounts(&pool.token_mint_a, &pool.token_mint_b, provider.clone()).await?;
-        let tick_array = self.fetch_tick_arrays(&pool_address, pool, provider.clone()).await?;
+        println!("pool_address: {:?}", pool_address);
+        let mut tick_array = self.fetch_tick_arrays(&pool_address, pool, provider.clone()).await?;
+        tick_array.sort_by(|a, b| a.start_tick_index.cmp(&b.start_tick_index));
 
         let tick_array_facades = tick_array.into_iter().map(|x| TickArrayFacade::from(&x)).collect::<Vec<_>>();
         let result: [TickArrayFacade; 5] = std::array::from_fn(|i| tick_array_facades[i]);
         let tick_arrays = TickArrays::from(result);
+        // let tick_sequence = TickArraySequence {
+        //     tick_arrays: tick_arrays.into(),
+        //     tick_spacing: pool.tick_spacing,
+        // };
 
+        // FIXME update orca core to use compute_swap directly
         let quote = swap_quote_by_input_token(amount_in, true, slippage_bps, pool.into(), tick_arrays, None, None).map_err(|c| SwapperError::NetworkError {
             msg: format!("swap_quote_by_input_token error: {:?}", c),
         })?;
@@ -94,7 +106,7 @@ impl GemSwapProvider for Orca {
             data: SwapProviderData {
                 provider: self.provider(),
                 routes: vec![SwapRoute {
-                    route_type: "whirlpool".into(),
+                    route_type: pool_address.to_string(),
                     input: from_asset.to_string(),
                     output: to_asset.to_string(),
                     fee_tier: pool.fee_rate.to_string(),
@@ -106,12 +118,46 @@ impl GemSwapProvider for Orca {
         })
     }
 
-    async fn fetch_quote_data(&self, _quote: &SwapQuote, _provider: Arc<dyn AlienProvider>, _data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError> {
-        todo!()
+    async fn fetch_quote_data(&self, quote: &SwapQuote, _provider: Arc<dyn AlienProvider>, _data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError> {
+        let payer = solana_sdk::pubkey::Pubkey::from_str_const(quote.request.wallet_address.as_str());
+        let from_value = quote.from_value.parse::<u64>().map_err(|_| SwapperError::InvalidAmount)?;
+        let to_value = quote.to_value.parse::<u64>().map_err(|_| SwapperError::InvalidAmount)?;
+        if quote.data.routes.is_empty() {
+            return Err(SwapperError::InvalidRoute);
+        }
+        let route = quote.data.routes.first().unwrap();
+        let pool_address = solana_sdk::pubkey::Pubkey::from_str_const(route.route_type.as_str());
+        let whirlpool = self.fetch_whirlpool(pool_address.to_string().as_str(), _provider.clone()).await?;
+        let specified_input = quote.request.mode == GemSwapMode::ExactIn;
+        let specified_token_a = route.input == whirlpool.token_mint_a.to_string();
+        let a_to_b = specified_token_a == specified_input;
+        let account_metas = self
+            .prepare_swap_v2_accounts(&route.input, &route.output, &payer, &pool_address, _provider)
+            .await?;
+
+        let instruction = SwapV2Instruction {
+            accounts: account_metas,
+            args: SwapV2Arguments {
+                amount: from_value,
+                other_amount_threshold: to_value,
+                sqrt_price_limit: 0,
+                amount_specified_is_input: specified_input,
+                a_to_b,
+            },
+        };
+        let instruction = instruction.to_instruction();
+        let message = Message::new(&[instruction], Some(&payer));
+        let tx = Transaction::new_unsigned(message);
+        let serialized = bincode::serialize(&tx).unwrap();
+        let encoded = STANDARD.encode(serialized);
+        Ok(SwapQuoteData {
+            to: WHIRLPOOL_PROGRAM.to_string(),
+            value: quote.from_value.clone(),
+            data: encoded,
+        })
     }
 
     async fn get_transaction_status(&self, _chain: Chain, _transaction_hash: &str, _provider: Arc<dyn AlienProvider>) -> Result<bool, SwapperError> {
-        // TODO: the transaction status from the RPC
         Ok(true)
     }
 }
@@ -168,44 +214,35 @@ impl Orca {
         Ok(pools)
     }
 
-    pub async fn fetch_tick_arrays(&self, pool_address: &Pubkey, pool: &Whirlpool, provider: Arc<dyn AlienProvider>) -> Result<Vec<TickArray>, SwapperError> {
-        let start_index = get_tick_array_start_tick_index(pool.tick_current_index, pool.tick_spacing);
-        let offset = (pool.tick_spacing as i32) * (TICK_ARRAY_SIZE as i32);
-        let tick_arrays = [
-            start_index - 2 * offset,
-            start_index - offset,
-            start_index,
-            start_index + offset,
-            start_index + 2 * offset,
-        ];
-        println!("tick_arrays: {:?}", tick_arrays);
-        let tick_addresses: Vec<String> = tick_arrays
-            .iter()
-            .map(|x| get_tick_array_address(pool_address, *x))
-            .filter_map(|x| match x {
-                Some(x) => Some(x.0.to_string()),
-                None => None,
-            })
-            .collect();
-        println!("tick_addresses: {:?}", tick_addresses);
+    pub async fn fetch_whirlpool(&self, pool_address: &str, provider: Arc<dyn AlienProvider>) -> Result<Whirlpool, SwapperError> {
+        let call = SolanaRpc::GetAccountInfo(pool_address.to_string());
+        let response: JsonRpcResult<ValueResult<AccountData>> = jsonrpc_call(&call, provider, &self.chain).await?;
+        let account_data = response.extract_result()?.value;
+        let whirlpool: Whirlpool = try_borsh_decode(account_data.data[0].as_str()).map_err(|e| SwapperError::ABIError { msg: e.to_string() })?;
+        Ok(whirlpool)
+    }
 
-        let call = SolanaRpc::GetMultipleAccounts(tick_addresses);
+    pub async fn fetch_tick_arrays(&self, pool_address: &Pubkey, pool: &Whirlpool, provider: Arc<dyn AlienProvider>) -> Result<Vec<TickArray>, SwapperError> {
+        let tick_addresses = self.get_tick_array_addresses(pool_address, pool);
+
+        let call = SolanaRpc::GetMultipleAccounts(tick_addresses.iter().map(|x| x.to_string()).collect());
         let response: JsonRpcResult<ValueResult<Vec<AccountData>>> = jsonrpc_call(&call, provider, &self.chain).await?;
         let tick_accounts = response.extract_result()?.value;
         let base64_strs: Vec<String> = tick_accounts.iter().map(|x| x.data[0].clone()).collect();
+
+        // FIXME make sure tick_array size is correct (5 or 6)
         let mut tick_array: Vec<TickArray> = vec![];
         for base64_str in base64_strs.iter() {
             let tick = try_borsh_decode::<TickArray>(base64_str).unwrap();
             tick_array.push(tick);
         }
-
         Ok(tick_array)
     }
 
     pub async fn fetch_token_accounts(
         &self,
-        token_mint_a: &Pubkey,
-        token_mint_b: &Pubkey,
+        token_mint_a: &str,
+        token_mint_b: &str,
         provider: Arc<dyn AlienProvider>,
     ) -> Result<Vec<AccountData>, SwapperError> {
         let rpc = SolanaRpc::GetMultipleAccounts(vec![token_mint_a.to_string(), token_mint_b.to_string()]);
@@ -214,8 +251,62 @@ impl Orca {
         Ok(token_accounts)
     }
 
+    pub async fn prepare_swap_v2_accounts(
+        &self,
+        token_mint_a: &str,
+        token_mint_b: &str,
+        signer: &Pubkey,
+        pool_address: &Pubkey,
+        provider: Arc<dyn AlienProvider>,
+    ) -> Result<Vec<AccountMeta>, SwapperError> {
+        let oracle_address = get_oracle_address(pool_address).unwrap().0;
+
+        let whirlpool = self.fetch_whirlpool(pool_address.to_string().as_str(), provider.clone()).await?;
+        // FIXME add cache header
+        let token_accounts = self.fetch_token_accounts(token_mint_a, token_mint_b, provider.clone()).await?;
+        let tick_array = self.get_tick_array_addresses(pool_address, &whirlpool);
+
+        // FIXME check token_owner_account_a and add create_account instruction if needed
+        Ok(vec![
+            AccountMeta::new_readonly(Pubkey::from_str_const(&token_accounts[0].owner), false),
+            AccountMeta::new_readonly(Pubkey::from_str_const(&token_accounts[1].owner), false),
+            AccountMeta::new_readonly(Pubkey::from_str_const(MEMO_PROGRAM), false),
+            AccountMeta::new_readonly(*signer, true),
+            AccountMeta::new(*pool_address, false),
+            AccountMeta::new_readonly(whirlpool.token_mint_a, false),
+            AccountMeta::new_readonly(whirlpool.token_mint_b, false),
+            //AccountMeta::new(token_owner_account_a, false),
+            AccountMeta::new(whirlpool.token_vault_a, false),
+            //AccountMeta::new(token_owner_account_b, false),
+            AccountMeta::new(whirlpool.token_vault_b, false),
+            AccountMeta::new(tick_array[0], false),
+            AccountMeta::new(tick_array[1], false),
+            AccountMeta::new(tick_array[2], false),
+            AccountMeta::new(oracle_address, false),
+        ])
+    }
+
+    fn get_tick_array_addresses(&self, pool_address: &Pubkey, pool: &Whirlpool) -> Vec<Pubkey> {
+        let start_index = get_tick_array_start_tick_index(pool.tick_current_index, pool.tick_spacing);
+        let offset = (pool.tick_spacing as i32) * (TICK_ARRAY_SIZE as i32);
+        let tick_arrays = [
+            start_index,
+            start_index + offset,
+            start_index + offset * 2,
+            start_index - offset,
+            start_index - offset * 2,
+        ];
+
+        let tick_addresses: Vec<Pubkey> = tick_arrays
+            .iter()
+            .map(|x| get_tick_array_address(pool_address, *x))
+            .filter_map(|x| x.map(|x| x.0))
+            .collect();
+        tick_addresses
+    }
+
     fn get_pool_address(&self, token_mint_1: &Pubkey, token_mint_2: &Pubkey, tick_spacing: u16) -> Option<String> {
-        let (token_mint_a, token_mint_b) = if token_mint_1.clone().to_bytes().cmp(&token_mint_2.clone().to_bytes()) == Ordering::Less {
+        let (token_mint_a, token_mint_b) = if (*token_mint_1).to_bytes().cmp(&(*token_mint_2).to_bytes()) == Ordering::Less {
             (token_mint_1, token_mint_2)
         } else {
             (token_mint_2, token_mint_1)

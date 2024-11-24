@@ -36,6 +36,16 @@ struct ContentView: View {
         options: nil
     )
 
+    let uni2linkRequest: SwapQuoteRequest = SwapQuoteRequest(
+        fromAsset: "ethereum_0x1f9840a85d5af5bf1d1762f925bdaddc4201f984",
+        toAsset: "ethereum_0x514910771af9ca656af840dff83e8264ecf986ca",
+        walletAddress: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7",
+        destinationAddress: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7",
+        value: "10000000000000000",
+        mode: .exactIn,
+        options: nil
+    )
+
     let sol2usdcRequest: SwapQuoteRequest = SwapQuoteRequest(
         fromAsset: "solana",
         toAsset: "solana_EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
@@ -109,7 +119,8 @@ struct ContentView: View {
             return print("<== fetchQuote: nil")
         }
         print("<== fetchQuote:\n", quote)
-
+        print("<== to amount:", quote.toValue)
+        
         let data = try await swapper.fetchQuoteData(quote: quote, data: .none)
         print("<== fetchQuoteData:\n", data)
     }
