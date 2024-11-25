@@ -36,7 +36,7 @@ pub fn get_swap_config() -> SwapConfig {
                 bps: 50,
             },
             solana: SwapReferralFee {
-                address: "5fmLrs2GuhfDP1B51ziV5Kd1xtAr9rw1jf3aQ4ihZ2gy".into(),
+                address: "CK8n55Y664YjfifoVYfud8jXuSx9JV4NgVakEaRceVXu".into(),
                 bps: 50,
             },
             thorchain: SwapReferralFee { address: "g1".into(), bps: 50 },

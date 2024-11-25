@@ -1,9 +1,9 @@
 use chain_primitives::format_token_id;
 use coingecko::mapper::COINGECKO_CHAIN_MAP;
-use coingecko::{get_chain_for_coingecko_platform_id, get_coingecko_market_id_for_chain, CoinGeckoClient, CoinInfo};
+use coingecko::{get_chain_for_coingecko_platform_id, CoinGeckoClient, CoinInfo};
 use primitives::asset_details::{ASSET_LINK_COINGECKO, ASSET_LINK_DISCORD, ASSET_LINK_GITHUB, ASSET_LINK_TELEGRAM, ASSET_LINK_WEBSITE, ASSET_LINK_X};
-use primitives::{Asset, AssetId, AssetLink, AssetScore, AssetType, Chain};
-use std::collections::{HashMap, HashSet};
+use primitives::{Asset, AssetId, AssetLink, AssetScore, AssetType};
+use std::collections::HashSet;
 use std::error::Error;
 use storage::DatabaseClient;
 pub struct AssetUpdater {

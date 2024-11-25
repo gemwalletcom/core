@@ -1,4 +1,4 @@
-use super::{AlienError, AlienTarget};
+pub use super::{AlienError, AlienTarget};
 use async_trait::async_trait;
 use primitives::Chain;
 use std::fmt::Debug;
@@ -10,5 +10,6 @@ pub type Data = Vec<u8>;
 pub trait AlienProvider: Send + Sync + Debug {
     async fn request(&self, target: AlienTarget) -> Result<Data, AlienError>;
     async fn batch_request(&self, targets: Vec<AlienTarget>) -> Result<Vec<Data>, AlienError>;
+    // FIXME: change Chain to generic string key
     fn get_endpoint(&self, chain: Chain) -> Result<String, AlienError>;
 }

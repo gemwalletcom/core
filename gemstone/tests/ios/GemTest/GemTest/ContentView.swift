@@ -3,6 +3,15 @@
 import SwiftUI
 import Gemstone
 
+let TEST_OPTIONS = GemSwapOptions(
+    slippageBps: 100,
+    fee: SwapReferralFees(
+        evm: .init(address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7", bps: 25),
+        solana: .init(address: "97q7TdebuvmxXCM1JzgqzpB1i7Wgvk4ACUWanhiL6Dk1", bps: 25),
+        thorchain: .init(address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7", bps: 25)),
+    preferredProviders: []
+)
+
 struct ContentView: View {
 
     let provider = NativeProvider()
@@ -34,7 +43,7 @@ struct ContentView: View {
         destinationAddress: "A21o4asMbFHYadqXdLusT9Bvx9xaC5YV9gcaidjqtdXC",
         value: "1000000000", // 1 SOL
         mode: .exactIn,
-        options: nil
+        options: TEST_OPTIONS
     )
 
     var body: some View {

@@ -8,15 +8,15 @@ use crate::{
 };
 use async_trait::async_trait;
 use gem_solana::{
+    get_asset_address,
     jsonrpc::{Filter, Memcmp, SolanaRpc, ENCODING_BASE58},
     pubkey::Pubkey,
-    WSOL_TOKEN_ADDRESS,
 };
 use orca_whirlpools_core::{
     get_tick_array_start_tick_index, swap_quote_by_input_token, TickArrayFacade, TickArrays, TickFacade, WhirlpoolFacade, WhirlpoolRewardInfoFacade,
     TICK_ARRAY_SIZE,
 };
-use primitives::{AssetId, Chain};
+use primitives::Chain;
 use std::{cmp::Ordering, iter::zip, str::FromStr, sync::Arc, vec};
 
 #[derive(Debug)]
@@ -55,8 +55,12 @@ impl GemSwapProvider for Orca {
         let options = request.options.clone().unwrap_or_default();
         let slippage_bps = options.slippage_bps as u16;
 
-        let from_asset = Self::get_asset_address(request.from_asset.clone())?;
-        let to_asset = Self::get_asset_address(request.to_asset.clone())?;
+        let from_asset = get_asset_address(&request.from_asset).ok_or_else(|| SwapperError::InvalidAddress {
+            address: request.from_asset.to_string(),
+        })?;
+        let to_asset = get_asset_address(&request.to_asset).ok_or_else(|| SwapperError::InvalidAddress {
+            address: request.from_asset.to_string(),
+        })?;
         let fee_tiers = self.fetch_fee_tiers(provider.clone()).await?;
         let mut pools = self
             .fetch_whirlpools(&from_asset, &to_asset, fee_tiers, provider.clone(), request.from_asset.chain)
@@ -218,14 +222,6 @@ impl Orca {
         };
 
         get_whirlpool_address(&self.whirlpool_config, token_mint_a, token_mint_b, tick_spacing).map(|x| x.0.to_string())
-    }
-
-    pub fn get_asset_address(asset_id: AssetId) -> Result<Pubkey, SwapperError> {
-        let address = match asset_id.token_id {
-            Some(token_id) => token_id,
-            None => WSOL_TOKEN_ADDRESS.to_string(),
-        };
-        Pubkey::from_str(&address).map_err(|_| SwapperError::InvalidAddress { address })
     }
 
     pub fn get_program_filters() -> Vec<Filter> {
