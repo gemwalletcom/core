@@ -17,15 +17,22 @@ use gem_solana::{
     MEMO_PROGRAM, WSOL_TOKEN_ADDRESS,
 };
 use orca_whirlpools_core::{
-    get_tick_array_start_tick_index, swap_quote_by_input_token, TickArrayFacade, TickArrays, TickFacade, WhirlpoolFacade, WhirlpoolRewardInfoFacade,
-    TICK_ARRAY_SIZE,
+    compute_swap, get_tick_array_start_tick_index, try_get_min_amount_with_slippage_tolerance, TickArrayFacade, TickArraySequence, TickArrays, TickFacade,
+    WhirlpoolFacade, WhirlpoolRewardInfoFacade, TICK_ARRAY_SIZE,
 };
 use primitives::Chain;
 use primitives::{AssetId, Chain};
 use solana_program::message::Message;
 use solana_sdk::{instruction::AccountMeta, pubkey::Pubkey, transaction::Transaction};
 
-use std::{cmp::Ordering, iter::zip, str::FromStr, sync::Arc, vec};
+use std::{
+    cmp::Ordering,
+    iter::zip,
+    str::FromStr,
+    sync::Arc,
+    time::{SystemTime, UNIX_EPOCH},
+    vec,
+};
 
 #[derive(Debug)]
 pub struct Orca {
@@ -90,19 +97,31 @@ impl GemSwapProvider for Orca {
         let tick_array_facades = tick_array.into_iter().map(|x| TickArrayFacade::from(&x)).collect::<Vec<_>>();
         let result: [TickArrayFacade; 5] = std::array::from_fn(|i| tick_array_facades[i]);
         let tick_arrays = TickArrays::from(result);
-        // let tick_sequence = TickArraySequence {
-        //     tick_arrays: tick_arrays.into(),
-        //     tick_spacing: pool.tick_spacing,
-        // };
+        let tick_sequence = TickArraySequence {
+            tick_arrays: tick_arrays.into(),
+            tick_spacing: pool.tick_spacing,
+        };
 
-        // FIXME update orca core to use compute_swap directly
-        let quote = swap_quote_by_input_token(amount_in, true, slippage_bps, pool.into(), tick_arrays, None, None).map_err(|c| SwapperError::NetworkError {
-            msg: format!("swap_quote_by_input_token error: {:?}", c),
-        })?;
+        let specified_input = request.mode == GemSwapMode::ExactIn;
+        let specified_token_a = pool.token_mint_a == from_asset;
+        let a_to_b = specified_token_a == specified_input;
+        let timestamp = SystemTime::now().duration_since(UNIX_EPOCH).expect("Time went backwards").as_secs();
+
+        let swap_result = compute_swap(amount_in, 0, pool.into(), tick_sequence, a_to_b, specified_input, timestamp)
+            .map_err(|e| SwapperError::ComputeQuoteError { msg: e.to_string() })?;
+
+        let (_, token_est_out_before_fee) = if specified_token_a {
+            (swap_result.token_a, swap_result.token_b)
+        } else {
+            (swap_result.token_b, swap_result.token_a)
+        };
+
+        let amount_out = try_get_min_amount_with_slippage_tolerance(token_est_out_before_fee, slippage_bps)
+            .map_err(|e| SwapperError::ComputeQuoteError { msg: e.to_string() })?;
 
         Ok(SwapQuote {
             from_value: request.value.clone(),
-            to_value: quote.token_est_out.to_string(),
+            to_value: amount_out.to_string(),
             data: SwapProviderData {
                 provider: self.provider(),
                 routes: vec![SwapRoute {
@@ -386,7 +405,7 @@ impl From<&Tick> for TickFacade {
 #[cfg(test)]
 mod tests {
     use super::*;
-
+    use orca_whirlpools_core::swap_quote_by_input_token;
     #[test]
     fn test_swap_quote_by_input_token() -> Result<(), SwapperError> {
         let data = include_str!("test/tick_array_response.json");

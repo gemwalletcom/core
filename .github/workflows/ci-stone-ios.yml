@@ -19,7 +19,7 @@ env:
   SCCACHE_GHA_ENABLED: "true"
   RUSTC_WRAPPER: "sccache"
   RUST_TOOLCHAIN_VERSION: 1.82.0
-  OPENSSL_DIR: /opt/homebrew/opt/openssl@3
+
 jobs:
   build_ios:
     runs-on: macos-latest
@@ -37,9 +37,6 @@ jobs:
 
       - name: Install just
         run: cargo install just
-
-      - name: Install openssl
-        run: brew install openssl@3
 
       - name: Setup Xcode
         run: |
