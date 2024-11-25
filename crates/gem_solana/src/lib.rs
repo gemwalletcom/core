@@ -7,7 +7,9 @@ pub const WSOL_TOKEN_ADDRESS: &str = "So1111111111111111111111111111111111111111
 pub const TOKEN_PROGRAM: &str = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA";
 pub const TOKEN_PROGRAM_2022: &str = "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb";
 
-use primitives::SolanaTokenProgramId;
+use primitives::{AssetId, SolanaTokenProgramId};
+use pubkey::Pubkey;
+use std::str::FromStr;
 
 pub fn get_token_program_by_id(id: SolanaTokenProgramId) -> &'static str {
     match id {
@@ -23,5 +25,12 @@ pub fn get_token_program_id_by_address(address: &str) -> Option<SolanaTokenProgr
         Some(SolanaTokenProgramId::Token2022)
     } else {
         None
+    }
+}
+
+pub fn get_asset_address(asset_id: &AssetId) -> Option<Pubkey> {
+    match &asset_id.token_id {
+        Some(token_id) => Pubkey::from_str(token_id).ok(),
+        None => Pubkey::from_str(WSOL_TOKEN_ADDRESS).ok(),
     }
 }
