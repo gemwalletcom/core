@@ -42,20 +42,6 @@ diesel::table! {
 }
 
 diesel::table! {
-    assets_properties (asset_id) {
-        #[max_length = 128]
-        asset_id -> Varchar,
-        is_buyable -> Bool,
-        is_sellable -> Bool,
-        is_swappable -> Bool,
-        is_stakeable -> Bool,
-        updated_at -> Timestamp,
-        created_at -> Timestamp,
-        staking_apr -> Nullable<Float8>,
-    }
-}
-
-diesel::table! {
     assets_types (id) {
         #[max_length = 32]
         id -> Varchar,
@@ -368,7 +354,6 @@ diesel::table! {
 diesel::joinable!(assets -> assets_types (asset_type));
 diesel::joinable!(assets -> chains (chain));
 diesel::joinable!(assets_links -> assets (asset_id));
-diesel::joinable!(assets_properties -> assets (asset_id));
 diesel::joinable!(fiat_assets -> assets (asset_id));
 diesel::joinable!(fiat_assets -> fiat_providers (provider));
 diesel::joinable!(fiat_transactions -> assets (asset_id));
@@ -392,7 +377,6 @@ diesel::joinable!(transactions_addresses -> transactions (transaction_id));
 diesel::allow_tables_to_appear_in_same_query!(
     assets,
     assets_links,
-    assets_properties,
     assets_types,
     chains,
     devices,
