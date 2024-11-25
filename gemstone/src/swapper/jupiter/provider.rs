@@ -84,7 +84,7 @@ impl GemSwapProvider for Jupiter {
             user_public_key: quote.request.wallet_address.clone(),
             fee_account,
             quote_response,
-            prioritization_fee_lamports: 10_000_000,
+            prioritization_fee_lamports: 500_000,
         };
         let client = JupiterClient::new(JUPITER_API_URL.into(), provider);
         let quote_data = client.get_swap_quote_data(request).await?;
