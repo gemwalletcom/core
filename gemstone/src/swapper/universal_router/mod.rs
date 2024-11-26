@@ -53,6 +53,14 @@ impl JsonRpcRequestConvert for EthereumRpc {
                 let value = serde_json::to_value(tx).unwrap();
                 vec![value, block.into()]
             }
+            EthereumRpc::GetTransactionReceipt(hash) => {
+                let value = serde_json::to_value(hash).unwrap();
+                vec![value]
+            }
+            EthereumRpc::EstimateGas(tx) => {
+                let value = serde_json::to_value(tx).unwrap();
+                vec![value]
+            }
         };
 
         JsonRpcRequest::new(id, method, params)

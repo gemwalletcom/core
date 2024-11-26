@@ -1,3 +1,4 @@
+use alloy_primitives::U256;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -32,6 +33,17 @@ impl TransactionObject {
             gas: None,
             gas_price: None,
             value: None,
+            data: format!("0x{}", hex::encode(data)),
+        }
+    }
+
+    pub fn new_call_with_value(from: &str, to: &str, data: Vec<u8>, value: &str) -> Self {
+        Self {
+            from: Some(from.to_string()),
+            to: to.to_string(),
+            gas: None,
+            gas_price: None,
+            value: Some(value.to_string()),
             data: format!("0x{}", hex::encode(data)),
         }
     }
@@ -73,6 +85,8 @@ pub enum EthereumRpc {
     GasPrice,
     GetBalance(&'static str),
     Call(TransactionObject, BlockParameter),
+    GetTransactionReceipt(String),
+    EstimateGas(TransactionObject),
 }
 
 impl EthereumRpc {
@@ -81,6 +95,8 @@ impl EthereumRpc {
             EthereumRpc::GasPrice => "eth_gasPrice",
             EthereumRpc::GetBalance(_) => "eth_getBalance",
             EthereumRpc::Call(_, _) => "eth_call",
+            EthereumRpc::GetTransactionReceipt(_) => "eth_getTransactionReceipt",
+            EthereumRpc::EstimateGas(_) => "eth_estimateGas",
         }
     }
 }

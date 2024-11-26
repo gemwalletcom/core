@@ -60,6 +60,10 @@ impl FromStr for EthereumAddress {
 impl EthereumAddress {
     pub const LEN: usize = 20;
 
+    pub fn zero() -> Self {
+        Self { bytes: vec![0u8; Self::LEN] }
+    }
+
     pub fn parse(str: &str) -> Option<EthereumAddress> {
         Self::from_str(str).ok()
     }
