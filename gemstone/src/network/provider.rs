@@ -9,5 +9,5 @@ pub type Data = Vec<u8>;
 pub trait AlienProvider: Send + Sync + Debug {
     async fn request(&self, target: AlienTarget) -> Result<Data, AlienError>;
     async fn batch_request(&self, targets: Vec<AlienTarget>) -> Result<Vec<Data>, AlienError>;
-    fn get_endpoint(&self, key: String) -> Result<String, AlienError>;
+    fn get_endpoint(&self, chain: String) -> Result<String, AlienError>;
 }

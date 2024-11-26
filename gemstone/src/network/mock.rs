@@ -46,7 +46,7 @@ pub mod tests {
             Ok(vec![self.response.as_bytes().to_vec()])
         }
 
-        fn get_endpoint(&self, _key: String) -> Result<String, AlienError> {
+        fn get_endpoint(&self, _chain: String) -> Result<String, AlienError> {
             Ok(String::from("http://localhost:8080"))
         }
     }

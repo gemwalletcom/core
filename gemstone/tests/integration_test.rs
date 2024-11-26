@@ -27,12 +27,12 @@ mod tests {
 
     #[async_trait]
     impl AlienProvider for NativeProvider {
-        fn get_endpoint(&self, key: String) -> Result<String, AlienError> {
+        fn get_endpoint(&self, chain: String) -> Result<String, AlienError> {
             Ok(self
                 .node_config
-                .get(&key)
+                .get(&chain)
                 .ok_or(AlienError::ResponseError {
-                    msg: "not supported key".into(),
+                    msg: "not supported chain".into(),
                 })?
                 .to_string())
         }

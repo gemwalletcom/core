@@ -20,9 +20,9 @@ public actor NativeProvider {
 }
 
 extension NativeProvider: AlienProvider {
-    nonisolated public func getEndpoint(key: String) throws -> String {
-        guard let url = nodeConfig[key] else {
-            throw AlienError.RequestError(msg: "\(key) is not supported.")
+    nonisolated public func getEndpoint(chain: String) throws -> String {
+        guard let url = nodeConfig[chain] else {
+            throw AlienError.RequestError(msg: "\(chain) is not supported.")
         }
         return url.absoluteString
     }

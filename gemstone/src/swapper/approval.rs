@@ -65,8 +65,8 @@ pub async fn check_approval_erc20(
     Ok(ApprovalType::None)
 }
 
-pub async fn check_approval(r#type: CheckApprovalType, provider: Arc<dyn AlienProvider>, chain: &Chain) -> Result<ApprovalType, SwapperError> {
-    match r#type {
+pub async fn check_approval(check_type: CheckApprovalType, provider: Arc<dyn AlienProvider>, chain: &Chain) -> Result<ApprovalType, SwapperError> {
+    match check_type {
         CheckApprovalType::ERC20(owner, token, spender, amount) => check_approval_erc20(owner, token, spender, amount, provider, chain).await,
         CheckApprovalType::Permit2(permit2_contract, owner, token, spender, amount) => {
             // Check token allowance, spender is permit2
