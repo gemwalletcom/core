@@ -3,6 +3,7 @@ use crate::network::AlienProvider;
 use async_trait::async_trait;
 use std::{fmt::Debug, sync::Arc};
 
+mod approval;
 mod custom_types;
 mod permit2_data;
 

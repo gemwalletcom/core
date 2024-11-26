@@ -2,17 +2,17 @@ mod pancakeswap_router;
 mod uniswap_router;
 
 use crate::{
-    network::{
-        jsonrpc::{batch_jsonrpc_call, jsonrpc_call},
-        AlienProvider, JsonRpcRequest, JsonRpcRequestConvert, JsonRpcResponse,
+    network::{jsonrpc::batch_jsonrpc_call, AlienProvider, JsonRpcRequest, JsonRpcRequestConvert, JsonRpcResponse},
+    swapper::{
+        approval::{check_approval, CheckApprovalType},
+        models::*,
+        slippage::apply_slippage_in_bp,
+        GemSwapProvider, SwapperError,
     },
-    swapper::{models::*, slippage::apply_slippage_in_bp, GemSwapProvider, SwapperError},
 };
 use gem_evm::{
     address::EthereumAddress,
-    erc20::IERC20,
     jsonrpc::{BlockParameter, EthereumRpc, TransactionObject},
-    permit2::IAllowanceTransfer,
     uniswap::{
         command::{encode_commands, PayPortion, Permit2Permit, Sweep, UniversalRouterCommand, UnwrapWeth, V3SwapExactIn, WrapEth, ADDRESS_THIS},
         contract::IQuoterV2,
@@ -245,64 +245,18 @@ impl UniswapV3 {
         provider: Arc<dyn AlienProvider>,
     ) -> Result<ApprovalType, SwapperError> {
         let deployment = self.provider.get_deployment_by_chain(chain).ok_or(SwapperError::NotSupportedChain)?;
-        // Check token allowance, spender is permit2
-        let allowance_data = IERC20::allowanceCall {
-            owner: wallet_address,
-            spender: Address::parse_checksummed(deployment.permit2, None).unwrap(),
-        }
-        .abi_encode();
-        let allowance_call = EthereumRpc::Call(TransactionObject::new_call(token, allowance_data), BlockParameter::Latest);
-
-        let response = jsonrpc_call(&allowance_call, provider.clone(), chain).await.map_err(SwapperError::from)?;
-        let result: String = response.extract_result().map_err(SwapperError::from)?;
-        let decoded = HexDecode(result).unwrap();
-        let allowance = IERC20::allowanceCall::abi_decode_returns(&decoded, false)
-            .map_err(|_| SwapperError::ABIError {
-                msg: "Invalid erc20 allowance response".into(),
-            })?
-            ._0;
-        if allowance < amount {
-            return Ok(ApprovalType::Approve(ApprovalData {
-                token: token.to_string(),
-                spender: deployment.permit2.to_string(),
-                value: amount.to_string(),
-            }));
-        }
-
-        // Check permit2 allowance, spender is universal router
-        let permit2_data = IAllowanceTransfer::allowanceCall {
-            _0: wallet_address,
-            _1: Address::parse_checksummed(token, None).unwrap(),
-            _2: Address::parse_checksummed(deployment.universal_router, None).unwrap(),
-        }
-        .abi_encode();
-        let permit2_call = EthereumRpc::Call(TransactionObject::new_call(deployment.permit2, permit2_data), BlockParameter::Latest);
-
-        let response = jsonrpc_call(&permit2_call, provider.clone(), chain).await.map_err(SwapperError::from)?;
-        let result: String = response.extract_result().map_err(SwapperError::from)?;
-        let decoded = HexDecode(result).unwrap();
-        let allowance_return = IAllowanceTransfer::allowanceCall::abi_decode_returns(&decoded, false).map_err(|_| SwapperError::ABIError {
-            msg: "Invalid permit2 allowance response".into(),
-        })?;
-
-        let timestamp = SystemTime::now().duration_since(UNIX_EPOCH).expect("Time went backwards").as_secs();
-        let expiration: u64 = allowance_return._1.try_into().map_err(|_| SwapperError::ABIError {
-            msg: "failed to convert expiration to u64".into(),
-        })?;
-
-        if U256::from(allowance_return._0) < amount || expiration < timestamp {
-            return Ok(ApprovalType::Permit2(Permit2ApprovalData {
-                token: token.to_string(),
-                spender: deployment.universal_router.to_string(),
-                value: amount.to_string(),
-                permit2_contract: deployment.permit2.to_string(),
-                permit2_nonce: allowance_return._2.try_into().map_err(|_| SwapperError::ABIError {
-                    msg: "failed to convert nonce to u64".into(),
-                })?,
-            }));
-        }
-
-        Ok(ApprovalType::None)
+        check_approval(
+            CheckApprovalType::Permit2(
+                deployment.permit2.to_string(),
+                wallet_address.to_string(),
+                token.to_string(),
+                deployment.universal_router.to_string(),
+                amount,
+            ),
+            provider,
+            chain,
+        )
+        .await
     }
 }
 
@@ -372,10 +326,10 @@ impl GemSwapProvider for UniswapV3 {
             data: SwapProviderData {
                 provider: self.provider(),
                 routes: vec![SwapRoute {
-                    route_type: String::from("v3-pool"),
+                    route_type: RouteType::Swap,
                     input: token_in.to_checksum(),
                     output: token_out.to_checksum(),
-                    fee_tier: fee_tier.to_string(),
+                    route_data: fee_tier.to_string(),
                     gas_estimate,
                 }],
             },
@@ -397,7 +351,7 @@ impl GemSwapProvider for UniswapV3 {
             FetchQuoteData::Permit2(data) => Some(data.into()),
             FetchQuoteData::None => None,
         };
-        let fee_tier = FeeTier::try_from(quote.data.routes[0].fee_tier.as_str()).map_err(|_| SwapperError::InvalidAmount)?;
+        let fee_tier = FeeTier::try_from(quote.data.routes[0].route_data.as_str()).map_err(|_| SwapperError::InvalidAmount)?;
 
         let commands = Self::build_commands(request, &token_in, &token_out, amount_in, to_amount, fee_tier, permit)?;
         let deadline = SystemTime::now().duration_since(UNIX_EPOCH).expect("Time went backwards").as_secs() + DEFAULT_DEADLINE;

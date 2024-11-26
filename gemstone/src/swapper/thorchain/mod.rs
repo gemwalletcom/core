@@ -15,7 +15,7 @@ use async_trait::async_trait;
 use primitives::Chain;
 use std::sync::Arc;
 
-use super::{ApprovalType, FetchQuoteData, SwapProvider, SwapProviderData, SwapQuote, SwapQuoteData, SwapQuoteRequest, SwapRoute, SwapperError};
+use super::{ApprovalType, FetchQuoteData, RouteType, SwapProvider, SwapProviderData, SwapQuote, SwapQuoteData, SwapQuoteRequest, SwapRoute, SwapperError};
 
 #[derive(Debug, Default)]
 pub struct ThorChain {}
@@ -66,7 +66,7 @@ impl GemSwapProvider for ThorChain {
 
     async fn fetch_quote(&self, request: &SwapQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapQuote, SwapperError> {
         let endpoint = provider
-            .get_endpoint(Chain::Thorchain)
+            .get_endpoint(Chain::Thorchain.to_string())
             .map_err(|err| SwapperError::NetworkError { msg: err.to_string() })?;
         let client = ThorChainSwapClient::new(provider);
 
@@ -102,10 +102,10 @@ impl GemSwapProvider for ThorChain {
             data: SwapProviderData {
                 provider: self.provider(),
                 routes: vec![SwapRoute {
-                    route_type: quote.inbound_address.unwrap_or_default(),
-                    input: request.clone().from_asset.to_string(),
-                    output: request.clone().to_asset.to_string(),
-                    fee_tier: "".to_string(),
+                    route_type: RouteType::Swap,
+                    input: request.from_asset.clone().to_string(),
+                    output: request.to_asset.clone().to_string(),
+                    route_data: quote.inbound_address.unwrap_or_default(),
                     gas_estimate: None,
                 }],
             },
@@ -131,7 +131,7 @@ impl GemSwapProvider for ThorChain {
             )
             .unwrap();
 
-        let to = quote.data.routes.first().unwrap().route_type.clone();
+        let to = quote.data.routes.first().unwrap().route_data.clone();
         let data: String = self.data(quote.request.from_asset.clone().chain, memo);
 
         let data = SwapQuoteData {
@@ -145,7 +145,7 @@ impl GemSwapProvider for ThorChain {
 
     async fn get_transaction_status(&self, _chain: Chain, transaction_hash: &str, provider: Arc<dyn AlienProvider>) -> Result<bool, SwapperError> {
         let endpoint = provider
-            .get_endpoint(Chain::Thorchain)
+            .get_endpoint(Chain::Thorchain.to_string())
             .map_err(|err| SwapperError::NetworkError { msg: err.to_string() })?;
         let client = ThorChainSwapClient::new(provider);
 

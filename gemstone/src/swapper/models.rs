@@ -149,13 +149,19 @@ pub struct SwapProviderData {
     pub routes: Vec<SwapRoute>,
 }
 
+#[derive(Debug, Clone, uniffi::Enum)]
+pub enum RouteType {
+    Swap,
+    Bridge,
+    Aggregate,
+}
+
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct SwapRoute {
-    // FIXME: Add route_data because route_type is misused somehow
-    pub route_type: String,
+    pub route_type: RouteType,
     pub input: String,
     pub output: String,
-    pub fee_tier: String,
+    pub route_data: String,
     pub gas_estimate: Option<String>,
 }
 

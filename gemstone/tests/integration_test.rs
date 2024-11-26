@@ -12,12 +12,12 @@ mod tests {
 
     #[derive(Debug)]
     pub struct NativeProvider {
-        pub node_config: HashMap<Chain, String>,
+        pub node_config: HashMap<String, String>,
         pub client: Client,
     }
 
     impl NativeProvider {
-        pub fn new(node_config: HashMap<Chain, String>) -> Self {
+        pub fn new(node_config: HashMap<String, String>) -> Self {
             Self {
                 node_config,
                 client: Client::new(),
@@ -27,12 +27,12 @@ mod tests {
 
     #[async_trait]
     impl AlienProvider for NativeProvider {
-        fn get_endpoint(&self, chain: Chain) -> Result<String, AlienError> {
+        fn get_endpoint(&self, key: String) -> Result<String, AlienError> {
             Ok(self
                 .node_config
-                .get(&chain)
+                .get(&key)
                 .ok_or(AlienError::ResponseError {
-                    msg: "not supported chain".into(),
+                    msg: "not supported key".into(),
                 })?
                 .to_string())
         }
@@ -94,7 +94,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_orca_get_quote_by_input() -> Result<(), SwapperError> {
-        let node_config = HashMap::from([(Chain::Solana, "https://api.mainnet-beta.solana.com".into())]);
+        let node_config = HashMap::from([(Chain::Solana.to_string(), "https://api.mainnet-beta.solana.com".into())]);
         let swap_provider: Box<dyn GemSwapProvider> = Box::new(Orca::default());
         let network_provider = Arc::new(NativeProvider::new(node_config));
 
@@ -110,7 +110,7 @@ mod tests {
         let quote = swap_provider.fetch_quote(&request, network_provider.clone()).await?;
 
         assert_eq!(quote.from_value, "1000000");
-        assert!(quote.to_value > 0);
+        assert!(quote.to_value.parse::<u64>().unwrap() > 0);
 
         Ok(())
     }

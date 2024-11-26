@@ -60,10 +60,10 @@ impl GemSwapProvider for Jupiter {
             data: SwapProviderData {
                 provider: self.provider(),
                 routes: vec![SwapRoute {
-                    route_type: serde_json::to_string(&swap_quote).unwrap_or_default(),
+                    route_type: RouteType::Aggregate,
                     input: input_mint,
                     output: output_mint,
-                    fee_tier: String::from("0"),
+                    route_data: serde_json::to_string(&swap_quote).unwrap_or_default(),
                     gas_estimate: None,
                 }],
             },
@@ -77,7 +77,7 @@ impl GemSwapProvider for Jupiter {
             return Err(SwapperError::InvalidRoute);
         }
         let route = &quote.data.routes[0];
-        let quote_response: QuoteResponse = serde_json::from_str(&route.route_type).map_err(|_| SwapperError::InvalidRoute)?;
+        let quote_response: QuoteResponse = serde_json::from_str(&route.route_data).map_err(|_| SwapperError::InvalidRoute)?;
         let fee_account = self.get_fee_account(&quote.request.options, &quote_response.output_mint);
 
         let request = QuoteDataRequest {

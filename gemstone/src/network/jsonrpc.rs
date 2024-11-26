@@ -71,7 +71,7 @@ impl<T> JsonRpcResult<T>
 where
     T: Clone,
 {
-    pub fn extract_result(&self) -> Result<T, JsonRpcError> {
+    pub fn take(&self) -> Result<T, JsonRpcError> {
         match self {
             JsonRpcResult::Value(value) => Ok(value.result.clone()),
             JsonRpcResult::Error(error) => Err(error.error.clone()),
@@ -99,7 +99,7 @@ where
     U: DeserializeOwned,
 {
     let request = call.to_req(1);
-    let endpoint = provider.get_endpoint(*chain)?;
+    let endpoint = provider.get_endpoint(chain.to_string())?;
     let target = batch_into_target(&request, &endpoint);
     let data = provider.request(target).await?;
     let result: JsonRpcResult<U> = serde_json::from_slice(&data).map_err(|err| AlienError::ResponseError { msg: err.to_string() })?;
@@ -112,7 +112,7 @@ where
 {
     let requests: Vec<JsonRpcRequest> = rpc_calls.iter().enumerate().map(|(index, request)| request.to_req(index as u64 + 1)).collect();
 
-    let endpoint = provider.get_endpoint(*chain)?;
+    let endpoint = provider.get_endpoint(chain.to_string())?;
     let targets = vec![batch_into_target(&requests, &endpoint)];
 
     let data_array = provider.batch_request(targets).await?;
