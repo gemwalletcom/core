@@ -94,7 +94,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_orca_get_quote_by_input() -> Result<(), SwapperError> {
-        let node_config = HashMap::from([(Chain::Solana.to_string(), "https://api.mainnet-beta.solana.com".into())]);
+        let node_config = HashMap::from([(Chain::Solana.to_string(), "https://solana-rpc.publicnode.com".into())]);
         let swap_provider: Box<dyn GemSwapProvider> = Box::new(Orca::default());
         let network_provider = Arc::new(NativeProvider::new(node_config));
 
