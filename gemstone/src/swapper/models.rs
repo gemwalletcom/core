@@ -153,7 +153,6 @@ pub struct SwapProviderData {
 pub enum RouteType {
     Swap,
     Bridge,
-    Aggregate,
 }
 
 #[derive(Debug, Clone, uniffi::Record)]
