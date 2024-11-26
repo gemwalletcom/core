@@ -65,7 +65,20 @@ impl GemSwapper {
             return Err(SwapperError::NotSupportedPair);
         }
 
-        let quotes_futures = self.swappers.iter().map(|x| x.fetch_quote(&request, self.rpc_provider.clone()));
+        let providers = self
+            .swappers
+            .iter()
+            .filter(|x| {
+                let supported_chains = x.supported_chains();
+                supported_chains.contains(&request.from_asset.chain) && supported_chains.contains(&request.to_asset.chain)
+            })
+            .collect::<Vec<_>>();
+
+        if providers.is_empty() {
+            return Err(SwapperError::NotSupportedPair);
+        }
+
+        let quotes_futures = providers.into_iter().map(|x| x.fetch_quote(&request, self.rpc_provider.clone()));
 
         let quotes = futures::future::join_all(quotes_futures.into_iter().map(|fut| async { fut.await.ok() }))
             .await
