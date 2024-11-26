@@ -18,6 +18,8 @@ pub enum SwapperError {
     InvalidAddress { address: String },
     #[error("Invalid amount")]
     InvalidAmount,
+    #[error("Invalid route")]
+    InvalidRoute,
     #[error("RPC error: {msg}")]
     NetworkError { msg: String },
     #[error("ABI error: {msg}")]
@@ -56,6 +58,7 @@ pub enum SwapProvider {
     Thorchain,
     Orca,
     MayanSwift,
+    Jupiter,
 }
 impl SwapProvider {
     pub fn name(&self) -> &str {
@@ -65,6 +68,7 @@ impl SwapProvider {
             Self::Thorchain => "THORChain",
             Self::Orca => "Orca Whirlpool",
             Self::MayanSwift => "Mayan Swift",
+            Self::Jupiter => "Jupiter",
         }
     }
 }
@@ -149,6 +153,7 @@ pub struct SwapProviderData {
 
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct SwapRoute {
+    // FIXME: Add route_data because route_type is misused somehow
     pub route_type: String,
     pub input: String,
     pub output: String,

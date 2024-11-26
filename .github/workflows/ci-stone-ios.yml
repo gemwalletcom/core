@@ -27,12 +27,13 @@ jobs:
       run:
         working-directory: gemstone
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions-rust-lang/setup-rust-toolchain@v1
-        with:
-          toolchain: ${{env.RUST_TOOLCHAIN_VERSION}}
+      - uses: actions/checkout@v4
+
+      - name: Restore cargo cache
+        uses: Swatinem/rust-cache@v2
+
       - name: Run sccache-cache
-        uses: mozilla-actions/sccache-action@v0.0.3
+        uses: mozilla-actions/sccache-action@v0.0.6
 
       - name: Install just
         run: cargo install just
@@ -50,7 +51,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: build_ios
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Auto tag
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: anothrNick/github-tag-action@v1

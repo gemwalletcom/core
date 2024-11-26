@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
 use diesel::prelude::*;
-use primitives::{AssetId, AssetLinks, AssetType, Chain};
+use primitives::{asset_details::AssetLinks, AssetBasic, AssetId, AssetType, Chain};
 use serde::{Deserialize, Serialize};
 #[derive(Debug, Queryable, Selectable, Serialize, Deserialize, Insertable, AsChangeset, Clone)]
 #[diesel(table_name = crate::schema::assets)]
@@ -15,6 +15,13 @@ pub struct Asset {
     pub asset_type: String,
     pub decimals: i32,
     pub rank: i32,
+
+    pub is_buyable: bool,
+    pub is_sellable: bool,
+    pub is_swappable: bool,
+    pub is_stakeable: bool,
+
+    pub staking_apr: Option<f64>,
 }
 
 impl Asset {
@@ -28,6 +35,15 @@ impl Asset {
             symbol: self.symbol.clone(),
             asset_type: AssetType::from_str(&self.asset_type).unwrap(),
             decimals: self.decimals,
+        }
+    }
+
+    pub fn as_basic_primitive(&self) -> primitives::AssetBasic {
+        AssetBasic {
+            asset: self.as_primitive(),
+            properties: self.as_property_primitive(),
+            details: Some(self.as_details_primitive()),
+            score: self.as_score_primitive(),
         }
     }
 
@@ -45,62 +61,16 @@ impl Asset {
             asset_type: asset.asset_type.as_ref().to_string(),
             decimals: asset.decimals,
             rank: 0,
+            is_buyable: false,
+            is_sellable: false,
+            is_swappable: false,
+            is_stakeable: false,
+            staking_apr: None,
         }
     }
 
-    pub fn as_primitive_full(&self) -> primitives::AssetFull {
-        primitives::AssetFull {
-            asset: self.as_primitive(),
-            details: None,
-            price: None,
-            market: None,
-            score: self.as_score_primitive(),
-        }
-    }
-}
-
-#[derive(Debug, Queryable, Selectable, Serialize, Deserialize, Insertable, AsChangeset, Clone)]
-#[diesel(table_name = crate::schema::assets_details)]
-#[diesel(check_for_backend(diesel::pg::Pg))]
-pub struct AssetDetail {
-    pub asset_id: String,
-    // links
-    pub homepage: Option<String>,
-    pub explorer: Option<String>,
-    pub twitter: Option<String>,
-    pub telegram: Option<String>,
-    pub github: Option<String>,
-    pub youtube: Option<String>,
-    pub facebook: Option<String>,
-    pub reddit: Option<String>,
-    pub coingecko: Option<String>,
-    pub coinmarketcap: Option<String>,
-    pub discord: Option<String>,
-
-    pub is_buyable: bool,
-    pub is_sellable: bool,
-    pub is_swappable: bool,
-    pub is_stakeable: bool,
-
-    pub staking_apr: Option<f64>,
-}
-
-impl AssetDetail {
-    pub fn as_primitive(&self) -> primitives::AssetDetails {
-        primitives::AssetDetails {
-            links: AssetLinks {
-                homepage: self.homepage.clone(),
-                explorer: self.explorer.clone(),
-                twitter: self.twitter.clone(),
-                telegram: self.telegram.clone(),
-                github: self.github.clone(),
-                youtube: self.youtube.clone(),
-                facebook: self.facebook.clone(),
-                reddit: self.reddit.clone(),
-                coingecko: self.coingecko.clone(),
-                coinmarketcap: self.coinmarketcap.clone(),
-                discord: self.discord.clone(),
-            },
+    pub fn as_property_primitive(&self) -> primitives::AssetProperties {
+        primitives::AssetProperties {
             is_buyable: self.is_buyable,
             is_sellable: self.is_sellable,
             is_swapable: self.is_swappable,
@@ -109,25 +79,40 @@ impl AssetDetail {
         }
     }
 
-    pub fn from_primitive(asset_id: &str, value: primitives::AssetDetails) -> AssetDetail {
-        AssetDetail {
+    pub fn as_details_primitive(&self) -> primitives::AssetDetails {
+        primitives::AssetDetails {
+            links: AssetLinks::default(),
+            is_buyable: self.is_buyable,
+            is_sellable: self.is_sellable,
+            is_swapable: self.is_swappable,
+            is_stakeable: self.is_stakeable,
+            staking_apr: self.staking_apr,
+        }
+    }
+}
+
+#[derive(Debug, Queryable, Selectable, Serialize, Deserialize, Insertable, AsChangeset, Clone)]
+#[diesel(table_name = crate::schema::assets_links)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+pub struct AssetLink {
+    pub asset_id: String,
+    pub name: String,
+    pub url: String,
+}
+
+impl AssetLink {
+    pub fn as_primitive(&self) -> primitives::AssetLink {
+        primitives::AssetLink {
+            name: self.name.clone(),
+            url: self.url.clone(),
+        }
+    }
+
+    pub fn from_primitive(asset_id: &str, link: primitives::AssetLink) -> Self {
+        Self {
             asset_id: asset_id.to_string(),
-            homepage: value.links.homepage,
-            explorer: value.links.explorer,
-            twitter: value.links.twitter,
-            telegram: value.links.telegram,
-            github: value.links.github,
-            youtube: value.links.youtube,
-            facebook: value.links.facebook,
-            reddit: value.links.reddit,
-            coingecko: value.links.coingecko,
-            coinmarketcap: value.links.coinmarketcap,
-            discord: value.links.discord,
-            is_buyable: value.is_buyable,
-            is_sellable: value.is_sellable,
-            is_swappable: value.is_swapable,
-            is_stakeable: value.is_stakeable,
-            staking_apr: value.staking_apr,
+            name: link.name.clone(),
+            url: link.url.clone(),
         }
     }
 }

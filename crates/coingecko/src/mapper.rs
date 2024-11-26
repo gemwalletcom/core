@@ -1,4 +1,16 @@
+use std::collections::HashMap;
+
 use primitives::chain::Chain;
+
+lazy_static::lazy_static! {
+    pub static ref COINGECKO_CHAIN_MAP: HashMap<String, Chain> = {
+    Chain::all()
+        .iter()
+        .map(|&x| (x, get_coingecko_market_id_for_chain(x).to_string()))
+        .map(|(x, id)| (id, x))
+        .collect()
+    };
+}
 
 // Full list https://api.coingecko.com/api/v3/asset_platforms
 pub fn get_chain_for_coingecko_platform_id(id: &str) -> Option<Chain> {

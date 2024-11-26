@@ -1,6 +1,8 @@
 use chain_primitives::format_token_id;
+use coingecko::mapper::COINGECKO_CHAIN_MAP;
 use coingecko::{get_chain_for_coingecko_platform_id, CoinGeckoClient, CoinInfo};
-use primitives::{Asset, AssetDetails, AssetId, AssetLinks, AssetScore, AssetType};
+use primitives::asset_details::{ASSET_LINK_COINGECKO, ASSET_LINK_DISCORD, ASSET_LINK_GITHUB, ASSET_LINK_TELEGRAM, ASSET_LINK_WEBSITE, ASSET_LINK_X};
+use primitives::{Asset, AssetId, AssetLink, AssetScore, AssetType};
 use std::collections::HashSet;
 use std::error::Error;
 use storage::DatabaseClient;
@@ -31,9 +33,18 @@ impl AssetUpdater {
         for coin in coin_list.clone() {
             match self.coin_gecko_client.get_coin(&coin).await {
                 Ok(coin_info) => {
-                    let result = self.get_assets_from_coin_info(coin_info);
-                    for (asset, asset_score, asset_details) in result {
-                        let _ = self.update_asset(asset, asset_score, asset_details).await;
+                    let result = self.get_assets_from_coin_info(coin_info.clone());
+
+                    let asset_links = self.get_asset_links(coin_info.clone());
+
+                    if result.is_empty() {
+                        if let Some(chain) = COINGECKO_CHAIN_MAP.get(&coin) {
+                            let _ = self.update_links(&chain.as_asset_id().to_string(), asset_links).await;
+                        }
+                    } else {
+                        for (asset, asset_score) in result {
+                            let _ = self.update_asset(asset, asset_score, asset_links.clone()).await;
+                        }
                     }
                 }
                 Err(err) => {
@@ -44,9 +55,7 @@ impl AssetUpdater {
         Ok(coin_list.len())
     }
 
-    fn get_assets_from_coin_info(&self, coin_info: CoinInfo) -> Vec<(Asset, AssetScore, AssetDetails)> {
-        let asset_details = self.get_asset_details(coin_info.clone());
-
+    fn get_assets_from_coin_info(&self, coin_info: CoinInfo) -> Vec<(Asset, AssetScore)> {
         let values = coin_info
             .clone()
             .detail_platforms
@@ -85,7 +94,7 @@ impl AssetUpdater {
                     None
                 }
             })
-            .map(|x| (x.clone(), self.get_asset_score(x.clone(), coin_info.clone()), asset_details.clone()))
+            .map(|x| (x.clone(), self.get_asset_score(x.clone(), coin_info.clone())))
             .collect::<Vec<_>>()
     }
 
@@ -136,86 +145,101 @@ impl AssetUpdater {
         AssetScore { rank }
     }
 
-    fn get_asset_details(&self, coin_info: CoinInfo) -> AssetDetails {
+    fn get_asset_links(&self, coin_info: CoinInfo) -> Vec<AssetLink> {
         let links = coin_info.links.clone();
-        let homepage = links
+
+        let mut results = vec![];
+
+        if let Some(value) = links.clone().twitter_screen_name {
+            results.push(AssetLink {
+                name: ASSET_LINK_X.to_string(),
+                url: format!("https://x.com/{}", value),
+            });
+        }
+
+        if let Some(value) = links
             .clone()
             .homepage
             .into_iter()
             .filter(|x| !x.is_empty())
             .collect::<Vec<_>>()
             .first()
-            .cloned();
-        let explorer = if coin_info.asset_platform_id.is_none() {
-            links
-                .clone()
-                .blockchain_site
-                .into_iter()
-                .filter(|x| !x.clone().unwrap_or("".to_string()).is_empty())
-                .collect::<Vec<_>>()
-                .first()
-                .cloned()
-        } else {
-            None
+            .cloned()
+        {
+            let exclude_domains = ["https://t.me"];
+            if !value.is_empty() && !exclude_domains.iter().any(|&domain| value.contains(domain)) {
+                results.push(AssetLink {
+                    name: ASSET_LINK_WEBSITE.to_string(),
+                    url: value,
+                });
+            }
+        }
+
+        if let Some(value) = links.clone().telegram_channel_identifier {
+            results.push(AssetLink {
+                name: ASSET_LINK_TELEGRAM.to_string(),
+                url: format!("https://t.me/{}", value),
+            });
         };
-        let twitter = if links.clone().twitter_screen_name.unwrap_or_default().is_empty() {
-            None
-        } else {
-            Some(format!("https://x.com/{}", links.clone().twitter_screen_name.unwrap_or_default()))
-        };
-        let facebook = if links.clone().facebook_username.unwrap_or_default().is_empty() {
-            None
-        } else {
-            Some(format!("https://facebook.com/{}", links.clone().facebook_username.unwrap_or_default()))
-        };
-        let telegram = if links.clone().telegram_channel_identifier.unwrap_or_default().is_empty() {
-            None
-        } else {
-            Some(format!("https://t.me/{}", links.clone().telegram_channel_identifier.unwrap_or_default()))
-        };
-        let reddit = if links.clone().subreddit_url.unwrap_or_default() == "https://www.reddit.com" {
-            None
-        } else {
-            links.clone().subreddit_url
-        };
-        let coingecko = format!("https://www.coingecko.com/coins/{}", coin_info.id.to_lowercase());
-        let coinmarketcap = format!("https://coinmarketcap.com/currencies/{}", coin_info.id.to_lowercase());
-        let discord = links
+
+        results.push(AssetLink {
+            name: ASSET_LINK_COINGECKO.to_string(),
+            url: format!("https://www.coingecko.com/coins/{}", coin_info.id.to_lowercase()),
+        });
+
+        if let Some(value) = links
             .clone()
             .chat_url
             .into_iter()
             .filter(|x| x.contains("discord.com"))
             .collect::<Vec<_>>()
             .first()
-            .cloned();
-        let repos = links.clone().repos_url.get("github").cloned().unwrap_or_default();
-        let github = repos.into_iter().filter(|x| !x.is_empty()).collect::<Vec<_>>().first().cloned();
-
-        let links = AssetLinks {
-            homepage,
-            explorer: explorer.unwrap_or_default(),
-            twitter,
-            telegram,
-            github,
-            youtube: None,
-            facebook,
-            reddit,
-            coingecko: Some(coingecko),
-            coinmarketcap: Some(coinmarketcap),
-            discord,
+            .cloned()
+        {
+            results.push(AssetLink {
+                name: ASSET_LINK_DISCORD.to_string(),
+                url: value,
+            });
         };
 
-        AssetDetails::from_links(links)
+        if let Some(value) = links
+            .clone()
+            .repos_url
+            .get("github")
+            .cloned()
+            .unwrap_or_default()
+            .into_iter()
+            .filter(|x| !x.is_empty())
+            .collect::<Vec<_>>()
+            .first()
+            .cloned()
+        {
+            results.push(AssetLink {
+                name: ASSET_LINK_GITHUB.to_string(),
+                url: value,
+            });
+        };
+
+        results
     }
 
     // asset, asset details
-    pub async fn update_asset(&mut self, asset: Asset, asset_score: AssetScore, asset_details: AssetDetails) -> Result<(), Box<dyn Error>> {
-        let details = storage::models::asset::AssetDetail::from_primitive(asset.id.to_string().as_str(), asset_details);
+    pub async fn update_asset(&mut self, asset: Asset, asset_score: AssetScore, asset_links: Vec<AssetLink>) -> Result<(), Box<dyn Error>> {
         let asset = storage::models::asset::Asset::from_primitive(asset);
         let asset_id = asset.id.as_str();
+
         let _ = self.database.add_assets(vec![asset.clone()]);
-        let _ = self.database.add_assets_details(vec![details]);
         let _ = self.database.update_asset_rank(asset_id, asset_score.rank);
+        let _ = self.update_links(asset_id, asset_links.clone()).await;
+        Ok(())
+    }
+
+    pub async fn update_links(&mut self, asset_id: &str, asset_links: Vec<AssetLink>) -> Result<(), Box<dyn Error>> {
+        let asset_links = asset_links
+            .into_iter()
+            .map(|x| storage::models::asset::AssetLink::from_primitive(asset_id, x))
+            .collect::<Vec<_>>();
+        let _ = self.database.add_assets_links(asset_links);
         Ok(())
     }
 }

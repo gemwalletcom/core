@@ -7,6 +7,7 @@ mod custom_types;
 mod permit2_data;
 
 pub mod mayan;
+pub mod jupiter;
 pub mod models;
 pub mod orca;
 pub mod slippage;
@@ -43,6 +44,7 @@ impl GemSwapper {
                 Box::new(universal_router::UniswapV3::new_pancakeswap()),
                 Box::new(thorchain::ThorChain::default()),
                 Box::new(mayan::mayan_swift_provider::MayanSwiftProvider::new()),
+                Box::new(jupiter::Jupiter::default()),
             ],
         }
     }

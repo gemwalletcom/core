@@ -1,7 +1,7 @@
 extern crate rocket;
-use std::error::Error;
+use std::{error::Error, vec};
 
-use primitives::{Asset, AssetFull, Chain};
+use primitives::{Asset, AssetBasic, AssetFull, Chain};
 use settings_chain::ChainProviders;
 use storage::DatabaseClient;
 
@@ -28,47 +28,36 @@ impl AssetsClient {
         Ok(self.database.get_asset(asset_id)?.as_primitive())
     }
 
-    pub fn get_assets_list(&mut self) -> Result<Vec<AssetFull>, Box<dyn Error>> {
-        let assets = self.database.get_assets_list()?;
-        Ok(assets.into_iter().map(|x| x.as_primitive_full()).collect())
+    pub fn get_assets_list(&mut self) -> Result<Vec<AssetBasic>, Box<dyn Error>> {
+        let assets = self.database.get_assets_list()?.into_iter().map(|x| x.as_basic_primitive()).collect();
+        Ok(assets)
     }
 
-    pub fn get_assets(&mut self, asset_ids: Vec<String>) -> Result<Vec<AssetFull>, Box<dyn Error>> {
-        let assets = self.database.get_assets(asset_ids)?;
-        Ok(assets.into_iter().map(|x| x.as_primitive_full()).collect())
+    pub fn get_assets(&mut self, asset_ids: Vec<String>) -> Result<Vec<AssetBasic>, Box<dyn Error>> {
+        let assets = self.database.get_assets(asset_ids)?.into_iter().map(|x| x.as_basic_primitive()).collect();
+        Ok(assets)
     }
 
     pub fn get_asset_full(&mut self, asset_id: &str) -> Result<AssetFull, Box<dyn Error>> {
         let asset = self.database.get_asset(asset_id)?;
-        let asset_price = self.database.get_price(asset_id).ok();
-        let market = asset_price.clone().map(|x| x.as_market_primitive());
-        let price = asset_price.clone().clone().map(|x| x.as_price_primitive());
-        let details = self.database.get_asset_details(asset_id).ok().map(|x| x.as_primitive());
+        let links = self.database.get_asset_links(asset_id)?.into_iter().map(|link| link.as_primitive()).collect();
 
-        let score = asset.as_score_primitive();
-        let asset = asset.as_primitive();
         Ok(AssetFull {
-            asset,
-            details,
-            price,
-            market,
-            score,
+            asset: asset.as_primitive(),
+            properties: asset.as_property_primitive(),
+            links,
+            details: Some(asset.as_details_primitive()),
+            score: asset.as_score_primitive(),
         })
     }
 
-    pub fn get_assets_search(&mut self, query: &str, chains: Vec<String>, limit: i64, offset: i64) -> Result<Vec<primitives::AssetFull>, Box<dyn Error>> {
+    pub fn get_assets_search(&mut self, query: &str, chains: Vec<String>, limit: i64, offset: i64) -> Result<Vec<primitives::AssetBasic>, Box<dyn Error>> {
         let min_score = if query.len() > 10 { -100 } else { 10 };
         let assets = self
             .database
             .get_assets_search(query, chains, min_score, limit, offset)?
             .into_iter()
-            .map(|asset| AssetFull {
-                asset: asset.as_primitive(),
-                details: None,
-                price: None,
-                market: None,
-                score: asset.as_score_primitive(),
-            })
+            .map(|x| x.as_basic_primitive())
             .collect();
         Ok(assets)
     }

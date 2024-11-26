@@ -18,43 +18,26 @@ diesel::table! {
         updated_at -> Timestamp,
         created_at -> Timestamp,
         rank -> Int4,
-        enabled -> Bool,
-    }
-}
-
-diesel::table! {
-    assets_details (asset_id) {
-        #[max_length = 128]
-        asset_id -> Varchar,
-        #[max_length = 128]
-        homepage -> Nullable<Varchar>,
-        #[max_length = 128]
-        explorer -> Nullable<Varchar>,
-        #[max_length = 128]
-        twitter -> Nullable<Varchar>,
-        #[max_length = 128]
-        telegram -> Nullable<Varchar>,
-        #[max_length = 128]
-        github -> Nullable<Varchar>,
-        #[max_length = 128]
-        youtube -> Nullable<Varchar>,
-        #[max_length = 128]
-        facebook -> Nullable<Varchar>,
-        #[max_length = 128]
-        reddit -> Nullable<Varchar>,
-        #[max_length = 128]
-        coingecko -> Nullable<Varchar>,
-        #[max_length = 128]
-        coinmarketcap -> Nullable<Varchar>,
-        #[max_length = 128]
-        discord -> Nullable<Varchar>,
-        updated_at -> Timestamp,
-        created_at -> Timestamp,
+        is_enabled -> Bool,
         is_buyable -> Bool,
         is_sellable -> Bool,
         is_swappable -> Bool,
         is_stakeable -> Bool,
         staking_apr -> Nullable<Float8>,
+    }
+}
+
+diesel::table! {
+    assets_links (id) {
+        id -> Int4,
+        #[max_length = 128]
+        asset_id -> Varchar,
+        #[max_length = 128]
+        name -> Varchar,
+        #[max_length = 256]
+        url -> Varchar,
+        updated_at -> Timestamp,
+        created_at -> Timestamp,
     }
 }
 
@@ -370,7 +353,7 @@ diesel::table! {
 
 diesel::joinable!(assets -> assets_types (asset_type));
 diesel::joinable!(assets -> chains (chain));
-diesel::joinable!(assets_details -> assets (asset_id));
+diesel::joinable!(assets_links -> assets (asset_id));
 diesel::joinable!(fiat_assets -> assets (asset_id));
 diesel::joinable!(fiat_assets -> fiat_providers (provider));
 diesel::joinable!(fiat_transactions -> assets (asset_id));
@@ -393,7 +376,7 @@ diesel::joinable!(transactions_addresses -> transactions (transaction_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
     assets,
-    assets_details,
+    assets_links,
     assets_types,
     chains,
     devices,

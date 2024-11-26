@@ -8,6 +8,7 @@ pub struct SwapConfig {
 pub struct SwapReferralFees {
     pub evm: SwapReferralFee,
     pub solana: SwapReferralFee,
+    pub solana_jupiter: SwapReferralFee,
     pub thorchain: SwapReferralFee,
 }
 
@@ -22,6 +23,7 @@ impl SwapReferralFees {
         SwapReferralFees {
             evm,
             solana: SwapReferralFee::default(),
+            solana_jupiter: SwapReferralFee::default(),
             thorchain: SwapReferralFee::default(),
         }
     }
@@ -37,6 +39,10 @@ pub fn get_swap_config() -> SwapConfig {
             },
             solana: SwapReferralFee {
                 address: "5fmLrs2GuhfDP1B51ziV5Kd1xtAr9rw1jf3aQ4ihZ2gy".into(),
+                bps: 50,
+            },
+            solana_jupiter: SwapReferralFee {
+                address: "CK8n55Y664YjfifoVYfud8jXuSx9JV4NgVakEaRceVXu".into(),
                 bps: 50,
             },
             thorchain: SwapReferralFee { address: "g1".into(), bps: 50 },

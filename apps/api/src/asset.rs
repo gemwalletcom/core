@@ -4,7 +4,7 @@ use std::str::FromStr;
 
 use crate::asset_client::AssetsChainProvider;
 use crate::AssetsClient;
-use primitives::{Asset, AssetFull, AssetId, Chain};
+use primitives::{Asset, AssetBasic, AssetFull, AssetId, Chain};
 use rocket::serde::json::Json;
 use rocket::tokio::sync::Mutex;
 use rocket::State;
@@ -16,7 +16,7 @@ pub async fn get_asset(asset_id: &str, client: &State<Mutex<AssetsClient>>) -> J
 }
 
 #[post("/assets", format = "json", data = "<asset_ids>")]
-pub async fn get_assets(asset_ids: Json<Vec<String>>, client: &State<Mutex<AssetsClient>>) -> Json<Vec<AssetFull>> {
+pub async fn get_assets(asset_ids: Json<Vec<String>>, client: &State<Mutex<AssetsClient>>) -> Json<Vec<AssetBasic>> {
     let assets = client.lock().await.get_assets(asset_ids.0).unwrap();
     Json(assets)
 }
@@ -39,7 +39,7 @@ pub async fn add_asset(asset_id: Json<AssetId>, client: &State<Mutex<AssetsClien
 }
 
 #[get("/assets/list")]
-pub async fn get_assets_list(client: &State<Mutex<AssetsClient>>) -> Json<Vec<AssetFull>> {
+pub async fn get_assets_list(client: &State<Mutex<AssetsClient>>) -> Json<Vec<AssetBasic>> {
     let assets = client.lock().await.get_assets_list().unwrap();
     Json(assets)
 }
@@ -51,7 +51,7 @@ pub async fn get_assets_search(
     limit: Option<i64>,
     offset: Option<i64>,
     client: &State<Mutex<AssetsClient>>,
-) -> Json<Vec<AssetFull>> {
+) -> Json<Vec<AssetBasic>> {
     let chains = chains.unwrap_or_default().split(',').flat_map(Chain::from_str).map(|x| x.to_string()).collect();
     let assets = client
         .lock()

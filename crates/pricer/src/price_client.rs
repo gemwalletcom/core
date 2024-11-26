@@ -1,5 +1,5 @@
 use chrono::NaiveDateTime;
-use primitives::{Asset, AssetDetails, AssetMarketPrice, AssetPrices, AssetScore};
+use primitives::{AssetMarketPrice, AssetPrices};
 use redis::{AsyncCommands, RedisResult};
 use std::error::Error;
 use storage::{
@@ -148,17 +148,6 @@ impl PriceClient {
             currency: currency.to_string(),
             prices,
         })
-    }
-
-    // asset, asset details
-    pub async fn update_asset(&mut self, asset: Asset, asset_score: AssetScore, asset_details: AssetDetails) -> Result<(), Box<dyn Error>> {
-        let details = storage::models::asset::AssetDetail::from_primitive(asset.id.to_string().as_str(), asset_details);
-        let asset = storage::models::asset::Asset::from_primitive(asset);
-        let asset_id = asset.id.as_str();
-        let _ = self.database.add_assets(vec![asset.clone()]);
-        let _ = self.database.add_assets_details(vec![details]);
-        let _ = self.database.update_asset_rank(asset_id, asset_score.rank);
-        Ok(())
     }
 
     pub fn delete_prices_updated_at_before(&mut self, time: NaiveDateTime) -> Result<usize, Box<dyn Error + Send + Sync>> {
