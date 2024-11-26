@@ -14,13 +14,12 @@ use base64::{engine::general_purpose::STANDARD, Engine};
 use gem_solana::{
     get_asset_address,
     jsonrpc::{Filter, Memcmp, SolanaRpc, ENCODING_BASE58},
-    MEMO_PROGRAM, WSOL_TOKEN_ADDRESS,
+    MEMO_PROGRAM,
 };
 use orca_whirlpools_core::{
     compute_swap, get_tick_array_start_tick_index, try_get_min_amount_with_slippage_tolerance, TickArrayFacade, TickArraySequence, TickArrays, TickFacade,
     WhirlpoolFacade, WhirlpoolRewardInfoFacade, TICK_ARRAY_SIZE,
 };
-use primitives::Chain;
 use primitives::{AssetId, Chain};
 use solana_program::message::Message;
 use solana_sdk::{instruction::AccountMeta, pubkey::Pubkey, transaction::Transaction};
@@ -70,12 +69,8 @@ impl GemSwapProvider for Orca {
         let options = request.options.clone().unwrap_or_default();
         let slippage_bps = options.slippage_bps as u16;
 
-        let from_asset = get_asset_address(&request.from_asset).ok_or_else(|| SwapperError::InvalidAddress {
-            address: request.from_asset.to_string(),
-        })?;
-        let to_asset = get_asset_address(&request.to_asset).ok_or_else(|| SwapperError::InvalidAddress {
-            address: request.from_asset.to_string(),
-        })?;
+        let from_asset = self.get_asset_address(&request.from_asset)?;
+        let to_asset = self.get_asset_address(&request.to_asset)?;
         let fee_tiers = self.fetch_fee_tiers(provider.clone()).await?;
         let mut pools = self
             .fetch_whirlpools(&from_asset, &to_asset, fee_tiers, provider.clone(), request.from_asset.chain)
@@ -182,6 +177,12 @@ impl GemSwapProvider for Orca {
 }
 
 impl Orca {
+    pub fn get_asset_address(&self, asset_id: &AssetId) -> Result<Pubkey, SwapperError> {
+        get_asset_address(asset_id)
+            .map(|x| Pubkey::new_from_array(x.to_bytes()))
+            .ok_or_else(|| SwapperError::InvalidAddress { address: asset_id.to_string() })
+    }
+
     #[allow(unused)]
     pub async fn fetch_fee_tiers(&self, provider: Arc<dyn AlienProvider>) -> Result<Vec<FeeTier>, SwapperError> {
         let call = SolanaRpc::GetProgramAccounts(self.whirlpool_program.to_string(), Self::get_program_filters());
