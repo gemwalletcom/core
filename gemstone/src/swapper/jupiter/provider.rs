@@ -61,9 +61,8 @@ impl GemSwapProvider for Jupiter {
             data: SwapProviderData {
                 provider: self.provider(),
                 routes: vec![SwapRoute {
-                    route_type: RouteType::Swap,
-                    input: input_mint,
-                    output: output_mint,
+                    input: AssetId::from(Chain::Solana, Some(input_mint)),
+                    output: AssetId::from(Chain::Solana, Some(output_mint)),
                     route_data: serde_json::to_string(&swap_quote).unwrap_or_default(),
                     gas_estimate: None,
                 }],

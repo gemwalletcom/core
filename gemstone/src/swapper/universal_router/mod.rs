@@ -326,9 +326,8 @@ impl GemSwapProvider for UniswapV3 {
             data: SwapProviderData {
                 provider: self.provider(),
                 routes: vec![SwapRoute {
-                    route_type: RouteType::Swap,
-                    input: token_in.to_checksum(),
-                    output: token_out.to_checksum(),
+                    input: AssetId::from(request.from_asset.chain, Some(token_in.to_checksum())),
+                    output: AssetId::from(request.to_asset.chain, Some(token_out.to_checksum())),
                     route_data: fee_tier.to_string(),
                     gas_estimate,
                 }],

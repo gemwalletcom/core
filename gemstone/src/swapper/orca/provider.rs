@@ -94,9 +94,8 @@ impl GemSwapProvider for Orca {
             data: SwapProviderData {
                 provider: self.provider(),
                 routes: vec![SwapRoute {
-                    route_type: RouteType::Swap,
-                    input: from_asset.to_string(),
-                    output: to_asset.to_string(),
+                    input: request.from_asset.clone(),
+                    output: request.to_asset.clone(),
                     route_data: pool.fee_rate.to_string(),
                     gas_estimate: None,
                 }],

@@ -15,7 +15,7 @@ use async_trait::async_trait;
 use primitives::Chain;
 use std::sync::Arc;
 
-use super::{ApprovalType, FetchQuoteData, RouteType, SwapProvider, SwapProviderData, SwapQuote, SwapQuoteData, SwapQuoteRequest, SwapRoute, SwapperError};
+use super::{ApprovalType, FetchQuoteData, SwapProvider, SwapProviderData, SwapQuote, SwapQuoteData, SwapQuoteRequest, SwapRoute, SwapperError};
 
 #[derive(Debug, Default)]
 pub struct ThorChain {}
@@ -102,9 +102,8 @@ impl GemSwapProvider for ThorChain {
             data: SwapProviderData {
                 provider: self.provider(),
                 routes: vec![SwapRoute {
-                    route_type: RouteType::Swap,
-                    input: request.from_asset.clone().to_string(),
-                    output: request.to_asset.clone().to_string(),
+                    input: request.from_asset.clone(),
+                    output: request.to_asset.clone(),
                     route_data: quote.inbound_address.unwrap_or_default(),
                     gas_estimate: None,
                 }],
