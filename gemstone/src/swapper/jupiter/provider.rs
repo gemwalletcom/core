@@ -41,7 +41,7 @@ impl GemSwapProvider for Jupiter {
         let output_mint = self.get_asset_address(&request.to_asset)?;
         let swap_options = request.options.clone().unwrap_or_default();
         let slippage_bps = swap_options.slippage_bps;
-        let platform_fee_bps = swap_options.fee.unwrap_or_default().solana.bps;
+        let platform_fee_bps = swap_options.fee.unwrap_or_default().solana_jupiter.bps;
 
         let quote_request = QuoteRequest {
             input_mint: input_mint.clone(),
