@@ -1,4 +1,4 @@
-use super::{client::JupiterClient, model::*, JUPITER_API_URL, PROGRAM_ADDRESS};
+use super::{client::JupiterClient, model::*, PROGRAM_ADDRESS};
 use crate::swapper::{GemSwapProvider, *};
 
 use async_trait::async_trait;
@@ -51,7 +51,8 @@ impl GemSwapProvider for Jupiter {
             slippage_bps,
             only_direct_routes: false,
         };
-        let client = JupiterClient::new(JUPITER_API_URL.into(), provider.clone());
+        let url = provider.get_endpoint(SwapProvider::Jupiter.name().to_lowercase())?;
+        let client = JupiterClient::new(url, provider.clone());
         let swap_quote = client.get_swap_quote(quote_request).await?;
 
         let quote = SwapQuote {
@@ -86,7 +87,8 @@ impl GemSwapProvider for Jupiter {
             quote_response,
             prioritization_fee_lamports: 500_000,
         };
-        let client = JupiterClient::new(JUPITER_API_URL.into(), provider);
+        let url = provider.get_endpoint(SwapProvider::Jupiter.name().to_lowercase())?;
+        let client = JupiterClient::new(url, provider);
         let quote_data = client.get_swap_quote_data(request).await?;
 
         let data = SwapQuoteData {
