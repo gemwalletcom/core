@@ -6,6 +6,7 @@ pub mod pubkey;
 pub const WSOL_TOKEN_ADDRESS: &str = "So11111111111111111111111111111111111111112";
 pub const TOKEN_PROGRAM: &str = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA";
 pub const TOKEN_PROGRAM_2022: &str = "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb";
+pub const MEMO_PROGRAM: &str = "MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr";
 
 use primitives::{AssetId, SolanaTokenProgramId};
 use pubkey::Pubkey;

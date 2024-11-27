@@ -18,7 +18,7 @@ impl JsonRpcRequestConvert for SolanaRpc {
                 Value::Array(accounts.iter().map(|x| serde_json::to_value(x).unwrap()).collect()),
                 serde_json::to_value(default_config).unwrap(),
             ],
-            SolanaRpc::GetEpochInfo => todo!(),
+            SolanaRpc::GetEpochInfo | SolanaRpc::GetLatestBlockhash => vec![],
         };
 
         JsonRpcRequest::new(id, &method, params)

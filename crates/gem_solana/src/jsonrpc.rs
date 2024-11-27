@@ -9,6 +9,7 @@ pub enum SolanaRpc {
     GetAccountInfo(String),
     GetMultipleAccounts(Vec<String>),
     GetEpochInfo,
+    GetLatestBlockhash,
 }
 
 impl Display for SolanaRpc {
@@ -18,6 +19,7 @@ impl Display for SolanaRpc {
             SolanaRpc::GetAccountInfo(_) => write!(f, "getAccountInfo"),
             SolanaRpc::GetMultipleAccounts(_) => write!(f, "getMultipleAccounts"),
             SolanaRpc::GetEpochInfo => write!(f, "getEpochInfo"),
+            SolanaRpc::GetLatestBlockhash => write!(f, "getLatestBlockhash"),
         }
     }
 }
