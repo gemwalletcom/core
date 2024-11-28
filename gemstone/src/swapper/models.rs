@@ -151,11 +151,9 @@ pub struct SwapProviderData {
 
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct SwapRoute {
-    // FIXME: Add route_data because route_type is misused somehow
-    pub route_type: String,
-    pub input: String,
-    pub output: String,
-    pub fee_tier: String,
+    pub input: AssetId,
+    pub output: AssetId,
+    pub route_data: String,
     pub gas_estimate: Option<String>,
 }
 

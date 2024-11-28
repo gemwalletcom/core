@@ -102,10 +102,9 @@ impl GemSwapProvider for ThorChain {
             data: SwapProviderData {
                 provider: self.provider(),
                 routes: vec![SwapRoute {
-                    route_type: quote.inbound_address.unwrap_or_default(),
-                    input: request.clone().from_asset.to_string(),
-                    output: request.clone().to_asset.to_string(),
-                    fee_tier: "".to_string(),
+                    input: request.from_asset.clone(),
+                    output: request.to_asset.clone(),
+                    route_data: quote.inbound_address.unwrap_or_default(),
                     gas_estimate: None,
                 }],
             },
@@ -131,7 +130,7 @@ impl GemSwapProvider for ThorChain {
             )
             .unwrap();
 
-        let to = quote.data.routes.first().unwrap().route_type.clone();
+        let to = quote.data.routes.first().unwrap().route_data.clone();
         let data: String = self.data(quote.request.from_asset.clone().chain, memo);
 
         let data = SwapQuoteData {
