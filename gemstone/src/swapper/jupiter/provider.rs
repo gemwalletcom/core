@@ -23,7 +23,7 @@ impl Jupiter {
         let mut fee_account = String::from("");
         if let Some(options) = options {
             if let Some(fee) = &options.fee {
-                fee_account = super::referral::get_referral_account(&fee.solana.address, mint);
+                fee_account = super::referral::get_referral_account(&fee.solana_jupiter.address, mint);
             }
         }
         fee_account
