@@ -2,7 +2,7 @@ use super::{client::JupiterClient, model::*, PROGRAM_ADDRESS};
 use crate::swapper::{GemSwapProvider, *};
 
 use async_trait::async_trait;
-use gem_solana::get_asset_address;
+use gem_solana::{get_asset_address, WSOL_TOKEN_ADDRESS};
 use primitives::{AssetId, Chain};
 
 #[derive(Debug, Default)]
@@ -17,6 +17,18 @@ impl Jupiter {
         get_asset_address(asset_id)
             .map(|x| x.to_string())
             .ok_or_else(|| SwapperError::InvalidAddress { address: asset_id.to_string() })
+    }
+
+    pub fn get_fee_mint(&self, mode: &GemSwapMode, input: &str, output: &str) -> String {
+        match mode {
+            GemSwapMode::ExactIn => {
+                if output == WSOL_TOKEN_ADDRESS {
+                    return output.to_string();
+                }
+                input.to_string()
+            }
+            GemSwapMode::ExactOut => input.to_string(),
+        }
     }
 
     pub fn get_fee_account(&self, options: &Option<GemSwapOptions>, mint: &str) -> String {
@@ -81,7 +93,8 @@ impl GemSwapProvider for Jupiter {
         }
         let route = &quote.data.routes[0];
         let quote_response: QuoteResponse = serde_json::from_str(&route.route_data).map_err(|_| SwapperError::InvalidRoute)?;
-        let fee_account = self.get_fee_account(&quote.request.options, &quote_response.output_mint);
+        let fee_mint = self.get_fee_mint(&quote.request.mode, &quote_response.input_mint, &quote_response.output_mint);
+        let fee_account = self.get_fee_account(&quote.request.options, &fee_mint);
 
         let request = QuoteDataRequest {
             user_public_key: quote.request.wallet_address.clone(),
