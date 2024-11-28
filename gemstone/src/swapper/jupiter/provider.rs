@@ -9,6 +9,10 @@ use primitives::{AssetId, Chain};
 pub struct Jupiter {}
 
 impl Jupiter {
+    pub fn get_endpoint(&self) -> String {
+        "https://quote-api.jup.ag".into()
+    }
+
     pub fn get_asset_address(&self, asset_id: &AssetId) -> Result<String, SwapperError> {
         get_asset_address(asset_id)
             .map(|x| x.to_string())
@@ -51,8 +55,7 @@ impl GemSwapProvider for Jupiter {
             slippage_bps,
             only_direct_routes: false,
         };
-        let url = provider.get_endpoint(SwapProvider::Jupiter.name().to_lowercase())?;
-        let client = JupiterClient::new(url, provider.clone());
+        let client = JupiterClient::new(self.get_endpoint(), provider.clone());
         let swap_quote = client.get_swap_quote(quote_request).await?;
 
         let quote = SwapQuote {
@@ -86,8 +89,7 @@ impl GemSwapProvider for Jupiter {
             quote_response,
             prioritization_fee_lamports: 500_000,
         };
-        let url = provider.get_endpoint(SwapProvider::Jupiter.name().to_lowercase())?;
-        let client = JupiterClient::new(url, provider);
+        let client = JupiterClient::new(self.get_endpoint(), provider);
         let quote_data = client.get_swap_quote_data(request).await?;
 
         let data = SwapQuoteData {

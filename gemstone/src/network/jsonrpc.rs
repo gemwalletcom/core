@@ -99,7 +99,7 @@ where
     U: DeserializeOwned,
 {
     let request = call.to_req(1);
-    let endpoint = provider.get_endpoint(chain.to_string())?;
+    let endpoint = provider.get_endpoint(*chain)?;
     let target = batch_into_target(&request, &endpoint);
     let data = provider.request(target).await?;
     let result: JsonRpcResult<U> = serde_json::from_slice(&data).map_err(|err| AlienError::ResponseError { msg: err.to_string() })?;
@@ -112,7 +112,7 @@ where
 {
     let requests: Vec<JsonRpcRequest> = rpc_calls.iter().enumerate().map(|(index, request)| request.to_req(index as u64 + 1)).collect();
 
-    let endpoint = provider.get_endpoint(chain.to_string())?;
+    let endpoint = provider.get_endpoint(*chain)?;
     let targets = vec![batch_into_target(&requests, &endpoint)];
 
     let data_array = provider.batch_request(targets).await?;

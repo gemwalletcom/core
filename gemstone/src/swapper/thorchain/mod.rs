@@ -66,7 +66,7 @@ impl GemSwapProvider for ThorChain {
 
     async fn fetch_quote(&self, request: &SwapQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapQuote, SwapperError> {
         let endpoint = provider
-            .get_endpoint(Chain::Thorchain.to_string())
+            .get_endpoint(Chain::Thorchain)
             .map_err(|err| SwapperError::NetworkError { msg: err.to_string() })?;
         let client = ThorChainSwapClient::new(provider);
 
@@ -144,7 +144,7 @@ impl GemSwapProvider for ThorChain {
 
     async fn get_transaction_status(&self, _chain: Chain, transaction_hash: &str, provider: Arc<dyn AlienProvider>) -> Result<bool, SwapperError> {
         let endpoint = provider
-            .get_endpoint(Chain::Thorchain.to_string())
+            .get_endpoint(Chain::Thorchain)
             .map_err(|err| SwapperError::NetworkError { msg: err.to_string() })?;
         let client = ThorChainSwapClient::new(provider);
 
