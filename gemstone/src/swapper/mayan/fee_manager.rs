@@ -8,7 +8,7 @@ use alloy_core::{
 use gem_evm::{
     address::EthereumAddress,
     jsonrpc::{BlockParameter, EthereumRpc, TransactionObject},
-    mayan::swift::fee_manager::IFeeManager,
+    mayan::fee_manager::IFeeManager,
 };
 use primitives::Chain;
 use thiserror::Error;

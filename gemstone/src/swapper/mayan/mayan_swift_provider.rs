@@ -1,14 +1,16 @@
+use rand::Rng;
 use std::{str::FromStr, sync::Arc};
 
 use alloy_core::{hex::ToHexExt, primitives::Address};
-use alloy_primitives::U256;
+use alloy_primitives::{keccak256, U256};
 use async_trait::async_trait;
 use gem_evm::{
     address::EthereumAddress,
     jsonrpc::EthereumRpc,
     mayan::swift::deployment::{get_swift_deployment_by_chain, get_swift_deployment_chains},
 };
-use primitives::Chain;
+use num_bigint::RandomBits;
+use primitives::{Asset, AssetId, Chain};
 
 use crate::{
     network::{jsonrpc_call, AlienProvider},
@@ -19,14 +21,16 @@ use crate::{
 
 use super::{
     fee_manager::{CalcProtocolBpsParams, FeeManager},
-    mayan_swift_contract::{MayanSwiftContract, MayanSwiftContractError, OrderParams},
+    forwarder::MayanForwarder,
+    mayan_relayer::{self, MayanRelayer, Quote, QuoteOptions, QuoteParams, QuoteType, MAYAN_FORWARDER_CONTRACT},
+    mayan_swift::{KeyStruct, MayanSwift, MayanSwiftError, OrderParams, PermitParams},
 };
 
 #[derive(Debug)]
 pub struct MayanSwiftProvider {}
 
-impl From<MayanSwiftContractError> for SwapperError {
-    fn from(err: MayanSwiftContractError) -> Self {
+impl From<MayanSwiftError> for SwapperError {
+    fn from(err: MayanSwiftError) -> Self {
         SwapperError::NetworkError { msg: err.to_string() }
     }
 }
@@ -49,7 +53,7 @@ impl MayanSwiftProvider {
 
         let deployment = get_swift_deployment_by_chain(request.from_asset.chain).ok_or(SwapperError::NotSupportedChain)?;
 
-        let swift_contract = MayanSwiftContract::new(deployment.address, provider.clone(), request.from_asset.chain);
+        let swift_contract = MayanSwift::new(deployment.address, provider.clone(), request.from_asset.chain);
 
         let amount = &request.value;
         swift_contract
@@ -58,121 +62,131 @@ impl MayanSwiftProvider {
             .map_err(|e| SwapperError::ABIError { msg: e.to_string() })
     }
 
-    async fn calculate_output_value(
-        &self,
-        request: &SwapQuoteRequest,
-        provider: Arc<dyn AlienProvider>,
-        order_params: &OrderParams,
-    ) -> Result<String, SwapperError> {
-        let fee_manager_address = Self::get_address_by_chain(request.from_asset.chain).ok_or(SwapperError::NotSupportedChain)?;
-        let fee_manager = FeeManager::new(fee_manager_address);
-
-        let token_out = if let Some(token_id) = &request.to_asset.token_id {
-            let mut bytes = [0u8; 32];
-            if let Ok(addr) = EthereumAddress::from_str(token_id) {
-                bytes.copy_from_slice(&addr.bytes);
-            }
-            bytes
-        } else {
-            [0u8; 32]
-        };
-
-        let fees = fee_manager
-            .calc_protocol_bps(
-                request.wallet_address.clone(),
-                &request.from_asset.chain,
-                provider.clone(),
-                CalcProtocolBpsParams {
-                    amount_in: request.value.parse().map_err(|_| SwapperError::InvalidAmount)?,
-                    token_in: EthereumAddress::zero(),
-                    token_out: token_out.into(),
-                    dest_chain: request.to_asset.chain.network_id().parse().unwrap(),
-                    referrer_bps: 0,
-                },
-            )
-            .await
-            .map_err(|e| SwapperError::NetworkError { msg: e.to_string() })?;
-
-        // TODO: do something with fees
-        let output_value = U256::from_str(request.value.as_str()).map_err(|_| SwapperError::InvalidAmount)?;
-
-        // Calculate output value with fees
-        let output_value = output_value.checked_sub(U256::from(fees)).ok_or(SwapperError::ComputeQuoteError {
-            msg: "Protocol fees calculation error".to_string(),
-        })?;
-
-        Ok(output_value.to_string())
+    fn add_referrer(&self, request: &SwapQuoteRequest, order_params: &mut OrderParams) {
+        // TODO: implement if needed
     }
 
-    fn add_referrer(&self, request: &SwapQuoteRequest, order_params: &mut OrderParams) {
-        // let referrer_bps = if let Some(options) = &request.options {
-        //     if let Some(ref_fees) = &options.fee {
-        //         if let Ok(addr) = EthereumAddress::from_str(&ref_fees.evm.address) {
-        //             order_params.referrer_addr.copy_from_slice(&addr.bytes);
-        //         }
-        //         ref_fees.evm.bps as u8
-        //     } else {
-        //         0
-        //     }
+    fn build_swift_order_params(&self, request: &SwapQuoteRequest, quote: &Quote) -> Result<OrderParams, SwapperError> {
+        let deadline = quote.deadline64.parse::<u64>().map_err(|_| SwapperError::InvalidRoute)?;
+
+        let trader_address = self.address_to_bytes32(&request.wallet_address)?;
+        let destination_address = self.address_to_bytes32(&request.destination_address)?;
+
+        // Handle the output token address
+        let token_out = if let to_token_contract = &quote.to_token.contract {
+            self.address_to_bytes32(to_token_contract)?
+        } else {
+            return Err(SwapperError::InvalidAddress {
+                address: "Missing to_token contract address".to_string(),
+            });
+        };
+
+        // Calculate the minimum amount out in smallest unit
+        let min_amount_out = self.convert_amount_to_wei(quote.min_amount_out, &request.to_asset)?;
+
+        // Calculate the gas drop in smallest unit
+        let gas_drop = self.convert_amount_to_wei(quote.gas_drop, &request.to_asset)?;
+
+        let random_bytes = Self::generate_random_bytes32(); // TODO
+
+        // Handle referrer address
+        // let referrer_address = if let Some(referrer) = &request.options {
+        //     self.address_to_bytes32(referrer)?
         // } else {
-        //     0
+        //     [0u8; 32]
         // };
 
-        // TODO: implement
+        // Create the order params
+        //
+        let params = OrderParams {
+            trader: trader_address,
+            token_out,
+            min_amount_out: min_amount_out.parse().map_err(|_| SwapperError::InvalidAmount)?,
+            gas_drop: gas_drop.parse().map_err(|_| SwapperError::InvalidAmount)?,
+            cancel_fee: quote.cancel_relayer_fee64.parse::<u64>().map_err(|_| SwapperError::InvalidAmount)?,
+            refund_fee: quote.refund_relayer_fee64.parse::<u64>().map_err(|_| SwapperError::InvalidAmount)?,
+            deadline: quote.deadline64.parse().map_err(|_| SwapperError::InvalidRoute)?,
+            dest_addr: destination_address,
+            dest_chain_id: request.to_asset.chain.network_id().parse().map_err(|_| SwapperError::InvalidAmount)?,
+            referrer_addr: [0u8; 32], // Add referrer logic if applicable
+            referrer_bps: 0u8,
+            auction_mode: quote.swift_auction_mode.unwrap_or(0),
+            random: random_bytes,
+        };
+
+        Ok(params)
     }
 
-    fn build_swift_order_params(&self, request: &SwapQuoteRequest) -> Result<OrderParams, SwapperError> {
-        let mut order_params = OrderParams {
-            trader: [0u8; 32],
-            token_out: [0u8; 32],
-            min_amount_out: request.value.parse().map_err(|_| SwapperError::InvalidAmount)?, // TODO::
-            // do i need to calculate output + fees here?
-            gas_drop: 0,
-            cancel_fee: 0,
-            refund_fee: 0,
-            deadline: (std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs() + 3600) as u64,
-            dest_addr: [0u8; 32],
-            dest_chain_id: request.to_asset.chain.network_id().parse().unwrap(),
-            referrer_addr: [0u8; 32],
-            referrer_bps: 0,
-            auction_mode: 0,
-            random: [0u8; 32],
+    fn generate_random_bytes32() -> [u8; 32] {
+        let mut rng = rand::thread_rng();
+        let mut random_bytes = [0u8; 32];
+        rng.fill(&mut random_bytes);
+        random_bytes
+    }
+
+    fn address_to_bytes32(&self, address: &str) -> Result<[u8; 32], SwapperError> {
+        let addr = EthereumAddress::from_str(address).map_err(|_| SwapperError::InvalidAddress { address: address.to_string() })?;
+        let mut bytes32 = [0u8; 32];
+        bytes32[12..].copy_from_slice(&addr.bytes);
+        Ok(bytes32)
+    }
+
+    async fn fetch_quote_from_request(&self, request: &SwapQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<Quote, SwapperError> {
+        let mayan_relayer = MayanRelayer::default_relayer(provider.clone());
+        let quote_params = QuoteParams {
+            amount: request.value.parse().map_err(|_| SwapperError::InvalidAmount)?,
+            from_token: request.from_asset.token_id.clone().unwrap_or(EthereumAddress::zero().to_checksum()),
+            from_chain: request.from_asset.chain.clone(),
+            to_token: request.to_asset.token_id.clone().unwrap_or(EthereumAddress::zero().to_checksum()),
+            to_chain: request.to_asset.chain.clone(),
+            slippage_bps: Some(100),
+            gas_drop: None,
+            referrer: None,
+            referrer_bps: None,
         };
 
-        // TODO: move to separated method to test
-        let token_in = if request.from_asset.is_native() {
-            EthereumAddress::zero()
-        } else {
-            EthereumAddress::from_str(request.from_asset.token_id.as_ref().ok_or(SwapperError::NotSupportedAsset)?).map_err(|_| {
-                SwapperError::InvalidAddress {
-                    address: request.from_asset.token_id.clone().unwrap(),
-                }
-            })?
+        let quote_options = QuoteOptions {
+            swift: true,
+            mctp: false,
+            gasless: false,
+            only_direct: false,
         };
 
-        if let Ok(wallet_addr) = EthereumAddress::from_str(&request.wallet_address) {
-            let mut trader_bytes = [0u8; 32];
-            trader_bytes[12..].copy_from_slice(&wallet_addr.bytes);
-            order_params.trader.copy_from_slice(&trader_bytes);
+        let quote = mayan_relayer
+            .get_quote(quote_params, Some(quote_options))
+            .await
+            .map_err(|e| SwapperError::ComputeQuoteError {
+                msg: format!("Mayan relayer quote error: {:?}", e),
+            })?;
+
+        // TODO: adjust to find most effective quote
+        let most_effective_qoute = quote.into_iter().filter(|x| x.r#type == QuoteType::SWIFT.to_string()).last();
+
+        most_effective_qoute.ok_or(SwapperError::ComputeQuoteError {
+            msg: "Quote is not available".to_string(),
+        })
+    }
+
+    fn convert_amount_to_wei(&self, amount: f64, asset_id: &AssetId) -> Result<String, SwapperError> {
+        // Retrieve asset information based on the provided AssetId
+        let asset = Asset::from_chain(asset_id.chain);
+
+        // Get the decimals for the asset
+        let decimals = asset.decimals;
+
+        // Calculate the scaling factor (10^decimals)
+        let scaling_factor = 10f64.powi(decimals as i32);
+
+        // Convert the amount to Wei (or the smallest unit)
+        let amount_in_wei = (amount * scaling_factor).round(); // `round` ensures correct conversion
+
+        // Ensure the amount is within a valid range for integers
+        if amount_in_wei < 0.0 || amount_in_wei > (u64::MAX as f64) {
+            return Err(SwapperError::InvalidAmount);
         }
 
-        // Set destination address
-        if let Ok(dest_addr) = EthereumAddress::from_str(&request.destination_address) {
-            let mut dest_bytes = [0u8; 32];
-            dest_bytes[12..].copy_from_slice(&dest_addr.bytes);
-            order_params.dest_addr.copy_from_slice(&dest_bytes);
-        }
-
-        // Set token_out for the destination token
-        if let Some(token_id) = &request.to_asset.token_id {
-            if let Ok(token_addr) = EthereumAddress::from_str(token_id) {
-                let mut token_bytes = [0u8; 32];
-                token_bytes[12..].copy_from_slice(&token_addr.bytes);
-                order_params.token_out.copy_from_slice(&token_bytes);
-            }
-        }
-
-        Ok(order_params)
+        // Convert the result to a string for return
+        Ok(format!("{:.0}", amount_in_wei))
     }
 }
 
@@ -188,72 +202,86 @@ impl GemSwapProvider for MayanSwiftProvider {
 
     async fn fetch_quote_data(&self, quote: &SwapQuote, provider: Arc<dyn AlienProvider>, data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError> {
         let request = &quote.request;
-        let swift_address = Self::get_address_by_chain(quote.request.from_asset.chain).ok_or(SwapperError::NotSupportedChain)?;
-        let swift_contract = MayanSwiftContract::new(swift_address.clone(), provider.clone(), quote.request.from_asset.chain);
-        let swift_order_params = self
-            .build_swift_order_params(request)
-            .map_err(|e| SwapperError::ComputeQuoteError { msg: e.to_string() })?;
+        let mayan_quote = self.fetch_quote_from_request(&request, provider.clone()).await?;
+        let swift_address = if let Some(address) = &mayan_quote.swift_mayan_contract {
+            address.clone()
+        } else {
+            return Err(SwapperError::ComputeQuoteError {
+                msg: "No swift_mayan_contract in quote".to_string(),
+            });
+        };
+        let swift_contract = MayanSwift::new(swift_address.clone(), provider.clone(), request.from_asset.chain);
+        let swift_order_params = self.build_swift_order_params(&quote.request, &mayan_quote)?;
+        let forwarder = MayanForwarder::new(MAYAN_FORWARDER_CONTRACT.to_string(), provider.clone(), request.from_asset.chain);
 
-        let amount_in = quote.from_value.parse().map_err(|_| SwapperError::InvalidAmount)?;
-        let data = if quote.request.from_asset.is_native() {
+        let swift_call_data = if request.from_asset.is_native() {
             swift_contract
-                .encode_create_order_with_eth(swift_order_params, amount_in)
+                .encode_create_order_with_eth(swift_order_params, quote.from_value.parse().map_err(|_| SwapperError::InvalidAmount)?)
                 .await
                 .map_err(|e| SwapperError::ABIError { msg: e.to_string() })?
         } else {
             swift_contract
-                .encode_create_order_with_token(request.from_asset.token_id.as_ref().unwrap(), amount_in, swift_order_params)
+                .encode_create_order_with_token(
+                    request.from_asset.token_id.as_ref().ok_or(SwapperError::InvalidAddress {
+                        address: request.from_asset.to_string(),
+                    })?,
+                    quote.from_value.parse().map_err(|_| SwapperError::InvalidAmount)?,
+                    swift_order_params,
+                )
                 .await
                 .map_err(|e| SwapperError::ABIError { msg: e.to_string() })?
         };
 
+        let mut value = quote.from_value.clone();
+
+        let forwarder_call_data = if request.from_asset.is_native() {
+            forwarder
+                .encode_forward_eth_call(swift_address.as_str(), swift_call_data.clone())
+                .await
+                .map_err(|e| SwapperError::ABIError { msg: e.to_string() })?
+        } else {
+            todo!()
+        };
+
         Ok(SwapQuoteData {
-            to: swift_address,
-            value: quote.from_value.clone(),
-            data: data.encode_hex(),
+            to: MAYAN_FORWARDER_CONTRACT.to_string(),
+            value: value.clone(),
+            data: forwarder_call_data.encode_hex(),
         })
     }
 
     async fn get_transaction_status(&self, chain: Chain, transaction_hash: &str, provider: Arc<dyn AlienProvider>) -> Result<bool, SwapperError> {
-        let receipt_call = EthereumRpc::GetTransactionReceipt(transaction_hash.to_string());
-
-        let response = jsonrpc_call(&receipt_call, provider, &chain)
-            .await
-            .map_err(|e| SwapperError::NetworkError { msg: e.to_string() })?;
-
-        let result: String = response.extract_result().map_err(|e| SwapperError::NetworkError { msg: e.to_string() })?;
-
-        Ok(result == "0x1")
+        todo!();
+        // let receipt_call = EthereumRpc::GetTransactionReceipt(transaction_hash.to_string());
+        //
+        // let response = jsonrpc_call(&receipt_call, provider, &chain)
+        //     .await
+        //     .map_err(|e| SwapperError::NetworkError { msg: e.to_string() })?;
+        //
+        // let result: serde_json::Value = response.extract_result().map_err(|e| SwapperError::NetworkError { msg: e.to_string() })?;
+        //
+        // if let Some(status_hex) = result.get("status").and_then(|s| s.as_str()) {
+        //     let status = U256::from_str_radix(status_hex.trim_start_matches("0x"), 16).unwrap_or_else(|_| U256::zero());
+        //     Ok(!status.is_zero())
+        // } else {
+        //     Ok(false)
+        // }
     }
 
-    async fn fetch_quote(&self, request: &SwapQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapQuote, crate::swapper::SwapperError> {
+    async fn fetch_quote(&self, request: &SwapQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapQuote, SwapperError> {
         // Validate chain support
         if !self.supported_chains().contains(&request.from_asset.chain) {
             return Err(SwapperError::NotSupportedChain);
         }
 
-        let swift_order_params = self
-            .build_swift_order_params(request)
-            .map_err(|e| SwapperError::ComputeQuoteError { msg: e.to_string() })?;
+        let quote = self.fetch_quote_from_request(request, provider.clone()).await?;
 
-        // Check approvals if needed
-        let approval = self.check_approval(request, provider.clone()).await?;
+        if quote.r#type != QuoteType::SWIFT.to_string() {
+            return Err(SwapperError::ComputeQuoteError {
+                msg: "Quote type is not SWIFT".to_string(),
+            });
+        }
 
-        // Get fee manager address for referral info
-        let swift_address = Self::get_address_by_chain(request.from_asset.chain).ok_or(SwapperError::NotSupportedChain)?;
-        let swift_contract = MayanSwiftContract::new(swift_address.clone(), provider.clone(), request.from_asset.chain);
-        let amount_in = U256::from_str(&request.value).map_err(|_| SwapperError::InvalidAmount)?;
-        let estimated_gas = if request.from_asset.is_native() {
-            swift_contract
-                .estimate_create_order_with_eth(request.wallet_address.as_str(), swift_order_params.clone(), amount_in)
-                .await
-                .map_err(|e| SwapperError::ABIError { msg: e.to_string() })?
-        } else {
-            swift_contract
-                .estimate_create_order_with_token(request.from_asset.token_id.as_ref().unwrap(), amount_in, swift_order_params.clone())
-                .await
-                .map_err(|e| SwapperError::ABIError { msg: e.to_string() })?
-        };
         // Create route information
         let route = SwapRoute {
             route_type: "swift-order".to_string(),
@@ -263,17 +291,19 @@ impl GemSwapProvider for MayanSwiftProvider {
                 .clone()
                 .unwrap_or_else(|| request.from_asset.chain.as_ref().to_string()),
             output: request.to_asset.token_id.clone().unwrap_or_else(|| request.to_asset.chain.as_ref().to_string()),
-            fee_tier: "0".to_string(),                     // MayanSwift doesn't use fee tiers
-            gas_estimate: Some(estimated_gas.to_string()), // TODO: check if this is correct
+            fee_tier: "0".to_string(),
+            gas_estimate: None,
         };
 
-        let output_value = self.calculate_output_value(request, provider.clone(), &swift_order_params).await?;
+        let approval = self.check_approval(request, provider.clone()).await?;
 
         Ok(SwapQuote {
             from_value: request.value.clone(),
-            to_value: output_value,
+            to_value: self
+                .convert_amount_to_wei(quote.min_amount_out, &request.to_asset)
+                .map_err(|e| SwapperError::ComputeQuoteError { msg: e.to_string() })?,
             data: SwapProviderData {
-                provider: self.provider().clone(),
+                provider: self.provider(),
                 routes: vec![route],
             },
             approval,
@@ -317,37 +347,5 @@ mod tests {
         assert!(chains.contains(&Chain::Arbitrum));
         assert!(chains.contains(&Chain::Optimism));
         assert!(chains.contains(&Chain::Base));
-    }
-
-    #[test]
-    fn test_address_parameters() {
-        let wallet = "0x0655c6AbdA5e2a5241aa08486bd50Cf7d475CF24";
-        let destination = "0x1234567890123456789012345678901234567890";
-
-        let request = SwapQuoteRequest {
-            from_asset: AssetId::from_chain(Chain::Base),
-            to_asset: AssetId::from_chain(Chain::Ethereum),
-            wallet_address: wallet.to_string(),
-            destination_address: destination.to_string(),
-            value: "292840000000000".to_string(),
-            mode: GemSwapMode::ExactIn,
-            options: None,
-        };
-
-        // Create provider and get params
-        let provider = Arc::new(MockProvider::new());
-        let swift_provider = MayanSwiftProvider::new();
-
-        let params = tokio_test::block_on(swift_provider.build_swift_order_params(&request, provider)).unwrap();
-
-        // Verify trader address (wallet)
-        let wallet_addr = EthereumAddress::from_str(wallet).unwrap();
-        assert_eq!(&params.trader[12..], &wallet_addr.bytes);
-        assert_eq!(&params.trader[..12], &[0u8; 12]); // First 12 bytes should be zero
-
-        // Verify destination address
-        let dest_addr = EthereumAddress::from_str(destination).unwrap();
-        assert_eq!(&params.dest_addr[12..], &dest_addr.bytes);
-        assert_eq!(&params.dest_addr[..12], &[0u8; 12]);
     }
 }

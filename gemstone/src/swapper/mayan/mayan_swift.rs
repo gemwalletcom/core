@@ -12,20 +12,20 @@ use gem_evm::{
     address::EthereumAddress,
     erc20::IERC20,
     jsonrpc::{BlockParameter, EthereumRpc, TransactionObject},
-    mayan::swift::swift::MayanSwift,
+    mayan::swift::swift::IMayanSwift,
 };
 use primitives::Chain;
 use std::{str::FromStr, sync::Arc};
 use thiserror::Error;
 
-pub struct MayanSwiftContract {
+pub struct MayanSwift {
     address: String,
     provider: Arc<dyn AlienProvider>,
     chain: Chain,
 }
 
 #[derive(Error, Debug)]
-pub enum MayanSwiftContractError {
+pub enum MayanSwiftError {
     #[error("Call failed: {msg}")]
     CallFailed { msg: String },
 
@@ -57,6 +57,26 @@ pub struct OrderParams {
     pub random: [u8; 32],
 }
 
+impl OrderParams {
+    pub fn to_contract_params(&self) -> IMayanSwift::OrderParams {
+        IMayanSwift::OrderParams {
+            trader: self.trader.into(),
+            tokenOut: self.token_out.into(),
+            minAmountOut: self.min_amount_out,
+            gasDrop: self.gas_drop,
+            cancelFee: self.cancel_fee,
+            refundFee: self.refund_fee,
+            deadline: self.deadline,
+            destAddr: self.dest_addr.into(),
+            destChainId: self.dest_chain_id,
+            referrerAddr: self.referrer_addr.into(),
+            referrerBps: self.referrer_bps,
+            auctionMode: self.auction_mode,
+            random: self.random.into(),
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct PermitParams {
     pub value: String,
@@ -66,38 +86,56 @@ pub struct PermitParams {
     pub s: [u8; 32],
 }
 
-impl MayanSwiftContract {
+#[derive(Debug, Clone)]
+pub struct KeyStruct {
+    pub params: OrderParams,
+    pub token_in: [u8; 32],
+    pub chain_id: u16,
+    pub protocol_bps: u16,
+}
+
+impl KeyStruct {
+    pub fn abi_encode(&self) -> Vec<u8> {
+        let key = IMayanSwift::KeyStruct {
+            params: self.params.to_contract_params(),
+            tokenIn: self.token_in.into(),
+            chainId: self.chain_id,
+            protocolBps: self.protocol_bps,
+        };
+        key.abi_encode()
+    }
+}
+
+impl MayanSwift {
     pub fn new(address: String, provider: Arc<dyn AlienProvider>, chain: Chain) -> Self {
         Self { address, provider, chain }
     }
 
-    pub async fn get_fee_manager_address(&self) -> Result<String, MayanSwiftContractError> {
-        let call_data = MayanSwift::feeManagerCall {}.abi_encode();
+    pub async fn get_fee_manager_address(&self) -> Result<String, MayanSwiftError> {
+        let call_data = IMayanSwift::feeManagerCall {}.abi_encode();
         let fee_manager_call = EthereumRpc::Call(TransactionObject::new_call(&self.address, call_data), BlockParameter::Latest);
 
         let response = jsonrpc_call(&fee_manager_call, self.provider.clone(), &self.chain)
             .await
-            .map_err(|e| MayanSwiftContractError::CallFailed { msg: e.to_string() })?;
+            .map_err(|e| MayanSwiftError::InvalidResponse { msg: e.to_string() })?;
 
-        let result: String = response
-            .extract_result()
-            .map_err(|e| MayanSwiftContractError::CallFailed { msg: e.to_string() })?;
+        let result: String = response.extract_result().map_err(|e| MayanSwiftError::InvalidResponse { msg: e.to_string() })?;
 
-        let decoded = HexDecode(&result).map_err(|e| MayanSwiftContractError::InvalidResponse { msg: e.to_string() })?;
+        let decoded = HexDecode(&result).map_err(|e| MayanSwiftError::InvalidResponse { msg: e.to_string() })?;
 
         let fee_manager =
-            MayanSwift::feeManagerCall::abi_decode_returns(&decoded, false).map_err(|e| MayanSwiftContractError::ABIError { msg: e.to_string() })?;
+            IMayanSwift::feeManagerCall::abi_decode_returns(&decoded, false).map_err(|e| MayanSwiftError::InvalidResponse { msg: e.to_string() })?;
 
-        let address = EthereumAddress::from_str(&fee_manager.feeManager.to_string()).map_err(|e| MayanSwiftContractError::ABIError {
+        let address = EthereumAddress::from_str(&fee_manager.feeManager.to_string()).map_err(|e| MayanSwiftError::InvalidResponse {
             msg: format!("Failed to parse fee manager address: {}", e),
         })?;
 
         Ok(address.to_checksum())
     }
 
-    pub async fn create_order_with_eth(&self, from: &str, params: OrderParams, value: &str) -> Result<String, MayanSwiftContractError> {
+    pub async fn create_order_with_eth(&self, from: &str, params: OrderParams, value: &str) -> Result<String, MayanSwiftError> {
         let call_data = self
-            .encode_create_order_with_eth(params, U256::from_str(value).map_err(|_| MayanSwiftContractError::InvalidAmount)?)
+            .encode_create_order_with_eth(params, U256::from_str(value).map_err(|_| MayanSwiftError::InvalidAmount)?)
             .await?;
 
         let create_order_call = EthereumRpc::Call(
@@ -107,34 +145,30 @@ impl MayanSwiftContract {
 
         let response = jsonrpc_call(&create_order_call, self.provider.clone(), &self.chain)
             .await
-            .map_err(|e| MayanSwiftContractError::CallFailed { msg: e.to_string() })?;
+            .map_err(|e| MayanSwiftError::CallFailed { msg: e.to_string() })?;
 
-        let result: String = response
-            .extract_result()
-            .map_err(|e| MayanSwiftContractError::CallFailed { msg: e.to_string() })?;
+        let result: String = response.extract_result().map_err(|e| MayanSwiftError::InvalidResponse { msg: e.to_string() })?;
 
         Ok(result)
     }
 
-    pub async fn create_order_with_token(&self, from: &str, token_in: &str, amount_in: &str, params: OrderParams) -> Result<String, MayanSwiftContractError> {
+    pub async fn create_order_with_token(&self, from: &str, token_in: &str, amount_in: &str, params: OrderParams) -> Result<String, MayanSwiftError> {
         let call_data = self
-            .encode_create_order_with_token(token_in, U256::from_str(amount_in).map_err(|_| MayanSwiftContractError::InvalidAmount)?, params)
+            .encode_create_order_with_token(token_in, U256::from_str(amount_in).map_err(|_| MayanSwiftError::InvalidAmount)?, params)
             .await?;
 
         let create_order_call = EthereumRpc::Call(TransactionObject::new_call_with_from(from, &self.address, call_data), BlockParameter::Latest);
 
         let response = jsonrpc_call(&create_order_call, self.provider.clone(), &self.chain)
             .await
-            .map_err(|e| MayanSwiftContractError::CallFailed { msg: e.to_string() })?;
+            .map_err(|e| MayanSwiftError::CallFailed { msg: e.to_string() })?;
 
-        let result: String = response
-            .extract_result()
-            .map_err(|e| MayanSwiftContractError::CallFailed { msg: e.to_string() })?;
+        let result: String = response.extract_result().map_err(|e| MayanSwiftError::CallFailed { msg: e.to_string() })?;
 
         Ok(result)
     }
 
-    pub async fn estimate_create_order_with_eth(&self, from: &str, params: OrderParams, amount: U256) -> Result<U256, MayanSwiftContractError> {
+    pub async fn estimate_create_order_with_eth(&self, from: &str, params: OrderParams, amount: U256) -> Result<U256, MayanSwiftError> {
         let call_data = self.encode_create_order_with_eth(params, amount).await?;
 
         // let value = encode_prefixed(amount.to_be_bytes_vec());
@@ -144,36 +178,32 @@ impl MayanSwiftContract {
 
         let response = jsonrpc_call(&estimate_gas_call, self.provider.clone(), &self.chain)
             .await
-            .map_err(|e| MayanSwiftContractError::CallFailed { msg: e.to_string() })?;
+            .map_err(|e| MayanSwiftError::CallFailed { msg: e.to_string() })?;
 
-        let result: String = response
-            .extract_result()
-            .map_err(|e| MayanSwiftContractError::CallFailed { msg: e.to_string() })?;
+        let result: String = response.extract_result().map_err(|e| MayanSwiftError::CallFailed { msg: e.to_string() })?;
 
         let hex_str = result.trim_start_matches("0x");
 
-        Ok(U256::from_str_radix(hex_str, 16).map_err(|e| MayanSwiftContractError::InvalidResponse { msg: e.to_string() })?)
+        Ok(U256::from_str_radix(hex_str, 16).map_err(|e| MayanSwiftError::InvalidResponse { msg: e.to_string() })?)
     }
 
-    pub async fn estimate_create_order_with_token(&self, token_in: &str, amount: U256, params: OrderParams) -> Result<U256, MayanSwiftContractError> {
+    pub async fn estimate_create_order_with_token(&self, token_in: &str, amount: U256, params: OrderParams) -> Result<U256, MayanSwiftError> {
         let call_data = self.encode_create_order_with_token(token_in, amount, params).await?;
         let estimate_gas_call = EthereumRpc::EstimateGas(TransactionObject::new_call_with_value(&self.address, token_in, call_data, &amount.to_string()));
 
         let response = jsonrpc_call(&estimate_gas_call, self.provider.clone(), &self.chain)
             .await
-            .map_err(|e| MayanSwiftContractError::CallFailed { msg: e.to_string() })?;
+            .map_err(|e| MayanSwiftError::CallFailed { msg: e.to_string() })?;
 
-        let result: String = response
-            .extract_result()
-            .map_err(|e| MayanSwiftContractError::CallFailed { msg: e.to_string() })?;
+        let result: String = response.extract_result().map_err(|e| MayanSwiftError::CallFailed { msg: e.to_string() })?;
 
-        let decoded = HexDecode(&result).map_err(|e| MayanSwiftContractError::InvalidResponse { msg: e.to_string() })?;
+        let decoded = HexDecode(&result).map_err(|e| MayanSwiftError::InvalidResponse { msg: e.to_string() })?;
 
-        Ok(U256::from_str(decoded.encode_hex().as_str()).map_err(|e| MayanSwiftContractError::InvalidResponse { msg: e.to_string() })?)
+        Ok(U256::from_str(decoded.encode_hex().as_str()).map_err(|e| MayanSwiftError::InvalidResponse { msg: e.to_string() })?)
     }
 
-    pub async fn encode_create_order_with_eth(&self, params: OrderParams, amount: U256) -> Result<Vec<u8>, MayanSwiftContractError> {
-        let call_data = MayanSwift::createOrderWithEthCall {
+    pub async fn encode_create_order_with_eth(&self, params: OrderParams, amount: U256) -> Result<Vec<u8>, MayanSwiftError> {
+        let call_data = IMayanSwift::createOrderWithEthCall {
             params: self.convert_order_params(params),
         }
         .abi_encode();
@@ -181,9 +211,9 @@ impl MayanSwiftContract {
         Ok(call_data)
     }
 
-    pub async fn encode_create_order_with_token(&self, token_in: &str, amount: U256, params: OrderParams) -> Result<Vec<u8>, MayanSwiftContractError> {
-        let call_data = MayanSwift::createOrderWithTokenCall {
-            tokenIn: Address::from_str(token_in).map_err(|e| MayanSwiftContractError::ABIError {
+    pub async fn encode_create_order_with_token(&self, token_in: &str, amount: U256, params: OrderParams) -> Result<Vec<u8>, MayanSwiftError> {
+        let call_data = IMayanSwift::createOrderWithTokenCall {
+            tokenIn: Address::from_str(token_in).map_err(|e| MayanSwiftError::ABIError {
                 msg: format!("Invalid token address: {}", e),
             })?,
             amountIn: amount,
@@ -194,8 +224,8 @@ impl MayanSwiftContract {
         Ok(call_data)
     }
 
-    pub async fn get_orders(&self, order_hashes: Vec<[u8; 32]>) -> Result<Vec<(u8, u64, u16)>, MayanSwiftContractError> {
-        let call_data = MayanSwift::getOrdersCall {
+    pub async fn get_orders(&self, order_hashes: Vec<[u8; 32]>) -> Result<Vec<(u8, u64, u16)>, MayanSwiftError> {
+        let call_data = IMayanSwift::getOrdersCall {
             orderHashes: order_hashes.into_iter().map(|x| x.into()).collect(),
         }
         .abi_encode();
@@ -204,15 +234,13 @@ impl MayanSwiftContract {
 
         let response = jsonrpc_call(&get_orders_call, self.provider.clone(), &self.chain)
             .await
-            .map_err(|e| MayanSwiftContractError::CallFailed { msg: e.to_string() })?;
+            .map_err(|e| MayanSwiftError::CallFailed { msg: e.to_string() })?;
 
-        let result: String = response
-            .extract_result()
-            .map_err(|e| MayanSwiftContractError::CallFailed { msg: e.to_string() })?;
+        let result: String = response.extract_result().map_err(|e| MayanSwiftError::CallFailed { msg: e.to_string() })?;
 
-        let decoded = HexDecode(&result).map_err(|e| MayanSwiftContractError::InvalidResponse { msg: e.to_string() })?;
+        let decoded = HexDecode(&result).map_err(|e| MayanSwiftError::InvalidResponse { msg: e.to_string() })?;
 
-        let orders = MayanSwift::getOrdersCall::abi_decode_returns(&decoded, false).map_err(|e| MayanSwiftContractError::ABIError { msg: e.to_string() })?;
+        let orders = IMayanSwift::getOrdersCall::abi_decode_returns(&decoded, false).map_err(|e| MayanSwiftError::ABIError { msg: e.to_string() })?;
 
         Ok(orders
             ._0
@@ -221,13 +249,13 @@ impl MayanSwiftContract {
             .collect())
     }
 
-    pub async fn check_token_approval(&self, owner: &str, token: &str, amount: &str) -> Result<ApprovalType, MayanSwiftContractError> {
+    pub async fn check_token_approval(&self, owner: &str, token: &str, amount: &str) -> Result<ApprovalType, MayanSwiftError> {
         // Encode allowance call for ERC20 token
         let call_data = IERC20::allowanceCall {
-            owner: Address::from_str(owner).map_err(|e| MayanSwiftContractError::ABIError {
+            owner: Address::from_str(owner).map_err(|e| MayanSwiftError::ABIError {
                 msg: format!("Invalid owner address: {}", e),
             })?,
-            spender: Address::from_str(&self.address).map_err(|e| MayanSwiftContractError::ABIError {
+            spender: Address::from_str(&self.address).map_err(|e| MayanSwiftError::ABIError {
                 msg: format!("Invalid spender address: {}", e),
             })?,
         }
@@ -239,19 +267,17 @@ impl MayanSwiftContract {
         // Execute the call
         let response = jsonrpc_call(&allowance_call, self.provider.clone(), &self.chain)
             .await
-            .map_err(|e| MayanSwiftContractError::CallFailed { msg: e.to_string() })?;
+            .map_err(|e| MayanSwiftError::CallFailed { msg: e.to_string() })?;
 
-        let result: String = response
-            .extract_result()
-            .map_err(|e| MayanSwiftContractError::CallFailed { msg: e.to_string() })?;
+        let result: String = response.extract_result().map_err(|e| MayanSwiftError::CallFailed { msg: e.to_string() })?;
 
         // Decode the response
-        let decoded = hex::decode(result.trim_start_matches("0x")).map_err(|e| MayanSwiftContractError::InvalidResponse { msg: e.to_string() })?;
+        let decoded = hex::decode(result.trim_start_matches("0x")).map_err(|e| MayanSwiftError::InvalidResponse { msg: e.to_string() })?;
 
-        let allowance = IERC20::allowanceCall::abi_decode_returns(&decoded, false).map_err(|e| MayanSwiftContractError::ABIError { msg: e.to_string() })?;
+        let allowance = IERC20::allowanceCall::abi_decode_returns(&decoded, false).map_err(|e| MayanSwiftError::InvalidResponse { msg: e.to_string() })?;
 
         // Convert amount string to U256 for comparison
-        let required_amount = U256::from_str(amount).map_err(|e| MayanSwiftContractError::ABIError {
+        let required_amount = U256::from_str(amount).map_err(|e| MayanSwiftError::ABIError {
             msg: format!("Invalid amount: {}", e),
         })?;
 
@@ -275,9 +301,9 @@ impl MayanSwiftContract {
         submission_fee: U256,
         signed_order_hash: Vec<u8>,
         permit_params: PermitParams,
-    ) -> Result<Vec<u8>, MayanSwiftContractError> {
-        let call_data = MayanSwift::createOrderWithSigCall {
-            tokenIn: Address::from_str(token_in).map_err(|e| MayanSwiftContractError::ABIError {
+    ) -> Result<Vec<u8>, MayanSwiftError> {
+        let call_data = IMayanSwift::createOrderWithSigCall {
+            tokenIn: Address::from_str(token_in).map_err(|e| MayanSwiftError::ABIError {
                 msg: format!("Invalid token address: {}", e),
             })?,
             amountIn: amount_in,
@@ -300,13 +326,13 @@ impl MayanSwiftContract {
         submission_fee: &str,
         signed_order_hash: Vec<u8>,
         permit_params: PermitParams,
-    ) -> Result<String, MayanSwiftContractError> {
+    ) -> Result<String, MayanSwiftError> {
         let call_data = self
             .encode_create_order_with_sig(
                 token_in,
-                U256::from_str(amount_in).map_err(|_| MayanSwiftContractError::InvalidAmount)?,
+                U256::from_str(amount_in).map_err(|_| MayanSwiftError::InvalidAmount)?,
                 params,
-                U256::from_str(submission_fee).map_err(|_| MayanSwiftContractError::InvalidAmount)?,
+                U256::from_str(submission_fee).map_err(|_| MayanSwiftError::InvalidAmount)?,
                 signed_order_hash,
                 permit_params,
             )
@@ -316,18 +342,16 @@ impl MayanSwiftContract {
 
         let response = jsonrpc_call(&create_order_call, self.provider.clone(), &self.chain)
             .await
-            .map_err(|e| MayanSwiftContractError::CallFailed { msg: e.to_string() })?;
+            .map_err(|e| MayanSwiftError::CallFailed { msg: e.to_string() })?;
 
-        let result: String = response
-            .extract_result()
-            .map_err(|e| MayanSwiftContractError::CallFailed { msg: e.to_string() })?;
+        let result: String = response.extract_result().map_err(|e| MayanSwiftError::InvalidResponse { msg: e.to_string() })?;
 
         Ok(result)
     }
 
-    pub fn convert_permit_params(&self, permit_params: PermitParams) -> MayanSwift::PermitParams {
-        MayanSwift::PermitParams {
-            value: U256::from_str(&permit_params.value).map_err(|_| MayanSwiftContractError::InvalidAmount)?,
+    pub fn convert_permit_params(&self, permit_params: PermitParams) -> IMayanSwift::PermitParams {
+        IMayanSwift::PermitParams {
+            value: U256::from_str(&permit_params.value).unwrap(),
             deadline: U256::from(permit_params.deadline),
             v: permit_params.v.into(),
             r: permit_params.r.into(),
@@ -336,22 +360,8 @@ impl MayanSwiftContract {
     }
 
     // Helper method to convert our native OrderParams to contract format
-    pub fn convert_order_params(&self, params: OrderParams) -> MayanSwift::OrderParams {
-        MayanSwift::OrderParams {
-            trader: params.trader.into(),
-            tokenOut: params.token_out.into(),
-            minAmountOut: params.min_amount_out,
-            gasDrop: params.gas_drop,
-            cancelFee: params.cancel_fee,
-            refundFee: params.refund_fee,
-            deadline: params.deadline,
-            destAddr: params.dest_addr.into(),
-            destChainId: params.dest_chain_id,
-            referrerAddr: params.referrer_addr.into(),
-            referrerBps: params.referrer_bps,
-            auctionMode: params.auction_mode,
-            random: params.random.into(),
-        }
+    pub fn convert_order_params(&self, params: OrderParams) -> IMayanSwift::OrderParams {
+        params.to_contract_params()
     }
 }
 

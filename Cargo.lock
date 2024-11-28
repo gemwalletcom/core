@@ -3315,6 +3315,7 @@ dependencies = [
  "num-bigint 0.4.6",
  "orca_whirlpools_core",
  "primitives",
+ "rand",
  "reqwest",
  "serde",
  "serde_json",

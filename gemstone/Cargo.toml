@@ -5,9 +5,9 @@ version = "0.1.1"
 
 [lib]
 crate-type = [
-    "staticlib", # iOS
-    "rlib",      # for Other crate
-    "cdylib",    # Android
+  "staticlib", # iOS
+  "rlib",      # for Other crate
+  "cdylib",    # Android
 ]
 
 name = "gemstone"
@@ -39,6 +39,7 @@ num-bigint.workspace = true
 futures.workspace = true
 borsh.workspace = true
 orca_whirlpools_core = "0.3.1"
+rand.workspace = true
 
 [build-dependencies]
 uniffi = { workspace = true, features = ["build"] }

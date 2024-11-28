@@ -30,7 +30,7 @@ sol! {
 sol! {
     /// @title MayanSwift Cross-Chain Swap Contract
     #[derive(Debug)]
-    contract MayanSwift {
+    contract IMayanSwift{
         // Events
         event OrderCreated(bytes32 indexed key);
         event OrderFulfilled(bytes32 indexed key, uint64 sequence, uint256 netAmount);
@@ -77,6 +77,13 @@ sol! {
             uint8 v;
             bytes32 r;
             bytes32 s;
+        }
+
+        struct KeyStruct {
+            OrderParams params;
+            bytes32 tokenIn;
+            uint16 chainId;
+            uint16 protocolBps;
         }
 
         // State changing functions
