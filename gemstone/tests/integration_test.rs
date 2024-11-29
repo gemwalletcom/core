@@ -2,6 +2,7 @@
 mod tests {
     use async_trait::async_trait;
     use futures::TryFutureExt;
+    use gemstone::swapper::across::Across;
     use gemstone::{
         network::{provider::AlienProvider, target::*, *},
         swapper::{orca::Orca, *},
@@ -9,15 +10,17 @@ mod tests {
     use primitives::{AssetId, Chain};
     use reqwest::Client;
     use std::{collections::HashMap, sync::Arc};
+    use std::str::FromStr;
+    use num_bigint::BigInt;
 
     #[derive(Debug)]
     pub struct NativeProvider {
-        pub node_config: HashMap<String, String>,
+        pub node_config: HashMap<Chain, String>,
         pub client: Client,
     }
 
     impl NativeProvider {
-        pub fn new(node_config: HashMap<String, String>) -> Self {
+        pub fn new(node_config: HashMap<Chain, String>) -> Self {
             Self {
                 node_config,
                 client: Client::new(),
@@ -27,7 +30,7 @@ mod tests {
 
     #[async_trait]
     impl AlienProvider for NativeProvider {
-        fn get_endpoint(&self, chain: String) -> Result<String, AlienError> {
+        fn get_endpoint(&self, chain: Chain) -> Result<String, AlienError> {
             Ok(self
                 .node_config
                 .get(&chain)
@@ -94,7 +97,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_orca_get_quote_by_input() -> Result<(), SwapperError> {
-        let node_config = HashMap::from([(Chain::Solana.to_string(), "https://solana-rpc.publicnode.com".into())]);
+        let node_config = HashMap::from([(Chain::Solana, "https://solana-rpc.publicnode.com".into())]);
         let swap_provider: Box<dyn GemSwapProvider> = Box::new(Orca::default());
         let network_provider = Arc::new(NativeProvider::new(node_config));
 
@@ -111,6 +114,31 @@ mod tests {
 
         assert_eq!(quote.from_value, "1000000");
         assert!(quote.to_value.parse::<u64>().unwrap() > 0);
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_across_get_quote_by_input() -> Result<(), SwapperError> {
+        let node_config = HashMap::from([(Chain::Base, "https://app.across.to".into())]);
+        let swap_provider: Box<dyn GemSwapProvider> = Box::new(Across::default());
+        let network_provider = Arc::new(NativeProvider::new(node_config));
+
+        let request = SwapQuoteRequest {
+            from_asset: AssetId::from(Chain::Base, Some("0x4200000000000000000000000000000000000006".into())),
+            to_asset: AssetId::from(Chain::Optimism, Some("0x4200000000000000000000000000000000000006".into())),
+            wallet_address: "G7B17AigRCGvwnxFc5U8zY5T3NBGduLzT7KYApNU2VdR".into(),
+            destination_address: "G7B17AigRCGvwnxFc5U8zY5T3NBGduLzT7KYApNU2VdR".into(),
+            value: "30000000000000000".into(),
+            mode: GemSwapMode::ExactIn,
+            options: None,
+        };
+        let quote = swap_provider.fetch_quote(&request, network_provider.clone()).await?;
+
+        assert_eq!(quote.from_value, "30000000000000000");
+        let value = BigInt::from_str(quote.to_value.as_str()).unwrap();
+        println!("value: {}", value);
+        assert!( value> BigInt::from(0));
 
         Ok(())
     }
