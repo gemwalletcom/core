@@ -62,7 +62,6 @@ impl GemSwapProvider for Across {
             approval: ApprovalType::None,
             request: request.clone(),
         };
-
         Ok(quote)
     }
 
