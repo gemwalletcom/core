@@ -7,11 +7,11 @@ mod tests {
         network::{provider::AlienProvider, target::*, *},
         swapper::{orca::Orca, *},
     };
+    use num_bigint::BigInt;
     use primitives::{AssetId, Chain};
     use reqwest::Client;
-    use std::{collections::HashMap, sync::Arc};
     use std::str::FromStr;
-    use num_bigint::BigInt;
+    use std::{collections::HashMap, sync::Arc};
 
     #[derive(Debug)]
     pub struct NativeProvider {
@@ -138,7 +138,7 @@ mod tests {
         assert_eq!(quote.from_value, "30000000000000000");
         let value = BigInt::from_str(quote.to_value.as_str()).unwrap();
         println!("value: {}", value);
-        assert!( value> BigInt::from(0));
+        assert!(value > BigInt::from(0));
 
         Ok(())
     }

@@ -31,10 +31,10 @@ impl AcrossChainName {
             AcrossChainName::Blast => "bl",   // ""
             AcrossChainName::Ethereum => "e", //
             AcrossChainName::Linea => "l",    //
-            AcrossChainName::Optimism => "a", //
-            AcrossChainName::Polygon => "a",  //
+            AcrossChainName::Optimism => "o", //
+            AcrossChainName::Polygon => "p",  //
             AcrossChainName::World => "w",    //
-            AcrossChainName::ZkSync => "a",   //
+            AcrossChainName::ZkSync => "zk",   //
         }
     }
 

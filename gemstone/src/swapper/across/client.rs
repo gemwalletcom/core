@@ -2,7 +2,6 @@ use super::asset::AcrossChainAsset;
 use crate::network::{AlienHttpMethod, AlienProvider, AlienTarget};
 use crate::swapper::across::model::{SaggestedFeesRequest, SaggestedFeesResponse};
 use crate::swapper::models::SwapperError;
-use primitives::Transaction;
 use std::sync::Arc;
 
 #[derive(Debug)]
@@ -23,14 +22,14 @@ impl AcrossSwapClient {
         value: String,
     ) -> Result<SaggestedFeesResponse, SwapperError> {
         let params = SaggestedFeesRequest {
-            inputToken: from_asset.token_id.unwrap(),
+            input_token: from_asset.token_id.unwrap(),
             amount: value,
-            originChainId: from_asset.chain.chain().network_id().to_string(),
-            destinationChainId: to_asset.chain.chain().network_id().to_string(),
+            origin_chain_id: from_asset.chain.chain().network_id().to_string(),
+            destination_chain_id: to_asset.chain.chain().network_id().to_string(),
             recipient: None,
             message: None,
             relayer: None,
-            outputToken: to_asset.token_id.unwrap(),
+            output_token: to_asset.token_id.unwrap(),
             timestamp: None,
         };
         let query = serde_urlencoded::to_string(params).unwrap();
@@ -49,28 +48,6 @@ impl AcrossSwapClient {
             .await
             .map_err(|err| SwapperError::NetworkError { msg: err.to_string() })?;
         let result: SaggestedFeesResponse = serde_json::from_slice(&data).map_err(|err| SwapperError::NetworkError { msg: err.to_string() })?;
-
-        println!("-------------{:?}", result);
-
-        Ok(result)
-    }
-
-    pub async fn get_transaction_status(&self, endpoint: &str, transaction_hash: &str) -> Result<Transaction, SwapperError> {
-        let target = AlienTarget {
-            url: format!("{}/thorchain/tx/{}", endpoint, transaction_hash),
-            method: AlienHttpMethod::Get,
-            headers: None,
-            body: None,
-        };
-
-        let data = self
-            .provider
-            .request(target)
-            .await
-            .map_err(|err| SwapperError::NetworkError { msg: err.to_string() })?;
-
-        let result: Transaction = serde_json::from_slice(&data).map_err(|err| SwapperError::NetworkError { msg: err.to_string() })?;
-
         Ok(result)
     }
 }

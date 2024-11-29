@@ -6,7 +6,6 @@ use crate::{
     swapper::{models::*, GemSwapProvider, SwapperError},
 };
 use async_trait::async_trait;
-use gem_evm::uniswap::FeeTier;
 use num_bigint::BigInt;
 use primitives::Chain;
 use std::str::FromStr;
@@ -41,7 +40,7 @@ impl GemSwapProvider for Across {
         let client = AcrossSwapClient::new(provider);
         let from_asset = AcrossChainAsset::from_asset_id(request.clone().from_asset).ok_or(SwapperError::NotSupportedAsset)?;
         let to_asset = AcrossChainAsset::from_asset_id(request.clone().to_asset).ok_or(SwapperError::NotSupportedAsset)?;
-        let quote = client
+        let _quote = client
             .get_quote(&self.get_endpoint(), from_asset.clone(), to_asset.clone(), request.clone().value)
             .await?;
 
@@ -62,7 +61,6 @@ impl GemSwapProvider for Across {
             approval: ApprovalType::None,
             request: request.clone(),
         };
-
         Ok(quote)
     }
 
@@ -89,7 +87,7 @@ impl Across {
         }
     }
 
-    fn value_to(&self, value: String,  decimals: i32) -> BigInt {
+    fn value_to(&self, value: String, decimals: i32) -> BigInt {
         let decimals = decimals - 8;
         if decimals > 0 {
             BigInt::from_str(value.as_str()).unwrap() * BigInt::from(10).pow((decimals).unsigned_abs())
@@ -100,5 +98,4 @@ impl Across {
 }
 
 #[cfg(test)]
-mod tests {
-}
+mod tests {}

@@ -300,7 +300,6 @@ impl AcrossChainAsset {
 
 #[cfg(test)]
 mod tests {
-    use primitives::Chain;
     use super::*;
-
+    use primitives::Chain;
 }
