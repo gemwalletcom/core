@@ -296,100 +296,11 @@ impl AcrossChainAsset {
             _ => None,
         }
     }
-
-    // https://dev.thorchain.org/concepts/memos.html#swap
-    pub fn get_memo(&self, destination_address: String, minimum: i64, interval: i64, quantity: i64, fee_address: String, bps: u32) -> Option<String> {
-        Some(format!(
-            "=:{}:{}:{}/{}/{}:{}:{}",
-            self.asset_name(),
-            destination_address,
-            minimum,
-            interval,
-            quantity,
-            fee_address,
-            bps
-        ))
-    }
 }
 
 #[cfg(test)]
 mod tests {
     use primitives::Chain;
-
     use super::*;
 
-    // #[test]
-    // fn test_across_chain_name_token() {
-    //     let test_cases = vec![
-    //         ("0xdAC17F958D2ee523a2206206994597C13D831ec7", AcrossChainName::Ethereum, "USDT", 6),
-    //         ("0x55d398326f99059fF775485246999027B3197955", AcrossChainName::SmartChain, "USDT", 18),
-    //     ];
-    //
-    //     for (token_id, chain, expected_symbol, expected_decimals) in test_cases {
-    //         let asset = AcrossChainAsset::from(chain, token_id);
-    //         assert!(asset.is_some());
-    //         let asset = asset.unwrap();
-    //         assert_eq!(asset.symbol, expected_symbol);
-    //         assert_eq!(asset.decimals, expected_decimals);
-    //     }
-    // }
-
-    // #[test]
-    // fn test_across_hain_asset_name() {
-    //     let asset_with_token = AcrossChainAsset {
-    //         symbol: "USDT".to_string(),
-    //         chain: AcrossChainName::Ethereum,
-    //         token_id: Some("0xdAC17F958D2ee523a2206206994597C13D831ec7".to_string()),
-    //         decimals: 6,
-    //     };
-    //     assert_eq!(asset_with_token.asset_name(), "ETH.USDT");
-    //
-    //     let asset_with_token = AcrossChainAsset {
-    //         symbol: "USDT".to_string(),
-    //         chain: AcrossChainName::SmartChain,
-    //         token_id: Some("0x55d398326f99059fF775485246999027B3197955".to_string()),
-    //         decimals: 6,
-    //     };
-    //     assert_eq!(asset_with_token.asset_name(), "BSC.USDT");
-    //
-    //     let asset_without_token = AcrossChainAsset {
-    //         symbol: "RUNE".to_string(),
-    //         chain: AcrossChainName::Thorchain,
-    //         token_id: None,
-    //         decimals: 8,
-    //     };
-    //     assert_eq!(asset_without_token.asset_name(), "r");
-    // }
-
-    #[test]
-    fn test_get_memo() {
-        let destination_address = "0x1234567890abcdef".to_string();
-        let fee_address = "g1".to_string();
-        let bps = 50;
-
-        assert_eq!(
-            AcrossChainAsset::from_asset_id(Chain::SmartChain.as_asset_id())
-                .unwrap()
-                .get_memo(destination_address.clone(), 0, 1, 0, fee_address.clone(), bps),
-            Some("=:s:0x1234567890abcdef:0/1/0:g1:50".into())
-        );
-        assert_eq!(
-            AcrossChainAsset::from_asset_id(Chain::Ethereum.as_asset_id())
-                .unwrap()
-                .get_memo(destination_address.clone(), 0, 1, 0, fee_address.clone(), bps),
-            Some("=:e:0x1234567890abcdef:0/1/0:g1:50".into())
-        );
-        assert_eq!(
-            AcrossChainAsset::from_asset_id(Chain::Doge.as_asset_id())
-                .unwrap()
-                .get_memo(destination_address.clone(), 0, 1, 0, fee_address.clone(), bps),
-            Some("=:d:0x1234567890abcdef:0/1/0:g1:50".into())
-        );
-        assert_eq!(
-            AcrossChainAsset::from_asset_id(AssetId::from(Chain::Ethereum, Some("0xdAC17F958D2ee523a2206206994597C13D831ec7".to_string())))
-                .unwrap()
-                .get_memo(destination_address.clone(), 0, 1, 0, fee_address.clone(), bps),
-            Some("=:ETH.USDT:0x1234567890abcdef:0/1/0:g1:50".into())
-        );
-    }
 }
