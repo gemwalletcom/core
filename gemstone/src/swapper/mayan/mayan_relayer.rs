@@ -131,13 +131,22 @@ pub struct Quote {
     pub price_impact: Option<f64>,
     #[serde(rename = "minAmountOut")]
     pub min_amount_out: f64,
+
+    #[serde(rename = "minMiddleAmount")]
+    pub min_middle_amount: Option<f64>,
+
+    #[serde(rename = "evmSwapRouterAddress")]
+    pub evm_swap_router_address: Option<String>,
+
+    #[serde(rename = "evmSwapRouterCalldata")]
+    pub evm_swap_router_calldata: Option<String>,
     #[serde(rename = "minReceived")]
     pub min_received: f64,
     #[serde(rename = "gasDrop")]
     pub gas_drop: f64,
     pub price: f64,
     #[serde(rename = "swapRelayerFee")]
-    pub swap_relayer_fee: Option<f64>,
+    pub swap_relayer_feed: Option<f64>,
     #[serde(rename = "redeemRelayerFee")]
     pub redeem_relayer_fee: Option<f64>,
     #[serde(rename = "refundRelayerFee")]

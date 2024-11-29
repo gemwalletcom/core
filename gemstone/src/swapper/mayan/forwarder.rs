@@ -25,15 +25,11 @@ pub enum MayanForwarderError {
     ABIError { msg: String },
 }
 
-pub struct MayanForwarder {
-    address: String,
-    provider: Arc<dyn AlienProvider>,
-    chain: Chain,
-}
+pub struct MayanForwarder {}
 
 impl MayanForwarder {
-    pub fn new(address: String, provider: Arc<dyn AlienProvider>, chain: Chain) -> Self {
-        Self { address, provider, chain }
+    pub fn new() -> Self {
+        Self {}
     }
 
     pub async fn encode_forward_eth_call(&self, mayan_protocol: &str, protocol_data: Vec<u8>) -> Result<Vec<u8>, MayanForwarderError> {

@@ -25,6 +25,8 @@ use super::{
     mayan_swift::{KeyStruct, MayanSwift, MayanSwiftError, OrderParams, PermitParams},
 };
 
+const MAYAN_ZERO_ADDRESS: &str = "0x0000000000000000000000000000000000000000";
+
 #[derive(Debug)]
 pub struct MayanSwiftProvider {}
 
@@ -92,13 +94,12 @@ impl MayanSwiftProvider {
             });
         };
 
-        let asset = Asset::from_chain(request.to_asset.chain);
-        let to_asset_decimals = asset.decimals.to_string().parse::<u8>().unwrap_or(18);
-
-        let min_amount_out = self.get_amount_of_fractional_amount(quote.min_amount_out, to_asset_decimals).map_err(|e| {
-            eprintln!("Failed to convert min_amount_out: {}", quote.min_amount_out);
-            e
-        })?;
+        let min_amount_out = self
+            .get_amount_of_fractional_amount(quote.min_amount_out, quote.to_token.decimals)
+            .map_err(|e| {
+                eprintln!("Failed to convert min_amount_out: {}", quote.min_amount_out);
+                e
+            })?;
 
         let gas_drop = self.convert_amount_to_wei(quote.gas_drop, &request.to_asset).map_err(|e| {
             eprintln!("Failed to convert gas_drop: {}", quote.gas_drop);
@@ -253,9 +254,9 @@ impl GemSwapProvider for MayanSwiftProvider {
         };
         let swift_contract = MayanSwift::new(swift_address.clone(), provider.clone(), request.from_asset.chain);
         let swift_order_params = self.build_swift_order_params(&quote.request, &mayan_quote)?;
-        let forwarder = MayanForwarder::new(MAYAN_FORWARDER_CONTRACT.to_string(), provider.clone(), request.from_asset.chain);
+        let forwarder = MayanForwarder::new();
 
-        let swift_call_data = if request.from_asset.is_native() {
+        let swift_call_data = if mayan_quote.swift_input_contract == MAYAN_ZERO_ADDRESS {
             swift_contract
                 .encode_create_order_with_eth(swift_order_params, quote.from_value.parse().map_err(|_| SwapperError::InvalidAmount)?)
                 .await
@@ -263,9 +264,7 @@ impl GemSwapProvider for MayanSwiftProvider {
         } else {
             swift_contract
                 .encode_create_order_with_token(
-                    request.from_asset.token_id.as_ref().ok_or(SwapperError::InvalidAddress {
-                        address: request.from_asset.to_string(),
-                    })?,
+                    mayan_quote.swift_input_contract.as_str(),
                     quote.from_value.parse().map_err(|_| SwapperError::InvalidAmount)?,
                     swift_order_params,
                 )
@@ -274,14 +273,52 @@ impl GemSwapProvider for MayanSwiftProvider {
         };
 
         let mut value = quote.from_value.clone();
-
-        let forwarder_call_data = if request.from_asset.is_native() {
-            forwarder
-                .encode_forward_eth_call(swift_address.as_str(), swift_call_data.clone())
-                .await
-                .map_err(|e| SwapperError::ABIError { msg: e.to_string() })?
+        let forwarder_call_data = if mayan_quote.from_token.contract == mayan_quote.swift_input_contract {
+            if mayan_quote.from_token.contract == MAYAN_ZERO_ADDRESS {
+                forwarder
+                    .encode_forward_eth_call(swift_address.as_str(), swift_call_data.clone())
+                    .await
+                    .map_err(|e| SwapperError::ABIError { msg: e.to_string() })?
+            } else {
+                todo!();
+            }
         } else {
-            todo!()
+            let evm_swap_router_address = mayan_quote.evm_swap_router_address.clone().ok_or_else(|| SwapperError::ComputeQuoteError {
+                msg: "Missing evmSwapRouterAddress".to_string(),
+            })?;
+            let evm_swap_router_calldata = mayan_quote.evm_swap_router_calldata.clone().ok_or_else(|| SwapperError::ComputeQuoteError {
+                msg: "Missing evmSwapRouterCalldata".to_string(),
+            })?;
+            let min_middle_amount = mayan_quote.min_middle_amount.clone().ok_or_else(|| SwapperError::ComputeQuoteError {
+                msg: "Missing minMiddleAmount".to_string(),
+            })?;
+
+            let token_in = mayan_quote.from_token.contract.clone();
+            let formatted_min_middle_amount = self
+                .get_amount_of_fractional_amount(min_middle_amount, mayan_quote.swift_input_decimals)
+                .map_err(|e| SwapperError::ComputeQuoteError { msg: e.to_string() })?;
+            let effective_amount_in = self
+                .get_amount_of_fractional_amount(mayan_quote.effective_amount_in, mayan_quote.from_token.decimals)
+                .map_err(|e| SwapperError::ComputeQuoteError { msg: e.to_string() })?;
+
+            if (mayan_quote.from_token.contract == MAYAN_ZERO_ADDRESS) {
+                forwarder
+                    .encode_swap_and_forward_eth_call(
+                        U256::from_str(quote.from_value.as_str()).map_err(|_| SwapperError::InvalidAmount)?,
+                        &evm_swap_router_address.as_str(),
+                        hex::decode(evm_swap_router_calldata.trim_start_matches("0x")).map_err(|_| SwapperError::ABIError {
+                            msg: "Failed to decode evm_swap_router_calldata hex string without prefix 0x ".to_string(),
+                        })?,
+                        &mayan_quote.swift_input_contract.as_str(),
+                        U256::from_str(&formatted_min_middle_amount).map_err(|_| SwapperError::InvalidAmount)?,
+                        &swift_address.as_str(),
+                        swift_call_data,
+                    )
+                    .await
+                    .map_err(|e| SwapperError::ABIError { msg: e.to_string() })?
+            } else {
+                todo!();
+            }
         };
 
         Ok(SwapQuoteData {
@@ -568,5 +605,17 @@ mod tests {
             assert!(result.is_ok(), "Failed for amount: {}", amount);
             assert_eq!(result.unwrap(), expected.to_string());
         }
+    }
+
+    #[test]
+    fn test_decode_evm_calldata_valid() {
+        let calldata = "0x07ed2379000000000000000000000000e37e799d5077682fa0a244d46e5649f71457bd09000000000000000000000000eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee000000000000000000000000833589fcd6edb6e08f4c7c32d4f71b54bda02913000000000000000000000000e37e799d5077682fa0a244d46e5649f71457bd090000000000000000000000000654874eb7f59c6f5b39931fc45dc45337c967c3000000000000000000000000000000000000000000000000016345785d8a00000000000000000000000000000000000000000000000000000000000013db374b0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000012000000000000000000000000000000000000000000000000000000000000004720000000000000000000000000000000000000000000004540004260003dc416003c01acae3d0173a93d819efdc832c7c4f153b06016452bbbe2900000000000000000000000000000000000000000000000000000000000000e0000000000000000000000000e37e799d5077682fa0a244d46e5649f71457bd090000000000000000000000000000000000000000000000000000000000000000000000000000000000000000e37e799d5077682fa0a244d46e5649f71457bd0900000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006749f4bcdef66c6c178087fd931514e99b04479e4d3d956c00020000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000833589fcd6edb6e08f4c7c32d4f71b54bda02913000000000000000000000000000000000000000000000000016345785d8a000000000000000000000000000000000000000000000000000000000000000000c00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000000000000001800000000000000000000000000000000000000000000000000006280fa0775121000000000000000000000000000000000000000000000000000000006749f4bc00000000000000000000000000000000000000000000000000000000000000e00000000000000000000000000654874eb7f59c6f5b39931fc45dc45337c967c300000000000000000000000000000000000000000000000000005af3107a400000000000000000000000fc892ee4a97800000000000000000166d2f7025080000000000000000003f0a5341099c401550000000000002eb7b4329f0233e9100000000000000000000000000000000000000000000004ee7259d6914ae6c461bc00000000000000004563918244f400000000000000000000006a94d74f4300000000000000000000000000006749f462000000000000000000003b1dfde910000000000000000000000000000000000000000000000000000000000000000041923845af1a0f8e52538eb26d2d7a9d0e9fc833f801c72890cc3aec84fbc1b930696a280a0414c1cab407169bb90cf3c122f85383e9bf614e490c181bcca205b41b0000000000000000000000000000000000000000000000000000000000000000a0f2fa6b66833589fcd6edb6e08f4c7c32d4f71b54bda029130000000000000000000000000000000000000000000000000000000015775e5f000000000000000000000000004c421380a06c4eca27833589fcd6edb6e08f4c7c32d4f71b54bda02913111111125421ca6dc452d289314280a0f8842a6500000000000000000000000000001ea79a4f";
+        let without_prefix = calldata.trim_start_matches("0x");
+        let decoded_calldata = hex::decode(without_prefix).unwrap();
+        let encoded_calldata = hex::encode(&decoded_calldata);
+        let bytes = calldata.as_bytes();
+
+        assert_eq!(encoded_calldata, calldata);
+        assert_eq!(bytes, decoded_calldata);
     }
 }
