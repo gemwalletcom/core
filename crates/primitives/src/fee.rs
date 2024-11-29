@@ -9,4 +9,5 @@ pub enum FeePriority {
 pub enum FeeUnitType {
     satVb,
     satB,
+    gwei,
 }
