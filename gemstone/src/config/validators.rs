@@ -48,7 +48,7 @@ pub fn get_validators() -> HashMap<String, Vec<String>> {
             Chain::Solana.to_string(),
             vec![
                 "9QU2QSxhb24FUX3Tu2FpczXjpK3VYrvRudywSZaM29mF".to_string(), // everstake
-                "23SUe5fzmLws1M58AnGnvnUBRUKJmzCpnFQwv4M4b9Er".to_string(), // stakin
+                "4PsiLMyoUQ7QRn1FFiFCvej4hsUTFzfvJnyN4bj1tmSN".to_string(), // stakin
             ],
         ),
     ]
