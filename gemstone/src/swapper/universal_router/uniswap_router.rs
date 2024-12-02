@@ -14,7 +14,7 @@ impl UniversalRouterProvider for UniswapUniversalRouter {
         SwapProvider::UniswapV3
     }
 
-    fn get_tiers(&self) -> Vec<gem_evm::uniswap::FeeTier> {
+    fn get_tiers(&self) -> Vec<FeeTier> {
         vec![FeeTier::Hundred, FeeTier::FiveHundred, FeeTier::ThreeThousand, FeeTier::TenThousand]
     }
 

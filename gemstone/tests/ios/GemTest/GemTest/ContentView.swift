@@ -1,52 +1,10 @@
 // Copyright (c). Gem Wallet. All rights reserved.
 
-import SwiftUI
 import Gemstone
-
-let TEST_OPTIONS = GemSwapOptions(
-    slippageBps: 100,
-    fee: SwapReferralFees(
-        evm: .init(address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7", bps: 25),
-        solana: .init(address: "97q7TdebuvmxXCM1JzgqzpB1i7Wgvk4ACUWanhiL6Dk1", bps: 25),
-        solanaJupiter: .init(address: "A21o4asMbFHYadqXdLusT9Bvx9xaC5YV9gcaidjqtdXC", bps: 25),
-        thorchain: .init(address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7", bps: 25)
-    ),
-    preferredProviders: []
-)
+import SwiftUI
 
 struct ContentView: View {
-
     let provider = NativeProvider()
-
-    let eth2usdcRequest: SwapQuoteRequest = SwapQuoteRequest(
-        fromAsset: "ethereum",
-        toAsset: "ethereum_0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-        walletAddress: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7",
-        destinationAddress: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7",
-        value: "100000000000000000", // 0.01 ETH
-        mode: .exactIn,
-        options: nil
-    )
-
-    let usdc2ethRequest: SwapQuoteRequest = SwapQuoteRequest(
-        fromAsset: "ethereum_0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-        toAsset: "ethereum",
-        walletAddress: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7",
-        destinationAddress: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7",
-        value: "100000000", // 100 USDC
-        mode: .exactIn,
-        options: nil
-    )
-
-    let sol2usdcRequest: SwapQuoteRequest = SwapQuoteRequest(
-        fromAsset: "solana",
-        toAsset: "solana_EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
-        walletAddress: "A21o4asMbFHYadqXdLusT9Bvx9xaC5YV9gcaidjqtdXC",
-        destinationAddress: "A21o4asMbFHYadqXdLusT9Bvx9xaC5YV9gcaidjqtdXC",
-        value: "1000000000", // 1 SOL
-        mode: .exactIn,
-        options: TEST_OPTIONS
-    )
 
     var body: some View {
         VStack {
@@ -62,25 +20,14 @@ struct ContentView: View {
             Button("List Providers") {
                 self.fetchProviders()
             }
-            Button("Fetch ETH Quote") {
-                Task.detached {
-                    do {
-                        try await self.fetchQuote(self.eth2usdcRequest)
-                    }
-                    catch {
-                        print(error)
-                    }
-                }
+            Button("Fetch ETH -> USDC") {
+                self.testQuote(quote: .eth2usdc)
             }
-            Button("Fetch SOL Quote") {
-                Task.detached {
-                    do {
-                        try await self.fetchQuote(self.sol2usdcRequest)
-                    }
-                    catch {
-                        print(error)
-                    }
-                }
+            Button("Fetch SOL -> USDC") {
+                self.testQuote(quote: .sol2usdc)
+            }
+            Button("Fetch UNI -> LINK") {
+                self.testQuote(quote: .uni2link)
             }
         }
         .padding()
@@ -105,12 +52,24 @@ struct ContentView: View {
         print(json)
     }
 
+    func testQuote(quote: SwapQuoteRequest) {
+        Task {
+            do {
+                try await self.fetchQuote(quote)
+            }
+            catch {
+                print(error)
+            }
+        }
+    }
+
     func fetchQuote(_ request: SwapQuoteRequest) async throws {
         let swapper = GemSwapper(rpcProvider: self.provider)
         guard let quote = try await swapper.fetchQuote(request: request).first else {
             return print("<== fetchQuote: nil")
         }
         print("<== fetchQuote:\n", quote)
+        print("==> amount out: \(quote.toValue)\n")
 
         let data = try await swapper.fetchQuoteData(quote: quote, data: .none)
         print("<== fetchQuoteData:\n", data)

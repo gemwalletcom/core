@@ -2,7 +2,7 @@ mod pancakeswap_router;
 mod uniswap_router;
 
 use crate::{
-    network::{jsonrpc::batch_jsonrpc_call, AlienProvider, JsonRpcRequest, JsonRpcRequestConvert, JsonRpcResponse},
+    network::{jsonrpc::batch_jsonrpc_call, AlienProvider, JsonRpcRequest, JsonRpcRequestConvert, JsonRpcResponse, JsonRpcResult},
     swapper::{
         approval::{check_approval, CheckApprovalType},
         models::*,
@@ -17,6 +17,7 @@ use gem_evm::{
         command::{encode_commands, PayPortion, Permit2Permit, Sweep, UniversalRouterCommand, UnwrapWeth, V3SwapExactIn, WrapEth, ADDRESS_THIS},
         contract::IQuoterV2,
         deployment::V3Deployment,
+        path::{build_direct_pair, build_pairs, get_base_pair, BasePair, TokenPair},
         FeeTier,
     },
 };
@@ -29,7 +30,6 @@ use alloy_core::{
     },
     sol_types::SolCall,
 };
-use alloy_primitives::aliases::U24;
 use async_trait::async_trait;
 use serde_json::Value;
 use std::{
@@ -94,17 +94,6 @@ impl UniswapV3 {
         EthereumAddress::parse(&str).ok_or(SwapperError::InvalidAddress { address: str })
     }
 
-    fn build_path_with_token(token_in: &EthereumAddress, token_out: &EthereumAddress, fee_tier: FeeTier) -> Bytes {
-        let mut bytes: Vec<u8> = vec![];
-        let fee = U24::from(fee_tier as u32);
-
-        bytes.extend(&token_in.bytes);
-        bytes.extend(&fee.to_be_bytes_vec());
-        bytes.extend(&token_out.bytes);
-
-        Bytes::from(bytes)
-    }
-
     fn parse_request(request: &SwapQuoteRequest) -> Result<(EVMChain, EthereumAddress, EthereumAddress, U256), SwapperError> {
         let evm_chain = EVMChain::from_chain(request.from_asset.chain).ok_or(SwapperError::NotSupportedChain)?;
         let token_in = Self::get_asset_address(&request.from_asset, evm_chain)?;
@@ -114,8 +103,49 @@ impl UniswapV3 {
         Ok((evm_chain, token_in, token_out, amount_in))
     }
 
-    fn build_quoter_request(request: &SwapQuoteRequest, quoter_v2: &str, amount_in: U256, path: &Bytes) -> EthereumRpc {
-        let call_data: Vec<u8> = match request.mode {
+    fn is_base_pair(token_in: &EthereumAddress, token_out: &EthereumAddress, base_pair: &BasePair) -> bool {
+        let base_set = base_pair.to_set();
+        base_set.contains(token_in) || base_set.contains(token_out)
+    }
+
+    fn build_paths(token_in: &EthereumAddress, token_out: &EthereumAddress, fee_tiers: &[FeeTier], base_pair: &BasePair) -> Vec<Bytes> {
+        let mut paths: Vec<Bytes> = fee_tiers
+            .iter()
+            .map(|fee_tier| build_direct_pair(token_in, token_out, fee_tier.clone() as u32))
+            .collect();
+
+        if !Self::is_base_pair(token_in, token_out, base_pair) {
+            // build token_in -> [native|stable] path
+
+            let native_token_pair: Vec<Vec<TokenPair>> = fee_tiers
+                .iter()
+                .map(|fee_tier| TokenPair::new_two_hop(token_in, &base_pair.native, token_out, fee_tier))
+                .collect();
+            let native_paths: Vec<Bytes> = native_token_pair.iter().map(|token_pairs| build_pairs(token_pairs)).collect();
+            paths.extend(native_paths);
+        };
+        paths
+    }
+
+    fn build_paths_with_routes(routes: &[SwapRoute]) -> Result<Bytes, SwapperError> {
+        if routes.is_empty() {
+            return Err(SwapperError::InvalidRoute);
+        }
+        let fee_tier = FeeTier::try_from(routes[0].route_data.as_str()).map_err(|_| SwapperError::InvalidAmount)?;
+        let token_pairs: Vec<TokenPair> = routes
+            .iter()
+            .map(|route| TokenPair {
+                token_in: route.input.clone().into(),
+                token_out: route.output.clone().into(),
+                fee_tier: fee_tier.clone(),
+            })
+            .collect();
+        let paths = build_pairs(&token_pairs);
+        Ok(paths)
+    }
+
+    fn build_quoter_request(mode: &GemSwapMode, wallet_address: &str, quoter_v2: &str, amount_in: U256, path: &Bytes) -> EthereumRpc {
+        let call_data: Vec<u8> = match mode {
             GemSwapMode::ExactIn => IQuoterV2::quoteExactInputCall {
                 path: path.clone(),
                 amountIn: amount_in,
@@ -129,7 +159,7 @@ impl UniswapV3 {
         };
 
         EthereumRpc::Call(
-            TransactionObject::new_call_with_from(&request.wallet_address, quoter_v2, call_data),
+            TransactionObject::new_call_with_from(wallet_address, quoter_v2, call_data),
             BlockParameter::Latest,
         )
     }
@@ -147,11 +177,11 @@ impl UniswapV3 {
 
     fn build_commands(
         request: &SwapQuoteRequest,
-        token_in: &EthereumAddress,
+        _token_in: &EthereumAddress,
         token_out: &EthereumAddress,
         amount_in: U256,
         quote_amount: U256,
-        fee_tier: FeeTier,
+        path: &Bytes,
         permit: Option<Permit2Permit>,
     ) -> Result<Vec<UniversalRouterCommand>, SwapperError> {
         let options = request.options.clone().unwrap_or_default();
@@ -164,8 +194,6 @@ impl UniswapV3 {
         let wrap_input_eth = request.from_asset.is_native();
         let unwrap_output_weth = request.to_asset.is_native();
         let pay_fees = fee_options.bps > 0;
-
-        let path = Self::build_path_with_token(token_in, token_out, fee_tier);
 
         let mut commands: Vec<UniversalRouterCommand> = vec![];
 
@@ -279,6 +307,8 @@ impl GemSwapProvider for UniswapV3 {
         let wallet_address = Address::parse_checksummed(&request.wallet_address, None).map_err(|_| SwapperError::InvalidAddress {
             address: request.wallet_address.clone(),
         })?;
+
+        // Check deployment and weth contract
         let deployment = self
             .provider
             .get_deployment_by_chain(&request.from_asset.chain)
@@ -286,32 +316,44 @@ impl GemSwapProvider for UniswapV3 {
         let (evm_chain, token_in, token_out, amount_in) = Self::parse_request(request)?;
         _ = evm_chain.weth_contract().ok_or(SwapperError::NotSupportedChain)?;
 
-        // Build path for QuoterV2
+        // Build paths for QuoterV2
         let fee_tiers = self.provider.get_tiers();
-        let eth_calls: Vec<EthereumRpc> = fee_tiers
+        let base_pair = get_base_pair(&evm_chain);
+        let paths = Self::build_paths(&token_in, &token_out, &fee_tiers, &base_pair);
+
+        assert!(paths.len() % fee_tiers.len() == 0);
+
+        let eth_calls: Vec<EthereumRpc> = paths
             .iter()
-            .map(|fee_tier| {
-                let path = Self::build_path_with_token(&token_in, &token_out, fee_tier.clone());
-                Self::build_quoter_request(request, deployment.quoter_v2, amount_in, &path)
-            })
+            .map(|path| Self::build_quoter_request(&request.mode, &request.wallet_address, deployment.quoter_v2, amount_in, path))
             .collect();
 
-        let responses = batch_jsonrpc_call(&eth_calls, provider.clone(), &request.from_asset.chain)
+        let results = batch_jsonrpc_call(&eth_calls, provider.clone(), &request.from_asset.chain)
             .await
             .map_err(SwapperError::from)?;
 
-        let mut max_amount_out = U256::from(0);
+        let mut max_amount_out: Option<U256> = None;
         let mut fee_tier_idx = 0;
         let mut gas_estimate: Option<String> = None;
-        for response in responses.iter() {
-            let quoter_tuple = Self::decode_quoter_response(response)?;
-            if quoter_tuple.0 > max_amount_out {
-                max_amount_out = quoter_tuple.0;
-                fee_tier_idx = response.id as usize - 1;
-                gas_estimate = Some(quoter_tuple.1.to_string());
+
+        for result in results.iter().enumerate() {
+            match result.1 {
+                JsonRpcResult::Value(value) => {
+                    let quoter_tuple = Self::decode_quoter_response(value)?;
+                    if quoter_tuple.0 > max_amount_out.unwrap_or_default() {
+                        max_amount_out = Some(quoter_tuple.0);
+                        fee_tier_idx = result.0;
+                        gas_estimate = Some(quoter_tuple.1.to_string());
+                    }
+                }
+                _ => continue,
             }
         }
-        let fee_tier: u32 = fee_tiers[fee_tier_idx].clone() as u32;
+
+        if max_amount_out.is_none() {
+            return Err(SwapperError::NoQuoteAvailable);
+        }
+
         let mut approval_type = ApprovalType::None;
         if !request.from_asset.is_native() {
             // Check allowances
@@ -320,17 +362,44 @@ impl GemSwapProvider for UniswapV3 {
                 .await?;
         }
 
-        Ok(SwapQuote {
-            from_value: request.value.clone(),
-            to_value: max_amount_out.to_string(),
-            data: SwapProviderData {
-                provider: self.provider(),
-                routes: vec![SwapRoute {
+        let fee_tier: u32 = fee_tiers[fee_tier_idx % fee_tiers.len()].clone() as u32;
+        let mut routes: Vec<SwapRoute> = vec![];
+        match fee_tier_idx / fee_tiers.len() {
+            // direct route
+            0 => routes.push(SwapRoute {
+                input: AssetId::from(request.from_asset.chain, Some(token_in.to_checksum())),
+                output: AssetId::from(request.to_asset.chain, Some(token_out.to_checksum())),
+                route_data: fee_tier.to_string(),
+                gas_estimate,
+            }),
+            // 2 hop route with native
+            1 => routes.extend(vec![
+                SwapRoute {
                     input: AssetId::from(request.from_asset.chain, Some(token_in.to_checksum())),
-                    output: AssetId::from(request.to_asset.chain, Some(token_out.to_checksum())),
+                    output: AssetId::from(request.from_asset.chain, Some(base_pair.native.to_checksum())),
                     route_data: fee_tier.to_string(),
                     gas_estimate,
-                }],
+                },
+                SwapRoute {
+                    input: AssetId::from(request.to_asset.chain, Some(base_pair.native.to_checksum())),
+                    output: AssetId::from(request.to_asset.chain, Some(token_in.to_checksum())),
+                    route_data: fee_tier.to_string(),
+                    gas_estimate: None,
+                },
+            ]),
+            _ => {}
+        }
+
+        if routes.is_empty() {
+            return Err(SwapperError::NoQuoteAvailable);
+        }
+
+        Ok(SwapQuote {
+            from_value: request.value.clone(),
+            to_value: max_amount_out.unwrap().to_string(),
+            data: SwapProviderData {
+                provider: self.provider(),
+                routes: routes.clone(),
             },
             approval: approval_type,
             request: request.clone(),
@@ -350,9 +419,9 @@ impl GemSwapProvider for UniswapV3 {
             FetchQuoteData::Permit2(data) => Some(data.into()),
             FetchQuoteData::None => None,
         };
-        let fee_tier = FeeTier::try_from(quote.data.routes[0].route_data.as_str()).map_err(|_| SwapperError::InvalidAmount)?;
 
-        let commands = Self::build_commands(request, &token_in, &token_out, amount_in, to_amount, fee_tier, permit)?;
+        let path: Bytes = Self::build_paths_with_routes(&quote.data.routes)?;
+        let commands = Self::build_commands(request, &token_in, &token_out, amount_in, to_amount, &path, permit)?;
         let deadline = SystemTime::now().duration_since(UNIX_EPOCH).expect("Time went backwards").as_secs() + DEFAULT_DEADLINE;
         let encoded = encode_commands(&commands, U256::from(deadline));
 
@@ -378,22 +447,8 @@ mod tests {
         config::swap_config::{SwapReferralFee, SwapReferralFees},
         swapper::permit2_data::*,
     };
-    use alloy_core::{hex::decode as HexDecode, hex::encode_prefixed as HexEncode};
+    use alloy_core::hex::decode as HexDecode;
     use alloy_primitives::aliases::U256;
-
-    #[test]
-    fn test_build_path() {
-        // Optimism WETH
-        let token0 = EthereumAddress::parse("0x4200000000000000000000000000000000000006").unwrap();
-        // USDC
-        let token1 = EthereumAddress::parse("0x0b2c639c533813f4aa9d7837caf62653d097ff85").unwrap();
-        let bytes = UniswapV3::build_path_with_token(&token0, &token1, FeeTier::FiveHundred);
-
-        assert_eq!(
-            HexEncode(bytes),
-            "0x42000000000000000000000000000000000000060001f40b2c639c533813f4aa9d7837caf62653d097ff85"
-        )
-    }
 
     #[test]
     fn test_decode_quoter_v2_response() {
@@ -422,8 +477,9 @@ mod tests {
         let token_out = EthereumAddress::parse("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48").unwrap();
         let amount_in = U256::from(1000000000000000u64);
 
+        let path = build_direct_pair(&token_in, &token_out, FeeTier::FiveHundred as u32);
         // without fee
-        let commands = UniswapV3::build_commands(&request, &token_in, &token_out, amount_in, U256::from(0), FeeTier::FiveHundred, None).unwrap();
+        let commands = UniswapV3::build_commands(&request, &token_in, &token_out, amount_in, U256::from(0), &path, None).unwrap();
 
         assert_eq!(commands.len(), 2);
 
@@ -440,7 +496,7 @@ mod tests {
         };
         request.options = Some(options);
 
-        let commands = UniswapV3::build_commands(&request, &token_in, &token_out, amount_in, U256::from(0), FeeTier::FiveHundred, None).unwrap();
+        let commands = UniswapV3::build_commands(&request, &token_in, &token_out, amount_in, U256::from(0), &path, None).unwrap();
 
         assert_eq!(commands.len(), 4);
 
@@ -484,13 +540,14 @@ mod tests {
             .unwrap(),
         };
 
+        let path = build_direct_pair(&token_in, &token_out, FeeTier::FiveHundred as u32);
         let commands = UniswapV3::build_commands(
             &request,
             &token_in,
             &token_out,
             amount_in,
             U256::from(6507936),
-            FeeTier::FiveHundred,
+            &path,
             Some(permit2_data.into()),
         )
         .unwrap();
@@ -525,16 +582,8 @@ mod tests {
         let token_out = EthereumAddress::parse(request.to_asset.token_id.as_ref().unwrap()).unwrap();
         let amount_in = U256::from_str(&request.value).unwrap();
 
-        let commands = UniswapV3::build_commands(
-            &request,
-            &token_in,
-            &token_out,
-            amount_in,
-            U256::from(33377662359182269u64),
-            FeeTier::FiveHundred,
-            None,
-        )
-        .unwrap();
+        let path = build_direct_pair(&token_in, &token_out, FeeTier::FiveHundred as u32);
+        let commands = UniswapV3::build_commands(&request, &token_in, &token_out, amount_in, U256::from(33377662359182269u64), &path, None).unwrap();
 
         assert_eq!(commands.len(), 3);
 
@@ -584,13 +633,14 @@ mod tests {
             .unwrap(),
         };
 
+        let path = build_direct_pair(&token_in, &token_out, FeeTier::FiveHundred as u32);
         let commands = UniswapV3::build_commands(
             &request,
             &token_in,
             &token_out,
             amount_in,
             U256::from(3997001989341576u64),
-            FeeTier::FiveHundred,
+            &path,
             Some(permit2_data.into()),
         )
         .unwrap();
@@ -602,4 +652,7 @@ mod tests {
         assert!(matches!(commands[2], UniversalRouterCommand::PAY_PORTION(_)));
         assert!(matches!(commands[3], UniversalRouterCommand::UNWRAP_WETH(_)));
     }
+
+    #[test]
+    fn test_build_commands_uni_link() {}
 }
