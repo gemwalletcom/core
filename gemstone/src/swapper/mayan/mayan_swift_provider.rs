@@ -7,11 +7,12 @@ use async_trait::async_trait;
 use gem_evm::{
     address::EthereumAddress,
     jsonrpc::EthereumRpc,
-    mayan::swift::deployment::{get_swift_deployment_by_chain, get_swift_deployment_chains},
+    mayan::swift::deployment::{get_swift_deployment_by_chain, get_swift_deployment_chains, get_swift_providers},
 };
 use primitives::{Asset, AssetId, Chain};
 
 use crate::{
+    config::swap_config::SwapReferralFee,
     network::{jsonrpc_call, AlienProvider},
     swapper::{
         ApprovalType, FetchQuoteData, GemSwapProvider, SwapProvider, SwapProviderData, SwapQuote, SwapQuoteData, SwapQuoteRequest, SwapRoute, SwapperError,
@@ -45,6 +46,13 @@ impl MayanSwiftProvider {
         get_swift_deployment_by_chain(chain).map(|x| x.address)
     }
 
+    fn get_chain_by_wormhole_id(&self, wormhole_id: u64) -> Option<Chain> {
+        get_swift_providers()
+            .into_iter()
+            .find(|(chain, deployment)| deployment.wormhole_id == wormhole_id)
+            .map(|(chain, _)| chain)
+    }
+
     async fn check_approval(&self, request: &SwapQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<ApprovalType, SwapperError> {
         if request.from_asset.is_native() {
             return Ok(ApprovalType::None);
@@ -63,11 +71,20 @@ impl MayanSwiftProvider {
             .map_err(|e| SwapperError::ABIError { msg: e.to_string() })
     }
 
-    fn add_referrer(&self, request: &SwapQuoteRequest, order_params: &mut OrderParams) {
-        // TODO: implement if needed
+    fn to_native_wormhole_address(&self, address: &str, w_chain_id: u64) -> Result<[u8; 32], SwapperError> {
+        let chain = self.get_chain_by_wormhole_id(w_chain_id).ok_or(SwapperError::InvalidRoute)?;
+
+        if chain == Chain::Solana {
+            todo!()
+        } else {
+            Ok(self.address_to_bytes32(address)?)
+        }
     }
 
     fn build_swift_order_params(&self, request: &SwapQuoteRequest, quote: &Quote) -> Result<OrderParams, SwapperError> {
+        let dest_chain_id = quote.to_token.w_chain_id.unwrap();
+        let from_chain_id = quote.from_token.w_chain_id.unwrap();
+
         let deadline = quote.deadline64.parse::<u64>().map_err(|_| {
             eprintln!("Failed to parse deadline: {}", quote.deadline64);
             SwapperError::InvalidRoute
@@ -106,8 +123,9 @@ impl MayanSwiftProvider {
             e
         })?;
 
-        let dest_chain_id = quote.to_token.w_chain_id.unwrap();
         let random_bytes = Self::generate_random_bytes32();
+
+        let referrer = self.get_referrer(request)?;
 
         let params = OrderParams {
             trader: trader_address,
@@ -119,8 +137,12 @@ impl MayanSwiftProvider {
             deadline,
             dest_addr: destination_address,
             dest_chain_id: dest_chain_id.to_string().parse().map_err(|_| SwapperError::InvalidAmount)?,
-            referrer_addr: [0u8; 32],
-            referrer_bps: 0u8,
+            referrer_addr: self
+                .to_native_wormhole_address(referrer.address.as_str(), from_chain_id)
+                .map_err(|e| SwapperError::InvalidAddress {
+                    address: referrer.address.clone(),
+                })?,
+            referrer_bps: referrer.bps.try_into().map_err(|_| SwapperError::InvalidAmount)?,
             auction_mode: quote.swift_auction_mode.unwrap_or(0),
             random: random_bytes,
         };
@@ -142,8 +164,28 @@ impl MayanSwiftProvider {
         Ok(bytes32)
     }
 
+    fn get_referrer(&self, request: &SwapQuoteRequest) -> Result<SwapReferralFee, SwapperError> {
+        if let Some(options) = &request.options {
+            if let Some(referrer) = &options.fee {
+                let evm_fee = &referrer.evm;
+                let solana_fee = &referrer.solana;
+
+                if request.from_asset.chain == Chain::Solana {
+                    return Ok(solana_fee.clone());
+                }
+
+                return Ok(evm_fee.clone());
+            }
+        }
+
+        Err(SwapperError::ComputeQuoteError {
+            msg: "Missing referrer".to_string(),
+        })
+    }
+
     async fn fetch_quote_from_request(&self, request: &SwapQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<Quote, SwapperError> {
         let mayan_relayer = MayanRelayer::default_relayer(provider.clone());
+        let referrer = self.get_referrer(request)?;
         let quote_params = QuoteParams {
             amount: request.value.parse().map_err(|_| SwapperError::InvalidAmount)?,
             from_token: request.from_asset.token_id.clone().unwrap_or(EthereumAddress::zero().to_checksum()),
@@ -152,8 +194,8 @@ impl MayanSwiftProvider {
             to_chain: request.to_asset.chain.clone(),
             slippage_bps: Some(100),
             gas_drop: None,
-            referrer: None,
-            referrer_bps: None,
+            referrer: Some(referrer.address),
+            referrer_bps: Some(referrer.bps),
         };
 
         let quote_options = QuoteOptions {

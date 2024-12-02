@@ -5,7 +5,7 @@ use primitives::Chain;
 #[derive(Debug, Clone, PartialEq)]
 pub struct MayanSwiftDeployment {
     pub address: String,
-    pub wormhole_id: u16,
+    pub wormhole_id: u64,
 }
 
 pub fn get_swift_providers() -> HashMap<Chain, MayanSwiftDeployment> {
