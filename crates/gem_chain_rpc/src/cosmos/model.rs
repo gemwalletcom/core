@@ -1,9 +1,12 @@
+use std::str;
 use std::str::FromStr;
 
+use base64::{engine::general_purpose, Engine as _};
 use num_bigint::BigInt;
 use serde::{Deserialize, Serialize};
 
 pub const EVENTS_WITHDRAW_REWARDS_TYPE: &str = "withdraw_rewards";
+pub const EVENTS_ATTRIBUTE_AMOUNT: &str = "amount";
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BlockResponse {
@@ -75,19 +78,30 @@ impl TransactionResponse {
             .flat_map(|x| x.attributes)
             .collect::<Vec<_>>();
 
+        //base64 decoding added for sei/celestia. This is a temporary solution until the issue is resolved in the cosmos-sdk
         let value = attributes
             .into_iter()
-            .filter(|x| x.key == "amount")
-            .flat_map(|x| {
-                x.value.map(|x| {
-                    x.split(',')
-                        .filter(|x| x.contains(denom))
-                        .collect::<Vec<&str>>()
-                        .first()
-                        .unwrap_or(&"0")
-                        .to_string()
-                        .replace(denom, "")
-                })
+            .filter(|x| {
+                if let Ok(value) = general_purpose::STANDARD.decode(x.key.clone()) {
+                    str::from_utf8(&value).unwrap() == EVENTS_ATTRIBUTE_AMOUNT
+                } else {
+                    x.key == EVENTS_ATTRIBUTE_AMOUNT
+                }
+            })
+            .map(|x| {
+                let value = x.value.unwrap_or_default();
+                if let Ok(value) = general_purpose::STANDARD.decode(value.clone()).as_ref() {
+                    str::from_utf8(value).unwrap_or_default()
+                } else {
+                    &value
+                }
+                .split(',')
+                .filter(|x| x.contains(denom))
+                .collect::<Vec<&str>>()
+                .first()
+                .unwrap_or(&"0")
+                .to_string()
+                .replace(denom, "")
             })
             .flat_map(|x| BigInt::from_str(&x).ok())
             .sum();

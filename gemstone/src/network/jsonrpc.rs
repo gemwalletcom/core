@@ -71,7 +71,7 @@ impl<T> JsonRpcResult<T>
 where
     T: Clone,
 {
-    pub fn extract_result(&self) -> Result<T, JsonRpcError> {
+    pub fn take(&self) -> Result<T, JsonRpcError> {
         match self {
             JsonRpcResult::Value(value) => Ok(value.result.clone()),
             JsonRpcResult::Error(error) => Err(error.error.clone()),

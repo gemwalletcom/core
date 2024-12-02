@@ -13,12 +13,12 @@ mod tests {
 
     #[derive(Debug)]
     pub struct NativeProvider {
-        pub node_config: HashMap<Chain, String>,
+        pub node_config: HashMap<String, String>,
         pub client: Client,
     }
 
     impl NativeProvider {
-        pub fn new(node_config: HashMap<Chain, String>) -> Self {
+        pub fn new(node_config: HashMap<String, String>) -> Self {
             Self {
                 node_config,
                 client: Client::new(),
@@ -28,7 +28,7 @@ mod tests {
 
     #[async_trait]
     impl AlienProvider for NativeProvider {
-        fn get_endpoint(&self, chain: Chain) -> Result<String, AlienError> {
+        fn get_endpoint(&self, chain: String) -> Result<String, AlienError> {
             Ok(self
                 .node_config
                 .get(&chain)
@@ -95,7 +95,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_orca_get_quote_by_input() -> Result<(), SwapperError> {
-        let node_config = HashMap::from([(Chain::Solana, "https://api.mainnet-beta.solana.com".into())]);
+        let node_config = HashMap::from([(Chain::Solana.to_string(), "https://solana-rpc.publicnode.com".into())]);
         let swap_provider: Box<dyn GemSwapProvider> = Box::new(Orca::default());
         let network_provider = Arc::new(NativeProvider::new(node_config));
 
