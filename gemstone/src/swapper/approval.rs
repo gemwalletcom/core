@@ -70,7 +70,7 @@ pub async fn check_approval(check_type: CheckApprovalType, provider: Arc<dyn Ali
         CheckApprovalType::ERC20(owner, token, spender, amount) => check_approval_erc20(owner, token, spender, amount, provider, chain).await,
         CheckApprovalType::Permit2(permit2_contract, owner, token, spender, amount) => {
             // Check token allowance, spender is permit2
-            let self_approval = check_approval_erc20(owner.clone(), token.clone(), spender.clone(), amount, provider.clone(), chain).await?;
+            let self_approval = check_approval_erc20(owner.clone(), token.clone(), permit2_contract.clone(), amount, provider.clone(), chain).await?;
 
             // Return self_approval if it's not None
             if matches!(self_approval, ApprovalType::Approve(_)) {
