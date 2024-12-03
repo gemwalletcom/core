@@ -1,5 +1,7 @@
 use super::{AlienError, AlienProvider, AlienTarget, Data};
-use std::{fmt::Debug, sync::Arc};
+use async_trait::async_trait;
+use primitives::Chain;
+use std::{fmt::Debug, sync::Arc, time::Duration};
 
 #[derive(Debug, uniffi::Object)]
 pub struct AlienProviderWarp {
@@ -18,38 +20,32 @@ impl AlienProviderWarp {
     }
 }
 
+#[derive(Debug)]
+pub struct AlienProviderMock {
+    pub response: String,
+    pub timeout: Duration,
+}
+
+#[async_trait]
+impl AlienProvider for AlienProviderMock {
+    async fn request(&self, _target: AlienTarget) -> Result<Data, AlienError> {
+        let responses = self.batch_request(vec![_target]).await;
+        responses.map(|responses| responses.first().unwrap().clone())
+    }
+
+    async fn batch_request(&self, _targets: Vec<AlienTarget>) -> Result<Vec<Data>, AlienError> {
+        Ok(vec![self.response.as_bytes().to_vec()])
+    }
+
+    fn get_endpoint(&self, _chain: Chain) -> Result<String, AlienError> {
+        Ok(String::from("http://localhost:8080"))
+    }
+}
+
 #[cfg(test)]
 pub mod tests {
-    use crate::network::*;
     use crate::network::{mock::*, target::*};
-    use async_std::future::{pending, timeout};
-    use async_trait::async_trait;
-    use primitives::Chain;
     use std::time::Duration;
-
-    #[derive(Debug)]
-    pub struct AlienProviderMock {
-        pub response: String,
-        pub timeout: Duration,
-    }
-
-    #[async_trait]
-    impl AlienProvider for AlienProviderMock {
-        async fn request(&self, _target: AlienTarget) -> Result<Data, AlienError> {
-            let responses = self.batch_request(vec![_target]).await;
-            responses.map(|responses| responses.first().unwrap().clone())
-        }
-
-        async fn batch_request(&self, _targets: Vec<AlienTarget>) -> Result<Vec<Data>, AlienError> {
-            let never = pending::<()>();
-            let _ = timeout(self.timeout, never).await;
-            Ok(vec![self.response.as_bytes().to_vec()])
-        }
-
-        fn get_endpoint(&self, _chain: Chain) -> Result<String, AlienError> {
-            Ok(String::from("http://localhost:8080"))
-        }
-    }
 
     #[tokio::test]
     async fn test_mock_call() {

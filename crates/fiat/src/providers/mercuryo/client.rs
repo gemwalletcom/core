@@ -122,6 +122,6 @@ impl MercuryoClient {
             .append_pair("network", network)
             .append_pair("signature", &signature);
 
-        return components.as_str().to_string();
+        components.as_str().to_string()
     }
 }

@@ -152,6 +152,6 @@ impl BanxaClient {
             .append_pair("fiatAmount", &request.fiat_amount.to_string())
             .append_pair("walletAddress", &request.wallet_address);
 
-        return components.as_str().to_string();
+        components.as_str().to_string()
     }
 }
