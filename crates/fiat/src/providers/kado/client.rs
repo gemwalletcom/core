@@ -116,7 +116,7 @@ impl KadoClient {
             .append_pair("network", &fiat_mapping.network.unwrap_or_default().to_uppercase())
             .append_pair("mode", "minimal");
 
-        return components.as_str().to_string();
+        components.as_str().to_string()
     }
 }
 

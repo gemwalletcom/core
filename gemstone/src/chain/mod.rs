@@ -12,7 +12,7 @@ pub struct ChainConfig {
 }
 
 pub fn get_chain_config(chain: Chain) -> ChainConfig {
-    return ChainConfig {
+    ChainConfig {
         network_id: chain.network_id().to_string(),
         transaction_timeout: chain_transaction_timeout_seconds(chain),
         slip_44: chain.as_slip44() as i32,
@@ -20,7 +20,7 @@ pub fn get_chain_config(chain: Chain) -> ChainConfig {
         denom: chain.as_denom().map(|x| x.to_string()),
         default_asset_type: chain.default_asset_type().map(|x| x.as_ref().to_string()),
         account_activation_fee: chain.account_activation_fee(),
-    };
+    }
 }
 
 fn chain_transaction_timeout_seconds(chain: Chain) -> f64 {

@@ -232,7 +232,7 @@ impl Serialize for TonAddress {
 
 struct TonAddressVisitor;
 
-impl<'de> Visitor<'de> for TonAddressVisitor {
+impl Visitor<'_> for TonAddressVisitor {
     type Value = TonAddress;
 
     fn expecting(&self, formatter: &mut Formatter) -> std::fmt::Result {
