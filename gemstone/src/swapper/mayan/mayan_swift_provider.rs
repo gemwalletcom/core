@@ -1,12 +1,17 @@
 use rand::Rng;
 use std::{str::FromStr, sync::Arc};
 
-use alloy_core::{hex::ToHexExt, primitives::Address};
-use alloy_primitives::{keccak256, U256};
+use alloy_core::{
+    hex::{decode as HexDecode, ToHexExt},
+    primitives::{Address, AddressError, U256},
+    sol_types::SolCall,
+};
+
 use async_trait::async_trait;
 use gem_evm::{
     address::EthereumAddress,
-    jsonrpc::EthereumRpc,
+    erc20::IERC20,
+    jsonrpc::{BlockParameter, EthereumRpc, TransactionObject},
     mayan::swift::deployment::{get_swift_deployment_by_chain, get_swift_deployment_chains, get_swift_providers},
 };
 use primitives::{Asset, AssetId, Chain};
@@ -15,15 +20,15 @@ use crate::{
     config::swap_config::SwapReferralFee,
     network::{jsonrpc_call, AlienProvider},
     swapper::{
+        approval::{check_approval, CheckApprovalType},
         ApprovalType, FetchQuoteData, GemSwapProvider, SwapProvider, SwapProviderData, SwapQuote, SwapQuoteData, SwapQuoteRequest, SwapRoute, SwapperError,
     },
 };
 
 use super::{
-    fee_manager::{CalcProtocolBpsParams, FeeManager},
     forwarder::MayanForwarder,
-    mayan_relayer::{self, MayanRelayer, Quote, QuoteOptions, QuoteParams, QuoteType, MAYAN_FORWARDER_CONTRACT},
-    mayan_swift::{KeyStruct, MayanSwift, MayanSwiftError, OrderParams, PermitParams},
+    mayan_relayer::{MayanRelayer, Quote, QuoteOptions, QuoteParams, QuoteType, MAYAN_FORWARDER_CONTRACT},
+    mayan_swift::{MayanSwift, MayanSwiftError, OrderParams},
 };
 
 const MAYAN_ZERO_ADDRESS: &str = "0x0000000000000000000000000000000000000000";
@@ -49,26 +54,26 @@ impl MayanSwiftProvider {
     fn get_chain_by_wormhole_id(&self, wormhole_id: u64) -> Option<Chain> {
         get_swift_providers()
             .into_iter()
-            .find(|(chain, deployment)| deployment.wormhole_id == wormhole_id)
+            .find(|(_, deployment)| deployment.wormhole_id == wormhole_id)
             .map(|(chain, _)| chain)
     }
 
-    async fn check_approval(&self, request: &SwapQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<ApprovalType, SwapperError> {
+    async fn check_approval(&self, request: &SwapQuoteRequest, provider: Arc<dyn AlienProvider>, quote: &Quote) -> Result<ApprovalType, SwapperError> {
         if request.from_asset.is_native() {
             return Ok(ApprovalType::None);
         }
 
-        let token_id = request.from_asset.token_id.as_ref().ok_or(SwapperError::NotSupportedAsset)?;
-
-        let deployment = get_swift_deployment_by_chain(request.from_asset.chain).ok_or(SwapperError::NotSupportedChain)?;
-
-        let swift_contract = MayanSwift::new(deployment.address, provider.clone(), request.from_asset.chain);
-
-        let amount = &request.value;
-        swift_contract
-            .check_token_approval(&request.wallet_address, token_id, amount)
-            .await
-            .map_err(|e| SwapperError::ABIError { msg: e.to_string() })
+        check_approval(
+            CheckApprovalType::ERC20(
+                request.wallet_address.clone(),
+                request.from_asset.token_id.clone().unwrap_or_default(),
+                MAYAN_FORWARDER_CONTRACT.to_string(),
+                U256::from_str(&request.value.as_str()).map_err(|_| SwapperError::InvalidAmount)?,
+            ),
+            provider,
+            &request.from_asset.chain,
+        )
+        .await
     }
 
     fn to_native_wormhole_address(&self, address: &str, w_chain_id: u64) -> Result<[u8; 32], SwapperError> {
@@ -118,7 +123,8 @@ impl MayanSwiftProvider {
                 e
             })?;
 
-        let gas_drop = self.convert_amount_to_wei(quote.gas_drop, &request.to_asset).map_err(|e| {
+        // TODO: check if we need to use to token or from token decimals
+        let gas_drop = self.convert_amount_to_wei(quote.gas_drop, quote.to_token.decimals.into()).map_err(|e| {
             eprintln!("Failed to convert gas_drop: {}", quote.gas_drop);
             e
         })?;
@@ -137,12 +143,14 @@ impl MayanSwiftProvider {
             deadline,
             dest_addr: destination_address,
             dest_chain_id: dest_chain_id.to_string().parse().map_err(|_| SwapperError::InvalidAmount)?,
-            referrer_addr: self
-                .to_native_wormhole_address(referrer.address.as_str(), from_chain_id)
-                .map_err(|e| SwapperError::InvalidAddress {
-                    address: referrer.address.clone(),
-                })?,
-            referrer_bps: referrer.bps.try_into().map_err(|_| SwapperError::InvalidAmount)?,
+            referrer_addr: referrer.clone().map_or([0u8; 32], |x| {
+                self.to_native_wormhole_address(x.address.as_str(), from_chain_id)
+                    .map_err(|err| SwapperError::ComputeQuoteError {
+                        msg: "Unable to get referrer wormhole address".to_string(),
+                    })
+                    .unwrap()
+            }),
+            referrer_bps: referrer.map_or(0u8, |x| x.bps.try_into().map_err(|_| SwapperError::InvalidAmount).unwrap()),
             auction_mode: quote.swift_auction_mode.unwrap_or(0),
             random: random_bytes,
         };
@@ -164,38 +172,42 @@ impl MayanSwiftProvider {
         Ok(bytes32)
     }
 
-    fn get_referrer(&self, request: &SwapQuoteRequest) -> Result<SwapReferralFee, SwapperError> {
+    fn get_referrer(&self, request: &SwapQuoteRequest) -> Result<Option<SwapReferralFee>, SwapperError> {
         if let Some(options) = &request.options {
             if let Some(referrer) = &options.fee {
                 let evm_fee = &referrer.evm;
                 let solana_fee = &referrer.solana;
 
                 if request.from_asset.chain == Chain::Solana {
-                    return Ok(solana_fee.clone());
+                    return Ok(Some(solana_fee.clone()));
                 }
 
-                return Ok(evm_fee.clone());
+                return Ok(Some(evm_fee.clone()));
             }
         }
 
-        Err(SwapperError::ComputeQuoteError {
-            msg: "Missing referrer".to_string(),
-        })
+        Ok(None)
     }
 
     async fn fetch_quote_from_request(&self, request: &SwapQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<Quote, SwapperError> {
+        let asset_decimals = self.get_asset_decimals(request.from_asset.clone(), provider.clone()).await?;
         let mayan_relayer = MayanRelayer::default_relayer(provider.clone());
         let referrer = self.get_referrer(request)?;
         let quote_params = QuoteParams {
-            amount: request.value.parse().map_err(|_| SwapperError::InvalidAmount)?,
+            amount: self.convert_to_decimals(
+                request.value.parse().map_err(|_| SwapperError::ComputeQuoteError {
+                    msg: "Failed to convert request value to number".to_string(),
+                })?,
+                asset_decimals,
+            ),
             from_token: request.from_asset.token_id.clone().unwrap_or(EthereumAddress::zero().to_checksum()),
             from_chain: request.from_asset.chain.clone(),
             to_token: request.to_asset.token_id.clone().unwrap_or(EthereumAddress::zero().to_checksum()),
             to_chain: request.to_asset.chain.clone(),
             slippage_bps: Some(100),
             gas_drop: None,
-            referrer: Some(referrer.address),
-            referrer_bps: Some(referrer.bps),
+            referrer: referrer.clone().map(|x| x.address),
+            referrer_bps: referrer.map(|x| x.bps),
         };
 
         let quote_options = QuoteOptions {
@@ -220,13 +232,7 @@ impl MayanSwiftProvider {
         })
     }
 
-    fn convert_amount_to_wei(&self, amount: f64, asset_id: &AssetId) -> Result<String, SwapperError> {
-        // Retrieve asset information based on the provided AssetId
-        let asset = Asset::from_chain(asset_id.chain);
-
-        // Get the decimals for the asset
-        let decimals = asset.decimals;
-
+    fn convert_amount_to_wei(&self, amount: f64, decimals: u32) -> Result<String, SwapperError> {
         // Calculate the scaling factor (10^decimals)
         let scaling_factor = 10f64.powi(decimals as i32);
 
@@ -272,6 +278,39 @@ impl MayanSwiftProvider {
         // Return the scaled amount as a string
         Ok(format!("{:.0}", scaled_amount))
     }
+
+    async fn get_asset_decimals(&self, asset_id: AssetId, provider: Arc<dyn AlienProvider>) -> Result<u32, SwapperError> {
+        let asset = Asset::from_chain(asset_id.chain);
+
+        if asset_id.is_native() {
+            return Ok(asset.decimals as u32);
+        }
+        let address = asset_id.token_id.clone().unwrap();
+        let decimals_data = IERC20::decimalsCall {}.abi_encode();
+        let decimals_call = EthereumRpc::Call(TransactionObject::new_call(&address, decimals_data), BlockParameter::Latest);
+
+        let response = jsonrpc_call(&decimals_call, provider.clone(), &asset_id.chain)
+            .await
+            .map_err(|err| SwapperError::ComputeQuoteError {
+                msg: format!("Failed to get ERC20 decimals: {}", err),
+            })?;
+        let result: String = response.take().map_err(|_| SwapperError::ComputeQuoteError {
+            msg: "Failed to get ERC20 decimals".to_string(),
+        })?;
+        let decoded = HexDecode(result).map_err(|_| SwapperError::ComputeQuoteError {
+            msg: "Failed to decode decimals return".to_string(),
+        })?;
+        let decimals_return = IERC20::decimalsCall::abi_decode_returns(&decoded, false).map_err(|_| SwapperError::ComputeQuoteError {
+            msg: "Failed to decode decimals return".to_string(),
+        })?;
+
+        Ok(decimals_return._0.into())
+    }
+
+    fn convert_to_decimals(&self, wei_amount: u128, decimals: u32) -> f64 {
+        let divisor = 10_u64.pow(decimals);
+        wei_amount as f64 / divisor as f64
+    }
 }
 
 #[async_trait]
@@ -282,6 +321,44 @@ impl GemSwapProvider for MayanSwiftProvider {
 
     fn supported_chains(&self) -> Vec<primitives::Chain> {
         get_swift_deployment_chains()
+    }
+
+    async fn fetch_quote(&self, request: &SwapQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapQuote, SwapperError> {
+        // Validate chain support
+        if !self.supported_chains().contains(&request.from_asset.chain) {
+            return Err(SwapperError::NotSupportedChain);
+        }
+
+        let quote = self.fetch_quote_from_request(request, provider.clone()).await?;
+
+        if quote.r#type != QuoteType::SWIFT.to_string() {
+            return Err(SwapperError::ComputeQuoteError {
+                msg: "Quote type is not SWIFT".to_string(),
+            });
+        }
+
+        // Create route information
+        let route = SwapRoute {
+            route_data: "swift-order".to_string(),
+            input: request.from_asset.clone(),
+            output: request.to_asset.clone(),
+            gas_estimate: None,
+        };
+
+        let approval = self.check_approval(request, provider.clone(), &quote).await?;
+
+        Ok(SwapQuote {
+            from_value: request.value.clone(),
+            to_value: self
+                .convert_amount_to_wei(quote.min_amount_out, quote.to_token.decimals.into())
+                .map_err(|e| SwapperError::ComputeQuoteError { msg: e.to_string() })?,
+            data: SwapProviderData {
+                provider: self.provider(),
+                routes: vec![route],
+            },
+            approval,
+            request: request.clone(),
+        })
     }
 
     async fn fetch_quote_data(&self, quote: &SwapQuote, provider: Arc<dyn AlienProvider>, data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError> {
@@ -314,7 +391,7 @@ impl GemSwapProvider for MayanSwiftProvider {
                 .map_err(|e| SwapperError::ABIError { msg: e.to_string() })?
         };
 
-        let mut value = quote.from_value.clone();
+        let value = quote.from_value.clone();
         let forwarder_call_data = if mayan_quote.from_token.contract == mayan_quote.swift_input_contract {
             if mayan_quote.from_token.contract == MAYAN_ZERO_ADDRESS {
                 forwarder
@@ -386,49 +463,6 @@ impl GemSwapProvider for MayanSwiftProvider {
         // } else {
         //     Ok(false)
         // }
-    }
-
-    async fn fetch_quote(&self, request: &SwapQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapQuote, SwapperError> {
-        // Validate chain support
-        if !self.supported_chains().contains(&request.from_asset.chain) {
-            return Err(SwapperError::NotSupportedChain);
-        }
-
-        let quote = self.fetch_quote_from_request(request, provider.clone()).await?;
-
-        if quote.r#type != QuoteType::SWIFT.to_string() {
-            return Err(SwapperError::ComputeQuoteError {
-                msg: "Quote type is not SWIFT".to_string(),
-            });
-        }
-
-        // Create route information
-        let route = SwapRoute {
-            route_type: "swift-order".to_string(),
-            input: request
-                .from_asset
-                .token_id
-                .clone()
-                .unwrap_or_else(|| request.from_asset.chain.as_ref().to_string()),
-            output: request.to_asset.token_id.clone().unwrap_or_else(|| request.to_asset.chain.as_ref().to_string()),
-            fee_tier: "0".to_string(),
-            gas_estimate: None,
-        };
-
-        let approval = self.check_approval(request, provider.clone()).await?;
-
-        Ok(SwapQuote {
-            from_value: request.value.clone(),
-            to_value: self
-                .convert_amount_to_wei(quote.min_amount_out, &request.to_asset)
-                .map_err(|e| SwapperError::ComputeQuoteError { msg: e.to_string() })?,
-            data: SwapProviderData {
-                provider: self.provider(),
-                routes: vec![route],
-            },
-            approval,
-            request: request.clone(),
-        })
     }
 }
 
@@ -608,7 +642,7 @@ mod tests {
         let provider = MayanSwiftProvider::new();
         let asset = Asset::from_chain(Chain::Ethereum);
         let amount = 1.23; // 1.23 ETH
-        let result = provider.convert_amount_to_wei(amount, &asset.id).unwrap();
+        let result = provider.convert_amount_to_wei(amount, 18).unwrap();
         assert_eq!(result, "1230000000000000000"); // 1.23 ETH in Wei
     }
 
@@ -617,7 +651,7 @@ mod tests {
         let provider = MayanSwiftProvider::new();
         let asset = Asset::from_chain(Chain::Ethereum);
         let amount = -1.0; // Negative amount
-        let result = provider.convert_amount_to_wei(amount, &asset.id);
+        let result = provider.convert_amount_to_wei(amount, 18);
         assert!(result.is_err());
     }
 

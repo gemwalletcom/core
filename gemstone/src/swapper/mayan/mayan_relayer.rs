@@ -1,9 +1,22 @@
 use std::sync::Arc;
 
-use primitives::Chain;
+use gem_evm::{
+    erc20::IERC20,
+    jsonrpc::{BlockParameter, EthereumRpc, TransactionObject},
+};
+use primitives::{Asset, AssetId, Chain};
 use serde::{Deserialize, Deserializer, Serialize};
 
-use crate::network::{AlienHttpMethod, AlienProvider, AlienTarget};
+use alloy_core::{
+    hex::decode as HexDecode,
+    primitives::{Address, AddressError, U256},
+    sol_types::SolCall,
+};
+
+use crate::{
+    network::{jsonrpc_call, AlienHttpMethod, AlienProvider, AlienTarget},
+    swapper::SwapperError,
+};
 
 const MAYAN_PROGRAM_ID: &str = "FC4eXxkyrMPTjiYUpp4EAnkmwMbQyZ6NDCh1kfLn6vsf";
 pub const MAYAN_FORWARDER_CONTRACT: &str = "0x0654874eb7F59C6f5b39931FC45dC45337c967c3";
@@ -17,7 +30,7 @@ struct ApiError {
 
 #[derive(Debug, Clone, Serialize)]
 pub struct QuoteParams {
-    pub amount: u64,
+    pub amount: f64,
     pub from_token: String,
     pub from_chain: Chain,
     pub to_token: String,
@@ -248,13 +261,13 @@ impl MayanRelayer {
         Self::new("https://price-api.mayan.finance/v3".to_string(), provider)
     }
 
-    fn convert_to_decimals(wei_amount: u64) -> f64 {
-        wei_amount as f64 / 1e18
-    }
-
     pub async fn get_quote(&self, params: QuoteParams, options: Option<QuoteOptions>) -> Result<Vec<Quote>, MayanRelayerError> {
         let options = options.unwrap_or_default();
-        let amount_decimals = Self::convert_to_decimals(params.amount);
+        let from_chain = if params.from_chain == Chain::SmartChain {
+            "bsc".to_string()
+        } else {
+            params.from_chain.to_string()
+        };
 
         let mut query_params = vec![
             ("swift", options.swift.to_string()),
@@ -263,9 +276,9 @@ impl MayanRelayer {
             ("onlyDirect", options.only_direct.to_string()),
             ("solanaProgram", MAYAN_PROGRAM_ID.to_string()),
             ("forwarderAddress", MAYAN_FORWARDER_CONTRACT.to_string()),
-            ("amountIn", amount_decimals.to_string()),
+            ("amountIn", params.amount.to_string()),
             ("fromToken", params.from_token),
-            ("fromChain", params.from_chain.to_string()),
+            ("fromChain", from_chain),
             ("toToken", params.to_token),
             ("toChain", params.to_chain.to_string()),
             // ("slippageBps", params.slippage_bps.map_or("auto".to_string(), |v| v.to_string())),
