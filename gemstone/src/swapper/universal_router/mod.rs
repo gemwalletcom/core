@@ -406,19 +406,19 @@ impl GemSwapProvider for UniswapV3 {
         let fee_tier: u32 = fee_tiers[fee_tier_idx % fee_tiers.len()].clone() as u32;
         let asset_id_in = AssetId::from(request.from_asset.chain, Some(token_in.to_checksum()));
         let asset_id_out = AssetId::from(request.to_asset.chain, Some(token_out.to_checksum()));
-        let asset_id_intermediary: Option<AssetId>;
-        match fee_tier_idx / fee_tiers.len() {
+        let asset_id_intermediary: Option<AssetId> = match fee_tier_idx / fee_tiers.len() {
             // direct route
-            0 => asset_id_intermediary = None,
+            0 => None,
             // 2 hop route with native
-            1 => asset_id_intermediary = Some(AssetId::from(request.from_asset.chain, Some(base_pair.native.to_checksum()))),
-            2 => asset_id_intermediary = Some(AssetId::from(request.from_asset.chain, Some(base_pair.native.to_checksum()))),
+            1 => Some(AssetId::from(request.from_asset.chain, Some(base_pair.native.to_checksum()))),
+            // 2 hop route with stable
+            2 => Some(AssetId::from(request.from_asset.chain, Some(base_pair.native.to_checksum()))),
             _ => {
                 return Err(SwapperError::ComputeQuoteError {
                     msg: "unexpected fee tier index".into(),
                 });
             }
-        }
+        };
         let routes = Self::build_swap_route(&asset_id_in, asset_id_intermediary.as_ref(), &asset_id_out, &fee_tier.to_string(), gas_estimate);
 
         Ok(SwapQuote {
