@@ -391,7 +391,11 @@ impl GemSwapProvider for MayanSwiftProvider {
                 .map_err(|e| SwapperError::ABIError { msg: e.to_string() })?
         };
 
-        let value = quote.from_value.clone();
+        let mut value = quote.from_value.clone();
+        let effective_amount_in = self
+            .get_amount_of_fractional_amount(mayan_quote.effective_amount_in, mayan_quote.from_token.decimals)
+            .map_err(|e| SwapperError::ComputeQuoteError { msg: e.to_string() })?;
+
         let forwarder_call_data = if mayan_quote.from_token.contract == mayan_quote.swift_input_contract {
             if mayan_quote.from_token.contract == MAYAN_ZERO_ADDRESS {
                 forwarder
@@ -399,7 +403,16 @@ impl GemSwapProvider for MayanSwiftProvider {
                     .await
                     .map_err(|e| SwapperError::ABIError { msg: e.to_string() })?
             } else {
-                todo!();
+                value = "0".to_string();
+                forwarder
+                    .encode_forward_erc20_call(
+                        mayan_quote.swift_input_contract.as_str(),
+                        U256::from_str(effective_amount_in.as_str()).unwrap(),
+                        None,
+                        swift_address.as_str(),
+                        swift_call_data.clone(),
+                    )
+                    .map_err(|e| SwapperError::ABIError { msg: e.to_string() })?
             }
         } else {
             let evm_swap_router_address = mayan_quote.evm_swap_router_address.clone().ok_or_else(|| SwapperError::ComputeQuoteError {
@@ -415,9 +428,6 @@ impl GemSwapProvider for MayanSwiftProvider {
             let token_in = mayan_quote.from_token.contract.clone();
             let formatted_min_middle_amount = self
                 .get_amount_of_fractional_amount(min_middle_amount, mayan_quote.swift_input_decimals)
-                .map_err(|e| SwapperError::ComputeQuoteError { msg: e.to_string() })?;
-            let effective_amount_in = self
-                .get_amount_of_fractional_amount(mayan_quote.effective_amount_in, mayan_quote.from_token.decimals)
                 .map_err(|e| SwapperError::ComputeQuoteError { msg: e.to_string() })?;
 
             if (mayan_quote.from_token.contract == MAYAN_ZERO_ADDRESS) {
@@ -436,7 +446,22 @@ impl GemSwapProvider for MayanSwiftProvider {
                     .await
                     .map_err(|e| SwapperError::ABIError { msg: e.to_string() })?
             } else {
-                todo!();
+                value = "0".to_string();
+                forwarder
+                    .encode_swap_and_forward_erc20_call(
+                        token_in.as_str(),
+                        U256::from_str(quote.from_value.as_str()).map_err(|_| SwapperError::InvalidAmount)?,
+                        None,
+                        &evm_swap_router_address.as_str(),
+                        hex::decode(evm_swap_router_calldata.trim_start_matches("0x")).map_err(|_| SwapperError::ABIError {
+                            msg: "Failed to decode evm_swap_router_calldata hex string without prefix 0x ".to_string(),
+                        })?,
+                        &mayan_quote.swift_input_contract.as_str(),
+                        U256::from_str(&formatted_min_middle_amount).map_err(|_| SwapperError::InvalidAmount)?,
+                        &swift_address.as_str(),
+                        swift_call_data,
+                    )
+                    .map_err(|e| SwapperError::ABIError { msg: e.to_string() })?
             }
         };
 

@@ -12,7 +12,7 @@ use gem_evm::{
     address::EthereumAddress,
     erc20::IERC20,
     jsonrpc::{BlockParameter, EthereumRpc, TransactionObject},
-    mayan::swift::swift::IMayanSwift,
+    mayan::{forwarder::IMayanForwarder::PermitParams, swift::swift::IMayanSwift},
 };
 use primitives::Chain;
 use std::{str::FromStr, sync::Arc};
@@ -78,7 +78,7 @@ impl OrderParams {
 }
 
 #[derive(Debug)]
-pub struct PermitParams {
+pub struct MayanSwiftPermit {
     pub value: String,
     pub deadline: u64,
     pub v: u8,
@@ -103,6 +103,28 @@ impl KeyStruct {
             protocolBps: self.protocol_bps,
         };
         key.abi_encode()
+    }
+}
+
+impl MayanSwiftPermit {
+    pub fn zero() -> Self {
+        Self {
+            value: "0".to_string(),
+            deadline: 0,
+            v: 0,
+            r: [0u8; 32],
+            s: [0u8; 32],
+        }
+    }
+
+    pub fn to_contract_params(&self) -> PermitParams {
+        PermitParams {
+            value: U256::from_str(&self.value).unwrap(),
+            deadline: U256::from(self.deadline),
+            v: self.v.into(),
+            r: self.r.into(),
+            s: self.s.into(),
+        }
     }
 }
 
