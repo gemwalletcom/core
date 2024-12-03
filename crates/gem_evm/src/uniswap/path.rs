@@ -48,8 +48,8 @@ impl From<AssetId> for EthereumAddress {
     }
 }
 
-pub fn get_base_pair(chain: &EVMChain) -> BasePair {
-    let weth = chain.weth_contract().unwrap().to_string();
+pub fn get_base_pair(chain: &EVMChain) -> Option<BasePair> {
+    let weth = chain.weth_contract()?;
     let stable = match chain {
         EVMChain::Ethereum => "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
         EVMChain::Polygon => "0x3c499c542cef5e3811e1192ce70d8cc03d5c3359",
@@ -64,10 +64,10 @@ pub fn get_base_pair(chain: &EVMChain) -> BasePair {
         EVMChain::World => "0x79a02482a880bce3f13e09da970dc34db4cd24d1", // USDC.e
         _ => panic!("unsupported chain"),
     };
-    BasePair {
-        native: EthereumAddress::parse(&weth).unwrap(),
-        stable: EthereumAddress::parse(stable).unwrap(),
-    }
+
+    let native = EthereumAddress::parse(weth)?;
+    let stable = EthereumAddress::parse(stable)?;
+    Some(BasePair { native, stable })
 }
 
 pub fn build_direct_pair(token_in: &EthereumAddress, token_out: &EthereumAddress, fee_tier: u32) -> Bytes {

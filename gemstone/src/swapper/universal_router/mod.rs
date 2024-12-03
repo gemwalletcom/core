@@ -123,6 +123,13 @@ impl UniswapV3 {
                 .collect();
             let native_paths: Vec<Bytes> = native_token_pair.iter().map(|token_pairs| build_pairs(token_pairs)).collect();
             paths.extend(native_paths);
+
+            let stable_token_pair: Vec<Vec<TokenPair>> = fee_tiers
+                .iter()
+                .map(|fee_tier| TokenPair::new_two_hop(token_in, &base_pair.stable, token_out, fee_tier))
+                .collect();
+            let stable_paths: Vec<Bytes> = stable_token_pair.iter().map(|token_pairs| build_pairs(token_pairs)).collect();
+            paths.extend(stable_paths);
         };
         paths
     }
@@ -162,6 +169,38 @@ impl UniswapV3 {
             TransactionObject::new_call_with_from(wallet_address, quoter_v2, call_data),
             BlockParameter::Latest,
         )
+    }
+
+    fn build_swap_route(
+        token_in: &AssetId,
+        intermediary: Option<&AssetId>,
+        token_out: &AssetId,
+        fee_tier: &str,
+        gas_estimate: Option<String>,
+    ) -> Vec<SwapRoute> {
+        if let Some(intermediary) = intermediary {
+            vec![
+                SwapRoute {
+                    input: token_in.clone(),
+                    output: intermediary.clone(),
+                    route_data: fee_tier.to_string(),
+                    gas_estimate: gas_estimate.clone(),
+                },
+                SwapRoute {
+                    input: intermediary.clone(),
+                    output: token_out.clone(),
+                    route_data: fee_tier.to_string(),
+                    gas_estimate: None,
+                },
+            ]
+        } else {
+            vec![SwapRoute {
+                input: token_in.clone(),
+                output: token_out.clone(),
+                route_data: fee_tier.to_string(),
+                gas_estimate: gas_estimate.clone(),
+            }]
+        }
     }
 
     // Returns (amountOut, gasEstimate)
@@ -318,7 +357,9 @@ impl GemSwapProvider for UniswapV3 {
 
         // Build paths for QuoterV2
         let fee_tiers = self.provider.get_tiers();
-        let base_pair = get_base_pair(&evm_chain);
+        let base_pair = get_base_pair(&evm_chain).ok_or(SwapperError::ComputeQuoteError {
+            msg: "base pair not found".into(),
+        })?;
         let paths = Self::build_paths(&token_in, &token_out, &fee_tiers, &base_pair);
 
         assert!(paths.len() % fee_tiers.len() == 0);
@@ -363,36 +404,22 @@ impl GemSwapProvider for UniswapV3 {
         }
 
         let fee_tier: u32 = fee_tiers[fee_tier_idx % fee_tiers.len()].clone() as u32;
-        let mut routes: Vec<SwapRoute> = vec![];
+        let asset_id_in = AssetId::from(request.from_asset.chain, Some(token_in.to_checksum()));
+        let asset_id_out = AssetId::from(request.to_asset.chain, Some(token_out.to_checksum()));
+        let asset_id_intermediary: Option<AssetId>;
         match fee_tier_idx / fee_tiers.len() {
             // direct route
-            0 => routes.push(SwapRoute {
-                input: AssetId::from(request.from_asset.chain, Some(token_in.to_checksum())),
-                output: AssetId::from(request.to_asset.chain, Some(token_out.to_checksum())),
-                route_data: fee_tier.to_string(),
-                gas_estimate,
-            }),
+            0 => asset_id_intermediary = None,
             // 2 hop route with native
-            1 => routes.extend(vec![
-                SwapRoute {
-                    input: AssetId::from(request.from_asset.chain, Some(token_in.to_checksum())),
-                    output: AssetId::from(request.from_asset.chain, Some(base_pair.native.to_checksum())),
-                    route_data: fee_tier.to_string(),
-                    gas_estimate,
-                },
-                SwapRoute {
-                    input: AssetId::from(request.to_asset.chain, Some(base_pair.native.to_checksum())),
-                    output: AssetId::from(request.to_asset.chain, Some(token_in.to_checksum())),
-                    route_data: fee_tier.to_string(),
-                    gas_estimate: None,
-                },
-            ]),
-            _ => {}
+            1 => asset_id_intermediary = Some(AssetId::from(request.from_asset.chain, Some(base_pair.native.to_checksum()))),
+            2 => asset_id_intermediary = Some(AssetId::from(request.from_asset.chain, Some(base_pair.native.to_checksum()))),
+            _ => {
+                return Err(SwapperError::ComputeQuoteError {
+                    msg: "unexpected fee tier index".into(),
+                });
+            }
         }
-
-        if routes.is_empty() {
-            return Err(SwapperError::NoQuoteAvailable);
-        }
+        let routes = Self::build_swap_route(&asset_id_in, asset_id_intermediary.as_ref(), &asset_id_out, &fee_tier.to_string(), gas_estimate);
 
         Ok(SwapQuote {
             from_value: request.value.clone(),

@@ -53,4 +53,14 @@ public extension SwapQuoteRequest {
         mode: .exactIn,
         options: SWAP_OPTIONS
     )
+
+    static let cake2btcb = SwapQuoteRequest(
+        fromAsset: "smartchain_0x0e09fabb73bd3ade0a17ecc321fd13a19e81ce82",
+        toAsset: "smartchain_0x7130d2a12b9bcbfae4f2634d864a1ee1ce3ead9c",
+        walletAddress: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7",
+        destinationAddress: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7",
+        value: "1000000000000000000000", // 1000 Cake
+        mode: .exactIn,
+        options: SWAP_OPTIONS
+    )
 }

@@ -7,11 +7,13 @@ struct ContentView: View {
     let provider = NativeProvider()
 
     var body: some View {
-        VStack {
-            Image(systemName: "diamond")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Gemstone lib version: " + Gemstone.libVersion())
+        VStack(alignment: .leading) {
+            HStack {
+                Image(systemName: "diamond")
+                    .imageScale(.large)
+                    .foregroundStyle(.tint)
+                Text("Gemstone lib version: " + Gemstone.libVersion())
+            }
             Button("Post Data") {
                 Task.detached {
                     try await self.fetchData()
@@ -28,6 +30,9 @@ struct ContentView: View {
             }
             Button("Fetch UNI -> LINK") {
                 self.testQuote(quote: .uni2link)
+            }
+            Button("Fetch Cake -> BTCB") {
+                self.testQuote(quote: .cake2btcb)
             }
         }
         .padding()
@@ -65,11 +70,19 @@ struct ContentView: View {
 
     func fetchQuote(_ request: SwapQuoteRequest) async throws {
         let swapper = GemSwapper(rpcProvider: self.provider)
-        guard let quote = try await swapper.fetchQuote(request: request).first else {
+        guard
+            let quote = try await swapper.fetchQuote(request: request).first,
+            let route = quote.data.routes.first
+        else {
             return print("<== fetchQuote: nil")
         }
+
         print("<== fetchQuote:\n", quote)
-        print("==> amount out: \(quote.toValue)\n")
+        print("==> amount out: \(quote.toValue)")
+        print("==> routes count: \(quote.data.routes.count), fee tier: \(route.routeData)")
+        if quote.data.routes.count > 1 {
+            print("==> intermediary token: \(route.output)")
+        }
 
         let data = try await swapper.fetchQuoteData(quote: quote, data: .none)
         print("<== fetchQuoteData:\n", data)
