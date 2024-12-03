@@ -113,21 +113,21 @@ pub struct SwapQuote {
     pub request: SwapQuoteRequest,
 }
 
-#[derive(Debug, Clone, uniffi::Enum)]
+#[derive(Debug, Clone, PartialEq, uniffi::Enum)]
 pub enum ApprovalType {
     Approve(ApprovalData),
     Permit2(Permit2ApprovalData),
     None,
 }
 
-#[derive(Debug, Clone, uniffi::Record)]
+#[derive(Debug, Clone, PartialEq, uniffi::Record)]
 pub struct ApprovalData {
     pub token: String,
     pub spender: String,
     pub value: String,
 }
 
-#[derive(Debug, Clone, uniffi::Record)]
+#[derive(Debug, Clone, PartialEq, uniffi::Record)]
 pub struct Permit2ApprovalData {
     pub token: String,
     pub spender: String,
