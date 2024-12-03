@@ -392,8 +392,7 @@ impl DatabaseClient {
         transactions_values: Vec<Transaction>,
         addresses_values: Vec<TransactionAddresses>,
     ) -> Result<bool, diesel::result::Error> {
-        return self
-            .connection
+        self.connection
             .build_transaction()
             .read_write()
             .run::<_, diesel::result::Error, _>(|conn: &mut PgConnection| {
@@ -432,7 +431,7 @@ impl DatabaseClient {
                 }
 
                 Ok(true)
-            });
+            })
     }
 
     pub fn get_transactions_by_device_id(

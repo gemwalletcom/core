@@ -79,7 +79,7 @@ impl Transaction {
         };
         let transaction_type = TransactionType::from_str(self.kind.as_str()).ok().unwrap();
 
-        return primitives::Transaction::new_with_utxo(
+        primitives::Transaction::new_with_utxo(
             hash.clone(),
             asset_id,
             from.clone().into(),
@@ -98,7 +98,7 @@ impl Transaction {
             outputs.clone(),
             self.metadata.clone(),
             self.created_at.and_utc(),
-        );
+        )
     }
 }
 

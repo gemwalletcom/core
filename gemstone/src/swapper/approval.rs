@@ -70,7 +70,7 @@ pub async fn check_approval(check_type: CheckApprovalType, provider: Arc<dyn Ali
         CheckApprovalType::ERC20(owner, token, spender, amount) => check_approval_erc20(owner, token, spender, amount, provider, chain).await,
         CheckApprovalType::Permit2(permit2_contract, owner, token, spender, amount) => {
             // Check token allowance, spender is permit2
-            let self_approval = check_approval_erc20(owner.clone(), token.clone(), spender.clone(), amount, provider.clone(), chain).await?;
+            let self_approval = check_approval_erc20(owner.clone(), token.clone(), permit2_contract.clone(), amount, provider.clone(), chain).await?;
 
             // Return self_approval if it's not None
             if matches!(self_approval, ApprovalType::Approve(_)) {
@@ -112,5 +112,42 @@ pub async fn check_approval(check_type: CheckApprovalType, provider: Arc<dyn Ali
 
             Ok(ApprovalType::None)
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::network::mock::*;
+    use std::time::Duration;
+
+    #[tokio::test]
+    async fn test_approval_tx_spender_is_permit2() -> Result<(), SwapperError> {
+        // Replicate https://optimistic.etherscan.io/tx/0x6aaa37e0ffdfcf0a0a45236cd39eb25fa9f3787133b583feeacc5d633f3e92f1
+        // Make sure use checksum addresses
+        let token = "0xdC6fF44d5d932Cbd77B52E5612Ba0529DC6226F1".to_string(); // WLD
+        let owner = "0x1085c5f70F7F7591D97da281A64688385455c2bD".to_string();
+        let spender = "0xCb1355ff08Ab38bBCE60111F1bb2B784bE25D7e8".to_string(); // Router
+        let permit2_contract = "0x000000000022D473030F116dDEE9F6B43aC78BA3".to_string();
+        let amount = U256::from(1000000000000000000u64);
+
+        let mock = AlienProviderMock {
+            response: r#"{"id":1,"jsonrpc":"2.0","result":"0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"}"#.to_string(),
+            timeout: Duration::from_millis(10),
+        };
+        let provider = Arc::new(mock);
+
+        let check_type = CheckApprovalType::Permit2(permit2_contract.clone(), owner, token.clone(), spender, amount);
+        let result = check_approval(check_type, provider, &Chain::Optimism).await.unwrap();
+
+        assert_eq!(
+            result,
+            ApprovalType::Approve(ApprovalData {
+                token,
+                spender: permit2_contract,
+                value: amount.to_string()
+            })
+        );
+        Ok(())
     }
 }
