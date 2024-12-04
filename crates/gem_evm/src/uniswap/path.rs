@@ -32,14 +32,21 @@ impl TokenPair {
 
 pub struct BasePair {
     pub native: EthereumAddress,
-    pub bitcoin: EthereumAddress,
-    pub stable: EthereumAddress,
-    pub alternative_stable: Option<EthereumAddress>,
+    pub stables: Vec<EthereumAddress>,
+    pub alternatives: Vec<EthereumAddress>,
 }
 
 impl BasePair {
     pub fn to_set(&self) -> HashSet<EthereumAddress> {
-        HashSet::from([self.native.clone(), self.stable.clone()])
+        HashSet::from_iter(self.to_array())
+    }
+
+    pub fn to_array(&self) -> Vec<EthereumAddress> {
+        let mut array = vec![self.native.clone()];
+        array.extend(self.stables.iter().cloned());
+        // alternatives is not used for now
+        // array.extend(self.alternatives.iter().cloned());
+        array
     }
 }
 
@@ -98,11 +105,15 @@ pub fn get_base_pair(chain: &EVMChain) -> Option<BasePair> {
         _ => panic!("unsupported chain"),
     };
 
+    let mut stables = vec![EthereumAddress::parse(usdc)?];
+    if !usdt.is_empty() {
+        stables.push(EthereumAddress::parse(usdt)?);
+    }
+
     Some(BasePair {
         native: EthereumAddress::parse(weth)?,
-        bitcoin: EthereumAddress::parse(btc)?,
-        stable: EthereumAddress::parse(usdc)?,
-        alternative_stable: EthereumAddress::parse(usdt),
+        stables,
+        alternatives: vec![EthereumAddress::parse(btc)?],
     })
 }
 

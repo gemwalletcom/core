@@ -106,7 +106,7 @@ where
     Ok(result)
 }
 
-pub async fn batch_jsonrpc_call<T>(rpc_calls: &[T], provider: Arc<dyn AlienProvider>, chain: &Chain) -> Result<Vec<JsonRpcResult<String>>, AlienError>
+pub async fn batch_jsonrpc_call<T>(rpc_calls: Vec<T>, provider: Arc<dyn AlienProvider>, chain: &Chain) -> Result<Vec<JsonRpcResult<String>>, AlienError>
 where
     T: JsonRpcRequestConvert,
 {

@@ -2,7 +2,7 @@ mod pancakeswap_router;
 mod uniswap_router;
 
 use crate::{
-    network::{jsonrpc::batch_jsonrpc_call, AlienProvider, JsonRpcRequest, JsonRpcRequestConvert, JsonRpcResponse, JsonRpcResult},
+    network::{jsonrpc::batch_jsonrpc_call, AlienError, AlienProvider, JsonRpcRequest, JsonRpcRequestConvert, JsonRpcResponse, JsonRpcResult},
     swapper::{
         approval::{check_approval, CheckApprovalType},
         models::*,
@@ -103,34 +103,32 @@ impl UniswapV3 {
         Ok((evm_chain, token_in, token_out, amount_in))
     }
 
-    fn is_base_pair(token_in: &EthereumAddress, token_out: &EthereumAddress, base_pair: &BasePair) -> bool {
-        let base_set = base_pair.to_set();
-        base_set.contains(token_in) || base_set.contains(token_out)
+    fn get_intermediaries(token_in: &EthereumAddress, token_out: &EthereumAddress, base_pair: &BasePair) -> Vec<EthereumAddress> {
+        base_pair
+            .to_array()
+            .iter()
+            .filter(|intermediary| *intermediary != token_in && *intermediary != token_out)
+            .cloned()
+            .collect()
     }
 
-    fn build_paths(token_in: &EthereumAddress, token_out: &EthereumAddress, fee_tiers: &[FeeTier], base_pair: &BasePair) -> Vec<Bytes> {
-        let mut paths: Vec<Bytes> = fee_tiers
+    fn build_paths(token_in: &EthereumAddress, token_out: &EthereumAddress, fee_tiers: &[FeeTier], base_pair: &BasePair) -> Vec<Vec<Bytes>> {
+        let mut paths = Vec::<Vec<Bytes>>::new();
+        let direct_paths: Vec<Bytes> = fee_tiers
             .iter()
             .map(|fee_tier| build_direct_pair(token_in, token_out, fee_tier.clone() as u32))
             .collect();
+        paths.push(direct_paths);
 
-        if !Self::is_base_pair(token_in, token_out, base_pair) {
-            // build token_in -> [native|stable] path
-
-            let native_token_pair: Vec<Vec<TokenPair>> = fee_tiers
+        let intermediaries = Self::get_intermediaries(token_in, token_out, base_pair);
+        intermediaries.iter().for_each(|intermediary| {
+            let token_pairs: Vec<Vec<TokenPair>> = fee_tiers
                 .iter()
-                .map(|fee_tier| TokenPair::new_two_hop(token_in, &base_pair.native, token_out, fee_tier))
+                .map(|fee_tier| TokenPair::new_two_hop(token_in, &intermediary, token_out, fee_tier))
                 .collect();
-            let native_paths: Vec<Bytes> = native_token_pair.iter().map(|token_pairs| build_pairs(token_pairs)).collect();
-            paths.extend(native_paths);
-
-            let stable_token_pair: Vec<Vec<TokenPair>> = fee_tiers
-                .iter()
-                .map(|fee_tier| TokenPair::new_two_hop(token_in, &base_pair.stable, token_out, fee_tier))
-                .collect();
-            let stable_paths: Vec<Bytes> = stable_token_pair.iter().map(|token_pairs| build_pairs(token_pairs)).collect();
-            paths.extend(stable_paths);
-        };
+            let pair_paths: Vec<Bytes> = token_pairs.iter().map(|token_pairs| build_pairs(token_pairs)).collect();
+            paths.push(pair_paths);
+        });
         paths
     }
 
@@ -358,34 +356,39 @@ impl GemSwapProvider for UniswapV3 {
         let base_pair = get_base_pair(&evm_chain).ok_or(SwapperError::ComputeQuoteError {
             msg: "base pair not found".into(),
         })?;
-        let paths = Self::build_paths(&token_in, &token_out, &fee_tiers, &base_pair);
 
-        assert!(paths.len() % fee_tiers.len() == 0);
-
-        let eth_calls: Vec<EthereumRpc> = paths
+        let paths_array = Self::build_paths(&token_in, &token_out, &fee_tiers, &base_pair);
+        let requests: Vec<_> = paths_array
             .iter()
-            .map(|path| Self::build_quoter_request(&request.mode, &request.wallet_address, deployment.quoter_v2, amount_in, path))
+            .map(|paths| {
+                let calls: Vec<EthereumRpc> = paths
+                    .iter()
+                    .map(|path| Self::build_quoter_request(&request.mode, &request.wallet_address, deployment.quoter_v2, amount_in, path))
+                    .collect();
+
+                batch_jsonrpc_call(calls, provider.clone(), &request.from_asset.chain)
+            })
             .collect();
 
-        let results = batch_jsonrpc_call(&eth_calls, provider.clone(), &request.from_asset.chain)
-            .await
-            .map_err(SwapperError::from)?;
+        let batch_results: Vec<Result<Vec<JsonRpcResult<String>>, AlienError>> = futures::future::join_all(requests).await.into_iter().collect();
 
         let mut max_amount_out: Option<U256> = None;
         let mut fee_tier_idx = 0;
         let mut gas_estimate: Option<String> = None;
 
-        for result in results.iter().enumerate() {
-            match result.1 {
-                JsonRpcResult::Value(value) => {
-                    let quoter_tuple = Self::decode_quoter_response(value)?;
-                    if quoter_tuple.0 > max_amount_out.unwrap_or_default() {
-                        max_amount_out = Some(quoter_tuple.0);
-                        fee_tier_idx = result.0;
-                        gas_estimate = Some(quoter_tuple.1.to_string());
+        for results in batch_results.iter() {
+            for (index, result) in results.iter().flatten().enumerate() {
+                match result {
+                    JsonRpcResult::Value(value) => {
+                        let quoter_tuple = Self::decode_quoter_response(value)?;
+                        if quoter_tuple.0 > max_amount_out.unwrap_or_default() {
+                            max_amount_out = Some(quoter_tuple.0);
+                            fee_tier_idx = index;
+                            gas_estimate = Some(quoter_tuple.1.to_string());
+                        }
                     }
+                    _ => continue,
                 }
-                _ => continue,
             }
         }
 
