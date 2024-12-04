@@ -124,7 +124,7 @@ impl UniswapV3 {
         intermediaries.iter().for_each(|intermediary| {
             let token_pairs: Vec<Vec<TokenPair>> = fee_tiers
                 .iter()
-                .map(|fee_tier| TokenPair::new_two_hop(token_in, &intermediary, token_out, fee_tier))
+                .map(|fee_tier| TokenPair::new_two_hop(token_in, intermediary, token_out, fee_tier))
                 .collect();
             let pair_paths: Vec<Bytes> = token_pairs.iter().map(|token_pairs| build_pairs(token_pairs)).collect();
             paths.push(pair_paths);
