@@ -49,7 +49,7 @@ public extension SwapQuoteRequest {
         toAsset: "optimism_0x350a791Bfc2C21F9Ed5d10980Dad2e2638ffa7f6",
         walletAddress: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7",
         destinationAddress: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7",
-        value: "10000000000000000000", // 10 UNI
+        value: "100000000000000000000", // 100 UNI
         mode: .exactIn,
         options: SWAP_OPTIONS
     )
