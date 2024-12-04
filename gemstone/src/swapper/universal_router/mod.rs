@@ -360,12 +360,18 @@ impl GemSwapProvider for UniswapV3 {
         let (evm_chain, token_in, token_out, amount_in) = Self::parse_request(request)?;
         _ = evm_chain.weth_contract().ok_or(SwapperError::NotSupportedChain)?;
 
-        // Build paths for QuoterV2
         let fee_tiers = self.provider.get_tiers();
         let base_pair = get_base_pair(&evm_chain).ok_or(SwapperError::ComputeQuoteError {
             msg: "base pair not found".into(),
         })?;
 
+        // Build paths for QuoterV2
+        // [
+        //     [direct_fee_tier1, ..., ..., ... ],
+        //     [weth_hop_fee_tier1, ..., ..., ... ],
+        //     [usdc_hop_fee_tier1, ..., ..., ... ],
+        //     [...],
+        // ]
         let paths_array = Self::build_paths(&token_in, &token_out, &fee_tiers, &base_pair);
         let requests: Vec<_> = paths_array
             .iter()
@@ -375,10 +381,12 @@ impl GemSwapProvider for UniswapV3 {
                     .map(|path| Self::build_quoter_request(&request.mode, &request.wallet_address, deployment.quoter_v2, amount_in, &path.1))
                     .collect();
 
+                // batch fee_tiers.len() requests into one jsonrpc call
                 batch_jsonrpc_call(calls, provider.clone(), &request.from_asset.chain)
             })
             .collect();
 
+        // fire batch requests in parallel
         let batch_results: Vec<_> = futures::future::join_all(requests).await.into_iter().collect();
 
         let mut max_amount_out: Option<U256> = None;
@@ -400,11 +408,11 @@ impl GemSwapProvider for UniswapV3 {
                                     gas_estimate = Some(quoter_tuple.1.to_string());
                                 }
                             }
-                            _ => continue,
+                            _ => continue, // skip no pool error etc.
                         }
                     }
                 }
-                Err(_) => continue,
+                _ => continue, // skip jsonrpc call error
             }
         }
 
@@ -420,13 +428,14 @@ impl GemSwapProvider for UniswapV3 {
                 .await?;
         }
 
+        // construct routes
         let fee_tier: u32 = fee_tiers[fee_tier_idx % fee_tiers.len()].clone() as u32;
         let asset_id_in = AssetId::from(request.from_asset.chain, Some(token_in.to_checksum()));
         let asset_id_out = AssetId::from(request.to_asset.chain, Some(token_out.to_checksum()));
         let asset_id_intermediary: Option<AssetId> = match batch_idx {
             // direct route
             0 => None,
-            // 2 hop route with native
+            // 2 hop route with intermediary token
             _ => {
                 let first_token_out = &paths_array[batch_idx][0].0[0].token_out;
                 Some(AssetId::from(request.to_asset.chain, Some(first_token_out.to_checksum())))
@@ -436,7 +445,7 @@ impl GemSwapProvider for UniswapV3 {
 
         Ok(SwapQuote {
             from_value: request.value.clone(),
-            to_value: max_amount_out.unwrap().to_string(),
+            to_value: max_amount_out.unwrap().to_string(), // safe to unwrap here because we will early return if no quote is available
             data: SwapProviderData {
                 provider: self.provider(),
                 routes: routes.clone(),
@@ -455,7 +464,7 @@ impl GemSwapProvider for UniswapV3 {
             .ok_or(SwapperError::NotSupportedChain)?;
         let to_amount = U256::from_str(&quote.to_value).map_err(|_| SwapperError::InvalidAmount)?;
 
-        let permit: Option<Permit2Permit> = match data {
+        let permit = match data {
             FetchQuoteData::Permit2(data) => Some(data.into()),
             FetchQuoteData::None => None,
         };
@@ -692,7 +701,4 @@ mod tests {
         assert!(matches!(commands[2], UniversalRouterCommand::PAY_PORTION(_)));
         assert!(matches!(commands[3], UniversalRouterCommand::UNWRAP_WETH(_)));
     }
-
-    #[test]
-    fn test_build_commands_uni_link() {}
 }
