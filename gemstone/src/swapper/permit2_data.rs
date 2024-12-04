@@ -1,5 +1,5 @@
 use crate::swapper::SwapperError;
-use alloy_core::primitives::{Address, Bytes, U256};
+use alloy_core::primitives::{Bytes, U256};
 use alloy_primitives::aliases::{U160, U48};
 use serde::{Deserialize, Serialize, Serializer};
 use std::{
@@ -35,12 +35,12 @@ impl From<PermitSingle> for IAllowanceTransfer::PermitSingle {
     fn from(val: PermitSingle) -> Self {
         IAllowanceTransfer::PermitSingle {
             details: IAllowanceTransfer::PermitDetails {
-                token: Address::parse_checksummed(val.details.token, None).unwrap(),
+                token: val.details.token.as_str().parse().unwrap(),
                 amount: U160::from_str(&val.details.amount).unwrap(),
                 expiration: U48::from(val.details.expiration),
                 nonce: U48::from(val.details.nonce),
             },
-            spender: Address::parse_checksummed(val.spender, None).unwrap(),
+            spender: val.spender.as_str().parse().unwrap(),
             sigDeadline: U256::from(val.sig_deadline),
         }
     }

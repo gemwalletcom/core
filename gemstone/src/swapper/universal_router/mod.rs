@@ -343,9 +343,7 @@ impl GemSwapProvider for UniswapV3 {
             return Err(SwapperError::NotSupportedChain);
         }
 
-        let wallet_address = Address::parse_checksummed(&request.wallet_address, None).map_err(|_| SwapperError::InvalidAddress {
-            address: request.wallet_address.clone(),
-        })?;
+        let wallet_address: Address = request.wallet_address.as_str().parse().map_err(SwapperError::from)?;
 
         // Check deployment and weth contract
         let deployment = self
