@@ -2,7 +2,7 @@ mod pancakeswap_router;
 mod uniswap_router;
 
 use crate::{
-    network::{jsonrpc::batch_jsonrpc_call, AlienError, AlienProvider, JsonRpcRequest, JsonRpcRequestConvert, JsonRpcResponse, JsonRpcResult},
+    network::{jsonrpc::batch_jsonrpc_call, AlienProvider, JsonRpcRequest, JsonRpcRequestConvert, JsonRpcResponse, JsonRpcResult},
     swapper::{
         approval::{check_approval, CheckApprovalType},
         models::*,
@@ -112,11 +112,20 @@ impl UniswapV3 {
             .collect()
     }
 
-    fn build_paths(token_in: &EthereumAddress, token_out: &EthereumAddress, fee_tiers: &[FeeTier], base_pair: &BasePair) -> Vec<Vec<Bytes>> {
-        let mut paths = Vec::<Vec<Bytes>>::new();
-        let direct_paths: Vec<Bytes> = fee_tiers
+    fn build_paths(token_in: &EthereumAddress, token_out: &EthereumAddress, fee_tiers: &[FeeTier], base_pair: &BasePair) -> Vec<Vec<(Vec<TokenPair>, Bytes)>> {
+        let mut paths: Vec<Vec<(Vec<TokenPair>, Bytes)>> = vec![];
+        let direct_paths: Vec<_> = fee_tiers
             .iter()
-            .map(|fee_tier| build_direct_pair(token_in, token_out, fee_tier.clone() as u32))
+            .map(|fee_tier| {
+                (
+                    vec![TokenPair {
+                        token_in: token_in.clone(),
+                        token_out: token_out.clone(),
+                        fee_tier: fee_tier.clone(),
+                    }],
+                    build_direct_pair(token_in, token_out, fee_tier.clone() as u32),
+                )
+            })
             .collect();
         paths.push(direct_paths);
 
@@ -126,7 +135,7 @@ impl UniswapV3 {
                 .iter()
                 .map(|fee_tier| TokenPair::new_two_hop(token_in, intermediary, token_out, fee_tier))
                 .collect();
-            let pair_paths: Vec<Bytes> = token_pairs.iter().map(|token_pairs| build_pairs(token_pairs)).collect();
+            let pair_paths: Vec<_> = token_pairs.iter().map(|token_pairs| (token_pairs.to_vec(), build_pairs(token_pairs))).collect();
             paths.push(pair_paths);
         });
         paths
@@ -363,32 +372,39 @@ impl GemSwapProvider for UniswapV3 {
             .map(|paths| {
                 let calls: Vec<EthereumRpc> = paths
                     .iter()
-                    .map(|path| Self::build_quoter_request(&request.mode, &request.wallet_address, deployment.quoter_v2, amount_in, path))
+                    .map(|path| Self::build_quoter_request(&request.mode, &request.wallet_address, deployment.quoter_v2, amount_in, &path.1))
                     .collect();
 
                 batch_jsonrpc_call(calls, provider.clone(), &request.from_asset.chain)
             })
             .collect();
 
-        let batch_results: Vec<Result<Vec<JsonRpcResult<String>>, AlienError>> = futures::future::join_all(requests).await.into_iter().collect();
+        let batch_results: Vec<_> = futures::future::join_all(requests).await.into_iter().collect();
 
         let mut max_amount_out: Option<U256> = None;
+        let mut batch_idx = 0;
         let mut fee_tier_idx = 0;
         let mut gas_estimate: Option<String> = None;
 
-        for results in batch_results.iter() {
-            for (index, result) in results.iter().flatten().enumerate() {
-                match result {
-                    JsonRpcResult::Value(value) => {
-                        let quoter_tuple = Self::decode_quoter_response(value)?;
-                        if quoter_tuple.0 > max_amount_out.unwrap_or_default() {
-                            max_amount_out = Some(quoter_tuple.0);
-                            fee_tier_idx = index;
-                            gas_estimate = Some(quoter_tuple.1.to_string());
+        for (batch, batch_result) in batch_results.iter().enumerate() {
+            match batch_result {
+                Ok(results) => {
+                    for (index, result) in results.iter().enumerate() {
+                        match result {
+                            JsonRpcResult::Value(value) => {
+                                let quoter_tuple = Self::decode_quoter_response(value)?;
+                                if quoter_tuple.0 > max_amount_out.unwrap_or_default() {
+                                    max_amount_out = Some(quoter_tuple.0);
+                                    fee_tier_idx = index;
+                                    batch_idx = batch;
+                                    gas_estimate = Some(quoter_tuple.1.to_string());
+                                }
+                            }
+                            _ => continue,
                         }
                     }
-                    _ => continue,
                 }
+                Err(_) => continue,
             }
         }
 
@@ -407,17 +423,13 @@ impl GemSwapProvider for UniswapV3 {
         let fee_tier: u32 = fee_tiers[fee_tier_idx % fee_tiers.len()].clone() as u32;
         let asset_id_in = AssetId::from(request.from_asset.chain, Some(token_in.to_checksum()));
         let asset_id_out = AssetId::from(request.to_asset.chain, Some(token_out.to_checksum()));
-        let asset_id_intermediary: Option<AssetId> = match fee_tier_idx / fee_tiers.len() {
+        let asset_id_intermediary: Option<AssetId> = match batch_idx {
             // direct route
             0 => None,
             // 2 hop route with native
-            1 => Some(AssetId::from(request.from_asset.chain, Some(base_pair.native.to_checksum()))),
-            // 2 hop route with stable
-            2 => Some(AssetId::from(request.from_asset.chain, Some(base_pair.native.to_checksum()))),
             _ => {
-                return Err(SwapperError::ComputeQuoteError {
-                    msg: "unexpected fee tier index".into(),
-                });
+                let first_token_out = &paths_array[batch_idx][0].0[0].token_out;
+                Some(AssetId::from(request.to_asset.chain, Some(first_token_out.to_checksum())))
             }
         };
         let routes = Self::build_swap_route(&asset_id_in, asset_id_intermediary.as_ref(), &asset_id_out, &fee_tier.to_string(), gas_estimate);

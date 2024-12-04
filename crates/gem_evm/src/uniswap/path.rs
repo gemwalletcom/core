@@ -7,6 +7,7 @@ use alloy_core::primitives::Bytes;
 use alloy_primitives::aliases::U24;
 use primitives::{AssetId, EVMChain};
 
+#[derive(Debug, Clone)]
 pub struct TokenPair {
     pub token_in: EthereumAddress,
     pub token_out: EthereumAddress,
