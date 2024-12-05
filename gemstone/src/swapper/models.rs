@@ -58,6 +58,7 @@ pub enum SwapProvider {
     Thorchain,
     Orca,
     Jupiter,
+    Across,
 }
 impl SwapProvider {
     pub fn name(&self) -> &str {
@@ -67,6 +68,7 @@ impl SwapProvider {
             Self::Thorchain => "THORChain",
             Self::Orca => "Orca Whirlpool",
             Self::Jupiter => "Jupiter",
+            Self::Across => "Across v3",
         }
     }
 }
