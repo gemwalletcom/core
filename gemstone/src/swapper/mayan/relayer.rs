@@ -34,13 +34,9 @@ pub struct QuoteParams {
 
 #[derive(Debug, Clone, Serialize)]
 pub struct QuoteOptions {
-    #[serde(default = "default_true")]
     pub swift: bool,
-    #[serde(default = "default_true")]
     pub mctp: bool,
-    #[serde(default = "default_false")]
     pub gasless: bool,
-    #[serde(default = "default_false")]
     pub only_direct: bool,
 }
 
