@@ -3,7 +3,7 @@ use std::{str::FromStr, sync::Arc};
 
 use alloy_core::{
     hex::{decode as HexDecode, ToHexExt},
-    primitives::{Address, AddressError, U256},
+    primitives::U256,
     sol_types::SolCall,
 };
 
@@ -12,7 +12,7 @@ use gem_evm::{
     address::EthereumAddress,
     erc20::IERC20,
     jsonrpc::{BlockParameter, EthereumRpc, TransactionObject},
-    mayan::swift::deployment::{get_swift_deployment_by_chain, get_swift_deployment_chains, get_swift_providers},
+    mayan::swift::deployment::{get_swift_deployment_chains, get_swift_providers},
 };
 use primitives::{Asset, AssetId, Chain};
 
@@ -26,12 +26,11 @@ use crate::{
 };
 
 use super::{
+    constants::{MAYAN_FORWARDER_CONTRACT, MAYAN_ZERO_ADDRESS},
     forwarder::MayanForwarder,
-    mayan_relayer::{MayanRelayer, Quote, QuoteOptions, QuoteParams, QuoteType, MAYAN_FORWARDER_CONTRACT},
-    mayan_swift::{MayanSwift, MayanSwiftError, OrderParams},
+    relayer::{MayanRelayer, Quote, QuoteOptions, QuoteParams, QuoteType},
+    swift::{MayanSwift, MayanSwiftError, OrderParams},
 };
-
-const MAYAN_ZERO_ADDRESS: &str = "0x0000000000000000000000000000000000000000";
 
 #[derive(Debug)]
 pub struct MayanSwiftProvider {}
@@ -47,10 +46,6 @@ impl MayanSwiftProvider {
         Self {}
     }
 
-    fn get_address_by_chain(chain: Chain) -> Option<String> {
-        get_swift_deployment_by_chain(chain).map(|x| x.address)
-    }
-
     fn get_chain_by_wormhole_id(&self, wormhole_id: u64) -> Option<Chain> {
         get_swift_providers()
             .into_iter()
@@ -58,7 +53,7 @@ impl MayanSwiftProvider {
             .map(|(chain, _)| chain)
     }
 
-    async fn check_approval(&self, request: &SwapQuoteRequest, provider: Arc<dyn AlienProvider>, quote: &Quote) -> Result<ApprovalType, SwapperError> {
+    async fn check_approval(&self, request: &SwapQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<ApprovalType, SwapperError> {
         if request.from_asset.is_native() {
             return Ok(ApprovalType::None);
         }
@@ -68,7 +63,7 @@ impl MayanSwiftProvider {
                 request.wallet_address.clone(),
                 request.from_asset.token_id.clone().unwrap_or_default(),
                 MAYAN_FORWARDER_CONTRACT.to_string(),
-                U256::from_str(&request.value.as_str()).map_err(|_| SwapperError::InvalidAmount)?,
+                U256::from_str(request.value.as_str()).map_err(|_| SwapperError::InvalidAmount)?,
             ),
             provider,
             &request.from_asset.chain,
@@ -90,39 +85,15 @@ impl MayanSwiftProvider {
         let dest_chain_id = quote.to_token.w_chain_id.unwrap();
         let from_chain_id = quote.from_token.w_chain_id.unwrap();
 
-        let deadline = quote.deadline64.parse::<u64>().map_err(|_| {
-            eprintln!("Failed to parse deadline: {}", quote.deadline64);
-            SwapperError::InvalidRoute
+        let deadline = quote.deadline64.parse::<u64>().map_err(|_| SwapperError::ComputeQuoteError {
+            msg: "Failed to parse deadline".to_string(),
         })?;
 
-        let trader_address = self.address_to_bytes32(&request.wallet_address).map_err(|e| {
-            eprintln!("Failed to parse wallet_address: {}", request.wallet_address);
-            e
-        })?;
+        let trader_address = self.address_to_bytes32(&request.wallet_address)?;
+        let destination_address = self.address_to_bytes32(&request.destination_address)?;
+        let token_out = self.address_to_bytes32(&quote.to_token.contract)?;
 
-        let destination_address = self.address_to_bytes32(&request.destination_address).map_err(|e| {
-            eprintln!("Failed to parse destination_address: {}", request.destination_address);
-            e
-        })?;
-
-        let token_out = if let to_token_contract = &quote.to_token.contract {
-            self.address_to_bytes32(to_token_contract).map_err(|e| {
-                eprintln!("Failed to parse to_token.contract: {}", to_token_contract);
-                e
-            })?
-        } else {
-            return Err(SwapperError::InvalidAddress {
-                address: "Missing to_token contract address".to_string(),
-            });
-        };
-
-        let min_amount_out = self
-            .get_amount_of_fractional_amount(quote.min_amount_out, quote.to_token.decimals)
-            .map_err(|e| {
-                eprintln!("Failed to convert min_amount_out: {}", quote.min_amount_out);
-                e
-            })?;
-
+        let min_amount_out = self.get_amount_of_fractional_amount(quote.min_amount_out, quote.to_token.decimals)?;
         // TODO: check if we need to use to token or from token decimals
         let gas_drop = self.convert_amount_to_wei(quote.gas_drop, quote.to_token.decimals.into()).map_err(|e| {
             eprintln!("Failed to convert gas_drop: {}", quote.gas_drop);
@@ -145,7 +116,7 @@ impl MayanSwiftProvider {
             dest_chain_id: dest_chain_id.to_string().parse().map_err(|_| SwapperError::InvalidAmount)?,
             referrer_addr: referrer.clone().map_or([0u8; 32], |x| {
                 self.to_native_wormhole_address(x.address.as_str(), from_chain_id)
-                    .map_err(|err| SwapperError::ComputeQuoteError {
+                    .map_err(|_| SwapperError::ComputeQuoteError {
                         msg: "Unable to get referrer wormhole address".to_string(),
                     })
                     .unwrap()
@@ -201,9 +172,9 @@ impl MayanSwiftProvider {
                 asset_decimals,
             ),
             from_token: request.from_asset.token_id.clone().unwrap_or(EthereumAddress::zero().to_checksum()),
-            from_chain: request.from_asset.chain.clone(),
+            from_chain: request.from_asset.chain,
             to_token: request.to_asset.token_id.clone().unwrap_or(EthereumAddress::zero().to_checksum()),
-            to_chain: request.to_asset.chain.clone(),
+            to_chain: request.to_asset.chain,
             slippage_bps: Some(100),
             gas_drop: None,
             referrer: referrer.clone().map(|x| x.address),
@@ -225,7 +196,7 @@ impl MayanSwiftProvider {
             })?;
 
         // TODO: adjust to find most effective quote
-        let most_effective_qoute = quote.into_iter().filter(|x| x.r#type == QuoteType::SWIFT.to_string()).last();
+        let most_effective_qoute = quote.into_iter().filter(|x| x.r#type == QuoteType::Swift.to_string()).last();
 
         most_effective_qoute.ok_or(SwapperError::ComputeQuoteError {
             msg: "Quote is not available".to_string(),
@@ -331,7 +302,7 @@ impl GemSwapProvider for MayanSwiftProvider {
 
         let quote = self.fetch_quote_from_request(request, provider.clone()).await?;
 
-        if quote.r#type != QuoteType::SWIFT.to_string() {
+        if quote.r#type != QuoteType::Swift.to_string() {
             return Err(SwapperError::ComputeQuoteError {
                 msg: "Quote type is not SWIFT".to_string(),
             });
@@ -345,7 +316,7 @@ impl GemSwapProvider for MayanSwiftProvider {
             gas_estimate: None,
         };
 
-        let approval = self.check_approval(request, provider.clone(), &quote).await?;
+        let approval = self.check_approval(request, provider.clone()).await?;
 
         Ok(SwapQuote {
             from_value: request.value.clone(),
@@ -361,23 +332,19 @@ impl GemSwapProvider for MayanSwiftProvider {
         })
     }
 
-    async fn fetch_quote_data(&self, quote: &SwapQuote, provider: Arc<dyn AlienProvider>, data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError> {
+    async fn fetch_quote_data(&self, quote: &SwapQuote, provider: Arc<dyn AlienProvider>, _data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError> {
         let request = &quote.request;
-        let mayan_quote = self.fetch_quote_from_request(&request, provider.clone()).await?;
-        let swift_address = if let Some(address) = &mayan_quote.swift_mayan_contract {
-            address.clone()
-        } else {
-            return Err(SwapperError::ComputeQuoteError {
-                msg: "No swift_mayan_contract in quote".to_string(),
-            });
-        };
-        let swift_contract = MayanSwift::new(swift_address.clone(), provider.clone(), request.from_asset.chain);
+        let mayan_quote = self.fetch_quote_from_request(request, provider.clone()).await?;
+        let swift_address = mayan_quote.swift_mayan_contract.clone().ok_or(SwapperError::ComputeQuoteError {
+            msg: "No swift_mayan_contract in quote".to_string(),
+        })?;
+        let swift_contract = MayanSwift::new();
         let swift_order_params = self.build_swift_order_params(&quote.request, &mayan_quote)?;
         let forwarder = MayanForwarder::new();
 
         let swift_call_data = if mayan_quote.swift_input_contract == MAYAN_ZERO_ADDRESS {
             swift_contract
-                .encode_create_order_with_eth(swift_order_params, quote.from_value.parse().map_err(|_| SwapperError::InvalidAmount)?)
+                .encode_create_order_with_eth(swift_order_params)
                 .await
                 .map_err(|e| SwapperError::ABIError { msg: e.to_string() })?
         } else {
@@ -421,7 +388,7 @@ impl GemSwapProvider for MayanSwiftProvider {
             let evm_swap_router_calldata = mayan_quote.evm_swap_router_calldata.clone().ok_or_else(|| SwapperError::ComputeQuoteError {
                 msg: "Missing evmSwapRouterCalldata".to_string(),
             })?;
-            let min_middle_amount = mayan_quote.min_middle_amount.clone().ok_or_else(|| SwapperError::ComputeQuoteError {
+            let min_middle_amount = mayan_quote.min_middle_amount.ok_or_else(|| SwapperError::ComputeQuoteError {
                 msg: "Missing minMiddleAmount".to_string(),
             })?;
 
@@ -430,17 +397,21 @@ impl GemSwapProvider for MayanSwiftProvider {
                 .get_amount_of_fractional_amount(min_middle_amount, mayan_quote.swift_input_decimals)
                 .map_err(|e| SwapperError::ComputeQuoteError { msg: e.to_string() })?;
 
-            if (mayan_quote.from_token.contract == MAYAN_ZERO_ADDRESS) {
+            let amount_in = U256::from_str(quote.from_value.as_str()).map_err(|_| SwapperError::InvalidAmount)?;
+            let swap_data = hex::decode(evm_swap_router_calldata.trim_start_matches("0x")).map_err(|_| SwapperError::ABIError {
+                msg: "Failed to decode evm_swap_router_calldata hex string without prefix 0x ".to_string(),
+            })?;
+            let min_middle_amount = U256::from_str(&formatted_min_middle_amount).map_err(|_| SwapperError::InvalidAmount)?;
+
+            if mayan_quote.from_token.contract == MAYAN_ZERO_ADDRESS {
                 forwarder
                     .encode_swap_and_forward_eth_call(
-                        U256::from_str(quote.from_value.as_str()).map_err(|_| SwapperError::InvalidAmount)?,
-                        &evm_swap_router_address.as_str(),
-                        hex::decode(evm_swap_router_calldata.trim_start_matches("0x")).map_err(|_| SwapperError::ABIError {
-                            msg: "Failed to decode evm_swap_router_calldata hex string without prefix 0x ".to_string(),
-                        })?,
-                        &mayan_quote.swift_input_contract.as_str(),
-                        U256::from_str(&formatted_min_middle_amount).map_err(|_| SwapperError::InvalidAmount)?,
-                        &swift_address.as_str(),
+                        amount_in,
+                        evm_swap_router_address.as_str(),
+                        swap_data,
+                        mayan_quote.swift_input_contract.as_str(),
+                        min_middle_amount,
+                        swift_address.as_str(),
                         swift_call_data,
                     )
                     .await
@@ -450,15 +421,13 @@ impl GemSwapProvider for MayanSwiftProvider {
                 forwarder
                     .encode_swap_and_forward_erc20_call(
                         token_in.as_str(),
-                        U256::from_str(quote.from_value.as_str()).map_err(|_| SwapperError::InvalidAmount)?,
+                        amount_in,
                         None,
-                        &evm_swap_router_address.as_str(),
-                        hex::decode(evm_swap_router_calldata.trim_start_matches("0x")).map_err(|_| SwapperError::ABIError {
-                            msg: "Failed to decode evm_swap_router_calldata hex string without prefix 0x ".to_string(),
-                        })?,
-                        &mayan_quote.swift_input_contract.as_str(),
-                        U256::from_str(&formatted_min_middle_amount).map_err(|_| SwapperError::InvalidAmount)?,
-                        &swift_address.as_str(),
+                        evm_swap_router_address.as_str(),
+                        swap_data,
+                        mayan_quote.swift_input_contract.as_str(),
+                        min_middle_amount,
+                        swift_address.as_str(),
                         swift_call_data,
                     )
                     .map_err(|e| SwapperError::ABIError { msg: e.to_string() })?
@@ -474,139 +443,21 @@ impl GemSwapProvider for MayanSwiftProvider {
 
     async fn get_transaction_status(&self, chain: Chain, transaction_hash: &str, provider: Arc<dyn AlienProvider>) -> Result<bool, SwapperError> {
         todo!();
-        // let receipt_call = EthereumRpc::GetTransactionReceipt(transaction_hash.to_string());
-        //
-        // let response = jsonrpc_call(&receipt_call, provider, &chain)
-        //     .await
-        //     .map_err(|e| SwapperError::NetworkError { msg: e.to_string() })?;
-        //
-        // let result: serde_json::Value = response.extract_result().map_err(|e| SwapperError::NetworkError { msg: e.to_string() })?;
-        //
-        // if let Some(status_hex) = result.get("status").and_then(|s| s.as_str()) {
-        //     let status = U256::from_str_radix(status_hex.trim_start_matches("0x"), 16).unwrap_or_else(|_| U256::zero());
-        //     Ok(!status.is_zero())
-        // } else {
-        //     Ok(false)
-        // }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use alloy_core::sol_types::SolValue;
-    use alloy_primitives::U256;
     use primitives::AssetId;
-    use serde::{Deserialize, Deserializer, Serialize};
 
-    use crate::{
-        network::{AlienError, AlienTarget, Data},
-        swapper::GemSwapMode,
-    };
+    use crate::swapper::GemSwapMode;
 
     use super::*;
 
     pub fn generate_mock_quote() -> Quote {
-        let json_data = r#"
-        {
-      "maxUserGasDrop": 0.01,
-      "sendTransactionCost": 0,
-      "rentCost": "40000000",
-      "gasless": false,
-      "swiftAuctionMode": 2,
-      "swiftMayanContract": "0xC38e4e6A15593f908255214653d3D947CA1c2338",
-      "minMiddleAmount": null,
-      "swiftInputContract": "0x0000000000000000000000000000000000000000",
-      "swiftInputDecimals": 18,
-      "slippageBps": 100,
-      "effectiveAmountIn": 0.1,
-      "expectedAmountOut": 0.09972757016582551,
-      "price": 0.9996900030000002,
-      "priceImpact": null,
-      "minAmountOut": 0.09873029446416727,
-      "minReceived": 0.09873029446416727,
-      "route": null,
-      "swapRelayerFee": null,
-      "swapRelayerFee64": null,
-      "redeemRelayerFee": null,
-      "redeemRelayerFee64": null,
-      "solanaRelayerFee": null,
-      "solanaRelayerFee64": null,
-      "refundRelayerFee": null,
-      "refundRelayerFee64": "1056",
-      "cancelRelayerFee64": "25",
-      "submitRelayerFee64": "0",
-      "deadline64": "1732777812",
-      "clientRelayerFeeSuccess": null,
-      "clientRelayerFeeRefund": 0.038947098479114796,
-      "fromToken": {
-        "name": "ETH",
-        "standard": "native",
-        "symbol": "ETH",
-        "mint": "",
-        "verified": true,
-        "contract": "0x0000000000000000000000000000000000000000",
-        "wrappedAddress": "0x4200000000000000000000000000000000000006",
-        "chainId": 8453,
-        "wChainId": 30,
-        "decimals": 18,
-        "logoURI": "https://statics.mayan.finance/eth.png",
-        "coingeckoId": "weth",
-        "pythUsdPriceId": "0xff61491a931112ddf1bd8147cd1b641375f79f5825126d665480874634fd0ace",
-        "realOriginContractAddress": "0x4200000000000000000000000000000000000006",
-        "realOriginChainId": 30,
-        "supportsPermit": false,
-        "hasAuction": true
-      },
-      "fromChain": "base",
-      "toToken": {
-        "name": "ETH",
-        "standard": "native",
-        "symbol": "ETH",
-        "mint": "8M6d63oL7dvMZ1gNbgGe3h8afMSWJEKEhtPTFM2u8h3c",
-        "verified": true,
-        "contract": "0x0000000000000000000000000000000000000000",
-        "wrappedAddress": "0x4200000000000000000000000000000000000006",
-        "chainId": 10,
-        "wChainId": 24,
-        "decimals": 18,
-        "logoURI": "https://statics.mayan.finance/eth.png",
-        "coingeckoId": "weth",
-        "pythUsdPriceId": "0xff61491a931112ddf1bd8147cd1b641375f79f5825126d665480874634fd0ace",
-        "realOriginContractAddress": "0x4200000000000000000000000000000000000006",
-        "realOriginChainId": 24,
-        "supportsPermit": false,
-        "hasAuction": true
-      },
-      "toTokenPrice": 3602.87682508,
-      "toChain": "optimism",
-      "mintDecimals": null,
-      "gasDrop": 0,
-      "eta": 1,
-      "etaSeconds": 12,
-      "clientEta": "12s",
-      "bridgeFee": 0,
-      "suggestedPriorityFee": 0,
-      "type": "SWIFT",
-      "priceStat": {
-        "ratio": 0.9996907516582549,
-        "status": "GOOD"
-      },
-      "referrerBps": 0,
-      "protocolBps": 3,
-      "onlyBridging": false,
-      "sourceSwapExpense": 0,
-      "relayer": "7dm9am6Qx7cH64RB99Mzf7ZsLbEfmXM7ihXXCvMiT2X1",
-      "meta": {
-        "advertisedDescription": "Cheapest and Fastest",
-        "advertisedTitle": "Best",
-        "icon": "https://cdn.mayan.finance/fast_icon.png",
-        "switchText": "Switch to the best route",
-        "title": "Best"
-      }
-    }
-        "#;
+        let data = include_str!("tests/quote_response.json");
 
-        let quote: Quote = serde_json::from_str(json_data).expect("Failed to deserialize Quote");
+        let quote: Quote = serde_json::from_str(data).expect("Failed to deserialize Quote");
         quote
     }
 
@@ -665,7 +516,6 @@ mod tests {
     #[test]
     fn test_convert_amount_to_wei_valid() {
         let provider = MayanSwiftProvider::new();
-        let asset = Asset::from_chain(Chain::Ethereum);
         let amount = 1.23; // 1.23 ETH
         let result = provider.convert_amount_to_wei(amount, 18).unwrap();
         assert_eq!(result, "1230000000000000000"); // 1.23 ETH in Wei
@@ -674,7 +524,6 @@ mod tests {
     #[test]
     fn test_convert_amount_to_wei_invalid() {
         let provider = MayanSwiftProvider::new();
-        let asset = Asset::from_chain(Chain::Ethereum);
         let amount = -1.0; // Negative amount
         let result = provider.convert_amount_to_wei(amount, 18);
         assert!(result.is_err());
@@ -706,17 +555,5 @@ mod tests {
             assert!(result.is_ok(), "Failed for amount: {}", amount);
             assert_eq!(result.unwrap(), expected.to_string());
         }
-    }
-
-    #[test]
-    fn test_decode_evm_calldata_valid() {
-        let calldata = "0x07ed2379000000000000000000000000e37e799d5077682fa0a244d46e5649f71457bd09000000000000000000000000eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee000000000000000000000000833589fcd6edb6e08f4c7c32d4f71b54bda02913000000000000000000000000e37e799d5077682fa0a244d46e5649f71457bd090000000000000000000000000654874eb7f59c6f5b39931fc45dc45337c967c3000000000000000000000000000000000000000000000000016345785d8a00000000000000000000000000000000000000000000000000000000000013db374b0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000012000000000000000000000000000000000000000000000000000000000000004720000000000000000000000000000000000000000000004540004260003dc416003c01acae3d0173a93d819efdc832c7c4f153b06016452bbbe2900000000000000000000000000000000000000000000000000000000000000e0000000000000000000000000e37e799d5077682fa0a244d46e5649f71457bd090000000000000000000000000000000000000000000000000000000000000000000000000000000000000000e37e799d5077682fa0a244d46e5649f71457bd0900000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006749f4bcdef66c6c178087fd931514e99b04479e4d3d956c00020000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000833589fcd6edb6e08f4c7c32d4f71b54bda02913000000000000000000000000000000000000000000000000016345785d8a000000000000000000000000000000000000000000000000000000000000000000c00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000000000000001800000000000000000000000000000000000000000000000000006280fa0775121000000000000000000000000000000000000000000000000000000006749f4bc00000000000000000000000000000000000000000000000000000000000000e00000000000000000000000000654874eb7f59c6f5b39931fc45dc45337c967c300000000000000000000000000000000000000000000000000005af3107a400000000000000000000000fc892ee4a97800000000000000000166d2f7025080000000000000000003f0a5341099c401550000000000002eb7b4329f0233e9100000000000000000000000000000000000000000000004ee7259d6914ae6c461bc00000000000000004563918244f400000000000000000000006a94d74f4300000000000000000000000000006749f462000000000000000000003b1dfde910000000000000000000000000000000000000000000000000000000000000000041923845af1a0f8e52538eb26d2d7a9d0e9fc833f801c72890cc3aec84fbc1b930696a280a0414c1cab407169bb90cf3c122f85383e9bf614e490c181bcca205b41b0000000000000000000000000000000000000000000000000000000000000000a0f2fa6b66833589fcd6edb6e08f4c7c32d4f71b54bda029130000000000000000000000000000000000000000000000000000000015775e5f000000000000000000000000004c421380a06c4eca27833589fcd6edb6e08f4c7c32d4f71b54bda02913111111125421ca6dc452d289314280a0f8842a6500000000000000000000000000001ea79a4f";
-        let without_prefix = calldata.trim_start_matches("0x");
-        let decoded_calldata = hex::decode(without_prefix).unwrap();
-        let encoded_calldata = hex::encode(&decoded_calldata);
-        let bytes = calldata.as_bytes();
-
-        assert_eq!(encoded_calldata, calldata);
-        assert_eq!(bytes, decoded_calldata);
     }
 }

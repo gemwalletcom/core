@@ -41,11 +41,11 @@ impl GemSwapper {
         Self {
             rpc_provider,
             swappers: vec![
-                // Box::new(universal_router::UniswapV3::new_uniswap()),
-                // Box::new(universal_router::UniswapV3::new_pancakeswap()),
-                // Box::new(thorchain::ThorChain::default()),
-                // Box::new(jupiter::Jupiter::default()),
-                Box::new(mayan::mayan_swift_provider::MayanSwiftProvider::new()),
+                Box::new(universal_router::UniswapV3::new_uniswap()),
+                Box::new(universal_router::UniswapV3::new_pancakeswap()),
+                Box::new(thorchain::ThorChain::default()),
+                Box::new(jupiter::Jupiter::default()),
+                Box::new(mayan::swift_provider::MayanSwiftProvider::new()),
             ],
         }
     }

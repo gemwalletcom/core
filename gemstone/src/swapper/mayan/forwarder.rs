@@ -1,31 +1,12 @@
-use std::{str::FromStr, sync::Arc};
+use std::str::FromStr;
 
 use alloy_core::{
     primitives::{Address, U256},
-    sol_types::{SolCall, SolValue},
+    sol_types::SolCall,
 };
-use gem_evm::{
-    jsonrpc::{BlockParameter, EthereumRpc, TransactionObject},
-    mayan::forwarder::IMayanForwarder,
-};
-use primitives::Chain;
-use thiserror::Error;
+use gem_evm::mayan::forwarder::IMayanForwarder;
 
-use crate::network::{jsonrpc_call, AlienProvider};
-
-use super::mayan_swift::MayanSwiftPermit;
-
-#[derive(Debug, Error)]
-pub enum MayanForwarderError {
-    #[error("Unsupported protocol")]
-    UnsupportedProtocol,
-    #[error("Call failed: {msg}")]
-    CallFailed { msg: String },
-    #[error("Invalid response")]
-    InvalidResponse,
-    #[error("ABI error: {msg}")]
-    ABIError { msg: String },
-}
+use super::{models::MayanError, swift::MayanSwiftPermit};
 
 pub struct MayanForwarder {}
 
@@ -34,9 +15,9 @@ impl MayanForwarder {
         Self {}
     }
 
-    pub async fn encode_forward_eth_call(&self, mayan_protocol: &str, protocol_data: Vec<u8>) -> Result<Vec<u8>, MayanForwarderError> {
+    pub async fn encode_forward_eth_call(&self, mayan_protocol: &str, protocol_data: Vec<u8>) -> Result<Vec<u8>, MayanError> {
         let call_data = IMayanForwarder::forwardEthCall {
-            mayanProtocol: Address::from_str(mayan_protocol).map_err(|e| MayanForwarderError::ABIError {
+            mayanProtocol: Address::from_str(mayan_protocol).map_err(|e| MayanError::ABIError {
                 msg: format!("Invalid protocol address: {}", e),
             })?,
             protocolData: protocol_data.into(),
@@ -53,14 +34,14 @@ impl MayanForwarder {
         permit: Option<MayanSwiftPermit>,
         mayan_protocol: &str,
         protocol_data: Vec<u8>,
-    ) -> Result<Vec<u8>, MayanForwarderError> {
+    ) -> Result<Vec<u8>, MayanError> {
         let call_data = IMayanForwarder::forwardERC20Call {
-            tokenIn: Address::from_str(token_in).map_err(|e| MayanForwarderError::ABIError {
+            tokenIn: Address::from_str(token_in).map_err(|e| MayanError::ABIError {
                 msg: format!("Invalid token address: {}", e),
             })?,
             amountIn: amount_in,
             permitParams: permit.map_or(MayanSwiftPermit::zero().to_contract_params(), |p| p.to_contract_params()),
-            mayanProtocol: Address::from_str(mayan_protocol).map_err(|e| MayanForwarderError::ABIError {
+            mayanProtocol: Address::from_str(mayan_protocol).map_err(|e| MayanError::ABIError {
                 msg: format!("Invalid protocol address: {}", e),
             })?,
             protocolData: protocol_data.into(),
@@ -79,18 +60,18 @@ impl MayanForwarder {
         min_middle_amount: U256,
         mayan_protocol: &str,
         mayan_data: Vec<u8>,
-    ) -> Result<Vec<u8>, MayanForwarderError> {
+    ) -> Result<Vec<u8>, MayanError> {
         let call_data = IMayanForwarder::swapAndForwardEthCall {
             amountIn: amount_in,
-            swapProtocol: Address::from_str(swap_protocol).map_err(|e| MayanForwarderError::ABIError {
+            swapProtocol: Address::from_str(swap_protocol).map_err(|e| MayanError::ABIError {
                 msg: format!("Invalid swap protocol address: {}", e),
             })?,
             swapData: swap_data.into(),
-            middleToken: Address::from_str(middle_token).map_err(|e| MayanForwarderError::ABIError {
+            middleToken: Address::from_str(middle_token).map_err(|e| MayanError::ABIError {
                 msg: format!("Invalid middle token address: {}", e),
             })?,
             minMiddleAmount: min_middle_amount,
-            mayanProtocol: Address::from_str(mayan_protocol).map_err(|e| MayanForwarderError::ABIError {
+            mayanProtocol: Address::from_str(mayan_protocol).map_err(|e| MayanError::ABIError {
                 msg: format!("Invalid mayan protocol address: {}", e),
             })?,
             mayanData: mayan_data.into(),
@@ -111,22 +92,22 @@ impl MayanForwarder {
         min_middle_amount: U256,
         mayan_protocol: &str,
         mayan_data: Vec<u8>,
-    ) -> Result<Vec<u8>, MayanForwarderError> {
+    ) -> Result<Vec<u8>, MayanError> {
         let call_data = IMayanForwarder::swapAndForwardERC20Call {
-            tokenIn: Address::from_str(token_in).map_err(|e| MayanForwarderError::ABIError {
+            tokenIn: Address::from_str(token_in).map_err(|e| MayanError::ABIError {
                 msg: format!("Invalid token address: {}", e),
             })?,
             amountIn: amount_in,
             permitParams: permit.map_or(MayanSwiftPermit::zero().to_contract_params(), |p| p.to_contract_params()),
-            swapProtocol: Address::from_str(swap_protocol).map_err(|e| MayanForwarderError::ABIError {
+            swapProtocol: Address::from_str(swap_protocol).map_err(|e| MayanError::ABIError {
                 msg: format!("Invalid swap protocol address: {}", e),
             })?,
             swapData: swap_data.into(),
-            middleToken: Address::from_str(middle_token).map_err(|e| MayanForwarderError::ABIError {
+            middleToken: Address::from_str(middle_token).map_err(|e| MayanError::ABIError {
                 msg: format!("Invalid middle token address: {}", e),
             })?,
             minMiddleAmount: min_middle_amount,
-            mayanProtocol: Address::from_str(mayan_protocol).map_err(|e| MayanForwarderError::ABIError {
+            mayanProtocol: Address::from_str(mayan_protocol).map_err(|e| MayanError::ABIError {
                 msg: format!("Invalid mayan protocol address: {}", e),
             })?,
             mayanData: mayan_data.into(),

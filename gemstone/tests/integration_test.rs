@@ -6,7 +6,7 @@ mod tests {
         network::{provider::AlienProvider, target::*, *},
         swapper::{orca::Orca, *},
     };
-    use mayan::mayan_swift_provider::MayanSwiftProvider;
+    use mayan::swift_provider::MayanSwiftProvider;
     use primitives::{Asset, AssetId, Chain};
     use reqwest::Client;
     use std::{collections::HashMap, sync::Arc};
@@ -146,13 +146,9 @@ mod tests {
         assert_eq!(quote.data.routes.len(), 1);
         assert_eq!(
             quote.data.routes[0].input,
-            AssetId::from(Chain::Base, Some("0x4200000000000000000000000000000000000042".to_string())),
+            AssetId::from(Chain::Base, Some("0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913".to_string())),
         );
         assert_eq!(quote.data.routes[0].output, AssetId::from_chain(Chain::Optimism));
-        // assert!(quote.data.routes[0].gas_estimate.is_some();
-
-        // Verify
-        // assert_eq!(quote.approval, ApprovalType::None);
 
         Ok(())
     }
