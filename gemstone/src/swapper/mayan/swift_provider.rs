@@ -49,7 +49,7 @@ impl MayanSwiftProvider {
     fn get_chain_by_wormhole_id(&self, wormhole_id: u64) -> Option<Chain> {
         get_swift_providers()
             .into_iter()
-            .find(|(_, deployment)| deployment.wormhole_id == wormhole_id)
+            .find(|(_, deployment)| deployment.wormhole_id.clone() as u64 == wormhole_id)
             .map(|(chain, _)| chain)
     }
 
