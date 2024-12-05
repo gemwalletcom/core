@@ -1,6 +1,7 @@
 pub mod command;
 pub mod contract;
 pub mod deployment;
+pub mod path;
 
 // hundredths of bps (e.g. 0.3% is 3000)
 #[derive(Debug, Clone, PartialEq)]

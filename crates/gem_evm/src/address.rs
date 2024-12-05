@@ -31,7 +31,7 @@ impl std::fmt::Display for AddressError {
     }
 }
 
-#[derive(Default)]
+#[derive(Debug, Default, Clone, PartialEq, Eq, Hash)]
 pub struct EthereumAddress {
     pub bytes: Vec<u8>,
 }

@@ -106,7 +106,7 @@ where
     Ok(result)
 }
 
-pub async fn batch_jsonrpc_call<T>(rpc_calls: &[T], provider: Arc<dyn AlienProvider>, chain: &Chain) -> Result<Vec<JsonRpcResponse<String>>, AlienError>
+pub async fn batch_jsonrpc_call<T>(rpc_calls: Vec<T>, provider: Arc<dyn AlienProvider>, chain: &Chain) -> Result<Vec<JsonRpcResult<String>>, AlienError>
 where
     T: JsonRpcRequestConvert,
 {
@@ -119,22 +119,7 @@ where
     let data = data_array.first().ok_or(AlienError::ResponseError { msg: "No result".into() })?;
 
     let results: Vec<JsonRpcResult<String>> = serde_json::from_slice(data).map_err(|err| AlienError::ResponseError { msg: err.to_string() })?;
-
-    let responses = results
-        .into_iter()
-        .filter_map(|result| match result {
-            JsonRpcResult::Value(value) => Some(value),
-            JsonRpcResult::Error(_) => None,
-        })
-        .collect::<Vec<JsonRpcResponse<String>>>();
-
-    if !responses.is_empty() {
-        Ok(responses)
-    } else {
-        Err(AlienError::ResponseError {
-            msg: "All jsonrpc requests failed".into(),
-        })
-    }
+    Ok(results)
 }
 
 #[cfg(test)]

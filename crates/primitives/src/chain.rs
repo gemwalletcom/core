@@ -228,7 +228,7 @@ impl Chain {
 
     pub fn account_activation_fee(&self) -> Option<i32> {
         match self {
-            Self::Xrp => Some(10_000_000), // https://xrpl.org/docs/concepts/accounts/reserves#base-reserve-and-owner-reserve
+            Self::Xrp => Some(1_000_000), // https://xrpl.org/docs/concepts/accounts/reserves#base-reserve-and-owner-reserve
             _ => None,
         }
     }

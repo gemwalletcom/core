@@ -63,7 +63,7 @@ impl TransakClient {
             .append_pair("disableWalletAddressForm", "true")
             .append_pair("walletAddress", &address);
 
-        return components.as_str().to_string();
+        components.as_str().to_string()
     }
 
     pub async fn get_supported_assets(&self) -> Result<Vec<Asset>, reqwest::Error> {

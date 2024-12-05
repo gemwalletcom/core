@@ -1,7 +1,7 @@
 use alloy_primitives::U256;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TransactionObject {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub from: Option<String>,
@@ -49,7 +49,7 @@ impl TransactionObject {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum BlockParameter {
     // hexadecimal block number
     Number(&'static str),
@@ -80,7 +80,7 @@ impl From<&BlockParameter> for serde_json::Value {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum EthereumRpc {
     GasPrice,
     GetBalance(&'static str),

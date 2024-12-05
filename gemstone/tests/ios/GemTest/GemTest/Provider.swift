@@ -12,14 +12,18 @@ public actor NativeProvider {
             "ethereum": URL(string: "https://eth.llamarpc.com")!,
             "optimism": URL(string: "https://optimism.llamarpc.com")!,
             "thorchain": URL(string: "https://thornode.ninerealms.com")!,
-            "solana": URL(string: "https://solana-rpc.publicnode.com")!
+            "solana": URL(string: "https://solana-rpc.publicnode.com")!,
+            "smartchain": URL(string: "https://binance.llamarpc.com")!,
+            "arbitrum": URL(string: "https://arbitrum.llamarpc.com")!,
+            "base": URL(string: "https://base.llamarpc.com")!,
+            "polygon": URL(string: "https://polygon.llamarpc.com")!
         ]
         self.session = session
     }
 }
 
 extension NativeProvider: AlienProvider {
-    nonisolated public func getEndpoint(chain: String) throws -> String {
+    public nonisolated func getEndpoint(chain: String) throws -> String {
         guard let url = nodeConfig[chain] else {
             throw AlienError.RequestError(msg: "\(chain) is not supported.")
         }

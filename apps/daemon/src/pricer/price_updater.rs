@@ -89,8 +89,7 @@ impl PriceUpdater {
     }
 
     pub fn get_prices_assets_for_coin(&mut self, coin: Coin) -> Vec<PriceAsset> {
-        return coin
-            .platforms
+        coin.platforms
             .clone()
             .into_iter()
             .flat_map(|(platform, token_id)| {
@@ -108,7 +107,7 @@ impl PriceUpdater {
                 }
                 None
             })
-            .collect::<Vec<_>>();
+            .collect::<Vec<_>>()
     }
 
     pub async fn update_prices_cache(&mut self) -> Result<usize, Box<dyn Error + Send + Sync>> {
