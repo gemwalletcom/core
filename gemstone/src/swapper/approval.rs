@@ -3,6 +3,7 @@ use crate::network::{jsonrpc::*, AlienProvider};
 
 use alloy_core::{
     hex::decode as HexDecode,
+    hex::FromHexError,
     primitives::{Address, AddressError, U256},
     sol_types::SolCall,
 };
@@ -33,6 +34,12 @@ impl From<AddressError> for SwapperError {
     }
 }
 
+impl From<FromHexError> for SwapperError {
+    fn from(err: FromHexError) -> Self {
+        SwapperError::InvalidAddress { address: err.to_string() }
+    }
+}
+
 pub async fn check_approval_erc20(
     owner: String,
     token: String,
@@ -41,8 +48,8 @@ pub async fn check_approval_erc20(
     provider: Arc<dyn AlienProvider>,
     chain: &Chain,
 ) -> Result<ApprovalType, SwapperError> {
-    let owner = Address::parse_checksummed(owner, None).map_err(SwapperError::from)?;
-    let spender = Address::parse_checksummed(spender, None).map_err(SwapperError::from)?;
+    let owner: Address = owner.as_str().parse().map_err(SwapperError::from)?;
+    let spender: Address = spender.as_str().parse().map_err(SwapperError::from)?;
     let allowance_data = IERC20::allowanceCall { owner, spender }.abi_encode();
     let allowance_call = EthereumRpc::Call(TransactionObject::new_call(&token, allowance_data), BlockParameter::Latest);
 
@@ -79,9 +86,9 @@ pub async fn check_approval(check_type: CheckApprovalType, provider: Arc<dyn Ali
 
             // Check permit2 allowance, spender is universal router
             let permit2_data = IAllowanceTransfer::allowanceCall {
-                _0: Address::parse_checksummed(owner, None).map_err(SwapperError::from)?,
-                _1: Address::parse_checksummed(token.clone(), None).map_err(SwapperError::from)?,
-                _2: Address::parse_checksummed(spender.clone(), None).map_err(SwapperError::from)?,
+                _0: owner.as_str().parse().map_err(SwapperError::from)?,
+                _1: token.as_str().parse().map_err(SwapperError::from)?,
+                _2: spender.as_str().parse().map_err(SwapperError::from)?,
             }
             .abi_encode();
             let permit2_call = EthereumRpc::Call(TransactionObject::new_call(&permit2_contract, permit2_data), BlockParameter::Latest);
