@@ -1222,7 +1222,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8f850665a0385e070b64c38d2354e6c104c8479c59868d1e48a0c13ee2c7a1c1"
 dependencies = [
  "autocfg",
- "libm",
+ "libm 0.2.11",
  "num-bigint 0.4.6",
  "num-integer",
  "num-traits",
@@ -4541,6 +4541,12 @@ checksum = "8e9489c2807c139ffd9c1794f4af0ebe86a828db53ecdc7fea2111d0fed085d1"
 
 [[package]]
 name = "libm"
+version = "0.1.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7fc7aa29613bd6a620df431842069224d8bc9011086b1db4c0e0cd47fa03ec9a"
+
+[[package]]
+name = "libm"
 version = "0.2.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8355be11b20d696c8f18f6cc018c4e372165b1fa8126cef092399c9951984ffa"
@@ -5355,7 +5361,7 @@ checksum = "dc84195820f291c7697304f3cbdadd1cb7199c0efc917ff5eafd71225c136151"
 dependencies = [
  "byteorder",
  "lazy_static",
- "libm",
+ "libm 0.2.11",
  "num-integer",
  "num-iter",
  "num-traits",
@@ -5428,7 +5434,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "071dfc062690e90b734c0b2273ce72ad0ffa95f0c74596bc250dcfd960262841"
 dependencies = [
  "autocfg",
- "libm",
+ "libm 0.2.11",
 ]
 
 [[package]]
@@ -5538,20 +5544,20 @@ dependencies = [
 
 [[package]]
 name = "orca_whirlpools_core"
-version = "0.3.1"
+version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7f45f8de382a0eba20e345851a1982fac84be02307efb3be959e40ef6e059a46"
+checksum = "0f42493f5891f8510f1e1b04aefc2c9833274ab6d5de80cb8d2cb6c8614c72d2"
 dependencies = [
  "ethnum",
- "libm",
+ "libm 0.1.4",
  "orca_whirlpools_macros",
 ]
 
 [[package]]
 name = "orca_whirlpools_macros"
-version = "0.3.1"
+version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "16c4fca1580bc8fd5ef85c3b35e6f5fddb15e94ba891020ac38c45383fb457f0"
+checksum = "fdab65368b82dfe2c01f518b2530af57770d442b741abf128151d0f7e6f3d41b"
 dependencies = [
  "proc-macro2 1.0.89",
  "quote 1.0.37",
