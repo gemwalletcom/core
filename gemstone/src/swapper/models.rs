@@ -57,6 +57,7 @@ pub enum SwapProvider {
     PancakeSwapV3,
     Thorchain,
     Orca,
+    MayanSwift,
     Jupiter,
 }
 impl SwapProvider {
@@ -66,6 +67,7 @@ impl SwapProvider {
             Self::PancakeSwapV3 => "PancakeSwap v3",
             Self::Thorchain => "THORChain",
             Self::Orca => "Orca Whirlpool",
+            Self::MayanSwift => "Mayan Swift",
             Self::Jupiter => "Jupiter",
         }
     }
