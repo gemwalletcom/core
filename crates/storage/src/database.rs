@@ -657,11 +657,11 @@ impl DatabaseClient {
         Ok(assets.len() as i32)
     }
 
-    pub fn set_swap_enabled(&mut self, asset_ids: Vec<String>) -> Result<usize, diesel::result::Error> {
+    pub fn set_swap_enabled(&mut self, asset_ids: Vec<String>, value: bool) -> Result<usize, diesel::result::Error> {
         use crate::schema::assets::dsl::*;
         diesel::update(assets)
             .filter(id.eq_any(&asset_ids))
-            .set(is_swappable.eq(true))
+            .set(is_swappable.eq(value))
             .execute(&mut self.connection)
     }
 

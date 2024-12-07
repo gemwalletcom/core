@@ -31,10 +31,7 @@ pub async fn add_asset(asset_id: Json<AssetId>, client: &State<Mutex<AssetsClien
         .get_token_data(asset_id.chain, asset_id.token_id.clone().unwrap())
         .await
         .unwrap();
-
     client.lock().await.add_asset(asset.clone()).unwrap();
-    client.lock().await.update_asset_rank(asset.id.to_string().as_str(), 15).unwrap();
-
     Json(asset)
 }
 
