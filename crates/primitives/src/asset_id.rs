@@ -13,6 +13,12 @@ pub struct AssetId {
     pub token_id: Option<String>,
 }
 
+impl From<&str> for AssetId {
+    fn from(value: &str) -> Self {
+        AssetId::new(value).unwrap()
+    }
+}
+
 impl fmt::Display for AssetId {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let str = match &self.token_id {

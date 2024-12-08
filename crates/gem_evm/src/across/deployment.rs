@@ -1,4 +1,6 @@
-use primitives::Chain;
+use crate::constants::*;
+use primitives::{AssetId, Chain};
+use std::collections::HashMap;
 
 pub struct AcrossDeployment {
     pub chain_id: u32,
@@ -69,5 +71,75 @@ impl AcrossDeployment {
             }),
             _ => None,
         }
+    }
+
+    pub fn supported_assets(&self) -> HashMap<Chain, Vec<AssetId>> {
+        HashMap::from([
+            (
+                Chain::Ethereum,
+                vec![
+                    ACX_ETH.into(),
+                    DAI_ETH.into(),
+                    USDC_ETH.into(),
+                    USDT_ETH.into(),
+                    USDC_E_ETH.into(),
+                    WBTC_ETH.into(),
+                    WETH_ETH.into(),
+                ],
+            ),
+            (
+                Chain::Optimism,
+                vec![
+                    ACX_OP.into(),
+                    DAI_OP.into(),
+                    USDT_OP.into(),
+                    USDC_OP.into(),
+                    USDC_E_OP.into(),
+                    WBTC_OP.into(),
+                    WETH_OP.into(),
+                ],
+            ),
+            (
+                Chain::Polygon,
+                vec![
+                    ACX_POLYGON.into(),
+                    DAI_POLYGON.into(),
+                    USDC_POLYGON.into(),
+                    USDC_E_POLYGON.into(),
+                    USDT_POLYGON.into(),
+                    WBTC_POLYGON.into(),
+                    WETH_POLYGON.into(),
+                ],
+            ),
+            (
+                Chain::Arbitrum,
+                vec![
+                    ACX_ARB.into(),
+                    DAI_ARB.into(),
+                    USDT_ARB.into(),
+                    USDC_ARB.into(),
+                    USDC_E_ARB.into(),
+                    WBTC_ARB.into(),
+                    WETH_ARB.into(),
+                ],
+            ),
+            (Chain::Base, vec![WETH_BASE.into(), USDC_BASE.into(), USDC_E_BASE.into()]),
+            (
+                Chain::Linea,
+                vec![DAI_LINEA.into(), USDC_E_LINEA.into(), USDT_LINEA.into(), WBTC_LINEA.into(), WETH_LINEA.into()],
+            ),
+            (
+                Chain::ZkSync,
+                vec![
+                    DAI_ZKSYNC.into(),
+                    WBTC_ZKSYNC.into(),
+                    WETH_ZKSYNC.into(),
+                    USDC_E_ZKSYNC.into(),
+                    USDT_ZKSYNC.into(),
+                ],
+            ),
+            (Chain::World, vec![WBTC_WORLD.into(), WETH_WORLD.into(), USDC_E_WORLD.into()]),
+            (Chain::Blast, vec![WBTC_BLAST.into(), WETH_BLAST.into()]),
+        ])
     }
 }

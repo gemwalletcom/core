@@ -1,5 +1,6 @@
 pub mod across;
 pub mod address;
+pub mod constants;
 pub mod erc20;
 pub mod erc2612;
 pub mod jsonrpc;
