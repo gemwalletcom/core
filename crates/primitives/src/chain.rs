@@ -1,11 +1,11 @@
-use std::fmt;
+use std::{fmt, str::FromStr};
 
 use serde::{Deserialize, Serialize};
 use strum::{EnumIter, IntoEnumIterator};
 use strum_macros::{AsRefStr, EnumString};
 use typeshare::typeshare;
 
-use crate::{AssetId, AssetType, ChainType};
+use crate::{AssetId, AssetType, ChainType, StakeChain};
 
 #[derive(Copy, Clone, Debug, Serialize, Deserialize, EnumIter, AsRefStr, EnumString, PartialEq, Eq, Hash)]
 #[typeshare(swift = "Equatable, CaseIterable, Sendable")]
@@ -231,6 +231,49 @@ impl Chain {
             Self::Xrp => Some(1_000_000), // https://xrpl.org/docs/concepts/accounts/reserves#base-reserve-and-owner-reserve
             _ => None,
         }
+    }
+
+    pub fn is_swap_supported(&self) -> bool {
+        match self {
+            Self::Ethereum
+            | Self::Bitcoin
+            | Self::Litecoin
+            | Self::SmartChain
+            | Self::Cosmos
+            | Self::Fantom
+            | Self::OpBNB
+            | Self::Arbitrum
+            | Self::Optimism
+            | Self::Polygon
+            | Self::Base
+            | Self::Gnosis
+            | Self::Manta
+            | Self::Blast
+            | Self::ZkSync
+            | Self::Linea
+            | Self::Mantle
+            | Self::Celo
+            | Self::World
+            | Self::Thorchain
+            | Self::Solana
+            | Self::AvalancheC
+            | Self::Doge => true,
+            Self::Osmosis
+            | Self::Celestia
+            | Self::Injective
+            | Self::Ton
+            | Self::Tron
+            | Self::Aptos
+            | Self::Sui
+            | Self::Xrp
+            | Self::Sei
+            | Self::Noble
+            | Self::Near => false,
+        }
+    }
+
+    pub fn is_stake_supported(&self) -> bool {
+        StakeChain::from_str(self.as_ref()).is_ok()
     }
 
     // miliseconds
