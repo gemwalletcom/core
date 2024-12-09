@@ -28,6 +28,9 @@ struct ContentView: View {
             Button("Fetch SOL -> USDC") {
                 self.testQuote(quote: .sol2usdc)
             }
+            Button("Fetch JUP -> BONK") {
+                self.testQuote(quote: .jup2bonk)
+            }
             Button("Fetch UNI -> LINK") {
                 self.testQuote(quote: .uni2link)
             }
@@ -79,7 +82,7 @@ struct ContentView: View {
 
         print("<== fetchQuote:\n", quote)
         print("==> amount out: \(quote.toValue)")
-        print("==> routes count: \(quote.data.routes.count), fee tier: \(route.routeData)")
+        print("==> routes count: \(quote.data.routes.count), fee tier: \(route.routeData), slippage: \(quote.data.suggestedSlippageBps)")
         if quote.data.routes.count > 1 {
             print("==> intermediary token: \(route.output)")
         }

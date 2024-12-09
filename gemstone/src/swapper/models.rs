@@ -146,6 +146,7 @@ pub struct SwapQuoteData {
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct SwapProviderData {
     pub provider: SwapProvider,
+    pub suggested_slippage_bps: Option<u32>,
     pub routes: Vec<SwapRoute>,
 }
 

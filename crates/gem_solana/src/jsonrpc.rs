@@ -61,3 +61,15 @@ pub struct Memcmp {
     pub bytes: String,
     pub encoding: String,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AccountData {
+    pub data: Vec<String>,
+    pub owner: String,
+    pub space: u64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ValueResult<T> {
+    pub value: T,
+}
