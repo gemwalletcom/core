@@ -10,42 +10,42 @@ documentation = "https://github.com/gemwalletcom"
 [workspace]
 resolver = "2"
 members = [
-  "apps/api",
-  "apps/daemon",
-  "apps/parser",
-  "apps/setup",
+    "apps/api",
+    "apps/daemon",
+    "apps/parser",
+    "apps/setup",
 
-  "bin/img-downloader",
-  "bin/generate",
+    "bin/img-downloader",
+    "bin/generate",
 
-  "bin/uniffi-bindgen",
-  "gemstone",
+    "bin/uniffi-bindgen",
+    "gemstone",
 
-  "crates/primitives",
-  "crates/blockchain",
-  "crates/fiat",
-  "crates/cacher",
-  "crates/name_resolver",
-  "crates/api_connector",
-  "crates/settings",
-  "crates/settings_chain",
-  "crates/pricer",
-  "crates/chain_primitives",
+    "crates/primitives",
+    "crates/blockchain",
+    "crates/fiat",
+    "crates/cacher",
+    "crates/name_resolver",
+    "crates/api_connector",
+    "crates/settings",
+    "crates/settings_chain",
+    "crates/pricer",
+    "crates/chain_primitives",
 
-  "crates/security_*",
-  "crates/gem_*",
+    "crates/security_*",
+    "crates/gem_*",
 
-  "crates/localizer",
-  "crates/job_runner",
+    "crates/localizer",
+    "crates/job_runner",
 ]
 
 default-members = [
-  "apps/api",
-  "apps/daemon",
-  "apps/parser",
-  "apps/setup",
-  "bin/generate",
-  "gemstone",
+    "apps/api",
+    "apps/daemon",
+    "apps/parser",
+    "apps/setup",
+    "bin/generate",
+    "gemstone",
 ]
 
 [workspace.dependencies]
@@ -117,5 +117,5 @@ rust-embed = { version = "8.5.0" }
 
 # numbers
 rusty-money = { git = "https://github.com/varunsrin/rusty_money.git", rev = "bbc0150", features = [
-  "iso",
+    "iso",
 ] }
