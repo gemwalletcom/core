@@ -38,6 +38,7 @@ url.workspace = true
 num-bigint.workspace = true
 futures.workspace = true
 borsh.workspace = true
+rand.workspace = true
 orca_whirlpools_core = "1.0.0"
 
 [build-dependencies]
