@@ -3214,6 +3214,7 @@ version = "1.0.0"
 dependencies = [
  "alloy-core",
  "alloy-sol-types",
+ "anyhow",
  "async-trait",
  "base64 0.22.1",
  "bs58 0.5.1",
@@ -3232,6 +3233,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2 0.10.8",
+ "tokio",
 ]
 
 [[package]]

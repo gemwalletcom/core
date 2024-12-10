@@ -6,7 +6,7 @@ use crate::metaplex::{
     uses::Uses,
     Key, TokenStandard,
 };
-use crate::pubkey::Pubkey;
+use crate::{pubkey::Pubkey, METAPLEX_PROGRAM};
 use borsh::{BorshDeserialize, BorshSerialize};
 
 #[derive(Clone, BorshDeserialize, BorshSerialize, Debug, PartialEq, Eq)]
@@ -44,7 +44,7 @@ pub enum ProgrammableConfig {
 
 impl Metadata {
     pub fn find_pda(mint: Pubkey) -> Option<(Pubkey, u8)> {
-        let mpl_id = Pubkey::from_str("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s").unwrap();
+        let mpl_id = Pubkey::from_str(METAPLEX_PROGRAM).unwrap();
         let seeds = &["metadata".as_bytes(), mpl_id.as_ref(), mint.as_ref()];
         Pubkey::try_find_program_address(seeds, &mpl_id)
     }

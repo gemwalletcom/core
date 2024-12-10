@@ -1,21 +1,23 @@
-use std::error::Error;
-
-use crate::{
-    solana::model::{BlockTransactions, InstructionParsed},
-    ChainBlockProvider, ChainTokenDataProvider,
-};
 use async_trait::async_trait;
 use chrono::Utc;
 use jsonrpsee::{
-    core::client::ClientT,
+    core::{client::ClientT, ClientError},
     http_client::{HttpClient, HttpClientBuilder},
     rpc_params,
 };
-use primitives::{chain::Chain, Asset, AssetId, Transaction, TransactionState, TransactionSwapMetadata, TransactionType};
-
-use super::model::BlockTransaction;
-use gem_solana::WSOL_TOKEN_ADDRESS;
+use serde::de::DeserializeOwned;
 use serde_json::json;
+use std::{error::Error, str::FromStr};
+
+use super::model::{BlockTransaction, BlockTransactions, InstructionParsed};
+use crate::{ChainBlockProvider, ChainTokenDataProvider};
+use gem_solana::{
+    jsonrpc::{AccountData, SolanaParsedTokenInfo, ValueResult},
+    metaplex::{decode_metadata, metadata::Metadata},
+    pubkey::Pubkey,
+    TOKEN_PROGRAM, WSOL_TOKEN_ADDRESS,
+};
+use primitives::{chain::Chain, Asset, AssetId, AssetType, Transaction, TransactionState, TransactionSwapMetadata, TransactionType};
 
 pub struct SolanaClient {
     client: HttpClient,
@@ -26,7 +28,6 @@ const MISSING_SLOT_ERROR: i32 = -32007;
 const MISSING_OR_SKIPPED_SLOT_ERROR: i32 = -32009;
 const NOT_AVAILABLE_SLOT_ERROR: i32 = -32004;
 const SYSTEM_PROGRAM_ID: &str = "11111111111111111111111111111111";
-const TOKEN_PROGRAM_ID: &str = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA";
 const JUPITER_PROGRAM_ID: &str = "JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4";
 
 impl SolanaClient {
@@ -39,7 +40,7 @@ impl SolanaClient {
         Self { client }
     }
 
-    fn map_transaction(&self, transaction: &BlockTransaction, block_number: i64) -> Option<primitives::Transaction> {
+    fn map_transaction(&self, transaction: &BlockTransaction, block_number: i64) -> Option<Transaction> {
         let account_keys = transaction
             .transaction
             .message
@@ -62,7 +63,7 @@ impl SolanaClient {
 
             let value = transaction.meta.pre_balances[0] - transaction.meta.post_balances[0] - fee;
 
-            let transaction = primitives::Transaction::new(
+            let transaction = Transaction::new(
                 hash,
                 chain.as_asset_id(),
                 from,
@@ -85,8 +86,8 @@ impl SolanaClient {
         let pre_token_balances = transaction.meta.pre_token_balances.clone();
         let post_token_balances = transaction.meta.post_token_balances.clone();
 
-        // SLP transfer. Limit to 7 accounts.
-        if account_keys.contains(&TOKEN_PROGRAM_ID.to_string())
+        // SPL transfer. Limit to 7 accounts.
+        if account_keys.contains(&TOKEN_PROGRAM.to_string())
             && account_keys.len() <= 7
             && (pre_token_balances.len() == 1 || pre_token_balances.len() == 2)
             && post_token_balances.len() == 2
@@ -119,7 +120,7 @@ impl SolanaClient {
             let from = sender.owner.clone();
             let to = recipient.owner.clone();
 
-            let transaction = primitives::Transaction::new(
+            let transaction = Transaction::new(
                 hash,
                 asset_id,
                 from,
@@ -140,8 +141,8 @@ impl SolanaClient {
         }
 
         if account_keys.contains(&JUPITER_PROGRAM_ID.to_string()) {
-            for innter_transaction in transaction.meta.inner_instructions.clone() {
-                let instructions = innter_transaction
+            for inner_transaction in transaction.meta.inner_instructions.clone() {
+                let instructions = inner_transaction
                     .instructions
                     .clone()
                     .into_iter()
@@ -179,7 +180,7 @@ impl SolanaClient {
                     };
                     let asset_id = from_asset.clone();
 
-                    let transaction = primitives::Transaction::new(
+                    let transaction = Transaction::new(
                         hash.clone(),
                         asset_id,
                         from_address,
@@ -213,6 +214,32 @@ impl SolanaClient {
             token_id: Some(program_id),
         }
     }
+
+    pub async fn get_account_info<T: DeserializeOwned>(&self, account: &str, encoding: &str) -> Result<T, Box<dyn Error + Send + Sync>> {
+        let rpc_method = "getAccountInfo";
+        let params = vec![
+            json!(account),
+            json!({
+                "encoding": encoding,
+                "commitment": "confirmed",
+            }),
+        ];
+        let info: T = self.client.request(rpc_method, params).await?;
+        Ok(info)
+    }
+
+    pub async fn get_metaplex_data(&self, token_mint: &str) -> Result<Metadata, Box<dyn Error + Send + Sync>> {
+        let pubkey = Pubkey::from_str(token_mint)?;
+        let metadata_key = Metadata::find_pda(pubkey)
+            .ok_or::<Box<dyn Error + Send + Sync>>("metadata program account not found".into())?
+            .0
+            .to_string();
+
+        let result: ValueResult<Option<AccountData>> = self.get_account_info(&metadata_key, "base64").await?;
+        let value = result.value.ok_or(anyhow::anyhow!("Failed to get metadata"))?;
+        let meta = decode_metadata(&value.data[0]).map_err(|_| anyhow::anyhow!("Failed to decode metadata"))?;
+        Ok(meta)
+    }
 }
 
 #[async_trait]
@@ -236,18 +263,18 @@ impl ChainBlockProvider for SolanaClient {
                 "rewards": false
             }),
         ];
-        let block: Result<BlockTransactions, jsonrpsee::core::ClientError> = self.client.request("getBlock", params).await;
+        let block: Result<BlockTransactions, ClientError> = self.client.request("getBlock", params).await;
         match block {
             Ok(block) => {
                 let transactions = block
                     .transactions
                     .into_iter()
                     .flat_map(|x| self.map_transaction(&x, block_number))
-                    .collect::<Vec<primitives::Transaction>>();
+                    .collect::<Vec<Transaction>>();
                 Ok(transactions)
             }
             Err(err) => match err {
-                jsonrpsee::core::ClientError::Call(err) => {
+                ClientError::Call(err) => {
                     let errors = [MISSING_SLOT_ERROR, MISSING_OR_SKIPPED_SLOT_ERROR, NOT_AVAILABLE_SLOT_ERROR, CLEANUP_BLOCK_ERROR];
                     if errors.contains(&err.code()) {
                         return Ok(vec![]);
@@ -263,7 +290,55 @@ impl ChainBlockProvider for SolanaClient {
 
 #[async_trait]
 impl ChainTokenDataProvider for SolanaClient {
-    async fn get_token_data(&self, _chain: Chain, _token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
-        unimplemented!()
+    async fn get_token_data(&self, chain: Chain, token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
+        let token_info: SolanaParsedTokenInfo = self.get_account_info(&token_id, "jsonParsed").await?;
+        let meta = self.get_metaplex_data(&token_id).await?;
+        let name = meta.data.name.trim_matches(char::from(0)).to_string();
+        let symbol = meta.data.symbol.trim_matches(char::from(0)).to_string();
+        let decimals = token_info.value.data.parsed.info.decimals;
+
+        Ok(Asset {
+            id: AssetId {
+                chain,
+                token_id: Some(token_id),
+            },
+            name,
+            symbol,
+            decimals,
+            asset_type: AssetType::SPL,
+        })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde::{Deserialize, Serialize};
+
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    struct JsonRpcResult<T> {
+        result: T,
+    }
+
+    #[test]
+    fn test_decode_token_data() {
+        let pyusd_file = concat!(env!("CARGO_MANIFEST_DIR"), "/testdata/solana/pyusd_mint.json");
+        let usdc_file = concat!(env!("CARGO_MANIFEST_DIR"), "/testdata/solana/usdc_mint.json");
+
+        let file = std::fs::File::open(pyusd_file).expect("file should open read only");
+        let json: serde_json::Value = serde_json::from_reader(file).expect("file should be proper JSON");
+        let result: JsonRpcResult<SolanaParsedTokenInfo> = serde_json::from_value(json).expect("Decoded into ParsedTokenInfo");
+        let parsed_info = result.result.value.data.parsed.info;
+
+        assert_eq!(parsed_info.decimals, 6);
+        assert_eq!(parsed_info.mint_authority, "22mKJkKjGEQ3rampp5YKaSsaYZ52BUkcnUN6evXGsXzz");
+
+        let file = std::fs::File::open(usdc_file).expect("file should open read only");
+        let json: serde_json::Value = serde_json::from_reader(file).expect("file should be proper JSON");
+        let result: JsonRpcResult<SolanaParsedTokenInfo> = serde_json::from_value(json).expect("Decoded into ParsedTokenInfo");
+        let parsed_info = result.result.value.data.parsed.info;
+
+        assert_eq!(parsed_info.decimals, 6);
+        assert_eq!(parsed_info.mint_authority, "BJE5MMbqXjVwjAF7oxwPYXnTXDyspzZyt4vwenNw5ruG");
     }
 }
