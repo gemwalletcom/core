@@ -61,3 +61,41 @@ pub struct Memcmp {
     pub bytes: String,
     pub encoding: String,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AccountData {
+    pub data: Vec<String>,
+    pub owner: String,
+    pub space: u64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ValueResult<T> {
+    pub value: T,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ValueData<T> {
+    pub data: T,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ParsedData<T> {
+    pub parsed: T,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ParsedInfo<T> {
+    pub info: T,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ParsedTokenInfo {
+    pub decimals: i32,
+    pub is_initialized: bool,
+    pub mint_authority: String,
+    pub supply: String,
+}
+
+pub type SolanaParsedTokenInfo = ValueResult<ValueData<ParsedData<ParsedInfo<ParsedTokenInfo>>>>;
