@@ -1,10 +1,3 @@
-use std::{error::Error, str::FromStr};
-
-use crate::{
-    solana::model::{BlockTransactions, InstructionParsed},
-    ChainBlockProvider, ChainTokenDataProvider,
-};
-
 use async_trait::async_trait;
 use chrono::Utc;
 use jsonrpsee::{
@@ -12,16 +5,19 @@ use jsonrpsee::{
     http_client::{HttpClient, HttpClientBuilder},
     rpc_params,
 };
-use primitives::{chain::Chain, Asset, AssetId, AssetType, Transaction, TransactionState, TransactionSwapMetadata, TransactionType};
+use serde::de::DeserializeOwned;
+use serde_json::json;
+use std::{error::Error, str::FromStr};
 
-use super::model::BlockTransaction;
+use super::model::{BlockTransaction, BlockTransactions, InstructionParsed};
+use crate::{ChainBlockProvider, ChainTokenDataProvider};
 use gem_solana::{
     jsonrpc::{AccountData, SolanaParsedTokenInfo, ValueResult},
     metaplex::{decode_metadata, metadata::Metadata},
     pubkey::Pubkey,
     TOKEN_PROGRAM, WSOL_TOKEN_ADDRESS,
 };
-use serde_json::json;
+use primitives::{chain::Chain, Asset, AssetId, AssetType, Transaction, TransactionState, TransactionSwapMetadata, TransactionType};
 
 pub struct SolanaClient {
     client: HttpClient,
@@ -218,6 +214,32 @@ impl SolanaClient {
             token_id: Some(program_id),
         }
     }
+
+    pub async fn get_account_info<T: DeserializeOwned>(&self, account: &str, encoding: &str) -> Result<T, Box<dyn Error + Send + Sync>> {
+        let rpc_method = "getAccountInfo";
+        let params = vec![
+            json!(account),
+            json!({
+                "encoding": encoding,
+                "commitment": "confirmed",
+            }),
+        ];
+        let info: T = self.client.request(rpc_method, params).await?;
+        Ok(info)
+    }
+
+    pub async fn get_metaplex_data(&self, token_mint: &str) -> Result<Metadata, Box<dyn Error + Send + Sync>> {
+        let pubkey = Pubkey::from_str(token_mint)?;
+        let metadata_key = Metadata::find_pda(pubkey)
+            .ok_or::<Box<dyn Error + Send + Sync>>("metadata program account not found".into())?
+            .0
+            .to_string();
+
+        let result: ValueResult<Option<AccountData>> = self.get_account_info(&metadata_key, "base64").await?;
+        let value = result.value.ok_or(anyhow::anyhow!("Failed to get metadata"))?;
+        let meta = decode_metadata(&value.data[0]).map_err(|_| anyhow::anyhow!("Failed to decode metadata"))?;
+        Ok(meta)
+    }
 }
 
 #[async_trait]
@@ -268,45 +290,23 @@ impl ChainBlockProvider for SolanaClient {
 
 #[async_trait]
 impl ChainTokenDataProvider for SolanaClient {
-    async fn get_token_data(&self, _chain: Chain, token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
-        let rpc_method = "getAccountInfo";
-        let params = vec![
-            json!(token_id),
-            json!({
-                "encoding": "jsonParsed",
-                "commitment": "confirmed",
-            }),
-        ];
+    async fn get_token_data(&self, chain: Chain, token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
+        let token_info: SolanaParsedTokenInfo = self.get_account_info(&token_id, "jsonParsed").await?;
+        let meta = self.get_metaplex_data(&token_id).await?;
+        let name = meta.data.name.trim_matches(char::from(0)).to_string();
+        let symbol = meta.data.symbol.trim_matches(char::from(0)).to_string();
+        let decimals = token_info.value.data.parsed.info.decimals;
 
-        let parsed_token_info: SolanaParsedTokenInfo = self.client.request(rpc_method, params).await?;
-
-        let pubkey = Pubkey::from_str(&token_id)?;
-        let metadata_key = Metadata::find_pda(pubkey)
-            .ok_or::<Box<dyn Error + Send + Sync>>("metadata program account not found".into())?
-            .0;
-
-        let params = vec![
-            json!(metadata_key.to_string()),
-            json!({
-                "encoding": "jsonParsed",
-                "commitment": "confirmed",
-            }),
-        ];
-        let result: ValueResult<Option<AccountData>> = self.client.request(rpc_method, params).await?;
-        let value = result.value.ok_or(anyhow::anyhow!("Failed to get metadata"))?;
-
-        let meta = decode_metadata(&value.data[0]).map_err(|_| anyhow::anyhow!("Failed to decode metadata"))?;
-        let asset = Asset {
+        Ok(Asset {
             id: AssetId {
-                chain: Chain::Solana,
+                chain,
                 token_id: Some(token_id),
             },
-            name: meta.data.name.trim_matches('\0').to_string(),
-            symbol: meta.data.symbol.trim_matches('\0').to_string(),
-            decimals: parsed_token_info.value.data.parsed.info.decimals,
+            name,
+            symbol,
+            decimals,
             asset_type: AssetType::SPL,
-        };
-        Ok(asset)
+        })
     }
 }
 

@@ -22,7 +22,6 @@ struct ContentView: View {
             Button("List Providers") {
                 self.fetchProviders()
             }
-            Text("Quotes:")
             Button("Fetch ETH -> USDC") {
                 self.testQuote(quote: .eth2usdc)
             }
@@ -83,9 +82,6 @@ struct ContentView: View {
         print("==> routes count: \(quote.data.routes.count), fee tier: \(route.routeData)")
         if quote.data.routes.count > 1 {
             print("==> intermediary token: \(route.output)")
-        }
-        if let slippage = quote.data.suggestedSlippageBps {
-            print("==> suggested slippage: \(slippage)")
         }
 
         let data = try await swapper.fetchQuoteData(quote: quote, data: .none)
