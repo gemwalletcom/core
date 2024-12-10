@@ -8,6 +8,8 @@ pub struct QuoteRequest {
     pub slippage_bps: u32,
     pub platform_fee_bps: u32,
     pub only_direct_routes: bool,
+    pub auto_slippage: bool,
+    pub max_auto_slippage_bps: u32,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -19,7 +21,7 @@ pub struct QuoteResponse {
     pub out_amount: String,
     pub other_amount_threshold: String,
     pub swap_mode: String,
-    pub slippage_bps: i64,
+    pub slippage_bps: u32,
     pub platform_fee: PlatformFee,
     pub price_impact_pct: String,
     pub route_plan: Vec<Route>,

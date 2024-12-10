@@ -1,4 +1,4 @@
-use super::{target::AlienHttpMethod, AlienError, AlienProvider, AlienTarget};
+use super::{target::AlienHttpMethod, AlienError, AlienProvider, AlienTarget, X_CACHE_TTL};
 use primitives::Chain;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::{
@@ -98,9 +98,22 @@ where
     T: JsonRpcRequestConvert,
     U: DeserializeOwned,
 {
+    jsonrpc_call_with_cache(call, provider, chain, None).await
+}
+
+pub async fn jsonrpc_call_with_cache<T, U>(call: &T, provider: Arc<dyn AlienProvider>, chain: &Chain, ttl: Option<u64>) -> Result<JsonRpcResult<U>, AlienError>
+where
+    T: JsonRpcRequestConvert,
+    U: DeserializeOwned,
+{
     let request = call.to_req(1);
     let endpoint = provider.get_endpoint(*chain)?;
-    let target = batch_into_target(&request, &endpoint);
+    let mut target = batch_into_target(&request, &endpoint);
+    if let Some(ttl) = ttl {
+        let mut headers = target.headers.unwrap_or_default();
+        headers.insert(X_CACHE_TTL.into(), ttl.to_string());
+        target.headers = Some(headers);
+    }
     let data = provider.request(target).await?;
     let result: JsonRpcResult<U> = serde_json::from_slice(&data).map_err(|err| AlienError::ResponseError { msg: err.to_string() })?;
     Ok(result)

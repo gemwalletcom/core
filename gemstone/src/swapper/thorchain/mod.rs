@@ -107,6 +107,7 @@ impl GemSwapProvider for ThorChain {
                     route_data: quote.inbound_address.unwrap_or_default(),
                     gas_estimate: None,
                 }],
+                suggested_slippage_bps: None,
             },
             approval: ApprovalType::None,
             request: request.clone(),

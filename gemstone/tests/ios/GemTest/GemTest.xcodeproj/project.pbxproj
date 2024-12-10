@@ -18,6 +18,7 @@
 		DF0C08052CCA661F00D2A524 /* URLRequest+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF0C08042CCA661400D2A524 /* URLRequest+Extension.swift */; };
 		DF0C080D2CD110B100D2A524 /* Gemstone+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF0C080C2CD110B100D2A524 /* Gemstone+Extension.swift */; };
 		DFAA63872CFDD83A00413EFA /* Request.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFAA63862CFDD83400413EFA /* Request.swift */; };
+		DFAA63892D07EFBA00413EFA /* Cache.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFAA63882D07EFB700413EFA /* Cache.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -43,6 +44,7 @@
 		DF0C08042CCA661400D2A524 /* URLRequest+Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "URLRequest+Extension.swift"; sourceTree = "<group>"; };
 		DF0C080C2CD110B100D2A524 /* Gemstone+Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Gemstone+Extension.swift"; sourceTree = "<group>"; };
 		DFAA63862CFDD83400413EFA /* Request.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Request.swift; sourceTree = "<group>"; };
+		DFAA63882D07EFB700413EFA /* Cache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Cache.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -87,6 +89,7 @@
 			children = (
 				DF0C08082CCA66B700D2A524 /* Extension */,
 				DF024FDA2CBE71F00044D11F /* Provider.swift */,
+				DFAA63882D07EFB700413EFA /* Cache.swift */,
 				4843F3822B32C18300CA5DA8 /* ContentView.swift */,
 				DFAA63862CFDD83400413EFA /* Request.swift */,
 				4843F3802B32C18300CA5DA8 /* GemTestApp.swift */,
@@ -230,6 +233,7 @@
 			files = (
 				DF0C08052CCA661F00D2A524 /* URLRequest+Extension.swift in Sources */,
 				4843F3832B32C18300CA5DA8 /* ContentView.swift in Sources */,
+				DFAA63892D07EFBA00413EFA /* Cache.swift in Sources */,
 				DF024FDB2CBE71F00044D11F /* Provider.swift in Sources */,
 				DF0C080D2CD110B100D2A524 /* Gemstone+Extension.swift in Sources */,
 				DFAA63872CFDD83A00413EFA /* Request.swift in Sources */,

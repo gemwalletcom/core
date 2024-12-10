@@ -1,12 +1,30 @@
 use super::{client::JupiterClient, model::*, PROGRAM_ADDRESS};
-use crate::swapper::{GemSwapProvider, *};
+use crate::{
+    network::jsonrpc::{jsonrpc_call_with_cache, JsonRpcResult},
+    swapper::{GemSwapProvider, *},
+};
 
 use async_trait::async_trait;
-use gem_solana::{get_asset_address, WSOL_TOKEN_ADDRESS};
+use gem_solana::{
+    get_asset_address,
+    jsonrpc::{AccountData, SolanaRpc, ValueResult},
+    USDC_TOKEN_MINT, USDT_TOKEN_MINT, WSOL_TOKEN_ADDRESS,
+};
 use primitives::{AssetId, Chain};
+use std::collections::HashSet;
 
-#[derive(Debug, Default)]
-pub struct Jupiter {}
+#[derive(Debug)]
+pub struct Jupiter {
+    pub fee_mints: HashSet<&'static str>,
+}
+
+impl Default for Jupiter {
+    fn default() -> Self {
+        Self {
+            fee_mints: HashSet::from([USDC_TOKEN_MINT, USDT_TOKEN_MINT, WSOL_TOKEN_ADDRESS]),
+        }
+    }
+}
 
 impl Jupiter {
     pub fn get_endpoint(&self) -> String {
@@ -22,7 +40,7 @@ impl Jupiter {
     pub fn get_fee_mint(&self, mode: &GemSwapMode, input: &str, output: &str) -> String {
         match mode {
             GemSwapMode::ExactIn => {
-                if output == WSOL_TOKEN_ADDRESS {
+                if self.fee_mints.contains(output) {
                     return output.to_string();
                 }
                 input.to_string()
@@ -31,14 +49,52 @@ impl Jupiter {
         }
     }
 
-    pub fn get_fee_account(&self, options: &Option<GemSwapOptions>, mint: &str) -> String {
-        let mut fee_account = String::from("");
+    pub fn get_fee_account(&self, options: &Option<GemSwapOptions>, mint: &str) -> Option<String> {
         if let Some(options) = options {
             if let Some(fee) = &options.fee {
-                fee_account = super::referral::get_referral_account(&fee.solana_jupiter.address, mint);
+                let fee_account = super::referral::get_referral_account(&fee.solana_jupiter.address, mint);
+                return Some(fee_account);
             }
         }
-        fee_account
+        None
+    }
+
+    pub async fn fetch_fee_account(
+        &self,
+        mode: &GemSwapMode,
+        options: &Option<GemSwapOptions>,
+        input_mint: &str,
+        output_mint: &str,
+        provider: Arc<dyn AlienProvider>,
+    ) -> Result<String, SwapperError> {
+        let fee_mint = self.get_fee_mint(mode, input_mint, output_mint);
+        let mut fee_account = self.get_fee_account(options, &fee_mint).unwrap_or_default();
+
+        if fee_account.is_empty() {
+            return Ok(fee_account);
+        }
+
+        // if fee_mint is USDC/USDT/WSOL, no need to check
+        if self.fee_mints.contains(fee_mint.as_str()) {
+            return Ok(fee_account);
+        }
+
+        // check fee token account exists, if not, set fee_account to empty string
+        let rpc_call = SolanaRpc::GetAccountInfo(fee_account.clone());
+        let rpc_result: JsonRpcResult<ValueResult<Option<AccountData>>> = jsonrpc_call_with_cache(&rpc_call, provider.clone(), &Chain::Solana, Some(3600))
+            .await
+            .map_err(|e| SwapperError::NetworkError {
+                msg: format!("get_account_info error: {:?}", e),
+            })?;
+        match rpc_result {
+            JsonRpcResult::Value(resp) => {
+                if resp.result.value.is_none() {
+                    fee_account = String::from("");
+                }
+            }
+            JsonRpcResult::Error(_) => fee_account = String::from(""),
+        };
+        Ok(fee_account)
     }
 }
 
@@ -65,6 +121,8 @@ impl GemSwapProvider for Jupiter {
             amount: request.value.clone(),
             platform_fee_bps,
             slippage_bps,
+            auto_slippage: true,
+            max_auto_slippage_bps: slippage_bps * 3,
             only_direct_routes: false,
         };
         let client = JupiterClient::new(self.get_endpoint(), provider.clone());
@@ -81,20 +139,26 @@ impl GemSwapProvider for Jupiter {
                     route_data: serde_json::to_string(&swap_quote).unwrap_or_default(),
                     gas_estimate: None,
                 }],
+                suggested_slippage_bps: Some(swap_quote.slippage_bps),
             },
             approval: ApprovalType::None,
             request: request.clone(),
         };
         Ok(quote)
     }
+
     async fn fetch_quote_data(&self, quote: &SwapQuote, provider: Arc<dyn AlienProvider>, _data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError> {
         if quote.data.routes.is_empty() {
             return Err(SwapperError::InvalidRoute);
         }
         let route = &quote.data.routes[0];
+        let input_mint = route.input.token_id.clone().unwrap();
+        let output_mint = route.output.token_id.clone().unwrap();
+
         let quote_response: QuoteResponse = serde_json::from_str(&route.route_data).map_err(|_| SwapperError::InvalidRoute)?;
-        let fee_mint = self.get_fee_mint(&quote.request.mode, &quote_response.input_mint, &quote_response.output_mint);
-        let fee_account = self.get_fee_account(&quote.request.options, &fee_mint);
+        let fee_account = self
+            .fetch_fee_account(&quote.request.mode, &quote.request.options, &input_mint, &output_mint, provider.clone())
+            .await?;
 
         let request = QuoteDataRequest {
             user_public_key: quote.request.wallet_address.clone(),
@@ -102,6 +166,7 @@ impl GemSwapProvider for Jupiter {
             quote_response,
             prioritization_fee_lamports: 500_000,
         };
+
         let client = JupiterClient::new(self.get_endpoint(), provider);
         let quote_data = client.get_swap_quote_data(request).await?;
 

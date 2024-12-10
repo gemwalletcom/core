@@ -6,6 +6,7 @@ import Gemstone
 public actor NativeProvider {
     let nodeConfig: [String: URL]
     let session: URLSession
+    let cache: Cache<AlienTarget, Data>
 
     init(session: URLSession = .shared) {
         self.nodeConfig = [
@@ -19,6 +20,7 @@ public actor NativeProvider {
             "polygon": URL(string: "https://polygon.llamarpc.com")!
         ]
         self.session = session
+        self.cache = Cache()
     }
 }
 
@@ -47,11 +49,21 @@ extension NativeProvider: AlienProvider {
             for target in targets {
                 group.addTask {
                     print("==> handle request: \(target)")
+                    if let data = await self.cache.get(key: target) {
+                        print("<== cached response size: \(data.count)")
+                        return data
+                    }
+
                     let (data, response) = try await self.session.data(for: target.asRequest())
                     if (response as? HTTPURLResponse)?.statusCode != 200 {
                         throw AlienError.ResponseError(msg: "invalid response: \(response)")
                     }
                     print("<== response size: \(data.count)")
+
+                    // save cache
+                    if let ttl = target.headers?["x-cache-ttl"] {
+                        await self.cache.set(value: data, forKey: target, ttl: TimeInterval(ttl))
+                    }
                     return data
                 }
             }
