@@ -1,0 +1,18 @@
+{
+  "name": "ETH",
+  "standard": "native",
+  "symbol": "ETH",
+  "mint": "",
+  "verified": true,
+  "contract": "0x0000000000000000000000000000000000000000",
+  "wrappedAddress": "0x4200000000000000000000000000000000000006",
+  "chainId": 8453,
+  "wChainId": 30,
+  "decimals": 18,
+  "logoURI": "https://statics.mayan.finance/eth.png",
+  "coingeckoId": "weth",
+  "realOriginChainId": 30,
+  "realOriginContractAddress": "0x4200000000000000000000000000000000000006",
+  "supportsPermit": false,
+  "hasAuction": true
+}

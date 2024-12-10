@@ -1,6 +1,7 @@
-use super::{AlienError, AlienProvider, AlienTarget, Data};
 use async_trait::async_trait;
 use primitives::Chain;
+
+use super::{AlienError, AlienProvider, AlienTarget, Data};
 use std::{fmt::Debug, sync::Arc, time::Duration};
 
 #[derive(Debug, uniffi::Object)]
