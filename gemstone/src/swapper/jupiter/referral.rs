@@ -26,6 +26,10 @@ mod tests {
 
         assert_eq!(fee_token_account, "6n5sDEwnejH1PC7ymh8WcoraXWuJeZAQ5WsPr3yebChd");
 
+        let fee_token_account = get_referral_account("97q7TdebuvmxXCM1JzgqzpB1i7Wgvk4ACUWanhiL6Dk1", USDC_TOKEN_MINT);
+
+        assert_eq!(fee_token_account, "9HyUVfNr858FHzLyZt3Cdr3b5Mp1dGwjaudpVWD6Qawv");
+
         let fee_token_account = get_referral_account("97q7TdebuvmxXCM1JzgqzpB1i7Wgvk4ACUWanhiL6Dk1", "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN");
 
         assert_eq!(fee_token_account, "Emk6jUQPPs5adT5Ve6EvR9XaAX4xDUDyGHCFXzt4FKgr");
