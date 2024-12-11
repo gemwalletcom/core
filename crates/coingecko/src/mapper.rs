@@ -31,7 +31,7 @@ pub fn get_chain_for_coingecko_platform_id(id: &str) -> Option<Chain> {
         "osmosis" => Some(Chain::Osmosis),
         "cosmos" => Some(Chain::Cosmos),
         "aptos" => Some(Chain::Aptos),
-        "suiche" => Some(Chain::Sui),
+        "sui" => Some(Chain::Sui),
         "opbnb" => Some(Chain::OpBNB),
         "mantle" => Some(Chain::Mantle),
         "celo" => Some(Chain::Celo),
