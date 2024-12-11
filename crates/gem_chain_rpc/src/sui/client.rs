@@ -9,10 +9,10 @@ use jsonrpsee::{
     rpc_params,
 };
 use num_bigint::BigUint;
-use primitives::{chain::Chain, Asset, Transaction, TransactionState, TransactionType};
+use primitives::{chain::Chain, Asset, AssetId, AssetType, Transaction, TransactionState, TransactionType};
 use serde_json::json;
 
-use super::model::{EventStake, EventUnstake, GasUsed};
+use super::model::{CoinMetadata, EventStake, EventUnstake, GasUsed};
 
 const SUI_STAKE_EVENT: &str = "0x3::validator::StakingRequestEvent";
 const SUI_UNSTAKE_EVENT: &str = "0x3::validator::UnstakingRequestEvent";
@@ -184,7 +184,18 @@ impl ChainBlockProvider for SuiClient {
 
 #[async_trait]
 impl ChainTokenDataProvider for SuiClient {
-    async fn get_token_data(&self, _chain: Chain, _token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
-        unimplemented!()
+    async fn get_token_data(&self, chain: Chain, token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
+        let metadata: CoinMetadata = self.client.request("suix_getCoinMetadata", vec![token_id.clone()]).await?;
+
+        Ok(Asset {
+            id: AssetId {
+                chain,
+                token_id: Some(token_id),
+            },
+            name: metadata.name,
+            symbol: metadata.symbol,
+            decimals: metadata.decimals,
+            asset_type: AssetType::TOKEN,
+        })
     }
 }

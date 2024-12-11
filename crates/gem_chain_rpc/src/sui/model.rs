@@ -93,3 +93,12 @@ pub struct EventUnstake {
     pub staker_address: String,
     pub validator_address: String,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CoinMetadata {
+    pub id: String,
+    pub name: String,
+    pub decimals: i32,
+    pub symbol: String,
+    pub description: String,
+}
