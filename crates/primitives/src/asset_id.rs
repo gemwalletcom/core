@@ -5,7 +5,7 @@ use typeshare::typeshare;
 
 use crate::chain::Chain;
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 #[typeshare(swift = "Equatable, Hashable, Sendable")]
 pub struct AssetId {
     pub chain: Chain,

@@ -39,6 +39,8 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
+use super::weth_address;
+
 static DEFAULT_DEADLINE: u64 = 3600;
 
 impl JsonRpcRequestConvert for EthereumRpc {
@@ -87,11 +89,7 @@ impl UniswapV3 {
     }
 
     fn get_asset_address(asset: &AssetId, evm_chain: EVMChain) -> Result<EthereumAddress, SwapperError> {
-        let str = match &asset.token_id {
-            Some(token_id) => token_id.to_string(),
-            None => evm_chain.weth_contract().unwrap().to_string(),
-        };
-        EthereumAddress::parse(&str).ok_or(SwapperError::InvalidAddress { address: str })
+        weth_address::parse_into_address(asset, evm_chain)
     }
 
     fn parse_request(request: &SwapQuoteRequest) -> Result<(EVMChain, EthereumAddress, EthereumAddress, U256), SwapperError> {

@@ -6,6 +6,7 @@ use std::{fmt::Debug, sync::Arc};
 mod approval;
 mod custom_types;
 mod permit2_data;
+mod weth_address;
 
 pub mod across;
 pub mod jupiter;

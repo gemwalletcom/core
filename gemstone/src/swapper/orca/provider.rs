@@ -107,7 +107,7 @@ impl GemSwapProvider for Orca {
     }
 
     async fn fetch_quote_data(&self, _quote: &SwapQuote, _provider: Arc<dyn AlienProvider>, _data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError> {
-        todo!()
+        Err(SwapperError::NotImplemented)
     }
 
     async fn get_transaction_status(&self, _chain: Chain, _transaction_hash: &str, _provider: Arc<dyn AlienProvider>) -> Result<bool, SwapperError> {

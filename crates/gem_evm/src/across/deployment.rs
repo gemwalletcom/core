@@ -1,4 +1,5 @@
 use crate::constants::*;
+use alloy_primitives::map::HashSet;
 use primitives::{AssetId, Chain};
 use std::collections::HashMap;
 
@@ -73,7 +74,7 @@ impl AcrossDeployment {
         }
     }
 
-    pub fn supported_assets(&self) -> HashMap<Chain, Vec<AssetId>> {
+    pub fn supported_assets() -> HashMap<Chain, Vec<AssetId>> {
         HashMap::from([
             (
                 Chain::Ethereum,
@@ -141,5 +142,50 @@ impl AcrossDeployment {
             (Chain::World, vec![WBTC_WORLD.into(), WETH_WORLD.into(), USDC_E_WORLD.into()]),
             (Chain::Blast, vec![WBTC_BLAST.into(), WETH_BLAST.into()]),
         ])
+    }
+
+    pub fn asset_mappings() -> Vec<HashSet<AssetId>> {
+        vec![
+            HashSet::from_iter([
+                WETH_ARB.into(),
+                WETH_BASE.into(),
+                WETH_BLAST.into(),
+                WETH_ETH.into(),
+                WETH_LINEA.into(),
+                WETH_OP.into(),
+                WETH_POLYGON.into(),
+                WETH_ZKSYNC.into(),
+                WETH_WORLD.into(),
+            ]),
+            HashSet::from_iter([USDC_ARB.into(), USDC_BASE.into(), USDC_ETH.into(), USDC_OP.into(), USDC_POLYGON.into()]),
+            HashSet::from_iter([
+                USDT_ARB.into(),
+                USDT_ETH.into(),
+                USDT_LINEA.into(),
+                USDT_OP.into(),
+                USDT_POLYGON.into(),
+                USDT_ZKSYNC.into(),
+            ]),
+            HashSet::from_iter([
+                DAI_ARB.into(),
+                DAI_BASE.into(),
+                DAI_ETH.into(),
+                DAI_LINEA.into(),
+                DAI_OP.into(),
+                DAI_POLYGON.into(),
+                DAI_ZKSYNC.into(),
+            ]),
+            HashSet::from_iter([
+                USDC_E_ARB.into(),
+                USDC_E_BASE.into(),
+                USDC_E_ETH.into(),
+                USDC_E_LINEA.into(),
+                USDC_E_OP.into(),
+                USDC_E_POLYGON.into(),
+                USDC_E_WORLD.into(),
+                USDC_E_ZKSYNC.into(),
+            ]),
+            HashSet::from_iter([ACX_ARB.into(), ACX_ETH.into(), ACX_OP.into(), ACX_POLYGON.into()]),
+        ]
     }
 }
