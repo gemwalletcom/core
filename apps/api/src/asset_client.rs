@@ -16,11 +16,10 @@ impl AssetsClient {
     }
 
     pub fn add_asset(&mut self, asset: Asset) -> Result<usize, Box<dyn Error>> {
-        Ok(self.database.add_assets(vec![storage::models::Asset::from_primitive(asset)])?)
-    }
-
-    pub fn update_asset_rank(&mut self, asset_id: &str, rank: i32) -> Result<usize, Box<dyn Error>> {
-        Ok(self.database.update_asset_rank(asset_id, rank)?)
+        let _ = self.database.add_assets(vec![storage::models::Asset::from_primitive(asset.clone())])?;
+        self.database.set_swap_enabled(vec![asset.id.to_string()], asset.id.chain.is_swap_supported())?;
+        self.database.update_asset_rank(&asset.id.to_string(), 15)?;
+        Ok(1)
     }
 
     #[allow(unused)]

@@ -18,6 +18,7 @@ sha2 = { workspace = true }
 bs58 = { workspace = true }
 jsonrpsee = { workspace = true }
 futures = { workspace = true }
+anyhow = { workspace = true }
 
 primitives = { path = "../primitives" }
 
@@ -26,3 +27,10 @@ gem_solana = { path = "../gem_solana" }
 gem_ton = { path = "../gem_ton" }
 alloy-core = { workspace = true }
 alloy-sol-types = { workspace = true }
+
+[dev-dependencies]
+tokio.workspace = true
+
+[[test]]
+name = "integration_test"
+test = false

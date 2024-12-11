@@ -1,5 +1,7 @@
 use std::{collections::HashMap, fmt::Debug};
 
+pub const X_CACHE_TTL: &str = "x-cache-ttl";
+
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct AlienTarget {
     pub url: String,

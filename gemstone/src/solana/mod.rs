@@ -13,7 +13,7 @@ pub struct MplMetadata {
 }
 
 pub fn decode_mpl_metadata(base64_str: String) -> Result<MplMetadata, Box<dyn std::error::Error>> {
-    let metadata = decode_metadata(base64_str)?;
+    let metadata = decode_metadata(&base64_str)?;
     Ok(MplMetadata {
         mint: metadata.mint.to_string(),
         name: metadata.data.name.trim_matches(char::from(0)).into(),

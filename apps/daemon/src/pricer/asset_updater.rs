@@ -151,10 +151,12 @@ impl AssetUpdater {
         let mut results = vec![];
 
         if let Some(value) = links.clone().twitter_screen_name {
-            results.push(AssetLink {
-                name: ASSET_LINK_X.to_string(),
-                url: format!("https://x.com/{}", value),
-            });
+            if !value.is_empty() {
+                results.push(AssetLink {
+                    name: ASSET_LINK_X.to_string(),
+                    url: format!("https://x.com/{}", value),
+                });
+            }
         }
 
         if let Some(value) = links
@@ -176,10 +178,12 @@ impl AssetUpdater {
         }
 
         if let Some(value) = links.clone().telegram_channel_identifier {
-            results.push(AssetLink {
-                name: ASSET_LINK_TELEGRAM.to_string(),
-                url: format!("https://t.me/{}", value),
-            });
+            if !value.is_empty() {
+                results.push(AssetLink {
+                    name: ASSET_LINK_TELEGRAM.to_string(),
+                    url: format!("https://t.me/{}", value),
+                });
+            }
         };
 
         results.push(AssetLink {
