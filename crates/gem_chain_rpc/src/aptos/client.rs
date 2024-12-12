@@ -1,13 +1,13 @@
 use std::{error::Error, str::FromStr};
 
-use crate::{ChainBlockProvider, ChainTokenDataProvider};
+use crate::{aptos::model::ResourceDataCoinInfo, ChainBlockProvider, ChainTokenDataProvider};
 use async_trait::async_trait;
 use chrono::Utc;
 use num_bigint::BigUint;
-use primitives::{chain::Chain, Asset, TransactionState, TransactionType};
+use primitives::{chain::Chain, Asset, AssetId, AssetType, TransactionState, TransactionType};
 use reqwest_middleware::ClientWithMiddleware;
 
-use super::model::{Block, Ledger, DEPOSIT_EVENT};
+use super::model::{Block, Ledger, Resource, DEPOSIT_EVENT};
 
 pub struct AptosClient {
     url: String,
@@ -71,6 +71,11 @@ impl AptosClient {
 
         Ok(response)
     }
+
+    pub async fn get_resources(&self, address: String) -> Result<Vec<Resource>, Box<dyn Error + Send + Sync>> {
+        let url = format!("{}/v1/accounts/{}/resources", self.url, address);
+        Ok(self.client.get(url).send().await?.json::<Vec<Resource>>().await?)
+    }
 }
 
 #[async_trait]
@@ -97,7 +102,28 @@ impl ChainBlockProvider for AptosClient {
 
 #[async_trait]
 impl ChainTokenDataProvider for AptosClient {
-    async fn get_token_data(&self, _chain: Chain, _token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
-        unimplemented!()
+    async fn get_token_data(&self, chain: Chain, token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
+        let parts: Vec<&str> = token_id.split("::").collect();
+        let address = parts.first().ok_or("Invalid token id")?;
+
+        let resource = self
+            .get_resources(address.to_string())
+            .await?
+            .into_iter()
+            .find(|x| x.resource_type == format!("0x1::coin::CoinInfo<{}>", token_id.clone()))
+            .ok_or("Token not found")?;
+
+        let coin_info: ResourceDataCoinInfo = serde_json::from_value(resource.data.clone())?;
+
+        Ok(Asset {
+            id: AssetId {
+                chain,
+                token_id: Some(token_id),
+            },
+            name: coin_info.name,
+            symbol: coin_info.symbol,
+            decimals: coin_info.decimals,
+            asset_type: AssetType::TOKEN,
+        })
     }
 }
