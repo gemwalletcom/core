@@ -3255,6 +3255,8 @@ dependencies = [
  "gem_hash",
  "hex",
  "itoa",
+ "num-bigint 0.4.6",
+ "num-traits",
  "primitives",
  "serde",
  "serde_json",
