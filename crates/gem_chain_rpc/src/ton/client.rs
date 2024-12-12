@@ -4,11 +4,11 @@ use crate::{ChainBlockProvider, ChainTokenDataProvider};
 use async_trait::async_trait;
 use chrono::Utc;
 use gem_ton::address::TonAddress;
-use primitives::{chain::Chain, Asset, TransactionState, TransactionType};
+use primitives::{chain::Chain, Asset, AssetId, AssetType, TransactionState, TransactionType};
 
 use reqwest_middleware::ClientWithMiddleware;
 
-use super::model::{Blocks, Chainhead, Shards, Transaction, Transactions};
+use super::model::{Blocks, Chainhead, JettonInfo, Shards, Transaction, Transactions};
 
 pub struct TonClient {
     url: String,
@@ -96,6 +96,11 @@ impl TonClient {
 
         Ok(response)
     }
+
+    pub async fn get_token_info(&self, token_id: String) -> Result<JettonInfo, Box<dyn Error + Send + Sync>> {
+        let url = format!("{}/v2/jettons/{}", self.url, token_id);
+        Ok(self.client.get(url).send().await?.json::<JettonInfo>().await?)
+    }
 }
 
 #[async_trait]
@@ -140,7 +145,18 @@ impl ChainBlockProvider for TonClient {
 
 #[async_trait]
 impl ChainTokenDataProvider for TonClient {
-    async fn get_token_data(&self, _chain: Chain, _token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
-        unimplemented!()
+    async fn get_token_data(&self, chain: Chain, token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
+        let token_info = self.get_token_info(token_id.clone()).await?;
+        let decimals = token_info.metadata.decimals.parse::<i32>().map_err(|_| "Invalid decimals")?;
+        Ok(Asset {
+            id: AssetId {
+                chain,
+                token_id: Some(token_id),
+            },
+            name: token_info.metadata.name,
+            symbol: token_info.metadata.symbol,
+            decimals,
+            asset_type: AssetType::JETTON,
+        })
     }
 }
