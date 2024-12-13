@@ -61,18 +61,31 @@ impl GemSwapper {
         self.swappers.iter().map(|x| x.provider()).collect()
     }
 
+    // filter provider types that does not support cross chain / bridge swaps
+    fn filter_by_provider_type(&self, provider_type: SwapProviderType, from_chain: &Chain, to_chain: &Chain) -> bool {
+        match provider_type {
+            SwapProviderType::OnChain => from_chain == to_chain,
+            SwapProviderType::CrossChain => true,
+            SwapProviderType::Bridge => from_chain != to_chain,
+        }
+    }
+
+    fn filter_by_supported_chains(&self, supported_chains: Vec<Chain>, from_chain: &Chain, to_chain: &Chain) -> bool {
+        supported_chains.contains(from_chain) && supported_chains.contains(to_chain)
+    }
+
     async fn fetch_quote(&self, request: SwapQuoteRequest) -> Result<Vec<SwapQuote>, SwapperError> {
         if request.from_asset == request.to_asset {
             return Err(SwapperError::NotSupportedPair);
         }
+        let from_chain = request.from_asset.chain;
+        let to_chain = request.to_asset.chain;
 
         let providers = self
             .swappers
             .iter()
-            .filter(|x| {
-                let supported_chains = x.supported_chains();
-                supported_chains.contains(&request.from_asset.chain) && supported_chains.contains(&request.to_asset.chain)
-            })
+            .filter(|x| self.filter_by_provider_type(x.provider().provider_type(), &from_chain, &to_chain))
+            .filter(|x| self.filter_by_supported_chains(x.supported_chains(), &from_chain, &to_chain))
             .collect::<Vec<_>>();
 
         if providers.is_empty() {
