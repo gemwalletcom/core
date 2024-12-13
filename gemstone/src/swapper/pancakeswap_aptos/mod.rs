@@ -73,7 +73,6 @@ impl GemSwapProvider for PancakeSwapAptos {
         let routes = quote.data.clone().routes;
         let route_data = routes.first().unwrap();
 
-        let address = format!("{}::router::swap_exact_input", PANCAKE_SWAP_APTOS_ADDRESS);
         let payload = TransactionPayload {
             function: format!("{}::router::swap_exact_input", PANCAKE_SWAP_APTOS_ADDRESS),
             type_arguments: vec![self.to_asset(quote.request.from_asset.clone()), self.to_asset(quote.request.to_asset.clone())],
@@ -82,7 +81,7 @@ impl GemSwapProvider for PancakeSwapAptos {
         };
         let data = serde_json::to_string(&payload).unwrap();
         let data = SwapQuoteData {
-            to: address,
+            to: PANCAKE_SWAP_APTOS_ADDRESS.to_string(),
             value: quote.from_value.clone(),
             data,
         };
