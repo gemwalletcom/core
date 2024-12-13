@@ -1,7 +1,7 @@
 use super::WHIRLPOOL_CONFIG;
 use base64::{engine::general_purpose::STANDARD, Engine};
 use borsh::{BorshDeserialize, BorshSerialize};
-use gem_solana::pubkey::Pubkey;
+use gem_solana::{jsonrpc::AccountData, pubkey::Pubkey};
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 
@@ -12,18 +12,6 @@ pub const TICK_ARRAY_SIZE: usize = 88;
 pub struct ProgramAccount {
     pub account: AccountData,
     pub pubkey: String,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct AccountData {
-    pub data: Vec<String>,
-    pub owner: String,
-    pub space: u64,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ValueResult<T> {
-    pub value: T,
 }
 
 #[derive(Debug, Clone, BorshSerialize, BorshDeserialize)]

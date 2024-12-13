@@ -60,3 +60,16 @@ impl Event {
         }
     }
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Resource<T> {
+    pub r#type: String,
+    pub data: T,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ResourceCoinInfo {
+    pub decimals: i32,
+    pub name: String,
+    pub symbol: String,
+}

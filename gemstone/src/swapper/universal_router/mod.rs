@@ -457,6 +457,7 @@ impl GemSwapProvider for UniswapV3 {
             data: SwapProviderData {
                 provider: self.provider(),
                 routes: routes.clone(),
+                suggested_slippage_bps: None,
             },
             approval: approval_type,
             request: request.clone(),

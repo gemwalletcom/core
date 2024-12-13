@@ -7,7 +7,7 @@ let SWAP_OPTIONS = GemSwapOptions(
     fee: SwapReferralFees(
         evm: .init(address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7", bps: 25),
         solana: .init(address: "97q7TdebuvmxXCM1JzgqzpB1i7Wgvk4ACUWanhiL6Dk1", bps: 25),
-        solanaJupiter: .init(address: "A21o4asMbFHYadqXdLusT9Bvx9xaC5YV9gcaidjqtdXC", bps: 25),
+        solanaJupiter: .init(address: "97q7TdebuvmxXCM1JzgqzpB1i7Wgvk4ACUWanhiL6Dk1", bps: 25),
         thorchain: .init(address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7", bps: 25)
     ),
     preferredProviders: []
@@ -40,6 +40,16 @@ public extension SwapQuoteRequest {
         walletAddress: "A21o4asMbFHYadqXdLusT9Bvx9xaC5YV9gcaidjqtdXC",
         destinationAddress: "A21o4asMbFHYadqXdLusT9Bvx9xaC5YV9gcaidjqtdXC",
         value: "1000000000", // 1 SOL
+        mode: .exactIn,
+        options: SWAP_OPTIONS
+    )
+
+    static let jup2bonk = SwapQuoteRequest(
+        fromAsset: "solana_JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN",
+        toAsset: "solana_DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263",
+        walletAddress: "A21o4asMbFHYadqXdLusT9Bvx9xaC5YV9gcaidjqtdXC",
+        destinationAddress: "A21o4asMbFHYadqXdLusT9Bvx9xaC5YV9gcaidjqtdXC",
+        value: "1000000000", // 1000 JUP
         mode: .exactIn,
         options: SWAP_OPTIONS
     )

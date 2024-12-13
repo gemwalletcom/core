@@ -9,7 +9,7 @@ use crate::{
 use async_trait::async_trait;
 use gem_solana::{
     get_asset_address,
-    jsonrpc::{Filter, Memcmp, SolanaRpc, ENCODING_BASE58},
+    jsonrpc::{AccountData, Filter, Memcmp, SolanaRpc, ValueResult, ENCODING_BASE58},
     pubkey::Pubkey,
 };
 use orca_whirlpools_core::{
@@ -99,6 +99,7 @@ impl GemSwapProvider for Orca {
                     route_data: pool.fee_rate.to_string(),
                     gas_estimate: None,
                 }],
+                suggested_slippage_bps: None,
             },
             approval: ApprovalType::None,
             request: request.clone(),

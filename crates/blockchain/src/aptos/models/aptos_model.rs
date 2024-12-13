@@ -17,6 +17,12 @@ struct AptosResourceBalance {
 
 #[typeshare(swift = "Sendable")]
 #[allow(dead_code)]
+struct AptosResourceBalanceOptional {
+    coin: Option<AptosResourceCoin>,
+}
+
+#[typeshare(swift = "Sendable")]
+#[allow(dead_code)]
 struct AptosResourceCoin {
     value: String,
 }
@@ -44,6 +50,7 @@ struct AptosTransactionBroacast {
 #[typeshare(swift = "Sendable")]
 #[allow(dead_code)]
 struct AptosGasFee {
+    deprioritized_gas_estimate: i32,
     gas_estimate: i32,
     prioritized_gas_estimate: i32,
 }
@@ -65,4 +72,12 @@ struct AptosError {
 #[typeshare(swift = "Equatable, Sendable")]
 pub enum AptosErrorCode {
     account_not_found,
+}
+
+#[typeshare(swift = "Equatable, Sendable")]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AptosCoinInfo {
+    pub decimals: i32,
+    pub name: String,
+    pub symbol: String,
 }
