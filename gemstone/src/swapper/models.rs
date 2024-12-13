@@ -51,7 +51,7 @@ pub enum GemSwapMode {
     ExactOut,
 }
 
-#[derive(Debug, Clone, PartialEq, uniffi::Enum)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, uniffi::Enum)]
 pub enum SwapProvider {
     UniswapV3,
     PancakeSwapV3,
