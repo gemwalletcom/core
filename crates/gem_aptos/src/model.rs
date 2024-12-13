@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 
+pub const NATIVE_APTOS_COIN: &str = "0x1::aptos_coin::AptosCoin";
 pub const WITHDRAW_EVENT: &str = "0x1::coin::WithdrawEvent";
 pub const DEPOSIT_EVENT: &str = "0x1::coin::DepositEvent";
 
@@ -59,6 +60,15 @@ impl Event {
             _ => None,
         }
     }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TransactionPayload {
+    pub function: String,
+    pub type_arguments: Vec<String>,
+    pub arguments: Vec<String>,
+    #[serde(rename = "type")]
+    pub payload_type: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

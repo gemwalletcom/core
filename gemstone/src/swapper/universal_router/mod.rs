@@ -230,7 +230,7 @@ impl UniswapV3 {
         path: &Bytes,
         permit: Option<Permit2Permit>,
     ) -> Result<Vec<UniversalRouterCommand>, SwapperError> {
-        let options = request.options.clone().unwrap_or_default();
+        let options = request.options.clone();
         let fee_options = options.fee.unwrap_or_default().evm;
         let recipient = Address::from_str(&request.wallet_address).map_err(|_| SwapperError::InvalidAddress {
             address: request.wallet_address.clone(),

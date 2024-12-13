@@ -3199,6 +3199,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "gem_aptos"
+version = "1.0.0"
+dependencies = [
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "gem_bsc"
 version = "1.0.0"
 dependencies = [
@@ -3221,6 +3229,7 @@ dependencies = [
  "chrono",
  "cosmos-sdk-proto",
  "futures",
+ "gem_aptos",
  "gem_evm",
  "gem_solana",
  "gem_ton",
@@ -3325,6 +3334,7 @@ dependencies = [
  "base64 0.22.1",
  "borsh",
  "futures",
+ "gem_aptos",
  "gem_bsc",
  "gem_cosmos",
  "gem_evm",
@@ -3333,6 +3343,7 @@ dependencies = [
  "gem_ton",
  "hex",
  "num-bigint 0.4.6",
+ "num-traits",
  "orca_whirlpools_core",
  "primitives",
  "reqwest",

@@ -8,7 +8,7 @@ use primitives::{chain::Chain, Asset, AssetId, AssetType, TransactionState, Tran
 use reqwest_middleware::ClientWithMiddleware;
 use serde::{Deserialize, Serialize};
 
-use super::model::{Block, Ledger, Resource, ResourceCoinInfo, DEPOSIT_EVENT};
+use gem_aptos::model::{Block, Ledger, Resource, ResourceCoinInfo, DEPOSIT_EVENT};
 
 pub struct AptosClient {
     url: String,
@@ -20,7 +20,7 @@ impl AptosClient {
         Self { url, client }
     }
 
-    pub fn map_transaction(&self, transaction: super::model::Transaction, block_number: i64) -> Option<primitives::Transaction> {
+    pub fn map_transaction(&self, transaction: gem_aptos::model::Transaction, block_number: i64) -> Option<primitives::Transaction> {
         let events = transaction.clone().events.unwrap_or_default();
 
         if transaction.transaction_type == "user_transaction" && events.len() <= 4 {

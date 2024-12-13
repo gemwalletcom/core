@@ -55,6 +55,7 @@ pub enum GemSwapMode {
 pub enum SwapProvider {
     UniswapV3,
     PancakeSwapV3,
+    PancakeSwapAptosV2,
     Thorchain,
     Orca,
     Jupiter,
@@ -72,6 +73,7 @@ impl SwapProvider {
         match self {
             Self::UniswapV3 => "Uniswap v3",
             Self::PancakeSwapV3 => "PancakeSwap v3",
+            Self::PancakeSwapAptosV2 => "PancakeSwap v2",
             Self::Thorchain => "THORChain",
             Self::Orca => "Orca Whirlpool",
             Self::Jupiter => "Jupiter",
@@ -82,6 +84,7 @@ impl SwapProvider {
         match self {
             Self::UniswapV3 => SwapProviderType::OnChain,
             Self::PancakeSwapV3 => SwapProviderType::OnChain,
+            Self::PancakeSwapAptosV2 => SwapProviderType::OnChain,
             Self::Thorchain => SwapProviderType::CrossChain,
             Self::Orca => SwapProviderType::OnChain,
             Self::Jupiter => SwapProviderType::OnChain,
@@ -102,7 +105,7 @@ pub struct SwapQuoteRequest {
     pub destination_address: String,
     pub value: String,
     pub mode: GemSwapMode,
-    pub options: Option<GemSwapOptions>,
+    pub options: GemSwapOptions,
 }
 
 #[derive(Debug, Clone, uniffi::Record)]

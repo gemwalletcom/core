@@ -10,6 +10,7 @@ mod permit2_data;
 pub mod jupiter;
 pub mod models;
 pub mod orca;
+pub mod pancakeswap_aptos;
 pub mod slippage;
 pub mod thorchain;
 pub mod universal_router;
@@ -59,6 +60,7 @@ impl GemSwapper {
                 Box::new(universal_router::UniswapV3::new_pancakeswap()),
                 Box::new(thorchain::ThorChain::default()),
                 Box::new(jupiter::Jupiter::default()),
+                Box::new(pancakeswap_aptos::PancakeSwapAptos::default()),
             ],
         }
     }

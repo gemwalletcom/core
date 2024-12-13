@@ -257,18 +257,9 @@ impl Chain {
             | Self::Thorchain
             | Self::Solana
             | Self::AvalancheC
-            | Self::Doge => true,
-            Self::Osmosis
-            | Self::Celestia
-            | Self::Injective
-            | Self::Ton
-            | Self::Tron
-            | Self::Aptos
-            | Self::Sui
-            | Self::Xrp
-            | Self::Sei
-            | Self::Noble
-            | Self::Near => false,
+            | Self::Doge
+            | Self::Aptos => true,
+            Self::Osmosis | Self::Celestia | Self::Injective | Self::Ton | Self::Tron | Self::Sui | Self::Xrp | Self::Sei | Self::Noble | Self::Near => false,
         }
     }
 
