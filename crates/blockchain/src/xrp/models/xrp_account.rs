@@ -24,6 +24,7 @@ struct XRPFee {
 
 #[typeshare(swift = "Sendable")]
 struct XRPDrops {
+    minimum_fee: String,
     median_fee: String,
 }
 

@@ -35,6 +35,21 @@ pub struct GemSwapper {
     pub swappers: Vec<Box<dyn GemSwapProvider>>,
 }
 
+impl GemSwapper {
+    // filter provider types that does not support cross chain / bridge swaps
+    fn filter_by_provider_type(provider_type: SwapProviderType, from_chain: &Chain, to_chain: &Chain) -> bool {
+        match provider_type {
+            SwapProviderType::OnChain => from_chain == to_chain,
+            SwapProviderType::CrossChain => true,
+            SwapProviderType::Bridge => from_chain != to_chain,
+        }
+    }
+
+    fn filter_by_supported_chains(supported_chains: Vec<Chain>, from_chain: &Chain, to_chain: &Chain) -> bool {
+        supported_chains.contains(from_chain) && supported_chains.contains(to_chain)
+    }
+}
+
 #[uniffi::export]
 impl GemSwapper {
     #[uniffi::constructor]
@@ -68,14 +83,14 @@ impl GemSwapper {
         if request.from_asset == request.to_asset {
             return Err(SwapperError::NotSupportedPair);
         }
+        let from_chain = request.from_asset.chain;
+        let to_chain = request.to_asset.chain;
 
         let providers = self
             .swappers
             .iter()
-            .filter(|x| {
-                let supported_chains = x.supported_chains();
-                supported_chains.contains(&request.from_asset.chain) && supported_chains.contains(&request.to_asset.chain)
-            })
+            .filter(|x| Self::filter_by_provider_type(x.provider().provider_type(), &from_chain, &to_chain))
+            .filter(|x| Self::filter_by_supported_chains(x.supported_chains(), &from_chain, &to_chain))
             .collect::<Vec<_>>();
 
         if providers.is_empty() {
@@ -114,5 +129,90 @@ impl GemSwapper {
             .ok_or(SwapperError::NotImplemented)?;
 
         swapper.get_transaction_status(chain, transaction_hash, self.rpc_provider.clone()).await
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::collections::BTreeSet;
+
+    #[test]
+    fn test_filter_by_provider_type() {
+        let providers = [
+            SwapProvider::UniswapV3,
+            SwapProvider::PancakeSwapV3,
+            SwapProvider::Jupiter,
+            SwapProvider::Thorchain,
+        ];
+
+        // Cross chain swaps (same chain will be filtered out)
+        let filtered = providers
+            .iter()
+            .filter(|x| GemSwapper::filter_by_provider_type(x.provider_type(), &Chain::Ethereum, &Chain::Optimism))
+            .cloned()
+            .collect::<Vec<_>>();
+
+        assert_eq!(filtered, vec![SwapProvider::Thorchain]);
+    }
+
+    #[test]
+    fn test_filter_by_supported_chains() {
+        let swappers: Vec<Box<dyn GemSwapProvider>> = vec![
+            Box::new(universal_router::UniswapV3::new_uniswap()),
+            Box::new(universal_router::UniswapV3::new_pancakeswap()),
+            Box::new(thorchain::ThorChain::default()),
+            Box::new(jupiter::Jupiter::default()),
+        ];
+
+        let from_chain = Chain::Ethereum;
+        let to_chain = Chain::Optimism;
+
+        let filtered = swappers
+            .iter()
+            .filter(|x| GemSwapper::filter_by_provider_type(x.provider().provider_type(), &from_chain, &to_chain))
+            .filter(|x| GemSwapper::filter_by_supported_chains(x.supported_chains(), &from_chain, &to_chain))
+            .collect::<Vec<_>>();
+
+        assert_eq!(filtered.len(), 0);
+
+        let from_chain = Chain::SmartChain;
+        let to_chain = Chain::SmartChain;
+
+        let filtered = swappers
+            .iter()
+            .filter(|x| GemSwapper::filter_by_provider_type(x.provider().provider_type(), &from_chain, &to_chain))
+            .filter(|x| GemSwapper::filter_by_supported_chains(x.supported_chains(), &from_chain, &to_chain))
+            .collect::<Vec<_>>();
+
+        assert_eq!(filtered.len(), 3);
+        assert_eq!(
+            filtered.iter().map(|x| x.provider()).collect::<BTreeSet<_>>(),
+            BTreeSet::from([SwapProvider::UniswapV3, SwapProvider::PancakeSwapV3, SwapProvider::Thorchain])
+        );
+
+        let from_chain = Chain::Solana;
+        let to_chain = Chain::Solana;
+
+        let filtered = swappers
+            .iter()
+            .filter(|x| GemSwapper::filter_by_provider_type(x.provider().provider_type(), &from_chain, &to_chain))
+            .filter(|x| GemSwapper::filter_by_supported_chains(x.supported_chains(), &from_chain, &to_chain))
+            .collect::<Vec<_>>();
+
+        assert_eq!(filtered.len(), 1);
+        assert_eq!(filtered[0].provider(), SwapProvider::Jupiter);
+
+        let from_chain = Chain::SmartChain;
+        let to_chain = Chain::Bitcoin;
+
+        let filtered = swappers
+            .iter()
+            .filter(|x| GemSwapper::filter_by_provider_type(x.provider().provider_type(), &from_chain, &to_chain))
+            .filter(|x| GemSwapper::filter_by_supported_chains(x.supported_chains(), &from_chain, &to_chain))
+            .collect::<Vec<_>>();
+
+        assert_eq!(filtered.len(), 1);
+        assert_eq!(filtered[0].provider(), SwapProvider::Thorchain);
     }
 }

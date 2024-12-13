@@ -5,9 +5,10 @@ pub enum FeePriority {
     fast,
 }
 
-#[typeshare(swift = "Equatable, Sendable, CaseIterable")]
+#[typeshare(swift = "Equatable, Sendable")]
 pub enum FeeUnitType {
     satVb,
     satB,
     gwei,
+    native,
 }

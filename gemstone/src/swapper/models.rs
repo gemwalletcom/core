@@ -51,7 +51,7 @@ pub enum GemSwapMode {
     ExactOut,
 }
 
-#[derive(Debug, Clone, PartialEq, uniffi::Enum)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, uniffi::Enum)]
 pub enum SwapProvider {
     UniswapV3,
     PancakeSwapV3,
@@ -60,6 +60,14 @@ pub enum SwapProvider {
     Jupiter,
     Across,
 }
+
+#[derive(Debug, Clone, PartialEq, uniffi::Enum)]
+pub enum SwapProviderType {
+    OnChain,
+    CrossChain,
+    Bridge,
+}
+
 impl SwapProvider {
     pub fn name(&self) -> &str {
         match self {
@@ -69,6 +77,16 @@ impl SwapProvider {
             Self::Orca => "Orca Whirlpool",
             Self::Jupiter => "Jupiter",
             Self::Across => "Across v3",
+        }
+    }
+
+    pub fn provider_type(&self) -> SwapProviderType {
+        match self {
+            Self::UniswapV3 => SwapProviderType::OnChain,
+            Self::PancakeSwapV3 => SwapProviderType::OnChain,
+            Self::Thorchain => SwapProviderType::CrossChain,
+            Self::Orca => SwapProviderType::OnChain,
+            Self::Jupiter => SwapProviderType::OnChain,
         }
     }
 }

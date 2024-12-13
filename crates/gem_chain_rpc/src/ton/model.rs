@@ -52,3 +52,15 @@ pub struct OutMessage {
 pub struct Address {
     pub address: String,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct JettonInfo {
+    pub metadata: JettonInfoMetadata,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct JettonInfoMetadata {
+    pub name: String,
+    pub symbol: String,
+    pub decimals: String,
+}
