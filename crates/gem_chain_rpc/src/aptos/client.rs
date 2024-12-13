@@ -1,13 +1,14 @@
 use std::{error::Error, str::FromStr};
 
-use crate::{aptos::model::ResourceDataCoinInfo, ChainBlockProvider, ChainTokenDataProvider};
+use crate::{ChainBlockProvider, ChainTokenDataProvider};
 use async_trait::async_trait;
 use chrono::Utc;
 use num_bigint::BigUint;
 use primitives::{chain::Chain, Asset, AssetId, AssetType, TransactionState, TransactionType};
 use reqwest_middleware::ClientWithMiddleware;
+use serde::{Deserialize, Serialize};
 
-use super::model::{Block, Ledger, Resource, DEPOSIT_EVENT};
+use super::model::{Block, Ledger, Resource, ResourceCoinInfo, DEPOSIT_EVENT};
 
 pub struct AptosClient {
     url: String,
@@ -72,9 +73,13 @@ impl AptosClient {
         Ok(response)
     }
 
-    pub async fn get_resources(&self, address: String) -> Result<Vec<Resource>, Box<dyn Error + Send + Sync>> {
-        let url = format!("{}/v1/accounts/{}/resources", self.url, address);
-        Ok(self.client.get(url).send().await?.json::<Vec<Resource>>().await?)
+    pub async fn get_resource<T: Serialize + for<'a> Deserialize<'a>>(
+        &self,
+        address: String,
+        resource: String,
+    ) -> Result<Resource<T>, Box<dyn Error + Send + Sync>> {
+        let url = format!("{}/v1/accounts/{}/resource/{}", self.url, address, resource);
+        Ok(self.client.get(url).send().await?.json::<Resource<T>>().await?)
     }
 }
 
@@ -105,15 +110,8 @@ impl ChainTokenDataProvider for AptosClient {
     async fn get_token_data(&self, chain: Chain, token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
         let parts: Vec<&str> = token_id.split("::").collect();
         let address = parts.first().ok_or("Invalid token id")?;
-
-        let resource = self
-            .get_resources(address.to_string())
-            .await?
-            .into_iter()
-            .find(|x| x.resource_type == format!("0x1::coin::CoinInfo<{}>", token_id.clone()))
-            .ok_or("Token not found")?;
-
-        let coin_info: ResourceDataCoinInfo = serde_json::from_value(resource.data.clone())?;
+        let resource = format!("0x1::coin::CoinInfo<{}>", token_id);
+        let coin_info = self.get_resource::<ResourceCoinInfo>(address.to_string(), resource).await?.data;
 
         Ok(Asset {
             id: AssetId {

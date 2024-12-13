@@ -62,14 +62,13 @@ impl Event {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Resource {
-    #[serde(rename = "type")]
-    pub resource_type: String,
-    pub data: serde_json::Value,
+pub struct Resource<T> {
+    pub r#type: String,
+    pub data: T,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ResourceDataCoinInfo {
+pub struct ResourceCoinInfo {
     pub decimals: i32,
     pub name: String,
     pub symbol: String,
