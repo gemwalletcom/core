@@ -209,14 +209,13 @@ impl Chain {
             Self::Solana => Some(AssetType::SPL),
             Self::Tron => Some(AssetType::TRC20),
             Self::Ton => Some(AssetType::JETTON),
-            Self::Sui => Some(AssetType::TOKEN),
+            Self::Sui | Self::Aptos => Some(AssetType::TOKEN),
             Self::Bitcoin
             | Self::Litecoin
             | Self::Thorchain
             | Self::Cosmos
             | Self::Osmosis
             | Self::Doge
-            | Self::Aptos
             | Self::Xrp
             | Self::Celestia
             | Self::Injective

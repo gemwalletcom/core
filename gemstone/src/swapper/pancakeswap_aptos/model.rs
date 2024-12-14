@@ -7,3 +7,9 @@ pub struct TokenPairReserve {
     pub reserve_x: String,
     pub reserve_y: String,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RouteData {
+    pub assets: Vec<String>,
+    pub min_value: String,
+}

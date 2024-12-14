@@ -10,7 +10,7 @@ use crate::network::AlienProvider;
 use async_trait::async_trait;
 use client::PancakeSwapAptosClient;
 use gem_aptos::model::{TransactionPayload, NATIVE_APTOS_COIN};
-use model::PANCAKE_SWAP_APTOS_ADDRESS;
+use model::{RouteData, PANCAKE_SWAP_APTOS_ADDRESS};
 use primitives::{AssetId, Chain};
 
 #[derive(Debug, Default)]
@@ -22,6 +22,22 @@ impl PancakeSwapAptos {
             return token_id;
         }
         NATIVE_APTOS_COIN.to_string()
+    }
+
+    fn swap_exact_input(&self, assets: Vec<String>, from_value: String, to_value: String) -> TransactionPayload {
+        let function = match assets.len() {
+            2 => "swap_exact_input",
+            3 => "swap_exact_input_doublehop",
+            4 => "swap_exact_input_triplehop",
+            _ => unimplemented!(),
+        };
+
+        TransactionPayload {
+            function: function.to_string(),
+            type_arguments: assets,
+            arguments: vec![from_value, to_value],
+            payload_type: "entry_function_payload".to_string(),
+        }
     }
 }
 
@@ -39,26 +55,35 @@ impl GemSwapProvider for PancakeSwapAptos {
         let endpoint: String = provider.get_endpoint(Chain::Aptos).unwrap();
         let client = PancakeSwapAptosClient::new(provider);
 
+        let from_internal_asset = self.to_asset(request.from_asset.clone());
+        let to_internal_asset = self.to_asset(request.to_asset.clone());
+
         let quote_value = client
             .get_quote(
                 endpoint.as_str(),
-                self.to_asset(request.from_asset.clone()).as_str(),
-                self.to_asset(request.to_asset.clone()).as_str(),
+                from_internal_asset.as_str(),
+                to_internal_asset.as_str(),
                 request.value.to_string().as_str(),
                 request.options.slippage_bps,
             )
             .await?;
+
+        let route_data = RouteData {
+            min_value: quote_value.clone(),
+            assets: vec![from_internal_asset, to_internal_asset],
+        };
+        let route_data = serde_json::to_string(&route_data).unwrap();
 
         let quote = SwapQuote {
             from_value: request.value.clone(),
             to_value: quote_value.clone(),
             data: SwapProviderData {
                 provider: self.provider(),
-                suggested_slippage_bps: Some(0),
+                suggested_slippage_bps: None,
                 routes: vec![SwapRoute {
                     input: request.from_asset.clone(),
                     output: request.to_asset.clone(),
-                    route_data: quote_value,
+                    route_data,
                     gas_estimate: None,
                 }],
             },
@@ -71,19 +96,18 @@ impl GemSwapProvider for PancakeSwapAptos {
 
     async fn fetch_quote_data(&self, quote: &SwapQuote, _provider: Arc<dyn AlienProvider>, _data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError> {
         let routes = quote.data.clone().routes;
-        let route_data = routes.first().unwrap();
+        let route_data: RouteData = serde_json::from_str(&routes.first().unwrap().route_data).map_err(|_| SwapperError::InvalidRoute)?;
 
-        let payload = TransactionPayload {
-            function: format!("{}::router::swap_exact_input", PANCAKE_SWAP_APTOS_ADDRESS),
-            type_arguments: vec![self.to_asset(quote.request.from_asset.clone()), self.to_asset(quote.request.to_asset.clone())],
-            arguments: vec![quote.from_value.clone().to_string(), route_data.route_data.clone()],
-            payload_type: "entry_function_payload".to_string(),
-        };
-        let data = serde_json::to_string(&payload).unwrap();
+        let payload = self.swap_exact_input(
+            vec![self.to_asset(quote.request.from_asset.clone()), self.to_asset(quote.request.to_asset.clone())],
+            quote.from_value.clone().to_string(),
+            route_data.min_value.clone(),
+        );
+
         let data = SwapQuoteData {
             to: PANCAKE_SWAP_APTOS_ADDRESS.to_string(),
             value: quote.from_value.clone(),
-            data,
+            data: serde_json::to_string(&payload).unwrap(),
         };
         Ok(data)
     }
