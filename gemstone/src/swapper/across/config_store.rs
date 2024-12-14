@@ -5,7 +5,7 @@ use crate::{
 use alloy_core::sol_types::SolCall;
 use alloy_primitives::Address;
 use gem_evm::{
-    across::{contracts::AcrossConfigStore, fees},
+    across::{contracts::AcrossConfigStore, lp_fees},
     address::EthereumAddress,
     jsonrpc::{BlockParameter, EthereumRpc, TransactionObject},
 };
@@ -28,7 +28,7 @@ pub struct RateModel {
     pub r2: String,
 }
 
-impl From<RateModel> for fees::RateModel {
+impl From<RateModel> for lp_fees::RateModel {
     fn from(value: RateModel) -> Self {
         Self {
             ubar: value.ubar.parse().unwrap(),

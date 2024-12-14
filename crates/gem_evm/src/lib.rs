@@ -3,6 +3,7 @@ pub mod address;
 pub mod constants;
 pub mod erc20;
 pub mod erc2612;
+pub mod ether_conv;
 pub mod jsonrpc;
 pub mod lido;
 pub mod permit2;

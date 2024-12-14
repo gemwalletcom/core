@@ -3252,6 +3252,7 @@ dependencies = [
  "alloy-primitives",
  "alloy-sol-types",
  "anyhow",
+ "bigdecimal",
  "gem_hash",
  "hex",
  "itoa",

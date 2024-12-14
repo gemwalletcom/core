@@ -11,7 +11,7 @@ use crate::{
 use gem_evm::{
     across::{
         deployment::{AcrossDeployment, ACROSS_CONFIG_STORE, ACROSS_HUBPOOL},
-        fees::LpFeeCalculator,
+        lp_fees::LpFeeCalculator,
     },
     address::EthereumAddress,
 };

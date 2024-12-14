@@ -1,5 +1,7 @@
-use crate::constants::*;
+use super::fee::CapitalCostConfig;
+use crate::{constants::*, ether_conv::EtherConv};
 use alloy_primitives::map::HashSet;
+use num_bigint::BigInt;
 use primitives::{AssetId, Chain};
 use std::collections::HashMap;
 
@@ -10,6 +12,11 @@ pub const ACROSS_HUBPOOL: &str = "0xc186fA914353c44b2E33eBE05f21846F1048bEda";
 pub struct AcrossDeployment {
     pub chain_id: u32,
     pub spoke_pool: &'static str,
+}
+
+pub struct AssetMapping {
+    pub capital_cost: CapitalCostConfig,
+    pub set: HashSet<AssetId>,
 }
 
 impl AcrossDeployment {
@@ -139,48 +146,114 @@ impl AcrossDeployment {
         ])
     }
 
-    pub fn asset_mappings() -> Vec<HashSet<AssetId>> {
+    pub fn asset_mappings() -> Vec<AssetMapping> {
         vec![
-            HashSet::from_iter([
-                WETH_ARB.into(),
-                WETH_BASE.into(),
-                WETH_BLAST.into(),
-                WETH_ETH.into(),
-                WETH_LINEA.into(),
-                WETH_OP.into(),
-                WETH_POLYGON.into(),
-                WETH_ZKSYNC.into(),
-                WETH_WORLD.into(),
-            ]),
-            HashSet::from_iter([USDC_ARB.into(), USDC_BASE.into(), USDC_ETH.into(), USDC_OP.into(), USDC_POLYGON.into()]),
-            HashSet::from_iter([
-                USDT_ARB.into(),
-                USDT_ETH.into(),
-                USDT_LINEA.into(),
-                USDT_OP.into(),
-                USDT_POLYGON.into(),
-                USDT_ZKSYNC.into(),
-            ]),
-            HashSet::from_iter([
-                DAI_ARB.into(),
-                DAI_BASE.into(),
-                DAI_ETH.into(),
-                DAI_LINEA.into(),
-                DAI_OP.into(),
-                DAI_POLYGON.into(),
-                DAI_ZKSYNC.into(),
-            ]),
-            HashSet::from_iter([
-                USDC_E_ARB.into(),
-                USDC_E_BASE.into(),
-                USDC_E_ETH.into(),
-                USDC_E_LINEA.into(),
-                USDC_E_OP.into(),
-                USDC_E_POLYGON.into(),
-                USDC_E_WORLD.into(),
-                USDC_E_ZKSYNC.into(),
-            ]),
-            HashSet::from_iter([ACX_ARB.into(), ACX_ETH.into(), ACX_OP.into(), ACX_POLYGON.into()]),
+            AssetMapping {
+                capital_cost: CapitalCostConfig {
+                    lower_bound: EtherConv::parse_ether("0.0001"),
+                    upper_bound: EtherConv::parse_ether("0.000075"),
+                    cutoff: EtherConv::parse_ether("0.3"),
+                    decimals: 18,
+                },
+                set: HashSet::from_iter([
+                    WETH_ARB.into(),
+                    WETH_BASE.into(),
+                    WETH_BLAST.into(),
+                    WETH_ETH.into(),
+                    WETH_LINEA.into(),
+                    WETH_OP.into(),
+                    WETH_POLYGON.into(),
+                    WETH_ZKSYNC.into(),
+                    WETH_WORLD.into(),
+                ]),
+            },
+            AssetMapping {
+                capital_cost: CapitalCostConfig {
+                    lower_bound: EtherConv::parse_ether("0.0001"),
+                    upper_bound: BigInt::from(0),
+                    cutoff: EtherConv::parse_ether("100000"),
+                    decimals: 6,
+                },
+                set: HashSet::from_iter([USDC_ARB.into(), USDC_BASE.into(), USDC_ETH.into(), USDC_OP.into(), USDC_POLYGON.into()]),
+            },
+            AssetMapping {
+                capital_cost: CapitalCostConfig {
+                    lower_bound: EtherConv::parse_ether("0.0001"),
+                    upper_bound: EtherConv::parse_ether("0.0001"),
+                    cutoff: EtherConv::parse_ether("1500000"),
+                    decimals: 6,
+                },
+                set: HashSet::from_iter([
+                    USDT_ARB.into(),
+                    USDT_ETH.into(),
+                    USDT_LINEA.into(),
+                    USDT_OP.into(),
+                    USDT_POLYGON.into(),
+                    USDT_ZKSYNC.into(),
+                ]),
+            },
+            AssetMapping {
+                capital_cost: CapitalCostConfig {
+                    lower_bound: EtherConv::parse_ether("0.0001"),
+                    upper_bound: EtherConv::parse_ether("0.0001"),
+                    cutoff: EtherConv::parse_ether("1500000"),
+                    decimals: 18,
+                },
+                set: HashSet::from_iter([
+                    DAI_ARB.into(),
+                    DAI_BASE.into(),
+                    DAI_ETH.into(),
+                    DAI_LINEA.into(),
+                    DAI_OP.into(),
+                    DAI_POLYGON.into(),
+                    DAI_ZKSYNC.into(),
+                ]),
+            },
+            AssetMapping {
+                capital_cost: CapitalCostConfig {
+                    lower_bound: EtherConv::parse_ether("0.0001"),
+                    upper_bound: BigInt::from(0),
+                    cutoff: EtherConv::parse_ether("100000"),
+                    decimals: 6,
+                },
+                set: HashSet::from_iter([
+                    USDC_E_ARB.into(),
+                    USDC_E_BASE.into(),
+                    USDC_E_ETH.into(),
+                    USDC_E_LINEA.into(),
+                    USDC_E_OP.into(),
+                    USDC_E_POLYGON.into(),
+                    USDC_E_WORLD.into(),
+                    USDC_E_ZKSYNC.into(),
+                ]),
+            },
+            AssetMapping {
+                capital_cost: CapitalCostConfig {
+                    lower_bound: EtherConv::parse_ether("0.0003"),
+                    upper_bound: EtherConv::parse_ether("0.0025"),
+                    cutoff: EtherConv::parse_ether("10"),
+                    decimals: 8,
+                },
+                set: HashSet::from_iter([
+                    WBTC_ARB.into(),
+                    WBTC_BLAST.into(),
+                    WBTC_ETH.into(),
+                    WBTC_LINEA.into(),
+                    WBTC_OP.into(),
+                    WBTC_POLYGON.into(),
+                    WBTC_WORLD.into(),
+                    WBTC_ZKSYNC.into(),
+                ]),
+            },
+            AssetMapping {
+                capital_cost: CapitalCostConfig {
+                    lower_bound: EtherConv::parse_ether("0.0001"),
+                    upper_bound: EtherConv::parse_ether("0.001"),
+                    cutoff: EtherConv::parse_ether("1000000"),
+                    decimals: 18,
+                },
+                set: HashSet::from_iter([ACX_ARB.into(), ACX_ETH.into(), ACX_OP.into(), ACX_POLYGON.into()]),
+            },
         ]
     }
 }
