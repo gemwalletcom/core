@@ -21,7 +21,7 @@ public extension SwapQuoteRequest {
         destinationAddress: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7",
         value: "100000000000000000", // 0.01 ETH
         mode: .exactIn,
-        options: nil
+        options: SWAP_OPTIONS
     )
 
     static let usdc2eth = SwapQuoteRequest(
@@ -31,7 +31,7 @@ public extension SwapQuoteRequest {
         destinationAddress: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7",
         value: "100000000", // 100 USDC
         mode: .exactIn,
-        options: nil
+        options: SWAP_OPTIONS
     )
 
     static let sol2usdc = SwapQuoteRequest(
