@@ -52,7 +52,7 @@ impl GemSwapProvider for Orca {
         }
 
         let amount_in = request.value.parse::<u64>().map_err(|_| SwapperError::InvalidAmount)?;
-        let options = request.options.clone().unwrap_or_default();
+        let options = request.options.clone();
         let slippage_bps = options.slippage_bps as u16;
 
         let from_asset = get_asset_address(&request.from_asset).ok_or_else(|| SwapperError::InvalidAddress {

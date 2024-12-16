@@ -228,7 +228,7 @@ impl UniswapV3 {
         path: &Bytes,
         permit: Option<Permit2Permit>,
     ) -> Result<Vec<UniversalRouterCommand>, SwapperError> {
-        let options = request.options.clone().unwrap_or_default();
+        let options = request.options.clone();
         let fee_options = options.fee.unwrap_or_default().evm;
         let recipient = Address::from_str(&request.wallet_address).map_err(|_| SwapperError::InvalidAddress {
             address: request.wallet_address.clone(),
@@ -518,7 +518,7 @@ mod tests {
             destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
             value: "10000000000000000".into(),
             mode: GemSwapMode::ExactIn,
-            options: None,
+            options: GemSwapOptions::default(),
         };
 
         let token_in = EthereumAddress::parse("0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2").unwrap();
@@ -542,7 +542,7 @@ mod tests {
             })),
             preferred_providers: vec![],
         };
-        request.options = Some(options);
+        request.options = options;
 
         let commands = UniswapV3::build_commands(&request, &token_in, &token_out, amount_in, U256::from(0), &path, None).unwrap();
 
@@ -564,7 +564,7 @@ mod tests {
             destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
             value: "6500000".into(),
             mode: GemSwapMode::ExactIn,
-            options: None,
+            options: GemSwapOptions::default(),
         };
 
         let token_in = EthereumAddress::parse(request.from_asset.token_id.as_ref().unwrap()).unwrap();
@@ -616,14 +616,14 @@ mod tests {
             destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
             value: "5064985".into(),
             mode: GemSwapMode::ExactIn,
-            options: Some(GemSwapOptions {
+            options: GemSwapOptions {
                 slippage_bps: 100,
                 fee: Some(SwapReferralFees::evm(SwapReferralFee {
                     bps: 25,
                     address: "0x3d83ec320541ae96c4c91e9202643870458fb290".into(),
                 })),
                 preferred_providers: vec![],
-            }),
+            },
         };
 
         let token_in = EthereumAddress::parse(request.from_asset.token_id.as_ref().unwrap()).unwrap();
@@ -650,14 +650,14 @@ mod tests {
             destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
             value: "10000000".into(),
             mode: GemSwapMode::ExactIn,
-            options: Some(GemSwapOptions {
+            options: GemSwapOptions {
                 slippage_bps: 100,
                 fee: Some(SwapReferralFees::evm(SwapReferralFee {
                     bps: 25,
                     address: "0x3d83ec320541ae96c4c91e9202643870458fb290".into(),
                 })),
                 preferred_providers: vec![],
-            }),
+            },
         };
 
         let token_in = EthereumAddress::parse(request.from_asset.token_id.as_ref().unwrap()).unwrap();

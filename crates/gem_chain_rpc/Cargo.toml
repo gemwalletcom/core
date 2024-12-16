@@ -25,6 +25,7 @@ primitives = { path = "../primitives" }
 gem_evm = { path = "../gem_evm" }
 gem_solana = { path = "../gem_solana" }
 gem_ton = { path = "../gem_ton" }
+gem_aptos = { path = "../gem_aptos" }
 alloy-core = { workspace = true }
 alloy-sol-types = { workspace = true }
 

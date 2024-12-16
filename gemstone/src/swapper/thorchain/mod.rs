@@ -79,7 +79,7 @@ impl GemSwapProvider for ThorChain {
         let to_asset = THORChainAsset::from_asset_id(request.clone().to_asset).ok_or(SwapperError::NotSupportedAsset)?;
 
         let value = self.value_from(request.clone().value, from_asset.decimals as i32);
-        let fee = request.options.clone().unwrap_or_default().fee.unwrap_or_default().thorchain;
+        let fee = request.options.clone().fee.unwrap_or_default().thorchain;
 
         let quote = client
             .get_quote(
@@ -117,7 +117,7 @@ impl GemSwapProvider for ThorChain {
     }
 
     async fn fetch_quote_data(&self, quote: &SwapQuote, _provider: Arc<dyn AlienProvider>, _data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError> {
-        let fee = quote.request.options.clone().unwrap_or_default().fee.unwrap_or_default().thorchain;
+        let fee = quote.request.options.clone().fee.unwrap_or_default().thorchain;
 
         let to_asset = THORChainAsset::from_asset_id(quote.clone().request.to_asset).ok_or(SwapperError::NotSupportedAsset)?;
         let memo = to_asset
