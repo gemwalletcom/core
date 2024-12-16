@@ -2,10 +2,10 @@ use crate::{
     network::{jsonrpc::jsonrpc_call_with_cache, AlienProvider, JsonRpcResult},
     swapper::SwapperError,
 };
-use alloy_core::sol_types::SolCall;
+use alloy_core::{hex::decode as HexDecode, sol_types::SolCall};
 use alloy_primitives::Address;
 use gem_evm::{
-    across::{contracts::AcrossConfigStore, lp_fees},
+    across::{contracts::AcrossConfigStore, fees},
     address::EthereumAddress,
     jsonrpc::{BlockParameter, EthereumRpc, TransactionObject},
 };
@@ -16,7 +16,7 @@ use std::sync::Arc;
 
 const CONFIG_CACHE_TTL: u64 = 60 * 60 * 24;
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RateModel {
     #[serde(rename = "UBar")]
     pub ubar: String,
@@ -28,7 +28,7 @@ pub struct RateModel {
     pub r2: String,
 }
 
-impl From<RateModel> for lp_fees::RateModel {
+impl From<RateModel> for fees::RateModel {
     fn from(value: RateModel) -> Self {
         Self {
             ubar: value.ubar.parse().unwrap(),
@@ -61,7 +61,13 @@ impl ConfigStoreClient {
         let call = EthereumRpc::Call(TransactionObject::new_call(&self.contract, data), BlockParameter::Latest);
         let response: JsonRpcResult<String> = jsonrpc_call_with_cache(&call, self.provider.clone(), &self.chain, Some(CONFIG_CACHE_TTL)).await?;
         let result = response.take()?;
-        let result: TokenConfig = serde_json::from_str(&result).map_err(|e| SwapperError::NetworkError { msg: e.to_string() })?;
+        let hex_data = HexDecode(result).map_err(|e| SwapperError::NetworkError {
+            msg: format!("failed to decode hex result: {:?}", e),
+        })?;
+        let decoded = AcrossConfigStore::l1TokenConfigCall::abi_decode_returns(&hex_data, true)
+            .map_err(|e| SwapperError::NetworkError { msg: e.to_string() })?
+            ._0;
+        let result: TokenConfig = serde_json::from_str(&decoded).map_err(|e| SwapperError::NetworkError { msg: e.to_string() })?;
         Ok(result)
     }
 }

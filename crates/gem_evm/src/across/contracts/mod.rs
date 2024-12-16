@@ -1,5 +1,6 @@
 pub mod config_store;
 pub mod hub_pool;
+pub mod multicall;
 pub mod spoke_pool;
 pub use config_store::AcrossConfigStore;
 pub use hub_pool::HubPoolInterface;

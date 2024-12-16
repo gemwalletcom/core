@@ -22,7 +22,7 @@ struct ContentView: View {
             Button("List Providers") {
                 self.fetchProviders()
             }
-            Text("Quotes:")
+            Text("Swap:")
             Button("Fetch ETH -> USDC") {
                 self.testQuote(quote: .eth2usdc)
             }
@@ -37,6 +37,10 @@ struct ContentView: View {
             }
             Button("Fetch Cake -> BTCB") {
                 self.testQuote(quote: .cake2btcb)
+            }
+            Text("Bridge:")
+            Button("Bridge Op WETH -> Arb") {
+                self.testQuote(quote: .opToArb)
             }
         }
         .padding()

@@ -129,16 +129,8 @@ impl LpFeeCalculator {
     }
 }
 
-pub struct RelayerFee {
-    pub lower_bound: u32,
-    pub upper_bound: u32,
-    pub cutoff: u32,
-    pub decimals: u32,
-}
-
+#[cfg(test)]
 mod tests {
-    use crate::ether_conv::EtherConv;
-
     use super::*;
 
     #[test]

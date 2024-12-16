@@ -1,7 +1,9 @@
 #[cfg(test)]
 mod tests {
+    use across::Across;
     use async_trait::async_trait;
     use futures::TryFutureExt;
+    use gem_evm::constants::{WETH_ARB, WETH_OP};
     use gemstone::{
         network::{provider::AlienProvider, target::*, *},
         swapper::{orca::Orca, *},
@@ -12,12 +14,12 @@ mod tests {
 
     #[derive(Debug)]
     pub struct NativeProvider {
-        pub node_config: HashMap<String, String>,
+        pub node_config: HashMap<Chain, String>,
         pub client: Client,
     }
 
     impl NativeProvider {
-        pub fn new(node_config: HashMap<String, String>) -> Self {
+        pub fn new(node_config: HashMap<Chain, String>) -> Self {
             Self {
                 node_config,
                 client: Client::new(),
@@ -25,9 +27,20 @@ mod tests {
         }
     }
 
+    impl Default for NativeProvider {
+        fn default() -> Self {
+            Self::new(HashMap::from([
+                (Chain::Ethereum, "https://eth.llamarpc.com".into()),
+                (Chain::Optimism, "https://optimism.llamarpc.com".into()),
+                (Chain::Arbitrum, "https://arbitrum.llamarpc.com".into()),
+                (Chain::Solana, "https://solana-rpc.publicnode.com".into()),
+            ]))
+        }
+    }
+
     #[async_trait]
     impl AlienProvider for NativeProvider {
-        fn get_endpoint(&self, chain: String) -> Result<String, AlienError> {
+        fn get_endpoint(&self, chain: Chain) -> Result<String, AlienError> {
             Ok(self
                 .node_config
                 .get(&chain)
@@ -71,8 +84,11 @@ mod tests {
                     msg: format!("request error: {:?}", e),
                 })
                 .await?;
-
             println!("<== response body size: {:?}", bytes.len());
+            if bytes.len() > 0 {
+                let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+                println!("<== response json: {:?}", json);
+            }
             Ok(bytes.to_vec())
         }
 
@@ -94,7 +110,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_orca_get_quote_by_input() -> Result<(), SwapperError> {
-        let node_config = HashMap::from([(Chain::Solana.to_string(), "https://solana-rpc.publicnode.com".into())]);
+        let node_config = HashMap::from([(Chain::Solana, "https://solana-rpc.publicnode.com".into())]);
         let swap_provider: Box<dyn GemSwapProvider> = Box::new(Orca::default());
         let network_provider = Arc::new(NativeProvider::new(node_config));
 
@@ -105,11 +121,32 @@ mod tests {
             destination_address: "G7B17AigRCGvwnxFc5U8zY5T3NBGduLzT7KYApNU2VdR".into(),
             value: "1000000".into(),
             mode: GemSwapMode::ExactIn,
-            options: None,
+            options: GemSwapOptions::default(),
         };
         let quote = swap_provider.fetch_quote(&request, network_provider.clone()).await?;
 
         assert_eq!(quote.from_value, "1000000");
+        assert!(quote.to_value.parse::<u64>().unwrap() > 0);
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_across_quote() -> Result<(), SwapperError> {
+        let swap_provider = Across::boxed();
+        let network_provider = Arc::new(NativeProvider::default());
+
+        let request = SwapQuoteRequest {
+            from_asset: WETH_OP.into(),
+            to_asset: WETH_ARB.into(),
+            wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
+            destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
+            value: "100000000000000000".into(),
+            mode: GemSwapMode::ExactIn,
+            options: GemSwapOptions::default(),
+        };
+        let quote = swap_provider.fetch_quote(&request, network_provider.clone()).await?;
+
         assert!(quote.to_value.parse::<u64>().unwrap() > 0);
 
         Ok(())

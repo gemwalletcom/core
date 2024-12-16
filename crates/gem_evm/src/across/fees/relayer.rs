@@ -1,5 +1,6 @@
 use num_bigint::BigInt;
 
+#[derive(Debug, Clone)]
 pub struct CapitalCostConfig {
     pub lower_bound: BigInt,
     pub upper_bound: BigInt,

@@ -15,7 +15,7 @@ use gem_evm::{
 };
 use num_bigint::BigInt;
 use primitives::Chain;
-use std::{str::FromStr, sync::Arc};
+use std::sync::Arc;
 
 pub struct HubPoolClient {
     pub contract: String,
@@ -50,7 +50,11 @@ impl HubPoolClient {
         let call = EthereumRpc::Call(TransactionObject::new_call(&self.contract, data), BlockParameter::Latest);
         let response: JsonRpcResult<String> = jsonrpc_call(&call, self.provider.clone(), &self.chain).await?;
         let result = response.take()?;
-        let result = BigInt::from_str(&result).map_err(|_| SwapperError::InvalidAmount)?;
+        let hex_data = HexDecode(result).map_err(|e| SwapperError::NetworkError { msg: e.to_string() })?;
+        let value = HubPoolInterface::liquidityUtilizationCurrentCall::abi_decode_returns(&hex_data, true)
+            .map_err(|e| SwapperError::ABIError { msg: e.to_string() })?
+            ._0;
+        let result = BigInt::from_bytes_le(num_bigint::Sign::Plus, &value.to_le_bytes::<32>());
         Ok(result)
     }
 }

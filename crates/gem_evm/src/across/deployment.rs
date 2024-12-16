@@ -1,4 +1,4 @@
-use super::fee::CapitalCostConfig;
+use super::fees::CapitalCostConfig;
 use crate::{constants::*, ether_conv::EtherConv};
 use alloy_primitives::map::HashSet;
 use num_bigint::BigInt;
@@ -7,6 +7,7 @@ use std::collections::HashMap;
 
 pub const ACROSS_CONFIG_STORE: &str = "0x3B03509645713718B78951126E0A6de6f10043f5";
 pub const ACROSS_HUBPOOL: &str = "0xc186fA914353c44b2E33eBE05f21846F1048bEda";
+pub const MULTICALL_HANDLER: &str = "0x924a9f036260DdD5808007E1AA95f08eD08aA569";
 
 /// https://docs.across.to/developer-docs/developers/contract-addresses
 pub struct AcrossDeployment {
@@ -73,6 +74,16 @@ impl AcrossDeployment {
                 spoke_pool: "0xE0B015E54d54fc84a6cB9B666099c46adE9335FF",
             }),
             _ => None,
+        }
+    }
+
+    pub fn multicall_handler(&self) -> String {
+        match self.chain_id {
+            // Linea
+            59144 => "0x1015c58894961F4F7Dd7D68ba033e28Ed3ee1cDB".into(),
+            // zkSync
+            324 => "0x863859ef502F0Ee9676626ED5B418037252eFeb2".into(),
+            _ => MULTICALL_HANDLER.into(),
         }
     }
 
