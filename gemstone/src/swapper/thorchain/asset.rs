@@ -1,5 +1,11 @@
 use primitives::{Asset, AssetId};
 
+use crate::swapper::asset::{
+    AVALANCHE_USDC, AVALANCHE_USDC_TOKEN_ID, AVALANCHE_USDT, AVALANCHE_USDT_TOKEN_ID, ETHEREUM_DAI, ETHEREUM_DAI_TOKEN_ID, ETHEREUM_USDC,
+    ETHEREUM_USDC_TOKEN_ID, ETHEREUM_USDT, ETHEREUM_USDT_TOKEN_ID, ETHEREUM_WBTC, ETHEREUM_WBTC_TOKEN_ID, SMARTCHAIN_USDC, SMARTCHAIN_USDC_TOKEN_ID,
+    SMARTCHAIN_USDT, SMARTCHAIN_USDT_TOKEN_ID,
+};
+
 use super::chain::THORChainName;
 
 #[derive(Clone)]
@@ -34,48 +40,32 @@ impl THORChainAsset {
         }
     }
 
+    pub fn thorchain_asset_token(chain: THORChainName, asset: Asset) -> THORChainAsset {
+        THORChainAsset {
+            symbol: asset.symbol,
+            chain,
+            token_id: asset.id.token_id,
+            decimals: asset.decimals as u32,
+        }
+    }
+
     pub fn from(chain: THORChainName, token_id: &str) -> Option<THORChainAsset> {
         match chain {
             THORChainName::Ethereum => match token_id {
-                "0xdAC17F958D2ee523a2206206994597C13D831ec7" => Some(THORChainAsset {
-                    symbol: "USDT".to_string(),
-                    chain: chain.clone(),
-                    token_id: Some(token_id.to_owned()),
-                    decimals: 6,
-                }),
-                "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48" => Some(THORChainAsset {
-                    symbol: "USDC".to_string(),
-                    chain: chain.clone(),
-                    token_id: Some(token_id.to_owned()),
-                    decimals: 6,
-                }),
-                "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599" => Some(THORChainAsset {
-                    symbol: "WBTC".to_string(),
-                    chain: chain.clone(),
-                    token_id: Some(token_id.to_owned()),
-                    decimals: 8,
-                }),
-                "0x6B175474E89094C44Da98b954EedeAC495271d0F" => Some(THORChainAsset {
-                    symbol: "DAI".to_string(),
-                    chain: chain.clone(),
-                    token_id: Some(token_id.to_owned()),
-                    decimals: 18,
-                }),
+                ETHEREUM_USDT_TOKEN_ID => Some(Self::thorchain_asset_token(chain, ETHEREUM_USDT.clone())),
+                ETHEREUM_USDC_TOKEN_ID => Some(Self::thorchain_asset_token(chain, ETHEREUM_USDC.clone())),
+                ETHEREUM_WBTC_TOKEN_ID => Some(Self::thorchain_asset_token(chain, ETHEREUM_WBTC.clone())),
+                ETHEREUM_DAI_TOKEN_ID => Some(Self::thorchain_asset_token(chain, ETHEREUM_DAI.clone())),
                 _ => None,
             },
             THORChainName::SmartChain => match token_id {
-                "0x55d398326f99059fF775485246999027B3197955" => Some(THORChainAsset {
-                    symbol: "USDT".to_string(),
-                    chain: chain.clone(),
-                    token_id: Some(token_id.to_owned()),
-                    decimals: 18,
-                }),
-                "0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d" => Some(THORChainAsset {
-                    symbol: "USDC".to_string(),
-                    chain: chain.clone(),
-                    token_id: Some(token_id.to_owned()),
-                    decimals: 18,
-                }),
+                SMARTCHAIN_USDT_TOKEN_ID => Some(Self::thorchain_asset_token(chain, SMARTCHAIN_USDT.clone())),
+                SMARTCHAIN_USDC_TOKEN_ID => Some(Self::thorchain_asset_token(chain, SMARTCHAIN_USDC.clone())),
+                _ => None,
+            },
+            THORChainName::AvalancheC => match token_id {
+                AVALANCHE_USDT_TOKEN_ID => Some(Self::thorchain_asset_token(chain, AVALANCHE_USDT.clone())),
+                AVALANCHE_USDC_TOKEN_ID => Some(Self::thorchain_asset_token(chain, AVALANCHE_USDC.clone())),
                 _ => None,
             },
             _ => None,

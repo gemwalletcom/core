@@ -3342,6 +3342,7 @@ dependencies = [
  "gem_sui",
  "gem_ton",
  "hex",
+ "lazy_static",
  "num-bigint 0.4.6",
  "num-traits",
  "orca_whirlpools_core",

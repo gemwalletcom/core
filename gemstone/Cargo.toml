@@ -41,6 +41,7 @@ num-traits.workspace = true
 futures.workspace = true
 borsh.workspace = true
 orca_whirlpools_core = "1.0.0"
+lazy_static = { workspace = true }
 
 [build-dependencies]
 uniffi = { workspace = true, features = ["build"] }

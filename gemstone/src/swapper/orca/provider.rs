@@ -42,8 +42,8 @@ impl GemSwapProvider for Orca {
         SwapProvider::Orca
     }
 
-    fn supported_chains(&self) -> Vec<Chain> {
-        vec![Chain::Solana]
+    fn supported_assets(&self) -> Vec<SwapChainAsset> {
+        vec![SwapChainAsset::All(Chain::Solana)]
     }
 
     async fn fetch_quote(&self, request: &SwapQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapQuote, SwapperError> {

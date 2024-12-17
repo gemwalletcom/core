@@ -1,7 +1,7 @@
 use super::permit2_data::Permit2Data;
 use crate::config::swap_config::SwapReferralFees;
 use crate::network::{jsonrpc::JsonRpcError, AlienError};
-use primitives::AssetId;
+use primitives::{AssetId, Chain};
 use std::fmt::Debug;
 
 static DEFAULT_SLIPPAGE_BPS: u32 = 300;
@@ -183,4 +183,25 @@ pub struct SwapRoute {
 pub enum FetchQuoteData {
     Permit2(Permit2Data),
     None,
+}
+
+#[derive(Debug, Clone, uniffi::Enum, PartialEq)]
+pub enum SwapChainAsset {
+    All(Chain),
+    Assets(Chain, Vec<AssetId>),
+}
+
+impl SwapChainAsset {
+    pub fn get_chain(&self) -> Chain {
+        match self {
+            Self::All(chain) => *chain,
+            Self::Assets(chain, _) => *chain,
+        }
+    }
+}
+
+#[derive(Debug, Clone, uniffi::Record, PartialEq)]
+pub struct SwapAssetList {
+    pub chains: Vec<Chain>,
+    pub asset_ids: Vec<AssetId>,
 }
