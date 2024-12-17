@@ -11,6 +11,7 @@ pub mod jupiter;
 pub mod mayan;
 pub mod models;
 pub mod orca;
+pub mod pancakeswap_aptos;
 pub mod slippage;
 pub mod thorchain;
 pub mod universal_router;
@@ -61,6 +62,7 @@ impl GemSwapper {
                 Box::new(thorchain::ThorChain::default()),
                 Box::new(jupiter::Jupiter::default()),
                 Box::new(mayan::swift_provider::MayanSwiftProvider::new()),
+                Box::new(pancakeswap_aptos::PancakeSwapAptos::default()),
             ],
         }
     }

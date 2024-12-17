@@ -49,12 +49,10 @@ impl Jupiter {
         }
     }
 
-    pub fn get_fee_account(&self, options: &Option<GemSwapOptions>, mint: &str) -> Option<String> {
-        if let Some(options) = options {
-            if let Some(fee) = &options.fee {
-                let fee_account = super::referral::get_referral_account(&fee.solana_jupiter.address, mint);
-                return Some(fee_account);
-            }
+    pub fn get_fee_account(&self, options: &GemSwapOptions, mint: &str) -> Option<String> {
+        if let Some(fee) = &options.fee {
+            let fee_account = super::referral::get_referral_account(&fee.solana_jupiter.address, mint);
+            return Some(fee_account);
         }
         None
     }
@@ -62,7 +60,7 @@ impl Jupiter {
     pub async fn fetch_fee_account(
         &self,
         mode: &GemSwapMode,
-        options: &Option<GemSwapOptions>,
+        options: &GemSwapOptions,
         input_mint: &str,
         output_mint: &str,
         provider: Arc<dyn AlienProvider>,
@@ -111,7 +109,7 @@ impl GemSwapProvider for Jupiter {
     async fn fetch_quote(&self, request: &SwapQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapQuote, SwapperError> {
         let input_mint = self.get_asset_address(&request.from_asset)?;
         let output_mint = self.get_asset_address(&request.to_asset)?;
-        let swap_options = request.options.clone().unwrap_or_default();
+        let swap_options = request.options.clone();
         let slippage_bps = swap_options.slippage_bps;
         let platform_fee_bps = swap_options.fee.unwrap_or_default().solana_jupiter.bps;
 

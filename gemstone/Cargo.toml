@@ -20,6 +20,7 @@ gem_ton = { path = "../crates/gem_ton" }
 gem_bsc = { path = "../crates/gem_bsc" }
 gem_evm = { path = "../crates/gem_evm" }
 gem_sui = { path = "../crates/gem_sui" }
+gem_aptos = { path = "../crates/gem_aptos" }
 
 # uniffi
 uniffi.workspace = true
@@ -36,6 +37,7 @@ alloy-primitives.workspace = true
 hex.workspace = true
 url.workspace = true
 num-bigint.workspace = true
+num-traits.workspace = true
 futures.workspace = true
 borsh.workspace = true
 rand.workspace = true
