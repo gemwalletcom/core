@@ -106,7 +106,11 @@ mod tests {
             destination_address: "G7B17AigRCGvwnxFc5U8zY5T3NBGduLzT7KYApNU2VdR".into(),
             value: "1000000".into(),
             mode: GemSwapMode::ExactIn,
-            options: None,
+            options: GemSwapOptions {
+                slippage_bps: 10,
+                fee: None,
+                preferred_providers: vec![],
+            },
         };
         let quote = swap_provider.fetch_quote(&request, network_provider.clone()).await?;
 
@@ -123,7 +127,7 @@ mod tests {
         let node_config = HashMap::from([(Chain::Base, "https://mainnet.base.org".to_string())]);
         let network_provider = Arc::new(NativeProvider::new(node_config));
 
-        let mayan_swift_provider = MayanSwiftProvider::new();
+        let mayan_swift_provider = MayanSwiftProvider::default();
 
         // Create a swap quote request
         let request = SwapQuoteRequest {
@@ -133,7 +137,11 @@ mod tests {
             destination_address: TEST_WALLET_ADDRESS.to_string(),
             value: "9000000".to_string(),
             mode: GemSwapMode::ExactIn, // Swap mode
-            options: None,
+            options: GemSwapOptions {
+                slippage_bps: 10,
+                fee: None,
+                preferred_providers: vec![],
+            },
         };
 
         let quote = mayan_swift_provider.fetch_quote(&request, network_provider.clone()).await?;

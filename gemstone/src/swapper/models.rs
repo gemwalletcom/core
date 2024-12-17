@@ -90,6 +90,7 @@ impl SwapProvider {
             Self::Thorchain => SwapProviderType::CrossChain,
             Self::Orca => SwapProviderType::OnChain,
             Self::Jupiter => SwapProviderType::OnChain,
+            Self::MayanSwift => SwapProviderType::CrossChain,
         }
     }
 }

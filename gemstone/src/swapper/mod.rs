@@ -61,7 +61,7 @@ impl GemSwapper {
                 Box::new(universal_router::UniswapV3::new_pancakeswap()),
                 Box::new(thorchain::ThorChain::default()),
                 Box::new(jupiter::Jupiter::default()),
-                Box::new(mayan::swift_provider::MayanSwiftProvider::new()),
+                Box::new(mayan::swift_provider::MayanSwiftProvider::default()),
                 Box::new(pancakeswap_aptos::PancakeSwapAptos::default()),
             ],
         }

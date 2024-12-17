@@ -3,7 +3,10 @@ use std::{str::FromStr, sync::Arc};
 
 use alloy_core::{
     hex::{decode as HexDecode, ToHexExt},
-    primitives::U256,
+    primitives::{
+        utils::{parse_units, Unit},
+        U256,
+    },
     sol_types::SolCall,
 };
 
@@ -32,7 +35,7 @@ use super::{
     swift::{MayanSwift, MayanSwiftError, OrderParams},
 };
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct MayanSwiftProvider {}
 
 impl From<MayanSwiftError> for SwapperError {
@@ -42,10 +45,6 @@ impl From<MayanSwiftError> for SwapperError {
 }
 
 impl MayanSwiftProvider {
-    pub fn new() -> Self {
-        Self {}
-    }
-
     fn get_chain_by_wormhole_id(&self, wormhole_id: u64) -> Option<Chain> {
         get_swift_providers()
             .into_iter()
@@ -144,17 +143,15 @@ impl MayanSwiftProvider {
     }
 
     fn get_referrer(&self, request: &SwapQuoteRequest) -> Result<Option<SwapReferralFee>, SwapperError> {
-        if let Some(options) = &request.options {
-            if let Some(referrer) = &options.fee {
-                let evm_fee = &referrer.evm;
-                let solana_fee = &referrer.solana;
+        if let Some(referrer) = &request.options.fee {
+            let evm_fee = &referrer.evm;
+            let solana_fee = &referrer.solana;
 
-                if request.from_asset.chain == Chain::Solana {
-                    return Ok(Some(solana_fee.clone()));
-                }
-
-                return Ok(Some(evm_fee.clone()));
+            if request.from_asset.chain == Chain::Solana {
+                return Ok(Some(solana_fee.clone()));
             }
+
+            return Ok(Some(evm_fee.clone()));
         }
 
         Ok(None)
@@ -203,20 +200,18 @@ impl MayanSwiftProvider {
         })
     }
 
-    fn convert_amount_to_wei(&self, amount: f64, decimals: u32) -> Result<String, SwapperError> {
-        // Calculate the scaling factor (10^decimals)
-        let scaling_factor = 10f64.powi(decimals as i32);
-
-        // Convert the amount to Wei (or the smallest unit)
-        let amount_in_wei = (amount * scaling_factor).round(); // `round` ensures correct conversion
-
-        // Ensure the amount is within a valid range for integers
-        if amount_in_wei < 0.0 || amount_in_wei > (u64::MAX as f64) {
-            return Err(SwapperError::InvalidAmount);
+    fn convert_amount_to_wei(&self, amount: f64, decimals: u8) -> Result<String, SwapperError> {
+        if amount < 0.0 {
+            return Err(SwapperError::ComputeQuoteError {
+                msg: "Cannot convert negative amount".to_string(),
+            });
         }
 
-        // Convert the result to a string for return
-        Ok(format!("{:.0}", amount_in_wei))
+        let parsed = parse_units(amount.to_string().as_str(), decimals).map_err(|_| SwapperError::ComputeQuoteError {
+            msg: "Invalid conversion amount to decimals".to_string(),
+        })?;
+
+        Ok(parsed.to_string())
     }
 
     fn get_amount_of_fractional_amount(&self, amount: f64, decimals: u8) -> Result<String, SwapperError> {
@@ -321,10 +316,11 @@ impl GemSwapProvider for MayanSwiftProvider {
         Ok(SwapQuote {
             from_value: request.value.clone(),
             to_value: self
-                .convert_amount_to_wei(quote.min_amount_out, quote.to_token.decimals.into())
+                .convert_amount_to_wei(quote.min_amount_out, quote.to_token.decimals)
                 .map_err(|e| SwapperError::ComputeQuoteError { msg: e.to_string() })?,
             data: SwapProviderData {
                 provider: self.provider(),
+                suggested_slippage_bps: Some(quote.slippage_bps),
                 routes: vec![route],
             },
             approval,
@@ -450,7 +446,7 @@ impl GemSwapProvider for MayanSwiftProvider {
 mod tests {
     use primitives::AssetId;
 
-    use crate::swapper::GemSwapMode;
+    use crate::swapper::{GemSwapMode, GemSwapOptions};
 
     use super::*;
 
@@ -476,13 +472,17 @@ mod tests {
             },
             value: "1230000000000000000".to_string(),
             mode: GemSwapMode::ExactIn,
-            options: None, // From JSON field "effectiveAmountIn"
+            options: GemSwapOptions {
+                slippage_bps: 12,
+                fee: None,
+                preferred_providers: vec![],
+            },
         }
     }
 
     #[test]
     fn test_supported_chains() {
-        let provider = MayanSwiftProvider::new();
+        let provider = MayanSwiftProvider::default();
         let chains = provider.supported_chains();
 
         assert!(chains.contains(&Chain::Solana));
@@ -496,7 +496,7 @@ mod tests {
 
     #[test]
     fn test_address_to_bytes32_valid() {
-        let provider = MayanSwiftProvider::new();
+        let provider = MayanSwiftProvider::default();
         let address = "0x0655c6AbdA5e2a5241aa08486bd50Cf7d475CF24";
         let bytes32 = provider.address_to_bytes32(address).unwrap();
         let expected_bytes32 = [
@@ -507,7 +507,7 @@ mod tests {
 
     #[test]
     fn test_address_to_bytes32_invalid() {
-        let provider = MayanSwiftProvider::new();
+        let provider = MayanSwiftProvider::default();
         let invalid_address = "invalid_address";
         let result = provider.address_to_bytes32(invalid_address);
         assert!(result.is_err());
@@ -515,23 +515,23 @@ mod tests {
 
     #[test]
     fn test_convert_amount_to_wei_valid() {
-        let provider = MayanSwiftProvider::new();
-        let amount = 1.23; // 1.23 ETH
+        let provider = MayanSwiftProvider::default();
+        let amount = 1.23;
         let result = provider.convert_amount_to_wei(amount, 18).unwrap();
         assert_eq!(result, "1230000000000000000"); // 1.23 ETH in Wei
     }
 
     #[test]
     fn test_convert_amount_to_wei_invalid() {
-        let provider = MayanSwiftProvider::new();
-        let amount = -1.0; // Negative amount
+        let provider = MayanSwiftProvider::default();
+        let amount = -1.0;
         let result = provider.convert_amount_to_wei(amount, 18);
         assert!(result.is_err());
     }
 
     #[test]
     fn test_build_swift_order_params_valid() {
-        let provider = MayanSwiftProvider::new();
+        let provider = MayanSwiftProvider::default();
         let request = generate_mock_request();
         let quote = generate_mock_quote();
 
@@ -550,7 +550,7 @@ mod tests {
         ];
 
         for (amount, decimals, expected) in test_cases {
-            let provider = MayanSwiftProvider::new();
+            let provider = MayanSwiftProvider::default();
             let result = provider.get_amount_of_fractional_amount(amount, decimals);
             assert!(result.is_ok(), "Failed for amount: {}", amount);
             assert_eq!(result.unwrap(), expected.to_string());
