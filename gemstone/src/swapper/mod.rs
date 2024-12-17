@@ -8,6 +8,7 @@ mod custom_types;
 mod permit2_data;
 
 pub mod jupiter;
+pub mod mayan;
 pub mod models;
 pub mod orca;
 pub mod pancakeswap_aptos;
@@ -60,6 +61,7 @@ impl GemSwapper {
                 Box::new(universal_router::UniswapV3::new_pancakeswap()),
                 Box::new(thorchain::ThorChain::default()),
                 Box::new(jupiter::Jupiter::default()),
+                Box::new(mayan::swift_provider::MayanSwiftProvider::default()),
                 Box::new(pancakeswap_aptos::PancakeSwapAptos::default()),
             ],
         }
