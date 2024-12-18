@@ -27,6 +27,7 @@ pub enum EVMChain {
     Mantle,
     Celo,
     World,
+    Sonic,
 }
 
 impl EVMChain {
@@ -50,6 +51,7 @@ impl EVMChain {
             Self::ZkSync => 20_000_000,             // https://era.zksync.network/chart/gasprice
             Self::Linea => 50_000_000,              // https://lineascan.build/gastracker
             Self::Mantle | Self::Celo | Self::Manta => 10_000_000,
+            Self::Sonic => 1_000_000_000,
         }
     }
 
@@ -67,7 +69,8 @@ impl EVMChain {
             | Self::ZkSync
             | Self::Linea
             | Self::Mantle
-            | Self::Celo => false,
+            | Self::Celo
+            | Self::Sonic => false,
             Self::Optimism | Self::Base | Self::OpBNB | Self::World => true,
         }
     }
@@ -85,6 +88,7 @@ impl EVMChain {
             Self::ZkSync => Some("0x5AEa5775959fBC2557Cc8789bC1bf90A239D9a91"),
             Self::Blast => Some("0x4300000000000000000000000000000000000004"),
             Self::Celo => Some("0x471EcE3750Da237f93B8E339c536989b8978a438"),
+            Self::Sonic => Some("0x039e2fB66102314Ce7b64Ce5Ce3E5183bc94aD38"),
             Self::Manta | Self::Linea | Self::Mantle => None,
         }
     }

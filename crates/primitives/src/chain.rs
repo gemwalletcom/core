@@ -47,6 +47,7 @@ pub enum Chain {
     Near,
     World,
     Stellar,
+    Sonic,
 }
 
 impl fmt::Display for Chain {
@@ -112,6 +113,7 @@ impl Chain {
             Self::Aptos => "1",
             Self::Tron | Self::Xrp => "",
             Self::Stellar => "Public Global Stellar Network ; September 2015",
+            Self::Sonic => "146",
         }
     }
 
@@ -141,7 +143,8 @@ impl Chain {
             | Self::Linea
             | Self::Mantle
             | Self::Celo
-            | Self::World => 60,
+            | Self::World
+            | Self::Sonic => 60,
             Self::Bitcoin => 0,
             Self::Litecoin => 2,
             Self::SmartChain => 9006,
@@ -178,7 +181,8 @@ impl Chain {
             | Self::Linea
             | Self::Mantle
             | Self::Celo
-            | Self::World => ChainType::Ethereum,
+            | Self::World
+            | Self::Sonic => ChainType::Ethereum,
             Self::Bitcoin | Self::Doge | Self::Litecoin => ChainType::Bitcoin,
             Self::Solana => ChainType::Solana,
             Self::Thorchain | Self::Cosmos | Self::Osmosis | Self::Celestia | Self::Injective | Self::Noble | Self::Sei => ChainType::Cosmos,
@@ -208,7 +212,8 @@ impl Chain {
             | Self::Linea
             | Self::Mantle
             | Self::Celo
-            | Self::World => Some(AssetType::ERC20),
+            | Self::World
+            | Self::Sonic => Some(AssetType::ERC20),
             Self::OpBNB | Self::SmartChain => Some(AssetType::BEP20),
             Self::Solana => Some(AssetType::SPL),
             Self::Tron => Some(AssetType::TRC20),
@@ -263,7 +268,8 @@ impl Chain {
             | Self::Solana
             | Self::AvalancheC
             | Self::Doge
-            | Self::Aptos => true,
+            | Self::Aptos
+            | Self::Sonic => true,
             Self::Osmosis
             | Self::Celestia
             | Self::Injective
@@ -318,6 +324,7 @@ impl Chain {
             Self::Celo => 1_000,
             Self::Near => 1_000,
             Self::Stellar => 6_000,
+            Self::Sonic => 1_000,
         }
     }
 
@@ -348,7 +355,8 @@ impl Chain {
             | Self::Celo
             | Self::Near
             | Self::World
-            | Self::Stellar => 30,
+            | Self::Stellar
+            | Self::Sonic => 30,
             Self::Noble => 20,
         }
     }

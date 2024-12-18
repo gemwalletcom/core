@@ -77,5 +77,6 @@ pub fn get_block_explorers(chain: Chain) -> Vec<Box<dyn BlockExplorer>> {
         Chain::Sui => vec![SuiScan::new(), SuiVision::new()],
         Chain::Near => vec![NearBlocks::new()],
         Chain::Stellar => vec![Blockchair::new_stellar()],
+        Chain::Sonic => vec![EtherScan::new(EVMChain::Sonic)],
     }
 }

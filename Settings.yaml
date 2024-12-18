@@ -141,6 +141,8 @@ chains:
     url: https://worldchain-mainnet.gateway.tenderly.co
   stellar:
     url: https://horizon.stellar.org
+  sonic:
+    url: https://rpc.soniclabs.com
   
 swap:
   jupiter:
