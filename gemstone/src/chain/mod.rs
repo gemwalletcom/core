@@ -9,6 +9,7 @@ pub struct ChainConfig {
     pub denom: Option<String>,
     pub default_asset_type: Option<String>,
     pub account_activation_fee: Option<i32>,
+    pub account_activation_fee_url: Option<String>,
     pub is_swap_supported: bool,
     pub is_stake_supported: bool,
 }
@@ -22,8 +23,17 @@ pub fn get_chain_config(chain: Chain) -> ChainConfig {
         denom: chain.as_denom().map(|x| x.to_string()),
         default_asset_type: chain.default_asset_type().map(|x| x.as_ref().to_string()),
         account_activation_fee: chain.account_activation_fee(),
+        account_activation_fee_url: account_activation_fee_url(chain).map(|x| x.to_string()),
         is_swap_supported: chain.is_swap_supported(),
         is_stake_supported: chain.is_stake_supported(),
+    }
+}
+
+pub fn account_activation_fee_url(chain: Chain) -> Option<String> {
+    match chain {
+        Chain::Xrp => Some("https://xrpl.org/docs/concepts/accounts/reserves#base-reserve-and-owner-reserve".into()),
+        Chain::Stellar => Some("https://developers.stellar.org/docs/learn/fundamentals/lumens#minimum-balance".into()),
+        _ => None,
     }
 }
 
