@@ -1,4 +1,4 @@
-use primitives::Chain;
+use primitives::{Chain, ChainType};
 
 #[derive(uniffi::Record, Debug, Clone, PartialEq)]
 pub struct ChainConfig {
@@ -12,6 +12,7 @@ pub struct ChainConfig {
     pub account_activation_fee_url: Option<String>,
     pub is_swap_supported: bool,
     pub is_stake_supported: bool,
+    pub is_memo_supported: bool,
 }
 
 pub fn get_chain_config(chain: Chain) -> ChainConfig {
@@ -26,6 +27,14 @@ pub fn get_chain_config(chain: Chain) -> ChainConfig {
         account_activation_fee_url: account_activation_fee_url(chain).map(|x| x.to_string()),
         is_swap_supported: chain.is_swap_supported(),
         is_stake_supported: chain.is_stake_supported(),
+        is_memo_supported: is_memo_supported(chain),
+    }
+}
+
+pub fn is_memo_supported(chain: Chain) -> bool {
+    match chain.chain_type() {
+        ChainType::Solana | ChainType::Cosmos | ChainType::Ton | ChainType::Xrp | ChainType::Stellar => true,
+        ChainType::Ethereum | ChainType::Bitcoin | ChainType::Near | ChainType::Tron | ChainType::Aptos | ChainType::Sui => false,
     }
 }
 
