@@ -95,7 +95,7 @@ impl GemSwapper {
     }
 
     fn supported_chains_for_from_asset(&self, asset_id: AssetId) -> SwapAssetList {
-        let chains: Vec<Chain> = Vec::new();
+        let chains: Vec<Chain> = vec![asset_id.chain];
         let mut asset_ids: Vec<AssetId> = Vec::new();
 
         for provider in &self.swappers {
@@ -110,14 +110,7 @@ impl GemSwapper {
                 }
             });
         }
-        if chains.is_empty() && asset_ids.is_empty() {
-            SwapAssetList {
-                chains: vec![asset_id.chain],
-                asset_ids: vec![],
-            }
-        } else {
-            SwapAssetList { chains, asset_ids }
-        }
+        SwapAssetList { chains, asset_ids }
     }
 
     fn get_providers(&self) -> Vec<SwapProvider> {
