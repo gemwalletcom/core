@@ -20,6 +20,7 @@ pub fn map_asset_chain(chain: String) -> Option<Chain> {
         "NEAR" => Some(Chain::Near),
         "CELO" => Some(Chain::Celo),
         "THORCHAIN" => Some(Chain::Thorchain),
+        "XLM" => Some(Chain::Stellar),
         _ => None,
     }
 }

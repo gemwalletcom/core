@@ -25,6 +25,7 @@ pub fn map_asset_chain(asset: Asset) -> Option<Chain> {
         "linea" => Some(Chain::Linea),
         "zksync" => Some(Chain::ZkSync),
         "celo" => Some(Chain::Celo),
+        "stellar" => Some(Chain::Stellar),
         _ => None,
     }
 }

@@ -23,7 +23,7 @@ pub fn map_asset_chain(chain: String) -> Option<Chain> {
         "LINEA" => Some(Chain::Linea),
         "ZKSYNC" => Some(Chain::ZkSync),
         "INJECTIVE" => Some(Chain::Injective),
-        "noble" => Some(Chain::Noble),
+        "STELLAR" => Some(Chain::Stellar),
         _ => None,
     }
 }
