@@ -1,7 +1,3 @@
-// FIXME remove this
-#![allow(unused_variables)]
-#![allow(unused_imports)]
-
 use super::{
     api::AcrossApi,
     config_store::{ConfigStoreClient, TokenConfig},
@@ -9,32 +5,33 @@ use super::{
 };
 use crate::{
     network::AlienProvider,
-    swapper::{
-        approval::{self, check_approval, CheckApprovalType},
-        models::*,
-        slippage::apply_slippage_in_bp,
-        weth_address, GemSwapProvider, SwapperError,
-    },
+    swapper::{approval::check_approval_erc20, asset::*, eth_rpc, models::*, slippage::apply_slippage_in_bp, weth_address, GemSwapProvider, SwapperError},
 };
 use gem_evm::{
     across::{
+        contracts::V3SpokePoolInterface::{self, V3RelayData},
         deployment::{AcrossDeployment, ACROSS_CONFIG_STORE, ACROSS_HUBPOOL},
-        fees::{LpFeeCalculator, RateModel, RelayerFeeCalculator},
+        fees::{self, LpFeeCalculator, RateModel, RelayerFeeCalculator},
     },
     address::EthereumAddress,
+    jsonrpc::TransactionObject,
 };
 use num_bigint::BigInt;
 use primitives::{AssetId, Chain, EVMChain};
 
 use alloy_core::{
-    primitives::{
-        hex::{decode as HexDecode, encode_prefixed as HexEncode},
-        Address, Bytes, U256,
-    },
-    sol_types::{abi::token, SolCall},
+    hex::decode as HexDecode,
+    hex::encode_prefixed as HexEncode,
+    primitives::{Address, Bytes, U256},
+    sol_types::{SolCall, SolValue},
 };
 use async_trait::async_trait;
-use std::{f32::consts::E, fmt::Debug, str::FromStr, sync::Arc};
+use std::{
+    fmt::Debug,
+    str::FromStr,
+    sync::Arc,
+    time::{SystemTime, UNIX_EPOCH},
+};
 
 #[derive(Debug, Default)]
 pub struct Across {}
@@ -71,6 +68,44 @@ impl Across {
         };
         hub_client.is_paused().await
     }
+
+    pub async fn estimate_gas_limit(
+        &self,
+        amount: &U256,
+        is_native: bool,
+        input_asset: &AssetId,
+        output_asset: &AssetId,
+        wallet_address: &EthereumAddress,
+        deployment: &AcrossDeployment,
+        provider: Arc<dyn AlienProvider>,
+        chain: &Chain,
+    ) -> Result<(U256, V3RelayData), SwapperError> {
+        let chain_id: u32 = chain.network_id().parse().unwrap();
+
+        let v3_relay_data = V3RelayData {
+            depositor: Address::from_slice(&wallet_address.bytes),
+            recipient: Address::from_slice(&wallet_address.bytes),
+            exclusiveRelayer: Address::ZERO,
+            inputToken: Address::from_str(input_asset.token_id.clone().unwrap().as_ref()).unwrap(),
+            outputToken: Address::from_str(output_asset.token_id.clone().unwrap().as_ref()).unwrap(),
+            inputAmount: *amount,
+            outputAmount: U256::from(100), // safe amount
+            originChainId: U256::from(chain_id),
+            depositId: u32::MAX,
+            fillDeadline: u32::MAX,
+            exclusivityDeadline: 0,
+            message: Bytes::from(vec![]),
+        };
+        let value = if is_native { amount.to_string() } else { String::from("0x0") };
+        let data = V3SpokePoolInterface::fillV3RelayCall {
+            relayData: v3_relay_data.clone(),
+            repaymentChainId: U256::from(chain_id),
+        }
+        .abi_encode();
+        let tx = TransactionObject::new_call_to_value(deployment.spoke_pool, &value, data);
+        let gas_limit = eth_rpc::estimate_gas(provider, chain, tx).await?;
+        Ok((gas_limit, v3_relay_data))
+    }
 }
 
 #[async_trait]
@@ -79,8 +114,18 @@ impl GemSwapProvider for Across {
         SwapProvider::Across
     }
 
-    fn supported_chains(&self) -> Vec<Chain> {
-        AcrossDeployment::deployed_chains()
+    fn supported_assets(&self) -> Vec<SwapChainAsset> {
+        // WETH for now
+        vec![
+            SwapChainAsset::Assets(Chain::Ethereum, vec![ETHEREUM_WETH.id.clone()]),
+            SwapChainAsset::Assets(Chain::Base, vec![BASE_WETH.id.clone()]),
+            SwapChainAsset::Assets(Chain::Blast, vec![BLAST_WETH.id.clone()]),
+            SwapChainAsset::Assets(Chain::Linea, vec![LINEA_WETH.id.clone()]),
+            SwapChainAsset::Assets(Chain::Optimism, vec![OPTIMISM_WETH.id.clone()]),
+            SwapChainAsset::Assets(Chain::Polygon, vec![POLYGON_WETH.id.clone()]),
+            SwapChainAsset::Assets(Chain::ZkSync, vec![ZKSYNC_WETH.id.clone()]),
+            SwapChainAsset::Assets(Chain::World, vec![WORLD_WETH.id.clone()]),
+        ]
     }
 
     async fn fetch_quote(&self, request: &SwapQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapQuote, SwapperError> {
@@ -91,6 +136,10 @@ impl GemSwapProvider for Across {
 
         let from_chain = EVMChain::from_chain(request.from_asset.chain).ok_or(SwapperError::NotSupportedChain)?;
         let from_amount: U256 = request.value.parse().map_err(|_| SwapperError::InvalidAmount)?;
+        let wallet_address = EthereumAddress::parse(&request.wallet_address).ok_or(SwapperError::InvalidAddress {
+            address: request.wallet_address.clone(),
+        })?;
+
         let deployment = AcrossDeployment::deployment_by_chain(&request.from_asset.chain).ok_or(SwapperError::NotSupportedChain)?;
         if !Self::is_supported_pair(&request.from_asset, &request.to_asset) {
             return Err(SwapperError::NotSupportedPair);
@@ -100,6 +149,8 @@ impl GemSwapProvider for Across {
         if is_paused {
             return Err(SwapperError::NoQuoteAvailable);
         }
+
+        // FIXME: Check from_amount too large or small
 
         let input_asset = weth_address::normalize_asset(&request.from_asset).unwrap();
         let output_asset = weth_address::normalize_asset(&request.to_asset).unwrap();
@@ -128,31 +179,69 @@ impl GemSwapProvider for Across {
         let rate_model = Self::get_rate_model(&request.from_asset, &request.to_asset, &token_config);
         let lpfee_calc = LpFeeCalculator::new(rate_model);
         let lpfee_percent = lpfee_calc.realized_lp_fee_pct(&util_before, &util_after, false);
+        let lpfee = fees::multiply(from_amount, lpfee_percent);
 
         let cost_config = &asset_mapping.capital_cost;
         let relayer_fee_percent = RelayerFeeCalculator::capital_fee_percent(BigInt::from_str(&request.value).expect("valid amount"), cost_config);
+        let relayer_fee = fees::multiply(from_amount, relayer_fee_percent);
 
-        // FIXME: calculate referrer fee
-        // FIXME: build message
+        // let referral_fee_bps = request.options.fee.clone().unwrap_or_default().evm.bps / 2;
+        // let referral_fee = from_amount * U256::from(referral_fee_bps) / U256::from(10000);
 
-        // FIXME: prepare fill tx to estimate gas limit
-        // FIXME: get gas price from destination chain
+        // FIXME: add referral fee and override relay data message
+        let referral_fee = U256::from(0);
 
-        let approval = ApprovalType::None;
+        let (gas_limit, mut v3_relay_data) = self
+            .estimate_gas_limit(
+                &from_amount,
+                request.from_asset.is_native(),
+                &input_asset,
+                &output_asset,
+                &wallet_address,
+                &deployment,
+                provider.clone(),
+                &request.from_asset.chain,
+            )
+            .await?;
+        let gas_price = eth_rpc::fetch_gas_price(provider.clone(), &request.from_asset.chain).await?;
+        let gas_fee = gas_limit * gas_price;
 
-        // FIXME: check Token approval
-        // FIXME: calculate gas fee amount in token amount
+        // Check output amount against slippage
+        let output_amount = from_amount - lpfee - relayer_fee - referral_fee - gas_fee;
+        let expect_min = apply_slippage_in_bp(&from_amount, request.options.slippage_bps);
+        if output_amount < expect_min {
+            return Err(SwapperError::NoQuoteAvailable);
+        }
+
+        let approval: ApprovalType = {
+            if request.from_asset.is_native() {
+                ApprovalType::None
+            } else {
+                check_approval_erc20(
+                    request.wallet_address.clone(),
+                    input_asset.token_id.clone().unwrap(),
+                    deployment.spoke_pool.into(),
+                    from_amount,
+                    provider.clone(),
+                    &request.from_asset.chain,
+                )
+                .await?
+            }
+        };
+
+        v3_relay_data.outputAmount = output_amount;
+        let route_data = HexEncode(v3_relay_data.abi_encode());
 
         Ok(SwapQuote {
             from_value: request.value.clone(),
-            to_value: request.value.clone(),
+            to_value: output_amount.to_string(),
             data: SwapProviderData {
                 provider: self.provider(),
                 suggested_slippage_bps: None,
                 routes: vec![SwapRoute {
                     input: input_asset.clone(),
                     output: output_asset.clone(),
-                    route_data: "".into(),
+                    route_data,
                     gas_estimate: None,
                 }],
             },
@@ -160,12 +249,39 @@ impl GemSwapProvider for Across {
             request: request.clone(),
         })
     }
-    async fn fetch_quote_data(&self, quote: &SwapQuote, provider: Arc<dyn AlienProvider>, data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError> {
-        Err(SwapperError::NotImplemented)
+    async fn fetch_quote_data(&self, quote: &SwapQuote, _provider: Arc<dyn AlienProvider>, _data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError> {
+        let dst_chain_id: u32 = quote.request.to_asset.chain.network_id().parse().unwrap();
+        let route = &quote.data.routes[0];
+        let route_data = HexDecode(&route.route_data)?;
+        let v3_relay_data = V3RelayData::abi_decode(&route_data, true).map_err(|_| SwapperError::InvalidRoute)?;
+        let timestamp = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs_f32();
+
+        let deposit_v3_call = V3SpokePoolInterface::depositV3Call {
+            depositor: v3_relay_data.depositor,
+            recipient: v3_relay_data.recipient,
+            inputToken: v3_relay_data.inputToken,
+            outputToken: v3_relay_data.outputToken,
+            inputAmount: v3_relay_data.inputAmount,
+            outputAmount: v3_relay_data.outputAmount,
+            destinationChainId: U256::from(dst_chain_id),
+            exclusiveRelayer: Address::ZERO,
+            quoteTimestamp: timestamp as u32,
+            fillDeadline: v3_relay_data.exclusivityDeadline,
+            exclusivityDeadline: 0,
+            message: v3_relay_data.message,
+        }
+        .abi_encode();
+
+        let quote_data = SwapQuoteData {
+            to: quote.data.routes.first().unwrap().route_data.clone(),
+            value: quote.data.routes.first().unwrap().route_data.clone(),
+            data: HexEncode(deposit_v3_call),
+        };
+        Ok(quote_data)
     }
     async fn get_transaction_status(&self, chain: Chain, transaction_hash: &str, provider: Arc<dyn AlienProvider>) -> Result<bool, SwapperError> {
         let api = AcrossApi::new(provider.clone());
-        let status = api.deposit_status(chain.network_id(), transaction_hash).await?;
+        let status = api.deposit_status(&chain, transaction_hash).await?;
         Ok(status.is_filled())
     }
 }

@@ -1,7 +1,8 @@
 use crate::{
     network::{AlienProvider, AlienTarget},
-    swapper::SwapperError,
+    swapper::{eth_rpc, SwapperError},
 };
+use primitives::Chain;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
@@ -34,8 +35,15 @@ impl FillStatus {
 }
 
 impl AcrossApi {
-    pub async fn deposit_status(&self, chain_id: &str, deposit_id: &str) -> Result<FillStatus, SwapperError> {
-        let url = format!("{}/deposit/status?originChainId={}&depositId={}", self.url, chain_id, deposit_id);
+    pub async fn deposit_status(&self, chain: &Chain, tx_hash: &str) -> Result<FillStatus, SwapperError> {
+        let receipt = eth_rpc::fetch_tx_receipt(self.provider.clone(), chain, tx_hash).await?;
+        if receipt.logs.len() < 2 || receipt.logs[1].topics.len() < 4 {
+            return Err(SwapperError::NetworkError {
+                msg: "invalid tx receipt".into(),
+            });
+        }
+        let deposit_id = receipt.logs[1].topics[3].clone();
+        let url = format!("{}/deposit/status?originChainId={}&depositId={}", self.url, chain.network_id(), &deposit_id);
         let target = AlienTarget::get(&url);
         let response = self.provider.request(target).await?;
         let status: FillStatus = serde_json::from_slice(&response).map_err(|e| SwapperError::NetworkError { msg: e.to_string() })?;

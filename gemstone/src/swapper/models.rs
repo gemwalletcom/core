@@ -1,6 +1,7 @@
 use super::permit2_data::Permit2Data;
 use crate::config::swap_config::SwapReferralFees;
 use crate::network::{jsonrpc::JsonRpcError, AlienError};
+use gem_evm::address::AddressError;
 use primitives::{AssetId, Chain};
 use std::fmt::Debug;
 
@@ -42,6 +43,12 @@ impl From<AlienError> for SwapperError {
 impl From<JsonRpcError> for SwapperError {
     fn from(err: JsonRpcError) -> Self {
         Self::NetworkError { msg: err.to_string() }
+    }
+}
+
+impl From<AddressError> for SwapperError {
+    fn from(err: AddressError) -> Self {
+        Self::InvalidAddress { address: err.to_string() }
     }
 }
 

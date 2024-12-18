@@ -2,7 +2,7 @@ mod pancakeswap_router;
 mod uniswap_router;
 
 use crate::{
-    network::{jsonrpc::batch_jsonrpc_call, AlienProvider, JsonRpcRequest, JsonRpcRequestConvert, JsonRpcResponse, JsonRpcResult},
+    network::{jsonrpc::batch_jsonrpc_call, AlienProvider, JsonRpcResponse, JsonRpcResult},
     swapper::{
         approval::{check_approval, CheckApprovalType},
         models::*,
@@ -31,7 +31,6 @@ use alloy_core::{
     sol_types::SolCall,
 };
 use async_trait::async_trait;
-use serde_json::Value;
 use std::{
     fmt::Debug,
     str::FromStr,
@@ -42,24 +41,6 @@ use std::{
 use super::weth_address;
 
 static DEFAULT_DEADLINE: u64 = 3600;
-
-impl JsonRpcRequestConvert for EthereumRpc {
-    fn to_req(&self, id: u64) -> JsonRpcRequest {
-        let method = self.method_name();
-        let params: Vec<Value> = match self {
-            EthereumRpc::GasPrice => vec![],
-            EthereumRpc::GetBalance(address) => {
-                vec![Value::String(address.to_string())]
-            }
-            EthereumRpc::Call(tx, block) => {
-                let value = serde_json::to_value(tx).unwrap();
-                vec![value, block.into()]
-            }
-        };
-
-        JsonRpcRequest::new(id, method, params)
-    }
-}
 
 pub trait UniversalRouterProvider: Send + Sync + Debug {
     fn provider(&self) -> SwapProvider;
