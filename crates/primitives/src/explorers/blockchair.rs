@@ -183,6 +183,14 @@ impl Blockchair {
             },
         })
     }
+    pub fn new_stellar() -> Box<Self> {
+        Box::new(Self {
+            meta: Metadata {
+                name: BLOCKCHAIR_NAME,
+                base_url: blockchair_url!("stellar"),
+            },
+        })
+    }
 }
 
 impl BlockExplorer for Blockchair {

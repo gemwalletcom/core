@@ -3,7 +3,8 @@ use std::sync::Arc;
 mod client;
 mod model;
 use super::{
-    ApprovalType, FetchQuoteData, GemSwapProvider, SwapProvider, SwapProviderData, SwapQuote, SwapQuoteData, SwapQuoteRequest, SwapRoute, SwapperError,
+    ApprovalType, FetchQuoteData, GemSwapProvider, SwapChainAsset, SwapProvider, SwapProviderData, SwapQuote, SwapQuoteData, SwapQuoteRequest, SwapRoute,
+    SwapperError,
 };
 
 use crate::network::AlienProvider;
@@ -47,8 +48,8 @@ impl GemSwapProvider for PancakeSwapAptos {
         SwapProvider::PancakeSwapAptosV2
     }
 
-    fn supported_chains(&self) -> Vec<Chain> {
-        vec![Chain::Aptos]
+    fn supported_assets(&self) -> Vec<SwapChainAsset> {
+        vec![SwapChainAsset::All(Chain::Aptos)]
     }
 
     async fn fetch_quote(&self, request: &SwapQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapQuote, SwapperError> {

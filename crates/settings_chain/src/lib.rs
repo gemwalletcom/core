@@ -1,7 +1,8 @@
 use core::str;
 
 use gem_chain_rpc::{
-    AptosClient, BitcoinClient, ChainProvider, CosmosClient, EthereumClient, NearClient, SolanaClient, SuiClient, TonClient, TronClient, XRPClient,
+    AptosClient, BitcoinClient, ChainProvider, CosmosClient, EthereumClient, MockChainBlockClient, NearClient, SolanaClient, SuiClient, TonClient, TronClient,
+    XRPClient,
 };
 use primitives::{Asset, Chain};
 use reqwest_middleware::ClientBuilder;
@@ -57,6 +58,7 @@ impl ProviderFactory {
             Chain::Sui => Box::new(SuiClient::new(url)),
             Chain::Xrp => Box::new(XRPClient::new(client, url)),
             Chain::Near => Box::new(NearClient::new(url)),
+            Chain::Stellar => Box::new(MockChainBlockClient::new(chain)),
         }
     }
 
@@ -96,6 +98,7 @@ impl ProviderFactory {
             Chain::Celo => settings.chains.celo.url.as_str(),
             Chain::Near => settings.chains.near.url.as_str(),
             Chain::World => settings.chains.world.url.as_str(),
+            Chain::Stellar => settings.chains.stellar.url.as_str(),
         }
     }
 }

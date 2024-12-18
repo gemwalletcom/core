@@ -139,6 +139,9 @@ chains:
     url: ""
   world:
     url: https://worldchain-mainnet.gateway.tenderly.co
+  stellar:
+    url: https://horizon.stellar.org
+  
 swap:
   jupiter:
     url: "https://quote-api.jup.ag"

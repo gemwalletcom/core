@@ -9,6 +9,7 @@ mod permit2_data;
 mod weth_address;
 
 pub mod across;
+pub mod asset;
 pub mod jupiter;
 pub mod models;
 pub mod orca;
@@ -18,16 +19,28 @@ pub mod thorchain;
 pub mod universal_router;
 
 pub use models::*;
-use primitives::Chain;
+use primitives::{AssetId, Chain};
 use std::collections::HashSet;
 
 #[async_trait]
 pub trait GemSwapProvider: Send + Sync + Debug {
     fn provider(&self) -> SwapProvider;
-    fn supported_chains(&self) -> Vec<Chain>;
+    fn supported_assets(&self) -> Vec<SwapChainAsset>;
     async fn fetch_quote(&self, request: &SwapQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapQuote, SwapperError>;
     async fn fetch_quote_data(&self, quote: &SwapQuote, provider: Arc<dyn AlienProvider>, data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError>;
     async fn get_transaction_status(&self, chain: Chain, transaction_hash: &str, provider: Arc<dyn AlienProvider>) -> Result<bool, SwapperError>;
+}
+
+impl dyn GemSwapProvider {
+    fn supported_chains(&self) -> Vec<Chain> {
+        self.supported_assets()
+            .into_iter()
+            .map(|x| match x.clone() {
+                SwapChainAsset::All(chain) => chain,
+                SwapChainAsset::Assets(chain, _) => chain,
+            })
+            .collect()
+    }
 }
 
 #[derive(Debug, uniffi::Object)]
@@ -48,6 +61,13 @@ impl GemSwapper {
 
     fn filter_by_supported_chains(supported_chains: Vec<Chain>, from_chain: &Chain, to_chain: &Chain) -> bool {
         supported_chains.contains(from_chain) && supported_chains.contains(to_chain)
+    }
+
+    fn filter_supported_assets(supported_assets: Vec<SwapChainAsset>, asset_id: AssetId) -> bool {
+        supported_assets.into_iter().any(|x| match x {
+            SwapChainAsset::All(_) => false,
+            SwapChainAsset::Assets(chain, assets) => chain == asset_id.chain || assets.contains(&asset_id),
+        })
     }
 }
 
@@ -75,6 +95,25 @@ impl GemSwapper {
             .collect::<HashSet<_>>()
             .into_iter()
             .collect()
+    }
+
+    fn supported_chains_for_from_asset(&self, asset_id: AssetId) -> SwapAssetList {
+        let chains: Vec<Chain> = vec![asset_id.chain];
+        let mut asset_ids: Vec<AssetId> = Vec::new();
+
+        for provider in &self.swappers {
+            if !Self::filter_supported_assets(provider.supported_assets(), asset_id.clone()) {
+                continue;
+            }
+            provider.supported_assets().into_iter().for_each(|x| match x {
+                SwapChainAsset::All(_) => {}
+                SwapChainAsset::Assets(chain, assets) => {
+                    asset_ids.push(chain.as_asset_id());
+                    asset_ids.extend(assets);
+                }
+            });
+        }
+        SwapAssetList { chains, asset_ids }
     }
 
     fn get_providers(&self) -> Vec<SwapProvider> {
@@ -136,8 +175,11 @@ impl GemSwapper {
 
 #[cfg(test)]
 mod tests {
+
+    use asset::ETHEREUM_USDT_TOKEN_ID;
+
     use super::*;
-    use std::collections::BTreeSet;
+    use std::{collections::BTreeSet, vec};
 
     #[test]
     fn test_filter_by_provider_type() {
@@ -216,5 +258,21 @@ mod tests {
 
         assert_eq!(filtered.len(), 1);
         assert_eq!(filtered[0].provider(), SwapProvider::Thorchain);
+    }
+
+    #[test]
+    fn test_filter_supported_assets() {
+        let asset_id = AssetId::from_chain(Chain::Ethereum);
+        let asset_id_usdt = AssetId::from_token(Chain::Ethereum, ETHEREUM_USDT_TOKEN_ID);
+        let supported_assets = vec![
+            SwapChainAsset::All(Chain::Ethereum),
+            SwapChainAsset::Assets(
+                Chain::Ethereum,
+                vec![AssetId::from_token(Chain::Ethereum, &asset_id_usdt.clone().token_id.unwrap())],
+            ),
+        ];
+
+        assert!(GemSwapper::filter_supported_assets(supported_assets.clone(), asset_id_usdt.clone()));
+        assert!(GemSwapper::filter_supported_assets(supported_assets, asset_id));
     }
 }

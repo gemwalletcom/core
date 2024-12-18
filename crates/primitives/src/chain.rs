@@ -46,6 +46,7 @@ pub enum Chain {
     Celo,
     Near,
     World,
+    Stellar,
 }
 
 impl fmt::Display for Chain {
@@ -110,6 +111,7 @@ impl Chain {
             Self::Sui => "35834a8a", // https://docs.sui.io/sui-api-ref#sui_getchainidentifier
             Self::Aptos => "1",
             Self::Tron | Self::Xrp => "",
+            Self::Stellar => "Public Global Stellar Network ; September 2015",
         }
     }
 
@@ -154,6 +156,7 @@ impl Chain {
             Self::Sui => 784,
             Self::Xrp => 144,
             Self::Near => 397,
+            Self::Stellar => 148,
         }
     }
 
@@ -185,6 +188,7 @@ impl Chain {
             Self::Sui => ChainType::Sui,
             Self::Xrp => ChainType::Xrp,
             Self::Near => ChainType::Near,
+            Self::Stellar => ChainType::Stellar,
         }
     }
 
@@ -221,13 +225,15 @@ impl Chain {
             | Self::Injective
             | Self::Noble
             | Self::Sei
-            | Self::Near => None,
+            | Self::Near
+            | Self::Stellar => None,
         }
     }
 
     pub fn account_activation_fee(&self) -> Option<i32> {
         match self {
             Self::Xrp => Some(1_000_000), // https://xrpl.org/docs/concepts/accounts/reserves#base-reserve-and-owner-reserve
+            Self::Stellar => Some(10_000_000),
             _ => None,
         }
     }
@@ -258,7 +264,17 @@ impl Chain {
             | Self::AvalancheC
             | Self::Doge
             | Self::Aptos => true,
-            Self::Osmosis | Self::Celestia | Self::Injective | Self::Ton | Self::Tron | Self::Sui | Self::Xrp | Self::Sei | Self::Noble | Self::Near => false,
+            Self::Osmosis
+            | Self::Celestia
+            | Self::Injective
+            | Self::Ton
+            | Self::Tron
+            | Self::Sui
+            | Self::Xrp
+            | Self::Sei
+            | Self::Noble
+            | Self::Near
+            | Self::Stellar => false,
         }
     }
 
@@ -301,6 +317,7 @@ impl Chain {
             Self::Mantle => 1_000,
             Self::Celo => 1_000,
             Self::Near => 1_000,
+            Self::Stellar => 6_000,
         }
     }
 
@@ -330,7 +347,8 @@ impl Chain {
             | Self::Mantle
             | Self::Celo
             | Self::Near
-            | Self::World => 30,
+            | Self::World
+            | Self::Stellar => 30,
             Self::Noble => 20,
         }
     }

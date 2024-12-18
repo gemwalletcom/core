@@ -53,6 +53,13 @@ impl AssetId {
         AssetId { chain, token_id }
     }
 
+    pub fn from_token(chain: Chain, token_id: &str) -> AssetId {
+        AssetId {
+            chain,
+            token_id: Some(token_id.to_string()),
+        }
+    }
+
     pub fn from_chain(chain: Chain) -> AssetId {
         AssetId { chain, token_id: None }
     }

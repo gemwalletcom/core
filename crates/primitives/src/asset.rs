@@ -263,6 +263,13 @@ impl Asset {
                 decimals: 18,
                 asset_type: AssetType::NATIVE,
             },
+            Chain::Stellar => Asset {
+                id: chain.as_asset_id(),
+                name: "Stellar".to_string(),
+                symbol: "XLM".to_string(),
+                decimals: 7,
+                asset_type: AssetType::NATIVE,
+            },
         }
     }
 }

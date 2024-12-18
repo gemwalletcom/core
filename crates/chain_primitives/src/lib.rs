@@ -40,6 +40,7 @@ pub fn format_token_id(chain: Chain, token_id: String) -> Option<String> {
         | Chain::Injective
         | Chain::Noble
         | Chain::Sei
-        | Chain::Near => None,
+        | Chain::Near
+        | Chain::Stellar => None,
     }
 }
