@@ -16,4 +16,5 @@ pub enum ChainType {
     Sui,
     Xrp,
     Near,
+    Stellar,
 }

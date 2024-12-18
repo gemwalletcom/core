@@ -205,6 +205,7 @@ pub struct Chains {
     pub celo: Chain,
     pub near: Chain,
     pub world: Chain,
+    pub stellar: Chain,
 }
 
 #[derive(Debug, Deserialize, Clone)]

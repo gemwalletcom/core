@@ -76,5 +76,6 @@ pub fn get_block_explorers(chain: Chain) -> Vec<Box<dyn BlockExplorer>> {
         Chain::Aptos => vec![AptosExplorer::new(), AptosScan::new(), Blockchair::new_aptos()],
         Chain::Sui => vec![SuiScan::new(), SuiVision::new()],
         Chain::Near => vec![NearBlocks::new()],
+        Chain::Stellar => vec![Blockchair::new_stellar()],
     }
 }
