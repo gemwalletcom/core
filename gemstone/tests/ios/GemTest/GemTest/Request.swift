@@ -73,4 +73,14 @@ public extension SwapQuoteRequest {
         mode: .exactIn,
         options: SWAP_OPTIONS
     )
+
+    static let opToArb = SwapQuoteRequest(
+        fromAsset: "optimism_0x4200000000000000000000000000000000000006",
+        toAsset: "ethereum_0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+        walletAddress: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7",
+        destinationAddress: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7",
+        value: "100000000000000000", // 0.1 weth
+        mode: .exactIn,
+        options: SWAP_OPTIONS
+    )
 }

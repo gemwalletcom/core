@@ -10,6 +10,26 @@ pub struct AlienTarget {
     pub body: Option<Vec<u8>>,
 }
 
+impl AlienTarget {
+    pub fn get(url: &str) -> Self {
+        Self {
+            url: url.into(),
+            method: AlienHttpMethod::Get,
+            headers: None,
+            body: None,
+        }
+    }
+
+    pub fn post_json(url: &str, body: serde_json::Value) -> Self {
+        Self {
+            url: url.into(),
+            method: AlienHttpMethod::Post,
+            headers: None,
+            body: Some(serde_json::to_vec(&body).unwrap()),
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, uniffi::Enum)]
 pub enum AlienHttpMethod {
     Get,

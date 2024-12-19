@@ -1,3 +1,4 @@
+use gem_evm::constants::*;
 use lazy_static::lazy_static;
 use primitives::{Asset, AssetId, AssetType, Chain};
 
@@ -7,6 +8,8 @@ const USDC_NAME: &str = "USDC";
 const USDC_SYMBOL: &str = "USDC";
 const WBTC_SYMBOL: &str = "WBTC";
 const DAI_SYMBOL: &str = "DAI";
+const WETH_NAME: &str = "Wrapped Ether";
+const WETH_SYMBOL: &str = "WETH";
 
 pub const ETHEREUM_USDC_TOKEN_ID: &str = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
 pub const ETHEREUM_USDT_TOKEN_ID: &str = "0xdAC17F958D2ee523a2206206994597C13D831ec7";
@@ -44,6 +47,77 @@ lazy_static! {
         id: AssetId::from_token(Chain::Ethereum, ETHEREUM_DAI_TOKEN_ID),
         name: DAI_SYMBOL.to_owned(),
         symbol: DAI_SYMBOL.to_owned(),
+        decimals: 18,
+        asset_type: AssetType::ERC20,
+    };
+    pub static ref ETHEREUM_WETH: Asset = Asset {
+        id: WETH_ETH.into(),
+        name: WETH_NAME.into(),
+        symbol: WETH_SYMBOL.into(),
+        decimals: 18,
+        asset_type: AssetType::ERC20,
+    };
+    // arbitrum
+    pub static ref ARBITRUM_WETH: Asset = Asset {
+        id: WETH_ARB.into(),
+        name: WETH_NAME.into(),
+        symbol: WETH_SYMBOL.into(),
+        decimals: 18,
+        asset_type: AssetType::ERC20,
+    };
+    // base
+    pub static ref BASE_WETH: Asset = Asset {
+        id: WETH_BASE.into(),
+        name: WETH_NAME.into(),
+        symbol: WETH_SYMBOL.into(),
+        decimals: 18,
+        asset_type: AssetType::ERC20,
+    };
+    // blast
+    pub static ref BLAST_WETH: Asset = Asset {
+        id: WETH_BLAST.into(),
+        name: WETH_NAME.into(),
+        symbol: WETH_SYMBOL.into(),
+        decimals: 18,
+        asset_type: AssetType::ERC20,
+    };
+    // linea
+    pub static ref LINEA_WETH: Asset = Asset {
+        id: WETH_LINEA.into(),
+        name: WETH_NAME.into(),
+        symbol: WETH_SYMBOL.into(),
+        decimals: 18,
+        asset_type: AssetType::ERC20,
+    };
+    // optimism
+    pub static ref OPTIMISM_WETH: Asset = Asset {
+        id: WETH_OP.into(),
+        name: WETH_NAME.into(),
+        symbol: WETH_SYMBOL.into(),
+        decimals: 18,
+        asset_type: AssetType::ERC20,
+    };
+    // polygon
+    pub static ref POLYGON_WETH: Asset = Asset {
+        id: WETH_POLYGON.into(),
+        name: WETH_NAME.into(),
+        symbol: WETH_SYMBOL.into(),
+        decimals: 18,
+        asset_type: AssetType::ERC20,
+    };
+    // zksync
+    pub static ref ZKSYNC_WETH: Asset = Asset {
+        id: WETH_ZKSYNC.into(),
+        name: WETH_NAME.into(),
+        symbol: WETH_SYMBOL.into(),
+        decimals: 18,
+        asset_type: AssetType::ERC20,
+    };
+    // world
+    pub static ref WORLD_WETH: Asset = Asset {
+        id: WETH_WORLD.into(),
+        name: WETH_NAME.into(),
+        symbol: WETH_SYMBOL.into(),
         decimals: 18,
         asset_type: AssetType::ERC20,
     };
