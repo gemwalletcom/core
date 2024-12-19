@@ -207,6 +207,7 @@ pub struct Chains {
     pub world: Chain,
     pub stellar: Chain,
     pub sonic: Chain,
+    pub algorand: Chain,
 }
 
 #[derive(Debug, Deserialize, Clone)]

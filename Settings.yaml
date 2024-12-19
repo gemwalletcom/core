@@ -143,6 +143,8 @@ chains:
     url: https://horizon.stellar.org
   sonic:
     url: https://rpc.soniclabs.com
+  algorand:
+    url: https://mainnet-api.algonode.cloud
   
 swap:
   jupiter:

@@ -48,6 +48,7 @@ pub enum Chain {
     World,
     Stellar,
     Sonic,
+    Algorand,
 }
 
 impl fmt::Display for Chain {
@@ -114,6 +115,7 @@ impl Chain {
             Self::Tron | Self::Xrp => "",
             Self::Stellar => "Public Global Stellar Network ; September 2015",
             Self::Sonic => "146",
+            Self::Algorand => "mainnet-v1.0",
         }
     }
 
@@ -160,6 +162,7 @@ impl Chain {
             Self::Xrp => 144,
             Self::Near => 397,
             Self::Stellar => 148,
+            Self::Algorand => 283,
         }
     }
 
@@ -193,6 +196,7 @@ impl Chain {
             Self::Xrp => ChainType::Xrp,
             Self::Near => ChainType::Near,
             Self::Stellar => ChainType::Stellar,
+            Self::Algorand => ChainType::Algorand,
         }
     }
 
@@ -231,7 +235,8 @@ impl Chain {
             | Self::Noble
             | Self::Sei
             | Self::Near
-            | Self::Stellar => None,
+            | Self::Stellar
+            | Self::Algorand => None,
         }
     }
 
@@ -239,6 +244,7 @@ impl Chain {
         match self {
             Self::Xrp => Some(1_000_000), // https://xrpl.org/docs/concepts/accounts/reserves#base-reserve-and-owner-reserve
             Self::Stellar => Some(10_000_000),
+            Self::Algorand => Some(100_000),
             _ => None,
         }
     }
@@ -280,7 +286,8 @@ impl Chain {
             | Self::Sei
             | Self::Noble
             | Self::Near
-            | Self::Stellar => false,
+            | Self::Stellar
+            | Self::Algorand => false,
         }
     }
 
@@ -325,6 +332,7 @@ impl Chain {
             Self::Near => 1_000,
             Self::Stellar => 6_000,
             Self::Sonic => 1_000,
+            Self::Algorand => 4_000,
         }
     }
 
@@ -356,7 +364,8 @@ impl Chain {
             | Self::Near
             | Self::World
             | Self::Stellar
-            | Self::Sonic => 30,
+            | Self::Sonic
+            | Self::Algorand => 30,
             Self::Noble => 20,
         }
     }

@@ -18,4 +18,5 @@ pub enum ChainType {
     Xrp,
     Near,
     Stellar,
+    Algorand,
 }

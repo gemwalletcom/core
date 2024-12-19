@@ -143,5 +143,6 @@ pub fn get_nodes_for_chain(chain: Chain) -> Vec<Node> {
         Chain::World => vec![Node::new("https://worldchain-mainnet.gateway.tenderly.co", NodePriority::High)],
         Chain::Stellar => vec![Node::new("https://horizon.stellar.org", NodePriority::High)],
         Chain::Sonic => vec![Node::new("https://rpc.soniclabs.com", NodePriority::High)],
+        Chain::Algorand => vec![Node::new("https://mainnet-api.algonode.cloud", NodePriority::High)],
     }
 }

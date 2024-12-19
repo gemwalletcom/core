@@ -277,6 +277,13 @@ impl Asset {
                 decimals: 18,
                 asset_type: AssetType::NATIVE,
             },
+            Chain::Algorand => Asset {
+                id: chain.as_asset_id(),
+                name: "Algorand".to_string(),
+                symbol: "ALGO".to_string(),
+                decimals: 6,
+                asset_type: AssetType::NATIVE,
+            },
         }
     }
 }
