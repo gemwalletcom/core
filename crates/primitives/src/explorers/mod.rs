@@ -32,3 +32,5 @@ pub mod tonscan;
 pub use tonscan::TonScan;
 mod blocksec;
 pub use blocksec::Blocksec;
+mod algorand;
+pub use algorand::AlgorandAllo;

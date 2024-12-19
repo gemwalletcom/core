@@ -13,6 +13,8 @@ pub enum WallletConnectCAIP2 {
     Solana,
     #[serde(rename = "cosmos")]
     Cosmos,
+    #[serde(rename = "algorand")]
+    Algorand,
 }
 
 #[allow(dead_code)]

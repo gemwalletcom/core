@@ -19,7 +19,8 @@ pub fn format_token_id(chain: Chain, token_id: String) -> Option<String> {
         | Chain::Linea
         | Chain::Mantle
         | Chain::Celo
-        | Chain::World => Some(EthereumAddress::parse(&token_id)?.to_checksum()),
+        | Chain::World
+        | Chain::Sonic => Some(EthereumAddress::parse(&token_id)?.to_checksum()),
         Chain::Solana | Chain::Sui | Chain::Ton => Some(token_id),
         Chain::Tron => {
             if token_id.len() == 34 && token_id.starts_with('T') {
@@ -41,6 +42,7 @@ pub fn format_token_id(chain: Chain, token_id: String) -> Option<String> {
         | Chain::Noble
         | Chain::Sei
         | Chain::Near
-        | Chain::Stellar => None,
+        | Chain::Stellar
+        | Chain::Algorand => None,
     }
 }

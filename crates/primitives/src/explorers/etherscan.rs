@@ -110,6 +110,12 @@ impl EtherScan {
                     base_url: "https://worldscan.org",
                 },
             },
+            EVMChain::Sonic => Self {
+                meta: Metadata {
+                    name: "SonicScan",
+                    base_url: "https://sonicscan.org/",
+                },
+            },
         })
     }
 }

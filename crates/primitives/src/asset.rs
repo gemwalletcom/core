@@ -270,6 +270,20 @@ impl Asset {
                 decimals: 7,
                 asset_type: AssetType::NATIVE,
             },
+            Chain::Sonic => Asset {
+                id: chain.as_asset_id(),
+                name: "Sonic".to_string(),
+                symbol: "S".to_string(),
+                decimals: 18,
+                asset_type: AssetType::NATIVE,
+            },
+            Chain::Algorand => Asset {
+                id: chain.as_asset_id(),
+                name: "Algorand".to_string(),
+                symbol: "ALGO".to_string(),
+                decimals: 6,
+                asset_type: AssetType::NATIVE,
+            },
         }
     }
 }
