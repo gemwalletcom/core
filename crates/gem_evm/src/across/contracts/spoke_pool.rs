@@ -36,6 +36,8 @@ sol! {
             bytes message;
         }
 
+        function getCurrentTime() public view virtual returns (uint256);
+
         function depositV3(
             address depositor,
             address recipient,

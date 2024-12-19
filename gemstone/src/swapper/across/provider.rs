@@ -60,15 +60,6 @@ impl Across {
         rate_model.clone().into()
     }
 
-    pub async fn is_paused(&self, provider: Arc<dyn AlienProvider>) -> Result<bool, SwapperError> {
-        let hub_client = HubPoolClient {
-            contract: ACROSS_HUBPOOL.into(),
-            provider: provider.clone(),
-            chain: Chain::Ethereum,
-        };
-        hub_client.is_paused().await
-    }
-
     pub async fn estimate_gas_limit(
         &self,
         amount: &U256,
@@ -145,36 +136,55 @@ impl GemSwapProvider for Across {
             return Err(SwapperError::NotSupportedPair);
         }
 
-        let is_paused = self.is_paused(provider.clone()).await?;
-        if is_paused {
-            return Err(SwapperError::NoQuoteAvailable);
-        }
-
-        // FIXME: Check from_amount too large or small
-
         let input_asset = weth_address::normalize_asset(&request.from_asset).unwrap();
         let output_asset = weth_address::normalize_asset(&request.to_asset).unwrap();
 
+        // Get L1 token address
         let mappings = AcrossDeployment::asset_mappings();
         let asset_mapping = mappings.iter().find(|x| x.set.contains(&input_asset)).unwrap();
         let asset_mainnet = asset_mapping.set.iter().find(|x| x.chain == Chain::Ethereum).unwrap();
         let mainnet_token = weth_address::parse_into_address(asset_mainnet, from_chain)?;
 
-        let config_client = ConfigStoreClient {
-            contract: ACROSS_CONFIG_STORE.into(),
-            provider: provider.clone(),
-            chain: Chain::Ethereum,
-        };
         let hubpool_client = HubPoolClient {
             contract: ACROSS_HUBPOOL.into(),
             provider: provider.clone(),
             chain: Chain::Ethereum,
         };
+        let config_client = ConfigStoreClient {
+            contract: ACROSS_CONFIG_STORE.into(),
+            provider: provider.clone(),
+            chain: Chain::Ethereum,
+        };
 
-        // FIXME: batch call
-        let token_config = config_client.fetch_config(&mainnet_token).await?;
-        let util_before = hubpool_client.fetch_utilization(&mainnet_token, U256::from(0)).await?;
-        let util_after = hubpool_client.fetch_utilization(&mainnet_token, from_amount).await?;
+        let calls = vec![
+            hubpool_client.paused_call3(),
+            hubpool_client.sync_call3(&mainnet_token),
+            hubpool_client.pooled_token_call3(&mainnet_token),
+        ];
+        let results = eth_rpc::multicall3_call(provider.clone(), &request.from_asset.chain, calls).await?;
+
+        // Check if protocol is paused
+        let is_paused = hubpool_client.decoded_paused_call3(&results[0])?;
+        if is_paused {
+            return Err(SwapperError::NoQuoteAvailable);
+        }
+
+        // Check bridge amount is too large (Across API has some limit in USD amount but we don't have that info)
+        if from_amount > hubpool_client.decoded_pooled_token_call3(&results[2])?.liquidReserves {
+            return Err(SwapperError::ComputeQuoteError {
+                msg: "Bridge amount is too large".into(),
+            });
+        }
+
+        let calls = vec![
+            config_client.config_call3(&mainnet_token),
+            hubpool_client.utilization_call3(&mainnet_token, U256::from(0)),
+            hubpool_client.utilization_call3(&mainnet_token, from_amount),
+        ];
+        let results = eth_rpc::multicall3_call(provider.clone(), &request.from_asset.chain, calls).await?;
+        let token_config = config_client.decoded_config_call3(&results[0])?;
+        let util_before = hubpool_client.decoded_utilization_call3(&results[1])?;
+        let util_after = hubpool_client.decoded_utilization_call3(&results[2])?;
 
         let rate_model = Self::get_rate_model(&request.from_asset, &request.to_asset, &token_config);
         let lpfee_calc = LpFeeCalculator::new(rate_model);
@@ -206,11 +216,20 @@ impl GemSwapProvider for Across {
         let gas_price = eth_rpc::fetch_gas_price(provider.clone(), &request.from_asset.chain).await?;
         let gas_fee = gas_limit * gas_price;
 
+        let remain_amount = from_amount - lpfee - relayer_fee - referral_fee;
+        if remain_amount < gas_fee {
+            return Err(SwapperError::ComputeQuoteError {
+                msg: "Bridge amount is too small".into(),
+            });
+        }
+
         // Check output amount against slippage
         let output_amount = from_amount - lpfee - relayer_fee - referral_fee - gas_fee;
         let expect_min = apply_slippage_in_bp(&from_amount, request.options.slippage_bps);
         if output_amount < expect_min {
-            return Err(SwapperError::NoQuoteAvailable);
+            return Err(SwapperError::ComputeQuoteError {
+                msg: "Expected amount exceeds slippage".into(),
+            });
         }
 
         let approval: ApprovalType = {

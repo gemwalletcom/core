@@ -1,8 +1,12 @@
 use super::SwapperError;
 use crate::network::{jsonrpc_call, AlienProvider, JsonRpcRequest, JsonRpcRequestConvert, JsonRpcResult};
-use gem_evm::jsonrpc::{BlockParameter, EthereumRpc, TransactionObject};
-use primitives::Chain;
+use gem_evm::{
+    jsonrpc::{BlockParameter, EthereumRpc, TransactionObject},
+    {multicall3, multicall3::IMulticall3},
+};
+use primitives::{Chain, EVMChain};
 
+use alloy_core::{hex::decode as HexDecode, sol_types::SolCall};
 use alloy_primitives::U256;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -65,4 +69,25 @@ pub async fn fetch_tx_receipt(provider: Arc<dyn AlienProvider>, chain: &Chain, t
     let call = EthereumRpc::GetTransactionReceipt(tx_hash.into());
     let resp: JsonRpcResult<TxReceipt> = jsonrpc_call(&call, provider.clone(), chain).await?;
     Ok(resp.take()?)
+}
+
+pub async fn multicall3_call(
+    provider: Arc<dyn AlienProvider>,
+    chain: &Chain,
+    calls: Vec<IMulticall3::Call3>,
+) -> Result<Vec<IMulticall3::Result>, SwapperError> {
+    let evm_chain = EVMChain::from_chain(*chain).ok_or(SwapperError::NotSupportedChain)?;
+    let multicall_address = multicall3::deployment_by_chain(&evm_chain);
+    let data = IMulticall3::aggregate3Call { calls }.abi_encode();
+    let call = EthereumRpc::Call(TransactionObject::new_call(multicall_address, data), BlockParameter::Latest);
+
+    let response: JsonRpcResult<String> = jsonrpc_call(&call, provider.clone(), chain).await?;
+    let result = response.take()?;
+    let hex_data = HexDecode(result).map_err(|e| SwapperError::NetworkError { msg: e.to_string() })?;
+
+    let decoded = IMulticall3::aggregate3Call::abi_decode_returns(&hex_data, true)
+        .map_err(|e| SwapperError::ABIError { msg: e.to_string() })?
+        .returnData;
+
+    Ok(decoded)
 }

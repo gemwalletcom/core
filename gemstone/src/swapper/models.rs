@@ -17,7 +17,7 @@ pub enum SwapperError {
     NotSupportedPair,
     #[error("Invalid address {address}")]
     InvalidAddress { address: String },
-    #[error("Invalid amount")]
+    #[error("Invalid input amount")]
     InvalidAmount,
     #[error("Invalid route")]
     InvalidRoute,

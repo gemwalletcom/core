@@ -3,7 +3,7 @@ mod tests {
     use across::Across;
     use async_trait::async_trait;
     use futures::TryFutureExt;
-    use gem_evm::constants::{WETH_ARB, WETH_OP};
+    use gem_evm::constants::{WETH_ETH, WETH_OP};
     use gemstone::{
         network::{provider::AlienProvider, target::*, *},
         swapper::{orca::Orca, *},
@@ -138,7 +138,7 @@ mod tests {
 
         let request = SwapQuoteRequest {
             from_asset: WETH_OP.into(),
-            to_asset: WETH_ARB.into(),
+            to_asset: WETH_ETH.into(),
             wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
             destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
             value: "100000000000000000".into(),
