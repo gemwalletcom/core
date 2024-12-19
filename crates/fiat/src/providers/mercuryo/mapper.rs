@@ -24,6 +24,7 @@ pub fn map_asset_chain(chain: String) -> Option<Chain> {
         "ZKSYNC" => Some(Chain::ZkSync),
         "INJECTIVE" => Some(Chain::Injective),
         "STELLAR" => Some(Chain::Stellar),
+        "ALGORAND" => Some(Chain::Algorand),
         _ => None,
     }
 }
