@@ -1,6 +1,14 @@
 #[typeshare(swift = "Sendable")]
 struct AlgorandAccount {
     amount: UInt64,
+    assets: Vec<AlgorandAccountAccount>,
+}
+
+#[typeshare(swift = "Sendable")]
+struct AlgorandAccountAccount {
+    amount: UInt64,
+    #[serde(rename = "asset-id")]
+    asset_id: i32,
 }
 
 #[typeshare(swift = "Sendable")]
@@ -38,4 +46,17 @@ struct AlgorandTransactionBroadcastError {
 struct AlgorandTransactionStatus {
     #[serde(rename = "confirmed-round")]
     confirmed_round: i32,
+}
+
+#[typeshare(swift = "Sendable")]
+struct AlgorandAssetResponse {
+    params: AlgorandAsset,
+}
+
+#[typeshare(swift = "Sendable")]
+struct AlgorandAsset {
+    decimals: i32,
+    name: String,
+    #[serde(rename = "unit-name")]
+    unit_name: String,
 }

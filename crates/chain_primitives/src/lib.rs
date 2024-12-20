@@ -29,7 +29,9 @@ pub fn format_token_id(chain: Chain, token_id: String) -> Option<String> {
                 None
             }
         }
+        Chain::Algorand => token_id.parse::<i32>().ok().map(|token_id| token_id.to_string()),
         Chain::Bitcoin
+        | Chain::BitcoinCash
         | Chain::Litecoin
         | Chain::Thorchain
         | Chain::Cosmos
@@ -42,7 +44,6 @@ pub fn format_token_id(chain: Chain, token_id: String) -> Option<String> {
         | Chain::Noble
         | Chain::Sei
         | Chain::Near
-        | Chain::Stellar
-        | Chain::Algorand => None,
+        | Chain::Stellar => None,
     }
 }

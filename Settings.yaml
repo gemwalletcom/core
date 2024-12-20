@@ -133,6 +133,8 @@ chains:
     url: "https://rpc.mainnet.near.org"
   bitcoin:
     url: ""
+  bitcoincash:
+    url: ""
   litecoin:
     url: ""
   doge:

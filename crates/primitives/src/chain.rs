@@ -13,6 +13,7 @@ use crate::{AssetId, AssetType, ChainType, StakeChain};
 #[strum(serialize_all = "lowercase")]
 pub enum Chain {
     Bitcoin,
+    BitcoinCash,
     Litecoin,
     Ethereum,
     SmartChain,
@@ -105,7 +106,7 @@ impl Chain {
             Self::Mantle => "5000",
             Self::Celo => "42220",
             Self::Near => "mainnet",
-            Self::Bitcoin => "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f",
+            Self::Bitcoin | Self::BitcoinCash => "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f",
             Self::Litecoin => "12a765e31ffd4059bada1e25190f6e98c99d9714d334efa41a195a7e7e04bfe2",
             Self::Doge => "1a91e3dace36e2be3bf030a65679fe821aa1d6ef92e7c9902eb318182c355691",
             Self::Solana => "5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d",
@@ -148,6 +149,7 @@ impl Chain {
             | Self::World
             | Self::Sonic => 60,
             Self::Bitcoin => 0,
+            Self::BitcoinCash => 145,
             Self::Litecoin => 2,
             Self::SmartChain => 9006,
             Self::Solana => 501,
@@ -186,7 +188,7 @@ impl Chain {
             | Self::Celo
             | Self::World
             | Self::Sonic => ChainType::Ethereum,
-            Self::Bitcoin | Self::Doge | Self::Litecoin => ChainType::Bitcoin,
+            Self::Bitcoin | Self::BitcoinCash | Self::Doge | Self::Litecoin => ChainType::Bitcoin,
             Self::Solana => ChainType::Solana,
             Self::Thorchain | Self::Cosmos | Self::Osmosis | Self::Celestia | Self::Injective | Self::Noble | Self::Sei => ChainType::Cosmos,
             Self::Ton => ChainType::Ton,
@@ -223,7 +225,9 @@ impl Chain {
             Self::Tron => Some(AssetType::TRC20),
             Self::Ton => Some(AssetType::JETTON),
             Self::Sui | Self::Aptos => Some(AssetType::TOKEN),
+            Self::Algorand => Some(AssetType::ASA),
             Self::Bitcoin
+            | Self::BitcoinCash
             | Self::Litecoin
             | Self::Thorchain
             | Self::Cosmos
@@ -235,8 +239,7 @@ impl Chain {
             | Self::Noble
             | Self::Sei
             | Self::Near
-            | Self::Stellar
-            | Self::Algorand => None,
+            | Self::Stellar => None,
         }
     }
 
@@ -253,6 +256,7 @@ impl Chain {
         match self {
             Self::Ethereum
             | Self::Bitcoin
+            | Self::BitcoinCash
             | Self::Litecoin
             | Self::SmartChain
             | Self::Cosmos
@@ -307,7 +311,7 @@ impl Chain {
             Self::Polygon => 3_000,
             Self::Base => 2_000,
             Self::Gnosis => 5_000,
-            Self::Bitcoin => 600_000,
+            Self::Bitcoin | Self::BitcoinCash => 600_000,
             Self::Litecoin => 120_000,
             Self::SmartChain => 3_000,
             Self::Solana => 500,
@@ -342,7 +346,7 @@ impl Chain {
             Self::Ethereum => 80,
             Self::Solana | Self::SmartChain => 70,
             Self::Osmosis | Self::Ton | Self::Tron => 50,
-            Self::Cosmos | Self::Injective | Self::Aptos | Self::Sui | Self::Xrp | Self::Celestia => 40,
+            Self::Cosmos | Self::Injective | Self::Aptos | Self::Sui | Self::Xrp | Self::Celestia | Self::BitcoinCash => 40,
             Self::Manta
             | Self::Fantom
             | Self::OpBNB

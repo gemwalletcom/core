@@ -61,7 +61,7 @@ pub fn fee_unit_type(chain: Chain) -> FeeUnitType {
 
 fn chain_transaction_timeout_seconds(chain: Chain) -> f64 {
     match chain {
-        Chain::Bitcoin => 28800_f64,
+        Chain::Bitcoin | Chain::BitcoinCash => 28800_f64,
         Chain::Litecoin | Chain::Doge => 7200_f64,
         Chain::Solana => 300_f64,
         Chain::Ethereum

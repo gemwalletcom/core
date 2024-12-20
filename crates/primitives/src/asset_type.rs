@@ -9,14 +9,15 @@ use typeshare::typeshare;
 #[strum(serialize_all = "UPPERCASE")]
 pub enum AssetType {
     NATIVE,
-    ERC20,
-    BEP20,
-    SPL,
-    TRC20,
-    TOKEN,
-    IBC,
-    JETTON,
-    SYNTH,
+    ERC20,  // EVM
+    BEP20,  // BNB
+    SPL,    // Solana
+    TRC20,  // Tron
+    TOKEN,  // Sui, Aptos
+    IBC,    // COSMOS
+    JETTON, // Ton
+    SYNTH,  // Thorchain
+    ASA,    // Algorand
 }
 
 impl AssetType {

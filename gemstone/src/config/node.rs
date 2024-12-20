@@ -34,7 +34,7 @@ pub fn get_nodes() -> HashMap<String, Vec<Node>> {
 
 pub fn get_nodes_for_chain(chain: Chain) -> Vec<Node> {
     match chain {
-        Chain::Bitcoin | Chain::Litecoin => vec![],
+        Chain::Bitcoin | Chain::Litecoin | Chain::BitcoinCash => vec![],
         Chain::Ethereum => vec![
             Node::new("https://ethereum.publicnode.com", NodePriority::High),
             Node::new("https://rpc.ankr.com/eth", NodePriority::High),

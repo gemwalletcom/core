@@ -37,7 +37,8 @@ pub fn get_namespace(chain: Chain) -> Option<String> {
         | Chain::Sui
         | Chain::Xrp
         | Chain::Near
-        | Chain::Stellar => None,
+        | Chain::Stellar
+        | Chain::BitcoinCash => None,
     }
 }
 
@@ -70,6 +71,6 @@ pub fn get_reference(chain: Chain) -> Option<String> {
             get_namespace(chain).map(|namespace| format!("{}:{}", namespace, chain.network_id()))
         }
         Chain::Algorand => Some("wGHE2Pwdvd7S12BL5FaOP20EGYesN73k".to_string()),
-        Chain::Ton | Chain::Tron | Chain::Aptos | Chain::Sui | Chain::Xrp | Chain::Near | Chain::Stellar => None,
+        Chain::Ton | Chain::Tron | Chain::Aptos | Chain::Sui | Chain::Xrp | Chain::Near | Chain::Stellar | Chain::BitcoinCash => None,
     }
 }
