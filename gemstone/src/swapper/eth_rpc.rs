@@ -1,12 +1,14 @@
 use super::SwapperError;
+use crate::debug_println;
 use crate::network::{jsonrpc_call, AlienProvider, JsonRpcRequest, JsonRpcRequestConvert, JsonRpcResult};
 use gem_evm::{
     jsonrpc::{BlockParameter, EthereumRpc, TransactionObject},
-    {multicall3, multicall3::IMulticall3},
+    multicall3::{self, IMulticall3},
+    parse_u256,
 };
 use primitives::{Chain, EVMChain};
 
-use alloy_core::{hex::decode as HexDecode, sol_types::SolCall};
+use alloy_core::{hex::decode as HexDecode, hex::encode_prefixed as HexEncode, sol_types::SolCall};
 use alloy_primitives::U256;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -53,16 +55,16 @@ impl JsonRpcRequestConvert for EthereumRpc {
 pub async fn fetch_gas_price(provider: Arc<dyn AlienProvider>, chain: &Chain) -> Result<U256, SwapperError> {
     let call = EthereumRpc::GasPrice;
     let resp: JsonRpcResult<String> = jsonrpc_call(&call, provider.clone(), chain).await?;
-    let gas_price = U256::from_str_radix(&resp.take()?, 16).map_err(|_| SwapperError::InvalidAmount)?;
+    let value = resp.take()?;
 
-    Ok(gas_price)
+    parse_u256(&value).ok_or(SwapperError::InvalidAmount)
 }
 
 pub async fn estimate_gas(provider: Arc<dyn AlienProvider>, chain: &Chain, tx: TransactionObject) -> Result<U256, SwapperError> {
     let call = EthereumRpc::EstimateGas(tx, BlockParameter::Latest);
     let resp: JsonRpcResult<String> = jsonrpc_call(&call, provider.clone(), chain).await?;
-    let limit = U256::from_str_radix(&resp.take()?, 16).map_err(|_| SwapperError::InvalidAmount)?;
-    Ok(limit)
+    let value = resp.take()?;
+    parse_u256(&value).ok_or(SwapperError::InvalidAmount)
 }
 
 pub async fn fetch_tx_receipt(provider: Arc<dyn AlienProvider>, chain: &Chain, tx_hash: &str) -> Result<TxReceipt, SwapperError> {
@@ -76,6 +78,14 @@ pub async fn multicall3_call(
     chain: &Chain,
     calls: Vec<IMulticall3::Call3>,
 ) -> Result<Vec<IMulticall3::Result>, SwapperError> {
+    for (idx, call) in calls.iter().enumerate() {
+        debug_println!(
+            "call {idx}: target {:?}, calldata: {:?}, allowFailure: {:?}",
+            call.target,
+            HexEncode(&call.callData),
+            call.allowFailure
+        );
+    }
     let evm_chain = EVMChain::from_chain(*chain).ok_or(SwapperError::NotSupportedChain)?;
     let multicall_address = multicall3::deployment_by_chain(&evm_chain);
     let data = IMulticall3::aggregate3Call { calls }.abi_encode();

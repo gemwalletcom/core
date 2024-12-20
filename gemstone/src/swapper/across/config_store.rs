@@ -57,7 +57,7 @@ impl ConfigStoreClient {
     pub fn config_call3(&self, l1token: &EthereumAddress) -> IMulticall3::Call3 {
         IMulticall3::Call3 {
             target: self.contract.parse().unwrap(),
-            allowFailure: false,
+            allowFailure: true,
             callData: AcrossConfigStore::l1TokenConfigCall {
                 l1Token: Address::from_slice(&l1token.bytes),
             }
@@ -67,11 +67,17 @@ impl ConfigStoreClient {
     }
 
     pub fn decoded_config_call3(&self, result: &IMulticall3::Result) -> Result<TokenConfig, SwapperError> {
-        let decoded = AcrossConfigStore::l1TokenConfigCall::abi_decode_returns(&result.returnData, true)
-            .map_err(|e| SwapperError::ABIError { msg: e.to_string() })?
-            ._0;
-        let result: TokenConfig = serde_json::from_str(&decoded).map_err(|e| SwapperError::NetworkError { msg: e.to_string() })?;
-        Ok(result)
+        if result.success {
+            let decoded = AcrossConfigStore::l1TokenConfigCall::abi_decode_returns(&result.returnData, true)
+                .map_err(|e| SwapperError::ABIError { msg: e.to_string() })?
+                ._0;
+            let result: TokenConfig = serde_json::from_str(&decoded).map_err(|e| SwapperError::NetworkError { msg: e.to_string() })?;
+            Ok(result)
+        } else {
+            Err(SwapperError::ABIError {
+                msg: "config call failed".into(),
+            })
+        }
     }
 
     pub async fn fetch_config(&self, l1token: &EthereumAddress) -> Result<TokenConfig, SwapperError> {

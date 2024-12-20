@@ -12,6 +12,14 @@ mod tests {
     use reqwest::Client;
     use std::{collections::HashMap, sync::Arc};
 
+    pub fn print_json(bytes: &[u8]) {
+        if let Ok(json) = serde_json::from_slice::<serde_json::Value>(bytes) {
+            println!("=== json: {:?}", json);
+        } else {
+            println!("=== body: {:?}", String::from_utf8(bytes.to_vec()).unwrap());
+        }
+    }
+
     #[derive(Debug)]
     pub struct NativeProvider {
         pub node_config: HashMap<Chain, String>,
@@ -67,8 +75,7 @@ mod tests {
                 }
             }
             if let Some(body) = target.body {
-                println!("==> request body size: {:?}", body.len());
-                println!("==> request body: {:?}", String::from_utf8(body.clone()).unwrap());
+                print_json(&body);
                 req = req.body(body);
             }
 
@@ -85,9 +92,8 @@ mod tests {
                 })
                 .await?;
             println!("<== response body size: {:?}", bytes.len());
-            if bytes.len() > 0 {
-                let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
-                println!("<== response json: {:?}", json);
+            if bytes.len() <= 4096 {
+                print_json(&bytes);
             }
             Ok(bytes.to_vec())
         }
@@ -147,6 +153,7 @@ mod tests {
         };
         let quote = swap_provider.fetch_quote(&request, network_provider.clone()).await?;
 
+        println!("quote: {:?}", quote);
         assert!(quote.to_value.parse::<u64>().unwrap() > 0);
 
         Ok(())

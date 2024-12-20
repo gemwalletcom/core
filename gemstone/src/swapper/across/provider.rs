@@ -161,12 +161,14 @@ impl GemSwapProvider for Across {
             hubpool_client.sync_call3(&mainnet_token),
             hubpool_client.pooled_token_call3(&mainnet_token),
         ];
-        let results = eth_rpc::multicall3_call(provider.clone(), &request.from_asset.chain, calls).await?;
+        let results = eth_rpc::multicall3_call(provider.clone(), &hubpool_client.chain, calls).await?;
 
         // Check if protocol is paused
         let is_paused = hubpool_client.decoded_paused_call3(&results[0])?;
         if is_paused {
-            return Err(SwapperError::NoQuoteAvailable);
+            return Err(SwapperError::ComputeQuoteError {
+                msg: "Across protocol is paused".into(),
+            });
         }
 
         // Check bridge amount is too large (Across API has some limit in USD amount but we don't have that info)
@@ -181,7 +183,7 @@ impl GemSwapProvider for Across {
             hubpool_client.utilization_call3(&mainnet_token, U256::from(0)),
             hubpool_client.utilization_call3(&mainnet_token, from_amount),
         ];
-        let results = eth_rpc::multicall3_call(provider.clone(), &request.from_asset.chain, calls).await?;
+        let results = eth_rpc::multicall3_call(provider.clone(), &hubpool_client.chain, calls).await?;
         let token_config = config_client.decoded_config_call3(&results[0])?;
         let util_before = hubpool_client.decoded_utilization_call3(&results[1])?;
         let util_after = hubpool_client.decoded_utilization_call3(&results[2])?;
@@ -210,10 +212,10 @@ impl GemSwapProvider for Across {
                 &wallet_address,
                 &deployment,
                 provider.clone(),
-                &request.from_asset.chain,
+                &request.to_asset.chain,
             )
             .await?;
-        let gas_price = eth_rpc::fetch_gas_price(provider.clone(), &request.from_asset.chain).await?;
+        let gas_price = eth_rpc::fetch_gas_price(provider.clone(), &request.to_asset.chain).await?;
         let gas_fee = gas_limit * gas_price;
 
         let remain_amount = from_amount - lpfee - relayer_fee - referral_fee;

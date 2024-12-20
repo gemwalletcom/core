@@ -24,11 +24,11 @@ sol! {
 
         function paused() external view returns (bool);
         function sync(address l1Token) public override nonReentrant;
-        function pooledToken(address l1Token) external view returns (PooledToken memory);
+        function pooledTokens(address l1Token) external view returns (PooledToken memory);
         function liquidityUtilizationCurrent(address l1Token) external returns (uint256);
         function liquidityUtilizationPostRelay(address l1Token, uint256 relayedAmount) external returns (uint256);
     }
 }
 
 // cast call 0xc186fA914353c44b2E33eBE05f21846F1048bEda "liquidityUtilizationCurrent(address)(uint256)" 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2 --rpc-url
-// cast call 0xc186fA914353c44b2E33eBE05f21846F1048bEda "pooledToken(address)(address,bool,uint32,int256,uint256,uint256)" 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2 --rpc-url
+// cast call 0xc186fA914353c44b2E33eBE05f21846F1048bEda "pooledTokens(address)(address,bool,uint32,int256,uint256,uint256)" 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2 --rpc-url

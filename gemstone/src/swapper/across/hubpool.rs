@@ -28,14 +28,21 @@ impl HubPoolClient {
     pub fn paused_call3(&self) -> IMulticall3::Call3 {
         IMulticall3::Call3 {
             target: self.contract.parse().unwrap(),
-            allowFailure: false,
+            allowFailure: true,
             callData: HubPoolInterface::pausedCall {}.abi_encode().into(),
         }
     }
 
     pub fn decoded_paused_call3(&self, result: &IMulticall3::Result) -> Result<bool, SwapperError> {
-        let decoded = HubPoolInterface::pausedCall::abi_decode_returns(&result.returnData, true).map_err(|e| SwapperError::ABIError { msg: e.to_string() })?;
-        Ok(decoded._0)
+        if result.success {
+            let decoded =
+                HubPoolInterface::pausedCall::abi_decode_returns(&result.returnData, true).map_err(|e| SwapperError::ABIError { msg: e.to_string() })?;
+            Ok(decoded._0)
+        } else {
+            Err(SwapperError::ABIError {
+                msg: "paused call failed".into(),
+            })
+        }
     }
 
     pub fn sync_call3(&self, l1token: &EthereumAddress) -> IMulticall3::Call3 {
@@ -53,8 +60,8 @@ impl HubPoolClient {
     pub fn pooled_token_call3(&self, l1token: &EthereumAddress) -> IMulticall3::Call3 {
         IMulticall3::Call3 {
             target: self.contract.parse().unwrap(),
-            allowFailure: false,
-            callData: HubPoolInterface::pooledTokenCall {
+            allowFailure: true,
+            callData: HubPoolInterface::pooledTokensCall {
                 l1Token: Address::from_slice(&l1token.bytes),
             }
             .abi_encode()
@@ -63,9 +70,15 @@ impl HubPoolClient {
     }
 
     pub fn decoded_pooled_token_call3(&self, result: &IMulticall3::Result) -> Result<HubPoolInterface::PooledToken, SwapperError> {
-        let decoded =
-            HubPoolInterface::pooledTokenCall::abi_decode_returns(&result.returnData, true).map_err(|e| SwapperError::ABIError { msg: e.to_string() })?;
-        Ok(decoded._0)
+        if result.success {
+            let decoded =
+                HubPoolInterface::pooledTokensCall::abi_decode_returns(&result.returnData, true).map_err(|e| SwapperError::ABIError { msg: e.to_string() })?;
+            Ok(decoded._0)
+        } else {
+            Err(SwapperError::ABIError {
+                msg: "pooled token call failed".into(),
+            })
+        }
     }
 
     pub fn utilization_call3(&self, l1_token: &EthereumAddress, amount: U256) -> IMulticall3::Call3 {
@@ -87,10 +100,16 @@ impl HubPoolClient {
     }
 
     pub fn decoded_utilization_call3(&self, result: &IMulticall3::Result) -> Result<BigInt, SwapperError> {
-        let value = HubPoolInterface::liquidityUtilizationCurrentCall::abi_decode_returns(&result.returnData, true)
-            .map_err(|e| SwapperError::ABIError { msg: e.to_string() })?
-            ._0;
-        Ok(BigInt::from_bytes_le(num_bigint::Sign::Plus, &value.to_le_bytes::<32>()))
+        if result.success {
+            let value = HubPoolInterface::liquidityUtilizationCurrentCall::abi_decode_returns(&result.returnData, true)
+                .map_err(|e| SwapperError::ABIError { msg: e.to_string() })?
+                ._0;
+            Ok(BigInt::from_bytes_le(num_bigint::Sign::Plus, &value.to_le_bytes::<32>()))
+        } else {
+            Err(SwapperError::ABIError {
+                msg: "utilization call failed".into(),
+            })
+        }
     }
 
     pub async fn fetch_utilization(&self, pool_token: &EthereumAddress, amount: U256) -> Result<BigInt, SwapperError> {
