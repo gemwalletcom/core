@@ -273,7 +273,7 @@ impl GemSwapProvider for Across {
         })
     }
     async fn fetch_quote_data(&self, quote: &SwapQuote, _provider: Arc<dyn AlienProvider>, _data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError> {
-        let deployment = AcrossDeployment::deployment_by_chain(&quote.request.to_asset.chain).ok_or(SwapperError::NotSupportedChain)?;
+        let deployment = AcrossDeployment::deployment_by_chain(&quote.request.from_asset.chain).ok_or(SwapperError::NotSupportedChain)?;
         let dst_chain_id: u32 = quote.request.to_asset.chain.network_id().parse().unwrap();
         let route = &quote.data.routes[0];
         let route_data = HexDecode(&route.route_data)?;
