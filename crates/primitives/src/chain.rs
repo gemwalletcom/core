@@ -50,6 +50,7 @@ pub enum Chain {
     Stellar,
     Sonic,
     Algorand,
+    Polkadot,
 }
 
 impl fmt::Display for Chain {
@@ -117,6 +118,7 @@ impl Chain {
             Self::Stellar => "Public Global Stellar Network ; September 2015",
             Self::Sonic => "146",
             Self::Algorand => "mainnet-v1.0",
+            Self::Polkadot => "Polkadot",
         }
     }
 
@@ -165,6 +167,7 @@ impl Chain {
             Self::Near => 397,
             Self::Stellar => 148,
             Self::Algorand => 283,
+            Self::Polkadot => 354,
         }
     }
 
@@ -199,6 +202,7 @@ impl Chain {
             Self::Near => ChainType::Near,
             Self::Stellar => ChainType::Stellar,
             Self::Algorand => ChainType::Algorand,
+            Self::Polkadot => ChainType::Polkadot,
         }
     }
 
@@ -239,7 +243,8 @@ impl Chain {
             | Self::Noble
             | Self::Sei
             | Self::Near
-            | Self::Stellar => None,
+            | Self::Stellar
+            | Self::Polkadot => None,
         }
     }
 
@@ -291,7 +296,8 @@ impl Chain {
             | Self::Noble
             | Self::Near
             | Self::Stellar
-            | Self::Algorand => false,
+            | Self::Algorand
+            | Self::Polkadot => false,
         }
     }
 
@@ -337,6 +343,7 @@ impl Chain {
             Self::Stellar => 6_000,
             Self::Sonic => 1_000,
             Self::Algorand => 4_000,
+            Self::Polkadot => 5_000,
         }
     }
 
@@ -346,7 +353,7 @@ impl Chain {
             Self::Ethereum => 80,
             Self::Solana | Self::SmartChain => 70,
             Self::Osmosis | Self::Ton | Self::Tron => 50,
-            Self::Cosmos | Self::Injective | Self::Aptos | Self::Sui | Self::Xrp | Self::Celestia | Self::BitcoinCash => 40,
+            Self::Cosmos | Self::Injective | Self::Aptos | Self::Sui | Self::Xrp | Self::Celestia | Self::BitcoinCash | Self::Polkadot => 40,
             Self::Manta
             | Self::Fantom
             | Self::OpBNB

@@ -38,7 +38,7 @@ pub fn get_chain_config(chain: Chain) -> ChainConfig {
 pub fn is_memo_supported(chain: Chain) -> bool {
     match chain.chain_type() {
         ChainType::Solana | ChainType::Cosmos | ChainType::Ton | ChainType::Xrp | ChainType::Stellar | ChainType::Algorand => true,
-        ChainType::Ethereum | ChainType::Bitcoin | ChainType::Near | ChainType::Tron | ChainType::Aptos | ChainType::Sui => false,
+        ChainType::Ethereum | ChainType::Bitcoin | ChainType::Near | ChainType::Tron | ChainType::Aptos | ChainType::Sui | ChainType::Polkadot => false,
     }
 }
 
@@ -95,6 +95,6 @@ fn chain_transaction_timeout_seconds(chain: Chain) -> f64 {
         | Chain::Near
         | Chain::World
         | Chain::Sonic => 1800_f64, // 30 minutes
-        Chain::Stellar | Chain::Algorand => 600_f64,
+        Chain::Stellar | Chain::Algorand | Chain::Polkadot => 600_f64,
     }
 }

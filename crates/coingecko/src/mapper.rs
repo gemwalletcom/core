@@ -76,5 +76,6 @@ pub fn get_coingecko_market_id_for_chain(chain: Chain) -> &'static str {
         Chain::Near => "near",
         Chain::Stellar => "stellar",
         Chain::Algorand => "algorand",
+        Chain::Polkadot => "polkadot",
     }
 }

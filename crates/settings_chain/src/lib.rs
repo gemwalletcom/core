@@ -59,7 +59,7 @@ impl ProviderFactory {
             Chain::Sui => Box::new(SuiClient::new(url)),
             Chain::Xrp => Box::new(XRPClient::new(client, url)),
             Chain::Near => Box::new(NearClient::new(url)),
-            Chain::Stellar | Chain::Algorand => Box::new(MockChainBlockClient::new(chain)),
+            Chain::Stellar | Chain::Algorand | Chain::Polkadot => Box::new(MockChainBlockClient::new(chain)),
         }
     }
 
@@ -103,6 +103,7 @@ impl ProviderFactory {
             Chain::Stellar => settings.chains.stellar.url.as_str(),
             Chain::Sonic => settings.chains.sonic.url.as_str(),
             Chain::Algorand => settings.chains.algorand.url.as_str(),
+            Chain::Polkadot => settings.chains.polkadot.url.as_str(),
         }
     }
 }

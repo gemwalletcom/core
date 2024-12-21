@@ -200,6 +200,15 @@ impl Blockchair {
             },
         })
     }
+
+    pub fn new_polkadot() -> Box<Self> {
+        Box::new(Self {
+            meta: Metadata {
+                name: BLOCKCHAIR_NAME,
+                base_url: blockchair_url!("polkadot"),
+            },
+        })
+    }
 }
 
 impl BlockExplorer for Blockchair {
