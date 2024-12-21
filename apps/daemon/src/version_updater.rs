@@ -57,8 +57,8 @@ impl Client {
     }
 
     fn set_release(&mut self, release: Release) -> Result<Release, Box<dyn Error + Send + Sync>> {
-        let releases = vec![storage::models::Release::from_primitive(release.clone()).clone()];
-        let _ = self.database.update_releases(releases)?;
+        let releases = storage::models::Release::from_primitive(release.clone()).clone();
+        let _ = self.database.update_release(releases)?;
         Ok(release)
     }
 

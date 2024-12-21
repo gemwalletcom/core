@@ -5,7 +5,7 @@ use super::model::{Asset, MoonPayIpAddress, MoonPayQuote};
 use base64::{engine::general_purpose, Engine as _};
 use hmac::{Hmac, Mac};
 use primitives::FiatTransactionType;
-use primitives::{fiat_quote::FiatQuote, fiat_quote_request::FiatBuyRequest, Chain, FiatProviderName};
+use primitives::{fiat_quote::FiatQuote, fiat_quote_request::FiatBuyRequest, FiatProviderName};
 use reqwest::Client;
 use sha2::Sha256;
 use url::Url;
@@ -85,7 +85,7 @@ impl MoonPayClient {
             chain,
             token_id,
             symbol: asset.code,
-            network: None,
+            network: asset.metadata.map(|x| x.network_code),
             enabled,
         })
     }
