@@ -1,5 +1,6 @@
 use crate::model::{filter_token_id, FiatProviderAsset};
 
+use super::mapper::map_asset_chain;
 use super::model::{Asset, MoonPayIpAddress, MoonPayQuote};
 use base64::{engine::general_purpose, Engine as _};
 use hmac::{Hmac, Mac};
@@ -76,7 +77,7 @@ impl MoonPayClient {
     }
 
     pub fn map_asset(asset: Asset) -> Option<FiatProviderAsset> {
-        let chain = Self::map_asset_chain(asset.clone());
+        let chain = map_asset_chain(asset.clone());
         let token_id = filter_token_id(asset.clone().metadata?.contract_address);
         let enabled = !asset.is_suspended.unwrap_or(true);
         Some(FiatProviderAsset {
@@ -87,33 +88,6 @@ impl MoonPayClient {
             network: None,
             enabled,
         })
-    }
-
-    pub fn map_asset_chain(asset: Asset) -> Option<Chain> {
-        match asset.metadata?.network_code.as_str() {
-            "ethereum" => Some(Chain::Ethereum),
-            "binance_smart_chain" => Some(Chain::SmartChain),
-            "solana" => Some(Chain::Solana),
-            "arbitrum" => Some(Chain::Arbitrum),
-            "base" => Some(Chain::Base),
-            "avalanche_c_chain" => Some(Chain::AvalancheC),
-            "optimism" => Some(Chain::Optimism),
-            "polygon" => Some(Chain::Polygon),
-            "tron" => Some(Chain::Tron),
-            "aptos" => Some(Chain::Aptos),
-            "bitcoin" => Some(Chain::Bitcoin),
-            "dogecoin" => Some(Chain::Doge),
-            "litecoin" => Some(Chain::Litecoin),
-            "ripple" => Some(Chain::Xrp),
-            "sui" => Some(Chain::Sui),
-            "ton" => Some(Chain::Ton),
-            "cosmos" => Some(Chain::Cosmos),
-            "near" => Some(Chain::Near),
-            "linea" => Some(Chain::Linea),
-            "zksync" => Some(Chain::ZkSync),
-            "celo" => Some(Chain::Celo),
-            _ => None,
-        }
     }
 
     pub fn get_fiat_quote(&self, request: FiatBuyRequest, quote: MoonPayQuote) -> FiatQuote {
