@@ -2,7 +2,7 @@ mod pancakeswap_router;
 mod uniswap_router;
 
 use crate::{
-    network::{jsonrpc::batch_jsonrpc_call, AlienProvider, JsonRpcRequest, JsonRpcRequestConvert, JsonRpcResponse, JsonRpcResult},
+    network::{jsonrpc::batch_jsonrpc_call, AlienProvider, JsonRpcResponse, JsonRpcResult},
     swapper::{
         approval::{check_approval, CheckApprovalType},
         models::*,
@@ -31,7 +31,6 @@ use alloy_core::{
     sol_types::SolCall,
 };
 use async_trait::async_trait;
-use serde_json::Value;
 use std::{
     fmt::Debug,
     str::FromStr,
@@ -39,25 +38,9 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
+use super::weth_address;
+
 static DEFAULT_DEADLINE: u64 = 3600;
-
-impl JsonRpcRequestConvert for EthereumRpc {
-    fn to_req(&self, id: u64) -> JsonRpcRequest {
-        let method = self.method_name();
-        let params: Vec<Value> = match self {
-            EthereumRpc::GasPrice => vec![],
-            EthereumRpc::GetBalance(address) => {
-                vec![Value::String(address.to_string())]
-            }
-            EthereumRpc::Call(tx, block) => {
-                let value = serde_json::to_value(tx).unwrap();
-                vec![value, block.into()]
-            }
-        };
-
-        JsonRpcRequest::new(id, method, params)
-    }
-}
 
 pub trait UniversalRouterProvider: Send + Sync + Debug {
     fn provider(&self) -> SwapProvider;
@@ -87,11 +70,7 @@ impl UniswapV3 {
     }
 
     fn get_asset_address(asset: &AssetId, evm_chain: EVMChain) -> Result<EthereumAddress, SwapperError> {
-        let str = match &asset.token_id {
-            Some(token_id) => token_id.to_string(),
-            None => evm_chain.weth_contract().unwrap().to_string(),
-        };
-        EthereumAddress::parse(&str).ok_or(SwapperError::InvalidAddress { address: str })
+        weth_address::parse_into_address(asset, evm_chain)
     }
 
     fn parse_request(request: &SwapQuoteRequest) -> Result<(EVMChain, EthereumAddress, EthereumAddress, U256), SwapperError> {
@@ -467,7 +446,7 @@ impl GemSwapProvider for UniswapV3 {
 
         let permit = match data {
             FetchQuoteData::Permit2(data) => Some(data.into()),
-            FetchQuoteData::None => None,
+            _ => None,
         };
 
         let path: Bytes = Self::build_paths_with_routes(&quote.data.routes)?;

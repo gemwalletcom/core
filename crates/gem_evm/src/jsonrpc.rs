@@ -25,6 +25,18 @@ impl TransactionObject {
             data: format!("0x{}", hex::encode(data)),
         }
     }
+
+    pub fn new_call_to_value(to: &str, value: &str, data: Vec<u8>) -> Self {
+        Self {
+            from: None,
+            to: to.to_string(),
+            gas: None,
+            gas_price: None,
+            value: Some(value.to_string()),
+            data: format!("0x{}", hex::encode(data)),
+        }
+    }
+
     pub fn new_call_with_from(from: &str, to: &str, data: Vec<u8>) -> Self {
         Self {
             from: Some(from.to_string()),
@@ -70,9 +82,11 @@ impl From<&BlockParameter> for serde_json::Value {
 
 #[derive(Debug, Clone)]
 pub enum EthereumRpc {
+    Call(TransactionObject, BlockParameter),
+    EstimateGas(TransactionObject, BlockParameter),
     GasPrice,
     GetBalance(&'static str),
-    Call(TransactionObject, BlockParameter),
+    GetTransactionReceipt(String),
 }
 
 impl EthereumRpc {
@@ -81,6 +95,8 @@ impl EthereumRpc {
             EthereumRpc::GasPrice => "eth_gasPrice",
             EthereumRpc::GetBalance(_) => "eth_getBalance",
             EthereumRpc::Call(_, _) => "eth_call",
+            EthereumRpc::GetTransactionReceipt(_) => "eth_getTransactionReceipt",
+            EthereumRpc::EstimateGas(_, _) => "eth_estimateGas",
         }
     }
 }

@@ -5,8 +5,11 @@ use std::{fmt::Debug, sync::Arc};
 
 mod approval;
 mod custom_types;
+mod eth_rpc;
 mod permit2_data;
+mod weth_address;
 
+pub mod across;
 pub mod asset;
 pub mod jupiter;
 pub mod models;
@@ -81,6 +84,7 @@ impl GemSwapper {
                 Box::new(thorchain::ThorChain::default()),
                 Box::new(jupiter::Jupiter::default()),
                 Box::new(pancakeswap_aptos::PancakeSwapAptos::default()),
+                Box::new(across::Across::default()),
             ],
         }
     }
@@ -132,7 +136,7 @@ impl GemSwapper {
             .collect::<Vec<_>>();
 
         if providers.is_empty() {
-            return Err(SwapperError::NotSupportedPair);
+            return Err(SwapperError::NoAvailableProvider);
         }
 
         let quotes_futures = providers.into_iter().map(|x| x.fetch_quote(&request, self.rpc_provider.clone()));
