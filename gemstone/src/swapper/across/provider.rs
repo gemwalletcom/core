@@ -88,7 +88,7 @@ impl Across {
             exclusivityDeadline: 0,
             message: Bytes::from(vec![]),
         };
-        let value = if is_native { amount.to_string() } else { String::from("0x0") };
+        let value = if is_native { format!("{:#x}", amount) } else { String::from("0x0") };
         let data = V3SpokePoolInterface::fillV3RelayCall {
             relayData: v3_relay_data.clone(),
             repaymentChainId: U256::from(chain_id),
