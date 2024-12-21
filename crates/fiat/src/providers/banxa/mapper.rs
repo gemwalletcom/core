@@ -3,6 +3,7 @@ use primitives::Chain;
 pub fn map_asset_chain(chain: String) -> Option<Chain> {
     match chain.as_str() {
         "BTC" => Some(Chain::Bitcoin),
+        "LTC" => Some(Chain::Litecoin),
         "ETH" => Some(Chain::Ethereum),
         "TRON" => Some(Chain::Tron),
         "BSC" => Some(Chain::SmartChain),
@@ -11,7 +12,6 @@ pub fn map_asset_chain(chain: String) -> Option<Chain> {
         "ATOM" => Some(Chain::Cosmos),
         "AVAX-C" => Some(Chain::AvalancheC),
         "XRP" => Some(Chain::Xrp),
-        "LTC" => Some(Chain::Litecoin),
         "FTM" => Some(Chain::Fantom),
         "DOGE" => Some(Chain::Doge),
         "APT" => Some(Chain::Aptos),

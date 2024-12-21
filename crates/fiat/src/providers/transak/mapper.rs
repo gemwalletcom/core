@@ -35,6 +35,7 @@ pub fn map_asset_chain(asset: Asset) -> Option<Chain> {
             "near" => Some(Chain::Near),
             "stellar" => Some(Chain::Stellar),
             "algorand" => Some(Chain::Algorand),
+            "polkadot" => Some(Chain::Polkadot),
             _ => None,
         },
         _ => None,

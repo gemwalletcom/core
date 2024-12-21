@@ -25,6 +25,7 @@ pub fn map_asset_chain(chain: String) -> Option<Chain> {
         "INJECTIVE" => Some(Chain::Injective),
         "STELLAR" => Some(Chain::Stellar),
         "ALGORAND" => Some(Chain::Algorand),
+        "POLKADOT" => Some(Chain::Polkadot),
         _ => None,
     }
 }

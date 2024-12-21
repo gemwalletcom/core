@@ -23,6 +23,8 @@ pub fn map_asset_chain(chain: String) -> Option<Chain> {
         "ZKSYNCERA" => Some(Chain::ZkSync),
         "LINEA" => Some(Chain::Linea),
         "CELO" => Some(Chain::Celo),
+        "POLKADOT" => Some(Chain::Polkadot),
+        "WORLDCHAIN" => Some(Chain::World),
         _ => None,
     }
 }
