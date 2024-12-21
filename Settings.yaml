@@ -133,6 +133,8 @@ chains:
     url: "https://rpc.mainnet.near.org"
   bitcoin:
     url: ""
+  bitcoincash:
+    url: ""
   litecoin:
     url: ""
   doge:
@@ -145,6 +147,8 @@ chains:
     url: https://rpc.soniclabs.com
   algorand:
     url: https://mainnet-api.algonode.cloud
+  polkadot:
+    url: https://polkadot-public-sidecar.parity-chains.parity.io
   
 swap:
   jupiter:

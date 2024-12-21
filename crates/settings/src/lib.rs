@@ -190,6 +190,7 @@ pub struct Chains {
     pub aptos: Chain,
     pub sui: Chain,
     pub bitcoin: Chain,
+    pub bitcoincash: Chain,
     pub litecoin: Chain,
     pub doge: Chain,
     pub fantom: Chain,
@@ -208,6 +209,7 @@ pub struct Chains {
     pub stellar: Chain,
     pub sonic: Chain,
     pub algorand: Chain,
+    pub polkadot: Chain,
 }
 
 #[derive(Debug, Deserialize, Clone)]

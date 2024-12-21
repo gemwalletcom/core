@@ -19,4 +19,5 @@ pub enum ChainType {
     Near,
     Stellar,
     Algorand,
+    Polkadot,
 }

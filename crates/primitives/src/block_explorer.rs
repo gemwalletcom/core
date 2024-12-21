@@ -2,7 +2,7 @@ use crate::chain::Chain;
 use crate::chain_evm::EVMChain;
 use crate::explorers::{
     AlgorandAllo, AptosExplorer, AptosScan, BlockScout, Blockchair, Blocksec, EtherScan, MantleExplorer, Mempool, MintScan, NearBlocks, RuneScan, SolanaFM,
-    Solscan, SuiScan, SuiVision, TonScan, TonViewer, TronScan, Viewblock, XrpScan, ZkSync,
+    Solscan, SubScan, SuiScan, SuiVision, TonScan, TonViewer, TronScan, Viewblock, XrpScan, ZkSync,
 };
 use std::str::FromStr;
 use typeshare::typeshare;
@@ -40,6 +40,7 @@ pub fn get_block_explorer(chain: Chain, name: &str) -> Box<dyn BlockExplorer> {
 pub fn get_block_explorers(chain: Chain) -> Vec<Box<dyn BlockExplorer>> {
     match chain {
         Chain::Bitcoin => vec![Blockchair::new_bitcoin(), Mempool::new()],
+        Chain::BitcoinCash => vec![Blockchair::new_bitcoin_cash()],
         Chain::Litecoin => vec![Blockchair::new_litecoin()],
         Chain::Doge => vec![Blockchair::new_doge()],
 
@@ -79,5 +80,6 @@ pub fn get_block_explorers(chain: Chain) -> Vec<Box<dyn BlockExplorer>> {
         Chain::Stellar => vec![Blockchair::new_stellar()],
         Chain::Sonic => vec![EtherScan::new(EVMChain::Sonic)],
         Chain::Algorand => vec![AlgorandAllo::new()],
+        Chain::Polkadot => vec![SubScan::new_polkadot(), Blockchair::new_polkadot()],
     }
 }

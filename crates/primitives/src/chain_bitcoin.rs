@@ -9,6 +9,7 @@ use typeshare::typeshare;
 #[strum(serialize_all = "lowercase")]
 pub enum BitcoinChain {
     Bitcoin,
+    BitcoinCash,
     Litecoin,
     Doge,
 }

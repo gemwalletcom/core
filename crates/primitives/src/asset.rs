@@ -39,6 +39,13 @@ impl Asset {
                 decimals: 8,
                 asset_type: AssetType::NATIVE,
             },
+            Chain::BitcoinCash => Asset {
+                id: chain.as_asset_id(),
+                name: "Bitcoin Cash".to_string(),
+                symbol: "BCH".to_string(),
+                decimals: 8,
+                asset_type: AssetType::NATIVE,
+            },
             Chain::Litecoin => Asset {
                 id: chain.as_asset_id(),
                 name: "Litecoin".to_string(),
@@ -282,6 +289,13 @@ impl Asset {
                 name: "Algorand".to_string(),
                 symbol: "ALGO".to_string(),
                 decimals: 6,
+                asset_type: AssetType::NATIVE,
+            },
+            Chain::Polkadot => Asset {
+                id: chain.as_asset_id(),
+                name: "Polkadot".to_string(),
+                symbol: "DOT".to_string(),
+                decimals: 10,
                 asset_type: AssetType::NATIVE,
             },
         }

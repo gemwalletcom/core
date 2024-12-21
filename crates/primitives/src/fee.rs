@@ -18,7 +18,6 @@ pub enum FeePriority {
 #[typeshare(swift = "Equatable, Sendable")]
 pub enum FeeUnitType {
     SatVb,
-    SatB,
     Gwei,
     Native,
 }

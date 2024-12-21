@@ -30,7 +30,7 @@ impl ProviderFactory {
         let url = url.to_string();
 
         match chain {
-            Chain::Bitcoin | Chain::Litecoin | Chain::Doge => Box::new(BitcoinClient::new(chain, client, url)),
+            Chain::Bitcoin | Chain::BitcoinCash | Chain::Litecoin | Chain::Doge => Box::new(BitcoinClient::new(chain, client, url)),
             Chain::Ethereum
             | Chain::SmartChain
             | Chain::Polygon
@@ -59,13 +59,14 @@ impl ProviderFactory {
             Chain::Sui => Box::new(SuiClient::new(url)),
             Chain::Xrp => Box::new(XRPClient::new(client, url)),
             Chain::Near => Box::new(NearClient::new(url)),
-            Chain::Stellar | Chain::Algorand => Box::new(MockChainBlockClient::new(chain)),
+            Chain::Stellar | Chain::Algorand | Chain::Polkadot => Box::new(MockChainBlockClient::new(chain)),
         }
     }
 
     pub fn url(chain: Chain, settings: &Settings) -> &str {
         match chain {
             Chain::Bitcoin => settings.chains.bitcoin.url.as_str(),
+            Chain::BitcoinCash => settings.chains.bitcoincash.url.as_str(),
             Chain::Litecoin => settings.chains.litecoin.url.as_str(),
             Chain::Ethereum => settings.chains.ethereum.url.as_str(),
             Chain::SmartChain => settings.chains.smartchain.url.as_str(),
@@ -102,6 +103,7 @@ impl ProviderFactory {
             Chain::Stellar => settings.chains.stellar.url.as_str(),
             Chain::Sonic => settings.chains.sonic.url.as_str(),
             Chain::Algorand => settings.chains.algorand.url.as_str(),
+            Chain::Polkadot => settings.chains.polkadot.url.as_str(),
         }
     }
 }

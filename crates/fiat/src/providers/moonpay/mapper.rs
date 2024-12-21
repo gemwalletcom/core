@@ -26,6 +26,15 @@ pub fn map_asset_chain(asset: Asset) -> Option<Chain> {
         "zksync" => Some(Chain::ZkSync),
         "celo" => Some(Chain::Celo),
         "stellar" => Some(Chain::Stellar),
+        "algorand" => Some(Chain::Algorand),
+        "polkadot" => Some(Chain::Polkadot),
+        "osmosis" => Some(Chain::Osmosis),
+        "fantom" => Some(Chain::Fantom),
+        "celestia" => Some(Chain::Celestia),
+        "sei" => Some(Chain::Sei),
+        "injective" => Some(Chain::Injective),
+        "noble" => Some(Chain::Noble),
+        "worldchain" => Some(Chain::World),
         _ => None,
     }
 }

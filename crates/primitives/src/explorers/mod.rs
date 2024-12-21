@@ -34,3 +34,5 @@ mod blocksec;
 pub use blocksec::Blocksec;
 mod algorand;
 pub use algorand::AlgorandAllo;
+mod subscan;
+pub use subscan::SubScan;

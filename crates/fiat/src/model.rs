@@ -41,8 +41,12 @@ pub fn filter_token_id(token_id: Option<String>) -> Option<String> {
             "0x0000000000000000000000000000000000000000",
             "0x471ece3750da237f93b8e339c536989b8978a438", // celo
             CosmosDenom::Uosmo.as_ref(),                  // osmosis
-            CosmosDenom::Usei.as_ref(),                   //sei
+            CosmosDenom::Usei.as_ref(),                   // sei
             CosmosDenom::Inj.as_ref(),                    // osmosis
+            CosmosDenom::Uusdc.as_ref(),                  // noble
+            CosmosDenom::Uatom.as_ref(),                  // atom
+            CosmosDenom::Rune.as_ref(),                   // rune
+            CosmosDenom::Utia.as_ref(),                   // celestia
         ]
         .contains(&contract_address.as_str())
     })

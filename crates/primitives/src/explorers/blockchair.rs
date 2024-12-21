@@ -22,6 +22,15 @@ impl Blockchair {
         })
     }
 
+    pub fn new_bitcoin_cash() -> Box<Self> {
+        Box::new(Self {
+            meta: Metadata {
+                name: BLOCKCHAIR_NAME,
+                base_url: blockchair_url!("bitcoin-cash"),
+            },
+        })
+    }
+
     pub fn new_litecoin() -> Box<Self> {
         Box::new(Self {
             meta: Metadata {
@@ -188,6 +197,15 @@ impl Blockchair {
             meta: Metadata {
                 name: BLOCKCHAIR_NAME,
                 base_url: blockchair_url!("stellar"),
+            },
+        })
+    }
+
+    pub fn new_polkadot() -> Box<Self> {
+        Box::new(Self {
+            meta: Metadata {
+                name: BLOCKCHAIR_NAME,
+                base_url: blockchair_url!("polkadot"),
             },
         })
     }
