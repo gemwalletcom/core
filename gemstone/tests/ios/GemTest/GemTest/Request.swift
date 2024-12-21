@@ -91,7 +91,7 @@ public extension SwapQuoteRequest {
         toAsset: "arbitrum",
         walletAddress: TEST_WALLET_ADDRESS,
         destinationAddress: TEST_WALLET_ADDRESS,
-        value: "100000000000000000", // 0.1 weth
+        value: "1000000000000000", // 0.001 weth
         mode: .exactIn,
         options: SWAP_OPTIONS
     )

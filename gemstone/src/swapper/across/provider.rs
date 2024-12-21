@@ -180,15 +180,19 @@ impl GemSwapProvider for Across {
             });
         }
 
+        let token_config_req = config_client.fetch_config(&mainnet_token);
         let calls = vec![
-            config_client.config_call3(&mainnet_token),
             hubpool_client.utilization_call3(&mainnet_token, U256::from(0)),
             hubpool_client.utilization_call3(&mainnet_token, from_amount),
         ];
-        let results = eth_rpc::multicall3_call(provider.clone(), &hubpool_client.chain, calls).await?;
-        let token_config = config_client.decoded_config_call3(&results[0])?;
-        let util_before = hubpool_client.decoded_utilization_call3(&results[1])?;
-        let util_after = hubpool_client.decoded_utilization_call3(&results[2])?;
+        let multicall_req = eth_rpc::multicall3_call(provider.clone(), &hubpool_client.chain, calls);
+
+        let batch_results = futures::join!(token_config_req, multicall_req);
+        let token_config = batch_results.0.map_err(SwapperError::from)?;
+        let multicall_results = batch_results.1.map_err(SwapperError::from)?;
+
+        let util_before = hubpool_client.decoded_utilization_call3(&multicall_results[0])?;
+        let util_after = hubpool_client.decoded_utilization_call3(&multicall_results[1])?;
 
         let rate_model = Self::get_rate_model(&request.from_asset, &request.to_asset, &token_config);
         let lpfee_calc = LpFeeCalculator::new(rate_model);
@@ -278,7 +282,8 @@ impl GemSwapProvider for Across {
         let route = &quote.data.routes[0];
         let route_data = HexDecode(&route.route_data)?;
         let v3_relay_data = V3RelayData::abi_decode(&route_data, true).map_err(|_| SwapperError::InvalidRoute)?;
-        let timestamp = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs_f32();
+        let timestamp = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs_f32() as u32;
+        let fill_deadline = timestamp + 3600; // 1 hour
 
         let deposit_v3_call = V3SpokePoolInterface::depositV3Call {
             depositor: v3_relay_data.depositor,
@@ -289,8 +294,8 @@ impl GemSwapProvider for Across {
             outputAmount: v3_relay_data.outputAmount,
             destinationChainId: U256::from(dst_chain_id),
             exclusiveRelayer: Address::ZERO,
-            quoteTimestamp: timestamp as u32,
-            fillDeadline: v3_relay_data.exclusivityDeadline,
+            quoteTimestamp: timestamp,
+            fillDeadline: fill_deadline,
             exclusivityDeadline: 0,
             message: v3_relay_data.message,
         }
