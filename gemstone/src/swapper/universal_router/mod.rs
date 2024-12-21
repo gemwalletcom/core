@@ -446,7 +446,7 @@ impl GemSwapProvider for UniswapV3 {
 
         let permit = match data {
             FetchQuoteData::Permit2(data) => Some(data.into()),
-            FetchQuoteData::None => None,
+            _ => None,
         };
 
         let path: Bytes = Self::build_paths_with_routes(&quote.data.routes)?;

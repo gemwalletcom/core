@@ -12,7 +12,7 @@ use gem_evm::{
     across::contracts::HubPoolInterface,
     address::EthereumAddress,
     jsonrpc::{BlockParameter, EthereumRpc, TransactionObject},
-    multicall3::IMulticall3,
+    multicall3::{create_call3, decode_call3_return, IMulticall3},
 };
 use num_bigint::BigInt;
 use primitives::Chain;
@@ -26,23 +26,14 @@ pub struct HubPoolClient {
 
 impl HubPoolClient {
     pub fn paused_call3(&self) -> IMulticall3::Call3 {
-        IMulticall3::Call3 {
-            target: self.contract.parse().unwrap(),
-            allowFailure: true,
-            callData: HubPoolInterface::pausedCall {}.abi_encode().into(),
-        }
+        create_call3(&self.contract, HubPoolInterface::pausedCall {})
     }
 
     pub fn decoded_paused_call3(&self, result: &IMulticall3::Result) -> Result<bool, SwapperError> {
-        if result.success {
-            let decoded =
-                HubPoolInterface::pausedCall::abi_decode_returns(&result.returnData, true).map_err(|e| SwapperError::ABIError { msg: e.to_string() })?;
-            Ok(decoded._0)
-        } else {
-            Err(SwapperError::ABIError {
-                msg: "paused call failed".into(),
-            })
-        }
+        let value = decode_call3_return::<HubPoolInterface::pausedCall>(result)
+            .map_err(|e| SwapperError::ABIError { msg: e.to_string() })?
+            ._0;
+        Ok(value)
     }
 
     pub fn sync_call3(&self, l1token: &EthereumAddress) -> IMulticall3::Call3 {
@@ -110,6 +101,19 @@ impl HubPoolClient {
                 msg: "utilization call failed".into(),
             })
         }
+    }
+
+    pub fn get_current_time(&self) -> IMulticall3::Call3 {
+        create_call3(&self.contract, HubPoolInterface::getCurrentTimeCall {})
+    }
+
+    pub fn decoded_current_time(&self, result: &IMulticall3::Result) -> Result<u32, SwapperError> {
+        let value = decode_call3_return::<HubPoolInterface::getCurrentTimeCall>(result)
+            .map_err(|e| SwapperError::ABIError { msg: e.to_string() })?
+            ._0;
+        value.try_into().map_err(|_| SwapperError::ABIError {
+            msg: "conversion to u32 failed".into(),
+        })
     }
 
     pub async fn fetch_utilization(&self, pool_token: &EthereumAddress, amount: U256) -> Result<BigInt, SwapperError> {

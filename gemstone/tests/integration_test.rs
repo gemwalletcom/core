@@ -147,7 +147,7 @@ mod tests {
             to_asset: AssetId::from_chain(Chain::Arbitrum),
             wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
             destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
-            value: "100000000000000000".into(),
+            value: "20000000000000000".into(), // 0.02 ETH
             mode: GemSwapMode::ExactIn,
             options: GemSwapOptions::default(),
         };
@@ -155,6 +155,11 @@ mod tests {
 
         println!("quote: {:?}", quote);
         assert!(quote.to_value.parse::<u64>().unwrap() > 0);
+
+        let quote_data = swap_provider
+            .fetch_quote_data(&quote, network_provider.clone(), FetchQuoteData::EstimateGas)
+            .await?;
+        println!("quote_data: {:?}", quote_data);
 
         Ok(())
     }

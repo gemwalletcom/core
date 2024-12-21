@@ -2,6 +2,7 @@ use super::{
     api::AcrossApi,
     config_store::{ConfigStoreClient, TokenConfig},
     hubpool::HubPoolClient,
+    DEFAULT_FILL_TIMEOUT,
 };
 use crate::{
     debug_println,
@@ -27,12 +28,7 @@ use alloy_core::{
     sol_types::{SolCall, SolValue},
 };
 use async_trait::async_trait;
-use std::{
-    fmt::Debug,
-    str::FromStr,
-    sync::Arc,
-    time::{SystemTime, UNIX_EPOCH},
-};
+use std::{fmt::Debug, str::FromStr, sync::Arc};
 
 #[derive(Debug, Default)]
 pub struct Across {}
@@ -184,6 +180,7 @@ impl GemSwapProvider for Across {
         let calls = vec![
             hubpool_client.utilization_call3(&mainnet_token, U256::from(0)),
             hubpool_client.utilization_call3(&mainnet_token, from_amount),
+            hubpool_client.get_current_time(),
         ];
         let multicall_req = eth_rpc::multicall3_call(provider.clone(), &hubpool_client.chain, calls);
 
@@ -193,15 +190,17 @@ impl GemSwapProvider for Across {
 
         let util_before = hubpool_client.decoded_utilization_call3(&multicall_results[0])?;
         let util_after = hubpool_client.decoded_utilization_call3(&multicall_results[1])?;
+        let timestamp = hubpool_client.decoded_current_time(&multicall_results[2])?;
 
         let rate_model = Self::get_rate_model(&request.from_asset, &request.to_asset, &token_config);
+        let cost_config = &asset_mapping.capital_cost;
+
         let lpfee_calc = LpFeeCalculator::new(rate_model);
         let lpfee_percent = lpfee_calc.realized_lp_fee_pct(&util_before, &util_after, false);
-        let lpfee = fees::multiply(from_amount, lpfee_percent);
+        let lpfee = fees::multiply(from_amount, lpfee_percent, cost_config.decimals);
 
-        let cost_config = &asset_mapping.capital_cost;
         let relayer_fee_percent = RelayerFeeCalculator::capital_fee_percent(BigInt::from_str(&request.value).expect("valid amount"), cost_config);
-        let relayer_fee = fees::multiply(from_amount, relayer_fee_percent);
+        let relayer_fee = fees::multiply(from_amount, relayer_fee_percent, cost_config.decimals);
 
         // let referral_fee_bps = request.options.fee.clone().unwrap_or_default().evm.bps / 2;
         // let referral_fee = from_amount * U256::from(referral_fee_bps) / U256::from(10000);
@@ -257,6 +256,7 @@ impl GemSwapProvider for Across {
         };
 
         v3_relay_data.outputAmount = output_amount;
+        v3_relay_data.fillDeadline = timestamp + DEFAULT_FILL_TIMEOUT;
         let route_data = HexEncode(v3_relay_data.abi_encode());
 
         Ok(SwapQuote {
@@ -276,26 +276,29 @@ impl GemSwapProvider for Across {
             request: request.clone(),
         })
     }
-    async fn fetch_quote_data(&self, quote: &SwapQuote, _provider: Arc<dyn AlienProvider>, _data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError> {
-        let deployment = AcrossDeployment::deployment_by_chain(&quote.request.from_asset.chain).ok_or(SwapperError::NotSupportedChain)?;
+    async fn fetch_quote_data(&self, quote: &SwapQuote, provider: Arc<dyn AlienProvider>, data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError> {
+        let from_chain = &quote.request.from_asset.chain;
+        let deployment = AcrossDeployment::deployment_by_chain(from_chain).ok_or(SwapperError::NotSupportedChain)?;
         let dst_chain_id: u32 = quote.request.to_asset.chain.network_id().parse().unwrap();
         let route = &quote.data.routes[0];
         let route_data = HexDecode(&route.route_data)?;
         let v3_relay_data = V3RelayData::abi_decode(&route_data, true).map_err(|_| SwapperError::InvalidRoute)?;
-        let timestamp = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs_f32() as u32;
-        let fill_deadline = timestamp + 3600; // 1 hour
 
         let deposit_v3_call = V3SpokePoolInterface::depositV3Call {
             depositor: v3_relay_data.depositor,
             recipient: v3_relay_data.recipient,
             inputToken: v3_relay_data.inputToken,
-            outputToken: v3_relay_data.outputToken,
+            outputToken: if quote.request.to_asset.is_native() {
+                Address::ZERO
+            } else {
+                v3_relay_data.outputToken
+            },
             inputAmount: v3_relay_data.inputAmount,
             outputAmount: v3_relay_data.outputAmount,
             destinationChainId: U256::from(dst_chain_id),
             exclusiveRelayer: Address::ZERO,
-            quoteTimestamp: timestamp,
-            fillDeadline: fill_deadline,
+            quoteTimestamp: v3_relay_data.fillDeadline - DEFAULT_FILL_TIMEOUT,
+            fillDeadline: v3_relay_data.fillDeadline,
             exclusivityDeadline: 0,
             message: v3_relay_data.message,
         }
@@ -306,8 +309,16 @@ impl GemSwapProvider for Across {
         let quote_data = SwapQuoteData {
             to: deployment.spoke_pool.into(),
             value: value.to_string(),
-            data: HexEncode(deposit_v3_call),
+            data: HexEncode(deposit_v3_call.clone()),
         };
+
+        if matches!(data, FetchQuoteData::EstimateGas) {
+            let hex_value = format!("{:#x}", U256::from_str(value).unwrap());
+            let tx = TransactionObject::new_call_to_value(&quote_data.to, &hex_value, deposit_v3_call);
+            let gas_limit = eth_rpc::estimate_gas(provider, from_chain, tx).await?;
+            debug_println!("gas_limit: {:?}", gas_limit);
+        }
+
         Ok(quote_data)
     }
     async fn get_transaction_status(&self, chain: Chain, transaction_hash: &str, provider: Arc<dyn AlienProvider>) -> Result<bool, SwapperError> {

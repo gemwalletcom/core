@@ -194,6 +194,7 @@ pub struct SwapRoute {
 #[derive(Debug, Clone, uniffi::Enum)]
 pub enum FetchQuoteData {
     Permit2(Permit2Data),
+    EstimateGas,
     None,
 }
 
