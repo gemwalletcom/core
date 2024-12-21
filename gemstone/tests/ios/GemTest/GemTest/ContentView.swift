@@ -39,7 +39,10 @@ struct ContentView: View {
                 self.testQuote(quote: .cake2btcb)
             }
             Text("Bridge:")
-            Button("Bridge Op WETH -> Arb") {
+            Button("Bridge Op ETH -> Ethereum") {
+                self.testQuote(quote: .opToEth)
+            }
+            Button("Bridge Op ETH -> Arbitrum") {
                 self.testQuote(quote: .opToArb)
             }
         }
@@ -87,7 +90,7 @@ struct ContentView: View {
 
         print("<== fetchQuote:\n", quote)
         print("==> amount out: \(quote.toValue)")
-        print("==> routes count: \(quote.data.routes.count), fee tier: \(route.routeData)")
+        print("==> routes count: \(quote.data.routes.count), route data: \(route.routeData)")
         if quote.data.routes.count > 1 {
             print("==> intermediary token: \(route.output)")
         }

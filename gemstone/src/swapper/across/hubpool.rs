@@ -94,7 +94,7 @@ impl HubPoolClient {
         };
         IMulticall3::Call3 {
             target: self.contract.parse().unwrap(),
-            allowFailure: false,
+            allowFailure: true,
             callData: data.into(),
         }
     }

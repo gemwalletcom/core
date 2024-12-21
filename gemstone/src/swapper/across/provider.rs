@@ -4,6 +4,7 @@ use super::{
     hubpool::HubPoolClient,
 };
 use crate::{
+    debug_println,
     network::AlienProvider,
     swapper::{approval::check_approval_erc20, asset::*, eth_rpc, models::*, slippage::apply_slippage_in_bp, weth_address, GemSwapProvider, SwapperError},
 };
@@ -44,7 +45,7 @@ impl Across {
     pub fn is_supported_pair(from_asset: &AssetId, to_asset: &AssetId) -> bool {
         let from = weth_address::normalize_asset(from_asset).unwrap();
         let to = weth_address::normalize_asset(to_asset).unwrap();
-
+        debug_println!("from: {:?}, to: {:?}", from, to);
         let asset_mappings = AcrossDeployment::asset_mappings();
         for mapping in asset_mappings.iter() {
             if mapping.set.contains(&from) && mapping.set.contains(&to) {
@@ -108,6 +109,7 @@ impl GemSwapProvider for Across {
     fn supported_assets(&self) -> Vec<SwapChainAsset> {
         // WETH for now
         vec![
+            SwapChainAsset::Assets(Chain::Arbitrum, vec![ARBITRUM_WETH.id.clone()]),
             SwapChainAsset::Assets(Chain::Ethereum, vec![ETHEREUM_WETH.id.clone()]),
             SwapChainAsset::Assets(Chain::Base, vec![BASE_WETH.id.clone()]),
             SwapChainAsset::Assets(Chain::Blast, vec![BLAST_WETH.id.clone()]),
@@ -271,6 +273,7 @@ impl GemSwapProvider for Across {
         })
     }
     async fn fetch_quote_data(&self, quote: &SwapQuote, _provider: Arc<dyn AlienProvider>, _data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError> {
+        let deployment = AcrossDeployment::deployment_by_chain(&quote.request.to_asset.chain).ok_or(SwapperError::NotSupportedChain)?;
         let dst_chain_id: u32 = quote.request.to_asset.chain.network_id().parse().unwrap();
         let route = &quote.data.routes[0];
         let route_data = HexDecode(&route.route_data)?;
@@ -293,9 +296,11 @@ impl GemSwapProvider for Across {
         }
         .abi_encode();
 
+        let value: &str = if quote.request.from_asset.is_native() { &quote.from_value } else { "0" };
+
         let quote_data = SwapQuoteData {
-            to: quote.data.routes.first().unwrap().route_data.clone(),
-            value: quote.data.routes.first().unwrap().route_data.clone(),
+            to: deployment.spoke_pool.into(),
+            value: value.to_string(),
             data: HexEncode(deposit_v3_call),
         };
         Ok(quote_data)
@@ -325,5 +330,14 @@ mod tests {
         assert!(Across::is_supported_pair(&weth_op, &weth_arb));
         assert!(Across::is_supported_pair(&usdc_eth, &usdc_arb));
         assert!(!Across::is_supported_pair(&weth_eth, &usdc_eth));
+
+        // native asset
+        let eth = AssetId::from(Chain::Ethereum, None);
+        let op = AssetId::from(Chain::Optimism, None);
+        let arb = AssetId::from(Chain::Arbitrum, None);
+
+        assert!(Across::is_supported_pair(&op, &eth));
+        assert!(Across::is_supported_pair(&arb, &eth));
+        assert!(Across::is_supported_pair(&op, &arb));
     }
 }

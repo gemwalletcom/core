@@ -15,6 +15,8 @@ pub enum SwapperError {
     NotSupportedAsset,
     #[error("Not supported pair")]
     NotSupportedPair,
+    #[error("No available provider")]
+    NoAvailableProvider,
     #[error("Invalid address {address}")]
     InvalidAddress { address: String },
     #[error("Invalid input amount")]

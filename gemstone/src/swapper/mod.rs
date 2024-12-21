@@ -136,7 +136,7 @@ impl GemSwapper {
             .collect::<Vec<_>>();
 
         if providers.is_empty() {
-            return Err(SwapperError::NotSupportedPair);
+            return Err(SwapperError::NoAvailableProvider);
         }
 
         let quotes_futures = providers.into_iter().map(|x| x.fetch_quote(&request, self.rpc_provider.clone()));
