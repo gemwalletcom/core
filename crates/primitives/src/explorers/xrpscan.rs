@@ -25,8 +25,8 @@ impl BlockExplorer for XrpScan {
     fn get_address_url(&self, address: &str) -> String {
         format!("{}/account/{}", self.meta.base_url, address)
     }
-    fn get_token_url(&self, _token: &str) -> Option<String> {
-        None
+    fn get_token_url(&self, token: &str) -> Option<String> {
+        Some(self.get_address_url(token))
     }
     fn get_validator_url(&self, _validator: &str) -> Option<String> {
         None
