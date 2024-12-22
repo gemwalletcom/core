@@ -25,16 +25,15 @@ impl PancakeSwapAptos {
         NATIVE_APTOS_COIN.to_string()
     }
 
-    fn swap_exact_input(&self, assets: Vec<String>, from_value: String, to_value: String) -> TransactionPayload {
+    fn router_swap_input(&self, address: &str, assets: Vec<String>, from_value: String, to_value: String) -> TransactionPayload {
         let function = match assets.len() {
             2 => "swap_exact_input",
             3 => "swap_exact_input_doublehop",
             4 => "swap_exact_input_triplehop",
             _ => unimplemented!(),
         };
-
         TransactionPayload {
-            function: function.to_string(),
+            function: format!("{}::router::{}", address, function.to_string()),
             type_arguments: assets,
             arguments: vec![from_value, to_value],
             payload_type: "entry_function_payload".to_string(),
@@ -99,7 +98,8 @@ impl GemSwapProvider for PancakeSwapAptos {
         let routes = quote.data.clone().routes;
         let route_data: RouteData = serde_json::from_str(&routes.first().unwrap().route_data).map_err(|_| SwapperError::InvalidRoute)?;
 
-        let payload = self.swap_exact_input(
+        let payload = self.router_swap_input(
+            PANCAKE_SWAP_APTOS_ADDRESS,
             vec![self.to_asset(quote.request.from_asset.clone()), self.to_asset(quote.request.to_asset.clone())],
             quote.from_value.clone().to_string(),
             route_data.min_value.clone(),
