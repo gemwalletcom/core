@@ -51,6 +51,7 @@ impl TransactionAddresses {
                     },
                 ]
             }
+            primitives::TransactionType::AssetActivation => todo!(),
         }
     }
 }
