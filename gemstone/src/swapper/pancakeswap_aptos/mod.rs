@@ -33,7 +33,7 @@ impl PancakeSwapAptos {
             _ => unimplemented!(),
         };
         TransactionPayload {
-            function: format!("{}::router::{}", address, function.to_string()),
+            function: format!("{}::router::{}", address, function),
             type_arguments: assets,
             arguments: vec![from_value, to_value],
             payload_type: "entry_function_payload".to_string(),
