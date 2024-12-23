@@ -35,7 +35,8 @@ struct AlgorandVersions {
 struct AlgorandTransactionBroadcast {
     #[serde(rename = "txId")]
     tx_id: Option<String>,
-    message: Option<String>,
+    #[serde(rename = "message")]
+    error_message: Option<String>,
 }
 
 #[typeshare(swift = "Sendable")]
