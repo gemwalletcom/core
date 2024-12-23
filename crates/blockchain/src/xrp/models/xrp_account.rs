@@ -30,8 +30,9 @@ struct XRPDrops {
 
 #[typeshare(swift = "Sendable")]
 struct XRPTransactionBroadcast {
-    accepted: bool,
+    accepted: Option<bool>,
     engine_result_message: Option<String>,
+    error_exception: Option<String>,
     tx_json: Option<XRPTransaction>,
 }
 
@@ -48,4 +49,27 @@ struct XRPTransactionStatus {
 #[typeshare(swift = "Sendable")]
 struct XRPLatestBlock {
     ledger_current_index: Int,
+}
+
+#[typeshare(swiftGenericConstraints = "T: Sendable")]
+#[typeshare(swift = "Sendable")]
+struct XRPAccountObjects<T> {
+    account_objects: T,
+}
+
+#[serde(rename_all = "PascalCase")]
+#[typeshare(swift = "Sendable")]
+struct XRPAccountAsset {
+    low_limit: XRPAssetLine,
+}
+
+#[typeshare(swift = "Sendable")]
+struct XRPAssetLine {
+    currency: String,
+}
+
+#[typeshare(swift = "Sendable")]
+struct XRPTokenId {
+    issuer: String,
+    currency: String,
 }

@@ -1,6 +1,6 @@
 mod alerter;
 mod device_updater;
-mod fiat_assets_updater;
+mod fiat;
 mod pricer;
 mod tokenlist_updater;
 mod transaction_updater;
@@ -11,8 +11,6 @@ use crate::tokenlist_updater::Client as TokenListClient;
 use crate::transaction_updater::TransactionUpdater;
 use crate::version_updater::Client as VersionClient;
 use api_connector::AssetsClient;
-use fiat::FiatProviderFactory;
-use fiat_assets_updater::FiatAssetsUpdater;
 use job_runner::run_job;
 use std::future::Future;
 use std::pin::Pin;
@@ -28,15 +26,6 @@ pub async fn main() {
     println!("daemon start service: {service}");
 
     let settings = settings::Settings::new().unwrap();
-
-    let update_fiat_assets = run_job("update fiat assets", Duration::from_secs(3600), {
-        let settings = Arc::new(settings.clone());
-        move || {
-            let providers = FiatProviderFactory::new_providers((*settings).clone());
-            let mut fiat_assets_updater = FiatAssetsUpdater::new(&settings.postgres.url, providers);
-            async move { fiat_assets_updater.update_fiat_assets().await }
-        }
-    });
 
     let update_appstore_version = run_job("update app store version", Duration::from_secs(43200), {
         let settings = Arc::new(settings.clone());
@@ -83,9 +72,9 @@ pub async fn main() {
     let services: Vec<Pin<Box<dyn Future<Output = ()> + Send>>> = match service.as_str() {
         "alerter" => alerter::jobs(settings.clone()).await,
         "pricer" => pricer::jobs(settings.clone()).await,
+        "fiat" => fiat::jobs(settings.clone()).await,
         _ => {
             vec![
-                Box::pin(update_fiat_assets),
                 Box::pin(update_appstore_version),
                 Box::pin(update_apk_version),
                 Box::pin(device_updater),

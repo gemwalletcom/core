@@ -223,10 +223,10 @@ impl DatabaseClient {
             .execute(&mut self.connection)
     }
 
-    pub fn update_releases(&mut self, values: Vec<Release>) -> Result<usize, diesel::result::Error> {
+    pub fn update_release(&mut self, release: Release) -> Result<usize, diesel::result::Error> {
         use crate::schema::releases::dsl::*;
         diesel::insert_into(releases)
-            .values(&values)
+            .values(&release)
             .on_conflict(platform_store)
             .do_update()
             .set(version.eq(excluded(version)))

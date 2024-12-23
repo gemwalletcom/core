@@ -15,6 +15,7 @@ pub enum TransactionType {
     StakeRewards,
     StakeRedelegate,
     StakeWithdraw,
+    AssetActivation,
 }
 
 impl Default for TransactionType {
