@@ -4,6 +4,7 @@ mod tests {
     use async_trait::async_trait;
     use futures::TryFutureExt;
     use gemstone::{
+        config::swap_config::{SwapReferralFee, SwapReferralFees},
         network::{provider::AlienProvider, target::*, *},
         swapper::{orca::Orca, *},
     };
@@ -140,6 +141,14 @@ mod tests {
     async fn test_across_quote() -> Result<(), SwapperError> {
         let swap_provider = Across::boxed();
         let network_provider = Arc::new(NativeProvider::default());
+        let options = GemSwapOptions {
+            slippage_bps: 100,
+            fee: Some(SwapReferralFees::evm(SwapReferralFee {
+                bps: 25,
+                address: "0x3d83ec320541ae96c4c91e9202643870458fb290".into(),
+            })),
+            preferred_providers: vec![],
+        };
 
         let request = SwapQuoteRequest {
             from_asset: AssetId::from_chain(Chain::Optimism),
@@ -148,7 +157,7 @@ mod tests {
             destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
             value: "20000000000000000".into(), // 0.02 ETH
             mode: GemSwapMode::ExactIn,
-            options: GemSwapOptions::default(),
+            options,
         };
 
         let now = SystemTime::now();
