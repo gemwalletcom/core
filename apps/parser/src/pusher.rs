@@ -89,6 +89,7 @@ impl Pusher {
                     )),
                 })
             }
+            TransactionType::AssetActivation => todo!(),
         }
     }
 
