@@ -199,7 +199,8 @@ impl GemSwapProvider for Across {
         let lpfee_percent = lpfee_calc.realized_lp_fee_pct(&util_before, &util_after, false);
         let lpfee = fees::multiply(from_amount, lpfee_percent, cost_config.decimals);
 
-        let relayer_fee_percent = RelayerFeeCalculator::capital_fee_percent(BigInt::from_str(&request.value).expect("valid amount"), cost_config);
+        let relayer_calc = RelayerFeeCalculator::default();
+        let relayer_fee_percent = relayer_calc.capital_fee_percent(&BigInt::from_str(&request.value).unwrap(), cost_config);
         let relayer_fee = fees::multiply(from_amount, relayer_fee_percent, cost_config.decimals);
 
         // let referral_fee_bps = request.options.fee.clone().unwrap_or_default().evm.bps / 2;
@@ -208,20 +209,21 @@ impl GemSwapProvider for Across {
         // FIXME: add referral fee and override relay data message
         let referral_fee = U256::from(0);
 
-        let (gas_limit, mut v3_relay_data) = self
-            .estimate_gas_limit(
-                &from_amount,
-                request.from_asset.is_native(),
-                &input_asset,
-                &output_asset,
-                &wallet_address,
-                &deployment,
-                provider.clone(),
-                &request.to_asset.chain,
-            )
-            .await?;
-        let gas_price = eth_rpc::fetch_gas_price(provider.clone(), &request.to_asset.chain).await?;
-        let gas_fee = gas_limit * gas_price;
+        let gas_price_req = eth_rpc::fetch_gas_price(provider.clone(), &request.to_asset.chain);
+        let gas_limit_req = self.estimate_gas_limit(
+            &from_amount,
+            request.from_asset.is_native(),
+            &input_asset,
+            &output_asset,
+            &wallet_address,
+            &deployment,
+            provider.clone(),
+            &request.to_asset.chain,
+        );
+
+        let (tuple, gas_price) = futures::join!(gas_limit_req, gas_price_req);
+        let (gas_limit, mut v3_relay_data) = tuple?;
+        let gas_fee = gas_limit * gas_price?;
 
         let remain_amount = from_amount - lpfee - relayer_fee - referral_fee;
         if remain_amount < gas_fee {

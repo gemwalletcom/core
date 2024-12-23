@@ -3,14 +3,13 @@ mod tests {
     use across::Across;
     use async_trait::async_trait;
     use futures::TryFutureExt;
-    // use gem_evm::constants::{WETH_ETH, WETH_OP};
     use gemstone::{
         network::{provider::AlienProvider, target::*, *},
         swapper::{orca::Orca, *},
     };
     use primitives::{AssetId, Chain};
     use reqwest::Client;
-    use std::{collections::HashMap, sync::Arc};
+    use std::{collections::HashMap, sync::Arc, time::SystemTime};
 
     pub fn print_json(bytes: &[u8]) {
         if let Ok(json) = serde_json::from_slice::<serde_json::Value>(bytes) {
@@ -151,15 +150,19 @@ mod tests {
             mode: GemSwapMode::ExactIn,
             options: GemSwapOptions::default(),
         };
-        let quote = swap_provider.fetch_quote(&request, network_provider.clone()).await?;
 
-        println!("quote: {:?}", quote);
+        let now = SystemTime::now();
+        let quote = swap_provider.fetch_quote(&request, network_provider.clone()).await?;
+        let elapsed = SystemTime::now().duration_since(now).unwrap();
+
+        println!("<== elapsed: {:?}", elapsed);
+        println!("<== quote: {:?}", quote);
         assert!(quote.to_value.parse::<u64>().unwrap() > 0);
 
         let quote_data = swap_provider
             .fetch_quote_data(&quote, network_provider.clone(), FetchQuoteData::EstimateGas)
             .await?;
-        println!("quote_data: {:?}", quote_data);
+        println!("<== quote_data: {:?}", quote_data);
 
         Ok(())
     }

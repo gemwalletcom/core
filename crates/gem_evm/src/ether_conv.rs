@@ -10,11 +10,15 @@ impl EtherConv {
 
     /// Parse Ether to Wei as BigInt
     pub fn parse_ether(ether: &str) -> BigInt {
-        let ether_value = ether.parse::<BigDecimal>().unwrap();
-        let wei_value = (&ether_value * BigDecimal::from(10u64.pow(18))).with_scale(0);
-
-        wei_value.as_bigint_and_exponent().0
+        to_bn_wei(ether, 18)
     }
+}
+
+pub fn to_bn_wei(value: &str, decimals: u32) -> BigInt {
+    let ether_value = value.parse::<BigDecimal>().unwrap();
+    let wei_value = (&ether_value * BigDecimal::from(10u64.pow(decimals))).with_scale(0);
+
+    wei_value.as_bigint_and_exponent().0
 }
 
 #[cfg(test)]
