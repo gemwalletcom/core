@@ -137,6 +137,29 @@ impl Across {
         let gas_limit = eth_rpc::estimate_gas(provider, chain, tx).await?;
         Ok((gas_limit, v3_relay_data))
     }
+
+    pub fn update_v3_relay_data(
+        &self,
+        v3_relay_data: &mut V3RelayData,
+        user_address: &EthereumAddress,
+        output_amount: &U256,
+        timestamp: u32,
+    ) -> Result<(), SwapperError> {
+        v3_relay_data.outputAmount = *output_amount;
+        v3_relay_data.fillDeadline = timestamp + DEFAULT_FILL_TIMEOUT;
+
+        let mut instructions = multicall_handler::Instructions::abi_decode(&v3_relay_data.message, true).map_err(|_| SwapperError::ABIError {
+            msg: "failed to decode v3_relay_data instructions".into(),
+        })?;
+        let new_user_transfer = IERC20::transferCall {
+            to: Address::from_slice(&user_address.bytes),
+            value: *output_amount,
+        };
+        instructions.calls[0].callData = new_user_transfer.abi_encode().into();
+
+        v3_relay_data.message = instructions.abi_encode().into();
+        Ok(())
+    }
 }
 
 #[async_trait]
@@ -222,7 +245,8 @@ impl GemSwapProvider for Across {
             });
         }
 
-        let token_config_req = config_client.fetch_config(&mainnet_token);
+        // Prepare data for lp fee calculation (token config, utilization, current time)
+        let token_config_req = config_client.fetch_config(&mainnet_token); // cache is used inside config_client
         let calls = vec![
             hubpool_client.utilization_call3(&mainnet_token, U256::from(0)),
             hubpool_client.utilization_call3(&mainnet_token, from_amount),
@@ -241,16 +265,19 @@ impl GemSwapProvider for Across {
         let rate_model = Self::get_rate_model(&request.from_asset, &request.to_asset, &token_config);
         let cost_config = &asset_mapping.capital_cost;
 
+        // Calculate lp fee
         let lpfee_calc = LpFeeCalculator::new(rate_model);
         let lpfee_percent = lpfee_calc.realized_lp_fee_pct(&util_before, &util_after, false);
         let lpfee = fees::multiply(from_amount, lpfee_percent, cost_config.decimals);
 
+        // Calculate relayer fee
         let relayer_calc = RelayerFeeCalculator::default();
         let relayer_fee_percent = relayer_calc.capital_fee_percent(&BigInt::from_str(&request.value).unwrap(), cost_config);
         let relayer_fee = fees::multiply(from_amount, relayer_fee_percent, cost_config.decimals);
 
         let referral_fee = request.options.fee.clone().unwrap_or_default().evm;
 
+        // Calculate gas limit / price for relayer
         let remain_amount = from_amount - lpfee - relayer_fee;
         let (message, referral_fee) = self.message_for_multicall_handler(&remain_amount, &wallet_address, &output_token, &referral_fee);
 
@@ -271,6 +298,7 @@ impl GemSwapProvider for Across {
         let (gas_limit, mut v3_relay_data) = tuple?;
         let gas_fee = gas_limit * gas_price?;
 
+        // Check if bridge amount is too small
         if remain_amount < gas_fee {
             return Err(SwapperError::ComputeQuoteError {
                 msg: "Bridge amount is too small".into(),
@@ -302,8 +330,8 @@ impl GemSwapProvider for Across {
             }
         };
 
-        v3_relay_data.outputAmount = output_amount;
-        v3_relay_data.fillDeadline = timestamp + DEFAULT_FILL_TIMEOUT;
+        // Update v3 relay data (was used to estimate gas limit) with final output amount and quote timestamp.
+        self.update_v3_relay_data(&mut v3_relay_data, &wallet_address, &output_amount, timestamp)?;
         let route_data = HexEncode(v3_relay_data.abi_encode());
 
         Ok(SwapQuote {
