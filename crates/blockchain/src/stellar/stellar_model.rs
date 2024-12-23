@@ -1,12 +1,8 @@
 #[typeshare(swift = "Sendable")]
 struct StellarAccount {
-    sequence: String,
-    balances: Vec<StellarBalance>,
-}
-
-#[typeshare(swift = "Sendable")]
-struct StellarAccountEmpty {
-    status: i32,
+    sequence: Option<String>,
+    balances: Option<Vec<StellarBalance>>,
+    status: Option<i32>,
 }
 
 #[typeshare(swift = "Sendable")]
@@ -35,12 +31,9 @@ struct StellarNodeStatus {
 
 #[typeshare(swift = "Sendable")]
 struct StellarTransactionBroadcast {
-    hash: String,
-}
-
-#[typeshare(swift = "Sendable")]
-struct StellarTransactionBroadcastError {
-    title: String,
+    hash: Option<String>,
+    #[serde(rename = "title")]
+    error_message: Option<String>,
 }
 
 #[typeshare(swift = "Sendable")]
