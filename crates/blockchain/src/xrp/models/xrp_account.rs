@@ -6,7 +6,7 @@ struct XRPResult<T> {
 
 #[typeshare(swift = "Sendable")]
 struct XRPAccountResult {
-    account_data: XRPAccount,
+    account_data: Option<XRPAccount>,
 }
 
 #[typeshare(swift = "Sendable")]
