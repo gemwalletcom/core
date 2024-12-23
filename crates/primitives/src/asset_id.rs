@@ -5,12 +5,18 @@ use typeshare::typeshare;
 
 use crate::chain::Chain;
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 #[typeshare(swift = "Equatable, Hashable, Sendable")]
 pub struct AssetId {
     pub chain: Chain,
     #[serde(rename = "tokenId")]
     pub token_id: Option<String>,
+}
+
+impl From<&str> for AssetId {
+    fn from(value: &str) -> Self {
+        AssetId::new(value).unwrap()
+    }
 }
 
 impl fmt::Display for AssetId {

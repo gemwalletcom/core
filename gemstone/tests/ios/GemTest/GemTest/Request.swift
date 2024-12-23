@@ -13,6 +13,8 @@ let SWAP_OPTIONS = GemSwapOptions(
     preferredProviders: []
 )
 
+let TEST_WALLET_ADDRESS = "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7"
+
 public extension SwapQuoteRequest {
     static let eth2usdc = SwapQuoteRequest(
         fromAsset: "ethereum",
@@ -70,6 +72,26 @@ public extension SwapQuoteRequest {
         walletAddress: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7",
         destinationAddress: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7",
         value: "1000000000000000000000", // 1000 Cake
+        mode: .exactIn,
+        options: SWAP_OPTIONS
+    )
+
+    static let opToEth = SwapQuoteRequest(
+        fromAsset: "optimism",
+        toAsset: "ethereum",
+        walletAddress: TEST_WALLET_ADDRESS,
+        destinationAddress: TEST_WALLET_ADDRESS,
+        value: "20000000000000000", // 0.02 eth
+        mode: .exactIn,
+        options: SWAP_OPTIONS
+    )
+
+    static let opToArb = SwapQuoteRequest(
+        fromAsset: "optimism",
+        toAsset: "arbitrum",
+        walletAddress: TEST_WALLET_ADDRESS,
+        destinationAddress: TEST_WALLET_ADDRESS,
+        value: "10000000000000000", // 0.01 eth
         mode: .exactIn,
         options: SWAP_OPTIONS
     )

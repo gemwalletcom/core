@@ -107,7 +107,7 @@ impl GemSwapProvider for Orca {
     }
 
     async fn fetch_quote_data(&self, _quote: &SwapQuote, _provider: Arc<dyn AlienProvider>, _data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError> {
-        todo!()
+        Err(SwapperError::NotImplemented)
     }
 
     async fn get_transaction_status(&self, _chain: Chain, _transaction_hash: &str, _provider: Arc<dyn AlienProvider>) -> Result<bool, SwapperError> {
@@ -136,7 +136,7 @@ impl Orca {
     ) -> Result<Whirlpool, SwapperError> {
         let fee_tiers = vec![get_splash_pool_fee_tiers()];
         let result = self.fetch_whirlpools(token_mint_1, token_mint_2, fee_tiers, provider, chain).await?;
-        let pool = result.first().ok_or(SwapperError::NotSupportedPair)?;
+        let pool = result.first().ok_or(SwapperError::NotSupportedAsset)?;
         Ok(pool.1.clone())
     }
 

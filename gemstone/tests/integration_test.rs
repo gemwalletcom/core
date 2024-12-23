@@ -1,5 +1,6 @@
 #[cfg(test)]
 mod tests {
+    use across::Across;
     use async_trait::async_trait;
     use futures::TryFutureExt;
     use gemstone::{
@@ -8,16 +9,24 @@ mod tests {
     };
     use primitives::{AssetId, Chain};
     use reqwest::Client;
-    use std::{collections::HashMap, sync::Arc};
+    use std::{collections::HashMap, sync::Arc, time::SystemTime};
+
+    pub fn print_json(bytes: &[u8]) {
+        if let Ok(json) = serde_json::from_slice::<serde_json::Value>(bytes) {
+            println!("=== json: {:?}", json);
+        } else {
+            println!("=== body: {:?}", String::from_utf8(bytes.to_vec()).unwrap());
+        }
+    }
 
     #[derive(Debug)]
     pub struct NativeProvider {
-        pub node_config: HashMap<String, String>,
+        pub node_config: HashMap<Chain, String>,
         pub client: Client,
     }
 
     impl NativeProvider {
-        pub fn new(node_config: HashMap<String, String>) -> Self {
+        pub fn new(node_config: HashMap<Chain, String>) -> Self {
             Self {
                 node_config,
                 client: Client::new(),
@@ -25,9 +34,20 @@ mod tests {
         }
     }
 
+    impl Default for NativeProvider {
+        fn default() -> Self {
+            Self::new(HashMap::from([
+                (Chain::Ethereum, "https://eth.llamarpc.com".into()),
+                (Chain::Optimism, "https://optimism.llamarpc.com".into()),
+                (Chain::Arbitrum, "https://arbitrum.llamarpc.com".into()),
+                (Chain::Solana, "https://solana-rpc.publicnode.com".into()),
+            ]))
+        }
+    }
+
     #[async_trait]
     impl AlienProvider for NativeProvider {
-        fn get_endpoint(&self, chain: String) -> Result<String, AlienError> {
+        fn get_endpoint(&self, chain: Chain) -> Result<String, AlienError> {
             Ok(self
                 .node_config
                 .get(&chain)
@@ -54,8 +74,7 @@ mod tests {
                 }
             }
             if let Some(body) = target.body {
-                println!("==> request body size: {:?}", body.len());
-                println!("==> request body: {:?}", String::from_utf8(body.clone()).unwrap());
+                print_json(&body);
                 req = req.body(body);
             }
 
@@ -71,8 +90,10 @@ mod tests {
                     msg: format!("request error: {:?}", e),
                 })
                 .await?;
-
             println!("<== response body size: {:?}", bytes.len());
+            if bytes.len() <= 4096 {
+                print_json(&bytes);
+            }
             Ok(bytes.to_vec())
         }
 
@@ -94,7 +115,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_orca_get_quote_by_input() -> Result<(), SwapperError> {
-        let node_config = HashMap::from([(Chain::Solana.to_string(), "https://solana-rpc.publicnode.com".into())]);
+        let node_config = HashMap::from([(Chain::Solana, "https://solana-rpc.publicnode.com".into())]);
         let swap_provider: Box<dyn GemSwapProvider> = Box::new(Orca::default());
         let network_provider = Arc::new(NativeProvider::new(node_config));
 
@@ -105,12 +126,43 @@ mod tests {
             destination_address: "G7B17AigRCGvwnxFc5U8zY5T3NBGduLzT7KYApNU2VdR".into(),
             value: "1000000".into(),
             mode: GemSwapMode::ExactIn,
-            options: None,
+            options: GemSwapOptions::default(),
         };
         let quote = swap_provider.fetch_quote(&request, network_provider.clone()).await?;
 
         assert_eq!(quote.from_value, "1000000");
         assert!(quote.to_value.parse::<u64>().unwrap() > 0);
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_across_quote() -> Result<(), SwapperError> {
+        let swap_provider = Across::boxed();
+        let network_provider = Arc::new(NativeProvider::default());
+
+        let request = SwapQuoteRequest {
+            from_asset: AssetId::from_chain(Chain::Optimism),
+            to_asset: AssetId::from_chain(Chain::Arbitrum),
+            wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
+            destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
+            value: "20000000000000000".into(), // 0.02 ETH
+            mode: GemSwapMode::ExactIn,
+            options: GemSwapOptions::default(),
+        };
+
+        let now = SystemTime::now();
+        let quote = swap_provider.fetch_quote(&request, network_provider.clone()).await?;
+        let elapsed = SystemTime::now().duration_since(now).unwrap();
+
+        println!("<== elapsed: {:?}", elapsed);
+        println!("<== quote: {:?}", quote);
+        assert!(quote.to_value.parse::<u64>().unwrap() > 0);
+
+        let quote_data = swap_provider
+            .fetch_quote_data(&quote, network_provider.clone(), FetchQuoteData::EstimateGas)
+            .await?;
+        println!("<== quote_data: {:?}", quote_data);
 
         Ok(())
     }

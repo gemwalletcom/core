@@ -1,6 +1,7 @@
 use super::permit2_data::Permit2Data;
 use crate::config::swap_config::SwapReferralFees;
 use crate::network::{jsonrpc::JsonRpcError, AlienError};
+use gem_evm::address::AddressError;
 use primitives::{AssetId, Chain};
 use std::fmt::Debug;
 
@@ -14,9 +15,11 @@ pub enum SwapperError {
     NotSupportedAsset,
     #[error("Not supported pair")]
     NotSupportedPair,
+    #[error("No available provider")]
+    NoAvailableProvider,
     #[error("Invalid address {address}")]
     InvalidAddress { address: String },
-    #[error("Invalid amount")]
+    #[error("Invalid input amount")]
     InvalidAmount,
     #[error("Invalid route")]
     InvalidRoute,
@@ -45,6 +48,12 @@ impl From<JsonRpcError> for SwapperError {
     }
 }
 
+impl From<AddressError> for SwapperError {
+    fn from(err: AddressError) -> Self {
+        Self::InvalidAddress { address: err.to_string() }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, uniffi::Enum)]
 pub enum GemSwapMode {
     ExactIn,
@@ -59,6 +68,7 @@ pub enum SwapProvider {
     Thorchain,
     Orca,
     Jupiter,
+    Across,
 }
 
 #[derive(Debug, Clone, PartialEq, uniffi::Enum)]
@@ -77,6 +87,7 @@ impl SwapProvider {
             Self::Thorchain => "THORChain",
             Self::Orca => "Orca Whirlpool",
             Self::Jupiter => "Jupiter",
+            Self::Across => "Across v3",
         }
     }
 
@@ -88,6 +99,7 @@ impl SwapProvider {
             Self::Thorchain => SwapProviderType::CrossChain,
             Self::Orca => SwapProviderType::OnChain,
             Self::Jupiter => SwapProviderType::OnChain,
+            Self::Across => SwapProviderType::Bridge,
         }
     }
 }
@@ -182,6 +194,7 @@ pub struct SwapRoute {
 #[derive(Debug, Clone, uniffi::Enum)]
 pub enum FetchQuoteData {
     Permit2(Permit2Data),
+    EstimateGas,
     None,
 }
 
