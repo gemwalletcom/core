@@ -51,6 +51,7 @@ pub enum Chain {
     Sonic,
     Algorand,
     Polkadot,
+    Cardano,
 }
 
 impl fmt::Display for Chain {
@@ -119,6 +120,7 @@ impl Chain {
             Self::Sonic => "146",
             Self::Algorand => "mainnet-v1.0",
             Self::Polkadot => "Polkadot",
+            Self::Cardano => "mainnet",
         }
     }
 
@@ -168,6 +170,7 @@ impl Chain {
             Self::Stellar => 148,
             Self::Algorand => 283,
             Self::Polkadot => 354,
+            Self::Cardano => 1815,
         }
     }
 
@@ -203,6 +206,7 @@ impl Chain {
             Self::Stellar => ChainType::Stellar,
             Self::Algorand => ChainType::Algorand,
             Self::Polkadot => ChainType::Polkadot,
+            Self::Cardano => ChainType::Cardano,
         }
     }
 
@@ -244,7 +248,8 @@ impl Chain {
             | Self::Sei
             | Self::Near
             | Self::Stellar
-            | Self::Polkadot => None,
+            | Self::Polkadot
+            | Self::Cardano => None,
         }
     }
 
@@ -297,7 +302,8 @@ impl Chain {
             | Self::Near
             | Self::Stellar
             | Self::Algorand
-            | Self::Polkadot => false,
+            | Self::Polkadot
+            | Self::Cardano => false,
         }
     }
 
@@ -344,6 +350,7 @@ impl Chain {
             Self::Sonic => 1_000,
             Self::Algorand => 4_000,
             Self::Polkadot => 5_000,
+            Self::Cardano => 60_000,
         }
     }
 
@@ -376,7 +383,8 @@ impl Chain {
             | Self::World
             | Self::Stellar
             | Self::Sonic
-            | Self::Algorand => 30,
+            | Self::Algorand
+            | Self::Cardano => 30,
             Self::Noble => 20,
         }
     }

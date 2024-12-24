@@ -20,4 +20,5 @@ pub enum ChainType {
     Stellar,
     Algorand,
     Polkadot,
+    Cardano,
 }

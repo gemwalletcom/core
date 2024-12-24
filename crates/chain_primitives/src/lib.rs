@@ -45,6 +45,7 @@ pub fn format_token_id(chain: Chain, token_id: String) -> Option<String> {
         | Chain::Sei
         | Chain::Near
         | Chain::Stellar
-        | Chain::Polkadot => None,
+        | Chain::Polkadot
+        | Chain::Cardano => None,
     }
 }

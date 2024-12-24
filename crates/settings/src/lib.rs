@@ -210,6 +210,7 @@ pub struct Chains {
     pub sonic: Chain,
     pub algorand: Chain,
     pub polkadot: Chain,
+    pub cardano: Chain,
 }
 
 #[derive(Debug, Deserialize, Clone)]

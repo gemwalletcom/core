@@ -1,8 +1,8 @@
 use crate::chain::Chain;
 use crate::chain_evm::EVMChain;
 use crate::explorers::{
-    AlgorandAllo, AptosExplorer, AptosScan, BlockScout, Blockchair, Blocksec, EtherScan, MantleExplorer, Mempool, MintScan, NearBlocks, RuneScan, SolanaFM,
-    Solscan, SubScan, SuiScan, SuiVision, TonScan, TonViewer, TronScan, Viewblock, XrpScan, ZkSync,
+    AlgorandAllo, AptosExplorer, AptosScan, BlockScout, Blockchair, Blocksec, Cardanocan, EtherScan, MantleExplorer, Mempool, MintScan, NearBlocks, RuneScan,
+    SolanaFM, Solscan, SubScan, SuiScan, SuiVision, TonScan, TonViewer, TronScan, Viewblock, XrpScan, ZkSync,
 };
 use std::str::FromStr;
 use typeshare::typeshare;
@@ -81,5 +81,6 @@ pub fn get_block_explorers(chain: Chain) -> Vec<Box<dyn BlockExplorer>> {
         Chain::Sonic => vec![EtherScan::new(EVMChain::Sonic)],
         Chain::Algorand => vec![AlgorandAllo::new()],
         Chain::Polkadot => vec![SubScan::new_polkadot(), Blockchair::new_polkadot()],
+        Chain::Cardano => vec![Cardanocan::new()],
     }
 }

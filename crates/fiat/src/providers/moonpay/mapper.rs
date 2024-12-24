@@ -35,6 +35,8 @@ pub fn map_asset_chain(asset: Asset) -> Option<Chain> {
         "injective" => Some(Chain::Injective),
         "noble" => Some(Chain::Noble),
         "worldchain" => Some(Chain::World),
+        "cardano" => Some(Chain::Cardano),
+        "bitcoin_cash" => Some(Chain::BitcoinCash),
         _ => None,
     }
 }

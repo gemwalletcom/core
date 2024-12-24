@@ -298,6 +298,13 @@ impl Asset {
                 decimals: 10,
                 asset_type: AssetType::NATIVE,
             },
+            Chain::Cardano => Asset {
+                id: chain.as_asset_id(),
+                name: "Cardano".to_string(),
+                symbol: "ADA".to_string(),
+                decimals: 6,
+                asset_type: AssetType::NATIVE,
+            },
         }
     }
 }

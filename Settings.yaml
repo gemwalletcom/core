@@ -149,6 +149,8 @@ chains:
     url: https://mainnet-api.algonode.cloud
   polkadot:
     url: https://polkadot-public-sidecar.parity-chains.parity.io
+  cardano:
+    url: ""
   
 swap:
   jupiter:
