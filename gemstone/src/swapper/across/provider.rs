@@ -148,7 +148,7 @@ impl Across {
         timestamp: u32,
         referral_fee: &SwapReferralFee,
     ) -> Result<(), SwapperError> {
-        let (message, _) = self.message_for_multicall_handler(output_amount, output_token, &user_address, &referral_fee);
+        let (message, _) = self.message_for_multicall_handler(output_amount, output_token, user_address, referral_fee);
 
         v3_relay_data.outputAmount = *output_amount;
         v3_relay_data.fillDeadline = timestamp + DEFAULT_FILL_TIMEOUT;
