@@ -2,6 +2,8 @@
 struct AlgorandAccount {
     amount: UInt64,
     assets: Vec<AlgorandAccountAccount>,
+    #[serde(rename = "min-balance")]
+    min_balance: i32,
 }
 
 #[typeshare(swift = "Sendable")]
