@@ -120,7 +120,7 @@ impl Chain {
             Self::Sonic => "146",
             Self::Algorand => "mainnet-v1.0",
             Self::Polkadot => "Polkadot",
-            Self::Cardano => "mainnet",
+            Self::Cardano => "764824073", // magic number from gensis configuration
         }
     }
 
