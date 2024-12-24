@@ -5,17 +5,22 @@ use super::{
     DEFAULT_FILL_TIMEOUT,
 };
 use crate::{
+    config::swap_config::SwapReferralFee,
     debug_println,
     network::AlienProvider,
     swapper::{approval::check_approval_erc20, asset::*, eth_rpc, models::*, slippage::apply_slippage_in_bp, weth_address, GemSwapProvider, SwapperError},
 };
 use gem_evm::{
     across::{
-        contracts::V3SpokePoolInterface::{self, V3RelayData},
+        contracts::{
+            multicall_handler,
+            V3SpokePoolInterface::{self, V3RelayData},
+        },
         deployment::{AcrossDeployment, ACROSS_CONFIG_STORE, ACROSS_HUBPOOL},
         fees::{self, LpFeeCalculator, RateModel, RelayerFeeCalculator},
     },
     address::EthereumAddress,
+    erc20::IERC20,
     jsonrpc::TransactionObject,
 };
 use num_bigint::BigInt;
@@ -57,13 +62,52 @@ impl Across {
         rate_model.clone().into()
     }
 
+    /// Return (message, referral_fee)
+    pub fn message_for_multicall_handler(
+        &self,
+        amount: &U256,
+        output_token: &EthereumAddress,
+        user_address: &EthereumAddress,
+        referral_fee: &SwapReferralFee,
+    ) -> (Vec<u8>, U256) {
+        if referral_fee.bps == 0 {
+            return (vec![], U256::from(0));
+        }
+        let fee_address = Address::from_str(&referral_fee.address).unwrap();
+        let fee_amount = amount * U256::from(referral_fee.bps) / U256::from(10000);
+        let output_amount = amount - fee_amount;
+        let to = Address::from_slice(&user_address.bytes);
+
+        let user_transfer = IERC20::transferCall { to, value: output_amount };
+        let fee_transfer = IERC20::transferCall {
+            to: fee_address,
+            value: fee_amount,
+        };
+        let calls = vec![
+            multicall_handler::Call {
+                target: Address::from_slice(&output_token.bytes),
+                callData: user_transfer.abi_encode().into(),
+                value: U256::from(0),
+            },
+            multicall_handler::Call {
+                target: Address::from_slice(&output_token.bytes),
+                callData: fee_transfer.abi_encode().into(),
+                value: U256::from(0),
+            },
+        ];
+        let instructions = multicall_handler::Instructions { calls, fallbackRecipient: to };
+        let message = instructions.abi_encode();
+        (message, fee_amount)
+    }
+
     pub async fn estimate_gas_limit(
         &self,
         amount: &U256,
         is_native: bool,
         input_asset: &AssetId,
-        output_asset: &AssetId,
+        output_token: &EthereumAddress,
         wallet_address: &EthereumAddress,
+        message: &[u8],
         deployment: &AcrossDeployment,
         provider: Arc<dyn AlienProvider>,
         chain: &Chain,
@@ -75,14 +119,14 @@ impl Across {
             recipient: Address::from_slice(&wallet_address.bytes),
             exclusiveRelayer: Address::ZERO,
             inputToken: Address::from_str(input_asset.token_id.clone().unwrap().as_ref()).unwrap(),
-            outputToken: Address::from_str(output_asset.token_id.clone().unwrap().as_ref()).unwrap(),
+            outputToken: Address::from_slice(&output_token.bytes),
             inputAmount: *amount,
             outputAmount: U256::from(100), // safe amount
             originChainId: U256::from(chain_id),
             depositId: u32::MAX,
             fillDeadline: u32::MAX,
             exclusivityDeadline: 0,
-            message: Bytes::from(vec![]),
+            message: Bytes::from(message.to_vec()),
         };
         let value = if is_native { format!("{:#x}", amount) } else { String::from("0x0") };
         let data = V3SpokePoolInterface::fillV3RelayCall {
@@ -93,6 +137,24 @@ impl Across {
         let tx = TransactionObject::new_call_to_value(deployment.spoke_pool, &value, data);
         let gas_limit = eth_rpc::estimate_gas(provider, chain, tx).await?;
         Ok((gas_limit, v3_relay_data))
+    }
+
+    pub fn update_v3_relay_data(
+        &self,
+        v3_relay_data: &mut V3RelayData,
+        user_address: &EthereumAddress,
+        output_amount: &U256,
+        output_token: &EthereumAddress,
+        timestamp: u32,
+        referral_fee: &SwapReferralFee,
+    ) -> Result<(), SwapperError> {
+        let (message, _) = self.message_for_multicall_handler(output_amount, output_token, user_address, referral_fee);
+
+        v3_relay_data.outputAmount = *output_amount;
+        v3_relay_data.fillDeadline = timestamp + DEFAULT_FILL_TIMEOUT;
+        v3_relay_data.message = message.into();
+
+        Ok(())
     }
 }
 
@@ -134,8 +196,11 @@ impl GemSwapProvider for Across {
             return Err(SwapperError::NotSupportedPair);
         }
 
-        let input_asset = weth_address::normalize_asset(&request.from_asset).unwrap();
-        let output_asset = weth_address::normalize_asset(&request.to_asset).unwrap();
+        let input_asset = weth_address::normalize_asset(&request.from_asset).ok_or(SwapperError::NotSupportedPair)?;
+        let output_asset = weth_address::normalize_asset(&request.to_asset.clone()).ok_or(SwapperError::NotSupportedPair)?;
+        let output_token = EthereumAddress::parse(&output_asset.clone().token_id.unwrap()).ok_or(SwapperError::InvalidAddress {
+            address: format!("{:?}", request.to_asset),
+        })?;
 
         // Get L1 token address
         let mappings = AcrossDeployment::asset_mappings();
@@ -176,7 +241,8 @@ impl GemSwapProvider for Across {
             });
         }
 
-        let token_config_req = config_client.fetch_config(&mainnet_token);
+        // Prepare data for lp fee calculation (token config, utilization, current time)
+        let token_config_req = config_client.fetch_config(&mainnet_token); // cache is used inside config_client
         let calls = vec![
             hubpool_client.utilization_call3(&mainnet_token, U256::from(0)),
             hubpool_client.utilization_call3(&mainnet_token, from_amount),
@@ -195,27 +261,30 @@ impl GemSwapProvider for Across {
         let rate_model = Self::get_rate_model(&request.from_asset, &request.to_asset, &token_config);
         let cost_config = &asset_mapping.capital_cost;
 
+        // Calculate lp fee
         let lpfee_calc = LpFeeCalculator::new(rate_model);
         let lpfee_percent = lpfee_calc.realized_lp_fee_pct(&util_before, &util_after, false);
         let lpfee = fees::multiply(from_amount, lpfee_percent, cost_config.decimals);
 
+        // Calculate relayer fee
         let relayer_calc = RelayerFeeCalculator::default();
         let relayer_fee_percent = relayer_calc.capital_fee_percent(&BigInt::from_str(&request.value).unwrap(), cost_config);
         let relayer_fee = fees::multiply(from_amount, relayer_fee_percent, cost_config.decimals);
 
-        // let referral_fee_bps = request.options.fee.clone().unwrap_or_default().evm.bps / 2;
-        // let referral_fee = from_amount * U256::from(referral_fee_bps) / U256::from(10000);
+        let referral_config = request.options.fee.clone().unwrap_or_default().evm_bridge;
 
-        // FIXME: add referral fee and override relay data message
-        let referral_fee = U256::from(0);
+        // Calculate gas limit / price for relayer
+        let remain_amount = from_amount - lpfee - relayer_fee;
+        let (message, referral_fee) = self.message_for_multicall_handler(&remain_amount, &wallet_address, &output_token, &referral_config);
 
         let gas_price_req = eth_rpc::fetch_gas_price(provider.clone(), &request.to_asset.chain);
         let gas_limit_req = self.estimate_gas_limit(
             &from_amount,
             request.from_asset.is_native(),
             &input_asset,
-            &output_asset,
+            &output_token,
             &wallet_address,
+            &message,
             &deployment,
             provider.clone(),
             &request.to_asset.chain,
@@ -225,19 +294,21 @@ impl GemSwapProvider for Across {
         let (gas_limit, mut v3_relay_data) = tuple?;
         let gas_fee = gas_limit * gas_price?;
 
-        let remain_amount = from_amount - lpfee - relayer_fee - referral_fee;
+        // Check if bridge amount is too small
         if remain_amount < gas_fee {
             return Err(SwapperError::ComputeQuoteError {
                 msg: "Bridge amount is too small".into(),
             });
         }
 
-        // Check output amount against slippage
-        let output_amount = from_amount - lpfee - relayer_fee - referral_fee - gas_fee;
+        let output_amount = remain_amount - gas_fee;
+        let output_user_amount = output_amount - referral_fee;
+
+        // Check output amount for user against slippage
         let expect_min = apply_slippage_in_bp(&from_amount, request.options.slippage_bps);
-        if output_amount < expect_min {
+        if output_user_amount < expect_min {
             return Err(SwapperError::ComputeQuoteError {
-                msg: "Expected amount exceeds slippage".into(),
+                msg: format!("Expected amount exceeds slippage, expected: {}, output: {}", expect_min, output_user_amount),
             });
         }
 
@@ -257,8 +328,8 @@ impl GemSwapProvider for Across {
             }
         };
 
-        v3_relay_data.outputAmount = output_amount;
-        v3_relay_data.fillDeadline = timestamp + DEFAULT_FILL_TIMEOUT;
+        // Update v3 relay data (was used to estimate gas limit) with final output amount, quote timestamp and referral fee.
+        self.update_v3_relay_data(&mut v3_relay_data, &wallet_address, &output_amount, &output_token, timestamp, &referral_config)?;
         let route_data = HexEncode(v3_relay_data.abi_encode());
 
         Ok(SwapQuote {
@@ -290,11 +361,7 @@ impl GemSwapProvider for Across {
             depositor: v3_relay_data.depositor,
             recipient: v3_relay_data.recipient,
             inputToken: v3_relay_data.inputToken,
-            outputToken: if quote.request.to_asset.is_native() {
-                Address::ZERO
-            } else {
-                v3_relay_data.outputToken
-            },
+            outputToken: v3_relay_data.outputToken,
             inputAmount: v3_relay_data.inputAmount,
             outputAmount: v3_relay_data.outputAmount,
             destinationChainId: U256::from(dst_chain_id),

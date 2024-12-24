@@ -5,7 +5,8 @@ import Gemstone
 let SWAP_OPTIONS = GemSwapOptions(
     slippageBps: 100,
     fee: SwapReferralFees(
-        evm: .init(address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7", bps: 25),
+        evm: .init(address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7", bps: 50),
+        evmBridge: .init(address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7", bps: 25),
         solana: .init(address: "97q7TdebuvmxXCM1JzgqzpB1i7Wgvk4ACUWanhiL6Dk1", bps: 25),
         solanaJupiter: .init(address: "97q7TdebuvmxXCM1JzgqzpB1i7Wgvk4ACUWanhiL6Dk1", bps: 25),
         thorchain: .init(address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7", bps: 25)
