@@ -62,6 +62,7 @@ impl Across {
         rate_model.clone().into()
     }
 
+    /// Return (message, referral_fee)
     pub fn message_for_multicall_handler(
         &self,
         amount: &U256,
@@ -70,7 +71,7 @@ impl Across {
         referral_fee: &SwapReferralFee,
     ) -> (Vec<u8>, U256) {
         if referral_fee.bps == 0 {
-            return (vec![], *amount);
+            return (vec![], U256::from(0));
         }
         let fee_address = Address::from_str(&referral_fee.address).unwrap();
         let fee_amount = amount * U256::from(referral_fee.bps) / U256::from(10000);
@@ -143,21 +144,16 @@ impl Across {
         v3_relay_data: &mut V3RelayData,
         user_address: &EthereumAddress,
         output_amount: &U256,
+        output_token: &EthereumAddress,
         timestamp: u32,
+        referral_fee: &SwapReferralFee,
     ) -> Result<(), SwapperError> {
+        let (message, _) = self.message_for_multicall_handler(output_amount, output_token, &user_address, &referral_fee);
+
         v3_relay_data.outputAmount = *output_amount;
         v3_relay_data.fillDeadline = timestamp + DEFAULT_FILL_TIMEOUT;
+        v3_relay_data.message = message.into();
 
-        let mut instructions = multicall_handler::Instructions::abi_decode(&v3_relay_data.message, true).map_err(|_| SwapperError::ABIError {
-            msg: "failed to decode v3_relay_data instructions".into(),
-        })?;
-        let new_user_transfer = IERC20::transferCall {
-            to: Address::from_slice(&user_address.bytes),
-            value: *output_amount,
-        };
-        instructions.calls[0].callData = new_user_transfer.abi_encode().into();
-
-        v3_relay_data.message = instructions.abi_encode().into();
         Ok(())
     }
 }
@@ -275,11 +271,11 @@ impl GemSwapProvider for Across {
         let relayer_fee_percent = relayer_calc.capital_fee_percent(&BigInt::from_str(&request.value).unwrap(), cost_config);
         let relayer_fee = fees::multiply(from_amount, relayer_fee_percent, cost_config.decimals);
 
-        let referral_fee = request.options.fee.clone().unwrap_or_default().evm;
+        let referral_config = request.options.fee.clone().unwrap_or_default().evm_bridge;
 
         // Calculate gas limit / price for relayer
         let remain_amount = from_amount - lpfee - relayer_fee;
-        let (message, referral_fee) = self.message_for_multicall_handler(&remain_amount, &wallet_address, &output_token, &referral_fee);
+        let (message, referral_fee) = self.message_for_multicall_handler(&remain_amount, &wallet_address, &output_token, &referral_config);
 
         let gas_price_req = eth_rpc::fetch_gas_price(provider.clone(), &request.to_asset.chain);
         let gas_limit_req = self.estimate_gas_limit(
@@ -305,12 +301,14 @@ impl GemSwapProvider for Across {
             });
         }
 
-        // Check output amount against slippage
-        let output_amount = from_amount - lpfee - relayer_fee - referral_fee - gas_fee;
+        let output_amount = remain_amount - gas_fee;
+        let output_user_amount = output_amount - referral_fee;
+
+        // Check output amount for user against slippage
         let expect_min = apply_slippage_in_bp(&from_amount, request.options.slippage_bps);
-        if output_amount < expect_min {
+        if output_user_amount < expect_min {
             return Err(SwapperError::ComputeQuoteError {
-                msg: format!("Expected amount exceeds slippage, expected: {}, output: {}", expect_min, output_amount),
+                msg: format!("Expected amount exceeds slippage, expected: {}, output: {}", expect_min, output_user_amount),
             });
         }
 
@@ -330,8 +328,8 @@ impl GemSwapProvider for Across {
             }
         };
 
-        // Update v3 relay data (was used to estimate gas limit) with final output amount and quote timestamp.
-        self.update_v3_relay_data(&mut v3_relay_data, &wallet_address, &output_amount, timestamp)?;
+        // Update v3 relay data (was used to estimate gas limit) with final output amount, quote timestamp and referral fee.
+        self.update_v3_relay_data(&mut v3_relay_data, &wallet_address, &output_amount, &output_token, timestamp, &referral_config)?;
         let route_data = HexEncode(v3_relay_data.abi_encode());
 
         Ok(SwapQuote {
@@ -363,11 +361,7 @@ impl GemSwapProvider for Across {
             depositor: v3_relay_data.depositor,
             recipient: v3_relay_data.recipient,
             inputToken: v3_relay_data.inputToken,
-            outputToken: if quote.request.to_asset.is_native() {
-                Address::ZERO
-            } else {
-                v3_relay_data.outputToken
-            },
+            outputToken: v3_relay_data.outputToken,
             inputAmount: v3_relay_data.inputAmount,
             outputAmount: v3_relay_data.outputAmount,
             destinationChainId: U256::from(dst_chain_id),

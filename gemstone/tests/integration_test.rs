@@ -141,13 +141,17 @@ mod tests {
     async fn test_across_quote() -> Result<(), SwapperError> {
         let swap_provider = Across::boxed();
         let network_provider = Arc::new(NativeProvider::default());
-        let options = GemSwapOptions {
+        let mut options = GemSwapOptions {
             slippage_bps: 100,
             fee: Some(SwapReferralFees::evm(SwapReferralFee {
                 bps: 25,
-                address: "0x3d83ec320541ae96c4c91e9202643870458fb290".into(),
+                address: "0x0D9DAB1A248f63B0a48965bA8435e4de7497a3dC".into(),
             })),
             preferred_providers: vec![],
+        };
+        options.fee.as_mut().unwrap().evm_bridge = SwapReferralFee {
+            bps: 25,
+            address: "0x0D9DAB1A248f63B0a48965bA8435e4de7497a3dC".into(),
         };
 
         let request = SwapQuoteRequest {
