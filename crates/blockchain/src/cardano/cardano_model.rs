@@ -37,7 +37,7 @@ struct CardanoAggregateSum {
 #[typeshare(swift = "Sendable")]
 #[serde(rename_all = "camelCase")]
 struct CardanoAggregateSumValue {
-    value: String,
+    value: Option<String>,
 }
 
 #[typeshare(swift = "Sendable")]
