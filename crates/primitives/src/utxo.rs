@@ -7,5 +7,5 @@ pub struct UTXO {
     pub transaction_id: String,
     pub vout: i32,
     pub value: String,
-    pub address: Option<String>,
+    pub address: String,
 }

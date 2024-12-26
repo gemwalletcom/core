@@ -1,51 +1,84 @@
 #[typeshare(swift = "Sendable")]
+#[serde(rename_all = "camelCase")]
+#[typeshare(swiftGenericConstraints = "T: Sendable")]
+struct CardanoUTXOS<T> {
+    utxos: T,
+}
+
+#[typeshare(swift = "Sendable")]
+#[serde(rename_all = "camelCase")]
 struct CardanoUTXO {
-    index: i32,
     address: String,
-    transaction: CardanoTransactionId,
-    value: CardanoAdaValue,
+    tx_hash: String,
+    index: i32,
+    value: String,
 }
 
 #[typeshare(swift = "Sendable")]
-struct CardanoTransactionId {
-    id: String,
+#[serde(rename_all = "camelCase")]
+struct CardanoBalance {
+    address: String,
+    tx_hash: String,
+    index: i32,
 }
 
 #[typeshare(swift = "Sendable")]
-struct CardanoAdaValue {
-    ada: CardanoAdaLovelace,
+#[serde(rename_all = "camelCase")]
+struct CardanoAggregateBalance {
+    aggregate: CardanoAggregateSum,
 }
 
 #[typeshare(swift = "Sendable")]
-struct CardanoAdaLovelace {
-    lovelace: UInt64,
+#[serde(rename_all = "camelCase")]
+struct CardanoAggregateSum {
+    sum: CardanoAggregateSumValue,
 }
 
 #[typeshare(swift = "Sendable")]
-struct CardanoBlockTip {
-    slot: i32,
+#[serde(rename_all = "camelCase")]
+struct CardanoAggregateSumValue {
+    value: String,
 }
 
 #[typeshare(swift = "Sendable")]
+#[serde(rename_all = "camelCase")]
 struct CardanoTransactionBroadcast {
-    transaction: CardanoTransactionId,
-}
-
-#[typeshare(swift = "Sendable")]
-struct Cardano {
-    updatableParameters: CardanoTransactionId,
+    submit_transaction: CardanoSubmitTransactionHash,
 }
 
 #[typeshare(swift = "Sendable")]
 #[serde(rename_all = "camelCase")]
-struct CardanoGenesisConfiguration {
-    updatable_parameters: CardanoUpdatableParameters,
+struct CardanoSubmitTransactionHash {
+    hash: String,
 }
 
 #[typeshare(swift = "Sendable")]
 #[serde(rename_all = "camelCase")]
-struct CardanoUpdatableParameters {
-    min_fee_constant: CardanoAdaValue,
-    min_fee_coefficient: i32,
-    network_magic: i32,
+struct CardanoTransactions {
+    transactions: Vec<CardanoTransaction>,
+}
+
+#[typeshare(swift = "Sendable")]
+#[serde(rename_all = "camelCase")]
+struct CardanoTransaction {
+    fee: String,
+    block: CardanoBlock,
+}
+
+#[typeshare(swift = "Sendable")]
+#[serde(rename_all = "camelCase")]
+struct CardanoBlock {
+    number: i32,
+}
+
+#[typeshare(swift = "Sendable")]
+#[serde(rename_all = "camelCase")]
+struct CardanoBlockData {
+    cardano: CardanoBlockTip,
+}
+
+#[typeshare(swift = "Sendable")]
+#[serde(rename_all = "camelCase")]
+struct CardanoBlockTip {
+    tip: CardanoBlock,
 }
