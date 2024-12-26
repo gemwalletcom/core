@@ -14,7 +14,7 @@ impl SubScan {
     pub fn new_polkadot() -> Box<Self> {
         Box::new(Self {
             meta: Metadata {
-                name: "ScanScan",
+                name: "SubScan",
                 base_url: subscan_url!("polkadot"),
             },
         })
