@@ -7,6 +7,7 @@ pub enum THORChainName {
     Ethereum,
     Cosmos,
     Bitcoin,
+    BitcoinCash,
     Litecoin,
     SmartChain,
     AvalancheC,
@@ -16,14 +17,15 @@ pub enum THORChainName {
 impl THORChainName {
     pub fn short_name(&self) -> &str {
         match self {
-            THORChainName::Doge => "d",       // DOGE.DOGE
-            THORChainName::Thorchain => "r",  // THOR.RUNE
-            THORChainName::Ethereum => "e",   // "ETH.ETH"
-            THORChainName::Cosmos => "g",     // GAIA.ATOM
-            THORChainName::Bitcoin => "b",    // BTC.BTC
-            THORChainName::Litecoin => "l",   // LTC.LTC
-            THORChainName::SmartChain => "s", // BSC.BNB
-            THORChainName::AvalancheC => "a", // AVAX.AVAX
+            THORChainName::Doge => "d",        // DOGE.DOGE
+            THORChainName::Thorchain => "r",   // THOR.RUNE
+            THORChainName::Ethereum => "e",    // "ETH.ETH"
+            THORChainName::Cosmos => "g",      // GAIA.ATOM
+            THORChainName::Bitcoin => "b",     // BTC.BTC
+            THORChainName::BitcoinCash => "c", // BCH.BCH
+            THORChainName::Litecoin => "l",    // LTC.LTC
+            THORChainName::SmartChain => "s",  // BSC.BNB
+            THORChainName::AvalancheC => "a",  // AVAX.AVAX
         }
     }
 
@@ -34,6 +36,7 @@ impl THORChainName {
             THORChainName::Ethereum => "ETH",
             THORChainName::Cosmos => "GAIA",
             THORChainName::Bitcoin => "BTC",
+            THORChainName::BitcoinCash => "BCH",
             THORChainName::Litecoin => "LTC",
             THORChainName::SmartChain => "BSC",
             THORChainName::AvalancheC => "AVAX",
@@ -47,6 +50,7 @@ impl THORChainName {
             THORChainName::Ethereum => Chain::Ethereum,
             THORChainName::Cosmos => Chain::Cosmos,
             THORChainName::Bitcoin => Chain::Bitcoin,
+            THORChainName::BitcoinCash => Chain::BitcoinCash,
             THORChainName::Litecoin => Chain::Litecoin,
             THORChainName::SmartChain => Chain::SmartChain,
             THORChainName::AvalancheC => Chain::AvalancheC,
@@ -63,6 +67,7 @@ impl THORChainName {
             Chain::SmartChain => Some(THORChainName::SmartChain),
             Chain::Ethereum => Some(THORChainName::Ethereum),
             Chain::AvalancheC => Some(THORChainName::AvalancheC),
+            Chain::BitcoinCash => Some(THORChainName::BitcoinCash),
             _ => None,
         }
     }
