@@ -114,9 +114,15 @@ impl Across {
     ) -> Result<(U256, V3RelayData), SwapperError> {
         let chain_id: u32 = chain.network_id().parse().unwrap();
 
+        let recipient = if message.is_empty() {
+            Address::from_slice(&wallet_address.bytes)
+        } else {
+            Address::from_str(deployment.multicall_handler().as_str()).unwrap()
+        };
+
         let v3_relay_data = V3RelayData {
             depositor: Address::from_slice(&wallet_address.bytes),
-            recipient: Address::from_slice(&wallet_address.bytes),
+            recipient,
             exclusiveRelayer: Address::ZERO,
             inputToken: Address::from_str(input_asset.token_id.clone().unwrap().as_ref()).unwrap(),
             outputToken: Address::from_slice(&output_token.bytes),
