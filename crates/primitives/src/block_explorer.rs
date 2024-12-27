@@ -60,7 +60,7 @@ pub fn get_block_explorers(chain: Chain) -> Vec<Box<dyn BlockExplorer>> {
         Chain::Celo => vec![BlockScout::new_celo(), EtherScan::new(EVMChain::Celo)],
         Chain::ZkSync => vec![ZkSync::new(), EtherScan::new(EVMChain::ZkSync)],
         Chain::World => vec![EtherScan::new(EVMChain::World)],
-        Chain::Solana => vec![SolanaFM::new(), Solscan::new(), Blockchair::new_solana()],
+        Chain::Solana => vec![Solscan::new(), SolanaFM::new(), Blockchair::new_solana()],
         Chain::Thorchain => vec![Viewblock::new(), RuneScan::new()],
 
         Chain::Cosmos => vec![MintScan::new_cosmos()],
