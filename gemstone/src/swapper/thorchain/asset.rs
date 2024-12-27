@@ -74,10 +74,14 @@ impl THORChainAsset {
 
     // https://dev.thorchain.org/concepts/memos.html#swap
     pub fn get_memo(&self, destination_address: String, minimum: i64, interval: i64, quantity: i64, fee_address: String, bps: u32) -> Option<String> {
+        let address = match self.chain {
+            THORChainName::BitcoinCash => destination_address.strip_prefix("bitcoincash:").unwrap_or(&destination_address),
+            _ => &destination_address,
+        };
         Some(format!(
             "=:{}:{}:{}/{}/{}:{}:{}",
             self.asset_name(),
-            destination_address,
+            address,
             minimum,
             interval,
             quantity,
@@ -165,6 +169,17 @@ mod tests {
                 .unwrap()
                 .get_memo(destination_address.clone(), 0, 1, 0, fee_address.clone(), bps),
             Some("=:ETH.USDT:0x1234567890abcdef:0/1/0:g1:50".into())
+        );
+        assert_eq!(
+            THORChainAsset::from_asset_id(Chain::BitcoinCash.as_asset_id()).unwrap().get_memo(
+                "bitcoincash:qpcns7lget89x9km0t8ry5fk52e8lhl53q0a64gd65".to_string(),
+                0,
+                1,
+                0,
+                fee_address.clone(),
+                bps
+            ),
+            Some("=:c:qpcns7lget89x9km0t8ry5fk52e8lhl53q0a64gd65:0/1/0:g1:50".into())
         );
     }
 }
