@@ -67,6 +67,9 @@ impl AssetId {
     pub fn is_native(&self) -> bool {
         self.token_id.is_none()
     }
+    pub fn is_token(&self) -> bool {
+        self.token_id.is_some()
+    }
 }
 
 #[cfg(test)]

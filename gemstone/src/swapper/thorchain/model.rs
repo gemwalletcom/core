@@ -15,6 +15,7 @@ pub struct QuoteSwapRequest {
 pub struct QuoteSwapResponse {
     pub expected_amount_out: String,
     pub inbound_address: Option<String>,
+    pub router: Option<String>,
     pub fees: QuoteFees,
 }
 
@@ -29,4 +30,10 @@ pub struct Transaction {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TransactionObserved {
     pub status: String, // done
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RouteData {
+    pub router_address: Option<String>,
+    pub inbound_address: Option<String>,
 }

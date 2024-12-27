@@ -25,6 +25,14 @@ impl THORChainAsset {
         }
     }
 
+    pub fn is_token(&self) -> bool {
+        self.token_id.is_some()
+    }
+
+    pub fn use_evm_router(&self) -> bool {
+        self.is_token() && self.chain.is_evm_chain()
+    }
+
     pub fn from_asset_id(asset_id: AssetId) -> Option<THORChainAsset> {
         let chain = THORChainName::from_chain(&asset_id.chain)?;
         if let Some(token_id) = &asset_id.token_id {

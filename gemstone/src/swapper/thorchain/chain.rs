@@ -71,4 +71,16 @@ impl THORChainName {
             _ => None,
         }
     }
+
+    pub fn is_evm_chain(&self) -> bool {
+        match self {
+            THORChainName::Ethereum | THORChainName::SmartChain | THORChainName::AvalancheC => true,
+            THORChainName::Doge
+            | THORChainName::Thorchain
+            | THORChainName::Cosmos
+            | THORChainName::Bitcoin
+            | THORChainName::BitcoinCash
+            | THORChainName::Litecoin => false,
+        }
+    }
 }
