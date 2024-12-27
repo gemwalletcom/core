@@ -4,8 +4,8 @@ mod client;
 mod model;
 mod provider;
 
+use chain::THORChainName;
 use num_bigint::BigInt;
-use primitives::Chain;
 use std::str::FromStr;
 
 #[derive(Debug, Default)]
@@ -16,10 +16,15 @@ const QUOTE_INTERVAL: i64 = 1;
 const QUOTE_QUANTITY: i64 = 0;
 
 impl ThorChain {
-    fn data(&self, chain: Chain, memo: String) -> String {
+    fn data(&self, chain: THORChainName, memo: String) -> String {
         match chain {
-            Chain::Thorchain | Chain::Litecoin | Chain::Doge | Chain::Bitcoin | Chain::Cosmos => memo,
-            _ => hex::encode(memo.as_bytes()),
+            THORChainName::Thorchain
+            | THORChainName::Litecoin
+            | THORChainName::Doge
+            | THORChainName::Bitcoin
+            | THORChainName::BitcoinCash
+            | THORChainName::Cosmos => memo,
+            THORChainName::Ethereum | THORChainName::SmartChain | THORChainName::AvalancheC => hex::encode(memo.as_bytes()),
         }
     }
 

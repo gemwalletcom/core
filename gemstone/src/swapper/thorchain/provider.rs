@@ -93,7 +93,9 @@ impl GemSwapProvider for ThorChain {
     async fn fetch_quote_data(&self, quote: &SwapQuote, _provider: Arc<dyn AlienProvider>, _data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError> {
         let fee = quote.request.options.clone().fee.unwrap_or_default().thorchain;
 
+        let from_asset = THORChainAsset::from_asset_id(quote.clone().request.from_asset).ok_or(SwapperError::NotSupportedAsset)?;
         let to_asset = THORChainAsset::from_asset_id(quote.clone().request.to_asset).ok_or(SwapperError::NotSupportedAsset)?;
+
         let memo = to_asset
             .get_memo(
                 quote.request.destination_address.clone(),
@@ -106,7 +108,7 @@ impl GemSwapProvider for ThorChain {
             .unwrap();
 
         let to = quote.data.routes.first().unwrap().route_data.clone();
-        let data: String = self.data(quote.request.from_asset.clone().chain, memo);
+        let data: String = self.data(from_asset.chain, memo);
 
         let data = SwapQuoteData {
             to,
