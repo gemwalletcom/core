@@ -13,6 +13,7 @@ pub mod multicall3;
 pub mod permit2;
 pub mod thorchain;
 pub mod uniswap;
+pub mod weth;
 
 pub fn parse_u256(value: &str) -> Option<U256> {
     if let Some(stripped) = value.strip_prefix("0x") {
