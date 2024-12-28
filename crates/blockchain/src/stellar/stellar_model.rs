@@ -13,6 +13,8 @@ struct StellarAccountEmpty {
 struct StellarBalance {
     balance: String,
     asset_type: String,
+    asset_code: Option<String>,
+    asset_issuer: Option<String>,
 }
 
 #[typeshare(swift = "Sendable")]
@@ -47,4 +49,24 @@ struct StellarTransactionBroadcastError {
 struct StellarTransactionStatus {
     successful: bool,
     fee_charged: String,
+}
+
+#[typeshare(swiftGenericConstraints = "T: Sendable")]
+#[typeshare(swift = "Sendable")]
+struct StellarEmbedded<T> {
+    _embedded: StellarRecords<T>,
+}
+
+#[typeshare(swiftGenericConstraints = "T: Sendable")]
+#[typeshare(swift = "Sendable")]
+struct StellarRecords<T> {
+    records: Vec<T>,
+}
+
+#[typeshare(swiftGenericConstraints = "T: Sendable")]
+#[typeshare(swift = "Sendable")]
+struct StellarAsset {
+    asset_code: String,
+    asset_issuer: String,
+    contract_id: Option<String>,
 }
