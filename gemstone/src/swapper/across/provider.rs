@@ -84,7 +84,7 @@ impl Across {
             // output_token is WETH and we need to unwrap it
             Self::unwrap_weth_calls(output_token, amount, &user_address, &user_amount, &fee_address, &fee_amount)
         } else {
-            Self::erc20_transfer_calls(&output_token, &user_address, &user_amount, &fee_address, &fee_amount)
+            Self::erc20_transfer_calls(output_token, &user_address, &user_amount, &fee_address, &fee_amount)
         };
         let instructions = multicall_handler::Instructions {
             calls,
@@ -141,7 +141,7 @@ impl Across {
         };
         vec![
             multicall_handler::Call {
-                target: target.clone(),
+                target,
                 callData: user_transfer.abi_encode().into(),
                 value: U256::from(0),
             },
