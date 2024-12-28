@@ -22,6 +22,7 @@ use gem_evm::{
     address::EthereumAddress,
     erc20::IERC20,
     jsonrpc::TransactionObject,
+    weth::WETH9,
 };
 use num_bigint::BigInt;
 use primitives::{AssetId, Chain, EVMChain};
@@ -66,6 +67,7 @@ impl Across {
     pub fn message_for_multicall_handler(
         &self,
         amount: &U256,
+        original_output_asset: &AssetId,
         output_token: &EthereumAddress,
         user_address: &EthereumAddress,
         referral_fee: &SwapReferralFee,
@@ -75,29 +77,80 @@ impl Across {
         }
         let fee_address = Address::from_str(&referral_fee.address).unwrap();
         let fee_amount = amount * U256::from(referral_fee.bps) / U256::from(10000);
-        let output_amount = amount - fee_amount;
-        let to = Address::from_slice(&user_address.bytes);
+        let user_address = Address::from_slice(&user_address.bytes);
+        let user_amount = amount - fee_amount;
 
-        let user_transfer = IERC20::transferCall { to, value: output_amount };
-        let fee_transfer = IERC20::transferCall {
-            to: fee_address,
-            value: fee_amount,
+        let calls = if original_output_asset.is_native() {
+            // output_token is WETH and we need to unwrap it
+            Self::unwrap_weth_calls(output_token, amount, &user_address, &user_amount, &fee_address, &fee_amount)
+        } else {
+            Self::erc20_transfer_calls(output_token, &user_address, &user_amount, &fee_address, &fee_amount)
         };
-        let calls = vec![
+        let instructions = multicall_handler::Instructions {
+            calls,
+            fallbackRecipient: user_address,
+        };
+        let message = instructions.abi_encode();
+        (message, fee_amount)
+    }
+
+    fn unwrap_weth_calls(
+        weth_contract: &EthereumAddress,
+        output_amount: &U256,
+        user_address: &Address,
+        user_amount: &U256,
+        fee_address: &Address,
+        fee_amount: &U256,
+    ) -> Vec<multicall_handler::Call> {
+        assert!(fee_amount + user_amount == *output_amount);
+        let withdraw_call = WETH9::withdrawCall { wad: *output_amount };
+        vec![
             multicall_handler::Call {
-                target: Address::from_slice(&output_token.bytes),
+                target: Address::from_slice(&weth_contract.bytes),
+                callData: withdraw_call.abi_encode().into(),
+                value: U256::from(0),
+            },
+            multicall_handler::Call {
+                target: *user_address,
+                callData: Bytes::new(),
+                value: *user_amount,
+            },
+            multicall_handler::Call {
+                target: *fee_address,
+                callData: Bytes::new(),
+                value: *fee_amount,
+            },
+        ]
+    }
+
+    fn erc20_transfer_calls(
+        token: &EthereumAddress,
+        user_address: &Address,
+        user_amount: &U256,
+        fee_address: &Address,
+        fee_amount: &U256,
+    ) -> Vec<multicall_handler::Call> {
+        let target = Address::from_slice(&token.bytes);
+        let user_transfer = IERC20::transferCall {
+            to: *user_address,
+            value: *user_amount,
+        };
+        let fee_transfer = IERC20::transferCall {
+            to: *fee_address,
+            value: *fee_amount,
+        };
+        vec![
+            multicall_handler::Call {
+                target,
                 callData: user_transfer.abi_encode().into(),
                 value: U256::from(0),
             },
             multicall_handler::Call {
-                target: Address::from_slice(&output_token.bytes),
+                target,
                 callData: fee_transfer.abi_encode().into(),
                 value: U256::from(0),
             },
-        ];
-        let instructions = multicall_handler::Instructions { calls, fallbackRecipient: to };
-        let message = instructions.abi_encode();
-        (message, fee_amount)
+        ]
     }
 
     pub async fn estimate_gas_limit(
@@ -150,11 +203,12 @@ impl Across {
         v3_relay_data: &mut V3RelayData,
         user_address: &EthereumAddress,
         output_amount: &U256,
+        original_output_asset: &AssetId,
         output_token: &EthereumAddress,
         timestamp: u32,
         referral_fee: &SwapReferralFee,
     ) -> Result<(), SwapperError> {
-        let (message, _) = self.message_for_multicall_handler(output_amount, output_token, user_address, referral_fee);
+        let (message, _) = self.message_for_multicall_handler(output_amount, original_output_asset, output_token, user_address, referral_fee);
 
         v3_relay_data.outputAmount = *output_amount;
         v3_relay_data.fillDeadline = timestamp + DEFAULT_FILL_TIMEOUT;
@@ -281,7 +335,7 @@ impl GemSwapProvider for Across {
 
         // Calculate gas limit / price for relayer
         let remain_amount = from_amount - lpfee - relayer_fee;
-        let (message, referral_fee) = self.message_for_multicall_handler(&remain_amount, &wallet_address, &output_token, &referral_config);
+        let (message, referral_fee) = self.message_for_multicall_handler(&remain_amount, &request.to_asset, &wallet_address, &output_token, &referral_config);
 
         let gas_price_req = eth_rpc::fetch_gas_price(provider.clone(), &request.to_asset.chain);
         let gas_limit_req = self.estimate_gas_limit(
@@ -335,7 +389,15 @@ impl GemSwapProvider for Across {
         };
 
         // Update v3 relay data (was used to estimate gas limit) with final output amount, quote timestamp and referral fee.
-        self.update_v3_relay_data(&mut v3_relay_data, &wallet_address, &output_amount, &output_token, timestamp, &referral_config)?;
+        self.update_v3_relay_data(
+            &mut v3_relay_data,
+            &wallet_address,
+            &output_amount,
+            &request.to_asset,
+            &output_token,
+            timestamp,
+            &referral_config,
+        )?;
         let route_data = HexEncode(v3_relay_data.abi_encode());
 
         Ok(SwapQuote {

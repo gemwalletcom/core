@@ -34,7 +34,7 @@ install-ios-targets:
 
 install-android-targets:
     rustup target add x86_64-linux-android aarch64-linux-android armv7-linux-androideabi
-    cargo install cargo-ndk
+    cargo install cargo-ndk --force
 
 test-ios:
     @set -o pipefail && xcodebuild -project tests/ios/GemTest/GemTest.xcodeproj \

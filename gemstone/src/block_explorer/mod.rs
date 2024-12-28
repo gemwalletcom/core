@@ -120,32 +120,32 @@ mod tests {
         let explorers = get_block_explorers(chain);
 
         assert_eq!(explorers.len(), 3);
-        assert_eq!(explorers[0].name(), "SolanaFM");
-        assert_eq!(explorers[1].name(), "Solscan");
+        assert_eq!(explorers[1].name(), "SolanaFM");
+        assert_eq!(explorers[0].name(), "Solscan");
 
         let explorer = Explorer::new(chain.as_ref());
 
         assert_eq!(
-            explorer.get_address_url(&explorers[0].name(), "5x38Kp4hvdomTCnCrAny4UtMUt5rQBdB6px2K1Ui45Wq",),
+            explorer.get_address_url(&explorers[1].name(), "5x38Kp4hvdomTCnCrAny4UtMUt5rQBdB6px2K1Ui45Wq",),
             "https://solana.fm/address/5x38Kp4hvdomTCnCrAny4UtMUt5rQBdB6px2K1Ui45Wq"
-        );
-        assert_eq!(
-            explorer.get_transaction_url(
-                &explorers[0].name(),
-                "58UdzFXAz6Vk58jEM6UsWmNb7kcJ1YvR2nQmkp8YQSW2gabmGra1u67SEjNZzTHCyuAn8NqzcQcn6qBLKx7uhVK7",
-            ),
-            "https://solana.fm/tx/58UdzFXAz6Vk58jEM6UsWmNb7kcJ1YvR2nQmkp8YQSW2gabmGra1u67SEjNZzTHCyuAn8NqzcQcn6qBLKx7uhVK7"
         );
         assert_eq!(
             explorer.get_transaction_url(
                 &explorers[1].name(),
                 "58UdzFXAz6Vk58jEM6UsWmNb7kcJ1YvR2nQmkp8YQSW2gabmGra1u67SEjNZzTHCyuAn8NqzcQcn6qBLKx7uhVK7",
             ),
+            "https://solana.fm/tx/58UdzFXAz6Vk58jEM6UsWmNb7kcJ1YvR2nQmkp8YQSW2gabmGra1u67SEjNZzTHCyuAn8NqzcQcn6qBLKx7uhVK7"
+        );
+        assert_eq!(
+            explorer.get_transaction_url(
+                &explorers[0].name(),
+                "58UdzFXAz6Vk58jEM6UsWmNb7kcJ1YvR2nQmkp8YQSW2gabmGra1u67SEjNZzTHCyuAn8NqzcQcn6qBLKx7uhVK7",
+            ),
             "https://solscan.io/tx/58UdzFXAz6Vk58jEM6UsWmNb7kcJ1YvR2nQmkp8YQSW2gabmGra1u67SEjNZzTHCyuAn8NqzcQcn6qBLKx7uhVK7"
         );
         assert_eq!(
             explorer
-                .get_token_url(&explorers[0].name(), "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",)
+                .get_token_url(&explorers[1].name(), "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",)
                 .unwrap(),
             "https://solana.fm/address/Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"
         );
