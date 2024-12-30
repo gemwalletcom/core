@@ -21,6 +21,10 @@ pub fn map_asset_chain(chain: String) -> Option<Chain> {
         "CELO" => Some(Chain::Celo),
         "THORCHAIN" => Some(Chain::Thorchain),
         "XLM" => Some(Chain::Stellar),
+        "ADA" => Some(Chain::Cardano),
+        "DOT" => Some(Chain::Polkadot),
+        "ALGO" => Some(Chain::Algorand),
+        "ZKSYNC" => Some(Chain::ZkSync),
         _ => None,
     }
 }

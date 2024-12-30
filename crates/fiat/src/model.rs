@@ -47,6 +47,8 @@ pub fn filter_token_id(token_id: Option<String>) -> Option<String> {
             CosmosDenom::Uatom.as_ref(),                  // atom
             CosmosDenom::Rune.as_ref(),                   // rune
             CosmosDenom::Utia.as_ref(),                   // celestia
+            "bip122:1a91e3dace36e2be3bf030a65679fe82",    // banxa::DOGE
+            "bip122:12a765e31ffd4059bada1e25190f6e98",    // banxa::LTC
         ]
         .contains(&contract_address.as_str())
     })
