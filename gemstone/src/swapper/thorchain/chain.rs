@@ -11,6 +11,7 @@ pub enum THORChainName {
     Litecoin,
     SmartChain,
     AvalancheC,
+    Base,
 }
 
 // https://dev.thorchain.org/concepts/memo-length-reduction.html
@@ -26,6 +27,7 @@ impl THORChainName {
             THORChainName::Litecoin => "l",    // LTC.LTC
             THORChainName::SmartChain => "s",  // BSC.BNB
             THORChainName::AvalancheC => "a",  // AVAX.AVAX
+            THORChainName::Base => "f",        // BASE.ETH
         }
     }
 
@@ -40,6 +42,7 @@ impl THORChainName {
             THORChainName::Litecoin => "LTC",
             THORChainName::SmartChain => "BSC",
             THORChainName::AvalancheC => "AVAX",
+            THORChainName::Base => "BASE",
         }
     }
 
@@ -54,6 +57,7 @@ impl THORChainName {
             THORChainName::Litecoin => Chain::Litecoin,
             THORChainName::SmartChain => Chain::SmartChain,
             THORChainName::AvalancheC => Chain::AvalancheC,
+            THORChainName::Base => Chain::Base,
         }
     }
 
@@ -68,13 +72,14 @@ impl THORChainName {
             Chain::Ethereum => Some(THORChainName::Ethereum),
             Chain::AvalancheC => Some(THORChainName::AvalancheC),
             Chain::BitcoinCash => Some(THORChainName::BitcoinCash),
+            Chain::Base => Some(THORChainName::Base),
             _ => None,
         }
     }
 
     pub fn is_evm_chain(&self) -> bool {
         match self {
-            THORChainName::Ethereum | THORChainName::SmartChain | THORChainName::AvalancheC => true,
+            THORChainName::Ethereum | THORChainName::SmartChain | THORChainName::AvalancheC | THORChainName::Base => true,
             THORChainName::Doge
             | THORChainName::Thorchain
             | THORChainName::Cosmos

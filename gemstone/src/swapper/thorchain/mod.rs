@@ -17,15 +17,10 @@ const QUOTE_QUANTITY: i64 = 0;
 
 impl ThorChain {
     fn data(&self, chain: THORChainName, memo: String) -> String {
-        match chain {
-            THORChainName::Thorchain
-            | THORChainName::Litecoin
-            | THORChainName::Doge
-            | THORChainName::Bitcoin
-            | THORChainName::BitcoinCash
-            | THORChainName::Cosmos => memo,
-            THORChainName::Ethereum | THORChainName::SmartChain | THORChainName::AvalancheC => hex::encode(memo.as_bytes()),
+        if chain.is_evm_chain() {
+            return hex::encode(memo.as_bytes());
         }
+        memo
     }
 
     fn value_from(&self, value: String, decimals: i32) -> BigInt {
@@ -50,6 +45,18 @@ impl ThorChain {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_data() {
+        let thorchain = ThorChain::default();
+        let memo = "test".to_string();
+
+        let result = thorchain.data(THORChainName::Ethereum, memo.clone());
+        assert_eq!(result, hex::encode(memo.as_bytes()));
+
+        let result = thorchain.data(THORChainName::Bitcoin, memo.clone());
+        assert_eq!(result, memo);
+    }
 
     #[test]
     fn test_value_from() {

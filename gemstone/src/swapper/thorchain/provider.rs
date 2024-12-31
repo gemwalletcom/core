@@ -2,7 +2,9 @@ use super::model::RouteData;
 use super::{asset::THORChainAsset, chain::THORChainName, ThorChain, QUOTE_INTERVAL, QUOTE_MINIMUM, QUOTE_QUANTITY};
 use crate::network::AlienProvider;
 use crate::swapper::approval::check_approval_erc20;
-use crate::swapper::asset::{AVALANCHE_USDC, AVALANCHE_USDT, ETHEREUM_DAI, ETHEREUM_USDC, ETHEREUM_USDT, ETHEREUM_WBTC, SMARTCHAIN_USDC, SMARTCHAIN_USDT};
+use crate::swapper::asset::{
+    AVALANCHE_USDC, AVALANCHE_USDT, BASE_CBBTC, BASE_USDC, ETHEREUM_DAI, ETHEREUM_USDC, ETHEREUM_USDT, ETHEREUM_WBTC, SMARTCHAIN_USDC, SMARTCHAIN_USDT,
+};
 use crate::swapper::thorchain::client::ThorChainSwapClient;
 use crate::swapper::{ApprovalType, FetchQuoteData, SwapProvider, SwapProviderData, SwapQuote, SwapQuoteData, SwapQuoteRequest, SwapRoute, SwapperError};
 use crate::swapper::{GemSwapProvider, SwapChainAsset};
@@ -40,6 +42,7 @@ impl GemSwapProvider for ThorChain {
                 ),
                 Chain::SmartChain => SwapChainAsset::Assets(chain, vec![SMARTCHAIN_USDT.id.clone(), SMARTCHAIN_USDC.id.clone()]),
                 Chain::AvalancheC => SwapChainAsset::Assets(chain, vec![AVALANCHE_USDT.id.clone(), AVALANCHE_USDC.id.clone()]),
+                Chain::Base => SwapChainAsset::Assets(chain, vec![BASE_USDC.id.clone(), BASE_CBBTC.id.clone()]),
                 _ => SwapChainAsset::Assets(chain, vec![]),
             })
             .collect()

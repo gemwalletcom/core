@@ -7,9 +7,12 @@ const USDT_SYMBOL: &str = "USDT";
 const USDC_NAME: &str = "USDC";
 const USDC_SYMBOL: &str = "USDC";
 const WBTC_SYMBOL: &str = "WBTC";
+const WBTC_NAME: &str = "Wrapped BTC";
 const DAI_SYMBOL: &str = "DAI";
 const WETH_NAME: &str = "Wrapped Ether";
 const WETH_SYMBOL: &str = "WETH";
+const CBBTC_NAME: &str = "Coinbase BTC";
+const CBBTC_SYMBOL: &str = "cbBTC";
 
 pub const ETHEREUM_USDC_TOKEN_ID: &str = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
 pub const ETHEREUM_USDT_TOKEN_ID: &str = "0xdAC17F958D2ee523a2206206994597C13D831ec7";
@@ -19,6 +22,8 @@ pub const SMARTCHAIN_USDT_TOKEN_ID: &str = "0x55d398326f99059fF775485246999027B3
 pub const SMARTCHAIN_USDC_TOKEN_ID: &str = "0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d";
 pub const AVALANCHE_USDT_TOKEN_ID: &str = "0x9702230A8Ea53601f5cD2dc00fDBc13d4dF4A8c7";
 pub const AVALANCHE_USDC_TOKEN_ID: &str = "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E";
+pub const BASE_USDC_TOKEN_ID: &str = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
+pub const BASE_CBBTC_TOKEN_ID: &str = "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf";
 
 lazy_static! {
     // ethereum
@@ -38,7 +43,7 @@ lazy_static! {
     };
     pub static ref ETHEREUM_WBTC: Asset = Asset {
         id: AssetId::from_token(Chain::Ethereum, ETHEREUM_WBTC_TOKEN_ID),
-        name: "Wrapped BTC".to_owned(),
+        name: WBTC_NAME.to_owned(),
         symbol: WBTC_SYMBOL.to_owned(),
         decimals: 8,
         asset_type: AssetType::ERC20,
@@ -127,14 +132,14 @@ lazy_static! {
         name: USDT_NAME.to_owned(),
         symbol: USDT_SYMBOL.to_owned(),
         decimals: 18,
-        asset_type: AssetType::ERC20,
+        asset_type: AssetType::BEP20,
     };
     pub static ref SMARTCHAIN_USDC: Asset = Asset {
         id: AssetId::from_token(Chain::SmartChain, SMARTCHAIN_USDC_TOKEN_ID),
         name: USDC_NAME.to_owned(),
         symbol: USDC_SYMBOL.to_owned(),
         decimals: 18,
-        asset_type: AssetType::ERC20,
+        asset_type: AssetType::BEP20,
     };
     // avalanche
     pub static ref AVALANCHE_USDT: Asset = Asset {
@@ -149,6 +154,21 @@ lazy_static! {
         name: USDC_NAME.to_owned(),
         symbol: USDC_SYMBOL.to_owned(),
         decimals: 6,
+        asset_type: AssetType::ERC20,
+    };
+    // base
+    pub static ref BASE_USDC: Asset = Asset {
+        id: AssetId::from_token(Chain::Base, BASE_USDC_TOKEN_ID),
+        name: USDT_NAME.to_owned(),
+        symbol: USDT_SYMBOL.to_owned(),
+        decimals: 6,
+        asset_type: AssetType::ERC20,
+    };
+    pub static ref BASE_CBBTC: Asset = Asset {
+        id: AssetId::from_token(Chain::Base, BASE_CBBTC_TOKEN_ID),
+        name: CBBTC_NAME.to_owned(),
+        symbol: CBBTC_SYMBOL.to_owned(),
+        decimals: 8,
         asset_type: AssetType::ERC20,
     };
 }
