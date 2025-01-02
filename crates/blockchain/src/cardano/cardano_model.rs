@@ -82,3 +82,21 @@ struct CardanoBlockData {
 struct CardanoBlockTip {
     tip: CardanoBlock,
 }
+
+#[typeshare(swift = "Sendable")]
+#[serde(rename_all = "camelCase")]
+struct CardanoGenesisData {
+    genesis: CardanoGenesis,
+}
+
+#[typeshare(swift = "Sendable")]
+#[serde(rename_all = "camelCase")]
+struct CardanoGenesis {
+    shelley: CardanoGenesisShelley,
+}
+
+#[typeshare(swift = "Sendable")]
+#[serde(rename_all = "camelCase")]
+struct CardanoGenesisShelley {
+    network_magic: i32,
+}
