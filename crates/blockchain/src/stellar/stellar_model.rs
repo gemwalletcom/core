@@ -9,6 +9,7 @@ struct StellarAccountEmpty {
     status: i32,
 }
 
+
 #[typeshare(swift = "Sendable")]
 struct StellarBalance {
     balance: String,
@@ -37,12 +38,9 @@ struct StellarNodeStatus {
 
 #[typeshare(swift = "Sendable")]
 struct StellarTransactionBroadcast {
-    hash: String,
-}
-
-#[typeshare(swift = "Sendable")]
-struct StellarTransactionBroadcastError {
-    title: String,
+    hash: Option<String>,
+    #[serde(rename = "title")]
+    error_message: Option<String>,
 }
 
 #[typeshare(swift = "Sendable")]
