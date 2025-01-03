@@ -23,7 +23,7 @@ impl BlockExplorer for Cardanocan {
         format!("{}/transaction/{}", self.meta.base_url, hash)
     }
     fn get_address_url(&self, address: &str) -> String {
-        format!("{}/account/{}", self.meta.base_url, address)
+        format!("{}/address/{}", self.meta.base_url, address)
     }
     fn get_token_url(&self, _token: &str) -> Option<String> {
         None
