@@ -1,5 +1,6 @@
 // lib.rs
 
+pub mod algorand;
 pub mod aptos;
 pub mod bitcoin;
 pub mod cosmos;
@@ -11,6 +12,7 @@ pub mod ton;
 pub mod tron;
 pub mod xrp;
 
+pub use self::algorand::client::AlgorandClient;
 pub use self::aptos::client::AptosClient;
 pub use self::bitcoin::client::BitcoinClient;
 pub use self::cosmos::client::CosmosClient;
