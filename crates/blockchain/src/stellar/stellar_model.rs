@@ -1,9 +1,14 @@
 #[typeshare(swift = "Sendable")]
 struct StellarAccount {
-    sequence: Option<String>,
-    balances: Option<Vec<StellarBalance>>,
-    status: Option<i32>,
+    sequence: String,
+    balances: Vec<StellarBalance>,
 }
+
+#[typeshare(swift = "Sendable")]
+struct StellarAccountEmpty {
+    status: i32,
+}
+
 
 #[typeshare(swift = "Sendable")]
 struct StellarBalance {
