@@ -15,6 +15,14 @@ impl BigNumberFormatter {
         let decimal = Self::big_decimal_value(value, decimals as u32)?;
         Some(decimal.to_string())
     }
+
+    pub fn value_from_amount(amount: &str, decimals: u32) -> Option<String> {
+        let big_decimal = BigDecimal::from_str(amount).expect("Invalid decimal number");
+        let multiplier = BigInt::from(10).pow(decimals);
+        let multiplier_decimal = BigDecimal::from(multiplier);
+        let scaled_value = big_decimal * multiplier_decimal;
+        Some(scaled_value.with_scale(0).to_string())
+    }
 }
 
 #[cfg(test)]
@@ -46,5 +54,18 @@ mod tests {
         // Test case 6: Output return small value
         let result = BigNumberFormatter::value("1640000000000000", 18).unwrap();
         assert_eq!(result, "0.00164");
+    }
+
+    #[test]
+    fn test_value_from_amount() {
+        // Test case 1: Valid input
+        let result = BigNumberFormatter::value_from_amount("1.123", 3).unwrap();
+        assert_eq!(result, "1123");
+
+        let result = BigNumberFormatter::value_from_amount("332131212.2321312", 8).unwrap();
+        assert_eq!(result, "33213121223213120");
+
+        let result = BigNumberFormatter::value_from_amount("0", 0).unwrap();
+        assert_eq!(result, "0");
     }
 }
