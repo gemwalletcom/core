@@ -28,8 +28,8 @@ impl StellarClient {
         Ok(self.client.get(url).send().await?.json::<Block>().await?)
     }
 
-    pub async fn get_block_payments(&self, block_number: i64) -> Result<Vec<Payment>, Box<dyn Error + Send + Sync>> {
-        let query = [("limit", 200.to_string()), ("include_failed", "true".to_string())];
+    pub async fn get_block_payments(&self, block_number: i64, limit: i64) -> Result<Vec<Payment>, Box<dyn Error + Send + Sync>> {
+        let query = [("limit", limit.to_string())];
         let url = format!("{}/ledgers/{}/payments", self.url, block_number);
         Ok(self
             .client
