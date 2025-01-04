@@ -1,6 +1,6 @@
 use core::str;
 
-use primitives::{Asset, BigNumberFormatter, Chain};
+use primitives::{Asset, BigNumberFormatter, Chain, TransactionState};
 use serde::{Deserialize, Serialize};
 
 pub const TRANSACTION_TYPE_PAYMENT: &str = "payment";
@@ -65,6 +65,13 @@ impl Payment {
             TRANSACTION_TYPE_PAYMENT => self.to.clone(),
             TRANSACTION_TYPE_CREATE_ACCOUNT => self.account.clone(),
             _ => None,
+        }
+    }
+
+    pub fn get_state(&self) -> TransactionState {
+        match self.transaction_successful {
+            true => TransactionState::Confirmed,
+            false => TransactionState::Failed,
         }
     }
 

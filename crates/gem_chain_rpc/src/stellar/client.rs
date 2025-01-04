@@ -75,7 +75,7 @@ impl StellarClient {
                         transaction.clone().to.unwrap_or_default(),
                         None,
                         primitives::TransactionType::Transfer,
-                        primitives::TransactionState::Confirmed,
+                        transaction.get_state(),
                         block.sequence.to_string(),
                         0.to_string(),
                         block.base_fee_in_stroops.to_string(), // TODO: Calculate from block/transaction
@@ -97,7 +97,7 @@ impl StellarClient {
 #[async_trait]
 impl ChainBlockProvider for StellarClient {
     fn get_chain(&self) -> Chain {
-        Chain::Stellar
+        Chain::Polkadot
     }
 
     async fn get_latest_block(&self) -> Result<i64, Box<dyn Error + Send + Sync>> {
