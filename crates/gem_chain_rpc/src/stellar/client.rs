@@ -88,7 +88,7 @@ impl ChainBlockProvider for StellarClient {
     async fn get_transactions(&self, block_number: i64) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Send + Sync>> {
         let block = self.get_block(block_number).await?;
         let transactions = self
-            .get_block_payments(block_number)
+            .get_block_payments(block_number, 200)
             .await?
             .iter()
             .flat_map(|x| self.map_transaction(block.clone(), x.clone()))
