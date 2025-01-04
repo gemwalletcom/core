@@ -28,8 +28,12 @@ impl StellarClient {
         Ok(self.client.get(url).send().await?.json::<Block>().await?)
     }
 
-    pub async fn get_block_payments(&self, block_number: i64, limit: i64) -> Result<Vec<Payment>, Box<dyn Error + Send + Sync>> {
-        let query = [("limit", limit.to_string())];
+    pub async fn get_block_payments(&self, block_number: i64, limit: usize, cursor: Option<String>) -> Result<Vec<Payment>, Box<dyn Error + Send + Sync>> {
+        let query = [
+            ("limit", limit.to_string()),
+            ("include_failed", "true".to_string()),
+            ("cursor", cursor.unwrap_or_default()),
+        ];
         let url = format!("{}/ledgers/{}/payments", self.url, block_number);
         Ok(self
             .client
@@ -41,6 +45,21 @@ impl StellarClient {
             .await?
             ._embedded
             .records)
+    }
+
+    pub async fn get_block_payments_all(&self, block_number: i64) -> Result<Vec<Payment>, Box<dyn Error + Send + Sync>> {
+        let mut results: Vec<Payment> = Vec::new();
+        let mut cursor: Option<String> = None;
+        let limit: usize = 200;
+        loop {
+            let payments = self.get_block_payments(block_number, limit, cursor).await?;
+            results.extend(payments.clone());
+            cursor = payments.last().map(|x| x.id.clone());
+
+            if payments.len() < limit {
+                return Ok(results);
+            }
+        }
     }
 
     pub fn map_transaction(&self, block: Block, transaction: Payment) -> Option<primitives::Transaction> {
@@ -88,7 +107,7 @@ impl ChainBlockProvider for StellarClient {
     async fn get_transactions(&self, block_number: i64) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Send + Sync>> {
         let block = self.get_block(block_number).await?;
         let transactions = self
-            .get_block_payments(block_number, 200)
+            .get_block_payments_all(block_number)
             .await?
             .iter()
             .flat_map(|x| self.map_transaction(block.clone(), x.clone()))

@@ -29,6 +29,7 @@ pub struct Block {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Payment {
+    pub id: String,
     pub transaction_successful: bool,
     pub transaction_hash: String,
     #[serde(rename = "type")]
