@@ -26,6 +26,10 @@ impl FiatProvider for MoonPayClient {
             .get_buy_quote(request_map.symbol.to_lowercase(), request.fiat_currency.to_lowercase(), request.fiat_amount)
             .await?;
 
+        if quote.quote_currency.not_allowed_countries.contains(&ip_address_check.alpha2) {
+            return Err("purchase is not allowed in this country".into());
+        }
+
         Ok(self.get_fiat_quote(request, quote))
     }
 
