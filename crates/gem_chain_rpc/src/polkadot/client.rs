@@ -69,7 +69,7 @@ impl PolkadotClient {
 #[async_trait]
 impl ChainBlockProvider for PolkadotClient {
     fn get_chain(&self) -> Chain {
-        Chain::Stellar
+        Chain::Algorand
     }
 
     async fn get_latest_block(&self) -> Result<i64, Box<dyn Error + Send + Sync>> {
