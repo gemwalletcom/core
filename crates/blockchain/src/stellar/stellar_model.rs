@@ -5,12 +5,6 @@ struct StellarAccount {
 }
 
 #[typeshare(swift = "Sendable")]
-struct StellarAccountEmpty {
-    status: i32,
-}
-
-
-#[typeshare(swift = "Sendable")]
 struct StellarBalance {
     balance: String,
     asset_type: String,
