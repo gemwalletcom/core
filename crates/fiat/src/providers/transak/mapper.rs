@@ -24,7 +24,7 @@ pub fn map_asset_chain(asset: Asset) -> Option<Chain> {
         "zksync" => Some(Chain::ZkSync),
         "celo" => Some(Chain::Celo),
         "mantle" => Some(Chain::Mantle),
-        "opBNB" => Some(Chain::OpBNB),
+        "opbnb" => Some(Chain::OpBNB),
         "mainnet" => match asset.coin_id.as_str() {
             "bitcoin" => Some(Chain::Bitcoin),
             "litecoin" => Some(Chain::Litecoin),
@@ -36,6 +36,7 @@ pub fn map_asset_chain(asset: Asset) -> Option<Chain> {
             "stellar" => Some(Chain::Stellar),
             "algorand" => Some(Chain::Algorand),
             "polkadot" => Some(Chain::Polkadot),
+            "cardano" => Some(Chain::Cardano),
             _ => None,
         },
         _ => None,
