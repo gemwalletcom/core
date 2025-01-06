@@ -9,7 +9,7 @@ use std::time::Duration;
 mod fiat_assets_updater;
 
 pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + Send>>> {
-    let update_fiat_assets_job = run_job("Price Alerts", Duration::from_secs(settings.alerter.update_interval_seconds), {
+    let update_fiat_assets_job = run_job("Update fiat assets", Duration::from_secs(3600), {
         let settings = Arc::new(settings.clone());
         move || {
             let providers = FiatProviderFactory::new_providers((*settings).clone());
