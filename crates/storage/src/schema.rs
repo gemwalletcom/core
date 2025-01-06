@@ -101,9 +101,9 @@ diesel::table! {
         #[max_length = 128]
         token_id -> Nullable<Varchar>,
         enabled -> Bool,
+        enabled_by_provider -> Bool,
         updated_at -> Timestamp,
         created_at -> Timestamp,
-        enabled_by_provider -> Bool,
     }
 }
 
