@@ -1,4 +1,5 @@
 mod alerter;
+mod assets;
 mod device_updater;
 mod fiat;
 mod pricer;
@@ -73,6 +74,7 @@ pub async fn main() {
         "alerter" => alerter::jobs(settings.clone()).await,
         "pricer" => pricer::jobs(settings.clone()).await,
         "fiat" => fiat::jobs(settings.clone()).await,
+        "assets" => assets::jobs(settings.clone()).await,
         _ => {
             vec![
                 Box::pin(update_appstore_version),

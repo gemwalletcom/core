@@ -1,8 +1,6 @@
-mod asset_updater;
 mod charts_updater;
 mod price_updater;
 
-use crate::pricer::asset_updater::AssetUpdater;
 use crate::pricer::charts_updater::ChartsUpdater;
 use crate::pricer::price_updater::PriceUpdater;
 use coingecko::CoinGeckoClient;
@@ -85,15 +83,6 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
         }
     });
 
-    let update_assets = run_job("Update assets assets", Duration::from_secs(86400), {
-        let settings = settings.clone();
-        let coingecko_client = coingecko_client.clone();
-        move || {
-            let mut asset_updater = AssetUpdater::new(coingecko_client.clone(), &settings.postgres.url);
-            async move { asset_updater.update_assets().await }
-        }
-    });
-
     vec![
         Box::pin(clean_updated_assets),
         Box::pin(update_fiat_assets),
@@ -103,7 +92,6 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
         Box::pin(update_prices_top_market_cap),
         Box::pin(update_prices_cache),
         Box::pin(update_charts),
-        Box::pin(update_assets),
     ]
 }
 
