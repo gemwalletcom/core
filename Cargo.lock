@@ -2885,6 +2885,7 @@ dependencies = [
  "settings",
  "sha2 0.10.8",
  "storage",
+ "thiserror",
  "tokio",
  "url",
  "uuid",

@@ -1,4 +1,5 @@
 use crate::{
+    error::FiatError,
     model::{FiatMapping, FiatProviderAsset},
     providers::moonpay::model::{Data, Webhook},
     FiatProvider,
@@ -19,7 +20,7 @@ impl FiatProvider for MoonPayClient {
     async fn get_buy_quote(&self, request: FiatBuyRequest, request_map: FiatMapping) -> Result<FiatQuote, Box<dyn std::error::Error + Send + Sync>> {
         let ip_address_check = self.get_ip_address(request.clone().ip_address).await?;
         if !ip_address_check.is_allowed && !ip_address_check.is_buy_allowed {
-            return Err("purchase is not allowed".into());
+            return Err(FiatError::FiatPurchaseNotAllowed.into());
         }
 
         let quote = self
@@ -27,7 +28,11 @@ impl FiatProvider for MoonPayClient {
             .await?;
 
         if quote.quote_currency.not_allowed_countries.contains(&ip_address_check.alpha2) {
-            return Err("purchase is not allowed in this country".into());
+            return Err(FiatError::UnsupportedCountry(ip_address_check.alpha2).into());
+        }
+
+        if &ip_address_check.state == "US" && quote.quote_currency.not_allowed_us_states.contains(&ip_address_check.state) {
+            return Err(FiatError::UnsupportedState(ip_address_check.state).into());
         }
 
         Ok(self.get_fiat_quote(request, quote))

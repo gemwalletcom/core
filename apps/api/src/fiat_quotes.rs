@@ -24,10 +24,13 @@ pub async fn get_fiat_on_ramp_quotes(
         fiat_currency: currency,
         wallet_address,
     };
-    let quotes = fiat_client.lock().await.get_buy_quotes(request).await;
-    match quotes {
-        Ok(value) => Json(FiatQuotes { quotes: value }),
-        Err(_) => Json(FiatQuotes { quotes: vec![] }),
+    let result = fiat_client.lock().await.get_buy_quotes(request).await;
+    match result {
+        Ok(value) => Json(value),
+        Err(_) => Json(FiatQuotes {
+            quotes: vec![],
+            errors: vec![],
+        }),
     }
 }
 
@@ -50,8 +53,11 @@ pub async fn get_fiat_off_ramp_quotes(
     };
     let quotes = fiat_client.lock().await.get_sell_quotes(request).await;
     match quotes {
-        Ok(value) => Json(FiatQuotes { quotes: value }),
-        Err(_) => Json(FiatQuotes { quotes: vec![] }),
+        Ok(value) => Json(value),
+        Err(_) => Json(FiatQuotes {
+            quotes: vec![],
+            errors: vec![],
+        }),
     }
 }
 

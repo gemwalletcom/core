@@ -17,6 +17,7 @@ hex = { workspace = true }
 bigdecimal = { workspace = true }
 uuid = { workspace = true }
 tokio = { workspace = true }
+thiserror = { workspace = true }
 
 settings = { path = "../settings" }
 storage = { path = "../storage" }

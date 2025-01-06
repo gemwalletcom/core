@@ -12,6 +12,8 @@ pub struct MoonPayQuote {
 #[serde(rename_all = "camelCase")]
 pub struct QuooteCurrency {
     pub not_allowed_countries: Vec<String>,
+    #[serde(rename = "notAllowedUSStates")]
+    pub not_allowed_us_states: Vec<String>,
 }
 
 #[derive(Debug, Clone, Deserialize)]

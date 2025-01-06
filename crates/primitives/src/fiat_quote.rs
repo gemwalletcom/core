@@ -19,4 +19,13 @@ pub struct FiatQuote {
 #[typeshare(swift = "Sendable")]
 pub struct FiatQuotes {
     pub quotes: Vec<FiatQuote>,
+    #[typeshare(skip)]
+    pub errors: Vec<FiatQuoteError>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[typeshare(swift = "Sendable")]
+pub struct FiatQuoteError {
+    pub provider: String,
+    pub error: String,
 }

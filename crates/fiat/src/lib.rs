@@ -5,7 +5,7 @@ pub use provider::FiatProvider;
 pub mod providers;
 use crate::providers::{BanxaClient, MercuryoClient, MoonPayClient, RampClient, TransakClient};
 use settings::Settings;
-
+pub mod error;
 pub struct FiatProviderFactory {}
 impl FiatProviderFactory {
     pub fn new_providers(settings: Settings) -> Vec<Box<dyn FiatProvider + Send + Sync>> {
