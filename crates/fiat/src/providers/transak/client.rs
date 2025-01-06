@@ -78,7 +78,7 @@ impl TransakClient {
         let token_id = filter_token_id(asset.clone().address);
 
         Some(FiatProviderAsset {
-            id: asset.clone().coin_id,
+            id: asset.clone().unique_id,
             chain,
             token_id,
             symbol: asset.symbol,

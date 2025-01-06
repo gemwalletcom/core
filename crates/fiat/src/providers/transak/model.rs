@@ -20,6 +20,7 @@ pub struct TransakResponse<T> {
 #[serde(rename_all = "camelCase")]
 pub struct Asset {
     pub coin_id: String,
+    pub unique_id: String,
     pub symbol: String,
     pub network: AssetNetwork,
     pub address: Option<String>,
