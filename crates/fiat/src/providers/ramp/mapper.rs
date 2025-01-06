@@ -27,6 +27,7 @@ pub fn map_asset_chain(chain: String) -> Option<Chain> {
         "WORLDCHAIN" => Some(Chain::World),
         "CARDANO" => Some(Chain::Cardano),
         "BCH" => Some(Chain::BitcoinCash),
+        "DOT" => Some(Chain::Polkadot),
         _ => None,
     }
 }

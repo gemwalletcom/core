@@ -25,6 +25,8 @@ pub fn map_asset_chain(chain: String) -> Option<Chain> {
         "DOT" => Some(Chain::Polkadot),
         "ALGO" => Some(Chain::Algorand),
         "ZKSYNC" => Some(Chain::ZkSync),
+        "BCH" => Some(Chain::BitcoinCash),
+        "WLD" => Some(Chain::World),
         _ => None,
     }
 }
