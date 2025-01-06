@@ -60,7 +60,7 @@ impl DatabaseClient {
                 symbol.eq(excluded(symbol)),
                 network.eq(excluded(network)),
                 token_id.eq(excluded(token_id)),
-                enabled.eq(excluded(enabled)),
+                enabled_by_provider.eq(excluded(enabled_by_provider)),
             ))
             .execute(&mut self.connection)
     }

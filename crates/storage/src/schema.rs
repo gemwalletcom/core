@@ -103,7 +103,7 @@ diesel::table! {
         enabled -> Bool,
         updated_at -> Timestamp,
         created_at -> Timestamp,
-        hidden -> Bool,
+        enabled_by_provider -> Bool,
     }
 }
 

@@ -58,7 +58,13 @@ impl Client {
     }
 
     fn get_fiat_mapping(&mut self, asset_id: &str) -> Result<FiatMappingMap, Box<dyn Error + Send + Sync>> {
-        let list = self.database.get_fiat_assets_for_asset_id(asset_id)?;
+        let list = self
+            .database
+            .get_fiat_assets_for_asset_id(asset_id)?
+            .into_iter()
+            .filter(|x| x.is_enabled())
+            .collect::<Vec<_>>();
+
         let map: FiatMappingMap = list
             .into_iter()
             .map(|x| {
