@@ -11,6 +11,8 @@ pub struct FiatBuyRequest {
     pub fiat_currency: String,
     pub fiat_amount: f64,
     pub wallet_address: String,
+    #[typeshare(skip)]
+    pub provider_id: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -69,7 +69,7 @@ impl FiatProvider {
     pub fn from_primitive(provider: primitives::FiatProviderName) -> Self {
         Self {
             id: provider.id(),
-            name: provider.as_str().to_string(),
+            name: provider.as_ref().to_string(),
             enabled: true,
         }
     }

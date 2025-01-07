@@ -141,6 +141,8 @@ impl BanxaClient {
         }
     }
 
+    // URL Parametization https://docs.banxa.com/docs/referral-link
+
     pub fn get_redirect_url(&self, request: FiatBuyRequest, fiat_mapping: FiatMapping) -> String {
         let mut components = Url::parse(&self.url).unwrap();
 

@@ -7,13 +7,14 @@ use rocket::tokio::sync::Mutex;
 use rocket::State;
 // on ramp
 
-#[get("/fiat/on_ramp/quotes/<asset_id>?<amount>&<currency>&<wallet_address>&<ip_address>")]
+#[get("/fiat/on_ramp/quotes/<asset_id>?<amount>&<currency>&<wallet_address>&<ip_address>&<provider_id>")]
 pub async fn get_fiat_on_ramp_quotes(
     asset_id: String,
     amount: f64,
     currency: String,
     wallet_address: String,
     ip_address: Option<String>,
+    provider_id: Option<String>,
     ip: std::net::IpAddr,
     fiat_client: &State<Mutex<FiatProvider>>,
 ) -> Json<FiatQuotes> {
@@ -23,6 +24,7 @@ pub async fn get_fiat_on_ramp_quotes(
         fiat_amount: amount,
         fiat_currency: currency,
         wallet_address,
+        provider_id,
     };
     let result = fiat_client.lock().await.get_buy_quotes(request).await;
     match result {

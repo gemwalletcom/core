@@ -1,16 +1,19 @@
 use serde::{Deserialize, Serialize};
 use strum::{EnumIter, IntoEnumIterator};
+use strum_macros::{AsRefStr, EnumString};
 use typeshare::typeshare;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Sendable")]
 #[serde(rename_all = "camelCase")]
 pub struct FiatProvider {
+    pub id: String,
     pub name: String,
     pub image_url: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, EnumIter)]
+#[derive(Debug, Clone, Serialize, Deserialize, EnumIter, AsRefStr, EnumString)]
+#[strum(serialize_all = "lowercase")]
 pub enum FiatProviderName {
     Mercuryo,
     Transak,
@@ -21,7 +24,11 @@ pub enum FiatProviderName {
 }
 
 impl FiatProviderName {
-    pub fn as_str(&self) -> &'static str {
+    pub fn id(&self) -> String {
+        self.as_ref().to_string()
+    }
+
+    pub fn name(&self) -> &'static str {
         match self {
             FiatProviderName::Mercuryo => "Mercuryo",
             FiatProviderName::Transak => "Transak",
@@ -31,14 +38,10 @@ impl FiatProviderName {
             FiatProviderName::Kado => "Kado",
         }
     }
-
-    pub fn id(&self) -> String {
-        self.as_str().to_lowercase()
-    }
-
     pub fn as_fiat_provider(&self) -> FiatProvider {
         FiatProvider {
-            name: self.as_str().to_string(),
+            id: self.id(),
+            name: self.name().to_owned(),
             image_url: "".to_string(),
         }
     }

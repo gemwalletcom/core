@@ -86,16 +86,27 @@ impl Client {
 
     pub async fn get_buy_quotes(&mut self, request: FiatBuyRequest) -> Result<FiatQuotes, Box<dyn Error + Send + Sync>> {
         let fiat_mapping_map = self.get_fiat_mapping(&request.asset_id)?;
-        let mut futures = vec![];
-
-        for provider in &self.providers {
-            if let Some(fiat_mapping) = fiat_mapping_map.get(provider.name().id().as_str()) {
-                futures.push(provider.get_buy_quote(request.clone(), fiat_mapping.clone()));
-            }
-        }
-
         let mut quotes = vec![];
         let mut errors = vec![];
+
+        let futures = self
+            .providers
+            .iter()
+            .filter_map(|provider| {
+                fiat_mapping_map.get(provider.name().id().as_str()).and_then(|fiat_mapping| {
+                    if let Some(provider_id) = request.provider_id.clone() {
+                        // If provider_name is provided, only get quote from that provider
+                        if provider_id == provider.name().id() {
+                            return Some(provider.get_buy_quote(request.clone(), fiat_mapping.clone()));
+                        }
+                        None
+                    } else {
+                        Some(provider.get_buy_quote(request.clone(), fiat_mapping.clone()))
+                    }
+                })
+            })
+            .collect::<Vec<_>>();
+
         join_all(futures).await.into_iter().for_each(|x| match x {
             Ok(quote) => {
                 quotes.push(quote);
