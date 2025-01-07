@@ -4,7 +4,7 @@ use strum_macros::{AsRefStr, EnumString};
 use typeshare::typeshare;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare(swift = "Equatable, Sendable")]
+#[typeshare(swift = "Equatable, Sendable, Hashable")]
 #[serde(rename_all = "camelCase")]
 pub struct FiatProvider {
     pub id: String,

@@ -31,7 +31,7 @@ pub enum FiatTransactionStatus {
     Unknown,
 }
 
-#[typeshare(swift = "Equatable, Sendable")]
+#[typeshare(swift = "Equatable, Sendable, Hashable")]
 #[derive(Debug, Clone, Serialize, Deserialize, AsRefStr, EnumString)]
 #[serde(rename_all = "lowercase")]
 #[strum(serialize_all = "lowercase")]
