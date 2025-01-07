@@ -20,7 +20,7 @@ impl FiatAssetsUpdater {
         for provider in self.providers.iter() {
             match provider.get_assets().await {
                 Ok(assets) => {
-                    println!("update_assets for provider: {}, assets: {:?}", provider.name().as_str(), assets.len());
+                    println!("update_assets for provider: {}, assets: {:?}", provider.name().id(), assets.len());
                     fiat_assets.extend(assets.clone());
 
                     let assets = assets
@@ -40,7 +40,7 @@ impl FiatAssetsUpdater {
                             Err(err) => {
                                 println!(
                                     "add_fiat_assets for provider: {}, {:?}:{:?} error: {}",
-                                    provider.name().as_str(),
+                                    provider.name().id(),
                                     asset.code,
                                     asset.asset_id,
                                     err
@@ -50,7 +50,7 @@ impl FiatAssetsUpdater {
                     }
                 }
                 Err(err) => {
-                    println!("update_assets for provider: {}, error: {}", provider.name().as_str(), err);
+                    println!("update_assets for provider: {}, error: {}", provider.name().id(), err);
                 }
             }
         }
