@@ -43,7 +43,7 @@ struct CardanoAggregateSumValue {
 #[typeshare(swift = "Sendable")]
 #[serde(rename_all = "camelCase")]
 struct CardanoTransactionBroadcast {
-    submit_transaction: CardanoSubmitTransactionHash,
+    submit_transaction: Option<CardanoSubmitTransactionHash>,
 }
 
 #[typeshare(swift = "Sendable")]

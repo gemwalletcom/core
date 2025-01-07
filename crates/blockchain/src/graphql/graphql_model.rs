@@ -10,7 +10,8 @@ struct GraphqlRequest {
 #[serde(rename_all = "camelCase")]
 #[typeshare(swiftGenericConstraints = "T: Sendable")]
 struct GraphqlData<T> {
-    data: T,
+    data: Option<T>,
+    errors: Option<Vec<GraphqlError>>,
 }
 
 #[typeshare(swift = "Sendable")]
