@@ -15,6 +15,7 @@ pub struct Settings {
     pub mercuryo: Mercuryo,
     pub ramp: Ramp,
     pub banxa: Banxa,
+    pub kado: Kado,
     pub coingecko: CoinGecko,
     pub pricer: Pricer,
     pub charter: Charter,
