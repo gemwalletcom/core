@@ -90,7 +90,7 @@ mod tests {
         let _usdc_config = CapitalCostConfig {
             decimals: 6,
             lower_bound: to_bn_wei("0.0001", 18),
-            upper_bound: to_bn_wei("0.0001", 18),
+            upper_bound: to_bn_wei("0.00015", 18),
             cutoff: BigInt::from(100000),
         };
 
