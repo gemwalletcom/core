@@ -9,7 +9,7 @@ use crate::{
     debug_println,
     network::AlienProvider,
     swapper::{
-        approval::check_approval_erc20, asset::*, chainlink::ChainLinkPriceFeed, eth_rpc, models::*, slippage::apply_slippage_in_bp, weth_address,
+        approval::check_approval_erc20, asset::*, chainlink::ChainlinkPriceFeed, eth_rpc, models::*, slippage::apply_slippage_in_bp, weth_address,
         GemSwapProvider, SwapperError,
     },
 };
@@ -330,7 +330,7 @@ impl GemSwapProvider for Across {
             hubpool_client.get_current_time(),
         ];
 
-        let eth_price_feed = ChainLinkPriceFeed::new_eth_usd_feed(provider.clone());
+        let eth_price_feed = ChainlinkPriceFeed::new_eth_usd_feed(provider.clone());
         if !input_is_native {
             calls.push(eth_price_feed.latest_round_call3());
         }
@@ -383,7 +383,7 @@ impl GemSwapProvider for Across {
         let (gas_limit, mut v3_relay_data) = tuple?;
         let mut gas_fee = gas_limit * gas_price?;
         if !input_is_native {
-            let eth_price = ChainLinkPriceFeed::decoded_answer(&multicall_results[3])?;
+            let eth_price = ChainlinkPriceFeed::decoded_answer(&multicall_results[3])?;
             gas_fee = Self::calculate_fee_in_token(&gas_fee, &eth_price, 6);
         }
         debug_println!("gas_fee: {}", gas_fee);
@@ -535,7 +535,7 @@ mod tests {
             success: true,
             returnData: data.into(),
         };
-        let price = ChainLinkPriceFeed::decoded_answer(&result).unwrap();
+        let price = ChainlinkPriceFeed::decoded_answer(&result).unwrap();
 
         assert_eq!(price, BigInt::from(335398640362_u64));
 

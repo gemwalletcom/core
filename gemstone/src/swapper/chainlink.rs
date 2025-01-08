@@ -18,15 +18,15 @@ use gem_evm::{
 };
 use primitives::Chain;
 
-pub struct ChainLinkPriceFeed {
+pub struct ChainlinkPriceFeed {
     pub contract: String,
     pub provider: Arc<dyn AlienProvider>,
     pub chain: Chain,
 }
 
-impl ChainLinkPriceFeed {
-    pub fn new_eth_usd_feed(provider: Arc<dyn AlienProvider>) -> ChainLinkPriceFeed {
-        ChainLinkPriceFeed {
+impl ChainlinkPriceFeed {
+    pub fn new_eth_usd_feed(provider: Arc<dyn AlienProvider>) -> ChainlinkPriceFeed {
+        ChainlinkPriceFeed {
             contract: CHAINLINK_ETH_USD_FEED.into(),
             provider,
             chain: Chain::Ethereum,
