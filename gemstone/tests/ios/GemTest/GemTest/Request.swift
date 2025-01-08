@@ -77,7 +77,7 @@ public extension SwapQuoteRequest {
         options: SWAP_OPTIONS
     )
 
-    static let opToEth = SwapQuoteRequest(
+    static let op2Eth = SwapQuoteRequest(
         fromAsset: "optimism",
         toAsset: "ethereum",
         walletAddress: TEST_WALLET_ADDRESS,
@@ -87,12 +87,32 @@ public extension SwapQuoteRequest {
         options: SWAP_OPTIONS
     )
 
-    static let opToArb = SwapQuoteRequest(
+    static let op2Arb = SwapQuoteRequest(
         fromAsset: "optimism",
         toAsset: "arbitrum",
         walletAddress: TEST_WALLET_ADDRESS,
         destinationAddress: TEST_WALLET_ADDRESS,
         value: "10000000000000000", // 0.01 eth
+        mode: .exactIn,
+        options: SWAP_OPTIONS
+    )
+
+    static let ethUSDC2Base = SwapQuoteRequest(
+        fromAsset: "ethereum_0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        toAsset: "base_0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        walletAddress: TEST_WALLET_ADDRESS,
+        destinationAddress: TEST_WALLET_ADDRESS,
+        value: "10000000000", // 10000 USDC
+        mode: .exactIn,
+        options: SWAP_OPTIONS
+    )
+
+    static let baseUSDC2Eth = SwapQuoteRequest(
+        fromAsset: "base_0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        toAsset: "ethereum_0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        walletAddress: TEST_WALLET_ADDRESS,
+        destinationAddress: TEST_WALLET_ADDRESS,
+        value: "10000000000", // 10000 USDC
         mode: .exactIn,
         options: SWAP_OPTIONS
     )

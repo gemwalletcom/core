@@ -4,6 +4,7 @@ use async_trait::async_trait;
 use std::{fmt::Debug, sync::Arc};
 
 mod approval;
+mod chainlink;
 mod custom_types;
 mod eth_rpc;
 mod permit2_data;

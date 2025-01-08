@@ -8,7 +8,10 @@ use crate::{
     config::swap_config::SwapReferralFee,
     debug_println,
     network::AlienProvider,
-    swapper::{approval::check_approval_erc20, asset::*, eth_rpc, models::*, slippage::apply_slippage_in_bp, weth_address, GemSwapProvider, SwapperError},
+    swapper::{
+        approval::check_approval_erc20, asset::*, chainlink::ChainLinkPriceFeed, eth_rpc, models::*, slippage::apply_slippage_in_bp, weth_address,
+        GemSwapProvider, SwapperError,
+    },
 };
 use gem_evm::{
     across::{
@@ -24,7 +27,7 @@ use gem_evm::{
     jsonrpc::TransactionObject,
     weth::WETH9,
 };
-use num_bigint::BigInt;
+use num_bigint::{BigInt, Sign};
 use primitives::{AssetId, Chain, EVMChain};
 
 use alloy_core::{
@@ -216,6 +219,12 @@ impl Across {
 
         Ok(())
     }
+
+    pub fn calculate_fee_in_token(fee_in_wei: &U256, token_price: &BigInt, token_decimals: u32) -> U256 {
+        let fee = BigInt::from_bytes_le(Sign::Plus, &fee_in_wei.to_le_bytes::<32>());
+        let fee_in_token = fee * token_price * BigInt::from(10_u64.pow(token_decimals)) / BigInt::from(10_u64.pow(8)) / BigInt::from(10_u64.pow(18));
+        U256::from_le_slice(&fee_in_token.to_bytes_le().1)
+    }
 }
 
 #[async_trait]
@@ -225,8 +234,8 @@ impl GemSwapProvider for Across {
     }
 
     fn supported_assets(&self) -> Vec<SwapChainAsset> {
-        // WETH for now
         vec![
+            // WETH
             SwapChainAsset::Assets(Chain::Arbitrum, vec![ARBITRUM_WETH.id.clone()]),
             SwapChainAsset::Assets(Chain::Ethereum, vec![ETHEREUM_WETH.id.clone()]),
             SwapChainAsset::Assets(Chain::Base, vec![BASE_WETH.id.clone()]),
@@ -236,6 +245,17 @@ impl GemSwapProvider for Across {
             SwapChainAsset::Assets(Chain::Polygon, vec![POLYGON_WETH.id.clone()]),
             SwapChainAsset::Assets(Chain::ZkSync, vec![ZKSYNC_WETH.id.clone()]),
             SwapChainAsset::Assets(Chain::World, vec![WORLD_WETH.id.clone()]),
+            // USDC
+            SwapChainAsset::Assets(Chain::Arbitrum, vec![ARBITRUM_USDC.id.clone()]),
+            SwapChainAsset::Assets(Chain::Ethereum, vec![ETHEREUM_USDC.id.clone()]),
+            SwapChainAsset::Assets(Chain::Base, vec![BASE_USDC.id.clone()]),
+            SwapChainAsset::Assets(Chain::Optimism, vec![OPTIMISM_USDC.id.clone()]),
+            // USDT
+            SwapChainAsset::Assets(Chain::Arbitrum, vec![ARBITRUM_USDT.id.clone()]),
+            SwapChainAsset::Assets(Chain::Ethereum, vec![ETHEREUM_USDT.id.clone()]),
+            SwapChainAsset::Assets(Chain::Linea, vec![LINEA_USDT.id.clone()]),
+            SwapChainAsset::Assets(Chain::Optimism, vec![OPTIMISM_USDT.id.clone()]),
+            SwapChainAsset::Assets(Chain::ZkSync, vec![ZKSYNC_USDT.id.clone()]),
         ]
     }
 
@@ -245,6 +265,7 @@ impl GemSwapProvider for Across {
             return Err(SwapperError::NotSupportedPair);
         }
 
+        let input_is_native = request.from_asset.is_native();
         let from_chain = EVMChain::from_chain(request.from_asset.chain).ok_or(SwapperError::NotSupportedChain)?;
         let from_amount: U256 = request.value.parse().map_err(|_| SwapperError::InvalidAmount)?;
         let wallet_address = EthereumAddress::parse(&request.wallet_address).ok_or(SwapperError::InvalidAddress {
@@ -303,11 +324,17 @@ impl GemSwapProvider for Across {
 
         // Prepare data for lp fee calculation (token config, utilization, current time)
         let token_config_req = config_client.fetch_config(&mainnet_token); // cache is used inside config_client
-        let calls = vec![
+        let mut calls = vec![
             hubpool_client.utilization_call3(&mainnet_token, U256::from(0)),
             hubpool_client.utilization_call3(&mainnet_token, from_amount),
             hubpool_client.get_current_time(),
         ];
+
+        let eth_price_feed = ChainLinkPriceFeed::new_eth_usd_feed(provider.clone());
+        if !input_is_native {
+            calls.push(eth_price_feed.latest_round_call3());
+        }
+
         let multicall_req = eth_rpc::multicall3_call(provider.clone(), &hubpool_client.chain, calls);
 
         let batch_results = futures::join!(token_config_req, multicall_req);
@@ -325,11 +352,13 @@ impl GemSwapProvider for Across {
         let lpfee_calc = LpFeeCalculator::new(rate_model);
         let lpfee_percent = lpfee_calc.realized_lp_fee_pct(&util_before, &util_after, false);
         let lpfee = fees::multiply(from_amount, lpfee_percent, cost_config.decimals);
+        debug_println!("lpfee: {}", lpfee);
 
         // Calculate relayer fee
         let relayer_calc = RelayerFeeCalculator::default();
         let relayer_fee_percent = relayer_calc.capital_fee_percent(&BigInt::from_str(&request.value).unwrap(), cost_config);
         let relayer_fee = fees::multiply(from_amount, relayer_fee_percent, cost_config.decimals);
+        debug_println!("relayer_fee: {}", relayer_fee);
 
         let referral_config = request.options.fee.clone().unwrap_or_default().evm_bridge;
 
@@ -340,7 +369,7 @@ impl GemSwapProvider for Across {
         let gas_price_req = eth_rpc::fetch_gas_price(provider.clone(), &request.to_asset.chain);
         let gas_limit_req = self.estimate_gas_limit(
             &from_amount,
-            request.from_asset.is_native(),
+            input_is_native,
             &input_asset,
             &output_token,
             &wallet_address,
@@ -352,7 +381,12 @@ impl GemSwapProvider for Across {
 
         let (tuple, gas_price) = futures::join!(gas_limit_req, gas_price_req);
         let (gas_limit, mut v3_relay_data) = tuple?;
-        let gas_fee = gas_limit * gas_price?;
+        let mut gas_fee = gas_limit * gas_price?;
+        if !input_is_native {
+            let eth_price = ChainLinkPriceFeed::decoded_answer(&multicall_results[3])?;
+            gas_fee = Self::calculate_fee_in_token(&gas_fee, &eth_price, 6);
+        }
+        debug_println!("gas_fee: {}", gas_fee);
 
         // Check if bridge amount is too small
         if remain_amount < gas_fee {
@@ -373,7 +407,7 @@ impl GemSwapProvider for Across {
         }
 
         let approval: ApprovalType = {
-            if request.from_asset.is_native() {
+            if input_is_native {
                 ApprovalType::None
             } else {
                 check_approval_erc20(
@@ -468,7 +502,7 @@ impl GemSwapProvider for Across {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use gem_evm::constants::*;
+    use gem_evm::{constants::*, multicall3::IMulticall3};
 
     #[test]
     fn test_is_supported_pair() {
@@ -492,5 +526,22 @@ mod tests {
         assert!(Across::is_supported_pair(&op, &eth));
         assert!(Across::is_supported_pair(&arb, &eth));
         assert!(Across::is_supported_pair(&op, &arb));
+    }
+
+    #[test]
+    fn test_fee_in_token() {
+        let data = HexDecode("0x00000000000000000000000000000000000000000000000700000000000013430000000000000000000000000000000000000000000000000000004e17511aea00000000000000000000000000000000000000000000000000000000677e57a600000000000000000000000000000000000000000000000000000000677e57bb0000000000000000000000000000000000000000000000070000000000001343").unwrap();
+        let result = IMulticall3::Result {
+            success: true,
+            returnData: data.into(),
+        };
+        let price = ChainLinkPriceFeed::decoded_answer(&result).unwrap();
+
+        assert_eq!(price, BigInt::from(335398640362_u64));
+
+        let gas_fee = U256::from(1861602902696880_u64);
+        let fee_in_token = Across::calculate_fee_in_token(&gas_fee, &price, 6);
+
+        assert_eq!(fee_in_token.to_string(), "6243790");
     }
 }
