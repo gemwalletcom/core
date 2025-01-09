@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use std::error::Error;
 use storage::database::DatabaseClient;
 
-pub struct Client {
+pub struct VersionClient {
     database: DatabaseClient,
 }
 
@@ -30,7 +30,7 @@ pub struct GitHubRepositoryAsset {
     pub name: String,
 }
 
-impl Client {
+impl VersionClient {
     pub fn new(database_url: &str) -> Self {
         let database = DatabaseClient::new(database_url);
         Self { database }

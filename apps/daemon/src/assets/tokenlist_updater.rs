@@ -2,12 +2,12 @@ use api_connector::AssetsClient;
 use std::error::Error;
 use storage::{database::DatabaseClient, models::Asset};
 
-pub struct Client {
+pub struct TokenListClient {
     database: DatabaseClient,
     assets_client: AssetsClient,
 }
 
-impl Client {
+impl TokenListClient {
     pub fn new(database_url: &str, assets_client: AssetsClient) -> Self {
         let database = DatabaseClient::new(database_url);
         Self { database, assets_client }

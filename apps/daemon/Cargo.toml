@@ -10,6 +10,8 @@ tokio = { workspace = true }
 reqwest = { workspace = true }
 futures = { workspace = true }
 chrono = { workspace = true }
+strum = { workspace = true }
+strum_macros = { workspace = true }
 
 settings = { path = "../../crates/settings" }
 storage = { path = "../../crates/storage" }

@@ -1,5 +1,6 @@
 use super::model::{Asset, TransakQuote, TransakResponse};
 use crate::model::{filter_token_id, FiatProviderAsset};
+use base64::{engine::general_purpose::STANDARD as BASE64, Engine as _};
 use primitives::FiatTransactionType;
 use primitives::{FiatBuyRequest, FiatProviderName, FiatQuote};
 use reqwest::Client;
@@ -85,5 +86,15 @@ impl TransakClient {
             network: Some(asset.network.name),
             enabled: asset.is_allowed,
         })
+    }
+
+    pub fn decode_jwt_content(&self, jwt: &str) -> Result<String, Box<dyn std::error::Error>> {
+        let parts: Vec<&str> = jwt.split('.').collect();
+        if parts.len() != 3 {
+            return Err("Invalid JWT format".to_string().into());
+        }
+        let payload = BASE64.decode(parts[1])?;
+        let claims: serde_json::Value = serde_json::from_slice(&payload)?;
+        Ok(serde_json::to_string_pretty(&claims)?)
     }
 }
