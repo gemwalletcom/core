@@ -506,12 +506,12 @@ mod tests {
 
     #[test]
     fn test_is_supported_pair() {
-        let weth_eth: AssetId = WETH_ETH.into();
-        let weth_op: AssetId = WETH_OP.into();
-        let weth_arb: AssetId = WETH_ARB.into();
+        let weth_eth: AssetId = WETH_ETH_ASSET_ID.into();
+        let weth_op: AssetId = WETH_OP_ASSET_ID.into();
+        let weth_arb: AssetId = WETH_ARB_ASSET_ID.into();
 
-        let usdc_eth: AssetId = USDC_ETH.into();
-        let usdc_arb: AssetId = USDC_ARB.into();
+        let usdc_eth: AssetId = USDC_ETH_ASSET_ID.into();
+        let usdc_arb: AssetId = USDC_ARB_ASSET_ID.into();
 
         assert!(Across::is_supported_pair(&weth_eth, &weth_op));
         assert!(Across::is_supported_pair(&weth_op, &weth_arb));

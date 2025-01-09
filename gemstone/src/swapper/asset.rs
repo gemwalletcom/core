@@ -56,7 +56,7 @@ lazy_static! {
         asset_type: AssetType::ERC20,
     };
     pub static ref ETHEREUM_WETH: Asset = Asset {
-        id: WETH_ETH.into(),
+        id: WETH_ETH_ASSET_ID.into(),
         name: WETH_NAME.into(),
         symbol: WETH_SYMBOL.into(),
         decimals: 18,
@@ -64,21 +64,21 @@ lazy_static! {
     };
     // arbitrum
     pub static ref ARBITRUM_WETH: Asset = Asset {
-        id: WETH_ARB.into(),
+        id: WETH_ARB_ASSET_ID.into(),
         name: WETH_NAME.into(),
         symbol: WETH_SYMBOL.into(),
         decimals: 18,
         asset_type: AssetType::ERC20,
     };
     pub static ref ARBITRUM_USDC: Asset = Asset {
-        id: USDC_ARB.into(),
+        id: USDC_ARB_ASSET_ID.into(),
         name: USDC_NAME.into(),
         symbol: USDC_SYMBOL.into(),
         decimals: 6,
         asset_type: AssetType::ERC20,
     };
     pub static ref ARBITRUM_USDT: Asset = Asset {
-        id: USDT_ARB.into(),
+        id: USDT_ARB_ASSET_ID.into(),
         name: USDT_NAME.into(),
         symbol: USDT_SYMBOL.into(),
         decimals: 6,
@@ -86,7 +86,7 @@ lazy_static! {
     };
     // base
     pub static ref BASE_WETH: Asset = Asset {
-        id: WETH_BASE.into(),
+        id: WETH_BASE_ASSET_ID.into(),
         name: WETH_NAME.into(),
         symbol: WETH_SYMBOL.into(),
         decimals: 18,
@@ -108,7 +108,7 @@ lazy_static! {
     };
     // blast
     pub static ref BLAST_WETH: Asset = Asset {
-        id: WETH_BLAST.into(),
+        id: WETH_BLAST_ASSET_ID.into(),
         name: WETH_NAME.into(),
         symbol: WETH_SYMBOL.into(),
         decimals: 18,
@@ -116,14 +116,14 @@ lazy_static! {
     };
     // linea
     pub static ref LINEA_WETH: Asset = Asset {
-        id: WETH_LINEA.into(),
+        id: WETH_LINEA_ASSET_ID.into(),
         name: WETH_NAME.into(),
         symbol: WETH_SYMBOL.into(),
         decimals: 18,
         asset_type: AssetType::ERC20,
     };
     pub static ref LINEA_USDT: Asset = Asset {
-        id: USDT_LINEA.into(),
+        id: USDT_LINEA_ASSET_ID.into(),
         name: USDT_NAME.into(),
         symbol: USDT_SYMBOL.into(),
         decimals: 6,
@@ -131,21 +131,21 @@ lazy_static! {
     };
     // optimism
     pub static ref OPTIMISM_WETH: Asset = Asset {
-        id: WETH_OP.into(),
+        id: WETH_OP_ASSET_ID.into(),
         name: WETH_NAME.into(),
         symbol: WETH_SYMBOL.into(),
         decimals: 18,
         asset_type: AssetType::ERC20,
     };
     pub static ref OPTIMISM_USDC: Asset = Asset {
-        id: USDC_OP.into(),
+        id: USDC_OP_ASSET_ID.into(),
         name: USDC_NAME.into(),
         symbol: USDC_SYMBOL.into(),
         decimals: 6,
         asset_type: AssetType::ERC20,
     };
     pub static ref OPTIMISM_USDT: Asset = Asset {
-        id: USDT_OP.into(),
+        id: USDT_OP_ASSET_ID.into(),
         name: USDT_NAME.into(),
         symbol: USDT_SYMBOL.into(),
         decimals: 6,
@@ -153,21 +153,21 @@ lazy_static! {
     };
     // polygon
     pub static ref POLYGON_WETH: Asset = Asset {
-        id: WETH_POLYGON.into(),
+        id: WETH_POLYGON_ASSET_ID.into(),
         name: WETH_NAME.into(),
         symbol: WETH_SYMBOL.into(),
         decimals: 18,
         asset_type: AssetType::ERC20,
     };
     pub static ref POLYGON_USDC: Asset = Asset {
-        id: USDC_POLYGON.into(),
+        id: USDC_POLYGON_ASSET_ID.into(),
         name: USDC_NAME.into(),
         symbol: USDC_SYMBOL.into(),
         decimals: 6,
         asset_type: AssetType::ERC20,
     };
     pub static ref POLYGON_USDT: Asset = Asset {
-        id: USDT_POLYGON.into(),
+        id: USDT_POLYGON_ASSET_ID.into(),
         name: USDT_NAME.into(),
         symbol: USDT_SYMBOL.into(),
         decimals: 6,
@@ -175,14 +175,14 @@ lazy_static! {
     };
     // zksync
     pub static ref ZKSYNC_WETH: Asset = Asset {
-        id: WETH_ZKSYNC.into(),
+        id: WETH_ZKSYNC_ASSET_ID.into(),
         name: WETH_NAME.into(),
         symbol: WETH_SYMBOL.into(),
         decimals: 18,
         asset_type: AssetType::ERC20,
     };
     pub static ref ZKSYNC_USDT: Asset = Asset {
-        id: USDT_ZKSYNC.into(),
+        id: USDT_ZKSYNC_ASSET_ID.into(),
         name: USDT_NAME.into(),
         symbol: USDT_SYMBOL.into(),
         decimals: 6,
@@ -190,7 +190,7 @@ lazy_static! {
     };
     // world
     pub static ref WORLD_WETH: Asset = Asset {
-        id: WETH_WORLD.into(),
+        id: WETH_WORLD_ASSET_ID.into(),
         name: WETH_NAME.into(),
         symbol: WETH_SYMBOL.into(),
         decimals: 18,
