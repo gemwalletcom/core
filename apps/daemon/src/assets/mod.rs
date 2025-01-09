@@ -15,11 +15,18 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
     let coingecko_client = CoinGeckoClient::new(&settings.coingecko.key.secret);
 
     let update_assets = run_job("Update CoinGecko assets", Duration::from_secs(86400), {
-        let settings = settings.clone();
-        let coingecko_client = coingecko_client.clone();
+        let (settings, coingecko_client) = (settings.clone(), coingecko_client.clone());
         move || {
             let mut asset_updater = AssetUpdater::new(coingecko_client.clone(), &settings.postgres.url);
             async move { asset_updater.update_assets().await }
+        }
+    });
+
+    let update_tranding_assets = run_job("Update CoinGecko Trending assets", Duration::from_secs(3600), {
+        let (settings, coingecko_client) = (settings.clone(), coingecko_client.clone());
+        move || {
+            let mut asset_updater = AssetUpdater::new(coingecko_client.clone(), &settings.postgres.url);
+            async move { asset_updater.update_trending_assets().await }
         }
     });
 
@@ -32,5 +39,5 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
         }
     });
 
-    vec![Box::pin(update_assets), Box::pin(token_list_updater)]
+    vec![Box::pin(update_assets), Box::pin(update_tranding_assets), Box::pin(token_list_updater)]
 }
