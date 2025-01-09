@@ -20,7 +20,6 @@ pub enum FiatProviderName {
     MoonPay,
     Ramp,
     Banxa,
-    Kado,
 }
 
 impl FiatProviderName {
@@ -35,7 +34,6 @@ impl FiatProviderName {
             FiatProviderName::MoonPay => "MoonPay",
             FiatProviderName::Ramp => "Ramp",
             FiatProviderName::Banxa => "Banxa",
-            FiatProviderName::Kado => "Kado",
         }
     }
     pub fn as_fiat_provider(&self) -> FiatProvider {
