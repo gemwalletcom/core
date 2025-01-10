@@ -7,6 +7,8 @@ use settings::Settings;
 
 use clap::Parser;
 use futures_util::StreamExt;
+use reqwest_middleware::ClientBuilder;
+use reqwest_retry::{policies::ExponentialBackoff, RetryTransientMiddleware};
 use std::{error::Error, fs, io::Write, path::Path, thread::sleep, time::Duration};
 
 /// Assets image downloader from coingecko
@@ -17,11 +19,19 @@ struct Downloader {
 
 impl Downloader {
     fn new(args: Args, api_key: String) -> Self {
-        let client = CoinGeckoClient::new(api_key.as_str());
+        let client = Self::new_coingecko_client(api_key);
         Self { args, client }
     }
 
-    async fn start(&self) -> Result<(), Box<dyn Error>> {
+    fn new_coingecko_client(api_key: String) -> CoinGeckoClient {
+        let retry_policy = ExponentialBackoff::builder().build_with_max_retries(10);
+        let client = ClientBuilder::new(reqwest::Client::new())
+            .with(RetryTransientMiddleware::new_with_policy(retry_policy))
+            .build();
+        return CoinGeckoClient::new_with_client_middleware(client, api_key.as_str());
+    }
+
+    async fn start(&self) -> Result<(), Box<dyn Error + Send + Sync>> {
         println!("==> Save path: {}", self.args.folder);
         let folder = Path::new(&self.args.folder);
         if !folder.exists() {
@@ -46,7 +56,7 @@ impl Downloader {
     fn coin_ids(&self, list: String) -> Vec<String> {
         list.split(',').map(|x| x.trim().to_string()).collect()
     }
-    async fn handle_coin_list(&self, list: String, folder: &Path) -> Result<(), Box<dyn Error>> {
+    async fn handle_coin_list(&self, list: String, folder: &Path) -> Result<(), Box<dyn Error + Send + Sync>> {
         let ids = match list.as_str() {
             "trending" => self.client.get_search_trending().await?.get_coins_ids(),
             "top" => self.get_coingecko_top().await?,
@@ -57,7 +67,7 @@ impl Downloader {
         self.handle_coin_ids(ids, folder).await
     }
 
-    async fn handle_coin_ids(&self, coin_ids: Vec<String>, folder: &Path) -> Result<(), Box<dyn Error>> {
+    async fn handle_coin_ids(&self, coin_ids: Vec<String>, folder: &Path) -> Result<(), Box<dyn Error + Send + Sync>> {
         for coin_id in coin_ids {
             self.handle_coin_id(&coin_id, folder).await?;
             sleep(Duration::from_millis(self.args.delay.into()));
@@ -65,7 +75,7 @@ impl Downloader {
         Ok(())
     }
 
-    async fn get_coingecko_top(&self) -> Result<Vec<String>, Box<dyn Error>> {
+    async fn get_coingecko_top(&self) -> Result<Vec<String>, Box<dyn Error + Send + Sync>> {
         let mut page = self.args.page;
         let total_pages = self.args.count.div_ceil(self.args.page_size);
         let mut ids: Vec<String> = Vec::new();
@@ -80,7 +90,7 @@ impl Downloader {
         Ok(ids)
     }
 
-    async fn handle_coin_id(&self, coin_id: &str, folder: &Path) -> Result<(), Box<dyn Error>> {
+    async fn handle_coin_id(&self, coin_id: &str, folder: &Path) -> Result<(), Box<dyn Error + Send + Sync>> {
         println!("==> process: {}", coin_id);
         let coin_info = self.client.get_coin(coin_id).await?;
         if self.is_native_asset(&coin_info) {
@@ -139,7 +149,7 @@ impl Downloader {
 }
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn Error>> {
+async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let args = cli_args::Args::parse();
     let api_key = Settings::new().unwrap().coingecko.key.secret;
     let downloader = Downloader::new(args, api_key);
@@ -147,7 +157,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     downloader.start().await
 }
 
-async fn download_image(url: &str, path: &str) -> Result<(), Box<dyn Error>> {
+async fn download_image(url: &str, path: &str) -> Result<(), Box<dyn Error + Send + Sync>> {
     let response = reqwest::get(url).await?;
     if response.status() != 200 {
         return Err("<== image not found".into());

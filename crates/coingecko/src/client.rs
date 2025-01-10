@@ -3,7 +3,9 @@ use crate::model::{CoinQuery, CointListQuery, SearchTrending, SimplePriceQuery};
 use super::model::{Coin, CoinInfo, CoinMarket, ExchangeRates, MarketChart, SimplePrices};
 use primitives::FiatRate;
 use reqwest::header::{HeaderMap, HeaderValue, USER_AGENT};
-use reqwest::Error;
+use reqwest_middleware::{ClientBuilder, ClientWithMiddleware};
+use std::error::Error;
+
 const COINGECKO_API_URL: &str = "https://api.coingecko.com";
 const COINGECKO_API_PRO_URL: &str = "https://pro-api.coingecko.com";
 static USER_AGENT_VALUE: HeaderValue =
@@ -11,14 +13,23 @@ static USER_AGENT_VALUE: HeaderValue =
 
 #[derive(Clone)]
 pub struct CoinGeckoClient {
-    client: reqwest::Client,
+    client: ClientWithMiddleware,
     url: String,
     api_key: String,
 }
 
 impl CoinGeckoClient {
     pub fn new(api_key: &str) -> Self {
-        let client = reqwest::Client::new();
+        let client = ClientBuilder::new(reqwest::Client::new()).build();
+        let url = Self::url_for_api_key(api_key.to_string().clone());
+        Self {
+            client,
+            url,
+            api_key: api_key.to_string(),
+        }
+    }
+
+    pub fn new_with_client_middleware(client: ClientWithMiddleware, api_key: &str) -> Self {
         let url = Self::url_for_api_key(api_key.to_string().clone());
         Self {
             client,
@@ -43,29 +54,29 @@ impl CoinGeckoClient {
         headers
     }
 
-    pub async fn get_search_trending(&self) -> Result<SearchTrending, Error> {
+    pub async fn get_search_trending(&self) -> Result<SearchTrending, Box<dyn Error + Send + Sync>> {
         let url = format!("{}/api/v3/search/trending", self.url);
         let response = self.client.get(&url).headers(self.headers()).send().await?;
-        response.json::<SearchTrending>().await
+        Ok(response.json::<SearchTrending>().await?)
     }
 
-    pub async fn get_coin_list(&self) -> Result<Vec<Coin>, Error> {
+    pub async fn get_coin_list(&self) -> Result<Vec<Coin>, Box<dyn Error + Send + Sync>> {
         let url = format!("{}/api/v3/coins/list", self.url);
         let query = CointListQuery { include_platform: true };
         let response = self.client.get(&url).query(&query).headers(self.headers()).send().await?;
-        response.json().await
+        Ok(response.json().await?)
     }
 
-    pub async fn get_coin_markets(&self, page: u32, per_page: u32) -> Result<Vec<CoinMarket>, Error> {
+    pub async fn get_coin_markets(&self, page: u32, per_page: u32) -> Result<Vec<CoinMarket>, Box<dyn Error + Send + Sync>> {
         let url = format!(
             "{}/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page={}&page={}&sparkline=false&locale=en",
             self.url, per_page, page
         );
         let response = self.client.get(&url).headers(self.headers()).send().await?;
-        response.json().await
+        Ok(response.json().await?)
     }
 
-    pub async fn get_prices_by_ids(&self, ids: Vec<String>, currency: &str) -> Result<SimplePrices, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn get_prices_by_ids(&self, ids: Vec<String>, currency: &str) -> Result<SimplePrices, Box<dyn Error + Send + Sync>> {
         let url = format!("{}/api/v3/simple/price", self.url);
         let query = SimplePriceQuery {
             ids: ids.join(","),
@@ -79,7 +90,7 @@ impl CoinGeckoClient {
         Ok(response.json().await?)
     }
 
-    pub async fn get_coin_markets_id(&self, id: &str) -> Result<CoinMarket, Box<dyn std::error::Error>> {
+    pub async fn get_coin_markets_id(&self, id: &str) -> Result<CoinMarket, Box<dyn Error + Send + Sync>> {
         let url = format!(
             "{}/api/v3/coins/markets?vs_currency=usd&ids={}&order=market_cap_desc&sparkline=false&locale=en",
             self.url, id
@@ -93,7 +104,7 @@ impl CoinGeckoClient {
         }
     }
 
-    pub async fn get_coin(&self, id: &str) -> Result<CoinInfo, Error> {
+    pub async fn get_coin(&self, id: &str) -> Result<CoinInfo, Box<dyn Error + Send + Sync>> {
         let url = format!("{}/api/v3/coins/{}", self.url, id);
         let query = CoinQuery {
             market_data: false,
@@ -103,10 +114,10 @@ impl CoinGeckoClient {
             developer_data: true,
         };
         let response = self.client.get(&url).query(&query).headers(self.headers()).send().await?;
-        response.json().await
+        Ok(response.json().await?)
     }
 
-    pub async fn get_fiat_rates(&self) -> Result<Vec<FiatRate>, Error> {
+    pub async fn get_fiat_rates(&self) -> Result<Vec<FiatRate>, Box<dyn Error + Send + Sync>> {
         let url = format!("{}/api/v3/exchange_rates", self.url);
         let response = self.client.get(&url).headers(self.headers()).send().await?;
 
@@ -125,7 +136,7 @@ impl CoinGeckoClient {
         Ok(fiat_rates)
     }
 
-    pub async fn get_all_coin_markets(&self, per_page: u32, pages: u32) -> Result<Vec<CoinMarket>, Error> {
+    pub async fn get_all_coin_markets(&self, per_page: u32, pages: u32) -> Result<Vec<CoinMarket>, Box<dyn Error + Send + Sync>> {
         let mut all_coin_markets = Vec::new();
         let mut page = 1;
 
@@ -144,7 +155,7 @@ impl CoinGeckoClient {
         Ok(all_coin_markets)
     }
 
-    pub async fn get_market_chart(&self, coin_id: &str) -> Result<MarketChart, Error> {
+    pub async fn get_market_chart(&self, coin_id: &str) -> Result<MarketChart, Box<dyn Error + Send + Sync>> {
         let url = format!(
             "{}/api/v3/coins/{}/market_chart?vs_currency=usd&days=max&interval=daily&precision=full",
             self.url, coin_id

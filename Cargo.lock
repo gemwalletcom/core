@@ -1786,6 +1786,7 @@ dependencies = [
  "lazy_static",
  "primitives",
  "reqwest",
+ "reqwest-middleware",
  "serde",
 ]
 
@@ -4022,6 +4023,8 @@ dependencies = [
  "futures-util",
  "gem_evm",
  "reqwest",
+ "reqwest-middleware",
+ "reqwest-retry",
  "serde",
  "settings",
  "tokio",
