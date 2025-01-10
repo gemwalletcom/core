@@ -3,28 +3,22 @@ use cli_args::Args;
 
 use coingecko::get_chain_for_coingecko_platform_id;
 use coingecko::{CoinGeckoClient, CoinInfo};
-use gem_evm::address::EthereumAddress;
 use settings::Settings;
 
 use clap::Parser;
 use futures_util::StreamExt;
-use std::{error::Error, fs, io::Write, path::Path, str::FromStr, thread::sleep, time::Duration};
+use std::{error::Error, fs, io::Write, path::Path, thread::sleep, time::Duration};
 
 /// Assets image downloader from coingecko
 struct Downloader {
     args: Args,
     client: CoinGeckoClient,
-    cool_down: Duration,
 }
 
 impl Downloader {
     fn new(args: Args, api_key: String) -> Self {
         let client = CoinGeckoClient::new(api_key.as_str());
-        Self {
-            args,
-            client,
-            cool_down: Duration::new(0, 300_000_000),
-        }
+        Self { args, client }
     }
 
     async fn start(&self) -> Result<(), Box<dyn Error>> {
@@ -46,21 +40,16 @@ impl Downloader {
             return self.handle_coin_list(self.args.coin_list.clone(), folder).await;
         }
 
-        self.handle_coingecko_top(folder).await
+        unimplemented!("specify coin_id, coin_ids or coin_list")
     }
 
     fn coin_ids(&self, list: String) -> Vec<String> {
         list.split(',').map(|x| x.trim().to_string()).collect()
     }
-
-    async fn handle_coin_id(&self, coin_id: &str, folder: &Path) -> Result<(), Box<dyn Error>> {
-        self.handle_coin(coin_id, folder).await?;
-        Ok(())
-    }
-
     async fn handle_coin_list(&self, list: String, folder: &Path) -> Result<(), Box<dyn Error>> {
         let ids = match list.as_str() {
             "trending" => self.client.get_search_trending().await?.get_coins_ids(),
+            "top" => self.get_coingecko_top().await?,
             _ => {
                 vec![]
             }
@@ -70,25 +59,28 @@ impl Downloader {
 
     async fn handle_coin_ids(&self, coin_ids: Vec<String>, folder: &Path) -> Result<(), Box<dyn Error>> {
         for coin_id in coin_ids {
-            self.handle_coin(&coin_id, folder).await?;
+            self.handle_coin_id(&coin_id, folder).await?;
+            sleep(Duration::from_millis(self.args.delay.into()));
         }
         Ok(())
     }
 
-    async fn handle_coingecko_top(&self, folder: &Path) -> Result<(), Box<dyn Error>> {
+    async fn get_coingecko_top(&self) -> Result<Vec<String>, Box<dyn Error>> {
         let mut page = self.args.page;
         let total_pages = self.args.count.div_ceil(self.args.page_size);
-        while page <= total_pages {
+        let mut ids: Vec<String> = Vec::new();
+
+        while page <= total_pages && page > 0 {
             let markets = self.client.get_coin_markets(page, self.args.page_size).await?;
             for market in markets {
-                self.handle_coin(&market.id, folder).await?;
+                ids.push(market.id.clone());
             }
             page += 1;
         }
-        Ok(())
+        Ok(ids)
     }
 
-    async fn handle_coin(&self, coin_id: &str, folder: &Path) -> Result<(), Box<dyn Error>> {
+    async fn handle_coin_id(&self, coin_id: &str, folder: &Path) -> Result<(), Box<dyn Error>> {
         println!("==> process: {}", coin_id);
         let coin_info = self.client.get_coin(coin_id).await?;
         if self.is_native_asset(&coin_info) {
@@ -114,29 +106,28 @@ impl Downloader {
                     continue;
                 }
             }
-            let mut address_folder = address.clone();
-            if chain.chain_type() == primitives::ChainType::Ethereum {
-                address_folder = EthereumAddress::from_str(address)?.to_checksum();
-            }
+
             let image_url: String = coin_info.image.large.clone();
-
-            // build <folder>/ethereum/assets/<address>/logo.png
-            let mut path = folder.join(chain.to_string());
-            path.push("assets");
-            path.push(address_folder.clone());
-            if path.exists() {
-                if self.args.verbose {
-                    println!("<== {:?} already exists, skip", &path);
+            if let Some(address_folder) = chain_primitives::format_token_id(chain, address.clone()) {
+                // build <folder>/ethereum/assets/<address>/logo.png
+                let mut path = folder.join(chain.to_string());
+                path.push("assets");
+                path.push(address_folder.clone());
+                if path.exists() {
+                    if self.args.verbose {
+                        println!("<== {:?} already exists, skip", &path);
+                    }
+                    return Ok(());
                 }
-                return Ok(());
+                fs::create_dir_all(path.clone())?;
+
+                path = path.join("logo.png");
+                println!("==> download image for {}/{}", chain, address);
+                println!("==> image url: {}", image_url);
+                crate::download_image(&image_url, path.to_str().unwrap()).await?;
+
+                sleep(Duration::from_millis(self.args.delay.into()));
             }
-            fs::create_dir_all(path.clone())?;
-
-            path = path.join("logo.png");
-            println!("==> download image for {}/{}", chain, address);
-            crate::download_image(&image_url, path.to_str().unwrap()).await?;
-
-            sleep(self.cool_down);
         }
 
         Ok(())

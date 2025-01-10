@@ -31,6 +31,10 @@ pub struct Args {
     #[arg(long, default_value = "")]
     pub coin_list: String,
 
+    /// Request delay in milliseconds
+    #[arg(long, default_value_t = 1000)]
+    pub delay: u32,
+
     /// Verbose mode
     #[arg(short, long, default_value_t = false)]
     pub verbose: bool,

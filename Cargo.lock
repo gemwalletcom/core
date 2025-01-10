@@ -4016,11 +4016,11 @@ dependencies = [
 name = "img-downloader"
 version = "1.0.0"
 dependencies = [
+ "chain_primitives",
  "clap",
  "coingecko",
  "futures-util",
  "gem_evm",
- "primitives",
  "reqwest",
  "serde",
  "settings",
