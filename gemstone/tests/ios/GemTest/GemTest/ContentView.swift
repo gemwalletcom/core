@@ -40,10 +40,16 @@ struct ContentView: View {
             }
             Text("Bridge:")
             Button("Bridge Op ETH -> Ethereum") {
-                self.testQuote(quote: .opToEth)
+                self.testQuote(quote: .op2Eth)
             }
             Button("Bridge Op ETH -> Arbitrum") {
-                self.testQuote(quote: .opToArb)
+                self.testQuote(quote: .op2Arb)
+            }
+            Button("Bridge ETH USDC -> Base") {
+                self.testQuote(quote: .ethUSDC2Base)
+            }
+            Button("Bridge Base USDC -> ETH") {
+                self.testQuote(quote: .baseUSDC2Eth)
             }
         }
         .padding()

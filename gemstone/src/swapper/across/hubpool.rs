@@ -14,7 +14,7 @@ use gem_evm::{
     jsonrpc::{BlockParameter, EthereumRpc, TransactionObject},
     multicall3::{create_call3, decode_call3_return, IMulticall3},
 };
-use num_bigint::BigInt;
+use num_bigint::{BigInt, Sign};
 use primitives::Chain;
 use std::sync::Arc;
 
@@ -95,7 +95,7 @@ impl HubPoolClient {
             let value = HubPoolInterface::liquidityUtilizationCurrentCall::abi_decode_returns(&result.returnData, true)
                 .map_err(|e| SwapperError::ABIError { msg: e.to_string() })?
                 ._0;
-            Ok(BigInt::from_bytes_le(num_bigint::Sign::Plus, &value.to_le_bytes::<32>()))
+            Ok(BigInt::from_bytes_le(Sign::Plus, &value.to_le_bytes::<32>()))
         } else {
             Err(SwapperError::ABIError {
                 msg: "utilization call failed".into(),

@@ -4,6 +4,7 @@ use async_trait::async_trait;
 use std::{fmt::Debug, sync::Arc};
 
 mod approval;
+mod chainlink;
 mod custom_types;
 mod eth_rpc;
 mod permit2_data;
@@ -177,9 +178,8 @@ impl GemSwapper {
 #[cfg(test)]
 mod tests {
 
-    use asset::ETHEREUM_USDT_TOKEN_ID;
-
     use super::*;
+    use primitives::asset_constants::USDT_ETH_ASSET_ID;
     use std::{collections::BTreeSet, vec};
 
     #[test]
@@ -264,7 +264,7 @@ mod tests {
     #[test]
     fn test_filter_supported_assets() {
         let asset_id = AssetId::from_chain(Chain::Ethereum);
-        let asset_id_usdt = AssetId::from_token(Chain::Ethereum, ETHEREUM_USDT_TOKEN_ID);
+        let asset_id_usdt: AssetId = USDT_ETH_ASSET_ID.into();
         let supported_assets = vec![
             SwapChainAsset::All(Chain::Ethereum),
             SwapChainAsset::Assets(

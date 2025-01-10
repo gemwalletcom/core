@@ -90,7 +90,7 @@ mod tests {
         let _usdc_config = CapitalCostConfig {
             decimals: 6,
             lower_bound: to_bn_wei("0.0001", 18),
-            upper_bound: BigInt::from(0), // FIXME shouldn't be zero?
+            upper_bound: to_bn_wei("0.00015", 18),
             cutoff: BigInt::from(100000),
         };
 
@@ -122,9 +122,9 @@ mod tests {
         let fee = calculator.capital_fee_percent(&to_bn_wei("1", 18), &_eth_config);
         assert_eq!(fee, BigInt::from(78750000000001_u64));
 
-        // FIXME Test 100 USDC
-        // let fee = calculator.capital_fee_percent(&to_bn_wei("100", 6), &_usdc_config);
-        // assert_eq!(fee, BigInt::from(127710000000000_u64));
+        // Test 100 USDC
+        let fee = calculator.capital_fee_percent(&to_bn_wei("100", 6), &_usdc_config);
+        assert_eq!(fee, BigInt::from(149999999999999_u64));
 
         // Test near zero amount for WBTC
         let fee = calculator.capital_fee_percent(&to_bn_wei("0.001", 8), &_wbtc_config);
