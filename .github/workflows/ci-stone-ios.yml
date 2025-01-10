@@ -40,7 +40,7 @@ jobs:
 
       - name: Setup Xcode
         run: |
-          sudo xcode-select -s /Applications/Xcode_16.2.app
+          sudo xcode-select -s /Applications/Xcode_16.1.app
           xcrun simctl list devices
 
       - name: Test iOS
