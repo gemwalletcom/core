@@ -40,7 +40,7 @@ test-ios:
     @set -o pipefail && xcodebuild -project tests/ios/GemTest/GemTest.xcodeproj \
     -scheme GemTest \
     -sdk iphonesimulator \
-    -destination "platform=iOS Simulator,name=iPhone 16" \
+    -destination "platform=iOS Simulator,name=iPhone 16 Pro" \
     test | xcbeautify
 
 export LIB_NAME := "gemstone"
