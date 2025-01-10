@@ -250,12 +250,6 @@ impl GemSwapProvider for Across {
             SwapChainAsset::Assets(Chain::Ethereum, vec![ETHEREUM_USDC.id.clone()]),
             SwapChainAsset::Assets(Chain::Base, vec![BASE_USDC.id.clone()]),
             SwapChainAsset::Assets(Chain::Optimism, vec![OPTIMISM_USDC.id.clone()]),
-            // USDT
-            SwapChainAsset::Assets(Chain::Arbitrum, vec![ARBITRUM_USDT.id.clone()]),
-            SwapChainAsset::Assets(Chain::Ethereum, vec![ETHEREUM_USDT.id.clone()]),
-            SwapChainAsset::Assets(Chain::Linea, vec![LINEA_USDT.id.clone()]),
-            SwapChainAsset::Assets(Chain::Optimism, vec![OPTIMISM_USDT.id.clone()]),
-            SwapChainAsset::Assets(Chain::ZkSync, vec![ZKSYNC_USDT.id.clone()]),
         ]
     }
 
@@ -502,7 +496,8 @@ impl GemSwapProvider for Across {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use gem_evm::{constants::*, multicall3::IMulticall3};
+    use gem_evm::multicall3::IMulticall3;
+    use primitives::asset_constants::*;
 
     #[test]
     fn test_is_supported_pair() {

@@ -1,6 +1,5 @@
-use gem_evm::constants::*;
 use lazy_static::lazy_static;
-use primitives::{Asset, AssetId, AssetType, Chain};
+use primitives::{asset_constants::*, Asset, AssetId, AssetType, Chain};
 
 const USDT_NAME: &str = "Tether";
 const USDT_SYMBOL: &str = "USDT";
@@ -14,6 +13,7 @@ const WETH_SYMBOL: &str = "WETH";
 const CBBTC_NAME: &str = "Coinbase BTC";
 const CBBTC_SYMBOL: &str = "cbBTC";
 
+// TODO: merge into primitives::asset_constants
 pub const ETHEREUM_USDC_TOKEN_ID: &str = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
 pub const ETHEREUM_USDT_TOKEN_ID: &str = "0xdAC17F958D2ee523a2206206994597C13D831ec7";
 pub const ETHEREUM_WBTC_TOKEN_ID: &str = "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599";

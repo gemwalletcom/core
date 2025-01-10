@@ -1,8 +1,8 @@
 use super::fees::CapitalCostConfig;
-use crate::{constants::*, ether_conv::EtherConv};
+use crate::ether_conv::EtherConv;
 use alloy_primitives::map::HashSet;
 use num_bigint::BigInt;
-use primitives::{AssetId, Chain};
+use primitives::{asset_constants::*, AssetId, Chain};
 use std::collections::HashMap;
 
 pub const ACROSS_CONFIG_STORE: &str = "0x3B03509645713718B78951126E0A6de6f10043f5";

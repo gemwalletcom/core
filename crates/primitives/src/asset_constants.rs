@@ -1,5 +1,3 @@
-// https://github.com/across-protocol/constants/blob/master/src/tokens.ts
-
 // Across Protocol Token
 pub const ACX_ARB_ASSET_ID: &str = "arbitrum_0x53691596d1BCe8CEa565b84d4915e69e03d9C99d";
 pub const ACX_ETH_ASSET_ID: &str = "ethereum_0x44108f0223A3C3028F5Fe7AEC7f9bb2E66beF82F";
@@ -37,6 +35,9 @@ pub const USDC_ETH_ASSET_ID: &str = "ethereum_0xA0b86991c6218b36c1d19D4a2e9Eb0cE
 pub const USDC_OP_ASSET_ID: &str = "optimism_0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85";
 pub const USDC_POLYGON_ASSET_ID: &str = "polygon_0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359";
 
+pub const USDC_BSC_ASSET_ID: &str = "smartchain_0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d";
+pub const USDC_AVAX_ASSET_ID: &str = "avalanchec_0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E";
+
 // USDC.e Bridged USDC
 pub const USDC_E_ARB_ASSET_ID: &str = "arbitrum_0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8";
 pub const USDC_E_BASE_ASSET_ID: &str = "base_0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
@@ -54,6 +55,8 @@ pub const USDT_LINEA_ASSET_ID: &str = "linea_0xA219439258ca9da29E9Cc4cE559692474
 pub const USDT_OP_ASSET_ID: &str = "optimism_0x94b008aA00579c1307B0EF2c499aD98a8ce58e58";
 pub const USDT_POLYGON_ASSET_ID: &str = "polygon_0xc2132D05D31c914a87C6611C10748AEb04B58e8F";
 pub const USDT_ZKSYNC_ASSET_ID: &str = "zksync_0x493257fD37EDB34451f62EDf8D2a0C418852bA4C";
+pub const USDT_BSC_ASSET_ID: &str = "smartchain_0x55d398326f99059fF775485246999027B3197955";
+pub const USDT_AVAX_ASSET_ID: &str = "avalanchec_0x9702230A8Ea53601f5cD2dc00fDBc13d4dF4A8c7";
 
 // WBTC
 pub const WBTC_ARB_ASSET_ID: &str = "arbitrum_0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f";
@@ -64,3 +67,6 @@ pub const WBTC_OP_ASSET_ID: &str = "optimism_0x68f180fcCe6836688e9084f035309E29B
 pub const WBTC_POLYGON_ASSET_ID: &str = "polygon_0x1BFD67037B42Cf73acF2047067bd4F2C47D9BfD6";
 pub const WBTC_WORLD_ASSET_ID: &str = "world_0x03C7054BCB39f7b2e5B2c7AcB37583e32D70Cfa3";
 pub const WBTC_ZKSYNC_ASSET_ID: &str = "zksync_0xBBeB516fb02a01611cBBE0453Fe3c580D7281011";
+
+// cbBTC
+pub const CBBTC_BASE_ASSET_ID: &str = "base_0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf";

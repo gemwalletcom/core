@@ -4,7 +4,6 @@ use std::str::FromStr;
 pub mod across;
 pub mod address;
 pub mod chainlink;
-pub mod constants;
 pub mod erc20;
 pub mod erc2612;
 pub mod ether_conv;
