@@ -1,6 +1,5 @@
 mod cli_args;
 use cli_args::Args;
-mod cli_model;
 
 use coingecko::get_chain_for_coingecko_platform_id;
 use coingecko::{CoinGeckoClient, CoinInfo};
@@ -40,14 +39,18 @@ impl Downloader {
         }
 
         if !self.args.coin_ids.is_empty() {
-            return self.handle_coin_ids(self.args.coin_ids.clone(), folder).await;
+            return self.handle_coin_ids(self.coin_ids(self.args.coin_ids.clone()), folder).await;
         }
 
-        if !self.args.coin_ids_url.is_empty() {
-            return self.handle_coin_url(&self.args.coin_ids_url, folder).await;
+        if !self.args.coin_list.is_empty() {
+            return self.handle_coin_list(self.args.coin_list.clone(), folder).await;
         }
 
         self.handle_coingecko_top(folder).await
+    }
+
+    fn coin_ids(&self, list: String) -> Vec<String> {
+        list.split(',').map(|x| x.trim().to_string()).collect()
     }
 
     async fn handle_coin_id(&self, coin_id: &str, folder: &Path) -> Result<(), Box<dyn Error>> {
@@ -55,21 +58,19 @@ impl Downloader {
         Ok(())
     }
 
-    async fn handle_coin_ids(&self, coin_ids: String, folder: &Path) -> Result<(), Box<dyn Error>> {
-        let ids: Vec<String> = coin_ids.split(',').map(|x| x.trim().to_string()).collect();
-        for coin_id in ids {
-            self.handle_coin(&coin_id, folder).await?;
-        }
-        Ok(())
+    async fn handle_coin_list(&self, list: String, folder: &Path) -> Result<(), Box<dyn Error>> {
+        let ids = match list.as_str() {
+            "trending" => self.client.get_search_trending().await?.get_coins_ids(),
+            _ => {
+                vec![]
+            }
+        };
+        self.handle_coin_ids(ids, folder).await
     }
 
-    async fn handle_coin_url(&self, url: &str, folder: &Path) -> Result<(), Box<dyn Error>> {
-        let response: cli_model::Response = reqwest::get(url).await?.json().await?;
-        for price in response.results {
-            match self.handle_coin_id(&price.coin_id, folder).await {
-                Ok(_) => continue,
-                Err(e) => println!("<== {} error: {}", price.coin_id, e),
-            }
+    async fn handle_coin_ids(&self, coin_ids: Vec<String>, folder: &Path) -> Result<(), Box<dyn Error>> {
+        for coin_id in coin_ids {
+            self.handle_coin(&coin_id, folder).await?;
         }
         Ok(())
     }
@@ -117,7 +118,7 @@ impl Downloader {
             if chain.chain_type() == primitives::ChainType::Ethereum {
                 address_folder = EthereumAddress::from_str(address)?.to_checksum();
             }
-            let image_url = coin_info.image.large.clone();
+            let image_url: String = coin_info.image.large.clone();
 
             // build <folder>/ethereum/assets/<address>/logo.png
             let mut path = folder.join(chain.to_string());

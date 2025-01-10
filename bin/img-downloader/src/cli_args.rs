@@ -27,9 +27,9 @@ pub struct Args {
     #[arg(long, default_value = "")]
     pub coin_ids: String,
 
-    /// Coin IDs from URL to download, exclusive with coin_ids_url
+    /// Coin list from coingecko. available: trending
     #[arg(long, default_value = "")]
-    pub coin_ids_url: String,
+    pub coin_list: String,
 
     /// Verbose mode
     #[arg(short, long, default_value_t = false)]
