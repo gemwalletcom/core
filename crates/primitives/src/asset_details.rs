@@ -8,9 +8,6 @@ use crate::{Asset, AssetMarket, AssetScore, Price};
 #[serde(rename_all = "camelCase")]
 pub struct AssetFull {
     pub asset: Asset,
-    //TODO: Remove from this in the future
-    #[typeshare(skip)]
-    pub details: Option<AssetDetails>,
     pub links: Vec<AssetLink>,
     pub properties: AssetProperties,
     pub score: AssetScore,
@@ -21,43 +18,8 @@ pub struct AssetFull {
 #[serde(rename_all = "camelCase")]
 pub struct AssetBasic {
     pub asset: Asset,
-    //TODO: Remove from this in the future
-    #[typeshare(skip)]
-    pub details: Option<AssetDetails>,
     pub properties: AssetProperties,
     pub score: AssetScore,
-}
-
-#[typeshare(skip)]
-#[typeshare(swift = "Sendable")]
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
-#[serde(rename_all = "camelCase")]
-pub struct AssetDetails {
-    pub links: AssetLinks,
-
-    pub is_buyable: bool,
-    pub is_sellable: bool,
-    pub is_swapable: bool,
-    pub is_stakeable: bool,
-
-    pub staking_apr: Option<f64>,
-}
-
-#[typeshare(skip)]
-#[typeshare(swift = "Sendable")]
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
-pub struct AssetLinks {
-    pub homepage: Option<String>,
-    pub explorer: Option<String>,
-    pub twitter: Option<String>,
-    pub telegram: Option<String>,
-    pub github: Option<String>,
-    pub youtube: Option<String>,
-    pub facebook: Option<String>,
-    pub reddit: Option<String>,
-    pub coingecko: Option<String>,
-    pub coinmarketcap: Option<String>,
-    pub discord: Option<String>,
 }
 
 #[typeshare(swift = "Sendable")]
@@ -103,6 +65,5 @@ pub struct AssetLink {
 #[typeshare(swift = "Sendable")]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AssetDetailsInfo {
-    pub details: AssetDetails,
     pub market: AssetMarket,
 }

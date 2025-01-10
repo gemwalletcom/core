@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
 use diesel::prelude::*;
-use primitives::{asset_details::AssetLinks, AssetBasic, AssetId, AssetType, Chain};
+use primitives::{AssetBasic, AssetId, AssetType, Chain};
 use serde::{Deserialize, Serialize};
 #[derive(Debug, Queryable, Selectable, Serialize, Deserialize, Insertable, AsChangeset, Clone)]
 #[diesel(table_name = crate::schema::assets)]
@@ -42,7 +42,6 @@ impl Asset {
         AssetBasic {
             asset: self.as_primitive(),
             properties: self.as_property_primitive(),
-            details: Some(self.as_details_primitive()),
             score: self.as_score_primitive(),
         }
     }
@@ -71,17 +70,6 @@ impl Asset {
 
     pub fn as_property_primitive(&self) -> primitives::AssetProperties {
         primitives::AssetProperties {
-            is_buyable: self.is_buyable,
-            is_sellable: self.is_sellable,
-            is_swapable: self.is_swappable,
-            is_stakeable: self.is_stakeable,
-            staking_apr: self.staking_apr,
-        }
-    }
-
-    pub fn as_details_primitive(&self) -> primitives::AssetDetails {
-        primitives::AssetDetails {
-            links: AssetLinks::default(),
             is_buyable: self.is_buyable,
             is_sellable: self.is_sellable,
             is_swapable: self.is_swappable,

@@ -45,7 +45,6 @@ impl AssetsClient {
             asset: asset.as_primitive(),
             properties: asset.as_property_primitive(),
             links,
-            details: Some(asset.as_details_primitive()),
             score: asset.as_score_primitive(),
         })
     }
