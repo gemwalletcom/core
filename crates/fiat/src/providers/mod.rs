@@ -12,6 +12,3 @@ pub use self::transak::client::TransakClient;
 
 pub mod banxa;
 pub use self::banxa::client::BanxaClient;
-
-pub mod kado;
-pub use self::kado::client::KadoClient;

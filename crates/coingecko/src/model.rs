@@ -140,6 +140,12 @@ pub struct SearchTrending {
     pub coins: Vec<SearchTrendingItem>,
 }
 
+impl SearchTrending {
+    pub fn get_coins_ids(&self) -> Vec<String> {
+        self.coins.iter().map(|x| x.item.id.clone()).collect()
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct SearchTrendingItem {
     pub item: SearchTrendingItemCoin,

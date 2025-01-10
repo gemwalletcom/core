@@ -20,7 +20,7 @@ impl AssetUpdater {
     }
 
     pub async fn update_assets(&mut self) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        let coin_list = self
+        let ids = self
             .database
             .get_prices()?
             .into_iter()
@@ -29,8 +29,16 @@ impl AssetUpdater {
             .collect::<HashSet<_>>()
             .into_iter()
             .collect::<Vec<String>>();
+        self.update_assets_ids(ids).await
+    }
 
-        for coin in coin_list.clone() {
+    pub async fn update_trending_assets(&mut self) -> Result<usize, Box<dyn Error + Send + Sync>> {
+        let ids = self.coin_gecko_client.get_search_trending().await?.get_coins_ids();
+        self.update_assets_ids(ids).await
+    }
+
+    async fn update_assets_ids(&mut self, ids: Vec<String>) -> Result<usize, Box<dyn Error + Send + Sync>> {
+        for coin in ids.clone() {
             match self.coin_gecko_client.get_coin(&coin).await {
                 Ok(coin_info) => {
                     let result = self.get_assets_from_coin_info(coin_info.clone());
@@ -52,7 +60,7 @@ impl AssetUpdater {
                 }
             }
         }
-        Ok(coin_list.len())
+        Ok(ids.len())
     }
 
     fn get_assets_from_coin_info(&self, coin_info: CoinInfo) -> Vec<(Asset, AssetScore)> {

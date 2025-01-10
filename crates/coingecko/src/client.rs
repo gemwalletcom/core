@@ -1,4 +1,4 @@
-use crate::model::{CoinQuery, CointListQuery, SearchTrending, SearchTrendingItemCoin, SimplePriceQuery};
+use crate::model::{CoinQuery, CointListQuery, SearchTrending, SimplePriceQuery};
 
 use super::model::{Coin, CoinInfo, CoinMarket, ExchangeRates, MarketChart, SimplePrices};
 use primitives::FiatRate;
@@ -43,11 +43,10 @@ impl CoinGeckoClient {
         headers
     }
 
-    pub async fn get_search_trending(&self) -> Result<Vec<SearchTrendingItemCoin>, Error> {
+    pub async fn get_search_trending(&self) -> Result<SearchTrending, Error> {
         let url = format!("{}/api/v3/search/trending", self.url);
         let response = self.client.get(&url).headers(self.headers()).send().await?;
-        let coins: SearchTrending = response.json().await?;
-        Ok(coins.coins.into_iter().map(|x| x.item).collect())
+        response.json::<SearchTrending>().await
     }
 
     pub async fn get_coin_list(&self) -> Result<Vec<Coin>, Error> {

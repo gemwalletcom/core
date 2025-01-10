@@ -29,9 +29,6 @@ banxa:
   key:
     public: ""
     secret: ""
-kado:
-  key:
-    secret: ""
 pricer:
   timer: 60
   outdated: 604800

@@ -1,10 +1,11 @@
-use super::client::TransakClient;
+use super::{client::TransakClient, model::WebhookPayload};
 use crate::{
     model::{FiatMapping, FiatProviderAsset},
+    providers::transak::model::WebhookEncryptedData,
     FiatProvider,
 };
 use async_trait::async_trait;
-use primitives::fiat_quote_request::FiatSellRequest;
+use primitives::{fiat_quote_request::FiatSellRequest, FiatTransactionStatus, FiatTransactionType};
 use primitives::{FiatBuyRequest, FiatProviderName, FiatQuote, FiatTransaction};
 use std::error::Error;
 
@@ -42,7 +43,36 @@ impl FiatProvider for TransakClient {
         Ok(assets)
     }
 
-    async fn webhook(&self, _data: serde_json::Value) -> Result<FiatTransaction, Box<dyn std::error::Error + Send + Sync>> {
-        unimplemented!()
+    async fn webhook(&self, data: serde_json::Value) -> Result<FiatTransaction, Box<dyn std::error::Error + Send + Sync>> {
+        let payload = serde_json::from_value::<WebhookEncryptedData>(data)?;
+        let payload = self.decode_jwt_content(&payload.data).unwrap();
+        let payload = serde_json::from_str::<WebhookPayload>(&payload)?.webhook_data;
+
+        let status = match payload.status.as_str() {
+            "ORDER_PAYMENT_VERIFYING" | "PAYMENT_DONE_MARKED_BY_USER" | "PENDING_DELIVERY_FROM_TRANSAK" | "AWAITING_PAYMENT_FROM_USER" => {
+                FiatTransactionStatus::Pending
+            }
+            "EXPIRED" | "FAILED" | "CANCELLED" | "REFUNDED" => FiatTransactionStatus::Failed,
+            "COMPLETED" => FiatTransactionStatus::Complete,
+            _ => FiatTransactionStatus::Unknown,
+        };
+        let transaction_type = FiatTransactionType::Buy;
+
+        let transaction = FiatTransaction {
+            asset_id: None,
+            transaction_type,
+            symbol: payload.crypto_currency,
+            provider_id: Self::NAME.id(),
+            provider_transaction_id: payload.id,
+            status,
+            fiat_amount: payload.fiat_amount,
+            fiat_currency: payload.fiat_currency,
+            transaction_hash: payload.transaction_hash,
+            address: Some(payload.wallet_address),
+            fee_provider: payload.conversion_price_data.as_ref().and_then(|data| data.fee("transak_fee")),
+            fee_network: payload.conversion_price_data.as_ref().and_then(|data| data.fee("network_fee")),
+            fee_partner: payload.conversion_price_data.as_ref().and_then(|data| data.fee("partner_fee")),
+        };
+        Ok(transaction)
     }
 }

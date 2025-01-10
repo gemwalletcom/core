@@ -32,3 +32,47 @@ pub struct Asset {
 pub struct AssetNetwork {
     pub name: String,
 }
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct WebhookEncryptedData {
+    pub data: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WebhookPayload {
+    pub webhook_data: WebhookData,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WebhookData {
+    pub id: String,
+    pub status: String,
+    pub fiat_currency: String,
+    pub is_buy_or_sell: String,
+    pub fiat_amount: f64,
+    pub network: Option<String>,
+    pub crypto_currency: String,
+    pub transaction_hash: Option<String>,
+    pub wallet_address: String,
+    pub conversion_price_data: Option<WebhookConversionPriceData>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WebhookConversionPriceData {
+    pub internal_fees: Vec<InternalFee>,
+}
+
+impl WebhookConversionPriceData {
+    pub fn fee(&self, id: &str) -> Option<f64> {
+        self.internal_fees.iter().find(|fee| fee.id == id).map(|fee| fee.value)
+    }
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct InternalFee {
+    pub id: String,
+    pub value: f64,
+}
