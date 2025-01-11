@@ -38,6 +38,7 @@ members = [
     "crates/localizer",
     "crates/job_runner",
     "crates/search_index",
+    "crates/nft"
 ]
 
 default-members = [

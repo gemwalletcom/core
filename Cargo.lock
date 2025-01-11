@@ -378,6 +378,7 @@ dependencies = [
  "config",
  "fiat",
  "name_resolver",
+ "nft",
  "pricer",
  "primitives",
  "prometheus-client",
@@ -5365,6 +5366,17 @@ dependencies = [
  "pasta_curves",
  "serde",
  "trait-set",
+]
+
+[[package]]
+name = "nft"
+version = "1.0.0"
+dependencies = [
+ "primitives",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "settings",
 ]
 
 [[package]]

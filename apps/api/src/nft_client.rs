@@ -1,29 +1,27 @@
 use std::error::Error;
 
-use primitives::{Chain, NFTCollectible, NFTCollection};
+use nft::NFT;
+use primitives::{Chain, NFTResult};
+use std::collections::HashMap;
 use storage::DatabaseClient;
 
 pub struct NFTClient {
     database: DatabaseClient,
+    nft: NFT,
 }
 
 impl NFTClient {
-    pub async fn new(database_url: &str) -> Self {
+    pub async fn new(database_url: &str, nftscan_key: &str) -> Self {
         Self {
             database: DatabaseClient::new(database_url),
+            nft: NFT::new(nftscan_key),
         }
     }
 
-    pub async fn get_nft_collections(&mut self, device_id: &str, wallet_index: i32) -> Result<Vec<NFTCollection>, Box<dyn Error>> {
-        let _subscriptions = self.get_subscriptions(device_id, wallet_index)?;
-        //TODO: subscriptions contains all of the addresses of the user. Fetch across all chains their nft
-        Ok(vec![])
-    }
-
-    pub async fn get_nft_collectibles(&mut self, device_id: &str, _collection_id: &str, wallet_index: i32) -> Result<Vec<NFTCollectible>, Box<dyn Error>> {
-        let _subscriptions = self.get_subscriptions(device_id, wallet_index)?;
-        //TODO: Get all the collectibles of the user.
-        Ok(vec![])
+    pub async fn get_nft_assets(&mut self, device_id: &str, wallet_index: i32) -> Result<Vec<NFTResult>, Box<dyn Error>> {
+        let subscriptions = self.get_subscriptions(device_id, wallet_index)?;
+        let addresses: HashMap<Chain, String> = subscriptions.into_iter().map(|x| (x.chain, x.address)).collect();
+        self.nft.get_assets(addresses).await
     }
 
     pub fn get_subscriptions(&mut self, device_id: &str, wallet_index: i32) -> Result<Vec<primitives::Subscription>, Box<dyn Error>> {
@@ -36,18 +34,8 @@ impl NFTClient {
         Ok(subscriptions)
     }
 
-    pub async fn get_nft_collections_by_address(&mut self, _chain: Chain, _address: &str) -> Result<Vec<NFTCollection>, Box<dyn Error>> {
-        //TODO: Fetching from ChainNFTProvider
-        Ok(vec![])
-    }
-
-    pub async fn get_nft_collectibles_by_address(
-        &mut self,
-        _chain: Chain,
-        _collection_id: &str,
-        _address: &str,
-    ) -> Result<Vec<NFTCollectible>, Box<dyn Error>> {
-        //TODO: Fetching from ChainNFTProvider
-        Ok(vec![])
+    pub async fn get_nft_assets_by_chain(&mut self, chain: Chain, address: &str) -> Result<Vec<NFTResult>, Box<dyn Error>> {
+        let addresses: HashMap<Chain, String> = [(chain, address.to_string())].iter().cloned().collect();
+        self.nft.get_assets(addresses).await
     }
 }

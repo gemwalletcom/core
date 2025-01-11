@@ -29,6 +29,7 @@ pub struct Settings {
     pub swap: Swap,
     pub alerter: Alerter,
     pub security: Security,
+    pub nft: NFT,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -308,4 +309,16 @@ impl Settings {
             .build()?;
         s.try_deserialize()
     }
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[allow(unused)]
+pub struct NFT {
+    pub nftscan: NFTScan,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[allow(unused)]
+pub struct NFTScan {
+    pub key: String,
 }

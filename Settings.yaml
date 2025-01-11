@@ -196,3 +196,7 @@ alerter:
   rules:
     price_increase_percent: 8.0
     price_decrease_percent: 10.0
+
+nft:
+  nftscan:
+    key: ""
