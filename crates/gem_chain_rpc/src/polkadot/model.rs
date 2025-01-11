@@ -43,6 +43,7 @@ pub struct ExtrinsicInfo {
 #[serde(untagged)]
 pub enum ExtrinsicArguments {
     Transfer(ExtrinsicTransfer),
+    Transfers(ExtrinsicCalls),
     Other(serde_json::Value),
 }
 
@@ -50,6 +51,23 @@ pub enum ExtrinsicArguments {
 pub struct ExtrinsicTransfer {
     pub value: String,
     pub dest: AddressId,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ExtrinsicCalls {
+    pub calls: Vec<Call>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Call {
+    pub method: ExtrinsicMethod,
+    pub args: CallArgs,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CallArgs {
+    pub dest: AddressId,
+    pub value: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

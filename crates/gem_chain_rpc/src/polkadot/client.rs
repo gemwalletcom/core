@@ -29,39 +29,62 @@ impl PolkadotClient {
         Ok(self.client.get(url).send().await?.json::<Block>().await?)
     }
 
-    pub fn map_transaction(&self, block: Block, transaction: Extrinsic) -> Option<primitives::Transaction> {
-        match transaction.method.method.as_str() {
-            TRANSACTION_TYPE_TRANSFER_KEEP_ALIVE | TRANSACTION_TYPE_TRANSFER_ALLOW_DEATH => {
-                let transfer = if let ExtrinsicArguments::Transfer(transfer) = &transaction.args {
-                    transfer
-                } else {
-                    return None;
-                };
-                let from_address = transaction.signature?.signer.id.clone();
-                let state = if transaction.success {
-                    primitives::TransactionState::Confirmed
-                } else {
-                    primitives::TransactionState::Failed
-                };
-                Some(primitives::Transaction::new(
-                    transaction.hash.clone(),
-                    self.get_chain().as_asset_id(),
-                    from_address,
+    fn map_transfer(&self, block: Block, transaction: Extrinsic, method: String, to_address: String, value: String) -> Option<primitives::Transaction> {
+        if method != TRANSACTION_TYPE_TRANSFER_ALLOW_DEATH && method != TRANSACTION_TYPE_TRANSFER_KEEP_ALIVE {
+            return None;
+        }
+        let from_address = transaction.signature?.signer.id.clone();
+        let state = if transaction.success {
+            primitives::TransactionState::Confirmed
+        } else {
+            primitives::TransactionState::Failed
+        };
+        Some(primitives::Transaction::new(
+            transaction.hash.clone(),
+            self.get_chain().as_asset_id(),
+            from_address,
+            to_address,
+            None,
+            primitives::TransactionType::Transfer,
+            state,
+            block.number,
+            transaction.nonce.unwrap_or_default().clone(),
+            transaction.info.partial_fee.unwrap_or("0".to_string()),
+            self.get_chain().as_asset_id(),
+            value,
+            None,
+            None,
+            Utc::now(),
+        ))
+    }
+
+    pub fn map_transaction(&self, block: Block, transaction: Extrinsic) -> Vec<Option<primitives::Transaction>> {
+        match &transaction.args.clone() {
+            ExtrinsicArguments::Transfer(transfer) => {
+                vec![self.map_transfer(
+                    block,
+                    transaction.clone(),
+                    transaction.method.method.clone(),
                     transfer.dest.id.clone(),
-                    None,
-                    primitives::TransactionType::Transfer,
-                    state,
-                    block.number,
-                    transaction.nonce.unwrap_or_default().clone(),
-                    transaction.info.partial_fee.unwrap_or("0".to_string()),
-                    self.get_chain().as_asset_id(),
                     transfer.value.clone(),
-                    None,
-                    None,
-                    Utc::now(),
-                ))
+                )]
             }
-            _ => None,
+            ExtrinsicArguments::Transfers(transfers) => {
+                return transfers
+                    .calls
+                    .iter()
+                    .map(|x| {
+                        self.map_transfer(
+                            block.clone(),
+                            transaction.clone(),
+                            x.method.method.clone(),
+                            x.args.dest.id.clone(),
+                            x.args.value.clone(),
+                        )
+                    })
+                    .collect()
+            }
+            _ => vec![],
         }
     }
 }
@@ -87,6 +110,7 @@ impl ChainBlockProvider for PolkadotClient {
             .extrinsics
             .iter()
             .flat_map(|x| self.map_transaction(block.clone(), x.clone()))
+            .flatten()
             .collect::<Vec<primitives::Transaction>>();
 
         Ok(transactions)
