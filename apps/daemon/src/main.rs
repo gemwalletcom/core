@@ -4,6 +4,7 @@ mod device;
 mod fiat;
 mod model;
 mod pricer;
+mod search;
 mod transaction;
 mod version;
 
@@ -33,6 +34,7 @@ pub async fn main() {
         DaemonService::Version => version::jobs(settings.clone()).await,
         DaemonService::Transaction => transaction::jobs(settings.clone()).await,
         DaemonService::Device => device::jobs(settings.clone()).await,
+        DaemonService::Search => search::jobs(settings.clone()).await,
     };
 
     let _ = futures::future::join_all(services).await;

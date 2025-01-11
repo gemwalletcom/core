@@ -1,4 +1,3 @@
-version: "3.8"
 services:
   app_build:
     image: app
@@ -91,6 +90,18 @@ services:
     volumes:
       - clickhouse:/var/lib/clickhouse
 
+  meilisearch:
+    image: getmeili/meilisearch:latest
+    container_name: meilisearch
+    restart: always
+    ports:
+      - 7700:7700
+    environment:
+      MEILI_NO_ANALYTICS: true
+    volumes:
+      - meilisearch:/meili_data
+
 volumes:
   postgres:
   clickhouse:
+  meilisearch:

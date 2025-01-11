@@ -30,7 +30,7 @@ mod transaction_client;
 
 use crate::asset_client::AssetsChainProvider;
 use api_connector::PusherClient;
-use asset_client::AssetsClient;
+use asset_client::{AssetsClient, AssetsSearchClient};
 use config_client::Client as ConfigClient;
 use device_client::DevicesClient;
 use fiat::client::Client as FiatProvider;
@@ -46,6 +46,7 @@ use pricer::PriceAlertClient;
 use rocket::fairing::AdHoc;
 use rocket::tokio::sync::Mutex;
 use rocket::{Build, Rocket};
+use search_index::SearchIndexClient;
 use security_providers::SecurityProviderFactory;
 use security_scan::SecurityScanClient;
 use settings::Settings;
@@ -83,6 +84,8 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
     let scan_client = SecurityScanClient::new(postgres_url, security_providers).await;
     let parser_client = ParserClient::new(settings_clone.clone()).await;
     let assets_client = AssetsClient::new(postgres_url).await;
+    let search_index_client = SearchIndexClient::new(&settings_clone.meilisearch.url.clone(), &settings_clone.meilisearch.key.clone());
+    let assets_search_client = AssetsSearchClient::new(&search_index_client).await;
     let swap_client = SwapClient::new(postgres_url).await;
     let providers = FiatProviderFactory::new_providers(settings_clone.clone());
     let fiat_client = FiatProvider::new(postgres_url, providers).await;
@@ -103,6 +106,7 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
         .manage(Mutex::new(name_client))
         .manage(Mutex::new(devices_client))
         .manage(Mutex::new(assets_client))
+        .manage(Mutex::new(assets_search_client))
         .manage(Mutex::new(subscriptions_client))
         .manage(Mutex::new(transactions_client))
         .manage(Mutex::new(metrics_client))

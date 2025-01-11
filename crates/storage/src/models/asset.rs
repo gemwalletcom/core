@@ -16,6 +16,7 @@ pub struct Asset {
     pub decimals: i32,
     pub rank: i32,
 
+    pub is_enabled: bool,
     pub is_buyable: bool,
     pub is_sellable: bool,
     pub is_swappable: bool,
@@ -60,6 +61,7 @@ impl Asset {
             asset_type: asset.asset_type.as_ref().to_string(),
             decimals: asset.decimals,
             rank: 0,
+            is_enabled: false,
             is_buyable: false,
             is_sellable: false,
             is_swappable: false,
@@ -70,6 +72,7 @@ impl Asset {
 
     pub fn as_property_primitive(&self) -> primitives::AssetProperties {
         primitives::AssetProperties {
+            is_enabled: self.is_enabled,
             is_buyable: self.is_buyable,
             is_sellable: self.is_sellable,
             is_swapable: self.is_swappable,

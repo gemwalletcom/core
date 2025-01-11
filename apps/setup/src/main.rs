@@ -1,4 +1,5 @@
 use primitives::{Asset, AssetType, Chain, FiatProviderName, PlatformStore};
+use search_index::{SearchIndexClient, ASSETS_FILTERS, ASSETS_INDEX_NAME, ASSETS_RANKING_RULES, ASSETS_SEARCH_ATTRIBUTES, ASSETS_SORTS, INDEX_PRIMARY_KEY};
 use settings::Settings;
 use storage::{ClickhouseClient, DatabaseClient};
 
@@ -61,6 +62,22 @@ async fn main() {
         .collect::<Vec<_>>();
 
     let _ = database_client.add_releases(releases);
+
+    let search_indexes = vec![ASSETS_INDEX_NAME];
+
+    println!("setup search index: {:?}", search_indexes);
+
+    let search_index_client = SearchIndexClient::new(&settings.meilisearch.url, settings.meilisearch.key.as_str());
+
+    for index in search_indexes {
+        search_index_client.create_index(index, INDEX_PRIMARY_KEY).await.unwrap();
+    }
+    let _ = search_index_client.set_filterable_attributes(ASSETS_INDEX_NAME, ASSETS_FILTERS.to_vec()).await;
+    let _ = search_index_client.set_sortable_attributes(ASSETS_INDEX_NAME, ASSETS_SORTS.to_vec()).await;
+    let _ = search_index_client
+        .set_searchable_attributes(ASSETS_INDEX_NAME, ASSETS_SEARCH_ATTRIBUTES.to_vec())
+        .await;
+    let _ = search_index_client.set_ranking_rules(ASSETS_INDEX_NAME, ASSETS_RANKING_RULES.to_vec()).await;
 
     println!("setup complete");
 }

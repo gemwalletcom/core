@@ -5,6 +5,9 @@ postgres:
 clickhouse:
   url: "http://localhost:8123"
   database: default
+meilisearch:
+  url: "http://localhost:7700"
+  key: "test"
 coingecko:
   key:
     secret: ""

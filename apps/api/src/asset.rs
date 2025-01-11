@@ -2,7 +2,7 @@ extern crate rocket;
 
 use std::str::FromStr;
 
-use crate::asset_client::AssetsChainProvider;
+use crate::asset_client::{AssetsChainProvider, AssetsSearchClient};
 use crate::AssetsClient;
 use primitives::{Asset, AssetBasic, AssetFull, AssetId, Chain};
 use rocket::serde::json::Json;
@@ -45,15 +45,16 @@ pub async fn get_assets_list(client: &State<Mutex<AssetsClient>>) -> Json<Vec<As
 pub async fn get_assets_search(
     query: String,
     chains: Option<String>,
-    limit: Option<i64>,
-    offset: Option<i64>,
-    client: &State<Mutex<AssetsClient>>,
+    limit: Option<usize>,
+    offset: Option<usize>,
+    client: &State<Mutex<AssetsSearchClient>>,
 ) -> Json<Vec<AssetBasic>> {
     let chains = chains.unwrap_or_default().split(',').flat_map(Chain::from_str).map(|x| x.to_string()).collect();
     let assets = client
         .lock()
         .await
         .get_assets_search(query.as_str(), chains, limit.unwrap_or(50), offset.unwrap_or(0))
+        .await
         .unwrap();
     Json(assets)
 }

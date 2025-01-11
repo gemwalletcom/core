@@ -34,6 +34,7 @@ pub struct AssetMarketPrice {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AssetProperties {
+    pub is_enabled: bool,
     pub is_buyable: bool,
     pub is_sellable: bool,
     pub is_swapable: bool,
@@ -60,10 +61,4 @@ pub const ASSET_LINK_DISCORD: &str = "discord";
 pub struct AssetLink {
     pub name: String,
     pub url: String,
-}
-
-#[typeshare(swift = "Sendable")]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct AssetDetailsInfo {
-    pub market: AssetMarket,
 }

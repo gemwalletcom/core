@@ -55,6 +55,6 @@ localize:
     @sh scripts/localize.sh core crates/localizer/i18n
 
 setup-services:
-    docker-compose up -d redis postgres clickhouse
+    docker-compose up -d redis postgres clickhouse meilisearch
 
 mod gemstone

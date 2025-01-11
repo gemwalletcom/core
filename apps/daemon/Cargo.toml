@@ -22,3 +22,4 @@ primitives = { path = "../../crates/primitives" }
 fiat = { path = "../../crates/fiat" }
 job_runner = { path = "../../crates/job_runner" }
 chain_primitives = { path = "../../crates/chain_primitives" }
+search_index = { path = "../../crates/search_index" }

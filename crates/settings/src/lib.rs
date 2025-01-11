@@ -9,6 +9,7 @@ pub struct Settings {
     pub redis: Database,
     pub postgres: Database,
     pub clickhouse: ClickhouseDatabase,
+    pub meilisearch: MeiliSearch,
     pub fiat: Fiat,
     pub moonpay: MoonPay,
     pub transak: Transak,
@@ -47,6 +48,13 @@ pub struct Database {
 pub struct ClickhouseDatabase {
     pub url: String,
     pub database: String,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[allow(unused)]
+pub struct MeiliSearch {
+    pub url: String,
+    pub key: String,
 }
 
 #[derive(Debug, Deserialize, Clone)]

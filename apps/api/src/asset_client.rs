@@ -2,6 +2,7 @@ extern crate rocket;
 use std::{error::Error, vec};
 
 use primitives::{Asset, AssetBasic, AssetFull, Chain};
+use search_index::{AssetDocument, SearchIndexClient, ASSETS_INDEX_NAME};
 use settings_chain::ChainProviders;
 use storage::DatabaseClient;
 
@@ -49,17 +50,6 @@ impl AssetsClient {
         })
     }
 
-    pub fn get_assets_search(&mut self, query: &str, chains: Vec<String>, limit: i64, offset: i64) -> Result<Vec<primitives::AssetBasic>, Box<dyn Error>> {
-        let min_score = if query.len() > 10 { -100 } else { 10 };
-        let assets = self
-            .database
-            .get_assets_search(query, chains, min_score, limit, offset)?
-            .into_iter()
-            .map(|x| x.as_basic_primitive())
-            .collect();
-        Ok(assets)
-    }
-
     pub fn get_assets_ids_by_device_id(&mut self, device_id: &str, wallet_index: i32, from_timestamp: Option<u32>) -> Result<Vec<String>, Box<dyn Error>> {
         let subscriptions = self.database.get_subscriptions_by_device_id_wallet_index(device_id, wallet_index)?;
 
@@ -68,6 +58,45 @@ impl AssetsClient {
 
         let assets_ids = self.database.get_assets_ids_by_device_id(addresses, chains, from_timestamp)?;
         Ok(assets_ids)
+    }
+}
+
+pub struct AssetsSearchClient {
+    client: SearchIndexClient,
+}
+
+impl AssetsSearchClient {
+    pub async fn new(client: &SearchIndexClient) -> Self {
+        Self { client: client.clone() }
+    }
+
+    pub async fn get_assets_search(
+        &mut self,
+        query: &str,
+        chains: Vec<String>,
+        limit: usize,
+        offset: usize,
+    ) -> Result<Vec<primitives::AssetBasic>, Box<dyn Error + Send + Sync>> {
+        let mut filters = vec![];
+        filters.push("score.rank > 0".to_string());
+        //filters.push("properties.isEnabled = true".to_string()); // Does not work, why?
+
+        if !chains.is_empty() {
+            let chain_filter = "asset.id.chain IN [\"".to_string() + &chains.join(",") + "\"]";
+            filters.push(chain_filter);
+        }
+        let filter = &filters.join(" AND ");
+
+        let assets: Vec<AssetDocument> = self.client.search(ASSETS_INDEX_NAME, query, filter, [].as_ref(), limit, offset).await?;
+
+        Ok(assets
+            .into_iter()
+            .map(|x| AssetBasic {
+                asset: x.asset,
+                properties: x.properties,
+                score: x.score,
+            })
+            .collect())
     }
 }
 

@@ -37,6 +37,7 @@ members = [
 
     "crates/localizer",
     "crates/job_runner",
+    "crates/search_index",
 ]
 
 default-members = [
@@ -80,6 +81,7 @@ diesel_migrations = { version = "2.2.0" }
 redis = { version = "0.25.0", features = ["tokio-comp", "json"] }
 chrono = { version = "0.4.34", features = ["serde"] }
 clickhouse = { version = "0.11.6" }
+meilisearch-sdk = { version = "0.27.1" } 
 
 # crypto
 base64 = { version = "0.22.0" }

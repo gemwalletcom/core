@@ -11,4 +11,5 @@ pub enum DaemonService {
     Version,
     Transaction,
     Device,
+    Search,
 }

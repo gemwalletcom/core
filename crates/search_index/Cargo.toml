@@ -1,0 +1,12 @@
+[package]
+name = "search_index"
+version = { workspace = true }
+edition = { workspace = true }
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+meilisearch-sdk = { workspace = true }
+
+primitives = { path = "../primitives" }
+settings = { path = "../settings" }
