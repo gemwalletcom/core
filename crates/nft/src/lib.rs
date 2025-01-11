@@ -58,9 +58,9 @@ impl NFTCollection {
             description: self.description.clone(),
             chain,
             image: NFTImage {
-                image_url: "".to_string(),
-                preview_image_url: "".to_string(),
-                original_source_url: "".to_string(),
+                image_url: self.logo_url.clone().unwrap_or_default(),
+                preview_image_url: self.logo_url.clone().unwrap_or_default(),
+                original_source_url: self.logo_url.clone().unwrap_or_default(),
             },
             is_verified: self.opensea_verified || self.verified,
         })
@@ -80,9 +80,9 @@ impl NFTAsset {
             description: self.description.clone(),
             chain: Chain::Ethereum,
             image: NFTImage {
-                image_url: "".to_string(),
-                preview_image_url: "".to_string(),
-                original_source_url: "".to_string(),
+                image_url: self.image_uri.clone().unwrap_or_default(),
+                preview_image_url: self.image_uri.clone().unwrap_or_default(),
+                original_source_url: self.image_uri.clone().unwrap_or_default(),
             },
             collectible_type,
             attributes: vec![],

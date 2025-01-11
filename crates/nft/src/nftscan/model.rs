@@ -19,6 +19,7 @@ pub struct NFTCollection {
     pub description: Option<String>,
     pub verified: bool,
     pub opensea_verified: bool,
+    pub logo_url: Option<String>,
     pub assets: Vec<NFTAsset>,
 }
 
@@ -29,4 +30,5 @@ pub struct NFTAsset {
     pub name: String,
     pub description: Option<String>,
     pub amount: String,
+    pub image_uri: Option<String>,
 }
