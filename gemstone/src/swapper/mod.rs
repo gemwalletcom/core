@@ -61,8 +61,14 @@ impl GemSwapper {
         }
     }
 
-    fn filter_by_supported_chains(supported_chains: Vec<Chain>, from_chain: &Chain, to_chain: &Chain) -> bool {
-        supported_chains.contains(from_chain) && supported_chains.contains(to_chain)
+    fn filter_by_supported_chains(provider_type: SwapProviderType, supported_chains: Vec<Chain>, from_chain: &Chain, to_chain: &Chain) -> bool {
+        supported_chains.contains(from_chain)
+            && supported_chains.contains(to_chain)
+            && match provider_type {
+                SwapProviderType::OnChain => from_chain == to_chain,
+                SwapProviderType::Bridge => from_chain != to_chain,
+                SwapProviderType::CrossChain => true,
+            }
     }
 
     fn filter_supported_assets(supported_assets: Vec<SwapChainAsset>, asset_id: AssetId) -> bool {
@@ -216,7 +222,7 @@ mod tests {
         let filtered = swappers
             .iter()
             .filter(|x| GemSwapper::filter_by_provider_type(x.provider().provider_type(), &from_chain, &to_chain))
-            .filter(|x| GemSwapper::filter_by_supported_chains(x.supported_chains(), &from_chain, &to_chain))
+            .filter(|x| GemSwapper::filter_by_supported_chains(x.provider().provider_type(), x.supported_chains(), &from_chain, &to_chain))
             .collect::<Vec<_>>();
 
         assert_eq!(filtered.len(), 0);
@@ -227,7 +233,7 @@ mod tests {
         let filtered = swappers
             .iter()
             .filter(|x| GemSwapper::filter_by_provider_type(x.provider().provider_type(), &from_chain, &to_chain))
-            .filter(|x| GemSwapper::filter_by_supported_chains(x.supported_chains(), &from_chain, &to_chain))
+            .filter(|x| GemSwapper::filter_by_supported_chains(x.provider().provider_type(), x.supported_chains(), &from_chain, &to_chain))
             .collect::<Vec<_>>();
 
         assert_eq!(filtered.len(), 3);
@@ -242,7 +248,7 @@ mod tests {
         let filtered = swappers
             .iter()
             .filter(|x| GemSwapper::filter_by_provider_type(x.provider().provider_type(), &from_chain, &to_chain))
-            .filter(|x| GemSwapper::filter_by_supported_chains(x.supported_chains(), &from_chain, &to_chain))
+            .filter(|x| GemSwapper::filter_by_supported_chains(x.provider().provider_type(), x.supported_chains(), &from_chain, &to_chain))
             .collect::<Vec<_>>();
 
         assert_eq!(filtered.len(), 1);
@@ -254,7 +260,7 @@ mod tests {
         let filtered = swappers
             .iter()
             .filter(|x| GemSwapper::filter_by_provider_type(x.provider().provider_type(), &from_chain, &to_chain))
-            .filter(|x| GemSwapper::filter_by_supported_chains(x.supported_chains(), &from_chain, &to_chain))
+            .filter(|x| GemSwapper::filter_by_supported_chains(x.provider().provider_type(), x.supported_chains(), &from_chain, &to_chain))
             .collect::<Vec<_>>();
 
         assert_eq!(filtered.len(), 1);
