@@ -14,7 +14,7 @@ use gem_evm::{
     address::EthereumAddress,
     jsonrpc::{BlockParameter, EthereumRpc, TransactionObject},
     uniswap::{
-        command::{encode_commands, PayPortion, Permit2Permit, Sweep, UniversalRouterCommand, UnwrapWeth, V3SwapExactIn, WrapEth, ADDRESS_THIS},
+        command::{encode_commands, PayPortion, Permit2Permit, Sweep, Transfer, UniversalRouterCommand, UnwrapWeth, V3SwapExactIn, WrapEth, ADDRESS_THIS},
         contract::IQuoterV2,
         deployment::V3Deployment,
         path::{build_direct_pair, build_pairs, get_base_pair, BasePair, TokenPair},
@@ -41,6 +41,11 @@ use std::{
 use super::weth_address;
 
 static DEFAULT_DEADLINE: u64 = 3600;
+
+pub struct FeePreference {
+    pub fee_token: EthereumAddress,
+    pub is_input_token: bool,
+}
 
 pub trait UniversalRouterProvider: Send + Sync + Debug {
     fn provider(&self) -> SwapProvider;
@@ -89,6 +94,30 @@ impl UniswapV3 {
             .filter(|intermediary| *intermediary != token_in && *intermediary != token_out)
             .cloned()
             .collect()
+    }
+
+    // Return (fee token, is_input_token)
+    fn get_fee_token(mode: &GemSwapMode, base_pair: Option<&BasePair>, input: &EthereumAddress, output: &EthereumAddress) -> FeePreference {
+        match mode {
+            GemSwapMode::ExactIn => {
+                if let Some(pair) = base_pair {
+                    if pair.to_set().contains(input) {
+                        return FeePreference {
+                            fee_token: input.clone(),
+                            is_input_token: true,
+                        };
+                    }
+                }
+                FeePreference {
+                    fee_token: output.clone(),
+                    is_input_token: false,
+                }
+            }
+            GemSwapMode::ExactOut => FeePreference {
+                fee_token: input.clone(),
+                is_input_token: true,
+            },
+        }
     }
 
     fn build_paths(token_in: &EthereumAddress, token_out: &EthereumAddress, fee_tiers: &[FeeTier], base_pair: &BasePair) -> Vec<Vec<(Vec<TokenPair>, Bytes)>> {
@@ -202,12 +231,13 @@ impl UniswapV3 {
 
     fn build_commands(
         request: &SwapQuoteRequest,
-        _token_in: &EthereumAddress,
+        token_in: &EthereumAddress,
         token_out: &EthereumAddress,
         amount_in: U256,
         quote_amount: U256,
         path: &Bytes,
         permit: Option<Permit2Permit>,
+        fee_token_is_input: bool,
     ) -> Result<Vec<UniversalRouterCommand>, SwapperError> {
         let options = request.options.clone();
         let fee_options = options.fee.unwrap_or_default().evm;
@@ -238,30 +268,48 @@ impl UniswapV3 {
                 // payer_is_user: is true when swapping tokens
                 let payer_is_user = !wrap_input_eth;
                 if pay_fees {
-                    // insert V3_SWAP_EXACT_IN
-                    // amount_out_min: if needs to pay fees, amount_out_min set to 0 and we will sweep the rest
-                    commands.push(UniversalRouterCommand::V3_SWAP_EXACT_IN(V3SwapExactIn {
-                        recipient: Address::from_str(ADDRESS_THIS).unwrap(),
-                        amount_in,
-                        amount_out_min: if pay_fees { U256::from(0) } else { amount_out },
-                        path: path.clone(),
-                        payer_is_user,
-                    }));
-
-                    // insert PAY_PORTION to fee_address
-                    commands.push(UniversalRouterCommand::PAY_PORTION(PayPortion {
-                        token: Address::from_slice(&token_out.bytes),
-                        recipient: Address::from_str(fee_options.address.as_str()).unwrap(),
-                        bips: U256::from(fee_options.bps),
-                    }));
-
-                    if !unwrap_output_weth {
-                        // MSG_SENDER should be the address of the caller
-                        commands.push(UniversalRouterCommand::SWEEP(Sweep {
-                            token: Address::from_slice(&token_out.bytes),
-                            recipient,
-                            amount_min: U256::from(amount_out),
+                    if fee_token_is_input {
+                        // insert TRANSFER fee first
+                        let fee = amount_in * U256::from(fee_options.bps) / U256::from(10000);
+                        commands.push(UniversalRouterCommand::TRANSFER(Transfer {
+                            token: Address::from_slice(&token_in.bytes),
+                            recipient: Address::from_str(fee_options.address.as_str()).unwrap(),
+                            value: fee,
                         }));
+                        // insert V3_SWAP_EXACT_IN with amount - fee, recipient is user address
+                        commands.push(UniversalRouterCommand::V3_SWAP_EXACT_IN(V3SwapExactIn {
+                            recipient,
+                            amount_in: amount_in - fee,
+                            amount_out_min: amount_out,
+                            path: path.clone(),
+                            payer_is_user,
+                        }));
+                    } else {
+                        // insert V3_SWAP_EXACT_IN
+                        // amount_out_min: if needs to pay fees, amount_out_min set to 0 and we will sweep the rest
+                        commands.push(UniversalRouterCommand::V3_SWAP_EXACT_IN(V3SwapExactIn {
+                            recipient: Address::from_str(ADDRESS_THIS).unwrap(),
+                            amount_in,
+                            amount_out_min: if pay_fees { U256::from(0) } else { amount_out },
+                            path: path.clone(),
+                            payer_is_user,
+                        }));
+
+                        // insert PAY_PORTION to fee_address
+                        commands.push(UniversalRouterCommand::PAY_PORTION(PayPortion {
+                            token: Address::from_slice(&token_out.bytes),
+                            recipient: Address::from_str(fee_options.address.as_str()).unwrap(),
+                            bips: U256::from(fee_options.bps),
+                        }));
+
+                        if !unwrap_output_weth {
+                            // MSG_SENDER should be the address of the caller
+                            commands.push(UniversalRouterCommand::SWEEP(Sweep {
+                                token: Address::from_slice(&token_out.bytes),
+                                recipient,
+                                amount_min: U256::from(amount_out),
+                            }));
+                        }
                     }
                 } else {
                     // insert V3_SWAP_EXACT_IN
@@ -343,6 +391,14 @@ impl GemSwapProvider for UniswapV3 {
         let base_pair = get_base_pair(&evm_chain).ok_or(SwapperError::ComputeQuoteError {
             msg: "base pair not found".into(),
         })?;
+
+        let fee_preference = Self::get_fee_token(&request.mode, Some(&base_pair), &token_in, &token_out);
+        // FIXME use quote_amount_in below
+        let _quote_amount_in = if fee_preference.is_input_token {
+            amount_in - amount_in * U256::from(request.options.clone().fee.unwrap_or_default().evm.bps) / U256::from(10000)
+        } else {
+            amount_in
+        };
 
         // Build paths for QuoterV2
         // [
@@ -448,9 +504,21 @@ impl GemSwapProvider for UniswapV3 {
             FetchQuoteData::Permit2(data) => Some(data.into()),
             _ => None,
         };
+        let evm_chain = EVMChain::from_chain(quote.request.from_asset.chain).ok_or(SwapperError::NotSupportedChain)?;
+        let base_pair = get_base_pair(&evm_chain);
+        let fee_preference = Self::get_fee_token(&request.mode, base_pair.as_ref(), &token_in, &token_out);
 
         let path: Bytes = Self::build_paths_with_routes(&quote.data.routes)?;
-        let commands = Self::build_commands(request, &token_in, &token_out, amount_in, to_amount, &path, permit)?;
+        let commands = Self::build_commands(
+            request,
+            &token_in,
+            &token_out,
+            amount_in,
+            to_amount,
+            &path,
+            permit,
+            fee_preference.is_input_token,
+        )?;
         let deadline = SystemTime::now().duration_since(UNIX_EPOCH).expect("Time went backwards").as_secs() + DEFAULT_DEADLINE;
         let encoded = encode_commands(&commands, U256::from(deadline));
 
@@ -508,7 +576,7 @@ mod tests {
 
         let path = build_direct_pair(&token_in, &token_out, FeeTier::FiveHundred as u32);
         // without fee
-        let commands = UniswapV3::build_commands(&request, &token_in, &token_out, amount_in, U256::from(0), &path, None).unwrap();
+        let commands = UniswapV3::build_commands(&request, &token_in, &token_out, amount_in, U256::from(0), &path, None, false).unwrap();
 
         assert_eq!(commands.len(), 2);
 
@@ -525,7 +593,7 @@ mod tests {
         };
         request.options = options;
 
-        let commands = UniswapV3::build_commands(&request, &token_in, &token_out, amount_in, U256::from(0), &path, None).unwrap();
+        let commands = UniswapV3::build_commands(&request, &token_in, &token_out, amount_in, U256::from(0), &path, None, false).unwrap();
 
         assert_eq!(commands.len(), 4);
 
@@ -578,6 +646,7 @@ mod tests {
             U256::from(6507936),
             &path,
             Some(permit2_data.into()),
+            false,
         )
         .unwrap();
 
@@ -612,7 +681,7 @@ mod tests {
         let amount_in = U256::from_str(&request.value).unwrap();
 
         let path = build_direct_pair(&token_in, &token_out, FeeTier::FiveHundred as u32);
-        let commands = UniswapV3::build_commands(&request, &token_in, &token_out, amount_in, U256::from(33377662359182269u64), &path, None).unwrap();
+        let commands = UniswapV3::build_commands(&request, &token_in, &token_out, amount_in, U256::from(33377662359182269u64), &path, None, false).unwrap();
 
         assert_eq!(commands.len(), 3);
 
@@ -671,6 +740,7 @@ mod tests {
             U256::from(3997001989341576u64),
             &path,
             Some(permit2_data.into()),
+            false,
         )
         .unwrap();
 
