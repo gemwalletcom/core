@@ -324,11 +324,14 @@ impl GemSwapProvider for UniswapV3 {
     }
 
     async fn fetch_quote(&self, request: &SwapQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapQuote, SwapperError> {
+        // Prevent cross chain swaps
+        if request.from_asset.chain != request.to_asset.chain {
+            return Err(SwapperError::NotSupportedPair);
+        }
         // Prevent swaps on unsupported chains
         if !self.support_chain(&request.from_asset.chain) {
             return Err(SwapperError::NotSupportedChain);
         }
-
         let wallet_address: Address = request.wallet_address.as_str().parse().map_err(SwapperError::from)?;
 
         // Check deployment and weth contract
