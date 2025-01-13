@@ -17,7 +17,6 @@ mod parser;
 mod parser_client;
 mod price_alerts;
 mod prices;
-mod response;
 mod security_providers;
 mod security_scan;
 mod status;
