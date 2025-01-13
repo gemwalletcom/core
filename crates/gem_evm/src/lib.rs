@@ -11,6 +11,7 @@ pub mod jsonrpc;
 pub mod lido;
 pub mod multicall3;
 pub mod permit2;
+pub mod stargate;
 pub mod thorchain;
 pub mod uniswap;
 pub mod weth;
