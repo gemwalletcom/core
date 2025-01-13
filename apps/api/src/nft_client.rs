@@ -1,7 +1,7 @@
 use std::error::Error;
 
 use nft::NFT;
-use primitives::{Chain, NFTCollection};
+use primitives::{Chain, NFTCollection, NFTData};
 use std::collections::HashMap;
 use storage::DatabaseClient;
 
@@ -18,7 +18,7 @@ impl NFTClient {
         }
     }
 
-    pub async fn get_nft_assets(&mut self, device_id: &str, wallet_index: i32) -> Result<Vec<NFTCollection>, Box<dyn Error>> {
+    pub async fn get_nft_assets(&mut self, device_id: &str, wallet_index: i32) -> Result<Vec<NFTData>, Box<dyn Error>> {
         let subscriptions = self.get_subscriptions(device_id, wallet_index)?;
         let addresses: HashMap<Chain, String> = subscriptions.into_iter().map(|x| (x.chain, x.address)).collect();
         self.nft.get_assets(addresses).await
@@ -34,7 +34,7 @@ impl NFTClient {
         Ok(subscriptions)
     }
 
-    pub async fn get_nft_assets_by_chain(&mut self, chain: Chain, address: &str) -> Result<Vec<NFTCollection>, Box<dyn Error>> {
+    pub async fn get_nft_assets_by_chain(&mut self, chain: Chain, address: &str) -> Result<Vec<NFTData>, Box<dyn Error>> {
         let addresses: HashMap<Chain, String> = [(chain, address.to_string())].iter().cloned().collect();
         self.nft.get_assets(addresses).await
     }

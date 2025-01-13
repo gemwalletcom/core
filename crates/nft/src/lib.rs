@@ -19,7 +19,7 @@ impl NFT {
         }
     }
 
-    pub async fn get_assets(&self, addresses: HashMap<Chain, String>) -> Result<Vec<primitives::NFTCollection>, Box<dyn std::error::Error>> {
+    pub async fn get_assets(&self, addresses: HashMap<Chain, String>) -> Result<Vec<primitives::NFTData>, Box<dyn std::error::Error>> {
         //TODO: Add support for Solana/Ton and other chains
         let evm_address = addresses.into_iter().find(|x| x.0.chain_type() == ChainType::Ethereum).unwrap().1;
         let result = self.client.get_all_evm_nfts(evm_address.as_str()).await?.data;
@@ -27,28 +27,42 @@ impl NFT {
         let assets = result
             .into_iter()
             .flat_map(|result| {
-                result
-                    .collection_assets
-                    .into_iter()
-                    .filter_map(move |x| x.as_primitive(&result.chain, x.assets.clone().into_iter().filter_map(|x| x.as_primitive()).collect()))
+                result.collection_assets.into_iter().filter_map(move |x| {
+                    x.as_primitive(&result.chain).map(|collection| primitives::NFTData {
+                        collection,
+                        assets: x.assets.into_iter().filter_map(|x| x.as_primitive()).collect(),
+                    })
+                })
             })
-            .filter(|x| x.is_verified)
+            .filter(|x| x.collection.is_verified)
             .collect();
 
         Ok(assets)
     }
+
+    pub fn map_chain(chain: &str) -> Option<primitives::Chain> {
+        match chain {
+            "eth" => Some(Chain::Ethereum),
+            "base" => Some(Chain::Base),
+            "bnb" => Some(Chain::SmartChain),
+            "polygon" => Some(Chain::Polygon),
+            "arbitrum" => Some(Chain::Arbitrum),
+            _ => return None,
+        }
+    }
+
+    pub fn map_erc_type(map_erc_type: &str) -> Option<primitives::NFTType> {
+        match map_erc_type {
+            "erc721" => Some(primitives::NFTType::ERC721),
+            "erc1155" => Some(primitives::NFTType::ERC1155),
+            _ => return None,
+        }
+    }
 }
 
 impl NFTCollection {
-    pub fn as_primitive(&self, chain: &str, assets: Vec<primitives::NFTAsset>) -> Option<primitives::NFTCollection> {
-        let chain = match chain {
-            "eth" => Chain::Ethereum,
-            "base" => Chain::Base,
-            "bnb" => Chain::SmartChain,
-            "polygon" => Chain::Polygon,
-            "arbitrum" => Chain::Arbitrum,
-            _ => return None,
-        };
+    pub fn as_primitive(&self, chain: &str) -> Option<primitives::NFTCollection> {
+        let chain = NFT::map_chain(chain)?;
 
         Some(primitives::NFTCollection {
             id: self.contract_address.to_string(),
@@ -61,30 +75,34 @@ impl NFTCollection {
                 original_source_url: self.logo_url.clone().unwrap_or_default(),
             },
             is_verified: self.opensea_verified || self.verified,
-            assets,
         })
     }
 }
 impl NFTAsset {
-    pub fn as_primitive(&self) -> Option<primitives::NFTAsset> {
-        let collectible_type = match self.erc_type.as_str() {
-            "erc721" => primitives::nft::NFTType::ERC721,
-            "erc1155" => primitives::nft::NFTType::ERC1155,
-            _ => return None,
-        };
+    pub fn as_primitive(&self, chain: &str) -> Option<primitives::NFTAsset> {
+        let chain = NFT::map_chain(chain)?;
+        let collectible_type = NFT::map_erc_type(self.erc_type.as_str())?;
 
         Some(primitives::NFTAsset {
             id: self.token_id.to_string(),
             name: self.name.to_string(),
             description: self.description.clone(),
-            chain: Chain::Ethereum,
+            chain,
             image: NFTImage {
                 image_url: self.image_uri.clone().unwrap_or_default(),
                 preview_image_url: self.image_uri.clone().unwrap_or_default(),
                 original_source_url: self.image_uri.clone().unwrap_or_default(),
             },
             collectible_type,
-            attributes: vec![],
+            attributes: self
+                .attributes
+                .clone()
+                .into_iter()
+                .map(|x| primitives::NFTAttrubute {
+                    name: x.attribute_name,
+                    value: x.attribute_value,
+                })
+                .collect(),
         })
     }
 }
