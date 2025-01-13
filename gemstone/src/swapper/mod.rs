@@ -139,7 +139,7 @@ impl GemSwapper {
             .swappers
             .iter()
             .filter(|x| Self::filter_by_provider_type(x.provider().provider_type(), &from_chain, &to_chain))
-            .filter(|x| Self::filter_by_supported_chains(x.supported_chains(), &from_chain, &to_chain))
+            .filter(|x| Self::filter_by_supported_chains(x.provider().provider_type(), x.supported_chains(), &from_chain, &to_chain))
             .collect::<Vec<_>>();
 
         if providers.is_empty() {
