@@ -8,7 +8,7 @@ install: install-typeshare install-postgres install-diesel
 
 install-rust:
     @echo Install rust
-    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+    @which rustup 2>&1 >/dev/null || curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 
 install-typeshare:
     @echo Install typeshare-cli
