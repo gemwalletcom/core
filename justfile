@@ -8,7 +8,11 @@ install: install-typeshare install-postgres install-diesel
 
 install-rust:
     @echo Install rust
-    @which rustup 2>&1 >/dev/null || curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+    @which rustup &>/dev/null || curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+    @source ~/.cargo/env
+    @rustc --version
+    @which just &>/dev/null || cargo install just
+    @just --version
 
 install-typeshare:
     @echo Install typeshare-cli
