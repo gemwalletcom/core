@@ -69,21 +69,19 @@ impl PolkadotClient {
                     transfer.value.clone(),
                 )]
             }
-            ExtrinsicArguments::Transfers(transfers) => {
-                return transfers
-                    .calls
-                    .iter()
-                    .map(|x| {
-                        self.map_transfer(
-                            block.clone(),
-                            transaction.clone(),
-                            x.method.method.clone(),
-                            x.args.dest.id.clone(),
-                            x.args.value.clone(),
-                        )
-                    })
-                    .collect()
-            }
+            ExtrinsicArguments::Transfers(transfers) => transfers
+                .calls
+                .iter()
+                .map(|x| {
+                    self.map_transfer(
+                        block.clone(),
+                        transaction.clone(),
+                        x.method.method.clone(),
+                        x.args.dest.id.clone(),
+                        x.args.value.clone(),
+                    )
+                })
+                .collect(),
             _ => vec![],
         }
     }

@@ -24,7 +24,7 @@ impl PriceUpdater {
     }
 
     pub async fn get_coin_list(&mut self) -> Result<Vec<Coin>, Box<dyn std::error::Error + Send + Sync>> {
-        Ok(self.coin_gecko_client.get_coin_list().await?)
+        self.coin_gecko_client.get_coin_list().await
     }
 
     pub async fn update_prices_assets(&mut self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
