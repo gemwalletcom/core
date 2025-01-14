@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use strum::{AsRefStr, EnumString};
+use strum::{AsRefStr, EnumIter, EnumString, IntoEnumIterator};
 use typeshare::typeshare;
 
 use crate::Chain;
@@ -20,8 +20,15 @@ pub struct NFTCollection {
     pub name: String,
     pub description: Option<String>,
     pub chain: Chain,
+    pub contract_address: String,
     pub image: NFTImage,
     pub is_verified: bool,
+}
+
+impl NFTCollection {
+    pub fn id(chain: Chain, contract_id: &str) -> String {
+        format!("{}_{}", chain.as_ref(), contract_id)
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -30,13 +37,19 @@ pub struct NFTCollection {
 pub struct NFTAsset {
     pub id: String,
     pub collection_id: String,
+    pub token_id: String,
+    pub token_type: NFTType,
     pub name: String,
     pub description: Option<String>,
     pub chain: Chain,
     pub image: NFTImage,
-    #[serde(rename = "type")]
-    pub collectible_type: NFTType,
-    pub attributes: Vec<NFTAttrubute>,
+    pub attributes: Vec<NFTAttribute>,
+}
+
+impl NFTAsset {
+    pub fn id(collection_id: &str, token_id: &str) -> String {
+        format!("{}_{}", collection_id, token_id)
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -51,12 +64,12 @@ pub struct NFTImage {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 #[typeshare(swift = "Sendable")]
-pub struct NFTAttrubute {
+pub struct NFTAttribute {
     pub name: String,
     pub value: String,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, AsRefStr, EnumString)]
+#[derive(Debug, Serialize, Deserialize, Clone, EnumIter, AsRefStr, EnumString)]
 #[typeshare(swift = "Sendable")]
 #[serde(rename_all = "lowercase")]
 #[strum(serialize_all = "lowercase")]
@@ -64,4 +77,10 @@ pub enum NFTType {
     ERC721,
     ERC1155,
     SPL,
+}
+
+impl NFTType {
+    pub fn all() -> Vec<NFTType> {
+        NFTType::iter().collect::<Vec<_>>()
+    }
 }
