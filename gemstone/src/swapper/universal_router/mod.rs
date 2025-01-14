@@ -98,25 +98,20 @@ impl UniswapV3 {
 
     // Return (fee token, is_input_token)
     fn get_fee_token(mode: &GemSwapMode, base_pair: Option<&BasePair>, input: &EthereumAddress, output: &EthereumAddress) -> FeePreference {
-        match mode {
+        let use_input_as_fee_token = match mode {
             GemSwapMode::ExactIn => {
                 if let Some(pair) = base_pair {
-                    if pair.to_set().contains(input) {
-                        return FeePreference {
-                            fee_token: input.clone(),
-                            is_input_token: true,
-                        };
-                    }
-                }
-                FeePreference {
-                    fee_token: output.clone(),
-                    is_input_token: false,
+                    let set = pair.to_set();
+                    set.contains(input) && !set.contains(output)
+                } else {
+                    false
                 }
             }
-            GemSwapMode::ExactOut => FeePreference {
-                fee_token: input.clone(),
-                is_input_token: true,
-            },
+            GemSwapMode::ExactOut => true,
+        };
+        FeePreference {
+            fee_token: if use_input_as_fee_token { input.clone() } else { output.clone() },
+            is_input_token: use_input_as_fee_token,
         }
     }
 
@@ -393,9 +388,9 @@ impl GemSwapProvider for UniswapV3 {
         })?;
 
         let fee_preference = Self::get_fee_token(&request.mode, Some(&base_pair), &token_in, &token_out);
-        // FIXME use quote_amount_in below
-        let _quote_amount_in = if fee_preference.is_input_token {
-            amount_in - amount_in * U256::from(request.options.clone().fee.unwrap_or_default().evm.bps) / U256::from(10000)
+        let fee_bps = request.options.clone().fee.unwrap_or_default().evm.bps;
+        let quote_amount_in = if fee_preference.is_input_token && fee_bps > 0 {
+            amount_in - amount_in * U256::from(fee_bps) / U256::from(10000)
         } else {
             amount_in
         };
@@ -413,7 +408,7 @@ impl GemSwapProvider for UniswapV3 {
             .map(|paths| {
                 let calls: Vec<EthereumRpc> = paths
                     .iter()
-                    .map(|path| Self::build_quoter_request(&request.mode, &request.wallet_address, deployment.quoter_v2, amount_in, &path.1))
+                    .map(|path| Self::build_quoter_request(&request.mode, &request.wallet_address, deployment.quoter_v2, quote_amount_in, &path.1))
                     .collect();
 
                 // batch fee_tiers.len() requests into one jsonrpc call
@@ -750,5 +745,28 @@ mod tests {
         assert!(matches!(commands[1], UniversalRouterCommand::V3_SWAP_EXACT_IN(_)));
         assert!(matches!(commands[2], UniversalRouterCommand::PAY_PORTION(_)));
         assert!(matches!(commands[3], UniversalRouterCommand::UNWRAP_WETH(_)));
+    }
+
+    #[test]
+    fn test_get_fee_token() {
+        let evm_chain = EVMChain::Ethereum;
+        let mode = GemSwapMode::ExactIn;
+        let base_pair = get_base_pair(&evm_chain);
+
+        // WETH -> UNI
+        let input = EthereumAddress::from_str("0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2").unwrap();
+        let output = EthereumAddress::from_str("0x1f9840a85d5af5bf1d1762f925bdaddc4201f984").unwrap();
+        let fee_preference = UniswapV3::get_fee_token(&mode, base_pair.as_ref(), &input, &output);
+
+        assert_eq!(fee_preference.fee_token, input);
+        assert!(fee_preference.is_input_token);
+
+        // USDC -> WETH
+        let input = EthereumAddress::from_str("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48").unwrap();
+        let output = EthereumAddress::from_str("0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2").unwrap();
+        let fee_preference = UniswapV3::get_fee_token(&mode, base_pair.as_ref(), &input, &output);
+
+        assert_eq!(fee_preference.fee_token, output);
+        assert!(!fee_preference.is_input_token);
     }
 }
