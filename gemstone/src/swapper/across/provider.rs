@@ -2,7 +2,7 @@ use super::{
     api::AcrossApi,
     config_store::{ConfigStoreClient, TokenConfig},
     hubpool::HubPoolClient,
-    DEFAULT_FILL_TIMEOUT,
+    DEFAULT_FILL_TIMEOUT, GEM_IDENTIFIER,
 };
 use crate::{
     config::swap_config::SwapReferralFee,
@@ -50,14 +50,9 @@ impl Across {
     pub fn is_supported_pair(from_asset: &AssetId, to_asset: &AssetId) -> bool {
         let from = weth_address::normalize_asset(from_asset).unwrap();
         let to = weth_address::normalize_asset(to_asset).unwrap();
-        debug_println!("from: {:?}, to: {:?}", from, to);
         let asset_mappings = AcrossDeployment::asset_mappings();
-        for mapping in asset_mappings.iter() {
-            if mapping.set.contains(&from) && mapping.set.contains(&to) {
-                return true;
-            }
-        }
-        false
+
+        asset_mappings.into_iter().any(|x| x.set.contains(&from) && x.set.contains(&to))
     }
 
     pub fn get_rate_model(from_asset: &AssetId, to_asset: &AssetId, token_config: &TokenConfig) -> RateModel {
@@ -250,6 +245,12 @@ impl GemSwapProvider for Across {
             SwapChainAsset::Assets(Chain::Ethereum, vec![ETHEREUM_USDC.id.clone()]),
             SwapChainAsset::Assets(Chain::Base, vec![BASE_USDC.id.clone()]),
             SwapChainAsset::Assets(Chain::Optimism, vec![OPTIMISM_USDC.id.clone()]),
+            // USDT
+            SwapChainAsset::Assets(Chain::Arbitrum, vec![ARBITRUM_USDT.id.clone()]),
+            SwapChainAsset::Assets(Chain::Ethereum, vec![ETHEREUM_USDT.id.clone()]),
+            SwapChainAsset::Assets(Chain::Linea, vec![LINEA_USDT.id.clone()]),
+            SwapChainAsset::Assets(Chain::Optimism, vec![OPTIMISM_USDT.id.clone()]),
+            SwapChainAsset::Assets(Chain::ZkSync, vec![ZKSYNC_USDT.id.clone()]),
         ]
     }
 
@@ -453,7 +454,7 @@ impl GemSwapProvider for Across {
         let route_data = HexDecode(&route.route_data)?;
         let v3_relay_data = V3RelayData::abi_decode(&route_data, true).map_err(|_| SwapperError::InvalidRoute)?;
 
-        let deposit_v3_call = V3SpokePoolInterface::depositV3Call {
+        let mut deposit_v3_call = V3SpokePoolInterface::depositV3Call {
             depositor: v3_relay_data.depositor,
             recipient: v3_relay_data.recipient,
             inputToken: v3_relay_data.inputToken,
@@ -468,6 +469,7 @@ impl GemSwapProvider for Across {
             message: v3_relay_data.message,
         }
         .abi_encode();
+        deposit_v3_call.extend_from_slice(&GEM_IDENTIFIER);
 
         let value: &str = if quote.request.from_asset.is_native() { &quote.from_value } else { "0" };
 
