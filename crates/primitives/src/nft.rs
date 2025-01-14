@@ -29,6 +29,7 @@ pub struct NFTCollection {
 #[typeshare(swift = "Sendable")]
 pub struct NFTAsset {
     pub id: String,
+    pub collection_id: String,
     pub name: String,
     pub description: Option<String>,
     pub chain: Chain,

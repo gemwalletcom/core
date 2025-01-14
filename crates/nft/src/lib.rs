@@ -29,8 +29,8 @@ impl NFT {
             .flat_map(|result| {
                 result.collection_assets.into_iter().filter_map(move |x| {
                     x.as_primitive(&result.chain).map(|collection| primitives::NFTData {
-                        collection,
-                        assets: x.assets.into_iter().filter_map(|x| x.as_primitive(&result.chain)).collect(),
+                        collection: collection.clone(),
+                        assets: x.assets.into_iter().filter_map(|x| x.as_primitive(&result.chain, &collection.id)).collect(),
                     })
                 })
             })
@@ -79,12 +79,13 @@ impl NFTCollection {
     }
 }
 impl NFTAsset {
-    pub fn as_primitive(&self, chain: &str) -> Option<primitives::NFTAsset> {
+    pub fn as_primitive(&self, chain: &str, collection_id: &str) -> Option<primitives::NFTAsset> {
         let chain = NFT::map_chain(chain)?;
         let collectible_type = NFT::map_erc_type(self.erc_type.as_str())?;
 
         Some(primitives::NFTAsset {
             id: self.token_id.to_string(),
+            collection_id: collection_id.to_string(),
             name: self.name.to_string(),
             description: self.description.clone(),
             chain,
