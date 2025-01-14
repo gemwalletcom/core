@@ -2,7 +2,7 @@ use super::{
     api::AcrossApi,
     config_store::{ConfigStoreClient, TokenConfig},
     hubpool::HubPoolClient,
-    DEFAULT_FILL_TIMEOUT, GEM_IDENTIFIER,
+    DEFAULT_FILL_TIMEOUT,
 };
 use crate::{
     config::swap_config::SwapReferralFee,
@@ -454,7 +454,7 @@ impl GemSwapProvider for Across {
         let route_data = HexDecode(&route.route_data)?;
         let v3_relay_data = V3RelayData::abi_decode(&route_data, true).map_err(|_| SwapperError::InvalidRoute)?;
 
-        let mut deposit_v3_call = V3SpokePoolInterface::depositV3Call {
+        let deposit_v3_call = V3SpokePoolInterface::depositV3Call {
             depositor: v3_relay_data.depositor,
             recipient: v3_relay_data.recipient,
             inputToken: v3_relay_data.inputToken,
@@ -469,7 +469,6 @@ impl GemSwapProvider for Across {
             message: v3_relay_data.message,
         }
         .abi_encode();
-        deposit_v3_call.extend_from_slice(&GEM_IDENTIFIER);
 
         let value: &str = if quote.request.from_asset.is_native() { &quote.from_value } else { "0" };
 
