@@ -50,9 +50,10 @@ impl Across {
     pub fn is_supported_pair(from_asset: &AssetId, to_asset: &AssetId) -> bool {
         let from = weth_address::normalize_asset(from_asset).unwrap();
         let to = weth_address::normalize_asset(to_asset).unwrap();
-        let asset_mappings = AcrossDeployment::asset_mappings();
 
-        asset_mappings.into_iter().any(|x| x.set.contains(&from) && x.set.contains(&to))
+        AcrossDeployment::asset_mappings()
+            .into_iter()
+            .any(|x| x.set.contains(&from) && x.set.contains(&to))
     }
 
     pub fn get_rate_model(from_asset: &AssetId, to_asset: &AssetId, token_config: &TokenConfig) -> RateModel {
