@@ -1,5 +1,5 @@
 extern crate rocket;
-use primitives::{Chain, NFTCollection, ResponseResult};
+use primitives::{Chain, NFTData, ResponseResult};
 use rocket::{response::status::NotFound, serde::json::Json, tokio::sync::Mutex, State};
 use std::str::FromStr;
 
@@ -12,7 +12,7 @@ pub async fn get_nft_assets(
     device_id: &str,
     wallet_index: i32,
     client: &State<Mutex<NFTClient>>,
-) -> Result<Json<ResponseResult<Vec<NFTCollection>>>, NotFound<String>> {
+) -> Result<Json<ResponseResult<Vec<NFTData>>>, NotFound<String>> {
     let result = client.lock().await.get_nft_assets(device_id, wallet_index).await;
     match result {
         Ok(data) => Ok(Json(ResponseResult { data })),
@@ -27,7 +27,7 @@ pub async fn get_nft_assets_by_chain(
     chain: &str,
     address: &str,
     client: &State<Mutex<NFTClient>>,
-) -> Result<Json<ResponseResult<Vec<NFTCollection>>>, NotFound<String>> {
+) -> Result<Json<ResponseResult<Vec<NFTData>>>, NotFound<String>> {
     let chain = Chain::from_str(chain).unwrap();
     let result = client.lock().await.get_nft_assets_by_chain(chain, address).await;
     match result {
