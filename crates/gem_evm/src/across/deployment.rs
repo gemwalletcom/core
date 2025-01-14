@@ -78,81 +78,22 @@ impl AcrossDeployment {
         HashMap::from([
             (
                 Chain::Ethereum,
-                vec![
-                    ACX_ETH_ASSET_ID.into(),
-                    DAI_ETH_ASSET_ID.into(),
-                    USDC_ETH_ASSET_ID.into(),
-                    USDT_ETH_ASSET_ID.into(),
-                    USDC_E_ETH_ASSET_ID.into(),
-                    WBTC_ETH_ASSET_ID.into(),
-                    WETH_ETH_ASSET_ID.into(),
-                ],
+                vec![USDC_ETH_ASSET_ID.into(), USDT_ETH_ASSET_ID.into(), WETH_ETH_ASSET_ID.into()],
             ),
-            (
-                Chain::Optimism,
-                vec![
-                    ACX_OP_ASSET_ID.into(),
-                    DAI_OP_ASSET_ID.into(),
-                    USDT_OP_ASSET_ID.into(),
-                    USDC_OP_ASSET_ID.into(),
-                    USDC_E_OP_ASSET_ID.into(),
-                    WBTC_OP_ASSET_ID.into(),
-                    WETH_OP_ASSET_ID.into(),
-                ],
-            ),
+            (Chain::Optimism, vec![USDT_OP_ASSET_ID.into(), USDC_OP_ASSET_ID.into(), WETH_OP_ASSET_ID.into()]),
             (
                 Chain::Polygon,
-                vec![
-                    ACX_POLYGON_ASSET_ID.into(),
-                    DAI_POLYGON_ASSET_ID.into(),
-                    USDC_POLYGON_ASSET_ID.into(),
-                    USDC_E_POLYGON_ASSET_ID.into(),
-                    USDT_POLYGON_ASSET_ID.into(),
-                    WBTC_POLYGON_ASSET_ID.into(),
-                    WETH_POLYGON_ASSET_ID.into(),
-                ],
+                vec![USDC_POLYGON_ASSET_ID.into(), USDT_POLYGON_ASSET_ID.into(), WETH_POLYGON_ASSET_ID.into()],
             ),
             (
                 Chain::Arbitrum,
-                vec![
-                    ACX_ARB_ASSET_ID.into(),
-                    DAI_ARB_ASSET_ID.into(),
-                    USDT_ARB_ASSET_ID.into(),
-                    USDC_ARB_ASSET_ID.into(),
-                    USDC_E_ARB_ASSET_ID.into(),
-                    WBTC_ARB_ASSET_ID.into(),
-                    WETH_ARB_ASSET_ID.into(),
-                ],
+                vec![USDT_ARB_ASSET_ID.into(), USDC_ARB_ASSET_ID.into(), WETH_ARB_ASSET_ID.into()],
             ),
-            (
-                Chain::Base,
-                vec![WETH_BASE_ASSET_ID.into(), USDC_BASE_ASSET_ID.into(), USDC_E_BASE_ASSET_ID.into()],
-            ),
-            (
-                Chain::Linea,
-                vec![
-                    DAI_LINEA_ASSET_ID.into(),
-                    USDC_E_LINEA_ASSET_ID.into(),
-                    USDT_LINEA_ASSET_ID.into(),
-                    WBTC_LINEA_ASSET_ID.into(),
-                    WETH_LINEA_ASSET_ID.into(),
-                ],
-            ),
-            (
-                Chain::ZkSync,
-                vec![
-                    DAI_ZKSYNC_ASSET_ID.into(),
-                    WBTC_ZKSYNC_ASSET_ID.into(),
-                    WETH_ZKSYNC_ASSET_ID.into(),
-                    USDC_E_ZKSYNC_ASSET_ID.into(),
-                    USDT_ZKSYNC_ASSET_ID.into(),
-                ],
-            ),
-            (
-                Chain::World,
-                vec![WBTC_WORLD_ASSET_ID.into(), WETH_WORLD_ASSET_ID.into(), USDC_E_WORLD_ASSET_ID.into()],
-            ),
-            (Chain::Blast, vec![WBTC_BLAST_ASSET_ID.into(), WETH_BLAST_ASSET_ID.into()]),
+            (Chain::Base, vec![WETH_BASE_ASSET_ID.into(), USDC_BASE_ASSET_ID.into()]),
+            (Chain::Linea, vec![USDT_LINEA_ASSET_ID.into(), WETH_LINEA_ASSET_ID.into()]),
+            (Chain::ZkSync, vec![WETH_ZKSYNC_ASSET_ID.into(), USDT_ZKSYNC_ASSET_ID.into()]),
+            (Chain::World, vec![WETH_WORLD_ASSET_ID.into()]),
+            (Chain::Blast, vec![WETH_BLAST_ASSET_ID.into()]),
         ])
     }
 
