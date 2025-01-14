@@ -50,14 +50,10 @@ impl Across {
     pub fn is_supported_pair(from_asset: &AssetId, to_asset: &AssetId) -> bool {
         let from = weth_address::normalize_asset(from_asset).unwrap();
         let to = weth_address::normalize_asset(to_asset).unwrap();
-        debug_println!("from: {:?}, to: {:?}", from, to);
-        let asset_mappings = AcrossDeployment::asset_mappings();
-        for mapping in asset_mappings.iter() {
-            if mapping.set.contains(&from) && mapping.set.contains(&to) {
-                return true;
-            }
-        }
-        false
+
+        AcrossDeployment::asset_mappings()
+            .into_iter()
+            .any(|x| x.set.contains(&from) && x.set.contains(&to))
     }
 
     pub fn get_rate_model(from_asset: &AssetId, to_asset: &AssetId, token_config: &TokenConfig) -> RateModel {
@@ -250,6 +246,12 @@ impl GemSwapProvider for Across {
             SwapChainAsset::Assets(Chain::Ethereum, vec![ETHEREUM_USDC.id.clone()]),
             SwapChainAsset::Assets(Chain::Base, vec![BASE_USDC.id.clone()]),
             SwapChainAsset::Assets(Chain::Optimism, vec![OPTIMISM_USDC.id.clone()]),
+            // USDT
+            SwapChainAsset::Assets(Chain::Arbitrum, vec![ARBITRUM_USDT.id.clone()]),
+            SwapChainAsset::Assets(Chain::Ethereum, vec![ETHEREUM_USDT.id.clone()]),
+            SwapChainAsset::Assets(Chain::Linea, vec![LINEA_USDT.id.clone()]),
+            SwapChainAsset::Assets(Chain::Optimism, vec![OPTIMISM_USDT.id.clone()]),
+            SwapChainAsset::Assets(Chain::ZkSync, vec![ZKSYNC_USDT.id.clone()]),
         ]
     }
 
