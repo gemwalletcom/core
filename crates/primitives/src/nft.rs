@@ -7,7 +7,7 @@ use crate::Chain;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 #[typeshare(swift = "Sendable")]
-pub struct NFTResult {
+pub struct NFTData {
     pub collection: NFTCollection,
     pub assets: Vec<NFTAsset>,
 }
