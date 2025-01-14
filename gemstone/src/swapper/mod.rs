@@ -81,13 +81,13 @@ impl GemSwapper {
         Self {
             rpc_provider,
             swappers: vec![
-                //Box::new(universal_router::UniswapV3::new_uniswap()),
-                //Box::new(universal_router::UniswapV3::new_pancakeswap()),
-                //Box::new(thorchain::ThorChain::default()),
-                //Box::new(jupiter::Jupiter::default()),
-                //Box::new(pancakeswap_aptos::PancakeSwapAptos::default()),
-                //Box::new(across::Across::default()),
-                Box::new(stargate::Stargate::default()),
+                Box::new(universal_router::UniswapV3::new_uniswap()),
+                Box::new(universal_router::UniswapV3::new_pancakeswap()),
+                Box::new(thorchain::ThorChain::default()),
+                Box::new(jupiter::Jupiter::default()),
+                Box::new(pancakeswap_aptos::PancakeSwapAptos::default()),
+                Box::new(across::Across::default()),
+                Box::new(stargate::Stargate::new()),
             ],
         }
     }
