@@ -1,7 +1,7 @@
 use std::error::Error;
 
 use nft::NFT;
-use primitives::{Chain, NFTCollection, NFTData};
+use primitives::{Chain, NFTData};
 use std::collections::HashMap;
 use storage::DatabaseClient;
 

@@ -30,7 +30,7 @@ impl NFT {
                 result.collection_assets.into_iter().filter_map(move |x| {
                     x.as_primitive(&result.chain).map(|collection| primitives::NFTData {
                         collection,
-                        assets: x.assets.into_iter().filter_map(|x| x.as_primitive()).collect(),
+                        assets: x.assets.into_iter().filter_map(|x| x.as_primitive(&result.chain)).collect(),
                     })
                 })
             })
@@ -47,7 +47,7 @@ impl NFT {
             "bnb" => Some(Chain::SmartChain),
             "polygon" => Some(Chain::Polygon),
             "arbitrum" => Some(Chain::Arbitrum),
-            _ => return None,
+            _ => None,
         }
     }
 
@@ -55,7 +55,7 @@ impl NFT {
         match map_erc_type {
             "erc721" => Some(primitives::NFTType::ERC721),
             "erc1155" => Some(primitives::NFTType::ERC1155),
-            _ => return None,
+            _ => None,
         }
     }
 }
