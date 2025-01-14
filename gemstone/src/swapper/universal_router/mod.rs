@@ -748,12 +748,57 @@ mod tests {
     }
 
     #[test]
+    fn test_build_commands_eth_to_uni() {
+        // Replicate https://optimistic.etherscan.io/tx/0x18277deea3e273a7fb9abc985269dcdabe3d34c2b604fbd82dcd0a5a5204f72c
+        let request = SwapQuoteRequest {
+            // ETH -> UNI
+            from_asset: AssetId::from(Chain::Optimism, None),
+            to_asset: AssetId::from(Chain::Optimism, Some("0x6fd9d7ad17242c41f7131d257212c54a0e816691".into())),
+            wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
+            destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
+            value: "1000000000000000".into(),
+            mode: GemSwapMode::ExactIn,
+            options: GemSwapOptions {
+                slippage_bps: 100,
+                fee: Some(SwapReferralFees::evm(SwapReferralFee {
+                    bps: 25,
+                    address: "0x3d83ec320541ae96c4c91e9202643870458fb290".into(),
+                })),
+                preferred_providers: vec![],
+            },
+        };
+
+        let token_in = EthereumAddress::parse("0x4200000000000000000000000000000000000006").unwrap();
+        let token_out = EthereumAddress::parse(&request.to_asset.token_id.clone().unwrap()).unwrap();
+        let amount_in = U256::from_str(request.value.as_str()).unwrap();
+
+        let path = build_direct_pair(&token_in, &token_out, FeeTier::ThreeThousand as u32);
+        let commands = UniswapV3::build_commands(
+            &request,
+            &token_in,
+            &token_out,
+            amount_in,
+            U256::from(244440440678888410_u64),
+            &path,
+            None,
+            true,
+        )
+        .unwrap();
+
+        assert_eq!(commands.len(), 3);
+
+        assert!(matches!(commands[0], UniversalRouterCommand::WRAP_ETH(_)));
+        assert!(matches!(commands[1], UniversalRouterCommand::TRANSFER(_)));
+        assert!(matches!(commands[2], UniversalRouterCommand::V3_SWAP_EXACT_IN(_)));
+    }
+
+    #[test]
     fn test_get_fee_token() {
         let evm_chain = EVMChain::Ethereum;
         let mode = GemSwapMode::ExactIn;
         let base_pair = get_base_pair(&evm_chain);
 
-        // WETH -> UNI
+        // WETH -> UNI (fee_token is WETH)
         let input = EthereumAddress::from_str("0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2").unwrap();
         let output = EthereumAddress::from_str("0x1f9840a85d5af5bf1d1762f925bdaddc4201f984").unwrap();
         let fee_preference = UniswapV3::get_fee_token(&mode, base_pair.as_ref(), &input, &output);
@@ -761,7 +806,7 @@ mod tests {
         assert_eq!(fee_preference.fee_token, input);
         assert!(fee_preference.is_input_token);
 
-        // USDC -> WETH
+        // USDC -> WETH (fee_token is WETH)
         let input = EthereumAddress::from_str("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48").unwrap();
         let output = EthereumAddress::from_str("0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2").unwrap();
         let fee_preference = UniswapV3::get_fee_token(&mode, base_pair.as_ref(), &input, &output);
