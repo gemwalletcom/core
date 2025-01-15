@@ -1,0 +1,80 @@
+{
+  "data": [
+    {
+      "pathway": {
+        "srcEid": 108,
+        "dstEid": 102,
+        "sender": {
+          "address": "0xf22bede237a07e121b56d91a491eb7bcdfd1f5907926a9e58338f964a01b17fa",
+          "id": "aptos-bridge",
+          "name": "Aptos Bridge",
+          "chain": "aptos"
+        },
+        "receiver": {
+          "address": "0x2762409baa1804d94d8c0bcff8400b78bf915d5b",
+          "id": "aptos-bridge",
+          "name": "Aptos Bridge",
+          "chain": "bsc"
+        },
+        "id": "108-102-0xf22bede237a07e121b56d91a491eb7bcdfd1f5907926a9e58338f964a01b17fa-0x2762409baa1804d94d8c0bcff8400b78bf915d5b",
+        "nonce": 309792
+      },
+      "source": {
+        "status": "SUCCEEDED",
+        "tx": {
+          "txHash": "0xeb31b3339c4c1bd91597f649fe21ddac2900f301ada3181357a281608a560d47",
+          "blockHash": "0x722c2003341cce20a5a3d63babd413a1a278c4e943abe2de289cff4f763ec524",
+          "blockNumber": "275562775",
+          "blockTimestamp": 1736533130,
+          "from": "0xc95615aa095c100b18eb6eaa0f0a0f30b9cd96685118a7cbc1a2328a91ca2eda",
+          "blockConfirmations": 260,
+          "payload": "0x0100000000000000000000000055d398326f99059ff775485246999027b3197955000000000000000000000000ba4d1d35bce0e8f28e5a3403e7a0b996c5d50ac400000000000186a000",
+          "value": "3870356",
+          "readinessTimestamp": 1736533186,
+          "adapterParams": {
+            "version": "1",
+            "dstGasLimit": "150000"
+          }
+        }
+      },
+      "destination": {
+        "status": "SUCCEEDED",
+        "tx": {
+          "txHash": "0xede2232a3ac249781197fe87281a03f5f6b38ff0e20253e0708db9e1b7ba8391",
+          "blockHash": "0x3c2023c675a67ef52c8b3577f8653a01dfec1b2f4d519da9bffc2075d585c904",
+          "blockNumber": 45650646,
+          "blockTimestamp": 1736533201
+        }
+      },
+      "guid": "0x325f35036d836baeac547cd4bdafe838d1c5897fe63a2392e98a6cdbd584b4c7",
+      "config": {
+        "error": false,
+        "receiveLibrary": "0x4D73AdB72bC3DD368966edD0f0b2148401A178E2",
+        "inboundConfig": {
+          "blockConfirmation": 260,
+          "relayerAddress": "0xA27A2cA24DD28Ce14Fb5f5844b59851F03DCf182",
+          "oracleAddress": "0x5a54fe5234E811466D5366846283323c954310B2",
+          "executorAddress": "0xA27A2cA24DD28Ce14Fb5f5844b59851F03DCf182",
+          "proofType": "2",
+          "utilsVersion": 1,
+          "proofVersion": "1",
+          "proofLibraryAddress": "0x28A5536cA9F36c45A9d2AC8d2B62Fc46Fde024B6",
+          "ulnVersion": "V2"
+        },
+        "outboundConfig": {
+          "blockConfirmation": 260,
+          "relayerAddress": "0x1d8727df513fa2a8785d0834e40b34223daff1affc079574082baadb74b66ee4",
+          "oracleAddress": "0x12e12de0af996d9611b0b78928cd9f4cbf50d94d972043cdd829baa77a78929b",
+          "proofType": "2"
+        },
+        "ulnSendVersion": "V2"
+      },
+      "status": {
+        "name": "DELIVERED",
+        "message": "Destination transaction confirmed"
+      },
+      "created": "2025-01-10T18:18:57.000Z",
+      "updated": "2025-01-10T18:20:47.000Z"
+    }
+  ]
+}
