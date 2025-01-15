@@ -1,4 +1,4 @@
-use primitives::{Asset, AssetType, Chain, FiatProviderName, PlatformStore};
+use primitives::{Asset, AssetType, Chain, FiatProviderName, NFTType, PlatformStore};
 use search_index::{SearchIndexClient, ASSETS_FILTERS, ASSETS_INDEX_NAME, ASSETS_RANKING_RULES, ASSETS_SEARCH_ATTRIBUTES, ASSETS_SORTS, INDEX_PRIMARY_KEY};
 use settings::Settings;
 use storage::{ClickhouseClient, DatabaseClient};
@@ -64,6 +64,10 @@ async fn main() {
     let _ = database_client.add_releases(releases);
 
     let search_indexes = vec![ASSETS_INDEX_NAME];
+
+    println!("setup nft types");
+    let types = NFTType::all().into_iter().map(storage::models::NftType::from_primitive).collect::<Vec<_>>();
+    let _ = database_client.add_nft_types(types);
 
     println!("setup search index: {:?}", search_indexes);
 

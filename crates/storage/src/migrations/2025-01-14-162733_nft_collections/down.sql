@@ -1,0 +1,1 @@
+drop table nft_collections;
