@@ -32,7 +32,7 @@ impl DatabaseClient {
 
     pub fn get_releases(&mut self) -> Result<Vec<Release>, diesel::result::Error> {
         use crate::schema::releases::dsl::*;
-        releases.order(id.asc()).select(Release::as_select()).load(&mut self.connection)
+        releases.order(updated_at.desc()).select(Release::as_select()).load(&mut self.connection)
     }
 
     pub fn get_tokenlists(&mut self) -> Result<Vec<TokenList>, diesel::result::Error> {
