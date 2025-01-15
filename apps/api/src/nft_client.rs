@@ -21,6 +21,14 @@ impl NFTClient {
     pub async fn get_nft_assets(&mut self, device_id: &str, wallet_index: i32) -> Result<Vec<NFTData>, Box<dyn Error + Send + Sync>> {
         let subscriptions = self.get_subscriptions(device_id, wallet_index)?;
         let addresses: HashMap<Chain, String> = subscriptions.into_iter().map(|x| (x.chain, x.address)).collect();
+
+        let addresses: HashMap<Chain, String> = addresses
+            .into_iter()
+            .filter(|x| matches!(x.0, Chain::Ethereum))
+            // .filter(|x| matches!(x.0, Chain::Ethereum | ChainType::Solana))
+            //.filter(|x| matches!(x.0, Chain::Solana))
+            .collect();
+
         self.get_nfts(self.nft.get_assets(addresses).await?).await
     }
 

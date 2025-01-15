@@ -6,7 +6,7 @@ use nftscan::{
     model::{NFTAsset, NFTAttribute, NFTCollection, NFTSolanaAsset, NFTSolanaResult},
     NFTScanClient,
 };
-use primitives::{Chain, ChainType, NFTImage};
+use primitives::{Chain, NFTImage};
 
 mod nftscan;
 
@@ -22,18 +22,11 @@ impl NFT {
     }
 
     pub async fn get_assets(&self, addresses: HashMap<Chain, String>) -> Result<Vec<primitives::NFTData>, Box<dyn std::error::Error + Send + Sync>> {
-        let supported_addresses: HashMap<Chain, String> = addresses
-            .into_iter()
-            // .filter(|x| matches!(x.0.chain_type(), ChainType::Ethereum | ChainType::Solana))
-            .filter(|x| matches!(x.0.chain_type(), ChainType::Ethereum))
-            //.filter(|x| matches!(x.0.chain_type(), ChainType::Solana))
-            .collect();
-
-        let futures: Vec<_> = supported_addresses
+        let futures: Vec<_> = addresses
             .into_iter()
             .map(|(chain, address)| {
                 let address = address.clone();
-                async move { self.get_nfts(chain.chain_type(), address.as_str()).await }
+                async move { self.get_nfts(chain, address.as_str()).await }
             })
             .collect();
 
@@ -47,9 +40,9 @@ impl NFT {
         Ok(assets)
     }
 
-    pub async fn get_nfts(&self, chain_type: ChainType, address: &str) -> Result<Vec<primitives::NFTData>, reqwest::Error> {
-        match chain_type {
-            ChainType::Ethereum => self.client.get_all_evm_nfts(address).await.map(|x| x.data).map(|result| {
+    pub async fn get_nfts(&self, chain: Chain, address: &str) -> Result<Vec<primitives::NFTData>, reqwest::Error> {
+        match chain {
+            Chain::Ethereum => self.client.get_all_evm_nfts(address).await.map(|x| x.data).map(|result| {
                 result
                     .into_iter()
                     .flat_map(|result| {
@@ -62,7 +55,7 @@ impl NFT {
                     })
                     .collect::<Vec<_>>()
             }),
-            ChainType::Solana => self.client.get_solana_nfts(address).await.map(|x| {
+            Chain::Solana => self.client.get_solana_nfts(address).await.map(|x| {
                 x.data
                     .into_iter()
                     .filter_map(|result| {
