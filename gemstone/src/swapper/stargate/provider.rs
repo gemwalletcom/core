@@ -12,11 +12,10 @@ use primitives::{AssetId, Chain};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    debug_println,
     network::{jsonrpc_call, AlienProvider, JsonRpcResult},
     swapper::{
-        approval::check_approval_erc20, eth_rpc, slippage::apply_slippage_in_bp, thorchain::ThorChain, ApprovalType, FetchQuoteData, GemSwapProvider,
-        SwapChainAsset, SwapProvider, SwapProviderData, SwapQuote, SwapQuoteData, SwapQuoteRequest, SwapRoute, SwapperError,
+        approval::check_approval_erc20, slippage::apply_slippage_in_bp, thorchain::ThorChain, ApprovalType, FetchQuoteData, GemSwapProvider, SwapChainAsset,
+        SwapProvider, SwapProviderData, SwapQuote, SwapQuoteData, SwapQuoteRequest, SwapRoute, SwapperError,
     },
 };
 
