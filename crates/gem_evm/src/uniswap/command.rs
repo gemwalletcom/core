@@ -10,7 +10,7 @@ pub const ADDRESS_THIS: &str = "0x0000000000000000000000000000000000000002";
 pub enum UniversalRouterCommand {
     V3_SWAP_EXACT_IN(V3SwapExactIn),
     V3_SWAP_EXACT_OUT(V3SwapExactOut),
-    PERMIT2_TRANSFER_FROM,
+    PERMIT2_TRANSFER_FROM(Transfer),
     PERMIT2_PERMIT_BATCH,
     SWEEP(Sweep),
     TRANSFER(Transfer),
@@ -28,7 +28,7 @@ impl UniversalRouterCommand {
         match self {
             Self::V3_SWAP_EXACT_IN(_) => 0x00,
             Self::V3_SWAP_EXACT_OUT(_) => 0x01,
-            Self::PERMIT2_TRANSFER_FROM => 0x02,
+            Self::PERMIT2_TRANSFER_FROM(_) => 0x02,
             Self::PERMIT2_PERMIT_BATCH => 0x03,
             Self::SWEEP(_) => 0x04,
             Self::TRANSFER(_) => 0x05,
@@ -52,6 +52,7 @@ impl UniversalRouterCommand {
             Self::WRAP_ETH(payload) => payload.abi_encode(),
             Self::UNWRAP_WETH(payload) => payload.abi_encode(),
             Self::PERMIT2_PERMIT(payload) => payload.abi_encode(),
+            Self::PERMIT2_TRANSFER_FROM(payload) => payload.abi_encode(),
             _ => {
                 todo!()
             }
