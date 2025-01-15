@@ -819,20 +819,26 @@ mod tests {
         let mode = GemSwapMode::ExactIn;
         let base_pair = get_base_pair(&evm_chain);
 
-        // WETH -> UNI (fee_token is WETH)
-        let input = EthereumAddress::from_str("0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2").unwrap();
-        let output = EthereumAddress::from_str("0x1f9840a85d5af5bf1d1762f925bdaddc4201f984").unwrap();
-        let fee_preference = UniswapV3::get_fee_token(&mode, base_pair.as_ref(), &input, &output);
+        let weth = EthereumAddress::from_str("0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2").unwrap();
+        let uni = EthereumAddress::from_str("0x1f9840a85d5af5bf1d1762f925bdaddc4201f984").unwrap();
+        let usdc = EthereumAddress::from_str("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48").unwrap();
 
-        assert_eq!(fee_preference.fee_token, input);
+        // WETH -> UNI (fee_token is WETH)
+        let fee_preference = UniswapV3::get_fee_token(&mode, base_pair.as_ref(), &weth, &uni);
+
+        assert_eq!(fee_preference.fee_token, weth);
         assert!(fee_preference.is_input_token);
 
         // USDC -> WETH (fee_token is WETH)
-        let input = EthereumAddress::from_str("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48").unwrap();
-        let output = EthereumAddress::from_str("0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2").unwrap();
-        let fee_preference = UniswapV3::get_fee_token(&mode, base_pair.as_ref(), &input, &output);
+        let fee_preference = UniswapV3::get_fee_token(&mode, base_pair.as_ref(), &usdc, &weth);
 
-        assert_eq!(fee_preference.fee_token, output);
+        assert_eq!(fee_preference.fee_token, weth);
         assert!(!fee_preference.is_input_token);
+
+        // USDC -> UNI (fee_token is USDC)
+        let fee_preference = UniswapV3::get_fee_token(&mode, base_pair.as_ref(), &usdc, &uni);
+
+        assert_eq!(fee_preference.fee_token, usdc);
+        assert!(fee_preference.is_input_token);
     }
 }
