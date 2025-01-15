@@ -12,4 +12,5 @@ pub enum DaemonService {
     Transaction,
     Device,
     Search,
+    NFT,
 }
