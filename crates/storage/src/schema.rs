@@ -176,7 +176,7 @@ diesel::table! {
         image_url -> Varchar,
         #[max_length = 32]
         token_type -> Varchar,
-        #[max_length = 256]
+        #[max_length = 512]
         token_id -> Varchar,
         attributes -> Jsonb,
         updated_at -> Timestamp,
