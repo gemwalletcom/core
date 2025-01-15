@@ -3,7 +3,7 @@ use typeshare::typeshare;
 
 use crate::{asset_id::AssetId, asset_type::AssetType, Chain};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[typeshare(swift = "Sendable")]
 pub struct Asset {
     pub id: AssetId,

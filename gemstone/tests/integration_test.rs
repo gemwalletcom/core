@@ -10,6 +10,7 @@ mod tests {
     };
     use primitives::{AssetId, Chain};
     use reqwest::Client;
+    use stargate::Stargate;
     use std::{collections::HashMap, sync::Arc, time::SystemTime};
 
     pub fn print_json(bytes: &[u8]) {
@@ -175,6 +176,47 @@ mod tests {
         let quote_data = swap_provider
             .fetch_quote_data(&quote, network_provider.clone(), FetchQuoteData::EstimateGas)
             .await?;
+        println!("<== quote_data: {:?}", quote_data);
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_stargate_quote() -> Result<(), SwapperError> {
+        let swap_provider = Stargate::new();
+        let network_provider = Arc::new(NativeProvider::default());
+        let mut options = GemSwapOptions {
+            slippage_bps: 100,
+            fee: Some(SwapReferralFees::evm(SwapReferralFee {
+                bps: 25,
+                address: "0x0D9DAB1A248f63B0a48965bA8435e4de7497a3dC".into(),
+            })),
+            preferred_providers: vec![],
+        };
+        options.fee.as_mut().unwrap().evm_bridge = SwapReferralFee {
+            bps: 25,
+            address: "0x0D9DAB1A248f63B0a48965bA8435e4de7497a3dC".into(),
+        };
+
+        let request = SwapQuoteRequest {
+            from_asset: AssetId::from_chain(Chain::Optimism),
+            to_asset: AssetId::from_chain(Chain::Base),
+            wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
+            destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
+            value: "20000000000000000".into(), // 0.02 ETH
+            mode: GemSwapMode::ExactIn,
+            options,
+        };
+
+        let now = SystemTime::now();
+        let quote = swap_provider.fetch_quote(&request, network_provider.clone()).await?;
+        let elapsed = SystemTime::now().duration_since(now).unwrap();
+
+        println!("<== elapsed: {:?}", elapsed);
+        println!("<== quote: {:?}", quote);
+        assert!(quote.to_value.parse::<u64>().unwrap() > 0);
+
+        let quote_data = swap_provider.fetch_quote_data(&quote, network_provider.clone(), FetchQuoteData::None).await?;
         println!("<== quote_data: {:?}", quote_data);
 
         Ok(())

@@ -23,7 +23,7 @@ impl ThorChain {
         memo
     }
 
-    fn value_from(&self, value: String, decimals: i32) -> BigInt {
+    pub fn value_from(&self, value: String, decimals: i32) -> BigInt {
         let decimals = decimals - 8;
         if decimals > 0 {
             BigInt::from_str(value.as_str()).unwrap() / BigInt::from(10).pow(decimals as u32)
@@ -32,7 +32,7 @@ impl ThorChain {
         }
     }
 
-    fn value_to(&self, value: String, decimals: i32) -> BigInt {
+    pub fn value_to(&self, value: String, decimals: i32) -> BigInt {
         let decimals = decimals - 8;
         if decimals > 0 {
             BigInt::from_str(value.as_str()).unwrap() * BigInt::from(10).pow((decimals).unsigned_abs())

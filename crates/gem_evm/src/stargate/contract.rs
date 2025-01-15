@@ -2,13 +2,6 @@ use alloy_core::sol;
 use serde::{Deserialize, Serialize};
 
 sol! {
-    #[derive(Debug, PartialEq)]
-    struct LzTxObj {
-        uint256 dstGasForCall;
-        uint256 dstNativeAmount;
-        bytes   dstNativeAddr;
-    }
-
     /**
      * @dev Struct representing token parameters for the OFT send() operation.
      */
@@ -62,12 +55,6 @@ sol! {
         MessagingFee fee;
     }
 
-    #[derive(Debug, PartialEq, Serialize, Deserialize)]
-    struct Ticket {
-        uint56 ticketId;
-        bytes  passenger;
-    }
-
     #[derive(Debug, PartialEq)]
     interface IStargate {
         function quoteSend(
@@ -113,20 +100,6 @@ sol! {
         ) external payable returns (
             MessagingReceipt memory msgReceipt,
             OFTReceipt       memory oftReceipt
-        );
-
-        /**
-         * @dev This function is same as `send` in OFT interface but returns the ticket data if in the bus ride mode,
-         *      which allows the caller to ride and drive the bus in the same transaction.
-         */
-        function sendToken(
-            SendParam      calldata _sendParam,
-            MessagingFee   calldata _fee,
-            address                 _refundAddress
-        ) external payable returns (
-            MessagingReceipt memory msgReceipt,
-            OFTReceipt       memory oftReceipt,
-            Ticket           memory ticket
         );
     }
 }
