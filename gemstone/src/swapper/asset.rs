@@ -94,8 +94,8 @@ lazy_static! {
     };
     pub static ref BASE_USDC: Asset = Asset {
         id: AssetId::from_token(Chain::Base, BASE_USDC_TOKEN_ID),
-        name: USDT_NAME.to_owned(),
-        symbol: USDT_SYMBOL.to_owned(),
+        name: USDC_NAME.to_owned(),
+        symbol: USDC_SYMBOL.to_owned(),
         decimals: 6,
         asset_type: AssetType::ERC20,
     };
