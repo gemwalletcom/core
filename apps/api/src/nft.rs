@@ -7,7 +7,7 @@ use crate::nft_client::NFTClient;
 
 // by device
 
-#[get("/nft/assets/<device_id>?<wallet_index>")]
+#[get("/nft/assets/device/<device_id>?<wallet_index>")]
 pub async fn get_nft_assets(
     device_id: &str,
     wallet_index: i32,
@@ -22,7 +22,7 @@ pub async fn get_nft_assets(
 
 // by address. mostly for testing purposes
 
-#[get("/nft/assets_by_chain/<chain>?<address>")]
+#[get("/nft/assets/chain/<chain>?<address>")]
 pub async fn get_nft_assets_by_chain(
     chain: &str,
     address: &str,

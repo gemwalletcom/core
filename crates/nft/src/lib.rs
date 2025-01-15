@@ -1,9 +1,8 @@
 use gem_evm::address::EthereumAddress;
-use gem_solana::TOKEN_PROGRAM;
 use std::collections::HashMap;
 
 use nftscan::{
-    model::{NFTAsset, NFTAttribute, NFTCollection, NFTSolanaAsset, NFTSolanaResult},
+    model::{NFTAsset, NFTCollection},
     NFTScanClient,
 };
 use primitives::{Chain, NFTImage};
@@ -35,6 +34,7 @@ impl NFT {
             .into_iter()
             .flatten()
             .filter(|x| x.collection.is_verified)
+            .filter(|x| !x.assets.is_empty())
             .collect();
 
         Ok(assets)
@@ -55,6 +55,17 @@ impl NFT {
                     })
                     .collect::<Vec<_>>()
             }),
+            Chain::Ton => self.client.get_ton_nfts(address).await.map(|x| {
+                x.data
+                    .into_iter()
+                    .filter_map(|result| {
+                        result.as_primitive().map(|collection| primitives::NFTData {
+                            collection: collection.clone(),
+                            assets: result.assets.into_iter().filter_map(|x| x.as_primitive(&collection.id)).collect(),
+                        })
+                    })
+                    .collect::<Vec<_>>()
+            }),
             Chain::Solana => self.client.get_solana_nfts(address).await.map(|x| {
                 x.data
                     .into_iter()
@@ -64,7 +75,6 @@ impl NFT {
                             assets: result.assets.into_iter().filter_map(|x| x.as_primitive(&collection.id)).collect(),
                         })
                     })
-                    .filter(|x| !x.assets.is_empty())
                     .collect::<Vec<_>>()
             }),
             _ => Ok(vec![]),
@@ -135,6 +145,15 @@ impl NFTAsset {
 
     pub fn get_image(&self) -> NFTImage {
         let image_url = self.image_uri.clone().unwrap_or_default();
+
+        if let Some(image_url) = self.nftscan_uri.clone() {
+            return NFTImage {
+                image_url: image_url.clone(),
+                preview_image_url: image_url.clone(),
+                original_source_url: image_url.clone(),
+            };
+        }
+
         let image_url = if image_url.clone().starts_with("Qm") {
             format!("https://ipfs.io/ipfs/{}", image_url)
         } else {
@@ -163,84 +182,6 @@ impl NFTAsset {
             image: self.get_image(),
             token_type,
             attributes,
-        })
-    }
-}
-
-impl NFTAttribute {
-    fn as_primitive(&self) -> primitives::NFTAttribute {
-        primitives::NFTAttribute {
-            name: self.attribute_name.clone(),
-            value: self.attribute_value.clone(),
-        }
-    }
-}
-
-// Solana
-
-impl NFTSolanaResult {
-    pub fn as_primitive(&self, contract_address: &str) -> Option<primitives::NFTCollection> {
-        let chain = Chain::Solana;
-        let name = self.collection.clone()?;
-        let image_url = self.logo_url.clone()?;
-        let description = self.description.clone()?;
-
-        Some(primitives::NFTCollection {
-            id: primitives::NFTCollection::id(chain, contract_address),
-            name,
-            description: Some(description),
-            chain,
-            contract_address: contract_address.to_string(),
-            image: NFTImage {
-                image_url: image_url.clone(),
-                preview_image_url: image_url.clone(),
-                original_source_url: image_url.clone(),
-            },
-            is_verified: true,
-        })
-    }
-}
-
-impl NFTSolanaAsset {
-    pub fn get_attributes(&self) -> Vec<primitives::NFTAttribute> {
-        self.attributes
-            .clone()
-            .unwrap_or_default()
-            .into_iter()
-            .map(|attr| attr.as_primitive())
-            .collect()
-    }
-
-    pub fn get_image(&self) -> NFTImage {
-        let image_url = self.image_uri.clone().unwrap_or_default();
-        NFTImage {
-            image_url: image_url.clone(),
-            preview_image_url: image_url.clone(),
-            original_source_url: image_url.clone(),
-        }
-    }
-
-    pub fn as_primitive(&self, collection_id: &str) -> Option<primitives::NFTAsset> {
-        let chain = Chain::Solana;
-        let interact_program = self.interact_program.clone()?;
-
-        if interact_program != TOKEN_PROGRAM || self.cnft {
-            return None;
-        }
-
-        let token_id = self.token_address.clone()?;
-        let name = self.name.clone()?;
-
-        Some(primitives::NFTAsset {
-            id: primitives::NFTAsset::id(collection_id, token_id.as_str()),
-            collection_id: collection_id.to_string(),
-            token_id,
-            name,
-            description: self.description.clone(),
-            chain,
-            image: self.get_image(),
-            token_type: primitives::NFTType::SPL,
-            attributes: self.get_attributes(),
         })
     }
 }

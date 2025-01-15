@@ -1,6 +1,10 @@
-use model::{NFTResult, NFTSolanaResult, Response};
+use model::{NFTResult, Response};
+use solana::NFTSolanaResult;
+use ton::NFTTonResult;
 
 pub mod model;
+pub mod solana;
+pub mod ton;
 
 pub struct NFTScanClient {
     client: reqwest::Client,
@@ -9,6 +13,8 @@ pub struct NFTScanClient {
 
 const NFTSCAN_REST_API_URL: &str = "https://restapi.nftscan.com";
 const NFTSCAN_SOLANA_API_URL: &str = "https://solanaapi.nftscan.com";
+const NFTSCAN_TON_API_URL: &str = "https://tonapi.nftscan.com";
+
 const EVM_CHAINS: [&str; 5] = ["eth", "bnb", "polygon", "arbitrum", "base"];
 
 impl NFTScanClient {
@@ -32,5 +38,12 @@ impl NFTScanClient {
         let query = [("show_attribute", "true")];
         let response = self.client.get(&url).header("X-API-KEY", &self.api_key).query(&query).send().await?;
         response.json::<Response<Vec<NFTSolanaResult>>>().await
+    }
+
+    pub async fn get_ton_nfts(&self, address: &str) -> Result<Response<Vec<NFTTonResult>>, reqwest::Error> {
+        let url = format!("{}/api/ton/account/own/all/{}", NFTSCAN_TON_API_URL, address);
+        let query = [("show_attribute", "true")];
+        let response = self.client.get(&url).header("X-API-KEY", &self.api_key).query(&query).send().await?;
+        response.json::<Response<Vec<NFTTonResult>>>().await
     }
 }
