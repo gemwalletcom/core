@@ -5372,11 +5372,13 @@ dependencies = [
 name = "nft"
 version = "1.0.0"
 dependencies = [
+ "futures",
+ "gem_evm",
+ "gem_solana",
  "primitives",
  "reqwest",
  "serde",
  "serde_json",
- "settings",
 ]
 
 [[package]]

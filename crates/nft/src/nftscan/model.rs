@@ -14,6 +14,8 @@ pub struct NFTResult {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NFTCollection {
+    pub token_address: Option<String>,
+    pub interact_program: Option<String>,
     pub contract_name: String,
     pub contract_address: String,
     pub description: Option<String>,
@@ -31,13 +33,24 @@ pub struct NFTAsset {
     pub description: Option<String>,
     pub amount: String,
     pub image_uri: Option<String>,
+    pub nftscan_uri: Option<String>,
     pub attributes: Vec<NFTAttribute>,
     pub rarity_score: Option<f64>,
     pub rarity_rank: Option<u64>,
+    pub metadata_json: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NFTAttribute {
     pub attribute_name: String,
     pub attribute_value: String,
+}
+
+impl NFTAttribute {
+    pub fn as_primitive(&self) -> primitives::NFTAttribute {
+        primitives::NFTAttribute {
+            name: self.attribute_name.clone(),
+            value: self.attribute_value.clone(),
+        }
+    }
 }

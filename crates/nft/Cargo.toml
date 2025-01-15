@@ -7,6 +7,8 @@ edition = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 reqwest = { workspace = true }
+futures.workspace = true
 
 primitives = { path = "../primitives" }
-settings = { path = "../settings" }
+gem_evm = { path = "../gem_evm" }
+gem_solana = { path = "../gem_solana" }
