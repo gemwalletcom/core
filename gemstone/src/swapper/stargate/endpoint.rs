@@ -3,11 +3,10 @@ use primitives::{AssetId, Chain};
 
 use crate::swapper::{
     asset::{
-        ARBITRUM_USDC, ARBITRUM_USDT, ARBITRUM_WETH, AVALANCHE_USDC, AVALANCHE_USDT, BASE_USDC, BASE_WETH, ETHEREUM_METH, ETHEREUM_USDC, ETHEREUM_USDT,
-        ETHEREUM_WETH, LINEA_WETH, MANTLE_USDC, MANTLE_USDT, OPTIMISM_USDC, OPTIMISM_USDT, OPTIMISM_WETH, POLYGON_USDC, POLYGON_USDT, SEI_USDC, SEI_USDT,
-        SMARTCHAIN_USDC, SMARTCHAIN_USDT,
+        ARBITRUM_USDC, ARBITRUM_USDT, AVALANCHE_USDC, AVALANCHE_USDT, BASE_USDC, ETHEREUM_USDC, ETHEREUM_USDT, OPTIMISM_USDC, OPTIMISM_USDT, POLYGON_USDC,
+        POLYGON_USDT, SMARTCHAIN_USDC, SMARTCHAIN_USDT,
     },
-    SwapChainAsset, SwapperError,
+    SwapChainAsset,
 };
 
 #[derive(Clone, Debug, PartialEq)]
@@ -53,20 +52,11 @@ lazy_static! {
                     asset: ETHEREUM_USDT.id.clone(),
                     address: "0x933597a323Eb81cAe705C5bC29985172fd5A3973".to_string(),
                 },
-                StargatePool {
-                    asset: ETHEREUM_METH.id.clone(),
-                    address: "0xd5f7838f5c461feff7fe49ea5ebaf7728bb0adfa".to_string(),
-                },
             ],
             endpoint_id: 30101,
             chain_asset: SwapChainAsset::Assets(
                 Chain::Ethereum,
-                vec![
-                    AssetId::from_chain(Chain::Ethereum),
-                    ETHEREUM_USDC.id.clone(),
-                    ETHEREUM_USDT.id.clone(),
-                    ETHEREUM_METH.id.clone(),
-                ]
+                vec![AssetId::from_chain(Chain::Ethereum), ETHEREUM_USDC.id.clone(), ETHEREUM_USDT.id.clone(),]
             ),
         },
         base: StargateEndpoint {

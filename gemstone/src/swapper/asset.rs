@@ -63,13 +63,6 @@ lazy_static! {
         decimals: 18,
         asset_type: AssetType::ERC20,
     };
-    pub static ref ETHEREUM_METH: Asset = Asset {
-        id: AssetId::from_token(Chain::Ethereum, ETHEREUM_METH_TOKEN_ID),
-        name: METH_NAME.into(),
-        symbol: METH_SYMBOL.into(),
-        decimals: 18,
-        asset_type: AssetType::ERC20,
-    };
     // arbitrum
     pub static ref ARBITRUM_WETH: Asset = Asset {
         id: WETH_ARB_ASSET_ID.into(),

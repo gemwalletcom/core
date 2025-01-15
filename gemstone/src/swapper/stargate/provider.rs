@@ -49,8 +49,6 @@ impl Stargate {
                 STARGATE_ROUTES.avalanche.clone(),
                 STARGATE_ROUTES.linea.clone(),
                 STARGATE_ROUTES.smartchain.clone(),
-                STARGATE_ROUTES.sei.clone(),
-                STARGATE_ROUTES.mantle.clone(),
             ],
         }
     }
@@ -259,8 +257,6 @@ mod tests {
                 STARGATE_ROUTES.avalanche.clone(),
                 STARGATE_ROUTES.linea.clone(),
                 STARGATE_ROUTES.smartchain.clone(),
-                STARGATE_ROUTES.sei.clone(),
-                STARGATE_ROUTES.mantle.clone(),
             ]
         );
     }
