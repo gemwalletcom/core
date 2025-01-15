@@ -266,11 +266,23 @@ impl UniswapV3 {
                     if fee_token_is_input {
                         // insert TRANSFER fee first
                         let fee = amount_in * U256::from(fee_options.bps) / U256::from(10000);
-                        commands.push(UniversalRouterCommand::TRANSFER(Transfer {
-                            token: Address::from_slice(&token_in.bytes),
-                            recipient: Address::from_str(fee_options.address.as_str()).unwrap(),
-                            value: fee,
-                        }));
+                        let fee_recipient = Address::from_str(fee_options.address.as_str()).unwrap();
+                        if wrap_input_eth {
+                            // if input is native ETH, we can transfer directly because of WRAP_ETH command
+                            commands.push(UniversalRouterCommand::TRANSFER(Transfer {
+                                token: Address::from_slice(&token_in.bytes),
+                                recipient: fee_recipient,
+                                value: fee,
+                            }));
+                        } else {
+                            // call permit2 transfer instead
+                            commands.push(UniversalRouterCommand::PERMIT2_TRANSFER_FROM(Transfer {
+                                token: Address::from_slice(&token_in.bytes),
+                                recipient: fee_recipient,
+                                value: fee,
+                            }));
+                        };
+
                         // insert V3_SWAP_EXACT_IN with amount - fee, recipient is user address
                         commands.push(UniversalRouterCommand::V3_SWAP_EXACT_IN(V3SwapExactIn {
                             recipient,
@@ -676,6 +688,7 @@ mod tests {
         let amount_in = U256::from_str(&request.value).unwrap();
 
         let path = build_direct_pair(&token_in, &token_out, FeeTier::FiveHundred as u32);
+        // fee token is output token
         let commands = UniswapV3::build_commands(&request, &token_in, &token_out, amount_in, U256::from(33377662359182269u64), &path, None, false).unwrap();
 
         assert_eq!(commands.len(), 3);
@@ -683,6 +696,14 @@ mod tests {
         assert!(matches!(commands[0], UniversalRouterCommand::V3_SWAP_EXACT_IN(_)));
         assert!(matches!(commands[1], UniversalRouterCommand::PAY_PORTION(_)));
         assert!(matches!(commands[2], UniversalRouterCommand::SWEEP(_)));
+
+        // fee token is input token
+        let commands = UniswapV3::build_commands(&request, &token_in, &token_out, amount_in, U256::from(33377662359182269u64), &path, None, true).unwrap();
+
+        assert_eq!(commands.len(), 2);
+
+        assert!(matches!(commands[0], UniversalRouterCommand::PERMIT2_TRANSFER_FROM(_)));
+        assert!(matches!(commands[1], UniversalRouterCommand::V3_SWAP_EXACT_IN(_)));
     }
 
     #[test]
@@ -748,7 +769,7 @@ mod tests {
     }
 
     #[test]
-    fn test_build_commands_eth_to_uni() {
+    fn test_build_commands_eth_to_uni_with_input_fee() {
         // Replicate https://optimistic.etherscan.io/tx/0x18277deea3e273a7fb9abc985269dcdabe3d34c2b604fbd82dcd0a5a5204f72c
         let request = SwapQuoteRequest {
             // ETH -> UNI
