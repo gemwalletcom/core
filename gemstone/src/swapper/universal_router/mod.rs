@@ -829,6 +829,11 @@ mod tests {
         assert_eq!(fee_preference.fee_token, weth);
         assert!(fee_preference.is_input_token);
 
+        // WETH -> USDC (fee_token is USDC)
+        let fee_preference = UniswapV3::get_fee_token(&mode, base_pair.as_ref(), &weth, &usdc);
+        assert_eq!(fee_preference.fee_token, usdc);
+        assert!(!fee_preference.is_input_token);
+
         // USDC -> WETH (fee_token is WETH)
         let fee_preference = UniswapV3::get_fee_token(&mode, base_pair.as_ref(), &usdc, &weth);
 
