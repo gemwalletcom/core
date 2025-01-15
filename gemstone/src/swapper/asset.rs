@@ -10,8 +10,6 @@ const WBTC_NAME: &str = "Wrapped BTC";
 const DAI_SYMBOL: &str = "DAI";
 const WETH_NAME: &str = "Wrapped Ether";
 const WETH_SYMBOL: &str = "WETH";
-const METH_NAME: &str = "mETH (mETH)";
-const METH_SYMBOL: &str = "mETH";
 const CBBTC_NAME: &str = "Coinbase BTC";
 const CBBTC_SYMBOL: &str = "cbBTC";
 
@@ -27,12 +25,6 @@ pub const AVALANCHE_USDT_TOKEN_ID: &str = "0x9702230A8Ea53601f5cD2dc00fDBc13d4dF
 pub const AVALANCHE_USDC_TOKEN_ID: &str = "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E";
 pub const BASE_USDC_TOKEN_ID: &str = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
 pub const BASE_CBBTC_TOKEN_ID: &str = "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf";
-pub const MANTLE_USDC_TOKEN_ID: &str = "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9";
-pub const MANTLE_USDT_TOKEN_ID: &str = "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae";
-pub const MANTLE_WETH_TOKEN_ID: &str = "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111";
-pub const MANTLE_METH_TOKEN_ID: &str = "0xcda86a272531e8640cd7f1a92c01839911b90bb0";
-pub const SEI_USDC_TOKEN_ID: &str = "0x3894085Ef7Ff0f0aeDf52E2A2704928d1Ec074F1";
-pub const SEI_USDT_TOKEN_ID: &str = "0x0dB9afb4C33be43a0a0e396Fd1383B4ea97aB10a";
 
 lazy_static! {
     // ethereum
@@ -239,51 +231,6 @@ lazy_static! {
         id: AssetId::from_token(Chain::AvalancheC, AVALANCHE_USDC_TOKEN_ID),
         name: USDC_NAME.to_owned(),
         symbol: USDC_SYMBOL.to_owned(),
-        decimals: 6,
-        asset_type: AssetType::ERC20,
-    };
-    // mantle
-    pub static ref MANTLE_USDC: Asset = Asset {
-        id: AssetId::from_token(Chain::Mantle, MANTLE_USDC_TOKEN_ID),
-        name: USDC_NAME.to_owned(),
-        symbol: USDC_SYMBOL.to_owned(),
-        decimals: 6,
-        asset_type: AssetType::ERC20,
-    };
-    pub static ref MANTLE_USDT: Asset = Asset {
-        id: AssetId::from_token(Chain::Mantle, MANTLE_USDT_TOKEN_ID),
-        name: USDT_NAME.to_owned(),
-        symbol: USDT_SYMBOL.to_owned(),
-        decimals: 6,
-        asset_type: AssetType::ERC20,
-    };
-    pub static ref MANTLE_WETH: Asset = Asset {
-        id: AssetId::from_token(Chain::Mantle, MANTLE_WETH_TOKEN_ID),
-        name: WETH_NAME.to_owned(),
-        symbol: WETH_SYMBOL.to_owned(),
-        decimals: 18,
-        asset_type: AssetType::ERC20,
-    };
-    pub static ref MANTLE_METH: Asset = Asset {
-        id: AssetId::from_token(Chain::Mantle, MANTLE_METH_TOKEN_ID),
-        name: METH_NAME.to_owned(),
-        symbol: METH_SYMBOL.to_owned(),
-        decimals: 18,
-        asset_type: AssetType::ERC20,
-    };
-
-    // sei
-    pub static ref SEI_USDC: Asset = Asset {
-        id: AssetId::from_token(Chain::Sei, SEI_USDC_TOKEN_ID),
-        name: USDC_NAME.to_owned(),
-        symbol: USDC_SYMBOL.to_owned(),
-        decimals: 6,
-        asset_type: AssetType::ERC20,
-    };
-    pub static ref SEI_USDT: Asset = Asset {
-        id: AssetId::from_token(Chain::Sei, SEI_USDT_TOKEN_ID),
-        name: USDT_NAME.to_owned(),
-        symbol: USDT_SYMBOL.to_owned(),
         decimals: 6,
         asset_type: AssetType::ERC20,
     };
