@@ -4,7 +4,7 @@ use primitives::AssetMarket;
 use serde::{Deserialize, Serialize};
 use std::hash::{Hash, Hasher};
 
-use super::{CreateChart, FiatRate};
+use super::{Asset, CreateChart, FiatRate};
 
 #[derive(Debug, Queryable, Selectable, Serialize, Deserialize, Insertable, AsChangeset, Clone)]
 #[diesel(table_name = crate::schema::prices)]
@@ -65,6 +65,13 @@ impl PriceCache {
 pub struct PriceAsset {
     pub asset_id: String,
     pub price_id: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct PriceAssetData {
+    pub price_asset: PriceAsset,
+    pub price: Price,
+    pub asset: Asset,
 }
 
 impl PartialEq for PriceAsset {

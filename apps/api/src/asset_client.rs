@@ -82,7 +82,7 @@ impl AssetsSearchClient {
         //filters.push("properties.isEnabled = true".to_string()); // Does not work, why?
 
         if !chains.is_empty() {
-            let chain_filter = "asset.id.chain IN [\"".to_string() + &chains.join(",") + "\"]";
+            let chain_filter = "asset.id.chain IN [\"".to_string() + &chains.join("\",\"") + "\"]";
             filters.push(chain_filter);
         }
         let filter = &filters.join(" AND ");

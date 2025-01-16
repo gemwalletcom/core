@@ -3,6 +3,7 @@ mod assets;
 mod device;
 mod fiat;
 mod model;
+mod nft;
 mod pricer;
 mod search;
 mod transaction;
@@ -35,6 +36,7 @@ pub async fn main() {
         DaemonService::Transaction => transaction::jobs(settings.clone()).await,
         DaemonService::Device => device::jobs(settings.clone()).await,
         DaemonService::Search => search::jobs(settings.clone()).await,
+        DaemonService::Nft => nft::jobs(settings.clone()).await,
     };
 
     let _ = futures::future::join_all(services).await;

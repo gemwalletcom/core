@@ -1,4 +1,4 @@
-use primitives::{Asset, AssetProperties, AssetScore};
+use primitives::{Asset, AssetMarket, AssetProperties, AssetScore};
 use serde::{Deserialize, Serialize};
 
 pub const ASSETS_INDEX_NAME: &str = "assets";
@@ -10,9 +10,20 @@ pub const ASSETS_FILTERS: &[&str] = &[
     "asset.type",
     "score.rank",
     "properties.isEnabled",
+    "market.marketCap",
+    "market.marketCapRank",
 ];
 pub const ASSETS_SEARCH_ATTRIBUTES: &[&str] = &["asset.id.tokenId", "asset.id.chain", "asset.name", "asset.symbol", "asset.type"];
-pub const ASSETS_RANKING_RULES: &[&str] = &["words", "typo", "score.rank:desc", "proximity", "attribute", "exactness"];
+pub const ASSETS_RANKING_RULES: &[&str] = &[
+    "words",
+    "typo",
+    "score.rank:desc",
+    "proximity",
+    "market.marketCap:desc",
+    "market.marketCapRank:asc",
+    "attribute",
+    "exactness",
+];
 
 pub const ASSETS_SORTS: &[&str] = &["score.rank"];
 
@@ -24,6 +35,7 @@ pub struct AssetDocument {
     pub asset: Asset,
     pub properties: AssetProperties,
     pub score: AssetScore,
+    pub market: Option<AssetMarket>,
     //TODO: Add price (market cap / supply and other metrics)
 }
 

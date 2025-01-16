@@ -1,9 +1,9 @@
 use primitives::{Asset, AssetId};
 
 use crate::swapper::asset::{
-    AVALANCHE_USDC, AVALANCHE_USDC_TOKEN_ID, AVALANCHE_USDT, AVALANCHE_USDT_TOKEN_ID, ETHEREUM_DAI, ETHEREUM_DAI_TOKEN_ID, ETHEREUM_USDC,
-    ETHEREUM_USDC_TOKEN_ID, ETHEREUM_USDT, ETHEREUM_USDT_TOKEN_ID, ETHEREUM_WBTC, ETHEREUM_WBTC_TOKEN_ID, SMARTCHAIN_USDC, SMARTCHAIN_USDC_TOKEN_ID,
-    SMARTCHAIN_USDT, SMARTCHAIN_USDT_TOKEN_ID,
+    AVALANCHE_USDC, AVALANCHE_USDC_TOKEN_ID, AVALANCHE_USDT, AVALANCHE_USDT_TOKEN_ID, BASE_CBBTC, BASE_CBBTC_TOKEN_ID, BASE_USDC, BASE_USDC_TOKEN_ID,
+    ETHEREUM_DAI, ETHEREUM_DAI_TOKEN_ID, ETHEREUM_USDC, ETHEREUM_USDC_TOKEN_ID, ETHEREUM_USDT, ETHEREUM_USDT_TOKEN_ID, ETHEREUM_WBTC, ETHEREUM_WBTC_TOKEN_ID,
+    SMARTCHAIN_USDC, SMARTCHAIN_USDC_TOKEN_ID, SMARTCHAIN_USDT, SMARTCHAIN_USDT_TOKEN_ID,
 };
 
 use super::chain::THORChainName;
@@ -48,32 +48,29 @@ impl THORChainAsset {
         }
     }
 
-    pub fn thorchain_asset_token(chain: THORChainName, asset: Asset) -> THORChainAsset {
-        THORChainAsset {
-            symbol: asset.symbol,
-            chain,
-            token_id: asset.id.token_id,
-            decimals: asset.decimals as u32,
-        }
-    }
-
+    //TODO: Refactor to remove mapping.
     pub fn from(chain: THORChainName, token_id: &str) -> Option<THORChainAsset> {
         match chain {
             THORChainName::Ethereum => match token_id {
-                ETHEREUM_USDT_TOKEN_ID => Some(Self::thorchain_asset_token(chain, ETHEREUM_USDT.clone())),
-                ETHEREUM_USDC_TOKEN_ID => Some(Self::thorchain_asset_token(chain, ETHEREUM_USDC.clone())),
-                ETHEREUM_WBTC_TOKEN_ID => Some(Self::thorchain_asset_token(chain, ETHEREUM_WBTC.clone())),
-                ETHEREUM_DAI_TOKEN_ID => Some(Self::thorchain_asset_token(chain, ETHEREUM_DAI.clone())),
+                ETHEREUM_USDT_TOKEN_ID => Some(chain.asset(ETHEREUM_USDT.clone())),
+                ETHEREUM_USDC_TOKEN_ID => Some(chain.asset(ETHEREUM_USDC.clone())),
+                ETHEREUM_WBTC_TOKEN_ID => Some(chain.asset(ETHEREUM_WBTC.clone())),
+                ETHEREUM_DAI_TOKEN_ID => Some(chain.asset(ETHEREUM_DAI.clone())),
                 _ => None,
             },
             THORChainName::SmartChain => match token_id {
-                SMARTCHAIN_USDT_TOKEN_ID => Some(Self::thorchain_asset_token(chain, SMARTCHAIN_USDT.clone())),
-                SMARTCHAIN_USDC_TOKEN_ID => Some(Self::thorchain_asset_token(chain, SMARTCHAIN_USDC.clone())),
+                SMARTCHAIN_USDT_TOKEN_ID => Some(chain.asset(SMARTCHAIN_USDT.clone())),
+                SMARTCHAIN_USDC_TOKEN_ID => Some(chain.asset(SMARTCHAIN_USDC.clone())),
                 _ => None,
             },
             THORChainName::AvalancheC => match token_id {
-                AVALANCHE_USDT_TOKEN_ID => Some(Self::thorchain_asset_token(chain, AVALANCHE_USDT.clone())),
-                AVALANCHE_USDC_TOKEN_ID => Some(Self::thorchain_asset_token(chain, AVALANCHE_USDC.clone())),
+                AVALANCHE_USDT_TOKEN_ID => Some(chain.asset(AVALANCHE_USDT.clone())),
+                AVALANCHE_USDC_TOKEN_ID => Some(chain.asset(AVALANCHE_USDC.clone())),
+                _ => None,
+            },
+            THORChainName::Base => match token_id {
+                BASE_USDC_TOKEN_ID => Some(chain.asset(BASE_USDC.clone())),
+                BASE_CBBTC_TOKEN_ID => Some(chain.asset(BASE_CBBTC.clone())),
                 _ => None,
             },
             _ => None,
@@ -96,6 +93,17 @@ impl THORChainAsset {
             fee_address,
             bps
         ))
+    }
+}
+
+impl THORChainName {
+    pub fn asset(&self, asset: Asset) -> THORChainAsset {
+        THORChainAsset {
+            symbol: asset.symbol,
+            chain: self.clone(),
+            token_id: asset.id.token_id,
+            decimals: asset.decimals as u32,
+        }
     }
 }
 

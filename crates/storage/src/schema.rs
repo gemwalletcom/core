@@ -300,13 +300,14 @@ diesel::table! {
 }
 
 diesel::table! {
-    releases (id) {
-        id -> Int4,
+    releases (platform_store) {
         #[max_length = 32]
         platform_store -> Varchar,
         #[max_length = 32]
         version -> Varchar,
         upgrade_required -> Bool,
+        updated_at -> Timestamp,
+        created_at -> Timestamp,
     }
 }
 
