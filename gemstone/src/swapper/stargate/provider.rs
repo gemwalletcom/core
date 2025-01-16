@@ -8,7 +8,6 @@ use primitives::Chain;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    debug_println,
     network::AlienProvider,
     swapper::{
         approval::check_approval_erc20, slippage::apply_slippage_in_bp, utils::converter, ApprovalType, FetchQuoteData, GemSwapProvider, SwapChainAsset,
@@ -64,6 +63,17 @@ impl GemSwapProvider for Stargate {
     }
 
     async fn fetch_quote(&self, request: &SwapQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapQuote, SwapperError> {
+        let from_asset = &request.from_asset;
+        let to_asset = &request.to_asset;
+
+        if from_asset.chain == to_asset.chain {
+            return Err(SwapperError::NotSupportedPair);
+        }
+
+        if from_asset.is_native() && !to_asset.is_native() {
+            return Err(SwapperError::NotSupportedPair);
+        }
+
         let pool = self.client.get_pool_by_asset_id(&request.from_asset)?;
         let mut send_param = self.client.build_send_param(request)?;
 
@@ -151,6 +161,17 @@ impl GemSwapProvider for Stargate {
 
 #[cfg(test)]
 mod tests {
+    use std::time::Duration;
+
+    use alloy_primitives::U256;
+    use primitives::AssetId;
+
+    use crate::{
+        config::swap_config::SwapReferralFees,
+        network::mock::AlienProviderMock,
+        swapper::{asset::BASE_USDC, GemSwapMode, GemSwapOptions},
+    };
+
     use super::*;
 
     #[test]
@@ -171,24 +192,59 @@ mod tests {
         );
     }
 
-    //#[test]
-    //fn test_same_chain_quote() {
-    //    let stargate = Stargate::new();
-    //    let request = SwapQuoteRequest {
-    //        wallet_address: "0x0655c6AbdA5e2a5241aa08486bd50Cf7d475CF24".to_string(),
-    //        from_asset: AssetId::from_chain(Chain::Ethereum),
-    //        to_asset: ETHEREUM_USDT.id.clone(),
-    //        value: U256::from(1).to_string(),
-    //        mode: GemSwapMode::ExactIn,
-    //        destination_address: "0x0655c6AbdA5e2a5241aa08486bd50Cf7d475CF24".to_string(),
-    //        options: GemSwapOptions {
-    //            slippage_bps: 100,
-    //            fee: Some(SwapReferralFees::default()),
-    //            preferred_providers: vec![],
-    //        },
-    //    };
-    //
-    //    let result = stargate.fetch_quote(&request);
-    //    assert!(matches!(result, Err(SwapperError::NotSupportedPair)));
-    //}
+    #[tokio::test]
+    async fn test_same_chain_quote() {
+        let stargate = Stargate::new();
+        let request = SwapQuoteRequest {
+            wallet_address: "0x0655c6AbdA5e2a5241aa08486bd50Cf7d475CF24".to_string(),
+            from_asset: AssetId::from_chain(Chain::Ethereum),
+            to_asset: AssetId::from_chain(Chain::Ethereum),
+            value: U256::from(1).to_string(),
+            mode: GemSwapMode::ExactIn,
+            destination_address: "0x0655c6AbdA5e2a5241aa08486bd50Cf7d475CF24".to_string(),
+            options: GemSwapOptions {
+                slippage_bps: 100,
+                fee: Some(SwapReferralFees::default()),
+                preferred_providers: vec![],
+            },
+        };
+
+        let mock = AlienProviderMock {
+            response: String::from("Hello"),
+            timeout: Duration::from_millis(100),
+        };
+
+        let result = stargate.fetch_quote(&request, Arc::new(mock)).await;
+
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), SwapperError::NotSupportedPair);
+    }
+
+    #[tokio::test]
+    async fn test_native_to_erc20_quote() {
+        let stargate = Stargate::new();
+        let request = SwapQuoteRequest {
+            wallet_address: "0x0655c6AbdA5e2a5241aa08486bd50Cf7d475CF24".to_string(),
+            from_asset: AssetId::from_chain(Chain::Ethereum),
+            to_asset: BASE_USDC.id.clone(),
+            value: U256::from(1).to_string(),
+            mode: GemSwapMode::ExactIn,
+            destination_address: "0x0655c6AbdA5e2a5241aa08486bd50Cf7d475CF24".to_string(),
+            options: GemSwapOptions {
+                slippage_bps: 100,
+                fee: Some(SwapReferralFees::default()),
+                preferred_providers: vec![],
+            },
+        };
+
+        let mock = AlienProviderMock {
+            response: String::from("Hello"),
+            timeout: Duration::from_millis(100),
+        };
+
+        let result = stargate.fetch_quote(&request, Arc::new(mock)).await;
+
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), SwapperError::NotSupportedPair);
+    }
 }

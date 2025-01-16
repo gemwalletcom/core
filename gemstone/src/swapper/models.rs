@@ -7,7 +7,7 @@ use std::fmt::Debug;
 
 static DEFAULT_SLIPPAGE_BPS: u32 = 300;
 
-#[derive(Debug, thiserror::Error, uniffi::Error)]
+#[derive(Debug, thiserror::Error, uniffi::Error, PartialEq)]
 pub enum SwapperError {
     #[error("Not supported chain")]
     NotSupportedChain,

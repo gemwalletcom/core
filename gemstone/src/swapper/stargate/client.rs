@@ -67,20 +67,9 @@ impl StargateClient {
     }
 
     pub fn build_send_param(&self, request: &SwapQuoteRequest) -> Result<SendParam, SwapperError> {
-        let from_asset = &request.from_asset;
-        let to_asset = &request.to_asset;
-
-        if from_asset.chain == to_asset.chain {
-            return Err(SwapperError::NotSupportedPair);
-        }
-
-        if from_asset.is_native() && !to_asset.is_native() {
-            return Err(SwapperError::NotSupportedPair);
-        }
-
         let amount_ld = U256::from_str(request.value.as_str()).unwrap();
 
-        let destination_endpoint = self.get_endpoint_by_chain(&to_asset.chain)?;
+        let destination_endpoint = self.get_endpoint_by_chain(&request.to_asset.chain)?;
 
         Ok(SendParam {
             dstEid: destination_endpoint.endpoint_id,
