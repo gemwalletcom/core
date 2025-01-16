@@ -89,7 +89,7 @@ impl SwapProvider {
             Self::Orca => "Orca Whirlpool",
             Self::Jupiter => "Jupiter",
             Self::Across => "Across v3",
-            Self::Stargate => "Stargate",
+            Self::Stargate => "Stargate v2",
         }
     }
 
