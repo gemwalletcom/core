@@ -217,7 +217,7 @@ impl GemSwapProvider for Stargate {
         Ok(quote_data)
     }
 
-    async fn get_transaction_status(&self, _chain: Chain, _transaction_hash: &str, _provider: Arc<dyn AlienProvider>) -> Result<bool, SwapperError> {
+    async fn get_transaction_status(&self, _chain: Chain, transaction_hash: &str, provider: Arc<dyn AlienProvider>) -> Result<bool, SwapperError> {
         let api = LayerZeroScanApi::new(_provider.clone());
         let response = api.get_message_by_tx(_transaction_hash).await?;
         let messages = response.data;
