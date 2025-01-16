@@ -1,6 +1,7 @@
 pub mod device;
 pub mod fiat;
 pub mod nft;
+pub mod price;
 pub mod release;
 pub mod subscription;
 
@@ -17,7 +18,7 @@ use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
 use price_alert::NewPriceAlert;
 use primitives::Chain;
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("src/migrations");
-use self::price::PriceAsset;
+
 use primitives::{AssetType, TransactionsFetchOption};
 
 pub struct DatabaseClient {
@@ -47,83 +48,6 @@ impl DatabaseClient {
             .filter(chain.eq(_chain))
             .set(version.eq(_version))
             .execute(&mut self.connection)
-    }
-
-    pub fn set_prices(&mut self, values: Vec<Price>) -> Result<usize, diesel::result::Error> {
-        use crate::schema::prices::dsl::*;
-        diesel::insert_into(prices)
-            .values(&values)
-            .on_conflict(id)
-            .do_update()
-            .set((
-                price.eq(excluded(price)),
-                price_change_percentage_24h.eq(excluded(price_change_percentage_24h)),
-                all_time_high.eq(excluded(all_time_high)),
-                all_time_high_date.eq(excluded(all_time_high_date)),
-                all_time_low.eq(excluded(all_time_low)),
-                all_time_low_date.eq(excluded(all_time_low_date)),
-                market_cap.eq(excluded(market_cap)),
-                market_cap_rank.eq(excluded(market_cap_rank)),
-                total_volume.eq(excluded(total_volume)),
-                circulating_supply.eq(excluded(circulating_supply)),
-                total_supply.eq(excluded(total_supply)),
-                max_supply.eq(excluded(max_supply)),
-                last_updated_at.eq(excluded(last_updated_at)),
-            ))
-            .execute(&mut self.connection)
-    }
-
-    pub fn set_prices_simple(&mut self, values: Vec<Price>) -> Result<usize, diesel::result::Error> {
-        use crate::schema::prices::dsl::*;
-        diesel::insert_into(prices)
-            .values(&values)
-            .on_conflict(id)
-            .do_update()
-            .set((
-                price.eq(excluded(price)),
-                price_change_percentage_24h.eq(excluded(price_change_percentage_24h)),
-                market_cap.eq(excluded(market_cap)),
-                total_volume.eq(excluded(total_volume)),
-                last_updated_at.eq(excluded(last_updated_at)),
-            ))
-            .execute(&mut self.connection)
-    }
-
-    pub fn set_prices_assets(&mut self, values: Vec<PriceAsset>) -> Result<usize, diesel::result::Error> {
-        use crate::schema::prices_assets::dsl::*;
-        diesel::insert_into(prices_assets)
-            .values(&values)
-            .on_conflict_do_nothing()
-            .execute(&mut self.connection)
-    }
-
-    pub fn get_prices(&mut self) -> Result<Vec<Price>, diesel::result::Error> {
-        use crate::schema::prices::dsl::*;
-        prices.order(market_cap.desc()).select(Price::as_select()).load(&mut self.connection)
-    }
-
-    pub fn get_prices_assets(&mut self) -> Result<Vec<PriceAsset>, diesel::result::Error> {
-        use crate::schema::prices_assets::dsl::*;
-        prices_assets.select(PriceAsset::as_select()).load(&mut self.connection)
-    }
-
-    pub fn get_price(&mut self, asset_id: &str) -> Result<Price, diesel::result::Error> {
-        use crate::schema::prices::dsl::*;
-        prices
-            .inner_join(prices_assets::table)
-            .filter(prices_assets::asset_id.eq(asset_id))
-            .select(Price::as_select())
-            .first(&mut self.connection)
-    }
-
-    pub fn get_prices_id_for_asset_id(&mut self, id: &str) -> Result<Vec<PriceAsset>, diesel::result::Error> {
-        use crate::schema::prices_assets::dsl::*;
-        prices_assets.filter(asset_id.eq(id)).select(PriceAsset::as_select()).load(&mut self.connection)
-    }
-
-    pub fn delete_prices_updated_at_before(&mut self, time: NaiveDateTime) -> Result<usize, diesel::result::Error> {
-        use crate::schema::prices::dsl::*;
-        diesel::delete(prices.filter(last_updated_at.lt(time).or(last_updated_at.is_null()))).execute(&mut self.connection)
     }
 
     pub fn get_parser_state(&mut self, _chain: Chain) -> Result<ParserState, diesel::result::Error> {
