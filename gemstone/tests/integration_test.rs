@@ -201,8 +201,8 @@ mod tests {
         let request = SwapQuoteRequest {
             from_asset: AssetId::from_chain(Chain::Optimism),
             to_asset: AssetId::from_chain(Chain::Base),
-            wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
-            destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
+            wallet_address: "0x0655c6AbdA5e2a5241aa08486bd50Cf7d475CF24".into(),
+            destination_address: "0x0655c6AbdA5e2a5241aa08486bd50Cf7d475CF24".into(),
             value: "20000000000000000".into(), // 0.02 ETH
             mode: GemSwapMode::ExactIn,
             options,
