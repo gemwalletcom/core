@@ -6,7 +6,7 @@ use crate::Chain;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-#[typeshare(swift = "Sendable")]
+#[typeshare(swift = "Sendable, Hashable, Equatable")]
 pub struct NFTData {
     pub collection: NFTCollection,
     pub assets: Vec<NFTAsset>,
@@ -14,7 +14,7 @@ pub struct NFTData {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-#[typeshare(swift = "Sendable")]
+#[typeshare(swift = "Sendable, Hashable, Equatable, Identifiable")]
 pub struct NFTCollection {
     pub id: String,
     pub name: String,
@@ -33,7 +33,7 @@ impl NFTCollection {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-#[typeshare(swift = "Sendable")]
+#[typeshare(swift = "Sendable, Hashable, Equatable, Identifiable")]
 pub struct NFTAsset {
     pub id: String,
     pub collection_id: String,
@@ -54,7 +54,7 @@ impl NFTAsset {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-#[typeshare(swift = "Sendable")]
+#[typeshare(swift = "Sendable, Hashable, Equatable")]
 pub struct NFTImage {
     pub image_url: String,
     pub preview_image_url: String,
@@ -63,14 +63,14 @@ pub struct NFTImage {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-#[typeshare(swift = "Sendable")]
+#[typeshare(swift = "Sendable, Hashable, Equatable")]
 pub struct NFTAttribute {
     pub name: String,
     pub value: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, EnumIter, AsRefStr, EnumString)]
-#[typeshare(swift = "Sendable")]
+#[typeshare(swift = "Sendable, Hashable, Equatable")]
 #[serde(rename_all = "lowercase")]
 #[strum(serialize_all = "lowercase")]
 pub enum NFTType {

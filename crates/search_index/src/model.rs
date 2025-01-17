@@ -19,8 +19,8 @@ pub const ASSETS_RANKING_RULES: &[&str] = &[
     "typo",
     "score.rank:desc",
     "proximity",
-    "market.marketCap:desc",
     "market.marketCapRank:asc",
+    "market.marketCap:desc",
     "attribute",
     "exactness",
 ];
