@@ -6,7 +6,6 @@ use crate::swapper::asset::{
     AVALANCHE_USDC, AVALANCHE_USDT, BASE_CBBTC, BASE_USDC, ETHEREUM_DAI, ETHEREUM_USDC, ETHEREUM_USDT, ETHEREUM_WBTC, SMARTCHAIN_USDC, SMARTCHAIN_USDT,
 };
 use crate::swapper::thorchain::client::ThorChainSwapClient;
-use crate::swapper::utils::converter;
 use crate::swapper::{ApprovalType, FetchQuoteData, SwapProvider, SwapProviderData, SwapQuote, SwapQuoteData, SwapQuoteRequest, SwapRoute, SwapperError};
 use crate::swapper::{GemSwapProvider, SwapChainAsset};
 use alloy_core::sol_types::SolCall;
@@ -14,7 +13,7 @@ use alloy_primitives::Address;
 use alloy_primitives::U256;
 use async_trait::async_trait;
 use gem_evm::thorchain::contracts::RouterInterface;
-use primitives::Chain;
+use primitives::{Chain, CryptoValueConverter};
 use std::str::FromStr;
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -58,7 +57,7 @@ impl GemSwapProvider for ThorChain {
         let from_asset = THORChainAsset::from_asset_id(request.clone().from_asset).ok_or(SwapperError::NotSupportedAsset)?;
         let to_asset = THORChainAsset::from_asset_id(request.clone().to_asset).ok_or(SwapperError::NotSupportedAsset)?;
 
-        let value = converter::value_from(request.clone().value, from_asset.decimals as i32);
+        let value = CryptoValueConverter::value_from(request.clone().value, from_asset.decimals as i32);
         let fee = request.options.clone().fee.unwrap_or_default().thorchain;
 
         let quote = client
@@ -74,7 +73,7 @@ impl GemSwapProvider for ThorChain {
             )
             .await?;
 
-        let to_value = converter::value_to(quote.expected_amount_out, to_asset.decimals as i32);
+        let to_value = CryptoValueConverter::value_to(quote.expected_amount_out, to_asset.decimals as i32);
 
         let approval: ApprovalType = {
             if from_asset.use_evm_router() {

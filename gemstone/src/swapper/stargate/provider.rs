@@ -4,14 +4,14 @@ use std::sync::Arc;
 use alloy_primitives::{hex, Address};
 use async_trait::async_trait;
 use gem_evm::stargate::contract::{MessagingFee, SendParam};
-use primitives::Chain;
+use primitives::{Chain, CryptoValueConverter};
 use serde::{Deserialize, Serialize};
 
 use crate::{
     network::AlienProvider,
     swapper::{
-        approval::check_approval_erc20, slippage::apply_slippage_in_bp, utils::converter, ApprovalType, FetchQuoteData, GemSwapProvider, SwapChainAsset,
-        SwapProvider, SwapProviderData, SwapQuote, SwapQuoteData, SwapQuoteRequest, SwapRoute, SwapperError,
+        approval::check_approval_erc20, slippage::apply_slippage_in_bp, ApprovalType, FetchQuoteData, GemSwapProvider, SwapChainAsset, SwapProvider,
+        SwapProviderData, SwapQuote, SwapQuoteData, SwapQuoteRequest, SwapRoute, SwapperError,
     },
 };
 
@@ -103,8 +103,8 @@ impl GemSwapProvider for Stargate {
 
         let from_decimals = self.client.get_decimals_by_asset_id(&request.from_asset)?;
         let to_decimals = self.client.get_decimals_by_asset_id(&request.to_asset)?;
-        let mut to_value = converter::value_from(oft_quote.receipt.amountReceivedLD.to_string(), from_decimals);
-        to_value = converter::value_to(to_value.to_string(), to_decimals);
+        let mut to_value = CryptoValueConverter::value_from(oft_quote.receipt.amountReceivedLD.to_string(), from_decimals);
+        to_value = CryptoValueConverter::value_to(to_value.to_string(), to_decimals);
 
         Ok(SwapQuote {
             from_value: request.value.to_string(),
