@@ -7,7 +7,7 @@ pub mod subscription;
 
 use crate::models::asset::AssetLink;
 use crate::models::*;
-use crate::schema::{prices_assets, transactions_addresses};
+use crate::schema::transactions_addresses;
 use chrono::{DateTime, NaiveDateTime};
 use diesel::associations::HasTable;
 use diesel::dsl::count;

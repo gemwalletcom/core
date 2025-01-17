@@ -1,4 +1,4 @@
-use crate::schema::{prices, prices_assets};
+use crate::schema::prices_assets;
 use crate::{models::*, DatabaseClient};
 use chrono::NaiveDateTime;
 use diesel::associations::HasTable;
