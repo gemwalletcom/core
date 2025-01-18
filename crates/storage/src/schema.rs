@@ -161,6 +161,15 @@ diesel::table! {
 }
 
 diesel::table! {
+    link_types (id) {
+        #[max_length = 32]
+        id -> Varchar,
+        #[max_length = 255]
+        name -> Varchar,
+    }
+}
+
+diesel::table! {
     nft_assets (id) {
         #[max_length = 512]
         id -> Varchar,
@@ -419,6 +428,7 @@ diesel::table! {
 diesel::joinable!(assets -> assets_types (asset_type));
 diesel::joinable!(assets -> chains (chain));
 diesel::joinable!(assets_links -> assets (asset_id));
+diesel::joinable!(assets_links -> link_types (name));
 diesel::joinable!(fiat_assets -> assets (asset_id));
 diesel::joinable!(fiat_assets -> fiat_providers (provider));
 diesel::joinable!(fiat_transactions -> assets (asset_id));
@@ -453,6 +463,7 @@ diesel::allow_tables_to_appear_in_same_query!(
     fiat_providers,
     fiat_rates,
     fiat_transactions,
+    link_types,
     nft_assets,
     nft_collections,
     nft_types,

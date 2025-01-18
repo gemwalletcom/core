@@ -3,7 +3,8 @@ CREATE TABLE assets_links (
 
     asset_id VARCHAR(128) NOT NULL REFERENCES assets (id) ON DELETE CASCADE,
     
-    name VARCHAR(128) NOT NULL,
+    name VARCHAR(32) NOT NULL REFERENCES link_types (id) ON DELETE CASCADE,
+
     url VARCHAR(256) NOT NULL,
 
     updated_at timestamp NOT NULL default current_timestamp,

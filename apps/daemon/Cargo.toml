@@ -12,6 +12,7 @@ futures = { workspace = true }
 chrono = { workspace = true }
 strum = { workspace = true }
 strum_macros = { workspace = true }
+aws-sdk-s3 = { workspace = true }
 
 settings = { path = "../../crates/settings" }
 storage = { path = "../../crates/storage" }
@@ -20,6 +21,7 @@ coingecko = { path = "../../crates/coingecko" }
 pricer = { path = "../../crates/pricer" }
 primitives = { path = "../../crates/primitives" }
 fiat = { path = "../../crates/fiat" }
+nft = { path = "../../crates/nft" }
 job_runner = { path = "../../crates/job_runner" }
 chain_primitives = { path = "../../crates/chain_primitives" }
 search_index = { path = "../../crates/search_index" }
