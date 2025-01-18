@@ -16,6 +16,9 @@ pub enum LinkType {
     Facebook,
     Website,
     Coingecko,
+    OpenSea,
+    Instagram,
+    MagicEden,
 }
 
 impl LinkType {
