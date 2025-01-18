@@ -1,7 +1,8 @@
 use crate::{models::*, DatabaseClient};
 
 use diesel::{prelude::*, upsert::excluded};
-use nft_asset::NftLink;
+use nft_collection::UpdateNftCollectionImageUrl;
+use nft_link::NftLink;
 
 impl DatabaseClient {
     pub fn get_nft_collections(&mut self) -> Result<Vec<NftCollection>, diesel::result::Error> {
@@ -48,6 +49,13 @@ impl DatabaseClient {
             .on_conflict((collection_id, link_type))
             .do_update()
             .set((url.eq(excluded(url)),))
+            .execute(&mut self.connection)
+    }
+
+    pub fn update_nft_collection_image_url(&mut self, update: UpdateNftCollectionImageUrl) -> Result<usize, diesel::result::Error> {
+        use crate::schema::nft_collections::dsl::*;
+        diesel::update(nft_collections.filter(id.eq(update.id.clone())))
+            .set(update)
             .execute(&mut self.connection)
     }
 }

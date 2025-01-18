@@ -1,4 +1,4 @@
-use storage::DatabaseClient;
+use storage::{models::nft_collection::UpdateNftCollectionImageUrl, DatabaseClient};
 
 use super::image_uploader::ImageUploaderClient;
 
@@ -14,28 +14,33 @@ impl CollectionsImageUploader {
     }
 
     pub async fn update(&mut self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
-        let collections = self.database.get_nft_collections()?.into_iter().map(|x| x.as_primitive()).collect::<Vec<_>>();
+        let url = self.image_uploader.bucket.url.clone();
+
+        let collections = self
+            .database
+            .get_nft_collections()?
+            .into_iter()
+            .map(|x| x.as_primitive())
+            .filter(|x| !x.image.image_url.contains(&url))
+            .collect::<Vec<_>>();
 
         for collection in collections.clone() {
             println!("Uploading image collection: {}", collection.name);
 
-            let path = format!("{}/{}/collection_original.png", collection.chain.as_ref(), collection.contract_address);
-            let image_url = collection.image.image_url.clone();
+            let path = collection.image_path().image_url;
+            let uploaded_image_url = self
+                .image_uploader
+                .upload_image_from_url(collection.image.image_url.clone().as_str(), path.as_str())
+                .await?;
 
-            self.image_uploader.upload_image_from_url(image_url.as_str(), path.as_str()).await?;
+            println!("Image uploaded: {}", uploaded_image_url);
 
-            //let _res = self.upload_collection(path.as_str(), image_url.as_str()).await?;
-            // Ok(_) => {
-            //     println!("Uploaded image collection: {}", collection.name);
-            // }
-            // Err(e) => {
-            //     println!("Failed to upload image collection: {}", e);
-            // }
-            // };
+            self.database.update_nft_collection_image_url(UpdateNftCollectionImageUrl {
+                id: collection.id,
+                image_url: Some(uploaded_image_url),
+            })?;
         }
 
-        //self.upload_collection("test", "test").await?;
-
-        Ok(0)
+        Ok(collections.len())
     }
 }

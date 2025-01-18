@@ -29,6 +29,15 @@ impl NFTCollection {
     pub fn id(chain: Chain, contract_id: &str) -> String {
         format!("{}_{}", chain.as_ref(), contract_id)
     }
+
+    pub fn image_path(&self) -> NFTImage {
+        let image = format!("{}/{}/collection_original.png", self.chain.as_ref(), self.contract_address);
+        NFTImage {
+            image_url: image.clone(),
+            preview_image_url: image.clone(),
+            original_source_url: image.clone(),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
