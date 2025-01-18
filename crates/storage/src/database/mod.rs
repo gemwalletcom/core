@@ -288,7 +288,7 @@ impl DatabaseClient {
         use crate::schema::assets_links::dsl::*;
         diesel::insert_into(assets_links)
             .values(values)
-            .on_conflict((asset_id, name))
+            .on_conflict((asset_id, link_type))
             .do_update()
             .set((url.eq(excluded(url)),))
             .execute(&mut self.connection)

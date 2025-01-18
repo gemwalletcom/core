@@ -7,6 +7,7 @@ pub mod fiat;
 pub mod link;
 pub mod nft_asset;
 pub mod nft_collection;
+pub mod nft_link;
 pub mod node;
 pub mod parser_state;
 pub mod price;
@@ -28,6 +29,7 @@ pub use self::fiat::{FiatAsset, FiatProvider, FiatRate, FiatTransaction, FiatTra
 pub use self::link::LinkType;
 pub use self::nft_asset::{NftAsset, NftType};
 pub use self::nft_collection::NftCollection;
+pub use self::nft_link::NftLink;
 pub use self::node::Node;
 pub use self::parser_state::ParserState;
 pub use self::price::{Price, PriceAsset, PriceCache};

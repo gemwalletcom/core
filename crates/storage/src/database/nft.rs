@@ -1,6 +1,7 @@
 use crate::{models::*, DatabaseClient};
 
-use diesel::prelude::*;
+use diesel::{prelude::*, upsert::excluded};
+use nft_asset::NftLink;
 
 impl DatabaseClient {
     pub fn get_nft_collections(&mut self) -> Result<Vec<NftCollection>, diesel::result::Error> {
@@ -37,6 +38,16 @@ impl DatabaseClient {
         diesel::insert_into(nft_types)
             .values(values)
             .on_conflict_do_nothing()
+            .execute(&mut self.connection)
+    }
+
+    pub fn add_nft_links(&mut self, values: Vec<NftLink>) -> Result<usize, diesel::result::Error> {
+        use crate::schema::nft_links::dsl::*;
+        diesel::insert_into(nft_links)
+            .values(values)
+            .on_conflict((collection_id, link_type))
+            .do_update()
+            .set((url.eq(excluded(url)),))
             .execute(&mut self.connection)
     }
 }

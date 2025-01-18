@@ -87,14 +87,14 @@ impl Asset {
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct AssetLink {
     pub asset_id: String,
-    pub name: String,
+    pub link_type: String,
     pub url: String,
 }
 
 impl AssetLink {
     pub fn as_primitive(&self) -> primitives::AssetLink {
         primitives::AssetLink {
-            name: self.name.clone(),
+            name: self.link_type.clone(),
             url: self.url.clone(),
         }
     }
@@ -102,7 +102,7 @@ impl AssetLink {
     pub fn from_primitive(asset_id: &str, link: primitives::AssetLink) -> Self {
         Self {
             asset_id: asset_id.to_string(),
-            name: link.name.clone(),
+            link_type: link.name.clone(),
             url: link.url.clone(),
         }
     }
