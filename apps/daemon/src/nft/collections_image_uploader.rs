@@ -1,4 +1,7 @@
-use storage::{models::nft_collection::UpdateNftCollectionImageUrl, DatabaseClient};
+use storage::{
+    models::{nft_asset::UpdateNftAssetImageUrl, nft_collection::UpdateNftCollectionImageUrl},
+    DatabaseClient,
+};
 
 use super::image_uploader::ImageUploaderClient;
 
@@ -13,7 +16,11 @@ impl CollectionsImageUploader {
         Self { database, image_uploader }
     }
 
-    pub async fn update(&mut self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
+    fn image_filter(image_url: &str, url: &str) -> bool {
+        !image_url.contains(url) && image_url.contains(".png")
+    }
+
+    pub async fn update_collections(&mut self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
         let url = self.image_uploader.bucket.url.clone();
 
         let collections = self
@@ -21,7 +28,7 @@ impl CollectionsImageUploader {
             .get_nft_collections()?
             .into_iter()
             .map(|x| x.as_primitive())
-            .filter(|x| !x.image.image_url.contains(&url))
+            .filter(|x| Self::image_filter(x.image.image_url.as_str(), &url))
             .collect::<Vec<_>>();
 
         for collection in collections.clone() {
@@ -42,5 +49,34 @@ impl CollectionsImageUploader {
         }
 
         Ok(collections.len())
+    }
+
+    pub async fn update_collection_assets(&mut self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
+        let url = self.image_uploader.bucket.url.clone();
+
+        let assets = self
+            .database
+            .get_nft_assets_all()?
+            .into_iter()
+            .map(|x| x.as_primitive())
+            .filter(|x| Self::image_filter(x.image.image_url.as_str(), &url))
+            .collect::<Vec<_>>();
+
+        for asset in assets.clone() {
+            println!("Uploading image asset: {}, name: {}", asset.collection_id, asset.name);
+
+            let path = asset.image_path().image_url;
+            let uploaded_image_url = self
+                .image_uploader
+                .upload_image_from_url(asset.image.image_url.clone().as_str(), path.as_str())
+                .await?;
+
+            self.database.update_nft_asset_image_url(UpdateNftAssetImageUrl {
+                id: asset.id,
+                image_url: uploaded_image_url,
+            })?;
+        }
+
+        Ok(assets.len())
     }
 }

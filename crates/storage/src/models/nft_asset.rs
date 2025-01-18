@@ -19,6 +19,14 @@ pub struct NftAsset {
     pub attributes: serde_json::Value,
 }
 
+#[derive(Debug, Queryable, Selectable, Insertable, AsChangeset, Serialize, Deserialize, Clone)]
+#[diesel(table_name = crate::schema::nft_assets)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+pub struct UpdateNftAssetImageUrl {
+    pub id: String,
+    pub image_url: String,
+}
+
 #[derive(Debug, Queryable, Selectable, Insertable, Serialize, Deserialize, Clone)]
 #[diesel(table_name = crate::schema::nft_types)]
 #[diesel(check_for_backend(diesel::pg::Pg))]

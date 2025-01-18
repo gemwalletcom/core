@@ -24,15 +24,29 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
         }
     });
 
-    let collections_image_uploader = run_job("Upload images to R2 bucket", Duration::from_secs(3600), {
+    let collections_image_uploader = run_job("Upload collection images to R2 bucket", Duration::from_secs(3600), {
         let settings = Arc::new(settings.clone());
         move || {
             let bucket = settings.nft.bucket.clone();
             let image_uploader = ImageUploaderClient::new(bucket.clone());
             let mut updater = CollectionsImageUploader::new(settings.postgres.url.as_str(), image_uploader);
-            async move { updater.update().await }
+            async move { updater.update_collections().await }
         }
     });
 
-    vec![Box::pin(open_sea_collections_updater), Box::pin(collections_image_uploader)]
+    let collection_assets_image_uploader = run_job("Upload collection assets images to R2 bucket", Duration::from_secs(3600), {
+        let settings = Arc::new(settings.clone());
+        move || {
+            let bucket = settings.nft.bucket.clone();
+            let image_uploader = ImageUploaderClient::new(bucket.clone());
+            let mut updater = CollectionsImageUploader::new(settings.postgres.url.as_str(), image_uploader);
+            async move { updater.update_collection_assets().await }
+        }
+    });
+
+    vec![
+        Box::pin(open_sea_collections_updater),
+        Box::pin(collections_image_uploader),
+        Box::pin(collection_assets_image_uploader),
+    ]
 }

@@ -63,21 +63,26 @@ impl NFTClient {
 
         self.database.add_nft_collections(collections)?;
 
-        // let assets = nfts
-        //     .clone()
-        //     .into_iter()
-        //     .flat_map(|x| x.assets)
-        //     .map(|x| storage::models::NftAsset::from_primitive(x.clone()))
-        //     .collect();
-        // self.database.add_nft_assets(assets)?;
+        let assets = nfts
+            .clone()
+            .into_iter()
+            .flat_map(|x| x.assets)
+            .clone()
+            .map(|x| storage::models::NftAsset::from_primitive(x.clone()))
+            .collect();
+
+        self.database.add_nft_assets(assets)?;
 
         let results = nfts
             .into_iter()
             .map(|x| {
                 let collection = self.database.get_nft_collection(&x.collection.id).unwrap().as_primitive();
+                let asset_ids = x.assets.into_iter().map(|x| x.id).collect();
+                let assets = self.database.get_nft_assets(asset_ids).unwrap().into_iter().map(|x| x.as_primitive()).collect();
+
                 NFTData {
                     collection: collection.clone(),
-                    assets: x.assets,
+                    assets,
                 }
             })
             .collect();
