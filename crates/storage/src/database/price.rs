@@ -21,6 +21,7 @@ impl DatabaseClient {
                 all_time_low.eq(excluded(all_time_low)),
                 all_time_low_date.eq(excluded(all_time_low_date)),
                 market_cap.eq(excluded(market_cap)),
+                market_cap_fdv.eq(excluded(market_cap_fdv)),
                 market_cap_rank.eq(excluded(market_cap_rank)),
                 total_volume.eq(excluded(total_volume)),
                 circulating_supply.eq(excluded(circulating_supply)),
