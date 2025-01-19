@@ -137,6 +137,7 @@ impl Price {
         let rate_multiplier = rate.rate / base_rate;
         new_price.price = price.price * rate_multiplier;
         new_price.market_cap = price.market_cap * rate_multiplier;
+        new_price.market_cap_fdv = price.market_cap_fdv * rate_multiplier;
         new_price.total_volume = price.total_volume * rate_multiplier;
         new_price
     }
