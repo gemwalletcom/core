@@ -62,6 +62,7 @@ pub struct CoinMarket {
     pub current_price: Option<f64>,
     pub price_change_percentage_24h: Option<f64>,
     pub market_cap: Option<f64>,
+    pub fully_diluted_valuation: Option<f64>,
     pub market_cap_rank: Option<i32>,
     pub total_volume: Option<f64>,
     pub circulating_supply: Option<f64>,
