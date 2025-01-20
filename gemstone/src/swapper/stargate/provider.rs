@@ -1,7 +1,7 @@
 use std::str::FromStr;
 use std::sync::Arc;
 
-use alloy_primitives::{hex, Address};
+use alloy_primitives::{hex, Address, U256};
 use async_trait::async_trait;
 use gem_evm::stargate::contract::{MessagingFee, SendParam};
 use primitives::{Chain, CryptoValueConverter};
@@ -15,7 +15,7 @@ use crate::{
     },
 };
 
-use super::{client::StargateClient, endpoint::STARGATE_ROUTES, layer_zero::scan::LayerZeroScanApi};
+use super::{client::StargateClient, endpoint::STARGATE_ROUTES};
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 struct StargateRouteData {
@@ -66,27 +66,28 @@ impl GemSwapProvider for Stargate {
         let from_asset = &request.from_asset;
         let to_asset = &request.to_asset;
 
-        if from_asset.chain == to_asset.chain {
-            return Err(SwapperError::NotSupportedPair);
-        }
-
         if from_asset.is_native() && !to_asset.is_native() {
             return Err(SwapperError::NotSupportedPair);
         }
 
         let pool = self.client.get_pool_by_asset_id(&request.from_asset)?;
-        let mut send_param = self.client.build_send_param(request)?;
+        let send_param = self.client.build_send_param(request)?;
 
         let oft_quote = self.client.quote_oft(pool, &send_param, provider.clone()).await?;
-        send_param.minAmountLD = apply_slippage_in_bp(&oft_quote.receipt.amountReceivedLD, request.options.slippage_bps);
-        let messaging_fee = self.client.quote_send(pool, &send_param, provider.clone()).await?;
+        let min_amount_ld = apply_slippage_in_bp(&oft_quote.receipt.amountReceivedLD, request.options.slippage_bps);
+        let final_send_param = SendParam {
+            amountLD: send_param.amountLD,
+            minAmountLD: min_amount_ld,
+            ..send_param
+        };
+        let messaging_fee = self.client.quote_send(pool, &final_send_param, provider.clone()).await?;
 
         let approval = if request.from_asset.is_token() {
             check_approval_erc20(
                 request.wallet_address.clone(),
                 request.from_asset.token_id.clone().unwrap(),
                 pool.address.clone(),
-                send_param.amountLD,
+                final_send_param.amountLD,
                 provider.clone(),
                 &request.from_asset.chain,
             )
@@ -96,7 +97,7 @@ impl GemSwapProvider for Stargate {
         };
 
         let route_data = StargateRouteData {
-            send_param: send_param.clone(),
+            send_param: final_send_param.clone(),
             fee: messaging_fee,
             refund_address: request.wallet_address.to_string(),
         };
@@ -127,35 +128,34 @@ impl GemSwapProvider for Stargate {
     async fn fetch_quote_data(&self, quote: &SwapQuote, _provider: Arc<dyn AlienProvider>, _data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError> {
         let pool = self.client.get_pool_by_asset_id(&quote.request.from_asset)?;
         let route_data: StargateRouteData = serde_json::from_str(&quote.data.routes.first().unwrap().route_data).map_err(|_| SwapperError::InvalidRoute)?;
-        let send_calldata = self.client.send(
+        let calldata = self.client.send(
             &route_data.send_param,
             &route_data.fee,
             &Address::from_str(route_data.refund_address.as_str()).unwrap(),
         );
 
-        let mut value_to_send = route_data.fee.nativeFee;
-
-        if quote.request.from_asset.is_native() {
-            value_to_send += route_data.send_param.amountLD;
-        }
+        let amount = if quote.request.from_asset.is_native() {
+            route_data.send_param.amountLD
+        } else {
+            U256::ZERO
+        };
+        let value = route_data.fee.nativeFee + amount;
 
         let quote_data = SwapQuoteData {
             to: pool.address.clone(),
-            value: value_to_send.to_string(),
-            data: hex::encode_prefixed(send_calldata.clone()),
+            value: value.to_string(),
+            data: hex::encode_prefixed(calldata.clone()),
         };
+
+        println!("value: {:?}", value);
+        println!("fee: {:?}", quote_data);
 
         Ok(quote_data)
     }
 
-    async fn get_transaction_status(&self, _chain: Chain, transaction_hash: &str, provider: Arc<dyn AlienProvider>) -> Result<bool, SwapperError> {
-        let api = LayerZeroScanApi::new(provider.clone());
-        let response = api.get_message_by_tx(transaction_hash).await?;
-        let messages = response.data;
-        let message = messages.first().ok_or(SwapperError::NetworkError {
-            msg: "Unable to check transaction status using Stargate Provider: No message found".into(),
-        })?;
-        Ok(message.status.is_delivered())
+    async fn get_transaction_status(&self, _chain: Chain, _transaction_hash: &str, _provider: Arc<dyn AlienProvider>) -> Result<bool, SwapperError> {
+        // TODO: implement onchain scanner solution
+        todo!()
     }
 }
 
@@ -190,34 +190,6 @@ mod tests {
                 &STARGATE_ROUTES.smartchain,
             ]
         );
-    }
-
-    #[tokio::test]
-    async fn test_same_chain_quote() {
-        let stargate = Stargate::new();
-        let request = SwapQuoteRequest {
-            wallet_address: "0x0655c6AbdA5e2a5241aa08486bd50Cf7d475CF24".to_string(),
-            from_asset: AssetId::from_chain(Chain::Ethereum),
-            to_asset: AssetId::from_chain(Chain::Ethereum),
-            value: U256::from(1).to_string(),
-            mode: GemSwapMode::ExactIn,
-            destination_address: "0x0655c6AbdA5e2a5241aa08486bd50Cf7d475CF24".to_string(),
-            options: GemSwapOptions {
-                slippage_bps: 100,
-                fee: Some(SwapReferralFees::default()),
-                preferred_providers: vec![],
-            },
-        };
-
-        let mock = AlienProviderMock {
-            response: String::from("Hello"),
-            timeout: Duration::from_millis(100),
-        };
-
-        let result = stargate.fetch_quote(&request, Arc::new(mock)).await;
-
-        assert!(result.is_err());
-        assert_eq!(result.unwrap_err(), SwapperError::NotSupportedPair);
     }
 
     #[tokio::test]
