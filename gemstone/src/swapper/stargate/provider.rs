@@ -71,14 +71,14 @@ impl GemSwapProvider for Stargate {
         }
 
         let pool = self.client.get_pool_by_asset_id(&request.from_asset)?;
-        let send_param = self.client.build_send_param(request)?;
+        let initial_send_param = self.client.build_send_param(request)?;
 
-        let oft_quote = self.client.quote_oft(pool, &send_param, provider.clone()).await?;
+        let oft_quote = self.client.quote_oft(pool, &initial_send_param, provider.clone()).await?;
         let min_amount_ld = apply_slippage_in_bp(&oft_quote.receipt.amountReceivedLD, request.options.slippage_bps);
         let final_send_param = SendParam {
-            amountLD: send_param.amountLD,
+            amountLD: initial_send_param.amountLD,
             minAmountLD: min_amount_ld,
-            ..send_param
+            ..initial_send_param
         };
         let messaging_fee = self.client.quote_send(pool, &final_send_param, provider.clone()).await?;
 
