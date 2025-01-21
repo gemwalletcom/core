@@ -7,7 +7,7 @@ pub struct Contract {
     pub collection: String,
     pub contract_standard: String,
     pub name: String,
-    pub total_supply: u64,
+    pub total_supply: Option<u64>,
 }
 
 #[derive(Deserialize)]
