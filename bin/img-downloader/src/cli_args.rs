@@ -9,15 +9,15 @@ pub struct Args {
 
     /// Top tokens on coingecko to download
     #[arg(short, long, default_value_t = 50)]
-    pub count: u32,
+    pub count: usize,
 
     /// Starting page for coingecko api
     #[arg(short, long, default_value_t = 1)]
-    pub page: u32,
+    pub page: usize,
 
     /// Page size for coingecko api
     #[arg(long, default_value_t = 50)]
-    pub page_size: u32,
+    pub page_size: usize,
 
     /// ID of the coin, if this is set, it will only download the image for the coin
     #[arg(long, default_value = "")]
