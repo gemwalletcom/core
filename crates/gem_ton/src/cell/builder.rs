@@ -192,6 +192,18 @@ impl CellBuilder {
         Ok(self)
     }
 
+    // https://docs.ton.org/develop/data-formats/tl-b-types#maybe
+    pub fn store_maybe_cell_ref(&mut self, maybe_cell: &Option<ArcCell>) -> Result<&mut Self, TonCellError> {
+        if let Some(cell) = maybe_cell {
+            self.store_bit(true)?;
+            self.store_reference(cell)?;
+        } else {
+            self.store_bit(false)?;
+        }
+
+        Ok(self)
+    }
+
     /// Adds a reference to a newly constructed `Cell`.
     ///
     /// The cell is wrapped it the `Arc`.

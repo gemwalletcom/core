@@ -43,6 +43,9 @@ borsh.workspace = true
 orca_whirlpools_core = "1.0.0"
 lazy_static = { workspace = true }
 
+tonlib-client = { workspace = true }
+tonlib-core = { workspace = true }
+
 [build-dependencies]
 uniffi = { workspace = true, features = ["build"] }
 

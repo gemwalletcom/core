@@ -17,6 +17,7 @@ pub mod models;
 pub mod orca;
 pub mod pancakeswap_aptos;
 pub mod slippage;
+pub mod stonfi;
 pub mod thorchain;
 pub mod universal_router;
 
@@ -86,6 +87,7 @@ impl GemSwapper {
                 Box::new(jupiter::Jupiter::default()),
                 Box::new(pancakeswap_aptos::PancakeSwapAptos::default()),
                 Box::new(across::Across::default()),
+                Box::new(stonfi::Stonfi::default()),
             ],
         }
     }

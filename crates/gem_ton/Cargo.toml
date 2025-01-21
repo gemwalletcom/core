@@ -17,3 +17,5 @@ crc = "3"
 serde = { workspace = true }
 serde_json = { workspace = true }
 anyhow = { workspace = true }
+tonlib-core = { workspace = true }
+tonlib-client = { workspace = true }

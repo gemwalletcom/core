@@ -38,7 +38,7 @@ members = [
     "crates/localizer",
     "crates/job_runner",
     "crates/search_index",
-    "crates/nft"
+    "crates/nft",
 ]
 
 default-members = [
@@ -82,7 +82,7 @@ diesel_migrations = { version = "2.2.0" }
 redis = { version = "0.25.0", features = ["tokio-comp", "json"] }
 chrono = { version = "0.4.34", features = ["serde"] }
 clickhouse = { version = "0.11.6" }
-meilisearch-sdk = { version = "0.27.1" } 
+meilisearch-sdk = { version = "0.27.1" }
 
 # crypto
 base64 = { version = "0.22.0" }
@@ -110,6 +110,9 @@ uniffi_bindgen = { version = "0.28.3" }
 alloy-core = { version = "0.8.9", features = ["sol-types", "json-abi", "rlp"] }
 alloy-primitives = "0.8.9"
 alloy-sol-types = "0.8.9"
+
+tonlib-core = { version = "0.23.1" }
+tonlib-client = { version = "0.23.1" }
 
 # localizer
 i18n-embed = { version = "0.15.0", features = ["fluent-system", "autoreload"] }
