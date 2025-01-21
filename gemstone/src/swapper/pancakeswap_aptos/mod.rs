@@ -64,7 +64,7 @@ impl GemSwapProvider for PancakeSwapAptos {
                 from_internal_asset.as_str(),
                 to_internal_asset.as_str(),
                 request.value.to_string().as_str(),
-                request.options.slippage_bps,
+                request.options.slippage.bps,
             )
             .await?;
 
@@ -79,13 +79,13 @@ impl GemSwapProvider for PancakeSwapAptos {
             to_value: quote_value.clone(),
             data: SwapProviderData {
                 provider: self.provider(),
-                suggested_slippage_bps: None,
                 routes: vec![SwapRoute {
                     input: request.from_asset.clone(),
                     output: request.to_asset.clone(),
                     route_data,
                     gas_estimate: None,
                 }],
+                slippage_bps: request.options.slippage.bps,
             },
             approval: ApprovalType::None,
             request: request.clone(),

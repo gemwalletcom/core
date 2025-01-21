@@ -1,3 +1,5 @@
+pub static DEFAULT_SLIPPAGE_BPS: u32 = 100;
+
 #[derive(uniffi::Record, Debug, Clone, PartialEq)]
 pub struct SwapConfig {
     pub default_slippage_bps: u32,
@@ -33,7 +35,7 @@ impl SwapReferralFees {
 
 pub fn get_swap_config() -> SwapConfig {
     SwapConfig {
-        default_slippage_bps: 100,
+        default_slippage_bps: DEFAULT_SLIPPAGE_BPS,
         referral_fee: SwapReferralFees {
             evm: SwapReferralFee {
                 address: "0x0D9DAB1A248f63B0a48965bA8435e4de7497a3dC".into(),
