@@ -311,6 +311,10 @@ impl Chain {
         StakeChain::from_str(self.as_ref()).is_ok()
     }
 
+    pub fn is_nft_supported(&self) -> bool {
+        matches!(self, Self::Ethereum)
+    }
+
     // miliseconds
     pub fn block_time(&self) -> i64 {
         match self {
