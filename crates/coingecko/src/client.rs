@@ -1,6 +1,4 @@
-use crate::model::{CoinQuery, CointListQuery, SearchTrending, SimplePriceQuery};
-
-use super::model::{Coin, CoinInfo, CoinMarket, ExchangeRates, MarketChart, SimplePrices};
+use crate::model::{Coin, CoinInfo, CoinMarket, CoinQuery, CointListQuery, ExchangeRates, MarketChart, SearchTrending};
 use primitives::FiatRate;
 use reqwest::header::{HeaderMap, HeaderValue, USER_AGENT};
 use reqwest_middleware::{ClientBuilder, ClientWithMiddleware};
@@ -67,7 +65,7 @@ impl CoinGeckoClient {
         Ok(response.json().await?)
     }
 
-    pub async fn get_coin_markets(&self, page: u32, per_page: u32) -> Result<Vec<CoinMarket>, Box<dyn Error + Send + Sync>> {
+    pub async fn get_coin_markets(&self, page: usize, per_page: usize) -> Result<Vec<CoinMarket>, Box<dyn Error + Send + Sync>> {
         let url = format!(
             "{}/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page={}&page={}&sparkline=false&locale=en",
             self.url, per_page, page
@@ -76,32 +74,19 @@ impl CoinGeckoClient {
         Ok(response.json().await?)
     }
 
-    pub async fn get_prices_by_ids(&self, ids: Vec<String>, currency: &str) -> Result<SimplePrices, Box<dyn Error + Send + Sync>> {
-        let url = format!("{}/api/v3/simple/price", self.url);
-        let query = SimplePriceQuery {
-            ids: ids.join(","),
-            vs_currencies: currency.to_string(),
-            include_market_cap: true,
-            include_24hr_vol: true,
-            include_24hr_change: true,
-            include_last_updated_at: true,
-        };
-        let response = self.client.get(&url).query(&query).headers(self.headers()).send().await?;
-        Ok(response.json().await?)
+    pub async fn get_coin_markets_ids(&self, ids: Vec<String>, per_page: usize) -> Result<Vec<CoinMarket>, Box<dyn Error + Send + Sync>> {
+        let url = format!(
+            "{}/api/v3/coins/markets?vs_currency=usd&ids={}&order=market_cap_desc&sparkline=false&locale=en&per_page={}",
+            self.url,
+            ids.join(","),
+            per_page
+        );
+        Ok(self.client.get(&url).headers(self.headers()).send().await?.json::<Vec<CoinMarket>>().await?)
     }
 
     pub async fn get_coin_markets_id(&self, id: &str) -> Result<CoinMarket, Box<dyn Error + Send + Sync>> {
-        let url = format!(
-            "{}/api/v3/coins/markets?vs_currency=usd&ids={}&order=market_cap_desc&sparkline=false&locale=en",
-            self.url, id
-        );
-        let response = self.client.get(&url).headers(self.headers()).send().await?.json::<Vec<CoinMarket>>().await?;
-
-        if let Some(market) = response.first() {
-            Ok(market.clone())
-        } else {
-            Err(format!("market {} not found", id).into())
-        }
+        let markets = self.get_coin_markets_ids(vec![id.to_string()], 1).await?;
+        markets.first().cloned().ok_or_else(|| format!("market {} not found", id).into())
     }
 
     pub async fn get_coin(&self, id: &str) -> Result<CoinInfo, Box<dyn Error + Send + Sync>> {
@@ -136,7 +121,7 @@ impl CoinGeckoClient {
         Ok(fiat_rates)
     }
 
-    pub async fn get_all_coin_markets(&self, per_page: u32, pages: u32) -> Result<Vec<CoinMarket>, Box<dyn Error + Send + Sync>> {
+    pub async fn get_all_coin_markets(&self, per_page: usize, pages: usize) -> Result<Vec<CoinMarket>, Box<dyn Error + Send + Sync>> {
         let mut all_coin_markets = Vec::new();
         let mut page = 1;
 
