@@ -116,7 +116,6 @@ impl GemSwapProvider for Jupiter {
         let (auto_slippage, max_auto_slippage_bps) = match swap_options.slippage.mode {
             SlippageMode::Auto => (true, slippage_bps * 3),
             SlippageMode::Exact => (false, slippage_bps),
-            SlippageMode::Max => (true, slippage_bps),
         };
 
         let quote_request = QuoteRequest {

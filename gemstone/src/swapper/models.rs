@@ -130,7 +130,6 @@ pub struct GemSlippage {
 pub enum SlippageMode {
     Auto,
     Exact,
-    Max,
 }
 
 impl From<u32> for GemSlippage {
