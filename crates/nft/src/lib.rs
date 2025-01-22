@@ -7,7 +7,9 @@ use nftscan::{
 };
 use primitives::{Chain, NFTImage};
 
-mod nftscan;
+pub mod nftscan;
+pub mod opensea;
+pub use opensea::OpenSeaClient;
 
 pub struct NFT {
     client: NFTScanClient,

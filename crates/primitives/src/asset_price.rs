@@ -17,6 +17,7 @@ pub struct AssetPrice {
 #[serde(rename_all = "camelCase")]
 pub struct AssetMarket {
     pub market_cap: Option<f64>,
+    pub market_cap_fdv: Option<f64>,
     pub market_cap_rank: Option<i32>,
     pub total_volume: Option<f64>,
     pub circulating_supply: Option<f64>,

@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use serde::{Deserialize, Serialize};
 use strum::{AsRefStr, EnumIter, EnumString, IntoEnumIterator};
 use typeshare::typeshare;
@@ -29,6 +31,15 @@ impl NFTCollection {
     pub fn id(chain: Chain, contract_id: &str) -> String {
         format!("{}_{}", chain.as_ref(), contract_id)
     }
+
+    pub fn image_path(&self) -> NFTImage {
+        let image = format!("{}/{}/collection_original.png", self.chain.as_ref(), self.contract_address);
+        NFTImage {
+            image_url: image.clone(),
+            preview_image_url: image.clone(),
+            original_source_url: image.clone(),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -46,9 +57,36 @@ pub struct NFTAsset {
     pub attributes: Vec<NFTAttribute>,
 }
 
+pub struct NFTAssetId {
+    pub chain: Chain,
+    pub collection_id: String,
+    pub token_id: String,
+}
+
+impl NFTAssetId {
+    pub fn from_id(id: &str) -> Self {
+        let parts: Vec<&str> = id.split('_').collect();
+        Self {
+            chain: Chain::from_str(parts[0]).unwrap(),
+            collection_id: parts[1].to_string(),
+            token_id: parts[2].to_string(),
+        }
+    }
+}
+
 impl NFTAsset {
     pub fn id(collection_id: &str, token_id: &str) -> String {
         format!("{}_{}", collection_id, token_id)
+    }
+
+    pub fn image_path(&self) -> NFTImage {
+        let asset_id = NFTAssetId::from_id(self.id.clone().as_str());
+        let image = format!("{}/{}/assets/{}_original.png", self.chain.as_ref(), asset_id.collection_id, self.token_id);
+        NFTImage {
+            image_url: image.clone(),
+            preview_image_url: image.clone(),
+            original_source_url: image.clone(),
+        }
     }
 }
 

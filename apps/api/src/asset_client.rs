@@ -50,7 +50,7 @@ impl AssetsClient {
         })
     }
 
-    pub fn get_assets_ids_by_device_id(&mut self, device_id: &str, wallet_index: i32, from_timestamp: Option<u32>) -> Result<Vec<String>, Box<dyn Error>> {
+    pub fn get_assets_by_device_id(&mut self, device_id: &str, wallet_index: i32, from_timestamp: Option<u32>) -> Result<Vec<String>, Box<dyn Error>> {
         let subscriptions = self.database.get_subscriptions_by_device_id_wallet_index(device_id, wallet_index)?;
 
         let addresses = subscriptions.clone().into_iter().map(|x| x.address).collect();

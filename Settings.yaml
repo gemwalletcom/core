@@ -199,4 +199,16 @@ alerter:
 
 nft:
   nftscan:
-    key: ""
+    key:
+      secret: ""
+  opensea:
+    key:
+      secret: ""
+  bucket:
+    endpoint: ""
+    region: auto
+    name: "nft-assets"
+    url: "https://nft-assets.gemwallet.com"
+    key:
+      public: ""
+      secret: ""

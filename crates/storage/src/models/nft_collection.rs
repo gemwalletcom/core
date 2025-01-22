@@ -24,6 +24,14 @@ pub struct NftCollection {
     pub is_enable: bool,
 }
 
+#[derive(Debug, Queryable, Selectable, Insertable, AsChangeset, Serialize, Deserialize, Clone)]
+#[diesel(table_name = crate::schema::nft_collections)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+pub struct UpdateNftCollectionImageUrl {
+    pub id: String,
+    pub image_url: Option<String>,
+}
+
 impl NftCollection {
     pub fn as_primitive(&self) -> primitives::NFTCollection {
         primitives::NFTCollection {

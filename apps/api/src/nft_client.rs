@@ -1,7 +1,7 @@
 use std::error::Error;
 
 use nft::NFT;
-use primitives::{Chain, NFTData};
+use primitives::{Chain, NFTCollection, NFTData};
 use std::collections::HashMap;
 use storage::DatabaseClient;
 
@@ -47,6 +47,11 @@ impl NFTClient {
         self.get_nfts(self.nft.get_assets(addresses).await?).await
     }
 
+    pub async fn get_nft_collection(&mut self, chain: Chain, id: &str) -> Result<NFTCollection, Box<dyn Error + Send + Sync>> {
+        let id = format!("{}_{}", chain.as_ref(), id);
+        Ok(self.database.get_nft_collection(id.as_str())?.as_primitive())
+    }
+
     // computed nfts from db
     async fn get_nfts(&mut self, nfts: Vec<NFTData>) -> Result<Vec<NFTData>, Box<dyn Error + Send + Sync>> {
         // cache collections and assets locally
@@ -58,21 +63,26 @@ impl NFTClient {
 
         self.database.add_nft_collections(collections)?;
 
-        // let assets = nfts
-        //     .clone()
-        //     .into_iter()
-        //     .flat_map(|x| x.assets)
-        //     .map(|x| storage::models::NftAsset::from_primitive(x.clone()))
-        //     .collect();
-        // self.database.add_nft_assets(assets)?;
+        let assets = nfts
+            .clone()
+            .into_iter()
+            .flat_map(|x| x.assets)
+            .clone()
+            .map(|x| storage::models::NftAsset::from_primitive(x.clone()))
+            .collect();
+
+        self.database.add_nft_assets(assets)?;
 
         let results = nfts
             .into_iter()
             .map(|x| {
                 let collection = self.database.get_nft_collection(&x.collection.id).unwrap().as_primitive();
+                let asset_ids = x.assets.into_iter().map(|x| x.id).collect();
+                let assets = self.database.get_nft_assets(asset_ids).unwrap().into_iter().map(|x| x.as_primitive()).collect();
+
                 NFTData {
                     collection: collection.clone(),
-                    assets: x.assets,
+                    assets,
                 }
             })
             .collect();

@@ -1,10 +1,13 @@
 mod charts_updater;
+mod price_asset_updater;
 mod price_updater;
 
 use crate::pricer::charts_updater::ChartsUpdater;
 use crate::pricer::price_updater::PriceUpdater;
 use coingecko::CoinGeckoClient;
 use job_runner::run_job;
+use price_asset_updater::PriceAssetUpdater;
+use price_updater::UpdatePrices;
 use pricer::{ChartClient, PriceClient};
 use settings::Settings;
 use std::future::Future;
@@ -35,31 +38,39 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
         let settings = Arc::new(settings.clone());
         move || {
             let settings = Arc::clone(&settings);
-            async move { price_updater_factory(&settings.clone()).update_prices_assets().await }
+            async move { price_asset_updater_factory(&settings.clone()).update_prices_assets().await }
         }
     });
 
-    let update_prices_assets_pages = run_job("Update prices assets 30 pages", Duration::from_secs(settings.pricer.timer * 30), {
+    let update_prices_assets_pages = run_job("Update prices assets 30 pages", Duration::from_secs(86400), {
         let settings = Arc::new(settings.clone());
         move || {
             let settings = Arc::clone(&settings);
-            async move { price_updater_factory(&settings.clone()).update_prices(30).await }
+            async move { price_updater_factory(&settings.clone()).update_prices_pages(30).await }
         }
     });
 
-    let update_prices_high_market_cap = run_job("Update prices high market cap", Duration::from_secs(settings.pricer.timer), {
+    let update_prices_top_market_cap = run_job("Update prices top (top 500) market cap", Duration::from_secs(settings.pricer.timer), {
         let settings = Arc::new(settings.clone());
         move || {
             let settings = Arc::clone(&settings);
-            async move { price_updater_factory(&settings.clone()).update_prices_simple_high_market_cap().await }
+            async move { price_updater_factory(&settings.clone()).update_prices_type(UpdatePrices::Top).await }
         }
     });
 
-    let update_prices_top_market_cap = run_job("Update prices low market cap", Duration::from_secs(settings.pricer.timer * 5), {
+    let update_prices_high_market_cap = run_job("Update prices high (500-2500) market cap", Duration::from_secs(settings.pricer.timer * 3), {
         let settings = Arc::new(settings.clone());
         move || {
             let settings = Arc::clone(&settings);
-            async move { price_updater_factory(&settings.clone()).update_prices_simple_low_market_cap().await }
+            async move { price_updater_factory(&settings.clone()).update_prices_type(UpdatePrices::High).await }
+        }
+    });
+
+    let update_prices_low_market_cap = run_job("Update prices low (2500...) market cap", Duration::from_secs(settings.pricer.timer * 10), {
+        let settings = Arc::new(settings.clone());
+        move || {
+            let settings = Arc::clone(&settings);
+            async move { price_updater_factory(&settings.clone()).update_prices_type(UpdatePrices::Low).await }
         }
     });
 
@@ -88,8 +99,9 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
         Box::pin(update_fiat_assets),
         Box::pin(update_prices_assets),
         Box::pin(update_prices_assets_pages),
-        Box::pin(update_prices_high_market_cap),
         Box::pin(update_prices_top_market_cap),
+        Box::pin(update_prices_high_market_cap),
+        Box::pin(update_prices_low_market_cap),
         Box::pin(update_prices_cache),
         Box::pin(update_charts),
     ]
@@ -99,4 +111,10 @@ fn price_updater_factory(settings: &Settings) -> PriceUpdater {
     let coingecko_client = CoinGeckoClient::new(&settings.coingecko.key.secret.clone());
     let price_client = PriceClient::new(&settings.redis.url, &settings.postgres.url.clone());
     PriceUpdater::new(price_client, coingecko_client.clone())
+}
+
+fn price_asset_updater_factory(settings: &Settings) -> PriceAssetUpdater {
+    let coingecko_client = CoinGeckoClient::new(&settings.coingecko.key.secret.clone());
+    let price_client = PriceClient::new(&settings.redis.url, &settings.postgres.url.clone());
+    PriceAssetUpdater::new(price_client, coingecko_client.clone())
 }

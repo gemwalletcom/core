@@ -75,6 +75,7 @@ lazy_static = "1.4.0"
 futures-util = "0.3.30"
 uuid = { version = "1.8.0", features = ["v4"] }
 rand = { version = "0.8.5" }
+aws-sdk-s3 = { version = "1.5", features = ["behavior-version-latest"] } 
 
 # db
 diesel = { version = "2.2.3", features = ["postgres", "chrono", "serde_json"] }

@@ -33,7 +33,7 @@ diesel::table! {
         #[max_length = 128]
         asset_id -> Varchar,
         #[max_length = 128]
-        name -> Varchar,
+        link_type -> Varchar,
         #[max_length = 256]
         url -> Varchar,
         updated_at -> Timestamp,
@@ -161,6 +161,15 @@ diesel::table! {
 }
 
 diesel::table! {
+    link_types (id) {
+        #[max_length = 32]
+        id -> Varchar,
+        #[max_length = 255]
+        name -> Varchar,
+    }
+}
+
+diesel::table! {
     nft_assets (id) {
         #[max_length = 512]
         id -> Varchar,
@@ -212,6 +221,20 @@ diesel::table! {
         project_x_username -> Nullable<Varchar>,
         is_verified -> Bool,
         is_enable -> Bool,
+        updated_at -> Timestamp,
+        created_at -> Timestamp,
+    }
+}
+
+diesel::table! {
+    nft_links (id) {
+        id -> Int4,
+        #[max_length = 128]
+        collection_id -> Varchar,
+        #[max_length = 32]
+        link_type -> Varchar,
+        #[max_length = 256]
+        url -> Varchar,
         updated_at -> Timestamp,
         created_at -> Timestamp,
     }
@@ -273,6 +296,7 @@ diesel::table! {
         price -> Float8,
         price_change_percentage_24h -> Float8,
         market_cap -> Float8,
+        market_cap_fdv -> Float8,
         market_cap_rank -> Int4,
         total_volume -> Float8,
         circulating_supply -> Float8,
@@ -419,6 +443,7 @@ diesel::table! {
 diesel::joinable!(assets -> assets_types (asset_type));
 diesel::joinable!(assets -> chains (chain));
 diesel::joinable!(assets_links -> assets (asset_id));
+diesel::joinable!(assets_links -> link_types (link_type));
 diesel::joinable!(fiat_assets -> assets (asset_id));
 diesel::joinable!(fiat_assets -> fiat_providers (provider));
 diesel::joinable!(fiat_transactions -> assets (asset_id));
@@ -427,6 +452,8 @@ diesel::joinable!(nft_assets -> chains (chain));
 diesel::joinable!(nft_assets -> nft_collections (collection_id));
 diesel::joinable!(nft_assets -> nft_types (token_type));
 diesel::joinable!(nft_collections -> chains (chain));
+diesel::joinable!(nft_links -> link_types (link_type));
+diesel::joinable!(nft_links -> nft_collections (collection_id));
 diesel::joinable!(nodes -> chains (chain));
 diesel::joinable!(parser_state -> chains (chain));
 diesel::joinable!(price_alerts -> assets (asset_id));
@@ -453,8 +480,10 @@ diesel::allow_tables_to_appear_in_same_query!(
     fiat_providers,
     fiat_rates,
     fiat_transactions,
+    link_types,
     nft_assets,
     nft_collections,
+    nft_links,
     nft_types,
     nodes,
     parser_state,

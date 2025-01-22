@@ -6,7 +6,7 @@ pub async fn run_job<F, Fut, R>(name: &'static str, interval_duration: Duration,
 where
     F: Fn() -> Fut + Send + Sync + 'static,
     Fut: Future<Output = R> + Send + 'static,
-    R: std::fmt::Debug + Send + 'static,
+    R: std::fmt::Debug + Send + Sync + 'static,
 {
     loop {
         let now = Instant::now();

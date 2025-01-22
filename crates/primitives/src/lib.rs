@@ -108,3 +108,5 @@ pub mod solana_pay;
 pub use self::fee::FeeUnitType;
 pub mod response;
 pub use self::response::{ResponseError, ResponseResult};
+pub mod link;
+pub use self::link::LinkType;
