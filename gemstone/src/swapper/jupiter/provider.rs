@@ -110,8 +110,13 @@ impl GemSwapProvider for Jupiter {
         let input_mint = self.get_asset_address(&request.from_asset)?;
         let output_mint = self.get_asset_address(&request.to_asset)?;
         let swap_options = request.options.clone();
-        let slippage_bps = swap_options.slippage_bps;
+        let slippage_bps = swap_options.slippage.bps;
         let platform_fee_bps = swap_options.fee.unwrap_or_default().solana_jupiter.bps;
+
+        let (auto_slippage, max_auto_slippage_bps) = match swap_options.slippage.mode {
+            SlippageMode::Auto => (true, slippage_bps * 3),
+            SlippageMode::Exact => (false, slippage_bps),
+        };
 
         let quote_request = QuoteRequest {
             input_mint: input_mint.clone(),
@@ -119,9 +124,8 @@ impl GemSwapProvider for Jupiter {
             amount: request.value.clone(),
             platform_fee_bps,
             slippage_bps,
-            auto_slippage: true,
-            max_auto_slippage_bps: slippage_bps * 3,
-            only_direct_routes: false,
+            auto_slippage,
+            max_auto_slippage_bps,
         };
         let client = JupiterClient::new(self.get_endpoint(), provider.clone());
         let swap_quote = client.get_swap_quote(quote_request).await?;
@@ -137,7 +141,7 @@ impl GemSwapProvider for Jupiter {
                     route_data: serde_json::to_string(&swap_quote).unwrap_or_default(),
                     gas_estimate: None,
                 }],
-                suggested_slippage_bps: Some(swap_quote.slippage_bps),
+                slippage_bps: swap_quote.slippage_bps,
             },
             approval: ApprovalType::None,
             request: request.clone(),

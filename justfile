@@ -4,6 +4,12 @@ list:
 build:
     cargo build
 
+build-gemstone:
+    just gemstone build
+
+build-ios:
+    just gemstone build-ios
+
 install: install-typeshare install-postgres install-diesel
 
 install-rust:

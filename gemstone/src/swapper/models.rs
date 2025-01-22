@@ -1,11 +1,11 @@
 use super::permit2_data::Permit2Data;
-use crate::config::swap_config::SwapReferralFees;
-use crate::network::{jsonrpc::JsonRpcError, AlienError};
+use crate::{
+    config::swap_config::{SwapReferralFees, DEFAULT_SLIPPAGE_BPS},
+    network::{jsonrpc::JsonRpcError, AlienError},
+};
 use gem_evm::address::AddressError;
 use primitives::{AssetId, Chain};
 use std::fmt::Debug;
-
-static DEFAULT_SLIPPAGE_BPS: u32 = 300;
 
 #[derive(Debug, thiserror::Error, uniffi::Error)]
 pub enum SwapperError {
@@ -121,8 +121,29 @@ pub struct SwapQuoteRequest {
 }
 
 #[derive(Debug, Clone, uniffi::Record)]
+pub struct GemSlippage {
+    pub bps: u32,
+    pub mode: SlippageMode,
+}
+
+#[derive(Debug, Clone, uniffi::Enum)]
+pub enum SlippageMode {
+    Auto,
+    Exact,
+}
+
+impl From<u32> for GemSlippage {
+    fn from(value: u32) -> Self {
+        GemSlippage {
+            bps: value,
+            mode: SlippageMode::Exact,
+        }
+    }
+}
+
+#[derive(Debug, Clone, uniffi::Record)]
 pub struct GemSwapOptions {
-    pub slippage_bps: u32,
+    pub slippage: GemSlippage,
     pub fee: Option<SwapReferralFees>,
     pub preferred_providers: Vec<SwapProvider>,
 }
@@ -130,7 +151,7 @@ pub struct GemSwapOptions {
 impl Default for GemSwapOptions {
     fn default() -> Self {
         Self {
-            slippage_bps: DEFAULT_SLIPPAGE_BPS,
+            slippage: DEFAULT_SLIPPAGE_BPS.into(),
             fee: None,
             preferred_providers: vec![],
         }
@@ -179,7 +200,7 @@ pub struct SwapQuoteData {
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct SwapProviderData {
     pub provider: SwapProvider,
-    pub suggested_slippage_bps: Option<u32>,
+    pub slippage_bps: u32,
     pub routes: Vec<SwapRoute>,
 }
 
