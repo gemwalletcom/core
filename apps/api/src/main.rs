@@ -144,6 +144,7 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
                 subscription::add_subscriptions,
                 subscription::get_subscriptions,
                 subscription::delete_subscriptions,
+                transaction::get_transactions_by_device_id_old,
                 transaction::get_transactions_by_device_id,
                 transaction::get_transactions_by_hash,
                 parser::get_parser_block,
