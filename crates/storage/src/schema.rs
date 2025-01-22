@@ -32,7 +32,7 @@ diesel::table! {
         id -> Int4,
         #[max_length = 128]
         asset_id -> Varchar,
-        #[max_length = 128]
+        #[max_length = 32]
         link_type -> Varchar,
         #[max_length = 256]
         url -> Varchar,
