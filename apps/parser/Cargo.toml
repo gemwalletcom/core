@@ -10,6 +10,7 @@ futures = { workspace = true }
 chrono = { workspace = true }
 async-trait = { workspace = true }
 rand = { workspace = true }
+num-format = { workspace = true }
 
 primitives = { path = "../../crates/primitives" }
 storage = { path = "../../crates/storage" }

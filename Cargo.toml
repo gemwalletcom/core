@@ -38,7 +38,7 @@ members = [
     "crates/localizer",
     "crates/job_runner",
     "crates/search_index",
-    "crates/nft"
+    "crates/nft",
 ]
 
 default-members = [
@@ -75,7 +75,7 @@ lazy_static = "1.4.0"
 futures-util = "0.3.30"
 uuid = { version = "1.8.0", features = ["v4"] }
 rand = { version = "0.8.5" }
-aws-sdk-s3 = { version = "1.5", features = ["behavior-version-latest"] } 
+aws-sdk-s3 = { version = "1.5", features = ["behavior-version-latest"] }
 
 # db
 diesel = { version = "2.2.3", features = ["postgres", "chrono", "serde_json"] }
@@ -83,7 +83,7 @@ diesel_migrations = { version = "2.2.0" }
 redis = { version = "0.25.0", features = ["tokio-comp", "json"] }
 chrono = { version = "0.4.34", features = ["serde"] }
 clickhouse = { version = "0.11.6" }
-meilisearch-sdk = { version = "0.27.1" } 
+meilisearch-sdk = { version = "0.27.1" }
 
 # crypto
 base64 = { version = "0.22.0" }
@@ -92,6 +92,7 @@ bech32 = { version = "0.11.0" }
 bs58 = { version = "0.5.0", features = ["check"] }
 hex = { version = "0.4.3" }
 num-bigint = { version = "0.4.4", features = ["std", "serde"] }
+num-format = { version = "0.4.4" }
 num-traits = { version = "0.2.18" }
 bigdecimal = "0.4"
 cosmos-sdk-proto = { version = "0.21.1" }
