@@ -139,6 +139,7 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
                 asset::get_assets,
                 asset::get_assets_list,
                 asset::get_assets_search,
+                asset::get_assets_by_device_id,
                 asset::get_assets_ids_by_device_id,
                 subscription::add_subscriptions,
                 subscription::get_subscriptions,
