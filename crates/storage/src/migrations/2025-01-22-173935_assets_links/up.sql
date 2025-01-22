@@ -3,7 +3,7 @@ CREATE TABLE assets_links (
 
     asset_id VARCHAR(128) NOT NULL REFERENCES assets (id) ON DELETE CASCADE,
     
-    link_type VARCHAR(32) NOT NULL REFERENCES link_types (id) ON DELETE CASCADE,
+    link_type VARCHAR(128) NOT NULL REFERENCES link_types (id) ON DELETE CASCADE,
 
     url VARCHAR(256) NOT NULL,
 
