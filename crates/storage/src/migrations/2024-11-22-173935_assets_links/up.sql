@@ -10,7 +10,7 @@ CREATE TABLE assets_links (
     updated_at timestamp NOT NULL default current_timestamp,
     created_at timestamp NOT NULL default current_timestamp,
 
-    UNIQUE(asset_id, name)
+    UNIQUE(asset_id, link_type)
 );
 
 SELECT diesel_manage_updated_at('assets_links');
