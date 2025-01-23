@@ -1,8 +1,11 @@
+use crate::swapper::{GemSlippage, SlippageMode};
+use primitives::Chain;
+
 pub static DEFAULT_SLIPPAGE_BPS: u32 = 100;
 
 #[derive(uniffi::Record, Debug, Clone, PartialEq)]
 pub struct SwapConfig {
-    pub default_slippage_bps: u32,
+    pub default_slippage: GemSlippage,
     pub referral_fee: SwapReferralFees,
 }
 
@@ -33,9 +36,9 @@ impl SwapReferralFees {
     }
 }
 
-pub fn get_swap_config() -> SwapConfig {
+pub fn get_swap_config(chain: Chain) -> SwapConfig {
     SwapConfig {
-        default_slippage_bps: DEFAULT_SLIPPAGE_BPS,
+        default_slippage: get_default_slippage(&chain),
         referral_fee: SwapReferralFees {
             evm: SwapReferralFee {
                 address: "0x0D9DAB1A248f63B0a48965bA8435e4de7497a3dC".into(),
@@ -54,6 +57,19 @@ pub fn get_swap_config() -> SwapConfig {
                 bps: 50,
             },
             thorchain: SwapReferralFee { address: "g1".into(), bps: 50 },
+        },
+    }
+}
+
+pub fn get_default_slippage(chain: &Chain) -> GemSlippage {
+    match chain {
+        Chain::Solana => GemSlippage {
+            bps: DEFAULT_SLIPPAGE_BPS * 3,
+            mode: SlippageMode::Auto,
+        },
+        _ => GemSlippage {
+            bps: DEFAULT_SLIPPAGE_BPS,
+            mode: SlippageMode::Exact,
         },
     }
 }

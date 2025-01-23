@@ -113,9 +113,9 @@ impl GemSwapProvider for Jupiter {
         let slippage_bps = swap_options.slippage.bps;
         let platform_fee_bps = swap_options.fee.unwrap_or_default().solana_jupiter.bps;
 
-        let (auto_slippage, max_auto_slippage_bps) = match swap_options.slippage.mode {
-            SlippageMode::Auto => (true, slippage_bps * 3),
-            SlippageMode::Exact => (false, slippage_bps),
+        let auto_slippage = match swap_options.slippage.mode {
+            SlippageMode::Auto => true,
+            SlippageMode::Exact => false,
         };
 
         let quote_request = QuoteRequest {
@@ -125,10 +125,11 @@ impl GemSwapProvider for Jupiter {
             platform_fee_bps,
             slippage_bps,
             auto_slippage,
-            max_auto_slippage_bps,
+            max_auto_slippage_bps: slippage_bps,
         };
         let client = JupiterClient::new(self.get_endpoint(), provider.clone());
         let swap_quote = client.get_swap_quote(quote_request).await?;
+        let computed_auto_slippage = swap_quote.computed_auto_slippage.unwrap_or(swap_quote.slippage_bps);
 
         let quote = SwapQuote {
             from_value: request.value.clone(),
@@ -141,7 +142,7 @@ impl GemSwapProvider for Jupiter {
                     route_data: serde_json::to_string(&swap_quote).unwrap_or_default(),
                     gas_estimate: None,
                 }],
-                slippage_bps: swap_quote.slippage_bps,
+                slippage_bps: computed_auto_slippage,
             },
             approval: ApprovalType::None,
             request: request.clone(),
@@ -162,11 +163,19 @@ impl GemSwapProvider for Jupiter {
             .fetch_fee_account(&quote.request.mode, &quote.request.options, &input_mint, &output_mint, provider.clone())
             .await?;
 
+        let dynamic_slippage = match quote.request.options.slippage.mode {
+            SlippageMode::Auto => Some(DynamicSlippage {
+                max_bps: quote.request.options.slippage.bps,
+            }),
+            SlippageMode::Exact => None,
+        };
+
         let request = QuoteDataRequest {
             user_public_key: quote.request.wallet_address.clone(),
             fee_account,
             quote_response,
             prioritization_fee_lamports: 500_000,
+            dynamic_slippage,
         };
 
         let client = JupiterClient::new(self.get_endpoint(), provider);

@@ -45,8 +45,9 @@ impl Config {
         get_stake_config(chain)
     }
 
-    fn get_swap_config(&self) -> SwapConfig {
-        get_swap_config()
+    fn get_swap_config(&self, chain: &str) -> SwapConfig {
+        let chain = Chain::from_str(&chain).unwrap();
+        get_swap_config(chain)
     }
 
     fn get_docs_url(&self, item: DocsUrl) -> String {

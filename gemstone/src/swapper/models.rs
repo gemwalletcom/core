@@ -120,13 +120,13 @@ pub struct SwapQuoteRequest {
     pub options: GemSwapOptions,
 }
 
-#[derive(Debug, Clone, uniffi::Record)]
+#[derive(Debug, Clone, PartialEq, uniffi::Record)]
 pub struct GemSlippage {
     pub bps: u32,
     pub mode: SlippageMode,
 }
 
-#[derive(Debug, Clone, uniffi::Enum)]
+#[derive(Debug, Clone, PartialEq, uniffi::Enum)]
 pub enum SlippageMode {
     Auto,
     Exact,
