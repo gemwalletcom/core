@@ -36,9 +36,12 @@ impl SwapReferralFees {
     }
 }
 
-pub fn get_swap_config(chain: Chain) -> SwapConfig {
+pub fn get_swap_config() -> SwapConfig {
     SwapConfig {
-        default_slippage: get_default_slippage(&chain),
+        default_slippage: GemSlippage {
+            bps: DEFAULT_SLIPPAGE_BPS,
+            mode: SlippageMode::Exact,
+        },
         referral_fee: SwapReferralFees {
             evm: SwapReferralFee {
                 address: "0x0D9DAB1A248f63B0a48965bA8435e4de7497a3dC".into(),
@@ -61,6 +64,7 @@ pub fn get_swap_config(chain: Chain) -> SwapConfig {
     }
 }
 
+#[uniffi::export]
 pub fn get_default_slippage(chain: &Chain) -> GemSlippage {
     match chain {
         Chain::Solana => GemSlippage {
