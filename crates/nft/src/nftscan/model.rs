@@ -29,12 +29,10 @@ pub struct NFTCollection {
 pub struct NFTAsset {
     pub token_id: String,
     pub erc_type: String,
-    pub name: String,
+    pub name: Option<String>,
     pub description: Option<String>,
-    pub amount: String,
     pub image_uri: Option<String>,
     pub nftscan_uri: Option<String>,
-    pub attributes: Vec<NFTAttribute>,
     pub rarity_score: Option<f64>,
     pub rarity_rank: Option<u64>,
     pub metadata_json: Option<String>,
