@@ -6,7 +6,7 @@ use std::str::FromStr;
 pub struct BigNumberFormatter {}
 
 impl BigNumberFormatter {
-    pub fn get_formatted_scale(value: &str, decimals: i32, target_scale: i64) -> Option<i64> {
+    fn get_formatted_scale(value: &str, decimals: i32, target_scale: i64) -> Option<i64> {
         let decimal = Self::big_decimal_value(value, decimals as u32)?;
         let decimal_string = decimal.to_string();
 
@@ -58,7 +58,8 @@ impl BigNumberFormatter {
         Some(decimal.to_string())
     }
 
-    pub fn formatted_value(value: &str, decimals: i32, scale: i64, locale: Option<Locale>) -> Option<String> {
+    pub fn localized_value_with_scale(value: &str, decimals: i32, target_scale: i64, locale: Option<Locale>) -> Option<String> {
+        let scale = Self::get_formatted_scale(value, decimals, target_scale)?;
         let decimal = Self::big_decimal_value(value, decimals as u32)?;
         let rounded_decimal = decimal.with_scale_round(scale, RoundingMode::Ceiling);
 
@@ -141,11 +142,17 @@ mod tests {
     #[test]
     fn test_format_with_commas() {
         let locale = Locale::en;
-        assert_eq!(BigNumberFormatter::formatted_value("1123450000", 6, 2, Some(locale)).unwrap(), "1,123.45");
-        assert_eq!(BigNumberFormatter::formatted_value("1123456666", 6, 2, Some(locale)).unwrap(), "1,123.46");
+        assert_eq!(
+            BigNumberFormatter::localized_value_with_scale("1123450000", 6, 2, Some(locale)).unwrap(),
+            "1,123.45"
+        );
+        assert_eq!(
+            BigNumberFormatter::localized_value_with_scale("1123456666", 6, 2, Some(locale)).unwrap(),
+            "1,123.46"
+        );
 
-        assert_eq!(BigNumberFormatter::formatted_value("12000", 8, 5, Some(locale)).unwrap(), "0.00012");
-        assert_eq!(BigNumberFormatter::formatted_value("129999", 8, 4, Some(locale)).unwrap(), "0.0013");
+        assert_eq!(BigNumberFormatter::localized_value_with_scale("12000", 8, 2, Some(locale)).unwrap(), "0.00012");
+        assert_eq!(BigNumberFormatter::localized_value_with_scale("129999", 8, 2, Some(locale)).unwrap(), "0.0013");
     }
 
     #[test]
