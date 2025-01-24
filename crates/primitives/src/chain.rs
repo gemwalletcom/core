@@ -312,7 +312,7 @@ impl Chain {
     }
 
     pub fn is_nft_supported(&self) -> bool {
-        matches!(self, Self::Ethereum)
+        matches!(self, Self::Ethereum | Self::Solana)
     }
 
     // miliseconds
