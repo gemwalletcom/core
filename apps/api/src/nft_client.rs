@@ -32,8 +32,7 @@ impl NFTClient {
 
         let addresses: HashMap<Chain, String> = addresses
             .into_iter()
-            .filter(|x| matches!(x.0, Chain::Ethereum))
-            // .filter(|x| matches!(x.0, Chain::Ethereum | ChainType::Solana))
+            .filter(|x| matches!(x.0, Chain::Ethereum | Chain::Solana))
             //.filter(|x| matches!(x.0, Chain::Solana))
             .collect();
 
