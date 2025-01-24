@@ -170,16 +170,12 @@ impl StargateClient {
         let amount_after_fee = apply_slippage_in_bp(&amount_ld, fee_bps);
 
         let compose_msg = self.build_compose_msg(amount_ld, request)?;
-
-        // We don't need to transfer Native/OFT to the swap destination address
-        // drain functionality of contract will handle that
-
         let extra_options = build_extra_options(&compose_msg);
 
         Ok(SendParam {
             dstEid: destination_endpoint.endpoint_id,
             // TODO: Move composer address to pool struct
-            to: self.address_to_bytes32("0xAc36e68F410433F9A19Fcc1aC34D59c132CaEA34"),
+            to: self.address_to_bytes32(destination_endpoint.composer_address.as_str()),
             amountLD: amount_ld,
             minAmountLD: amount_after_fee,
             extraOptions: extra_options,

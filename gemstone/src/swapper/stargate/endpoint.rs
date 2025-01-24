@@ -26,6 +26,7 @@ pub struct StargateEndpoint {
     pub id: Chain,
     pub pools: Vec<StargatePool>,
     pub endpoint_id: u32,
+    pub composer_address: String,
 }
 
 #[derive(Clone, Debug)]

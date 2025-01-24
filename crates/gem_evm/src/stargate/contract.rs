@@ -129,17 +129,5 @@ sol! {
             MessagingReceipt memory msgReceipt,
             OFTReceipt       memory oftReceipt
         );
-
-         function prepareTakeTaxi(
-            address _stargate,
-            uint32 _dstEid,
-            uint256 _amount,
-            address _composer,
-            bytes memory _composeMsg
-        ) external view returns (
-            uint256 valueToSend,
-            SendParam memory sendParam,
-            MessagingFee memory messagingFee
-        );
     }
 }
