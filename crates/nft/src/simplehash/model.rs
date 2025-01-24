@@ -13,7 +13,7 @@ pub struct Nft {
     pub chain: String,
     pub contract_address: String,
     pub token_id: String,
-    pub name: String,
+    pub name: Option<String>,
     pub description: Option<String>,
     pub previews: Previews,
     //     pub image_url: String,
@@ -45,9 +45,9 @@ pub struct Nft {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Previews {
-    pub image_small_url: String,
-    pub image_medium_url: String,
-    pub image_large_url: String,
+    pub image_small_url: Option<String>,
+    pub image_medium_url: Option<String>,
+    pub image_large_url: Option<String>,
     //pub image_opengraph_url: String,
     //pub blurhash: String,
     //pub predominant_color: String,
@@ -95,7 +95,7 @@ pub struct Contract {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Collection {
     //     pub collection_id: String,
-    pub name: String,
+    pub name: Option<String>,
     pub description: Option<String>,
     pub image_url: String,
     //     pub image_properties: ImageProperties,

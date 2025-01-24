@@ -51,7 +51,7 @@ impl super::model::Nft {
         let id = NFTCollection::id(chain, &self.contract_address);
         Some(primitives::NFTCollection {
             id,
-            name: self.collection.name.clone(),
+            name: self.collection.name.clone().unwrap_or_default(),
             description: self.collection.description.clone(),
             chain,
             contract_address: self.contract_address.clone(),
@@ -71,12 +71,12 @@ impl super::model::Nft {
         Some(primitives::NFTAsset {
             id,
             token_id: self.token_id.clone(),
-            name: self.name.clone(),
+            name: self.name.clone().unwrap_or_default(),
             description: self.description.clone(),
             image: NFTImage {
-                image_url: self.previews.image_medium_url.clone(),
-                preview_image_url: self.previews.image_small_url.clone(),
-                original_source_url: self.previews.image_large_url.clone(),
+                image_url: self.previews.image_medium_url.clone().unwrap_or_default(),
+                preview_image_url: self.previews.image_small_url.clone().unwrap_or_default(),
+                original_source_url: self.previews.image_large_url.clone().unwrap_or_default(),
             },
             collection_id,
             token_type: self.as_type()?,
