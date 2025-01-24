@@ -5,6 +5,7 @@ pub(crate) const MARKET_MAGICEDEN_ID: &str = "magiceden";
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct NftResponse {
+    pub next_cursor: Option<String>,
     pub nfts: Vec<Nft>,
 }
 
@@ -12,7 +13,7 @@ pub struct NftResponse {
 pub struct Nft {
     pub chain: String,
     pub contract_address: String,
-    pub token_id: String,
+    pub token_id: Option<String>,
     pub name: Option<String>,
     pub description: Option<String>,
     pub previews: Previews,
@@ -83,7 +84,7 @@ pub struct ImageProperties {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Contract {
     #[serde(rename = "type")]
-    pub contract_type: String,
+    pub contract_type: Option<String>,
     //     pub name: String,
     //     pub symbol: String,
     //     pub deployed_by: String,
@@ -110,7 +111,7 @@ pub struct Collection {
     //     pub medium_username: Option<String>,
     //     pub telegram_url: Option<String>,
     pub marketplace_pages: Vec<MarketplacePage>,
-    //     pub metaplex_mint: Option<String>,
+    pub metaplex_mint: Option<String>,
     //     pub metaplex_candy_machine: Option<String>,
     //     pub metaplex_first_verified_creator: Option<String>,
     //     pub mpl_core_collection_address: Option<String>,

@@ -1,4 +1,5 @@
 use gem_evm::address::EthereumAddress;
+use simplehash::client::{SIMPLEHASH_EVM_CHAINS, SIMPLEHASH_SOLANA_CHAIN};
 use std::collections::HashMap;
 
 use nftscan::{
@@ -47,8 +48,13 @@ impl NFT {
     }
 
     pub async fn get_nfts(&self, chain: Chain, address: &str) -> Result<Vec<primitives::NFTData>, reqwest::Error> {
+        let pages_limit = 5;
         match chain {
-            Chain::Ethereum => self.simplehash_client.get_assets_evm(address).await.map(|x| x.as_primitives()),
+            Chain::Ethereum => self
+                .simplehash_client
+                .get_assets_all(address, SIMPLEHASH_EVM_CHAINS.to_vec(), pages_limit)
+                .await
+                .map(|x| x.as_primitives()),
             Chain::Ton => self.nftscan_client.get_ton_nfts(address).await.map(|x| {
                 x.data
                     .into_iter()
@@ -60,17 +66,11 @@ impl NFT {
                     })
                     .collect::<Vec<_>>()
             }),
-            Chain::Solana => self.nftscan_client.get_solana_nfts(address).await.map(|x| {
-                x.data
-                    .into_iter()
-                    .filter_map(|result| {
-                        result.as_primitive(address).map(|collection| primitives::NFTData {
-                            collection: collection.clone(),
-                            assets: result.assets.into_iter().filter_map(|x| x.as_primitive(&collection.id)).collect(),
-                        })
-                    })
-                    .collect::<Vec<_>>()
-            }),
+            Chain::Solana => self
+                .simplehash_client
+                .get_assets_all(address, SIMPLEHASH_SOLANA_CHAIN.to_vec(), pages_limit)
+                .await
+                .map(|x| x.as_primitives()),
             _ => Ok(vec![]),
         }
     }

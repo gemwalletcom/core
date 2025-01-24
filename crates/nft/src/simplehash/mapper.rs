@@ -9,7 +9,7 @@ impl super::model::NftResponse {
         let mut result = HashMap::new();
         for nft in &self.nfts {
             if let Some(collection) = nft.as_primitive_collection() {
-                if nft.is_verified_asset() {
+                if nft.asset_has_image() && nft.collection_has_image() {
                     result.entry(collection).or_insert_with(Vec::new).push(nft.as_primitive_asset());
                 }
             }
@@ -29,14 +29,16 @@ impl super::model::Nft {
     pub fn as_chain(&self) -> Option<primitives::Chain> {
         match self.chain.as_str() {
             "ethereum" => Some(primitives::Chain::Ethereum),
+            "solana" => Some(primitives::Chain::Solana),
             _ => None,
         }
     }
 
     pub fn as_type(&self) -> Option<primitives::NFTType> {
-        match self.contract.contract_type.as_str() {
+        match self.contract.contract_type.clone()?.as_str() {
             "ERC721" => Some(primitives::NFTType::ERC721),
             "ERC1155" => Some(primitives::NFTType::ERC1155),
+            "NonFungible" => Some(primitives::NFTType::SPL),
             _ => None,
         }
     }
@@ -48,13 +50,17 @@ impl super::model::Nft {
             .any(|page| [MARKET_OPENSEA_ID, MARKET_MAGICEDEN_ID].contains(&page.marketplace_id.as_str()) && page.verified.unwrap_or_default())
     }
 
-    pub fn is_verified_asset(&self) -> bool {
-        self.previews.image_medium_url.is_some()
+    pub fn collection_has_image(&self) -> bool {
+        !self.as_primitive_collection_image().image_url.is_empty()
+    }
+
+    pub fn asset_has_image(&self) -> bool {
+        !self.as_primitive_asset_image().image_url.is_empty()
     }
 
     pub fn as_primitive_collection(&self) -> Option<primitives::NFTCollection> {
         let chain = self.as_chain()?;
-        let id = NFTCollection::id(chain, &self.contract_address);
+        let id = NFTCollection::id(chain, &self.get_contract_address()?);
         Some(primitives::NFTCollection {
             id,
             name: self.collection.name.clone().unwrap_or_default(),
@@ -84,13 +90,28 @@ impl super::model::Nft {
         }
     }
 
+    pub fn get_token_id(&self) -> Option<String> {
+        match self.as_chain()? {
+            primitives::Chain::Solana => Some(self.contract_address.clone()),
+            _ => self.token_id.clone(),
+        }
+    }
+
+    pub fn get_contract_address(&self) -> Option<String> {
+        match self.as_chain()? {
+            primitives::Chain::Solana => self.collection.metaplex_mint.clone(),
+            _ => Some(self.contract_address.clone()),
+        }
+    }
+
     pub fn as_primitive_asset(&self) -> Option<primitives::NFTAsset> {
         let chain: primitives::Chain = self.as_chain()?;
-        let collection_id = NFTCollection::id(chain, &self.contract_address);
-        let id = NFTAsset::id(collection_id.as_str(), &self.token_id);
+        let collection_id = NFTCollection::id(chain, &self.get_contract_address()?);
+        let token_id = &self.get_token_id()?;
+        let id = NFTAsset::id(collection_id.as_str(), token_id);
         Some(primitives::NFTAsset {
             id,
-            token_id: self.token_id.clone(),
+            token_id: token_id.to_string(),
             name: self.name.clone().unwrap_or_default(),
             description: self.description.clone(),
             image: self.as_primitive_asset_image(),

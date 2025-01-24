@@ -18,11 +18,11 @@ impl NFTClient {
         }
     }
 
-    pub async fn update_collection(&mut self, collection_id: &str) -> Result<bool, Box<dyn Error + Send + Sync>> {
+    pub async fn update_collection(&mut self, _collection_id: &str) -> Result<bool, Box<dyn Error + Send + Sync>> {
         Ok(true)
     }
 
-    pub async fn update_asset(&mut self, asset_id: &str) -> Result<bool, Box<dyn Error + Send + Sync>> {
+    pub async fn update_asset(&mut self, _asset_id: &str) -> Result<bool, Box<dyn Error + Send + Sync>> {
         Ok(true)
     }
 
