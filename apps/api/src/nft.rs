@@ -36,6 +36,28 @@ pub async fn get_nft_assets_by_chain(
     }
 }
 
+// collections
+
+#[get("/nft/collections/update/<collection_id>")]
+pub async fn update_nft_collection(collection_id: &str, client: &State<Mutex<NFTClient>>) -> Result<Json<ResponseResult<bool>>, NotFound<String>> {
+    let result = client.lock().await.update_collection(collection_id).await;
+    match result {
+        Ok(data) => Ok(Json(ResponseResult { data })),
+        Err(err) => Err(NotFound(err.to_string())),
+    }
+}
+
+// assets
+
+#[get("/nft/assets/update/<asset_id>")]
+pub async fn update_nft_asset(asset_id: &str, client: &State<Mutex<NFTClient>>) -> Result<Json<ResponseResult<bool>>, NotFound<String>> {
+    let result = client.lock().await.update_asset(asset_id).await;
+    match result {
+        Ok(data) => Ok(Json(ResponseResult { data })),
+        Err(err) => Err(NotFound(err.to_string())),
+    }
+}
+
 // from db
 
 #[get("/nft/collections/chain/<chain>/<collection_id>")]

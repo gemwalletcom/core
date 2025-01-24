@@ -18,6 +18,14 @@ impl NFTClient {
         }
     }
 
+    pub async fn update_collection(&mut self, collection_id: &str) -> Result<bool, Box<dyn Error + Send + Sync>> {
+        Ok(true)
+    }
+
+    pub async fn update_asset(&mut self, asset_id: &str) -> Result<bool, Box<dyn Error + Send + Sync>> {
+        Ok(true)
+    }
+
     pub async fn get_nft_assets(&mut self, device_id: &str, wallet_index: i32) -> Result<Vec<NFTData>, Box<dyn Error + Send + Sync>> {
         let subscriptions = self.get_subscriptions(device_id, wallet_index)?;
         let addresses: HashMap<Chain, String> = subscriptions.into_iter().map(|x| (x.chain, x.address)).collect();

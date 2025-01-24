@@ -154,6 +154,8 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
                 nft::get_nft_assets,
                 nft::get_nft_assets_by_chain,
                 nft::get_nft_collection_by_chain,
+                nft::update_nft_collection,
+                nft::update_nft_asset,
                 price_alerts::get_price_alerts,
                 price_alerts::add_price_alerts,
                 price_alerts::delete_price_alerts,

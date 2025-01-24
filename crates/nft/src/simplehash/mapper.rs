@@ -9,7 +9,9 @@ impl super::model::NftResponse {
         let mut result = HashMap::new();
         for nft in &self.nfts {
             if let Some(collection) = nft.as_primitive_collection() {
-                result.entry(collection).or_insert_with(Vec::new).push(nft.as_primitive_asset());
+                if nft.is_verified_asset() {
+                    result.entry(collection).or_insert_with(Vec::new).push(nft.as_primitive_asset());
+                }
             }
         }
         result
@@ -39,11 +41,15 @@ impl super::model::Nft {
         }
     }
 
-    pub fn is_verified(&self) -> bool {
+    pub fn is_verified_collection(&self) -> bool {
         self.collection
             .marketplace_pages
             .iter()
             .any(|page| [MARKET_OPENSEA_ID, MARKET_MAGICEDEN_ID].contains(&page.marketplace_id.as_str()) && page.verified.unwrap_or_default())
+    }
+
+    pub fn is_verified_asset(&self) -> bool {
+        self.previews.image_medium_url.is_some()
     }
 
     pub fn as_primitive_collection(&self) -> Option<primitives::NFTCollection> {
@@ -56,7 +62,7 @@ impl super::model::Nft {
             chain,
             contract_address: self.contract_address.clone(),
             image: self.as_primitive_collection_image(),
-            is_verified: self.is_verified(),
+            is_verified: self.is_verified_collection(),
         })
     }
 
@@ -87,16 +93,20 @@ impl super::model::Nft {
             token_id: self.token_id.clone(),
             name: self.name.clone().unwrap_or_default(),
             description: self.description.clone(),
-            image: NFTImage {
-                image_url: self.previews.image_medium_url.clone().unwrap_or_default(),
-                preview_image_url: self.previews.image_small_url.clone().unwrap_or_default(),
-                original_source_url: self.previews.image_large_url.clone().unwrap_or_default(),
-            },
+            image: self.as_primitive_asset_image(),
             collection_id,
             token_type: self.as_type()?,
             chain,
             attributes: self.extra_metadata.attributes.iter().map(|attr| attr.as_primitive()).collect(),
         })
+    }
+
+    pub fn as_primitive_asset_image(&self) -> primitives::NFTImage {
+        NFTImage {
+            image_url: self.previews.image_medium_url.clone().unwrap_or_default(),
+            preview_image_url: self.previews.image_small_url.clone().unwrap_or_default(),
+            original_source_url: self.previews.image_large_url.clone().unwrap_or_default(),
+        }
     }
 }
 
