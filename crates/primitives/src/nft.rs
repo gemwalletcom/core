@@ -113,6 +113,7 @@ pub struct NFTImage {
 pub struct NFTAttribute {
     pub name: String,
     pub value: String,
+    pub percentage: Option<f64>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, EnumIter, AsRefStr, EnumString)]

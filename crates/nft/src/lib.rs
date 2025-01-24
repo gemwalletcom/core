@@ -128,6 +128,7 @@ impl NFTAsset {
                     Some(primitives::NFTAttribute {
                         name: attr["trait_type"].as_str()?.to_string(),
                         value: attr["value"].as_str()?.to_string(),
+                        percentage: None,
                     })
                 })
                 .collect();

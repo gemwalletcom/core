@@ -142,6 +142,7 @@ impl super::model::Attribute {
         primitives::NFTAttribute {
             name: self.trait_type.clone(),
             value: self.value.clone(),
+            percentage: self.percentage,
         }
     }
 }

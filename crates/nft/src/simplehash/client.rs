@@ -48,7 +48,12 @@ impl SimpleHashClient {
     pub async fn get_assets(&self, address: &str, chains: Vec<&str>, cursor: Option<String>) -> Result<NftResponse, reqwest::Error> {
         let url = format!("{}/api/v0/nfts/owners_v2", BASE_URL);
         let chains = chains.join(",");
-        let mut query = vec![("chains", chains), ("wallet_addresses", address.to_string()), ("limit", "50".to_string())];
+        let mut query = vec![
+            ("chains", chains),
+            ("wallet_addresses", address.to_string()),
+            ("limit", "50".to_string()),
+            ("include_attribute_percentages", "1".to_string()),
+        ];
         if let Some(cursor) = cursor {
             query.push(("cursor", cursor));
         }

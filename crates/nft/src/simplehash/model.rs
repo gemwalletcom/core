@@ -224,5 +224,5 @@ pub struct ExtraMetadata {
 pub struct Attribute {
     pub trait_type: String,
     pub value: String,
-    //pub display_type: Option<String>,
+    pub percentage: Option<f64>,
 }

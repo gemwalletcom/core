@@ -49,6 +49,7 @@ impl NFTAttribute {
         primitives::NFTAttribute {
             name: self.attribute_name.clone(),
             value: self.attribute_value.clone(),
+            percentage: None,
         }
     }
 }
