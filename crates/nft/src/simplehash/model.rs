@@ -214,9 +214,10 @@ pub struct MarketplacePage {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ExtraMetadata {
     pub attributes: Vec<Attribute>,
-    //pub image_original_url: String,
+    pub image_original_url: Option<String>,
     //pub animation_original_url: Option<String>,
     //pub metadata_original_url: String,
+    pub token_program: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

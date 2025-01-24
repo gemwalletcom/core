@@ -81,6 +81,12 @@ impl super::model::Nft {
                     preview_image_url: image_url.clone(),
                     original_source_url: image_url.clone(),
                 };
+            } else if let Some(image_original_url) = &self.extra_metadata.image_original_url {
+                return NFTImage {
+                    image_url: image_original_url.clone(),
+                    preview_image_url: image_original_url.clone(),
+                    original_source_url: image_original_url.clone(),
+                };
             }
         }
         NFTImage {
@@ -99,7 +105,7 @@ impl super::model::Nft {
 
     pub fn get_contract_address(&self) -> Option<String> {
         match self.as_chain()? {
-            primitives::Chain::Solana => self.collection.metaplex_mint.clone().or_else(|| self.collection.metaplex_candy_machine.clone()),
+            primitives::Chain::Solana => self.collection.metaplex_mint.clone().or_else(|| self.extra_metadata.token_program.clone()),
             _ => Some(self.contract_address.clone()),
         }
     }
