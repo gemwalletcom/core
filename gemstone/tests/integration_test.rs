@@ -43,6 +43,7 @@ mod tests {
                 (Chain::Optimism, "https://optimism.llamarpc.com".into()),
                 (Chain::Arbitrum, "https://arbitrum.llamarpc.com".into()),
                 (Chain::Solana, "https://solana-rpc.publicnode.com".into()),
+                (Chain::Base, "https://base.llamarpc.com".into()),
             ]))
         }
     }
@@ -185,6 +186,7 @@ mod tests {
     async fn test_stargate_quote() -> Result<(), SwapperError> {
         let swap_provider = Stargate::new();
         let network_provider = Arc::new(NativeProvider::default());
+
         let mut options = GemSwapOptions {
             slippage_bps: 100,
             fee: Some(SwapReferralFees::evm(SwapReferralFee {
@@ -199,8 +201,8 @@ mod tests {
         };
 
         let request = SwapQuoteRequest {
-            from_asset: AssetId::from_chain(Chain::Optimism),
-            to_asset: AssetId::from_chain(Chain::Base),
+            from_asset: AssetId::from_chain(Chain::Base),
+            to_asset: AssetId::from_chain(Chain::Optimism),
             wallet_address: "0x0655c6AbdA5e2a5241aa08486bd50Cf7d475CF24".into(),
             destination_address: "0x0655c6AbdA5e2a5241aa08486bd50Cf7d475CF24".into(),
             value: "20000000000000000".into(), // 0.02 ETH
@@ -216,7 +218,9 @@ mod tests {
         println!("<== quote: {:?}", quote);
         assert!(quote.to_value.parse::<u64>().unwrap() > 0);
 
-        let quote_data = swap_provider.fetch_quote_data(&quote, network_provider.clone(), FetchQuoteData::None).await?;
+        let quote_data = swap_provider
+            .fetch_quote_data(&quote, network_provider.clone(), FetchQuoteData::EstimateGas)
+            .await?;
         println!("<== quote_data: {:?}", quote_data);
 
         Ok(())

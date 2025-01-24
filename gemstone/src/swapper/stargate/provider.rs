@@ -3,14 +3,18 @@ use std::sync::Arc;
 
 use alloy_primitives::{hex, Address, U256};
 use async_trait::async_trait;
-use gem_evm::stargate::contract::{MessagingFee, SendParam};
+use gem_evm::{
+    jsonrpc::TransactionObject,
+    stargate::contract::{MessagingFee, SendParam},
+};
 use primitives::{Chain, CryptoValueConverter};
 use serde::{Deserialize, Serialize};
 
 use crate::{
+    debug_println,
     network::AlienProvider,
     swapper::{
-        approval::check_approval_erc20, slippage::apply_slippage_in_bp, ApprovalType, FetchQuoteData, GemSwapProvider, SwapChainAsset, SwapProvider,
+        approval::check_approval_erc20, eth_rpc, slippage::apply_slippage_in_bp, ApprovalType, FetchQuoteData, GemSwapProvider, SwapChainAsset, SwapProvider,
         SwapProviderData, SwapQuote, SwapQuoteData, SwapQuoteRequest, SwapRoute, SwapperError,
     },
 };
@@ -22,6 +26,7 @@ struct StargateRouteData {
     send_param: SendParam,
     fee: MessagingFee,
     refund_address: String,
+    min_value_out: U256,
 }
 
 #[derive(Debug, Default)]
@@ -75,9 +80,14 @@ impl GemSwapProvider for Stargate {
 
         let oft_quote = self.client.quote_oft(pool, &initial_send_param, provider.clone()).await?;
         let min_amount_ld = apply_slippage_in_bp(&oft_quote.receipt.amountReceivedLD, request.options.slippage_bps);
+
+        // We need to recalculate instructions based on receipt from OFT quote
+        // Without this, the first call, where we send bridge token to recipient, will fail
+        let compose_msg_with_min_amount = self.client.build_compose_msg(min_amount_ld, request)?;
         let final_send_param = SendParam {
             amountLD: initial_send_param.amountLD,
             minAmountLD: min_amount_ld,
+            composeMsg: compose_msg_with_min_amount.into(),
             ..initial_send_param
         };
         let messaging_fee = self.client.quote_send(pool, &final_send_param, provider.clone()).await?;
@@ -86,7 +96,7 @@ impl GemSwapProvider for Stargate {
             check_approval_erc20(
                 request.wallet_address.clone(),
                 request.from_asset.token_id.clone().unwrap(),
-                pool.address.clone(),
+                pool.address.clone(), // TODO: use different address
                 final_send_param.amountLD,
                 provider.clone(),
                 &request.from_asset.chain,
@@ -96,15 +106,23 @@ impl GemSwapProvider for Stargate {
             ApprovalType::None
         };
 
+        let amount = if request.from_asset.is_native() {
+            final_send_param.amountLD
+        } else {
+            U256::ZERO
+        };
+        let min_value_out = messaging_fee.nativeFee + amount;
+
         let route_data = StargateRouteData {
             send_param: final_send_param.clone(),
-            fee: messaging_fee,
+            fee: messaging_fee.clone(),
             refund_address: request.wallet_address.to_string(),
+            min_value_out,
         };
 
         let from_decimals = self.client.get_decimals_by_asset_id(&request.from_asset)?;
         let to_decimals = self.client.get_decimals_by_asset_id(&request.to_asset)?;
-        let mut to_value = CryptoValueConverter::value_from(oft_quote.receipt.amountReceivedLD.to_string(), from_decimals);
+        let mut to_value = CryptoValueConverter::value_from(final_send_param.minAmountLD.to_string(), from_decimals);
         to_value = CryptoValueConverter::value_to(to_value.to_string(), to_decimals);
 
         Ok(SwapQuote {
@@ -134,21 +152,18 @@ impl GemSwapProvider for Stargate {
             &Address::from_str(route_data.refund_address.as_str()).unwrap(),
         );
 
-        let amount = if quote.request.from_asset.is_native() {
-            route_data.send_param.amountLD
-        } else {
-            U256::ZERO
-        };
-        let value = route_data.fee.nativeFee + amount;
-
         let quote_data = SwapQuoteData {
             to: pool.address.clone(),
-            value: value.to_string(),
+            value: route_data.min_value_out.to_string(),
             data: hex::encode_prefixed(calldata.clone()),
         };
 
-        println!("value: {:?}", value);
-        println!("fee: {:?}", quote_data);
+        if matches!(_data, FetchQuoteData::EstimateGas) {
+            let hex_value = format!("{:#x}", route_data.min_value_out);
+            let tx = TransactionObject::new_call_to_value(&quote_data.to, &hex_value, calldata.clone());
+            let gas_limit = eth_rpc::estimate_gas(_provider, &quote.request.from_asset.chain, tx).await?;
+            debug_println!("gas_limit: {:?}", gas_limit);
+        }
 
         Ok(quote_data)
     }

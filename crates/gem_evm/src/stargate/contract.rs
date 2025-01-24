@@ -2,6 +2,23 @@ use alloy_core::sol;
 use serde::{Deserialize, Serialize};
 
 sol! {
+    #[derive(Debug)]
+    struct Call {
+        address target;
+        bytes callData;
+        uint256 value;
+    }
+
+    #[derive(Debug)]
+    struct Instructions {
+        address token;
+        //  Calls that will be attempted.
+        Call[] calls;
+        // Where the tokens go if any part of the call fails.
+        // Leftover tokens are sent here as well if the action succeeds.
+        address fallbackRecipient;
+    }
+
     /// Parameters for the OFT send() operation
     #[derive(Debug, PartialEq, Serialize, Deserialize)]
     struct SendParam {
@@ -111,6 +128,18 @@ sol! {
         ) external payable returns (
             MessagingReceipt memory msgReceipt,
             OFTReceipt       memory oftReceipt
+        );
+
+         function prepareTakeTaxi(
+            address _stargate,
+            uint32 _dstEid,
+            uint256 _amount,
+            address _composer,
+            bytes memory _composeMsg
+        ) external view returns (
+            uint256 valueToSend,
+            SendParam memory sendParam,
+            MessagingFee memory messagingFee
         );
     }
 }

@@ -1,19 +1,51 @@
 use std::{collections::HashMap, str::FromStr, sync::Arc};
 
-use alloy_core::sol_types::SolCall;
-use alloy_primitives::{hex, Address, Bytes, FixedBytes, U160, U256};
+use alloy_core::sol_types::{SolCall, SolValue};
+use alloy_primitives::{hex, Address, Bytes, FixedBytes, Uint, U160, U256};
 use gem_evm::{
+    erc20::IERC20,
     jsonrpc::{BlockParameter, EthereumRpc, TransactionObject},
-    stargate::contract::{IStargate, MessagingFee, OFTReceipt, SendParam},
+    stargate::contract::{Call, IStargate, Instructions, MessagingFee, OFTReceipt, SendParam},
 };
 use primitives::{AssetId, Chain};
 
 use crate::{
     network::{jsonrpc_call, AlienProvider, JsonRpcResult},
-    swapper::{SwapQuoteRequest, SwapperError},
+    swapper::{slippage::apply_slippage_in_bp, SwapQuoteRequest, SwapperError},
 };
 
 use super::endpoint::{StargateEndpoint, StargatePool};
+
+fn build_extra_options(compose_msg: &[u8]) -> Bytes {
+    if compose_msg.is_empty() {
+        return Bytes::new();
+    }
+
+    let mut options = vec![0x00, 0x03]; // Type 3 header
+
+    // Add LZ Compose Option (index 0, 200k gas, 0 value)
+    let worker_id = 0x01u8;
+    let option_type = 0x03u8;
+
+    // Compose option data: index (u16) + gas (u128) + value (u128)
+    let index = 0u16.to_be_bytes();
+    let gas = 200_000u128.to_be_bytes();
+    let value = 0u128.to_be_bytes();
+
+    let mut option_data = Vec::with_capacity(34);
+    option_data.extend_from_slice(&index);
+    option_data.extend_from_slice(&gas);
+    //option_data.extend_from_slice(&value);
+
+    // Worker ID (1 byte) + option length (2 bytes) + option type (1 byte)
+    options.push(worker_id);
+    let option_length = (option_data.len() + 1) as u16; // +1 for option_type
+    options.extend_from_slice(&option_length.to_be_bytes());
+    options.push(option_type);
+    options.extend_from_slice(&option_data);
+
+    Bytes::from(options)
+}
 
 #[derive(Debug)]
 pub struct StargateOFTQuote {
@@ -66,18 +98,92 @@ impl StargateClient {
         self.get_pool_by_asset_id(asset).map(|p| p.asset.decimals)
     }
 
+    pub fn build_compose_msg(&self, amount: U256, request: &SwapQuoteRequest) -> Result<Vec<u8>, SwapperError> {
+        let fees = request.options.fee.as_ref().map(|f| f.evm_bridge.clone());
+        let fee_bps = fees.clone().map(|f| f.bps).unwrap_or(0);
+        let amount_after_fee = apply_slippage_in_bp(&amount, fee_bps);
+
+        let destination_address = Address::from_str(request.destination_address.as_str())?;
+        let referrer_address = fees.clone().map(|f| Address::from_str(f.address.clone().as_str()).unwrap()).unwrap();
+
+        let fee_amount = amount - amount_after_fee;
+        let oft_token = if request.to_asset.is_native() {
+            Address::ZERO
+        } else {
+            Address::from_str(request.to_asset.token_id.as_ref().unwrap().as_ref()).unwrap()
+        };
+
+        let instruction_calls = if request.from_asset.is_native() {
+            vec![
+                Call {
+                    target: destination_address,
+                    callData: Bytes::new(),
+                    value: amount_after_fee,
+                },
+                Call {
+                    target: referrer_address,
+                    callData: Bytes::new(),
+                    value: fee_amount,
+                },
+            ]
+        } else {
+            vec![
+                Call {
+                    target: oft_token,
+                    callData: IERC20::transferCall {
+                        to: destination_address,
+                        value: amount_after_fee,
+                    }
+                    .abi_encode()
+                    .into(),
+                    value: U256::ZERO,
+                },
+                Call {
+                    target: oft_token,
+                    callData: IERC20::transferCall {
+                        to: referrer_address,
+                        value: fee_amount,
+                    }
+                    .abi_encode()
+                    .into(),
+                    value: U256::ZERO,
+                },
+            ]
+        };
+
+        let instructions = Instructions {
+            token: oft_token,
+            calls: instruction_calls.clone(),
+            fallbackRecipient: destination_address,
+        };
+
+        let compose_msg = instructions.abi_encode();
+
+        Ok(compose_msg)
+    }
+
     pub fn build_send_param(&self, request: &SwapQuoteRequest) -> Result<SendParam, SwapperError> {
         let amount_ld = U256::from_str(request.value.as_str()).unwrap();
-
         let destination_endpoint = self.get_endpoint_by_chain(&request.to_asset.chain)?;
+        let fees = request.options.fee.as_ref().map(|f| f.evm_bridge.clone());
+        let fee_bps = fees.clone().map(|f| f.bps).unwrap_or(0);
+        let amount_after_fee = apply_slippage_in_bp(&amount_ld, fee_bps);
+
+        let compose_msg = self.build_compose_msg(amount_ld, request)?;
+
+        // We don't need to transfer Native/OFT to the swap destination address
+        // drain functionality of contract will handle that
+
+        let extra_options = build_extra_options(&compose_msg);
 
         Ok(SendParam {
             dstEid: destination_endpoint.endpoint_id,
-            to: self.address_to_bytes32(request.destination_address.as_str()),
+            // TODO: Move composer address to pool struct
+            to: self.address_to_bytes32("0xAc36e68F410433F9A19Fcc1aC34D59c132CaEA34"),
             amountLD: amount_ld,
-            minAmountLD: amount_ld,
-            extraOptions: Bytes::new(),
-            composeMsg: Bytes::new(),
+            minAmountLD: amount_after_fee,
+            extraOptions: extra_options,
+            composeMsg: compose_msg.into(),
             oftCmd: Bytes::new(),
         })
     }
@@ -115,6 +221,8 @@ impl StargateClient {
         let returns = IStargate::quoteSendCall::abi_decode_returns(&decoded, true).map_err(|e| SwapperError::ABIError {
             msg: format!("Unable to abi decode quote send response: {:?}", e.to_string()),
         })?;
+
+        println!("quote_send_response: {:?}", returns);
 
         Ok(returns.fee)
     }
