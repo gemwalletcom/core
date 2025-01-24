@@ -32,7 +32,7 @@ impl super::model::Nft {
     }
 
     pub fn as_type(&self) -> Option<primitives::NFTType> {
-        match self.contract.r#type.as_str() {
+        match self.contract.contract_type.as_str() {
             "ERC721" => Some(primitives::NFTType::ERC721),
             "ERC1155" => Some(primitives::NFTType::ERC1155),
             _ => None,
@@ -61,19 +61,20 @@ impl super::model::Nft {
     }
 
     pub fn as_primitive_collection_image(&self) -> primitives::NFTImage {
-        if self.collection.image_properties.mime_type == Some("image/png".to_string()) {
-            let image_url = self.collection.image_url.clone();
-            NFTImage {
-                image_url,
-                preview_image_url: self.collection.image_url.clone(),
-                original_source_url: self.collection.image_url.clone(),
+        if let Some(image_properties) = &self.collection.image_properties {
+            if image_properties.mime_type == Some("image/png".to_string()) {
+                let image_url = self.collection.image_url.clone().unwrap_or_default();
+                return NFTImage {
+                    image_url: image_url.clone(),
+                    preview_image_url: image_url.clone(),
+                    original_source_url: image_url.clone(),
+                };
             }
-        } else {
-            NFTImage {
-                image_url: "".to_string(),
-                preview_image_url: "".to_string(),
-                original_source_url: "".to_string(),
-            }
+        }
+        NFTImage {
+            image_url: "".to_string(),
+            preview_image_url: "".to_string(),
+            original_source_url: "".to_string(),
         }
     }
 

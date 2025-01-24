@@ -82,7 +82,8 @@ pub struct ImageProperties {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Contract {
-    pub r#type: String,
+    #[serde(rename = "type")]
+    pub contract_type: String,
     //     pub name: String,
     //     pub symbol: String,
     //     pub deployed_by: String,
@@ -97,8 +98,8 @@ pub struct Collection {
     //     pub collection_id: String,
     pub name: Option<String>,
     pub description: Option<String>,
-    pub image_url: String,
-    pub image_properties: ImageProperties,
+    pub image_url: Option<String>,
+    pub image_properties: Option<ImageProperties>,
     //     pub banner_image_url: String,
     //     pub category: String,
     //     pub is_nsfw: bool,

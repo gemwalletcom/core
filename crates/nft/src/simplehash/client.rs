@@ -21,7 +21,7 @@ impl SimpleHashClient {
     pub async fn get_assets_evm(&self, address: &str) -> Result<NftResponse, reqwest::Error> {
         let url = format!("{}/api/v0/nfts/owners_v2", BASE_URL);
         let chains = EVM_CHAINS.join(",");
-        let query = [("chains", chains), ("wallet_addresses", address.to_string())];
+        let query = [("chains", chains), ("wallet_addresses", address.to_string()), ("limit", "50".to_string())];
         let response = self.client.get(&url).query(&query).send().await?;
         response.json::<NftResponse>().await
     }
