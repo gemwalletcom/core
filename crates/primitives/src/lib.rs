@@ -77,6 +77,8 @@ pub mod transaction_metadata_types;
 pub use self::transaction_metadata_types::TransactionSwapMetadata;
 pub mod big_number_formatter;
 pub use self::big_number_formatter::BigNumberFormatter;
+pub mod big_number_localizer;
+pub use self::big_number_localizer::BigNumberLocalizer;
 pub mod number_formatter;
 pub use self::number_formatter::NumberFormatter;
 pub mod wallet_connect;
