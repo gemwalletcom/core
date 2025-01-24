@@ -36,7 +36,7 @@ jobs:
         uses: mozilla-actions/sccache-action@v0.0.6
 
       - name: Install just
-        run: brew install just
+        run: which just || cargo install just
 
       - name: Setup Xcode
         run: |
