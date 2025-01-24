@@ -55,13 +55,26 @@ impl super::model::Nft {
             description: self.collection.description.clone(),
             chain,
             contract_address: self.contract_address.clone(),
-            image: NFTImage {
-                image_url: self.collection.image_url.clone(),
-                preview_image_url: self.collection.image_url.clone(),
-                original_source_url: self.collection.image_url.clone(),
-            },
+            image: self.as_primitive_collection_image(),
             is_verified: self.is_verified(),
         })
+    }
+
+    pub fn as_primitive_collection_image(&self) -> primitives::NFTImage {
+        if self.collection.image_properties.mime_type == Some("image/png".to_string()) {
+            let image_url = self.collection.image_url.clone();
+            NFTImage {
+                image_url,
+                preview_image_url: self.collection.image_url.clone(),
+                original_source_url: self.collection.image_url.clone(),
+            }
+        } else {
+            NFTImage {
+                image_url: "".to_string(),
+                preview_image_url: "".to_string(),
+                original_source_url: "".to_string(),
+            }
+        }
     }
 
     pub fn as_primitive_asset(&self) -> Option<primitives::NFTAsset> {

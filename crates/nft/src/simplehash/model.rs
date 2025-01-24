@@ -17,7 +17,7 @@ pub struct Nft {
     pub description: Option<String>,
     pub previews: Previews,
     //     pub image_url: String,
-    //     pub image_properties: ImageProperties,
+    //pub image_properties: ImageProperties,
     //     pub video_url: Option<String>,
     //     pub video_properties: Option<MediaProperties>,
     //     pub audio_url: Option<String>,
@@ -53,14 +53,14 @@ pub struct Previews {
     //pub predominant_color: String,
 }
 
-// #[derive(Debug, Serialize, Deserialize)]
-// pub struct ImageProperties {
-//     pub width: u32,
-//     pub height: u32,
-//     pub size: u32,
-//     pub mime_type: String,
-//     pub exif_orientation: Option<String>,
-// }
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ImageProperties {
+    // pub width: u32,
+    // pub height: u32,
+    // pub size: u32,
+    pub mime_type: Option<String>,
+    // pub exif_orientation: Option<String>,
+}
 
 // #[derive(Debug, Serialize, Deserialize)]
 // pub struct MediaProperties {
@@ -98,7 +98,7 @@ pub struct Collection {
     pub name: Option<String>,
     pub description: Option<String>,
     pub image_url: String,
-    //     pub image_properties: ImageProperties,
+    pub image_properties: ImageProperties,
     //     pub banner_image_url: String,
     //     pub category: String,
     //     pub is_nsfw: bool,
