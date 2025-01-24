@@ -1,4 +1,7 @@
-use std::str::FromStr;
+use std::{
+    hash::{Hash, Hasher},
+    str::FromStr,
+};
 
 use serde::{Deserialize, Serialize};
 use strum::{AsRefStr, EnumIter, EnumString, IntoEnumIterator};
@@ -13,8 +16,7 @@ pub struct NFTData {
     pub collection: NFTCollection,
     pub assets: Vec<NFTAsset>,
 }
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
 #[serde(rename_all = "camelCase")]
 #[typeshare(swift = "Sendable, Hashable, Equatable, Identifiable")]
 pub struct NFTCollection {
@@ -25,6 +27,12 @@ pub struct NFTCollection {
     pub contract_address: String,
     pub image: NFTImage,
     pub is_verified: bool,
+}
+
+impl Hash for NFTCollection {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.id.hash(state);
+    }
 }
 
 impl NFTCollection {
@@ -90,7 +98,7 @@ impl NFTAsset {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
 #[serde(rename_all = "camelCase")]
 #[typeshare(swift = "Sendable, Hashable, Equatable")]
 pub struct NFTImage {

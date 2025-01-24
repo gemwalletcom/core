@@ -10,15 +10,19 @@ use primitives::{Chain, NFTImage};
 pub mod nftscan;
 pub mod opensea;
 pub use opensea::OpenSeaClient;
+pub mod simplehash;
+pub use simplehash::SimpleHashClient;
 
 pub struct NFT {
-    client: NFTScanClient,
+    nftscan_client: NFTScanClient,
+    simplehash_client: SimpleHashClient,
 }
 
 impl NFT {
-    pub fn new(nftscan_key: &str) -> Self {
+    pub fn new(nftscan_key: &str, simplehash_key: &str) -> Self {
         Self {
-            client: NFTScanClient::new(nftscan_key),
+            nftscan_client: NFTScanClient::new(nftscan_key),
+            simplehash_client: SimpleHashClient::new(simplehash_key.to_string()),
         }
     }
 
@@ -44,20 +48,8 @@ impl NFT {
 
     pub async fn get_nfts(&self, chain: Chain, address: &str) -> Result<Vec<primitives::NFTData>, reqwest::Error> {
         match chain {
-            Chain::Ethereum => self.client.get_all_evm_nfts(address).await.map(|x| x.data).map(|result| {
-                result
-                    .into_iter()
-                    .flat_map(|result| {
-                        result.collection_assets.into_iter().filter_map(move |x| {
-                            x.as_primitive(&result.chain).map(|collection| primitives::NFTData {
-                                collection: collection.clone(),
-                                assets: x.assets.into_iter().filter_map(|x| x.as_primitive(&result.chain, &collection.id)).collect(),
-                            })
-                        })
-                    })
-                    .collect::<Vec<_>>()
-            }),
-            Chain::Ton => self.client.get_ton_nfts(address).await.map(|x| {
+            Chain::Ethereum => self.simplehash_client.get_assets_evm(address).await.map(|x| x.as_primitives()),
+            Chain::Ton => self.nftscan_client.get_ton_nfts(address).await.map(|x| {
                 x.data
                     .into_iter()
                     .filter_map(|result| {
@@ -68,7 +60,7 @@ impl NFT {
                     })
                     .collect::<Vec<_>>()
             }),
-            Chain::Solana => self.client.get_solana_nfts(address).await.map(|x| {
+            Chain::Solana => self.nftscan_client.get_solana_nfts(address).await.map(|x| {
                 x.data
                     .into_iter()
                     .filter_map(|result| {

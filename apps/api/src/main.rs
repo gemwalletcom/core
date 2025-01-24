@@ -88,7 +88,7 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
     let swap_client = SwapClient::new(postgres_url).await;
     let providers = FiatProviderFactory::new_providers(settings_clone.clone());
     let fiat_client = FiatProvider::new(postgres_url, providers).await;
-    let nft_client = NFTClient::new(postgres_url, &settings.nft.nftscan.key.secret).await;
+    let nft_client = NFTClient::new(postgres_url, &settings.nft.nftscan.key.secret, &settings.nft.simplehash.key.secret).await;
 
     rocket::build()
         .attach(AdHoc::on_ignite("Tokio Runtime Configuration", |rocket| async {

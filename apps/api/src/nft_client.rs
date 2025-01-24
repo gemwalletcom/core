@@ -11,10 +11,10 @@ pub struct NFTClient {
 }
 
 impl NFTClient {
-    pub async fn new(database_url: &str, nftscan_key: &str) -> Self {
+    pub async fn new(database_url: &str, nftscan_key: &str, simplehash_key: &str) -> Self {
         Self {
             database: DatabaseClient::new(database_url),
-            nft: NFT::new(nftscan_key),
+            nft: NFT::new(nftscan_key, simplehash_key),
         }
     }
 

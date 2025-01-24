@@ -201,6 +201,9 @@ nft:
   nftscan:
     key:
       secret: ""
+  simplehash:
+    key:
+      secret: ""
   opensea:
     key:
       secret: ""

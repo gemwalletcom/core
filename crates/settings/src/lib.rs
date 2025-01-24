@@ -315,6 +315,7 @@ impl Settings {
 #[allow(unused)]
 pub struct NFT {
     pub nftscan: NFTScan,
+    pub simplehash: SimpleHash,
     pub opensea: OpenSea,
     pub bucket: BucketConfiguration,
 }
@@ -322,6 +323,12 @@ pub struct NFT {
 #[derive(Debug, Deserialize, Clone)]
 #[allow(unused)]
 pub struct NFTScan {
+    pub key: KeySecret,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[allow(unused)]
+pub struct SimpleHash {
     pub key: KeySecret,
 }
 
