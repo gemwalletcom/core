@@ -53,6 +53,7 @@ impl SimpleHashClient {
             ("wallet_addresses", address.to_string()),
             ("limit", "50".to_string()),
             ("include_attribute_percentages", "1".to_string()),
+            ("spam_score__lte", "50".to_string()),
         ];
         if let Some(cursor) = cursor {
             query.push(("cursor", cursor));
