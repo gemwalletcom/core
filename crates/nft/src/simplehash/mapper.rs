@@ -38,7 +38,7 @@ impl super::model::Nft {
         match self.contract.contract_type.clone()?.as_str() {
             "ERC721" => Some(primitives::NFTType::ERC721),
             "ERC1155" => Some(primitives::NFTType::ERC1155),
-            "NonFungible" => Some(primitives::NFTType::SPL),
+            "NonFungible" | "ProgrammableNonFungible" => Some(primitives::NFTType::SPL),
             _ => None,
         }
     }
@@ -99,7 +99,7 @@ impl super::model::Nft {
 
     pub fn get_contract_address(&self) -> Option<String> {
         match self.as_chain()? {
-            primitives::Chain::Solana => self.collection.metaplex_mint.clone(),
+            primitives::Chain::Solana => self.collection.metaplex_mint.clone().or_else(|| self.collection.metaplex_candy_machine.clone()),
             _ => Some(self.contract_address.clone()),
         }
     }
