@@ -61,6 +61,7 @@ impl NFT {
                     .filter_map(|result| {
                         result.as_primitive().map(|collection| primitives::NFTData {
                             collection: collection.clone(),
+                            links: vec![],
                             assets: result.assets.into_iter().filter_map(|x| x.as_primitive(&collection.id)).collect(),
                         })
                     })

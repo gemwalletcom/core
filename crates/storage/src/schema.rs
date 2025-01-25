@@ -213,14 +213,8 @@ diesel::table! {
         contrtact_address -> Varchar,
         #[max_length = 512]
         image_url -> Nullable<Varchar>,
-        #[max_length = 128]
-        project_url -> Nullable<Varchar>,
-        #[max_length = 128]
-        opensea_url -> Nullable<Varchar>,
-        #[max_length = 128]
-        project_x_username -> Nullable<Varchar>,
         is_verified -> Bool,
-        is_enable -> Bool,
+        is_enabled -> Bool,
         updated_at -> Timestamp,
         created_at -> Timestamp,
     }

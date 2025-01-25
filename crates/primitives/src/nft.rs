@@ -7,15 +7,17 @@ use serde::{Deserialize, Serialize};
 use strum::{AsRefStr, EnumIter, EnumString, IntoEnumIterator};
 use typeshare::typeshare;
 
-use crate::Chain;
+use crate::{AssetLink, Chain};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 #[typeshare(swift = "Sendable, Hashable, Equatable")]
 pub struct NFTData {
     pub collection: NFTCollection,
+    pub links: Vec<AssetLink>,
     pub assets: Vec<NFTAsset>,
 }
+
 #[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
 #[serde(rename_all = "camelCase")]
 #[typeshare(swift = "Sendable, Hashable, Equatable, Identifiable")]

@@ -66,6 +66,7 @@ impl NFTClient {
             .clone()
             .into_iter()
             .map(|x| storage::models::NftCollection::from_primitive(x.collection.clone()))
+            .filter(|x| x.is_enabled)
             .collect();
 
         self.database.add_nft_collections(collections)?;
@@ -85,10 +86,19 @@ impl NFTClient {
             .map(|x| {
                 let collection = self.database.get_nft_collection(&x.collection.id).unwrap().as_primitive();
                 let asset_ids = x.assets.into_iter().map(|x| x.id).collect();
+                let links: Vec<primitives::AssetLink> = self
+                    .database
+                    .get_nft_collection_links(&x.collection.id)
+                    .unwrap()
+                    .into_iter()
+                    .map(|x| x.as_primitive())
+                    .collect();
+
                 let assets = self.database.get_nft_assets(asset_ids).unwrap().into_iter().map(|x| x.as_primitive()).collect();
 
                 NFTData {
                     collection: collection.clone(),
+                    links,
                     assets,
                 }
             })

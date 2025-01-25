@@ -19,13 +19,13 @@ impl OpenSeaClient {
         }
     }
 
-    pub async fn get_collection(&self, contract_address: &str) -> Result<Collection, Box<dyn Error + Send + Sync>> {
-        let contract = self.get_contract(contract_address).await?;
+    pub async fn get_collection(&self, chain: &str, contract_address: &str) -> Result<Collection, Box<dyn Error + Send + Sync>> {
+        let contract = self.get_contract(chain, contract_address).await?;
         self.get_collection_by_slug(&contract.collection).await
     }
 
-    pub async fn get_contract(&self, contract_address: &str) -> Result<Contract, Box<dyn Error + Send + Sync>> {
-        let url = format!("{}/api/v2/chain/ethereum/contract/{}", Self::BASE_URL, contract_address);
+    pub async fn get_contract(&self, chain: &str, contract_address: &str) -> Result<Contract, Box<dyn Error + Send + Sync>> {
+        let url = format!("{}/api/v2/chain/{}/contract/{}", Self::BASE_URL, chain, contract_address);
         Ok(self.client.get(&url).send().await?.json::<Contract>().await?)
     }
 

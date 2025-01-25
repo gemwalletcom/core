@@ -46,6 +46,14 @@ impl DatabaseClient {
             .first(&mut self.connection)
     }
 
+    pub fn get_nft_collection_links(&mut self, _collection_id: &str) -> Result<Vec<NftLink>, diesel::result::Error> {
+        use crate::schema::nft_links::dsl::*;
+        nft_links
+            .filter(collection_id.eq(_collection_id))
+            .select(NftLink::as_select())
+            .load(&mut self.connection)
+    }
+
     pub fn add_nft_collections(&mut self, values: Vec<NftCollection>) -> Result<usize, diesel::result::Error> {
         use crate::schema::nft_collections::dsl::*;
         diesel::insert_into(nft_collections)

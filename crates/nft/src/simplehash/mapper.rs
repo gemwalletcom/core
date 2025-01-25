@@ -19,7 +19,11 @@ impl super::model::NftResponse {
             .map(|(collection, assets)| {
                 let collection = collection.clone();
                 let assets = assets.into_iter().flatten().collect();
-                NFTData { collection, assets }
+                NFTData {
+                    collection,
+                    links: vec![], //TODO add links
+                    assets,
+                }
             })
             .collect::<Vec<_>>()
     }

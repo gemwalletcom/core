@@ -17,11 +17,8 @@ pub struct NftCollection {
     pub owner: Option<String>,
     pub contrtact_address: String,
     pub image_url: Option<String>,
-    pub project_url: Option<String>,
-    pub opensea_url: Option<String>,
-    pub project_x_username: Option<String>,
     pub is_verified: bool,
-    pub is_enable: bool,
+    pub is_enabled: bool,
 }
 
 #[derive(Debug, Queryable, Selectable, Insertable, AsChangeset, Serialize, Deserialize, Clone)]
@@ -61,10 +58,7 @@ impl NftCollection {
             url: None,
             owner: None,
             contrtact_address: collection.contract_address.clone(),
-            project_url: None,
-            opensea_url: None,
-            project_x_username: None,
-            is_enable: true,
+            is_enabled: true,
         }
     }
 }
