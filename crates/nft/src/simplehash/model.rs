@@ -128,10 +128,10 @@ pub struct Collection {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct MarketplacePage {
     pub marketplace_id: String,
-    //pub marketplace_name: String,
+    pub marketplace_name: Option<String>,
     //pub marketplace_collection_id: String,
     //pub nft_url: String,
-    //pub collection_url: String,
+    pub collection_url: Option<String>,
     pub verified: Option<bool>,
 }
 

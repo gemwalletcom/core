@@ -14,7 +14,6 @@ use crate::{AssetLink, Chain};
 #[typeshare(swift = "Sendable, Hashable, Equatable")]
 pub struct NFTData {
     pub collection: NFTCollection,
-    pub links: Vec<AssetLink>,
     pub assets: Vec<NFTAsset>,
 }
 
@@ -29,6 +28,7 @@ pub struct NFTCollection {
     pub contract_address: String,
     pub image: NFTImage,
     pub is_verified: bool,
+    pub links: Vec<AssetLink>,
 }
 
 impl Hash for NFTCollection {

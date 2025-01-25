@@ -42,6 +42,7 @@ impl NFTTonResult {
                 original_source_url: image_url.clone(),
             },
             is_verified: false,
+            links: vec![],
         })
     }
 }

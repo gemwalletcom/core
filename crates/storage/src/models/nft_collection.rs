@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
 use diesel::prelude::*;
-use primitives::{Chain, NFTImage};
+use primitives::{AssetLink, Chain, NFTImage};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Queryable, Selectable, Insertable, AsChangeset, Serialize, Deserialize, Clone)]
@@ -30,7 +30,7 @@ pub struct UpdateNftCollectionImageUrl {
 }
 
 impl NftCollection {
-    pub fn as_primitive(&self) -> primitives::NFTCollection {
+    pub fn as_primitive(&self, links: Vec<AssetLink>) -> primitives::NFTCollection {
         primitives::NFTCollection {
             id: self.id.clone(),
             name: self.name.clone(),
@@ -43,6 +43,7 @@ impl NftCollection {
                 original_source_url: self.image_url.clone().unwrap_or_default(),
             },
             is_verified: self.is_verified,
+            links: links,
         }
     }
 

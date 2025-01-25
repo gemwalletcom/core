@@ -1,6 +1,6 @@
 use crate::{models::*, DatabaseClient};
 
-use diesel::{prelude::*, upsert::excluded};
+use diesel::prelude::*;
 use nft_asset::UpdateNftAssetImageUrl;
 use nft_collection::UpdateNftCollectionImageUrl;
 use nft_link::NftLink;
@@ -90,8 +90,7 @@ impl DatabaseClient {
         diesel::insert_into(nft_links)
             .values(values)
             .on_conflict((collection_id, link_type))
-            .do_update()
-            .set((url.eq(excluded(url)),))
+            .do_nothing()
             .execute(&mut self.connection)
     }
 }

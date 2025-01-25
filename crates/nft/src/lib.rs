@@ -61,7 +61,6 @@ impl NFT {
                     .filter_map(|result| {
                         result.as_primitive().map(|collection| primitives::NFTData {
                             collection: collection.clone(),
-                            links: vec![],
                             assets: result.assets.into_iter().filter_map(|x| x.as_primitive(&collection.id)).collect(),
                         })
                     })
@@ -114,6 +113,7 @@ impl NFTCollection {
                 original_source_url: self.logo_url.clone().unwrap_or_default(),
             },
             is_verified: self.opensea_verified || self.verified,
+            links: vec![],
         })
     }
 }

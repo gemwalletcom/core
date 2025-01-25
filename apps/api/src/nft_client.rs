@@ -55,11 +55,10 @@ impl NFTClient {
     }
 
     pub async fn get_nft_collection(&mut self, id: &str) -> Result<NFTData, Box<dyn Error + Send + Sync>> {
-        let collection = self.database.get_nft_collection(id)?.as_primitive();
+        let collection = self.database.get_nft_collection(id)?;
         let links = self.database.get_nft_collection_links(id)?.into_iter().map(|x| x.as_primitive()).collect();
         Ok(NFTData {
-            collection,
-            links,
+            collection: collection.as_primitive(links),
             assets: vec![],
         })
     }
@@ -74,11 +73,23 @@ impl NFTClient {
         let collections = nfts
             .clone()
             .into_iter()
-            .map(|x| storage::models::NftCollection::from_primitive(x.collection.clone()))
+            .map(|x| storage::models::NftCollection::from_primitive(x.collection))
             .filter(|x| x.is_enabled)
+            .collect();
+        let links: Vec<storage::models::NftLink> = nfts
+            .clone()
+            .into_iter()
+            .flat_map(|x| {
+                x.clone()
+                    .collection
+                    .links
+                    .into_iter()
+                    .map(move |link| storage::models::NftLink::from_primitive(&x.clone().collection.id, link))
+            })
             .collect();
 
         self.database.add_nft_collections(collections)?;
+        self.database.add_nft_links(links)?;
 
         let assets = nfts
             .clone()
@@ -93,7 +104,7 @@ impl NFTClient {
         let results = nfts
             .into_iter()
             .map(|x| {
-                let collection = self.database.get_nft_collection(&x.collection.id).unwrap().as_primitive();
+                let collection = self.database.get_nft_collection(&x.collection.id).unwrap();
                 let asset_ids = x.assets.into_iter().map(|x| x.id).collect();
                 let links: Vec<primitives::AssetLink> = self
                     .database
@@ -106,8 +117,7 @@ impl NFTClient {
                 let assets = self.database.get_nft_assets(asset_ids).unwrap().into_iter().map(|x| x.as_primitive()).collect();
 
                 NFTData {
-                    collection: collection.clone(),
-                    links,
+                    collection: collection.as_primitive(links).clone(),
                     assets,
                 }
             })

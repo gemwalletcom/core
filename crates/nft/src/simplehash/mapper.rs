@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use primitives::{NFTAsset, NFTCollection, NFTData, NFTImage};
+use primitives::{LinkType, NFTAsset, NFTCollection, NFTData, NFTImage};
 
 use super::model::{MARKET_MAGICEDEN_ID, MARKET_OPENSEA_ID};
 
@@ -19,11 +19,7 @@ impl super::model::NftResponse {
             .map(|(collection, assets)| {
                 let collection = collection.clone();
                 let assets = assets.into_iter().flatten().collect();
-                NFTData {
-                    collection,
-                    links: vec![], //TODO add links
-                    assets,
-                }
+                NFTData { collection, assets }
             })
             .collect::<Vec<_>>()
     }
@@ -65,6 +61,8 @@ impl super::model::Nft {
     pub fn as_primitive_collection(&self) -> Option<primitives::NFTCollection> {
         let chain = self.as_chain()?;
         let id = NFTCollection::id(chain, &self.get_contract_address()?);
+        let links = self.as_links();
+
         Some(primitives::NFTCollection {
             id,
             name: self.collection.name.clone().unwrap_or_default(),
@@ -73,7 +71,12 @@ impl super::model::Nft {
             contract_address: self.contract_address.clone(),
             image: self.as_primitive_collection_image(),
             is_verified: self.is_verified_collection(),
+            links,
         })
+    }
+
+    pub fn as_links(&self) -> Vec<primitives::AssetLink> {
+        self.collection.marketplace_pages.iter().flat_map(|x| x.as_primitive()).collect()
     }
 
     pub fn as_primitive_collection_image(&self) -> primitives::NFTImage {
@@ -148,5 +151,21 @@ impl super::model::Attribute {
             value: self.value.clone(),
             percentage: self.percentage,
         }
+    }
+}
+
+impl super::model::MarketplacePage {
+    pub fn as_primitive(&self) -> Option<primitives::AssetLink> {
+        let link_type = match self.marketplace_id.as_str() {
+            MARKET_OPENSEA_ID => LinkType::OpenSea,
+            MARKET_MAGICEDEN_ID => LinkType::MagicEden,
+            _ => return None,
+        };
+        let url = self.collection_url.clone()?;
+
+        Some(primitives::AssetLink {
+            name: link_type.as_ref().to_string(),
+            url,
+        })
     }
 }
