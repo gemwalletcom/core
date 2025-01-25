@@ -1,7 +1,7 @@
 use std::error::Error;
 
 use nft::NFT;
-use primitives::{Chain, NFTData};
+use primitives::{Chain, NFTAsset, NFTData};
 use std::collections::HashMap;
 use storage::DatabaseClient;
 
@@ -55,13 +55,17 @@ impl NFTClient {
     }
 
     pub async fn get_nft_collection(&mut self, id: &str) -> Result<NFTData, Box<dyn Error + Send + Sync>> {
-        let collection = self.database.get_nft_collection(&id)?.as_primitive();
-        let links = self.database.get_nft_collection_links(&id)?.into_iter().map(|x| x.as_primitive()).collect();
+        let collection = self.database.get_nft_collection(id)?.as_primitive();
+        let links = self.database.get_nft_collection_links(id)?.into_iter().map(|x| x.as_primitive()).collect();
         Ok(NFTData {
             collection,
             links,
             assets: vec![],
         })
+    }
+
+    pub async fn get_nft_asset(&mut self, id: &str) -> Result<NFTAsset, Box<dyn Error + Send + Sync>> {
+        Ok(self.database.get_nft_asset(id)?.as_primitive())
     }
 
     // computed nfts from db

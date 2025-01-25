@@ -12,9 +12,15 @@ impl DatabaseClient {
         use crate::schema::nft_assets::dsl::*;
         nft_assets.select(NftAsset::as_select()).load(&mut self.connection)
     }
+
     pub fn get_nft_assets(&mut self, asset_ids: Vec<String>) -> Result<Vec<NftAsset>, diesel::result::Error> {
         use crate::schema::nft_assets::dsl::*;
         nft_assets.filter(id.eq_any(asset_ids)).select(NftAsset::as_select()).load(&mut self.connection)
+    }
+
+    pub fn get_nft_asset(&mut self, asset_id: &str) -> Result<NftAsset, diesel::result::Error> {
+        use crate::schema::nft_assets::dsl::*;
+        nft_assets.filter(id.eq(asset_id)).select(NftAsset::as_select()).first(&mut self.connection)
     }
 
     pub fn add_nft_assets(&mut self, values: Vec<NftAsset>) -> Result<usize, diesel::result::Error> {
