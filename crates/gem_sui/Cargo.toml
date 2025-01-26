@@ -14,3 +14,4 @@ hex = { workspace = true }
 thiserror = { workspace = true }
 base64 = { workspace = true }
 anyhow = { workspace = true }
+serde = { workspace = true }

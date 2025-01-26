@@ -12,6 +12,7 @@ mod weth_address;
 
 pub mod across;
 pub mod asset;
+pub mod cetus;
 pub mod jupiter;
 pub mod models;
 pub mod orca;
