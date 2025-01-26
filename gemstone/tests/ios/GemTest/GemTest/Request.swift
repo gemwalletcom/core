@@ -13,7 +13,8 @@ let SWAP_OPTIONS = GemSwapOptions(
         evmBridge: .init(address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7", bps: 25),
         solana: .init(address: "97q7TdebuvmxXCM1JzgqzpB1i7Wgvk4ACUWanhiL6Dk1", bps: 25),
         solanaJupiter: .init(address: "97q7TdebuvmxXCM1JzgqzpB1i7Wgvk4ACUWanhiL6Dk1", bps: 25),
-        thorchain: .init(address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7", bps: 25)
+        thorchain: .init(address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7", bps: 25),
+        sui: .init(address: "0xa9bd0493f9bd1f792a4aedc1f99d54535a75a46c38fd56a8f2c6b7c8d75817a1", bps: 50)
     ),
     preferredProviders: []
 )
