@@ -34,7 +34,7 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
         }
     });
 
-    let update_prices_assets = run_job("Update prices assets", Duration::from_secs(86400), {
+    let update_prices_assets = run_job("Update prices assets", Duration::from_secs(1800), {
         let settings = Arc::new(settings.clone());
         move || {
             let settings = Arc::clone(&settings);
