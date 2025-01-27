@@ -72,52 +72,56 @@ pub async fn check_approval_erc20(
     Ok(ApprovalType::None)
 }
 
+pub async fn check_approval_permit2(
+    permit2_contract: String,
+    owner: String,
+    token: String,
+    spender: String,
+    amount: U256,
+    provider: Arc<dyn AlienProvider>,
+    chain: &Chain,
+) -> Result<ApprovalType, SwapperError> {
+    // Check permit2 allowance, spender is universal router
+    let permit2_data = IAllowanceTransfer::allowanceCall {
+        _0: owner.as_str().parse().map_err(SwapperError::from)?,
+        _1: token.as_str().parse().map_err(SwapperError::from)?,
+        _2: spender.as_str().parse().map_err(SwapperError::from)?,
+    }
+    .abi_encode();
+    let permit2_call = EthereumRpc::Call(TransactionObject::new_call(&permit2_contract, permit2_data), BlockParameter::Latest);
+
+    let response = jsonrpc_call(&permit2_call, provider.clone(), chain).await.map_err(SwapperError::from)?;
+    let result: String = response.take().map_err(SwapperError::from)?;
+    let decoded = HexDecode(result).unwrap();
+    let allowance_return = IAllowanceTransfer::allowanceCall::abi_decode_returns(&decoded, false).map_err(|_| SwapperError::ABIError {
+        msg: "Invalid permit2 allowance response".into(),
+    })?;
+
+    let timestamp = SystemTime::now().duration_since(UNIX_EPOCH).expect("Time went backwards").as_secs();
+    let expiration: u64 = allowance_return._1.try_into().map_err(|_| SwapperError::ABIError {
+        msg: "failed to convert expiration to u64".into(),
+    })?;
+
+    if U256::from(allowance_return._0) < amount || expiration < timestamp {
+        return Ok(ApprovalType::Permit2(Permit2ApprovalData {
+            token,
+            spender,
+            value: amount.to_string(),
+            permit2_contract,
+            permit2_nonce: allowance_return._2.try_into().map_err(|_| SwapperError::ABIError {
+                msg: "failed to convert nonce to u64".into(),
+            })?,
+        }));
+    }
+
+    Ok(ApprovalType::None)
+}
+
 pub async fn check_approval(check_type: CheckApprovalType, provider: Arc<dyn AlienProvider>, chain: &Chain) -> Result<ApprovalType, SwapperError> {
     match check_type {
         CheckApprovalType::ERC20(owner, token, spender, amount) => check_approval_erc20(owner, token, spender, amount, provider, chain).await,
         CheckApprovalType::Permit2(permit2_contract, owner, token, spender, amount) => {
-            // Check token allowance, spender is permit2
-            let self_approval = check_approval_erc20(owner.clone(), token.clone(), permit2_contract.clone(), amount, provider.clone(), chain).await?;
-
-            // Return self_approval if it's not None
-            if matches!(self_approval, ApprovalType::Approve(_)) {
-                return Ok(self_approval);
-            }
-
-            // Check permit2 allowance, spender is universal router
-            let permit2_data = IAllowanceTransfer::allowanceCall {
-                _0: owner.as_str().parse().map_err(SwapperError::from)?,
-                _1: token.as_str().parse().map_err(SwapperError::from)?,
-                _2: spender.as_str().parse().map_err(SwapperError::from)?,
-            }
-            .abi_encode();
-            let permit2_call = EthereumRpc::Call(TransactionObject::new_call(&permit2_contract, permit2_data), BlockParameter::Latest);
-
-            let response = jsonrpc_call(&permit2_call, provider.clone(), chain).await.map_err(SwapperError::from)?;
-            let result: String = response.take().map_err(SwapperError::from)?;
-            let decoded = HexDecode(result).unwrap();
-            let allowance_return = IAllowanceTransfer::allowanceCall::abi_decode_returns(&decoded, false).map_err(|_| SwapperError::ABIError {
-                msg: "Invalid permit2 allowance response".into(),
-            })?;
-
-            let timestamp = SystemTime::now().duration_since(UNIX_EPOCH).expect("Time went backwards").as_secs();
-            let expiration: u64 = allowance_return._1.try_into().map_err(|_| SwapperError::ABIError {
-                msg: "failed to convert expiration to u64".into(),
-            })?;
-
-            if U256::from(allowance_return._0) < amount || expiration < timestamp {
-                return Ok(ApprovalType::Permit2(Permit2ApprovalData {
-                    token,
-                    spender,
-                    value: amount.to_string(),
-                    permit2_contract,
-                    permit2_nonce: allowance_return._2.try_into().map_err(|_| SwapperError::ABIError {
-                        msg: "failed to convert nonce to u64".into(),
-                    })?,
-                }));
-            }
-
-            Ok(ApprovalType::None)
+            check_approval_permit2(permit2_contract, owner, token, spender, amount, provider, chain).await
         }
     }
 }
@@ -137,23 +141,52 @@ mod tests {
         let spender = "0xCb1355ff08Ab38bBCE60111F1bb2B784bE25D7e8".to_string(); // Router
         let permit2_contract = "0x000000000022D473030F116dDEE9F6B43aC78BA3".to_string();
         let amount = U256::from(1000000000000000000u64);
+        let chain: Chain = Chain::Optimism;
 
+        let token_clone = token.clone();
         let mock = AlienProviderMock {
-            response: r#"{"id":1,"jsonrpc":"2.0","result":"0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"}"#.to_string(),
+            response: MockFn(Box::new(move |target| {
+                let body = target.body.unwrap();
+                let json = serde_json::from_slice::<serde_json::Value>(&body).unwrap();
+                let params = json["params"].as_array().unwrap();
+                let param = params[0].as_object().unwrap();
+                let to = param["to"].as_str().unwrap();
+                if to == token_clone {
+                    return r#"{"id":1,"jsonrpc":"2.0","result":"0x0000000000000000000000000000000000000000000000000000000000000000"}"#.to_string();
+                }
+                r#"{"id":1,"jsonrpc":"2.0","result":"0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"}"#.to_string()
+            })),
             timeout: Duration::from_millis(10),
         };
         let provider = Arc::new(mock);
 
-        let check_type = CheckApprovalType::Permit2(permit2_contract.clone(), owner, token.clone(), spender, amount);
-        let result = check_approval(check_type, provider, &Chain::Optimism).await.unwrap();
+        let erc20_check = CheckApprovalType::ERC20(owner.clone(), token.clone(), permit2_contract.clone(), amount);
+        let permit2_check = CheckApprovalType::Permit2(permit2_contract.clone(), owner.clone(), token.clone(), spender.clone(), amount);
+
+        let approvals = futures::future::join_all(vec![
+            check_approval(erc20_check, provider.clone(), &chain),
+            check_approval(permit2_check, provider.clone(), &chain),
+        ])
+        .await;
+
+        let result: Vec<ApprovalType> = approvals.into_iter().flatten().collect();
 
         assert_eq!(
             result,
-            ApprovalType::Approve(ApprovalData {
-                token,
-                spender: permit2_contract,
-                value: amount.to_string()
-            })
+            vec![
+                ApprovalType::Approve(ApprovalData {
+                    token: token.clone(),
+                    spender: permit2_contract.clone(),
+                    value: amount.to_string()
+                }),
+                ApprovalType::Permit2(Permit2ApprovalData {
+                    token: token.clone(),
+                    spender: spender.clone(),
+                    value: amount.to_string(),
+                    permit2_contract,
+                    permit2_nonce: 0,
+                }),
+            ]
         );
         Ok(())
     }

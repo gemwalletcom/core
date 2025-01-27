@@ -144,7 +144,6 @@ impl GemSwapProvider for Jupiter {
                 }],
                 slippage_bps: computed_auto_slippage,
             },
-            approval: ApprovalType::None,
             request: request.clone(),
         };
         Ok(quote)
@@ -185,6 +184,7 @@ impl GemSwapProvider for Jupiter {
             to: PROGRAM_ADDRESS.to_string(),
             value: "".to_string(),
             data: quote_data.swap_transaction,
+            approvals: vec![],
         };
         Ok(data)
     }

@@ -101,7 +101,6 @@ impl GemSwapProvider for Orca {
                 }],
                 slippage_bps: request.options.slippage.bps,
             },
-            approval: ApprovalType::None,
             request: request.clone(),
         })
     }

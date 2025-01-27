@@ -38,7 +38,10 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
-use super::weth_address;
+use super::{
+    permit2_data::{Permit2Data, Permit2Detail, PermitSingle},
+    weth_address,
+};
 
 static DEFAULT_DEADLINE: u64 = 3600;
 
@@ -351,20 +354,25 @@ impl UniswapV3 {
         amount: U256,
         chain: &Chain,
         provider: Arc<dyn AlienProvider>,
-    ) -> Result<ApprovalType, SwapperError> {
+    ) -> Result<Vec<ApprovalType>, SwapperError> {
         let deployment = self.provider.get_deployment_by_chain(chain).ok_or(SwapperError::NotSupportedChain)?;
-        check_approval(
-            CheckApprovalType::Permit2(
-                deployment.permit2.to_string(),
-                wallet_address.to_string(),
-                token.to_string(),
-                deployment.universal_router.to_string(),
-                amount,
-            ),
-            provider,
-            chain,
-        )
-        .await
+        // Check token allowance, spender is permit2
+        let erc20_type = CheckApprovalType::ERC20(wallet_address.to_string(), token.to_string(), deployment.permit2.to_string(), amount);
+        let permit2_type = CheckApprovalType::Permit2(
+            deployment.permit2.to_string(),
+            wallet_address.to_string(),
+            token.to_string(),
+            deployment.universal_router.to_string(),
+            amount,
+        );
+
+        let approvals = futures::future::join_all(vec![
+            check_approval(erc20_type, provider.clone(), chain),
+            check_approval(permit2_type, provider.clone(), chain),
+        ])
+        .await;
+
+        approvals.into_iter().collect()
     }
 }
 
@@ -383,7 +391,6 @@ impl GemSwapProvider for UniswapV3 {
         if !self.support_chain(&request.from_asset.chain) {
             return Err(SwapperError::NotSupportedChain);
         }
-        let wallet_address: Address = request.wallet_address.as_str().parse().map_err(SwapperError::from)?;
 
         // Check deployment and weth contract
         let deployment = self
@@ -461,14 +468,6 @@ impl GemSwapProvider for UniswapV3 {
             return Err(SwapperError::NoQuoteAvailable);
         }
 
-        let mut approval_type = ApprovalType::None;
-        if !request.from_asset.is_native() {
-            // Check allowances
-            approval_type = self
-                .check_approval(wallet_address, &token_in.to_checksum(), amount_in, &request.from_asset.chain, provider)
-                .await?;
-        }
-
         // construct routes
         let fee_tier: u32 = fee_tiers[fee_tier_idx % fee_tiers.len()].clone() as u32;
         let asset_id_in = AssetId::from(request.from_asset.chain, Some(token_in.to_checksum()));
@@ -492,12 +491,11 @@ impl GemSwapProvider for UniswapV3 {
                 routes: routes.clone(),
                 slippage_bps: request.options.slippage.bps,
             },
-            approval: approval_type,
             request: request.clone(),
         })
     }
 
-    async fn fetch_quote_data(&self, quote: &SwapQuote, _provider: Arc<dyn AlienProvider>, data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError> {
+    async fn fetch_quote_data(&self, quote: &SwapQuote, provider: Arc<dyn AlienProvider>, data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError> {
         let request = &quote.request;
         let (_, token_in, token_out, amount_in) = Self::parse_request(request)?;
         let deployment = self
@@ -505,11 +503,45 @@ impl GemSwapProvider for UniswapV3 {
             .get_deployment_by_chain(&request.from_asset.chain)
             .ok_or(SwapperError::NotSupportedChain)?;
         let to_amount = U256::from_str(&quote.to_value).map_err(|_| SwapperError::InvalidAmount)?;
+        let wallet_address: Address = request.wallet_address.as_str().parse().map_err(SwapperError::from)?;
 
-        let permit = match data {
+        let mut permit = match data {
             FetchQuoteData::Permit2(data) => Some(data.into()),
             _ => None,
         };
+
+        let approvals = {
+            if quote.request.from_asset.is_native() {
+                vec![]
+            } else {
+                // Check allowances
+                self.check_approval(wallet_address, &token_in.to_checksum(), amount_in, &request.from_asset.chain, provider)
+                    .await?
+            }
+        };
+
+        for approval in &approvals {
+            if let ApprovalType::Permit2(permit2) = approval {
+                let expiration = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() + 3600;
+                permit = Some(
+                    Permit2Data {
+                        permit_single: PermitSingle {
+                            details: Permit2Detail {
+                                token: permit2.token.clone(),
+                                amount: permit2.value.clone(),
+                                expiration,
+                                nonce: permit2.permit2_nonce,
+                            },
+                            spender: permit2.spender.clone(),
+                            sig_deadline: 0,
+                        },
+                        signature: vec![0u8; 65],
+                    }
+                    .into(),
+                );
+            }
+        }
+
         let evm_chain = EVMChain::from_chain(quote.request.from_asset.chain).ok_or(SwapperError::NotSupportedChain)?;
         let base_pair = get_base_pair(&evm_chain);
         let fee_preference = Self::get_fee_token(&request.mode, base_pair.as_ref(), &token_in, &token_out);
@@ -530,10 +562,12 @@ impl GemSwapProvider for UniswapV3 {
 
         let wrap_input_eth = request.from_asset.is_native();
         let value = if wrap_input_eth { request.value.clone() } else { String::from("0") };
+
         Ok(SwapQuoteData {
             to: deployment.universal_router.into(),
             value,
             data: HexEncode(encoded),
+            approvals,
         })
     }
 
