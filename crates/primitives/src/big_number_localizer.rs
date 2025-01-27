@@ -8,6 +8,7 @@ pub struct BigNumberLocalizer {}
 pub enum Format {
     Short,
     Medium,
+    Full,
 }
 
 impl Format {
@@ -15,6 +16,7 @@ impl Format {
         match self {
             Format::Short => 2,
             Format::Medium => 4,
+            Format::Full => 32,
         }
     }
 }
@@ -26,10 +28,12 @@ impl BigNumberLocalizer {
 
     fn get_formatted_scale(value: &str, decimals: i32, target_scale: i64) -> Option<i64> {
         let decimal = BigNumberFormatter::big_decimal_value(value, decimals as u32)?;
-        let decimal_string = decimal.to_string();
+        let decimal_string = decimal.to_plain_string();
+        println!("decimal_string: {}", decimal_string);
 
         let parts: Vec<&str> = decimal_string.split('.').collect();
         if parts.len() < 2 {
+            println!("parts.len({:?}) < 2", parts.len());
             // No fractional part => just use target_scale
             return Some(target_scale);
         }
@@ -55,11 +59,14 @@ impl BigNumberLocalizer {
         }
 
         let computed_scale = leading_zero_count as i64 + target_scale;
+        println!("computed_scale: {}", computed_scale);
+        println!("leading_zero_count: {}", leading_zero_count);
+        println!("frac_str.len(): {}", frac_str.len());
         if computed_scale > frac_str.len() as i64 {
             // If our desired scale surpasses the entire fractional length,
             // we fallback to just 'leading_zero_count'.
             // This ensures we don't try to keep beyond the available digits.
-            Some(leading_zero_count as i64)
+            Some(frac_str.len() as i64)
         } else {
             Some(computed_scale)
         }
@@ -68,9 +75,12 @@ impl BigNumberLocalizer {
     fn localized_value_with_scale(value: &str, decimals: i32, target_scale: i64, locale: Locale) -> Option<String> {
         let scale = Self::get_formatted_scale(value, decimals, target_scale)?;
         let decimal = BigNumberFormatter::big_decimal_value(value, decimals as u32)?;
-        let rounded_decimal = decimal.with_scale_round(scale, RoundingMode::Ceiling);
+        println!("decimal: {}", decimal);
+        println!("scale: {}", scale);
+        let rounded_decimal = decimal.with_scale(scale);
 
-        let s = rounded_decimal.to_string();
+        let s = rounded_decimal.to_plain_string();
+        println!("rounded_decimal: {}", s);
         let parts: Vec<&str> = s.split('.').collect();
         let integer_part = parts[0];
         let fractional_part = if parts.len() > 1 { format!(".{}", parts[1]) } else { String::new() };
@@ -104,14 +114,19 @@ mod tests {
         let locale = Locale::en;
         assert_eq!(localizer.get_value("1123450000", 0, Format::Short, locale).unwrap(), "1,123,450,000.00");
         assert_eq!(localizer.get_value("1123450000", 6, Format::Short, locale).unwrap(), "1,123.45");
-        assert_eq!(localizer.get_value("1123450000", 6, Format::Medium, locale).unwrap(), "1,124"); // Invalid?
-        assert_eq!(localizer.get_value("1123456666", 6, Format::Short, locale).unwrap(), "1,123.46");
+        assert_eq!(localizer.get_value("1123450000", 6, Format::Medium, locale).unwrap(), "1,123.45"); // invalid?
+        assert_eq!(localizer.get_value("1123455555", 6, Format::Medium, locale).unwrap(), "1,123.4555"); // Invalid?
+        assert_eq!(localizer.get_value("1123456666", 6, Format::Short, locale).unwrap(), "1,123.45");
+        assert_eq!(localizer.get_value("1123456666", 6, Format::Medium, locale).unwrap(), "1,123.4566");
 
         assert_eq!(localizer.get_value("12000", 8, Format::Short, locale).unwrap(), "0.00012");
         assert_eq!(localizer.get_value("0", 8, Format::Short, locale).unwrap(), "0.00");
-        assert_eq!(localizer.get_value("1", 8, Format::Short, locale).unwrap(), "0.01"); // Invalid?
-        assert_eq!(localizer.get_value("1", 8, Format::Medium, locale).unwrap(), "0.0001"); // Invalid?
-        assert_eq!(localizer.get_value("129999", 8, Format::Short, locale).unwrap(), "0.0013");
+        assert_eq!(localizer.get_value("1", 8, Format::Short, locale).unwrap(), "0.00000001");
+        // Invalid?
+        assert_eq!(localizer.get_value("1", 8, Format::Medium, locale).unwrap(), "0.00000001"); // Invalid?
+        assert_eq!(localizer.get_value("129999", 8, Format::Short, locale).unwrap(), "0.0012");
+        assert_eq!(localizer.get_value("129999", 8, Format::Medium, locale).unwrap(), "0.001299");
+        assert_eq!(localizer.get_value("129999", 8, Format::Full, locale).unwrap(), "0.00129999");
         // Invalid
     }
 

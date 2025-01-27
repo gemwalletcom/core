@@ -114,8 +114,7 @@ impl Pusher {
             return Ok(0);
         }
         let localizer = LanguageLocalizer::new_with_language(&device.locale);
-        let locale = Locale::from_name(device.locale.as_str()).unwrap_or(Locale::en);
-        let message = self.message(localizer, transaction.clone(), subscription.clone(), locale)?;
+        let message = self.message(localizer, transaction.clone(), subscription.clone(), Locale::en)?;
 
         let notification_transaction = PushNotificationTransaction {
             wallet_index: subscription.wallet_index,
