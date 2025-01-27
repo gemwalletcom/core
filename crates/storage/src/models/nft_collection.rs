@@ -43,7 +43,7 @@ impl NftCollection {
                 original_source_url: self.image_url.clone().unwrap_or_default(),
             },
             is_verified: self.is_verified,
-            links: links,
+            links,
         }
     }
 
