@@ -17,6 +17,7 @@ pub fn get_chain_for_coingecko_platform_id(id: &str) -> Option<Chain> {
     match id {
         "ethereum" => Some(Chain::Ethereum),
         "avalanche" => Some(Chain::AvalancheC),
+        "abstract" => Some(Chain::Abstract),
         "optimistic-ethereum" => Some(Chain::Optimism),
         "base" => Some(Chain::Base),
         "arbitrum-one" => Some(Chain::Arbitrum),
@@ -49,9 +50,16 @@ pub fn get_coingecko_market_id_for_chain(chain: Chain) -> &'static str {
         Chain::Bitcoin => "bitcoin",
         Chain::BitcoinCash => "bitcoin-cash",
         Chain::Litecoin => "litecoin",
-        Chain::Ethereum | Chain::Base | Chain::Arbitrum | Chain::Optimism | Chain::ZkSync | Chain::Blast | Chain::Linea | Chain::Manta | Chain::World => {
-            "ethereum"
-        }
+        Chain::Ethereum
+        | Chain::Base
+        | Chain::Arbitrum
+        | Chain::Optimism
+        | Chain::ZkSync
+        | Chain::Blast
+        | Chain::Linea
+        | Chain::Manta
+        | Chain::World
+        | Chain::Abstract => "ethereum",
         Chain::SmartChain | Chain::OpBNB => "binancecoin",
         Chain::Solana => "solana",
         Chain::Polygon => "matic-network",

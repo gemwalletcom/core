@@ -151,6 +151,8 @@ chains:
     url: https://polkadot-public-sidecar.parity-chains.parity.io
   cardano:
     url: ""
+  abstract:
+    url: https://api.mainnet.abs.xyz
   
 swap:
   jupiter:
