@@ -120,7 +120,7 @@ mod tests {
         assert_eq!(localizer.get_value("129999", 8, Format::Medium, locale).unwrap(), "0.001299");
         assert_eq!(localizer.get_value("129999", 8, Format::Full, locale).unwrap(), "0.00129999");
 
-        assert_eq!(localizer.get_value("1", 18, Format::Short, locale).unwrap(), "0.00000001");
+        assert_eq!(localizer.get_value("1", 18, Format::Short, locale).unwrap(), "0.000000000000000001");
     }
 
     #[test]
