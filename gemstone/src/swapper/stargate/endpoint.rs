@@ -59,6 +59,7 @@ lazy_static! {
                     address: "0x933597a323Eb81cAe705C5bC29985172fd5A3973".to_string(),
                 },
             ],
+            composer_address: "0x2805169ba8ea84ed28efa6bccbc593e44bb4bde4".to_string(),
             endpoint_id: ENDPOINT_ID_ETHEREUM,
         },
         base: StargateEndpoint {
@@ -73,6 +74,7 @@ lazy_static! {
                     address: "0x27a16dc786820B16E5c9028b75B99F6f604b5d26".to_string(),
                 },
             ],
+            composer_address: "0x2805169ba8ea84ed28efa6bccbc593e44bb4bde4".to_string(),
             endpoint_id: ENDPOINT_ID_BASE,
         },
         optimism: StargateEndpoint {
@@ -91,6 +93,7 @@ lazy_static! {
                     address: "0x19cFCE47eD54a88614648DC3f19A5980097007dD".to_string(),
                 },
             ],
+            composer_address: "0x2805169ba8ea84ed28efa6bccbc593e44bb4bde4".to_string(),
             endpoint_id: ENDPOINT_ID_OPTIMISM,
         },
         arbitrum: StargateEndpoint {
@@ -109,6 +112,7 @@ lazy_static! {
                     address: "0xcE8CcA271Ebc0533920C83d39F417ED6A0abB7D0".to_string(),
                 },
             ],
+            composer_address: "0x2805169ba8ea84ed28efa6bccbc593e44bb4bde4".to_string(),
             endpoint_id: ENDPOINT_ID_ARBITRUM,
         },
         polygon: StargateEndpoint {
@@ -123,6 +127,7 @@ lazy_static! {
                     address: "0xd47b03ee6d86Cf251ee7860FB2ACf9f91B9fD4d7".to_string(),
                 },
             ],
+            composer_address: "0x2805169ba8ea84ed28efa6bccbc593e44bb4bde4".to_string(),
             endpoint_id: ENDPOINT_ID_POLYGON,
         },
         avalanche: StargateEndpoint {
@@ -137,6 +142,7 @@ lazy_static! {
                     address: "0x12dC9256Acc9895B076f6638D628382881e62CeE".to_string(),
                 },
             ],
+            composer_address: "0x2805169ba8ea84ed28efa6bccbc593e44bb4bde4".to_string(),
             endpoint_id: ENDPOINT_ID_AVALANCHE,
         },
         linea: StargateEndpoint {
@@ -145,6 +151,7 @@ lazy_static! {
                 asset: Asset::from_chain(Chain::Linea),
                 address: "0x81F6138153d473E8c5EcebD3DC8Cd4903506B075".to_string(),
             }],
+            composer_address: "0x2805169ba8ea84ed28efa6bccbc593e44bb4bde4".to_string(),
             endpoint_id: ENDPOINT_ID_LINEA,
         },
         smartchain: StargateEndpoint {
@@ -159,6 +166,7 @@ lazy_static! {
                     address: "0x138EB30f73BC423c6455C53df6D89CB01d9eBc63".to_string(),
                 },
             ],
+            composer_address: "0x2805169ba8ea84ed28efa6bccbc593e44bb4bde4".to_string(),
             endpoint_id: ENDPOINT_ID_SMARTCHAIN,
         },
     };
