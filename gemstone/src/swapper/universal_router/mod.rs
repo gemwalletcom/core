@@ -43,7 +43,8 @@ use super::{
     weth_address,
 };
 
-static DEFAULT_DEADLINE: u64 = 3600;
+static DEFAULT_DEADLINE: u64 = 3600; // 1 hour
+static DEFAULT_EXPIRATION: u64 = 60 * 60 * 24 * 30; // 30 days
 
 pub struct FeePreference {
     pub fee_token: EthereumAddress,
@@ -372,7 +373,11 @@ impl UniswapV3 {
         ])
         .await;
 
-        approvals.into_iter().collect()
+        Ok(approvals
+            .into_iter()
+            .filter_map(Result::ok) // Handle Results
+            .filter(|approval| !matches!(approval, ApprovalType::None))
+            .collect())
     }
 }
 
@@ -520,9 +525,11 @@ impl GemSwapProvider for UniswapV3 {
             }
         };
 
+        let now = SystemTime::now().duration_since(UNIX_EPOCH).expect("Time went backwards").as_secs();
+        let sig_deadline = now + DEFAULT_DEADLINE;
+        let expiration = now + DEFAULT_EXPIRATION;
         for approval in &approvals {
             if let ApprovalType::Permit2(permit2) = approval {
-                let expiration = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() + 3600;
                 permit = Some(
                     Permit2Data {
                         permit_single: PermitSingle {
@@ -533,7 +540,7 @@ impl GemSwapProvider for UniswapV3 {
                                 nonce: permit2.permit2_nonce,
                             },
                             spender: permit2.spender.clone(),
-                            sig_deadline: 0,
+                            sig_deadline,
                         },
                         signature: vec![0u8; 65],
                     }
@@ -557,8 +564,7 @@ impl GemSwapProvider for UniswapV3 {
             permit,
             fee_preference.is_input_token,
         )?;
-        let deadline = SystemTime::now().duration_since(UNIX_EPOCH).expect("Time went backwards").as_secs() + DEFAULT_DEADLINE;
-        let encoded = encode_commands(&commands, U256::from(deadline));
+        let encoded = encode_commands(&commands, U256::from(sig_deadline));
 
         let wrap_input_eth = request.from_asset.is_native();
         let value = if wrap_input_eth { request.value.clone() } else { String::from("0") };

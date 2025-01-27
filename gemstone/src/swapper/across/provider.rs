@@ -467,7 +467,7 @@ impl GemSwapProvider for Across {
                     deployment.spoke_pool.into(),
                     v3_relay_data.inputAmount,
                     provider.clone(),
-                    &from_chain,
+                    from_chain,
                 )
                 .await?
             }
