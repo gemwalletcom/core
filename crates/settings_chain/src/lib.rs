@@ -48,7 +48,8 @@ impl ProviderFactory {
             | Chain::Mantle
             | Chain::Celo
             | Chain::World
-            | Chain::Sonic => Box::new(EthereumClient::new(chain, url)),
+            | Chain::Sonic
+            | Chain::Abstract => Box::new(EthereumClient::new(chain, url)),
             Chain::Cosmos | Chain::Osmosis | Chain::Celestia | Chain::Thorchain | Chain::Injective | Chain::Noble | Chain::Sei => {
                 Box::new(CosmosClient::new(chain, client, url))
             }
@@ -108,6 +109,7 @@ impl ProviderFactory {
             Chain::Algorand => settings.chains.algorand.url.as_str(),
             Chain::Polkadot => settings.chains.polkadot.url.as_str(),
             Chain::Cardano => settings.chains.cardano.url.as_str(),
+            Chain::Abstract => settings.chains.abstract_chain.url.as_str(),
         }
     }
 }

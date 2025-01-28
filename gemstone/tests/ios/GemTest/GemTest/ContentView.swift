@@ -100,9 +100,7 @@ struct ContentView: View {
         if quote.data.routes.count > 1 {
             print("==> intermediary token: \(route.output)")
         }
-        if let slippage = quote.data.suggestedSlippageBps {
-            print("suggested slippageBps: \(slippage)")
-        }
+        print("suggested slippageBps: \(quote.data.slippageBps)")
 
         let data = try await swapper.fetchQuoteData(quote: quote, data: .none)
         print("<== fetchQuoteData:\n", data)

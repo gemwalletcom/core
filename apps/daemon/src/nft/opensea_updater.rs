@@ -1,6 +1,11 @@
-use nft::opensea::OpenSeaClient;
-use primitives::LinkType;
-use storage::{models::NftLink, DatabaseClient};
+use std::str::FromStr;
+
+use nft::opensea::{model::Collection, OpenSeaClient};
+use primitives::{Chain, LinkType};
+use storage::{
+    models::{NftCollection, NftLink},
+    DatabaseClient,
+};
 
 pub struct OpenSeaUpdater {
     database: DatabaseClient,
@@ -17,45 +22,53 @@ impl OpenSeaUpdater {
         let collections = self.database.get_nft_collections()?;
 
         for collection in collections.clone() {
-            let opensea_collection = self.opensea_client.get_collection(&collection.contrtact_address).await?;
+            let chain = Chain::from_str(collection.chain.as_str())?;
+            match chain {
+                Chain::Ethereum => {
+                    let opensea_collection = self.opensea_client.get_collection(chain.as_ref(), &collection.contract_address).await?;
+                    let _ = self.update_collection(collection.clone(), opensea_collection);
 
-            let mut links: Vec<NftLink> = vec![];
-
-            if !opensea_collection.opensea_url.is_empty() {
-                links.push(NftLink {
-                    collection_id: collection.id.clone(),
-                    link_type: LinkType::OpenSea.as_ref().to_string(),
-                    url: opensea_collection.opensea_url,
-                });
+                    println!("Updating collection: {}", collection.name);
+                }
+                _ => continue,
             }
-            if !opensea_collection.project_url.is_empty() {
-                links.push(NftLink {
-                    collection_id: collection.id.clone(),
-                    link_type: LinkType::Website.as_ref().to_string(),
-                    url: opensea_collection.project_url,
-                });
-            }
-            if !opensea_collection.twitter_username.is_empty() {
-                links.push(NftLink {
-                    collection_id: collection.id.clone(),
-                    link_type: LinkType::X.as_ref().to_string(),
-                    url: format!("https://x.com/{}", opensea_collection.twitter_username),
-                });
-            }
-            if !opensea_collection.instagram_username.is_empty() {
-                links.push(NftLink {
-                    collection_id: collection.id.clone(),
-                    link_type: LinkType::Instagram.as_ref().to_string(),
-                    url: format!("https://instagram.com/{}", opensea_collection.instagram_username),
-                });
-            }
-            self.database.add_nft_links(links.clone())?;
-
-            println!("Updating collection: {}, links: {:?}", collection.name, links);
         }
 
-        // self.search_index.add_documents(ASSETS_INDEX_NAME, documents.clone()).await?;
-
         Ok(collections.len())
+    }
+
+    fn update_collection(&mut self, collection: NftCollection, opensea_collection: Collection) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let mut links: Vec<NftLink> = vec![];
+
+        if !opensea_collection.opensea_url.is_empty() {
+            links.push(NftLink {
+                collection_id: collection.id.clone(),
+                link_type: LinkType::OpenSea.as_ref().to_string(),
+                url: opensea_collection.opensea_url,
+            });
+        }
+        if !opensea_collection.project_url.is_empty() {
+            links.push(NftLink {
+                collection_id: collection.id.clone(),
+                link_type: LinkType::Website.as_ref().to_string(),
+                url: opensea_collection.project_url,
+            });
+        }
+        if !opensea_collection.twitter_username.is_empty() {
+            links.push(NftLink {
+                collection_id: collection.id.clone(),
+                link_type: LinkType::X.as_ref().to_string(),
+                url: format!("https://x.com/{}", opensea_collection.twitter_username),
+            });
+        }
+        if !opensea_collection.instagram_username.is_empty() {
+            links.push(NftLink {
+                collection_id: collection.id.clone(),
+                link_type: LinkType::Instagram.as_ref().to_string(),
+                url: format!("https://instagram.com/{}", opensea_collection.instagram_username),
+            });
+        }
+        self.database.add_nft_links(links.clone())?;
+        Ok(())
     }
 }

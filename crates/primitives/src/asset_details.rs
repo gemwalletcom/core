@@ -55,8 +55,8 @@ pub const ASSET_LINK_COINGECKO: &str = "coingecko";
 pub const ASSET_LINK_COINMARKETCAP: &str = "coinmarketcap";
 pub const ASSET_LINK_DISCORD: &str = "discord";
 
-#[typeshare(swift = "Sendable")]
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[typeshare(swift = "Sendable, Equatable, Hashable")]
+#[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct AssetLink {
     pub name: String,

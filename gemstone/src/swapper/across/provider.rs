@@ -395,7 +395,7 @@ impl GemSwapProvider for Across {
         let output_user_amount = output_amount - referral_fee;
 
         // Check output amount for user against slippage
-        let expect_min = apply_slippage_in_bp(&from_amount, request.options.slippage_bps);
+        let expect_min = apply_slippage_in_bp(&from_amount, request.options.slippage.bps);
         if output_user_amount < expect_min {
             return Err(SwapperError::ComputeQuoteError {
                 msg: format!("Expected amount exceeds slippage, expected: {}, output: {}", expect_min, output_user_amount),
@@ -435,7 +435,7 @@ impl GemSwapProvider for Across {
             to_value: output_amount.to_string(),
             data: SwapProviderData {
                 provider: self.provider(),
-                suggested_slippage_bps: None,
+                slippage_bps: request.options.slippage.bps,
                 routes: vec![SwapRoute {
                     input: input_asset.clone(),
                     output: output_asset.clone(),

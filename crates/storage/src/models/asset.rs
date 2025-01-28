@@ -61,7 +61,7 @@ impl Asset {
             asset_type: asset.asset_type.as_ref().to_string(),
             decimals: asset.decimals,
             rank: 0,
-            is_enabled: false,
+            is_enabled: true,
             is_buyable: false,
             is_sellable: false,
             is_swappable: false,

@@ -143,7 +143,7 @@ mod tests {
         let swap_provider = Across::boxed();
         let network_provider = Arc::new(NativeProvider::default());
         let mut options = GemSwapOptions {
-            slippage_bps: 100,
+            slippage: 100.into(),
             fee: Some(SwapReferralFees::evm(SwapReferralFee {
                 bps: 25,
                 address: "0x0D9DAB1A248f63B0a48965bA8435e4de7497a3dC".into(),

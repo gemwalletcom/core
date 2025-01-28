@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
 use diesel::prelude::*;
-use primitives::{Chain, NFTImage};
+use primitives::{AssetLink, Chain, NFTImage};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Queryable, Selectable, Insertable, AsChangeset, Serialize, Deserialize, Clone)]
@@ -15,13 +15,10 @@ pub struct NftCollection {
     pub symbol: Option<String>,
     pub url: Option<String>,
     pub owner: Option<String>,
-    pub contrtact_address: String,
+    pub contract_address: String,
     pub image_url: Option<String>,
-    pub project_url: Option<String>,
-    pub opensea_url: Option<String>,
-    pub project_x_username: Option<String>,
     pub is_verified: bool,
-    pub is_enable: bool,
+    pub is_enabled: bool,
 }
 
 #[derive(Debug, Queryable, Selectable, Insertable, AsChangeset, Serialize, Deserialize, Clone)]
@@ -33,19 +30,20 @@ pub struct UpdateNftCollectionImageUrl {
 }
 
 impl NftCollection {
-    pub fn as_primitive(&self) -> primitives::NFTCollection {
+    pub fn as_primitive(&self, links: Vec<AssetLink>) -> primitives::NFTCollection {
         primitives::NFTCollection {
             id: self.id.clone(),
             name: self.name.clone(),
             description: Some(self.description.clone()),
             chain: Chain::from_str(self.chain.as_str()).unwrap(),
-            contract_address: self.contrtact_address.clone(),
+            contract_address: self.contract_address.clone(),
             image: NFTImage {
                 image_url: self.image_url.clone().unwrap_or_default(),
                 preview_image_url: self.image_url.clone().unwrap_or_default(),
                 original_source_url: self.image_url.clone().unwrap_or_default(),
             },
             is_verified: self.is_verified,
+            links,
         }
     }
 
@@ -60,11 +58,8 @@ impl NftCollection {
             symbol: None,
             url: None,
             owner: None,
-            contrtact_address: collection.contract_address.clone(),
-            project_url: None,
-            opensea_url: None,
-            project_x_username: None,
-            is_enable: true,
+            contract_address: collection.contract_address.clone(),
+            is_enabled: true,
         }
     }
 }

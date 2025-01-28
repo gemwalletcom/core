@@ -27,7 +27,7 @@ impl CollectionsImageUploader {
             .database
             .get_nft_collections()?
             .into_iter()
-            .map(|x| x.as_primitive())
+            .map(|x| x.as_primitive(vec![]))
             .filter(|x| Self::image_filter(x.image.image_url.as_str(), &url))
             .collect::<Vec<_>>();
 

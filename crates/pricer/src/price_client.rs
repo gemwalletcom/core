@@ -46,13 +46,6 @@ impl PriceClient {
         Ok(prices.len())
     }
 
-    pub fn set_prices_simple(&mut self, prices: Vec<Price>) -> Result<usize, Box<dyn Error>> {
-        for chunk in prices.chunks(PRICES_INSERT_BATCH_LIMIT).clone() {
-            self.database.set_prices_simple(chunk.to_vec())?;
-        }
-        Ok(prices.len())
-    }
-
     pub fn set_prices_assets(&mut self, values: Vec<PriceAsset>) -> Result<usize, Box<dyn Error + Send + Sync>> {
         // filter non existing prices and assets
         let assets_ids = self

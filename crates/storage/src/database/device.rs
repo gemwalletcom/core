@@ -1,12 +1,15 @@
 use crate::{models::*, DatabaseClient};
 use chrono::{Duration, Utc};
-use diesel::prelude::*;
+use diesel::{prelude::*, upsert::excluded};
 
 impl DatabaseClient {
     pub fn add_device(&mut self, device: UpdateDevice) -> Result<Device, diesel::result::Error> {
         use crate::schema::devices::dsl::*;
         diesel::insert_into(devices)
             .values(&device)
+            .on_conflict(device_id)
+            .do_update()
+            .set((device_id.eq(excluded(device_id)),))
             .returning(Device::as_returning())
             .get_result(&mut self.connection)
     }

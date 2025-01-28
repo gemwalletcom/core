@@ -249,7 +249,7 @@ impl UniswapV3 {
 
         match mode {
             GemSwapMode::ExactIn => {
-                let amount_out = apply_slippage_in_bp(&quote_amount, options.slippage_bps + fee_options.bps);
+                let amount_out = apply_slippage_in_bp(&quote_amount, options.slippage.bps + fee_options.bps);
                 if wrap_input_eth {
                     // Wrap ETH, recipient is this_address
                     commands.push(UniversalRouterCommand::WRAP_ETH(WrapEth {
@@ -490,7 +490,7 @@ impl GemSwapProvider for UniswapV3 {
             data: SwapProviderData {
                 provider: self.provider(),
                 routes: routes.clone(),
-                suggested_slippage_bps: None,
+                slippage_bps: request.options.slippage.bps,
             },
             approval: approval_type,
             request: request.clone(),
@@ -590,7 +590,7 @@ mod tests {
         assert!(matches!(commands[1], UniversalRouterCommand::V3_SWAP_EXACT_IN(_)));
 
         let options = GemSwapOptions {
-            slippage_bps: 100,
+            slippage: 100.into(),
             fee: Some(SwapReferralFees::evm(SwapReferralFee {
                 bps: 25,
                 address: "0x3d83ec320541ae96c4c91e9202643870458fb290".into(),
@@ -673,7 +673,7 @@ mod tests {
             value: "5064985".into(),
             mode: GemSwapMode::ExactIn,
             options: GemSwapOptions {
-                slippage_bps: 100,
+                slippage: 100.into(),
                 fee: Some(SwapReferralFees::evm(SwapReferralFee {
                     bps: 25,
                     address: "0x3d83ec320541ae96c4c91e9202643870458fb290".into(),
@@ -716,7 +716,7 @@ mod tests {
             value: "10000000".into(),
             mode: GemSwapMode::ExactIn,
             options: GemSwapOptions {
-                slippage_bps: 100,
+                slippage: 100.into(),
                 fee: Some(SwapReferralFees::evm(SwapReferralFee {
                     bps: 25,
                     address: "0x3d83ec320541ae96c4c91e9202643870458fb290".into(),
@@ -779,7 +779,7 @@ mod tests {
             value: "1000000000000000".into(),
             mode: GemSwapMode::ExactIn,
             options: GemSwapOptions {
-                slippage_bps: 100,
+                slippage: 100.into(),
                 fee: Some(SwapReferralFees::evm(SwapReferralFee {
                     bps: 25,
                     address: "0x3d83ec320541ae96c4c91e9202643870458fb290".into(),
