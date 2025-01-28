@@ -59,6 +59,7 @@ pub struct Price {
 #[derive(Debug, Deserialize, Clone)]
 pub struct OrderDetails {
     pub id: String,
+    pub status: String,
     pub coin_code: String,
     pub fiat_amount: f64,
     pub fiat_code: String,
@@ -66,6 +67,7 @@ pub struct OrderDetails {
     pub tx_hash: Option<String>,
     pub blockchain: Blockchain,
     pub fee: Option<f64>,
+    pub payment_fee: Option<f64>,
     pub merchant_fee: Option<f64>,
     pub network_fee: Option<f64>,
 }
@@ -73,5 +75,4 @@ pub struct OrderDetails {
 #[derive(Debug, Deserialize, Clone)]
 pub struct Webhook {
     pub order_id: String,
-    pub status: String,
 }

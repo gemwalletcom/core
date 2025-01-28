@@ -108,7 +108,7 @@ impl GemSwapProvider for ThorChain {
                     route_data: serde_json::to_string(&route_data).unwrap_or_default(),
                     gas_estimate: None,
                 }],
-                suggested_slippage_bps: None,
+                slippage_bps: request.options.slippage.bps,
             },
             approval,
             request: request.clone(),

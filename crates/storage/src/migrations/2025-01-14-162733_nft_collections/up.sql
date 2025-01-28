@@ -9,16 +9,12 @@ CREATE TABLE nft_collections (
     url VARCHAR(256),
 
     owner VARCHAR(128),
-    contrtact_address VARCHAR(128) NOT NULL,
+    contract_address VARCHAR(128) NOT NULL,
 
     image_url VARCHAR(512),
-    
-    project_url VARCHAR(128),
-    opensea_url VARCHAR(128),
-    project_x_username VARCHAR(128),
 
     is_verified BOOLEAN NOT NULL default false,
-    is_enable BOOLEAN NOT NULL default true,
+    is_enabled BOOLEAN NOT NULL default true,
 
     updated_at timestamp NOT NULL default current_timestamp,
     created_at timestamp NOT NULL default current_timestamp

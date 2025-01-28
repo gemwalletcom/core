@@ -1,6 +1,6 @@
 use crate::{models::*, DatabaseClient};
 
-use diesel::{prelude::*, upsert::excluded};
+use diesel::prelude::*;
 use nft_asset::UpdateNftAssetImageUrl;
 use nft_collection::UpdateNftCollectionImageUrl;
 use nft_link::NftLink;
@@ -12,9 +12,15 @@ impl DatabaseClient {
         use crate::schema::nft_assets::dsl::*;
         nft_assets.select(NftAsset::as_select()).load(&mut self.connection)
     }
+
     pub fn get_nft_assets(&mut self, asset_ids: Vec<String>) -> Result<Vec<NftAsset>, diesel::result::Error> {
         use crate::schema::nft_assets::dsl::*;
         nft_assets.filter(id.eq_any(asset_ids)).select(NftAsset::as_select()).load(&mut self.connection)
+    }
+
+    pub fn get_nft_asset(&mut self, asset_id: &str) -> Result<NftAsset, diesel::result::Error> {
+        use crate::schema::nft_assets::dsl::*;
+        nft_assets.filter(id.eq(asset_id)).select(NftAsset::as_select()).first(&mut self.connection)
     }
 
     pub fn add_nft_assets(&mut self, values: Vec<NftAsset>) -> Result<usize, diesel::result::Error> {
@@ -44,6 +50,14 @@ impl DatabaseClient {
             .filter(id.eq(collection_id))
             .select(NftCollection::as_select())
             .first(&mut self.connection)
+    }
+
+    pub fn get_nft_collection_links(&mut self, _collection_id: &str) -> Result<Vec<NftLink>, diesel::result::Error> {
+        use crate::schema::nft_links::dsl::*;
+        nft_links
+            .filter(collection_id.eq(_collection_id))
+            .select(NftLink::as_select())
+            .load(&mut self.connection)
     }
 
     pub fn add_nft_collections(&mut self, values: Vec<NftCollection>) -> Result<usize, diesel::result::Error> {
@@ -76,8 +90,7 @@ impl DatabaseClient {
         diesel::insert_into(nft_links)
             .values(values)
             .on_conflict((collection_id, link_type))
-            .do_update()
-            .set((url.eq(excluded(url)),))
+            .do_nothing()
             .execute(&mut self.connection)
     }
 }

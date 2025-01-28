@@ -1,4 +1,5 @@
 use gem_evm::address::EthereumAddress;
+use simplehash::client::{SIMPLEHASH_EVM_CHAINS, SIMPLEHASH_SOLANA_CHAIN};
 use std::collections::HashMap;
 
 use nftscan::{
@@ -10,15 +11,19 @@ use primitives::{Chain, NFTImage};
 pub mod nftscan;
 pub mod opensea;
 pub use opensea::OpenSeaClient;
+pub mod simplehash;
+pub use simplehash::SimpleHashClient;
 
 pub struct NFT {
-    client: NFTScanClient,
+    nftscan_client: NFTScanClient,
+    simplehash_client: SimpleHashClient,
 }
 
 impl NFT {
-    pub fn new(nftscan_key: &str) -> Self {
+    pub fn new(nftscan_key: &str, simplehash_key: &str) -> Self {
         Self {
-            client: NFTScanClient::new(nftscan_key),
+            nftscan_client: NFTScanClient::new(nftscan_key),
+            simplehash_client: SimpleHashClient::new(simplehash_key.to_string()),
         }
     }
 
@@ -43,21 +48,14 @@ impl NFT {
     }
 
     pub async fn get_nfts(&self, chain: Chain, address: &str) -> Result<Vec<primitives::NFTData>, reqwest::Error> {
+        let pages_limit = 5;
         match chain {
-            Chain::Ethereum => self.client.get_all_evm_nfts(address).await.map(|x| x.data).map(|result| {
-                result
-                    .into_iter()
-                    .flat_map(|result| {
-                        result.collection_assets.into_iter().filter_map(move |x| {
-                            x.as_primitive(&result.chain).map(|collection| primitives::NFTData {
-                                collection: collection.clone(),
-                                assets: x.assets.into_iter().filter_map(|x| x.as_primitive(&result.chain, &collection.id)).collect(),
-                            })
-                        })
-                    })
-                    .collect::<Vec<_>>()
-            }),
-            Chain::Ton => self.client.get_ton_nfts(address).await.map(|x| {
+            Chain::Ethereum => self
+                .simplehash_client
+                .get_assets_all(address, SIMPLEHASH_EVM_CHAINS.to_vec(), pages_limit)
+                .await
+                .map(|x| x.as_primitives()),
+            Chain::Ton => self.nftscan_client.get_ton_nfts(address).await.map(|x| {
                 x.data
                     .into_iter()
                     .filter_map(|result| {
@@ -68,17 +66,11 @@ impl NFT {
                     })
                     .collect::<Vec<_>>()
             }),
-            Chain::Solana => self.client.get_solana_nfts(address).await.map(|x| {
-                x.data
-                    .into_iter()
-                    .filter_map(|result| {
-                        result.as_primitive(address).map(|collection| primitives::NFTData {
-                            collection: collection.clone(),
-                            assets: result.assets.into_iter().filter_map(|x| x.as_primitive(&collection.id)).collect(),
-                        })
-                    })
-                    .collect::<Vec<_>>()
-            }),
+            Chain::Solana => self
+                .simplehash_client
+                .get_assets_all(address, SIMPLEHASH_SOLANA_CHAIN.to_vec(), pages_limit)
+                .await
+                .map(|x| x.as_primitives()),
             _ => Ok(vec![]),
         }
     }
@@ -111,7 +103,7 @@ impl NFTCollection {
 
         Some(primitives::NFTCollection {
             id: primitives::NFTCollection::id(chain, contract_address.as_str()),
-            name: self.contract_name.to_string(),
+            name: self.contract_name.clone().to_string(),
             description: self.description.clone(),
             chain,
             contract_address: contract_address.clone(),
@@ -121,6 +113,7 @@ impl NFTCollection {
                 original_source_url: self.logo_url.clone().unwrap_or_default(),
             },
             is_verified: self.opensea_verified || self.verified,
+            links: vec![],
         })
     }
 }
@@ -136,6 +129,7 @@ impl NFTAsset {
                     Some(primitives::NFTAttribute {
                         name: attr["trait_type"].as_str()?.to_string(),
                         value: attr["value"].as_str()?.to_string(),
+                        percentage: None,
                     })
                 })
                 .collect();
@@ -178,7 +172,7 @@ impl NFTAsset {
             id: primitives::NFTAsset::id(collection_id, token_id.as_str()),
             collection_id: collection_id.to_string(),
             token_id,
-            name: self.name.to_string(),
+            name: self.name.clone().unwrap_or_default().to_string(),
             description: self.description.clone(),
             chain,
             image: self.get_image(),

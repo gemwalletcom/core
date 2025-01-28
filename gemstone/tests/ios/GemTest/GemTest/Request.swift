@@ -3,7 +3,7 @@
 import Gemstone
 
 let SWAP_OPTIONS = GemSwapOptions(
-    slippageBps: 100,
+    slippage: getDefaultSlippage(chain: "solana"),
     fee: SwapReferralFees(
         evm: .init(address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7", bps: 50),
         evmBridge: .init(address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7", bps: 25),

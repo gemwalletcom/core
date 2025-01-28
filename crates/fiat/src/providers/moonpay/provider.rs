@@ -66,10 +66,10 @@ impl FiatProvider for MoonPayClient {
         let asset = Self::map_asset(payload.data.currency).unwrap();
         let asset_id = AssetId::from(asset.chain.unwrap(), asset.token_id);
 
-        let status = match payload.transaction_type.as_str() {
-            "transaction_created" => FiatTransactionStatus::Pending,
-            "transaction_failed" => FiatTransactionStatus::Failed,
-            "transaction_updated" => FiatTransactionStatus::Complete,
+        let status = match payload.data.status.as_str() {
+            "pending" => FiatTransactionStatus::Pending,
+            "failed" => FiatTransactionStatus::Failed,
+            "completed" => FiatTransactionStatus::Complete,
             _ => FiatTransactionStatus::Unknown,
         };
 

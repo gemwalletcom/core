@@ -45,7 +45,7 @@ impl FiatProvider for BanxaClient {
         let order = self.get_order(&data.order_id).await?;
 
         // https://docs.banxa.com/docs/order-status
-        let status = match data.status.as_str() {
+        let status = match order.status.as_str() {
             "pendingPayment" | "waitingPayment" | "paymentReceived" | "inProgress" | "coinTransferred" | "cryptoTransferred" | "extraVerification" => {
                 FiatTransactionStatus::Pending
             }
@@ -73,7 +73,7 @@ impl FiatProvider for BanxaClient {
             fiat_currency: order.fiat_code,
             transaction_hash: order.tx_hash,
             address: Some(order.wallet_address),
-            fee_provider: order.fee,
+            fee_provider: order.payment_fee,
             fee_network: order.network_fee,
             fee_partner: order.merchant_fee,
         };

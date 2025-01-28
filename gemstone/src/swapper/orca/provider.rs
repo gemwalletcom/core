@@ -53,7 +53,7 @@ impl GemSwapProvider for Orca {
 
         let amount_in = request.value.parse::<u64>().map_err(|_| SwapperError::InvalidAmount)?;
         let options = request.options.clone();
-        let slippage_bps = options.slippage_bps as u16;
+        let slippage_bps = options.slippage.bps as u16;
 
         let from_asset = get_asset_address(&request.from_asset).ok_or_else(|| SwapperError::InvalidAddress {
             address: request.from_asset.to_string(),
@@ -99,7 +99,7 @@ impl GemSwapProvider for Orca {
                     route_data: pool.fee_rate.to_string(),
                     gas_estimate: None,
                 }],
-                suggested_slippage_bps: None,
+                slippage_bps: request.options.slippage.bps,
             },
             approval: ApprovalType::None,
             request: request.clone(),

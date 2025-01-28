@@ -1,5 +1,5 @@
 extern crate rocket;
-use primitives::{Chain, NFTCollection, NFTData, ResponseResult};
+use primitives::{Chain, NFTAsset, NFTData, ResponseResult};
 use rocket::{response::status::NotFound, serde::json::Json, tokio::sync::Mutex, State};
 use std::str::FromStr;
 
@@ -36,16 +36,42 @@ pub async fn get_nft_assets_by_chain(
     }
 }
 
+// collections
+
+#[put("/nft/collections/update/<collection_id>")]
+pub async fn update_nft_collection(collection_id: &str, client: &State<Mutex<NFTClient>>) -> Result<Json<ResponseResult<bool>>, NotFound<String>> {
+    let result = client.lock().await.update_collection(collection_id).await;
+    match result {
+        Ok(data) => Ok(Json(ResponseResult { data })),
+        Err(err) => Err(NotFound(err.to_string())),
+    }
+}
+
+// assets
+
+#[put("/nft/assets/update/<asset_id>")]
+pub async fn update_nft_asset(asset_id: &str, client: &State<Mutex<NFTClient>>) -> Result<Json<ResponseResult<bool>>, NotFound<String>> {
+    let result = client.lock().await.update_asset(asset_id).await;
+    match result {
+        Ok(data) => Ok(Json(ResponseResult { data })),
+        Err(err) => Err(NotFound(err.to_string())),
+    }
+}
+
+#[get("/nft/assets/<asset_id>")]
+pub async fn get_nft_asset(asset_id: &str, client: &State<Mutex<NFTClient>>) -> Result<Json<ResponseResult<NFTAsset>>, NotFound<String>> {
+    let result = client.lock().await.get_nft_asset(asset_id).await;
+    match result {
+        Ok(data) => Ok(Json(ResponseResult { data })),
+        Err(err) => Err(NotFound(err.to_string())),
+    }
+}
+
 // from db
 
-#[get("/nft/collections/chain/<chain>/<collection_id>")]
-pub async fn get_nft_collection_by_chain(
-    chain: &str,
-    collection_id: &str,
-    client: &State<Mutex<NFTClient>>,
-) -> Result<Json<ResponseResult<NFTCollection>>, NotFound<String>> {
-    let chain = Chain::from_str(chain).unwrap();
-    let result = client.lock().await.get_nft_collection(chain, collection_id).await;
+#[get("/nft/collections/<collection_id>")]
+pub async fn get_nft_collection(collection_id: &str, client: &State<Mutex<NFTClient>>) -> Result<Json<ResponseResult<NFTData>>, NotFound<String>> {
+    let result = client.lock().await.get_nft_collection(collection_id).await;
     match result {
         Ok(data) => Ok(Json(ResponseResult { data })),
         Err(err) => Err(NotFound(err.to_string())),

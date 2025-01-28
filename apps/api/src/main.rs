@@ -88,7 +88,7 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
     let swap_client = SwapClient::new(postgres_url).await;
     let providers = FiatProviderFactory::new_providers(settings_clone.clone());
     let fiat_client = FiatProvider::new(postgres_url, providers).await;
-    let nft_client = NFTClient::new(postgres_url, &settings.nft.nftscan.key.secret).await;
+    let nft_client = NFTClient::new(postgres_url, &settings.nft.nftscan.key.secret, &settings.nft.simplehash.key.secret).await;
 
     rocket::build()
         .attach(AdHoc::on_ignite("Tokio Runtime Configuration", |rocket| async {
@@ -144,6 +144,7 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
                 subscription::add_subscriptions,
                 subscription::get_subscriptions,
                 subscription::delete_subscriptions,
+                transaction::get_transactions_by_device_id_old,
                 transaction::get_transactions_by_device_id,
                 transaction::get_transactions_by_hash,
                 parser::get_parser_block,
@@ -152,7 +153,10 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
                 swap::get_swap_assets,
                 nft::get_nft_assets,
                 nft::get_nft_assets_by_chain,
-                nft::get_nft_collection_by_chain,
+                nft::get_nft_collection,
+                nft::get_nft_asset,
+                nft::update_nft_collection,
+                nft::update_nft_asset,
                 price_alerts::get_price_alerts,
                 price_alerts::add_price_alerts,
                 price_alerts::delete_price_alerts,

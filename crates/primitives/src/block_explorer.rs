@@ -82,5 +82,6 @@ pub fn get_block_explorers(chain: Chain) -> Vec<Box<dyn BlockExplorer>> {
         Chain::Algorand => vec![AlgorandAllo::new()],
         Chain::Polkadot => vec![SubScan::new_polkadot(), Blockchair::new_polkadot()],
         Chain::Cardano => vec![Cardanocan::new()],
+        Chain::Abstract => vec![EtherScan::new(EVMChain::Abstract)],
     }
 }

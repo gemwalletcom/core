@@ -52,6 +52,7 @@ pub enum Chain {
     Algorand,
     Polkadot,
     Cardano,
+    Abstract,
 }
 
 impl fmt::Display for Chain {
@@ -121,6 +122,7 @@ impl Chain {
             Self::Algorand => "mainnet-v1.0",
             Self::Polkadot => "Polkadot",
             Self::Cardano => "764824073", // magic number from gensis configuration
+            Self::Abstract => "2741",
         }
     }
 
@@ -151,7 +153,8 @@ impl Chain {
             | Self::Mantle
             | Self::Celo
             | Self::World
-            | Self::Sonic => 60,
+            | Self::Sonic
+            | Self::Abstract => 60,
             Self::Bitcoin => 0,
             Self::BitcoinCash => 145,
             Self::Litecoin => 2,
@@ -193,7 +196,8 @@ impl Chain {
             | Self::Mantle
             | Self::Celo
             | Self::World
-            | Self::Sonic => ChainType::Ethereum,
+            | Self::Sonic
+            | Self::Abstract => ChainType::Ethereum,
             Self::Bitcoin | Self::BitcoinCash | Self::Doge | Self::Litecoin => ChainType::Bitcoin,
             Self::Solana => ChainType::Solana,
             Self::Thorchain | Self::Cosmos | Self::Osmosis | Self::Celestia | Self::Injective | Self::Noble | Self::Sei => ChainType::Cosmos,
@@ -227,7 +231,8 @@ impl Chain {
             | Self::Mantle
             | Self::Celo
             | Self::World
-            | Self::Sonic => Some(AssetType::ERC20),
+            | Self::Sonic
+            | Self::Abstract => Some(AssetType::ERC20),
             Self::OpBNB | Self::SmartChain => Some(AssetType::BEP20),
             Self::Solana => Some(AssetType::SPL),
             Self::Tron => Some(AssetType::TRC20),
@@ -303,7 +308,8 @@ impl Chain {
             | Self::Stellar
             | Self::Algorand
             | Self::Polkadot
-            | Self::Cardano => false,
+            | Self::Cardano
+            | Self::Abstract => false,
         }
     }
 
@@ -312,7 +318,7 @@ impl Chain {
     }
 
     pub fn is_nft_supported(&self) -> bool {
-        matches!(self, Self::Ethereum)
+        matches!(self, Self::Ethereum | Self::Solana)
     }
 
     // miliseconds
@@ -351,7 +357,7 @@ impl Chain {
             Self::Celo => 1_000,
             Self::Near => 1_000,
             Self::Stellar => 6_000,
-            Self::Sonic => 1_000,
+            Self::Sonic | Self::Abstract => 1_000,
             Self::Algorand => 4_000,
             Self::Polkadot => 5_000,
             Self::Cardano => 60_000,
@@ -365,6 +371,7 @@ impl Chain {
             Self::Solana | Self::SmartChain => 70,
             Self::Osmosis | Self::Ton | Self::Tron => 50,
             Self::Cosmos | Self::Injective | Self::Aptos | Self::Sui | Self::Xrp | Self::Celestia | Self::BitcoinCash | Self::Polkadot => 40,
+            Self::Abstract => 35,
             Self::Manta
             | Self::Fantom
             | Self::OpBNB

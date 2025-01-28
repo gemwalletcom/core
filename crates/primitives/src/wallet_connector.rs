@@ -37,6 +37,8 @@ pub enum WalletConnectionMethods {
     solana_sign_message,
     #[serde(rename = "solana_signTransaction")]
     solana_sign_transaction,
+    #[serde(rename = "solana_signAndSendTransaction")]
+    solana_sign_and_send_transaction,
 }
 
 #[derive(Debug, Serialize)]
