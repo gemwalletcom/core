@@ -125,7 +125,7 @@ impl super::model::Nft {
         Some(primitives::NFTAsset {
             id,
             token_id: token_id.to_string(),
-            contract_address: self.contract_address.clone(),
+            contract_address: Some(self.contract_address.clone()),
             name: self.name.clone().unwrap_or_default(),
             description: self.description.clone(),
             image: self.as_primitive_asset_image(),

@@ -51,7 +51,7 @@ impl NftAsset {
             name: self.name.clone(),
             description: Some(self.description.clone()),
             chain: Chain::from_str(self.chain.as_str()).unwrap(),
-            contract_address: self.contract_address.clone(),
+            contract_address: Some(self.contract_address.clone()),
             token_id: self.token_id.clone(),
             image: NFTImage {
                 image_url: self.image_url.clone(),
@@ -70,7 +70,7 @@ impl NftAsset {
             chain: primitive.chain.to_string(),
             name: primitive.name.clone(),
             description: primitive.description.unwrap_or_default(),
-            contract_address: primitive.contract_address.clone(),
+            contract_address: primitive.contract_address.unwrap_or_default(),
             token_id: primitive.token_id.clone(),
             token_type: primitive.token_type.as_ref().to_string(),
             image_url: primitive.image.image_url.clone(),

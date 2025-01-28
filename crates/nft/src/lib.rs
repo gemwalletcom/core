@@ -171,7 +171,7 @@ impl NFTAsset {
         Some(primitives::NFTAsset {
             id: primitives::NFTAsset::id(chain, contract_address, token_id.as_str()),
             collection_id: primitives::NFTCollection::id(chain, contract_address),
-            contract_address: contract_address.to_string(),
+            contract_address: Some(contract_address.to_string()),
             token_id,
             name: self.name.clone().unwrap_or_default().to_string(),
             description: self.description.clone(),

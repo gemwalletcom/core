@@ -58,7 +58,7 @@ impl NFTCollection {
 pub struct NFTAsset {
     pub id: String,
     pub collection_id: String,
-    pub contract_address: String,
+    pub contract_address: Option<String>,
     pub token_id: String,
     pub token_type: NFTType,
     pub name: String,

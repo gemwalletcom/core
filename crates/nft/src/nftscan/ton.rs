@@ -65,7 +65,7 @@ impl NFTTonAsset {
         Some(primitives::NFTAsset {
             id: primitives::NFTAsset::id(chain, contract_address, token_id.as_str()),
             collection_id: primitives::NFTCollection::id(chain, contract_address),
-            contract_address: contract_address.to_string(),
+            contract_address: Some(contract_address.to_string()),
             token_id,
             name,
             description: self.description.clone(),
