@@ -16,15 +16,17 @@ impl AssetsIndexUpdater {
     }
 
     pub async fn update(&mut self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
-        let documents = self
-            .database
-            .get_assets_list()?
+        let prices = self.database.get_prices_assets_list()?;
+
+        let documents = prices
+            .clone()
             .into_iter()
-            .map(|asset| AssetDocument {
-                id: sanitize_index_primary_id(asset.id.as_str()),
-                asset: asset.as_primitive(),
-                properties: asset.clone().as_property_primitive(),
-                score: asset.clone().as_score_primitive(),
+            .map(|x| AssetDocument {
+                id: sanitize_index_primary_id(x.asset.id.as_str()),
+                asset: x.asset.as_primitive(),
+                properties: x.asset.clone().as_property_primitive(),
+                score: x.asset.clone().as_score_primitive(),
+                market: Some(x.price.as_market_primitive()),
             })
             .collect::<Vec<_>>();
 

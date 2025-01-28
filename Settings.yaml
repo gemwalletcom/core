@@ -151,6 +151,8 @@ chains:
     url: https://polkadot-public-sidecar.parity-chains.parity.io
   cardano:
     url: ""
+  abstract:
+    url: https://api.mainnet.abs.xyz
   
 swap:
   jupiter:
@@ -199,4 +201,19 @@ alerter:
 
 nft:
   nftscan:
-    key: ""
+    key:
+      secret: ""
+  simplehash:
+    key:
+      secret: ""
+  opensea:
+    key:
+      secret: ""
+  bucket:
+    endpoint: ""
+    region: auto
+    name: "nft-assets"
+    url: "https://nft-assets.gemwallet.com"
+    key:
+      public: ""
+      secret: ""

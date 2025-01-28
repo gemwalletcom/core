@@ -14,7 +14,7 @@ use gem_evm::{
     address::EthereumAddress,
     jsonrpc::{BlockParameter, EthereumRpc, TransactionObject},
     uniswap::{
-        command::{encode_commands, PayPortion, Permit2Permit, Sweep, UniversalRouterCommand, UnwrapWeth, V3SwapExactIn, WrapEth, ADDRESS_THIS},
+        command::{encode_commands, PayPortion, Permit2Permit, Sweep, Transfer, UniversalRouterCommand, UnwrapWeth, V3SwapExactIn, WrapEth, ADDRESS_THIS},
         contract::IQuoterV2,
         deployment::V3Deployment,
         path::{build_direct_pair, build_pairs, get_base_pair, BasePair, TokenPair},
@@ -41,6 +41,11 @@ use std::{
 use super::weth_address;
 
 static DEFAULT_DEADLINE: u64 = 3600;
+
+pub struct FeePreference {
+    pub fee_token: EthereumAddress,
+    pub is_input_token: bool,
+}
 
 pub trait UniversalRouterProvider: Send + Sync + Debug {
     fn provider(&self) -> SwapProvider;
@@ -89,6 +94,25 @@ impl UniswapV3 {
             .filter(|intermediary| *intermediary != token_in && *intermediary != token_out)
             .cloned()
             .collect()
+    }
+
+    // Return (fee token, is_input_token)
+    fn get_fee_token(mode: &GemSwapMode, base_pair: Option<&BasePair>, input: &EthereumAddress, output: &EthereumAddress) -> FeePreference {
+        let use_input_as_fee_token = match mode {
+            GemSwapMode::ExactIn => {
+                if let Some(pair) = base_pair {
+                    let set = pair.to_set();
+                    set.contains(input) && !set.contains(output)
+                } else {
+                    false
+                }
+            }
+            GemSwapMode::ExactOut => true,
+        };
+        FeePreference {
+            fee_token: if use_input_as_fee_token { input.clone() } else { output.clone() },
+            is_input_token: use_input_as_fee_token,
+        }
     }
 
     fn build_paths(token_in: &EthereumAddress, token_out: &EthereumAddress, fee_tiers: &[FeeTier], base_pair: &BasePair) -> Vec<Vec<(Vec<TokenPair>, Bytes)>> {
@@ -202,12 +226,13 @@ impl UniswapV3 {
 
     fn build_commands(
         request: &SwapQuoteRequest,
-        _token_in: &EthereumAddress,
+        token_in: &EthereumAddress,
         token_out: &EthereumAddress,
         amount_in: U256,
         quote_amount: U256,
         path: &Bytes,
         permit: Option<Permit2Permit>,
+        fee_token_is_input: bool,
     ) -> Result<Vec<UniversalRouterCommand>, SwapperError> {
         let options = request.options.clone();
         let fee_options = options.fee.unwrap_or_default().evm;
@@ -224,7 +249,7 @@ impl UniswapV3 {
 
         match mode {
             GemSwapMode::ExactIn => {
-                let amount_out = apply_slippage_in_bp(&quote_amount, options.slippage_bps + fee_options.bps);
+                let amount_out = apply_slippage_in_bp(&quote_amount, options.slippage.bps + fee_options.bps);
                 if wrap_input_eth {
                     // Wrap ETH, recipient is this_address
                     commands.push(UniversalRouterCommand::WRAP_ETH(WrapEth {
@@ -238,30 +263,60 @@ impl UniswapV3 {
                 // payer_is_user: is true when swapping tokens
                 let payer_is_user = !wrap_input_eth;
                 if pay_fees {
-                    // insert V3_SWAP_EXACT_IN
-                    // amount_out_min: if needs to pay fees, amount_out_min set to 0 and we will sweep the rest
-                    commands.push(UniversalRouterCommand::V3_SWAP_EXACT_IN(V3SwapExactIn {
-                        recipient: Address::from_str(ADDRESS_THIS).unwrap(),
-                        amount_in,
-                        amount_out_min: if pay_fees { U256::from(0) } else { amount_out },
-                        path: path.clone(),
-                        payer_is_user,
-                    }));
+                    if fee_token_is_input {
+                        // insert TRANSFER fee first
+                        let fee = amount_in * U256::from(fee_options.bps) / U256::from(10000);
+                        let fee_recipient = Address::from_str(fee_options.address.as_str()).unwrap();
+                        if wrap_input_eth {
+                            // if input is native ETH, we can transfer directly because of WRAP_ETH command
+                            commands.push(UniversalRouterCommand::TRANSFER(Transfer {
+                                token: Address::from_slice(&token_in.bytes),
+                                recipient: fee_recipient,
+                                value: fee,
+                            }));
+                        } else {
+                            // call permit2 transfer instead
+                            commands.push(UniversalRouterCommand::PERMIT2_TRANSFER_FROM(Transfer {
+                                token: Address::from_slice(&token_in.bytes),
+                                recipient: fee_recipient,
+                                value: fee,
+                            }));
+                        };
 
-                    // insert PAY_PORTION to fee_address
-                    commands.push(UniversalRouterCommand::PAY_PORTION(PayPortion {
-                        token: Address::from_slice(&token_out.bytes),
-                        recipient: Address::from_str(fee_options.address.as_str()).unwrap(),
-                        bips: U256::from(fee_options.bps),
-                    }));
-
-                    if !unwrap_output_weth {
-                        // MSG_SENDER should be the address of the caller
-                        commands.push(UniversalRouterCommand::SWEEP(Sweep {
-                            token: Address::from_slice(&token_out.bytes),
+                        // insert V3_SWAP_EXACT_IN with amount - fee, recipient is user address
+                        commands.push(UniversalRouterCommand::V3_SWAP_EXACT_IN(V3SwapExactIn {
                             recipient,
-                            amount_min: U256::from(amount_out),
+                            amount_in: amount_in - fee,
+                            amount_out_min: amount_out,
+                            path: path.clone(),
+                            payer_is_user,
                         }));
+                    } else {
+                        // insert V3_SWAP_EXACT_IN
+                        // amount_out_min: if needs to pay fees, amount_out_min set to 0 and we will sweep the rest
+                        commands.push(UniversalRouterCommand::V3_SWAP_EXACT_IN(V3SwapExactIn {
+                            recipient: Address::from_str(ADDRESS_THIS).unwrap(),
+                            amount_in,
+                            amount_out_min: if pay_fees { U256::from(0) } else { amount_out },
+                            path: path.clone(),
+                            payer_is_user,
+                        }));
+
+                        // insert PAY_PORTION to fee_address
+                        commands.push(UniversalRouterCommand::PAY_PORTION(PayPortion {
+                            token: Address::from_slice(&token_out.bytes),
+                            recipient: Address::from_str(fee_options.address.as_str()).unwrap(),
+                            bips: U256::from(fee_options.bps),
+                        }));
+
+                        if !unwrap_output_weth {
+                            // MSG_SENDER should be the address of the caller
+                            commands.push(UniversalRouterCommand::SWEEP(Sweep {
+                                token: Address::from_slice(&token_out.bytes),
+                                recipient,
+                                amount_min: U256::from(amount_out),
+                            }));
+                        }
                     }
                 } else {
                     // insert V3_SWAP_EXACT_IN
@@ -328,7 +383,6 @@ impl GemSwapProvider for UniswapV3 {
         if !self.support_chain(&request.from_asset.chain) {
             return Err(SwapperError::NotSupportedChain);
         }
-
         let wallet_address: Address = request.wallet_address.as_str().parse().map_err(SwapperError::from)?;
 
         // Check deployment and weth contract
@@ -344,6 +398,14 @@ impl GemSwapProvider for UniswapV3 {
             msg: "base pair not found".into(),
         })?;
 
+        let fee_preference = Self::get_fee_token(&request.mode, Some(&base_pair), &token_in, &token_out);
+        let fee_bps = request.options.clone().fee.unwrap_or_default().evm.bps;
+        let quote_amount_in = if fee_preference.is_input_token && fee_bps > 0 {
+            amount_in - amount_in * U256::from(fee_bps) / U256::from(10000)
+        } else {
+            amount_in
+        };
+
         // Build paths for QuoterV2
         // [
         //     [direct_fee_tier1, ..., ..., ... ],
@@ -357,7 +419,7 @@ impl GemSwapProvider for UniswapV3 {
             .map(|paths| {
                 let calls: Vec<EthereumRpc> = paths
                     .iter()
-                    .map(|path| Self::build_quoter_request(&request.mode, &request.wallet_address, deployment.quoter_v2, amount_in, &path.1))
+                    .map(|path| Self::build_quoter_request(&request.mode, &request.wallet_address, deployment.quoter_v2, quote_amount_in, &path.1))
                     .collect();
 
                 // batch fee_tiers.len() requests into one jsonrpc call
@@ -428,7 +490,7 @@ impl GemSwapProvider for UniswapV3 {
             data: SwapProviderData {
                 provider: self.provider(),
                 routes: routes.clone(),
-                suggested_slippage_bps: None,
+                slippage_bps: request.options.slippage.bps,
             },
             approval: approval_type,
             request: request.clone(),
@@ -448,9 +510,21 @@ impl GemSwapProvider for UniswapV3 {
             FetchQuoteData::Permit2(data) => Some(data.into()),
             _ => None,
         };
+        let evm_chain = EVMChain::from_chain(quote.request.from_asset.chain).ok_or(SwapperError::NotSupportedChain)?;
+        let base_pair = get_base_pair(&evm_chain);
+        let fee_preference = Self::get_fee_token(&request.mode, base_pair.as_ref(), &token_in, &token_out);
 
         let path: Bytes = Self::build_paths_with_routes(&quote.data.routes)?;
-        let commands = Self::build_commands(request, &token_in, &token_out, amount_in, to_amount, &path, permit)?;
+        let commands = Self::build_commands(
+            request,
+            &token_in,
+            &token_out,
+            amount_in,
+            to_amount,
+            &path,
+            permit,
+            fee_preference.is_input_token,
+        )?;
         let deadline = SystemTime::now().duration_since(UNIX_EPOCH).expect("Time went backwards").as_secs() + DEFAULT_DEADLINE;
         let encoded = encode_commands(&commands, U256::from(deadline));
 
@@ -508,7 +582,7 @@ mod tests {
 
         let path = build_direct_pair(&token_in, &token_out, FeeTier::FiveHundred as u32);
         // without fee
-        let commands = UniswapV3::build_commands(&request, &token_in, &token_out, amount_in, U256::from(0), &path, None).unwrap();
+        let commands = UniswapV3::build_commands(&request, &token_in, &token_out, amount_in, U256::from(0), &path, None, false).unwrap();
 
         assert_eq!(commands.len(), 2);
 
@@ -516,7 +590,7 @@ mod tests {
         assert!(matches!(commands[1], UniversalRouterCommand::V3_SWAP_EXACT_IN(_)));
 
         let options = GemSwapOptions {
-            slippage_bps: 100,
+            slippage: 100.into(),
             fee: Some(SwapReferralFees::evm(SwapReferralFee {
                 bps: 25,
                 address: "0x3d83ec320541ae96c4c91e9202643870458fb290".into(),
@@ -525,7 +599,7 @@ mod tests {
         };
         request.options = options;
 
-        let commands = UniswapV3::build_commands(&request, &token_in, &token_out, amount_in, U256::from(0), &path, None).unwrap();
+        let commands = UniswapV3::build_commands(&request, &token_in, &token_out, amount_in, U256::from(0), &path, None, false).unwrap();
 
         assert_eq!(commands.len(), 4);
 
@@ -578,6 +652,7 @@ mod tests {
             U256::from(6507936),
             &path,
             Some(permit2_data.into()),
+            false,
         )
         .unwrap();
 
@@ -598,7 +673,7 @@ mod tests {
             value: "5064985".into(),
             mode: GemSwapMode::ExactIn,
             options: GemSwapOptions {
-                slippage_bps: 100,
+                slippage: 100.into(),
                 fee: Some(SwapReferralFees::evm(SwapReferralFee {
                     bps: 25,
                     address: "0x3d83ec320541ae96c4c91e9202643870458fb290".into(),
@@ -612,13 +687,22 @@ mod tests {
         let amount_in = U256::from_str(&request.value).unwrap();
 
         let path = build_direct_pair(&token_in, &token_out, FeeTier::FiveHundred as u32);
-        let commands = UniswapV3::build_commands(&request, &token_in, &token_out, amount_in, U256::from(33377662359182269u64), &path, None).unwrap();
+        // fee token is output token
+        let commands = UniswapV3::build_commands(&request, &token_in, &token_out, amount_in, U256::from(33377662359182269u64), &path, None, false).unwrap();
 
         assert_eq!(commands.len(), 3);
 
         assert!(matches!(commands[0], UniversalRouterCommand::V3_SWAP_EXACT_IN(_)));
         assert!(matches!(commands[1], UniversalRouterCommand::PAY_PORTION(_)));
         assert!(matches!(commands[2], UniversalRouterCommand::SWEEP(_)));
+
+        // fee token is input token
+        let commands = UniswapV3::build_commands(&request, &token_in, &token_out, amount_in, U256::from(33377662359182269u64), &path, None, true).unwrap();
+
+        assert_eq!(commands.len(), 2);
+
+        assert!(matches!(commands[0], UniversalRouterCommand::PERMIT2_TRANSFER_FROM(_)));
+        assert!(matches!(commands[1], UniversalRouterCommand::V3_SWAP_EXACT_IN(_)));
     }
 
     #[test]
@@ -632,7 +716,7 @@ mod tests {
             value: "10000000".into(),
             mode: GemSwapMode::ExactIn,
             options: GemSwapOptions {
-                slippage_bps: 100,
+                slippage: 100.into(),
                 fee: Some(SwapReferralFees::evm(SwapReferralFee {
                     bps: 25,
                     address: "0x3d83ec320541ae96c4c91e9202643870458fb290".into(),
@@ -671,6 +755,7 @@ mod tests {
             U256::from(3997001989341576u64),
             &path,
             Some(permit2_data.into()),
+            false,
         )
         .unwrap();
 
@@ -680,5 +765,84 @@ mod tests {
         assert!(matches!(commands[1], UniversalRouterCommand::V3_SWAP_EXACT_IN(_)));
         assert!(matches!(commands[2], UniversalRouterCommand::PAY_PORTION(_)));
         assert!(matches!(commands[3], UniversalRouterCommand::UNWRAP_WETH(_)));
+    }
+
+    #[test]
+    fn test_build_commands_eth_to_uni_with_input_fee() {
+        // Replicate https://optimistic.etherscan.io/tx/0x18277deea3e273a7fb9abc985269dcdabe3d34c2b604fbd82dcd0a5a5204f72c
+        let request = SwapQuoteRequest {
+            // ETH -> UNI
+            from_asset: AssetId::from(Chain::Optimism, None),
+            to_asset: AssetId::from(Chain::Optimism, Some("0x6fd9d7ad17242c41f7131d257212c54a0e816691".into())),
+            wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
+            destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
+            value: "1000000000000000".into(),
+            mode: GemSwapMode::ExactIn,
+            options: GemSwapOptions {
+                slippage: 100.into(),
+                fee: Some(SwapReferralFees::evm(SwapReferralFee {
+                    bps: 25,
+                    address: "0x3d83ec320541ae96c4c91e9202643870458fb290".into(),
+                })),
+                preferred_providers: vec![],
+            },
+        };
+
+        let token_in = EthereumAddress::parse("0x4200000000000000000000000000000000000006").unwrap();
+        let token_out = EthereumAddress::parse(&request.to_asset.token_id.clone().unwrap()).unwrap();
+        let amount_in = U256::from_str(request.value.as_str()).unwrap();
+
+        let path = build_direct_pair(&token_in, &token_out, FeeTier::ThreeThousand as u32);
+        let commands = UniswapV3::build_commands(
+            &request,
+            &token_in,
+            &token_out,
+            amount_in,
+            U256::from(244440440678888410_u64),
+            &path,
+            None,
+            true,
+        )
+        .unwrap();
+
+        assert_eq!(commands.len(), 3);
+
+        assert!(matches!(commands[0], UniversalRouterCommand::WRAP_ETH(_)));
+        assert!(matches!(commands[1], UniversalRouterCommand::TRANSFER(_)));
+        assert!(matches!(commands[2], UniversalRouterCommand::V3_SWAP_EXACT_IN(_)));
+    }
+
+    #[test]
+    fn test_get_fee_token() {
+        let evm_chain = EVMChain::Ethereum;
+        let mode = GemSwapMode::ExactIn;
+        let base_pair = get_base_pair(&evm_chain);
+
+        let weth = EthereumAddress::from_str("0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2").unwrap();
+        let uni = EthereumAddress::from_str("0x1f9840a85d5af5bf1d1762f925bdaddc4201f984").unwrap();
+        let usdc = EthereumAddress::from_str("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48").unwrap();
+
+        // WETH -> UNI (fee_token is WETH)
+        let fee_preference = UniswapV3::get_fee_token(&mode, base_pair.as_ref(), &weth, &uni);
+
+        assert_eq!(fee_preference.fee_token, weth);
+        assert!(fee_preference.is_input_token);
+
+        // WETH -> USDC (fee_token is USDC)
+        let fee_preference = UniswapV3::get_fee_token(&mode, base_pair.as_ref(), &weth, &usdc);
+        assert_eq!(fee_preference.fee_token, usdc);
+        assert!(!fee_preference.is_input_token);
+
+        // USDC -> WETH (fee_token is WETH)
+        let fee_preference = UniswapV3::get_fee_token(&mode, base_pair.as_ref(), &usdc, &weth);
+
+        assert_eq!(fee_preference.fee_token, weth);
+        assert!(!fee_preference.is_input_token);
+
+        // USDC -> UNI (fee_token is USDC)
+        let fee_preference = UniswapV3::get_fee_token(&mode, base_pair.as_ref(), &usdc, &uni);
+
+        assert_eq!(fee_preference.fee_token, usdc);
+        assert!(fee_preference.is_input_token);
     }
 }

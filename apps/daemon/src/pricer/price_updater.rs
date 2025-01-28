@@ -1,13 +1,10 @@
-use chain_primitives::format_token_id;
-use chrono::{DateTime, Duration, Utc};
-use coingecko::mapper::{get_chain_for_coingecko_platform_id, get_coingecko_market_id_for_chain};
-use coingecko::{Coin, CoinGeckoClient, CoinMarket, SimplePrice};
+use chrono::{Duration, Utc};
+use coingecko::{CoinGeckoClient, CoinMarket};
 use pricer::PriceClient;
-use primitives::chain::Chain;
 use primitives::DEFAULT_FIAT_CURRENCY;
 use std::collections::{HashMap, HashSet};
 use std::error::Error;
-use storage::models::price::{PriceAsset, PriceCache};
+use storage::models::price::PriceCache;
 use storage::models::{FiatRate, Price};
 
 pub struct PriceUpdater {
@@ -15,99 +12,56 @@ pub struct PriceUpdater {
     price_client: PriceClient,
 }
 
+pub enum UpdatePrices {
+    Top,
+    High,
+    Low,
+}
+
+const MAX_MARKETS_PER_PAGE: usize = 250;
+
 impl PriceUpdater {
     pub fn new(price_client: PriceClient, coin_gecko_client: CoinGeckoClient) -> Self {
-        PriceUpdater {
+        Self {
             coin_gecko_client,
             price_client,
         }
     }
 
-    pub async fn get_coin_list(&mut self) -> Result<Vec<Coin>, Box<dyn std::error::Error + Send + Sync>> {
-        self.coin_gecko_client.get_coin_list().await
-    }
-
-    pub async fn update_prices_assets(&mut self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
-        // native assets
-        let chains_assets = Chain::all()
-            .into_iter()
-            .map(|x| PriceAsset {
-                asset_id: x.as_ref().to_string(),
-                price_id: get_coingecko_market_id_for_chain(x).to_string(),
-            })
-            .collect::<Vec<_>>();
-        self.price_client.set_prices_assets(chains_assets.clone())?;
-
-        // assets
-        let coin_list = self.get_coin_list().await?;
-
-        let assets = coin_list.into_iter().flat_map(|x| self.get_prices_assets_for_coin(x)).collect::<Vec<_>>();
-
-        self.price_client.set_prices_assets(assets.clone())?;
-
-        Ok(chains_assets.len() + assets.len())
-    }
-
-    pub async fn update_prices_simple_high_market_cap(&mut self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
-        let ids = self.price_client.get_prices_ids()?.into_iter().take(500).collect::<Vec<_>>();
-        self.update_prices_simple_ids(ids).await
-    }
-
-    pub async fn update_prices_simple_low_market_cap(&mut self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn update_prices_type(&mut self, update_type: UpdatePrices) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
         let ids = self.price_client.get_prices_ids()?;
-        let ids = ids.into_iter().skip(500).collect::<Vec<_>>();
-        self.update_prices_simple_ids(ids).await
+        let asset_ids = match update_type {
+            UpdatePrices::Top => ids.into_iter().take(500).collect::<Vec<_>>(),
+            UpdatePrices::High => ids.into_iter().take(2500).skip(500).collect::<Vec<_>>(),
+            UpdatePrices::Low => ids.into_iter().skip(2500).collect::<Vec<_>>(),
+        };
+        self.update_prices(asset_ids).await
     }
 
-    pub async fn update_prices_simple_ids(&mut self, ids: Vec<String>) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
-        let ids_chunks = ids.chunks(500);
-        for ids in ids_chunks {
-            let prices = self.coin_gecko_client.get_prices_by_ids(ids.to_vec(), DEFAULT_FIAT_CURRENCY).await?;
-            let prices = prices
-                .into_iter()
-                .map(|(id, price)| price_for_simple_price(id.as_str(), price))
-                .collect::<Vec<Price>>();
-
-            let _ = self.price_client.set_prices_simple(prices);
-        }
-
-        Ok(ids.len())
-    }
-
-    pub async fn update_prices(&mut self, pages: u32) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
-        let coin_markets = self.coin_gecko_client.get_all_coin_markets(250, pages).await?;
-
-        let prices = coin_markets
+    fn map_coin_markets(coin_markets: Vec<CoinMarket>) -> Vec<Price> {
+        coin_markets
             .into_iter()
-            .map(|market| price_for_market(market.clone()))
+            .map(|x| Self::map_price_for_market(x.clone()))
             .filter(|x| x.last_updated_at.is_some())
             .collect::<HashSet<Price>>()
             .into_iter()
-            .collect::<Vec<Price>>();
-
-        self.price_client.set_prices(prices)
+            .collect::<Vec<Price>>()
     }
 
-    pub fn get_prices_assets_for_coin(&mut self, coin: Coin) -> Vec<PriceAsset> {
-        coin.platforms
-            .clone()
-            .into_iter()
-            .flat_map(|(platform, token_id)| {
-                let platform = get_chain_for_coingecko_platform_id(platform.as_str());
-                if let Some(chain) = platform {
-                    let token_id = token_id.unwrap_or_default();
-                    if !token_id.is_empty() {
-                        if let Some(asset_id) = get_asset_id(chain, token_id) {
-                            return Some(PriceAsset {
-                                asset_id,
-                                price_id: coin.id.clone(),
-                            });
-                        }
-                    }
-                }
-                None
-            })
-            .collect::<Vec<_>>()
+    pub async fn update_prices(&mut self, ids: Vec<String>) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
+        let ids_chunks = ids.chunks(250);
+        for ids in ids_chunks {
+            let coin_markets = self.coin_gecko_client.get_coin_markets_ids(ids.to_vec(), MAX_MARKETS_PER_PAGE).await?;
+            let prices = Self::map_coin_markets(coin_markets);
+            self.price_client.set_prices(prices)?;
+        }
+        Ok(ids.len())
+    }
+
+    pub async fn update_prices_pages(&mut self, pages: usize) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
+        let coin_markets = self.coin_gecko_client.get_all_coin_markets(MAX_MARKETS_PER_PAGE, pages).await?;
+        let prices = Self::map_coin_markets(coin_markets);
+        self.price_client.set_prices(prices)
     }
 
     pub async fn update_prices_cache(&mut self) -> Result<usize, Box<dyn Error + Send + Sync>> {
@@ -175,52 +129,24 @@ impl PriceUpdater {
         let time = Utc::now() - Duration::seconds(seconds as i64);
         self.price_client.delete_prices_updated_at_before(time.naive_utc())
     }
-}
 
-fn price_for_market(market: CoinMarket) -> Price {
-    Price::new(
-        market.id,
-        market.current_price.unwrap_or_default(),
-        market.price_change_percentage_24h.unwrap_or_default(),
-        market.ath.unwrap_or_default(),
-        market.ath_date.map(|x| x.naive_local()),
-        market.atl.unwrap_or_default(),
-        market.atl_date.map(|x| x.naive_local()),
-        market.market_cap.unwrap_or_default(),
-        market.market_cap_rank.unwrap_or_default(),
-        market.total_volume.unwrap_or_default(),
-        market.circulating_supply.unwrap_or_default(),
-        market.total_supply.unwrap_or_default(),
-        market.max_supply.unwrap_or_default(),
-        market.last_updated.map(|x| x.naive_local()),
-    )
-}
-
-fn price_for_simple_price(id: &str, price: SimplePrice) -> Price {
-    let last_updated_at = price.last_updated_at.and_then(|x| DateTime::from_timestamp(x as i64, 0)).map(|x| x.naive_utc());
-
-    Price::new(
-        id.to_string(),
-        price.usd.unwrap_or_default(),
-        price.usd_24h_change.unwrap_or_default(),
-        0.0,
-        None,
-        0.0,
-        None,
-        price.usd_market_cap.unwrap_or_default(),
-        0,
-        0.0,
-        0.0,
-        0.0,
-        0.0,
-        last_updated_at,
-    )
-}
-
-fn get_asset_id(chain: Chain, token_id: String) -> Option<String> {
-    if token_id.is_empty() {
-        return Some(chain.as_ref().to_string());
+    fn map_price_for_market(market: CoinMarket) -> Price {
+        Price::new(
+            market.id,
+            market.current_price.unwrap_or_default(),
+            market.price_change_percentage_24h.unwrap_or_default(),
+            market.ath.unwrap_or_default(),
+            market.ath_date.map(|x| x.naive_local()),
+            market.atl.unwrap_or_default(),
+            market.atl_date.map(|x| x.naive_local()),
+            market.market_cap.unwrap_or_default(),
+            market.fully_diluted_valuation.unwrap_or_default(),
+            market.market_cap_rank.unwrap_or_default(),
+            market.total_volume.unwrap_or_default(),
+            market.circulating_supply.unwrap_or_default(),
+            market.total_supply.unwrap_or_default(),
+            market.max_supply.unwrap_or_default(),
+            market.last_updated.map(|x| x.naive_local()),
+        )
     }
-    let token_id = format_token_id(chain, token_id)?;
-    format!("{}_{}", chain.as_ref(), token_id).into()
 }

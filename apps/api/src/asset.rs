@@ -59,6 +59,7 @@ pub async fn get_assets_search(
     Json(assets)
 }
 
+//TODO: Delete in favor of get_assets_by_device_id
 #[get("/assets/by_device_id/<device_id>?<wallet_index>&<from_timestamp>")]
 pub async fn get_assets_ids_by_device_id(
     device_id: &str,
@@ -66,10 +67,16 @@ pub async fn get_assets_ids_by_device_id(
     from_timestamp: Option<u32>,
     client: &State<Mutex<AssetsClient>>,
 ) -> Json<Vec<String>> {
-    let assets = client
-        .lock()
-        .await
-        .get_assets_ids_by_device_id(device_id, wallet_index, from_timestamp)
-        .unwrap();
+    get_assets_by_device_id(device_id, wallet_index, from_timestamp, client).await
+}
+
+#[get("/assets/device/<device_id>?<wallet_index>&<from_timestamp>")]
+pub async fn get_assets_by_device_id(
+    device_id: &str,
+    wallet_index: i32,
+    from_timestamp: Option<u32>,
+    client: &State<Mutex<AssetsClient>>,
+) -> Json<Vec<String>> {
+    let assets = client.lock().await.get_assets_by_device_id(device_id, wallet_index, from_timestamp).unwrap();
     Json(assets)
 }

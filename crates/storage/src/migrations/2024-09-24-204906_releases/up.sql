@@ -1,10 +1,12 @@
 CREATE TABLE releases (
-  id SERIAL PRIMARY KEY,
-  platform_store VARCHAR(32) NOT NULL,
+  platform_store VARCHAR(32) PRIMARY KEY  NOT NULL,
+  
   version VARCHAR(32) NOT NULL,
   upgrade_required bool NOT NULL default false,
-
-  UNIQUE(platform_store)
+  
+  updated_at timestamp NOT NULL default current_timestamp,
+  created_at timestamp NOT NULL default current_timestamp
 );
 
-DROP TABLE IF EXISTS versions;
+
+SELECT diesel_manage_updated_at('releases');

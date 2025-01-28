@@ -62,6 +62,7 @@ pub struct CoinMarket {
     pub current_price: Option<f64>,
     pub price_change_percentage_24h: Option<f64>,
     pub market_cap: Option<f64>,
+    pub fully_diluted_valuation: Option<f64>,
     pub market_cap_rank: Option<i32>,
     pub total_volume: Option<f64>,
     pub circulating_supply: Option<f64>,
@@ -72,27 +73,6 @@ pub struct CoinMarket {
     pub atl: Option<f64>,
     pub atl_date: Option<DateTime<Utc>>,
     pub last_updated: Option<DateTime<Utc>>,
-}
-
-pub type SimplePrices = HashMap<String, SimplePrice>;
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct SimplePrice {
-    pub usd: Option<f64>,
-    pub usd_market_cap: Option<f64>,
-    pub usd_24h_vol: Option<f64>,
-    pub usd_24h_change: Option<f64>,
-    pub last_updated_at: Option<u64>,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct SimplePriceQuery {
-    pub ids: String,
-    pub vs_currencies: String,
-    pub include_market_cap: bool,
-    pub include_24hr_vol: bool,
-    pub include_24hr_change: bool,
-    pub include_last_updated_at: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

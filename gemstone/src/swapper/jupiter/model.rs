@@ -7,7 +7,6 @@ pub struct QuoteRequest {
     pub amount: String,
     pub slippage_bps: u32,
     pub platform_fee_bps: u32,
-    pub only_direct_routes: bool,
     pub auto_slippage: bool,
     pub max_auto_slippage_bps: u32,
 }
@@ -22,6 +21,7 @@ pub struct QuoteResponse {
     pub other_amount_threshold: String,
     pub swap_mode: String,
     pub slippage_bps: u32,
+    pub computed_auto_slippage: Option<u32>,
     pub platform_fee: PlatformFee,
     pub price_impact_pct: String,
     pub route_plan: Vec<Route>,
@@ -64,10 +64,18 @@ pub struct QuoteDataResponse {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct DynamicSlippage {
+    pub max_bps: u32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct QuoteDataRequest {
     pub user_public_key: String,
     #[serde(skip_serializing_if = "String::is_empty")]
     pub fee_account: String,
     pub quote_response: QuoteResponse,
     pub prioritization_fee_lamports: i64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub dynamic_slippage: Option<DynamicSlippage>,
 }

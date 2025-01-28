@@ -4,7 +4,7 @@ use primitives::AssetMarket;
 use serde::{Deserialize, Serialize};
 use std::hash::{Hash, Hasher};
 
-use super::{CreateChart, FiatRate};
+use super::{Asset, CreateChart, FiatRate};
 
 #[derive(Debug, Queryable, Selectable, Serialize, Deserialize, Insertable, AsChangeset, Clone)]
 #[diesel(table_name = crate::schema::prices)]
@@ -18,6 +18,7 @@ pub struct Price {
     pub all_time_low: f64,
     pub all_time_low_date: Option<NaiveDateTime>,
     pub market_cap: f64,
+    pub market_cap_fdv: f64,
     pub market_cap_rank: i32,
     pub total_volume: f64,
     pub circulating_supply: f64,
@@ -50,6 +51,7 @@ impl PriceCache {
     pub fn as_market(&self) -> AssetMarket {
         AssetMarket {
             market_cap: Some(self.price.market_cap),
+            market_cap_fdv: Some(self.price.market_cap_fdv),
             market_cap_rank: Some(self.price.market_cap_rank),
             total_volume: Some(self.price.total_volume),
             circulating_supply: Some(self.price.circulating_supply),
@@ -65,6 +67,13 @@ impl PriceCache {
 pub struct PriceAsset {
     pub asset_id: String,
     pub price_id: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct PriceAssetData {
+    pub price_asset: PriceAsset,
+    pub price: Price,
+    pub asset: Asset,
 }
 
 impl PartialEq for PriceAsset {
@@ -96,6 +105,7 @@ impl Price {
         all_time_low: f64,
         all_time_low_date: Option<NaiveDateTime>,
         market_cap: f64,
+        market_cap_fdv: f64,
         market_cap_rank: i32,
         total_volume: f64,
         circulating_supply: f64,
@@ -113,6 +123,7 @@ impl Price {
             all_time_low,
             all_time_low_date,
             market_cap,
+            market_cap_fdv,
             market_cap_rank,
             total_volume,
             circulating_supply,
@@ -126,6 +137,7 @@ impl Price {
         let rate_multiplier = rate.rate / base_rate;
         new_price.price = price.price * rate_multiplier;
         new_price.market_cap = price.market_cap * rate_multiplier;
+        new_price.market_cap_fdv = price.market_cap_fdv * rate_multiplier;
         new_price.total_volume = price.total_volume * rate_multiplier;
         new_price
     }
@@ -142,6 +154,7 @@ impl Price {
     pub fn as_market_primitive(&self) -> AssetMarket {
         AssetMarket {
             market_cap: Some(self.market_cap),
+            market_cap_fdv: Some(self.market_cap_fdv),
             market_cap_rank: Some(self.market_cap_rank),
             total_volume: self.total_volume.into(),
             circulating_supply: Some(self.circulating_supply),

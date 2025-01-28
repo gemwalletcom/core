@@ -82,7 +82,7 @@ pub use self::number_formatter::NumberFormatter;
 pub mod wallet_connect;
 pub use self::wallet_connect::WallletConnectCAIP2;
 pub mod nft;
-pub use self::nft::{NFTAsset, NFTAttrubute, NFTCollection, NFTImage};
+pub use self::nft::{NFTAsset, NFTAttribute, NFTCollection, NFTData, NFTImage, NFTType};
 pub mod price_alert;
 pub use self::price_alert::{PriceAlert, PriceAlertDirection, PriceAlertType, PriceAlerts};
 
@@ -106,3 +106,5 @@ pub mod solana_pay;
 pub use self::fee::FeeUnitType;
 pub mod response;
 pub use self::response::{ResponseError, ResponseResult};
+pub mod link;
+pub use self::link::LinkType;

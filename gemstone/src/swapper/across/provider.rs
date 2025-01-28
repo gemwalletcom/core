@@ -50,14 +50,10 @@ impl Across {
     pub fn is_supported_pair(from_asset: &AssetId, to_asset: &AssetId) -> bool {
         let from = weth_address::normalize_asset(from_asset).unwrap();
         let to = weth_address::normalize_asset(to_asset).unwrap();
-        debug_println!("from: {:?}, to: {:?}", from, to);
-        let asset_mappings = AcrossDeployment::asset_mappings();
-        for mapping in asset_mappings.iter() {
-            if mapping.set.contains(&from) && mapping.set.contains(&to) {
-                return true;
-            }
-        }
-        false
+
+        AcrossDeployment::asset_mappings()
+            .into_iter()
+            .any(|x| x.set.contains(&from) && x.set.contains(&to))
     }
 
     pub fn get_rate_model(from_asset: &AssetId, to_asset: &AssetId, token_config: &TokenConfig) -> RateModel {
@@ -250,6 +246,12 @@ impl GemSwapProvider for Across {
             SwapChainAsset::Assets(Chain::Ethereum, vec![ETHEREUM_USDC.id.clone()]),
             SwapChainAsset::Assets(Chain::Base, vec![BASE_USDC.id.clone()]),
             SwapChainAsset::Assets(Chain::Optimism, vec![OPTIMISM_USDC.id.clone()]),
+            // USDT
+            SwapChainAsset::Assets(Chain::Arbitrum, vec![ARBITRUM_USDT.id.clone()]),
+            SwapChainAsset::Assets(Chain::Ethereum, vec![ETHEREUM_USDT.id.clone()]),
+            SwapChainAsset::Assets(Chain::Linea, vec![LINEA_USDT.id.clone()]),
+            SwapChainAsset::Assets(Chain::Optimism, vec![OPTIMISM_USDT.id.clone()]),
+            SwapChainAsset::Assets(Chain::ZkSync, vec![ZKSYNC_USDT.id.clone()]),
         ]
     }
 
@@ -393,7 +395,7 @@ impl GemSwapProvider for Across {
         let output_user_amount = output_amount - referral_fee;
 
         // Check output amount for user against slippage
-        let expect_min = apply_slippage_in_bp(&from_amount, request.options.slippage_bps);
+        let expect_min = apply_slippage_in_bp(&from_amount, request.options.slippage.bps);
         if output_user_amount < expect_min {
             return Err(SwapperError::ComputeQuoteError {
                 msg: format!("Expected amount exceeds slippage, expected: {}, output: {}", expect_min, output_user_amount),
@@ -433,7 +435,7 @@ impl GemSwapProvider for Across {
             to_value: output_amount.to_string(),
             data: SwapProviderData {
                 provider: self.provider(),
-                suggested_slippage_bps: None,
+                slippage_bps: request.options.slippage.bps,
                 routes: vec![SwapRoute {
                     input: input_asset.clone(),
                     output: output_asset.clone(),

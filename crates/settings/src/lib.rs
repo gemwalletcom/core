@@ -213,6 +213,8 @@ pub struct Chains {
     pub algorand: Chain,
     pub polkadot: Chain,
     pub cardano: Chain,
+    #[serde(rename = "abstract")]
+    pub abstract_chain: Chain,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -315,10 +317,35 @@ impl Settings {
 #[allow(unused)]
 pub struct NFT {
     pub nftscan: NFTScan,
+    pub simplehash: SimpleHash,
+    pub opensea: OpenSea,
+    pub bucket: BucketConfiguration,
 }
 
 #[derive(Debug, Deserialize, Clone)]
 #[allow(unused)]
 pub struct NFTScan {
-    pub key: String,
+    pub key: KeySecret,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[allow(unused)]
+pub struct SimpleHash {
+    pub key: KeySecret,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[allow(unused)]
+pub struct OpenSea {
+    pub key: KeySecret,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[allow(unused)]
+pub struct BucketConfiguration {
+    pub endpoint: String,
+    pub region: String,
+    pub key: Key,
+    pub name: String,
+    pub url: String,
 }

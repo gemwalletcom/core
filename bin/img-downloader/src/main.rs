@@ -28,7 +28,7 @@ impl Downloader {
         let client = ClientBuilder::new(reqwest::Client::new())
             .with(RetryTransientMiddleware::new_with_policy(retry_policy))
             .build();
-        return CoinGeckoClient::new_with_client_middleware(client, api_key.as_str());
+        CoinGeckoClient::new_with_client_middleware(client, api_key.as_str())
     }
 
     async fn start(&self) -> Result<(), Box<dyn Error + Send + Sync>> {
