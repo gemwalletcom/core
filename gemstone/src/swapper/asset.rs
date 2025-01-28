@@ -24,6 +24,8 @@ pub const AVALANCHE_USDT_TOKEN_ID: &str = "0x9702230A8Ea53601f5cD2dc00fDBc13d4dF
 pub const AVALANCHE_USDC_TOKEN_ID: &str = "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E";
 pub const BASE_USDC_TOKEN_ID: &str = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
 pub const BASE_CBBTC_TOKEN_ID: &str = "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf";
+pub const ABSTRACT_USDT_TOKEN_ID: &str = "0x0709f39376deee2a2dfc94a58edeb2eb9df012bd";
+pub const ABSTRACT_USDC_TOKEN_ID: &str = "0x84A71ccD554Cc1b02749b35d22F684CC8ec987e1";
 
 lazy_static! {
     // ethereum
@@ -221,6 +223,23 @@ lazy_static! {
     };
     pub static ref AVALANCHE_USDC: Asset = Asset {
         id: AssetId::from_token(Chain::AvalancheC, AVALANCHE_USDC_TOKEN_ID),
+        name: USDC_NAME.to_owned(),
+        symbol: USDC_SYMBOL.to_owned(),
+        decimals: 6,
+        asset_type: AssetType::ERC20,
+    };
+
+    // abstract
+    pub static ref ABSTRACT_USDT: Asset = Asset {
+        id: AssetId::from_token(Chain::Abstract, ABSTRACT_USDT_TOKEN_ID),
+        name: USDT_NAME.to_owned(),
+        symbol: USDT_SYMBOL.to_owned(),
+        decimals: 6,
+        asset_type: AssetType::ERC20,
+    };
+
+    pub static ref ABSTRACT_USDC: Asset = Asset {
+        id: AssetId::from_token(Chain::Abstract, ABSTRACT_USDC_TOKEN_ID),
         name: USDC_NAME.to_owned(),
         symbol: USDC_SYMBOL.to_owned(),
         decimals: 6,

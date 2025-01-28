@@ -2,8 +2,8 @@ use lazy_static::lazy_static;
 use primitives::{Asset, Chain};
 
 use crate::swapper::asset::{
-    ARBITRUM_USDC, ARBITRUM_USDT, AVALANCHE_USDC, AVALANCHE_USDT, BASE_USDC, ETHEREUM_USDC, ETHEREUM_USDT, OPTIMISM_USDC, OPTIMISM_USDT, POLYGON_USDC,
-    POLYGON_USDT, SMARTCHAIN_USDC, SMARTCHAIN_USDT,
+    ABSTRACT_USDC, ABSTRACT_USDT, ARBITRUM_USDC, ARBITRUM_USDT, AVALANCHE_USDC, AVALANCHE_USDT, BASE_USDC, ETHEREUM_USDC, ETHEREUM_USDT, OPTIMISM_USDC,
+    OPTIMISM_USDT, POLYGON_USDC, POLYGON_USDT, SMARTCHAIN_USDC, SMARTCHAIN_USDT,
 };
 
 pub const ENDPOINT_ID_ETHEREUM: u32 = 30101;
@@ -14,6 +14,7 @@ pub const ENDPOINT_ID_POLYGON: u32 = 30109;
 pub const ENDPOINT_ID_AVALANCHE: u32 = 30106;
 pub const ENDPOINT_ID_LINEA: u32 = 30183;
 pub const ENDPOINT_ID_SMARTCHAIN: u32 = 30102;
+pub const ENDPOINT_ID_ABSTRACT: u32 = 30324;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct StargatePool {
@@ -39,6 +40,7 @@ pub struct StargateRoutes {
     pub avalanche: StargateEndpoint,
     pub linea: StargateEndpoint,
     pub smartchain: StargateEndpoint,
+    pub abstrct: StargateEndpoint, // Abstract is reserver keyword in Rust
 }
 
 lazy_static! {
@@ -168,6 +170,25 @@ lazy_static! {
             ],
             composer_address: "0x2805169ba8ea84ed28efa6bccbc593e44bb4bde4".to_string(),
             endpoint_id: ENDPOINT_ID_SMARTCHAIN,
+        },
+        abstrct: StargateEndpoint {
+            id: Chain::Abstract,
+            pools: vec![
+                StargatePool {
+                    asset: ABSTRACT_USDT.clone(),
+                    address: "0x943C484278b8bE05D119DfC73CfAa4c9D8f11A76".to_string(),
+                },
+                StargatePool {
+                    asset: ABSTRACT_USDC.clone(),
+                    address: "0x91a5Fe991ccB876d22847967CEd24dCd7A426e0E".to_string(),
+                },
+                StargatePool {
+                    asset: Asset::from_chain(Chain::Abstract),
+                    address: "0x221F0E1280Ec657503ca55c708105F1e1529527D".to_string(),
+                },
+            ],
+            composer_address: "0x2805169ba8ea84ed28efa6bccbc593e44bb4bde4".to_string(),
+            endpoint_id: ENDPOINT_ID_ABSTRACT,
         },
     };
 }
