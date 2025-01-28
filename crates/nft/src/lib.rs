@@ -162,15 +162,16 @@ impl NFTAsset {
         }
     }
 
-    pub fn as_primitive(&self, chain: &str, collection_id: &str) -> Option<primitives::NFTAsset> {
+    pub fn as_primitive(&self, chain: &str, contract_address: &str) -> Option<primitives::NFTAsset> {
         let chain = NFT::map_chain(chain)?;
         let token_type = NFT::map_erc_type(self.erc_type.as_str())?;
         let attributes = self.get_attributes().unwrap_or_default();
         let token_id = self.token_id.clone();
 
         Some(primitives::NFTAsset {
-            id: primitives::NFTAsset::id(collection_id, token_id.as_str()),
-            collection_id: collection_id.to_string(),
+            id: primitives::NFTAsset::id(chain, contract_address, token_id.as_str()),
+            collection_id: primitives::NFTCollection::id(chain, contract_address),
+            contract_address: contract_address.to_string(),
             token_id,
             name: self.name.clone().unwrap_or_default().to_string(),
             description: self.description.clone(),

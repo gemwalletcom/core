@@ -15,6 +15,7 @@ CREATE TABLE nft_assets (
 
     token_type VARCHAR(32) NOT NULL REFERENCES nft_types (id) ON DELETE CASCADE,
     token_id VARCHAR(512) NOT NULL,
+    contract_address VARCHAR(512) NOT NULL,
 
     attributes JSONB NOT NULL,
 
