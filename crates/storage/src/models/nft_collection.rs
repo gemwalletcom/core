@@ -15,7 +15,7 @@ pub struct NftCollection {
     pub symbol: Option<String>,
     pub url: Option<String>,
     pub owner: Option<String>,
-    pub contrtact_address: String,
+    pub contract_address: String,
     pub image_url: Option<String>,
     pub is_verified: bool,
     pub is_enabled: bool,
@@ -36,7 +36,7 @@ impl NftCollection {
             name: self.name.clone(),
             description: Some(self.description.clone()),
             chain: Chain::from_str(self.chain.as_str()).unwrap(),
-            contract_address: self.contrtact_address.clone(),
+            contract_address: self.contract_address.clone(),
             image: NFTImage {
                 image_url: self.image_url.clone().unwrap_or_default(),
                 preview_image_url: self.image_url.clone().unwrap_or_default(),
@@ -58,7 +58,7 @@ impl NftCollection {
             symbol: None,
             url: None,
             owner: None,
-            contrtact_address: collection.contract_address.clone(),
+            contract_address: collection.contract_address.clone(),
             is_enabled: true,
         }
     }

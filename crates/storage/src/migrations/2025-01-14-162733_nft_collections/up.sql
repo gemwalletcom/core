@@ -9,7 +9,7 @@ CREATE TABLE nft_collections (
     url VARCHAR(256),
 
     owner VARCHAR(128),
-    contrtact_address VARCHAR(128) NOT NULL,
+    contract_address VARCHAR(128) NOT NULL,
 
     image_url VARCHAR(512),
 

@@ -28,6 +28,7 @@ pub enum EVMChain {
     Celo,
     World,
     Sonic,
+    Abstract,
 }
 
 impl EVMChain {
@@ -37,21 +38,21 @@ impl EVMChain {
 
     pub fn min_priority_fee(&self) -> u64 {
         match self {
-            Self::Ethereum => 1_000_000_000,        // https://etherscan.io/gastracker
-            Self::SmartChain => 1_000_000_000,      // https://bscscan.com/gastracker
-            Self::Polygon => 30_000_000_000,        // https://polygonscan.com/gastracker
-            Self::Arbitrum => 10_000_000,           // https://arbiscan.io/address/0x000000000000000000000000000000000000006C#readContract getMinimumGasPrice
-            Self::Optimism => 10_000_000,           // https://optimistic.etherscan.io/chart/gasprice
-            Self::Base => 100_000_000,              // https://basescan.org/chart/gasprice
-            Self::AvalancheC => 25_000_000_000,     // https://snowscan.xyz/gastracker
-            Self::OpBNB | Self::World => 1_000_000, // https://opbnbscan.com/statistics
-            Self::Fantom => 3_500_000_000,          // https://ftmscan.com/gastracker
-            Self::Gnosis => 3_000_000_000,          // https://gnosisscan.io/gastracker
-            Self::Blast => 200_000_000,             // https://blastscan.io/chart/gasprice
-            Self::ZkSync => 20_000_000,             // https://era.zksync.network/chart/gasprice
-            Self::Linea => 50_000_000,              // https://lineascan.build/gastracker
+            Self::Ethereum => 1_000_000_000,                         // https://etherscan.io/gastracker
+            Self::SmartChain => 1_000_000_000,                       // https://bscscan.com/gastracker
+            Self::Polygon => 30_000_000_000,                         // https://polygonscan.com/gastracker
+            Self::Arbitrum => 10_000_000, // https://arbiscan.io/address/0x000000000000000000000000000000000000006C#readContract getMinimumGasPrice
+            Self::Optimism => 10_000_000, // https://optimistic.etherscan.io/chart/gasprice
+            Self::Base => 100_000_000,    // https://basescan.org/chart/gasprice
+            Self::AvalancheC => 25_000_000_000, // https://snowscan.xyz/gastracker
+            Self::OpBNB | Self::World | Self::Abstract => 1_000_000, // https://opbnbscan.com/statistics
+            Self::Fantom => 3_500_000_000, // https://ftmscan.com/gastracker
+            Self::Gnosis => 3_000_000_000, // https://gnosisscan.io/gastracker
+            Self::Blast => 200_000_000,   // https://blastscan.io/chart/gasprice
+            Self::ZkSync => 20_000_000,   // https://era.zksync.network/chart/gasprice
+            Self::Linea => 50_000_000,    // https://lineascan.build/gastracker
             Self::Mantle | Self::Celo | Self::Manta => 10_000_000,
-            Self::Sonic => 1_000_000_000,
+            Self::Sonic => 10_000_000,
         }
     }
 
@@ -70,7 +71,8 @@ impl EVMChain {
             | Self::Linea
             | Self::Mantle
             | Self::Celo
-            | Self::Sonic => false,
+            | Self::Sonic
+            | Self::Abstract => false,
             Self::Optimism | Self::Base | Self::OpBNB | Self::World => true,
         }
     }
@@ -89,6 +91,7 @@ impl EVMChain {
             Self::Blast => Some("0x4300000000000000000000000000000000000004"),
             Self::Celo => Some("0x471EcE3750Da237f93B8E339c536989b8978a438"),
             Self::Sonic => Some("0x039e2fB66102314Ce7b64Ce5Ce3E5183bc94aD38"),
+            Self::Abstract => Some("0x3439153EB7AF838Ad19d56E1571FBD09333C2809"),
             Self::Manta | Self::Linea | Self::Mantle => None,
         }
     }

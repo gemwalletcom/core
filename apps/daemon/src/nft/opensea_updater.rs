@@ -25,7 +25,7 @@ impl OpenSeaUpdater {
             let chain = Chain::from_str(collection.chain.as_str())?;
             match chain {
                 Chain::Ethereum => {
-                    let opensea_collection = self.opensea_client.get_collection(chain.as_ref(), &collection.contrtact_address).await?;
+                    let opensea_collection = self.opensea_client.get_collection(chain.as_ref(), &collection.contract_address).await?;
                     let _ = self.update_collection(collection.clone(), opensea_collection);
 
                     println!("Updating collection: {}", collection.name);

@@ -44,8 +44,6 @@ pub struct CurrencyMetadata {
 #[serde(rename_all = "camelCase")]
 pub struct Data<T> {
     pub data: T,
-    #[serde(rename = "type")]
-    pub transaction_type: String,
 }
 
 #[derive(Debug, Clone, Deserialize)]
