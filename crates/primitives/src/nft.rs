@@ -68,6 +68,13 @@ pub struct NFTAsset {
     pub attributes: Vec<NFTAttribute>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[typeshare(swift = "Sendable, Hashable, Equatable")]
+pub struct NFTAssetData {
+    pub collection: NFTCollection,
+    pub asset: NFTAsset,
+}
+
 pub struct NFTAssetId {
     pub chain: Chain,
     pub collection_id: String,
