@@ -472,12 +472,13 @@ impl GemSwapProvider for Across {
                 .await?
             }
         };
+        let approvals = if approval == ApprovalType::None { vec![] } else { vec![approval] };
 
         let quote_data = SwapQuoteData {
             to: deployment.spoke_pool.into(),
             value: value.to_string(),
             data: HexEncode(deposit_v3_call.clone()),
-            approvals: vec![approval],
+            approvals,
         };
 
         if matches!(data, FetchQuoteData::EstimateGas) {

@@ -134,6 +134,7 @@ impl GemSwapProvider for ThorChain {
                 ApprovalType::None
             }
         };
+        let approvals = if approval == ApprovalType::None { vec![] } else { vec![approval] };
 
         let data = if from_asset.use_evm_router() {
             // only used for swapping from ERC20 tokens
@@ -157,14 +158,14 @@ impl GemSwapProvider for ThorChain {
                 to,
                 value: "0".to_string(),
                 data: hex::encode(call.clone()),
-                approvals: vec![approval],
+                approvals,
             }
         } else {
             SwapQuoteData {
                 to: route_data.inbound_address.unwrap_or_default(),
                 value,
                 data: self.data(from_asset.chain, memo),
-                approvals: vec![approval],
+                approvals,
             }
         };
 
