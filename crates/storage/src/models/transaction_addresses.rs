@@ -22,7 +22,8 @@ impl TransactionAddresses {
             | primitives::TransactionType::StakeUndelegate
             | primitives::TransactionType::StakeRewards
             | primitives::TransactionType::StakeRedelegate
-            | primitives::TransactionType::StakeWithdraw => transaction
+            | primitives::TransactionType::StakeWithdraw
+            | primitives::TransactionType::TransferNFT => transaction
                 .addresses()
                 .into_iter()
                 .map(|x| Self {

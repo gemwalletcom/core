@@ -253,7 +253,7 @@ impl Transaction {
 
     pub fn asset_ids(&self) -> Vec<String> {
         match self.transaction_type {
-            TransactionType::Transfer => vec![self.asset_id.clone().to_string()],
+            TransactionType::Transfer | TransactionType::TransferNFT => vec![self.asset_id.clone().to_string()],
             TransactionType::Swap => self
                 .metadata
                 .clone()

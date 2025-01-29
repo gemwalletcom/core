@@ -38,8 +38,8 @@ impl Hash for NFTCollection {
 }
 
 impl NFTCollection {
-    pub fn id(chain: Chain, contract_id: &str) -> String {
-        format!("{}_{}", chain.as_ref(), contract_id)
+    pub fn id(chain: Chain, contract_address: &str) -> String {
+        format!("{}_{}", chain.as_ref(), contract_address)
     }
 
     pub fn image_path(&self) -> NFTImage {
@@ -58,6 +58,7 @@ impl NFTCollection {
 pub struct NFTAsset {
     pub id: String,
     pub collection_id: String,
+    pub contract_address: Option<String>,
     pub token_id: String,
     pub token_type: NFTType,
     pub name: String,
@@ -65,6 +66,13 @@ pub struct NFTAsset {
     pub chain: Chain,
     pub image: NFTImage,
     pub attributes: Vec<NFTAttribute>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[typeshare(swift = "Sendable, Hashable, Equatable")]
+pub struct NFTAssetData {
+    pub collection: NFTCollection,
+    pub asset: NFTAsset,
 }
 
 pub struct NFTAssetId {
@@ -85,8 +93,8 @@ impl NFTAssetId {
 }
 
 impl NFTAsset {
-    pub fn id(collection_id: &str, token_id: &str) -> String {
-        format!("{}_{}", collection_id, token_id)
+    pub fn id(chain: Chain, contract_address: &str, token_id: &str) -> String {
+        format!("{}_{}_{}", chain.as_ref(), contract_address, token_id)
     }
 
     pub fn image_path(&self) -> NFTImage {

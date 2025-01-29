@@ -57,13 +57,15 @@ impl NFTTonAsset {
         }
     }
 
-    pub fn as_primitive(&self, collection_id: &str) -> Option<primitives::NFTAsset> {
+    pub fn as_primitive(&self, contract_address: &str) -> Option<primitives::NFTAsset> {
+        let chain = Chain::Ton;
         let token_id = self.token_address.clone()?;
         let name = self.name.clone()?;
 
         Some(primitives::NFTAsset {
-            id: primitives::NFTAsset::id(collection_id, token_id.as_str()),
-            collection_id: collection_id.to_string(),
+            id: primitives::NFTAsset::id(chain, contract_address, token_id.as_str()),
+            collection_id: primitives::NFTCollection::id(chain, contract_address),
+            contract_address: Some(contract_address.to_string()),
             token_id,
             name,
             description: self.description.clone(),

@@ -121,10 +121,11 @@ impl super::model::Nft {
         let chain: primitives::Chain = self.as_chain()?;
         let collection_id = NFTCollection::id(chain, &self.get_contract_address()?);
         let token_id = &self.get_token_id()?;
-        let id = NFTAsset::id(collection_id.as_str(), token_id);
+        let id = NFTAsset::id(chain, &self.get_contract_address()?, token_id);
         Some(primitives::NFTAsset {
             id,
             token_id: token_id.to_string(),
+            contract_address: Some(self.contract_address.clone()),
             name: self.name.clone().unwrap_or_default(),
             description: self.description.clone(),
             image: self.as_primitive_asset_image(),

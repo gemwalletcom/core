@@ -8,6 +8,7 @@ use typeshare::typeshare;
 #[strum(serialize_all = "camelCase")]
 pub enum TransactionType {
     Transfer,
+    TransferNFT,
     Swap,
     TokenApproval,
     StakeDelegate,
