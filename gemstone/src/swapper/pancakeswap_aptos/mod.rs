@@ -3,7 +3,8 @@ use std::sync::Arc;
 mod client;
 mod model;
 use super::{
-    FetchQuoteData, GemSwapProvider, SwapChainAsset, SwapProvider, SwapProviderData, SwapQuote, SwapQuoteData, SwapQuoteRequest, SwapRoute, SwapperError,
+    ApprovalType, FetchQuoteData, GemSwapProvider, SwapChainAsset, SwapProvider, SwapProviderData, SwapQuote, SwapQuoteData, SwapQuoteRequest, SwapRoute,
+    SwapperError,
 };
 
 use crate::network::AlienProvider;
@@ -92,6 +93,10 @@ impl GemSwapProvider for PancakeSwapAptos {
         Ok(quote)
     }
 
+    async fn fetch_permit2_for_quote(&self, _quote: &SwapQuote, _provider: Arc<dyn AlienProvider>) -> Result<ApprovalType, SwapperError> {
+        Ok(ApprovalType::None)
+    }
+
     async fn fetch_quote_data(&self, quote: &SwapQuote, _provider: Arc<dyn AlienProvider>, _data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError> {
         let routes = quote.data.clone().routes;
         let route_data: RouteData = serde_json::from_str(&routes.first().unwrap().route_data).map_err(|_| SwapperError::InvalidRoute)?;
@@ -107,7 +112,7 @@ impl GemSwapProvider for PancakeSwapAptos {
             to: PANCAKE_SWAP_APTOS_ADDRESS.to_string(),
             value: quote.from_value.clone(),
             data: serde_json::to_string(&payload).unwrap(),
-            approvals: vec![],
+            approval: ApprovalType::None,
         };
         Ok(data)
     }

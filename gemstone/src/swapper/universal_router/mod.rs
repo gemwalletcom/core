@@ -38,13 +38,9 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
-use super::{
-    permit2_data::{Permit2Data, Permit2Detail, PermitSingle},
-    weth_address,
-};
+use super::weth_address;
 
 static DEFAULT_DEADLINE: u64 = 3600; // 1 hour
-static DEFAULT_EXPIRATION: u64 = 60 * 60 * 24 * 30; // 30 days
 
 pub struct FeePreference {
     pub fee_token: EthereumAddress,
@@ -348,17 +344,30 @@ impl UniswapV3 {
         Ok(commands)
     }
 
-    async fn check_approval(
+    async fn check_erc20_approval(
         &self,
         wallet_address: Address,
         token: &str,
         amount: U256,
         chain: &Chain,
         provider: Arc<dyn AlienProvider>,
-    ) -> Result<Vec<ApprovalType>, SwapperError> {
+    ) -> Result<ApprovalType, SwapperError> {
         let deployment = self.provider.get_deployment_by_chain(chain).ok_or(SwapperError::NotSupportedChain)?;
         // Check token allowance, spender is permit2
         let erc20_type = CheckApprovalType::ERC20(wallet_address.to_string(), token.to_string(), deployment.permit2.to_string(), amount);
+
+        check_approval(erc20_type, provider.clone(), chain).await
+    }
+
+    async fn check_permit2_approval(
+        &self,
+        wallet_address: Address,
+        token: &str,
+        amount: U256,
+        chain: &Chain,
+        provider: Arc<dyn AlienProvider>,
+    ) -> Result<ApprovalType, SwapperError> {
+        let deployment = self.provider.get_deployment_by_chain(chain).ok_or(SwapperError::NotSupportedChain)?;
         let permit2_type = CheckApprovalType::Permit2(
             deployment.permit2.to_string(),
             wallet_address.to_string(),
@@ -367,17 +376,7 @@ impl UniswapV3 {
             amount,
         );
 
-        let approvals = futures::future::join_all(vec![
-            check_approval(erc20_type, provider.clone(), chain),
-            check_approval(permit2_type, provider.clone(), chain),
-        ])
-        .await;
-
-        Ok(approvals
-            .into_iter()
-            .filter_map(Result::ok) // Handle Results
-            .filter(|approval| !matches!(approval, ApprovalType::None))
-            .collect())
+        check_approval(permit2_type, provider.clone(), chain).await
     }
 }
 
@@ -500,6 +499,13 @@ impl GemSwapProvider for UniswapV3 {
         })
     }
 
+    async fn fetch_permit2_for_quote(&self, quote: &SwapQuote, provider: Arc<dyn AlienProvider>) -> Result<ApprovalType, SwapperError> {
+        let wallet_address: Address = quote.request.wallet_address.as_str().parse().map_err(SwapperError::from)?;
+        let (_, token_in, _, amount_in) = Self::parse_request(&quote.request)?;
+        self.check_permit2_approval(wallet_address, &token_in.to_checksum(), amount_in, &quote.request.from_asset.chain, provider)
+            .await
+    }
+
     async fn fetch_quote_data(&self, quote: &SwapQuote, provider: Arc<dyn AlienProvider>, data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError> {
         let request = &quote.request;
         let (_, token_in, token_out, amount_in) = Self::parse_request(request)?;
@@ -510,44 +516,23 @@ impl GemSwapProvider for UniswapV3 {
         let to_amount = U256::from_str(&quote.to_value).map_err(|_| SwapperError::InvalidAmount)?;
         let wallet_address: Address = request.wallet_address.as_str().parse().map_err(SwapperError::from)?;
 
-        let mut permit = match data {
+        let permit = match data {
             FetchQuoteData::Permit2(data) => Some(data.into()),
             _ => None,
         };
 
-        let approvals = {
+        let approval = {
             if quote.request.from_asset.is_native() {
-                vec![]
+                ApprovalType::None
             } else {
-                // Check allowances
-                self.check_approval(wallet_address, &token_in.to_checksum(), amount_in, &request.from_asset.chain, provider)
+                // Check if need to approve permit2 contract
+                self.check_erc20_approval(wallet_address, &token_in.to_checksum(), amount_in, &request.from_asset.chain, provider)
                     .await?
             }
         };
 
         let now = SystemTime::now().duration_since(UNIX_EPOCH).expect("Time went backwards").as_secs();
         let sig_deadline = now + DEFAULT_DEADLINE;
-        let expiration = now + DEFAULT_EXPIRATION;
-        for approval in &approvals {
-            if let ApprovalType::Permit2(permit2) = approval {
-                permit = Some(
-                    Permit2Data {
-                        permit_single: PermitSingle {
-                            details: Permit2Detail {
-                                token: permit2.token.clone(),
-                                amount: permit2.value.clone(),
-                                expiration,
-                                nonce: permit2.permit2_nonce,
-                            },
-                            spender: permit2.spender.clone(),
-                            sig_deadline,
-                        },
-                        signature: vec![0u8; 65],
-                    }
-                    .into(),
-                );
-            }
-        }
 
         let evm_chain = EVMChain::from_chain(quote.request.from_asset.chain).ok_or(SwapperError::NotSupportedChain)?;
         let base_pair = get_base_pair(&evm_chain);
@@ -573,7 +558,7 @@ impl GemSwapProvider for UniswapV3 {
             to: deployment.universal_router.into(),
             value,
             data: HexEncode(encoded),
-            approvals,
+            approval,
         })
     }
 

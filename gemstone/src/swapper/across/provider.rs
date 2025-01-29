@@ -430,6 +430,11 @@ impl GemSwapProvider for Across {
             request: request.clone(),
         })
     }
+
+    async fn fetch_permit2_for_quote(&self, _quote: &SwapQuote, _provider: Arc<dyn AlienProvider>) -> Result<ApprovalType, SwapperError> {
+        Ok(ApprovalType::None)
+    }
+
     async fn fetch_quote_data(&self, quote: &SwapQuote, provider: Arc<dyn AlienProvider>, data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError> {
         let from_chain = &quote.request.from_asset.chain;
         let deployment = AcrossDeployment::deployment_by_chain(from_chain).ok_or(SwapperError::NotSupportedChain)?;
@@ -472,13 +477,12 @@ impl GemSwapProvider for Across {
                 .await?
             }
         };
-        let approvals = if approval == ApprovalType::None { vec![] } else { vec![approval] };
 
         let quote_data = SwapQuoteData {
             to: deployment.spoke_pool.into(),
             value: value.to_string(),
             data: HexEncode(deposit_v3_call.clone()),
-            approvals,
+            approval,
         };
 
         if matches!(data, FetchQuoteData::EstimateGas) {

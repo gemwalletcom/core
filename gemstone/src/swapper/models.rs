@@ -194,7 +194,7 @@ pub struct SwapQuoteData {
     pub to: String,
     pub value: String,
     pub data: String,
-    pub approvals: Vec<ApprovalType>,
+    pub approval: ApprovalType,
 }
 
 #[derive(Debug, Clone, uniffi::Record)]

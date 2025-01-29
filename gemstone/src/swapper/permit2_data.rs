@@ -1,8 +1,5 @@
 use crate::swapper::SwapperError;
-use alloy_core::{
-    primitives::{Bytes, U256},
-    sol_types::SolCall,
-};
+use alloy_core::primitives::{Bytes, U256};
 use alloy_primitives::aliases::{U160, U48};
 use serde::{Deserialize, Serialize, Serializer};
 use std::{
@@ -12,10 +9,7 @@ use std::{
 
 use gem_evm::{
     permit2::{IAllowanceTransfer, Permit2Types},
-    uniswap::{
-        command::{Permit2Permit, UniversalRouterCommand},
-        contract::IUniversalRouter,
-    },
+    uniswap::command::Permit2Permit,
 };
 use primitives::{eip712::EIP712Domain, Chain};
 
@@ -102,19 +96,6 @@ pub fn permit2_data_to_eip712_json(chain: Chain, data: PermitSingle, contract: &
         msg: "failed to serialize EIP712 message to JSON".into(),
     })?;
     Ok(json)
-}
-
-#[uniffi::export]
-pub fn update_permit2_in_calldata(permit2: Permit2Data, calldata: Vec<u8>) -> Vec<u8> {
-    let permit2_permit: Permit2Permit = permit2.into();
-    let command = UniversalRouterCommand::PERMIT2_PERMIT(permit2_permit);
-    let mut decoded = IUniversalRouter::executeCall::abi_decode(&calldata, true).unwrap();
-    // check if the first command is the same as the one we want to update
-    if decoded.commands[0] != command.raw_value() {
-        return calldata;
-    }
-    decoded.inputs[0] = Bytes::from_iter(command.encode().iter());
-    IUniversalRouter::executeCall::abi_encode(&decoded)
 }
 
 #[cfg(test)]

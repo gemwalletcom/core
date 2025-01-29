@@ -99,6 +99,10 @@ impl GemSwapProvider for ThorChain {
         Ok(quote)
     }
 
+    async fn fetch_permit2_for_quote(&self, _quote: &SwapQuote, _provider: Arc<dyn AlienProvider>) -> Result<ApprovalType, SwapperError> {
+        Ok(ApprovalType::None)
+    }
+
     async fn fetch_quote_data(&self, quote: &SwapQuote, provider: Arc<dyn AlienProvider>, _data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError> {
         let fee = quote.request.options.clone().fee.unwrap_or_default().thorchain;
         let from_asset = THORChainAsset::from_asset_id(quote.clone().request.from_asset).ok_or(SwapperError::NotSupportedAsset)?;
@@ -134,7 +138,6 @@ impl GemSwapProvider for ThorChain {
                 ApprovalType::None
             }
         };
-        let approvals = if approval == ApprovalType::None { vec![] } else { vec![approval] };
 
         let data = if from_asset.use_evm_router() {
             // only used for swapping from ERC20 tokens
@@ -158,14 +161,14 @@ impl GemSwapProvider for ThorChain {
                 to,
                 value: "0".to_string(),
                 data: hex::encode(call.clone()),
-                approvals,
+                approval,
             }
         } else {
             SwapQuoteData {
                 to: route_data.inbound_address.unwrap_or_default(),
                 value,
                 data: self.data(from_asset.chain, memo),
-                approvals,
+                approval,
             }
         };
 
