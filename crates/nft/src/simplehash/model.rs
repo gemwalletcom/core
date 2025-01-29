@@ -113,6 +113,7 @@ pub struct Collection {
     pub marketplace_pages: Vec<MarketplacePage>,
     pub metaplex_mint: Option<String>,
     pub metaplex_candy_machine: Option<String>,
+    pub mpl_core_collection_address: Option<String>,
     //     pub metaplex_first_verified_creator: Option<String>,
     //     pub mpl_core_collection_address: Option<String>,
     //     pub floor_prices: Vec<FloorPrice>,

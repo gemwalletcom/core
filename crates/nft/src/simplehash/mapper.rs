@@ -112,7 +112,12 @@ impl super::model::Nft {
 
     pub fn get_contract_address(&self) -> Option<String> {
         match self.as_chain()? {
-            primitives::Chain::Solana => self.collection.metaplex_mint.clone().or_else(|| self.extra_metadata.token_program.clone()),
+            primitives::Chain::Solana => self
+                .collection
+                .mpl_core_collection_address
+                .clone()
+                .or_else(|| self.collection.metaplex_mint.clone())
+                .or_else(|| self.extra_metadata.token_program.clone()),
             _ => Some(self.contract_address.clone()),
         }
     }
