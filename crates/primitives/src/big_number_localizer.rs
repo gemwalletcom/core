@@ -1,5 +1,4 @@
 use crate::BigNumberFormatter;
-use bigdecimal::RoundingMode;
 use num_format::{Locale, ToFormattedString};
 
 #[derive(Default)]
