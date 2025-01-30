@@ -262,15 +262,6 @@ impl DatabaseClient {
             .execute(&mut self.connection)
     }
 
-    pub fn update_asset_rank(&mut self, asset_id: &str, _rank: i32) -> Result<usize, diesel::result::Error> {
-        use crate::schema::assets::dsl::*;
-        diesel::update(assets)
-            .filter(id.eq(asset_id))
-            .filter(rank.eq(0))
-            .set(rank.eq(_rank))
-            .execute(&mut self.connection)
-    }
-
     pub fn add_assets_types(&mut self, values: Vec<AssetType>) -> Result<usize, diesel::result::Error> {
         let values = values
             .iter()
