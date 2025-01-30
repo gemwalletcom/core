@@ -28,6 +28,7 @@ thiserror.workspace = true
 
 anyhow.workspace = true
 base64.workspace = true
+base64-serde.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 serde_urlencoded.workspace = true
@@ -45,6 +46,8 @@ lazy_static = { workspace = true }
 
 tonlib-client = { workspace = true }
 tonlib-core = { workspace = true }
+reqwest.workspace = true
+
 
 [build-dependencies]
 uniffi = { workspace = true, features = ["build"] }
@@ -52,7 +55,6 @@ uniffi = { workspace = true, features = ["build"] }
 [dev-dependencies]
 async-std.workspace = true
 tokio.workspace = true
-reqwest.workspace = true
 futures.workspace = true
 
 [[test]]

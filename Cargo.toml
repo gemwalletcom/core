@@ -75,7 +75,7 @@ lazy_static = "1.4.0"
 futures-util = "0.3.30"
 uuid = { version = "1.8.0", features = ["v4"] }
 rand = { version = "0.8.5" }
-aws-sdk-s3 = { version = "1.5", features = ["behavior-version-latest"] } 
+aws-sdk-s3 = { version = "1.5", features = ["behavior-version-latest"] }
 
 # db
 diesel = { version = "2.2.3", features = ["postgres", "chrono", "serde_json"] }
@@ -87,6 +87,7 @@ meilisearch-sdk = { version = "0.27.1" }
 
 # crypto
 base64 = { version = "0.22.0" }
+base64-serde = "0.7"
 blake2 = "0.10.6"
 bech32 = { version = "0.11.0" }
 bs58 = { version = "0.5.0", features = ["check"] }

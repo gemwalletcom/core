@@ -7,6 +7,7 @@ use crate::{network::AlienProvider, swapper::SwapChainAsset};
 
 use super::{ApprovalType, FetchQuoteData, GemSwapProvider, SwapProvider, SwapProviderData, SwapQuote, SwapQuoteData, SwapQuoteRequest, SwapperError};
 
+pub mod pool;
 pub mod router;
 
 #[derive(Debug, Default)]
@@ -31,7 +32,7 @@ impl GemSwapProvider for Stonfi {
             to_value: request.value.clone(),
             data: SwapProviderData {
                 provider: SwapProvider::Stonfi,
-                suggested_slippage_bps: Some(100),
+                slippage_bps: 100,
                 routes: vec![],
             },
             approval: ApprovalType::None,

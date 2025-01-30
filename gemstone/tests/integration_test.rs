@@ -3,6 +3,7 @@ mod tests {
     use across::Across;
     use async_trait::async_trait;
     use futures::TryFutureExt;
+    use gem_ton::cell::CellParser;
     use gemstone::{
         config::swap_config::{SwapReferralFee, SwapReferralFees},
         network::{provider::AlienProvider, target::*, *},
@@ -11,6 +12,7 @@ mod tests {
     use primitives::{AssetId, Chain};
     use reqwest::Client;
     use std::{collections::HashMap, sync::Arc, time::SystemTime};
+    use stonfi::pool::get_pool_data;
 
     pub fn print_json(bytes: &[u8]) {
         if let Ok(json) = serde_json::from_slice::<serde_json::Value>(bytes) {
@@ -42,6 +44,7 @@ mod tests {
                 (Chain::Optimism, "https://optimism.llamarpc.com".into()),
                 (Chain::Arbitrum, "https://arbitrum.llamarpc.com".into()),
                 (Chain::Solana, "https://solana-rpc.publicnode.com".into()),
+                (Chain::Ton, "https://toncenter.com/".into()),
             ]))
         }
     }
@@ -177,6 +180,20 @@ mod tests {
             .await?;
         println!("<== quote_data: {:?}", quote_data);
 
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_stonfi() -> Result<(), SwapperError> {
+        let client = reqwest::Client::new();
+        let response = get_pool_data(&client, "EQCGScrZe1xbyWqWDvdI6mzP-GAcAWFv6ZXuaJOuSqemxku4")
+            .await
+            .map_err(|err| {
+                println!("err: {:?}", err);
+                SwapperError::NetworkError { msg: err.to_string() }
+            })?;
+
+        println!("<== response: {:?}", response);
         Ok(())
     }
 }
