@@ -1,9 +1,11 @@
 use std::error::Error;
 
 use localizer::LanguageLocalizer;
+use num_format::Locale;
+use primitives::big_number_localizer::Format;
 use primitives::{
-    AddressFormatter, BigNumberFormatter, Chain, PushNotification, PushNotificationTransaction, PushNotificationTypes, Subscription, Transaction,
-    TransactionSwapMetadata, TransactionType,
+    AddressFormatter, BigNumberFormatter, BigNumberLocalizer, Chain, PushNotification, PushNotificationTransaction, PushNotificationTypes, Subscription,
+    Transaction, TransactionSwapMetadata, TransactionType,
 };
 use storage::DatabaseClient;
 
@@ -32,9 +34,18 @@ impl Pusher {
         }
     }
 
-    pub fn message(&mut self, localizer: LanguageLocalizer, transaction: Transaction, subscription: Subscription) -> Result<Message, Box<dyn Error>> {
+    pub fn message(
+        &mut self,
+        localizer: LanguageLocalizer,
+        transaction: Transaction,
+        subscription: Subscription,
+        locale: Locale,
+    ) -> Result<Message, Box<dyn Error>> {
+        let number_localizer = BigNumberLocalizer::default();
         let asset = self.database_client.get_asset(transaction.asset_id.to_string().as_str())?;
-        let amount = BigNumberFormatter::value(transaction.value.as_str(), asset.decimals).unwrap_or_default();
+        let amount = number_localizer
+            .get_value(transaction.value.as_str(), asset.decimals, Format::Short, locale)
+            .unwrap_or_default();
         let chain = transaction.asset_id.chain;
         let to_address = self.get_address(chain, transaction.to.as_str())?;
         let from_address = self.get_address(chain, transaction.from.as_str())?;
@@ -103,7 +114,7 @@ impl Pusher {
             return Ok(0);
         }
         let localizer = LanguageLocalizer::new_with_language(&device.locale);
-        let message = self.message(localizer, transaction.clone(), subscription.clone())?;
+        let message = self.message(localizer, transaction.clone(), subscription.clone(), Locale::en)?;
 
         let notification_transaction = PushNotificationTransaction {
             wallet_index: subscription.wallet_index,
