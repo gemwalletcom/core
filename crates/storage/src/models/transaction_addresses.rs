@@ -1,5 +1,5 @@
 use diesel::prelude::*;
-use primitives::TransactionSwapMetadata;
+use primitives::{TransactionSwapMetadata, TransactionType};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Queryable, Selectable, Serialize, Deserialize, Insertable, AsChangeset, Clone)]
@@ -16,14 +16,16 @@ impl TransactionAddresses {
     pub fn from_primitive(transaction: primitives::Transaction) -> Vec<TransactionAddresses> {
         let transaction_id = transaction.clone().id;
         match transaction.transaction_type {
-            primitives::TransactionType::Transfer
-            | primitives::TransactionType::TokenApproval
-            | primitives::TransactionType::StakeDelegate
-            | primitives::TransactionType::StakeUndelegate
-            | primitives::TransactionType::StakeRewards
-            | primitives::TransactionType::StakeRedelegate
-            | primitives::TransactionType::StakeWithdraw
-            | primitives::TransactionType::TransferNFT => transaction
+            TransactionType::Transfer
+            | TransactionType::TokenApproval
+            | TransactionType::StakeDelegate
+            | TransactionType::StakeUndelegate
+            | TransactionType::StakeRewards
+            | TransactionType::StakeRedelegate
+            | TransactionType::StakeWithdraw
+            | TransactionType::TransferNFT
+            | TransactionType::AssetActivation
+            | TransactionType::SmartContractCall => transaction
                 .addresses()
                 .into_iter()
                 .map(|x| Self {
@@ -33,7 +35,7 @@ impl TransactionAddresses {
                     address: x,
                 })
                 .collect(),
-            primitives::TransactionType::Swap => {
+            TransactionType::Swap => {
                 let metadata: TransactionSwapMetadata = serde_json::from_value(transaction.metadata.clone().unwrap()).unwrap();
                 let from_asset = metadata.from_asset.clone();
                 let to_asset = metadata.to_asset.clone();
@@ -52,7 +54,6 @@ impl TransactionAddresses {
                     },
                 ]
             }
-            primitives::TransactionType::AssetActivation => todo!(),
         }
     }
 }
