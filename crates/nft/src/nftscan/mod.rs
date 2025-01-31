@@ -1,6 +1,7 @@
 use model::{NFTResult, Response};
 use ton::NFTTonResult;
 
+pub mod mapper;
 pub mod model;
 pub mod ton;
 
