@@ -6,6 +6,8 @@ pub static DEFAULT_SLIPPAGE_BPS: u32 = 100;
 #[derive(uniffi::Record, Debug, Clone, PartialEq)]
 pub struct SwapConfig {
     pub default_slippage: GemSlippage,
+    pub permit2_expiration: u64,
+    pub permit2_sig_deadline: u64,
     pub referral_fee: SwapReferralFees,
 }
 
@@ -42,6 +44,8 @@ pub fn get_swap_config() -> SwapConfig {
             bps: DEFAULT_SLIPPAGE_BPS,
             mode: SlippageMode::Exact,
         },
+        permit2_expiration: 60 * 60 * 24 * 30, // 30 days
+        permit2_sig_deadline: 60 * 30,         // 30 minutes
         referral_fee: SwapReferralFees {
             evm: SwapReferralFee {
                 address: "0x0D9DAB1A248f63B0a48965bA8435e4de7497a3dC".into(),
