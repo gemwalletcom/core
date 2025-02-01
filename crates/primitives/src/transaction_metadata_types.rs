@@ -12,3 +12,10 @@ pub struct TransactionSwapMetadata {
     pub to_asset: AssetId,
     pub to_value: String,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[typeshare(swift = "Sendable")]
+#[serde(rename_all = "camelCase")]
+pub struct TransactionNFTTransferMetadata {
+    pub asset_id: String,
+}

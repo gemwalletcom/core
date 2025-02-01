@@ -1,22 +1,31 @@
 use chrono::{DateTime, Duration, Utc};
 use primitives::Chain;
 
-#[derive(Default, Debug, Clone)]
+#[derive(Debug, Clone)]
 pub struct ParserOptions {
+    pub chain: Chain,
     pub timeout: u64,
     pub retry: u64,
 }
 
 impl ParserOptions {
-    pub fn is_transaction_outdated(&self, chain: Chain, transaction_created_at: DateTime<Utc>) -> bool {
-        Utc::now() - transaction_created_at > Duration::milliseconds(self.outdated(chain))
+    pub fn is_transaction_outdated(&self, transaction_created_at: DateTime<Utc>) -> bool {
+        Utc::now() - transaction_created_at > Duration::seconds(self.outdated_seconds())
     }
 
-    pub fn outdated(&self, chain: Chain) -> i64 {
-        match chain {
-            Chain::Bitcoin => 7_200_000,                // 2 hours
-            Chain::Litecoin | Chain::Doge => 1_800_000, // 30 minutes
-            _ => 900_000,                               // 15 minutes
+    pub fn outdated_seconds(&self) -> i64 {
+        match self.chain {
+            Chain::Bitcoin => 7_200,                // 2 hours
+            Chain::Litecoin | Chain::Doge => 1_800, // 30 minutes
+            _ => 900,                               // 15 minutes
+        }
+    }
+
+    pub fn minimum_transfer_amount(&self) -> Option<u64> {
+        match self.chain {
+            Chain::Tron | Chain::Xrp | Chain::Stellar => Some(1_000),
+            Chain::Polkadot => Some(100_000),
+            _ => None,
         }
     }
 }
