@@ -1,3 +1,4 @@
+use std::fmt;
 use std::{
     hash::{Hash, Hasher},
     str::FromStr,
@@ -85,6 +86,14 @@ pub struct NFTAssetId {
 }
 
 impl NFTAssetId {
+    pub fn new(chain: Chain, contract_address: &str, token_id: &str) -> Self {
+        Self {
+            chain,
+            contract_address: contract_address.to_string(),
+            token_id: token_id.to_string(),
+        }
+    }
+
     pub fn from_id(id: &str) -> Option<Self> {
         let parts: Vec<&str> = id.split('_').collect();
         if parts.len() != 3 {
@@ -105,6 +114,12 @@ impl NFTAssetId {
 impl AsRef<str> for NFTAssetId {
     fn as_ref(&self) -> &str {
         Box::leak(format!("{}_{}_{}", self.chain.as_ref(), self.contract_address, self.token_id).into_boxed_str())
+    }
+}
+
+impl fmt::Display for NFTAssetId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.as_ref())
     }
 }
 

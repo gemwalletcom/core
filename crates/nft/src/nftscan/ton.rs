@@ -1,4 +1,4 @@
-use primitives::{Chain, NFTImage};
+use primitives::{Chain, NFTAssetId, NFTImage};
 use serde::{Deserialize, Serialize};
 
 use super::model::NFTAttribute;
@@ -61,9 +61,10 @@ impl NFTTonAsset {
         let chain = Chain::Ton;
         let token_id = self.token_address.clone()?;
         let name = self.name.clone()?;
+        let id = NFTAssetId::new(chain, contract_address, token_id.as_str());
 
         Some(primitives::NFTAsset {
-            id: primitives::NFTAsset::id(chain, contract_address, token_id.as_str()),
+            id: id.to_string(),
             collection_id: primitives::NFTCollection::id(chain, contract_address),
             contract_address: Some(contract_address.to_string()),
             token_id,
