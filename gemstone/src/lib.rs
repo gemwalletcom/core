@@ -1,3 +1,4 @@
+use network::AlienError;
 use payment::PaymentWrapper;
 use primitives::Chain;
 pub mod lido;
@@ -51,6 +52,12 @@ impl From<&str> for GemstoneError {
 
 impl From<Box<dyn std::error::Error>> for GemstoneError {
     fn from(error: Box<dyn std::error::Error>) -> Self {
+        Self::AnyError { msg: error.to_string() }
+    }
+}
+
+impl From<AlienError> for GemstoneError {
+    fn from(error: AlienError) -> Self {
         Self::AnyError { msg: error.to_string() }
     }
 }
