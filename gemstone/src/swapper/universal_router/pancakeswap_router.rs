@@ -1,5 +1,5 @@
 use gem_evm::uniswap::{
-    deployment::{get_pancakeswap_router_deployment_by_chain, V3Deployment},
+    deployment::v3::{get_pancakeswap_router_deployment_by_chain, V3Deployment},
     FeeTier,
 };
 use primitives::Chain;

@@ -15,8 +15,8 @@ use gem_evm::{
     jsonrpc::{BlockParameter, EthereumRpc, TransactionObject},
     uniswap::{
         command::{encode_commands, PayPortion, Permit2Permit, Sweep, Transfer, UniversalRouterCommand, UnwrapWeth, V3SwapExactIn, WrapEth, ADDRESS_THIS},
-        contract::IQuoterV2,
-        deployment::V3Deployment,
+        contracts::v3::IQuoterV2,
+        deployment::v3::V3Deployment,
         path::{build_direct_pair, build_pairs, get_base_pair, BasePair, TokenPair},
         FeeTier,
     },
