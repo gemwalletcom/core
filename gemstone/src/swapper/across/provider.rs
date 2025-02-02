@@ -402,22 +402,6 @@ impl GemSwapProvider for Across {
             });
         }
 
-        let approval: ApprovalType = {
-            if input_is_native {
-                ApprovalType::None
-            } else {
-                check_approval_erc20(
-                    request.wallet_address.clone(),
-                    input_asset.token_id.clone().unwrap(),
-                    deployment.spoke_pool.into(),
-                    from_amount,
-                    provider.clone(),
-                    &request.from_asset.chain,
-                )
-                .await?
-            }
-        };
-
         // Update v3 relay data (was used to estimate gas limit) with final output amount, quote timestamp and referral fee.
         self.update_v3_relay_data(
             &mut v3_relay_data,
@@ -443,10 +427,14 @@ impl GemSwapProvider for Across {
                     gas_estimate: None,
                 }],
             },
-            approval,
             request: request.clone(),
         })
     }
+
+    async fn fetch_permit2_for_quote(&self, _quote: &SwapQuote, _provider: Arc<dyn AlienProvider>) -> Result<ApprovalType, SwapperError> {
+        Ok(ApprovalType::None)
+    }
+
     async fn fetch_quote_data(&self, quote: &SwapQuote, provider: Arc<dyn AlienProvider>, data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError> {
         let from_chain = &quote.request.from_asset.chain;
         let deployment = AcrossDeployment::deployment_by_chain(from_chain).ok_or(SwapperError::NotSupportedChain)?;
@@ -471,12 +459,30 @@ impl GemSwapProvider for Across {
         }
         .abi_encode();
 
-        let value: &str = if quote.request.from_asset.is_native() { &quote.from_value } else { "0" };
+        let input_is_native = quote.request.from_asset.is_native();
+        let value: &str = if input_is_native { &quote.from_value } else { "0" };
+
+        let approval: ApprovalType = {
+            if input_is_native {
+                ApprovalType::None
+            } else {
+                check_approval_erc20(
+                    quote.request.wallet_address.clone(),
+                    v3_relay_data.inputToken.to_string(),
+                    deployment.spoke_pool.into(),
+                    v3_relay_data.inputAmount,
+                    provider.clone(),
+                    from_chain,
+                )
+                .await?
+            }
+        };
 
         let quote_data = SwapQuoteData {
             to: deployment.spoke_pool.into(),
             value: value.to_string(),
             data: HexEncode(deposit_v3_call.clone()),
+            approval,
         };
 
         if matches!(data, FetchQuoteData::EstimateGas) {

@@ -87,11 +87,14 @@ impl GemSwapProvider for PancakeSwapAptos {
                 }],
                 slippage_bps: request.options.slippage.bps,
             },
-            approval: ApprovalType::None,
             request: request.clone(),
         };
 
         Ok(quote)
+    }
+
+    async fn fetch_permit2_for_quote(&self, _quote: &SwapQuote, _provider: Arc<dyn AlienProvider>) -> Result<ApprovalType, SwapperError> {
+        Ok(ApprovalType::None)
     }
 
     async fn fetch_quote_data(&self, quote: &SwapQuote, _provider: Arc<dyn AlienProvider>, _data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError> {
@@ -109,6 +112,7 @@ impl GemSwapProvider for PancakeSwapAptos {
             to: PANCAKE_SWAP_APTOS_ADDRESS.to_string(),
             value: quote.from_value.clone(),
             data: serde_json::to_string(&payload).unwrap(),
+            approval: ApprovalType::None,
         };
         Ok(data)
     }

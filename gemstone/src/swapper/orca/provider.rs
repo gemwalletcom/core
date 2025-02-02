@@ -101,9 +101,12 @@ impl GemSwapProvider for Orca {
                 }],
                 slippage_bps: request.options.slippage.bps,
             },
-            approval: ApprovalType::None,
             request: request.clone(),
         })
+    }
+
+    async fn fetch_permit2_for_quote(&self, _quote: &SwapQuote, _provider: Arc<dyn AlienProvider>) -> Result<ApprovalType, SwapperError> {
+        Ok(ApprovalType::None)
     }
 
     async fn fetch_quote_data(&self, _quote: &SwapQuote, _provider: Arc<dyn AlienProvider>, _data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError> {

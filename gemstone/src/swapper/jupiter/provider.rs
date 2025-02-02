@@ -144,10 +144,13 @@ impl GemSwapProvider for Jupiter {
                 }],
                 slippage_bps: computed_auto_slippage,
             },
-            approval: ApprovalType::None,
             request: request.clone(),
         };
         Ok(quote)
+    }
+
+    async fn fetch_permit2_for_quote(&self, _quote: &SwapQuote, _provider: Arc<dyn AlienProvider>) -> Result<ApprovalType, SwapperError> {
+        Ok(ApprovalType::None)
     }
 
     async fn fetch_quote_data(&self, quote: &SwapQuote, provider: Arc<dyn AlienProvider>, _data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError> {
@@ -185,6 +188,7 @@ impl GemSwapProvider for Jupiter {
             to: PROGRAM_ADDRESS.to_string(),
             value: "".to_string(),
             data: quote_data.swap_transaction,
+            approval: ApprovalType::None,
         };
         Ok(data)
     }
