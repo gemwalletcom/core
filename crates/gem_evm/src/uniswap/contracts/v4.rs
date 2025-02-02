@@ -1,6 +1,5 @@
 use alloy_core::sol;
 
-// https://github.com/Uniswap/v4-periphery/blob/main/src/interfaces/IV4Quoter.sol
 sol! {
     type Currency is address;
 
@@ -27,6 +26,7 @@ sol! {
         bytes hookData;
     }
 
+    // https://github.com/Uniswap/v4-periphery/blob/main/src/interfaces/IV4Quoter.sol
     #[derive(Debug)]
     interface IV4Quoter {
         struct QuoteExactSingleParams {
@@ -87,5 +87,43 @@ sol! {
         function quoteExactOutput(QuoteExactParams memory params)
             external
             returns (uint256 amountIn, uint256 gasEstimate);
+    }
+
+    // https://github.com/Uniswap/v4-periphery/blob/main/src/interfaces/IV4Router.sol
+    #[derive(Debug)]
+    interface IV4Router {
+        /// @notice Parameters for a single-hop exact-input swap
+        struct ExactInputSingleParams {
+            PoolKey poolKey;
+            bool zeroForOne;
+            uint128 amountIn;
+            uint128 amountOutMinimum;
+            bytes hookData;
+        }
+
+        /// @notice Parameters for a multi-hop exact-input swap
+        struct ExactInputParams {
+            Currency currencyIn;
+            PathKey[] path;
+            uint128 amountIn;
+            uint128 amountOutMinimum;
+        }
+
+        /// @notice Parameters for a single-hop exact-output swap
+        struct ExactOutputSingleParams {
+            PoolKey poolKey;
+            bool zeroForOne;
+            uint128 amountOut;
+            uint128 amountInMaximum;
+            bytes hookData;
+        }
+
+        /// @notice Parameters for a multi-hop exact-output swap
+        struct ExactOutputParams {
+            Currency currencyOut;
+            PathKey[] path;
+            uint128 amountOut;
+            uint128 amountInMaximum;
+        }
     }
 }
