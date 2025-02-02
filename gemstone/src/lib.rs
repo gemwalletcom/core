@@ -1,5 +1,5 @@
 use network::AlienError;
-use payment::PaymentWrapper;
+use payment::PaymentType;
 use primitives::Chain;
 pub mod lido;
 use gem_bsc::stake_hub;
@@ -188,6 +188,6 @@ pub fn bsc_encode_claim_call(operator_address: String, request_number: u64) -> R
 }
 
 #[uniffi::export]
-pub fn payment_decode_url(string: &str) -> Result<PaymentWrapper, GemstoneError> {
+pub fn payment_decode_url(string: &str) -> Result<PaymentType, GemstoneError> {
     payment::decode_url(string).map_err(GemstoneError::from)
 }
