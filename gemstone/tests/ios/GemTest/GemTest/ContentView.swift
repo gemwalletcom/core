@@ -53,7 +53,12 @@ struct ContentView: View {
             }
             Text("Solana Pay:")
             Button("Send Get & Post Request") {
-                self.testSolanaPay()
+                self.testSolanaPay(uri: TEST_SOLANA_PAY_URI)
+            }
+            Button("Paste URI") {
+                if let text = UIPasteboard.general.string {
+                    self.testSolanaPay(uri: text)
+                }
             }
         }
         .padding()
@@ -115,10 +120,8 @@ struct ContentView: View {
         print("<== getProviders:\n", swapper.getProviders())
     }
 
-    let testPay = ""
-
-    func testSolanaPay() {
-        let decoded = try! paymentDecodeUrl(string: TEST_SOLANA_PAY_URI)
+    func testSolanaPay(uri: String) {
+        let decoded = try! paymentDecodeUrl(string: uri)
         switch decoded {
         case .paymentLink(let link):
             switch link {
