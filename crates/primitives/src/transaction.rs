@@ -253,20 +253,22 @@ impl Transaction {
 
     pub fn asset_ids(&self) -> Vec<String> {
         match self.transaction_type {
-            TransactionType::Transfer | TransactionType::TransferNFT => vec![self.asset_id.clone().to_string()],
+            TransactionType::Transfer
+            | TransactionType::TokenApproval
+            | TransactionType::StakeDelegate
+            | TransactionType::StakeUndelegate
+            | TransactionType::StakeRewards
+            | TransactionType::StakeRedelegate
+            | TransactionType::StakeWithdraw
+            | TransactionType::AssetActivation
+            | TransactionType::TransferNFT
+            | TransactionType::SmartContractCall => vec![self.asset_id.clone().to_string()],
             TransactionType::Swap => self
                 .metadata
                 .clone()
                 .and_then(|metadata| serde_json::from_value::<TransactionSwapMetadata>(metadata).ok())
                 .map(|metadata| vec![metadata.from_asset.to_string(), metadata.to_asset.to_string()])
                 .unwrap_or_default(),
-            TransactionType::TokenApproval
-            | TransactionType::StakeDelegate
-            | TransactionType::StakeUndelegate
-            | TransactionType::StakeRewards
-            | TransactionType::StakeRedelegate
-            | TransactionType::StakeWithdraw
-            | TransactionType::AssetActivation => vec![self.asset_id.clone().to_string()],
         }
     }
 }
