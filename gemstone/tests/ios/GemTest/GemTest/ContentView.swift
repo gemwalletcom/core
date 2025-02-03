@@ -51,6 +51,10 @@ struct ContentView: View {
             Button("Bridge Base USDC -> ETH") {
                 self.testQuote(quote: .baseUSDC2Eth)
             }
+            Text("Solana Pay:")
+            Button("Send Get & Post Request") {
+                self.testSolanaPay()
+            }
         }
         .padding()
         .onAppear {}
@@ -109,6 +113,32 @@ struct ContentView: View {
     func fetchProviders() {
         let swapper = GemSwapper(rpcProvider: self.provider)
         print("<== getProviders:\n", swapper.getProviders())
+    }
+
+    let testPay = ""
+
+    func testSolanaPay() {
+        let decoded = try! paymentDecodeUrl(string: TEST_SOLANA_PAY_URI)
+        switch decoded {
+        case .paymentLink(let link):
+            switch link {
+            case .solanaPay(let url):
+                let solanaPay = SolanaPay(provider: self.provider)
+                Task {
+                    do {
+                        let label = try await solanaPay.getLabel(link: url)
+                        print(label)
+
+                        let tx = try await solanaPay.postAccount(link: url, account: TEST_SOL_WALLET)
+                        print(tx)
+                    } catch let error {
+                        print(error)
+                    }
+                }
+            }
+        default:
+            return
+        }
     }
 }
 

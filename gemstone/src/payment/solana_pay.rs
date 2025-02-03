@@ -13,13 +13,16 @@ pub struct SolanaPay {
 #[derive(Debug, Deserialize, uniffi::Record)]
 pub struct SolanaPayLabel {
     pub label: String,
-    pub icon: String, // URL
+    #[serde(rename = "icon")]
+    pub icon_url: String,
+    pub error: Option<String>,
 }
 
 #[derive(Debug, Deserialize, uniffi::Record)]
 pub struct SolanaPayTransaction {
     pub message: Option<String>,
-    pub transaction: String, // base64
+    pub transaction: Option<String>, // base64
+    pub error: Option<String>,
 }
 
 #[uniffi::export]
@@ -35,6 +38,9 @@ impl SolanaPay {
         let label = serde_json::from_slice::<SolanaPayLabel>(&response).map_err(|_| GemstoneError::AnyError {
             msg: "Failed to get solana pay label and icon".into(),
         })?;
+        if let Some(error) = label.error {
+            return Err(GemstoneError::AnyError { msg: error });
+        }
         Ok(label)
     }
 
@@ -47,6 +53,9 @@ impl SolanaPay {
         let transaction = serde_json::from_slice::<SolanaPayTransaction>(&response).map_err(|_| GemstoneError::AnyError {
             msg: "Failed to get solana pay transaction".into(),
         })?;
+        if let Some(error) = transaction.error {
+            return Err(GemstoneError::AnyError { msg: error });
+        }
         Ok(transaction)
     }
 }
