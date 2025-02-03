@@ -1,4 +1,5 @@
-use payment::PaymentWrapper;
+use network::AlienError;
+use payment::PaymentType;
 use primitives::Chain;
 pub mod lido;
 use gem_bsc::stake_hub;
@@ -51,6 +52,12 @@ impl From<&str> for GemstoneError {
 
 impl From<Box<dyn std::error::Error>> for GemstoneError {
     fn from(error: Box<dyn std::error::Error>) -> Self {
+        Self::AnyError { msg: error.to_string() }
+    }
+}
+
+impl From<AlienError> for GemstoneError {
+    fn from(error: AlienError) -> Self {
         Self::AnyError { msg: error.to_string() }
     }
 }
@@ -181,6 +188,6 @@ pub fn bsc_encode_claim_call(operator_address: String, request_number: u64) -> R
 }
 
 #[uniffi::export]
-pub fn payment_decode_url(string: &str) -> Result<PaymentWrapper, GemstoneError> {
+pub fn payment_decode_url(string: &str) -> Result<PaymentType, GemstoneError> {
     payment::decode_url(string).map_err(GemstoneError::from)
 }
