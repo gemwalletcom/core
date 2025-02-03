@@ -37,15 +37,23 @@ mod tests {
 
     #[test]
     fn test_is_transaction_outdated_positive() {
-        let options = ParserOptions::default();
-        let created_at = Utc::now() - Duration::milliseconds(options.outdated(Chain::Bitcoin) + 1);
-        assert!(options.is_transaction_outdated(Chain::Bitcoin, created_at));
+        let options = ParserOptions {
+            chain: Chain::Bitcoin,
+            timeout: 0,
+            retry: 0,
+        };
+        let created_at = Utc::now() - Duration::seconds(options.outdated_seconds() + 1);
+        assert!(options.is_transaction_outdated(created_at));
     }
 
     #[test]
     fn test_is_transaction_outdated_negative() {
-        let options = ParserOptions::default();
-        let created_at = Utc::now() - Duration::milliseconds(options.outdated(Chain::Bitcoin) - 1);
-        assert!(!options.is_transaction_outdated(Chain::Bitcoin, created_at));
+        let options = ParserOptions {
+            chain: Chain::Bitcoin,
+            timeout: 0,
+            retry: 0,
+        };
+        let created_at = Utc::now() - Duration::seconds(options.outdated_seconds() - 1);
+        assert!(!options.is_transaction_outdated(created_at));
     }
 }
