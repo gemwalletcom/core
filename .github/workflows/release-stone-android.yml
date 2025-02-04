@@ -20,9 +20,6 @@ env:
 jobs:
   publish:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: gemstone
     steps:
       - name: Set version tag
         run: |
@@ -63,11 +60,12 @@ jobs:
         run: cargo install just
 
       - name: Setup NDK
-        run: just install-ndk
+        run: just gemstone install-ndk
 
       - name: Build Android Bindings
         run: |
           just install-android-targets && just bindgen-kotlin
+        working-directory: gemstone
 
       - name: Publish to Github Packages
         run: |
@@ -75,3 +73,4 @@ jobs:
         env:
           GITHUB_USER: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        working-directory: gemstone
