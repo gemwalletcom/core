@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
-use crate::{Asset, AssetMarket, AssetScore, Price};
+use crate::{Asset, AssetMarket, AssetScore, Chain, Price};
 
 #[typeshare(swift = "Sendable")]
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -41,6 +41,19 @@ pub struct AssetProperties {
     pub is_stakeable: bool,
 
     pub staking_apr: Option<f64>,
+}
+
+impl AssetProperties {
+    pub fn default(chain: Chain) -> Self {
+        Self {
+            is_enabled: true,
+            is_buyable: false,
+            is_sellable: false,
+            is_swapable: chain.is_swap_supported(),
+            is_stakeable: chain.is_stake_supported(),
+            staking_apr: None,
+        }
+    }
 }
 
 pub const ASSET_LINK_X: &str = "x";

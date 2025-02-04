@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use strum_macros::{AsRefStr, EnumString};
 use typeshare::typeshare;
 
-#[derive(Debug, Clone, Serialize, Deserialize, EnumString, AsRefStr)]
+#[derive(Debug, Clone, Serialize, Deserialize, EnumString, AsRefStr, PartialEq)]
 #[typeshare(swift = "Equatable, CaseIterable, Sendable")]
 #[serde(rename_all = "camelCase")]
 #[strum(serialize_all = "camelCase")]
@@ -17,6 +17,7 @@ pub enum TransactionType {
     StakeRedelegate,
     StakeWithdraw,
     AssetActivation,
+    SmartContractCall,
 }
 
 impl Default for TransactionType {

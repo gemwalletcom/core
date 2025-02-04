@@ -7,7 +7,7 @@ use std::{
 
 use crate::{ParserOptions, Pusher};
 use gem_chain_rpc::ChainBlockProvider;
-use primitives::Chain;
+use primitives::{Chain, Transaction, TransactionType};
 use storage::DatabaseClient;
 
 pub struct Parser {
@@ -118,7 +118,7 @@ impl Parser {
         }
     }
 
-    async fn fetch_blocks(&mut self, blocks: Vec<i32>) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Send + Sync>> {
+    async fn fetch_blocks(&mut self, blocks: Vec<i32>) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
         let mut retry_attempts_count = 0;
         loop {
             let results = futures::future::try_join_all(blocks.iter().map(|block| self.provider.get_transactions(*block as i64))).await;
@@ -136,11 +136,28 @@ impl Parser {
         }
     }
 
+    fn filter_transaction(transaction: &Transaction, options: &ParserOptions) -> bool {
+        if transaction.transaction_type == TransactionType::Transfer {
+            if let Some(minimum_amount) = options.minimum_transfer_amount() {
+                if let Ok(value) = transaction.value.parse::<u64>() {
+                    return minimum_amount > value;
+                }
+            }
+        }
+        true
+    }
+
     pub async fn parse_blocks(&mut self, blocks: Vec<i32>) -> Result<ParserBlocksResult, Box<dyn Error + Send + Sync>> {
-        let transactions = self.fetch_blocks(blocks.clone()).await?;
+        let transactions = self
+            .fetch_blocks(blocks.clone())
+            .await?
+            .into_iter()
+            .filter(|x| Self::filter_transaction(x, &self.options))
+            .collect::<Vec<Transaction>>();
+
         let addresses = transactions.clone().into_iter().flat_map(|x| x.addresses()).collect();
         let subscriptions = self.database.get_subscriptions(self.chain, addresses)?;
-        let mut transactions_map: HashMap<String, primitives::Transaction> = HashMap::new();
+        let mut transactions_map: HashMap<String, Transaction> = HashMap::new();
 
         // Debugging only, insert all transactions
         // for transaction in transactions.clone().into_iter() {
@@ -163,7 +180,7 @@ impl Parser {
 
                     let transaction = transaction.finalize(vec![subscription.address.clone()]).clone();
 
-                    if self.options.is_transaction_outdated(transaction.asset_id.chain, transaction.created_at) {
+                    if self.options.is_transaction_outdated(transaction.created_at) {
                         println!("outdated transaction: {}, created_at: {}", transaction.id, transaction.created_at);
                         continue;
                     }
