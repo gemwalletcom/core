@@ -78,12 +78,12 @@ pub async fn multicall3_call(
     chain: &Chain,
     calls: Vec<IMulticall3::Call3>,
 ) -> Result<Vec<IMulticall3::Result>, SwapperError> {
-    for (idx, call) in calls.iter().enumerate() {
+    for (_idx, _call) in calls.iter().enumerate() {
         debug_println!(
-            "call {idx}: target {:?}, calldata: {:?}, allowFailure: {:?}",
-            call.target,
-            HexEncode(&call.callData),
-            call.allowFailure
+            "call {_idx}: target {:?}, calldata: {:?}, allowFailure: {:?}",
+            _call.target,
+            HexEncode(&_call.callData),
+            _call.allowFailure
         );
     }
     let evm_chain = EVMChain::from_chain(*chain).ok_or(SwapperError::NotSupportedChain)?;
