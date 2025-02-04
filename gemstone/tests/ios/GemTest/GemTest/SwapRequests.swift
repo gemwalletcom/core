@@ -17,8 +17,6 @@ let SWAP_OPTIONS = GemSwapOptions(
 let TEST_ETH_WALLET = "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7"
 let TEST_SOL_WALLET = "A21o4asMbFHYadqXdLusT9Bvx9xaC5YV9gcaidjqtdXC"
 
-let TEST_SOLANA_PAY_URI = "solana:https%3A%2F%2Fapi.spherepay.co%2Fv1%2Fpublic%2FpaymentLink%2Fpay%2FpaymentLink_7fa254717ba443fcb0f9f632f553934b%3Fstate%3DAL%26country%3DUSA%26lineItems%3D%255B%257B%2522id%2522%253A%2522lineItem_c488a0e552c44806afccc318e50506f8%2522%252C%2522quantity%2522%253A100%257D%255D%26solanaPayReference%3DEWuRMCeC7Y8mHYxsfeXFsBidTRLAvvWfTj2nie3B2nxf%26paymentReference%3D5jSAdFduqFVyOAcR5fFoj%26network%3Dsol%26skipPreflight%3Dfalse"
-
 public extension SwapQuoteRequest {
     static let eth2usdc = SwapQuoteRequest(
         fromAsset: "ethereum",
