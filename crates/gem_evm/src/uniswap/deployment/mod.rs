@@ -20,7 +20,7 @@ pub fn get_uniswap_permit2_by_chain(chain: &Chain) -> Option<&'static str> {
         | Chain::Celo
         | Chain::Blast
         | Chain::World => Some("0x000000000022D473030F116dDEE9F6B43aC78BA3"),
-        Chain::ZkSync => Some("0x0000000000225e31d15943971f47ad3022f714fa"),
+        Chain::ZkSync | Chain::Abstract => Some("0x0000000000225e31d15943971f47ad3022f714fa"),
         _ => None,
     }
 }

@@ -66,6 +66,7 @@ impl UniswapV3 {
     pub fn new_uniswap() -> Self {
         Self::new(Box::new(uniswap_router::UniswapUniversalRouter {}))
     }
+
     pub fn new_pancakeswap() -> Self {
         Self::new(Box::new(pancakeswap_router::PancakeSwapUniversalRouter {}))
     }
