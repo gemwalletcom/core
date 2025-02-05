@@ -33,10 +33,6 @@ pub async fn main() {
     } else {
         chains
     };
-    let parser_options = ParserOptions {
-        timeout: settings.parser.timeout,
-        retry: settings.parser.retry,
-    };
 
     // create node client
     let nodes = database.get_nodes().unwrap();
@@ -51,7 +47,11 @@ pub async fn main() {
     let mut parsers = Vec::new();
     for chain in chains {
         let settings = settings.clone();
-        let parser_options = parser_options.clone();
+        let parser_options = ParserOptions {
+            chain,
+            timeout: settings.parser.timeout,
+            retry: settings.parser.retry,
+        };
         let node_urls = nodes_map.clone().get(chain.as_ref()).cloned().unwrap_or_default();
 
         let parser = tokio::spawn(async move {

@@ -1,3 +1,4 @@
+use std::fmt;
 use std::{
     hash::{Hash, Hasher},
     str::FromStr,
@@ -75,31 +76,57 @@ pub struct NFTAssetData {
     pub asset: NFTAsset,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[typeshare(swift = "Equatable, Hashable, Sendable")]
+#[serde(rename_all = "camelCase")]
 pub struct NFTAssetId {
     pub chain: Chain,
-    pub collection_id: String,
+    pub contract_address: String,
     pub token_id: String,
 }
 
 impl NFTAssetId {
-    pub fn from_id(id: &str) -> Self {
-        let parts: Vec<&str> = id.split('_').collect();
+    pub fn new(chain: Chain, contract_address: &str, token_id: &str) -> Self {
         Self {
-            chain: Chain::from_str(parts[0]).unwrap(),
-            collection_id: parts[1].to_string(),
-            token_id: parts[2].to_string(),
+            chain,
+            contract_address: contract_address.to_string(),
+            token_id: token_id.to_string(),
         }
+    }
+
+    pub fn from_id(id: &str) -> Option<Self> {
+        let parts: Vec<&str> = id.split('_').collect();
+        if parts.len() != 3 {
+            return None;
+        }
+        Some(Self {
+            chain: Chain::from_str(parts[0]).ok()?,
+            contract_address: parts[1].to_string(),
+            token_id: parts[2].to_string(),
+        })
+    }
+
+    pub fn get_collection_id(&self) -> String {
+        format!("{}_{}", self.chain.as_ref(), self.contract_address)
+    }
+}
+
+impl AsRef<str> for NFTAssetId {
+    fn as_ref(&self) -> &str {
+        Box::leak(format!("{}_{}_{}", self.chain.as_ref(), self.contract_address, self.token_id).into_boxed_str())
+    }
+}
+
+impl fmt::Display for NFTAssetId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.as_ref())
     }
 }
 
 impl NFTAsset {
-    pub fn id(chain: Chain, contract_address: &str, token_id: &str) -> String {
-        format!("{}_{}_{}", chain.as_ref(), contract_address, token_id)
-    }
-
     pub fn image_path(&self) -> NFTImage {
-        let asset_id = NFTAssetId::from_id(self.id.clone().as_str());
-        let image = format!("{}/{}/assets/{}_original.png", self.chain.as_ref(), asset_id.collection_id, self.token_id);
+        let asset_id = NFTAssetId::from_id(self.id.clone().as_str()).unwrap();
+        let image = format!("{}/{}/assets/{}_original.png", self.chain.as_ref(), asset_id.contract_address, self.token_id);
         NFTImage {
             image_url: image.clone(),
             preview_image_url: image.clone(),

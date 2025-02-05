@@ -1,5 +1,5 @@
 use gem_evm::address::EthereumAddress;
-use primitives::{Chain, NFTImage};
+use primitives::{Chain, NFTAssetId, NFTImage};
 
 use super::model::{NFTAsset, NFTCollection};
 
@@ -32,9 +32,9 @@ impl NFTAsset {
         let token_type = map_erc_type(self.erc_type.as_str())?;
         let attributes = vec![];
         let token_id = self.token_id.clone();
-
+        let id = NFTAssetId::new(chain, contract_address, token_id.as_str());
         Some(primitives::NFTAsset {
-            id: primitives::NFTAsset::id(chain, contract_address, token_id.as_str()),
+            id: id.to_string(),
             collection_id: primitives::NFTCollection::id(chain, contract_address),
             contract_address: Some(contract_address.to_string()),
             token_id,
