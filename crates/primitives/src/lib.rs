@@ -80,7 +80,7 @@ pub use self::big_number_formatter::BigNumberFormatter;
 pub mod number_formatter;
 pub use self::number_formatter::NumberFormatter;
 pub mod wallet_connect;
-pub use self::wallet_connect::WallletConnectCAIP2;
+pub use self::wallet_connect::WalletConnectCAIP2;
 pub mod nft;
 pub use self::nft::{NFTAsset, NFTAssetId, NFTAttribute, NFTCollection, NFTData, NFTImage, NFTType};
 pub mod price_alert;

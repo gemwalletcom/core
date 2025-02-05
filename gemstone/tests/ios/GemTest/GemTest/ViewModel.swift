@@ -51,24 +51,20 @@ public struct ViewModel: Sendable {
     }
 
     public func fetchSolanaPay(uri: String) async throws {
-        let decoded = try! paymentDecodeUrl(string: uri)
-        switch decoded {
-        case .paymentLink(let link):
-            switch link {
-            case .solanaPay(let url):
-                do {
-                    let solanaPay = SolanaPay(provider: self.provider)
-                    async let labelCall = solanaPay.getLabel(link: url)
-                    async let txCall = solanaPay.postAccount(link: url, account: TEST_SOL_WALLET)
-
-                    let (label, tx) = try await (labelCall, txCall)
-                    print(label, tx)
-                } catch {
-                    print(error)
-                }
-            }
-        default:
+        let wrapper = try paymentDecodeUrl(string: uri)
+        guard let url = wrapper.paymentLink else {
+            print("invalid url")
             return
+        }
+        do {
+            let solanaPay = SolanaPay(provider: self.provider)
+            async let labelCall = solanaPay.getLabel(link: url)
+            async let txCall = solanaPay.postAccount(link: url, account: TEST_SOL_WALLET)
+
+            let (label, tx) = try await (labelCall, txCall)
+            print(label, tx)
+        } catch {
+            print(error)
         }
     }
 }

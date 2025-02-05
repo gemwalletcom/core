@@ -6,7 +6,7 @@ use typeshare::typeshare;
 #[typeshare(swift = "Sendable")]
 #[serde(rename_all = "lowercase")]
 #[strum(serialize_all = "lowercase")]
-pub enum WallletConnectCAIP2 {
+pub enum WalletConnectCAIP2 {
     #[serde(rename = "eip155")]
     Eip155,
     #[serde(rename = "solana")]
