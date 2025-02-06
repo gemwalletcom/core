@@ -65,7 +65,12 @@ jobs:
 
       - name: Upload to release
         run: |
-          gh release create ${{ env.VER_NAME }} target/spm/Gemstone-spm.tar.bz2 --title ${{ env.VER_NAME }} --notes "Gemstone iOS framework" --draft
+          if [[ $(gh release list | grep ${{ env.VER_NAME }}) ]]; then
+            gh release upload ${{ env.VER_NAME }} target/spm/Gemstone-spm.tar.bz2 --clobber
+          else
+            echo "Release not found, creating a new draft release"
+            gh release create ${{ env.VER_NAME }} target/spm/Gemstone-spm.tar.bz2 --title ${{ env.VER_NAME }} --generate-notes --prerelease
+          fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         working-directory: gemstone

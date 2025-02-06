@@ -488,8 +488,8 @@ impl GemSwapProvider for Across {
         if matches!(data, FetchQuoteData::EstimateGas) {
             let hex_value = format!("{:#x}", U256::from_str(value).unwrap());
             let tx = TransactionObject::new_call_to_value(&quote_data.to, &hex_value, deposit_v3_call);
-            let gas_limit = eth_rpc::estimate_gas(provider, from_chain, tx).await?;
-            debug_println!("gas_limit: {:?}", gas_limit);
+            let _gas_limit = eth_rpc::estimate_gas(provider, from_chain, tx).await?;
+            debug_println!("gas_limit: {:?}", _gas_limit);
         }
 
         Ok(quote_data)
