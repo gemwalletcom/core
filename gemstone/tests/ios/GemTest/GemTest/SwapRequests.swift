@@ -121,8 +121,8 @@ public extension SwapQuoteRequest {
     static let absETH2USDC = SwapQuoteRequest(
         fromAsset: "abstract",
         toAsset: "abstract_0x84A71ccD554Cc1b02749b35d22F684CC8ec987e1",
-        walletAddress: TEST_WALLET_ADDRESS,
-        destinationAddress: TEST_WALLET_ADDRESS,
+        walletAddress: TEST_ETH_WALLET,
+        destinationAddress: TEST_ETH_WALLET,
         value: "1000000000000000000", // 1 ETH
         mode: .exactIn,
         options: SWAP_OPTIONS
