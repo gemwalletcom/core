@@ -19,3 +19,5 @@ extension AlienTarget: URLRequestConvertible {
         return request
     }
 }
+
+extension SolanaPay: @unchecked @retroactive Sendable {}

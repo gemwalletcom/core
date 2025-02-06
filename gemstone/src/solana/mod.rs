@@ -1,3 +1,4 @@
+use crate::GemstoneError;
 use gem_solana::{
     metaplex::{decode_metadata, metadata::Metadata},
     pubkey::Pubkey,
@@ -26,4 +27,15 @@ pub fn derive_metadata_pda(mint: &str) -> Result<String, Box<dyn std::error::Err
     let key = Pubkey::from_str(mint)?;
     let metadata = Metadata::find_pda(key).ok_or("metadata program account not found")?;
     Ok(metadata.0.to_string())
+}
+
+/// Exports functions
+#[uniffi::export]
+pub fn solana_decode_metadata(base64_str: String) -> Result<MplMetadata, GemstoneError> {
+    decode_mpl_metadata(base64_str).map_err(GemstoneError::from)
+}
+
+#[uniffi::export]
+pub fn solana_derive_metadata_pda(mint: String) -> Result<String, GemstoneError> {
+    derive_metadata_pda(&mint).map_err(GemstoneError::from)
 }
