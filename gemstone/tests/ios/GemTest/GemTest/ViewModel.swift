@@ -41,6 +41,9 @@ public struct ViewModel: Sendable {
         }
         print("suggested slippageBps: \(quote.data.slippageBps)")
 
+        let permit2 = try await swapper.fetchPermit2ForQuote(quote: quote)
+        print("<== permit2", permit2)
+
         let data = try await swapper.fetchQuoteData(quote: quote, data: .none)
         print("<== fetchQuoteData:\n", data)
     }
