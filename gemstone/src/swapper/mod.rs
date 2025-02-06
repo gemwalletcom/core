@@ -18,7 +18,7 @@ pub mod orca;
 pub mod pancakeswap_aptos;
 pub mod slippage;
 pub mod thorchain;
-pub mod universal_router;
+pub mod uniswap;
 
 pub use models::*;
 use primitives::{AssetId, Chain};
@@ -30,7 +30,13 @@ pub trait GemSwapProvider: Send + Sync + Debug {
     fn supported_assets(&self) -> Vec<SwapChainAsset>;
     async fn fetch_quote(&self, request: &SwapQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapQuote, SwapperError>;
     async fn fetch_quote_data(&self, quote: &SwapQuote, provider: Arc<dyn AlienProvider>, data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError>;
-    async fn get_transaction_status(&self, chain: Chain, transaction_hash: &str, provider: Arc<dyn AlienProvider>) -> Result<bool, SwapperError>;
+    async fn get_transaction_status(&self, _chain: Chain, _transaction_hash: &str, _provider: Arc<dyn AlienProvider>) -> Result<bool, SwapperError> {
+        if self.provider().provider_type() == SwapProviderType::OnChain {
+            Ok(true)
+        } else {
+            Err(SwapperError::NotImplemented)
+        }
+    }
 }
 
 impl dyn GemSwapProvider {
@@ -80,8 +86,8 @@ impl GemSwapper {
         Self {
             rpc_provider,
             swappers: vec![
-                Box::new(universal_router::UniswapV3::new_uniswap()),
-                Box::new(universal_router::UniswapV3::new_pancakeswap()),
+                Box::new(uniswap::universal_router::new_uniswap_v3()),
+                Box::new(uniswap::universal_router::new_pancakeswap()),
                 Box::new(thorchain::ThorChain::default()),
                 Box::new(jupiter::Jupiter::default()),
                 Box::new(pancakeswap_aptos::PancakeSwapAptos::default()),
@@ -212,8 +218,8 @@ mod tests {
     #[test]
     fn test_filter_by_supported_chains() {
         let swappers: Vec<Box<dyn GemSwapProvider>> = vec![
-            Box::new(universal_router::UniswapV3::new_uniswap()),
-            Box::new(universal_router::UniswapV3::new_pancakeswap()),
+            Box::new(uniswap::universal_router::new_uniswap_v3()),
+            Box::new(uniswap::universal_router::new_pancakeswap()),
             Box::new(thorchain::ThorChain::default()),
             Box::new(jupiter::Jupiter::default()),
         ];
