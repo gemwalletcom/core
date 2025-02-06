@@ -8,6 +8,12 @@ pub struct AssetScore {
     pub rank: i32,
 }
 
+impl Default for AssetScore {
+    fn default() -> Self {
+        Self { rank: 15 }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, CaseIterable, Sendable")]
 #[serde(rename_all = "lowercase")]

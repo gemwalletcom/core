@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use primitives::{LinkType, NFTAsset, NFTCollection, NFTData, NFTImage};
+use primitives::{LinkType, NFTAssetId, NFTCollection, NFTData, NFTImage};
 
 use super::model::{MARKET_MAGICEDEN_ID, MARKET_OPENSEA_ID};
 
@@ -112,7 +112,12 @@ impl super::model::Nft {
 
     pub fn get_contract_address(&self) -> Option<String> {
         match self.as_chain()? {
-            primitives::Chain::Solana => self.collection.metaplex_mint.clone().or_else(|| self.extra_metadata.token_program.clone()),
+            primitives::Chain::Solana => self
+                .collection
+                .mpl_core_collection_address
+                .clone()
+                .or_else(|| self.collection.metaplex_mint.clone())
+                .or_else(|| self.extra_metadata.token_program.clone()),
             _ => Some(self.contract_address.clone()),
         }
     }
@@ -121,10 +126,11 @@ impl super::model::Nft {
         let chain: primitives::Chain = self.as_chain()?;
         let collection_id = NFTCollection::id(chain, &self.get_contract_address()?);
         let token_id = &self.get_token_id()?;
-        let id = NFTAsset::id(collection_id.as_str(), token_id);
+        let id = NFTAssetId::new(chain, &self.get_contract_address()?, token_id);
         Some(primitives::NFTAsset {
-            id,
+            id: id.to_string(),
             token_id: token_id.to_string(),
+            contract_address: Some(self.contract_address.clone()),
             name: self.name.clone().unwrap_or_default(),
             description: self.description.clone(),
             image: self.as_primitive_asset_image(),

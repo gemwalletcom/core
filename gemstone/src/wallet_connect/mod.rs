@@ -1,5 +1,6 @@
 use primitives::Chain;
-use primitives::WallletConnectCAIP2;
+use primitives::WalletConnectCAIP2;
+use std::str::FromStr;
 
 // CAIP-2 https://github.com/ChainAgnostic/CAIPs/blob/main/CAIPs/caip-2.md
 pub fn get_namespace(chain: Chain) -> Option<String> {
@@ -22,12 +23,12 @@ pub fn get_namespace(chain: Chain) -> Option<String> {
         | Chain::Celo
         | Chain::World
         | Chain::Sonic
-        | Chain::Abstract => Some(WallletConnectCAIP2::Eip155.as_ref().to_string()),
-        Chain::Solana => Some(WallletConnectCAIP2::Solana.as_ref().to_string()),
+        | Chain::Abstract => Some(WalletConnectCAIP2::Eip155.as_ref().to_string()),
+        Chain::Solana => Some(WalletConnectCAIP2::Solana.as_ref().to_string()),
         Chain::Cosmos | Chain::Osmosis | Chain::Celestia | Chain::Injective | Chain::Noble | Chain::Sei => {
-            Some(format!("{}:{}", WallletConnectCAIP2::Cosmos.as_ref(), chain.network_id()))
+            Some(format!("{}:{}", WalletConnectCAIP2::Cosmos.as_ref(), chain.network_id()))
         } // cosmos:cosmoshub-4
-        Chain::Algorand => Some(WallletConnectCAIP2::Algorand.as_ref().to_string()),
+        Chain::Algorand => Some(WalletConnectCAIP2::Algorand.as_ref().to_string()),
         Chain::Bitcoin
         | Chain::Litecoin
         | Chain::Thorchain
@@ -85,5 +86,26 @@ pub fn get_reference(chain: Chain) -> Option<String> {
         | Chain::BitcoinCash
         | Chain::Polkadot
         | Chain::Cardano => None,
+    }
+}
+
+#[derive(uniffi::Object)]
+struct WalletConnectNamespace {}
+
+#[uniffi::export]
+impl WalletConnectNamespace {
+    #[uniffi::constructor]
+    fn new() -> Self {
+        Self {}
+    }
+
+    fn get_namespace(&self, chain: String) -> Option<String> {
+        let chain = Chain::from_str(&chain).ok()?;
+        get_namespace(chain)
+    }
+
+    fn get_reference(&self, chain: String) -> Option<String> {
+        let chain = Chain::from_str(&chain).ok()?;
+        get_reference(chain)
     }
 }

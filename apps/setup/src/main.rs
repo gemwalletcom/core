@@ -39,7 +39,7 @@ async fn main() {
     let assets = chains
         .into_iter()
         .map(Asset::from_chain)
-        .map(storage::models::Asset::from_primitive)
+        .map(storage::models::Asset::from_primitive_default)
         .collect::<Vec<_>>();
     let _ = database_client.add_assets(assets);
 

@@ -118,7 +118,7 @@ impl EtherScan {
             },
             EVMChain::Abstract => Self {
                 meta: Metadata {
-                    name: "AbstractScan",
+                    name: "Abscan",
                     base_url: "https://abscan.org/",
                 },
             },

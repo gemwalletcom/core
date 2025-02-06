@@ -2,7 +2,7 @@ use chain_primitives::format_token_id;
 use coingecko::mapper::COINGECKO_CHAIN_MAP;
 use coingecko::{get_chain_for_coingecko_platform_id, CoinGeckoClient, CoinInfo};
 use primitives::asset_details::{ASSET_LINK_COINGECKO, ASSET_LINK_DISCORD, ASSET_LINK_GITHUB, ASSET_LINK_TELEGRAM, ASSET_LINK_WEBSITE, ASSET_LINK_X};
-use primitives::{Asset, AssetId, AssetLink, AssetScore, AssetType};
+use primitives::{Asset, AssetId, AssetLink, AssetProperties, AssetScore, AssetType};
 use std::collections::HashSet;
 use std::error::Error;
 use storage::DatabaseClient;
@@ -236,12 +236,12 @@ impl AssetUpdater {
     }
 
     // asset, asset details
-    pub async fn update_asset(&mut self, asset: Asset, asset_score: AssetScore, asset_links: Vec<AssetLink>) -> Result<(), Box<dyn Error>> {
-        let asset = storage::models::asset::Asset::from_primitive(asset);
+    pub async fn update_asset(&mut self, asset: Asset, score: AssetScore, asset_links: Vec<AssetLink>) -> Result<(), Box<dyn Error>> {
+        let properties = AssetProperties::default(asset.chain());
+        let asset = storage::models::asset::Asset::from_primitive(asset, score, properties);
         let asset_id = asset.id.as_str();
 
         let _ = self.database.add_assets(vec![asset.clone()]);
-        let _ = self.database.update_asset_rank(asset_id, asset_score.rank);
         let _ = self.update_links(asset_id, asset_links.clone()).await;
         Ok(())
     }

@@ -187,6 +187,8 @@ diesel::table! {
         token_type -> Varchar,
         #[max_length = 512]
         token_id -> Varchar,
+        #[max_length = 512]
+        contract_address -> Varchar,
         attributes -> Jsonb,
         updated_at -> Timestamp,
         created_at -> Timestamp,

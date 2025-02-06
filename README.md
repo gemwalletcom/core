@@ -1,40 +1,40 @@
-# Gem Core Library
+# Gem Wallet Core
 
-[![Tests](https://github.com/gemwalletcom/core/actions/workflows/ci.yml/badge.svg)](https://github.com/gemwalletcom/core/actions/workflows/ci.yml)
-[![Gemstone iOS](https://github.com/gemwalletcom/core/actions/workflows/ci-stone-ios.yml/badge.svg)](https://github.com/gemwalletcom/core/actions/workflows/ci-stone-ios.yml)
-[![Gemstone Android](https://github.com/gemwalletcom/core/actions/workflows/ci-stone-android.yml/badge.svg)](https://github.com/gemwalletcom/core/actions/workflows/ci-stone-android.yml)
+[![Rust](https://img.shields.io/badge/language-Rust-orange?logo=rust)](https://www.rust-lang.org/)
+[![GitHub release](https://img.shields.io/github/v/release/gemwalletcom/core)](https://github.com/gemwalletcom/core/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
+[![Unit Tests](https://github.com/gemwalletcom/core/actions/workflows/ci.yml/badge.svg)](https://github.com/gemwalletcom/core/actions/workflows/ci.yml)
+[![Docker Build](https://github.com/gemwalletcom/core/actions/workflows/docker.yml/badge.svg)](https://github.com/gemwalletcom/core/actions/workflows/docker.yml)
+[![iOS Tests](https://github.com/gemwalletcom/core/actions/workflows/ci-stone-ios.yml/badge.svg)](https://github.com/gemwalletcom/core/actions/workflows/ci-stone-ios.yml)
+[![Android Build](https://github.com/gemwalletcom/core/actions/workflows/ci-stone-android.yml/badge.svg)](https://github.com/gemwalletcom/core/actions/workflows/ci-stone-android.yml)
+[![Telegram](https://img.shields.io/badge/Telegram-2CA5E0?style=flat&logo=telegram&logoColor=white)](https://t.me/gemwallet_developers)
+![GitHub Repo stars](https://img.shields.io/github/stars/gemwalletcom/core?style=social)
 
-The Gem Core library is a Rust monorepo that serves as the backend infrastructure and cross platform libraries for the Gem Wallet on Android and iOS. It handles various tasks, including:
+# Introduction
 
-- Push notifications
-- Pricing information
-- Asset updating
-- Shared modes using TypeShare
-- Crypto primitives
-- More
+Gem Wallet Core is the core engine powering [Gem Wallet](https://gemwallet.com/), a fully open source, secure and decentralized crypto wallet designed for Bitcoin, Ethereum, Solana, BNB Chain, Base, Sui and much more. Built in Rust, it ensures high performance, safety, and reliability.
 
-## Gemstone
+## Gem Wallet Features:
 
-The Gemstone is a cross-platform library for Swift and Kotlin.
+- 🚀 High-Performance: Completely native UI and Core is written in Rust for speed and safety.
+- 🔐 Secure: Utilizes strong cryptographic standards.
+- 🛠 Extensible: Designed to support additional features and integrations.
+- 🤝 Open Source: Community-driven and actively maintained.
 
-## Cryptography
+Gem Wallet Core serves as the backbone for both backend and frontend apps, handling various tasks, including:
 
-The underlying cryptography / keystore for Gem Wallet is implemented using [Trust Wallet Core](https://github.com/trustwallet/wallet-core) for now.
+- Transaction indexing and push notifications
+- Asset price, charts and alerts
+- Fiat on and off-ramps
+- ENS, Solana and more name resolution
+- NFTs
+- Native and cross-chain swaps
+- Native BNB Chain and Sui staking
+- More ...
 
-```mermaid
-graph LR
-    client[Gem Wallet iOS / Android]
-    core-lib[Gem Wallet Core]
-    trust-core[Trust Wallet Core]
-    client-- pricing, notification and ... -->core-lib
-    client-- cryptography such as seed generation and ... -->trust-core
-```
+## Running API
 
-> Note: According to the roadmap, in the future, the client will only interact with the Gem Wallet Core, and the interaction with the Trust Wallet Core will be the responsibility of the Gem Wallet Core.
-
-## Running
-
-### Setup Core
+### Install dependencies
 
 Run `just install` to install rust, typeshare
 
@@ -43,29 +43,69 @@ Run `just install` to install rust, typeshare
 - Create a new database `api` and grant privileges to `username` role
 - Run `diesel migration run` to create tables and do migrations
 
-### Supported Chains
+Run API locally: `cargo run --package api`
 
-| Chain        | Transfers     | Token Transfers |
-|--------------|---------------|-----------------|
-| Bitcoin      | ✅            | --              |
-| Litecoin     | ✅            | --              |
-| Doge         | ✅            | --              |
-| Ethereum     | ✅            | ✅               |
-| SmartChain   | ✅            | ✅               |
-| Solana       | ✅            | ✅               |
-| Polygon      | ✅            | ✅               |
-| Thorchain    | ✅            | 🏗               |
-| Cosmos       | ✅            | 🏗               |
-| Osmosis      | ✅            | 🏗               |
-| Arbitrum     | ✅            | ✅               |
-| Ton          | ✅            | 🏗               |
-| Tron         | ✅            | ✅               |
-| Optimism     | ✅            | ✅               |
-| Aptos        | ✅            | 🏗               |
-| Base         | ✅            | ✅               |
-| AvalancheC   | ✅            | ✅               |
-| Sui          | ✅            | 🏗               |
-| Xrp          | ✅            | 🏗               |
-| OpBNB        | ✅            | ✅               |
+## Gemstone
 
-List of available chains specified in [primitives package](https://github.com/gemwalletcom/core/blob/main/crates/primitives/src/chain.rs).
+Cross platform Rust library for iOS and Android with native async networking support.
+
+### iOS
+
+Download `Gemstone-spm.tar.bz2` from the [releases](https://github.com/gemwalletcom/core/releases) page.
+
+Unzip and add it to your project as a local Swift Package.
+
+### Android
+
+Add the following to your `libs.versions.toml` file:
+```toml
+[versions]
+gemstone = "<latest_version>"
+
+[libraries]
+gemstone = { module = "com.gemwallet.gemstone:gemstone", version.ref = "gemstone" }
+```
+
+Add the following to your `build.gradle.kts` file:
+
+```gradle
+dependencies {
+    api(libs.gemstone)
+}
+```
+
+```gradle
+allprojects {
+    repositories {
+        maven {
+            url = uri("https://maven.pkg.github.com/gemwalletcom/core")
+            credentials {
+                username = <github_username>
+                password = <github_token>
+            }
+        }
+    }
+}
+```
+
+# Contributing
+
+We welcome contributions! To get started:
+
+- Look for issues with the `help wanted` labels.
+- Fork the repository.
+- Create a new branch (feature-xyz).
+- Commit your changes and push.
+- Open a Pull Request.
+
+# License
+
+This project is licensed under the [MIT](./LICENSE) License.
+
+# Community & Support
+
+- 💬 Join our [Discord](https://discord.com/invite/aWkq5sj7SY) or [Telegram](https://t.me/gemwallet_developers)
+- 📖 Read the [Docs](https://docs.gemwallet.com/)
+- 🐦 Follow us on [X](https://x.com/GemWalletApp)
+
+Made with ❤️ by the Gem Wallet community.

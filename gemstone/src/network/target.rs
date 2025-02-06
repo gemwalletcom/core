@@ -24,7 +24,7 @@ impl AlienTarget {
         Self {
             url: url.into(),
             method: AlienHttpMethod::Post,
-            headers: None,
+            headers: Some(HashMap::from([("Content-Type".into(), "application/json".into())])),
             body: Some(serde_json::to_vec(&body).unwrap()),
         }
     }
