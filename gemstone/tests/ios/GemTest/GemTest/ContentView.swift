@@ -38,6 +38,9 @@ struct ContentView: View {
             Button("Fetch Cake -> BTCB") {
                 self.testQuote(quote: .cake2btcb)
             }
+            Button("Fetch ETH on ABS -> USDC") {
+                self.testQuote(quote: .absETH2USDC)
+            }
             Text("Bridge:")
             Button("Bridge Op ETH -> Ethereum") {
                 self.testQuote(quote: .op2Eth)

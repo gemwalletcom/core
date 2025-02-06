@@ -73,7 +73,7 @@ pub fn get_base_pair(chain: &EVMChain) -> Option<BasePair> {
         EVMChain::ZkSync => "0xBBeB516fb02a01611cBBE0453Fe3c580D7281011",
         EVMChain::Blast => "0xf7bc58b8d8f97adc129cfc4c9f45ce3c0e1d2692",
         EVMChain::World => "0x03C7054BCB39f7b2e5B2c7AcB37583e32D70Cfa3",
-        EVMChain::Abstract => "",
+        EVMChain::Abstract => "", // None
         _ => panic!("unsupported chain"),
     };
 
@@ -103,9 +103,10 @@ pub fn get_base_pair(chain: &EVMChain) -> Option<BasePair> {
         EVMChain::Celo => "0x48065fbBE25f71C9282ddf5e1cD6D6A887483D5e",
         EVMChain::SmartChain => "0x55d398326f99059fF775485246999027B3197955",
         EVMChain::ZkSync => "0x493257fD37EDB34451f62EDf8D2a0C418852bA4C",
-        EVMChain::Blast => "",    // None
-        EVMChain::World => "",    // None
-        EVMChain::Abstract => "", // None
+        EVMChain::Abstract => "0x0709F39376dEEe2A2dfC94A58EdEb2Eb9DF012bD",
+        EVMChain::Blast => "", // None
+        EVMChain::World => "", // None
+
         _ => panic!("unsupported chain"),
     };
 
@@ -113,11 +114,18 @@ pub fn get_base_pair(chain: &EVMChain) -> Option<BasePair> {
     if !usdt.is_empty() {
         stables.push(EthereumAddress::parse(usdt)?);
     }
+    let alternatives = {
+        if btc.is_empty() {
+            vec![]
+        } else {
+            vec![EthereumAddress::parse(btc)?]
+        }
+    };
 
     Some(BasePair {
         native: EthereumAddress::parse(weth)?,
         stables,
-        alternatives: vec![EthereumAddress::parse(btc)?],
+        alternatives,
     })
 }
 

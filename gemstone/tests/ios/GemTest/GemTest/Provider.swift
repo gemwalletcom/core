@@ -17,7 +17,8 @@ public actor NativeProvider {
             "smartchain": URL(string: "https://binance.llamarpc.com")!,
             "arbitrum": URL(string: "https://arbitrum.llamarpc.com")!,
             "base": URL(string: "https://base.llamarpc.com")!,
-            "polygon": URL(string: "https://polygon.llamarpc.com")!
+            "polygon": URL(string: "https://polygon.llamarpc.com")!,
+            "abstract": URL(string: "https://api.mainnet.abs.xyz")!
         ]
         self.session = session
         self.cache = Cache()

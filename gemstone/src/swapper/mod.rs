@@ -1,4 +1,4 @@
-use crate::network::AlienProvider;
+use crate::{debug_println, network::AlienProvider};
 
 use async_trait::async_trait;
 use std::{fmt::Debug, sync::Arc};
@@ -76,7 +76,7 @@ impl GemSwapper {
 #[uniffi::export]
 impl GemSwapper {
     #[uniffi::constructor]
-    fn new(rpc_provider: Arc<dyn AlienProvider>) -> Self {
+    pub fn new(rpc_provider: Arc<dyn AlienProvider>) -> Self {
         Self {
             rpc_provider,
             swappers: vec![
@@ -90,7 +90,7 @@ impl GemSwapper {
         }
     }
 
-    fn supported_chains(&self) -> Vec<Chain> {
+    pub fn supported_chains(&self) -> Vec<Chain> {
         self.swappers
             .iter()
             .flat_map(|x| x.supported_chains())
@@ -99,7 +99,7 @@ impl GemSwapper {
             .collect()
     }
 
-    fn supported_chains_for_from_asset(&self, asset_id: AssetId) -> SwapAssetList {
+    pub fn supported_chains_for_from_asset(&self, asset_id: &AssetId) -> SwapAssetList {
         let chains: Vec<Chain> = vec![asset_id.chain];
         let mut asset_ids: Vec<AssetId> = Vec::new();
 
@@ -118,11 +118,11 @@ impl GemSwapper {
         SwapAssetList { chains, asset_ids }
     }
 
-    fn get_providers(&self) -> Vec<SwapProvider> {
+    pub fn get_providers(&self) -> Vec<SwapProvider> {
         self.swappers.iter().map(|x| x.provider()).collect()
     }
 
-    async fn fetch_quote(&self, request: SwapQuoteRequest) -> Result<Vec<SwapQuote>, SwapperError> {
+    pub async fn fetch_quote(&self, request: &SwapQuoteRequest) -> Result<Vec<SwapQuote>, SwapperError> {
         if request.from_asset == request.to_asset {
             return Err(SwapperError::NotSupportedPair);
         }
@@ -140,13 +140,21 @@ impl GemSwapper {
             return Err(SwapperError::NoAvailableProvider);
         }
 
-        let quotes_futures = providers.into_iter().map(|x| x.fetch_quote(&request, self.rpc_provider.clone()));
+        let quotes_futures = providers.into_iter().map(|x| x.fetch_quote(request, self.rpc_provider.clone()));
 
-        let quotes = futures::future::join_all(quotes_futures.into_iter().map(|fut| async { fut.await.ok() }))
-            .await
-            .into_iter()
-            .flatten()
-            .collect::<Vec<_>>();
+        let quotes = futures::future::join_all(quotes_futures.into_iter().map(|fut| async {
+            match &fut.await {
+                Ok(quote) => Some(quote.clone()),
+                Err(_err) => {
+                    debug_println!("fetch_quote error: {:?}", _err);
+                    None
+                }
+            }
+        }))
+        .await
+        .into_iter()
+        .flatten()
+        .collect::<Vec<_>>();
 
         if quotes.is_empty() {
             return Err(SwapperError::NoQuoteAvailable);
@@ -155,7 +163,7 @@ impl GemSwapper {
         Ok(quotes)
     }
 
-    async fn fetch_quote_data(&self, quote: &SwapQuote, data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError> {
+    pub async fn fetch_quote_data(&self, quote: &SwapQuote, data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError> {
         let swapper = self
             .swappers
             .iter()
@@ -164,7 +172,7 @@ impl GemSwapper {
         swapper.fetch_quote_data(quote, self.rpc_provider.clone(), data).await
     }
 
-    async fn get_transaction_status(&self, chain: Chain, swap_provider: SwapProvider, transaction_hash: &str) -> Result<bool, SwapperError> {
+    pub async fn get_transaction_status(&self, chain: Chain, swap_provider: SwapProvider, transaction_hash: &str) -> Result<bool, SwapperError> {
         let swapper = self
             .swappers
             .iter()
