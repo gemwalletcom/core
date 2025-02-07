@@ -21,7 +21,9 @@ pub fn format_token_id(chain: Chain, token_id: String) -> Option<String> {
         | Chain::Celo
         | Chain::World
         | Chain::Sonic
-        | Chain::Abstract => Some(EthereumAddress::parse(&token_id)?.to_checksum()),
+        | Chain::Abstract
+        | Chain::Berachain
+        | Chain::Ink => Some(EthereumAddress::parse(&token_id)?.to_checksum()),
         Chain::Solana | Chain::Sui | Chain::Ton => Some(token_id),
         Chain::Tron => {
             if token_id.len() == 34 && token_id.starts_with('T') {

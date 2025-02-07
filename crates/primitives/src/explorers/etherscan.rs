@@ -113,15 +113,22 @@ impl EtherScan {
             EVMChain::Sonic => Self {
                 meta: Metadata {
                     name: "SonicScan",
-                    base_url: "https://sonicscan.org/",
+                    base_url: "https://sonicscan.org",
                 },
             },
             EVMChain::Abstract => Self {
                 meta: Metadata {
                     name: "Abscan",
-                    base_url: "https://abscan.org/",
+                    base_url: "https://abscan.org",
                 },
             },
+            EVMChain::Berachain => Self {
+                meta: Metadata {
+                    name: "Berachain",
+                    base_url: "https://berascan.com",
+                },
+            },
+            EVMChain::Ink => todo!(),
         })
     }
 }

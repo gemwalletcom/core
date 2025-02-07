@@ -104,7 +104,9 @@ fn chain_transaction_timeout_seconds(chain: Chain) -> f64 {
         | Chain::Near
         | Chain::World
         | Chain::Sonic
-        | Chain::Abstract => 1800_f64, // 30 minutes
+        | Chain::Abstract
+        | Chain::Berachain
+        | Chain::Ink => 1800_f64, // 30 minutes
         Chain::Stellar | Chain::Algorand | Chain::Polkadot | Chain::Cardano => 600_f64,
     }
 }

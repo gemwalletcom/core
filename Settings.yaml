@@ -153,6 +153,12 @@ chains:
     url: ""
   abstract:
     url: https://api.mainnet.abs.xyz
+  berachain:
+    url: https://rpc.berachain.com
+  ink:
+    url: https://rpc-qnd.inkonchain.com
+  unichain:
+    url: https://unichain-mainnet-rpc.publicnode.com
   
 swap:
   jupiter:

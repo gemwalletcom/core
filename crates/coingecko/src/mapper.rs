@@ -40,7 +40,9 @@ pub fn get_chain_for_coingecko_platform_id(id: &str) -> Option<Chain> {
         "linea" => Some(Chain::Linea),
         "near" => Some(Chain::Near),
         "the-open-network" => Some(Chain::Ton),
-        //"algorand" => Some(Chain::Algorand),
+        "algorand" => Some(Chain::Algorand),
+        "berachain-bera" => Some(Chain::Berachain),
+        "ink" => Some(Chain::Ink),
         _ => None,
     }
 }
@@ -59,7 +61,8 @@ pub fn get_coingecko_market_id_for_chain(chain: Chain) -> &'static str {
         | Chain::Linea
         | Chain::Manta
         | Chain::World
-        | Chain::Abstract => "ethereum",
+        | Chain::Abstract
+        | Chain::Ink => "ethereum",
         Chain::SmartChain | Chain::OpBNB => "binancecoin",
         Chain::Solana => "solana",
         Chain::Polygon => "matic-network",
@@ -86,5 +89,6 @@ pub fn get_coingecko_market_id_for_chain(chain: Chain) -> &'static str {
         Chain::Algorand => "algorand",
         Chain::Polkadot => "polkadot",
         Chain::Cardano => "cardano",
+        Chain::Berachain => "berachain-bera",
     }
 }

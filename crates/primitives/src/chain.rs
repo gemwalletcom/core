@@ -53,6 +53,8 @@ pub enum Chain {
     Polkadot,
     Cardano,
     Abstract,
+    Berachain,
+    Ink,
 }
 
 impl fmt::Display for Chain {
@@ -123,6 +125,8 @@ impl Chain {
             Self::Polkadot => "Polkadot",
             Self::Cardano => "764824073", // magic number from gensis configuration
             Self::Abstract => "2741",
+            Self::Berachain => "80094",
+            Self::Ink => "57073",
         }
     }
 
@@ -154,7 +158,9 @@ impl Chain {
             | Self::Celo
             | Self::World
             | Self::Sonic
-            | Self::Abstract => 60,
+            | Self::Abstract
+            | Self::Berachain
+            | Self::Ink => 60,
             Self::Bitcoin => 0,
             Self::BitcoinCash => 145,
             Self::Litecoin => 2,
@@ -197,7 +203,9 @@ impl Chain {
             | Self::Celo
             | Self::World
             | Self::Sonic
-            | Self::Abstract => ChainType::Ethereum,
+            | Self::Abstract
+            | Self::Berachain
+            | Self::Ink => ChainType::Ethereum,
             Self::Bitcoin | Self::BitcoinCash | Self::Doge | Self::Litecoin => ChainType::Bitcoin,
             Self::Solana => ChainType::Solana,
             Self::Thorchain | Self::Cosmos | Self::Osmosis | Self::Celestia | Self::Injective | Self::Noble | Self::Sei => ChainType::Cosmos,
@@ -232,7 +240,9 @@ impl Chain {
             | Self::Celo
             | Self::World
             | Self::Sonic
-            | Self::Abstract => Some(AssetType::ERC20),
+            | Self::Abstract
+            | Self::Berachain
+            | Self::Ink => Some(AssetType::ERC20),
             Self::OpBNB | Self::SmartChain => Some(AssetType::BEP20),
             Self::Solana => Some(AssetType::SPL),
             Self::Tron => Some(AssetType::TRC20),
@@ -309,7 +319,9 @@ impl Chain {
             | Self::Algorand
             | Self::Polkadot
             | Self::Cardano
-            | Self::Abstract => false,
+            | Self::Abstract
+            | Self::Berachain
+            | Self::Ink => false,
         }
     }
 
@@ -361,6 +373,8 @@ impl Chain {
             Self::Algorand => 4_000,
             Self::Polkadot => 5_000,
             Self::Cardano => 60_000,
+            Self::Berachain => 2_000,
+            Self::Ink => 1_000,
         }
     }
 
@@ -371,7 +385,7 @@ impl Chain {
             Self::Solana | Self::SmartChain => 70,
             Self::Osmosis | Self::Ton | Self::Tron => 50,
             Self::Cosmos | Self::Injective | Self::Aptos | Self::Sui | Self::Xrp | Self::Celestia | Self::BitcoinCash | Self::Polkadot => 40,
-            Self::Abstract => 35,
+            Self::Abstract | Self::Berachain | Self::Ink => 35,
             Self::Manta
             | Self::Fantom
             | Self::OpBNB
