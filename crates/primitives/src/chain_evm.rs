@@ -56,7 +56,7 @@ impl EVMChain {
             Self::Linea => 50_000_000,    // https://lineascan.build/gastracker
             Self::Mantle | Self::Celo | Self::Manta => 10_000_000,
             Self::Sonic => 10_000_000,
-            Self::Berachain => 10_000_000_00, // 1 Gwei
+            Self::Berachain => 1_000_000_000, // 1 Gwei
         }
     }
 
