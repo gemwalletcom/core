@@ -51,7 +51,8 @@ impl ProviderFactory {
             | Chain::Sonic
             | Chain::Abstract
             | Chain::Berachain
-            | Chain::Ink => Box::new(EthereumClient::new(chain, url)),
+            | Chain::Ink
+            | Chain::Unichain => Box::new(EthereumClient::new(chain, url)),
             Chain::Cosmos | Chain::Osmosis | Chain::Celestia | Chain::Thorchain | Chain::Injective | Chain::Noble | Chain::Sei => {
                 Box::new(CosmosClient::new(chain, client, url))
             }
@@ -114,6 +115,7 @@ impl ProviderFactory {
             Chain::Abstract => settings.chains.abstract_chain.url.as_str(),
             Chain::Berachain => settings.chains.berachain.url.as_str(),
             Chain::Ink => settings.chains.ink.url.as_str(),
+            Chain::Unichain => settings.chains.unichain.url.as_str(),
         }
     }
 }

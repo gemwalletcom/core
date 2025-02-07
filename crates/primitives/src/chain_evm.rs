@@ -31,6 +31,7 @@ pub enum EVMChain {
     Abstract,
     Berachain,
     Ink,
+    Unichain,
 }
 
 impl EVMChain {
@@ -47,7 +48,7 @@ impl EVMChain {
             Self::Optimism => 10_000_000, // https://optimistic.etherscan.io/chart/gasprice
             Self::Base => 100_000_000,    // https://basescan.org/chart/gasprice
             Self::AvalancheC => 25_000_000_000, // https://snowscan.xyz/gastracker
-            Self::OpBNB | Self::World | Self::Abstract | Self::Ink => 1_000_000, // https://opbnbscan.com/statistics
+            Self::OpBNB | Self::World | Self::Abstract | Self::Ink | Self::Unichain => 1_000_000, // https://opbnbscan.com/statistics
             Self::Fantom => 3_500_000_000, // https://ftmscan.com/gastracker
             Self::Gnosis => 3_000_000_000, // https://gnosisscan.io/gastracker
             Self::Blast => 200_000_000,   // https://blastscan.io/chart/gasprice
@@ -77,7 +78,7 @@ impl EVMChain {
             | Self::Sonic
             | Self::Abstract
             | Self::Berachain => false,
-            Self::Optimism | Self::Base | Self::OpBNB | Self::World | Self::Ink => true,
+            Self::Optimism | Self::Base | Self::OpBNB | Self::World | Self::Ink | Self::Unichain => true,
         }
     }
 
@@ -87,7 +88,7 @@ impl EVMChain {
             Self::SmartChain => Some("0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c"), // WBNB
             Self::Polygon => Some("0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270"),    // WMATIC
             Self::Arbitrum => Some("0x82aF49447D8a07e3bd95BD0d56f35241523fBab1"),
-            Self::Optimism | Self::Base | Self::OpBNB | Self::World | Self::Ink => Some("0x4200000000000000000000000000000000000006"),
+            Self::Optimism | Self::Base | Self::OpBNB | Self::World | Self::Ink | Self::Unichain => Some("0x4200000000000000000000000000000000000006"),
             Self::AvalancheC => Some("0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7"), // WAVAX
             Self::Fantom => Some("0x21be370D5312f44cB42ce377BC9b8a0cEF1A4C83"),     // WFTM
             Self::Gnosis => Some("0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d"),     // Wrapped XDAI (WXDAI)
