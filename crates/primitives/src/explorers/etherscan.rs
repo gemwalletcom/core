@@ -122,7 +122,14 @@ impl EtherScan {
                     base_url: "https://abscan.org",
                 },
             },
-            EVMChain::Unichain => Self {
+            EVMChain::Berachain => Self {
+                meta: Metadata {
+                    name: "Berachain",
+                    base_url: "https://berascan.com",
+                },
+            },
+            EVMChain::Ink => todo!(),
+            EVMChain::Berachain => Self {
                 meta: Metadata {
                     name: "Uniscan",
                     base_url: "https://uniscan.xyz",

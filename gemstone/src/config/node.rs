@@ -147,6 +147,11 @@ pub fn get_nodes_for_chain(chain: Chain) -> Vec<Node> {
         Chain::Polkadot => vec![Node::new("https://polkadot-public-sidecar.parity-chains.parity.io", NodePriority::High)],
         Chain::Cardano => vec![],
         Chain::Abstract => vec![Node::new("https://api.mainnet.abs.xyz", NodePriority::High)],
-        Chain::Unichain => vec![Node::new("https://mainnet.unichain.org", NodePriority::High)], // FIXME wait for mainnet
+        Chain::Berachain => vec![Node::new("https://rpc.berachain.com", NodePriority::High)],
+        Chain::Ink => vec![
+            Node::new("https://rpc-qnd.inkonchain.com", NodePriority::High),
+            Node::new("https://rpc-gel.inkonchain.com", NodePriority::High),
+        ],
+        Chain::Unichain => vec![],
     }
 }
