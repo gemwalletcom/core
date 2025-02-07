@@ -15,16 +15,14 @@ use crate::{
 };
 use gem_evm::{
     across::{
-        contracts::{
-            multicall_handler,
-            V3SpokePoolInterface::{self, V3RelayData},
-        },
+        contracts::V3SpokePoolInterface::{self, V3RelayData},
         deployment::{AcrossDeployment, ACROSS_CONFIG_STORE, ACROSS_HUBPOOL},
         fees::{self, LpFeeCalculator, RateModel, RelayerFeeCalculator},
     },
     address::EthereumAddress,
     erc20::IERC20,
     jsonrpc::TransactionObject,
+    multicall_handler,
     weth::WETH9,
 };
 use num_bigint::{BigInt, Sign};

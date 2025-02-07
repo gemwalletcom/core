@@ -10,6 +10,7 @@ pub mod ether_conv;
 pub mod jsonrpc;
 pub mod lido;
 pub mod multicall3;
+pub mod multicall_handler;
 pub mod permit2;
 pub mod stargate;
 pub mod thorchain;

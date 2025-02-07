@@ -1,11 +1,12 @@
 use std::{collections::HashMap, str::FromStr, sync::Arc};
 
 use alloy_core::sol_types::{SolCall, SolValue};
-use alloy_primitives::{hex, Address, Bytes, FixedBytes, Uint, U160, U256};
+use alloy_primitives::{hex, Address, Bytes, FixedBytes, U160, U256};
 use gem_evm::{
     erc20::IERC20,
     jsonrpc::{BlockParameter, EthereumRpc, TransactionObject},
-    stargate::contract::{Call, IStargate, Instructions, MessagingFee, OFTReceipt, SendParam},
+    multicall_handler::{Call, Instructions},
+    stargate::contract::{IStargate, MessagingFee, OFTReceipt, SendParam},
 };
 use primitives::{AssetId, Chain};
 
@@ -30,7 +31,7 @@ fn build_extra_options(compose_msg: &[u8]) -> Bytes {
     // Compose option data: index (u16) + gas (u128) + value (u128)
     let index = 0u16.to_be_bytes();
     let gas = 200_000u128.to_be_bytes();
-    let value = 0u128.to_be_bytes();
+    let _value = 0u128.to_be_bytes();
 
     let mut option_data = Vec::with_capacity(34);
     option_data.extend_from_slice(&index);
@@ -152,7 +153,6 @@ impl StargateClient {
         };
 
         let instructions = Instructions {
-            token: oft_token,
             calls: instruction_calls.clone(),
             fallbackRecipient: destination_address,
         };

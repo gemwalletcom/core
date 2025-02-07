@@ -75,11 +75,12 @@ impl GemSwapProvider for Stargate {
             return Err(SwapperError::NotSupportedPair);
         }
 
+        let slippage_bps = request.options.slippage.bps;
         let pool = self.client.get_pool_by_asset_id(&request.from_asset)?;
         let initial_send_param = self.client.build_send_param(request)?;
 
         let oft_quote = self.client.quote_oft(pool, &initial_send_param, provider.clone()).await?;
-        let min_amount_ld = apply_slippage_in_bp(&oft_quote.receipt.amountReceivedLD, request.options.slippage_bps);
+        let min_amount_ld = apply_slippage_in_bp(&oft_quote.receipt.amountReceivedLD, slippage_bps);
 
         // We need to recalculate instructions based on receipt from OFT quote
         // Without this, the first call, where we send bridge token to recipient, will fail
@@ -136,7 +137,7 @@ impl GemSwapProvider for Stargate {
                     route_data: serde_json::to_string(&route_data).unwrap_or_default(),
                     gas_estimate: None,
                 }],
-                suggested_slippage_bps: None,
+                slippage_bps,
             },
             approval,
             request: request.clone(),
@@ -218,7 +219,7 @@ mod tests {
             mode: GemSwapMode::ExactIn,
             destination_address: "0x0655c6AbdA5e2a5241aa08486bd50Cf7d475CF24".to_string(),
             options: GemSwapOptions {
-                slippage_bps: 100,
+                slippage: 100.into(),
                 fee: Some(SwapReferralFees::default()),
                 preferred_providers: vec![],
             },

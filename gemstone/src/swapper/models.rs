@@ -7,7 +7,7 @@ use gem_evm::address::AddressError;
 use primitives::{AssetId, Chain};
 use std::fmt::Debug;
 
-#[derive(Debug, thiserror::Error, uniffi::Error)]
+#[derive(Debug, PartialEq, thiserror::Error, uniffi::Error)]
 pub enum SwapperError {
     #[error("Not supported chain")]
     NotSupportedChain,

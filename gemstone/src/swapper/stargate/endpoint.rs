@@ -40,7 +40,7 @@ pub struct StargateRoutes {
     pub avalanche: StargateEndpoint,
     pub linea: StargateEndpoint,
     pub smartchain: StargateEndpoint,
-    pub abstrct: StargateEndpoint, // Abstract is reserver keyword in Rust
+    pub _abstract: StargateEndpoint,
 }
 
 lazy_static! {
@@ -171,7 +171,7 @@ lazy_static! {
             composer_address: "0x2805169ba8ea84ed28efa6bccbc593e44bb4bde4".to_string(),
             endpoint_id: ENDPOINT_ID_SMARTCHAIN,
         },
-        abstrct: StargateEndpoint {
+        _abstract: StargateEndpoint {
             id: Chain::Abstract,
             pools: vec![
                 StargatePool {
