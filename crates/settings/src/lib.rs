@@ -215,6 +215,9 @@ pub struct Chains {
     pub cardano: Chain,
     #[serde(rename = "abstract")]
     pub abstract_chain: Chain,
+    pub berachain: Chain,
+    pub ink: Chain,
+    pub unichain: Chain,
 }
 
 #[derive(Debug, Deserialize, Clone)]
