@@ -22,8 +22,6 @@ pub fn format_token_id(chain: Chain, token_id: String) -> Option<String> {
         | Chain::World
         | Chain::Sonic
         | Chain::Abstract
-        | Chain::Berachain
-        | Chain::Ink
         | Chain::Unichain => Some(EthereumAddress::parse(&token_id)?.to_checksum()),
         Chain::Solana | Chain::Sui | Chain::Ton => Some(token_id),
         Chain::Tron => {
