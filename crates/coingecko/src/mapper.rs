@@ -62,8 +62,7 @@ pub fn get_coingecko_market_id_for_chain(chain: Chain) -> &'static str {
         | Chain::Manta
         | Chain::World
         | Chain::Abstract
-        | Chain::Ink
-        | Chain::Unichain => "ethereum",
+        | Chain::Ink => "ethereum",
         Chain::SmartChain | Chain::OpBNB => "binancecoin",
         Chain::Solana => "solana",
         Chain::Polygon => "matic-network",
