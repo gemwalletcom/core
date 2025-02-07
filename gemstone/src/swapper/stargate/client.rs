@@ -11,6 +11,7 @@ use gem_evm::{
 use primitives::{AssetId, Chain};
 
 use crate::{
+    debug_println,
     network::{jsonrpc_call, AlienProvider, JsonRpcResult},
     swapper::{slippage::apply_slippage_in_bp, SwapQuoteRequest, SwapperError},
 };
@@ -218,7 +219,7 @@ impl StargateClient {
             msg: format!("Unable to abi decode quote send response: {:?}", e.to_string()),
         })?;
 
-        println!("quote_send_response: {:?}", returns);
+        debug_println!("quote_send_response: {:?}", returns);
 
         Ok(returns.fee)
     }
