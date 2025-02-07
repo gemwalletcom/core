@@ -29,6 +29,9 @@ pub enum EVMChain {
     World,
     Sonic,
     Abstract,
+    Berachain,
+    Ink,
+    Unichain,
 }
 
 impl EVMChain {
@@ -38,14 +41,14 @@ impl EVMChain {
 
     pub fn min_priority_fee(&self) -> u64 {
         match self {
-            Self::Ethereum => 1_000_000_000,                         // https://etherscan.io/gastracker
-            Self::SmartChain => 1_000_000_000,                       // https://bscscan.com/gastracker
-            Self::Polygon => 30_000_000_000,                         // https://polygonscan.com/gastracker
+            Self::Ethereum => 1_000_000_000,                                                      // https://etherscan.io/gastracker
+            Self::SmartChain => 1_000_000_000,                                                    // https://bscscan.com/gastracker
+            Self::Polygon => 30_000_000_000,                                                      // https://polygonscan.com/gastracker
             Self::Arbitrum => 10_000_000, // https://arbiscan.io/address/0x000000000000000000000000000000000000006C#readContract getMinimumGasPrice
             Self::Optimism => 10_000_000, // https://optimistic.etherscan.io/chart/gasprice
             Self::Base => 100_000_000,    // https://basescan.org/chart/gasprice
             Self::AvalancheC => 25_000_000_000, // https://snowscan.xyz/gastracker
-            Self::OpBNB | Self::World | Self::Abstract => 1_000_000, // https://opbnbscan.com/statistics
+            Self::OpBNB | Self::World | Self::Abstract | Self::Ink | Self::Unichain => 1_000_000, // https://opbnbscan.com/statistics
             Self::Fantom => 3_500_000_000, // https://ftmscan.com/gastracker
             Self::Gnosis => 3_000_000_000, // https://gnosisscan.io/gastracker
             Self::Blast => 200_000_000,   // https://blastscan.io/chart/gasprice
@@ -53,6 +56,7 @@ impl EVMChain {
             Self::Linea => 50_000_000,    // https://lineascan.build/gastracker
             Self::Mantle | Self::Celo | Self::Manta => 10_000_000,
             Self::Sonic => 10_000_000,
+            Self::Berachain => 10_000_000_000, // 10 Gwei
         }
     }
 
@@ -72,8 +76,9 @@ impl EVMChain {
             | Self::Mantle
             | Self::Celo
             | Self::Sonic
-            | Self::Abstract => false,
-            Self::Optimism | Self::Base | Self::OpBNB | Self::World => true,
+            | Self::Abstract
+            | Self::Berachain => false,
+            Self::Optimism | Self::Base | Self::OpBNB | Self::World | Self::Ink | Self::Unichain => true,
         }
     }
 
@@ -83,7 +88,7 @@ impl EVMChain {
             Self::SmartChain => Some("0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c"),
             Self::Polygon => Some("0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270"),
             Self::Arbitrum => Some("0x82aF49447D8a07e3bd95BD0d56f35241523fBab1"),
-            Self::Optimism | Self::Base | Self::OpBNB | Self::World => Some("0x4200000000000000000000000000000000000006"),
+            Self::Optimism | Self::Base | Self::OpBNB | Self::World | Self::Ink | Self::Unichain => Some("0x4200000000000000000000000000000000000006"),
             Self::AvalancheC => Some("0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7"),
             Self::Fantom => Some("0x21be370D5312f44cB42ce377BC9b8a0cEF1A4C83"),
             Self::Gnosis => Some("0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d"),
@@ -92,7 +97,7 @@ impl EVMChain {
             Self::Celo => Some("0x471EcE3750Da237f93B8E339c536989b8978a438"),
             Self::Sonic => Some("0x039e2fB66102314Ce7b64Ce5Ce3E5183bc94aD38"),
             Self::Abstract => Some("0x3439153EB7AF838Ad19d56E1571FBD09333C2809"),
-            Self::Manta | Self::Linea | Self::Mantle => None,
+            Self::Manta | Self::Linea | Self::Mantle | Self::Berachain => None,
         }
     }
 
