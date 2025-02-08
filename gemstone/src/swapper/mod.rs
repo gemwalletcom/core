@@ -29,7 +29,9 @@ pub trait GemSwapProvider: Send + Sync + Debug {
     fn provider(&self) -> SwapProvider;
     fn supported_assets(&self) -> Vec<SwapChainAsset>;
     async fn fetch_quote(&self, request: &SwapQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapQuote, SwapperError>;
-    async fn fetch_permit2_for_quote(&self, quote: &SwapQuote, provider: Arc<dyn AlienProvider>) -> Result<ApprovalType, SwapperError>;
+    async fn fetch_permit2_for_quote(&self, _quote: &SwapQuote, _provider: Arc<dyn AlienProvider>) -> Result<Option<Permit2ApprovalData>, SwapperError> {
+        Ok(None)
+    }
     async fn fetch_quote_data(&self, quote: &SwapQuote, provider: Arc<dyn AlienProvider>, data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError>;
     async fn get_transaction_status(&self, chain: Chain, transaction_hash: &str, provider: Arc<dyn AlienProvider>) -> Result<bool, SwapperError>;
 }
@@ -160,7 +162,7 @@ impl GemSwapper {
         Ok(quotes)
     }
 
-    async fn fetch_permit2_for_quote(&self, quote: &SwapQuote) -> Result<ApprovalType, SwapperError> {
+    async fn fetch_permit2_for_quote(&self, quote: &SwapQuote) -> Result<Option<Permit2ApprovalData>, SwapperError> {
         let provider = self.get_swapper_by_provider(&quote.data.provider).ok_or(SwapperError::NoAvailableProvider)?;
         provider.fetch_permit2_for_quote(quote, self.rpc_provider.clone()).await
     }

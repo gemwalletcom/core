@@ -4,7 +4,7 @@ mod uniswap_router;
 use crate::{
     network::{jsonrpc::batch_jsonrpc_call, AlienProvider, JsonRpcResponse, JsonRpcResult},
     swapper::{
-        approval::{check_approval, CheckApprovalType},
+        approval::{check_approval_erc20, check_approval_permit2},
         models::*,
         slippage::apply_slippage_in_bp,
         GemSwapProvider, SwapperError,
@@ -354,9 +354,15 @@ impl UniswapV3 {
     ) -> Result<ApprovalType, SwapperError> {
         let deployment = self.provider.get_deployment_by_chain(chain).ok_or(SwapperError::NotSupportedChain)?;
         // Check token allowance, spender is permit2
-        let erc20_type = CheckApprovalType::ERC20(wallet_address.to_string(), token.to_string(), deployment.permit2.to_string(), amount);
-
-        check_approval(erc20_type, provider.clone(), chain).await
+        check_approval_erc20(
+            wallet_address.to_string(),
+            token.to_string(),
+            deployment.permit2.to_string(),
+            amount,
+            provider,
+            chain,
+        )
+        .await
     }
 
     async fn check_permit2_approval(
@@ -366,17 +372,23 @@ impl UniswapV3 {
         amount: U256,
         chain: &Chain,
         provider: Arc<dyn AlienProvider>,
-    ) -> Result<ApprovalType, SwapperError> {
+    ) -> Result<Option<Permit2ApprovalData>, SwapperError> {
         let deployment = self.provider.get_deployment_by_chain(chain).ok_or(SwapperError::NotSupportedChain)?;
-        let permit2_type = CheckApprovalType::Permit2(
+
+        let result = check_approval_permit2(
             deployment.permit2.to_string(),
             wallet_address.to_string(),
             token.to_string(),
             deployment.universal_router.to_string(),
             amount,
-        );
-
-        check_approval(permit2_type, provider.clone(), chain).await
+            provider.clone(),
+            chain,
+        )
+        .await?;
+        match result {
+            ApprovalType::Permit2(permit2) => Ok(Some(permit2)),
+            _ => Ok(None),
+        }
     }
 }
 
@@ -499,7 +511,7 @@ impl GemSwapProvider for UniswapV3 {
         })
     }
 
-    async fn fetch_permit2_for_quote(&self, quote: &SwapQuote, provider: Arc<dyn AlienProvider>) -> Result<ApprovalType, SwapperError> {
+    async fn fetch_permit2_for_quote(&self, quote: &SwapQuote, provider: Arc<dyn AlienProvider>) -> Result<Option<Permit2ApprovalData>, SwapperError> {
         let wallet_address: Address = quote.request.wallet_address.as_str().parse().map_err(SwapperError::from)?;
         let (_, token_in, _, amount_in) = Self::parse_request(&quote.request)?;
         self.check_permit2_approval(wallet_address, &token_in.to_checksum(), amount_in, &quote.request.from_asset.chain, provider)

@@ -19,13 +19,22 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
+#[allow(unused)]
 #[derive(Debug, Clone)]
 pub enum CheckApprovalType {
-    #[allow(dead_code)]
-    /* owner, token, spender, amount */
-    ERC20(String, String, String, U256),
-    /* permit2 contract, owner, token, spender, amount */
-    Permit2(String, String, String, String, U256),
+    ERC20 {
+        owner: String,
+        token: String,
+        spender: String,
+        amount: U256,
+    },
+    Permit2 {
+        permit2_contract: String,
+        owner: String,
+        token: String,
+        spender: String,
+        amount: U256,
+    },
 }
 
 impl From<AddressError> for SwapperError {
@@ -117,12 +126,17 @@ pub async fn check_approval_permit2(
     Ok(ApprovalType::None)
 }
 
+#[allow(unused)]
 pub async fn check_approval(check_type: CheckApprovalType, provider: Arc<dyn AlienProvider>, chain: &Chain) -> Result<ApprovalType, SwapperError> {
     match check_type {
-        CheckApprovalType::ERC20(owner, token, spender, amount) => check_approval_erc20(owner, token, spender, amount, provider, chain).await,
-        CheckApprovalType::Permit2(permit2_contract, owner, token, spender, amount) => {
-            check_approval_permit2(permit2_contract, owner, token, spender, amount, provider, chain).await
-        }
+        CheckApprovalType::ERC20 { owner, token, spender, amount } => check_approval_erc20(owner, token, spender, amount, provider, chain).await,
+        CheckApprovalType::Permit2 {
+            permit2_contract,
+            owner,
+            token,
+            spender,
+            amount,
+        } => check_approval_permit2(permit2_contract, owner, token, spender, amount, provider, chain).await,
     }
 }
 
@@ -160,8 +174,19 @@ mod tests {
         };
         let provider = Arc::new(mock);
 
-        let erc20_check = CheckApprovalType::ERC20(owner.clone(), token.clone(), permit2_contract.clone(), amount);
-        let permit2_check = CheckApprovalType::Permit2(permit2_contract.clone(), owner.clone(), token.clone(), spender.clone(), amount);
+        let erc20_check = CheckApprovalType::ERC20 {
+            owner: owner.clone(),
+            token: token.clone(),
+            spender: permit2_contract.clone(),
+            amount,
+        };
+        let permit2_check = CheckApprovalType::Permit2 {
+            permit2_contract: permit2_contract.clone(),
+            owner: owner.clone(),
+            token: token.clone(),
+            spender: spender.clone(),
+            amount,
+        };
 
         let approvals = futures::future::join_all(vec![
             check_approval(erc20_check, provider.clone(), &chain),
