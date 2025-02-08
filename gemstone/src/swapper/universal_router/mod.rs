@@ -544,7 +544,7 @@ impl GemSwapProvider for UniswapV3 {
                     .await?
             }
         };
-        if matches!(approval, ApprovalType::None) {
+        if matches!(approval, ApprovalType::Approve(_)) {
             gas_limit = Some(DEFAULT_SWAP_GAS_LIMIT.to_string());
         }
 
