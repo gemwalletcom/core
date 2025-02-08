@@ -208,7 +208,7 @@ impl Chain {
             | Self::Sonic
             | Self::Abstract
             | Self::Berachain
-            | Self::Ink 
+            | Self::Ink
             | Self::Unichain => ChainType::Ethereum,
             Self::Bitcoin | Self::BitcoinCash | Self::Doge | Self::Litecoin => ChainType::Bitcoin,
             Self::Solana => ChainType::Solana,
@@ -325,7 +325,6 @@ impl Chain {
             | Self::Algorand
             | Self::Polkadot
             | Self::Cardano
-            | Self::Abstract
             | Self::Berachain
             | Self::Ink
             | Self::Unichain => false,
