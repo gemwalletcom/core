@@ -41,6 +41,7 @@ use std::{
 use super::weth_address;
 
 static DEFAULT_DEADLINE: u64 = 3600; // 1 hour
+const DEFAULT_SWAP_GAS_LIMIT: u64 = 500_000; // gwei
 
 pub struct FeePreference {
     pub fee_token: EthereumAddress,
@@ -533,6 +534,7 @@ impl GemSwapProvider for UniswapV3 {
             _ => None,
         };
 
+        let mut gas_limit: Option<String> = None;
         let approval = {
             if quote.request.from_asset.is_native() {
                 ApprovalType::None
@@ -542,6 +544,9 @@ impl GemSwapProvider for UniswapV3 {
                     .await?
             }
         };
+        if matches!(approval, ApprovalType::None) {
+            gas_limit = Some(DEFAULT_SWAP_GAS_LIMIT.to_string());
+        }
 
         let now = SystemTime::now().duration_since(UNIX_EPOCH).expect("Time went backwards").as_secs();
         let sig_deadline = now + DEFAULT_DEADLINE;
@@ -571,7 +576,7 @@ impl GemSwapProvider for UniswapV3 {
             value,
             data: HexEncode(encoded),
             approval,
-            gas_limit: quote.data.routes[0].gas_limit.clone(),
+            gas_limit,
         })
     }
 
