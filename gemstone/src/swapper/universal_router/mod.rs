@@ -194,13 +194,13 @@ impl UniswapV3 {
                     input: token_in.clone(),
                     output: intermediary.clone(),
                     route_data: fee_tier.to_string(),
-                    gas_estimate: gas_estimate.clone(),
+                    gas_limit: gas_estimate.clone(),
                 },
                 SwapRoute {
                     input: intermediary.clone(),
                     output: token_out.clone(),
                     route_data: fee_tier.to_string(),
-                    gas_estimate: None,
+                    gas_limit: None,
                 },
             ]
         } else {
@@ -208,7 +208,7 @@ impl UniswapV3 {
                 input: token_in.clone(),
                 output: token_out.clone(),
                 route_data: fee_tier.to_string(),
-                gas_estimate: gas_estimate.clone(),
+                gas_limit: gas_estimate.clone(),
             }]
         }
     }
@@ -571,6 +571,7 @@ impl GemSwapProvider for UniswapV3 {
             value,
             data: HexEncode(encoded),
             approval,
+            gas_limit: quote.data.routes[0].gas_limit.clone(),
         })
     }
 

@@ -1,4 +1,5 @@
 use super::model::RouteData;
+use super::DEFAULT_DEPOSIT_GAS_LIMIT;
 use super::{asset::THORChainAsset, chain::THORChainName, ThorChain, QUOTE_INTERVAL, QUOTE_MINIMUM, QUOTE_QUANTITY};
 use crate::network::AlienProvider;
 use crate::swapper::approval::check_approval_erc20;
@@ -89,7 +90,7 @@ impl GemSwapProvider for ThorChain {
                     input: request.from_asset.clone(),
                     output: request.to_asset.clone(),
                     route_data: serde_json::to_string(&route_data).unwrap_or_default(),
-                    gas_estimate: None,
+                    gas_limit: None,
                 }],
                 slippage_bps: request.options.slippage.bps,
             },
@@ -158,6 +159,7 @@ impl GemSwapProvider for ThorChain {
                 value: "0".to_string(),
                 data: hex::encode(call.clone()),
                 approval,
+                gas_limit: Some(DEFAULT_DEPOSIT_GAS_LIMIT.to_string()),
             }
         } else {
             SwapQuoteData {
@@ -165,6 +167,7 @@ impl GemSwapProvider for ThorChain {
                 value,
                 data: self.data(from_asset.chain, memo),
                 approval,
+                gas_limit: None,
             }
         };
 

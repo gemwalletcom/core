@@ -9,8 +9,8 @@ use crate::{
     debug_println,
     network::AlienProvider,
     swapper::{
-        approval::check_approval_erc20, asset::*, chainlink::ChainlinkPriceFeed, eth_rpc, models::*, slippage::apply_slippage_in_bp, weth_address,
-        GemSwapProvider, SwapperError,
+        across::DEFAULT_GAS_LIMIT, approval::check_approval_erc20, asset::*, chainlink::ChainlinkPriceFeed, eth_rpc, models::*, slippage::apply_slippage_in_bp,
+        weth_address, GemSwapProvider, SwapperError,
     },
 };
 use gem_evm::{
@@ -424,7 +424,7 @@ impl GemSwapProvider for Across {
                     input: input_asset.clone(),
                     output: output_asset.clone(),
                     route_data,
-                    gas_estimate: None,
+                    gas_limit: Some(DEFAULT_GAS_LIMIT.to_string()),
                 }],
             },
             request: request.clone(),
@@ -479,6 +479,7 @@ impl GemSwapProvider for Across {
             value: value.to_string(),
             data: HexEncode(deposit_v3_call.clone()),
             approval,
+            gas_limit: route.gas_limit.clone(),
         };
 
         if matches!(data, FetchQuoteData::EstimateGas) {

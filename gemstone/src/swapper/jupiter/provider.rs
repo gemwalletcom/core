@@ -140,7 +140,7 @@ impl GemSwapProvider for Jupiter {
                     input: AssetId::from(Chain::Solana, Some(input_mint)),
                     output: AssetId::from(Chain::Solana, Some(output_mint)),
                     route_data: serde_json::to_string(&swap_quote).unwrap_or_default(),
-                    gas_estimate: None,
+                    gas_limit: None,
                 }],
                 slippage_bps: computed_auto_slippage,
             },
@@ -185,6 +185,7 @@ impl GemSwapProvider for Jupiter {
             value: "".to_string(),
             data: quote_data.swap_transaction,
             approval: ApprovalType::None,
+            gas_limit: None,
         };
         Ok(data)
     }

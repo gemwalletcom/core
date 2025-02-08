@@ -14,6 +14,7 @@ pub struct ThorChain {}
 const QUOTE_MINIMUM: i64 = 0;
 const QUOTE_INTERVAL: i64 = 1;
 const QUOTE_QUANTITY: i64 = 0;
+const DEFAULT_DEPOSIT_GAS_LIMIT: u64 = 80_000;
 
 impl ThorChain {
     fn data(&self, chain: THORChainName, memo: String) -> String {

@@ -195,6 +195,7 @@ pub struct SwapQuoteData {
     pub value: String,
     pub data: String,
     pub approval: ApprovalType,
+    pub gas_limit: Option<String>,
 }
 
 #[derive(Debug, Clone, uniffi::Record)]
@@ -209,7 +210,7 @@ pub struct SwapRoute {
     pub input: AssetId,
     pub output: AssetId,
     pub route_data: String,
-    pub gas_estimate: Option<String>,
+    pub gas_limit: Option<String>,
 }
 
 #[derive(Debug, Clone, uniffi::Enum)]

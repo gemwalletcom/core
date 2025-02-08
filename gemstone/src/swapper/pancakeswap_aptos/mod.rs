@@ -83,7 +83,7 @@ impl GemSwapProvider for PancakeSwapAptos {
                     input: request.from_asset.clone(),
                     output: request.to_asset.clone(),
                     route_data,
-                    gas_estimate: None,
+                    gas_limit: None,
                 }],
                 slippage_bps: request.options.slippage.bps,
             },
@@ -109,6 +109,7 @@ impl GemSwapProvider for PancakeSwapAptos {
             value: quote.from_value.clone(),
             data: serde_json::to_string(&payload).unwrap(),
             approval: ApprovalType::None,
+            gas_limit: None,
         };
         Ok(data)
     }
