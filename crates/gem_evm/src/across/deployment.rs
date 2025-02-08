@@ -60,6 +60,10 @@ impl AcrossDeployment {
                 chain_id,
                 spoke_pool: "0xE0B015E54d54fc84a6cB9B666099c46adE9335FF",
             }),
+            Chain::Ink => Some(Self {
+                chain_id,
+                spoke_pool: "0x3baD7AD0728f9917d1Bf08af5782dCbD516cDd96",
+            }),
             _ => None,
         }
     }
@@ -94,6 +98,7 @@ impl AcrossDeployment {
             (Chain::ZkSync, vec![WETH_ZKSYNC_ASSET_ID.into(), USDT_ZKSYNC_ASSET_ID.into()]),
             (Chain::World, vec![WETH_WORLD_ASSET_ID.into()]),
             (Chain::Blast, vec![WETH_BLAST_ASSET_ID.into()]),
+            (Chain::Ink, vec![WETH_INK_ASSET_ID.into(), USDT_INK_ASSET_ID.into()]),
         ])
     }
 
