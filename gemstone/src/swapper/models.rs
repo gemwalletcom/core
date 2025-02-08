@@ -69,6 +69,7 @@ pub enum SwapProvider {
     Orca,
     Jupiter,
     Across,
+    Stonfi,
 }
 
 #[derive(Debug, Clone, PartialEq, uniffi::Enum)]
@@ -88,6 +89,7 @@ impl SwapProvider {
             Self::Orca => "Orca Whirlpool",
             Self::Jupiter => "Jupiter",
             Self::Across => "Across v3",
+            Self::Stonfi => "Stonfi",
         }
     }
 
@@ -100,6 +102,7 @@ impl SwapProvider {
             Self::Orca => SwapProviderType::OnChain,
             Self::Jupiter => SwapProviderType::OnChain,
             Self::Across => SwapProviderType::Bridge,
+            Self::Stonfi => SwapProviderType::OnChain,
         }
     }
 }
