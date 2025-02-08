@@ -47,6 +47,9 @@ struct ContentView: View {
             Button("Bridge Op ETH -> Arbitrum") {
                 self.testQuote(quote: .op2Arb)
             }
+            Button("Bridge Op ETH -> Ink") {
+                self.testQuote(quote: .op2Ink)
+            }
             Button("Bridge ETH USDC -> Base") {
                 self.testQuote(quote: .ethUSDC2Base)
             }

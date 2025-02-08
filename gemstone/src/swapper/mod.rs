@@ -1,4 +1,4 @@
-use crate::network::AlienProvider;
+use crate::{debug_println, network::AlienProvider};
 
 use async_trait::async_trait;
 use std::{fmt::Debug, sync::Arc};
@@ -129,7 +129,7 @@ impl GemSwapper {
         self.swappers.iter().map(|x| x.provider()).collect()
     }
 
-    async fn fetch_quote(&self, request: SwapQuoteRequest) -> Result<Vec<SwapQuote>, SwapperError> {
+    async fn fetch_quote(&self, request: &SwapQuoteRequest) -> Result<Vec<SwapQuote>, SwapperError> {
         if request.from_asset == request.to_asset {
             return Err(SwapperError::NotSupportedPair);
         }
@@ -147,13 +147,21 @@ impl GemSwapper {
             return Err(SwapperError::NoAvailableProvider);
         }
 
-        let quotes_futures = providers.into_iter().map(|x| x.fetch_quote(&request, self.rpc_provider.clone()));
+        let quotes_futures = providers.into_iter().map(|x| x.fetch_quote(request, self.rpc_provider.clone()));
 
-        let quotes = futures::future::join_all(quotes_futures.into_iter().map(|fut| async { fut.await.ok() }))
-            .await
-            .into_iter()
-            .flatten()
-            .collect::<Vec<_>>();
+        let quotes = futures::future::join_all(quotes_futures.into_iter().map(|fut| async {
+            match &fut.await {
+                Ok(quote) => Some(quote.clone()),
+                Err(_err) => {
+                    debug_println!("fetch_quote error: {:?}", _err);
+                    None
+                }
+            }
+        }))
+        .await
+        .into_iter()
+        .flatten()
+        .collect::<Vec<_>>();
 
         if quotes.is_empty() {
             return Err(SwapperError::NoQuoteAvailable);

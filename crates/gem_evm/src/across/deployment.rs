@@ -121,6 +121,7 @@ impl AcrossDeployment {
                     WETH_POLYGON_ASSET_ID.into(),
                     WETH_ZKSYNC_ASSET_ID.into(),
                     WETH_WORLD_ASSET_ID.into(),
+                    WETH_INK_ASSET_ID.into(),
                 ]),
             },
             AssetMapping {
@@ -152,6 +153,7 @@ impl AcrossDeployment {
                     USDT_OP_ASSET_ID.into(),
                     USDT_POLYGON_ASSET_ID.into(),
                     USDT_ZKSYNC_ASSET_ID.into(),
+                    USDT_INK_ASSET_ID.into(),
                 ]),
             },
             AssetMapping {

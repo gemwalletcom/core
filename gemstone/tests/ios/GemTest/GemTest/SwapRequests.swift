@@ -92,6 +92,16 @@ public extension SwapQuoteRequest {
         options: SWAP_OPTIONS
     )
 
+    static let op2Ink = SwapQuoteRequest(
+        fromAsset: "optimism",
+        toAsset: "ink",
+        walletAddress: TEST_ETH_WALLET,
+        destinationAddress: TEST_ETH_WALLET,
+        value: "10000000000000000", // 0.01 eth
+        mode: .exactIn,
+        options: SWAP_OPTIONS
+    )
+
     static let ethUSDC2Base = SwapQuoteRequest(
         fromAsset: "ethereum_0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
         toAsset: "base_0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",

@@ -9,7 +9,13 @@ use crate::{
     debug_println,
     network::AlienProvider,
     swapper::{
-        across::DEFAULT_GAS_LIMIT, approval::check_approval_erc20, asset::*, chainlink::ChainlinkPriceFeed, eth_rpc, models::*, slippage::apply_slippage_in_bp,
+        across::{DEFAULT_DEPOSIT_GAS_LIMIT, DEFAULT_FILL_GAS_LIMIT},
+        approval::check_approval_erc20,
+        asset::*,
+        chainlink::ChainlinkPriceFeed,
+        eth_rpc,
+        models::*,
+        slippage::apply_slippage_in_bp,
         weth_address, GemSwapProvider, SwapperError,
     },
 };
@@ -193,8 +199,8 @@ impl Across {
         }
         .abi_encode();
         let tx = TransactionObject::new_call_to_value(deployment.spoke_pool, &value, data);
-        let gas_limit = eth_rpc::estimate_gas(provider, chain, tx).await?;
-        Ok((gas_limit, v3_relay_data))
+        let gas_limit = eth_rpc::estimate_gas(provider, chain, tx).await;
+        Ok((gas_limit.unwrap_or(U256::from(DEFAULT_FILL_GAS_LIMIT)), v3_relay_data))
     }
 
     pub fn update_v3_relay_data(
@@ -426,7 +432,7 @@ impl GemSwapProvider for Across {
                     input: input_asset.clone(),
                     output: output_asset.clone(),
                     route_data,
-                    gas_limit: Some(DEFAULT_GAS_LIMIT.to_string()),
+                    gas_limit: Some(DEFAULT_DEPOSIT_GAS_LIMIT.to_string()),
                 }],
             },
             request: request.clone(),
@@ -476,20 +482,24 @@ impl GemSwapProvider for Across {
             }
         };
 
+        let to: String = deployment.spoke_pool.into();
+        let mut gas_limit = route.gas_limit.clone();
+
+        if matches!(data, FetchQuoteData::EstimateGas) {
+            let hex_value = format!("{:#x}", U256::from_str(value).unwrap());
+            let tx = TransactionObject::new_call_to_value(&to, &hex_value, deposit_v3_call.clone());
+            let _gas_limit = eth_rpc::estimate_gas(provider, from_chain, tx).await?;
+            debug_println!("gas_limit: {:?}", _gas_limit);
+            gas_limit = Some(_gas_limit.to_string());
+        }
+
         let quote_data = SwapQuoteData {
             to: deployment.spoke_pool.into(),
             value: value.to_string(),
             data: HexEncode(deposit_v3_call.clone()),
             approval,
-            gas_limit: route.gas_limit.clone(),
+            gas_limit,
         };
-
-        if matches!(data, FetchQuoteData::EstimateGas) {
-            let hex_value = format!("{:#x}", U256::from_str(value).unwrap());
-            let tx = TransactionObject::new_call_to_value(&quote_data.to, &hex_value, deposit_v3_call);
-            let _gas_limit = eth_rpc::estimate_gas(provider, from_chain, tx).await?;
-            debug_println!("gas_limit: {:?}", _gas_limit);
-        }
 
         Ok(quote_data)
     }
