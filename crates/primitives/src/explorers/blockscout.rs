@@ -21,6 +21,15 @@ impl BlockScout {
             },
         })
     }
+
+    pub fn new_ink() -> Box<Self> {
+        Box::new(Self {
+            meta: Metadata {
+                name: "Ink Explorer",
+                base_url: "https://explorer.inkonchain.com",
+            },
+        })
+    }
 }
 
 impl BlockExplorer for BlockScout {
