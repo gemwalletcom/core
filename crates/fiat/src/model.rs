@@ -1,4 +1,5 @@
-use primitives::{Chain, CosmosDenom};
+use chain_primitives::format_token_id;
+use primitives::{AssetId, Chain, CosmosDenom};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -31,11 +32,23 @@ pub struct FiatProviderAsset {
     pub enabled: bool,
 }
 
+impl FiatProviderAsset {
+    pub fn asset_id(&self) -> Option<AssetId> {
+        match self.clone().chain {
+            Some(chain) => match &self.token_id {
+                Some(token_id) => format_token_id(chain, token_id.to_string()).map(|formatted_token_id| AssetId::from(chain, Some(formatted_token_id))),
+                None => Some(chain.as_asset_id()),
+            },
+            None => None,
+        }
+    }
+}
+
 pub type FiatMappingMap = HashMap<String, FiatMapping>;
 
 // used to filter out fiat tokens that have specific token ids for native coins
-pub fn filter_token_id(token_id: Option<String>) -> Option<String> {
-    token_id.filter(|contract_address| {
+pub fn filter_token_id(chain: Option<Chain>, token_id: Option<String>) -> Option<String> {
+    let token_id = token_id.filter(|contract_address| {
         ![
             "0x0000000000000000000000000000000000001010", // matic
             "0x0000000000000000000000000000000000000000",
@@ -51,5 +64,11 @@ pub fn filter_token_id(token_id: Option<String>) -> Option<String> {
             "bip122:12a765e31ffd4059bada1e25190f6e98",    // banxa::LTC
         ]
         .contains(&contract_address.as_str())
-    })
+    });
+    if let Some(chain) = chain {
+        if let Some(token_id) = token_id {
+            return format_token_id(chain, token_id);
+        }
+    }
+    return token_id;
 }
