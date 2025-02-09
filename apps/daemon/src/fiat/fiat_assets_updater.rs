@@ -1,6 +1,4 @@
-use chain_primitives::format_token_id;
 use fiat::{model::FiatProviderAsset, FiatProvider};
-use primitives::AssetId;
 use storage::database::DatabaseClient;
 
 pub struct FiatAssetsUpdater {
@@ -59,14 +57,7 @@ impl FiatAssetsUpdater {
     }
 
     fn map_fiat_asset(&self, provider: String, fiat_asset: FiatProviderAsset) -> primitives::FiatAsset {
-        let asset_id: Option<AssetId> = match fiat_asset.clone().chain {
-            Some(chain) => match fiat_asset.clone().token_id {
-                Some(token_id) => format_token_id(chain, token_id).map(|formatted_token_id| AssetId::from(chain, Some(formatted_token_id))),
-                None => Some(chain.as_asset_id()),
-            },
-            None => None,
-        };
-
+        let asset_id = fiat_asset.asset_id();
         primitives::FiatAsset {
             id: fiat_asset.clone().id,
             asset_id,

@@ -1,4 +1,4 @@
-use crate::model::FiatProviderAsset;
+use crate::model::{filter_token_id, FiatProviderAsset};
 use bigdecimal::ToPrimitive;
 use primitives::FiatTransactionType;
 use primitives::{BigNumberFormatter, FiatBuyRequest, FiatProviderName, FiatQuote};
@@ -34,7 +34,7 @@ impl RampClient {
 
     pub fn map_asset(asset: QuoteAsset) -> Option<FiatProviderAsset> {
         let chain = map_asset_chain(asset.chain.clone());
-        let token_id = asset.token_id();
+        let token_id = filter_token_id(chain, asset.token_id());
         Some(FiatProviderAsset {
             id: asset.crypto_asset_symbol(),
             chain,

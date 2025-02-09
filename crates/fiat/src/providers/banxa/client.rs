@@ -110,7 +110,7 @@ impl BanxaClient {
             .into_iter()
             .map(|blockchain| {
                 let chain = super::mapper::map_asset_chain(blockchain.clone().code.clone());
-                let token_id = filter_token_id(blockchain.clone().contract_id);
+                let token_id = filter_token_id(chain, blockchain.clone().contract_id);
                 let id = asset.clone().coin_code + "-" + blockchain.clone().code.as_str();
                 FiatProviderAsset {
                     id,

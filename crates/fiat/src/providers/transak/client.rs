@@ -76,7 +76,7 @@ impl TransakClient {
 
     pub fn map_asset(asset: Asset) -> Option<FiatProviderAsset> {
         let chain = super::mapper::map_asset_chain(asset.clone());
-        let token_id = filter_token_id(asset.clone().address);
+        let token_id = filter_token_id(chain, asset.clone().address);
 
         Some(FiatProviderAsset {
             id: asset.clone().unique_id,

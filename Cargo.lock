@@ -3199,6 +3199,7 @@ dependencies = [
  "async-trait",
  "base64 0.22.1",
  "bigdecimal",
+ "chain_primitives",
  "futures",
  "hex",
  "hmac",
