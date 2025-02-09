@@ -184,7 +184,7 @@ impl GemSwapProvider for Jupiter {
             to: PROGRAM_ADDRESS.to_string(),
             value: "".to_string(),
             data: quote_data.swap_transaction,
-            approval: ApprovalType::None,
+            approval: None,
             gas_limit: None,
         };
         Ok(data)

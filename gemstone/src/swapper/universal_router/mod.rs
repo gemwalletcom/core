@@ -376,7 +376,7 @@ impl UniswapV3 {
     ) -> Result<Option<Permit2ApprovalData>, SwapperError> {
         let deployment = self.provider.get_deployment_by_chain(chain).ok_or(SwapperError::NotSupportedChain)?;
 
-        let result = check_approval_permit2(
+        Ok(check_approval_permit2(
             deployment.permit2.to_string(),
             wallet_address.to_string(),
             token.to_string(),
@@ -385,11 +385,8 @@ impl UniswapV3 {
             provider.clone(),
             chain,
         )
-        .await?;
-        match result {
-            ApprovalType::Permit2(permit2) => Ok(Some(permit2)),
-            _ => Ok(None),
-        }
+        .await?
+        .permit2_data())
     }
 }
 
@@ -535,16 +532,17 @@ impl GemSwapProvider for UniswapV3 {
         };
 
         let mut gas_limit: Option<String> = None;
-        let approval = {
+        let approval: Option<ApprovalData> = {
             if quote.request.from_asset.is_native() {
-                ApprovalType::None
+                None
             } else {
                 // Check if need to approve permit2 contract
                 self.check_erc20_approval(wallet_address, &token_in.to_checksum(), amount_in, &request.from_asset.chain, provider)
                     .await?
+                    .approval_data()
             }
         };
-        if matches!(approval, ApprovalType::Approve(_)) {
+        if approval.is_some() {
             gas_limit = Some(DEFAULT_SWAP_GAS_LIMIT.to_string());
         }
 

@@ -466,9 +466,9 @@ impl GemSwapProvider for Across {
         let input_is_native = quote.request.from_asset.is_native();
         let value: &str = if input_is_native { &quote.from_value } else { "0" };
 
-        let approval: ApprovalType = {
+        let approval: Option<ApprovalData> = {
             if input_is_native {
-                ApprovalType::None
+                None
             } else {
                 check_approval_erc20(
                     quote.request.wallet_address.clone(),
@@ -479,6 +479,7 @@ impl GemSwapProvider for Across {
                     from_chain,
                 )
                 .await?
+                .approval_data()
             }
         };
 

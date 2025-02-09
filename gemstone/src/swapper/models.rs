@@ -173,6 +173,21 @@ pub enum ApprovalType {
     None,
 }
 
+impl ApprovalType {
+    pub fn approval_data(&self) -> Option<ApprovalData> {
+        match self {
+            Self::Approve(data) => Some(data.clone()),
+            _ => None,
+        }
+    }
+    pub fn permit2_data(&self) -> Option<Permit2ApprovalData> {
+        match self {
+            Self::Permit2(data) => Some(data.clone()),
+            _ => None,
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, uniffi::Record)]
 pub struct ApprovalData {
     pub token: String,
@@ -194,7 +209,7 @@ pub struct SwapQuoteData {
     pub to: String,
     pub value: String,
     pub data: String,
-    pub approval: ApprovalType,
+    pub approval: Option<ApprovalData>,
     pub gas_limit: Option<String>,
 }
 

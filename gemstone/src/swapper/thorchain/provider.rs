@@ -7,7 +7,7 @@ use crate::swapper::asset::{
     AVALANCHE_USDC, AVALANCHE_USDT, BASE_CBBTC, BASE_USDC, ETHEREUM_DAI, ETHEREUM_USDC, ETHEREUM_USDT, ETHEREUM_WBTC, SMARTCHAIN_USDC, SMARTCHAIN_USDT,
 };
 use crate::swapper::thorchain::client::ThorChainSwapClient;
-use crate::swapper::{ApprovalType, FetchQuoteData, SwapProvider, SwapProviderData, SwapQuote, SwapQuoteData, SwapQuoteRequest, SwapRoute, SwapperError};
+use crate::swapper::{ApprovalData, FetchQuoteData, SwapProvider, SwapProviderData, SwapQuote, SwapQuoteData, SwapQuoteRequest, SwapRoute, SwapperError};
 use crate::swapper::{GemSwapProvider, SwapChainAsset};
 use alloy_core::sol_types::SolCall;
 use alloy_primitives::Address;
@@ -119,7 +119,7 @@ impl GemSwapProvider for ThorChain {
         let route_data: RouteData = serde_json::from_str(&quote.data.routes.first().unwrap().route_data).map_err(|_| SwapperError::InvalidRoute)?;
         let value = quote.request.value.clone();
 
-        let approval: ApprovalType = {
+        let approval: Option<ApprovalData> = {
             if from_asset.use_evm_router() {
                 let from_amount: U256 = value.to_string().parse().map_err(|_| SwapperError::InvalidAmount)?;
                 check_approval_erc20(
@@ -131,8 +131,9 @@ impl GemSwapProvider for ThorChain {
                     &from_asset.chain.chain(),
                 )
                 .await?
+                .approval_data()
             } else {
-                ApprovalType::None
+                None
             }
         };
 
