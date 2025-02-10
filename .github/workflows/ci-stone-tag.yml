@@ -1,0 +1,30 @@
+name: Gemstone Auto Tag
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "gemstone/**"
+  pull_request:
+    branches: ["main"]
+    paths:
+      - "gemstone/**"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  auto_tag:
+    runs-on: ubuntu-latest
+    needs: build_ios
+    steps:
+      - uses: actions/checkout@v4
+      - name: Auto tag
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: anothrNick/github-tag-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT }}
+          WITH_V: false
+          DEFAULT_BUMP: patch
+          DRY_RUN: false
