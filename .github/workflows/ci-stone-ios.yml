@@ -47,17 +47,3 @@ jobs:
         run: |
           just install-ios-targets
           just build-ios && just test-ios
-
-  auto_tag:
-    runs-on: ubuntu-latest
-    needs: build_ios
-    steps:
-      - uses: actions/checkout@v4
-      - name: Auto tag
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        uses: anothrNick/github-tag-action@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          WITH_V: false
-          DEFAULT_BUMP: patch
-          DRY_RUN: false
