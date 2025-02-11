@@ -77,6 +77,14 @@ impl GemSwapper {
             SwapChainAsset::Assets(chain, assets) => chain == asset_id.chain || assets.contains(&asset_id),
         })
     }
+
+    fn filter_by_preferred_providers(preferred_providers: &[SwapProvider], provider: SwapProvider) -> bool {
+        // if no preferred providers, return all
+        if preferred_providers.is_empty() {
+            return true;
+        }
+        preferred_providers.contains(&provider)
+    }
 }
 
 #[uniffi::export]
@@ -87,6 +95,7 @@ impl GemSwapper {
             rpc_provider,
             swappers: vec![
                 Box::new(uniswap::universal_router::new_uniswap_v3()),
+                Box::new(uniswap::universal_router::new_uniswap_v4()),
                 Box::new(uniswap::universal_router::new_pancakeswap()),
                 Box::new(thorchain::ThorChain::default()),
                 Box::new(jupiter::Jupiter::default()),
@@ -134,12 +143,13 @@ impl GemSwapper {
         }
         let from_chain = request.from_asset.chain;
         let to_chain = request.to_asset.chain;
-
+        let preferred_providers = &request.options.preferred_providers;
         let providers = self
             .swappers
             .iter()
             .filter(|x| Self::filter_by_provider_type(x.provider().provider_type(), &from_chain, &to_chain))
             .filter(|x| Self::filter_by_supported_chains(x.supported_chains(), &from_chain, &to_chain))
+            .filter(|x| Self::filter_by_preferred_providers(preferred_providers, x.provider()))
             .collect::<Vec<_>>();
 
         if providers.is_empty() {

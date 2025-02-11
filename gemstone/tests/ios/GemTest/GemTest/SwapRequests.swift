@@ -127,4 +127,19 @@ public extension SwapQuoteRequest {
         mode: .exactIn,
         options: SWAP_OPTIONS
     )
+
+    static let eth2usdc_v4: SwapQuoteRequest = {
+        var options = SWAP_OPTIONS
+        options.preferredProviders = [SwapProvider.uniswapV4]
+
+        return SwapQuoteRequest(
+            fromAsset: "ethereum",
+            toAsset: "ethereum_0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+            walletAddress: TEST_ETH_WALLET,
+            destinationAddress: TEST_ETH_WALLET,
+            value: "1000000000000000000", // 1 ETH
+            mode: .exactIn,
+            options: options
+        )
+    }()
 }

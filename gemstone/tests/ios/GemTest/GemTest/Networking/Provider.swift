@@ -18,7 +18,8 @@ public actor NativeProvider {
             "arbitrum": URL(string: "https://arbitrum.llamarpc.com")!,
             "base": URL(string: "https://base.llamarpc.com")!,
             "polygon": URL(string: "https://polygon.llamarpc.com")!,
-            "abstract": URL(string: "https://api.mainnet.abs.xyz")!
+            "abstract": URL(string: "https://api.mainnet.abs.xyz")!,
+            "unichain": URL(string: "https://mainnet.unichain.org")!
         ]
         self.session = session
         self.cache = Cache()

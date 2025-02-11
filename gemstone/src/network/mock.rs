@@ -20,7 +20,7 @@ impl AlienProviderWarp {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct AlienProviderMock {
     pub response: String,
     pub timeout: Duration,

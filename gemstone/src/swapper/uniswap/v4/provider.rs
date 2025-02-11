@@ -7,7 +7,7 @@ use gem_evm::uniswap::deployment;
 use primitives::Chain;
 use std::sync::Arc;
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct UniswapV4 {}
 
 impl UniswapV4 {
