@@ -97,11 +97,10 @@ impl GemSwapProvider for Orca {
                     input: request.from_asset.clone(),
                     output: request.to_asset.clone(),
                     route_data: pool.fee_rate.to_string(),
-                    gas_estimate: None,
+                    gas_limit: None,
                 }],
                 slippage_bps: request.options.slippage.bps,
             },
-            approval: ApprovalType::None,
             request: request.clone(),
         })
     }

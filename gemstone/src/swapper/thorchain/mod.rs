@@ -15,6 +15,9 @@ const QUOTE_MINIMUM: i64 = 0;
 const QUOTE_INTERVAL: i64 = 1;
 const QUOTE_QUANTITY: i64 = 0;
 
+// FIXME: estimate gas limit with memo x bytes
+const DEFAULT_DEPOSIT_GAS_LIMIT: u64 = 90_000;
+
 impl ThorChain {
     fn data(&self, chain: THORChainName, memo: String) -> String {
         if chain.is_evm_chain() {

@@ -4,13 +4,7 @@ import Gemstone
 
 let SWAP_OPTIONS = GemSwapOptions(
     slippage: getDefaultSlippage(chain: "solana"),
-    fee: SwapReferralFees(
-        evm: .init(address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7", bps: 50),
-        evmBridge: .init(address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7", bps: 25),
-        solana: .init(address: "97q7TdebuvmxXCM1JzgqzpB1i7Wgvk4ACUWanhiL6Dk1", bps: 25),
-        solanaJupiter: .init(address: "97q7TdebuvmxXCM1JzgqzpB1i7Wgvk4ACUWanhiL6Dk1", bps: 25),
-        thorchain: .init(address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7", bps: 25)
-    ),
+    fee: Config().getSwapConfig().referralFee,
     preferredProviders: []
 )
 
@@ -91,6 +85,16 @@ public extension SwapQuoteRequest {
     static let op2Arb = SwapQuoteRequest(
         fromAsset: "optimism",
         toAsset: "arbitrum",
+        walletAddress: TEST_ETH_WALLET,
+        destinationAddress: TEST_ETH_WALLET,
+        value: "10000000000000000", // 0.01 eth
+        mode: .exactIn,
+        options: SWAP_OPTIONS
+    )
+
+    static let op2Ink = SwapQuoteRequest(
+        fromAsset: "optimism",
+        toAsset: "ink",
         walletAddress: TEST_ETH_WALLET,
         destinationAddress: TEST_ETH_WALLET,
         value: "10000000000000000", // 0.01 eth

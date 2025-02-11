@@ -163,7 +163,6 @@ pub struct SwapQuote {
     pub from_value: String,
     pub to_value: String,
     pub data: SwapProviderData,
-    pub approval: ApprovalType,
     pub request: SwapQuoteRequest,
 }
 
@@ -172,6 +171,21 @@ pub enum ApprovalType {
     Approve(ApprovalData),
     Permit2(Permit2ApprovalData),
     None,
+}
+
+impl ApprovalType {
+    pub fn approval_data(&self) -> Option<ApprovalData> {
+        match self {
+            Self::Approve(data) => Some(data.clone()),
+            _ => None,
+        }
+    }
+    pub fn permit2_data(&self) -> Option<Permit2ApprovalData> {
+        match self {
+            Self::Permit2(data) => Some(data.clone()),
+            _ => None,
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, uniffi::Record)]
@@ -195,6 +209,8 @@ pub struct SwapQuoteData {
     pub to: String,
     pub value: String,
     pub data: String,
+    pub approval: Option<ApprovalData>,
+    pub gas_limit: Option<String>,
 }
 
 #[derive(Debug, Clone, uniffi::Record)]
@@ -209,7 +225,7 @@ pub struct SwapRoute {
     pub input: AssetId,
     pub output: AssetId,
     pub route_data: String,
-    pub gas_estimate: Option<String>,
+    pub gas_limit: Option<String>,
 }
 
 #[derive(Debug, Clone, uniffi::Enum)]
