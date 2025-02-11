@@ -78,7 +78,7 @@ impl MoonPayClient {
 
     pub fn map_asset(asset: Asset) -> Option<FiatProviderAsset> {
         let chain = map_asset_chain(asset.clone());
-        let token_id = filter_token_id(asset.clone().metadata?.contract_address);
+        let token_id = filter_token_id(chain, asset.clone().metadata?.contract_address);
         let enabled = !asset.is_suspended.unwrap_or(true);
         Some(FiatProviderAsset {
             id: asset.clone().code,

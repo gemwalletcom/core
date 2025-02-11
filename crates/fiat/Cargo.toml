@@ -22,3 +22,4 @@ thiserror = { workspace = true }
 settings = { path = "../settings" }
 storage = { path = "../storage" }
 primitives = { path = "../primitives" }
+chain_primitives = { path = "../chain_primitives" }

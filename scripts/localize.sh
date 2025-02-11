@@ -2,8 +2,12 @@
 
 set -e
 
-# public read only
-token="d27a64f96c062117da75b13ce34519a84a89d203"
+if [[ -z "$LOCALIZE_TOKEN" ]]; then
+    echo "Error: LOCALIZE_TOKEN is not set!"
+    exit 1
+fi
+
+token=$LOCALIZE_TOKEN
 mobile_project_id="94865410644ee707546334.60736699"
 core_project_id="2608747066be591cd57427.16218028"
 

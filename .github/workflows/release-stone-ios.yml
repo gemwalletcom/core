@@ -1,4 +1,4 @@
-name: iOS Framework
+name: Publish iOS Framework
 
 on:
   push:
