@@ -18,6 +18,8 @@ pub use self::price::{Price, PriceFull};
 pub mod asset;
 pub mod config;
 pub use self::config::{ConfigResponse, ConfigVersions, Release};
+pub mod crypto_value_converter;
+pub use self::crypto_value_converter::CryptoValueConverter;
 pub mod currency;
 pub use self::asset::Asset;
 pub mod asset_id;
