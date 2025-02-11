@@ -30,7 +30,8 @@ Gem Wallet Core serves as the backbone for both backend and frontend apps, handl
 - NFTs
 - Native and cross-chain swaps
 - Native BNB Chain and Sui staking
-- More ...
+- More
+- ...
 
 ## Running API
 
