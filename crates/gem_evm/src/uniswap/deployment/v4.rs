@@ -22,7 +22,7 @@ impl Deployment for V4Deployment {
 }
 
 pub fn get_uniswap_router_deployment_by_chain(chain: &Chain) -> Option<V4Deployment> {
-    // https://docs.uniswap.org/contracts/v4/deployments/
+    // https://github.com/Uniswap/contracts/blob/main/deployments/index.md
     let permit2 = get_uniswap_permit2_by_chain(chain)?;
     match chain {
         Chain::Ethereum => Some(V4Deployment {
@@ -69,6 +69,11 @@ pub fn get_uniswap_router_deployment_by_chain(chain: &Chain) -> Option<V4Deploym
             quoter: "0x55d235b3ff2daf7c3ede0defc9521f1d6fe6c5c0",
             permit2,
             universal_router: "0x8ac7bee993bb44dab564ea4bc9ea67bf9eb5e743",
+        }),
+        Chain::Unichain => Some(V4Deployment {
+            quoter: "0x333E3C607B141b18fF6de9f258db6e77fE7491E0",
+            permit2,
+            universal_router: "0xEf740bf23aCaE26f6492B10de645D6B98dC8Eaf3",
         }),
         _ => None,
     }
