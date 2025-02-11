@@ -70,5 +70,5 @@ pub fn filter_token_id(chain: Option<Chain>, token_id: Option<String>) -> Option
             return format_token_id(chain, token_id);
         }
     }
-    return token_id;
+    token_id
 }
