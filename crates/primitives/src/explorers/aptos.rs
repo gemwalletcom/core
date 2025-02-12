@@ -25,10 +25,6 @@ impl BlockExplorer for AptosExplorer {
     fn get_address_url(&self, address: &str) -> String {
         format!("{}/account/{}", self.meta.base_url, address)
     }
-    fn get_token_url(&self, _token: &str) -> Option<String> {
-        None
-    }
-
     fn get_validator_url(&self, validator: &str) -> Option<String> {
         self.get_address_url(validator).into()
     }

@@ -25,12 +25,6 @@ impl BlockExplorer for Viewblock {
     fn get_address_url(&self, address: &str) -> String {
         format!("{}/address/{}", self.meta.base_url, address)
     }
-    fn get_token_url(&self, _token: &str) -> Option<String> {
-        None
-    }
-    fn get_validator_url(&self, _validator: &str) -> Option<String> {
-        None
-    }
 }
 
 pub struct RuneScan {
@@ -56,12 +50,5 @@ impl BlockExplorer for RuneScan {
     }
     fn get_address_url(&self, address: &str) -> String {
         format!("{}/address/{}", self.meta.base_url, address)
-    }
-    fn get_token_url(&self, _token: &str) -> Option<String> {
-        None
-    }
-
-    fn get_validator_url(&self, _validator: &str) -> Option<String> {
-        None
     }
 }

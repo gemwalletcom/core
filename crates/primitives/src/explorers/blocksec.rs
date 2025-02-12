@@ -58,12 +58,6 @@ impl BlockExplorer for Blocksec {
         // delegate to etherscan
         EtherScan::new(self.chain).get_address_url(_address)
     }
-    fn get_token_url(&self, _token: &str) -> Option<String> {
-        None
-    }
-    fn get_validator_url(&self, _validator: &str) -> Option<String> {
-        None
-    }
 }
 
 #[cfg(test)]
