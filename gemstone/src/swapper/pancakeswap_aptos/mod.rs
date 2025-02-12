@@ -3,8 +3,7 @@ use std::sync::Arc;
 mod client;
 mod model;
 use super::{
-    ApprovalType, FetchQuoteData, GemSwapProvider, SwapChainAsset, SwapProvider, SwapProviderData, SwapQuote, SwapQuoteData, SwapQuoteRequest, SwapRoute,
-    SwapperError,
+    FetchQuoteData, GemSwapProvider, SwapChainAsset, SwapProvider, SwapProviderData, SwapQuote, SwapQuoteData, SwapQuoteRequest, SwapRoute, SwapperError,
 };
 
 use crate::network::AlienProvider;
@@ -83,11 +82,10 @@ impl GemSwapProvider for PancakeSwapAptos {
                     input: request.from_asset.clone(),
                     output: request.to_asset.clone(),
                     route_data,
-                    gas_estimate: None,
+                    gas_limit: None,
                 }],
                 slippage_bps: request.options.slippage.bps,
             },
-            approval: ApprovalType::None,
             request: request.clone(),
         };
 
@@ -109,6 +107,8 @@ impl GemSwapProvider for PancakeSwapAptos {
             to: PANCAKE_SWAP_APTOS_ADDRESS.to_string(),
             value: quote.from_value.clone(),
             data: serde_json::to_string(&payload).unwrap(),
+            approval: None,
+            gas_limit: None,
         };
         Ok(data)
     }

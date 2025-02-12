@@ -20,21 +20,31 @@ impl AlienProviderWarp {
     }
 }
 
-#[derive(Debug, Default)]
+use std::fmt;
+
+pub struct MockFn(pub Box<dyn Fn(AlienTarget) -> String + Send + Sync>);
+
+impl fmt::Debug for MockFn {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_tuple("MockFn").finish()
+    }
+}
+
+#[derive(Debug)]
 pub struct AlienProviderMock {
-    pub response: String,
+    pub response: MockFn,
     pub timeout: Duration,
 }
 
 #[async_trait]
 impl AlienProvider for AlienProviderMock {
-    async fn request(&self, _target: AlienTarget) -> Result<Data, AlienError> {
-        let responses = self.batch_request(vec![_target]).await;
+    async fn request(&self, target: AlienTarget) -> Result<Data, AlienError> {
+        let responses = self.batch_request(vec![target]).await;
         responses.map(|responses| responses.first().unwrap().clone())
     }
 
-    async fn batch_request(&self, _targets: Vec<AlienTarget>) -> Result<Vec<Data>, AlienError> {
-        Ok(vec![self.response.as_bytes().to_vec()])
+    async fn batch_request(&self, targets: Vec<AlienTarget>) -> Result<Vec<Data>, AlienError> {
+        targets.iter().map(|target| Ok(self.response.0(target.clone()).into_bytes())).collect()
     }
 
     fn get_endpoint(&self, _chain: Chain) -> Result<String, AlienError> {
@@ -49,19 +59,20 @@ pub mod tests {
 
     #[tokio::test]
     async fn test_mock_call() {
-        let mock = AlienProviderMock {
-            response: String::from("Hello"),
-            timeout: Duration::from_millis(100),
-        };
-        let warp = AlienProviderWarp {
-            provider: std::sync::Arc::new(mock),
-        };
         let target = AlienTarget {
             url: String::from("https://example.com"),
             method: AlienHttpMethod::Get,
             headers: None,
             body: None,
         };
+        let mock = AlienProviderMock {
+            response: MockFn(Box::new(|_| String::from("Hello"))),
+            timeout: Duration::from_millis(100),
+        };
+        let warp = AlienProviderWarp {
+            provider: std::sync::Arc::new(mock),
+        };
+
         let data_vec = warp.teleport(vec![target]).await.unwrap();
         let bytes = data_vec.first().unwrap();
         let string = String::from_utf8(bytes.clone()).unwrap();

@@ -19,7 +19,8 @@ public actor NativeProvider {
             "base": URL(string: "https://base.llamarpc.com")!,
             "polygon": URL(string: "https://polygon.llamarpc.com")!,
             "abstract": URL(string: "https://api.mainnet.abs.xyz")!,
-            "unichain": URL(string: "https://mainnet.unichain.org")!
+            "unichain": URL(string: "https://mainnet.unichain.org")!,
+            "ink": URL(string: "https://rpc-qnd.inkonchain.com")!
         ]
         self.session = session
         self.cache = Cache()

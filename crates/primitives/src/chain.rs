@@ -124,7 +124,7 @@ impl Chain {
             Self::Sonic => "146",
             Self::Algorand => "mainnet-v1.0",
             Self::Polkadot => "Polkadot",
-            Self::Cardano => "764824073", // magic number from gensis configuration
+            Self::Cardano => "764824073", // magic number from genesis configuration
             Self::Abstract => "2741",
             Self::Berachain => "80094",
             Self::Ink => "57073",

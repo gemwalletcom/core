@@ -6,13 +6,13 @@ Gemstone is the essential cross platform library used by Gem Wallet clients (mai
 
 iOS
 
-```sh
+```bash
 just build-ios
 ```
 
 Android
 
-```sh
+```bash
 just bindgen-kotlin && just build-android
 ```
 
