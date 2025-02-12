@@ -64,6 +64,10 @@ impl AcrossDeployment {
                 chain_id,
                 spoke_pool: "0x3baD7AD0728f9917d1Bf08af5782dCbD516cDd96",
             }),
+            Chain::Unichain => Some(Self {
+                chain_id,
+                spoke_pool: "0x09aea4b2242abC8bb4BB78D537A67a245A7bEC64",
+            }),
             _ => None,
         }
     }
@@ -99,6 +103,7 @@ impl AcrossDeployment {
             (Chain::World, vec![WETH_WORLD_ASSET_ID.into()]),
             (Chain::Blast, vec![WETH_BLAST_ASSET_ID.into()]),
             (Chain::Ink, vec![WETH_INK_ASSET_ID.into(), USDT_INK_ASSET_ID.into()]),
+            (Chain::Unichain, vec![WETH_UNICHAIN_ASSET_ID.into(), USDC_UNICHAIN_ASSET_ID.into()]),
         ])
     }
 
@@ -122,6 +127,7 @@ impl AcrossDeployment {
                     WETH_ZKSYNC_ASSET_ID.into(),
                     WETH_WORLD_ASSET_ID.into(),
                     WETH_INK_ASSET_ID.into(),
+                    WETH_UNICHAIN_ASSET_ID.into(),
                 ]),
             },
             AssetMapping {
@@ -137,6 +143,7 @@ impl AcrossDeployment {
                     USDC_ETH_ASSET_ID.into(),
                     USDC_OP_ASSET_ID.into(),
                     USDC_POLYGON_ASSET_ID.into(),
+                    USDC_UNICHAIN_ASSET_ID.into(),
                 ]),
             },
             AssetMapping {
