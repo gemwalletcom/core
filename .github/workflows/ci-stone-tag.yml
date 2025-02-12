@@ -25,5 +25,5 @@ jobs:
       - name: Auto bump
         uses: anothrNick/github-tag-action@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.PAT }}
           DEFAULT_BUMP: ${{ github.event.inputs.bump_type }}
