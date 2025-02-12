@@ -102,7 +102,7 @@ impl AcrossDeployment {
             (Chain::ZkSync, vec![WETH_ZKSYNC_ASSET_ID.into(), USDT_ZKSYNC_ASSET_ID.into()]),
             (Chain::World, vec![WETH_WORLD_ASSET_ID.into()]),
             (Chain::Blast, vec![WETH_BLAST_ASSET_ID.into()]),
-            (Chain::Ink, vec![WETH_INK_ASSET_ID.into(), USDT_INK_ASSET_ID.into()]),
+            // (Chain::Ink, vec![WETH_INK_ASSET_ID.into(), USDT_INK_ASSET_ID.into()]),
             (Chain::Unichain, vec![WETH_UNICHAIN_ASSET_ID.into(), USDC_UNICHAIN_ASSET_ID.into()]),
         ])
     }
@@ -126,7 +126,7 @@ impl AcrossDeployment {
                     WETH_POLYGON_ASSET_ID.into(),
                     WETH_ZKSYNC_ASSET_ID.into(),
                     WETH_WORLD_ASSET_ID.into(),
-                    WETH_INK_ASSET_ID.into(),
+                    // WETH_INK_ASSET_ID.into(),
                     WETH_UNICHAIN_ASSET_ID.into(),
                 ]),
             },
@@ -160,7 +160,7 @@ impl AcrossDeployment {
                     USDT_OP_ASSET_ID.into(),
                     USDT_POLYGON_ASSET_ID.into(),
                     USDT_ZKSYNC_ASSET_ID.into(),
-                    USDT_INK_ASSET_ID.into(),
+                    // USDT_INK_ASSET_ID.into(),
                 ]),
             },
             AssetMapping {
