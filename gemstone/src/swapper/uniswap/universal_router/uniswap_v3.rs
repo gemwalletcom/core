@@ -1,10 +1,9 @@
+use crate::swapper::{uniswap::v3::UniversalRouterProvider, SwapProvider};
 use gem_evm::uniswap::{
-    deployment::{get_uniswap_router_deployment_by_chain, V3Deployment},
+    deployment::v3::{get_uniswap_router_deployment_by_chain, V3Deployment},
     FeeTier,
 };
 use primitives::Chain;
-
-use super::{SwapProvider, UniversalRouterProvider};
 
 #[derive(Debug)]
 pub struct UniswapUniversalRouter {}

@@ -18,7 +18,7 @@ pub mod orca;
 pub mod pancakeswap_aptos;
 pub mod slippage;
 pub mod thorchain;
-pub mod universal_router;
+pub mod uniswap;
 
 pub use models::*;
 use primitives::{AssetId, Chain};
@@ -33,7 +33,13 @@ pub trait GemSwapProvider: Send + Sync + Debug {
         Ok(None)
     }
     async fn fetch_quote_data(&self, quote: &SwapQuote, provider: Arc<dyn AlienProvider>, data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError>;
-    async fn get_transaction_status(&self, chain: Chain, transaction_hash: &str, provider: Arc<dyn AlienProvider>) -> Result<bool, SwapperError>;
+    async fn get_transaction_status(&self, _chain: Chain, _transaction_hash: &str, _provider: Arc<dyn AlienProvider>) -> Result<bool, SwapperError> {
+        if self.provider().provider_type() == SwapProviderType::OnChain {
+            Ok(true)
+        } else {
+            Err(SwapperError::NotImplemented)
+        }
+    }
 }
 
 impl dyn GemSwapProvider {
@@ -75,6 +81,14 @@ impl GemSwapper {
         })
     }
 
+    fn filter_by_preferred_providers(preferred_providers: &[SwapProvider], provider: SwapProvider) -> bool {
+        // if no preferred providers, return all
+        if preferred_providers.is_empty() {
+            return true;
+        }
+        preferred_providers.contains(&provider)
+    }
+
     fn get_swapper_by_provider<'a>(&'a self, provider: &SwapProvider) -> Option<&'a dyn GemSwapProvider> {
         self.swappers.iter().find(|x| x.provider() == *provider).map(|v| &**v)
     }
@@ -83,12 +97,12 @@ impl GemSwapper {
 #[uniffi::export]
 impl GemSwapper {
     #[uniffi::constructor]
-    fn new(rpc_provider: Arc<dyn AlienProvider>) -> Self {
+    pub fn new(rpc_provider: Arc<dyn AlienProvider>) -> Self {
         Self {
             rpc_provider,
             swappers: vec![
-                Box::new(universal_router::UniswapV3::new_uniswap()),
-                Box::new(universal_router::UniswapV3::new_pancakeswap()),
+                Box::new(uniswap::universal_router::new_uniswap_v3()),
+                Box::new(uniswap::universal_router::new_pancakeswap()),
                 Box::new(thorchain::ThorChain::default()),
                 Box::new(jupiter::Jupiter::default()),
                 Box::new(pancakeswap_aptos::PancakeSwapAptos::default()),
@@ -97,7 +111,7 @@ impl GemSwapper {
         }
     }
 
-    fn supported_chains(&self) -> Vec<Chain> {
+    pub fn supported_chains(&self) -> Vec<Chain> {
         self.swappers
             .iter()
             .flat_map(|x| x.supported_chains())
@@ -106,7 +120,7 @@ impl GemSwapper {
             .collect()
     }
 
-    fn supported_chains_for_from_asset(&self, asset_id: AssetId) -> SwapAssetList {
+    pub fn supported_chains_for_from_asset(&self, asset_id: &AssetId) -> SwapAssetList {
         let chains: Vec<Chain> = vec![asset_id.chain];
         let mut asset_ids: Vec<AssetId> = Vec::new();
 
@@ -125,22 +139,23 @@ impl GemSwapper {
         SwapAssetList { chains, asset_ids }
     }
 
-    fn get_providers(&self) -> Vec<SwapProvider> {
+    pub fn get_providers(&self) -> Vec<SwapProvider> {
         self.swappers.iter().map(|x| x.provider()).collect()
     }
 
-    async fn fetch_quote(&self, request: &SwapQuoteRequest) -> Result<Vec<SwapQuote>, SwapperError> {
+    pub async fn fetch_quote(&self, request: &SwapQuoteRequest) -> Result<Vec<SwapQuote>, SwapperError> {
         if request.from_asset == request.to_asset {
             return Err(SwapperError::NotSupportedPair);
         }
         let from_chain = request.from_asset.chain;
         let to_chain = request.to_asset.chain;
-
+        let preferred_providers = &request.options.preferred_providers;
         let providers = self
             .swappers
             .iter()
             .filter(|x| Self::filter_by_provider_type(x.provider().provider_type(), &from_chain, &to_chain))
             .filter(|x| Self::filter_by_supported_chains(x.supported_chains(), &from_chain, &to_chain))
+            .filter(|x| Self::filter_by_preferred_providers(preferred_providers, x.provider()))
             .collect::<Vec<_>>();
 
         if providers.is_empty() {
@@ -170,17 +185,17 @@ impl GemSwapper {
         Ok(quotes)
     }
 
-    async fn fetch_permit2_for_quote(&self, quote: &SwapQuote) -> Result<Option<Permit2ApprovalData>, SwapperError> {
+    pub async fn fetch_permit2_for_quote(&self, quote: &SwapQuote) -> Result<Option<Permit2ApprovalData>, SwapperError> {
         let provider = self.get_swapper_by_provider(&quote.data.provider).ok_or(SwapperError::NoAvailableProvider)?;
         provider.fetch_permit2_for_quote(quote, self.rpc_provider.clone()).await
     }
 
-    async fn fetch_quote_data(&self, quote: &SwapQuote, data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError> {
+    pub async fn fetch_quote_data(&self, quote: &SwapQuote, data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError> {
         let provider = self.get_swapper_by_provider(&quote.data.provider).ok_or(SwapperError::NoAvailableProvider)?;
         provider.fetch_quote_data(quote, self.rpc_provider.clone(), data).await
     }
 
-    async fn get_transaction_status(&self, chain: Chain, swap_provider: SwapProvider, transaction_hash: &str) -> Result<bool, SwapperError> {
+    pub async fn get_transaction_status(&self, chain: Chain, swap_provider: SwapProvider, transaction_hash: &str) -> Result<bool, SwapperError> {
         let provider = self.get_swapper_by_provider(&swap_provider).ok_or(SwapperError::NoAvailableProvider)?;
         provider.get_transaction_status(chain, transaction_hash, self.rpc_provider.clone()).await
     }
@@ -215,8 +230,8 @@ mod tests {
     #[test]
     fn test_filter_by_supported_chains() {
         let swappers: Vec<Box<dyn GemSwapProvider>> = vec![
-            Box::new(universal_router::UniswapV3::new_uniswap()),
-            Box::new(universal_router::UniswapV3::new_pancakeswap()),
+            Box::new(uniswap::universal_router::new_uniswap_v3()),
+            Box::new(uniswap::universal_router::new_pancakeswap()),
             Box::new(thorchain::ThorChain::default()),
             Box::new(jupiter::Jupiter::default()),
         ];

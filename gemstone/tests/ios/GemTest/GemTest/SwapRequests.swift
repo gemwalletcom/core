@@ -102,6 +102,16 @@ public extension SwapQuoteRequest {
         options: SWAP_OPTIONS
     )
 
+    static let eth2Unichain = SwapQuoteRequest(
+        fromAsset: "ethereum",
+        toAsset: "unichain",
+        walletAddress: TEST_ETH_WALLET,
+        destinationAddress: TEST_ETH_WALLET,
+        value: "10000000000000000", // 0.01 eth
+        mode: .exactIn,
+        options: SWAP_OPTIONS
+    )
+
     static let ethUSDC2Base = SwapQuoteRequest(
         fromAsset: "ethereum_0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
         toAsset: "base_0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
@@ -121,4 +131,29 @@ public extension SwapQuoteRequest {
         mode: .exactIn,
         options: SWAP_OPTIONS
     )
+
+    static let absETH2USDC = SwapQuoteRequest(
+        fromAsset: "abstract",
+        toAsset: "abstract_0x84A71ccD554Cc1b02749b35d22F684CC8ec987e1",
+        walletAddress: TEST_ETH_WALLET,
+        destinationAddress: TEST_ETH_WALLET,
+        value: "1000000000000000000", // 1 ETH
+        mode: .exactIn,
+        options: SWAP_OPTIONS
+    )
+
+    static let eth2usdc_v4: SwapQuoteRequest = {
+        var options = SWAP_OPTIONS
+        options.preferredProviders = [SwapProvider.uniswapV4]
+
+        return SwapQuoteRequest(
+            fromAsset: "ethereum",
+            toAsset: "ethereum_0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+            walletAddress: TEST_ETH_WALLET,
+            destinationAddress: TEST_ETH_WALLET,
+            value: "1000000000000000000", // 1 ETH
+            mode: .exactIn,
+            options: options
+        )
+    }()
 }

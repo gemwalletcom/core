@@ -1,4 +1,4 @@
-use super::contract::IUniversalRouter;
+use super::contracts::IUniversalRouter;
 use crate::permit2::IAllowanceTransfer;
 use alloy_core::primitives::{Address, Bytes, U256};
 use alloy_sol_types::{sol_data, SolCall, SolType};
@@ -21,6 +21,13 @@ pub enum UniversalRouterCommand {
     WRAP_ETH(WrapEth),
     UNWRAP_WETH(UnwrapWeth),
     PERMIT2_TRANSFER_FROM_BATCH,
+
+    // V4
+    V4_SWAP,
+    V3_POSITION_MANAGER_PERMIT,
+    V3_POSITION_MANAGER_CALL,
+    // V4_INITIALIZE_POOL
+    V4_POSITION_MANAGER_CALL,
 }
 
 impl UniversalRouterCommand {
@@ -34,11 +41,16 @@ impl UniversalRouterCommand {
             Self::TRANSFER(_) => 0x05,
             Self::PAY_PORTION(_) => 0x06,
             Self::V2_SWAP_EXACT_IN => 0x08,
+            // COMMAND_PLACEHOLDER = 0x07;
             Self::V2_SWAP_EXACT_OUT => 0x09,
             Self::PERMIT2_PERMIT(_) => 0x0a,
             Self::WRAP_ETH(_) => 0x0b,
             Self::UNWRAP_WETH(_) => 0x0c,
             Self::PERMIT2_TRANSFER_FROM_BATCH => 0x0d,
+            Self::V4_SWAP => 0x10,
+            Self::V3_POSITION_MANAGER_PERMIT => 0x11,
+            Self::V3_POSITION_MANAGER_CALL => 0x12,
+            Self::V4_POSITION_MANAGER_CALL => 0x14,
         }
     }
 

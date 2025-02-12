@@ -1,5 +1,6 @@
+pub mod actions;
 pub mod command;
-pub mod contract;
+pub mod contracts;
 pub mod deployment;
 pub mod path;
 

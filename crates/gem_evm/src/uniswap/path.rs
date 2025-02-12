@@ -73,6 +73,7 @@ pub fn get_base_pair(chain: &EVMChain) -> Option<BasePair> {
         EVMChain::ZkSync => "0xBBeB516fb02a01611cBBE0453Fe3c580D7281011",
         EVMChain::Blast => "0xf7bc58b8d8f97adc129cfc4c9f45ce3c0e1d2692",
         EVMChain::World => "0x03C7054BCB39f7b2e5B2c7AcB37583e32D70Cfa3",
+        EVMChain::Abstract => "", // None
         _ => panic!("unsupported chain"),
     };
 
@@ -85,9 +86,11 @@ pub fn get_base_pair(chain: &EVMChain) -> Option<BasePair> {
         EVMChain::AvalancheC => "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E",
         EVMChain::Celo => "0xcebA9300f2b948710d2653dD7B07f33A8B32118C",
         EVMChain::SmartChain => "0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d",
-        EVMChain::ZkSync => "0x3355df6D4c9C3035724Fd0e3914dE96A5a83aaf4", // USDC.e
-        EVMChain::Blast => "0x4300000000000000000000000000000000000003",  // USDB
-        EVMChain::World => "0x79A02482A880bCE3F13e09Da970dC34db4CD24d1",  // USDC.e
+        EVMChain::ZkSync => "0x3355df6D4c9C3035724Fd0e3914dE96A5a83aaf4",   // USDC.e
+        EVMChain::Blast => "0x4300000000000000000000000000000000000003",    // USDB
+        EVMChain::World => "0x79A02482A880bCE3F13e09Da970dC34db4CD24d1",    // USDC.e
+        EVMChain::Abstract => "0x84A71ccD554Cc1b02749b35d22F684CC8ec987e1", // USDC.e
+        EVMChain::Unichain => "0x078d782b760474a361dda0af3839290b0ef57ad6",
         _ => panic!("unsupported chain"),
     };
 
@@ -101,6 +104,8 @@ pub fn get_base_pair(chain: &EVMChain) -> Option<BasePair> {
         EVMChain::Celo => "0x48065fbBE25f71C9282ddf5e1cD6D6A887483D5e",
         EVMChain::SmartChain => "0x55d398326f99059fF775485246999027B3197955",
         EVMChain::ZkSync => "0x493257fD37EDB34451f62EDf8D2a0C418852bA4C",
+        EVMChain::Abstract => "0x0709F39376dEEe2A2dfC94A58EdEb2Eb9DF012bD",
+        EVMChain::Unichain => "0x588ce4f028d8e7b53b687865d6a67b3a54c75518",
         EVMChain::Blast => "", // None
         EVMChain::World => "", // None
         _ => panic!("unsupported chain"),
@@ -110,11 +115,18 @@ pub fn get_base_pair(chain: &EVMChain) -> Option<BasePair> {
     if !usdt.is_empty() {
         stables.push(EthereumAddress::parse(usdt)?);
     }
+    let alternatives = {
+        if btc.is_empty() {
+            vec![]
+        } else {
+            vec![EthereumAddress::parse(btc)?]
+        }
+    };
 
     Some(BasePair {
         native: EthereumAddress::parse(weth)?,
         stables,
-        alternatives: vec![EthereumAddress::parse(btc)?],
+        alternatives,
     })
 }
 

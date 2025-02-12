@@ -189,7 +189,4 @@ impl GemSwapProvider for Jupiter {
         };
         Ok(data)
     }
-    async fn get_transaction_status(&self, _chain: Chain, _transaction_hash: &str, _provider: Arc<dyn AlienProvider>) -> Result<bool, SwapperError> {
-        Ok(true)
-    }
 }

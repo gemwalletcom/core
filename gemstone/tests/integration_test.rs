@@ -42,6 +42,7 @@ mod tests {
                 (Chain::Optimism, "https://optimism.llamarpc.com".into()),
                 (Chain::Arbitrum, "https://arbitrum.llamarpc.com".into()),
                 (Chain::Solana, "https://solana-rpc.publicnode.com".into()),
+                (Chain::Abstract, "https://api.mainnet.abs.xyz".into()),
             ]))
         }
     }
@@ -133,6 +134,48 @@ mod tests {
 
         assert_eq!(quote.from_value, "1000000");
         assert!(quote.to_value.parse::<u64>().unwrap() > 0);
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_swapper_get_quote_by_output() -> Result<(), SwapperError> {
+        let network_provider = Arc::new(NativeProvider::default());
+        let swapper = GemSwapper::new(network_provider);
+
+        assert!(swapper.supported_chains().contains(&Chain::Abstract));
+
+        let from_asset = AssetId::from_chain(Chain::Abstract);
+        let to_asset = AssetId::from(Chain::Abstract, Some("0x84A71ccD554Cc1b02749b35d22F684CC8ec987e1".to_string()));
+
+        let options = GemSwapOptions {
+            slippage: 100.into(),
+            fee: Some(SwapReferralFees::evm(SwapReferralFee {
+                bps: 25,
+                address: "0x0D9DAB1A248f63B0a48965bA8435e4de7497a3dC".into(),
+            })),
+            preferred_providers: vec![],
+        };
+
+        let request = SwapQuoteRequest {
+            from_asset,
+            to_asset,
+            wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
+            destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
+            value: "20000000000000000".into(), // 0.02 ETH
+            mode: GemSwapMode::ExactIn,
+            options,
+        };
+
+        let quotes = swapper.fetch_quote(&request).await?;
+        assert_eq!(quotes.len(), 1);
+
+        let quote = &quotes[0];
+        println!("<== quote: {:?}", quote);
+        assert!(quote.to_value.parse::<u64>().unwrap() > 0);
+
+        let quote_data = swapper.fetch_quote_data(&quote, FetchQuoteData::EstimateGas).await?;
+        println!("<== quote_data: {:?}", quote_data);
 
         Ok(())
     }

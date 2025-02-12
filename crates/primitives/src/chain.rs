@@ -309,7 +309,9 @@ impl Chain {
             | Self::AvalancheC
             | Self::Doge
             | Self::Aptos
-            | Self::Sonic => true,
+            | Self::Sonic
+            | Self::Abstract
+            | Self::Unichain => true,
             Self::Osmosis
             | Self::Celestia
             | Self::Injective
@@ -324,10 +326,8 @@ impl Chain {
             | Self::Algorand
             | Self::Polkadot
             | Self::Cardano
-            | Self::Abstract
             | Self::Berachain
-            | Self::Ink
-            | Self::Unichain => false,
+            | Self::Ink => false,
         }
     }
 

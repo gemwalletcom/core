@@ -248,11 +248,13 @@ impl GemSwapProvider for Across {
             SwapChainAsset::Assets(Chain::ZkSync, vec![ZKSYNC_WETH.id.clone()]),
             SwapChainAsset::Assets(Chain::World, vec![WORLD_WETH.id.clone()]),
             SwapChainAsset::Assets(Chain::Ink, vec![INK_WETH.id.clone()]),
+            SwapChainAsset::Assets(Chain::Unichain, vec![UNICHAIN_WETH.id.clone()]),
             // USDC
             SwapChainAsset::Assets(Chain::Arbitrum, vec![ARBITRUM_USDC.id.clone()]),
             SwapChainAsset::Assets(Chain::Ethereum, vec![ETHEREUM_USDC.id.clone()]),
             SwapChainAsset::Assets(Chain::Base, vec![BASE_USDC.id.clone()]),
             SwapChainAsset::Assets(Chain::Optimism, vec![OPTIMISM_USDC.id.clone()]),
+            SwapChainAsset::Assets(Chain::Unichain, vec![UNICHAIN_USDC.id.clone()]),
             // USDT
             SwapChainAsset::Assets(Chain::Arbitrum, vec![ARBITRUM_USDT.id.clone()]),
             SwapChainAsset::Assets(Chain::Ethereum, vec![ETHEREUM_USDT.id.clone()]),

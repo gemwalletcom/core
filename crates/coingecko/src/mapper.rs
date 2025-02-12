@@ -43,6 +43,7 @@ pub fn get_chain_for_coingecko_platform_id(id: &str) -> Option<Chain> {
         "algorand" => Some(Chain::Algorand),
         "berachain-bera" => Some(Chain::Berachain),
         "ink" => Some(Chain::Ink),
+        "unichain" => Some(Chain::Unichain),
         _ => None,
     }
 }

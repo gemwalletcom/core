@@ -28,6 +28,9 @@ struct ContentView: View {
             Button("Fetch ETH -> USDC") {
                 self.testQuote(quote: .eth2usdc)
             }
+            Button("Fetch v4 ETH -> USDC") {
+                self.testQuote(quote: .eth2usdc_v4)
+            }
             Button("Fetch SOL -> USDC") {
                 self.testQuote(quote: .sol2usdc)
             }
@@ -40,6 +43,9 @@ struct ContentView: View {
             Button("Fetch Cake -> BTCB") {
                 self.testQuote(quote: .cake2btcb)
             }
+            Button("Fetch ETH on ABS -> USDC") {
+                self.testQuote(quote: .absETH2USDC)
+            }
             Text("Bridge:")
             Button("Bridge Op ETH -> Ethereum") {
                 self.testQuote(quote: .op2Eth)
@@ -49,6 +55,9 @@ struct ContentView: View {
             }
             Button("Bridge Op ETH -> Ink") {
                 self.testQuote(quote: .op2Ink)
+            }
+            Button("Bridge ETH -> Unichain") {
+                self.testQuote(quote: .eth2Unichain)
             }
             Button("Bridge ETH USDC -> Base") {
                 self.testQuote(quote: .ethUSDC2Base)

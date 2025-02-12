@@ -63,6 +63,7 @@ pub enum GemSwapMode {
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, uniffi::Enum)]
 pub enum SwapProvider {
     UniswapV3,
+    UniswapV4,
     PancakeSwapV3,
     PancakeSwapAptosV2,
     Thorchain,
@@ -82,6 +83,7 @@ impl SwapProvider {
     pub fn name(&self) -> &str {
         match self {
             Self::UniswapV3 => "Uniswap v3",
+            Self::UniswapV4 => "Uniswap v4",
             Self::PancakeSwapV3 => "PancakeSwap v3",
             Self::PancakeSwapAptosV2 => "PancakeSwap v2",
             Self::Thorchain => "THORChain",
@@ -94,6 +96,7 @@ impl SwapProvider {
     pub fn provider_type(&self) -> SwapProviderType {
         match self {
             Self::UniswapV3 => SwapProviderType::OnChain,
+            Self::UniswapV4 => SwapProviderType::OnChain,
             Self::PancakeSwapV3 => SwapProviderType::OnChain,
             Self::PancakeSwapAptosV2 => SwapProviderType::OnChain,
             Self::Thorchain => SwapProviderType::CrossChain,
