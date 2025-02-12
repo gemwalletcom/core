@@ -17,3 +17,4 @@ pub trait UniversalRouterProvider: Send + Sync + Debug {
 }
 
 static DEFAULT_DEADLINE: u64 = 3600;
+const DEFAULT_SWAP_GAS_LIMIT: u64 = 500_000; // gwei

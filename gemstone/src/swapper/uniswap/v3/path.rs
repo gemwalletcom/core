@@ -78,13 +78,13 @@ pub fn build_swap_route(
                 input: token_in.clone(),
                 output: intermediary.clone(),
                 route_data: fee_tier.to_string(),
-                gas_estimate: gas_estimate.clone(),
+                gas_limit: gas_estimate.clone(),
             },
             SwapRoute {
                 input: intermediary.clone(),
                 output: token_out.clone(),
                 route_data: fee_tier.to_string(),
-                gas_estimate: None,
+                gas_limit: None,
             },
         ]
     } else {
@@ -92,7 +92,7 @@ pub fn build_swap_route(
             input: token_in.clone(),
             output: token_out.clone(),
             route_data: fee_tier.to_string(),
-            gas_estimate: gas_estimate.clone(),
+            gas_limit: gas_estimate.clone(),
         }]
     }
 }
