@@ -1,10 +1,17 @@
-name: Gemstone Auto Tag
+name: Gemstone Tag version
 
-on:
-  push:
-    branches: ["main"]
-    paths:
-      - "gemstone/**"
+on: 
+  workflow_dispatch:
+    inputs:
+      bump_type:
+        description: Bump type
+        required: true
+        default: patch
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -15,9 +22,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Auto tag
+      - name: Auto bump
         uses: anothrNick/github-tag-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.PAT }}
-          WITH_V: false
-          DEFAULT_BUMP: patch
+          DEFAULT_BUMP: ${{ github.event.inputs.bump_type }}
