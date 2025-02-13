@@ -6,18 +6,8 @@ use gem_evm::{
         FeeTier,
     },
 };
-use primitives::AssetId;
 
-use crate::swapper::{SwapRoute, SwapperError};
-
-pub fn get_intermediaries(token_in: &EthereumAddress, token_out: &EthereumAddress, base_pair: &BasePair) -> Vec<EthereumAddress> {
-    base_pair
-        .to_array()
-        .iter()
-        .filter(|intermediary| *intermediary != token_in && *intermediary != token_out)
-        .cloned()
-        .collect()
-}
+use crate::swapper::{uniswap::swap_route::get_intermediaries, SwapRoute, SwapperError};
 
 pub fn build_paths(token_in: &EthereumAddress, token_out: &EthereumAddress, fee_tiers: &[FeeTier], base_pair: &BasePair) -> Vec<Vec<(Vec<TokenPair>, Bytes)>> {
     let mut paths: Vec<Vec<(Vec<TokenPair>, Bytes)>> = vec![];
@@ -63,36 +53,4 @@ pub fn build_paths_with_routes(routes: &[SwapRoute]) -> Result<Bytes, SwapperErr
         .collect();
     let paths = build_pairs(&token_pairs);
     Ok(paths)
-}
-
-pub fn build_swap_route(
-    token_in: &AssetId,
-    intermediary: Option<&AssetId>,
-    token_out: &AssetId,
-    fee_tier: &str,
-    gas_estimate: Option<String>,
-) -> Vec<SwapRoute> {
-    if let Some(intermediary) = intermediary {
-        vec![
-            SwapRoute {
-                input: token_in.clone(),
-                output: intermediary.clone(),
-                route_data: fee_tier.to_string(),
-                gas_limit: gas_estimate.clone(),
-            },
-            SwapRoute {
-                input: intermediary.clone(),
-                output: token_out.clone(),
-                route_data: fee_tier.to_string(),
-                gas_limit: None,
-            },
-        ]
-    } else {
-        vec![SwapRoute {
-            input: token_in.clone(),
-            output: token_out.clone(),
-            route_data: fee_tier.to_string(),
-            gas_limit: gas_estimate.clone(),
-        }]
-    }
 }

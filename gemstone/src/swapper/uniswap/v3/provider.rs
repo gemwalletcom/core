@@ -3,7 +3,7 @@ use crate::{
     swapper::{
         approval::{check_approval_erc20, check_approval_permit2},
         models::*,
-        uniswap::fee_token::get_fee_token,
+        uniswap::{fee_token::get_fee_token, swap_route::build_swap_route},
         weth_address, GemSwapProvider, SwapperError,
     },
 };
@@ -202,7 +202,7 @@ impl GemSwapProvider for UniswapV3 {
                 Some(AssetId::from(request.to_asset.chain, Some(first_token_out.to_checksum())))
             }
         };
-        let routes = super::path::build_swap_route(&asset_id_in, asset_id_intermediary.as_ref(), &asset_id_out, &fee_tier.to_string(), gas_estimate);
+        let routes = build_swap_route(&asset_id_in, asset_id_intermediary.as_ref(), &asset_id_out, &fee_tier.to_string(), gas_estimate);
 
         Ok(SwapQuote {
             from_value: request.value.clone(),

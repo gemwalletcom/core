@@ -6,12 +6,25 @@ pub mod path;
 
 // hundredths of bps (e.g. 0.3% is 3000)
 #[derive(Debug, Clone, PartialEq)]
+#[repr(u32)]
 pub enum FeeTier {
     Hundred = 100,
     FiveHundred = 500,
     TwoThousandFiveHundred = 2500,
     ThreeThousand = 3000,
     TenThousand = 10000,
+}
+
+impl FeeTier {
+    pub fn default_tick_spacing(&self) -> u32 {
+        match self {
+            FeeTier::Hundred => 1,
+            FeeTier::FiveHundred => 10,
+            FeeTier::TwoThousandFiveHundred => 50,
+            FeeTier::ThreeThousand => 60,
+            FeeTier::TenThousand => 200,
+        }
+    }
 }
 
 impl TryFrom<&str> for FeeTier {
