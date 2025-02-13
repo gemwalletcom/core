@@ -1,4 +1,4 @@
-name: Clippy
+name: CI - Lint
 on:
   pull_request:
     branches: ["main"]

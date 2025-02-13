@@ -1,4 +1,4 @@
-name: Publish iOS Framework
+name: Release - Gemstone iOS
 
 on:
   push:

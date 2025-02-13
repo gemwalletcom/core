@@ -1,4 +1,4 @@
-name: Diesel
+name: CI - Diesel Schema
 
 on:
   push:

@@ -339,7 +339,7 @@ impl Chain {
         matches!(self, Self::Ethereum | Self::Solana)
     }
 
-    // miliseconds
+    // milliseconds
     pub fn block_time(&self) -> i64 {
         match self {
             Self::Ethereum => 12_000,
