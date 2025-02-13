@@ -38,3 +38,5 @@ mod subscan;
 pub use subscan::SubScan;
 mod cardano;
 pub use cardano::Cardanocan;
+mod okx;
+pub use okx::OkxExplorer;

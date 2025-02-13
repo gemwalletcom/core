@@ -152,7 +152,4 @@ impl BlockExplorer for EtherScan {
     fn get_token_url(&self, token: &str) -> Option<String> {
         Some(format!("{}/token/{}", self.meta.base_url, token))
     }
-    fn get_validator_url(&self, _validator: &str) -> Option<String> {
-        None
-    }
 }

@@ -28,7 +28,4 @@ impl BlockExplorer for XrpScan {
     fn get_token_url(&self, token: &str) -> Option<String> {
         Some(self.get_address_url(token))
     }
-    fn get_validator_url(&self, _validator: &str) -> Option<String> {
-        None
-    }
 }
