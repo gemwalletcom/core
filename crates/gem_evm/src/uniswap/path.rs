@@ -73,7 +73,7 @@ pub fn get_base_pair(chain: &EVMChain) -> Option<BasePair> {
         EVMChain::ZkSync => "0xBBeB516fb02a01611cBBE0453Fe3c580D7281011",
         EVMChain::Blast => "0xf7bc58b8d8f97adc129cfc4c9f45ce3c0e1d2692",
         EVMChain::World => "0x03C7054BCB39f7b2e5B2c7AcB37583e32D70Cfa3",
-        EVMChain::Abstract => "", // None
+        EVMChain::Abstract | EVMChain::Unichain => "", // None
         _ => panic!("unsupported chain"),
     };
 
@@ -106,8 +106,7 @@ pub fn get_base_pair(chain: &EVMChain) -> Option<BasePair> {
         EVMChain::ZkSync => "0x493257fD37EDB34451f62EDf8D2a0C418852bA4C",
         EVMChain::Abstract => "0x0709F39376dEEe2A2dfC94A58EdEb2Eb9DF012bD",
         EVMChain::Unichain => "0x588ce4f028d8e7b53b687865d6a67b3a54c75518",
-        EVMChain::Blast => "", // None
-        EVMChain::World => "", // None
+        EVMChain::Blast | EVMChain::World => "", // None
         _ => panic!("unsupported chain"),
     };
 
