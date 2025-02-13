@@ -1,4 +1,4 @@
-name: Gemstone Android
+name: CI - Gemstone Android
 
 on:
   push:

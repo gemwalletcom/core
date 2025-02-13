@@ -1,4 +1,4 @@
-name: Publish to Github Packages
+name: Release - Gemstone Android
 
 on:
   push:
@@ -16,7 +16,7 @@ env:
   RUSTC_WRAPPER: "sccache"
 
 jobs:
-  publish:
+  publish_gpr:
     runs-on: ubuntu-latest
     steps:
       - name: Set version tag

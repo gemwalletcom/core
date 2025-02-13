@@ -1,4 +1,4 @@
-name: Gemstone Tag Release
+name: Release - Gemstone Tag
 
 on:
   workflow_dispatch:
@@ -18,7 +18,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  auto_tag:
+  tag_release:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
