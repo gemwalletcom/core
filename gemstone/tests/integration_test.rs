@@ -43,6 +43,7 @@ mod tests {
                 (Chain::Arbitrum, "https://arbitrum.llamarpc.com".into()),
                 (Chain::Solana, "https://solana-rpc.publicnode.com".into()),
                 (Chain::Abstract, "https://api.mainnet.abs.xyz".into()),
+                (Chain::Unichain, "https://mainnet.unichain.org".into()),
             ]))
         }
     }
@@ -143,10 +144,26 @@ mod tests {
         let network_provider = Arc::new(NativeProvider::default());
         let swapper = GemSwapper::new(network_provider);
 
-        assert!(swapper.supported_chains().contains(&Chain::Abstract));
+        let trade_pairs: HashMap<Chain, (AssetId, AssetId)> = HashMap::from([
+            (
+                Chain::Abstract,
+                (
+                    AssetId::from_chain(Chain::Abstract),
+                    AssetId::from(Chain::Abstract, Some("0x84A71ccD554Cc1b02749b35d22F684CC8ec987e1".to_string())),
+                ),
+            ),
+            (
+                Chain::Unichain,
+                (
+                    AssetId::from_chain(Chain::Unichain),
+                    AssetId::from(Chain::Unichain, Some("0x078D782b760474a361dDA0AF3839290b0EF57AD6".to_string())),
+                ),
+            ),
+        ]);
 
-        let from_asset = AssetId::from_chain(Chain::Abstract);
-        let to_asset = AssetId::from(Chain::Abstract, Some("0x84A71ccD554Cc1b02749b35d22F684CC8ec987e1".to_string()));
+        assert!(swapper.supported_chains().contains(&Chain::Unichain));
+        let (from_asset, to_asset) = trade_pairs.get(&Chain::Unichain).cloned().unwrap();
+        println!("from_asset: {:?}, to_asset: {:?}", from_asset, to_asset);
 
         let options = GemSwapOptions {
             slippage: 100.into(),

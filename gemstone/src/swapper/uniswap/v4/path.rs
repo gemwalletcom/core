@@ -1,9 +1,6 @@
 use super::super::swap_route::get_intermediaries;
 use alloy_core::primitives::Address;
-use alloy_primitives::{
-    aliases::{I24, U24},
-    Bytes,
-};
+use alloy_primitives::Bytes;
 use gem_evm::{
     address::EthereumAddress,
     uniswap::{
@@ -28,8 +25,8 @@ pub fn build_pool_keys(token_in: &EthereumAddress, token_out: &EthereumAddress, 
     fee_tiers
         .iter()
         .map(|fee_tier| {
-            let fee = U24::from_le_bytes((fee_tier.clone() as u32).to_le_bytes());
-            let tick_spacing = I24::from_le_bytes(fee_tier.default_tick_spacing().to_le_bytes());
+            let fee = fee_tier.as_u24();
+            let tick_spacing = fee_tier.default_tick_spacing();
             let pool_key = PoolKey {
                 currency0,
                 currency1,
@@ -69,8 +66,8 @@ pub fn build_path_keys(
                 .iter()
                 .map(|token_pair| PathKey {
                     intermediateCurrency: Address::from_slice(&intermediary.bytes),
-                    fee: U24::from_le_bytes((token_pair.fee_tier.clone() as u32).to_le_bytes()),
-                    tickSpacing: I24::from_le_bytes(token_pair.fee_tier.default_tick_spacing().to_le_bytes()),
+                    fee: token_pair.fee_tier.as_u24(),
+                    tickSpacing: token_pair.fee_tier.default_tick_spacing(),
                     hooks: Address::ZERO,
                     hookData: Bytes::new(),
                 })

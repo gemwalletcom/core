@@ -17,7 +17,7 @@ use alloy_core::primitives::U256;
 use async_trait::async_trait;
 use std::{str::FromStr, sync::Arc, vec};
 
-use super::path::{build_path_keys, build_pool_keys};
+use super::path::build_pool_keys;
 
 #[derive(Debug, Default)]
 pub struct UniswapV4 {}
