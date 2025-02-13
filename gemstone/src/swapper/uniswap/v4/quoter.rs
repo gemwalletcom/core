@@ -27,6 +27,7 @@ pub fn build_quote_exact_single_request(token_in: &EthereumAddress, wallet_addre
     )
 }
 
+#[allow(unused)]
 pub fn build_quote_exact_request(token_in: &EthereumAddress, wallet_address: &str, quoter_v2: &str, amount_in: u128, path: &[PathKey]) -> EthereumRpc {
     let quote = IV4Quoter::QuoteExactParams {
         exactCurrency: Address::from_slice(&token_in.bytes),

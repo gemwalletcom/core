@@ -147,8 +147,8 @@ public extension SwapQuoteRequest {
         options.preferredProviders = [SwapProvider.uniswapV4]
 
         return SwapQuoteRequest(
-            fromAsset: "ethereum",
-            toAsset: "ethereum_0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+            fromAsset: "unichain",
+            toAsset: "unichain_0x078D782b760474a361dDA0AF3839290b0EF57AD6",
             walletAddress: TEST_ETH_WALLET,
             destinationAddress: TEST_ETH_WALLET,
             value: "1000000000000000000", // 1 ETH
