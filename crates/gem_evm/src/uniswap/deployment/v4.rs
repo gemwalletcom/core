@@ -2,7 +2,7 @@ use super::{get_uniswap_permit2_by_chain, Deployment};
 use primitives::Chain;
 
 pub struct V4Deployment {
-    pub quoter: &'static str,
+    pub quoter: &'static str, // V4 Quoter
     pub permit2: &'static str,
     pub universal_router: &'static str,
 }

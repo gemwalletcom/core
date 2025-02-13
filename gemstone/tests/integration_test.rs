@@ -6,7 +6,7 @@ mod tests {
     use gemstone::{
         config::swap_config::{SwapReferralFee, SwapReferralFees},
         network::{provider::AlienProvider, target::*, *},
-        swapper::{orca::Orca, *},
+        swapper::{orca::Orca, uniswap::v4::UniswapV4, *},
     };
     use primitives::{AssetId, Chain};
     use reqwest::Client;
@@ -153,17 +153,15 @@ mod tests {
                 ),
             ),
             (
-                Chain::Unichain,
+                Chain::Ethereum,
                 (
-                    AssetId::from_chain(Chain::Unichain),
-                    AssetId::from(Chain::Unichain, Some("0x078D782b760474a361dDA0AF3839290b0EF57AD6".to_string())),
+                    AssetId::from_chain(Chain::Ethereum),
+                    AssetId::from(Chain::Ethereum, Some("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48".to_string())),
                 ),
             ),
         ]);
 
-        assert!(swapper.supported_chains().contains(&Chain::Unichain));
-        let (from_asset, to_asset) = trade_pairs.get(&Chain::Unichain).cloned().unwrap();
-        println!("from_asset: {:?}, to_asset: {:?}", from_asset, to_asset);
+        let (from_asset, to_asset) = trade_pairs.get(&Chain::Abstract).cloned().unwrap();
 
         let options = GemSwapOptions {
             slippage: 100.into(),
@@ -217,6 +215,45 @@ mod tests {
         let request = SwapQuoteRequest {
             from_asset: AssetId::from_chain(Chain::Optimism),
             to_asset: AssetId::from_chain(Chain::Arbitrum),
+            wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
+            destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
+            value: "20000000000000000".into(), // 0.02 ETH
+            mode: GemSwapMode::ExactIn,
+            options,
+        };
+
+        let now = SystemTime::now();
+        let quote = swap_provider.fetch_quote(&request, network_provider.clone()).await?;
+        let elapsed = SystemTime::now().duration_since(now).unwrap();
+
+        println!("<== elapsed: {:?}", elapsed);
+        println!("<== quote: {:?}", quote);
+        assert!(quote.to_value.parse::<u64>().unwrap() > 0);
+
+        let quote_data = swap_provider
+            .fetch_quote_data(&quote, network_provider.clone(), FetchQuoteData::EstimateGas)
+            .await?;
+        println!("<== quote_data: {:?}", quote_data);
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_v4_quoter() -> Result<(), SwapperError> {
+        let swap_provider = UniswapV4::boxed();
+        let network_provider = Arc::new(NativeProvider::default());
+        let options = GemSwapOptions {
+            slippage: 100.into(),
+            fee: Some(SwapReferralFees::evm(SwapReferralFee {
+                bps: 25,
+                address: "0x0D9DAB1A248f63B0a48965bA8435e4de7497a3dC".into(),
+            })),
+            preferred_providers: vec![SwapProvider::UniswapV4],
+        };
+
+        let request = SwapQuoteRequest {
+            from_asset: AssetId::from_chain(Chain::Unichain),
+            to_asset: AssetId::from(Chain::Unichain, Some("0x078D782b760474a361dDA0AF3839290b0EF57AD6".to_string())),
             wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
             destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
             value: "20000000000000000".into(), // 0.02 ETH

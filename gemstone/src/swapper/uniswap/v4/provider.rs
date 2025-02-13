@@ -23,6 +23,10 @@ use super::path::build_pool_keys;
 pub struct UniswapV4 {}
 
 impl UniswapV4 {
+    pub fn boxed() -> Box<dyn GemSwapProvider> {
+        Box::new(Self::default())
+    }
+
     fn support_chain(&self, chain: &Chain) -> bool {
         deployment::v4::get_uniswap_router_deployment_by_chain(chain).is_some()
     }
