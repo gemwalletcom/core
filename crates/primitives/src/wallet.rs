@@ -9,6 +9,7 @@ struct Wallet {
     order: i32,
     #[serde(rename = "isPinned")]
     is_pinned: bool,
+    #[serde(rename = "imageUrl")]
     image_url: Option<String>,
 }
 
