@@ -108,7 +108,7 @@ impl GemSwapProvider for UniswapV4 {
                     for (index, result) in results.iter().enumerate() {
                         match result {
                             JsonRpcResult::Value(value) => {
-                                let quoter_tuple = super::quoter::decode_quoter_response(&value)?;
+                                let quoter_tuple = super::quoter::decode_quoter_response(value)?;
                                 if quoter_tuple.0 > max_amount_out.unwrap_or_default() {
                                     max_amount_out = Some(quoter_tuple.0);
                                     fee_tier_idx = index;

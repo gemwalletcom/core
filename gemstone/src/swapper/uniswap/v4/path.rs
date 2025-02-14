@@ -58,7 +58,7 @@ pub fn build_path_keys(
     intermediaries.iter().for_each(|intermediary| {
         let array: Vec<Vec<TokenPair>> = fee_tiers
             .iter()
-            .map(|fee_tier| TokenPair::new_two_hop(token_in, &intermediary, token_out, fee_tier))
+            .map(|fee_tier| TokenPair::new_two_hop(token_in, intermediary, token_out, fee_tier))
             .collect();
 
         for token_pairs in array.iter().skip(1) {
