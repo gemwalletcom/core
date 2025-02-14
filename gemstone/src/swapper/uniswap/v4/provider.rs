@@ -89,9 +89,7 @@ impl GemSwapProvider for UniswapV4 {
         let pool_keys = build_pool_keys(&token_in, &token_out, &fee_tiers);
         let calls: Vec<EthereumRpc> = pool_keys
             .iter()
-            .map(|pool_key| {
-                super::quoter::build_quote_exact_single_request(&token_in, &request.wallet_address, deployment.quoter, quote_amount_in, &pool_key.1)
-            })
+            .map(|pool_key| super::quoter::build_quote_exact_single_request(&token_in, deployment.quoter, quote_amount_in, &pool_key.1))
             .collect();
         let batch_call = batch_jsonrpc_call(calls, provider.clone(), &request.from_asset.chain);
         let requests = vec![batch_call];
