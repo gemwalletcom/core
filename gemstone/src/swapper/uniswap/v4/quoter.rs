@@ -57,7 +57,7 @@ mod tests {
         let token_in = EthereumAddress::parse("0x0000000000000000000000000000000000000000").unwrap();
         let token_out = EthereumAddress::parse("0x078D782b760474a361dDA0AF3839290b0EF57AD6").unwrap();
         let fee_tiers = vec![FeeTier::ThreeThousand];
-        let wallet_address = "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7";
+
         let v4_quoter = "0x333E3C607B141b18fF6de9f258db6e77fE7491E0";
         let amount_in = 10000000000000000_u128;
         let pool_keys = build_pool_keys(&token_in, &token_out, &fee_tiers);
@@ -73,7 +73,7 @@ mod tests {
             "0x25939956ef14a098d95051d86c75890cfd623a9eeba055e46d8dd9135980b37c"
         );
 
-        let rpc = build_quote_exact_single_request(&token_in, wallet_address, v4_quoter, amount_in, pool_key);
+        let rpc = build_quote_exact_single_request(&token_in, v4_quoter, amount_in, pool_key);
 
         if let EthereumRpc::Call(call, _) = rpc {
             assert!(call.data.starts_with("0xaa9d21cb"));
