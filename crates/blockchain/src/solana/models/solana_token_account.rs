@@ -15,6 +15,7 @@ struct SolanaStakeAccount {
 #[typeshare(swiftGenericConstraints = "T: Sendable")]
 struct SolanaTokenAccount {
     account: SolanaAccount<SolanaAccountParsed<SolanaAccountParsedInfo<SolanaTokenInfo>>>,
+    pubkey: String,
 }
 
 // parsed data
@@ -24,6 +25,7 @@ struct SolanaTokenAccount {
 struct SolanaAccount<T> {
     lamports: Int,
     space: i32,
+    owner: String,
     data: T,
 }
 
