@@ -256,7 +256,7 @@ mod tests {
             to_asset: AssetId::from(Chain::Unichain, Some("0x078D782b760474a361dDA0AF3839290b0EF57AD6".to_string())),
             wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
             destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
-            value: "20000000000000000".into(), // 0.02 ETH
+            value: "10000000000000000".into(), // 0.01 ETH
             mode: GemSwapMode::ExactIn,
             options,
         };
