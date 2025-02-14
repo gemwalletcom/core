@@ -74,7 +74,7 @@ pub fn get_base_pair(chain: &EVMChain) -> Option<BasePair> {
         EVMChain::Blast => "0xf7bc58b8d8f97adc129cfc4c9f45ce3c0e1d2692",
         EVMChain::World => "0x03C7054BCB39f7b2e5B2c7AcB37583e32D70Cfa3",
         EVMChain::Abstract | EVMChain::Unichain => "", // None
-        _ => panic!("unsupported chain"),
+        _ => panic!("get_base_pair: unsupported chain for btc"),
     };
 
     let usdc = match chain {
@@ -91,7 +91,7 @@ pub fn get_base_pair(chain: &EVMChain) -> Option<BasePair> {
         EVMChain::World => "0x79A02482A880bCE3F13e09Da970dC34db4CD24d1",    // USDC.e
         EVMChain::Abstract => "0x84A71ccD554Cc1b02749b35d22F684CC8ec987e1", // USDC.e
         EVMChain::Unichain => "0x078d782b760474a361dda0af3839290b0ef57ad6",
-        _ => panic!("unsupported chain"),
+        _ => panic!("get_base_pair: unsupported chain for usdc"),
     };
 
     let usdt: &str = match chain {
@@ -107,7 +107,7 @@ pub fn get_base_pair(chain: &EVMChain) -> Option<BasePair> {
         EVMChain::Abstract => "0x0709F39376dEEe2A2dfC94A58EdEb2Eb9DF012bD",
         EVMChain::Unichain => "0x588ce4f028d8e7b53b687865d6a67b3a54c75518",
         EVMChain::Blast | EVMChain::World => "", // None
-        _ => panic!("unsupported chain"),
+        _ => panic!("get_base_pair unsupported chain for usdt"),
     };
 
     let mut stables = vec![EthereumAddress::parse(usdc)?];
