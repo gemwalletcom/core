@@ -17,7 +17,10 @@ use alloy_core::primitives::U256;
 use async_trait::async_trait;
 use std::{str::FromStr, sync::Arc, vec};
 
-use super::path::build_pool_keys;
+use super::{
+    path::{build_pool_keys, build_quote_exact_params},
+    quoter::{build_quote_exact_request, build_quote_exact_single_request},
+};
 
 #[derive(Debug, Default)]
 pub struct UniswapV4 {}
@@ -35,9 +38,16 @@ impl UniswapV4 {
         vec![FeeTier::Hundred, FeeTier::FiveHundred, FeeTier::ThreeThousand, FeeTier::TenThousand]
     }
 
+    fn is_base_pair(&self, token_in: &EthereumAddress, token_out: &EthereumAddress, evm_chain: &EVMChain) -> bool {
+        let base_pair = get_base_pair(evm_chain).unwrap();
+        let mut set = base_pair.to_set();
+        set.insert(EthereumAddress::zero());
+        set.contains(token_in) && set.contains(token_out)
+    }
+
     fn parse_asset_address(asset: &AssetId, evm_chain: EVMChain) -> Result<EthereumAddress, SwapperError> {
         if asset.is_native() {
-            Ok(EthereumAddress { bytes: vec![0u8; 20] })
+            Ok(EthereumAddress::zero())
         } else {
             weth_address::parse_into_address(asset, evm_chain)
         }
@@ -71,7 +81,6 @@ impl GemSwapProvider for UniswapV4 {
         let base_pair = get_base_pair(&evm_chain).ok_or(SwapperError::ComputeQuoteError {
             msg: "base pair not found".into(),
         })?;
-
         let fee_preference = get_fee_token(&request.mode, Some(&base_pair), &token_in, &token_out);
         let fee_bps = request.options.clone().fee.unwrap_or_default().evm.bps;
         let quote_amount_in = if fee_preference.is_input_token && fee_bps > 0 {
@@ -89,10 +98,21 @@ impl GemSwapProvider for UniswapV4 {
         let pool_keys = build_pool_keys(&token_in, &token_out, &fee_tiers);
         let calls: Vec<EthereumRpc> = pool_keys
             .iter()
-            .map(|pool_key| super::quoter::build_quote_exact_single_request(&token_in, deployment.quoter, quote_amount_in, &pool_key.1))
+            .map(|pool_key| build_quote_exact_single_request(&token_in, deployment.quoter, quote_amount_in, &pool_key.1))
             .collect();
         let batch_call = batch_jsonrpc_call(calls, provider.clone(), &request.from_asset.chain);
-        let requests = vec![batch_call];
+        let mut requests = vec![batch_call];
+
+        if !self.is_base_pair(&token_in, &token_out, &evm_chain) {
+            let quote_exact_params = build_quote_exact_params(quote_amount_in, &token_in, &token_out, &fee_tiers, &base_pair.stables);
+            let calls: Vec<EthereumRpc> = quote_exact_params
+                .iter()
+                .map(|path_key| build_quote_exact_request(deployment.quoter, &path_key.1))
+                .collect();
+
+            let batch_call = batch_jsonrpc_call(calls, provider.clone(), &request.from_asset.chain);
+            requests.push(batch_call);
+        }
 
         // fire batch requests in parallel
         let batch_results: Vec<_> = futures::future::join_all(requests).await.into_iter().collect();

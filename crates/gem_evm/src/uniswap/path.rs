@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::{collections::HashSet, fmt::Display};
 
 use super::FeeTier;
 use crate::address::EthereumAddress;
@@ -12,6 +12,29 @@ pub struct TokenPair {
     pub token_in: EthereumAddress,
     pub token_out: EthereumAddress,
     pub fee_tier: FeeTier,
+}
+
+impl Display for TokenPair {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}-{}->{}", self.token_in, self.fee_tier.as_u24(), self.token_out)
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct TokenPairs(pub Vec<TokenPair>);
+
+impl Display for TokenPairs {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "[")?;
+        let mut iter = self.0.iter();
+        if let Some(first) = iter.next() {
+            write!(f, "{}", first)?; // Write first element without a leading comma
+            for item in iter {
+                write!(f, ", {}", item)?; // Write subsequent elements with a leading comma
+            }
+        }
+        write!(f, "]")
+    }
 }
 
 impl TokenPair {
@@ -31,6 +54,7 @@ impl TokenPair {
     }
 }
 
+#[derive(Debug)]
 pub struct BasePair {
     pub native: EthereumAddress,
     pub stables: Vec<EthereumAddress>,
