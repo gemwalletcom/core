@@ -3,8 +3,12 @@ use gem_evm::{address::EthereumAddress, uniswap::path::BasePair};
 use primitives::AssetId;
 
 pub fn get_intermediaries(token_in: &EthereumAddress, token_out: &EthereumAddress, base_pair: &BasePair) -> Vec<EthereumAddress> {
-    base_pair
-        .to_array()
+    let array = base_pair.to_array();
+    get_intermediaries_by_array(token_in, token_out, &array)
+}
+
+pub fn get_intermediaries_by_array(token_in: &EthereumAddress, token_out: &EthereumAddress, array: &[EthereumAddress]) -> Vec<EthereumAddress> {
+    array
         .iter()
         .filter(|intermediary| *intermediary != token_in && *intermediary != token_out)
         .cloned()

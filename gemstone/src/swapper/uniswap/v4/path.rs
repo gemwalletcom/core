@@ -1,11 +1,10 @@
-use super::super::swap_route::get_intermediaries;
 use alloy_core::primitives::Address;
 use alloy_primitives::Bytes;
 use gem_evm::{
     address::EthereumAddress,
     uniswap::{
-        contracts::v4::{PathKey, PoolKey},
-        path::{BasePair, TokenPair},
+        contracts::v4::{IV4Quoter::QuoteExactParams, PathKey, PoolKey},
+        path::{TokenPair, TokenPairs},
         FeeTier,
     },
 };
@@ -46,34 +45,49 @@ pub fn build_pool_keys(token_in: &EthereumAddress, token_out: &EthereumAddress, 
         .collect()
 }
 
-#[allow(unused)]
-pub fn build_path_keys(
+pub fn build_quote_exact_params(
+    amount_in: u128,
     token_in: &EthereumAddress,
     token_out: &EthereumAddress,
     fee_tiers: &[FeeTier],
-    base_pair: &BasePair,
-) -> Vec<(Vec<TokenPair>, Vec<PathKey>)> {
-    let mut result: Vec<(Vec<TokenPair>, Vec<PathKey>)> = vec![];
-    let intermediaries = get_intermediaries(token_in, token_out, base_pair);
+    intermediaries: &[EthereumAddress],
+) -> Vec<(Vec<TokenPair>, QuoteExactParams)> {
+    println!("in: {:}, out: {:}", token_in, token_out);
+
+    let mut result: Vec<(Vec<TokenPair>, QuoteExactParams)> = vec![];
     intermediaries.iter().for_each(|intermediary| {
         let array: Vec<Vec<TokenPair>> = fee_tiers
             .iter()
             .map(|fee_tier| TokenPair::new_two_hop(token_in, intermediary, token_out, fee_tier))
             .collect();
 
-        for token_pairs in array.iter().skip(1) {
-            let path_keys: Vec<PathKey> = token_pairs
-                .iter()
-                .map(|token_pair| PathKey {
-                    intermediateCurrency: Address::from_slice(&intermediary.bytes),
+        array.iter().for_each(|token_pairs| {
+            println!("token_pairs: {:}", TokenPairs(token_pairs.clone()));
+
+            if token_pairs.len() < 2 {
+                return;
+            }
+
+            let mut quote_exact_params = QuoteExactParams {
+                exactCurrency: Address::ZERO,
+                path: vec![],
+                exactAmount: amount_in,
+            };
+            for (idx, token_pair) in token_pairs.iter().enumerate() {
+                if idx == 0 {
+                    quote_exact_params.exactCurrency = Address::from_slice(&token_pair.token_in.bytes);
+                }
+                let path_key = PathKey {
+                    intermediateCurrency: Address::from_slice(&token_pair.token_out.bytes),
                     fee: token_pair.fee_tier.as_u24(),
                     tickSpacing: token_pair.fee_tier.default_tick_spacing(),
                     hooks: Address::ZERO,
                     hookData: Bytes::new(),
-                })
-                .collect();
-            result.push((token_pairs.clone(), path_keys));
-        }
+                };
+                quote_exact_params.path.push(path_key);
+            }
+            result.push((token_pairs.clone(), quote_exact_params));
+        });
     });
     result
 }
