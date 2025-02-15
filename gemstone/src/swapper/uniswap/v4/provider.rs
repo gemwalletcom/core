@@ -1,21 +1,23 @@
 use crate::{
     network::{batch_jsonrpc_call, AlienProvider, JsonRpcError},
     swapper::{
+        approval::check_approval_permit2,
         uniswap::{
             fee_token::get_fee_token,
             quote_result::get_best_quote,
             swap_route::{build_swap_route, get_intermediaries},
         },
-        weth_address, FetchQuoteData, GemSwapProvider, SwapChainAsset, SwapProvider, SwapProviderData, SwapQuote, SwapQuoteData, SwapQuoteRequest,
-        SwapperError,
+        weth_address, FetchQuoteData, GemSwapProvider, Permit2ApprovalData, SwapChainAsset, SwapProvider, SwapProviderData, SwapQuote, SwapQuoteData,
+        SwapQuoteRequest, SwapperError,
     },
 };
+use alloy_primitives::U256;
 use gem_evm::{
     address::EthereumAddress,
     jsonrpc::EthereumRpc,
     uniswap::{
         contracts::v4::IV4Quoter::QuoteExactParams,
-        deployment,
+        deployment::{self},
         path::{get_base_pair, TokenPair},
         FeeTier,
     },
@@ -162,6 +164,29 @@ impl GemSwapProvider for UniswapV4 {
             },
             request: request.clone(),
         })
+    }
+
+    async fn fetch_permit2_for_quote(&self, quote: &SwapQuote, provider: Arc<dyn AlienProvider>) -> Result<Option<Permit2ApprovalData>, SwapperError> {
+        if quote.request.from_asset.is_native() {
+            return Ok(None);
+        }
+        let from_chain = quote.request.from_asset.chain;
+        let (_, token_in, _, amount_in) = Self::parse_request(&quote.request)?;
+        let v4_deployment = deployment::v4::get_uniswap_router_deployment_by_chain(&from_chain).ok_or(SwapperError::NotSupportedChain)?;
+
+        let permit2_data = check_approval_permit2(
+            v4_deployment.permit2,
+            quote.request.wallet_address.clone(),
+            token_in.to_string(),
+            v4_deployment.universal_router.to_string(),
+            U256::from(amount_in),
+            provider.clone(),
+            &from_chain,
+        )
+        .await?
+        .permit2_data();
+
+        Ok(permit2_data)
     }
 
     async fn fetch_quote_data(&self, _quote: &SwapQuote, _provider: Arc<dyn AlienProvider>, _data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError> {

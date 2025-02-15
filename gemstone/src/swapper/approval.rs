@@ -82,7 +82,7 @@ pub async fn check_approval_erc20(
 }
 
 pub async fn check_approval_permit2(
-    permit2_contract: String,
+    permit2_contract: &str,
     owner: String,
     token: String,
     spender: String,
@@ -97,7 +97,7 @@ pub async fn check_approval_permit2(
         _2: spender.as_str().parse().map_err(SwapperError::from)?,
     }
     .abi_encode();
-    let permit2_call = EthereumRpc::Call(TransactionObject::new_call(&permit2_contract, permit2_data), BlockParameter::Latest);
+    let permit2_call = EthereumRpc::Call(TransactionObject::new_call(permit2_contract, permit2_data), BlockParameter::Latest);
 
     let response = jsonrpc_call(&permit2_call, provider.clone(), chain).await.map_err(SwapperError::from)?;
     let result: String = response.take().map_err(SwapperError::from)?;
@@ -116,7 +116,7 @@ pub async fn check_approval_permit2(
             token,
             spender,
             value: amount.to_string(),
-            permit2_contract,
+            permit2_contract: permit2_contract.into(),
             permit2_nonce: allowance_return._2.try_into().map_err(|_| SwapperError::ABIError {
                 msg: "failed to convert nonce to u64".into(),
             })?,
@@ -136,7 +136,7 @@ pub async fn check_approval(check_type: CheckApprovalType, provider: Arc<dyn Ali
             token,
             spender,
             amount,
-        } => check_approval_permit2(permit2_contract, owner, token, spender, amount, provider, chain).await,
+        } => check_approval_permit2(&permit2_contract, owner, token, spender, amount, provider, chain).await,
     }
 }
 
