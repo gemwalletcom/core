@@ -1,23 +1,25 @@
 use crate::{
     network::{batch_jsonrpc_call, AlienProvider, JsonRpcError},
     swapper::{
-        approval::check_approval_permit2,
+        approval::{check_approval_erc20, check_approval_permit2},
         uniswap::{
+            deadline::get_sig_deadline,
             fee_token::get_fee_token,
             quote_result::get_best_quote,
             swap_route::{build_swap_route, get_intermediaries},
         },
-        weth_address, FetchQuoteData, GemSwapProvider, Permit2ApprovalData, SwapChainAsset, SwapProvider, SwapProviderData, SwapQuote, SwapQuoteData,
-        SwapQuoteRequest, SwapperError,
+        weth_address, ApprovalData, FetchQuoteData, GemSwapProvider, Permit2ApprovalData, SwapChainAsset, SwapProvider, SwapProviderData, SwapQuote,
+        SwapQuoteData, SwapQuoteRequest, SwapperError,
     },
 };
+use alloy_core::hex;
 use alloy_primitives::U256;
 use gem_evm::{
     address::EthereumAddress,
     jsonrpc::EthereumRpc,
     uniswap::{
         contracts::v4::IV4Quoter::QuoteExactParams,
-        deployment::{self},
+        deployment::v4::get_uniswap_deployment_by_chain,
         path::{get_base_pair, TokenPair},
         FeeTier,
     },
@@ -28,8 +30,10 @@ use async_trait::async_trait;
 use std::{str::FromStr, sync::Arc, vec};
 
 use super::{
+    commands::{build_commands, encode_commands},
     path::{build_pool_keys, build_quote_exact_params},
     quoter::{build_quote_exact_requests, build_quote_exact_single_request},
+    DEFAULT_SWAP_GAS_LIMIT,
 };
 
 #[derive(Debug, Default)]
@@ -41,7 +45,7 @@ impl UniswapV4 {
     }
 
     fn support_chain(&self, chain: &Chain) -> bool {
-        deployment::v4::get_uniswap_router_deployment_by_chain(chain).is_some()
+        get_uniswap_deployment_by_chain(chain).is_some()
     }
 
     fn get_tiers(&self) -> Vec<FeeTier> {
@@ -81,7 +85,7 @@ impl GemSwapProvider for UniswapV4 {
     }
     async fn fetch_quote(&self, request: &SwapQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapQuote, SwapperError> {
         // Check deployment and weth contract
-        let deployment = deployment::v4::get_uniswap_router_deployment_by_chain(&request.from_asset.chain).ok_or(SwapperError::NotSupportedChain)?;
+        let deployment = get_uniswap_deployment_by_chain(&request.from_asset.chain).ok_or(SwapperError::NotSupportedChain)?;
         let (evm_chain, token_in, token_out, amount_in) = Self::parse_request(request)?;
         _ = evm_chain.weth_contract().ok_or(SwapperError::NotSupportedChain)?;
 
@@ -172,7 +176,7 @@ impl GemSwapProvider for UniswapV4 {
         }
         let from_chain = quote.request.from_asset.chain;
         let (_, token_in, _, amount_in) = Self::parse_request(&quote.request)?;
-        let v4_deployment = deployment::v4::get_uniswap_router_deployment_by_chain(&from_chain).ok_or(SwapperError::NotSupportedChain)?;
+        let v4_deployment = get_uniswap_deployment_by_chain(&from_chain).ok_or(SwapperError::NotSupportedChain)?;
 
         let permit2_data = check_approval_permit2(
             v4_deployment.permit2,
@@ -189,7 +193,59 @@ impl GemSwapProvider for UniswapV4 {
         Ok(permit2_data)
     }
 
-    async fn fetch_quote_data(&self, _quote: &SwapQuote, _provider: Arc<dyn AlienProvider>, _data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError> {
-        todo!()
+    async fn fetch_quote_data(&self, quote: &SwapQuote, provider: Arc<dyn AlienProvider>, data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError> {
+        let request = &quote.request;
+        let (_, token_in, token_out, amount_in) = Self::parse_request(request)?;
+        let deployment = get_uniswap_deployment_by_chain(&request.from_asset.chain).ok_or(SwapperError::NotSupportedChain)?;
+        let to_amount = U256::from_str(&quote.to_value).map_err(|_| SwapperError::InvalidAmount)?;
+
+        let permit = data.permit2_data().map(|data| data.into());
+
+        let mut gas_limit: Option<String> = None;
+        let approval: Option<ApprovalData> = if quote.request.from_asset.is_native() {
+            None
+        } else {
+            // Check if need to approve permit2 contract
+            check_approval_erc20(
+                request.wallet_address.clone(),
+                token_in.to_string(),
+                deployment.permit2.to_string(),
+                U256::from(amount_in),
+                provider,
+                &request.from_asset.chain,
+            )
+            .await?
+            .approval_data()
+        };
+        if approval.is_some() {
+            gas_limit = Some(DEFAULT_SWAP_GAS_LIMIT.to_string());
+        }
+
+        let sig_deadline = get_sig_deadline();
+        let evm_chain = EVMChain::from_chain(quote.request.from_asset.chain).ok_or(SwapperError::NotSupportedChain)?;
+        let base_pair = get_base_pair(&evm_chain, false);
+        let fee_preference = get_fee_token(&request.mode, base_pair.as_ref(), &token_in, &token_out);
+
+        let commands = build_commands(
+            request,
+            &token_in,
+            &token_out,
+            U256::from(amount_in),
+            to_amount,
+            permit,
+            fee_preference.is_input_token,
+        )?;
+        let encoded = encode_commands(&commands, U256::from(sig_deadline));
+
+        let wrap_input_eth = request.from_asset.is_native();
+        let value = if wrap_input_eth { request.value.clone() } else { String::from("0") };
+
+        Ok(SwapQuoteData {
+            to: deployment.universal_router.into(),
+            value,
+            data: hex::encode(encoded),
+            approval,
+            gas_limit,
+        })
     }
 }

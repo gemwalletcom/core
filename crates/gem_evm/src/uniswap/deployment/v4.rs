@@ -21,7 +21,7 @@ impl Deployment for V4Deployment {
     }
 }
 
-pub fn get_uniswap_router_deployment_by_chain(chain: &Chain) -> Option<V4Deployment> {
+pub fn get_uniswap_deployment_by_chain(chain: &Chain) -> Option<V4Deployment> {
     // https://github.com/Uniswap/contracts/blob/main/deployments/index.md
     let permit2 = get_uniswap_permit2_by_chain(chain)?;
     match chain {

@@ -3,7 +3,7 @@ use crate::{
     swapper::{
         approval::{check_approval_erc20, check_approval_permit2},
         models::*,
-        uniswap::{fee_token::get_fee_token, quote_result::get_best_quote, swap_route::build_swap_route},
+        uniswap::{deadline::get_sig_deadline, fee_token::get_fee_token, quote_result::get_best_quote, swap_route::build_swap_route},
         weth_address, GemSwapProvider, SwapperError,
     },
 };
@@ -16,14 +16,9 @@ use primitives::{AssetId, Chain, EVMChain};
 
 use alloy_core::primitives::{hex::encode_prefixed as HexEncode, Address, Bytes, U256};
 use async_trait::async_trait;
-use std::{
-    fmt::Debug,
-    str::FromStr,
-    sync::Arc,
-    time::{SystemTime, UNIX_EPOCH},
-};
+use std::{fmt::Debug, str::FromStr, sync::Arc};
 
-use super::{commands::build_commands, path::build_paths_with_routes, UniversalRouterProvider, DEFAULT_DEADLINE, DEFAULT_SWAP_GAS_LIMIT};
+use super::{commands::build_commands, path::build_paths_with_routes, UniversalRouterProvider, DEFAULT_SWAP_GAS_LIMIT};
 
 #[derive(Debug)]
 pub struct UniswapV3 {
@@ -215,29 +210,22 @@ impl GemSwapProvider for UniswapV3 {
             .ok_or(SwapperError::NotSupportedChain)?;
         let to_amount = U256::from_str(&quote.to_value).map_err(|_| SwapperError::InvalidAmount)?;
         let wallet_address: Address = request.wallet_address.as_str().parse().map_err(SwapperError::from)?;
-
-        let permit = match data {
-            FetchQuoteData::Permit2(data) => Some(data.into()),
-            _ => None,
-        };
+        let permit = data.permit2_data().map(|data| data.into());
 
         let mut gas_limit: Option<String> = None;
-        let approval: Option<ApprovalData> = {
-            if quote.request.from_asset.is_native() {
-                None
-            } else {
-                // Check if need to approve permit2 contract
-                self.check_erc20_approval(wallet_address, &token_in.to_checksum(), amount_in, &request.from_asset.chain, provider)
-                    .await?
-                    .approval_data()
-            }
+        let approval: Option<ApprovalData> = if quote.request.from_asset.is_native() {
+            None
+        } else {
+            // Check if need to approve permit2 contract
+            self.check_erc20_approval(wallet_address, &token_in.to_checksum(), amount_in, &request.from_asset.chain, provider)
+                .await?
+                .approval_data()
         };
         if approval.is_some() {
             gas_limit = Some(DEFAULT_SWAP_GAS_LIMIT.to_string());
         }
 
-        let now = SystemTime::now().duration_since(UNIX_EPOCH).expect("Time went backwards").as_secs();
-        let sig_deadline = now + DEFAULT_DEADLINE;
+        let sig_deadline = get_sig_deadline();
 
         let evm_chain = EVMChain::from_chain(quote.request.from_asset.chain).ok_or(SwapperError::NotSupportedChain)?;
         let base_pair = get_base_pair(&evm_chain, true);
