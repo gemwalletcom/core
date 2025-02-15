@@ -51,11 +51,10 @@ pub fn build_quote_exact_params(
     token_out: &EthereumAddress,
     fee_tiers: &[FeeTier],
     intermediaries: &[EthereumAddress],
-) -> Vec<(Vec<TokenPair>, QuoteExactParams)> {
-    println!("in: {:}, out: {:}", token_in, token_out);
-
-    let mut result: Vec<(Vec<TokenPair>, QuoteExactParams)> = vec![];
+) -> Vec<Vec<(Vec<TokenPair>, QuoteExactParams)>> {
+    let mut results: Vec<Vec<(Vec<TokenPair>, QuoteExactParams)>> = vec![];
     intermediaries.iter().for_each(|intermediary| {
+        let mut result: Vec<(Vec<TokenPair>, QuoteExactParams)> = vec![];
         let array: Vec<Vec<TokenPair>> = fee_tiers
             .iter()
             .map(|fee_tier| TokenPair::new_two_hop(token_in, intermediary, token_out, fee_tier))
@@ -88,6 +87,7 @@ pub fn build_quote_exact_params(
             }
             result.push((token_pairs.clone(), quote_exact_params));
         });
+        results.push(result);
     });
-    result
+    results
 }
