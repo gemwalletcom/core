@@ -95,12 +95,12 @@ mod tests {
         let token_in = EthereumAddress::parse("0x6fd9d7AD17242c41f7131d257212c54A0e816691").unwrap(); // UNI
         let token_out = EthereumAddress::parse("0x350a791Bfc2C21F9Ed5d10980Dad2e2638ffa7f6").unwrap(); // LINK
         let fee_tiers = vec![FeeTier::ThreeThousand, FeeTier::FiveHundred, FeeTier::Hundred];
-        let base_pair = get_base_pair(&EVMChain::Optimism).unwrap();
+        let base_pair = get_base_pair(&EVMChain::Optimism, false).unwrap();
 
         let v4_quoter = "0x1f3131a13296fb91c90870043742c3cdbff1a8d7";
         let amount_in = 10000000000000000_u128;
 
-        let quote_params = build_quote_exact_params(amount_in, &token_in, &token_out, &fee_tiers, &base_pair.stables);
+        let quote_params = build_quote_exact_params(amount_in, &token_in, &token_out, &fee_tiers, &base_pair.to_array());
         let rpc_calls = build_quote_exact_requests(v4_quoter, &quote_params);
 
         assert_eq!(rpc_calls.len(), 2); // 2 intermediary tokens

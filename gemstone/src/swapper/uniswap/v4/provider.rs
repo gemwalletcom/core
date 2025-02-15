@@ -1,7 +1,10 @@
 use crate::{
     network::{batch_jsonrpc_call, AlienProvider, JsonRpcResult},
     swapper::{
-        uniswap::{fee_token::get_fee_token, swap_route::build_swap_route},
+        uniswap::{
+            fee_token::get_fee_token,
+            swap_route::{build_swap_route, get_intermediaries},
+        },
         weth_address, FetchQuoteData, GemSwapProvider, SwapChainAsset, SwapProvider, SwapProviderData, SwapQuote, SwapQuoteData, SwapQuoteRequest,
         SwapperError,
     },
@@ -9,7 +12,12 @@ use crate::{
 use gem_evm::{
     address::EthereumAddress,
     jsonrpc::EthereumRpc,
-    uniswap::{deployment, path::get_base_pair, FeeTier},
+    uniswap::{
+        contracts::v4::IV4Quoter::QuoteExactParams,
+        deployment,
+        path::{get_base_pair, TokenPair},
+        FeeTier,
+    },
 };
 use primitives::{AssetId, Chain, EVMChain};
 
@@ -39,10 +47,8 @@ impl UniswapV4 {
     }
 
     fn is_base_pair(&self, token_in: &EthereumAddress, token_out: &EthereumAddress, evm_chain: &EVMChain) -> bool {
-        let base_pair = get_base_pair(evm_chain).unwrap();
-        let mut set = base_pair.to_set();
-        set.insert(EthereumAddress::zero());
-        set.contains(token_in) && set.contains(token_out)
+        let base_set = get_base_pair(evm_chain, false).unwrap().to_set();
+        base_set.contains(token_in) && base_set.contains(token_out)
     }
 
     fn parse_asset_address(asset: &AssetId, evm_chain: EVMChain) -> Result<EthereumAddress, SwapperError> {
@@ -78,7 +84,7 @@ impl GemSwapProvider for UniswapV4 {
         _ = evm_chain.weth_contract().ok_or(SwapperError::NotSupportedChain)?;
 
         let fee_tiers = self.get_tiers();
-        let base_pair = get_base_pair(&evm_chain).ok_or(SwapperError::ComputeQuoteError {
+        let base_pair = get_base_pair(&evm_chain, false).ok_or(SwapperError::ComputeQuoteError {
             msg: "base pair not found".into(),
         })?;
         let fee_preference = get_fee_token(&request.mode, Some(&base_pair), &token_in, &token_out);
@@ -103,14 +109,18 @@ impl GemSwapProvider for UniswapV4 {
         let batch_call = batch_jsonrpc_call(calls, provider.clone(), &request.from_asset.chain);
         let mut requests = vec![batch_call];
 
+        let quote_exact_params: Vec<Vec<(Vec<TokenPair>, QuoteExactParams)>>;
         if !self.is_base_pair(&token_in, &token_out, &evm_chain) {
-            let quote_exact_params = build_quote_exact_params(quote_amount_in, &token_in, &token_out, &fee_tiers, &base_pair.stables);
+            let intermediaries = get_intermediaries(&token_in, &token_out, &base_pair);
+            quote_exact_params = build_quote_exact_params(quote_amount_in, &token_in, &token_out, &fee_tiers, &intermediaries);
             build_quote_exact_requests(deployment.quoter, &quote_exact_params)
                 .iter()
                 .for_each(|call_array| {
                     let batch_call = batch_jsonrpc_call(call_array.to_vec(), provider.clone(), &request.from_asset.chain);
                     requests.push(batch_call);
                 });
+        } else {
+            quote_exact_params = vec![];
         }
 
         // fire batch requests in parallel
@@ -156,7 +166,7 @@ impl GemSwapProvider for UniswapV4 {
             0 => None,
             // 2 hop route with intermediary token
             _ => {
-                let first_token_out = &pool_keys[batch_idx].0[0].token_out;
+                let first_token_out = &quote_exact_params[batch_idx][0].0[0].token_out;
                 Some(AssetId::from(request.to_asset.chain, Some(first_token_out.to_checksum())))
             }
         };
