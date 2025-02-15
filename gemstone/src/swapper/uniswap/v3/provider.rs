@@ -84,7 +84,7 @@ impl UniswapV3 {
         let deployment = self.provider.get_deployment_by_chain(chain).ok_or(SwapperError::NotSupportedChain)?;
 
         Ok(check_approval_permit2(
-            deployment.permit2.to_string(),
+            deployment.permit2,
             wallet_address.to_string(),
             token.to_string(),
             deployment.universal_router.to_string(),
