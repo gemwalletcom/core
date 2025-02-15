@@ -1,7 +1,7 @@
 use crate::swapper::GemSwapMode;
 use gem_evm::{address::EthereumAddress, uniswap::path::BasePair};
 
-#[allow(dead_code)]
+#[allow(unused)]
 pub struct FeePreference {
     pub fee_token: EthereumAddress,
     pub is_input_token: bool,
