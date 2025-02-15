@@ -103,7 +103,7 @@ mod tests {
         let quote_params = build_quote_exact_params(amount_in, &token_in, &token_out, &fee_tiers, &base_pair.to_array());
         let rpc_calls = build_quote_exact_requests(v4_quoter, &quote_params);
 
-        assert_eq!(rpc_calls.len(), 2); // 2 intermediary tokens
+        assert_eq!(rpc_calls.len(), 3); // 3 intermediaries (ETH, USDC, USDT)
 
         // 3 fee tiers
         rpc_calls.iter().for_each(|call_array| assert_eq!(call_array.len(), 3));

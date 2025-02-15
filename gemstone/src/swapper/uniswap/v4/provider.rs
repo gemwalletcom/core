@@ -1,8 +1,9 @@
 use crate::{
-    network::{batch_jsonrpc_call, AlienProvider, JsonRpcResult},
+    network::{batch_jsonrpc_call, AlienProvider, JsonRpcError},
     swapper::{
         uniswap::{
             fee_token::get_fee_token,
+            quote_result::get_best_quote,
             swap_route::{build_swap_route, get_intermediaries},
         },
         weth_address, FetchQuoteData, GemSwapProvider, SwapChainAsset, SwapProvider, SwapProviderData, SwapQuote, SwapQuoteData, SwapQuoteRequest,
@@ -21,7 +22,6 @@ use gem_evm::{
 };
 use primitives::{AssetId, Chain, EVMChain};
 
-use alloy_core::primitives::U256;
 use async_trait::async_trait;
 use std::{str::FromStr, sync::Arc, vec};
 
@@ -124,38 +124,18 @@ impl GemSwapProvider for UniswapV4 {
         }
 
         // fire batch requests in parallel
-        let batch_results: Vec<_> = futures::future::join_all(requests).await.into_iter().collect();
+        let batch_results: Vec<_> = futures::future::join_all(requests)
+            .await
+            .into_iter()
+            .map(|r| r.map_err(JsonRpcError::from))
+            .collect();
 
-        let mut max_amount_out: Option<U256> = None;
-        let mut batch_idx = 0;
-        let mut fee_tier_idx = 0;
-        let mut gas_estimate: Option<String> = None;
+        let quote_result = get_best_quote(&batch_results, super::quoter::decode_quoter_response)?;
 
-        for (batch, batch_result) in batch_results.iter().enumerate() {
-            match batch_result {
-                Ok(results) => {
-                    for (index, result) in results.iter().enumerate() {
-                        match result {
-                            JsonRpcResult::Value(value) => {
-                                let quoter_tuple = super::quoter::decode_quoter_response(value)?;
-                                if quoter_tuple.0 > max_amount_out.unwrap_or_default() {
-                                    max_amount_out = Some(quoter_tuple.0);
-                                    fee_tier_idx = index;
-                                    batch_idx = batch;
-                                    gas_estimate = Some(quoter_tuple.1.to_string());
-                                }
-                            }
-                            _ => continue, // skip no pool error etc.
-                        }
-                    }
-                }
-                _ => continue, // skip jsonrpc call error
-            }
-        }
-
-        if max_amount_out.is_none() {
-            return Err(SwapperError::NoQuoteAvailable);
-        }
+        let max_amount_out = quote_result.amount_out;
+        let fee_tier_idx = quote_result.fee_tier_idx;
+        let batch_idx = quote_result.batch_idx;
+        let gas_estimate = quote_result.gas_estimate;
 
         // construct routes
         let fee_tier: u32 = fee_tiers[fee_tier_idx % fee_tiers.len()].clone() as u32;
@@ -174,7 +154,7 @@ impl GemSwapProvider for UniswapV4 {
 
         Ok(SwapQuote {
             from_value: request.value.clone(),
-            to_value: max_amount_out.unwrap().to_string(), // safe to unwrap here because we will early return if no quote is available
+            to_value: max_amount_out.to_string(),
             data: SwapProviderData {
                 provider: self.provider(),
                 routes: routes.clone(),
@@ -183,6 +163,7 @@ impl GemSwapProvider for UniswapV4 {
             request: request.clone(),
         })
     }
+
     async fn fetch_quote_data(&self, _quote: &SwapQuote, _provider: Arc<dyn AlienProvider>, _data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError> {
         todo!()
     }
