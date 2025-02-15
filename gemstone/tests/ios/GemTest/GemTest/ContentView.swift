@@ -31,6 +31,9 @@ struct ContentView: View {
             Button("Fetch v4 ETH -> USDC") {
                 self.testQuote(quote: .eth2usdc_v4)
             }
+            Button("Fetch v4 UNI -> DAI") {
+                self.testQuote(quote: .uni2dai_v4)
+            }
             Button("Fetch SOL -> USDC") {
                 self.testQuote(quote: .sol2usdc)
             }

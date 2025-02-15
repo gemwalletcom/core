@@ -122,7 +122,7 @@ impl GemSwapProvider for UniswapV3 {
         _ = evm_chain.weth_contract().ok_or(SwapperError::NotSupportedChain)?;
 
         let fee_tiers = self.provider.get_tiers();
-        let base_pair = get_base_pair(&evm_chain).ok_or(SwapperError::ComputeQuoteError {
+        let base_pair = get_base_pair(&evm_chain, true).ok_or(SwapperError::ComputeQuoteError {
             msg: "base pair not found".into(),
         })?;
 
@@ -260,7 +260,7 @@ impl GemSwapProvider for UniswapV3 {
         let sig_deadline = now + DEFAULT_DEADLINE;
 
         let evm_chain = EVMChain::from_chain(quote.request.from_asset.chain).ok_or(SwapperError::NotSupportedChain)?;
-        let base_pair = get_base_pair(&evm_chain);
+        let base_pair = get_base_pair(&evm_chain, true);
         let fee_preference = get_fee_token(&request.mode, base_pair.as_ref(), &token_in, &token_out);
 
         let path: Bytes = build_paths_with_routes(&quote.data.routes)?;
