@@ -2,8 +2,8 @@ use api_connector::pusher::model::Notification;
 use chrono::{Duration, NaiveDateTime, Utc};
 use localizer::{LanguageLocalizer, LanguageNotification};
 use primitives::{
-    Asset, Device, NumberFormatter, Price, PriceAlertDirection, PriceAlertType, PriceAlerts, PushNotification, PushNotificationPriceAlert,
-    PushNotificationTypes, DEFAULT_FIAT_CURRENCY,
+    Asset, Device, NumberFormatter, Price, PriceAlertDirection, PriceAlertType, PriceAlerts, PushNotification, PushNotificationAsset, PushNotificationTypes,
+    DEFAULT_FIAT_CURRENCY,
 };
 use std::collections::{HashMap, HashSet};
 use std::error::Error;
@@ -175,7 +175,7 @@ impl PriceAlertClient {
                     unimplemented!()
                 }
             };
-            let price_alert_data = PushNotificationPriceAlert {
+            let price_alert_data = PushNotificationAsset {
                 asset_id: price_alert.asset.id.to_string(),
             };
             let data = PushNotification {

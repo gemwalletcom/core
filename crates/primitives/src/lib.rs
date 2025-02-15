@@ -69,7 +69,7 @@ pub use self::address_formatter::AddressFormatter;
 pub mod utxo;
 pub use self::utxo::UTXO;
 pub mod push_notification;
-pub use self::push_notification::{PushNotification, PushNotificationPriceAlert, PushNotificationTransaction, PushNotificationTypes};
+pub use self::push_notification::{PushNotification, PushNotificationAsset, PushNotificationTransaction, PushNotificationTypes};
 pub mod security_scan;
 pub use self::security_scan::SecurityMetadata;
 pub use self::security_scan::SecurityResponse;
