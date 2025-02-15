@@ -217,6 +217,9 @@ impl GemSwapProvider for UniswapV3 {
     }
 
     async fn fetch_permit2_for_quote(&self, quote: &SwapQuote, provider: Arc<dyn AlienProvider>) -> Result<Option<Permit2ApprovalData>, SwapperError> {
+        if quote.request.from_asset.is_native() {
+            return Ok(None);
+        }
         let wallet_address: Address = quote.request.wallet_address.as_str().parse().map_err(SwapperError::from)?;
         let (_, token_in, _, amount_in) = Self::parse_request(&quote.request)?;
         self.check_permit2_approval(wallet_address, &token_in.to_checksum(), amount_in, &quote.request.from_asset.chain, provider)

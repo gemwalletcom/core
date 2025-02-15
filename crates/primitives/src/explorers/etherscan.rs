@@ -124,7 +124,7 @@ impl EtherScan {
             },
             EVMChain::Berachain => Self {
                 meta: Metadata {
-                    name: "Berachain",
+                    name: "Berascan",
                     base_url: "https://berascan.com",
                 },
             },
