@@ -19,7 +19,7 @@ use std::{str::FromStr, sync::Arc, vec};
 
 use super::{
     path::{build_pool_keys, build_quote_exact_params},
-    quoter::{build_quote_exact_request, build_quote_exact_single_request},
+    quoter::{build_quote_exact_requests, build_quote_exact_single_request},
 };
 
 #[derive(Debug, Default)]
@@ -105,13 +105,12 @@ impl GemSwapProvider for UniswapV4 {
 
         if !self.is_base_pair(&token_in, &token_out, &evm_chain) {
             let quote_exact_params = build_quote_exact_params(quote_amount_in, &token_in, &token_out, &fee_tiers, &base_pair.stables);
-            let calls: Vec<EthereumRpc> = quote_exact_params
+            build_quote_exact_requests(deployment.quoter, &quote_exact_params)
                 .iter()
-                .map(|path_key| build_quote_exact_request(deployment.quoter, &path_key.1))
-                .collect();
-
-            let batch_call = batch_jsonrpc_call(calls, provider.clone(), &request.from_asset.chain);
-            requests.push(batch_call);
+                .for_each(|call_array| {
+                    let batch_call = batch_jsonrpc_call(call_array.to_vec(), provider.clone(), &request.from_asset.chain);
+                    requests.push(batch_call);
+                });
         }
 
         // fire batch requests in parallel
