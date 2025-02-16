@@ -77,7 +77,7 @@ struct XRPTokenId {
 
 #[typeshare(swift = "Sendable")]
 struct XRPAccountLinesResult {
-    lines: Vec<XRPAccountLine>,
+    lines: Option<Vec<XRPAccountLine>>,
 }
 
 #[typeshare(swift = "Sendable")]
