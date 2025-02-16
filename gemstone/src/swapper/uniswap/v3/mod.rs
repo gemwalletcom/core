@@ -16,5 +16,4 @@ pub trait UniversalRouterProvider: Send + Sync + Debug {
     fn get_deployment_by_chain(&self, chain: &Chain) -> Option<V3Deployment>;
 }
 
-static DEFAULT_DEADLINE: u64 = 3600;
 const DEFAULT_SWAP_GAS_LIMIT: u64 = 500_000; // gwei

@@ -102,6 +102,7 @@ impl GemSwapper {
             rpc_provider,
             swappers: vec![
                 Box::new(uniswap::universal_router::new_uniswap_v3()),
+                Box::new(uniswap::universal_router::new_uniswap_v4()),
                 Box::new(uniswap::universal_router::new_pancakeswap()),
                 Box::new(thorchain::ThorChain::default()),
                 Box::new(jupiter::Jupiter::default()),

@@ -42,6 +42,15 @@ impl Display for JsonRpcError {
     }
 }
 
+impl From<AlienError> for JsonRpcError {
+    fn from(err: AlienError) -> Self {
+        Self {
+            code: -1,
+            message: err.to_string(),
+        }
+    }
+}
+
 impl From<JsonRpcError> for AlienError {
     fn from(err: JsonRpcError) -> Self {
         Self::ResponseError { msg: err.message }
