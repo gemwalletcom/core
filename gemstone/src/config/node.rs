@@ -153,5 +153,6 @@ pub fn get_nodes_for_chain(chain: Chain) -> Vec<Node> {
             Node::new("https://rpc-gel.inkonchain.com", NodePriority::High),
         ],
         Chain::Unichain => vec![Node::new("https://mainnet.unichain.org", NodePriority::High)],
+        Chain::Hyperliquid => vec![Node::new("https://rpc.hyperliquid.xyz/evm", NodePriority::High)],
     }
 }

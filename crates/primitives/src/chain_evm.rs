@@ -32,6 +32,7 @@ pub enum EVMChain {
     Berachain,
     Ink,
     Unichain,
+    Hyperliquid,
 }
 
 impl EVMChain {
@@ -41,9 +42,9 @@ impl EVMChain {
 
     pub fn min_priority_fee(&self) -> u64 {
         match self {
-            Self::Ethereum => 1_000_000_000,                                     // https://etherscan.io/gastracker
-            Self::SmartChain => 1_000_000_000,                                   // https://bscscan.com/gastracker
-            Self::Polygon => 30_000_000_000,                                     // https://polygonscan.com/gastracker
+            Self::Ethereum => 1_000_000_000,                                                      // https://etherscan.io/gastracker
+            Self::SmartChain => 1_000_000_000,                                                    // https://bscscan.com/gastracker
+            Self::Polygon => 30_000_000_000,                                                      // https://polygonscan.com/gastracker
             Self::Arbitrum => 10_000_000, // https://arbiscan.io/address/0x000000000000000000000000000000000000006C#readContract getMinimumGasPrice
             Self::Optimism => 10_000_000, // https://optimistic.etherscan.io/chart/gasprice
             Self::Base => 100_000_000,    // https://basescan.org/chart/gasprice
@@ -56,7 +57,8 @@ impl EVMChain {
             Self::Linea => 50_000_000,    // https://lineascan.build/gastracker
             Self::Mantle | Self::Celo | Self::Manta => 10_000_000,
             Self::Sonic => 10_000_000,
-            Self::Berachain => 1_000_000_000, // 1 Gwei
+            Self::Berachain => 1_000_000_000,   // 1 Gwei
+            Self::Hyperliquid => 1_000_000_000, // 1 Gwei
         }
     }
 
@@ -77,7 +79,8 @@ impl EVMChain {
             | Self::Celo
             | Self::Sonic
             | Self::Abstract
-            | Self::Berachain => false,
+            | Self::Berachain
+            | Self::Hyperliquid => false,
             Self::Optimism | Self::Base | Self::OpBNB | Self::World | Self::Ink | Self::Unichain => true,
         }
     }
@@ -98,6 +101,7 @@ impl EVMChain {
             Self::Sonic => Some("0x039e2fB66102314Ce7b64Ce5Ce3E5183bc94aD38"), // Wrapped Sonic (wS)
             Self::Abstract => Some("0x3439153EB7AF838Ad19d56E1571FBD09333C2809"),
             Self::Berachain => Some("0x6969696969696969696969696969696969696969"), // WBERA
+            Self::Hyperliquid => Some("0x5555555555555555555555555555555555555555"),
             Self::Manta | Self::Linea | Self::Mantle => None,
         }
     }

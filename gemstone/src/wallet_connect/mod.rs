@@ -25,7 +25,9 @@ pub fn get_namespace(chain: Chain) -> Option<String> {
         | Chain::Sonic
         | Chain::Abstract
         | Chain::Berachain
-        | Chain::Ink | Chain::Unichain => Some(WalletConnectCAIP2::Eip155.as_ref().to_string()),
+        | Chain::Ink
+        | Chain::Unichain
+        | Chain::Hyperliquid => Some(WalletConnectCAIP2::Eip155.as_ref().to_string()),
         Chain::Solana => Some(WalletConnectCAIP2::Solana.as_ref().to_string()),
         Chain::Cosmos | Chain::Osmosis | Chain::Celestia | Chain::Injective | Chain::Noble | Chain::Sei => {
             Some(format!("{}:{}", WalletConnectCAIP2::Cosmos.as_ref(), chain.network_id()))
@@ -74,7 +76,9 @@ pub fn get_reference(chain: Chain) -> Option<String> {
         | Chain::Sonic
         | Chain::Abstract
         | Chain::Berachain
-        | Chain::Ink | Chain::Unichain => Some(chain.network_id().to_string()),
+        | Chain::Ink
+        | Chain::Unichain
+        | Chain::Hyperliquid => Some(chain.network_id().to_string()),
         Chain::Solana => Some("4sGjMW1sUnHzSxGspuhpqLDx6wiyjNtZ".to_string()),
         Chain::Cosmos | Chain::Osmosis | Chain::Celestia | Chain::Noble | Chain::Sei | Chain::Injective | Chain::Thorchain => {
             get_namespace(chain).map(|namespace| format!("{}:{}", namespace, chain.network_id()))
