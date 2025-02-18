@@ -53,7 +53,7 @@ pub fn get_block_explorers(chain: Chain) -> Vec<Box<dyn BlockExplorer>> {
         Chain::Polygon => vec![EtherScan::new(EVMChain::Polygon), Blockchair::new_polygon(), Blocksec::new_polygon()],
         Chain::Arbitrum => vec![EtherScan::new(EVMChain::Arbitrum), Blockchair::new_arbitrum(), Blocksec::new_arbitrum()],
         Chain::Optimism => vec![EtherScan::new(EVMChain::Optimism), Blockchair::new_optimism(), Blocksec::new_optimism()],
-        Chain::Base => vec![EtherScan::new(EVMChain::Base), Blockchair::new_base(), Blocksec::new_ethereum()],
+        Chain::Base => vec![EtherScan::new(EVMChain::Base), Blockchair::new_base(), Blocksec::new_base()],
         Chain::AvalancheC => vec![EtherScan::new(EVMChain::AvalancheC), Blockchair::new_avalanche()],
         Chain::OpBNB => vec![EtherScan::new(EVMChain::OpBNB), Blockchair::new_opbnb()],
         Chain::Fantom => vec![EtherScan::new(EVMChain::Fantom), Blockchair::new_fantom()],
