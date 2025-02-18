@@ -5,7 +5,7 @@ mod tests {
     use gemstone::{
         config::swap_config::{get_swap_config, SwapReferralFee, SwapReferralFees},
         network::{provider::AlienProvider, target::*, *},
-        swapper::{across::Across, cetus::Cetus, models::*, orca::Orca},
+        swapper::{across::Across, cetus::Cetus, models::*, orca::Orca, GemSwapper},
     };
     use primitives::{AssetId, Chain};
     use reqwest::Client;
