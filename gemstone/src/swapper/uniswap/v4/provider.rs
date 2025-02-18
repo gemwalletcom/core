@@ -18,6 +18,7 @@ use gem_evm::{
     address::EthereumAddress,
     jsonrpc::EthereumRpc,
     uniswap::{
+        command::encode_commands,
         contracts::v4::IV4Quoter::QuoteExactParams,
         deployment::v4::get_uniswap_deployment_by_chain,
         path::{get_base_pair, TokenPair},
@@ -30,7 +31,7 @@ use async_trait::async_trait;
 use std::{str::FromStr, sync::Arc, vec};
 
 use super::{
-    commands::{build_commands, encode_commands},
+    commands::build_commands,
     path::{build_pool_keys, build_quote_exact_params},
     quoter::{build_quote_exact_requests, build_quote_exact_single_request},
     DEFAULT_SWAP_GAS_LIMIT,
@@ -197,7 +198,7 @@ impl GemSwapProvider for UniswapV4 {
         let request = &quote.request;
         let (_, token_in, token_out, amount_in) = Self::parse_request(request)?;
         let deployment = get_uniswap_deployment_by_chain(&request.from_asset.chain).ok_or(SwapperError::NotSupportedChain)?;
-        let to_amount = U256::from_str(&quote.to_value).map_err(|_| SwapperError::InvalidAmount)?;
+        let to_amount = u128::from_str(&quote.to_value).map_err(|_| SwapperError::InvalidAmount)?;
 
         let permit = data.permit2_data().map(|data| data.into());
 
@@ -230,8 +231,9 @@ impl GemSwapProvider for UniswapV4 {
             request,
             &token_in,
             &token_out,
-            U256::from(amount_in),
+            amount_in,
             to_amount,
+            &quote.data.routes,
             permit,
             fee_preference.is_input_token,
         )?;

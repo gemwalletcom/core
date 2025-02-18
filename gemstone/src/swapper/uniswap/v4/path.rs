@@ -9,6 +9,8 @@ use gem_evm::{
     },
 };
 
+use crate::swapper::{SwapRoute, SwapperError};
+
 // return (currency0, currency1)
 fn sort_addresses(token_in: &EthereumAddress, token_out: &EthereumAddress) -> (Address, Address) {
     if token_in.bytes < token_out.bytes {
@@ -18,21 +20,28 @@ fn sort_addresses(token_in: &EthereumAddress, token_out: &EthereumAddress) -> (A
     }
 }
 
-pub fn build_pool_keys(token_in: &EthereumAddress, token_out: &EthereumAddress, fee_tiers: &[FeeTier]) -> Vec<(Vec<TokenPair>, PoolKey)> {
+pub fn build_pool_key(token_in: &EthereumAddress, token_out: &EthereumAddress, fee_tier: &FeeTier) -> (PoolKey, bool) {
     let (currency0, currency1) = sort_addresses(token_in, token_out);
+    let zero_for_one = currency0 == Address::from_slice(&token_in.bytes);
+    let fee = fee_tier.as_u24();
+    let tick_spacing = fee_tier.default_tick_spacing();
+    (
+        PoolKey {
+            currency0,
+            currency1,
+            fee,
+            tickSpacing: tick_spacing,
+            hooks: Address::ZERO,
+        },
+        zero_for_one,
+    )
+}
 
+pub fn build_pool_keys(token_in: &EthereumAddress, token_out: &EthereumAddress, fee_tiers: &[FeeTier]) -> Vec<(Vec<TokenPair>, PoolKey)> {
     fee_tiers
         .iter()
         .map(|fee_tier| {
-            let fee = fee_tier.as_u24();
-            let tick_spacing = fee_tier.default_tick_spacing();
-            let pool_key = PoolKey {
-                currency0,
-                currency1,
-                fee,
-                tickSpacing: tick_spacing,
-                hooks: Address::ZERO,
-            };
+            let (pool_key, _) = build_pool_key(token_in, token_out, fee_tier);
             (
                 vec![TokenPair {
                     token_in: token_in.clone(),
@@ -80,4 +89,25 @@ pub fn build_quote_exact_params(
                 .collect()
         })
         .collect()
+}
+
+impl TryFrom<&SwapRoute> for PathKey {
+    type Error = SwapperError;
+
+    fn try_from(value: &SwapRoute) -> Result<Self, Self::Error> {
+        let token_id = value.output.token_id.as_ref().ok_or(SwapperError::InvalidAddress {
+            address: value.output.to_string(),
+        })?;
+        let currency = token_id
+            .parse::<Address>()
+            .map_err(|_| SwapperError::InvalidAddress { address: token_id.clone() })?;
+        let fee_tier = FeeTier::try_from(value.route_data.as_str()).map_err(|_| SwapperError::InvalidRoute)?;
+        Ok(PathKey {
+            intermediateCurrency: currency,
+            fee: fee_tier.as_u24(),
+            tickSpacing: fee_tier.default_tick_spacing(),
+            hooks: Address::ZERO,
+            hookData: Bytes::new(),
+        })
+    }
 }
