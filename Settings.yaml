@@ -161,7 +161,7 @@ chains:
     url: https://unichain-mainnet-rpc.publicnode.com
   hyperliquid:
     url: https://rpc.hyperliquid.xyz/evm
-  
+
 swap:
   jupiter:
     url: "https://quote-api.jup.ag"
