@@ -3617,7 +3617,7 @@ dependencies = [
 
 [[package]]
 name = "gemstone"
-version = "0.1.1"
+version = "0.30.4"
 dependencies = [
  "alloy-core",
  "alloy-primitives",
