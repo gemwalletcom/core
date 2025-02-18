@@ -9,7 +9,7 @@ impl OkxExplorer {
     pub fn new_ink() -> Box<Self> {
         Box::new(Self {
             meta: Metadata {
-                name: "Ink Mainnet",
+                name: "OKX Explorer",
                 base_url: "https://www.okx.com/web3/explorer",
             },
             chain_path: "inkchain",
