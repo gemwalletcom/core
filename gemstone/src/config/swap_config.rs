@@ -18,6 +18,7 @@ pub struct SwapReferralFees {
     pub solana: SwapReferralFee,
     pub solana_jupiter: SwapReferralFee,
     pub thorchain: SwapReferralFee,
+    pub sui: SwapReferralFee,
 }
 
 #[derive(uniffi::Record, Default, Debug, Clone, PartialEq)]
@@ -34,6 +35,7 @@ impl SwapReferralFees {
             solana: SwapReferralFee::default(),
             solana_jupiter: SwapReferralFee::default(),
             thorchain: SwapReferralFee::default(),
+            sui: SwapReferralFee::default(),
         }
     }
 }
@@ -64,6 +66,10 @@ pub fn get_swap_config() -> SwapConfig {
                 bps: 50,
             },
             thorchain: SwapReferralFee { address: "g1".into(), bps: 50 },
+            sui: SwapReferralFee {
+                address: "0xa9bd0493f9bd1f792a4aedc1f99d54535a75a46c38fd56a8f2c6b7c8d75817a1".into(),
+                bps: 50,
+            },
         },
     }
 }

@@ -12,6 +12,7 @@ mod weth_address;
 
 pub mod across;
 pub mod asset;
+pub mod cetus;
 pub mod jupiter;
 pub mod models;
 pub mod orca;
@@ -107,6 +108,7 @@ impl GemSwapper {
                 Box::new(jupiter::Jupiter::default()),
                 Box::new(pancakeswap_aptos::PancakeSwapAptos::default()),
                 Box::new(across::Across::default()),
+                Box::new(cetus::Cetus::default()),
             ],
         }
     }
