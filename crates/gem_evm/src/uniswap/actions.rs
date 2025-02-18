@@ -5,10 +5,11 @@ use super::contracts::v4::{Currency, IV4Router};
 // https://github.com/Uniswap/v4-periphery/blob/main/src/libraries/Actions.sol
 #[allow(non_camel_case_types)]
 pub enum V4Action {
-    SWAP_EXACT_IN(IV4Router::ExactInputParams),
     SWAP_EXACT_IN_SINGLE(IV4Router::ExactInputSingleParams),
-    SWAP_EXACT_OUT(IV4Router::ExactOutputParams),
+    SWAP_EXACT_IN(IV4Router::ExactInputParams),
     SWAP_EXACT_OUT_SINGLE(IV4Router::ExactOutputSingleParams),
+    SWAP_EXACT_OUT(IV4Router::ExactOutputParams),
+
     SETTLE { currency: Currency, amount: U256, payer_is_user: bool },
     SETTLE_ALL { currency: Currency, max_amount: U256 },
     TAKE { currency: Currency, recipient: Address, amount: U256 },
@@ -19,10 +20,11 @@ pub enum V4Action {
 impl V4Action {
     pub fn byte(&self) -> u8 {
         match self {
-            Self::SWAP_EXACT_IN(_) => 0x00,
-            Self::SWAP_EXACT_IN_SINGLE(_) => 0x01,
-            Self::SWAP_EXACT_OUT(_) => 0x02,
-            Self::SWAP_EXACT_OUT_SINGLE(_) => 0x03,
+            Self::SWAP_EXACT_IN_SINGLE(_) => 0x06,
+            Self::SWAP_EXACT_IN(_) => 0x07,
+            Self::SWAP_EXACT_OUT_SINGLE(_) => 0x08,
+            Self::SWAP_EXACT_OUT(_) => 0x09,
+
             Self::SETTLE {
                 currency: _,
                 amount: _,
