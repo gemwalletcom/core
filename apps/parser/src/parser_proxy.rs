@@ -1,4 +1,4 @@
-use rand::{thread_rng, Rng};
+use rand::{rng, Rng};
 use std::{
     error::Error,
     sync::{Arc, Mutex},
@@ -39,7 +39,7 @@ impl ParserProxy {
             return error;
         }
         let current_index = *self.provider_current_index.lock().unwrap();
-        let new_index = thread_rng().gen_range(0..self.providers.len());
+        let new_index = rng().random_range(0..self.providers.len());
         //TODO: Ensure it's not the same as current index
 
         println!(

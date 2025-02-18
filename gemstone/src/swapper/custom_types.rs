@@ -1,29 +1,14 @@
 use primitives::{AssetId, Chain};
 use std::str::FromStr;
 
-uniffi::custom_type!(Chain, String);
-uniffi::custom_type!(AssetId, String);
+uniffi::custom_type!(Chain, String, {
+    remote,
+    lower: |s| s.to_string(),
+    try_lift: |s| Chain::from_str(&s).map_err(|_| anyhow::anyhow!("Invalid Chain")),
+});
 
-impl crate::UniffiCustomTypeConverter for Chain {
-    type Builtin = String;
-
-    fn into_custom(chain: Self::Builtin) -> uniffi::Result<Self> {
-        Chain::from_str(&chain).map_err(anyhow::Error::msg)
-    }
-
-    fn from_custom(obj: Self) -> Self::Builtin {
-        obj.as_ref().to_string()
-    }
-}
-
-impl crate::UniffiCustomTypeConverter for AssetId {
-    type Builtin = String;
-
-    fn into_custom(string: Self::Builtin) -> uniffi::Result<Self> {
-        AssetId::new(&string).ok_or(anyhow::anyhow!("invalid asset id"))
-    }
-
-    fn from_custom(obj: Self) -> Self::Builtin {
-        obj.to_string()
-    }
-}
+uniffi::custom_type!(AssetId, String, {
+    remote,
+    lower: |s| s.to_string(),
+    try_lift: |s| AssetId::new(&s).ok_or(anyhow::anyhow!("Invalid AssetId")),
+});
