@@ -1,12 +1,11 @@
 #[cfg(test)]
 mod tests {
-    use across::Across;
     use async_trait::async_trait;
     use futures::TryFutureExt;
     use gemstone::{
-        config::swap_config::{SwapReferralFee, SwapReferralFees},
+        config::swap_config::{get_swap_config, SwapReferralFee, SwapReferralFees},
         network::{provider::AlienProvider, target::*, *},
-        swapper::{orca::Orca, uniswap::v4::UniswapV4, *},
+        swapper::{across::Across, cetus::Cetus, models::*, orca::Orca, uniswap::v4::UniswapV4, *},
     };
     use primitives::{AssetId, Chain};
     use reqwest::Client;
@@ -42,6 +41,7 @@ mod tests {
                 (Chain::Optimism, "https://optimism.llamarpc.com".into()),
                 (Chain::Arbitrum, "https://arbitrum.llamarpc.com".into()),
                 (Chain::Solana, "https://solana-rpc.publicnode.com".into()),
+                (Chain::Sui, "https://fullnode.mainnet.sui.io".into()),
                 (Chain::Abstract, "https://api.mainnet.abs.xyz".into()),
                 (Chain::Unichain, "https://mainnet.unichain.org".into()),
                 (Chain::SmartChain, "https://binance.llamarpc.com".into()),
@@ -121,7 +121,7 @@ mod tests {
     #[tokio::test]
     async fn test_orca_get_quote_by_input() -> Result<(), SwapperError> {
         let node_config = HashMap::from([(Chain::Solana, "https://solana-rpc.publicnode.com".into())]);
-        let swap_provider: Box<dyn GemSwapProvider> = Box::new(Orca::default());
+        let swap_provider = Orca::boxed();
         let network_provider = Arc::new(NativeProvider::new(node_config));
 
         let request = SwapQuoteRequest {
@@ -275,6 +275,36 @@ mod tests {
             .fetch_quote_data(&quote, network_provider.clone(), FetchQuoteData::EstimateGas)
             .await?;
         println!("<== quote_data: {:?}", quote_data);
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_cetus_swap() -> Result<(), Box<dyn std::error::Error>> {
+        let swap_provider = Cetus::boxed();
+        let network_provider = Arc::new(NativeProvider::default());
+        let config = get_swap_config();
+        let options = GemSwapOptions {
+            slippage: 50.into(),
+            fee: Some(config.referral_fee),
+            preferred_providers: vec![],
+        };
+
+        let request = SwapQuoteRequest {
+            from_asset: AssetId::from_chain(Chain::Sui),
+            to_asset: AssetId {
+                chain: Chain::Sui,
+                token_id: Some("0xdba34672e30cb065b1f93e3ab55318768fd6fef66c15942c9f7cb846e2f900e7::usdc::USDC".into()),
+            },
+            wallet_address: "0x07754eecfffb541c38ff90c01d9e7881e1c6863374febb482ad7bf6dd129653c".into(),
+            destination_address: "0x07754eecfffb541c38ff90c01d9e7881e1c6863374febb482ad7bf6dd129653c".into(),
+            value: "100000000000".into(), // 100 SUI
+            mode: GemSwapMode::ExactIn,
+            options,
+        };
+
+        let quote = swap_provider.fetch_quote(&request, network_provider.clone()).await?;
+        println!("{:?}", quote);
 
         Ok(())
     }

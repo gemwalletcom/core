@@ -13,6 +13,7 @@ mod weth_address;
 
 pub mod across;
 pub mod asset;
+pub mod cetus;
 pub mod error;
 pub mod jupiter;
 pub mod models;
@@ -123,6 +124,7 @@ impl GemSwapper {
                 Box::new(uniswap::universal_router::new_oku()),
                 Box::new(uniswap::universal_router::new_wagmi()),
                 Box::new(pancakeswap_aptos::PancakeSwapAptos::default()),
+                Box::new(cetus::Cetus::default()),
             ],
         }
     }
