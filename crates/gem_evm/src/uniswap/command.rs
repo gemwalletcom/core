@@ -1,4 +1,7 @@
-use super::{actions::V4Action, contracts::IUniversalRouter};
+use super::{
+    actions::{self, V4Action},
+    contracts::IUniversalRouter,
+};
 use crate::permit2::IAllowanceTransfer;
 use alloy_core::primitives::{Address, Bytes, U256};
 use alloy_sol_types::{sol_data, SolCall, SolType};
@@ -43,10 +46,8 @@ impl UniversalRouterCommand {
             Self::WRAP_ETH(_) => 0x0b,
             Self::UNWRAP_WETH(_) => 0x0c,
             Self::PERMIT2_TRANSFER_FROM_BATCH => 0x0d,
+
             Self::V4_SWAP { actions: _ } => 0x10,
-            // Self::V3_POSITION_MANAGER_PERMIT => 0x11,
-            // Self::V3_POSITION_MANAGER_CALL => 0x12,
-            // Self::V4_POSITION_MANAGER_CALL => 0x14,
         }
     }
 
@@ -61,9 +62,8 @@ impl UniversalRouterCommand {
             Self::UNWRAP_WETH(payload) => payload.abi_encode(),
             Self::PERMIT2_PERMIT(payload) => payload.abi_encode(),
             Self::PERMIT2_TRANSFER_FROM(payload) => payload.abi_encode(),
-            _ => {
-                todo!()
-            }
+            Self::V4_SWAP { actions } => actions::encode_actions(actions),
+            Self::PERMIT2_PERMIT_BATCH | Self::PERMIT2_TRANSFER_FROM_BATCH | Self::V2_SWAP_EXACT_IN | Self::V2_SWAP_EXACT_OUT => todo!(),
         }
     }
 }
