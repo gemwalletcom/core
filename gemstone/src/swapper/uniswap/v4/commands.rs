@@ -1,23 +1,16 @@
 use std::str::FromStr;
 
 use crate::swapper::{slippage::apply_slippage_in_bp, GemSwapMode, SwapQuoteRequest, SwapRoute, SwapperError};
-use alloy_primitives::{Address, Bytes, U256};
+use alloy_primitives::{Address, U256};
 use gem_evm::{
     address::EthereumAddress,
     uniswap::{
-        actions::V4Action::{self, SWAP_EXACT_IN, SWAP_EXACT_IN_SINGLE},
-        command::{PayPortion, Permit2Permit, Sweep, Transfer, UniversalRouterCommand},
-        contracts::v4::{
-            IV4Router::{ExactInputParams, ExactInputSingleParams},
-            PathKey,
-        },
-        FeeTier,
+        actions::V4Action::{SETTLE, SWAP_EXACT_IN, TAKE},
+        command::{PayPortion, Permit2Permit, Sweep, Transfer, UniversalRouterCommand, ADDRESS_THIS},
+        contracts::v4::{IV4Router::ExactInputParams, PathKey},
     },
 };
 
-use super::path::build_pool_key;
-
-#[allow(unused)]
 pub fn build_commands(
     request: &SwapQuoteRequest,
     token_in: &EthereumAddress,
@@ -39,10 +32,6 @@ pub fn build_commands(
 
     let input_is_native = request.from_asset.is_native();
     let mut commands: Vec<UniversalRouterCommand> = vec![];
-    let mut actions: Vec<V4Action> = vec![];
-
-    // V4_SWAP {actions}
-    // Dispatcher -> BaseActionsRouter::_executeActions -> PoolManager::_executeActionsWithoutUnlock -> V4Router::_handleAction
 
     match mode {
         GemSwapMode::ExactIn => {
@@ -52,8 +41,6 @@ pub fn build_commands(
                 commands.push(UniversalRouterCommand::PERMIT2_PERMIT(permit));
             }
 
-            // payer_is_user: is true when swapping tokens
-            let payer_is_user = input_is_native;
             if pay_fees {
                 if fee_token_is_input {
                     // insert TRANSFER fee first
@@ -91,7 +78,6 @@ pub fn build_commands(
                         bips: U256::from(fee_options.bps),
                     }));
 
-                    // MSG_SENDER should be the address of the caller
                     commands.push(UniversalRouterCommand::SWEEP(Sweep {
                         token: Address::from_slice(&token_out.bytes),
                         recipient,
@@ -120,30 +106,29 @@ fn build_v4_swap_command(
     if swap_routes.is_empty() {
         return Err(SwapperError::InvalidRoute);
     }
-
-    if swap_routes.len() == 1 {
-        // single hop
-        let fee_tier = FeeTier::try_from(swap_routes[0].route_data.as_str()).map_err(|_| SwapperError::InvalidRoute)?;
-        let (pool_key, zero_for_one) = build_pool_key(token_in, token_out, &fee_tier);
-        let action = SWAP_EXACT_IN_SINGLE(ExactInputSingleParams {
-            poolKey: pool_key,
-            zeroForOne: zero_for_one,
-            amountIn: amount_in,
-            amountOutMinimum: amount_out_min,
-            hookData: Bytes::new(),
-        });
-        return Ok(UniversalRouterCommand::V4_SWAP { actions: vec![action] });
-    }
-    // multi hops
-    let keys: Vec<PathKey> = swap_routes
+    // V4_SWAP {actions}
+    // Dispatcher -> BaseActionsRouter::_executeActions -> PoolManager::_executeActionsWithoutUnlock -> V4Router::_handleAction
+    let path: Vec<PathKey> = swap_routes
         .iter()
         .map(|route| PathKey::try_from(route).map_err(|_| SwapperError::InvalidRoute))
         .collect::<Result<Vec<PathKey>, SwapperError>>()?;
-    let action = SWAP_EXACT_IN(ExactInputParams {
-        currencyIn: Address::from_slice(&token_in.bytes),
-        path: keys,
-        amountIn: amount_in,
-        amountOutMinimum: amount_out_min,
-    });
-    Ok(UniversalRouterCommand::V4_SWAP { actions: vec![action] })
+    let actions = vec![
+        SWAP_EXACT_IN(ExactInputParams {
+            currencyIn: Address::from_slice(&token_in.bytes),
+            path,
+            amountIn: amount_in,
+            amountOutMinimum: amount_out_min,
+        }),
+        SETTLE {
+            currency: Address::from_slice(&token_in.bytes),
+            amount: U256::from(0),
+            payer_is_user: true,
+        },
+        TAKE {
+            currency: Address::from_slice(&token_out.bytes),
+            recipient: ADDRESS_THIS.parse().unwrap(),
+            amount: U256::from(0),
+        },
+    ];
+    Ok(UniversalRouterCommand::V4_SWAP { actions })
 }
