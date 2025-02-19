@@ -26,3 +26,23 @@ extension SwapQuote: @retroactive CustomStringConvertible {
         return String(data: bytes, encoding: .utf8)!
     }
 }
+
+extension SwapQuoteData: @retroactive CustomStringConvertible {
+    public var description: String {
+        var json: [String: Any] = [
+            "to": to,
+            "value": value,
+            "data": data,
+            "gasLimit": gasLimit ?? NSNull(),
+        ]
+        if let approvalData = approval {
+            json["approval"] = [
+                "token": approvalData.token,
+                "spender": approvalData.spender,
+                "value": approvalData.value,
+            ]
+        }
+        let bytes = try! JSONSerialization.data(withJSONObject: json, options: [.prettyPrinted, .sortedKeys])
+        return String(data: bytes, encoding: .utf8)!
+    }
+}

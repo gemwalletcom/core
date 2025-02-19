@@ -245,7 +245,7 @@ impl GemSwapProvider for UniswapV4 {
         Ok(SwapQuoteData {
             to: deployment.universal_router.into(),
             value,
-            data: hex::encode(encoded),
+            data: hex::encode_prefixed(encoded),
             approval,
             gas_limit,
         })
