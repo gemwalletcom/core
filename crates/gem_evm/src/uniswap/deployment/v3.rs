@@ -116,3 +116,15 @@ pub fn get_pancakeswap_router_deployment_by_chain(chain: &Chain) -> Option<V3Dep
         _ => None,
     }
 }
+
+pub fn get_oku_deployment_by_chain(chain: &Chain) -> Option<V3Deployment> {
+    // https://docs.oku.trade/home/extra-information/deployed-contracts
+    match chain {
+        Chain::Sonic => Some(V3Deployment {
+            quoter_v2: "0x5911cB3633e764939edc2d92b7e1ad375Bb57649",
+            universal_router: "0x738fD6d10bCc05c230388B4027CAd37f82fe2AF2",
+            permit2: "0xB952578f3520EE8Ea45b7914994dcf4702cEe578",
+        }),
+        _ => None,
+    }
+}

@@ -105,8 +105,9 @@ impl GemSwapper {
                 Box::new(uniswap::universal_router::new_pancakeswap()),
                 Box::new(thorchain::ThorChain::default()),
                 Box::new(jupiter::Jupiter::default()),
-                Box::new(pancakeswap_aptos::PancakeSwapAptos::default()),
                 Box::new(across::Across::default()),
+                Box::new(uniswap::universal_router::new_oku()),
+                Box::new(pancakeswap_aptos::PancakeSwapAptos::default()),
             ],
         }
     }
