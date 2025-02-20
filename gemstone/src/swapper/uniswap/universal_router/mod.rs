@@ -1,3 +1,4 @@
+mod oku;
 mod pancakeswap;
 mod uniswap_v3;
 
@@ -9,6 +10,10 @@ pub fn new_uniswap_v3() -> UniswapV3 {
 
 pub fn new_pancakeswap() -> UniswapV3 {
     UniswapV3::new(Box::new(pancakeswap::PancakeSwapUniversalRouter {}))
+}
+
+pub fn new_oku() -> UniswapV3 {
+    UniswapV3::new(Box::new(oku::OkuUniversalRouter {}))
 }
 
 pub fn new_uniswap_v4() -> UniswapV4 {
