@@ -73,7 +73,8 @@ pub fn get_base_pair(chain: &EVMChain) -> Option<BasePair> {
         EVMChain::ZkSync => "0xBBeB516fb02a01611cBBE0453Fe3c580D7281011",
         EVMChain::Blast => "0xf7bc58b8d8f97adc129cfc4c9f45ce3c0e1d2692",
         EVMChain::World => "0x03C7054BCB39f7b2e5B2c7AcB37583e32D70Cfa3",
-        EVMChain::Abstract => "", // None
+        EVMChain::Sonic => "0x0555E30da8f98308EdB960aa94C0Db47230d2B9c",
+        EVMChain::Abstract | EVMChain::Mantle | EVMChain::Gnosis | EVMChain::Manta => "", // None
         _ => panic!("unsupported chain"),
     };
 
@@ -91,6 +92,10 @@ pub fn get_base_pair(chain: &EVMChain) -> Option<BasePair> {
         EVMChain::World => "0x79A02482A880bCE3F13e09Da970dC34db4CD24d1",    // USDC.e
         EVMChain::Abstract => "0x84A71ccD554Cc1b02749b35d22F684CC8ec987e1", // USDC.e
         EVMChain::Unichain => "0x078d782b760474a361dda0af3839290b0ef57ad6",
+        EVMChain::Sonic => "0x29219dd400f2bf60e5a23d13be72b486d4038894", // USDC.e
+        EVMChain::Mantle => "0x09Bc4E0D864854c6aFB6eB9A9cdF58aC190D0dF9",
+        EVMChain::Gnosis => "0x2a22f9c3b484c3629090FeED35F17Ff8F88f76F0", // USDC.e
+        EVMChain::Manta => "0xb73603c5d87fa094b7314c74ace2e64d165016fb",
         _ => panic!("unsupported chain"),
     };
 
@@ -106,8 +111,11 @@ pub fn get_base_pair(chain: &EVMChain) -> Option<BasePair> {
         EVMChain::ZkSync => "0x493257fD37EDB34451f62EDf8D2a0C418852bA4C",
         EVMChain::Abstract => "0x0709F39376dEEe2A2dfC94A58EdEb2Eb9DF012bD",
         EVMChain::Unichain => "0x588ce4f028d8e7b53b687865d6a67b3a54c75518",
-        EVMChain::Blast => "", // None
-        EVMChain::World => "", // None
+        EVMChain::Sonic => "0x6047828dc181963ba44974801FF68e538dA5eaF9",
+        EVMChain::Mantle => "0x201EBa5CC46D216Ce6DC03F6a759e8E766e956aE",
+        EVMChain::Gnosis => "0x4ECaBa5870353805a9F068101A40E0f32ed605C6",
+        EVMChain::Manta => "0xf417f5a458ec102b90352f697d6e2ac3a3d2851f",
+        EVMChain::Blast | EVMChain::World => "", // None
         _ => panic!("unsupported chain"),
     };
 
