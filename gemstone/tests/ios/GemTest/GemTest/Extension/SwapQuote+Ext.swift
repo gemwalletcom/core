@@ -33,6 +33,7 @@ extension SwapQuoteData: @retroactive CustomStringConvertible {
             "to": to,
             "value": value,
             "data": data,
+            "approval": NSNull(),
             "gasLimit": gasLimit ?? NSNull(),
         ]
         if let approvalData = approval {

@@ -62,13 +62,15 @@ pub fn build_commands(
                         }));
                     };
                     // insert V4_SWAP with amount - fee
-                    let command = build_v4_swap_command(token_in, token_out, amount_in - fee, amount_out, swap_routes)?;
+                    // fee charged in token_in, so we need to use recipient as recipient
+                    let command = build_v4_swap_command(token_in, token_out, amount_in - fee, amount_out, swap_routes, &recipient)?;
                     commands.push(command);
                 } else {
                     // insert V4 SWAP
                     // if needs to pay fees, amount_out_min set to 0 and we will sweep the rest
+                    let address_this = ADDRESS_THIS.parse().unwrap();
                     let amount_out_min = if pay_fees { 0 } else { amount_out };
-                    let command = build_v4_swap_command(token_in, token_out, amount_in, amount_out_min, swap_routes)?;
+                    let command = build_v4_swap_command(token_in, token_out, amount_in, amount_out_min, swap_routes, &address_this)?;
                     commands.push(command);
 
                     // insert PAY_PORTION to fee_address
@@ -85,7 +87,7 @@ pub fn build_commands(
                     }));
                 }
             } else {
-                let command = build_v4_swap_command(token_in, token_out, amount_in, amount_out, swap_routes)?;
+                let command = build_v4_swap_command(token_in, token_out, amount_in, amount_out, swap_routes, &recipient)?;
                 commands.push(command);
             }
         }
@@ -102,6 +104,7 @@ fn build_v4_swap_command(
     amount_in: u128,
     amount_out_min: u128,
     swap_routes: &[SwapRoute],
+    recipient: &Address,
 ) -> Result<UniversalRouterCommand, SwapperError> {
     if swap_routes.is_empty() {
         return Err(SwapperError::InvalidRoute);
@@ -126,7 +129,7 @@ fn build_v4_swap_command(
         },
         TAKE {
             currency: Address::from_slice(&token_out.bytes),
-            recipient: ADDRESS_THIS.parse().unwrap(),
+            recipient: recipient.to_owned(),
             amount: U256::from(0),
         },
     ];
