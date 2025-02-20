@@ -119,7 +119,7 @@ pub fn get_base_pair(chain: &EVMChain, weth_as_native: bool) -> Option<BasePair>
         EVMChain::Blast => "0x4300000000000000000000000000000000000003",    // USDB
         EVMChain::World => "0x79A02482A880bCE3F13e09Da970dC34db4CD24d1",    // USDC.e
         EVMChain::Abstract => "0x84A71ccD554Cc1b02749b35d22F684CC8ec987e1", // USDC.e
-        EVMChain::Unichain => "0x078d782b760474a361dda0af3839290b0ef57ad6"
+        EVMChain::Unichain => "0x078d782b760474a361dda0af3839290b0ef57ad6",
         EVMChain::Sonic => "0x29219dd400f2bf60e5a23d13be72b486d4038894", // USDC.e
         EVMChain::Mantle => "0x09Bc4E0D864854c6aFB6eB9A9cdF58aC190D0dF9",
         EVMChain::Gnosis => "0x2a22f9c3b484c3629090FeED35F17Ff8F88f76F0", // USDC.e
