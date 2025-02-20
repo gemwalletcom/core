@@ -11,6 +11,7 @@ pub enum DocsUrl {
     TronMultiSignature,
     RootedDevice,
     PriceImpact,
+    TokenApproval,
 }
 const DOCS_URL: &str = "https://docs.gemwallet.com";
 
@@ -27,6 +28,7 @@ pub fn get_docs_url(item: DocsUrl) -> String {
         DocsUrl::TronMultiSignature => "/guides/trx-multisig-scam/",
         DocsUrl::RootedDevice => "/guides/secure-wallet/rooted-device/",
         DocsUrl::PriceImpact => "/faq/price-impact/",
+        DocsUrl::TokenApproval => "/faq/token-approval/",
     };
     format!("{}{}", DOCS_URL, path)
 }
