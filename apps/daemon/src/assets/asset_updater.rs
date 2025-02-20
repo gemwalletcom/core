@@ -1,8 +1,7 @@
 use chain_primitives::format_token_id;
 use coingecko::mapper::COINGECKO_CHAIN_MAP;
 use coingecko::{get_chain_for_coingecko_platform_id, CoinGeckoClient, CoinInfo};
-use primitives::asset_details::{ASSET_LINK_COINGECKO, ASSET_LINK_DISCORD, ASSET_LINK_GITHUB, ASSET_LINK_TELEGRAM, ASSET_LINK_WEBSITE, ASSET_LINK_X};
-use primitives::{Asset, AssetId, AssetLink, AssetProperties, AssetScore, AssetType};
+use primitives::{Asset, AssetId, AssetLink, AssetProperties, AssetScore, AssetType, LinkType};
 use std::collections::HashSet;
 use std::error::Error;
 use storage::DatabaseClient;
@@ -161,7 +160,7 @@ impl AssetUpdater {
         if let Some(value) = links.clone().twitter_screen_name {
             if !value.is_empty() {
                 results.push(AssetLink {
-                    name: ASSET_LINK_X.to_string(),
+                    name: LinkType::X.as_ref().to_string(),
                     url: format!("https://x.com/{}", value),
                 });
             }
@@ -179,7 +178,7 @@ impl AssetUpdater {
             let exclude_domains = ["https://t.me"];
             if !value.is_empty() && !exclude_domains.iter().any(|&domain| value.contains(domain)) {
                 results.push(AssetLink {
-                    name: ASSET_LINK_WEBSITE.to_string(),
+                    name: LinkType::Website.as_ref().to_string(),
                     url: value,
                 });
             }
@@ -188,14 +187,14 @@ impl AssetUpdater {
         if let Some(value) = links.clone().telegram_channel_identifier {
             if !value.is_empty() {
                 results.push(AssetLink {
-                    name: ASSET_LINK_TELEGRAM.to_string(),
+                    name: LinkType::Telegram.as_ref().to_string(),
                     url: format!("https://t.me/{}", value),
                 });
             }
         };
 
         results.push(AssetLink {
-            name: ASSET_LINK_COINGECKO.to_string(),
+            name: LinkType::Coingecko.as_ref().to_string(),
             url: format!("https://www.coingecko.com/coins/{}", coin_info.id.to_lowercase()),
         });
 
@@ -209,7 +208,7 @@ impl AssetUpdater {
             .cloned()
         {
             results.push(AssetLink {
-                name: ASSET_LINK_DISCORD.to_string(),
+                name: LinkType::Discord.as_ref().to_string(),
                 url: value,
             });
         };
@@ -227,7 +226,7 @@ impl AssetUpdater {
             .cloned()
         {
             results.push(AssetLink {
-                name: ASSET_LINK_GITHUB.to_string(),
+                name: LinkType::GitHub.as_ref().to_string(),
                 url: value,
             });
         };

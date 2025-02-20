@@ -19,6 +19,8 @@ pub enum LinkType {
     OpenSea,
     Instagram,
     MagicEden,
+    CoinMarketCap,
+    TikTok,
 }
 
 impl LinkType {

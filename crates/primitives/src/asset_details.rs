@@ -58,18 +58,6 @@ impl AssetProperties {
     }
 }
 
-pub const ASSET_LINK_X: &str = "x";
-pub const ASSET_LINK_FACEBOOK: &str = "facebook";
-pub const ASSET_LINK_WEBSITE: &str = "website";
-pub const ASSET_LINK_EXPLORER: &str = "explorer";
-pub const ASSET_LINK_TELEGRAM: &str = "telegram";
-pub const ASSET_LINK_GITHUB: &str = "github";
-pub const ASSET_LINK_YOUTUBE: &str = "youtube";
-pub const ASSET_LINK_REDDIT: &str = "reddit";
-pub const ASSET_LINK_COINGECKO: &str = "coingecko";
-pub const ASSET_LINK_COINMARKETCAP: &str = "coinmarketcap";
-pub const ASSET_LINK_DISCORD: &str = "discord";
-
 #[typeshare(swift = "Sendable, Equatable, Hashable")]
 #[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
 #[serde(rename_all = "camelCase")]

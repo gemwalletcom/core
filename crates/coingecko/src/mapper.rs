@@ -46,6 +46,7 @@ pub fn get_chain_for_coingecko_platform_id(id: &str) -> Option<Chain> {
         "unichain" => Some(Chain::Unichain),
         "xrp" => Some(Chain::Xrp),
         "hyperliquid" => Some(Chain::Hyperliquid),
+        "sonic" => Some(Chain::Sonic),
         _ => None,
     }
 }
@@ -80,7 +81,8 @@ pub fn get_coingecko_market_id_for_chain(chain: Chain) -> &'static str {
         Chain::AvalancheC => "avalanche-2",
         Chain::Sui => "sui",
         Chain::Xrp => "ripple",
-        Chain::Fantom | Chain::Sonic => "fantom",
+        Chain::Fantom => "fantom",
+        Chain::Sonic => "sonic-3",
         Chain::Gnosis => "xdai",
         Chain::Celestia => "celestia",
         Chain::Injective => "injective-protocol",
