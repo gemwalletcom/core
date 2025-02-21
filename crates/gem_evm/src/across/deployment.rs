@@ -62,7 +62,7 @@ impl AcrossDeployment {
             }),
             Chain::Ink => Some(Self {
                 chain_id,
-                spoke_pool: "0x3baD7AD0728f9917d1Bf08af5782dCbD516cDd96",
+                spoke_pool: "0xeF684C38F94F48775959ECf2012D7E864ffb9dd4",
             }),
             Chain::Unichain => Some(Self {
                 chain_id,
