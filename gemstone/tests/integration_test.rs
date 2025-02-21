@@ -44,6 +44,7 @@ mod tests {
                 (Chain::Solana, "https://solana-rpc.publicnode.com".into()),
                 (Chain::Abstract, "https://api.mainnet.abs.xyz".into()),
                 (Chain::Unichain, "https://mainnet.unichain.org".into()),
+                (Chain::SmartChain, "https://binance.llamarpc.com".into()),
             ]))
         }
     }

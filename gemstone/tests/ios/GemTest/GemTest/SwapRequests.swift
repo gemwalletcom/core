@@ -72,6 +72,16 @@ public extension SwapQuoteRequest {
         options: SWAP_OPTIONS
     )
 
+    static let cake2bnb = SwapQuoteRequest(
+        fromAsset: "smartchain_0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82",
+        toAsset: "smartchain",
+        walletAddress: TEST_ETH_WALLET,
+        destinationAddress: TEST_ETH_WALLET,
+        value: "400000000000000000", // 0.4
+        mode: .exactIn,
+        options: SWAP_OPTIONS
+    )
+
     static let op2Eth = SwapQuoteRequest(
         fromAsset: "optimism",
         toAsset: "ethereum",

@@ -43,6 +43,9 @@ struct ContentView: View {
             Button("Fetch UNI -> LINK") {
                 self.testQuote(quote: .uni2link)
             }
+            Button("Fetch Cake -> BNB") {
+                self.testQuote(quote: .cake2bnb)
+            }
             Button("Fetch Cake -> BTCB") {
                 self.testQuote(quote: .cake2btcb)
             }

@@ -53,9 +53,9 @@ impl UniswapV4 {
         vec![FeeTier::Hundred, FeeTier::FiveHundred, FeeTier::ThreeThousand, FeeTier::TenThousand]
     }
 
-    fn is_base_pair(&self, token_in: &EthereumAddress, token_out: &EthereumAddress, evm_chain: &EVMChain) -> bool {
+    fn is_base_pair(token_in: &EthereumAddress, token_out: &EthereumAddress, evm_chain: &EVMChain) -> bool {
         let base_set = get_base_pair(evm_chain, false).unwrap().to_set();
-        base_set.contains(token_in) && base_set.contains(token_out)
+        base_set.contains(token_in) || base_set.contains(token_out)
     }
 
     fn parse_asset_address(asset: &AssetId, evm_chain: EVMChain) -> Result<EthereumAddress, SwapperError> {
@@ -117,7 +117,7 @@ impl GemSwapProvider for UniswapV4 {
         let mut requests = vec![batch_call];
 
         let quote_exact_params: Vec<Vec<(Vec<TokenPair>, QuoteExactParams)>>;
-        if !self.is_base_pair(&token_in, &token_out, &evm_chain) {
+        if !Self::is_base_pair(&token_in, &token_out, &evm_chain) {
             let intermediaries = get_intermediaries(&token_in, &token_out, &base_pair);
             quote_exact_params = build_quote_exact_params(quote_amount_in, &token_in, &token_out, &fee_tiers, &intermediaries);
             build_quote_exact_requests(deployment.quoter, &quote_exact_params)
@@ -249,5 +249,29 @@ impl GemSwapProvider for UniswapV4 {
             approval,
             gas_limit,
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::swapper::{GemSwapMode, GemSwapOptions};
+
+    use super::*;
+
+    #[test]
+    fn test_is_base_pair() {
+        let request = SwapQuoteRequest {
+            from_asset: AssetId::from(Chain::SmartChain, Some("0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82".to_string())),
+            to_asset: AssetId::from_chain(Chain::SmartChain),
+            wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
+            destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
+            value: "40000000000000000".into(), // 0.04 Cake
+            mode: GemSwapMode::ExactIn,
+            options: GemSwapOptions::default(),
+        };
+
+        let (evm_chain, token_in, token_out, _) = UniswapV4::parse_request(&request).unwrap();
+
+        assert!(UniswapV4::is_base_pair(&token_in, &token_out, &evm_chain));
     }
 }
