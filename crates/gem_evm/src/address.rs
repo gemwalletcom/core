@@ -1,6 +1,6 @@
 /// Taken from https://github.com/alloy-rs/core/blob/main/crates/primitives/src/bits/address.rs
 use gem_hash::keccak::keccak256;
-use std::str::FromStr;
+use std::{fmt::Display, str::FromStr};
 
 /// Error type for address checksum validation.
 #[derive(Debug, Copy, Clone)]
@@ -22,7 +22,7 @@ impl std::error::Error for AddressError {
     }
 }
 
-impl std::fmt::Display for AddressError {
+impl Display for AddressError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Hex(err) => err.fmt(f),
@@ -34,6 +34,18 @@ impl std::fmt::Display for AddressError {
 #[derive(Debug, Default, Clone, PartialEq, Eq, Hash)]
 pub struct EthereumAddress {
     pub bytes: Vec<u8>,
+}
+
+impl EthereumAddress {
+    pub fn zero() -> Self {
+        Self { bytes: [0u8; 20].to_vec() }
+    }
+}
+
+impl Display for EthereumAddress {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "0x{}", hex::encode(&self.bytes))
+    }
 }
 
 impl FromStr for EthereumAddress {

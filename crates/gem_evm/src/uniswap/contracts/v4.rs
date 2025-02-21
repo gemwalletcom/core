@@ -2,7 +2,7 @@ use alloy_core::sol;
 
 sol! {
     type Currency is address;
-
+    // https://github.com/Uniswap/v4-core/blob/main/src/types/PoolKey.sol
     #[derive(Debug)]
     struct PoolKey {
         /// @notice The lower currency of the pool, sorted numerically
@@ -17,6 +17,7 @@ sol! {
         address hooks;
     }
 
+    // https://github.com/Uniswap/v4-periphery/blob/main/src/libraries/PathKey.sol
     #[derive(Debug)]
     struct PathKey {
         Currency intermediateCurrency;

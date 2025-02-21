@@ -3631,6 +3631,7 @@ dependencies = [
  "gem_bsc",
  "gem_cosmos",
  "gem_evm",
+ "gem_hash",
  "gem_solana",
  "gem_sui",
  "gem_ton",

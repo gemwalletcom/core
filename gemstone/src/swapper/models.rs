@@ -237,6 +237,15 @@ pub enum FetchQuoteData {
     None,
 }
 
+impl FetchQuoteData {
+    pub fn permit2_data(&self) -> Option<Permit2Data> {
+        match self {
+            Self::Permit2(data) => Some(data.clone()),
+            _ => None,
+        }
+    }
+}
+
 #[derive(Debug, Clone, uniffi::Enum, PartialEq)]
 pub enum SwapChainAsset {
     All(Chain),

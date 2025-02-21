@@ -1,7 +1,7 @@
 use crate::swapper::GemSwapMode;
 use gem_evm::{address::EthereumAddress, uniswap::path::BasePair};
 
-#[allow(dead_code)]
+#[allow(unused)]
 pub struct FeePreference {
     pub fee_token: EthereumAddress,
     pub is_input_token: bool,
@@ -38,7 +38,7 @@ mod tests {
     fn test_get_fee_token() {
         let evm_chain = EVMChain::Ethereum;
         let mode = GemSwapMode::ExactIn;
-        let base_pair = get_base_pair(&evm_chain);
+        let base_pair = get_base_pair(&evm_chain, true);
 
         let weth = EthereumAddress::from_str("0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2").unwrap();
         let uni = EthereumAddress::from_str("0x1f9840a85d5af5bf1d1762f925bdaddc4201f984").unwrap();
