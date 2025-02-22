@@ -20,6 +20,7 @@
 		DFA9A0642D51E920005B63B1 /* ViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFA9A0632D51E91B005B63B1 /* ViewModel.swift */; };
 		DFAA63872CFDD83A00413EFA /* SwapRequests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFAA63862CFDD83400413EFA /* SwapRequests.swift */; };
 		DFAA63892D07EFBA00413EFA /* Cache.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFAA63882D07EFB700413EFA /* Cache.swift */; };
+		DFB382DC2D60532000738DE6 /* SwapQuote+Ext.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFB382DB2D60530A00738DE6 /* SwapQuote+Ext.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -47,6 +48,7 @@
 		DFA9A0632D51E91B005B63B1 /* ViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewModel.swift; sourceTree = "<group>"; };
 		DFAA63862CFDD83400413EFA /* SwapRequests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwapRequests.swift; sourceTree = "<group>"; };
 		DFAA63882D07EFB700413EFA /* Cache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Cache.swift; sourceTree = "<group>"; };
+		DFB382DB2D60530A00738DE6 /* SwapQuote+Ext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwapQuote+Ext.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -120,6 +122,7 @@
 		DF0C08082CCA66B700D2A524 /* Extension */ = {
 			isa = PBXGroup;
 			children = (
+				DFB382DB2D60530A00738DE6 /* SwapQuote+Ext.swift */,
 				DF0C080C2CD110B100D2A524 /* Gemstone+Extension.swift */,
 				DF0C08042CCA661400D2A524 /* URLRequest+Extension.swift */,
 				DF0C08012CC89ACD00D2A524 /* Data+Hex.swift */,
@@ -245,6 +248,7 @@
 				DF0C08052CCA661F00D2A524 /* URLRequest+Extension.swift in Sources */,
 				DFA9A0642D51E920005B63B1 /* ViewModel.swift in Sources */,
 				4843F3832B32C18300CA5DA8 /* ContentView.swift in Sources */,
+				DFB382DC2D60532000738DE6 /* SwapQuote+Ext.swift in Sources */,
 				DFAA63892D07EFBA00413EFA /* Cache.swift in Sources */,
 				DF024FDB2CBE71F00044D11F /* Provider.swift in Sources */,
 				DF0C080D2CD110B100D2A524 /* Gemstone+Extension.swift in Sources */,
