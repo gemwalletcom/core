@@ -33,7 +33,7 @@ public struct ViewModel: Sendable {
             return print("<== fetchQuote: nil")
         }
 
-        print("<== fetchQuote:\n", quote)
+        print("<== fetchQuote:\n", quote.description)
         print("==> amount out: \(quote.toValue)")
         print("==> routes count: \(quote.data.routes.count), route data: \(route.routeData)")
         if quote.data.routes.count > 1 {

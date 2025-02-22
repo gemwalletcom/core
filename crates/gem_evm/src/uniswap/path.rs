@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::{collections::HashSet, fmt::Display};
 
 use super::FeeTier;
 use crate::address::EthereumAddress;
@@ -12,6 +12,29 @@ pub struct TokenPair {
     pub token_in: EthereumAddress,
     pub token_out: EthereumAddress,
     pub fee_tier: FeeTier,
+}
+
+impl Display for TokenPair {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}-{}->{}", self.token_in, self.fee_tier.as_u24(), self.token_out)
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct TokenPairs(pub Vec<TokenPair>);
+
+impl Display for TokenPairs {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "[")?;
+        let mut iter = self.0.iter();
+        if let Some(first) = iter.next() {
+            write!(f, "{}", first)?; // Write first element without a leading comma
+            for item in iter {
+                write!(f, ", {}", item)?; // Write subsequent elements with a leading comma
+            }
+        }
+        write!(f, "]")
+    }
 }
 
 impl TokenPair {
@@ -31,6 +54,7 @@ impl TokenPair {
     }
 }
 
+#[derive(Debug)]
 pub struct BasePair {
     pub native: EthereumAddress,
     pub stables: Vec<EthereumAddress>,
@@ -58,8 +82,12 @@ impl From<AssetId> for EthereumAddress {
     }
 }
 
-pub fn get_base_pair(chain: &EVMChain) -> Option<BasePair> {
-    let weth = chain.weth_contract()?;
+pub fn get_base_pair(chain: &EVMChain, weth_as_native: bool) -> Option<BasePair> {
+    let native = if weth_as_native {
+        EthereumAddress::parse(chain.weth_contract()?)?
+    } else {
+        EthereumAddress::zero()
+    };
 
     let btc: &str = match chain {
         EVMChain::Ethereum => "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
@@ -73,8 +101,8 @@ pub fn get_base_pair(chain: &EVMChain) -> Option<BasePair> {
         EVMChain::ZkSync => "0xBBeB516fb02a01611cBBE0453Fe3c580D7281011",
         EVMChain::Blast => "0xf7bc58b8d8f97adc129cfc4c9f45ce3c0e1d2692",
         EVMChain::World => "0x03C7054BCB39f7b2e5B2c7AcB37583e32D70Cfa3",
-        EVMChain::Abstract | EVMChain::Mantle | EVMChain::Gnosis | EVMChain::Manta | EVMChain::Sonic => "", // None
-        _ => panic!("unsupported chain"),
+        EVMChain::Sonic => "0x0555E30da8f98308EdB960aa94C0Db47230d2B9c",
+        EVMChain::Abstract | EVMChain::Mantle | EVMChain::Gnosis | EVMChain::Manta | EVMChain::Unichain => "", // None
     };
 
     let usdc = match chain {
@@ -95,7 +123,7 @@ pub fn get_base_pair(chain: &EVMChain) -> Option<BasePair> {
         EVMChain::Mantle => "0x09Bc4E0D864854c6aFB6eB9A9cdF58aC190D0dF9",
         EVMChain::Gnosis => "0x2a22f9c3b484c3629090FeED35F17Ff8F88f76F0", // USDC.e
         EVMChain::Manta => "0xb73603c5d87fa094b7314c74ace2e64d165016fb",
-        _ => panic!("unsupported chain"),
+        _ => panic!("get_base_pair: unsupported chain for usdc"),
     };
 
     let usdt: &str = match chain {
@@ -115,7 +143,7 @@ pub fn get_base_pair(chain: &EVMChain) -> Option<BasePair> {
         EVMChain::Gnosis => "0x4ECaBa5870353805a9F068101A40E0f32ed605C6",
         EVMChain::Manta => "0xf417f5a458ec102b90352f697d6e2ac3a3d2851f",
         EVMChain::Blast | EVMChain::World => "", // None
-        _ => panic!("unsupported chain"),
+        _ => panic!("get_base_pair unsupported chain for usdt"),
     };
 
     let mut stables = vec![EthereumAddress::parse(usdc)?];
@@ -130,11 +158,7 @@ pub fn get_base_pair(chain: &EVMChain) -> Option<BasePair> {
         }
     };
 
-    Some(BasePair {
-        native: EthereumAddress::parse(weth)?,
-        stables,
-        alternatives,
-    })
+    Some(BasePair { native, stables, alternatives })
 }
 
 pub fn build_direct_pair(token_in: &EthereumAddress, token_out: &EthereumAddress, fee_tier: u32) -> Bytes {

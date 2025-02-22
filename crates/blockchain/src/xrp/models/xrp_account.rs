@@ -86,4 +86,3 @@ struct XRPAccountLine {
     balance: String,
     currency: String,
 }
-
