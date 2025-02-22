@@ -1,6 +1,7 @@
 mod oku;
 mod pancakeswap;
 mod uniswap_v3;
+mod wagmi;
 
 use crate::swapper::uniswap::{v3::UniswapV3, v4::UniswapV4};
 
@@ -18,4 +19,8 @@ pub fn new_oku() -> UniswapV3 {
 
 pub fn new_uniswap_v4() -> UniswapV4 {
     UniswapV4::default()
+}
+
+pub fn new_wagmi() -> UniswapV3 {
+    UniswapV3::new(Box::new(wagmi::WagmiUniversalRouter {}))
 }

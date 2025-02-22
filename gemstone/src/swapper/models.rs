@@ -71,6 +71,7 @@ pub enum SwapProvider {
     Jupiter,
     Across,
     OkuTrade,
+    Wagmi,
 }
 
 #[derive(Debug, Clone, PartialEq, uniffi::Enum)]
@@ -92,12 +93,13 @@ impl SwapProvider {
             Self::Jupiter => "Jupiter",
             Self::Across => "Across v3",
             Self::OkuTrade => "Oku Trade",
+            Self::Wagmi => "Wagmi",
         }
     }
 
     pub fn provider_type(&self) -> SwapProviderType {
         match self {
-            Self::UniswapV3 | Self::UniswapV4 | Self::PancakeSwapV3 | Self::PancakeSwapAptosV2 | Self::Orca | Self::Jupiter | Self::OkuTrade => {
+            Self::UniswapV3 | Self::UniswapV4 | Self::PancakeSwapV3 | Self::PancakeSwapAptosV2 | Self::Orca | Self::Jupiter | Self::OkuTrade | Self::Wagmi => {
                 SwapProviderType::OnChain
             }
             Self::Thorchain => SwapProviderType::CrossChain,

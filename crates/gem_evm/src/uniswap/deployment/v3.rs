@@ -128,3 +128,15 @@ pub fn get_oku_deployment_by_chain(chain: &Chain) -> Option<V3Deployment> {
         _ => None,
     }
 }
+
+pub fn get_wagmi_router_deployment_by_chain(chain: &Chain) -> Option<V3Deployment> {
+    // https://docs.wagmi.com/wagmi/contracts#sonic
+    match chain {
+        Chain::Sonic => Some(V3Deployment {
+            quoter_v2: "0xDb51CffFf3B989d0cB6b58AbF173371b6F2d0D24",
+            universal_router: "0xC81dAe2Cdf2f6C0076aE3E174a54985040626D19",
+            permit2: "0x7Ac9E324c2a211a389fac64b773433A17dB22948",
+        }),
+        _ => None,
+    }
+}
