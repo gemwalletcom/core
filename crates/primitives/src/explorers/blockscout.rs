@@ -7,8 +7,8 @@ impl BlockScout {
     pub fn new_celo() -> Box<Self> {
         Box::new(Self {
             meta: Metadata {
-                name: "Celo BlockScout",
-                base_url: "https://explorer.celo.org/mainnet",
+                name: "BlockScout",
+                base_url: "https://celo.blockscout.com",
             },
         })
     }
@@ -31,10 +31,10 @@ impl BlockScout {
         })
     }
 
-    pub fn new_hyper_evm() -> Box<Self> {
+    pub fn new_hyperliquid() -> Box<Self> {
         Box::new(Self {
             meta: Metadata {
-                name: "Hyperliquid EVM Explorer",
+                name: "BlockScout",
                 base_url: "https://hyperliquid.cloud.blockscout.com",
             },
         })
