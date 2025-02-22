@@ -103,6 +103,7 @@ pub fn get_base_pair(chain: &EVMChain, weth_as_native: bool) -> Option<BasePair>
         EVMChain::World => "0x03C7054BCB39f7b2e5B2c7AcB37583e32D70Cfa3",
         EVMChain::Sonic => "0x0555E30da8f98308EdB960aa94C0Db47230d2B9c",
         EVMChain::Abstract | EVMChain::Mantle | EVMChain::Gnosis | EVMChain::Manta | EVMChain::Unichain => "", // None
+        _ => panic!("get_base_pair: unsupported chain for btc"),
     };
 
     let usdc = match chain {

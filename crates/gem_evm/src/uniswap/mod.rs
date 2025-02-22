@@ -28,6 +28,7 @@ impl FeeTier {
         match self {
             FeeTier::Hundred => I24::unchecked_from(1),
             FeeTier::FiveHundred => I24::unchecked_from(10),
+            FeeTier::ThousandFiveHundred => I24::unchecked_from(50),
             FeeTier::TwoThousandFiveHundred => I24::unchecked_from(50),
             FeeTier::ThreeThousand => I24::unchecked_from(60),
             FeeTier::TenThousand => I24::unchecked_from(200),
