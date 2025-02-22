@@ -9,6 +9,7 @@ pub mod path;
 pub enum FeeTier {
     Hundred = 100,
     FiveHundred = 500,
+    ThousandFiveHundred = 1500,
     TwoThousandFiveHundred = 2500,
     ThreeThousand = 3000,
     TenThousand = 10000,
@@ -21,6 +22,7 @@ impl TryFrom<&str> for FeeTier {
         match value {
             "100" => Ok(FeeTier::Hundred),
             "500" => Ok(FeeTier::FiveHundred),
+            "1500" => Ok(FeeTier::ThousandFiveHundred),
             "2500" => Ok(FeeTier::TwoThousandFiveHundred),
             "3000" => Ok(FeeTier::ThreeThousand),
             "10000" => Ok(FeeTier::TenThousand),

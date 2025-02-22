@@ -73,8 +73,7 @@ pub fn get_base_pair(chain: &EVMChain) -> Option<BasePair> {
         EVMChain::ZkSync => "0xBBeB516fb02a01611cBBE0453Fe3c580D7281011",
         EVMChain::Blast => "0xf7bc58b8d8f97adc129cfc4c9f45ce3c0e1d2692",
         EVMChain::World => "0x03C7054BCB39f7b2e5B2c7AcB37583e32D70Cfa3",
-        EVMChain::Sonic => "0x0555E30da8f98308EdB960aa94C0Db47230d2B9c",
-        EVMChain::Abstract | EVMChain::Mantle | EVMChain::Gnosis | EVMChain::Manta => "", // None
+        EVMChain::Abstract | EVMChain::Mantle | EVMChain::Gnosis | EVMChain::Manta | EVMChain::Sonic => "", // None
         _ => panic!("unsupported chain"),
     };
 
