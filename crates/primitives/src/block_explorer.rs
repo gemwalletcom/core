@@ -88,8 +88,8 @@ pub fn get_block_explorers(chain: Chain) -> Vec<Box<dyn BlockExplorer>> {
         Chain::Cardano => vec![Cardanocan::new()],
         Chain::Abstract => vec![EtherScan::new(EVMChain::Abstract)],
         Chain::Berachain => vec![EtherScan::new(EVMChain::Berachain)],
-        Chain::Ink => vec![OkxExplorer::new_ink(), BlockScout::new_ink()],
+        Chain::Ink => vec![BlockScout::new_ink(), OkxExplorer::new_ink()],
         Chain::Unichain => vec![EtherScan::new(EVMChain::Unichain)],
-        Chain::Hyperliquid => vec![HyperLiquid::new()],
+        Chain::Hyperliquid => vec![BlockScout::new_hyper_evm(), HyperLiquid::new()],
     }
 }

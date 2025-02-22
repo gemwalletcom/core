@@ -101,7 +101,7 @@ impl EVMChain {
             Self::Sonic => Some("0x039e2fB66102314Ce7b64Ce5Ce3E5183bc94aD38"), // Wrapped Sonic (wS)
             Self::Abstract => Some("0x3439153EB7AF838Ad19d56E1571FBD09333C2809"),
             Self::Berachain => Some("0x6969696969696969696969696969696969696969"), // WBERA
-            Self::Hyperliquid => Some("0x5555555555555555555555555555555555555555"),
+            Self::Hyperliquid => Some("0x5555555555555555555555555555555555555555"), // WHYPE
             Self::Linea => Some("0xe5D7C2a44FfDDf6b295A15c148167daaAf5Cf34f"),
             Self::Mantle => Some("0x78c1b0C915c4FAA5FffA6CAbf0219DA63d7f4cb8"), // Wrapped Mantle (WMNT)
             Self::Manta => Some("0x0dc808adce2099a9f62aa87d9670745aba741746"),
