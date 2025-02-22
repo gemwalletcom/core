@@ -10,7 +10,7 @@ pub struct WagmiUniversalRouter {}
 
 impl UniversalRouterProvider for WagmiUniversalRouter {
     fn provider(&self) -> SwapProvider {
-        SwapProvider::UniswapV3
+        SwapProvider::Wagmi
     }
 
     fn get_tiers(&self) -> Vec<FeeTier> {
