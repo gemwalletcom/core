@@ -2,7 +2,7 @@ use crate::chain::Chain;
 use crate::chain_evm::EVMChain;
 use crate::explorers::{
     AlgorandAllo, AptosExplorer, AptosScan, BlockScout, Blockchair, Blocksec, Cardanocan, EtherScan, HyperLiquid, MantleExplorer, Mempool, MintScan,
-    NearBlocks, OkxExplorer, RuneScan, SolanaFM, Solscan, SubScan, SuiScan, SuiVision, TonScan, TonViewer, TronScan, Viewblock, XrpScan, ZkSync,
+    NearBlocks, OkxExplorer, RouteScan, RuneScan, SolanaFM, Solscan, SubScan, SuiScan, SuiVision, TonScan, TonViewer, TronScan, Viewblock, XrpScan, ZkSync,
 };
 use std::str::FromStr;
 use typeshare::typeshare;
@@ -54,7 +54,7 @@ pub fn get_block_explorers(chain: Chain) -> Vec<Box<dyn BlockExplorer>> {
         Chain::Arbitrum => vec![EtherScan::new(EVMChain::Arbitrum), Blockchair::new_arbitrum(), Blocksec::new_arbitrum()],
         Chain::Optimism => vec![EtherScan::new(EVMChain::Optimism), Blockchair::new_optimism(), Blocksec::new_optimism()],
         Chain::Base => vec![EtherScan::new(EVMChain::Base), Blockchair::new_base(), Blocksec::new_base()],
-        Chain::AvalancheC => vec![EtherScan::new(EVMChain::AvalancheC), Blockchair::new_avalanche()],
+        Chain::AvalancheC => vec![EtherScan::new(EVMChain::AvalancheC), RouteScan::new_avax(), Blockchair::new_avalanche()],
         Chain::OpBNB => vec![EtherScan::new(EVMChain::OpBNB), Blockchair::new_opbnb()],
         Chain::Fantom => vec![EtherScan::new(EVMChain::Fantom), Blockchair::new_fantom()],
         Chain::Gnosis => vec![EtherScan::new(EVMChain::Gnosis), Blockchair::new_gnosis()],
@@ -82,13 +82,13 @@ pub fn get_block_explorers(chain: Chain) -> Vec<Box<dyn BlockExplorer>> {
         Chain::Sui => vec![SuiScan::new(), SuiVision::new()],
         Chain::Near => vec![NearBlocks::new()],
         Chain::Stellar => vec![Blockchair::new_stellar()],
-        Chain::Sonic => vec![EtherScan::new(EVMChain::Sonic)],
+        Chain::Sonic => vec![EtherScan::new(EVMChain::Sonic), RouteScan::new_sonic()],
         Chain::Algorand => vec![AlgorandAllo::new()],
         Chain::Polkadot => vec![SubScan::new_polkadot(), Blockchair::new_polkadot()],
         Chain::Cardano => vec![Cardanocan::new()],
         Chain::Abstract => vec![EtherScan::new(EVMChain::Abstract)],
         Chain::Berachain => vec![EtherScan::new(EVMChain::Berachain)],
-        Chain::Ink => vec![BlockScout::new_ink(), OkxExplorer::new_ink()],
+        Chain::Ink => vec![RouteScan::new_ink(), BlockScout::new_ink(), OkxExplorer::new_ink()],
         Chain::Unichain => vec![EtherScan::new(EVMChain::Unichain)],
         Chain::Hyperliquid => vec![BlockScout::new_hyperliquid(), HyperLiquid::new()],
     }

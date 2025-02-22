@@ -46,8 +46,8 @@ impl EtherScan {
             },
             EVMChain::AvalancheC => Self {
                 meta: Metadata {
-                    name: "SnowTrace",
-                    base_url: "https://snowtrace.io",
+                    name: "SnowScan",
+                    base_url: "https://snowscan.xyz",
                 },
             },
             EVMChain::OpBNB => Self {

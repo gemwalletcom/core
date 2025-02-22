@@ -3,11 +3,13 @@ pub struct BlockScout {
     pub meta: Metadata,
 }
 
+static BLOCK_SCOUT: &str = "BlockScout";
+
 impl BlockScout {
     pub fn new_celo() -> Box<Self> {
         Box::new(Self {
             meta: Metadata {
-                name: "BlockScout",
+                name: BLOCK_SCOUT,
                 base_url: "https://celo.blockscout.com",
             },
         })
@@ -34,7 +36,7 @@ impl BlockScout {
     pub fn new_hyperliquid() -> Box<Self> {
         Box::new(Self {
             meta: Metadata {
-                name: "BlockScout",
+                name: BLOCK_SCOUT,
                 base_url: "https://hyperliquid.cloud.blockscout.com",
             },
         })
