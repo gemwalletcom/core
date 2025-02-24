@@ -158,7 +158,7 @@ chains:
   ink:
     url: https://rpc-qnd.inkonchain.com
   unichain:
-    url: https://unichain-mainnet-rpc.publicnode.com
+    url: https://mainnet.unichain.org
   hyperliquid:
     url: https://rpc.hyperliquid.xyz/evm
   
