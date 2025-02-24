@@ -486,7 +486,7 @@ impl GemSwapProvider for Across {
         };
 
         let to: String = deployment.spoke_pool.into();
-        let mut gas_limit = route.gas_limit.clone();
+        let mut gas_limit = if approval.is_some() { route.gas_limit.clone() } else { None };
 
         if matches!(data, FetchQuoteData::EstimateGas) {
             let hex_value = format!("{:#x}", U256::from_str(value).unwrap());
