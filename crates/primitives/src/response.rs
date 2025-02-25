@@ -8,6 +8,12 @@ pub struct ResponseResult<T> {
     pub data: T,
 }
 
+impl<T> ResponseResult<T> {
+    pub fn new(data: T) -> Self {
+        Self { data }
+    }
+}
+
 #[typeshare(swift = "Sendable")]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ResponseError {
