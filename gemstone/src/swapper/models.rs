@@ -84,6 +84,19 @@ pub enum SwapProviderType {
 impl SwapProvider {
     pub fn name(&self) -> &str {
         match self {
+            Self::UniswapV3 | Self::UniswapV4 => "Uniswap",
+            Self::PancakeSwapV3 | Self::PancakeSwapAptosV2 => "PancakeSwap",
+            Self::Thorchain => "THORChain",
+            Self::Orca => "Orca",
+            Self::Jupiter => "Jupiter",
+            Self::Across => "Across",
+            Self::OkuTrade => "Oku",
+            Self::Wagmi => "Wagmi",
+        }
+    }
+
+    pub fn protocol_name(&self) -> &str {
+        match self {
             Self::UniswapV3 => "Uniswap v3",
             Self::UniswapV4 => "Uniswap v4",
             Self::PancakeSwapV3 => "PancakeSwap v3",
@@ -111,6 +124,11 @@ impl SwapProvider {
 #[uniffi::export]
 fn swap_provider_name_to_string(provider: SwapProvider) -> String {
     provider.name().to_string()
+}
+
+#[uniffi::export]
+fn swap_provider_display_name_to_string(provider: SwapProvider) -> String {
+    provider.display_name().to_string()
 }
 
 #[derive(Debug, Clone, uniffi::Record)]
