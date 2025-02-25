@@ -14,6 +14,7 @@ pub struct QuoteSwapRequest {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct QuoteSwapResponse {
     pub expected_amount_out: String,
+    pub recommended_min_amount_in: String,
     pub inbound_address: Option<String>,
     pub router: Option<String>,
     pub fees: QuoteFees,

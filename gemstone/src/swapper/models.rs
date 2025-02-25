@@ -161,7 +161,10 @@ impl Default for GemSwapOptions {
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct SwapQuote {
     pub from_value: String,
+    // Original quote amount
     pub to_value: String,
+    // Minimum amount (slippage, fee applied)
+    pub to_min_value: String,
     pub data: SwapProviderData,
     pub request: SwapQuoteRequest,
 }

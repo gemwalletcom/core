@@ -67,6 +67,7 @@ impl GemSwapProvider for PancakeSwapAptos {
 
         let from_internal_asset = self.to_asset(request.from_asset.clone());
         let to_internal_asset = self.to_asset(request.to_asset.clone());
+        let fee_bps = 0; // TODO: implement fees
 
         let quote_value = client
             .get_quote(
@@ -74,7 +75,7 @@ impl GemSwapProvider for PancakeSwapAptos {
                 from_internal_asset.as_str(),
                 to_internal_asset.as_str(),
                 request.value.to_string().as_str(),
-                request.options.slippage.bps,
+                request.options.slippage.bps + fee_bps,
             )
             .await?;
 
@@ -87,6 +88,7 @@ impl GemSwapProvider for PancakeSwapAptos {
         let quote = SwapQuote {
             from_value: request.value.clone(),
             to_value: quote_value.clone(),
+            to_min_value: quote_value.clone(),
             data: SwapProviderData {
                 provider: self.provider().clone(),
                 routes: vec![SwapRoute {

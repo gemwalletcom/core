@@ -28,6 +28,9 @@ struct ContentView: View {
             Button("Fetch ETH -> USDC") {
                 self.testQuote(quote: .eth2usdc)
             }
+            Button("Fetch ETH -> BTC") {
+                self.testQuote(quote: .eth2btc)
+            }
             Button("Fetch v4 ETH -> USDC") {
                 self.testQuote(quote: .eth2usdc_v4, id: .uniswapV4)
             }

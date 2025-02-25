@@ -32,6 +32,7 @@ extension SwapQuote: @retroactive CustomStringConvertible {
         let json: [String: Any] = [
             "fromValue": fromValue,
             "toValue": toValue,
+            "toMinValue": toMinValue,
             "data": [
                 "provider": provider,
                 "slippageBps": data.slippageBps,
