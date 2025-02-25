@@ -1,6 +1,7 @@
 use crate::{debug_println, network::AlienProvider};
 
 use async_trait::async_trait;
+use num_traits::ToPrimitive;
 use std::{fmt::Debug, sync::Arc};
 
 mod approval;
@@ -21,7 +22,7 @@ pub mod thorchain;
 pub mod uniswap;
 
 pub use models::*;
-use primitives::{AssetId, Chain};
+use primitives::{AssetId, Chain, EVMChain};
 use std::collections::HashSet;
 
 #[async_trait]
@@ -91,6 +92,16 @@ impl GemSwapper {
 
     fn get_swapper_by_provider<'a>(&'a self, provider: &SwapProvider) -> Option<&'a dyn GemSwapProvider> {
         self.swappers.iter().find(|x| x.provider() == *provider).map(|v| &**v)
+    }
+
+    fn apply_gas_limit_multiplier(chain: &Chain, gas_limit: String) -> String {
+        if let Some(evm_chain) = EVMChain::from_chain(*chain) {
+            let multiplier = if evm_chain.is_zkstack() { 2.0 } else { 1.0 };
+            if let Ok(gas_limit_value) = gas_limit.parse::<f64>() {
+                return (gas_limit_value * multiplier).ceil().to_u64().unwrap_or_default().to_string();
+            }
+        }
+        gas_limit
     }
 }
 
@@ -195,7 +206,11 @@ impl GemSwapper {
 
     pub async fn fetch_quote_data(&self, quote: &SwapQuote, data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError> {
         let provider = self.get_swapper_by_provider(&quote.data.provider).ok_or(SwapperError::NoAvailableProvider)?;
-        provider.fetch_quote_data(quote, self.rpc_provider.clone(), data).await
+        let mut quote_data = provider.fetch_quote_data(quote, self.rpc_provider.clone(), data).await?;
+        if let Some(gas_limit) = quote_data.gas_limit.take() {
+            quote_data.gas_limit = Some(Self::apply_gas_limit_multiplier(&quote.request.from_asset.chain, gas_limit));
+        }
+        Ok(quote_data)
     }
 
     pub async fn get_transaction_status(&self, chain: Chain, swap_provider: SwapProvider, transaction_hash: &str) -> Result<bool, SwapperError> {
