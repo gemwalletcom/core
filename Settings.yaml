@@ -181,15 +181,17 @@ swap:
     fee:
       percent: 0
       address: ""
-security:
+scan:
   goplus:
     url: "https://api.gopluslabs.io"
-    app_id: ""
-    app_secret: ""
+    key: 
+      public: ""
+      secret: ""
   hashdit:
     url: "https://api.hashdit.io"
-    app_id: ""
-    app_secret: ""
+    key: 
+      public: ""
+      secret: ""
 
 parser:
   retry: 0

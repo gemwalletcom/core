@@ -351,6 +351,13 @@ diesel::table! {
 }
 
 diesel::table! {
+    scan_addresses_types (id) {
+        #[max_length = 32]
+        id -> Varchar,
+    }
+}
+
+diesel::table! {
     subscriptions (id) {
         id -> Int4,
         device_id -> Int4,
@@ -488,6 +495,7 @@ diesel::allow_tables_to_appear_in_same_query!(
     prices_assets,
     releases,
     scan_addresses,
+    scan_addresses_types,
     subscriptions,
     subscriptions_addresses_exclude,
     tokenlists,

@@ -127,8 +127,8 @@ fn swap_provider_name_to_string(provider: SwapProvider) -> String {
 }
 
 #[uniffi::export]
-fn swap_provider_display_name_to_string(provider: SwapProvider) -> String {
-    provider.display_name().to_string()
+fn swap_provider_protocol_name_to_string(provider: SwapProvider) -> String {
+    provider.protocol_name().to_string()
 }
 
 #[derive(Debug, Clone, uniffi::Record)]

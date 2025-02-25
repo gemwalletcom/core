@@ -4,7 +4,7 @@ use crate::models::DetectResponse;
 use async_trait::async_trait;
 use hmac::{Hmac, Mac};
 use reqwest_enum::target::Target;
-use security_provider::{ScanResult, ScanTarget, SecurityProvider, DEFAULT_TIMEOUT};
+use security_provider::{ScanProvider, ScanResult, ScanTarget};
 use sha2::Sha256;
 use std::time::{SystemTime, UNIX_EPOCH};
 type HmacSha256 = Hmac<Sha256>;
@@ -18,6 +18,14 @@ pub struct HashDitProvider {
 }
 
 impl HashDitProvider {
+    pub fn new(client: reqwest::Client, app_id: &str, app_secret: &str) -> Self {
+        HashDitProvider {
+            client,
+            app_id: app_id.to_string(),
+            app_secret: app_secret.to_string(),
+        }
+    }
+
     fn generate_msg_for_sig(&self, timestamp: &str, nonce: &str, method: &str, url: &str, query: &str, body: &[u8]) -> String {
         let body = if body.is_empty() { "" } else { std::str::from_utf8(body).unwrap_or_default() };
         if !query.is_empty() {
@@ -61,28 +69,14 @@ impl HashDitProvider {
             .header("X-Signature-signature", sig)
             .header("X-Signature-timestamp", timestamp)
             .header("X-Signature-nonce", nonce)
-            .timeout(DEFAULT_TIMEOUT)
             .query(&query)
             .body(body);
         request
     }
-
-    fn new(app_id: &str, app_secret: &str) -> Self {
-        HashDitProvider {
-            client: reqwest::Client::new(),
-            app_id: app_id.to_string(),
-            app_secret: app_secret.to_string(),
-        }
-    }
 }
 
 #[async_trait]
-impl SecurityProvider for HashDitProvider {
-    fn new(app_id: &str, app_secret: &str) -> Self {
-        // Initialize HashDit client
-        HashDitProvider::new(app_id, app_secret)
-    }
-
+impl ScanProvider for HashDitProvider {
     fn name(&self) -> &'static str {
         PROVIDER_NAME
     }
@@ -121,7 +115,6 @@ impl SecurityProvider for HashDitProvider {
             is_malicious,
             reason,
             provider: PROVIDER_NAME.into(),
-            metadata: None,
         })
     }
 }

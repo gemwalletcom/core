@@ -393,6 +393,7 @@ dependencies = [
  "pricer",
  "primitives",
  "prometheus-client",
+ "reqwest",
  "rocket",
  "search_index",
  "security_goplus",

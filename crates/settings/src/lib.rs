@@ -28,7 +28,7 @@ pub struct Settings {
     pub pusher: Pusher,
     pub swap: Swap,
     pub alerter: Alerter,
-    pub security: Security,
+    pub scan: Scan,
     pub nft: NFT,
 }
 
@@ -263,9 +263,9 @@ pub struct Swap {
 
 #[derive(Debug, Deserialize, Clone)]
 #[allow(unused)]
-pub struct Security {
-    pub hashdit: SecurityProvider,
-    pub goplus: SecurityProvider,
+pub struct Scan {
+    pub hashdit: ScanProvider,
+    pub goplus: ScanProvider,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -285,10 +285,9 @@ pub struct SwapProvider {
 
 #[derive(Debug, Deserialize, Clone)]
 #[allow(unused)]
-pub struct SecurityProvider {
+pub struct ScanProvider {
     pub url: String,
-    pub app_id: String,
-    pub app_secret: String,
+    pub key: Key,
 }
 
 #[derive(Debug, Deserialize, Clone)]
