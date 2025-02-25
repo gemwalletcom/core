@@ -136,6 +136,11 @@ impl GemSwapProvider for ThorChain {
                 None
             }
         };
+        let gas_limit = if approval.is_some() {
+            Some(DEFAULT_DEPOSIT_GAS_LIMIT.to_string())
+        } else {
+            None
+        };
 
         let data = if from_asset.use_evm_router() {
             // only used for swapping from ERC20 tokens
@@ -160,7 +165,7 @@ impl GemSwapProvider for ThorChain {
                 value: "0".to_string(),
                 data: hex::encode(call.clone()),
                 approval,
-                gas_limit: Some(DEFAULT_DEPOSIT_GAS_LIMIT.to_string()),
+                gas_limit,
             }
         } else {
             SwapQuoteData {
@@ -168,7 +173,7 @@ impl GemSwapProvider for ThorChain {
                 value,
                 data: self.data(from_asset.chain, memo),
                 approval,
-                gas_limit: None,
+                gas_limit,
             }
         };
 

@@ -62,8 +62,10 @@ impl EVMChain {
         }
     }
 
+    // https://docs.optimism.io/stack/getting-started
     pub fn is_opstack(&self) -> bool {
         match self {
+            Self::Optimism | Self::Base | Self::OpBNB | Self::World | Self::Ink | Self::Unichain => true,
             Self::Ethereum
             | Self::SmartChain
             | Self::Polygon
@@ -81,7 +83,34 @@ impl EVMChain {
             | Self::Abstract
             | Self::Berachain
             | Self::Hyperliquid => false,
-            Self::Optimism | Self::Base | Self::OpBNB | Self::World | Self::Ink | Self::Unichain => true,
+        }
+    }
+
+    // https://docs.zksync.io/zk-stack/running/quickstart
+    pub fn is_zkstack(&self) -> bool {
+        match self {
+            Self::ZkSync | Self::Abstract => true,
+            Self::Ethereum
+            | Self::SmartChain
+            | Self::Polygon
+            | Self::Arbitrum
+            | Self::Optimism
+            | Self::Base
+            | Self::OpBNB
+            | Self::World
+            | Self::Ink
+            | Self::Unichain
+            | Self::AvalancheC
+            | Self::Fantom
+            | Self::Gnosis
+            | Self::Manta
+            | Self::Blast
+            | Self::Linea
+            | Self::Mantle
+            | Self::Celo
+            | Self::Sonic
+            | Self::Berachain
+            | Self::Hyperliquid => false,
         }
     }
 
