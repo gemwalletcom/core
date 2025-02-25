@@ -19,8 +19,10 @@ pub enum SwapperError {
     NoAvailableProvider,
     #[error("Invalid address {address}")]
     InvalidAddress { address: String },
-    #[error("Invalid input amount")]
+    #[error("Failed to parse input amount")]
     InvalidAmount,
+    #[error("Input amount is too small")]
+    InputAmountTooSmall,
     #[error("Invalid route")]
     InvalidRoute,
     #[error("RPC error: {msg}")]
@@ -165,7 +167,10 @@ impl Default for GemSwapOptions {
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct SwapQuote {
     pub from_value: String,
+    // Original quote amount
     pub to_value: String,
+    // Minimum amount (slippage, fee applied)
+    pub to_min_value: String,
     pub data: SwapProviderData,
     pub request: SwapQuoteRequest,
 }
