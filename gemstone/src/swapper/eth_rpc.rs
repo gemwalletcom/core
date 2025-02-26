@@ -8,7 +8,7 @@ use gem_evm::{
 };
 use primitives::{Chain, EVMChain};
 
-use alloy_core::{hex::decode as HexDecode, hex::encode_prefixed as HexEncode, sol_types::SolCall};
+use alloy_core::{hex::decode as HexDecode, sol_types::SolCall};
 use alloy_primitives::U256;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -82,7 +82,7 @@ pub async fn multicall3_call(
         debug_println!(
             "call {_idx}: target {:?}, calldata: {:?}, allowFailure: {:?}",
             _call.target,
-            HexEncode(&_call.callData),
+            hex::encode(&_call.callData),
             _call.allowFailure
         );
     }

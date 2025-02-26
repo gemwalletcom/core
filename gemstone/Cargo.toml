@@ -1,7 +1,7 @@
 [package]
 edition = "2021"
 name = "gemstone"
-version = "0.30.4"
+version = "0.30.6"
 
 [lib]
 crate-type = [
