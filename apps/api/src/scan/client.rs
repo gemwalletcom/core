@@ -1,7 +1,7 @@
 extern crate rocket;
 use primitives::{ScanTransaction, ScanTransactionPayload};
 use rocket::futures::future;
-use security_provider::{AddressTarget, ScanProvider, ScanRequest, ScanResult, ScanTarget, ScanTargetType};
+use security_provider::{AddressTarget, ScanProvider, ScanResult};
 use std::error::Error;
 use storage::DatabaseClient;
 
@@ -22,14 +22,11 @@ impl ScanClient {
             return Ok(local_scan);
         }
 
-        let scan_request = ScanRequest {
-            target: ScanTarget::Address(AddressTarget {
-                chain: payload.origin.chain,
-                address: payload.origin.address.clone(),
-            }),
-            target_type: ScanTargetType::Address,
+        let target = AddressTarget {
+            chain: payload.origin.chain,
+            address: payload.origin.address.clone(),
         };
-        let providers_scan = self.scan_providers(scan_request).await?;
+        let providers_scan = self.scan_address_providers(target).await?;
 
         //TODO: Store into DB / if is_malicious
 
@@ -54,8 +51,8 @@ impl ScanClient {
         })
     }
 
-    pub async fn scan_providers(&mut self, scan_request: ScanRequest) -> Result<Vec<ScanResult>, Box<dyn Error + Send + Sync>> {
-        let results = future::join_all(self.security_providers.iter().map(|provider| provider.scan(&scan_request.target)))
+    pub async fn scan_address_providers(&mut self, target: AddressTarget) -> Result<Vec<ScanResult<AddressTarget>>, Box<dyn Error + Send + Sync>> {
+        let results = future::join_all(self.security_providers.iter().map(|provider| provider.scan_address(&target)))
             .await
             .into_iter()
             .filter_map(|result| match result {

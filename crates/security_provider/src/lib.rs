@@ -30,8 +30,9 @@ pub enum ScanTargetType {
     URL,
 }
 
-#[derive(Debug, Default, Serialize, Deserialize)]
-pub struct ScanResult {
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ScanResult<T> {
+    pub target: T,
     pub is_malicious: bool,
     pub reason: Option<String>,
     pub provider: String,
@@ -40,5 +41,6 @@ pub struct ScanResult {
 #[async_trait]
 pub trait ScanProvider: Send + Sync {
     fn name(&self) -> &'static str;
-    async fn scan(&self, target: &ScanTarget) -> Result<ScanResult, Box<dyn std::error::Error + Send + Sync>>;
+    async fn scan_address(&self, target: &AddressTarget) -> Result<ScanResult<AddressTarget>, Box<dyn std::error::Error + Send + Sync>>;
+    async fn scan_url(&self, target: &str) -> Result<ScanResult<String>, Box<dyn std::error::Error + Send + Sync>>;
 }

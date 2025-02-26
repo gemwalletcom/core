@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use strum::{AsRefStr, EnumIter, EnumString, IntoEnumIterator};
 use typeshare::typeshare;
 
-use crate::{AssetId, Chain, TransactionType};
+use crate::{Chain, TransactionType};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Sendable")]
@@ -35,6 +35,7 @@ pub struct ScanAddressTarget {
 
 #[derive(Debug, Clone, Serialize, Deserialize, EnumIter, AsRefStr, EnumString)]
 #[serde(rename_all = "lowercase")]
+#[strum(serialize_all = "lowercase")]
 pub enum AddressType {
     Address,
     Contract,

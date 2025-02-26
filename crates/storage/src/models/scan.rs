@@ -23,7 +23,7 @@ pub struct ScanAddressType {
 impl ScanAddressType {
     pub fn from_primitive(primitive: primitives::AddressType) -> Self {
         Self {
-            id: primitive.as_ref().to_string(),
+            id: primitive.as_ref().to_lowercase(),
         }
     }
 }
