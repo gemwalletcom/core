@@ -7,7 +7,7 @@ CREATE TABLE scan_addresses (
     chain VARCHAR NOT NULL REFERENCES chains (id) ON DELETE CASCADE,
     address VARCHAR(128) NOT NULL,
     name VARCHAR(64),
-    type VARCHAR(32) NOT NULL REFERENCES scan_addresses_types (id) ON DELETE CASCADE,
+    type VARCHAR(32) REFERENCES scan_addresses_types (id) ON DELETE CASCADE,
     is_verified boolean NOT NULL DEFAULT false,
     is_fraudulent boolean NOT NULL DEFAULT false,
     is_memo_required boolean NOT NULL DEFAULT false,

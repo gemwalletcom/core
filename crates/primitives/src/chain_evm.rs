@@ -5,6 +5,13 @@ use strum::{EnumIter, IntoEnumIterator};
 use strum_macros::{AsRefStr, EnumString};
 use typeshare::typeshare;
 
+#[derive(Debug, PartialEq)]
+pub enum ChainStack {
+    Native,
+    Optimism,
+    ZkSync,
+}
+
 #[derive(Copy, Clone, Debug, Serialize, Deserialize, EnumIter, AsRefStr, EnumString, PartialEq)]
 #[typeshare(swift = "Equatable, CaseIterable, Sendable")]
 #[serde(rename_all = "lowercase")]
@@ -62,10 +69,10 @@ impl EVMChain {
         }
     }
 
-    // https://docs.optimism.io/stack/getting-started
-    pub fn is_opstack(&self) -> bool {
+    pub fn chain_stack(&self) -> ChainStack {
         match self {
-            Self::Optimism | Self::Base | Self::OpBNB | Self::World | Self::Ink | Self::Unichain => true,
+            Self::Optimism | Self::Base | Self::OpBNB | Self::World | Self::Ink | Self::Unichain => ChainStack::Optimism,
+            Self::ZkSync | Self::Abstract => ChainStack::ZkSync,
             Self::Ethereum
             | Self::SmartChain
             | Self::Polygon
@@ -75,43 +82,23 @@ impl EVMChain {
             | Self::Gnosis
             | Self::Manta
             | Self::Blast
-            | Self::ZkSync
             | Self::Linea
             | Self::Mantle
             | Self::Celo
             | Self::Sonic
-            | Self::Abstract
             | Self::Berachain
-            | Self::Hyperliquid => false,
+            | Self::Hyperliquid => ChainStack::Native,
         }
+    }
+
+    // https://docs.optimism.io/stack/getting-started
+    pub fn is_opstack(&self) -> bool {
+        self.chain_stack() == ChainStack::Optimism
     }
 
     // https://docs.zksync.io/zk-stack/running/quickstart
     pub fn is_zkstack(&self) -> bool {
-        match self {
-            Self::ZkSync | Self::Abstract => true,
-            Self::Ethereum
-            | Self::SmartChain
-            | Self::Polygon
-            | Self::Arbitrum
-            | Self::Optimism
-            | Self::Base
-            | Self::OpBNB
-            | Self::World
-            | Self::Ink
-            | Self::Unichain
-            | Self::AvalancheC
-            | Self::Fantom
-            | Self::Gnosis
-            | Self::Manta
-            | Self::Blast
-            | Self::Linea
-            | Self::Mantle
-            | Self::Celo
-            | Self::Sonic
-            | Self::Berachain
-            | Self::Hyperliquid => false,
-        }
+        self.chain_stack() == ChainStack::ZkSync
     }
 
     pub fn weth_contract(&self) -> Option<&str> {
