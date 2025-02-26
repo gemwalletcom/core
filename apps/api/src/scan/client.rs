@@ -1,5 +1,5 @@
 extern crate rocket;
-use primitives::{ScanTransaction, ScanTransactionPayload};
+use primitives::{Chain, ScanTransaction, ScanTransactionPayload, TransactionType};
 use rocket::futures::future;
 use security_provider::{AddressTarget, ScanProvider, ScanResult};
 use std::error::Error;
@@ -20,6 +20,14 @@ impl ScanClient {
         let local_scan = self.get_scan_transaction_local(payload.clone())?;
         if local_scan.is_malicious {
             return Ok(local_scan);
+        }
+
+        // temp solution
+        if payload.transaction_type == TransactionType::Swap && payload.origin.chain == Chain::Ethereum && payload.target.chain == Chain::Bitcoin {
+            return Ok(ScanTransaction {
+                is_malicious: true,
+                is_memo_required: false,
+            });
         }
 
         let target = AddressTarget {
