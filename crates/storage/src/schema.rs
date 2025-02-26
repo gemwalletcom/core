@@ -464,6 +464,7 @@ diesel::joinable!(price_alerts -> devices (device_id));
 diesel::joinable!(prices_assets -> assets (asset_id));
 diesel::joinable!(prices_assets -> prices (price_id));
 diesel::joinable!(scan_addresses -> chains (chain));
+diesel::joinable!(scan_addresses -> scan_addresses_types (type_));
 diesel::joinable!(subscriptions -> chains (chain));
 diesel::joinable!(subscriptions -> devices (device_id));
 diesel::joinable!(subscriptions_addresses_exclude -> chains (chain));
