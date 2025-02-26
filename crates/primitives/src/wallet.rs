@@ -1,4 +1,4 @@
-#[typeshare(swift = "Equatable, Sendable")]
+#[typeshare(swift = "Equatable, Sendable, Hashable")]
 struct Wallet {
     id: String,
     name: String,
