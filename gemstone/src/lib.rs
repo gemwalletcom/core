@@ -15,7 +15,7 @@ pub mod ton;
 pub mod wallet_connect;
 
 uniffi::setup_scaffolding!("gemstone");
-static LIB_VERSION: &str = "v0.2.81";
+static LIB_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[macro_export]
 macro_rules! debug_println {

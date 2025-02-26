@@ -344,8 +344,8 @@ impl GemSwapProvider for Across {
         let multicall_req = eth_rpc::multicall3_call(provider.clone(), &hubpool_client.chain, calls);
 
         let batch_results = futures::join!(token_config_req, multicall_req);
-        let token_config = batch_results.0.map_err(SwapperError::from)?;
-        let multicall_results = batch_results.1.map_err(SwapperError::from)?;
+        let token_config = batch_results.0?;
+        let multicall_results = batch_results.1?;
 
         let util_before = hubpool_client.decoded_utilization_call3(&multicall_results[0])?;
         let util_after = hubpool_client.decoded_utilization_call3(&multicall_results[1])?;
