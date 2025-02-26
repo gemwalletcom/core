@@ -4,6 +4,7 @@ pub mod link;
 pub mod nft;
 pub mod price;
 pub mod release;
+pub mod scan;
 pub mod subscription;
 
 use crate::models::asset::AssetLink;
@@ -283,15 +284,6 @@ impl DatabaseClient {
             .do_update()
             .set((url.eq(excluded(url)),))
             .execute(&mut self.connection)
-    }
-
-    pub fn get_scan_address(&mut self, _chain: Chain, value: &str) -> Result<ScanAddress, diesel::result::Error> {
-        use crate::schema::scan_addresses::dsl::*;
-        scan_addresses
-            .filter(chain.eq(_chain.as_ref()))
-            .filter(address.eq(value))
-            .select(ScanAddress::as_select())
-            .first(&mut self.connection)
     }
 
     // swap

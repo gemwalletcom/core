@@ -1,4 +1,4 @@
-use primitives::{Asset, AssetType, Chain, FiatProviderName, LinkType, NFTType, PlatformStore};
+use primitives::{AddressType, Asset, AssetType, Chain, FiatProviderName, LinkType, NFTType, PlatformStore};
 use search_index::{SearchIndexClient, ASSETS_FILTERS, ASSETS_INDEX_NAME, ASSETS_RANKING_RULES, ASSETS_SEARCH_ATTRIBUTES, ASSETS_SORTS, INDEX_PRIMARY_KEY};
 use settings::Settings;
 use storage::{ClickhouseClient, DatabaseClient};
@@ -72,6 +72,13 @@ async fn main() {
     println!("setup link types");
     let types = LinkType::all().into_iter().map(storage::models::LinkType::from_primitive).collect::<Vec<_>>();
     let _ = database_client.add_link_types(types);
+
+    println!("setup scan address types");
+    let address_types = AddressType::all()
+        .into_iter()
+        .map(storage::models::ScanAddressType::from_primitive)
+        .collect::<Vec<_>>();
+    let _ = database_client.add_scan_address_types(address_types);
 
     println!("setup search index: {:?}", search_indexes);
 

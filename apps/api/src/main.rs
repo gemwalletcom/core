@@ -17,8 +17,7 @@ mod parser;
 mod parser_client;
 mod price_alerts;
 mod prices;
-mod security_providers;
-mod security_scan;
+mod scan;
 mod status;
 mod subscription;
 mod subscription_client;
@@ -45,9 +44,8 @@ use pricer::PriceAlertClient;
 use rocket::fairing::AdHoc;
 use rocket::tokio::sync::Mutex;
 use rocket::{Build, Rocket};
+use scan::{ScanClient, ScanProviderFactory};
 use search_index::SearchIndexClient;
-use security_providers::SecurityProviderFactory;
-use security_scan::SecurityScanClient;
 use settings::Settings;
 use settings_chain::ProviderFactory;
 use storage::{ClickhouseClient, DatabaseClient};
@@ -79,8 +77,8 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
     let subscriptions_client = SubscriptionsClient::new(postgres_url).await;
     let metrics_client = MetricsClient::new(postgres_url).await;
 
-    let security_providers = SecurityProviderFactory::create_providers(&settings_clone);
-    let scan_client = SecurityScanClient::new(postgres_url, security_providers).await;
+    let security_providers = ScanProviderFactory::create_providers(&settings_clone);
+    let scan_client = ScanClient::new(postgres_url, security_providers).await;
     let parser_client = ParserClient::new(settings_clone.clone()).await;
     let assets_client = AssetsClient::new(postgres_url).await;
     let search_index_client = SearchIndexClient::new(&settings_clone.meilisearch.url.clone(), &settings_clone.meilisearch.key.clone());
@@ -160,7 +158,7 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
                 price_alerts::get_price_alerts,
                 price_alerts::add_price_alerts,
                 price_alerts::delete_price_alerts,
-                security_scan::scan,
+                scan::scan_transaction,
             ],
         )
         .mount(settings.metrics.path, routes![metrics::get_metrics,])
