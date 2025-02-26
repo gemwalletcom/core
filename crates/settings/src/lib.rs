@@ -264,6 +264,7 @@ pub struct Swap {
 #[derive(Debug, Deserialize, Clone)]
 #[allow(unused)]
 pub struct Scan {
+    pub timeout_ms: u64,
     pub hashdit: ScanProvider,
     pub goplus: ScanProvider,
 }

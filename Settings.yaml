@@ -182,6 +182,7 @@ swap:
       percent: 0
       address: ""
 scan:
+  timeout_ms: 1200 # ms
   goplus:
     url: "https://api.gopluslabs.io"
     key: 
