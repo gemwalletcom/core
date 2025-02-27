@@ -278,7 +278,7 @@ impl GemSwapProvider for Across {
             address: request.wallet_address.clone(),
         })?;
 
-        let deployment = AcrossDeployment::deployment_by_chain(&request.from_asset.chain).ok_or(SwapperError::NotSupportedChain)?;
+        let _ = AcrossDeployment::deployment_by_chain(&request.from_asset.chain).ok_or(SwapperError::NotSupportedChain)?;
         let destination_deployment = AcrossDeployment::deployment_by_chain(&request.to_asset.chain).ok_or(SwapperError::NotSupportedChain)?;
         if !Self::is_supported_pair(&request.from_asset, &request.to_asset) {
             return Err(SwapperError::NotSupportedPair);
