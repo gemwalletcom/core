@@ -278,7 +278,8 @@ impl GemSwapProvider for Across {
             address: request.wallet_address.clone(),
         })?;
 
-        let deployment = AcrossDeployment::deployment_by_chain(&request.from_asset.chain).ok_or(SwapperError::NotSupportedChain)?;
+        let _ = AcrossDeployment::deployment_by_chain(&request.from_asset.chain).ok_or(SwapperError::NotSupportedChain)?;
+        let destination_deployment = AcrossDeployment::deployment_by_chain(&request.to_asset.chain).ok_or(SwapperError::NotSupportedChain)?;
         if !Self::is_supported_pair(&request.from_asset, &request.to_asset) {
             return Err(SwapperError::NotSupportedPair);
         }
@@ -380,7 +381,7 @@ impl GemSwapProvider for Across {
             &output_token,
             &wallet_address,
             &message,
-            &deployment,
+            &destination_deployment,
             provider.clone(),
             &request.to_asset.chain,
         );
@@ -537,7 +538,9 @@ mod tests {
         let eth = AssetId::from(Chain::Ethereum, None);
         let op = AssetId::from(Chain::Optimism, None);
         let arb = AssetId::from(Chain::Arbitrum, None);
+        let linea = AssetId::from(Chain::Linea, None);
 
+        assert!(Across::is_supported_pair(&eth, &linea));
         assert!(Across::is_supported_pair(&op, &eth));
         assert!(Across::is_supported_pair(&arb, &eth));
         assert!(Across::is_supported_pair(&op, &arb));

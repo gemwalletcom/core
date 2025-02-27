@@ -45,6 +45,7 @@ mod tests {
                 (Chain::Abstract, "https://api.mainnet.abs.xyz".into()),
                 (Chain::Unichain, "https://mainnet.unichain.org".into()),
                 (Chain::SmartChain, "https://binance.llamarpc.com".into()),
+                (Chain::Linea, "https://rpc.linea.build".into()),
             ]))
         }
     }

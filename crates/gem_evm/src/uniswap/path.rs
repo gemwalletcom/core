@@ -98,12 +98,13 @@ pub fn get_base_pair(chain: &EVMChain, weth_as_native: bool) -> Option<BasePair>
         EVMChain::AvalancheC => "0x408d4cd0adb7cebd1f1a1c33a0ba2098e1295bab",
         EVMChain::Celo => "0xd71ffd0940c920786ec4dbb5a12306669b5b81ef",
         EVMChain::SmartChain => "0x7130d2a12b9bcbfae4f2634d864a1ee1ce3ead9c", // BTCB
+        EVMChain::OpBNB => "0x7c6b91d9be155a6db01f749217d76ff02a7227f2",      // BTCB
         EVMChain::ZkSync => "0xBBeB516fb02a01611cBBE0453Fe3c580D7281011",
         EVMChain::Blast => "0xf7bc58b8d8f97adc129cfc4c9f45ce3c0e1d2692",
         EVMChain::World => "0x03C7054BCB39f7b2e5B2c7AcB37583e32D70Cfa3",
         EVMChain::Sonic => "0x0555E30da8f98308EdB960aa94C0Db47230d2B9c",
-        EVMChain::Abstract | EVMChain::Mantle | EVMChain::Gnosis | EVMChain::Manta | EVMChain::Unichain => "", // None
-        _ => panic!("get_base_pair: unsupported chain for btc"),
+        EVMChain::Linea => "0x3aAB2285ddcDdaD8edf438C1bAB47e1a9D05a9b4",
+        _ => "", // None
     };
 
     let usdc = match chain {
@@ -124,7 +125,9 @@ pub fn get_base_pair(chain: &EVMChain, weth_as_native: bool) -> Option<BasePair>
         EVMChain::Mantle => "0x09Bc4E0D864854c6aFB6eB9A9cdF58aC190D0dF9",
         EVMChain::Gnosis => "0x2a22f9c3b484c3629090FeED35F17Ff8F88f76F0", // USDC.e
         EVMChain::Manta => "0xb73603c5d87fa094b7314c74ace2e64d165016fb",
-        _ => panic!("get_base_pair: unsupported chain for usdc"),
+        EVMChain::Linea => "0x176211869cA2b568f2A7D4EE941E073a821EE1ff",
+        EVMChain::OpBNB => "",
+        _ => panic!("USDC is not configured for this chain"),
     };
 
     let usdt: &str = match chain {
@@ -143,11 +146,16 @@ pub fn get_base_pair(chain: &EVMChain, weth_as_native: bool) -> Option<BasePair>
         EVMChain::Mantle => "0x201EBa5CC46D216Ce6DC03F6a759e8E766e956aE",
         EVMChain::Gnosis => "0x4ECaBa5870353805a9F068101A40E0f32ed605C6",
         EVMChain::Manta => "0xf417f5a458ec102b90352f697d6e2ac3a3d2851f",
+        EVMChain::Linea => "0xA219439258ca9da29E9Cc4cE5596924745e12B93",
+        EVMChain::OpBNB => "0x9e5AAC1Ba1a2e6aEd6b32689DFcF62A509Ca96f3",
         EVMChain::Blast | EVMChain::World => "", // None
-        _ => panic!("get_base_pair unsupported chain for usdt"),
+        _ => panic!("USDT is not configured for this chain"),
     };
 
-    let mut stables = vec![EthereumAddress::parse(usdc)?];
+    let mut stables = vec![];
+    if !usdc.is_empty() {
+        stables.push(EthereumAddress::parse(usdc)?);
+    }
     if !usdt.is_empty() {
         stables.push(EthereumAddress::parse(usdt)?);
     }
