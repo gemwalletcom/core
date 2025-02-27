@@ -537,7 +537,9 @@ mod tests {
         let eth = AssetId::from(Chain::Ethereum, None);
         let op = AssetId::from(Chain::Optimism, None);
         let arb = AssetId::from(Chain::Arbitrum, None);
+        let linea = AssetId::from(Chain::Linea, None);
 
+        assert!(Across::is_supported_pair(&eth, &linea));
         assert!(Across::is_supported_pair(&op, &eth));
         assert!(Across::is_supported_pair(&arb, &eth));
         assert!(Across::is_supported_pair(&op, &arb));

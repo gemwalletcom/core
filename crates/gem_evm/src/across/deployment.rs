@@ -15,6 +15,7 @@ pub struct AcrossDeployment {
     pub spoke_pool: &'static str,
 }
 
+#[derive(Debug)]
 pub struct AssetMapping {
     pub capital_cost: CapitalCostConfig,
     pub set: HashSet<AssetId>,
