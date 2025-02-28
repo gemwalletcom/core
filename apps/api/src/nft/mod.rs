@@ -3,7 +3,8 @@ use primitives::{Chain, NFTAsset, NFTData, ResponseResult};
 use rocket::{response::status::NotFound, serde::json::Json, tokio::sync::Mutex, State};
 use std::str::FromStr;
 
-use crate::nft_client::NFTClient;
+pub mod client;
+pub use self::client::NFTClient;
 
 // by device
 
@@ -60,7 +61,7 @@ pub async fn update_nft_asset(asset_id: &str, client: &State<Mutex<NFTClient>>) 
 
 #[get("/nft/assets/<asset_id>")]
 pub async fn get_nft_asset(asset_id: &str, client: &State<Mutex<NFTClient>>) -> Result<Json<ResponseResult<NFTAsset>>, NotFound<String>> {
-    let result = client.lock().await.get_nft_asset(asset_id).await;
+    let result = client.lock().await.get_nft_asset(asset_id);
     match result {
         Ok(data) => Ok(Json(ResponseResult { data })),
         Err(err) => Err(NotFound(err.to_string())),
@@ -71,7 +72,7 @@ pub async fn get_nft_asset(asset_id: &str, client: &State<Mutex<NFTClient>>) -> 
 
 #[get("/nft/collections/<collection_id>")]
 pub async fn get_nft_collection(collection_id: &str, client: &State<Mutex<NFTClient>>) -> Result<Json<ResponseResult<NFTData>>, NotFound<String>> {
-    let result = client.lock().await.get_nft_collection(collection_id).await;
+    let result = client.lock().await.get_nft_collection_data(collection_id);
     match result {
         Ok(data) => Ok(Json(ResponseResult { data })),
         Err(err) => Err(NotFound(err.to_string())),

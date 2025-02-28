@@ -7,7 +7,8 @@ edition = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 reqwest = { workspace = true }
-futures.workspace = true
+futures.workspace = true 
+async-trait = { workspace = true }
 
 primitives = { path = "../primitives" }
 gem_evm = { path = "../gem_evm" }

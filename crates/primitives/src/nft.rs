@@ -69,6 +69,12 @@ pub struct NFTAsset {
     pub attributes: Vec<NFTAttribute>,
 }
 
+impl From<NFTAsset> for NFTAssetId {
+    fn from(asset: NFTAsset) -> Self {
+        NFTAssetId::new(asset.chain, asset.contract_address.as_deref().unwrap_or_default(), &asset.token_id)
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Sendable, Hashable, Equatable")]
 pub struct NFTAssetData {
@@ -83,6 +89,26 @@ pub struct NFTAssetId {
     pub chain: Chain,
     pub contract_address: String,
     pub token_id: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[serde(rename_all = "camelCase")]
+pub struct NFTCollectionId {
+    pub chain: Chain,
+    pub contract_address: String,
+}
+
+impl NFTCollectionId {
+    pub fn new(chain: Chain, contract_address: &str) -> Self {
+        Self {
+            chain,
+            contract_address: contract_address.to_string(),
+        }
+    }
+
+    pub fn id(&self) -> String {
+        format!("{}_{}", self.chain.as_ref(), self.contract_address)
+    }
 }
 
 impl NFTAssetId {
@@ -106,8 +132,8 @@ impl NFTAssetId {
         })
     }
 
-    pub fn get_collection_id(&self) -> String {
-        format!("{}_{}", self.chain.as_ref(), self.contract_address)
+    pub fn get_collection_id(&self) -> NFTCollectionId {
+        NFTCollectionId::new(self.chain, &self.contract_address)
     }
 }
 

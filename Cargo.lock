@@ -5365,6 +5365,7 @@ dependencies = [
 name = "nft"
 version = "1.0.0"
 dependencies = [
+ "async-trait",
  "futures",
  "gem_evm",
  "gem_solana",

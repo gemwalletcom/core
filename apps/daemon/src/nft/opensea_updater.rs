@@ -19,13 +19,13 @@ impl OpenSeaUpdater {
     }
 
     pub async fn update(&mut self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
-        let collections = self.database.get_nft_collections()?;
+        let collections = self.database.get_nft_collections_all()?;
 
         for collection in collections.clone() {
             let chain = Chain::from_str(collection.chain.as_str())?;
             match chain {
                 Chain::Ethereum => {
-                    let opensea_collection = self.opensea_client.get_collection(chain.as_ref(), &collection.contract_address).await?;
+                    let opensea_collection = self.opensea_client.get_collection_id(chain.as_ref(), &collection.contract_address).await?;
                     let _ = self.update_collection(collection.clone(), opensea_collection);
 
                     println!("Updating collection: {}", collection.name);

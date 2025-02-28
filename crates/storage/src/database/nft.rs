@@ -39,7 +39,7 @@ impl DatabaseClient {
     }
 
     // collections
-    pub fn get_nft_collections(&mut self) -> Result<Vec<NftCollection>, diesel::result::Error> {
+    pub fn get_nft_collections_all(&mut self) -> Result<Vec<NftCollection>, diesel::result::Error> {
         use crate::schema::nft_collections::dsl::*;
         nft_collections.select(NftCollection::as_select()).load(&mut self.connection)
     }
@@ -50,6 +50,14 @@ impl DatabaseClient {
             .filter(id.eq(collection_id))
             .select(NftCollection::as_select())
             .first(&mut self.connection)
+    }
+
+    pub fn get_nft_collections(&mut self, ids: Vec<String>) -> Result<Vec<NftCollection>, diesel::result::Error> {
+        use crate::schema::nft_collections::dsl::*;
+        nft_collections
+            .filter(id.eq_any(ids))
+            .select(NftCollection::as_select())
+            .load(&mut self.connection)
     }
 
     pub fn get_nft_collection_links(&mut self, _collection_id: &str) -> Result<Vec<NftLink>, diesel::result::Error> {

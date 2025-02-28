@@ -12,7 +12,6 @@ mod metrics;
 mod metrics_client;
 mod name;
 mod nft;
-mod nft_client;
 mod parser;
 mod parser_client;
 mod price_alerts;
@@ -36,7 +35,7 @@ use fiat::FiatProviderFactory;
 use metrics_client::MetricsClient;
 use name_resolver::client::Client as NameClient;
 use name_resolver::NameProviderFactory;
-use nft_client::NFTClient;
+use nft::NFTClient;
 use parser_client::ParserClient;
 use pricer::chart_client::ChartClient;
 use pricer::price_client::PriceClient;
@@ -86,7 +85,13 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
     let swap_client = SwapClient::new(postgres_url).await;
     let providers = FiatProviderFactory::new_providers(settings_clone.clone());
     let fiat_client = FiatProvider::new(postgres_url, providers).await;
-    let nft_client = NFTClient::new(postgres_url, &settings.nft.nftscan.key.secret, &settings.nft.simplehash.key.secret).await;
+    let nft_client = NFTClient::new(
+        postgres_url,
+        &settings.nft.nftscan.key.secret,
+        &settings.nft.opensea.key.secret,
+        &settings.nft.magiceden.key.secret,
+    )
+    .await;
 
     rocket::build()
         .attach(AdHoc::on_ignite("Tokio Runtime Configuration", |rocket| async {

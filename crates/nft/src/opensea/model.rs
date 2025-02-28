@@ -1,5 +1,7 @@
 use serde::Deserialize;
 
+pub type TokenStandard = String;
+
 #[derive(Deserialize, Debug)]
 pub struct Contract {
     pub address: String,
@@ -10,12 +12,47 @@ pub struct Contract {
     pub total_supply: Option<u64>,
 }
 
+#[derive(Deserialize, Debug)]
+pub struct NftsResponse {
+    pub nfts: Vec<Nft>,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct NftResponse {
+    pub nft: Nft,
+}
+
+#[derive(Deserialize, Clone, Debug)]
+pub struct Nft {
+    pub identifier: String,
+    pub collection: String,
+    pub contract: String,
+    pub token_standard: TokenStandard,
+    pub name: String,
+    pub description: String,
+    pub image_url: String,
+    pub display_image_url: String,
+    // pub display_animation_url: Option<String>,
+    // pub metadata_url: String,
+    // pub opensea_url: String,
+    // pub updated_at: String,
+    // pub is_disabled: bool,
+    // pub is_nsfw: bool,
+    pub traits: Option<Vec<Trait>>,
+}
+
+#[derive(Deserialize, Clone, Debug)]
+pub struct Trait {
+    pub trait_type: String,
+    pub value: serde_json::Value,
+}
+
 #[derive(Deserialize)]
 pub struct Collection {
     pub collection: String,
     pub name: String,
     pub description: String,
-    // pub image_url: String,
+    pub image_url: String,
     // pub banner_image_url: String,
     // pub owner: String,
     // pub safelist_status: String,

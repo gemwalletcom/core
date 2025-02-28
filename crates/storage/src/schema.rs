@@ -177,9 +177,9 @@ diesel::table! {
         collection_id -> Varchar,
         #[max_length = 64]
         chain -> Varchar,
-        #[max_length = 256]
-        name -> Varchar,
         #[max_length = 1024]
+        name -> Varchar,
+        #[max_length = 4096]
         description -> Varchar,
         #[max_length = 512]
         image_url -> Varchar,
@@ -201,9 +201,9 @@ diesel::table! {
         id -> Varchar,
         #[max_length = 64]
         chain -> Varchar,
-        #[max_length = 256]
-        name -> Varchar,
         #[max_length = 1024]
+        name -> Varchar,
+        #[max_length = 4096]
         description -> Varchar,
         #[max_length = 128]
         symbol -> Nullable<Varchar>,
@@ -464,7 +464,6 @@ diesel::joinable!(price_alerts -> devices (device_id));
 diesel::joinable!(prices_assets -> assets (asset_id));
 diesel::joinable!(prices_assets -> prices (price_id));
 diesel::joinable!(scan_addresses -> chains (chain));
-diesel::joinable!(scan_addresses -> scan_addresses_types (type_));
 diesel::joinable!(subscriptions -> chains (chain));
 diesel::joinable!(subscriptions -> devices (device_id));
 diesel::joinable!(subscriptions_addresses_exclude -> chains (chain));

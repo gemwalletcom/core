@@ -1,41 +1,12 @@
+use primitives::Chain;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Response<T> {
-    pub code: usize,
-    pub data: T,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct NFTResult {
-    pub chain: String,
-    pub collection_assets: Vec<NFTCollection>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct NFTCollection {
-    pub token_address: Option<String>,
-    pub interact_program: Option<String>,
-    pub contract_name: String,
-    pub contract_address: String,
-    pub description: Option<String>,
-    pub verified: bool,
-    pub opensea_verified: bool,
-    pub logo_url: Option<String>,
-    pub assets: Vec<NFTAsset>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct NFTAsset {
-    pub token_id: String,
-    pub erc_type: String,
-    pub name: Option<String>,
-    pub description: Option<String>,
-    pub image_uri: Option<String>,
-    pub nftscan_uri: Option<String>,
-    pub rarity_score: Option<f64>,
-    pub rarity_rank: Option<u64>,
-    pub metadata_json: Option<String>,
+pub fn get_chain(chain: Chain) -> Option<String> {
+    match chain {
+        Chain::Ethereum => Some("eth".to_owned()),
+        Chain::Solana => Some("sol".to_owned()),
+        _ => None,
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -45,11 +16,14 @@ pub struct NFTAttribute {
 }
 
 impl NFTAttribute {
-    pub fn as_primitive(&self) -> primitives::NFTAttribute {
-        primitives::NFTAttribute {
+    pub fn as_primitive(&self) -> Option<primitives::NFTAttribute> {
+        if self.attribute_value.is_empty() || self.attribute_value.len() > 18 {
+            return None;
+        }
+        Some(primitives::NFTAttribute {
             name: self.attribute_name.clone(),
             value: self.attribute_value.clone(),
             percentage: None,
-        }
+        })
     }
 }

@@ -8,8 +8,8 @@ CREATE TABLE nft_assets (
     collection_id VARCHAR(64) NOT NULL REFERENCES nft_collections (id) ON DELETE CASCADE,
     chain VARCHAR(64) NOT NULL REFERENCES chains (id) ON DELETE CASCADE,
     
-    name VARCHAR(256) NOT NULL,
-    description VARCHAR(1024) NOT NULL,
+    name VARCHAR(1024) NOT NULL,
+    description VARCHAR(4096) NOT NULL,
 
     image_url VARCHAR(512) NOT NULL,
 
