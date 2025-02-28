@@ -359,4 +359,12 @@ impl DatabaseClient {
     pub fn migrations(&mut self) {
         self.connection.run_pending_migrations(MIGRATIONS).unwrap();
     }
+
+    pub fn add_transactions_types(&mut self, values: Vec<TransactionType>) -> Result<usize, diesel::result::Error> {
+        use crate::schema::transactions_types::dsl::*;
+        diesel::insert_into(transactions_types)
+            .values(values)
+            .on_conflict_do_nothing()
+            .execute(&mut self.connection)
+    }
 }

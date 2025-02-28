@@ -28,7 +28,12 @@ impl NFTProvider for MagicEdenClient {
     }
 
     async fn get_asset(&self, asset_id: NFTAssetId) -> Result<NFTAsset, Box<dyn Error + Send + Sync>> {
-        let asset = self.get_asset_id(&asset_id.token_id).await?.as_primitive(asset_id).ok_or("Asset not found")?;
+        let owner = self.get_token_owner(&asset_id.token_id).await?;
+        let asset = self
+            .get_asset_id(&asset_id.token_id)
+            .await?
+            .as_primitive(asset_id, owner)
+            .ok_or("Asset not found")?;
         Ok(asset)
     }
 }

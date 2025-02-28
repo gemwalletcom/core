@@ -35,7 +35,6 @@ impl NFTClient {
             .filter(|x| matches!(x.0, Chain::Ethereum | Chain::Solana))
             //.filter(|x| matches!(x.0, Chain::Solana))
             .collect();
-
         let assets = self.nft.get_assets(addresses).await?;
         self.preload(assets).await
     }
@@ -49,14 +48,7 @@ impl NFTClient {
             .into_iter()
             .collect();
 
-        let collection_ids = self.preload_collections(collection_ids).await?;
-        // only fetch assets for preloaded collections
-        let assets = assets
-            .iter()
-            .filter(|x| collection_ids.iter().any(|id| id.id == x.get_collection_id().id()))
-            .cloned()
-            .collect::<Vec<_>>();
-
+        self.preload_collections(collection_ids).await?;
         self.preload_assets(assets.clone()).await?;
         self.get_nfts(assets).await
     }
@@ -87,6 +79,7 @@ impl NFTClient {
                     .into_iter()
                     .map(move |link| storage::models::NftLink::from_primitive(&x.id.clone(), link))
             })
+            .filter(|x| !x.url.is_empty())
             .collect();
 
         self.database.add_nft_collections(new_collections)?;
@@ -151,6 +144,7 @@ impl NFTClient {
             .into_iter()
             .map(|x| x.as_primitive())
             .collect();
+
         Ok(collection.as_primitive(links))
     }
 

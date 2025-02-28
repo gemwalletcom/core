@@ -80,6 +80,7 @@ impl NFTCollection {
         Some(primitives::NFTCollection {
             id: primitives::NFTCollection::id(chain, contract_address.as_str()),
             name,
+            symbol: None,
             description: self.description.clone(),
             chain,
             contract_address: contract_address.clone(),

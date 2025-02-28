@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
 use gem_evm::address::EthereumAddress;
-use primitives::{Chain, NFTAsset, NFTAssetId, NFTAttribute, NFTCollectionId, NFTImage, NFTType};
+use primitives::{Chain, LinkType, NFTAsset, NFTAssetId, NFTAttribute, NFTCollectionId, NFTImage, NFTType};
 
 use super::model::{Collection, Nft, Trait};
 
@@ -54,23 +54,12 @@ impl Trait {
     }
 }
 
-// impl std::str::FromStr for primitives::NFTType {
-//     type Err = ();
-
-//     fn from_str(s: &str) -> Result<Self, Self::Err> {
-//         match s.to_lowercase().as_str() {
-//             "erc1155" => Ok(primitives::NFTType::ERC1155),
-//             "erc721" => Ok(primitives::NFTType::ERC721),
-//             _ => Err(()),
-//         }
-//     }
-// }
-
 impl Collection {
     pub fn as_primitive(&self, collection: NFTCollectionId) -> primitives::NFTCollection {
         primitives::NFTCollection {
             id: collection.id(),
             name: self.name.clone(),
+            symbol: Some(self.collection.clone()),
             description: Some(self.description.clone()),
             chain: collection.chain,
             contract_address: collection.contract_address.clone(),
@@ -79,8 +68,17 @@ impl Collection {
                 preview_image_url: self.image_url.clone(),
                 original_source_url: self.image_url.clone(),
             },
-            links: vec![], // TODO
+            links: self.as_links(),
             is_verified: true,
         }
+    }
+
+    pub fn as_links(&self) -> Vec<primitives::AssetLink> {
+        vec![
+            primitives::AssetLink::new(self.opensea_url.as_str(), LinkType::OpenSea),
+            primitives::AssetLink::new(self.project_url.as_str(), LinkType::Website),
+            primitives::AssetLink::new(self.discord_url.as_str(), LinkType::Discord),
+            primitives::AssetLink::new(self.telegram_url.as_str(), LinkType::Telegram),
+        ]
     }
 }

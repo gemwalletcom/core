@@ -19,10 +19,11 @@ pub struct Trait {
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Collection {
-    pub symbol: String,
+    pub symbol: Option<String>,
     pub name: String,
     pub description: String,
     pub image: String,
+    pub on_chain_collection_address: String,
     pub twitter: Option<String>,
     pub discord: Option<String>,
     pub website: Option<String>,

@@ -24,6 +24,7 @@ pub struct NFTData {
 pub struct NFTCollection {
     pub id: String,
     pub name: String,
+    pub symbol: Option<String>,
     pub description: Option<String>,
     pub chain: Chain,
     pub contract_address: String,

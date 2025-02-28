@@ -7,12 +7,12 @@ impl Nft {
         Some(NFTAssetId::new(chain, &self.collection, &self.mint_address))
     }
 
-    pub fn as_primitive(&self, asset: NFTAssetId) -> Option<NFTAsset> {
+    pub fn as_primitive(&self, asset: NFTAssetId, owner: String) -> Option<NFTAsset> {
         let traits = self.attributes.clone();
         Some(NFTAsset {
             id: asset.to_string(),
             collection_id: asset.get_collection_id().id(),
-            contract_address: Some(asset.contract_address), //TODO: Specify contract address as owner / program
+            contract_address: Some(owner),
             token_id: asset.token_id,
             token_type: NFTType::SPL,
             name: self.name.clone(),
@@ -44,9 +44,10 @@ impl Collection {
         primitives::NFTCollection {
             id: collection.id(),
             name: self.name.clone(),
+            symbol: self.symbol.clone(),
             description: Some(self.description.clone()),
             chain: collection.chain,
-            contract_address: collection.contract_address.clone(), // TODO: Specify contract address as owner / program
+            contract_address: self.on_chain_collection_address.clone(),
             image: NFTImage {
                 image_url: self.image.clone(),
                 preview_image_url: self.image.clone(),
@@ -69,6 +70,6 @@ impl Collection {
             links.push(primitives::AssetLink::new(discord.as_str(), LinkType::Discord));
         }
 
-        links.iter().filter(|x| !x.url.is_empty()).cloned().collect()
+        links
     }
 }

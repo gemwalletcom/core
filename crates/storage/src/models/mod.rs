@@ -38,5 +38,5 @@ pub use self::release::Release;
 pub use self::scan::{ScanAddress, ScanAddressType};
 pub use self::subscription::{Subscription, SubscriptionAddressExclude};
 pub use self::tokenlist::TokenList;
-pub use self::transaction::Transaction;
+pub use self::transaction::{Transaction, TransactionType};
 pub use self::transaction_addresses::{AddressChainIdResult, TransactionAddresses};

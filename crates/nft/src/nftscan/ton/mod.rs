@@ -33,6 +33,7 @@ impl NFTTonResult {
         Some(primitives::NFTCollection {
             id: primitives::NFTCollection::id(chain, contract_address.as_str()),
             name,
+            symbol: None,
             description,
             chain,
             contract_address: contract_address.to_string(),

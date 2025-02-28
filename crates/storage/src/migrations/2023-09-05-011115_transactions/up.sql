@@ -1,3 +1,8 @@
+CREATE TABLE transactions_types (
+    id VARCHAR(32) PRIMARY KEY NOT NULL,
+    name VARCHAR(255) NOT NULL default ''
+);
+
 CREATE TABLE transactions
 (
     id           VARCHAR(256) NOT NULL PRIMARY KEY,
@@ -10,7 +15,7 @@ CREATE TABLE transactions
     sequence     INTEGER,
     block_number INTEGER      NOT NULL,
     state        VARCHAR(16)  NOT NULL,
-    kind         VARCHAR(16)  NOT NULL,
+    kind         VARCHAR(16)  NOT NULL REFERENCES transactions_types (id) ON DELETE CASCADE,
     value        VARCHAR(256),
     asset_id     VARCHAR      NOT NULL REFERENCES assets (id) ON DELETE CASCADE,
     fee          VARCHAR(32),

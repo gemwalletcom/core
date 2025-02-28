@@ -207,8 +207,6 @@ diesel::table! {
         description -> Varchar,
         #[max_length = 128]
         symbol -> Nullable<Varchar>,
-        #[max_length = 256]
-        url -> Nullable<Varchar>,
         #[max_length = 128]
         owner -> Nullable<Varchar>,
         #[max_length = 128]
@@ -443,6 +441,15 @@ diesel::table! {
     }
 }
 
+diesel::table! {
+    transactions_types (id) {
+        #[max_length = 32]
+        id -> Varchar,
+        #[max_length = 255]
+        name -> Varchar,
+    }
+}
+
 diesel::joinable!(assets -> assets_types (asset_type));
 diesel::joinable!(assets -> chains (chain));
 diesel::joinable!(assets_links -> assets (asset_id));
@@ -501,4 +508,5 @@ diesel::allow_tables_to_appear_in_same_query!(
     tokenlists,
     transactions,
     transactions_addresses,
+    transactions_types,
 );

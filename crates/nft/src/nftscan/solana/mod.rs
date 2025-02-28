@@ -1,4 +1,3 @@
-use gem_solana::TOKEN_PROGRAM;
 use primitives::{Chain, NFTAssetId, NFTImage};
 use serde::{Deserialize, Serialize};
 
@@ -64,6 +63,7 @@ impl NFTSolanaResult {
         Some(primitives::NFTCollection {
             id: primitives::NFTCollection::id(chain, &contract_address),
             name,
+            symbol: None,
             description,
             chain,
             contract_address: contract_address.to_string(),
