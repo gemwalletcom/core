@@ -1,45 +1,12 @@
-use crate::Chain;
-use serde::{Deserialize, Serialize};
+use crate::chain::{Chain, EVMChain};
 use std::str::FromStr;
-use strum::{EnumIter, IntoEnumIterator};
-use strum_macros::{AsRefStr, EnumString};
-use typeshare::typeshare;
+use strum::IntoEnumIterator;
 
 #[derive(Debug, PartialEq)]
 pub enum ChainStack {
     Native,
     Optimism,
     ZkSync,
-}
-
-#[derive(Copy, Clone, Debug, Serialize, Deserialize, EnumIter, AsRefStr, EnumString, PartialEq)]
-#[typeshare(swift = "Equatable, CaseIterable, Sendable")]
-#[serde(rename_all = "lowercase")]
-#[strum(serialize_all = "lowercase")]
-pub enum EVMChain {
-    Ethereum,
-    SmartChain,
-    Polygon,
-    Arbitrum,
-    Optimism,
-    Base,
-    AvalancheC,
-    OpBNB,
-    Fantom,
-    Gnosis,
-    Manta,
-    Blast,
-    ZkSync,
-    Linea,
-    Mantle,
-    Celo,
-    World,
-    Sonic,
-    Abstract,
-    Berachain,
-    Ink,
-    Unichain,
-    Hyperliquid,
 }
 
 impl EVMChain {

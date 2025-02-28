@@ -1,5 +1,5 @@
 use crate::block_explorer::{BlockExplorer, Metadata};
-use crate::chain_evm::EVMChain;
+use crate::chain::EVMChain;
 
 pub struct EtherScan {
     pub meta: Metadata,

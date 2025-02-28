@@ -6,8 +6,9 @@ use strum_macros::{AsRefStr, EnumString};
 use typeshare::typeshare;
 
 use crate::{AssetId, AssetType, ChainType, StakeChain};
+use gem_macros::ChainAttributes;
 
-#[derive(Copy, Clone, Debug, Serialize, Deserialize, EnumIter, AsRefStr, EnumString, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, Debug, Serialize, Deserialize, EnumIter, AsRefStr, EnumString, PartialEq, Eq, Hash, ChainAttributes)]
 #[typeshare(swift = "Equatable, CaseIterable, Sendable, Hashable")]
 #[serde(rename_all = "lowercase")]
 #[strum(serialize_all = "lowercase")]
@@ -15,47 +16,70 @@ pub enum Chain {
     Bitcoin,
     BitcoinCash,
     Litecoin,
+    #[is_evm]
     Ethereum,
+    #[is_evm]
     SmartChain,
     Solana,
+    #[is_evm]
     Polygon,
     Thorchain,
     Cosmos,
     Osmosis,
+    #[is_evm]
     Arbitrum,
     Ton,
     Tron,
     Doge,
+    #[is_evm]
     Optimism,
     Aptos,
+    #[is_evm]
     Base,
+    #[is_evm]
     AvalancheC,
     Sui,
     Xrp,
+    #[is_evm]
     OpBNB,
+    #[is_evm]
     Fantom,
+    #[is_evm]
     Gnosis,
     Celestia,
     Injective,
     Sei,
+    #[is_evm]
     Manta,
+    #[is_evm]
     Blast,
     Noble,
+    #[is_evm]
     ZkSync,
+    #[is_evm]
     Linea,
+    #[is_evm]
     Mantle,
+    #[is_evm]
     Celo,
     Near,
+    #[is_evm]
     World,
     Stellar,
+    #[is_evm]
     Sonic,
     Algorand,
     Polkadot,
     Cardano,
+    #[is_evm]
     Abstract,
+    #[is_evm]
     Berachain,
+    #[is_evm]
     Ink,
+    #[is_evm]
     Unichain,
+    #[is_evm]
     Hyperliquid,
 }
 

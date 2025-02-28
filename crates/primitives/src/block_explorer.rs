@@ -1,5 +1,4 @@
-use crate::chain::Chain;
-use crate::chain_evm::EVMChain;
+use crate::chain::{Chain, EVMChain};
 use crate::explorers::{
     AlgorandAllo, AptosExplorer, AptosScan, BlockScout, Blockchair, Blocksec, Cardanocan, EtherScan, HyperLiquid, MantleExplorer, Mempool, MintScan,
     NearBlocks, OkxExplorer, RouteScan, RuneScan, SolanaFM, Solscan, SubScan, SuiScan, SuiVision, TonScan, TonViewer, TronScan, Viewblock, XrpScan, ZkSync,

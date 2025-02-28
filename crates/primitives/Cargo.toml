@@ -17,3 +17,5 @@ anyhow = { workspace = true }
 urlencoding = { workspace = true }
 url = { workspace = true }
 rusty-money = { workspace = true }
+
+gem_macros = { path = "../gem_macros" }

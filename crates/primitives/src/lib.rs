@@ -1,14 +1,13 @@
 // lib.rs
 
 pub mod chain;
-pub use self::chain::Chain;
+pub use self::chain::{Chain, EVMChain};
 pub mod chain_stake;
 pub use self::chain_stake::StakeChain;
 pub mod chain_type;
 pub use self::chain_type::ChainType;
-pub mod chain_evm;
-pub use self::chain_evm::EVMChain;
 pub mod chain_bitcoin;
+pub mod chain_evm;
 pub use self::chain_bitcoin::BitcoinChain;
 pub mod name;
 pub use self::name::NameProvider;
