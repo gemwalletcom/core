@@ -18,6 +18,7 @@ pub trait NFTProvider: Send + Sync {
     async fn get_asset(&self, asset_id: NFTAssetId) -> Result<NFTAsset, Box<dyn std::error::Error + Send + Sync>>;
 }
 
+#[allow(unused)]
 pub struct NFT {
     nftscan_client: NFTScanClient,
     opensea_client: OpenSeaClient,
