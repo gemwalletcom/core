@@ -1,5 +1,7 @@
+pub mod client;
+pub use client::SubscriptionsClient;
+
 extern crate rocket;
-use crate::SubscriptionsClient;
 use primitives::Subscription;
 use rocket::serde::json::Json;
 use rocket::tokio::sync::Mutex;

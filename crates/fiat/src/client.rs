@@ -15,12 +15,12 @@ use primitives::{fiat_quote::FiatQuotes, fiat_quote_request::FiatSellRequest};
 use reqwest::Client as RequestClient;
 use storage::DatabaseClient;
 
-pub struct Client {
+pub struct FiatClient {
     database: DatabaseClient,
     providers: Vec<Box<dyn FiatProvider + Send + Sync>>,
 }
 
-impl Client {
+impl FiatClient {
     pub async fn new(database_url: &str, providers: Vec<Box<dyn FiatProvider + Send + Sync>>) -> Self {
         let database = DatabaseClient::new(database_url);
 

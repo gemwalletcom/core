@@ -6,10 +6,13 @@ pub mod providers;
 use crate::providers::{BanxaClient, MercuryoClient, MoonPayClient, RampClient, TransakClient};
 use settings::Settings;
 pub mod error;
+
+pub use client::FiatClient;
+
 pub struct FiatProviderFactory {}
 impl FiatProviderFactory {
     pub fn new_providers(settings: Settings) -> Vec<Box<dyn FiatProvider + Send + Sync>> {
-        let request_client = crate::client::Client::request_client(settings.fiat.timeout);
+        let request_client = crate::client::FiatClient::request_client(settings.fiat.timeout);
 
         let moonpay = MoonPayClient::new(request_client.clone(), settings.moonpay.key.public.clone(), settings.moonpay.key.secret.clone());
         let ramp = RampClient::new(request_client.clone(), settings.ramp.key.public.clone());

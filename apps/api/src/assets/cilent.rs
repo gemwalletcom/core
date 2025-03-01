@@ -1,4 +1,3 @@
-extern crate rocket;
 use std::{error::Error, vec};
 
 use primitives::{Asset, AssetBasic, AssetFull, Chain};

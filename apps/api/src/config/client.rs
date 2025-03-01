@@ -5,11 +5,11 @@ use primitives::{
 use std::{error::Error, str::FromStr};
 use storage::DatabaseClient;
 
-pub struct Client {
+pub struct ConfigClient {
     database: DatabaseClient,
 }
 
-impl Client {
+impl ConfigClient {
     pub async fn new(database_url: &str) -> Self {
         let database = DatabaseClient::new(database_url);
         Self { database }

@@ -20,7 +20,7 @@ pub trait NFTProvider: Send + Sync {
 
 pub struct NFT {
     nftscan_client: NFTScanClient,
-    opensea_client: OpenSeaClient,
+    _opensea_client: OpenSeaClient,
     magiceden_client: MagicEdenClient,
 }
 
@@ -28,7 +28,7 @@ impl NFT {
     pub fn new(nftscan_key: &str, opensea_key: &str, magiceden_key: &str) -> Self {
         Self {
             nftscan_client: NFTScanClient::new(nftscan_key),
-            opensea_client: OpenSeaClient::new(opensea_key),
+            _opensea_client: OpenSeaClient::new(opensea_key),
             magiceden_client: MagicEdenClient::new(magiceden_key),
         }
     }

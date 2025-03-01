@@ -1,7 +1,9 @@
+mod client;
+pub use client::ParserClient;
+
 extern crate rocket;
 use std::str::FromStr;
 
-use crate::parser_client::ParserClient;
 use primitives::{Chain, Transaction};
 use rocket::serde::json::Json;
 use rocket::tokio::sync::Mutex;

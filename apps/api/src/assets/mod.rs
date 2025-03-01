@@ -1,9 +1,9 @@
+pub mod cilent;
+pub use cilent::{AssetsChainProvider, AssetsClient, AssetsSearchClient};
 extern crate rocket;
 
 use std::str::FromStr;
 
-use crate::asset_client::{AssetsChainProvider, AssetsSearchClient};
-use crate::AssetsClient;
 use primitives::{Asset, AssetBasic, AssetFull, AssetId, Chain};
 use rocket::serde::json::Json;
 use rocket::tokio::sync::Mutex;

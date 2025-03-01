@@ -1,5 +1,6 @@
+pub mod client;
+pub use client::DevicesClient;
 extern crate rocket;
-use crate::DevicesClient;
 use primitives::device::Device;
 use rocket::http::Status;
 use rocket::serde::json::Json;
