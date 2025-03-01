@@ -3,14 +3,9 @@ use std::str::FromStr;
 use gem_evm::address::EthereumAddress;
 use primitives::{Chain, LinkType, NFTAsset, NFTAssetId, NFTAttribute, NFTCollectionId, NFTImage, NFTType};
 
-use super::model::{Collection, Nft, Trait};
+use super::model::{Collection, Nft, NftAsset, Trait};
 
 impl Nft {
-    pub fn as_asset_id(&self, chain: Chain) -> Option<NFTAssetId> {
-        let contract_address = EthereumAddress::from_str(&self.contract).ok()?.to_checksum();
-        Some(NFTAssetId::new(chain, &contract_address, &self.identifier))
-    }
-
     pub fn as_primitive(&self, asset: NFTAssetId) -> Option<NFTAsset> {
         let traits = self.traits.clone().unwrap_or_default();
         Some(NFTAsset {
@@ -37,6 +32,13 @@ impl Nft {
             "erc721" => Some(NFTType::ERC721),
             _ => None,
         }
+    }
+}
+
+impl NftAsset {
+    pub fn as_asset_id(&self, chain: Chain) -> Option<NFTAssetId> {
+        let contract_address = EthereumAddress::from_str(&self.contract).ok()?.to_checksum();
+        Some(NFTAssetId::new(chain, &contract_address, &self.identifier))
     }
 }
 

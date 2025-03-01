@@ -1,4 +1,4 @@
-use super::model::{Collection, Contract, Nft, NftResponse, NftsResponse};
+use super::model::{Collection, Contract, NftAsset, NftResponse, NftsResponse};
 use reqwest::header::{HeaderMap, HeaderValue};
 use std::error::Error;
 
@@ -17,7 +17,7 @@ impl OpenSeaClient {
         }
     }
 
-    pub async fn get_nfts_by_account(&self, chain: &str, account_address: &str) -> Result<Vec<Nft>, Box<dyn Error + Send + Sync>> {
+    pub async fn get_nfts_by_account(&self, chain: &str, account_address: &str) -> Result<Vec<NftAsset>, Box<dyn Error + Send + Sync>> {
         let url = format!("{}/api/v2/chain/{}/account/{}/nfts", Self::BASE_URL, chain, account_address);
         Ok(self.client.get(&url).send().await?.json::<NftsResponse>().await?.nfts)
     }
