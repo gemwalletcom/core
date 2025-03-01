@@ -36,6 +36,7 @@ pub fn chain_features_derive(input: TokenStream) -> TokenStream {
 
     let evm_enum = quote! {
         #[derive(Copy, Clone, Debug, Serialize, Deserialize, EnumIter, AsRefStr, EnumString, PartialEq)]
+        #[typeshare(swift = "Equatable, CaseIterable, Sendable")]
         #[serde(rename_all = "lowercase")]
         #[strum(serialize_all = "lowercase")]
         pub enum EVMChain {
