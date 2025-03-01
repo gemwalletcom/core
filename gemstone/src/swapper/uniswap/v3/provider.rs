@@ -94,7 +94,7 @@ impl UniswapV3 {
 
 #[async_trait]
 impl GemSwapProvider for UniswapV3 {
-    fn provider(&self) -> SwapProvider {
+    fn provider(&self) -> &SwapProvider {
         self.provider.provider()
     }
 
@@ -183,7 +183,7 @@ impl GemSwapProvider for UniswapV3 {
             from_value: request.value.clone(),
             to_value: max_amount_out.to_string(),
             data: SwapProviderData {
-                provider: self.provider(),
+                provider: self.provider().id.clone(),
                 routes: routes.clone(),
                 slippage_bps: request.options.slippage.bps,
             },

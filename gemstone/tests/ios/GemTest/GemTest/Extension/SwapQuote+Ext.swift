@@ -5,6 +5,11 @@ import Gemstone
 
 extension SwapQuote: @retroactive CustomStringConvertible {
     public var description: String {
+        let swapProvider = SwapProvider(id: self.data.provider)
+        let provider: [String: Any] = [
+            "id": swapProvider.name(),
+            "protocol": swapProvider.protocol(),
+        ]
         let routes: [[String: Any]] = data.routes.map { route in
             [
                 "input": route.input,
@@ -17,7 +22,7 @@ extension SwapQuote: @retroactive CustomStringConvertible {
             "fromValue": fromValue,
             "toValue": toValue,
             "data": [
-                "provider": swapProviderNameToString(provider: data.provider),
+                "provider": provider,
                 "slippageBps": data.slippageBps,
                 "routes": routes,
             ],

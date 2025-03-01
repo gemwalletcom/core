@@ -45,8 +45,18 @@ use alloy_core::{
 use async_trait::async_trait;
 use std::{fmt::Debug, str::FromStr, sync::Arc};
 
-#[derive(Debug, Default)]
-pub struct Across {}
+#[derive(Debug)]
+pub struct Across {
+    pub provider: SwapProvider,
+}
+
+impl Default for Across {
+    fn default() -> Self {
+        Self {
+            provider: SwapProvider::new(SwapProviderId::Across),
+        }
+    }
+}
 
 impl Across {
     pub fn boxed() -> Box<dyn GemSwapProvider> {
@@ -231,8 +241,8 @@ impl Across {
 
 #[async_trait]
 impl GemSwapProvider for Across {
-    fn provider(&self) -> SwapProvider {
-        SwapProvider::Across
+    fn provider(&self) -> &SwapProvider {
+        &self.provider
     }
 
     fn supported_assets(&self) -> Vec<SwapChainAsset> {
@@ -429,7 +439,7 @@ impl GemSwapProvider for Across {
             from_value: request.value.clone(),
             to_value: output_amount.to_string(),
             data: SwapProviderData {
-                provider: self.provider(),
+                provider: self.provider().id.clone(),
                 slippage_bps: request.options.slippage.bps,
                 routes: vec![SwapRoute {
                     input: input_asset.clone(),

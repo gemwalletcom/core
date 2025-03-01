@@ -1,58 +1,7 @@
 use super::permit2_data::Permit2Data;
-use crate::{
-    config::swap_config::{SwapReferralFees, DEFAULT_SLIPPAGE_BPS},
-    network::{jsonrpc::JsonRpcError, AlienError},
-};
-use gem_evm::address::AddressError;
+use crate::config::swap_config::{SwapReferralFees, DEFAULT_SLIPPAGE_BPS};
 use primitives::{AssetId, Chain};
 use std::fmt::Debug;
-
-#[derive(Debug, thiserror::Error, uniffi::Error)]
-pub enum SwapperError {
-    #[error("Not supported chain")]
-    NotSupportedChain,
-    #[error("Not supported asset")]
-    NotSupportedAsset,
-    #[error("Not supported pair")]
-    NotSupportedPair,
-    #[error("No available provider")]
-    NoAvailableProvider,
-    #[error("Invalid address {address}")]
-    InvalidAddress { address: String },
-    #[error("Invalid input amount")]
-    InvalidAmount,
-    #[error("Invalid route")]
-    InvalidRoute,
-    #[error("RPC error: {msg}")]
-    NetworkError { msg: String },
-    #[error("ABI error: {msg}")]
-    ABIError { msg: String },
-    #[error("Compute quote error: {msg}")]
-    ComputeQuoteError { msg: String },
-
-    #[error("No quote available")]
-    NoQuoteAvailable,
-    #[error("Not implemented")]
-    NotImplemented,
-}
-
-impl From<AlienError> for SwapperError {
-    fn from(err: AlienError) -> Self {
-        Self::NetworkError { msg: err.to_string() }
-    }
-}
-
-impl From<JsonRpcError> for SwapperError {
-    fn from(err: JsonRpcError) -> Self {
-        Self::NetworkError { msg: err.to_string() }
-    }
-}
-
-impl From<AddressError> for SwapperError {
-    fn from(err: AddressError) -> Self {
-        Self::InvalidAddress { address: err.to_string() }
-    }
-}
 
 #[derive(Debug, Clone, PartialEq, uniffi::Enum)]
 pub enum GemSwapMode {
@@ -60,8 +9,45 @@ pub enum GemSwapMode {
     ExactOut,
 }
 
+#[derive(Debug, Clone, PartialEq, uniffi::Object)]
+pub struct SwapProvider {
+    pub id: SwapProviderId,
+    pub r#type: SwapProviderType,
+    pub name: String,
+    pub protocol: String,
+}
+
+#[uniffi::export]
+impl SwapProvider {
+    #[uniffi::constructor]
+    pub fn new(id: SwapProviderId) -> Self {
+        Self {
+            id: id.clone(),
+            r#type: id.provider_type(),
+            name: id.name().to_string(),
+            protocol: id.protocol_name().to_string(),
+        }
+    }
+    pub fn id(&self) -> SwapProviderId {
+        self.id.clone()
+    }
+    pub fn name(&self) -> String {
+        self.name.clone()
+    }
+    pub fn protocol(&self) -> String {
+        self.protocol.clone()
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, uniffi::Enum)]
+pub enum SwapProviderType {
+    OnChain,
+    CrossChain,
+    Bridge,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, uniffi::Enum)]
-pub enum SwapProvider {
+pub enum SwapProviderId {
     UniswapV3,
     UniswapV4,
     PancakeSwapV3,
@@ -74,14 +60,7 @@ pub enum SwapProvider {
     Wagmi,
 }
 
-#[derive(Debug, Clone, PartialEq, uniffi::Enum)]
-pub enum SwapProviderType {
-    OnChain,
-    CrossChain,
-    Bridge,
-}
-
-impl SwapProvider {
+impl SwapProviderId {
     pub fn name(&self) -> &str {
         match self {
             Self::UniswapV3 | Self::UniswapV4 => "Uniswap",
@@ -121,16 +100,6 @@ impl SwapProvider {
     }
 }
 
-#[uniffi::export]
-fn swap_provider_name_to_string(provider: SwapProvider) -> String {
-    provider.name().to_string()
-}
-
-#[uniffi::export]
-fn swap_provider_protocol_name_to_string(provider: SwapProvider) -> String {
-    provider.protocol_name().to_string()
-}
-
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct SwapQuoteRequest {
     pub from_asset: AssetId,
@@ -167,7 +136,7 @@ impl From<u32> for GemSlippage {
 pub struct GemSwapOptions {
     pub slippage: GemSlippage,
     pub fee: Option<SwapReferralFees>,
-    pub preferred_providers: Vec<SwapProvider>,
+    pub preferred_providers: Vec<SwapProviderId>,
 }
 
 impl Default for GemSwapOptions {
@@ -237,7 +206,7 @@ pub struct SwapQuoteData {
 
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct SwapProviderData {
-    pub provider: SwapProvider,
+    pub provider: SwapProviderId,
     pub slippage_bps: u32,
     pub routes: Vec<SwapRoute>,
 }

@@ -1,6 +1,6 @@
 use crate::network::{AlienHttpMethod, AlienProvider, AlienTarget};
-use crate::swapper::models::SwapperError;
 use crate::swapper::thorchain::model::{QuoteSwapRequest, QuoteSwapResponse};
+use crate::swapper::SwapperError;
 use std::sync::Arc;
 
 use super::asset::THORChainAsset;

@@ -11,7 +11,7 @@ use primitives::Chain;
 use std::fmt::Debug;
 
 pub trait UniversalRouterProvider: Send + Sync + Debug {
-    fn provider(&self) -> SwapProvider;
+    fn provider(&self) -> &SwapProvider;
     fn get_tiers(&self) -> Vec<FeeTier>;
     fn get_deployment_by_chain(&self, chain: &Chain) -> Option<V3Deployment>;
 }

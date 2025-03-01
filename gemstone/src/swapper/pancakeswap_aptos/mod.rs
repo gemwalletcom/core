@@ -3,7 +3,8 @@ use std::sync::Arc;
 mod client;
 mod model;
 use super::{
-    FetchQuoteData, GemSwapProvider, SwapChainAsset, SwapProvider, SwapProviderData, SwapQuote, SwapQuoteData, SwapQuoteRequest, SwapRoute, SwapperError,
+    FetchQuoteData, GemSwapProvider, SwapChainAsset, SwapProvider, SwapProviderData, SwapProviderId, SwapQuote, SwapQuoteData, SwapQuoteRequest, SwapRoute,
+    SwapperError,
 };
 
 use crate::network::AlienProvider;
@@ -13,8 +14,18 @@ use gem_aptos::model::{TransactionPayload, NATIVE_APTOS_COIN};
 use model::{RouteData, PANCAKE_SWAP_APTOS_ADDRESS};
 use primitives::{AssetId, Chain};
 
-#[derive(Debug, Default)]
-pub struct PancakeSwapAptos {}
+#[derive(Debug)]
+pub struct PancakeSwapAptos {
+    pub provider: SwapProvider,
+}
+
+impl Default for PancakeSwapAptos {
+    fn default() -> Self {
+        Self {
+            provider: SwapProvider::new(SwapProviderId::PancakeSwapAptosV2),
+        }
+    }
+}
 
 impl PancakeSwapAptos {
     fn to_asset(&self, asset_id: AssetId) -> String {
@@ -42,8 +53,8 @@ impl PancakeSwapAptos {
 
 #[async_trait]
 impl GemSwapProvider for PancakeSwapAptos {
-    fn provider(&self) -> SwapProvider {
-        SwapProvider::PancakeSwapAptosV2
+    fn provider(&self) -> &SwapProvider {
+        &self.provider
     }
 
     fn supported_assets(&self) -> Vec<SwapChainAsset> {
@@ -77,7 +88,7 @@ impl GemSwapProvider for PancakeSwapAptos {
             from_value: request.value.clone(),
             to_value: quote_value.clone(),
             data: SwapProviderData {
-                provider: self.provider(),
+                provider: self.provider().id.clone(),
                 routes: vec![SwapRoute {
                     input: request.from_asset.clone(),
                     output: request.to_asset.clone(),
