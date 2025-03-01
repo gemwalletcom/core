@@ -439,7 +439,7 @@ impl GemSwapProvider for Across {
             from_value: request.value.clone(),
             to_value: output_amount.to_string(),
             data: SwapProviderData {
-                provider: self.provider().id.clone(),
+                provider: self.provider().clone(),
                 slippage_bps: request.options.slippage.bps,
                 routes: vec![SwapRoute {
                     input: input_asset.clone(),

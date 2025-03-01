@@ -5,10 +5,9 @@ import Gemstone
 
 extension SwapQuote: @retroactive CustomStringConvertible {
     public var description: String {
-        let swapProvider = SwapProvider(id: self.data.provider)
         let provider: [String: Any] = [
-            "id": swapProvider.name(),
-            "protocol": swapProvider.protocol(),
+            "name": data.provider.name,
+            "protocol": data.provider.protocol,
         ]
         let routes: [[String: Any]] = data.routes.map { route in
             [

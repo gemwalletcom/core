@@ -173,7 +173,7 @@ impl GemSwapProvider for UniswapV4 {
             from_value: request.value.clone(),
             to_value: max_amount_out.to_string(),
             data: SwapProviderData {
-                provider: self.provider().id.clone(),
+                provider: self.provider().clone(),
                 routes: routes.clone(),
                 slippage_bps: request.options.slippage.bps,
             },

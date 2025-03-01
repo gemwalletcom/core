@@ -137,7 +137,7 @@ impl GemSwapProvider for Jupiter {
             from_value: request.value.clone(),
             to_value: swap_quote.out_amount.clone(),
             data: SwapProviderData {
-                provider: self.provider().id.clone(),
+                provider: self.provider().clone(),
                 routes: vec![SwapRoute {
                     input: AssetId::from(Chain::Solana, Some(input_mint)),
                     output: AssetId::from(Chain::Solana, Some(output_mint)),

@@ -94,7 +94,7 @@ impl GemSwapProvider for Orca {
             from_value: request.value.clone(),
             to_value: quote.token_est_out.to_string(),
             data: SwapProviderData {
-                provider: self.provider().id.clone(),
+                provider: self.provider().clone(),
                 routes: vec![SwapRoute {
                     input: request.from_asset.clone(),
                     output: request.to_asset.clone(),

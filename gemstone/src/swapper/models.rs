@@ -10,6 +10,26 @@ pub enum GemSwapMode {
 }
 
 #[derive(Debug, Clone, PartialEq, uniffi::Object)]
+pub struct SwapProviderConfig(pub SwapProvider);
+
+impl SwapProviderConfig {
+    pub fn id(&self) -> SwapProviderId {
+        self.0.id.clone()
+    }
+}
+
+#[uniffi::export]
+impl SwapProviderConfig {
+    #[uniffi::constructor]
+    pub fn new(id: SwapProviderId) -> Self {
+        Self(SwapProvider::new(id))
+    }
+    pub fn inner(&self) -> SwapProvider {
+        self.0.clone()
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, uniffi::Record)]
 pub struct SwapProvider {
     pub id: SwapProviderId,
     pub r#type: SwapProviderType,
@@ -17,9 +37,7 @@ pub struct SwapProvider {
     pub protocol: String,
 }
 
-#[uniffi::export]
 impl SwapProvider {
-    #[uniffi::constructor]
     pub fn new(id: SwapProviderId) -> Self {
         Self {
             id: id.clone(),
@@ -27,15 +45,6 @@ impl SwapProvider {
             name: id.name().to_string(),
             protocol: id.protocol_name().to_string(),
         }
-    }
-    pub fn id(&self) -> SwapProviderId {
-        self.id.clone()
-    }
-    pub fn name(&self) -> String {
-        self.name.clone()
-    }
-    pub fn protocol(&self) -> String {
-        self.protocol.clone()
     }
 }
 
@@ -206,7 +215,7 @@ pub struct SwapQuoteData {
 
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct SwapProviderData {
-    pub provider: SwapProviderId,
+    pub provider: SwapProvider,
     pub slippage_bps: u32,
     pub routes: Vec<SwapRoute>,
 }
