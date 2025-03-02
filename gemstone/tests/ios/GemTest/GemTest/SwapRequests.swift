@@ -180,7 +180,7 @@ public extension SwapQuoteRequest {
 
     static let eth2btc: SwapQuoteRequest = {
         var options = SWAP_OPTIONS
-        options.preferredProviders = [SwapProvider.thorchain]
+        options.preferredProviders = [SwapProviderId.thorchain]
 
         return SwapQuoteRequest(
             fromAsset: "ethereum",
