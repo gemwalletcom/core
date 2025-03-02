@@ -94,7 +94,7 @@ impl UniswapV3 {
 
 #[async_trait]
 impl GemSwapProvider for UniswapV3 {
-    fn provider(&self) -> &SwapProvider {
+    fn provider(&self) -> &SwapProviderType {
         self.provider.provider()
     }
 

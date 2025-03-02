@@ -15,14 +15,14 @@ use std::collections::HashSet;
 
 #[derive(Debug)]
 pub struct Jupiter {
-    pub provider: SwapProvider,
+    pub provider: SwapProviderType,
     pub fee_mints: HashSet<&'static str>,
 }
 
 impl Default for Jupiter {
     fn default() -> Self {
         Self {
-            provider: SwapProvider::new(SwapProviderId::Jupiter),
+            provider: SwapProviderType::new(SwapProvider::Jupiter),
             fee_mints: HashSet::from([USDC_TOKEN_MINT, USDT_TOKEN_MINT, WSOL_TOKEN_ADDRESS]),
         }
     }
@@ -100,7 +100,7 @@ impl Jupiter {
 
 #[async_trait]
 impl GemSwapProvider for Jupiter {
-    fn provider(&self) -> &SwapProvider {
+    fn provider(&self) -> &SwapProviderType {
         &self.provider
     }
 

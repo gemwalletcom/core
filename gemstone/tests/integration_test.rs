@@ -250,7 +250,7 @@ mod tests {
                 bps: 25,
                 address: "0x0D9DAB1A248f63B0a48965bA8435e4de7497a3dC".into(),
             })),
-            preferred_providers: vec![SwapProviderId::UniswapV4],
+            preferred_providers: vec![SwapProvider::UniswapV4],
         };
 
         let request = SwapQuoteRequest {

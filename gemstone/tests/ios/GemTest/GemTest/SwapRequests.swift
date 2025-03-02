@@ -154,7 +154,7 @@ public extension SwapQuoteRequest {
 
     static let eth2usdc_v4: SwapQuoteRequest = {
         var options = SWAP_OPTIONS
-        options.preferredProviders = [SwapProviderId.uniswapV4]
+        options.preferredProviders = [SwapProvider.uniswapV4]
 
         return SwapQuoteRequest(
             fromAsset: "unichain",
@@ -169,7 +169,7 @@ public extension SwapQuoteRequest {
 
     static let uni2dai_v4: SwapQuoteRequest = {
         var options = SWAP_OPTIONS
-        options.preferredProviders = [SwapProviderId.uniswapV4]
+        options.preferredProviders = [SwapProvider.uniswapV4]
 
         return SwapQuoteRequest(
             fromAsset: "unichain_0x8f187aA05619a017077f5308904739877ce9eA21",

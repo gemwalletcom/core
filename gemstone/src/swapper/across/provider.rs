@@ -47,13 +47,13 @@ use std::{fmt::Debug, str::FromStr, sync::Arc};
 
 #[derive(Debug)]
 pub struct Across {
-    pub provider: SwapProvider,
+    pub provider: SwapProviderType,
 }
 
 impl Default for Across {
     fn default() -> Self {
         Self {
-            provider: SwapProvider::new(SwapProviderId::Across),
+            provider: SwapProviderType::new(SwapProvider::Across),
         }
     }
 }
@@ -241,7 +241,7 @@ impl Across {
 
 #[async_trait]
 impl GemSwapProvider for Across {
-    fn provider(&self) -> &SwapProvider {
+    fn provider(&self) -> &SwapProviderType {
         &self.provider
     }
 

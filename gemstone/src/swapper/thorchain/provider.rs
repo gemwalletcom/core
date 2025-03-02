@@ -7,7 +7,7 @@ use crate::swapper::asset::{
     AVALANCHE_USDC, AVALANCHE_USDT, BASE_CBBTC, BASE_USDC, ETHEREUM_DAI, ETHEREUM_USDC, ETHEREUM_USDT, ETHEREUM_WBTC, SMARTCHAIN_USDC, SMARTCHAIN_USDT,
 };
 use crate::swapper::thorchain::client::ThorChainSwapClient;
-use crate::swapper::{ApprovalData, FetchQuoteData, SwapProvider, SwapProviderData, SwapQuote, SwapQuoteData, SwapQuoteRequest, SwapRoute, SwapperError};
+use crate::swapper::{ApprovalData, FetchQuoteData, SwapProviderData, SwapProviderType, SwapQuote, SwapQuoteData, SwapQuoteRequest, SwapRoute, SwapperError};
 use crate::swapper::{GemSwapProvider, SwapChainAsset};
 use alloy_core::sol_types::SolCall;
 use alloy_primitives::Address;
@@ -21,7 +21,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 #[async_trait]
 impl GemSwapProvider for ThorChain {
-    fn provider(&self) -> &SwapProvider {
+    fn provider(&self) -> &SwapProviderType {
         &self.provider
     }
 

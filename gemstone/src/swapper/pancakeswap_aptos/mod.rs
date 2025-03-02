@@ -3,7 +3,7 @@ use std::sync::Arc;
 mod client;
 mod model;
 use super::{
-    FetchQuoteData, GemSwapProvider, SwapChainAsset, SwapProvider, SwapProviderData, SwapProviderId, SwapQuote, SwapQuoteData, SwapQuoteRequest, SwapRoute,
+    FetchQuoteData, GemSwapProvider, SwapChainAsset, SwapProvider, SwapProviderData, SwapProviderType, SwapQuote, SwapQuoteData, SwapQuoteRequest, SwapRoute,
     SwapperError,
 };
 
@@ -16,13 +16,13 @@ use primitives::{AssetId, Chain};
 
 #[derive(Debug)]
 pub struct PancakeSwapAptos {
-    pub provider: SwapProvider,
+    pub provider: SwapProviderType,
 }
 
 impl Default for PancakeSwapAptos {
     fn default() -> Self {
         Self {
-            provider: SwapProvider::new(SwapProviderId::PancakeSwapAptosV2),
+            provider: SwapProviderType::new(SwapProvider::PancakeSwapAptosV2),
         }
     }
 }
@@ -53,7 +53,7 @@ impl PancakeSwapAptos {
 
 #[async_trait]
 impl GemSwapProvider for PancakeSwapAptos {
-    fn provider(&self) -> &SwapProvider {
+    fn provider(&self) -> &SwapProviderType {
         &self.provider
     }
 

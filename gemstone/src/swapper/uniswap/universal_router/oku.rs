@@ -1,4 +1,4 @@
-use crate::swapper::{uniswap::v3::UniversalRouterProvider, SwapProvider, SwapProviderId};
+use crate::swapper::{uniswap::v3::UniversalRouterProvider, SwapProviderType, SwapProvider};
 use gem_evm::uniswap::{
     deployment::v3::{get_oku_deployment_by_chain, V3Deployment},
     FeeTier,
@@ -7,19 +7,19 @@ use primitives::Chain;
 
 #[derive(Debug)]
 pub struct OkuUniversalRouter {
-    pub provider: SwapProvider,
+    pub provider: SwapProviderType,
 }
 
 impl Default for OkuUniversalRouter {
     fn default() -> Self {
         Self {
-            provider: SwapProvider::new(SwapProviderId::OkuTrade),
+            provider: SwapProviderType::new(SwapProvider::OkuTrade),
         }
     }
 }
 
 impl UniversalRouterProvider for OkuUniversalRouter {
-    fn provider(&self) -> &SwapProvider {
+    fn provider(&self) -> &SwapProviderType {
         &self.provider
     }
 
