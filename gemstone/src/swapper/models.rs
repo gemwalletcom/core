@@ -10,7 +10,7 @@ pub enum GemSwapMode {
 }
 
 #[derive(Debug, Clone, PartialEq, uniffi::Object)]
-pub struct SwapProviderConfig(pub SwapProvider);
+pub struct SwapProviderConfig(SwapProvider);
 
 impl SwapProviderConfig {
     pub fn id(&self) -> SwapProviderId {
