@@ -37,7 +37,7 @@ pub trait GemSwapProvider: Send + Sync + Debug {
     }
     async fn fetch_quote_data(&self, quote: &SwapQuote, provider: Arc<dyn AlienProvider>, data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError>;
     async fn get_transaction_status(&self, _chain: Chain, _transaction_hash: &str, _provider: Arc<dyn AlienProvider>) -> Result<bool, SwapperError> {
-        if self.provider().r#type == SwapProviderMode::OnChain {
+        if self.provider().mode == SwapProviderMode::OnChain {
             Ok(true)
         } else {
             Err(SwapperError::NotImplemented)
@@ -155,8 +155,8 @@ impl GemSwapper {
         SwapAssetList { chains, asset_ids }
     }
 
-    pub fn get_providers(&self) -> Vec<SwapProvider> {
-        self.swappers.iter().map(|x| x.provider().id.clone()).collect()
+    pub fn get_providers(&self) -> Vec<SwapProviderType> {
+        self.swappers.iter().map(|x| x.provider().clone()).collect()
     }
 
     pub async fn fetch_quote(&self, request: &SwapQuoteRequest) -> Result<Vec<SwapQuote>, SwapperError> {
@@ -169,7 +169,7 @@ impl GemSwapper {
         let providers = self
             .swappers
             .iter()
-            .filter(|x| Self::filter_by_provider_type(&x.provider().r#type, &from_chain, &to_chain))
+            .filter(|x| Self::filter_by_provider_type(&x.provider().mode, &from_chain, &to_chain))
             .filter(|x| Self::filter_by_supported_chains(x.supported_chains(), &from_chain, &to_chain))
             .filter(|x| Self::filter_by_preferred_providers(preferred_providers, &x.provider().id))
             .collect::<Vec<_>>();

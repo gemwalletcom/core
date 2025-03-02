@@ -167,18 +167,13 @@ public extension SwapQuoteRequest {
         )
     }()
 
-    static let uni2dai_v4: SwapQuoteRequest = {
-        var options = SWAP_OPTIONS
-        options.preferredProviders = [SwapProvider.uniswapV4]
-
-        return SwapQuoteRequest(
-            fromAsset: "unichain_0x8f187aA05619a017077f5308904739877ce9eA21",
-            toAsset: "unichain_0x20CAb320A855b39F724131C69424240519573f81",
-            walletAddress: TEST_ETH_WALLET,
-            destinationAddress: TEST_ETH_WALLET,
-            value: "1000000000000000000", // 1 ETH
-            mode: .exactIn,
-            options: options
-        )
-    }()
+    static let uni2dai_v4: SwapQuoteRequest = .init(
+        fromAsset: "unichain_0x8f187aA05619a017077f5308904739877ce9eA21",
+        toAsset: "unichain_0x20CAb320A855b39F724131C69424240519573f81",
+        walletAddress: TEST_ETH_WALLET,
+        destinationAddress: TEST_ETH_WALLET,
+        value: "1000000000000000000", // 1 ETH
+        mode: .exactIn,
+        options: SWAP_OPTIONS
+    )
 }

@@ -32,7 +32,7 @@ impl SwapProviderConfig {
 #[derive(Debug, Clone, PartialEq, uniffi::Record)]
 pub struct SwapProviderType {
     pub id: SwapProvider,
-    pub r#type: SwapProviderMode,
+    pub mode: SwapProviderMode,
     pub name: String,
     pub protocol: String,
 }
@@ -41,7 +41,7 @@ impl SwapProviderType {
     pub fn new(id: SwapProvider) -> Self {
         Self {
             id: id.clone(),
-            r#type: id.provider_type(),
+            mode: id.provider_type(),
             name: id.name().to_string(),
             protocol: id.protocol_name().to_string(),
         }
