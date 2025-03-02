@@ -41,7 +41,7 @@ impl SwapProviderType {
     pub fn new(id: SwapProvider) -> Self {
         Self {
             id: id.clone(),
-            mode: id.provider_type(),
+            mode: id.mode(),
             name: id.name().to_string(),
             protocol: id.protocol_name().to_string(),
         }
@@ -98,7 +98,7 @@ impl SwapProvider {
         }
     }
 
-    pub fn provider_type(&self) -> SwapProviderMode {
+    pub fn mode(&self) -> SwapProviderMode {
         match self {
             Self::UniswapV3 | Self::UniswapV4 | Self::PancakeSwapV3 | Self::PancakeSwapAptosV2 | Self::Orca | Self::Jupiter | Self::OkuTrade | Self::Wagmi => {
                 SwapProviderMode::OnChain
