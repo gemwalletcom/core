@@ -21,7 +21,7 @@ use std::{cmp::Ordering, iter::zip, str::FromStr, sync::Arc, vec};
 
 #[derive(Debug)]
 pub struct Orca {
-    pub provider: SwapProvider,
+    pub provider: SwapProviderType,
     pub whirlpool_program: Pubkey,
     pub whirlpool_config: Pubkey,
     pub chain: Chain,
@@ -30,7 +30,7 @@ pub struct Orca {
 impl Default for Orca {
     fn default() -> Self {
         Self {
-            provider: SwapProvider::new(SwapProviderId::Orca),
+            provider: SwapProviderType::new(SwapProvider::Orca),
             whirlpool_program: Pubkey::from_str(WHIRLPOOL_PROGRAM).unwrap(),
             whirlpool_config: Pubkey::from_str(WHIRLPOOL_CONFIG).unwrap(),
             chain: Chain::Solana,
@@ -40,7 +40,7 @@ impl Default for Orca {
 
 #[async_trait]
 impl GemSwapProvider for Orca {
-    fn provider(&self) -> &SwapProvider {
+    fn provider(&self) -> &SwapProviderType {
         &self.provider
     }
 

@@ -8,7 +8,7 @@ use crate::{
             quote_result::get_best_quote,
             swap_route::{build_swap_route, get_intermediaries},
         },
-        weth_address, ApprovalData, FetchQuoteData, GemSwapProvider, Permit2ApprovalData, SwapChainAsset, SwapProvider, SwapProviderData, SwapProviderId,
+        weth_address, ApprovalData, FetchQuoteData, GemSwapProvider, Permit2ApprovalData, SwapChainAsset, SwapProvider, SwapProviderData, SwapProviderType,
         SwapQuote, SwapQuoteData, SwapQuoteRequest, SwapperError,
     },
 };
@@ -39,13 +39,13 @@ use super::{
 
 #[derive(Debug)]
 pub struct UniswapV4 {
-    pub provider: SwapProvider,
+    pub provider: SwapProviderType,
 }
 
 impl Default for UniswapV4 {
     fn default() -> Self {
         Self {
-            provider: SwapProvider::new(SwapProviderId::UniswapV4),
+            provider: SwapProviderType::new(SwapProvider::UniswapV4),
         }
     }
 }
@@ -88,7 +88,7 @@ impl UniswapV4 {
 
 #[async_trait]
 impl GemSwapProvider for UniswapV4 {
-    fn provider(&self) -> &SwapProvider {
+    fn provider(&self) -> &SwapProviderType {
         &self.provider
     }
     fn supported_assets(&self) -> Vec<SwapChainAsset> {

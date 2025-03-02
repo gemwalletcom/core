@@ -29,7 +29,7 @@ struct ContentView: View {
                 self.testQuote(quote: .eth2usdc)
             }
             Button("Fetch v4 ETH -> USDC") {
-                self.testQuote(quote: .eth2usdc_v4)
+                self.testQuote(quote: .eth2usdc_v4, id: .uniswapV4)
             }
             Button("Fetch v4 UNI -> DAI") {
                 self.testQuote(quote: .uni2dai_v4)
@@ -94,8 +94,14 @@ struct ContentView: View {
             }
         }
     }
-}
 
-#Preview {
-    ContentView()
+    func testQuote(quote: SwapQuoteRequest, id: SwapProvider) {
+        Task {
+            do {
+                try await self.model.fetchQuoteById(quote, provider: id)
+            } catch {
+                print(error)
+            }
+        }
+    }
 }

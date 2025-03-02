@@ -26,20 +26,29 @@ public struct ViewModel: Sendable {
 
     public func fetchQuote(_ request: SwapQuoteRequest) async throws {
         let swapper = GemSwapper(rpcProvider: self.provider)
+        let quotes = try await swapper.fetchQuote(request: request)
+        print("<== quotes: \(quotes.count)")
         guard
-            let quote = try await swapper.fetchQuote(request: request).first,
-            let route = quote.data.routes.first
+            let quote = quotes.first,
+            let _ = quote.data.routes.first
         else {
             return print("<== fetchQuote: nil")
         }
 
-        print("<== fetchQuote:\n", quote.description)
-        print("==> amount out: \(quote.toValue)")
-        print("==> routes count: \(quote.data.routes.count), route data: \(route.routeData)")
-        if quote.data.routes.count > 1 {
-            print("==> intermediary token: \(route.output)")
-        }
-        print("suggested slippageBps: \(quote.data.slippageBps)")
+        self.dumpQuote(quote)
+        try await fetchQuoteData(quote: quote)
+    }
+
+    public func fetchQuoteById(_ request: SwapQuoteRequest, provider: SwapProvider) async throws {
+        let swapper = GemSwapper(rpcProvider: self.provider)
+        let quote = try await swapper.fetchQuoteByProvider(provider: provider, request: request)
+        self.dumpQuote(quote)
+
+        try await fetchQuoteData(quote: quote)
+    }
+
+    public func fetchQuoteData(quote: SwapQuote) async throws {
+        let swapper = GemSwapper(rpcProvider: self.provider)
 
         if let permit2 = try await swapper.fetchPermit2ForQuote(quote: quote) {
             print("<== permit2", permit2)
@@ -70,5 +79,16 @@ public struct ViewModel: Sendable {
         } catch {
             print(error)
         }
+    }
+
+    func dumpQuote(_ quote: SwapQuote) {
+        let route = quote.data.routes.first!
+        print("<== fetchQuote:\n", quote.description)
+        print("==> amount out: \(quote.toValue)")
+        print("==> routes count: \(quote.data.routes.count), route data: \(route.routeData)")
+        if quote.data.routes.count > 1 {
+            print("==> intermediary token: \(route.output)")
+        }
+        print("suggested slippageBps: \(quote.data.slippageBps)")
     }
 }

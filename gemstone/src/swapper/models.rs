@@ -10,10 +10,10 @@ pub enum GemSwapMode {
 }
 
 #[derive(Debug, Clone, PartialEq, uniffi::Object)]
-pub struct SwapProviderConfig(SwapProvider);
+pub struct SwapProviderConfig(SwapProviderType);
 
 impl SwapProviderConfig {
-    pub fn id(&self) -> SwapProviderId {
+    pub fn id(&self) -> SwapProvider {
         self.0.id.clone()
     }
 }
@@ -21,27 +21,27 @@ impl SwapProviderConfig {
 #[uniffi::export]
 impl SwapProviderConfig {
     #[uniffi::constructor]
-    pub fn new(id: SwapProviderId) -> Self {
-        Self(SwapProvider::new(id))
+    pub fn new(id: SwapProvider) -> Self {
+        Self(SwapProviderType::new(id))
     }
-    pub fn inner(&self) -> SwapProvider {
+    pub fn inner(&self) -> SwapProviderType {
         self.0.clone()
     }
 }
 
 #[derive(Debug, Clone, PartialEq, uniffi::Record)]
-pub struct SwapProvider {
-    pub id: SwapProviderId,
-    pub r#type: SwapProviderType,
+pub struct SwapProviderType {
+    pub id: SwapProvider,
+    pub mode: SwapProviderMode,
     pub name: String,
     pub protocol: String,
 }
 
-impl SwapProvider {
-    pub fn new(id: SwapProviderId) -> Self {
+impl SwapProviderType {
+    pub fn new(id: SwapProvider) -> Self {
         Self {
             id: id.clone(),
-            r#type: id.provider_type(),
+            mode: id.mode(),
             name: id.name().to_string(),
             protocol: id.protocol_name().to_string(),
         }
@@ -49,14 +49,14 @@ impl SwapProvider {
 }
 
 #[derive(Debug, Clone, PartialEq, uniffi::Enum)]
-pub enum SwapProviderType {
+pub enum SwapProviderMode {
     OnChain,
     CrossChain,
     Bridge,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, uniffi::Enum)]
-pub enum SwapProviderId {
+pub enum SwapProvider {
     UniswapV3,
     UniswapV4,
     PancakeSwapV3,
@@ -69,7 +69,7 @@ pub enum SwapProviderId {
     Wagmi,
 }
 
-impl SwapProviderId {
+impl SwapProvider {
     pub fn name(&self) -> &str {
         match self {
             Self::UniswapV3 | Self::UniswapV4 => "Uniswap",
@@ -98,13 +98,13 @@ impl SwapProviderId {
         }
     }
 
-    pub fn provider_type(&self) -> SwapProviderType {
+    pub fn mode(&self) -> SwapProviderMode {
         match self {
             Self::UniswapV3 | Self::UniswapV4 | Self::PancakeSwapV3 | Self::PancakeSwapAptosV2 | Self::Orca | Self::Jupiter | Self::OkuTrade | Self::Wagmi => {
-                SwapProviderType::OnChain
+                SwapProviderMode::OnChain
             }
-            Self::Thorchain => SwapProviderType::CrossChain,
-            Self::Across => SwapProviderType::Bridge,
+            Self::Thorchain => SwapProviderMode::CrossChain,
+            Self::Across => SwapProviderMode::Bridge,
         }
     }
 }
@@ -145,7 +145,7 @@ impl From<u32> for GemSlippage {
 pub struct GemSwapOptions {
     pub slippage: GemSlippage,
     pub fee: Option<SwapReferralFees>,
-    pub preferred_providers: Vec<SwapProviderId>,
+    pub preferred_providers: Vec<SwapProvider>,
 }
 
 impl Default for GemSwapOptions {
@@ -215,7 +215,7 @@ pub struct SwapQuoteData {
 
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct SwapProviderData {
-    pub provider: SwapProvider,
+    pub provider: SwapProviderType,
     pub slippage_bps: u32,
     pub routes: Vec<SwapRoute>,
 }
