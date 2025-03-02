@@ -201,6 +201,11 @@ impl GemSwapper {
         Ok(quotes)
     }
 
+    pub async fn fetch_quote_by_provider(&self, provider: SwapProviderId, request: SwapQuoteRequest) -> Result<SwapQuote, SwapperError> {
+        let provider = self.get_swapper_by_provider(&provider).ok_or(SwapperError::NoAvailableProvider)?;
+        provider.fetch_quote(&request, self.rpc_provider.clone()).await
+    }
+
     pub async fn fetch_permit2_for_quote(&self, quote: &SwapQuote) -> Result<Option<Permit2ApprovalData>, SwapperError> {
         let provider = self.get_swapper_by_provider(&quote.data.provider.id).ok_or(SwapperError::NoAvailableProvider)?;
         provider.fetch_permit2_for_quote(quote, self.rpc_provider.clone()).await
