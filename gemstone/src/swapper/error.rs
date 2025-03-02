@@ -16,6 +16,8 @@ pub enum SwapperError {
     InvalidAddress { address: String },
     #[error("Invalid input amount")]
     InvalidAmount,
+    #[error("Input amount is too small")]
+    InputAmountTooSmall,
     #[error("Invalid route")]
     InvalidRoute,
     #[error("RPC error: {msg}")]

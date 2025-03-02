@@ -1,12 +1,13 @@
-use crate::network::{AlienHttpMethod, AlienProvider, AlienTarget};
-use crate::swapper::thorchain::model::{QuoteSwapRequest, QuoteSwapResponse};
-use crate::swapper::SwapperError;
+use super::{
+    asset::THORChainAsset,
+    model::{QuoteSwapRequest, QuoteSwapResponse, Transaction},
+};
+use crate::{
+    network::{AlienHttpMethod, AlienProvider, AlienTarget},
+    swapper::SwapperError,
+};
 use num_bigint::BigInt;
-use std::str::FromStr;
-use std::sync::Arc;
-
-use super::asset::THORChainAsset;
-use super::model::Transaction;
+use std::{str::FromStr, sync::Arc};
 
 #[derive(Debug)]
 pub struct ThorChainSwapClient {
