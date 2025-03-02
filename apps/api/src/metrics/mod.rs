@@ -1,5 +1,8 @@
+mod client;
+pub use client::MetricsClient;
+
 extern crate rocket;
-use crate::metrics_client::MetricsClient;
+
 use rocket::tokio::sync::Mutex;
 use rocket::State;
 

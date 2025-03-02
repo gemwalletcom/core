@@ -1,5 +1,7 @@
+pub mod client;
+pub use client::ConfigClient;
 extern crate rocket;
-use crate::config_client::Client as ConfigClient;
+
 use primitives::config::ConfigResponse;
 use rocket::serde::json::Json;
 use rocket::tokio::sync::Mutex;

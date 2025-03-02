@@ -1,6 +1,7 @@
+pub mod client;
+pub use client::TransactionsClient;
 extern crate rocket;
 
-use crate::TransactionsClient;
 use primitives::Transaction;
 use primitives::TransactionsFetchOption;
 use rocket::serde::json::Json;
