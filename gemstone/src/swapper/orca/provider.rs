@@ -21,6 +21,7 @@ use std::{cmp::Ordering, iter::zip, str::FromStr, sync::Arc, vec};
 
 #[derive(Debug)]
 pub struct Orca {
+    pub provider: SwapProvider,
     pub whirlpool_program: Pubkey,
     pub whirlpool_config: Pubkey,
     pub chain: Chain,
@@ -29,6 +30,7 @@ pub struct Orca {
 impl Default for Orca {
     fn default() -> Self {
         Self {
+            provider: SwapProvider::new(SwapProviderId::Orca),
             whirlpool_program: Pubkey::from_str(WHIRLPOOL_PROGRAM).unwrap(),
             whirlpool_config: Pubkey::from_str(WHIRLPOOL_CONFIG).unwrap(),
             chain: Chain::Solana,
@@ -38,8 +40,8 @@ impl Default for Orca {
 
 #[async_trait]
 impl GemSwapProvider for Orca {
-    fn provider(&self) -> SwapProvider {
-        SwapProvider::Orca
+    fn provider(&self) -> &SwapProvider {
+        &self.provider
     }
 
     fn supported_assets(&self) -> Vec<SwapChainAsset> {
@@ -92,7 +94,7 @@ impl GemSwapProvider for Orca {
             from_value: request.value.clone(),
             to_value: quote.token_est_out.to_string(),
             data: SwapProviderData {
-                provider: self.provider(),
+                provider: self.provider().clone(),
                 routes: vec![SwapRoute {
                     input: request.from_asset.clone(),
                     output: request.to_asset.clone(),
