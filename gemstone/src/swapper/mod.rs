@@ -266,7 +266,7 @@ mod tests {
 
         let filtered = swappers
             .iter()
-            .filter(|x| GemSwapper::filter_by_provider_type(&x.provider().r#type, &from_chain, &to_chain))
+            .filter(|x| GemSwapper::filter_by_provider_type(&x.provider().mode, &from_chain, &to_chain))
             .filter(|x| GemSwapper::filter_by_supported_chains(x.supported_chains(), &from_chain, &to_chain))
             .collect::<Vec<_>>();
 
@@ -277,7 +277,7 @@ mod tests {
 
         let filtered = swappers
             .iter()
-            .filter(|x| GemSwapper::filter_by_provider_type(&x.provider().r#type, &from_chain, &to_chain))
+            .filter(|x| GemSwapper::filter_by_provider_type(&x.provider().mode, &from_chain, &to_chain))
             .filter(|x| GemSwapper::filter_by_supported_chains(x.supported_chains(), &from_chain, &to_chain))
             .collect::<Vec<_>>();
 
@@ -292,7 +292,7 @@ mod tests {
 
         let filtered = swappers
             .iter()
-            .filter(|x| GemSwapper::filter_by_provider_type(&x.provider().r#type, &from_chain, &to_chain))
+            .filter(|x| GemSwapper::filter_by_provider_type(&x.provider().mode, &from_chain, &to_chain))
             .filter(|x| GemSwapper::filter_by_supported_chains(x.supported_chains(), &from_chain, &to_chain))
             .collect::<Vec<_>>();
 
