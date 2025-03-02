@@ -1,4 +1,4 @@
-use super::models::SwapperError;
+use super::error::SwapperError;
 use gem_evm::address::EthereumAddress;
 use primitives::{AssetId, EVMChain};
 

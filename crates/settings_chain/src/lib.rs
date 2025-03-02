@@ -57,7 +57,7 @@ impl ProviderFactory {
             Chain::Cosmos | Chain::Osmosis | Chain::Celestia | Chain::Thorchain | Chain::Injective | Chain::Noble | Chain::Sei => {
                 Box::new(CosmosClient::new(chain, client, url))
             }
-            Chain::Solana => Box::new(SolanaClient::new(url)),
+            Chain::Solana => Box::new(SolanaClient::new(url.as_str())),
             Chain::Ton => Box::new(TonClient::new(client, url)),
             Chain::Tron => Box::new(TronClient::new(client, url)),
             Chain::Aptos => Box::new(AptosClient::new(client, url)),

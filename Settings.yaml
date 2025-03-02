@@ -214,10 +214,10 @@ nft:
   nftscan:
     key:
       secret: ""
-  simplehash:
+  opensea:
     key:
       secret: ""
-  opensea:
+  magiceden:
     key:
       secret: ""
   bucket:

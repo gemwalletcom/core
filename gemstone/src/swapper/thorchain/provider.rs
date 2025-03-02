@@ -21,8 +21,8 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 #[async_trait]
 impl GemSwapProvider for ThorChain {
-    fn provider(&self) -> SwapProvider {
-        SwapProvider::Thorchain
+    fn provider(&self) -> &SwapProvider {
+        &self.provider
     }
 
     fn supported_assets(&self) -> Vec<SwapChainAsset> {
@@ -85,7 +85,7 @@ impl GemSwapProvider for ThorChain {
             from_value: request.clone().value,
             to_value: to_value.to_string(),
             data: SwapProviderData {
-                provider: self.provider(),
+                provider: self.provider().clone(),
                 routes: vec![SwapRoute {
                     input: request.from_asset.clone(),
                     output: request.to_asset.clone(),

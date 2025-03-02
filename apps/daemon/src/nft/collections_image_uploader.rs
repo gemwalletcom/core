@@ -25,7 +25,7 @@ impl CollectionsImageUploader {
 
         let collections = self
             .database
-            .get_nft_collections()?
+            .get_nft_collections_all()?
             .into_iter()
             .map(|x| x.as_primitive(vec![]))
             .filter(|x| Self::image_filter(x.image.image_url.as_str(), &url))

@@ -335,7 +335,7 @@ impl Asset {
             },
             Chain::Hyperliquid => Asset {
                 id: chain.as_asset_id(),
-                name: "Hyperliquid".to_string(),
+                name: "HypeEVM".to_string(),
                 symbol: "HYPE".to_string(),
                 decimals: 18,
                 asset_type: AssetType::NATIVE,

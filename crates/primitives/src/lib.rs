@@ -80,7 +80,7 @@ pub use self::number_formatter::NumberFormatter;
 pub mod wallet_connect;
 pub use self::wallet_connect::WalletConnectCAIP2;
 pub mod nft;
-pub use self::nft::{NFTAsset, NFTAssetId, NFTAttribute, NFTCollection, NFTData, NFTImage, NFTType};
+pub use self::nft::{NFTAsset, NFTAssetId, NFTAttribute, NFTCollection, NFTCollectionId, NFTData, NFTImage, NFTType};
 pub mod price_alert;
 pub use self::price_alert::{PriceAlert, PriceAlertDirection, PriceAlertType, PriceAlerts};
 

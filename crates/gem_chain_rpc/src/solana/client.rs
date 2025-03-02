@@ -31,7 +31,7 @@ const SYSTEM_PROGRAM_ID: &str = "11111111111111111111111111111111";
 const JUPITER_PROGRAM_ID: &str = "JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4";
 
 impl SolanaClient {
-    pub fn new(url: String) -> Self {
+    pub fn new(url: &str) -> Self {
         let client = HttpClientBuilder::default()
             .max_response_size(100 * 1024 * 1024) // 100MB
             .build(url)

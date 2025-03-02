@@ -18,7 +18,7 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
         let settings = Arc::new(settings.clone());
 
         move || {
-            let opensea_client = OpenSeaClient::new(settings.nft.opensea.key.secret.clone());
+            let opensea_client = OpenSeaClient::new(&settings.nft.opensea.key.secret);
             let mut updater = OpenSeaUpdater::new(&settings.postgres.url, opensea_client);
             async move { updater.update().await }
         }

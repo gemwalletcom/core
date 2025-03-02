@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
-use crate::{Asset, AssetMarket, AssetScore, Chain, Price};
+use crate::{Asset, AssetMarket, AssetScore, Chain, LinkType, Price};
 
 #[typeshare(swift = "Sendable")]
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -64,4 +64,13 @@ impl AssetProperties {
 pub struct AssetLink {
     pub name: String,
     pub url: String,
+}
+
+impl AssetLink {
+    pub fn new(url: &str, link_type: LinkType) -> Self {
+        Self {
+            name: link_type.name(),
+            url: url.to_string(),
+        }
+    }
 }

@@ -8,8 +8,8 @@ use crate::{
             quote_result::get_best_quote,
             swap_route::{build_swap_route, get_intermediaries},
         },
-        weth_address, ApprovalData, FetchQuoteData, GemSwapProvider, Permit2ApprovalData, SwapChainAsset, SwapProvider, SwapProviderData, SwapQuote,
-        SwapQuoteData, SwapQuoteRequest, SwapperError,
+        weth_address, ApprovalData, FetchQuoteData, GemSwapProvider, Permit2ApprovalData, SwapChainAsset, SwapProvider, SwapProviderData, SwapProviderId,
+        SwapQuote, SwapQuoteData, SwapQuoteRequest, SwapperError,
     },
 };
 use alloy_core::hex;
@@ -37,8 +37,18 @@ use super::{
     DEFAULT_SWAP_GAS_LIMIT,
 };
 
-#[derive(Debug, Default)]
-pub struct UniswapV4 {}
+#[derive(Debug)]
+pub struct UniswapV4 {
+    pub provider: SwapProvider,
+}
+
+impl Default for UniswapV4 {
+    fn default() -> Self {
+        Self {
+            provider: SwapProvider::new(SwapProviderId::UniswapV4),
+        }
+    }
+}
 
 impl UniswapV4 {
     pub fn boxed() -> Box<dyn GemSwapProvider> {
@@ -78,8 +88,8 @@ impl UniswapV4 {
 
 #[async_trait]
 impl GemSwapProvider for UniswapV4 {
-    fn provider(&self) -> SwapProvider {
-        SwapProvider::UniswapV4
+    fn provider(&self) -> &SwapProvider {
+        &self.provider
     }
     fn supported_assets(&self) -> Vec<SwapChainAsset> {
         Chain::all().iter().filter(|x| self.support_chain(x)).map(|x| SwapChainAsset::All(*x)).collect()
@@ -163,7 +173,7 @@ impl GemSwapProvider for UniswapV4 {
             from_value: request.value.clone(),
             to_value: max_amount_out.to_string(),
             data: SwapProviderData {
-                provider: self.provider(),
+                provider: self.provider().clone(),
                 routes: routes.clone(),
                 slippage_bps: request.options.slippage.bps,
             },

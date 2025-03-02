@@ -177,9 +177,9 @@ diesel::table! {
         collection_id -> Varchar,
         #[max_length = 64]
         chain -> Varchar,
-        #[max_length = 256]
-        name -> Varchar,
         #[max_length = 1024]
+        name -> Varchar,
+        #[max_length = 4096]
         description -> Varchar,
         #[max_length = 512]
         image_url -> Varchar,
@@ -201,14 +201,12 @@ diesel::table! {
         id -> Varchar,
         #[max_length = 64]
         chain -> Varchar,
-        #[max_length = 256]
-        name -> Varchar,
         #[max_length = 1024]
+        name -> Varchar,
+        #[max_length = 4096]
         description -> Varchar,
         #[max_length = 128]
         symbol -> Nullable<Varchar>,
-        #[max_length = 256]
-        url -> Nullable<Varchar>,
         #[max_length = 128]
         owner -> Nullable<Varchar>,
         #[max_length = 128]
@@ -443,6 +441,15 @@ diesel::table! {
     }
 }
 
+diesel::table! {
+    transactions_types (id) {
+        #[max_length = 32]
+        id -> Varchar,
+        #[max_length = 255]
+        name -> Varchar,
+    }
+}
+
 diesel::joinable!(assets -> assets_types (asset_type));
 diesel::joinable!(assets -> chains (chain));
 diesel::joinable!(assets_links -> assets (asset_id));
@@ -470,6 +477,7 @@ diesel::joinable!(subscriptions -> devices (device_id));
 diesel::joinable!(subscriptions_addresses_exclude -> chains (chain));
 diesel::joinable!(tokenlists -> chains (chain));
 diesel::joinable!(transactions -> chains (chain));
+diesel::joinable!(transactions -> transactions_types (kind));
 diesel::joinable!(transactions_addresses -> assets (asset_id));
 diesel::joinable!(transactions_addresses -> chains (chain_id));
 diesel::joinable!(transactions_addresses -> transactions (transaction_id));
@@ -502,4 +510,5 @@ diesel::allow_tables_to_appear_in_same_query!(
     tokenlists,
     transactions,
     transactions_addresses,
+    transactions_types,
 );
