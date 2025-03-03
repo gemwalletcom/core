@@ -178,18 +178,13 @@ public extension SwapQuoteRequest {
         options: SWAP_OPTIONS
     )
 
-    static let eth2btc: SwapQuoteRequest = {
-        var options = SWAP_OPTIONS
-        options.preferredProviders = [SwapProviderId.thorchain]
-
-        return SwapQuoteRequest(
-            fromAsset: "ethereum",
-            toAsset: "bitcoin",
-            walletAddress: TEST_ETH_WALLET,
-            destinationAddress: TEST_BTC_WALLET,
-            value: "100000000000", // 1 ETH
-            mode: .exactIn,
-            options: options
-        )
-    }()
+    static let eth2btc: SwapQuoteRequest = .init(
+        fromAsset: "ethereum",
+        toAsset: "bitcoin",
+        walletAddress: TEST_ETH_WALLET,
+        destinationAddress: TEST_BTC_WALLET,
+        value: "1000000000000000000", // 1 ETH
+        mode: .exactIn,
+        options: SWAP_OPTIONS
+    )
 }
