@@ -6,8 +6,7 @@ use crate::{
     network::{AlienHttpMethod, AlienProvider, AlienTarget},
     swapper::SwapperError,
 };
-use num_bigint::BigInt;
-use std::{str::FromStr, sync::Arc};
+use std::sync::Arc;
 
 #[derive(Debug)]
 pub struct ThorChainSwapClient {
