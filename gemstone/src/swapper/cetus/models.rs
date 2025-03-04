@@ -1,6 +1,10 @@
-use super::client::Pool;
-use gem_sui::jsonrpc::{DataObject, MoveObject, MoveObjectId, OptionU64, SuiData, I32};
+use num_bigint::BigInt;
 use serde::{Deserialize, Serialize};
+use std::str::FromStr;
+
+use super::client::Pool;
+use crate::swapper::SwapperError;
+use gem_sui::jsonrpc::{DataObject, MoveObject, MoveObjectId, OptionU64, SuiData, I32};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CetusPool {
@@ -39,6 +43,30 @@ pub struct CetusPoolObject {
     pub tick_spacing: i32,
     pub liquidity: String,
     pub tick_manager: MoveObject<TickManager>,
+}
+
+impl CetusPoolObject {
+    pub fn fee_rate(&self) -> Result<BigInt, SwapperError> {
+        BigInt::from_str(&self.fee_rate).map_err(|_| SwapperError::ComputeQuoteError {
+            msg: "Invalid fee_rate".into(),
+        })
+    }
+
+    pub fn current_sqrt_price(&self) -> Result<BigInt, SwapperError> {
+        BigInt::from_str(&self.current_sqrt_price).map_err(|_| SwapperError::ComputeQuoteError {
+            msg: "Invalid current_sqrt_price".into(),
+        })
+    }
+
+    pub fn liquidity(&self) -> Result<BigInt, SwapperError> {
+        BigInt::from_str(&self.liquidity).map_err(|_| SwapperError::ComputeQuoteError {
+            msg: "Invalid liquidity".into(),
+        })
+    }
+
+    pub fn current_tick_index(&self) -> i32 {
+        self.current_tick_index.fields.bits
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

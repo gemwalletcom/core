@@ -1,19 +1,25 @@
+use async_trait::async_trait;
+use num_bigint::BigInt;
+use std::{str::FromStr, sync::Arc};
+
 use super::{
     client::CetusClient,
-    models::{CetusPool, CetusPoolObject, CetusPoolType},
+    math::{compute_swap, PoolData, TickData},
+    models::{CetusPool, CetusPoolObject, CetusPoolType, TickManager},
 };
 use crate::{
     debug_println,
     network::{jsonrpc_call, AlienProvider, JsonRpcResult},
-    swapper::{FetchQuoteData, GemSwapProvider, SwapChainAsset, SwapProvider, SwapProviderType, SwapQuote, SwapQuoteData, SwapQuoteRequest, SwapperError},
+    swapper::{
+        FetchQuoteData, GemSwapProvider, SwapChainAsset, SwapProvider, SwapProviderData, SwapProviderType, SwapQuote, SwapQuoteData, SwapQuoteRequest,
+        SwapperError,
+    },
 };
-use async_trait::async_trait;
 use gem_sui::{
     jsonrpc::{ObjectDataOptions, SuiRpc},
     SUI_COIN_TYPE_FULL,
 };
 use primitives::{AssetId, Chain};
-use std::sync::Arc;
 
 #[derive(Debug)]
 pub struct Cetus {
@@ -58,6 +64,39 @@ impl Cetus {
         let object = response.take()?.data;
         Ok(object.content.unwrap().fields)
     }
+
+    pub fn convert_to_tick_data(ticks: &TickManager) -> Vec<TickData> {
+        let mut tick_data = Vec::new();
+        let head_ticks = &ticks.ticks.fields.head;
+
+        // Process each tick in the head vector
+        for tick_obj in head_ticks {
+            // Skip if the tick is None (OptionU64 represents None as bits = 0)
+            if tick_obj.fields.is_none {
+                continue;
+            }
+
+            // Convert tick index to i32
+            let index: i32 = tick_obj.fields.v.parse().unwrap();
+
+            // Calculate sqrt_price for this tick index
+            // Using the formula: 1.0001^(tick/2) * 2^96
+            // In fixed point notation: sqrt_price = 2^96 * (1.0001)^(tick/2)
+            let sqrt_price = BigInt::from(2).pow(96) * BigInt::from(10001).pow((index / 2) as u32) / BigInt::from(10000).pow((index / 2) as u32);
+
+            // Default liquidity_net to 1 since we don't have actual liquidity data
+            // This is a simplification - in a real implementation you'd want to
+            // calculate the actual liquidity net value
+            let liquidity_net = BigInt::from(1);
+
+            tick_data.push(TickData {
+                index,
+                sqrt_price,
+                liquidity_net,
+            });
+        }
+        tick_data
+    }
 }
 
 #[async_trait]
@@ -79,17 +118,46 @@ impl GemSwapProvider for Cetus {
             return Err(SwapperError::NoQuoteAvailable);
         }
 
-        let pool_id = &pools[0].pool_address;
-        let pool_object = self.fetch_pool_by_id(pool_id, provider).await?;
+        let pool = &pools[0];
+        let pool_object = self.fetch_pool_by_id(&pool.pool_address, provider).await?;
+        let amount_in = BigInt::from_str(&request.value).map_err(|_| SwapperError::InvalidAmount)?;
+
         debug_println!("{:?}", pool_object);
-        todo!()
+
+        let slippage_bps = request.options.slippage.bps;
+        let pool_data = PoolData {
+            current_tick_index: pool_object.current_tick_index(),
+            fee_rate: pool_object.fee_rate()?,
+        };
+
+        // Convert ticks to TickData format
+        let swap_ticks = Self::convert_to_tick_data(&pool_object.tick_manager.fields);
+
+        let a_to_b = pool.coin_type_a == from_coin;
+
+        let swap_result = compute_swap(
+            &pool_data,
+            swap_ticks,
+            pool_object.current_sqrt_price()?,
+            pool_object.liquidity()?,
+            amount_in,
+            a_to_b,
+            true, // by_amount_in
+        );
+
+        Ok(SwapQuote {
+            from_value: request.value.clone(),
+            to_value: swap_result.amount_out.to_string(),
+            data: SwapProviderData {
+                provider: self.provider.clone(),
+                slippage_bps,
+                routes: vec![],
+            },
+            request: request.clone(),
+        })
     }
 
     async fn fetch_quote_data(&self, _quote: &SwapQuote, _provider: Arc<dyn AlienProvider>, _data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError> {
         todo!()
-    }
-
-    async fn get_transaction_status(&self, _chain: Chain, _transaction_hash: &str, _provider: Arc<dyn AlienProvider>) -> Result<bool, SwapperError> {
-        Ok(true)
     }
 }
