@@ -1,9 +1,10 @@
 use super::{client::JupiterClient, model::*, PROGRAM_ADDRESS};
 use crate::{
     network::jsonrpc::{jsonrpc_call_with_cache, JsonRpcResult},
-    swapper::{GemSwapProvider, *},
+    swapper::{slippage::apply_slippage_in_bp, GemSwapProvider, *},
 };
 
+use alloy_primitives::U256;
 use async_trait::async_trait;
 use gem_solana::{
     get_asset_address,
@@ -132,10 +133,13 @@ impl GemSwapProvider for Jupiter {
         let client = JupiterClient::new(self.get_endpoint(), provider.clone());
         let swap_quote = client.get_swap_quote(quote_request).await?;
         let computed_auto_slippage = swap_quote.computed_auto_slippage.unwrap_or(swap_quote.slippage_bps);
+        let quote_amount: U256 = request.value.parse().map_err(|_| SwapperError::InvalidAmount)?;
+        let expect_min = apply_slippage_in_bp(&quote_amount, computed_auto_slippage + platform_fee_bps);
 
         let quote = SwapQuote {
             from_value: request.value.clone(),
             to_value: swap_quote.out_amount.clone(),
+            to_min_value: expect_min.to_string(),
             data: SwapProviderData {
                 provider: self.provider().clone(),
                 routes: vec![SwapRoute {

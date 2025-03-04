@@ -10,6 +10,7 @@ let SWAP_OPTIONS = GemSwapOptions(
 
 let TEST_ETH_WALLET = "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7"
 let TEST_SOL_WALLET = "A21o4asMbFHYadqXdLusT9Bvx9xaC5YV9gcaidjqtdXC"
+let TEST_BTC_WALLET = "bc1qe7qlndxgfv76c0ulnfhh7j0vdwkqdkkl4yf9gm"
 
 public extension SwapQuoteRequest {
     static let eth2usdc = SwapQuoteRequest(
@@ -172,6 +173,16 @@ public extension SwapQuoteRequest {
         toAsset: "unichain_0x20CAb320A855b39F724131C69424240519573f81",
         walletAddress: TEST_ETH_WALLET,
         destinationAddress: TEST_ETH_WALLET,
+        value: "1000000000000000000", // 1 ETH
+        mode: .exactIn,
+        options: SWAP_OPTIONS
+    )
+
+    static let eth2btc: SwapQuoteRequest = .init(
+        fromAsset: "ethereum",
+        toAsset: "bitcoin",
+        walletAddress: TEST_ETH_WALLET,
+        destinationAddress: TEST_BTC_WALLET,
         value: "1000000000000000000", // 1 ETH
         mode: .exactIn,
         options: SWAP_OPTIONS

@@ -407,9 +407,7 @@ impl GemSwapProvider for Across {
 
         // Check if bridge amount is too small
         if remain_amount < gas_fee {
-            return Err(SwapperError::ComputeQuoteError {
-                msg: "Bridge amount is too small".into(),
-            });
+            return Err(SwapperError::InputAmountTooSmall);
         }
 
         let output_amount = remain_amount - gas_fee;
@@ -438,6 +436,7 @@ impl GemSwapProvider for Across {
         Ok(SwapQuote {
             from_value: request.value.clone(),
             to_value: output_amount.to_string(),
+            to_min_value: expect_min.to_string(),
             data: SwapProviderData {
                 provider: self.provider().clone(),
                 slippage_bps: request.options.slippage.bps,
