@@ -56,11 +56,6 @@ impl ThorChainSwapClient {
             .map_err(|err| SwapperError::NetworkError { msg: err.to_string() })?;
 
         let result: QuoteSwapResponse = serde_json::from_slice(&data).map_err(|err| SwapperError::NetworkError { msg: err.to_string() })?;
-        let input_amount = BigInt::from_str(&value).map_err(|_| SwapperError::InvalidAmount)?;
-        let recommended_min_amount = BigInt::from_str(&result.recommended_min_amount_in).map_err(|_| SwapperError::InvalidAmount)?;
-        if recommended_min_amount > input_amount {
-            return Err(SwapperError::InputAmountTooSmall);
-        }
 
         Ok(result)
     }
