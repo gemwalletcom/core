@@ -3594,6 +3594,8 @@ dependencies = [
  "blake2",
  "hex",
  "primitives",
+ "serde",
+ "serde_json",
  "sui-types",
  "thiserror 2.0.11",
 ]

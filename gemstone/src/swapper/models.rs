@@ -67,6 +67,7 @@ pub enum SwapProvider {
     Across,
     OkuTrade,
     Wagmi,
+    Cetus,
 }
 
 impl SwapProvider {
@@ -80,6 +81,7 @@ impl SwapProvider {
             Self::Across => "Across",
             Self::OkuTrade => "Oku",
             Self::Wagmi => "Wagmi",
+            Self::Cetus => "Cetus",
         }
     }
 
@@ -95,14 +97,21 @@ impl SwapProvider {
             Self::Across => "Across v3",
             Self::OkuTrade => "Oku Trade",
             Self::Wagmi => "Wagmi",
+            Self::Cetus => "Cetus",
         }
     }
 
     pub fn mode(&self) -> SwapProviderMode {
         match self {
-            Self::UniswapV3 | Self::UniswapV4 | Self::PancakeSwapV3 | Self::PancakeSwapAptosV2 | Self::Orca | Self::Jupiter | Self::OkuTrade | Self::Wagmi => {
-                SwapProviderMode::OnChain
-            }
+            Self::UniswapV3
+            | Self::UniswapV4
+            | Self::PancakeSwapV3
+            | Self::PancakeSwapAptosV2
+            | Self::Orca
+            | Self::Jupiter
+            | Self::OkuTrade
+            | Self::Wagmi
+            | Self::Cetus => SwapProviderMode::OnChain,
             Self::Thorchain => SwapProviderMode::CrossChain,
             Self::Across => SwapProviderMode::Bridge,
         }
