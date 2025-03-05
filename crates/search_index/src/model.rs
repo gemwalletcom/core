@@ -22,6 +22,7 @@ pub const ASSETS_RANKING_RULES: &[&str] = &[
     "market.marketCapRank:asc",
     "market.marketCapFdv:desc",
     "market.marketCap:desc",
+    "market.totalVolume:desc",
     "attribute",
     "exactness",
 ];
