@@ -3628,6 +3628,7 @@ dependencies = [
  "async-std",
  "async-trait",
  "base64 0.22.1",
+ "bigdecimal",
  "borsh",
  "futures",
  "gem_aptos",

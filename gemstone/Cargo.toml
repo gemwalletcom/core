@@ -42,6 +42,7 @@ num-traits.workspace = true
 futures.workspace = true
 borsh.workspace = true
 lazy_static.workspace = true
+bigdecimal.workspace = true
 
 orca_whirlpools_core = "1.0.0"
 
