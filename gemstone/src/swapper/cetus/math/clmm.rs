@@ -972,10 +972,10 @@ mod tests {
         let amount = BigInt::from(500);
 
         // Test by amount in
-        let result_by_amount_in = get_next_sqrt_price_a_up(&sqrt_price, &liquidity, &amount, true).unwrap();
+        let _result_by_amount_in = get_next_sqrt_price_a_up(&sqrt_price, &liquidity, &amount, true).unwrap();
 
         // Test by amount out
-        let result_by_amount_out = get_next_sqrt_price_a_up(&sqrt_price, &liquidity, &amount, false).unwrap();
+        let _result_by_amount_out = get_next_sqrt_price_a_up(&sqrt_price, &liquidity, &amount, false).unwrap();
 
         // Zero amount should return the same sqrt price
         let result_zero_amount = get_next_sqrt_price_a_up(&sqrt_price, &liquidity, &ZERO, true).unwrap();
@@ -1026,10 +1026,10 @@ mod tests {
         let fee_rate = BigInt::from(3000); // 0.3%
 
         // Test by amount in
-        let step_in = compute_swap_step(&current_sqrt_price, &target_sqrt_price, &liquidity, &amount, &fee_rate, true).unwrap();
+        let _step_in = compute_swap_step(&current_sqrt_price, &target_sqrt_price, &liquidity, &amount, &fee_rate, true).unwrap();
 
         // Test by amount out
-        let step_out = compute_swap_step(&current_sqrt_price, &target_sqrt_price, &liquidity, &amount, &fee_rate, false).unwrap();
+        let _step_out = compute_swap_step(&current_sqrt_price, &target_sqrt_price, &liquidity, &amount, &fee_rate, false).unwrap();
 
         // Test with zero liquidity
         let zero_liquidity = compute_swap_step(&current_sqrt_price, &target_sqrt_price, &ZERO, &amount, &fee_rate, true).unwrap();
@@ -1048,10 +1048,10 @@ mod tests {
         let coin_amount = BigInt::from(1000);
 
         // Test for coin A
-        let liquidity_a = estimate_liquidity_for_coin_a(&sqrt_price_x, &sqrt_price_y, &coin_amount);
+        let _liquidity_a = estimate_liquidity_for_coin_a(&sqrt_price_x, &sqrt_price_y, &coin_amount);
 
         // Test for coin B
-        let liquidity_b = estimate_liquidity_for_coin_b(&sqrt_price_x, &sqrt_price_y, &coin_amount);
+        let _liquidity_b = estimate_liquidity_for_coin_b(&sqrt_price_x, &sqrt_price_y, &coin_amount);
 
         // Edge cases
         let zero_amount_a = estimate_liquidity_for_coin_a(&sqrt_price_x, &sqrt_price_y, &ZERO);

@@ -1,4 +1,4 @@
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize};
 use serde_json::Value;
 use std::{fmt::Display, ops::Not};
 
@@ -78,10 +78,28 @@ pub struct MoveObjectId {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OptionU64 {
     pub is_none: bool,
-    pub v: String,
+    #[serde(deserialize_with = "deserialize_u64_from_str")]
+    pub v: u64,
+}
+
+fn deserialize_u64_from_str<'de, D>(deserializer: D) -> Result<u64, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let s: String = serde::Deserialize::deserialize(deserializer)?;
+    s.parse::<u64>().map_err(serde::de::Error::custom)
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct I32 {
+    #[serde(deserialize_with = "u32_to_i32")]
     pub bits: i32,
+}
+
+fn u32_to_i32<'de, D>(deserializer: D) -> Result<i32, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let value: u32 = Deserialize::deserialize(deserializer)?;
+    Ok(value as i32) // Converts using two’s complement
 }
