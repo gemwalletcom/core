@@ -203,6 +203,8 @@ pusher:
     topic: ""
 daemon:
   service: ""
+  search:
+    assets_update_interval: 1800
 
 alerter:
   update_interval_seconds: 60

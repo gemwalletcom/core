@@ -37,7 +37,6 @@ pub struct AssetDocument {
     pub properties: AssetProperties,
     pub score: AssetScore,
     pub market: Option<AssetMarket>,
-    //TODO: Add price (market cap / supply and other metrics)
 }
 
 pub fn sanitize_index_primary_id(input: &str) -> String {
