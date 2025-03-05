@@ -20,6 +20,7 @@ pub const ASSETS_RANKING_RULES: &[&str] = &[
     "score.rank:desc",
     "proximity",
     "market.marketCapRank:asc",
+    "market.marketCapFdv:desc",
     "market.marketCap:desc",
     "attribute",
     "exactness",
