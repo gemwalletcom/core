@@ -1,27 +1,7 @@
-use bigdecimal::BigDecimal;
 use num_bigint::{BigInt, Sign};
-use num_traits::ToPrimitive;
 use std::str::FromStr;
 
-use super::constants::*;
-use super::error::ErrorCode;
-use super::math;
-
-// Constants from the original codebase
-pub const MAX_TICK_INDEX: i32 = 443636;
-pub const MIN_TICK_INDEX: i32 = -443636;
-pub const TICK_BOUND: i32 = 443636;
-
-const BIT_PRECISION: usize = 14;
-
 // Utility functions for bit manipulation with BigInt
-
-/// Shift left with sign handling for BigInt
-fn signed_shift_left(n0: &BigInt, shift_by: usize, bit_width: usize) -> BigInt {
-    let twos_n0 = to_twos_complement(n0, bit_width) << shift_by;
-    let masked = twos_n0 & ((BigInt::from(1) << (bit_width + 1)) - 1);
-    from_twos_complement(&masked, bit_width)
-}
 
 /// Shift right with sign handling for BigInt
 fn signed_shift_right(n0: &BigInt, shift_by: usize, bit_width: usize) -> BigInt {
@@ -188,22 +168,6 @@ fn tick_index_to_sqrt_price_negative(tick_index: i32) -> BigInt {
 pub struct TickMath;
 
 impl TickMath {
-    /// Convert price to sqrt_price_x64
-    pub fn price_to_sqrt_price_x64(price: BigDecimal, decimals_a: i32, decimals_b: i32) -> BigInt {
-        let decimal_diff = BigDecimal::from_str(&format!("1e{}", decimals_b - decimals_a)).unwrap();
-        let adjusted_price = price * decimal_diff;
-        let sqrt_price = adjusted_price.sqrt().unwrap();
-        math::to_x64(&sqrt_price)
-    }
-
-    /// Convert sqrt_price_x64 to price
-    pub fn sqrt_price_x64_to_price(sqrt_price_x64: &BigInt, decimals_a: i32, decimals_b: i32) -> BigDecimal {
-        let sqrt_price = math::from_x64(sqrt_price_x64);
-        let price = &sqrt_price * &sqrt_price;
-        let decimal_diff = BigDecimal::from_str(&format!("1e{}", decimals_a - decimals_b)).unwrap();
-        price * decimal_diff
-    }
-
     /// Convert tick index to sqrt_price_x64
     pub fn tick_index_to_sqrt_price_x64(tick_index: i32) -> BigInt {
         if tick_index > 0 {
@@ -212,98 +176,6 @@ impl TickMath {
             tick_index_to_sqrt_price_negative(tick_index)
         }
     }
-
-    /// Convert sqrt_price_x64 to tick index
-    pub fn sqrt_price_x64_to_tick_index(sqrt_price_x64: &BigInt) -> Result<i32, ErrorCode> {
-        // For testing purposes, we're removing this validation
-        // if sqrt_price_x64 > &*MAX_SQRT_PRICE || sqrt_price_x64 < &*MIN_SQRT_PRICE {
-        //     return Err(ErrorCode::InvalidSqrtPrice);
-        // }
-
-        let msb = sqrt_price_x64.bits() as usize - 1;
-        let adjusted_msb = BigInt::from(msb as i64 - 64);
-        let log2p_integer_x32 = signed_shift_left(&adjusted_msb, 32, 128);
-
-        let mut bit = BigInt::from_str("8000000000000000").unwrap();
-        let mut precision = 0;
-        let mut log2p_fraction_x64 = BigInt::from(0);
-
-        let r = if msb >= 64 {
-            sqrt_price_x64 >> (msb - 63)
-        } else {
-            sqrt_price_x64 << (63 - msb)
-        };
-
-        let mut r = r.clone();
-
-        while bit > BigInt::from(0) && precision < BIT_PRECISION {
-            r = &r * &r;
-            let r_more_than_two: BigInt = &r >> 127;
-            r = &r >> (63 + r_more_than_two.to_i32().unwrap() as usize);
-            log2p_fraction_x64 += &bit * &r_more_than_two;
-            bit = &bit >> 1;
-            precision += 1;
-        }
-
-        let log2p_fraction_x32 = &log2p_fraction_x64 >> 32;
-        let log2p_x32 = &log2p_integer_x32 + log2p_fraction_x32;
-        let logbp_x64 = log2p_x32 * &*LOG_B_2_X32_VALUE;
-
-        let n0 = &logbp_x64 - &*LOG_B_P_ERR_MARGIN_LOWER_X64_VALUE;
-        let tick_low = signed_shift_right(&n0, 64, 128).to_i32().unwrap();
-
-        let n0 = &logbp_x64 + &*LOG_B_P_ERR_MARGIN_UPPER_X64_VALUE;
-        let tick_high = signed_shift_right(&n0, 64, 128).to_i32().unwrap();
-
-        if tick_low == tick_high {
-            return Ok(tick_low);
-        }
-
-        let derived_tick_high_sqrt_price_x64 = Self::tick_index_to_sqrt_price_x64(tick_high);
-        if derived_tick_high_sqrt_price_x64 <= *sqrt_price_x64 {
-            Ok(tick_high)
-        } else {
-            Ok(tick_low)
-        }
-    }
-
-    /// Convert tick index to price
-    pub fn tick_index_to_price(tick_index: i32, decimals_a: i32, decimals_b: i32) -> BigDecimal {
-        let sqrt_price_x64 = Self::tick_index_to_sqrt_price_x64(tick_index);
-        Self::sqrt_price_x64_to_price(&sqrt_price_x64, decimals_a, decimals_b)
-    }
-
-    /// Convert price to tick index
-    pub fn price_to_tick_index(price: BigDecimal, decimals_a: i32, decimals_b: i32) -> Result<i32, ErrorCode> {
-        let sqrt_price_x64 = Self::price_to_sqrt_price_x64(price, decimals_a, decimals_b);
-        Self::sqrt_price_x64_to_tick_index(&sqrt_price_x64)
-    }
-
-    /// Convert price to initializable tick index
-    pub fn price_to_initializable_tick_index(price: BigDecimal, decimals_a: i32, decimals_b: i32, tick_spacing: i32) -> Result<i32, ErrorCode> {
-        let tick_index = Self::price_to_tick_index(price, decimals_a, decimals_b)?;
-        Ok(Self::get_initializable_tick_index(tick_index, tick_spacing))
-    }
-
-    /// Get initializable tick index
-    pub fn get_initializable_tick_index(tick_index: i32, tick_spacing: i32) -> i32 {
-        tick_index - (tick_index % tick_spacing)
-    }
-
-    /// Get the next initializable tick index
-    pub fn get_next_initializable_tick_index(tick_index: i32, tick_spacing: i32) -> i32 {
-        Self::get_initializable_tick_index(tick_index, tick_spacing) + tick_spacing
-    }
-
-    /// Get the previous initializable tick index
-    pub fn get_prev_initializable_tick_index(tick_index: i32, tick_spacing: i32) -> i32 {
-        Self::get_initializable_tick_index(tick_index, tick_spacing) - tick_spacing
-    }
-}
-
-/// Calculate tick score
-pub fn tick_score(tick_index: i32) -> BigDecimal {
-    BigDecimal::from(tick_index) + BigDecimal::from(TICK_BOUND)
 }
 
 #[cfg(test)]
@@ -344,53 +216,5 @@ mod tests {
     fn test_price_conversions() {
         // Skip this test as it depends on complex algorithms
         // In a real refactoring we would need to fix the algorithm properly
-    }
-
-    #[test]
-    fn test_initializable_tick_index() {
-        // Test with positive tick and spacing
-        let tick_index = 42;
-        let tick_spacing = 10;
-
-        let initializable_tick = TickMath::get_initializable_tick_index(tick_index, tick_spacing);
-        assert_eq!(initializable_tick, 40);
-
-        // Test with negative tick and spacing
-        let tick_index = -42;
-        let tick_spacing = 10;
-
-        let initializable_tick = TickMath::get_initializable_tick_index(tick_index, tick_spacing);
-        assert_eq!(initializable_tick, -40);
-
-        // Test next initializable tick
-        let tick_index = 42;
-        let tick_spacing = 10;
-
-        let next_initializable = TickMath::get_next_initializable_tick_index(tick_index, tick_spacing);
-        assert_eq!(next_initializable, 50);
-
-        // Test previous initializable tick
-        let tick_index = 42;
-        let tick_spacing = 10;
-
-        let prev_initializable = TickMath::get_prev_initializable_tick_index(tick_index, tick_spacing);
-        assert_eq!(prev_initializable, 30);
-    }
-
-    #[test]
-    fn test_tick_score() {
-        // Test with positive tick
-        let tick_index = 100;
-        let score = tick_score(tick_index);
-
-        let expected = BigDecimal::from(tick_index) + BigDecimal::from(TICK_BOUND);
-        assert_eq!(score, expected);
-
-        // Test with negative tick
-        let tick_index = -100;
-        let score = tick_score(tick_index);
-
-        let expected = BigDecimal::from(tick_index) + BigDecimal::from(TICK_BOUND);
-        assert_eq!(score, expected);
     }
 }

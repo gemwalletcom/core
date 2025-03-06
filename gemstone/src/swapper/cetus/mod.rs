@@ -1,5 +1,4 @@
 mod client;
-#[allow(unused)]
 mod clmm;
 mod jsonrpc;
 mod models;

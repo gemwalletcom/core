@@ -76,10 +76,6 @@ impl TryInto<ClmmPoolData> for CetusPoolObject {
             current_sqrt_price: self.current_sqrt_price,
             current_tick_index: self.current_tick_index.fields.bits,
             fee_rate: self.fee_rate,
-            fee_growth_global_a: self.fee_growth_global_a,
-            fee_growth_global_b: self.fee_growth_global_b,
-            fee_protocol_coin_a: self.fee_protocol_coin_a,
-            fee_protocol_coin_b: self.fee_protocol_coin_b,
         })
     }
 }
