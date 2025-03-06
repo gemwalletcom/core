@@ -10,11 +10,10 @@ use super::{
     models::{CetusPool, CetusPoolObject, CetusPoolType},
 };
 use crate::{
-    debug_println,
     network::{jsonrpc_call, AlienProvider, JsonRpcResult},
     swapper::{
         slippage::apply_slippage_in_bp, FetchQuoteData, GemSwapProvider, SwapChainAsset, SwapProvider, SwapProviderData, SwapProviderType, SwapQuote,
-        SwapQuoteData, SwapQuoteRequest, SwapperError,
+        SwapQuoteData, SwapQuoteRequest, SwapRoute, SwapperError,
     },
 };
 use gem_sui::{
@@ -79,6 +78,7 @@ impl GemSwapProvider for Cetus {
     }
 
     async fn fetch_quote(&self, request: &SwapQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapQuote, SwapperError> {
+        let from_chain = request.from_asset.chain;
         let from_coin = Cetus::get_coin_address(&request.from_asset);
         let to_coin = Cetus::get_coin_address(&request.to_asset);
         let pools = self.fetch_pools_by_coins(&from_coin, &to_coin, provider.clone()).await?;
@@ -87,15 +87,13 @@ impl GemSwapProvider for Cetus {
             return Err(SwapperError::NoQuoteAvailable);
         }
 
-        let pool = &pools[0];
+        let pool = &pools[0]; // FIXME pick multiple pools
         let pool_object = self.fetch_pool_by_id(&pool.pool_address, provider).await?;
         let amount_in = BigInt::from_str(&request.value).map_err(|_| SwapperError::InvalidAmount)?;
 
-        debug_println!("{:?}", pool_object);
-
         // Convert ticks to TickData format
         let tick_datas = &pool_object.tick_manager.fields.to_ticks();
-        let pool_data = pool_object.try_into()?;
+        let pool_data = pool_object.clone().try_into()?;
 
         let a_to_b = pool.coin_type_a == from_coin;
 
@@ -111,7 +109,12 @@ impl GemSwapProvider for Cetus {
             data: SwapProviderData {
                 provider: self.provider.clone(),
                 slippage_bps,
-                routes: vec![],
+                routes: vec![SwapRoute {
+                    input: AssetId::from(from_chain, Some(from_coin.clone())),
+                    output: AssetId::from(from_chain, Some(to_coin.clone())),
+                    route_data: serde_json::to_string(&pool_object).unwrap(),
+                    gas_limit: None,
+                }],
             },
             request: request.clone(),
         })
