@@ -114,9 +114,9 @@ impl AssetUpdater {
         // market cap calculation
         let market_cap_rank = coin_info.market_cap_rank.unwrap_or_default();
         rank += match market_cap_rank {
-            1..25 => 10,
-            25..50 => 8,
-            50..100 => 6,
+            1..25 => 14,
+            25..50 => 9,
+            50..100 => 8,
             100..250 => 5,
             250..500 => 4,
             500..1000 => 2,
