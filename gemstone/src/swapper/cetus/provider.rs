@@ -4,7 +4,7 @@ use std::{str::FromStr, sync::Arc};
 
 use super::{
     client::CetusClient,
-    math::compute_swap,
+    clmm::compute_swap,
     models::{CetusPool, CetusPoolObject, CetusPoolType},
 };
 use crate::{

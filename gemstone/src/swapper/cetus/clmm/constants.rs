@@ -5,14 +5,6 @@ use num_bigint::BigInt;
 pub const MAX_SQRT_PRICE_STR: &str = "79226673515401279992447579055";
 pub const MIN_SQRT_PRICE_STR: &str = "4295048016";
 
-// Tick constants
-pub const MAX_TICK_INDEX: i32 = 443636;
-pub const MIN_TICK_INDEX: i32 = -443636;
-pub const TICK_BOUND: i32 = 443636;
-
-// Bit precision for calculations
-pub const BIT_PRECISION: usize = 14;
-
 // Log calculation constants
 pub const LOG_B_2_X32: &str = "59543866431248";
 pub const LOG_B_P_ERR_MARGIN_LOWER_X64: &str = "184467440737095516";

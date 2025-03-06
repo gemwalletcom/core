@@ -1,7 +1,7 @@
 mod client;
+#[allow(unused)]
+mod clmm;
 mod jsonrpc;
-#[allow(dead_code)]
-mod math;
 mod models;
 mod provider;
 

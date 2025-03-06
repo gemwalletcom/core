@@ -3,7 +3,7 @@ use serde::{de, Deserialize, Serialize};
 
 use super::{
     client::Pool,
-    math::{ClmmPoolData, TickData},
+    clmm::{tick::TickMath, ClmmPoolData, TickData},
 };
 use crate::swapper::SwapperError;
 use gem_sui::jsonrpc::{DataObject, MoveObject, MoveObjectId, OptionU64, SuiData, I32};
@@ -189,7 +189,7 @@ impl TickManager {
         // Convert tick indices to TickData objects
         for tick_index in all_indices {
             // Calculate the square root price for this tick
-            let sqrt_price = super::math::tick::TickMath::tick_index_to_sqrt_price_x64(tick_index);
+            let sqrt_price = TickMath::tick_index_to_sqrt_price_x64(tick_index);
 
             // Add or remove liquidity at this tick boundary
             // For tick boundaries, liquidity changes significantly
