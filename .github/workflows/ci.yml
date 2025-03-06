@@ -28,8 +28,8 @@ jobs:
         uses: mozilla-actions/sccache-action@v0.0.6
 
       - name: Install just
-        run: brew install just
-  
+        run: sudo apt install just
+
       - name: Run tests
         run: just test-all
 
