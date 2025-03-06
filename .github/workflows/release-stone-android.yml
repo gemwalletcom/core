@@ -14,7 +14,6 @@ env:
   CARGO_TERM_COLOR: always
   SCCACHE_GHA_ENABLED: "true"
   RUSTC_WRAPPER: "sccache"
-  JUST_ALLOW_UNSTABLE: "true"
 
 jobs:
   publish_gpr:
@@ -59,16 +58,16 @@ jobs:
         run: sudo apt install just
 
       - name: Setup NDK
-        run: just gemstone install-ndk
+        run: just gemstone install-ndk --unstable
 
       - name: Build Android Bindings
         run: |
-          just install-android-targets && just bindgen-kotlin
+          just install-android-targets --unstable && just bindgen-kotlin --unstable
         working-directory: gemstone
 
       - name: Publish to Github Packages
         run: |
-          just publish-android
+          just publish-android --unstable
         env:
           GITHUB_USER: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

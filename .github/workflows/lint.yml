@@ -27,4 +27,4 @@ jobs:
         run: sudo apt install just
 
       - name: Run Lint
-        run: JUST_ALLOW_UNSTABLE=true just lint
+        run: just lint --unstable
