@@ -4,8 +4,7 @@ on:
     branches: ["main"]
 
 env:
-  CARGO_TERM_COLOR: always
-  JUST_ALLOW_UNSTABLE: "true"
+  CARGO_TERM_COLOR: always  
 
 jobs:
   clippy_check:
@@ -28,4 +27,4 @@ jobs:
         run: sudo apt install just
 
       - name: Run Lint
-        run: just lint
+        run: JUST_ALLOW_UNSTABLE=true just lint
