@@ -24,7 +24,7 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Install just
-        run: cargo install just
+        run: brew install just
 
       - name: Run Lint
         run: just lint
