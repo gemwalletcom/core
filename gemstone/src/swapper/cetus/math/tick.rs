@@ -4,7 +4,7 @@ use num_traits::ToPrimitive;
 use std::str::FromStr;
 
 use super::constants::*;
-use super::error::{ClmmpoolsError, MathErrorCode};
+use super::error::ErrorCode;
 
 // Constants from the original codebase
 pub const MAX_TICK_INDEX: i32 = 443636;
@@ -213,12 +213,9 @@ impl TickMath {
     }
 
     /// Convert sqrt_price_x64 to tick index
-    pub fn sqrt_price_x64_to_tick_index(sqrt_price_x64: &BigInt) -> Result<i32, ClmmpoolsError> {
+    pub fn sqrt_price_x64_to_tick_index(sqrt_price_x64: &BigInt) -> Result<i32, ErrorCode> {
         if sqrt_price_x64 > &*MAX_SQRT_PRICE || sqrt_price_x64 < &*MIN_SQRT_PRICE {
-            return Err(ClmmpoolsError::math_error(
-                "Provided sqrtPrice is not within the supported sqrtPrice range.",
-                MathErrorCode::InvalidSqrtPrice,
-            ));
+            return Err(ErrorCode::InvalidSqrtPrice);
         }
 
         let msb = sqrt_price_x64.bits() as usize - 1;
@@ -275,13 +272,13 @@ impl TickMath {
     }
 
     /// Convert price to tick index
-    pub fn price_to_tick_index(price: BigDecimal, decimals_a: i32, decimals_b: i32) -> Result<i32, ClmmpoolsError> {
+    pub fn price_to_tick_index(price: BigDecimal, decimals_a: i32, decimals_b: i32) -> Result<i32, ErrorCode> {
         let sqrt_price_x64 = Self::price_to_sqrt_price_x64(price, decimals_a, decimals_b);
         Self::sqrt_price_x64_to_tick_index(&sqrt_price_x64)
     }
 
     /// Convert price to initializable tick index
-    pub fn price_to_initializable_tick_index(price: BigDecimal, decimals_a: i32, decimals_b: i32, tick_spacing: i32) -> Result<i32, ClmmpoolsError> {
+    pub fn price_to_initializable_tick_index(price: BigDecimal, decimals_a: i32, decimals_b: i32, tick_spacing: i32) -> Result<i32, ErrorCode> {
         let tick_index = Self::price_to_tick_index(price, decimals_a, decimals_b)?;
         Ok(Self::get_initializable_tick_index(tick_index, tick_spacing))
     }

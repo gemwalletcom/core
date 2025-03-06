@@ -1,5 +1,5 @@
 use super::constants::*;
-use super::error::{ClmmpoolsError, MathErrorCode};
+use super::error::ErrorCode;
 use bigdecimal::BigDecimal;
 use num_bigint::{BigInt, Sign};
 use num_traits::{One, Signed};
@@ -72,121 +72,109 @@ impl MathUtil {
     }
 
     /// Check unsigned subtraction
-    pub fn check_unsigned_sub(n0: &BigInt, n1: &BigInt) -> Result<BigInt, ClmmpoolsError> {
+    pub fn check_unsigned_sub(n0: &BigInt, n1: &BigInt) -> Result<BigInt, ErrorCode> {
         let n = n0 - n1;
         if n.sign() == Sign::Minus {
-            Err(ClmmpoolsError::math_error(
-                "Unsigned integer sub overflow",
-                MathErrorCode::UnsignedIntegerOverflow,
-            ))
+            Err(ErrorCode::UnsignedIntegerOverflow)
         } else {
             Ok(n)
         }
     }
 
     /// Check multiplication with overflow checking
-    pub fn check_mul(n0: &BigInt, n1: &BigInt, limit: u32) -> Result<BigInt, ClmmpoolsError> {
+    pub fn check_mul(n0: &BigInt, n1: &BigInt, limit: u32) -> Result<BigInt, ErrorCode> {
         let n = n0 * n1;
         if Self::is_overflow(&n, limit) {
-            Err(ClmmpoolsError::math_error("Multiplication overflow", MathErrorCode::MulOverflow))
+            Err(ErrorCode::MulOverflow)
         } else {
             Ok(n)
         }
     }
 
     /// Check multiplication and division with floor rounding
-    pub fn check_mul_div_floor(n0: &BigInt, n1: &BigInt, denom: &BigInt, limit: u32) -> Result<BigInt, ClmmpoolsError> {
+    pub fn check_mul_div_floor(n0: &BigInt, n1: &BigInt, denom: &BigInt, limit: u32) -> Result<BigInt, ErrorCode> {
         if denom.eq(&*ZERO) {
-            return Err(ClmmpoolsError::math_error("Divide by zero", MathErrorCode::DivideByZero));
+            return Err(ErrorCode::DivideByZero);
         }
 
         let n = (n0 * n1) / denom;
 
         if Self::is_overflow(&n, limit) {
-            Err(ClmmpoolsError::math_error("Multiplication div overflow", MathErrorCode::MulDivOverflow))
+            Err(ErrorCode::MulDivOverflow)
         } else {
             Ok(n)
         }
     }
 
     /// Check multiplication and division with ceiling rounding
-    pub fn check_mul_div_ceil(n0: &BigInt, n1: &BigInt, denom: &BigInt, limit: u32) -> Result<BigInt, ClmmpoolsError> {
+    pub fn check_mul_div_ceil(n0: &BigInt, n1: &BigInt, denom: &BigInt, limit: u32) -> Result<BigInt, ErrorCode> {
         if denom.eq(&*ZERO) {
-            return Err(ClmmpoolsError::math_error("Divide by zero", MathErrorCode::DivideByZero));
+            return Err(ErrorCode::DivideByZero);
         }
 
         let n = (n0 * n1 + (denom - 1)) / denom;
 
         if Self::is_overflow(&n, limit) {
-            Err(ClmmpoolsError::math_error("Multiplication div overflow", MathErrorCode::MulDivOverflow))
+            Err(ErrorCode::MulDivOverflow)
         } else {
             Ok(n)
         }
     }
 
     /// Check multiplication and division with rounding
-    pub fn check_mul_div_round(n0: &BigInt, n1: &BigInt, denom: &BigInt, limit: u32) -> Result<BigInt, ClmmpoolsError> {
+    pub fn check_mul_div_round(n0: &BigInt, n1: &BigInt, denom: &BigInt, limit: u32) -> Result<BigInt, ErrorCode> {
         if denom.eq(&*ZERO) {
-            return Err(ClmmpoolsError::math_error("Divide by zero", MathErrorCode::DivideByZero));
+            return Err(ErrorCode::DivideByZero);
         }
 
         let n = (n0 * (n1 + (denom >> 1))) / denom;
 
         if Self::is_overflow(&n, limit) {
-            Err(ClmmpoolsError::math_error("Multiplication div overflow", MathErrorCode::MulDivOverflow))
+            Err(ErrorCode::MulDivOverflow)
         } else {
             Ok(n)
         }
     }
 
     /// Check multiplication and shift right
-    pub fn check_mul_shift_right(n0: &BigInt, n1: &BigInt, shift: u32, limit: u32) -> Result<BigInt, ClmmpoolsError> {
+    pub fn check_mul_shift_right(n0: &BigInt, n1: &BigInt, shift: u32, limit: u32) -> Result<BigInt, ErrorCode> {
         let n = (n0 * n1) / (BigInt::from(2).pow(shift));
 
         if Self::is_overflow(&n, limit) {
-            Err(ClmmpoolsError::math_error(
-                "Multiplication shift right overflow",
-                MathErrorCode::MulShiftRightOverflow,
-            ))
+            Err(ErrorCode::MulShiftRightOverflow)
         } else {
             Ok(n)
         }
     }
 
     /// Check multiplication and shift right 64 with conditional round up
-    pub fn check_mul_shift_right64_round_up_if(n0: &BigInt, n1: &BigInt, limit: u32, round_up: bool) -> Result<BigInt, ClmmpoolsError> {
+    pub fn check_mul_shift_right64_round_up_if(n0: &BigInt, n1: &BigInt, limit: u32, round_up: bool) -> Result<BigInt, ErrorCode> {
         let p = n0 * n1;
         let should_round_up = round_up && (&p & &*U64_MAX) > *ZERO;
         let result = if should_round_up { &p >> (64 + 1) } else { &p >> 64 };
 
         if Self::is_overflow(&result, limit) {
-            Err(ClmmpoolsError::math_error(
-                "Multiplication shift right overflow",
-                MathErrorCode::MulShiftRightOverflow,
-            ))
+            Err(ErrorCode::MulShiftRightOverflow)
         } else {
             Ok(result)
         }
     }
 
     /// Check multiplication and shift left
-    pub fn check_mul_shift_left(n0: &BigInt, n1: &BigInt, shift: u32, limit: u32) -> Result<BigInt, ClmmpoolsError> {
+    pub fn check_mul_shift_left(n0: &BigInt, n1: &BigInt, shift: u32, limit: u32) -> Result<BigInt, ErrorCode> {
         let n = (n0 * n1) << shift;
 
         if Self::is_overflow(&n, limit) {
-            Err(ClmmpoolsError::math_error(
-                "Multiplication shift left overflow",
-                MathErrorCode::MulShiftLeftOverflow,
-            ))
+            Err(ErrorCode::MulShiftLeftOverflow)
         } else {
             Ok(n)
         }
     }
 
     /// Check division with conditional round up
-    pub fn check_div_round_up_if(n0: &BigInt, n1: &BigInt, round_up: bool) -> Result<BigInt, ClmmpoolsError> {
+    pub fn check_div_round_up_if(n0: &BigInt, n1: &BigInt, round_up: bool) -> Result<BigInt, ErrorCode> {
         if n1.eq(&*ZERO) {
-            return Err(ClmmpoolsError::math_error("Divide by zero", MathErrorCode::DivideByZero));
+            return Err(ErrorCode::DivideByZero);
         }
 
         if round_up {

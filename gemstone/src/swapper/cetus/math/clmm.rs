@@ -1,5 +1,5 @@
 use super::constants::*;
-use super::error::{ClmmpoolsError, CoinErrorCode, MathErrorCode};
+use super::error::ErrorCode;
 use super::swap::SwapUtils;
 use super::tick::TickMath;
 use super::utils::MathUtil;
@@ -105,7 +105,7 @@ pub fn get_delta_a(sqrt_price0: &BigInt, sqrt_price1: &BigInt, liquidity: &BigIn
 /// # Returns
 ///
 /// * The amount B delta
-pub fn get_delta_b(sqrt_price0: &BigInt, sqrt_price1: &BigInt, liquidity: &BigInt, round_up: bool) -> Result<BigInt, ClmmpoolsError> {
+pub fn get_delta_b(sqrt_price0: &BigInt, sqrt_price1: &BigInt, liquidity: &BigInt, round_up: bool) -> Result<BigInt, ErrorCode> {
     let sqrt_price_diff = if sqrt_price0 > sqrt_price1 {
         sqrt_price0 - sqrt_price1
     } else {
@@ -121,7 +121,7 @@ pub fn get_delta_b(sqrt_price0: &BigInt, sqrt_price1: &BigInt, liquidity: &BigIn
     let result = if should_round_up { &p >> (64 + 1) } else { &p >> 64 };
 
     if MathUtil::is_overflow(&result, 64) {
-        Err(ClmmpoolsError::math_error("Result large than u64 max", MathErrorCode::IntegerDowncastOverflow))
+        Err(ErrorCode::IntegerDowncastOverflow)
     } else {
         Ok(result)
     }
@@ -140,7 +140,7 @@ pub fn get_delta_b(sqrt_price0: &BigInt, sqrt_price1: &BigInt, liquidity: &BigIn
 /// # Returns
 ///
 /// * The next sqrt price
-pub fn get_next_sqrt_price_a_up(sqrt_price: &BigInt, liquidity: &BigInt, amount: &BigInt, by_amount_in: bool) -> Result<BigInt, ClmmpoolsError> {
+pub fn get_next_sqrt_price_a_up(sqrt_price: &BigInt, liquidity: &BigInt, amount: &BigInt, by_amount_in: bool) -> Result<BigInt, ErrorCode> {
     if amount == &*ZERO {
         return Ok(sqrt_price.clone());
     }
@@ -150,10 +150,8 @@ pub fn get_next_sqrt_price_a_up(sqrt_price: &BigInt, liquidity: &BigInt, amount:
     let product = MathUtil::check_mul(sqrt_price, amount, 256)?;
 
     if !by_amount_in && liquidity_shl64 <= product {
-        return Err(ClmmpoolsError::math_error(
-            "getNextSqrtPriceAUp - Unable to divide liquidityShl64 by product",
-            MathErrorCode::DivideByZero,
-        ));
+        // Unable to divide liquidityShl64 by product
+        return Err(ErrorCode::DivideByZero);
     }
 
     let next_sqrt_price = if by_amount_in {
@@ -163,17 +161,11 @@ pub fn get_next_sqrt_price_a_up(sqrt_price: &BigInt, liquidity: &BigInt, amount:
     };
 
     if next_sqrt_price < *MIN_SQRT_PRICE {
-        return Err(ClmmpoolsError::coin_error(
-            "getNextSqrtPriceAUp - Next sqrt price less than min sqrt price",
-            CoinErrorCode::CoinAmountMinSubceeded,
-        ));
+        return Err(ErrorCode::CoinAmountMinSubceeded);
     }
 
     if next_sqrt_price > *MAX_SQRT_PRICE {
-        return Err(ClmmpoolsError::coin_error(
-            "getNextSqrtPriceAUp - Next sqrt price greater than max sqrt price",
-            CoinErrorCode::CoinAmountMaxExceeded,
-        ));
+        return Err(ErrorCode::CoinAmountMaxExceeded);
     }
 
     Ok(next_sqrt_price)
@@ -192,7 +184,7 @@ pub fn get_next_sqrt_price_a_up(sqrt_price: &BigInt, liquidity: &BigInt, amount:
 /// # Returns
 ///
 /// * The next sqrt price
-pub fn get_next_sqrt_price_b_down(sqrt_price: &BigInt, liquidity: &BigInt, amount: &BigInt, by_amount_in: bool) -> Result<BigInt, ClmmpoolsError> {
+pub fn get_next_sqrt_price_b_down(sqrt_price: &BigInt, liquidity: &BigInt, amount: &BigInt, by_amount_in: bool) -> Result<BigInt, ErrorCode> {
     let delta_sqrt_price = MathUtil::check_div_round_up_if(&(amount << 64), liquidity, !by_amount_in)?;
     let next_sqrt_price = if by_amount_in {
         sqrt_price + &delta_sqrt_price
@@ -201,10 +193,7 @@ pub fn get_next_sqrt_price_b_down(sqrt_price: &BigInt, liquidity: &BigInt, amoun
     };
 
     if next_sqrt_price < *MIN_SQRT_PRICE || next_sqrt_price > *MAX_SQRT_PRICE {
-        return Err(ClmmpoolsError::coin_error(
-            "getNextSqrtPriceBDown - Next sqrt price out of bounds",
-            CoinErrorCode::SqrtPriceOutOfBounds,
-        ));
+        return Err(ErrorCode::SqrtPriceOutOfBounds);
     }
 
     Ok(next_sqrt_price)
@@ -222,7 +211,7 @@ pub fn get_next_sqrt_price_b_down(sqrt_price: &BigInt, liquidity: &BigInt, amoun
 /// # Returns
 ///
 /// * The next sqrt price
-pub fn get_next_sqrt_price_from_input(sqrt_price: &BigInt, liquidity: &BigInt, amount: &BigInt, a_to_b: bool) -> Result<BigInt, ClmmpoolsError> {
+pub fn get_next_sqrt_price_from_input(sqrt_price: &BigInt, liquidity: &BigInt, amount: &BigInt, a_to_b: bool) -> Result<BigInt, ErrorCode> {
     if a_to_b {
         get_next_sqrt_price_a_up(sqrt_price, liquidity, amount, true)
     } else {
@@ -242,7 +231,7 @@ pub fn get_next_sqrt_price_from_input(sqrt_price: &BigInt, liquidity: &BigInt, a
 /// # Returns
 ///
 /// * The next sqrt price
-pub fn get_next_sqrt_price_from_output(sqrt_price: &BigInt, liquidity: &BigInt, amount: &BigInt, a_to_b: bool) -> Result<BigInt, ClmmpoolsError> {
+pub fn get_next_sqrt_price_from_output(sqrt_price: &BigInt, liquidity: &BigInt, amount: &BigInt, a_to_b: bool) -> Result<BigInt, ErrorCode> {
     if a_to_b {
         get_next_sqrt_price_b_down(sqrt_price, liquidity, amount, false)
     } else {
@@ -348,7 +337,7 @@ pub fn compute_swap_step(
     amount: &BigInt,
     fee_rate: &BigInt,
     by_amount_in: bool,
-) -> Result<SwapStepResult, ClmmpoolsError> {
+) -> Result<SwapStepResult, ErrorCode> {
     if liquidity == &*ZERO {
         return Ok(SwapStepResult {
             amount_in: ZERO.clone(),
@@ -442,13 +431,7 @@ pub struct TickData {
 /// # Returns
 ///
 /// * The swap result
-pub fn compute_swap(
-    a_to_b: bool,
-    by_amount_in: bool,
-    amount: &BigInt,
-    pool_data: &ClmmPoolData,
-    swap_ticks: &[TickData],
-) -> Result<SwapResult, ClmmpoolsError> {
+pub fn compute_swap(a_to_b: bool, by_amount_in: bool, amount: &BigInt, pool_data: &ClmmPoolData, swap_ticks: &[TickData]) -> Result<SwapResult, ErrorCode> {
     let mut remainder_amount = amount.clone();
     let mut current_liquidity = pool_data.liquidity.clone();
     let mut current_sqrt_price = pool_data.current_sqrt_price.clone();
@@ -622,13 +605,7 @@ impl ClmmPoolUtil {
     /// # Returns
     ///
     /// * The ref fee and updated clmm
-    pub fn update_fee_rate(
-        clmm: &mut ClmmPoolData,
-        fee_amount: &BigInt,
-        ref_rate: i64,
-        protocol_fee_rate: i64,
-        is_coin_a: bool,
-    ) -> Result<BigInt, ClmmpoolsError> {
+    pub fn update_fee_rate(clmm: &mut ClmmPoolData, fee_amount: &BigInt, ref_rate: i64, protocol_fee_rate: i64, is_coin_a: bool) -> Result<BigInt, ErrorCode> {
         let protocol_fee = MathUtil::check_mul_div_ceil(fee_amount, &BigInt::from(protocol_fee_rate), &FEE_RATE_DENOMINATOR, 64)?;
 
         let ref_fee = if ref_rate == 0 {
@@ -749,7 +726,7 @@ impl ClmmPoolUtil {
         round_up: bool,
         slippage: BigDecimal,
         cur_sqrt_price: &BigInt,
-    ) -> Result<LiquidityInput, ClmmpoolsError> {
+    ) -> Result<LiquidityInput, ErrorCode> {
         let current_tick = TickMath::sqrt_price_x64_to_tick_index(cur_sqrt_price)?;
         let lower_sqrt_price = TickMath::tick_index_to_sqrt_price_x64(lower_tick);
         let upper_sqrt_price = TickMath::tick_index_to_sqrt_price_x64(upper_tick);
@@ -757,18 +734,14 @@ impl ClmmPoolUtil {
         let liquidity;
         if current_tick < lower_tick {
             if !is_coin_a {
-                return Err(ClmmpoolsError::math_error(
-                    "lower tick cannot calculate liquidity by coinB",
-                    MathErrorCode::NotSupportedThisCoin,
-                ));
+                // lower tick cannot calculate liquidity by coinB
+                return Err(ErrorCode::NotSupportedThisCoin);
             }
             liquidity = estimate_liquidity_for_coin_a(&lower_sqrt_price, &upper_sqrt_price, coin_amount);
         } else if current_tick > upper_tick {
             if is_coin_a {
-                return Err(ClmmpoolsError::math_error(
-                    "upper tick cannot calculate liquidity by coinA",
-                    MathErrorCode::NotSupportedThisCoin,
-                ));
+                // upper tick cannot calculate liquidity by coinA
+                return Err(ErrorCode::NotSupportedThisCoin);
             }
             liquidity = estimate_liquidity_for_coin_b(&upper_sqrt_price, &lower_sqrt_price, coin_amount);
         } else if is_coin_a {
@@ -827,12 +800,10 @@ impl ClmmPoolUtil {
         lower_tick: i32,
         upper_tick: i32,
         token_amount: &CoinAmounts,
-    ) -> Result<BigInt, ClmmpoolsError> {
+    ) -> Result<BigInt, ErrorCode> {
         if lower_tick > upper_tick {
-            return Err(ClmmpoolsError::math_error(
-                "lower tick cannot be greater than lower tick",
-                MathErrorCode::InvalidTwoTickIndex,
-            ));
+            // lower tick cannot be greater than lower tick
+            return Err(ErrorCode::InvalidTwoTickIndex);
         }
 
         let curr_tick = TickMath::sqrt_price_x64_to_tick_index(cur_sqrt_price)?;
@@ -898,7 +869,7 @@ impl ClmmPoolUtil {
     /// # Returns
     ///
     /// * The ratio of token A and B
-    pub fn calculate_deposit_ratio_fix_token_a(lower_tick: i32, upper_tick: i32, cur_sqrt_price: &BigInt) -> Result<(BigDecimal, BigDecimal), ClmmpoolsError> {
+    pub fn calculate_deposit_ratio_fix_token_a(lower_tick: i32, upper_tick: i32, cur_sqrt_price: &BigInt) -> Result<(BigDecimal, BigDecimal), ErrorCode> {
         let coin_amount_a = BigInt::from(100000000); // Fixed test amount
 
         let liquidity_input =
