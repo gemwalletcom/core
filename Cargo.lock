@@ -1799,6 +1799,8 @@ name = "cacher"
 version = "1.0.0"
 dependencies = [
  "redis",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

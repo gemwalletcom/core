@@ -76,7 +76,11 @@ impl PriceUpdater {
             map
         });
 
-        let base_rate = rates.iter().find(|x| x.symbol == DEFAULT_FIAT_CURRENCY).map(|x| x.rate).unwrap();
+        let base_rate = rates
+            .iter()
+            .find(|x| x.symbol == DEFAULT_FIAT_CURRENCY)
+            .map(|x| x.rate)
+            .ok_or("base rate not found")?;
 
         for rate in rates.iter() {
             let prices: Vec<PriceCache> = prices

@@ -1,4 +1,4 @@
-use crate::model::{Coin, CoinInfo, CoinMarket, CoinQuery, CointListQuery, ExchangeRates, MarketChart, SearchTrending};
+use crate::model::{Coin, CoinInfo, CoinMarket, CoinQuery, CointListQuery, Data, ExchangeRates, Global, MarketChart, SearchTrending, TopGainersLosers};
 use primitives::FiatRate;
 use reqwest::header::{HeaderMap, HeaderValue, USER_AGENT};
 use reqwest_middleware::{ClientBuilder, ClientWithMiddleware};
@@ -52,10 +52,22 @@ impl CoinGeckoClient {
         headers
     }
 
+    pub async fn get_global(&self) -> Result<Global, Box<dyn Error + Send + Sync>> {
+        let url = format!("{}/api/v3/global", self.url);
+        let response = self.client.get(&url).headers(self.headers()).send().await?;
+        Ok(response.json::<Data<Global>>().await?.data)
+    }
+
     pub async fn get_search_trending(&self) -> Result<SearchTrending, Box<dyn Error + Send + Sync>> {
         let url = format!("{}/api/v3/search/trending", self.url);
         let response = self.client.get(&url).headers(self.headers()).send().await?;
         Ok(response.json::<SearchTrending>().await?)
+    }
+
+    pub async fn get_top_gainers_losers(&self) -> Result<TopGainersLosers, Box<dyn Error + Send + Sync>> {
+        let url = format!("{}/api/v3/coins/top_gainers_losers?vs_currency=usd", self.url);
+        let response = self.client.get(&url).headers(self.headers()).send().await?;
+        Ok(response.json::<TopGainersLosers>().await?)
     }
 
     pub async fn get_coin_list(&self) -> Result<Vec<Coin>, Box<dyn Error + Send + Sync>> {

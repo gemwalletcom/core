@@ -59,9 +59,17 @@ impl DatabaseClient {
             .first(&mut self.connection)
     }
 
-    pub fn get_prices_id_for_asset_id(&mut self, id: &str) -> Result<Vec<PriceAsset>, diesel::result::Error> {
+    pub fn get_prices_assets_for_asset_id(&mut self, id: &str) -> Result<Vec<PriceAsset>, diesel::result::Error> {
         use crate::schema::prices_assets::dsl::*;
         prices_assets.filter(asset_id.eq(id)).select(PriceAsset::as_select()).load(&mut self.connection)
+    }
+
+    pub fn get_prices_assets_for_price_ids(&mut self, ids: Vec<String>) -> Result<Vec<PriceAsset>, diesel::result::Error> {
+        use crate::schema::prices_assets::dsl::*;
+        prices_assets
+            .filter(price_id.eq_any(ids))
+            .select(PriceAsset::as_select())
+            .load(&mut self.connection)
     }
 
     pub fn delete_prices_updated_at_before(&mut self, time: NaiveDateTime) -> Result<usize, diesel::result::Error> {

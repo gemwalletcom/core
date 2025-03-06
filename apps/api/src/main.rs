@@ -4,6 +4,7 @@ mod assets;
 mod config;
 mod devices;
 mod fiat;
+mod markets;
 mod metrics;
 mod name;
 mod nft;
@@ -26,9 +27,7 @@ use name_resolver::client::Client as NameClient;
 use name_resolver::NameProviderFactory;
 use nft::NFTClient;
 use parser::ParserClient;
-use pricer::chart_client::ChartClient;
-use pricer::price_client::PriceClient;
-use pricer::PriceAlertClient;
+use pricer::{ChartClient, MarketsClient, PriceAlertClient, PriceClient};
 use rocket::fairing::AdHoc;
 use rocket::tokio::sync::Mutex;
 use rocket::{Build, Rocket};
@@ -81,6 +80,7 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
         &settings.nft.magiceden.key.secret,
     )
     .await;
+    let markets_client = MarketsClient::new(postgres_url, redis_url);
 
     rocket::build()
         .attach(AdHoc::on_ignite("Tokio Runtime Configuration", |rocket| async {
@@ -107,6 +107,7 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
         .manage(Mutex::new(nft_client))
         .manage(Mutex::new(price_alert_client))
         .manage(Mutex::new(assets_chain_provider))
+        .manage(Mutex::new(markets_client))
         .mount("/", routes![status::get_status])
         .mount(
             "/v1",
@@ -153,6 +154,7 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
                 price_alerts::add_price_alerts,
                 price_alerts::delete_price_alerts,
                 scan::scan_transaction,
+                markets::get_markets,
             ],
         )
         .mount(settings.metrics.path, routes![metrics::get_metrics])

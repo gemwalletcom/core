@@ -6,11 +6,13 @@ use typeshare::typeshare;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ResponseResult<T> {
     pub data: T,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error: Option<ResponseError>,
 }
 
 impl<T> ResponseResult<T> {
     pub fn new(data: T) -> Self {
-        Self { data }
+        Self { data, error: None }
     }
 }
 
