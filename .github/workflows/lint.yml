@@ -5,6 +5,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  JUST_ALLOW_UNSTABLE: "true"
 
 jobs:
   clippy_check:
