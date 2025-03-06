@@ -3,6 +3,7 @@ use crate::{
     swapper::{
         approval::{check_approval_erc20, check_approval_permit2},
         models::*,
+        slippage::apply_slippage_in_bp,
         uniswap::{deadline::get_sig_deadline, fee_token::get_fee_token, quote_result::get_best_quote, swap_route::build_swap_route},
         weth_address, GemSwapProvider, SwapperError,
     },
@@ -163,6 +164,11 @@ impl GemSwapProvider for UniswapV3 {
         let fee_tier_idx = quote_result.fee_tier_idx;
         let batch_idx = quote_result.batch_idx;
         let gas_estimate = quote_result.gas_estimate;
+        let expect_min = if fee_preference.is_input_token {
+            apply_slippage_in_bp(&max_amount_out, request.options.slippage.bps)
+        } else {
+            apply_slippage_in_bp(&max_amount_out, request.options.slippage.bps + fee_bps)
+        };
 
         // construct routes
         let fee_tier: u32 = fee_tiers[fee_tier_idx % fee_tiers.len()].clone() as u32;
@@ -182,6 +188,7 @@ impl GemSwapProvider for UniswapV3 {
         Ok(SwapQuote {
             from_value: request.value.clone(),
             to_value: max_amount_out.to_string(),
+            to_min_value: expect_min.to_string(),
             data: SwapProviderData {
                 provider: self.provider().clone(),
                 routes: routes.clone(),

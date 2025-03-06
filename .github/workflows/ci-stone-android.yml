@@ -9,6 +9,7 @@ on:
     branches: ["main"]
     paths:
       - "gemstone/**"
+      - ".github/workflows/ci-stone-android.yml"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -54,10 +55,10 @@ jobs:
         uses: mozilla-actions/sccache-action@v0.0.6
 
       - name: Install just
-        run: which just || cargo install just
+        run: sudo apt install just
 
       - name: Setup NDK
-        run: just install-ndk
+        run: just --unstable install-ndk
 
       - name: Setup Gradle
         uses: gradle/gradle-build-action@v3
@@ -65,5 +66,5 @@ jobs:
       - name: Build Android Bindings
         run: |
           df -h
-          just install-android-targets
-          just build-android
+          just --unstable install-android-targets
+          just --unstable build-android

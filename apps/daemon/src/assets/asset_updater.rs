@@ -113,19 +113,18 @@ impl AssetUpdater {
 
         // market cap calculation
         let market_cap_rank = coin_info.market_cap_rank.unwrap_or_default();
-        if market_cap_rank > 0 && market_cap_rank < 100 {
-            rank += 4;
-        } else if market_cap_rank < 500 {
-            rank += 3;
-        } else if market_cap_rank < 1000 {
-            rank += 2;
-        } else if market_cap_rank < 2000 {
-            rank += 1;
-        } else if market_cap_rank < 4000 {
-            rank += -2;
-        } else if market_cap_rank < 5000 {
-            rank += -4;
-        }
+        rank += match market_cap_rank {
+            1..25 => 14,
+            25..50 => 9,
+            50..100 => 8,
+            100..250 => 5,
+            250..500 => 4,
+            500..1000 => 2,
+            1000..2000 => 1,
+            2000..4000 => -2,
+            4000..5000 => -4,
+            _ => -5, // Default case (no change)
+        };
 
         if coin_info.platforms.len() > 6 {
             rank += 2;
@@ -159,10 +158,7 @@ impl AssetUpdater {
 
         if let Some(value) = links.clone().twitter_screen_name {
             if !value.is_empty() {
-                results.push(AssetLink {
-                    name: LinkType::X.as_ref().to_string(),
-                    url: format!("https://x.com/{}", value),
-                });
+                results.push(AssetLink::new(&format!("https://x.com/{}", value), LinkType::X));
             }
         }
 
@@ -177,26 +173,20 @@ impl AssetUpdater {
         {
             let exclude_domains = ["https://t.me"];
             if !value.is_empty() && !exclude_domains.iter().any(|&domain| value.contains(domain)) {
-                results.push(AssetLink {
-                    name: LinkType::Website.as_ref().to_string(),
-                    url: value,
-                });
+                results.push(AssetLink::new(&value, LinkType::Website));
             }
         }
 
         if let Some(value) = links.clone().telegram_channel_identifier {
             if !value.is_empty() {
-                results.push(AssetLink {
-                    name: LinkType::Telegram.as_ref().to_string(),
-                    url: format!("https://t.me/{}", value),
-                });
+                results.push(AssetLink::new(&format!("https://t.me/{}", value), LinkType::Telegram));
             }
         };
 
-        results.push(AssetLink {
-            name: LinkType::Coingecko.as_ref().to_string(),
-            url: format!("https://www.coingecko.com/coins/{}", coin_info.id.to_lowercase()),
-        });
+        results.push(AssetLink::new(
+            &format!("https://www.coingecko.com/coins/{}", coin_info.id.to_lowercase()),
+            LinkType::Coingecko,
+        ));
 
         if let Some(value) = links
             .clone()
@@ -207,10 +197,7 @@ impl AssetUpdater {
             .first()
             .cloned()
         {
-            results.push(AssetLink {
-                name: LinkType::Discord.as_ref().to_string(),
-                url: value,
-            });
+            results.push(AssetLink::new(&value, LinkType::Discord));
         };
 
         if let Some(value) = links
@@ -225,10 +212,7 @@ impl AssetUpdater {
             .first()
             .cloned()
         {
-            results.push(AssetLink {
-                name: LinkType::GitHub.as_ref().to_string(),
-                url: value,
-            });
+            results.push(AssetLink::new(&value, LinkType::GitHub));
         };
 
         results
@@ -241,6 +225,7 @@ impl AssetUpdater {
         let asset_id = asset.id.as_str();
 
         let _ = self.database.add_assets(vec![asset.clone()]);
+        let _ = self.database.update_assets_rank(vec![asset.clone()]);
         let _ = self.update_links(asset_id, asset_links.clone()).await;
         Ok(())
     }

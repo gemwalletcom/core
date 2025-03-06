@@ -1,10 +1,12 @@
-use crate::network::{AlienHttpMethod, AlienProvider, AlienTarget};
-use crate::swapper::thorchain::model::{QuoteSwapRequest, QuoteSwapResponse};
-use crate::swapper::SwapperError;
+use super::{
+    asset::THORChainAsset,
+    model::{QuoteSwapRequest, QuoteSwapResponse, Transaction},
+};
+use crate::{
+    network::{AlienHttpMethod, AlienProvider, AlienTarget},
+    swapper::SwapperError,
+};
 use std::sync::Arc;
-
-use super::asset::THORChainAsset;
-use super::model::Transaction;
 
 #[derive(Debug)]
 pub struct ThorChainSwapClient {
@@ -30,7 +32,7 @@ impl ThorChainSwapClient {
         let params = QuoteSwapRequest {
             from_asset: from_asset.asset_name(),
             to_asset: to_asset.asset_name(),
-            amount: value,
+            amount: value.clone(),
             affiliate,
             affiliate_bps,
             streaming_interval,

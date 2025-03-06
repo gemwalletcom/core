@@ -10,7 +10,8 @@ let SWAP_OPTIONS = GemSwapOptions(
 
 let TEST_ETH_WALLET = "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7"
 let TEST_SOL_WALLET = "A21o4asMbFHYadqXdLusT9Bvx9xaC5YV9gcaidjqtdXC"
-let SUI_WALLET_ADDRESS = "0xa9bd0493f9bd1f792a4aedc1f99d54535a75a46c38fd56a8f2c6b7c8d75817a1"
+let TEST_BTC_WALLET = "bc1qe7qlndxgfv76c0ulnfhh7j0vdwkqdkkl4yf9gm"
+let TEST_SUI_WALLET = "0xa9bd0493f9bd1f792a4aedc1f99d54535a75a46c38fd56a8f2c6b7c8d75817a1"
 
 public extension SwapQuoteRequest {
     static let eth2usdc = SwapQuoteRequest(
@@ -178,11 +179,21 @@ public extension SwapQuoteRequest {
         options: SWAP_OPTIONS
     )
 
+    static let eth2btc: SwapQuoteRequest = .init(
+        fromAsset: "ethereum",
+        toAsset: "bitcoin",
+        walletAddress: TEST_ETH_WALLET,
+        destinationAddress: TEST_BTC_WALLET,
+        value: "1000000000000000000", // 1 ETH
+        mode: .exactIn,
+        options: SWAP_OPTIONS
+    )
+  
     static let sui2USDC = SwapQuoteRequest(
         fromAsset: "sui",
         toAsset: "sui_0xdba34672e30cb065b1f93e3ab55318768fd6fef66c15942c9f7cb846e2f900e7::usdc::USDC",
-        walletAddress: SUI_WALLET_ADDRESS,
-        destinationAddress: SUI_WALLET_ADDRESS,
+        walletAddress: TEST_SUI_WALLET,
+        destinationAddress: TEST_SUI_WALLET,
         value: "100000000000", // 100 SUI
         mode: .exactIn,
         options: SWAP_OPTIONS

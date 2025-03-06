@@ -6,5 +6,8 @@
     },
     "[toml]": {
         "editor.formatOnSave": true
+    },
+    "[yaml]": {
+        "editor.formatOnSave": true
     }
 }

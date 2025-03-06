@@ -238,6 +238,7 @@ pub struct Parser {
 #[allow(unused)]
 pub struct Daemon {
     pub service: String,
+    pub search: DaemonSearch,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -352,4 +353,10 @@ pub struct BucketConfiguration {
     pub key: Key,
     pub name: String,
     pub url: String,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[allow(unused)]
+pub struct DaemonSearch {
+    pub assets_update_interval: u64,
 }

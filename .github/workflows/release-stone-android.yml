@@ -55,19 +55,19 @@ jobs:
         uses: mozilla-actions/sccache-action@v0.0.6
 
       - name: Install just
-        run: cargo install just
+        run: sudo apt install just
 
       - name: Setup NDK
-        run: just gemstone install-ndk
+        run: just --unstable gemstone install-ndk
 
       - name: Build Android Bindings
         run: |
-          just install-android-targets && just bindgen-kotlin
+          just --unstable install-android-targets && just --unstable bindgen-kotlin
         working-directory: gemstone
 
       - name: Publish to Github Packages
         run: |
-          just publish-android
+          just --unstable publish-android
         env:
           GITHUB_USER: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
