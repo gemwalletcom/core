@@ -58,7 +58,7 @@ jobs:
         run: sudo apt install just
 
       - name: Setup NDK
-        run: just install-ndk --unstable
+        run: just --unstable install-ndk 
 
       - name: Setup Gradle
         uses: gradle/gradle-build-action@v3
@@ -66,5 +66,5 @@ jobs:
       - name: Build Android Bindings
         run: |
           df -h
-          just install-android-targets --unstable
-          just build-android --unstable
+          just --unstable install-android-targets
+          just --unstable build-android

@@ -50,7 +50,7 @@ jobs:
         run: sudo apt install just
       
       - name: Install diesel
-        run: just install-diesel --unstable
+        run: just --unstable install-diesel
 
       - name: Run migration
         run: |
