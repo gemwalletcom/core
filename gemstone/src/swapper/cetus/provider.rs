@@ -1,5 +1,7 @@
+use alloy_core::primitives::U256;
 use async_trait::async_trait;
 use num_bigint::BigInt;
+use num_traits::ToBytes;
 use std::{str::FromStr, sync::Arc};
 
 use super::{
@@ -11,8 +13,8 @@ use crate::{
     debug_println,
     network::{jsonrpc_call, AlienProvider, JsonRpcResult},
     swapper::{
-        FetchQuoteData, GemSwapProvider, SwapChainAsset, SwapProvider, SwapProviderData, SwapProviderType, SwapQuote, SwapQuoteData, SwapQuoteRequest,
-        SwapperError,
+        slippage::apply_slippage_in_bp, FetchQuoteData, GemSwapProvider, SwapChainAsset, SwapProvider, SwapProviderData, SwapProviderType, SwapQuote,
+        SwapQuoteData, SwapQuoteRequest, SwapperError,
     },
 };
 use gem_sui::{
@@ -91,7 +93,6 @@ impl GemSwapProvider for Cetus {
 
         debug_println!("{:?}", pool_object);
 
-        let slippage_bps = request.options.slippage.bps;
         // Convert ticks to TickData format
         let tick_datas = &pool_object.tick_manager.fields.to_ticks();
         let pool_data = pool_object.try_into()?;
@@ -99,10 +100,14 @@ impl GemSwapProvider for Cetus {
         let a_to_b = pool.coin_type_a == from_coin;
 
         let swap_result = compute_swap(a_to_b, true, &amount_in, &pool_data, tick_datas).map_err(|e| SwapperError::ComputeQuoteError { msg: e.to_string() })?;
+        let quote_amount = U256::from_le_slice(swap_result.amount_out.to_le_bytes().as_slice());
+        let slippage_bps = request.options.slippage.bps;
+        let expect_min = apply_slippage_in_bp(&quote_amount, slippage_bps);
 
         Ok(SwapQuote {
             from_value: request.value.clone(),
-            to_value: swap_result.amount_out.to_string(),
+            to_value: quote_amount.to_string(),
+            to_min_value: expect_min.to_string(),
             data: SwapProviderData {
                 provider: self.provider.clone(),
                 slippage_bps,
