@@ -58,7 +58,7 @@ jobs:
         run: sudo apt install just
 
       - name: Setup NDK
-        run: just --unstable install-ndk 
+        run: just --unstable install-ndk
 
       - name: Setup Gradle
         uses: gradle/gradle-build-action@v3
