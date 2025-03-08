@@ -120,8 +120,8 @@ diesel::table! {
 }
 
 diesel::table! {
-    fiat_rates (id) {
-        id -> Int4,
+    fiat_rates (symbol) {
+        #[max_length = 32]
         symbol -> Varchar,
         name -> Varchar,
         rate -> Float8,
