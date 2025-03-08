@@ -68,8 +68,7 @@ impl GemSwapper {
     fn filter_by_provider_mode(mode: &SwapProviderMode, from_chain: &Chain, to_chain: &Chain) -> bool {
         match mode {
             SwapProviderMode::OnChain => from_chain == to_chain,
-            SwapProviderMode::CrossChain => true,
-            SwapProviderMode::Bridge => from_chain != to_chain,
+            SwapProviderMode::Bridge | SwapProviderMode::CrossChain => from_chain != to_chain,
         }
     }
 
@@ -281,10 +280,10 @@ mod tests {
             .filter(|x| GemSwapper::filter_by_supported_chains(x.supported_chains(), &from_chain, &to_chain))
             .collect::<Vec<_>>();
 
-        assert_eq!(filtered.len(), 3);
+        assert_eq!(filtered.len(), 2);
         assert_eq!(
             filtered.iter().map(|x| x.provider().id.clone()).collect::<BTreeSet<_>>(),
-            BTreeSet::from([SwapProvider::UniswapV3, SwapProvider::PancakeSwapV3, SwapProvider::Thorchain])
+            BTreeSet::from([SwapProvider::UniswapV3, SwapProvider::PancakeSwapV3])
         );
 
         let from_chain = Chain::Solana;
