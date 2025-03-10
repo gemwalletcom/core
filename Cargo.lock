@@ -3596,6 +3596,8 @@ dependencies = [
  "blake2",
  "hex",
  "primitives",
+ "serde",
+ "serde_json",
  "sui-types",
  "thiserror 2.0.11",
 ]
@@ -3628,6 +3630,7 @@ dependencies = [
  "async-std",
  "async-trait",
  "base64 0.22.1",
+ "bigdecimal",
  "borsh",
  "futures",
  "gem_aptos",
