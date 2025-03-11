@@ -1,4 +1,5 @@
 mod charts_updater;
+mod markets_updater;
 mod price_asset_updater;
 mod price_updater;
 
@@ -6,9 +7,10 @@ use crate::pricer::charts_updater::ChartsUpdater;
 use crate::pricer::price_updater::PriceUpdater;
 use coingecko::CoinGeckoClient;
 use job_runner::run_job;
+use markets_updater::MarketsUpdater;
 use price_asset_updater::PriceAssetUpdater;
 use price_updater::UpdatePrices;
-use pricer::{ChartClient, PriceClient};
+use pricer::{ChartClient, MarketsClient, PriceClient};
 use settings::Settings;
 use std::future::Future;
 use std::pin::Pin;
@@ -94,6 +96,14 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
         }
     });
 
+    let update_markets = run_job("Update markets", Duration::from_secs(3600), {
+        let settings = Arc::new(settings.clone());
+        move || {
+            let settings = Arc::clone(&settings);
+            async move { markets_updater_factory(&settings.clone()).update_markets().await }
+        }
+    });
+
     vec![
         Box::pin(clean_updated_assets),
         Box::pin(update_fiat_assets),
@@ -104,6 +114,7 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
         Box::pin(update_prices_low_market_cap),
         Box::pin(update_prices_cache),
         Box::pin(update_charts),
+        Box::pin(update_markets),
     ]
 }
 
@@ -117,4 +128,10 @@ fn price_asset_updater_factory(settings: &Settings) -> PriceAssetUpdater {
     let coingecko_client = CoinGeckoClient::new(&settings.coingecko.key.secret.clone());
     let price_client = PriceClient::new(&settings.redis.url, &settings.postgres.url.clone());
     PriceAssetUpdater::new(price_client, coingecko_client.clone())
+}
+
+fn markets_updater_factory(settings: &Settings) -> MarketsUpdater {
+    let coingecko_client = CoinGeckoClient::new(&settings.coingecko.key.secret.clone());
+    let markets_client = MarketsClient::new(&settings.postgres.url.clone(), &settings.redis.url);
+    MarketsUpdater::new(markets_client, coingecko_client.clone())
 }

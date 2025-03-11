@@ -31,7 +31,7 @@ jobs:
         run: sudo apt install just
 
       - name: Run tests
-        run: just --unstable gemstone test
+        run: just --unstable test-all
 
       - name: Build integration tests
         run: |
