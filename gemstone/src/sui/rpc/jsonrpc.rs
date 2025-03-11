@@ -32,6 +32,12 @@ impl JsonRpcRequestConvert for SuiRpc {
                     Value::Null, // gas_price
                 ]
             }
+            SuiRpc::GetAllCoins { owner } => {
+                vec![Value::String(owner.into())]
+            }
+            SuiRpc::GetGasPrice => {
+                vec![]
+            }
         };
 
         JsonRpcRequest::new(id, &method, params)

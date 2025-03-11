@@ -5,10 +5,12 @@ pub mod error;
 pub mod math;
 pub mod swap;
 pub mod tick;
-
+#[allow(unused)]
+pub mod tx;
 pub use swap::compute_swap;
+pub use tx::TransactionUtil;
 
-#[derive(Clone, Default)]
+#[derive(Debug, Clone, Default)]
 pub struct ClmmPoolData {
     pub liquidity: BigInt,
     pub current_tick_index: i32,
@@ -16,7 +18,7 @@ pub struct ClmmPoolData {
     pub fee_rate: BigInt,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct TickData {
     pub index: i32,
     pub sqrt_price: BigInt,

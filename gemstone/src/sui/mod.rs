@@ -1,3 +1,5 @@
+pub mod rpc;
+
 mod model;
 
 use crate::GemstoneError;

@@ -5,10 +5,10 @@ edition = { workspace = true }
 
 [dependencies]
 
-bcs = "0.1.6"
 primitives = { path = "../primitives" }
-sui-types = { git = "https://github.com/mystenlabs/sui", package = "sui-types", tag = "mainnet-v1.43.1" }
 
+sui-types = { workspace = true }
+bcs = { workspace = true }
 blake2 = { workspace = true }
 hex = { workspace = true }
 thiserror = { workspace = true }

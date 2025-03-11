@@ -37,23 +37,23 @@ pub type CetusPoolType = SuiData<DataObject<MoveObject<CetusPoolObject>>>;
 pub struct CetusPoolObject {
     pub coin_a: String,
     pub coin_b: String,
-    #[serde(deserialize_with = "deserialize_bigint")]
+    #[serde(deserialize_with = "deserialize_bigint", serialize_with = "serialize_bigint")]
     pub current_sqrt_price: BigInt,
     pub current_tick_index: MoveObject<I32>,
-    #[serde(deserialize_with = "deserialize_bigint")]
+    #[serde(deserialize_with = "deserialize_bigint", serialize_with = "serialize_bigint")]
     pub fee_growth_global_a: BigInt,
-    #[serde(deserialize_with = "deserialize_bigint")]
+    #[serde(deserialize_with = "deserialize_bigint", serialize_with = "serialize_bigint")]
     pub fee_growth_global_b: BigInt,
-    #[serde(deserialize_with = "deserialize_bigint")]
+    #[serde(deserialize_with = "deserialize_bigint", serialize_with = "serialize_bigint")]
     pub fee_protocol_coin_a: BigInt,
-    #[serde(deserialize_with = "deserialize_bigint")]
+    #[serde(deserialize_with = "deserialize_bigint", serialize_with = "serialize_bigint")]
     pub fee_protocol_coin_b: BigInt,
-    #[serde(deserialize_with = "deserialize_bigint")]
+    #[serde(deserialize_with = "deserialize_bigint", serialize_with = "serialize_bigint")]
     pub fee_rate: BigInt,
     pub id: MoveObjectId,
     pub is_pause: bool,
     pub tick_spacing: i32,
-    #[serde(deserialize_with = "deserialize_bigint")]
+    #[serde(deserialize_with = "deserialize_bigint", serialize_with = "serialize_bigint")]
     pub liquidity: BigInt,
     pub tick_manager: MoveObject<TickManager>,
 }
@@ -65,6 +65,13 @@ where
 {
     let s: String = de::Deserialize::deserialize(deserializer)?;
     s.parse::<BigInt>().map_err(de::Error::custom)
+}
+
+fn serialize_bigint<S>(value: &BigInt, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+{
+    serializer.serialize_str(&value.to_string())
 }
 
 impl TryInto<ClmmPoolData> for CetusPoolObject {
@@ -218,7 +225,7 @@ impl TickManager {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::network::jsonrpc::*;
+    use crate::{network::jsonrpc::*, sui::rpc::models::CoinData};
     use serde_json;
 
     #[test]
@@ -245,5 +252,14 @@ mod tests {
         assert_eq!(content.current_sqrt_price.to_string(), "1883186036311192350");
         assert_eq!(content.tick_spacing, 200);
         assert_eq!(content.tick_manager.fields.ticks.fields.tail.fields.v, 887236);
+    }
+
+    #[test]
+    fn test_decode_all_coins() {
+        let string = include_str!("test/sui_all_coins.json");
+        let response: JsonRpcResult<SuiData<Vec<CoinData>>> = serde_json::from_str(string).unwrap();
+        let all_coins = response.take().unwrap().data;
+
+        assert_eq!(all_coins.len(), 7);
     }
 }

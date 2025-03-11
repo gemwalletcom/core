@@ -7,6 +7,8 @@ pub enum SuiRpc {
     GetMultipleObjects(Vec<String>, Option<ObjectDataOptions>),
     InspectTransactionBlock(String, String), // sender_address, tx_bytes (base64)
     NormalizedMoveFunction(Vec<String>),
+    GetAllCoins { owner: String },
+    GetGasPrice,
 }
 
 impl Display for SuiRpc {
@@ -16,6 +18,8 @@ impl Display for SuiRpc {
             Self::GetMultipleObjects(_, _) => write!(f, "sui_multiGetObjects"),
             Self::InspectTransactionBlock(_, _) => write!(f, "sui_devInspectTransactionBlock"),
             Self::NormalizedMoveFunction(_) => write!(f, "sui_getNormalizedMoveFunction"),
+            Self::GetAllCoins { owner: _ } => write!(f, "suix_getAllCoins"),
+            Self::GetGasPrice => write!(f, "suix_getReferenceGasPrice"),
         }
     }
 }
@@ -78,11 +82,11 @@ pub struct MoveObjectId {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OptionU64 {
     pub is_none: bool,
-    #[serde(deserialize_with = "deserialize_u64_from_str")]
+    #[serde(deserialize_with = "deserialize_u64_from_str", serialize_with = "serialize_u64")]
     pub v: u64,
 }
 
-fn deserialize_u64_from_str<'de, D>(deserializer: D) -> Result<u64, D::Error>
+pub fn deserialize_u64_from_str<'de, D>(deserializer: D) -> Result<u64, D::Error>
 where
     D: serde::Deserializer<'de>,
 {
@@ -90,9 +94,16 @@ where
     s.parse::<u64>().map_err(serde::de::Error::custom)
 }
 
+fn serialize_u64<S>(value: &u64, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+{
+    serializer.serialize_str(&value.to_string())
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct I32 {
-    #[serde(deserialize_with = "u32_to_i32")]
+    #[serde(deserialize_with = "u32_to_i32", serialize_with = "i32_to_u32")]
     pub bits: i32,
 }
 
@@ -101,5 +112,12 @@ where
     D: Deserializer<'de>,
 {
     let value: u32 = Deserialize::deserialize(deserializer)?;
-    Ok(value as i32) // Converts using two’s complement
+    Ok(value as i32) // Converts using two's complement
+}
+
+fn i32_to_u32<S>(value: &i32, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+{
+    serializer.serialize_u32(value.unsigned_abs())
 }

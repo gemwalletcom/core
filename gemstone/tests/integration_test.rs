@@ -306,6 +306,9 @@ mod tests {
         let quote = swap_provider.fetch_quote(&request, network_provider.clone()).await?;
         println!("{:?}", quote);
 
+        let quote_data = swap_provider.fetch_quote_data(&quote, network_provider.clone(), FetchQuoteData::None).await?;
+        println!("{:?}", quote_data);
+
         Ok(())
     }
 }

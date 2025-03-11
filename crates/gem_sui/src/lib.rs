@@ -1,4 +1,3 @@
-pub mod encoder;
 pub mod jsonrpc;
 pub mod model;
 
@@ -21,6 +20,7 @@ static SUI_SYSTEM_STATE_OBJECT_ID: u8 = 0x5;
 
 pub static SUI_COIN_TYPE: &str = "0x2::sui::SUI";
 pub static SUI_COIN_TYPE_FULL: &str = "0x0000000000000000000000000000000000000000000000000000000000000002::sui::SUI";
+pub static EMPTY_ADDRESS: &str = "0x0000000000000000000000000000000000000000000000000000000000000000";
 
 pub fn encode_transfer(input: &TransferInput) -> Result<TxOutput, Error> {
     if let Some(err) = validate_enough_balance(&input.coins, input.amount) {

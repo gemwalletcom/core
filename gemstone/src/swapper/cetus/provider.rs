@@ -1,26 +1,35 @@
 use alloy_core::primitives::U256;
 use async_trait::async_trait;
+use bcs;
 use num_bigint::BigInt;
 use num_traits::ToBytes;
 use std::{str::FromStr, sync::Arc};
 
 use super::{
     client::CetusClient,
-    clmm::compute_swap,
+    clmm::{
+        compute_swap,
+        tx::{ClmmPoolConfig, IntegrateConfig, SwapParams},
+        TransactionUtil,
+    },
     models::{CetusPool, CetusPoolObject, CetusPoolType},
+    CETUS_CLMM_PACKAGE_ID, CETUS_CLMM_PUBLISHED_AT, CETUS_GLOBAL_CONFIG_ID, CETUS_INTEGRATE_PACKAGE_ID, CETUS_INTEGRATE_PUBLISHED_AT,
 };
 use crate::{
     network::{jsonrpc_call, AlienProvider, JsonRpcResult},
+    sui::rpc::SuiClient,
     swapper::{
-        slippage::apply_slippage_in_bp, FetchQuoteData, GemSwapProvider, SwapChainAsset, SwapProvider, SwapProviderData, SwapProviderType, SwapQuote,
-        SwapQuoteData, SwapQuoteRequest, SwapRoute, SwapperError,
+        slippage::apply_slippage_in_bp, FetchQuoteData, GemSwapMode, GemSwapProvider, SwapChainAsset, SwapProvider, SwapProviderData, SwapProviderType,
+        SwapQuote, SwapQuoteData, SwapQuoteRequest, SwapRoute, SwapperError,
     },
 };
 use gem_sui::{
     jsonrpc::{ObjectDataOptions, SuiRpc},
-    SUI_COIN_TYPE_FULL,
+    model::TxOutput,
+    EMPTY_ADDRESS, SUI_COIN_TYPE, SUI_COIN_TYPE_FULL,
 };
 use primitives::{AssetId, Chain};
+use sui_types::{base_types::ObjectID, transaction::TransactionData};
 
 #[derive(Debug)]
 pub struct Cetus {
@@ -45,6 +54,26 @@ impl Cetus {
             return SUI_COIN_TYPE_FULL.into();
         }
         asset_id.token_id.clone().unwrap()
+    }
+
+    pub fn get_clmm_config(&self) -> Result<(ClmmPoolConfig, IntegrateConfig), SwapperError> {
+        Ok((
+            ClmmPoolConfig {
+                package_id: ObjectID::from_str(CETUS_CLMM_PACKAGE_ID).map_err(|_| SwapperError::TransactionError {
+                    msg: "Invalid package ID".to_string(),
+                })?,
+                published_at: CETUS_CLMM_PUBLISHED_AT.to_string(),
+                global_config_id: ObjectID::from_str(CETUS_GLOBAL_CONFIG_ID).map_err(|_| SwapperError::TransactionError {
+                    msg: "Invalid global config ID".to_string(),
+                })?,
+            },
+            IntegrateConfig {
+                package_id: ObjectID::from_str(CETUS_INTEGRATE_PACKAGE_ID).map_err(|_| SwapperError::TransactionError {
+                    msg: "Invalid integrate package ID".to_string(),
+                })?,
+                published_at: CETUS_INTEGRATE_PUBLISHED_AT.to_string(),
+            },
+        ))
     }
 
     async fn fetch_pools_by_coins(&self, coin_a: &str, coin_b: &str, provider: Arc<dyn AlienProvider>) -> Result<Vec<CetusPool>, SwapperError> {
@@ -78,11 +107,18 @@ impl GemSwapProvider for Cetus {
     }
 
     async fn fetch_quote(&self, request: &SwapQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapQuote, SwapperError> {
-        let from_chain = request.from_asset.chain;
-        let from_coin = Cetus::get_coin_address(&request.from_asset);
-        let to_coin = Cetus::get_coin_address(&request.to_asset);
-        let pools = self.fetch_pools_by_coins(&from_coin, &to_coin, provider.clone()).await?;
+        let from_asset = &request.from_asset;
+        let to_asset = &request.to_asset;
+        let from_chain = from_asset.chain;
+        let to_chain = to_asset.chain;
+        if from_chain != Chain::Sui || to_chain != Chain::Sui {
+            return Err(SwapperError::NotSupportedChain);
+        }
 
+        let from_coin = Self::get_coin_address(from_asset);
+        let to_coin = Self::get_coin_address(to_asset);
+
+        let pools = self.fetch_pools_by_coins(&from_coin, &to_coin, provider.clone()).await?;
         if pools.is_empty() {
             return Err(SwapperError::NoQuoteAvailable);
         }
@@ -120,7 +156,68 @@ impl GemSwapProvider for Cetus {
         })
     }
 
-    async fn fetch_quote_data(&self, _quote: &SwapQuote, _provider: Arc<dyn AlienProvider>, _data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError> {
-        todo!()
+    async fn fetch_quote_data(&self, quote: &SwapQuote, provider: Arc<dyn AlienProvider>, _data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError> {
+        if quote.data.routes.is_empty() {
+            return Err(SwapperError::InvalidRoute);
+        }
+
+        let route = &quote.data.routes[0];
+        let from_asset = &route.input;
+
+        let sender_address = quote.request.wallet_address.parse().map_err(|_| SwapperError::InvalidAddress {
+            address: quote.request.wallet_address.clone(),
+        })?;
+        let pool_object: CetusPoolObject = serde_json::from_str(&route.route_data).map_err(|e| SwapperError::TransactionError {
+            msg: format!("Invalid route data: {}", e),
+        })?;
+        let from_coin = Self::get_coin_address(from_asset);
+        let a2b = from_coin == pool_object.coin_a;
+        let pool_id = pool_object.id.id.parse().map_err(|_| SwapperError::InvalidRoute)?;
+
+        let swap_params = SwapParams {
+            pool_id,
+            a2b,
+            by_amount_in: quote.request.mode == GemSwapMode::ExactIn,
+            amount: quote.from_value.parse::<u64>().unwrap_or(0),
+            amount_limit: quote.to_min_value.parse::<u64>().unwrap_or(0),
+            coin_type_a: pool_object.coin_a.clone(),
+            coin_type_b: pool_object.coin_b.clone(),
+            swap_partner: None, // No swap partner for now
+        };
+
+        let sui_client = SuiClient::new(provider.clone());
+        let (clmm_pool_config, integrate_config) = self.get_clmm_config()?;
+
+        let gas_price = sui_client.get_gas_price().await.map_err(SwapperError::from)?;
+        let all_coin_assets = sui_client.get_coin_assets(sender_address).await.map_err(SwapperError::from)?;
+
+        let gas_coin = all_coin_assets
+            .iter()
+            .find(|x| x.coin_type == SUI_COIN_TYPE_FULL || x.coin_type == SUI_COIN_TYPE)
+            .ok_or(SwapperError::TransactionError {
+                msg: "Gas coin not found".to_string(),
+            })?;
+
+        let ptb = TransactionUtil::build_swap_transaction(&sui_client, &clmm_pool_config, &integrate_config, &swap_params, &all_coin_assets).map_err(|e| {
+            SwapperError::TransactionError {
+                msg: format!("Failed to build swap transaction: {}", e),
+            }
+        })?;
+        let tx = ptb.finish();
+
+        let dummy_tx_data = TransactionData::new_programmable(EMPTY_ADDRESS.parse().unwrap(), vec![gas_coin.to_ref()], tx.clone(), 50000000, gas_price);
+        let tx_bytes = bcs::to_bytes(&dummy_tx_data).map_err(|e| SwapperError::TransactionError { msg: e.to_string() })?;
+        let gas_budget = sui_client.estimate_gas_budget(EMPTY_ADDRESS, &tx_bytes).await?;
+
+        let tx_data = TransactionData::new_programmable(sender_address, vec![gas_coin.to_ref()], tx, gas_budget, gas_price);
+        let tx_output = TxOutput::from_tx_data(&tx_data).unwrap();
+
+        Ok(SwapQuoteData {
+            to: "".to_string(),
+            value: "".to_string(),
+            data: hex::encode(tx_output.tx_data),
+            approval: None,
+            gas_limit: None,
+        })
     }
 }
