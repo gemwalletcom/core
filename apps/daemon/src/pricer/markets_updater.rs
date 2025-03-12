@@ -2,7 +2,7 @@ use std::{error::Error, vec};
 
 use coingecko::{model::Global, CoinGeckoClient};
 use pricer::MarketsClient;
-use primitives::{Chain, MarketDominance, Markets, MarketsAssets};
+use primitives::{AssetTag, Chain, MarketDominance, Markets};
 
 pub struct MarketsUpdater {
     markets_client: MarketsClient,
@@ -25,8 +25,13 @@ impl MarketsUpdater {
         let trending = self.markets_client.get_asset_ids_for_prices_ids(trending.get_coins_ids()).await?;
         let gainers = self.markets_client.get_asset_ids_for_prices_ids(top_gainers_losers.get_gainers_ids()).await?;
         let losers = self.markets_client.get_asset_ids_for_prices_ids(top_gainers_losers.get_losers_ids()).await?;
-        let assets = MarketsAssets { trending, gainers, losers };
         let dominance = self.dominance(global.clone());
+
+        let _ = self.markets_client.set_asset_ids_for_tag(AssetTag::Trending, trending);
+        let _ = self.markets_client.set_asset_ids_for_tag(AssetTag::Gainers, gainers);
+        let _ = self.markets_client.set_asset_ids_for_tag(AssetTag::Losers, losers);
+
+        let assets = self.markets_client.get_market_assets()?;
 
         let markets = Markets {
             market_cap: global.total_market_cap.usd as f32,

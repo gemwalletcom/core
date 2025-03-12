@@ -8,6 +8,9 @@ use typeshare::typeshare;
 #[strum(serialize_all = "lowercase")]
 pub enum AssetTag {
     Trending,
+    Gainers,
+    Losers,
+    New,
     Stablecoins,
 }
 

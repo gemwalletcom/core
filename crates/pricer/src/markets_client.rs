@@ -1,7 +1,7 @@
 use std::error::Error;
 
 use cacher::CacherClient;
-use primitives::Markets;
+use primitives::{AssetTag, Markets, MarketsAssets};
 use storage::DatabaseClient;
 
 pub struct MarketsClient {
@@ -29,5 +29,22 @@ impl MarketsClient {
     pub async fn get_asset_ids_for_prices_ids(&mut self, price_ids: Vec<String>) -> Result<Vec<String>, Box<dyn Error + Send + Sync>> {
         let assets = self.database.get_prices_assets_for_price_ids(price_ids)?;
         Ok(assets.into_iter().map(|x| x.asset_id).collect())
+    }
+
+    pub fn set_asset_ids_for_tag(&mut self, tag: AssetTag, asset_ids: Vec<String>) -> Result<(), Box<dyn Error + Send + Sync>> {
+        Ok(self.database.set_assets_tags_for_tag(tag.as_ref(), asset_ids)?)
+    }
+
+    pub fn get_asset_ids_for_tag(&mut self, tag: AssetTag) -> Result<Vec<String>, Box<dyn Error + Send + Sync>> {
+        Ok(self.database.get_assets_tags_for_tag(tag.as_ref())?.into_iter().map(|x| x.asset_id).collect())
+    }
+
+    pub fn get_market_assets(&mut self) -> Result<MarketsAssets, Box<dyn Error + Send + Sync>> {
+        let assets = MarketsAssets {
+            trending: self.get_asset_ids_for_tag(AssetTag::Trending)?,
+            gainers: self.get_asset_ids_for_tag(AssetTag::Gainers)?,
+            losers: self.get_asset_ids_for_tag(AssetTag::Losers)?,
+        };
+        Ok(assets)
     }
 }
