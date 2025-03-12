@@ -10,6 +10,7 @@ pub struct AssetFull {
     pub asset: Asset,
     pub properties: AssetProperties,
     pub score: AssetScore,
+    #[typeshare(skip)]
     pub tags: Vec<String>,
     pub links: Vec<AssetLink>,
 }
