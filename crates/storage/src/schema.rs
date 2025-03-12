@@ -42,6 +42,16 @@ diesel::table! {
 }
 
 diesel::table! {
+    assets_tags (asset_id, tag_id) {
+        #[max_length = 128]
+        asset_id -> Varchar,
+        #[max_length = 64]
+        tag_id -> Varchar,
+        created_at -> Timestamp,
+    }
+}
+
+diesel::table! {
     assets_types (id) {
         #[max_length = 32]
         id -> Varchar,
@@ -382,6 +392,14 @@ diesel::table! {
 }
 
 diesel::table! {
+    tags (id) {
+        #[max_length = 64]
+        id -> Varchar,
+        created_at -> Timestamp,
+    }
+}
+
+diesel::table! {
     tokenlists (id) {
         id -> Int4,
         chain -> Varchar,
@@ -454,6 +472,8 @@ diesel::joinable!(assets -> assets_types (asset_type));
 diesel::joinable!(assets -> chains (chain));
 diesel::joinable!(assets_links -> assets (asset_id));
 diesel::joinable!(assets_links -> link_types (link_type));
+diesel::joinable!(assets_tags -> assets (asset_id));
+diesel::joinable!(assets_tags -> tags (tag_id));
 diesel::joinable!(fiat_assets -> assets (asset_id));
 diesel::joinable!(fiat_assets -> fiat_providers (provider));
 diesel::joinable!(fiat_transactions -> assets (asset_id));
@@ -485,6 +505,7 @@ diesel::joinable!(transactions_addresses -> transactions (transaction_id));
 diesel::allow_tables_to_appear_in_same_query!(
     assets,
     assets_links,
+    assets_tags,
     assets_types,
     chains,
     devices,
@@ -507,6 +528,7 @@ diesel::allow_tables_to_appear_in_same_query!(
     scan_addresses_types,
     subscriptions,
     subscriptions_addresses_exclude,
+    tags,
     tokenlists,
     transactions,
     transactions_addresses,

@@ -11,6 +11,7 @@ pub struct AssetFull {
     pub links: Vec<AssetLink>,
     pub properties: AssetProperties,
     pub score: AssetScore,
+    pub tags: Vec<String>,
 }
 
 #[typeshare(swift = "Sendable")]

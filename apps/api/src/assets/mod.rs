@@ -41,19 +41,27 @@ pub async fn get_assets_list(client: &State<Mutex<AssetsClient>>) -> Json<Vec<As
     Json(assets)
 }
 
-#[get("/assets/search?<query>&<chains>&<limit>&<offset>")]
+#[get("/assets/search?<query>&<chains>&<tags>&<limit>&<offset>")]
 pub async fn get_assets_search(
     query: String,
     chains: Option<String>,
+    tags: Option<String>,
     limit: Option<usize>,
     offset: Option<usize>,
     client: &State<Mutex<AssetsSearchClient>>,
 ) -> Json<Vec<AssetBasic>> {
     let chains = chains.unwrap_or_default().split(',').flat_map(Chain::from_str).map(|x| x.to_string()).collect();
+    let tags = tags
+        .unwrap_or_default()
+        .split(',')
+        .filter(|x| !x.is_empty())
+        .map(|x| x.to_string())
+        .collect::<Vec<String>>();
+
     let assets = client
         .lock()
         .await
-        .get_assets_search(query.as_str(), chains, limit.unwrap_or(50), offset.unwrap_or(0))
+        .get_assets_search(query.as_str(), chains, tags, limit.unwrap_or(50), offset.unwrap_or(0))
         .await
         .unwrap();
     Json(assets)

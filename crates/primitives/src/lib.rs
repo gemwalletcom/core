@@ -84,7 +84,8 @@ pub mod nft;
 pub use self::nft::{NFTAsset, NFTAssetId, NFTAttribute, NFTCollection, NFTCollectionId, NFTData, NFTImage, NFTType};
 pub mod price_alert;
 pub use self::price_alert::{PriceAlert, PriceAlertDirection, PriceAlertType, PriceAlerts};
-
+pub mod tag;
+pub use self::tag::AssetTag;
 pub mod chain_cosmos;
 pub use self::chain_cosmos::CosmosDenom;
 pub mod payment_decoder;

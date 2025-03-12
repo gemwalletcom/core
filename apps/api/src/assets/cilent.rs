@@ -38,12 +38,14 @@ impl AssetsClient {
     pub fn get_asset_full(&mut self, asset_id: &str) -> Result<AssetFull, Box<dyn Error>> {
         let asset = self.database.get_asset(asset_id)?;
         let links = self.database.get_asset_links(asset_id)?.into_iter().map(|link| link.as_primitive()).collect();
+        let tags = self.database.get_assets_tags_for_asset(asset_id)?;
 
         Ok(AssetFull {
             asset: asset.as_primitive(),
             properties: asset.as_property_primitive(),
             links,
             score: asset.as_score_primitive(),
+            tags: tags.into_iter().map(|x| x.tag_id).collect(),
         })
     }
 
@@ -71,6 +73,7 @@ impl AssetsSearchClient {
         &mut self,
         query: &str,
         chains: Vec<String>,
+        tags: Vec<String>,
         limit: usize,
         offset: usize,
     ) -> Result<Vec<primitives::AssetBasic>, Box<dyn Error + Send + Sync>> {
@@ -78,9 +81,12 @@ impl AssetsSearchClient {
         filters.push("score.rank > 0".to_string());
         //filters.push("properties.isEnabled = true".to_string()); // Does not work, why?
 
+        if !tags.is_empty() {
+            filters.push(filter_array("tags", tags));
+        }
+
         if !chains.is_empty() {
-            let chain_filter = "asset.id.chain IN [\"".to_string() + &chains.join("\",\"") + "\"]";
-            filters.push(chain_filter);
+            filters.push(filter_array("asset.id.chain", chains));
         }
         let filter = &filters.join(" AND ");
 
@@ -96,6 +102,10 @@ impl AssetsSearchClient {
             })
             .collect())
     }
+}
+
+fn filter_array(field: &str, values: Vec<String>) -> String {
+    format!("{} IN [\"{}\"]", field, values.join("\",\""))
 }
 
 pub struct AssetsChainProvider {
