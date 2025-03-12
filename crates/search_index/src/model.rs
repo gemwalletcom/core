@@ -39,7 +39,7 @@ pub struct AssetDocument {
     pub properties: AssetProperties,
     pub score: AssetScore,
     pub market: Option<AssetMarket>,
-    pub tags: Vec<String>,
+    pub tags: Option<Vec<String>>,
 }
 
 pub fn sanitize_index_primary_id(input: &str) -> String {

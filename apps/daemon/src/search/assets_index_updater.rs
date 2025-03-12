@@ -30,7 +30,7 @@ impl AssetsIndexUpdater {
                 properties: x.asset.clone().as_property_primitive(),
                 score: x.asset.clone().as_score_primitive(),
                 market: Some(x.price.as_market_primitive()),
-                tags: assets_tags_map.get(x.asset.id.as_str()).cloned().unwrap_or_default(),
+                tags: assets_tags_map.get(x.asset.id.as_str()).cloned(),
             })
             .collect::<Vec<_>>();
 
