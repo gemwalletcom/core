@@ -8,10 +8,10 @@ use crate::{Asset, AssetMarket, AssetScore, Chain, LinkType, Price};
 #[serde(rename_all = "camelCase")]
 pub struct AssetFull {
     pub asset: Asset,
-    pub links: Vec<AssetLink>,
     pub properties: AssetProperties,
     pub score: AssetScore,
     pub tags: Vec<String>,
+    pub links: Vec<AssetLink>,
 }
 
 #[typeshare(swift = "Sendable")]
