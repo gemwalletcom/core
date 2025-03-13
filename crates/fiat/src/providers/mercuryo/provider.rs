@@ -74,9 +74,9 @@ impl FiatProvider for MercuryoClient {
             fiat_currency: data.fiat_currency,
             transaction_hash: data.tx.clone().and_then(|x| x.id),
             address: data.tx.clone().and_then(|x| x.address),
-            fee_provider: data.fee.and_then(|x| x.parse::<f64>().ok()),
+            fee_provider: data.fee,
             fee_network: None,
-            fee_partner: data.partner_fee.and_then(|x| x.parse::<f64>().ok()),
+            fee_partner: data.partner_fee,
         };
 
         print!("transaction: {:?}", transaction);

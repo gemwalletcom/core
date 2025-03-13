@@ -111,4 +111,4 @@ pub use self::link_type::LinkType;
 pub mod markets;
 pub use self::markets::{MarketDominance, Markets, MarketsAssets};
 pub mod serde;
-pub use self::serde::{deserialize_f64_from_str, deserialize_u64_from_str};
+pub use self::serde::{deserialize_f64_from_str, deserialize_option_f64_from_str, deserialize_u64_from_str};

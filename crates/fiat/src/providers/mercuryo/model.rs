@@ -1,3 +1,4 @@
+use primitives::{deserialize_f64_from_str, deserialize_option_f64_from_str};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize)]
@@ -7,10 +8,10 @@ pub struct Response<T> {
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct Quote {
-    #[serde(deserialize_with = "primitives::deserialize_f64_from_str")]
+    #[serde(deserialize_with = "deserialize_f64_from_str")]
     pub amount: f64,
     pub currency: String,
-    #[serde(deserialize_with = "primitives::deserialize_f64_from_str")]
+    #[serde(deserialize_with = "deserialize_f64_from_str")]
     pub fiat_amount: f64,
 }
 
@@ -60,10 +61,12 @@ pub struct Webhook {
 pub struct WebhookData {
     pub id: String,
     pub status: String,
-    #[serde(deserialize_with = "primitives::deserialize_f64_from_str")]
+    #[serde(deserialize_with = "deserialize_f64_from_str")]
     pub fiat_amount: f64,
-    pub fee: Option<String>,
-    pub partner_fee: Option<String>,
+    #[serde(deserialize_with = "deserialize_option_f64_from_str")]
+    pub fee: Option<f64>,
+    #[serde(deserialize_with = "deserialize_option_f64_from_str")]
+    pub partner_fee: Option<f64>,
     pub fiat_currency: String,
     pub currency: String,
     pub merchant_transaction_id: Option<String>,

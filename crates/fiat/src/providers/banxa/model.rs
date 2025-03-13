@@ -1,3 +1,4 @@
+use primitives::deserialize_f64_from_str;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize)]
@@ -51,11 +52,11 @@ pub struct Prices {
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct Price {
-    #[serde(deserialize_with = "primitives::deserialize_f64_from_str")]
+    #[serde(deserialize_with = "deserialize_f64_from_str")]
     pub network_fee: f64,
-    #[serde(deserialize_with = "primitives::deserialize_f64_from_str")]
+    #[serde(deserialize_with = "deserialize_f64_from_str")]
     pub fee_amount: f64,
-    #[serde(deserialize_with = "primitives::deserialize_f64_from_str")]
+    #[serde(deserialize_with = "deserialize_f64_from_str")]
     pub fiat_amount: f64,
 }
 

@@ -23,8 +23,9 @@ impl ParserOptions {
 
     pub fn minimum_transfer_amount(&self) -> Option<u64> {
         match self.chain {
-            Chain::Tron | Chain::Xrp | Chain::Stellar => Some(1_000),
-            Chain::Polkadot => Some(100_000),
+            Chain::Tron | Chain::Xrp => Some(5_000),
+            Chain::Stellar => Some(50_000),
+            Chain::Polkadot => Some(10_000_000),
             _ => None,
         }
     }
