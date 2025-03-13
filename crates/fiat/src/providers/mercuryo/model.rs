@@ -63,9 +63,9 @@ pub struct WebhookData {
     pub status: String,
     #[serde(deserialize_with = "deserialize_f64_from_str")]
     pub fiat_amount: f64,
-    #[serde(deserialize_with = "deserialize_option_f64_from_str")]
+    #[serde(default, deserialize_with = "deserialize_option_f64_from_str")]
     pub fee: Option<f64>,
-    #[serde(deserialize_with = "deserialize_option_f64_from_str")]
+    #[serde(default, deserialize_with = "deserialize_option_f64_from_str")]
     pub partner_fee: Option<f64>,
     pub fiat_currency: String,
     pub currency: String,
