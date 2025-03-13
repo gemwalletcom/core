@@ -1,4 +1,4 @@
-use crate::sui::rpc::{CoinAsset, SuiClient};
+use crate::sui::rpc::CoinAsset;
 use anyhow::{anyhow, Result};
 use gem_sui::{sui_clock_object, SUI_FRAMEWORK_PACKAGE_ID};
 use num_bigint::BigInt;
@@ -110,7 +110,6 @@ impl TransactionBuilder {
         fix_amount: bool,
     ) -> Result<BuildCoinResult> {
         let coin_assets = CoinAssist::get_coin_assets(coin_type, all_coins);
-
         // Mint zero coin if amount is 0
         if amount == &BigInt::from(0u64) {
             return Self::build_zero_value_coin(all_coins, tx_builder, coin_type, build_vector);
@@ -438,13 +437,13 @@ impl TransactionBuilder {
         args.push(tx_builder.pure(params.by_amount_in)?);
 
         // Add amount
-        args.push(tx_builder.pure(u64::from_str(&params.amount.to_string()).unwrap_or(0))?);
+        args.push(tx_builder.pure(&params.amount)?);
 
         // Add amount_limit
-        args.push(tx_builder.pure(u64::from_str(&params.amount_limit.to_string()).unwrap_or(0))?);
+        args.push(tx_builder.pure(&params.amount_limit)?);
 
         // Add sqrt_price_limit
-        args.push(tx_builder.pure(u128::from_str(&sqrt_price_limit).unwrap_or(0))?);
+        args.push(tx_builder.pure(sqrt_price_limit)?);
 
         // Add clock
         args.push(tx_builder.obj(sui_clock_object())?);
@@ -470,24 +469,19 @@ impl TransactionBuilder {
         let mut tx_builder = ProgrammableTransactionBuilder::new();
 
         // Calculate the input amounts based on direction and swap mode
-        let amount_a = if params.a2b {
+        let (amount_a, amount_b) = if params.a2b {
             if params.by_amount_in {
-                params.amount.clone()
+                (params.amount.clone(), BigInt::from(0u64))
             } else {
-                params.amount_limit.clone()
+                (params.amount_limit.clone(), BigInt::from(0u64))
             }
         } else {
-            BigInt::from(0u64)
-        };
-
-        let amount_b = if !params.a2b {
+            #[allow(clippy::collapsible_else_if)]
             if params.by_amount_in {
-                params.amount.clone()
+                (BigInt::from(0u64), params.amount.clone())
             } else {
-                params.amount_limit.clone()
+                (BigInt::from(0u64), params.amount_limit.clone())
             }
-        } else {
-            BigInt::from(0u64)
         };
 
         // Build coin inputs for both sides of the swap
@@ -514,10 +508,10 @@ impl CoinAssist {
     }
 }
 
-pub fn get_default_sqrt_price_limit(a2b: bool) -> String {
+pub fn get_default_sqrt_price_limit(a2b: bool) -> u128 {
     if a2b {
-        "4295048016".to_string()
+        4295048016_u128
     } else {
-        "79226673515401279992447579055".to_string()
+        79226673515401279992447579055_u128
     }
 }

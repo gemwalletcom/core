@@ -1,6 +1,9 @@
 use crate::network::{jsonrpc::JsonRpcResult, jsonrpc_call, AlienError, AlienProvider};
 use base64::{engine::general_purpose, Engine as _};
-use gem_sui::jsonrpc::{SuiData, SuiRpc};
+use gem_sui::{
+    jsonrpc::{SuiData, SuiRpc},
+    SUI_COIN_TYPE, SUI_COIN_TYPE_FULL,
+};
 
 use primitives::Chain;
 use serde::de::DeserializeOwned;
@@ -26,7 +29,17 @@ impl SuiClient {
 
     pub async fn get_coin_assets(&self, owner: SuiAddress) -> Result<Vec<CoinAsset>, AlienError> {
         let coins: SuiData<Vec<CoinAsset>> = self.rpc_call(SuiRpc::GetAllCoins { owner: owner.to_string() }).await?;
-        Ok(coins.data)
+        let coins = coins
+            .data
+            .into_iter()
+            .map(|mut coin| {
+                if coin.coin_type == SUI_COIN_TYPE {
+                    coin.coin_type = SUI_COIN_TYPE_FULL.into();
+                }
+                coin
+            })
+            .collect();
+        Ok(coins)
     }
 
     pub async fn get_gas_price(&self) -> Result<u64, AlienError> {

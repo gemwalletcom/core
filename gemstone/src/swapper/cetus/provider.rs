@@ -28,7 +28,7 @@ use crate::{
 use gem_sui::{
     jsonrpc::{ObjectDataOptions, SuiRpc},
     model::TxOutput,
-    EMPTY_ADDRESS, SUI_COIN_TYPE, SUI_COIN_TYPE_FULL,
+    EMPTY_ADDRESS, SUI_COIN_TYPE_FULL,
 };
 use primitives::{AssetId, Chain};
 use sui_types::{
@@ -183,18 +183,6 @@ impl GemSwapProvider for Cetus {
         let pool_ref = pool_data.obj_ref();
         let from_coin = Self::get_coin_address(from_asset);
 
-        let a2b = from_coin == pool_data.coin_a;
-        let swap_params = SwapParams {
-            pool_ref,
-            a2b,
-            by_amount_in: a2b,
-            amount: BigInt::from_str(&quote.from_value).unwrap(),
-            amount_limit: BigInt::from_str(&quote.to_min_value).unwrap(),
-            coin_type_a: pool_data.coin_a.clone(),
-            coin_type_b: pool_data.coin_b.clone(),
-            swap_partner: None, // No swap partner for now
-        };
-
         let sui_client = SuiClient::new(provider.clone());
         let (clmm_pool_config, integrate_config) = self.get_clmm_config()?;
 
@@ -206,11 +194,22 @@ impl GemSwapProvider for Cetus {
 
         let gas_coin = all_coin_assets
             .iter()
-            .find(|x| x.coin_type == SUI_COIN_TYPE_FULL || x.coin_type == SUI_COIN_TYPE)
+            .find(|x| x.coin_type == SUI_COIN_TYPE_FULL)
             .ok_or(SwapperError::TransactionError {
                 msg: "Gas coin not found".to_string(),
             })?;
 
+        let a2b = from_coin == pool_data.coin_a;
+        let swap_params = SwapParams {
+            pool_ref,
+            a2b,
+            by_amount_in: a2b,
+            amount: BigInt::from_str(&quote.from_value)?,
+            amount_limit: BigInt::from_str(&quote.to_min_value)?,
+            coin_type_a: pool_data.coin_a.clone(),
+            coin_type_b: pool_data.coin_b.clone(),
+            swap_partner: None, // No swap partner for now
+        };
         let ptb = TransactionBuilder::build_swap_transaction(&clmm_pool_config, &integrate_config, &swap_params, &all_coin_assets).map_err(|e| {
             SwapperError::TransactionError {
                 msg: format!("Failed to build swap transaction: {}", e),
