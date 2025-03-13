@@ -1,33 +1,26 @@
 use num_bigint::{BigInt, ParseBigIntError};
-use serde::{de, Deserialize, Serialize};
-
-use super::{
-    client::Pool,
-    clmm::{tick::TickMath, ClmmPoolData, TickData},
+use serde::{Deserialize, Serialize};
+use sui_types::{
+    base_types::{ObjectID, ObjectRef, SequenceNumber},
+    digests::ObjectDigest,
 };
-use crate::swapper::SwapperError;
+
+use super::clmm::{tick::TickMath, ClmmPoolData, TickData};
+use crate::swapper::{serializer::*, SwapperError};
 use gem_sui::jsonrpc::{DataObject, MoveObject, MoveObjectId, OptionU64, SuiData, I32};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct CetusPool {
-    pub pool_address: String,
-    pub coin_type_a: String,
-    pub coin_type_b: String,
-    pub fee_rate: String,
-    pub is_pause: bool,
-    pub name: String,
+pub struct RoutePoolData {
+    pub object_id: ObjectID,
+    pub version: u64,
+    pub digest: ObjectDigest,
+    pub coin_a: String,
+    pub coin_b: String,
 }
 
-impl From<Pool> for CetusPool {
-    fn from(pool: Pool) -> Self {
-        Self {
-            pool_address: pool.address,
-            coin_type_a: pool.coin_a_address,
-            coin_type_b: pool.coin_b_address,
-            fee_rate: pool.fee,
-            is_pause: pool.object.is_pause,
-            name: pool.name,
-        }
+impl RoutePoolData {
+    pub fn obj_ref(&self) -> ObjectRef {
+        (self.object_id, SequenceNumber::from_u64(self.version), self.digest)
     }
 }
 
@@ -60,22 +53,6 @@ pub struct CetusPoolObject {
     #[serde(deserialize_with = "deserialize_bigint", serialize_with = "serialize_bigint")]
     pub liquidity: BigInt,
     pub tick_manager: MoveObject<TickManager>,
-}
-
-// Add this helper function to deserialize string to BigInt
-fn deserialize_bigint<'de, D>(deserializer: D) -> Result<BigInt, D::Error>
-where
-    D: de::Deserializer<'de>,
-{
-    let s: String = de::Deserialize::deserialize(deserializer)?;
-    s.parse::<BigInt>().map_err(de::Error::custom)
-}
-
-fn serialize_bigint<S>(value: &BigInt, serializer: S) -> Result<S::Ok, S::Error>
-where
-    S: serde::Serializer,
-{
-    serializer.serialize_str(&value.to_string())
 }
 
 impl TryInto<ClmmPoolData> for CetusPoolObject {

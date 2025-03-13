@@ -1,4 +1,4 @@
-use super::models::{Pool, Request, Response};
+use super::models::{CetusPool, Request, Response};
 use crate::{
     network::{AlienProvider, AlienTarget},
     swapper::SwapperError,
@@ -16,7 +16,7 @@ impl CetusClient {
         Self { provider }
     }
 
-    pub async fn get_pool_by_token(&self, token_a: &str, token_b: &str) -> Result<Vec<Pool>, SwapperError> {
+    pub async fn get_pool_by_token(&self, token_a: &str, token_b: &str) -> Result<Vec<CetusPool>, SwapperError> {
         let request = Request {
             display_all_pools: true,
             has_mining: true,

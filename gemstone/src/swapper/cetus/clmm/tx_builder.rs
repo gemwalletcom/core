@@ -1,21 +1,14 @@
 use crate::sui::rpc::{CoinAsset, SuiClient};
 use anyhow::{anyhow, Result};
-use bcs;
 use gem_sui::sui_clock_object;
 use num_bigint::BigInt;
 use std::str::FromStr;
 use sui_types::{
-    base_types::{ObjectDigest, ObjectID, ObjectRef, SequenceNumber, SuiAddress},
+    base_types::{ObjectID, ObjectRef, SequenceNumber},
     programmable_transaction_builder::ProgrammableTransactionBuilder,
-    transaction::{Argument, ObjectArg, ProgrammableTransaction, TransactionData},
+    transaction::{Argument, ObjectArg},
     Identifier, TypeTag,
 };
-
-// Helper function to create ObjectRef from ObjectID
-#[allow(dead_code)]
-fn object_id_to_ref(id: ObjectID) -> (ObjectID, SequenceNumber, ObjectDigest) {
-    (id, SequenceNumber::from_u64(0), ObjectDigest::new([0; 32]))
-}
 
 #[derive(Debug, Clone)]
 pub struct SwapParams {
@@ -410,6 +403,8 @@ impl TransactionBuilder {
         primary_coin_input_b: &BuildCoinResult,
     ) -> Result<()> {
         let sqrt_price_limit = get_default_sqrt_price_limit(params.a2b);
+        println!("Coin type A: {}", &params.coin_type_a);
+        println!("Coin type B: {}", &params.coin_type_b);
         let type_arguments = vec![TypeTag::from_str(&params.coin_type_a)?, TypeTag::from_str(&params.coin_type_b)?];
 
         let has_swap_partner = params.swap_partner.is_some();
@@ -468,8 +463,8 @@ impl TransactionBuilder {
         // Make the move call
         tx_builder.programmable_move_call(
             integrate.package_id,
-            Identifier::from_str(CLMM_INTEGRATE_POOL_V2_MODULE).unwrap(),
-            Identifier::from_str(function_name).unwrap(),
+            Identifier::from_str(CLMM_INTEGRATE_POOL_V2_MODULE)?,
+            Identifier::from_str(function_name)?,
             type_arguments,
             args,
         );
@@ -528,78 +523,6 @@ impl TransactionBuilder {
 
         Ok(tx_builder)
     }
-
-    #[allow(dead_code)]
-    pub async fn adjust_transaction_for_gas(
-        client: &SuiClient,
-        all_coins: &[CoinAsset],
-        amount: u64,
-        sender_address: &str,
-        tx: &ProgrammableTransaction,
-    ) -> Result<(u64, Option<ProgrammableTransactionBuilder>)> {
-        // Get amount coins
-        let amount_coins = CoinAssist::select_coin_asset_greater_than_or_equal(all_coins, amount, None);
-        if amount_coins.is_empty() {
-            return Err(anyhow!("Insufficient balance"));
-        }
-
-        let total_amount = CoinAssist::calculate_total_balance(all_coins);
-
-        // If the remaining coin balance is greater than 1000000000, no gas fee correction will be done
-        if total_amount - amount > 1000000000 {
-            return Ok((amount, None));
-        }
-
-        // Estimate gas consumption
-        let estimate_gas = (Self::serialize_and_estimate_gas(client, sender_address, tx.clone()).await).unwrap_or(500000);
-
-        // Find gas coins
-        let exclude_ids = amount_coins.iter().map(|coin| coin.coin_object_id).collect::<Vec<_>>();
-        let gas_coins = CoinAssist::select_coin_asset_greater_than_or_equal(all_coins, estimate_gas, Some(exclude_ids));
-
-        // There is not enough gas and the amount needs to be adjusted
-        if gas_coins.is_empty() {
-            // Readjust the amount, reserve 500 gas for the split
-            let new_gas = estimate_gas + 500;
-            if total_amount - amount < new_gas {
-                let new_amount = if amount > new_gas {
-                    amount - new_gas
-                } else {
-                    return Err(anyhow!("Gas insufficient balance"));
-                };
-
-                let new_tx_builder = ProgrammableTransactionBuilder::new();
-                return Ok((new_amount, Some(new_tx_builder)));
-            }
-        }
-
-        Ok((amount, None))
-    }
-
-    #[allow(dead_code)]
-    async fn serialize_and_estimate_gas(client: &SuiClient, sender_address: &str, tx: ProgrammableTransaction) -> Result<u64> {
-        // Create a dummy transaction data with the builder
-        // We need to use a dummy gas budget and gas price for the serialization
-        let sender = SuiAddress::from_str(sender_address)?;
-
-        // Use empty coin references for estimation purposes
-        let coin_refs = Vec::new();
-
-        // Use dummy values for gas budget and gas price
-        let gas_budget = 50000000; // Dummy value
-        let gas_price = 1000; // Dummy value
-                              // Create the transaction data
-        let tx_data = TransactionData::new_programmable(sender, coin_refs, tx, gas_budget, gas_price);
-
-        // Serialize the transaction data to bytes using bincode
-        let tx_bytes = bcs::to_bytes(&tx_data).map_err(|e| anyhow!("Failed to serialize transaction data: {}", e))?;
-
-        // Estimate the gas cost
-        client
-            .estimate_gas_budget(sender_address, &tx_bytes)
-            .await
-            .map_err(|e| anyhow!("Failed to estimate gas: {}", e))
-    }
 }
 
 // Helper structs and implementations
@@ -612,47 +535,6 @@ impl CoinAssist {
 
     pub fn calculate_total_balance(coin_assets: &[CoinAsset]) -> u64 {
         coin_assets.iter().map(|asset| asset.balance).sum()
-    }
-
-    #[allow(dead_code)]
-    pub fn select_coin_asset_greater_than_or_equal(all_coins: &[CoinAsset], amount: u64, exclude_ids: Option<Vec<ObjectID>>) -> Vec<CoinAsset> {
-        let mut result = Vec::new();
-        let mut total = 0u64;
-
-        // Filter out excluded coins
-        let filtered_coins = if let Some(ids) = &exclude_ids {
-            all_coins.iter().filter(|coin| !ids.contains(&coin.coin_object_id)).cloned().collect::<Vec<_>>()
-        } else {
-            all_coins.to_vec()
-        };
-
-        // Sort coins by balance (descending)
-        let mut sorted_coins = filtered_coins;
-        sorted_coins.sort_by(|a, b| b.balance.cmp(&a.balance));
-
-        // Try to find a single coin with sufficient balance
-        for coin in &sorted_coins {
-            if coin.balance >= amount {
-                return vec![coin.clone()];
-            }
-        }
-
-        // Otherwise, collect coins until we reach the amount
-        for coin in sorted_coins {
-            if total >= amount {
-                break;
-            }
-
-            result.push(coin.clone());
-            total += coin.balance;
-        }
-
-        if total < amount {
-            // Not enough coins to reach the amount
-            return Vec::new();
-        }
-
-        result
     }
 }
 

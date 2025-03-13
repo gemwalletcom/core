@@ -1,18 +1,19 @@
 use alloy_core::primitives::U256;
 use async_trait::async_trait;
 use bcs;
+use futures::join;
 use num_bigint::BigInt;
 use num_traits::ToBytes;
 use std::{str::FromStr, sync::Arc};
 
 use super::{
-    client::CetusClient,
+    client::{models::CetusPool, CetusClient},
     clmm::{
         compute_swap,
         tx_builder::{ClmmPoolConfig, IntegrateConfig, SwapParams},
         TransactionBuilder,
     },
-    models::{get_pool_object, CetusPool, CetusPoolType},
+    models::{get_pool_object, CetusPoolType, RoutePoolData},
     CETUS_CLMM_PACKAGE_ID, CETUS_CLMM_PUBLISHED_AT, CETUS_GLOBAL_CONFIG_ID, CETUS_GLOBAL_CONFIG_SHARED_VERSION, CETUS_INTEGRATE_PACKAGE_ID,
     CETUS_INTEGRATE_PUBLISHED_AT,
 };
@@ -83,7 +84,7 @@ impl Cetus {
             .get_pool_by_token(coin_a, coin_b)
             .await?
             .iter()
-            .filter_map(|x| if x.object.is_pause { None } else { Some(CetusPool::from(x.clone())) })
+            .filter_map(|x| if x.object.is_pause { None } else { Some(x.clone()) })
             .collect::<Vec<CetusPool>>();
 
         Ok(pools)
@@ -125,20 +126,27 @@ impl GemSwapProvider for Cetus {
         }
 
         let pool = &pools[0]; // FIXME pick multiple pools
-        let sui_data = self.fetch_pool_by_id(&pool.pool_address, provider).await?;
-        let pool_object = get_pool_object(&sui_data).unwrap();
+        let pool_data = self.fetch_pool_by_id(&pool.address, provider).await?;
+        let pool_object = get_pool_object(&pool_data).unwrap();
         let amount_in = BigInt::from_str(&request.value).map_err(|_| SwapperError::InvalidAmount)?;
 
         // Convert ticks to TickData format
         let tick_datas = &pool_object.tick_manager.fields.to_ticks();
-        let pool_data = pool_object.clone().try_into()?;
+        let clmm_data = pool_object.clone().try_into()?;
 
-        let a_to_b = pool.coin_type_a == from_coin;
+        let a2b = pool.coin_a_address == from_coin;
 
-        let swap_result = compute_swap(a_to_b, true, &amount_in, &pool_data, tick_datas).map_err(|e| SwapperError::ComputeQuoteError { msg: e.to_string() })?;
+        let swap_result = compute_swap(a2b, true, &amount_in, &clmm_data, tick_datas).map_err(|e| SwapperError::ComputeQuoteError { msg: e.to_string() })?;
         let quote_amount = U256::from_le_slice(swap_result.amount_out.to_le_bytes().as_slice());
         let slippage_bps = request.options.slippage.bps;
         let expect_min = apply_slippage_in_bp(&quote_amount, slippage_bps);
+        let route_data = RoutePoolData {
+            object_id: pool_data.data.object_id,
+            version: pool_data.data.version,
+            digest: pool_data.data.digest,
+            coin_a: pool.coin_a_address.clone(),
+            coin_b: pool.coin_b_address.clone(),
+        };
 
         Ok(SwapQuote {
             from_value: request.value.clone(),
@@ -150,7 +158,7 @@ impl GemSwapProvider for Cetus {
                 routes: vec![SwapRoute {
                     input: AssetId::from(from_chain, Some(from_coin.clone())),
                     output: AssetId::from(from_chain, Some(to_coin.clone())),
-                    route_data: serde_json::to_string(&sui_data).unwrap(),
+                    route_data: serde_json::to_string(&route_data).unwrap(),
                     gas_limit: None,
                 }],
             },
@@ -169,30 +177,35 @@ impl GemSwapProvider for Cetus {
         let sender_address = quote.request.wallet_address.parse().map_err(|_| SwapperError::InvalidAddress {
             address: quote.request.wallet_address.clone(),
         })?;
-        let sui_data: CetusPoolType = serde_json::from_str(&route.route_data).map_err(|e| SwapperError::TransactionError {
+        let pool_data: RoutePoolData = serde_json::from_str(&route.route_data).map_err(|e| SwapperError::TransactionError {
             msg: format!("Invalid route data: {}", e),
         })?;
-        let pool_object = get_pool_object(&sui_data).unwrap();
-        let pool_ref = sui_data.data.to_ref();
+        let pool_ref = pool_data.obj_ref();
         let from_coin = Self::get_coin_address(from_asset);
-        let a2b = from_coin == pool_object.coin_a;
 
+        let a2b = from_coin == pool_data.coin_a;
         let swap_params = SwapParams {
             pool_ref,
             a2b,
             by_amount_in: quote.request.mode == GemSwapMode::ExactIn,
-            amount: BigInt::from_str(&quote.from_value).unwrap_or(BigInt::from(0u64)),
-            amount_limit: BigInt::from_str(&quote.to_min_value).unwrap_or(BigInt::from(0u64)),
-            coin_type_a: pool_object.coin_a.clone(),
-            coin_type_b: pool_object.coin_b.clone(),
+            amount: BigInt::from_str(&quote.from_value).unwrap(),
+            amount_limit: BigInt::from_str(&quote.to_min_value).unwrap(),
+            coin_type_a: pool_data.coin_a.clone(),
+            coin_type_b: pool_data.coin_b.clone(),
             swap_partner: None, // No swap partner for now
         };
 
         let sui_client = SuiClient::new(provider.clone());
         let (clmm_pool_config, integrate_config) = self.get_clmm_config()?;
 
-        let gas_price = sui_client.get_gas_price().await.map_err(SwapperError::from)?;
-        let all_coin_assets = sui_client.get_coin_assets(sender_address).await.map_err(SwapperError::from)?;
+        // Execute gas_price and coin_assets fetching in parallel
+        let (gas_price_result, all_coin_assets_result) = join!(
+            sui_client.get_gas_price(), 
+            sui_client.get_coin_assets(sender_address)
+        );
+        
+        let gas_price = gas_price_result.map_err(SwapperError::from)?;
+        let all_coin_assets = all_coin_assets_result.map_err(SwapperError::from)?;
 
         let gas_coin = all_coin_assets
             .iter()

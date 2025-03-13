@@ -18,11 +18,11 @@ pub struct Response {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ResponseData {
     pub total: u32,
-    pub lp_list: Vec<Pool>,
+    pub lp_list: Vec<CetusPool>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Pool {
+pub struct CetusPool {
     pub address: String,
     pub pool_type: String,
     pub coin_a_address: String,
