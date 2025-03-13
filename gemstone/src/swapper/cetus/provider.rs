@@ -21,8 +21,8 @@ use crate::{
     network::{jsonrpc_call, AlienProvider, JsonRpcResult},
     sui::rpc::SuiClient,
     swapper::{
-        slippage::apply_slippage_in_bp, FetchQuoteData, GemSwapMode, GemSwapProvider, SwapChainAsset, SwapProvider, SwapProviderData, SwapProviderType,
-        SwapQuote, SwapQuoteData, SwapQuoteRequest, SwapRoute, SwapperError,
+        slippage::apply_slippage_in_bp, FetchQuoteData, GemSwapProvider, SwapChainAsset, SwapProvider, SwapProviderData, SwapProviderType, SwapQuote,
+        SwapQuoteData, SwapQuoteRequest, SwapRoute, SwapperError,
     },
 };
 use gem_sui::{
@@ -187,7 +187,7 @@ impl GemSwapProvider for Cetus {
         let swap_params = SwapParams {
             pool_ref,
             a2b,
-            by_amount_in: quote.request.mode == GemSwapMode::ExactIn,
+            by_amount_in: a2b,
             amount: BigInt::from_str(&quote.from_value).unwrap(),
             amount_limit: BigInt::from_str(&quote.to_min_value).unwrap(),
             coin_type_a: pool_data.coin_a.clone(),
@@ -199,11 +199,8 @@ impl GemSwapProvider for Cetus {
         let (clmm_pool_config, integrate_config) = self.get_clmm_config()?;
 
         // Execute gas_price and coin_assets fetching in parallel
-        let (gas_price_result, all_coin_assets_result) = join!(
-            sui_client.get_gas_price(), 
-            sui_client.get_coin_assets(sender_address)
-        );
-        
+        let (gas_price_result, all_coin_assets_result) = join!(sui_client.get_gas_price(), sui_client.get_coin_assets(sender_address));
+
         let gas_price = gas_price_result.map_err(SwapperError::from)?;
         let all_coin_assets = all_coin_assets_result.map_err(SwapperError::from)?;
 
@@ -214,12 +211,11 @@ impl GemSwapProvider for Cetus {
                 msg: "Gas coin not found".to_string(),
             })?;
 
-        let ptb =
-            TransactionBuilder::build_swap_transaction(&sui_client, &clmm_pool_config, &integrate_config, &swap_params, &all_coin_assets).map_err(|e| {
-                SwapperError::TransactionError {
-                    msg: format!("Failed to build swap transaction: {}", e),
-                }
-            })?;
+        let ptb = TransactionBuilder::build_swap_transaction(&clmm_pool_config, &integrate_config, &swap_params, &all_coin_assets).map_err(|e| {
+            SwapperError::TransactionError {
+                msg: format!("Failed to build swap transaction: {}", e),
+            }
+        })?;
         let tx = ptb.finish();
 
         let dummy_tx_data = TransactionData::new_programmable(EMPTY_ADDRESS.parse().unwrap(), vec![gas_coin.to_ref()], tx.clone(), 50000000, gas_price);

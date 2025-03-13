@@ -1,12 +1,14 @@
 use crate::sui::rpc::{CoinAsset, SuiClient};
 use anyhow::{anyhow, Result};
-use gem_sui::sui_clock_object;
+use gem_sui::{sui_clock_object, SUI_FRAMEWORK_PACKAGE_ID};
 use num_bigint::BigInt;
+use num_traits::ToPrimitive;
 use std::str::FromStr;
+
 use sui_types::{
     base_types::{ObjectID, ObjectRef, SequenceNumber},
     programmable_transaction_builder::ProgrammableTransactionBuilder,
-    transaction::{Argument, ObjectArg},
+    transaction::{Argument, Command, ObjectArg},
     Identifier, TypeTag,
 };
 
@@ -52,6 +54,10 @@ const SWAP_WITH_PARTNER_A2B: &str = "swap_a2b_with_partner";
 const SWAP_WITH_PARTNER_B2A: &str = "swap_b2a_with_partner";
 const SWAP_A2B: &str = "swap_a2b";
 const SWAP_B2A: &str = "swap_b2a";
+const MODULE_COIN: &str = "coin";
+const FUNCTION_ZERO: &str = "zero";
+const FUNCTION_SPLIT: &str = "split";
+const FUNCTION_JOIN: &str = "join";
 
 pub struct TransactionBuilder;
 
@@ -60,10 +66,10 @@ impl TransactionBuilder {
         let zero_coin_arg = tx_builder.pure(0u64)?;
 
         // Create the move call command
-        let move_call = sui_types::transaction::Command::move_call(
-            ObjectID::from_str("0x2").unwrap(),
-            Identifier::new("coin").unwrap(),
-            Identifier::new("zero").unwrap(),
+        let move_call = Command::move_call(
+            ObjectID::from_single_byte(SUI_FRAMEWORK_PACKAGE_ID),
+            Identifier::from_str(MODULE_COIN)?,
+            Identifier::from_str(FUNCTION_ZERO)?,
             vec![TypeTag::from_str(coin_type)?],
             vec![zero_coin_arg],
         );
@@ -110,7 +116,7 @@ impl TransactionBuilder {
             return Self::build_zero_value_coin(all_coins, tx_builder, coin_type, build_vector);
         }
 
-        let amount_total = BigInt::from(CoinAssist::calculate_total_balance(&coin_assets));
+        let amount_total = CoinAssist::calculate_total_balance(&coin_assets);
         if amount_total < *amount {
             return Err(anyhow!(
                 "The amount({}) is Insufficient balance for {}, expect {}",
@@ -139,6 +145,57 @@ impl TransactionBuilder {
         }
     }
 
+    // Helper function to split a coin
+    fn split_coin(tx_builder: &mut ProgrammableTransactionBuilder, coin_arg: Argument, split_amount: BigInt, coin_type: &str) -> Result<Argument> {
+        let split_u64 = split_amount.to_u64().ok_or(anyhow!("Failed to convert BigInt to u64"))?;
+        let split_amount_arg = tx_builder.pure(split_u64)?;
+        Ok(tx_builder.programmable_move_call(
+            ObjectID::from_single_byte(SUI_FRAMEWORK_PACKAGE_ID),
+            Identifier::from_str(MODULE_COIN)?,
+            Identifier::from_str(FUNCTION_SPLIT)?,
+            vec![TypeTag::from_str(coin_type)?],
+            vec![coin_arg, split_amount_arg],
+        ))
+    }
+
+    // Helper function to join coins
+    fn join_coins(tx_builder: &mut ProgrammableTransactionBuilder, coin_a: Argument, coin_b: Argument, coin_type: &str) -> Result<Argument> {
+        Ok(tx_builder.programmable_move_call(
+            ObjectID::from_single_byte(SUI_FRAMEWORK_PACKAGE_ID),
+            Identifier::from_str(MODULE_COIN)?,
+            Identifier::from_str(FUNCTION_JOIN)?,
+            vec![TypeTag::from_str(coin_type)?],
+            vec![coin_a, coin_b],
+        ))
+    }
+
+    // Helper function to find exact coin match
+    fn find_exact_coin_match(
+        tx_builder: &mut ProgrammableTransactionBuilder,
+        all_coins: &[CoinAsset],
+        sorted_coins: &[CoinAsset],
+        amount: &BigInt,
+    ) -> Result<Option<BuildCoinResult>> {
+        for coin in sorted_coins {
+            if coin.balance == *amount {
+                let obj_arg = ObjectArg::ImmOrOwnedObject(coin.to_ref());
+                let coin_arg = tx_builder.obj(obj_arg)?;
+
+                let mut remain_coins = all_coins.to_vec();
+                remain_coins.retain(|c| c.coin_object_id != coin.coin_object_id);
+
+                return Ok(Some(BuildCoinResult {
+                    target_coin: coin_arg,
+                    remain_coins,
+                    is_mint_zero_coin: false,
+                    target_coin_amount: amount.to_string(),
+                    original_splited_coin: None,
+                }));
+            }
+        }
+        Ok(None)
+    }
+
     fn build_vector_coin(
         tx_builder: &mut ProgrammableTransactionBuilder,
         all_coins: &[CoinAsset],
@@ -151,30 +208,14 @@ impl TransactionBuilder {
         let mut sorted_coins = coin_assets.to_vec();
         sorted_coins.sort_by(|a, b| a.balance.cmp(&b.balance));
 
+        // Try to find exact match first
+        if let Some(result) = Self::find_exact_coin_match(tx_builder, all_coins, &sorted_coins, amount)? {
+            return Ok(result);
+        }
+
         let mut remaining_amount = amount.clone();
         let mut used_coins = Vec::new();
         let mut coin_args = Vec::new();
-
-        // Try to find exact match first
-        for coin in &sorted_coins {
-            if BigInt::from(coin.balance) == *amount {
-                let obj_arg = ObjectArg::ImmOrOwnedObject(coin.to_ref());
-                let coin_arg = tx_builder.obj(obj_arg)?;
-                // We can't use make_obj_vec with Argument, so we'll just use the coin_arg directly
-                let vec_arg = coin_arg;
-
-                let mut remain_coins = all_coins.to_vec();
-                remain_coins.retain(|c| c.coin_object_id != coin.coin_object_id);
-
-                return Ok(BuildCoinResult {
-                    target_coin: vec_arg,
-                    remain_coins,
-                    is_mint_zero_coin: false,
-                    target_coin_amount: amount.to_string(),
-                    original_splited_coin: None,
-                });
-            }
-        }
 
         // Otherwise, collect coins until we reach the amount
         for coin in &sorted_coins {
@@ -187,21 +228,13 @@ impl TransactionBuilder {
             let coin_arg = tx_builder.obj(obj_arg)?;
             coin_args.push(coin_arg);
 
-            let coin_balance = BigInt::from(coin.balance);
+            let coin_balance = coin.balance.clone();
             if coin_balance <= remaining_amount {
                 remaining_amount -= coin_balance;
             } else {
                 // Need to split this coin
-                // Convert BigInt to u64 for the split operation
-                let split_amount_u64 = u64::from_str(&(coin.balance - u64::from_str(&remaining_amount.to_string()).unwrap_or(0)).to_string()).unwrap_or(0);
-                let split_amount = tx_builder.pure(split_amount_u64)?;
-                let split_coin = tx_builder.programmable_move_call(
-                    ObjectID::from_str("0x2").unwrap(),
-                    Identifier::new("coin").unwrap(),
-                    Identifier::new("split").unwrap(),
-                    vec![TypeTag::from_str(coin_type)?],
-                    vec![coin_arg, split_amount],
-                );
+                let split_amount = &coin.balance - &remaining_amount;
+                let split_coin = Self::split_coin(tx_builder, coin_arg, split_amount, coin_type)?;
 
                 // Replace the last coin with the split result
                 coin_args.pop();
@@ -221,13 +254,7 @@ impl TransactionBuilder {
             // For now, just use the first coin
             let rest_coins = if coin_args.len() > 1 { coin_args[1] } else { first_coin };
 
-            tx_builder.programmable_move_call(
-                ObjectID::from_str("0x2").unwrap(),
-                Identifier::new("coin").unwrap(),
-                Identifier::new("join").unwrap(),
-                vec![TypeTag::from_str(coin_type)?],
-                vec![first_coin, rest_coins],
-            )
+            Self::join_coins(tx_builder, first_coin, rest_coins, coin_type)?
         } else if coin_args.len() == 1 {
             coin_args[0]
         } else {
@@ -259,42 +286,20 @@ impl TransactionBuilder {
         sorted_coins.sort_by(|a, b| a.balance.cmp(&b.balance));
 
         // Try to find exact match first
-        for coin in &sorted_coins {
-            if BigInt::from(coin.balance) == *amount {
-                let obj_arg = ObjectArg::ImmOrOwnedObject(coin.to_ref());
-                let coin_arg = tx_builder.obj(obj_arg)?;
-
-                let mut remain_coins = coin_assets.to_vec();
-                remain_coins.retain(|c| c.coin_object_id != coin.coin_object_id);
-
-                return Ok(BuildCoinResult {
-                    target_coin: coin_arg,
-                    remain_coins,
-                    is_mint_zero_coin: false,
-                    target_coin_amount: amount.to_string(),
-                    original_splited_coin: None,
-                });
-            }
+        if let Some(result) = Self::find_exact_coin_match(tx_builder, coin_assets, &sorted_coins, amount)? {
+            return Ok(result);
         }
 
         // Find a coin with sufficient balance
         for coin in &sorted_coins {
-            if BigInt::from(coin.balance) > *amount {
+            if coin.balance > *amount {
                 let obj_arg = ObjectArg::ImmOrOwnedObject(coin.to_ref());
                 let coin_arg = tx_builder.obj(obj_arg)?;
 
                 if fix_amount {
                     // Split the coin
-                    // Convert BigInt to u64 for split operation
-                    let amount_u64 = u64::from_str(&amount.to_string()).unwrap_or(0);
-                    let split_amount = tx_builder.pure(coin.balance - amount_u64)?;
-                    let split_result = tx_builder.programmable_move_call(
-                        ObjectID::from_str("0x2").unwrap(),
-                        Identifier::new("coin").unwrap(),
-                        Identifier::new("split").unwrap(),
-                        vec![TypeTag::from_str(coin_type)?],
-                        vec![coin_arg, split_amount],
-                    );
+                    let split_amount = coin.balance.clone() - amount;
+                    let split_result = Self::split_coin(tx_builder, coin_arg, split_amount, coin_type)?;
 
                     let mut remain_coins = coin_assets.to_vec();
                     remain_coins.retain(|c| c.coin_object_id != coin.coin_object_id);
@@ -336,21 +341,13 @@ impl TransactionBuilder {
             let coin_arg = tx_builder.obj(obj_arg)?;
             coin_args.push(coin_arg);
 
-            let coin_balance = BigInt::from(coin.balance);
+            let coin_balance = coin.balance.clone();
             if coin_balance <= remaining_amount {
                 remaining_amount -= coin_balance;
             } else {
                 // Need to split this coin
-                // Convert BigInt to u64 for split operation
-                let split_amount_u64 = u64::from_str(&(coin.balance - u64::from_str(&remaining_amount.to_string()).unwrap_or(0)).to_string()).unwrap_or(0);
-                let split_amount = tx_builder.pure(split_amount_u64)?;
-                let split_coin = tx_builder.programmable_move_call(
-                    ObjectID::from_str("0x2").unwrap(),
-                    Identifier::new("coin").unwrap(),
-                    Identifier::new("split").unwrap(),
-                    vec![TypeTag::from_str(coin_type)?],
-                    vec![coin_arg, split_amount],
-                );
+                let split_amount = coin_balance - &remaining_amount;
+                let split_coin = Self::split_coin(tx_builder, coin_arg, split_amount, coin_type)?;
 
                 // Replace the last coin with the split result
                 coin_args.pop();
@@ -368,13 +365,7 @@ impl TransactionBuilder {
             let first_coin = coin_args[0];
 
             for coin_arg in coin_args.iter().skip(1) {
-                tx_builder.programmable_move_call(
-                    ObjectID::from_str("0x2").unwrap(),
-                    Identifier::new("coin").unwrap(),
-                    Identifier::new("join").unwrap(),
-                    vec![TypeTag::from_str(coin_type)?],
-                    vec![first_coin, *coin_arg],
-                );
+                Self::join_coins(tx_builder, first_coin, *coin_arg, coin_type)?;
             }
 
             first_coin
@@ -403,8 +394,6 @@ impl TransactionBuilder {
         primary_coin_input_b: &BuildCoinResult,
     ) -> Result<()> {
         let sqrt_price_limit = get_default_sqrt_price_limit(params.a2b);
-        println!("Coin type A: {}", &params.coin_type_a);
-        println!("Coin type B: {}", &params.coin_type_b);
         let type_arguments = vec![TypeTag::from_str(&params.coin_type_a)?, TypeTag::from_str(&params.coin_type_b)?];
 
         let has_swap_partner = params.swap_partner.is_some();
@@ -473,7 +462,6 @@ impl TransactionBuilder {
     }
 
     pub fn build_swap_transaction(
-        _client: &SuiClient,
         clmm_pool: &ClmmPoolConfig,
         integrate: &IntegrateConfig,
         params: &SwapParams,
@@ -481,6 +469,7 @@ impl TransactionBuilder {
     ) -> Result<ProgrammableTransactionBuilder> {
         let mut tx_builder = ProgrammableTransactionBuilder::new();
 
+        // Calculate the input amounts based on direction and swap mode
         let amount_a = if params.a2b {
             if params.by_amount_in {
                 params.amount.clone()
@@ -490,15 +479,6 @@ impl TransactionBuilder {
         } else {
             BigInt::from(0u64)
         };
-
-        let primary_coin_input_a = Self::build_coin_for_amount(
-            &mut tx_builder,
-            all_coin_asset,
-            &amount_a,
-            &params.coin_type_a,
-            false,
-            true,
-        )?;
 
         let amount_b = if !params.a2b {
             if params.by_amount_in {
@@ -510,15 +490,11 @@ impl TransactionBuilder {
             BigInt::from(0u64)
         };
 
-        let primary_coin_input_b = Self::build_coin_for_amount(
-            &mut tx_builder,
-            all_coin_asset,
-            &amount_b,
-            &params.coin_type_b,
-            false,
-            true,
-        )?;
+        // Build coin inputs for both sides of the swap
+        let primary_coin_input_a = Self::build_coin_for_amount(&mut tx_builder, all_coin_asset, &amount_a, &params.coin_type_a, false, true)?;
+        let primary_coin_input_b = Self::build_coin_for_amount(&mut tx_builder, all_coin_asset, &amount_b, &params.coin_type_b, false, true)?;
 
+        // Build the transaction with the prepared coin inputs
         Self::build_swap_transaction_args(&mut tx_builder, params, clmm_pool, integrate, &primary_coin_input_a, &primary_coin_input_b)?;
 
         Ok(tx_builder)
@@ -533,8 +509,8 @@ impl CoinAssist {
         all_coins.iter().filter(|asset| asset.coin_type == coin_type).cloned().collect()
     }
 
-    pub fn calculate_total_balance(coin_assets: &[CoinAsset]) -> u64 {
-        coin_assets.iter().map(|asset| asset.balance).sum()
+    pub fn calculate_total_balance(coin_assets: &[CoinAsset]) -> BigInt {
+        coin_assets.iter().map(|asset| asset.balance.clone()).sum()
     }
 }
 

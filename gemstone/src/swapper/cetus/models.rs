@@ -6,7 +6,10 @@ use sui_types::{
 };
 
 use super::clmm::{tick::TickMath, ClmmPoolData, TickData};
-use crate::swapper::{serializer::*, SwapperError};
+use crate::swapper::{
+    serializer::{deserialize_bigint, serialize_bigint},
+    SwapperError,
+};
 use gem_sui::jsonrpc::{DataObject, MoveObject, MoveObjectId, OptionU64, SuiData, I32};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -206,7 +209,7 @@ impl TickManager {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{network::jsonrpc::*, sui::rpc::models::CoinData};
+    use crate::{network::jsonrpc::*, sui::rpc::CoinAsset};
     use serde_json;
 
     #[test]
@@ -238,8 +241,8 @@ mod tests {
     #[test]
     fn test_decode_all_coins() {
         let string = include_str!("test/sui_all_coins.json");
-        let response: JsonRpcResult<SuiData<Vec<CoinData>>> = serde_json::from_str(string).unwrap();
-        let all_coins = response.take().unwrap().data;
+        let response: JsonRpcResponse<SuiData<Vec<CoinAsset>>> = serde_json::from_str(string).unwrap();
+        let all_coins = response.result.data;
 
         assert_eq!(all_coins.len(), 7);
     }

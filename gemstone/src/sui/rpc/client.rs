@@ -7,7 +7,7 @@ use serde::de::DeserializeOwned;
 use std::sync::Arc;
 use sui_types::base_types::SuiAddress;
 
-use super::models::{CoinAsset, CoinData, InspectResults};
+use super::models::{CoinAsset, InspectResults};
 
 pub struct SuiClient {
     provider: Arc<dyn AlienProvider>,
@@ -25,9 +25,8 @@ impl SuiClient {
     }
 
     pub async fn get_coin_assets(&self, owner: SuiAddress) -> Result<Vec<CoinAsset>, AlienError> {
-        let coins: SuiData<Vec<CoinData>> = self.rpc_call(SuiRpc::GetAllCoins { owner: owner.to_string() }).await?;
-        let assets = coins.data.into_iter().map(|coin| coin.into()).collect();
-        Ok(assets)
+        let coins: SuiData<Vec<CoinAsset>> = self.rpc_call(SuiRpc::GetAllCoins { owner: owner.to_string() }).await?;
+        Ok(coins.data)
     }
 
     pub async fn get_gas_price(&self) -> Result<u64, AlienError> {

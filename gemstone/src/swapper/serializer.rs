@@ -1,17 +1,20 @@
 use num_bigint::BigInt;
-use serde::de;
+use serde::{Deserialize, Deserializer, Serializer};
+use std::str::FromStr;
 
+/// Deserialize a string into a BigInt
 pub fn deserialize_bigint<'de, D>(deserializer: D) -> Result<BigInt, D::Error>
 where
-    D: de::Deserializer<'de>,
+    D: Deserializer<'de>,
 {
-    let s: String = de::Deserialize::deserialize(deserializer)?;
-    s.parse::<BigInt>().map_err(de::Error::custom)
+    let s = String::deserialize(deserializer)?;
+    BigInt::from_str(&s).map_err(serde::de::Error::custom)
 }
 
+/// Serialize a BigInt as a string
 pub fn serialize_bigint<S>(value: &BigInt, serializer: S) -> Result<S::Ok, S::Error>
 where
-    S: serde::Serializer,
+    S: Serializer,
 {
     serializer.serialize_str(&value.to_string())
 }
