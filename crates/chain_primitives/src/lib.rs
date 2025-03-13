@@ -31,6 +31,7 @@ pub fn format_token_id(chain: Chain, token_id: String) -> Option<String> {
         Chain::Xrp => token_id.starts_with('r').then_some(token_id),
         Chain::Algorand => token_id.parse::<i32>().ok().map(|token_id| token_id.to_string()),
         Chain::Sui => (token_id.len() >= 64 && token_id.starts_with("0x")).then_some(token_id),
+        Chain::Stellar => (token_id.len() == 56 && token_id.starts_with('G')).then_some(token_id),
         Chain::Bitcoin
         | Chain::BitcoinCash
         | Chain::Litecoin
@@ -44,7 +45,6 @@ pub fn format_token_id(chain: Chain, token_id: String) -> Option<String> {
         | Chain::Noble
         | Chain::Sei
         | Chain::Near
-        | Chain::Stellar
         | Chain::Polkadot
         | Chain::Cardano => None,
     }
