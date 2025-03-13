@@ -33,6 +33,10 @@ impl From<Pool> for CetusPool {
 
 pub type CetusPoolType = SuiData<DataObject<MoveObject<CetusPoolObject>>>;
 
+pub fn get_pool_object(data: &CetusPoolType) -> Option<CetusPoolObject> {
+    data.data.content.clone().map(|content| content.fields)
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CetusPoolObject {
     pub coin_a: String,
@@ -231,11 +235,11 @@ mod tests {
     #[test]
     fn test_decode_rpc_pool() {
         let data = include_str!("test/sui_usdc_pool.json");
-        let response: JsonRpcResult<CetusPoolType> = serde_json::from_slice(data.as_bytes()).unwrap();
-        let pool = response.take().unwrap().data;
+        let response: JsonRpcResponse<CetusPoolType> = serde_json::from_slice(data.as_bytes()).unwrap();
+        let pool = response.result.data;
         let content = pool.content.unwrap().fields;
 
-        assert_eq!(pool.object_id, "0xb8d7d9e66a60c239e7a60110efcf8de6c705580ed924d0dde141f4a0e2c90105");
+        assert_eq!(pool.object_id.to_hex(), "b8d7d9e66a60c239e7a60110efcf8de6c705580ed924d0dde141f4a0e2c90105");
         assert_eq!(content.liquidity.to_string(), "8070961612060967");
         assert_eq!(content.fee_rate.to_string(), "2500");
         assert_eq!(content.current_sqrt_price.to_string(), "287685790526294295789");
@@ -246,7 +250,7 @@ mod tests {
         let pool = response.unwrap().result.data;
         let content = pool.content.unwrap().fields;
 
-        assert_eq!(pool.object_id, "0x8049d009116269ac04ee14206b7afd8b64b5801279f85401ee4b39779f809134");
+        assert_eq!(pool.object_id.to_hex(), "8049d009116269ac04ee14206b7afd8b64b5801279f85401ee4b39779f809134");
         assert_eq!(content.liquidity.to_string(), "10315028460841");
         assert_eq!(content.fee_rate.to_string(), "10000");
         assert_eq!(content.current_sqrt_price.to_string(), "1883186036311192350");

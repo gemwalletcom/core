@@ -17,6 +17,7 @@ static SUI_REQUEST_ADD_STAKE: &str = "request_add_stake";
 static SUI_REQUEST_WITHDRAW_STAKE: &str = "request_withdraw_stake";
 static SUI_SYSTEM_ADDRESS: u8 = 0x3;
 static SUI_SYSTEM_STATE_OBJECT_ID: u8 = 0x5;
+static SUI_CLOCK_OBJECT_ID: u8 = 0x6;
 
 pub static SUI_COIN_TYPE: &str = "0x2::sui::SUI";
 pub static SUI_COIN_TYPE_FULL: &str = "0x0000000000000000000000000000000000000000000000000000000000000002::sui::SUI";
@@ -131,6 +132,14 @@ pub fn validate_and_hash(encoded: &str) -> Result<TxOutput, Error> {
 pub fn sui_system_state_object() -> ObjectArg {
     ObjectArg::SharedObject {
         id: ObjectID::from_single_byte(SUI_SYSTEM_STATE_OBJECT_ID),
+        initial_shared_version: SequenceNumber::from_u64(1),
+        mutable: true,
+    }
+}
+
+pub fn sui_clock_object() -> ObjectArg {
+    ObjectArg::SharedObject {
+        id: ObjectID::from_single_byte(SUI_CLOCK_OBJECT_ID),
         initial_shared_version: SequenceNumber::from_u64(1),
         mutable: true,
     }

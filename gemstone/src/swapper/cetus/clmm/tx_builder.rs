@@ -1,29 +1,32 @@
 use crate::sui::rpc::{CoinAsset, SuiClient};
 use anyhow::{anyhow, Result};
 use bcs;
+use gem_sui::sui_clock_object;
+use num_bigint::BigInt;
 use std::str::FromStr;
 use sui_types::{
-    base_types::{ObjectDigest, ObjectID, SequenceNumber, SuiAddress},
+    base_types::{ObjectDigest, ObjectID, ObjectRef, SequenceNumber, SuiAddress},
     programmable_transaction_builder::ProgrammableTransactionBuilder,
     transaction::{Argument, ObjectArg, ProgrammableTransaction, TransactionData},
     Identifier, TypeTag,
 };
 
 // Helper function to create ObjectRef from ObjectID
+#[allow(dead_code)]
 fn object_id_to_ref(id: ObjectID) -> (ObjectID, SequenceNumber, ObjectDigest) {
     (id, SequenceNumber::from_u64(0), ObjectDigest::new([0; 32]))
 }
 
 #[derive(Debug, Clone)]
 pub struct SwapParams {
-    pub pool_id: ObjectID,
+    pub pool_ref: ObjectRef,
     pub a2b: bool,
     pub by_amount_in: bool,
-    pub amount: u64,
-    pub amount_limit: u64,
+    pub amount: BigInt,
+    pub amount_limit: BigInt,
     pub coin_type_a: String,
     pub coin_type_b: String,
-    pub swap_partner: Option<ObjectID>,
+    pub swap_partner: Option<ObjectRef>,
 }
 
 #[derive(Debug, Clone)]
@@ -31,6 +34,7 @@ pub struct ClmmPoolConfig {
     pub package_id: ObjectID,
     pub published_at: String,
     pub global_config_id: ObjectID,
+    pub global_config_shared_version: SequenceNumber,
 }
 
 #[derive(Debug, Clone)]
@@ -40,6 +44,7 @@ pub struct IntegrateConfig {
 }
 
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub struct BuildCoinResult {
     pub target_coin: Argument,
     pub remain_coins: Vec<CoinAsset>,
@@ -49,16 +54,15 @@ pub struct BuildCoinResult {
 }
 
 // Constants
-const CLOCK_ADDRESS: &str = "0x6";
 const CLMM_INTEGRATE_POOL_V2_MODULE: &str = "clmm_integrate";
 const SWAP_WITH_PARTNER_A2B: &str = "swap_a2b_with_partner";
 const SWAP_WITH_PARTNER_B2A: &str = "swap_b2a_with_partner";
 const SWAP_A2B: &str = "swap_a2b";
 const SWAP_B2A: &str = "swap_b2a";
 
-pub struct TransactionUtil;
+pub struct TransactionBuilder;
 
-impl TransactionUtil {
+impl TransactionBuilder {
     pub fn call_mint_zero_value_coin(tx_builder: &mut ProgrammableTransactionBuilder, coin_type: &str) -> Result<Argument> {
         let zero_coin_arg = tx_builder.pure(0u64)?;
 
@@ -101,7 +105,7 @@ impl TransactionUtil {
     pub fn build_coin_for_amount(
         tx_builder: &mut ProgrammableTransactionBuilder,
         all_coins: &[CoinAsset],
-        amount: u64,
+        amount: &BigInt,
         coin_type: &str,
         build_vector: bool,
         fix_amount: bool,
@@ -109,12 +113,12 @@ impl TransactionUtil {
         let coin_assets = CoinAssist::get_coin_assets(coin_type, all_coins);
 
         // Mint zero coin if amount is 0
-        if amount == 0 {
+        if amount == &BigInt::from(0u64) {
             return Self::build_zero_value_coin(all_coins, tx_builder, coin_type, build_vector);
         }
 
-        let amount_total = CoinAssist::calculate_total_balance(&coin_assets);
-        if amount_total < amount {
+        let amount_total = BigInt::from(CoinAssist::calculate_total_balance(&coin_assets));
+        if amount_total < *amount {
             return Err(anyhow!(
                 "The amount({}) is Insufficient balance for {}, expect {}",
                 amount_total,
@@ -130,7 +134,7 @@ impl TransactionUtil {
         tx_builder: &mut ProgrammableTransactionBuilder,
         all_coins: &[CoinAsset],
         coin_assets: &[CoinAsset],
-        amount: u64,
+        amount: &BigInt,
         coin_type: &str,
         build_vector: bool,
         fix_amount: bool,
@@ -146,7 +150,7 @@ impl TransactionUtil {
         tx_builder: &mut ProgrammableTransactionBuilder,
         all_coins: &[CoinAsset],
         coin_assets: &[CoinAsset],
-        amount: u64,
+        amount: &BigInt,
         coin_type: &str,
         fix_amount: bool,
     ) -> Result<BuildCoinResult> {
@@ -154,13 +158,13 @@ impl TransactionUtil {
         let mut sorted_coins = coin_assets.to_vec();
         sorted_coins.sort_by(|a, b| a.balance.cmp(&b.balance));
 
-        let mut remaining_amount = amount;
+        let mut remaining_amount = amount.clone();
         let mut used_coins = Vec::new();
         let mut coin_args = Vec::new();
 
         // Try to find exact match first
         for coin in &sorted_coins {
-            if coin.balance == amount {
+            if BigInt::from(coin.balance) == *amount {
                 let obj_arg = ObjectArg::ImmOrOwnedObject(coin.to_ref());
                 let coin_arg = tx_builder.obj(obj_arg)?;
                 // We can't use make_obj_vec with Argument, so we'll just use the coin_arg directly
@@ -181,7 +185,7 @@ impl TransactionUtil {
 
         // Otherwise, collect coins until we reach the amount
         for coin in &sorted_coins {
-            if remaining_amount == 0 {
+            if remaining_amount == BigInt::from(0u64) {
                 break;
             }
 
@@ -190,11 +194,14 @@ impl TransactionUtil {
             let coin_arg = tx_builder.obj(obj_arg)?;
             coin_args.push(coin_arg);
 
-            if coin.balance <= remaining_amount {
-                remaining_amount -= coin.balance;
+            let coin_balance = BigInt::from(coin.balance);
+            if coin_balance <= remaining_amount {
+                remaining_amount -= coin_balance;
             } else {
                 // Need to split this coin
-                let split_amount = tx_builder.pure(coin.balance - remaining_amount)?;
+                // Convert BigInt to u64 for the split operation
+                let split_amount_u64 = u64::from_str(&(coin.balance - u64::from_str(&remaining_amount.to_string()).unwrap_or(0)).to_string()).unwrap_or(0);
+                let split_amount = tx_builder.pure(split_amount_u64)?;
                 let split_coin = tx_builder.programmable_move_call(
                     ObjectID::from_str("0x2").unwrap(),
                     Identifier::new("coin").unwrap(),
@@ -206,11 +213,11 @@ impl TransactionUtil {
                 // Replace the last coin with the split result
                 coin_args.pop();
                 coin_args.push(split_coin);
-                remaining_amount = 0;
+                remaining_amount = BigInt::from(0u64);
             }
         }
 
-        if remaining_amount > 0 {
+        if remaining_amount > BigInt::from(0u64) {
             return Err(anyhow!("Insufficient balance: needed {} more of {}", remaining_amount, coin_type));
         }
 
@@ -250,7 +257,7 @@ impl TransactionUtil {
     fn build_one_coin(
         tx_builder: &mut ProgrammableTransactionBuilder,
         coin_assets: &[CoinAsset],
-        amount: u64,
+        amount: &BigInt,
         coin_type: &str,
         fix_amount: bool,
     ) -> Result<BuildCoinResult> {
@@ -260,7 +267,7 @@ impl TransactionUtil {
 
         // Try to find exact match first
         for coin in &sorted_coins {
-            if coin.balance == amount {
+            if BigInt::from(coin.balance) == *amount {
                 let obj_arg = ObjectArg::ImmOrOwnedObject(coin.to_ref());
                 let coin_arg = tx_builder.obj(obj_arg)?;
 
@@ -279,13 +286,15 @@ impl TransactionUtil {
 
         // Find a coin with sufficient balance
         for coin in &sorted_coins {
-            if coin.balance > amount {
+            if BigInt::from(coin.balance) > *amount {
                 let obj_arg = ObjectArg::ImmOrOwnedObject(coin.to_ref());
                 let coin_arg = tx_builder.obj(obj_arg)?;
 
                 if fix_amount {
                     // Split the coin
-                    let split_amount = tx_builder.pure(coin.balance - amount)?;
+                    // Convert BigInt to u64 for split operation
+                    let amount_u64 = u64::from_str(&amount.to_string()).unwrap_or(0);
+                    let split_amount = tx_builder.pure(coin.balance - amount_u64)?;
                     let split_result = tx_builder.programmable_move_call(
                         ObjectID::from_str("0x2").unwrap(),
                         Identifier::new("coin").unwrap(),
@@ -320,12 +329,12 @@ impl TransactionUtil {
         }
 
         // If no single coin is sufficient, we need to merge coins
-        let mut remaining_amount = amount;
+        let mut remaining_amount = amount.clone();
         let mut used_coins = Vec::new();
         let mut coin_args = Vec::new();
 
         for coin in &sorted_coins {
-            if remaining_amount == 0 {
+            if remaining_amount == BigInt::from(0u64) {
                 break;
             }
 
@@ -334,11 +343,14 @@ impl TransactionUtil {
             let coin_arg = tx_builder.obj(obj_arg)?;
             coin_args.push(coin_arg);
 
-            if coin.balance <= remaining_amount {
-                remaining_amount -= coin.balance;
+            let coin_balance = BigInt::from(coin.balance);
+            if coin_balance <= remaining_amount {
+                remaining_amount -= coin_balance;
             } else {
                 // Need to split this coin
-                let split_amount = tx_builder.pure(coin.balance - remaining_amount)?;
+                // Convert BigInt to u64 for split operation
+                let split_amount_u64 = u64::from_str(&(coin.balance - u64::from_str(&remaining_amount.to_string()).unwrap_or(0)).to_string()).unwrap_or(0);
+                let split_amount = tx_builder.pure(split_amount_u64)?;
                 let split_coin = tx_builder.programmable_move_call(
                     ObjectID::from_str("0x2").unwrap(),
                     Identifier::new("coin").unwrap(),
@@ -350,11 +362,11 @@ impl TransactionUtil {
                 // Replace the last coin with the split result
                 coin_args.pop();
                 coin_args.push(split_coin);
-                remaining_amount = 0;
+                remaining_amount = BigInt::from(0u64);
             }
         }
 
-        if remaining_amount > 0 {
+        if remaining_amount > BigInt::from(0u64) {
             return Err(anyhow!("Insufficient balance: needed {} more of {}", remaining_amount, coin_type));
         }
 
@@ -417,16 +429,20 @@ impl TransactionUtil {
         let mut args = Vec::new();
 
         // Add global config
-        let global_obj_arg = ObjectArg::ImmOrOwnedObject(object_id_to_ref(clmm_pool.global_config_id));
+        let global_obj_arg = ObjectArg::SharedObject {
+            id: clmm_pool.global_config_id,
+            initial_shared_version: clmm_pool.global_config_shared_version,
+            mutable: true,
+        };
         args.push(tx_builder.obj(global_obj_arg)?);
 
         // Add pool id
-        let pool_obj_arg = ObjectArg::ImmOrOwnedObject(object_id_to_ref(params.pool_id));
+        let pool_obj_arg = ObjectArg::ImmOrOwnedObject(params.pool_ref);
         args.push(tx_builder.obj(pool_obj_arg)?);
 
         // Add swap partner if needed
         if has_swap_partner {
-            let partner_obj_arg = ObjectArg::ImmOrOwnedObject(object_id_to_ref(params.swap_partner.unwrap()));
+            let partner_obj_arg = ObjectArg::ImmOrOwnedObject(params.swap_partner.unwrap());
             args.push(tx_builder.obj(partner_obj_arg)?);
         }
 
@@ -447,14 +463,13 @@ impl TransactionUtil {
         args.push(tx_builder.pure(u128::from_str(&sqrt_price_limit).unwrap_or(0))?);
 
         // Add clock
-        let clock_obj_arg = ObjectArg::ImmOrOwnedObject(object_id_to_ref(ObjectID::from_str(CLOCK_ADDRESS).unwrap()));
-        args.push(tx_builder.obj(clock_obj_arg)?);
+        args.push(tx_builder.obj(sui_clock_object())?);
 
         // Make the move call
         tx_builder.programmable_move_call(
-            ObjectID::from_str(&integrate.published_at).unwrap(),
-            Identifier::new(CLMM_INTEGRATE_POOL_V2_MODULE).unwrap(),
-            Identifier::new(function_name).unwrap(),
+            integrate.package_id,
+            Identifier::from_str(CLMM_INTEGRATE_POOL_V2_MODULE).unwrap(),
+            Identifier::from_str(function_name).unwrap(),
             type_arguments,
             args,
         );
@@ -463,7 +478,7 @@ impl TransactionUtil {
     }
 
     pub fn build_swap_transaction(
-        client: &SuiClient,
+        _client: &SuiClient,
         clmm_pool: &ClmmPoolConfig,
         integrate: &IntegrateConfig,
         params: &SwapParams,
@@ -471,35 +486,39 @@ impl TransactionUtil {
     ) -> Result<ProgrammableTransactionBuilder> {
         let mut tx_builder = ProgrammableTransactionBuilder::new();
 
+        let amount_a = if params.a2b {
+            if params.by_amount_in {
+                params.amount.clone()
+            } else {
+                params.amount_limit.clone()
+            }
+        } else {
+            BigInt::from(0u64)
+        };
+
         let primary_coin_input_a = Self::build_coin_for_amount(
             &mut tx_builder,
             all_coin_asset,
-            if params.a2b {
-                if params.by_amount_in {
-                    params.amount
-                } else {
-                    params.amount_limit
-                }
-            } else {
-                0
-            },
+            &amount_a,
             &params.coin_type_a,
             false,
             true,
         )?;
 
+        let amount_b = if !params.a2b {
+            if params.by_amount_in {
+                params.amount.clone()
+            } else {
+                params.amount_limit.clone()
+            }
+        } else {
+            BigInt::from(0u64)
+        };
+
         let primary_coin_input_b = Self::build_coin_for_amount(
             &mut tx_builder,
             all_coin_asset,
-            if !params.a2b {
-                if params.by_amount_in {
-                    params.amount
-                } else {
-                    params.amount_limit
-                }
-            } else {
-                0
-            },
+            &amount_b,
             &params.coin_type_b,
             false,
             true,
@@ -510,6 +529,7 @@ impl TransactionUtil {
         Ok(tx_builder)
     }
 
+    #[allow(dead_code)]
     pub async fn adjust_transaction_for_gas(
         client: &SuiClient,
         all_coins: &[CoinAsset],
@@ -556,6 +576,7 @@ impl TransactionUtil {
         Ok((amount, None))
     }
 
+    #[allow(dead_code)]
     async fn serialize_and_estimate_gas(client: &SuiClient, sender_address: &str, tx: ProgrammableTransaction) -> Result<u64> {
         // Create a dummy transaction data with the builder
         // We need to use a dummy gas budget and gas price for the serialization
@@ -593,6 +614,7 @@ impl CoinAssist {
         coin_assets.iter().map(|asset| asset.balance).sum()
     }
 
+    #[allow(dead_code)]
     pub fn select_coin_asset_greater_than_or_equal(all_coins: &[CoinAsset], amount: u64, exclude_ids: Option<Vec<ObjectID>>) -> Vec<CoinAsset> {
         let mut result = Vec::new();
         let mut total = 0u64;

@@ -1,6 +1,9 @@
 use serde::{Deserialize, Deserializer, Serialize};
-use serde_json::Value;
 use std::{fmt::Display, ops::Not};
+use sui_types::{
+    base_types::{ObjectID, ObjectRef, SequenceNumber},
+    digests::ObjectDigest,
+};
 
 pub enum SuiRpc {
     GetObject(String, Option<ObjectDataOptions>),
@@ -60,11 +63,24 @@ pub struct SuiData<T> {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DataObject<T> {
-    pub object_id: String,
-    pub version: String,
-    pub digest: String,
-    pub owner: Option<Value>,
+    pub object_id: ObjectID,
+    #[serde(deserialize_with = "deserialize_u64_from_str", serialize_with = "serialize_u64")]
+    pub version: u64,
+    pub digest: ObjectDigest,
+    pub owner: Option<Owner>,
     pub content: Option<T>,
+}
+
+impl<T> DataObject<T> {
+    pub fn to_ref(&self) -> ObjectRef {
+        (self.object_id, SequenceNumber::from_u64(self.version), self.digest)
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum Owner {
+    AddressOwner(String),
+    Shared { initial_shared_version: u64 },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

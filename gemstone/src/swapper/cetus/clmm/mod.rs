@@ -5,10 +5,9 @@ pub mod error;
 pub mod math;
 pub mod swap;
 pub mod tick;
-#[allow(unused)]
-pub mod tx;
+pub mod tx_builder;
 pub use swap::compute_swap;
-pub use tx::TransactionUtil;
+pub use tx_builder::TransactionBuilder;
 
 #[derive(Debug, Clone, Default)]
 pub struct ClmmPoolData {
