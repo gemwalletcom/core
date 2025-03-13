@@ -14,6 +14,7 @@ pub struct Tag {
 pub struct AssetTag {
     pub asset_id: String,
     pub tag_id: String,
+    pub order: Option<i32>,
 }
 
 impl Tag {

@@ -47,6 +47,7 @@ diesel::table! {
         asset_id -> Varchar,
         #[max_length = 64]
         tag_id -> Varchar,
+        order -> Nullable<Int4>,
         created_at -> Timestamp,
     }
 }

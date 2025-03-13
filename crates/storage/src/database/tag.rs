@@ -22,7 +22,11 @@ impl DatabaseClient {
 
     pub fn get_assets_tags_for_tag(&mut self, _tag_id: &str) -> Result<Vec<AssetTag>, diesel::result::Error> {
         use crate::schema::assets_tags::dsl::*;
-        assets_tags.filter(tag_id.eq(_tag_id)).select(AssetTag::as_select()).load(&mut self.connection)
+        assets_tags
+            .filter(tag_id.eq(_tag_id))
+            .order(order.asc())
+            .select(AssetTag::as_select())
+            .load(&mut self.connection)
     }
 
     pub fn delete_assets_tags(&mut self, _tag_id: &str) -> Result<usize, diesel::result::Error> {
@@ -34,9 +38,11 @@ impl DatabaseClient {
         use crate::schema::assets_tags::dsl::*;
         let values = asset_ids
             .into_iter()
-            .map(|x| AssetTag {
+            .enumerate()
+            .map(|(index, x)| AssetTag {
                 asset_id: x,
                 tag_id: _tag_id.to_string(),
+                order: Some(index as i32),
             })
             .collect::<Vec<_>>();
 
