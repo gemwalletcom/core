@@ -51,9 +51,12 @@ pub struct Prices {
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct Price {
-    pub network_fee: String,
-    pub fee_amount: String,
-    pub fiat_amount: String,
+    #[serde(deserialize_with = "primitives::deserialize_f64_from_str")]
+    pub network_fee: f64,
+    #[serde(deserialize_with = "primitives::deserialize_f64_from_str")]
+    pub fee_amount: f64,
+    #[serde(deserialize_with = "primitives::deserialize_f64_from_str")]
+    pub fiat_amount: f64,
 }
 
 #[derive(Debug, Deserialize, Clone)]

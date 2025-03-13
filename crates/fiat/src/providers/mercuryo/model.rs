@@ -7,9 +7,11 @@ pub struct Response<T> {
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct Quote {
-    pub amount: String,
+    #[serde(deserialize_with = "primitives::deserialize_f64_from_str")]
+    pub amount: f64,
     pub currency: String,
-    pub fiat_amount: String,
+    #[serde(deserialize_with = "primitives::deserialize_f64_from_str")]
+    pub fiat_amount: f64,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -58,7 +60,8 @@ pub struct Webhook {
 pub struct WebhookData {
     pub id: String,
     pub status: String,
-    pub fiat_amount: String,
+    #[serde(deserialize_with = "primitives::deserialize_f64_from_str")]
+    pub fiat_amount: f64,
     pub fee: Option<String>,
     pub partner_fee: Option<String>,
     pub fiat_currency: String,
