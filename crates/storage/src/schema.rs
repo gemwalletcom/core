@@ -275,6 +275,7 @@ diesel::table! {
         is_enabled -> Bool,
         updated_at -> Timestamp,
         created_at -> Timestamp,
+        timeout_latest_block -> Int4,
     }
 }
 

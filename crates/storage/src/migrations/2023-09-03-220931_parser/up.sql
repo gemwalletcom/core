@@ -4,6 +4,7 @@ CREATE TABLE parser_state (
     latest_block INTEGER NOT NULL default 0,
     await_blocks INTEGER NOT NULL default 0,
     timeout_between_blocks INTEGER NOT NULL default 0,
+    timeout_latest_block INTEGER NOT NULL default 0,
     parallel_blocks INTEGER NOT NULL default 1,
     is_enabled boolean NOT NULL default true,
     updated_at timestamp NOT NULL default current_timestamp,

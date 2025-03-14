@@ -38,9 +38,10 @@ impl Parser {
     pub async fn start(&mut self) -> Result<(), Box<dyn Error + Send + Sync>> {
         loop {
             let state = self.database.get_parser_state(self.chain)?;
+            let timeout = cmp::max(state.timeout_latest_block as u64, self.options.timeout);
 
             if !state.is_enabled {
-                tokio::time::sleep(Duration::from_millis(self.options.timeout)).await;
+                tokio::time::sleep(Duration::from_millis(timeout)).await;
                 continue;
             }
             let next_current_block = state.current_block + state.await_blocks;
@@ -61,14 +62,14 @@ impl Parser {
                             state.await_blocks
                         );
 
-                        tokio::time::sleep(Duration::from_millis(self.options.timeout)).await;
+                        tokio::time::sleep(Duration::from_millis(timeout)).await;
                         continue;
                     }
                 }
                 Err(err) => {
                     println!("parser latest_block chain: {}, error: {:?}", self.chain.as_ref(), err);
 
-                    tokio::time::sleep(Duration::from_millis(self.options.timeout * 5)).await;
+                    tokio::time::sleep(Duration::from_millis(timeout * 5)).await;
                     continue;
                 }
             }
@@ -102,7 +103,7 @@ impl Parser {
                     Err(err) => {
                         println!("parser parse_block chain: blocks: {}, {:?}, error: {:?}", self.chain.as_ref(), next_blocks, err);
 
-                        tokio::time::sleep(Duration::from_millis(self.options.timeout)).await;
+                        tokio::time::sleep(Duration::from_millis(timeout)).await;
                         break;
                     }
                 }
