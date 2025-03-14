@@ -3511,6 +3511,7 @@ dependencies = [
  "reqwest-middleware",
  "serde",
  "serde_json",
+ "serde_serializers",
  "sha2 0.10.8",
  "tokio",
 ]
@@ -6212,8 +6213,6 @@ version = "1.0.0"
 dependencies = [
  "anyhow",
  "chrono",
- "num-bigint 0.4.6",
- "num-traits",
  "serde",
  "serde_json",
  "strum 0.27.1",
@@ -7784,6 +7783,7 @@ name = "serde_serializers"
 version = "1.0.0"
 dependencies = [
  "num-bigint 0.4.6",
+ "num-traits",
  "serde",
  "serde_json",
 ]

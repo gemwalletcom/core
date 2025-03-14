@@ -8,7 +8,7 @@ where
     serializer.serialize_str(&value.to_string())
 }
 
-pub fn deserialize_bigint<'de, D>(deserializer: D) -> Result<BigInt, D::Error>
+pub fn deserialize_bigint_from_str<'de, D>(deserializer: D) -> Result<BigInt, D::Error>
 where
     D: de::Deserializer<'de>,
 {
@@ -25,7 +25,7 @@ mod tests {
 
     #[derive(Serialize, Deserialize)]
     struct TestStruct {
-        #[serde(serialize_with = "serialize_bigint", deserialize_with = "deserialize_bigint")]
+        #[serde(serialize_with = "serialize_bigint", deserialize_with = "deserialize_bigint_from_str")]
         value: BigInt,
     }
 
