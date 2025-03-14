@@ -1,4 +1,5 @@
 use fiat::{model::FiatProviderAsset, FiatProvider};
+use primitives::Diff;
 use storage::database::DatabaseClient;
 
 pub struct FiatAssetsUpdater {
@@ -10,6 +11,23 @@ impl FiatAssetsUpdater {
     pub fn new(database_url: &str, providers: Vec<Box<dyn FiatProvider + Send + Sync>>) -> Self {
         let database: DatabaseClient = DatabaseClient::new(database_url);
         Self { database, providers }
+    }
+
+    pub async fn update_buyable_sellable_assets(&mut self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
+        let enabled_asset_ids = self.database.get_fiat_assets_is_enabled()?;
+
+        // buyable
+        let buyable_result = Diff::compare(self.database.get_assets_is_buyable()?, enabled_asset_ids.clone());
+
+        let _ = self.database.set_assets_is_buyable(buyable_result.missing.clone(), true);
+        let _ = self.database.set_assets_is_buyable(buyable_result.different.clone(), false);
+
+        // sellable
+        // let sellable_result = Diff::compare(self.database.get_assets_is_sellable()?, enabled_asset_ids.clone());
+        // let _ = self.database.set_assets_is_sellable(sellable_result.missing.clone(), true);
+        // let _ = self.database.set_assets_is_sellable(sellable_result.different.clone(), false);
+
+        Ok(1)
     }
 
     pub async fn update_fiat_assets(&mut self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {

@@ -31,8 +31,8 @@ pub struct FiatAsset {
     pub symbol: String,
     pub network: Option<String>,
     pub token_id: Option<String>,
-    pub enabled: bool, // managed by db
-    pub enabled_by_provider: bool,
+    pub is_enabled: bool, // managed by db
+    pub is_enabled_by_provider: bool,
 }
 
 impl FiatAsset {
@@ -46,13 +46,13 @@ impl FiatAsset {
             symbol: asset.symbol,
             network: asset.network,
             token_id: asset.token_id,
-            enabled: asset.enabled,
-            enabled_by_provider: asset.enabled,
+            is_enabled: asset.enabled,
+            is_enabled_by_provider: asset.enabled,
         }
     }
 
     pub fn is_enabled(&self) -> bool {
-        self.enabled && self.enabled_by_provider
+        self.is_enabled && self.is_enabled_by_provider
     }
 }
 

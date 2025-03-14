@@ -1,4 +1,6 @@
-pub mod asset;
+pub mod assets;
+pub mod assets_links;
+pub mod assets_types;
 pub mod device;
 pub mod fiat;
 pub mod link;
@@ -262,14 +264,6 @@ impl DatabaseClient {
     pub fn get_swap_assets_version(&mut self) -> Result<i32, diesel::result::Error> {
         let assets = self.get_swap_assets()?;
         Ok(assets.len() as i32)
-    }
-
-    pub fn set_swap_enabled(&mut self, asset_ids: Vec<String>, value: bool) -> Result<usize, diesel::result::Error> {
-        use crate::schema::assets::dsl::*;
-        diesel::update(assets)
-            .filter(id.eq_any(&asset_ids))
-            .set(is_swappable.eq(value))
-            .execute(&mut self.connection)
     }
 
     pub fn add_chains(&mut self, _chains: Vec<String>) -> Result<usize, diesel::result::Error> {

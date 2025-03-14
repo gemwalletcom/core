@@ -111,8 +111,8 @@ diesel::table! {
         network -> Nullable<Varchar>,
         #[max_length = 128]
         token_id -> Nullable<Varchar>,
-        enabled -> Bool,
-        enabled_by_provider -> Bool,
+        is_enabled -> Bool,
+        is_enabled_by_provider -> Bool,
         updated_at -> Timestamp,
         created_at -> Timestamp,
     }

@@ -32,7 +32,7 @@ impl FiatClient {
     }
 
     pub async fn get_on_ramp_assets(&mut self) -> Result<FiatAssets, Box<dyn Error + Send + Sync>> {
-        let assets = self.database.get_fiat_assets_is_buyable()?;
+        let assets = self.database.get_assets_is_buyable()?;
         Ok(FiatAssets {
             version: assets.clone().len() as u32,
             asset_ids: assets,
@@ -40,7 +40,7 @@ impl FiatClient {
     }
 
     pub async fn get_off_ramp_assets(&mut self) -> Result<FiatAssets, Box<dyn Error + Send + Sync>> {
-        let assets = self.database.get_fiat_assets_is_sellable()?;
+        let assets = self.database.get_assets_is_sellable()?;
         Ok(FiatAssets {
             version: assets.clone().len() as u32,
             asset_ids: assets,

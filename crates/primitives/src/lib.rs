@@ -103,3 +103,5 @@ pub mod link_type;
 pub use self::link_type::LinkType;
 pub mod markets;
 pub use self::markets::{MarketDominance, Markets, MarketsAssets};
+pub mod diff;
+pub use self::diff::Diff;
