@@ -1,6 +1,6 @@
 use crate::sui::rpc::CoinAsset;
 use anyhow::{anyhow, Result};
-use gem_sui::{sui_clock_object, SUI_FRAMEWORK_PACKAGE_ID};
+use gem_sui::{sui_clock_object, SUI_COIN_TYPE_FULL, SUI_FRAMEWORK_PACKAGE_ID};
 use num_bigint::BigInt;
 use num_traits::ToPrimitive;
 use std::str::FromStr;
@@ -11,6 +11,17 @@ use sui_types::{
     transaction::{Argument, Command, ObjectArg},
     Identifier, TypeTag,
 };
+
+// Constants
+const SWAP_WITH_PARTNER_A2B: &str = "swap_a2b_with_partner";
+const SWAP_WITH_PARTNER_B2A: &str = "swap_b2a_with_partner";
+const SWAP_A2B: &str = "swap_a2b";
+const SWAP_B2A: &str = "swap_b2a";
+const MODULE_COIN: &str = "coin";
+const MODULE_POOL_SCRIPT_V2: &str = "pool_script_v2";
+const FUNCTION_ZERO: &str = "zero";
+const MIN_PRICE_SQRT_LIMIT: u128 = 4295048016_u128;
+const MAX_PRICE_SQRT_LIMIT: u128 = 79226673515401279992447579055_u128;
 
 #[derive(Debug, Clone)]
 pub struct SwapParams {
@@ -25,17 +36,16 @@ pub struct SwapParams {
 }
 
 #[derive(Debug, Clone)]
-pub struct ClmmPoolConfig {
-    pub package_id: ObjectID,
-    pub published_at: String,
-    pub global_config_id: ObjectID,
-    pub global_config_shared_version: SequenceNumber,
+pub struct CetusConfig {
+    pub global_config: SharedObjectConfig,
+    pub clmm_pool: ObjectID,
+    pub router: ObjectID,
 }
 
 #[derive(Debug, Clone)]
-pub struct IntegrateConfig {
-    pub package_id: ObjectID,
-    pub published_at: String,
+pub struct SharedObjectConfig {
+    pub id: ObjectID,
+    pub shared_version: SequenceNumber,
 }
 
 #[derive(Debug, Clone)]
@@ -48,49 +58,18 @@ pub struct BuildCoinResult {
     pub original_splited_coin: Option<ObjectID>,
 }
 
-// Constants
-const CLMM_INTEGRATE_POOL_V2_MODULE: &str = "clmm_integrate";
-const SWAP_WITH_PARTNER_A2B: &str = "swap_a2b_with_partner";
-const SWAP_WITH_PARTNER_B2A: &str = "swap_b2a_with_partner";
-const SWAP_A2B: &str = "swap_a2b";
-const SWAP_B2A: &str = "swap_b2a";
-const MODULE_COIN: &str = "coin";
-const FUNCTION_ZERO: &str = "zero";
-const FUNCTION_SPLIT: &str = "split";
-const FUNCTION_JOIN: &str = "join";
-
 pub struct TransactionBuilder;
 
 impl TransactionBuilder {
-    pub fn call_mint_zero_value_coin(tx_builder: &mut ProgrammableTransactionBuilder, coin_type: &str) -> Result<Argument> {
-        let zero_coin_arg = tx_builder.pure(0u64)?;
-
-        // Create the move call command
+    pub fn build_zero_value_coin(all_coins: &[CoinAsset], tx_builder: &mut ProgrammableTransactionBuilder, coin_type: &str) -> Result<BuildCoinResult> {
         let move_call = Command::move_call(
             ObjectID::from_single_byte(SUI_FRAMEWORK_PACKAGE_ID),
             Identifier::from_str(MODULE_COIN)?,
             Identifier::from_str(FUNCTION_ZERO)?,
             vec![TypeTag::from_str(coin_type)?],
-            vec![zero_coin_arg],
+            vec![],
         );
-
-        Ok(tx_builder.command(move_call))
-    }
-
-    pub fn build_zero_value_coin(
-        all_coins: &[CoinAsset],
-        tx_builder: &mut ProgrammableTransactionBuilder,
-        coin_type: &str,
-        build_vector: bool,
-    ) -> Result<BuildCoinResult> {
-        let zero_coin = Self::call_mint_zero_value_coin(tx_builder, coin_type)?;
-
-        let target_coin = if build_vector {
-            // We can't use make_obj_vec directly with Argument, so we'll just use the zero_coin directly
-            zero_coin
-        } else {
-            zero_coin
-        };
+        let target_coin = tx_builder.command(move_call);
 
         Ok(BuildCoinResult {
             target_coin,
@@ -106,13 +85,12 @@ impl TransactionBuilder {
         all_coins: &[CoinAsset],
         amount: &BigInt,
         coin_type: &str,
-        build_vector: bool,
         fix_amount: bool,
     ) -> Result<BuildCoinResult> {
         let coin_assets = CoinAssist::get_coin_assets(coin_type, all_coins);
         // Mint zero coin if amount is 0
         if amount == &BigInt::from(0u64) {
-            return Self::build_zero_value_coin(all_coins, tx_builder, coin_type, build_vector);
+            return Self::build_zero_value_coin(all_coins, tx_builder, coin_type);
         }
 
         let amount_total = CoinAssist::calculate_total_balance(&coin_assets);
@@ -125,276 +103,52 @@ impl TransactionBuilder {
             ));
         }
 
-        Self::build_coin(tx_builder, all_coins, &coin_assets, amount, coin_type, build_vector, fix_amount)
-    }
-
-    fn build_coin(
-        tx_builder: &mut ProgrammableTransactionBuilder,
-        all_coins: &[CoinAsset],
-        coin_assets: &[CoinAsset],
-        amount: &BigInt,
-        coin_type: &str,
-        build_vector: bool,
-        fix_amount: bool,
-    ) -> Result<BuildCoinResult> {
-        if build_vector {
-            Self::build_vector_coin(tx_builder, all_coins, coin_assets, amount, coin_type, fix_amount)
-        } else {
-            Self::build_one_coin(tx_builder, coin_assets, amount, coin_type, fix_amount)
-        }
-    }
-
-    // Helper function to split a coin
-    fn split_coin(tx_builder: &mut ProgrammableTransactionBuilder, coin_arg: Argument, split_amount: BigInt, coin_type: &str) -> Result<Argument> {
-        let split_u64 = split_amount.to_u64().ok_or(anyhow!("Failed to convert BigInt to u64"))?;
-        let split_amount_arg = tx_builder.pure(split_u64)?;
-        Ok(tx_builder.programmable_move_call(
-            ObjectID::from_single_byte(SUI_FRAMEWORK_PACKAGE_ID),
-            Identifier::from_str(MODULE_COIN)?,
-            Identifier::from_str(FUNCTION_SPLIT)?,
-            vec![TypeTag::from_str(coin_type)?],
-            vec![coin_arg, split_amount_arg],
-        ))
-    }
-
-    // Helper function to join coins
-    fn join_coins(tx_builder: &mut ProgrammableTransactionBuilder, coin_a: Argument, coin_b: Argument, coin_type: &str) -> Result<Argument> {
-        Ok(tx_builder.programmable_move_call(
-            ObjectID::from_single_byte(SUI_FRAMEWORK_PACKAGE_ID),
-            Identifier::from_str(MODULE_COIN)?,
-            Identifier::from_str(FUNCTION_JOIN)?,
-            vec![TypeTag::from_str(coin_type)?],
-            vec![coin_a, coin_b],
-        ))
-    }
-
-    // Helper function to find exact coin match
-    fn find_exact_coin_match(
-        tx_builder: &mut ProgrammableTransactionBuilder,
-        all_coins: &[CoinAsset],
-        sorted_coins: &[CoinAsset],
-        amount: &BigInt,
-    ) -> Result<Option<BuildCoinResult>> {
-        for coin in sorted_coins {
-            if coin.balance == *amount {
-                let obj_arg = ObjectArg::ImmOrOwnedObject(coin.to_ref());
-                let coin_arg = tx_builder.obj(obj_arg)?;
-
-                let mut remain_coins = all_coins.to_vec();
-                remain_coins.retain(|c| c.coin_object_id != coin.coin_object_id);
-
-                return Ok(Some(BuildCoinResult {
-                    target_coin: coin_arg,
-                    remain_coins,
-                    is_mint_zero_coin: false,
-                    target_coin_amount: amount.to_string(),
-                    original_splited_coin: None,
-                }));
-            }
-        }
-        Ok(None)
-    }
-
-    fn build_vector_coin(
-        tx_builder: &mut ProgrammableTransactionBuilder,
-        all_coins: &[CoinAsset],
-        coin_assets: &[CoinAsset],
-        amount: &BigInt,
-        coin_type: &str,
-        fix_amount: bool,
-    ) -> Result<BuildCoinResult> {
-        // Sort coins by balance (ascending)
-        let mut sorted_coins = coin_assets.to_vec();
-        sorted_coins.sort_by(|a, b| a.balance.cmp(&b.balance));
-
-        // Try to find exact match first
-        if let Some(result) = Self::find_exact_coin_match(tx_builder, all_coins, &sorted_coins, amount)? {
-            return Ok(result);
-        }
-
-        let mut remaining_amount = amount.clone();
-        let mut used_coins = Vec::new();
-        let mut coin_args = Vec::new();
-
-        // Otherwise, collect coins until we reach the amount
-        for coin in &sorted_coins {
-            if remaining_amount == BigInt::from(0u64) {
-                break;
-            }
-
-            used_coins.push(coin.coin_object_id);
-            let obj_arg = ObjectArg::ImmOrOwnedObject(coin.to_ref());
-            let coin_arg = tx_builder.obj(obj_arg)?;
-            coin_args.push(coin_arg);
-
-            let coin_balance = coin.balance.clone();
-            if coin_balance <= remaining_amount {
-                remaining_amount -= coin_balance;
-            } else {
-                // Need to split this coin
-                let split_amount = &coin.balance - &remaining_amount;
-                let split_coin = Self::split_coin(tx_builder, coin_arg, split_amount, coin_type)?;
-
-                // Replace the last coin with the split result
-                coin_args.pop();
-                coin_args.push(split_coin);
-                remaining_amount = BigInt::from(0u64);
-            }
-        }
-
-        if remaining_amount > BigInt::from(0u64) {
-            return Err(anyhow!("Insufficient balance: needed {} more of {}", remaining_amount, coin_type));
-        }
-
-        // If we need to merge coins
-        let merged_coin = if coin_args.len() > 1 && fix_amount {
-            let first_coin = coin_args[0];
-            // We can't use make_obj_vec with Argument, so we'll handle this differently
-            // For now, just use the first coin
-            let rest_coins = if coin_args.len() > 1 { coin_args[1] } else { first_coin };
-
-            Self::join_coins(tx_builder, first_coin, rest_coins, coin_type)?
-        } else if coin_args.len() == 1 {
-            coin_args[0]
-        } else {
-            // We can't use make_obj_vec with Argument, so we'll just use the first coin if available
-            coin_args[0]
-        };
-
-        let mut remain_coins = all_coins.to_vec();
-        remain_coins.retain(|c| !used_coins.contains(&c.coin_object_id));
-
-        Ok(BuildCoinResult {
-            target_coin: merged_coin,
-            remain_coins,
-            is_mint_zero_coin: false,
-            target_coin_amount: amount.to_string(),
-            original_splited_coin: None,
-        })
+        Self::build_one_coin(tx_builder, &coin_assets, amount, coin_type, fix_amount)
     }
 
     fn build_one_coin(
-        tx_builder: &mut ProgrammableTransactionBuilder,
+        ptb: &mut ProgrammableTransactionBuilder,
         coin_assets: &[CoinAsset],
         amount: &BigInt,
         coin_type: &str,
-        fix_amount: bool,
+        _fix_amount: bool,
     ) -> Result<BuildCoinResult> {
-        // Sort coins by balance (ascending)
-        let mut sorted_coins = coin_assets.to_vec();
-        sorted_coins.sort_by(|a, b| a.balance.cmp(&b.balance));
-
-        // Try to find exact match first
-        if let Some(result) = Self::find_exact_coin_match(tx_builder, coin_assets, &sorted_coins, amount)? {
-            return Ok(result);
-        }
-
-        // Find a coin with sufficient balance
-        for coin in &sorted_coins {
-            if coin.balance > *amount {
-                let obj_arg = ObjectArg::ImmOrOwnedObject(coin.to_ref());
-                let coin_arg = tx_builder.obj(obj_arg)?;
-
-                if fix_amount {
-                    // Split the coin
-                    let split_amount = coin.balance.clone() - amount;
-                    let split_result = Self::split_coin(tx_builder, coin_arg, split_amount, coin_type)?;
-
-                    let mut remain_coins = coin_assets.to_vec();
-                    remain_coins.retain(|c| c.coin_object_id != coin.coin_object_id);
-
-                    return Ok(BuildCoinResult {
-                        target_coin: split_result,
-                        remain_coins,
-                        is_mint_zero_coin: false,
-                        target_coin_amount: amount.to_string(),
-                        original_splited_coin: Some(coin.coin_object_id),
-                    });
-                } else {
-                    let mut remain_coins = coin_assets.to_vec();
-                    remain_coins.retain(|c| c.coin_object_id != coin.coin_object_id);
-
-                    return Ok(BuildCoinResult {
-                        target_coin: coin_arg,
-                        remain_coins,
-                        is_mint_zero_coin: false,
-                        target_coin_amount: coin.balance.to_string(),
-                        original_splited_coin: None,
-                    });
-                }
-            }
-        }
-
-        // If no single coin is sufficient, we need to merge coins
-        let mut remaining_amount = amount.clone();
-        let mut used_coins = Vec::new();
-        let mut coin_args = Vec::new();
-
-        for coin in &sorted_coins {
-            if remaining_amount == BigInt::from(0u64) {
-                break;
-            }
-
-            used_coins.push(coin.coin_object_id);
-            let obj_arg = ObjectArg::ImmOrOwnedObject(coin.to_ref());
-            let coin_arg = tx_builder.obj(obj_arg)?;
-            coin_args.push(coin_arg);
-
-            let coin_balance = coin.balance.clone();
-            if coin_balance <= remaining_amount {
-                remaining_amount -= coin_balance;
+        if coin_type == SUI_COIN_TYPE_FULL {
+            if coin_assets.len() > 1 {
+                let results = CoinAssist::select_coins_gte(coin_assets, amount);
+                let target_coin = &results.0[0];
+                return Ok(BuildCoinResult {
+                    target_coin: ptb.obj(ObjectArg::ImmOrOwnedObject(target_coin.to_ref()))?,
+                    remain_coins: results.1,
+                    is_mint_zero_coin: false,
+                    target_coin_amount: target_coin.balance.to_string(),
+                    original_splited_coin: None,
+                });
             } else {
-                // Need to split this coin
-                let split_amount = coin_balance - &remaining_amount;
-                let split_coin = Self::split_coin(tx_builder, coin_arg, split_amount, coin_type)?;
-
-                // Replace the last coin with the split result
-                coin_args.pop();
-                coin_args.push(split_coin);
-                remaining_amount = BigInt::from(0u64);
+                // split gas coin
+                let amount_arg = ptb.pure(amount.to_u64().unwrap())?;
+                let target_coin = ptb.command(Command::SplitCoins(Argument::GasCoin, vec![amount_arg]));
+                return Ok(BuildCoinResult {
+                    target_coin,
+                    remain_coins: vec![],
+                    is_mint_zero_coin: false,
+                    target_coin_amount: amount.to_string(),
+                    original_splited_coin: None,
+                });
             }
         }
-
-        if remaining_amount > BigInt::from(0u64) {
-            return Err(anyhow!("Insufficient balance: needed {} more of {}", remaining_amount, coin_type));
-        }
-
-        // Merge coins if needed
-        let merged_coin = if coin_args.len() > 1 {
-            let first_coin = coin_args[0];
-
-            for coin_arg in coin_args.iter().skip(1) {
-                Self::join_coins(tx_builder, first_coin, *coin_arg, coin_type)?;
-            }
-
-            first_coin
-        } else {
-            coin_args[0]
-        };
-
-        let mut remain_coins = coin_assets.to_vec();
-        remain_coins.retain(|c| !used_coins.contains(&c.coin_object_id));
-
-        Ok(BuildCoinResult {
-            target_coin: merged_coin,
-            remain_coins,
-            is_mint_zero_coin: false,
-            target_coin_amount: amount.to_string(),
-            original_splited_coin: None,
-        })
+        todo!("build_split_target_coin")
     }
 
     pub fn build_swap_transaction_args(
         tx_builder: &mut ProgrammableTransactionBuilder,
         params: &SwapParams,
-        clmm_pool: &ClmmPoolConfig,
-        integrate: &IntegrateConfig,
+        cetus_config: &CetusConfig,
         primary_coin_input_a: &BuildCoinResult,
         primary_coin_input_b: &BuildCoinResult,
     ) -> Result<()> {
-        let sqrt_price_limit = get_default_sqrt_price_limit(params.a2b);
+        let sqrt_price_limit = if params.a2b { MIN_PRICE_SQRT_LIMIT } else { MAX_PRICE_SQRT_LIMIT };
         let type_arguments = vec![TypeTag::from_str(&params.coin_type_a)?, TypeTag::from_str(&params.coin_type_b)?];
-
         let has_swap_partner = params.swap_partner.is_some();
 
         let function_name = if has_swap_partner {
@@ -413,8 +167,8 @@ impl TransactionBuilder {
 
         // Add global config
         let global_obj_arg = ObjectArg::SharedObject {
-            id: clmm_pool.global_config_id,
-            initial_shared_version: clmm_pool.global_config_shared_version,
+            id: cetus_config.global_config.id,
+            initial_shared_version: cetus_config.global_config.shared_version,
             mutable: true,
         };
         args.push(tx_builder.obj(global_obj_arg)?);
@@ -450,8 +204,8 @@ impl TransactionBuilder {
 
         // Make the move call
         tx_builder.programmable_move_call(
-            integrate.package_id,
-            Identifier::from_str(CLMM_INTEGRATE_POOL_V2_MODULE)?,
+            cetus_config.router,
+            Identifier::from_str(MODULE_POOL_SCRIPT_V2)?,
             Identifier::from_str(function_name)?,
             type_arguments,
             args,
@@ -460,12 +214,7 @@ impl TransactionBuilder {
         Ok(())
     }
 
-    pub fn build_swap_transaction(
-        clmm_pool: &ClmmPoolConfig,
-        integrate: &IntegrateConfig,
-        params: &SwapParams,
-        all_coin_asset: &[CoinAsset],
-    ) -> Result<ProgrammableTransactionBuilder> {
+    pub fn build_swap_transaction(cetus_config: &CetusConfig, params: &SwapParams, all_coin_asset: &[CoinAsset]) -> Result<ProgrammableTransactionBuilder> {
         let mut tx_builder = ProgrammableTransactionBuilder::new();
 
         // Calculate the input amounts based on direction and swap mode
@@ -485,11 +234,11 @@ impl TransactionBuilder {
         };
 
         // Build coin inputs for both sides of the swap
-        let primary_coin_input_a = Self::build_coin_for_amount(&mut tx_builder, all_coin_asset, &amount_a, &params.coin_type_a, false, true)?;
-        let primary_coin_input_b = Self::build_coin_for_amount(&mut tx_builder, all_coin_asset, &amount_b, &params.coin_type_b, false, true)?;
+        let primary_coin_input_a = Self::build_coin_for_amount(&mut tx_builder, all_coin_asset, &amount_a, &params.coin_type_a, true)?;
+        let primary_coin_input_b = Self::build_coin_for_amount(&mut tx_builder, all_coin_asset, &amount_b, &params.coin_type_b, true)?;
 
         // Build the transaction with the prepared coin inputs
-        Self::build_swap_transaction_args(&mut tx_builder, params, clmm_pool, integrate, &primary_coin_input_a, &primary_coin_input_b)?;
+        Self::build_swap_transaction_args(&mut tx_builder, params, cetus_config, &primary_coin_input_a, &primary_coin_input_b)?;
 
         Ok(tx_builder)
     }
@@ -506,12 +255,9 @@ impl CoinAssist {
     pub fn calculate_total_balance(coin_assets: &[CoinAsset]) -> BigInt {
         coin_assets.iter().map(|asset| asset.balance.clone()).sum()
     }
-}
 
-pub fn get_default_sqrt_price_limit(a2b: bool) -> u128 {
-    if a2b {
-        4295048016_u128
-    } else {
-        79226673515401279992447579055_u128
+    // (selected(object_id, balance), remains_coins)
+    pub fn select_coins_gte(_coin_assets: &[CoinAsset], _amount: &BigInt) -> (Vec<CoinAsset>, Vec<CoinAsset>) {
+        todo!()
     }
 }

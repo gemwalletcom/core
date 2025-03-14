@@ -1,5 +1,6 @@
 use alloy_core::primitives::U256;
 use async_trait::async_trait;
+use base64::{engine::general_purpose, Engine as _};
 use bcs;
 use futures::join;
 use num_bigint::BigInt;
@@ -10,14 +11,14 @@ use super::{
     client::{models::CetusPool, CetusClient},
     clmm::{
         compute_swap,
-        tx_builder::{ClmmPoolConfig, IntegrateConfig, SwapParams},
+        tx_builder::{CetusConfig, SharedObjectConfig, SwapParams},
         TransactionBuilder,
     },
     models::{get_pool_object, CetusPoolType, RoutePoolData},
-    CETUS_CLMM_PACKAGE_ID, CETUS_CLMM_PUBLISHED_AT, CETUS_GLOBAL_CONFIG_ID, CETUS_GLOBAL_CONFIG_SHARED_VERSION, CETUS_INTEGRATE_PACKAGE_ID,
-    CETUS_INTEGRATE_PUBLISHED_AT,
+    CETUS_CLMM_PACKAGE_ID, CETUS_GLOBAL_CONFIG_ID, CETUS_GLOBAL_CONFIG_SHARED_VERSION, CETUS_ROUTER_PACKAGE_ID,
 };
 use crate::{
+    debug_println,
     network::{jsonrpc_call, AlienProvider, JsonRpcResult},
     sui::rpc::SuiClient,
     swapper::{
@@ -61,21 +62,15 @@ impl Cetus {
         asset_id.token_id.clone().unwrap()
     }
 
-    pub fn get_clmm_config(&self) -> Result<(ClmmPoolConfig, IntegrateConfig), SwapperError> {
-        Ok((
-            ClmmPoolConfig {
-                package_id: ObjectID::from_str(CETUS_CLMM_PACKAGE_ID).unwrap(),
-                published_at: CETUS_CLMM_PUBLISHED_AT.to_string(),
-                global_config_id: ObjectID::from_str(CETUS_GLOBAL_CONFIG_ID).unwrap(),
-                global_config_shared_version: SequenceNumber::from_u64(CETUS_GLOBAL_CONFIG_SHARED_VERSION),
+    pub fn get_clmm_config(&self) -> Result<CetusConfig, SwapperError> {
+        Ok(CetusConfig {
+            global_config: SharedObjectConfig {
+                id: ObjectID::from_str(CETUS_GLOBAL_CONFIG_ID).unwrap(),
+                shared_version: SequenceNumber::from_u64(CETUS_GLOBAL_CONFIG_SHARED_VERSION),
             },
-            IntegrateConfig {
-                package_id: ObjectID::from_str(CETUS_INTEGRATE_PACKAGE_ID).map_err(|_| SwapperError::TransactionError {
-                    msg: "Invalid integrate package ID".to_string(),
-                })?,
-                published_at: CETUS_INTEGRATE_PUBLISHED_AT.to_string(),
-            },
-        ))
+            clmm_pool: ObjectID::from_str(CETUS_CLMM_PACKAGE_ID).unwrap(),
+            router: ObjectID::from_str(CETUS_ROUTER_PACKAGE_ID).unwrap(),
+        })
     }
 
     async fn fetch_pools_by_coins(&self, coin_a: &str, coin_b: &str, provider: Arc<dyn AlienProvider>) -> Result<Vec<CetusPool>, SwapperError> {
@@ -184,7 +179,7 @@ impl GemSwapProvider for Cetus {
         let from_coin = Self::get_coin_address(from_asset);
 
         let sui_client = SuiClient::new(provider.clone());
-        let (clmm_pool_config, integrate_config) = self.get_clmm_config()?;
+        let cetus_config = self.get_clmm_config()?;
 
         // Execute gas_price and coin_assets fetching in parallel
         let (gas_price_result, all_coin_assets_result) = join!(sui_client.get_gas_price(), sui_client.get_coin_assets(sender_address));
@@ -210,12 +205,16 @@ impl GemSwapProvider for Cetus {
             coin_type_b: pool_data.coin_b.clone(),
             swap_partner: None, // No swap partner for now
         };
-        let ptb = TransactionBuilder::build_swap_transaction(&clmm_pool_config, &integrate_config, &swap_params, &all_coin_assets).map_err(|e| {
-            SwapperError::TransactionError {
-                msg: format!("Failed to build swap transaction: {}", e),
-            }
+        let ptb = TransactionBuilder::build_swap_transaction(&cetus_config, &swap_params, &all_coin_assets).map_err(|e| SwapperError::TransactionError {
+            msg: format!("Failed to build swap transaction: {}", e),
         })?;
         let tx = ptb.finish();
+        let _debug_tx_data = TransactionData::new_programmable(sender_address, vec![gas_coin.to_ref()], tx.clone(), 50000000, gas_price);
+        debug_println!(
+            "====> debug tx data: sui keytool decode-or-verify-tx --json --tx-bytes {:?}",
+            general_purpose::STANDARD.encode(bcs::to_bytes(&_debug_tx_data).unwrap())
+        );
+
         let tx_kind = TransactionKind::ProgrammableTransaction(tx.clone());
         let tx_bytes = bcs::to_bytes(&tx_kind).map_err(|e| SwapperError::TransactionError { msg: e.to_string() })?;
         let gas_budget = sui_client.inspect_tx_block(EMPTY_ADDRESS, &tx_bytes).await?;
