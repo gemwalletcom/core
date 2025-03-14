@@ -271,11 +271,11 @@ diesel::table! {
         latest_block -> Int4,
         await_blocks -> Int4,
         timeout_between_blocks -> Int4,
+        timeout_latest_block -> Int4,
         parallel_blocks -> Int4,
         is_enabled -> Bool,
         updated_at -> Timestamp,
         created_at -> Timestamp,
-        timeout_latest_block -> Int4,
     }
 }
 
