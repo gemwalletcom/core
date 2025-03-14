@@ -1,0 +1,139 @@
+{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "result": {
+      "effects": {
+        "messageVersion": "v1",
+        "status": {
+          "status": "failure",
+          "error": "ArityMismatch in command 0"
+        },
+        "executedEpoch": "701",
+        "gasUsed": {
+          "computationCost": "745000",
+          "storageCost": "14219600",
+          "storageRebate": "11782584",
+          "nonRefundableStorageFee": "119016"
+        },
+        "modifiedAtVersions": [
+          {
+            "objectId": "0x0000000000000000000000000000000000000000000000000000000000000006",
+            "sequenceNumber": "317397822"
+          },
+          {
+            "objectId": "0x24de99ca68d99127e0406b9955b65a1bf00ce34c788e7dcd8a921e600861ceac",
+            "sequenceNumber": "1"
+          },
+          {
+            "objectId": "0x7adbdefcd7faf611d011a1da1cfee4099a62ceafddb08700400d68fbc09fb8e9",
+            "sequenceNumber": "474382883"
+          },
+          {
+            "objectId": "0xb8d7d9e66a60c239e7a60110efcf8de6c705580ed924d0dde141f4a0e2c90105",
+            "sequenceNumber": "506543178"
+          },
+          {
+            "objectId": "0xdaa46292632c3c4d8f31f23ea0f9b36a28ff3677e9684980e4438403a67a3d8f",
+            "sequenceNumber": "506545747"
+          }
+        ],
+        "sharedObjects": [
+          {
+            "objectId": "0x0000000000000000000000000000000000000000000000000000000000000006",
+            "version": 317397822,
+            "digest": "6nuEw8JUSj67oFrLYh59sgq3QvDvEG27SZmuKXrF6e49"
+          },
+          {
+            "objectId": "0xb8d7d9e66a60c239e7a60110efcf8de6c705580ed924d0dde141f4a0e2c90105",
+            "version": 506543178,
+            "digest": "8U4D785D6nPEX1i6cQguAS4pDjpHv4tPXQGztB1Nz3K"
+          },
+          {
+            "objectId": "0xdaa46292632c3c4d8f31f23ea0f9b36a28ff3677e9684980e4438403a67a3d8f",
+            "version": 506545747,
+            "digest": "D58o5EkcM2oBgdsVsvT4UmdQqf2nzHpojNnsXXo2WE1J"
+          }
+        ],
+        "transactionDigest": "Akem5ehU4d6MRmBSntDXPjkELTqJNh74fCgRSVkiJYdm",
+        "mutated": [
+          {
+            "owner": {
+              "Shared": {
+                "initial_shared_version": 1
+              }
+            },
+            "reference": {
+              "objectId": "0x0000000000000000000000000000000000000000000000000000000000000006",
+              "version": 506545748,
+              "digest": "2pPYAn3npxceuoCLAAhKYM7R9T7rKPYUaNJdBKGjqRAM"
+            }
+          },
+          {
+            "owner": {
+              "AddressOwner": "0x0000000000000000000000000000000000000000000000000000000000000000"
+            },
+            "reference": {
+              "objectId": "0x24de99ca68d99127e0406b9955b65a1bf00ce34c788e7dcd8a921e600861ceac",
+              "version": 506545748,
+              "digest": "EKxT5YJvFDPwLn6SG3DKbW1TSCKZ8u8dLawwALwkQ9Ha"
+            }
+          },
+          {
+            "owner": {
+              "AddressOwner": "0x07754eecfffb541c38ff90c01d9e7881e1c6863374febb482ad7bf6dd129653c"
+            },
+            "reference": {
+              "objectId": "0x7adbdefcd7faf611d011a1da1cfee4099a62ceafddb08700400d68fbc09fb8e9",
+              "version": 506545748,
+              "digest": "3TvYasXuBD6sJ7NgsJtqUy4R3orCoM5bUrEomAPWiZzT"
+            }
+          },
+          {
+            "owner": {
+              "Shared": {
+                "initial_shared_version": 373623018
+              }
+            },
+            "reference": {
+              "objectId": "0xb8d7d9e66a60c239e7a60110efcf8de6c705580ed924d0dde141f4a0e2c90105",
+              "version": 506545748,
+              "digest": "HTwakmN1QbMXbpp41WFNkSrtoyw3BnrNkaHTGGTKxejH"
+            }
+          },
+          {
+            "owner": {
+              "Shared": {
+                "initial_shared_version": 1574190
+              }
+            },
+            "reference": {
+              "objectId": "0xdaa46292632c3c4d8f31f23ea0f9b36a28ff3677e9684980e4438403a67a3d8f",
+              "version": 506545748,
+              "digest": "771QrmcD7cKdu16xzfhkQCVCLuhMXBzgahKN7G6xKgBt"
+            }
+          }
+        ],
+        "gasObject": {
+          "owner": {
+            "AddressOwner": "0x0000000000000000000000000000000000000000000000000000000000000000"
+          },
+          "reference": {
+            "objectId": "0x24de99ca68d99127e0406b9955b65a1bf00ce34c788e7dcd8a921e600861ceac",
+            "version": 506545748,
+            "digest": "EKxT5YJvFDPwLn6SG3DKbW1TSCKZ8u8dLawwALwkQ9Ha"
+          }
+        },
+        "dependencies": [
+          "nn5Qnb9VuVWrHVLyGrTjkqhAsePNALB7fyRU8mZGYXW",
+          "583uphgwaYqsk1YyRfpShouKUu8oGNu6p6K34YLiPTxD",
+          "6gsbgCNHqsw9HNuMsfrYEnBRh7aAh1gVEQysysgt5dys",
+          "7DkJSrf5sPWGxqHbH2X1wXwFcftRm6myhJJnuTJbaMYr",
+          "7vBpHR9PY4CaitQzLE3gBSsMcBFL3L3SyfPQ7EpZcein",
+          "9gjz9z4Mh32WYZ4z2r2mU7TsBMMUnq77qu7qrVXbAJev",
+          "G6mQiteZyWCN9GYDDGNaKBnV5qNhBFFqUNumZ9T61oJt"
+        ]
+      },
+      "events": [],
+      "error": "ExecutionError: ExecutionError { inner: ExecutionErrorInner { kind: ArityMismatch, source: Some(\"Expected 1 argument calling function 'zero', but found 2\"), command: Some(0) } }"
+    }
+  }

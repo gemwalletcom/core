@@ -33,7 +33,7 @@ use gem_sui::{
 use primitives::{AssetId, Chain};
 use sui_types::{
     base_types::{ObjectID, SequenceNumber},
-    transaction::TransactionData,
+    transaction::{TransactionData, TransactionKind},
 };
 
 #[derive(Debug)]
@@ -216,10 +216,9 @@ impl GemSwapProvider for Cetus {
             }
         })?;
         let tx = ptb.finish();
-
-        let dummy_tx_data = TransactionData::new_programmable(EMPTY_ADDRESS.parse().unwrap(), vec![gas_coin.to_ref()], tx.clone(), 50000000, gas_price);
-        let tx_bytes = bcs::to_bytes(&dummy_tx_data).map_err(|e| SwapperError::TransactionError { msg: e.to_string() })?;
-        let gas_budget = sui_client.estimate_gas_budget(EMPTY_ADDRESS, &tx_bytes).await?;
+        let tx_kind = TransactionKind::ProgrammableTransaction(tx.clone());
+        let tx_bytes = bcs::to_bytes(&tx_kind).map_err(|e| SwapperError::TransactionError { msg: e.to_string() })?;
+        let gas_budget = sui_client.inspect_tx_block(EMPTY_ADDRESS, &tx_bytes).await?;
 
         let tx_data = TransactionData::new_programmable(sender_address, vec![gas_coin.to_ref()], tx, gas_budget, gas_price);
         let tx_output = TxOutput::from_tx_data(&tx_data).unwrap();

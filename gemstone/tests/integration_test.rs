@@ -298,7 +298,7 @@ mod tests {
             },
             wallet_address: "0x07754eecfffb541c38ff90c01d9e7881e1c6863374febb482ad7bf6dd129653c".into(),
             destination_address: "0x07754eecfffb541c38ff90c01d9e7881e1c6863374febb482ad7bf6dd129653c".into(),
-            value: "400000000".into(), // 0.4 SUI (using a smaller amount that the wallet has available)
+            value: "400000000".into(), // 0.4 SUI
             mode: GemSwapMode::ExactIn,
             options,
         };

@@ -209,7 +209,10 @@ impl TickManager {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{network::jsonrpc::*, sui::rpc::CoinAsset};
+    use crate::{
+        network::jsonrpc::*,
+        sui::rpc::{models::InspectResult, CoinAsset},
+    };
     use serde_json;
 
     #[test]
@@ -245,5 +248,15 @@ mod tests {
         let all_coins = response.result.data;
 
         assert_eq!(all_coins.len(), 7);
+    }
+
+    #[test]
+    fn test_decode_dev_inspect() {
+        let string = include_str!("test/sui_dev_inspect.json");
+        let response: JsonRpcResponse<InspectResult> = serde_json::from_str(string).unwrap();
+        let result = response.result;
+
+        assert!(result.error.is_some());
+        assert!(result.effects.total_gas_cost() > 0);
     }
 }

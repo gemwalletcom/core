@@ -35,14 +35,21 @@ pub struct CoinResponse {
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct InspectResults {
+pub struct InspectResult {
     pub effects: InspectEffects,
+    pub error: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct InspectEffects {
     pub gas_used: InspectGasUsed,
+}
+
+impl InspectEffects {
+    pub fn total_gas_cost(&self) -> u64 {
+        self.gas_used.computation_cost + self.gas_used.storage_cost - self.gas_used.storage_rebate
+    }
 }
 
 #[derive(Debug, Clone, Deserialize)]

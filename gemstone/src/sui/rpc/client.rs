@@ -10,7 +10,7 @@ use serde::de::DeserializeOwned;
 use std::sync::Arc;
 use sui_types::base_types::SuiAddress;
 
-use super::models::{CoinAsset, InspectResults};
+use super::models::{CoinAsset, InspectResult};
 
 pub struct SuiClient {
     provider: Arc<dyn AlienProvider>,
@@ -44,19 +44,23 @@ impl SuiClient {
 
     pub async fn get_gas_price(&self) -> Result<u64, AlienError> {
         let gas_price: String = self.rpc_call(SuiRpc::GetGasPrice).await?;
-        Ok(gas_price.parse().unwrap_or(0))
+        gas_price.parse::<u64>().map_err(|e| AlienError::ResponseError {
+            msg: format!("Failed to parse gas price: {:?}", e),
+        })
     }
 
-    pub async fn estimate_gas_budget(&self, sender: &str, tx_data: &[u8]) -> Result<u64, AlienError> {
+    pub async fn inspect_tx_block(&self, sender: &str, tx_data: &[u8]) -> Result<u64, AlienError> {
         let tx_bytes_base64 = general_purpose::STANDARD.encode(tx_data);
-        let result: SuiData<InspectResults> = self.rpc_call(SuiRpc::InspectTransactionBlock(sender.to_string(), tx_bytes_base64)).await?;
-        let effects = result.data.effects;
-        // Extract the gas used from the results
-        let gas_used = effects.gas_used.computation_cost + effects.gas_used.storage_cost - effects.gas_used.storage_rebate;
+        let result: InspectResult = self.rpc_call(SuiRpc::InspectTransactionBlock(sender.to_string(), tx_bytes_base64)).await?;
+
+        if result.error.is_some() {
+            return Err(AlienError::ResponseError {
+                msg: format!("Failed to inspect transaction: {:?}", result.error),
+            });
+        }
 
         // Add a buffer for safety (20%)
-        let gas_with_buffer = (gas_used as f64 * 1.2) as u64;
-
+        let gas_with_buffer = (result.effects.total_gas_cost() as f64 * 1.2) as u64;
         Ok(gas_with_buffer)
     }
 }
