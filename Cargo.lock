@@ -3148,6 +3148,7 @@ dependencies = [
  "reqwest",
  "serde",
  "serde_json",
+ "serde_serializers",
  "settings",
  "sha2 0.10.8",
  "storage",
@@ -7764,6 +7765,15 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.93",
+]
+
+[[package]]
+name = "serde_serializers"
+version = "1.0.0"
+dependencies = [
+ "num-bigint 0.4.6",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

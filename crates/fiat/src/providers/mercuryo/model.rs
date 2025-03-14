@@ -1,5 +1,5 @@
-use primitives::{deserialize_f64_from_str, deserialize_option_f64_from_str};
 use serde::{Deserialize, Serialize};
+use serde_serializers::{deserialize_f64_from_str, deserialize_option_f64_from_str};
 
 #[derive(Debug, Deserialize)]
 pub struct Response<T> {

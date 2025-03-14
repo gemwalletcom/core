@@ -1,0 +1,9 @@
+[package]
+name = "serde_serializers"
+version = { workspace = true }
+edition = { workspace = true }
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+num-bigint = { workspace = true }
