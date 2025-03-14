@@ -1,8 +1,9 @@
 use api_connector::pusher::model::Notification;
 use chrono::{Duration, NaiveDateTime, Utc};
 use localizer::{LanguageLocalizer, LanguageNotification};
+use number_formatter::NumberFormatter;
 use primitives::{
-    Asset, Device, NumberFormatter, Price, PriceAlertDirection, PriceAlertType, PriceAlerts, PushNotification, PushNotificationAsset, PushNotificationTypes,
+    Asset, Device, Price, PriceAlertDirection, PriceAlertType, PriceAlerts, PushNotification, PushNotificationAsset, PushNotificationTypes,
     DEFAULT_FIAT_CURRENCY,
 };
 use std::collections::{HashMap, HashSet};

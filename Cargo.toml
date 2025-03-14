@@ -39,7 +39,8 @@ members = [
     "crates/job_runner",
     "crates/search_index",
     "crates/nft",
-    "crates/serde_serializers"
+    "crates/serde_serializers",
+    "crates/number_formatter"
 ]
 
 default-members = [

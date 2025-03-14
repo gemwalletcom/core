@@ -3144,6 +3144,7 @@ dependencies = [
  "futures",
  "hex",
  "hmac",
+ "number_formatter",
  "primitives",
  "reqwest",
  "serde",
@@ -3505,6 +3506,7 @@ dependencies = [
  "jsonrpsee",
  "num-bigint 0.4.6",
  "num-traits",
+ "number_formatter",
  "primitives",
  "reqwest-middleware",
  "serde",
@@ -5552,6 +5554,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "number_formatter"
+version = "1.0.0"
+dependencies = [
+ "bigdecimal",
+ "num-bigint 0.4.6",
+ "num-traits",
+ "rusty-money",
+]
+
+[[package]]
 name = "object"
 version = "0.36.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5829,6 +5841,7 @@ dependencies = [
  "futures",
  "gem_chain_rpc",
  "localizer",
+ "number_formatter",
  "primitives",
  "rand 0.9.0",
  "serde_json",
@@ -6153,6 +6166,7 @@ dependencies = [
  "cacher",
  "chrono",
  "localizer",
+ "number_formatter",
  "primitives",
  "redis",
  "serde",
@@ -6197,11 +6211,9 @@ name = "primitives"
 version = "1.0.0"
 dependencies = [
  "anyhow",
- "bigdecimal",
  "chrono",
  "num-bigint 0.4.6",
  "num-traits",
- "rusty-money",
  "serde",
  "serde_json",
  "strum 0.27.1",

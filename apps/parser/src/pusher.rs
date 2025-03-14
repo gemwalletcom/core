@@ -1,9 +1,10 @@
 use std::error::Error;
 
 use localizer::LanguageLocalizer;
+use number_formatter::BigNumberFormatter;
 use primitives::{
-    AddressFormatter, BigNumberFormatter, Chain, PushNotification, PushNotificationTransaction, PushNotificationTypes, Subscription, Transaction,
-    TransactionSwapMetadata, TransactionType,
+    AddressFormatter, Chain, PushNotification, PushNotificationTransaction, PushNotificationTypes, Subscription, Transaction, TransactionSwapMetadata,
+    TransactionType,
 };
 use storage::DatabaseClient;
 

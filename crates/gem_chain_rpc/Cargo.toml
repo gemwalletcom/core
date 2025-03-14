@@ -21,6 +21,7 @@ futures = { workspace = true }
 anyhow = { workspace = true }
 
 primitives = { path = "../primitives" }
+number_formatter = { path = "../number_formatter" }
 
 gem_evm = { path = "../gem_evm" }
 gem_solana = { path = "../gem_solana" }
