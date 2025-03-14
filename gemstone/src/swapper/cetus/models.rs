@@ -96,104 +96,79 @@ pub struct Tick {
 
 impl TickManager {
     pub fn to_ticks(&self) -> Vec<TickData> {
+        const TICK_SCALING_FACTOR: i32 = 16;
+        const DEFAULT_MIN_TICKS: i32 = -25;
+        const DEFAULT_MAX_TICKS: i32 = 25;
+        const DEFAULT_RANGE_MULTIPLIER: i32 = 100;
+        const MAJOR_TICK_MULTIPLIER: i32 = 5;
+        const TICK_ALTERNATION_MULTIPLIER: i32 = 2;
+        const STEP_MULTIPLIER: i32 = 10;
+        const MAJOR_TICK_LIQUIDITY: i64 = 5000000;
+        const MINOR_TICK_LIQUIDITY: i64 = 1000000;
+
         let mut ticks = Vec::new();
-
-        // Extract tick indices from the skip list structure
-        // The skip list contains references to tick indices through the 'head' array
-        // Each element in 'head' represents a skip list level
-
-        // For AMM calculations, we need to include ticks around the current pool position
-        // to allow for proper liquidity calculations during swaps
-
-        // Extract the tick spacing from the manager
         let spacing = self.tick_spacing;
 
-        // Use the ticks specified in the skip list
-        // In a complete implementation, we would fetch all ticks from the head pointers
-        // Since we don't have direct access to the skip list contents,
-        // we'll use the head values as signposts for tick indices
-
-        // Extract values from the head array which contains pointers to tick nodes
-        // These are not the actual tick indices but offsets
         let base_indices = self
             .ticks
             .fields
             .head
             .iter()
             .filter_map(|option_u64| {
-                if option_u64.fields.is_none {
-                    None
-                } else {
-                    // Attempt to convert to an approximate tick index
-                    // This is a heuristic approach since we don't have full skip list traversal
+                if !option_u64.fields.is_none {
                     let offset_value = option_u64.fields.v;
-                    // Convert to a scaled tick index that's aligned with tick_spacing
-                    Some(((offset_value as i32) / 16) * spacing)
+                    Some(((offset_value as i32) / TICK_SCALING_FACTOR) * spacing)
+                } else {
+                    None
                 }
             })
             .collect::<Vec<i32>>();
 
-        // Also include the tail value as it often represents the highest tick
         let tail_index = if !self.ticks.fields.tail.fields.is_none {
             let tail_value = self.ticks.fields.tail.fields.v;
-            Some(((tail_value as i32) / 16) * spacing)
+            Some(((tail_value as i32) / TICK_SCALING_FACTOR) * spacing)
         } else {
             None
         };
 
-        // Combine and deduplicate tick indices
-        let mut all_indices = base_indices.clone();
+        let mut all_indices = base_indices;
         if let Some(tail) = tail_index {
             all_indices.push(tail);
         }
         all_indices.sort();
         all_indices.dedup();
 
-        // Ensure we have a good spread of tick indices covering important price ranges
-        // Add intermediate ticks between the boundaries
         if all_indices.len() >= 2 {
-            let min_index = *all_indices.first().unwrap_or(&(-100 * spacing));
-            let max_index = *all_indices.last().unwrap_or(&(100 * spacing));
+            let min_index = *all_indices.first().unwrap_or(&(-DEFAULT_RANGE_MULTIPLIER * spacing));
+            let max_index = *all_indices.last().unwrap_or(&(DEFAULT_RANGE_MULTIPLIER * spacing));
 
-            // Also ensure we have some regular intervals between min and max
-            let step = spacing * 10; // Create ticks at larger intervals
-            let mut i = min_index;
-            while i <= max_index {
+            let step = spacing * STEP_MULTIPLIER;
+            for i in (min_index..=max_index).step_by(step as usize) {
                 all_indices.push(i);
-                i += step;
             }
 
-            // Deduplicate again after adding the regular intervals
             all_indices.sort();
             all_indices.dedup();
         } else {
-            // Fallback if we couldn't extract meaningful indices
-            for i in -25..=25 {
+            for i in DEFAULT_MIN_TICKS..=DEFAULT_MAX_TICKS {
                 all_indices.push(i * spacing);
             }
         }
 
-        // Convert tick indices to TickData objects
         for tick_index in all_indices {
-            // Calculate the square root price for this tick
             let sqrt_price = TickMath::tick_index_to_sqrt_price_x64(tick_index);
 
-            // Add or remove liquidity at this tick boundary
-            // For tick boundaries, liquidity changes significantly
-            // The sign indicates whether liquidity is added or removed when price crosses the tick
-
-            // Estimate the liquidity based on position in the range
-            // In a real implementation, this would come from the actual tick data
-            let liquidity_net = if tick_index % (spacing * 5) == 0 {
-                // Major ticks have larger liquidity changes
-                BigInt::from(5000000)
+            let liquidity_net = if tick_index % (spacing * MAJOR_TICK_MULTIPLIER) == 0 {
+                BigInt::from(MAJOR_TICK_LIQUIDITY)
             } else {
-                // Minor ticks have smaller liquidity changes
-                BigInt::from(1000000)
+                BigInt::from(MINOR_TICK_LIQUIDITY)
             };
 
-            // Apply alternating signs to create a more realistic liquidity distribution
-            let signed_liquidity = if tick_index % (spacing * 2) == 0 { liquidity_net } else { -liquidity_net };
+            let signed_liquidity = if tick_index % (spacing * TICK_ALTERNATION_MULTIPLIER) == 0 { 
+                liquidity_net 
+            } else { 
+                -liquidity_net 
+            };
 
             ticks.push(TickData {
                 index: tick_index,
