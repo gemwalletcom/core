@@ -12,7 +12,7 @@ static LANGUAGE_KOTLIN: &str = "kotlin";
 static LANG_KOTLIN_ETX: &str = "kt";
 
 fn main() {
-    let folders = vec!["crates/blockchain", "crates/primitives", "crates/settings"];
+    let folders = vec!["crates/blockchain", "crates/primitives"];
 
     let platform_str = std::env::args().nth(1).expect("no platform specified");
     let platform_directory_path = std::env::args().nth(2).expect("no path specified");
