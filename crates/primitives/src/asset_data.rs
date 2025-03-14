@@ -4,7 +4,7 @@ struct AssetData {
     balance: Balance,
     account: Account,
     price: Option<Price>,
-    price_alert: Option<PriceAlert>,
+    price_alerts: Vec<PriceAlert>,
     metadata: AssetMetaData,
 }
 

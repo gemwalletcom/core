@@ -43,7 +43,7 @@ pub enum EVMChain {
 }
 
 impl EVMChain {
-    pub fn all() -> Vec<EVMChain> {
+    pub fn all() -> Vec<Self> {
         Self::iter().collect::<Vec<_>>()
     }
 

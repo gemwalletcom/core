@@ -30,7 +30,7 @@ impl LinkType {
 }
 
 impl LinkType {
-    pub fn all() -> Vec<LinkType> {
-        LinkType::iter().collect::<Vec<_>>()
+    pub fn all() -> Vec<Self> {
+        Self::iter().collect::<Vec<_>>()
     }
 }

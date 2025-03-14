@@ -1,4 +1,4 @@
-use primitives::{AddressType, Asset, AssetType, Chain, FiatProviderName, LinkType, NFTType, PlatformStore, TransactionType};
+use primitives::{AddressType, Asset, AssetTag, AssetType, Chain, FiatProviderName, LinkType, NFTType, PlatformStore, TransactionType};
 use search_index::{SearchIndexClient, ASSETS_FILTERS, ASSETS_INDEX_NAME, ASSETS_RANKING_RULES, ASSETS_SEARCH_ATTRIBUTES, ASSETS_SORTS, INDEX_PRIMARY_KEY};
 use settings::Settings;
 use storage::{ClickhouseClient, DatabaseClient};
@@ -86,6 +86,10 @@ async fn main() {
         .map(storage::models::TransactionType::from_primitive)
         .collect::<Vec<_>>();
     let _ = database_client.add_transactions_types(address_types);
+
+    println!("setup assets tags");
+    let assets_tags = AssetTag::all().into_iter().map(storage::models::Tag::from_primitive).collect::<Vec<_>>();
+    let _ = database_client.add_tags(assets_tags);
 
     println!("setup search index: {:?}", search_indexes);
 

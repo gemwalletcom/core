@@ -6,7 +6,7 @@ pub fn map_asset_chain(chain: String) -> Option<Chain> {
         "LTC" => Some(Chain::Litecoin),
         "ETH" => Some(Chain::Ethereum),
         "TRON" => Some(Chain::Tron),
-        "BSC" => Some(Chain::SmartChain),
+        "BSC" | "BNB" => Some(Chain::SmartChain),
         "SOL" => Some(Chain::Solana),
         "MATIC" => Some(Chain::Polygon),
         "ATOM" => Some(Chain::Cosmos),
@@ -27,6 +27,12 @@ pub fn map_asset_chain(chain: String) -> Option<Chain> {
         "ZKSYNC" => Some(Chain::ZkSync),
         "BCH" => Some(Chain::BitcoinCash),
         "WLD" => Some(Chain::World),
+        "OPTIMISM" => Some(Chain::Optimism),
+        "LINEA" => Some(Chain::Linea),
+        "UNICHAIN" => Some(Chain::Unichain),
+        "ARB" => Some(Chain::Arbitrum),
+        "BASE" => Some(Chain::Base),
+        "S" => Some(Chain::Sonic),
         _ => None,
     }
 }

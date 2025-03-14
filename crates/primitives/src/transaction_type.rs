@@ -27,7 +27,7 @@ impl Default for TransactionType {
 }
 
 impl TransactionType {
-    pub fn all() -> Vec<TransactionType> {
-        TransactionType::iter().collect::<Vec<_>>()
+    pub fn all() -> Vec<Self> {
+        Self::iter().collect::<Vec<_>>()
     }
 }

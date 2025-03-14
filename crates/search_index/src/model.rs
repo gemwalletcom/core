@@ -12,6 +12,7 @@ pub const ASSETS_FILTERS: &[&str] = &[
     "properties.isEnabled",
     "market.marketCap",
     "market.marketCapRank",
+    "tags",
 ];
 pub const ASSETS_SEARCH_ATTRIBUTES: &[&str] = &["asset.id.tokenId", "asset.id.chain", "asset.name", "asset.symbol", "asset.type"];
 pub const ASSETS_RANKING_RULES: &[&str] = &[
@@ -38,6 +39,7 @@ pub struct AssetDocument {
     pub properties: AssetProperties,
     pub score: AssetScore,
     pub market: Option<AssetMarket>,
+    pub tags: Option<Vec<String>>,
 }
 
 pub fn sanitize_index_primary_id(input: &str) -> String {

@@ -99,9 +99,9 @@ impl EthereumClient {
         } else {
             TransactionState::Failed
         };
-        let value = transaction.value.value.to_string();
-        let nonce = transaction.nonce.as_i32();
-        let block = transaction.block_number.as_i32();
+        let value = transaction.value.to_string();
+        let nonce = transaction.nonce;
+        let block = transaction.block_number;
         let fee = receipt.get_fee().to_string();
         let from = EthereumAddress::parse(&transaction.from)?.to_checksum();
         let to = EthereumAddress::parse(&transaction.to.unwrap_or_default())?.to_checksum();

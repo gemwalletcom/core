@@ -169,8 +169,8 @@ impl SolanaClient {
 
                     let from_asset = self.asset_id_from_program(input.info.mint?);
                     let to_asset = self.asset_id_from_program(output.info.mint?);
-                    let from_value = input.info.token_amount?.amount.value.to_string();
-                    let to_value = output.info.token_amount?.amount.value.to_string();
+                    let from_value = input.info.token_amount?.amount.to_string();
+                    let to_value = output.info.token_amount?.amount.to_string();
 
                     let swap = TransactionSwapMetadata {
                         from_asset: from_asset.clone(),

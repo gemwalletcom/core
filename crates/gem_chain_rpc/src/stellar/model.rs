@@ -1,6 +1,7 @@
 use core::str;
 
-use primitives::{Asset, BigNumberFormatter, Chain, TransactionState};
+use number_formatter::BigNumberFormatter;
+use primitives::{Asset, Chain, TransactionState};
 use serde::{Deserialize, Serialize};
 
 pub const TRANSACTION_TYPE_PAYMENT: &str = "payment";

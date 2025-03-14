@@ -193,7 +193,7 @@ pub enum NFTType {
 }
 
 impl NFTType {
-    pub fn all() -> Vec<NFTType> {
-        NFTType::iter().collect::<Vec<_>>()
+    pub fn all() -> Vec<Self> {
+        Self::iter().collect::<Vec<_>>()
     }
 }

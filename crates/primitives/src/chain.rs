@@ -430,7 +430,7 @@ impl Chain {
         }
     }
 
-    pub fn all() -> Vec<Chain> {
-        Chain::iter().collect::<Vec<_>>()
+    pub fn all() -> Vec<Self> {
+        Self::iter().collect::<Vec<_>>()
     }
 }

@@ -89,7 +89,7 @@ impl MercuryoClient {
             quote_type: FiatTransactionType::Buy,
             fiat_amount: request.fiat_amount,
             fiat_currency: request.fiat_currency,
-            crypto_amount: quote.clone().amount.parse::<f64>().unwrap_or_default(),
+            crypto_amount: quote.clone().amount,
             redirect_url: self.redirect_url(quote.clone(), &request_map.network.unwrap_or_default(), request.wallet_address.as_str(), "buy"),
         }
     }
@@ -98,7 +98,7 @@ impl MercuryoClient {
         FiatQuote {
             provider: Self::NAME.as_fiat_provider(),
             quote_type: FiatTransactionType::Sell,
-            fiat_amount: quote.fiat_amount.parse::<f64>().unwrap_or_default(),
+            fiat_amount: quote.fiat_amount,
             fiat_currency: request.fiat_currency,
             crypto_amount: request.crypto_amount,
             redirect_url: self.redirect_url(quote.clone(), &request_map.network.unwrap_or_default(), request.wallet_address.as_str(), "sell"),

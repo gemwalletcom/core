@@ -7,6 +7,7 @@ pub mod price;
 pub mod release;
 pub mod scan;
 pub mod subscription;
+pub mod tag;
 
 use crate::models::asset::AssetLink;
 use crate::models::*;

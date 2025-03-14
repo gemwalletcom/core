@@ -43,7 +43,7 @@ pub enum AddressType {
 }
 
 impl AddressType {
-    pub fn all() -> Vec<AddressType> {
-        AddressType::iter().collect::<Vec<_>>()
+    pub fn all() -> Vec<Self> {
+        Self::iter().collect::<Vec<_>>()
     }
 }
