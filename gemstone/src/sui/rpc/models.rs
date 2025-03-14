@@ -1,6 +1,6 @@
-use super::serializer::*;
 use num_bigint::BigInt;
 use serde::Deserialize;
+use serde_serializers::*;
 
 use sui_types::{
     base_types::{ObjectID, ObjectRef},
@@ -13,7 +13,7 @@ pub struct CoinAsset {
     pub coin_object_id: ObjectID,
     pub coin_type: String,
     pub digest: ObjectDigest,
-    #[serde(deserialize_with = "deserialize_bigint", serialize_with = "serialize_bigint")]
+    #[serde(deserialize_with = "deserialize_bigint_from_str", serialize_with = "serialize_bigint")]
     pub balance: BigInt,
     #[serde(deserialize_with = "deserialize_u64_from_str", serialize_with = "serialize_u64")]
     pub version: u64,

@@ -1,4 +1,5 @@
 use serde::{Deserialize, Deserializer, Serialize};
+use serde_serializers::{deserialize_u64_from_str, serialize_u64};
 use std::{fmt::Display, ops::Not};
 use sui_types::{
     base_types::{ObjectID, ObjectRef, SequenceNumber},
@@ -100,21 +101,6 @@ pub struct OptionU64 {
     pub is_none: bool,
     #[serde(deserialize_with = "deserialize_u64_from_str", serialize_with = "serialize_u64")]
     pub v: u64,
-}
-
-pub fn deserialize_u64_from_str<'de, D>(deserializer: D) -> Result<u64, D::Error>
-where
-    D: serde::Deserializer<'de>,
-{
-    let s: String = serde::Deserialize::deserialize(deserializer)?;
-    s.parse::<u64>().map_err(serde::de::Error::custom)
-}
-
-fn serialize_u64<S>(value: &u64, serializer: S) -> Result<S::Ok, S::Error>
-where
-    S: serde::Serializer,
-{
-    serializer.serialize_str(&value.to_string())
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

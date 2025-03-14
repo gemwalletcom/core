@@ -40,7 +40,7 @@ members = [
     "crates/search_index",
     "crates/nft",
     "crates/serde_serializers",
-    "crates/number_formatter"
+    "crates/number_formatter",
 ]
 
 default-members = [
@@ -79,7 +79,7 @@ futures-util = "0.3.30"
 uuid = { version = "1.8.0", features = ["v4"] }
 rand = { version = "0.9.0" }
 aws-sdk-s3 = { version = "1.5", features = ["behavior-version-latest"] }
-itertools = {version = "0.14.0" }
+itertools = { version = "0.14.0" }
 
 # db
 diesel = { version = "2.2.3", features = ["postgres", "chrono", "serde_json"] }
@@ -109,7 +109,7 @@ itoa = { version = "1.0.10" }
 curve25519-dalek = { version = "4.1.3" }
 borsh = { version = "1.5.3", features = ["derive"] }
 bcs = { version = "0.1.6" }
-sui-types = { git = "https://github.com/mystenlabs/sui", package = "sui-types", tag = "mainnet-v1.43.1" }
+sui-types = { git = "https://github.com/mystenlabs/sui", package = "sui-types", tag = "mainnet-v1.44.3" }
 
 uniffi = { version = "0.29.0" }
 uniffi_bindgen = { version = "0.29.0" }

@@ -9,7 +9,6 @@ mod chainlink;
 mod custom_types;
 mod eth_rpc;
 mod permit2_data;
-mod serializer;
 mod weth_address;
 
 pub mod across;

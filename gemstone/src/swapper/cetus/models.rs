@@ -1,15 +1,13 @@
 use num_bigint::{BigInt, ParseBigIntError};
 use serde::{Deserialize, Serialize};
+use serde_serializers::{deserialize_bigint_from_str as deserialize_bigint, serialize_bigint};
 use sui_types::{
     base_types::{ObjectID, ObjectRef, SequenceNumber},
     digests::ObjectDigest,
 };
 
 use super::clmm::{tick::TickMath, ClmmPoolData, TickData};
-use crate::swapper::{
-    serializer::{deserialize_bigint, serialize_bigint},
-    SwapperError,
-};
+use crate::swapper::SwapperError;
 use gem_sui::jsonrpc::{DataObject, MoveObject, MoveObjectId, OptionU64, SuiData, I32};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -164,10 +162,10 @@ impl TickManager {
                 BigInt::from(MINOR_TICK_LIQUIDITY)
             };
 
-            let signed_liquidity = if tick_index % (spacing * TICK_ALTERNATION_MULTIPLIER) == 0 { 
-                liquidity_net 
-            } else { 
-                -liquidity_net 
+            let signed_liquidity = if tick_index % (spacing * TICK_ALTERNATION_MULTIPLIER) == 0 {
+                liquidity_net
+            } else {
+                -liquidity_net
             };
 
             ticks.push(TickData {

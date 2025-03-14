@@ -3576,6 +3576,7 @@ dependencies = [
  "primitives",
  "serde",
  "serde_json",
+ "serde_serializers",
  "sui-types",
  "thiserror 2.0.11",
 ]
@@ -3629,6 +3630,7 @@ dependencies = [
  "reqwest",
  "serde",
  "serde_json",
+ "serde_serializers",
  "serde_urlencoded",
  "sui-types",
  "thiserror 2.0.11",
