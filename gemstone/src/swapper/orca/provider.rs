@@ -32,6 +32,12 @@ pub struct Orca {
     pub chain: Chain,
 }
 
+impl Orca {
+    pub fn boxed() -> Box<dyn GemSwapProvider> {
+        Box::new(Orca::default())
+    }
+}
+
 impl Default for Orca {
     fn default() -> Self {
         Self {

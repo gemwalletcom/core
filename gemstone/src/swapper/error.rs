@@ -26,6 +26,8 @@ pub enum SwapperError {
     ABIError { msg: String },
     #[error("Compute quote error: {msg}")]
     ComputeQuoteError { msg: String },
+    #[error("Transaction error: {msg}")]
+    TransactionError { msg: String },
 
     #[error("No quote available")]
     NoQuoteAvailable,

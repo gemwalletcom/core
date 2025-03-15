@@ -1,4 +1,5 @@
 use anyhow::Error;
+use base64::{engine::general_purpose, Engine as _};
 use bcs;
 use blake2::{digest::consts::U32, Blake2b, Digest};
 use std::str::FromStr;
@@ -95,5 +96,9 @@ impl TxOutput {
             tx_data: data,
             hash: hasher.finalize().to_vec(),
         })
+    }
+
+    pub fn base64_encoded(&self) -> String {
+        general_purpose::STANDARD.encode(self.tx_data.clone())
     }
 }

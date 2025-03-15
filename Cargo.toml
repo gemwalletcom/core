@@ -40,7 +40,7 @@ members = [
     "crates/search_index",
     "crates/nft",
     "crates/serde_serializers",
-    "crates/number_formatter"
+    "crates/number_formatter",
 ]
 
 default-members = [
@@ -55,6 +55,7 @@ default-members = [
 [workspace.dependencies]
 typeshare = "1.0.3"
 serde = { version = "1.0.196", features = ["derive"] }
+serde_with = "3.11.0"
 serde_json = { version = "1.0.114" }
 serde_urlencoded = { version = "0.7.1" }
 tokio = { version = "1.36.0", features = ["macros", "rt-multi-thread"] }
@@ -78,7 +79,7 @@ futures-util = "0.3.30"
 uuid = { version = "1.8.0", features = ["v4"] }
 rand = { version = "0.9.0" }
 aws-sdk-s3 = { version = "1.5", features = ["behavior-version-latest"] }
-itertools = {version = "0.14.0" }
+itertools = { version = "0.14.0" }
 
 # db
 diesel = { version = "2.2.3", features = ["postgres", "chrono", "serde_json"] }
@@ -107,6 +108,8 @@ tiny-keccak = { version = "2.0.2", features = ["keccak"] }
 itoa = { version = "1.0.10" }
 curve25519-dalek = { version = "4.1.3" }
 borsh = { version = "1.5.3", features = ["derive"] }
+bcs = { version = "0.1.6" }
+sui-types = { git = "https://github.com/mystenlabs/sui", package = "sui-types", tag = "mainnet-v1.44.3" }
 
 uniffi = { version = "0.29.0" }
 uniffi_bindgen = { version = "0.29.0" }

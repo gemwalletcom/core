@@ -1,4 +1,5 @@
 mod model;
+pub mod rpc;
 
 use crate::GemstoneError;
 use gem_sui::model::{StakeInput, TokenTransferInput, TransferInput, UnstakeInput};

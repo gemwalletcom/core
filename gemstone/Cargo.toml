@@ -22,12 +22,17 @@ gem_evm = { path = "../crates/gem_evm" }
 gem_sui = { path = "../crates/gem_sui" }
 gem_aptos = { path = "../crates/gem_aptos" }
 gem_hash = { path = "../crates/gem_hash" }
+serde_serializers = { path = "../crates/serde_serializers" }
+
+bcs.workspace = true
+sui-types.workspace = true
 
 # uniffi
 uniffi.workspace = true
 thiserror.workspace = true
 
 anyhow.workspace = true
+
 base64.workspace = true
 serde.workspace = true
 serde_json.workspace = true
@@ -42,6 +47,7 @@ num-traits.workspace = true
 futures.workspace = true
 borsh.workspace = true
 lazy_static.workspace = true
+bigdecimal.workspace = true
 
 orca_whirlpools_core = "1.0.0"
 
