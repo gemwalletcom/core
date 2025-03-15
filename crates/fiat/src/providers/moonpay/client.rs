@@ -7,7 +7,7 @@ use super::mapper::map_asset_chain;
 use super::model::{Asset, MoonPayBuyQuote, MoonPayIpAddress, MoonPaySellQuote};
 use base64::{engine::general_purpose, Engine as _};
 use hmac::{Hmac, Mac};
-use primitives::{FiatQuoteRequest, FiatProviderName, FiatQuote, FiatTransactionType};
+use primitives::{FiatProviderName, FiatQuote, FiatQuoteRequest, FiatTransactionType};
 use reqwest::Client;
 use sha2::Sha256;
 use url::Url;
@@ -107,7 +107,12 @@ impl MoonPayClient {
             fiat_amount: request.clone().fiat_amount,
             fiat_currency: request.clone().fiat_currency,
             crypto_amount: quote.quote_currency_amount,
-            redirect_url: self.redirect_buy_url(request.fiat_amount, &request.wallet_address, &quote.quote_currency_code),
+            redirect_url: self.redirect_url(
+                FiatTransactionType::Buy,
+                request.fiat_amount,
+                &request.wallet_address,
+                &quote.quote_currency_code,
+            ),
         }
     }
 
@@ -118,31 +123,38 @@ impl MoonPayClient {
             fiat_amount: quote.quote_currency_amount,
             fiat_currency: request.clone().fiat_currency,
             crypto_amount: quote.base_currency_amount,
-            redirect_url: self.redirect_sell_url(request.crypto_amount.unwrap_or_default(), &request.wallet_address, &quote.base_currency_code),
+            redirect_url: self.redirect_url(
+                FiatTransactionType::Sell,
+                request.crypto_amount.unwrap_or_default(),
+                &request.wallet_address,
+                &quote.base_currency_code,
+            ),
         }
     }
 
     // docs: https://dev.moonpay.com/docs/ramps-sdk-buy-params
-    pub fn redirect_buy_url(&self, amount: f64, address: &str, symbol: &str) -> String {
-        let mut components = Url::parse(MOONPAY_BUY_REDIRECT_URL).unwrap();
-        components
-            .query_pairs_mut()
-            .append_pair("apiKey", &self.api_key)
-            .append_pair("currencyCode", symbol)
-            .append_pair("baseCurrencyAmount", &amount.to_string())
-            .append_pair("walletAddress", address);
-        self.sign(components)
-    }
-
     // docs: https://dev.moonpay.com/docs/ramps-sdk-sell-params
-    pub fn redirect_sell_url(&self, amount: f64, address: &str, symbol: &str) -> String {
-        let mut components = Url::parse(MOONPAY_SELL_REDIRECT_URL).unwrap();
+    pub fn redirect_url(&self, quote_type: FiatTransactionType, amount: f64, address: &str, symbol: &str) -> String {
+        let url = match quote_type {
+            FiatTransactionType::Buy => MOONPAY_BUY_REDIRECT_URL,
+            FiatTransactionType::Sell => MOONPAY_SELL_REDIRECT_URL,
+        };
+        let mut components = Url::parse(url).unwrap();
         components
             .query_pairs_mut()
             .append_pair("apiKey", &self.api_key)
-            .append_pair("defaultBaseCurrencyCode", symbol)
-            .append_pair("baseCurrencyAmount", &amount.to_string())
-            .append_pair("refundWalletAddress", address);
+            .append_pair("baseCurrencyAmount", &amount.to_string());
+
+        match quote_type {
+            FiatTransactionType::Buy => components
+                .query_pairs_mut()
+                .append_pair("currencyCode", symbol)
+                .append_pair("walletAddress", address),
+            FiatTransactionType::Sell => components
+                .query_pairs_mut()
+                .append_pair("defaultBaseCurrencyCode", symbol)
+                .append_pair("refundWalletAddress", address),
+        };
         self.sign(components)
     }
 

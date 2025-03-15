@@ -2,7 +2,7 @@ use crate::model::{filter_token_id, FiatProviderAsset};
 use bigdecimal::ToPrimitive;
 use number_formatter::BigNumberFormatter;
 use primitives::FiatTransactionType;
-use primitives::{FiatQuoteRequest, FiatProviderName, FiatQuote};
+use primitives::{FiatProviderName, FiatQuote, FiatQuoteRequest};
 use reqwest::Client;
 use url::Url;
 

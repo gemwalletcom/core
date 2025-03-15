@@ -2,7 +2,7 @@ use super::model::{Asset, Currencies, Quote, QuoteQuery, QuoteSellQuery, Respons
 use crate::model::{FiatMapping, FiatProviderAsset};
 use hex;
 use primitives::FiatTransactionType;
-use primitives::{FiatQuoteRequest, FiatProviderName, FiatQuote};
+use primitives::{FiatProviderName, FiatQuote, FiatQuoteRequest};
 use reqwest::Client;
 use sha2::{Digest, Sha512};
 use url::Url;
@@ -89,7 +89,12 @@ impl MercuryoClient {
             fiat_amount: request.fiat_amount,
             fiat_currency: request.fiat_currency,
             crypto_amount: quote.clone().amount,
-            redirect_url: self.redirect_url(quote.clone(), &request_map.network.unwrap_or_default(), request.wallet_address.as_str(), "buy"),
+            redirect_url: self.redirect_url(
+                quote.clone(),
+                FiatTransactionType::Buy,
+                &request_map.network.unwrap_or_default(),
+                request.wallet_address.as_str(),
+            ),
         }
     }
 
@@ -100,11 +105,16 @@ impl MercuryoClient {
             fiat_amount: quote.fiat_amount,
             fiat_currency: request.fiat_currency,
             crypto_amount: request.crypto_amount.unwrap_or_default(),
-            redirect_url: self.redirect_url(quote.clone(), &request_map.network.unwrap_or_default(), request.wallet_address.as_str(), "sell"),
+            redirect_url: self.redirect_url(
+                quote.clone(),
+                FiatTransactionType::Sell,
+                &request_map.network.unwrap_or_default(),
+                request.wallet_address.as_str(),
+            ),
         }
     }
 
-    pub fn redirect_url(&self, quote: Quote, network: &str, address: &str, quote_type: &str) -> String {
+    pub fn redirect_url(&self, quote: Quote, quote_type: FiatTransactionType, network: &str, address: &str) -> String {
         let mut components = Url::parse(MERCURYO_REDIRECT_URL).unwrap();
         let signature_content = format!("{}{}", address, self.secret_key);
         let signature = hex::encode(Sha512::digest(signature_content));
@@ -113,13 +123,22 @@ impl MercuryoClient {
         components
             .query_pairs_mut()
             .append_pair("widget_id", self.widget_id.as_str())
-            .append_pair("type", quote_type)
             .append_pair("merchant_transaction_id", id.as_str())
-            .append_pair("fiat_amount", &quote.fiat_amount.to_string())
             .append_pair("currency", &quote.currency)
             .append_pair("address", address)
             .append_pair("network", network)
             .append_pair("signature", &signature);
+
+        match quote_type {
+            FiatTransactionType::Buy => components
+                .query_pairs_mut()
+                .append_pair("type", "buy")
+                .append_pair("fiat_amount", &quote.fiat_amount.to_string()),
+            FiatTransactionType::Sell => components
+                .query_pairs_mut()
+                .append_pair("type", "sell")
+                .append_pair("amount", &quote.amount.to_string()),
+        };
 
         components.as_str().to_string()
     }

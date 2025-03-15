@@ -1,4 +1,4 @@
-use primitives::{AssetId, FiatQuoteRequest, FiatProviderName, FiatQuote, FiatTransaction, FiatTransactionStatus, FiatTransactionType};
+use primitives::{AssetId, FiatProviderName, FiatQuote, FiatQuoteRequest, FiatTransaction, FiatTransactionStatus, FiatTransactionType};
 use std::error::Error;
 
 use crate::{
