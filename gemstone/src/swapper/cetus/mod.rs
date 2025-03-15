@@ -1,4 +1,5 @@
 mod client;
+#[allow(unused)]
 mod clmm;
 mod models;
 mod provider;

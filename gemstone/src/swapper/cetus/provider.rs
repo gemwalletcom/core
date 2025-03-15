@@ -1,40 +1,39 @@
 use alloy_core::primitives::U256;
 use async_trait::async_trait;
-use base64::{engine::general_purpose, Engine as _};
 use bcs;
 use futures::join;
 use num_bigint::BigInt;
-use num_traits::ToBytes;
+use num_traits::{ToBytes, ToPrimitive};
 use std::{str::FromStr, sync::Arc};
 
 use super::{
     client::{models::CetusPool, CetusClient},
     clmm::{
-        compute_swap,
-        tx_builder::{CetusConfig, SharedObjectConfig, SwapParams},
-        TransactionBuilder,
+        tx_builder::{CetusConfig, SharedObject, SwapParams},
+        TickData, TransactionBuilder,
     },
-    models::{get_pool_object, CetusPoolType, RoutePoolData},
+    models::{CalculatedSwapResult, CetusPoolObject, CetusPoolType, RoutePoolData},
     CETUS_CLMM_PACKAGE_ID, CETUS_GLOBAL_CONFIG_ID, CETUS_GLOBAL_CONFIG_SHARED_VERSION, CETUS_ROUTER_PACKAGE_ID,
 };
 use crate::{
-    debug_println,
-    network::{jsonrpc_call, AlienProvider, JsonRpcResult},
-    sui::rpc::SuiClient,
+    network::AlienProvider,
+    sui::rpc::{models::InspectEvent, SuiClient},
     swapper::{
         slippage::apply_slippage_in_bp, FetchQuoteData, GemSwapMode, GemSwapProvider, SwapChainAsset, SwapProvider, SwapProviderData, SwapProviderType,
         SwapQuote, SwapQuoteData, SwapQuoteRequest, SwapRoute, SwapperError,
     },
 };
 use gem_sui::{
-    jsonrpc::{ObjectDataOptions, SuiRpc},
+    jsonrpc::{ObjectDataOptions, SuiData, SuiRpc},
     model::TxOutput,
     EMPTY_ADDRESS, SUI_COIN_TYPE_FULL,
 };
 use primitives::{AssetId, Chain};
 use sui_types::{
-    base_types::{ObjectID, SequenceNumber},
-    transaction::{TransactionData, TransactionKind},
+    base_types::ObjectID,
+    programmable_transaction_builder::ProgrammableTransactionBuilder,
+    transaction::{Command, ObjectArg, TransactionData, TransactionKind},
+    Identifier, TypeTag,
 };
 
 #[derive(Debug)]
@@ -64,9 +63,9 @@ impl Cetus {
 
     pub fn get_clmm_config(&self) -> Result<CetusConfig, SwapperError> {
         Ok(CetusConfig {
-            global_config: SharedObjectConfig {
+            global_config: SharedObject {
                 id: ObjectID::from_str(CETUS_GLOBAL_CONFIG_ID).unwrap(),
-                shared_version: SequenceNumber::from_u64(CETUS_GLOBAL_CONFIG_SHARED_VERSION),
+                shared_version: CETUS_GLOBAL_CONFIG_SHARED_VERSION,
             },
             clmm_pool: ObjectID::from_str(CETUS_CLMM_PACKAGE_ID).unwrap(),
             router: ObjectID::from_str(CETUS_ROUTER_PACKAGE_ID).unwrap(),
@@ -85,11 +84,74 @@ impl Cetus {
         Ok(pools)
     }
 
-    async fn fetch_pool_by_id(&self, pool_id: &str, provider: Arc<dyn AlienProvider>) -> Result<CetusPoolType, SwapperError> {
-        let rpc = SuiRpc::GetObject(pool_id.into(), Some(ObjectDataOptions::default()));
-        let response: JsonRpcResult<CetusPoolType> = jsonrpc_call(&rpc, provider, &Chain::Sui).await?;
-        let object = response.take()?;
-        Ok(object)
+    async fn pre_swap(
+        &self,
+        pool: &CetusPool,
+        pool_obj: &SharedObject,
+        a2b: bool,
+        buy_amount_in: bool,
+        amount: BigInt,
+        provider: Arc<dyn AlienProvider>,
+    ) -> Result<CalculatedSwapResult, anyhow::Error> {
+        let client = SuiClient::new(provider);
+        let mut ptb = ProgrammableTransactionBuilder::new();
+        let type_args = vec![TypeTag::from_str(&pool.coin_a_address)?, TypeTag::from_str(&pool.coin_b_address)?];
+        let args = [
+            ptb.obj(ObjectArg::SharedObject {
+                id: pool_obj.id,
+                initial_shared_version: pool_obj.initial_shared_version(),
+                mutable: false,
+            })?,
+            ptb.pure(a2b)?,
+            ptb.pure(buy_amount_in)?,
+            ptb.pure(amount.to_u64().unwrap_or(0))?,
+        ];
+        let move_call = Command::move_call(
+            ObjectID::from_str(CETUS_ROUTER_PACKAGE_ID)?,
+            Identifier::from_str("fetcher_script")?,
+            Identifier::from_str("calculate_swap_result")?,
+            type_args,
+            args.to_vec(),
+        );
+        ptb.command(move_call);
+        let tx = ptb.finish();
+        let tx_kind = TransactionKind::ProgrammableTransaction(tx);
+        let tx_bytes = bcs::to_bytes(&tx_kind).unwrap();
+        let result = client.inspect_tx_block(EMPTY_ADDRESS, &tx_bytes).await?;
+        let event = result.events.as_array().map(|x| x.first().unwrap()).unwrap();
+        let event_data: InspectEvent<SuiData<CalculatedSwapResult>> = serde_json::from_value(event.clone()).unwrap();
+        Ok(event_data.parsed_json.data)
+    }
+
+    #[allow(unused)]
+    async fn fetch_ticks_by_pool_id(
+        &self,
+        pool: &CetusPoolObject,
+        pool_obj: &SharedObject,
+        provider: Arc<dyn AlienProvider>,
+    ) -> Result<Vec<TickData>, anyhow::Error> {
+        let mut ptb = ProgrammableTransactionBuilder::new();
+        let type_args = vec![TypeTag::from_str(&pool.coin_a)?, TypeTag::from_str(&pool.coin_b)?];
+        let start = ptb.command(Command::make_move_vec(Some(TypeTag::U32), vec![]));
+        let limit = ptb.pure(512)?;
+        let args = [
+            ptb.obj(ObjectArg::SharedObject {
+                id: pool_obj.id,
+                initial_shared_version: pool_obj.initial_shared_version(),
+                mutable: false,
+            })?,
+            start,
+            limit,
+        ];
+        let move_call = Command::move_call(
+            ObjectID::from_str(CETUS_ROUTER_PACKAGE_ID)?,
+            Identifier::from_str("fetcher_script")?,
+            Identifier::from_str("get_ticks")?,
+            type_args,
+            args.to_vec(),
+        );
+        ptb.command(move_call);
+        todo!()
     }
 }
 
@@ -104,16 +166,13 @@ impl GemSwapProvider for Cetus {
     }
 
     async fn fetch_quote(&self, request: &SwapQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapQuote, SwapperError> {
-        let from_asset = &request.from_asset;
-        let to_asset = &request.to_asset;
-        let from_chain = from_asset.chain;
-        let to_chain = to_asset.chain;
-        if from_chain != Chain::Sui || to_chain != Chain::Sui {
+        if request.from_asset.chain != Chain::Sui || request.to_asset.chain != Chain::Sui {
             return Err(SwapperError::NotSupportedChain);
         }
 
-        let from_coin = Self::get_coin_address(from_asset);
-        let to_coin = Self::get_coin_address(to_asset);
+        let from_coin = Self::get_coin_address(&request.from_asset);
+        let to_coin = Self::get_coin_address(&request.to_asset);
+        let amount_in = BigInt::from_str(&request.value).map_err(|_| SwapperError::InvalidAmount)?;
 
         let pools = self.fetch_pools_by_coins(&from_coin, &to_coin, provider.clone()).await?;
         if pools.is_empty() {
@@ -121,27 +180,36 @@ impl GemSwapProvider for Cetus {
         }
 
         let pool = &pools[0]; // FIXME pick multiple pools
-        let pool_data = self.fetch_pool_by_id(&pool.address, provider).await?;
-        let pool_object = get_pool_object(&pool_data).unwrap();
-        let amount_in = BigInt::from_str(&request.value).map_err(|_| SwapperError::InvalidAmount)?;
-
-        // Convert ticks to TickData format
-        let tick_datas = &pool_object.tick_manager.fields.to_ticks();
-        let clmm_data = pool_object.clone().try_into()?;
+        let sui_client = SuiClient::new(provider.clone());
+        let pool_data: CetusPoolType = sui_client
+            .rpc_call(SuiRpc::GetObject(pool.address.to_string(), Some(ObjectDataOptions::default())))
+            .await?;
+        let pool_shared = SharedObject {
+            id: pool_data.data.object_id,
+            shared_version: pool_data.data.initial_shared_version().expect("Initial shared version should be available"),
+        };
 
         let a2b = pool.coin_a_address == from_coin;
+        let buy_amount_in = request.mode == GemSwapMode::ExactIn;
 
-        let swap_result = compute_swap(a2b, true, &amount_in, &clmm_data, tick_datas).map_err(|e| SwapperError::ComputeQuoteError { msg: e.to_string() })?;
+        // Call router to pre-swap
+        let swap_result = self
+            .pre_swap(pool, &pool_shared, a2b, buy_amount_in, amount_in, provider.clone())
+            .await
+            .map_err(|e| SwapperError::ComputeQuoteError { msg: e.to_string() })?;
+
         let quote_amount = U256::from_le_slice(swap_result.amount_out.to_le_bytes().as_slice());
         let slippage_bps = request.options.slippage.bps;
         let expect_min = apply_slippage_in_bp(&quote_amount, slippage_bps);
+
+        // Prepare route data
         let route_data = RoutePoolData {
             object_id: pool_data.data.object_id,
             version: pool_data.data.version,
             digest: pool_data.data.digest,
             coin_a: pool.coin_a_address.clone(),
             coin_b: pool.coin_b_address.clone(),
-            initial_shared_version: pool_data.data.initial_shared_version().expect("Initial shared version should be available"),
+            initial_shared_version: pool_shared.shared_version,
         };
 
         Ok(SwapQuote {
@@ -152,8 +220,8 @@ impl GemSwapProvider for Cetus {
                 provider: self.provider.clone(),
                 slippage_bps,
                 routes: vec![SwapRoute {
-                    input: AssetId::from(from_chain, Some(from_coin.clone())),
-                    output: AssetId::from(from_chain, Some(to_coin.clone())),
+                    input: AssetId::from(Chain::Sui, Some(from_coin.clone())),
+                    output: AssetId::from(Chain::Sui, Some(to_coin.clone())),
                     route_data: serde_json::to_string(&route_data).unwrap(),
                     gas_limit: None,
                 }],
@@ -163,21 +231,17 @@ impl GemSwapProvider for Cetus {
     }
 
     async fn fetch_quote_data(&self, quote: &SwapQuote, provider: Arc<dyn AlienProvider>, _data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError> {
-        if quote.data.routes.is_empty() {
-            return Err(SwapperError::InvalidRoute);
-        }
-
-        let route = &quote.data.routes[0];
-        let from_asset = &route.input;
-
+        // Validate quote data
+        let route = &quote.data.routes.first().ok_or(SwapperError::InvalidRoute)?;
         let sender_address = quote.request.wallet_address.parse().map_err(|_| SwapperError::InvalidAddress {
             address: quote.request.wallet_address.clone(),
         })?;
-        let pool_data: RoutePoolData = serde_json::from_str(&route.route_data).map_err(|e| SwapperError::TransactionError {
+        let route_data: RoutePoolData = serde_json::from_str(&route.route_data).map_err(|e| SwapperError::TransactionError {
             msg: format!("Invalid route data: {}", e),
         })?;
-        let from_coin = Self::get_coin_address(from_asset);
 
+        let from_asset = &route.input;
+        let from_coin = Self::get_coin_address(from_asset);
         let sui_client = SuiClient::new(provider.clone());
         let cetus_config = self.get_clmm_config()?;
 
@@ -187,48 +251,47 @@ impl GemSwapProvider for Cetus {
         let gas_price = gas_price_result.map_err(SwapperError::from)?;
         let all_coin_assets = all_coin_assets_result.map_err(SwapperError::from)?;
 
-        let gas_coin = all_coin_assets
-            .iter()
-            .find(|x| x.coin_type == SUI_COIN_TYPE_FULL)
-            .ok_or(SwapperError::TransactionError {
-                msg: "Gas coin not found".to_string(),
-            })?;
-
-        let a2b = from_coin == pool_data.coin_a;
+        // Prepare swap params for tx building
+        let a2b = from_coin == route_data.coin_a;
         let swap_params = SwapParams {
-            pool_ref: SharedObjectConfig {
-                id: pool_data.object_id,
-                shared_version: SequenceNumber::from_u64(pool_data.initial_shared_version),
+            pool_object_shared: SharedObject {
+                id: route_data.object_id,
+                shared_version: route_data.initial_shared_version,
             },
             a2b,
             by_amount_in: quote.request.mode == GemSwapMode::ExactIn,
             amount: BigInt::from_str(&quote.from_value)?,
             amount_limit: BigInt::from_str(&quote.to_min_value)?,
-            coin_type_a: pool_data.coin_a.clone(),
-            coin_type_b: pool_data.coin_b.clone(),
+            coin_type_a: route_data.coin_a.clone(),
+            coin_type_b: route_data.coin_b.clone(),
             swap_partner: None, // No swap partner for now
         };
+
+        // Build tx
         let ptb = TransactionBuilder::build_swap_transaction(&cetus_config, &swap_params, &all_coin_assets).map_err(|e| SwapperError::TransactionError {
             msg: format!("Failed to build swap transaction: {}", e),
         })?;
         let tx = ptb.finish();
-        let _debug_tx_data = TransactionData::new_programmable(sender_address, vec![gas_coin.to_ref()], tx.clone(), 50000000, gas_price);
-        debug_println!(
-            "====> debug tx data: sui keytool decode-or-verify-tx --json --tx-bytes {:?}",
-            general_purpose::STANDARD.encode(bcs::to_bytes(&_debug_tx_data).unwrap())
-        );
 
+        // Estimate gas_budget
         let tx_kind = TransactionKind::ProgrammableTransaction(tx.clone());
         let tx_bytes = bcs::to_bytes(&tx_kind).map_err(|e| SwapperError::TransactionError { msg: e.to_string() })?;
-        let gas_budget = sui_client.inspect_tx_block(EMPTY_ADDRESS, &tx_bytes).await?;
+        let inspect_result = sui_client.inspect_tx_block(EMPTY_ADDRESS, &tx_bytes).await?;
+        let gas_budget = (inspect_result.effects.total_gas_cost() as f64 * 1.2) as u64;
 
-        let tx_data = TransactionData::new_programmable(sender_address, vec![gas_coin.to_ref()], tx, gas_budget, gas_price);
+        let coin_refs = all_coin_assets
+            .iter()
+            .filter(|x| x.coin_type == SUI_COIN_TYPE_FULL)
+            .map(|x| x.to_ref())
+            .collect::<Vec<_>>();
+
+        let tx_data = TransactionData::new_programmable(sender_address, coin_refs, tx, gas_budget, gas_price);
         let tx_output = TxOutput::from_tx_data(&tx_data).unwrap();
 
         Ok(SwapQuoteData {
             to: "".to_string(),
             value: "".to_string(),
-            data: hex::encode(tx_output.tx_data),
+            data: tx_output.base64_encoded(),
             approval: None,
             gas_limit: None,
         })

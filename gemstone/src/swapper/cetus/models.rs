@@ -6,9 +6,19 @@ use sui_types::{
     digests::ObjectDigest,
 };
 
-use super::clmm::{tick::TickMath, ClmmPoolData, TickData};
+use super::clmm::ClmmPoolData;
 use crate::swapper::SwapperError;
 use gem_sui::jsonrpc::{DataObject, MoveObject, MoveObjectId, OptionU64, SuiData, I32};
+
+#[allow(unused)]
+#[derive(Debug, Clone, Deserialize)]
+pub struct CalculatedSwapResult {
+    #[serde(deserialize_with = "deserialize_bigint")]
+    pub amount_out: BigInt,
+    #[serde(deserialize_with = "deserialize_bigint")]
+    pub fee_amount: BigInt,
+    pub is_exceed: bool,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RoutePoolData {
@@ -29,6 +39,7 @@ impl RoutePoolData {
 
 pub type CetusPoolType = SuiData<DataObject<MoveObject<CetusPoolObject>>>;
 
+#[allow(unused)]
 pub fn get_pool_object(data: &CetusPoolType) -> Option<CetusPoolObject> {
     data.data.content.clone().map(|content| content.fields)
 }
@@ -94,99 +105,15 @@ pub struct Tick {
     pub tail: MoveObject<OptionU64>,
 }
 
-impl TickManager {
-    pub fn to_ticks(&self) -> Vec<TickData> {
-        const TICK_SCALING_FACTOR: i32 = 16;
-        const DEFAULT_MIN_TICKS: i32 = -25;
-        const DEFAULT_MAX_TICKS: i32 = 25;
-        const DEFAULT_RANGE_MULTIPLIER: i32 = 100;
-        const MAJOR_TICK_MULTIPLIER: i32 = 5;
-        const TICK_ALTERNATION_MULTIPLIER: i32 = 2;
-        const STEP_MULTIPLIER: i32 = 10;
-        const MAJOR_TICK_LIQUIDITY: i64 = 5000000;
-        const MINOR_TICK_LIQUIDITY: i64 = 1000000;
-
-        let mut ticks = Vec::new();
-        let spacing = self.tick_spacing;
-
-        let base_indices = self
-            .ticks
-            .fields
-            .head
-            .iter()
-            .filter_map(|option_u64| {
-                if !option_u64.fields.is_none {
-                    let offset_value = option_u64.fields.v;
-                    Some(((offset_value as i32) / TICK_SCALING_FACTOR) * spacing)
-                } else {
-                    None
-                }
-            })
-            .collect::<Vec<i32>>();
-
-        let tail_index = if !self.ticks.fields.tail.fields.is_none {
-            let tail_value = self.ticks.fields.tail.fields.v;
-            Some(((tail_value as i32) / TICK_SCALING_FACTOR) * spacing)
-        } else {
-            None
-        };
-
-        let mut all_indices = base_indices;
-        if let Some(tail) = tail_index {
-            all_indices.push(tail);
-        }
-        all_indices.sort();
-        all_indices.dedup();
-
-        if all_indices.len() >= 2 {
-            let min_index = *all_indices.first().unwrap_or(&(-DEFAULT_RANGE_MULTIPLIER * spacing));
-            let max_index = *all_indices.last().unwrap_or(&(DEFAULT_RANGE_MULTIPLIER * spacing));
-
-            let step = spacing * STEP_MULTIPLIER;
-            for i in (min_index..=max_index).step_by(step as usize) {
-                all_indices.push(i);
-            }
-
-            all_indices.sort();
-            all_indices.dedup();
-        } else {
-            for i in DEFAULT_MIN_TICKS..=DEFAULT_MAX_TICKS {
-                all_indices.push(i * spacing);
-            }
-        }
-
-        for tick_index in all_indices {
-            let sqrt_price = TickMath::tick_index_to_sqrt_price_x64(tick_index);
-
-            let liquidity_net = if tick_index % (spacing * MAJOR_TICK_MULTIPLIER) == 0 {
-                BigInt::from(MAJOR_TICK_LIQUIDITY)
-            } else {
-                BigInt::from(MINOR_TICK_LIQUIDITY)
-            };
-
-            let signed_liquidity = if tick_index % (spacing * TICK_ALTERNATION_MULTIPLIER) == 0 {
-                liquidity_net
-            } else {
-                -liquidity_net
-            };
-
-            ticks.push(TickData {
-                index: tick_index,
-                sqrt_price,
-                liquidity_net: signed_liquidity,
-            });
-        }
-
-        ticks
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::{
         network::jsonrpc::*,
-        sui::rpc::{models::InspectResult, CoinAsset},
+        sui::rpc::{
+            models::{InspectEvent, InspectResult},
+            CoinAsset,
+        },
     };
     use serde_json;
 
@@ -231,7 +158,11 @@ mod tests {
         let response: JsonRpcResponse<InspectResult> = serde_json::from_str(string).unwrap();
         let result = response.result;
 
-        assert!(result.error.is_some());
+        let event = result.events.as_array().unwrap().first().unwrap();
+        let event_data: InspectEvent<SuiData<CalculatedSwapResult>> = serde_json::from_value(event.clone()).unwrap();
+
+        assert!(result.error.is_none());
         assert!(result.effects.total_gas_cost() > 0);
+        assert_eq!(event_data.parsed_json.data.amount_out.to_string(), "1168986");
     }
 }

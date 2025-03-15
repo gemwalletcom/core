@@ -49,7 +49,7 @@ impl SuiClient {
         })
     }
 
-    pub async fn inspect_tx_block(&self, sender: &str, tx_data: &[u8]) -> Result<u64, AlienError> {
+    pub async fn inspect_tx_block(&self, sender: &str, tx_data: &[u8]) -> Result<InspectResult, AlienError> {
         let tx_bytes_base64 = general_purpose::STANDARD.encode(tx_data);
         let result: InspectResult = self.rpc_call(SuiRpc::InspectTransactionBlock(sender.to_string(), tx_bytes_base64)).await?;
 
@@ -58,9 +58,6 @@ impl SuiClient {
                 msg: format!("Failed to inspect transaction: {:?}", result.error),
             });
         }
-
-        // Add a buffer for safety (20%)
-        let gas_with_buffer = (result.effects.total_gas_cost() as f64 * 1.2) as u64;
-        Ok(gas_with_buffer)
+        Ok(result)
     }
 }

@@ -1,6 +1,5 @@
 use thiserror::Error;
 
-#[allow(unused)]
 #[derive(Debug, Clone, Copy, Error)]
 pub enum ErrorCode {
     #[error("Integer downcast overflow")]

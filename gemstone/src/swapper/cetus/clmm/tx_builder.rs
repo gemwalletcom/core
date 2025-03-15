@@ -25,7 +25,7 @@ const MAX_PRICE_SQRT_LIMIT: u128 = 79226673515401279992447579055_u128;
 
 #[derive(Debug, Clone)]
 pub struct SwapParams {
-    pub pool_ref: SharedObjectConfig,
+    pub pool_object_shared: SharedObject,
     pub a2b: bool,
     pub by_amount_in: bool,
     pub amount: BigInt,
@@ -37,15 +37,21 @@ pub struct SwapParams {
 
 #[derive(Debug, Clone)]
 pub struct CetusConfig {
-    pub global_config: SharedObjectConfig,
+    pub global_config: SharedObject,
     pub clmm_pool: ObjectID,
     pub router: ObjectID,
 }
 
 #[derive(Debug, Clone)]
-pub struct SharedObjectConfig {
+pub struct SharedObject {
     pub id: ObjectID,
-    pub shared_version: SequenceNumber,
+    pub shared_version: u64,
+}
+
+impl SharedObject {
+    pub fn initial_shared_version(&self) -> SequenceNumber {
+        SequenceNumber::from_u64(self.shared_version)
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -168,15 +174,15 @@ impl TransactionBuilder {
         // Add global config
         let global_obj_arg = ObjectArg::SharedObject {
             id: cetus_config.global_config.id,
-            initial_shared_version: cetus_config.global_config.shared_version,
+            initial_shared_version: cetus_config.global_config.initial_shared_version(),
             mutable: true,
         };
         args.push(ptb.obj(global_obj_arg)?);
 
         // Add pool object
         let pool_obj_arg = ObjectArg::SharedObject {
-            id: params.pool_ref.id,
-            initial_shared_version: params.pool_ref.shared_version,
+            id: params.pool_object_shared.id,
+            initial_shared_version: params.pool_object_shared.initial_shared_version(),
             mutable: true,
         };
         args.push(ptb.obj(pool_obj_arg)?);
@@ -195,10 +201,10 @@ impl TransactionBuilder {
         args.push(ptb.pure(params.by_amount_in)?);
 
         // Add amount
-        args.push(ptb.pure(&params.amount)?);
+        args.push(ptb.pure(params.amount.to_u64().unwrap_or(0))?);
 
         // Add amount_limit
-        args.push(ptb.pure(&params.amount_limit)?);
+        args.push(ptb.pure(params.amount_limit.to_u64().unwrap_or(0))?);
 
         // Add sqrt_price_limit
         args.push(ptb.pure(sqrt_price_limit)?);
