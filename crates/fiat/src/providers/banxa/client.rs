@@ -115,9 +115,9 @@ impl BanxaClient {
             .collect()
     }
 
-    pub fn get_fiat_quote(&self, request: FiatQuoteRequest, fiat_mapping: FiatMapping, price: Price) -> FiatQuote {
+    pub fn get_fiat_buy_quote(&self, request: FiatQuoteRequest, fiat_mapping: FiatMapping, price: Price) -> FiatQuote {
         let crypto_amount = request.fiat_amount / (price.fiat_amount + price.fee_amount + price.network_fee);
-        let redirect_url = self.get_redirect_url("buy", request.clone(), fiat_mapping);
+        let redirect_url = self.get_redirect_buy_url(request.clone(), fiat_mapping);
 
         FiatQuote {
             provider: Self::NAME.as_fiat_provider(),
@@ -129,20 +129,46 @@ impl BanxaClient {
         }
     }
 
+    pub fn get_fiat_sell_quote(&self, request: FiatQuoteRequest, fiat_mapping: FiatMapping, _price: Price) -> FiatQuote {
+        let crypto_amount = request.crypto_amount.unwrap_or_default();
+        //request.fiat_amount / (price.fiat_amount + price.fee_amount + price.network_fee);
+        let redirect_url = self.get_redirect_sell_url(request.clone(), fiat_mapping);
+
+        FiatQuote {
+            provider: Self::NAME.as_fiat_provider(),
+            quote_type: FiatTransactionType::Sell,
+            fiat_amount: request.fiat_amount,
+            fiat_currency: request.fiat_currency,
+            crypto_amount,
+            redirect_url,
+        }
+    }
+
     // URL Parametization https://docs.banxa.com/docs/referral-link
 
-    pub fn get_redirect_url(&self, order_type: &str, request: FiatQuoteRequest, fiat_mapping: FiatMapping) -> String {
+    pub fn get_redirect_buy_url(&self, request: FiatQuoteRequest, fiat_mapping: FiatMapping) -> String {
         let mut components = Url::parse(&self.url).unwrap();
-
         components
             .query_pairs_mut()
-            .append_pair("orderType", order_type)
+            .append_pair("orderType", "buy")
             .append_pair("coinType", &fiat_mapping.symbol)
             .append_pair("blockchain", &fiat_mapping.network.unwrap_or_default())
             .append_pair("fiatType", request.fiat_currency.as_str())
             .append_pair("fiatAmount", &request.fiat_amount.to_string())
             .append_pair("walletAddress", &request.wallet_address);
+        components.as_str().to_string()
+    }
 
+    pub fn get_redirect_sell_url(&self, request: FiatQuoteRequest, fiat_mapping: FiatMapping) -> String {
+        let mut components = Url::parse(&self.url).unwrap();
+        components
+            .query_pairs_mut()
+            .append_pair("orderType", "sell")
+            .append_pair("coinType", &fiat_mapping.symbol)
+            .append_pair("blockchain", &fiat_mapping.network.unwrap_or_default())
+            .append_pair("fiatType", request.fiat_currency.as_str())
+            .append_pair("coinAmount", &request.crypto_amount.unwrap_or_default().to_string())
+            .append_pair("walletAddress", &request.wallet_address);
         components.as_str().to_string()
     }
 }

@@ -137,23 +137,12 @@ impl Parser {
         }
     }
 
-    fn filter_transaction(transaction: &Transaction, options: &ParserOptions) -> bool {
-        if transaction.transaction_type == TransactionType::Transfer {
-            if let Some(minimum_amount) = options.minimum_transfer_amount() {
-                if let Ok(value) = transaction.value.parse::<u64>() {
-                    return minimum_amount > value;
-                }
-            }
-        }
-        true
-    }
-
     pub async fn parse_blocks(&mut self, blocks: Vec<i32>) -> Result<ParserBlocksResult, Box<dyn Error + Send + Sync>> {
         let transactions = self
             .fetch_blocks(blocks.clone())
             .await?
             .into_iter()
-            .filter(|x| Self::filter_transaction(x, &self.options))
+            .filter(|x| filter_transaction(&x.value, &x.transaction_type, self.options.minimum_transfer_amount()))
             .collect::<Vec<Transaction>>();
 
         let addresses = transactions.clone().into_iter().flat_map(|x| x.addresses()).collect();
@@ -253,5 +242,33 @@ impl Parser {
         }
 
         Ok(primitive_transactions.len())
+    }
+}
+
+fn filter_transaction(value: &str, transaction_type: &TransactionType, minimum_transfer_amount: u64) -> bool {
+    if *transaction_type == TransactionType::Transfer {
+        if let Ok(value) = value.parse::<u64>() {
+            return value >= minimum_transfer_amount;
+        }
+    }
+    true
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_filter_transaction() {
+        let test_cases = vec![
+            ("1", TransactionType::Transfer, 0, true),
+            ("500", TransactionType::Transfer, 1000, false),
+            ("1500", TransactionType::Transfer, 1000, true),
+            ("invalid", TransactionType::Transfer, 1000, true),
+        ];
+
+        for (transaction_value, transaction_type, minimum_transfer_amount, expected) in test_cases {
+            assert_eq!(filter_transaction(transaction_value, &transaction_type, minimum_transfer_amount), expected);
+        }
     }
 }

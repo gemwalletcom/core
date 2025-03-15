@@ -4,7 +4,7 @@ use crate::{
 };
 use async_trait::async_trait;
 use primitives::FiatTransactionType;
-use primitives::{AssetId, FiatQuoteRequest, FiatProviderName, FiatQuote, FiatTransaction, FiatTransactionStatus};
+use primitives::{AssetId, FiatProviderName, FiatQuote, FiatQuoteRequest, FiatTransaction, FiatTransactionStatus};
 use std::error::Error;
 
 use super::{
@@ -22,11 +22,15 @@ impl FiatProvider for BanxaClient {
         let prices = self.get_prices(&request.fiat_currency, &request_map.symbol).await?;
         let price = prices.prices.first().cloned().ok_or("No price available")?;
 
-        Ok(self.get_fiat_quote(request, request_map, price))
+        Ok(self.get_fiat_buy_quote(request, request_map, price))
     }
 
-    async fn get_sell_quote(&self, _request: FiatQuoteRequest, _request_map: FiatMapping) -> Result<FiatQuote, Box<dyn Error + Send + Sync>> {
-        Err(Box::from("not supported"))
+    async fn get_sell_quote(&self, request: FiatQuoteRequest, request_map: FiatMapping) -> Result<FiatQuote, Box<dyn Error + Send + Sync>> {
+        Err("not supported")?;
+        let prices = self.get_prices(&request.fiat_currency, &request_map.symbol).await?;
+        let price = prices.prices.first().cloned().ok_or("No price available")?;
+
+        Ok(self.get_fiat_sell_quote(request, request_map, price))
     }
 
     async fn get_assets(&self) -> Result<Vec<FiatProviderAsset>, Box<dyn std::error::Error + Send + Sync>> {
