@@ -25,7 +25,7 @@ const MAX_PRICE_SQRT_LIMIT: u128 = 79226673515401279992447579055_u128;
 
 #[derive(Debug, Clone)]
 pub struct SwapParams {
-    pub pool_ref: ObjectRef,
+    pub pool_ref: SharedObjectConfig,
     pub a2b: bool,
     pub by_amount_in: bool,
     pub amount: BigInt,
@@ -61,7 +61,7 @@ pub struct BuildCoinResult {
 pub struct TransactionBuilder;
 
 impl TransactionBuilder {
-    pub fn build_zero_value_coin(all_coins: &[CoinAsset], tx_builder: &mut ProgrammableTransactionBuilder, coin_type: &str) -> Result<BuildCoinResult> {
+    pub fn build_zero_value_coin(all_coins: &[CoinAsset], ptb: &mut ProgrammableTransactionBuilder, coin_type: &str) -> Result<BuildCoinResult> {
         let move_call = Command::move_call(
             ObjectID::from_single_byte(SUI_FRAMEWORK_PACKAGE_ID),
             Identifier::from_str(MODULE_COIN)?,
@@ -69,7 +69,7 @@ impl TransactionBuilder {
             vec![TypeTag::from_str(coin_type)?],
             vec![],
         );
-        let target_coin = tx_builder.command(move_call);
+        let target_coin = ptb.command(move_call);
 
         Ok(BuildCoinResult {
             target_coin,
@@ -81,7 +81,7 @@ impl TransactionBuilder {
     }
 
     pub fn build_coin_for_amount(
-        tx_builder: &mut ProgrammableTransactionBuilder,
+        ptb: &mut ProgrammableTransactionBuilder,
         all_coins: &[CoinAsset],
         amount: &BigInt,
         coin_type: &str,
@@ -90,7 +90,7 @@ impl TransactionBuilder {
         let coin_assets = CoinAssist::get_coin_assets(coin_type, all_coins);
         // Mint zero coin if amount is 0
         if amount == &BigInt::from(0u64) {
-            return Self::build_zero_value_coin(all_coins, tx_builder, coin_type);
+            return Self::build_zero_value_coin(all_coins, ptb, coin_type);
         }
 
         let amount_total = CoinAssist::calculate_total_balance(&coin_assets);
@@ -103,7 +103,7 @@ impl TransactionBuilder {
             ));
         }
 
-        Self::build_one_coin(tx_builder, &coin_assets, amount, coin_type, fix_amount)
+        Self::build_one_coin(ptb, &coin_assets, amount, coin_type, fix_amount)
     }
 
     fn build_one_coin(
@@ -141,7 +141,7 @@ impl TransactionBuilder {
     }
 
     pub fn build_swap_transaction_args(
-        tx_builder: &mut ProgrammableTransactionBuilder,
+        ptb: &mut ProgrammableTransactionBuilder,
         params: &SwapParams,
         cetus_config: &CetusConfig,
         primary_coin_input_a: &BuildCoinResult,
@@ -171,16 +171,20 @@ impl TransactionBuilder {
             initial_shared_version: cetus_config.global_config.shared_version,
             mutable: true,
         };
-        args.push(tx_builder.obj(global_obj_arg)?);
+        args.push(ptb.obj(global_obj_arg)?);
 
-        // Add pool id
-        let pool_obj_arg = ObjectArg::ImmOrOwnedObject(params.pool_ref);
-        args.push(tx_builder.obj(pool_obj_arg)?);
+        // Add pool object
+        let pool_obj_arg = ObjectArg::SharedObject {
+            id: params.pool_ref.id,
+            initial_shared_version: params.pool_ref.shared_version,
+            mutable: true,
+        };
+        args.push(ptb.obj(pool_obj_arg)?);
 
         // Add swap partner if needed
         if has_swap_partner {
             let partner_obj_arg = ObjectArg::ImmOrOwnedObject(params.swap_partner.unwrap());
-            args.push(tx_builder.obj(partner_obj_arg)?);
+            args.push(ptb.obj(partner_obj_arg)?);
         }
 
         // Add coin inputs
@@ -188,22 +192,22 @@ impl TransactionBuilder {
         args.push(primary_coin_input_b.target_coin);
 
         // Add by_amount_in
-        args.push(tx_builder.pure(params.by_amount_in)?);
+        args.push(ptb.pure(params.by_amount_in)?);
 
         // Add amount
-        args.push(tx_builder.pure(&params.amount)?);
+        args.push(ptb.pure(&params.amount)?);
 
         // Add amount_limit
-        args.push(tx_builder.pure(&params.amount_limit)?);
+        args.push(ptb.pure(&params.amount_limit)?);
 
         // Add sqrt_price_limit
-        args.push(tx_builder.pure(sqrt_price_limit)?);
+        args.push(ptb.pure(sqrt_price_limit)?);
 
         // Add clock
-        args.push(tx_builder.obj(sui_clock_object())?);
+        args.push(ptb.obj(sui_clock_object())?);
 
         // Make the move call
-        tx_builder.programmable_move_call(
+        ptb.programmable_move_call(
             cetus_config.router,
             Identifier::from_str(MODULE_POOL_SCRIPT_V2)?,
             Identifier::from_str(function_name)?,
@@ -215,7 +219,7 @@ impl TransactionBuilder {
     }
 
     pub fn build_swap_transaction(cetus_config: &CetusConfig, params: &SwapParams, all_coin_asset: &[CoinAsset]) -> Result<ProgrammableTransactionBuilder> {
-        let mut tx_builder = ProgrammableTransactionBuilder::new();
+        let mut ptb = ProgrammableTransactionBuilder::new();
 
         // Calculate the input amounts based on direction and swap mode
         let (amount_a, amount_b) = if params.a2b {
@@ -234,13 +238,13 @@ impl TransactionBuilder {
         };
 
         // Build coin inputs for both sides of the swap
-        let primary_coin_input_a = Self::build_coin_for_amount(&mut tx_builder, all_coin_asset, &amount_a, &params.coin_type_a, true)?;
-        let primary_coin_input_b = Self::build_coin_for_amount(&mut tx_builder, all_coin_asset, &amount_b, &params.coin_type_b, true)?;
+        let primary_coin_input_a = Self::build_coin_for_amount(&mut ptb, all_coin_asset, &amount_a, &params.coin_type_a, true)?;
+        let primary_coin_input_b = Self::build_coin_for_amount(&mut ptb, all_coin_asset, &amount_b, &params.coin_type_b, true)?;
 
         // Build the transaction with the prepared coin inputs
-        Self::build_swap_transaction_args(&mut tx_builder, params, cetus_config, &primary_coin_input_a, &primary_coin_input_b)?;
+        Self::build_swap_transaction_args(&mut ptb, params, cetus_config, &primary_coin_input_a, &primary_coin_input_b)?;
 
-        Ok(tx_builder)
+        Ok(ptb)
     }
 }
 

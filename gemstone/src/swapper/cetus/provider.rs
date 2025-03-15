@@ -22,8 +22,8 @@ use crate::{
     network::{jsonrpc_call, AlienProvider, JsonRpcResult},
     sui::rpc::SuiClient,
     swapper::{
-        slippage::apply_slippage_in_bp, FetchQuoteData, GemSwapProvider, SwapChainAsset, SwapProvider, SwapProviderData, SwapProviderType, SwapQuote,
-        SwapQuoteData, SwapQuoteRequest, SwapRoute, SwapperError,
+        slippage::apply_slippage_in_bp, FetchQuoteData, GemSwapMode, GemSwapProvider, SwapChainAsset, SwapProvider, SwapProviderData, SwapProviderType,
+        SwapQuote, SwapQuoteData, SwapQuoteRequest, SwapRoute, SwapperError,
     },
 };
 use gem_sui::{
@@ -141,6 +141,7 @@ impl GemSwapProvider for Cetus {
             digest: pool_data.data.digest,
             coin_a: pool.coin_a_address.clone(),
             coin_b: pool.coin_b_address.clone(),
+            initial_shared_version: pool_data.data.initial_shared_version().expect("Initial shared version should be available"),
         };
 
         Ok(SwapQuote {
@@ -175,7 +176,6 @@ impl GemSwapProvider for Cetus {
         let pool_data: RoutePoolData = serde_json::from_str(&route.route_data).map_err(|e| SwapperError::TransactionError {
             msg: format!("Invalid route data: {}", e),
         })?;
-        let pool_ref = pool_data.obj_ref();
         let from_coin = Self::get_coin_address(from_asset);
 
         let sui_client = SuiClient::new(provider.clone());
@@ -196,9 +196,12 @@ impl GemSwapProvider for Cetus {
 
         let a2b = from_coin == pool_data.coin_a;
         let swap_params = SwapParams {
-            pool_ref,
+            pool_ref: SharedObjectConfig {
+                id: pool_data.object_id,
+                shared_version: SequenceNumber::from_u64(pool_data.initial_shared_version),
+            },
             a2b,
-            by_amount_in: a2b,
+            by_amount_in: quote.request.mode == GemSwapMode::ExactIn,
             amount: BigInt::from_str(&quote.from_value)?,
             amount_limit: BigInt::from_str(&quote.to_min_value)?,
             coin_type_a: pool_data.coin_a.clone(),

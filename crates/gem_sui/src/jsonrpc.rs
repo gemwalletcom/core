@@ -78,6 +78,16 @@ impl<T> DataObject<T> {
     }
 }
 
+impl<T> DataObject<T> {
+    pub fn initial_shared_version(&self) -> Option<u64> {
+        if let Some(Owner::Shared { initial_shared_version }) = &self.owner {
+            Some(*initial_shared_version)
+        } else {
+            None
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Owner {
     AddressOwner(String),

@@ -17,9 +17,11 @@ pub struct RoutePoolData {
     pub digest: ObjectDigest,
     pub coin_a: String,
     pub coin_b: String,
+    pub initial_shared_version: u64,
 }
 
 impl RoutePoolData {
+    #[allow(unused)]
     pub fn obj_ref(&self) -> ObjectRef {
         (self.object_id, SequenceNumber::from_u64(self.version), self.digest)
     }
