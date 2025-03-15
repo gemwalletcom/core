@@ -8,8 +8,7 @@ use async_trait::async_trait;
 use std::error::Error;
 
 use super::client::MoonPayClient;
-use primitives::{fiat_quote_request::FiatSellRequest, FiatTransactionType};
-use primitives::{AssetId, FiatBuyRequest, FiatProviderName, FiatQuote, FiatTransaction, FiatTransactionStatus};
+use primitives::{AssetId, FiatBuyRequest, FiatProviderName, FiatQuote, FiatTransaction, FiatTransactionStatus, FiatTransactionType};
 
 #[async_trait]
 impl FiatProvider for MoonPayClient {
@@ -32,14 +31,18 @@ impl FiatProvider for MoonPayClient {
         Ok(self.get_buy_fiat_quote(request, quote))
     }
 
-    async fn get_sell_quote(&self, request: FiatSellRequest, request_map: FiatMapping) -> Result<FiatQuote, Box<dyn Error + Send + Sync>> {
+    async fn get_sell_quote(&self, request: FiatBuyRequest, request_map: FiatMapping) -> Result<FiatQuote, Box<dyn Error + Send + Sync>> {
         let ip_address_check = self.get_ip_address(&request.ip_address).await?;
         if !ip_address_check.is_allowed && !ip_address_check.is_sell_allowed {
             return Err(FiatError::FiatSellNotAllowed.into());
         }
 
         let quote = self
-            .get_sell_quote(request_map.symbol.to_lowercase(), request.fiat_currency.to_lowercase(), request.crypto_amount)
+            .get_sell_quote(
+                request_map.symbol.to_lowercase(),
+                request.fiat_currency.to_lowercase(),
+                request.crypto_amount.unwrap_or_default(),
+            )
             .await?;
 
         Ok(self.get_sell_fiat_quote(request, quote))

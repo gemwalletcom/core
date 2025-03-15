@@ -1,8 +1,7 @@
 extern crate rocket;
 pub use fiat::{FiatClient, FiatProviderFactory};
 
-use primitives::fiat_quote_request::FiatSellRequest;
-use primitives::{fiat_assets::FiatAssets, fiat_quote::FiatQuotes, fiat_quote_request::FiatBuyRequest};
+use primitives::{FiatAssets, FiatBuyRequest, FiatQuotes};
 use rocket::serde::json::Json;
 use rocket::tokio::sync::Mutex;
 use rocket::State;
@@ -24,6 +23,7 @@ pub async fn get_fiat_on_ramp_quotes(
         ip_address: ip_address.unwrap_or(ip.to_string()),
         fiat_amount: amount,
         fiat_currency: currency,
+        crypto_amount: None,
         wallet_address,
         provider_id,
     };
@@ -37,22 +37,25 @@ pub async fn get_fiat_on_ramp_quotes(
     }
 }
 
-#[get("/fiat/off_ramp/quotes/<asset_id>?<amount>&<currency>&<wallet_address>&<ip_address>")]
+#[get("/fiat/off_ramp/quotes/<asset_id>?<amount>&<currency>&<wallet_address>&<ip_address>&<provider_id>")]
 pub async fn get_fiat_off_ramp_quotes(
     asset_id: &str,
     amount: f64,
     currency: &str,
     wallet_address: &str,
     ip_address: Option<String>,
+    provider_id: Option<String>,
     ip: std::net::IpAddr,
     fiat_client: &State<Mutex<FiatClient>>,
 ) -> Json<FiatQuotes> {
-    let request = FiatSellRequest {
+    let request = FiatBuyRequest {
         asset_id: asset_id.into(),
         ip_address: ip_address.unwrap_or(ip.to_string()),
-        crypto_amount: amount,
+        fiat_amount: 0.0,
+        crypto_amount: Some(amount),
         fiat_currency: currency.into(),
         wallet_address: wallet_address.into(),
+        provider_id,
     };
     let quotes = fiat_client.lock().await.get_sell_quotes(request).await;
     match quotes {

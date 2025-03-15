@@ -6,12 +6,7 @@ use crate::{
     FiatProvider,
 };
 use futures::future::join_all;
-use primitives::{
-    fiat_assets::FiatAssets,
-    fiat_quote::{FiatQuote, FiatQuoteError},
-    fiat_quote_request::FiatBuyRequest,
-};
-use primitives::{fiat_quote::FiatQuotes, fiat_quote_request::FiatSellRequest};
+use primitives::{FiatAssets, FiatBuyRequest, FiatQuote, FiatQuoteError, FiatQuotes};
 use reqwest::Client as RequestClient;
 use storage::DatabaseClient;
 
@@ -124,7 +119,7 @@ impl FiatClient {
         Ok(FiatQuotes { quotes, errors })
     }
 
-    pub async fn get_sell_quotes(&mut self, request: FiatSellRequest) -> Result<FiatQuotes, Box<dyn Error + Send + Sync>> {
+    pub async fn get_sell_quotes(&mut self, request: FiatBuyRequest) -> Result<FiatQuotes, Box<dyn Error + Send + Sync>> {
         let fiat_mapping_map = self.get_fiat_mapping(&request.asset_id)?;
         let mut futures = vec![];
 

@@ -3,7 +3,7 @@ use crate::{
     FiatProvider,
 };
 use async_trait::async_trait;
-use primitives::{fiat_quote_request::FiatSellRequest, FiatTransactionType};
+use primitives::FiatTransactionType;
 use primitives::{AssetId, FiatBuyRequest, FiatProviderName, FiatQuote, FiatTransaction, FiatTransactionStatus};
 use std::error::Error;
 
@@ -25,13 +25,13 @@ impl FiatProvider for BanxaClient {
         Ok(self.get_fiat_quote(request, request_map, price))
     }
 
-    async fn get_sell_quote(&self, _request: FiatSellRequest, _request_map: FiatMapping) -> Result<FiatQuote, Box<dyn Error + Send + Sync>> {
+    async fn get_sell_quote(&self, _request: FiatBuyRequest, _request_map: FiatMapping) -> Result<FiatQuote, Box<dyn Error + Send + Sync>> {
         Err(Box::from("not supported"))
     }
 
     async fn get_assets(&self) -> Result<Vec<FiatProviderAsset>, Box<dyn std::error::Error + Send + Sync>> {
         let assets = self
-            .get_assets()
+            .get_buy_assets()
             .await?
             .into_iter()
             .flat_map(Self::map_asset)

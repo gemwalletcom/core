@@ -11,7 +11,6 @@ use super::{
     model::{QuoteRequest, Webhook},
 };
 use async_trait::async_trait;
-use primitives::fiat_quote_request::FiatSellRequest;
 
 #[async_trait]
 impl FiatProvider for RampClient {
@@ -41,7 +40,7 @@ impl FiatProvider for RampClient {
         Ok(self.get_fiat_quote(request.clone(), quote))
     }
 
-    async fn get_sell_quote(&self, _request: FiatSellRequest, _request_map: FiatMapping) -> Result<FiatQuote, Box<dyn Error + Send + Sync>> {
+    async fn get_sell_quote(&self, _request: FiatBuyRequest, _request_map: FiatMapping) -> Result<FiatQuote, Box<dyn Error + Send + Sync>> {
         Err(Box::from("not supported"))
     }
 

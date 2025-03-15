@@ -3,7 +3,7 @@ use crate::{
     FiatProvider,
 };
 use async_trait::async_trait;
-use primitives::{fiat_quote_request::FiatSellRequest, fiat_transaction::FiatTransactionType};
+use primitives::fiat_transaction::FiatTransactionType;
 use primitives::{FiatBuyRequest, FiatProviderName, FiatQuote, FiatTransaction, FiatTransactionStatus};
 use std::error::Error;
 
@@ -28,12 +28,12 @@ impl FiatProvider for MercuryoClient {
         Ok(self.get_fiat_buy_quote(request, request_map.clone(), quote))
     }
 
-    async fn get_sell_quote(&self, request: FiatSellRequest, request_map: FiatMapping) -> Result<FiatQuote, Box<dyn Error + Send + Sync>> {
+    async fn get_sell_quote(&self, request: FiatBuyRequest, request_map: FiatMapping) -> Result<FiatQuote, Box<dyn Error + Send + Sync>> {
         let quote = self
             .get_quote_sell(
                 request.fiat_currency.clone(),
                 request_map.symbol.clone(),
-                request.crypto_amount,
+                request.crypto_amount.unwrap_or_default(),
                 request_map.network.clone().unwrap_or_default(),
             )
             .await?;

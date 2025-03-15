@@ -33,7 +33,7 @@ pub use self::asset_details::{AssetBasic, AssetFull, AssetLink, AssetMarketPrice
 pub mod asset_constants;
 pub mod fiat_assets;
 pub mod fiat_quote;
-pub use self::fiat_quote::FiatQuote;
+pub use self::fiat_quote::{FiatQuote, FiatQuoteError, FiatQuotes};
 pub mod fiat_transaction;
 pub use self::fiat_transaction::{FiatTransaction, FiatTransactionStatus, FiatTransactionType};
 pub mod tokenlist;

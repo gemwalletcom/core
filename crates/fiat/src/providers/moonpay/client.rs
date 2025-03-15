@@ -7,9 +7,7 @@ use super::mapper::map_asset_chain;
 use super::model::{Asset, MoonPayBuyQuote, MoonPayIpAddress, MoonPaySellQuote};
 use base64::{engine::general_purpose, Engine as _};
 use hmac::{Hmac, Mac};
-use primitives::fiat_quote_request::FiatSellRequest;
-use primitives::FiatTransactionType;
-use primitives::{fiat_quote::FiatQuote, fiat_quote_request::FiatBuyRequest, FiatProviderName};
+use primitives::{FiatBuyRequest, FiatProviderName, FiatQuote, FiatTransactionType};
 use reqwest::Client;
 use sha2::Sha256;
 use url::Url;
@@ -113,14 +111,14 @@ impl MoonPayClient {
         }
     }
 
-    pub fn get_sell_fiat_quote(&self, request: FiatSellRequest, quote: MoonPaySellQuote) -> FiatQuote {
+    pub fn get_sell_fiat_quote(&self, request: FiatBuyRequest, quote: MoonPaySellQuote) -> FiatQuote {
         FiatQuote {
             provider: Self::NAME.as_fiat_provider(),
             quote_type: FiatTransactionType::Sell,
             fiat_amount: quote.quote_currency_amount,
             fiat_currency: request.clone().fiat_currency,
             crypto_amount: quote.base_currency_amount,
-            redirect_url: self.redirect_sell_url(request.crypto_amount, &request.wallet_address, &quote.base_currency_code),
+            redirect_url: self.redirect_sell_url(request.crypto_amount.unwrap_or_default(), &request.wallet_address, &quote.base_currency_code),
         }
     }
 
