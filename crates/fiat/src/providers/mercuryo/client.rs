@@ -2,7 +2,7 @@ use super::model::{Asset, Currencies, Quote, QuoteQuery, QuoteSellQuery, Respons
 use crate::model::{FiatMapping, FiatProviderAsset};
 use hex;
 use primitives::FiatTransactionType;
-use primitives::{FiatBuyRequest, FiatProviderName, FiatQuote};
+use primitives::{FiatQuoteRequest, FiatProviderName, FiatQuote};
 use reqwest::Client;
 use sha2::{Digest, Sha512};
 use url::Url;
@@ -82,7 +82,7 @@ impl MercuryoClient {
         })
     }
 
-    pub fn get_fiat_buy_quote(&self, request: FiatBuyRequest, request_map: FiatMapping, quote: Quote) -> FiatQuote {
+    pub fn get_fiat_buy_quote(&self, request: FiatQuoteRequest, request_map: FiatMapping, quote: Quote) -> FiatQuote {
         FiatQuote {
             provider: Self::NAME.as_fiat_provider(),
             quote_type: FiatTransactionType::Buy,
@@ -93,7 +93,7 @@ impl MercuryoClient {
         }
     }
 
-    pub fn get_fiat_sell_quote(&self, request: FiatBuyRequest, request_map: FiatMapping, quote: Quote) -> FiatQuote {
+    pub fn get_fiat_sell_quote(&self, request: FiatQuoteRequest, request_map: FiatMapping, quote: Quote) -> FiatQuote {
         FiatQuote {
             provider: Self::NAME.as_fiat_provider(),
             quote_type: FiatTransactionType::Sell,

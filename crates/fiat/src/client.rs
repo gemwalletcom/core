@@ -6,7 +6,7 @@ use crate::{
     FiatProvider,
 };
 use futures::future::join_all;
-use primitives::{FiatAssets, FiatBuyRequest, FiatQuote, FiatQuoteError, FiatQuotes};
+use primitives::{FiatAssets, FiatQuote, FiatQuoteError, FiatQuoteRequest, FiatQuotes};
 use reqwest::Client as RequestClient;
 use storage::DatabaseClient;
 
@@ -79,7 +79,7 @@ impl FiatClient {
         Ok(map)
     }
 
-    pub async fn get_buy_quotes(&mut self, request: FiatBuyRequest) -> Result<FiatQuotes, Box<dyn Error + Send + Sync>> {
+    pub async fn get_buy_quotes(&mut self, request: FiatQuoteRequest) -> Result<FiatQuotes, Box<dyn Error + Send + Sync>> {
         let fiat_mapping_map = self.get_fiat_mapping(&request.asset_id)?;
         let mut quotes = vec![];
         let mut errors = vec![];
@@ -119,7 +119,7 @@ impl FiatClient {
         Ok(FiatQuotes { quotes, errors })
     }
 
-    pub async fn get_sell_quotes(&mut self, request: FiatBuyRequest) -> Result<FiatQuotes, Box<dyn Error + Send + Sync>> {
+    pub async fn get_sell_quotes(&mut self, request: FiatQuoteRequest) -> Result<FiatQuotes, Box<dyn Error + Send + Sync>> {
         let fiat_mapping_map = self.get_fiat_mapping(&request.asset_id)?;
         let mut futures = vec![];
 
@@ -140,7 +140,7 @@ impl FiatClient {
             })
             .collect();
 
-        quotes.sort_by(|a, b| b.crypto_amount.partial_cmp(&a.crypto_amount).unwrap());
+        quotes.sort_by(|a, b| b.fiat_amount.partial_cmp(&a.fiat_amount).unwrap());
 
         Ok(FiatQuotes { quotes, errors: vec![] })
     }

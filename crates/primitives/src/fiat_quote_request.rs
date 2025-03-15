@@ -4,7 +4,7 @@ use typeshare::typeshare;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Sendable")]
 #[serde(rename_all = "camelCase")]
-pub struct FiatBuyRequest {
+pub struct FiatQuoteRequest {
     pub asset_id: String,
     #[typeshare(skip)]
     pub ip_address: String,

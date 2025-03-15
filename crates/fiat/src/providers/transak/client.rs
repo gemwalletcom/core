@@ -2,7 +2,7 @@ use super::model::{Asset, TransakQuote, TransakResponse};
 use crate::model::{filter_token_id, FiatProviderAsset};
 use base64::{engine::general_purpose::STANDARD_NO_PAD as BASE64, Engine as _};
 use primitives::FiatTransactionType;
-use primitives::{FiatBuyRequest, FiatProviderName, FiatQuote};
+use primitives::{FiatQuoteRequest, FiatProviderName, FiatQuote};
 use reqwest::Client;
 use url::Url;
 
@@ -40,7 +40,7 @@ impl TransakClient {
         Ok(transak_quote)
     }
 
-    pub fn get_fiat_quote(&self, request: FiatBuyRequest, quote: TransakQuote) -> FiatQuote {
+    pub fn get_fiat_quote(&self, request: FiatQuoteRequest, quote: TransakQuote) -> FiatQuote {
         FiatQuote {
             provider: Self::NAME.as_fiat_provider(),
             quote_type: FiatTransactionType::Buy,

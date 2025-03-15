@@ -1,7 +1,7 @@
 extern crate rocket;
 pub use fiat::{FiatClient, FiatProviderFactory};
 
-use primitives::{FiatAssets, FiatBuyRequest, FiatQuotes};
+use primitives::{FiatAssets, FiatQuoteRequest, FiatQuotes};
 use rocket::serde::json::Json;
 use rocket::tokio::sync::Mutex;
 use rocket::State;
@@ -18,7 +18,7 @@ pub async fn get_fiat_on_ramp_quotes(
     ip: std::net::IpAddr,
     fiat_client: &State<Mutex<FiatClient>>,
 ) -> Json<FiatQuotes> {
-    let request: FiatBuyRequest = FiatBuyRequest {
+    let request: FiatQuoteRequest = FiatQuoteRequest {
         asset_id: asset_id.clone(),
         ip_address: ip_address.unwrap_or(ip.to_string()),
         fiat_amount: amount,
@@ -48,7 +48,7 @@ pub async fn get_fiat_off_ramp_quotes(
     ip: std::net::IpAddr,
     fiat_client: &State<Mutex<FiatClient>>,
 ) -> Json<FiatQuotes> {
-    let request = FiatBuyRequest {
+    let request = FiatQuoteRequest {
         asset_id: asset_id.into(),
         ip_address: ip_address.unwrap_or(ip.to_string()),
         fiat_amount: 0.0,

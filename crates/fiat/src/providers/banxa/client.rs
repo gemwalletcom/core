@@ -2,7 +2,7 @@ use std::time::SystemTime;
 
 use crate::model::{filter_token_id, FiatMapping, FiatProviderAsset};
 use hex;
-use primitives::{FiatBuyRequest, FiatProviderName, FiatQuote};
+use primitives::{FiatProviderName, FiatQuote, FiatQuoteRequest};
 use reqwest::Client;
 use url::Url;
 
@@ -115,7 +115,7 @@ impl BanxaClient {
             .collect()
     }
 
-    pub fn get_fiat_quote(&self, request: FiatBuyRequest, fiat_mapping: FiatMapping, price: Price) -> FiatQuote {
+    pub fn get_fiat_quote(&self, request: FiatQuoteRequest, fiat_mapping: FiatMapping, price: Price) -> FiatQuote {
         let crypto_amount = request.fiat_amount / (price.fiat_amount + price.fee_amount + price.network_fee);
         let redirect_url = self.get_redirect_url("buy", request.clone(), fiat_mapping);
 
@@ -131,7 +131,7 @@ impl BanxaClient {
 
     // URL Parametization https://docs.banxa.com/docs/referral-link
 
-    pub fn get_redirect_url(&self, order_type: &str, request: FiatBuyRequest, fiat_mapping: FiatMapping) -> String {
+    pub fn get_redirect_url(&self, order_type: &str, request: FiatQuoteRequest, fiat_mapping: FiatMapping) -> String {
         let mut components = Url::parse(&self.url).unwrap();
 
         components

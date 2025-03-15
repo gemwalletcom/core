@@ -42,7 +42,7 @@ pub use self::fiat_assets::FiatAssets;
 pub mod fiat_provider;
 pub use self::fiat_provider::FiatProviderName;
 pub mod fiat_quote_request;
-pub use self::fiat_quote_request::FiatBuyRequest;
+pub use self::fiat_quote_request::FiatQuoteRequest;
 pub mod fiat_rate;
 pub use self::fiat_rate::FiatRate;
 pub mod platform;
