@@ -1,12 +1,8 @@
 use num_bigint::{BigInt, ParseBigIntError};
 use serde::{Deserialize, Serialize};
 use serde_serializers::{deserialize_bigint_from_str as deserialize_bigint, serialize_bigint};
-use sui_types::{
-    base_types::{ObjectID, ObjectRef, SequenceNumber},
-    digests::ObjectDigest,
-};
+use sui_types::{base_types::ObjectID, digests::ObjectDigest};
 
-use super::clmm::ClmmPoolData;
 use crate::swapper::SwapperError;
 use gem_sui::jsonrpc::{DataObject, MoveObject, MoveObjectId, OptionU64, SuiData, I32};
 
@@ -30,19 +26,7 @@ pub struct RoutePoolData {
     pub initial_shared_version: u64,
 }
 
-impl RoutePoolData {
-    #[allow(unused)]
-    pub fn obj_ref(&self) -> ObjectRef {
-        (self.object_id, SequenceNumber::from_u64(self.version), self.digest)
-    }
-}
-
 pub type CetusPoolType = SuiData<DataObject<MoveObject<CetusPoolObject>>>;
-
-#[allow(unused)]
-pub fn get_pool_object(data: &CetusPoolType) -> Option<CetusPoolObject> {
-    data.data.content.clone().map(|content| content.fields)
-}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CetusPoolObject {
@@ -67,19 +51,6 @@ pub struct CetusPoolObject {
     #[serde(deserialize_with = "deserialize_bigint", serialize_with = "serialize_bigint")]
     pub liquidity: BigInt,
     pub tick_manager: MoveObject<TickManager>,
-}
-
-impl TryInto<ClmmPoolData> for CetusPoolObject {
-    type Error = SwapperError;
-
-    fn try_into(self) -> Result<ClmmPoolData, Self::Error> {
-        Ok(ClmmPoolData {
-            liquidity: self.liquidity,
-            current_sqrt_price: self.current_sqrt_price,
-            current_tick_index: self.current_tick_index.fields.bits,
-            fee_rate: self.fee_rate,
-        })
-    }
 }
 
 impl From<ParseBigIntError> for SwapperError {

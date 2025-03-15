@@ -8,11 +8,8 @@ use std::{str::FromStr, sync::Arc};
 
 use super::{
     client::{models::CetusPool, CetusClient},
-    clmm::{
-        tx_builder::{CetusConfig, SharedObject, SwapParams},
-        TickData, TransactionBuilder,
-    },
-    models::{CalculatedSwapResult, CetusPoolObject, CetusPoolType, RoutePoolData},
+    models::{CalculatedSwapResult, CetusPoolType, RoutePoolData},
+    tx_builder::{CetusConfig, SharedObject, SwapParams, TransactionBuilder},
     CETUS_CLMM_PACKAGE_ID, CETUS_GLOBAL_CONFIG_ID, CETUS_GLOBAL_CONFIG_SHARED_VERSION, CETUS_ROUTER_PACKAGE_ID,
 };
 use crate::{
@@ -121,37 +118,6 @@ impl Cetus {
         let event = result.events.as_array().map(|x| x.first().unwrap()).unwrap();
         let event_data: InspectEvent<SuiData<CalculatedSwapResult>> = serde_json::from_value(event.clone()).unwrap();
         Ok(event_data.parsed_json.data)
-    }
-
-    #[allow(unused)]
-    async fn fetch_ticks_by_pool_id(
-        &self,
-        pool: &CetusPoolObject,
-        pool_obj: &SharedObject,
-        provider: Arc<dyn AlienProvider>,
-    ) -> Result<Vec<TickData>, anyhow::Error> {
-        let mut ptb = ProgrammableTransactionBuilder::new();
-        let type_args = vec![TypeTag::from_str(&pool.coin_a)?, TypeTag::from_str(&pool.coin_b)?];
-        let start = ptb.command(Command::make_move_vec(Some(TypeTag::U32), vec![]));
-        let limit = ptb.pure(512)?;
-        let args = [
-            ptb.obj(ObjectArg::SharedObject {
-                id: pool_obj.id,
-                initial_shared_version: pool_obj.initial_shared_version(),
-                mutable: false,
-            })?,
-            start,
-            limit,
-        ];
-        let move_call = Command::move_call(
-            ObjectID::from_str(CETUS_ROUTER_PACKAGE_ID)?,
-            Identifier::from_str("fetcher_script")?,
-            Identifier::from_str("get_ticks")?,
-            type_args,
-            args.to_vec(),
-        );
-        ptb.command(move_call);
-        todo!()
     }
 }
 
