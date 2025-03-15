@@ -1,4 +1,6 @@
+use num_bigint::BigInt;
 use serde::{Deserialize, Serialize};
+use serde_serializers::deserialize_bigint_from_str;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct QuoteSwapRequest {
@@ -36,4 +38,16 @@ pub struct TransactionObserved {
 pub struct RouteData {
     pub router_address: Option<String>,
     pub inbound_address: Option<String>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[allow(dead_code)]
+pub struct InboundAddress {
+    pub chain: String,
+    #[serde(deserialize_with = "deserialize_bigint_from_str")]
+    pub gas_rate: BigInt,
+    #[serde(deserialize_with = "deserialize_bigint_from_str")]
+    pub outbound_fee: BigInt,
+    #[serde(deserialize_with = "deserialize_bigint_from_str")]
+    pub dust_threshold: BigInt,
 }

@@ -22,6 +22,7 @@ gem_evm = { path = "../crates/gem_evm" }
 gem_sui = { path = "../crates/gem_sui" }
 gem_aptos = { path = "../crates/gem_aptos" }
 gem_hash = { path = "../crates/gem_hash" }
+serde_serializers = { path = "../crates/serde_serializers" }
 
 # uniffi
 uniffi.workspace = true

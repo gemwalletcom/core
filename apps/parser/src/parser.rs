@@ -263,6 +263,7 @@ mod tests {
         let test_cases = vec![
             ("1", TransactionType::Transfer, 0, true),
             ("500", TransactionType::Transfer, 1000, false),
+            ("1000", TransactionType::Transfer, 1000, true),
             ("1500", TransactionType::Transfer, 1000, true),
             ("invalid", TransactionType::Transfer, 1000, true),
         ];
