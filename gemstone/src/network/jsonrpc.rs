@@ -1,4 +1,4 @@
-use super::{target::AlienHttpMethod, AlienError, AlienProvider, AlienTarget, X_CACHE_TTL};
+use super::{target::AlienHttpMethod, AlienError, AlienProvider, AlienTarget};
 use primitives::Chain;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::{
@@ -119,9 +119,7 @@ where
     let endpoint = provider.get_endpoint(*chain)?;
     let mut target = batch_into_target(&request, &endpoint);
     if let Some(ttl) = ttl {
-        let mut headers = target.headers.unwrap_or_default();
-        headers.insert(X_CACHE_TTL.into(), ttl.to_string());
-        target.headers = Some(headers);
+        target = target.set_cache_ttl(ttl);
     }
     let data = provider.request(target).await?;
     let result: JsonRpcResult<U> = serde_json::from_slice(&data).map_err(|err| AlienError::ResponseError { msg: err.to_string() })?;

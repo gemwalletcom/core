@@ -5,11 +5,17 @@ use futures::join;
 use num_bigint::BigInt;
 use num_traits::{ToBytes, ToPrimitive};
 use std::{str::FromStr, sync::Arc};
+use sui_types::{
+    base_types::ObjectID,
+    programmable_transaction_builder::ProgrammableTransactionBuilder,
+    transaction::{Command, ObjectArg, TransactionData, TransactionKind},
+    Identifier, TypeTag,
+};
 
 use super::{
-    client::{models::CetusPool, CetusClient},
-    models::{CalculatedSwapResult, CetusPoolType, RoutePoolData},
-    tx_builder::{CetusConfig, SharedObject, SwapParams, TransactionBuilder},
+    api::{models::CetusPool, CetusClient},
+    models::{CalculatedSwapResult, CetusConfig, CetusPoolType, RoutePoolData, SharedObject, SwapParams},
+    tx_builder::TransactionBuilder,
     CETUS_CLMM_PACKAGE_ID, CETUS_GLOBAL_CONFIG_ID, CETUS_GLOBAL_CONFIG_SHARED_VERSION, CETUS_ROUTER_PACKAGE_ID,
 };
 use crate::{
@@ -26,12 +32,6 @@ use gem_sui::{
     EMPTY_ADDRESS, SUI_COIN_TYPE_FULL,
 };
 use primitives::{AssetId, Chain};
-use sui_types::{
-    base_types::ObjectID,
-    programmable_transaction_builder::ProgrammableTransactionBuilder,
-    transaction::{Command, ObjectArg, TransactionData, TransactionKind},
-    Identifier, TypeTag,
-};
 
 #[derive(Debug)]
 pub struct Cetus {

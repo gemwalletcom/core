@@ -6,11 +6,13 @@ use num_traits::ToPrimitive;
 use std::str::FromStr;
 
 use sui_types::{
-    base_types::{ObjectID, ObjectRef, SequenceNumber},
+    base_types::ObjectID,
     programmable_transaction_builder::ProgrammableTransactionBuilder,
     transaction::{Argument, Command, ObjectArg},
     Identifier, TypeTag,
 };
+
+use super::models::{CetusConfig, SwapParams};
 
 // Constants
 const SWAP_WITH_PARTNER_A2B: &str = "swap_a2b_with_partner";
@@ -24,38 +26,7 @@ const MIN_PRICE_SQRT_LIMIT: u128 = 4295048016_u128;
 const MAX_PRICE_SQRT_LIMIT: u128 = 79226673515401279992447579055_u128;
 
 #[derive(Debug, Clone)]
-pub struct SwapParams {
-    pub pool_object_shared: SharedObject,
-    pub a2b: bool,
-    pub by_amount_in: bool,
-    pub amount: BigInt,
-    pub amount_limit: BigInt,
-    pub coin_type_a: String,
-    pub coin_type_b: String,
-    pub swap_partner: Option<ObjectRef>,
-}
-
-#[derive(Debug, Clone)]
-pub struct CetusConfig {
-    pub global_config: SharedObject,
-    pub clmm_pool: ObjectID,
-    pub router: ObjectID,
-}
-
-#[derive(Debug, Clone)]
-pub struct SharedObject {
-    pub id: ObjectID,
-    pub shared_version: u64,
-}
-
-impl SharedObject {
-    pub fn initial_shared_version(&self) -> SequenceNumber {
-        SequenceNumber::from_u64(self.shared_version)
-    }
-}
-
-#[derive(Debug, Clone)]
-#[allow(dead_code)]
+#[allow(unused)]
 pub struct BuildCoinResult {
     pub target_coin: Argument,
     pub remain_coins: Vec<CoinAsset>,
@@ -117,7 +88,7 @@ impl TransactionBuilder {
         coin_assets: &[CoinAsset],
         amount: &BigInt,
         coin_type: &str,
-        _fix_amount: bool,
+        fix_amount: bool,
     ) -> Result<BuildCoinResult> {
         if coin_type == SUI_COIN_TYPE_FULL {
             if coin_assets.len() > 1 {
@@ -143,7 +114,55 @@ impl TransactionBuilder {
                 });
             }
         }
-        todo!("build_split_target_coin")
+        Self::build_split_target_coin(ptb, coin_assets, amount, fix_amount)
+    }
+
+    fn build_split_target_coin(
+        ptb: &mut ProgrammableTransactionBuilder,
+        coin_assets: &[CoinAsset],
+        amount: &BigInt,
+        fix_amount: bool,
+    ) -> Result<BuildCoinResult> {
+        let (selected_coins, remain_coins) = CoinAssist::select_coins_gte(coin_assets, amount);
+
+        if selected_coins.is_empty() {
+            return Err(anyhow!("No coins selected for splitting"));
+        }
+
+        let total_selected_amount = CoinAssist::calculate_total_balance(&selected_coins);
+
+        // Split into primary coin and merge coins
+        let mut coins_iter = selected_coins.iter();
+        let primary_coin = coins_iter.next().unwrap();
+        let merge_coins: Vec<_> = coins_iter.collect();
+
+        let mut target_coin = ptb.obj(ObjectArg::ImmOrOwnedObject(primary_coin.to_ref()))?;
+        let mut original_splited_coin = None;
+
+        // Merge additional coins if any
+        if !merge_coins.is_empty() {
+            let merge_coin_args: Vec<Argument> = merge_coins
+                .iter()
+                .map(|coin| ptb.obj(ObjectArg::ImmOrOwnedObject(coin.to_ref())))
+                .collect::<Result<_>>()?;
+
+            ptb.command(Command::MergeCoins(target_coin, merge_coin_args));
+        }
+
+        // Split coin if needed
+        if fix_amount && total_selected_amount > *amount {
+            original_splited_coin = Some(primary_coin.coin_object_id);
+            let amount_arg = ptb.pure(amount.to_u64().unwrap())?;
+            target_coin = ptb.command(Command::SplitCoins(target_coin, vec![amount_arg]));
+        }
+
+        Ok(BuildCoinResult {
+            target_coin,
+            remain_coins,
+            is_mint_zero_coin: false,
+            target_coin_amount: total_selected_amount.to_string(),
+            original_splited_coin,
+        })
     }
 
     pub fn build_swap_transaction_args(
@@ -267,7 +286,51 @@ impl CoinAssist {
     }
 
     // (selected(object_id, balance), remains_coins)
-    pub fn select_coins_gte(_coin_assets: &[CoinAsset], _amount: &BigInt) -> (Vec<CoinAsset>, Vec<CoinAsset>) {
-        todo!()
+    pub fn select_coins_gte(coin_assets: &[CoinAsset], amount: &BigInt) -> (Vec<CoinAsset>, Vec<CoinAsset>) {
+        // Sort coins by balance in descending order
+        let mut sorted_coins: Vec<CoinAsset> = coin_assets.to_vec();
+        sorted_coins.sort_by(|a, b| b.balance.cmp(&a.balance));
+
+        let total = Self::calculate_total_balance(&sorted_coins);
+
+        // If total is less than amount, return empty selected and all coins as remaining
+        if total < *amount {
+            return (vec![], sorted_coins);
+        }
+
+        // If total equals amount, return all coins as selected and empty remaining
+        if total == *amount {
+            return (sorted_coins, vec![]);
+        }
+
+        let mut sum = BigInt::from(0u64);
+        let mut selected_coins = Vec::new();
+        let mut remaining_coins = sorted_coins.clone();
+
+        while sum < total {
+            let target = amount - &sum;
+
+            // Find coin with smallest sufficient balance
+            if let Some((idx, _)) = remaining_coins.iter().enumerate().find(|(_, coin)| coin.balance >= target) {
+                selected_coins.push(remaining_coins.remove(idx));
+                break;
+            }
+
+            // If no coin with sufficient balance found, take the largest one
+            if let Some(coin) = remaining_coins.pop() {
+                if coin.balance > BigInt::from(0u64) {
+                    sum += &coin.balance;
+                    selected_coins.push(coin);
+                }
+            } else {
+                break;
+            }
+        }
+
+        // Sort both vectors by balance
+        selected_coins.sort_by(|a, b| b.balance.cmp(&a.balance));
+        remaining_coins.sort_by(|a, b| b.balance.cmp(&a.balance));
+
+        (selected_coins, remaining_coins)
     }
 }

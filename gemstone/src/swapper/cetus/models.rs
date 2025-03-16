@@ -1,10 +1,13 @@
 use num_bigint::{BigInt, ParseBigIntError};
 use serde::{Deserialize, Serialize};
-use serde_serializers::{deserialize_bigint_from_str as deserialize_bigint, serialize_bigint};
-use sui_types::{base_types::ObjectID, digests::ObjectDigest};
+use sui_types::{
+    base_types::{ObjectID, ObjectRef, SequenceNumber},
+    digests::ObjectDigest,
+};
 
 use crate::swapper::SwapperError;
 use gem_sui::jsonrpc::{DataObject, MoveObject, MoveObjectId, OptionU64, SuiData, I32};
+use serde_serializers::{deserialize_bigint_from_str as deserialize_bigint, serialize_bigint};
 
 #[allow(unused)]
 #[derive(Debug, Clone, Deserialize)]
@@ -50,19 +53,12 @@ pub struct CetusPoolObject {
     pub tick_spacing: i32,
     #[serde(deserialize_with = "deserialize_bigint", serialize_with = "serialize_bigint")]
     pub liquidity: BigInt,
-    pub tick_manager: MoveObject<TickManager>,
 }
 
 impl From<ParseBigIntError> for SwapperError {
     fn from(err: ParseBigIntError) -> Self {
         Self::ComputeQuoteError { msg: err.to_string() }
     }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TickManager {
-    pub tick_spacing: i32,
-    pub ticks: MoveObject<Tick>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -74,6 +70,37 @@ pub struct Tick {
     pub max_level: String,
     pub size: String,
     pub tail: MoveObject<OptionU64>,
+}
+
+#[derive(Debug, Clone)]
+pub struct SwapParams {
+    pub pool_object_shared: SharedObject,
+    pub a2b: bool,
+    pub by_amount_in: bool,
+    pub amount: BigInt,
+    pub amount_limit: BigInt,
+    pub coin_type_a: String,
+    pub coin_type_b: String,
+    pub swap_partner: Option<ObjectRef>,
+}
+
+#[derive(Debug, Clone)]
+pub struct CetusConfig {
+    pub global_config: SharedObject,
+    pub clmm_pool: ObjectID,
+    pub router: ObjectID,
+}
+
+#[derive(Debug, Clone)]
+pub struct SharedObject {
+    pub id: ObjectID,
+    pub shared_version: u64,
+}
+
+impl SharedObject {
+    pub fn initial_shared_version(&self) -> SequenceNumber {
+        SequenceNumber::from_u64(self.shared_version)
+    }
 }
 
 #[cfg(test)]
@@ -111,7 +138,6 @@ mod tests {
         assert_eq!(content.fee_rate.to_string(), "10000");
         assert_eq!(content.current_sqrt_price.to_string(), "1883186036311192350");
         assert_eq!(content.tick_spacing, 200);
-        assert_eq!(content.tick_manager.fields.ticks.fields.tail.fields.v, 887236);
     }
 
     #[test]

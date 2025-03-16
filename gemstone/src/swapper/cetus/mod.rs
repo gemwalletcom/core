@@ -1,4 +1,4 @@
-mod client;
+mod api;
 mod models;
 mod provider;
 mod tx_builder;
