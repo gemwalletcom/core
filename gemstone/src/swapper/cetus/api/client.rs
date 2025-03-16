@@ -6,7 +6,7 @@ use crate::{
 use std::sync::Arc;
 
 const CETUS_API_URL: &str = "https://api-sui.cetus.zone/v2";
-const POOL_CACHE_TTL: u64 = 60 * 60 * 6; // 6 hours
+const POOL_CACHE_TTL: u64 = 60 * 5; // 5 minutes
 
 pub struct CetusClient {
     pub provider: Arc<dyn AlienProvider>,

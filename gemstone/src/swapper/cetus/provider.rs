@@ -88,9 +88,8 @@ impl Cetus {
         a2b: bool,
         buy_amount_in: bool,
         amount: BigInt,
-        provider: Arc<dyn AlienProvider>,
+        client: Arc<SuiClient>,
     ) -> Result<CalculatedSwapResult, anyhow::Error> {
-        let client = SuiClient::new(provider);
         let mut ptb = ProgrammableTransactionBuilder::new();
         let type_args = vec![TypeTag::from_str(&pool.coin_a_address)?, TypeTag::from_str(&pool.coin_b_address)?];
         let args = [
@@ -151,22 +150,24 @@ impl GemSwapProvider for Cetus {
         sorted_pools.sort_by(|a, b| b.object.liquidity.cmp(&a.object.liquidity));
         let top_pools = sorted_pools.iter().take(2).collect::<Vec<_>>();
 
-        let sui_client = sui_client.clone();
+        // Create a single SuiClient that can be reused
+        let sui_client = Arc::new(SuiClient::new(provider.clone()));
+        let from_coin_clone = from_coin.clone();
+
         // Batch fetch pool data
-        let sui_client = SuiClient::new(provider.clone());
-        let pool_data_futures = top_pools.iter().map(|pool| async move {
-            let pool_data: CetusPoolType = sui_client
-                .rpc_call(SuiRpc::GetObject(pool.address.to_string(), Some(ObjectDataOptions::default())))
-                .await?;
-            Ok::<_, SwapperError>((
-                pool,
-                pool_data,
-                SharedObject {
+        let pool_data_futures = top_pools.iter().map(|pool| {
+            let from_coin = from_coin_clone.clone();
+            let sui_client = sui_client.clone();
+            async move {
+                let pool_data: CetusPoolType = sui_client
+                    .rpc_call(SuiRpc::GetObject(pool.address.to_string(), Some(ObjectDataOptions::default())))
+                    .await?;
+                let shared_object = SharedObject {
                     id: pool_data.data.object_id,
                     shared_version: pool_data.data.initial_shared_version().expect("Initial shared version should be available"),
-                },
-                pool.coin_a_address == from_coin,
-            ))
+                };
+                Ok::<_, SwapperError>((pool, pool_data, shared_object, pool.coin_a_address == from_coin))
+            }
         });
 
         let pool_quotes = futures::future::join_all(pool_data_futures)
@@ -179,10 +180,10 @@ impl GemSwapProvider for Cetus {
             return Err(SwapperError::NoQuoteAvailable);
         }
 
-        // Run pre-swap calculations in parallel
+        // Run pre-swap calculations in parallel using the same SuiClient instance
         let swap_futures = pool_quotes
             .iter()
-            .map(|(pool, _, pool_shared, a2b)| self.pre_swap(pool, pool_shared, *a2b, buy_amount_in, amount_in.clone(), provider.clone()));
+            .map(|(pool, _, pool_shared, a2b)| self.pre_swap(pool, pool_shared, *a2b, buy_amount_in, amount_in.clone(), sui_client.clone()));
         let swap_results = futures::future::join_all(swap_futures).await;
 
         // Find the best quote
