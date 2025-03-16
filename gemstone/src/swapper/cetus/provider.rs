@@ -145,24 +145,69 @@ impl GemSwapProvider for Cetus {
             return Err(SwapperError::NoQuoteAvailable);
         }
 
-        let pool = &pools[0]; // FIXME pick multiple pools
-        let sui_client = SuiClient::new(provider.clone());
-        let pool_data: CetusPoolType = sui_client
-            .rpc_call(SuiRpc::GetObject(pool.address.to_string(), Some(ObjectDataOptions::default())))
-            .await?;
-        let pool_shared = SharedObject {
-            id: pool_data.data.object_id,
-            shared_version: pool_data.data.initial_shared_version().expect("Initial shared version should be available"),
-        };
-
-        let a2b = pool.coin_a_address == from_coin;
         let buy_amount_in = request.mode == GemSwapMode::ExactIn;
+        // Sort pools by liquidity and take top 2
+        let mut sorted_pools = pools;
+        sorted_pools.sort_by(|a, b| b.object.liquidity.cmp(&a.object.liquidity));
+        let top_pools = sorted_pools.iter().take(2).collect::<Vec<_>>();
 
-        // Call router to pre-swap
-        let swap_result = self
-            .pre_swap(pool, &pool_shared, a2b, buy_amount_in, amount_in, provider.clone())
+        let sui_client = sui_client.clone();
+        // Batch fetch pool data
+        let sui_client = SuiClient::new(provider.clone());
+        let pool_data_futures = top_pools.iter().map(|pool| async move {
+            let pool_data: CetusPoolType = sui_client
+                .rpc_call(SuiRpc::GetObject(pool.address.to_string(), Some(ObjectDataOptions::default())))
+                .await?;
+            Ok::<_, SwapperError>((
+                pool,
+                pool_data,
+                SharedObject {
+                    id: pool_data.data.object_id,
+                    shared_version: pool_data.data.initial_shared_version().expect("Initial shared version should be available"),
+                },
+                pool.coin_a_address == from_coin,
+            ))
+        });
+
+        let pool_quotes = futures::future::join_all(pool_data_futures)
             .await
-            .map_err(|e| SwapperError::ComputeQuoteError { msg: e.to_string() })?;
+            .into_iter()
+            .filter_map(Result::ok)
+            .collect::<Vec<_>>();
+
+        if pool_quotes.is_empty() {
+            return Err(SwapperError::NoQuoteAvailable);
+        }
+
+        // Run pre-swap calculations in parallel
+        let swap_futures = pool_quotes
+            .iter()
+            .map(|(pool, _, pool_shared, a2b)| self.pre_swap(pool, pool_shared, *a2b, buy_amount_in, amount_in.clone(), provider.clone()));
+        let swap_results = futures::future::join_all(swap_futures).await;
+
+        // Find the best quote
+        let mut best_result: Option<CalculatedSwapResult> = None;
+        let mut best_pool_data = None;
+        let mut best_pool = None;
+
+        for (result, (pool, pool_data, _, _)) in swap_results.into_iter().zip(pool_quotes.iter()) {
+            if let Ok(swap_result) = result {
+                let is_better = match &best_result {
+                    None => true,
+                    Some(best) => swap_result.amount_out > best.amount_out,
+                };
+                if is_better {
+                    best_result = Some(swap_result);
+                    best_pool_data = Some(pool_data.clone());
+                    best_pool = Some(pool);
+                }
+            }
+        }
+
+        let (swap_result, pool_data, pool) = match (best_result, best_pool_data, best_pool) {
+            (Some(r), Some(pd), Some(p)) => (r, pd, p),
+            _ => return Err(SwapperError::NoQuoteAvailable),
+        };
 
         let quote_amount = U256::from_le_slice(swap_result.amount_out.to_le_bytes().as_slice());
         let slippage_bps = request.options.slippage.bps;
@@ -175,7 +220,7 @@ impl GemSwapProvider for Cetus {
             digest: pool_data.data.digest,
             coin_a: pool.coin_a_address.clone(),
             coin_b: pool.coin_b_address.clone(),
-            initial_shared_version: pool_shared.shared_version,
+            initial_shared_version: pool_data.data.initial_shared_version().expect("Initial shared version should be available"),
         };
 
         Ok(SwapQuote {

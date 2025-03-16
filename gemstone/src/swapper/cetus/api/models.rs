@@ -1,4 +1,6 @@
+use num_bigint::BigInt;
 use serde::{Deserialize, Serialize};
+use serde_serializers::deserialize_bigint_from_str as deserialize_bigint;
 
 #[derive(Debug, Serialize)]
 pub struct Request {
@@ -37,7 +39,8 @@ pub struct CetusPool {
 pub struct Object {
     pub current_sqrt_price: String,
     pub tick_spacing: i32,
-    pub liquidity: String,
+    #[serde(deserialize_with = "deserialize_bigint")]
+    pub liquidity: BigInt,
     pub is_pause: bool,
     pub index: i32,
 }
