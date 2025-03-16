@@ -36,7 +36,7 @@ test-workspace:
     cargo test --workspace --quiet
 
 test-all:
-    cargo test --all --verbose
+    cargo test --all --workspace --verbose
 
 test CRATE:
     cargo test --package {{CRATE}} --workspace

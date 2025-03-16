@@ -23,6 +23,8 @@ impl Diff {
     /// # Examples
     ///
     /// ```
+    /// use primitives::Diff;
+    ///
     /// let source = vec!["a".to_string(), "b".to_string(), "c".to_string()];
     /// let target = vec!["b".to_string(), "c".to_string(), "d".to_string()];
     ///
