@@ -8,7 +8,7 @@ use chain::THORChainName;
 use num_bigint::BigInt;
 use std::str::FromStr;
 
-use super::{SwapProviderType, SwapProvider};
+use super::{SwapProvider, SwapProviderType};
 
 const QUOTE_MINIMUM: i64 = 0;
 const QUOTE_INTERVAL: i64 = 1;

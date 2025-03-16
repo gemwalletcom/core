@@ -2,7 +2,7 @@ use crate::model::{filter_token_id, FiatProviderAsset};
 use bigdecimal::ToPrimitive;
 use number_formatter::BigNumberFormatter;
 use primitives::FiatTransactionType;
-use primitives::{FiatBuyRequest, FiatProviderName, FiatQuote};
+use primitives::{FiatProviderName, FiatQuote, FiatQuoteRequest};
 use reqwest::Client;
 use url::Url;
 
@@ -52,7 +52,7 @@ impl RampClient {
         Ok(quote)
     }
 
-    pub fn get_fiat_quote(&self, request: FiatBuyRequest, quote: Quote) -> FiatQuote {
+    pub fn get_fiat_quote(&self, request: FiatQuoteRequest, quote: Quote) -> FiatQuote {
         let crypto_amount = BigNumberFormatter::big_decimal_value(quote.clone().card_payment.crypto_amount.as_str(), quote.asset.decimals).unwrap_or_default();
 
         FiatQuote {
@@ -65,7 +65,7 @@ impl RampClient {
         }
     }
 
-    pub fn redirect_url(&self, request: FiatBuyRequest, quote: Quote) -> String {
+    pub fn redirect_url(&self, request: FiatQuoteRequest, quote: Quote) -> String {
         let mut components = Url::parse(RAMP_REDIRECT_URL).unwrap();
         components
             .query_pairs_mut()

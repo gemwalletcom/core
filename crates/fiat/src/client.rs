@@ -6,12 +6,7 @@ use crate::{
     FiatProvider,
 };
 use futures::future::join_all;
-use primitives::{
-    fiat_assets::FiatAssets,
-    fiat_quote::{FiatQuote, FiatQuoteError},
-    fiat_quote_request::FiatBuyRequest,
-};
-use primitives::{fiat_quote::FiatQuotes, fiat_quote_request::FiatSellRequest};
+use primitives::{FiatAssets, FiatQuote, FiatQuoteError, FiatQuoteRequest, FiatQuotes};
 use reqwest::Client as RequestClient;
 use storage::DatabaseClient;
 
@@ -32,7 +27,7 @@ impl FiatClient {
     }
 
     pub async fn get_on_ramp_assets(&mut self) -> Result<FiatAssets, Box<dyn Error + Send + Sync>> {
-        let assets = self.database.get_fiat_assets_is_buyable()?;
+        let assets = self.database.get_assets_is_buyable()?;
         Ok(FiatAssets {
             version: assets.clone().len() as u32,
             asset_ids: assets,
@@ -40,7 +35,7 @@ impl FiatClient {
     }
 
     pub async fn get_off_ramp_assets(&mut self) -> Result<FiatAssets, Box<dyn Error + Send + Sync>> {
-        let assets = self.database.get_fiat_assets_is_sellable()?;
+        let assets = self.database.get_assets_is_sellable()?;
         Ok(FiatAssets {
             version: assets.clone().len() as u32,
             asset_ids: assets,
@@ -84,7 +79,7 @@ impl FiatClient {
         Ok(map)
     }
 
-    pub async fn get_buy_quotes(&mut self, request: FiatBuyRequest) -> Result<FiatQuotes, Box<dyn Error + Send + Sync>> {
+    pub async fn get_buy_quotes(&mut self, request: FiatQuoteRequest) -> Result<FiatQuotes, Box<dyn Error + Send + Sync>> {
         let fiat_mapping_map = self.get_fiat_mapping(&request.asset_id)?;
         let mut quotes = vec![];
         let mut errors = vec![];
@@ -124,7 +119,7 @@ impl FiatClient {
         Ok(FiatQuotes { quotes, errors })
     }
 
-    pub async fn get_sell_quotes(&mut self, request: FiatSellRequest) -> Result<FiatQuotes, Box<dyn Error + Send + Sync>> {
+    pub async fn get_sell_quotes(&mut self, request: FiatQuoteRequest) -> Result<FiatQuotes, Box<dyn Error + Send + Sync>> {
         let fiat_mapping_map = self.get_fiat_mapping(&request.asset_id)?;
         let mut futures = vec![];
 
@@ -145,7 +140,7 @@ impl FiatClient {
             })
             .collect();
 
-        quotes.sort_by(|a, b| b.crypto_amount.partial_cmp(&a.crypto_amount).unwrap());
+        quotes.sort_by(|a, b| b.fiat_amount.partial_cmp(&a.fiat_amount).unwrap());
 
         Ok(FiatQuotes { quotes, errors: vec![] })
     }

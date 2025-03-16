@@ -1,11 +1,13 @@
+use std::error::Error;
+
+use crate::error::FiatError;
 use crate::model::{filter_token_id, FiatProviderAsset};
 
 use super::mapper::map_asset_chain;
-use super::model::{Asset, MoonPayIpAddress, MoonPayQuote};
+use super::model::{Asset, MoonPayBuyQuote, MoonPayIpAddress, MoonPaySellQuote};
 use base64::{engine::general_purpose, Engine as _};
 use hmac::{Hmac, Mac};
-use primitives::FiatTransactionType;
-use primitives::{fiat_quote::FiatQuote, fiat_quote_request::FiatBuyRequest, FiatProviderName};
+use primitives::{FiatProviderName, FiatQuote, FiatQuoteRequest, FiatTransactionType};
 use reqwest::Client;
 use sha2::Sha256;
 use url::Url;
@@ -17,7 +19,8 @@ pub struct MoonPayClient {
 }
 
 const MOONPAY_API_BASE_URL: &str = "https://api.moonpay.com";
-const MOONPAY_REDIRECT_URL: &str = "https://buy.moonpay.com";
+const MOONPAY_BUY_REDIRECT_URL: &str = "https://buy.moonpay.com";
+const MOONPAY_SELL_REDIRECT_URL: &str = "https://sell.moonpay.com";
 
 impl MoonPayClient {
     pub const NAME: FiatProviderName = FiatProviderName::MoonPay;
@@ -26,7 +29,7 @@ impl MoonPayClient {
         Self { client, api_key, secret_key }
     }
 
-    pub async fn get_ip_address(&self, ip_address: String) -> Result<MoonPayIpAddress, reqwest::Error> {
+    pub async fn get_ip_address(&self, ip_address: &str) -> Result<MoonPayIpAddress, reqwest::Error> {
         let url = format!("{}/v4/ip_address/?ipAddress={}&apiKey={}", MOONPAY_API_BASE_URL, ip_address, self.api_key,);
 
         let response = self.client.get(&url).send().await?;
@@ -35,32 +38,39 @@ impl MoonPayClient {
         Ok(ip_address_result)
     }
 
-    pub async fn get_buy_quote(&self, symbol: String, fiat_currency: String, fiat_amount: f64) -> Result<MoonPayQuote, reqwest::Error> {
+    pub async fn get_buy_quote(&self, symbol: String, fiat_currency: String, fiat_amount: f64) -> Result<MoonPayBuyQuote, reqwest::Error> {
         let url = format!(
             "{}/v3/currencies/{}/buy_quote/?baseCurrencyCode={}&baseCurrencyAmount={}&areFeesIncluded={}&apiKey={}",
             MOONPAY_API_BASE_URL, symbol, fiat_currency, fiat_amount, "true", self.api_key,
         );
 
-        let quote = self.client.get(&url).send().await?.json::<MoonPayQuote>().await?;
-        Ok(quote)
+        self.client.get(&url).send().await?.json::<MoonPayBuyQuote>().await
     }
 
-    pub async fn get_sell_quote(&self, symbol: String, fiat_currency: String, crypto_amount: f64) -> Result<MoonPayQuote, reqwest::Error> {
+    pub async fn get_sell_quote(&self, symbol: String, fiat_currency: String, crypto_amount: f64) -> Result<MoonPaySellQuote, reqwest::Error> {
         let url = format!(
             "{}/v3/currencies/{}/sell_quote/?quoteCurrencyCode={}&baseCurrencyAmount={}&areFeesIncluded={}&apiKey={}",
             MOONPAY_API_BASE_URL, symbol, fiat_currency, crypto_amount, "true", self.api_key,
         );
 
-        println!("url: {:?}", url);
-
-        let quote = self.client.get(&url).send().await?.json::<MoonPayQuote>().await?;
-        Ok(quote)
+        self.client.get(&url).send().await?.json::<MoonPaySellQuote>().await
     }
 
     pub async fn get_assets(&self) -> Result<Vec<Asset>, Box<dyn std::error::Error + Send + Sync>> {
         let url = format!("{}/v3/currencies", MOONPAY_API_BASE_URL);
         let assets = self.client.get(&url).send().await?.json::<Vec<Asset>>().await?;
         Ok(assets)
+    }
+
+    pub async fn validate_quote(&self, quote: &MoonPayBuyQuote, ip_address: MoonPayIpAddress) -> Result<(), Box<dyn Error + Send + Sync>> {
+        if quote.quote_currency.not_allowed_countries.contains(&ip_address.alpha2) {
+            return Err(FiatError::UnsupportedCountry(ip_address.alpha2).into());
+        }
+
+        if &ip_address.state == "US" && quote.quote_currency.not_allowed_us_states.contains(&ip_address.state) {
+            return Err(FiatError::UnsupportedState(ip_address.state).into());
+        }
+        Ok(())
     }
 
     pub async fn get_transactions(&self) -> Result<Vec<String>, Box<dyn std::error::Error + Send + Sync>> {
@@ -90,27 +100,65 @@ impl MoonPayClient {
         })
     }
 
-    pub fn get_fiat_quote(&self, request: FiatBuyRequest, quote: MoonPayQuote) -> FiatQuote {
+    pub fn get_buy_fiat_quote(&self, request: FiatQuoteRequest, quote: MoonPayBuyQuote) -> FiatQuote {
         FiatQuote {
             provider: Self::NAME.as_fiat_provider(),
             quote_type: FiatTransactionType::Buy,
             fiat_amount: request.clone().fiat_amount,
             fiat_currency: request.clone().fiat_currency,
             crypto_amount: quote.quote_currency_amount,
-            redirect_url: self.redirect_url(request.clone(), quote),
+            redirect_url: self.redirect_url(
+                FiatTransactionType::Buy,
+                request.fiat_amount,
+                &request.wallet_address,
+                &quote.quote_currency_code,
+            ),
         }
     }
 
-    pub fn redirect_url(&self, request: FiatBuyRequest, quote: MoonPayQuote) -> String {
-        let mut components = Url::parse(MOONPAY_REDIRECT_URL).unwrap();
+    pub fn get_sell_fiat_quote(&self, request: FiatQuoteRequest, quote: MoonPaySellQuote) -> FiatQuote {
+        FiatQuote {
+            provider: Self::NAME.as_fiat_provider(),
+            quote_type: FiatTransactionType::Sell,
+            fiat_amount: quote.quote_currency_amount,
+            fiat_currency: request.clone().fiat_currency,
+            crypto_amount: quote.base_currency_amount,
+            redirect_url: self.redirect_url(
+                FiatTransactionType::Sell,
+                request.crypto_amount.unwrap_or_default(),
+                &request.wallet_address,
+                &quote.base_currency_code,
+            ),
+        }
+    }
 
+    // docs: https://dev.moonpay.com/docs/ramps-sdk-buy-params
+    // docs: https://dev.moonpay.com/docs/ramps-sdk-sell-params
+    pub fn redirect_url(&self, quote_type: FiatTransactionType, amount: f64, address: &str, symbol: &str) -> String {
+        let url = match quote_type {
+            FiatTransactionType::Buy => MOONPAY_BUY_REDIRECT_URL,
+            FiatTransactionType::Sell => MOONPAY_SELL_REDIRECT_URL,
+        };
+        let mut components = Url::parse(url).unwrap();
         components
             .query_pairs_mut()
             .append_pair("apiKey", &self.api_key)
-            .append_pair("currencyCode", &quote.quote_currency_code)
-            .append_pair("baseCurrencyAmount", &request.clone().fiat_amount.to_string())
-            .append_pair("walletAddress", request.wallet_address.as_str());
+            .append_pair("baseCurrencyAmount", &amount.to_string());
 
+        match quote_type {
+            FiatTransactionType::Buy => components
+                .query_pairs_mut()
+                .append_pair("currencyCode", symbol)
+                .append_pair("walletAddress", address),
+            FiatTransactionType::Sell => components
+                .query_pairs_mut()
+                .append_pair("defaultBaseCurrencyCode", symbol)
+                .append_pair("refundWalletAddress", address),
+        };
+        self.sign(components)
+    }
+
+    fn sign(&self, mut components: Url) -> String {
         let query = components.query().unwrap();
         let signature = self.generate_signature(format!("?{}", &query).as_str());
         components.query_pairs_mut().append_pair("signature", &signature);

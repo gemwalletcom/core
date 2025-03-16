@@ -3,8 +3,8 @@ use crate::{
     FiatProvider,
 };
 use async_trait::async_trait;
-use primitives::{fiat_quote_request::FiatSellRequest, FiatTransactionType};
-use primitives::{AssetId, FiatBuyRequest, FiatProviderName, FiatQuote, FiatTransaction, FiatTransactionStatus};
+use primitives::FiatTransactionType;
+use primitives::{AssetId, FiatProviderName, FiatQuote, FiatQuoteRequest, FiatTransaction, FiatTransactionStatus};
 use std::error::Error;
 
 use super::{
@@ -18,20 +18,24 @@ impl FiatProvider for BanxaClient {
         Self::NAME
     }
 
-    async fn get_buy_quote(&self, request: FiatBuyRequest, request_map: FiatMapping) -> Result<FiatQuote, Box<dyn std::error::Error + Send + Sync>> {
+    async fn get_buy_quote(&self, request: FiatQuoteRequest, request_map: FiatMapping) -> Result<FiatQuote, Box<dyn std::error::Error + Send + Sync>> {
         let prices = self.get_prices(&request.fiat_currency, &request_map.symbol).await?;
         let price = prices.prices.first().cloned().ok_or("No price available")?;
 
-        Ok(self.get_fiat_quote(request, request_map, price))
+        Ok(self.get_fiat_buy_quote(request, request_map, price))
     }
 
-    async fn get_sell_quote(&self, _request: FiatSellRequest, _request_map: FiatMapping) -> Result<FiatQuote, Box<dyn Error + Send + Sync>> {
-        Err(Box::from("not supported"))
+    async fn get_sell_quote(&self, request: FiatQuoteRequest, request_map: FiatMapping) -> Result<FiatQuote, Box<dyn Error + Send + Sync>> {
+        Err("not supported")?;
+        let prices = self.get_prices(&request.fiat_currency, &request_map.symbol).await?;
+        let price = prices.prices.first().cloned().ok_or("No price available")?;
+
+        Ok(self.get_fiat_sell_quote(request, request_map, price))
     }
 
     async fn get_assets(&self) -> Result<Vec<FiatProviderAsset>, Box<dyn std::error::Error + Send + Sync>> {
         let assets = self
-            .get_assets()
+            .get_buy_assets()
             .await?
             .into_iter()
             .flat_map(Self::map_asset)

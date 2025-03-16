@@ -2,18 +2,26 @@ use serde::Deserialize;
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct MoonPayQuote {
+pub struct MoonPayBuyQuote {
     pub quote_currency_amount: f64,
     pub quote_currency_code: String,
-    pub quote_currency: QuooteCurrency,
+    pub quote_currency: QuoteCurrency,
 }
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct QuooteCurrency {
+pub struct QuoteCurrency {
     pub not_allowed_countries: Vec<String>,
     #[serde(rename = "notAllowedUSStates")]
     pub not_allowed_us_states: Vec<String>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MoonPaySellQuote {
+    pub base_currency_amount: f64,
+    pub base_currency_code: String,
+    pub quote_currency_amount: f64,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -22,6 +30,7 @@ pub struct MoonPayIpAddress {
     pub alpha2: String,
     pub state: String,
     pub is_buy_allowed: bool,
+    pub is_sell_allowed: bool,
     pub is_allowed: bool,
 }
 

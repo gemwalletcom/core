@@ -5,8 +5,7 @@ use crate::{
     FiatProvider,
 };
 use async_trait::async_trait;
-use primitives::{fiat_quote_request::FiatSellRequest, FiatTransactionStatus, FiatTransactionType};
-use primitives::{FiatBuyRequest, FiatProviderName, FiatQuote, FiatTransaction};
+use primitives::{FiatQuoteRequest, FiatProviderName, FiatQuote, FiatTransaction, FiatTransactionStatus, FiatTransactionType};
 use std::error::Error;
 
 #[async_trait]
@@ -15,7 +14,7 @@ impl FiatProvider for TransakClient {
         Self::NAME
     }
 
-    async fn get_buy_quote(&self, request: FiatBuyRequest, request_map: FiatMapping) -> Result<FiatQuote, Box<dyn std::error::Error + Send + Sync>> {
+    async fn get_buy_quote(&self, request: FiatQuoteRequest, request_map: FiatMapping) -> Result<FiatQuote, Box<dyn std::error::Error + Send + Sync>> {
         let quote = self
             .get_buy_quote(
                 request_map.symbol.clone(),
@@ -29,7 +28,7 @@ impl FiatProvider for TransakClient {
         Ok(self.get_fiat_quote(request, quote))
     }
 
-    async fn get_sell_quote(&self, _request: FiatSellRequest, _request_map: FiatMapping) -> Result<FiatQuote, Box<dyn Error + Send + Sync>> {
+    async fn get_sell_quote(&self, _request: FiatQuoteRequest, _request_map: FiatMapping) -> Result<FiatQuote, Box<dyn Error + Send + Sync>> {
         Err(Box::from("not supported"))
     }
 

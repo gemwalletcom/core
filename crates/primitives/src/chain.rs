@@ -140,7 +140,7 @@ impl Chain {
     }
 
     pub fn is_utxo(&self) -> bool {
-        matches!(self, Self::Bitcoin | Self::Litecoin | Self::Doge)
+        matches!(self, Self::Bitcoin | Self::Litecoin | Self::Doge | Self::Cardano)
     }
 
     pub fn as_slip44(&self) -> i64 {
