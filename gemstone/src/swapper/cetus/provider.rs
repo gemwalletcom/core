@@ -6,7 +6,7 @@ use num_bigint::BigInt;
 use num_traits::{ToBytes, ToPrimitive};
 use std::{str::FromStr, sync::Arc};
 use sui_types::{
-    base_types::ObjectID,
+    base_types::{ObjectID, ObjectRef},
     programmable_transaction_builder::ProgrammableTransactionBuilder,
     transaction::{Command, ObjectArg, TransactionData, TransactionKind},
     Identifier, TypeTag,
@@ -213,6 +213,8 @@ impl GemSwapProvider for Cetus {
 
         // Execute gas_price and coin_assets fetching in parallel
         let (gas_price_result, all_coin_assets_result) = join!(sui_client.get_gas_price(), sui_client.get_coin_assets(sender_address));
+        // FIXME fetch swap partner object
+        let swap_partner: Option<ObjectRef> = None;
 
         let gas_price = gas_price_result.map_err(SwapperError::from)?;
         let all_coin_assets = all_coin_assets_result.map_err(SwapperError::from)?;
@@ -230,7 +232,7 @@ impl GemSwapProvider for Cetus {
             amount_limit: BigInt::from_str(&quote.to_min_value)?,
             coin_type_a: route_data.coin_a.clone(),
             coin_type_b: route_data.coin_b.clone(),
-            swap_partner: None, // No swap partner for now
+            swap_partner,
         };
 
         // Build tx
