@@ -143,7 +143,7 @@ pub fn sui_clock_object() -> ObjectArg {
     ObjectArg::SharedObject {
         id: ObjectID::from_single_byte(SUI_CLOCK_OBJECT_ID),
         initial_shared_version: SequenceNumber::from_u64(1),
-        mutable: true,
+        mutable: false,
     }
 }
 
