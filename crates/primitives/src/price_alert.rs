@@ -43,4 +43,12 @@ pub enum PriceAlertType {
     AllTimeHigh,
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[typeshare(swift = "Equatable, Hashable, Sendable")]
+pub enum PriceAlertNotificationType {
+    Auto,
+    Price,
+    PricePercentChange,
+}
+
 pub type PriceAlerts = Vec<PriceAlert>;
