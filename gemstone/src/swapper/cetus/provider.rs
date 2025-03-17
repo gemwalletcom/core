@@ -215,7 +215,7 @@ impl GemSwapProvider for Cetus {
 
         let quote_amount = U256::from_le_slice(swap_result.amount_out.to_le_bytes().as_slice());
         let slippage_bps = request.options.slippage.bps;
-        let fee_bps = 0 // request.options.fee.as_ref().map(|fee| fee.sui_cetus.bps).unwrap_or(0);
+        let fee_bps = 0; // request.options.fee.as_ref().map(|fee| fee.sui_cetus.bps).unwrap_or(0);
         let expect_min = apply_slippage_in_bp(&quote_amount, slippage_bps + fee_bps);
 
         // Prepare route data
