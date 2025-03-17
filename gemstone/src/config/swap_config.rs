@@ -67,7 +67,7 @@ pub fn get_swap_config() -> SwapConfig {
             },
             thorchain: SwapReferralFee { address: "g1".into(), bps: 50 },
             sui_cetus: SwapReferralFee {
-                address: "0x07754eecfffb541c38ff90c01d9e7881e1c6863374febb482ad7bf6dd129653c".into(),
+                address: "0x9d6b98b18fd26b5efeec68d020dcf1be7a94c2c315353779bc6b3aed44188ddf".into(),
                 bps: 50,
             },
         },

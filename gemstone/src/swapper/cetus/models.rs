@@ -27,6 +27,7 @@ pub struct RoutePoolData {
     pub coin_a: String,
     pub coin_b: String,
     pub initial_shared_version: u64,
+    pub fee_rate: String,
 }
 
 pub type CetusPoolType = SuiData<DataObject<MoveObject<CetusPoolObject>>>;

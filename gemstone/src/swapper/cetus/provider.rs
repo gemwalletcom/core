@@ -222,6 +222,7 @@ impl GemSwapProvider for Cetus {
             coin_a: pool.coin_a_address.clone(),
             coin_b: pool.coin_b_address.clone(),
             initial_shared_version: pool_data.data.initial_shared_version().expect("Initial shared version should be available"),
+            fee_rate: pool.fee.to_string(),
         };
 
         Ok(SwapQuote {
