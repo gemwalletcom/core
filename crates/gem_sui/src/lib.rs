@@ -24,6 +24,7 @@ pub static SUI_FRAMEWORK_PACKAGE_ID: u8 = 0x2;
 pub static SUI_COIN_TYPE: &str = "0x2::sui::SUI";
 pub static SUI_COIN_TYPE_FULL: &str = "0x0000000000000000000000000000000000000000000000000000000000000002::sui::SUI";
 pub static EMPTY_ADDRESS: &str = "0x0000000000000000000000000000000000000000000000000000000000000000";
+pub static STORAGE_FEE_UNIT: u64 = 76; // https://blog.sui.io/storage-fees-explained
 
 pub fn encode_transfer(input: &TransferInput) -> Result<TxOutput, Error> {
     if let Some(err) = validate_enough_balance(&input.coins, input.amount) {

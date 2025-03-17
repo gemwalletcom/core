@@ -20,7 +20,10 @@ use super::{
 };
 use crate::{
     network::AlienProvider,
-    sui::rpc::{models::InspectEvent, SuiClient},
+    sui::{
+        gas_budget::GasBudgetCalculator,
+        rpc::{models::InspectEvent, SuiClient},
+    },
     swapper::{
         slippage::apply_slippage_in_bp, FetchQuoteData, GemSwapMode, GemSwapProvider, SwapChainAsset, SwapProvider, SwapProviderData, SwapProviderType,
         SwapQuote, SwapQuoteData, SwapQuoteRequest, SwapRoute, SwapperError,
@@ -212,7 +215,8 @@ impl GemSwapProvider for Cetus {
 
         let quote_amount = U256::from_le_slice(swap_result.amount_out.to_le_bytes().as_slice());
         let slippage_bps = request.options.slippage.bps;
-        let expect_min = apply_slippage_in_bp(&quote_amount, slippage_bps);
+        let fee_bps = 0 // request.options.fee.as_ref().map(|fee| fee.sui_cetus.bps).unwrap_or(0);
+        let expect_min = apply_slippage_in_bp(&quote_amount, slippage_bps + fee_bps);
 
         // Prepare route data
         let route_data = RoutePoolData {
@@ -292,7 +296,7 @@ impl GemSwapProvider for Cetus {
         let tx_kind = TransactionKind::ProgrammableTransaction(tx.clone());
         let tx_bytes = bcs::to_bytes(&tx_kind).map_err(|e| SwapperError::TransactionError { msg: e.to_string() })?;
         let inspect_result = sui_client.inspect_tx_block(EMPTY_ADDRESS, &tx_bytes).await?;
-        let gas_budget = (inspect_result.effects.total_gas_cost() as f64 * 1.2) as u64;
+        let gas_budget = GasBudgetCalculator::gas_budget(&inspect_result.effects.gas_used);
 
         let coin_refs = all_coin_assets
             .iter()

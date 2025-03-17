@@ -160,7 +160,7 @@ mod tests {
         let event_data: InspectEvent<SuiData<CalculatedSwapResult>> = serde_json::from_value(event.clone()).unwrap();
 
         assert!(result.error.is_none());
-        assert!(result.effects.total_gas_cost() > 0);
+        assert_eq!(result.effects.gas_used.computation_cost, 746000);
         assert_eq!(event_data.parsed_json.data.amount_out.to_string(), "1168986");
     }
 }

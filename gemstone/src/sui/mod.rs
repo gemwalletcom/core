@@ -1,3 +1,4 @@
+pub mod gas_budget;
 mod model;
 pub mod rpc;
 
