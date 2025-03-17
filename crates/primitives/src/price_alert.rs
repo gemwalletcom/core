@@ -1,3 +1,4 @@
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use strum_macros::{AsRefStr, EnumString};
 use typeshare::typeshare;
@@ -12,6 +13,7 @@ pub struct PriceAlert {
     pub price: Option<f64>,
     pub price_percent_change: Option<f64>,
     pub price_direction: Option<PriceAlertDirection>,
+    pub last_notified_at: Option<DateTime<Utc>>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
