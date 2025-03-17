@@ -79,76 +79,94 @@ impl FiatClient {
         Ok(map)
     }
 
-    pub async fn get_buy_quotes(&mut self, request: FiatQuoteRequest) -> Result<FiatQuotes, Box<dyn Error + Send + Sync>> {
-        let fiat_mapping_map = self.get_fiat_mapping(&request.asset_id)?;
-        let mut quotes = vec![];
-        let mut errors = vec![];
-
-        let futures = self
-            .providers
+    pub fn get_providers(&self, request: FiatQuoteRequest) -> Vec<&(dyn FiatProvider + Send + Sync)> {
+        self.providers
             .iter()
-            .filter_map(|provider| {
-                fiat_mapping_map.get(provider.name().id().as_str()).and_then(|fiat_mapping| {
-                    if let Some(provider_id) = request.provider_id.clone() {
-                        // If provider_name is provided, only get quote from that provider
-                        if provider_id == provider.name().id() {
-                            return Some(provider.get_buy_quote(request.clone(), fiat_mapping.clone()));
-                        }
-                        None
-                    } else {
-                        Some(provider.get_buy_quote(request.clone(), fiat_mapping.clone()))
-                    }
-                })
-            })
-            .collect::<Vec<_>>();
+            .filter(|x| request.provider_id.as_deref().map_or(true, |id| x.name().id() == id))
+            .map(|x| x.as_ref())
+            .collect()
+    }
 
-        join_all(futures).await.into_iter().for_each(|x| match x {
-            Ok(quote) => {
-                quotes.push(quote);
-            }
-            Err(e) => {
-                errors.push(FiatQuoteError {
-                    provider: "".to_string(), //TODO: Add provider
-                    error: e.to_string(),
-                });
-            }
-        });
-
-        quotes.sort_by(|a, b| b.crypto_amount.partial_cmp(&a.crypto_amount).unwrap());
-
-        Ok(FiatQuotes { quotes, errors })
+    pub async fn get_buy_quotes(&mut self, request: FiatQuoteRequest) -> Result<FiatQuotes, Box<dyn Error + Send + Sync>> {
+        self.get_quotes(
+            request,
+            |provider, request, mapping| provider.get_buy_quote(request, mapping),
+            sort_by_crypto_amount,
+        )
+        .await
     }
 
     pub async fn get_sell_quotes(&mut self, request: FiatQuoteRequest) -> Result<FiatQuotes, Box<dyn Error + Send + Sync>> {
-        let fiat_mapping_map = self.get_fiat_mapping(&request.asset_id)?;
-        let mut futures = vec![];
+        self.get_quotes(
+            request,
+            |provider, request, mapping| provider.get_sell_quote(request, mapping),
+            sort_by_fiat_amount,
+        )
+        .await
+    }
 
-        for provider in &self.providers {
-            if let Some(fiat_mapping) = fiat_mapping_map.get(provider.name().id().as_str()) {
-                futures.push(provider.get_sell_quote(request.clone(), fiat_mapping.clone()));
+    async fn get_quotes<F>(
+        &mut self,
+        request: FiatQuoteRequest,
+        quote_fn: F,
+        sort_fn: fn(&FiatQuote, &FiatQuote) -> std::cmp::Ordering,
+    ) -> Result<FiatQuotes, Box<dyn Error + Send + Sync>>
+    where
+        F: Fn(&dyn FiatProvider, FiatQuoteRequest, FiatMapping) -> futures::future::BoxFuture<'_, Result<FiatQuote, Box<dyn Error + Send + Sync>>>
+            + Send
+            + Sync,
+    {
+        let fiat_mapping_map = self.get_fiat_mapping(&request.asset_id)?;
+
+        let providers = self.get_providers(request.clone());
+        let futures = providers.into_iter().filter_map(|provider| {
+            let provider_id = provider.name().id().to_string();
+            fiat_mapping_map.get(&provider_id).map(|mapping| {
+                let quote_fn = &quote_fn;
+                let request = request.clone();
+                let mapping = mapping.clone();
+                async move {
+                    match quote_fn(provider, request, mapping).await {
+                        Ok(quote) => Ok(quote),
+                        Err(e) => Err(FiatQuoteError::new(provider_id, e.to_string())),
+                    }
+                }
+            })
+        });
+
+        let results = join_all(futures).await;
+
+        let mut quotes = Vec::new();
+        let mut errors = Vec::new();
+
+        for result in results {
+            match result {
+                Ok(quote) => quotes.push(quote),
+                Err(e) => errors.push(e),
             }
         }
 
-        let mut quotes: Vec<FiatQuote> = join_all(futures)
-            .await
-            .into_iter()
-            .flatten()
-            .map(|quote| {
-                let mut result = quote.clone();
-                result.crypto_amount = precision(quote.crypto_amount, 5);
-                result
-            })
-            .collect();
+        for quote in &mut quotes {
+            quote.crypto_amount = precision(quote.crypto_amount, 5);
+        }
 
-        quotes.sort_by(|a, b| b.fiat_amount.partial_cmp(&a.fiat_amount).unwrap());
+        quotes.sort_by(sort_fn);
 
-        Ok(FiatQuotes { quotes, errors: vec![] })
+        Ok(FiatQuotes { quotes, errors })
     }
 }
 
 #[allow(dead_code)]
 fn precision(val: f64, precision: usize) -> f64 {
     format!("{:.prec$}", val, prec = precision).parse::<f64>().unwrap()
+}
+
+fn sort_by_crypto_amount(a: &FiatQuote, b: &FiatQuote) -> std::cmp::Ordering {
+    b.crypto_amount.partial_cmp(&a.crypto_amount).unwrap()
+}
+
+fn sort_by_fiat_amount(a: &FiatQuote, b: &FiatQuote) -> std::cmp::Ordering {
+    b.fiat_amount.partial_cmp(&a.fiat_amount).unwrap()
 }
 
 #[cfg(test)]

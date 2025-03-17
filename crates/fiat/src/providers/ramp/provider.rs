@@ -1,3 +1,4 @@
+use number_formatter::BigNumberFormatter;
 use primitives::{AssetId, FiatProviderName, FiatQuote, FiatQuoteRequest, FiatTransaction, FiatTransactionStatus, FiatTransactionType};
 use std::error::Error;
 
@@ -20,33 +21,59 @@ impl FiatProvider for RampClient {
 
     async fn get_buy_quote(&self, request: FiatQuoteRequest, request_map: FiatMapping) -> Result<FiatQuote, Box<dyn std::error::Error + Send + Sync>> {
         let assets = self
-            .get_supported_assets(request.clone().fiat_currency, request.clone().ip_address)
+            .get_supported_buy_assets(request.clone().fiat_currency, request.clone().ip_address)
             .await?
             .assets;
-
-        let crypto_asset_symbol = format!("{}_{}", request_map.network.unwrap_or_default(), request_map.symbol,);
+        let crypto_asset_symbol = self.get_crypto_asset_symbol(request_map);
 
         if !assets.iter().any(|x| x.crypto_asset_symbol() == crypto_asset_symbol) {
-            return Err("asset not supported".into());
+            return Err("asset buy not supported".into());
         }
 
         let payload = QuoteRequest {
             crypto_asset_symbol,
             fiat_currency: request.clone().fiat_currency,
-            fiat_value: request.fiat_amount,
+            fiat_value: Some(request.fiat_amount),
+            crypto_amount: None,
         };
-        let quote = self.get_client_quote(payload).await?;
+        let quote = self.get_client_buy_quote(payload).await?;
 
-        Ok(self.get_fiat_quote(request.clone(), quote))
+        Ok(self.get_fiat_buy_quote(request.clone(), quote))
     }
 
-    async fn get_sell_quote(&self, _request: FiatQuoteRequest, _request_map: FiatMapping) -> Result<FiatQuote, Box<dyn Error + Send + Sync>> {
-        Err(Box::from("not supported"))
+    #[allow(dead_code)]
+    #[allow(unused)]
+    async fn get_sell_quote(&self, request: FiatQuoteRequest, request_map: FiatMapping) -> Result<FiatQuote, Box<dyn Error + Send + Sync>> {
+        return Err("not supported".into());
+
+        let assets = self
+            .get_supported_sell_assets(request.clone().fiat_currency, request.clone().ip_address)
+            .await?
+            .assets;
+
+        let crypto_asset_symbol = self.get_crypto_asset_symbol(request_map);
+        let asset = assets
+            .iter()
+            .find(|x| x.crypto_asset_symbol() == crypto_asset_symbol)
+            .ok_or("asset sell not supported")?;
+
+        let crypto_amount =
+            BigNumberFormatter::value_from_amount(request.crypto_amount.unwrap_or_default().to_string().as_str(), asset.decimals).unwrap_or_default();
+
+        let payload = QuoteRequest {
+            crypto_asset_symbol,
+            fiat_currency: request.clone().fiat_currency,
+            fiat_value: None,
+            crypto_amount: Some(crypto_amount),
+        };
+        let quote = self.get_client_sell_quote(payload).await?;
+
+        Ok(self.get_fiat_sell_quote(request.clone(), quote))
     }
 
     async fn get_assets(&self) -> Result<Vec<FiatProviderAsset>, Box<dyn std::error::Error + Send + Sync>> {
         let assets = self
-            .get_supported_assets("USD".to_string(), "127.0.0.0".to_string())
+            .get_supported_buy_assets("USD".to_string(), "127.0.0.0".to_string())
             .await?
             .assets
             .into_iter()
