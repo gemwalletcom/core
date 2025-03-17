@@ -97,5 +97,6 @@ pub fn get_coingecko_market_id_for_chain(chain: Chain) -> &'static str {
         Chain::Cardano => "cardano",
         Chain::Berachain => "berachain-bera",
         Chain::Hyperliquid => "hyperliquid",
+        Chain::Monad => "monad",
     }
 }

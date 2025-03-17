@@ -40,6 +40,7 @@ pub enum EVMChain {
     Ink,
     Unichain,
     Hyperliquid,
+    Monad,
 }
 
 impl EVMChain {
@@ -66,6 +67,7 @@ impl EVMChain {
             Self::Sonic => 10_000_000,
             Self::Berachain => 1_000_000_000,   // 1 Gwei
             Self::Hyperliquid => 1_000_000_000, // 1 Gwei
+            Self::Monad => 1_000_000_000,       // 1 Gwei
         }
     }
 
@@ -87,7 +89,8 @@ impl EVMChain {
             | Self::Celo
             | Self::Sonic
             | Self::Berachain
-            | Self::Hyperliquid => ChainStack::Native,
+            | Self::Hyperliquid
+            | Self::Monad => ChainStack::Native,
         }
     }
 
@@ -121,6 +124,7 @@ impl EVMChain {
             Self::Linea => Some("0xe5D7C2a44FfDDf6b295A15c148167daaAf5Cf34f"),
             Self::Mantle => Some("0x78c1b0C915c4FAA5FffA6CAbf0219DA63d7f4cb8"), // Wrapped Mantle (WMNT)
             Self::Manta => Some("0x0dc808adce2099a9f62aa87d9670745aba741746"),
+            Self::Monad => None, //TODO: Monad
         }
     }
 

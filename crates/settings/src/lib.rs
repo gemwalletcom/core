@@ -219,6 +219,7 @@ pub struct Chains {
     pub ink: Chain,
     pub unichain: Chain,
     pub hyperliquid: Chain,
+    pub monad: Chain,
 }
 
 #[derive(Debug, Deserialize, Clone)]
