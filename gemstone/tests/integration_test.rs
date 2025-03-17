@@ -298,7 +298,7 @@ mod tests {
             },
             wallet_address: "0xa9bd0493f9bd1f792a4aedc1f99d54535a75a46c38fd56a8f2c6b7c8d75817a1".into(),
             destination_address: "0xa9bd0493f9bd1f792a4aedc1f99d54535a75a46c38fd56a8f2c6b7c8d75817a1".into(),
-            value: "500000000".into(), // 0.5 SUI
+            value: "1500000000".into(), // 1.5 SUI
             mode: GemSwapMode::ExactIn,
             options,
         };

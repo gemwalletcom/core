@@ -91,7 +91,7 @@ impl TransactionBuilder {
         fix_amount: bool,
     ) -> Result<BuildCoinResult> {
         if coin_type == SUI_COIN_TYPE_FULL {
-            if coin_assets.len() > 1 {
+            if amount == &BigInt::from(0) && coin_assets.len() > 1 {
                 let results = CoinAssist::select_coins_gte(coin_assets, amount);
                 let target_coin = &results.0[0];
                 return Ok(BuildCoinResult {
@@ -101,18 +101,17 @@ impl TransactionBuilder {
                     target_coin_amount: target_coin.balance.to_string(),
                     original_splited_coin: None,
                 });
-            } else {
-                // split gas coin
-                let amount_arg = ptb.pure(amount.to_u64().unwrap())?;
-                let target_coin = ptb.command(Command::SplitCoins(Argument::GasCoin, vec![amount_arg]));
-                return Ok(BuildCoinResult {
-                    target_coin,
-                    remain_coins: vec![],
-                    is_mint_zero_coin: false,
-                    target_coin_amount: amount.to_string(),
-                    original_splited_coin: None,
-                });
             }
+            // split gas coin
+            let amount_arg = ptb.pure(amount.to_u64().unwrap())?;
+            let target_coin = ptb.command(Command::SplitCoins(Argument::GasCoin, vec![amount_arg]));
+            return Ok(BuildCoinResult {
+                target_coin,
+                remain_coins: vec![],
+                is_mint_zero_coin: false,
+                target_coin_amount: amount.to_string(),
+                original_splited_coin: None,
+            });
         }
         Self::build_split_target_coin(ptb, coin_assets, amount, fix_amount)
     }

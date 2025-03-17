@@ -295,7 +295,7 @@ impl GemSwapProvider for Cetus {
         // Estimate gas_budget
         let tx_kind = TransactionKind::ProgrammableTransaction(tx.clone());
         let tx_bytes = bcs::to_bytes(&tx_kind).map_err(|e| SwapperError::TransactionError { msg: e.to_string() })?;
-        let inspect_result = sui_client.inspect_tx_block(EMPTY_ADDRESS, &tx_bytes).await?;
+        let inspect_result = sui_client.inspect_tx_block(&quote.request.wallet_address, &tx_bytes).await?;
         let gas_budget = GasBudgetCalculator::gas_budget(&inspect_result.effects.gas_used);
 
         let coin_refs = all_coin_assets
