@@ -37,7 +37,7 @@ impl AssetUpdater {
     }
 
     pub async fn update_recently_added_assets(&mut self) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        let ids = self.coin_gecko_client.get_coin_list_new().await?.ids();
+        let ids = self.coin_gecko_client.get_coin_list_new().await?.ids().iter().take(10).cloned().collect();
         self.update_assets_ids(ids).await
     }
 
