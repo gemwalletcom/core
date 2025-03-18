@@ -161,6 +161,8 @@ chains:
     url: https://mainnet.unichain.org
   hyperliquid:
     url: https://rpc.hyperliquid.xyz/evm
+  monad:
+    url: https://testnet-rpc.monad.xyz #TODO: Monad
 
 swap:
   jupiter:

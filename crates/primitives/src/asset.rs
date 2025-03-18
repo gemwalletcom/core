@@ -340,6 +340,13 @@ impl Asset {
                 decimals: 18,
                 asset_type: AssetType::NATIVE,
             },
+            Chain::Monad => Asset {
+                id: chain.as_asset_id(),
+                name: "Monad Testnet".to_string(), //TODO: Monad
+                symbol: "MON".to_string(),
+                decimals: 18,
+                asset_type: AssetType::NATIVE,
+            },
         }
     }
 }

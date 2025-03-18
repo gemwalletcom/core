@@ -134,6 +134,12 @@ impl EtherScan {
                     base_url: "https://uniscan.xyz",
                 },
             },
+            EVMChain::Monad => Self {
+                meta: Metadata {
+                    name: "Monad",
+                    base_url: "https://testnet.monadexplorer.com", //TODO: Monad. Replace with etherscan
+                },
+            },
             _ => todo!(),
         })
     }

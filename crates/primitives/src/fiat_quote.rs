@@ -29,3 +29,9 @@ pub struct FiatQuoteError {
     pub provider: String,
     pub error: String,
 }
+
+impl FiatQuoteError {
+    pub fn new(provider: String, error: String) -> Self {
+        Self { provider, error }
+    }
+}
