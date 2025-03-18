@@ -82,7 +82,7 @@ impl FiatClient {
     pub fn get_providers(&self, request: FiatQuoteRequest) -> Vec<&(dyn FiatProvider + Send + Sync)> {
         self.providers
             .iter()
-            .filter(|x| request.provider_id.as_deref().map_or(true, |id| x.name().id() == id))
+            .filter(|x| request.provider_id.as_deref().is_none_or(|id| x.name().id() == id))
             .map(|x| x.as_ref())
             .collect()
     }
