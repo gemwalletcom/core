@@ -324,13 +324,13 @@ impl Chain {
             | Self::Unichain
             | Self::Ink
             | Self::Hyperliquid
+            | Self::Sui
             | Self::Monad => true,
             Self::Osmosis
             | Self::Celestia
             | Self::Injective
             | Self::Ton
             | Self::Tron
-            | Self::Sui
             | Self::Xrp
             | Self::Sei
             | Self::Noble

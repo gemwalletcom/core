@@ -1,3 +1,4 @@
+pub mod jsonrpc;
 pub mod model;
 
 use anyhow::{anyhow, Error};
@@ -15,7 +16,15 @@ static SUI_SYSTEM_ID: &str = "sui_system";
 static SUI_REQUEST_ADD_STAKE: &str = "request_add_stake";
 static SUI_REQUEST_WITHDRAW_STAKE: &str = "request_withdraw_stake";
 static SUI_SYSTEM_ADDRESS: u8 = 0x3;
-static SUI_SYSTEM_STATE_OBJECT_ID: u8 = 0x5;
+
+pub static SUI_SYSTEM_STATE_OBJECT_ID: u8 = 0x5;
+pub static SUI_CLOCK_OBJECT_ID: u8 = 0x6;
+pub static SUI_FRAMEWORK_PACKAGE_ID: u8 = 0x2;
+
+pub static SUI_COIN_TYPE: &str = "0x2::sui::SUI";
+pub static SUI_COIN_TYPE_FULL: &str = "0x0000000000000000000000000000000000000000000000000000000000000002::sui::SUI";
+pub static EMPTY_ADDRESS: &str = "0x0000000000000000000000000000000000000000000000000000000000000000";
+pub static STORAGE_FEE_UNIT: u64 = 76; // https://blog.sui.io/storage-fees-explained
 
 pub fn encode_transfer(input: &TransferInput) -> Result<TxOutput, Error> {
     if let Some(err) = validate_enough_balance(&input.coins, input.amount) {
@@ -131,6 +140,14 @@ pub fn sui_system_state_object() -> ObjectArg {
     }
 }
 
+pub fn sui_clock_object() -> ObjectArg {
+    ObjectArg::SharedObject {
+        id: ObjectID::from_single_byte(SUI_CLOCK_OBJECT_ID),
+        initial_shared_version: SequenceNumber::from_u64(1),
+        mutable: false,
+    }
+}
+
 pub fn validate_enough_balance(coins: &[Coin], amount: u64) -> Option<Error> {
     if coins.is_empty() {
         return Some(anyhow!("coins list is empty"));
@@ -156,7 +173,7 @@ mod tests {
             recipient: "0xe6af80fe1b0b42fcd96762e5c70f5e8dae39f8f0ee0f118cac0d55b74e2927c2".into(),
             amount: 8993996480,
             coins: vec![Coin {
-                coin_type: "0x2::sui::SUI".into(),
+                coin_type: SUI_COIN_TYPE.into(),
                 balance: 8994756360,
                 object: Object {
                     object_id: "0x9f258c85566d977b4c99bb6019560ba99c796e71291269d8f9f3cc9d9f37db46".into(),
@@ -207,7 +224,7 @@ mod tests {
                 price: 750,
             },
             gas_coin: Coin {
-                coin_type: "0x2::sui::SUI".into(),
+                coin_type: SUI_COIN_TYPE.into(),
                 balance: 100000000,
                 object: Object {
                     object_id: "0x890f8c604c7cb5cc194dbf4953ad3dbebd81ef7526be351d3514cc3cc26c9c1d".into(),
@@ -233,7 +250,7 @@ mod tests {
                 price: 750,
             },
             coins: vec![Coin {
-                coin_type: "0x2::sui::SUI".into(),
+                coin_type: SUI_COIN_TYPE.into(),
                 balance: 10990277896,
                 object: Object {
                     object_id: "0x36b8380aa7531d73723657d73a114cfafedf89dc8c76b6752f6daef17e43dda2".into(),
@@ -266,7 +283,7 @@ mod tests {
                 price: 750,
             },
             gas_coin: Coin {
-                coin_type: "0x2::sui::SUI".into(),
+                coin_type: SUI_COIN_TYPE.into(),
                 balance: 631668351,
                 object: Object {
                     object_id: "0x36b8380aa7531d73723657d73a114cfafedf89dc8c76b6752f6daef17e43dda2".into(),

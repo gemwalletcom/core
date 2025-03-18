@@ -163,7 +163,7 @@ chains:
     url: https://rpc.hyperliquid.xyz/evm
   monad:
     url: https://testnet-rpc.monad.xyz #TODO: Monad
-  
+
 swap:
   jupiter:
     url: "https://quote-api.jup.ag"

@@ -1,4 +1,5 @@
 // Copyright (c). Gem Wallet. All rights reserved.
+
 import Foundation
 
 class WrappedStruct<T: Sendable & Hashable>: NSObject {
