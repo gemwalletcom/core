@@ -190,24 +190,16 @@ impl TransactionBuilder {
         let mut args = Vec::new();
 
         // Add global config
-        let global_obj_arg = ObjectArg::SharedObject {
-            id: cetus_config.global_config.id,
-            initial_shared_version: cetus_config.global_config.initial_shared_version(),
-            mutable: true,
-        };
+        let global_obj_arg = cetus_config.global_config.to_obj_arg(true);
         args.push(ptb.obj(global_obj_arg)?);
 
         // Add pool object
-        let pool_obj_arg = ObjectArg::SharedObject {
-            id: params.pool_object_shared.id,
-            initial_shared_version: params.pool_object_shared.initial_shared_version(),
-            mutable: true,
-        };
+        let pool_obj_arg = params.pool_object_shared.to_obj_arg(true);
         args.push(ptb.obj(pool_obj_arg)?);
 
         // Add swap partner if needed
         if has_swap_partner {
-            let partner_obj_arg = ObjectArg::ImmOrOwnedObject(params.swap_partner.unwrap());
+            let partner_obj_arg = params.swap_partner.clone().unwrap().to_obj_arg(true);
             args.push(ptb.obj(partner_obj_arg)?);
         }
 

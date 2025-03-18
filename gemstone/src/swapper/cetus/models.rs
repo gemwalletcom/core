@@ -1,8 +1,9 @@
 use num_bigint::{BigInt, ParseBigIntError};
 use serde::{Deserialize, Serialize};
 use sui_types::{
-    base_types::{ObjectID, ObjectRef, SequenceNumber},
+    base_types::{ObjectID, SequenceNumber},
     digests::ObjectDigest,
+    transaction::ObjectArg,
 };
 
 use crate::swapper::SwapperError;
@@ -82,12 +83,13 @@ pub struct SwapParams {
     pub amount_limit: BigInt,
     pub coin_type_a: String,
     pub coin_type_b: String,
-    pub swap_partner: Option<ObjectRef>,
+    pub swap_partner: Option<SharedObject>,
 }
 
 #[derive(Debug, Clone)]
 pub struct CetusConfig {
     pub global_config: SharedObject,
+    pub partner: Option<SharedObject>,
     pub clmm_pool: ObjectID,
     pub router: ObjectID,
 }
@@ -101,6 +103,14 @@ pub struct SharedObject {
 impl SharedObject {
     pub fn initial_shared_version(&self) -> SequenceNumber {
         SequenceNumber::from_u64(self.shared_version)
+    }
+
+    pub fn to_obj_arg(&self, mutable: bool) -> ObjectArg {
+        ObjectArg::SharedObject {
+            id: self.id,
+            initial_shared_version: self.initial_shared_version(),
+            mutable,
+        }
     }
 }
 
