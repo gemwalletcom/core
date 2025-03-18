@@ -377,8 +377,7 @@ impl Chain {
             Self::Doge => 60_000,
             Self::Aptos => 500,
             Self::AvalancheC => 2_000,
-            
-          => 500,
+            Self::Sui => 500,
             Self::Xrp => 4_000,
             Self::Sei => 1_000,
             Self::Noble => 6_000,
