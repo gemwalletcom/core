@@ -140,17 +140,17 @@ pub struct SearchTrending {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct TopGainersLosers {
-    pub top_gainers: Vec<SearchTrendingPrice>,
-    pub top_losers: Vec<SearchTrendingPrice>,
+    pub top_gainers: CoinIds,
+    pub top_losers: CoinIds,
 }
 
 impl TopGainersLosers {
     pub fn get_gainers_ids(&self) -> Vec<String> {
-        self.top_gainers.iter().map(|x| x.id.clone()).collect()
+        self.top_gainers.ids()
     }
 
     pub fn get_losers_ids(&self) -> Vec<String> {
-        self.top_losers.iter().map(|x| x.id.clone()).collect()
+        self.top_losers.ids()
     }
 }
 
@@ -162,15 +162,19 @@ impl SearchTrending {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct SearchTrendingItem {
-    pub item: SearchTrendingItemCoin,
+    pub item: CoinId,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct SearchTrendingItemCoin {
+pub struct CoinId {
     pub id: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct SearchTrendingPrice {
-    pub id: String,
+pub struct CoinIds(pub Vec<CoinId>);
+
+impl CoinIds {
+    pub fn ids(&self) -> Vec<String> {
+        self.0.iter().map(|x| x.id.clone()).collect()
+    }
 }

@@ -26,7 +26,6 @@ pub async fn main() {
 
     let service = DaemonService::from_str(service.as_str()).expect("Expected a valid service");
 
-    // Pin the futures when creating the services vector
     let services: Vec<Pin<Box<dyn Future<Output = ()> + Send>>> = match service {
         DaemonService::Alerter => alerter::jobs(settings.clone()).await,
         DaemonService::Pricer => pricer::jobs(settings.clone()).await,
