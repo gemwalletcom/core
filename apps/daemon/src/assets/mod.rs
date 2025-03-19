@@ -30,6 +30,14 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
         }
     });
 
+    let update_recently_added_assets = run_job("Update CoinGecko recently added assets", Duration::from_secs(3600), {
+        let (settings, coingecko_client) = (settings.clone(), coingecko_client.clone());
+        move || {
+            let mut asset_updater = AssetUpdater::new(coingecko_client.clone(), &settings.postgres.url);
+            async move { asset_updater.update_recently_added_assets().await }
+        }
+    });
+
     let token_list_updater = run_job("token list update", Duration::from_secs(86400), {
         let settings = settings.clone();
         move || {
@@ -39,5 +47,10 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
         }
     });
 
-    vec![Box::pin(update_assets), Box::pin(update_tranding_assets), Box::pin(token_list_updater)]
+    vec![
+        Box::pin(update_assets),
+        Box::pin(update_tranding_assets),
+        Box::pin(update_recently_added_assets),
+        Box::pin(token_list_updater),
+    ]
 }

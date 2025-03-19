@@ -3,7 +3,7 @@ use std::str::FromStr;
 use diesel::prelude::*;
 use primitives::{AssetBasic, AssetId, AssetProperties, AssetScore, AssetType, Chain};
 use serde::{Deserialize, Serialize};
-#[derive(Debug, Queryable, Selectable, Serialize, Deserialize, Insertable, AsChangeset, Clone)]
+#[derive(Debug, Queryable, Selectable, Identifiable, Serialize, Deserialize, Insertable, AsChangeset, Clone)]
 #[diesel(table_name = crate::schema::assets)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct Asset {

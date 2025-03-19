@@ -36,6 +36,11 @@ impl AssetUpdater {
         self.update_assets_ids(ids).await
     }
 
+    pub async fn update_recently_added_assets(&mut self) -> Result<usize, Box<dyn Error + Send + Sync>> {
+        let ids = self.coin_gecko_client.get_coin_list_new().await?.ids().iter().take(10).cloned().collect();
+        self.update_assets_ids(ids).await
+    }
+
     async fn update_assets_ids(&mut self, ids: Vec<String>) -> Result<usize, Box<dyn Error + Send + Sync>> {
         for coin in ids.clone() {
             match self.coin_gecko_client.get_coin(&coin).await {
@@ -49,7 +54,7 @@ impl AssetUpdater {
                             let _ = self.update_links(&chain.as_asset_id().to_string(), asset_links).await;
                         }
                     } else {
-                        for (asset, asset_score) in result {
+                        for (asset, asset_score) in result.clone() {
                             let _ = self.update_asset(asset, asset_score, asset_links.clone()).await;
                         }
                     }

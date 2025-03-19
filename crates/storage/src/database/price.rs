@@ -1,7 +1,6 @@
 use crate::schema::prices_assets;
 use crate::{models::*, DatabaseClient};
 use chrono::NaiveDateTime;
-use diesel::associations::HasTable;
 use diesel::prelude::*;
 use diesel::upsert::excluded;
 use price::PriceAssetData;
@@ -78,28 +77,14 @@ impl DatabaseClient {
     }
 
     pub fn get_prices_assets_list(&mut self) -> Result<Vec<PriceAssetData>, diesel::result::Error> {
-        use crate::schema::assets::dsl::*;
-        use crate::schema::prices::dsl::*;
-        use crate::schema::prices_assets::dsl::*;
+        use crate::schema::{assets, prices, prices_assets};
 
-        let query =
-            prices_assets
-                .inner_join(prices::table())
-                .inner_join(assets::table())
-                .select((Price::as_select(), PriceAsset::as_select(), Asset::as_select()));
+        let query = assets::table
+            .left_join(prices_assets::table.on(prices_assets::asset_id.eq(assets::id)))
+            .left_join(prices::table.on(prices_assets::price_id.eq(prices::id)))
+            .select((Asset::as_select(), Option::<Price>::as_select()));
 
-        let data: Vec<(Price, PriceAsset, Asset)> = query.load(&mut self.connection)?;
-        let data = data
-            .clone()
-            .into_iter()
-            .map(|x| PriceAssetData {
-                price_asset: x.1,
-                price: x.0,
-                asset: x.2,
-            })
-            .collect();
-
-        Ok(data)
+        query.load::<PriceAssetData>(&mut self.connection)
     }
 }
 

@@ -6,7 +6,7 @@ use std::hash::{Hash, Hasher};
 
 use super::{Asset, CreateChart, FiatRate};
 
-#[derive(Debug, Queryable, Selectable, Serialize, Deserialize, Insertable, AsChangeset, Clone)]
+#[derive(Debug, Queryable, Selectable, Identifiable, Serialize, Deserialize, Insertable, AsChangeset, Clone)]
 #[diesel(table_name = crate::schema::prices)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct Price {
@@ -69,11 +69,10 @@ pub struct PriceAsset {
     pub price_id: String,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, Queryable)]
 pub struct PriceAssetData {
-    pub price_asset: PriceAsset,
-    pub price: Price,
     pub asset: Asset,
+    pub price: Option<Price>,
 }
 
 impl PartialEq for PriceAsset {
