@@ -55,9 +55,8 @@ impl PriceAlertClient {
 
     pub async fn delete_price_alerts(&mut self, device_id: &str, price_alerts: PriceAlerts) -> Result<usize, Box<dyn Error>> {
         let device = self.database.get_device(device_id)?;
-        let asset_ids: Vec<_> = price_alerts.iter().map(|x| x.asset_id.as_str()).collect::<HashSet<_>>().into_iter().collect();
-
-        Ok(self.database.delete_price_alerts(device.id, asset_ids)?)
+        let ids = price_alerts.iter().map(|x| x.id()).collect::<HashSet<_>>().into_iter().collect();
+        Ok(self.database.delete_price_alerts(device.id, ids)?)
     }
 
     pub async fn get_devices_to_alert(&mut self, rules: PriceAlertRules) -> Result<Vec<PriceAlertNotification>, Box<dyn Error + Send + Sync>> {

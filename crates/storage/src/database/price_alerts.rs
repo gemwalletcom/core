@@ -28,9 +28,9 @@ impl DatabaseClient {
             .execute(&mut self.connection)
     }
 
-    pub fn delete_price_alerts(&mut self, _device_id: i32, asset_ids: Vec<&str>) -> Result<usize, diesel::result::Error> {
+    pub fn delete_price_alerts(&mut self, _device_id: i32, ids: Vec<String>) -> Result<usize, diesel::result::Error> {
         use crate::schema::price_alerts::dsl::*;
-        diesel::delete(price_alerts.filter(device_id.eq(_device_id).and(asset_id.eq_any(asset_ids)))).execute(&mut self.connection)
+        diesel::delete(price_alerts.filter(device_id.eq(_device_id).and(identifier.eq_any(ids)))).execute(&mut self.connection)
     }
 
     pub fn update_price_alerts_set_notified_at(&mut self, ids: Vec<i32>, _last_notified_at: NaiveDateTime) -> Result<usize, diesel::result::Error> {
