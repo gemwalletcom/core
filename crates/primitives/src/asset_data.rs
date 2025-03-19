@@ -1,4 +1,4 @@
-#[typeshare(swift = "Sendable")]
+#[typeshare(swift = "Equatable, Hashable, Sendable")]
 struct AssetData {
     asset: Asset,
     balance: Balance,
