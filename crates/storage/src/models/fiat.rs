@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 #[diesel(table_name = crate::schema::fiat_rates)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct FiatRate {
-    pub symbol: String,
+    pub id: String,
     pub name: String,
     pub rate: f64,
 }
@@ -13,7 +13,7 @@ pub struct FiatRate {
 impl FiatRate {
     pub fn from_primitive(rate: primitives::FiatRate) -> Self {
         FiatRate {
-            symbol: rate.symbol,
+            id: rate.symbol,
             name: rate.name,
             rate: rate.rate,
         }

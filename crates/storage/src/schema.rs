@@ -131,9 +131,9 @@ diesel::table! {
 }
 
 diesel::table! {
-    fiat_rates (symbol) {
-        #[max_length = 32]
-        symbol -> Varchar,
+    fiat_rates (id) {
+        #[max_length = 8]
+        id -> Varchar,
         name -> Varchar,
         rate -> Float8,
         created_at -> Timestamp,
@@ -287,6 +287,8 @@ diesel::table! {
         device_id -> Int4,
         #[max_length = 128]
         asset_id -> Varchar,
+        #[max_length = 128]
+        currency -> Varchar,
         #[max_length = 16]
         price_direction -> Nullable<Varchar>,
         price -> Nullable<Float8>,
@@ -478,6 +480,7 @@ diesel::joinable!(assets_links -> assets (asset_id));
 diesel::joinable!(assets_links -> link_types (link_type));
 diesel::joinable!(assets_tags -> assets (asset_id));
 diesel::joinable!(assets_tags -> tags (tag_id));
+diesel::joinable!(devices -> fiat_rates (currency));
 diesel::joinable!(fiat_assets -> assets (asset_id));
 diesel::joinable!(fiat_assets -> fiat_providers (provider));
 diesel::joinable!(fiat_transactions -> assets (asset_id));
@@ -492,6 +495,7 @@ diesel::joinable!(nodes -> chains (chain));
 diesel::joinable!(parser_state -> chains (chain));
 diesel::joinable!(price_alerts -> assets (asset_id));
 diesel::joinable!(price_alerts -> devices (device_id));
+diesel::joinable!(price_alerts -> fiat_rates (currency));
 diesel::joinable!(prices_assets -> assets (asset_id));
 diesel::joinable!(prices_assets -> prices (price_id));
 diesel::joinable!(scan_addresses -> chains (chain));

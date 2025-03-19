@@ -78,7 +78,7 @@ impl PriceUpdater {
 
         let base_rate = rates
             .iter()
-            .find(|x| x.symbol == DEFAULT_FIAT_CURRENCY)
+            .find(|x| x.id == DEFAULT_FIAT_CURRENCY)
             .map(|x| x.rate)
             .ok_or("base rate not found")?;
 
@@ -105,10 +105,10 @@ impl PriceUpdater {
             if prices.is_empty() {
                 continue;
             }
-            match self.price_client.set_cache_prices(rate.symbol.as_str(), prices).await {
+            match self.price_client.set_cache_prices(rate.id.as_str(), prices).await {
                 Ok(_) => {}
                 Err(e) => {
-                    println!("Error setting cache prices for {}: {}", rate.symbol, e);
+                    println!("Error setting cache prices for {}: {}", rate.id, e);
                 }
             }
         }
