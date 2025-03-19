@@ -1,0 +1,10 @@
+[package]
+name = "pricer_dex"
+version = { workspace = true }
+edition = { workspace = true }
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+primitives = { path = "../primitives" }

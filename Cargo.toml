@@ -41,6 +41,7 @@ members = [
     "crates/nft",
     "crates/serde_serializers",
     "crates/number_formatter",
+    "crates/pricer_dex",
 ]
 
 default-members = [
