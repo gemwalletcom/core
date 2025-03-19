@@ -60,6 +60,7 @@ impl Downloader {
         let ids = match list.as_str() {
             "trending" => self.client.get_search_trending().await?.get_coins_ids(),
             "top" => self.get_coingecko_top().await?,
+            "new" => self.client.get_coin_list_new().await?.ids().iter().take(20).cloned().collect(),
             _ => {
                 vec![]
             }
