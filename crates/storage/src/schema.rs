@@ -281,8 +281,9 @@ diesel::table! {
 
 diesel::table! {
     price_alerts (id) {
+        id -> Int4,
         #[max_length = 512]
-        id -> Varchar,
+        identifier -> Varchar,
         device_id -> Int4,
         #[max_length = 128]
         asset_id -> Varchar,
