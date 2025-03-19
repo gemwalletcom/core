@@ -16,6 +16,21 @@ pub struct PriceAlert {
     pub last_notified_at: Option<DateTime<Utc>>,
 }
 
+impl PriceAlert {
+    pub fn id(&self) -> String {
+        let parts: Vec<String> = vec![
+            Some(self.asset_id.clone()),
+            self.price.map(|p| p.to_string()),
+            self.price_percent_change.map(|p| p.to_string()),
+            self.price_direction.clone().map(|d| d.as_ref().to_string()),
+        ]
+        .into_iter()
+        .filter_map(|x| x.map(|s| s.to_string()))
+        .collect();
+        parts.join("_")
+    }
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Hashable, Sendable")]
 #[serde(rename_all = "camelCase")]
@@ -54,3 +69,44 @@ pub enum PriceAlertNotificationType {
 }
 
 pub type PriceAlerts = Vec<PriceAlert>;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_price_alert_id_with_all_fields() {
+        let price_alert = PriceAlert {
+            asset_id: "asset123".to_string(),
+            price: Some(100.0),
+            price_percent_change: Some(5.0),
+            price_direction: Some(PriceAlertDirection::Up),
+            last_notified_at: None,
+        };
+        assert_eq!(price_alert.id(), "asset123_100_5_up");
+    }
+
+    #[test]
+    fn test_price_alert_id_with_missing_optional_fields() {
+        let price_alert = PriceAlert {
+            asset_id: "asset123".to_string(),
+            price: None,
+            price_percent_change: None,
+            price_direction: None,
+            last_notified_at: None,
+        };
+        assert_eq!(price_alert.id(), "asset123");
+    }
+
+    #[test]
+    fn test_price_alert_id_with_some_optional_fields() {
+        let price_alert = PriceAlert {
+            asset_id: "asset123".to_string(),
+            price: Some(100.0),
+            price_percent_change: None,
+            price_direction: Some(PriceAlertDirection::Down),
+            last_notified_at: None,
+        };
+        assert_eq!(price_alert.id(), "asset123_100_down");
+    }
+}

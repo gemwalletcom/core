@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 #[diesel(table_name = crate::schema::price_alerts)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct PriceAlert {
-    pub id: i32,
+    pub id: String,
     pub device_id: i32,
     pub asset_id: String,
     pub price_direction: Option<String>,
@@ -19,6 +19,7 @@ pub struct PriceAlert {
 #[diesel(table_name = crate::schema::price_alerts)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct NewPriceAlert {
+    pub id: String,
     pub device_id: i32,
     pub asset_id: String,
     pub price_direction: Option<String>,
@@ -39,6 +40,7 @@ impl PriceAlert {
 
     pub fn new_price_alert(primitive: primitives::PriceAlert, device_id: i32) -> NewPriceAlert {
         NewPriceAlert {
+            id: primitive.id(),
             device_id,
             asset_id: primitive.asset_id.clone(),
             price_direction: primitive.price_direction.map(|value| value.as_ref().to_string()),
