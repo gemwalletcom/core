@@ -6,7 +6,6 @@ use serde::{Deserialize, Serialize};
 #[diesel(table_name = crate::schema::price_alerts)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct PriceAlert {
-    pub id: i32,
     pub identifier: String,
     pub device_id: i32,
     pub asset_id: String,

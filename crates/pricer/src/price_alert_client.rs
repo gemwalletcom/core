@@ -74,7 +74,7 @@ impl PriceAlertClient {
         let price_alerts = self.database.get_price_alerts(after_notified_at)?;
 
         let mut results: Vec<PriceAlertNotification> = Vec::new();
-        let mut price_alert_ids: HashSet<i32> = HashSet::new();
+        let mut price_alert_ids: HashSet<String> = HashSet::new();
 
         for price in prices {
             if let Some(asset_ids) = prices_assets_map.get(&price.id) {
@@ -82,7 +82,7 @@ impl PriceAlertClient {
                     if asset_ids.clone().contains(&price_alert.asset_id) {
                         if let Some(alert) = self.get_price_alert_type(&price_alert, price.clone(), rules.clone()) {
                             let notification: PriceAlertNotification = self.price_alert_notification(price.as_price_primitive(), price_alert.clone(), alert)?;
-                            price_alert_ids.insert(price_alert.id);
+                            price_alert_ids.insert(price_alert.identifier);
                             results.push(notification);
                         }
                     }
