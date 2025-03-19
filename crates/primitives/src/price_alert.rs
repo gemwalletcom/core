@@ -24,6 +24,9 @@ fn default_currency() -> String {
 
 impl PriceAlert {
     pub fn id(&self) -> String {
+        if self.price.is_none() && self.price_percent_change.is_none() && self.price_direction.is_none() {
+            return self.asset_id.clone();
+        }
         let parts: Vec<String> = vec![
             Some(self.asset_id.clone()),
             Some(self.currency.clone()),
@@ -84,36 +87,49 @@ mod tests {
     #[test]
     fn test_price_alert_id_with_all_fields() {
         let price_alert = PriceAlert {
-            asset_id: "asset123".to_string(),
+            asset_id: "ethereum".to_string(),
+            currency: "USD".to_string(),
             price: Some(100.0),
             price_percent_change: Some(5.0),
             price_direction: Some(PriceAlertDirection::Up),
             last_notified_at: None,
         };
-        assert_eq!(price_alert.id(), "asset123_100_5_up");
+        assert_eq!(price_alert.id(), "ethereum_USD_100_5_up");
+
+        let price_alert = PriceAlert {
+            asset_id: "ethereum".to_string(),
+            currency: "USD".to_string(),
+            price: Some(1.12344),
+            price_percent_change: Some(10_000.10),
+            price_direction: Some(PriceAlertDirection::Up),
+            last_notified_at: None,
+        };
+        assert_eq!(price_alert.id(), "ethereum_USD_1.12344_10000.1_up");
     }
 
     #[test]
     fn test_price_alert_id_with_missing_optional_fields() {
         let price_alert = PriceAlert {
-            asset_id: "asset123".to_string(),
+            asset_id: "ethereum".to_string(),
+            currency: "USD".to_string(),
             price: None,
             price_percent_change: None,
             price_direction: None,
             last_notified_at: None,
         };
-        assert_eq!(price_alert.id(), "asset123");
+        assert_eq!(price_alert.id(), "ethereum");
     }
 
     #[test]
     fn test_price_alert_id_with_some_optional_fields() {
         let price_alert = PriceAlert {
-            asset_id: "asset123".to_string(),
+            asset_id: "ethereum".to_string(),
+            currency: "USD".to_string(),
             price: Some(100.0),
             price_percent_change: None,
             price_direction: Some(PriceAlertDirection::Down),
             last_notified_at: None,
         };
-        assert_eq!(price_alert.id(), "asset123_100_down");
+        assert_eq!(price_alert.id(), "ethereum_USD_100_down");
     }
 }
