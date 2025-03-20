@@ -6420,6 +6420,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "pricer_dex"
+version = "1.0.0"
+dependencies = [
+ "primitives",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "primeorder"
 version = "0.13.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
