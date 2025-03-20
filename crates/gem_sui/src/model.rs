@@ -3,11 +3,7 @@ use base64::{engine::general_purpose, Engine as _};
 use bcs;
 use blake2::{digest::consts::U32, Blake2b, Digest};
 use std::str::FromStr;
-use sui_types::{
-    base_types::{ObjectID, ObjectRef, SequenceNumber},
-    digests::ObjectDigest,
-    transaction::TransactionData,
-};
+use sui_types::{transaction::serialization::transaction::TransactionData, ObjectDigest, ObjectId as ObjectID, ObjectReference as ObjectRef};
 type Blake2b256 = Blake2b<U32>;
 
 #[derive(Debug, PartialEq, Clone)]
@@ -26,9 +22,9 @@ pub struct Object {
 
 impl Object {
     pub fn to_ref(&self) -> ObjectRef {
-        (
-            ObjectID::from_hex_literal(&self.object_id).unwrap(),
-            SequenceNumber::from_u64(self.version),
+        ObjectRef::new(
+            ObjectID::from_str(&self.object_id).unwrap(),
+            self.version,
             ObjectDigest::from_str(&self.digest).unwrap(),
         )
     }

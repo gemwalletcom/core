@@ -5,11 +5,16 @@ use anyhow::{anyhow, Error};
 use base64::{engine::general_purpose, Engine as _};
 use model::*;
 use std::str::FromStr;
+use sui_transaction_builder::{Function, TransactionBuilder as ProgrammableTransactionBuilder};
 use sui_types::{
-    base_types::{ObjectID, ObjectRef, SequenceNumber, SuiAddress},
-    programmable_transaction_builder::ProgrammableTransactionBuilder,
-    transaction::{Argument, Command, ObjectArg, TransactionData},
-    Identifier,
+    transaction::{
+        serialization::{
+            input_argument::{CallArg, ObjectArg},
+            transaction::TransactionData,
+        },
+        Argument,
+    },
+    Address as SuiAddress, Identifier, ObjectId as ObjectID, ObjectReference as ObjectRef,
 };
 
 static SUI_SYSTEM_ID: &str = "sui_system";
@@ -80,20 +85,22 @@ pub fn encode_split_and_stake(input: &StakeInput) -> Result<TxOutput, Error> {
     let mut ptb = ProgrammableTransactionBuilder::new();
 
     // split new coin to stake
-    let split_stake_amount = ptb.pure(input.stake_amount)?;
-    let Argument::Result(idx) = ptb.command(Command::SplitCoins(Argument::GasCoin, vec![split_stake_amount])) else {
+    let split_stake_amount = CallArg::Pure(input.stake_amount.to_le_bytes().to_vec());
+    let Argument::Result(idx) = ptb.split_coins(Argument::Gas, vec![split_stake_amount]) else {
         panic!("command should always give a Argument::Result")
     };
 
     // move call request_add_stake
-    let move_call = Command::move_call(
-        ObjectID::from_single_byte(SUI_SYSTEM_ADDRESS),
+    let function = Function::new(
+        SuiAddress::from_u8(SUI_SYSTEM_ADDRESS),
         Identifier::new(SUI_SYSTEM_ID).unwrap(),
         Identifier::new(SUI_REQUEST_ADD_STAKE).unwrap(),
         vec![],
+    );
+    ptb.move_call(
+        function,
         vec![ptb.obj(sui_system_state_object())?, Argument::NestedResult(idx, 0), ptb.pure(validator)?],
     );
-    ptb.command(move_call);
 
     let tx_data = TransactionData::new_programmable(sender, coin_refs, ptb.finish(), input.gas.budget, input.gas.price);
 
@@ -104,17 +111,16 @@ pub fn encode_unstake(input: &UnstakeInput) -> Result<TxOutput, Error> {
     let mut ptb = ProgrammableTransactionBuilder::new();
 
     let sender = SuiAddress::from_str(&input.sender)?;
-    let staked_sui = ObjectArg::ImmOrOwnedObject(input.staked_sui.to_ref());
+    let staked_sui = ObjectArg::ImmutableOrOwned(input.staked_sui.to_ref());
     let gas_coin = input.gas_coin.object.to_ref();
 
-    let move_call = Command::move_call(
-        ObjectID::from_single_byte(SUI_SYSTEM_ADDRESS),
+    let function = Function::new(
+        SuiAddress::from_u8(SUI_SYSTEM_ADDRESS),
         Identifier::new(SUI_SYSTEM_ID).unwrap(),
         Identifier::new(SUI_REQUEST_WITHDRAW_STAKE).unwrap(),
         vec![],
-        vec![ptb.obj(sui_system_state_object())?, ptb.obj(staked_sui)?],
     );
-    ptb.command(move_call);
+    ptb.move_call(function, vec![ptb.obj(sui_system_state_object())?, staked_sui]);
 
     let tx_data = TransactionData::new_programmable(sender, vec![gas_coin], ptb.finish(), input.gas.budget, input.gas.price);
 
@@ -133,17 +139,17 @@ pub fn validate_and_hash(encoded: &str) -> Result<TxOutput, Error> {
 }
 
 pub fn sui_system_state_object() -> ObjectArg {
-    ObjectArg::SharedObject {
-        id: ObjectID::from_single_byte(SUI_SYSTEM_STATE_OBJECT_ID),
-        initial_shared_version: SequenceNumber::from_u64(1),
+    ObjectArg::Shared {
+        object_id: ObjectID::from_u8(SUI_SYSTEM_STATE_OBJECT_ID),
+        initial_shared_version: 1,
         mutable: true,
     }
 }
 
 pub fn sui_clock_object() -> ObjectArg {
-    ObjectArg::SharedObject {
-        id: ObjectID::from_single_byte(SUI_CLOCK_OBJECT_ID),
-        initial_shared_version: SequenceNumber::from_u64(1),
+    ObjectArg::Shared {
+        object_id: ObjectID::from_u8(SUI_CLOCK_OBJECT_ID),
+        initial_shared_version: 1,
         mutable: false,
     }
 }

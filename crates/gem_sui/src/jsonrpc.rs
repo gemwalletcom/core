@@ -1,10 +1,7 @@
 use serde::{Deserialize, Deserializer, Serialize};
 use serde_serializers::{deserialize_u64_from_str, serialize_u64};
 use std::{fmt::Display, ops::Not};
-use sui_types::{
-    base_types::{ObjectID, ObjectRef, SequenceNumber},
-    digests::ObjectDigest,
-};
+use sui_types::{ObjectDigest, ObjectId as ObjectID, ObjectReference as ObjectRef};
 
 pub enum SuiRpc {
     GetObject(String, Option<ObjectDataOptions>),
@@ -74,7 +71,7 @@ pub struct DataObject<T> {
 
 impl<T> DataObject<T> {
     pub fn to_ref(&self) -> ObjectRef {
-        (self.object_id, SequenceNumber::from_u64(self.version), self.digest)
+        ObjectRef::new(self.object_id, self.version, self.digest)
     }
 }
 
