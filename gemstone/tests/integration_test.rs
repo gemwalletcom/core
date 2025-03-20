@@ -5,7 +5,7 @@ mod tests {
     use gemstone::{
         config::swap_config::{get_swap_config, SwapReferralFee, SwapReferralFees},
         network::{provider::AlienProvider, target::*, *},
-        swapper::{across::Across, cetus::Cetus, models::*, orca::Orca, uniswap::v4::UniswapV4, GemSwapper, *},
+        swapper::{across::Across, cetus::Cetus, debridge::DeBridge, models::*, orca::Orca, uniswap::v4::UniswapV4, GemSwapper, *},
     };
     use primitives::{AssetId, Chain};
     use reqwest::Client;
@@ -308,6 +308,78 @@ mod tests {
 
         let quote_data = swap_provider.fetch_quote_data(&quote, network_provider.clone(), FetchQuoteData::None).await?;
         println!("{:?}", quote_data);
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_debridge_usdc_to_sol() -> Result<(), SwapperError> {
+        let swap_provider = DeBridge::boxed();
+        let network_provider = Arc::new(NativeProvider::default());
+        let config = get_swap_config();
+        let options = GemSwapOptions {
+            slippage: GemSlippage {
+                bps: 100,
+                mode: SlippageMode::Exact,
+            },
+            fee: Some(config.referral_fee),
+            preferred_providers: vec![],
+        };
+
+        let request = SwapQuoteRequest {
+            from_asset: AssetId::from(Chain::Ethereum, Some("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48".into())), // USDC on Ethereum
+            to_asset: AssetId::from_chain(Chain::Solana),                                                          // Native SOL
+            wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
+            destination_address: "G7B17AigRCGvwnxFc5U8zY5T3NBGduLzT7KYApNU2VdR".into(),
+            value: "20000000".into(), // 20 USDC
+            mode: GemSwapMode::ExactIn,
+            options,
+        };
+
+        let quote = swap_provider.fetch_quote(&request, network_provider.clone()).await?;
+        println!("<== quote: {:?}", quote);
+        assert!(quote.to_value.parse::<u64>().unwrap() > 0);
+
+        let quote_data = swap_provider
+            .fetch_quote_data(&quote, network_provider.clone(), FetchQuoteData::EstimateGas)
+            .await?;
+        println!("<== quote_data: {:?}", quote_data);
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_debridge_sol_to_eth() -> Result<(), SwapperError> {
+        let swap_provider = DeBridge::boxed();
+        let network_provider = Arc::new(NativeProvider::default());
+        let config = get_swap_config();
+        let options = GemSwapOptions {
+            slippage: GemSlippage {
+                bps: 100,
+                mode: SlippageMode::Exact,
+            },
+            fee: Some(config.referral_fee),
+            preferred_providers: vec![],
+        };
+
+        let request = SwapQuoteRequest {
+            from_asset: AssetId::from_chain(Chain::Solana), // Native SOL
+            to_asset: AssetId::from_chain(Chain::Ethereum), // Native ETH
+            wallet_address: "G7B17AigRCGvwnxFc5U8zY5T3NBGduLzT7KYApNU2VdR".into(),
+            destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
+            value: "1000000000".into(), // 1 SOL
+            mode: GemSwapMode::ExactIn,
+            options,
+        };
+
+        let quote = swap_provider.fetch_quote(&request, network_provider.clone()).await?;
+        println!("<== quote: {:?}", quote);
+        assert!(quote.to_value.parse::<u64>().unwrap() > 0);
+
+        let quote_data = swap_provider
+            .fetch_quote_data(&quote, network_provider.clone(), FetchQuoteData::EstimateGas)
+            .await?;
+        println!("<== quote_data: {:?}", quote_data);
 
         Ok(())
     }
