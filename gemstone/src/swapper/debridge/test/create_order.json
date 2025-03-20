@@ -1,0 +1,132 @@
+{
+  "estimation": {
+    "srcChainTokenIn": {
+      "address": "0x0000000000000000000000000000000000000000",
+      "chainId": 1,
+      "decimals": 18,
+      "name": "Ethereum",
+      "symbol": "ETH",
+      "amount": "10000000000000000",
+      "approximateOperatingExpense": "690455870394408",
+      "mutatedWithOperatingExpense": false,
+      "approximateUsdValue": 19.96086848091413,
+      "originApproximateUsdValue": 19.96086848091413
+    },
+    "srcChainTokenOut": {
+      "address": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+      "chainId": 1,
+      "decimals": 6,
+      "name": "USD Coin",
+      "symbol": "USDC",
+      "amount": "19902499",
+      "maxRefundAmount": "59887",
+      "approximateUsdValue": 19.902499
+    },
+    "dstChainTokenOut": {
+      "name": "Native SOL",
+      "symbol": "SOL",
+      "chainId": 7565164,
+      "address": "11111111111111111111111111111111",
+      "decimals": 9,
+      "amount": "141043764",
+      "recommendedAmount": "141043764",
+      "maxTheoreticalAmount": "141893849",
+      "approximateUsdValue": 18.458642241345107,
+      "recommendedApproximateUsdValue": 18.458642241345107,
+      "maxTheoreticalApproximateUsdValue": 18.569894341010666
+    },
+    "costsDetails": [
+      {
+        "chain": "1",
+        "tokenIn": "0x0000000000000000000000000000000000000000",
+        "tokenOut": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        "amountIn": "10000000000000000",
+        "amountOut": "19962386",
+        "type": "PreSwap"
+      },
+      {
+        "chain": "1",
+        "tokenIn": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        "tokenOut": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        "amountIn": "19962386",
+        "amountOut": "19902499",
+        "type": "PreSwapEstimatedSlippage",
+        "payload": {
+          "feeAmount": "59887",
+          "feeBps": "30",
+          "estimatedVolatilityBps": "15"
+        }
+      },
+      {
+        "chain": "1",
+        "tokenIn": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        "tokenOut": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        "amountIn": "19902499",
+        "amountOut": "19894539",
+        "type": "DlnProtocolFee",
+        "payload": {
+          "feeAmount": "7960",
+          "feeBps": "4",
+          "feeApproximateUsdValue": "0.00796"
+        }
+      },
+      {
+        "chain": "7565164",
+        "tokenIn": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "tokenOut": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "amountIn": "19894539",
+        "amountOut": "19886582",
+        "type": "TakerMargin",
+        "payload": {
+          "feeAmount": "7957",
+          "feeBps": "4"
+        }
+      },
+      {
+        "chain": "7565164",
+        "tokenIn": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "tokenOut": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "amountIn": "19886582",
+        "amountOut": "18506020",
+        "type": "EstimatedOperatingExpenses",
+        "payload": {
+          "feeAmount": "1380562"
+        }
+      },
+      {
+        "chain": "7565164",
+        "tokenIn": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "tokenOut": "11111111111111111111111111111111",
+        "amountIn": "18506020",
+        "amountOut": "141468168",
+        "type": "AfterSwap",
+        "payload": {
+          "amountOutBeforeCorrection": "141468168"
+        }
+      },
+      {
+        "chain": "7565164",
+        "tokenIn": "11111111111111111111111111111111",
+        "tokenOut": "11111111111111111111111111111111",
+        "amountIn": "141468168",
+        "amountOut": "141043764",
+        "type": "AfterSwapEstimatedSlippage",
+        "payload": {
+          "feeAmount": "424404",
+          "feeBps": "30",
+          "estimatedVolatilityBps": "16"
+        }
+      }
+    ],
+    "recommendedSlippage": 0.6
+  },
+  "tx": {
+    "allowanceTarget": "0x663DC15D3C1aC63ff12E45Ab68FeA3F0a883C251"
+  },
+  "order": {
+    "approximateFulfillmentDelay": 1
+  },
+  "fixFee": "1000000000000000",
+  "userPoints": 200.07,
+  "integratorPoints": 50.02
+}
