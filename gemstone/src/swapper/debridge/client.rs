@@ -26,15 +26,6 @@ impl DeBridgeClient {
         serde_json::from_slice(&response).map_err(|e| SwapperError::NetworkError { msg: e.to_string() })
     }
 
-    #[allow(unused)]
-    pub async fn get_order(&self, order_id: &str) -> Result<CreateOrderResponse, SwapperError> {
-        let url = format!("{}/dln/order/{}", API_BASE_URL, order_id);
-        let target = AlienTarget::get(&url);
-
-        let response = self.provider.request(target).await?;
-        serde_json::from_slice(&response).map_err(|e| SwapperError::NetworkError { msg: e.to_string() })
-    }
-
     pub async fn get_order_status(&self, order_id: &str) -> Result<OrderStatus, SwapperError> {
         let url = format!("{}/dln/order/{}/status", API_BASE_URL, order_id);
         let target = AlienTarget::get(&url);
