@@ -1,5 +1,6 @@
 use alloy_core::primitives::U256;
 use async_trait::async_trait;
+use base64::{engine::general_purpose::STANDARD, Engine as _};
 use bcs;
 use futures::join;
 use num_bigint::BigInt;
@@ -20,10 +21,13 @@ use super::{
     CETUS_ROUTER_PACKAGE_ID,
 };
 use crate::{
-    network::AlienProvider,
+    network::{jsonrpc::batch_jsonrpc_call, AlienProvider, JsonRpcResult},
     sui::{
         gas_budget::GasBudgetCalculator,
-        rpc::{models::InspectEvent, SuiClient},
+        rpc::{
+            models::{InspectEvent, InspectResult},
+            SuiClient,
+        },
     },
     swapper::{
         slippage::apply_slippage_in_bp, FetchQuoteData, GemSwapMode, GemSwapProvider, SwapChainAsset, SwapProvider, SwapProviderData, SwapProviderType,
@@ -89,15 +93,7 @@ impl Cetus {
         Ok(pools)
     }
 
-    async fn pre_swap(
-        &self,
-        pool: &CetusPool,
-        pool_obj: &SharedObject,
-        a2b: bool,
-        buy_amount_in: bool,
-        amount: BigInt,
-        client: Arc<SuiClient>,
-    ) -> Result<CalculatedSwapResult, anyhow::Error> {
+    fn pre_swap_call(&self, pool: &CetusPool, pool_obj: &SharedObject, a2b: bool, buy_amount_in: bool, amount: BigInt) -> Result<SuiRpc, anyhow::Error> {
         let mut ptb = ProgrammableTransactionBuilder::new();
         let type_args = vec![TypeTag::from_str(&pool.coin_a_address)?, TypeTag::from_str(&pool.coin_b_address)?];
         let args = [
@@ -121,10 +117,13 @@ impl Cetus {
         let tx = ptb.finish();
         let tx_kind = TransactionKind::ProgrammableTransaction(tx);
         let tx_bytes = bcs::to_bytes(&tx_kind).unwrap();
-        let result = client.inspect_tx_block(EMPTY_ADDRESS, &tx_bytes).await?;
+        Ok(SuiRpc::InspectTransactionBlock(EMPTY_ADDRESS.to_string(), STANDARD.encode(tx_bytes)))
+    }
+
+    fn decode_swap_result(&self, result: &InspectResult) -> Option<CalculatedSwapResult> {
         let event = result.events.as_array().map(|x| x.first().unwrap()).unwrap();
         let event_data: InspectEvent<SuiData<CalculatedSwapResult>> = serde_json::from_value(event.clone()).unwrap();
-        Ok(event_data.parsed_json.data)
+        Some(event_data.parsed_json.data)
     }
 }
 
@@ -139,10 +138,6 @@ impl GemSwapProvider for Cetus {
     }
 
     async fn fetch_quote(&self, request: &SwapQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapQuote, SwapperError> {
-        if request.from_asset.chain != Chain::Sui || request.to_asset.chain != Chain::Sui {
-            return Err(SwapperError::NotSupportedChain);
-        }
-
         let from_coin = Self::get_coin_address(&request.from_asset);
         let to_coin = Self::get_coin_address(&request.to_asset);
         let amount_in = BigInt::from_str(&request.value).map_err(|_| SwapperError::InvalidAmount)?;
@@ -158,56 +153,64 @@ impl GemSwapProvider for Cetus {
         sorted_pools.sort_by(|a, b| b.object.liquidity.cmp(&a.object.liquidity));
         let top_pools = sorted_pools.iter().take(2).collect::<Vec<_>>();
 
-        // Create a single SuiClient that can be reused
-        let sui_client = Arc::new(SuiClient::new(provider.clone()));
         let from_coin_clone = from_coin.clone();
 
-        // Batch fetch pool data
-        let pool_data_futures = top_pools.iter().map(|pool| {
-            let from_coin = from_coin_clone.clone();
-            let sui_client = sui_client.clone();
-            async move {
-                let pool_data: CetusPoolType = sui_client
-                    .rpc_call(SuiRpc::GetObject(pool.address.to_string(), Some(ObjectDataOptions::default())))
-                    .await?;
+        // Batch fetch pool data using a single RPC call
+        let rpc_calls = top_pools
+            .iter()
+            .map(|pool| SuiRpc::GetObject(pool.address.to_string(), Some(ObjectDataOptions::default())))
+            .collect::<Vec<_>>();
+
+        let pool_data_results: Vec<JsonRpcResult<CetusPoolType>> = batch_jsonrpc_call(rpc_calls, provider.clone(), &Chain::Sui).await?;
+
+        let pool_quotes = top_pools
+            .into_iter()
+            .zip(pool_data_results.into_iter())
+            .filter_map(|(pool, result)| {
+                let pool_data: CetusPoolType = match result.take() {
+                    Ok(pool_data) => pool_data,
+                    Err(_) => return None,
+                };
                 let shared_object = SharedObject {
                     id: pool_data.data.object_id,
-                    shared_version: pool_data.data.initial_shared_version().expect("Initial shared version should be available"),
+                    shared_version: pool_data.data.version,
                 };
-                Ok::<_, SwapperError>((pool, pool_data, shared_object, pool.coin_a_address == from_coin))
-            }
-        });
-
-        let pool_quotes = futures::future::join_all(pool_data_futures)
-            .await
-            .into_iter()
-            .filter_map(Result::ok)
+                Some((pool, pool_data, shared_object, pool.coin_a_address == from_coin_clone))
+            })
             .collect::<Vec<_>>();
 
         if pool_quotes.is_empty() {
             return Err(SwapperError::NoQuoteAvailable);
         }
 
-        // Run pre-swap calculations in parallel using the same SuiClient instance
-        let swap_futures = pool_quotes
+        // Batch calculate swap results using a single RPC call
+        let swap_rpc_calls = pool_quotes
             .iter()
-            .map(|(pool, _, pool_shared, a2b)| self.pre_swap(pool, pool_shared, *a2b, buy_amount_in, amount_in.clone(), sui_client.clone()));
-        let swap_results = futures::future::join_all(swap_futures).await;
+            .filter_map(
+                |(pool, _, pool_shared, a2b)| match self.pre_swap_call(pool, pool_shared, *a2b, buy_amount_in, amount_in.clone()) {
+                    Ok(call) => Some(call),
+                    Err(_) => None,
+                },
+            )
+            .collect::<Vec<_>>();
+
+        let swap_results: Vec<JsonRpcResult<InspectResult>> = batch_jsonrpc_call(swap_rpc_calls, provider.clone(), &Chain::Sui).await?;
 
         // Find the best quote
         let mut best_result: Option<CalculatedSwapResult> = None;
         let mut best_pool_data = None;
         let mut best_pool = None;
 
-        for (result, (pool, pool_data, _, _)) in swap_results.into_iter().zip(pool_quotes.iter()) {
-            if let Ok(swap_result) = result {
+        for ((pool, pool_data, _, _), result) in pool_quotes.iter().zip(swap_results.into_iter()) {
+            let inspect_result = result.take()?;
+            if let Some(swap_result) = self.decode_swap_result(&inspect_result) {
                 let is_better = match &best_result {
                     None => true,
                     Some(best) => swap_result.amount_out > best.amount_out,
                 };
                 if is_better {
                     best_result = Some(swap_result);
-                    best_pool_data = Some(pool_data.clone());
+                    best_pool_data = Some(pool_data);
                     best_pool = Some(pool);
                 }
             }
