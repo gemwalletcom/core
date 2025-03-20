@@ -22,7 +22,7 @@ const ETH_FORWARDER_ADDRESS: &str = "0x663DC15D3C1aC63ff12E45Ab68FeA3F0a883C251"
 const ETH_DLN_SOURCE: &str = "0xeF4fB24aD0916217251F553c0596F8Edc630EB66";
 #[allow(unused)]
 const SOL_DLN_SOURCE: &str = "src5qyZHqTqecJV4aY6Cb6zDZLMDzrDKKezs22MPHr4";
-const DEFAULT_GAS_LIMIT: &str = "100000";
+const DEFAULT_GAS_LIMIT: u64 = 500_000;
 
 #[derive(Debug)]
 pub struct DeBridge {
@@ -133,7 +133,7 @@ impl GemSwapProvider for DeBridge {
 
     async fn fetch_quote_data(&self, quote: &SwapQuote, provider: Arc<dyn AlienProvider>, _data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError> {
         let route = quote.data.routes.first().ok_or(SwapperError::InvalidRoute)?;
-        let quote_dln_response = serde_json::from_str::<CreateOrderResponse>(&route.route_data).map_err(|_| SwapperError::InvalidRoute)?;
+        let _quote_dln_response = serde_json::from_str::<CreateOrderResponse>(&route.route_data).map_err(|_| SwapperError::InvalidRoute)?;
         let from_chain = quote.request.from_asset.chain;
         let client = DeBridgeClient::new(provider.clone());
         let quote_request = self.create_quote_request(&quote.request, true)?;
