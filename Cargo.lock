@@ -6426,6 +6426,7 @@ dependencies = [
  "primitives",
  "serde",
  "serde_json",
+ "tokio",
 ]
 
 [[package]]

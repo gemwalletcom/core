@@ -8,3 +8,10 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 
 primitives = { path = "../primitives" }
+
+[dev-dependencies]
+tokio.workspace = true
+
+[[test]]
+name = "integration_test"
+test = false
