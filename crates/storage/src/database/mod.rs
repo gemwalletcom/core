@@ -258,12 +258,11 @@ impl DatabaseClient {
 
     pub fn get_swap_assets(&mut self) -> Result<Vec<String>, diesel::result::Error> {
         use crate::schema::assets::dsl::*;
-        assets.filter(is_swappable.eq(true)).select(id).load(&mut self.connection)
+        assets.filter(rank.gt(20)).select(id).order(rank.desc()).load(&mut self.connection)
     }
 
     pub fn get_swap_assets_version(&mut self) -> Result<i32, diesel::result::Error> {
-        let assets = self.get_swap_assets()?;
-        Ok(assets.len() as i32)
+        Ok((std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs() / 3600) as i32)
     }
 
     pub fn add_chains(&mut self, _chains: Vec<String>) -> Result<usize, diesel::result::Error> {

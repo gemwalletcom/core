@@ -17,7 +17,7 @@ impl SwapClient {
 
     pub async fn get_swap_assets(&mut self) -> Result<FiatAssets, Box<dyn Error>> {
         let assets = self.database.get_swap_assets()?;
-        let version = self.database.get_swap_assets_version()?;
+        let version = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH)?.as_secs() / 3600;
 
         Ok(FiatAssets {
             version: version as u32,
