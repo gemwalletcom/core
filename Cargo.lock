@@ -4693,27 +4693,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "primeorder"
-version = "0.13.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "353e1ca18966c16d9deb1c69278edbc5f194139612772bd9537af60ac231e1e6"
-dependencies = [
- "elliptic-curve 0.13.8",
-]
-
-[[package]]
-name = "primitive-types"
-version = "0.10.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "05e4722c697a58a99d5d06a08c30821d7c082a4632198de1eaa5a6c22ef42373"
-dependencies = [
- "fixed-hash 0.7.0",
- "impl-codec 0.5.1",
- "impl-serde",
- "uint",
-]
-
-[[package]]
 name = "primitive-types"
 version = "0.12.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6343,6 +6322,8 @@ dependencies = [
 [[package]]
 name = "sui-sdk-types"
 version = "0.0.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7117be517afd60de9f3c6a5880ce9ddf1aaca8e3ee8ac06530660e02c76bf585"
 dependencies = [
  "base64ct",
  "bcs",
@@ -6350,7 +6331,6 @@ dependencies = [
  "bnum",
  "bs58",
  "hex",
- "rand_core 0.6.4",
  "roaring",
  "serde",
  "serde_derive",
@@ -6362,6 +6342,8 @@ dependencies = [
 [[package]]
 name = "sui-transaction-builder"
 version = "0.0.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "96c51024ccb8dae86173769988f928f87f7a1751aa7246e557ee1582f402596f"
 dependencies = [
  "base64ct",
  "bcs",
