@@ -1,8 +1,7 @@
 use anyhow::Error;
 use base64::{engine::general_purpose, Engine as _};
 use bcs;
-use std::str::FromStr;
-use sui_types::{ObjectDigest, ObjectId as ObjectID, ObjectReference as ObjectRef, Transaction};
+use sui_types::Transaction;
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Coin {
@@ -16,16 +15,6 @@ pub struct Object {
     pub object_id: String,
     pub digest: String,
     pub version: u64,
-}
-
-impl Object {
-    pub fn to_ref(&self) -> ObjectRef {
-        ObjectRef::new(
-            ObjectID::from_str(&self.object_id).unwrap(),
-            self.version,
-            ObjectDigest::from_str(&self.digest).unwrap(),
-        )
-    }
 }
 
 #[derive(Debug, PartialEq, Clone)]

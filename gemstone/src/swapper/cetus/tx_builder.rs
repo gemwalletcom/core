@@ -90,7 +90,7 @@ impl TransactionBuilder {
                 let results = CoinAssist::select_coins_gte(coin_assets, amount);
                 let target_coin = &results.0[0];
                 return Ok(BuildCoinResult {
-                    target_coin: ptb.input(Input::immutable(target_coin.coin_object_id, target_coin.version, target_coin.digest)),
+                    target_coin: ptb.input(Input::owned(target_coin.coin_object_id, target_coin.version, target_coin.digest)),
                     remain_coins: results.1,
                     is_mint_zero_coin: false,
                     target_coin_amount: target_coin.balance.to_string(),
@@ -130,14 +130,14 @@ impl TransactionBuilder {
         let primary_coin = coins_iter.next().unwrap();
         let merge_coins: Vec<_> = coins_iter.collect();
 
-        let mut target_coin = ptb.input(Input::immutable(primary_coin.coin_object_id, primary_coin.version, primary_coin.digest));
+        let mut target_coin = ptb.input(Input::owned(primary_coin.coin_object_id, primary_coin.version, primary_coin.digest));
         let mut original_splited_coin = None;
 
         // Merge additional coins if any
         if !merge_coins.is_empty() {
             let merge_coin_args: Vec<Argument> = merge_coins
                 .iter()
-                .map(|coin| ptb.input(Input::immutable(coin.coin_object_id, coin.version, coin.digest)))
+                .map(|coin| ptb.input(Input::owned(coin.coin_object_id, coin.version, coin.digest)))
                 .collect::<Vec<_>>();
 
             ptb.merge_coins(target_coin, merge_coin_args);
@@ -189,13 +189,13 @@ impl TransactionBuilder {
         args.push(ptb.input(Input::shared(global_config.id, global_config.shared_version, true)));
 
         // Add pool object
-        let pool_obj_arg = params.pool_object_shared.clone();
-        args.push(ptb.input(Input::shared(pool_obj_arg.id, pool_obj_arg.shared_version, true)));
+        let pool_obj = params.pool_object_shared.clone();
+        args.push(ptb.input(Input::shared(pool_obj.id, pool_obj.shared_version, true)));
 
         // Add swap partner if needed
         if has_swap_partner {
-            let partner_obj_arg = params.swap_partner.clone().unwrap();
-            args.push(ptb.input(Input::shared(partner_obj_arg.id, partner_obj_arg.shared_version, true)));
+            let partner_obj = params.swap_partner.clone().unwrap();
+            args.push(ptb.input(Input::shared(partner_obj.id, partner_obj.shared_version, true)));
         }
 
         // Add coin inputs

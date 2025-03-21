@@ -53,9 +53,17 @@ pub fn encode_transfer(input: &TransferInput) -> Result<TxOutput, Error> {
         let recipient_argument = ptb.input(Serialized(&recipient));
         ptb.transfer_objects(vec![split_result], recipient_argument);
     }
+
+    let coins = input
+        .coins
+        .iter()
+        .map(|x| Input::immutable(x.object.object_id.parse().unwrap(), x.object.version, x.object.digest.parse().unwrap()))
+        .collect::<Vec<_>>();
+
     ptb.set_gas_budget(input.gas.budget);
     ptb.set_gas_price(input.gas.price);
     ptb.set_sender(sender);
+    ptb.add_gas_objects(coins);
     let tx_data = ptb.finish()?;
     TxOutput::from_tx_data(&tx_data)
 }
@@ -218,7 +226,7 @@ pub fn validate_enough_balance(coins: &[Coin], amount: u64) -> Option<Error> {
 
 #[cfg(test)]
 mod tests {
-    use sui_types::transaction::TransactionKind;
+    use sui_types::TransactionKind;
 
     use super::*;
 

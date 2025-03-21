@@ -115,7 +115,7 @@ mod tests {
         let pool = response.result.data;
         let content = pool.content.unwrap().fields;
 
-        assert_eq!(pool.object_id.to_string(), "b8d7d9e66a60c239e7a60110efcf8de6c705580ed924d0dde141f4a0e2c90105");
+        assert_eq!(pool.object_id.to_string(), "0xb8d7d9e66a60c239e7a60110efcf8de6c705580ed924d0dde141f4a0e2c90105");
         assert_eq!(content.liquidity.to_string(), "8070961612060967");
         assert_eq!(content.fee_rate.to_string(), "2500");
         assert_eq!(content.current_sqrt_price.to_string(), "287685790526294295789");
@@ -126,7 +126,7 @@ mod tests {
         let pool = response.unwrap().result.data;
         let content = pool.content.unwrap().fields;
 
-        assert_eq!(pool.object_id.to_string(), "8049d009116269ac04ee14206b7afd8b64b5801279f85401ee4b39779f809134");
+        assert_eq!(pool.object_id.to_string(), "0x8049d009116269ac04ee14206b7afd8b64b5801279f85401ee4b39779f809134");
         assert_eq!(content.liquidity.to_string(), "10315028460841");
         assert_eq!(content.fee_rate.to_string(), "10000");
         assert_eq!(content.current_sqrt_price.to_string(), "1883186036311192350");
