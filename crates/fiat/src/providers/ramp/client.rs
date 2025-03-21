@@ -107,8 +107,9 @@ impl RampClient {
             .append_pair("hostApiKey", &self.api_key)
             .append_pair("hostAppName", "Gem Wallet")
             .append_pair("hostLogoUrl", "https://gemwallet.com/images/presskit/gemwallet-icon-256x256.png")
-            .append_pair("variant", "hosted")
+            .append_pair("variant", "hosted-mobile")
             .append_pair("userAddress", request.wallet_address.as_str())
+            .append_pair("swapAsset", symbol)
             .append_pair("defaultAsset", symbol);
 
         match fiat_type {
@@ -116,7 +117,6 @@ impl RampClient {
                 .query_pairs_mut()
                 .append_pair("defaultFlow", "ONRAMP")
                 .append_pair("fiatCurrency", &request.clone().fiat_currency.to_string())
-                .append_pair("swapAsset", symbol)
                 .append_pair("fiatValue", &request.clone().fiat_amount.to_string())
                 .append_pair("webhookStatusUrl", "https://api.gemwallet.com/v1/fiat/webhooks/ramp"),
             FiatTransactionType::Sell => components

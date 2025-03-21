@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS price_alerts (
 
     device_id            INTEGER NOT NULL REFERENCES devices (id) ON DELETE CASCADE,
     asset_id             VARCHAR(128) NOT NULL REFERENCES assets (id)  ON DELETE CASCADE,
+    currency             VARCHAR(128) NOT NULL REFERENCES fiat_rates (id)  ON DELETE CASCADE,
     price_direction      VARCHAR(16),
     price                float,
     price_percent_change float,

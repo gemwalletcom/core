@@ -4,7 +4,7 @@ use typeshare::typeshare;
 use crate::{asset_id::AssetId, asset_type::AssetType, Chain};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare(swift = "Sendable")]
+#[typeshare(swift = "Equatable, Hashable, Sendable")]
 pub struct Asset {
     pub id: AssetId,
     pub name: String,

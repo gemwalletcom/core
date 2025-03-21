@@ -41,11 +41,7 @@ impl FiatProvider for RampClient {
         Ok(self.get_fiat_buy_quote(request.clone(), quote))
     }
 
-    #[allow(dead_code)]
-    #[allow(unused)]
     async fn get_sell_quote(&self, request: FiatQuoteRequest, request_map: FiatMapping) -> Result<FiatQuote, Box<dyn Error + Send + Sync>> {
-        return Err("not supported".into());
-
         let assets = self
             .get_supported_sell_assets(request.clone().fiat_currency, request.clone().ip_address)
             .await?
