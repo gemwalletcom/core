@@ -5,17 +5,8 @@ use anyhow::{anyhow, Error};
 use base64::{engine::general_purpose, Engine as _};
 use model::*;
 use std::str::FromStr;
-use sui_transaction_builder::{Function, TransactionBuilder as ProgrammableTransactionBuilder};
-use sui_types::{
-    transaction::{
-        serialization::{
-            input_argument::{CallArg, ObjectArg},
-            transaction::TransactionData,
-        },
-        Argument,
-    },
-    Address as SuiAddress, Identifier, ObjectId as ObjectID, ObjectReference as ObjectRef,
-};
+use sui_transaction_builder::{unresolved::Input, Function, Serialized, TransactionBuilder};
+use sui_types::{transaction::Argument, Address, Identifier, ObjectId, Transaction};
 
 static SUI_SYSTEM_ID: &str = "sui_system";
 static SUI_REQUEST_ADD_STAKE: &str = "request_add_stake";
@@ -36,19 +27,36 @@ pub fn encode_transfer(input: &TransferInput) -> Result<TxOutput, Error> {
         return Err(err);
     }
 
-    let coin_refs: Vec<ObjectRef> = input.coins.iter().map(|x| x.object.to_ref()).collect();
+    let sender = Address::from_str(&input.sender)?;
+    let recipient = Address::from_str(&input.recipient)?;
 
-    let sender = SuiAddress::from_str(&input.sender)?;
-    let recipient = SuiAddress::from_str(&input.recipient)?;
-
-    let mut ptb = ProgrammableTransactionBuilder::new();
+    let mut ptb = TransactionBuilder::new();
     if input.send_max {
-        ptb.pay_all_sui(recipient);
+        // Transfer all objects to recipient
+        let objects: Vec<Argument> = input
+            .coins
+            .clone()
+            .into_iter()
+            .map(|x| {
+                ptb.input(Input::owned(
+                    x.object.object_id.parse().unwrap(),
+                    x.object.version,
+                    x.object.digest.parse().unwrap(),
+                ))
+            })
+            .collect();
+        let recipient_argument = ptb.input(Serialized(&recipient));
+        ptb.transfer_objects(objects, recipient_argument);
     } else {
-        ptb.pay_sui(vec![recipient], vec![input.amount])?;
+        let amount = ptb.input(Serialized(&input.amount));
+        let split_result = ptb.split_coins(ptb.gas(), vec![amount]);
+        let recipient_argument = ptb.input(Serialized(&recipient));
+        ptb.transfer_objects(vec![split_result], recipient_argument);
     }
-
-    let tx_data = TransactionData::new_programmable(sender, coin_refs, ptb.finish(), input.gas.budget, input.gas.price);
+    ptb.set_gas_budget(input.gas.budget);
+    ptb.set_gas_price(input.gas.price);
+    ptb.set_sender(sender);
+    let tx_data = ptb.finish()?;
     TxOutput::from_tx_data(&tx_data)
 }
 
@@ -56,14 +64,55 @@ pub fn encode_token_transfer(input: &TokenTransferInput) -> Result<TxOutput, Err
     if let Some(err) = validate_enough_balance(&input.tokens, input.amount) {
         return Err(err);
     }
-    let mut ptb = ProgrammableTransactionBuilder::new();
-    let sender = SuiAddress::from_str(&input.sender)?;
-    let recipient = SuiAddress::from_str(&input.recipient)?;
-    let coin_refs: Vec<ObjectRef> = input.tokens.iter().map(|x| x.object.to_ref()).collect();
-    let gas_coin = input.gas_coin.object.to_ref();
+    let mut ptb = TransactionBuilder::new();
+    let sender = Address::from_str(&input.sender)?;
+    let recipient = Address::from_str(&input.recipient)?;
 
-    ptb.pay(coin_refs, vec![recipient], vec![input.amount])?;
-    let tx_data = TransactionData::new_programmable(sender, vec![gas_coin], ptb.finish(), input.gas.budget, input.gas.price);
+    // Implement pay function manually since it's not available in the new SDK
+    if input.tokens.is_empty() {
+        return Err(anyhow!("coins vector is empty"));
+    }
+
+    // Convert refs to inputs
+    let mut coins_inputs: Vec<Argument> = input
+        .tokens
+        .clone()
+        .into_iter()
+        .map(|x| {
+            ptb.input(Input::owned(
+                x.object.object_id.parse().unwrap(),
+                x.object.version,
+                x.object.digest.parse().unwrap(),
+            ))
+        })
+        .collect();
+
+    // Get first coin
+    let first_coin = coins_inputs.remove(0);
+
+    // Merge coins if more than one
+    if !coins_inputs.is_empty() {
+        ptb.merge_coins(first_coin, coins_inputs);
+    }
+
+    // Split and transfer
+    let amount = ptb.input(Serialized(&input.amount));
+    let split_result = ptb.split_coins(first_coin, vec![amount]);
+    let recipient_argument = ptb.input(Serialized(&recipient));
+    ptb.transfer_objects(vec![split_result], recipient_argument);
+
+    let gas_coin = Input::immutable(
+        input.gas_coin.object.object_id.parse().unwrap(),
+        input.gas_coin.object.version,
+        input.gas_coin.object.digest.parse().unwrap(),
+    );
+
+    ptb.set_sender(sender);
+    ptb.set_gas_budget(input.gas.budget);
+    ptb.set_gas_price(input.gas.price);
+    ptb.add_gas_objects(vec![gas_coin]);
+
+    let tx_data = ptb.finish()?;
 
     TxOutput::from_tx_data(&tx_data)
 }
@@ -78,80 +127,81 @@ pub fn encode_split_and_stake(input: &StakeInput) -> Result<TxOutput, Error> {
         return Err(anyhow!("stake amount is too small"));
     }
 
-    let coin_refs: Vec<ObjectRef> = input.coins.iter().map(|x| x.object.to_ref()).collect();
-    let sender = SuiAddress::from_str(&input.sender)?;
-    let validator = SuiAddress::from_str(&input.validator)?;
+    let sender = Address::from_str(&input.sender)?;
+    let validator = Address::from_str(&input.validator)?;
 
-    let mut ptb = ProgrammableTransactionBuilder::new();
+    let mut ptb = TransactionBuilder::new();
 
     // split new coin to stake
-    let split_stake_amount = CallArg::Pure(input.stake_amount.to_le_bytes().to_vec());
-    let Argument::Result(idx) = ptb.split_coins(Argument::Gas, vec![split_stake_amount]) else {
-        panic!("command should always give a Argument::Result")
-    };
+    let stake_amount = ptb.input(Serialized(&input.stake_amount));
+    let split_result = ptb.split_coins(ptb.gas(), vec![stake_amount]);
 
     // move call request_add_stake
     let function = Function::new(
-        SuiAddress::from_u8(SUI_SYSTEM_ADDRESS),
+        Address::from_u8(SUI_SYSTEM_ADDRESS),
         Identifier::new(SUI_SYSTEM_ID).unwrap(),
         Identifier::new(SUI_REQUEST_ADD_STAKE).unwrap(),
         vec![],
     );
-    ptb.move_call(
-        function,
-        vec![ptb.obj(sui_system_state_object())?, Argument::NestedResult(idx, 0), ptb.pure(validator)?],
-    );
 
-    let tx_data = TransactionData::new_programmable(sender, coin_refs, ptb.finish(), input.gas.budget, input.gas.price);
+    // Get system state object
+    let sys_state = ptb.input(Input::shared(ObjectId::from_u8(SUI_SYSTEM_STATE_OBJECT_ID), 1, true));
+    let validator_argument = ptb.input(Serialized(&validator));
+
+    ptb.set_sender(sender);
+    ptb.set_gas_budget(input.gas.budget);
+    ptb.set_gas_price(input.gas.price);
+    ptb.move_call(function, vec![sys_state, split_result, validator_argument]);
+
+    let tx_data = ptb.finish()?;
 
     TxOutput::from_tx_data(&tx_data)
 }
 
 pub fn encode_unstake(input: &UnstakeInput) -> Result<TxOutput, Error> {
-    let mut ptb = ProgrammableTransactionBuilder::new();
+    let mut ptb = TransactionBuilder::new();
 
-    let sender = SuiAddress::from_str(&input.sender)?;
-    let staked_sui = ObjectArg::ImmutableOrOwned(input.staked_sui.to_ref());
-    let gas_coin = input.gas_coin.object.to_ref();
-
+    let sender = Address::from_str(&input.sender)?;
+    let staked_sui = ptb.input(Input::owned(
+        input.staked_sui.object_id.parse().unwrap(),
+        input.staked_sui.version,
+        input.staked_sui.digest.parse().unwrap(),
+    ));
+    let gas_coin = Input::immutable(
+        input.gas_coin.object.object_id.parse().unwrap(),
+        input.gas_coin.object.version,
+        input.gas_coin.object.digest.parse().unwrap(),
+    );
     let function = Function::new(
-        SuiAddress::from_u8(SUI_SYSTEM_ADDRESS),
+        Address::from_u8(SUI_SYSTEM_ADDRESS),
         Identifier::new(SUI_SYSTEM_ID).unwrap(),
         Identifier::new(SUI_REQUEST_WITHDRAW_STAKE).unwrap(),
         vec![],
     );
-    ptb.move_call(function, vec![ptb.obj(sui_system_state_object())?, staked_sui]);
 
-    let tx_data = TransactionData::new_programmable(sender, vec![gas_coin], ptb.finish(), input.gas.budget, input.gas.price);
+    // Get system state object
+    let sys_state = ptb.input(Input::shared(ObjectId::from_u8(SUI_SYSTEM_STATE_OBJECT_ID), 1, true));
+
+    ptb.move_call(function, vec![sys_state, staked_sui]);
+
+    ptb.set_sender(sender);
+    ptb.set_gas_budget(input.gas.budget);
+    ptb.set_gas_price(input.gas.price);
+    ptb.add_gas_objects(vec![gas_coin]);
+    let tx_data = ptb.finish()?;
 
     TxOutput::from_tx_data(&tx_data)
 }
 
-pub(crate) fn decode_transaction(_tx: &str) -> Result<TransactionData, Error> {
+pub(crate) fn decode_transaction(_tx: &str) -> Result<Transaction, Error> {
     let bytes = general_purpose::STANDARD.decode(_tx)?;
-    let tx_data = bcs::from_bytes::<TransactionData>(&bytes)?;
-    Ok(tx_data)
+    let tx = bcs::from_bytes::<Transaction>(&bytes)?;
+    Ok(tx)
 }
 
 pub fn validate_and_hash(encoded: &str) -> Result<TxOutput, Error> {
     let tx_data = decode_transaction(encoded)?;
     TxOutput::from_tx_data(&tx_data)
-}
-
-pub fn sui_system_state_object() -> ObjectArg {
-    ObjectArg::Shared {
-        object_id: ObjectID::from_u8(SUI_SYSTEM_STATE_OBJECT_ID),
-        initial_shared_version: 1,
-        mutable: true,
-    }
-}
-
-pub fn sui_clock_object() -> ObjectArg {
-    ObjectArg::Shared {
-        object_id: ObjectID::from_u8(SUI_CLOCK_OBJECT_ID),
-        initial_shared_version: 1,
-        mutable: false,
-    }
 }
 
 pub fn validate_enough_balance(coins: &[Coin], amount: u64) -> Option<Error> {
@@ -307,10 +357,9 @@ mod tests {
     fn test_decode_transaction() {
         let tx = "AAAPAAhkx5NBAAAAAAAIKUO8sgMAAAAAAQAAAQAAAQAACGTHk0EAAAAAAQFexM/GvrUlJRacMqd+FsKIt7/Lm4mCielL8xCFcLPvpBbjZwAAAAAAAQEB2qRikmMsPE2PMfI+oPmzaij/NnfpaEmA5EOEA6Z6PY8uBRgAAAAAAAABAYBJ0AkRYmmsBO4UIGt6/YtktYASefhUAe5LOXefgJE0zicvAAAAAAABAQEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABgEAAAAAAAAAAAEB8ZTZsbytly5Fp91n3Umz7h4zV6AKUIUMUs1Ru0UOE7QXwmUAAAAAAAABASjkmd/16GSi6v5HYmmk9QNfHBbzONp74YsQNJmr8nHO7fIyAAAAAAABAQHwxA1nsHgADhgDIzTDMlxHueyfPZrkEovoINVGY9FOO+/yMgAAAAAAAQEBNdNbDlsXdZPYw6gBRiSFVy/DCGHmzpalWvbcRzBwknju8jIAAAAAAAAAIJP2W4wWwmM0O79mz5+O72nLHbyS0T8MMxsNyut2tKq2BgIAAQEAAADcFXIbqoK6ZIItWFpzSaFQj3bZSugOiZsG5INpwld1Dghzd2FwX2NhcBFvYnRhaW5fcm91dGVyX2NhcAIHAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIDc3VpA1NVSQAH5COc2VH2xT2cQeJScNgNMfklrRZV5bpbVDhD1KZpde4EU1VJUARTVUlQAAUCAAABAQABAgABAwABBAAA3BVyG6qCumSCLVhac0mhUI922UroDombBuSDacJXdQ4Ic3dhcF9jYXANaW5pdGlhdGVfcGF0aAEHAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIDc3VpA1NVSQACAgEAAQUAAB7GqMWsC4uXwofNNLn8apS1OgfJMKhQWVJnncjUs3gKBnJvdXRlchBzd2FwX2JfdG9fYV9ieV9iAwcAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgNzdWkDU1VJAAfkI5zZUfbFPZxB4lJw2A0x+SWtFlXlultUOEPUpml17gRTVUlQBFNVSVAABwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACA3N1aQNTVUkABgEGAAIBAAEHAAEIAAICAAEJAADcFXIbqoK6ZIItWFpzSaFQj3bZSugOiZsG5INpwld1Dghzd2FwX2NhcBFyZXR1cm5fcm91dGVyX2NhcAIHAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIDc3VpA1NVSQAH5COc2VH2xT2cQeJScNgNMfklrRZV5bpbVDhD1KZpde4EU1VJUARTVUlQAAYCAQACAwABCgABCwABDAABDQABAQIDAAEOAJP2W4wWwmM0O79mz5+O72nLHbyS0T8MMxsNyut2tKq2AQAX1Cs2B1S8591qpdZjDUOB/CBDy2V8/6tqhBbwbdyxj734BAAAAAAg6yrtiW5R0TC68GDMmZye6U+KDjfZlq21n3bztRGzXjuT9luMFsJjNDu/Zs+fju9pyx28ktE/DDMbDcrrdrSqtu4CAAAAAAAA3P9fAAAAAAAA";
         let tx_data = decode_transaction(tx).unwrap();
-        let TransactionData::V1(data) = tx_data;
 
-        assert_eq!(data.sender.to_string(), "0x93f65b8c16c263343bbf66cf9f8eef69cb1dbc92d13f0c331b0dcaeb76b4aab6");
-        match data.kind {
+        assert_eq!(tx_data.sender.to_string(), "0x93f65b8c16c263343bbf66cf9f8eef69cb1dbc92d13f0c331b0dcaeb76b4aab6");
+        match tx_data.kind {
             TransactionKind::ProgrammableTransaction(programmable) => {
                 assert_eq!(programmable.commands.len(), 6);
             }

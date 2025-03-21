@@ -1,10 +1,8 @@
 use anyhow::Error;
 use base64::{engine::general_purpose, Engine as _};
 use bcs;
-use blake2::{digest::consts::U32, Blake2b, Digest};
 use std::str::FromStr;
-use sui_types::{transaction::serialization::transaction::TransactionData, ObjectDigest, ObjectId as ObjectID, ObjectReference as ObjectRef};
-type Blake2b256 = Blake2b<U32>;
+use sui_types::{ObjectDigest, ObjectId as ObjectID, ObjectReference as ObjectRef, Transaction};
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Coin {
@@ -80,17 +78,12 @@ pub struct TxOutput {
 }
 
 impl TxOutput {
-    pub fn from_tx_data(tx_data: &TransactionData) -> Result<Self, Error> {
-        let data = bcs::to_bytes(&tx_data)?;
-        // manually build IntentMessage::new(Intent::sui_transaction(), tx_data.clone());
-        let mut message = vec![0x0u8, 0x0, 0x0];
-        message.append(&mut data.clone());
-        let mut hasher = Blake2b256::new();
-        hasher.update(&message);
+    pub fn from_tx_data(tx_data: &Transaction) -> Result<Self, Error> {
+        let digest = tx_data.signing_digest();
 
         Ok(Self {
-            tx_data: data,
-            hash: hasher.finalize().to_vec(),
+            tx_data: bcs::to_bytes(tx_data)?,
+            hash: digest.to_vec(),
         })
     }
 

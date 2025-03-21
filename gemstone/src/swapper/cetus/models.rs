@@ -1,10 +1,6 @@
 use num_bigint::{BigInt, ParseBigIntError};
 use serde::{Deserialize, Serialize};
-use sui_types::{
-    base_types::{ObjectID, SequenceNumber},
-    digests::ObjectDigest,
-    transaction::ObjectArg,
-};
+use sui_types::{Address, ObjectDigest, ObjectId};
 
 use crate::swapper::SwapperError;
 use gem_sui::jsonrpc::{DataObject, MoveObject, MoveObjectId, OptionU64, SuiData, I32};
@@ -22,7 +18,7 @@ pub struct CalculatedSwapResult {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RoutePoolData {
-    pub object_id: ObjectID,
+    pub object_id: ObjectId,
     pub version: u64,
     pub digest: ObjectDigest,
     pub coin_a: String,
@@ -90,28 +86,14 @@ pub struct SwapParams {
 pub struct CetusConfig {
     pub global_config: SharedObject,
     pub partner: Option<SharedObject>,
-    pub clmm_pool: ObjectID,
-    pub router: ObjectID,
+    pub clmm_pool: ObjectId,
+    pub router: Address,
 }
 
 #[derive(Debug, Clone)]
 pub struct SharedObject {
-    pub id: ObjectID,
+    pub id: ObjectId,
     pub shared_version: u64,
-}
-
-impl SharedObject {
-    pub fn initial_shared_version(&self) -> SequenceNumber {
-        SequenceNumber::from_u64(self.shared_version)
-    }
-
-    pub fn to_obj_arg(&self, mutable: bool) -> ObjectArg {
-        ObjectArg::SharedObject {
-            id: self.id,
-            initial_shared_version: self.initial_shared_version(),
-            mutable,
-        }
-    }
 }
 
 #[cfg(test)]
@@ -133,7 +115,7 @@ mod tests {
         let pool = response.result.data;
         let content = pool.content.unwrap().fields;
 
-        assert_eq!(pool.object_id.to_hex(), "b8d7d9e66a60c239e7a60110efcf8de6c705580ed924d0dde141f4a0e2c90105");
+        assert_eq!(pool.object_id.to_string(), "b8d7d9e66a60c239e7a60110efcf8de6c705580ed924d0dde141f4a0e2c90105");
         assert_eq!(content.liquidity.to_string(), "8070961612060967");
         assert_eq!(content.fee_rate.to_string(), "2500");
         assert_eq!(content.current_sqrt_price.to_string(), "287685790526294295789");
@@ -144,7 +126,7 @@ mod tests {
         let pool = response.unwrap().result.data;
         let content = pool.content.unwrap().fields;
 
-        assert_eq!(pool.object_id.to_hex(), "8049d009116269ac04ee14206b7afd8b64b5801279f85401ee4b39779f809134");
+        assert_eq!(pool.object_id.to_string(), "8049d009116269ac04ee14206b7afd8b64b5801279f85401ee4b39779f809134");
         assert_eq!(content.liquidity.to_string(), "10315028460841");
         assert_eq!(content.fee_rate.to_string(), "10000");
         assert_eq!(content.current_sqrt_price.to_string(), "1883186036311192350");

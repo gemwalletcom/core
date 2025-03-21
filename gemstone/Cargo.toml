@@ -26,7 +26,7 @@ serde_serializers = { path = "../crates/serde_serializers" }
 
 bcs.workspace = true
 sui-types.workspace = true
-
+sui-transaction-builder.workspace = true
 # uniffi
 uniffi.workspace = true
 thiserror.workspace = true

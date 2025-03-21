@@ -2709,6 +2709,7 @@ dependencies = [
  "serde_serializers",
  "serde_urlencoded",
  "sui-sdk-types",
+ "sui-transaction-builder",
  "thiserror 2.0.11",
  "tokio",
  "uniffi",

@@ -8,7 +8,7 @@ use gem_sui::{
 use primitives::Chain;
 use serde::de::DeserializeOwned;
 use std::sync::Arc;
-use sui_types::base_types::SuiAddress;
+use sui_types::Address as SuiAddress;
 
 use super::models::{CoinAsset, InspectResult};
 

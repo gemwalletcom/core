@@ -5,12 +5,8 @@ use futures::join;
 use num_bigint::BigInt;
 use num_traits::{ToBytes, ToPrimitive};
 use std::{str::FromStr, sync::Arc};
-use sui_types::{
-    base_types::ObjectID,
-    programmable_transaction_builder::ProgrammableTransactionBuilder,
-    transaction::{Command, ObjectArg, TransactionData, TransactionKind},
-    Identifier, TypeTag,
-};
+use sui_transaction_builder::{unresolved::Input, Function, Serialized, TransactionBuilder as ProgrammableTransactionBuilder};
+use sui_types::{Address, Identifier, ObjectId, TypeTag};
 
 use super::{
     api::{models::CetusPool, CetusClient},
@@ -65,15 +61,15 @@ impl Cetus {
     pub fn get_clmm_config(&self) -> Result<CetusConfig, SwapperError> {
         Ok(CetusConfig {
             global_config: SharedObject {
-                id: ObjectID::from_str(CETUS_GLOBAL_CONFIG_ID).unwrap(),
+                id: ObjectId::from_str(CETUS_GLOBAL_CONFIG_ID).unwrap(),
                 shared_version: CETUS_GLOBAL_CONFIG_SHARED_VERSION,
             },
             partner: Some(SharedObject {
-                id: ObjectID::from_str(CETUS_MAINNET_PARTNER_ID).unwrap(),
+                id: ObjectId::from_str(CETUS_MAINNET_PARTNER_ID).unwrap(),
                 shared_version: CETUS_PARTNER_SHARED_VERSION,
             }),
-            clmm_pool: ObjectID::from_str(CETUS_CLMM_PACKAGE_ID).unwrap(),
-            router: ObjectID::from_str(CETUS_ROUTER_PACKAGE_ID).unwrap(),
+            clmm_pool: ObjectId::from_str(CETUS_CLMM_PACKAGE_ID).unwrap(),
+            router: Address::from_str(CETUS_ROUTER_PACKAGE_ID).unwrap(),
         })
     }
 
@@ -100,26 +96,22 @@ impl Cetus {
     ) -> Result<CalculatedSwapResult, anyhow::Error> {
         let mut ptb = ProgrammableTransactionBuilder::new();
         let type_args = vec![TypeTag::from_str(&pool.coin_a_address)?, TypeTag::from_str(&pool.coin_b_address)?];
-        let args = [
-            ptb.obj(ObjectArg::SharedObject {
-                id: pool_obj.id,
-                initial_shared_version: pool_obj.initial_shared_version(),
-                mutable: false,
-            })?,
-            ptb.pure(a2b)?,
-            ptb.pure(buy_amount_in)?,
-            ptb.pure(amount.to_u64().unwrap_or(0))?,
+
+        let arguments = vec![
+            ptb.input(Input::shared(pool_obj.id, pool_obj.shared_version, false)),
+            ptb.input(Serialized(&a2b)),
+            ptb.input(Serialized(&buy_amount_in)),
+            ptb.input(Serialized(&amount.to_u64().unwrap_or(0))),
         ];
-        let move_call = Command::move_call(
-            ObjectID::from_str(CETUS_ROUTER_PACKAGE_ID)?,
+        let function = Function::new(
+            Address::from_str(CETUS_ROUTER_PACKAGE_ID)?,
             Identifier::from_str("fetcher_script")?,
             Identifier::from_str("calculate_swap_result")?,
             type_args,
-            args.to_vec(),
         );
-        ptb.command(move_call);
-        let tx = ptb.finish();
-        let tx_kind = TransactionKind::ProgrammableTransaction(tx);
+        ptb.move_call(function, arguments);
+
+        let tx_kind = ptb.finish()?.kind;
         let tx_bytes = bcs::to_bytes(&tx_kind).unwrap();
         let result = client.inspect_tx_block(EMPTY_ADDRESS, &tx_bytes).await?;
         let event = result.events.as_array().map(|x| x.first().unwrap()).unwrap();
@@ -290,13 +282,14 @@ impl GemSwapProvider for Cetus {
         };
 
         // Build tx
-        let ptb = TransactionBuilder::build_swap_transaction(&cetus_config, &swap_params, &all_coin_assets).map_err(|e| SwapperError::TransactionError {
-            msg: format!("Failed to build swap transaction: {}", e),
-        })?;
-        let tx = ptb.finish();
+        let mut ptb =
+            TransactionBuilder::build_swap_transaction(&cetus_config, &swap_params, &all_coin_assets).map_err(|e| SwapperError::TransactionError {
+                msg: format!("Failed to build swap transaction: {}", e),
+            })?;
+        let tx = ptb.clone().finish().map_err(|e| SwapperError::TransactionError { msg: e.to_string() })?;
 
         // Estimate gas_budget
-        let tx_kind = TransactionKind::ProgrammableTransaction(tx.clone());
+        let tx_kind = tx.kind.clone();
         let tx_bytes = bcs::to_bytes(&tx_kind).map_err(|e| SwapperError::TransactionError { msg: e.to_string() })?;
         let inspect_result = sui_client.inspect_tx_block(&quote.request.wallet_address, &tx_bytes).await?;
         let gas_budget = GasBudgetCalculator::gas_budget(&inspect_result.effects.gas_used);
@@ -304,10 +297,16 @@ impl GemSwapProvider for Cetus {
         let coin_refs = all_coin_assets
             .iter()
             .filter(|x| x.coin_type == SUI_COIN_TYPE_FULL)
-            .map(|x| x.to_ref())
+            .map(|x| Input::immutable(x.coin_object_id, x.version, x.digest))
             .collect::<Vec<_>>();
 
-        let tx_data = TransactionData::new_programmable(sender_address, coin_refs, tx, gas_budget, gas_price);
+        ptb.set_sender(sender_address);
+        ptb.set_gas_budget(gas_budget);
+        ptb.set_gas_price(gas_price);
+        ptb.add_gas_objects(coin_refs);
+
+        let tx_data = ptb.finish().map_err(|e| SwapperError::TransactionError { msg: e.to_string() })?;
+
         let tx_output = TxOutput::from_tx_data(&tx_data).unwrap();
 
         Ok(SwapQuoteData {
