@@ -3,7 +3,7 @@ use crate::model::{FiatMapping, FiatProviderAsset};
 use hex;
 use number_formatter::BigNumberFormatter;
 use primitives::{FiatBuyQuote, FiatQuoteType, FiatSellQuote};
-use primitives::{FiatProviderName, FiatQuote, FiatQuoteRequest};
+use primitives::{FiatProviderName, FiatQuote};
 use reqwest::Client;
 use sha2::{Digest, Sha512};
 use url::Url;

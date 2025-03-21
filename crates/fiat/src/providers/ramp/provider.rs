@@ -1,4 +1,3 @@
-use number_formatter::BigNumberFormatter;
 use primitives::{AssetId, FiatBuyQuote, FiatProviderName, FiatQuote, FiatQuoteType, FiatSellQuote, FiatTransaction, FiatTransactionStatus};
 use std::error::Error;
 

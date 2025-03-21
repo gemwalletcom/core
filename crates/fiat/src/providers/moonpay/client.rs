@@ -8,7 +8,7 @@ use super::model::{Asset, MoonPayBuyQuote, MoonPayIpAddress, MoonPaySellQuote};
 use base64::{engine::general_purpose, Engine as _};
 use hmac::{Hmac, Mac};
 use number_formatter::BigNumberFormatter;
-use primitives::{FiatBuyQuote, FiatProviderName, FiatQuote, FiatQuoteRequest, FiatQuoteType, FiatQuoteTypeResult, FiatSellQuote};
+use primitives::{FiatBuyQuote, FiatProviderName, FiatQuote, FiatQuoteType, FiatQuoteTypeResult, FiatSellQuote};
 use reqwest::Client;
 use sha2::Sha256;
 use url::Url;

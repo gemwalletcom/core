@@ -1,5 +1,4 @@
 use crate::model::{filter_token_id, FiatMapping, FiatProviderAsset};
-use bigdecimal::ToPrimitive;
 use number_formatter::BigNumberFormatter;
 use primitives::{FiatBuyQuote, FiatProviderName, FiatQuote, FiatSellQuote};
 use primitives::{FiatQuoteType, FiatQuoteTypeResult};

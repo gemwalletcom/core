@@ -1,4 +1,3 @@
-use bigdecimal::ToPrimitive;
 use number_formatter::BigNumberFormatter;
 use std::error::Error;
 use std::time::Duration;
