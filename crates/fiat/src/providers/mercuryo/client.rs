@@ -1,7 +1,8 @@
 use super::model::{Asset, Currencies, Quote, QuoteQuery, QuoteSellQuery, Response};
 use crate::model::{FiatMapping, FiatProviderAsset};
 use hex;
-use primitives::FiatTransactionType;
+use number_formatter::BigNumberFormatter;
+use primitives::{FiatBuyQuote, FiatQuoteType, FiatSellQuote};
 use primitives::{FiatProviderName, FiatQuote, FiatQuoteRequest};
 use reqwest::Client;
 use sha2::{Digest, Sha512};
@@ -38,8 +39,7 @@ impl MercuryoClient {
             widget_id: self.widget_id.clone(),
         };
         let url = format!("{}/v1.6/widget/buy/rate", MERCURYO_API_BASE_URL);
-        let quote = self.client.get(url.as_str()).query(&query).send().await?.json::<Response<Quote>>().await?;
-        Ok(quote.data)
+        Ok(self.client.get(url.as_str()).query(&query).send().await?.json::<Response<Quote>>().await?.data)
     }
 
     pub async fn get_quote_sell(
@@ -59,8 +59,7 @@ impl MercuryoClient {
         };
         let url = format!("{}/v1.6/public/convert", MERCURYO_API_BASE_URL);
 
-        let quote = self.client.get(url.as_str()).query(&query).send().await?.json::<Response<Quote>>().await?;
-        Ok(quote.data)
+        Ok(self.client.get(url.as_str()).query(&query).send().await?.json::<Response<Quote>>().await?.data)
     }
 
     pub async fn get_assets(&self) -> Result<Vec<Asset>, Box<dyn std::error::Error + Send + Sync>> {
@@ -82,39 +81,42 @@ impl MercuryoClient {
         })
     }
 
-    pub fn get_fiat_buy_quote(&self, request: FiatQuoteRequest, request_map: FiatMapping, quote: Quote) -> FiatQuote {
+    pub fn get_fiat_buy_quote(&self, request: FiatBuyQuote, request_map: FiatMapping, quote: Quote) -> FiatQuote {
+        let crypto_value = BigNumberFormatter::f64_as_value(quote.clone().amount, request.asset.decimals as u32).unwrap_or_default();
         FiatQuote {
             provider: Self::NAME.as_fiat_provider(),
-            quote_type: FiatTransactionType::Buy,
+            quote_type: FiatQuoteType::Buy,
             fiat_amount: request.fiat_amount,
             fiat_currency: request.fiat_currency,
             crypto_amount: quote.clone().amount,
+            crypto_value,
             redirect_url: self.redirect_url(
                 quote.clone(),
-                FiatTransactionType::Buy,
+                FiatQuoteType::Buy,
                 &request_map.network.unwrap_or_default(),
                 request.wallet_address.as_str(),
             ),
         }
     }
 
-    pub fn get_fiat_sell_quote(&self, request: FiatQuoteRequest, request_map: FiatMapping, quote: Quote) -> FiatQuote {
+    pub fn get_fiat_sell_quote(&self, request: FiatSellQuote, request_map: FiatMapping, quote: Quote) -> FiatQuote {
         FiatQuote {
             provider: Self::NAME.as_fiat_provider(),
-            quote_type: FiatTransactionType::Sell,
+            quote_type: FiatQuoteType::Sell,
             fiat_amount: quote.fiat_amount,
             fiat_currency: request.fiat_currency,
-            crypto_amount: request.crypto_amount.unwrap_or_default(),
+            crypto_amount: quote.amount,
+            crypto_value: request.crypto_value,
             redirect_url: self.redirect_url(
                 quote.clone(),
-                FiatTransactionType::Sell,
+                FiatQuoteType::Sell,
                 &request_map.network.unwrap_or_default(),
                 request.wallet_address.as_str(),
             ),
         }
     }
 
-    pub fn redirect_url(&self, quote: Quote, quote_type: FiatTransactionType, network: &str, address: &str) -> String {
+    pub fn redirect_url(&self, quote: Quote, quote_type: FiatQuoteType, network: &str, address: &str) -> String {
         let mut components = Url::parse(MERCURYO_REDIRECT_URL).unwrap();
         let signature_content = format!("{}{}", address, self.secret_key);
         let signature = hex::encode(Sha512::digest(signature_content));
@@ -130,11 +132,11 @@ impl MercuryoClient {
             .append_pair("signature", &signature);
 
         match quote_type {
-            FiatTransactionType::Buy => components
+            FiatQuoteType::Buy => components
                 .query_pairs_mut()
                 .append_pair("type", "buy")
                 .append_pair("fiat_amount", &quote.fiat_amount.to_string()),
-            FiatTransactionType::Sell => components
+            FiatQuoteType::Sell => components
                 .query_pairs_mut()
                 .append_pair("type", "sell")
                 .append_pair("amount", &quote.amount.to_string()),

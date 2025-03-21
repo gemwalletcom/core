@@ -8,7 +8,7 @@ use async_trait::async_trait;
 use std::error::Error;
 
 use super::client::MoonPayClient;
-use primitives::{AssetId, FiatQuoteRequest, FiatProviderName, FiatQuote, FiatTransaction, FiatTransactionStatus, FiatTransactionType};
+use primitives::{AssetId, FiatBuyQuote, FiatProviderName, FiatQuote, FiatQuoteType, FiatSellQuote, FiatTransaction, FiatTransactionStatus};
 
 #[async_trait]
 impl FiatProvider for MoonPayClient {
@@ -16,7 +16,7 @@ impl FiatProvider for MoonPayClient {
         Self::NAME
     }
 
-    async fn get_buy_quote(&self, request: FiatQuoteRequest, request_map: FiatMapping) -> Result<FiatQuote, Box<dyn std::error::Error + Send + Sync>> {
+    async fn get_buy_quote(&self, request: FiatBuyQuote, request_map: FiatMapping) -> Result<FiatQuote, Box<dyn std::error::Error + Send + Sync>> {
         let ip_address_check = self.get_ip_address(&request.ip_address).await?;
         if !ip_address_check.is_allowed && !ip_address_check.is_buy_allowed {
             return Err(FiatError::FiatPurchaseNotAllowed.into());
@@ -31,18 +31,13 @@ impl FiatProvider for MoonPayClient {
         Ok(self.get_buy_fiat_quote(request, quote))
     }
 
-    async fn get_sell_quote(&self, request: FiatQuoteRequest, request_map: FiatMapping) -> Result<FiatQuote, Box<dyn Error + Send + Sync>> {
+    async fn get_sell_quote(&self, request: FiatSellQuote, request_map: FiatMapping) -> Result<FiatQuote, Box<dyn Error + Send + Sync>> {
         let ip_address_check = self.get_ip_address(&request.ip_address).await?;
         if !ip_address_check.is_allowed && !ip_address_check.is_sell_allowed {
             return Err(FiatError::FiatSellNotAllowed.into());
         }
-
         let quote = self
-            .get_sell_quote(
-                request_map.symbol.to_lowercase(),
-                request.fiat_currency.to_lowercase(),
-                request.crypto_amount.unwrap_or_default(),
-            )
+            .get_sell_quote(request_map.symbol.to_lowercase(), request.fiat_currency.to_lowercase(), request.crypto_amount)
             .await?;
 
         Ok(self.get_sell_fiat_quote(request, quote))
@@ -76,7 +71,7 @@ impl FiatProvider for MoonPayClient {
         let fee_network = payload.data.network_fee_amount.unwrap_or_default();
         let fee_partner = payload.data.extra_fee_amount.unwrap_or_default();
         let fiat_amount = currency_amount + fee_provider + fee_network + fee_partner;
-        let transaction_type = FiatTransactionType::Buy;
+        let transaction_type = FiatQuoteType::Buy;
 
         let transaction = FiatTransaction {
             asset_id: Some(asset_id),

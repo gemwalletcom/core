@@ -1,5 +1,5 @@
 use number_formatter::BigNumberFormatter;
-use primitives::{AssetId, FiatProviderName, FiatQuote, FiatQuoteRequest, FiatTransaction, FiatTransactionStatus, FiatTransactionType};
+use primitives::{AssetId, FiatBuyQuote, FiatProviderName, FiatQuote, FiatQuoteType, FiatSellQuote, FiatTransaction, FiatTransactionStatus};
 use std::error::Error;
 
 use crate::{
@@ -19,7 +19,7 @@ impl FiatProvider for RampClient {
         Self::NAME
     }
 
-    async fn get_buy_quote(&self, request: FiatQuoteRequest, request_map: FiatMapping) -> Result<FiatQuote, Box<dyn std::error::Error + Send + Sync>> {
+    async fn get_buy_quote(&self, request: FiatBuyQuote, request_map: FiatMapping) -> Result<FiatQuote, Box<dyn std::error::Error + Send + Sync>> {
         let assets = self
             .get_supported_buy_assets(request.clone().fiat_currency, request.clone().ip_address)
             .await?
@@ -41,26 +41,22 @@ impl FiatProvider for RampClient {
         Ok(self.get_fiat_buy_quote(request.clone(), quote))
     }
 
-    async fn get_sell_quote(&self, request: FiatQuoteRequest, request_map: FiatMapping) -> Result<FiatQuote, Box<dyn Error + Send + Sync>> {
+    async fn get_sell_quote(&self, request: FiatSellQuote, request_map: FiatMapping) -> Result<FiatQuote, Box<dyn Error + Send + Sync>> {
         let assets = self
             .get_supported_sell_assets(request.clone().fiat_currency, request.clone().ip_address)
             .await?
             .assets;
 
         let crypto_asset_symbol = self.get_crypto_asset_symbol(request_map);
-        let asset = assets
-            .iter()
-            .find(|x| x.crypto_asset_symbol() == crypto_asset_symbol)
-            .ok_or("asset sell not supported")?;
-
-        let crypto_amount =
-            BigNumberFormatter::value_from_amount(request.crypto_amount.unwrap_or_default().to_string().as_str(), asset.decimals).unwrap_or_default();
+        if !assets.iter().any(|x| x.crypto_asset_symbol() == crypto_asset_symbol) {
+            return Err("asset buy not supported".into());
+        }
 
         let payload = QuoteRequest {
             crypto_asset_symbol,
             fiat_currency: request.clone().fiat_currency,
             fiat_value: None,
-            crypto_amount: Some(crypto_amount),
+            crypto_amount: Some(request.clone().crypto_value),
         };
         let quote = self.get_client_sell_quote(payload).await?;
 
@@ -91,7 +87,7 @@ impl FiatProvider for RampClient {
             "RELEASED" => FiatTransactionStatus::Complete,
             _ => FiatTransactionStatus::Unknown,
         };
-        let transaction_type = FiatTransactionType::Buy;
+        let transaction_type = FiatQuoteType::Buy;
 
         let transaction = FiatTransaction {
             asset_id: Some(asset_id),

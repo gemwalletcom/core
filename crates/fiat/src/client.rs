@@ -1,3 +1,5 @@
+use bigdecimal::ToPrimitive;
+use number_formatter::BigNumberFormatter;
 use std::error::Error;
 use std::time::Duration;
 
@@ -6,7 +8,7 @@ use crate::{
     FiatProvider,
 };
 use futures::future::join_all;
-use primitives::{FiatAssets, FiatQuote, FiatQuoteError, FiatQuoteRequest, FiatQuotes};
+use primitives::{Asset, FiatAssets, FiatQuote, FiatQuoteError, FiatQuoteRequest, FiatQuoteType, FiatQuotes};
 use reqwest::Client as RequestClient;
 use storage::DatabaseClient;
 
@@ -87,25 +89,38 @@ impl FiatClient {
             .collect()
     }
 
-    pub async fn get_buy_quotes(&mut self, request: FiatQuoteRequest) -> Result<FiatQuotes, Box<dyn Error + Send + Sync>> {
-        self.get_quotes(
-            request,
-            |provider, request, mapping| provider.get_buy_quote(request, mapping),
-            sort_by_crypto_amount,
-        )
-        .await
+    pub async fn get_asset(&mut self, asset_id: &str) -> Result<Asset, Box<dyn Error + Send + Sync>> {
+        Ok(self.database.get_asset(asset_id)?.as_primitive())
     }
 
-    pub async fn get_sell_quotes(&mut self, request: FiatQuoteRequest) -> Result<FiatQuotes, Box<dyn Error + Send + Sync>> {
-        self.get_quotes(
-            request,
-            |provider, request, mapping| provider.get_sell_quote(request, mapping),
-            sort_by_fiat_amount,
-        )
-        .await
+    pub async fn get_quotes(&mut self, request: FiatQuoteRequest) -> Result<FiatQuotes, Box<dyn Error + Send + Sync>> {
+        let asset = self.database.get_asset(&request.asset_id)?.as_primitive();
+        match request.quote_type {
+            FiatQuoteType::Buy => {
+                let fiat_amount = request.clone().fiat_amount.unwrap();
+                let fiat_value = BigNumberFormatter::f64_as_value(fiat_amount, asset.decimals as u32).unwrap_or_default();
+                self.get_quotes_in_parallel(
+                    request,
+                    |provider, request, mapping| provider.get_buy_quote(request.get_buy_quote(asset.clone(), fiat_value.clone()), mapping),
+                    sort_by_crypto_amount,
+                )
+                .await
+            }
+            FiatQuoteType::Sell => {
+                let crypto_value = &request.clone().crypto_value.unwrap();
+                let crypto_amount = BigNumberFormatter::value_as_f64(crypto_value, asset.decimals as u32).unwrap_or_default();
+
+                self.get_quotes_in_parallel(
+                    request,
+                    |provider, request, mapping| provider.get_sell_quote(request.get_sell_quote(asset.clone(), crypto_amount), mapping),
+                    sort_by_fiat_amount,
+                )
+                .await
+            }
+        }
     }
 
-    async fn get_quotes<F>(
+    async fn get_quotes_in_parallel<F>(
         &mut self,
         request: FiatQuoteRequest,
         quote_fn: F,

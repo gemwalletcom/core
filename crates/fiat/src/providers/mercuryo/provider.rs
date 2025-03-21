@@ -3,8 +3,8 @@ use crate::{
     FiatProvider,
 };
 use async_trait::async_trait;
-use primitives::fiat_transaction::FiatTransactionType;
-use primitives::{FiatQuoteRequest, FiatProviderName, FiatQuote, FiatTransaction, FiatTransactionStatus};
+use primitives::{fiat_transaction::FiatQuoteType, FiatBuyQuote, FiatSellQuote};
+use primitives::{FiatProviderName, FiatQuote, FiatTransaction, FiatTransactionStatus};
 use std::error::Error;
 
 use super::{client::MercuryoClient, model::Webhook};
@@ -15,7 +15,7 @@ impl FiatProvider for MercuryoClient {
         Self::NAME
     }
 
-    async fn get_buy_quote(&self, request: FiatQuoteRequest, request_map: FiatMapping) -> Result<FiatQuote, Box<dyn std::error::Error + Send + Sync>> {
+    async fn get_buy_quote(&self, request: FiatBuyQuote, request_map: FiatMapping) -> Result<FiatQuote, Box<dyn std::error::Error + Send + Sync>> {
         let quote = self
             .get_quote_buy(
                 request.fiat_currency.clone(),
@@ -28,12 +28,12 @@ impl FiatProvider for MercuryoClient {
         Ok(self.get_fiat_buy_quote(request, request_map.clone(), quote))
     }
 
-    async fn get_sell_quote(&self, request: FiatQuoteRequest, request_map: FiatMapping) -> Result<FiatQuote, Box<dyn Error + Send + Sync>> {
+    async fn get_sell_quote(&self, request: FiatSellQuote, request_map: FiatMapping) -> Result<FiatQuote, Box<dyn Error + Send + Sync>> {
         let quote = self
             .get_quote_sell(
                 request.fiat_currency.clone(),
                 request_map.symbol.clone(),
-                request.crypto_amount.unwrap_or_default(),
+                request.crypto_amount,
                 request_map.network.clone().unwrap_or_default(),
             )
             .await?;
@@ -61,7 +61,7 @@ impl FiatProvider for MercuryoClient {
             "paid" | "completed" | "succeeded" => FiatTransactionStatus::Complete,
             _ => FiatTransactionStatus::Unknown,
         };
-        let transaction_type = FiatTransactionType::Buy;
+        let transaction_type = FiatQuoteType::Buy;
 
         let transaction = FiatTransaction {
             asset_id: None,

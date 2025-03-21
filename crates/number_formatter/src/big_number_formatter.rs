@@ -1,4 +1,4 @@
-use bigdecimal::BigDecimal;
+use bigdecimal::{BigDecimal, ToPrimitive};
 use num_bigint::BigInt;
 use std::str::FromStr;
 
@@ -11,6 +11,11 @@ impl BigNumberFormatter {
         decimal = decimal / BigDecimal::from(exp);
         Some(decimal)
     }
+
+    pub fn value_as_f64(value: &str, decimals: u32) -> Option<f64> {
+        Self::big_decimal_value(value, decimals)?.to_f64()
+    }
+
     pub fn value(value: &str, decimals: i32) -> Option<String> {
         let decimal = Self::big_decimal_value(value, decimals as u32)?;
         Some(decimal.to_string())
@@ -22,6 +27,10 @@ impl BigNumberFormatter {
         let multiplier_decimal = BigDecimal::from(multiplier);
         let scaled_value = big_decimal * multiplier_decimal;
         Some(scaled_value.with_scale(0).to_string())
+    }
+
+    pub fn f64_as_value(amount: f64, decimals: u32) -> Option<String> {
+        Some(Self::value_from_amount(amount.to_string().as_str(), decimals)?.to_string())
     }
 }
 

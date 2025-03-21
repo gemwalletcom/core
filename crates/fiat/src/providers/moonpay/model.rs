@@ -5,12 +5,13 @@ use serde::Deserialize;
 pub struct MoonPayBuyQuote {
     pub quote_currency_amount: f64,
     pub quote_currency_code: String,
-    pub quote_currency: QuoteCurrency,
+    pub quote_currency: Currency,
 }
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct QuoteCurrency {
+pub struct Currency {
+    pub decimals: u32,
     pub not_allowed_countries: Vec<String>,
     #[serde(rename = "notAllowedUSStates")]
     pub not_allowed_us_states: Vec<String>,
@@ -22,6 +23,7 @@ pub struct MoonPaySellQuote {
     pub base_currency_amount: f64,
     pub base_currency_code: String,
     pub quote_currency_amount: f64,
+    pub base_currency: Currency,
 }
 
 #[derive(Debug, Clone, Deserialize)]
