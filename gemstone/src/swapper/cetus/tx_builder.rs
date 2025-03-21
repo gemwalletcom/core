@@ -6,7 +6,7 @@ use num_traits::ToPrimitive;
 use std::str::FromStr;
 
 use sui_transaction_builder::{unresolved::Input, Function, Serialized, TransactionBuilder as ProgrammableTransactionBuilder};
-use sui_types::{transaction::Argument, Address, Identifier, ObjectId, TypeTag};
+use sui_types::{Address, Argument, Identifier, ObjectId, TypeTag};
 
 use super::models::{CetusConfig, SwapParams};
 

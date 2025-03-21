@@ -6,7 +6,7 @@ use base64::{engine::general_purpose, Engine as _};
 use model::*;
 use std::str::FromStr;
 use sui_transaction_builder::{unresolved::Input, Function, Serialized, TransactionBuilder};
-use sui_types::{transaction::Argument, Address, Identifier, ObjectId, Transaction};
+use sui_types::{Address, Argument, Identifier, ObjectId, Transaction};
 
 static SUI_SYSTEM_ID: &str = "sui_system";
 static SUI_REQUEST_ADD_STAKE: &str = "request_add_stake";

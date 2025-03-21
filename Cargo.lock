@@ -6311,7 +6311,7 @@ dependencies = [
 
 [[package]]
 name = "sui-sdk-types"
-version = "0.0.2"
+version = "0.0.3"
 dependencies = [
  "base64ct",
  "bcs",
@@ -6330,7 +6330,7 @@ dependencies = [
 
 [[package]]
 name = "sui-transaction-builder"
-version = "0.1.0"
+version = "0.0.3"
 dependencies = [
  "base64ct",
  "bcs",
