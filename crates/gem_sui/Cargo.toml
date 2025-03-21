@@ -8,6 +8,7 @@ edition = { workspace = true }
 primitives = { path = "../primitives" }
 
 sui-types = { workspace = true }
+sui-transaction-builder = { workspace = true }
 bcs = { workspace = true }
 blake2 = { workspace = true }
 hex = { workspace = true }
