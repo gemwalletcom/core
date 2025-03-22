@@ -11,9 +11,6 @@ mod tests {
         let chains = vec![Chain::Bitcoin, Chain::Ethereum];
         let result = provider.get_chain_prices(chains.clone()).await;
 
-        println!("{:?}", result);
-
-        assert!(result.is_ok());
         assert!(result.ok().unwrap().len() == chains.len());
     }
 }

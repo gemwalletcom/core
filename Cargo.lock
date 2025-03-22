@@ -6423,6 +6423,10 @@ dependencies = [
 name = "pricer_dex"
 version = "1.0.0"
 dependencies = [
+ "async-trait",
+ "base64 0.22.1",
+ "gem_chain_rpc",
+ "gem_solana",
  "primitives",
  "serde",
  "serde_json",

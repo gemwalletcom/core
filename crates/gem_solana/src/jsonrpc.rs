@@ -66,7 +66,6 @@ pub struct Memcmp {
 pub struct AccountData {
     pub data: Vec<String>,
     pub owner: String,
-    pub space: u64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
