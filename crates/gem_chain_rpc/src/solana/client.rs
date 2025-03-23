@@ -1,13 +1,13 @@
 use async_trait::async_trait;
 use chrono::Utc;
 use jsonrpsee::{
-    core::{client::ClientT, ClientError},
+    core::{client::ClientT, params::BatchRequestBuilder, ClientError},
     http_client::{HttpClient, HttpClientBuilder},
     rpc_params,
 };
 use serde::de::DeserializeOwned;
 use serde_json::json;
-use std::{error::Error, str::FromStr};
+use std::{error::Error, fmt::Debug, str::FromStr};
 
 use super::model::{BlockTransaction, BlockTransactions, InstructionParsed};
 use crate::{ChainBlockProvider, ChainTokenDataProvider};
@@ -226,6 +226,44 @@ impl SolanaClient {
         ];
         let info: T = self.client.request(rpc_method, params).await?;
         Ok(info)
+    }
+
+    pub async fn get_account_info_batch<T: DeserializeOwned + Debug + Clone>(
+        &self,
+        accounts: Vec<String>,
+        encoding: &str,
+        batch: usize,
+    ) -> Result<Vec<T>, Box<dyn Error + Send + Sync>> {
+        let accounts_chunks: Vec<Vec<String>> = accounts.chunks(batch).map(|s| s.into()).collect();
+        let mut results: Vec<T> = Vec::new();
+        for accounts in accounts_chunks {
+            let mut batch = BatchRequestBuilder::default();
+            for account in accounts.iter() {
+                let params = vec![
+                    json!(account),
+                    json!({
+                        "encoding": encoding,
+                        "commitment": "confirmed",
+                    }),
+                ];
+                batch.insert("getAccountInfo", params)?;
+            }
+
+            let data = self
+                .client
+                .batch_request::<T>(batch)
+                .await?
+                .iter()
+                .filter_map(|r| r.as_ref().ok())
+                .cloned()
+                .collect::<Vec<T>>();
+
+            if data.len() != accounts.len() {
+                return Err("Failed to get all transaction reciepts".into());
+            }
+            results.extend(data);
+        }
+        Ok(results)
     }
 
     pub async fn get_metaplex_data(&self, token_mint: &str) -> Result<Metadata, Box<dyn Error + Send + Sync>> {

@@ -44,6 +44,8 @@ test CRATE:
 format:
     cargo fmt -q --all
 
+fix: lint
+
 lint:
     @cargo clippy --version
     cargo clippy -- -D warnings

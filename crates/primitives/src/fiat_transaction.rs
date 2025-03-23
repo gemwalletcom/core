@@ -7,7 +7,7 @@ use typeshare::typeshare;
 #[serde(rename_all = "camelCase")]
 pub struct FiatTransaction {
     pub asset_id: Option<AssetId>,
-    pub transaction_type: FiatTransactionType,
+    pub transaction_type: FiatQuoteType,
     pub provider_id: String,
     pub provider_transaction_id: String,
     pub status: FiatTransactionStatus,
@@ -35,7 +35,7 @@ pub enum FiatTransactionStatus {
 #[derive(Debug, Clone, Serialize, Deserialize, AsRefStr, EnumString)]
 #[serde(rename_all = "lowercase")]
 #[strum(serialize_all = "lowercase")]
-pub enum FiatTransactionType {
+pub enum FiatQuoteType {
     Buy,
     Sell,
 }

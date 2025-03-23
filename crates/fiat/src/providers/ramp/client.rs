@@ -1,8 +1,7 @@
 use crate::model::{filter_token_id, FiatMapping, FiatProviderAsset};
-use bigdecimal::ToPrimitive;
 use number_formatter::BigNumberFormatter;
-use primitives::FiatTransactionType;
-use primitives::{FiatProviderName, FiatQuote, FiatQuoteRequest};
+use primitives::{FiatBuyQuote, FiatProviderName, FiatQuote, FiatSellQuote};
+use primitives::{FiatQuoteType, FiatQuoteTypeResult};
 use reqwest::Client;
 use url::Url;
 
@@ -69,30 +68,36 @@ impl RampClient {
         Ok(self.client.post(&url).json(&request).send().await?.json().await?)
     }
 
-    pub fn get_fiat_buy_quote(&self, request: FiatQuoteRequest, quote: QuoteBuy) -> FiatQuote {
-        let crypto_amount = BigNumberFormatter::big_decimal_value(quote.clone().card_payment.crypto_amount.as_str(), quote.asset.decimals).unwrap_or_default();
+    pub fn get_fiat_buy_quote(&self, request: FiatBuyQuote, quote: QuoteBuy) -> FiatQuote {
+        let crypto_amount = BigNumberFormatter::value_as_f64(quote.clone().card_payment.crypto_amount.as_str(), quote.asset.decimals).unwrap_or_default();
 
         FiatQuote {
             provider: Self::NAME.as_fiat_provider(),
-            quote_type: FiatTransactionType::Buy,
+            quote_type: FiatQuoteType::Buy,
             fiat_amount: request.clone().fiat_amount,
+            crypto_value: quote.clone().card_payment.crypto_amount,
             fiat_currency: request.clone().fiat_currency,
-            crypto_amount: crypto_amount.to_f64().unwrap_or_default(),
-            redirect_url: self.redirect_url(FiatTransactionType::Buy, request.clone(), &quote.asset.crypto_asset_symbol(), ""),
+            crypto_amount,
+            redirect_url: self.redirect_url(
+                FiatQuoteTypeResult::Buy(request),
+                &quote.asset.crypto_asset_symbol(),
+                quote.clone().card_payment.crypto_amount.as_str(),
+            ),
         }
     }
 
-    pub fn get_fiat_sell_quote(&self, request: FiatQuoteRequest, quote: QuoteSell) -> FiatQuote {
-        let crypto_amount = BigNumberFormatter::big_decimal_value(quote.clone().card_payment.crypto_amount.as_str(), quote.asset.decimals).unwrap_or_default();
+    pub fn get_fiat_sell_quote(&self, request: FiatSellQuote, quote: QuoteSell) -> FiatQuote {
+        let crypto_amount = BigNumberFormatter::value_as_f64(quote.clone().card_payment.crypto_amount.as_str(), quote.asset.decimals).unwrap_or_default();
+
         FiatQuote {
             provider: Self::NAME.as_fiat_provider(),
-            quote_type: FiatTransactionType::Sell,
+            quote_type: FiatQuoteType::Sell,
             fiat_amount: quote.card_payment.fiat_value,
             fiat_currency: request.clone().fiat_currency,
-            crypto_amount: crypto_amount.to_f64().unwrap_or_default(),
+            crypto_amount,
+            crypto_value: quote.clone().card_payment.crypto_amount.as_str().to_string(),
             redirect_url: self.redirect_url(
-                FiatTransactionType::Sell,
-                request.clone(),
+                FiatQuoteTypeResult::Sell(request),
                 &quote.asset.crypto_asset_symbol(),
                 quote.clone().card_payment.crypto_amount.as_str(),
             ),
@@ -100,7 +105,7 @@ impl RampClient {
     }
 
     // docs: https://docs.ramp.network/configuration
-    pub fn redirect_url(&self, fiat_type: FiatTransactionType, request: FiatQuoteRequest, symbol: &str, crypto_amount: &str) -> String {
+    pub fn redirect_url(&self, quote_type: FiatQuoteTypeResult, symbol: &str, crypto_amount: &str) -> String {
         let mut components = Url::parse(RAMP_REDIRECT_URL).unwrap();
         components
             .query_pairs_mut()
@@ -108,25 +113,24 @@ impl RampClient {
             .append_pair("hostAppName", "Gem Wallet")
             .append_pair("hostLogoUrl", "https://gemwallet.com/images/presskit/gemwallet-icon-256x256.png")
             .append_pair("variant", "hosted-mobile")
-            .append_pair("userAddress", request.wallet_address.as_str())
             .append_pair("swapAsset", symbol)
+            .append_pair("userAddress", quote_type.get_wallet_address().as_str())
             .append_pair("defaultAsset", symbol);
 
-        match fiat_type {
-            FiatTransactionType::Buy => components
+        match quote_type {
+            FiatQuoteTypeResult::Buy(request) => components
                 .query_pairs_mut()
                 .append_pair("defaultFlow", "ONRAMP")
                 .append_pair("fiatCurrency", &request.clone().fiat_currency.to_string())
                 .append_pair("fiatValue", &request.clone().fiat_amount.to_string())
                 .append_pair("webhookStatusUrl", "https://api.gemwallet.com/v1/fiat/webhooks/ramp"),
-            FiatTransactionType::Sell => components
+            FiatQuoteTypeResult::Sell(_) => components
                 .query_pairs_mut()
                 .append_pair("defaultFlow", "OFFRAMP")
                 .append_pair("swapAmount", crypto_amount)
                 .append_pair("offrampAsset", symbol)
                 .append_pair("offrampWebhookV3Url", "https://api.gemwallet.com/v1/fiat/webhooks/ramp"),
         };
-
         components.as_str().to_string()
     }
 }
