@@ -68,6 +68,7 @@ pub enum SwapProvider {
     OkuTrade,
     Wagmi,
     Cetus,
+    MayanSwift,
 }
 
 impl SwapProvider {
@@ -82,6 +83,7 @@ impl SwapProvider {
             Self::OkuTrade => "Oku",
             Self::Wagmi => "Wagmi",
             Self::Cetus => "Cetus",
+            Self::MayanSwift => "Mayan",
         }
     }
 
@@ -98,6 +100,7 @@ impl SwapProvider {
             Self::OkuTrade => "Oku Trade",
             Self::Wagmi => "Wagmi",
             Self::Cetus => "Cetus",
+            Self::MayanSwift => "Mayan Swift",
         }
     }
 
@@ -112,7 +115,7 @@ impl SwapProvider {
             | Self::OkuTrade
             | Self::Wagmi
             | Self::Cetus => SwapProviderMode::OnChain,
-            Self::Thorchain => SwapProviderMode::CrossChain,
+            Self::Thorchain | Self::MayanSwift => SwapProviderMode::CrossChain,
             Self::Across => SwapProviderMode::Bridge,
         }
     }

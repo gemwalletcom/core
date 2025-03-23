@@ -5,7 +5,7 @@ mod tests {
     use gemstone::{
         config::swap_config::{get_swap_config, SwapReferralFee, SwapReferralFees},
         network::{provider::AlienProvider, target::*, *},
-        swapper::{across::Across, cetus::Cetus, models::*, orca::Orca, uniswap::v4::UniswapV4, GemSwapper, *},
+        swapper::{across::Across, cetus::Cetus, mayan::MayanSwiftProvider, models::*, orca::Orca, uniswap::v4::UniswapV4, GemSwapper, *},
     };
     use primitives::{AssetId, Chain};
     use reqwest::Client;
@@ -46,6 +46,7 @@ mod tests {
                 (Chain::Unichain, "https://mainnet.unichain.org".into()),
                 (Chain::SmartChain, "https://binance.llamarpc.com".into()),
                 (Chain::Linea, "https://rpc.linea.build".into()),
+                (Chain::Base, "https://mainnet.base.org".into()),
             ]))
         }
     }
@@ -308,6 +309,45 @@ mod tests {
 
         let quote_data = swap_provider.fetch_quote_data(&quote, network_provider.clone(), FetchQuoteData::None).await?;
         println!("{:?}", quote_data);
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_mayan_swift_quote() -> Result<(), SwapperError> {
+        const TEST_WALLET_ADDRESS: &str = "0x0655c6AbdA5e2a5241aa08486bd50Cf7d475CF24";
+
+        let swap_provider = MayanSwiftProvider::default();
+        let network_provider = Arc::new(NativeProvider::default());
+
+        // Create a swap quote request
+        let request = SwapQuoteRequest {
+            from_asset: AssetId::from(Chain::Base, Some("0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913".to_string())),
+            to_asset: AssetId::from_chain(Chain::Optimism),
+            wallet_address: TEST_WALLET_ADDRESS.to_string(),
+            destination_address: TEST_WALLET_ADDRESS.to_string(),
+            value: "9000000".to_string(),
+            mode: GemSwapMode::ExactIn,
+            options: GemSwapOptions {
+                slippage: 10.into(),
+                fee: None,
+                preferred_providers: vec![],
+            },
+        };
+
+        let quote = swap_provider.fetch_quote(&request, network_provider.clone()).await?;
+
+        assert_eq!(quote.from_value, "9000000");
+        // Expect the to_value to be
+        assert!(quote.to_value.parse::<i64>().unwrap() > 0);
+
+        // Verify
+        assert_eq!(quote.data.routes.len(), 1);
+        assert_eq!(
+            quote.data.routes[0].input,
+            AssetId::from(Chain::Base, Some("0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913".to_string())),
+        );
+        assert_eq!(quote.data.routes[0].output, AssetId::from_chain(Chain::Optimism));
 
         Ok(())
     }

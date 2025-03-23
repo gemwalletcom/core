@@ -3726,6 +3726,7 @@ dependencies = [
  "num-traits",
  "orca_whirlpools_core",
  "primitives",
+ "rand 0.9.0",
  "reqwest",
  "serde",
  "serde_json",

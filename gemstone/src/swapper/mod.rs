@@ -16,6 +16,7 @@ pub mod asset;
 pub mod cetus;
 pub mod error;
 pub mod jupiter;
+pub mod mayan;
 pub mod models;
 pub mod orca;
 pub mod pancakeswap_aptos;
@@ -124,6 +125,7 @@ impl GemSwapper {
                 Box::new(uniswap::universal_router::new_wagmi()),
                 Box::new(pancakeswap_aptos::PancakeSwapAptos::default()),
                 Box::new(cetus::Cetus::default()),
+                Box::new(mayan::MayanSwiftProvider::default()),
             ],
         }
     }
