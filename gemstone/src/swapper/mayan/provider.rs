@@ -12,7 +12,7 @@ use gem_evm::{
     address::EthereumAddress,
     erc20::IERC20,
     jsonrpc::{BlockParameter, EthereumRpc, TransactionObject},
-    mayan::deployment::{get_swift_deployment_chains, get_swift_providers},
+    mayan::deployment::get_swift_providers,
 };
 use primitives::{Asset, AssetId, Chain};
 
@@ -53,10 +53,6 @@ impl From<MayanSwiftError> for SwapperError {
 }
 
 impl MayanSwiftProvider {
-    fn supported_chains(&self) -> Vec<primitives::Chain> {
-        get_swift_deployment_chains()
-    }
-
     fn get_chain_by_wormhole_id(&self, wormhole_id: u64) -> Option<Chain> {
         get_swift_providers()
             .into_iter()
@@ -204,9 +200,9 @@ impl MayanSwiftProvider {
             })?;
 
         // TODO: adjust to find most effective quote
-        let most_effective_qoute = quote.into_iter().filter(|x| x.r#type == QuoteType::Swift.to_string()).last();
+        let most_effective_quote = quote.into_iter().filter(|x| x.r#type == QuoteType::Swift.to_string()).last();
 
-        most_effective_qoute.ok_or(SwapperError::ComputeQuoteError {
+        most_effective_quote.ok_or(SwapperError::ComputeQuoteError {
             msg: "Quote is not available".to_string(),
         })
     }
@@ -299,18 +295,13 @@ impl GemSwapProvider for MayanSwiftProvider {
     fn supported_assets(&self) -> Vec<SwapChainAsset> {
         vec![
             SwapChainAsset::All(Chain::Solana),
-            SwapChainAsset::All(Chain::Sui),
             SwapChainAsset::All(Chain::Polygon),
+            SwapChainAsset::All(Chain::SmartChain),
             SwapChainAsset::All(Chain::Ethereum),
         ]
     }
 
     async fn fetch_quote(&self, request: &SwapQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapQuote, SwapperError> {
-        // Validate chain support
-        if !self.supported_chains().contains(&request.from_asset.chain) {
-            return Err(SwapperError::NotSupportedChain);
-        }
-
         let quote = self.fetch_quote_from_request(request, provider.clone()).await?;
 
         if quote.r#type != QuoteType::Swift.to_string() {
@@ -494,20 +485,6 @@ mod tests {
                 preferred_providers: vec![],
             },
         }
-    }
-
-    #[test]
-    fn test_supported_chains() {
-        let provider = MayanSwiftProvider::default();
-        let chains = provider.supported_chains();
-
-        assert!(chains.contains(&Chain::Solana));
-        assert!(chains.contains(&Chain::Ethereum));
-        assert!(chains.contains(&Chain::SmartChain));
-        assert!(chains.contains(&Chain::Polygon));
-        assert!(chains.contains(&Chain::Arbitrum));
-        assert!(chains.contains(&Chain::Optimism));
-        assert!(chains.contains(&Chain::Base));
     }
 
     #[test]

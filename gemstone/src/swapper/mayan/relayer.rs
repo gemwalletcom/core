@@ -48,7 +48,6 @@ impl Default for QuoteOptions {
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-#[allow(dead_code)]
 pub struct Token {
     pub name: String,
     pub standard: String,
@@ -71,7 +70,6 @@ pub struct Token {
 }
 
 #[derive(Debug, PartialEq)]
-#[allow(dead_code)]
 pub enum QuoteType {
     Swift,
     Mctp, // TODO: do we want to support all types?
@@ -92,7 +90,6 @@ impl Display for QuoteType {
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-#[allow(dead_code)]
 pub struct Quote {
     #[serde(rename = "type")]
     pub r#type: String,
@@ -176,6 +173,7 @@ impl MayanRelayer {
             params.from_chain.to_string()
         };
 
+        // FIXME add struct and serde_urlencoded
         let mut query_params = vec![
             ("swift", options.swift.to_string()),
             ("mctp", options.mctp.to_string()),
