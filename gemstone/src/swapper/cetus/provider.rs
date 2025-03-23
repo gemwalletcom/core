@@ -1,5 +1,6 @@
 use alloy_core::primitives::U256;
 use async_trait::async_trait;
+use base64::{engine::general_purpose::STANDARD, Engine as _};
 use bcs;
 use futures::join;
 use num_bigint::BigInt;
@@ -23,7 +24,10 @@ use crate::{
     network::AlienProvider,
     sui::{
         gas_budget::GasBudgetCalculator,
-        rpc::{models::InspectEvent, SuiClient},
+        rpc::{
+            models::{InspectEvent, InspectResult},
+            SuiClient,
+        },
     },
     swapper::{
         slippage::apply_slippage_in_bp, FetchQuoteData, GemSwapMode, GemSwapProvider, SwapChainAsset, SwapProvider, SwapProviderData, SwapProviderType,
@@ -98,6 +102,12 @@ impl Cetus {
         amount: BigInt,
         client: Arc<SuiClient>,
     ) -> Result<CalculatedSwapResult, anyhow::Error> {
+        let call = self.pre_swap_call(pool, pool_obj, a2b, buy_amount_in, amount)?;
+        let result: InspectResult = client.rpc_call(call).await?;
+        self.decode_swap_result(&result)
+    }
+
+    fn pre_swap_call(&self, pool: &CetusPool, pool_obj: &SharedObject, a2b: bool, buy_amount_in: bool, amount: BigInt) -> Result<SuiRpc, anyhow::Error> {
         let mut ptb = ProgrammableTransactionBuilder::new();
         let type_args = vec![TypeTag::from_str(&pool.coin_a_address)?, TypeTag::from_str(&pool.coin_b_address)?];
         let args = [
@@ -121,9 +131,14 @@ impl Cetus {
         let tx = ptb.finish();
         let tx_kind = TransactionKind::ProgrammableTransaction(tx);
         let tx_bytes = bcs::to_bytes(&tx_kind).unwrap();
-        let result = client.inspect_tx_block(EMPTY_ADDRESS, &tx_bytes).await?;
-        let event = result.events.as_array().map(|x| x.first().unwrap()).unwrap();
-        let event_data: InspectEvent<SuiData<CalculatedSwapResult>> = serde_json::from_value(event.clone()).unwrap();
+        Ok(SuiRpc::InspectTransactionBlock(EMPTY_ADDRESS.to_string(), STANDARD.encode(tx_bytes)))
+    }
+
+    fn decode_swap_result(&self, result: &InspectResult) -> Result<CalculatedSwapResult, anyhow::Error> {
+        let event = result.events.as_array().map(|x| x.first().unwrap()).ok_or(SwapperError::ComputeQuoteError {
+            msg: "Failed to get event".to_string(),
+        })?;
+        let event_data: InspectEvent<SuiData<CalculatedSwapResult>> = serde_json::from_value(event.clone())?;
         Ok(event_data.parsed_json.data)
     }
 }
@@ -139,10 +154,6 @@ impl GemSwapProvider for Cetus {
     }
 
     async fn fetch_quote(&self, request: &SwapQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapQuote, SwapperError> {
-        if request.from_asset.chain != Chain::Sui || request.to_asset.chain != Chain::Sui {
-            return Err(SwapperError::NotSupportedChain);
-        }
-
         let from_coin = Self::get_coin_address(&request.from_asset);
         let to_coin = Self::get_coin_address(&request.to_asset);
         let amount_in = BigInt::from_str(&request.value).map_err(|_| SwapperError::InvalidAmount)?;
@@ -160,28 +171,24 @@ impl GemSwapProvider for Cetus {
 
         // Create a single SuiClient that can be reused
         let sui_client = Arc::new(SuiClient::new(provider.clone()));
-        let from_coin_clone = from_coin.clone();
 
-        // Batch fetch pool data
-        let pool_data_futures = top_pools.iter().map(|pool| {
-            let from_coin = from_coin_clone.clone();
-            let sui_client = sui_client.clone();
-            async move {
-                let pool_data: CetusPoolType = sui_client
-                    .rpc_call(SuiRpc::GetObject(pool.address.to_string(), Some(ObjectDataOptions::default())))
-                    .await?;
+        let rpc_call = SuiRpc::GetMultipleObjects(
+            top_pools.iter().map(|pool| pool.address.to_string()).collect(),
+            Some(ObjectDataOptions::default()),
+        );
+
+        let pool_datas: Vec<CetusPoolType> = sui_client.rpc_call(rpc_call).await?;
+
+        let pool_quotes = top_pools
+            .into_iter()
+            .zip(pool_datas.into_iter())
+            .map(|(pool, pool_data)| {
                 let shared_object = SharedObject {
                     id: pool_data.data.object_id,
                     shared_version: pool_data.data.initial_shared_version().expect("Initial shared version should be available"),
                 };
-                Ok::<_, SwapperError>((pool, pool_data, shared_object, pool.coin_a_address == from_coin))
-            }
-        });
-
-        let pool_quotes = futures::future::join_all(pool_data_futures)
-            .await
-            .into_iter()
-            .filter_map(Result::ok)
+                (pool, pool_data, shared_object, pool.coin_a_address == from_coin)
+            })
             .collect::<Vec<_>>();
 
         if pool_quotes.is_empty() {
