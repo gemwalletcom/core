@@ -137,7 +137,7 @@ impl Cetus {
 
     fn decode_swap_result(&self, result: &InspectResult) -> Result<CalculatedSwapResult, anyhow::Error> {
         let event = result.events.as_array().map(|x| x.first().unwrap()).ok_or(SwapperError::ComputeQuoteError {
-            msg: "Failed to get event".to_string(),
+            msg: format!("Failed to get event from InspectResult: {:?}", result),
         })?;
         let event_data: InspectEvent<SuiData<CalculatedSwapResult>> = serde_json::from_value(event.clone())?;
         Ok(event_data.parsed_json.data)
