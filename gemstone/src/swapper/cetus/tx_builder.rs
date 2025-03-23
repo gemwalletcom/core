@@ -1,12 +1,12 @@
 use crate::sui::rpc::CoinAsset;
 use anyhow::{anyhow, Result};
-use gem_sui::{SUI_CLOCK_OBJECT_ID, SUI_COIN_TYPE_FULL, SUI_FRAMEWORK_PACKAGE_ID};
+use gem_sui::{address_from_u8, object_id_from_u8, SUI_CLOCK_OBJECT_ID, SUI_COIN_TYPE_FULL, SUI_FRAMEWORK_PACKAGE_ID};
 use num_bigint::BigInt;
 use num_traits::ToPrimitive;
 use std::str::FromStr;
 
 use sui_transaction_builder::{unresolved::Input, Function, Serialized, TransactionBuilder as ProgrammableTransactionBuilder};
-use sui_types::{Address, Argument, Identifier, ObjectId, TypeTag};
+use sui_types::{Argument, Identifier, ObjectId, TypeTag};
 
 use super::models::{CetusConfig, SwapParams};
 
@@ -36,7 +36,7 @@ pub struct TransactionBuilder;
 impl TransactionBuilder {
     pub fn build_zero_value_coin(all_coins: &[CoinAsset], ptb: &mut ProgrammableTransactionBuilder, coin_type: &str) -> Result<BuildCoinResult> {
         let function = Function::new(
-            Address::from_u8(SUI_FRAMEWORK_PACKAGE_ID),
+            address_from_u8(SUI_FRAMEWORK_PACKAGE_ID),
             Identifier::from_str(MODULE_COIN)?,
             Identifier::from_str(FUNCTION_ZERO)?,
             vec![TypeTag::from_str(coin_type)?],
@@ -215,7 +215,7 @@ impl TransactionBuilder {
         args.push(ptb.input(Serialized(&sqrt_price_limit)));
 
         // Add clock
-        args.push(ptb.input(Input::shared(ObjectId::from_u8(SUI_CLOCK_OBJECT_ID), 1, false)));
+        args.push(ptb.input(Input::shared(object_id_from_u8(SUI_CLOCK_OBJECT_ID), 1, false)));
 
         // Make the move call
         let function = Function::new(
