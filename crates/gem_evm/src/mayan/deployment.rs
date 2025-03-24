@@ -72,13 +72,6 @@ pub fn get_swift_providers() -> HashMap<Chain, MayanSwiftDeployment> {
                 wormhole_id: WormholeId::Base,
             },
         ),
-        (
-            Chain::Sui,
-            MayanSwiftDeployment {
-                address: "0xC38e4e6A15593f908255214653d3D947CA1c2338".to_string(),
-                wormhole_id: WormholeId::Sui,
-            },
-        ),
     ])
 }
 
