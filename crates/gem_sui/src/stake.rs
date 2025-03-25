@@ -27,10 +27,10 @@ pub fn encode_split_and_stake(input: &StakeInput) -> Result<TxOutput, Error> {
 
     // split new coin to stake
     let stake_amount = ptb.input(Serialized(&input.stake_amount));
-    let split_result = match ptb.split_coins(ptb.gas(), vec![stake_amount]) {
-        Argument::Result(idx) => Argument::NestedResult(idx, 0),
-        _ => return Err(anyhow!("failed to split coins")),
+    let Argument::Result(idx) = ptb.split_coins(ptb.gas(), vec![stake_amount]) else {
+        panic!("split_coins should always give a Argument::Result");
     };
+    let split_result = Argument::NestedResult(idx, 0);
 
     // move call request_add_stake
     let function = Function::new(

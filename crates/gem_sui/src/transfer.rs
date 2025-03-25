@@ -19,10 +19,10 @@ pub fn encode_transfer(input: &TransferInput) -> Result<TxOutput, Error> {
         ptb.transfer_objects(vec![ptb.gas()], recipient_argument);
     } else {
         let amount = ptb.input(Serialized(&input.amount));
-        let split_result = match ptb.split_coins(ptb.gas(), vec![amount]) {
-            Argument::Result(idx) => Argument::NestedResult(idx, 0),
-            _ => panic!("self.command should always give a Argument::Result"),
+        let Argument::Result(idx) = ptb.split_coins(ptb.gas(), vec![amount]) else {
+            panic!("split_coins should always give a Argument::Result")
         };
+        let split_result = Argument::NestedResult(idx, 0);
         let recipient_argument = ptb.input(Serialized(&recipient));
 
         ptb.transfer_objects(vec![split_result], recipient_argument);
@@ -59,10 +59,10 @@ pub fn encode_token_transfer(input: &TokenTransferInput) -> Result<TxOutput, Err
 
     // Split and transfer
     let amount = ptb.input(Serialized(&input.amount));
-    let split_result = match ptb.split_coins(first_coin, vec![amount]) {
-        Argument::Result(idx) => Argument::NestedResult(idx, 0),
-        _ => return Err(anyhow!("failed to split coins")),
+    let Argument::Result(idx) = ptb.split_coins(first_coin, vec![amount]) else {
+        panic!("self.command should always give a Argument::Result")
     };
+    let split_result = Argument::NestedResult(idx, 0);
     let recipient_argument = ptb.input(Serialized(&recipient));
     ptb.transfer_objects(vec![split_result], recipient_argument);
 
