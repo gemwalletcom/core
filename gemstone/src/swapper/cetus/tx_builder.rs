@@ -1,6 +1,6 @@
 use crate::sui::rpc::CoinAsset;
 use anyhow::{anyhow, Result};
-use gem_sui::{address_from_u8, object_id_from_u8, SUI_CLOCK_OBJECT_ID, SUI_COIN_TYPE_FULL, SUI_FRAMEWORK_PACKAGE_ID};
+use gem_sui::{sui_clock_object_input, ObjectID, SUI_COIN_TYPE_FULL, SUI_FRAMEWORK_PACKAGE_ID};
 use num_bigint::BigInt;
 use num_traits::ToPrimitive;
 use std::str::FromStr;
@@ -36,7 +36,7 @@ pub struct TransactionBuilder;
 impl TransactionBuilder {
     pub fn build_zero_value_coin(all_coins: &[CoinAsset], ptb: &mut ProgrammableTransactionBuilder, coin_type: &str) -> Result<BuildCoinResult> {
         let function = Function::new(
-            address_from_u8(SUI_FRAMEWORK_PACKAGE_ID),
+            ObjectID::from(SUI_FRAMEWORK_PACKAGE_ID).addr(),
             Identifier::from_str(MODULE_COIN)?,
             Identifier::from_str(FUNCTION_ZERO)?,
             vec![TypeTag::from_str(coin_type)?],
@@ -215,7 +215,7 @@ impl TransactionBuilder {
         args.push(ptb.input(Serialized(&sqrt_price_limit)));
 
         // Add clock
-        args.push(ptb.input(Input::shared(object_id_from_u8(SUI_CLOCK_OBJECT_ID), 1, false)));
+        args.push(ptb.input(sui_clock_object_input()));
 
         // Make the move call
         let function = Function::new(
