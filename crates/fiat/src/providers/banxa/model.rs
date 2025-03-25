@@ -53,6 +53,8 @@ pub struct Prices {
 #[derive(Debug, Deserialize, Clone)]
 pub struct Price {
     #[serde(deserialize_with = "deserialize_f64_from_str")]
+    pub spot_price_including_fee: f64,
+    #[serde(deserialize_with = "deserialize_f64_from_str")]
     pub network_fee: f64,
     #[serde(deserialize_with = "deserialize_f64_from_str")]
     pub fee_amount: f64,

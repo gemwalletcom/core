@@ -132,7 +132,7 @@ impl BanxaClient {
     }
 
     pub fn get_fiat_sell_quote(&self, request: FiatSellQuote, fiat_mapping: FiatMapping, price: Price) -> FiatQuote {
-        let fiat_amount = (price.fiat_amount + price.fee_amount + price.network_fee) / request.crypto_amount;
+        let fiat_amount = price.spot_price_including_fee * request.crypto_amount;
         let redirect_url = self.get_redirect_sell_url(request.clone(), fiat_mapping);
 
         FiatQuote {
