@@ -21,7 +21,7 @@ pub trait NFTProvider: Send + Sync {
 #[allow(unused)]
 pub struct NFT {
     nftscan_client: NFTScanClient,
-    _opensea_client: OpenSeaClient,
+    opensea_client: OpenSeaClient,
     magiceden_client: MagicEdenClient,
 }
 
@@ -29,7 +29,7 @@ impl NFT {
     pub fn new(nftscan_key: &str, opensea_key: &str, magiceden_key: &str) -> Self {
         Self {
             nftscan_client: NFTScanClient::new(nftscan_key),
-            _opensea_client: OpenSeaClient::new(opensea_key),
+            opensea_client: OpenSeaClient::new(opensea_key),
             magiceden_client: MagicEdenClient::new(magiceden_key),
         }
     }
@@ -48,7 +48,7 @@ impl NFT {
 
     pub async fn get_asset_ids(&self, chain: Chain, address: &str) -> Result<Vec<NFTAssetId>, Box<dyn std::error::Error + Send + Sync>> {
         match chain {
-            Chain::Ethereum => self.nftscan_client.get_assets(chain, address.to_string()).await,
+            Chain::Ethereum => self.opensea_client.get_assets(chain, address.to_string()).await,
             Chain::Solana => self.magiceden_client.get_assets(chain, address.to_string()).await,
             _ => Ok(vec![]),
         }
@@ -56,7 +56,7 @@ impl NFT {
 
     pub async fn get_collection(&self, collection_id: NFTCollectionId) -> Result<NFTCollection, Box<dyn std::error::Error + Send + Sync>> {
         match collection_id.chain {
-            Chain::Ethereum => self.nftscan_client.get_collection(collection_id).await,
+            Chain::Ethereum => self.opensea_client.get_collection(collection_id).await,
             Chain::Solana => self.magiceden_client.get_collection(collection_id).await,
             _ => unimplemented!(),
         }
@@ -64,7 +64,7 @@ impl NFT {
 
     pub async fn get_asset(&self, asset_id: NFTAssetId) -> Result<NFTAsset, Box<dyn std::error::Error + Send + Sync>> {
         match asset_id.chain {
-            Chain::Ethereum => self.nftscan_client.get_asset(asset_id).await,
+            Chain::Ethereum => self.opensea_client.get_asset(asset_id).await,
             Chain::Solana => self.magiceden_client.get_asset(asset_id).await,
             _ => unimplemented!(),
         }

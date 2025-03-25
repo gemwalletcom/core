@@ -33,5 +33,5 @@ pub fn sui_encode_unstake(input: &SuiUnstakeInput) -> Result<SuiTxOutput, Gemsto
 
 #[uniffi::export]
 pub fn sui_validate_and_hash(encoded: String) -> Result<SuiTxOutput, GemstoneError> {
-    gem_sui::validate_and_hash(&encoded).map(SuiTxOutput::from).map_err(GemstoneError::from)
+    gem_sui::tx::validate_and_hash(&encoded).map(SuiTxOutput::from).map_err(GemstoneError::from)
 }

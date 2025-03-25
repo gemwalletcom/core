@@ -1,6 +1,8 @@
 use crate::schema::fiat_providers;
 use crate::{models::*, DatabaseClient};
+use chrono::NaiveDateTime;
 use diesel::associations::HasTable;
+use diesel::dsl::count_star;
 use diesel::prelude::*;
 use diesel::upsert::excluded;
 
@@ -52,6 +54,21 @@ impl DatabaseClient {
     pub fn get_fiat_assets(&mut self) -> Result<Vec<FiatAsset>, diesel::result::Error> {
         use crate::schema::fiat_assets::dsl::*;
         fiat_assets.select(FiatAsset::as_select()).load(&mut self.connection)
+    }
+
+    pub fn get_fiat_assets_popular(&mut self, from: NaiveDateTime, limit: i64) -> Result<Vec<String>, diesel::result::Error> {
+        use crate::schema::fiat_transactions::dsl::*;
+
+        Ok(fiat_transactions
+            .filter(created_at.gt(from))
+            .select(asset_id)
+            .group_by(asset_id)
+            .order_by(count_star().desc())
+            .limit(limit)
+            .load::<Option<String>>(&mut self.connection)?
+            .into_iter()
+            .flatten()
+            .collect())
     }
 
     pub fn get_fiat_assets_for_asset_id(&mut self, _asset_id: &str) -> Result<Vec<FiatAsset>, diesel::result::Error> {

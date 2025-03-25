@@ -2,15 +2,13 @@ use num_bigint::BigInt;
 use serde::Deserialize;
 use serde_serializers::*;
 
-use sui_types::{
-    base_types::{ObjectID, ObjectRef},
-    digests::ObjectDigest,
-};
+use sui_transaction_builder::unresolved::Input;
+use sui_types::{ObjectDigest, ObjectId};
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CoinAsset {
-    pub coin_object_id: ObjectID,
+    pub coin_object_id: ObjectId,
     pub coin_type: String,
     pub digest: ObjectDigest,
     #[serde(deserialize_with = "deserialize_bigint_from_str", serialize_with = "serialize_bigint")]
@@ -20,8 +18,8 @@ pub struct CoinAsset {
 }
 
 impl CoinAsset {
-    pub fn to_ref(&self) -> ObjectRef {
-        (self.coin_object_id, self.version.into(), self.digest)
+    pub fn to_input(&self) -> Input {
+        Input::owned(self.coin_object_id, self.version, self.digest)
     }
 }
 

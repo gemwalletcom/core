@@ -26,7 +26,7 @@ serde_serializers = { path = "../crates/serde_serializers" }
 
 bcs.workspace = true
 sui-types.workspace = true
-
+sui-transaction-builder.workspace = true
 # uniffi
 uniffi.workspace = true
 thiserror.workspace = true
@@ -49,7 +49,7 @@ borsh.workspace = true
 lazy_static.workspace = true
 bigdecimal.workspace = true
 rand.workspace = true
-orca_whirlpools_core = "1.0.0"
+orca_whirlpools_core = "1.0.5"
 
 [build-dependencies]
 uniffi = { workspace = true, features = ["build"] }

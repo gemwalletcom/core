@@ -33,7 +33,7 @@ impl MarketsClient {
         Ok(price_ids.into_iter().filter_map(|price_id| asset_map.get(&price_id).cloned()).collect())
     }
 
-    pub fn set_asset_ids_for_tag(&mut self, tag: AssetTag, asset_ids: Vec<String>) -> Result<(), Box<dyn Error + Send + Sync>> {
+    pub fn set_asset_ids_for_tag(&mut self, tag: AssetTag, asset_ids: Vec<String>) -> Result<usize, Box<dyn Error + Send + Sync>> {
         Ok(self.database.set_assets_tags_for_tag(tag.as_ref(), asset_ids)?)
     }
 
