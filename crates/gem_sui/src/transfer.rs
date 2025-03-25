@@ -14,36 +14,24 @@ pub fn encode_transfer(input: &TransferInput) -> Result<TxOutput, Error> {
 
     let mut ptb = TransactionBuilder::new();
     if input.send_max {
-        // Transfer all objects to recipient
-        let objects: Vec<Argument> = input
-            .coins
-            .clone()
-            .into_iter()
-            .map(|x| {
-                ptb.input(Input::owned(
-                    x.object.object_id.parse().unwrap(),
-                    x.object.version,
-                    x.object.digest.parse().unwrap(),
-                ))
-            })
-            .collect();
         let recipient_argument = ptb.input(Serialized(&recipient));
-        ptb.transfer_objects(objects, recipient_argument);
+
+        ptb.transfer_objects(vec![ptb.gas()], recipient_argument);
     } else {
         let amount = ptb.input(Serialized(&input.amount));
-        let split_result = ptb.split_coins(ptb.gas(), vec![amount]);
+        let split_result = match ptb.split_coins(ptb.gas(), vec![amount]) {
+            Argument::Result(idx) => Argument::NestedResult(idx, 0),
+            _ => panic!("self.command should always give a Argument::Result"),
+        };
         let recipient_argument = ptb.input(Serialized(&recipient));
+
         ptb.transfer_objects(vec![split_result], recipient_argument);
     }
 
-    let coins = input
-        .coins
-        .iter()
-        .map(|x| Input::immutable(x.object.object_id.parse().unwrap(), x.object.version, x.object.digest.parse().unwrap()))
-        .collect::<Vec<_>>();
-
-    crate::tx::fill_tx(&mut ptb, sender, input.gas.price, input.gas.budget, coins);
+    let coins = input.coins.iter().map(|x| x.object.to_input()).collect::<Vec<_>>();
+    super::tx::fill_tx(&mut ptb, sender, input.gas.price, input.gas.budget, coins);
     let tx = ptb.finish()?;
+
     TxOutput::from_tx(&tx)
 }
 
@@ -55,24 +43,11 @@ pub fn encode_token_transfer(input: &TokenTransferInput) -> Result<TxOutput, Err
     let sender = Address::from_str(&input.sender)?;
     let recipient = Address::from_str(&input.recipient)?;
 
-    // Implement pay function manually since it's not available in the new SDK
     if input.tokens.is_empty() {
-        return Err(anyhow!("coins vector is empty"));
+        return Err(anyhow!("tokens vector is empty"));
     }
 
-    // Convert refs to inputs
-    let mut coins_inputs: Vec<Argument> = input
-        .tokens
-        .clone()
-        .into_iter()
-        .map(|x| {
-            ptb.input(Input::owned(
-                x.object.object_id.parse().unwrap(),
-                x.object.version,
-                x.object.digest.parse().unwrap(),
-            ))
-        })
-        .collect();
+    let mut coins_inputs: Vec<Argument> = input.tokens.clone().into_iter().map(|x| ptb.input(x.object.to_input())).collect();
 
     // Get first coin
     let first_coin = coins_inputs.remove(0);
@@ -84,7 +59,10 @@ pub fn encode_token_transfer(input: &TokenTransferInput) -> Result<TxOutput, Err
 
     // Split and transfer
     let amount = ptb.input(Serialized(&input.amount));
-    let split_result = ptb.split_coins(first_coin, vec![amount]);
+    let split_result = match ptb.split_coins(first_coin, vec![amount]) {
+        Argument::Result(idx) => Argument::NestedResult(idx, 0),
+        _ => return Err(anyhow!("failed to split coins")),
+    };
     let recipient_argument = ptb.input(Serialized(&recipient));
     ptb.transfer_objects(vec![split_result], recipient_argument);
 
@@ -94,7 +72,7 @@ pub fn encode_token_transfer(input: &TokenTransferInput) -> Result<TxOutput, Err
         input.gas_coin.object.digest.parse().unwrap(),
     );
 
-    crate::tx::fill_tx(&mut ptb, sender, input.gas.price, input.gas.budget, vec![gas_coin]);
+    super::tx::fill_tx(&mut ptb, sender, input.gas.price, input.gas.budget, vec![gas_coin]);
 
     let tx = ptb.finish()?;
     TxOutput::from_tx(&tx)
@@ -102,8 +80,9 @@ pub fn encode_token_transfer(input: &TokenTransferInput) -> Result<TxOutput, Err
 
 #[cfg(test)]
 mod tests {
-    use crate::SUI_COIN_TYPE;
+    use crate::{tx::decode_transaction, SUI_COIN_TYPE};
     use base64::{engine::general_purpose, Engine as _};
+    use sui_types::Transaction;
 
     use super::*;
 
@@ -130,8 +109,16 @@ mod tests {
         };
 
         let output = encode_transfer(&input).unwrap();
+        let tx: Transaction = bcs::from_bytes(&output.tx_data).unwrap();
         let b64_encoded = general_purpose::STANDARD.encode(output.tx_data);
-        assert_eq!(b64_encoded, "AAABACDmr4D+GwtC/NlnYuXHD16Nrjn48O4PEYysDVW3TiknwgEBAQABAACpvQST+b0feSpK7cH5nVRTWnWkbDj9VqjyxrfI11gXoQGfJYyFVm2Xe0yZu2AZVgupnHlucSkSadj588ydnzfbRoz/EwQAAAAAIOqzQffiRRpexyiDEtyjm40KqFMf60ohK5jCJ0z3+Lqwqb0Ek/m9H3kqSu3B+Z1UU1p1pGw4/Vao8sa3yNdYF6HuAgAAAAAAAEB4fQEAAAAAAA==");
+        let expected_tx = "AAABACDmr4D+GwtC/NlnYuXHD16Nrjn48O4PEYysDVW3TiknwgEBAQABAACpvQST+b0feSpK7cH5nVRTWnWkbDj9VqjyxrfI11gXoQGfJYyFVm2Xe0yZu2AZVgupnHlucSkSadj588ydnzfbRoz/EwQAAAAAIOqzQffiRRpexyiDEtyjm40KqFMf60ohK5jCJ0z3+Lqwqb0Ek/m9H3kqSu3B+Z1UU1p1pGw4/Vao8sa3yNdYF6HuAgAAAAAAAEB4fQEAAAAAAA==";
+        let expected_decoded = decode_transaction(expected_tx).unwrap();
+
+        std::fs::write("transfer.json", serde_json::to_string_pretty(&tx).unwrap()).unwrap();
+        std::fs::write("expected_transfer.json", serde_json::to_string_pretty(&expected_decoded).unwrap()).unwrap();
+
+        assert_eq!(tx, expected_decoded);
+        assert_eq!(b64_encoded, expected_tx);
     }
 
     #[test]
@@ -176,7 +163,12 @@ mod tests {
         };
 
         let output = encode_token_transfer(&input).unwrap();
+        let tx: Transaction = bcs::from_bytes(&output.tx_data).unwrap();
         let b64_encoded = general_purpose::STANDARD.encode(output.tx_data);
-        assert_eq!(b64_encoded, "AAAEAQAaa2Aj02P13K0Cb4PdubsPmHyUHxDbKrhlcXEaGpoe5ji0AAQAAAAAIKZSBGYgBc5PwYeX01SAZHnJYxA3pJRvrUZmR7ToQZTWAQAv2VDzPs355deXyjEwgR56lz1MHaVCesDJEKjF9ui3LTe0AAQAAAAAIFwwpOhb+onitRHRqj+wsEA0nNO2KqqOt8/IVbcC0O7oAAgAGA2PAAAAAAAg5q+A/hsLQvzZZ2Llxw9eja45+PDuDxGMrA1Vt04pJ8IDAwEAAAEBAQACAQAAAQECAAEBAwEAAAABAwCpvQST+b0feSpK7cH5nVRTWnWkbDj9VqjyxrfI11gXoQGJD4xgTHy1zBlNv0lTrT2+vYHvdSa+NR01FMw8wmycHfRmHQQAAAAAICYtptS+v/0HkfChzkJo0QzRDQxhli84CM3mMV/dqUBbqb0Ek/m9H3kqSu3B+Z1UU1p1pGw4/Vao8sa3yNdYF6HuAgAAAAAAAEB4fQEAAAAAAA==");
+        let expected_tx = "AAAEAQAaa2Aj02P13K0Cb4PdubsPmHyUHxDbKrhlcXEaGpoe5ji0AAQAAAAAIKZSBGYgBc5PwYeX01SAZHnJYxA3pJRvrUZmR7ToQZTWAQAv2VDzPs355deXyjEwgR56lz1MHaVCesDJEKjF9ui3LTe0AAQAAAAAIFwwpOhb+onitRHRqj+wsEA0nNO2KqqOt8/IVbcC0O7oAAgAGA2PAAAAAAAg5q+A/hsLQvzZZ2Llxw9eja45+PDuDxGMrA1Vt04pJ8IDAwEAAAEBAQACAQAAAQECAAEBAwEAAAABAwCpvQST+b0feSpK7cH5nVRTWnWkbDj9VqjyxrfI11gXoQGJD4xgTHy1zBlNv0lTrT2+vYHvdSa+NR01FMw8wmycHfRmHQQAAAAAICYtptS+v/0HkfChzkJo0QzRDQxhli84CM3mMV/dqUBbqb0Ek/m9H3kqSu3B+Z1UU1p1pGw4/Vao8sa3yNdYF6HuAgAAAAAAAEB4fQEAAAAAAA==";
+        let expected_decoded = decode_transaction(expected_tx).unwrap();
+
+        assert_eq!(tx, expected_decoded);
+        assert_eq!(b64_encoded, expected_tx);
     }
 }
