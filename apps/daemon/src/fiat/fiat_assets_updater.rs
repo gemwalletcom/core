@@ -1,5 +1,6 @@
+use chrono::{Duration, Utc};
 use fiat::{model::FiatProviderAsset, FiatProvider};
-use primitives::Diff;
+use primitives::{AssetTag, Diff};
 use storage::database::DatabaseClient;
 
 pub struct FiatAssetsUpdater {
@@ -28,6 +29,14 @@ impl FiatAssetsUpdater {
         // let _ = self.database.set_assets_is_sellable(sellable_result.different.clone(), false);
 
         Ok(1)
+    }
+
+    pub async fn update_trending_fiat_assets(&mut self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
+        let from = Utc::now().naive_utc() - Duration::days(30);
+        let asset_ids = self.database.get_fiat_assets_popular(from, 30)?;
+        Ok(self
+            .database
+            .set_assets_tags_for_tag(AssetTag::TrendingFiatPurchase.as_ref(), asset_ids.clone())?)
     }
 
     pub async fn update_fiat_assets(&mut self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
