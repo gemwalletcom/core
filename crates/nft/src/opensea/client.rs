@@ -19,7 +19,8 @@ impl OpenSeaClient {
 
     pub async fn get_nfts_by_account(&self, chain: &str, account_address: &str) -> Result<Vec<NftAsset>, Box<dyn Error + Send + Sync>> {
         let url = format!("{}/api/v2/chain/{}/account/{}/nfts", Self::BASE_URL, chain, account_address);
-        Ok(self.client.get(&url).send().await?.json::<NftsResponse>().await?.nfts)
+        let query = [("limit", 200)];
+        Ok(self.client.get(&url).query(&query).send().await?.json::<NftsResponse>().await?.nfts)
     }
 
     pub async fn get_collection_id(&self, chain: &str, contract_address: &str) -> Result<Collection, Box<dyn Error + Send + Sync>> {
