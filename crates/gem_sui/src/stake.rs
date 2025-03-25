@@ -39,14 +39,17 @@ pub fn encode_split_and_stake(input: &StakeInput) -> Result<TxOutput, Error> {
     let sys_state = ptb.input(Input::shared(object_id_from_u8(SUI_SYSTEM_STATE_OBJECT_ID), 1, true));
     let validator_argument = ptb.input(Serialized(&validator));
 
-    ptb.set_sender(sender);
-    ptb.set_gas_budget(input.gas.budget);
-    ptb.set_gas_price(input.gas.price);
+    crate::tx::fill_tx(
+        &mut ptb,
+        sender,
+        input.gas.price,
+        input.gas.budget,
+        input.coins.iter().map(|x| x.object.to_input()).collect(),
+    );
     ptb.move_call(function, vec![sys_state, split_result, validator_argument]);
 
-    let tx_data = ptb.finish()?;
-
-    TxOutput::from_tx_data(&tx_data)
+    let tx = ptb.finish()?;
+    TxOutput::from_tx(&tx)
 }
 
 pub fn encode_unstake(input: &UnstakeInput) -> Result<TxOutput, Error> {
@@ -58,7 +61,7 @@ pub fn encode_unstake(input: &UnstakeInput) -> Result<TxOutput, Error> {
         input.staked_sui.version,
         input.staked_sui.digest.parse().unwrap(),
     ));
-    let gas_coin = Input::immutable(
+    let gas_coin = Input::owned(
         input.gas_coin.object.object_id.parse().unwrap(),
         input.gas_coin.object.version,
         input.gas_coin.object.digest.parse().unwrap(),
@@ -75,13 +78,9 @@ pub fn encode_unstake(input: &UnstakeInput) -> Result<TxOutput, Error> {
 
     ptb.move_call(function, vec![sys_state, staked_sui]);
 
-    ptb.set_sender(sender);
-    ptb.set_gas_budget(input.gas.budget);
-    ptb.set_gas_price(input.gas.price);
-    ptb.add_gas_objects(vec![gas_coin]);
-    let tx_data = ptb.finish()?;
-
-    TxOutput::from_tx_data(&tx_data)
+    crate::tx::fill_tx(&mut ptb, sender, input.gas.price, input.gas.budget, vec![gas_coin]);
+    let tx = ptb.finish()?;
+    TxOutput::from_tx(&tx)
 }
 
 #[cfg(test)]

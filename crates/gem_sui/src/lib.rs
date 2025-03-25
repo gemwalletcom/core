@@ -1,9 +1,8 @@
-pub mod decoder;
 pub mod jsonrpc;
 pub mod model;
 pub mod stake;
 pub mod transfer;
-pub use decoder::*;
+pub mod tx;
 pub use stake::*;
 pub use transfer::*;
 

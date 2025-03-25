@@ -42,12 +42,9 @@ pub fn encode_transfer(input: &TransferInput) -> Result<TxOutput, Error> {
         .map(|x| Input::immutable(x.object.object_id.parse().unwrap(), x.object.version, x.object.digest.parse().unwrap()))
         .collect::<Vec<_>>();
 
-    ptb.set_gas_budget(input.gas.budget);
-    ptb.set_gas_price(input.gas.price);
-    ptb.set_sender(sender);
-    ptb.add_gas_objects(coins);
-    let tx_data = ptb.finish()?;
-    TxOutput::from_tx_data(&tx_data)
+    crate::tx::fill_tx(&mut ptb, sender, input.gas.price, input.gas.budget, coins);
+    let tx = ptb.finish()?;
+    TxOutput::from_tx(&tx)
 }
 
 pub fn encode_token_transfer(input: &TokenTransferInput) -> Result<TxOutput, Error> {
@@ -97,14 +94,10 @@ pub fn encode_token_transfer(input: &TokenTransferInput) -> Result<TxOutput, Err
         input.gas_coin.object.digest.parse().unwrap(),
     );
 
-    ptb.set_sender(sender);
-    ptb.set_gas_budget(input.gas.budget);
-    ptb.set_gas_price(input.gas.price);
-    ptb.add_gas_objects(vec![gas_coin]);
+    crate::tx::fill_tx(&mut ptb, sender, input.gas.price, input.gas.budget, vec![gas_coin]);
 
-    let tx_data = ptb.finish()?;
-
-    TxOutput::from_tx_data(&tx_data)
+    let tx = ptb.finish()?;
+    TxOutput::from_tx(&tx)
 }
 
 #[cfg(test)]

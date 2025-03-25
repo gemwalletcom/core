@@ -2,6 +2,7 @@ use num_bigint::BigInt;
 use serde::Deserialize;
 use serde_serializers::*;
 
+use sui_transaction_builder::unresolved::Input;
 use sui_types::{ObjectDigest, ObjectId};
 
 #[derive(Debug, Clone, Deserialize)]
@@ -14,6 +15,12 @@ pub struct CoinAsset {
     pub balance: BigInt,
     #[serde(deserialize_with = "deserialize_u64_from_str", serialize_with = "serialize_u64")]
     pub version: u64,
+}
+
+impl CoinAsset {
+    pub fn to_input(&self) -> Input {
+        Input::owned(self.coin_object_id, self.version, self.digest)
+    }
 }
 
 #[derive(Debug, Clone, Deserialize)]

@@ -1,6 +1,7 @@
 use anyhow::Error;
 use base64::{engine::general_purpose, Engine as _};
 use bcs;
+use sui_transaction_builder::unresolved::Input;
 use sui_types::Transaction;
 
 #[derive(Debug, PartialEq, Clone)]
@@ -15,6 +16,12 @@ pub struct Object {
     pub object_id: String,
     pub digest: String,
     pub version: u64,
+}
+
+impl Object {
+    pub fn to_input(&self) -> Input {
+        Input::owned(self.object_id.parse().unwrap(), self.version, self.digest.parse().unwrap())
+    }
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -67,11 +74,11 @@ pub struct TxOutput {
 }
 
 impl TxOutput {
-    pub fn from_tx_data(tx_data: &Transaction) -> Result<Self, Error> {
+    pub fn from_tx(tx_data: &Transaction) -> Result<Self, Error> {
         let digest = tx_data.signing_digest();
-
+        let tx_data = bcs::to_bytes(tx_data)?;
         Ok(Self {
-            tx_data: bcs::to_bytes(tx_data)?,
+            tx_data,
             hash: digest.to_vec(),
         })
     }
