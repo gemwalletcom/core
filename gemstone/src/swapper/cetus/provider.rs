@@ -6,12 +6,8 @@ use futures::join;
 use num_bigint::BigInt;
 use num_traits::{ToBytes, ToPrimitive};
 use std::{str::FromStr, sync::Arc};
-use sui_types::{
-    base_types::ObjectID,
-    programmable_transaction_builder::ProgrammableTransactionBuilder,
-    transaction::{Command, ObjectArg, TransactionData, TransactionKind},
-    Identifier, TypeTag,
-};
+use sui_transaction_builder::{unresolved::Input, Function, Serialized, TransactionBuilder as ProgrammableTransactionBuilder};
+use sui_types::{Address, Identifier, ObjectId, TypeTag};
 
 use super::{
     api::{models::CetusPool, CetusClient},
@@ -70,15 +66,15 @@ impl Cetus {
     pub fn get_clmm_config(&self) -> Result<CetusConfig, SwapperError> {
         Ok(CetusConfig {
             global_config: SharedObject {
-                id: ObjectID::from_str(CETUS_GLOBAL_CONFIG_ID).unwrap(),
+                id: ObjectId::from_str(CETUS_GLOBAL_CONFIG_ID).unwrap(),
                 shared_version: CETUS_GLOBAL_CONFIG_SHARED_VERSION,
             },
             partner: Some(SharedObject {
-                id: ObjectID::from_str(CETUS_MAINNET_PARTNER_ID).unwrap(),
+                id: ObjectId::from_str(CETUS_MAINNET_PARTNER_ID).unwrap(),
                 shared_version: CETUS_PARTNER_SHARED_VERSION,
             }),
-            clmm_pool: ObjectID::from_str(CETUS_CLMM_PACKAGE_ID).unwrap(),
-            router: ObjectID::from_str(CETUS_ROUTER_PACKAGE_ID).unwrap(),
+            clmm_pool: ObjectId::from_str(CETUS_CLMM_PACKAGE_ID).unwrap(),
+            router: Address::from_str(CETUS_ROUTER_PACKAGE_ID).unwrap(),
         })
     }
 
@@ -111,27 +107,24 @@ impl Cetus {
     fn pre_swap_call(&self, pool: &CetusPool, pool_obj: &SharedObject, a2b: bool, buy_amount_in: bool, amount: BigInt) -> Result<SuiRpc, anyhow::Error> {
         let mut ptb = ProgrammableTransactionBuilder::new();
         let type_args = vec![TypeTag::from_str(&pool.coin_a_address)?, TypeTag::from_str(&pool.coin_b_address)?];
-        let args = [
-            ptb.obj(ObjectArg::SharedObject {
-                id: pool_obj.id,
-                initial_shared_version: pool_obj.initial_shared_version(),
-                mutable: false,
-            })?,
-            ptb.pure(a2b)?,
-            ptb.pure(buy_amount_in)?,
-            ptb.pure(amount.to_u64().unwrap_or(0))?,
+
+        let arguments = vec![
+            ptb.input(Input::shared(pool_obj.id, pool_obj.shared_version, false)),
+            ptb.input(Serialized(&a2b)),
+            ptb.input(Serialized(&buy_amount_in)),
+            ptb.input(Serialized(&amount.to_u64().unwrap_or(0))),
         ];
-        let move_call = Command::move_call(
-            ObjectID::from_str(CETUS_ROUTER_PACKAGE_ID)?,
+        let function = Function::new(
+            Address::from_str(CETUS_ROUTER_PACKAGE_ID)?,
             Identifier::from_str("fetcher_script")?,
             Identifier::from_str("calculate_swap_result")?,
             type_args,
-            args.to_vec(),
         );
-        ptb.command(move_call);
-        let tx = ptb.finish();
-        let tx_kind = TransactionKind::ProgrammableTransaction(tx);
-        let tx_bytes = bcs::to_bytes(&tx_kind).unwrap();
+
+        ptb.move_call(function, arguments);
+
+        let tx = gem_sui::tx::prefill_tx(ptb);
+        let tx_bytes = bcs::to_bytes(&tx.kind).unwrap();
         Ok(SuiRpc::InspectTransactionBlock(EMPTY_ADDRESS.to_string(), STANDARD.encode(tx_bytes)))
     }
 
@@ -298,13 +291,15 @@ impl GemSwapProvider for Cetus {
         };
 
         // Build tx
-        let ptb = TransactionBuilder::build_swap_transaction(&cetus_config, &swap_params, &all_coin_assets).map_err(|e| SwapperError::TransactionError {
-            msg: format!("Failed to build swap transaction: {}", e),
-        })?;
-        let tx = ptb.finish();
+        let mut ptb =
+            TransactionBuilder::build_swap_transaction(&cetus_config, &swap_params, &all_coin_assets).map_err(|e| SwapperError::TransactionError {
+                msg: format!("Failed to build swap transaction: {}", e),
+            })?;
+
+        let tx = gem_sui::tx::prefill_tx(ptb.clone());
 
         // Estimate gas_budget
-        let tx_kind = TransactionKind::ProgrammableTransaction(tx.clone());
+        let tx_kind = tx.kind.clone();
         let tx_bytes = bcs::to_bytes(&tx_kind).map_err(|e| SwapperError::TransactionError { msg: e.to_string() })?;
         let inspect_result = sui_client.inspect_tx_block(&quote.request.wallet_address, &tx_bytes).await?;
         let gas_budget = GasBudgetCalculator::gas_budget(&inspect_result.effects.gas_used);
@@ -314,11 +309,12 @@ impl GemSwapProvider for Cetus {
         let coin_refs = all_coin_assets
             .iter()
             .filter(|x| x.coin_type == SUI_COIN_TYPE_FULL)
-            .map(|x| x.to_ref())
+            .map(|x| x.to_input())
             .collect::<Vec<_>>();
 
-        let tx_data = TransactionData::new_programmable(sender_address, coin_refs, tx, gas_budget, gas_price);
-        let tx_output = TxOutput::from_tx_data(&tx_data).unwrap();
+        gem_sui::tx::fill_tx(&mut ptb, sender_address, gas_price, gas_budget, coin_refs);
+        let tx = ptb.finish().map_err(|e| SwapperError::TransactionError { msg: e.to_string() })?;
+        let tx_output = TxOutput::from_tx(&tx).unwrap();
 
         Ok(SwapQuoteData {
             to: "".to_string(),
@@ -332,19 +328,19 @@ impl GemSwapProvider for Cetus {
 
 #[cfg(test)]
 mod tests {
-    use sui_types::digests::ObjectDigest;
-
     use super::*;
     use crate::sui::{
         gas_budget,
         rpc::{models::InspectGasUsed, CoinAsset},
     };
+    use gem_sui::tx::decode_transaction;
+    use sui_types::{ObjectDigest, Transaction, TransactionKind};
 
     #[test]
     fn test_build_swap_transaction() {
         let provider = Cetus::default();
         let cetus_config = provider.get_clmm_config().unwrap();
-        let sender_address = "0xa9bd0493f9bd1f792a4aedc1f99d54535a75a46c38fd56a8f2c6b7c8d75817a1".parse().unwrap();
+        let sender_address = "0xa9bd0493f9bd1f792a4aedc1f99d54535a75a46c38fd56a8f2c6b7c8d75817a1".parse::<Address>().unwrap();
 
         let route_data = include_str!("test/route_data.json");
         let route_data: RoutePoolData = serde_json::from_str(route_data).unwrap();
@@ -367,40 +363,45 @@ mod tests {
 
         let all_coins = vec![
             CoinAsset {
-                coin_object_id: ObjectID::from_hex_literal("0xf16c8050267480b521889587515e40d10db27bf526b516b8c38421e5fa2c43e2").unwrap(),
+                coin_object_id: ObjectId::from_str("0xf16c8050267480b521889587515e40d10db27bf526b516b8c38421e5fa2c43e2").unwrap(),
                 coin_type: SUI_COIN_TYPE_FULL.into(),
                 digest: ObjectDigest::from_str("4Wr3NarWTJb2jpgtyE1siYxsB4EPtWuzCMCoYBQTXpkZ").unwrap(),
                 balance: BigInt::from(1340089353u64),
                 version: 508024613,
             },
             CoinAsset {
-                coin_object_id: ObjectID::from_hex_literal("0xd8fd7990d0e74997ec0956be16336b9451cc29586ef224548d45e833ac926873").unwrap(),
+                coin_object_id: ObjectId::from_str("0xd8fd7990d0e74997ec0956be16336b9451cc29586ef224548d45e833ac926873").unwrap(),
                 coin_type: SUI_COIN_TYPE_FULL.into(),
                 digest: ObjectDigest::from_str("4yuV6Hjfe1cHnNhiB7MTkhGHtLxSVhmJ7pUuFQbzPpp").unwrap(),
                 balance: BigInt::from(1011267243u64),
                 version: 508024613,
             },
         ];
-        let coin_refs = all_coins.iter().map(|x| x.to_ref()).collect::<Vec<_>>();
 
-        let ptb = TransactionBuilder::build_swap_transaction(&cetus_config, &params, &all_coins).unwrap();
-        let tx = ptb.finish();
+        let mut ptb = TransactionBuilder::build_swap_transaction(&cetus_config, &params, &all_coins).unwrap();
+        let tx = gem_sui::tx::prefill_tx(ptb.clone());
 
-        let tx_kind = TransactionKind::ProgrammableTransaction(tx.clone());
-        let tx_bytes = bcs::to_bytes(&tx_kind).unwrap();
+        let expected_kind= "AAkACAAvaFkAAAAAAQHapGKSYyw8TY8x8j6g+bNqKP82d+loSYDkQ4QDpno9jy4FGAAAAAAAAQEBUeiDunwLVmomy8ipTNM+sKvUGKd8weYK0i/ZsfKc0qv7mnEWAAAAAAEBAQixh1tlQchH8F7XHQTLz6ZuToYZvzuJI7B8W1QJQzNmHn5DHgAAAAABAAEBAAgAL2hZAAAAAAAI3l0zAAAAAAAAEK8zG6gyf7s1scT+/wAAAAABAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGAQAAAAAAAAAAAwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgRjb2luBHplcm8BB9ujRnLjDLBlsfk+OrVTGHaP1v72bBWULJ98uEbi+QDnBHVzZGMEVVNEQwAAAgABAQAAADpaqQ/6M9CRANe2lB6hwP/mq2bncGLd0mMgwbBzqrsQDnBvb2xfc2NyaXB0X3YyFXN3YXBfYjJhX3dpdGhfcGFydG5lcgIH26NGcuMMsGWx+T46tVMYdo/W/vZsFZQsn3y4RuL5AOcEdXNkYwRVU0RDAAcAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgNzdWkDU1VJAAoBAQABAgABAwACAAACAQABBAABBQABBgABBwABCAA=";
+        let expected_decoded: TransactionKind = decode_transaction(expected_kind).unwrap();
+
+        assert_eq!(STANDARD.encode(bcs::to_bytes(&tx.kind).unwrap()), expected_kind);
+        assert_eq!(tx.kind, expected_decoded);
+
         let gas_used = InspectGasUsed {
             computation_cost: 750000,
             storage_cost: 16818800,
             storage_rebate: 14363316,
         };
         let gas_budget = gas_budget::GasBudgetCalculator::gas_budget(&gas_used);
+        gem_sui::tx::fill_tx(&mut ptb, sender_address, 750, gas_budget, all_coins.iter().map(|x| x.to_input()).collect());
 
-        assert_eq!(STANDARD.encode(tx_bytes), "AAgACAAvaFkAAAAAAQHapGKSYyw8TY8x8j6g+bNqKP82d+loSYDkQ4QDpno9jy4FGAAAAAAAAQEBUeiDunwLVmomy8ipTNM+sKvUGKd8weYK0i/ZsfKc0qv7mnEWAAAAAAEBAQixh1tlQchH8F7XHQTLz6ZuToYZvzuJI7B8W1QJQzNmHn5DHgAAAAABAAEBAAjeXTMAAAAAAAAQrzMbqDJ/uzWxxP7/AAAAAAEBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAYBAAAAAAAAAAADAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACBGNvaW4EemVybwEH26NGcuMMsGWx+T46tVMYdo/W/vZsFZQsn3y4RuL5AOcEdXNkYwRVU0RDAAACAAEBAAAAOlqpD/oz0JEA17aUHqHA/+arZudwYt3SYyDBsHOquxAOcG9vbF9zY3JpcHRfdjIVc3dhcF9iMmFfd2l0aF9wYXJ0bmVyAgfbo0Zy4wywZbH5Pjq1Uxh2j9b+9mwVlCyffLhG4vkA5wR1c2RjBFVTREMABwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACA3N1aQNTVUkACgEBAAECAAEDAAIAAAIBAAEEAAEAAAEFAAEGAAEHAA==");
+        let tx = ptb.finish().expect("Failed to build tx");
+        let tx_output = TxOutput::from_tx(&tx).unwrap();
+        let expected_tx = "AAAJAAgAL2hZAAAAAAEB2qRikmMsPE2PMfI+oPmzaij/NnfpaEmA5EOEA6Z6PY8uBRgAAAAAAAEBAVHog7p8C1ZqJsvIqUzTPrCr1BinfMHmCtIv2bHynNKr+5pxFgAAAAABAQEIsYdbZUHIR/Be1x0Ey8+mbk6GGb87iSOwfFtUCUMzZh5+Qx4AAAAAAQABAQAIAC9oWQAAAAAACN5dMwAAAAAAABCvMxuoMn+7NbHE/v8AAAAAAQEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABgEAAAAAAAAAAAMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIEY29pbgR6ZXJvAQfbo0Zy4wywZbH5Pjq1Uxh2j9b+9mwVlCyffLhG4vkA5wR1c2RjBFVTREMAAAIAAQEAAAA6WqkP+jPQkQDXtpQeocD/5qtm53Bi3dJjIMGwc6q7EA5wb29sX3NjcmlwdF92MhVzd2FwX2IyYV93aXRoX3BhcnRuZXICB9ujRnLjDLBlsfk+OrVTGHaP1v72bBWULJ98uEbi+QDnBHVzZGMEVVNEQwAHAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIDc3VpA1NVSQAKAQEAAQIAAQMAAgAAAgEAAQQAAQUAAQYAAQcAAQgAqb0Ek/m9H3kqSu3B+Z1UU1p1pGw4/Vao8sa3yNdYF6EC8WyAUCZ0gLUhiJWHUV5A0Q2ye/UmtRa4w4Qh5fosQ+Il10ceAAAAACA0OFre4GX55ePHjlikxbwgC6amVlPjoneYZeKqSQLRKtj9eZDQ50mX7AlWvhYza5RRzClYbvIkVI1F6DOskmhzJddHHgAAAAAgAQUVwujMoqGWQ1H+T/jFIOV5DzYLyA5euLdj6znzhtWpvQST+b0feSpK7cH5nVRTWnWkbDj9VqjyxrfI11gXoe4CAAAAAAAAtLE6AAAAAAAA";
+        let expected_decoded: Transaction = decode_transaction(expected_tx).unwrap();
 
-        let tx_data = TransactionData::new_programmable(sender_address, coin_refs, tx, gas_budget, 750);
-        let tx_output = TxOutput::from_tx_data(&tx_data).unwrap();
-
-        assert_eq!(STANDARD.encode(tx_output.tx_data), "AAAIAAgAL2hZAAAAAAEB2qRikmMsPE2PMfI+oPmzaij/NnfpaEmA5EOEA6Z6PY8uBRgAAAAAAAEBAVHog7p8C1ZqJsvIqUzTPrCr1BinfMHmCtIv2bHynNKr+5pxFgAAAAABAQEIsYdbZUHIR/Be1x0Ey8+mbk6GGb87iSOwfFtUCUMzZh5+Qx4AAAAAAQABAQAI3l0zAAAAAAAAEK8zG6gyf7s1scT+/wAAAAABAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGAQAAAAAAAAAAAwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgRjb2luBHplcm8BB9ujRnLjDLBlsfk+OrVTGHaP1v72bBWULJ98uEbi+QDnBHVzZGMEVVNEQwAAAgABAQAAADpaqQ/6M9CRANe2lB6hwP/mq2bncGLd0mMgwbBzqrsQDnBvb2xfc2NyaXB0X3YyFXN3YXBfYjJhX3dpdGhfcGFydG5lcgIH26NGcuMMsGWx+T46tVMYdo/W/vZsFZQsn3y4RuL5AOcEdXNkYwRVU0RDAAcAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgNzdWkDU1VJAAoBAQABAgABAwACAAACAQABBAABAAABBQABBgABBwCpvQST+b0feSpK7cH5nVRTWnWkbDj9VqjyxrfI11gXoQLxbIBQJnSAtSGIlYdRXkDRDbJ79Sa1FrjDhCHl+ixD4iXXRx4AAAAAIDQ4Wt7gZfnl48eOWKTFvCALpqZWU+Oid5hl4qpJAtEq2P15kNDnSZfsCVa+FjNrlFHMKVhu8iRUjUXoM6ySaHMl10ceAAAAACABBRXC6MyioZZDUf5P+MUg5XkPNgvIDl64t2PrOfOG1am9BJP5vR95KkrtwfmdVFNadaRsOP1WqPLGt8jXWBeh7gIAAAAAAAC0sToAAAAAAAA=");
-        assert_eq!(hex::encode(tx_output.hash), "a3c4993de414195036774b8309d8af056180b2fc44d832e63b5ee8d26abf3701");
+        assert_eq!(STANDARD.encode(tx_output.tx_data), expected_tx);
+        assert_eq!(tx, expected_decoded);
+        assert_eq!(hex::encode(tx_output.hash), "cf17205e4ad94f5c0e7869ba41524ca9813681aed298c763d5d8c34dd04e591f");
     }
 }
