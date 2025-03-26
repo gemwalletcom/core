@@ -16,6 +16,14 @@ struct TonMessageTransactions {
 #[typeshare(swift = "Sendable")]
 struct TonTransactionMessage {
     hash: String,
+    out_msgs: Vec<TonTransactionOutMessage>,
+}
+
+#[typeshare(swift = "Sendable")]
+struct TonTransactionOutMessage {
+    hash: String,
+    bounce: bool,
+    bounced: bool,
 }
 
 #[typeshare(swift = "Sendable")]
