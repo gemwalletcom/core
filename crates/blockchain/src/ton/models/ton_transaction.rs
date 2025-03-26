@@ -9,6 +9,11 @@ struct TonTransactionId {
 }
 
 #[typeshare(swift = "Sendable")]
+struct TonMessageTransactions {
+    transactions: Vec<TonTransactionMessage>,
+}
+
+#[typeshare(swift = "Sendable")]
 struct TonTransactionMessage {
     hash: String,
 }
