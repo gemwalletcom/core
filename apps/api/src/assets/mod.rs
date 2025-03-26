@@ -1,5 +1,6 @@
 pub mod cilent;
 pub use cilent::{AssetsChainProvider, AssetsClient, AssetsSearchClient};
+use rocket::response::status::NotFound;
 extern crate rocket;
 
 use std::str::FromStr;
@@ -10,9 +11,16 @@ use rocket::tokio::sync::Mutex;
 use rocket::State;
 
 #[get("/assets/<asset_id>")]
-pub async fn get_asset(asset_id: &str, client: &State<Mutex<AssetsClient>>) -> Json<AssetFull> {
-    let asset = client.lock().await.get_asset_full(asset_id).unwrap();
-    Json(asset)
+pub async fn get_asset(asset_id: &str, client: &State<Mutex<AssetsClient>>) -> Result<Json<AssetFull>, NotFound<String>> {
+    let result = client.lock().await.get_asset_full(asset_id);
+    match result {
+        Ok(asset) => Ok(Json(asset)),
+        Err(error) => {
+            println!("get_asset error: {}, {:?}", asset_id, error);
+
+            Err(NotFound(asset_id.to_string()))
+        }
+    }
 }
 
 #[post("/assets", format = "json", data = "<asset_ids>")]
