@@ -82,7 +82,8 @@ pub use self::tag::AssetTag;
 pub mod chain_cosmos;
 pub use self::chain_cosmos::CosmosDenom;
 pub mod payment_decoder;
-pub use self::payment_decoder::{Payment, PaymentURLDecoder};
+pub use self::payment_decoder::{DecodedLinkType, PaymentURLDecoder};
+
 pub const DEFAULT_FIAT_CURRENCY: &str = "USD";
 pub mod image_formatter;
 pub use self::image_formatter::ImageFormatter;

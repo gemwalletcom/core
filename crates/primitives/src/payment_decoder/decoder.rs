@@ -8,6 +8,8 @@ use crate::{
 use anyhow::{anyhow, Result};
 use std::{collections::HashMap, fmt, str::FromStr};
 
+use super::ton_pay::{self, TON_PAY_SCHEME};
+
 #[derive(Debug, PartialEq)]
 pub struct Payment {
     pub address: String,
@@ -81,6 +83,16 @@ impl PaymentURLDecoder {
                         });
                     }
                 }
+            }
+            if scheme == TON_PAY_SCHEME {
+                let ton_payment = ton_pay::parse(string)?;
+                return Ok(Payment {
+                    address: ton_payment.recipient,
+                    amount: None,
+                    memo: None,
+                    asset_id: Some(ton_payment.asset_id),
+                    link: None,
+                });
             }
 
             let path: &str = chunks[1];
@@ -290,6 +302,30 @@ mod tests {
                 amount: Some("1.23".to_string()),
                 memo: None,
                 asset_id: Some(AssetId::from_chain(Chain::SmartChain)),
+                link: None,
+            }
+        );
+    }
+
+    #[test]
+    fn test_ton_address() {
+        assert_eq!(
+            PaymentURLDecoder::decode("UQA5olhYULHkui4mTQM0LodWG0EqUaxmK6-e3mHrCZFO2diA").unwrap(),
+            Payment {
+                address: "UQA5olhYULHkui4mTQM0LodWG0EqUaxmK6-e3mHrCZFO2diA".to_string(),
+                amount: None,
+                memo: None,
+                asset_id: None,
+                link: None,
+            }
+        );
+        assert_eq!(
+            PaymentURLDecoder::decode("ton://transfer/UQA5olhYULHkui4mTQM0LodWG0EqUaxmK6-e3mHrCZFO2diA").unwrap(),
+            Payment {
+                address: "UQA5olhYULHkui4mTQM0LodWG0EqUaxmK6-e3mHrCZFO2diA".to_string(),
+                amount: None,
+                memo: None,
+                asset_id: Some(AssetId::from_chain(Chain::Ton)),
                 link: None,
             }
         );
