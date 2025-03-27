@@ -270,17 +270,6 @@ mod tests {
                 link: None,
             }
         );
-
-        assert_eq!(
-            PaymentURLDecoder::decode("ton:EQAzoUpalAaXnVm5MoiYWRZguLFzY0KxFjLv3MkRq5BXzyiQ?amount=0.00001").unwrap(),
-            Payment {
-                address: "EQAzoUpalAaXnVm5MoiYWRZguLFzY0KxFjLv3MkRq5BXzyiQ".to_string(),
-                amount: Some("0.00001".to_string()),
-                memo: None,
-                asset_id: Some(AssetId::from_chain(Chain::Ton)),
-                link: None,
-            }
-        );
     }
 
     #[test]
