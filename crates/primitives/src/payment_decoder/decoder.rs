@@ -1,14 +1,12 @@
-use crate::{
-    asset_id::AssetId,
-    erc681::{TransactionRequest, ETHEREUM_SCHEME},
-    solana_pay,
-    solana_pay::{PayTransfer as SolanaPayTransfer, SOLANA_PAY_SCHEME},
-    Chain,
-};
+use crate::{asset_id::AssetId, Chain};
 use anyhow::{anyhow, Result};
 use std::{collections::HashMap, fmt, str::FromStr};
 
-use super::ton_pay::{self, TON_PAY_SCHEME};
+use super::{
+    erc681::{TransactionRequest, ETHEREUM_SCHEME},
+    solana_pay::{self, PayTransfer as SolanaPayTransfer, SOLANA_PAY_SCHEME},
+    ton_pay::{self, TON_PAY_SCHEME},
+};
 
 #[derive(Debug, PartialEq)]
 pub struct Payment {
