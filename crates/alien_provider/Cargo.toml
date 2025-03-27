@@ -1,0 +1,13 @@
+[package]
+name = "alien_provider"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+gemstone = { path = "../../gemstone" }
+primitives = { path = "../primitives" }
+reqwest.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+async-trait.workspace = true
+futures.workspace = true

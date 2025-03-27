@@ -1,0 +1,14 @@
+[package]
+name = "swapper-dump"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+gemstone = { path = "../../gemstone" }
+primitives = { path = "../../crates/primitives" }
+alien_provider = { path = "../../crates/alien_provider" }
+tokio = { workspace = true }
+
+[[bin]]
+name = "swapper-dump"
+path = "src/main.rs"
