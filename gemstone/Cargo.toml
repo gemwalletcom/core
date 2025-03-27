@@ -55,10 +55,8 @@ orca_whirlpools_core = "1.0.5"
 uniffi = { workspace = true, features = ["build"] }
 
 [dev-dependencies]
-async-std.workspace = true
 tokio.workspace = true
-reqwest.workspace = true
-futures.workspace = true
+alien_provider = { path = "../crates/alien_provider" }
 
 [[test]]
 name = "integration_test"
