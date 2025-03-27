@@ -258,7 +258,12 @@ impl DatabaseClient {
 
     pub fn get_swap_assets(&mut self) -> Result<Vec<String>, diesel::result::Error> {
         use crate::schema::assets::dsl::*;
-        assets.filter(rank.gt(20)).select(id).order(rank.desc()).load(&mut self.connection)
+        assets
+            .filter(rank.gt(21))
+            .filter(is_swappable.eq(true))
+            .select(id)
+            .order(rank.desc())
+            .load(&mut self.connection)
     }
 
     pub fn get_swap_assets_version(&mut self) -> Result<i32, diesel::result::Error> {

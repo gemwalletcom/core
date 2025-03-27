@@ -1,5 +1,5 @@
 use crate::GemstoneError;
-use primitives::{payment_decoder::DecodedLinkType, PaymentURLDecoder};
+use primitives::{DecodedLinkType, PaymentURLDecoder};
 
 pub mod solana_pay;
 

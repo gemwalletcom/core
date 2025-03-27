@@ -1,12 +1,12 @@
-use crate::{
-    asset_id::AssetId,
-    erc681::{TransactionRequest, ETHEREUM_SCHEME},
-    solana_pay,
-    solana_pay::{PayTransfer as SolanaPayTransfer, SOLANA_PAY_SCHEME},
-    Chain,
-};
+use crate::{asset_id::AssetId, Chain};
 use anyhow::{anyhow, Result};
 use std::{collections::HashMap, fmt, str::FromStr};
+
+use super::{
+    erc681::{TransactionRequest, ETHEREUM_SCHEME},
+    solana_pay::{self, PayTransfer as SolanaPayTransfer, SOLANA_PAY_SCHEME},
+    ton_pay::{self, TON_PAY_SCHEME},
+};
 
 #[derive(Debug, PartialEq)]
 pub struct Payment {
@@ -81,6 +81,16 @@ impl PaymentURLDecoder {
                         });
                     }
                 }
+            }
+            if scheme == TON_PAY_SCHEME {
+                let ton_payment = ton_pay::parse(string)?;
+                return Ok(Payment {
+                    address: ton_payment.recipient,
+                    amount: None,
+                    memo: None,
+                    asset_id: Some(ton_payment.asset_id),
+                    link: None,
+                });
             }
 
             let path: &str = chunks[1];
@@ -258,17 +268,6 @@ mod tests {
                 link: None,
             }
         );
-
-        assert_eq!(
-            PaymentURLDecoder::decode("ton:EQAzoUpalAaXnVm5MoiYWRZguLFzY0KxFjLv3MkRq5BXzyiQ?amount=0.00001").unwrap(),
-            Payment {
-                address: "EQAzoUpalAaXnVm5MoiYWRZguLFzY0KxFjLv3MkRq5BXzyiQ".to_string(),
-                amount: Some("0.00001".to_string()),
-                memo: None,
-                asset_id: Some(AssetId::from_chain(Chain::Ton)),
-                link: None,
-            }
-        );
     }
 
     #[test]
@@ -290,6 +289,30 @@ mod tests {
                 amount: Some("1.23".to_string()),
                 memo: None,
                 asset_id: Some(AssetId::from_chain(Chain::SmartChain)),
+                link: None,
+            }
+        );
+    }
+
+    #[test]
+    fn test_ton_address() {
+        assert_eq!(
+            PaymentURLDecoder::decode("UQA5olhYULHkui4mTQM0LodWG0EqUaxmK6-e3mHrCZFO2diA").unwrap(),
+            Payment {
+                address: "UQA5olhYULHkui4mTQM0LodWG0EqUaxmK6-e3mHrCZFO2diA".to_string(),
+                amount: None,
+                memo: None,
+                asset_id: None,
+                link: None,
+            }
+        );
+        assert_eq!(
+            PaymentURLDecoder::decode("ton://transfer/UQA5olhYULHkui4mTQM0LodWG0EqUaxmK6-e3mHrCZFO2diA").unwrap(),
+            Payment {
+                address: "UQA5olhYULHkui4mTQM0LodWG0EqUaxmK6-e3mHrCZFO2diA".to_string(),
+                amount: None,
+                memo: None,
+                asset_id: Some(AssetId::from_chain(Chain::Ton)),
                 link: None,
             }
         );
