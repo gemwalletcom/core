@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use futures::TryFutureExt;
+use futures::{future::try_join_all, TryFutureExt};
 use gemstone::network::{provider::AlienProvider, target::*, *};
 use primitives::Chain;
 use reqwest::Client;
@@ -43,7 +43,7 @@ impl AlienProvider for NativeProvider {
             .node_config
             .get(&chain)
             .ok_or(AlienError::ResponseError {
-                msg: "not supported chain".into(),
+                msg: format!("not supported chain: {:?}", chain),
             })?
             .to_string())
     }
@@ -65,7 +65,7 @@ impl AlienProvider for NativeProvider {
             }
         }
         if let Some(body) = target.body {
-            if body.len() <= 4096 {
+            if cfg!(debug_assertions) && body.len() <= 4096 {
                 if let Ok(json) = serde_json::from_slice::<serde_json::Value>(&body) {
                     println!("=== json: {:?}", json);
                 } else {
@@ -88,7 +88,7 @@ impl AlienProvider for NativeProvider {
             })
             .await?;
         println!("<== response body size: {:?}", bytes.len());
-        if bytes.len() <= 4096 {
+        if cfg!(debug_assertions) && bytes.len() <= 4096 {
             if let Ok(json) = serde_json::from_slice::<serde_json::Value>(&bytes) {
                 println!("=== json: {:?}", json);
             } else {
@@ -99,17 +99,7 @@ impl AlienProvider for NativeProvider {
     }
 
     async fn batch_request(&self, targets: Vec<AlienTarget>) -> Result<Vec<Data>, AlienError> {
-        let mut futures = vec![];
-        for target in targets.iter() {
-            let future = self.request(target.clone());
-            futures.push(future);
-        }
-        let responses = futures::future::join_all(futures).await;
-        let error = responses.iter().find_map(|x| x.as_ref().err());
-        if let Some(err) = error {
-            return Err(err.clone());
-        }
-        let responses = responses.into_iter().filter_map(|x| x.ok()).collect();
-        Ok(responses)
+        let futures = targets.into_iter().map(|target| self.request(target));
+        try_join_all(futures).await
     }
 }
