@@ -47,8 +47,6 @@ impl CollectionsImageUploader {
                 id: collection.id,
                 image_preview_url: Some(uploaded_image_url.clone()),
                 image_preview_mime_type: Some(MIME_TYPE_PNG.to_string()),
-                image_original_url: Some(uploaded_image_url.clone()),
-                image_original_mime_type: Some(MIME_TYPE_PNG.to_string()),
             })?;
         }
 
@@ -79,8 +77,6 @@ impl CollectionsImageUploader {
                 id: asset.id,
                 image_preview_url: Some(uploaded_image_url.clone()),
                 image_preview_mime_type: Some(MIME_TYPE_PNG.to_string()),
-                image_original_url: Some(uploaded_image_url.clone()),
-                image_original_mime_type: Some(MIME_TYPE_PNG.to_string()),
             })?;
         }
 

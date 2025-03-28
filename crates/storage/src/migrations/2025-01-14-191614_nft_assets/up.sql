@@ -14,8 +14,8 @@ CREATE TABLE nft_assets (
     image_preview_url VARCHAR(512),
     image_preview_mime_type VARCHAR(64),
 
-    image_original_url VARCHAR(512),
-    image_original_mime_type VARCHAR(64),
+    resource_url VARCHAR(512),
+    resource_mime_type VARCHAR(64),
 
     token_type VARCHAR(32) NOT NULL REFERENCES nft_types (id) ON DELETE CASCADE,
     token_id VARCHAR(512) NOT NULL,

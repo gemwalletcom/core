@@ -197,9 +197,9 @@ diesel::table! {
         #[max_length = 64]
         image_preview_mime_type -> Nullable<Varchar>,
         #[max_length = 512]
-        image_original_url -> Nullable<Varchar>,
+        resource_url -> Nullable<Varchar>,
         #[max_length = 64]
-        image_original_mime_type -> Nullable<Varchar>,
+        resource_mime_type -> Nullable<Varchar>,
         #[max_length = 32]
         token_type -> Varchar,
         #[max_length = 512]
@@ -232,10 +232,6 @@ diesel::table! {
         image_preview_url -> Nullable<Varchar>,
         #[max_length = 64]
         image_preview_mime_type -> Nullable<Varchar>,
-        #[max_length = 512]
-        image_original_url -> Nullable<Varchar>,
-        #[max_length = 64]
-        image_original_mime_type -> Nullable<Varchar>,
         is_verified -> Bool,
         is_enabled -> Bool,
         updated_at -> Timestamp,

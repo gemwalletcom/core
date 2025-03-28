@@ -30,16 +30,13 @@ impl OpenSeaUpdater {
                     let _ = self.update_collection(collection.clone(), opensea_collection);
 
                     // update mime types
-                    if collection.image_preview_mime_type.is_none() && collection.image_original_mime_type.is_none() {
+                    if collection.image_preview_mime_type.is_none() {
                         let image_preview_mime_type = get_image_mime_type(&collection.clone().image_preview_url.unwrap_or_default()).await?;
-                        let image_original_mime_type = get_image_mime_type(&collection.clone().image_original_url.unwrap_or_default()).await?;
 
                         let update = UpdateNftCollectionImageUrl {
                             id: collection.id.clone(),
                             image_preview_url: collection.image_preview_url.clone(),
                             image_preview_mime_type: Some(image_preview_mime_type),
-                            image_original_url: collection.image_original_url.clone(),
-                            image_original_mime_type: Some(image_original_mime_type.clone()),
                         };
 
                         self.database.update_nft_collection_image_url(update)?;

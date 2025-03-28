@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
 use gem_evm::address::EthereumAddress;
-use primitives::{Chain, LinkType, NFTAsset, NFTAssetId, NFTAttribute, NFTCollectionId, NFTImage, NFTImageOld, NFTImages, NFTType};
+use primitives::{Chain, LinkType, NFTAsset, NFTAssetId, NFTAttribute, NFTCollectionId, NFTImageOld, NFTImages, NFTResource, NFTType};
 
 use super::model::{Collection, Nft, NftAsset, Trait};
 
@@ -22,9 +22,9 @@ impl Nft {
                 preview_image_url: self.display_image_url.clone(),
                 original_source_url: self.display_image_url.clone(),
             },
+            resource: NFTResource::from_url(&self.image_url),
             images: NFTImages {
-                preview: NFTImage::from_url(&self.display_image_url),
-                original: NFTImage::from_url(&self.display_image_url),
+                preview: NFTResource::from_url(&self.display_image_url),
             },
             attributes: traits.iter().flat_map(|x| x.as_attribute()).collect(),
         })
@@ -75,8 +75,7 @@ impl Collection {
                 original_source_url: self.image_url.clone(),
             },
             images: NFTImages {
-                preview: NFTImage::from_url(&self.image_url),
-                original: NFTImage::from_url(&self.image_url),
+                preview: NFTResource::from_url(&self.image_url),
             },
             links: self.as_links(),
             is_verified: true,

@@ -63,8 +63,7 @@ impl NFTCollection {
     pub fn images(&self) -> NFTImages {
         let image = format!("{}/{}/collection_original.png", self.chain.as_ref(), self.contract_address);
         NFTImages {
-            preview: NFTImage::from_url(&image),
-            original: NFTImage::from_url(&image),
+            preview: NFTResource::from_url(&image),
         }
     }
 }
@@ -83,6 +82,7 @@ pub struct NFTAsset {
     pub chain: Chain,
     #[typeshare(skip)]
     pub image: NFTImageOld,
+    pub resource: NFTResource,
     pub images: NFTImages,
     pub attributes: Vec<NFTAttribute>,
 }
@@ -191,12 +191,12 @@ pub struct NFTImageOld {
 #[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
 #[serde(rename_all = "camelCase")]
 #[typeshare(swift = "Sendable, Hashable, Equatable")]
-pub struct NFTImage {
+pub struct NFTResource {
     pub url: String,
     pub mime_type: String,
 }
 
-impl NFTImage {
+impl NFTResource {
     pub fn new(url: String, mime_type: String) -> Self {
         Self { url, mime_type }
     }
@@ -213,8 +213,7 @@ impl NFTImage {
 #[serde(rename_all = "camelCase")]
 #[typeshare(swift = "Sendable, Hashable, Equatable")]
 pub struct NFTImages {
-    pub preview: NFTImage,
-    pub original: NFTImage,
+    pub preview: NFTResource,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

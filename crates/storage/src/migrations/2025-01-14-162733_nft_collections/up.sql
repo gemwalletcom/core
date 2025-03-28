@@ -13,9 +13,6 @@ CREATE TABLE nft_collections (
     image_preview_url VARCHAR(512),
     image_preview_mime_type VARCHAR(64),
 
-    image_original_url VARCHAR(512),
-    image_original_mime_type VARCHAR(64),
-
     is_verified BOOLEAN NOT NULL default false,
     is_enabled BOOLEAN NOT NULL default true,
 

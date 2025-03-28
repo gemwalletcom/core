@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
 use diesel::prelude::*;
-use primitives::{nft::NFTImages, AssetLink, Chain, NFTImage, NFTImageOld};
+use primitives::{AssetLink, Chain, NFTImageOld, NFTImages, NFTResource};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Queryable, Selectable, Insertable, AsChangeset, Serialize, Deserialize, Clone)]
@@ -17,8 +17,6 @@ pub struct NftCollection {
     pub contract_address: String,
     pub image_preview_url: Option<String>,
     pub image_preview_mime_type: Option<String>,
-    pub image_original_url: Option<String>,
-    pub image_original_mime_type: Option<String>,
     pub is_verified: bool,
     pub is_enabled: bool,
 }
@@ -30,8 +28,6 @@ pub struct UpdateNftCollectionImageUrl {
     pub id: String,
     pub image_preview_url: Option<String>,
     pub image_preview_mime_type: Option<String>,
-    pub image_original_url: Option<String>,
-    pub image_original_mime_type: Option<String>,
 }
 
 impl NftCollection {
@@ -49,13 +45,9 @@ impl NftCollection {
                 original_source_url: self.image_preview_url.clone().unwrap_or_default(),
             },
             images: NFTImages {
-                preview: NFTImage {
+                preview: NFTResource {
                     url: self.image_preview_url.clone().unwrap_or_default(),
                     mime_type: self.image_preview_mime_type.clone().unwrap_or_default(),
-                },
-                original: NFTImage {
-                    url: self.image_original_url.clone().unwrap_or_default(),
-                    mime_type: self.image_original_mime_type.clone().unwrap_or_default(),
                 },
             },
             is_verified: self.is_verified,
@@ -71,8 +63,6 @@ impl NftCollection {
             chain: collection.chain.to_string(),
             image_preview_url: Some(collection.images.preview.url.clone()),
             image_preview_mime_type: Some(collection.images.preview.mime_type.clone()),
-            image_original_url: Some(collection.images.original.url.clone()),
-            image_original_mime_type: Some(collection.images.original.mime_type.clone()),
             is_verified: collection.is_verified,
             symbol: collection.symbol,
             owner: None,

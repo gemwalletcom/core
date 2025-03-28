@@ -1,4 +1,4 @@
-use primitives::{Chain, LinkType, NFTAsset, NFTAssetId, NFTAttribute, NFTCollectionId, NFTImage, NFTImageOld, NFTImages, NFTType};
+use primitives::{Chain, LinkType, NFTAsset, NFTAssetId, NFTAttribute, NFTCollectionId, NFTImageOld, NFTImages, NFTResource, NFTType};
 
 use super::model::{Collection, Nft, Trait};
 
@@ -23,9 +23,9 @@ impl Nft {
                 preview_image_url: self.image.clone(),
                 original_source_url: self.image.clone(),
             },
+            resource: NFTResource::from_url(&self.image),
             images: NFTImages {
-                preview: NFTImage::from_url(&self.image),
-                original: NFTImage::from_url(&self.image),
+                preview: NFTResource::from_url(&self.image),
             },
             attributes: traits.iter().flat_map(|x| x.as_attribute()).collect(),
         })
@@ -58,8 +58,7 @@ impl Collection {
                 original_source_url: self.image.clone(),
             },
             images: NFTImages {
-                preview: NFTImage::from_url(&self.image),
-                original: NFTImage::from_url(&self.image),
+                preview: NFTResource::from_url(&self.image),
             },
             links: self.as_links(),
             is_verified: true,

@@ -37,7 +37,7 @@ pub struct Nft {
     pub token_standard: TokenStandard,
     pub name: String,
     pub description: String,
-    //pub image_url: String,
+    pub image_url: String,
     pub display_image_url: String,
     pub traits: Option<Vec<Trait>>,
 }
