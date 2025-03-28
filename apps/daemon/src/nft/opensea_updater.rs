@@ -68,7 +68,7 @@ impl OpenSeaUpdater {
                 url: format!("https://instagram.com/{}", opensea_collection.instagram_username),
             });
         }
-        self.database.add_nft_links(links.clone())?;
+        self.database.add_nft_collections_links(links.clone())?;
         Ok(())
     }
 }

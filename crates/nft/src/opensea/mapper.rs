@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
 use gem_evm::address::EthereumAddress;
-use primitives::{Chain, LinkType, NFTAsset, NFTAssetId, NFTAttribute, NFTCollectionId, NFTImage, NFTImageOld, NFTImages, NFTType, MIME_TYPE_PNG};
+use primitives::{Chain, LinkType, NFTAsset, NFTAssetId, NFTAttribute, NFTCollectionId, NFTImage, NFTImageOld, NFTImages, NFTType};
 
 use super::model::{Collection, Nft, NftAsset, Trait};
 
