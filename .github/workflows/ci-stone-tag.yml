@@ -1,0 +1,38 @@
+name: Release - Gemstone Tag
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump_type:
+        description: Bump type
+        required: true
+        default: patch
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tag_release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Auto bump tag
+        id: tag_version
+        uses: anothrNick/github-tag-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT }}
+          DEFAULT_BUMP: ${{ github.event.inputs.bump_type }}
+
+      - name: Create release
+        run: |
+          gh release create ${{ env.NEW_TAG }} --title ${{ env.NEW_TAG }} --verify-tag --generate-notes --latest
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT }}
+          NEW_TAG: ${{ steps.tag_version.outputs.new_tag }}

@@ -1,8 +1,9 @@
 use super::model::{Asset, TransakQuote, TransakResponse};
 use crate::model::{filter_token_id, FiatProviderAsset};
-use base64::{engine::general_purpose::STANDARD as BASE64, Engine as _};
-use primitives::FiatTransactionType;
-use primitives::{FiatBuyRequest, FiatProviderName, FiatQuote};
+use base64::{engine::general_purpose::STANDARD_NO_PAD as BASE64, Engine as _};
+use number_formatter::BigNumberFormatter;
+use primitives::{FiatBuyQuote, FiatQuoteType};
+use primitives::{FiatProviderName, FiatQuote};
 use reqwest::Client;
 use url::Url;
 
@@ -30,23 +31,55 @@ impl TransakClient {
         network: String,
         ip_address: String,
     ) -> Result<TransakQuote, reqwest::Error> {
-        let url = format!(
-            "{}/api/v2/currencies/price?ipAddress={}&fiatCurrency={}&cryptoCurrency={}&isBuyOrSell=buy&fiatAmount={}&network={}&partnerApiKey={}",
-            TRANSAK_API_URL, ip_address, fiat_currency, symbol, fiat_amount, network, self.api_key
-        );
-
-        let response = self.client.get(&url).send().await?;
-        let transak_quote = response.json::<TransakResponse<TransakQuote>>().await?.response;
-        Ok(transak_quote)
+        self.get_quote("buy", symbol, fiat_currency, Some(fiat_amount), None, network, ip_address).await
     }
 
-    pub fn get_fiat_quote(&self, request: FiatBuyRequest, quote: TransakQuote) -> FiatQuote {
+    pub async fn get_quote(
+        &self,
+        quote_type: &str,
+        symbol: String,
+        fiat_currency: String,
+        fiat_amount: Option<f64>,
+        crypto_amount: Option<&str>,
+        network: String,
+        ip_address: String,
+    ) -> Result<TransakQuote, reqwest::Error> {
+        let url = format!("{}/api/v2/currencies/price", TRANSAK_API_URL);
+        let mut query = vec![
+            ("isBuyOrSell", quote_type.to_string()),
+            ("ipAddress", ip_address.to_string()),
+            ("fiatCurrency", fiat_currency.to_string()),
+            ("cryptoCurrency", symbol.to_string()),
+            ("network", network.to_string()),
+            ("partnerApiKey", self.api_key.to_string()),
+        ];
+        if let Some(amount) = fiat_amount {
+            query.push(("fiatAmount", amount.to_string()));
+        }
+        if let Some(amount) = crypto_amount {
+            query.push(("cryptoAmount", amount.to_string()));
+        }
+
+        Ok(self
+            .client
+            .get(url)
+            .query(&query)
+            .send()
+            .await?
+            .json::<TransakResponse<TransakQuote>>()
+            .await?
+            .response)
+    }
+
+    pub fn get_fiat_quote(&self, request: FiatBuyQuote, quote: TransakQuote) -> FiatQuote {
+        let crypto_value = BigNumberFormatter::f64_as_value(quote.crypto_amount, request.asset.decimals as u32).unwrap_or_default();
         FiatQuote {
             provider: Self::NAME.as_fiat_provider(),
-            quote_type: FiatTransactionType::Buy,
+            quote_type: FiatQuoteType::Buy,
             fiat_amount: request.fiat_amount,
             fiat_currency: request.fiat_currency,
             crypto_amount: quote.crypto_amount,
+            crypto_value,
             redirect_url: self.redirect_url(quote, request.wallet_address),
         }
     }
@@ -76,7 +109,7 @@ impl TransakClient {
 
     pub fn map_asset(asset: Asset) -> Option<FiatProviderAsset> {
         let chain = super::mapper::map_asset_chain(asset.clone());
-        let token_id = filter_token_id(asset.clone().address);
+        let token_id = filter_token_id(chain, asset.clone().address);
 
         Some(FiatProviderAsset {
             id: asset.clone().unique_id,
@@ -93,8 +126,8 @@ impl TransakClient {
         if parts.len() != 3 {
             return Err("Invalid JWT format".to_string().into());
         }
-        let payload = BASE64.decode(parts[1])?;
-        let claims: serde_json::Value = serde_json::from_slice(&payload)?;
-        Ok(serde_json::to_string_pretty(&claims)?)
+        let payload = parts[1];
+        let payload = BASE64.decode(payload)?;
+        Ok(String::from_utf8(payload)?)
     }
 }

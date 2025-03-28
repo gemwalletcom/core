@@ -7,7 +7,7 @@ use std::{
 
 use crate::{ParserOptions, Pusher};
 use gem_chain_rpc::ChainBlockProvider;
-use primitives::Chain;
+use primitives::{Chain, Transaction, TransactionType};
 use storage::DatabaseClient;
 
 pub struct Parser {
@@ -38,9 +38,10 @@ impl Parser {
     pub async fn start(&mut self) -> Result<(), Box<dyn Error + Send + Sync>> {
         loop {
             let state = self.database.get_parser_state(self.chain)?;
+            let timeout = cmp::max(state.timeout_latest_block as u64, self.options.timeout);
 
             if !state.is_enabled {
-                tokio::time::sleep(Duration::from_millis(self.options.timeout)).await;
+                tokio::time::sleep(Duration::from_millis(timeout)).await;
                 continue;
             }
             let next_current_block = state.current_block + state.await_blocks;
@@ -61,14 +62,14 @@ impl Parser {
                             state.await_blocks
                         );
 
-                        tokio::time::sleep(Duration::from_millis(self.options.timeout)).await;
+                        tokio::time::sleep(Duration::from_millis(timeout)).await;
                         continue;
                     }
                 }
                 Err(err) => {
                     println!("parser latest_block chain: {}, error: {:?}", self.chain.as_ref(), err);
 
-                    tokio::time::sleep(Duration::from_millis(self.options.timeout * 5)).await;
+                    tokio::time::sleep(Duration::from_millis(timeout * 5)).await;
                     continue;
                 }
             }
@@ -102,7 +103,7 @@ impl Parser {
                     Err(err) => {
                         println!("parser parse_block chain: blocks: {}, {:?}, error: {:?}", self.chain.as_ref(), next_blocks, err);
 
-                        tokio::time::sleep(Duration::from_millis(self.options.timeout)).await;
+                        tokio::time::sleep(Duration::from_millis(timeout)).await;
                         break;
                     }
                 }
@@ -118,7 +119,7 @@ impl Parser {
         }
     }
 
-    async fn fetch_blocks(&mut self, blocks: Vec<i32>) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Send + Sync>> {
+    async fn fetch_blocks(&mut self, blocks: Vec<i32>) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
         let mut retry_attempts_count = 0;
         loop {
             let results = futures::future::try_join_all(blocks.iter().map(|block| self.provider.get_transactions(*block as i64))).await;
@@ -137,10 +138,16 @@ impl Parser {
     }
 
     pub async fn parse_blocks(&mut self, blocks: Vec<i32>) -> Result<ParserBlocksResult, Box<dyn Error + Send + Sync>> {
-        let transactions = self.fetch_blocks(blocks.clone()).await?;
+        let transactions = self
+            .fetch_blocks(blocks.clone())
+            .await?
+            .into_iter()
+            .filter(|x| filter_transaction(&x.value, &x.transaction_type, self.options.minimum_transfer_amount()))
+            .collect::<Vec<Transaction>>();
+
         let addresses = transactions.clone().into_iter().flat_map(|x| x.addresses()).collect();
         let subscriptions = self.database.get_subscriptions(self.chain, addresses)?;
-        let mut transactions_map: HashMap<String, primitives::Transaction> = HashMap::new();
+        let mut transactions_map: HashMap<String, Transaction> = HashMap::new();
 
         // Debugging only, insert all transactions
         // for transaction in transactions.clone().into_iter() {
@@ -163,7 +170,7 @@ impl Parser {
 
                     let transaction = transaction.finalize(vec![subscription.address.clone()]).clone();
 
-                    if self.options.is_transaction_outdated(transaction.asset_id.chain, transaction.created_at) {
+                    if self.options.is_transaction_outdated(transaction.created_at) {
                         println!("outdated transaction: {}, created_at: {}", transaction.id, transaction.created_at);
                         continue;
                     }
@@ -235,5 +242,34 @@ impl Parser {
         }
 
         Ok(primitive_transactions.len())
+    }
+}
+
+fn filter_transaction(value: &str, transaction_type: &TransactionType, minimum_transfer_amount: u64) -> bool {
+    if *transaction_type == TransactionType::Transfer {
+        if let Ok(value) = value.parse::<u64>() {
+            return value >= minimum_transfer_amount;
+        }
+    }
+    true
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_filter_transaction() {
+        let test_cases = vec![
+            ("1", TransactionType::Transfer, 0, true),
+            ("500", TransactionType::Transfer, 1000, false),
+            ("1000", TransactionType::Transfer, 1000, true),
+            ("1500", TransactionType::Transfer, 1000, true),
+            ("invalid", TransactionType::Transfer, 1000, true),
+        ];
+
+        for (transaction_value, transaction_type, minimum_transfer_amount, expected) in test_cases {
+            assert_eq!(filter_transaction(transaction_value, &transaction_type, minimum_transfer_amount), expected);
+        }
     }
 }

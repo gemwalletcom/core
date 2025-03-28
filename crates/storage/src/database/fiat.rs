@@ -1,6 +1,8 @@
 use crate::schema::fiat_providers;
 use crate::{models::*, DatabaseClient};
+use chrono::NaiveDateTime;
 use diesel::associations::HasTable;
+use diesel::dsl::count_star;
 use diesel::prelude::*;
 use diesel::upsert::excluded;
 
@@ -16,7 +18,7 @@ impl DatabaseClient {
                 symbol.eq(excluded(symbol)),
                 network.eq(excluded(network)),
                 token_id.eq(excluded(token_id)),
-                enabled_by_provider.eq(excluded(enabled_by_provider)),
+                is_enabled_by_provider.eq(excluded(is_enabled_by_provider)),
             ))
             .execute(&mut self.connection)
     }
@@ -54,14 +56,19 @@ impl DatabaseClient {
         fiat_assets.select(FiatAsset::as_select()).load(&mut self.connection)
     }
 
-    pub fn get_fiat_assets_is_buyable(&mut self) -> Result<Vec<String>, diesel::result::Error> {
-        use crate::schema::assets::dsl::*;
-        assets.filter(is_buyable.eq(true)).select(id).load(&mut self.connection)
-    }
+    pub fn get_fiat_assets_popular(&mut self, from: NaiveDateTime, limit: i64) -> Result<Vec<String>, diesel::result::Error> {
+        use crate::schema::fiat_transactions::dsl::*;
 
-    pub fn get_fiat_assets_is_sellable(&mut self) -> Result<Vec<String>, diesel::result::Error> {
-        use crate::schema::assets::dsl::*;
-        assets.filter(is_sellable.eq(true)).select(id).load(&mut self.connection)
+        Ok(fiat_transactions
+            .filter(created_at.gt(from))
+            .select(asset_id)
+            .group_by(asset_id)
+            .order_by(count_star().desc())
+            .limit(limit)
+            .load::<Option<String>>(&mut self.connection)?
+            .into_iter()
+            .flatten()
+            .collect())
     }
 
     pub fn get_fiat_assets_for_asset_id(&mut self, _asset_id: &str) -> Result<Vec<FiatAsset>, diesel::result::Error> {
@@ -78,7 +85,7 @@ impl DatabaseClient {
         use crate::schema::fiat_rates::dsl::*;
         diesel::insert_into(fiat_rates)
             .values(&rates)
-            .on_conflict(symbol)
+            .on_conflict(id)
             .do_update()
             .set(rate.eq(excluded(rate)))
             .execute(&mut self.connection)
@@ -91,6 +98,25 @@ impl DatabaseClient {
 
     pub fn get_fiat_rate(&mut self, currency: &str) -> Result<FiatRate, diesel::result::Error> {
         use crate::schema::fiat_rates::dsl::*;
-        fiat_rates.filter(symbol.eq(currency)).select(FiatRate::as_select()).first(&mut self.connection)
+        fiat_rates.filter(id.eq(currency)).select(FiatRate::as_select()).first(&mut self.connection)
+    }
+
+    pub fn get_fiat_providers(&mut self) -> Result<Vec<FiatProvider>, diesel::result::Error> {
+        use crate::schema::fiat_providers::dsl::*;
+        fiat_providers.select(FiatProvider::as_select()).load(&mut self.connection)
+    }
+
+    pub fn get_fiat_assets_is_enabled(&mut self) -> Result<Vec<String>, diesel::result::Error> {
+        use crate::schema::fiat_assets::dsl::*;
+        Ok(fiat_assets
+            .filter(is_enabled.eq(true))
+            .filter(is_enabled_by_provider.eq(true))
+            .filter(asset_id.is_not_null())
+            .distinct()
+            .select(asset_id)
+            .load::<Option<String>>(&mut self.connection)?
+            .into_iter()
+            .flatten()
+            .collect::<Vec<String>>())
     }
 }

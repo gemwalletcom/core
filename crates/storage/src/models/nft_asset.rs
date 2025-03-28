@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
 use diesel::prelude::*;
-use primitives::{Chain, NFTImage, NFTType};
+use primitives::{Chain, NFTImageOld, NFTImages, NFTResource, NFTType};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Queryable, Selectable, Insertable, AsChangeset, Serialize, Deserialize, Clone)]
@@ -10,12 +10,16 @@ use serde::{Deserialize, Serialize};
 pub struct NftAsset {
     pub id: String,
     pub collection_id: String,
+    pub contract_address: String,
     pub chain: String,
     pub name: String,
     pub description: String,
     pub token_id: String,
     pub token_type: String,
-    pub image_url: String,
+    pub image_preview_url: Option<String>,
+    pub image_preview_mime_type: Option<String>,
+    pub resource_url: Option<String>,
+    pub resource_mime_type: Option<String>,
     pub attributes: serde_json::Value,
 }
 
@@ -24,7 +28,8 @@ pub struct NftAsset {
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct UpdateNftAssetImageUrl {
     pub id: String,
-    pub image_url: String,
+    pub image_preview_url: Option<String>,
+    pub image_preview_mime_type: Option<String>,
 }
 
 #[derive(Debug, Queryable, Selectable, Insertable, Serialize, Deserialize, Clone)]
@@ -50,11 +55,22 @@ impl NftAsset {
             name: self.name.clone(),
             description: Some(self.description.clone()),
             chain: Chain::from_str(self.chain.as_str()).unwrap(),
+            contract_address: Some(self.contract_address.clone()),
             token_id: self.token_id.clone(),
-            image: NFTImage {
-                image_url: self.image_url.clone(),
-                preview_image_url: self.image_url.clone(),
-                original_source_url: self.image_url.clone(),
+            image: NFTImageOld {
+                image_url: self.image_preview_url.clone().unwrap_or_default(),
+                preview_image_url: self.image_preview_url.clone().unwrap_or_default(),
+                original_source_url: self.image_preview_url.clone().unwrap_or_default(),
+            },
+            resource: NFTResource {
+                url: self.resource_url.clone().unwrap_or_default(),
+                mime_type: self.resource_mime_type.clone().unwrap_or_default(),
+            },
+            images: NFTImages {
+                preview: NFTResource {
+                    url: self.image_preview_url.clone().unwrap_or_default(),
+                    mime_type: self.image_preview_mime_type.clone().unwrap_or_default(),
+                },
             },
             token_type: NFTType::from_str(self.token_type.as_str()).unwrap(),
             attributes: serde_json::from_value(self.attributes.clone()).unwrap_or_default(),
@@ -68,9 +84,13 @@ impl NftAsset {
             chain: primitive.chain.to_string(),
             name: primitive.name.clone(),
             description: primitive.description.unwrap_or_default(),
+            contract_address: primitive.contract_address.unwrap_or_default(),
             token_id: primitive.token_id.clone(),
             token_type: primitive.token_type.as_ref().to_string(),
-            image_url: primitive.image.image_url.clone(),
+            image_preview_url: Some(primitive.images.preview.url.clone()),
+            image_preview_mime_type: Some(primitive.images.preview.mime_type.clone()),
+            resource_url: Some(primitive.resource.url.clone()),
+            resource_mime_type: Some(primitive.resource.mime_type.clone()),
             attributes: serde_json::to_value(primitive.attributes).unwrap_or_default(),
         }
     }

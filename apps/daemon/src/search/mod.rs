@@ -12,7 +12,7 @@ use std::time::Duration;
 pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + Send>>> {
     let search_index_client = SearchIndexClient::new(&settings.meilisearch.url, settings.meilisearch.key.as_str());
 
-    let assets_index_updater = run_job("Update assets index", Duration::from_secs(3600), {
+    let assets_index_updater = run_job("Update assets index", Duration::from_secs(settings.daemon.search.assets_update_interval), {
         let settings = Arc::new(settings.clone());
         let search_index_client = search_index_client.clone();
 

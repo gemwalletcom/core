@@ -7,6 +7,7 @@ struct XRPResult<T> {
 #[typeshare(swift = "Sendable")]
 struct XRPAccountResult {
     account_data: Option<XRPAccount>,
+    ledger_current_index: i32,
 }
 
 #[typeshare(swift = "Sendable")]
@@ -71,5 +72,17 @@ struct XRPAssetLine {
 #[typeshare(swift = "Sendable")]
 struct XRPTokenId {
     issuer: String,
+    currency: String,
+}
+
+#[typeshare(swift = "Sendable")]
+struct XRPAccountLinesResult {
+    lines: Option<Vec<XRPAccountLine>>,
+}
+
+#[typeshare(swift = "Sendable")]
+struct XRPAccountLine {
+    account: String,
+    balance: String,
     currency: String,
 }

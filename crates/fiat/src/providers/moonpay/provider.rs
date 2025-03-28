@@ -8,8 +8,7 @@ use async_trait::async_trait;
 use std::error::Error;
 
 use super::client::MoonPayClient;
-use primitives::{fiat_quote_request::FiatSellRequest, FiatTransactionType};
-use primitives::{AssetId, FiatBuyRequest, FiatProviderName, FiatQuote, FiatTransaction, FiatTransactionStatus};
+use primitives::{AssetId, FiatBuyQuote, FiatProviderName, FiatQuote, FiatQuoteType, FiatSellQuote, FiatTransaction, FiatTransactionStatus};
 
 #[async_trait]
 impl FiatProvider for MoonPayClient {
@@ -17,8 +16,8 @@ impl FiatProvider for MoonPayClient {
         Self::NAME
     }
 
-    async fn get_buy_quote(&self, request: FiatBuyRequest, request_map: FiatMapping) -> Result<FiatQuote, Box<dyn std::error::Error + Send + Sync>> {
-        let ip_address_check = self.get_ip_address(request.clone().ip_address).await?;
+    async fn get_buy_quote(&self, request: FiatBuyQuote, request_map: FiatMapping) -> Result<FiatQuote, Box<dyn std::error::Error + Send + Sync>> {
+        let ip_address_check = self.get_ip_address(&request.ip_address).await?;
         if !ip_address_check.is_allowed && !ip_address_check.is_buy_allowed {
             return Err(FiatError::FiatPurchaseNotAllowed.into());
         }
@@ -27,27 +26,21 @@ impl FiatProvider for MoonPayClient {
             .get_buy_quote(request_map.symbol.to_lowercase(), request.fiat_currency.to_lowercase(), request.fiat_amount)
             .await?;
 
-        if quote.quote_currency.not_allowed_countries.contains(&ip_address_check.alpha2) {
-            return Err(FiatError::UnsupportedCountry(ip_address_check.alpha2).into());
-        }
+        self.validate_quote(&quote, ip_address_check).await?;
 
-        if &ip_address_check.state == "US" && quote.quote_currency.not_allowed_us_states.contains(&ip_address_check.state) {
-            return Err(FiatError::UnsupportedState(ip_address_check.state).into());
-        }
-
-        Ok(self.get_fiat_quote(request, quote))
+        Ok(self.get_buy_fiat_quote(request, quote))
     }
 
-    async fn get_sell_quote(&self, _request: FiatSellRequest, _request_map: FiatMapping) -> Result<FiatQuote, Box<dyn Error + Send + Sync>> {
-        // println!("request: {:?}", request);
-        // let quote = self.get_sell_quote(
-        //     request_map.symbol.to_lowercase(),
-        //     request.fiat_currency.to_lowercase(),
-        //     request.crypto_amount,
-        // ).await;
-        // println!("quote: {:?}", quote);
+    async fn get_sell_quote(&self, request: FiatSellQuote, request_map: FiatMapping) -> Result<FiatQuote, Box<dyn Error + Send + Sync>> {
+        let ip_address_check = self.get_ip_address(&request.ip_address).await?;
+        if !ip_address_check.is_allowed && !ip_address_check.is_sell_allowed {
+            return Err(FiatError::FiatSellNotAllowed.into());
+        }
+        let quote = self
+            .get_sell_quote(request_map.symbol.to_lowercase(), request.fiat_currency.to_lowercase(), request.crypto_amount)
+            .await?;
 
-        Err(Box::from("not supported"))
+        Ok(self.get_sell_fiat_quote(request, quote))
     }
 
     async fn get_assets(&self) -> Result<Vec<FiatProviderAsset>, Box<dyn std::error::Error + Send + Sync>> {
@@ -78,7 +71,7 @@ impl FiatProvider for MoonPayClient {
         let fee_network = payload.data.network_fee_amount.unwrap_or_default();
         let fee_partner = payload.data.extra_fee_amount.unwrap_or_default();
         let fiat_amount = currency_amount + fee_provider + fee_network + fee_partner;
-        let transaction_type = FiatTransactionType::Buy;
+        let transaction_type = FiatQuoteType::Buy;
 
         let transaction = FiatTransaction {
             asset_id: Some(asset_id),

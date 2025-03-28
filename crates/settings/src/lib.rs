@@ -28,7 +28,7 @@ pub struct Settings {
     pub pusher: Pusher,
     pub swap: Swap,
     pub alerter: Alerter,
-    pub security: Security,
+    pub scan: Scan,
     pub nft: NFT,
 }
 
@@ -215,6 +215,11 @@ pub struct Chains {
     pub cardano: Chain,
     #[serde(rename = "abstract")]
     pub abstract_chain: Chain,
+    pub berachain: Chain,
+    pub ink: Chain,
+    pub unichain: Chain,
+    pub hyperliquid: Chain,
+    pub monad: Chain,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -234,6 +239,7 @@ pub struct Parser {
 #[allow(unused)]
 pub struct Daemon {
     pub service: String,
+    pub search: DaemonSearch,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -259,9 +265,10 @@ pub struct Swap {
 
 #[derive(Debug, Deserialize, Clone)]
 #[allow(unused)]
-pub struct Security {
-    pub hashdit: SecurityProvider,
-    pub goplus: SecurityProvider,
+pub struct Scan {
+    pub timeout_ms: u64,
+    pub hashdit: ScanProvider,
+    pub goplus: ScanProvider,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -281,10 +288,9 @@ pub struct SwapProvider {
 
 #[derive(Debug, Deserialize, Clone)]
 #[allow(unused)]
-pub struct SecurityProvider {
+pub struct ScanProvider {
     pub url: String,
-    pub app_id: String,
-    pub app_secret: String,
+    pub key: Key,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -317,8 +323,8 @@ impl Settings {
 #[allow(unused)]
 pub struct NFT {
     pub nftscan: NFTScan,
-    pub simplehash: SimpleHash,
     pub opensea: OpenSea,
+    pub magiceden: MagicEden,
     pub bucket: BucketConfiguration,
 }
 
@@ -330,13 +336,13 @@ pub struct NFTScan {
 
 #[derive(Debug, Deserialize, Clone)]
 #[allow(unused)]
-pub struct SimpleHash {
+pub struct OpenSea {
     pub key: KeySecret,
 }
 
 #[derive(Debug, Deserialize, Clone)]
 #[allow(unused)]
-pub struct OpenSea {
+pub struct MagicEden {
     pub key: KeySecret,
 }
 
@@ -348,4 +354,10 @@ pub struct BucketConfiguration {
     pub key: Key,
     pub name: String,
     pub url: String,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[allow(unused)]
+pub struct DaemonSearch {
+    pub assets_update_interval: u64,
 }

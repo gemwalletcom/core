@@ -26,8 +26,8 @@ pub enum PlatformStore {
 }
 
 impl PlatformStore {
-    pub fn all() -> Vec<PlatformStore> {
-        PlatformStore::iter().collect()
+    pub fn all() -> Vec<Self> {
+        Self::iter().collect()
     }
 }
 

@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use serde_serializers::deserialize_f64_from_str;
 
 #[derive(Debug, Deserialize)]
 pub struct Response<T> {
@@ -51,9 +52,14 @@ pub struct Prices {
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct Price {
-    pub network_fee: String,
-    pub fee_amount: String,
-    pub fiat_amount: String,
+    #[serde(deserialize_with = "deserialize_f64_from_str")]
+    pub spot_price_including_fee: f64,
+    #[serde(deserialize_with = "deserialize_f64_from_str")]
+    pub network_fee: f64,
+    #[serde(deserialize_with = "deserialize_f64_from_str")]
+    pub fee_amount: f64,
+    #[serde(deserialize_with = "deserialize_f64_from_str")]
+    pub fiat_amount: f64,
 }
 
 #[derive(Debug, Deserialize, Clone)]

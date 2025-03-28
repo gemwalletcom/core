@@ -1,4 +1,4 @@
-name: Clippy
+name: CI - Lint
 on:
   pull_request:
     branches: ["main"]
@@ -24,7 +24,7 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Install just
-        run: cargo install just
+        run: sudo apt install just
 
       - name: Run Lint
-        run: just lint
+        run: just --unstable lint

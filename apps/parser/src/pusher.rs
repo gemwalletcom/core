@@ -1,9 +1,10 @@
 use std::error::Error;
 
 use localizer::LanguageLocalizer;
+use number_formatter::BigNumberFormatter;
 use primitives::{
-    AddressFormatter, BigNumberFormatter, Chain, PushNotification, PushNotificationTransaction, PushNotificationTypes, Subscription, Transaction,
-    TransactionSwapMetadata, TransactionType,
+    AddressFormatter, Chain, PushNotification, PushNotificationTransaction, PushNotificationTypes, Subscription, Transaction, TransactionSwapMetadata,
+    TransactionType,
 };
 use storage::DatabaseClient;
 
@@ -40,7 +41,7 @@ impl Pusher {
         let from_address = self.get_address(chain, transaction.from.as_str())?;
 
         match transaction.transaction_type {
-            TransactionType::Transfer => {
+            TransactionType::Transfer | TransactionType::TransferNFT | TransactionType::SmartContractCall => {
                 let is_sent = transaction.input_addresses().contains(&subscription.address) || transaction.from == subscription.address;
 
                 let title = localizer.notification_transfer_title(is_sent, self.get_value(amount, asset.symbol).as_str());

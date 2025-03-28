@@ -1,13 +1,8 @@
 use anyhow::Error;
+use base64::{engine::general_purpose, Engine as _};
 use bcs;
-use blake2::{digest::consts::U32, Blake2b, Digest};
-use std::str::FromStr;
-use sui_types::{
-    base_types::{ObjectID, ObjectRef, SequenceNumber},
-    digests::ObjectDigest,
-    transaction::TransactionData,
-};
-type Blake2b256 = Blake2b<U32>;
+use sui_transaction_builder::unresolved::Input;
+use sui_types::Transaction;
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Coin {
@@ -24,12 +19,8 @@ pub struct Object {
 }
 
 impl Object {
-    pub fn to_ref(&self) -> ObjectRef {
-        (
-            ObjectID::from_hex_literal(&self.object_id).unwrap(),
-            SequenceNumber::from_u64(self.version),
-            ObjectDigest::from_str(&self.digest).unwrap(),
-        )
+    pub fn to_input(&self) -> Input {
+        Input::owned(self.object_id.parse().unwrap(), self.version, self.digest.parse().unwrap())
     }
 }
 
@@ -83,17 +74,16 @@ pub struct TxOutput {
 }
 
 impl TxOutput {
-    pub fn from_tx_data(tx_data: &TransactionData) -> Result<Self, Error> {
-        let data = bcs::to_bytes(&tx_data)?;
-        // manually build IntentMessage::new(Intent::sui_transaction(), tx_data.clone());
-        let mut message = vec![0x0u8, 0x0, 0x0];
-        message.append(&mut data.clone());
-        let mut hasher = Blake2b256::new();
-        hasher.update(&message);
-
+    pub fn from_tx(tx_data: &Transaction) -> Result<Self, Error> {
+        let digest = tx_data.signing_digest();
+        let tx_data = bcs::to_bytes(tx_data)?;
         Ok(Self {
-            tx_data: data,
-            hash: hasher.finalize().to_vec(),
+            tx_data,
+            hash: digest.to_vec(),
         })
+    }
+
+    pub fn base64_encoded(&self) -> String {
+        general_purpose::STANDARD.encode(self.tx_data.clone())
     }
 }

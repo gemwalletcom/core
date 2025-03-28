@@ -1,4 +1,4 @@
-name: Diesel
+name: CI - Diesel Schema
 
 on:
   push:
@@ -45,9 +45,13 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
       - name: Run sccache-cache
         uses: mozilla-actions/sccache-action@v0.0.6
-      - name: Install just & diesel
-        run: |
-          cargo install just && just install-diesel
+
+      - name: Install just
+        run: sudo apt install just
+      
+      - name: Install diesel
+        run: just --unstable install-diesel
+
       - name: Run migration
         run: |
           diesel setup

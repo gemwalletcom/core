@@ -39,7 +39,7 @@ pub struct PriceFull {
 struct PriceData {
     asset: Asset,
     price: Option<Price>,
-    price_alert: Option<PriceAlert>,
+    price_alerts: Vec<PriceAlert>,
     market: Option<AssetMarket>,
     links: Vec<AssetLink>,
 }

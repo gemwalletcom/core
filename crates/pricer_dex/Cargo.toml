@@ -1,0 +1,21 @@
+[package]
+name = "pricer_dex"
+version = { workspace = true }
+edition = { workspace = true }
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+async-trait =  { workspace = true }
+base64 = { workspace = true }
+
+primitives = { path = "../primitives" }
+gem_chain_rpc = { path = "../gem_chain_rpc" }
+gem_solana = { path = "../gem_solana" }
+
+[dev-dependencies]
+tokio.workspace = true
+
+[[test]]
+name = "integration_test"
+test = false

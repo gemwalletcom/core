@@ -1,14 +1,14 @@
 use num_bigint::BigUint;
-use primitives::BigIntValue;
 use serde::{Deserialize, Serialize};
+use serde_serializers::deserialize_biguint_from_str;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Block {
     pub blockhash: String,
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone)]
+#[derive(Debug, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Meta {
     pub fee: u64,
@@ -19,19 +19,19 @@ pub struct Meta {
     pub post_token_balances: Vec<TokenBalance>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct InnerInstruction {
     pub instructions: Vec<Instruction>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Instruction {
     pub parsed: Option<InstructionParsed>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct InstructionParsed {
     pub info: InstructionInfo,
@@ -39,7 +39,7 @@ pub struct InstructionParsed {
     pub instruction_type: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct InstructionInfo {
     pub authority: Option<String>,
@@ -87,27 +87,27 @@ pub struct AccountKey {
 //     pub program_id_index: u64,
 // }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Transaction {
     pub message: Message,
     pub signatures: Vec<String>,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct BlockTransaction {
     pub meta: Meta,
     pub transaction: Transaction,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct BlockTransactions {
     pub transactions: Vec<BlockTransaction>,
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone)]
+#[derive(Debug, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct TokenBalance {
     pub account_index: i64,
@@ -118,12 +118,13 @@ pub struct TokenBalance {
 
 impl TokenBalance {
     pub fn get_amount(&self) -> BigUint {
-        self.ui_token_amount.amount.value.clone()
+        self.ui_token_amount.amount.clone()
     }
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone)]
+#[derive(Debug, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct TokenAmount {
-    pub amount: BigIntValue,
+    #[serde(deserialize_with = "deserialize_biguint_from_str")]
+    pub amount: BigUint,
 }

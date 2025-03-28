@@ -1,4 +1,4 @@
-#[typeshare(swift = "Sendable")]
+#[typeshare(swift = "Equatable, Hashable, Sendable")]
 struct AssetMetaData {
     #[serde(rename = "isEnabled")]
     is_enabled: bool,

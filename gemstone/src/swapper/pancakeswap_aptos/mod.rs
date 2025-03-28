@@ -3,7 +3,7 @@ use std::sync::Arc;
 mod client;
 mod model;
 use super::{
-    ApprovalType, FetchQuoteData, GemSwapProvider, SwapChainAsset, SwapProvider, SwapProviderData, SwapQuote, SwapQuoteData, SwapQuoteRequest, SwapRoute,
+    FetchQuoteData, GemSwapProvider, SwapChainAsset, SwapProvider, SwapProviderData, SwapProviderType, SwapQuote, SwapQuoteData, SwapQuoteRequest, SwapRoute,
     SwapperError,
 };
 
@@ -14,8 +14,18 @@ use gem_aptos::model::{TransactionPayload, NATIVE_APTOS_COIN};
 use model::{RouteData, PANCAKE_SWAP_APTOS_ADDRESS};
 use primitives::{AssetId, Chain};
 
-#[derive(Debug, Default)]
-pub struct PancakeSwapAptos {}
+#[derive(Debug)]
+pub struct PancakeSwapAptos {
+    pub provider: SwapProviderType,
+}
+
+impl Default for PancakeSwapAptos {
+    fn default() -> Self {
+        Self {
+            provider: SwapProviderType::new(SwapProvider::PancakeSwapAptosV2),
+        }
+    }
+}
 
 impl PancakeSwapAptos {
     fn to_asset(&self, asset_id: AssetId) -> String {
@@ -43,8 +53,8 @@ impl PancakeSwapAptos {
 
 #[async_trait]
 impl GemSwapProvider for PancakeSwapAptos {
-    fn provider(&self) -> SwapProvider {
-        SwapProvider::PancakeSwapAptosV2
+    fn provider(&self) -> &SwapProviderType {
+        &self.provider
     }
 
     fn supported_assets(&self) -> Vec<SwapChainAsset> {
@@ -57,6 +67,7 @@ impl GemSwapProvider for PancakeSwapAptos {
 
         let from_internal_asset = self.to_asset(request.from_asset.clone());
         let to_internal_asset = self.to_asset(request.to_asset.clone());
+        let fee_bps = 0; // TODO: implement fees
 
         let quote_value = client
             .get_quote(
@@ -64,7 +75,7 @@ impl GemSwapProvider for PancakeSwapAptos {
                 from_internal_asset.as_str(),
                 to_internal_asset.as_str(),
                 request.value.to_string().as_str(),
-                request.options.slippage.bps,
+                request.options.slippage.bps + fee_bps,
             )
             .await?;
 
@@ -77,17 +88,17 @@ impl GemSwapProvider for PancakeSwapAptos {
         let quote = SwapQuote {
             from_value: request.value.clone(),
             to_value: quote_value.clone(),
+            to_min_value: quote_value.clone(),
             data: SwapProviderData {
-                provider: self.provider(),
+                provider: self.provider().clone(),
                 routes: vec![SwapRoute {
                     input: request.from_asset.clone(),
                     output: request.to_asset.clone(),
                     route_data,
-                    gas_estimate: None,
+                    gas_limit: None,
                 }],
                 slippage_bps: request.options.slippage.bps,
             },
-            approval: ApprovalType::None,
             request: request.clone(),
         };
 
@@ -109,11 +120,9 @@ impl GemSwapProvider for PancakeSwapAptos {
             to: PANCAKE_SWAP_APTOS_ADDRESS.to_string(),
             value: quote.from_value.clone(),
             data: serde_json::to_string(&payload).unwrap(),
+            approval: None,
+            gas_limit: None,
         };
         Ok(data)
-    }
-
-    async fn get_transaction_status(&self, _chain: Chain, _transaction_hash: &str, _provider: Arc<dyn AlienProvider>) -> Result<bool, SwapperError> {
-        unimplemented!()
     }
 }

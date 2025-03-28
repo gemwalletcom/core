@@ -1,9 +1,9 @@
 use std::str::FromStr;
 
 use diesel::prelude::*;
-use primitives::{AssetBasic, AssetId, AssetType, Chain};
+use primitives::{AssetBasic, AssetId, AssetProperties, AssetScore, AssetType, Chain};
 use serde::{Deserialize, Serialize};
-#[derive(Debug, Queryable, Selectable, Serialize, Deserialize, Insertable, AsChangeset, Clone)]
+#[derive(Debug, Queryable, Selectable, Identifiable, Serialize, Deserialize, Insertable, AsChangeset, Clone)]
 #[diesel(table_name = crate::schema::assets)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct Asset {
@@ -44,6 +44,7 @@ impl Asset {
             asset: self.as_primitive(),
             properties: self.as_property_primitive(),
             score: self.as_score_primitive(),
+            links: vec![],
         }
     }
 
@@ -51,7 +52,11 @@ impl Asset {
         primitives::AssetScore { rank: self.rank }
     }
 
-    pub fn from_primitive(asset: primitives::Asset) -> Self {
+    pub fn from_primitive_default(asset: primitives::Asset) -> Self {
+        Self::from_primitive(asset.clone(), AssetScore::default(), AssetProperties::default(asset.chain()))
+    }
+
+    pub fn from_primitive(asset: primitives::Asset, score: AssetScore, properties: primitives::AssetProperties) -> Self {
         Self {
             id: asset.id.to_string(),
             chain: asset.id.chain.as_ref().to_string(),
@@ -60,13 +65,13 @@ impl Asset {
             symbol: asset.symbol,
             asset_type: asset.asset_type.as_ref().to_string(),
             decimals: asset.decimals,
-            rank: 0,
-            is_enabled: true,
-            is_buyable: false,
-            is_sellable: false,
-            is_swappable: false,
-            is_stakeable: false,
-            staking_apr: None,
+            rank: score.rank,
+            is_enabled: properties.is_enabled,
+            is_buyable: properties.is_buyable,
+            is_sellable: properties.is_sellable,
+            is_swappable: properties.is_swapable,
+            is_stakeable: properties.is_stakeable,
+            staking_apr: properties.staking_apr,
         }
     }
 

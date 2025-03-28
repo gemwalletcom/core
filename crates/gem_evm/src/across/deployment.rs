@@ -15,6 +15,7 @@ pub struct AcrossDeployment {
     pub spoke_pool: &'static str,
 }
 
+#[derive(Debug)]
 pub struct AssetMapping {
     pub capital_cost: CapitalCostConfig,
     pub set: HashSet<AssetId>,
@@ -60,6 +61,14 @@ impl AcrossDeployment {
                 chain_id,
                 spoke_pool: "0xE0B015E54d54fc84a6cB9B666099c46adE9335FF",
             }),
+            Chain::Ink => Some(Self {
+                chain_id,
+                spoke_pool: "0xeF684C38F94F48775959ECf2012D7E864ffb9dd4",
+            }),
+            Chain::Unichain => Some(Self {
+                chain_id,
+                spoke_pool: "0x09aea4b2242abC8bb4BB78D537A67a245A7bEC64",
+            }),
             _ => None,
         }
     }
@@ -94,6 +103,8 @@ impl AcrossDeployment {
             (Chain::ZkSync, vec![WETH_ZKSYNC_ASSET_ID.into(), USDT_ZKSYNC_ASSET_ID.into()]),
             (Chain::World, vec![WETH_WORLD_ASSET_ID.into()]),
             (Chain::Blast, vec![WETH_BLAST_ASSET_ID.into()]),
+            (Chain::Ink, vec![WETH_INK_ASSET_ID.into(), USDT_INK_ASSET_ID.into()]),
+            (Chain::Unichain, vec![WETH_UNICHAIN_ASSET_ID.into(), USDC_UNICHAIN_ASSET_ID.into()]),
         ])
     }
 
@@ -116,6 +127,8 @@ impl AcrossDeployment {
                     WETH_POLYGON_ASSET_ID.into(),
                     WETH_ZKSYNC_ASSET_ID.into(),
                     WETH_WORLD_ASSET_ID.into(),
+                    WETH_INK_ASSET_ID.into(),
+                    WETH_UNICHAIN_ASSET_ID.into(),
                 ]),
             },
             AssetMapping {
@@ -131,6 +144,7 @@ impl AcrossDeployment {
                     USDC_ETH_ASSET_ID.into(),
                     USDC_OP_ASSET_ID.into(),
                     USDC_POLYGON_ASSET_ID.into(),
+                    USDC_UNICHAIN_ASSET_ID.into(),
                 ]),
             },
             AssetMapping {
@@ -147,6 +161,7 @@ impl AcrossDeployment {
                     USDT_OP_ASSET_ID.into(),
                     USDT_POLYGON_ASSET_ID.into(),
                     USDT_ZKSYNC_ASSET_ID.into(),
+                    USDT_INK_ASSET_ID.into(),
                 ]),
             },
             AssetMapping {

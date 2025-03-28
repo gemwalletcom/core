@@ -24,9 +24,19 @@ impl AlienTarget {
         Self {
             url: url.into(),
             method: AlienHttpMethod::Post,
-            headers: None,
+            headers: Some(HashMap::from([("Content-Type".into(), "application/json".into())])),
             body: Some(serde_json::to_vec(&body).unwrap()),
         }
+    }
+
+    pub fn set_cache_ttl(mut self, ttl: u64) -> Self {
+        if self.headers.is_none() {
+            self.headers = Some(HashMap::new());
+        }
+        if let Some(headers) = self.headers.as_mut() {
+            headers.insert(X_CACHE_TTL.into(), ttl.to_string());
+        }
+        self
     }
 }
 

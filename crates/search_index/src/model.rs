@@ -12,15 +12,18 @@ pub const ASSETS_FILTERS: &[&str] = &[
     "properties.isEnabled",
     "market.marketCap",
     "market.marketCapRank",
+    "tags",
 ];
 pub const ASSETS_SEARCH_ATTRIBUTES: &[&str] = &["asset.id.tokenId", "asset.id.chain", "asset.name", "asset.symbol", "asset.type"];
 pub const ASSETS_RANKING_RULES: &[&str] = &[
     "words",
     "typo",
     "score.rank:desc",
+    "market.marketCapFdv:desc",
     "proximity",
     "market.marketCapRank:asc",
     "market.marketCap:desc",
+    "market.totalVolume:desc",
     "attribute",
     "exactness",
 ];
@@ -36,7 +39,7 @@ pub struct AssetDocument {
     pub properties: AssetProperties,
     pub score: AssetScore,
     pub market: Option<AssetMarket>,
-    //TODO: Add price (market cap / supply and other metrics)
+    pub tags: Option<Vec<String>>,
 }
 
 pub fn sanitize_index_primary_id(input: &str) -> String {

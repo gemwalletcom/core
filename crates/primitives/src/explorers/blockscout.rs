@@ -3,12 +3,14 @@ pub struct BlockScout {
     pub meta: Metadata,
 }
 
+static BLOCK_SCOUT: &str = "BlockScout";
+
 impl BlockScout {
     pub fn new_celo() -> Box<Self> {
         Box::new(Self {
             meta: Metadata {
-                name: "BlockScout",
-                base_url: "https://explorer.celo.org/mainnet",
+                name: BLOCK_SCOUT,
+                base_url: "https://celo.blockscout.com",
             },
         })
     }
@@ -18,6 +20,24 @@ impl BlockScout {
             meta: Metadata {
                 name: "Pacific Explorer",
                 base_url: "https://pacific-explorer.manta.network",
+            },
+        })
+    }
+
+    pub fn new_ink() -> Box<Self> {
+        Box::new(Self {
+            meta: Metadata {
+                name: "Ink Explorer",
+                base_url: "https://explorer.inkonchain.com",
+            },
+        })
+    }
+
+    pub fn new_hyperliquid() -> Box<Self> {
+        Box::new(Self {
+            meta: Metadata {
+                name: BLOCK_SCOUT,
+                base_url: "https://hyperliquid.cloud.blockscout.com",
             },
         })
     }
@@ -35,8 +55,5 @@ impl BlockExplorer for BlockScout {
     }
     fn get_token_url(&self, _token: &str) -> Option<String> {
         Some(format!("{}/token/{}", self.meta.base_url, _token))
-    }
-    fn get_validator_url(&self, _validator: &str) -> Option<String> {
-        None
     }
 }

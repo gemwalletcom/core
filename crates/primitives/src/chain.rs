@@ -8,7 +8,7 @@ use typeshare::typeshare;
 use crate::{AssetId, AssetType, ChainType, StakeChain};
 
 #[derive(Copy, Clone, Debug, Serialize, Deserialize, EnumIter, AsRefStr, EnumString, PartialEq, Eq, Hash)]
-#[typeshare(swift = "Equatable, CaseIterable, Sendable")]
+#[typeshare(swift = "Equatable, CaseIterable, Sendable, Hashable")]
 #[serde(rename_all = "lowercase")]
 #[strum(serialize_all = "lowercase")]
 pub enum Chain {
@@ -53,6 +53,11 @@ pub enum Chain {
     Polkadot,
     Cardano,
     Abstract,
+    Berachain,
+    Ink,
+    Unichain,
+    Hyperliquid,
+    Monad,
 }
 
 impl fmt::Display for Chain {
@@ -121,8 +126,13 @@ impl Chain {
             Self::Sonic => "146",
             Self::Algorand => "mainnet-v1.0",
             Self::Polkadot => "Polkadot",
-            Self::Cardano => "764824073", // magic number from gensis configuration
+            Self::Cardano => "764824073", // magic number from genesis configuration
             Self::Abstract => "2741",
+            Self::Berachain => "80094",
+            Self::Ink => "57073",
+            Self::Unichain => "130",
+            Self::Hyperliquid => "999",
+            Self::Monad => "10143", //TODO: Monad 143
         }
     }
 
@@ -132,7 +142,7 @@ impl Chain {
     }
 
     pub fn is_utxo(&self) -> bool {
-        matches!(self, Self::Bitcoin | Self::Litecoin | Self::Doge)
+        matches!(self, Self::Bitcoin | Self::Litecoin | Self::Doge | Self::Cardano)
     }
 
     pub fn as_slip44(&self) -> i64 {
@@ -154,7 +164,12 @@ impl Chain {
             | Self::Celo
             | Self::World
             | Self::Sonic
-            | Self::Abstract => 60,
+            | Self::Abstract
+            | Self::Berachain
+            | Self::Ink
+            | Self::Unichain
+            | Self::Hyperliquid
+            | Self::Monad => 60,
             Self::Bitcoin => 0,
             Self::BitcoinCash => 145,
             Self::Litecoin => 2,
@@ -197,7 +212,12 @@ impl Chain {
             | Self::Celo
             | Self::World
             | Self::Sonic
-            | Self::Abstract => ChainType::Ethereum,
+            | Self::Abstract
+            | Self::Berachain
+            | Self::Ink
+            | Self::Unichain
+            | Self::Hyperliquid
+            | Self::Monad => ChainType::Ethereum,
             Self::Bitcoin | Self::BitcoinCash | Self::Doge | Self::Litecoin => ChainType::Bitcoin,
             Self::Solana => ChainType::Solana,
             Self::Thorchain | Self::Cosmos | Self::Osmosis | Self::Celestia | Self::Injective | Self::Noble | Self::Sei => ChainType::Cosmos,
@@ -232,7 +252,12 @@ impl Chain {
             | Self::Celo
             | Self::World
             | Self::Sonic
-            | Self::Abstract => Some(AssetType::ERC20),
+            | Self::Abstract
+            | Self::Berachain
+            | Self::Ink
+            | Self::Unichain
+            | Self::Hyperliquid
+            | Self::Monad => Some(AssetType::ERC20),
             Self::OpBNB | Self::SmartChain => Some(AssetType::BEP20),
             Self::Solana => Some(AssetType::SPL),
             Self::Tron => Some(AssetType::TRC20),
@@ -267,6 +292,14 @@ impl Chain {
         }
     }
 
+    pub fn minimum_account_balance(&self) -> Option<u64> {
+        match self {
+            Self::Solana => Some(890_880),
+            Self::Polkadot => Some(10_000_000_000),
+            _ => None,
+        }
+    }
+
     pub fn is_swap_supported(&self) -> bool {
         match self {
             Self::Ethereum
@@ -294,13 +327,18 @@ impl Chain {
             | Self::AvalancheC
             | Self::Doge
             | Self::Aptos
-            | Self::Sonic => true,
+            | Self::Sonic
+            | Self::Abstract
+            | Self::Unichain
+            | Self::Ink
+            | Self::Hyperliquid
+            | Self::Sui
+            | Self::Monad => true,
             Self::Osmosis
             | Self::Celestia
             | Self::Injective
             | Self::Ton
             | Self::Tron
-            | Self::Sui
             | Self::Xrp
             | Self::Sei
             | Self::Noble
@@ -309,7 +347,7 @@ impl Chain {
             | Self::Algorand
             | Self::Polkadot
             | Self::Cardano
-            | Self::Abstract => false,
+            | Self::Berachain => false,
         }
     }
 
@@ -321,8 +359,8 @@ impl Chain {
         matches!(self, Self::Ethereum | Self::Solana)
     }
 
-    // miliseconds
-    pub fn block_time(&self) -> i64 {
+    // milliseconds
+    pub fn block_time(&self) -> i32 {
         match self {
             Self::Ethereum => 12_000,
             Self::Manta => 12_000,
@@ -361,6 +399,11 @@ impl Chain {
             Self::Algorand => 4_000,
             Self::Polkadot => 5_000,
             Self::Cardano => 60_000,
+            Self::Berachain => 2_000,
+            Self::Ink => 1_000,
+            Self::Unichain => 1_000,
+            Self::Hyperliquid => 2_000,
+            Self::Monad => 1_000,
         }
     }
 
@@ -370,8 +413,17 @@ impl Chain {
             Self::Ethereum => 80,
             Self::Solana | Self::SmartChain => 70,
             Self::Osmosis | Self::Ton | Self::Tron => 50,
-            Self::Cosmos | Self::Injective | Self::Aptos | Self::Sui | Self::Xrp | Self::Celestia | Self::BitcoinCash | Self::Polkadot => 40,
-            Self::Abstract => 35,
+            Self::Cosmos
+            | Self::Injective
+            | Self::Aptos
+            | Self::Sui
+            | Self::Xrp
+            | Self::Celestia
+            | Self::BitcoinCash
+            | Self::Polkadot
+            | Self::Hyperliquid
+            | Self::Monad => 40,
+            Self::Abstract | Self::Berachain | Self::Ink | Self::Unichain => 35,
             Self::Manta
             | Self::Fantom
             | Self::OpBNB
@@ -400,7 +452,7 @@ impl Chain {
         }
     }
 
-    pub fn all() -> Vec<Chain> {
-        Chain::iter().collect::<Vec<_>>()
+    pub fn all() -> Vec<Self> {
+        Self::iter().collect::<Vec<_>>()
     }
 }

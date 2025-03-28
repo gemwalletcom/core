@@ -8,12 +8,8 @@ typeshare = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 chrono = { workspace = true }
-num-bigint = { workspace = true }
-num-traits = { workspace = true }
-bigdecimal = { workspace = true }
 strum = { workspace = true }
 strum_macros = { workspace = true }
 anyhow = { workspace = true }
 urlencoding = { workspace = true }
 url = { workspace = true }
-rusty-money = { workspace = true }

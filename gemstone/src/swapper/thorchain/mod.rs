@@ -8,12 +8,27 @@ use chain::THORChainName;
 use num_bigint::BigInt;
 use std::str::FromStr;
 
-#[derive(Debug, Default)]
-pub struct ThorChain {}
+use super::{SwapProvider, SwapProviderType};
 
 const QUOTE_MINIMUM: i64 = 0;
 const QUOTE_INTERVAL: i64 = 1;
 const QUOTE_QUANTITY: i64 = 0;
+
+// FIXME: estimate gas limit with memo x bytes
+const DEFAULT_DEPOSIT_GAS_LIMIT: u64 = 90_000;
+
+#[derive(Debug)]
+pub struct ThorChain {
+    pub provider: SwapProviderType,
+}
+
+impl Default for ThorChain {
+    fn default() -> Self {
+        Self {
+            provider: SwapProviderType::new(SwapProvider::Thorchain),
+        }
+    }
+}
 
 impl ThorChain {
     fn data(&self, chain: THORChainName, memo: String) -> String {

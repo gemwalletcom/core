@@ -9,8 +9,14 @@ use crate::{
     debug_println,
     network::AlienProvider,
     swapper::{
-        approval::check_approval_erc20, asset::*, chainlink::ChainlinkPriceFeed, eth_rpc, models::*, slippage::apply_slippage_in_bp, weth_address,
-        GemSwapProvider, SwapperError,
+        across::{DEFAULT_DEPOSIT_GAS_LIMIT, DEFAULT_FILL_GAS_LIMIT},
+        approval::check_approval_erc20,
+        asset::*,
+        chainlink::ChainlinkPriceFeed,
+        eth_rpc,
+        models::*,
+        slippage::apply_slippage_in_bp,
+        weth_address, GemSwapProvider, SwapperError,
     },
 };
 use gem_evm::{
@@ -39,8 +45,18 @@ use alloy_core::{
 use async_trait::async_trait;
 use std::{fmt::Debug, str::FromStr, sync::Arc};
 
-#[derive(Debug, Default)]
-pub struct Across {}
+#[derive(Debug)]
+pub struct Across {
+    pub provider: SwapProviderType,
+}
+
+impl Default for Across {
+    fn default() -> Self {
+        Self {
+            provider: SwapProviderType::new(SwapProvider::Across),
+        }
+    }
+}
 
 impl Across {
     pub fn boxed() -> Box<dyn GemSwapProvider> {
@@ -193,8 +209,8 @@ impl Across {
         }
         .abi_encode();
         let tx = TransactionObject::new_call_to_value(deployment.spoke_pool, &value, data);
-        let gas_limit = eth_rpc::estimate_gas(provider, chain, tx).await?;
-        Ok((gas_limit, v3_relay_data))
+        let gas_limit = eth_rpc::estimate_gas(provider, chain, tx).await;
+        Ok((gas_limit.unwrap_or(U256::from(DEFAULT_FILL_GAS_LIMIT)), v3_relay_data))
     }
 
     pub fn update_v3_relay_data(
@@ -225,8 +241,8 @@ impl Across {
 
 #[async_trait]
 impl GemSwapProvider for Across {
-    fn provider(&self) -> SwapProvider {
-        SwapProvider::Across
+    fn provider(&self) -> &SwapProviderType {
+        &self.provider
     }
 
     fn supported_assets(&self) -> Vec<SwapChainAsset> {
@@ -241,17 +257,21 @@ impl GemSwapProvider for Across {
             SwapChainAsset::Assets(Chain::Polygon, vec![POLYGON_WETH.id.clone()]),
             SwapChainAsset::Assets(Chain::ZkSync, vec![ZKSYNC_WETH.id.clone()]),
             SwapChainAsset::Assets(Chain::World, vec![WORLD_WETH.id.clone()]),
+            SwapChainAsset::Assets(Chain::Ink, vec![INK_WETH.id.clone()]),
+            SwapChainAsset::Assets(Chain::Unichain, vec![UNICHAIN_WETH.id.clone()]),
             // USDC
             SwapChainAsset::Assets(Chain::Arbitrum, vec![ARBITRUM_USDC.id.clone()]),
             SwapChainAsset::Assets(Chain::Ethereum, vec![ETHEREUM_USDC.id.clone()]),
             SwapChainAsset::Assets(Chain::Base, vec![BASE_USDC.id.clone()]),
             SwapChainAsset::Assets(Chain::Optimism, vec![OPTIMISM_USDC.id.clone()]),
+            SwapChainAsset::Assets(Chain::Unichain, vec![UNICHAIN_USDC.id.clone()]),
             // USDT
             SwapChainAsset::Assets(Chain::Arbitrum, vec![ARBITRUM_USDT.id.clone()]),
             SwapChainAsset::Assets(Chain::Ethereum, vec![ETHEREUM_USDT.id.clone()]),
             SwapChainAsset::Assets(Chain::Linea, vec![LINEA_USDT.id.clone()]),
             SwapChainAsset::Assets(Chain::Optimism, vec![OPTIMISM_USDT.id.clone()]),
             SwapChainAsset::Assets(Chain::ZkSync, vec![ZKSYNC_USDT.id.clone()]),
+            SwapChainAsset::Assets(Chain::Ink, vec![INK_USDT.id.clone()]),
         ]
     }
 
@@ -268,7 +288,8 @@ impl GemSwapProvider for Across {
             address: request.wallet_address.clone(),
         })?;
 
-        let deployment = AcrossDeployment::deployment_by_chain(&request.from_asset.chain).ok_or(SwapperError::NotSupportedChain)?;
+        let _ = AcrossDeployment::deployment_by_chain(&request.from_asset.chain).ok_or(SwapperError::NotSupportedChain)?;
+        let destination_deployment = AcrossDeployment::deployment_by_chain(&request.to_asset.chain).ok_or(SwapperError::NotSupportedChain)?;
         if !Self::is_supported_pair(&request.from_asset, &request.to_asset) {
             return Err(SwapperError::NotSupportedPair);
         }
@@ -334,8 +355,8 @@ impl GemSwapProvider for Across {
         let multicall_req = eth_rpc::multicall3_call(provider.clone(), &hubpool_client.chain, calls);
 
         let batch_results = futures::join!(token_config_req, multicall_req);
-        let token_config = batch_results.0.map_err(SwapperError::from)?;
-        let multicall_results = batch_results.1.map_err(SwapperError::from)?;
+        let token_config = batch_results.0?;
+        let multicall_results = batch_results.1?;
 
         let util_before = hubpool_client.decoded_utilization_call3(&multicall_results[0])?;
         let util_after = hubpool_client.decoded_utilization_call3(&multicall_results[1])?;
@@ -370,7 +391,7 @@ impl GemSwapProvider for Across {
             &output_token,
             &wallet_address,
             &message,
-            &deployment,
+            &destination_deployment,
             provider.clone(),
             &request.to_asset.chain,
         );
@@ -386,9 +407,7 @@ impl GemSwapProvider for Across {
 
         // Check if bridge amount is too small
         if remain_amount < gas_fee {
-            return Err(SwapperError::ComputeQuoteError {
-                msg: "Bridge amount is too small".into(),
-            });
+            return Err(SwapperError::InputAmountTooSmall);
         }
 
         let output_amount = remain_amount - gas_fee;
@@ -401,22 +420,6 @@ impl GemSwapProvider for Across {
                 msg: format!("Expected amount exceeds slippage, expected: {}, output: {}", expect_min, output_user_amount),
             });
         }
-
-        let approval: ApprovalType = {
-            if input_is_native {
-                ApprovalType::None
-            } else {
-                check_approval_erc20(
-                    request.wallet_address.clone(),
-                    input_asset.token_id.clone().unwrap(),
-                    deployment.spoke_pool.into(),
-                    from_amount,
-                    provider.clone(),
-                    &request.from_asset.chain,
-                )
-                .await?
-            }
-        };
 
         // Update v3 relay data (was used to estimate gas limit) with final output amount, quote timestamp and referral fee.
         self.update_v3_relay_data(
@@ -433,20 +436,21 @@ impl GemSwapProvider for Across {
         Ok(SwapQuote {
             from_value: request.value.clone(),
             to_value: output_amount.to_string(),
+            to_min_value: expect_min.to_string(),
             data: SwapProviderData {
-                provider: self.provider(),
+                provider: self.provider().clone(),
                 slippage_bps: request.options.slippage.bps,
                 routes: vec![SwapRoute {
                     input: input_asset.clone(),
                     output: output_asset.clone(),
                     route_data,
-                    gas_estimate: None,
+                    gas_limit: Some(DEFAULT_DEPOSIT_GAS_LIMIT.to_string()),
                 }],
             },
-            approval,
             request: request.clone(),
         })
     }
+
     async fn fetch_quote_data(&self, quote: &SwapQuote, provider: Arc<dyn AlienProvider>, data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError> {
         let from_chain = &quote.request.from_asset.chain;
         let deployment = AcrossDeployment::deployment_by_chain(from_chain).ok_or(SwapperError::NotSupportedChain)?;
@@ -471,20 +475,44 @@ impl GemSwapProvider for Across {
         }
         .abi_encode();
 
-        let value: &str = if quote.request.from_asset.is_native() { &quote.from_value } else { "0" };
+        let input_is_native = quote.request.from_asset.is_native();
+        let value: &str = if input_is_native { &quote.from_value } else { "0" };
+
+        let approval: Option<ApprovalData> = {
+            if input_is_native {
+                None
+            } else {
+                check_approval_erc20(
+                    quote.request.wallet_address.clone(),
+                    v3_relay_data.inputToken.to_string(),
+                    deployment.spoke_pool.into(),
+                    v3_relay_data.inputAmount,
+                    provider.clone(),
+                    from_chain,
+                )
+                .await?
+                .approval_data()
+            }
+        };
+
+        let to: String = deployment.spoke_pool.into();
+        let mut gas_limit = if approval.is_some() { route.gas_limit.clone() } else { None };
+
+        if matches!(data, FetchQuoteData::EstimateGas) {
+            let hex_value = format!("{:#x}", U256::from_str(value).unwrap());
+            let tx = TransactionObject::new_call_to_value(&to, &hex_value, deposit_v3_call.clone());
+            let _gas_limit = eth_rpc::estimate_gas(provider, from_chain, tx).await?;
+            debug_println!("gas_limit: {:?}", _gas_limit);
+            gas_limit = Some(_gas_limit.to_string());
+        }
 
         let quote_data = SwapQuoteData {
             to: deployment.spoke_pool.into(),
             value: value.to_string(),
             data: HexEncode(deposit_v3_call.clone()),
+            approval,
+            gas_limit,
         };
-
-        if matches!(data, FetchQuoteData::EstimateGas) {
-            let hex_value = format!("{:#x}", U256::from_str(value).unwrap());
-            let tx = TransactionObject::new_call_to_value(&quote_data.to, &hex_value, deposit_v3_call);
-            let gas_limit = eth_rpc::estimate_gas(provider, from_chain, tx).await?;
-            debug_println!("gas_limit: {:?}", gas_limit);
-        }
 
         Ok(quote_data)
     }
@@ -519,7 +547,9 @@ mod tests {
         let eth = AssetId::from(Chain::Ethereum, None);
         let op = AssetId::from(Chain::Optimism, None);
         let arb = AssetId::from(Chain::Arbitrum, None);
+        let linea = AssetId::from(Chain::Linea, None);
 
+        assert!(Across::is_supported_pair(&eth, &linea));
         assert!(Across::is_supported_pair(&op, &eth));
         assert!(Across::is_supported_pair(&arb, &eth));
         assert!(Across::is_supported_pair(&op, &arb));

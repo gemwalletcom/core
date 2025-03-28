@@ -5,12 +5,16 @@ edition = { workspace = true }
 
 [dependencies]
 
-bcs = "0.1.6"
 primitives = { path = "../primitives" }
-sui-types = { git = "https://github.com/mystenlabs/sui", package = "sui-types", tag = "mainnet-v1.40.3" }
 
+sui-types = { workspace = true }
+sui-transaction-builder = { workspace = true }
+bcs = { workspace = true }
 blake2 = { workspace = true }
 hex = { workspace = true }
 thiserror = { workspace = true }
 base64 = { workspace = true }
 anyhow = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+serde_serializers = { path = "../serde_serializers" }

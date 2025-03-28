@@ -1,26 +1,31 @@
+pub mod assets;
+pub mod assets_links;
+pub mod assets_types;
 pub mod device;
 pub mod fiat;
 pub mod link;
 pub mod nft;
 pub mod price;
+pub mod price_alerts;
 pub mod release;
+pub mod scan;
 pub mod subscription;
+pub mod tag;
 
 use crate::models::asset::AssetLink;
 use crate::models::*;
 use crate::schema::transactions_addresses;
-use chrono::{DateTime, NaiveDateTime};
+use chrono::DateTime;
 use diesel::associations::HasTable;
 use diesel::dsl::count;
 use diesel::pg::PgConnection;
 use diesel::prelude::*;
 use diesel::{upsert::excluded, Connection};
 use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
-use price_alert::NewPriceAlert;
 use primitives::Chain;
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("src/migrations");
 
-use primitives::{AssetType, TransactionsFetchOption};
+use primitives::TransactionsFetchOption;
 
 pub struct DatabaseClient {
     pub(crate) connection: PgConnection,
@@ -226,11 +231,6 @@ impl DatabaseClient {
             .load(&mut self.connection)
     }
 
-    pub fn get_assets_list(&mut self) -> Result<Vec<Asset>, diesel::result::Error> {
-        use crate::schema::assets::dsl::*;
-        assets.filter(is_enabled.eq(true)).select(Asset::as_select()).load(&mut self.connection)
-    }
-
     pub fn get_assets_ids_by_device_id(
         &mut self,
         addresses: Vec<String>,
@@ -254,73 +254,20 @@ impl DatabaseClient {
             .load(&mut self.connection)
     }
 
-    pub fn add_assets(&mut self, values: Vec<Asset>) -> Result<usize, diesel::result::Error> {
-        use crate::schema::assets::dsl::*;
-        diesel::insert_into(assets)
-            .values(values)
-            .on_conflict_do_nothing()
-            .execute(&mut self.connection)
-    }
-
-    pub fn update_asset_rank(&mut self, asset_id: &str, _rank: i32) -> Result<usize, diesel::result::Error> {
-        use crate::schema::assets::dsl::*;
-        diesel::update(assets)
-            .filter(id.eq(asset_id))
-            .filter(rank.eq(0))
-            .set(rank.eq(_rank))
-            .execute(&mut self.connection)
-    }
-
-    pub fn add_assets_types(&mut self, values: Vec<AssetType>) -> Result<usize, diesel::result::Error> {
-        let values = values
-            .iter()
-            .map(|x| super::models::AssetType { id: x.as_ref().to_owned() })
-            .collect::<Vec<_>>();
-
-        use crate::schema::assets_types::dsl::*;
-        diesel::insert_into(assets_types)
-            .values(values)
-            .on_conflict_do_nothing()
-            .execute(&mut self.connection)
-    }
-
-    pub fn add_assets_links(&mut self, values: Vec<AssetLink>) -> Result<usize, diesel::result::Error> {
-        use crate::schema::assets_links::dsl::*;
-        diesel::insert_into(assets_links)
-            .values(values)
-            .on_conflict((asset_id, link_type))
-            .do_update()
-            .set((url.eq(excluded(url)),))
-            .execute(&mut self.connection)
-    }
-
-    pub fn get_scan_address(&mut self, _chain: Chain, value: &str) -> Result<ScanAddress, diesel::result::Error> {
-        use crate::schema::scan_addresses::dsl::*;
-        scan_addresses
-            .filter(chain.eq(_chain.as_ref()))
-            .filter(address.eq(value))
-            .select(ScanAddress::as_select())
-            .first(&mut self.connection)
-    }
-
     // swap
 
     pub fn get_swap_assets(&mut self) -> Result<Vec<String>, diesel::result::Error> {
         use crate::schema::assets::dsl::*;
-        assets.filter(is_swappable.eq(true)).select(id).load(&mut self.connection)
+        assets
+            .filter(rank.gt(21))
+            .filter(is_swappable.eq(true))
+            .select(id)
+            .order(rank.desc())
+            .load(&mut self.connection)
     }
 
     pub fn get_swap_assets_version(&mut self) -> Result<i32, diesel::result::Error> {
-        let assets = self.get_swap_assets()?;
-        Ok(assets.len() as i32)
-    }
-
-    pub fn set_swap_enabled(&mut self, asset_ids: Vec<String>, value: bool) -> Result<usize, diesel::result::Error> {
-        use crate::schema::assets::dsl::*;
-        diesel::update(assets)
-            .filter(id.eq_any(&asset_ids))
-            .set(is_swappable.eq(value))
-            .execute(&mut self.connection)
+        Ok((std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs() / 3600) as i32)
     }
 
     pub fn add_chains(&mut self, _chains: Vec<String>) -> Result<usize, diesel::result::Error> {
@@ -333,47 +280,17 @@ impl DatabaseClient {
             .execute(&mut self.connection)
     }
 
-    // price alerts
-    pub fn get_price_alerts(&mut self, after_notified_at: NaiveDateTime) -> Result<Vec<PriceAlert>, diesel::result::Error> {
-        use crate::schema::price_alerts::dsl::*;
-        price_alerts
-            .filter(last_notified_at.lt(after_notified_at).or(last_notified_at.is_null()))
-            .select(PriceAlert::as_select())
-            .load(&mut self.connection)
-    }
-
-    pub fn get_price_alerts_for_device_id(&mut self, _device_id: i32) -> Result<Vec<PriceAlert>, diesel::result::Error> {
-        use crate::schema::price_alerts::dsl::*;
-        price_alerts
-            .filter(device_id.eq(_device_id))
-            .select(PriceAlert::as_select())
-            .load(&mut self.connection)
-    }
-
-    pub fn add_price_alerts(&mut self, values: Vec<NewPriceAlert>) -> Result<usize, diesel::result::Error> {
-        use crate::schema::price_alerts::dsl::*;
-        diesel::insert_into(price_alerts)
-            .values(values)
-            .on_conflict_do_nothing()
-            .execute(&mut self.connection)
-    }
-
-    pub fn delete_price_alerts(&mut self, _device_id: i32, asset_ids: Vec<&str>) -> Result<usize, diesel::result::Error> {
-        use crate::schema::price_alerts::dsl::*;
-        diesel::delete(price_alerts.filter(device_id.eq(_device_id).and(asset_id.eq_any(asset_ids)))).execute(&mut self.connection)
-    }
-
-    pub fn update_price_alerts_set_notified_at(&mut self, ids: Vec<i32>, _last_notified_at: NaiveDateTime) -> Result<usize, diesel::result::Error> {
-        use crate::schema::price_alerts::dsl::*;
-        diesel::update(price_alerts)
-            .filter(id.eq_any(&ids))
-            .set(last_notified_at.eq(_last_notified_at))
-            .execute(&mut self.connection)
-    }
-
     // nft
 
     pub fn migrations(&mut self) {
         self.connection.run_pending_migrations(MIGRATIONS).unwrap();
+    }
+
+    pub fn add_transactions_types(&mut self, values: Vec<TransactionType>) -> Result<usize, diesel::result::Error> {
+        use crate::schema::transactions_types::dsl::*;
+        diesel::insert_into(transactions_types)
+            .values(values)
+            .on_conflict_do_nothing()
+            .execute(&mut self.connection)
     }
 }

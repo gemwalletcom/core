@@ -1,16 +1,18 @@
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
-use crate::{Asset, AssetMarket, AssetScore, Price};
+use crate::{Asset, AssetMarket, AssetScore, Chain, LinkType, Price};
 
 #[typeshare(swift = "Sendable")]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AssetFull {
     pub asset: Asset,
-    pub links: Vec<AssetLink>,
     pub properties: AssetProperties,
     pub score: AssetScore,
+    #[typeshare(skip)]
+    pub tags: Vec<String>,
+    pub links: Vec<AssetLink>,
 }
 
 #[typeshare(swift = "Sendable")]
@@ -20,6 +22,8 @@ pub struct AssetBasic {
     pub asset: Asset,
     pub properties: AssetProperties,
     pub score: AssetScore,
+    #[typeshare(skip)]
+    pub links: Vec<AssetLink>,
 }
 
 #[typeshare(swift = "Sendable")]
@@ -43,17 +47,18 @@ pub struct AssetProperties {
     pub staking_apr: Option<f64>,
 }
 
-pub const ASSET_LINK_X: &str = "x";
-pub const ASSET_LINK_FACEBOOK: &str = "facebook";
-pub const ASSET_LINK_WEBSITE: &str = "website";
-pub const ASSET_LINK_EXPLORER: &str = "explorer";
-pub const ASSET_LINK_TELEGRAM: &str = "telegram";
-pub const ASSET_LINK_GITHUB: &str = "github";
-pub const ASSET_LINK_YOUTUBE: &str = "youtube";
-pub const ASSET_LINK_REDDIT: &str = "reddit";
-pub const ASSET_LINK_COINGECKO: &str = "coingecko";
-pub const ASSET_LINK_COINMARKETCAP: &str = "coinmarketcap";
-pub const ASSET_LINK_DISCORD: &str = "discord";
+impl AssetProperties {
+    pub fn default(chain: Chain) -> Self {
+        Self {
+            is_enabled: true,
+            is_buyable: false,
+            is_sellable: false,
+            is_swapable: chain.is_swap_supported(),
+            is_stakeable: chain.is_stake_supported(),
+            staking_apr: None,
+        }
+    }
+}
 
 #[typeshare(swift = "Sendable, Equatable, Hashable")]
 #[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
@@ -61,4 +66,13 @@ pub const ASSET_LINK_DISCORD: &str = "discord";
 pub struct AssetLink {
     pub name: String,
     pub url: String,
+}
+
+impl AssetLink {
+    pub fn new(url: &str, link_type: LinkType) -> Self {
+        Self {
+            name: link_type.name(),
+            url: url.to_string(),
+        }
+    }
 }

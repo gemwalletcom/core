@@ -1,8 +1,8 @@
+mod collections_updater;
 mod image_uploader;
-mod opensea_updater;
+use collections_updater::OpenSeaUpdater;
 use image_uploader::ImageUploaderClient;
 use nft::OpenSeaClient;
-use opensea_updater::OpenSeaUpdater;
 mod collections_image_uploader;
 use collections_image_uploader::CollectionsImageUploader;
 
@@ -14,13 +14,13 @@ use std::sync::Arc;
 use std::time::Duration;
 
 pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + Send>>> {
-    let open_sea_collections_updater = run_job("Update OpenSea collections", Duration::from_secs(3600), {
+    let open_sea_collections_updater = run_job("Update collections", Duration::from_secs(3600), {
         let settings = Arc::new(settings.clone());
 
         move || {
-            let opensea_client = OpenSeaClient::new(settings.nft.opensea.key.secret.clone());
+            let opensea_client = OpenSeaClient::new(&settings.nft.opensea.key.secret);
             let mut updater = OpenSeaUpdater::new(&settings.postgres.url, opensea_client);
-            async move { updater.update().await }
+            async move { updater.update_collections().await }
         }
     });
 

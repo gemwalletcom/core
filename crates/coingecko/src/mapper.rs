@@ -40,7 +40,13 @@ pub fn get_chain_for_coingecko_platform_id(id: &str) -> Option<Chain> {
         "linea" => Some(Chain::Linea),
         "near" => Some(Chain::Near),
         "the-open-network" => Some(Chain::Ton),
-        //"algorand" => Some(Chain::Algorand),
+        "algorand" => Some(Chain::Algorand),
+        "berachain-bera" => Some(Chain::Berachain),
+        "ink" => Some(Chain::Ink),
+        "unichain" => Some(Chain::Unichain),
+        "xrp" => Some(Chain::Xrp),
+        "hyperliquid" => Some(Chain::Hyperliquid),
+        "sonic" => Some(Chain::Sonic),
         _ => None,
     }
 }
@@ -59,7 +65,9 @@ pub fn get_coingecko_market_id_for_chain(chain: Chain) -> &'static str {
         | Chain::Linea
         | Chain::Manta
         | Chain::World
-        | Chain::Abstract => "ethereum",
+        | Chain::Abstract
+        | Chain::Ink
+        | Chain::Unichain => "ethereum",
         Chain::SmartChain | Chain::OpBNB => "binancecoin",
         Chain::Solana => "solana",
         Chain::Polygon => "matic-network",
@@ -73,7 +81,8 @@ pub fn get_coingecko_market_id_for_chain(chain: Chain) -> &'static str {
         Chain::AvalancheC => "avalanche-2",
         Chain::Sui => "sui",
         Chain::Xrp => "ripple",
-        Chain::Fantom | Chain::Sonic => "fantom",
+        Chain::Fantom => "fantom",
+        Chain::Sonic => "sonic-3",
         Chain::Gnosis => "xdai",
         Chain::Celestia => "celestia",
         Chain::Injective => "injective-protocol",
@@ -86,5 +95,8 @@ pub fn get_coingecko_market_id_for_chain(chain: Chain) -> &'static str {
         Chain::Algorand => "algorand",
         Chain::Polkadot => "polkadot",
         Chain::Cardano => "cardano",
+        Chain::Berachain => "berachain-bera",
+        Chain::Hyperliquid => "hyperliquid",
+        Chain::Monad => "monad",
     }
 }

@@ -1,9 +1,10 @@
 use api_connector::pusher::model::Notification;
 use chrono::{Duration, NaiveDateTime, Utc};
 use localizer::{LanguageLocalizer, LanguageNotification};
+use number_formatter::NumberFormatter;
 use primitives::{
-    Asset, Device, NumberFormatter, Price, PriceAlertDirection, PriceAlertType, PriceAlerts, PushNotification, PushNotificationPriceAlert,
-    PushNotificationTypes, DEFAULT_FIAT_CURRENCY,
+    Asset, Device, Price, PriceAlertDirection, PriceAlertType, PriceAlerts, PushNotification, PushNotificationAsset, PushNotificationTypes,
+    DEFAULT_FIAT_CURRENCY,
 };
 use std::collections::{HashMap, HashSet};
 use std::error::Error;
@@ -54,9 +55,8 @@ impl PriceAlertClient {
 
     pub async fn delete_price_alerts(&mut self, device_id: &str, price_alerts: PriceAlerts) -> Result<usize, Box<dyn Error>> {
         let device = self.database.get_device(device_id)?;
-        let asset_ids: Vec<_> = price_alerts.iter().map(|x| x.asset_id.as_str()).collect::<HashSet<_>>().into_iter().collect();
-
-        Ok(self.database.delete_price_alerts(device.id, asset_ids)?)
+        let ids = price_alerts.iter().map(|x| x.id()).collect::<HashSet<_>>().into_iter().collect();
+        Ok(self.database.delete_price_alerts(device.id, ids)?)
     }
 
     pub async fn get_devices_to_alert(&mut self, rules: PriceAlertRules) -> Result<Vec<PriceAlertNotification>, Box<dyn Error + Send + Sync>> {
@@ -74,7 +74,7 @@ impl PriceAlertClient {
         let price_alerts = self.database.get_price_alerts(after_notified_at)?;
 
         let mut results: Vec<PriceAlertNotification> = Vec::new();
-        let mut price_alert_ids: HashSet<i32> = HashSet::new();
+        let mut price_alert_ids: HashSet<String> = HashSet::new();
 
         for price in prices {
             if let Some(asset_ids) = prices_assets_map.get(&price.id) {
@@ -82,7 +82,7 @@ impl PriceAlertClient {
                     if asset_ids.clone().contains(&price_alert.asset_id) {
                         if let Some(alert) = self.get_price_alert_type(&price_alert, price.clone(), rules.clone()) {
                             let notification: PriceAlertNotification = self.price_alert_notification(price.as_price_primitive(), price_alert.clone(), alert)?;
-                            price_alert_ids.insert(price_alert.id);
+                            price_alert_ids.insert(price_alert.identifier);
                             results.push(notification);
                         }
                     }
@@ -175,7 +175,7 @@ impl PriceAlertClient {
                     unimplemented!()
                 }
             };
-            let price_alert_data = PushNotificationPriceAlert {
+            let price_alert_data = PushNotificationAsset {
                 asset_id: price_alert.asset.id.to_string(),
             };
             let data = PushNotification {

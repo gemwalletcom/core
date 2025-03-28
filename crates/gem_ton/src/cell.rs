@@ -124,7 +124,7 @@ impl Cell {
         if !full_bytes {
             writer.write_bytes(&self.data[..data_len - 1]).map_boc_serialization_error()?;
             let last_byte = self.data[data_len - 1];
-            let l = last_byte | 1 << (8 - rest_bits - 1);
+            let l = last_byte | (1 << (8 - rest_bits - 1));
             writer.write(8, l).map_boc_serialization_error()?;
         } else {
             writer.write_bytes(&self.data).map_boc_serialization_error()?;

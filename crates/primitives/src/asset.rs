@@ -4,7 +4,7 @@ use typeshare::typeshare;
 use crate::{asset_id::AssetId, asset_type::AssetType, Chain};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare(swift = "Sendable")]
+#[typeshare(swift = "Equatable, Hashable, Sendable")]
 pub struct Asset {
     pub id: AssetId,
     pub name: String,
@@ -309,6 +309,41 @@ impl Asset {
                 id: chain.as_asset_id(),
                 name: "Abstract".to_string(),
                 symbol: "ETH".to_string(),
+                decimals: 18,
+                asset_type: AssetType::NATIVE,
+            },
+            Chain::Berachain => Asset {
+                id: chain.as_asset_id(),
+                name: "Berachain".to_string(),
+                symbol: "BERA".to_string(),
+                decimals: 18,
+                asset_type: AssetType::NATIVE,
+            },
+            Chain::Ink => Asset {
+                id: chain.as_asset_id(),
+                name: "Ink".to_string(),
+                symbol: "ETH".to_string(),
+                decimals: 18,
+                asset_type: AssetType::NATIVE,
+            },
+            Chain::Unichain => Asset {
+                id: chain.as_asset_id(),
+                name: "Unichain".to_string(),
+                symbol: "ETH".to_string(),
+                decimals: 18,
+                asset_type: AssetType::NATIVE,
+            },
+            Chain::Hyperliquid => Asset {
+                id: chain.as_asset_id(),
+                name: "HypeEVM".to_string(),
+                symbol: "HYPE".to_string(),
+                decimals: 18,
+                asset_type: AssetType::NATIVE,
+            },
+            Chain::Monad => Asset {
+                id: chain.as_asset_id(),
+                name: "Monad Testnet".to_string(), //TODO: Monad
+                symbol: "MON".to_string(),
                 decimals: 18,
                 asset_type: AssetType::NATIVE,
             },

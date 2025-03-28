@@ -1,58 +1,7 @@
 use super::permit2_data::Permit2Data;
-use crate::{
-    config::swap_config::{SwapReferralFees, DEFAULT_SLIPPAGE_BPS},
-    network::{jsonrpc::JsonRpcError, AlienError},
-};
-use gem_evm::address::AddressError;
+use crate::config::swap_config::{SwapReferralFees, DEFAULT_SLIPPAGE_BPS};
 use primitives::{AssetId, Chain};
 use std::fmt::Debug;
-
-#[derive(Debug, thiserror::Error, uniffi::Error)]
-pub enum SwapperError {
-    #[error("Not supported chain")]
-    NotSupportedChain,
-    #[error("Not supported asset")]
-    NotSupportedAsset,
-    #[error("Not supported pair")]
-    NotSupportedPair,
-    #[error("No available provider")]
-    NoAvailableProvider,
-    #[error("Invalid address {address}")]
-    InvalidAddress { address: String },
-    #[error("Invalid input amount")]
-    InvalidAmount,
-    #[error("Invalid route")]
-    InvalidRoute,
-    #[error("RPC error: {msg}")]
-    NetworkError { msg: String },
-    #[error("ABI error: {msg}")]
-    ABIError { msg: String },
-    #[error("Compute quote error: {msg}")]
-    ComputeQuoteError { msg: String },
-
-    #[error("No quote available")]
-    NoQuoteAvailable,
-    #[error("Not implemented")]
-    NotImplemented,
-}
-
-impl From<AlienError> for SwapperError {
-    fn from(err: AlienError) -> Self {
-        Self::NetworkError { msg: err.to_string() }
-    }
-}
-
-impl From<JsonRpcError> for SwapperError {
-    fn from(err: JsonRpcError) -> Self {
-        Self::NetworkError { msg: err.to_string() }
-    }
-}
-
-impl From<AddressError> for SwapperError {
-    fn from(err: AddressError) -> Self {
-        Self::InvalidAddress { address: err.to_string() }
-    }
-}
 
 #[derive(Debug, Clone, PartialEq, uniffi::Enum)]
 pub enum GemSwapMode {
@@ -60,15 +9,65 @@ pub enum GemSwapMode {
     ExactOut,
 }
 
+#[derive(Debug, Clone, PartialEq, uniffi::Object)]
+pub struct SwapProviderConfig(SwapProviderType);
+
+impl SwapProviderConfig {
+    pub fn id(&self) -> SwapProvider {
+        self.0.id.clone()
+    }
+}
+
+#[uniffi::export]
+impl SwapProviderConfig {
+    #[uniffi::constructor]
+    pub fn new(id: SwapProvider) -> Self {
+        Self(SwapProviderType::new(id))
+    }
+    pub fn inner(&self) -> SwapProviderType {
+        self.0.clone()
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, uniffi::Record)]
+pub struct SwapProviderType {
+    pub id: SwapProvider,
+    pub mode: SwapProviderMode,
+    pub name: String,
+    pub protocol: String,
+}
+
+impl SwapProviderType {
+    pub fn new(id: SwapProvider) -> Self {
+        Self {
+            id: id.clone(),
+            mode: id.mode(),
+            name: id.name().to_string(),
+            protocol: id.protocol_name().to_string(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, uniffi::Enum)]
+pub enum SwapProviderMode {
+    OnChain,
+    CrossChain,
+    Bridge,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, uniffi::Enum)]
 pub enum SwapProvider {
     UniswapV3,
+    UniswapV4,
     PancakeSwapV3,
     PancakeSwapAptosV2,
     Thorchain,
     Orca,
     Jupiter,
     Across,
+    OkuTrade,
+    Wagmi,
+    Cetus,
     Stonfi,
 }
 
@@ -82,34 +81,51 @@ pub enum SwapProviderType {
 impl SwapProvider {
     pub fn name(&self) -> &str {
         match self {
+            Self::UniswapV3 | Self::UniswapV4 => "Uniswap",
+            Self::PancakeSwapV3 | Self::PancakeSwapAptosV2 => "PancakeSwap",
+            Self::Thorchain => "THORChain",
+            Self::Orca => "Orca",
+            Self::Jupiter => "Jupiter",
+            Self::Across => "Across",
+            Self::OkuTrade => "Oku",
+            Self::Wagmi => "Wagmi",
+            Self::Cetus => "Cetus",
+        }
+    }
+
+    pub fn protocol_name(&self) -> &str {
+        match self {
             Self::UniswapV3 => "Uniswap v3",
+            Self::UniswapV4 => "Uniswap v4",
             Self::PancakeSwapV3 => "PancakeSwap v3",
             Self::PancakeSwapAptosV2 => "PancakeSwap v2",
             Self::Thorchain => "THORChain",
             Self::Orca => "Orca Whirlpool",
             Self::Jupiter => "Jupiter",
             Self::Across => "Across v3",
+            Self::OkuTrade => "Oku Trade",
+            Self::Wagmi => "Wagmi",
+            Self::Cetus => "Cetus",
             Self::Stonfi => "Stonfi",
         }
     }
 
-    pub fn provider_type(&self) -> SwapProviderType {
+    pub fn mode(&self) -> SwapProviderMode {
         match self {
-            Self::UniswapV3 => SwapProviderType::OnChain,
-            Self::PancakeSwapV3 => SwapProviderType::OnChain,
-            Self::PancakeSwapAptosV2 => SwapProviderType::OnChain,
-            Self::Thorchain => SwapProviderType::CrossChain,
-            Self::Orca => SwapProviderType::OnChain,
-            Self::Jupiter => SwapProviderType::OnChain,
-            Self::Across => SwapProviderType::Bridge,
-            Self::Stonfi => SwapProviderType::OnChain,
+            Self::UniswapV3
+            | Self::UniswapV4
+            | Self::PancakeSwapV3
+            | Self::PancakeSwapAptosV2
+            | Self::Orca
+            | Self::Jupiter
+            | Self::OkuTrade
+            | Self::Wagmi
+            | Self::Cetus
+            | Self::Stonfi => SwapProviderMode::OnChain,
+            Self::Thorchain => SwapProviderMode::CrossChain,
+            Self::Across => SwapProviderMode::Bridge,
         }
     }
-}
-
-#[uniffi::export]
-fn swap_provider_name_to_string(provider: SwapProvider) -> String {
-    provider.name().to_string()
 }
 
 #[derive(Debug, Clone, uniffi::Record)]
@@ -164,9 +180,11 @@ impl Default for GemSwapOptions {
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct SwapQuote {
     pub from_value: String,
+    // Original quote amount
     pub to_value: String,
+    // Minimum amount (slippage, fee applied)
+    pub to_min_value: String,
     pub data: SwapProviderData,
-    pub approval: ApprovalType,
     pub request: SwapQuoteRequest,
 }
 
@@ -175,6 +193,21 @@ pub enum ApprovalType {
     Approve(ApprovalData),
     Permit2(Permit2ApprovalData),
     None,
+}
+
+impl ApprovalType {
+    pub fn approval_data(&self) -> Option<ApprovalData> {
+        match self {
+            Self::Approve(data) => Some(data.clone()),
+            _ => None,
+        }
+    }
+    pub fn permit2_data(&self) -> Option<Permit2ApprovalData> {
+        match self {
+            Self::Permit2(data) => Some(data.clone()),
+            _ => None,
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, uniffi::Record)]
@@ -198,11 +231,13 @@ pub struct SwapQuoteData {
     pub to: String,
     pub value: String,
     pub data: String,
+    pub approval: Option<ApprovalData>,
+    pub gas_limit: Option<String>,
 }
 
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct SwapProviderData {
-    pub provider: SwapProvider,
+    pub provider: SwapProviderType,
     pub slippage_bps: u32,
     pub routes: Vec<SwapRoute>,
 }
@@ -212,7 +247,7 @@ pub struct SwapRoute {
     pub input: AssetId,
     pub output: AssetId,
     pub route_data: String,
-    pub gas_estimate: Option<String>,
+    pub gas_limit: Option<String>,
 }
 
 #[derive(Debug, Clone, uniffi::Enum)]
@@ -220,6 +255,15 @@ pub enum FetchQuoteData {
     Permit2(Permit2Data),
     EstimateGas,
     None,
+}
+
+impl FetchQuoteData {
+    pub fn permit2_data(&self) -> Option<Permit2Data> {
+        match self {
+            Self::Permit2(data) => Some(data.clone()),
+            _ => None,
+        }
+    }
 }
 
 #[derive(Debug, Clone, uniffi::Enum, PartialEq)]

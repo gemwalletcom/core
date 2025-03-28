@@ -18,5 +18,27 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
         }
     });
 
-    vec![Box::pin(update_fiat_assets_job)]
+    let update_fiat_buyable_assets_job = run_job("Update fiat buyable/sellable assets", Duration::from_secs(3600), {
+        let settings = Arc::new(settings.clone());
+        move || {
+            let providers = FiatProviderFactory::new_providers((*settings).clone());
+            let mut fiat_assets_updater = FiatAssetsUpdater::new(&settings.postgres.url, providers);
+            async move { fiat_assets_updater.update_buyable_sellable_assets().await }
+        }
+    });
+
+    let update_trending_fiat_assets_job = run_job("Update trending fiat assets", Duration::from_secs(3600), {
+        let settings = Arc::new(settings.clone());
+        move || {
+            let providers = FiatProviderFactory::new_providers((*settings).clone());
+            let mut fiat_assets_updater = FiatAssetsUpdater::new(&settings.postgres.url, providers);
+            async move { fiat_assets_updater.update_trending_fiat_assets().await }
+        }
+    });
+
+    vec![
+        Box::pin(update_fiat_assets_job),
+        Box::pin(update_fiat_buyable_assets_job),
+        Box::pin(update_trending_fiat_assets_job),
+    ]
 }

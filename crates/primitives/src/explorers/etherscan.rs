@@ -46,8 +46,8 @@ impl EtherScan {
             },
             EVMChain::AvalancheC => Self {
                 meta: Metadata {
-                    name: "SnowTrace",
-                    base_url: "https://snowtrace.io",
+                    name: "SnowScan",
+                    base_url: "https://snowscan.xyz",
                 },
             },
             EVMChain::OpBNB => Self {
@@ -113,15 +113,34 @@ impl EtherScan {
             EVMChain::Sonic => Self {
                 meta: Metadata {
                     name: "SonicScan",
-                    base_url: "https://sonicscan.org/",
+                    base_url: "https://sonicscan.org",
                 },
             },
             EVMChain::Abstract => Self {
                 meta: Metadata {
-                    name: "AbstractScan",
-                    base_url: "https://abscan.org/",
+                    name: "Abscan",
+                    base_url: "https://abscan.org",
                 },
             },
+            EVMChain::Berachain => Self {
+                meta: Metadata {
+                    name: "Berascan",
+                    base_url: "https://berascan.com",
+                },
+            },
+            EVMChain::Unichain => Self {
+                meta: Metadata {
+                    name: "Uniscan",
+                    base_url: "https://uniscan.xyz",
+                },
+            },
+            EVMChain::Monad => Self {
+                meta: Metadata {
+                    name: "Monad",
+                    base_url: "https://testnet.monadexplorer.com", //TODO: Monad. Replace with etherscan
+                },
+            },
+            _ => todo!(),
         })
     }
 }
@@ -138,8 +157,5 @@ impl BlockExplorer for EtherScan {
     }
     fn get_token_url(&self, token: &str) -> Option<String> {
         Some(format!("{}/token/{}", self.meta.base_url, token))
-    }
-    fn get_validator_url(&self, _validator: &str) -> Option<String> {
-        None
     }
 }

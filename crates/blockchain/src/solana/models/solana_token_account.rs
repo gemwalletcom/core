@@ -1,54 +1,81 @@
 #[typeshare(swift = "Sendable")]
-struct SolanaTokenAccount {
+struct SolanaTokenAccountPubkey {
+    pubkey: String,
+}
+
+// accounts
+#[typeshare(swift = "Sendable")]
+#[typeshare(swiftGenericConstraints = "T: Sendable")]
+struct SolanaStakeAccount {
+    account: SolanaAccount<SolanaAccountParsed<SolanaAccountParsedInfo<SolanaStakeInfo>>>,
     pubkey: String,
 }
 
 #[typeshare(swift = "Sendable")]
 #[typeshare(swiftGenericConstraints = "T: Sendable")]
-struct SolanaTokenAccountResult<T> {
-    account: T,
+struct SolanaTokenAccount {
+    account: SolanaAccount<SolanaAccountParsed<SolanaAccountParsedInfo<SolanaTokenInfo>>>,
     pubkey: String,
 }
 
+// parsed data
+
 #[typeshare(swift = "Sendable")]
-struct SolanaStakeAccount {
+#[typeshare(swiftGenericConstraints = "T: Sendable")]
+struct SolanaAccount<T> {
     lamports: Int,
     space: i32,
-    data: SolanaStakeAccountData,
+    owner: String,
+    data: T,
 }
 
 #[typeshare(swift = "Sendable")]
-struct SolanaStakeAccountData {
-    parsed: SolanaStakeAccountDataParsed,
+#[typeshare(swiftGenericConstraints = "T: Sendable")]
+struct SolanaAccountParsed<T> {
+    parsed: T,
 }
 
 #[typeshare(swift = "Sendable")]
-struct SolanaStakeAccountDataParsed {
-    info: SolanaStakeAccountDataParsedInfo,
+#[typeshare(swiftGenericConstraints = "T: Sendable")]
+struct SolanaAccountParsedInfo<T> {
+    info: T,
 }
 
+// parsed data: stake
 #[typeshare(swift = "Sendable")]
-struct SolanaStakeAccountDataParsedInfo {
-    stake: SolanaStakeAccountDataParsedInfoStake,
-    meta: SolanaStakeAccountDataParsedInfoMeta,
+struct SolanaStakeInfo {
+    stake: SolanaStake,
+    meta: SolanaRentExemptReserve,
 }
 
 #[typeshare(swift = "Sendable")]
 #[serde(rename_all = "camelCase")]
-struct SolanaStakeAccountDataParsedInfoMeta {
+struct SolanaRentExemptReserve {
     rent_exempt_reserve: String,
 }
 
 #[typeshare(swift = "Sendable")]
-struct SolanaStakeAccountDataParsedInfoStake {
-    delegation: SolanaStakeAccountDataParsedInfoStakeDelegation,
+struct SolanaStake {
+    delegation: SolanaStakeDelegation,
 }
 
 #[typeshare(swift = "Sendable")]
 #[serde(rename_all = "camelCase")]
-struct SolanaStakeAccountDataParsedInfoStakeDelegation {
+struct SolanaStakeDelegation {
     voter: String,
     stake: String,
     activation_epoch: String,
     deactivation_epoch: String,
+}
+
+// // parsed data: token
+#[typeshare(swift = "Sendable")]
+#[serde(rename_all = "camelCase")]
+struct SolanaTokenInfo {
+    token_amount: SolanaTokenAmount,
+}
+
+#[typeshare(swift = "Sendable")]
+struct SolanaTokenAmount {
+    amount: String,
 }

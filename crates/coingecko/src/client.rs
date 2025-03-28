@@ -1,4 +1,6 @@
-use crate::model::{Coin, CoinInfo, CoinMarket, CoinQuery, CointListQuery, ExchangeRates, MarketChart, SearchTrending};
+use crate::model::{
+    Coin, CoinIds, CoinInfo, CoinMarket, CoinQuery, CointListQuery, Data, ExchangeRates, Global, MarketChart, SearchTrending, TopGainersLosers,
+};
 use primitives::FiatRate;
 use reqwest::header::{HeaderMap, HeaderValue, USER_AGENT};
 use reqwest_middleware::{ClientBuilder, ClientWithMiddleware};
@@ -52,17 +54,30 @@ impl CoinGeckoClient {
         headers
     }
 
+    pub async fn get_global(&self) -> Result<Global, Box<dyn Error + Send + Sync>> {
+        let url = format!("{}/api/v3/global", self.url);
+        Ok(self.client.get(&url).headers(self.headers()).send().await?.json::<Data<Global>>().await?.data)
+    }
+
     pub async fn get_search_trending(&self) -> Result<SearchTrending, Box<dyn Error + Send + Sync>> {
         let url = format!("{}/api/v3/search/trending", self.url);
-        let response = self.client.get(&url).headers(self.headers()).send().await?;
-        Ok(response.json::<SearchTrending>().await?)
+        Ok(self.client.get(&url).headers(self.headers()).send().await?.json().await?)
+    }
+
+    pub async fn get_top_gainers_losers(&self) -> Result<TopGainersLosers, Box<dyn Error + Send + Sync>> {
+        let url = format!("{}/api/v3/coins/top_gainers_losers?vs_currency=usd", self.url);
+        Ok(self.client.get(&url).headers(self.headers()).send().await?.json().await?)
     }
 
     pub async fn get_coin_list(&self) -> Result<Vec<Coin>, Box<dyn Error + Send + Sync>> {
         let url = format!("{}/api/v3/coins/list", self.url);
         let query = CointListQuery { include_platform: true };
-        let response = self.client.get(&url).query(&query).headers(self.headers()).send().await?;
-        Ok(response.json().await?)
+        Ok(self.client.get(&url).query(&query).headers(self.headers()).send().await?.json().await?)
+    }
+
+    pub async fn get_coin_list_new(&self) -> Result<CoinIds, Box<dyn Error + Send + Sync>> {
+        let url = format!("{}/api/v3/coins/list/new", self.url);
+        Ok(self.client.get(&url).headers(self.headers()).send().await?.json().await?)
     }
 
     pub async fn get_coin_markets(&self, page: usize, per_page: usize) -> Result<Vec<CoinMarket>, Box<dyn Error + Send + Sync>> {
@@ -70,8 +85,7 @@ impl CoinGeckoClient {
             "{}/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page={}&page={}&sparkline=false&locale=en",
             self.url, per_page, page
         );
-        let response = self.client.get(&url).headers(self.headers()).send().await?;
-        Ok(response.json().await?)
+        Ok(self.client.get(&url).headers(self.headers()).send().await?.json().await?)
     }
 
     pub async fn get_coin_markets_ids(&self, ids: Vec<String>, per_page: usize) -> Result<Vec<CoinMarket>, Box<dyn Error + Send + Sync>> {
@@ -81,7 +95,7 @@ impl CoinGeckoClient {
             ids.join(","),
             per_page
         );
-        Ok(self.client.get(&url).headers(self.headers()).send().await?.json::<Vec<CoinMarket>>().await?)
+        Ok(self.client.get(&url).headers(self.headers()).send().await?.json().await?)
     }
 
     pub async fn get_coin_markets_id(&self, id: &str) -> Result<CoinMarket, Box<dyn Error + Send + Sync>> {
@@ -98,16 +112,12 @@ impl CoinGeckoClient {
             localization: true,
             developer_data: true,
         };
-        let response = self.client.get(&url).query(&query).headers(self.headers()).send().await?;
-        Ok(response.json().await?)
+        Ok(self.client.get(&url).query(&query).headers(self.headers()).send().await?.json().await?)
     }
 
     pub async fn get_fiat_rates(&self) -> Result<Vec<FiatRate>, Box<dyn Error + Send + Sync>> {
         let url = format!("{}/api/v3/exchange_rates", self.url);
-        let response = self.client.get(&url).headers(self.headers()).send().await?;
-
-        let rates: ExchangeRates = response.json().await?;
-
+        let rates = self.client.get(&url).headers(self.headers()).send().await?.json::<ExchangeRates>().await?;
         let fiat_rates: Vec<FiatRate> = rates
             .rates
             .into_iter()
@@ -145,8 +155,6 @@ impl CoinGeckoClient {
             "{}/api/v3/coins/{}/market_chart?vs_currency=usd&days=max&interval=daily&precision=full",
             self.url, coin_id
         );
-        let response = self.client.get(url).send().await?.json::<MarketChart>().await?;
-
-        Ok(response)
+        Ok(self.client.get(url).send().await?.json().await?)
     }
 }

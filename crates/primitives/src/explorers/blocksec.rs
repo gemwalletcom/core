@@ -58,12 +58,6 @@ impl BlockExplorer for Blocksec {
         // delegate to etherscan
         EtherScan::new(self.chain).get_address_url(_address)
     }
-    fn get_token_url(&self, _token: &str) -> Option<String> {
-        None
-    }
-    fn get_validator_url(&self, _validator: &str) -> Option<String> {
-        None
-    }
 }
 
 #[cfg(test)]
@@ -99,5 +93,15 @@ mod tests {
             explorer.get_address_url("0xba4d1d35bce0e8f28e5a3403e7a0b996c5d50ac4"),
             "https://bscscan.com/address/0xba4d1d35bce0e8f28e5a3403e7a0b996c5d50ac4"
         )
+    }
+
+    #[test]
+    fn test_get_base_url() {
+        let explorer = Blocksec::new_base();
+
+        assert_eq!(
+            explorer.get_tx_url("0xa9fe9d47f5130e3aa622b1f1c9a7af04f68a297a126e9210c671b3afb5df2816"),
+            "https://app.blocksec.com/explorer/tx/base/0xa9fe9d47f5130e3aa622b1f1c9a7af04f68a297a126e9210c671b3afb5df2816"
+        );
     }
 }

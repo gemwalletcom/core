@@ -226,4 +226,35 @@ lazy_static! {
         decimals: 6,
         asset_type: AssetType::ERC20,
     };
+    // ink
+    pub static ref INK_WETH: Asset = Asset {
+        id: WETH_INK_ASSET_ID.into(),
+        name: WETH_NAME.into(),
+        symbol: WETH_SYMBOL.into(),
+        decimals: 18,
+        asset_type: AssetType::ERC20,
+    };
+    pub static ref INK_USDT: Asset = Asset {
+        id: USDT_INK_ASSET_ID.into(),
+        name: USDT_NAME.to_owned(),
+        symbol: USDT_SYMBOL.to_owned(),
+        decimals: 6,
+        asset_type: AssetType::ERC20,
+    };
+    // Unichain
+    pub static ref UNICHAIN_WETH: Asset = Asset {
+        id: WETH_UNICHAIN_ASSET_ID.into(),
+        name: WETH_NAME.into(),
+        symbol: WETH_SYMBOL.into(),
+        decimals: 18,
+        asset_type: AssetType::ERC20,
+    };
+    pub static ref UNICHAIN_USDC: Asset = Asset {
+        id: USDC_UNICHAIN_ASSET_ID.into(),
+        name: USDC_NAME.to_owned(),
+        symbol: USDC_SYMBOL.to_owned(),
+        decimals: 6,
+        asset_type: AssetType::ERC20,
+    };
+
 }

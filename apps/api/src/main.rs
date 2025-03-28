@@ -1,59 +1,44 @@
 #[macro_use]
 extern crate rocket;
-mod asset;
-mod asset_client;
-mod charts;
+mod assets;
 mod config;
-mod config_client;
-mod device;
-mod device_client;
-mod fiat_quotes;
+mod devices;
+mod fiat;
+mod markets;
 mod metrics;
-mod metrics_client;
 mod name;
 mod nft;
-mod nft_client;
 mod parser;
-mod parser_client;
 mod price_alerts;
 mod prices;
-mod security_providers;
-mod security_scan;
+mod scan;
 mod status;
-mod subscription;
-mod subscription_client;
+mod subscriptions;
 mod swap;
-mod swap_client;
-mod transaction;
-mod transaction_client;
+mod transactions;
 
-use crate::asset_client::AssetsChainProvider;
 use api_connector::PusherClient;
-use asset_client::{AssetsClient, AssetsSearchClient};
-use config_client::Client as ConfigClient;
-use device_client::DevicesClient;
-use fiat::client::Client as FiatProvider;
-use fiat::FiatProviderFactory;
-use metrics_client::MetricsClient;
+use assets::{AssetsChainProvider, AssetsClient, AssetsSearchClient};
+use config::ConfigClient;
+use devices::DevicesClient;
+use fiat::{FiatClient, FiatProviderFactory};
+use metrics::MetricsClient;
 use name_resolver::client::Client as NameClient;
 use name_resolver::NameProviderFactory;
-use nft_client::NFTClient;
-use parser_client::ParserClient;
-use pricer::chart_client::ChartClient;
-use pricer::price_client::PriceClient;
-use pricer::PriceAlertClient;
+use nft::NFTClient;
+use parser::ParserClient;
+use pricer::{ChartClient, MarketsClient, PriceAlertClient, PriceClient};
 use rocket::fairing::AdHoc;
 use rocket::tokio::sync::Mutex;
 use rocket::{Build, Rocket};
+use scan::{ScanClient, ScanProviderFactory};
 use search_index::SearchIndexClient;
-use security_providers::SecurityProviderFactory;
-use security_scan::SecurityScanClient;
 use settings::Settings;
 use settings_chain::ProviderFactory;
 use storage::{ClickhouseClient, DatabaseClient};
-use subscription_client::SubscriptionsClient;
-use swap_client::SwapClient;
-use transaction_client::TransactionsClient;
+use subscriptions::SubscriptionsClient;
+use swap::SwapClient;
+use transactions::TransactionsClient;
 
 async fn rocket(settings: Settings) -> Rocket<Build> {
     let redis_url = settings.redis.url.as_str();
@@ -79,16 +64,23 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
     let subscriptions_client = SubscriptionsClient::new(postgres_url).await;
     let metrics_client = MetricsClient::new(postgres_url).await;
 
-    let security_providers = SecurityProviderFactory::create_providers(&settings_clone);
-    let scan_client = SecurityScanClient::new(postgres_url, security_providers).await;
+    let security_providers = ScanProviderFactory::create_providers(&settings_clone);
+    let scan_client = ScanClient::new(postgres_url, security_providers).await;
     let parser_client = ParserClient::new(settings_clone.clone()).await;
     let assets_client = AssetsClient::new(postgres_url).await;
     let search_index_client = SearchIndexClient::new(&settings_clone.meilisearch.url.clone(), &settings_clone.meilisearch.key.clone());
     let assets_search_client = AssetsSearchClient::new(&search_index_client).await;
     let swap_client = SwapClient::new(postgres_url).await;
     let providers = FiatProviderFactory::new_providers(settings_clone.clone());
-    let fiat_client = FiatProvider::new(postgres_url, providers).await;
-    let nft_client = NFTClient::new(postgres_url, &settings.nft.nftscan.key.secret, &settings.nft.simplehash.key.secret).await;
+    let fiat_client = FiatClient::new(postgres_url, providers).await;
+    let nft_client = NFTClient::new(
+        postgres_url,
+        &settings.nft.nftscan.key.secret,
+        &settings.nft.opensea.key.secret,
+        &settings.nft.magiceden.key.secret,
+    )
+    .await;
+    let markets_client = MarketsClient::new(postgres_url, redis_url);
 
     rocket::build()
         .attach(AdHoc::on_ignite("Tokio Runtime Configuration", |rocket| async {
@@ -115,38 +107,39 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
         .manage(Mutex::new(nft_client))
         .manage(Mutex::new(price_alert_client))
         .manage(Mutex::new(assets_chain_provider))
-        .mount("/", routes![status::get_status,])
+        .manage(Mutex::new(markets_client))
+        .mount("/", routes![status::get_status])
         .mount(
             "/v1",
             routes![
                 prices::get_price,
                 prices::get_assets_prices,
-                charts::get_charts,
-                fiat_quotes::get_fiat_on_ramp_quotes,
-                fiat_quotes::get_fiat_off_ramp_quotes,
-                fiat_quotes::get_fiat_on_ramp_assets,
-                fiat_quotes::get_fiat_off_ramp_assets,
-                fiat_quotes::create_fiat_webhook,
+                prices::get_charts,
+                fiat::get_fiat_quotes,
+                fiat::get_fiat_on_ramp_quotes,
+                fiat::get_fiat_on_ramp_assets,
+                fiat::get_fiat_off_ramp_assets,
+                fiat::create_fiat_webhook,
                 config::get_config,
                 name::get_name_resolve,
-                device::add_device,
-                device::get_device,
-                device::update_device,
-                device::delete_device,
-                device::send_push_notification_device,
-                asset::get_asset,
-                asset::add_asset,
-                asset::get_assets,
-                asset::get_assets_list,
-                asset::get_assets_search,
-                asset::get_assets_by_device_id,
-                asset::get_assets_ids_by_device_id,
-                subscription::add_subscriptions,
-                subscription::get_subscriptions,
-                subscription::delete_subscriptions,
-                transaction::get_transactions_by_device_id_old,
-                transaction::get_transactions_by_device_id,
-                transaction::get_transactions_by_hash,
+                devices::add_device,
+                devices::get_device,
+                devices::update_device,
+                devices::delete_device,
+                devices::send_push_notification_device,
+                assets::get_asset,
+                assets::add_asset,
+                assets::get_assets,
+                assets::get_assets_list,
+                assets::get_assets_search,
+                assets::get_assets_by_device_id,
+                assets::get_assets_ids_by_device_id,
+                subscriptions::add_subscriptions,
+                subscriptions::get_subscriptions,
+                subscriptions::delete_subscriptions,
+                transactions::get_transactions_by_device_id_old,
+                transactions::get_transactions_by_device_id,
+                transactions::get_transactions_by_hash,
                 parser::get_parser_block,
                 parser::get_parser_block_finalize,
                 parser::get_parser_block_number_latest,
@@ -160,10 +153,11 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
                 price_alerts::get_price_alerts,
                 price_alerts::add_price_alerts,
                 price_alerts::delete_price_alerts,
-                security_scan::scan,
+                scan::scan_transaction,
+                markets::get_markets,
             ],
         )
-        .mount(settings.metrics.path, routes![metrics::get_metrics,])
+        .mount(settings.metrics.path, routes![metrics::get_metrics])
 }
 
 #[tokio::main]

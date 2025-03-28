@@ -8,13 +8,18 @@ CREATE TABLE nft_assets (
     collection_id VARCHAR(64) NOT NULL REFERENCES nft_collections (id) ON DELETE CASCADE,
     chain VARCHAR(64) NOT NULL REFERENCES chains (id) ON DELETE CASCADE,
     
-    name VARCHAR(256) NOT NULL,
-    description VARCHAR(1024) NOT NULL,
+    name VARCHAR(1024) NOT NULL,
+    description VARCHAR(4096) NOT NULL,
 
-    image_url VARCHAR(512) NOT NULL,
+    image_preview_url VARCHAR(512),
+    image_preview_mime_type VARCHAR(64),
+
+    resource_url VARCHAR(512),
+    resource_mime_type VARCHAR(64),
 
     token_type VARCHAR(32) NOT NULL REFERENCES nft_types (id) ON DELETE CASCADE,
     token_id VARCHAR(512) NOT NULL,
+    contract_address VARCHAR(512) NOT NULL,
 
     attributes JSONB NOT NULL,
 

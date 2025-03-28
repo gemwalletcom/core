@@ -153,7 +153,17 @@ chains:
     url: ""
   abstract:
     url: https://api.mainnet.abs.xyz
-  
+  berachain:
+    url: https://rpc.berachain.com
+  ink:
+    url: https://rpc-qnd.inkonchain.com
+  unichain:
+    url: https://mainnet.unichain.org
+  hyperliquid:
+    url: https://rpc.hyperliquid.xyz/evm
+  monad:
+    url: https://testnet-rpc.monad.xyz #TODO: Monad
+
 swap:
   jupiter:
     url: "https://quote-api.jup.ag"
@@ -173,15 +183,18 @@ swap:
     fee:
       percent: 0
       address: ""
-security:
+scan:
+  timeout_ms: 1200 # ms
   goplus:
     url: "https://api.gopluslabs.io"
-    app_id: ""
-    app_secret: ""
+    key: 
+      public: ""
+      secret: ""
   hashdit:
     url: "https://api.hashdit.io"
-    app_id: ""
-    app_secret: ""
+    key: 
+      public: ""
+      secret: ""
 
 parser:
   retry: 0
@@ -192,6 +205,8 @@ pusher:
     topic: ""
 daemon:
   service: ""
+  search:
+    assets_update_interval: 1800
 
 alerter:
   update_interval_seconds: 60
@@ -203,10 +218,10 @@ nft:
   nftscan:
     key:
       secret: ""
-  simplehash:
+  opensea:
     key:
       secret: ""
-  opensea:
+  magiceden:
     key:
       secret: ""
   bucket:

@@ -17,8 +17,10 @@
 		DF0C08022CC89AD200D2A524 /* Data+Hex.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF0C08012CC89ACD00D2A524 /* Data+Hex.swift */; };
 		DF0C08052CCA661F00D2A524 /* URLRequest+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF0C08042CCA661400D2A524 /* URLRequest+Extension.swift */; };
 		DF0C080D2CD110B100D2A524 /* Gemstone+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF0C080C2CD110B100D2A524 /* Gemstone+Extension.swift */; };
-		DFAA63872CFDD83A00413EFA /* Request.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFAA63862CFDD83400413EFA /* Request.swift */; };
+		DFA9A0642D51E920005B63B1 /* ViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFA9A0632D51E91B005B63B1 /* ViewModel.swift */; };
+		DFAA63872CFDD83A00413EFA /* SwapRequests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFAA63862CFDD83400413EFA /* SwapRequests.swift */; };
 		DFAA63892D07EFBA00413EFA /* Cache.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFAA63882D07EFB700413EFA /* Cache.swift */; };
+		DFB382DC2D60532000738DE6 /* Swapper+Ext.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFB382DB2D60530A00738DE6 /* Swapper+Ext.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -43,8 +45,10 @@
 		DF0C08012CC89ACD00D2A524 /* Data+Hex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Data+Hex.swift"; sourceTree = "<group>"; };
 		DF0C08042CCA661400D2A524 /* URLRequest+Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "URLRequest+Extension.swift"; sourceTree = "<group>"; };
 		DF0C080C2CD110B100D2A524 /* Gemstone+Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Gemstone+Extension.swift"; sourceTree = "<group>"; };
-		DFAA63862CFDD83400413EFA /* Request.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Request.swift; sourceTree = "<group>"; };
+		DFA9A0632D51E91B005B63B1 /* ViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewModel.swift; sourceTree = "<group>"; };
+		DFAA63862CFDD83400413EFA /* SwapRequests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwapRequests.swift; sourceTree = "<group>"; };
 		DFAA63882D07EFB700413EFA /* Cache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Cache.swift; sourceTree = "<group>"; };
+		DFB382DB2D60530A00738DE6 /* Swapper+Ext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Swapper+Ext.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -88,10 +92,10 @@
 			isa = PBXGroup;
 			children = (
 				DF0C08082CCA66B700D2A524 /* Extension */,
-				DF024FDA2CBE71F00044D11F /* Provider.swift */,
-				DFAA63882D07EFB700413EFA /* Cache.swift */,
+				DFA9A0652D51ECDF005B63B1 /* Networking */,
 				4843F3822B32C18300CA5DA8 /* ContentView.swift */,
-				DFAA63862CFDD83400413EFA /* Request.swift */,
+				DFA9A0632D51E91B005B63B1 /* ViewModel.swift */,
+				DFAA63862CFDD83400413EFA /* SwapRequests.swift */,
 				4843F3802B32C18300CA5DA8 /* GemTestApp.swift */,
 				4843F3842B32C18400CA5DA8 /* Assets.xcassets */,
 				4843F3862B32C18400CA5DA8 /* Preview Content */,
@@ -118,11 +122,21 @@
 		DF0C08082CCA66B700D2A524 /* Extension */ = {
 			isa = PBXGroup;
 			children = (
+				DFB382DB2D60530A00738DE6 /* Swapper+Ext.swift */,
 				DF0C080C2CD110B100D2A524 /* Gemstone+Extension.swift */,
 				DF0C08042CCA661400D2A524 /* URLRequest+Extension.swift */,
 				DF0C08012CC89ACD00D2A524 /* Data+Hex.swift */,
 			);
 			path = Extension;
+			sourceTree = "<group>";
+		};
+		DFA9A0652D51ECDF005B63B1 /* Networking */ = {
+			isa = PBXGroup;
+			children = (
+				DF024FDA2CBE71F00044D11F /* Provider.swift */,
+				DFAA63882D07EFB700413EFA /* Cache.swift */,
+			);
+			path = Networking;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -232,11 +246,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				DF0C08052CCA661F00D2A524 /* URLRequest+Extension.swift in Sources */,
+				DFA9A0642D51E920005B63B1 /* ViewModel.swift in Sources */,
 				4843F3832B32C18300CA5DA8 /* ContentView.swift in Sources */,
+				DFB382DC2D60532000738DE6 /* Swapper+Ext.swift in Sources */,
 				DFAA63892D07EFBA00413EFA /* Cache.swift in Sources */,
 				DF024FDB2CBE71F00044D11F /* Provider.swift in Sources */,
 				DF0C080D2CD110B100D2A524 /* Gemstone+Extension.swift in Sources */,
-				DFAA63872CFDD83A00413EFA /* Request.swift in Sources */,
+				DFAA63872CFDD83A00413EFA /* SwapRequests.swift in Sources */,
 				4843F3812B32C18300CA5DA8 /* GemTestApp.swift in Sources */,
 				DF0C08022CC89AD200D2A524 /* Data+Hex.swift in Sources */,
 			);
@@ -264,7 +280,6 @@
 		4843F39F2B32C18400CA5DA8 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
@@ -329,7 +344,6 @@
 		4843F3A02B32C18400CA5DA8 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
@@ -400,10 +414,6 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-				);
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = gemwallet.GemTest;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -428,10 +438,6 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-				);
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = gemwallet.GemTest;
 				PRODUCT_NAME = "$(TARGET_NAME)";

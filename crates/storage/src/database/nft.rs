@@ -39,7 +39,7 @@ impl DatabaseClient {
     }
 
     // collections
-    pub fn get_nft_collections(&mut self) -> Result<Vec<NftCollection>, diesel::result::Error> {
+    pub fn get_nft_collections_all(&mut self) -> Result<Vec<NftCollection>, diesel::result::Error> {
         use crate::schema::nft_collections::dsl::*;
         nft_collections.select(NftCollection::as_select()).load(&mut self.connection)
     }
@@ -52,9 +52,17 @@ impl DatabaseClient {
             .first(&mut self.connection)
     }
 
+    pub fn get_nft_collections(&mut self, ids: Vec<String>) -> Result<Vec<NftCollection>, diesel::result::Error> {
+        use crate::schema::nft_collections::dsl::*;
+        nft_collections
+            .filter(id.eq_any(ids))
+            .select(NftCollection::as_select())
+            .load(&mut self.connection)
+    }
+
     pub fn get_nft_collection_links(&mut self, _collection_id: &str) -> Result<Vec<NftLink>, diesel::result::Error> {
-        use crate::schema::nft_links::dsl::*;
-        nft_links
+        use crate::schema::nft_collections_links::dsl::*;
+        nft_collections_links
             .filter(collection_id.eq(_collection_id))
             .select(NftLink::as_select())
             .load(&mut self.connection)
@@ -85,9 +93,9 @@ impl DatabaseClient {
     }
 
     // nft links
-    pub fn add_nft_links(&mut self, values: Vec<NftLink>) -> Result<usize, diesel::result::Error> {
-        use crate::schema::nft_links::dsl::*;
-        diesel::insert_into(nft_links)
+    pub fn add_nft_collections_links(&mut self, values: Vec<NftLink>) -> Result<usize, diesel::result::Error> {
+        use crate::schema::nft_collections_links::dsl::*;
+        diesel::insert_into(nft_collections_links)
             .values(values)
             .on_conflict((collection_id, link_type))
             .do_nothing()

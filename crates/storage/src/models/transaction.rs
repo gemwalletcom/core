@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
-use primitives::{transaction_utxo::TransactionInput, AssetId, TransactionDirection, TransactionType};
+use primitives::{transaction_utxo::TransactionInput, AssetId, TransactionDirection};
 use serde::{Deserialize, Serialize};
 
 // #[derive(FromSqlRow, Serialize, Deserialize, Debug, Default, AsExpression)]
@@ -77,7 +77,7 @@ impl Transaction {
         } else {
             primitives::TransactionDirection::SelfTransfer
         };
-        let transaction_type = TransactionType::from_str(self.kind.as_str()).ok().unwrap();
+        let transaction_type = primitives::TransactionType::from_str(self.kind.as_str()).ok().unwrap();
 
         primitives::Transaction::new_with_utxo(
             hash.clone(),
@@ -109,4 +109,19 @@ pub struct TransactionC {
     pub direction: TransactionDirection,
     pub inputs: Option<Vec<TransactionInput>>,
     pub outputs: Option<Vec<TransactionInput>>,
+}
+
+#[derive(Debug, Queryable, Selectable, Insertable, Serialize, Deserialize, Clone)]
+#[diesel(table_name = crate::schema::transactions_types)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+pub struct TransactionType {
+    pub id: String,
+}
+
+impl TransactionType {
+    pub fn from_primitive(primitive: primitives::TransactionType) -> Self {
+        Self {
+            id: primitive.as_ref().to_owned(),
+        }
+    }
 }

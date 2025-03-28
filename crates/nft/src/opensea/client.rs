@@ -1,8 +1,6 @@
-use std::error::Error;
-
+use super::model::{Collection, Contract, NftAsset, NftResponse, NftsResponse};
 use reqwest::header::{HeaderMap, HeaderValue};
-
-use super::model::{Collection, Contract};
+use std::error::Error;
 
 pub struct OpenSeaClient {
     client: reqwest::Client,
@@ -11,15 +9,21 @@ pub struct OpenSeaClient {
 impl OpenSeaClient {
     const BASE_URL: &'static str = "https://api.opensea.io";
 
-    pub fn new(api_key: String) -> Self {
+    pub fn new(api_key: &str) -> Self {
         let mut headers = HeaderMap::new();
-        headers.insert("x-api-key", HeaderValue::from_str(&api_key).unwrap());
+        headers.insert("x-api-key", HeaderValue::from_str(api_key).unwrap());
         OpenSeaClient {
             client: reqwest::Client::builder().default_headers(headers).build().unwrap(),
         }
     }
 
-    pub async fn get_collection(&self, chain: &str, contract_address: &str) -> Result<Collection, Box<dyn Error + Send + Sync>> {
+    pub async fn get_nfts_by_account(&self, chain: &str, account_address: &str) -> Result<Vec<NftAsset>, Box<dyn Error + Send + Sync>> {
+        let url = format!("{}/api/v2/chain/{}/account/{}/nfts", Self::BASE_URL, chain, account_address);
+        let query = [("limit", 200)];
+        Ok(self.client.get(&url).query(&query).send().await?.json::<NftsResponse>().await?.nfts)
+    }
+
+    pub async fn get_collection_id(&self, chain: &str, contract_address: &str) -> Result<Collection, Box<dyn Error + Send + Sync>> {
         let contract = self.get_contract(chain, contract_address).await?;
         self.get_collection_by_slug(&contract.collection).await
     }
@@ -29,9 +33,13 @@ impl OpenSeaClient {
         Ok(self.client.get(&url).send().await?.json::<Contract>().await?)
     }
 
+    pub async fn get_asset_id(&self, chain: &str, contract_address: &str, token_id: &str) -> Result<NftResponse, Box<dyn Error + Send + Sync>> {
+        let url = format!("{}/api/v2/chain/{}/contract/{}/nfts/{}", Self::BASE_URL, chain, contract_address, token_id);
+        Ok(self.client.get(&url).send().await?.json::<NftResponse>().await?)
+    }
+
     pub async fn get_collection_by_slug(&self, collection_slug: &str) -> Result<Collection, Box<dyn Error + Send + Sync>> {
         let url = format!("{}/api/v2/collections/{}", Self::BASE_URL, collection_slug);
-        let response = self.client.get(&url).send().await?.json::<Collection>().await?;
-        Ok(response)
+        Ok(self.client.get(&url).send().await?.json::<Collection>().await?)
     }
 }

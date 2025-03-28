@@ -1,6 +1,6 @@
-use chain_primitives::format_token_id;
+use chrono::{Duration, Utc};
 use fiat::{model::FiatProviderAsset, FiatProvider};
-use primitives::AssetId;
+use primitives::{AssetTag, Diff};
 use storage::database::DatabaseClient;
 
 pub struct FiatAssetsUpdater {
@@ -12,6 +12,31 @@ impl FiatAssetsUpdater {
     pub fn new(database_url: &str, providers: Vec<Box<dyn FiatProvider + Send + Sync>>) -> Self {
         let database: DatabaseClient = DatabaseClient::new(database_url);
         Self { database, providers }
+    }
+
+    pub async fn update_buyable_sellable_assets(&mut self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
+        let enabled_asset_ids = self.database.get_fiat_assets_is_enabled()?;
+
+        // buyable
+        let buyable_result = Diff::compare(self.database.get_assets_is_buyable()?, enabled_asset_ids.clone());
+
+        let _ = self.database.set_assets_is_buyable(buyable_result.missing.clone(), true);
+        let _ = self.database.set_assets_is_buyable(buyable_result.different.clone(), false);
+
+        // sellable
+        // let sellable_result = Diff::compare(self.database.get_assets_is_sellable()?, enabled_asset_ids.clone());
+        // let _ = self.database.set_assets_is_sellable(sellable_result.missing.clone(), true);
+        // let _ = self.database.set_assets_is_sellable(sellable_result.different.clone(), false);
+
+        Ok(1)
+    }
+
+    pub async fn update_trending_fiat_assets(&mut self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
+        let from = Utc::now().naive_utc() - Duration::days(30);
+        let asset_ids = self.database.get_fiat_assets_popular(from, 30)?;
+        Ok(self
+            .database
+            .set_assets_tags_for_tag(AssetTag::TrendingFiatPurchase.as_ref(), asset_ids.clone())?)
     }
 
     pub async fn update_fiat_assets(&mut self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
@@ -59,14 +84,7 @@ impl FiatAssetsUpdater {
     }
 
     fn map_fiat_asset(&self, provider: String, fiat_asset: FiatProviderAsset) -> primitives::FiatAsset {
-        let asset_id: Option<AssetId> = match fiat_asset.clone().chain {
-            Some(chain) => match fiat_asset.clone().token_id {
-                Some(token_id) => format_token_id(chain, token_id).map(|formatted_token_id| AssetId::from(chain, Some(formatted_token_id))),
-                None => Some(chain.as_asset_id()),
-            },
-            None => None,
-        };
-
+        let asset_id = fiat_asset.asset_id();
         primitives::FiatAsset {
             id: fiat_asset.clone().id,
             asset_id,

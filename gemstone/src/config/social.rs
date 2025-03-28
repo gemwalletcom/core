@@ -1,3 +1,7 @@
+use std::str::FromStr;
+
+use primitives::LinkType;
+
 #[derive(uniffi::Enum, Clone)]
 pub enum SocialUrl {
     X,
@@ -23,16 +27,25 @@ pub fn get_social_url(item: SocialUrl) -> Option<&'static str> {
 }
 
 #[uniffi::export]
-fn social_url_order(url: SocialUrl) -> i32 {
-    match url {
-        SocialUrl::X => 110,
-        SocialUrl::Discord => 1,
-        SocialUrl::Reddit => 60,
-        SocialUrl::Telegram => 90,
-        SocialUrl::GitHub => 20,
-        SocialUrl::YouTube => 30,
-        SocialUrl::Facebook => 40,
-        SocialUrl::Website => 120,
-        SocialUrl::Coingecko => 100,
+fn link_type_order(link_type: String) -> i32 {
+    let link_type = LinkType::from_str(link_type.as_str()).ok();
+    match link_type {
+        Some(value) => match value {
+            LinkType::Website => 120,
+            LinkType::X => 110,
+            LinkType::Coingecko => 105,
+            LinkType::CoinMarketCap => 104,
+            LinkType::OpenSea => 103,
+            LinkType::MagicEden => 102,
+            LinkType::Telegram => 90,
+            LinkType::Reddit => 60,
+            LinkType::Instagram => 50,
+            LinkType::Facebook => 40,
+            LinkType::TikTok => 35,
+            LinkType::Discord => 1,
+            LinkType::GitHub => 20,
+            LinkType::YouTube => 30,
+        },
+        None => 0,
     }
 }

@@ -1,8 +1,15 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Clone)]
-pub struct Quote {
+pub struct QuoteBuy {
     #[serde(rename = "CARD_PAYMENT")]
+    pub card_payment: QuoteData,
+    pub asset: QuoteAsset,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct QuoteSell {
+    #[serde(rename = "CARD")]
     pub card_payment: QuoteData,
     pub asset: QuoteAsset,
 }
@@ -10,11 +17,8 @@ pub struct Quote {
 #[derive(Debug, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct QuoteData {
-    //fiat_currency: String,
     pub crypto_amount: String,
-    //fiat_value: u32,
-    //base_ramp_fee: f64,
-    //applied_fee: f64,
+    pub fiat_value: f64,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -57,7 +61,10 @@ impl QuoteAsset {
 pub struct QuoteRequest {
     pub crypto_asset_symbol: String,
     pub fiat_currency: String,
-    pub fiat_value: f64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub fiat_value: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub crypto_amount: Option<String>,
 }
 
 #[derive(Deserialize, Clone)]

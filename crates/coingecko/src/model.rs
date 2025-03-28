@@ -3,6 +3,24 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Data<T> {
+    pub data: T,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Global {
+    pub market_cap_change_percentage_24h_usd: f64,
+    pub total_market_cap: Total,
+    pub total_volume: Total,
+    pub market_cap_percentage: HashMap<String, f64>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Total {
+    pub usd: f64,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Coin {
     pub id: String,
     pub symbol: String,
@@ -120,6 +138,22 @@ pub struct SearchTrending {
     pub coins: Vec<SearchTrendingItem>,
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct TopGainersLosers {
+    pub top_gainers: CoinIds,
+    pub top_losers: CoinIds,
+}
+
+impl TopGainersLosers {
+    pub fn get_gainers_ids(&self) -> Vec<String> {
+        self.top_gainers.ids()
+    }
+
+    pub fn get_losers_ids(&self) -> Vec<String> {
+        self.top_losers.ids()
+    }
+}
+
 impl SearchTrending {
     pub fn get_coins_ids(&self) -> Vec<String> {
         self.coins.iter().map(|x| x.item.id.clone()).collect()
@@ -128,15 +162,19 @@ impl SearchTrending {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct SearchTrendingItem {
-    pub item: SearchTrendingItemCoin,
+    pub item: CoinId,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct SearchTrendingItemCoin {
+pub struct CoinId {
     pub id: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct SearchTrendingPrice {
-    pub id: String,
+pub struct CoinIds(pub Vec<CoinId>);
+
+impl CoinIds {
+    pub fn ids(&self) -> Vec<String> {
+        self.0.iter().map(|x| x.id.clone()).collect()
+    }
 }

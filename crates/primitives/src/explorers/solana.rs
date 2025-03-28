@@ -28,9 +28,6 @@ impl BlockExplorer for SolanaFM {
     fn get_token_url(&self, token: &str) -> Option<String> {
         Some(format!("{}/address/{}", self.meta.base_url, token))
     }
-    fn get_validator_url(&self, _validator: &str) -> Option<String> {
-        None
-    }
 }
 
 pub struct Solscan {

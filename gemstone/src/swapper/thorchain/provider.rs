@@ -1,4 +1,5 @@
 use super::model::RouteData;
+use super::DEFAULT_DEPOSIT_GAS_LIMIT;
 use super::{asset::THORChainAsset, chain::THORChainName, ThorChain, QUOTE_INTERVAL, QUOTE_MINIMUM, QUOTE_QUANTITY};
 use crate::network::AlienProvider;
 use crate::swapper::approval::check_approval_erc20;
@@ -6,7 +7,7 @@ use crate::swapper::asset::{
     AVALANCHE_USDC, AVALANCHE_USDT, BASE_CBBTC, BASE_USDC, ETHEREUM_DAI, ETHEREUM_USDC, ETHEREUM_USDT, ETHEREUM_WBTC, SMARTCHAIN_USDC, SMARTCHAIN_USDT,
 };
 use crate::swapper::thorchain::client::ThorChainSwapClient;
-use crate::swapper::{ApprovalType, FetchQuoteData, SwapProvider, SwapProviderData, SwapQuote, SwapQuoteData, SwapQuoteRequest, SwapRoute, SwapperError};
+use crate::swapper::{ApprovalData, FetchQuoteData, SwapProviderData, SwapProviderType, SwapQuote, SwapQuoteData, SwapQuoteRequest, SwapRoute, SwapperError};
 use crate::swapper::{GemSwapProvider, SwapChainAsset};
 use alloy_core::sol_types::SolCall;
 use alloy_primitives::Address;
@@ -20,8 +21,8 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 #[async_trait]
 impl GemSwapProvider for ThorChain {
-    fn provider(&self) -> SwapProvider {
-        SwapProvider::Thorchain
+    fn provider(&self) -> &SwapProviderType {
+        &self.provider
     }
 
     fn supported_assets(&self) -> Vec<SwapChainAsset> {
@@ -58,6 +59,21 @@ impl GemSwapProvider for ThorChain {
         let to_asset = THORChainAsset::from_asset_id(request.clone().to_asset).ok_or(SwapperError::NotSupportedAsset)?;
 
         let value = self.value_from(request.clone().value, from_asset.decimals as i32);
+
+        // min fee validation
+        let inbound_addresses = client.get_inbound_addresses(endpoint.as_str()).await?;
+        let from_inbound_address = &inbound_addresses
+            .iter()
+            .find(|address| address.chain == from_asset.chain.long_name())
+            .ok_or(SwapperError::InvalidRoute)?;
+
+        if from_inbound_address.dust_threshold > value {
+            return Err(SwapperError::InputAmountTooSmall);
+        }
+        // if (from_inbound_address.outbound_fee.clone() * from_inbound_address.gas_rate.clone()) > value {
+        //     return Err(SwapperError::InputAmountTooSmall);
+        // }
+
         let fee = request.options.clone().fee.unwrap_or_default().thorchain;
 
         let quote = client
@@ -75,23 +91,6 @@ impl GemSwapProvider for ThorChain {
 
         let to_value = self.value_to(quote.expected_amount_out, to_asset.decimals as i32);
 
-        let approval: ApprovalType = {
-            if from_asset.use_evm_router() {
-                let from_amount: U256 = value.to_string().parse().map_err(|_| SwapperError::InvalidAmount)?;
-                check_approval_erc20(
-                    request.wallet_address.clone(),
-                    from_asset.token_id.clone().unwrap(),
-                    quote.router.clone().unwrap(),
-                    from_amount,
-                    provider.clone(),
-                    &from_asset.chain.chain(),
-                )
-                .await?
-            } else {
-                ApprovalType::None
-            }
-        };
-
         let route_data = RouteData {
             router_address: quote.router.clone(),
             inbound_address: quote.inbound_address.clone(),
@@ -100,26 +99,25 @@ impl GemSwapProvider for ThorChain {
         let quote = SwapQuote {
             from_value: request.clone().value,
             to_value: to_value.to_string(),
+            to_min_value: to_value.to_string(),
             data: SwapProviderData {
-                provider: self.provider(),
+                provider: self.provider().clone(),
                 routes: vec![SwapRoute {
                     input: request.from_asset.clone(),
                     output: request.to_asset.clone(),
                     route_data: serde_json::to_string(&route_data).unwrap_or_default(),
-                    gas_estimate: None,
+                    gas_limit: None,
                 }],
                 slippage_bps: request.options.slippage.bps,
             },
-            approval,
             request: request.clone(),
         };
 
         Ok(quote)
     }
 
-    async fn fetch_quote_data(&self, quote: &SwapQuote, _provider: Arc<dyn AlienProvider>, _data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError> {
+    async fn fetch_quote_data(&self, quote: &SwapQuote, provider: Arc<dyn AlienProvider>, _data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError> {
         let fee = quote.request.options.clone().fee.unwrap_or_default().thorchain;
-
         let from_asset = THORChainAsset::from_asset_id(quote.clone().request.from_asset).ok_or(SwapperError::NotSupportedAsset)?;
         let to_asset = THORChainAsset::from_asset_id(quote.clone().request.to_asset).ok_or(SwapperError::NotSupportedAsset)?;
 
@@ -136,6 +134,29 @@ impl GemSwapProvider for ThorChain {
 
         let route_data: RouteData = serde_json::from_str(&quote.data.routes.first().unwrap().route_data).map_err(|_| SwapperError::InvalidRoute)?;
         let value = quote.request.value.clone();
+
+        let approval: Option<ApprovalData> = {
+            if from_asset.use_evm_router() {
+                let from_amount: U256 = value.to_string().parse().map_err(|_| SwapperError::InvalidAmount)?;
+                check_approval_erc20(
+                    quote.request.wallet_address.clone(),
+                    from_asset.token_id.clone().unwrap(),
+                    route_data.router_address.clone().unwrap(),
+                    from_amount,
+                    provider.clone(),
+                    &from_asset.chain.chain(),
+                )
+                .await?
+                .approval_data()
+            } else {
+                None
+            }
+        };
+        let gas_limit = if approval.is_some() {
+            Some(DEFAULT_DEPOSIT_GAS_LIMIT.to_string())
+        } else {
+            None
+        };
 
         let data = if from_asset.use_evm_router() {
             // only used for swapping from ERC20 tokens
@@ -159,12 +180,16 @@ impl GemSwapProvider for ThorChain {
                 to,
                 value: "0".to_string(),
                 data: hex::encode(call.clone()),
+                approval,
+                gas_limit,
             }
         } else {
             SwapQuoteData {
                 to: route_data.inbound_address.unwrap_or_default(),
                 value,
                 data: self.data(from_asset.chain, memo),
+                approval,
+                gas_limit,
             }
         };
 

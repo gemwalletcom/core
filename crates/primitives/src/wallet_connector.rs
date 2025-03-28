@@ -78,8 +78,8 @@ struct WalletConnectionSessionAppMetadata {
 #[typeshare(swift = "Equatable, Hashable, Sendable")]
 #[serde(rename_all = "camelCase")]
 struct WalletConnectionSessionProposal {
-    wallet: Wallet,
-    accounts: [Account],
+    default_wallet: Wallet,
+    wallets: [Wallet],
     metadata: WalletConnectionSessionAppMetadata,
 }
 

@@ -24,7 +24,7 @@ impl ClickhouseClient {
     }
 
     pub async fn add_items<T: Serialize + Clone + Row>(&self, table_name: &str, values: Vec<T>) -> Result<usize> {
-        let mut inserter = self.client.inserter(table_name)?.with_max_entries(50);
+        let mut inserter = self.client.insert(table_name)?.with_option("max_insert_block_size", "50");
         for value in values.clone() {
             inserter.write(&value).await?;
         }

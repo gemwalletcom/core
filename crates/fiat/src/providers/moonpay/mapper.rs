@@ -5,7 +5,7 @@ use super::model::Asset;
 pub fn map_asset_chain(asset: Asset) -> Option<Chain> {
     match asset.metadata?.network_code.as_str() {
         "ethereum" => Some(Chain::Ethereum),
-        "binance_smart_chain" => Some(Chain::SmartChain),
+        "binance_smart_chain" | "bnb_chain" => Some(Chain::SmartChain),
         "solana" => Some(Chain::Solana),
         "arbitrum" => Some(Chain::Arbitrum),
         "base" => Some(Chain::Base),
@@ -37,6 +37,8 @@ pub fn map_asset_chain(asset: Asset) -> Option<Chain> {
         "worldchain" => Some(Chain::World),
         "cardano" => Some(Chain::Cardano),
         "bitcoin_cash" => Some(Chain::BitcoinCash),
+        "mantle" => Some(Chain::Mantle),
+        "sonic" => Some(Chain::Sonic),
         _ => None,
     }
 }

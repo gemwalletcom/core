@@ -1,4 +1,4 @@
-name: Tests
+name: CI - Unit Tests
 
 on:
   push:
@@ -27,10 +27,12 @@ jobs:
       - name: Run sccache-cache
         uses: mozilla-actions/sccache-action@v0.0.6
 
+      - name: Install just
+        run: sudo apt install just
+
       - name: Run tests
-        run: |
-          cargo install just && just test-all
+        run: just --unstable test-all
 
       - name: Build integration tests
         run: |
-          just gemstone build-integration-tests
+          just --unstable gemstone build-integration-tests

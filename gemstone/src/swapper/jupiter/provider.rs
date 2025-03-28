@@ -1,9 +1,10 @@
 use super::{client::JupiterClient, model::*, PROGRAM_ADDRESS};
 use crate::{
     network::jsonrpc::{jsonrpc_call_with_cache, JsonRpcResult},
-    swapper::{GemSwapProvider, *},
+    swapper::{slippage::apply_slippage_in_bp, GemSwapProvider, *},
 };
 
+use alloy_primitives::U256;
 use async_trait::async_trait;
 use gem_solana::{
     get_asset_address,
@@ -15,12 +16,14 @@ use std::collections::HashSet;
 
 #[derive(Debug)]
 pub struct Jupiter {
+    pub provider: SwapProviderType,
     pub fee_mints: HashSet<&'static str>,
 }
 
 impl Default for Jupiter {
     fn default() -> Self {
         Self {
+            provider: SwapProviderType::new(SwapProvider::Jupiter),
             fee_mints: HashSet::from([USDC_TOKEN_MINT, USDT_TOKEN_MINT, WSOL_TOKEN_ADDRESS]),
         }
     }
@@ -98,8 +101,8 @@ impl Jupiter {
 
 #[async_trait]
 impl GemSwapProvider for Jupiter {
-    fn provider(&self) -> SwapProvider {
-        SwapProvider::Jupiter
+    fn provider(&self) -> &SwapProviderType {
+        &self.provider
     }
 
     fn supported_assets(&self) -> Vec<SwapChainAsset> {
@@ -130,21 +133,23 @@ impl GemSwapProvider for Jupiter {
         let client = JupiterClient::new(self.get_endpoint(), provider.clone());
         let swap_quote = client.get_swap_quote(quote_request).await?;
         let computed_auto_slippage = swap_quote.computed_auto_slippage.unwrap_or(swap_quote.slippage_bps);
+        let quote_amount: U256 = request.value.parse().map_err(|_| SwapperError::InvalidAmount)?;
+        let expect_min = apply_slippage_in_bp(&quote_amount, computed_auto_slippage + platform_fee_bps);
 
         let quote = SwapQuote {
             from_value: request.value.clone(),
             to_value: swap_quote.out_amount.clone(),
+            to_min_value: expect_min.to_string(),
             data: SwapProviderData {
-                provider: self.provider(),
+                provider: self.provider().clone(),
                 routes: vec![SwapRoute {
                     input: AssetId::from(Chain::Solana, Some(input_mint)),
                     output: AssetId::from(Chain::Solana, Some(output_mint)),
                     route_data: serde_json::to_string(&swap_quote).unwrap_or_default(),
-                    gas_estimate: None,
+                    gas_limit: None,
                 }],
                 slippage_bps: computed_auto_slippage,
             },
-            approval: ApprovalType::None,
             request: request.clone(),
         };
         Ok(quote)
@@ -185,10 +190,9 @@ impl GemSwapProvider for Jupiter {
             to: PROGRAM_ADDRESS.to_string(),
             value: "".to_string(),
             data: quote_data.swap_transaction,
+            approval: None,
+            gas_limit: None,
         };
         Ok(data)
-    }
-    async fn get_transaction_status(&self, _chain: Chain, _transaction_hash: &str, _provider: Arc<dyn AlienProvider>) -> Result<bool, SwapperError> {
-        Ok(true)
     }
 }

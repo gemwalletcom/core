@@ -17,8 +17,9 @@ members = [
 
     "bin/img-downloader",
     "bin/generate",
-
     "bin/uniffi-bindgen",
+    "bin/swapper-dump",
+
     "gemstone",
 
     "crates/primitives",
@@ -39,6 +40,10 @@ members = [
     "crates/job_runner",
     "crates/search_index",
     "crates/nft",
+    "crates/serde_serializers",
+    "crates/number_formatter",
+    "crates/pricer_dex",
+    "crates/alien_provider",
 ]
 
 default-members = [
@@ -51,76 +56,82 @@ default-members = [
 ]
 
 [workspace.dependencies]
-typeshare = "1.0.3"
-serde = { version = "1.0.196", features = ["derive"] }
-serde_json = { version = "1.0.114" }
+typeshare = "1.0.4"
+serde = { version = "1.0.219", features = ["derive"] }
+serde_with = "3.12.0"
+serde_json = { version = "1.0.140" }
 serde_urlencoded = { version = "0.7.1" }
-tokio = { version = "1.36.0", features = ["macros", "rt-multi-thread"] }
-reqwest = { version = "0.12.3", features = ["json"] }
-reqwest-middleware = { version = "0.3.0" }
-reqwest-retry = { version = "0.5.0" }
-reqwest-enum = { version = "0.3.0", features = ["jsonrpc"] }
-url = { version = "2.5.0" }
+tokio = { version = "1.44.1", features = ["macros", "rt-multi-thread"] }
+reqwest = { version = "0.12.15", features = ["json"] }
+reqwest-middleware = { version = "0.4.1" }
+reqwest-retry = { version = "0.7.0" }
+reqwest-enum = { version = "0.3.3", features = ["jsonrpc"] }
+url = { version = "2.5.4" }
 urlencoding = { version = "2.1.3" }
-config = { version = "0.14.0", features = ["yaml"] }
-rocket = { version = "0.5.0", features = ["json"] }
-async-trait = { version = "0.1.77" }
-async-std = { version = "1.13.0" }
-prometheus-client = { version = "0.22.1" }
-futures = { version = "0.3.30" }
-thiserror = { version = "1.0.69" }
+config = { version = "0.15.11", features = ["yaml"] }
+rocket = { version = "0.5.1", features = ["json"] }
+async-trait = { version = "0.1.88" }
+async-std = { version = "1.13.1" }
+prometheus-client = { version = "0.23.1" }
+futures = { version = "0.3.31" }
+thiserror = { version = "2.0.12" }
 anyhow = { version = "1.0" }
-indexmap = "2.2.2"
-lazy_static = "1.4.0"
-futures-util = "0.3.30"
-uuid = { version = "1.8.0", features = ["v4"] }
-rand = { version = "0.8.5" }
-aws-sdk-s3 = { version = "1.5", features = ["behavior-version-latest"] }
+indexmap = "2.8.0"
+lazy_static = "1.5.0"
+futures-util = "0.3.31"
+uuid = { version = "1.16.0", features = ["v4"] }
+rand = { version = "0.9.0" }
+aws-sdk-s3 = { version = "1.79.0", features = ["behavior-version-latest"] }
+itertools = { version = "0.14.0" }
 
 # db
-diesel = { version = "2.2.3", features = ["postgres", "chrono", "serde_json"] }
+diesel = { version = "2.2.8", features = ["postgres", "chrono", "serde_json"] }
 diesel_migrations = { version = "2.2.0" }
-redis = { version = "0.25.0", features = ["tokio-comp", "json"] }
-chrono = { version = "0.4.34", features = ["serde"] }
-clickhouse = { version = "0.11.6" }
-meilisearch-sdk = { version = "0.27.1" }
+redis = { version = "0.29.2", features = ["tokio-comp", "json"] }
+chrono = { version = "0.4.40", features = ["serde"] }
+clickhouse = { version = "0.13.2" }
+meilisearch-sdk = { version = "0.28.0" }
 
 # crypto
-base64 = { version = "0.22.0" }
-base64-serde = "0.7"
+base64 = { version = "0.22.1" }
 blake2 = "0.10.6"
 bech32 = { version = "0.11.0" }
-bs58 = { version = "0.5.0", features = ["check"] }
+bs58 = { version = "0.5.1", features = ["check"] }
 hex = { version = "0.4.3" }
-num-bigint = { version = "0.4.4", features = ["std", "serde"] }
-num-traits = { version = "0.2.18" }
+num-bigint = { version = "0.4.6", features = ["std", "serde"] }
+num-traits = { version = "0.2.19" }
 bigdecimal = "0.4"
-cosmos-sdk-proto = { version = "0.21.1" }
+cosmos-sdk-proto = { version = "0.26.1" }
 hmac = { version = "0.12.1" }
 sha2 = { version = "0.10.8" }
-strum = { version = "0.26.1", features = ["derive"] }
-strum_macros = "0.26.1"
-jsonrpsee = { version = "0.22.1", features = ["http-client"] }
+strum = { version = "0.27.1", features = ["derive"] }
+strum_macros = "0.27.1"
+jsonrpsee = { version = "0.24.9", features = ["http-client"] }
 tiny-keccak = { version = "2.0.2", features = ["keccak"] }
-itoa = { version = "1.0.10" }
+itoa = { version = "1.0.15" }
 curve25519-dalek = { version = "4.1.3" }
-borsh = { version = "1.5.3", features = ["derive"] }
+borsh = { version = "1.5.6", features = ["derive"] }
+bcs = { version = "0.1.6" }
+sui-types = { package = "sui-sdk-types", version = "0.0.3", features = [
+    "serde",
+] }
+sui-transaction-builder = { package = "sui-transaction-builder", version = "0.0.3" }
 
-uniffi = { version = "0.28.3" }
-uniffi_bindgen = { version = "0.28.3" }
+uniffi = { version = "0.29.1" }
+uniffi_bindgen = { version = "0.29.1" }
 
-alloy-core = { version = "0.8.9", features = ["sol-types", "json-abi", "rlp"] }
-alloy-primitives = "0.8.9"
-alloy-sol-types = "0.8.9"
+alloy-core = { version = "0.8.24", features = ["sol-types", "json-abi", "rlp"] }
+alloy-primitives = "0.8.24"
+alloy-sol-types = "0.8.24"
 
 tonlib-core = { version = "0.23.1" }
 tonlib-client = { version = "0.23.1" }
 
 # localizer
-i18n-embed = { version = "0.15.0", features = ["fluent-system", "autoreload"] }
-i18n-embed-fl = { version = "0.9.1" }
-once_cell = { version = "1.19.0" }
-rust-embed = { version = "8.5.0" }
+i18n-embed = { version = "0.15.3", features = ["fluent-system", "autoreload"] }
+i18n-embed-fl = { version = "0.9.3" }
+once_cell = { version = "1.21.1" }
+rust-embed = { version = "8.6.0" }
 
 # numbers
 rusty-money = { git = "https://github.com/varunsrin/rusty_money.git", rev = "bbc0150", features = [

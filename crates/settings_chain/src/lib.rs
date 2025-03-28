@@ -1,7 +1,7 @@
 use core::str;
 
 use gem_chain_rpc::{
-    AlgorandClient, AptosClient, BitcoinClient, ChainProvider, CosmosClient, EthereumClient, MockChainBlockClient, NearClient, PolkadotClient, SolanaClient,
+    AlgorandClient, AptosClient, BitcoinClient, CardanoClient, ChainProvider, CosmosClient, EthereumClient, NearClient, PolkadotClient, SolanaClient,
     StellarClient, SuiClient, TonClient, TronClient, XRPClient,
 };
 use primitives::{Asset, Chain};
@@ -49,18 +49,23 @@ impl ProviderFactory {
             | Chain::Celo
             | Chain::World
             | Chain::Sonic
-            | Chain::Abstract => Box::new(EthereumClient::new(chain, url)),
+            | Chain::Abstract
+            | Chain::Berachain
+            | Chain::Ink
+            | Chain::Unichain
+            | Chain::Hyperliquid
+            | Chain::Monad => Box::new(EthereumClient::new(chain, url)),
             Chain::Cosmos | Chain::Osmosis | Chain::Celestia | Chain::Thorchain | Chain::Injective | Chain::Noble | Chain::Sei => {
                 Box::new(CosmosClient::new(chain, client, url))
             }
-            Chain::Solana => Box::new(SolanaClient::new(url)),
+            Chain::Solana => Box::new(SolanaClient::new(url.as_str())),
             Chain::Ton => Box::new(TonClient::new(client, url)),
             Chain::Tron => Box::new(TronClient::new(client, url)),
             Chain::Aptos => Box::new(AptosClient::new(client, url)),
             Chain::Sui => Box::new(SuiClient::new(url)),
             Chain::Xrp => Box::new(XRPClient::new(client, url)),
             Chain::Near => Box::new(NearClient::new(url)),
-            Chain::Cardano => Box::new(MockChainBlockClient::new(chain)),
+            Chain::Cardano => Box::new(CardanoClient::new(client, url)),
             Chain::Algorand => Box::new(AlgorandClient::new(client, url)),
             Chain::Stellar => Box::new(StellarClient::new(client, url)),
             Chain::Polkadot => Box::new(PolkadotClient::new(client, url)),
@@ -110,6 +115,11 @@ impl ProviderFactory {
             Chain::Polkadot => settings.chains.polkadot.url.as_str(),
             Chain::Cardano => settings.chains.cardano.url.as_str(),
             Chain::Abstract => settings.chains.abstract_chain.url.as_str(),
+            Chain::Berachain => settings.chains.berachain.url.as_str(),
+            Chain::Ink => settings.chains.ink.url.as_str(),
+            Chain::Unichain => settings.chains.unichain.url.as_str(),
+            Chain::Hyperliquid => settings.chains.hyperliquid.url.as_str(),
+            Chain::Monad => settings.chains.monad.url.as_str(),
         }
     }
 }

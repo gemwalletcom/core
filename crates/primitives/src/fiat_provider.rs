@@ -44,7 +44,7 @@ impl FiatProviderName {
         }
     }
 
-    pub fn all() -> Vec<FiatProviderName> {
-        FiatProviderName::iter().collect::<Vec<_>>()
+    pub fn all() -> Vec<Self> {
+        Self::iter().collect::<Vec<_>>()
     }
 }

@@ -1,4 +1,6 @@
+pub mod gas_budget;
 mod model;
+pub mod rpc;
 
 use crate::GemstoneError;
 use gem_sui::model::{StakeInput, TokenTransferInput, TransferInput, UnstakeInput};
@@ -31,5 +33,5 @@ pub fn sui_encode_unstake(input: &SuiUnstakeInput) -> Result<SuiTxOutput, Gemsto
 
 #[uniffi::export]
 pub fn sui_validate_and_hash(encoded: String) -> Result<SuiTxOutput, GemstoneError> {
-    gem_sui::validate_and_hash(&encoded).map(SuiTxOutput::from).map_err(GemstoneError::from)
+    gem_sui::tx::validate_and_hash(&encoded).map(SuiTxOutput::from).map_err(GemstoneError::from)
 }

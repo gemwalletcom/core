@@ -1,11 +1,9 @@
-use super::fee_tiers::get_splash_pool_fee_tiers;
-use super::whirlpool::{get_tick_array_address, get_whirlpool_address};
-use super::{models::*, FEE_TIER_DISCRIMINATOR, WHIRLPOOL_CONFIG, WHIRLPOOL_PROGRAM};
-use crate::network::JsonRpcResult;
 use crate::{
-    network::{jsonrpc::jsonrpc_call, AlienProvider},
-    swapper::{models::*, GemSwapProvider, SwapperError},
+    debug_println,
+    network::{jsonrpc::jsonrpc_call, AlienProvider, JsonRpcResult},
+    swapper::{models::*, slippage::apply_slippage_in_bp, GemSwapProvider, SwapperError},
 };
+use alloy_primitives::U256;
 use async_trait::async_trait;
 use gem_solana::{
     get_asset_address,
@@ -19,16 +17,31 @@ use orca_whirlpools_core::{
 use primitives::Chain;
 use std::{cmp::Ordering, iter::zip, str::FromStr, sync::Arc, vec};
 
+use super::{
+    fee_tiers::get_splash_pool_fee_tiers,
+    models::*,
+    whirlpool::{get_tick_array_address, get_whirlpool_address},
+    FEE_TIER_DISCRIMINATOR, WHIRLPOOL_CONFIG, WHIRLPOOL_PROGRAM,
+};
+
 #[derive(Debug)]
 pub struct Orca {
+    pub provider: SwapProviderType,
     pub whirlpool_program: Pubkey,
     pub whirlpool_config: Pubkey,
     pub chain: Chain,
 }
 
+impl Orca {
+    pub fn boxed() -> Box<dyn GemSwapProvider> {
+        Box::new(Orca::default())
+    }
+}
+
 impl Default for Orca {
     fn default() -> Self {
         Self {
+            provider: SwapProviderType::new(SwapProvider::Orca),
             whirlpool_program: Pubkey::from_str(WHIRLPOOL_PROGRAM).unwrap(),
             whirlpool_config: Pubkey::from_str(WHIRLPOOL_CONFIG).unwrap(),
             chain: Chain::Solana,
@@ -38,8 +51,8 @@ impl Default for Orca {
 
 #[async_trait]
 impl GemSwapProvider for Orca {
-    fn provider(&self) -> SwapProvider {
-        SwapProvider::Orca
+    fn provider(&self) -> &SwapProviderType {
+        &self.provider
     }
 
     fn supported_assets(&self) -> Vec<SwapChainAsset> {
@@ -54,6 +67,7 @@ impl GemSwapProvider for Orca {
         let amount_in = request.value.parse::<u64>().map_err(|_| SwapperError::InvalidAmount)?;
         let options = request.options.clone();
         let slippage_bps = options.slippage.bps as u16;
+        let fee_bps = options.fee.unwrap_or_default().solana.bps;
 
         let from_asset = get_asset_address(&request.from_asset).ok_or_else(|| SwapperError::InvalidAddress {
             address: request.from_asset.to_string(),
@@ -74,8 +88,8 @@ impl GemSwapProvider for Orca {
         pools.sort_by(|(_, a), (_, b)| b.liquidity.cmp(&a.liquidity).then(a.fee_rate.cmp(&b.fee_rate)));
         let (pool_address, pool) = pools.first().unwrap();
         let pool_address = Pubkey::from_str(pool_address).unwrap();
-        println!("first_pool: {:?}", pool);
-        println!("pool_address: {:?}", pool_address);
+        debug_println!("first_pool: {:?}", pool);
+        debug_println!("pool_address: {:?}", pool_address);
 
         // let _token_accounts = self.fetch_token_accounts(&pool.token_mint_a, &pool.token_mint_b, provider.clone()).await?;
         let tick_array = self.fetch_tick_arrays(&pool_address, pool, provider.clone()).await?;
@@ -88,31 +102,29 @@ impl GemSwapProvider for Orca {
             msg: format!("swap_quote_by_input_token error: {:?}", c),
         })?;
 
+        let quote_amount: U256 = U256::from(amount_in);
+        let expect_min = apply_slippage_in_bp(&quote_amount, slippage_bps as u32 + fee_bps);
+
         Ok(SwapQuote {
             from_value: request.value.clone(),
             to_value: quote.token_est_out.to_string(),
+            to_min_value: expect_min.to_string(),
             data: SwapProviderData {
-                provider: self.provider(),
+                provider: self.provider().clone(),
                 routes: vec![SwapRoute {
                     input: request.from_asset.clone(),
                     output: request.to_asset.clone(),
                     route_data: pool.fee_rate.to_string(),
-                    gas_estimate: None,
+                    gas_limit: None,
                 }],
                 slippage_bps: request.options.slippage.bps,
             },
-            approval: ApprovalType::None,
             request: request.clone(),
         })
     }
 
     async fn fetch_quote_data(&self, _quote: &SwapQuote, _provider: Arc<dyn AlienProvider>, _data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError> {
         Err(SwapperError::NotImplemented)
-    }
-
-    async fn get_transaction_status(&self, _chain: Chain, _transaction_hash: &str, _provider: Arc<dyn AlienProvider>) -> Result<bool, SwapperError> {
-        // TODO: the transaction status from the RPC
-        Ok(true)
     }
 }
 
@@ -178,7 +190,7 @@ impl Orca {
             start_index + offset,
             start_index + 2 * offset,
         ];
-        println!("tick_arrays: {:?}", tick_arrays);
+        debug_println!("tick_arrays: {:?}", tick_arrays);
         let tick_addresses: Vec<String> = tick_arrays
             .iter()
             .map(|x| get_tick_array_address(pool_address, *x))
@@ -187,7 +199,7 @@ impl Orca {
                 None => None,
             })
             .collect();
-        println!("tick_addresses: {:?}", tick_addresses);
+        debug_println!("tick_addresses: {:?}", tick_addresses);
 
         let call = SolanaRpc::GetMultipleAccounts(tick_addresses);
         let response: JsonRpcResult<ValueResult<Vec<AccountData>>> = jsonrpc_call(&call, provider, &self.chain).await?;

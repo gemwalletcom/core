@@ -20,7 +20,7 @@ install-rust:
 
 install-typeshare:
     @echo Install typeshare-cli
-    cargo install typeshare-cli --version 1.12.0 --force
+    cargo install typeshare-cli --version 1.13.2 --force
 
 install-postgres:
 	brew install libpq postgresql@15
@@ -36,13 +36,15 @@ test-workspace:
     cargo test --workspace --quiet
 
 test-all:
-    cargo test --all --verbose
+    cargo test --all --workspace --verbose
 
 test CRATE:
     cargo test --package {{CRATE}} --workspace
 
 format:
     cargo fmt -q --all
+
+fix: lint
 
 lint:
     @cargo clippy --version
