@@ -70,3 +70,12 @@ impl NFT {
         }
     }
 }
+
+pub async fn get_image_mime_type(url: &str) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+    let response = reqwest::Client::new().head(url).send().await?;
+    if let Some(mime_type) = response.headers().get(reqwest::header::CONTENT_TYPE) {
+        Ok(mime_type.to_str()?.to_string())
+    } else {
+        Err("Failed to determine MIME type".into())
+    }
+}
