@@ -1,4 +1,4 @@
-use primitives::{Chain, LinkType, NFTAsset, NFTAssetId, NFTAttribute, NFTCollectionId, NFTImage, NFTType};
+use primitives::{Chain, LinkType, NFTAsset, NFTAssetId, NFTAttribute, NFTCollectionId, NFTImage, NFTImageOld, NFTImages, NFTType, MIME_TYPE_PNG};
 
 use super::model::{Collection, Nft, Trait};
 
@@ -18,10 +18,14 @@ impl Nft {
             name: self.name.clone(),
             description: None,
             chain: asset.chain,
-            image: NFTImage {
+            image: NFTImageOld {
                 image_url: self.image.clone(),
                 preview_image_url: self.image.clone(),
                 original_source_url: self.image.clone(),
+            },
+            images: NFTImages {
+                preview: NFTImage::from_url(&self.image),
+                original: NFTImage::from_url(&self.image),
             },
             attributes: traits.iter().flat_map(|x| x.as_attribute()).collect(),
         })
@@ -48,10 +52,14 @@ impl Collection {
             description: Some(self.description.clone()),
             chain: collection.chain,
             contract_address: self.on_chain_collection_address.clone(),
-            image: NFTImage {
+            image: NFTImageOld {
                 image_url: self.image.clone(),
                 preview_image_url: self.image.clone(),
                 original_source_url: self.image.clone(),
+            },
+            images: NFTImages {
+                preview: NFTImage::from_url(&self.image),
+                original: NFTImage::from_url(&self.image),
             },
             links: self.as_links(),
             is_verified: true,

@@ -74,7 +74,7 @@ pub use self::transaction_metadata_types::TransactionSwapMetadata;
 pub mod wallet_connect;
 pub use self::wallet_connect::WalletConnectCAIP2;
 pub mod nft;
-pub use self::nft::{NFTAsset, NFTAssetId, NFTAttribute, NFTCollection, NFTCollectionId, NFTData, NFTImage, NFTType};
+pub use self::nft::{NFTAsset, NFTAssetId, NFTAttribute, NFTCollection, NFTCollectionId, NFTData, NFTImage, NFTImageOld, NFTImages, NFTType, MIME_TYPE_PNG};
 pub mod price_alert;
 pub use self::price_alert::{PriceAlert, PriceAlertDirection, PriceAlertType, PriceAlerts};
 pub mod tag;

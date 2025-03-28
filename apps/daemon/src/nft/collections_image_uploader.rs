@@ -1,3 +1,4 @@
+use primitives::MIME_TYPE_PNG;
 use storage::{
     models::{nft_asset::UpdateNftAssetImageUrl, nft_collection::UpdateNftCollectionImageUrl},
     DatabaseClient,
@@ -44,7 +45,10 @@ impl CollectionsImageUploader {
 
             self.database.update_nft_collection_image_url(UpdateNftCollectionImageUrl {
                 id: collection.id,
-                image_url: Some(uploaded_image_url),
+                image_preview_url: Some(uploaded_image_url.clone()),
+                image_preview_mime_type: Some(MIME_TYPE_PNG.to_string()),
+                image_original_url: Some(uploaded_image_url.clone()),
+                image_original_mime_type: Some(MIME_TYPE_PNG.to_string()),
             })?;
         }
 
@@ -73,7 +77,10 @@ impl CollectionsImageUploader {
 
             self.database.update_nft_asset_image_url(UpdateNftAssetImageUrl {
                 id: asset.id,
-                image_url: uploaded_image_url,
+                image_preview_url: Some(uploaded_image_url.clone()),
+                image_preview_mime_type: Some(MIME_TYPE_PNG.to_string()),
+                image_original_url: Some(uploaded_image_url.clone()),
+                image_original_mime_type: Some(MIME_TYPE_PNG.to_string()),
             })?;
         }
 

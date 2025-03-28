@@ -1,1 +1,0 @@
-drop table nft_links;

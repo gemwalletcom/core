@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
 use gem_evm::address::EthereumAddress;
-use primitives::{Chain, LinkType, NFTAsset, NFTAssetId, NFTAttribute, NFTCollectionId, NFTImage, NFTType};
+use primitives::{Chain, LinkType, NFTAsset, NFTAssetId, NFTAttribute, NFTCollectionId, NFTImage, NFTImageOld, NFTImages, NFTType, MIME_TYPE_PNG};
 
 use super::model::{Collection, Nft, NftAsset, Trait};
 
@@ -17,10 +17,14 @@ impl Nft {
             name: self.name.clone(),
             description: Some(self.description.clone()),
             chain: asset.chain,
-            image: NFTImage {
-                image_url: self.image_url.clone(),
-                preview_image_url: self.image_url.clone(),
-                original_source_url: self.image_url.clone(),
+            image: NFTImageOld {
+                image_url: self.display_image_url.clone(),
+                preview_image_url: self.display_image_url.clone(),
+                original_source_url: self.display_image_url.clone(),
+            },
+            images: NFTImages {
+                preview: NFTImage::from_url(&self.display_image_url),
+                original: NFTImage::from_url(&self.display_image_url),
             },
             attributes: traits.iter().flat_map(|x| x.as_attribute()).collect(),
         })
@@ -65,10 +69,14 @@ impl Collection {
             description: Some(self.description.clone()),
             chain: collection.chain,
             contract_address: collection.contract_address.clone(),
-            image: NFTImage {
+            image: NFTImageOld {
                 image_url: self.image_url.clone(),
                 preview_image_url: self.image_url.clone(),
                 original_source_url: self.image_url.clone(),
+            },
+            images: NFTImages {
+                preview: NFTImage::from_url(&self.image_url),
+                original: NFTImage::from_url(&self.image_url),
             },
             links: self.as_links(),
             is_verified: true,

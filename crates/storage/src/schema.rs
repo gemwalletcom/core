@@ -193,7 +193,13 @@ diesel::table! {
         #[max_length = 4096]
         description -> Varchar,
         #[max_length = 512]
-        image_url -> Varchar,
+        image_preview_url -> Nullable<Varchar>,
+        #[max_length = 64]
+        image_preview_mime_type -> Nullable<Varchar>,
+        #[max_length = 512]
+        image_original_url -> Nullable<Varchar>,
+        #[max_length = 64]
+        image_original_mime_type -> Nullable<Varchar>,
         #[max_length = 32]
         token_type -> Varchar,
         #[max_length = 512]
@@ -223,7 +229,13 @@ diesel::table! {
         #[max_length = 128]
         contract_address -> Varchar,
         #[max_length = 512]
-        image_url -> Nullable<Varchar>,
+        image_preview_url -> Nullable<Varchar>,
+        #[max_length = 64]
+        image_preview_mime_type -> Nullable<Varchar>,
+        #[max_length = 512]
+        image_original_url -> Nullable<Varchar>,
+        #[max_length = 64]
+        image_original_mime_type -> Nullable<Varchar>,
         is_verified -> Bool,
         is_enabled -> Bool,
         updated_at -> Timestamp,

@@ -4,6 +4,10 @@ use std::{
     str::FromStr,
 };
 
+pub const MIME_TYPE_PNG: &str = "image/png";
+pub const MIME_TYPE_JPG: &str = "image/jpeg";
+pub const MIME_TYPE_SVG: &str = "image/svg+xml";
+
 use serde::{Deserialize, Serialize};
 use strum::{AsRefStr, EnumIter, EnumString, IntoEnumIterator};
 use typeshare::typeshare;
@@ -29,7 +33,9 @@ pub struct NFTCollection {
     pub description: Option<String>,
     pub chain: Chain,
     pub contract_address: String,
-    pub image: NFTImage,
+    #[typeshare(skip)]
+    pub image: NFTImageOld,
+    pub images: NFTImages,
     pub is_verified: bool,
     pub links: Vec<AssetLink>,
 }
@@ -45,12 +51,20 @@ impl NFTCollection {
         format!("{}_{}", chain.as_ref(), contract_address)
     }
 
-    pub fn image_path(&self) -> NFTImage {
+    pub fn image_path(&self) -> NFTImageOld {
         let image = format!("{}/{}/collection_original.png", self.chain.as_ref(), self.contract_address);
-        NFTImage {
+        NFTImageOld {
             image_url: image.clone(),
             preview_image_url: image.clone(),
             original_source_url: image.clone(),
+        }
+    }
+
+    pub fn images(&self) -> NFTImages {
+        let image = format!("{}/{}/collection_original.png", self.chain.as_ref(), self.contract_address);
+        NFTImages {
+            preview: NFTImage::from_url(&image),
+            original: NFTImage::from_url(&image),
         }
     }
 }
@@ -67,7 +81,8 @@ pub struct NFTAsset {
     pub name: String,
     pub description: Option<String>,
     pub chain: Chain,
-    pub image: NFTImage,
+    pub image: NFTImageOld,
+    pub images: NFTImages,
     pub attributes: Vec<NFTAttribute>,
 }
 
@@ -152,10 +167,10 @@ impl fmt::Display for NFTAssetId {
 }
 
 impl NFTAsset {
-    pub fn image_path(&self) -> NFTImage {
+    pub fn image_path(&self) -> NFTImageOld {
         let asset_id = NFTAssetId::from_id(self.id.clone().as_str()).unwrap();
         let image = format!("{}/{}/assets/{}_original.png", self.chain.as_ref(), asset_id.contract_address, self.token_id);
-        NFTImage {
+        NFTImageOld {
             image_url: image.clone(),
             preview_image_url: image.clone(),
             original_source_url: image.clone(),
@@ -165,11 +180,40 @@ impl NFTAsset {
 
 #[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
 #[serde(rename_all = "camelCase")]
-#[typeshare(swift = "Sendable, Hashable, Equatable")]
-pub struct NFTImage {
+#[typeshare(skip)]
+pub struct NFTImageOld {
     pub image_url: String,
     pub preview_image_url: String,
     pub original_source_url: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
+#[serde(rename_all = "camelCase")]
+#[typeshare(swift = "Sendable, Hashable, Equatable")]
+pub struct NFTImage {
+    pub url: String,
+    pub mime_type: String,
+}
+
+impl NFTImage {
+    pub fn new(url: String, mime_type: String) -> Self {
+        Self { url, mime_type }
+    }
+
+    pub fn from_url(url: &str) -> Self {
+        Self {
+            url: url.to_string(),
+            mime_type: mime_type_for_image_url(url),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
+#[serde(rename_all = "camelCase")]
+#[typeshare(swift = "Sendable, Hashable, Equatable")]
+pub struct NFTImages {
+    pub preview: NFTImage,
+    pub original: NFTImage,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -195,5 +239,15 @@ pub enum NFTType {
 impl NFTType {
     pub fn all() -> Vec<Self> {
         Self::iter().collect::<Vec<_>>()
+    }
+}
+
+fn mime_type_for_image_url(url: &str) -> String {
+    if url.ends_with(".jpeg") || url.ends_with(".jpg") {
+        MIME_TYPE_JPG.to_string()
+    } else if url.ends_with(".svg") {
+        MIME_TYPE_SVG.to_string()
+    } else {
+        MIME_TYPE_PNG.to_string()
     }
 }
