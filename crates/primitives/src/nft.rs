@@ -81,6 +81,7 @@ pub struct NFTAsset {
     pub name: String,
     pub description: Option<String>,
     pub chain: Chain,
+    #[typeshare(skip)]
     pub image: NFTImageOld,
     pub images: NFTImages,
     pub attributes: Vec<NFTAttribute>,
