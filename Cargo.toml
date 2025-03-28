@@ -124,6 +124,9 @@ alloy-core = { version = "0.8.24", features = ["sol-types", "json-abi", "rlp"] }
 alloy-primitives = "0.8.24"
 alloy-sol-types = "0.8.24"
 
+tonlib-core = { version = "0.23.1" }
+tonlib-client = { version = "0.23.1" }
+
 # localizer
 i18n-embed = { version = "0.15.3", features = ["fluent-system", "autoreload"] }
 i18n-embed-fl = { version = "0.9.3" }

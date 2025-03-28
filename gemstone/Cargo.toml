@@ -51,11 +51,17 @@ bigdecimal.workspace = true
 
 orca_whirlpools_core = "1.0.5"
 
+tonlib-client = { workspace = true }
+tonlib-core = { workspace = true }
+reqwest.workspace = true
+
+
 [build-dependencies]
 uniffi = { workspace = true, features = ["build"] }
 
 [dev-dependencies]
 tokio.workspace = true
+futures.workspace = true
 alien_provider = { path = "../crates/alien_provider" }
 
 [[test]]

@@ -7,6 +7,7 @@ mod tests {
     };
     use primitives::{AssetId, Chain};
     use std::{collections::HashMap, sync::Arc, time::SystemTime};
+    use stonfi::pool::get_pool_data;
 
     #[tokio::test]
     async fn test_orca_get_quote_by_input() -> Result<(), SwapperError> {
@@ -131,6 +132,17 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_stonfi() -> Result<(), SwapperError> {
+        let client = reqwest::Client::new();
+        let response = get_pool_data(&client, "EQCGScrZe1xbyWqWDvdI6mzP-GAcAWFv6ZXuaJOuSqemxku4")
+            .await
+            .map_err(|err| {
+                println!("err: {:?}", err);
+                SwapperError::NetworkError { msg: err.to_string() }
+            })?;
+    }
+
+     #[tokio::test]
     async fn test_v4_quoter() -> Result<(), SwapperError> {
         let swap_provider = UniswapV4::boxed();
         let network_provider = Arc::new(NativeProvider::default());
@@ -198,7 +210,6 @@ mod tests {
 
         let quote_data = swap_provider.fetch_quote_data(&quote, network_provider.clone(), FetchQuoteData::None).await?;
         println!("{:?}", quote_data);
-
         Ok(())
     }
 }

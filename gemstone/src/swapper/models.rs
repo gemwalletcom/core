@@ -68,6 +68,14 @@ pub enum SwapProvider {
     OkuTrade,
     Wagmi,
     Cetus,
+    Stonfi,
+}
+
+#[derive(Debug, Clone, PartialEq, uniffi::Enum)]
+pub enum SwapProviderType {
+    OnChain,
+    CrossChain,
+    Bridge,
 }
 
 impl SwapProvider {
@@ -98,6 +106,7 @@ impl SwapProvider {
             Self::OkuTrade => "Oku Trade",
             Self::Wagmi => "Wagmi",
             Self::Cetus => "Cetus",
+            Self::Stonfi => "Stonfi",
         }
     }
 
@@ -111,7 +120,8 @@ impl SwapProvider {
             | Self::Jupiter
             | Self::OkuTrade
             | Self::Wagmi
-            | Self::Cetus => SwapProviderMode::OnChain,
+            | Self::Cetus
+            | Self::Stonfi => SwapProviderMode::OnChain,
             Self::Thorchain => SwapProviderMode::CrossChain,
             Self::Across => SwapProviderMode::Bridge,
         }

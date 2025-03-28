@@ -20,6 +20,7 @@ pub mod models;
 pub mod orca;
 pub mod pancakeswap_aptos;
 pub mod slippage;
+pub mod stonfi;
 pub mod thorchain;
 pub mod uniswap;
 
@@ -124,6 +125,7 @@ impl GemSwapper {
                 Box::new(uniswap::universal_router::new_wagmi()),
                 Box::new(pancakeswap_aptos::PancakeSwapAptos::default()),
                 Box::new(cetus::Cetus::default()),
+                Box::new(stonfi::Stonfi::default()),
             ],
         }
     }
