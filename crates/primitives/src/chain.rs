@@ -292,6 +292,14 @@ impl Chain {
         }
     }
 
+    pub fn minimum_account_balance(&self) -> Option<u64> {
+        match self {
+            Self::Solana => Some(890_880),
+            Self::Polkadot => Some(10_000_000_000),
+            _ => None,
+        }
+    }
+
     pub fn is_swap_supported(&self) -> bool {
         match self {
             Self::Ethereum

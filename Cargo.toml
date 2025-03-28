@@ -17,8 +17,9 @@ members = [
 
     "bin/img-downloader",
     "bin/generate",
-
     "bin/uniffi-bindgen",
+    "bin/swapper-dump",
+
     "gemstone",
 
     "crates/primitives",
@@ -42,6 +43,7 @@ members = [
     "crates/serde_serializers",
     "crates/number_formatter",
     "crates/pricer_dex",
+    "crates/alien_provider",
 ]
 
 default-members = [
