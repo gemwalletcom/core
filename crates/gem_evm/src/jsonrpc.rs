@@ -47,6 +47,17 @@ impl TransactionObject {
             data: format!("0x{}", hex::encode(data)),
         }
     }
+
+    pub fn new_call_with_value(from: &str, to: &str, data: Vec<u8>, value: &str) -> Self {
+        Self {
+            from: Some(from.to_string()),
+            to: to.to_string(),
+            gas: None,
+            gas_price: None,
+            value: Some(value.to_string()),
+            data: format!("0x{}", hex::encode(data)),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

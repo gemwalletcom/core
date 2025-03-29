@@ -9,6 +9,7 @@ pub mod erc2612;
 pub mod ether_conv;
 pub mod jsonrpc;
 pub mod lido;
+pub mod mayan;
 pub mod multicall3;
 pub mod permit2;
 pub mod thorchain;
