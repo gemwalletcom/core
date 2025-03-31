@@ -333,11 +333,11 @@ impl Chain {
             | Self::Ink
             | Self::Hyperliquid
             | Self::Sui
-            | Self::Monad => true,
+            | Self::Monad
+            | Self::Ton => true,
             Self::Osmosis
             | Self::Celestia
             | Self::Injective
-            | Self::Ton
             | Self::Tron
             | Self::Xrp
             | Self::Sei
