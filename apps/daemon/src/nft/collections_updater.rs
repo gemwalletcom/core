@@ -1,9 +1,10 @@
 use std::str::FromStr;
 
+use nft::get_image_mime_type;
 use nft::opensea::{model::Collection, OpenSeaClient};
 use primitives::{Chain, LinkType};
 use storage::{
-    models::{NftCollection, NftLink},
+    models::{nft_collection::UpdateNftCollectionImageUrl, NftCollection, NftLink},
     DatabaseClient,
 };
 
@@ -18,7 +19,7 @@ impl OpenSeaUpdater {
         Self { database, opensea_client }
     }
 
-    pub async fn update(&mut self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn update_collections(&mut self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
         let collections = self.database.get_nft_collections_all()?;
 
         for collection in collections.clone() {
@@ -27,6 +28,19 @@ impl OpenSeaUpdater {
                 Chain::Ethereum => {
                     let opensea_collection = self.opensea_client.get_collection_id(chain.as_ref(), &collection.contract_address).await?;
                     let _ = self.update_collection(collection.clone(), opensea_collection);
+
+                    // update mime types
+                    if collection.image_preview_mime_type.is_none() {
+                        let image_preview_mime_type = get_image_mime_type(&collection.clone().image_preview_url.unwrap_or_default()).await?;
+
+                        let update = UpdateNftCollectionImageUrl {
+                            id: collection.id.clone(),
+                            image_preview_url: collection.image_preview_url.clone(),
+                            image_preview_mime_type: Some(image_preview_mime_type),
+                        };
+
+                        self.database.update_nft_collection_image_url(update)?;
+                    }
 
                     println!("Updating collection: {}", collection.name);
                 }
@@ -68,7 +82,7 @@ impl OpenSeaUpdater {
                 url: format!("https://instagram.com/{}", opensea_collection.instagram_username),
             });
         }
-        self.database.add_nft_links(links.clone())?;
+        self.database.add_nft_collections_links(links.clone())?;
         Ok(())
     }
 }

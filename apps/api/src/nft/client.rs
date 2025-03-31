@@ -83,7 +83,7 @@ impl NFTClient {
             .collect();
 
         self.database.add_nft_collections(new_collections)?;
-        self.database.add_nft_links(links)?;
+        self.database.add_nft_collections_links(links)?;
 
         Ok(collections)
     }

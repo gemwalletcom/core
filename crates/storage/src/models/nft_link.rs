@@ -2,7 +2,7 @@ use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Queryable, Selectable, Serialize, Deserialize, Insertable, AsChangeset, Clone)]
-#[diesel(table_name = crate::schema::nft_links)]
+#[diesel(table_name = crate::schema::nft_collections_links)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct NftLink {
     pub collection_id: String,
