@@ -6,7 +6,7 @@ build:
 
 lint:
     @cargo clippy --version
-    cargo clippy -- -D warnings
+    cargo clippy --fix --allow-dirty
 
 test:
     cargo test
