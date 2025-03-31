@@ -4,7 +4,7 @@ mod tests {
     use gem_evm::ether_conv;
     use gemstone::{
         config::swap_config::{get_swap_config, SwapReferralFee, SwapReferralFees},
-        swapper::{across::Across, cetus::Cetus, mayan::MayanSwiftProvider, models::*, orca::Orca, uniswap::v4::UniswapV4, GemSwapper, *},
+        swapper::{across::Across, cetus::Cetus, models::*, orca::Orca, uniswap::v4::UniswapV4, GemSwapper, *},
     };
     use primitives::{AssetId, Chain};
     use std::{collections::HashMap, sync::Arc, time::SystemTime};
@@ -205,28 +205,28 @@ mod tests {
 
     #[tokio::test]
     async fn test_mayan_swift_quote() -> Result<(), SwapperError> {
-        let swap_provider = MayanSwiftProvider::default();
-        let network_provider = Arc::new(NativeProvider::default());
+        let swapper = GemSwapper::new(Arc::new(NativeProvider::default()));
         let swap_config = get_swap_config();
 
         let request = SwapQuoteRequest {
-            from_asset: AssetId::from_chain(Chain::Ethereum),
-            to_asset: AssetId::from_chain(Chain::Solana),
+            from_asset: AssetId::from_token(Chain::Ethereum, "0x514910771af9ca656af840dff83e8264ecf986ca"),
+            to_asset: AssetId::from_token(Chain::Solana, "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"),
             wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".to_string(),
             destination_address: "G7B17AigRCGvwnxFc5U8zY5T3NBGduLzT7KYApNU2VdR".to_string(),
-            value: ether_conv::EtherConv::parse_ether("0.01").to_string(),
+            value: ether_conv::to_bn_wei("0.2", 18).to_string(),
             mode: GemSwapMode::ExactIn,
             options: GemSwapOptions {
                 slippage: swap_config.default_slippage.clone(),
                 fee: Some(swap_config.referral_fee),
-                preferred_providers: vec![],
+                preferred_providers: vec![SwapProvider::MayanSwift],
             },
         };
 
-        let quote = swap_provider.fetch_quote(&request, network_provider.clone()).await?;
+        let quotes = swapper.fetch_quote(&request).await?;
+        let quote = quotes.first().unwrap();
         println!("<== quote: {:?}", quote);
 
-        let quote_data = swap_provider.fetch_quote_data(&quote, network_provider.clone(), FetchQuoteData::None).await?;
+        let quote_data = swapper.fetch_quote_data(quote, FetchQuoteData::None).await?;
         println!("<== quote_data: {:?}", quote_data);
 
         Ok(())
