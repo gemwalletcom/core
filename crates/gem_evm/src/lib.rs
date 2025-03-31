@@ -12,6 +12,7 @@ pub mod lido;
 pub mod mayan;
 pub mod multicall3;
 pub mod permit2;
+pub mod serializer;
 pub mod thorchain;
 pub mod uniswap;
 pub mod weth;

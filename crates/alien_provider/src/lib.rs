@@ -32,6 +32,9 @@ impl Default for NativeProvider {
             (Chain::Unichain, "https://mainnet.unichain.org".into()),
             (Chain::SmartChain, "https://binance.llamarpc.com".into()),
             (Chain::Linea, "https://rpc.linea.build".into()),
+            (Chain::Base, "https://base.llamarpc.com".into()),
+            (Chain::Aptos, "https://fullnode.mainnet.aptoslabs.com".into()),
+            (Chain::Polygon, "https://polygon.llamarpc.com".into()),
         ]))
     }
 }

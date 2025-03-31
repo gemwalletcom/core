@@ -3,27 +3,12 @@ use alloy_core::{
     sol_types::SolCall,
 };
 
+use crate::swapper::SwapperError;
 use gem_evm::mayan::{contracts::IMayanForwarder::PermitParams, contracts::IMayanSwift};
 use std::str::FromStr;
-use thiserror::Error;
 
 #[derive(Default)]
 pub struct MayanSwift {}
-
-#[derive(Error, Debug)]
-pub enum MayanSwiftError {
-    #[error("Call failed: {msg}")]
-    CallFailed { msg: String },
-
-    #[error("Invalid response: {msg}")]
-    InvalidResponse { msg: String },
-
-    #[error("ABI error: {msg}")]
-    ABIError { msg: String },
-
-    #[error("Invalid amount")]
-    InvalidAmount,
-}
 
 // Parameter structs with native types
 #[derive(Debug, Clone)]
@@ -95,7 +80,7 @@ impl MayanSwiftPermit {
 }
 
 impl MayanSwift {
-    pub async fn encode_create_order_with_eth(&self, params: OrderParams) -> Result<Vec<u8>, MayanSwiftError> {
+    pub fn encode_create_order_with_eth(&self, params: OrderParams) -> Result<Vec<u8>, SwapperError> {
         let call_data = IMayanSwift::createOrderWithEthCall {
             params: params.to_contract_params(),
         }
@@ -104,11 +89,9 @@ impl MayanSwift {
         Ok(call_data)
     }
 
-    pub async fn encode_create_order_with_token(&self, token_in: &str, amount: U256, params: OrderParams) -> Result<Vec<u8>, MayanSwiftError> {
+    pub fn encode_create_order_with_token(&self, token_in: Address, amount: U256, params: OrderParams) -> Result<Vec<u8>, SwapperError> {
         let call_data = IMayanSwift::createOrderWithTokenCall {
-            tokenIn: Address::from_str(token_in).map_err(|e| MayanSwiftError::ABIError {
-                msg: format!("Invalid token address: {}", e),
-            })?,
+            tokenIn: token_in,
             amountIn: amount,
             params: params.to_contract_params(),
         }

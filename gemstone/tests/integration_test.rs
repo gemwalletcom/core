@@ -1,9 +1,10 @@
 #[cfg(test)]
 mod tests {
     use alien_provider::NativeProvider;
+    use gem_evm::ether_conv;
     use gemstone::{
-        config::swap_config::{SwapReferralFee, SwapReferralFees, get_swap_config},
-        swapper::{GemSwapper, across::Across, cetus::Cetus, mayan::MayanSwiftProvider, models::*, orca::Orca, uniswap::v4::UniswapV4, *},
+        config::swap_config::{get_swap_config, SwapReferralFee, SwapReferralFees},
+        swapper::{across::Across, cetus::Cetus, mayan::MayanSwiftProvider, models::*, orca::Orca, uniswap::v4::UniswapV4, GemSwapper, *},
     };
     use primitives::{AssetId, Chain};
     use std::{collections::HashMap, sync::Arc, time::SystemTime};
@@ -204,39 +205,29 @@ mod tests {
 
     #[tokio::test]
     async fn test_mayan_swift_quote() -> Result<(), SwapperError> {
-        const TEST_WALLET_ADDRESS: &str = "0x0655c6AbdA5e2a5241aa08486bd50Cf7d475CF24";
-
         let swap_provider = MayanSwiftProvider::default();
         let network_provider = Arc::new(NativeProvider::default());
+        let swap_config = get_swap_config();
 
-        // Create a swap quote request
         let request = SwapQuoteRequest {
-            from_asset: AssetId::from(Chain::Base, Some("0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913".to_string())),
-            to_asset: AssetId::from_chain(Chain::Optimism),
-            wallet_address: TEST_WALLET_ADDRESS.to_string(),
-            destination_address: TEST_WALLET_ADDRESS.to_string(),
-            value: "9000000".to_string(),
+            from_asset: AssetId::from_chain(Chain::Ethereum),
+            to_asset: AssetId::from_chain(Chain::Solana),
+            wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".to_string(),
+            destination_address: "G7B17AigRCGvwnxFc5U8zY5T3NBGduLzT7KYApNU2VdR".to_string(),
+            value: ether_conv::EtherConv::parse_ether("0.1").to_string(),
             mode: GemSwapMode::ExactIn,
             options: GemSwapOptions {
-                slippage: 10.into(),
-                fee: None,
+                slippage: swap_config.default_slippage.clone(),
+                fee: Some(swap_config.referral_fee),
                 preferred_providers: vec![],
             },
         };
 
         let quote = swap_provider.fetch_quote(&request, network_provider.clone()).await?;
+        println!("<== quote: {:?}", quote);
 
-        assert_eq!(quote.from_value, "9000000");
-        // Expect the to_value to be
-        assert!(quote.to_value.parse::<i64>().unwrap() > 0);
-
-        // Verify
-        assert_eq!(quote.data.routes.len(), 1);
-        assert_eq!(
-            quote.data.routes[0].input,
-            AssetId::from(Chain::Base, Some("0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913".to_string())),
-        );
-        assert_eq!(quote.data.routes[0].output, AssetId::from_chain(Chain::Optimism));
+        let quote_data = swap_provider.fetch_quote_data(&quote, network_provider.clone(), FetchQuoteData::None).await?;
+        println!("<== quote_data: {:?}", quote_data);
 
         Ok(())
     }

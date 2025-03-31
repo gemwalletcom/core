@@ -1,7 +1,7 @@
 [package]
 edition = "2021"
 name = "gemstone"
-version = "0.30.6"
+version = "0.31.1"
 
 [lib]
 crate-type = [
@@ -49,6 +49,7 @@ borsh.workspace = true
 lazy_static.workspace = true
 bigdecimal.workspace = true
 rand.workspace = true
+bs58.workspace = true
 orca_whirlpools_core = "1.0.5"
 
 [build-dependencies]

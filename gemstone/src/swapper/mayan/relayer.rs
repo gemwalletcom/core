@@ -1,37 +1,79 @@
 use serde::{Deserialize, Serialize};
 use std::{fmt::Display, sync::Arc};
 
-use super::{MAYAN_FORWARDER_CONTRACT, MAYAN_PROGRAM_ID, SDK_VERSION};
+use super::{MAYAN_FORWARDER_CONTRACT, MAYAN_PROGRAM_ID};
 use crate::network::{AlienProvider, AlienTarget};
+use crate::swapper::SwapperError;
+use alloy_primitives::Address;
+use gem_evm::serializer::{deserialize_address, deserialize_optional_address, serialize_address, serialize_optional_address};
 use primitives::Chain;
+use serde_serializers::{deserialize_optional_u64_from_str, deserialize_u64_from_str, serialize_optional_u64, serialize_u64};
 
-#[derive(Debug, Deserialize)]
-struct ApiError {
-    msg: String,
-}
+pub const MAYAN_API_URL: &str = "https://price-api.mayan.finance/v3";
 
 #[derive(Debug, Clone, Serialize)]
-pub struct QuoteParams {
-    pub amount: f64,
+#[serde(rename_all = "camelCase")]
+pub struct QuoteUrlParams {
+    pub swift: bool,
+    pub fast_mctp: bool,
+    pub only_direct: bool,
+    pub solana_program: String,
+    pub forwarder_address: String,
+    pub amount_in64: String,
     pub from_token: String,
-    pub from_chain: Chain,
+    pub from_chain: String,
     pub to_token: String,
-    pub to_chain: Chain,
+    pub to_chain: String,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub slippage_bps: Option<u32>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub gas_drop: Option<u64>,
+    pub slippage_bps: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub referrer: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub referrer_bps: Option<u32>,
+    pub sdk_version: String,
+}
+
+impl QuoteUrlParams {
+    pub fn from_params(
+        amount_in64: String,
+        from_token: String,
+        from_chain: Chain,
+        to_token: String,
+        to_chain: Chain,
+        options: &QuoteOptions,
+        slippage_bps: Option<String>,
+        referrer: Option<String>,
+        referrer_bps: Option<u32>,
+    ) -> Self {
+        let from_chain_str = if from_chain == Chain::SmartChain {
+            "bsc".to_string()
+        } else {
+            from_chain.to_string()
+        };
+
+        Self {
+            swift: options.swift,
+            fast_mctp: options.fast_mctp,
+            only_direct: options.only_direct,
+            solana_program: MAYAN_PROGRAM_ID.to_string(),
+            forwarder_address: MAYAN_FORWARDER_CONTRACT.to_string(),
+            amount_in64,
+            from_token,
+            from_chain: from_chain_str,
+            to_token,
+            to_chain: to_chain.to_string(),
+            slippage_bps,
+            referrer,
+            referrer_bps,
+            sdk_version: "10_4_0".to_string(),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize)]
 pub struct QuoteOptions {
     pub swift: bool,
-    pub mctp: bool,
-    pub gasless: bool,
+    pub fast_mctp: bool,
     pub only_direct: bool,
 }
 
@@ -39,115 +81,93 @@ impl Default for QuoteOptions {
     fn default() -> Self {
         Self {
             swift: true,
-            mctp: true,
-            gasless: false,
+            fast_mctp: false,
             only_direct: false,
         }
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Token {
     pub name: String,
-    pub standard: String,
     pub symbol: String,
-    pub mint: String,
     pub verified: bool,
     pub contract: String,
     pub wrapped_address: Option<String>,
     pub chain_id: Option<u64>,
-    pub w_chain_id: Option<u64>,
+    pub w_chain_id: u64,
     pub decimals: u8,
-
-    #[serde(rename = "logoURI")]
-    pub logo_uri: String,
-    pub coingecko_id: String,
     pub real_origin_chain_id: Option<u64>,
     pub real_origin_contract_address: Option<String>,
-    pub supports_permit: bool,
-    pub has_auction: bool,
 }
 
 #[derive(Debug, PartialEq)]
 pub enum QuoteType {
     Swift,
-    Mctp, // TODO: do we want to support all types?
-    Swap,
-    WH,
+    FastMctp,
 }
 
 impl Display for QuoteType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             QuoteType::Swift => write!(f, "SWIFT"),
-            QuoteType::Mctp => write!(f, "MCTP"),
-            QuoteType::Swap => write!(f, "SWAP"),
-            QuoteType::WH => write!(f, "WH"),
+            QuoteType::FastMctp => write!(f, "FAST_MCTP"),
         }
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Quote {
     #[serde(rename = "type")]
     pub r#type: String,
-    pub effective_amount_in: f64,
+    #[serde(deserialize_with = "deserialize_u64_from_str", serialize_with = "serialize_u64")]
+    pub effective_amount_in64: u64,
     pub expected_amount_out: f64,
-    pub price_impact: Option<f64>,
     pub min_amount_out: f64,
     pub min_middle_amount: Option<f64>,
     pub evm_swap_router_address: Option<String>,
     pub evm_swap_router_calldata: Option<String>,
     pub min_received: f64,
     pub gas_drop: f64,
-    pub price: f64,
-    pub swap_relayer_feed: Option<f64>,
-    pub redeem_relayer_fee: Option<f64>,
-    pub refund_relayer_fee: Option<f64>,
-    pub solana_relayer_fee: Option<f64>,
-    pub refund_relayer_fee64: String,
-    pub cancel_relayer_fee64: String,
+    #[serde(deserialize_with = "deserialize_optional_u64_from_str", serialize_with = "serialize_optional_u64")]
+    pub refund_relayer_fee64: Option<u64>,
+    #[serde(deserialize_with = "deserialize_optional_u64_from_str", serialize_with = "serialize_optional_u64")]
+    pub cancel_relayer_fee64: Option<u64>,
     pub from_token: Token,
     pub to_token: Token,
     pub from_chain: String,
     pub to_chain: String,
     pub slippage_bps: u32,
-    pub bridge_fee: f64,
-    pub suggested_priority_fee: f64,
-    pub only_bridging: bool,
     pub deadline64: String,
     pub referrer_bps: Option<u32>,
     pub protocol_bps: Option<u32>,
-    pub swift_mayan_contract: Option<String>,
+    #[serde(deserialize_with = "deserialize_optional_address", serialize_with = "serialize_optional_address")]
+    pub swift_mayan_contract: Option<Address>,
     pub swift_auction_mode: Option<u8>,
-    pub swift_input_contract: String,
+    #[serde(deserialize_with = "deserialize_address", serialize_with = "serialize_address")]
+    pub swift_input_contract: Address,
     pub swift_input_decimals: u8,
-    pub gasless: bool,
     pub relayer: String,
-    pub send_transaction_cost: f64,
-    pub max_user_gas_drop: f64,
 }
 
 #[derive(Debug, Deserialize)]
-struct QuoteResponse {
-    quotes: Vec<Quote>,
-
-    #[serde(rename = "minimumSdkVersion")]
-    pub minimum_sdk_version: Vec<u8>,
+#[serde(untagged)]
+pub enum QuoteResult {
+    Success(QuoteResponse),
+    Error(QuoteError),
 }
 
-#[derive(Debug, thiserror::Error)]
-pub enum MayanRelayerError {
-    #[error("Network error: {0}")]
-    NetworkError(String),
-    #[error("Invalid response: {0}")]
-    InvalidResponse(String),
-    #[error("SDK version not supported")]
-    SdkVersionNotSupported,
-    #[error("Invalid parameters: {0}")]
-    InvalidParameters(String),
+#[derive(Debug, Deserialize)]
+pub struct QuoteResponse {
+    pub quotes: Vec<Quote>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct QuoteError {
+    pub code: String,
+    pub msg: String,
 }
 
 #[derive(Debug)]
@@ -162,49 +182,11 @@ impl MayanRelayer {
     }
 
     pub fn default_relayer(provider: Arc<dyn AlienProvider>) -> Self {
-        Self::new("https://price-api.mayan.finance/v3".to_string(), provider)
+        Self::new(MAYAN_API_URL.to_string(), provider)
     }
 
-    pub async fn get_quote(&self, params: QuoteParams, options: Option<QuoteOptions>) -> Result<Vec<Quote>, MayanRelayerError> {
-        let options = options.unwrap_or_default();
-        let from_chain = if params.from_chain == Chain::SmartChain {
-            "bsc".to_string()
-        } else {
-            params.from_chain.to_string()
-        };
-
-        // FIXME add struct and serde_urlencoded
-        let mut query_params = vec![
-            ("swift", options.swift.to_string()),
-            ("mctp", options.mctp.to_string()),
-            ("gasless", options.gasless.to_string()),
-            ("onlyDirect", options.only_direct.to_string()),
-            ("solanaProgram", MAYAN_PROGRAM_ID.to_string()),
-            ("forwarderAddress", MAYAN_FORWARDER_CONTRACT.to_string()),
-            ("amountIn", params.amount.to_string()),
-            ("fromToken", params.from_token),
-            ("fromChain", from_chain),
-            ("toToken", params.to_token),
-            ("toChain", params.to_chain.to_string()),
-            // ("slippageBps", params.slippage_bps.map_or("auto".to_string(), |v| v.to_string())),
-            // ("gasDrop", params.gas_drop.unwrap_or(0).to_string()),
-            ("sdkVersion", "9_7_0".to_string()),
-        ];
-
-        if let Some(slippage) = params.slippage_bps {
-            query_params.push(("slippageBps", slippage.to_string()));
-        }
-        if let Some(gas_drop) = params.gas_drop {
-            query_params.push(("gasDrop", gas_drop.to_string()));
-        }
-        if let Some(referrer) = params.referrer {
-            query_params.push(("referrer", referrer));
-        }
-        if let Some(referrer_bps) = params.referrer_bps {
-            query_params.push(("referrerBps", referrer_bps.to_string()));
-        }
-
-        let query = serde_urlencoded::to_string(&query_params).map_err(|e| MayanRelayerError::InvalidParameters(e.to_string()))?;
+    pub async fn get_quote(&self, params: QuoteUrlParams) -> Result<Vec<Quote>, SwapperError> {
+        let query = serde_urlencoded::to_string(&params).map_err(|e| SwapperError::ComputeQuoteError { msg: e.to_string() })?;
 
         let url = format!("{}/quote?{}", self.url, query);
         let target = AlienTarget::get(&url);
@@ -213,50 +195,17 @@ impl MayanRelayer {
             .provider
             .request(target)
             .await
-            .map_err(|err| MayanRelayerError::NetworkError(err.to_string()))?;
+            .map_err(|err| SwapperError::NetworkError { msg: err.to_string() })?;
 
-        let quote_response = serde_json::from_slice::<QuoteResponse>(&data);
-        match quote_response {
-            Ok(response) => {
-                if !self.check_sdk_version(response.minimum_sdk_version) {
-                    return Err(MayanRelayerError::SdkVersionNotSupported);
-                }
+        let result = serde_json::from_slice::<QuoteResult>(&data).map_err(|e| SwapperError::ComputeQuoteError { msg: e.to_string() })?;
 
-                Ok(response.quotes)
-            }
-            Err(err) => {
-                if let Ok(api_error) = serde_json::from_slice::<ApiError>(&data) {
-                    return Err(MayanRelayerError::InvalidResponse(api_error.msg));
-                }
-                Err(MayanRelayerError::NetworkError(err.to_string()))
-            }
+        match result {
+            QuoteResult::Success(response) => Ok(response.quotes),
+            QuoteResult::Error(error) => match error.code.as_str() {
+                "QUOTE_NOT_FOUND" => Err(SwapperError::NoQuoteAvailable),
+                _ => Err(SwapperError::ComputeQuoteError { msg: error.msg }),
+            },
         }
-    }
-
-    fn check_sdk_version(&self, minimum_version: Vec<u8>) -> bool {
-        let sdk_version = SDK_VERSION.split('_').filter_map(|x| x.parse::<u8>().ok()).collect::<Vec<_>>();
-
-        // Major version check
-        if sdk_version[0] < minimum_version[0] {
-            return false;
-        }
-        if sdk_version[0] > minimum_version[0] {
-            return true;
-        }
-
-        // Minor version check
-        if sdk_version[1] < minimum_version[1] {
-            return false;
-        }
-        if sdk_version[1] > minimum_version[1] {
-            return true;
-        }
-
-        if sdk_version[2] >= minimum_version[2] {
-            return true;
-        }
-
-        false
     }
 }
 
@@ -265,9 +214,59 @@ mod tests {
     use super::*;
 
     #[test]
+    fn test_quote_url_params_from_params() {
+        let options = QuoteOptions::default();
+        let params = QuoteUrlParams::from_params(
+            "100".to_string(),
+            "ETH".to_string(),
+            Chain::Ethereum,
+            "USDC".to_string(),
+            Chain::Solana,
+            &options,
+            Some("50".to_string()),
+            Some("referrer".to_string()),
+            Some(10),
+        );
+
+        assert_eq!(params.amount_in64, "100");
+        assert_eq!(params.from_token, "ETH");
+        assert_eq!(params.from_chain, "ethereum");
+        assert_eq!(params.to_token, "USDC");
+        assert_eq!(params.to_chain, "solana");
+        assert_eq!(params.solana_program, MAYAN_PROGRAM_ID.to_string());
+        assert_eq!(params.forwarder_address, MAYAN_FORWARDER_CONTRACT.to_string());
+        assert_eq!(params.slippage_bps, Some("50".to_string()));
+        assert_eq!(params.referrer, Some("referrer".to_string()));
+        assert_eq!(params.referrer_bps, Some(10));
+        assert!(params.swift);
+        assert!(!params.fast_mctp);
+        assert!(!params.only_direct);
+    }
+
+    #[test]
+    fn test_smart_chain_conversion() {
+        let options = QuoteOptions::default();
+        let params = QuoteUrlParams::from_params(
+            "100".to_string(),
+            "BNB".to_string(),
+            Chain::SmartChain,
+            "USDC".to_string(),
+            Chain::Solana,
+            &options,
+            None,
+            None,
+            None,
+        );
+
+        assert_eq!(params.from_chain, "bsc");
+    }
+
+    #[test]
     fn test_quote_deserialization() {
         let data = include_str!("test/quote_response.json");
-        let quote: Quote = serde_json::from_str(data).expect("Failed to deserialize Quote");
+        let result = serde_json::from_str::<QuoteResponse>(data).unwrap();
+        let quote = result.quotes.first().unwrap();
+
         assert_eq!(quote.r#type, "SWIFT");
         assert_eq!(quote.swift_input_decimals, 18);
     }
@@ -279,18 +278,7 @@ mod tests {
         let token: Token = serde_json::from_str(data).expect("Failed to deserialize Token");
         assert_eq!(token.name, "ETH");
         assert!(token.verified);
-        assert_eq!(token.chain_id, Some(8453));
+        assert_eq!(token.chain_id.unwrap(), 8453);
         assert_eq!(token.wrapped_address.unwrap(), "0x4200000000000000000000000000000000000006");
-    }
-
-    #[test]
-    fn test_quote_response_deserialization() {
-        let json_data = r#"{
-            "quotes": [],
-            "minimumSdkVersion": [7, 0, 0]
-        }"#;
-
-        let response: QuoteResponse = serde_json::from_str(json_data).expect("Failed to deserialize QuoteResponse");
-        assert_eq!(response.minimum_sdk_version, vec![7, 0, 0]);
     }
 }

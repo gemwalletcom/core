@@ -2504,7 +2504,7 @@ dependencies = [
 
 [[package]]
 name = "gemstone"
-version = "0.30.6"
+version = "0.31.1"
 dependencies = [
  "alien_provider",
  "alloy-core",
@@ -2515,6 +2515,7 @@ dependencies = [
  "bcs",
  "bigdecimal",
  "borsh",
+ "bs58",
  "futures",
  "gem_aptos",
  "gem_bsc",
