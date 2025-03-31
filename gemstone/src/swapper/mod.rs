@@ -19,6 +19,7 @@ pub mod jupiter;
 pub mod models;
 pub mod orca;
 pub mod pancakeswap_aptos;
+pub mod proxy;
 pub mod slippage;
 pub mod thorchain;
 pub mod uniswap;
@@ -124,6 +125,7 @@ impl GemSwapper {
                 Box::new(uniswap::universal_router::new_wagmi()),
                 Box::new(pancakeswap_aptos::PancakeSwapAptos::default()),
                 Box::new(cetus::Cetus::default()),
+                Box::new(proxy::ProxyProvider::new_stonfi_v2()),
             ],
         }
     }
