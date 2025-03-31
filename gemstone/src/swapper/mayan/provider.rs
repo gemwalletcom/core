@@ -159,7 +159,13 @@ impl GemSwapProvider for MayanSwiftProvider {
         if request.from_asset.chain.chain_type() == ChainType::Ethereum {
             let approval = Self::check_approval(request, provider.clone()).await?;
 
-            tx_builder.build_evm_tx(mayan_quote, approval, &request.wallet_address, &request.destination_address, referrer)
+            tx_builder.build_evm_tx(
+                mayan_quote,
+                approval.approval_data(),
+                &request.wallet_address,
+                &request.destination_address,
+                referrer,
+            )
         } else if request.from_asset.chain.chain_type() == ChainType::Solana {
             tx_builder.build_sol_tx(mayan_quote)
         } else {

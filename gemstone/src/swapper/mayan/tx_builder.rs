@@ -10,11 +10,11 @@ use super::{
     forwarder::MayanForwarder,
     models::Quote,
     swift::{MayanSwift, OrderParams},
-    MAYAN_FORWARDER_CONTRACT,
+    FORWARD_ERC20_GAS_LIMIT, FORWARD_SWAP_ERC20_GAS_LIMIT, MAYAN_FORWARDER_CONTRACT,
 };
 use crate::{
     config::swap_config::SwapReferralFee,
-    swapper::{ApprovalType, SwapQuoteData, SwapperError},
+    swapper::{ApprovalData, SwapQuoteData, SwapperError},
 };
 use gem_evm::{
     ether_conv,
@@ -118,7 +118,7 @@ impl MayanTxBuilder {
     pub fn build_evm_tx(
         &self,
         mayan_quote: Quote,
-        approval: ApprovalType,
+        approval: Option<ApprovalData>,
         wallet_address: &str,
         destination_address: &str,
         referrer_fee: Option<SwapReferralFee>,
@@ -143,6 +143,8 @@ impl MayanTxBuilder {
         let zero_address = Address::ZERO;
 
         let mut value = mayan_quote.effective_amount_in64;
+        let mut gas_limit = None;
+
         let is_native = swift_input_address == zero_address;
         let need_swap = mayan_quote.evm_swap_router_address.is_some() && mayan_quote.evm_swap_router_calldata.is_some();
         let swift_call_data = if is_native {
@@ -159,6 +161,7 @@ impl MayanTxBuilder {
                 forwarder_contract.encode_forward_eth_call(mayan_swift_protocol, swift_call_data.clone())?
             } else {
                 value = 0;
+                gas_limit = if approval.is_some() { Some(FORWARD_ERC20_GAS_LIMIT) } else { None };
                 forwarder_contract.encode_forward_erc20_call(from_token_address, amount, None, mayan_swift_protocol, swift_call_data.clone())?
             }
         } else {
@@ -188,7 +191,7 @@ impl MayanTxBuilder {
                 )?
             } else {
                 value = 0;
-
+                gas_limit = if approval.is_some() { Some(FORWARD_SWAP_ERC20_GAS_LIMIT) } else { None };
                 forwarder_contract.encode_swap_and_forward_erc20_call(
                     from_token_address,
                     amount_in,
@@ -208,8 +211,8 @@ impl MayanTxBuilder {
             to: MAYAN_FORWARDER_CONTRACT.to_string(),
             value: value.to_string(),
             data: forwarder_call_data.encode_hex(),
-            approval: approval.approval_data(),
-            gas_limit: None,
+            approval,
+            gas_limit: gas_limit.map(|x| x.to_string()),
         })
     }
 
