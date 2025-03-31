@@ -211,7 +211,6 @@ impl MayanTxBuilder {
             }
         };
 
-        // FIXME: add gas limit
         Ok(SwapQuoteData {
             to: MAYAN_FORWARDER_CONTRACT.to_string(),
             value: value.to_string(),

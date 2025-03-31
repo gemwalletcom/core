@@ -177,7 +177,7 @@ impl GemSwapProvider for MayanSwiftProvider {
             if matches!(data, FetchQuoteData::EstimateGas) {
                 let hex_value = format!("{:#x}", U256::from_str(request.value.as_str()).unwrap());
                 let tx = TransactionObject::new_call_to_value(&quote_data.to, &hex_value, HexDecode(&quote_data.data).unwrap());
-                let _gas_limit = eth_rpc::estimate_gas(provider, &request.from_asset.chain, tx).await?;
+                let _gas_limit = eth_rpc::estimate_gas(provider, &request.from_asset.chain, tx).await;
                 debug_println!("gas_limit: {:?}", _gas_limit);
             }
 

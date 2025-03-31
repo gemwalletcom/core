@@ -80,7 +80,7 @@ impl GemSwapper {
 
     fn filter_supported_assets(supported_assets: Vec<SwapChainAsset>, asset_id: AssetId) -> bool {
         supported_assets.into_iter().any(|x| match x {
-            SwapChainAsset::All(_) => false,
+            SwapChainAsset::All(_) => true,
             SwapChainAsset::Assets(chain, assets) => chain == asset_id.chain || assets.contains(&asset_id),
         })
     }
