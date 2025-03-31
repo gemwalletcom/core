@@ -1,4 +1,7 @@
-use alloy_core::primitives::{Address, U256};
+use alloy_core::{
+    hex::decode as HexDecode,
+    primitives::{Address, U256},
+};
 use async_trait::async_trait;
 use gem_solana::WSOL_TOKEN_ADDRESS;
 use num_bigint::BigInt;
@@ -12,14 +15,15 @@ use super::{
 };
 use crate::{
     config::swap_config::SwapReferralFee,
+    debug_println,
     network::AlienProvider,
     swapper::{
         approval::{check_approval, CheckApprovalType},
-        ApprovalType, FetchQuoteData, GemSwapProvider, SwapChainAsset, SwapProvider, SwapProviderData, SwapProviderType, SwapQuote, SwapQuoteData,
+        eth_rpc, ApprovalType, FetchQuoteData, GemSwapProvider, SwapChainAsset, SwapProvider, SwapProviderData, SwapProviderType, SwapQuote, SwapQuoteData,
         SwapQuoteRequest, SwapRoute, SwapperError,
     },
 };
-use gem_evm::ether_conv;
+use gem_evm::{ether_conv, jsonrpc::TransactionObject};
 use primitives::{AssetId, Chain, ChainType};
 
 #[derive(Debug)]
@@ -118,6 +122,9 @@ impl GemSwapProvider for MayanSwiftProvider {
             SwapChainAsset::All(Chain::AvalancheC),
             SwapChainAsset::All(Chain::SmartChain),
             SwapChainAsset::All(Chain::Ethereum),
+            SwapChainAsset::All(Chain::Base),
+            SwapChainAsset::All(Chain::Arbitrum),
+            SwapChainAsset::All(Chain::Optimism),
         ]
     }
 
@@ -149,7 +156,7 @@ impl GemSwapProvider for MayanSwiftProvider {
         })
     }
 
-    async fn fetch_quote_data(&self, quote: &SwapQuote, provider: Arc<dyn AlienProvider>, _data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError> {
+    async fn fetch_quote_data(&self, quote: &SwapQuote, provider: Arc<dyn AlienProvider>, data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError> {
         let request = &quote.request;
         let route_data = &quote.data.routes.first().ok_or(SwapperError::InvalidRoute)?.route_data;
         let mayan_quote: Quote = serde_json::from_str(route_data).map_err(|_| SwapperError::InvalidRoute)?;
@@ -159,17 +166,26 @@ impl GemSwapProvider for MayanSwiftProvider {
         if request.from_asset.chain.chain_type() == ChainType::Ethereum {
             let approval = Self::check_approval(request, provider.clone()).await?;
 
-            tx_builder.build_evm_tx(
+            let quote_data = tx_builder.build_evm_tx(
                 mayan_quote,
                 approval.approval_data(),
                 &request.wallet_address,
                 &request.destination_address,
                 referrer,
-            )
+            )?;
+
+            if matches!(data, FetchQuoteData::EstimateGas) {
+                let hex_value = format!("{:#x}", U256::from_str(request.value.as_str()).unwrap());
+                let tx = TransactionObject::new_call_to_value(&quote_data.to, &hex_value, HexDecode(&quote_data.data).unwrap());
+                let _gas_limit = eth_rpc::estimate_gas(provider, &request.from_asset.chain, tx).await?;
+                debug_println!("gas_limit: {:?}", _gas_limit);
+            }
+
+            Ok(quote_data)
         } else if request.from_asset.chain.chain_type() == ChainType::Solana {
             tx_builder.build_sol_tx(mayan_quote)
         } else {
-            return Err(SwapperError::InvalidRoute);
+            Err(SwapperError::InvalidRoute)
         }
     }
 }
