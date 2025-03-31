@@ -1,7 +1,8 @@
 use alloy_core::{
-    hex::{decode as HexDecode, ToHexExt},
+    hex::{decode as HexDecode, encode_prefixed as HexEncode},
     primitives::{Address, U256},
 };
+use gem_solana::WSOL_TOKEN_ADDRESS;
 use num_traits::ToBytes;
 use rand::Rng;
 use std::str::FromStr;
@@ -50,11 +51,15 @@ impl MayanTxBuilder {
     fn to_native_wormhole_address(address: &str, w_chain_id: u64) -> Result<[u8; 32], SwapperError> {
         let chain = Self::get_chain_by_wormhole_id(w_chain_id).ok_or(SwapperError::InvalidRoute)?;
         if chain == Chain::Solana {
+            let mut bytes32 = [0u8; 32];
+            if address == WSOL_TOKEN_ADDRESS {
+                return Ok(bytes32);
+            }
+
             let decoded = bs58::decode(address)
                 .into_vec()
                 .map_err(|_| SwapperError::InvalidAddress { address: address.to_string() })?;
 
-            let mut bytes32 = [0u8; 32];
             if decoded.len() == 32 {
                 bytes32.copy_from_slice(&decoded);
             } else {
@@ -210,7 +215,7 @@ impl MayanTxBuilder {
         Ok(SwapQuoteData {
             to: MAYAN_FORWARDER_CONTRACT.to_string(),
             value: value.to_string(),
-            data: forwarder_call_data.encode_hex(),
+            data: HexEncode(forwarder_call_data),
             approval,
             gas_limit: gas_limit.map(|x| x.to_string()),
         })

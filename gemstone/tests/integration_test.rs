@@ -214,7 +214,7 @@ mod tests {
             to_asset: AssetId::from_chain(Chain::Solana),
             wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".to_string(),
             destination_address: "G7B17AigRCGvwnxFc5U8zY5T3NBGduLzT7KYApNU2VdR".to_string(),
-            value: ether_conv::EtherConv::parse_ether("0.1").to_string(),
+            value: ether_conv::EtherConv::parse_ether("0.01").to_string(),
             mode: GemSwapMode::ExactIn,
             options: GemSwapOptions {
                 slippage: swap_config.default_slippage.clone(),
