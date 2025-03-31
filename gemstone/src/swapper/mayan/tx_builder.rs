@@ -198,7 +198,7 @@ impl MayanTxBuilder {
                 value = 0;
                 gas_limit = if approval.is_some() { Some(FORWARD_SWAP_ERC20_GAS_LIMIT) } else { None };
                 forwarder_contract.encode_swap_and_forward_erc20_call(
-                    from_token_address,
+                    swift_input_address,
                     amount_in,
                     None,
                     swap_protocol,
@@ -257,7 +257,7 @@ mod tests {
         let wallet_address = "0x0655c6AbdA5e2a5241aa08486bd50Cf7d475CF24";
         let destination_address = "G7B17AigRCGvwnxFc5U8zY5T3NBGduLzT7KYApNU2VdR";
         let referrer_fee = Some(SwapReferralFee {
-            address: "0x0655c6AbdA5e2a5241aa08486bd50Cf7d475CF24".to_string(),
+            address: "G7B17AigRCGvwnxFc5U8zY5T3NBGduLzT7KYApNU2VdR".to_string(),
             bps: 100,
         });
 
