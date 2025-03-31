@@ -150,7 +150,7 @@ impl MayanTxBuilder {
         let mut value = mayan_quote.effective_amount_in64;
         let mut gas_limit = None;
 
-        let is_native = swift_input_address == zero_address;
+        let is_native = from_token_address == zero_address;
         let need_swap = mayan_quote.evm_swap_router_address.is_some() && mayan_quote.evm_swap_router_calldata.is_some();
         let swift_call_data = if is_native {
             swift_contract.encode_create_order_with_eth(swift_order_params)?
