@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 pub struct QuoteRequest {
     pub from_address: String,
     pub from_asset: String,
+    pub to_address: String,
     pub to_asset: String,
     pub from_value: String,
     pub referral_address: String,
@@ -16,6 +17,7 @@ pub struct Quote {
     pub quote: QuoteRequest,
     pub output_value: String,
     pub output_min_value: String,
+    pub route_data: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
