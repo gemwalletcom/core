@@ -13,7 +13,7 @@ pub struct Price {
 
 impl Price {
     pub fn new_with_rate(&self, base_rate: f64, rate: f64) -> Self {
-        let rate_multiplier = rate / base_rate;
+        let rate_multiplier = rate * base_rate;
         let price_value = self.price * rate_multiplier;
 
         Price {
