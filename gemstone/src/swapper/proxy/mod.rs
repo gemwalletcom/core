@@ -37,7 +37,7 @@ impl ProxyProvider {
         }
     }
 
-    fn get_referrer(&self, chain: &Chain, options: &GemSwapOptions, provider: SwapProvider) -> SwapReferralFee {
+    fn get_referrer(&self, chain: &Chain, options: &GemSwapOptions, provider: &SwapProvider) -> SwapReferralFee {
         match provider {
             // always use solana for Mayan, otherwise not supported chain error
             SwapProvider::Mayan => {
@@ -78,7 +78,7 @@ impl GemSwapProvider for ProxyProvider {
 
     async fn fetch_quote(&self, request: &SwapQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapQuote, SwapperError> {
         let client = ProxyClient::new(provider);
-        let referrer = self.get_referrer(&request.from_asset.chain, &request.options);
+        let referrer = self.get_referrer(&request.from_asset.chain, &request.options, &self.provider.id);
         let quote_request = QuoteRequest {
             from_address: request.wallet_address.clone(),
             from_asset: request.from_asset.to_string(),
