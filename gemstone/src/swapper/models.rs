@@ -69,6 +69,7 @@ pub enum SwapProvider {
     Wagmi,
     Cetus,
     StonFiV2,
+    Mayan,
 }
 
 impl SwapProvider {
@@ -84,6 +85,7 @@ impl SwapProvider {
             Self::Wagmi => "Wagmi",
             Self::Cetus => "Cetus",
             Self::StonFiV2 => "STON.fi",
+            Self::Mayan => "Mayan",
         }
     }
 
@@ -97,7 +99,7 @@ impl SwapProvider {
             Self::Across => "Across v3",
             Self::OkuTrade => "Oku Trade",
             Self::StonFiV2 => "STON.fi v2",
-            Self::Thorchain | Self::Jupiter | Self::Wagmi | Self::Cetus => self.name(),
+            Self::Thorchain | Self::Jupiter | Self::Wagmi | Self::Cetus | Self::Mayan => self.name(),
         }
     }
 
@@ -113,7 +115,7 @@ impl SwapProvider {
             | Self::Wagmi
             | Self::Cetus
             | Self::StonFiV2 => SwapProviderMode::OnChain,
-            Self::Thorchain => SwapProviderMode::CrossChain,
+            Self::Thorchain | Self::Mayan => SwapProviderMode::CrossChain,
             Self::Across => SwapProviderMode::Bridge,
         }
     }
