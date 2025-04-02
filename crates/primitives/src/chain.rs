@@ -360,7 +360,7 @@ impl Chain {
     }
 
     // milliseconds
-    pub fn block_time(&self) -> i32 {
+    pub fn block_time(&self) -> u32 {
         match self {
             Self::Ethereum => 12_000,
             Self::Manta => 12_000,

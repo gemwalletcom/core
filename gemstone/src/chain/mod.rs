@@ -3,7 +3,7 @@ use primitives::{Chain, ChainType, FeeUnitType};
 #[derive(uniffi::Record, Debug, Clone, PartialEq)]
 pub struct ChainConfig {
     pub network_id: String,
-    pub transaction_timeout: i32,
+    pub transaction_timeout: u32,
     pub slip_44: i32,
     pub rank: i32,
     pub denom: Option<String>,
@@ -13,6 +13,7 @@ pub struct ChainConfig {
     pub account_activation_fee: Option<i32>,
     pub account_activation_fee_url: Option<String>,
     pub minimum_account_balance: Option<u64>,
+    pub block_time: u32,
     pub is_swap_supported: bool,
     pub is_stake_supported: bool,
     pub is_nft_supported: bool,
@@ -32,6 +33,7 @@ pub fn get_chain_config(chain: Chain) -> ChainConfig {
         account_activation_fee: chain.account_activation_fee(),
         account_activation_fee_url: account_activation_fee_url(chain).map(|x| x.to_string()),
         minimum_account_balance: chain.minimum_account_balance(),
+        block_time: chain.block_time(),
         is_swap_supported: chain.is_swap_supported(),
         is_stake_supported: chain.is_stake_supported(),
         is_nft_supported: chain.is_nft_supported(),
@@ -70,6 +72,6 @@ pub fn fee_unit_type(chain: Chain) -> FeeUnitType {
     }
 }
 
-fn chain_transaction_timeout_seconds(chain: Chain) -> i32 {
+fn chain_transaction_timeout_seconds(chain: Chain) -> u32 {
     chain.block_time() * 100
 }
