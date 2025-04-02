@@ -80,7 +80,7 @@ impl ProxyProvider {
         let token = from_asset.token_id.clone().unwrap();
         let wallet_address = request.wallet_address.clone();
         let spender = quote_data.to.clone();
-        let amount = U256::from_str(&quote_data.value).map_err(|_| SwapperError::InvalidAmount)?;
+        let amount = U256::from_str(&quote.from_value).map_err(|_| SwapperError::InvalidAmount)?;
         let approval = check_approval_erc20(wallet_address, token, spender.to_string(), amount, provider, &request.from_asset.chain).await?;
 
         let gas_limit: Option<String> = if matches!(approval, ApprovalType::Approve(_)) {
