@@ -219,10 +219,9 @@ impl GemSwapProvider for Cetus {
             _ => return Err(SwapperError::NoQuoteAvailable),
         };
 
-        let quote_amount = U256::from_le_slice(swap_result.amount_out.to_le_bytes().as_slice());
         let slippage_bps = request.options.slippage.bps;
-        let fee_bps = 0; // request.options.fee.as_ref().map(|fee| fee.sui_cetus.bps).unwrap_or(0);
-        let expect_min = apply_slippage_in_bp(&quote_amount, slippage_bps + fee_bps);
+        let to_value = U256::from_le_slice(swap_result.amount_out.to_le_bytes().as_slice());
+        let to_min_value = apply_slippage_in_bp(&to_value, slippage_bps);
 
         // Prepare route data
         let route_data = RoutePoolData {
@@ -237,8 +236,8 @@ impl GemSwapProvider for Cetus {
 
         Ok(SwapQuote {
             from_value: request.value.clone(),
-            to_value: quote_amount.to_string(),
-            to_min_value: expect_min.to_string(),
+            to_value: to_value.to_string(),
+            to_min_value: to_min_value.to_string(),
             data: SwapProviderData {
                 provider: self.provider.clone(),
                 slippage_bps,
