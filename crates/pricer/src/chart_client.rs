@@ -24,7 +24,7 @@ impl ChartClient {
     pub async fn get_charts_prices(&mut self, coin_id: &str, period: ChartPeriod, currency: &str) -> Result<Vec<ChartValue>, Box<dyn Error>> {
         let base_rate = self.database.get_fiat_rate(DEFAULT_FIAT_CURRENCY)?;
         let rate = self.database.get_fiat_rate(currency)?;
-        let rate_multiplier = rate.rate / base_rate.rate;
+        let rate_multiplier = rate.multiplier(base_rate.rate);
         let interval = self.period_sql(period.clone());
 
         match period {
