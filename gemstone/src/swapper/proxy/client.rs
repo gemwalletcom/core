@@ -19,12 +19,7 @@ impl ProxyClient {
         let query = serde_urlencoded::to_string(&request).unwrap();
         let url = format!("{}/quote?{}", endpoint, query);
 
-        let target = AlienTarget {
-            url,
-            method: AlienHttpMethod::Get,
-            headers: None,
-            body: None,
-        };
+        let target = AlienTarget::get(&url);
 
         let data = self
             .provider
