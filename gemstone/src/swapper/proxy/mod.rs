@@ -37,7 +37,17 @@ impl ProxyProvider {
         }
     }
 
-    fn get_referrer(&self, chain: &Chain, options: &GemSwapOptions) -> SwapReferralFee {
+    fn get_referrer(&self, chain: &Chain, options: &GemSwapOptions, provider: SwapProvider) -> SwapReferralFee {
+        match provider {
+            // always use solana for Mayan, otherwise not supported chain error
+            SwapProvider::Mayan => {
+                if chain.chain_type() == ChainType::Ethereum {
+                    return options.fee.as_ref().unwrap().solana.clone();
+                }
+            }
+            _ => {}
+        }
+
         match chain.chain_type() {
             ChainType::Ethereum => options.fee.as_ref().unwrap().evm.clone(),
             ChainType::Solana => options.fee.as_ref().unwrap().solana.clone(),
