@@ -111,7 +111,6 @@ impl GemSwapProvider for ProxyProvider {
                     ETHEREUM_USDC.id.clone(),
                     ETHEREUM_DAI.id.clone(),
                     ETHEREUM_USDS.id.clone(),
-                    ETHEREUM_FDUSD.id.clone(),
                     ETHEREUM_WBTC.id.clone(),
                     ETHEREUM_WETH.id.clone(),
                     ETHEREUM_STETH.id.clone(),

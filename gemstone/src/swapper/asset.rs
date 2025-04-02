@@ -12,8 +12,6 @@ const WETH_NAME: &str = "Wrapped Ether";
 const WETH_SYMBOL: &str = "WETH";
 const CBBTC_NAME: &str = "Coinbase BTC";
 const CBBTC_SYMBOL: &str = "cbBTC";
-const FDUSD_NAME: &str = "First Digital USD";
-const FDUSD_SYMBOL: &str = "FDUSD";
 const USDS_NAME: &str = "USDS Stablecoin";
 const USDS_SYMBOL: &str = "USDS";
 
@@ -25,7 +23,6 @@ pub const ETHEREUM_DAI_TOKEN_ID: &str = "0x6B175474E89094C44Da98b954EedeAC495271
 pub const ETHEREUM_STETH_TOKEN_ID: &str = "0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84";
 pub const ETHEREUM_CBBTC_TOKEN_ID: &str = "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf";
 pub const ETHEREUM_USDS_TOKEN_ID: &str = "0xdC035D45d973E3EC169d2276DDab16f1e407384F";
-pub const ETHEREUM_FDUSD_TOKEN_ID: &str = "0xc5f0f7b66764F6ec8C8Dff7BA683102295E16409";
 pub const SMARTCHAIN_USDT_TOKEN_ID: &str = "0x55d398326f99059fF775485246999027B3197955";
 pub const SMARTCHAIN_USDC_TOKEN_ID: &str = "0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d";
 pub const SMARTCHAIN_WBTC_TOKEN_ID: &str = "0x0555E30da8f98308EdB960aa94C0Db47230d2B9c";
@@ -82,13 +79,6 @@ lazy_static! {
         id: AssetId::from_token(Chain::Ethereum, ETHEREUM_USDS_TOKEN_ID),
         name: USDS_NAME.to_owned(),
         symbol: USDS_SYMBOL.to_owned(),
-        decimals: 18,
-        asset_type: AssetType::ERC20,
-    };
-    pub static ref ETHEREUM_FDUSD: Asset = Asset {
-        id: AssetId::from_token(Chain::Ethereum, ETHEREUM_FDUSD_TOKEN_ID),
-        name: FDUSD_NAME.to_owned(),
-        symbol: FDUSD_SYMBOL.to_owned(),
         decimals: 18,
         asset_type: AssetType::ERC20,
     };
