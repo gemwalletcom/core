@@ -126,6 +126,7 @@ impl GemSwapper {
                 Box::new(pancakeswap_aptos::PancakeSwapAptos::default()),
                 Box::new(cetus::Cetus::default()),
                 Box::new(proxy::ProxyProvider::new_stonfi_v2()),
+                Box::new(proxy::ProxyProvider::new_mayan()),
             ],
         }
     }
