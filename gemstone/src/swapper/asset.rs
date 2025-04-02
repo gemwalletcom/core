@@ -12,7 +12,6 @@ const WETH_NAME: &str = "Wrapped Ether";
 const WETH_SYMBOL: &str = "WETH";
 const CBBTC_NAME: &str = "Coinbase BTC";
 const CBBTC_SYMBOL: &str = "cbBTC";
-const BNB_NAME: &str = "BNB";
 const FDUSD_NAME: &str = "First Digital USD";
 const FDUSD_SYMBOL: &str = "FDUSD";
 const USDS_NAME: &str = "USDS Stablecoin";
@@ -23,7 +22,6 @@ pub const ETHEREUM_USDC_TOKEN_ID: &str = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606
 pub const ETHEREUM_USDT_TOKEN_ID: &str = "0xdAC17F958D2ee523a2206206994597C13D831ec7";
 pub const ETHEREUM_WBTC_TOKEN_ID: &str = "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599";
 pub const ETHEREUM_DAI_TOKEN_ID: &str = "0x6B175474E89094C44Da98b954EedeAC495271d0F";
-pub const ETHEREUM_BNB_TOKEN_ID: &str = "0xB8c77482e45F1F44dE1745F52C74426C631bDD52";
 pub const ETHEREUM_STETH_TOKEN_ID: &str = "0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84";
 pub const ETHEREUM_CBBTC_TOKEN_ID: &str = "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf";
 pub const ETHEREUM_USDS_TOKEN_ID: &str = "0xdC035D45d973E3EC169d2276DDab16f1e407384F";
@@ -42,7 +40,6 @@ pub const SOLANA_USDT_TOKEN_ID: &str = "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8Ben
 pub const SOLANA_USDS_TOKEN_ID: &str = "USDSwr9ApdHk5bvJKMjzff41FfuX8bSxdKcR81vTwcA";
 pub const SOLANA_WBTC_TOKEN_ID: &str = "3NZ9JMVBmGAqocybic2c7LQCJScmgsAZ6vQqTDzcqmJh";
 pub const SOLANA_CBBTC_TOKEN_ID: &str = "cbbtcf3aa214zXHbiAZQwf4122FBYbraNdFqgw4iMij";
-pub const SOLANA_JITO_SOL_TOKEN_ID: &str = "J1toso1uCk3RLmjorhTtrVwY9HJ7X8V9yYac6Y7kGCPn";
 
 lazy_static! {
     // ethereum
@@ -78,13 +75,6 @@ lazy_static! {
         id: WETH_ETH_ASSET_ID.into(),
         name: WETH_NAME.into(),
         symbol: WETH_SYMBOL.into(),
-        decimals: 18,
-        asset_type: AssetType::ERC20,
-    };
-    pub static ref ETHEREUM_BNB: Asset = Asset {
-        id: AssetId::from_token(Chain::Ethereum, ETHEREUM_USDC_TOKEN_ID),
-        name: BNB_NAME.to_owned(),
-        symbol: BNB_NAME.to_owned(),
         decimals: 18,
         asset_type: AssetType::ERC20,
     };
@@ -365,13 +355,6 @@ lazy_static! {
         name: CBBTC_NAME.to_owned(),
         symbol: CBBTC_SYMBOL.to_owned(),
         decimals: 8,
-        asset_type: AssetType::SPL,
-    };
-    pub static ref SOLANA_JITO_SOL: Asset = Asset {
-        id: AssetId::from_token(Chain::Solana, SOLANA_JITO_SOL_TOKEN_ID),
-        name: "Jito Staked SOL".to_owned(),
-        symbol: "JitoSOL".to_owned(),
-        decimals: 9,
         asset_type: AssetType::SPL,
     };
 

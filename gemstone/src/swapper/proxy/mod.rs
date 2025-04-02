@@ -111,7 +111,6 @@ impl GemSwapProvider for ProxyProvider {
                     ETHEREUM_USDC.id.clone(),
                     ETHEREUM_DAI.id.clone(),
                     ETHEREUM_USDS.id.clone(),
-                    ETHEREUM_BNB.id.clone(),
                     ETHEREUM_FDUSD.id.clone(),
                     ETHEREUM_WBTC.id.clone(),
                     ETHEREUM_WETH.id.clone(),
@@ -127,7 +126,6 @@ impl GemSwapProvider for ProxyProvider {
                     SOLANA_USDS.id.clone(),
                     SOLANA_CBBTC.id.clone(),
                     SOLANA_WBTC.id.clone(),
-                    SOLANA_JITO_SOL.id.clone(),
                 ],
             ),
             SwapChainAsset::Assets(
