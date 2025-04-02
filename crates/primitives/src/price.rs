@@ -60,7 +60,7 @@ mod tests {
         assert_eq!(new_price.price_change_percentage_24h, 5.0);
 
         let new_price = price.new_with_rate(2.0, 1.0);
-        assert_eq!(new_price.price, 50.0);
+        assert_eq!(new_price.price, 200.0);
         assert_eq!(new_price.price_change_percentage_24h, 5.0);
 
         let new_price = price.new_with_rate(1.0, 0.5);

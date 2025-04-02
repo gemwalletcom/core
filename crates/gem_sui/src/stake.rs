@@ -121,9 +121,6 @@ mod tests {
         let expected_hash = hex::decode("66be75b0f86ca3a9f24380adc8d8336d8921d5dbdc78f1b3c24c7d6842ce5911").unwrap();
         let expected_tx: Transaction = bcs::from_bytes(&expected_tx_data).unwrap();
 
-        std::fs::write("stake.json", serde_json::to_string_pretty(&tx).unwrap()).unwrap();
-        std::fs::write("expected_stake.json", serde_json::to_string_pretty(&expected_tx).unwrap()).unwrap();
-
         assert_eq!(tx, expected_tx);
         assert_eq!(data.tx_data, expected_tx_data);
         assert_eq!(data.hash, expected_hash);
