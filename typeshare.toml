@@ -20,3 +20,8 @@ prefix = ''
 "Data" = "ByteArray"
 "Value" = "String?"
 "BigInt" = "String"
+
+[typescript.type_mappings]
+"DateTime" = "Date"
+"Data" = "Uint8Array"
+"Value" = "object"
