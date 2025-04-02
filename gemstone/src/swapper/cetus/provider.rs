@@ -220,6 +220,7 @@ impl GemSwapProvider for Cetus {
         };
 
         let slippage_bps = request.options.slippage.bps;
+        // swap_result.amount_out already deducts protocol fee
         let to_value = U256::from_le_slice(swap_result.amount_out.to_le_bytes().as_slice());
         let to_min_value = apply_slippage_in_bp(&to_value, slippage_bps);
 
