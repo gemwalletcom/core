@@ -114,9 +114,6 @@ mod tests {
         let expected_tx = "AAABACDmr4D+GwtC/NlnYuXHD16Nrjn48O4PEYysDVW3TiknwgEBAQABAACpvQST+b0feSpK7cH5nVRTWnWkbDj9VqjyxrfI11gXoQGfJYyFVm2Xe0yZu2AZVgupnHlucSkSadj588ydnzfbRoz/EwQAAAAAIOqzQffiRRpexyiDEtyjm40KqFMf60ohK5jCJ0z3+Lqwqb0Ek/m9H3kqSu3B+Z1UU1p1pGw4/Vao8sa3yNdYF6HuAgAAAAAAAEB4fQEAAAAAAA==";
         let expected_decoded = decode_transaction(expected_tx).unwrap();
 
-        std::fs::write("transfer.json", serde_json::to_string_pretty(&tx).unwrap()).unwrap();
-        std::fs::write("expected_transfer.json", serde_json::to_string_pretty(&expected_decoded).unwrap()).unwrap();
-
         assert_eq!(tx, expected_decoded);
         assert_eq!(b64_encoded, expected_tx);
     }
