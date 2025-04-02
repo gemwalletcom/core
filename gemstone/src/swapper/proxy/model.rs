@@ -17,7 +17,7 @@ pub struct Quote {
     pub quote: QuoteRequest,
     pub output_value: String,
     pub output_min_value: String,
-    pub route_data: String,
+    pub route_data: serde_json::Value,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
