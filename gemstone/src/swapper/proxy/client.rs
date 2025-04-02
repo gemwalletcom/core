@@ -1,6 +1,6 @@
 use super::model::{Quote, QuoteData, QuoteRequest};
 use crate::{
-    network::{AlienHttpMethod, AlienProvider, AlienTarget},
+    network::{AlienProvider, AlienTarget},
     swapper::SwapperError,
 };
 use std::sync::Arc;
