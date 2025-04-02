@@ -35,10 +35,7 @@ pub struct PriceCache {
 
 impl PriceCache {
     pub fn as_price_primitive(&self) -> primitives::Price {
-        primitives::Price {
-            price: self.price.price,
-            price_change_percentage_24h: self.price.price_change_percentage_24h,
-        }
+        primitives::Price::new(self.price.price, self.price.price_change_percentage_24h, self.price.last_updated_at)
     }
     pub fn as_asset_price_primitive(&self) -> primitives::AssetPrice {
         primitives::AssetPrice {
@@ -144,10 +141,7 @@ impl Price {
 
 impl Price {
     pub fn as_price_primitive(&self) -> primitives::Price {
-        primitives::Price {
-            price: self.price,
-            price_change_percentage_24h: self.price_change_percentage_24h,
-        }
+        primitives::Price::new(self.price, self.price_change_percentage_24h, self.last_updated_at)
     }
 
     pub fn as_market_primitive(&self) -> AssetMarket {

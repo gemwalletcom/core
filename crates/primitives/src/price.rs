@@ -1,3 +1,4 @@
+use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
@@ -9,9 +10,19 @@ use crate::{Asset, AssetLink, AssetMarket, PriceAlert};
 pub struct Price {
     pub price: f64,
     pub price_change_percentage_24h: f64,
+    #[typeshare(skip)]
+    pub last_updated: Option<NaiveDateTime>,
 }
 
 impl Price {
+    pub fn new(price: f64, price_change_percentage_24h: f64, last_updated: Option<NaiveDateTime>) -> Self {
+        Price {
+            price,
+            price_change_percentage_24h,
+            last_updated,
+        }
+    }
+
     pub fn new_with_rate(&self, base_rate: f64, rate: f64) -> Self {
         let rate_multiplier = rate * base_rate;
         let price_value = self.price * rate_multiplier;
@@ -19,6 +30,7 @@ impl Price {
         Price {
             price: price_value,
             price_change_percentage_24h: self.price_change_percentage_24h,
+            last_updated: self.last_updated,
         }
     }
 }
@@ -53,6 +65,7 @@ mod tests {
         let price = Price {
             price: 100.0,
             price_change_percentage_24h: 5.0,
+            last_updated: None,
         };
 
         let new_price = price.new_with_rate(1.0, 2.0);
