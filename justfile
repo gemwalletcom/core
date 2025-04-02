@@ -36,10 +36,10 @@ test-workspace:
     cargo test --workspace --quiet
 
 test-all:
-    cargo test --all --workspace --verbose
+    cargo test --all --workspace 
 
 test CRATE:
-    cargo test --package {{CRATE}} --workspace
+    cargo test --package {{CRATE}}
 
 format:
     cargo fmt -q --all
