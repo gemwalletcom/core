@@ -133,7 +133,7 @@ impl Price {
 
     pub fn for_rate(price: Price, base_rate: f64, rate: FiatRate) -> Price {
         let mut new_price = price.clone();
-        let rate_multiplier = rate.rate / base_rate;
+        let rate_multiplier = rate.multiplier(base_rate);
         new_price.price = price.price * rate_multiplier;
         new_price.market_cap = price.market_cap * rate_multiplier;
         new_price.market_cap_fdv = price.market_cap_fdv * rate_multiplier;

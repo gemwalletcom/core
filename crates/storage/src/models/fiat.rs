@@ -18,6 +18,10 @@ impl FiatRate {
             rate: rate.rate,
         }
     }
+
+    pub fn multiplier(&self, base: f64) -> f64 {
+        self.rate * base
+    }
 }
 
 #[derive(Debug, Queryable, Selectable, Insertable, AsChangeset, Clone)]

@@ -1,7 +1,7 @@
 use crate::model::{
     Coin, CoinIds, CoinInfo, CoinMarket, CoinQuery, CointListQuery, Data, ExchangeRates, Global, MarketChart, SearchTrending, TopGainersLosers,
 };
-use primitives::FiatRate;
+use primitives::{FiatRate, DEFAULT_FIAT_CURRENCY};
 use reqwest::header::{HeaderMap, HeaderValue, USER_AGENT};
 use reqwest_middleware::{ClientBuilder, ClientWithMiddleware};
 use std::error::Error;
@@ -118,14 +118,21 @@ impl CoinGeckoClient {
     pub async fn get_fiat_rates(&self) -> Result<Vec<FiatRate>, Box<dyn Error + Send + Sync>> {
         let url = format!("{}/api/v3/exchange_rates", self.url);
         let rates = self.client.get(&url).headers(self.headers()).send().await?.json::<ExchangeRates>().await?;
+        let usd_rate = rates
+            .rates
+            .get(DEFAULT_FIAT_CURRENCY.to_lowercase().as_str())
+            .ok_or("Default fiat currency rate not found")?
+            .value;
+
         let fiat_rates: Vec<FiatRate> = rates
             .rates
+            .clone()
             .into_iter()
             .filter(|x| x.1.rate_type == "fiat")
             .map(|x| FiatRate {
                 symbol: x.0.to_uppercase(),
                 name: x.1.name,
-                rate: x.1.value,
+                rate: x.1.value / usd_rate,
             })
             .collect();
         Ok(fiat_rates)
