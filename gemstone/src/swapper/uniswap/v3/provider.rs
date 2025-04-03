@@ -4,7 +4,12 @@ use crate::{
         approval::{check_approval_erc20, check_approval_permit2},
         models::*,
         slippage::apply_slippage_in_bp,
-        uniswap::{deadline::get_sig_deadline, fee_token::get_fee_token, quote_result::get_best_quote, swap_route::build_swap_route},
+        uniswap::{
+            deadline::get_sig_deadline,
+            fee_token::get_fee_token,
+            quote_result::get_best_quote,
+            swap_route::{build_swap_route, RouteData},
+        },
         weth_address, GemSwapProvider, SwapperError,
     },
 };
@@ -104,17 +109,12 @@ impl GemSwapProvider for UniswapV3 {
     }
 
     async fn fetch_quote(&self, request: &SwapQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapQuote, SwapperError> {
-        // Prevent swaps on unsupported chains
-        if !self.support_chain(&request.from_asset.chain) {
-            return Err(SwapperError::NotSupportedChain);
-        }
-
         // Check deployment and weth contract
         let deployment = self
             .provider
             .get_deployment_by_chain(&request.from_asset.chain)
             .ok_or(SwapperError::NotSupportedChain)?;
-        let (evm_chain, token_in, token_out, amount_in) = Self::parse_request(request)?;
+        let (evm_chain, token_in, token_out, from_value) = Self::parse_request(request)?;
         _ = evm_chain.weth_contract().ok_or(SwapperError::NotSupportedChain)?;
 
         let fee_tiers = self.provider.get_tiers();
@@ -124,10 +124,12 @@ impl GemSwapProvider for UniswapV3 {
 
         let fee_preference = get_fee_token(&request.mode, Some(&base_pair), &token_in, &token_out);
         let fee_bps = request.options.clone().fee.unwrap_or_default().evm.bps;
+
+        // If fees are taken from input token, we need to use remaining amount as quote amount
         let quote_amount_in = if fee_preference.is_input_token && fee_bps > 0 {
-            amount_in - amount_in * U256::from(fee_bps) / U256::from(10000)
+            apply_slippage_in_bp(&from_value, fee_bps)
         } else {
-            amount_in
+            from_value
         };
 
         // Build paths for QuoterV2
@@ -160,15 +162,18 @@ impl GemSwapProvider for UniswapV3 {
 
         let quote_result = get_best_quote(&batch_results, super::quoter_v2::decode_quoter_response)?;
 
-        let max_amount_out = quote_result.amount_out;
+        let to_value = if fee_preference.is_input_token {
+            // fees are taken from input token
+            quote_result.amount_out
+        } else {
+            // fees are taken from output token
+            apply_slippage_in_bp(&quote_result.amount_out, fee_bps)
+        };
+        let to_min_value = apply_slippage_in_bp(&to_value, request.options.slippage.bps);
+
         let fee_tier_idx = quote_result.fee_tier_idx;
         let batch_idx = quote_result.batch_idx;
         let gas_estimate = quote_result.gas_estimate;
-        let expect_min = if fee_preference.is_input_token {
-            apply_slippage_in_bp(&max_amount_out, request.options.slippage.bps)
-        } else {
-            apply_slippage_in_bp(&max_amount_out, request.options.slippage.bps + fee_bps)
-        };
 
         // construct routes
         let fee_tier: u32 = fee_tiers[fee_tier_idx % fee_tiers.len()].clone() as u32;
@@ -183,12 +188,15 @@ impl GemSwapProvider for UniswapV3 {
                 Some(AssetId::from(request.to_asset.chain, Some(first_token_out.to_checksum())))
             }
         };
-        let routes = build_swap_route(&asset_id_in, asset_id_intermediary.as_ref(), &asset_id_out, &fee_tier.to_string(), gas_estimate);
+        let route_data = RouteData {
+            fee_tier: fee_tier.to_string(),
+            min_amount_out: to_min_value.to_string(),
+        };
+        let routes = build_swap_route(&asset_id_in, asset_id_intermediary.as_ref(), &asset_id_out, &route_data, gas_estimate);
 
         Ok(SwapQuote {
             from_value: request.value.clone(),
-            to_value: max_amount_out.to_string(),
-            to_min_value: expect_min.to_string(),
+            to_value: to_value.to_string(),
             data: SwapProviderData {
                 provider: self.provider().clone(),
                 routes: routes.clone(),
@@ -215,7 +223,10 @@ impl GemSwapProvider for UniswapV3 {
             .provider
             .get_deployment_by_chain(&request.from_asset.chain)
             .ok_or(SwapperError::NotSupportedChain)?;
-        let to_amount = U256::from_str(&quote.to_value).map_err(|_| SwapperError::InvalidAmount)?;
+
+        let route_data: RouteData = serde_json::from_str(&quote.data.routes.first().unwrap().route_data).map_err(|_| SwapperError::InvalidRoute)?;
+        let to_amount = U256::from_str(&route_data.min_amount_out).map_err(|_| SwapperError::InvalidAmount)?;
+
         let wallet_address: Address = request.wallet_address.as_str().parse().map_err(SwapperError::from)?;
         let permit = data.permit2_data().map(|data| data.into());
 

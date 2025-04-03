@@ -15,7 +15,6 @@ use crate::{
         chainlink::ChainlinkPriceFeed,
         eth_rpc,
         models::*,
-        slippage::apply_slippage_in_bp,
         weth_address, GemSwapProvider, SwapperError,
     },
 };
@@ -411,15 +410,7 @@ impl GemSwapProvider for Across {
         }
 
         let output_amount = remain_amount - gas_fee;
-        let output_user_amount = output_amount - referral_fee;
-
-        // Check output amount for user against slippage
-        let expect_min = apply_slippage_in_bp(&from_amount, request.options.slippage.bps);
-        if output_user_amount < expect_min {
-            return Err(SwapperError::ComputeQuoteError {
-                msg: format!("Expected amount exceeds slippage, expected: {}, output: {}", expect_min, output_user_amount),
-            });
-        }
+        let to_value = output_amount - referral_fee;
 
         // Update v3 relay data (was used to estimate gas limit) with final output amount, quote timestamp and referral fee.
         self.update_v3_relay_data(
@@ -435,8 +426,7 @@ impl GemSwapProvider for Across {
 
         Ok(SwapQuote {
             from_value: request.value.clone(),
-            to_value: output_amount.to_string(),
-            to_min_value: expect_min.to_string(),
+            to_value: to_value.to_string(),
             data: SwapProviderData {
                 provider: self.provider().clone(),
                 slippage_bps: request.options.slippage.bps,

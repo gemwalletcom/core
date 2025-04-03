@@ -99,7 +99,6 @@ impl GemSwapProvider for ThorChain {
         let quote = SwapQuote {
             from_value: request.clone().value,
             to_value: to_value.to_string(),
-            to_min_value: to_value.to_string(),
             data: SwapProviderData {
                 provider: self.provider().clone(),
                 routes: vec![SwapRoute {

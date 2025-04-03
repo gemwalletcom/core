@@ -3,7 +3,6 @@ use crate::{
     network::{jsonrpc::jsonrpc_call, AlienProvider, JsonRpcResult},
     swapper::{models::*, slippage::apply_slippage_in_bp, GemSwapProvider, SwapperError},
 };
-use alloy_primitives::U256;
 use async_trait::async_trait;
 use gem_solana::{
     get_asset_address,
@@ -101,14 +100,11 @@ impl GemSwapProvider for Orca {
         let quote = swap_quote_by_input_token(amount_in, true, slippage_bps, pool.into(), tick_arrays, None, None).map_err(|c| SwapperError::NetworkError {
             msg: format!("swap_quote_by_input_token error: {:?}", c),
         })?;
-
-        let quote_amount: U256 = U256::from(amount_in);
-        let expect_min = apply_slippage_in_bp(&quote_amount, slippage_bps as u32 + fee_bps);
+        let to_value = apply_slippage_in_bp(&quote.token_est_out, fee_bps);
 
         Ok(SwapQuote {
             from_value: request.value.clone(),
-            to_value: quote.token_est_out.to_string(),
-            to_min_value: expect_min.to_string(),
+            to_value: to_value.to_string(),
             data: SwapProviderData {
                 provider: self.provider().clone(),
                 routes: vec![SwapRoute {

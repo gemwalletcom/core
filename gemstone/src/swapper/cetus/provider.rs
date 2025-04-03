@@ -4,7 +4,7 @@ use base64::{engine::general_purpose::STANDARD, Engine as _};
 use bcs;
 use futures::join;
 use num_bigint::BigInt;
-use num_traits::{ToBytes, ToPrimitive};
+use num_traits::{FromBytes, ToBytes, ToPrimitive};
 use std::{str::FromStr, sync::Arc};
 use sui_transaction_builder::{unresolved::Input, Function, Serialized, TransactionBuilder as ProgrammableTransactionBuilder};
 use sui_types::{Address, Identifier, ObjectId, TypeTag};
@@ -219,10 +219,9 @@ impl GemSwapProvider for Cetus {
             _ => return Err(SwapperError::NoQuoteAvailable),
         };
 
-        let quote_amount = U256::from_le_slice(swap_result.amount_out.to_le_bytes().as_slice());
         let slippage_bps = request.options.slippage.bps;
-        let fee_bps = 0; // request.options.fee.as_ref().map(|fee| fee.sui_cetus.bps).unwrap_or(0);
-        let expect_min = apply_slippage_in_bp(&quote_amount, slippage_bps + fee_bps);
+        // swap_result.amount_out already deducts protocol fee
+        let to_value = U256::from_le_slice(swap_result.amount_out.to_le_bytes().as_slice());
 
         // Prepare route data
         let route_data = RoutePoolData {
@@ -237,8 +236,7 @@ impl GemSwapProvider for Cetus {
 
         Ok(SwapQuote {
             from_value: request.value.clone(),
-            to_value: quote_amount.to_string(),
-            to_min_value: expect_min.to_string(),
+            to_value: to_value.to_string(),
             data: SwapProviderData {
                 provider: self.provider.clone(),
                 slippage_bps,
@@ -276,6 +274,8 @@ impl GemSwapProvider for Cetus {
 
         // Prepare swap params for tx building
         let a2b = from_coin == route_data.coin_a;
+        let to_value = U256::from_str(&quote.to_value).map_err(|_| SwapperError::InvalidAmount)?;
+        let amount_limit = apply_slippage_in_bp(&to_value, quote.data.slippage_bps);
         let swap_params = SwapParams {
             pool_object_shared: SharedObject {
                 id: route_data.object_id,
@@ -284,7 +284,7 @@ impl GemSwapProvider for Cetus {
             a2b,
             by_amount_in: quote.request.mode == GemSwapMode::ExactIn,
             amount: BigInt::from_str(&quote.from_value)?,
-            amount_limit: BigInt::from_str(&quote.to_min_value)?,
+            amount_limit: BigInt::from_le_bytes(amount_limit.as_le_slice()),
             coin_type_a: route_data.coin_a.clone(),
             coin_type_b: route_data.coin_b.clone(),
             swap_partner: cetus_config.partner.clone(),

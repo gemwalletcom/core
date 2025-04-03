@@ -88,7 +88,6 @@ impl GemSwapProvider for PancakeSwapAptos {
         let quote = SwapQuote {
             from_value: request.value.clone(),
             to_value: quote_value.clone(),
-            to_min_value: quote_value.clone(),
             data: SwapProviderData {
                 provider: self.provider().clone(),
                 routes: vec![SwapRoute {

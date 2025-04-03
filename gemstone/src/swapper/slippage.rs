@@ -19,6 +19,12 @@ impl BasisPointConvert for u128 {
     }
 }
 
+impl BasisPointConvert for u64 {
+    fn from_u32(value: u32) -> Self {
+        value as u64
+    }
+}
+
 pub fn apply_slippage_in_bp<T>(amount: &T, bps: u32) -> T
 where
     T: BasisPointConvert + Mul<Output = T> + Div<Output = T>,
