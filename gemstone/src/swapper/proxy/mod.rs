@@ -125,6 +125,7 @@ impl GemSwapProvider for ProxyProvider {
                     SOLANA_USDS.id.clone(),
                     SOLANA_CBBTC.id.clone(),
                     SOLANA_WBTC.id.clone(),
+                    SOLANA_JITO_SOL.id.clone(),
                 ],
             ),
             SwapChainAsset::Assets(

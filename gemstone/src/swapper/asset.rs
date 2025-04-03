@@ -37,6 +37,7 @@ pub const SOLANA_USDT_TOKEN_ID: &str = "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8Ben
 pub const SOLANA_USDS_TOKEN_ID: &str = "USDSwr9ApdHk5bvJKMjzff41FfuX8bSxdKcR81vTwcA";
 pub const SOLANA_WBTC_TOKEN_ID: &str = "3NZ9JMVBmGAqocybic2c7LQCJScmgsAZ6vQqTDzcqmJh";
 pub const SOLANA_CBBTC_TOKEN_ID: &str = "cbbtcf3aa214zXHbiAZQwf4122FBYbraNdFqgw4iMij";
+pub const SOLANA_JITO_SOL_TOKEN_ID: &str = "J1toso1uCk3RLmjorhTtrVwY9HJ7X8V9yYac6Y7kGCPn";
 
 lazy_static! {
     // ethereum
@@ -345,6 +346,13 @@ lazy_static! {
         name: CBBTC_NAME.to_owned(),
         symbol: CBBTC_SYMBOL.to_owned(),
         decimals: 8,
+        asset_type: AssetType::SPL,
+    };
+    pub static ref SOLANA_JITO_SOL: Asset = Asset {
+        id: AssetId::from_token(Chain::Solana, SOLANA_JITO_SOL_TOKEN_ID),
+        name: "Jito Staked SOL".to_owned(),
+        symbol: "JitoSOL".to_owned(),
+        decimals: 9,
         asset_type: AssetType::SPL,
     };
 
