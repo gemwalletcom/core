@@ -1,6 +1,13 @@
 use crate::swapper::SwapRoute;
 use gem_evm::{address::EthereumAddress, uniswap::path::BasePair};
 use primitives::AssetId;
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RouteData {
+    pub fee_tier: String,
+    pub min_amount_out: String,
+}
 
 pub fn get_intermediaries(token_in: &EthereumAddress, token_out: &EthereumAddress, base_pair: &BasePair) -> Vec<EthereumAddress> {
     let array = base_pair.to_array();
@@ -19,21 +26,22 @@ pub fn build_swap_route(
     token_in: &AssetId,
     intermediary: Option<&AssetId>,
     token_out: &AssetId,
-    fee_tier: &str,
+    route_data: &RouteData,
     gas_estimate: Option<String>,
 ) -> Vec<SwapRoute> {
+    let data = serde_json::to_string(route_data).unwrap();
     if let Some(intermediary) = intermediary {
         vec![
             SwapRoute {
                 input: token_in.clone(),
                 output: intermediary.clone(),
-                route_data: fee_tier.to_string(),
+                route_data: data.clone(),
                 gas_limit: gas_estimate.clone(),
             },
             SwapRoute {
                 input: intermediary.clone(),
                 output: token_out.clone(),
-                route_data: fee_tier.to_string(),
+                route_data: data,
                 gas_limit: None,
             },
         ]
@@ -41,7 +49,7 @@ pub fn build_swap_route(
         vec![SwapRoute {
             input: token_in.clone(),
             output: token_out.clone(),
-            route_data: fee_tier.to_string(),
+            route_data: data,
             gas_limit: gas_estimate.clone(),
         }]
     }
