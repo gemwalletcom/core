@@ -137,13 +137,10 @@ impl GemSwapProvider for Jupiter {
         let out_amount: U256 = swap_quote.out_amount.parse().map_err(|_| SwapperError::InvalidAmount)?;
         // out_amount doesn't take account of slippage and platform fee
         let to_value = apply_slippage_in_bp(&out_amount, platform_fee_bps);
-        // other_amount_threshold is amount after accounting slippage and platform fee
-        let to_min_value = swap_quote.other_amount_threshold.clone();
 
         let quote = SwapQuote {
             from_value: request.value.clone(),
             to_value: to_value.to_string(),
-            to_min_value,
             data: SwapProviderData {
                 provider: self.provider().clone(),
                 routes: vec![SwapRoute {

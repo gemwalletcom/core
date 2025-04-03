@@ -168,7 +168,6 @@ impl GemSwapProvider for UniswapV3 {
         let fee_tier_idx = quote_result.fee_tier_idx;
         let batch_idx = quote_result.batch_idx;
         let gas_estimate = quote_result.gas_estimate;
-        let to_min_value = apply_slippage_in_bp(&to_value, request.options.slippage.bps);
 
         // construct routes
         let fee_tier: u32 = fee_tiers[fee_tier_idx % fee_tiers.len()].clone() as u32;
@@ -188,7 +187,6 @@ impl GemSwapProvider for UniswapV3 {
         Ok(SwapQuote {
             from_value: request.value.clone(),
             to_value: to_value.to_string(),
-            to_min_value: to_min_value.to_string(),
             data: SwapProviderData {
                 provider: self.provider().clone(),
                 routes: routes.clone(),
