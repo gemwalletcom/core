@@ -128,6 +128,7 @@ impl GemSwapProvider for ProxyProvider {
                     SOLANA_JITO_SOL.id.clone(),
                 ],
             ),
+            SwapChainAsset::Assets(Chain::Sui, vec![SUI_USDC.id.clone(), SUI_SBUSDT.id.clone(), SUI_WAL.id.clone()]),
             SwapChainAsset::Assets(
                 Chain::SmartChain,
                 vec![SMARTCHAIN_USDT.id.clone(), SMARTCHAIN_USDC.id.clone(), SMARTCHAIN_WBTC.id.clone()],

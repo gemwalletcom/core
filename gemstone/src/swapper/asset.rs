@@ -16,6 +16,7 @@ const USDS_NAME: &str = "USDS Stablecoin";
 const USDS_SYMBOL: &str = "USDS";
 
 // TODO: merge into primitives::asset_constants
+// Ethereum
 pub const ETHEREUM_USDC_TOKEN_ID: &str = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
 pub const ETHEREUM_USDT_TOKEN_ID: &str = "0xdAC17F958D2ee523a2206206994597C13D831ec7";
 pub const ETHEREUM_WBTC_TOKEN_ID: &str = "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599";
@@ -23,21 +24,30 @@ pub const ETHEREUM_DAI_TOKEN_ID: &str = "0x6B175474E89094C44Da98b954EedeAC495271
 pub const ETHEREUM_STETH_TOKEN_ID: &str = "0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84";
 pub const ETHEREUM_CBBTC_TOKEN_ID: &str = "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf";
 pub const ETHEREUM_USDS_TOKEN_ID: &str = "0xdC035D45d973E3EC169d2276DDab16f1e407384F";
+// SmartChain
 pub const SMARTCHAIN_USDT_TOKEN_ID: &str = "0x55d398326f99059fF775485246999027B3197955";
 pub const SMARTCHAIN_USDC_TOKEN_ID: &str = "0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d";
 pub const SMARTCHAIN_WBTC_TOKEN_ID: &str = "0x0555E30da8f98308EdB960aa94C0Db47230d2B9c";
+// Avalanche
 pub const AVALANCHE_USDT_TOKEN_ID: &str = "0x9702230A8Ea53601f5cD2dc00fDBc13d4dF4A8c7";
 pub const AVALANCHE_USDC_TOKEN_ID: &str = "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E";
+// Base
 pub const BASE_USDC_TOKEN_ID: &str = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
 pub const BASE_USDS_TOKEN_ID: &str = "0x820C137fa70C8691f0e44Dc420a5e53c168921Dc";
 pub const BASE_CBBTC_TOKEN_ID: &str = "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf";
 pub const BASE_WBTC_TOKEN_ID: &str = "0x0555E30da8f98308EdB960aa94C0Db47230d2B9c";
+// Solana
 pub const SOLANA_USDC_TOKEN_ID: &str = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
 pub const SOLANA_USDT_TOKEN_ID: &str = "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB";
 pub const SOLANA_USDS_TOKEN_ID: &str = "USDSwr9ApdHk5bvJKMjzff41FfuX8bSxdKcR81vTwcA";
 pub const SOLANA_WBTC_TOKEN_ID: &str = "3NZ9JMVBmGAqocybic2c7LQCJScmgsAZ6vQqTDzcqmJh";
 pub const SOLANA_CBBTC_TOKEN_ID: &str = "cbbtcf3aa214zXHbiAZQwf4122FBYbraNdFqgw4iMij";
 pub const SOLANA_JITO_SOL_TOKEN_ID: &str = "J1toso1uCk3RLmjorhTtrVwY9HJ7X8V9yYac6Y7kGCPn";
+// SUI
+pub const SUI_USDC_TOKEN_ID: &str = "0xdba34672e30cb065b1f93e3ab55318768fd6fef66c15942c9f7cb846e2f900e7::usdc::USDC";
+pub const SUI_WAL_TOKEN_ID: &str = "0x356a26eb9e012a68958082340d4c4116e7f55615cf27affcff209cf0ae544f59::wal::WAL";
+// SUI bridged
+pub const SUI_SBUSDT_TOKEN_ID: &str = "0x375f70cf2ae4c00bf37117d0c85a2c71545e6ee05c4a5c7d282cd66a4504b068::usdt::USDT";
 
 lazy_static! {
     // ethereum
@@ -354,6 +364,28 @@ lazy_static! {
         symbol: "JitoSOL".to_owned(),
         decimals: 9,
         asset_type: AssetType::SPL,
+    };
+    // Sui
+    pub static ref SUI_USDC: Asset = Asset {
+        id: AssetId::from_token(Chain::Sui, SUI_USDC_TOKEN_ID),
+        name: USDC_NAME.to_owned(),
+        symbol: USDC_SYMBOL.to_owned(),
+        decimals: 6,
+        asset_type: AssetType::TOKEN,
+    };
+    pub static ref SUI_SBUSDT: Asset = Asset {
+        id: AssetId::from_token(Chain::Sui, SUI_SBUSDT_TOKEN_ID),
+        name: "Sui Bridged USDT".to_owned(),
+        symbol: "sbUSDT".to_owned(),
+        decimals: 6,
+        asset_type: AssetType::TOKEN,
+    };
+    pub static ref SUI_WAL: Asset = Asset {
+        id: AssetId::from_token(Chain::Sui, SUI_WAL_TOKEN_ID),
+        name: "Walrus".to_owned(),
+        symbol: "WAL".to_owned(),
+        decimals: 9,
+        asset_type: AssetType::TOKEN,
     };
 
 }
