@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 
@@ -37,6 +39,7 @@ pub struct FiatAsset {
     pub token_id: Option<String>,
     pub is_enabled: bool, // managed by db
     pub is_enabled_by_provider: bool,
+    pub unsupported_countries: Option<serde_json::Value>,
 }
 
 impl FiatAsset {
@@ -52,11 +55,19 @@ impl FiatAsset {
             token_id: asset.token_id,
             is_enabled: asset.enabled,
             is_enabled_by_provider: asset.enabled,
+            unsupported_countries: Some(serde_json::to_value(asset.unsupported_countries).unwrap()),
         }
     }
 
     pub fn is_enabled(&self) -> bool {
         self.is_enabled && self.is_enabled_by_provider
+    }
+
+    pub fn unsupported_countries(&self) -> HashMap<String, Vec<String>> {
+        self.unsupported_countries
+            .as_ref()
+            .and_then(|v| serde_json::from_value(v.clone()).ok())
+            .unwrap_or_default()
     }
 }
 

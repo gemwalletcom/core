@@ -55,6 +55,7 @@ impl RampClient {
             symbol: asset.symbol,
             network: Some(asset.chain),
             enabled: asset.enabled.unwrap_or(false),
+            unsupported_countries: None,
         })
     }
 

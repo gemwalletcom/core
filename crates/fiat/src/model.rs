@@ -20,6 +20,7 @@ pub struct FiatRates {
 pub struct FiatMapping {
     pub symbol: String,
     pub network: Option<String>,
+    pub unsupported_countries: HashMap<String, Vec<String>>,
 }
 
 #[derive(Debug, Clone)]
@@ -30,6 +31,7 @@ pub struct FiatProviderAsset {
     pub token_id: Option<String>,
     pub network: Option<String>,
     pub enabled: bool,
+    pub unsupported_countries: Option<HashMap<String, Vec<String>>>,
 }
 
 impl FiatProviderAsset {

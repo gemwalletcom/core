@@ -1,6 +1,5 @@
-use std::error::Error;
+use std::collections::HashMap;
 
-use crate::error::FiatError;
 use crate::model::{filter_token_id, FiatProviderAsset};
 
 use super::mapper::map_asset_chain;
@@ -31,41 +30,47 @@ impl MoonPayClient {
     }
 
     pub async fn get_ip_address(&self, ip_address: &str) -> Result<MoonPayIpAddress, reqwest::Error> {
-        let url = format!("{}/v4/ip_address/?ipAddress={}&apiKey={}", MOONPAY_API_BASE_URL, ip_address, self.api_key,);
-        self.client.get(&url).send().await?.json().await
+        self.client
+            .get(format!("{}/v4/ip_address/", MOONPAY_API_BASE_URL))
+            .query(&[("ipAddress", ip_address), ("apiKey", &self.api_key)])
+            .send()
+            .await?
+            .json()
+            .await
     }
 
     pub async fn get_buy_quote(&self, symbol: String, fiat_currency: String, fiat_amount: f64) -> Result<MoonPayBuyQuote, reqwest::Error> {
-        let url = format!(
-            "{}/v3/currencies/{}/buy_quote/?baseCurrencyCode={}&baseCurrencyAmount={}&areFeesIncluded={}&apiKey={}",
-            MOONPAY_API_BASE_URL, symbol, fiat_currency, fiat_amount, "true", self.api_key,
-        );
-        self.client.get(&url).send().await?.json().await
+        self.client
+            .get(format!("{}/v3/currencies/{}/buy_quote/", MOONPAY_API_BASE_URL, symbol))
+            .query(&[
+                ("baseCurrencyCode", fiat_currency),
+                ("baseCurrencyAmount", fiat_amount.to_string()),
+                ("areFeesIncluded", "true".to_string()),
+                ("apiKey", self.api_key.clone()),
+            ])
+            .send()
+            .await?
+            .json()
+            .await
     }
 
     pub async fn get_sell_quote(&self, symbol: String, fiat_currency: String, crypto_amount: f64) -> Result<MoonPaySellQuote, reqwest::Error> {
-        let url = format!(
-            "{}/v3/currencies/{}/sell_quote/?quoteCurrencyCode={}&baseCurrencyAmount={}&areFeesIncluded={}&apiKey={}",
-            MOONPAY_API_BASE_URL, symbol, fiat_currency, crypto_amount, "true", self.api_key,
-        );
-
-        self.client.get(&url).send().await?.json().await
+        self.client
+            .get(format!("{}/v3/currencies/{}/sell_quote/", MOONPAY_API_BASE_URL, symbol))
+            .query(&[
+                ("quoteCurrencyCode", fiat_currency),
+                ("baseCurrencyAmount", crypto_amount.to_string()),
+                ("areFeesIncluded", "true".to_string()),
+                ("apiKey", self.api_key.clone()),
+            ])
+            .send()
+            .await?
+            .json()
+            .await
     }
 
     pub async fn get_assets(&self) -> Result<Vec<Asset>, Box<dyn std::error::Error + Send + Sync>> {
-        let url = format!("{}/v3/currencies", MOONPAY_API_BASE_URL);
-        Ok(self.client.get(&url).send().await?.json().await?)
-    }
-
-    pub async fn validate_quote(&self, quote: &MoonPayBuyQuote, ip_address: MoonPayIpAddress) -> Result<(), Box<dyn Error + Send + Sync>> {
-        if quote.quote_currency.not_allowed_countries.contains(&ip_address.alpha2) {
-            return Err(FiatError::UnsupportedCountry(ip_address.alpha2).into());
-        }
-
-        if &ip_address.state == "US" && quote.quote_currency.not_allowed_us_states.contains(&ip_address.state) {
-            return Err(FiatError::UnsupportedState(ip_address.state).into());
-        }
-        Ok(())
+        Ok(self.client.get(format!("{}/v3/currencies", MOONPAY_API_BASE_URL)).send().await?.json().await?)
     }
 
     pub async fn get_transactions(&self) -> Result<Vec<String>, Box<dyn std::error::Error + Send + Sync>> {
@@ -85,6 +90,14 @@ impl MoonPayClient {
         let chain = map_asset_chain(asset.clone());
         let token_id = filter_token_id(chain, asset.clone().metadata?.contract_address);
         let enabled = !asset.is_suspended.unwrap_or(true);
+
+        let mut unsupported_countries = HashMap::new();
+        if let Some(countries) = asset.clone().not_allowed_countries {
+            for country in countries {
+                unsupported_countries.insert(country, vec![]);
+            }
+        }
+
         Some(FiatProviderAsset {
             id: asset.clone().code,
             chain,
@@ -92,6 +105,7 @@ impl MoonPayClient {
             symbol: asset.code,
             network: asset.metadata.map(|x| x.network_code),
             enabled,
+            unsupported_countries: Some(unsupported_countries),
         })
     }
 

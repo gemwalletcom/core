@@ -93,6 +93,7 @@ impl FiatAssetsUpdater {
             network: fiat_asset.clone().network,
             token_id: fiat_asset.clone().token_id,
             enabled: fiat_asset.clone().enabled,
+            unsupported_countries: fiat_asset.clone().unsupported_countries.unwrap_or_default(),
         }
     }
 }

@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
@@ -21,4 +23,5 @@ pub struct FiatAsset {
     pub network: Option<String>,
     pub token_id: Option<String>,
     pub enabled: bool,
+    pub unsupported_countries: HashMap<String, Vec<String>>,
 }

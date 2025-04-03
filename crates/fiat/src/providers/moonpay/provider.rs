@@ -17,16 +17,9 @@ impl FiatProvider for MoonPayClient {
     }
 
     async fn get_buy_quote(&self, request: FiatBuyQuote, request_map: FiatMapping) -> Result<FiatQuote, Box<dyn std::error::Error + Send + Sync>> {
-        let ip_address_check = self.get_ip_address(&request.ip_address).await?;
-        if !ip_address_check.is_allowed && !ip_address_check.is_buy_allowed {
-            return Err(FiatError::FiatPurchaseNotAllowed.into());
-        }
-
         let quote = self
             .get_buy_quote(request_map.symbol.to_lowercase(), request.fiat_currency.to_lowercase(), request.fiat_amount)
             .await?;
-
-        self.validate_quote(&quote, ip_address_check).await?;
 
         Ok(self.get_buy_fiat_quote(request, quote))
     }

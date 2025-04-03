@@ -42,6 +42,10 @@ pub struct Asset {
     pub code: String,
     pub metadata: Option<CurrencyMetadata>,
     pub is_suspended: Option<bool>,
+    #[serde(rename = "notAllowedUSStates")]
+    pub not_allowed_us_states: Option<Vec<String>>,
+    #[serde(rename = "notAllowedCountries")]
+    pub not_allowed_countries: Option<Vec<String>>,
 }
 
 #[derive(Debug, Clone, Deserialize)]

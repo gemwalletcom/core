@@ -78,6 +78,7 @@ impl MercuryoClient {
             symbol: asset.clone().currency,
             network: Some(asset.network),
             enabled: true,
+            unsupported_countries: None,
         })
     }
 

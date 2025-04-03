@@ -113,6 +113,7 @@ diesel::table! {
         token_id -> Nullable<Varchar>,
         is_enabled -> Bool,
         is_enabled_by_provider -> Bool,
+        unsupported_countries -> Nullable<Jsonb>,
         updated_at -> Timestamp,
         created_at -> Timestamp,
     }

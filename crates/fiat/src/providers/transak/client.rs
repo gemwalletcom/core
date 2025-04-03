@@ -118,6 +118,7 @@ impl TransakClient {
             symbol: asset.symbol,
             network: Some(asset.network.name),
             enabled: asset.is_allowed,
+            unsupported_countries: None,
         })
     }
 
