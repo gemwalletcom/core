@@ -68,11 +68,11 @@ impl MoonPayClient {
     }
 
     pub async fn get_assets(&self) -> Result<Vec<Asset>, reqwest::Error> {
-        Ok(self.client.get(format!("{}/v3/currencies", MOONPAY_API_BASE_URL)).send().await?.json().await?)
+        self.client.get(format!("{}/v3/currencies", MOONPAY_API_BASE_URL)).send().await?.json().await
     }
 
     pub async fn get_countries(&self) -> Result<Vec<Country>, reqwest::Error> {
-        Ok(self.client.get(format!("{}/v3/countries", MOONPAY_API_BASE_URL)).send().await?.json().await?)
+        self.client.get(format!("{}/v3/countries", MOONPAY_API_BASE_URL)).send().await?.json().await
     }
 
     pub async fn get_transactions(&self) -> Result<Vec<String>, reqwest::Error> {
@@ -90,7 +90,16 @@ impl MoonPayClient {
 
     pub fn map_asset(asset: Asset) -> Option<FiatProviderAsset> {
         let chain = map_asset_chain(asset.clone());
-        let token_id = filter_token_id(chain, asset.clone().metadata?.contract_address);
+        let contract_address = match asset.metadata.as_ref().map(|m| m.network_code.as_str()) {
+            Some("ripple") => asset
+                .metadata
+                .as_ref()
+                .and_then(|m| m.contract_address.as_deref().and_then(|s| s.split('.').last().map(String::from))),
+            // Add other blockchain specific rules here
+            _ => asset.clone().metadata?.contract_address,
+        };
+
+        let token_id = filter_token_id(chain, contract_address);
         let enabled = !asset.is_suspended.unwrap_or(true);
 
         Some(FiatProviderAsset {
