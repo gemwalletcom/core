@@ -7,7 +7,7 @@ use reqwest::{
 };
 use url::Url;
 
-use super::model::{Asset, Order, PaymentMethod, Quote, ORDER_TYPE_BUY, ORDER_TYPE_SELL};
+use super::model::{Asset, Country, Order, PaymentMethod, Quote, ORDER_TYPE_BUY, ORDER_TYPE_SELL};
 
 const API_URL: &str = "https://api.banxa.com";
 
@@ -87,6 +87,11 @@ impl BanxaClient {
 
     pub async fn get_payment_methods(&self, order_type: &str) -> Result<Vec<PaymentMethod>, reqwest::Error> {
         let url = format!("{}/{}/v2/payment-methods/{}", API_URL, self.merchant_key, order_type);
+        self.client.get(&url).headers(self.get_headers()).send().await?.json().await
+    }
+
+    pub async fn get_countries(&self) -> Result<Vec<Country>, reqwest::Error> {
+        let url = format!("{}/{}/v2/countries", API_URL, self.merchant_key);
         self.client.get(&url).headers(self.get_headers()).send().await?.json().await
     }
 

@@ -14,7 +14,7 @@ pub struct TransakQuote {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct TransakResponse<T> {
+pub struct Response<T> {
     pub response: T,
 }
 
@@ -28,6 +28,13 @@ pub struct Asset {
     pub address: Option<String>,
     pub is_allowed: bool,
     pub kyc_countries_not_supported: Vec<String>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Country {
+    pub alpha2: String,
+    pub is_allowed: bool,
 }
 
 impl Asset {

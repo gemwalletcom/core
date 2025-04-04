@@ -1,4 +1,4 @@
-use super::model::{Asset, TransakQuote, TransakResponse};
+use super::model::{Asset, Country, Response, TransakQuote};
 use crate::model::{filter_token_id, FiatProviderAsset};
 use base64::{engine::general_purpose::STANDARD_NO_PAD as BASE64, Engine as _};
 use number_formatter::BigNumberFormatter;
@@ -66,7 +66,7 @@ impl TransakClient {
             .query(&query)
             .send()
             .await?
-            .json::<TransakResponse<TransakQuote>>()
+            .json::<Response<TransakQuote>>()
             .await?
             .response)
     }
@@ -100,10 +100,14 @@ impl TransakClient {
         components.as_str().to_string()
     }
 
-    pub async fn get_supported_assets(&self) -> Result<TransakResponse<Vec<Asset>>, reqwest::Error> {
+    pub async fn get_supported_assets(&self) -> Result<Response<Vec<Asset>>, reqwest::Error> {
         let url = format!("{}/api/v2/currencies/crypto-currencies", TRANSAK_API_URL);
-        let response = self.client.get(&url).send().await?;
-        response.json().await
+        self.client.get(&url).send().await?.json().await
+    }
+
+    pub async fn get_countries(&self) -> Result<Response<Vec<Country>>, reqwest::Error> {
+        let url = format!("{}/api/v2/countries", TRANSAK_API_URL);
+        self.client.get(&url).send().await?.json().await
     }
 
     pub fn map_asset(asset: Asset) -> Option<FiatProviderAsset> {

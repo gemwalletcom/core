@@ -40,12 +40,19 @@ pub struct MoonPayIpAddress {
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct Country {
+    pub alpha2: String,
+    pub is_allowed: bool,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Asset {
     pub code: String,
     pub metadata: Option<CurrencyMetadata>,
     pub is_suspended: Option<bool>,
-    #[serde(rename = "notAllowedUSStates")]
-    pub not_allowed_us_states: Option<Vec<String>>,
+    //#[serde(rename = "notAllowedUSStates")]
+    //pub not_allowed_us_states: Option<Vec<String>>,
     #[serde(rename = "notAllowedCountries")]
     pub not_allowed_countries: Option<Vec<String>>,
 }
@@ -57,11 +64,6 @@ impl Asset {
         for country in &self.not_allowed_countries.clone().unwrap_or_default() {
             map.insert(country.clone(), vec![]);
         }
-
-        if let Some(states) = &self.not_allowed_us_states {
-            map.insert("US".to_string(), states.clone());
-        }
-
         map
     }
 }

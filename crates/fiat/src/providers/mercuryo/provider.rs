@@ -1,5 +1,5 @@
 use crate::{
-    model::{FiatMapping, FiatProviderAsset},
+    model::{FiatMapping, FiatProviderAsset, FiatProviderCountry},
     FiatProvider,
 };
 use async_trait::async_trait;
@@ -48,6 +48,19 @@ impl FiatProvider for MercuryoClient {
             .flat_map(Self::map_asset)
             .collect::<Vec<FiatProviderAsset>>();
         Ok(assets)
+    }
+
+    async fn get_countries(&self) -> Result<Vec<FiatProviderCountry>, Box<dyn std::error::Error + Send + Sync>> {
+        Ok(self
+            .get_countries()
+            .await?
+            .data
+            .into_iter()
+            .map(|x| FiatProviderCountry {
+                alpha2: x.to_uppercase(),
+                is_allowed: true,
+            })
+            .collect())
     }
 
     // full transaction: https://github.com/mercuryoio/api-migration-docs/blob/master/Widget_API_Mercuryo_v1.6.md#22-callbacks-response-body

@@ -34,6 +34,12 @@ pub struct FiatProviderAsset {
     pub unsupported_countries: Option<HashMap<String, Vec<String>>>,
 }
 
+#[derive(Debug, Clone)]
+pub struct FiatProviderCountry {
+    pub alpha2: String,
+    pub is_allowed: bool,
+}
+
 impl FiatProviderAsset {
     pub fn asset_id(&self) -> Option<AssetId> {
         match self.clone().chain {

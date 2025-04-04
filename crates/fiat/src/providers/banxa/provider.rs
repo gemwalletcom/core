@@ -1,5 +1,5 @@
 use crate::{
-    model::{FiatMapping, FiatProviderAsset},
+    model::{FiatMapping, FiatProviderAsset, FiatProviderCountry},
     FiatProvider,
 };
 use async_trait::async_trait;
@@ -60,6 +60,18 @@ impl FiatProvider for BanxaClient {
             .flat_map(Self::map_asset)
             .collect::<Vec<FiatProviderAsset>>();
         Ok(assets)
+    }
+
+    async fn get_countries(&self) -> Result<Vec<FiatProviderCountry>, Box<dyn std::error::Error + Send + Sync>> {
+        Ok(self
+            .get_countries()
+            .await?
+            .into_iter()
+            .map(|x| FiatProviderCountry {
+                alpha2: x.id,
+                is_allowed: true,
+            })
+            .collect())
     }
 
     // https://docs.banxa.com/docs/webhooks

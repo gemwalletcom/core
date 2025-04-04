@@ -2,7 +2,7 @@ use primitives::{AssetId, FiatBuyQuote, FiatProviderName, FiatQuote, FiatQuoteTy
 use std::error::Error;
 
 use crate::{
-    model::{FiatMapping, FiatProviderAsset},
+    model::{FiatMapping, FiatProviderAsset, FiatProviderCountry},
     FiatProvider,
 };
 
@@ -71,6 +71,10 @@ impl FiatProvider for RampClient {
             .flat_map(Self::map_asset)
             .collect::<Vec<FiatProviderAsset>>();
         Ok(assets)
+    }
+
+    async fn get_countries(&self) -> Result<Vec<FiatProviderCountry>, Box<dyn std::error::Error + Send + Sync>> {
+        Ok(vec![])
     }
 
     // full transaction: https://docs.ramp.network/webhooks#example-using-expressjs

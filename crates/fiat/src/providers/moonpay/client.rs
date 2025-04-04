@@ -1,7 +1,7 @@
 use crate::model::{filter_token_id, FiatProviderAsset};
 
 use super::mapper::map_asset_chain;
-use super::model::{Asset, MoonPayBuyQuote, MoonPayIpAddress, MoonPaySellQuote};
+use super::model::{Asset, Country, MoonPayBuyQuote, MoonPayIpAddress, MoonPaySellQuote};
 use base64::{engine::general_purpose, Engine as _};
 use hmac::{Hmac, Mac};
 use number_formatter::BigNumberFormatter;
@@ -67,11 +67,15 @@ impl MoonPayClient {
             .await
     }
 
-    pub async fn get_assets(&self) -> Result<Vec<Asset>, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn get_assets(&self) -> Result<Vec<Asset>, reqwest::Error> {
         Ok(self.client.get(format!("{}/v3/currencies", MOONPAY_API_BASE_URL)).send().await?.json().await?)
     }
 
-    pub async fn get_transactions(&self) -> Result<Vec<String>, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn get_countries(&self) -> Result<Vec<Country>, reqwest::Error> {
+        Ok(self.client.get(format!("{}/v3/countries", MOONPAY_API_BASE_URL)).send().await?.json().await?)
+    }
+
+    pub async fn get_transactions(&self) -> Result<Vec<String>, reqwest::Error> {
         // let url = format!("{}/v1/transactions", MOONPAY_API_BASE_URL);
         // let assets = self
         //     .client

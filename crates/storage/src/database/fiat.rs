@@ -11,7 +11,7 @@ impl DatabaseClient {
         use crate::schema::fiat_assets::dsl::*;
         diesel::insert_into(fiat_assets)
             .values(values)
-            .on_conflict((id,))
+            .on_conflict(id)
             .do_update()
             .set((
                 asset_id.eq(excluded(asset_id)),
@@ -30,6 +30,21 @@ impl DatabaseClient {
             .values(values)
             .on_conflict_do_nothing()
             .execute(&mut self.connection)
+    }
+
+    pub fn add_fiat_providers_countries(&mut self, values: Vec<FiatProviderCountry>) -> Result<usize, diesel::result::Error> {
+        use crate::schema::fiat_providers_countries::dsl::*;
+        diesel::insert_into(fiat_providers_countries)
+            .values(values)
+            .on_conflict(id)
+            .do_update()
+            .set((alpha2.eq(excluded(alpha2)), is_allowed.eq(excluded(is_allowed))))
+            .execute(&mut self.connection)
+    }
+
+    pub fn get_fiat_providers_countries(&mut self) -> Result<Vec<FiatProviderCountry>, diesel::result::Error> {
+        use crate::schema::fiat_providers_countries::dsl::*;
+        fiat_providers_countries.select(FiatProviderCountry::as_select()).load(&mut self.connection)
     }
 
     pub fn add_fiat_transaction(&mut self, transaction: FiatTransaction) -> Result<usize, diesel::result::Error> {

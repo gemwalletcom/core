@@ -7,9 +7,17 @@ CREATE TABLE fiat_providers (
     created_at timestamp NOT NULL default current_timestamp
 );
 
-INSERT INTO fiat_providers(id, name, enabled) VALUES ('moonpay', 'MoonPay', true);
-INSERT INTO fiat_providers(id, name, enabled) VALUES ('ramp', 'Ramp', true);
-INSERT INTO fiat_providers(id, name, enabled) VALUES ('mercuryo', 'Mercuryo', true);
-INSERT INTO fiat_providers(id, name, enabled) VALUES ('transak', 'Transak', true);
-
 SELECT diesel_manage_updated_at('fiat_providers');
+
+
+CREATE TABLE fiat_providers_countries (
+    id VARCHAR(32) PRIMARY KEY NOT NULL,
+    provider VARCHAR(128) NOT NULL REFERENCES fiat_providers (id) ON DELETE CASCADE,
+    alpha2 VARCHAR(32) NOT NULL, 
+    is_allowed BOOLEAN NOT NULL,
+
+    updated_at timestamp NOT NULL default current_timestamp,
+    created_at timestamp NOT NULL default current_timestamp
+);
+
+SELECT diesel_manage_updated_at('fiat_providers_countries');

@@ -1,6 +1,6 @@
 use super::{client::TransakClient, model::WebhookPayload};
 use crate::{
-    model::{FiatMapping, FiatProviderAsset},
+    model::{FiatMapping, FiatProviderAsset, FiatProviderCountry},
     providers::transak::model::WebhookEncryptedData,
     FiatProvider,
 };
@@ -40,6 +40,19 @@ impl FiatProvider for TransakClient {
             .flat_map(Self::map_asset)
             .collect::<Vec<FiatProviderAsset>>();
         Ok(assets)
+    }
+
+    async fn get_countries(&self) -> Result<Vec<FiatProviderCountry>, Box<dyn std::error::Error + Send + Sync>> {
+        Ok(self
+            .get_countries()
+            .await?
+            .response
+            .into_iter()
+            .map(|x| FiatProviderCountry {
+                alpha2: x.alpha2,
+                is_allowed: x.is_allowed,
+            })
+            .collect())
     }
 
     async fn webhook(&self, data: serde_json::Value) -> Result<FiatTransaction, Box<dyn std::error::Error + Send + Sync>> {

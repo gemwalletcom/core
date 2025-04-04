@@ -129,6 +129,27 @@ impl FiatTransaction {
     }
 }
 
+#[derive(Debug, Queryable, Selectable, Insertable, AsChangeset, Clone)]
+#[diesel(table_name = crate::schema::fiat_providers_countries)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+pub struct FiatProviderCountry {
+    pub id: String,
+    pub provider: String,
+    pub alpha2: String,
+    pub is_allowed: bool,
+}
+
+impl FiatProviderCountry {
+    pub fn new(provider: &str, alpha2: &str, is_allowed: bool) -> Self {
+        Self {
+            id: format!("{}_{}", provider, alpha2).to_lowercase(),
+            provider: provider.to_string(),
+            alpha2: alpha2.to_string(),
+            is_allowed,
+        }
+    }
+}
+
 #[derive(AsChangeset)]
 #[diesel(table_name = crate::schema::fiat_transactions)]
 pub struct FiatTransactionUpdate {

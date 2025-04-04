@@ -83,6 +83,27 @@ impl FiatAssetsUpdater {
         Ok(fiat_assets.len())
     }
 
+    pub async fn update_fiat_providers_countries(&mut self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
+        for provider in self.providers.iter() {
+            match provider.get_countries().await {
+                Ok(countries) => {
+                    println!("update_countries for provider: {}, countries: {:?}", provider.name().id(), countries.len());
+
+                    let countries = countries
+                        .into_iter()
+                        .map(|x| storage::models::FiatProviderCountry::new(provider.name().id().as_str(), &x.alpha2, x.is_allowed))
+                        .collect::<Vec<storage::models::FiatProviderCountry>>();
+
+                    let _ = self.database.add_fiat_providers_countries(countries.clone());
+                }
+                Err(err) => {
+                    println!("update_countries for provider: {}, error: {}", provider.name().id(), err);
+                }
+            }
+        }
+        Ok(0)
+    }
+
     fn map_fiat_asset(&self, provider: String, fiat_asset: FiatProviderAsset) -> primitives::FiatAsset {
         let asset_id = fiat_asset.asset_id();
         primitives::FiatAsset {

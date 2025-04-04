@@ -11,6 +11,9 @@ pub enum FiatError {
     #[error("Unsupported country: {0}")]
     UnsupportedCountry(String),
 
+    #[error("Unsupported country {0} for an asset: {0}")]
+    UnsupportedCountryAsset(String, String),
+
     #[error("Unsupported state: {0}")]
     UnsupportedState(String),
 }

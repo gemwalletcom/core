@@ -1,6 +1,6 @@
 use crate::{
     error::FiatError,
-    model::{FiatMapping, FiatProviderAsset},
+    model::{FiatMapping, FiatProviderAsset, FiatProviderCountry},
     providers::moonpay::model::{Data, Webhook},
     FiatProvider,
 };
@@ -44,6 +44,18 @@ impl FiatProvider for MoonPayClient {
             .flat_map(Self::map_asset)
             .collect::<Vec<FiatProviderAsset>>();
         Ok(assets)
+    }
+
+    async fn get_countries(&self) -> Result<Vec<FiatProviderCountry>, Box<dyn std::error::Error + Send + Sync>> {
+        Ok(self
+            .get_countries()
+            .await?
+            .into_iter()
+            .map(|x| FiatProviderCountry {
+                alpha2: x.alpha2,
+                is_allowed: x.is_allowed,
+            })
+            .collect())
     }
 
     // full transaction: https://dev.moonpay.com/reference/reference-webhooks-buy
