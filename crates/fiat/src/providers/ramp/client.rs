@@ -6,7 +6,7 @@ use reqwest::Client;
 use url::Url;
 
 use super::mapper::map_asset_chain;
-use super::model::{QuoteAsset, QuoteAssets, QuoteBuy, QuoteRequest, QuoteSell};
+use super::model::{Country, QuoteAsset, QuoteAssets, QuoteBuy, QuoteRequest, QuoteSell};
 
 pub struct RampClient {
     client: Client,
@@ -43,6 +43,15 @@ impl RampClient {
         );
         let assets = self.client.get(&url).send().await?.json::<QuoteAssets>().await?;
         Ok(assets)
+    }
+
+    pub async fn get_countries(&self) -> Result<Vec<Country>, reqwest::Error> {
+        self.client
+            .get(format!("{}/api/host-api/countries", RAMP_API_BASE_URL))
+            .send()
+            .await?
+            .json()
+            .await
     }
 
     pub fn map_asset(asset: QuoteAsset) -> Option<FiatProviderAsset> {

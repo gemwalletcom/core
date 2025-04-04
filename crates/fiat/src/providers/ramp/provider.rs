@@ -76,7 +76,16 @@ impl FiatProvider for RampClient {
     }
 
     async fn get_countries(&self) -> Result<Vec<FiatProviderCountry>, Box<dyn std::error::Error + Send + Sync>> {
-        Ok(vec![])
+        Ok(self
+            .get_countries()
+            .await?
+            .into_iter()
+            .map(|x| FiatProviderCountry {
+                provider: Self::NAME.id(),
+                alpha2: x.code.to_uppercase(),
+                is_allowed: x.card_payments_enabled,
+            })
+            .collect())
     }
 
     // full transaction: https://docs.ramp.network/webhooks#example-using-expressjs
