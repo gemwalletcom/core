@@ -80,11 +80,7 @@ pub fn get_uniswap_router_deployment_by_chain(chain: &Chain) -> Option<V3Deploym
             permit2,
             universal_router: "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D",
         }),
-        Chain::Abstract => Some(V3Deployment {
-            quoter_v2: "0x728BD3eC25D5EDBafebB84F3d67367Cd9EBC7693",
-            permit2,
-            universal_router: "0xE1b076ea612Db28a0d768660e4D81346c02ED75e",
-        }),
+
         Chain::Unichain => Some(V3Deployment {
             quoter_v2: "0x385A5cf5F83e99f7BB2852b6A19C3538b9FA7658",
             permit2,
@@ -136,6 +132,24 @@ pub fn get_wagmi_router_deployment_by_chain(chain: &Chain) -> Option<V3Deploymen
             quoter_v2: "0xDb51CffFf3B989d0cB6b58AbF173371b6F2d0D24",
             universal_router: "0xC81dAe2Cdf2f6C0076aE3E174a54985040626D19",
             permit2: "0x7Ac9E324c2a211a389fac64b773433A17dB22948",
+        }),
+        _ => None,
+    }
+}
+
+pub fn get_reservoir_deployment_by_chain(chain: &Chain) -> Option<V3Deployment> {
+    // https://docs.reservoir.tools/reservoir-swap/uniswap-contracts
+    let permit2 = get_uniswap_permit2_by_chain(chain)?;
+    match chain {
+        Chain::Abstract => Some(V3Deployment {
+            quoter_v2: "0x728BD3eC25D5EDBafebB84F3d67367Cd9EBC7693",
+            permit2,
+            universal_router: "0xE1b076ea612Db28a0d768660e4D81346c02ED75e",
+        }),
+        Chain::Ink => Some(V3Deployment {
+            quoter_v2: "0x96b572D2d880cf2Fa2563651BD23ADE6f5516652",
+            permit2,
+            universal_router: "0x9C5577aEF7c2a5C80aA62bA5420170F6b4a302FF",
         }),
         _ => None,
     }
