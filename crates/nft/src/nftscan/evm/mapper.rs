@@ -1,4 +1,4 @@
-use gem_evm::address::EthereumAddress;
+use gem_evm::address::normalize_checksum;
 use primitives::{Chain, NFTAssetId, NFTImage};
 
 use super::model::{NFTAsset, NFTCollection, NFTCollectionAssets, NFTResult};
@@ -54,7 +54,7 @@ impl NFTAsset {
     pub fn as_primitive(&self, chain: Chain, contract_address: &str) -> Option<primitives::NFTAsset> {
         let token_type = map_erc_type(self.erc_type.as_str())?;
         let token_id = self.token_id.clone();
-        let contract_address = EthereumAddress::parse(contract_address)?.to_checksum();
+        let contract_address = normalize_checksum(contract_address)?;
         let id: NFTAssetId = NFTAssetId::new(chain, &contract_address, token_id.as_str());
         let name = self.name.clone()?;
 
@@ -75,7 +75,7 @@ impl NFTAsset {
 
 impl NFTCollection {
     pub fn as_primitive(&self, chain: Chain) -> Option<primitives::NFTCollection> {
-        let contract_address = EthereumAddress::parse(self.contract_address.as_str())?.to_checksum();
+        let contract_address = normalize_checksum(self.contract_address.as_str())?;
         let name = self.name.clone()?;
         Some(primitives::NFTCollection {
             id: primitives::NFTCollection::id(chain, contract_address.as_str()),
@@ -97,7 +97,7 @@ impl NFTCollection {
 
 impl NFTCollectionAssets {
     pub fn as_collection_id(&self, chain: Chain) -> Option<primitives::NFTCollectionId> {
-        let contract_address = EthereumAddress::parse(self.contract_address.as_str())?.to_checksum();
+        let contract_address = normalize_checksum(self.contract_address.as_str())?;
         Some(primitives::NFTCollectionId::new(chain, contract_address.as_str()))
     }
 }
