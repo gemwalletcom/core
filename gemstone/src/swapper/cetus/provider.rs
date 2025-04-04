@@ -337,7 +337,7 @@ mod tests {
     fn test_build_swap_transaction() {
         let provider = Cetus::default();
         let cetus_config = provider.get_clmm_config().unwrap();
-        let sender_address = "0xa9bd0493f9bd1f792a4aedc1f99d54535a75a46c38fd56a8f2c6b7c8d75817a1".parse::<Address>().unwrap();
+        let sender_address = Address::from_str("0xa9bd0493f9bd1f792a4aedc1f99d54535a75a46c38fd56a8f2c6b7c8d75817a1").unwrap();
 
         let route_data = include_str!("test/route_data.json");
         let route_data: RoutePoolData = serde_json::from_str(route_data).unwrap();

@@ -19,9 +19,9 @@ pub fn build_paths(token_in: &Address, token_out: &Address, fee_tiers: &[FeeTier
                 vec![TokenPair {
                     token_in: *token_in,
                     token_out: *token_out,
-                    fee_tier: fee_tier.clone(),
+                    fee_tier: *fee_tier,
                 }],
-                build_direct_pair(token_in, token_out, fee_tier.clone() as u32),
+                build_direct_pair(token_in, token_out, *fee_tier),
             )
         })
         .collect();
@@ -31,7 +31,7 @@ pub fn build_paths(token_in: &Address, token_out: &Address, fee_tiers: &[FeeTier
     intermediaries.iter().for_each(|intermediary| {
         let token_pairs: Vec<Vec<TokenPair>> = fee_tiers
             .iter()
-            .map(|fee_tier| TokenPair::new_two_hop(token_in, intermediary, token_out, fee_tier))
+            .map(|fee_tier| TokenPair::new_two_hop(token_in, intermediary, token_out, *fee_tier))
             .collect();
         let pair_paths: Vec<_> = token_pairs.iter().map(|token_pairs| (token_pairs.to_vec(), build_pairs(token_pairs))).collect();
         paths.push(pair_paths);
@@ -50,7 +50,7 @@ pub fn build_paths_with_routes(routes: &[SwapRoute]) -> Result<Bytes, SwapperErr
         .map(|route| TokenPair {
             token_in: eth_address::parse_asset_id(&route.input).unwrap(),
             token_out: eth_address::parse_asset_id(&route.output).unwrap(),
-            fee_tier: fee_tier.clone(),
+            fee_tier,
         })
         .collect();
     let paths = build_pairs(&token_pairs);

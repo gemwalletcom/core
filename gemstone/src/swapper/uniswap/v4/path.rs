@@ -42,7 +42,7 @@ pub fn build_pool_keys(token_in: &Address, token_out: &Address, fee_tiers: &[Fee
                 vec![TokenPair {
                     token_in: *token_in,
                     token_out: *token_out,
-                    fee_tier: fee_tier.clone(),
+                    fee_tier: *fee_tier,
                 }],
                 pool_key,
             )
@@ -62,7 +62,7 @@ pub fn build_quote_exact_params(
         .map(|intermediary| {
             fee_tiers
                 .iter()
-                .map(|fee_tier| TokenPair::new_two_hop(token_in, intermediary, token_out, fee_tier))
+                .map(|fee_tier| TokenPair::new_two_hop(token_in, intermediary, token_out, *fee_tier))
                 .filter(|token_pairs| token_pairs.len() >= 2)
                 .map(|token_pairs| {
                     let quote_exact_params = QuoteExactParams {

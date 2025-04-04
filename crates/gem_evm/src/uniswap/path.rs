@@ -1,4 +1,4 @@
-use alloy_primitives::{aliases::U32, Address, Bytes};
+use alloy_primitives::{aliases::U24, Address, Bytes};
 use std::{collections::HashSet, fmt::Display};
 
 use super::FeeTier;
@@ -35,17 +35,17 @@ impl Display for TokenPairs {
 }
 
 impl TokenPair {
-    pub fn new_two_hop(token_in: &Address, intermediary: &Address, token_out: &Address, fee_tier: &FeeTier) -> Vec<TokenPair> {
+    pub fn new_two_hop(token_in: &Address, intermediary: &Address, token_out: &Address, fee_tier: FeeTier) -> Vec<TokenPair> {
         vec![
             TokenPair {
                 token_in: *token_in,
                 token_out: *intermediary,
-                fee_tier: *fee_tier,
+                fee_tier,
             },
             TokenPair {
                 token_in: *intermediary,
                 token_out: *token_out,
-                fee_tier: *fee_tier,
+                fee_tier,
             },
         ]
     }
@@ -167,9 +167,9 @@ pub fn get_base_pair(chain: &EVMChain, weth_as_native: bool) -> Option<BasePair>
     Some(BasePair { native, stables, alternatives })
 }
 
-pub fn build_direct_pair(token_in: &Address, token_out: &Address, fee_tier: u32) -> Bytes {
+pub fn build_direct_pair(token_in: &Address, token_out: &Address, fee_tier: FeeTier) -> Bytes {
     let mut bytes: Vec<u8> = vec![];
-    let fee = U32::from(fee_tier);
+    let fee = U24::from(fee_tier.as_u24());
     bytes.extend(token_in.as_slice());
     bytes.extend(&fee.to_be_bytes_vec());
     bytes.extend(token_out.as_slice());
@@ -199,7 +199,7 @@ pub fn build_pairs(token_pairs: &[TokenPair]) -> Bytes {
 
     let mut bytes: Vec<u8> = vec![];
     for (idx, token_pair) in token_pairs.iter().enumerate() {
-        let fee = U32::from(token_pair.fee_tier as u32);
+        let fee = U24::from(token_pair.fee_tier.as_u24());
         if idx == 0 {
             bytes.extend(token_pair.token_in.as_slice());
         }
@@ -212,35 +212,36 @@ pub fn build_pairs(token_pairs: &[TokenPair]) -> Bytes {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use alloy_primitives::{address, hex::encode_prefixed as HexEncode};
 
     #[test]
     fn test_build_path() {
         // Optimism WETH
-        let token0 = "0x4200000000000000000000000000000000000006".parse::<Address>().unwrap();
+        let token0 = address!("0x4200000000000000000000000000000000000006");
         // USDC
-        let token1 = "0x0b2c639c533813f4aa9d7837caf62653d097ff85".parse::<Address>().unwrap();
-        let bytes = build_direct_pair(&token0, &token1, FeeTier::FiveHundred as u32);
+        let token1 = address!("0x0b2c639c533813f4aa9d7837caf62653d097ff85");
+        let bytes = build_direct_pair(&token0, &token1, FeeTier::FiveHundred);
 
         assert_eq!(
-            hex::encode(bytes),
-            "4200000000000000000000000000000000000006000001f40b2c639c533813f4aa9d7837caf62653d097ff85"
+            HexEncode(bytes),
+            "0x42000000000000000000000000000000000000060001f40b2c639c533813f4aa9d7837caf62653d097ff85"
         );
     }
 
     #[test]
     fn test_two_hop_path() {
         // UNI
-        let token0 = "0x6fd9d7AD17242c41f7131d257212c54A0e816691".parse::<Address>().unwrap();
+        let token0 = address!("0x6fd9d7AD17242c41f7131d257212c54A0e816691");
         // WETH
-        let token1 = "0x4200000000000000000000000000000000000006".parse::<Address>().unwrap();
+        let token1 = address!("0x4200000000000000000000000000000000000006");
         // LINK
-        let token2 = "0x350a791Bfc2C21F9Ed5d10980Dad2e2638ffa7f6".parse::<Address>().unwrap();
-        let token_pairs = TokenPair::new_two_hop(&token0, &token1, &token2, &FeeTier::ThreeThousand);
+        let token2 = address!("0x350a791Bfc2C21F9Ed5d10980Dad2e2638ffa7f6");
+        let token_pairs = TokenPair::new_two_hop(&token0, &token1, &token2, FeeTier::ThreeThousand);
         let bytes = build_pairs(&token_pairs);
 
         assert_eq!(
-            hex::encode(bytes),
-            "6fd9d7ad17242c41f7131d257212c54a0e8166910000bb84200000000000000000000000000000000000000064200000000000000000000000000000000000000060000bb8350a791bfc2c21f9ed5d10980dad2e2638ffa7f6"
+            HexEncode(bytes),
+            "0x6fd9d7ad17242c41f7131d257212c54a0e816691000bb84200000000000000000000000000000000000006000bb8350a791bfc2c21f9ed5d10980dad2e2638ffa7f6"
         );
     }
 }

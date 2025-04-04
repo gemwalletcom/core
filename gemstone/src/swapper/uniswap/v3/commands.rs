@@ -150,7 +150,7 @@ mod tests {
         let token_out = eth_address::parse_str("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48").unwrap();
         let amount_in = U256::from(1000000000000000u64);
 
-        let path = build_direct_pair(&token_in, &token_out, FeeTier::FiveHundred as u32);
+        let path = build_direct_pair(&token_in, &token_out, FeeTier::FiveHundred);
         // without fee
         let commands = super::build_commands(&request, &token_in, &token_out, amount_in, U256::from(0), &path, None, false).unwrap();
 
@@ -213,7 +213,7 @@ mod tests {
             .unwrap(),
         };
 
-        let path = build_direct_pair(&token_in, &token_out, FeeTier::FiveHundred as u32);
+        let path = build_direct_pair(&token_in, &token_out, FeeTier::FiveHundred);
         let commands = super::build_commands(
             &request,
             &token_in,
@@ -256,7 +256,7 @@ mod tests {
         let token_out = eth_address::parse_str(request.to_asset.token_id.as_ref().unwrap()).unwrap();
         let amount_in = U256::from_str(&request.value).unwrap();
 
-        let path = build_direct_pair(&token_in, &token_out, FeeTier::FiveHundred as u32);
+        let path = build_direct_pair(&token_in, &token_out, FeeTier::FiveHundred);
         // fee token is output token
         let commands = super::build_commands(&request, &token_in, &token_out, amount_in, U256::from(33377662359182269u64), &path, None, false).unwrap();
 
@@ -316,7 +316,7 @@ mod tests {
             .unwrap(),
         };
 
-        let path = build_direct_pair(&token_in, &token_out, FeeTier::FiveHundred as u32);
+        let path = build_direct_pair(&token_in, &token_out, FeeTier::FiveHundred);
         let commands = super::build_commands(
             &request,
             &token_in,
@@ -362,7 +362,7 @@ mod tests {
         let token_out = eth_address::parse_str(&request.to_asset.token_id.clone().unwrap()).unwrap();
         let amount_in = U256::from_str(request.value.as_str()).unwrap();
 
-        let path = build_direct_pair(&token_in, &token_out, FeeTier::ThreeThousand as u32);
+        let path = build_direct_pair(&token_in, &token_out, FeeTier::ThreeThousand);
         let commands = super::build_commands(
             &request,
             &token_in,

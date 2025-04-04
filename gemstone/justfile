@@ -9,7 +9,7 @@ lint:
     cargo clippy -- -D warnings
 
 test:
-    cargo test
+    cargo test --lib
 
 integration-test:
     cargo test --test integration_test

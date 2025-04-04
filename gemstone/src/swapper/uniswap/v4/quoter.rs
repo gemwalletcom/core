@@ -52,7 +52,7 @@ pub fn decode_quoter_response(response: &JsonRpcResponse<String>) -> Result<(U25
 mod tests {
     use super::*;
     use crate::swapper::uniswap::v4::path::{build_pool_keys, build_quote_exact_params};
-    use alloy_primitives::hex::encode_prefixed as HexEncode;
+    use alloy_primitives::{address, hex::encode_prefixed as HexEncode};
     use alloy_sol_types::SolValue;
     use gem_evm::uniswap::{path::get_base_pair, FeeTier};
     use gem_hash::keccak::keccak256;
@@ -60,8 +60,8 @@ mod tests {
 
     #[test]
     fn test_build_quote_exact_single_request() {
-        let token_in = "0x0000000000000000000000000000000000000000".parse::<Address>().unwrap();
-        let token_out = "0x078D782b760474a361dDA0AF3839290b0EF57AD6".parse::<Address>().unwrap(); // USDC
+        let token_in = address!("0x0000000000000000000000000000000000000000");
+        let token_out = address!("0x078D782b760474a361dDA0AF3839290b0EF57AD6"); // USDC
         let fee_tiers = vec![FeeTier::ThreeThousand];
 
         let v4_quoter = "0x333E3C607B141b18fF6de9f258db6e77fE7491E0";
@@ -85,8 +85,8 @@ mod tests {
 
     #[test]
     fn test_build_quote_exact_request() {
-        let token_in = "0x6fd9d7AD17242c41f7131d257212c54A0e816691".parse::<Address>().unwrap(); // UNI
-        let token_out = "0x350a791Bfc2C21F9Ed5d10980Dad2e2638ffa7f6".parse::<Address>().unwrap(); // LINK
+        let token_in = address!("0x6fd9d7AD17242c41f7131d257212c54A0e816691"); // UNI
+        let token_out = address!("0x350a791Bfc2C21F9Ed5d10980Dad2e2638ffa7f6"); // LINK
         let fee_tiers = vec![FeeTier::ThreeThousand, FeeTier::FiveHundred, FeeTier::Hundred];
         let base_pair = get_base_pair(&EVMChain::Optimism, false).unwrap();
 

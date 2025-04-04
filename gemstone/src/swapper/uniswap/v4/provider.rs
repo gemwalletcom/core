@@ -162,7 +162,7 @@ impl GemSwapProvider for UniswapV4 {
         let to_min_value = apply_slippage_in_bp(&to_value, request.options.slippage.bps);
 
         // construct routes
-        let fee_tier: u32 = fee_tiers[fee_tier_idx % fee_tiers.len()].clone() as u32;
+        let fee_tier: u32 = fee_tiers[fee_tier_idx % fee_tiers.len()] as u32;
         let asset_id_in = AssetId::from(request.from_asset.chain, Some(token_in.to_checksum(None)));
         let asset_id_out = AssetId::from(request.to_asset.chain, Some(token_out.to_checksum(None)));
         let asset_id_intermediary: Option<AssetId> = match batch_idx {
