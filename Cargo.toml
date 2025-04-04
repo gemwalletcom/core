@@ -121,7 +121,7 @@ uniffi = { version = "0.29.1" }
 uniffi_bindgen = { version = "0.29.1" }
 
 alloy-core = { version = "0.8.24", features = ["sol-types", "json-abi", "rlp"] }
-alloy-primitives = "0.8.24"
+alloy-primitives = "0.8.25"
 alloy-sol-types = "0.8.24"
 
 # localizer
