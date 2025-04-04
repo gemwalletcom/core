@@ -7,7 +7,10 @@ use gem_evm::{
     },
 };
 
-use crate::swapper::{uniswap::swap_route::get_intermediaries, SwapRoute, SwapperError};
+use crate::swapper::{
+    uniswap::swap_route::{get_intermediaries, RouteData},
+    SwapRoute, SwapperError,
+};
 
 pub fn build_paths(token_in: &EthereumAddress, token_out: &EthereumAddress, fee_tiers: &[FeeTier], base_pair: &BasePair) -> Vec<Vec<(Vec<TokenPair>, Bytes)>> {
     let mut paths: Vec<Vec<(Vec<TokenPair>, Bytes)>> = vec![];
@@ -42,7 +45,8 @@ pub fn build_paths_with_routes(routes: &[SwapRoute]) -> Result<Bytes, SwapperErr
     if routes.is_empty() {
         return Err(SwapperError::InvalidRoute);
     }
-    let fee_tier = FeeTier::try_from(routes[0].route_data.as_str()).map_err(|_| SwapperError::InvalidAmount)?;
+    let route_data: RouteData = serde_json::from_str(&routes[0].route_data).map_err(|_| SwapperError::InvalidRoute)?;
+    let fee_tier = FeeTier::try_from(route_data.fee_tier.as_str()).map_err(|_| SwapperError::InvalidAmount)?;
     let token_pairs: Vec<TokenPair> = routes
         .iter()
         .map(|route| TokenPair {
