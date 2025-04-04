@@ -27,7 +27,7 @@ pub fn format_token_id(chain: Chain, token_id: String) -> Option<String> {
         | Chain::Unichain
         | Chain::Hyperliquid
         | Chain::Monad => Some(EthereumAddress::parse(&token_id)?.to_checksum()),
-        Chain::Solana | Chain::Ton => Some(token_id),
+        Chain::Solana | Chain::Ton | Chain::Near => Some(token_id),
         Chain::Tron => (token_id.len() == 34 && token_id.starts_with('T')).then_some(token_id),
         Chain::Xrp => token_id.starts_with('r').then_some(token_id),
         Chain::Algorand => token_id.parse::<i32>().ok().map(|token_id| token_id.to_string()),
@@ -45,7 +45,6 @@ pub fn format_token_id(chain: Chain, token_id: String) -> Option<String> {
         | Chain::Injective
         | Chain::Noble
         | Chain::Sei
-        | Chain::Near
         | Chain::Polkadot
         | Chain::Cardano => None,
     }

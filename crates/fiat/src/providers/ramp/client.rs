@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::model::{filter_token_id, FiatMapping, FiatProviderAsset};
 use number_formatter::BigNumberFormatter;
 use primitives::{FiatBuyQuote, FiatProviderName, FiatQuote, FiatSellQuote};
@@ -54,9 +56,10 @@ impl RampClient {
             .await
     }
 
-    pub fn map_asset(asset: QuoteAsset) -> Option<FiatProviderAsset> {
+    pub fn map_asset(asset: QuoteAsset, unsupported_countries: Option<HashMap<String, Vec<String>>>) -> Option<FiatProviderAsset> {
         let chain = map_asset_chain(asset.chain.clone());
         let token_id = filter_token_id(chain, asset.token_id());
+
         Some(FiatProviderAsset {
             id: asset.crypto_asset_symbol(),
             chain,
@@ -64,7 +67,7 @@ impl RampClient {
             symbol: asset.symbol,
             network: Some(asset.chain),
             enabled: asset.enabled.unwrap_or(false),
-            unsupported_countries: None,
+            unsupported_countries,
         })
     }
 

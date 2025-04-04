@@ -26,6 +26,7 @@ pub struct QuoteData {
 pub struct Country {
     pub code: String,
     pub card_payments_enabled: bool,
+    pub api_v3_supported_assets: Option<Vec<String>>,
 }
 
 #[derive(Debug, Deserialize, Clone)]
