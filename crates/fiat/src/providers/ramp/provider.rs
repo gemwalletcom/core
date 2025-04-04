@@ -21,15 +21,7 @@ impl FiatProvider for RampClient {
     }
 
     async fn get_buy_quote(&self, request: FiatBuyQuote, request_map: FiatMapping) -> Result<FiatQuote, Box<dyn std::error::Error + Send + Sync>> {
-        let assets = self
-            .get_supported_buy_assets(request.clone().fiat_currency, request.clone().ip_address)
-            .await?
-            .assets;
         let crypto_asset_symbol = self.get_crypto_asset_symbol(request_map);
-
-        if !assets.iter().any(|x| x.crypto_asset_symbol() == crypto_asset_symbol) {
-            return Err("asset buy not supported".into());
-        }
 
         let payload = QuoteRequest {
             crypto_asset_symbol,
@@ -43,15 +35,7 @@ impl FiatProvider for RampClient {
     }
 
     async fn get_sell_quote(&self, request: FiatSellQuote, request_map: FiatMapping) -> Result<FiatQuote, Box<dyn Error + Send + Sync>> {
-        let assets = self
-            .get_supported_sell_assets(request.clone().fiat_currency, request.clone().ip_address)
-            .await?
-            .assets;
-
         let crypto_asset_symbol = self.get_crypto_asset_symbol(request_map);
-        if !assets.iter().any(|x| x.crypto_asset_symbol() == crypto_asset_symbol) {
-            return Err("asset buy not supported".into());
-        }
 
         let payload = QuoteRequest {
             crypto_asset_symbol,
