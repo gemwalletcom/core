@@ -1,10 +1,9 @@
-use super::{models::ApprovalType, ApprovalData, Permit2ApprovalData, SwapperError};
+use super::{eth_address, models::ApprovalType, ApprovalData, Permit2ApprovalData, SwapperError};
 use crate::network::{jsonrpc::*, AlienProvider};
 
 use alloy_core::{
     hex::decode as HexDecode,
-    hex::FromHexError,
-    primitives::{Address, AddressError, U256},
+    primitives::{Address, U256},
     sol_types::SolCall,
 };
 
@@ -37,18 +36,6 @@ pub enum CheckApprovalType {
     },
 }
 
-impl From<AddressError> for SwapperError {
-    fn from(err: AddressError) -> Self {
-        SwapperError::InvalidAddress { address: err.to_string() }
-    }
-}
-
-impl From<FromHexError> for SwapperError {
-    fn from(err: FromHexError) -> Self {
-        SwapperError::InvalidAddress { address: err.to_string() }
-    }
-}
-
 pub async fn check_approval_erc20(
     owner: String,
     token: String,
@@ -57,20 +44,16 @@ pub async fn check_approval_erc20(
     provider: Arc<dyn AlienProvider>,
     chain: &Chain,
 ) -> Result<ApprovalType, SwapperError> {
-    let owner: Address = owner.as_str().parse().map_err(SwapperError::from)?;
-    let spender: Address = spender.as_str().parse().map_err(SwapperError::from)?;
+    let owner: Address = owner.as_str().parse().map_err(|_| SwapperError::InvalidAddress(owner))?;
+    let spender: Address = spender.as_str().parse().map_err(|_| SwapperError::InvalidAddress(spender))?;
     let allowance_data = IERC20::allowanceCall { owner, spender }.abi_encode();
     let allowance_call = EthereumRpc::Call(TransactionObject::new_call(&token, allowance_data), BlockParameter::Latest);
 
     let response = jsonrpc_call(&allowance_call, provider.clone(), chain).await.map_err(SwapperError::from)?;
     let result: String = response.take().map_err(SwapperError::from)?;
-    let decoded = HexDecode(result).map_err(|e| SwapperError::NetworkError { msg: e.to_string() })?;
+    let decoded = HexDecode(result).map_err(|_| SwapperError::ABIError("failed to decode hex".into()))?;
 
-    let allowance = IERC20::allowanceCall::abi_decode_returns(&decoded, false)
-        .map_err(|_| SwapperError::ABIError {
-            msg: "Invalid erc20 allowance response".into(),
-        })?
-        ._0;
+    let allowance = IERC20::allowanceCall::abi_decode_returns(&decoded, false).map_err(SwapperError::from)?._0;
     if allowance < amount {
         return Ok(ApprovalType::Approve(ApprovalData {
             token: token.to_string(),
@@ -92,9 +75,9 @@ pub async fn check_approval_permit2(
 ) -> Result<ApprovalType, SwapperError> {
     // Check permit2 allowance, spender is universal router
     let permit2_data = IAllowanceTransfer::allowanceCall {
-        _0: owner.as_str().parse().map_err(SwapperError::from)?,
-        _1: token.as_str().parse().map_err(SwapperError::from)?,
-        _2: spender.as_str().parse().map_err(SwapperError::from)?,
+        _0: eth_address::parse_address(&owner)?,
+        _1: eth_address::parse_address(&token)?,
+        _2: eth_address::parse_address(&spender)?,
     }
     .abi_encode();
     let permit2_call = EthereumRpc::Call(TransactionObject::new_call(permit2_contract, permit2_data), BlockParameter::Latest);
@@ -102,14 +85,13 @@ pub async fn check_approval_permit2(
     let response = jsonrpc_call(&permit2_call, provider.clone(), chain).await.map_err(SwapperError::from)?;
     let result: String = response.take().map_err(SwapperError::from)?;
     let decoded = HexDecode(result).unwrap();
-    let allowance_return = IAllowanceTransfer::allowanceCall::abi_decode_returns(&decoded, false).map_err(|_| SwapperError::ABIError {
-        msg: "Invalid permit2 allowance response".into(),
-    })?;
+    let allowance_return = IAllowanceTransfer::allowanceCall::abi_decode_returns(&decoded, false).map_err(SwapperError::from)?;
 
     let timestamp = SystemTime::now().duration_since(UNIX_EPOCH).expect("Time went backwards").as_secs();
-    let expiration: u64 = allowance_return._1.try_into().map_err(|_| SwapperError::ABIError {
-        msg: "failed to convert expiration to u64".into(),
-    })?;
+    let expiration: u64 = allowance_return
+        ._1
+        .try_into()
+        .map_err(|_| SwapperError::ABIError("failed to convert expiration to u64".into()))?;
 
     if U256::from(allowance_return._0) < amount || expiration < timestamp {
         return Ok(ApprovalType::Permit2(Permit2ApprovalData {
@@ -117,9 +99,10 @@ pub async fn check_approval_permit2(
             spender,
             value: amount.to_string(),
             permit2_contract: permit2_contract.into(),
-            permit2_nonce: allowance_return._2.try_into().map_err(|_| SwapperError::ABIError {
-                msg: "failed to convert nonce to u64".into(),
-            })?,
+            permit2_nonce: allowance_return
+                ._2
+                .try_into()
+                .map_err(|_| SwapperError::ABIError("failed to convert nonce to u64".into()))?,
         }));
     }
 

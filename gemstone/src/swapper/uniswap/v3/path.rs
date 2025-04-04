@@ -46,7 +46,7 @@ pub fn build_paths_with_routes(routes: &[SwapRoute]) -> Result<Bytes, SwapperErr
         return Err(SwapperError::InvalidRoute);
     }
     let route_data: RouteData = serde_json::from_str(&routes[0].route_data).map_err(|_| SwapperError::InvalidRoute)?;
-    let fee_tier = FeeTier::try_from(route_data.fee_tier.as_str()).map_err(|_| SwapperError::InvalidAmount)?;
+    let fee_tier = FeeTier::try_from(route_data.fee_tier.as_str()).map_err(|_| SwapperError::InvalidAmount("invalid fee tier".into()))?;
     let token_pairs: Vec<TokenPair> = routes
         .iter()
         .map(|route| TokenPair {

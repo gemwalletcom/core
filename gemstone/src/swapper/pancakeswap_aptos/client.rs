@@ -56,13 +56,9 @@ impl PancakeSwapAptosClient {
             body: None,
         };
 
-        let data = self
-            .provider
-            .request(target)
-            .await
-            .map_err(|err| SwapperError::NetworkError { msg: err.to_string() })?;
+        let data = self.provider.request(target).await.map_err(SwapperError::from)?;
 
-        let result: Resource<TokenPairReserve> = serde_json::from_slice(&data).map_err(|err| SwapperError::NetworkError { msg: err.to_string() })?;
+        let result: Resource<TokenPairReserve> = serde_json::from_slice(&data).map_err(|e| SwapperError::NetworkError(e.to_string()))?;
 
         let reserve_x = BigUint::from_str(result.data.reserve_x.as_str()).unwrap_or_default();
         let reserve_y = BigUint::from_str(result.data.reserve_y.as_str()).unwrap_or_default();

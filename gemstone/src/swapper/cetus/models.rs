@@ -55,7 +55,7 @@ pub struct CetusPoolObject {
 
 impl From<ParseBigIntError> for SwapperError {
     fn from(err: ParseBigIntError) -> Self {
-        Self::ComputeQuoteError { msg: err.to_string() }
+        Self::ComputeQuoteError(err.to_string())
     }
 }
 

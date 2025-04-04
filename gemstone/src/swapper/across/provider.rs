@@ -13,9 +13,9 @@ use crate::{
         approval::check_approval_erc20,
         asset::*,
         chainlink::ChainlinkPriceFeed,
-        eth_rpc,
+        eth_address, eth_rpc,
         models::*,
-        weth_address, GemSwapProvider, SwapperError,
+        GemSwapProvider, SwapperError,
     },
 };
 use gem_evm::{
@@ -63,8 +63,8 @@ impl Across {
     }
 
     pub fn is_supported_pair(from_asset: &AssetId, to_asset: &AssetId) -> bool {
-        let from = weth_address::normalize_asset(from_asset).unwrap();
-        let to = weth_address::normalize_asset(to_asset).unwrap();
+        let from = eth_address::normalize_asset(from_asset).unwrap();
+        let to = eth_address::normalize_asset(to_asset).unwrap();
 
         AcrossDeployment::asset_mappings()
             .into_iter()
@@ -282,10 +282,8 @@ impl GemSwapProvider for Across {
 
         let input_is_native = request.from_asset.is_native();
         let from_chain = EVMChain::from_chain(request.from_asset.chain).ok_or(SwapperError::NotSupportedChain)?;
-        let from_amount: U256 = request.value.parse().map_err(|_| SwapperError::InvalidAmount)?;
-        let wallet_address = EthereumAddress::parse(&request.wallet_address).ok_or(SwapperError::InvalidAddress {
-            address: request.wallet_address.clone(),
-        })?;
+        let from_amount: U256 = request.value.parse().map_err(SwapperError::from)?;
+        let wallet_address = EthereumAddress::parse(&request.wallet_address).ok_or(SwapperError::InvalidAddress(request.wallet_address.clone()))?;
 
         let _ = AcrossDeployment::deployment_by_chain(&request.from_asset.chain).ok_or(SwapperError::NotSupportedChain)?;
         let destination_deployment = AcrossDeployment::deployment_by_chain(&request.to_asset.chain).ok_or(SwapperError::NotSupportedChain)?;
@@ -293,17 +291,15 @@ impl GemSwapProvider for Across {
             return Err(SwapperError::NotSupportedPair);
         }
 
-        let input_asset = weth_address::normalize_asset(&request.from_asset).ok_or(SwapperError::NotSupportedPair)?;
-        let output_asset = weth_address::normalize_asset(&request.to_asset.clone()).ok_or(SwapperError::NotSupportedPair)?;
-        let output_token = EthereumAddress::parse(&output_asset.clone().token_id.unwrap()).ok_or(SwapperError::InvalidAddress {
-            address: format!("{:?}", request.to_asset),
-        })?;
+        let input_asset = eth_address::normalize_asset(&request.from_asset).ok_or(SwapperError::NotSupportedPair)?;
+        let output_asset = eth_address::normalize_asset(&request.to_asset.clone()).ok_or(SwapperError::NotSupportedPair)?;
+        let output_token = EthereumAddress::parse(&output_asset.clone().token_id.unwrap()).ok_or(SwapperError::InvalidAddress(request.to_asset.to_string()))?;
 
         // Get L1 token address
         let mappings = AcrossDeployment::asset_mappings();
         let asset_mapping = mappings.iter().find(|x| x.set.contains(&input_asset)).unwrap();
         let asset_mainnet = asset_mapping.set.iter().find(|x| x.chain == Chain::Ethereum).unwrap();
-        let mainnet_token = weth_address::parse_into_address(asset_mainnet, from_chain)?;
+        let mainnet_token = eth_address::parse_into_address(asset_mainnet, from_chain)?;
 
         let hubpool_client = HubPoolClient {
             contract: ACROSS_HUBPOOL.into(),
@@ -326,16 +322,12 @@ impl GemSwapProvider for Across {
         // Check if protocol is paused
         let is_paused = hubpool_client.decoded_paused_call3(&results[0])?;
         if is_paused {
-            return Err(SwapperError::ComputeQuoteError {
-                msg: "Across protocol is paused".into(),
-            });
+            return Err(SwapperError::ComputeQuoteError("Across protocol is paused".into()));
         }
 
         // Check bridge amount is too large (Across API has some limit in USD amount but we don't have that info)
         if from_amount > hubpool_client.decoded_pooled_token_call3(&results[2])?.liquidReserves {
-            return Err(SwapperError::ComputeQuoteError {
-                msg: "Bridge amount is too large".into(),
-            });
+            return Err(SwapperError::ComputeQuoteError("Bridge amount is too large".into()));
         }
 
         // Prepare data for lp fee calculation (token config, utilization, current time)
@@ -446,7 +438,7 @@ impl GemSwapProvider for Across {
         let deployment = AcrossDeployment::deployment_by_chain(from_chain).ok_or(SwapperError::NotSupportedChain)?;
         let dst_chain_id: u32 = quote.request.to_asset.chain.network_id().parse().unwrap();
         let route = &quote.data.routes[0];
-        let route_data = HexDecode(&route.route_data)?;
+        let route_data = HexDecode(&route.route_data).map_err(|_| SwapperError::InvalidRoute)?;
         let v3_relay_data = V3RelayData::abi_decode(&route_data, true).map_err(|_| SwapperError::InvalidRoute)?;
 
         let deposit_v3_call = V3SpokePoolInterface::depositV3Call {

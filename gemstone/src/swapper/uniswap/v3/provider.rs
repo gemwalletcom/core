@@ -2,6 +2,7 @@ use crate::{
     network::{jsonrpc::batch_jsonrpc_call, AlienProvider, JsonRpcError},
     swapper::{
         approval::{check_approval_erc20, check_approval_permit2},
+        eth_address,
         models::*,
         slippage::apply_slippage_in_bp,
         uniswap::{
@@ -10,7 +11,7 @@ use crate::{
             quote_result::get_best_quote,
             swap_route::{build_swap_route, RouteData},
         },
-        weth_address, GemSwapProvider, SwapperError,
+        GemSwapProvider, SwapperError,
     },
 };
 use gem_evm::{
@@ -41,14 +42,14 @@ impl UniswapV3 {
     }
 
     fn get_asset_address(asset: &AssetId, evm_chain: EVMChain) -> Result<EthereumAddress, SwapperError> {
-        weth_address::parse_into_address(asset, evm_chain)
+        eth_address::parse_into_address(asset, evm_chain)
     }
 
     fn parse_request(request: &SwapQuoteRequest) -> Result<(EVMChain, EthereumAddress, EthereumAddress, U256), SwapperError> {
         let evm_chain = EVMChain::from_chain(request.from_asset.chain).ok_or(SwapperError::NotSupportedChain)?;
         let token_in = Self::get_asset_address(&request.from_asset, evm_chain)?;
         let token_out = Self::get_asset_address(&request.to_asset, evm_chain)?;
-        let amount_in = U256::from_str(&request.value).map_err(|_| SwapperError::InvalidAmount)?;
+        let amount_in = U256::from_str(&request.value).map_err(SwapperError::from)?;
 
         Ok((evm_chain, token_in, token_out, amount_in))
     }
@@ -118,9 +119,7 @@ impl GemSwapProvider for UniswapV3 {
         _ = evm_chain.weth_contract().ok_or(SwapperError::NotSupportedChain)?;
 
         let fee_tiers = self.provider.get_tiers();
-        let base_pair = get_base_pair(&evm_chain, true).ok_or(SwapperError::ComputeQuoteError {
-            msg: "base pair not found".into(),
-        })?;
+        let base_pair = get_base_pair(&evm_chain, true).ok_or(SwapperError::ComputeQuoteError("base pair not found".into()))?;
 
         let fee_preference = get_fee_token(&request.mode, Some(&base_pair), &token_in, &token_out);
         let fee_bps = request.options.clone().fee.unwrap_or_default().evm.bps;
@@ -210,7 +209,7 @@ impl GemSwapProvider for UniswapV3 {
         if quote.request.from_asset.is_native() {
             return Ok(None);
         }
-        let wallet_address: Address = quote.request.wallet_address.as_str().parse().map_err(SwapperError::from)?;
+        let wallet_address = eth_address::parse_address(quote.request.wallet_address.as_str())?;
         let (_, token_in, _, amount_in) = Self::parse_request(&quote.request)?;
         self.check_permit2_approval(wallet_address, &token_in.to_checksum(), amount_in, &quote.request.from_asset.chain, provider)
             .await
@@ -225,9 +224,9 @@ impl GemSwapProvider for UniswapV3 {
             .ok_or(SwapperError::NotSupportedChain)?;
 
         let route_data: RouteData = serde_json::from_str(&quote.data.routes.first().unwrap().route_data).map_err(|_| SwapperError::InvalidRoute)?;
-        let to_amount = U256::from_str(&route_data.min_amount_out).map_err(|_| SwapperError::InvalidAmount)?;
+        let to_amount = U256::from_str(&route_data.min_amount_out).map_err(SwapperError::from)?;
 
-        let wallet_address: Address = request.wallet_address.as_str().parse().map_err(SwapperError::from)?;
+        let wallet_address = eth_address::parse_address(request.wallet_address.as_str())?;
         let permit = data.permit2_data().map(|data| data.into());
 
         let mut gas_limit: Option<String> = None;

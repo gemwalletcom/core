@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use crate::swapper::{slippage::apply_slippage_in_bp, GemSwapMode, SwapQuoteRequest, SwapRoute, SwapperError};
+use crate::swapper::{eth_address, slippage::apply_slippage_in_bp, GemSwapMode, SwapQuoteRequest, SwapRoute, SwapperError};
 use alloy_primitives::{Address, U256};
 use gem_evm::{
     address::EthereumAddress,
@@ -23,9 +23,7 @@ pub fn build_commands(
 ) -> Result<Vec<UniversalRouterCommand>, SwapperError> {
     let options = request.options.clone();
     let fee_options = options.fee.unwrap_or_default().evm;
-    let recipient = Address::from_str(&request.wallet_address).map_err(|_| SwapperError::InvalidAddress {
-        address: request.wallet_address.clone(),
-    })?;
+    let recipient = eth_address::parse_address(&request.wallet_address)?;
 
     let mode = request.mode.clone();
     let pay_fees = fee_options.bps > 0;

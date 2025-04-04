@@ -9,7 +9,7 @@ use gem_evm::{
     },
 };
 
-use crate::swapper::{uniswap::swap_route::RouteData, SwapRoute, SwapperError};
+use crate::swapper::{eth_address, uniswap::swap_route::RouteData, SwapRoute, SwapperError};
 
 // return (currency0, currency1)
 fn sort_addresses(token_in: &EthereumAddress, token_out: &EthereumAddress) -> (Address, Address) {
@@ -95,15 +95,11 @@ impl TryFrom<&SwapRoute> for PathKey {
     type Error = SwapperError;
 
     fn try_from(value: &SwapRoute) -> Result<Self, Self::Error> {
-        let token_id = value.output.token_id.as_ref().ok_or(SwapperError::InvalidAddress {
-            address: value.output.to_string(),
-        })?;
-        let currency = token_id
-            .parse::<Address>()
-            .map_err(|_| SwapperError::InvalidAddress { address: token_id.clone() })?;
+        let token_id = value.output.token_id.as_ref().ok_or(SwapperError::InvalidAddress(value.output.to_string()))?;
+        let currency = eth_address::parse_address(token_id)?;
 
         let route_data: RouteData = serde_json::from_str(&value.route_data).map_err(|_| SwapperError::InvalidRoute)?;
-        let fee_tier = FeeTier::try_from(route_data.fee_tier.as_str()).map_err(|_| SwapperError::InvalidAmount)?;
+        let fee_tier = FeeTier::try_from(route_data.fee_tier.as_str()).map_err(|_| SwapperError::InvalidAmount("invalid fee tier".into()))?;
         Ok(PathKey {
             intermediateCurrency: currency,
             fee: fee_tier.as_u24(),

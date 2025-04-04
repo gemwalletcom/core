@@ -35,10 +35,9 @@ pub fn build_quoter_request(mode: &GemSwapMode, wallet_address: &str, quoter_v2:
 
 // Returns (amountOut, gasEstimate)
 pub fn decode_quoter_response(response: &JsonRpcResponse<String>) -> Result<(U256, U256), SwapperError> {
-    let decoded = HexDecode(&response.result).map_err(|_| SwapperError::NetworkError {
-        msg: "Failed to decode hex result".into(),
-    })?;
-    let quoter_return = IQuoterV2::quoteExactInputCall::abi_decode_returns(&decoded, true).map_err(|err| SwapperError::ABIError { msg: err.to_string() })?;
+    let decoded = HexDecode(&response.result).map_err(|_| SwapperError::NetworkError("Failed to decode hex result".into()))?;
+    let quoter_return = IQuoterV2::quoteExactInputCall::abi_decode_returns(&decoded, true)
+        .map_err(|_| SwapperError::ABIError("Failed to decode quoteExactInputCall".into()))?;
 
     Ok((quoter_return.amountOut, quoter_return.gasEstimate))
 }

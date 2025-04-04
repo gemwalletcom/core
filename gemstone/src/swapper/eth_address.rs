@@ -1,4 +1,5 @@
 use super::error::SwapperError;
+use alloy_primitives::Address;
 use gem_evm::address::EthereumAddress;
 use primitives::{AssetId, EVMChain};
 
@@ -21,5 +22,9 @@ pub(crate) fn normalize_asset(asset: &AssetId) -> Option<AssetId> {
 
 pub(crate) fn parse_into_address(asset: &AssetId, evm_chain: EVMChain) -> Result<EthereumAddress, SwapperError> {
     let str = get_address_by_asset(asset, evm_chain)?;
-    EthereumAddress::parse(&str).ok_or(SwapperError::InvalidAddress { address: str })
+    EthereumAddress::parse(&str).ok_or(SwapperError::InvalidAddress(str))
+}
+
+pub(crate) fn parse_address(str: &str) -> Result<Address, SwapperError> {
+    str.parse::<Address>().map_err(|_| SwapperError::InvalidAddress(str.to_string()))
 }

@@ -129,9 +129,11 @@ impl Cetus {
     }
 
     fn decode_swap_result(&self, result: &InspectResult) -> Result<CalculatedSwapResult, anyhow::Error> {
-        let event = result.events.as_array().map(|x| x.first().unwrap()).ok_or(SwapperError::ComputeQuoteError {
-            msg: format!("Failed to get event from InspectResult: {:?}", result),
-        })?;
+        let event = result
+            .events
+            .as_array()
+            .map(|x| x.first().unwrap())
+            .ok_or(SwapperError::ComputeQuoteError(format!("Failed to get event from InspectResult: {:?}", result)))?;
         let event_data: InspectEvent<SuiData<CalculatedSwapResult>> = serde_json::from_value(event.clone())?;
         Ok(event_data.parsed_json.data)
     }
@@ -150,7 +152,7 @@ impl GemSwapProvider for Cetus {
     async fn fetch_quote(&self, request: &SwapQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapQuote, SwapperError> {
         let from_coin = Self::get_coin_address(&request.from_asset);
         let to_coin = Self::get_coin_address(&request.to_asset);
-        let amount_in = BigInt::from_str(&request.value).map_err(|_| SwapperError::InvalidAmount)?;
+        let amount_in = BigInt::from_str(&request.value).map_err(SwapperError::from)?;
 
         let pools = self.fetch_pools_by_coins(&from_coin, &to_coin, provider.clone()).await?;
         if pools.is_empty() {
@@ -254,12 +256,9 @@ impl GemSwapProvider for Cetus {
     async fn fetch_quote_data(&self, quote: &SwapQuote, provider: Arc<dyn AlienProvider>, _data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError> {
         // Validate quote data
         let route = &quote.data.routes.first().ok_or(SwapperError::InvalidRoute)?;
-        let sender_address = quote.request.wallet_address.parse().map_err(|_| SwapperError::InvalidAddress {
-            address: quote.request.wallet_address.clone(),
-        })?;
-        let route_data: RoutePoolData = serde_json::from_str(&route.route_data).map_err(|e| SwapperError::TransactionError {
-            msg: format!("Invalid route data: {}", e),
-        })?;
+        let sender_address = quote.request.wallet_address.parse().map_err(SwapperError::from)?;
+        let route_data: RoutePoolData =
+            serde_json::from_str(&route.route_data).map_err(|e| SwapperError::TransactionError(format!("Invalid route data: {}", e)))?;
 
         let from_asset = &route.input;
         let from_coin = Self::get_coin_address(from_asset);
@@ -274,7 +273,7 @@ impl GemSwapProvider for Cetus {
 
         // Prepare swap params for tx building
         let a2b = from_coin == route_data.coin_a;
-        let to_value = U256::from_str(&quote.to_value).map_err(|_| SwapperError::InvalidAmount)?;
+        let to_value = U256::from_str(&quote.to_value).map_err(SwapperError::from)?;
         let amount_limit = apply_slippage_in_bp(&to_value, quote.data.slippage_bps);
         let swap_params = SwapParams {
             pool_object_shared: SharedObject {
@@ -291,16 +290,14 @@ impl GemSwapProvider for Cetus {
         };
 
         // Build tx
-        let mut ptb =
-            TransactionBuilder::build_swap_transaction(&cetus_config, &swap_params, &all_coin_assets).map_err(|e| SwapperError::TransactionError {
-                msg: format!("Failed to build swap transaction: {}", e),
-            })?;
+        let mut ptb = TransactionBuilder::build_swap_transaction(&cetus_config, &swap_params, &all_coin_assets)
+            .map_err(|e| SwapperError::TransactionError(format!("Failed to build swap transaction: {}", e)))?;
 
         let tx = gem_sui::tx::prefill_tx(ptb.clone());
 
         // Estimate gas_budget
         let tx_kind = tx.kind.clone();
-        let tx_bytes = bcs::to_bytes(&tx_kind).map_err(|e| SwapperError::TransactionError { msg: e.to_string() })?;
+        let tx_bytes = bcs::to_bytes(&tx_kind).map_err(|e| SwapperError::TransactionError(e.to_string()))?;
         let inspect_result = sui_client.inspect_tx_block(&quote.request.wallet_address, &tx_bytes).await?;
         let gas_budget = GasBudgetCalculator::gas_budget(&inspect_result.effects.gas_used);
 
@@ -313,7 +310,7 @@ impl GemSwapProvider for Cetus {
             .collect::<Vec<_>>();
 
         gem_sui::tx::fill_tx(&mut ptb, sender_address, gas_price, gas_budget, coin_refs);
-        let tx = ptb.finish().map_err(|e| SwapperError::TransactionError { msg: e.to_string() })?;
+        let tx = ptb.finish().map_err(|e| SwapperError::TransactionError(e.to_string()))?;
         let tx_output = TxOutput::from_tx(&tx).unwrap();
 
         Ok(SwapQuoteData {

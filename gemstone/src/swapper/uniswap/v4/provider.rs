@@ -2,6 +2,7 @@ use crate::{
     network::{batch_jsonrpc_call, AlienProvider, JsonRpcError},
     swapper::{
         approval::{check_approval_erc20, check_approval_permit2},
+        eth_address,
         slippage::apply_slippage_in_bp,
         uniswap::{
             deadline::get_sig_deadline,
@@ -9,8 +10,8 @@ use crate::{
             quote_result::get_best_quote,
             swap_route::{build_swap_route, get_intermediaries, RouteData},
         },
-        weth_address, ApprovalData, FetchQuoteData, GemSwapProvider, Permit2ApprovalData, SwapChainAsset, SwapProvider, SwapProviderData, SwapProviderType,
-        SwapQuote, SwapQuoteData, SwapQuoteRequest, SwapperError,
+        ApprovalData, FetchQuoteData, GemSwapProvider, Permit2ApprovalData, SwapChainAsset, SwapProvider, SwapProviderData, SwapProviderType, SwapQuote,
+        SwapQuoteData, SwapQuoteRequest, SwapperError,
     },
 };
 use alloy_core::hex;
@@ -73,7 +74,7 @@ impl UniswapV4 {
         if asset.is_native() {
             Ok(EthereumAddress::zero())
         } else {
-            weth_address::parse_into_address(asset, evm_chain)
+            eth_address::parse_into_address(asset, evm_chain)
         }
     }
 
@@ -81,7 +82,7 @@ impl UniswapV4 {
         let evm_chain = EVMChain::from_chain(request.from_asset.chain).ok_or(SwapperError::NotSupportedChain)?;
         let token_in = Self::parse_asset_address(&request.from_asset, evm_chain)?;
         let token_out = Self::parse_asset_address(&request.to_asset, evm_chain)?;
-        let amount_in = u128::from_str(&request.value).map_err(|_| SwapperError::InvalidAmount)?;
+        let amount_in = u128::from_str(&request.value).map_err(SwapperError::from)?;
 
         Ok((evm_chain, token_in, token_out, amount_in))
     }
@@ -102,9 +103,7 @@ impl GemSwapProvider for UniswapV4 {
         _ = evm_chain.weth_contract().ok_or(SwapperError::NotSupportedChain)?;
 
         let fee_tiers = self.get_tiers();
-        let base_pair = get_base_pair(&evm_chain, false).ok_or(SwapperError::ComputeQuoteError {
-            msg: "base pair not found".into(),
-        })?;
+        let base_pair = get_base_pair(&evm_chain, false).ok_or(SwapperError::ComputeQuoteError("base pair not found".into()))?;
         let fee_preference = get_fee_token(&request.mode, Some(&base_pair), &token_in, &token_out);
         let fee_bps = request.options.clone().fee.unwrap_or_default().evm.bps;
         // If fees are taken from input token, we need to use remaining amount as quote amount
@@ -223,7 +222,7 @@ impl GemSwapProvider for UniswapV4 {
         let (_, token_in, token_out, amount_in) = Self::parse_request(request)?;
         let deployment = get_uniswap_deployment_by_chain(&request.from_asset.chain).ok_or(SwapperError::NotSupportedChain)?;
         let route_data: RouteData = serde_json::from_str(&quote.data.routes.first().unwrap().route_data).map_err(|_| SwapperError::InvalidRoute)?;
-        let to_amount = u128::from_str(&route_data.min_amount_out).map_err(|_| SwapperError::InvalidAmount)?;
+        let to_amount = u128::from_str(&route_data.min_amount_out).map_err(SwapperError::from)?;
 
         let permit = data.permit2_data().map(|data| data.into());
 

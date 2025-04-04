@@ -31,7 +31,7 @@ impl HubPoolClient {
 
     pub fn decoded_paused_call3(&self, result: &IMulticall3::Result) -> Result<bool, SwapperError> {
         let value = decode_call3_return::<HubPoolInterface::pausedCall>(result)
-            .map_err(|e| SwapperError::ABIError { msg: e.to_string() })?
+            .map_err(|e| SwapperError::ABIError(e.to_string()))?
             ._0;
         Ok(value)
     }
@@ -63,12 +63,10 @@ impl HubPoolClient {
     pub fn decoded_pooled_token_call3(&self, result: &IMulticall3::Result) -> Result<HubPoolInterface::PooledToken, SwapperError> {
         if result.success {
             let decoded =
-                HubPoolInterface::pooledTokensCall::abi_decode_returns(&result.returnData, true).map_err(|e| SwapperError::ABIError { msg: e.to_string() })?;
+                HubPoolInterface::pooledTokensCall::abi_decode_returns(&result.returnData, true).map_err(|e| SwapperError::ABIError(e.to_string()))?;
             Ok(decoded._0)
         } else {
-            Err(SwapperError::ABIError {
-                msg: "pooled token call failed".into(),
-            })
+            Err(SwapperError::ABIError("pooled token call failed".into()))
         }
     }
 
@@ -93,13 +91,11 @@ impl HubPoolClient {
     pub fn decoded_utilization_call3(&self, result: &IMulticall3::Result) -> Result<BigInt, SwapperError> {
         if result.success {
             let value = HubPoolInterface::liquidityUtilizationCurrentCall::abi_decode_returns(&result.returnData, true)
-                .map_err(|e| SwapperError::ABIError { msg: e.to_string() })?
+                .map_err(SwapperError::from)?
                 ._0;
             Ok(BigInt::from_bytes_le(Sign::Plus, &value.to_le_bytes::<32>()))
         } else {
-            Err(SwapperError::ABIError {
-                msg: "utilization call failed".into(),
-            })
+            Err(SwapperError::ABIError("utilization call failed".into()))
         }
     }
 
@@ -109,11 +105,9 @@ impl HubPoolClient {
 
     pub fn decoded_current_time(&self, result: &IMulticall3::Result) -> Result<u32, SwapperError> {
         let value = decode_call3_return::<HubPoolInterface::getCurrentTimeCall>(result)
-            .map_err(|e| SwapperError::ABIError { msg: e.to_string() })?
+            .map_err(|e| SwapperError::ABIError(e.to_string()))?
             ._0;
-        value.try_into().map_err(|_| SwapperError::ABIError {
-            msg: "conversion to u32 failed".into(),
-        })
+        value.try_into().map_err(|_| SwapperError::ABIError("decode current time failed".into()))
     }
 
     pub async fn fetch_utilization(&self, pool_token: &EthereumAddress, amount: U256) -> Result<BigInt, SwapperError> {
@@ -121,9 +115,9 @@ impl HubPoolClient {
         let call = EthereumRpc::Call(TransactionObject::new_call(&self.contract, call3.callData.to_vec()), BlockParameter::Latest);
         let response: JsonRpcResult<String> = jsonrpc_call(&call, self.provider.clone(), &self.chain).await?;
         let result = response.take()?;
-        let hex_data = HexDecode(result).map_err(|e| SwapperError::NetworkError { msg: e.to_string() })?;
+        let hex_data = HexDecode(result).map_err(|e| SwapperError::NetworkError(e.to_string()))?;
         let value = HubPoolInterface::liquidityUtilizationCurrentCall::abi_decode_returns(&hex_data, true)
-            .map_err(|e| SwapperError::ABIError { msg: e.to_string() })?
+            .map_err(SwapperError::from)?
             ._0;
         let result = BigInt::from_bytes_le(num_bigint::Sign::Plus, &value.to_le_bytes::<32>());
         Ok(result)
