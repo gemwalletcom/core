@@ -1,17 +1,9 @@
-use super::error::SwapperError;
 use alloy_primitives::Address;
-use gem_evm::address::EthereumAddress;
+
+use super::error::SwapperError;
 use primitives::{AssetId, EVMChain};
 
-pub(crate) fn get_address_by_asset(asset: &AssetId, evm_chain: EVMChain) -> Result<String, SwapperError> {
-    let str = match &asset.token_id {
-        Some(token_id) => token_id.to_string(),
-        None => evm_chain.weth_contract().ok_or(SwapperError::NotSupportedChain)?.to_string(),
-    };
-    Ok(str)
-}
-
-pub(crate) fn normalize_asset(asset: &AssetId) -> Option<AssetId> {
+pub(crate) fn normalize_weth_asset(asset: &AssetId) -> Option<AssetId> {
     if !asset.is_native() {
         return Some(asset.clone());
     }
@@ -20,11 +12,22 @@ pub(crate) fn normalize_asset(asset: &AssetId) -> Option<AssetId> {
     Some(AssetId::from(asset.chain, Some(weth.to_string())))
 }
 
-pub(crate) fn parse_into_address(asset: &AssetId, evm_chain: EVMChain) -> Result<EthereumAddress, SwapperError> {
-    let str = get_address_by_asset(asset, evm_chain)?;
-    EthereumAddress::parse(&str).ok_or(SwapperError::InvalidAddress(str))
+pub(crate) fn normalize_weth_address(asset: &AssetId, evm_chain: EVMChain) -> Result<Address, SwapperError> {
+    if asset.is_native() {
+        let weth = evm_chain.weth_contract().ok_or(SwapperError::NotSupportedChain)?;
+        parse_str(weth)
+    } else {
+        parse_asset_id(asset)
+    }
 }
 
-pub(crate) fn parse_address(str: &str) -> Result<Address, SwapperError> {
+pub(crate) fn parse_asset_id(asset: &AssetId) -> Result<Address, SwapperError> {
+    match &asset.token_id {
+        Some(token_id) => token_id.parse::<Address>().map_err(|_| SwapperError::InvalidAddress(token_id.to_string())),
+        None => Err(SwapperError::InvalidAddress(asset.to_string())),
+    }
+}
+
+pub(crate) fn parse_str(str: &str) -> Result<Address, SwapperError> {
     str.parse::<Address>().map_err(|_| SwapperError::InvalidAddress(str.to_string()))
 }

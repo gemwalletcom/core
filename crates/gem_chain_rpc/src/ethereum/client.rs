@@ -1,11 +1,11 @@
 use super::model::{Block, Transaction, TransactionReciept};
 use crate::ethereum::erc20;
 use crate::{ChainBlockProvider, ChainTokenDataProvider};
-use alloy_core::primitives::hex;
-use alloy_core::sol_types::SolCall;
+use alloy_primitives::hex;
+use alloy_sol_types::SolCall;
 use async_trait::async_trait;
 use chrono::Utc;
-use gem_evm::address::EthereumAddress;
+use gem_evm::address::normalize_checksum;
 use hex::FromHex;
 use jsonrpsee::{
     core::{client::ClientT, params::BatchRequestBuilder},
@@ -103,8 +103,8 @@ impl EthereumClient {
         let nonce = transaction.nonce;
         let block = transaction.block_number;
         let fee = receipt.get_fee().to_string();
-        let from = EthereumAddress::parse(&transaction.from)?.to_checksum();
-        let to = EthereumAddress::parse(&transaction.to.unwrap_or_default())?.to_checksum();
+        let from = normalize_checksum(&transaction.from).ok()?;
+        let to = normalize_checksum(&transaction.to.unwrap_or_default()).ok()?;
 
         // system transfer
         if transaction.input == "0x" {
@@ -135,14 +135,13 @@ impl EthereumClient {
                 FUNCTION_ERC20_APPROVE => TransactionType::TokenApproval,
                 _ => TransactionType::Transfer,
             };
-            let token_id = to.clone();
             let asset_id = AssetId {
                 chain: self.chain,
-                token_id: Some(token_id),
+                token_id: to.clone().into(),
             };
             let value: String = transaction.input.chars().skip(74).take(64).collect();
             let to_address: String = transaction.input.chars().skip(34).take(40).collect::<String>();
-            let to_address = EthereumAddress::parse(&to_address)?.to_checksum();
+            let to_address = normalize_checksum(&to_address).ok()?;
             let value = BigUint::from_str_radix(value.as_str(), 16).unwrap_or_default();
 
             let transaction = primitives::Transaction::new(
@@ -184,14 +183,14 @@ impl EthereumClient {
                     self.chain.as_asset_id(),
                     AssetId {
                         chain: self.chain,
-                        token_id: Some(EthereumAddress::parse(&last_log.address)?.to_checksum()),
+                        token_id: normalize_checksum(&last_log.address).ok(),
                     },
                 )
             } else {
                 (
                     AssetId {
                         chain: self.chain,
-                        token_id: Some(EthereumAddress::parse(&first_log.address)?.to_checksum()),
+                        token_id: normalize_checksum(&first_log.address).ok(),
                     },
                     self.chain.as_asset_id(),
                 )
@@ -278,9 +277,9 @@ impl ChainTokenDataProvider for EthereumClient {
         let symbol: String = self.eth_call(token_id.as_str(), FUNCTION_ERC20_SYMBOL).await?;
         let decimals: String = self.eth_call(token_id.as_str(), FUNCTION_ERC20_DECIMALS).await?;
 
-        let name: String = erc20::nameCall::abi_decode_returns(&Vec::from_hex(name)?, true).unwrap()._0;
-        let symbol: String = erc20::symbolCall::abi_decode_returns(&Vec::from_hex(symbol)?, true).unwrap()._0;
-        let decimals: u8 = erc20::decimalsCall::abi_decode_returns(&Vec::from_hex(decimals)?, true).unwrap()._0;
+        let name: String = erc20::nameCall::abi_decode_returns(&Vec::from_hex(name)?).unwrap();
+        let symbol: String = erc20::symbolCall::abi_decode_returns(&Vec::from_hex(symbol)?).unwrap();
+        let decimals: u8 = erc20::decimalsCall::abi_decode_returns(&Vec::from_hex(decimals)?).unwrap();
 
         Ok(Asset {
             id: AssetId {

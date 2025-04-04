@@ -1,5 +1,5 @@
-use alloy_core::sol_types::SolCall;
 use alloy_primitives::hex::decode as HexDecode;
+use alloy_sol_types::SolCall;
 use num_bigint::BigInt;
 use num_traits::FromBytes;
 use std::sync::Arc;
@@ -52,7 +52,7 @@ impl ChainlinkPriceFeed {
         let response: JsonRpcResult<String> = jsonrpc_call(&call, self.provider.clone(), &self.chain).await?;
         let result = response.take()?;
         let hex_data = HexDecode(result).map_err(|_| SwapperError::NetworkError("failed to latest round data".into()))?;
-        let decoded = AggregatorInterface::latestRoundDataCall::abi_decode_returns(&hex_data, true).map_err(SwapperError::from)?;
+        let decoded = AggregatorInterface::latestRoundDataCall::abi_decode_returns(&hex_data).map_err(SwapperError::from)?;
 
         Ok(BigInt::from_le_bytes(&decoded.answer.to_le_bytes::<32>()))
     }

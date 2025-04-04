@@ -49,8 +49,8 @@ impl From<JsonRpcError> for SwapperError {
     }
 }
 
-impl From<gem_evm::address::AddressError> for SwapperError {
-    fn from(err: gem_evm::address::AddressError) -> Self {
+impl From<alloy_primitives::AddressError> for SwapperError {
+    fn from(err: alloy_primitives::AddressError) -> Self {
         Self::InvalidAddress(err.to_string())
     }
 }
@@ -73,8 +73,8 @@ impl From<serde_urlencoded::ser::Error> for SwapperError {
     }
 }
 
-impl From<alloy_core::sol_types::Error> for SwapperError {
-    fn from(err: alloy_core::sol_types::Error) -> Self {
+impl From<alloy_sol_types::Error> for SwapperError {
+    fn from(err: alloy_sol_types::Error) -> Self {
         Self::ABIError(format!("AlloyError: {}", err))
     }
 }

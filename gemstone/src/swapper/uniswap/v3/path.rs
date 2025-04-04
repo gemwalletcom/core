@@ -1,26 +1,24 @@
-use alloy_primitives::Bytes;
-use gem_evm::{
-    address::EthereumAddress,
-    uniswap::{
-        path::{build_direct_pair, build_pairs, BasePair, TokenPair},
-        FeeTier,
-    },
+use alloy_primitives::{Address, Bytes};
+use gem_evm::uniswap::{
+    path::{build_direct_pair, build_pairs, BasePair, TokenPair},
+    FeeTier,
 };
 
 use crate::swapper::{
+    eth_address,
     uniswap::swap_route::{get_intermediaries, RouteData},
     SwapRoute, SwapperError,
 };
 
-pub fn build_paths(token_in: &EthereumAddress, token_out: &EthereumAddress, fee_tiers: &[FeeTier], base_pair: &BasePair) -> Vec<Vec<(Vec<TokenPair>, Bytes)>> {
+pub fn build_paths(token_in: &Address, token_out: &Address, fee_tiers: &[FeeTier], base_pair: &BasePair) -> Vec<Vec<(Vec<TokenPair>, Bytes)>> {
     let mut paths: Vec<Vec<(Vec<TokenPair>, Bytes)>> = vec![];
     let direct_paths: Vec<_> = fee_tiers
         .iter()
         .map(|fee_tier| {
             (
                 vec![TokenPair {
-                    token_in: token_in.clone(),
-                    token_out: token_out.clone(),
+                    token_in: *token_in,
+                    token_out: *token_out,
                     fee_tier: fee_tier.clone(),
                 }],
                 build_direct_pair(token_in, token_out, fee_tier.clone() as u32),
@@ -50,8 +48,8 @@ pub fn build_paths_with_routes(routes: &[SwapRoute]) -> Result<Bytes, SwapperErr
     let token_pairs: Vec<TokenPair> = routes
         .iter()
         .map(|route| TokenPair {
-            token_in: route.input.clone().into(),
-            token_out: route.output.clone().into(),
+            token_in: eth_address::parse_asset_id(&route.input).unwrap(),
+            token_out: eth_address::parse_asset_id(&route.output).unwrap(),
             fee_tier: fee_tier.clone(),
         })
         .collect();

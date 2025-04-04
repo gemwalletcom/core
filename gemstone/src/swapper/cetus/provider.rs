@@ -1,4 +1,4 @@
-use alloy_core::primitives::U256;
+use alloy_primitives::U256;
 use async_trait::async_trait;
 use base64::{engine::general_purpose::STANDARD, Engine as _};
 use bcs;

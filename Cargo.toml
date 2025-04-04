@@ -112,17 +112,16 @@ itoa = { version = "1.0.15" }
 curve25519-dalek = { version = "4.1.3" }
 borsh = { version = "1.5.6", features = ["derive"] }
 bcs = { version = "0.1.6" }
-sui-types = { package = "sui-sdk-types", version = "0.0.3", features = [
+sui-types = { package = "sui-sdk-types", version = "0.0.4", features = [
     "serde",
 ] }
-sui-transaction-builder = { package = "sui-transaction-builder", version = "0.0.3" }
+sui-transaction-builder = { package = "sui-transaction-builder", version = "0.0.4" }
 
 uniffi = { version = "0.29.1" }
 uniffi_bindgen = { version = "0.29.1" }
 
-alloy-core = { version = "0.8.24", features = ["sol-types", "json-abi", "rlp"] }
-alloy-primitives = "0.8.24"
-alloy-sol-types = "0.8.24"
+alloy-primitives = "1.0.0"
+alloy-sol-types = "1.0.0"
 
 # localizer
 i18n-embed = { version = "0.15.3", features = ["fluent-system", "autoreload"] }

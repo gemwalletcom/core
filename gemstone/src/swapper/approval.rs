@@ -1,11 +1,8 @@
 use super::{eth_address, models::ApprovalType, ApprovalData, Permit2ApprovalData, SwapperError};
 use crate::network::{jsonrpc::*, AlienProvider};
 
-use alloy_core::{
-    hex::decode as HexDecode,
-    primitives::{Address, U256},
-    sol_types::SolCall,
-};
+use alloy_primitives::{hex::decode as HexDecode, Address, U256};
+use alloy_sol_types::SolCall;
 
 use gem_evm::{
     erc20::IERC20,
@@ -53,7 +50,7 @@ pub async fn check_approval_erc20(
     let result: String = response.take().map_err(SwapperError::from)?;
     let decoded = HexDecode(result).map_err(|_| SwapperError::ABIError("failed to decode hex".into()))?;
 
-    let allowance = IERC20::allowanceCall::abi_decode_returns(&decoded, false).map_err(SwapperError::from)?._0;
+    let allowance = IERC20::allowanceCall::abi_decode_returns(&decoded).map_err(SwapperError::from)?;
     if allowance < amount {
         return Ok(ApprovalType::Approve(ApprovalData {
             token: token.to_string(),
@@ -75,9 +72,9 @@ pub async fn check_approval_permit2(
 ) -> Result<ApprovalType, SwapperError> {
     // Check permit2 allowance, spender is universal router
     let permit2_data = IAllowanceTransfer::allowanceCall {
-        _0: eth_address::parse_address(&owner)?,
-        _1: eth_address::parse_address(&token)?,
-        _2: eth_address::parse_address(&spender)?,
+        _0: eth_address::parse_str(&owner)?,
+        _1: eth_address::parse_str(&token)?,
+        _2: eth_address::parse_str(&spender)?,
     }
     .abi_encode();
     let permit2_call = EthereumRpc::Call(TransactionObject::new_call(permit2_contract, permit2_data), BlockParameter::Latest);
@@ -85,7 +82,7 @@ pub async fn check_approval_permit2(
     let response = jsonrpc_call(&permit2_call, provider.clone(), chain).await.map_err(SwapperError::from)?;
     let result: String = response.take().map_err(SwapperError::from)?;
     let decoded = HexDecode(result).unwrap();
-    let allowance_return = IAllowanceTransfer::allowanceCall::abi_decode_returns(&decoded, false).map_err(SwapperError::from)?;
+    let allowance_return = IAllowanceTransfer::allowanceCall::abi_decode_returns(&decoded).map_err(SwapperError::from)?;
 
     let timestamp = SystemTime::now().duration_since(UNIX_EPOCH).expect("Time went backwards").as_secs();
     let expiration: u64 = allowance_return

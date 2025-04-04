@@ -1,4 +1,4 @@
-use alloy_core::sol;
+use alloy_sol_types::sol;
 
 // https://github.com/Uniswap/universal-router/blob/main/contracts/interfaces/IUniversalRouter.sol
 sol! {

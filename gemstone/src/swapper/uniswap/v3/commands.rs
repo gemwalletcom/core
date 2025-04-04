@@ -1,16 +1,13 @@
 use crate::swapper::{eth_address, models::*, slippage::apply_slippage_in_bp, SwapperError};
-use gem_evm::{
-    address::EthereumAddress,
-    uniswap::command::{PayPortion, Permit2Permit, Sweep, Transfer, UniversalRouterCommand, UnwrapWeth, V3SwapExactIn, WrapEth, ADDRESS_THIS},
-};
+use gem_evm::uniswap::command::{PayPortion, Permit2Permit, Sweep, Transfer, UniversalRouterCommand, UnwrapWeth, V3SwapExactIn, WrapEth, ADDRESS_THIS};
 
-use alloy_core::primitives::{Address, Bytes, U256};
+use alloy_primitives::{Address, Bytes, U256};
 use std::str::FromStr;
 
 pub fn build_commands(
     request: &SwapQuoteRequest,
-    token_in: &EthereumAddress,
-    token_out: &EthereumAddress,
+    token_in: &Address,
+    token_out: &Address,
     amount_in: U256,
     quote_amount: U256,
     path: &Bytes,
@@ -19,7 +16,7 @@ pub fn build_commands(
 ) -> Result<Vec<UniversalRouterCommand>, SwapperError> {
     let options = request.options.clone();
     let fee_options = options.fee.unwrap_or_default().evm;
-    let recipient = eth_address::parse_address(&request.wallet_address)?;
+    let recipient = eth_address::parse_str(&request.wallet_address)?;
 
     let mode = request.mode.clone();
     let wrap_input_eth = request.from_asset.is_native();
@@ -51,14 +48,14 @@ pub fn build_commands(
                     if wrap_input_eth {
                         // if input is native ETH, we can transfer directly because of WRAP_ETH command
                         commands.push(UniversalRouterCommand::TRANSFER(Transfer {
-                            token: Address::from_slice(&token_in.bytes),
+                            token: *token_in,
                             recipient: fee_recipient,
                             value: fee,
                         }));
                     } else {
                         // call permit2 transfer instead
                         commands.push(UniversalRouterCommand::PERMIT2_TRANSFER_FROM(Transfer {
-                            token: Address::from_slice(&token_in.bytes),
+                            token: *token_in,
                             recipient: fee_recipient,
                             value: fee,
                         }));
@@ -85,7 +82,7 @@ pub fn build_commands(
 
                     // insert PAY_PORTION to fee_address
                     commands.push(UniversalRouterCommand::PAY_PORTION(PayPortion {
-                        token: Address::from_slice(&token_out.bytes),
+                        token: *token_out,
                         recipient: Address::from_str(fee_options.address.as_str()).unwrap(),
                         bips: U256::from(fee_options.bps),
                     }));
@@ -93,7 +90,7 @@ pub fn build_commands(
                     if !unwrap_output_weth {
                         // MSG_SENDER should be the address of the caller
                         commands.push(UniversalRouterCommand::SWEEP(Sweep {
-                            token: Address::from_slice(&token_out.bytes),
+                            token: *token_out,
                             recipient,
                             amount_min: U256::from(amount_out),
                         }));
@@ -149,8 +146,8 @@ mod tests {
             options: GemSwapOptions::default(),
         };
 
-        let token_in = EthereumAddress::parse("0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2").unwrap();
-        let token_out = EthereumAddress::parse("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48").unwrap();
+        let token_in = eth_address::parse_str("0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2").unwrap();
+        let token_out = eth_address::parse_str("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48").unwrap();
         let amount_in = U256::from(1000000000000000u64);
 
         let path = build_direct_pair(&token_in, &token_out, FeeTier::FiveHundred as u32);
@@ -195,8 +192,8 @@ mod tests {
             options: GemSwapOptions::default(),
         };
 
-        let token_in = EthereumAddress::parse(request.from_asset.token_id.as_ref().unwrap()).unwrap();
-        let token_out = EthereumAddress::parse(request.to_asset.token_id.as_ref().unwrap()).unwrap();
+        let token_in = eth_address::parse_str(request.from_asset.token_id.as_ref().unwrap()).unwrap();
+        let token_out = eth_address::parse_str(request.to_asset.token_id.as_ref().unwrap()).unwrap();
         let amount_in = U256::from_str(&request.value).unwrap();
 
         let permit2_data = Permit2Data {
@@ -255,8 +252,8 @@ mod tests {
             },
         };
 
-        let token_in = EthereumAddress::parse(request.from_asset.token_id.as_ref().unwrap()).unwrap();
-        let token_out = EthereumAddress::parse(request.to_asset.token_id.as_ref().unwrap()).unwrap();
+        let token_in = eth_address::parse_str(request.from_asset.token_id.as_ref().unwrap()).unwrap();
+        let token_out = eth_address::parse_str(request.to_asset.token_id.as_ref().unwrap()).unwrap();
         let amount_in = U256::from_str(&request.value).unwrap();
 
         let path = build_direct_pair(&token_in, &token_out, FeeTier::FiveHundred as u32);
@@ -298,8 +295,8 @@ mod tests {
             },
         };
 
-        let token_in = EthereumAddress::parse(request.from_asset.token_id.as_ref().unwrap()).unwrap();
-        let token_out = EthereumAddress::parse("0x4200000000000000000000000000000000000006").unwrap();
+        let token_in = eth_address::parse_str(request.from_asset.token_id.as_ref().unwrap()).unwrap();
+        let token_out = eth_address::parse_str("0x4200000000000000000000000000000000000006").unwrap();
         let amount_in = U256::from_str(&request.value).unwrap();
 
         let permit2_data = Permit2Data {
@@ -361,8 +358,8 @@ mod tests {
             },
         };
 
-        let token_in = EthereumAddress::parse("0x4200000000000000000000000000000000000006").unwrap();
-        let token_out = EthereumAddress::parse(&request.to_asset.token_id.clone().unwrap()).unwrap();
+        let token_in = eth_address::parse_str("0x4200000000000000000000000000000000000006").unwrap();
+        let token_out = eth_address::parse_str(&request.to_asset.token_id.clone().unwrap()).unwrap();
         let amount_in = U256::from_str(request.value.as_str()).unwrap();
 
         let path = build_direct_pair(&token_in, &token_out, FeeTier::ThreeThousand as u32);

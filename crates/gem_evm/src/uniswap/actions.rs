@@ -63,10 +63,10 @@ impl V4Action {
 mod tests {
     use super::*;
     use crate::uniswap::{command::ADDRESS_THIS, contracts::v4::PathKey};
-    use alloy_core::primitives::{hex::encode as HexEncode, Address, U256};
     use alloy_primitives::{
         aliases::{I24, U24},
-        Bytes,
+        hex::encode as HexEncode,
+        Address, Bytes, U256,
     };
     use std::str::FromStr;
 

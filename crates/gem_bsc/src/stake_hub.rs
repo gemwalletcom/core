@@ -1,7 +1,8 @@
-use alloy_core::primitives::{Address, U256};
-use alloy_core::{sol, sol_types::SolCall};
+use alloy_primitives::{Address, U256};
+use alloy_sol_types::{sol, SolCall};
 use anyhow::Error;
 use std::str::FromStr;
+
 sol! {
     #[derive(Debug, PartialEq)]
     interface IHubReader {
@@ -74,7 +75,7 @@ pub fn encode_validators_call(offset: u16, limit: u16) -> Vec<u8> {
 }
 
 pub fn decode_validators_return(result: &[u8]) -> Result<Vec<BscValidator>, Error> {
-    let decoded = IHubReader::getValidatorsCall::abi_decode_returns(result, true).map_err(Error::msg)?._0;
+    let decoded = IHubReader::getValidatorsCall::abi_decode_returns(result).map_err(Error::msg)?;
     let validators = decoded
         .iter()
         .map(|validator| BscValidator {
@@ -95,7 +96,7 @@ pub fn encode_delegations_call(delegator: &str, offset: u16, limit: u16) -> Resu
 }
 
 pub fn decode_delegations_return(result: &[u8]) -> Result<Vec<BscDelegation>, Error> {
-    let decoded = IHubReader::getDelegationsCall::abi_decode_returns(result, true).map_err(anyhow::Error::msg)?._0;
+    let decoded = IHubReader::getDelegationsCall::abi_decode_returns(result).map_err(anyhow::Error::msg)?;
     let delegations = decoded
         .iter()
         .map(|delegation| BscDelegation {
@@ -115,7 +116,7 @@ pub fn encode_undelegations_call(delegator: &str, offset: u16, limit: u16) -> Re
 }
 
 pub fn decode_undelegations_return(result: &[u8]) -> Result<Vec<BscUndelegation>, Error> {
-    let decoded = IHubReader::getUndelegationsCall::abi_decode_returns(result, true).map_err(Error::msg)?._0;
+    let decoded = IHubReader::getUndelegationsCall::abi_decode_returns(result).map_err(Error::msg)?;
     let undelegations = decoded
         .iter()
         .map(|undelegation| BscUndelegation {

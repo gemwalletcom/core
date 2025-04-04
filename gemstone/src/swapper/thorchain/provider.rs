@@ -9,9 +9,8 @@ use crate::swapper::asset::{
 use crate::swapper::thorchain::client::ThorChainSwapClient;
 use crate::swapper::{ApprovalData, FetchQuoteData, SwapProviderData, SwapProviderType, SwapQuote, SwapQuoteData, SwapQuoteRequest, SwapRoute, SwapperError};
 use crate::swapper::{GemSwapProvider, SwapChainAsset};
-use alloy_core::sol_types::SolCall;
-use alloy_primitives::Address;
-use alloy_primitives::U256;
+use alloy_primitives::{hex::encode_prefixed as HexEncode, Address, U256};
+use alloy_sol_types::SolCall;
 use async_trait::async_trait;
 use gem_evm::thorchain::contracts::RouterInterface;
 use primitives::Chain;
@@ -176,7 +175,7 @@ impl GemSwapProvider for ThorChain {
             SwapQuoteData {
                 to,
                 value: "0".to_string(),
-                data: hex::encode(call.clone()),
+                data: HexEncode(call.clone()),
                 approval,
                 gas_limit,
             }

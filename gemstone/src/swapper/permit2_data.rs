@@ -1,6 +1,8 @@
 use crate::swapper::SwapperError;
-use alloy_core::primitives::{Bytes, U256};
-use alloy_primitives::aliases::{U160, U48};
+use alloy_primitives::{
+    aliases::{U160, U48},
+    Bytes, U256,
+};
 use serde::{Deserialize, Serialize, Serializer};
 use std::{
     fmt::{Debug, Display},

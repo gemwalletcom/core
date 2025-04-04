@@ -8,8 +8,8 @@ use gem_evm::{
 };
 use primitives::{Chain, EVMChain};
 
-use alloy_core::{hex::decode as HexDecode, sol_types::SolCall};
-use alloy_primitives::U256;
+use alloy_primitives::{hex::decode as HexDecode, U256};
+use alloy_sol_types::SolCall;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::sync::Arc;
@@ -95,8 +95,7 @@ pub async fn multicall3_call(
     let result = response.take()?;
     let hex_data = HexDecode(result).map_err(|e| SwapperError::NetworkError(e.to_string()))?;
 
-    let decoded =
-        IMulticall3::aggregate3Call::abi_decode_returns(&hex_data, true).map_err(|_| SwapperError::ABIError("failed to decode aggregate3Call".into()))?;
+    let decoded = IMulticall3::aggregate3Call::abi_decode_returns(&hex_data).map_err(|_| SwapperError::ABIError("failed to decode aggregate3Call".into()))?;
 
-    Ok(decoded.returnData)
+    Ok(decoded)
 }

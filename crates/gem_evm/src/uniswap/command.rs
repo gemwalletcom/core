@@ -3,7 +3,7 @@ use super::{
     contracts::IUniversalRouter,
 };
 use crate::permit2::IAllowanceTransfer;
-use alloy_core::primitives::{Address, Bytes, U256};
+use alloy_primitives::{Address, Bytes, U256};
 use alloy_sol_types::{sol_data, SolCall, SolType};
 
 pub const MSG_SENDER: &str = "0x0000000000000000000000000000000000000001";
@@ -202,11 +202,11 @@ pub fn encode_commands(commands: &[UniversalRouterCommand], deadline: U256) -> V
 #[cfg(test)]
 mod tests {
     use super::*;
-    use alloy_core::primitives::{
+    use alloy_primitives::{
+        aliases::U48,
         hex::{decode as HexDecode, encode_prefixed as HexEncode},
         Address, Bytes, U160, U256,
     };
-    use alloy_primitives::aliases::U48;
     use std::str::FromStr;
 
     const OP_USDC: &str = "0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85";

@@ -2,19 +2,16 @@ use std::str::FromStr;
 
 use crate::swapper::{eth_address, slippage::apply_slippage_in_bp, GemSwapMode, SwapQuoteRequest, SwapRoute, SwapperError};
 use alloy_primitives::{Address, U256};
-use gem_evm::{
-    address::EthereumAddress,
-    uniswap::{
-        actions::V4Action::{SETTLE, SWAP_EXACT_IN, TAKE},
-        command::{PayPortion, Permit2Permit, Sweep, Transfer, UniversalRouterCommand, ADDRESS_THIS},
-        contracts::v4::{IV4Router::ExactInputParams, PathKey},
-    },
+use gem_evm::uniswap::{
+    actions::V4Action::{SETTLE, SWAP_EXACT_IN, TAKE},
+    command::{PayPortion, Permit2Permit, Sweep, Transfer, UniversalRouterCommand, ADDRESS_THIS},
+    contracts::v4::{IV4Router::ExactInputParams, PathKey},
 };
 
 pub fn build_commands(
     request: &SwapQuoteRequest,
-    token_in: &EthereumAddress,
-    token_out: &EthereumAddress,
+    token_in: &Address,
+    token_out: &Address,
     amount_in: u128,
     quote_amount: u128,
     swap_routes: &[SwapRoute],
@@ -23,7 +20,7 @@ pub fn build_commands(
 ) -> Result<Vec<UniversalRouterCommand>, SwapperError> {
     let options = request.options.clone();
     let fee_options = options.fee.unwrap_or_default().evm;
-    let recipient = eth_address::parse_address(&request.wallet_address)?;
+    let recipient = eth_address::parse_str(&request.wallet_address)?;
 
     let mode = request.mode.clone();
     let pay_fees = fee_options.bps > 0;
@@ -47,14 +44,14 @@ pub fn build_commands(
                     if input_is_native {
                         // if input is native ETH, we can transfer directly
                         commands.push(UniversalRouterCommand::TRANSFER(Transfer {
-                            token: Address::from_slice(&token_in.bytes),
+                            token: *token_in,
                             recipient: fee_recipient,
                             value: U256::from(fee),
                         }));
                     } else {
                         // call permit2 transfer instead
                         commands.push(UniversalRouterCommand::PERMIT2_TRANSFER_FROM(Transfer {
-                            token: Address::from_slice(&token_in.bytes),
+                            token: *token_in,
                             recipient: fee_recipient,
                             value: U256::from(fee),
                         }));
@@ -73,13 +70,13 @@ pub fn build_commands(
 
                     // insert PAY_PORTION to fee_address
                     commands.push(UniversalRouterCommand::PAY_PORTION(PayPortion {
-                        token: Address::from_slice(&token_out.bytes),
+                        token: *token_out,
                         recipient: Address::from_str(fee_options.address.as_str()).unwrap(),
                         bips: U256::from(fee_options.bps),
                     }));
 
                     commands.push(UniversalRouterCommand::SWEEP(Sweep {
-                        token: Address::from_slice(&token_out.bytes),
+                        token: *token_out,
                         recipient,
                         amount_min: U256::from(amount_out),
                     }));
@@ -97,8 +94,8 @@ pub fn build_commands(
 }
 
 fn build_v4_swap_command(
-    token_in: &EthereumAddress,
-    token_out: &EthereumAddress,
+    token_in: &Address,
+    token_out: &Address,
     amount_in: u128,
     amount_out_min: u128,
     swap_routes: &[SwapRoute],
@@ -115,18 +112,18 @@ fn build_v4_swap_command(
         .collect::<Result<Vec<PathKey>, SwapperError>>()?;
     let actions = vec![
         SWAP_EXACT_IN(ExactInputParams {
-            currencyIn: Address::from_slice(&token_in.bytes),
+            currencyIn: *token_in,
             path,
             amountIn: amount_in,
             amountOutMinimum: amount_out_min,
         }),
         SETTLE {
-            currency: Address::from_slice(&token_in.bytes),
+            currency: *token_in,
             amount: U256::from(0),
             payer_is_user: true,
         },
         TAKE {
-            currency: Address::from_slice(&token_out.bytes),
+            currency: *token_out,
             recipient: recipient.to_owned(),
             amount: U256::from(0),
         },

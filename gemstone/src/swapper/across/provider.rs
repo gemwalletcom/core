@@ -27,7 +27,6 @@ use gem_evm::{
         deployment::{AcrossDeployment, ACROSS_CONFIG_STORE, ACROSS_HUBPOOL},
         fees::{self, LpFeeCalculator, RateModel, RelayerFeeCalculator},
     },
-    address::EthereumAddress,
     erc20::IERC20,
     jsonrpc::TransactionObject,
     weth::WETH9,
@@ -35,12 +34,11 @@ use gem_evm::{
 use num_bigint::{BigInt, Sign};
 use primitives::{AssetId, Chain, EVMChain};
 
-use alloy_core::{
-    hex::decode as HexDecode,
-    hex::encode_prefixed as HexEncode,
-    primitives::{Address, Bytes, U256},
-    sol_types::{SolCall, SolValue},
+use alloy_primitives::{
+    hex::{decode as HexDecode, encode_prefixed as HexEncode},
+    Address, Bytes, U256,
 };
+use alloy_sol_types::{SolCall, SolValue};
 use async_trait::async_trait;
 use std::{fmt::Debug, str::FromStr, sync::Arc};
 
@@ -63,8 +61,8 @@ impl Across {
     }
 
     pub fn is_supported_pair(from_asset: &AssetId, to_asset: &AssetId) -> bool {
-        let from = eth_address::normalize_asset(from_asset).unwrap();
-        let to = eth_address::normalize_asset(to_asset).unwrap();
+        let from = eth_address::normalize_weth_asset(from_asset).unwrap();
+        let to = eth_address::normalize_weth_asset(to_asset).unwrap();
 
         AcrossDeployment::asset_mappings()
             .into_iter()
@@ -82,8 +80,8 @@ impl Across {
         &self,
         amount: &U256,
         original_output_asset: &AssetId,
-        output_token: &EthereumAddress,
-        user_address: &EthereumAddress,
+        output_token: &Address,
+        user_address: &Address,
         referral_fee: &SwapReferralFee,
     ) -> (Vec<u8>, U256) {
         if referral_fee.bps == 0 {
@@ -91,25 +89,24 @@ impl Across {
         }
         let fee_address = Address::from_str(&referral_fee.address).unwrap();
         let fee_amount = amount * U256::from(referral_fee.bps) / U256::from(10000);
-        let user_address = Address::from_slice(&user_address.bytes);
         let user_amount = amount - fee_amount;
 
         let calls = if original_output_asset.is_native() {
             // output_token is WETH and we need to unwrap it
-            Self::unwrap_weth_calls(output_token, amount, &user_address, &user_amount, &fee_address, &fee_amount)
+            Self::unwrap_weth_calls(output_token, amount, user_address, &user_amount, &fee_address, &fee_amount)
         } else {
-            Self::erc20_transfer_calls(output_token, &user_address, &user_amount, &fee_address, &fee_amount)
+            Self::erc20_transfer_calls(output_token, user_address, &user_amount, &fee_address, &fee_amount)
         };
         let instructions = multicall_handler::Instructions {
             calls,
-            fallbackRecipient: user_address,
+            fallbackRecipient: *user_address,
         };
         let message = instructions.abi_encode();
         (message, fee_amount)
     }
 
     fn unwrap_weth_calls(
-        weth_contract: &EthereumAddress,
+        weth_contract: &Address,
         output_amount: &U256,
         user_address: &Address,
         user_amount: &U256,
@@ -120,7 +117,7 @@ impl Across {
         let withdraw_call = WETH9::withdrawCall { wad: *output_amount };
         vec![
             multicall_handler::Call {
-                target: Address::from_slice(&weth_contract.bytes),
+                target: *weth_contract,
                 callData: withdraw_call.abi_encode().into(),
                 value: U256::from(0),
             },
@@ -138,13 +135,13 @@ impl Across {
     }
 
     fn erc20_transfer_calls(
-        token: &EthereumAddress,
+        token: &Address,
         user_address: &Address,
         user_amount: &U256,
         fee_address: &Address,
         fee_amount: &U256,
     ) -> Vec<multicall_handler::Call> {
-        let target = Address::from_slice(&token.bytes);
+        let target = *token;
         let user_transfer = IERC20::transferCall {
             to: *user_address,
             value: *user_amount,
@@ -172,8 +169,8 @@ impl Across {
         amount: &U256,
         is_native: bool,
         input_asset: &AssetId,
-        output_token: &EthereumAddress,
-        wallet_address: &EthereumAddress,
+        output_token: &Address,
+        wallet_address: &Address,
         message: &[u8],
         deployment: &AcrossDeployment,
         provider: Arc<dyn AlienProvider>,
@@ -182,17 +179,17 @@ impl Across {
         let chain_id: u32 = chain.network_id().parse().unwrap();
 
         let recipient = if message.is_empty() {
-            Address::from_slice(&wallet_address.bytes)
+            *wallet_address
         } else {
             Address::from_str(deployment.multicall_handler().as_str()).unwrap()
         };
 
         let v3_relay_data = V3RelayData {
-            depositor: Address::from_slice(&wallet_address.bytes),
+            depositor: *wallet_address,
             recipient,
             exclusiveRelayer: Address::ZERO,
             inputToken: Address::from_str(input_asset.token_id.clone().unwrap().as_ref()).unwrap(),
-            outputToken: Address::from_slice(&output_token.bytes),
+            outputToken: *output_token,
             inputAmount: *amount,
             outputAmount: U256::from(100), // safe amount
             originChainId: U256::from(chain_id),
@@ -215,10 +212,10 @@ impl Across {
     pub fn update_v3_relay_data(
         &self,
         v3_relay_data: &mut V3RelayData,
-        user_address: &EthereumAddress,
+        user_address: &Address,
         output_amount: &U256,
         original_output_asset: &AssetId,
-        output_token: &EthereumAddress,
+        output_token: &Address,
         timestamp: u32,
         referral_fee: &SwapReferralFee,
     ) -> Result<(), SwapperError> {
@@ -283,7 +280,7 @@ impl GemSwapProvider for Across {
         let input_is_native = request.from_asset.is_native();
         let from_chain = EVMChain::from_chain(request.from_asset.chain).ok_or(SwapperError::NotSupportedChain)?;
         let from_amount: U256 = request.value.parse().map_err(SwapperError::from)?;
-        let wallet_address = EthereumAddress::parse(&request.wallet_address).ok_or(SwapperError::InvalidAddress(request.wallet_address.clone()))?;
+        let wallet_address = eth_address::parse_str(&request.wallet_address)?;
 
         let _ = AcrossDeployment::deployment_by_chain(&request.from_asset.chain).ok_or(SwapperError::NotSupportedChain)?;
         let destination_deployment = AcrossDeployment::deployment_by_chain(&request.to_asset.chain).ok_or(SwapperError::NotSupportedChain)?;
@@ -291,15 +288,15 @@ impl GemSwapProvider for Across {
             return Err(SwapperError::NotSupportedPair);
         }
 
-        let input_asset = eth_address::normalize_asset(&request.from_asset).ok_or(SwapperError::NotSupportedPair)?;
-        let output_asset = eth_address::normalize_asset(&request.to_asset.clone()).ok_or(SwapperError::NotSupportedPair)?;
-        let output_token = EthereumAddress::parse(&output_asset.clone().token_id.unwrap()).ok_or(SwapperError::InvalidAddress(request.to_asset.to_string()))?;
+        let input_asset = eth_address::normalize_weth_asset(&request.from_asset).ok_or(SwapperError::NotSupportedPair)?;
+        let output_asset = eth_address::normalize_weth_asset(&request.to_asset.clone()).ok_or(SwapperError::NotSupportedPair)?;
+        let output_token = eth_address::parse_str(&output_asset.clone().token_id.unwrap())?;
 
         // Get L1 token address
         let mappings = AcrossDeployment::asset_mappings();
         let asset_mapping = mappings.iter().find(|x| x.set.contains(&input_asset)).unwrap();
         let asset_mainnet = asset_mapping.set.iter().find(|x| x.chain == Chain::Ethereum).unwrap();
-        let mainnet_token = eth_address::parse_into_address(asset_mainnet, from_chain)?;
+        let mainnet_token = eth_address::normalize_weth_address(asset_mainnet, from_chain)?;
 
         let hubpool_client = HubPoolClient {
             contract: ACROSS_HUBPOOL.into(),
@@ -439,7 +436,7 @@ impl GemSwapProvider for Across {
         let dst_chain_id: u32 = quote.request.to_asset.chain.network_id().parse().unwrap();
         let route = &quote.data.routes[0];
         let route_data = HexDecode(&route.route_data).map_err(|_| SwapperError::InvalidRoute)?;
-        let v3_relay_data = V3RelayData::abi_decode(&route_data, true).map_err(|_| SwapperError::InvalidRoute)?;
+        let v3_relay_data = V3RelayData::abi_decode(&route_data).map_err(|_| SwapperError::InvalidRoute)?;
 
         let deposit_v3_call = V3SpokePoolInterface::depositV3Call {
             depositor: v3_relay_data.depositor,
