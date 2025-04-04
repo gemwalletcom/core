@@ -2,7 +2,7 @@ use alloy_primitives::{aliases::U24, Address, Bytes};
 use std::{collections::HashSet, fmt::Display};
 
 use super::FeeTier;
-use primitives::{AssetId, EVMChain};
+use primitives::EVMChain;
 
 #[derive(Debug, Clone)]
 pub struct TokenPair {
@@ -70,11 +70,6 @@ impl BasePair {
         // array.extend(self.alternatives.iter().cloned());
         array
     }
-}
-
-pub fn asset_id_to_address(asset_id: &AssetId) -> Option<Address> {
-    let token_id = asset_id.token_id.as_ref()?;
-    token_id.parse().ok()
 }
 
 pub fn get_base_pair(chain: &EVMChain, weth_as_native: bool) -> Option<BasePair> {

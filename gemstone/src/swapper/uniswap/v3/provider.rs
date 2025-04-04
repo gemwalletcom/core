@@ -208,7 +208,7 @@ impl GemSwapProvider for UniswapV3 {
         if quote.request.from_asset.is_native() {
             return Ok(None);
         }
-        let wallet_address = eth_address::parse_str(quote.request.wallet_address.as_str())?;
+        let wallet_address = eth_address::parse_str(&quote.request.wallet_address)?;
         let (_, token_in, _, amount_in) = Self::parse_request(&quote.request)?;
         self.check_permit2_approval(
             wallet_address,
@@ -231,7 +231,7 @@ impl GemSwapProvider for UniswapV3 {
         let route_data: RouteData = serde_json::from_str(&quote.data.routes.first().unwrap().route_data).map_err(|_| SwapperError::InvalidRoute)?;
         let to_amount = U256::from_str(&route_data.min_amount_out).map_err(SwapperError::from)?;
 
-        let wallet_address = eth_address::parse_str(request.wallet_address.as_str())?;
+        let wallet_address = eth_address::parse_str(&request.wallet_address)?;
         let permit = data.permit2_data().map(|data| data.into());
 
         let mut gas_limit: Option<String> = None;

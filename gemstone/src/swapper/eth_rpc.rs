@@ -64,7 +64,7 @@ pub async fn estimate_gas(provider: Arc<dyn AlienProvider>, chain: &Chain, tx: T
     let call = EthereumRpc::EstimateGas(tx, BlockParameter::Latest);
     let resp: JsonRpcResult<String> = jsonrpc_call(&call, provider.clone(), chain).await?;
     let value = resp.take()?;
-    parse_u256(&value).ok_or(SwapperError::InvalidAmount("invalid gas price".into()))
+    parse_u256(&value).ok_or(SwapperError::InvalidAmount("invalid gas limit".into()))
 }
 
 pub async fn fetch_tx_receipt(provider: Arc<dyn AlienProvider>, chain: &Chain, tx_hash: &str) -> Result<TxReceipt, SwapperError> {

@@ -68,11 +68,11 @@ impl UniswapV4 {
         base_set.contains(token_in) || base_set.contains(token_out)
     }
 
-    fn parse_asset_address(asset: &AssetId, evm_chain: EVMChain) -> Result<Address, SwapperError> {
+    fn parse_asset_address(asset: &AssetId, _evm_chain: EVMChain) -> Result<Address, SwapperError> {
         if asset.is_native() {
             Ok(Address::ZERO)
         } else {
-            eth_address::normalize_weth_address(asset, evm_chain)
+            eth_address::parse_asset_id(asset)
         }
     }
 

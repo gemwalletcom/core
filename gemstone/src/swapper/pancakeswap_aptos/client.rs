@@ -1,5 +1,5 @@
 use crate::{
-    network::{AlienHttpMethod, AlienProvider, AlienTarget},
+    network::{AlienProvider, AlienTarget},
     swapper::SwapperError,
 };
 use gem_aptos::model::Resource;
@@ -49,13 +49,7 @@ impl PancakeSwapAptosClient {
         let path = format!("/v1/accounts/{}/resource/{}", address, resource);
         let url = format!("{}{}", endpoint, path);
 
-        let target = AlienTarget {
-            url,
-            method: AlienHttpMethod::Get,
-            headers: None,
-            body: None,
-        };
-
+        let target = AlienTarget::get(&url);
         let data = self.provider.request(target).await.map_err(SwapperError::from)?;
 
         let result: Resource<TokenPairReserve> = serde_json::from_slice(&data).map_err(|e| SwapperError::NetworkError(e.to_string()))?;

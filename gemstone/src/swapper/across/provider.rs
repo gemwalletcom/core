@@ -290,7 +290,7 @@ impl GemSwapProvider for Across {
 
         let input_asset = eth_address::normalize_weth_asset(&request.from_asset).ok_or(SwapperError::NotSupportedPair)?;
         let output_asset = eth_address::normalize_weth_asset(&request.to_asset.clone()).ok_or(SwapperError::NotSupportedPair)?;
-        let output_token = eth_address::parse_str(&output_asset.clone().token_id.unwrap())?;
+        let output_token = eth_address::parse_asset_id(&output_asset)?;
 
         // Get L1 token address
         let mappings = AcrossDeployment::asset_mappings();

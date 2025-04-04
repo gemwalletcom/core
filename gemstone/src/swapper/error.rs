@@ -90,3 +90,9 @@ impl From<std::num::ParseIntError> for SwapperError {
         Self::InvalidAmount(err.to_string())
     }
 }
+
+impl From<num_bigint::ParseBigIntError> for SwapperError {
+    fn from(err: num_bigint::ParseBigIntError) -> Self {
+        Self::InvalidAmount(err.to_string())
+    }
+}

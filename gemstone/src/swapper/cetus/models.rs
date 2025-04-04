@@ -1,8 +1,7 @@
-use num_bigint::{BigInt, ParseBigIntError};
+use num_bigint::BigInt;
 use serde::{Deserialize, Serialize};
 use sui_types::{Address, ObjectDigest, ObjectId};
 
-use crate::swapper::SwapperError;
 use gem_sui::jsonrpc::{DataObject, MoveObject, MoveObjectId, OptionU64, SuiData, I32};
 use serde_serializers::{deserialize_bigint_from_str as deserialize_bigint, serialize_bigint};
 
@@ -51,12 +50,6 @@ pub struct CetusPoolObject {
     pub tick_spacing: i32,
     #[serde(deserialize_with = "deserialize_bigint", serialize_with = "serialize_bigint")]
     pub liquidity: BigInt,
-}
-
-impl From<ParseBigIntError> for SwapperError {
-    fn from(err: ParseBigIntError) -> Self {
-        Self::ComputeQuoteError(err.to_string())
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
