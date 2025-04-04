@@ -120,7 +120,7 @@ sui-transaction-builder = { package = "sui-transaction-builder", version = "0.0.
 uniffi = { version = "0.29.1" }
 uniffi_bindgen = { version = "0.29.1" }
 
-alloy-core = { version = "0.8.24", features = ["sol-types", "json-abi", "rlp"] }
+alloy-core = { version = "0.8.25", features = ["sol-types", "json-abi", "rlp"] }
 alloy-primitives = "0.8.24"
 alloy-sol-types = "0.8.24"
 
