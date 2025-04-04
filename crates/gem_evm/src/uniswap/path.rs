@@ -1,4 +1,4 @@
-use alloy_primitives::{aliases::U24, Address, Bytes};
+use alloy_primitives::{aliases::U32, Address, Bytes};
 use std::{collections::HashSet, fmt::Display};
 
 use super::FeeTier;
@@ -13,7 +13,7 @@ pub struct TokenPair {
 
 impl Display for TokenPair {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}-{}->{}", self.token_in, self.fee_tier.as_u24(), self.token_out)
+        write!(f, "{}-{}->{}", self.token_in, self.fee_tier as u32, self.token_out)
     }
 }
 
@@ -40,12 +40,12 @@ impl TokenPair {
             TokenPair {
                 token_in: *token_in,
                 token_out: *intermediary,
-                fee_tier: fee_tier.clone(),
+                fee_tier: *fee_tier,
             },
             TokenPair {
                 token_in: *intermediary,
                 token_out: *token_out,
-                fee_tier: fee_tier.clone(),
+                fee_tier: *fee_tier,
             },
         ]
     }
@@ -169,7 +169,7 @@ pub fn get_base_pair(chain: &EVMChain, weth_as_native: bool) -> Option<BasePair>
 
 pub fn build_direct_pair(token_in: &Address, token_out: &Address, fee_tier: u32) -> Bytes {
     let mut bytes: Vec<u8> = vec![];
-    let fee = U24::from(fee_tier);
+    let fee = U32::from(fee_tier);
     bytes.extend(token_in.as_slice());
     bytes.extend(&fee.to_be_bytes_vec());
     bytes.extend(token_out.as_slice());
@@ -199,7 +199,7 @@ pub fn build_pairs(token_pairs: &[TokenPair]) -> Bytes {
 
     let mut bytes: Vec<u8> = vec![];
     for (idx, token_pair) in token_pairs.iter().enumerate() {
-        let fee = U24::from::<u32>(token_pair.fee_tier.clone() as u32);
+        let fee = U32::from(token_pair.fee_tier as u32);
         if idx == 0 {
             bytes.extend(token_pair.token_in.as_slice());
         }

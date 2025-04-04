@@ -7,7 +7,7 @@ pub mod deployment;
 pub mod path;
 
 // hundredths of bps (e.g. 0.3% is 3000)
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 #[repr(u32)]
 pub enum FeeTier {
     Hundred = 100,
@@ -20,7 +20,7 @@ pub enum FeeTier {
 
 impl FeeTier {
     pub fn as_u24(&self) -> U24 {
-        let fee_bytes = (self.clone() as u32).to_le_bytes();
+        let fee_bytes = (*self as u32).to_le_bytes();
         U24::from_le_bytes([fee_bytes[0], fee_bytes[1], fee_bytes[2]])
     }
 

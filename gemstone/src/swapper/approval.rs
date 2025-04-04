@@ -48,7 +48,7 @@ pub async fn check_approval_erc20(
 
     let response = jsonrpc_call(&allowance_call, provider.clone(), chain).await.map_err(SwapperError::from)?;
     let result: String = response.take().map_err(SwapperError::from)?;
-    let decoded = HexDecode(result).map_err(|_| SwapperError::ABIError("failed to decode hex".into()))?;
+    let decoded = HexDecode(result).map_err(|_| SwapperError::ABIError("failed to decode allowance_call result".into()))?;
 
     let allowance = IERC20::allowanceCall::abi_decode_returns(&decoded).map_err(SwapperError::from)?;
     if allowance < amount {
