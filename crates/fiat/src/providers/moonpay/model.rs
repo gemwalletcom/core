@@ -8,6 +8,7 @@ pub struct MoonPayBuyQuote {
     pub quote_currency_amount: f64,
     pub quote_currency_code: String,
     pub quote_currency: Currency,
+    pub total_amount: f64,
 }
 
 #[derive(Debug, Clone, Deserialize)]

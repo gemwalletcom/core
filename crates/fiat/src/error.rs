@@ -8,6 +8,9 @@ pub enum FiatError {
     #[error("Sell not allowed")]
     FiatSellNotAllowed,
 
+    #[error("Minimum Amount is {0}")]
+    MinimumAmount(f64),
+
     #[error("Unsupported country: {0}")]
     UnsupportedCountry(String),
 

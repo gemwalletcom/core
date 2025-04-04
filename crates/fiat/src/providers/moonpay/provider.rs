@@ -23,6 +23,10 @@ impl FiatProvider for MoonPayClient {
             .get_buy_quote(request_map.symbol.to_lowercase(), request.fiat_currency.to_lowercase(), request.fiat_amount)
             .await?;
 
+        if quote.total_amount > request.fiat_amount {
+            return Err(Box::new(FiatError::MinimumAmount(quote.total_amount)));
+        }
+
         Ok(self.get_buy_fiat_quote(request, quote))
     }
 
