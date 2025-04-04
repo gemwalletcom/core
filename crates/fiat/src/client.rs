@@ -3,7 +3,6 @@ use number_formatter::BigNumberFormatter;
 use std::collections::{HashMap, HashSet};
 use std::error::Error;
 use std::time::Duration;
-use storage::models::FiatProviderCountry;
 
 use crate::{
     error::FiatError,
@@ -12,7 +11,7 @@ use crate::{
     FiatProvider, IPCheckClient,
 };
 use futures::future::join_all;
-use primitives::{Asset, FiatAssets, FiatQuote, FiatQuoteError, FiatQuoteRequest, FiatQuoteType, FiatQuotes};
+use primitives::{Asset, FiatAssets, FiatProviderCountry, FiatQuote, FiatQuoteError, FiatQuoteRequest, FiatQuoteType, FiatQuotes};
 use reqwest::Client as RequestClient;
 use storage::DatabaseClient;
 
@@ -46,6 +45,10 @@ impl FiatClient {
             version: assets.clone().len() as u32,
             asset_ids: assets,
         })
+    }
+
+    pub async fn get_fiat_providers_countries(&mut self) -> Result<Vec<FiatProviderCountry>, Box<dyn Error + Send + Sync>> {
+        Ok(self.database.get_fiat_providers_countries()?.into_iter().map(|x| x.as_primitive()).collect())
     }
 
     pub async fn get_off_ramp_assets(&mut self) -> Result<FiatAssets, Box<dyn Error + Send + Sync>> {
@@ -108,7 +111,7 @@ impl FiatClient {
 
     pub async fn get_quotes(&mut self, request: FiatQuoteRequest) -> Result<FiatQuotes, Box<dyn Error + Send + Sync>> {
         let asset = self.database.get_asset(&request.asset_id)?.as_primitive();
-        let fiat_providers_countries = self.database.get_fiat_providers_countries()?;
+        let fiat_providers_countries = self.get_fiat_providers_countries().await?;
         let ip_address_info = self.get_ip_address(&request.ip_address).await?;
         let fiat_mapping_map = self.get_fiat_mapping(&request.asset_id)?;
 

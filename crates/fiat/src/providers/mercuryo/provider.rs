@@ -1,10 +1,10 @@
 use crate::{
-    model::{FiatMapping, FiatProviderAsset, FiatProviderCountry},
+    model::{FiatMapping, FiatProviderAsset},
     FiatProvider,
 };
 use async_trait::async_trait;
 use primitives::{fiat_transaction::FiatQuoteType, FiatBuyQuote, FiatSellQuote};
-use primitives::{FiatProviderName, FiatQuote, FiatTransaction, FiatTransactionStatus};
+use primitives::{FiatProviderCountry, FiatProviderName, FiatQuote, FiatTransaction, FiatTransactionStatus};
 use std::error::Error;
 
 use super::{client::MercuryoClient, model::Webhook};
@@ -57,6 +57,7 @@ impl FiatProvider for MercuryoClient {
             .data
             .into_iter()
             .map(|x| FiatProviderCountry {
+                provider: Self::NAME.id(),
                 alpha2: x.to_uppercase(),
                 is_allowed: true,
             })

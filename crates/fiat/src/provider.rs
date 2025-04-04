@@ -1,8 +1,8 @@
 use std::sync::Arc;
 
-use crate::model::{FiatMapping, FiatProviderAsset, FiatProviderCountry};
+use crate::model::{FiatMapping, FiatProviderAsset};
 use async_trait::async_trait;
-use primitives::{FiatBuyQuote, FiatProviderName, FiatQuote, FiatSellQuote, FiatTransaction};
+use primitives::{FiatBuyQuote, FiatProviderCountry, FiatProviderName, FiatQuote, FiatSellQuote, FiatTransaction};
 
 #[async_trait]
 pub trait FiatProvider {

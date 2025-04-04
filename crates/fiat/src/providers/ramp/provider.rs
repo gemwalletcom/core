@@ -1,8 +1,10 @@
-use primitives::{AssetId, FiatBuyQuote, FiatProviderName, FiatQuote, FiatQuoteType, FiatSellQuote, FiatTransaction, FiatTransactionStatus};
+use primitives::{
+    AssetId, FiatBuyQuote, FiatProviderCountry, FiatProviderName, FiatQuote, FiatQuoteType, FiatSellQuote, FiatTransaction, FiatTransactionStatus,
+};
 use std::error::Error;
 
 use crate::{
-    model::{FiatMapping, FiatProviderAsset, FiatProviderCountry},
+    model::{FiatMapping, FiatProviderAsset},
     FiatProvider,
 };
 

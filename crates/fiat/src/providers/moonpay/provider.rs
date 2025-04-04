@@ -1,6 +1,6 @@
 use crate::{
     error::FiatError,
-    model::{FiatMapping, FiatProviderAsset, FiatProviderCountry},
+    model::{FiatMapping, FiatProviderAsset},
     providers::moonpay::model::{Data, Webhook},
     FiatProvider,
 };
@@ -8,7 +8,9 @@ use async_trait::async_trait;
 use std::error::Error;
 
 use super::client::MoonPayClient;
-use primitives::{AssetId, FiatBuyQuote, FiatProviderName, FiatQuote, FiatQuoteType, FiatSellQuote, FiatTransaction, FiatTransactionStatus};
+use primitives::{
+    AssetId, FiatBuyQuote, FiatProviderCountry, FiatProviderName, FiatQuote, FiatQuoteType, FiatSellQuote, FiatTransaction, FiatTransactionStatus,
+};
 
 #[async_trait]
 impl FiatProvider for MoonPayClient {
@@ -52,6 +54,7 @@ impl FiatProvider for MoonPayClient {
             .await?
             .into_iter()
             .map(|x| FiatProviderCountry {
+                provider: Self::NAME.id(),
                 alpha2: x.alpha2,
                 is_allowed: x.is_allowed,
             })

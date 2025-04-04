@@ -1,10 +1,10 @@
 use crate::{
-    model::{FiatMapping, FiatProviderAsset, FiatProviderCountry},
+    model::{FiatMapping, FiatProviderAsset},
     FiatProvider,
 };
 use async_trait::async_trait;
 use primitives::{FiatBuyQuote, FiatQuoteType, FiatSellQuote};
-use primitives::{FiatProviderName, FiatQuote, FiatTransaction, FiatTransactionStatus};
+use primitives::{FiatProviderCountry, FiatProviderName, FiatQuote, FiatTransaction, FiatTransactionStatus};
 use std::error::Error;
 
 use super::{
@@ -68,6 +68,7 @@ impl FiatProvider for BanxaClient {
             .await?
             .into_iter()
             .map(|x| FiatProviderCountry {
+                provider: Self::NAME.id(),
                 alpha2: x.id,
                 is_allowed: true,
             })

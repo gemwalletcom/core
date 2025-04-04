@@ -1,11 +1,11 @@
 use super::{client::TransakClient, model::WebhookPayload};
 use crate::{
-    model::{FiatMapping, FiatProviderAsset, FiatProviderCountry},
+    model::{FiatMapping, FiatProviderAsset},
     providers::transak::model::WebhookEncryptedData,
     FiatProvider,
 };
 use async_trait::async_trait;
-use primitives::{FiatBuyQuote, FiatProviderName, FiatQuote, FiatQuoteType, FiatSellQuote, FiatTransaction, FiatTransactionStatus};
+use primitives::{FiatBuyQuote, FiatProviderCountry, FiatProviderName, FiatQuote, FiatQuoteType, FiatSellQuote, FiatTransaction, FiatTransactionStatus};
 use std::error::Error;
 
 #[async_trait]
@@ -49,6 +49,7 @@ impl FiatProvider for TransakClient {
             .response
             .into_iter()
             .map(|x| FiatProviderCountry {
+                provider: Self::NAME.id(),
                 alpha2: x.alpha2,
                 is_allowed: x.is_allowed,
             })

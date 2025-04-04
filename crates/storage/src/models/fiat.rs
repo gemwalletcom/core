@@ -140,12 +140,20 @@ pub struct FiatProviderCountry {
 }
 
 impl FiatProviderCountry {
-    pub fn new(provider: &str, alpha2: &str, is_allowed: bool) -> Self {
+    pub fn from_primitive(primitive: primitives::FiatProviderCountry) -> Self {
         Self {
-            id: format!("{}_{}", provider, alpha2).to_lowercase(),
-            provider: provider.to_string(),
-            alpha2: alpha2.to_string(),
-            is_allowed,
+            id: format!("{}_{}", primitive.provider, primitive.alpha2).to_lowercase(),
+            provider: primitive.provider.to_string(),
+            alpha2: primitive.alpha2.to_string(),
+            is_allowed: primitive.is_allowed,
+        }
+    }
+
+    pub fn as_primitive(&self) -> primitives::FiatProviderCountry {
+        primitives::FiatProviderCountry {
+            provider: self.provider.clone(),
+            alpha2: self.alpha2.clone(),
+            is_allowed: self.is_allowed,
         }
     }
 }
