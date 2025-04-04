@@ -35,6 +35,7 @@ impl FiatProvider for TransakClient {
         let assets = self
             .get_supported_assets()
             .await?
+            .response
             .into_iter()
             .flat_map(Self::map_asset)
             .collect::<Vec<FiatProviderAsset>>();

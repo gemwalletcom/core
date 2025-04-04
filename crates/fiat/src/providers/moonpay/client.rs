@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use crate::model::{filter_token_id, FiatProviderAsset};
 
 use super::mapper::map_asset_chain;
@@ -91,21 +89,14 @@ impl MoonPayClient {
         let token_id = filter_token_id(chain, asset.clone().metadata?.contract_address);
         let enabled = !asset.is_suspended.unwrap_or(true);
 
-        let mut unsupported_countries = HashMap::new();
-        if let Some(countries) = asset.clone().not_allowed_countries {
-            for country in countries {
-                unsupported_countries.insert(country, vec![]);
-            }
-        }
-
         Some(FiatProviderAsset {
             id: asset.clone().code,
             chain,
             token_id,
-            symbol: asset.code,
-            network: asset.metadata.map(|x| x.network_code),
+            symbol: asset.clone().code,
+            network: asset.clone().metadata.map(|x| x.network_code),
             enabled,
-            unsupported_countries: Some(unsupported_countries),
+            unsupported_countries: Some(asset.unsupported_countries()),
         })
     }
 

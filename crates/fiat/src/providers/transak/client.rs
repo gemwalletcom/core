@@ -42,12 +42,12 @@ impl TransakClient {
         fiat_amount: Option<f64>,
         crypto_amount: Option<&str>,
         network: String,
-        ip_address: String,
+        country_code: String,
     ) -> Result<TransakQuote, reqwest::Error> {
-        let url = format!("{}/api/v2/currencies/price", TRANSAK_API_URL);
+        let url = format!("{}/api/v1/pricing/public/quotes", TRANSAK_API_URL);
         let mut query = vec![
             ("isBuyOrSell", quote_type.to_string()),
-            ("ipAddress", ip_address.to_string()),
+            ("quoteCountryCode", country_code.to_string()),
             ("fiatCurrency", fiat_currency.to_string()),
             ("cryptoCurrency", symbol.to_string()),
             ("network", network.to_string()),
@@ -100,11 +100,10 @@ impl TransakClient {
         components.as_str().to_string()
     }
 
-    pub async fn get_supported_assets(&self) -> Result<Vec<Asset>, reqwest::Error> {
+    pub async fn get_supported_assets(&self) -> Result<TransakResponse<Vec<Asset>>, reqwest::Error> {
         let url = format!("{}/api/v2/currencies/crypto-currencies", TRANSAK_API_URL);
         let response = self.client.get(&url).send().await?;
-        let assets = response.json::<TransakResponse<Vec<Asset>>>().await?.response;
-        Ok(assets)
+        response.json().await
     }
 
     pub fn map_asset(asset: Asset) -> Option<FiatProviderAsset> {
@@ -115,10 +114,10 @@ impl TransakClient {
             id: asset.clone().unique_id,
             chain,
             token_id,
-            symbol: asset.symbol,
-            network: Some(asset.network.name),
+            symbol: asset.clone().symbol,
+            network: Some(asset.clone().network.name),
             enabled: asset.is_allowed,
-            unsupported_countries: None,
+            unsupported_countries: Some(asset.unsupported_countries()),
         })
     }
 

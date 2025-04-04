@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use serde::Deserialize;
 
 #[derive(Debug, Clone, Deserialize)]
@@ -46,6 +48,22 @@ pub struct Asset {
     pub not_allowed_us_states: Option<Vec<String>>,
     #[serde(rename = "notAllowedCountries")]
     pub not_allowed_countries: Option<Vec<String>>,
+}
+
+impl Asset {
+    pub fn unsupported_countries(&self) -> HashMap<String, Vec<String>> {
+        let mut map = HashMap::new();
+
+        for country in &self.not_allowed_countries.clone().unwrap_or_default() {
+            map.insert(country.clone(), vec![]);
+        }
+
+        if let Some(states) = &self.not_allowed_us_states {
+            map.insert("US".to_string(), states.clone());
+        }
+
+        map
+    }
 }
 
 #[derive(Debug, Clone, Deserialize)]

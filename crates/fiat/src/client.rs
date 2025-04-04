@@ -1,3 +1,4 @@
+use cacher::CacherClient;
 use number_formatter::BigNumberFormatter;
 use std::error::Error;
 use std::time::Duration;
@@ -15,16 +16,19 @@ use storage::DatabaseClient;
 
 pub struct FiatClient {
     database: DatabaseClient,
+    cacher: CacherClient,
     providers: Vec<Box<dyn FiatProvider + Send + Sync>>,
     ip_check_client: IPCheckClient,
 }
 
 impl FiatClient {
-    pub async fn new(database_url: &str, providers: Vec<Box<dyn FiatProvider + Send + Sync>>, ip_check_client: IPCheckClient) -> Self {
+    pub async fn new(database_url: &str, cacher_url: &str, providers: Vec<Box<dyn FiatProvider + Send + Sync>>, ip_check_client: IPCheckClient) -> Self {
         let database = DatabaseClient::new(database_url);
+        let cacher = CacherClient::new(cacher_url);
 
         Self {
             database,
+            cacher,
             providers,
             ip_check_client,
         }
@@ -132,7 +136,10 @@ impl FiatClient {
     }
 
     pub async fn get_ip_address(&mut self, ip_address: &str) -> Result<IPAddressInfo, Box<dyn Error + Send + Sync>> {
-        self.ip_check_client.get_ip_address(ip_address).await
+        let key = format!("fiat_ip_resolver_ip_address:{}", ip_address);
+        self.cacher
+            .get_or_set_value(&key, || self.ip_check_client.get_ip_address(ip_address), Some(86400))
+            .await
     }
 
     async fn get_quotes_in_parallel<F>(
