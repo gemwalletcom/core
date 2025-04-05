@@ -1,4 +1,4 @@
-use alloy_core::sol;
+use alloy_sol_types::sol;
 
 sol!(
     function name() public view virtual returns (string memory);

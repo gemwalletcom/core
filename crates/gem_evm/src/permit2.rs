@@ -1,4 +1,4 @@
-use alloy_core::sol;
+use alloy_sol_types::sol;
 use primitives::eip712::EIP712Type;
 use serde::{Deserialize, Serialize};
 

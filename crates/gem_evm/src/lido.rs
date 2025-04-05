@@ -1,8 +1,9 @@
-use crate::erc2612::Permit;
-use alloy_core::primitives::{Address, FixedBytes, U256};
-use alloy_core::{sol, sol_types::SolCall};
+use alloy_primitives::{Address, FixedBytes, U256};
+use alloy_sol_types::{sol, SolCall};
 use anyhow::Error;
 use std::str::FromStr;
+
+use crate::erc2612::Permit;
 
 sol! {
     #[derive(Debug, PartialEq)]
@@ -82,8 +83,8 @@ pub fn encode_get_withdrawal_request_ids(owner: &str) -> Result<Vec<u8>, Error> 
 }
 
 pub fn decode_get_withdrawal_request_ids(result: &[u8]) -> Result<Vec<String>, Error> {
-    let decoded = WithdrawalQueueERC721::getWithdrawalRequestsCall::abi_decode_returns(result, true).map_err(Error::msg)?;
-    let requests = decoded.requestsIds.into_iter().map(|x| x.to_string()).collect();
+    let decoded = WithdrawalQueueERC721::getWithdrawalRequestsCall::abi_decode_returns(result).map_err(Error::msg)?;
+    let requests = decoded.into_iter().map(|x| x.to_string()).collect();
     Ok(requests)
 }
 
@@ -99,8 +100,8 @@ pub fn encode_get_withdrawal_request_status(request_ids: &[String]) -> Result<Ve
 }
 
 pub fn decode_get_withdrawal_request_status(result: &[u8]) -> Result<Vec<WithdrawalRequestStatus>, Error> {
-    let decoded = WithdrawalQueueERC721::getWithdrawalStatusCall::abi_decode_returns(result, true).map_err(Error::msg)?;
-    Ok(decoded.statuses)
+    let decoded = WithdrawalQueueERC721::getWithdrawalStatusCall::abi_decode_returns(result).map_err(Error::msg)?;
+    Ok(decoded.into_iter().collect())
 }
 
 pub fn encode_claim_withdrawal(request_id: &str) -> Result<Vec<u8>, Error> {
@@ -110,8 +111,8 @@ pub fn encode_claim_withdrawal(request_id: &str) -> Result<Vec<u8>, Error> {
 }
 
 pub fn decode_request_withdrawals_return(result: &[u8]) -> Result<Vec<String>, Error> {
-    let decoded = WithdrawalQueueERC721::requestWithdrawalsWithPermitCall::abi_decode_returns(result, true).map_err(Error::msg)?;
-    Ok(decoded.requestIds.into_iter().map(|x| x.to_string()).collect())
+    let decoded = WithdrawalQueueERC721::requestWithdrawalsWithPermitCall::abi_decode_returns(result).map_err(Error::msg)?;
+    Ok(decoded.into_iter().map(|x| x.to_string()).collect())
 }
 
 #[cfg(test)]

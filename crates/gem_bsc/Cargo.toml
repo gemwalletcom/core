@@ -8,4 +8,5 @@ edition = { workspace = true }
 hex = { workspace = true }
 itoa = { workspace = true }
 anyhow = { workspace = true }
-alloy-core = { workspace = true }
+alloy-primitives = { workspace = true }
+alloy-sol-types = { workspace = true }

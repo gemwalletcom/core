@@ -37,7 +37,7 @@ impl Jupiter {
     pub fn get_asset_address(&self, asset_id: &AssetId) -> Result<String, SwapperError> {
         get_asset_address(asset_id)
             .map(|x| x.to_string())
-            .ok_or_else(|| SwapperError::InvalidAddress { address: asset_id.to_string() })
+            .ok_or(SwapperError::InvalidAddress(asset_id.to_string()))
     }
 
     pub fn get_fee_mint(&self, mode: &GemSwapMode, input: &str, output: &str) -> String {
@@ -84,9 +84,7 @@ impl Jupiter {
         let rpc_call = SolanaRpc::GetAccountInfo(fee_account.clone());
         let rpc_result: JsonRpcResult<ValueResult<Option<AccountData>>> = jsonrpc_call_with_cache(&rpc_call, provider.clone(), &Chain::Solana, Some(3600))
             .await
-            .map_err(|e| SwapperError::NetworkError {
-                msg: format!("get_account_info error: {:?}", e),
-            })?;
+            .map_err(|e| SwapperError::NetworkError(format!("get_account_info error: {:?}", e)))?;
         match rpc_result {
             JsonRpcResult::Value(resp) => {
                 if resp.result.value.is_none() {
@@ -134,7 +132,7 @@ impl GemSwapProvider for Jupiter {
         let swap_quote = client.get_swap_quote(quote_request).await?;
         let computed_auto_slippage = swap_quote.computed_auto_slippage.unwrap_or(swap_quote.slippage_bps);
 
-        let out_amount: U256 = swap_quote.out_amount.parse().map_err(|_| SwapperError::InvalidAmount)?;
+        let out_amount: U256 = swap_quote.out_amount.parse().map_err(SwapperError::from)?;
         // out_amount doesn't take account of slippage and platform fee
         let to_value = apply_slippage_in_bp(&out_amount, platform_fee_bps);
 

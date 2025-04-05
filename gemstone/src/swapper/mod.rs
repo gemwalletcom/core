@@ -7,9 +7,9 @@ use std::{fmt::Debug, sync::Arc};
 mod approval;
 mod chainlink;
 mod custom_types;
+mod eth_address;
 mod eth_rpc;
 mod permit2_data;
-mod weth_address;
 
 pub mod across;
 pub mod asset;
