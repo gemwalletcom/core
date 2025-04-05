@@ -48,3 +48,10 @@ impl FiatProviderName {
         Self::iter().collect::<Vec<_>>()
     }
 }
+
+#[derive(Debug, Clone)]
+pub struct FiatProviderCountry {
+    pub provider: String,
+    pub alpha2: String,
+    pub is_allowed: bool,
+}

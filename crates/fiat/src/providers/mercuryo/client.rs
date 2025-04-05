@@ -24,13 +24,7 @@ impl MercuryoClient {
         MercuryoClient { client, widget_id, secret_key }
     }
 
-    pub async fn get_quote_buy(
-        &self,
-        fiat_currency: String,
-        symbol: String,
-        fiat_amount: f64,
-        network: String,
-    ) -> Result<Quote, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn get_quote_buy(&self, fiat_currency: String, symbol: String, fiat_amount: f64, network: String) -> Result<Quote, reqwest::Error> {
         let query = QuoteQuery {
             from: fiat_currency.clone(),
             to: symbol.clone(),
@@ -42,13 +36,7 @@ impl MercuryoClient {
         Ok(self.client.get(url.as_str()).query(&query).send().await?.json::<Response<Quote>>().await?.data)
     }
 
-    pub async fn get_quote_sell(
-        &self,
-        fiat_currency: String,
-        symbol: String,
-        fiat_amount: f64,
-        network: String,
-    ) -> Result<Quote, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn get_quote_sell(&self, fiat_currency: String, symbol: String, fiat_amount: f64, network: String) -> Result<Quote, reqwest::Error> {
         let query = QuoteSellQuery {
             from: symbol.clone(),
             to: fiat_currency.clone(),
@@ -62,10 +50,22 @@ impl MercuryoClient {
         Ok(self.client.get(url.as_str()).query(&query).send().await?.json::<Response<Quote>>().await?.data)
     }
 
-    pub async fn get_assets(&self) -> Result<Vec<Asset>, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn get_assets(&self) -> Result<Vec<Asset>, reqwest::Error> {
         let url = format!("{}/v1.6/lib/currencies", MERCURYO_API_BASE_URL);
         let response = self.client.get(&url).send().await?.json::<Response<Currencies>>().await?;
         Ok(response.data.config.crypto_currencies)
+    }
+
+    pub async fn get_countries(&self) -> Result<Response<Vec<String>>, reqwest::Error> {
+        let query = [("type", "alpha2")];
+        Ok(self
+            .client
+            .get(format!("{}/v1.6/public/card-countries", MERCURYO_API_BASE_URL))
+            .query(&query)
+            .send()
+            .await?
+            .json()
+            .await?)
     }
 
     pub fn map_asset(asset: Asset) -> Option<FiatProviderAsset> {

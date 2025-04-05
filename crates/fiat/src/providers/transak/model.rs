@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use serde::Deserialize;
 
 #[derive(Debug, Clone, Deserialize)]
@@ -12,7 +14,7 @@ pub struct TransakQuote {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct TransakResponse<T> {
+pub struct Response<T> {
     pub response: T,
 }
 
@@ -25,6 +27,20 @@ pub struct Asset {
     pub network: AssetNetwork,
     pub address: Option<String>,
     pub is_allowed: bool,
+    pub kyc_countries_not_supported: Vec<String>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Country {
+    pub alpha2: String,
+    pub is_allowed: bool,
+}
+
+impl Asset {
+    pub fn unsupported_countries(&self) -> HashMap<String, Vec<String>> {
+        self.kyc_countries_not_supported.clone().into_iter().map(|country| (country, vec![])).collect()
+    }
 }
 
 #[derive(Debug, Clone, Deserialize)]

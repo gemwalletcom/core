@@ -73,7 +73,7 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
     let swap_client = SwapClient::new(postgres_url).await;
     let providers = FiatProviderFactory::new_providers(settings_clone.clone());
     let ip_check_client = FiatProviderFactory::new_ip_check_client(settings_clone.clone());
-    let fiat_client = FiatClient::new(postgres_url, providers, ip_check_client).await;
+    let fiat_client = FiatClient::new(postgres_url, redis_url, providers, ip_check_client).await;
     let nft_client = NFTClient::new(
         postgres_url,
         &settings.nft.nftscan.key.secret,

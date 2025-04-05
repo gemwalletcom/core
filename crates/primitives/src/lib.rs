@@ -40,7 +40,7 @@ pub mod tokenlist;
 pub use self::fiat_assets::FiatAsset;
 pub use self::fiat_assets::FiatAssets;
 pub mod fiat_provider;
-pub use self::fiat_provider::FiatProviderName;
+pub use self::fiat_provider::{FiatProviderCountry, FiatProviderName};
 pub mod fiat_quote_request;
 pub use self::fiat_quote_request::{FiatBuyQuote, FiatQuoteAmount, FiatQuoteRequest, FiatQuoteTypeResult, FiatSellQuote};
 pub mod fiat_rate;
