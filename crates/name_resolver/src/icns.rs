@@ -50,7 +50,7 @@ impl NameClient for IcnsClient {
     }
 
     async fn resolve(&self, name: &str, chain: Chain) -> Result<String, Box<dyn Error + Send + Sync>> {
-        let suffix = name.split('.').last().unwrap_or_default();
+        let suffix = name.split('.').next_back().unwrap_or_default();
         if !DOMAIN_MAP.contains_key(suffix) {
             return Err(format!("unsupported domain: {}", suffix).into());
         }

@@ -1,9 +1,7 @@
-use std::collections::HashMap;
-
 use crate::model::{filter_token_id, FiatProviderAsset};
 
 use super::mapper::map_asset_chain;
-use super::model::{Asset, MoonPayBuyQuote, MoonPayIpAddress, MoonPaySellQuote};
+use super::model::{Asset, Country, MoonPayBuyQuote, MoonPayIpAddress, MoonPaySellQuote};
 use base64::{engine::general_purpose, Engine as _};
 use hmac::{Hmac, Mac};
 use number_formatter::BigNumberFormatter;
@@ -69,11 +67,15 @@ impl MoonPayClient {
             .await
     }
 
-    pub async fn get_assets(&self) -> Result<Vec<Asset>, Box<dyn std::error::Error + Send + Sync>> {
-        Ok(self.client.get(format!("{}/v3/currencies", MOONPAY_API_BASE_URL)).send().await?.json().await?)
+    pub async fn get_assets(&self) -> Result<Vec<Asset>, reqwest::Error> {
+        self.client.get(format!("{}/v3/currencies", MOONPAY_API_BASE_URL)).send().await?.json().await
     }
 
-    pub async fn get_transactions(&self) -> Result<Vec<String>, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn get_countries(&self) -> Result<Vec<Country>, reqwest::Error> {
+        self.client.get(format!("{}/v3/countries", MOONPAY_API_BASE_URL)).send().await?.json().await
+    }
+
+    pub async fn get_transactions(&self) -> Result<Vec<String>, reqwest::Error> {
         // let url = format!("{}/v1/transactions", MOONPAY_API_BASE_URL);
         // let assets = self
         //     .client
@@ -88,24 +90,26 @@ impl MoonPayClient {
 
     pub fn map_asset(asset: Asset) -> Option<FiatProviderAsset> {
         let chain = map_asset_chain(asset.clone());
-        let token_id = filter_token_id(chain, asset.clone().metadata?.contract_address);
-        let enabled = !asset.is_suspended.unwrap_or(true);
+        let contract_address = match asset.metadata.as_ref().map(|m| m.network_code.as_str()) {
+            Some("ripple") => asset
+                .metadata
+                .as_ref()
+                .and_then(|m| m.contract_address.as_deref().and_then(|s| s.split('.').next_back().map(String::from))),
+            // Add other blockchain specific rules here
+            _ => asset.clone().metadata?.contract_address,
+        };
 
-        let mut unsupported_countries = HashMap::new();
-        if let Some(countries) = asset.clone().not_allowed_countries {
-            for country in countries {
-                unsupported_countries.insert(country, vec![]);
-            }
-        }
+        let token_id = filter_token_id(chain, contract_address);
+        let enabled = !asset.is_suspended.unwrap_or(true);
 
         Some(FiatProviderAsset {
             id: asset.clone().code,
             chain,
             token_id,
-            symbol: asset.code,
-            network: asset.metadata.map(|x| x.network_code),
+            symbol: asset.clone().code,
+            network: asset.clone().metadata.map(|x| x.network_code),
             enabled,
-            unsupported_countries: Some(unsupported_countries),
+            unsupported_countries: Some(asset.unsupported_countries()),
         })
     }
 

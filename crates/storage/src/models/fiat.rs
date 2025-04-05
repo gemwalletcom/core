@@ -129,6 +129,35 @@ impl FiatTransaction {
     }
 }
 
+#[derive(Debug, Queryable, Selectable, Insertable, AsChangeset, Clone)]
+#[diesel(table_name = crate::schema::fiat_providers_countries)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+pub struct FiatProviderCountry {
+    pub id: String,
+    pub provider: String,
+    pub alpha2: String,
+    pub is_allowed: bool,
+}
+
+impl FiatProviderCountry {
+    pub fn from_primitive(primitive: primitives::FiatProviderCountry) -> Self {
+        Self {
+            id: format!("{}_{}", primitive.provider, primitive.alpha2).to_lowercase(),
+            provider: primitive.provider.to_string(),
+            alpha2: primitive.alpha2.to_string(),
+            is_allowed: primitive.is_allowed,
+        }
+    }
+
+    pub fn as_primitive(&self) -> primitives::FiatProviderCountry {
+        primitives::FiatProviderCountry {
+            provider: self.provider.clone(),
+            alpha2: self.alpha2.clone(),
+            is_allowed: self.is_allowed,
+        }
+    }
+}
+
 #[derive(AsChangeset)]
 #[diesel(table_name = crate::schema::fiat_transactions)]
 pub struct FiatTransactionUpdate {

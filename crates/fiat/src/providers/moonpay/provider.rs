@@ -8,7 +8,9 @@ use async_trait::async_trait;
 use std::error::Error;
 
 use super::client::MoonPayClient;
-use primitives::{AssetId, FiatBuyQuote, FiatProviderName, FiatQuote, FiatQuoteType, FiatSellQuote, FiatTransaction, FiatTransactionStatus};
+use primitives::{
+    AssetId, FiatBuyQuote, FiatProviderCountry, FiatProviderName, FiatQuote, FiatQuoteType, FiatSellQuote, FiatTransaction, FiatTransactionStatus,
+};
 
 #[async_trait]
 impl FiatProvider for MoonPayClient {
@@ -20,6 +22,10 @@ impl FiatProvider for MoonPayClient {
         let quote = self
             .get_buy_quote(request_map.symbol.to_lowercase(), request.fiat_currency.to_lowercase(), request.fiat_amount)
             .await?;
+
+        if quote.total_amount > request.fiat_amount {
+            return Err(Box::new(FiatError::MinimumAmount(quote.total_amount)));
+        }
 
         Ok(self.get_buy_fiat_quote(request, quote))
     }
@@ -44,6 +50,19 @@ impl FiatProvider for MoonPayClient {
             .flat_map(Self::map_asset)
             .collect::<Vec<FiatProviderAsset>>();
         Ok(assets)
+    }
+
+    async fn get_countries(&self) -> Result<Vec<FiatProviderCountry>, Box<dyn std::error::Error + Send + Sync>> {
+        Ok(self
+            .get_countries()
+            .await?
+            .into_iter()
+            .map(|x| FiatProviderCountry {
+                provider: Self::NAME.id(),
+                alpha2: x.alpha2,
+                is_allowed: x.is_allowed,
+            })
+            .collect())
     }
 
     // full transaction: https://dev.moonpay.com/reference/reference-webhooks-buy

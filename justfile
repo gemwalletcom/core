@@ -44,7 +44,8 @@ test CRATE:
 format:
     cargo fmt -q --all
 
-fix: lint
+fix:
+    @cargo clippy --fix --workspace --all-targets --allow-dirty
 
 lint:
     @cargo clippy --version
