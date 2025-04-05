@@ -1,0 +1,13 @@
+[package]
+name = "coinmarketcap"
+edition = { workspace = true }
+version = { workspace = true }
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+reqwest = { workspace = true }
+chrono = { workspace = true }
+reqwest-middleware = { workspace = true }
+primitives = { path = "../primitives" }
+serde_serializers = { path = "../serde_serializers" }

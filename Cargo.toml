@@ -44,6 +44,7 @@ members = [
     "crates/number_formatter",
     "crates/pricer_dex",
     "crates/alien_provider",
+    "crates/coinmarketcap",
 ]
 
 default-members = [

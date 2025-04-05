@@ -1,0 +1,800 @@
+{
+  "data": {
+    "points": [
+      {
+        "name": "Bitcoin Season",
+        "altcoinIndex": "14",
+        "altcoinMarketcap": "1051829120736.28",
+        "timestamp": "1743552000"
+      },
+      {
+        "name": "Bitcoin Season",
+        "altcoinIndex": "14",
+        "altcoinMarketcap": "1007097074837.57",
+        "timestamp": "1743638400"
+      },
+      {
+        "name": "Bitcoin Season",
+        "altcoinIndex": "16",
+        "altcoinMarketcap": "1012589353181.18",
+        "timestamp": "1743724800"
+      },
+      {
+        "name": "Bitcoin Season",
+        "altcoinIndex": "15",
+        "altcoinMarketcap": "1021669697614.57",
+        "timestamp": "1743811200"
+      },
+      {
+        "name": "Bitcoin Season",
+        "altcoinIndex": "15",
+        "altcoinMarketcap": "1015149933064.55",
+        "timestamp": "1743857664"
+      }
+    ],
+    "historicalValues": {
+      "now": {
+        "name": "Bitcoin Season",
+        "altcoinIndex": "15",
+        "altcoinMarketcap": "1015149933064.55",
+        "timestamp": "1743857664"
+      },
+      "yesterday": {
+        "name": "Bitcoin Season",
+        "altcoinIndex": "16",
+        "altcoinMarketcap": "1012589353181.18",
+        "timestamp": "1743724800"
+      },
+      "lastWeek": {
+        "name": "Bitcoin Season",
+        "altcoinIndex": "17",
+        "altcoinMarketcap": "1067187779185.32",
+        "timestamp": "1743206400"
+      },
+      "lastMonth": {
+        "name": "Bitcoin Season",
+        "altcoinIndex": "15",
+        "altcoinMarketcap": "1138149428346.91",
+        "timestamp": "1741132800"
+      },
+      "yearlyHigh": {
+        "name": "Altcoin Season",
+        "altcoinIndex": "87",
+        "altcoinMarketcap": "1607706051531.92",
+        "timestamp": "1733270400"
+      },
+      "yearlyLow": {
+        "name": "Bitcoin Season",
+        "altcoinIndex": "13",
+        "altcoinMarketcap": "1036161579758.34",
+        "timestamp": "1741737600"
+      }
+    },
+    "dialConfigs": [
+      {
+        "start": 0,
+        "end": 25,
+        "name": "Bitcoin Season"
+      },
+      {
+        "start": 26,
+        "end": 74,
+        "name": ""
+      },
+      {
+        "start": 75,
+        "end": 100,
+        "name": "Altcoin Season"
+      }
+    ],
+    "topCryptos": [
+      {
+        "id": 24647,
+        "name": "Berachain",
+        "symbol": "BERA",
+        "slug": "berachain",
+        "percentChange": 474.13263335
+      },
+      {
+        "id": 23635,
+        "name": "Four",
+        "symbol": "FORM",
+        "slug": "binaryx-new",
+        "percentChange": 373.65896389
+      },
+      {
+        "id": 6536,
+        "name": "MANTRA",
+        "symbol": "OM",
+        "slug": "mantra",
+        "percentChange": 58.75068130
+      },
+      {
+        "id": 35626,
+        "name": "Story",
+        "symbol": "IP",
+        "slug": "story-protocol",
+        "percentChange": 47.18937409
+      },
+      {
+        "id": 35336,
+        "name": "OFFICIAL TRUMP",
+        "symbol": "TRUMP",
+        "slug": "official-trump",
+        "percentChange": 42.39794708
+      },
+      {
+        "id": 4269,
+        "name": "GateToken",
+        "symbol": "GT",
+        "slug": "gatetoken",
+        "percentChange": 26.89555628
+      },
+      {
+        "id": 4705,
+        "name": "PAX Gold",
+        "symbol": "PAXG",
+        "slug": "pax-gold",
+        "percentChange": 15.57311358
+      },
+      {
+        "id": 5176,
+        "name": "Tether Gold",
+        "symbol": "XAUt",
+        "slug": "tether-gold",
+        "percentChange": 15.45040985
+      },
+      {
+        "id": 328,
+        "name": "Monero",
+        "symbol": "XMR",
+        "slug": "monero",
+        "percentChange": 9.87139134
+      },
+      {
+        "id": 3897,
+        "name": "OKB",
+        "symbol": "OKB",
+        "slug": "okb",
+        "percentChange": 2.35081700
+      },
+      {
+        "id": 3957,
+        "name": "UNUS SED LEO",
+        "symbol": "LEO",
+        "slug": "unus-sed-leo",
+        "percentChange": -1.89071176
+      },
+      {
+        "id": 2087,
+        "name": "KuCoin Token",
+        "symbol": "KCS",
+        "slug": "kucoin-token",
+        "percentChange": -7.70359984
+      },
+      {
+        "id": 52,
+        "name": "XRP",
+        "symbol": "XRP",
+        "slug": "xrp",
+        "percentChange": -9.25030342
+      },
+      {
+        "id": 1958,
+        "name": "TRON",
+        "symbol": "TRX",
+        "slug": "tron",
+        "percentChange": -10.18210529
+      },
+      {
+        "id": 1765,
+        "name": "EOS",
+        "symbol": "EOS",
+        "slug": "eos",
+        "percentChange": -13.28506422
+      },
+      {
+        "id": 1,
+        "name": "Bitcoin",
+        "symbol": "BTC",
+        "slug": "bitcoin",
+        "percentChange": -15.04551783
+      },
+      {
+        "id": 1518,
+        "name": "Maker",
+        "symbol": "MKR",
+        "slug": "maker",
+        "percentChange": -15.42441351
+      },
+      {
+        "id": 7326,
+        "name": "DeXe",
+        "symbol": "DEXE",
+        "slug": "dexe",
+        "percentChange": -15.48153266
+      },
+      {
+        "id": 1839,
+        "name": "BNB",
+        "symbol": "BNB",
+        "slug": "bnb",
+        "percentChange": -15.91796666
+      },
+      {
+        "id": 2694,
+        "name": "Nexo",
+        "symbol": "NEXO",
+        "slug": "nexo",
+        "percentChange": -24.20743979
+      },
+      {
+        "id": 2634,
+        "name": "XDC Network",
+        "symbol": "XDC",
+        "slug": "xdc-network",
+        "percentChange": -24.21763656
+      },
+      {
+        "id": 11092,
+        "name": "Bitget Token",
+        "symbol": "BGB",
+        "slug": "bitget-token-new",
+        "percentChange": -25.37327888
+      },
+      {
+        "id": 2,
+        "name": "Litecoin",
+        "symbol": "LTC",
+        "slug": "litecoin",
+        "percentChange": -26.54008633
+      },
+      {
+        "id": 3794,
+        "name": "Cosmos",
+        "symbol": "ATOM",
+        "slug": "cosmos",
+        "percentChange": -32.09876714
+      },
+      {
+        "id": 1437,
+        "name": "Zcash",
+        "symbol": "ZEC",
+        "slug": "zcash",
+        "percentChange": -32.98037815
+      },
+      {
+        "id": 7186,
+        "name": "PancakeSwap",
+        "symbol": "CAKE",
+        "slug": "pancakeswap",
+        "percentChange": -33.64782036
+      },
+      {
+        "id": 1831,
+        "name": "Bitcoin Cash",
+        "symbol": "BCH",
+        "slug": "bitcoin-cash",
+        "percentChange": -35.86484460
+      },
+      {
+        "id": 32956,
+        "name": "Grass",
+        "symbol": "GRASS",
+        "slug": "grass",
+        "percentChange": -38.84733883
+      },
+      {
+        "id": 2010,
+        "name": "Cardano",
+        "symbol": "ADA",
+        "slug": "cardano",
+        "percentChange": -39.16759643
+      },
+      {
+        "id": 32684,
+        "name": "Sonic (prev. FTM)",
+        "symbol": "S",
+        "slug": "sonic",
+        "percentChange": -39.85590471
+      },
+      {
+        "id": 9481,
+        "name": "Pendle",
+        "symbol": "PENDLE",
+        "slug": "pendle",
+        "percentChange": -40.75707569
+      },
+      {
+        "id": 3635,
+        "name": "Cronos",
+        "symbol": "CRO",
+        "slug": "cronos",
+        "percentChange": -41.50352683
+      },
+      {
+        "id": 512,
+        "name": "Stellar",
+        "symbol": "XLM",
+        "slug": "stellar",
+        "percentChange": -41.92543131
+      },
+      {
+        "id": 1321,
+        "name": "Ethereum Classic",
+        "symbol": "ETC",
+        "slug": "ethereum-classic",
+        "percentChange": -42.04137155
+      },
+      {
+        "id": 11419,
+        "name": "Toncoin",
+        "symbol": "TON",
+        "slug": "toncoin",
+        "percentChange": -42.39486946
+      },
+      {
+        "id": 3155,
+        "name": "Quant",
+        "symbol": "QNT",
+        "slug": "quant",
+        "percentChange": -42.45523888
+      },
+      {
+        "id": 28541,
+        "name": "Jito",
+        "symbol": "JTO",
+        "slug": "jito",
+        "percentChange": -43.75834070
+      },
+      {
+        "id": 5426,
+        "name": "Solana",
+        "symbol": "SOL",
+        "slug": "solana",
+        "percentChange": -44.40044274
+      },
+      {
+        "id": 1975,
+        "name": "Chainlink",
+        "symbol": "LINK",
+        "slug": "chainlink",
+        "percentChange": -44.77249512
+      },
+      {
+        "id": 16086,
+        "name": "BitTorrent [New]",
+        "symbol": "BTT",
+        "slug": "bittorrent-new",
+        "percentChange": -44.96184692
+      },
+      {
+        "id": 3602,
+        "name": "Bitcoin SV",
+        "symbol": "BSV",
+        "slug": "bitcoin-sv",
+        "percentChange": -45.90952101
+      },
+      {
+        "id": 4642,
+        "name": "Hedera",
+        "symbol": "HBAR",
+        "slug": "hedera",
+        "percentChange": -46.49630839
+      },
+      {
+        "id": 27075,
+        "name": "Mantle",
+        "symbol": "MNT",
+        "slug": "mantle",
+        "percentChange": -46.68135720
+      },
+      {
+        "id": 21159,
+        "name": "Ondo",
+        "symbol": "ONDO",
+        "slug": "ondo-finance",
+        "percentChange": -47.53690411
+      },
+      {
+        "id": 6636,
+        "name": "Polkadot",
+        "symbol": "DOT",
+        "slug": "polkadot-new",
+        "percentChange": -47.89946462
+      },
+      {
+        "id": 20396,
+        "name": "Kaspa",
+        "symbol": "KAS",
+        "slug": "kaspa",
+        "percentChange": -48.20879370
+      },
+      {
+        "id": 5994,
+        "name": "Shiba Inu",
+        "symbol": "SHIB",
+        "slug": "shiba-inu",
+        "percentChange": -48.55518836
+      },
+      {
+        "id": 22861,
+        "name": "Celestia",
+        "symbol": "TIA",
+        "slug": "celestia",
+        "percentChange": -50.33265297
+      },
+      {
+        "id": 1027,
+        "name": "Ethereum",
+        "symbol": "ETH",
+        "slug": "ethereum",
+        "percentChange": -50.42422936
+      },
+      {
+        "id": 21794,
+        "name": "Aptos",
+        "symbol": "APT",
+        "slug": "aptos",
+        "percentChange": -50.77947961
+      },
+      {
+        "id": 7950,
+        "name": "Flare",
+        "symbol": "FLR",
+        "slug": "flare",
+        "percentChange": -50.91038488
+      },
+      {
+        "id": 32880,
+        "name": "Kaia",
+        "symbol": "KAIA",
+        "slug": "kaia",
+        "percentChange": -51.46508351
+      },
+      {
+        "id": 2280,
+        "name": "Filecoin",
+        "symbol": "FIL",
+        "slug": "filecoin",
+        "percentChange": -51.64759855
+      },
+      {
+        "id": 6538,
+        "name": "Curve DAO Token",
+        "symbol": "CRV",
+        "slug": "curve-dao-token",
+        "percentChange": -53.08315915
+      },
+      {
+        "id": 4558,
+        "name": "Flow",
+        "symbol": "FLOW",
+        "slug": "flow",
+        "percentChange": -53.49297708
+      },
+      {
+        "id": 32196,
+        "name": "Hyperliquid",
+        "symbol": "HYPE",
+        "slug": "hyperliquid",
+        "percentChange": -53.50774642
+      },
+      {
+        "id": 1720,
+        "name": "IOTA",
+        "symbol": "IOTA",
+        "slug": "iota",
+        "percentChange": -53.76778275
+      },
+      {
+        "id": 4030,
+        "name": "Algorand",
+        "symbol": "ALGO",
+        "slug": "algorand",
+        "percentChange": -53.84439309
+      },
+      {
+        "id": 2011,
+        "name": "Tezos",
+        "symbol": "XTZ",
+        "slug": "tezos",
+        "percentChange": -54.67010602
+      },
+      {
+        "id": 1966,
+        "name": "Decentraland",
+        "symbol": "MANA",
+        "slug": "decentraland",
+        "percentChange": -55.40025711
+      },
+      {
+        "id": 7278,
+        "name": "Aave",
+        "symbol": "AAVE",
+        "slug": "aave",
+        "percentChange": -55.87454160
+      },
+      {
+        "id": 74,
+        "name": "Dogecoin",
+        "symbol": "DOGE",
+        "slug": "dogecoin",
+        "percentChange": -55.97121769
+      },
+      {
+        "id": 3077,
+        "name": "VeChain",
+        "symbol": "VET",
+        "slug": "vechain",
+        "percentChange": -56.76115187
+      },
+      {
+        "id": 5805,
+        "name": "Avalanche",
+        "symbol": "AVAX",
+        "slug": "avalanche",
+        "percentChange": -56.79888422
+      },
+      {
+        "id": 20947,
+        "name": "Sui",
+        "symbol": "SUI",
+        "slug": "sui",
+        "percentChange": -56.87158820
+      },
+      {
+        "id": 6535,
+        "name": "NEAR Protocol",
+        "symbol": "NEAR",
+        "slug": "near-protocol",
+        "percentChange": -57.25180094
+      },
+      {
+        "id": 5665,
+        "name": "Helium",
+        "symbol": "HNT",
+        "slug": "helium",
+        "percentChange": -57.45697179
+      },
+      {
+        "id": 8916,
+        "name": "Internet Computer",
+        "symbol": "ICP",
+        "slug": "internet-computer",
+        "percentChange": -58.25298157
+      },
+      {
+        "id": 29210,
+        "name": "Jupiter",
+        "symbol": "JUP",
+        "slug": "jupiter-ag",
+        "percentChange": -58.60906652
+      },
+      {
+        "id": 6210,
+        "name": "The Sandbox",
+        "symbol": "SAND",
+        "slug": "the-sandbox",
+        "percentChange": -58.69936557
+      },
+      {
+        "id": 13855,
+        "name": "Ethereum Name Service",
+        "symbol": "ENS",
+        "slug": "ethereum-name-service",
+        "percentChange": -58.86243947
+      },
+      {
+        "id": 8000,
+        "name": "Lido DAO",
+        "symbol": "LDO",
+        "slug": "lido-dao",
+        "percentChange": -58.98287836
+      },
+      {
+        "id": 28081,
+        "name": "SPX6900",
+        "symbol": "SPX",
+        "slug": "spx6900",
+        "percentChange": -60.27209703
+      },
+      {
+        "id": 6783,
+        "name": "Axie Infinity",
+        "symbol": "AXS",
+        "slug": "axie-infinity",
+        "percentChange": -60.56615032
+      },
+      {
+        "id": 5690,
+        "name": "Render",
+        "symbol": "RENDER",
+        "slug": "render",
+        "percentChange": -60.86379063
+      },
+      {
+        "id": 22974,
+        "name": "Bittensor",
+        "symbol": "TAO",
+        "slug": "bittensor",
+        "percentChange": -61.05479690
+      },
+      {
+        "id": 7083,
+        "name": "Uniswap",
+        "symbol": "UNI",
+        "slug": "uniswap",
+        "percentChange": -61.05600558
+      },
+      {
+        "id": 28324,
+        "name": "dYdX",
+        "symbol": "DYDX",
+        "slug": "dydx-chain",
+        "percentChange": -61.27224343
+      },
+      {
+        "id": 35697,
+        "name": "Pi",
+        "symbol": "PI",
+        "slug": "pi",
+        "percentChange": -62.91021234
+      },
+      {
+        "id": 33597,
+        "name": "Fartcoin",
+        "symbol": "FARTCOIN",
+        "slug": "fartcoin",
+        "percentChange": -63.45539493
+      },
+      {
+        "id": 28321,
+        "name": "POL (prev. MATIC)",
+        "symbol": "POL",
+        "slug": "polygon-ecosystem-token",
+        "percentChange": -63.57308037
+      },
+      {
+        "id": 7080,
+        "name": "Gala",
+        "symbol": "GALA",
+        "slug": "gala",
+        "percentChange": -64.20744531
+      },
+      {
+        "id": 7226,
+        "name": "Injective",
+        "symbol": "INJ",
+        "slug": "injective",
+        "percentChange": -64.34163055
+      },
+      {
+        "id": 23149,
+        "name": "Sei",
+        "symbol": "SEI",
+        "slug": "sei",
+        "percentChange": -64.53764249
+      },
+      {
+        "id": 4847,
+        "name": "Stacks",
+        "symbol": "STX",
+        "slug": "stacks",
+        "percentChange": -65.13256828
+      },
+      {
+        "id": 11841,
+        "name": "Arbitrum",
+        "symbol": "ARB",
+        "slug": "arbitrum",
+        "percentChange": -65.14113705
+      },
+      {
+        "id": 6719,
+        "name": "The Graph",
+        "symbol": "GRT",
+        "slug": "the-graph",
+        "percentChange": -65.66343778
+      },
+      {
+        "id": 32452,
+        "name": "Movement",
+        "symbol": "MOVE",
+        "slug": "movement",
+        "percentChange": -65.67586529
+      },
+      {
+        "id": 28177,
+        "name": "Pyth Network",
+        "symbol": "PYTH",
+        "slug": "pyth-network",
+        "percentChange": -65.93184639
+      },
+      {
+        "id": 24478,
+        "name": "Pepe",
+        "symbol": "PEPE",
+        "slug": "pepe",
+        "percentChange": -65.94803707
+      },
+      {
+        "id": 11840,
+        "name": "Optimism",
+        "symbol": "OP",
+        "slug": "optimism-ethereum",
+        "percentChange": -66.34924430
+      },
+      {
+        "id": 23095,
+        "name": "Bonk",
+        "symbol": "BONK",
+        "slug": "bonk1",
+        "percentChange": -68.13060424
+      },
+      {
+        "id": 2416,
+        "name": "Theta Network",
+        "symbol": "THETA",
+        "slug": "theta-network",
+        "percentChange": -68.29218952
+      },
+      {
+        "id": 8526,
+        "name": "Raydium",
+        "symbol": "RAY",
+        "slug": "raydium",
+        "percentChange": -68.39474779
+      },
+      {
+        "id": 13502,
+        "name": "Worldcoin",
+        "symbol": "WLD",
+        "slug": "worldcoin-org",
+        "percentChange": -68.47360215
+      },
+      {
+        "id": 10603,
+        "name": "Immutable",
+        "symbol": "IMX",
+        "slug": "immutable-x",
+        "percentChange": -70.17279932
+      },
+      {
+        "id": 3773,
+        "name": "Artificial Superintelligence Alliance",
+        "symbol": "FET",
+        "slug": "artificial-superintelligence-alliance",
+        "percentChange": -70.61157864
+      },
+      {
+        "id": 10804,
+        "name": "FLOKI",
+        "symbol": "FLOKI",
+        "slug": "floki-inu",
+        "percentChange": -71.77537669
+      },
+      {
+        "id": 8425,
+        "name": "JasmyCoin",
+        "symbol": "JASMY",
+        "slug": "jasmy",
+        "percentChange": -73.13846254
+      },
+      {
+        "id": 30171,
+        "name": "Ethena",
+        "symbol": "ENA",
+        "slug": "ethena",
+        "percentChange": -74.93384315
+      }
+    ]
+  },
+  "status": {
+    "timestamp": "2025-04-05T12:54:24.783Z",
+    "error_code": "0",
+    "error_message": "SUCCESS",
+    "elapsed": "33",
+    "credit_count": 0
+  }
+}
