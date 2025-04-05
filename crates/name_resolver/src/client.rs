@@ -44,7 +44,7 @@ impl Client {
     }
 
     pub async fn resolve(&self, name: &str, chain: Chain) -> Result<NameRecord, Box<dyn Error + Send + Sync>> {
-        let name_prefix = name.split('.').clone().last().unwrap_or_default();
+        let name_prefix = name.split('.').clone().next_back().unwrap_or_default();
         for provider in self.providers.iter() {
             if provider.chains().contains(&chain) && provider.domains().contains(&name_prefix) {
                 match provider.resolve(name, chain).await {
