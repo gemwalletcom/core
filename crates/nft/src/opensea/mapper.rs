@@ -1,4 +1,4 @@
-use gem_evm::address::normalize_checksum;
+use gem_evm::ethereum_address_checksum;
 use primitives::{Chain, LinkType, NFTAsset, NFTAssetId, NFTAttribute, NFTCollectionId, NFTImageOld, NFTImages, NFTResource, NFTType};
 
 use super::model::{Collection, Nft, NftAsset, Trait};
@@ -39,7 +39,7 @@ impl Nft {
 
 impl NftAsset {
     pub fn as_asset_id(&self, chain: Chain) -> Option<NFTAssetId> {
-        let contract_address = normalize_checksum(&self.contract).ok()?;
+        let contract_address = ethereum_address_checksum(&self.contract).ok()?;
         Some(NFTAssetId::new(chain, &contract_address, &self.identifier))
     }
 }

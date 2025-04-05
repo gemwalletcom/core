@@ -2,7 +2,7 @@ use async_trait::async_trait;
 use std::error::Error;
 
 use crate::{client::NameClient, ens_provider::provider::Provider};
-use gem_evm::address::normalize_checksum;
+use gem_evm::ethereum_address_checksum;
 use primitives::{chain::Chain, name::NameProvider};
 
 pub struct ENSClient {
@@ -23,7 +23,7 @@ impl NameClient for ENSClient {
 
     async fn resolve(&self, name: &str, chain: Chain) -> Result<String, Box<dyn Error + Send + Sync>> {
         let address = self.provider.resolve_name(name, chain).await?;
-        let address = normalize_checksum(&address)?;
+        let address = ethereum_address_checksum(&address)?;
         Ok(address)
     }
 

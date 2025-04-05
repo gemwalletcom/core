@@ -5,7 +5,7 @@ use alloy_primitives::hex;
 use alloy_sol_types::SolCall;
 use async_trait::async_trait;
 use chrono::Utc;
-use gem_evm::address::normalize_checksum;
+use gem_evm::ethereum_address_checksum;
 use hex::FromHex;
 use jsonrpsee::{
     core::{client::ClientT, params::BatchRequestBuilder},
@@ -103,8 +103,8 @@ impl EthereumClient {
         let nonce = transaction.nonce;
         let block = transaction.block_number;
         let fee = receipt.get_fee().to_string();
-        let from = normalize_checksum(&transaction.from).ok()?;
-        let to = normalize_checksum(&transaction.to.unwrap_or_default()).ok()?;
+        let from = ethereum_address_checksum(&transaction.from).ok()?;
+        let to = ethereum_address_checksum(&transaction.to.unwrap_or_default()).ok()?;
 
         // system transfer
         if transaction.input == "0x" {
@@ -141,7 +141,7 @@ impl EthereumClient {
             };
             let value: String = transaction.input.chars().skip(74).take(64).collect();
             let to_address: String = transaction.input.chars().skip(34).take(40).collect::<String>();
-            let to_address = normalize_checksum(&to_address).ok()?;
+            let to_address = ethereum_address_checksum(&to_address).ok()?;
             let value = BigUint::from_str_radix(value.as_str(), 16).unwrap_or_default();
 
             let transaction = primitives::Transaction::new(
@@ -183,14 +183,14 @@ impl EthereumClient {
                     self.chain.as_asset_id(),
                     AssetId {
                         chain: self.chain,
-                        token_id: normalize_checksum(&last_log.address).ok(),
+                        token_id: ethereum_address_checksum(&last_log.address).ok(),
                     },
                 )
             } else {
                 (
                     AssetId {
                         chain: self.chain,
-                        token_id: normalize_checksum(&first_log.address).ok(),
+                        token_id: ethereum_address_checksum(&first_log.address).ok(),
                     },
                     self.chain.as_asset_id(),
                 )

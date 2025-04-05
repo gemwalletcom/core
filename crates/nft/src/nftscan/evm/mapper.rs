@@ -1,4 +1,4 @@
-use gem_evm::address::normalize_checksum;
+use gem_evm::ethereum_address_checksum;
 use primitives::{Chain, NFTAssetId, NFTImage};
 
 use super::model::{NFTAsset, NFTCollection, NFTCollectionAssets, NFTResult};
