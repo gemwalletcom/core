@@ -3,4 +3,6 @@ mod model;
 
 pub mod mayan;
 pub mod provider;
-pub use provider::ProxyProvider;
+pub mod provider_factory;
+
+pub use provider_factory::*;
