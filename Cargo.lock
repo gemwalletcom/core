@@ -1355,6 +1355,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "coinmarketcap"
+version = "1.0.0"
+dependencies = [
+ "chrono",
+ "primitives",
+ "reqwest",
+ "reqwest-middleware",
+ "serde",
+ "serde_json",
+ "serde_serializers",
+]
+
+[[package]]
 name = "colorchoice"
 version = "1.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"

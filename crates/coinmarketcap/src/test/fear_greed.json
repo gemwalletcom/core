@@ -1,0 +1,275 @@
+{
+  "data": {
+    "dataList": [
+      {
+        "score": 38,
+        "name": "Fear",
+        "timestamp": "1738713600",
+        "btcPrice": "97878.01",
+        "btcVolume": "49125911241.12"
+      },
+      {
+        "score": 35,
+        "name": "Fear",
+        "timestamp": "1738800000",
+        "btcPrice": "96610.64",
+        "btcVolume": "45302471947.11"
+      },
+      {
+        "score": 35,
+        "name": "Fear",
+        "timestamp": "1738886400",
+        "btcPrice": "96581.32",
+        "btcVolume": "55741290456.48"
+      },
+      {
+        "score": 35,
+        "name": "Fear",
+        "timestamp": "1738972800",
+        "btcPrice": "96533.26",
+        "btcVolume": "22447526395.12"
+      },
+      {
+        "score": 35,
+        "name": "Fear",
+        "timestamp": "1739059200",
+        "btcPrice": "96481.32",
+        "btcVolume": "27732901800.43"
+      },
+      {
+        "score": 35,
+        "name": "Fear",
+        "timestamp": "1739145600",
+        "btcPrice": "96499.46",
+        "btcVolume": "40078962390.78"
+      },
+      {
+        "score": 37,
+        "name": "Fear",
+        "timestamp": "1739232000",
+        "btcPrice": "97438.13",
+        "btcVolume": "37488783271.89"
+      },
+      {
+        "score": 35,
+        "name": "Fear",
+        "timestamp": "1739318400",
+        "btcPrice": "95745.69",
+        "btcVolume": "49340445529.78"
+      },
+      {
+        "score": 40,
+        "name": "Neutral",
+        "timestamp": "1739404800",
+        "btcPrice": "97888.75",
+        "btcVolume": "37147280859.99"
+      },
+      {
+        "score": 38,
+        "name": "Fear",
+        "timestamp": "1739491200",
+        "btcPrice": "96623.37",
+        "btcVolume": "32697987276.92"
+      },
+      {
+        "score": 41,
+        "name": "Neutral",
+        "timestamp": "1739577600",
+        "btcPrice": "97508.38",
+        "btcVolume": "17047266288.41"
+      },
+      {
+        "score": 41,
+        "name": "Neutral",
+        "timestamp": "1739664000",
+        "btcPrice": "97580.49",
+        "btcVolume": "16536755396.23"
+      },
+      {
+        "score": 38,
+        "name": "Fear",
+        "timestamp": "1739750400",
+        "btcPrice": "96179.00",
+        "btcVolume": "27336550689.63"
+      },
+      {
+        "score": 38,
+        "name": "Fear",
+        "timestamp": "1739836800",
+        "btcPrice": "95773.82",
+        "btcVolume": "37325720482.36"
+      },
+      {
+        "score": 37,
+        "name": "Fear",
+        "timestamp": "1739923200",
+        "btcPrice": "95532.53",
+        "btcVolume": "28990872861.84"
+      },
+      {
+        "score": 40,
+        "name": "Neutral",
+        "timestamp": "1740009600",
+        "btcPrice": "96632.68",
+        "btcVolume": "31668022770.75"
+      },
+      {
+        "score": 43,
+        "name": "Neutral",
+        "timestamp": "1740096000",
+        "btcPrice": "98340.67",
+        "btcVolume": "49608706469.55"
+      },
+      {
+        "score": 38,
+        "name": "Fear",
+        "timestamp": "1740182400",
+        "btcPrice": "96134.20",
+        "btcVolume": "18353824476.55"
+      },
+      {
+        "score": 40,
+        "name": "Neutral",
+        "timestamp": "1740268800",
+        "btcPrice": "96577.80",
+        "btcVolume": "16999478976.16"
+      },
+      {
+        "score": 40,
+        "name": "Neutral",
+        "timestamp": "1740355200",
+        "btcPrice": "96277.96",
+        "btcVolume": "44046480529.18"
+      },
+      {
+        "score": 29,
+        "name": "Fear",
+        "timestamp": "1740441600",
+        "btcPrice": "91437.11",
+        "btcVolume": "92139104127.70"
+      },
+      {
+        "score": 26,
+        "name": "Fear",
+        "timestamp": "1740528000",
+        "btcPrice": "88638.89",
+        "btcVolume": "64597492134.27"
+      },
+      {
+        "score": 20,
+        "name": "Fear",
+        "timestamp": "1740614400",
+        "btcPrice": "84076.86",
+        "btcVolume": "52659591953.61"
+      },
+      {
+        "score": 21,
+        "name": "Fear",
+        "timestamp": "1740700800",
+        "btcPrice": "84705.63",
+        "btcVolume": "83610570575.92"
+      },
+      {
+        "score": 20,
+        "name": "Fear",
+        "timestamp": "1740787200",
+        "btcPrice": "84373.86",
+        "btcVolume": "29190628396.31"
+      },
+      {
+        "score": 22,
+        "name": "Fear",
+        "timestamp": "1740873600",
+        "btcPrice": "86036.26",
+        "btcVolume": "58398341092.43"
+      },
+      {
+        "score": 39,
+        "name": "Fear",
+        "timestamp": "1740960000",
+        "btcPrice": "94248.42",
+        "btcVolume": "70072228536.46"
+      },
+      {
+        "score": 24,
+        "name": "Fear",
+        "timestamp": "1741046400",
+        "btcPrice": "86064.07",
+        "btcVolume": "68095241474.12"
+      },
+      {
+        "score": 27,
+        "name": "Fear",
+        "timestamp": "1743851290",
+        "btcPrice": "83603.47",
+        "btcVolume": "34234084348.37"
+      }
+    ],
+    "dialConfig": [
+      {
+        "start": 0,
+        "end": 20,
+        "name": "Extreme fear"
+      },
+      {
+        "start": 20,
+        "end": 40,
+        "name": "Fear"
+      },
+      {
+        "start": 40,
+        "end": 60,
+        "name": "Neutral"
+      },
+      {
+        "start": 60,
+        "end": 80,
+        "name": "Greed"
+      },
+      {
+        "start": 80,
+        "end": 100,
+        "name": "Extreme greed"
+      }
+    ],
+    "historicalValues": {
+      "now": {
+        "score": 27,
+        "name": "Fear",
+        "timestamp": "1743851290"
+      },
+      "yesterday": {
+        "score": 25,
+        "name": "Fear",
+        "timestamp": "1743724800"
+      },
+      "lastWeek": {
+        "score": 27,
+        "name": "Fear",
+        "timestamp": "1743206400"
+      },
+      "lastMonth": {
+        "score": 25,
+        "name": "Fear",
+        "timestamp": "1741132800"
+      },
+      "yearlyHigh": {
+        "score": 88,
+        "name": "Extreme greed",
+        "timestamp": "1732147200"
+      },
+      "yearlyLow": {
+        "score": 15,
+        "name": "Extreme fear",
+        "timestamp": "1741651200"
+      }
+    }
+  },
+  "status": {
+    "timestamp": "2025-04-05T11:14:45.561Z",
+    "error_code": "0",
+    "error_message": "SUCCESS",
+    "elapsed": "23",
+    "credit_count": 0
+  }
+}
