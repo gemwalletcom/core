@@ -94,7 +94,7 @@ impl MoonPayClient {
             Some("ripple") => asset
                 .metadata
                 .as_ref()
-                .and_then(|m| m.contract_address.as_deref().and_then(|s| s.split('.').last().map(String::from))),
+                .and_then(|m| m.contract_address.as_deref().and_then(|s| s.split('.').next_back().map(String::from))),
             // Add other blockchain specific rules here
             _ => asset.clone().metadata?.contract_address,
         };

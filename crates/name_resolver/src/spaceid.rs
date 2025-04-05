@@ -32,7 +32,7 @@ impl NameClient for SpaceIdClient {
     }
 
     async fn resolve(&self, name: &str, _chain: Chain) -> Result<String, Box<dyn Error + Send + Sync>> {
-        let tld = name.split('.').clone().last().unwrap_or_default();
+        let tld = name.split('.').clone().next_back().unwrap_or_default();
         let url = format!("{}/v1/getAddress?tld={}&domain={}", self.api_url, tld, name);
         let record: ResolveRecord = self.client.get(&url).send().await?.json().await?;
         if record.code != 0 {

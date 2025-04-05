@@ -110,7 +110,7 @@ impl RawBagOfCells {
         }
 
         let num_ref_bits = 32 - (self.cells.len() as u32).leading_zeros();
-        let num_ref_bytes = (num_ref_bits + 7) / 8;
+        let num_ref_bytes = num_ref_bits.div_ceil(8);
 
         let mut full_size = 0u32;
         let mut index = Vec::<u32>::with_capacity(self.cells.len());
@@ -120,7 +120,7 @@ impl RawBagOfCells {
         }
 
         let num_offset_bits = 32 - full_size.leading_zeros();
-        let num_offset_bytes = (num_offset_bits + 7) / 8;
+        let num_offset_bytes = num_offset_bits.div_ceil(8);
 
         let mut writer = BitWriter::endian(Vec::new(), BigEndian);
 
@@ -203,7 +203,7 @@ fn read_cell(reader: &mut ByteReader<Cursor<&[u8]>, BigEndian>, size: u8) -> Res
 }
 
 fn raw_cell_size(cell: &RawCell, ref_size_bytes: u32) -> u32 {
-    let data_len = (cell.bit_len + 7) / 8;
+    let data_len = cell.bit_len.div_ceil(8);
     2 + data_len as u32 + cell.references.len() as u32 * ref_size_bytes
 }
 
@@ -216,7 +216,7 @@ fn write_raw_cell(writer: &mut BitWriter<Vec<u8>, BigEndian>, cell: &RawCell, re
     let padding_bits = cell.bit_len % 8;
     let full_bytes = padding_bits == 0;
     let data = cell.data.as_slice();
-    let data_len = (cell.bit_len + 7) / 8;
+    let data_len = cell.bit_len.div_ceil(8);
     let d2 = data_len as u8 * 2 - if full_bytes { 0 } else { 1 }; //subtract 1 if the last byte is not full
 
     writer.write(8, d1).map_boc_serialization_error()?;
