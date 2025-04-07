@@ -95,23 +95,21 @@ impl PriceAlertClient {
 
     fn get_price_alert_type(&self, price_alert: &PriceAlert, price: storage::models::Price, rules: PriceAlertRules) -> Option<PriceAlertType> {
         if let Some(price_alert_price) = price_alert.price {
-            // price goes up/down
-            if let Some(direction) = price_alert.as_primitive().price_direction {
-                match direction {
-                    PriceAlertDirection::Up => {
-                        if price.clone().price > price_alert_price {
-                            return Some(PriceAlertType::PriceUp);
-                        }
-                    }
-                    PriceAlertDirection::Down => {
-                        if price.clone().price < price_alert_price {
-                            return Some(PriceAlertType::PriceDown);
-                        }
-                    }
-                }
-            }
-        } else if price.clone().price_change_percentage_24h > rules.price_change_increase {
-            return Some(PriceAlertType::PriceChangesUp);
+            let direction = price_alert.as_primitive().price_direction?;
+            let current_price = price.price;
+            match direction {
+                PriceAlertDirection::Up if current_price > price_alert_price => Some(PriceAlertType::PriceUp),
+                PriceAlertDirection::Down if current_price < price_alert_price => Some(PriceAlertType::PriceDown),
+                _ => None,
+            };
+        } else if let Some(price_alert_percent) = price_alert.price_percent_change {
+            let direction = price_alert.as_primitive().price_direction?;
+            let price_change_percentage_24h = price.clone().price_change_percentage_24h;
+            match direction {
+                PriceAlertDirection::Up if price_change_percentage_24h > price_alert_percent => Some(PriceAlertType::PricePercentChangeUp),
+                PriceAlertDirection::Down if price_change_percentage_24h < -price_alert_percent => Some(PriceAlertType::PricePercentChangeDown),
+                _ => None,
+            };
         } else if price.clone().price_change_percentage_24h < -rules.price_change_decrease {
             return Some(PriceAlertType::PriceChangesDown);
         } else if Self::is_within_past(price.clone().all_time_high_date, Duration::hours(12)) {
@@ -164,16 +162,13 @@ impl PriceAlertClient {
 
             let language_localizer = LanguageLocalizer::new_with_language(&price_alert.device.locale);
             let notification_message: LanguageNotification = match price_alert.alert_type {
-                PriceAlertType::PriceChangesUp => {
+                PriceAlertType::PriceChangesUp | PriceAlertType::PriceUp | PriceAlertType::PricePercentChangeUp => {
                     language_localizer.price_alert_up(&price_alert.asset.full_name(), price.unwrap().as_str(), price_change.as_str())
                 }
-                PriceAlertType::PriceChangesDown => {
+                PriceAlertType::PriceChangesDown | PriceAlertType::PriceDown | PriceAlertType::PricePercentChangeDown => {
                     language_localizer.price_alert_down(&price_alert.asset.full_name(), price.unwrap().as_str(), price_change.as_str())
                 }
                 PriceAlertType::AllTimeHigh => language_localizer.price_alert_all_time_high(&price_alert.asset.name, price.unwrap().as_str()),
-                PriceAlertType::PriceUp | PriceAlertType::PriceDown | PriceAlertType::PricePercentChangeUp | PriceAlertType::PricePercentChangeDown => {
-                    unimplemented!()
-                }
             };
             let price_alert_data = PushNotificationAsset {
                 asset_id: price_alert.asset.id.to_string(),
