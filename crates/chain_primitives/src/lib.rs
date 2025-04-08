@@ -1,4 +1,4 @@
-use gem_evm::address::EthereumAddress;
+use gem_evm::ethereum_address_checksum;
 use primitives::Chain;
 
 pub fn format_token_id(chain: Chain, token_id: String) -> Option<String> {
@@ -26,8 +26,8 @@ pub fn format_token_id(chain: Chain, token_id: String) -> Option<String> {
         | Chain::Ink
         | Chain::Unichain
         | Chain::Hyperliquid
-        | Chain::Monad => Some(EthereumAddress::parse(&token_id)?.to_checksum()),
-        Chain::Solana | Chain::Ton => Some(token_id),
+        | Chain::Monad => ethereum_address_checksum(&token_id).ok(),
+        Chain::Solana | Chain::Ton | Chain::Near => Some(token_id),
         Chain::Tron => (token_id.len() == 34 && token_id.starts_with('T')).then_some(token_id),
         Chain::Xrp => token_id.starts_with('r').then_some(token_id),
         Chain::Algorand => token_id.parse::<i32>().ok().map(|token_id| token_id.to_string()),
@@ -45,7 +45,6 @@ pub fn format_token_id(chain: Chain, token_id: String) -> Option<String> {
         | Chain::Injective
         | Chain::Noble
         | Chain::Sei
-        | Chain::Near
         | Chain::Polkadot
         | Chain::Cardano => None,
     }
@@ -61,8 +60,8 @@ mod tests {
 
         let valid_token_id = "0x1234567890abcdef1234567890abcdef12345678".to_string();
         let formatted_valid_token_id = format_token_id(chain, valid_token_id.clone());
-        assert_eq!(formatted_valid_token_id, Some(EthereumAddress::parse(&valid_token_id).unwrap().to_checksum()));
 
+        assert_eq!(formatted_valid_token_id, ethereum_address_checksum(&valid_token_id).ok());
         assert_eq!(format_token_id(chain, "0x123".to_string()), None);
     }
 

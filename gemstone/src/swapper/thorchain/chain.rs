@@ -1,6 +1,6 @@
 use primitives::Chain;
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Eq)]
 pub enum THORChainName {
     Doge,
     Thorchain,

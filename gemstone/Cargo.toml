@@ -1,7 +1,7 @@
 [package]
 edition = "2021"
 name = "gemstone"
-version = "0.30.6"
+version = "0.31.1"
 
 [lib]
 crate-type = [
@@ -40,8 +40,8 @@ serde.workspace = true
 serde_json.workspace = true
 serde_urlencoded.workspace = true
 async-trait.workspace = true
-alloy-core.workspace = true
 alloy-primitives.workspace = true
+alloy-sol-types.workspace = true
 hex.workspace = true
 url.workspace = true
 num-bigint.workspace = true

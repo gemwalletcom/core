@@ -25,3 +25,4 @@ primitives = { path = "../primitives" }
 chain_primitives = { path = "../chain_primitives" }
 serde_serializers = { path = "../serde_serializers" }
 number_formatter = { path = "../number_formatter" }
+cacher = { path = "../cacher" }

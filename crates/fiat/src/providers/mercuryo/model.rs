@@ -71,6 +71,8 @@ pub struct WebhookData {
     pub currency: String,
     pub merchant_transaction_id: Option<String>,
     pub tx: Option<Transaction>,
+    #[serde(rename = "type")]
+    pub transacton_type: String,
 }
 
 #[derive(Debug, Deserialize, Clone)]

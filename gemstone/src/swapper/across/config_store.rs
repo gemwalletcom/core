@@ -2,11 +2,10 @@ use crate::{
     network::{jsonrpc::jsonrpc_call_with_cache, AlienProvider, JsonRpcResult},
     swapper::SwapperError,
 };
-use alloy_core::{hex::decode as HexDecode, sol_types::SolCall};
-use alloy_primitives::Address;
+use alloy_primitives::{hex::decode as HexDecode, Address};
+use alloy_sol_types::SolCall;
 use gem_evm::{
     across::{contracts::AcrossConfigStore, fees},
-    address::EthereumAddress,
     jsonrpc::{BlockParameter, EthereumRpc, TransactionObject},
     multicall3::IMulticall3,
 };
@@ -54,45 +53,33 @@ pub struct ConfigStoreClient {
 }
 
 impl ConfigStoreClient {
-    pub fn config_call3(&self, l1token: &EthereumAddress) -> IMulticall3::Call3 {
+    pub fn config_call3(&self, l1token: &Address) -> IMulticall3::Call3 {
         IMulticall3::Call3 {
             target: self.contract.parse().unwrap(),
             allowFailure: true,
-            callData: AcrossConfigStore::l1TokenConfigCall {
-                l1Token: Address::from_slice(&l1token.bytes),
-            }
-            .abi_encode()
-            .into(),
+            callData: AcrossConfigStore::l1TokenConfigCall { l1Token: *l1token }.abi_encode().into(),
         }
     }
 
     pub fn decoded_config_call3(&self, result: &IMulticall3::Result) -> Result<TokenConfig, SwapperError> {
         if result.success {
-            let decoded = AcrossConfigStore::l1TokenConfigCall::abi_decode_returns(&result.returnData, true)
-                .map_err(|e| SwapperError::ABIError { msg: e.to_string() })?
-                ._0;
-            let result: TokenConfig = serde_json::from_str(&decoded).map_err(|e| SwapperError::NetworkError { msg: e.to_string() })?;
+            let decoded = AcrossConfigStore::l1TokenConfigCall::abi_decode_returns(&result.returnData).map_err(SwapperError::from)?;
+            let result: TokenConfig = serde_json::from_str(&decoded).map_err(SwapperError::from)?;
             Ok(result)
         } else {
-            Err(SwapperError::ABIError {
-                msg: "config call failed".into(),
-            })
+            Err(SwapperError::ABIError("config call failed".into()))
         }
     }
 
-    pub async fn fetch_config(&self, l1token: &EthereumAddress) -> Result<TokenConfig, SwapperError> {
-        let data = AcrossConfigStore::l1TokenConfigCall {
-            l1Token: Address::from_slice(&l1token.bytes),
-        }
-        .abi_encode();
+    pub async fn fetch_config(&self, l1token: &Address) -> Result<TokenConfig, SwapperError> {
+        let data = AcrossConfigStore::l1TokenConfigCall { l1Token: *l1token }.abi_encode();
         let call = EthereumRpc::Call(TransactionObject::new_call(&self.contract, data), BlockParameter::Latest);
         let response: JsonRpcResult<String> = jsonrpc_call_with_cache(&call, self.provider.clone(), &self.chain, Some(CONFIG_CACHE_TTL)).await?;
         let result = response.take()?;
-        let hex_data = HexDecode(result).map_err(|e| SwapperError::NetworkError { msg: e.to_string() })?;
-        let decoded = AcrossConfigStore::l1TokenConfigCall::abi_decode_returns(&hex_data, true)
-            .map_err(|e| SwapperError::NetworkError { msg: e.to_string() })?
-            ._0;
-        let result: TokenConfig = serde_json::from_str(&decoded).map_err(|e| SwapperError::NetworkError { msg: e.to_string() })?;
+        let hex_data = HexDecode(result).map_err(|e| SwapperError::NetworkError(e.to_string()))?;
+        let decoded = AcrossConfigStore::l1TokenConfigCall::abi_decode_returns(&hex_data).map_err(SwapperError::from)?;
+
+        let result: TokenConfig = serde_json::from_str(&decoded).map_err(SwapperError::from)?;
         Ok(result)
     }
 }

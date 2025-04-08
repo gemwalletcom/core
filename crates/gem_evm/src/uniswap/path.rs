@@ -1,22 +1,19 @@
+use alloy_primitives::{aliases::U24, Address, Bytes};
 use std::{collections::HashSet, fmt::Display};
 
 use super::FeeTier;
-use crate::address::EthereumAddress;
-
-use alloy_core::primitives::Bytes;
-use alloy_primitives::aliases::U24;
-use primitives::{AssetId, EVMChain};
+use primitives::EVMChain;
 
 #[derive(Debug, Clone)]
 pub struct TokenPair {
-    pub token_in: EthereumAddress,
-    pub token_out: EthereumAddress,
+    pub token_in: Address,
+    pub token_out: Address,
     pub fee_tier: FeeTier,
 }
 
 impl Display for TokenPair {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}-{}->{}", self.token_in, self.fee_tier.as_u24(), self.token_out)
+        write!(f, "{}-{}->{}", self.token_in, self.fee_tier as u32, self.token_out)
     }
 }
 
@@ -38,17 +35,17 @@ impl Display for TokenPairs {
 }
 
 impl TokenPair {
-    pub fn new_two_hop(token_in: &EthereumAddress, intermediary: &EthereumAddress, token_out: &EthereumAddress, fee_tier: &FeeTier) -> Vec<TokenPair> {
+    pub fn new_two_hop(token_in: &Address, intermediary: &Address, token_out: &Address, fee_tier: FeeTier) -> Vec<TokenPair> {
         vec![
             TokenPair {
-                token_in: token_in.clone(),
-                token_out: intermediary.clone(),
-                fee_tier: fee_tier.clone(),
+                token_in: *token_in,
+                token_out: *intermediary,
+                fee_tier,
             },
             TokenPair {
-                token_in: intermediary.clone(),
-                token_out: token_out.clone(),
-                fee_tier: fee_tier.clone(),
+                token_in: *intermediary,
+                token_out: *token_out,
+                fee_tier,
             },
         ]
     }
@@ -56,18 +53,18 @@ impl TokenPair {
 
 #[derive(Debug)]
 pub struct BasePair {
-    pub native: EthereumAddress,
-    pub stables: Vec<EthereumAddress>,
-    pub alternatives: Vec<EthereumAddress>,
+    pub native: Address,
+    pub stables: Vec<Address>,
+    pub alternatives: Vec<Address>,
 }
 
 impl BasePair {
-    pub fn to_set(&self) -> HashSet<EthereumAddress> {
+    pub fn to_set(&self) -> HashSet<Address> {
         HashSet::from_iter(self.to_array())
     }
 
-    pub fn to_array(&self) -> Vec<EthereumAddress> {
-        let mut array = vec![self.native.clone()];
+    pub fn to_array(&self) -> Vec<Address> {
+        let mut array = vec![self.native];
         array.extend(self.stables.iter().cloned());
         // alternatives is not used for now
         // array.extend(self.alternatives.iter().cloned());
@@ -75,18 +72,11 @@ impl BasePair {
     }
 }
 
-impl From<AssetId> for EthereumAddress {
-    fn from(asset_id: AssetId) -> Self {
-        let token_id = asset_id.token_id.unwrap_or_default();
-        EthereumAddress::parse(&token_id).unwrap()
-    }
-}
-
 pub fn get_base_pair(chain: &EVMChain, weth_as_native: bool) -> Option<BasePair> {
     let native = if weth_as_native {
-        EthereumAddress::parse(chain.weth_contract()?)?
+        chain.weth_contract()?.parse().ok()?
     } else {
-        EthereumAddress::zero()
+        Address::ZERO
     };
 
     let btc: &str = match chain {
@@ -126,6 +116,7 @@ pub fn get_base_pair(chain: &EVMChain, weth_as_native: bool) -> Option<BasePair>
         EVMChain::Gnosis => "0x2a22f9c3b484c3629090FeED35F17Ff8F88f76F0", // USDC.e
         EVMChain::Manta => "0xb73603c5d87fa094b7314c74ace2e64d165016fb",
         EVMChain::Linea => "0x176211869cA2b568f2A7D4EE941E073a821EE1ff",
+        EVMChain::Ink => "0xF1815bd50389c46847f0Bda824eC8da914045D14",
         EVMChain::OpBNB => "",
         _ => panic!("USDC is not configured for this chain"),
     };
@@ -148,34 +139,35 @@ pub fn get_base_pair(chain: &EVMChain, weth_as_native: bool) -> Option<BasePair>
         EVMChain::Manta => "0xf417f5a458ec102b90352f697d6e2ac3a3d2851f",
         EVMChain::Linea => "0xA219439258ca9da29E9Cc4cE5596924745e12B93",
         EVMChain::OpBNB => "0x9e5AAC1Ba1a2e6aEd6b32689DFcF62A509Ca96f3",
+        EVMChain::Ink => "0x0200C29006150606B650577BBE7B6248F58470c1",
         EVMChain::Blast | EVMChain::World => "", // None
         _ => panic!("USDT is not configured for this chain"),
     };
 
     let mut stables = vec![];
     if !usdc.is_empty() {
-        stables.push(EthereumAddress::parse(usdc)?);
+        stables.push(usdc.parse().ok()?);
     }
     if !usdt.is_empty() {
-        stables.push(EthereumAddress::parse(usdt)?);
+        stables.push(usdt.parse().ok()?);
     }
     let alternatives = {
         if btc.is_empty() {
             vec![]
         } else {
-            vec![EthereumAddress::parse(btc)?]
+            vec![btc.parse().ok()?]
         }
     };
 
     Some(BasePair { native, stables, alternatives })
 }
 
-pub fn build_direct_pair(token_in: &EthereumAddress, token_out: &EthereumAddress, fee_tier: u32) -> Bytes {
+pub fn build_direct_pair(token_in: &Address, token_out: &Address, fee_tier: FeeTier) -> Bytes {
     let mut bytes: Vec<u8> = vec![];
-    let fee = U24::from(fee_tier);
-    bytes.extend(&token_in.bytes);
+    let fee = U24::from(fee_tier.as_u24());
+    bytes.extend(token_in.as_slice());
     bytes.extend(&fee.to_be_bytes_vec());
-    bytes.extend(&token_out.bytes);
+    bytes.extend(token_out.as_slice());
     Bytes::from(bytes)
 }
 
@@ -202,12 +194,12 @@ pub fn build_pairs(token_pairs: &[TokenPair]) -> Bytes {
 
     let mut bytes: Vec<u8> = vec![];
     for (idx, token_pair) in token_pairs.iter().enumerate() {
-        let fee = U24::from::<u32>(token_pair.fee_tier.clone() as u32);
+        let fee = U24::from(token_pair.fee_tier.as_u24());
         if idx == 0 {
-            bytes.extend(&token_pair.token_in.bytes);
+            bytes.extend(token_pair.token_in.as_slice());
         }
         bytes.extend(&fee.to_be_bytes_vec());
-        bytes.extend(&token_pair.token_out.bytes);
+        bytes.extend(token_pair.token_out.as_slice());
     }
     Bytes::from(bytes)
 }
@@ -215,36 +207,36 @@ pub fn build_pairs(token_pairs: &[TokenPair]) -> Bytes {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use alloy_core::primitives::hex::encode_prefixed as HexEncode;
+    use alloy_primitives::{address, hex::encode_prefixed as HexEncode};
 
     #[test]
     fn test_build_path() {
         // Optimism WETH
-        let token0 = EthereumAddress::parse("0x4200000000000000000000000000000000000006").unwrap();
+        let token0 = address!("0x4200000000000000000000000000000000000006");
         // USDC
-        let token1 = EthereumAddress::parse("0x0b2c639c533813f4aa9d7837caf62653d097ff85").unwrap();
-        let bytes = build_direct_pair(&token0, &token1, FeeTier::FiveHundred as u32);
+        let token1 = address!("0x0b2c639c533813f4aa9d7837caf62653d097ff85");
+        let bytes = build_direct_pair(&token0, &token1, FeeTier::FiveHundred);
 
         assert_eq!(
             HexEncode(bytes),
             "0x42000000000000000000000000000000000000060001f40b2c639c533813f4aa9d7837caf62653d097ff85"
-        )
+        );
     }
 
     #[test]
     fn test_two_hop_path() {
         // UNI
-        let token0 = EthereumAddress::parse("0x6fd9d7AD17242c41f7131d257212c54A0e816691").unwrap();
+        let token0 = address!("0x6fd9d7AD17242c41f7131d257212c54A0e816691");
         // WETH
-        let token1 = EthereumAddress::parse("0x4200000000000000000000000000000000000006").unwrap();
+        let token1 = address!("0x4200000000000000000000000000000000000006");
         // LINK
-        let token2 = EthereumAddress::parse("0x350a791Bfc2C21F9Ed5d10980Dad2e2638ffa7f6").unwrap();
-        let token_pairs = TokenPair::new_two_hop(&token0, &token1, &token2, &FeeTier::ThreeThousand);
+        let token2 = address!("0x350a791Bfc2C21F9Ed5d10980Dad2e2638ffa7f6");
+        let token_pairs = TokenPair::new_two_hop(&token0, &token1, &token2, FeeTier::ThreeThousand);
         let bytes = build_pairs(&token_pairs);
 
         assert_eq!(
             HexEncode(bytes),
             "0x6fd9d7ad17242c41f7131d257212c54a0e816691000bb84200000000000000000000000000000000000006000bb8350a791bfc2c21f9ed5d10980dad2e2638ffa7f6"
-        )
+        );
     }
 }

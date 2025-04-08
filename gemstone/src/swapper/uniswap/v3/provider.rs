@@ -2,6 +2,7 @@ use crate::{
     network::{jsonrpc::batch_jsonrpc_call, AlienProvider, JsonRpcError},
     swapper::{
         approval::{check_approval_erc20, check_approval_permit2},
+        eth_address,
         models::*,
         slippage::apply_slippage_in_bp,
         uniswap::{
@@ -10,17 +11,16 @@ use crate::{
             quote_result::get_best_quote,
             swap_route::{build_swap_route, RouteData},
         },
-        weth_address, GemSwapProvider, SwapperError,
+        GemSwapProvider, SwapperError,
     },
 };
 use gem_evm::{
-    address::EthereumAddress,
     jsonrpc::EthereumRpc,
     uniswap::{command::encode_commands, path::get_base_pair},
 };
 use primitives::{AssetId, Chain, EVMChain};
 
-use alloy_core::primitives::{hex::encode_prefixed as HexEncode, Address, Bytes, U256};
+use alloy_primitives::{hex::encode_prefixed as HexEncode, Address, Bytes, U256};
 use async_trait::async_trait;
 use std::{fmt::Debug, str::FromStr, sync::Arc};
 
@@ -40,15 +40,15 @@ impl UniswapV3 {
         self.provider.get_deployment_by_chain(chain).is_some()
     }
 
-    fn get_asset_address(asset: &AssetId, evm_chain: EVMChain) -> Result<EthereumAddress, SwapperError> {
-        weth_address::parse_into_address(asset, evm_chain)
+    fn get_asset_address(asset: &AssetId, evm_chain: EVMChain) -> Result<Address, SwapperError> {
+        eth_address::normalize_weth_address(asset, evm_chain)
     }
 
-    fn parse_request(request: &SwapQuoteRequest) -> Result<(EVMChain, EthereumAddress, EthereumAddress, U256), SwapperError> {
+    fn parse_request(request: &SwapQuoteRequest) -> Result<(EVMChain, Address, Address, U256), SwapperError> {
         let evm_chain = EVMChain::from_chain(request.from_asset.chain).ok_or(SwapperError::NotSupportedChain)?;
         let token_in = Self::get_asset_address(&request.from_asset, evm_chain)?;
         let token_out = Self::get_asset_address(&request.to_asset, evm_chain)?;
-        let amount_in = U256::from_str(&request.value).map_err(|_| SwapperError::InvalidAmount)?;
+        let amount_in = U256::from_str(&request.value).map_err(SwapperError::from)?;
 
         Ok((evm_chain, token_in, token_out, amount_in))
     }
@@ -118,9 +118,7 @@ impl GemSwapProvider for UniswapV3 {
         _ = evm_chain.weth_contract().ok_or(SwapperError::NotSupportedChain)?;
 
         let fee_tiers = self.provider.get_tiers();
-        let base_pair = get_base_pair(&evm_chain, true).ok_or(SwapperError::ComputeQuoteError {
-            msg: "base pair not found".into(),
-        })?;
+        let base_pair = get_base_pair(&evm_chain, true).ok_or(SwapperError::ComputeQuoteError("base pair not found".into()))?;
 
         let fee_preference = get_fee_token(&request.mode, Some(&base_pair), &token_in, &token_out);
         let fee_bps = request.options.clone().fee.unwrap_or_default().evm.bps;
@@ -176,16 +174,16 @@ impl GemSwapProvider for UniswapV3 {
         let gas_estimate = quote_result.gas_estimate;
 
         // construct routes
-        let fee_tier: u32 = fee_tiers[fee_tier_idx % fee_tiers.len()].clone() as u32;
-        let asset_id_in = AssetId::from(request.from_asset.chain, Some(token_in.to_checksum()));
-        let asset_id_out = AssetId::from(request.to_asset.chain, Some(token_out.to_checksum()));
+        let fee_tier: u32 = fee_tiers[fee_tier_idx % fee_tiers.len()] as u32;
+        let asset_id_in = AssetId::from(request.from_asset.chain, Some(token_in.to_checksum(None)));
+        let asset_id_out = AssetId::from(request.to_asset.chain, Some(token_out.to_checksum(None)));
         let asset_id_intermediary: Option<AssetId> = match batch_idx {
             // direct route
             0 => None,
             // 2 hop route with intermediary token
             _ => {
                 let first_token_out = &paths_array[batch_idx][0].0[0].token_out;
-                Some(AssetId::from(request.to_asset.chain, Some(first_token_out.to_checksum())))
+                Some(AssetId::from(request.to_asset.chain, Some(first_token_out.to_checksum(None))))
             }
         };
         let route_data = RouteData {
@@ -210,10 +208,16 @@ impl GemSwapProvider for UniswapV3 {
         if quote.request.from_asset.is_native() {
             return Ok(None);
         }
-        let wallet_address: Address = quote.request.wallet_address.as_str().parse().map_err(SwapperError::from)?;
+        let wallet_address = eth_address::parse_str(&quote.request.wallet_address)?;
         let (_, token_in, _, amount_in) = Self::parse_request(&quote.request)?;
-        self.check_permit2_approval(wallet_address, &token_in.to_checksum(), amount_in, &quote.request.from_asset.chain, provider)
-            .await
+        self.check_permit2_approval(
+            wallet_address,
+            &token_in.to_checksum(None),
+            amount_in,
+            &quote.request.from_asset.chain,
+            provider,
+        )
+        .await
     }
 
     async fn fetch_quote_data(&self, quote: &SwapQuote, provider: Arc<dyn AlienProvider>, data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError> {
@@ -225,9 +229,9 @@ impl GemSwapProvider for UniswapV3 {
             .ok_or(SwapperError::NotSupportedChain)?;
 
         let route_data: RouteData = serde_json::from_str(&quote.data.routes.first().unwrap().route_data).map_err(|_| SwapperError::InvalidRoute)?;
-        let to_amount = U256::from_str(&route_data.min_amount_out).map_err(|_| SwapperError::InvalidAmount)?;
+        let to_amount = U256::from_str(&route_data.min_amount_out).map_err(SwapperError::from)?;
 
-        let wallet_address: Address = request.wallet_address.as_str().parse().map_err(SwapperError::from)?;
+        let wallet_address = eth_address::parse_str(&request.wallet_address)?;
         let permit = data.permit2_data().map(|data| data.into());
 
         let mut gas_limit: Option<String> = None;
@@ -235,7 +239,7 @@ impl GemSwapProvider for UniswapV3 {
             None
         } else {
             // Check if need to approve permit2 contract
-            self.check_erc20_approval(wallet_address, &token_in.to_checksum(), amount_in, &request.from_asset.chain, provider)
+            self.check_erc20_approval(wallet_address, &token_in.to_checksum(None), amount_in, &request.from_asset.chain, provider)
                 .await?
                 .approval_data()
         };

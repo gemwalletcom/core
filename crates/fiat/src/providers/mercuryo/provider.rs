@@ -4,7 +4,7 @@ use crate::{
 };
 use async_trait::async_trait;
 use primitives::{fiat_transaction::FiatQuoteType, FiatBuyQuote, FiatSellQuote};
-use primitives::{FiatProviderName, FiatQuote, FiatTransaction, FiatTransactionStatus};
+use primitives::{FiatProviderCountry, FiatProviderName, FiatQuote, FiatTransaction, FiatTransactionStatus};
 use std::error::Error;
 
 use super::{client::MercuryoClient, model::Webhook};
@@ -50,6 +50,20 @@ impl FiatProvider for MercuryoClient {
         Ok(assets)
     }
 
+    async fn get_countries(&self) -> Result<Vec<FiatProviderCountry>, Box<dyn std::error::Error + Send + Sync>> {
+        Ok(self
+            .get_countries()
+            .await?
+            .data
+            .into_iter()
+            .map(|x| FiatProviderCountry {
+                provider: Self::NAME.id(),
+                alpha2: x.to_uppercase(),
+                is_allowed: true,
+            })
+            .collect())
+    }
+
     // full transaction: https://github.com/mercuryoio/api-migration-docs/blob/master/Widget_API_Mercuryo_v1.6.md#22-callbacks-response-body
     async fn webhook(&self, data: serde_json::Value) -> Result<FiatTransaction, Box<dyn std::error::Error + Send + Sync>> {
         let data = serde_json::from_value::<Webhook>(data)?.data;
@@ -61,7 +75,11 @@ impl FiatProvider for MercuryoClient {
             "paid" | "completed" | "succeeded" => FiatTransactionStatus::Complete,
             _ => FiatTransactionStatus::Unknown,
         };
-        let transaction_type = FiatQuoteType::Buy;
+        let transaction_type = match data.transacton_type.as_str() {
+            "buy" => FiatQuoteType::Buy,
+            "sell" => FiatQuoteType::Sell,
+            _ => FiatQuoteType::Buy,
+        };
 
         let transaction = FiatTransaction {
             asset_id: None,

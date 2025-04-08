@@ -1,4 +1,4 @@
-use alloy_core::sol;
+use alloy_sol_types::sol;
 
 // https://github.com/across-protocol/contracts/blob/master/contracts/handlers/MulticallHandler.sol
 sol! {

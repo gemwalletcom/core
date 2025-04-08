@@ -1,4 +1,4 @@
-use alloy_core::primitives::U256;
+use alloy_primitives::U256;
 use std::ops::{Div, Mul};
 
 const HUNDRED_PERCENT_IN_BPS: u32 = 10000;

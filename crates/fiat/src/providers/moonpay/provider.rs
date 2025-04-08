@@ -8,7 +8,9 @@ use async_trait::async_trait;
 use std::error::Error;
 
 use super::client::MoonPayClient;
-use primitives::{AssetId, FiatBuyQuote, FiatProviderName, FiatQuote, FiatQuoteType, FiatSellQuote, FiatTransaction, FiatTransactionStatus};
+use primitives::{
+    AssetId, FiatBuyQuote, FiatProviderCountry, FiatProviderName, FiatQuote, FiatQuoteType, FiatSellQuote, FiatTransaction, FiatTransactionStatus,
+};
 
 #[async_trait]
 impl FiatProvider for MoonPayClient {
@@ -17,16 +19,13 @@ impl FiatProvider for MoonPayClient {
     }
 
     async fn get_buy_quote(&self, request: FiatBuyQuote, request_map: FiatMapping) -> Result<FiatQuote, Box<dyn std::error::Error + Send + Sync>> {
-        let ip_address_check = self.get_ip_address(&request.ip_address).await?;
-        if !ip_address_check.is_allowed && !ip_address_check.is_buy_allowed {
-            return Err(FiatError::FiatPurchaseNotAllowed.into());
-        }
-
         let quote = self
             .get_buy_quote(request_map.symbol.to_lowercase(), request.fiat_currency.to_lowercase(), request.fiat_amount)
             .await?;
 
-        self.validate_quote(&quote, ip_address_check).await?;
+        if quote.total_amount > request.fiat_amount {
+            return Err(Box::new(FiatError::MinimumAmount(quote.total_amount)));
+        }
 
         Ok(self.get_buy_fiat_quote(request, quote))
     }
@@ -53,6 +52,19 @@ impl FiatProvider for MoonPayClient {
         Ok(assets)
     }
 
+    async fn get_countries(&self) -> Result<Vec<FiatProviderCountry>, Box<dyn std::error::Error + Send + Sync>> {
+        Ok(self
+            .get_countries()
+            .await?
+            .into_iter()
+            .map(|x| FiatProviderCountry {
+                provider: Self::NAME.id(),
+                alpha2: x.alpha2,
+                is_allowed: x.is_allowed,
+            })
+            .collect())
+    }
+
     // full transaction: https://dev.moonpay.com/reference/reference-webhooks-buy
     async fn webhook(&self, data: serde_json::Value) -> Result<FiatTransaction, Box<dyn std::error::Error + Send + Sync>> {
         let payload = serde_json::from_value::<Data<Webhook>>(data)?;
@@ -72,6 +84,11 @@ impl FiatProvider for MoonPayClient {
         let fee_partner = payload.data.extra_fee_amount.unwrap_or_default();
         let fiat_amount = currency_amount + fee_provider + fee_network + fee_partner;
         let transaction_type = FiatQuoteType::Buy;
+        // let transaction_type = match data.transacton_type.as_str() {
+        //     "buy" => FiatQuoteType::Buy,
+        //     "sell" => FiatQuoteType::Sell,
+        //     _ => FiatQuoteType::Buy,
+        // };
 
         let transaction = FiatTransaction {
             asset_id: Some(asset_id),

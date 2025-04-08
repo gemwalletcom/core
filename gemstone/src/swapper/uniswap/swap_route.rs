@@ -1,5 +1,6 @@
 use crate::swapper::SwapRoute;
-use gem_evm::{address::EthereumAddress, uniswap::path::BasePair};
+use alloy_primitives::Address;
+use gem_evm::uniswap::path::BasePair;
 use primitives::AssetId;
 use serde::{Deserialize, Serialize};
 
@@ -9,12 +10,12 @@ pub struct RouteData {
     pub min_amount_out: String,
 }
 
-pub fn get_intermediaries(token_in: &EthereumAddress, token_out: &EthereumAddress, base_pair: &BasePair) -> Vec<EthereumAddress> {
+pub fn get_intermediaries(token_in: &Address, token_out: &Address, base_pair: &BasePair) -> Vec<Address> {
     let array = base_pair.to_array();
     get_intermediaries_by_array(token_in, token_out, &array)
 }
 
-pub fn get_intermediaries_by_array(token_in: &EthereumAddress, token_out: &EthereumAddress, array: &[EthereumAddress]) -> Vec<EthereumAddress> {
+pub fn get_intermediaries_by_array(token_in: &Address, token_out: &Address, array: &[Address]) -> Vec<Address> {
     array
         .iter()
         .filter(|intermediary| *intermediary != token_in && *intermediary != token_out)

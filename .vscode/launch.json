@@ -11,7 +11,6 @@
             "cargo": {
                 "args": [
                     "build",
-                    "--bin=api",
                     "--package=api"
                 ],
                 "filter": {
@@ -20,44 +19,6 @@
                 }
             },
             "args": [],
-            "cwd": "${workspaceFolder}",
-            "envFile": ".env"
-        },
-        {
-            "type": "lldb",
-            "request": "launch",
-            "name": "Run parser",
-            "cargo": {
-                "args": [
-                    "build",
-                    "--bin=parser",
-                    "--package=parser"
-                ],
-                "filter": {
-                    "name": "parser",
-                    "kind": "bin"
-                }
-            },
-            "args": [],
-            "cwd": "${workspaceFolder}"
-        },
-        {
-            "type": "lldb",
-            "request": "launch",
-            "name": "Run deamon",
-            "cargo": {
-                "args": [
-                    "build",
-                    "--bin=deamon",
-                    "--package=deamon"
-                ],
-                "filter": {
-                    "name": "deamon",
-                    "kind": "bin"
-                }
-            },
-            "args": [],
-            "cwd": "${workspaceFolder}"
         },
         {
             "type": "lldb",

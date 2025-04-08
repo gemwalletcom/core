@@ -24,7 +24,12 @@ pub async fn main() {
 
     let settings = settings::Settings::new().unwrap();
 
-    let service = DaemonService::from_str(service.as_str()).expect("Expected a valid service");
+    let service = DaemonService::from_str(service.as_str()).unwrap_or_else(|_| {
+        panic!(
+            "Expected a valid service: {:?}",
+            DaemonService::all().iter().map(|x| x.as_ref()).collect::<Vec<_>>()
+        );
+    });
 
     let services: Vec<Pin<Box<dyn Future<Output = ()> + Send>>> = match service {
         DaemonService::Alerter => alerter::jobs(settings.clone()).await,

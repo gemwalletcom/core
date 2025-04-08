@@ -1,4 +1,4 @@
-use alloy_core::sol;
+use alloy_sol_types::sol;
 
 // https://docs.across.to/reference/selected-contract-functions
 // https://github.com/across-protocol/contracts/blob/master/contracts/HubPool.sol

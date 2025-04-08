@@ -15,6 +15,8 @@ pub mod thorchain;
 pub mod uniswap;
 pub mod weth;
 
+pub use address::ethereum_address_checksum;
+
 pub fn parse_u256(value: &str) -> Option<U256> {
     if let Some(stripped) = value.strip_prefix("0x") {
         U256::from_str_radix(stripped, 16).ok()

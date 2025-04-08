@@ -1,7 +1,12 @@
+use alloy_primitives::{hex::encode_prefixed as HexEncode, Address, U256};
+use async_trait::async_trait;
+use std::{str::FromStr, sync::Arc, vec};
+
 use crate::{
     network::{batch_jsonrpc_call, AlienProvider, JsonRpcError},
     swapper::{
         approval::{check_approval_erc20, check_approval_permit2},
+        eth_address,
         slippage::apply_slippage_in_bp,
         uniswap::{
             deadline::get_sig_deadline,
@@ -9,14 +14,11 @@ use crate::{
             quote_result::get_best_quote,
             swap_route::{build_swap_route, get_intermediaries, RouteData},
         },
-        weth_address, ApprovalData, FetchQuoteData, GemSwapProvider, Permit2ApprovalData, SwapChainAsset, SwapProvider, SwapProviderData, SwapProviderType,
-        SwapQuote, SwapQuoteData, SwapQuoteRequest, SwapperError,
+        ApprovalData, FetchQuoteData, GemSwapProvider, Permit2ApprovalData, SwapChainAsset, SwapProvider, SwapProviderData, SwapProviderType, SwapQuote,
+        SwapQuoteData, SwapQuoteRequest, SwapperError,
     },
 };
-use alloy_core::hex;
-use alloy_primitives::U256;
 use gem_evm::{
-    address::EthereumAddress,
     jsonrpc::EthereumRpc,
     uniswap::{
         command::encode_commands,
@@ -27,9 +29,6 @@ use gem_evm::{
     },
 };
 use primitives::{AssetId, Chain, EVMChain};
-
-use async_trait::async_trait;
-use std::{str::FromStr, sync::Arc, vec};
 
 use super::{
     commands::build_commands,
@@ -64,24 +63,24 @@ impl UniswapV4 {
         vec![FeeTier::Hundred, FeeTier::FiveHundred, FeeTier::ThreeThousand, FeeTier::TenThousand]
     }
 
-    fn is_base_pair(token_in: &EthereumAddress, token_out: &EthereumAddress, evm_chain: &EVMChain) -> bool {
+    fn is_base_pair(token_in: &Address, token_out: &Address, evm_chain: &EVMChain) -> bool {
         let base_set = get_base_pair(evm_chain, false).unwrap().to_set();
         base_set.contains(token_in) || base_set.contains(token_out)
     }
 
-    fn parse_asset_address(asset: &AssetId, evm_chain: EVMChain) -> Result<EthereumAddress, SwapperError> {
+    fn parse_asset_address(asset: &AssetId, _evm_chain: EVMChain) -> Result<Address, SwapperError> {
         if asset.is_native() {
-            Ok(EthereumAddress::zero())
+            Ok(Address::ZERO)
         } else {
-            weth_address::parse_into_address(asset, evm_chain)
+            eth_address::parse_asset_id(asset)
         }
     }
 
-    fn parse_request(request: &SwapQuoteRequest) -> Result<(EVMChain, EthereumAddress, EthereumAddress, u128), SwapperError> {
+    fn parse_request(request: &SwapQuoteRequest) -> Result<(EVMChain, Address, Address, u128), SwapperError> {
         let evm_chain = EVMChain::from_chain(request.from_asset.chain).ok_or(SwapperError::NotSupportedChain)?;
         let token_in = Self::parse_asset_address(&request.from_asset, evm_chain)?;
         let token_out = Self::parse_asset_address(&request.to_asset, evm_chain)?;
-        let amount_in = u128::from_str(&request.value).map_err(|_| SwapperError::InvalidAmount)?;
+        let amount_in = u128::from_str(&request.value).map_err(SwapperError::from)?;
 
         Ok((evm_chain, token_in, token_out, amount_in))
     }
@@ -102,9 +101,7 @@ impl GemSwapProvider for UniswapV4 {
         _ = evm_chain.weth_contract().ok_or(SwapperError::NotSupportedChain)?;
 
         let fee_tiers = self.get_tiers();
-        let base_pair = get_base_pair(&evm_chain, false).ok_or(SwapperError::ComputeQuoteError {
-            msg: "base pair not found".into(),
-        })?;
+        let base_pair = get_base_pair(&evm_chain, false).ok_or(SwapperError::ComputeQuoteError("base pair not found".into()))?;
         let fee_preference = get_fee_token(&request.mode, Some(&base_pair), &token_in, &token_out);
         let fee_bps = request.options.clone().fee.unwrap_or_default().evm.bps;
         // If fees are taken from input token, we need to use remaining amount as quote amount
@@ -165,16 +162,16 @@ impl GemSwapProvider for UniswapV4 {
         let to_min_value = apply_slippage_in_bp(&to_value, request.options.slippage.bps);
 
         // construct routes
-        let fee_tier: u32 = fee_tiers[fee_tier_idx % fee_tiers.len()].clone() as u32;
-        let asset_id_in = AssetId::from(request.from_asset.chain, Some(token_in.to_checksum()));
-        let asset_id_out = AssetId::from(request.to_asset.chain, Some(token_out.to_checksum()));
+        let fee_tier: u32 = fee_tiers[fee_tier_idx % fee_tiers.len()] as u32;
+        let asset_id_in = AssetId::from(request.from_asset.chain, Some(token_in.to_checksum(None)));
+        let asset_id_out = AssetId::from(request.to_asset.chain, Some(token_out.to_checksum(None)));
         let asset_id_intermediary: Option<AssetId> = match batch_idx {
             // direct route
             0 => None,
             // 2 hop route with intermediary token
             _ => {
                 let first_token_out = &quote_exact_params[batch_idx][0].0[0].token_out;
-                Some(AssetId::from(request.to_asset.chain, Some(first_token_out.to_checksum())))
+                Some(AssetId::from(request.to_asset.chain, Some(first_token_out.to_checksum(None))))
             }
         };
         let route_data = RouteData {
@@ -223,7 +220,7 @@ impl GemSwapProvider for UniswapV4 {
         let (_, token_in, token_out, amount_in) = Self::parse_request(request)?;
         let deployment = get_uniswap_deployment_by_chain(&request.from_asset.chain).ok_or(SwapperError::NotSupportedChain)?;
         let route_data: RouteData = serde_json::from_str(&quote.data.routes.first().unwrap().route_data).map_err(|_| SwapperError::InvalidRoute)?;
-        let to_amount = u128::from_str(&route_data.min_amount_out).map_err(|_| SwapperError::InvalidAmount)?;
+        let to_amount = u128::from_str(&route_data.min_amount_out).map_err(SwapperError::from)?;
 
         let permit = data.permit2_data().map(|data| data.into());
 
@@ -270,7 +267,7 @@ impl GemSwapProvider for UniswapV4 {
         Ok(SwapQuoteData {
             to: deployment.universal_router.into(),
             value,
-            data: hex::encode_prefixed(encoded),
+            data: HexEncode(encoded),
             approval,
             gas_limit,
         })

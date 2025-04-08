@@ -33,10 +33,10 @@ install-diesel:
     cargo install diesel_cli --no-default-features --features postgres --version 2.2.4 --force
 
 test-workspace:
-    cargo test --workspace --quiet
+    cargo test --lib --workspace --quiet
 
 test-all:
-    cargo test --all --workspace 
+    cargo test --lib --all
 
 test CRATE:
     cargo test --package {{CRATE}}
@@ -44,7 +44,8 @@ test CRATE:
 format:
     cargo fmt -q --all
 
-fix: lint
+fix:
+    @cargo clippy --fix --workspace --all-targets --allow-dirty
 
 lint:
     @cargo clippy --version

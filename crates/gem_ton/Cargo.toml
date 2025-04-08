@@ -7,7 +7,7 @@ edition = { workspace = true }
 
 thiserror = { workspace = true }
 base64 = { workspace = true }
-bitstream-io = "2"
+bitstream-io = "2.6.0"
 num-bigint = { workspace = true }
 num-traits = { workspace = true }
 sha2 = { workspace = true }

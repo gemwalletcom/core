@@ -44,3 +44,5 @@ mod hyperliquid;
 pub use hyperliquid::HyperLiquid;
 mod routescan;
 pub use routescan::RouteScan;
+mod mayanscan;
+pub use mayanscan::MayanScan;

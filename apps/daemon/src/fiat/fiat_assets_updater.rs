@@ -83,6 +83,23 @@ impl FiatAssetsUpdater {
         Ok(fiat_assets.len())
     }
 
+    pub async fn update_fiat_providers_countries(&mut self) -> Result<bool, Box<dyn std::error::Error + Send + Sync>> {
+        for provider in self.providers.iter() {
+            match provider.get_countries().await {
+                Ok(countries) => {
+                    println!("update_countries for provider: {}, countries: {:?}", provider.name().id(), countries.len());
+                    let _ = self
+                        .database
+                        .add_fiat_providers_countries(countries.into_iter().map(storage::models::FiatProviderCountry::from_primitive).collect());
+                }
+                Err(err) => {
+                    println!("update_countries for provider: {}, error: {}", provider.name().id(), err);
+                }
+            }
+        }
+        Ok(true)
+    }
+
     fn map_fiat_asset(&self, provider: String, fiat_asset: FiatProviderAsset) -> primitives::FiatAsset {
         let asset_id = fiat_asset.asset_id();
         primitives::FiatAsset {
@@ -93,6 +110,7 @@ impl FiatAssetsUpdater {
             network: fiat_asset.clone().network,
             token_id: fiat_asset.clone().token_id,
             enabled: fiat_asset.clone().enabled,
+            unsupported_countries: fiat_asset.clone().unsupported_countries.unwrap_or_default(),
         }
     }
 }

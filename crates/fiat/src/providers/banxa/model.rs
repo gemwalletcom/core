@@ -1,9 +1,17 @@
-use serde::{Deserialize, Serialize};
-use serde_serializers::deserialize_f64_from_str;
+use std::collections::HashMap;
 
-#[derive(Debug, Deserialize)]
-pub struct Response<T> {
-    pub data: T,
+use serde::Deserialize;
+use serde_serializers::{deserialize_f64_from_str, deserialize_option_f64_from_str};
+
+pub const ORDER_TYPE_BUY: &str = "buy";
+pub const ORDER_TYPE_SELL: &str = "sell";
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct Coin {
+    pub id: String,
+    pub blockchain: String,
+    pub address: String,
+    pub network: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -13,69 +21,74 @@ pub struct Coins {
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct Asset {
-    pub coin_code: String,
+    pub id: String,
     pub blockchains: Vec<Blockchain>,
 }
 
 #[derive(Debug, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct Blockchain {
-    pub code: String,
-    pub contract_id: Option<String>,
-}
-#[derive(Debug, Deserialize)]
-pub struct OrderData<T> {
-    pub order: T,
+    pub id: String,
+    pub address: Option<String>,
+    pub unsupported_countries: UnsupportedCountries,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
+#[serde(untagged)]
+pub enum UnsupportedCountries {
+    Map(HashMap<String, Vec<String>>),
+    Empty(Vec<()>),
+}
+
+impl UnsupportedCountries {
+    pub fn list_map(self) -> HashMap<String, Vec<String>> {
+        match self {
+            UnsupportedCountries::Map(map) => map,
+            UnsupportedCountries::Empty(_) => HashMap::new(),
+        }
+    }
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct Quote {
+    #[serde(deserialize_with = "deserialize_f64_from_str")]
+    pub crypto_amount: f64,
+    #[serde(deserialize_with = "deserialize_f64_from_str")]
+    pub fiat_amount: f64,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct PaymentMethod {
+    pub id: String,
+    pub supported_fiats: Vec<String>,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct Country {
+    pub id: String,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct Order {
     pub id: String,
-    pub checkout_url: String,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct OrderRequest {
-    pub account_reference: String,
-    pub source: String,
-    pub source_amount: String,
-    pub target: String,
-    pub blockchain: String,
-    pub wallet_address: String,
-    pub return_url_on_success: String,
-}
-
-#[derive(Debug, Deserialize, Clone)]
-pub struct Prices {
-    pub spot_price: String,
-    pub prices: Vec<Price>,
-}
-
-#[derive(Debug, Deserialize, Clone)]
-pub struct Price {
-    #[serde(deserialize_with = "deserialize_f64_from_str")]
-    pub spot_price_including_fee: f64,
-    #[serde(deserialize_with = "deserialize_f64_from_str")]
-    pub network_fee: f64,
-    #[serde(deserialize_with = "deserialize_f64_from_str")]
-    pub fee_amount: f64,
-    #[serde(deserialize_with = "deserialize_f64_from_str")]
-    pub fiat_amount: f64,
-}
-
-#[derive(Debug, Deserialize, Clone)]
-pub struct OrderDetails {
-    pub id: String,
     pub status: String,
-    pub coin_code: String,
+    pub crypto: Coin,
+    pub fiat: String,
+    #[serde(deserialize_with = "deserialize_f64_from_str")]
     pub fiat_amount: f64,
-    pub fiat_code: String,
+    #[serde(deserialize_with = "deserialize_f64_from_str")]
+    pub crypto_amount: f64,
     pub wallet_address: String,
     pub tx_hash: Option<String>,
-    pub blockchain: Blockchain,
-    pub fee: Option<f64>,
-    pub payment_fee: Option<f64>,
-    pub merchant_fee: Option<f64>,
+    #[serde(deserialize_with = "deserialize_option_f64_from_str")]
+    pub processing_fee: Option<f64>,
+    #[serde(deserialize_with = "deserialize_option_f64_from_str")]
     pub network_fee: Option<f64>,
+    pub order_type: String,
 }
 
 #[derive(Debug, Deserialize, Clone)]

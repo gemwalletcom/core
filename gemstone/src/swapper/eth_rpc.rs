@@ -8,8 +8,8 @@ use gem_evm::{
 };
 use primitives::{Chain, EVMChain};
 
-use alloy_core::{hex::decode as HexDecode, sol_types::SolCall};
-use alloy_primitives::U256;
+use alloy_primitives::{hex::decode as HexDecode, U256};
+use alloy_sol_types::SolCall;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::sync::Arc;
@@ -57,14 +57,14 @@ pub async fn fetch_gas_price(provider: Arc<dyn AlienProvider>, chain: &Chain) ->
     let resp: JsonRpcResult<String> = jsonrpc_call(&call, provider.clone(), chain).await?;
     let value = resp.take()?;
 
-    parse_u256(&value).ok_or(SwapperError::InvalidAmount)
+    parse_u256(&value).ok_or(SwapperError::InvalidAmount("invalid gas price".into()))
 }
 
 pub async fn estimate_gas(provider: Arc<dyn AlienProvider>, chain: &Chain, tx: TransactionObject) -> Result<U256, SwapperError> {
     let call = EthereumRpc::EstimateGas(tx, BlockParameter::Latest);
     let resp: JsonRpcResult<String> = jsonrpc_call(&call, provider.clone(), chain).await?;
     let value = resp.take()?;
-    parse_u256(&value).ok_or(SwapperError::InvalidAmount)
+    parse_u256(&value).ok_or(SwapperError::InvalidAmount("invalid gas limit".into()))
 }
 
 pub async fn fetch_tx_receipt(provider: Arc<dyn AlienProvider>, chain: &Chain, tx_hash: &str) -> Result<TxReceipt, SwapperError> {
@@ -93,11 +93,9 @@ pub async fn multicall3_call(
 
     let response: JsonRpcResult<String> = jsonrpc_call(&call, provider.clone(), chain).await?;
     let result = response.take()?;
-    let hex_data = HexDecode(result).map_err(|e| SwapperError::NetworkError { msg: e.to_string() })?;
+    let hex_data = HexDecode(result).map_err(|e| SwapperError::NetworkError(e.to_string()))?;
 
-    let decoded = IMulticall3::aggregate3Call::abi_decode_returns(&hex_data, true)
-        .map_err(|e| SwapperError::ABIError { msg: e.to_string() })?
-        .returnData;
+    let decoded = IMulticall3::aggregate3Call::abi_decode_returns(&hex_data).map_err(|_| SwapperError::ABIError("failed to decode aggregate3Call".into()))?;
 
     Ok(decoded)
 }

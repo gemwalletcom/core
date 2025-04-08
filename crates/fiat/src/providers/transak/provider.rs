@@ -5,7 +5,7 @@ use crate::{
     FiatProvider,
 };
 use async_trait::async_trait;
-use primitives::{FiatBuyQuote, FiatProviderName, FiatQuote, FiatQuoteType, FiatSellQuote, FiatTransaction, FiatTransactionStatus};
+use primitives::{FiatBuyQuote, FiatProviderCountry, FiatProviderName, FiatQuote, FiatQuoteType, FiatSellQuote, FiatTransaction, FiatTransactionStatus};
 use std::error::Error;
 
 #[async_trait]
@@ -35,10 +35,25 @@ impl FiatProvider for TransakClient {
         let assets = self
             .get_supported_assets()
             .await?
+            .response
             .into_iter()
             .flat_map(Self::map_asset)
             .collect::<Vec<FiatProviderAsset>>();
         Ok(assets)
+    }
+
+    async fn get_countries(&self) -> Result<Vec<FiatProviderCountry>, Box<dyn std::error::Error + Send + Sync>> {
+        Ok(self
+            .get_countries()
+            .await?
+            .response
+            .into_iter()
+            .map(|x| FiatProviderCountry {
+                provider: Self::NAME.id(),
+                alpha2: x.alpha2,
+                is_allowed: x.is_allowed,
+            })
+            .collect())
     }
 
     async fn webhook(&self, data: serde_json::Value) -> Result<FiatTransaction, Box<dyn std::error::Error + Send + Sync>> {
@@ -54,7 +69,11 @@ impl FiatProvider for TransakClient {
             "COMPLETED" => FiatTransactionStatus::Complete,
             _ => FiatTransactionStatus::Unknown,
         };
-        let transaction_type = FiatQuoteType::Buy;
+        let transaction_type = match payload.is_buy_or_sell.as_str() {
+            "BUY" => FiatQuoteType::Buy,
+            "SELL" => FiatQuoteType::Sell,
+            _ => FiatQuoteType::Buy,
+        };
 
         let transaction = FiatTransaction {
             asset_id: None,

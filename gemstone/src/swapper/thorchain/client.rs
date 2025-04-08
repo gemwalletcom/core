@@ -41,13 +41,9 @@ impl ThorChainSwapClient {
         let query = serde_urlencoded::to_string(params).unwrap();
         let target = AlienTarget::get(format!("{}{}?{}", endpoint, "/thorchain/quote/swap", query).as_str());
 
-        let data = self
-            .provider
-            .request(target)
-            .await
-            .map_err(|err| SwapperError::NetworkError { msg: err.to_string() })?;
+        let data = self.provider.request(target).await.map_err(SwapperError::from)?;
 
-        serde_json::from_slice(&data).map_err(|err| SwapperError::NetworkError { msg: err.to_string() })
+        serde_json::from_slice(&data).map_err(SwapperError::from)
     }
 
     #[allow(dead_code)]
@@ -59,24 +55,16 @@ impl ThorChainSwapClient {
             body: None,
         };
 
-        let data = self
-            .provider
-            .request(target)
-            .await
-            .map_err(|err| SwapperError::NetworkError { msg: err.to_string() })?;
+        let data = self.provider.request(target).await.map_err(SwapperError::from)?;
 
-        serde_json::from_slice(&data).map_err(|err| SwapperError::NetworkError { msg: err.to_string() })
+        serde_json::from_slice(&data).map_err(SwapperError::from)
     }
 
     pub async fn get_transaction_status(&self, endpoint: &str, transaction_hash: &str) -> Result<Transaction, SwapperError> {
         let target = AlienTarget::get(format!("{}/thorchain/tx/{}", endpoint, transaction_hash).as_str());
 
-        let data = self
-            .provider
-            .request(target)
-            .await
-            .map_err(|err| SwapperError::NetworkError { msg: err.to_string() })?;
+        let data = self.provider.request(target).await.map_err(SwapperError::from)?;
 
-        serde_json::from_slice(&data).map_err(|err| SwapperError::NetworkError { msg: err.to_string() })
+        serde_json::from_slice(&data).map_err(SwapperError::from)
     }
 }

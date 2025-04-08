@@ -8,6 +8,7 @@ CREATE TABLE fiat_assets (
   token_id VARCHAR(128) NULL,
   is_enabled BOOLEAN NOT NULL DEFAULT TRUE,  
   is_enabled_by_provider BOOLEAN NOT NULL DEFAULT TRUE,
+  unsupported_countries jsonb,
   updated_at timestamp NOT NULL default current_timestamp,
   created_at timestamp NOT NULL default current_timestamp
 );

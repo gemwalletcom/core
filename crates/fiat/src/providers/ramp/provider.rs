@@ -1,5 +1,10 @@
-use primitives::{AssetId, FiatBuyQuote, FiatProviderName, FiatQuote, FiatQuoteType, FiatSellQuote, FiatTransaction, FiatTransactionStatus};
-use std::error::Error;
+use primitives::{
+    AssetId, FiatBuyQuote, FiatProviderCountry, FiatProviderName, FiatQuote, FiatQuoteType, FiatSellQuote, FiatTransaction, FiatTransactionStatus,
+};
+use std::{
+    collections::{HashMap, HashSet},
+    error::Error,
+};
 
 use crate::{
     model::{FiatMapping, FiatProviderAsset},
@@ -19,15 +24,7 @@ impl FiatProvider for RampClient {
     }
 
     async fn get_buy_quote(&self, request: FiatBuyQuote, request_map: FiatMapping) -> Result<FiatQuote, Box<dyn std::error::Error + Send + Sync>> {
-        let assets = self
-            .get_supported_buy_assets(request.clone().fiat_currency, request.clone().ip_address)
-            .await?
-            .assets;
         let crypto_asset_symbol = self.get_crypto_asset_symbol(request_map);
-
-        if !assets.iter().any(|x| x.crypto_asset_symbol() == crypto_asset_symbol) {
-            return Err("asset buy not supported".into());
-        }
 
         let payload = QuoteRequest {
             crypto_asset_symbol,
@@ -41,15 +38,7 @@ impl FiatProvider for RampClient {
     }
 
     async fn get_sell_quote(&self, request: FiatSellQuote, request_map: FiatMapping) -> Result<FiatQuote, Box<dyn Error + Send + Sync>> {
-        let assets = self
-            .get_supported_sell_assets(request.clone().fiat_currency, request.clone().ip_address)
-            .await?
-            .assets;
-
         let crypto_asset_symbol = self.get_crypto_asset_symbol(request_map);
-        if !assets.iter().any(|x| x.crypto_asset_symbol() == crypto_asset_symbol) {
-            return Err("asset buy not supported".into());
-        }
 
         let payload = QuoteRequest {
             crypto_asset_symbol,
@@ -63,20 +52,47 @@ impl FiatProvider for RampClient {
     }
 
     async fn get_assets(&self) -> Result<Vec<FiatProviderAsset>, Box<dyn std::error::Error + Send + Sync>> {
-        let assets = self
-            .get_supported_buy_assets("USD".to_string(), "127.0.0.0".to_string())
-            .await?
-            .assets
+        let countries = self.get_countries().await?;
+        let assets = self.get_supported_buy_assets("USD".to_string(), "127.0.0.0".to_string()).await?.assets;
+        let assets_symbols_map = assets.clone().into_iter().map(|x| x.crypto_asset_symbol()).collect::<HashSet<String>>();
+
+        let asset_to_countries: HashMap<String, HashMap<String, Vec<String>>> = countries.iter().fold(HashMap::new(), |mut map, country| {
+            let supported_assets = &country.api_v3_supported_assets.clone().unwrap_or_default().into_iter().collect::<HashSet<_>>();
+            if supported_assets.is_empty() {
+                return map;
+            }
+            let assets_difference = assets_symbols_map.difference(supported_assets).collect::<HashSet<&String>>();
+            for asset in assets_difference {
+                map.entry(asset.clone()).or_default().insert(country.code.to_uppercase(), vec![]);
+            }
+            map
+        });
+
+        let assets = assets
             .into_iter()
-            .flat_map(Self::map_asset)
+            .flat_map(|x| Self::map_asset(x.clone(), asset_to_countries.get(&x.crypto_asset_symbol()).cloned()))
             .collect::<Vec<FiatProviderAsset>>();
+
         Ok(assets)
+    }
+
+    async fn get_countries(&self) -> Result<Vec<FiatProviderCountry>, Box<dyn std::error::Error + Send + Sync>> {
+        Ok(self
+            .get_countries()
+            .await?
+            .into_iter()
+            .map(|x| FiatProviderCountry {
+                provider: Self::NAME.id(),
+                alpha2: x.code.to_uppercase(),
+                is_allowed: x.card_payments_enabled,
+            })
+            .collect())
     }
 
     // full transaction: https://docs.ramp.network/webhooks#example-using-expressjs
     async fn webhook(&self, data: serde_json::Value) -> Result<FiatTransaction, Box<dyn std::error::Error + Send + Sync>> {
         let payload = serde_json::from_value::<Webhook>(data)?.purchase;
-        let asset = Self::map_asset(payload.asset.clone()).unwrap();
+        let asset = Self::map_asset(payload.asset.clone(), None).unwrap();
         let asset_id = AssetId::from(asset.chain.unwrap(), asset.token_id);
 
         // https://docs.ramp.network/sdk-reference#ramp-sale-transaction-object
@@ -86,6 +102,11 @@ impl FiatProvider for RampClient {
             "RELEASED" => FiatTransactionStatus::Complete,
             _ => FiatTransactionStatus::Unknown,
         };
+        // let transaction_type = match data.transacton_type.as_str() {
+        //     "buy" => FiatQuoteType::Buy,
+        //     "sell" => FiatQuoteType::Sell,
+        //     _ => FiatQuoteType::Buy,
+        // };
         let transaction_type = FiatQuoteType::Buy;
 
         let transaction = FiatTransaction {

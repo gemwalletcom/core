@@ -1,4 +1,4 @@
-use alloy_core::sol;
+use alloy_sol_types::sol;
 
 pub mod v3;
 pub mod v4;

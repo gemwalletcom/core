@@ -1,5 +1,4 @@
 use crate::network::{jsonrpc::JsonRpcError, AlienError};
-use gem_evm::address::AddressError;
 use std::fmt::Debug;
 
 #[derive(Debug, thiserror::Error, uniffi::Error)]
@@ -12,22 +11,22 @@ pub enum SwapperError {
     NotSupportedPair,
     #[error("No available provider")]
     NoAvailableProvider,
-    #[error("Invalid address {address}")]
-    InvalidAddress { address: String },
-    #[error("Invalid input amount")]
-    InvalidAmount,
+    #[error("Invalid address {0}")]
+    InvalidAddress(String),
+    #[error("Invalid amount {0}")]
+    InvalidAmount(String),
     #[error("Input amount is too small")]
     InputAmountTooSmall,
-    #[error("Invalid route")]
+    #[error("Invalid route or route data")]
     InvalidRoute,
-    #[error("RPC error: {msg}")]
-    NetworkError { msg: String },
-    #[error("ABI error: {msg}")]
-    ABIError { msg: String },
-    #[error("Compute quote error: {msg}")]
-    ComputeQuoteError { msg: String },
-    #[error("Transaction error: {msg}")]
-    TransactionError { msg: String },
+    #[error("Network related error: {0}")]
+    NetworkError(String),
+    #[error("ABI error: {0}")]
+    ABIError(String),
+    #[error("Compute quote error: {0}")]
+    ComputeQuoteError(String),
+    #[error("Transaction error: {0}")]
+    TransactionError(String),
 
     #[error("No quote available")]
     NoQuoteAvailable,
@@ -37,18 +36,63 @@ pub enum SwapperError {
 
 impl From<AlienError> for SwapperError {
     fn from(err: AlienError) -> Self {
-        Self::NetworkError { msg: err.to_string() }
+        match err {
+            AlienError::RequestError { msg } => Self::NetworkError(format!("Alien request error: {}", msg)),
+            AlienError::ResponseError { msg } => Self::NetworkError(format!("Alien response error: {}", msg)),
+        }
     }
 }
 
 impl From<JsonRpcError> for SwapperError {
     fn from(err: JsonRpcError) -> Self {
-        Self::NetworkError { msg: err.to_string() }
+        Self::NetworkError(format!("JsonRpcError: {}", err))
     }
 }
 
-impl From<AddressError> for SwapperError {
-    fn from(err: AddressError) -> Self {
-        Self::InvalidAddress { address: err.to_string() }
+impl From<alloy_primitives::AddressError> for SwapperError {
+    fn from(err: alloy_primitives::AddressError) -> Self {
+        Self::InvalidAddress(err.to_string())
+    }
+}
+
+impl From<sui_types::AddressParseError> for SwapperError {
+    fn from(err: sui_types::AddressParseError) -> Self {
+        Self::InvalidAddress(err.to_string())
+    }
+}
+
+impl From<serde_json::Error> for SwapperError {
+    fn from(err: serde_json::Error) -> Self {
+        Self::NetworkError(format!("serde_json::Error: {}", err))
+    }
+}
+
+impl From<serde_urlencoded::ser::Error> for SwapperError {
+    fn from(err: serde_urlencoded::ser::Error) -> Self {
+        Self::NetworkError(format!("Request query error: {}", err))
+    }
+}
+
+impl From<alloy_sol_types::Error> for SwapperError {
+    fn from(err: alloy_sol_types::Error) -> Self {
+        Self::ABIError(format!("AlloyError: {}", err))
+    }
+}
+
+impl From<alloy_primitives::ruint::ParseError> for SwapperError {
+    fn from(err: alloy_primitives::ruint::ParseError) -> Self {
+        Self::InvalidAmount(err.to_string())
+    }
+}
+
+impl From<std::num::ParseIntError> for SwapperError {
+    fn from(err: std::num::ParseIntError) -> Self {
+        Self::InvalidAmount(err.to_string())
+    }
+}
+
+impl From<num_bigint::ParseBigIntError> for SwapperError {
+    fn from(err: num_bigint::ParseBigIntError) -> Self {
+        Self::InvalidAmount(err.to_string())
     }
 }

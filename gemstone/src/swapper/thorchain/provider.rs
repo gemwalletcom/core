@@ -9,9 +9,8 @@ use crate::swapper::asset::{
 use crate::swapper::thorchain::client::ThorChainSwapClient;
 use crate::swapper::{ApprovalData, FetchQuoteData, SwapProviderData, SwapProviderType, SwapQuote, SwapQuoteData, SwapQuoteRequest, SwapRoute, SwapperError};
 use crate::swapper::{GemSwapProvider, SwapChainAsset};
-use alloy_core::sol_types::SolCall;
-use alloy_primitives::Address;
-use alloy_primitives::U256;
+use alloy_primitives::{hex::encode_prefixed as HexEncode, Address, U256};
+use alloy_sol_types::SolCall;
 use async_trait::async_trait;
 use gem_evm::thorchain::contracts::RouterInterface;
 use primitives::Chain;
@@ -50,9 +49,7 @@ impl GemSwapProvider for ThorChain {
     }
 
     async fn fetch_quote(&self, request: &SwapQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapQuote, SwapperError> {
-        let endpoint = provider
-            .get_endpoint(Chain::Thorchain)
-            .map_err(|err| SwapperError::NetworkError { msg: err.to_string() })?;
+        let endpoint = provider.get_endpoint(Chain::Thorchain).map_err(SwapperError::from)?;
         let client = ThorChainSwapClient::new(provider.clone());
 
         let from_asset = THORChainAsset::from_asset_id(request.clone().from_asset).ok_or(SwapperError::NotSupportedAsset)?;
@@ -60,19 +57,23 @@ impl GemSwapProvider for ThorChain {
 
         let value = self.value_from(request.clone().value, from_asset.decimals as i32);
 
-        // min fee validation
-        let inbound_addresses = client.get_inbound_addresses(endpoint.as_str()).await?;
-        let from_inbound_address = &inbound_addresses
-            .iter()
-            .find(|address| address.chain == from_asset.chain.long_name())
-            .ok_or(SwapperError::InvalidRoute)?;
+        // thorchain is not included in inbound addresses
+        if from_asset.chain != THORChainName::Thorchain {
+            // min fee validation
+            let inbound_addresses = client.get_inbound_addresses(endpoint.as_str()).await?;
+            let from_inbound_address = &inbound_addresses
+                .iter()
+                .find(|address| address.chain == from_asset.chain.long_name())
+                .ok_or(SwapperError::InvalidRoute)?;
 
-        if from_inbound_address.dust_threshold > value {
-            return Err(SwapperError::InputAmountTooSmall);
+            if from_inbound_address.dust_threshold > value {
+                return Err(SwapperError::InputAmountTooSmall);
+            }
+
+            // if (from_inbound_address.outbound_fee.clone() * from_inbound_address.gas_rate.clone()) > value {
+            //     return Err(SwapperError::InputAmountTooSmall);
+            // }
         }
-        // if (from_inbound_address.outbound_fee.clone() * from_inbound_address.gas_rate.clone()) > value {
-        //     return Err(SwapperError::InputAmountTooSmall);
-        // }
 
         let fee = request.options.clone().fee.unwrap_or_default().thorchain;
 
@@ -136,7 +137,7 @@ impl GemSwapProvider for ThorChain {
 
         let approval: Option<ApprovalData> = {
             if from_asset.use_evm_router() {
-                let from_amount: U256 = value.to_string().parse().map_err(|_| SwapperError::InvalidAmount)?;
+                let from_amount: U256 = value.to_string().parse().map_err(SwapperError::from)?;
                 check_approval_erc20(
                     quote.request.wallet_address.clone(),
                     from_asset.token_id.clone().unwrap(),
@@ -178,7 +179,7 @@ impl GemSwapProvider for ThorChain {
             SwapQuoteData {
                 to,
                 value: "0".to_string(),
-                data: hex::encode(call.clone()),
+                data: HexEncode(call.clone()),
                 approval,
                 gas_limit,
             }
@@ -196,9 +197,7 @@ impl GemSwapProvider for ThorChain {
     }
 
     async fn get_transaction_status(&self, _chain: Chain, transaction_hash: &str, provider: Arc<dyn AlienProvider>) -> Result<bool, SwapperError> {
-        let endpoint = provider
-            .get_endpoint(Chain::Thorchain)
-            .map_err(|err| SwapperError::NetworkError { msg: err.to_string() })?;
+        let endpoint = provider.get_endpoint(Chain::Thorchain).map_err(SwapperError::from)?;
         let client = ThorChainSwapClient::new(provider);
 
         let status = client.get_transaction_status(&endpoint, transaction_hash).await?;

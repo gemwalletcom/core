@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 
@@ -37,6 +39,7 @@ pub struct FiatAsset {
     pub token_id: Option<String>,
     pub is_enabled: bool, // managed by db
     pub is_enabled_by_provider: bool,
+    pub unsupported_countries: Option<serde_json::Value>,
 }
 
 impl FiatAsset {
@@ -52,11 +55,19 @@ impl FiatAsset {
             token_id: asset.token_id,
             is_enabled: asset.enabled,
             is_enabled_by_provider: asset.enabled,
+            unsupported_countries: Some(serde_json::to_value(asset.unsupported_countries).unwrap()),
         }
     }
 
     pub fn is_enabled(&self) -> bool {
         self.is_enabled && self.is_enabled_by_provider
+    }
+
+    pub fn unsupported_countries(&self) -> HashMap<String, Vec<String>> {
+        self.unsupported_countries
+            .as_ref()
+            .and_then(|v| serde_json::from_value(v.clone()).ok())
+            .unwrap_or_default()
     }
 }
 
@@ -114,6 +125,35 @@ impl FiatTransaction {
             fee_provider: transaction.fee_provider,
             fee_network: transaction.fee_network,
             fee_partner: transaction.fee_partner,
+        }
+    }
+}
+
+#[derive(Debug, Queryable, Selectable, Insertable, AsChangeset, Clone)]
+#[diesel(table_name = crate::schema::fiat_providers_countries)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+pub struct FiatProviderCountry {
+    pub id: String,
+    pub provider: String,
+    pub alpha2: String,
+    pub is_allowed: bool,
+}
+
+impl FiatProviderCountry {
+    pub fn from_primitive(primitive: primitives::FiatProviderCountry) -> Self {
+        Self {
+            id: format!("{}_{}", primitive.provider, primitive.alpha2).to_lowercase(),
+            provider: primitive.provider.to_string(),
+            alpha2: primitive.alpha2.to_string(),
+            is_allowed: primitive.is_allowed,
+        }
+    }
+
+    pub fn as_primitive(&self) -> primitives::FiatProviderCountry {
+        primitives::FiatProviderCountry {
+            provider: self.provider.clone(),
+            alpha2: self.alpha2.clone(),
+            is_allowed: self.is_allowed,
         }
     }
 }

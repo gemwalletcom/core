@@ -31,14 +31,10 @@ impl CetusClient {
         target = target.set_cache_ttl(POOL_CACHE_TTL);
 
         let response = self.provider.request(target).await?;
-        let response: Response = serde_json::from_slice(&response).map_err(|e| SwapperError::NetworkError {
-            msg: format!("Failed to parse json response: {}", e),
-        })?;
+        let response: Response = serde_json::from_slice(&response).map_err(|e| SwapperError::NetworkError(format!("Failed to parse json response: {}", e)))?;
 
         if response.code != 200 {
-            return Err(SwapperError::NetworkError {
-                msg: format!("API error: {}", response.msg),
-            });
+            return Err(SwapperError::NetworkError(format!("API error: {}", response.msg)));
         }
 
         Ok(response.data.lp_list)

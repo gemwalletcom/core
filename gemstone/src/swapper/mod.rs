@@ -7,9 +7,9 @@ use std::{fmt::Debug, sync::Arc};
 mod approval;
 mod chainlink;
 mod custom_types;
+mod eth_address;
 mod eth_rpc;
 mod permit2_data;
-mod weth_address;
 
 pub mod across;
 pub mod asset;
@@ -123,10 +123,11 @@ impl GemSwapper {
                 Box::new(across::Across::default()),
                 Box::new(uniswap::universal_router::new_oku()),
                 Box::new(uniswap::universal_router::new_wagmi()),
+                Box::new(uniswap::universal_router::new_reservoir()),
                 Box::new(pancakeswap_aptos::PancakeSwapAptos::default()),
                 Box::new(cetus::Cetus::default()),
-                Box::new(proxy::ProxyProvider::new_stonfi_v2()),
-                Box::new(proxy::ProxyProvider::new_mayan()),
+                Box::new(proxy::new_stonfi_v2()),
+                Box::new(proxy::new_mayan()),
             ],
         }
     }

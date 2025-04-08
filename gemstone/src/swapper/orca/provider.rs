@@ -63,17 +63,13 @@ impl GemSwapProvider for Orca {
             return Err(SwapperError::NotSupportedChain);
         }
 
-        let amount_in = request.value.parse::<u64>().map_err(|_| SwapperError::InvalidAmount)?;
+        let amount_in = request.value.parse::<u64>().map_err(SwapperError::from)?;
         let options = request.options.clone();
         let slippage_bps = options.slippage.bps as u16;
         let fee_bps = options.fee.unwrap_or_default().solana.bps;
 
-        let from_asset = get_asset_address(&request.from_asset).ok_or_else(|| SwapperError::InvalidAddress {
-            address: request.from_asset.to_string(),
-        })?;
-        let to_asset = get_asset_address(&request.to_asset).ok_or_else(|| SwapperError::InvalidAddress {
-            address: request.from_asset.to_string(),
-        })?;
+        let from_asset = get_asset_address(&request.from_asset).ok_or(SwapperError::InvalidAddress(request.from_asset.to_string()))?;
+        let to_asset = get_asset_address(&request.to_asset).ok_or(SwapperError::InvalidAddress(request.from_asset.to_string()))?;
         let fee_tiers = self.fetch_fee_tiers(provider.clone()).await?;
         let mut pools = self
             .fetch_whirlpools(&from_asset, &to_asset, fee_tiers, provider.clone(), request.from_asset.chain)
@@ -97,9 +93,8 @@ impl GemSwapProvider for Orca {
         let result: [TickArrayFacade; 5] = std::array::from_fn(|i| tick_array_facades[i]);
         let tick_arrays = TickArrays::from(result);
 
-        let quote = swap_quote_by_input_token(amount_in, true, slippage_bps, pool.into(), tick_arrays, None, None).map_err(|c| SwapperError::NetworkError {
-            msg: format!("swap_quote_by_input_token error: {:?}", c),
-        })?;
+        let quote = swap_quote_by_input_token(amount_in, true, slippage_bps, pool.into(), tick_arrays, None, None)
+            .map_err(|c| SwapperError::NetworkError(format!("swap_quote_by_input_token error: {:?}", c)))?;
         let to_value = apply_slippage_in_bp(&quote.token_est_out, fee_bps);
 
         Ok(SwapQuote {
@@ -170,7 +165,7 @@ impl Orca {
                 continue;
             }
             let account_data = account_data.clone().unwrap();
-            let whirlpool: Whirlpool = try_borsh_decode(account_data.data[0].as_str()).map_err(|e| SwapperError::ABIError { msg: e.to_string() })?;
+            let whirlpool: Whirlpool = try_borsh_decode(account_data.data[0].as_str()).map_err(|e| SwapperError::ABIError(e.to_string()))?;
             pools.push((pool_address.to_string(), whirlpool));
         }
         Ok(pools)
@@ -328,10 +323,8 @@ mod tests {
         let base64_str = "P5XRDOGAYwkT5EH4ORPKaLBjT7Al/eqohzfoQRDRJV41ezN33e4czf8EAAQAkAEBACUn6rOx9gIAAAAAAAAAAADZ0q3a01wPfgAAAAAAAAAApsj///QCNRYAAAAA7MHhBAAAAAAGm4hX/quBhPtof2NGGMA12sQ53BrrO1WYoPAAAAAAAchN8kM4mDvkqFswl7r0C8lXEQjSiawAs2jfF11Edc96okZrwvdXv2MAAAAAAAAAAMb6evO+2606PWXzaqvJdDGxu+TC0vbg5HymAgNFL11hFl+VcsWpaqUC3VEQVKJqbSWO98HW1sGu4SkZFNxRAjLtNOmyVWgdCwAAAAAAAAAAaZY8ZwAAAAAMANCv64YU2n8Zq6AtQPGMaSWF9lAg387T1eX5qcDE4Q8bkJQIzrVDfhKReyB9qZTQ6FenQB4SLAPfa/fG1/wqvR0xrxfe/zwmhIFgCsr+SxQJjA/hQbf0oc34STRkRAMAAAAAAAAAAAAAAAAAAAAAIxHh3tFPDkQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAC9HTGvF97/PCaEgWAKyv5LFAmMD+FBt/ShzfhJNGREAwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAL0dMa8X3v88JoSBYArK/ksUCYwP4UG39KHN+Ek0ZEQDAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
         let pool: Whirlpool = try_borsh_decode(base64_str).unwrap();
 
-        let quote =
-            swap_quote_by_input_token(amount_in, true, slippage_bps, (&pool).into(), tick_arrays, None, None).map_err(|c| SwapperError::ComputeQuoteError {
-                msg: format!("swap_quote_by_input_token error: {:?}", c),
-            })?;
+        let quote = swap_quote_by_input_token(amount_in, true, slippage_bps, (&pool).into(), tick_arrays, None, None)
+            .map_err(|c| SwapperError::ComputeQuoteError(format!("swap_quote_by_input_token error: {:?}", c)))?;
         assert_eq!(quote.token_min_out, 239958);
         Ok(())
     }
