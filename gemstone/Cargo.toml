@@ -32,6 +32,8 @@ uniffi.workspace = true
 thiserror.workspace = true
 
 anyhow.workspace = true
+strum = { workspace = true }
+strum_macros = { workspace = true }
 
 base64.workspace = true
 serde.workspace = true

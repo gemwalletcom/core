@@ -2534,6 +2534,8 @@ dependencies = [
  "serde_json",
  "serde_serializers",
  "serde_urlencoded",
+ "strum",
+ "strum_macros",
  "sui-sdk-types",
  "sui-transaction-builder",
  "thiserror 2.0.12",

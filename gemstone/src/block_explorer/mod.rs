@@ -1,5 +1,7 @@
-use primitives::{block_explorer::get_block_explorer, chain::Chain};
+use primitives::{block_explorer::get_block_explorer, chain::Chain, explorers::RuneScan};
 use std::str::FromStr;
+
+use crate::swapper::SwapProvider;
 
 #[derive(uniffi::Object)]
 pub struct Explorer {
@@ -17,6 +19,26 @@ impl Explorer {
 
     pub fn get_transaction_url(&self, explorer_name: &str, transaction_id: &str) -> String {
         get_block_explorer(self.chain, explorer_name).get_tx_url(transaction_id)
+    }
+
+    pub fn get_transaction_swap_url(&self, explorer_name: &str, transaction_id: &str, provider: &str) -> String {
+        let provider = SwapProvider::from_str(provider).unwrap();
+        match provider {
+            SwapProvider::Mayan => MayanScan::new().get_tx_url(transaction_id),
+            SwapProvider::Thorchain => RuneScan::new().get_tx_url(transaction_id),
+            SwapProvider::UniswapV3
+            | SwapProvider::UniswapV4
+            | SwapProvider::PancakeSwapV3
+            | SwapProvider::PancakeSwapAptosV2
+            | SwapProvider::Orca
+            | SwapProvider::Jupiter
+            | SwapProvider::Across
+            | SwapProvider::Oku
+            | SwapProvider::Wagmi
+            | SwapProvider::Cetus
+            | SwapProvider::StonFiV2
+            | SwapProvider::Reservoir => self.get_transaction_url(explorer_name, transaction_id),
+        }
     }
 
     pub fn get_address_url(&self, explorer_name: &str, address: &str) -> String {
