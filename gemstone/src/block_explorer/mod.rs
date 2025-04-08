@@ -12,6 +12,21 @@ pub struct Explorer {
     pub chain: Chain,
 }
 
+#[derive(uniffi::Record)]
+pub struct ExplorerURL {
+    pub name: String,
+    pub url: String,
+}
+
+impl ExplorerURL {
+    pub fn new(name: &str, url: &str) -> Self {
+        Self {
+            name: name.to_string(),
+            url: url.to_string(),
+        }
+    }
+}
+
 #[uniffi::export]
 impl Explorer {
     #[uniffi::constructor]
@@ -25,10 +40,11 @@ impl Explorer {
         get_block_explorer(self.chain, explorer_name).get_tx_url(transaction_id)
     }
 
-    pub fn get_transaction_swap_url(&self, explorer_name: &str, transaction_id: &str, provider: SwapProvider) -> String {
-        match provider {
-            SwapProvider::Mayan => MayanScan::new().get_tx_url(transaction_id),
-            SwapProvider::Thorchain => RuneScan::new().get_tx_url(transaction_id),
+    pub fn get_transaction_swap_url(&self, explorer_name: &str, transaction_id: &str, provider: &str) -> Option<ExplorerURL> {
+        let provider = SwapProvider::from_str(provider).ok()?;
+        let explorer: Box<dyn BlockExplorer> = match provider {
+            SwapProvider::Mayan => MayanScan::new(),
+            SwapProvider::Thorchain => RuneScan::new(),
             SwapProvider::UniswapV3
             | SwapProvider::UniswapV4
             | SwapProvider::PancakeSwapV3
@@ -40,8 +56,9 @@ impl Explorer {
             | SwapProvider::Wagmi
             | SwapProvider::Cetus
             | SwapProvider::StonFiV2
-            | SwapProvider::Reservoir => self.get_transaction_url(explorer_name, transaction_id),
-        }
+            | SwapProvider::Reservoir => get_block_explorer(self.chain, explorer_name),
+        };
+        Some(ExplorerURL::new(&explorer.name(), &self.get_transaction_url(explorer_name, transaction_id)))
     }
 
     pub fn get_address_url(&self, explorer_name: &str, address: &str) -> String {

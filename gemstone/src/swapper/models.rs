@@ -36,6 +36,7 @@ pub struct SwapProviderType {
     pub mode: SwapProviderMode,
     pub name: String,
     pub protocol: String,
+    pub protocol_id: String,
 }
 
 impl SwapProviderType {
@@ -45,6 +46,7 @@ impl SwapProviderType {
             mode: id.mode(),
             name: id.name().to_string(),
             protocol: id.protocol_name().to_string(),
+            protocol_id: id.id().to_string(),
         }
     }
 }
@@ -57,7 +59,7 @@ pub enum SwapProviderMode {
 }
 
 #[derive(Debug, Clone, PartialEq, AsRefStr, EnumString, Eq, PartialOrd, Ord, uniffi::Enum)]
-#[strum(serialize_all = "snake_case")]
+#[strum(serialize_all = "lowercase")]
 pub enum SwapProvider {
     UniswapV3,
     UniswapV4,
