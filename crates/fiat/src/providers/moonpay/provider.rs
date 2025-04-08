@@ -84,6 +84,11 @@ impl FiatProvider for MoonPayClient {
         let fee_partner = payload.data.extra_fee_amount.unwrap_or_default();
         let fiat_amount = currency_amount + fee_provider + fee_network + fee_partner;
         let transaction_type = FiatQuoteType::Buy;
+        // let transaction_type = match data.transacton_type.as_str() {
+        //     "buy" => FiatQuoteType::Buy,
+        //     "sell" => FiatQuoteType::Sell,
+        //     _ => FiatQuoteType::Buy,
+        // };
 
         let transaction = FiatTransaction {
             asset_id: Some(asset_id),

@@ -102,6 +102,11 @@ impl FiatProvider for RampClient {
             "RELEASED" => FiatTransactionStatus::Complete,
             _ => FiatTransactionStatus::Unknown,
         };
+        // let transaction_type = match data.transacton_type.as_str() {
+        //     "buy" => FiatQuoteType::Buy,
+        //     "sell" => FiatQuoteType::Sell,
+        //     _ => FiatQuoteType::Buy,
+        // };
         let transaction_type = FiatQuoteType::Buy;
 
         let transaction = FiatTransaction {

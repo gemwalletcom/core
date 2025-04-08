@@ -88,6 +88,7 @@ pub struct Order {
     pub processing_fee: Option<f64>,
     #[serde(deserialize_with = "deserialize_option_f64_from_str")]
     pub network_fee: Option<f64>,
+    pub order_type: String,
 }
 
 #[derive(Debug, Deserialize, Clone)]

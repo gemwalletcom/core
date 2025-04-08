@@ -69,7 +69,11 @@ impl FiatProvider for TransakClient {
             "COMPLETED" => FiatTransactionStatus::Complete,
             _ => FiatTransactionStatus::Unknown,
         };
-        let transaction_type = FiatQuoteType::Buy;
+        let transaction_type = match payload.is_buy_or_sell.as_str() {
+            "BUY" => FiatQuoteType::Buy,
+            "SELL" => FiatQuoteType::Sell,
+            _ => FiatQuoteType::Buy,
+        };
 
         let transaction = FiatTransaction {
             asset_id: None,

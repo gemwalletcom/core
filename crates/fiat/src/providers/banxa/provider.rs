@@ -94,7 +94,11 @@ impl FiatProvider for BanxaClient {
         //    .first()
         //    .map(|asset| AssetId::from(asset.chain.unwrap(), asset.token_id.clone()));
 
-        let transaction_type = FiatQuoteType::Buy;
+        let transaction_type = match order.order_type.as_str() {
+            "BUY" => FiatQuoteType::Buy,
+            "SELL" => FiatQuoteType::Sell,
+            _ => FiatQuoteType::Buy,
+        };
 
         let transaction = FiatTransaction {
             asset_id: None,
