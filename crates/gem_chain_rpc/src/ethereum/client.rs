@@ -201,6 +201,7 @@ impl EthereumClient {
                 from_value: from_value.clone(),
                 to_asset: assets.1.clone(),
                 to_value: to_value.clone(),
+                provider: None,
             };
             let asset_id = assets.clone().0;
 
