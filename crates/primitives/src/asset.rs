@@ -55,7 +55,7 @@ impl Asset {
             },
             Chain::SmartChain => Asset {
                 id: chain.as_asset_id(),
-                name: "Smart Chain".to_string(),
+                name: "BNB Chain".to_string(),
                 symbol: "BNB".to_string(),
                 decimals: 18,
                 asset_type: AssetType::NATIVE,
