@@ -1,6 +1,5 @@
 use api_connector::pusher::model::Notification;
 use chrono::{Duration, NaiveDateTime, Utc};
-use core::panic;
 use localizer::{LanguageLocalizer, LanguageNotification};
 use number_formatter::NumberFormatter;
 use primitives::{

@@ -46,7 +46,7 @@ impl BlockExplorer for RuneScan {
         self.meta.name.into()
     }
     fn get_tx_url(&self, hash: &str) -> String {
-        format!("{}/tx/{}", self.meta.base_url, hash)
+        format!("{}/tx/{}", self.meta.base_url, hash.trim_start_matches("0x"))
     }
     fn get_address_url(&self, address: &str) -> String {
         format!("{}/address/{}", self.meta.base_url, address)
