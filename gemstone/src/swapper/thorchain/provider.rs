@@ -57,19 +57,23 @@ impl GemSwapProvider for ThorChain {
 
         let value = self.value_from(request.clone().value, from_asset.decimals as i32);
 
-        // min fee validation
-        let inbound_addresses = client.get_inbound_addresses(endpoint.as_str()).await?;
-        let from_inbound_address = &inbound_addresses
-            .iter()
-            .find(|address| address.chain == from_asset.chain.long_name())
-            .ok_or(SwapperError::InvalidRoute)?;
+        // thorchain is not included in inbound addresses
+        if from_asset.chain != THORChainName::Thorchain {
+            // min fee validation
+            let inbound_addresses = client.get_inbound_addresses(endpoint.as_str()).await?;
+            let from_inbound_address = &inbound_addresses
+                .iter()
+                .find(|address| address.chain == from_asset.chain.long_name())
+                .ok_or(SwapperError::InvalidRoute)?;
 
-        if from_inbound_address.dust_threshold > value {
-            return Err(SwapperError::InputAmountTooSmall);
+            if from_inbound_address.dust_threshold > value {
+                return Err(SwapperError::InputAmountTooSmall);
+            }
+
+            // if (from_inbound_address.outbound_fee.clone() * from_inbound_address.gas_rate.clone()) > value {
+            //     return Err(SwapperError::InputAmountTooSmall);
+            // }
         }
-        // if (from_inbound_address.outbound_fee.clone() * from_inbound_address.gas_rate.clone()) > value {
-        //     return Err(SwapperError::InputAmountTooSmall);
-        // }
 
         let fee = request.options.clone().fee.unwrap_or_default().thorchain;
 
