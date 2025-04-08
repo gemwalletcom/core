@@ -2,6 +2,7 @@ use super::permit2_data::Permit2Data;
 use crate::config::swap_config::{SwapReferralFees, DEFAULT_SLIPPAGE_BPS};
 use primitives::{AssetId, Chain};
 use std::fmt::Debug;
+use strum_macros::{AsRefStr, EnumString};
 
 #[derive(Debug, Clone, PartialEq, uniffi::Enum)]
 pub enum GemSwapMode {
@@ -55,7 +56,8 @@ pub enum SwapProviderMode {
     Bridge,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, uniffi::Enum)]
+#[derive(Debug, Clone, PartialEq, AsRefStr, EnumString, Eq, PartialOrd, Ord, uniffi::Enum)]
+#[strum(serialize_all = "snake_case")]
 pub enum SwapProvider {
     UniswapV3,
     UniswapV4,
@@ -65,7 +67,7 @@ pub enum SwapProvider {
     Orca,
     Jupiter,
     Across,
-    OkuTrade,
+    Oku,
     Wagmi,
     Cetus,
     StonFiV2,
@@ -74,6 +76,10 @@ pub enum SwapProvider {
 }
 
 impl SwapProvider {
+    pub fn id(&self) -> &str {
+        self.as_ref()
+    }
+
     pub fn name(&self) -> &str {
         match self {
             Self::UniswapV3 | Self::UniswapV4 => "Uniswap",
@@ -82,7 +88,7 @@ impl SwapProvider {
             Self::Orca => "Orca",
             Self::Jupiter => "Jupiter",
             Self::Across => "Across",
-            Self::OkuTrade => "Oku",
+            Self::Oku => "Oku",
             Self::Wagmi => "Wagmi",
             Self::Cetus => "Cetus",
             Self::StonFiV2 => "STON.fi",
@@ -99,7 +105,7 @@ impl SwapProvider {
             Self::PancakeSwapAptosV2 => "PancakeSwap v2",
             Self::Orca => "Orca Whirlpool",
             Self::Across => "Across v3",
-            Self::OkuTrade => "Oku Trade",
+            Self::Oku => "Oku",
             Self::StonFiV2 => "STON.fi v2",
             Self::Thorchain | Self::Jupiter | Self::Wagmi | Self::Cetus | Self::Mayan | Self::Reservoir => self.name(),
         }
@@ -113,7 +119,7 @@ impl SwapProvider {
             | Self::PancakeSwapAptosV2
             | Self::Orca
             | Self::Jupiter
-            | Self::OkuTrade
+            | Self::Oku
             | Self::Wagmi
             | Self::Cetus
             | Self::StonFiV2

@@ -177,6 +177,7 @@ impl SolanaClient {
                         from_value: from_value.clone(),
                         to_asset: to_asset.clone(),
                         to_value: to_value.clone(),
+                        provider: None,
                     };
                     let asset_id = from_asset.clone();
 

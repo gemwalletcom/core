@@ -36,7 +36,7 @@ impl Explorer {
             | SwapProvider::Orca
             | SwapProvider::Jupiter
             | SwapProvider::Across
-            | SwapProvider::OkuTrade
+            | SwapProvider::Oku
             | SwapProvider::Wagmi
             | SwapProvider::Cetus
             | SwapProvider::StonFiV2

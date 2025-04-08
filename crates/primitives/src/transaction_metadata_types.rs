@@ -11,6 +11,7 @@ pub struct TransactionSwapMetadata {
     pub from_value: String,
     pub to_asset: AssetId,
     pub to_value: String,
+    pub provider: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
