@@ -1,12 +1,8 @@
-<<<<<<< HEAD
-use primitives::{block_explorer::get_block_explorer, chain::Chain, explorers::RuneScan};
-=======
 use primitives::{
     block_explorer::{get_block_explorer, BlockExplorer},
     chain::Chain,
     explorers::{MayanScan, RuneScan},
 };
->>>>>>> main
 use std::str::FromStr;
 
 use crate::swapper::SwapProvider;
@@ -29,12 +25,7 @@ impl Explorer {
         get_block_explorer(self.chain, explorer_name).get_tx_url(transaction_id)
     }
 
-<<<<<<< HEAD
-    pub fn get_transaction_swap_url(&self, explorer_name: &str, transaction_id: &str, provider: &str) -> String {
-        let provider = SwapProvider::from_str(provider).unwrap();
-=======
     pub fn get_transaction_swap_url(&self, explorer_name: &str, transaction_id: &str, provider: SwapProvider) -> String {
->>>>>>> main
         match provider {
             SwapProvider::Mayan => MayanScan::new().get_tx_url(transaction_id),
             SwapProvider::Thorchain => RuneScan::new().get_tx_url(transaction_id),
@@ -45,11 +36,7 @@ impl Explorer {
             | SwapProvider::Orca
             | SwapProvider::Jupiter
             | SwapProvider::Across
-<<<<<<< HEAD
             | SwapProvider::Oku
-=======
-            | SwapProvider::OkuTrade
->>>>>>> main
             | SwapProvider::Wagmi
             | SwapProvider::Cetus
             | SwapProvider::StonFiV2
