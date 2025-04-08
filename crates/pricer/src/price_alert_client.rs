@@ -1,5 +1,6 @@
 use api_connector::pusher::model::Notification;
 use chrono::{Duration, NaiveDateTime, Utc};
+use core::panic;
 use localizer::{LanguageLocalizer, LanguageNotification};
 use number_formatter::NumberFormatter;
 use primitives::{
@@ -97,17 +98,17 @@ impl PriceAlertClient {
         if let Some(price_alert_price) = price_alert.price {
             let direction = price_alert.as_primitive().price_direction?;
             let current_price = price.price;
-            match direction {
-                PriceAlertDirection::Up if current_price > price_alert_price => Some(PriceAlertType::PriceUp),
-                PriceAlertDirection::Down if current_price < price_alert_price => Some(PriceAlertType::PriceDown),
+            return match direction {
+                PriceAlertDirection::Up if current_price >= price_alert_price => Some(PriceAlertType::PriceUp),
+                PriceAlertDirection::Down if current_price <= price_alert_price => Some(PriceAlertType::PriceDown),
                 _ => None,
             };
         } else if let Some(price_alert_percent) = price_alert.price_percent_change {
             let direction = price_alert.as_primitive().price_direction?;
             let price_change_percentage_24h = price.clone().price_change_percentage_24h;
-            match direction {
-                PriceAlertDirection::Up if price_change_percentage_24h > price_alert_percent => Some(PriceAlertType::PricePercentChangeUp),
-                PriceAlertDirection::Down if price_change_percentage_24h < -price_alert_percent => Some(PriceAlertType::PricePercentChangeDown),
+            return match direction {
+                PriceAlertDirection::Up if price_change_percentage_24h >= price_alert_percent => Some(PriceAlertType::PricePercentChangeUp),
+                PriceAlertDirection::Down if price_change_percentage_24h <= -price_alert_percent => Some(PriceAlertType::PricePercentChangeDown),
                 _ => None,
             };
         } else if price.clone().price_change_percentage_24h < -rules.price_change_decrease {
