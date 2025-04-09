@@ -7,6 +7,7 @@ const USDC_NAME: &str = "USDC";
 const USDC_SYMBOL: &str = "USDC";
 const WBTC_SYMBOL: &str = "WBTC";
 const WBTC_NAME: &str = "Wrapped BTC";
+const DAI_NAME: &str = "Dai Stablecoin";
 const DAI_SYMBOL: &str = "DAI";
 const WETH_NAME: &str = "Wrapped Ether";
 const WETH_SYMBOL: &str = "WETH";
@@ -181,6 +182,13 @@ lazy_static! {
         decimals: 18,
         asset_type: AssetType::ERC20,
     };
+    pub static ref LINEA_USDC: Asset = Asset {
+        id: USDC_E_LINEA_ASSET_ID.into(),
+        name: USDC_NAME.into(),
+        symbol: USDC_SYMBOL.into(),
+        decimals: 6,
+        asset_type: AssetType::ERC20,
+    };
     pub static ref LINEA_USDT: Asset = Asset {
         id: USDT_LINEA_ASSET_ID.into(),
         name: USDT_NAME.into(),
@@ -320,6 +328,13 @@ lazy_static! {
         name: USDC_NAME.to_owned(),
         symbol: USDC_SYMBOL.to_owned(),
         decimals: 6,
+        asset_type: AssetType::ERC20,
+    };
+    pub static ref UNICHAIN_DAI: Asset = Asset {
+        id: DAI_UNICHAIN_ASSET_ID.into(),
+        name: DAI_NAME.to_owned(),
+        symbol: DAI_SYMBOL.to_owned(),
+        decimals: 18,
         asset_type: AssetType::ERC20,
     };
     // Solana

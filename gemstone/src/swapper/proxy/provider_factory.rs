@@ -51,6 +51,10 @@ pub fn new_mayan() -> ProxyProvider {
             ),
             SwapChainAsset::Assets(Chain::Polygon, vec![POLYGON_USDC.id.clone(), POLYGON_USDT.id.clone()]),
             SwapChainAsset::Assets(Chain::AvalancheC, vec![AVALANCHE_USDT.id.clone(), AVALANCHE_USDC.id.clone()]),
+            SwapChainAsset::Assets(Chain::Arbitrum, vec![ARBITRUM_USDC.id.clone(), ARBITRUM_USDT.id.clone()]),
+            SwapChainAsset::Assets(Chain::Optimism, vec![OPTIMISM_USDC.id.clone(), OPTIMISM_USDT.id.clone()]),
+            SwapChainAsset::Assets(Chain::Linea, vec![LINEA_USDC.id.clone(), LINEA_USDT.id.clone()]),
+            SwapChainAsset::Assets(Chain::Unichain, vec![UNICHAIN_USDC.id.clone(), UNICHAIN_DAI.id.clone()]),
         ],
     }
 }
