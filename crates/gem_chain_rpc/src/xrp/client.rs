@@ -15,6 +15,7 @@ pub struct XRPClient {
 }
 
 const RESULT_SUCCESS: &str = "tesSUCCESS";
+const TRANSACTION_TYPE_PAYMENT: &str = "Payment";
 
 impl XRPClient {
     pub fn new(client: ClientWithMiddleware, url: String) -> Self {
@@ -22,9 +23,9 @@ impl XRPClient {
     }
 
     pub fn map_transaction(&self, transaction: super::model::Transaction, block_number: i64, block_timestamp: i64) -> Option<primitives::Transaction> {
-        if transaction.transaction_type == "Payment" && transaction.memos.unwrap_or_default().is_empty() {
+        if transaction.transaction_type == TRANSACTION_TYPE_PAYMENT && transaction.memos.unwrap_or_default().is_empty() {
             let memo = transaction.destination_tag.map(|x| x.to_string());
-            let value = transaction.amount.clone()?.as_value_string();
+            let value = transaction.amount.clone()?.as_value_string()?;
             let token_id = transaction.amount?.token_id();
             let asset_id = AssetId::from(self.get_chain(), token_id);
 

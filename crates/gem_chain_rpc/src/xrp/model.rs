@@ -1,3 +1,4 @@
+use number_formatter::BigNumberFormatter;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -60,10 +61,10 @@ pub enum Amount {
 }
 
 impl Amount {
-    pub fn as_value_string(&self) -> String {
+    pub fn as_value_string(&self) -> Option<String> {
         match self {
-            Amount::Str(amount) => amount.to_string(),
-            Amount::Amount(amount) => amount.value.to_string(),
+            Amount::Str(amount) => Some(amount.clone()),
+            Amount::Amount(amount) => BigNumberFormatter::value_from_amount(&amount.value, 15),
         }
     }
 
