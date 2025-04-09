@@ -122,11 +122,11 @@ chains:
   noble:
     url: "https://rest.cosmos.directory/noble"
   zksync:
-    url: "https://rpc.ankr.com/zksync_era"
+    url: "https://mainnet.era.zksync.io"
   linea:
     url: "https://linea.drpc.org"
   mantle:
-    url: "https://rpc.ankr.com/mantle"
+    url: "https://rpc.mantle.xyz"
   celo:
     url: "https://rpc.ankr.com/celo"
   near:
