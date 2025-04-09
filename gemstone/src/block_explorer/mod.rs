@@ -12,7 +12,7 @@ pub struct Explorer {
     pub chain: Chain,
 }
 
-#[derive(uniffi::Record)]
+#[derive(Debug, uniffi::Record)]
 pub struct ExplorerURL {
     pub name: String,
     pub url: String,
@@ -58,7 +58,7 @@ impl Explorer {
             | SwapProvider::StonFiV2
             | SwapProvider::Reservoir => get_block_explorer(self.chain, explorer_name),
         };
-        Some(ExplorerURL::new(&explorer.name(), &self.get_transaction_url(explorer_name, transaction_id)))
+        Some(ExplorerURL::new(&explorer.name(), &explorer.get_tx_url(transaction_id)))
     }
 
     pub fn get_address_url(&self, explorer_name: &str, address: &str) -> String {
@@ -319,27 +319,31 @@ mod tests {
 
     #[test]
     fn test_transaction_swap_url() {
-        let explorers = get_block_explorers(Chain::Thorchain);
         let explorer = Explorer::new(Chain::Thorchain.as_ref());
-        let tx_url = explorer.get_transaction_swap_url(
-            &explorers[0].name(),
-            "0x0299923c9a0a40e3a296058ac2c5c3a7b41f91803ea36ad9645492ccca0f8631",
-            SwapProvider::Thorchain,
-        );
+        let tx_url = explorer
+            .get_transaction_swap_url(
+                "runescan",
+                "0x0299923c9a0a40e3a296058ac2c5c3a7b41f91803ea36ad9645492ccca0f8631",
+                SwapProvider::Thorchain.as_ref(),
+            )
+            .unwrap();
 
         assert_eq!(
-            tx_url,
+            tx_url.url,
             "https://runescan.io/tx/0299923c9a0a40e3a296058ac2c5c3a7b41f91803ea36ad9645492ccca0f8631"
         );
 
-        let tx_url = explorer.get_transaction_swap_url(
-            &explorers[0].name(),
-            "0x56acc6a58fc0bdd9e9be5cc2a3ff079b91b933f562cf0fe760f1d8d6b76f4876",
-            SwapProvider::Mayan,
-        );
+        let explorer = Explorer::new(Chain::Solana.as_ref());
+        let tx_url = explorer
+            .get_transaction_swap_url(
+                "solscan",
+                "0x56acc6a58fc0bdd9e9be5cc2a3ff079b91b933f562cf0fe760f1d8d6b76f4876",
+                SwapProvider::Mayan.as_ref(),
+            )
+            .unwrap();
 
         assert_eq!(
-            tx_url,
+            tx_url.url,
             "https://explorer.mayan.finance/tx/0x56acc6a58fc0bdd9e9be5cc2a3ff079b91b933f562cf0fe760f1d8d6b76f4876"
         );
     }
