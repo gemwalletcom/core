@@ -37,7 +37,6 @@ pub fn get_nodes_for_chain(chain: Chain) -> Vec<Node> {
         Chain::Bitcoin | Chain::Litecoin | Chain::BitcoinCash => vec![],
         Chain::Ethereum => vec![
             Node::new("https://ethereum.publicnode.com", NodePriority::High),
-            Node::new("https://rpc.ankr.com/eth", NodePriority::High),
             Node::new("https://ethereum-rpc.polkachu.com", NodePriority::High),
             Node::new("https://eth.merkle.io", NodePriority::High),
         ],
@@ -72,7 +71,7 @@ pub fn get_nodes_for_chain(chain: Chain) -> Vec<Node> {
         ],
         Chain::Doge => vec![],
         Chain::Optimism => vec![
-            Node::new("https://rpc.ankr.com/optimism", NodePriority::High),
+            Node::new("https://mainnet.optimism.io", NodePriority::High),
             Node::new("https://optimism-rpc.polkachu.com", NodePriority::High),
         ],
         Chain::Aptos => vec![
@@ -81,14 +80,10 @@ pub fn get_nodes_for_chain(chain: Chain) -> Vec<Node> {
         ],
         Chain::Base => vec![
             Node::new("https://mainnet.base.org", NodePriority::High),
-            Node::new("https://rpc.ankr.com/base", NodePriority::High),
             Node::new("https://base-rpc.polkachu.com", NodePriority::High),
             Node::new("https://base.merkle.io", NodePriority::High),
         ],
-        Chain::AvalancheC => vec![
-            Node::new("https://avalanche.drpc.org", NodePriority::High),
-            Node::new("https://rpc.ankr.com/avalanche", NodePriority::High),
-        ],
+        Chain::AvalancheC => vec![Node::new("https://avalanche.drpc.org", NodePriority::High)],
         Chain::Sui => vec![Node::new("https://sui-rpc.publicnode.com", NodePriority::High)],
         Chain::Xrp => vec![
             Node::new("https://s1.ripple.com:51234", NodePriority::High),
@@ -105,7 +100,7 @@ pub fn get_nodes_for_chain(chain: Chain) -> Vec<Node> {
         ],
         Chain::Gnosis => vec![
             Node::new("https://gnosis.drpc.org", NodePriority::High),
-            Node::new("https://rpc.ankr.com/gnosis", NodePriority::High),
+            Node::new("https://rpc.gnosischain.com", NodePriority::High),
         ],
         Chain::Celestia => vec![
             Node::new("https://celestia-rest.publicnode.com", NodePriority::High),
@@ -134,8 +129,8 @@ pub fn get_nodes_for_chain(chain: Chain) -> Vec<Node> {
             Node::new("https://mainnet.era.zksync.io", NodePriority::High),
         ],
         Chain::Linea => vec![Node::new("https://linea-rpc.polkachu.com", NodePriority::High)],
-        Chain::Mantle => vec![Node::new("https://rpc.ankr.com/mantle", NodePriority::High)],
-        Chain::Celo => vec![Node::new("https://rpc.ankr.com/celo", NodePriority::High)],
+        Chain::Mantle => vec![Node::new("https://rpc.mantle.xyz", NodePriority::High)],
+        Chain::Celo => vec![],
         Chain::Near => vec![Node::new("https://rpc.mainnet.near.org", NodePriority::High)],
         Chain::World => vec![Node::new("https://worldchain-mainnet.gateway.tenderly.co", NodePriority::High)],
         Chain::Stellar => vec![Node::new("https://horizon.stellar.org", NodePriority::High)],
