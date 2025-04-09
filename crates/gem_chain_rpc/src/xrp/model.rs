@@ -66,11 +66,20 @@ impl Amount {
             Amount::Amount(amount) => amount.value.to_string(),
         }
     }
+
+    pub fn token_id(&self) -> Option<String> {
+        match self {
+            Amount::Str(_) => None,
+            Amount::Amount(amount) => Some(amount.issuer.clone()),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AmountCurrency {
     pub value: String,
+    pub issuer: String,
+    pub currency: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

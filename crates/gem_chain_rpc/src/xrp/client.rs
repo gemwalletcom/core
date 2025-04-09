@@ -3,7 +3,7 @@ use std::error::Error;
 use crate::{ChainBlockProvider, ChainTokenDataProvider};
 use async_trait::async_trait;
 use chrono::DateTime;
-use primitives::{chain::Chain, Asset, TransactionState, TransactionType};
+use primitives::{chain::Chain, Asset, AssetId, TransactionState, TransactionType};
 use reqwest_middleware::ClientWithMiddleware;
 use serde_json::json;
 
@@ -14,6 +14,8 @@ pub struct XRPClient {
     client: ClientWithMiddleware,
 }
 
+const RESULT_SUCCESS: &str = "tesSUCCESS";
+
 impl XRPClient {
     pub fn new(client: ClientWithMiddleware, url: String) -> Self {
         Self { url, client }
@@ -21,41 +23,35 @@ impl XRPClient {
 
     pub fn map_transaction(&self, transaction: super::model::Transaction, block_number: i64, block_timestamp: i64) -> Option<primitives::Transaction> {
         if transaction.transaction_type == "Payment" && transaction.memos.unwrap_or_default().is_empty() {
-            let amount = transaction.amount?;
-            match amount {
-                // system transfer
-                super::model::Amount::Str(value) => {
-                    let asset_id = self.get_chain().as_asset_id();
-                    let state = if transaction.meta.result == "tesSUCCESS" {
-                        TransactionState::Confirmed
-                    } else {
-                        TransactionState::Failed
-                    };
-                    // add check for delivered amount, for success it should be equal to amount
-                    let transaction = primitives::Transaction::new(
-                        transaction.hash,
-                        asset_id.clone(),
-                        transaction.account.unwrap_or_default(),
-                        transaction.destination.unwrap_or_default(),
-                        None,
-                        TransactionType::Transfer,
-                        state,
-                        block_number.to_string(),
-                        transaction.sequence.to_string(),
-                        transaction.fee.unwrap_or_default(),
-                        asset_id,
-                        value,
-                        Some(transaction.destination_tag.unwrap_or_default().to_string()),
-                        None,
-                        DateTime::from_timestamp(block_timestamp, 0)?,
-                    );
-                    return Some(transaction);
-                }
-                // token transfer
-                super::model::Amount::Amount(_) => {
-                    return None;
-                }
-            }
+            let memo = transaction.destination_tag.map(|x| x.to_string());
+            let value = transaction.amount.clone()?.as_value_string();
+            let token_id = transaction.amount?.token_id();
+            let asset_id = AssetId::from(self.get_chain(), token_id);
+
+            let state = if transaction.meta.result == RESULT_SUCCESS {
+                TransactionState::Confirmed
+            } else {
+                TransactionState::Failed
+            };
+            // add check for delivered amount, for success it should be equal to amount
+            let transaction = primitives::Transaction::new(
+                transaction.hash,
+                asset_id.clone(),
+                transaction.account.unwrap_or_default(),
+                transaction.destination.unwrap_or_default(),
+                None,
+                TransactionType::Transfer,
+                state,
+                block_number.to_string(),
+                transaction.sequence.to_string(),
+                transaction.fee.unwrap_or_default(),
+                self.get_chain().as_asset_id(),
+                value,
+                memo,
+                None,
+                DateTime::from_timestamp(block_timestamp, 0)?,
+            );
+            return Some(transaction);
         }
         None
     }
