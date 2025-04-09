@@ -12,7 +12,7 @@ pub struct Explorer {
     pub chain: Chain,
 }
 
-#[derive(uniffi::Record)]
+#[derive(Debug, uniffi::Record)]
 pub struct ExplorerURL {
     pub name: String,
     pub url: String,
