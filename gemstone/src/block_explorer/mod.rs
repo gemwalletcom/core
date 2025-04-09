@@ -1,7 +1,7 @@
 use primitives::{
     block_explorer::{get_block_explorer, BlockExplorer},
     chain::Chain,
-    explorers::{MayanScan, RuneScan},
+    explorers::{MayanScan, RuneScan, SocketScan},
 };
 use std::str::FromStr;
 
@@ -45,13 +45,13 @@ impl Explorer {
         let explorer: Box<dyn BlockExplorer> = match provider {
             SwapProvider::Mayan => MayanScan::new(),
             SwapProvider::Thorchain => RuneScan::new(),
+            SwapProvider::Across => SocketScan::new(),
             SwapProvider::UniswapV3
             | SwapProvider::UniswapV4
             | SwapProvider::PancakeSwapV3
             | SwapProvider::PancakeSwapAptosV2
             | SwapProvider::Orca
             | SwapProvider::Jupiter
-            | SwapProvider::Across
             | SwapProvider::Oku
             | SwapProvider::Wagmi
             | SwapProvider::Cetus

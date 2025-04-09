@@ -46,3 +46,5 @@ mod routescan;
 pub use routescan::RouteScan;
 mod mayanscan;
 pub use mayanscan::MayanScan;
+mod socketscan;
+pub use socketscan::SocketScan;
