@@ -97,7 +97,7 @@ impl CardanoClient {
             inputs.into(),
             outputs.into(),
             None,
-            Utc::now(),
+            Utc::now().naive_utc(),
         );
 
         Some(transaction)

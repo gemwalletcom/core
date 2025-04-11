@@ -71,7 +71,7 @@ impl TronClient {
                     value.parameter.value.amount.unwrap_or_default().to_string(),
                     None,
                     None,
-                    Utc::now(),
+                    Utc::now().naive_utc(),
                 );
                 return Some(transaction);
             }
@@ -109,7 +109,7 @@ impl TronClient {
                     value.to_string(),
                     None,
                     None,
-                    Utc::now(),
+                    Utc::now().naive_utc(),
                 );
 
                 return Some(transaction);

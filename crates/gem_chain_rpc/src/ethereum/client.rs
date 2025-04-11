@@ -123,7 +123,7 @@ impl EthereumClient {
                 value,
                 None,
                 None,
-                Utc::now(),
+                Utc::now().naive_utc(),
             );
             return Some(transaction);
         }
@@ -159,7 +159,7 @@ impl EthereumClient {
                 value.to_string(),
                 None,
                 None,
-                Utc::now(),
+                Utc::now().naive_utc(),
             );
             return Some(transaction);
         }
@@ -220,7 +220,7 @@ impl EthereumClient {
                 from_value.clone().to_string(),
                 None,
                 serde_json::to_value(swap).ok(),
-                Utc::now(),
+                Utc::now().naive_utc(),
             );
             return Some(transaction);
         }

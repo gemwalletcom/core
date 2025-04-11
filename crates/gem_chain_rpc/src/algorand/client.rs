@@ -51,7 +51,7 @@ impl AlgorandClient {
                 transaction.amt.unwrap_or_default().to_string(),
                 transaction.clone().get_memo(),
                 None,
-                DateTime::from_timestamp(block.ts, 0).unwrap_or_default(),
+                DateTime::from_timestamp(block.ts, 0)?.naive_utc(),
             )),
             _ => None,
         }
