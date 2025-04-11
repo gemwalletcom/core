@@ -1,7 +1,7 @@
 use super::{client::JupiterClient, model::*, PROGRAM_ADDRESS};
 use crate::{
     network::jsonrpc::{jsonrpc_call_with_cache, JsonRpcResult},
-    swapper::{slippage::apply_slippage_in_bp, GemSwapProvider, *},
+    swapper::{GemSwapProvider, *},
 };
 
 use alloy_primitives::U256;
@@ -133,8 +133,9 @@ impl GemSwapProvider for Jupiter {
         let computed_auto_slippage = swap_quote.computed_auto_slippage.unwrap_or(swap_quote.slippage_bps);
 
         let out_amount: U256 = swap_quote.out_amount.parse().map_err(SwapperError::from)?;
+        let platform_fee: U256 = swap_quote.platform_fee.amount.parse().map_err(SwapperError::from)?;
         // out_amount doesn't take account of slippage and platform fee
-        let to_value = apply_slippage_in_bp(&out_amount, platform_fee_bps);
+        let to_value = out_amount - platform_fee;
 
         let quote = SwapQuote {
             from_value: request.value.clone(),
