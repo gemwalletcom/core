@@ -1,9 +1,11 @@
+use serde::{Deserialize, Serialize};
 use strum::EnumString;
 use strum_macros::AsRefStr;
 use typeshare::typeshare;
 
-#[derive(Debug, Copy, Clone, PartialEq, AsRefStr, EnumString, Eq, PartialOrd, Ord)]
+#[derive(Debug, Copy, Clone, PartialEq, AsRefStr, EnumString, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Sendable")]
+#[serde(rename_all = "lowercase")]
 #[strum(serialize_all = "lowercase")]
 pub enum SwapProviderMode {
     OnChain,
@@ -11,8 +13,9 @@ pub enum SwapProviderMode {
     Bridge,
 }
 
-#[derive(Debug, Copy, Clone, PartialEq, AsRefStr, EnumString, Eq, PartialOrd, Ord)]
+#[derive(Debug, Copy, Clone, PartialEq, AsRefStr, EnumString, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Sendable")]
+#[serde(rename_all = "lowercase")]
 #[strum(serialize_all = "lowercase")]
 pub enum SwapProvider {
     UniswapV3,
