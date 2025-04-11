@@ -1,11 +1,9 @@
-use network::AlienError;
 pub mod asset;
 pub mod block_explorer;
 pub mod bsc;
 pub mod chain;
 pub mod config;
 pub mod cosmos;
-pub mod lido;
 pub mod network;
 pub mod payment;
 pub mod solana;
@@ -13,6 +11,8 @@ pub mod sui;
 pub mod swapper;
 pub mod ton;
 pub mod wallet_connect;
+
+use network::AlienError;
 
 uniffi::setup_scaffolding!("gemstone");
 static LIB_VERSION: &str = env!("CARGO_PKG_VERSION");
