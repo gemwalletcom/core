@@ -2,7 +2,34 @@ use super::permit2_data::Permit2Data;
 use crate::config::swap_config::{SwapReferralFees, DEFAULT_SLIPPAGE_BPS};
 use primitives::{AssetId, Chain};
 use std::fmt::Debug;
-use strum_macros::{AsRefStr, EnumString};
+
+pub type SwapProvider = primitives::SwapProvider;
+pub type SwapProviderMode = primitives::SwapProviderMode;
+
+#[uniffi::remote(Enum)]
+pub enum SwapProvider {
+    UniswapV3,
+    UniswapV4,
+    PancakeSwapV3,
+    PancakeSwapAptosV2,
+    Thorchain,
+    Orca,
+    Jupiter,
+    Across,
+    Oku,
+    Wagmi,
+    Cetus,
+    StonFiV2,
+    Mayan,
+    Reservoir,
+}
+
+#[uniffi::remote(Enum)]
+pub enum SwapProviderMode {
+    OnChain,
+    CrossChain,
+    Bridge,
+}
 
 #[derive(Debug, Clone, PartialEq, uniffi::Enum)]
 pub enum GemSwapMode {
@@ -15,7 +42,7 @@ pub struct SwapProviderConfig(SwapProviderType);
 
 impl SwapProviderConfig {
     pub fn id(&self) -> SwapProvider {
-        self.0.id.clone()
+        self.0.id
     }
 }
 
@@ -42,92 +69,11 @@ pub struct SwapProviderType {
 impl SwapProviderType {
     pub fn new(id: SwapProvider) -> Self {
         Self {
-            id: id.clone(),
+            id,
             mode: id.mode(),
             name: id.name().to_string(),
             protocol: id.protocol_name().to_string(),
             protocol_id: id.id().to_string(),
-        }
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, uniffi::Enum)]
-pub enum SwapProviderMode {
-    OnChain,
-    CrossChain,
-    Bridge,
-}
-
-#[derive(Debug, Clone, PartialEq, AsRefStr, EnumString, Eq, PartialOrd, Ord, uniffi::Enum)]
-#[strum(serialize_all = "lowercase")]
-pub enum SwapProvider {
-    UniswapV3,
-    UniswapV4,
-    PancakeSwapV3,
-    PancakeSwapAptosV2,
-    Thorchain,
-    Orca,
-    Jupiter,
-    Across,
-    Oku,
-    Wagmi,
-    Cetus,
-    StonFiV2,
-    Mayan,
-    Reservoir,
-}
-
-impl SwapProvider {
-    pub fn id(&self) -> &str {
-        self.as_ref()
-    }
-
-    pub fn name(&self) -> &str {
-        match self {
-            Self::UniswapV3 | Self::UniswapV4 => "Uniswap",
-            Self::PancakeSwapV3 | Self::PancakeSwapAptosV2 => "PancakeSwap",
-            Self::Thorchain => "THORChain",
-            Self::Orca => "Orca",
-            Self::Jupiter => "Jupiter",
-            Self::Across => "Across",
-            Self::Oku => "Oku",
-            Self::Wagmi => "Wagmi",
-            Self::Cetus => "Cetus",
-            Self::StonFiV2 => "STON.fi",
-            Self::Mayan => "Mayan",
-            Self::Reservoir => "Reservoir",
-        }
-    }
-
-    pub fn protocol_name(&self) -> &str {
-        match self {
-            Self::UniswapV3 => "Uniswap v3",
-            Self::UniswapV4 => "Uniswap v4",
-            Self::PancakeSwapV3 => "PancakeSwap v3",
-            Self::PancakeSwapAptosV2 => "PancakeSwap v2",
-            Self::Orca => "Orca Whirlpool",
-            Self::Across => "Across v3",
-            Self::Oku => "Oku",
-            Self::StonFiV2 => "STON.fi v2",
-            Self::Thorchain | Self::Jupiter | Self::Wagmi | Self::Cetus | Self::Mayan | Self::Reservoir => self.name(),
-        }
-    }
-
-    pub fn mode(&self) -> SwapProviderMode {
-        match self {
-            Self::UniswapV3
-            | Self::UniswapV4
-            | Self::PancakeSwapV3
-            | Self::PancakeSwapAptosV2
-            | Self::Orca
-            | Self::Jupiter
-            | Self::Oku
-            | Self::Wagmi
-            | Self::Cetus
-            | Self::StonFiV2
-            | Self::Reservoir => SwapProviderMode::OnChain,
-            Self::Thorchain | Self::Mayan => SwapProviderMode::CrossChain,
-            Self::Across => SwapProviderMode::Bridge,
         }
     }
 }
