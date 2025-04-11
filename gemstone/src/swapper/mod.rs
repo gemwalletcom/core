@@ -288,7 +288,7 @@ mod tests {
 
         assert_eq!(filtered.len(), 2);
         assert_eq!(
-            filtered.iter().map(|x| x.provider().id.clone()).collect::<BTreeSet<_>>(),
+            filtered.iter().map(|x| x.provider().id).collect::<BTreeSet<_>>(),
             BTreeSet::from([SwapProvider::UniswapV3, SwapProvider::PancakeSwapV3])
         );
 

@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
-use crate::AssetId;
+use crate::{AssetId, SwapProvider};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Sendable")]
@@ -11,7 +11,7 @@ pub struct TransactionSwapMetadata {
     pub from_value: String,
     pub to_asset: AssetId,
     pub to_value: String,
-    pub provider: Option<String>,
+    pub provider: Option<SwapProvider>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

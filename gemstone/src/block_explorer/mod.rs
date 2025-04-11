@@ -40,8 +40,7 @@ impl Explorer {
         get_block_explorer(self.chain, explorer_name).get_tx_url(transaction_id)
     }
 
-    pub fn get_transaction_swap_url(&self, explorer_name: &str, transaction_id: &str, provider: &str) -> Option<ExplorerURL> {
-        let provider = SwapProvider::from_str(provider).ok()?;
+    pub fn get_transaction_swap_url(&self, explorer_name: &str, transaction_id: &str, provider: SwapProvider) -> Option<ExplorerURL> {
         let explorer: Box<dyn BlockExplorer> = match provider {
             SwapProvider::Mayan => MayanScan::new(),
             SwapProvider::Thorchain => RuneScan::new(),
@@ -324,7 +323,7 @@ mod tests {
             .get_transaction_swap_url(
                 "runescan",
                 "0x0299923c9a0a40e3a296058ac2c5c3a7b41f91803ea36ad9645492ccca0f8631",
-                SwapProvider::Thorchain.as_ref(),
+                SwapProvider::Thorchain,
             )
             .unwrap();
 
@@ -338,7 +337,7 @@ mod tests {
             .get_transaction_swap_url(
                 "solscan",
                 "0x56acc6a58fc0bdd9e9be5cc2a3ff079b91b933f562cf0fe760f1d8d6b76f4876",
-                SwapProvider::Mayan.as_ref(),
+                SwapProvider::Mayan,
             )
             .unwrap();
 
