@@ -18,6 +18,7 @@ pub enum DocsUrl {
     StakingAPR,
     StakingStatus,
     StakingValidator,
+    AccountMinimalBalance,
 }
 const DOCS_URL: &str = "https://docs.gemwallet.com";
 
@@ -41,6 +42,7 @@ pub fn get_docs_url(item: DocsUrl) -> String {
         DocsUrl::StakingAPR => "/faq/staking-apr/",
         DocsUrl::StakingStatus => "/faq/staking-status/",
         DocsUrl::StakingValidator => "/faq/staking-validator/",
+        DocsUrl::AccountMinimalBalance => "/faq/account-minimal-balance/",
     };
     format!("{}{}", DOCS_URL, path)
 }
