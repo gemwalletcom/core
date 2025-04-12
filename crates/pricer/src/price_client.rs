@@ -96,7 +96,7 @@ impl PriceClient {
 
     pub async fn get_asset_price(&mut self, asset_id: &str, currency: &str) -> Result<AssetMarketPrice, Box<dyn Error>> {
         let prices = self.get_cache_prices(currency, vec![asset_id]).await?;
-        let price = prices.first().cloned().ok_or("No price available")?;
+        let price = prices.first().cloned().ok_or(format!("No price available for asset_id: {}", asset_id))?;
 
         Ok(AssetMarketPrice {
             price: Some(price.as_price_primitive()),
