@@ -7,16 +7,6 @@ use typeshare::typeshare;
 #[typeshare(swift = "Equatable, Sendable")]
 #[serde(rename_all = "lowercase")]
 #[strum(serialize_all = "lowercase")]
-pub enum SwapProviderMode {
-    OnChain,
-    CrossChain,
-    Bridge,
-}
-
-#[derive(Debug, Copy, Clone, PartialEq, AsRefStr, EnumString, Eq, PartialOrd, Ord, Serialize, Deserialize)]
-#[typeshare(swift = "Equatable, Sendable")]
-#[serde(rename_all = "lowercase")]
-#[strum(serialize_all = "lowercase")]
 pub enum SwapProvider {
     UniswapV3,
     UniswapV4,
@@ -67,24 +57,6 @@ impl SwapProvider {
             Self::Oku => "Oku",
             Self::StonFiV2 => "STON.fi v2",
             Self::Thorchain | Self::Jupiter | Self::Wagmi | Self::Cetus | Self::Mayan | Self::Reservoir => self.name(),
-        }
-    }
-
-    pub fn mode(&self) -> SwapProviderMode {
-        match self {
-            Self::UniswapV3
-            | Self::UniswapV4
-            | Self::PancakeSwapV3
-            | Self::PancakeSwapAptosV2
-            | Self::Orca
-            | Self::Jupiter
-            | Self::Oku
-            | Self::Wagmi
-            | Self::Cetus
-            | Self::StonFiV2
-            | Self::Reservoir => SwapProviderMode::OnChain,
-            Self::Thorchain | Self::Mayan => SwapProviderMode::CrossChain,
-            Self::Across => SwapProviderMode::Bridge,
         }
     }
 }

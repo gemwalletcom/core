@@ -18,7 +18,7 @@ pub fn build_commands(
     let fee_options = options.fee.unwrap_or_default().evm;
     let recipient = eth_address::parse_str(&request.wallet_address)?;
 
-    let mode = request.mode.clone();
+    let mode = request.mode;
     let wrap_input_eth = request.from_asset.is_native();
     let unwrap_output_weth = request.to_asset.is_native();
     let pay_fees = fee_options.bps > 0;

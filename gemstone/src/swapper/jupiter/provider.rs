@@ -1,7 +1,7 @@
 use super::{client::JupiterClient, model::*, PROGRAM_ADDRESS};
 use crate::{
     network::jsonrpc::{jsonrpc_call_with_cache, JsonRpcResult},
-    swapper::{slippage::apply_slippage_in_bp, GemSwapProvider, *},
+    swapper::{slippage::apply_slippage_in_bp, Swapper, *},
 };
 
 use alloy_primitives::U256;
@@ -23,7 +23,7 @@ pub struct Jupiter {
 impl Default for Jupiter {
     fn default() -> Self {
         Self {
-            provider: SwapProviderType::new(SwapProvider::Jupiter),
+            provider: SwapProviderType::new(GemSwapProvider::Jupiter),
             fee_mints: HashSet::from([USDC_TOKEN_MINT, USDT_TOKEN_MINT, WSOL_TOKEN_ADDRESS]),
         }
     }
@@ -98,7 +98,7 @@ impl Jupiter {
 }
 
 #[async_trait]
-impl GemSwapProvider for Jupiter {
+impl Swapper for Jupiter {
     fn provider(&self) -> &SwapProviderType {
         &self.provider
     }

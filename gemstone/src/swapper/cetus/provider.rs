@@ -27,8 +27,8 @@ use crate::{
         },
     },
     swapper::{
-        slippage::apply_slippage_in_bp, FetchQuoteData, GemSwapMode, GemSwapProvider, SwapChainAsset, SwapProvider, SwapProviderData, SwapProviderType,
-        SwapQuote, SwapQuoteData, SwapQuoteRequest, SwapRoute, SwapperError,
+        slippage::apply_slippage_in_bp, FetchQuoteData, GemSwapMode, GemSwapProvider, SwapChainAsset, SwapProviderData, SwapProviderType, SwapQuote,
+        SwapQuoteData, SwapQuoteRequest, SwapRoute, Swapper, SwapperError,
     },
 };
 use gem_sui::{
@@ -46,13 +46,13 @@ pub struct Cetus {
 impl Default for Cetus {
     fn default() -> Self {
         Self {
-            provider: SwapProviderType::new(SwapProvider::Cetus),
+            provider: SwapProviderType::new(GemSwapProvider::Cetus),
         }
     }
 }
 
 impl Cetus {
-    pub fn boxed() -> Box<dyn GemSwapProvider> {
+    pub fn boxed() -> Box<dyn Swapper> {
         Box::new(Self::default())
     }
 
@@ -140,7 +140,7 @@ impl Cetus {
 }
 
 #[async_trait]
-impl GemSwapProvider for Cetus {
+impl Swapper for Cetus {
     fn provider(&self) -> &SwapProviderType {
         &self.provider
     }

@@ -8,7 +8,7 @@ use crate::swapper::asset::{
 };
 use crate::swapper::thorchain::client::ThorChainSwapClient;
 use crate::swapper::{ApprovalData, FetchQuoteData, SwapProviderData, SwapProviderType, SwapQuote, SwapQuoteData, SwapQuoteRequest, SwapRoute, SwapperError};
-use crate::swapper::{GemSwapProvider, SwapChainAsset};
+use crate::swapper::{SwapChainAsset, Swapper};
 use alloy_primitives::{hex::encode_prefixed as HexEncode, Address, U256};
 use alloy_sol_types::SolCall;
 use async_trait::async_trait;
@@ -19,7 +19,7 @@ use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 #[async_trait]
-impl GemSwapProvider for ThorChain {
+impl Swapper for ThorChain {
     fn provider(&self) -> &SwapProviderType {
         &self.provider
     }

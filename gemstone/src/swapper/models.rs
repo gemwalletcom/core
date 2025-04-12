@@ -3,11 +3,10 @@ use crate::config::swap_config::{SwapReferralFees, DEFAULT_SLIPPAGE_BPS};
 use primitives::{AssetId, Chain};
 use std::fmt::Debug;
 
-pub type SwapProvider = primitives::SwapProvider;
-pub type SwapProviderMode = primitives::SwapProviderMode;
+pub type GemSwapProvider = primitives::SwapProvider;
 
 #[uniffi::remote(Enum)]
-pub enum SwapProvider {
+pub enum GemSwapProvider {
     UniswapV3,
     UniswapV4,
     PancakeSwapV3,
@@ -24,14 +23,14 @@ pub enum SwapProvider {
     Reservoir,
 }
 
-#[uniffi::remote(Enum)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum SwapProviderMode {
     OnChain,
     CrossChain,
     Bridge,
 }
 
-#[derive(Debug, Clone, PartialEq, uniffi::Enum)]
+#[derive(Debug, Copy, Clone, PartialEq, uniffi::Enum)]
 pub enum GemSwapMode {
     ExactIn,
     ExactOut,
@@ -41,7 +40,7 @@ pub enum GemSwapMode {
 pub struct SwapProviderConfig(SwapProviderType);
 
 impl SwapProviderConfig {
-    pub fn id(&self) -> SwapProvider {
+    pub fn id(&self) -> GemSwapProvider {
         self.0.id
     }
 }
@@ -49,7 +48,7 @@ impl SwapProviderConfig {
 #[uniffi::export]
 impl SwapProviderConfig {
     #[uniffi::constructor]
-    pub fn new(id: SwapProvider) -> Self {
+    pub fn new(id: GemSwapProvider) -> Self {
         Self(SwapProviderType::new(id))
     }
     pub fn inner(&self) -> SwapProviderType {
@@ -59,21 +58,37 @@ impl SwapProviderConfig {
 
 #[derive(Debug, Clone, PartialEq, uniffi::Record)]
 pub struct SwapProviderType {
-    pub id: SwapProvider,
-    pub mode: SwapProviderMode,
+    pub id: GemSwapProvider,
     pub name: String,
     pub protocol: String,
     pub protocol_id: String,
 }
 
 impl SwapProviderType {
-    pub fn new(id: SwapProvider) -> Self {
+    pub fn new(id: GemSwapProvider) -> Self {
         Self {
             id,
-            mode: id.mode(),
             name: id.name().to_string(),
             protocol: id.protocol_name().to_string(),
             protocol_id: id.id().to_string(),
+        }
+    }
+
+    pub fn mode(&self) -> SwapProviderMode {
+        match self.id {
+            GemSwapProvider::UniswapV3
+            | GemSwapProvider::UniswapV4
+            | GemSwapProvider::PancakeSwapV3
+            | GemSwapProvider::PancakeSwapAptosV2
+            | GemSwapProvider::Orca
+            | GemSwapProvider::Jupiter
+            | GemSwapProvider::Oku
+            | GemSwapProvider::Wagmi
+            | GemSwapProvider::Cetus
+            | GemSwapProvider::StonFiV2
+            | GemSwapProvider::Reservoir => SwapProviderMode::OnChain,
+            GemSwapProvider::Thorchain | GemSwapProvider::Mayan => SwapProviderMode::CrossChain,
+            GemSwapProvider::Across => SwapProviderMode::Bridge,
         }
     }
 }
@@ -114,7 +129,7 @@ impl From<u32> for GemSlippage {
 pub struct GemSwapOptions {
     pub slippage: GemSlippage,
     pub fee: Option<SwapReferralFees>,
-    pub preferred_providers: Vec<SwapProvider>,
+    pub preferred_providers: Vec<GemSwapProvider>,
 }
 
 impl Default for GemSwapOptions {

@@ -14,8 +14,8 @@ use crate::{
     swapper::{
         approval::check_approval_erc20,
         models::{ApprovalData, ApprovalType, SwapChainAsset},
-        FetchQuoteData, GemSwapOptions, GemSwapProvider, SwapProvider, SwapProviderData, SwapProviderType, SwapQuote, SwapQuoteData, SwapQuoteRequest,
-        SwapRoute, SwapperError,
+        FetchQuoteData, GemSwapOptions, GemSwapProvider, SwapProviderData, SwapProviderType, SwapQuote, SwapQuoteData, SwapQuoteRequest, SwapRoute, Swapper,
+        SwapperError,
     },
 };
 use primitives::{Chain, ChainType};
@@ -31,10 +31,10 @@ pub struct ProxyProvider {
 }
 
 impl ProxyProvider {
-    fn get_referrer(&self, chain: &Chain, options: &GemSwapOptions, provider: &SwapProvider) -> SwapReferralFee {
+    fn get_referrer(&self, chain: &Chain, options: &GemSwapOptions, provider: &GemSwapProvider) -> SwapReferralFee {
         match provider {
             // always use solana for Mayan, otherwise not supported chain error
-            SwapProvider::Mayan => {
+            GemSwapProvider::Mayan => {
                 return options.fee.as_ref().unwrap().solana.clone();
             }
             _ => {}
@@ -79,7 +79,7 @@ impl ProxyProvider {
 }
 
 #[async_trait]
-impl GemSwapProvider for ProxyProvider {
+impl Swapper for ProxyProvider {
     fn provider(&self) -> &SwapProviderType {
         &self.provider
     }
@@ -140,7 +140,7 @@ impl GemSwapProvider for ProxyProvider {
 
     async fn get_transaction_status(&self, _chain: Chain, transaction_hash: &str, provider: Arc<dyn AlienProvider>) -> Result<bool, SwapperError> {
         match self.provider.id {
-            SwapProvider::Mayan => {
+            GemSwapProvider::Mayan => {
                 let client = MayanExplorer::new(provider);
                 let result = client.get_transaction_status(transaction_hash).await?;
                 Ok(result.client_status == MayanClientStatus::Completed)
