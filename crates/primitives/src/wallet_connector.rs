@@ -59,8 +59,8 @@ struct WalletConnectionSession {
     session_id: String,
     state: WalletConnectionState,
     chains: [Chain],
-    created_at: DateTime<Utc>,
-    expire_at: DateTime<Utc>,
+    created_at: NaiveDateTime,
+    expire_at: NaiveDateTime,
     metadata: WalletConnectionSessionAppMetadata,
 }
 

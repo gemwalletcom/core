@@ -3,8 +3,7 @@ use crate::{
     transaction_utxo::TransactionInput, Chain, TransactionSwapMetadata,
 };
 
-use chrono::offset::Utc;
-use chrono::DateTime;
+use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
 use std::{collections::HashSet, vec};
 use typeshare::typeshare;
@@ -45,7 +44,7 @@ pub struct Transaction {
     pub utxo_outputs: Vec<TransactionInput>,
     pub metadata: Option<serde_json::Value>,
     #[serde(rename = "createdAt")]
-    pub created_at: DateTime<Utc>,
+    pub created_at: NaiveDateTime,
 }
 
 impl Transaction {
@@ -64,7 +63,7 @@ impl Transaction {
         value: String,
         memo: Option<String>,
         metadata: Option<serde_json::Value>,
-        created_at: DateTime<Utc>,
+        created_at: NaiveDateTime,
     ) -> Self {
         let id = Self::id_from(asset_id.clone().chain, hash.clone());
         Self {
@@ -108,7 +107,7 @@ impl Transaction {
         utxo_inputs: Option<Vec<TransactionInput>>,
         utxo_outputs: Option<Vec<TransactionInput>>,
         metadata: Option<serde_json::Value>,
-        created_at: DateTime<Utc>,
+        created_at: NaiveDateTime,
     ) -> Self {
         let id = Self::id_from(asset_id.clone().chain, hash.clone());
         Self {

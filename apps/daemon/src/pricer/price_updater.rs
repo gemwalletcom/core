@@ -140,9 +140,9 @@ impl PriceUpdater {
             market.current_price.unwrap_or_default(),
             market.price_change_percentage_24h.unwrap_or_default(),
             market.ath.unwrap_or_default(),
-            market.ath_date.map(|x| x.naive_local()),
+            market.ath_date,
             market.atl.unwrap_or_default(),
-            market.atl_date.map(|x| x.naive_local()),
+            market.atl_date,
             market.market_cap.unwrap_or_default(),
             market.fully_diluted_valuation.unwrap_or_default(),
             market.market_cap_rank.unwrap_or_default(),
@@ -150,7 +150,7 @@ impl PriceUpdater {
             market.circulating_supply.unwrap_or_default(),
             market.total_supply.unwrap_or_default(),
             market.max_supply.unwrap_or_default(),
-            market.last_updated.map(|x| x.naive_local()),
+            market.last_updated,
         )
     }
 }

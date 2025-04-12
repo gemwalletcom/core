@@ -56,6 +56,7 @@ impl SolanaClient {
         let sequence = 0.to_string();
         let state = TransactionState::Confirmed;
         let fee_asset_id = chain.as_asset_id();
+        let created_at = Utc::now().naive_utc();
         // system transfer
         if (account_keys.len() == 2 || account_keys.len() == 3) && account_keys.last()? == SYSTEM_PROGRAM_ID && signatures.len() == 1 {
             let from = account_keys.first()?.clone();
@@ -78,7 +79,7 @@ impl SolanaClient {
                 value.to_string(),
                 None,
                 None,
-                Utc::now(),
+                created_at,
             );
             return Some(transaction);
         }
@@ -135,7 +136,7 @@ impl SolanaClient {
                 value.to_string(),
                 None,
                 None,
-                Utc::now(),
+                created_at,
             );
             return Some(transaction);
         }
@@ -196,7 +197,7 @@ impl SolanaClient {
                         from_value.clone().to_string(),
                         None,
                         serde_json::to_value(swap).ok(),
-                        Utc::now(),
+                        created_at,
                     );
                     return Some(transaction);
                 }

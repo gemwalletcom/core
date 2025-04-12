@@ -1,4 +1,4 @@
-use chrono::{NaiveDateTime, TimeZone};
+use chrono::NaiveDateTime;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 
@@ -37,7 +37,7 @@ impl PriceAlert {
             price_direction: self.price_direction.as_deref().and_then(|value| value.parse().ok()),
             price: self.price,
             price_percent_change: self.price_percent_change,
-            last_notified_at: self.last_notified_at.map(|x| chrono::Utc.from_utc_datetime(&x)),
+            last_notified_at: self.last_notified_at,
         }
     }
 

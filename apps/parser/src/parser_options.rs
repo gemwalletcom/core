@@ -1,4 +1,4 @@
-use chrono::{DateTime, Duration, Utc};
+use chrono::{Duration, NaiveDateTime, Utc};
 use primitives::Chain;
 
 #[derive(Debug, Clone)]
@@ -9,8 +9,8 @@ pub struct ParserOptions {
 }
 
 impl ParserOptions {
-    pub fn is_transaction_outdated(&self, transaction_created_at: DateTime<Utc>) -> bool {
-        Utc::now() - transaction_created_at > Duration::seconds(self.outdated_seconds())
+    pub fn is_transaction_outdated(&self, transaction_created_at: NaiveDateTime) -> bool {
+        Utc::now().naive_utc() - transaction_created_at > Duration::seconds(self.outdated_seconds())
     }
 
     pub fn outdated_seconds(&self) -> i64 {

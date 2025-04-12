@@ -185,7 +185,7 @@ impl CosmosClient {
                 value,
                 Some(memo),
                 None,
-                Utc::now(),
+                Utc::now().naive_utc(),
             );
             return Some(transaction);
         }

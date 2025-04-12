@@ -1,4 +1,4 @@
-use chrono::{DateTime, Utc};
+use chrono::NaiveDateTime;
 use serde::Deserialize;
 #[derive(Debug)]
 pub enum AppStoreError {
@@ -26,8 +26,8 @@ pub struct App {
     pub user_rating_count: Option<f64>,
     pub average_user_rating: Option<f64>,
     pub track_name: String,
-    pub release_date: DateTime<Utc>,
-    pub current_version_release_date: DateTime<Utc>,
+    pub release_date: NaiveDateTime,
+    pub current_version_release_date: NaiveDateTime,
 }
 
 #[derive(Debug, Deserialize)]
