@@ -7,7 +7,6 @@ extension SwapProviderType: @retroactive CustomStringConvertible {
     public var description: String {
         let json: [String: Any] = [
             "id": String(describing: id),
-            "mode": String(describing: mode),
             "protocol": self.protocol,
         ]
         let bytes = try! JSONSerialization.data(withJSONObject: json, options: [.prettyPrinted, .sortedKeys])
