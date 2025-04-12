@@ -100,7 +100,7 @@ impl FiatProvider for RampClient {
             "CREATED" | "INITIALIZED" | "FIAT_PENDING" => FiatTransactionStatus::Pending,
             "RETURNED" | "EXPIRED" | "CANCELLED" | "REVIEW_REJECTED" | "FIAT_RETURNED" => FiatTransactionStatus::Failed,
             "RELEASED" => FiatTransactionStatus::Complete,
-            _ => FiatTransactionStatus::Unknown,
+            _ => FiatTransactionStatus::Unknown(payload.status),
         };
         // let transaction_type = match data.transacton_type.as_str() {
         //     "buy" => FiatQuoteType::Buy,

@@ -67,7 +67,7 @@ impl FiatProvider for TransakClient {
             }
             "EXPIRED" | "FAILED" | "CANCELLED" | "REFUNDED" => FiatTransactionStatus::Failed,
             "COMPLETED" => FiatTransactionStatus::Complete,
-            _ => FiatTransactionStatus::Unknown,
+            _ => FiatTransactionStatus::Unknown(payload.status),
         };
         let transaction_type = match payload.is_buy_or_sell.as_str() {
             "BUY" => FiatQuoteType::Buy,

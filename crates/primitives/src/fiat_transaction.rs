@@ -28,7 +28,7 @@ pub enum FiatTransactionStatus {
     Complete,
     Pending,
     Failed,
-    Unknown,
+    Unknown(String),
 }
 
 #[typeshare(swift = "Equatable, Sendable, Hashable")]

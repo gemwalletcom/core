@@ -73,7 +73,7 @@ impl FiatProvider for MercuryoClient {
             "new" | "pending" | "order_scheduled" => FiatTransactionStatus::Pending,
             "cancelled" | "order_failed" | "descriptor_failed" => FiatTransactionStatus::Failed,
             "paid" | "completed" | "succeeded" => FiatTransactionStatus::Complete,
-            _ => FiatTransactionStatus::Unknown,
+            _ => FiatTransactionStatus::Unknown(data.status),
         };
         let transaction_type = match data.transacton_type.as_str() {
             "buy" => FiatQuoteType::Buy,

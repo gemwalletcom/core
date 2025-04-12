@@ -87,7 +87,7 @@ impl FiatProvider for BanxaClient {
             }
             "cancelled" | "declined" | "expired" | "refunded" => FiatTransactionStatus::Failed,
             "complete" | "completed" | "succeeded" => FiatTransactionStatus::Complete,
-            _ => FiatTransactionStatus::Unknown,
+            _ => FiatTransactionStatus::Unknown(order.status),
         };
         // TODO: Add order.crypto to asset mapping
         //let assset_id = Self::map_asset(asset)

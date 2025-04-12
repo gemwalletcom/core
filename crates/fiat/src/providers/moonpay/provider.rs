@@ -88,7 +88,7 @@ impl FiatProvider for MoonPayClient {
             "pending" | "waitingForDeposit" => FiatTransactionStatus::Pending,
             "failed" => FiatTransactionStatus::Failed,
             "completed" => FiatTransactionStatus::Complete,
-            _ => FiatTransactionStatus::Unknown,
+            _ => FiatTransactionStatus::Unknown(payload.status),
         };
         let fee_provider = payload.fee_amount.unwrap_or_default();
         let fee_network = payload.network_fee_amount.unwrap_or_default();
