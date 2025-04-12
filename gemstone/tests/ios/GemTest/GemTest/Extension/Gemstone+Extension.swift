@@ -2,6 +2,8 @@
 import Foundation
 import Gemstone
 
+public typealias SwapProvider = GemSwapProvider
+
 extension AlienTarget: URLRequestConvertible {
     func asRequest() throws -> URLRequest {
         guard let url = URL(string: self.url) else {

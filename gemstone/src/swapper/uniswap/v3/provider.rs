@@ -11,7 +11,7 @@ use crate::{
             quote_result::get_best_quote,
             swap_route::{build_swap_route, RouteData},
         },
-        GemSwapProvider, SwapperError,
+        Swapper, SwapperError,
     },
 };
 use gem_evm::{
@@ -99,7 +99,7 @@ impl UniswapV3 {
 }
 
 #[async_trait]
-impl GemSwapProvider for UniswapV3 {
+impl Swapper for UniswapV3 {
     fn provider(&self) -> &SwapProviderType {
         self.provider.provider()
     }

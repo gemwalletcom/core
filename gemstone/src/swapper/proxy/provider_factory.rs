@@ -1,11 +1,11 @@
-use crate::swapper::{asset::*, models::SwapChainAsset, SwapProvider, SwapProviderType};
+use crate::swapper::{asset::*, models::SwapChainAsset, GemSwapProvider, SwapProviderType};
 use primitives::Chain;
 
 use super::provider::{ProxyProvider, PROVIDER_API_URL};
 
 pub fn new_stonfi_v2() -> ProxyProvider {
     ProxyProvider {
-        provider: SwapProviderType::new(SwapProvider::StonFiV2),
+        provider: SwapProviderType::new(GemSwapProvider::StonFiV2),
         url: format!("{}/{}", PROVIDER_API_URL, "stonfi_v2"),
         assets: vec![SwapChainAsset::All(Chain::Ton)],
     }
@@ -13,7 +13,7 @@ pub fn new_stonfi_v2() -> ProxyProvider {
 
 pub fn new_mayan() -> ProxyProvider {
     ProxyProvider {
-        provider: SwapProviderType::new(SwapProvider::Mayan),
+        provider: SwapProviderType::new(GemSwapProvider::Mayan),
         url: format!("{}/{}", PROVIDER_API_URL, "mayan"),
         assets: vec![
             SwapChainAsset::Assets(

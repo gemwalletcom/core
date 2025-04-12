@@ -1,4 +1,4 @@
-use crate::swapper::{uniswap::v3::UniversalRouterProvider, SwapProvider, SwapProviderType};
+use crate::swapper::{uniswap::v3::UniversalRouterProvider, GemSwapProvider, SwapProviderType};
 use gem_evm::uniswap::{
     deployment::v3::{get_reservoir_deployment_by_chain, V3Deployment},
     FeeTier,
@@ -13,7 +13,7 @@ pub struct ReservoirUniversalRouter {
 impl Default for ReservoirUniversalRouter {
     fn default() -> Self {
         Self {
-            provider: SwapProviderType::new(SwapProvider::Reservoir),
+            provider: SwapProviderType::new(GemSwapProvider::Reservoir),
         }
     }
 }

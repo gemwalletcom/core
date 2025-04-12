@@ -1,7 +1,7 @@
 use crate::{
     debug_println,
     network::{jsonrpc::jsonrpc_call, AlienProvider, JsonRpcResult},
-    swapper::{models::*, slippage::apply_slippage_in_bp, GemSwapProvider, SwapperError},
+    swapper::{models::*, slippage::apply_slippage_in_bp, Swapper, SwapperError},
 };
 use async_trait::async_trait;
 use gem_solana::{
@@ -32,7 +32,7 @@ pub struct Orca {
 }
 
 impl Orca {
-    pub fn boxed() -> Box<dyn GemSwapProvider> {
+    pub fn boxed() -> Box<dyn Swapper> {
         Box::new(Orca::default())
     }
 }
@@ -40,7 +40,7 @@ impl Orca {
 impl Default for Orca {
     fn default() -> Self {
         Self {
-            provider: SwapProviderType::new(SwapProvider::Orca),
+            provider: SwapProviderType::new(GemSwapProvider::Orca),
             whirlpool_program: Pubkey::from_str(WHIRLPOOL_PROGRAM).unwrap(),
             whirlpool_config: Pubkey::from_str(WHIRLPOOL_CONFIG).unwrap(),
             chain: Chain::Solana,
@@ -49,7 +49,7 @@ impl Default for Orca {
 }
 
 #[async_trait]
-impl GemSwapProvider for Orca {
+impl Swapper for Orca {
     fn provider(&self) -> &SwapProviderType {
         &self.provider
     }

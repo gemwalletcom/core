@@ -104,3 +104,5 @@ pub mod markets;
 pub use self::markets::{MarketDominance, Markets, MarketsAssets};
 pub mod diff;
 pub use self::diff::Diff;
+pub mod swap_provider;
+pub use self::swap_provider::SwapProvider;

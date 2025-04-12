@@ -5,7 +5,7 @@ use primitives::{
 };
 use std::str::FromStr;
 
-use crate::swapper::SwapProvider;
+use crate::swapper::GemSwapProvider;
 
 #[derive(uniffi::Object)]
 pub struct Explorer {
@@ -40,23 +40,23 @@ impl Explorer {
         get_block_explorer(self.chain, explorer_name).get_tx_url(transaction_id)
     }
 
-    pub fn get_transaction_swap_url(&self, explorer_name: &str, transaction_id: &str, provider: &str) -> Option<ExplorerURL> {
-        let provider = SwapProvider::from_str(provider).ok()?;
+    pub fn get_transaction_swap_url(&self, explorer_name: &str, transaction_id: &str, provider_id: &str) -> Option<ExplorerURL> {
+        let provider = GemSwapProvider::from_str(provider_id).ok()?;
         let explorer: Box<dyn BlockExplorer> = match provider {
-            SwapProvider::Mayan => MayanScan::new(),
-            SwapProvider::Thorchain => RuneScan::new(),
-            SwapProvider::Across => SocketScan::new(),
-            SwapProvider::UniswapV3
-            | SwapProvider::UniswapV4
-            | SwapProvider::PancakeSwapV3
-            | SwapProvider::PancakeSwapAptosV2
-            | SwapProvider::Orca
-            | SwapProvider::Jupiter
-            | SwapProvider::Oku
-            | SwapProvider::Wagmi
-            | SwapProvider::Cetus
-            | SwapProvider::StonFiV2
-            | SwapProvider::Reservoir => get_block_explorer(self.chain, explorer_name),
+            GemSwapProvider::Mayan => MayanScan::new(),
+            GemSwapProvider::Thorchain => RuneScan::new(),
+            GemSwapProvider::Across => SocketScan::new(),
+            GemSwapProvider::UniswapV3
+            | GemSwapProvider::UniswapV4
+            | GemSwapProvider::PancakeSwapV3
+            | GemSwapProvider::PancakeSwapAptosV2
+            | GemSwapProvider::Orca
+            | GemSwapProvider::Jupiter
+            | GemSwapProvider::Oku
+            | GemSwapProvider::Wagmi
+            | GemSwapProvider::Cetus
+            | GemSwapProvider::StonFiV2
+            | GemSwapProvider::Reservoir => get_block_explorer(self.chain, explorer_name),
         };
         Some(ExplorerURL::new(&explorer.name(), &explorer.get_tx_url(transaction_id)))
     }
@@ -324,7 +324,7 @@ mod tests {
             .get_transaction_swap_url(
                 "runescan",
                 "0x0299923c9a0a40e3a296058ac2c5c3a7b41f91803ea36ad9645492ccca0f8631",
-                SwapProvider::Thorchain.as_ref(),
+                GemSwapProvider::Thorchain.as_ref(),
             )
             .unwrap();
 
@@ -338,7 +338,7 @@ mod tests {
             .get_transaction_swap_url(
                 "solscan",
                 "0x56acc6a58fc0bdd9e9be5cc2a3ff079b91b933f562cf0fe760f1d8d6b76f4876",
-                SwapProvider::Mayan.as_ref(),
+                GemSwapProvider::Mayan.as_ref(),
             )
             .unwrap();
 

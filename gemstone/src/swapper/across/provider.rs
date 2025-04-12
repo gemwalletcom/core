@@ -15,7 +15,7 @@ use crate::{
         chainlink::ChainlinkPriceFeed,
         eth_address, eth_rpc,
         models::*,
-        GemSwapProvider, SwapperError,
+        Swapper, SwapperError,
     },
 };
 use gem_evm::{
@@ -50,13 +50,13 @@ pub struct Across {
 impl Default for Across {
     fn default() -> Self {
         Self {
-            provider: SwapProviderType::new(SwapProvider::Across),
+            provider: SwapProviderType::new(GemSwapProvider::Across),
         }
     }
 }
 
 impl Across {
-    pub fn boxed() -> Box<dyn GemSwapProvider> {
+    pub fn boxed() -> Box<dyn Swapper> {
         Box::new(Self::default())
     }
 
@@ -236,7 +236,7 @@ impl Across {
 }
 
 #[async_trait]
-impl GemSwapProvider for Across {
+impl Swapper for Across {
     fn provider(&self) -> &SwapProviderType {
         &self.provider
     }
