@@ -56,6 +56,8 @@ pub struct Asset {
     //pub not_allowed_us_states: Option<Vec<String>>,
     #[serde(rename = "notAllowedCountries")]
     pub not_allowed_countries: Option<Vec<String>>,
+    #[serde(rename = "type")]
+    pub currency_type: FiatCurrencyType,
 }
 
 impl Asset {
@@ -88,8 +90,10 @@ pub struct Webhook {
     pub id: String,
     pub status: String,
     pub base_currency_amount: f64,
-    pub base_currency: FiatCurrency,
-    pub currency: Asset,
+    pub quote_currency_amount: f64,
+    pub base_currency: Asset,
+    pub currency: Option<Asset>,
+    pub quote_currency: Option<Asset>,
     pub wallet_address: Option<String>,
     pub crypto_transaction_id: Option<String>,
     pub network_fee_amount: Option<f64>,
@@ -97,8 +101,9 @@ pub struct Webhook {
     pub fee_amount: Option<f64>,
 }
 
-#[derive(Debug, Clone, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct FiatCurrency {
-    pub code: String,
+#[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum FiatCurrencyType {
+    Fiat,
+    Crypto,
 }

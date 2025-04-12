@@ -7,7 +7,7 @@ use crate::{
 use async_trait::async_trait;
 use std::error::Error;
 
-use super::client::MoonPayClient;
+use super::{client::MoonPayClient, model::FiatCurrencyType};
 use primitives::{
     AssetId, FiatBuyQuote, FiatProviderCountry, FiatProviderName, FiatQuote, FiatQuoteType, FiatSellQuote, FiatTransaction, FiatTransactionStatus,
 };
@@ -67,43 +67,48 @@ impl FiatProvider for MoonPayClient {
 
     // full transaction: https://dev.moonpay.com/reference/reference-webhooks-buy
     async fn webhook(&self, data: serde_json::Value) -> Result<FiatTransaction, Box<dyn std::error::Error + Send + Sync>> {
-        let payload = serde_json::from_value::<Data<Webhook>>(data)?;
-        let asset = Self::map_asset(payload.data.currency).unwrap();
+        let payload = serde_json::from_value::<Data<Webhook>>(data)?.data;
+
+        let asset = payload.clone().currency.unwrap_or(payload.clone().base_currency);
+        let fiat_currency = payload.clone().quote_currency.unwrap_or(payload.clone().base_currency);
+        let asset = Self::map_asset(asset).unwrap();
         let asset_id = AssetId::from(asset.chain.unwrap(), asset.token_id);
 
-        let status = match payload.data.status.as_str() {
-            "pending" => FiatTransactionStatus::Pending,
+        let transaction_type = if payload.clone().base_currency.currency_type == FiatCurrencyType::Fiat {
+            FiatQuoteType::Buy
+        } else {
+            FiatQuoteType::Sell
+        };
+        let currency_amount = match transaction_type {
+            FiatQuoteType::Buy => payload.base_currency_amount,
+            FiatQuoteType::Sell => payload.quote_currency_amount,
+        };
+
+        let status = match payload.status.as_str() {
+            "pending" | "waitingForDeposit" => FiatTransactionStatus::Pending,
             "failed" => FiatTransactionStatus::Failed,
             "completed" => FiatTransactionStatus::Complete,
             _ => FiatTransactionStatus::Unknown,
         };
-
-        let currency_amount = payload.data.base_currency_amount;
-        let fee_provider = payload.data.fee_amount.unwrap_or_default();
-        let fee_network = payload.data.network_fee_amount.unwrap_or_default();
-        let fee_partner = payload.data.extra_fee_amount.unwrap_or_default();
+        let fee_provider = payload.fee_amount.unwrap_or_default();
+        let fee_network = payload.network_fee_amount.unwrap_or_default();
+        let fee_partner = payload.extra_fee_amount.unwrap_or_default();
         let fiat_amount = currency_amount + fee_provider + fee_network + fee_partner;
-        let transaction_type = FiatQuoteType::Buy;
-        // let transaction_type = match data.transacton_type.as_str() {
-        //     "buy" => FiatQuoteType::Buy,
-        //     "sell" => FiatQuoteType::Sell,
-        //     _ => FiatQuoteType::Buy,
-        // };
 
         let transaction = FiatTransaction {
             asset_id: Some(asset_id),
             transaction_type,
             symbol: asset.symbol,
             provider_id: Self::NAME.id(),
-            provider_transaction_id: payload.data.id,
+            provider_transaction_id: payload.id,
             status,
             fiat_amount,
-            fiat_currency: payload.data.base_currency.code.to_uppercase(),
-            transaction_hash: payload.data.crypto_transaction_id,
-            address: payload.data.wallet_address,
-            fee_provider: payload.data.fee_amount,
-            fee_network: payload.data.network_fee_amount,
-            fee_partner: payload.data.extra_fee_amount,
+            fiat_currency: fiat_currency.code.to_uppercase(),
+            transaction_hash: payload.crypto_transaction_id,
+            address: payload.wallet_address,
+            fee_provider: payload.fee_amount,
+            fee_network: payload.network_fee_amount,
+            fee_partner: payload.extra_fee_amount,
         };
 
         Ok(transaction)
