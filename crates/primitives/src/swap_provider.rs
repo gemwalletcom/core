@@ -22,6 +22,7 @@ pub enum SwapProvider {
     StonFiV2,
     Mayan,
     Reservoir,
+    Symbiosis,
 }
 
 impl SwapProvider {
@@ -43,6 +44,7 @@ impl SwapProvider {
             Self::StonFiV2 => "STON.fi",
             Self::Mayan => "Mayan",
             Self::Reservoir => "Reservoir",
+            Self::Symbiosis => "Symbiosis",
         }
     }
 
@@ -57,6 +59,7 @@ impl SwapProvider {
             Self::Oku => "Oku",
             Self::StonFiV2 => "STON.fi v2",
             Self::Thorchain | Self::Jupiter | Self::Wagmi | Self::Cetus | Self::Mayan | Self::Reservoir => self.name(),
+            Self::Symbiosis => "Symbiosis",
         }
     }
 }

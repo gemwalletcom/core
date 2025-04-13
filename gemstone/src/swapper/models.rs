@@ -21,6 +21,7 @@ pub enum GemSwapProvider {
     StonFiV2,
     Mayan,
     Reservoir,
+    Symbiosis,
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -86,7 +87,8 @@ impl SwapProviderType {
             | GemSwapProvider::Wagmi
             | GemSwapProvider::Cetus
             | GemSwapProvider::StonFiV2
-            | GemSwapProvider::Reservoir => SwapProviderMode::OnChain,
+            | GemSwapProvider::Reservoir
+            | GemSwapProvider::Symbiosis => SwapProviderMode::OnChain,
             GemSwapProvider::Thorchain | GemSwapProvider::Mayan => SwapProviderMode::CrossChain,
             GemSwapProvider::Across => SwapProviderMode::Bridge,
         }
