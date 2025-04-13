@@ -128,6 +128,7 @@ impl GemSwapper {
                 Box::new(cetus::Cetus::default()),
                 Box::new(proxy::new_stonfi_v2()),
                 Box::new(proxy::new_mayan()),
+                Box::new(proxy::new_symbiosis()),
             ],
         }
     }
