@@ -58,15 +58,15 @@ impl ProxyProvider {
         let request = &quote.request;
         let from_asset = &request.from_asset;
 
-        if from_asset.chain.chain_type() != ChainType::Ethereum || from_asset.is_native() {
+        if from_asset.chain().chain_type() != ChainType::Ethereum || from_asset.is_native() {
             return Ok((None, None));
         }
 
-        let token = from_asset.token_id.clone().unwrap();
+        let token = from_asset.id.token_id.clone().unwrap();
         let wallet_address = request.wallet_address.clone();
         let spender = quote_data.to.clone();
         let amount = U256::from_str(&quote.from_value).map_err(SwapperError::from)?;
-        let approval = check_approval_erc20(wallet_address, token, spender.to_string(), amount, provider, &request.from_asset.chain).await?;
+        let approval = check_approval_erc20(wallet_address, token, spender.to_string(), amount, provider, &request.from_asset.chain()).await?;
 
         let gas_limit: Option<String> = if matches!(approval, ApprovalType::Approve(_)) {
             Some(DEFAULT_GAS_LIMIT.to_string())
@@ -90,12 +90,14 @@ impl Swapper for ProxyProvider {
 
     async fn fetch_quote(&self, request: &SwapQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapQuote, SwapperError> {
         let client = ProxyClient::new(provider);
-        let referrer = self.get_referrer(&request.from_asset.chain, &request.options, &self.provider.id);
+        let referrer = self.get_referrer(&request.from_asset.chain(), &request.options, &self.provider.id);
         let quote_request = QuoteRequest {
             from_address: request.wallet_address.clone(),
-            from_asset: request.from_asset.to_string(),
+            from_asset: request.from_asset.id.to_string(),
+            from_asset_decimals: request.from_asset.decimals,
             to_address: request.destination_address.clone(),
-            to_asset: request.to_asset.to_string(),
+            to_asset: request.to_asset.id.to_string(),
+            to_asset_decimals: request.to_asset.decimals,
             from_value: request.value.clone(),
             referral_address: referrer.address.clone(),
             referral_bps: referrer.bps as usize,
@@ -110,8 +112,8 @@ impl Swapper for ProxyProvider {
             data: SwapProviderData {
                 provider: self.provider().clone(),
                 routes: vec![SwapRoute {
-                    input: request.from_asset.clone(),
-                    output: request.to_asset.clone(),
+                    input: request.from_asset.id.clone(),
+                    output: request.to_asset.id.clone(),
                     route_data: serde_json::to_string(&quote).unwrap(),
                     gas_limit: None,
                 }],

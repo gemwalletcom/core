@@ -168,8 +168,8 @@ impl GemSwapper {
         if request.from_asset == request.to_asset {
             return Err(SwapperError::NotSupportedPair);
         }
-        let from_chain = request.from_asset.chain;
-        let to_chain = request.to_asset.chain;
+        let from_chain = request.from_asset.chain();
+        let to_chain = request.to_asset.chain();
         let preferred_providers = &request.options.preferred_providers;
         let providers = self
             .swappers
@@ -220,7 +220,7 @@ impl GemSwapper {
         let provider = self.get_swapper_by_provider(&quote.data.provider.id).ok_or(SwapperError::NoAvailableProvider)?;
         let mut quote_data = provider.fetch_quote_data(quote, self.rpc_provider.clone(), data).await?;
         if let Some(gas_limit) = quote_data.gas_limit.take() {
-            quote_data.gas_limit = Some(Self::apply_gas_limit_multiplier(&quote.request.from_asset.chain, gas_limit));
+            quote_data.gas_limit = Some(Self::apply_gas_limit_multiplier(&quote.request.from_asset.chain(), gas_limit));
         }
         Ok(quote_data)
     }

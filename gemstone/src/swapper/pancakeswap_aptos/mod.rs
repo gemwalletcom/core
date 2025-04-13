@@ -65,8 +65,8 @@ impl Swapper for PancakeSwapAptos {
         let endpoint: String = provider.get_endpoint(Chain::Aptos).unwrap();
         let client = PancakeSwapAptosClient::new(provider);
 
-        let from_internal_asset = self.to_asset(request.from_asset.clone());
-        let to_internal_asset = self.to_asset(request.to_asset.clone());
+        let from_internal_asset = self.to_asset(request.from_asset.id.clone());
+        let to_internal_asset = self.to_asset(request.to_asset.id.clone());
         let fee_bps = 0; // TODO: implement fees
 
         let quote_value = client
@@ -91,8 +91,8 @@ impl Swapper for PancakeSwapAptos {
             data: SwapProviderData {
                 provider: self.provider().clone(),
                 routes: vec![SwapRoute {
-                    input: request.from_asset.clone(),
-                    output: request.to_asset.clone(),
+                    input: request.from_asset.id.clone(),
+                    output: request.to_asset.id.clone(),
                     route_data,
                     gas_limit: None,
                 }],
@@ -110,7 +110,10 @@ impl Swapper for PancakeSwapAptos {
 
         let payload = self.router_swap_input(
             PANCAKE_SWAP_APTOS_ADDRESS,
-            vec![self.to_asset(quote.request.from_asset.clone()), self.to_asset(quote.request.to_asset.clone())],
+            vec![
+                self.to_asset(quote.request.from_asset.id.clone()),
+                self.to_asset(quote.request.to_asset.id.clone()),
+            ],
             quote.from_value.clone().to_string(),
             route_data.min_value.clone(),
         );

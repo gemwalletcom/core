@@ -77,9 +77,9 @@ impl UniswapV4 {
     }
 
     fn parse_request(request: &SwapQuoteRequest) -> Result<(EVMChain, Address, Address, u128), SwapperError> {
-        let evm_chain = EVMChain::from_chain(request.from_asset.chain).ok_or(SwapperError::NotSupportedChain)?;
-        let token_in = Self::parse_asset_address(&request.from_asset, evm_chain)?;
-        let token_out = Self::parse_asset_address(&request.to_asset, evm_chain)?;
+        let evm_chain = EVMChain::from_chain(request.from_asset.chain()).ok_or(SwapperError::NotSupportedChain)?;
+        let token_in = Self::parse_asset_address(&request.from_asset.id, evm_chain)?;
+        let token_out = Self::parse_asset_address(&request.to_asset.id, evm_chain)?;
         let amount_in = u128::from_str(&request.value).map_err(SwapperError::from)?;
 
         Ok((evm_chain, token_in, token_out, amount_in))
@@ -95,8 +95,9 @@ impl Swapper for UniswapV4 {
         Chain::all().iter().filter(|x| self.support_chain(x)).map(|x| SwapChainAsset::All(*x)).collect()
     }
     async fn fetch_quote(&self, request: &SwapQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapQuote, SwapperError> {
+        let from_chain = request.from_asset.chain();
         // Check deployment and weth contract
-        let deployment = get_uniswap_deployment_by_chain(&request.from_asset.chain).ok_or(SwapperError::NotSupportedChain)?;
+        let deployment = get_uniswap_deployment_by_chain(&from_chain).ok_or(SwapperError::NotSupportedChain)?;
         let (evm_chain, token_in, token_out, from_value) = Self::parse_request(request)?;
         _ = evm_chain.weth_contract().ok_or(SwapperError::NotSupportedChain)?;
 
@@ -122,7 +123,7 @@ impl Swapper for UniswapV4 {
             .iter()
             .map(|pool_key| build_quote_exact_single_request(&token_in, deployment.quoter, quote_amount_in, &pool_key.1))
             .collect();
-        let batch_call = batch_jsonrpc_call(calls, provider.clone(), &request.from_asset.chain);
+        let batch_call = batch_jsonrpc_call(calls, provider.clone(), &from_chain);
         let mut requests = vec![batch_call];
 
         let quote_exact_params: Vec<Vec<(Vec<TokenPair>, QuoteExactParams)>>;
@@ -132,7 +133,7 @@ impl Swapper for UniswapV4 {
             build_quote_exact_requests(deployment.quoter, &quote_exact_params)
                 .iter()
                 .for_each(|call_array| {
-                    let batch_call = batch_jsonrpc_call(call_array.to_vec(), provider.clone(), &request.from_asset.chain);
+                    let batch_call = batch_jsonrpc_call(call_array.to_vec(), provider.clone(), &from_chain);
                     requests.push(batch_call);
                 });
         } else {
@@ -163,15 +164,15 @@ impl Swapper for UniswapV4 {
 
         // construct routes
         let fee_tier: u32 = fee_tiers[fee_tier_idx % fee_tiers.len()] as u32;
-        let asset_id_in = AssetId::from(request.from_asset.chain, Some(token_in.to_checksum(None)));
-        let asset_id_out = AssetId::from(request.to_asset.chain, Some(token_out.to_checksum(None)));
+        let asset_id_in = AssetId::from(request.from_asset.chain(), Some(token_in.to_checksum(None)));
+        let asset_id_out = AssetId::from(request.to_asset.chain(), Some(token_out.to_checksum(None)));
         let asset_id_intermediary: Option<AssetId> = match batch_idx {
             // direct route
             0 => None,
             // 2 hop route with intermediary token
             _ => {
                 let first_token_out = &quote_exact_params[batch_idx][0].0[0].token_out;
-                Some(AssetId::from(request.to_asset.chain, Some(first_token_out.to_checksum(None))))
+                Some(AssetId::from(request.to_asset.chain(), Some(first_token_out.to_checksum(None))))
             }
         };
         let route_data = RouteData {
@@ -196,7 +197,7 @@ impl Swapper for UniswapV4 {
         if quote.request.from_asset.is_native() {
             return Ok(None);
         }
-        let from_chain = quote.request.from_asset.chain;
+        let from_chain = quote.request.from_asset.chain();
         let (_, token_in, _, amount_in) = Self::parse_request(&quote.request)?;
         let v4_deployment = get_uniswap_deployment_by_chain(&from_chain).ok_or(SwapperError::NotSupportedChain)?;
 
@@ -218,7 +219,7 @@ impl Swapper for UniswapV4 {
     async fn fetch_quote_data(&self, quote: &SwapQuote, provider: Arc<dyn AlienProvider>, data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError> {
         let request = &quote.request;
         let (_, token_in, token_out, amount_in) = Self::parse_request(request)?;
-        let deployment = get_uniswap_deployment_by_chain(&request.from_asset.chain).ok_or(SwapperError::NotSupportedChain)?;
+        let deployment = get_uniswap_deployment_by_chain(&request.from_asset.chain()).ok_or(SwapperError::NotSupportedChain)?;
         let route_data: RouteData = serde_json::from_str(&quote.data.routes.first().unwrap().route_data).map_err(|_| SwapperError::InvalidRoute)?;
         let to_amount = u128::from_str(&route_data.min_amount_out).map_err(SwapperError::from)?;
 
@@ -235,7 +236,7 @@ impl Swapper for UniswapV4 {
                 deployment.permit2.to_string(),
                 U256::from(amount_in),
                 provider,
-                &request.from_asset.chain,
+                &request.from_asset.chain(),
             )
             .await?
             .approval_data()
@@ -245,7 +246,7 @@ impl Swapper for UniswapV4 {
         }
 
         let sig_deadline = get_sig_deadline();
-        let evm_chain = EVMChain::from_chain(quote.request.from_asset.chain).ok_or(SwapperError::NotSupportedChain)?;
+        let evm_chain = EVMChain::from_chain(quote.request.from_asset.chain()).ok_or(SwapperError::NotSupportedChain)?;
         let base_pair = get_base_pair(&evm_chain, false);
         let fee_preference = get_fee_token(&request.mode, base_pair.as_ref(), &token_in, &token_out);
 
@@ -283,8 +284,8 @@ mod tests {
     #[test]
     fn test_is_base_pair() {
         let request = SwapQuoteRequest {
-            from_asset: AssetId::from(Chain::SmartChain, Some("0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82".to_string())),
-            to_asset: AssetId::from_chain(Chain::SmartChain),
+            from_asset: AssetId::from(Chain::SmartChain, Some("0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82".to_string())).into(),
+            to_asset: AssetId::from_chain(Chain::SmartChain).into(),
             wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
             destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
             value: "40000000000000000".into(), // 0.04 Cake

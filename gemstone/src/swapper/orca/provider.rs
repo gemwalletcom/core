@@ -59,20 +59,16 @@ impl Swapper for Orca {
     }
 
     async fn fetch_quote(&self, request: &SwapQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapQuote, SwapperError> {
-        if request.from_asset.chain != Chain::Solana || request.to_asset.chain != Chain::Solana {
-            return Err(SwapperError::NotSupportedChain);
-        }
-
         let amount_in = request.value.parse::<u64>().map_err(SwapperError::from)?;
         let options = request.options.clone();
         let slippage_bps = options.slippage.bps as u16;
         let fee_bps = options.fee.unwrap_or_default().solana.bps;
 
-        let from_asset = get_asset_address(&request.from_asset).ok_or(SwapperError::InvalidAddress(request.from_asset.to_string()))?;
-        let to_asset = get_asset_address(&request.to_asset).ok_or(SwapperError::InvalidAddress(request.from_asset.to_string()))?;
+        let from_asset = get_asset_address(&request.from_asset.id).ok_or(SwapperError::InvalidAddress(request.from_asset.id.to_string()))?;
+        let to_asset = get_asset_address(&request.to_asset.id).ok_or(SwapperError::InvalidAddress(request.to_asset.id.to_string()))?;
         let fee_tiers = self.fetch_fee_tiers(provider.clone()).await?;
         let mut pools = self
-            .fetch_whirlpools(&from_asset, &to_asset, fee_tiers, provider.clone(), request.from_asset.chain)
+            .fetch_whirlpools(&from_asset, &to_asset, fee_tiers, provider.clone(), request.from_asset.chain())
             .await?;
 
         if pools.is_empty() {
@@ -103,8 +99,8 @@ impl Swapper for Orca {
             data: SwapProviderData {
                 provider: self.provider().clone(),
                 routes: vec![SwapRoute {
-                    input: request.from_asset.clone(),
-                    output: request.to_asset.clone(),
+                    input: request.from_asset.id.clone(),
+                    output: request.to_asset.id.clone(),
                     route_data: pool.fee_rate.to_string(),
                     gas_limit: None,
                 }],

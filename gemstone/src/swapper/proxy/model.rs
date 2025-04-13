@@ -4,8 +4,10 @@ use serde::{Deserialize, Serialize};
 pub struct QuoteRequest {
     pub from_address: String,
     pub from_asset: String,
+    pub from_asset_decimals: Option<u32>,
     pub to_address: String,
     pub to_asset: String,
+    pub to_asset_decimals: Option<u32>,
     pub from_value: String,
     pub referral_address: String,
     pub referral_bps: usize,

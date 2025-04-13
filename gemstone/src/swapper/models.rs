@@ -93,10 +93,32 @@ impl SwapProviderType {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, uniffi::Record)]
+pub struct QuoteAsset {
+    pub id: AssetId,
+    pub decimals: Option<u32>,
+}
+
+impl QuoteAsset {
+    pub fn is_native(&self) -> bool {
+        self.id.is_native()
+    }
+
+    pub fn chain(&self) -> Chain {
+        self.id.chain
+    }
+}
+
+impl From<AssetId> for QuoteAsset {
+    fn from(id: AssetId) -> Self {
+        Self { id, decimals: None }
+    }
+}
+
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct SwapQuoteRequest {
-    pub from_asset: AssetId,
-    pub to_asset: AssetId,
+    pub from_asset: QuoteAsset,
+    pub to_asset: QuoteAsset,
     pub wallet_address: String,
     pub destination_address: String,
     pub value: String,
