@@ -239,11 +239,11 @@ impl Across {
         let to_chain = EVMChain::from_chain(*to_chain)?;
         let from_chain_l2 = from_chain.is_ethereum_layer2();
         let to_chain_l2 = to_chain.is_ethereum_layer2();
-        match (from_chain_l2, to_chain_l2) {
-            (true, true) => Some(5),
-            (true, false) => Some(10),
-            (false, _) => Some(20),
-        }
+        Some(match (from_chain_l2, to_chain_l2) {
+            (true, true) => 5,   // L2 to L2
+            (true, false) => 10, // L2 to L1
+            (false, _) => 20,    // L1 to L2
+        })
     }
 }
 
