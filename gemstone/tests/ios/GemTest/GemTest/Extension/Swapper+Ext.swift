@@ -36,6 +36,7 @@ extension SwapQuote: @retroactive CustomStringConvertible {
                 "slippageBps": data.slippageBps,
                 "routes": routes,
             ],
+            "etaInSeconds": etaInSeconds ?? 0,
         ]
         let bytes = try! JSONSerialization.data(withJSONObject: json, options: [.prettyPrinted, .sortedKeys])
         return String(data: bytes, encoding: .utf8)!
