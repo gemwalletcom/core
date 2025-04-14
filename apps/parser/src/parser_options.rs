@@ -44,7 +44,7 @@ mod tests {
             retry: 0,
         };
         let created_at = Utc::now() - Duration::seconds(options.outdated_seconds() + 1);
-        assert!(options.is_transaction_outdated(created_at));
+        assert!(options.is_transaction_outdated(created_at.naive_utc()));
     }
 
     #[test]
@@ -55,6 +55,6 @@ mod tests {
             retry: 0,
         };
         let created_at = Utc::now() - Duration::seconds(options.outdated_seconds() - 1);
-        assert!(!options.is_transaction_outdated(created_at));
+        assert!(!options.is_transaction_outdated(created_at.naive_utc()));
     }
 }
