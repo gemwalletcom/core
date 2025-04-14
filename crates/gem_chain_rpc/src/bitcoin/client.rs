@@ -73,7 +73,7 @@ impl BitcoinClient {
             inputs.into(),
             outputs.into(),
             None,
-            Utc::now().naive_utc(),
+            Utc::now(),
             //Utc.timestamp_opt(transaction.block_time, 0).unwrap(),
         );
 

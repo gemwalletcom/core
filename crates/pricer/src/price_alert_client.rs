@@ -60,7 +60,7 @@ impl PriceAlertClient {
     }
 
     pub async fn get_devices_to_alert(&mut self, rules: PriceAlertRules) -> Result<Vec<PriceAlertNotification>, Box<dyn Error + Send + Sync>> {
-        let now = chrono::Utc::now().naive_utc();
+        let now = chrono::Utc::now();
         let after_notified_at = now - chrono::Duration::hours(24);
 
         let prices = self.database.get_prices()?;
@@ -71,7 +71,7 @@ impl PriceAlertClient {
             map
         });
 
-        let price_alerts = self.database.get_price_alerts(after_notified_at)?;
+        let price_alerts = self.database.get_price_alerts(after_notified_at.naive_utc())?;
 
         let mut results: Vec<PriceAlertNotification> = Vec::new();
         let mut price_alert_ids: HashSet<String> = HashSet::new();
@@ -89,7 +89,8 @@ impl PriceAlertClient {
                 }
             }
         }
-        self.database.update_price_alerts_set_notified_at(price_alert_ids.into_iter().collect(), now)?;
+        self.database
+            .update_price_alerts_set_notified_at(price_alert_ids.into_iter().collect(), now.naive_utc())?;
         Ok(results)
     }
 

@@ -37,7 +37,7 @@ impl PriceAlert {
             price_direction: self.price_direction.as_deref().and_then(|value| value.parse().ok()),
             price: self.price,
             price_percent_change: self.price_percent_change,
-            last_notified_at: self.last_notified_at,
+            last_notified_at: self.last_notified_at.map(|x| x.and_utc()),
         }
     }
 

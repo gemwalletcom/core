@@ -50,7 +50,7 @@ impl XRPClient {
                 value,
                 memo,
                 None,
-                DateTime::from_timestamp(block_timestamp, 0)?.naive_utc(),
+                DateTime::from_timestamp(block_timestamp, 0)?,
             );
             return Some(transaction);
         }
