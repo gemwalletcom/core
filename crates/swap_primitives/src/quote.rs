@@ -62,4 +62,5 @@ pub struct QuoteData {
     pub to: String,
     pub value: String,
     pub data: String,
+    pub limit: Option<String>,
 }
