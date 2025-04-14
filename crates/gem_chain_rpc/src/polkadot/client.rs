@@ -54,7 +54,7 @@ impl PolkadotClient {
             value,
             None,
             None,
-            Utc::now().naive_utc(),
+            Utc::now(),
         ))
     }
 

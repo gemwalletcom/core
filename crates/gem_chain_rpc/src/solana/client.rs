@@ -56,7 +56,7 @@ impl SolanaClient {
         let sequence = 0.to_string();
         let state = TransactionState::Confirmed;
         let fee_asset_id = chain.as_asset_id();
-        let created_at = Utc::now().naive_utc();
+        let created_at = Utc::now();
         // system transfer
         if (account_keys.len() == 2 || account_keys.len() == 3) && account_keys.last()? == SYSTEM_PROGRAM_ID && signatures.len() == 1 {
             let from = account_keys.first()?.clone();

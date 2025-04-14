@@ -68,7 +68,7 @@ impl NearClient {
                         deposit.clone(),
                         None,
                         None,
-                        Utc::now().naive_utc(),
+                        Utc::now(),
                     );
                     return Some(transaction);
                 }

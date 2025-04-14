@@ -170,7 +170,7 @@ impl Parser {
 
                     let transaction = transaction.finalize(vec![subscription.address.clone()]).clone();
 
-                    if self.options.is_transaction_outdated(transaction.created_at) {
+                    if self.options.is_transaction_outdated(transaction.created_at.naive_utc()) {
                         println!("outdated transaction: {}, created_at: {}", transaction.id, transaction.created_at);
                         continue;
                     }
