@@ -14,7 +14,10 @@ pub struct AssetId {
 
 impl Default for AssetId {
     fn default() -> Self {
-        panic!("makes serde happy");
+        Self {
+            chain: Chain::Ethereum,
+            token_id: None,
+        }
     }
 }
 
