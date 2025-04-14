@@ -21,6 +21,7 @@
 		DFAA63872CFDD83A00413EFA /* SwapRequests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFAA63862CFDD83400413EFA /* SwapRequests.swift */; };
 		DFAA63892D07EFBA00413EFA /* Cache.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFAA63882D07EFB700413EFA /* Cache.swift */; };
 		DFB382DC2D60532000738DE6 /* Swapper+Ext.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFB382DB2D60530A00738DE6 /* Swapper+Ext.swift */; };
+		F4B94AD92DACF23A00403B6A /* BigInt in Frameworks */ = {isa = PBXBuildFile; productRef = F4B94AD82DACF23A00403B6A /* BigInt */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -57,6 +58,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				4843F3AC2B32C1B300CA5DA8 /* Gemstone in Frameworks */,
+				F4B94AD92DACF23A00403B6A /* BigInt in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -157,6 +159,7 @@
 			name = GemTest;
 			packageProductDependencies = (
 				4843F3AB2B32C1B300CA5DA8 /* Gemstone */,
+				F4B94AD82DACF23A00403B6A /* BigInt */,
 			);
 			productName = GemTest;
 			productReference = 4843F37D2B32C18300CA5DA8 /* GemTest.app */;
@@ -210,6 +213,7 @@
 			mainGroup = 4843F3742B32C18300CA5DA8;
 			packageReferences = (
 				4843F3AA2B32C1B300CA5DA8 /* XCLocalSwiftPackageReference "../../../target/spm" */,
+				F4B94AD72DACF23A00403B6A /* XCRemoteSwiftPackageReference "BigInt" */,
 			);
 			productRefGroup = 4843F37E2B32C18300CA5DA8 /* Products */;
 			projectDirPath = "";
@@ -521,10 +525,26 @@
 		};
 /* End XCLocalSwiftPackageReference section */
 
+/* Begin XCRemoteSwiftPackageReference section */
+		F4B94AD72DACF23A00403B6A /* XCRemoteSwiftPackageReference "BigInt" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/attaswift/BigInt.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.1.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
 /* Begin XCSwiftPackageProductDependency section */
 		4843F3AB2B32C1B300CA5DA8 /* Gemstone */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = Gemstone;
+		};
+		F4B94AD82DACF23A00403B6A /* BigInt */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F4B94AD72DACF23A00403B6A /* XCRemoteSwiftPackageReference "BigInt" */;
+			productName = BigInt;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

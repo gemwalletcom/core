@@ -148,6 +148,7 @@ pub struct SwapQuote {
     pub to_value: String,
     pub data: SwapProviderData,
     pub request: SwapQuoteRequest,
+    pub eta_in_seconds: Option<u32>,
 }
 
 #[derive(Debug, Clone, PartialEq, uniffi::Enum)]

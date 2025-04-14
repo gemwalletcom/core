@@ -111,6 +111,7 @@ impl Swapper for Orca {
                 slippage_bps: request.options.slippage.bps,
             },
             request: request.clone(),
+            eta_in_seconds: None,
         })
     }
 

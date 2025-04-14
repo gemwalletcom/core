@@ -99,6 +99,7 @@ impl Swapper for PancakeSwapAptos {
                 slippage_bps: request.options.slippage.bps,
             },
             request: request.clone(),
+            eta_in_seconds: None,
         };
 
         Ok(quote)

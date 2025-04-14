@@ -18,6 +18,7 @@ pub struct Quote {
     pub output_value: String,
     pub output_min_value: String,
     pub route_data: serde_json::Value,
+    pub eta_in_seconds: Option<u32>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
