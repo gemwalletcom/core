@@ -201,7 +201,7 @@ impl Swapper for UniswapV3 {
                 slippage_bps: request.options.slippage.bps,
             },
             request: request.clone(),
-            eta_in_seconds: Some(request.from_asset.chain.block_time() / 1000),
+            eta_in_seconds: None,
         })
     }
 

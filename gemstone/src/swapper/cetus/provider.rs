@@ -250,7 +250,7 @@ impl Swapper for Cetus {
                 }],
             },
             request: request.clone(),
-            eta_in_seconds: Some(Chain::Sui.block_time() / 1000),
+            eta_in_seconds: None,
         })
     }
 
