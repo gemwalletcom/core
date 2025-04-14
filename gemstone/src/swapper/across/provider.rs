@@ -32,7 +32,7 @@ use gem_evm::{
     weth::WETH9,
 };
 use num_bigint::{BigInt, Sign};
-use primitives::{chain_evm::ChainStack, AssetId, Chain, EVMChain};
+use primitives::{AssetId, Chain, EVMChain};
 
 use alloy_primitives::{
     hex::{decode as HexDecode, encode_prefixed as HexEncode},
