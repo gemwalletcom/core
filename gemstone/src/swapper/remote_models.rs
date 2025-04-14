@@ -54,6 +54,7 @@ pub enum GemSlippageMode {
 #[uniffi::remote(Record)]
 pub struct GemQuoteAsset {
     pub id: AssetId,
+    pub asset_id: String,
     pub symbol: String,
     pub decimals: u32,
 }

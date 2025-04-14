@@ -12,6 +12,12 @@ pub struct AssetId {
     pub token_id: Option<String>,
 }
 
+impl Default for AssetId {
+    fn default() -> Self {
+        panic!("makes serde happy");
+    }
+}
+
 impl Serialize for AssetId {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where

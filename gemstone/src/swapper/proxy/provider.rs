@@ -17,7 +17,7 @@ use crate::{
     },
 };
 use primitives::{Chain, ChainType};
-use swap_primitives::{Quote, QuoteAsset, QuoteData, QuoteRequest, ReferralAddress, ReferralInfo};
+use swap_primitives::{Quote, QuoteData, QuoteRequest, ReferralAddress, ReferralInfo};
 
 pub const PROVIDER_API_URL: &str = "https://api.gemwallet.com/swapper";
 const DEFAULT_GAS_LIMIT: u64 = 500000;
@@ -75,16 +75,8 @@ impl Swapper for ProxyProvider {
         let quote_request = QuoteRequest {
             from_address: request.wallet_address.clone(),
             to_address: request.destination_address.clone(),
-            from_asset: QuoteAsset {
-                id: request.from_asset.id.clone(),
-                symbol: request.from_asset.symbol.clone(),
-                decimals: request.from_asset.decimals,
-            },
-            to_asset: QuoteAsset {
-                id: request.to_asset.id.clone(),
-                symbol: request.to_asset.symbol.clone(),
-                decimals: request.to_asset.decimals,
-            },
+            from_asset: request.from_asset.clone(),
+            to_asset: request.to_asset.clone(),
             from_value: request.value.clone(),
             referral: ReferralInfo {
                 address: ReferralAddress {

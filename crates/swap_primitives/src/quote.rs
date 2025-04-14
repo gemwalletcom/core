@@ -7,7 +7,9 @@ use primitives::{AssetId, Chain};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare]
 pub struct QuoteAsset {
+    #[serde(skip)]
     pub id: AssetId,
+    pub asset_id: String,
     pub symbol: String,
     pub decimals: u32,
 }
@@ -25,7 +27,8 @@ impl QuoteAsset {
 impl From<AssetId> for QuoteAsset {
     fn from(id: AssetId) -> Self {
         Self {
-            id,
+            id: id.clone(),
+            asset_id: id.to_string(),
             symbol: String::new(),
             decimals: 0,
         }
