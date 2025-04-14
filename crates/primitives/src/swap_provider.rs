@@ -19,6 +19,8 @@ pub enum SwapProvider {
     Oku,
     Wagmi,
     Cetus,
+    #[serde(rename = "stonfi_v2")]
+    #[strum(serialize = "stonfi_v2")]
     StonFiV2,
     Mayan,
     Reservoir,
