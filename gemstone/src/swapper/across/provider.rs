@@ -15,7 +15,7 @@ use crate::{
         chainlink::ChainlinkPriceFeed,
         eth_address, eth_rpc,
         models::*,
-        Swapper, SwapperError,
+        GemSwapProvider, Swapper, SwapperError,
     },
 };
 use gem_evm::{

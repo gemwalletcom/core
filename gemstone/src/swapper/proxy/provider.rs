@@ -6,19 +6,18 @@ use std::sync::Arc;
 use super::{
     client::ProxyClient,
     mayan::{MayanClientStatus, MayanExplorer},
-    model::{Quote, QuoteData, QuoteRequest},
 };
 use crate::{
-    config::swap_config::SwapReferralFee,
+    config::swap_config::DEFAULT_SWAP_FEE_BPS,
     network::AlienProvider,
     swapper::{
         approval::check_approval_erc20,
         models::{ApprovalData, ApprovalType, SwapChainAsset},
-        FetchQuoteData, GemSwapOptions, GemSwapProvider, SwapProviderData, SwapProviderType, SwapQuote, SwapQuoteData, SwapQuoteRequest, SwapRoute, Swapper,
-        SwapperError,
+        FetchQuoteData, GemSwapProvider, SwapProviderData, SwapProviderType, SwapQuote, SwapQuoteData, SwapQuoteRequest, SwapRoute, Swapper, SwapperError,
     },
 };
 use primitives::{Chain, ChainType};
+use swap_primitives::{Quote, QuoteAsset, QuoteData, QuoteRequest, ReferralAddress, ReferralInfo};
 
 pub const PROVIDER_API_URL: &str = "https://api.gemwallet.com/swapper";
 const DEFAULT_GAS_LIMIT: u64 = 500000;
@@ -31,24 +30,6 @@ pub struct ProxyProvider {
 }
 
 impl ProxyProvider {
-    fn get_referrer(&self, chain: &Chain, options: &GemSwapOptions, provider: &GemSwapProvider) -> SwapReferralFee {
-        match provider {
-            // always use solana for Mayan, otherwise not supported chain error
-            GemSwapProvider::Mayan => {
-                return options.fee.as_ref().unwrap().solana.clone();
-            }
-            _ => {}
-        }
-
-        match chain.chain_type() {
-            ChainType::Ethereum => options.fee.as_ref().unwrap().evm.clone(),
-            ChainType::Solana => options.fee.as_ref().unwrap().solana.clone(),
-            ChainType::Ton => options.fee.as_ref().unwrap().ton.clone(),
-            ChainType::Sui => options.fee.as_ref().unwrap().sui.clone(),
-            _ => SwapReferralFee::default(),
-        }
-    }
-
     pub async fn check_approval(
         &self,
         quote: &SwapQuote,
@@ -90,18 +71,32 @@ impl Swapper for ProxyProvider {
 
     async fn fetch_quote(&self, request: &SwapQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapQuote, SwapperError> {
         let client = ProxyClient::new(provider);
-        let referrer = self.get_referrer(&request.from_asset.chain(), &request.options, &self.provider.id);
+        let referral = request.options.fee.clone().unwrap_or_default();
         let quote_request = QuoteRequest {
             from_address: request.wallet_address.clone(),
-            from_asset: request.from_asset.id.to_string(),
-            from_asset_decimals: request.from_asset.decimals,
             to_address: request.destination_address.clone(),
-            to_asset: request.to_asset.id.to_string(),
-            to_asset_decimals: request.to_asset.decimals,
+            from_asset: QuoteAsset {
+                id: request.from_asset.id.clone(),
+                symbol: request.from_asset.symbol.clone(),
+                decimals: request.from_asset.decimals,
+            },
+            to_asset: QuoteAsset {
+                id: request.to_asset.id.clone(),
+                symbol: request.to_asset.symbol.clone(),
+                decimals: request.to_asset.decimals,
+            },
             from_value: request.value.clone(),
-            referral_address: referrer.address.clone(),
-            referral_bps: referrer.bps as usize,
-            slippage_bps: request.options.slippage.bps as usize,
+            referral: ReferralInfo {
+                address: ReferralAddress {
+                    evm: Some(referral.evm.address.clone()),
+                    solana: Some(referral.solana.address.clone()),
+                    sui: Some(referral.sui.address.clone()),
+                    ton: Some(referral.ton.address.clone()),
+                    tron: Some(referral.tron.address.clone()),
+                },
+                bps: DEFAULT_SWAP_FEE_BPS,
+            },
+            slippage_bps: request.options.slippage.bps,
         };
 
         let quote = client.get_quote(&self.url, quote_request.clone()).await?;

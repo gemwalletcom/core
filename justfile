@@ -70,5 +70,6 @@ setup-services:
 
 generate-ts-primitives:
     @typeshare ./crates/primitives --lang=typescript --output-file=primitives.ts 1>/dev/null 2>&1
+    @typeshare ./crates/swap_primitives --lang=typescript --output-file=swap_primitives.ts 1>/dev/null 2>&1
 
 mod gemstone

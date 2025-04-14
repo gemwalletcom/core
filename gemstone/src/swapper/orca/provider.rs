@@ -1,7 +1,7 @@
 use crate::{
     debug_println,
     network::{jsonrpc::jsonrpc_call, AlienProvider, JsonRpcResult},
-    swapper::{models::*, slippage::apply_slippage_in_bp, Swapper, SwapperError},
+    swapper::{models::*, slippage::apply_slippage_in_bp, GemSwapProvider, Swapper, SwapperError},
 };
 use async_trait::async_trait;
 use gem_solana::{
