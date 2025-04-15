@@ -1,6 +1,6 @@
 use super::{client::JupiterClient, model::*, PROGRAM_ADDRESS};
 use crate::{
-    network::jsonrpc::{jsonrpc_call_with_cache, JsonRpcResult},
+    network::jsonrpc::{jsonrpc_call, jsonrpc_call_with_cache, JsonRpcResult},
     swapper::{slippage::apply_slippage_in_bp, Swapper, *},
 };
 
@@ -9,7 +9,7 @@ use async_trait::async_trait;
 use gem_solana::{
     get_asset_address,
     jsonrpc::{AccountData, SolanaRpc, ValueResult},
-    USDC_TOKEN_MINT, USDS_TOKEN_MINT, USDT_TOKEN_MINT, WSOL_TOKEN_ADDRESS,
+    TOKEN_PROGRAM, USDC_TOKEN_MINT, USDS_TOKEN_MINT, USDT_TOKEN_MINT, WSOL_TOKEN_ADDRESS,
 };
 use primitives::{AssetId, Chain};
 use std::collections::HashSet;
@@ -52,12 +52,25 @@ impl Jupiter {
         }
     }
 
-    pub fn get_fee_token_account(&self, options: &GemSwapOptions, mint: &str) -> Option<String> {
+    pub fn get_fee_token_account(&self, options: &GemSwapOptions, mint: &str, token_program: &str) -> Option<String> {
         if let Some(fee) = &options.fee {
-            let fee_account = super::token_account::get_token_account(&fee.solana.address, mint);
+            let fee_account = super::token_account::get_token_account(&fee.solana.address, mint, token_program);
             return Some(fee_account);
         }
         None
+    }
+
+    pub async fn fetch_token_program(&self, mint: &str, provider: Arc<dyn AlienProvider>) -> Result<String, SwapperError> {
+        let rpc_call = SolanaRpc::GetAccountInfo(mint.to_string());
+        let ttl = 7 * 24 * 60 * 60;
+        let rpc_result: JsonRpcResult<ValueResult<Option<AccountData>>> = jsonrpc_call_with_cache(&rpc_call, provider.clone(), &Chain::Solana, Some(ttl))
+            .await
+            .map_err(SwapperError::from)?;
+        let value = rpc_result.take()?;
+        if value.value.is_none() {
+            return Err(SwapperError::NetworkError("get_account_info error".to_string()));
+        }
+        Ok(value.value.unwrap().owner)
     }
 
     pub async fn fetch_fee_account(
@@ -69,30 +82,27 @@ impl Jupiter {
         provider: Arc<dyn AlienProvider>,
     ) -> Result<String, SwapperError> {
         let fee_mint = self.get_fee_mint(mode, input_mint, output_mint);
-        let mut fee_account = self.get_fee_token_account(options, &fee_mint).unwrap_or_default();
-
+        let token_program = if self.fee_mints.contains(fee_mint.as_str()) {
+            TOKEN_PROGRAM.to_string()
+        } else {
+            self.fetch_token_program(&fee_mint, provider.clone()).await?
+        };
+        let mut fee_account = self.get_fee_token_account(options, &fee_mint, &token_program).unwrap_or_default();
         if fee_account.is_empty() {
             return Ok(fee_account);
         }
-
-        // if fee_mint is USDC/USDT/WSOL, no need to check
+        // if in fee mints, no need to check
         if self.fee_mints.contains(fee_mint.as_str()) {
             return Ok(fee_account);
         }
 
         // check fee token account exists, if not, set fee_account to empty string
         let rpc_call = SolanaRpc::GetAccountInfo(fee_account.clone());
-        let rpc_result: JsonRpcResult<ValueResult<Option<AccountData>>> = jsonrpc_call_with_cache(&rpc_call, provider.clone(), &Chain::Solana, Some(3600))
-            .await
-            .map_err(|e| SwapperError::NetworkError(format!("get_account_info error: {:?}", e)))?;
-        match rpc_result {
-            JsonRpcResult::Value(resp) => {
-                if resp.result.value.is_none() {
-                    fee_account = String::from("");
-                }
-            }
-            JsonRpcResult::Error(_) => fee_account = String::from(""),
-        };
+        let rpc_result: JsonRpcResult<ValueResult<Option<AccountData>>> =
+            jsonrpc_call(&rpc_call, provider.clone(), &Chain::Solana).await.map_err(SwapperError::from)?;
+        if matches!(rpc_result, JsonRpcResult::Error(_)) || matches!(rpc_result, JsonRpcResult::Value(ref resp) if resp.result.value.is_none()) {
+            fee_account = String::from("");
+        }
         Ok(fee_account)
     }
 }
