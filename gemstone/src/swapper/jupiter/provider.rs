@@ -9,7 +9,7 @@ use async_trait::async_trait;
 use gem_solana::{
     get_asset_address,
     jsonrpc::{AccountData, SolanaRpc, ValueResult},
-    USDC_TOKEN_MINT, USDT_TOKEN_MINT, WSOL_TOKEN_ADDRESS,
+    USDC_TOKEN_MINT, USDS_TOKEN_MINT, USDT_TOKEN_MINT, WSOL_TOKEN_ADDRESS,
 };
 use primitives::{AssetId, Chain};
 use std::collections::HashSet;
@@ -24,7 +24,7 @@ impl Default for Jupiter {
     fn default() -> Self {
         Self {
             provider: SwapProviderType::new(GemSwapProvider::Jupiter),
-            fee_mints: HashSet::from([USDC_TOKEN_MINT, USDT_TOKEN_MINT, WSOL_TOKEN_ADDRESS]),
+            fee_mints: HashSet::from([USDC_TOKEN_MINT, USDT_TOKEN_MINT, USDS_TOKEN_MINT, WSOL_TOKEN_ADDRESS]),
         }
     }
 }
@@ -52,9 +52,9 @@ impl Jupiter {
         }
     }
 
-    pub fn get_fee_account(&self, options: &GemSwapOptions, mint: &str) -> Option<String> {
+    pub fn get_fee_token_account(&self, options: &GemSwapOptions, mint: &str) -> Option<String> {
         if let Some(fee) = &options.fee {
-            let fee_account = super::referral::get_referral_account(&fee.solana.address, mint);
+            let fee_account = super::token_account::get_token_account(&fee.solana.address, mint);
             return Some(fee_account);
         }
         None
@@ -69,7 +69,7 @@ impl Jupiter {
         provider: Arc<dyn AlienProvider>,
     ) -> Result<String, SwapperError> {
         let fee_mint = self.get_fee_mint(mode, input_mint, output_mint);
-        let mut fee_account = self.get_fee_account(options, &fee_mint).unwrap_or_default();
+        let mut fee_account = self.get_fee_token_account(options, &fee_mint).unwrap_or_default();
 
         if fee_account.is_empty() {
             return Ok(fee_account);
