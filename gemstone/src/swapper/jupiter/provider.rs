@@ -82,17 +82,15 @@ impl Jupiter {
         provider: Arc<dyn AlienProvider>,
     ) -> Result<String, SwapperError> {
         let fee_mint = self.get_fee_mint(mode, input_mint, output_mint);
+        // if fee_mint is in preset, no need to fetch token program
         let token_program = if self.fee_mints.contains(fee_mint.as_str()) {
-            TOKEN_PROGRAM.to_string()
+            return Ok(self.get_fee_token_account(options, fee_mint.as_str(), TOKEN_PROGRAM).unwrap());
         } else {
             self.fetch_token_program(&fee_mint, provider.clone()).await?
         };
+
         let mut fee_account = self.get_fee_token_account(options, &fee_mint, &token_program).unwrap_or_default();
         if fee_account.is_empty() {
-            return Ok(fee_account);
-        }
-        // if in fee mints, no need to check
-        if self.fee_mints.contains(fee_mint.as_str()) {
             return Ok(fee_account);
         }
 
