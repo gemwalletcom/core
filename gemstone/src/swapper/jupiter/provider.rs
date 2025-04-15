@@ -54,7 +54,7 @@ impl Jupiter {
 
     pub fn get_fee_account(&self, options: &GemSwapOptions, mint: &str) -> Option<String> {
         if let Some(fee) = &options.fee {
-            let fee_account = super::referral::get_referral_account(&fee.solana_jupiter.address, mint);
+            let fee_account = super::referral::get_referral_account(&fee.solana.address, mint);
             return Some(fee_account);
         }
         None
@@ -112,7 +112,7 @@ impl Swapper for Jupiter {
         let output_mint = self.get_asset_address(&request.to_asset)?;
         let swap_options = request.options.clone();
         let slippage_bps = swap_options.slippage.bps;
-        let platform_fee_bps = swap_options.fee.unwrap_or_default().solana_jupiter.bps;
+        let platform_fee_bps = swap_options.fee.unwrap_or_default().solana.bps;
 
         let auto_slippage = match swap_options.slippage.mode {
             SlippageMode::Auto => true,
