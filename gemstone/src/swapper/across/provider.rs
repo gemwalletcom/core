@@ -233,6 +233,18 @@ impl Across {
         let fee_in_token = fee * token_price * BigInt::from(10_u64.pow(token_decimals)) / BigInt::from(10_u64.pow(8)) / BigInt::from(10_u64.pow(18));
         U256::from_le_slice(&fee_in_token.to_bytes_le().1)
     }
+
+    pub fn get_eta_in_seconds(&self, from_chain: &Chain, to_chain: &Chain) -> Option<u32> {
+        let from_chain = EVMChain::from_chain(*from_chain)?;
+        let to_chain = EVMChain::from_chain(*to_chain)?;
+        let from_chain_l2 = from_chain.is_ethereum_layer2();
+        let to_chain_l2 = to_chain.is_ethereum_layer2();
+        Some(match (from_chain_l2, to_chain_l2) {
+            (true, true) => 5,   // L2 to L2
+            (true, false) => 10, // L2 to L1
+            (false, _) => 20,    // L1 to L2
+        })
+    }
 }
 
 #[async_trait]
@@ -243,31 +255,26 @@ impl Swapper for Across {
 
     fn supported_assets(&self) -> Vec<SwapChainAsset> {
         vec![
-            // WETH
-            SwapChainAsset::Assets(Chain::Arbitrum, vec![ARBITRUM_WETH.id.clone()]),
-            SwapChainAsset::Assets(Chain::Ethereum, vec![ETHEREUM_WETH.id.clone()]),
-            SwapChainAsset::Assets(Chain::Base, vec![BASE_WETH.id.clone()]),
+            SwapChainAsset::Assets(
+                Chain::Arbitrum,
+                vec![ARBITRUM_WETH.id.clone(), ARBITRUM_USDC.id.clone(), ARBITRUM_USDT.id.clone()],
+            ),
+            SwapChainAsset::Assets(
+                Chain::Ethereum,
+                vec![ETHEREUM_WETH.id.clone(), ETHEREUM_USDC.id.clone(), ETHEREUM_USDT.id.clone()],
+            ),
+            SwapChainAsset::Assets(Chain::Base, vec![BASE_WETH.id.clone(), BASE_USDC.id.clone()]),
             SwapChainAsset::Assets(Chain::Blast, vec![BLAST_WETH.id.clone()]),
-            SwapChainAsset::Assets(Chain::Linea, vec![LINEA_WETH.id.clone()]),
-            SwapChainAsset::Assets(Chain::Optimism, vec![OPTIMISM_WETH.id.clone()]),
+            SwapChainAsset::Assets(Chain::Linea, vec![LINEA_WETH.id.clone(), LINEA_USDT.id.clone()]),
+            SwapChainAsset::Assets(
+                Chain::Optimism,
+                vec![OPTIMISM_WETH.id.clone(), OPTIMISM_USDC.id.clone(), OPTIMISM_USDT.id.clone()],
+            ),
             SwapChainAsset::Assets(Chain::Polygon, vec![POLYGON_WETH.id.clone()]),
-            SwapChainAsset::Assets(Chain::ZkSync, vec![ZKSYNC_WETH.id.clone()]),
+            SwapChainAsset::Assets(Chain::ZkSync, vec![ZKSYNC_WETH.id.clone(), ZKSYNC_USDT.id.clone()]),
             SwapChainAsset::Assets(Chain::World, vec![WORLD_WETH.id.clone()]),
-            SwapChainAsset::Assets(Chain::Ink, vec![INK_WETH.id.clone()]),
-            SwapChainAsset::Assets(Chain::Unichain, vec![UNICHAIN_WETH.id.clone()]),
-            // USDC
-            SwapChainAsset::Assets(Chain::Arbitrum, vec![ARBITRUM_USDC.id.clone()]),
-            SwapChainAsset::Assets(Chain::Ethereum, vec![ETHEREUM_USDC.id.clone()]),
-            SwapChainAsset::Assets(Chain::Base, vec![BASE_USDC.id.clone()]),
-            SwapChainAsset::Assets(Chain::Optimism, vec![OPTIMISM_USDC.id.clone()]),
-            SwapChainAsset::Assets(Chain::Unichain, vec![UNICHAIN_USDC.id.clone()]),
-            // USDT
-            SwapChainAsset::Assets(Chain::Arbitrum, vec![ARBITRUM_USDT.id.clone()]),
-            SwapChainAsset::Assets(Chain::Ethereum, vec![ETHEREUM_USDT.id.clone()]),
-            SwapChainAsset::Assets(Chain::Linea, vec![LINEA_USDT.id.clone()]),
-            SwapChainAsset::Assets(Chain::Optimism, vec![OPTIMISM_USDT.id.clone()]),
-            SwapChainAsset::Assets(Chain::ZkSync, vec![ZKSYNC_USDT.id.clone()]),
-            SwapChainAsset::Assets(Chain::Ink, vec![INK_USDT.id.clone()]),
+            SwapChainAsset::Assets(Chain::Ink, vec![INK_WETH.id.clone(), INK_USDT.id.clone()]),
+            SwapChainAsset::Assets(Chain::Unichain, vec![UNICHAIN_WETH.id.clone(), UNICHAIN_USDC.id.clone()]),
         ]
     }
 
@@ -428,6 +435,7 @@ impl Swapper for Across {
                 }],
             },
             request: request.clone(),
+            eta_in_seconds: self.get_eta_in_seconds(&request.from_asset.chain(), &request.to_asset.chain()),
         })
     }
 

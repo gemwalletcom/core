@@ -250,6 +250,7 @@ impl Swapper for Cetus {
                 }],
             },
             request: request.clone(),
+            eta_in_seconds: None,
         })
     }
 

@@ -54,7 +54,7 @@ impl Transaction {
             to_address: transaction.to.into(),
             kind: transaction.transaction_type.as_ref().to_string(),
             state: transaction.state.to_string(),
-            created_at: transaction.created_at,
+            created_at: transaction.created_at.naive_utc(),
             utxo_inputs: serde_json::to_value(transaction.utxo_inputs).ok(),
             utxo_outputs: serde_json::to_value(transaction.utxo_outputs).ok(),
             metadata: serde_json::to_value(transaction.metadata).ok(),
@@ -97,7 +97,7 @@ impl Transaction {
             inputs.clone(),
             outputs.clone(),
             self.metadata.clone(),
-            self.created_at,
+            self.created_at.and_utc(),
         )
     }
 }

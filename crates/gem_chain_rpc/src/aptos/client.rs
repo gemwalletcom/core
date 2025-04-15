@@ -53,7 +53,7 @@ impl AptosClient {
                 value.clone(),
                 None,
                 None,
-                Utc::now().naive_utc(),
+                Utc::now(),
             );
             return Some(transaction);
         }

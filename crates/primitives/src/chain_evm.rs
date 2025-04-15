@@ -94,6 +94,24 @@ impl EVMChain {
         }
     }
 
+    pub fn is_ethereum_layer2(&self) -> bool {
+        matches!(
+            self,
+            Self::Abstract
+                | Self::Optimism
+                | Self::Base
+                | Self::World
+                | Self::Ink
+                | Self::Unichain
+                | Self::ZkSync
+                | Self::Arbitrum
+                | Self::Blast
+                | Self::Linea
+                | Self::Celo
+                | Self::Mantle
+        )
+    }
+
     // https://docs.optimism.io/stack/getting-started
     pub fn is_opstack(&self) -> bool {
         self.chain_stack() == ChainStack::Optimism

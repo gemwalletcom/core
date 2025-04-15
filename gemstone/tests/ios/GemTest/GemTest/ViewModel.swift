@@ -2,6 +2,7 @@
 
 import Foundation
 import Gemstone
+import BigInt
 
 public struct ViewModel: Sendable {
     let provider = NativeProvider()
@@ -26,7 +27,10 @@ public struct ViewModel: Sendable {
 
     public func fetchQuote(_ request: SwapQuoteRequest) async throws {
         let swapper = GemSwapper(rpcProvider: self.provider)
-        let quotes = try await swapper.fetchQuote(request: request)
+        var quotes = try await swapper.fetchQuote(request: request)
+        quotes = quotes.sorted(by: { lhs, rhs in
+            BigInt(lhs.toValue)! > BigInt(rhs.toValue)!
+        })
         print("<== quotes: \(quotes.count)")
         guard
             let quote = quotes.first,
@@ -35,8 +39,11 @@ public struct ViewModel: Sendable {
             return print("<== fetchQuote: nil")
         }
 
-        self.dumpQuote(quote)
-        try await fetchQuoteData(quote: quote)
+        for quote in quotes {
+            self.dumpQuote(quote)
+        }
+
+        try await self.fetchQuoteData(quote: quote)
     }
 
     public func fetchQuoteById(_ request: SwapQuoteRequest, provider: SwapProvider) async throws {
@@ -44,7 +51,7 @@ public struct ViewModel: Sendable {
         let quote = try await swapper.fetchQuoteByProvider(provider: provider, request: request)
         self.dumpQuote(quote)
 
-        try await fetchQuoteData(quote: quote)
+        try await self.fetchQuoteData(quote: quote)
     }
 
     public func fetchQuoteData(quote: SwapQuote) async throws {

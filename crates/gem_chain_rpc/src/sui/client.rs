@@ -45,7 +45,7 @@ impl SuiClient {
         let hash = transaction.digest.clone();
         let fee = self.get_fee(transaction.effects.gas_used.clone());
         let chain = self.get_chain();
-        let created_at = Utc::now().naive_utc();
+        let created_at = Utc::now();
         // system transfer
         if balance_changes.len() == 2 && balance_changes[0].coin_type == chain.as_denom()? && balance_changes[1].coin_type == chain.as_denom()? {
             let (from_change, to_change) = if balance_changes[0].amount.contains('-') {

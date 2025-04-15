@@ -150,6 +150,7 @@ impl Swapper for Jupiter {
                 slippage_bps: computed_auto_slippage,
             },
             request: request.clone(),
+            eta_in_seconds: None,
         };
         Ok(quote)
     }

@@ -107,6 +107,7 @@ impl Swapper for ProxyProvider {
                 slippage_bps: request.options.slippage.bps,
             },
             request: request.clone(),
+            eta_in_seconds: Some(quote.eta_in_seconds),
         })
     }
 
