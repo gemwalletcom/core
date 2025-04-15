@@ -54,6 +54,7 @@ impl ProviderFactory {
             | Chain::Ink
             | Chain::Unichain
             | Chain::Hyperliquid
+            | Chain::XDC
             | Chain::Monad => Box::new(EthereumClient::new(chain, url)),
             Chain::Cosmos | Chain::Osmosis | Chain::Celestia | Chain::Thorchain | Chain::Injective | Chain::Noble | Chain::Sei => {
                 Box::new(CosmosClient::new(chain, client, url))
@@ -119,6 +120,7 @@ impl ProviderFactory {
             Chain::Ink => settings.chains.ink.url.as_str(),
             Chain::Unichain => settings.chains.unichain.url.as_str(),
             Chain::Hyperliquid => settings.chains.hyperliquid.url.as_str(),
+            Chain::XDC => settings.chains.xdc.url.as_str(),
             Chain::Monad => settings.chains.monad.url.as_str(),
         }
     }

@@ -150,5 +150,10 @@ pub fn get_nodes_for_chain(chain: Chain) -> Vec<Node> {
         ],
         Chain::Hyperliquid => vec![Node::new("https://rpc.hyperliquid.xyz/evm", NodePriority::High)],
         Chain::Monad => vec![], //TODO: Monad
+         Chain::XDC => vec![
+            Node::new("https://rpc.xinfin.network", NodePriority::High),
+            Node::new("https://erpc.xinfin.network", NodePriority::Medium),
+            Node::new("https://rpc.ankr.com/xdc", NodePriority::Medium),
+        ],
     }
 }

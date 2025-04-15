@@ -284,6 +284,13 @@ impl Asset {
                 decimals: 18,
                 asset_type: AssetType::NATIVE,
             },
+            Chain::XDC => Asset {
+                id: chain.as_asset_id(),
+                name: "XDC Network".to_string(),
+                symbol: "XDC".to_string(),
+                decimals: 18,
+                asset_type: AssetType::NATIVE,
+            },
             Chain::Algorand => Asset {
                 id: chain.as_asset_id(),
                 name: "Algorand".to_string(),

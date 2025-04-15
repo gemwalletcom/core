@@ -163,7 +163,8 @@ chains:
     url: https://rpc.hyperliquid.xyz/evm
   monad:
     url: https://testnet-rpc.monad.xyz #TODO: Monad
-
+  xdc:
+    url: https://rpc.xinfin.network
 swap:
   jupiter:
     url: "https://quote-api.jup.ag"
@@ -187,12 +188,12 @@ scan:
   timeout_ms: 1200 # ms
   goplus:
     url: "https://api.gopluslabs.io"
-    key: 
+    key:
       public: ""
       secret: ""
   hashdit:
     url: "https://api.hashdit.io"
-    key: 
+    key:
       public: ""
       secret: ""
 

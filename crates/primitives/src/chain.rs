@@ -58,6 +58,7 @@ pub enum Chain {
     Unichain,
     Hyperliquid,
     Monad,
+    XDC,
 }
 
 impl fmt::Display for Chain {
@@ -102,6 +103,7 @@ impl Chain {
             Self::Manta => "169",
             Self::Blast => "81457",
             Self::World => "480",
+            Self::XDC => "50",
             Self::Cosmos => "cosmoshub-4",
             Self::Osmosis => "osmosis-1",
             Self::Celestia => "celestia",
@@ -169,6 +171,7 @@ impl Chain {
             | Self::Ink
             | Self::Unichain
             | Self::Hyperliquid
+            | Self::XDC
             | Self::Monad => 60,
             Self::Bitcoin => 0,
             Self::BitcoinCash => 145,
@@ -217,6 +220,7 @@ impl Chain {
             | Self::Ink
             | Self::Unichain
             | Self::Hyperliquid
+            | Self::XDC
             | Self::Monad => ChainType::Ethereum,
             Self::Bitcoin | Self::BitcoinCash | Self::Doge | Self::Litecoin => ChainType::Bitcoin,
             Self::Solana => ChainType::Solana,
@@ -257,6 +261,7 @@ impl Chain {
             | Self::Ink
             | Self::Unichain
             | Self::Hyperliquid
+            | Self::XDC
             | Self::Monad => Some(AssetType::ERC20),
             Self::OpBNB | Self::SmartChain => Some(AssetType::BEP20),
             Self::Solana => Some(AssetType::SPL),
@@ -333,6 +338,7 @@ impl Chain {
             | Self::Ink
             | Self::Hyperliquid
             | Self::Sui
+            | Self::XDC
             | Self::Monad
             | Self::Ton => true,
             Self::Osmosis
@@ -371,6 +377,7 @@ impl Chain {
             Self::Polygon => 3_000,
             Self::Base => 2_000,
             Self::Gnosis => 5_000,
+            Self::XDC => 2_000,
             Self::Bitcoin | Self::BitcoinCash => 600_000,
             Self::Litecoin => 120_000,
             Self::SmartChain => 3_000,
@@ -447,6 +454,7 @@ impl Chain {
             | Self::Stellar
             | Self::Sonic
             | Self::Algorand
+            | Self::XDC
             | Self::Cardano => 30,
             Self::Noble => 20,
         }

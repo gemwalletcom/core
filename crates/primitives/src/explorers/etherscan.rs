@@ -134,6 +134,12 @@ impl EtherScan {
                     base_url: "https://uniscan.xyz",
                 },
             },
+            EVMChain::XDC => Self {
+                meta: Metadata {
+                    name: "XinFin",
+                    base_url: "https://xdcscan.io",
+                },
+            },
             EVMChain::Monad => Self {
                 meta: Metadata {
                     name: "Monad",
