@@ -194,6 +194,10 @@ impl Swapper for Jupiter {
         let client = JupiterClient::new(self.get_endpoint(), provider);
         let quote_data = client.get_swap_quote_data(request).await?;
 
+        if let Some(simulation_error) = quote_data.simulation_error {
+            return Err(SwapperError::TransactionError(simulation_error.error));
+        }
+
         let data = SwapQuoteData {
             to: PROGRAM_ADDRESS.to_string(),
             value: "".to_string(),

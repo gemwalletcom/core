@@ -60,6 +60,14 @@ pub struct RouteSwapInfo {
 #[serde(rename_all = "camelCase")]
 pub struct QuoteDataResponse {
     pub swap_transaction: String,
+    pub simulation_error: Option<SimulationError>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SimulationError {
+    pub error: String,
+    pub error_code: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
