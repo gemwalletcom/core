@@ -1,16 +1,32 @@
 use std::fmt;
 
-use serde::{Deserialize, Serialize};
-use typeshare::typeshare;
+use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 
 use crate::chain::Chain;
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
-#[typeshare(swift = "Equatable, Hashable, Sendable")]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct AssetId {
     pub chain: Chain,
-    #[serde(rename = "tokenId")]
     pub token_id: Option<String>,
+}
+
+impl Serialize for AssetId {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_str(&self.to_string())
+    }
+}
+
+impl<'de> Deserialize<'de> for AssetId {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        AssetId::new(&s).ok_or_else(|| de::Error::custom("Invalid AssetId"))
+    }
 }
 
 impl From<&str> for AssetId {

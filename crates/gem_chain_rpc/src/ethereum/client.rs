@@ -4,7 +4,7 @@ use crate::{ChainBlockProvider, ChainTokenDataProvider};
 use alloy_primitives::hex;
 use alloy_sol_types::SolCall;
 use async_trait::async_trait;
-use chrono::{TimeZone, Utc};
+use chrono::DateTime;
 use gem_evm::ethereum_address_checksum;
 use hex::FromHex;
 use jsonrpsee::{
@@ -105,7 +105,7 @@ impl EthereumClient {
         let fee = receipt.get_fee().to_string();
         let from = ethereum_address_checksum(&transaction.from).ok()?;
         let to = ethereum_address_checksum(&transaction.to.unwrap_or_default()).ok()?;
-        let created_at = Utc.timestamp_opt(timestamp.try_into().ok()?, 0).single()?;
+        let created_at = DateTime::from_timestamp(timestamp.try_into().ok()?, 0)?;
 
         // system transfer
         if transaction.input == "0x" {
@@ -160,7 +160,7 @@ impl EthereumClient {
                 value.to_string(),
                 None,
                 None,
-                Utc::now(),
+                created_at,
             );
             return Some(transaction);
         }
@@ -221,7 +221,7 @@ impl EthereumClient {
                 from_value.clone().to_string(),
                 None,
                 serde_json::to_value(swap).ok(),
-                Utc::now(),
+                created_at,
             );
             return Some(transaction);
         }
