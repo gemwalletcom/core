@@ -31,7 +31,7 @@ impl Default for Jupiter {
 
 impl Jupiter {
     pub fn get_endpoint(&self) -> String {
-        "https://quote-api.jup.ag".into()
+        "https://lite-api.jup.ag".into()
     }
 
     pub fn get_asset_address(&self, asset_id: &AssetId) -> Result<String, SwapperError> {
