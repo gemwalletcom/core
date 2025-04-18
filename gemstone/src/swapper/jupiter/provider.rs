@@ -62,15 +62,15 @@ impl Jupiter {
 
     pub async fn fetch_token_program(&self, mint: &str, provider: Arc<dyn AlienProvider>) -> Result<String, SwapperError> {
         let rpc_call = SolanaRpc::GetAccountInfo(mint.to_string());
-        let ttl = 7 * 24 * 60 * 60;
-        let rpc_result: JsonRpcResult<ValueResult<Option<AccountData>>> = jsonrpc_call_with_cache(&rpc_call, provider.clone(), &Chain::Solana, Some(ttl))
+        let rpc_result: JsonRpcResult<ValueResult<Option<AccountData>>> = jsonrpc_call_with_cache(&rpc_call, provider.clone(), &Chain::Solana, Some(u64::MAX))
             .await
             .map_err(SwapperError::from)?;
         let value = rpc_result.take()?;
-        if value.value.is_none() {
-            return Err(SwapperError::NetworkError("get_account_info error".to_string()));
-        }
-        Ok(value.value.unwrap().owner)
+
+        value
+            .value
+            .map(|x| x.owner)
+            .ok_or(SwapperError::NetworkError("fetch_token_program error".to_string()))
     }
 
     pub async fn fetch_fee_account(
