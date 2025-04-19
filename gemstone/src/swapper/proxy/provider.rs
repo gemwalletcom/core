@@ -16,8 +16,10 @@ use crate::{
         FetchQuoteData, GemSwapProvider, SwapProviderData, SwapProviderType, SwapQuote, SwapQuoteData, SwapQuoteRequest, SwapRoute, Swapper, SwapperError,
     },
 };
-use primitives::{Chain, ChainType};
-use swap_primitives::{Quote, QuoteData, QuoteRequest, ReferralAddress, ReferralInfo};
+use primitives::{
+    swap::{Quote, QuoteData, QuoteRequest, ReferralAddress, ReferralInfo},
+    Chain, ChainType,
+};
 
 pub const PROVIDER_API_URL: &str = "https://api.gemwallet.com/swapper";
 const DEFAULT_GAS_LIMIT: u64 = 500000;
@@ -80,11 +82,11 @@ impl Swapper for ProxyProvider {
             from_value: request.value.clone(),
             referral: ReferralInfo {
                 address: ReferralAddress {
-                    evm: Some(referral.evm.address.clone()),
-                    solana: Some(referral.solana.address.clone()),
-                    sui: Some(referral.sui.address.clone()),
-                    ton: Some(referral.ton.address.clone()),
-                    tron: Some(referral.tron.address.clone()),
+                    evm: referral.evm.address.clone(),
+                    solana: referral.solana.address.clone(),
+                    sui: referral.sui.address.clone(),
+                    ton: referral.ton.address.clone(),
+                    tron: referral.tron.address.clone(),
                 },
                 bps: DEFAULT_SWAP_FEE_BPS,
             },

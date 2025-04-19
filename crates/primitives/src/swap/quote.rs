@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
 use super::referral::ReferralInfo;
-use primitives::{AssetId, Chain};
+use crate::{AssetId, Chain};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare]

@@ -23,7 +23,6 @@ gem_sui = { path = "../crates/gem_sui" }
 gem_aptos = { path = "../crates/gem_aptos" }
 gem_hash = { path = "../crates/gem_hash" }
 serde_serializers = { path = "../crates/serde_serializers" }
-swap_primitives = { path = "../crates/swap_primitives" }
 
 bcs.workspace = true
 sui-types.workspace = true

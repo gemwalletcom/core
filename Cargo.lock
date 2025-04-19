@@ -2481,7 +2481,6 @@ dependencies = [
  "strum_macros",
  "sui-sdk-types",
  "sui-transaction-builder",
- "swap_primitives",
  "thiserror 2.0.12",
  "tokio",
  "uniffi",
@@ -6012,18 +6011,6 @@ dependencies = [
  "serde_with",
  "sui-sdk-types",
  "thiserror 2.0.12",
-]
-
-[[package]]
-name = "swap_primitives"
-version = "1.0.0"
-dependencies = [
- "primitives",
- "serde",
- "serde_json",
- "strum",
- "strum_macros",
- "typeshare",
 ]
 
 [[package]]

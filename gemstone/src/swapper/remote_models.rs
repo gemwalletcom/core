@@ -1,11 +1,11 @@
 use primitives::AssetId;
 
 pub type GemSwapProvider = primitives::SwapProvider;
-pub type GemSwapProviderMode = swap_primitives::SwapProviderMode;
-pub type GemQuoteAsset = swap_primitives::QuoteAsset;
-pub type GemSwapMode = swap_primitives::SwapMode;
-pub type GemSlippage = swap_primitives::Slippage;
-pub type GemSlippageMode = swap_primitives::SlippageMode;
+pub type GemSwapProviderMode = primitives::swap::SwapProviderMode;
+pub type GemQuoteAsset = primitives::swap::QuoteAsset;
+pub type GemSwapMode = primitives::swap::SwapMode;
+pub type GemSlippage = primitives::swap::Slippage;
+pub type GemSlippageMode = primitives::swap::SlippageMode;
 
 #[uniffi::remote(Enum)]
 pub enum GemSwapProvider {

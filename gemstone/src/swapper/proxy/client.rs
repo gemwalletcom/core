@@ -2,8 +2,8 @@ use crate::{
     network::{AlienProvider, AlienTarget},
     swapper::SwapperError,
 };
+use primitives::swap::{Quote, QuoteData, QuoteRequest};
 use std::sync::Arc;
-use swap_primitives::{Quote, QuoteData, QuoteRequest};
 
 #[derive(Debug)]
 pub struct ProxyClient {
