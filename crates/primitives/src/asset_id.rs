@@ -1,24 +1,13 @@
 use std::fmt;
 
-use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
-use typeshare::typeshare;
+use serde::{Deserialize, Deserializer, Serialize, Serializer, de};
 
 use crate::chain::Chain;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-#[typeshare(swift = "Equatable, Hashable, Sendable")]
 pub struct AssetId {
     pub chain: Chain,
     pub token_id: Option<String>,
-}
-
-impl Default for AssetId {
-    fn default() -> Self {
-        Self {
-            chain: Chain::Ethereum,
-            token_id: None,
-        }
-    }
 }
 
 impl Serialize for AssetId {

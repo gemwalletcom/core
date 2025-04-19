@@ -5,7 +5,6 @@ prefix = ''
 "UInt32" = "UInt64"
 "Int32" = "Int"
 "BigInt" = "BigInt"
-"NaiveDateTime" = "Date"
 "DateTime" = "Date"
 "Value" = "TransactionMetadata" # Fix later to be adjustable
 
@@ -15,8 +14,7 @@ prefix = ''
 "UInt64" = "Long"
 "Int" = "Long"
 "Int64" = "Long"
-"NaiveDateTime" = "Long"
-"DateTime" = "Long"
+"DateTime" = "SerializedDate"
 "Data" = "ByteArray"
 "Value" = "String?"
 "BigInt" = "String"
