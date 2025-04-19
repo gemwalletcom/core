@@ -15,12 +15,7 @@ impl JupiterClient {
 
     pub async fn get_swap_quote(&self, request: QuoteRequest) -> Result<QuoteResponse, AlienError> {
         let query_string = serde_urlencoded::to_string(&request).map_err(|e| AlienError::RequestError { msg: e.to_string() })?;
-        let target = AlienTarget {
-            url: format!("{}/v6/quote?{}", self.api_url, &query_string),
-            method: AlienHttpMethod::Get,
-            headers: None,
-            body: None,
-        };
+        let target = AlienTarget::get(&format!("{}/swap/v1/quote?{}", self.api_url, &query_string));
         let response = self.provider.request(target).await?;
         let quote_response: QuoteResponse = serde_json::from_slice(&response).map_err(|e| AlienError::ResponseError { msg: e.to_string() })?;
         Ok(quote_response)
@@ -29,7 +24,7 @@ impl JupiterClient {
         let headers = HashMap::from([("Content-Type".to_string(), "application/json".to_string())]);
         let json = serde_json::to_string(&request).map_err(|e| AlienError::RequestError { msg: e.to_string() })?;
         let target = AlienTarget {
-            url: format!("{}/v6/swap", self.api_url),
+            url: format!("{}/swap/v1/swap", self.api_url),
             method: AlienHttpMethod::Post,
             headers: Some(headers),
             body: Some(json.as_bytes().into()),
