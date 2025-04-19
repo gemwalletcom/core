@@ -33,6 +33,10 @@ fn main() {
         "keccak.rs",
         "fiat_rate.rs",
         "number_formatter.rs",
+        "mode.rs",
+        "quote.rs",
+        "referral.rs",
+        "slippage.rs",
     ]
     .to_vec();
     ignored_files.append(&mut ignored_files_by_platform(platform.clone()));

@@ -106,3 +106,4 @@ pub mod diff;
 pub use self::diff::Diff;
 pub mod swap_provider;
 pub use self::swap_provider::SwapProvider;
+pub mod swap;

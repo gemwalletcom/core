@@ -1,8 +1,8 @@
-use super::model::{Quote, QuoteData, QuoteRequest};
 use crate::{
     network::{AlienProvider, AlienTarget},
     swapper::SwapperError,
 };
+use primitives::swap::{Quote, QuoteData, QuoteRequest};
 use std::sync::Arc;
 
 #[derive(Debug)]
@@ -16,11 +16,8 @@ impl ProxyClient {
     }
 
     pub async fn get_quote(&self, endpoint: &str, request: QuoteRequest) -> Result<Quote, SwapperError> {
-        let query = serde_urlencoded::to_string(&request).map_err(SwapperError::from)?;
-        let url = format!("{}/quote?{}", endpoint, query);
-
-        let target = AlienTarget::get(&url);
-
+        let url = format!("{}/quote", endpoint);
+        let target = AlienTarget::post_json(&url, serde_json::json!(request));
         let data = self.provider.request(target).await.map_err(SwapperError::from)?;
 
         serde_json::from_slice(&data).map_err(SwapperError::from)

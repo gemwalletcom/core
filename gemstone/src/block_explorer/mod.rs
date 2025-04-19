@@ -56,7 +56,8 @@ impl Explorer {
             | GemSwapProvider::Wagmi
             | GemSwapProvider::Cetus
             | GemSwapProvider::StonFiV2
-            | GemSwapProvider::Reservoir => get_block_explorer(self.chain, explorer_name),
+            | GemSwapProvider::Reservoir
+            | GemSwapProvider::Symbiosis => get_block_explorer(self.chain, explorer_name),
         };
         Some(ExplorerURL::new(&explorer.name(), &explorer.get_tx_url(transaction_id)))
     }

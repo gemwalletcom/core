@@ -35,7 +35,7 @@ impl FillStatus {
 }
 
 impl AcrossApi {
-    pub async fn deposit_status(&self, chain: &Chain, tx_hash: &str) -> Result<FillStatus, SwapperError> {
+    pub async fn deposit_status(&self, chain: Chain, tx_hash: &str) -> Result<FillStatus, SwapperError> {
         let receipt = eth_rpc::fetch_tx_receipt(self.provider.clone(), chain, tx_hash).await?;
         if receipt.logs.len() < 2 || receipt.logs[1].topics.len() < 4 {
             return Err(SwapperError::NetworkError("invalid tx receipt".into()));

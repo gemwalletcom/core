@@ -11,6 +11,14 @@ pub fn new_stonfi_v2() -> ProxyProvider {
     }
 }
 
+pub fn new_symbiosis() -> ProxyProvider {
+    ProxyProvider {
+        provider: SwapProviderType::new(GemSwapProvider::Symbiosis),
+        url: format!("{}/{}", PROVIDER_API_URL, "symbiosis"),
+        assets: vec![SwapChainAsset::All(Chain::Tron)],
+    }
+}
+
 pub fn new_mayan() -> ProxyProvider {
     ProxyProvider {
         provider: SwapProviderType::new(GemSwapProvider::Mayan),

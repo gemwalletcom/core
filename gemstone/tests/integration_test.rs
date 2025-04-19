@@ -15,8 +15,8 @@ mod tests {
         let network_provider = Arc::new(NativeProvider::new(node_config));
 
         let request = SwapQuoteRequest {
-            from_asset: AssetId::from(Chain::Solana, None),
-            to_asset: AssetId::from(Chain::Solana, Some("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v".into())),
+            from_asset: AssetId::from(Chain::Solana, None).into(),
+            to_asset: AssetId::from(Chain::Solana, Some("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v".into())).into(),
             wallet_address: "G7B17AigRCGvwnxFc5U8zY5T3NBGduLzT7KYApNU2VdR".into(),
             destination_address: "G7B17AigRCGvwnxFc5U8zY5T3NBGduLzT7KYApNU2VdR".into(),
             value: "1000000".into(),
@@ -65,8 +65,8 @@ mod tests {
         };
 
         let request = SwapQuoteRequest {
-            from_asset,
-            to_asset,
+            from_asset: from_asset.into(),
+            to_asset: to_asset.into(),
             wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
             destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
             value: "20000000000000000".into(), // 0.02 ETH
@@ -105,8 +105,8 @@ mod tests {
         };
 
         let request = SwapQuoteRequest {
-            from_asset: AssetId::from_chain(Chain::Optimism),
-            to_asset: AssetId::from_chain(Chain::Arbitrum),
+            from_asset: AssetId::from_chain(Chain::Optimism).into(),
+            to_asset: AssetId::from_chain(Chain::Arbitrum).into(),
             wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
             destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
             value: "20000000000000000".into(), // 0.02 ETH
@@ -144,8 +144,8 @@ mod tests {
         };
 
         let request = SwapQuoteRequest {
-            from_asset: AssetId::from_chain(Chain::Unichain),
-            to_asset: AssetId::from(Chain::Unichain, Some("0x078D782b760474a361dDA0AF3839290b0EF57AD6".to_string())),
+            from_asset: AssetId::from_chain(Chain::Unichain).into(),
+            to_asset: AssetId::from(Chain::Unichain, Some("0x078D782b760474a361dDA0AF3839290b0EF57AD6".to_string())).into(),
             wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
             destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
             value: "10000000000000000".into(), // 0.01 ETH
@@ -181,11 +181,12 @@ mod tests {
         };
 
         let request = SwapQuoteRequest {
-            from_asset: AssetId::from_chain(Chain::Sui),
+            from_asset: AssetId::from_chain(Chain::Sui).into(),
             to_asset: AssetId {
                 chain: Chain::Sui,
                 token_id: Some("0xdba34672e30cb065b1f93e3ab55318768fd6fef66c15942c9f7cb846e2f900e7::usdc::USDC".into()),
-            },
+            }
+            .into(),
             wallet_address: "0xa9bd0493f9bd1f792a4aedc1f99d54535a75a46c38fd56a8f2c6b7c8d75817a1".into(),
             destination_address: "0xa9bd0493f9bd1f792a4aedc1f99d54535a75a46c38fd56a8f2c6b7c8d75817a1".into(),
             value: "1500000000".into(), // 1.5 SUI

@@ -108,15 +108,15 @@ impl Swapper for Jupiter {
     }
 
     async fn fetch_quote(&self, request: &SwapQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapQuote, SwapperError> {
-        let input_mint = self.get_asset_address(&request.from_asset)?;
-        let output_mint = self.get_asset_address(&request.to_asset)?;
+        let input_mint = self.get_asset_address(&request.from_asset.id)?;
+        let output_mint = self.get_asset_address(&request.to_asset.id)?;
         let swap_options = request.options.clone();
         let slippage_bps = swap_options.slippage.bps;
         let platform_fee_bps = swap_options.fee.unwrap_or_default().solana_jupiter.bps;
 
         let auto_slippage = match swap_options.slippage.mode {
-            SlippageMode::Auto => true,
-            SlippageMode::Exact => false,
+            GemSlippageMode::Auto => true,
+            GemSlippageMode::Exact => false,
         };
 
         let quote_request = QuoteRequest {
@@ -169,10 +169,10 @@ impl Swapper for Jupiter {
             .await?;
 
         let dynamic_slippage = match quote.request.options.slippage.mode {
-            SlippageMode::Auto => Some(DynamicSlippage {
+            GemSlippageMode::Auto => Some(DynamicSlippage {
                 max_bps: quote.request.options.slippage.bps,
             }),
-            SlippageMode::Exact => None,
+            GemSlippageMode::Exact => None,
         };
 
         let request = QuoteDataRequest {
