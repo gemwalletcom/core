@@ -67,7 +67,6 @@ pub struct QuoteDataResponse {
 #[serde(rename_all = "camelCase")]
 pub struct SimulationError {
     pub error: String,
-    pub error_code: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
