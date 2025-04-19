@@ -128,7 +128,7 @@ chains:
   mantle:
     url: "https://rpc.mantle.xyz"
   celo:
-    url: "https://rpc.ankr.com/celo"
+    url: "https://forno.celo.org"
   near:
     url: "https://rpc.mainnet.near.org"
   bitcoin:
