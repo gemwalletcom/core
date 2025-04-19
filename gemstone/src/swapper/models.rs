@@ -2,6 +2,7 @@ use super::permit2_data::Permit2Data;
 use crate::config::swap_config::{SwapReferralFees, DEFAULT_SLIPPAGE_BPS};
 use primitives::{AssetId, Chain};
 use std::fmt::Debug;
+use std::str::FromStr;
 
 pub type GemSwapProvider = primitives::SwapProvider;
 
@@ -49,6 +50,11 @@ impl SwapProviderConfig {
 impl SwapProviderConfig {
     #[uniffi::constructor]
     pub fn new(id: GemSwapProvider) -> Self {
+        Self(SwapProviderType::new(id))
+    }
+    #[uniffi::constructor]
+    pub fn from_string(id: String) -> Self {
+        let id = GemSwapProvider::from_str(&id).unwrap();
         Self(SwapProviderType::new(id))
     }
     pub fn inner(&self) -> SwapProviderType {

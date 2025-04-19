@@ -4,3 +4,4 @@ target
 .idea/
 .vscode/
 .vscode/settings.json
+gemstone/src/.build
