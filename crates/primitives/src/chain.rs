@@ -292,6 +292,14 @@ impl Chain {
         }
     }
 
+    pub fn token_activation_fee(&self) -> Option<i32> {
+        match self {
+            Self::Xrp => Some(200_000),    // https://xrpl.org/docs/concepts/accounts/reserves#base-reserve-and-owner-reserve
+            Self::Solana => Some(2039280), // 2039280 (165 bytes) https://solana.com/docs/core/accounts
+            _ => None,
+        }
+    }
+
     pub fn minimum_account_balance(&self) -> Option<u64> {
         match self {
             Self::Solana => Some(890_880),

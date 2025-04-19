@@ -3,13 +3,13 @@ use serde::{Deserialize, Serialize};
 use strum_macros::{AsRefStr, EnumString};
 use typeshare::typeshare;
 
-use crate::{Asset, Price, DEFAULT_FIAT_CURRENCY};
+use crate::{Asset, AssetId, Price, DEFAULT_FIAT_CURRENCY};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Hashable, Sendable")]
 #[serde(rename_all = "camelCase")]
 pub struct PriceAlert {
-    pub asset_id: String,
+    pub asset_id: AssetId,
     #[serde(default = "default_currency")]
     pub currency: String,
     pub price: Option<f64>,
@@ -25,10 +25,10 @@ fn default_currency() -> String {
 impl PriceAlert {
     pub fn id(&self) -> String {
         if self.price.is_none() && self.price_percent_change.is_none() && self.price_direction.is_none() {
-            return self.asset_id.clone();
+            return self.asset_id.to_string();
         }
         let parts: Vec<String> = vec![
-            Some(self.asset_id.clone()),
+            Some(self.asset_id.to_string()),
             Some(self.currency.clone()),
             self.price.map(|p| p.to_string()),
             self.price_percent_change.map(|p| p.to_string()),
@@ -82,12 +82,14 @@ pub type PriceAlerts = Vec<PriceAlert>;
 
 #[cfg(test)]
 mod tests {
+    use crate::Chain;
+
     use super::*;
 
     #[test]
     fn test_price_alert_id_with_all_fields() {
         let price_alert = PriceAlert {
-            asset_id: "ethereum".to_string(),
+            asset_id: AssetId::from_chain(Chain::Ethereum),
             currency: "USD".to_string(),
             price: Some(100.0),
             price_percent_change: Some(5.0),
@@ -97,7 +99,7 @@ mod tests {
         assert_eq!(price_alert.id(), "ethereum_USD_100_5_up");
 
         let price_alert = PriceAlert {
-            asset_id: "ethereum".to_string(),
+            asset_id: AssetId::from_chain(Chain::Ethereum),
             currency: "USD".to_string(),
             price: Some(1.12344),
             price_percent_change: Some(10_000.10),
@@ -110,7 +112,7 @@ mod tests {
     #[test]
     fn test_price_alert_id_with_missing_optional_fields() {
         let price_alert = PriceAlert {
-            asset_id: "ethereum".to_string(),
+            asset_id: AssetId::from_chain(Chain::Ethereum),
             currency: "USD".to_string(),
             price: None,
             price_percent_change: None,
@@ -123,7 +125,7 @@ mod tests {
     #[test]
     fn test_price_alert_id_with_some_optional_fields() {
         let price_alert = PriceAlert {
-            asset_id: "ethereum".to_string(),
+            asset_id: AssetId::from_chain(Chain::Ethereum),
             currency: "USD".to_string(),
             price: Some(100.0),
             price_percent_change: None,

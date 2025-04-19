@@ -28,6 +28,7 @@ impl XRPClient {
             let value = transaction.amount.clone()?.as_value_string()?;
             let token_id = transaction.amount?.token_id();
             let asset_id = AssetId::from(self.get_chain(), token_id);
+            let created_at = DateTime::from_timestamp(block_timestamp, 0)?;
 
             let state = if transaction.meta.result == RESULT_SUCCESS {
                 TransactionState::Confirmed
@@ -50,7 +51,7 @@ impl XRPClient {
                 value,
                 memo,
                 None,
-                DateTime::from_timestamp(block_timestamp, 0)?,
+                created_at,
             );
             return Some(transaction);
         }

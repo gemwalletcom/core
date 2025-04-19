@@ -4,7 +4,7 @@ use crate::{ChainBlockProvider, ChainTokenDataProvider};
 use alloy_primitives::hex;
 use alloy_sol_types::SolCall;
 use async_trait::async_trait;
-use chrono::Utc;
+use chrono::DateTime;
 use gem_evm::ethereum_address_checksum;
 use hex::FromHex;
 use jsonrpsee::{
@@ -93,7 +93,7 @@ impl EthereumClient {
         Ok(self.client.request("eth_getBlockByNumber", params).await?)
     }
 
-    fn map_transaction(&self, transaction: Transaction, receipt: &TransactionReciept) -> Option<primitives::Transaction> {
+    fn map_transaction(&self, transaction: Transaction, receipt: &TransactionReciept, timestamp: BigUint) -> Option<primitives::Transaction> {
         let state = if receipt.status == "0x1" {
             TransactionState::Confirmed
         } else {
@@ -101,10 +101,11 @@ impl EthereumClient {
         };
         let value = transaction.value.to_string();
         let nonce = transaction.nonce;
-        let block = transaction.block_number;
+        let block_number = transaction.block_number;
         let fee = receipt.get_fee().to_string();
         let from = ethereum_address_checksum(&transaction.from).ok()?;
         let to = ethereum_address_checksum(&transaction.to.unwrap_or_default()).ok()?;
+        let created_at = DateTime::from_timestamp(timestamp.try_into().ok()?, 0)?;
 
         // system transfer
         if transaction.input == "0x" {
@@ -116,14 +117,14 @@ impl EthereumClient {
                 None,
                 TransactionType::Transfer,
                 state,
-                block.to_string(),
+                block_number.to_string(),
                 nonce.to_string(),
                 fee.to_string(),
                 self.chain.as_asset_id(),
                 value,
                 None,
                 None,
-                Utc::now(),
+                created_at,
             );
             return Some(transaction);
         }
@@ -152,14 +153,14 @@ impl EthereumClient {
                 None,
                 transaction_type,
                 state,
-                block.to_string(),
+                block_number.to_string(),
                 nonce.to_string(),
                 fee.to_string(),
                 self.chain.as_asset_id(),
                 value.to_string(),
                 None,
                 None,
-                Utc::now(),
+                created_at,
             );
             return Some(transaction);
         }
@@ -213,14 +214,14 @@ impl EthereumClient {
                 to.to_string().into(),
                 TransactionType::Swap,
                 state,
-                block.to_string(),
+                block_number.to_string(),
                 nonce.to_string(),
                 fee.to_string(),
                 self.chain.as_asset_id(),
                 from_value.clone().to_string(),
                 None,
                 serde_json::to_value(swap).ok(),
-                Utc::now(),
+                created_at,
             );
             return Some(transaction);
         }
@@ -242,7 +243,8 @@ impl ChainBlockProvider for EthereumClient {
     }
 
     async fn get_transactions(&self, block_number: i64) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Send + Sync>> {
-        let block = self.get_block(block_number).await?;
+        let block = self.get_block(block_number).await?.clone();
+
         let transactions = block
             .transactions
             .into_iter()
@@ -264,7 +266,7 @@ impl ChainBlockProvider for EthereumClient {
         let transactions = transactions
             .into_iter()
             .zip(receipts.iter())
-            .filter_map(|(transaction, receipt)| self.map_transaction(transaction, receipt))
+            .filter_map(|(transaction, receipt)| self.map_transaction(transaction, receipt, block.timestamp.clone()))
             .collect::<Vec<primitives::Transaction>>();
 
         return Ok(transactions);

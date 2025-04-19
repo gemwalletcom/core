@@ -16,6 +16,8 @@ struct XRPAccount {
     balance: String,
     #[serde(rename = "Sequence")]
     sequence: i32,
+    #[serde(rename = "OwnerCount")]
+    owner_count: i32,
 }
 
 #[typeshare(swift = "Sendable")]

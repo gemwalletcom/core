@@ -6,6 +6,8 @@ use serde_serializers::{deserialize_biguint_from_hex_str, deserialize_biguint_fr
 #[serde(rename_all = "camelCase")]
 pub struct Block {
     pub transactions: Vec<Transaction>,
+    #[serde(deserialize_with = "deserialize_biguint_from_hex_str")]
+    pub timestamp: BigUint,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
