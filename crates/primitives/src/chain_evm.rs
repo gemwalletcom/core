@@ -73,7 +73,7 @@ impl EVMChain {
 
     pub fn chain_stack(&self) -> ChainStack {
         match self {
-            Self::Optimism | Self::Base | Self::OpBNB | Self::World | Self::Ink | Self::Unichain => ChainStack::Optimism,
+            Self::Optimism | Self::Base | Self::OpBNB | Self::World | Self::Ink | Self::Unichain | Self::Celo => ChainStack::Optimism,
             Self::ZkSync | Self::Abstract => ChainStack::ZkSync,
             Self::Ethereum
             | Self::SmartChain
@@ -86,7 +86,6 @@ impl EVMChain {
             | Self::Blast
             | Self::Linea
             | Self::Mantle
-            | Self::Celo
             | Self::Sonic
             | Self::Berachain
             | Self::Hyperliquid
