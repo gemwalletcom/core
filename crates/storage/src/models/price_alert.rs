@@ -1,5 +1,6 @@
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
+use primitives::AssetId;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Queryable, Selectable, Serialize, Deserialize, Insertable, AsChangeset, Clone)]
@@ -32,7 +33,7 @@ pub struct NewPriceAlert {
 impl PriceAlert {
     pub fn as_primitive(&self) -> primitives::PriceAlert {
         primitives::PriceAlert {
-            asset_id: self.asset_id.clone(),
+            asset_id: AssetId::new(&self.asset_id).unwrap(),
             currency: self.currency.clone(),
             price_direction: self.price_direction.as_deref().and_then(|value| value.parse().ok()),
             price: self.price,
@@ -45,7 +46,7 @@ impl PriceAlert {
         NewPriceAlert {
             identifier: primitive.id(),
             device_id,
-            asset_id: primitive.asset_id.clone(),
+            asset_id: primitive.asset_id.to_string(),
             currency: primitive.currency.clone(),
             price_direction: primitive.price_direction.map(|value| value.as_ref().to_string()),
             price: primitive.price,

@@ -3,13 +3,13 @@ use serde::{Deserialize, Serialize};
 use strum_macros::{AsRefStr, EnumString};
 use typeshare::typeshare;
 
-use crate::{Asset, Price, DEFAULT_FIAT_CURRENCY};
+use crate::{Asset, AssetId, Price, DEFAULT_FIAT_CURRENCY};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Hashable, Sendable")]
 #[serde(rename_all = "camelCase")]
 pub struct PriceAlert {
-    pub asset_id: String,
+    pub asset_id: AssetId,
     #[serde(default = "default_currency")]
     pub currency: String,
     pub price: Option<f64>,
@@ -25,10 +25,10 @@ fn default_currency() -> String {
 impl PriceAlert {
     pub fn id(&self) -> String {
         if self.price.is_none() && self.price_percent_change.is_none() && self.price_direction.is_none() {
-            return self.asset_id.clone();
+            return self.asset_id.to_string();
         }
         let parts: Vec<String> = vec![
-            Some(self.asset_id.clone()),
+            Some(self.asset_id.to_string()),
             Some(self.currency.clone()),
             self.price.map(|p| p.to_string()),
             self.price_percent_change.map(|p| p.to_string()),
