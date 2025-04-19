@@ -82,12 +82,14 @@ pub type PriceAlerts = Vec<PriceAlert>;
 
 #[cfg(test)]
 mod tests {
+    use crate::Chain;
+
     use super::*;
 
     #[test]
     fn test_price_alert_id_with_all_fields() {
         let price_alert = PriceAlert {
-            asset_id: "ethereum".to_string(),
+            asset_id: AssetId::from_chain(Chain::Ethereum),
             currency: "USD".to_string(),
             price: Some(100.0),
             price_percent_change: Some(5.0),
@@ -97,7 +99,7 @@ mod tests {
         assert_eq!(price_alert.id(), "ethereum_USD_100_5_up");
 
         let price_alert = PriceAlert {
-            asset_id: "ethereum".to_string(),
+            asset_id: AssetId::from_chain(Chain::Ethereum),
             currency: "USD".to_string(),
             price: Some(1.12344),
             price_percent_change: Some(10_000.10),
@@ -110,7 +112,7 @@ mod tests {
     #[test]
     fn test_price_alert_id_with_missing_optional_fields() {
         let price_alert = PriceAlert {
-            asset_id: "ethereum".to_string(),
+            asset_id: AssetId::from_chain(Chain::Ethereum),
             currency: "USD".to_string(),
             price: None,
             price_percent_change: None,
@@ -123,7 +125,7 @@ mod tests {
     #[test]
     fn test_price_alert_id_with_some_optional_fields() {
         let price_alert = PriceAlert {
-            asset_id: "ethereum".to_string(),
+            asset_id: AssetId::from_chain(Chain::Ethereum),
             currency: "USD".to_string(),
             price: Some(100.0),
             price_percent_change: None,
