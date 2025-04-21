@@ -9,6 +9,7 @@ pub struct SwapConfig {
     pub permit2_expiration: u64,
     pub permit2_sig_deadline: u64,
     pub referral_fee: SwapReferralFees,
+    pub high_price_impact_percent: u32,
 }
 
 #[derive(uniffi::Record, Default, Debug, Clone, PartialEq)]
@@ -77,6 +78,7 @@ pub fn get_swap_config() -> SwapConfig {
                 bps: 50,
             },
         },
+        high_price_impact_percent: 10,
     }
 }
 
