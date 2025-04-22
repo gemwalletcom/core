@@ -79,7 +79,7 @@ pub fn get_swap_config() -> SwapConfig {
                 bps: DEFAULT_SWAP_FEE_BPS,
             },
             tron: SwapReferralFee {
-                address: "TA7mCjHFfo68FG3wc6pDCeRGbJSPZkBfL7".into(),
+                address: "TYeyZXywpA921LEtw2PF3obK4B8Jjgpp32".into(),
                 bps: DEFAULT_SWAP_FEE_BPS,
             },
         },
