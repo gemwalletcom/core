@@ -52,8 +52,8 @@ impl Swapper for ThorChain {
         let endpoint = provider.get_endpoint(Chain::Thorchain).map_err(SwapperError::from)?;
         let client = ThorChainSwapClient::new(provider.clone());
 
-        let from_asset = THORChainAsset::from_asset_id(request.clone().from_asset).ok_or(SwapperError::NotSupportedAsset)?;
-        let to_asset = THORChainAsset::from_asset_id(request.clone().to_asset).ok_or(SwapperError::NotSupportedAsset)?;
+        let from_asset = THORChainAsset::from_asset_id(&request.from_asset.id).ok_or(SwapperError::NotSupportedAsset)?;
+        let to_asset = THORChainAsset::from_asset_id(&request.to_asset.id).ok_or(SwapperError::NotSupportedAsset)?;
 
         let value = self.value_from(request.clone().value, from_asset.decimals as i32);
 
@@ -103,8 +103,8 @@ impl Swapper for ThorChain {
             data: SwapProviderData {
                 provider: self.provider().clone(),
                 routes: vec![SwapRoute {
-                    input: request.from_asset.clone(),
-                    output: request.to_asset.clone(),
+                    input: request.from_asset.asset_id(),
+                    output: request.to_asset.asset_id(),
                     route_data: serde_json::to_string(&route_data).unwrap_or_default(),
                     gas_limit: None,
                 }],
@@ -119,8 +119,8 @@ impl Swapper for ThorChain {
 
     async fn fetch_quote_data(&self, quote: &SwapQuote, provider: Arc<dyn AlienProvider>, _data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError> {
         let fee = quote.request.options.clone().fee.unwrap_or_default().thorchain;
-        let from_asset = THORChainAsset::from_asset_id(quote.clone().request.from_asset).ok_or(SwapperError::NotSupportedAsset)?;
-        let to_asset = THORChainAsset::from_asset_id(quote.clone().request.to_asset).ok_or(SwapperError::NotSupportedAsset)?;
+        let from_asset = THORChainAsset::from_asset_id(&quote.request.from_asset.id).ok_or(SwapperError::NotSupportedAsset)?;
+        let to_asset = THORChainAsset::from_asset_id(&quote.request.to_asset.id).ok_or(SwapperError::NotSupportedAsset)?;
 
         let memo = to_asset
             .get_memo(
@@ -163,7 +163,7 @@ impl Swapper for ThorChain {
             // only used for swapping from ERC20 tokens
             let to = route_data.router_address.clone().unwrap();
             let inbound_address = Address::from_str(&route_data.inbound_address.unwrap_or_default()).unwrap();
-            let token_address = Address::from_str(&quote.request.from_asset.token_id.clone().unwrap()).unwrap();
+            let token_address = Address::from_str(&quote.request.from_asset.asset_id().token_id.clone().unwrap()).unwrap();
             let amount = U256::from_str(&value).unwrap();
             let timestamp = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() + 86400; // + 1 day
             let expiry = U256::from_str(timestamp.to_string().as_str()).unwrap();

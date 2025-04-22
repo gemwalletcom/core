@@ -20,12 +20,15 @@ pub mod models;
 pub mod orca;
 pub mod pancakeswap_aptos;
 pub mod proxy;
+pub mod remote_models;
 pub mod slippage;
 pub mod thorchain;
 pub mod uniswap;
 
 pub use error::*;
 pub use models::*;
+pub use remote_models::*;
+
 use primitives::{AssetId, Chain, EVMChain};
 use std::collections::HashSet;
 
@@ -39,7 +42,7 @@ pub trait Swapper: Send + Sync + Debug {
     }
     async fn fetch_quote_data(&self, quote: &SwapQuote, provider: Arc<dyn AlienProvider>, data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError>;
     async fn get_transaction_status(&self, _chain: Chain, _transaction_hash: &str, _provider: Arc<dyn AlienProvider>) -> Result<bool, SwapperError> {
-        if self.provider().mode() == SwapProviderMode::OnChain {
+        if self.provider().mode() == GemSwapProviderMode::OnChain {
             Ok(true)
         } else {
             Err(SwapperError::NotImplemented)
@@ -67,15 +70,15 @@ pub struct GemSwapper {
 
 impl GemSwapper {
     // filter provider types that does not support cross chain / bridge swaps
-    fn filter_by_provider_mode(mode: &SwapProviderMode, from_chain: &Chain, to_chain: &Chain) -> bool {
+    fn filter_by_provider_mode(mode: GemSwapProviderMode, from_chain: Chain, to_chain: Chain) -> bool {
         match mode {
-            SwapProviderMode::OnChain => from_chain == to_chain,
-            SwapProviderMode::Bridge | SwapProviderMode::CrossChain => from_chain != to_chain,
+            GemSwapProviderMode::OnChain => from_chain == to_chain,
+            GemSwapProviderMode::Bridge | GemSwapProviderMode::CrossChain => from_chain != to_chain,
         }
     }
 
-    fn filter_by_supported_chains(supported_chains: Vec<Chain>, from_chain: &Chain, to_chain: &Chain) -> bool {
-        supported_chains.contains(from_chain) && supported_chains.contains(to_chain)
+    fn filter_by_supported_chains(supported_chains: Vec<Chain>, from_chain: Chain, to_chain: Chain) -> bool {
+        supported_chains.contains(&from_chain) && supported_chains.contains(&to_chain)
     }
 
     fn filter_supported_assets(supported_assets: Vec<SwapChainAsset>, asset_id: AssetId) -> bool {
@@ -128,6 +131,7 @@ impl GemSwapper {
                 Box::new(cetus::Cetus::default()),
                 Box::new(proxy::new_stonfi_v2()),
                 Box::new(proxy::new_mayan()),
+                Box::new(proxy::new_symbiosis()),
             ],
         }
     }
@@ -165,17 +169,17 @@ impl GemSwapper {
     }
 
     pub async fn fetch_quote(&self, request: &SwapQuoteRequest) -> Result<Vec<SwapQuote>, SwapperError> {
-        if request.from_asset == request.to_asset {
+        if request.from_asset.id == request.to_asset.id {
             return Err(SwapperError::NotSupportedPair);
         }
-        let from_chain = request.from_asset.chain;
-        let to_chain = request.to_asset.chain;
+        let from_chain = request.from_asset.chain();
+        let to_chain = request.to_asset.chain();
         let preferred_providers = &request.options.preferred_providers;
         let providers = self
             .swappers
             .iter()
-            .filter(|x| Self::filter_by_provider_mode(&x.provider().mode(), &from_chain, &to_chain))
-            .filter(|x| Self::filter_by_supported_chains(x.supported_chains(), &from_chain, &to_chain))
+            .filter(|x| Self::filter_by_provider_mode(x.provider().mode(), from_chain, to_chain))
+            .filter(|x| Self::filter_by_supported_chains(x.supported_chains(), from_chain, to_chain))
             .filter(|x| Self::filter_by_preferred_providers(preferred_providers, &x.provider().id))
             .collect::<Vec<_>>();
 
@@ -220,7 +224,7 @@ impl GemSwapper {
         let provider = self.get_swapper_by_provider(&quote.data.provider.id).ok_or(SwapperError::NoAvailableProvider)?;
         let mut quote_data = provider.fetch_quote_data(quote, self.rpc_provider.clone(), data).await?;
         if let Some(gas_limit) = quote_data.gas_limit.take() {
-            quote_data.gas_limit = Some(Self::apply_gas_limit_multiplier(&quote.request.from_asset.chain, gas_limit));
+            quote_data.gas_limit = Some(Self::apply_gas_limit_multiplier(&quote.request.from_asset.chain(), gas_limit));
         }
         Ok(quote_data)
     }
@@ -242,7 +246,7 @@ mod tests {
     fn test_filter_by_provider_type() {
         let providers = [
             GemSwapProvider::UniswapV3,
-            GemSwapProvider::PancakeSwapV3,
+            GemSwapProvider::PancakeswapV3,
             GemSwapProvider::Jupiter,
             GemSwapProvider::Thorchain,
         ];
@@ -250,7 +254,7 @@ mod tests {
         // Cross chain swaps (same chain will be filtered out)
         let filtered = providers
             .iter()
-            .filter(|x| GemSwapper::filter_by_provider_mode(&SwapProviderType::new(**x).mode(), &Chain::Ethereum, &Chain::Optimism))
+            .filter(|x| GemSwapper::filter_by_provider_mode(SwapProviderType::new(**x).mode(), Chain::Ethereum, Chain::Optimism))
             .cloned()
             .collect::<Vec<_>>();
 
@@ -271,8 +275,8 @@ mod tests {
 
         let filtered = swappers
             .iter()
-            .filter(|x| GemSwapper::filter_by_provider_mode(&x.provider().mode(), &from_chain, &to_chain))
-            .filter(|x| GemSwapper::filter_by_supported_chains(x.supported_chains(), &from_chain, &to_chain))
+            .filter(|x| GemSwapper::filter_by_provider_mode(x.provider().mode(), from_chain, to_chain))
+            .filter(|x| GemSwapper::filter_by_supported_chains(x.supported_chains(), from_chain, to_chain))
             .collect::<Vec<_>>();
 
         assert_eq!(filtered.len(), 0);
@@ -282,14 +286,14 @@ mod tests {
 
         let filtered = swappers
             .iter()
-            .filter(|x| GemSwapper::filter_by_provider_mode(&x.provider().mode(), &from_chain, &to_chain))
-            .filter(|x| GemSwapper::filter_by_supported_chains(x.supported_chains(), &from_chain, &to_chain))
+            .filter(|x| GemSwapper::filter_by_provider_mode(x.provider().mode(), from_chain, to_chain))
+            .filter(|x| GemSwapper::filter_by_supported_chains(x.supported_chains(), from_chain, to_chain))
             .collect::<Vec<_>>();
 
         assert_eq!(filtered.len(), 2);
         assert_eq!(
             filtered.iter().map(|x| x.provider().id).collect::<BTreeSet<_>>(),
-            BTreeSet::from([GemSwapProvider::UniswapV3, GemSwapProvider::PancakeSwapV3])
+            BTreeSet::from([GemSwapProvider::UniswapV3, GemSwapProvider::PancakeswapV3])
         );
 
         let from_chain = Chain::Solana;
@@ -297,8 +301,8 @@ mod tests {
 
         let filtered = swappers
             .iter()
-            .filter(|x| GemSwapper::filter_by_provider_mode(&x.provider().mode(), &from_chain, &to_chain))
-            .filter(|x| GemSwapper::filter_by_supported_chains(x.supported_chains(), &from_chain, &to_chain))
+            .filter(|x| GemSwapper::filter_by_provider_mode(x.provider().mode(), from_chain, to_chain))
+            .filter(|x| GemSwapper::filter_by_supported_chains(x.supported_chains(), from_chain, to_chain))
             .collect::<Vec<_>>();
 
         assert_eq!(filtered.len(), 1);
@@ -309,8 +313,8 @@ mod tests {
 
         let filtered = swappers
             .iter()
-            .filter(|x| GemSwapper::filter_by_provider_mode(&x.provider().mode(), &from_chain, &to_chain))
-            .filter(|x| GemSwapper::filter_by_supported_chains(x.supported_chains(), &from_chain, &to_chain))
+            .filter(|x| GemSwapper::filter_by_provider_mode(x.provider().mode(), from_chain, to_chain))
+            .filter(|x| GemSwapper::filter_by_supported_chains(x.supported_chains(), from_chain, to_chain))
             .collect::<Vec<_>>();
 
         assert_eq!(filtered.len(), 1);

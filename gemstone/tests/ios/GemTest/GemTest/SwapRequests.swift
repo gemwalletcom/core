@@ -15,8 +15,8 @@ let TEST_SUI_WALLET = "0xa9bd0493f9bd1f792a4aedc1f99d54535a75a46c38fd56a8f2c6b7c
 
 public extension SwapQuoteRequest {
     static let eth2usdc = SwapQuoteRequest(
-        fromAsset: "ethereum",
-        toAsset: "ethereum_0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        fromAsset: GemQuoteAsset(id: "ethereum", decimals: 18),
+        toAsset: GemQuoteAsset(id: "ethereum_0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48", decimals: 18),
         walletAddress: TEST_ETH_WALLET,
         destinationAddress: TEST_ETH_WALLET,
         value: "100000000000000000", // 0.01 ETH
@@ -25,8 +25,8 @@ public extension SwapQuoteRequest {
     )
 
     static let usdc2eth = SwapQuoteRequest(
-        fromAsset: "ethereum_0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-        toAsset: "ethereum",
+        fromAsset: GemQuoteAsset(id: "ethereum_0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48", decimals: 6),
+        toAsset: GemQuoteAsset(id: "ethereum", decimals: 18),
         walletAddress: TEST_ETH_WALLET,
         destinationAddress: TEST_ETH_WALLET,
         value: "100000000", // 100 USDC
@@ -35,8 +35,8 @@ public extension SwapQuoteRequest {
     )
 
     static let sol2usdc = SwapQuoteRequest(
-        fromAsset: "solana",
-        toAsset: "solana_EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        fromAsset: GemQuoteAsset(id: "solana", decimals: 9),
+        toAsset: GemQuoteAsset(id: "solana_EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", decimals: 6),
         walletAddress: TEST_SOL_WALLET,
         destinationAddress: TEST_SOL_WALLET,
         value: "1000000000", // 1 SOL
@@ -45,8 +45,8 @@ public extension SwapQuoteRequest {
     )
 
     static let jup2bonk = SwapQuoteRequest(
-        fromAsset: "solana_JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN",
-        toAsset: "solana_DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263",
+        fromAsset: GemQuoteAsset(id: "solana_JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN", decimals: 6),
+        toAsset: GemQuoteAsset(id: "solana_DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263", decimals: 5),
         walletAddress: TEST_SOL_WALLET,
         destinationAddress: TEST_SOL_WALLET,
         value: "1000000000", // 1000 JUP
@@ -55,8 +55,8 @@ public extension SwapQuoteRequest {
     )
 
     static let uni2link = SwapQuoteRequest(
-        fromAsset: "optimism_0x6fd9d7AD17242c41f7131d257212c54A0e816691",
-        toAsset: "optimism_0x350a791Bfc2C21F9Ed5d10980Dad2e2638ffa7f6",
+        fromAsset: GemQuoteAsset(id: "optimism_0x6fd9d7AD17242c41f7131d257212c54A0e816691", decimals: 18),
+        toAsset: GemQuoteAsset(id: "optimism_0x350a791Bfc2C21F9Ed5d10980Dad2e2638ffa7f6", decimals: 18),
         walletAddress: TEST_ETH_WALLET,
         destinationAddress: TEST_ETH_WALLET,
         value: "100000000000000000000", // 100 UNI
@@ -65,8 +65,8 @@ public extension SwapQuoteRequest {
     )
 
     static let cake2btcb = SwapQuoteRequest(
-        fromAsset: "smartchain_0x0e09fabb73bd3ade0a17ecc321fd13a19e81ce82",
-        toAsset: "smartchain_0x7130d2a12b9bcbfae4f2634d864a1ee1ce3ead9c",
+        fromAsset: GemQuoteAsset(id: "smartchain_0x0e09fabb73bd3ade0a17ecc321fd13a19e81ce82", decimals: 18),
+        toAsset: GemQuoteAsset(id: "smartchain_0x7130d2a12b9bcbfae4f2634d864a1ee1ce3ead9c", decimals: 18),
         walletAddress: TEST_ETH_WALLET,
         destinationAddress: TEST_ETH_WALLET,
         value: "1000000000000000000000", // 1000 Cake
@@ -75,8 +75,8 @@ public extension SwapQuoteRequest {
     )
 
     static let cake2bnb = SwapQuoteRequest(
-        fromAsset: "smartchain_0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82",
-        toAsset: "smartchain",
+        fromAsset: GemQuoteAsset(id: "smartchain_0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82", decimals: 18),
+        toAsset: GemQuoteAsset(id: "smartchain", decimals: 18),
         walletAddress: TEST_ETH_WALLET,
         destinationAddress: TEST_ETH_WALLET,
         value: "400000000000000000", // 0.4
@@ -85,8 +85,8 @@ public extension SwapQuoteRequest {
     )
 
     static let op2Eth = SwapQuoteRequest(
-        fromAsset: "optimism",
-        toAsset: "ethereum",
+        fromAsset: GemQuoteAsset(id: "optimism",decimals: 18),
+        toAsset: GemQuoteAsset(id: "ethereum", decimals: 18),
         walletAddress: TEST_ETH_WALLET,
         destinationAddress: TEST_ETH_WALLET,
         value: "20000000000000000", // 0.02 eth
@@ -95,8 +95,8 @@ public extension SwapQuoteRequest {
     )
 
     static let op2Arb = SwapQuoteRequest(
-        fromAsset: "optimism",
-        toAsset: "arbitrum",
+        fromAsset: GemQuoteAsset(id: "optimism", decimals: 18),
+        toAsset: GemQuoteAsset(id: "arbitrum", decimals: 18),
         walletAddress: TEST_ETH_WALLET,
         destinationAddress: TEST_ETH_WALLET,
         value: "10000000000000000", // 0.01 eth
@@ -105,8 +105,8 @@ public extension SwapQuoteRequest {
     )
 
     static let op2Ink = SwapQuoteRequest(
-        fromAsset: "optimism",
-        toAsset: "ink",
+        fromAsset: GemQuoteAsset(id: "optimism", decimals: 18),
+        toAsset: GemQuoteAsset(id: "ink", decimals: 18),
         walletAddress: TEST_ETH_WALLET,
         destinationAddress: TEST_ETH_WALLET,
         value: "10000000000000000", // 0.01 eth
@@ -115,8 +115,8 @@ public extension SwapQuoteRequest {
     )
 
     static let eth2Unichain = SwapQuoteRequest(
-        fromAsset: "ethereum",
-        toAsset: "unichain",
+        fromAsset: GemQuoteAsset(id: "ethereum", decimals: 18),
+        toAsset: GemQuoteAsset(id: "unichain", decimals: 18),
         walletAddress: TEST_ETH_WALLET,
         destinationAddress: TEST_ETH_WALLET,
         value: "10000000000000000", // 0.01 eth
@@ -125,8 +125,8 @@ public extension SwapQuoteRequest {
     )
 
     static let ethUSDC2Base = SwapQuoteRequest(
-        fromAsset: "ethereum_0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
-        toAsset: "base_0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        fromAsset: GemQuoteAsset(id: "ethereum_0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", decimals: 6),
+        toAsset: GemQuoteAsset(id: "base_0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", decimals: 18),
         walletAddress: TEST_ETH_WALLET,
         destinationAddress: TEST_ETH_WALLET,
         value: "10000000000", // 10000 USDC
@@ -135,8 +135,8 @@ public extension SwapQuoteRequest {
     )
 
     static let baseUSDC2Eth = SwapQuoteRequest(
-        fromAsset: "base_0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-        toAsset: "ethereum_0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        fromAsset: GemQuoteAsset(id: "base_0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", decimals: 6),
+        toAsset: GemQuoteAsset(id: "ethereum_0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", decimals: 18),
         walletAddress: TEST_ETH_WALLET,
         destinationAddress: TEST_ETH_WALLET,
         value: "10000000000", // 10000 USDC
@@ -145,8 +145,8 @@ public extension SwapQuoteRequest {
     )
 
     static let absETH2USDC = SwapQuoteRequest(
-        fromAsset: "abstract",
-        toAsset: "abstract_0x84A71ccD554Cc1b02749b35d22F684CC8ec987e1",
+        fromAsset: GemQuoteAsset(id: "abstract", decimals: 18),
+        toAsset: GemQuoteAsset(id: "abstract_0x84A71ccD554Cc1b02749b35d22F684CC8ec987e1", decimals: 6),
         walletAddress: TEST_ETH_WALLET,
         destinationAddress: TEST_ETH_WALLET,
         value: "1000000000000000000", // 1 ETH
@@ -159,8 +159,8 @@ public extension SwapQuoteRequest {
         options.preferredProviders = [SwapProvider.uniswapV4]
 
         return SwapQuoteRequest(
-            fromAsset: "unichain",
-            toAsset: "unichain_0x078D782b760474a361dDA0AF3839290b0EF57AD6",
+            fromAsset: GemQuoteAsset(id: "unichain", decimals: 18),
+            toAsset: GemQuoteAsset(id: "unichain_0x078D782b760474a361dDA0AF3839290b0EF57AD6", decimals: 6),
             walletAddress: TEST_ETH_WALLET,
             destinationAddress: TEST_ETH_WALLET,
             value: "1000000000000000000", // 1 ETH
@@ -170,8 +170,8 @@ public extension SwapQuoteRequest {
     }()
 
     static let uni2dai_v4: SwapQuoteRequest = .init(
-        fromAsset: "unichain_0x8f187aA05619a017077f5308904739877ce9eA21",
-        toAsset: "unichain_0x20CAb320A855b39F724131C69424240519573f81",
+        fromAsset: GemQuoteAsset(id: "unichain_0x8f187aA05619a017077f5308904739877ce9eA21", decimals: 18),
+        toAsset: GemQuoteAsset(id: "unichain_0x20CAb320A855b39F724131C69424240519573f81", decimals: 18),
         walletAddress: TEST_ETH_WALLET,
         destinationAddress: TEST_ETH_WALLET,
         value: "1000000000000000000", // 1 ETH
@@ -180,8 +180,8 @@ public extension SwapQuoteRequest {
     )
 
     static let eth2btc: SwapQuoteRequest = .init(
-        fromAsset: "ethereum",
-        toAsset: "bitcoin",
+        fromAsset: GemQuoteAsset(id: "ethereum", decimals: 18),
+        toAsset: GemQuoteAsset(id: "bitcoin", decimals: 8),
         walletAddress: TEST_ETH_WALLET,
         destinationAddress: TEST_BTC_WALLET,
         value: "1000000000000000000", // 1 ETH
@@ -190,8 +190,8 @@ public extension SwapQuoteRequest {
     )
 
     static let sui2USDC = SwapQuoteRequest(
-        fromAsset: "sui",
-        toAsset: "sui_0xdba34672e30cb065b1f93e3ab55318768fd6fef66c15942c9f7cb846e2f900e7::usdc::USDC",
+        fromAsset: GemQuoteAsset(id: "sui", decimals: 9),
+        toAsset: GemQuoteAsset(id: "sui_0xdba34672e30cb065b1f93e3ab55318768fd6fef66c15942c9f7cb846e2f900e7::usdc::USDC",decimals: 6),
         walletAddress: TEST_SUI_WALLET,
         destinationAddress: TEST_SUI_WALLET,
         value: "100000000000", // 100 SUI

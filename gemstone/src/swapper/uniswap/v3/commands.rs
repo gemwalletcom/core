@@ -1,4 +1,4 @@
-use crate::swapper::{eth_address, models::*, slippage::apply_slippage_in_bp, SwapperError};
+use crate::swapper::{eth_address, models::*, slippage::apply_slippage_in_bp, GemSwapMode, SwapperError};
 use gem_evm::uniswap::command::{PayPortion, Permit2Permit, Sweep, Transfer, UniversalRouterCommand, UnwrapWeth, V3SwapExactIn, WrapEth, ADDRESS_THIS};
 
 use alloy_primitives::{Address, Bytes, U256};
@@ -137,8 +137,8 @@ mod tests {
     fn test_build_commands_eth_to_token() {
         let mut request = SwapQuoteRequest {
             // ETH -> USDC
-            from_asset: AssetId::from(Chain::Ethereum, None),
-            to_asset: AssetId::from(Chain::Ethereum, Some("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48".into())),
+            from_asset: AssetId::from(Chain::Ethereum, None).into(),
+            to_asset: AssetId::from(Chain::Ethereum, Some("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48".into())).into(),
             wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
             destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
             value: "10000000000000000".into(),
@@ -183,8 +183,8 @@ mod tests {
     fn test_build_commands_usdc_to_usdt() {
         let request = SwapQuoteRequest {
             // USDC -> USDT
-            from_asset: AssetId::from(Chain::Optimism, Some("0x0b2c639c533813f4aa9d7837caf62653d097ff85".into())),
-            to_asset: AssetId::from(Chain::Optimism, Some("0x94b008aa00579c1307b0ef2c499ad98a8ce58e58".into())),
+            from_asset: AssetId::from(Chain::Optimism, Some("0x0b2c639c533813f4aa9d7837caf62653d097ff85".into())).into(),
+            to_asset: AssetId::from(Chain::Optimism, Some("0x94b008aa00579c1307b0ef2c499ad98a8ce58e58".into())).into(),
             wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
             destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
             value: "6500000".into(),
@@ -192,8 +192,8 @@ mod tests {
             options: GemSwapOptions::default(),
         };
 
-        let token_in = eth_address::parse_str(request.from_asset.token_id.as_ref().unwrap()).unwrap();
-        let token_out = eth_address::parse_str(request.to_asset.token_id.as_ref().unwrap()).unwrap();
+        let token_in = eth_address::parse_str(request.from_asset.asset_id().token_id.as_ref().unwrap()).unwrap();
+        let token_out = eth_address::parse_str(request.to_asset.asset_id().token_id.as_ref().unwrap()).unwrap();
         let amount_in = U256::from_str(&request.value).unwrap();
 
         let permit2_data = Permit2Data {
@@ -236,8 +236,8 @@ mod tests {
     fn test_build_commands_usdc_to_aave() {
         let request = SwapQuoteRequest {
             // USDC -> AAVE
-            from_asset: AssetId::from(Chain::Optimism, Some("0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85".into())),
-            to_asset: AssetId::from(Chain::Optimism, Some("0x76fb31fb4af56892a25e32cfc43de717950c9278".into())),
+            from_asset: AssetId::from(Chain::Optimism, Some("0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85".into())).into(),
+            to_asset: AssetId::from(Chain::Optimism, Some("0x76fb31fb4af56892a25e32cfc43de717950c9278".into())).into(),
             wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
             destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
             value: "5064985".into(),
@@ -252,8 +252,8 @@ mod tests {
             },
         };
 
-        let token_in = eth_address::parse_str(request.from_asset.token_id.as_ref().unwrap()).unwrap();
-        let token_out = eth_address::parse_str(request.to_asset.token_id.as_ref().unwrap()).unwrap();
+        let token_in = eth_address::parse_str(request.from_asset.asset_id().token_id.as_ref().unwrap()).unwrap();
+        let token_out = eth_address::parse_str(request.to_asset.asset_id().token_id.as_ref().unwrap()).unwrap();
         let amount_in = U256::from_str(&request.value).unwrap();
 
         let path = build_direct_pair(&token_in, &token_out, FeeTier::FiveHundred);
@@ -279,8 +279,8 @@ mod tests {
     fn test_build_commands_usdce_to_eth() {
         let request = SwapQuoteRequest {
             // USDCE -> ETH
-            from_asset: AssetId::from(Chain::Optimism, Some("0x7F5c764cBc14f9669B88837ca1490cCa17c31607".into())),
-            to_asset: AssetId::from(Chain::Ethereum, None),
+            from_asset: AssetId::from(Chain::Optimism, Some("0x7F5c764cBc14f9669B88837ca1490cCa17c31607".into())).into(),
+            to_asset: AssetId::from(Chain::Ethereum, None).into(),
             wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
             destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
             value: "10000000".into(),
@@ -295,14 +295,14 @@ mod tests {
             },
         };
 
-        let token_in = eth_address::parse_str(request.from_asset.token_id.as_ref().unwrap()).unwrap();
+        let token_in = eth_address::parse_str(request.from_asset.asset_id().token_id.as_ref().unwrap()).unwrap();
         let token_out = eth_address::parse_str("0x4200000000000000000000000000000000000006").unwrap();
         let amount_in = U256::from_str(&request.value).unwrap();
 
         let permit2_data = Permit2Data {
             permit_single: PermitSingle {
                 details: Permit2Detail {
-                    token: request.from_asset.token_id.clone().unwrap(),
+                    token: request.from_asset.asset_id().token_id.clone().unwrap(),
                     amount: "1461501637330902918203684832716283019655932542975".into(),
                     expiration: 1732667502,
                     nonce: 0,
@@ -342,8 +342,8 @@ mod tests {
         // Replicate https://optimistic.etherscan.io/tx/0x18277deea3e273a7fb9abc985269dcdabe3d34c2b604fbd82dcd0a5a5204f72c
         let request = SwapQuoteRequest {
             // ETH -> UNI
-            from_asset: AssetId::from(Chain::Optimism, None),
-            to_asset: AssetId::from(Chain::Optimism, Some("0x6fd9d7ad17242c41f7131d257212c54a0e816691".into())),
+            from_asset: AssetId::from(Chain::Optimism, None).into(),
+            to_asset: AssetId::from(Chain::Optimism, Some("0x6fd9d7ad17242c41f7131d257212c54a0e816691".into())).into(),
             wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
             destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
             value: "1000000000000000".into(),
@@ -359,7 +359,7 @@ mod tests {
         };
 
         let token_in = eth_address::parse_str("0x4200000000000000000000000000000000000006").unwrap();
-        let token_out = eth_address::parse_str(&request.to_asset.token_id.clone().unwrap()).unwrap();
+        let token_out = eth_address::parse_str(&request.to_asset.asset_id().token_id.unwrap()).unwrap();
         let amount_in = U256::from_str(request.value.as_str()).unwrap();
 
         let path = build_direct_pair(&token_in, &token_out, FeeTier::ThreeThousand);

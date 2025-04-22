@@ -4,38 +4,7 @@ use primitives::{AssetId, Chain};
 use std::fmt::Debug;
 use std::str::FromStr;
 
-pub type GemSwapProvider = primitives::SwapProvider;
-
-#[uniffi::remote(Enum)]
-pub enum GemSwapProvider {
-    UniswapV3,
-    UniswapV4,
-    PancakeSwapV3,
-    PancakeSwapAptosV2,
-    Thorchain,
-    Orca,
-    Jupiter,
-    Across,
-    Oku,
-    Wagmi,
-    Cetus,
-    StonFiV2,
-    Mayan,
-    Reservoir,
-}
-
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub enum SwapProviderMode {
-    OnChain,
-    CrossChain,
-    Bridge,
-}
-
-#[derive(Debug, Copy, Clone, PartialEq, uniffi::Enum)]
-pub enum GemSwapMode {
-    ExactIn,
-    ExactOut,
-}
+use super::remote_models::*;
 
 #[derive(Debug, Clone, PartialEq, uniffi::Object)]
 pub struct SwapProviderConfig(SwapProviderType);
@@ -80,55 +49,35 @@ impl SwapProviderType {
         }
     }
 
-    pub fn mode(&self) -> SwapProviderMode {
+    pub fn mode(&self) -> GemSwapProviderMode {
         match self.id {
             GemSwapProvider::UniswapV3
             | GemSwapProvider::UniswapV4
-            | GemSwapProvider::PancakeSwapV3
-            | GemSwapProvider::PancakeSwapAptosV2
+            | GemSwapProvider::PancakeswapV3
+            | GemSwapProvider::PancakeswapAptosV2
             | GemSwapProvider::Orca
             | GemSwapProvider::Jupiter
             | GemSwapProvider::Oku
             | GemSwapProvider::Wagmi
             | GemSwapProvider::Cetus
-            | GemSwapProvider::StonFiV2
-            | GemSwapProvider::Reservoir => SwapProviderMode::OnChain,
-            GemSwapProvider::Thorchain | GemSwapProvider::Mayan => SwapProviderMode::CrossChain,
-            GemSwapProvider::Across => SwapProviderMode::Bridge,
+            | GemSwapProvider::StonfiV2
+            | GemSwapProvider::Reservoir
+            | GemSwapProvider::Symbiosis => GemSwapProviderMode::OnChain,
+            GemSwapProvider::Thorchain | GemSwapProvider::Mayan => GemSwapProviderMode::CrossChain,
+            GemSwapProvider::Across => GemSwapProviderMode::Bridge,
         }
     }
 }
 
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct SwapQuoteRequest {
-    pub from_asset: AssetId,
-    pub to_asset: AssetId,
+    pub from_asset: GemQuoteAsset,
+    pub to_asset: GemQuoteAsset,
     pub wallet_address: String,
     pub destination_address: String,
     pub value: String,
     pub mode: GemSwapMode,
     pub options: GemSwapOptions,
-}
-
-#[derive(Debug, Clone, PartialEq, uniffi::Record)]
-pub struct GemSlippage {
-    pub bps: u32,
-    pub mode: SlippageMode,
-}
-
-#[derive(Debug, Clone, PartialEq, uniffi::Enum)]
-pub enum SlippageMode {
-    Auto,
-    Exact,
-}
-
-impl From<u32> for GemSlippage {
-    fn from(value: u32) -> Self {
-        GemSlippage {
-            bps: value,
-            mode: SlippageMode::Exact,
-        }
-    }
 }
 
 #[derive(Debug, Clone, uniffi::Record)]

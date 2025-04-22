@@ -33,7 +33,8 @@ impl THORChainAsset {
         self.is_token() && self.chain.is_evm_chain()
     }
 
-    pub fn from_asset_id(asset_id: AssetId) -> Option<THORChainAsset> {
+    pub fn from_asset_id(asset_id: &str) -> Option<THORChainAsset> {
+        let asset_id = AssetId::new(asset_id)?;
         let chain = THORChainName::from_chain(&asset_id.chain)?;
         if let Some(token_id) = &asset_id.token_id {
             THORChainAsset::from(chain, token_id)
@@ -163,31 +164,31 @@ mod tests {
         let bps = 50;
 
         assert_eq!(
-            THORChainAsset::from_asset_id(Chain::SmartChain.as_asset_id())
+            THORChainAsset::from_asset_id(Chain::SmartChain.as_ref())
                 .unwrap()
                 .get_memo(destination_address.clone(), 0, 1, 0, fee_address.clone(), bps),
             Some("=:s:0x1234567890abcdef:0/1/0:g1:50".into())
         );
         assert_eq!(
-            THORChainAsset::from_asset_id(Chain::Ethereum.as_asset_id())
+            THORChainAsset::from_asset_id(Chain::Ethereum.as_ref())
                 .unwrap()
                 .get_memo(destination_address.clone(), 0, 1, 0, fee_address.clone(), bps),
             Some("=:e:0x1234567890abcdef:0/1/0:g1:50".into())
         );
         assert_eq!(
-            THORChainAsset::from_asset_id(Chain::Doge.as_asset_id())
+            THORChainAsset::from_asset_id(Chain::Doge.as_ref())
                 .unwrap()
                 .get_memo(destination_address.clone(), 0, 1, 0, fee_address.clone(), bps),
             Some("=:d:0x1234567890abcdef:0/1/0:g1:50".into())
         );
         assert_eq!(
-            THORChainAsset::from_asset_id(AssetId::from(Chain::Ethereum, Some("0xdAC17F958D2ee523a2206206994597C13D831ec7".to_string())))
+            THORChainAsset::from_asset_id("ethereum_0xdAC17F958D2ee523a2206206994597C13D831ec7")
                 .unwrap()
                 .get_memo(destination_address.clone(), 0, 1, 0, fee_address.clone(), bps),
             Some("=:ETH.USDT:0x1234567890abcdef:0/1/0:g1:50".into())
         );
         assert_eq!(
-            THORChainAsset::from_asset_id(Chain::BitcoinCash.as_asset_id()).unwrap().get_memo(
+            THORChainAsset::from_asset_id(Chain::BitcoinCash.as_ref()).unwrap().get_memo(
                 "bitcoincash:qpcns7lget89x9km0t8ry5fk52e8lhl53q0a64gd65".to_string(),
                 0,
                 1,

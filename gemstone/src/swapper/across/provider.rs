@@ -15,7 +15,7 @@ use crate::{
         chainlink::ChainlinkPriceFeed,
         eth_address, eth_rpc,
         models::*,
-        Swapper, SwapperError,
+        GemSwapProvider, Swapper, SwapperError,
     },
 };
 use gem_evm::{
@@ -174,7 +174,7 @@ impl Across {
         message: &[u8],
         deployment: &AcrossDeployment,
         provider: Arc<dyn AlienProvider>,
-        chain: &Chain,
+        chain: Chain,
     ) -> Result<(U256, V3RelayData), SwapperError> {
         let chain_id: u32 = chain.network_id().parse().unwrap();
 
@@ -280,23 +280,23 @@ impl Swapper for Across {
 
     async fn fetch_quote(&self, request: &SwapQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapQuote, SwapperError> {
         // does not support same chain swap
-        if request.from_asset.chain == request.to_asset.chain {
+        if request.from_asset.chain() == request.to_asset.chain() {
             return Err(SwapperError::NotSupportedPair);
         }
 
         let input_is_native = request.from_asset.is_native();
-        let from_chain = EVMChain::from_chain(request.from_asset.chain).ok_or(SwapperError::NotSupportedChain)?;
+        let from_chain = EVMChain::from_chain(request.from_asset.chain()).ok_or(SwapperError::NotSupportedChain)?;
         let from_amount: U256 = request.value.parse().map_err(SwapperError::from)?;
         let wallet_address = eth_address::parse_str(&request.wallet_address)?;
 
-        let _ = AcrossDeployment::deployment_by_chain(&request.from_asset.chain).ok_or(SwapperError::NotSupportedChain)?;
-        let destination_deployment = AcrossDeployment::deployment_by_chain(&request.to_asset.chain).ok_or(SwapperError::NotSupportedChain)?;
-        if !Self::is_supported_pair(&request.from_asset, &request.to_asset) {
+        let _ = AcrossDeployment::deployment_by_chain(&request.from_asset.chain()).ok_or(SwapperError::NotSupportedChain)?;
+        let destination_deployment = AcrossDeployment::deployment_by_chain(&request.to_asset.chain()).ok_or(SwapperError::NotSupportedChain)?;
+        if !Self::is_supported_pair(&request.from_asset.asset_id(), &request.to_asset.asset_id()) {
             return Err(SwapperError::NotSupportedPair);
         }
 
-        let input_asset = eth_address::normalize_weth_asset(&request.from_asset).ok_or(SwapperError::NotSupportedPair)?;
-        let output_asset = eth_address::normalize_weth_asset(&request.to_asset.clone()).ok_or(SwapperError::NotSupportedPair)?;
+        let input_asset = eth_address::normalize_weth_asset(&request.from_asset.asset_id()).ok_or(SwapperError::NotSupportedPair)?;
+        let output_asset = eth_address::normalize_weth_asset(&request.to_asset.asset_id()).ok_or(SwapperError::NotSupportedPair)?;
         let output_token = eth_address::parse_asset_id(&output_asset)?;
 
         // Get L1 token address
@@ -357,7 +357,7 @@ impl Swapper for Across {
         let util_after = hubpool_client.decoded_utilization_call3(&multicall_results[1])?;
         let timestamp = hubpool_client.decoded_current_time(&multicall_results[2])?;
 
-        let rate_model = Self::get_rate_model(&request.from_asset, &request.to_asset, &token_config);
+        let rate_model = Self::get_rate_model(&input_asset, &output_asset, &token_config);
         let cost_config = &asset_mapping.capital_cost;
 
         // Calculate lp fee
@@ -376,9 +376,9 @@ impl Swapper for Across {
 
         // Calculate gas limit / price for relayer
         let remain_amount = from_amount - lpfee - relayer_fee;
-        let (message, referral_fee) = self.message_for_multicall_handler(&remain_amount, &request.to_asset, &wallet_address, &output_token, &referral_config);
+        let (message, referral_fee) = self.message_for_multicall_handler(&remain_amount, &output_asset, &wallet_address, &output_token, &referral_config);
 
-        let gas_price_req = eth_rpc::fetch_gas_price(provider.clone(), &request.to_asset.chain);
+        let gas_price_req = eth_rpc::fetch_gas_price(provider.clone(), request.to_asset.chain());
         let gas_limit_req = self.estimate_gas_limit(
             &from_amount,
             input_is_native,
@@ -388,7 +388,7 @@ impl Swapper for Across {
             &message,
             &destination_deployment,
             provider.clone(),
-            &request.to_asset.chain,
+            request.to_asset.chain(),
         );
 
         let (tuple, gas_price) = futures::join!(gas_limit_req, gas_price_req);
@@ -413,7 +413,7 @@ impl Swapper for Across {
             &mut v3_relay_data,
             &wallet_address,
             &output_amount,
-            &request.to_asset,
+            &output_asset,
             &output_token,
             timestamp,
             &referral_config,
@@ -434,14 +434,14 @@ impl Swapper for Across {
                 }],
             },
             request: request.clone(),
-            eta_in_seconds: self.get_eta_in_seconds(&request.from_asset.chain, &request.to_asset.chain),
+            eta_in_seconds: self.get_eta_in_seconds(&request.from_asset.chain(), &request.to_asset.chain()),
         })
     }
 
     async fn fetch_quote_data(&self, quote: &SwapQuote, provider: Arc<dyn AlienProvider>, data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError> {
-        let from_chain = &quote.request.from_asset.chain;
-        let deployment = AcrossDeployment::deployment_by_chain(from_chain).ok_or(SwapperError::NotSupportedChain)?;
-        let dst_chain_id: u32 = quote.request.to_asset.chain.network_id().parse().unwrap();
+        let from_chain = quote.request.from_asset.chain();
+        let deployment = AcrossDeployment::deployment_by_chain(&from_chain).ok_or(SwapperError::NotSupportedChain)?;
+        let dst_chain_id: u32 = quote.request.to_asset.chain().network_id().parse().unwrap();
         let route = &quote.data.routes[0];
         let route_data = HexDecode(&route.route_data).map_err(|_| SwapperError::InvalidRoute)?;
         let v3_relay_data = V3RelayData::abi_decode(&route_data).map_err(|_| SwapperError::InvalidRoute)?;
@@ -475,7 +475,7 @@ impl Swapper for Across {
                     deployment.spoke_pool.into(),
                     v3_relay_data.inputAmount,
                     provider.clone(),
-                    from_chain,
+                    &from_chain,
                 )
                 .await?
                 .approval_data()
@@ -505,7 +505,7 @@ impl Swapper for Across {
     }
     async fn get_transaction_status(&self, chain: Chain, transaction_hash: &str, provider: Arc<dyn AlienProvider>) -> Result<bool, SwapperError> {
         let api = AcrossApi::new(provider.clone());
-        let status = api.deposit_status(&chain, transaction_hash).await?;
+        let status = api.deposit_status(chain, transaction_hash).await?;
         Ok(status.is_filled())
     }
 }

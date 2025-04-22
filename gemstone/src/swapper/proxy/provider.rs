@@ -6,19 +6,20 @@ use std::sync::Arc;
 use super::{
     client::ProxyClient,
     mayan::{MayanClientStatus, MayanExplorer},
-    model::{Quote, QuoteData, QuoteRequest},
 };
 use crate::{
-    config::swap_config::SwapReferralFee,
+    config::swap_config::DEFAULT_SWAP_FEE_BPS,
     network::AlienProvider,
     swapper::{
         approval::check_approval_erc20,
         models::{ApprovalData, ApprovalType, SwapChainAsset},
-        FetchQuoteData, GemSwapOptions, GemSwapProvider, SwapProviderData, SwapProviderType, SwapQuote, SwapQuoteData, SwapQuoteRequest, SwapRoute, Swapper,
-        SwapperError,
+        FetchQuoteData, GemSwapProvider, SwapProviderData, SwapProviderType, SwapQuote, SwapQuoteData, SwapQuoteRequest, SwapRoute, Swapper, SwapperError,
     },
 };
-use primitives::{Chain, ChainType};
+use primitives::{
+    swap::{Quote, QuoteData, QuoteRequest},
+    Chain, ChainType,
+};
 
 pub const PROVIDER_API_URL: &str = "https://api.gemwallet.com/swapper";
 const DEFAULT_GAS_LIMIT: u64 = 500000;
@@ -31,24 +32,6 @@ pub struct ProxyProvider {
 }
 
 impl ProxyProvider {
-    fn get_referrer(&self, chain: &Chain, options: &GemSwapOptions, provider: &GemSwapProvider) -> SwapReferralFee {
-        match provider {
-            // always use solana for Mayan, otherwise not supported chain error
-            GemSwapProvider::Mayan => {
-                return options.fee.as_ref().unwrap().solana.clone();
-            }
-            _ => {}
-        }
-
-        match chain.chain_type() {
-            ChainType::Ethereum => options.fee.as_ref().unwrap().evm.clone(),
-            ChainType::Solana => options.fee.as_ref().unwrap().solana.clone(),
-            ChainType::Ton => options.fee.as_ref().unwrap().ton.clone(),
-            ChainType::Sui => options.fee.as_ref().unwrap().sui.clone(),
-            _ => SwapReferralFee::default(),
-        }
-    }
-
     pub async fn check_approval(
         &self,
         quote: &SwapQuote,
@@ -58,15 +41,16 @@ impl ProxyProvider {
         let request = &quote.request;
         let from_asset = &request.from_asset;
 
-        if from_asset.chain.chain_type() != ChainType::Ethereum || from_asset.is_native() {
+        if from_asset.chain().chain_type() != ChainType::Ethereum || from_asset.is_native() {
             return Ok((None, None));
         }
 
+        let from_asset = from_asset.asset_id();
         let token = from_asset.token_id.clone().unwrap();
         let wallet_address = request.wallet_address.clone();
         let spender = quote_data.to.clone();
         let amount = U256::from_str(&quote.from_value).map_err(SwapperError::from)?;
-        let approval = check_approval_erc20(wallet_address, token, spender.to_string(), amount, provider, &request.from_asset.chain).await?;
+        let approval = check_approval_erc20(wallet_address, token, spender.to_string(), amount, provider, &from_asset.chain).await?;
 
         let gas_limit: Option<String> = if matches!(approval, ApprovalType::Approve(_)) {
             Some(DEFAULT_GAS_LIMIT.to_string())
@@ -90,16 +74,14 @@ impl Swapper for ProxyProvider {
 
     async fn fetch_quote(&self, request: &SwapQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapQuote, SwapperError> {
         let client = ProxyClient::new(provider);
-        let referrer = self.get_referrer(&request.from_asset.chain, &request.options, &self.provider.id);
         let quote_request = QuoteRequest {
             from_address: request.wallet_address.clone(),
-            from_asset: request.from_asset.to_string(),
             to_address: request.destination_address.clone(),
-            to_asset: request.to_asset.to_string(),
+            from_asset: request.from_asset.clone(),
+            to_asset: request.to_asset.clone(),
             from_value: request.value.clone(),
-            referral_address: referrer.address.clone(),
-            referral_bps: referrer.bps as usize,
-            slippage_bps: request.options.slippage.bps as usize,
+            referral_bps: DEFAULT_SWAP_FEE_BPS,
+            slippage_bps: request.options.slippage.bps,
         };
 
         let quote = client.get_quote(&self.url, quote_request.clone()).await?;
@@ -110,15 +92,15 @@ impl Swapper for ProxyProvider {
             data: SwapProviderData {
                 provider: self.provider().clone(),
                 routes: vec![SwapRoute {
-                    input: request.from_asset.clone(),
-                    output: request.to_asset.clone(),
+                    input: request.from_asset.asset_id(),
+                    output: request.to_asset.asset_id(),
                     route_data: serde_json::to_string(&quote).unwrap(),
                     gas_limit: None,
                 }],
                 slippage_bps: request.options.slippage.bps,
             },
             request: request.clone(),
-            eta_in_seconds: quote.eta_in_seconds,
+            eta_in_seconds: Some(quote.eta_in_seconds),
         })
     }
 
