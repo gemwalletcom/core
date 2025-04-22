@@ -291,12 +291,12 @@ impl Swapper for Across {
 
         let _ = AcrossDeployment::deployment_by_chain(&request.from_asset.chain()).ok_or(SwapperError::NotSupportedChain)?;
         let destination_deployment = AcrossDeployment::deployment_by_chain(&request.to_asset.chain()).ok_or(SwapperError::NotSupportedChain)?;
-        if !Self::is_supported_pair(&request.from_asset.id, &request.to_asset.id) {
+        if !Self::is_supported_pair(&request.from_asset.asset_id(), &request.to_asset.asset_id()) {
             return Err(SwapperError::NotSupportedPair);
         }
 
-        let input_asset = eth_address::normalize_weth_asset(&request.from_asset.id).ok_or(SwapperError::NotSupportedPair)?;
-        let output_asset = eth_address::normalize_weth_asset(&request.to_asset.id).ok_or(SwapperError::NotSupportedPair)?;
+        let input_asset = eth_address::normalize_weth_asset(&request.from_asset.asset_id()).ok_or(SwapperError::NotSupportedPair)?;
+        let output_asset = eth_address::normalize_weth_asset(&request.to_asset.asset_id()).ok_or(SwapperError::NotSupportedPair)?;
         let output_token = eth_address::parse_asset_id(&output_asset)?;
 
         // Get L1 token address
@@ -357,7 +357,7 @@ impl Swapper for Across {
         let util_after = hubpool_client.decoded_utilization_call3(&multicall_results[1])?;
         let timestamp = hubpool_client.decoded_current_time(&multicall_results[2])?;
 
-        let rate_model = Self::get_rate_model(&request.from_asset.id, &request.to_asset.id, &token_config);
+        let rate_model = Self::get_rate_model(&input_asset, &output_asset, &token_config);
         let cost_config = &asset_mapping.capital_cost;
 
         // Calculate lp fee
@@ -376,8 +376,7 @@ impl Swapper for Across {
 
         // Calculate gas limit / price for relayer
         let remain_amount = from_amount - lpfee - relayer_fee;
-        let (message, referral_fee) =
-            self.message_for_multicall_handler(&remain_amount, &request.to_asset.id, &wallet_address, &output_token, &referral_config);
+        let (message, referral_fee) = self.message_for_multicall_handler(&remain_amount, &output_asset, &wallet_address, &output_token, &referral_config);
 
         let gas_price_req = eth_rpc::fetch_gas_price(provider.clone(), request.to_asset.chain());
         let gas_limit_req = self.estimate_gas_limit(
@@ -414,7 +413,7 @@ impl Swapper for Across {
             &mut v3_relay_data,
             &wallet_address,
             &output_amount,
-            &request.to_asset.id,
+            &output_asset,
             &output_token,
             timestamp,
             &referral_config,

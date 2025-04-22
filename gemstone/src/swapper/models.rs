@@ -47,14 +47,14 @@ impl SwapProviderType {
         match self.id {
             GemSwapProvider::UniswapV3
             | GemSwapProvider::UniswapV4
-            | GemSwapProvider::PancakeSwapV3
-            | GemSwapProvider::PancakeSwapAptosV2
+            | GemSwapProvider::PancakeswapV3
+            | GemSwapProvider::PancakeswapAptosV2
             | GemSwapProvider::Orca
             | GemSwapProvider::Jupiter
             | GemSwapProvider::Oku
             | GemSwapProvider::Wagmi
             | GemSwapProvider::Cetus
-            | GemSwapProvider::StonFiV2
+            | GemSwapProvider::StonfiV2
             | GemSwapProvider::Reservoir
             | GemSwapProvider::Symbiosis => GemSwapProviderMode::OnChain,
             GemSwapProvider::Thorchain | GemSwapProvider::Mayan => GemSwapProviderMode::CrossChain,

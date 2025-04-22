@@ -192,8 +192,8 @@ mod tests {
             options: GemSwapOptions::default(),
         };
 
-        let token_in = eth_address::parse_str(request.from_asset.id.token_id.as_ref().unwrap()).unwrap();
-        let token_out = eth_address::parse_str(request.to_asset.id.token_id.as_ref().unwrap()).unwrap();
+        let token_in = eth_address::parse_str(request.from_asset.asset_id().token_id.as_ref().unwrap()).unwrap();
+        let token_out = eth_address::parse_str(request.to_asset.asset_id().token_id.as_ref().unwrap()).unwrap();
         let amount_in = U256::from_str(&request.value).unwrap();
 
         let permit2_data = Permit2Data {
@@ -252,8 +252,8 @@ mod tests {
             },
         };
 
-        let token_in = eth_address::parse_str(request.from_asset.id.token_id.as_ref().unwrap()).unwrap();
-        let token_out = eth_address::parse_str(request.to_asset.id.token_id.as_ref().unwrap()).unwrap();
+        let token_in = eth_address::parse_str(request.from_asset.asset_id().token_id.as_ref().unwrap()).unwrap();
+        let token_out = eth_address::parse_str(request.to_asset.asset_id().token_id.as_ref().unwrap()).unwrap();
         let amount_in = U256::from_str(&request.value).unwrap();
 
         let path = build_direct_pair(&token_in, &token_out, FeeTier::FiveHundred);
@@ -295,14 +295,14 @@ mod tests {
             },
         };
 
-        let token_in = eth_address::parse_str(request.from_asset.id.token_id.as_ref().unwrap()).unwrap();
+        let token_in = eth_address::parse_str(request.from_asset.asset_id().token_id.as_ref().unwrap()).unwrap();
         let token_out = eth_address::parse_str("0x4200000000000000000000000000000000000006").unwrap();
         let amount_in = U256::from_str(&request.value).unwrap();
 
         let permit2_data = Permit2Data {
             permit_single: PermitSingle {
                 details: Permit2Detail {
-                    token: request.from_asset.id.token_id.clone().unwrap(),
+                    token: request.from_asset.asset_id().token_id.clone().unwrap(),
                     amount: "1461501637330902918203684832716283019655932542975".into(),
                     expiration: 1732667502,
                     nonce: 0,
@@ -359,7 +359,7 @@ mod tests {
         };
 
         let token_in = eth_address::parse_str("0x4200000000000000000000000000000000000006").unwrap();
-        let token_out = eth_address::parse_str(&request.to_asset.id.token_id.clone().unwrap()).unwrap();
+        let token_out = eth_address::parse_str(&request.to_asset.asset_id().token_id.unwrap()).unwrap();
         let amount_in = U256::from_str(request.value.as_str()).unwrap();
 
         let path = build_direct_pair(&token_in, &token_out, FeeTier::ThreeThousand);

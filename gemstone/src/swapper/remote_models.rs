@@ -1,5 +1,3 @@
-use primitives::AssetId;
-
 pub type GemSwapProvider = primitives::SwapProvider;
 pub type GemSwapProviderMode = primitives::swap::SwapProviderMode;
 pub type GemQuoteAsset = primitives::swap::QuoteAsset;
@@ -11,8 +9,8 @@ pub type GemSlippageMode = primitives::swap::SlippageMode;
 pub enum GemSwapProvider {
     UniswapV3,
     UniswapV4,
-    PancakeSwapV3,
-    PancakeSwapAptosV2,
+    PancakeswapV3,
+    PancakeswapAptosV2,
     Thorchain,
     Orca,
     Jupiter,
@@ -20,7 +18,7 @@ pub enum GemSwapProvider {
     Oku,
     Wagmi,
     Cetus,
-    StonFiV2,
+    StonfiV2,
     Mayan,
     Reservoir,
     Symbiosis,
@@ -53,8 +51,7 @@ pub enum GemSlippageMode {
 
 #[uniffi::remote(Record)]
 pub struct GemQuoteAsset {
-    pub id: AssetId,
-    pub asset_id: String,
+    pub id: String,
     pub symbol: String,
     pub decimals: u32,
 }

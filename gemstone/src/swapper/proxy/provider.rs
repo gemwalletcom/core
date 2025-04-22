@@ -17,7 +17,7 @@ use crate::{
     },
 };
 use primitives::{
-    swap::{Quote, QuoteData, QuoteRequest, ReferralAddress, ReferralInfo},
+    swap::{Quote, QuoteData, QuoteRequest},
     Chain, ChainType,
 };
 
@@ -45,7 +45,7 @@ impl ProxyProvider {
             return Ok((None, None));
         }
 
-        let token = from_asset.id.token_id.clone().unwrap();
+        let token = from_asset.asset_id().token_id.clone().unwrap();
         let wallet_address = request.wallet_address.clone();
         let spender = quote_data.to.clone();
         let amount = U256::from_str(&quote.from_value).map_err(SwapperError::from)?;
@@ -73,23 +73,13 @@ impl Swapper for ProxyProvider {
 
     async fn fetch_quote(&self, request: &SwapQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapQuote, SwapperError> {
         let client = ProxyClient::new(provider);
-        let referral = request.options.fee.clone().unwrap_or_default();
         let quote_request = QuoteRequest {
             from_address: request.wallet_address.clone(),
             to_address: request.destination_address.clone(),
             from_asset: request.from_asset.clone(),
             to_asset: request.to_asset.clone(),
             from_value: request.value.clone(),
-            referral: ReferralInfo {
-                address: ReferralAddress {
-                    evm: referral.evm.address.clone(),
-                    solana: referral.solana.address.clone(),
-                    sui: referral.sui.address.clone(),
-                    ton: referral.ton.address.clone(),
-                    tron: referral.tron.address.clone(),
-                },
-                bps: DEFAULT_SWAP_FEE_BPS,
-            },
+            referral_bps: DEFAULT_SWAP_FEE_BPS,
             slippage_bps: request.options.slippage.bps,
         };
 
@@ -101,8 +91,8 @@ impl Swapper for ProxyProvider {
             data: SwapProviderData {
                 provider: self.provider().clone(),
                 routes: vec![SwapRoute {
-                    input: request.from_asset.id.clone(),
-                    output: request.to_asset.id.clone(),
+                    input: request.from_asset.asset_id(),
+                    output: request.to_asset.asset_id(),
                     route_data: serde_json::to_string(&quote).unwrap(),
                     gas_limit: None,
                 }],

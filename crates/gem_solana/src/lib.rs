@@ -32,9 +32,14 @@ pub fn get_token_program_id_by_address(address: &str) -> Option<SolanaTokenProgr
     }
 }
 
-pub fn get_asset_address(asset_id: &AssetId) -> Option<Pubkey> {
+pub fn get_pubkey_by_asset(asset_id: &AssetId) -> Option<Pubkey> {
     match &asset_id.token_id {
         Some(token_id) => Pubkey::from_str(token_id).ok(),
         None => Pubkey::from_str(WSOL_TOKEN_ADDRESS).ok(),
     }
+}
+
+pub fn get_pubkey_by_str(asset_id: &str) -> Option<Pubkey> {
+    let asset_id = AssetId::new(asset_id)?;
+    get_pubkey_by_asset(&asset_id)
 }

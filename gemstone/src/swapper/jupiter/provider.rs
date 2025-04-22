@@ -7,7 +7,7 @@ use crate::{
 use alloy_primitives::U256;
 use async_trait::async_trait;
 use gem_solana::{
-    get_asset_address,
+    get_pubkey_by_str,
     jsonrpc::{AccountData, SolanaRpc, ValueResult},
     USDC_TOKEN_MINT, USDT_TOKEN_MINT, WSOL_TOKEN_ADDRESS,
 };
@@ -34,8 +34,8 @@ impl Jupiter {
         "https://quote-api.jup.ag".into()
     }
 
-    pub fn get_asset_address(&self, asset_id: &AssetId) -> Result<String, SwapperError> {
-        get_asset_address(asset_id)
+    pub fn get_asset_address(&self, asset_id: &str) -> Result<String, SwapperError> {
+        get_pubkey_by_str(asset_id)
             .map(|x| x.to_string())
             .ok_or(SwapperError::InvalidAddress(asset_id.to_string()))
     }

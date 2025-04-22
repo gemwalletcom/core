@@ -5,7 +5,7 @@ use crate::{
 };
 use async_trait::async_trait;
 use gem_solana::{
-    get_asset_address,
+    get_pubkey_by_str,
     jsonrpc::{AccountData, Filter, Memcmp, SolanaRpc, ValueResult, ENCODING_BASE58},
     pubkey::Pubkey,
 };
@@ -64,8 +64,8 @@ impl Swapper for Orca {
         let slippage_bps = options.slippage.bps as u16;
         let fee_bps = options.fee.unwrap_or_default().solana.bps;
 
-        let from_asset = get_asset_address(&request.from_asset.id).ok_or(SwapperError::InvalidAddress(request.from_asset.id.to_string()))?;
-        let to_asset = get_asset_address(&request.to_asset.id).ok_or(SwapperError::InvalidAddress(request.to_asset.id.to_string()))?;
+        let from_asset = get_pubkey_by_str(&request.from_asset.id).ok_or(SwapperError::NotSupportedAsset)?;
+        let to_asset = get_pubkey_by_str(&request.to_asset.id).ok_or(SwapperError::NotSupportedAsset)?;
         let fee_tiers = self.fetch_fee_tiers(provider.clone()).await?;
         let mut pools = self
             .fetch_whirlpools(&from_asset, &to_asset, fee_tiers, provider.clone(), request.from_asset.chain())
@@ -99,8 +99,8 @@ impl Swapper for Orca {
             data: SwapProviderData {
                 provider: self.provider().clone(),
                 routes: vec![SwapRoute {
-                    input: request.from_asset.id.clone(),
-                    output: request.to_asset.id.clone(),
+                    input: request.from_asset.asset_id(),
+                    output: request.to_asset.asset_id(),
                     route_data: pool.fee_rate.to_string(),
                     gas_limit: None,
                 }],

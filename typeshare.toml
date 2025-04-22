@@ -25,3 +25,4 @@ prefix = ''
 "Value" = "object"
 "BigInt" = "BigInteger"
 "NaiveDateTime" = "Date"
+"AssetId" = "string"

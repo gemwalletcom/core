@@ -40,8 +40,9 @@ impl UniswapV3 {
         self.provider.get_deployment_by_chain(chain).is_some()
     }
 
-    fn get_asset_address(asset: &AssetId, evm_chain: EVMChain) -> Result<Address, SwapperError> {
-        eth_address::normalize_weth_address(asset, evm_chain)
+    fn get_asset_address(asset: &str, evm_chain: EVMChain) -> Result<Address, SwapperError> {
+        let asset_id = AssetId::new(asset).ok_or(SwapperError::NotSupportedAsset)?;
+        eth_address::normalize_weth_address(&asset_id, evm_chain)
     }
 
     fn parse_request(request: &SwapQuoteRequest) -> Result<(EVMChain, Address, Address, U256), SwapperError> {

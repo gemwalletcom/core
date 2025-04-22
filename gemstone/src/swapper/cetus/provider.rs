@@ -150,8 +150,8 @@ impl Swapper for Cetus {
     }
 
     async fn fetch_quote(&self, request: &SwapQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapQuote, SwapperError> {
-        let from_coin = Self::get_coin_address(&request.from_asset.id);
-        let to_coin = Self::get_coin_address(&request.to_asset.id);
+        let from_coin = Self::get_coin_address(&request.from_asset.asset_id());
+        let to_coin = Self::get_coin_address(&request.to_asset.asset_id());
         let amount_in = BigInt::from_str(&request.value).map_err(SwapperError::from)?;
 
         let pools = self.fetch_pools_by_coins(&from_coin, &to_coin, provider.clone()).await?;

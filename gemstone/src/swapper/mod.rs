@@ -246,7 +246,7 @@ mod tests {
     fn test_filter_by_provider_type() {
         let providers = [
             GemSwapProvider::UniswapV3,
-            GemSwapProvider::PancakeSwapV3,
+            GemSwapProvider::PancakeswapV3,
             GemSwapProvider::Jupiter,
             GemSwapProvider::Thorchain,
         ];
@@ -293,7 +293,7 @@ mod tests {
         assert_eq!(filtered.len(), 2);
         assert_eq!(
             filtered.iter().map(|x| x.provider().id).collect::<BTreeSet<_>>(),
-            BTreeSet::from([GemSwapProvider::UniswapV3, GemSwapProvider::PancakeSwapV3])
+            BTreeSet::from([GemSwapProvider::UniswapV3, GemSwapProvider::PancakeswapV3])
         );
 
         let from_chain = Chain::Solana;
