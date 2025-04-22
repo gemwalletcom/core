@@ -13,7 +13,7 @@ pub struct PancakeSwapUniversalRouter {
 impl Default for PancakeSwapUniversalRouter {
     fn default() -> Self {
         Self {
-            provider: SwapProviderType::new(GemSwapProvider::PancakeSwapV3),
+            provider: SwapProviderType::new(GemSwapProvider::PancakeswapV3),
         }
     }
 }

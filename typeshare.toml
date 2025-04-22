@@ -23,3 +23,6 @@ prefix = ''
 "DateTime" = "Date"
 "Data" = "Uint8Array"
 "Value" = "object"
+"BigInt" = "BigInteger"
+"NaiveDateTime" = "Date"
+"AssetId" = "string"

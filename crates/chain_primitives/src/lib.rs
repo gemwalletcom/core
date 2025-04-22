@@ -29,7 +29,14 @@ pub fn format_token_id(chain: Chain, token_id: String) -> Option<String> {
         | Chain::Monad => ethereum_address_checksum(&token_id).ok(),
         Chain::Solana | Chain::Ton | Chain::Near => Some(token_id),
         Chain::Tron => (token_id.len() == 34 && token_id.starts_with('T')).then_some(token_id),
-        Chain::Xrp => token_id.starts_with('r').then_some(token_id),
+        Chain::Xrp => {
+            if let Some((_, addr)) = token_id.split_once('.') {
+                if addr.starts_with('r') {
+                    return Some(addr.to_string());
+                }
+            }
+            token_id.starts_with('r').then_some(token_id)
+        }
         Chain::Algorand => token_id.parse::<i32>().ok().map(|token_id| token_id.to_string()),
         Chain::Sui => (token_id.len() >= 64 && token_id.starts_with("0x")).then_some(token_id),
         Chain::Stellar => (token_id.len() == 56 && token_id.starts_with('G')).then_some(token_id),
@@ -52,6 +59,7 @@ pub fn format_token_id(chain: Chain, token_id: String) -> Option<String> {
 
 #[cfg(test)]
 mod tests {
+
     use super::*;
 
     #[test]
@@ -86,5 +94,19 @@ mod tests {
 
         assert_eq!(format_token_id(chain, "1234567890123456789012345678901234".to_string()), None);
         assert_eq!(format_token_id(chain, "T123".to_string()), None);
+    }
+
+    #[test]
+    fn test_format_token_id_xrp() {
+        let chain = Chain::Xrp;
+
+        assert_eq!(
+            format_token_id(chain, "534F4C4F00000000000000000000000000000000.rsoLo2S1kiGeCcn6hCUXVrCpGMWLrRrLZz".to_string()),
+            Some("rsoLo2S1kiGeCcn6hCUXVrCpGMWLrRrLZz".to_string())
+        );
+        assert_eq!(
+            format_token_id(chain, "rsoLo2S1kiGeCcn6hCUXVrCpGMWLrRrLZz".to_string()),
+            Some("rsoLo2S1kiGeCcn6hCUXVrCpGMWLrRrLZz".to_string())
+        );
     }
 }

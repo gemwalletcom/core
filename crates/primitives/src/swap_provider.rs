@@ -5,13 +5,13 @@ use typeshare::typeshare;
 
 #[derive(Debug, Copy, Clone, PartialEq, AsRefStr, EnumString, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Sendable")]
-#[serde(rename_all = "lowercase")]
-#[strum(serialize_all = "lowercase")]
+#[serde(rename_all = "snake_case")]
+#[strum(serialize_all = "snake_case")]
 pub enum SwapProvider {
     UniswapV3,
     UniswapV4,
-    PancakeSwapV3,
-    PancakeSwapAptosV2,
+    PancakeswapV3,
+    PancakeswapAptosV2,
     Thorchain,
     Orca,
     Jupiter,
@@ -19,9 +19,10 @@ pub enum SwapProvider {
     Oku,
     Wagmi,
     Cetus,
-    StonFiV2,
+    StonfiV2,
     Mayan,
     Reservoir,
+    Symbiosis,
 }
 
 impl SwapProvider {
@@ -32,7 +33,7 @@ impl SwapProvider {
     pub fn name(&self) -> &str {
         match self {
             Self::UniswapV3 | Self::UniswapV4 => "Uniswap",
-            Self::PancakeSwapV3 | Self::PancakeSwapAptosV2 => "PancakeSwap",
+            Self::PancakeswapV3 | Self::PancakeswapAptosV2 => "PancakeSwap",
             Self::Thorchain => "THORChain",
             Self::Orca => "Orca",
             Self::Jupiter => "Jupiter",
@@ -40,9 +41,10 @@ impl SwapProvider {
             Self::Oku => "Oku",
             Self::Wagmi => "Wagmi",
             Self::Cetus => "Cetus",
-            Self::StonFiV2 => "STON.fi",
+            Self::StonfiV2 => "STON.fi",
             Self::Mayan => "Mayan",
             Self::Reservoir => "Reservoir",
+            Self::Symbiosis => "Symbiosis",
         }
     }
 
@@ -50,13 +52,14 @@ impl SwapProvider {
         match self {
             Self::UniswapV3 => "Uniswap v3",
             Self::UniswapV4 => "Uniswap v4",
-            Self::PancakeSwapV3 => "PancakeSwap v3",
-            Self::PancakeSwapAptosV2 => "PancakeSwap v2",
+            Self::PancakeswapV3 => "PancakeSwap v3",
+            Self::PancakeswapAptosV2 => "PancakeSwap v2",
             Self::Orca => "Orca Whirlpool",
             Self::Across => "Across v3",
             Self::Oku => "Oku",
-            Self::StonFiV2 => "STON.fi v2",
+            Self::StonfiV2 => "STON.fi v2",
             Self::Thorchain | Self::Jupiter | Self::Wagmi | Self::Cetus | Self::Mayan | Self::Reservoir => self.name(),
+            Self::Symbiosis => "Symbiosis",
         }
     }
 }

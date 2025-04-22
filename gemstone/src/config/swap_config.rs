@@ -1,7 +1,9 @@
-use crate::swapper::{GemSlippage, SlippageMode};
+use crate::swapper::{GemSlippage, GemSlippageMode};
 use primitives::Chain;
 
 pub static DEFAULT_SLIPPAGE_BPS: u32 = 100;
+pub static DEFAULT_SWAP_FEE_BPS: u32 = 50;
+pub static DEFAULT_BRIDGE_FEE_BPS: u32 = 25;
 
 #[derive(uniffi::Record, Debug, Clone, PartialEq)]
 pub struct SwapConfig {
@@ -9,6 +11,7 @@ pub struct SwapConfig {
     pub permit2_expiration: u64,
     pub permit2_sig_deadline: u64,
     pub referral_fee: SwapReferralFees,
+    pub high_price_impact_percent: u32,
 }
 
 #[derive(uniffi::Record, Default, Debug, Clone, PartialEq)]
@@ -19,6 +22,7 @@ pub struct SwapReferralFees {
     pub thorchain: SwapReferralFee,
     pub sui: SwapReferralFee,
     pub ton: SwapReferralFee,
+    pub tron: SwapReferralFee,
 }
 
 #[derive(uniffi::Record, Default, Debug, Clone, PartialEq)]
@@ -36,6 +40,7 @@ impl SwapReferralFees {
             thorchain: SwapReferralFee::default(),
             sui: SwapReferralFee::default(),
             ton: SwapReferralFee::default(),
+            tron: SwapReferralFee::default(),
         }
     }
 }
@@ -44,33 +49,41 @@ pub fn get_swap_config() -> SwapConfig {
     SwapConfig {
         default_slippage: GemSlippage {
             bps: DEFAULT_SLIPPAGE_BPS,
-            mode: SlippageMode::Exact,
+            mode: GemSlippageMode::Exact,
         },
         permit2_expiration: 60 * 60 * 24 * 30, // 30 days
         permit2_sig_deadline: 60 * 30,         // 30 minutes
         referral_fee: SwapReferralFees {
             evm: SwapReferralFee {
                 address: "0x0D9DAB1A248f63B0a48965bA8435e4de7497a3dC".into(),
-                bps: 50,
+                bps: DEFAULT_SWAP_FEE_BPS,
             },
             evm_bridge: SwapReferralFee {
                 address: "0x0D9DAB1A248f63B0a48965bA8435e4de7497a3dC".into(),
-                bps: 25,
+                bps: DEFAULT_BRIDGE_FEE_BPS,
             },
             solana: SwapReferralFee {
                 address: "5fmLrs2GuhfDP1B51ziV5Kd1xtAr9rw1jf3aQ4ihZ2gy".into(),
-                bps: 50,
+                bps: DEFAULT_SWAP_FEE_BPS,
             },
-            thorchain: SwapReferralFee { address: "g1".into(), bps: 50 },
+            thorchain: SwapReferralFee {
+                address: "g1".into(),
+                bps: DEFAULT_SWAP_FEE_BPS,
+            },
             sui: SwapReferralFee {
                 address: "0x9d6b98b18fd26b5efeec68d020dcf1be7a94c2c315353779bc6b3aed44188ddf".into(),
-                bps: 50,
+                bps: DEFAULT_SWAP_FEE_BPS,
             },
             ton: SwapReferralFee {
                 address: "UQDxJKarPSp0bCta9DFgp81Mpt5hpGbuVcSxwfeza0Bin201".into(),
-                bps: 50,
+                bps: DEFAULT_SWAP_FEE_BPS,
+            },
+            tron: SwapReferralFee {
+                address: "TA7mCjHFfo68FG3wc6pDCeRGbJSPZkBfL7".into(),
+                bps: DEFAULT_SWAP_FEE_BPS,
             },
         },
+        high_price_impact_percent: 10,
     }
 }
 
@@ -79,11 +92,11 @@ pub fn get_default_slippage(chain: &Chain) -> GemSlippage {
     match chain {
         Chain::Solana => GemSlippage {
             bps: DEFAULT_SLIPPAGE_BPS * 3,
-            mode: SlippageMode::Auto,
+            mode: GemSlippageMode::Auto,
         },
         _ => GemSlippage {
             bps: DEFAULT_SLIPPAGE_BPS,
-            mode: SlippageMode::Exact,
+            mode: GemSlippageMode::Exact,
         },
     }
 }

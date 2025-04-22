@@ -5,9 +5,17 @@ use super::provider::{ProxyProvider, PROVIDER_API_URL};
 
 pub fn new_stonfi_v2() -> ProxyProvider {
     ProxyProvider {
-        provider: SwapProviderType::new(GemSwapProvider::StonFiV2),
+        provider: SwapProviderType::new(GemSwapProvider::StonfiV2),
         url: format!("{}/{}", PROVIDER_API_URL, "stonfi_v2"),
         assets: vec![SwapChainAsset::All(Chain::Ton)],
+    }
+}
+
+pub fn new_symbiosis() -> ProxyProvider {
+    ProxyProvider {
+        provider: SwapProviderType::new(GemSwapProvider::Symbiosis),
+        url: format!("{}/{}", PROVIDER_API_URL, "symbiosis"),
+        assets: vec![SwapChainAsset::All(Chain::Tron)],
     }
 }
 
