@@ -68,7 +68,6 @@ public extension GemQuoteAsset {
     init(id: String, decimals: UInt32) {
         self.init(
             id: id,
-            assetId: id,
             symbol: "",
             decimals: decimals
         )
