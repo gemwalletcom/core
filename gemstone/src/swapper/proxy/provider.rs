@@ -45,11 +45,12 @@ impl ProxyProvider {
             return Ok((None, None));
         }
 
-        let token = from_asset.asset_id().token_id.clone().unwrap();
+        let from_asset = from_asset.asset_id();
+        let token = from_asset.token_id.clone().unwrap();
         let wallet_address = request.wallet_address.clone();
         let spender = quote_data.to.clone();
         let amount = U256::from_str(&quote.from_value).map_err(SwapperError::from)?;
-        let approval = check_approval_erc20(wallet_address, token, spender.to_string(), amount, provider, &request.from_asset.chain()).await?;
+        let approval = check_approval_erc20(wallet_address, token, spender.to_string(), amount, provider, &from_asset.chain).await?;
 
         let gas_limit: Option<String> = if matches!(approval, ApprovalType::Approve(_)) {
             Some(DEFAULT_GAS_LIMIT.to_string())

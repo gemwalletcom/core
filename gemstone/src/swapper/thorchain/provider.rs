@@ -103,8 +103,8 @@ impl Swapper for ThorChain {
             data: SwapProviderData {
                 provider: self.provider().clone(),
                 routes: vec![SwapRoute {
-                    input: request.from_asset.asset_id().clone(),
-                    output: request.to_asset.asset_id().clone(),
+                    input: request.from_asset.asset_id(),
+                    output: request.to_asset.asset_id(),
                     route_data: serde_json::to_string(&route_data).unwrap_or_default(),
                     gas_limit: None,
                 }],

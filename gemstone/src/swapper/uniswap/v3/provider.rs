@@ -40,8 +40,8 @@ impl UniswapV3 {
         self.provider.get_deployment_by_chain(chain).is_some()
     }
 
-    fn get_asset_address(asset: &str, evm_chain: EVMChain) -> Result<Address, SwapperError> {
-        let asset_id = AssetId::new(asset).ok_or(SwapperError::NotSupportedAsset)?;
+    fn get_asset_address(asset_id: &str, evm_chain: EVMChain) -> Result<Address, SwapperError> {
+        let asset_id = AssetId::new(asset_id).ok_or(SwapperError::NotSupportedAsset)?;
         eth_address::normalize_weth_address(&asset_id, evm_chain)
     }
 
@@ -111,6 +111,7 @@ impl Swapper for UniswapV3 {
 
     async fn fetch_quote(&self, request: &SwapQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapQuote, SwapperError> {
         let from_chain = request.from_asset.chain();
+        let to_chain = request.to_asset.chain();
         // Check deployment and weth contract
         let deployment = self.provider.get_deployment_by_chain(&from_chain).ok_or(SwapperError::NotSupportedChain)?;
         let (evm_chain, token_in, token_out, from_value) = Self::parse_request(request)?;
@@ -174,15 +175,15 @@ impl Swapper for UniswapV3 {
 
         // construct routes
         let fee_tier: u32 = fee_tiers[fee_tier_idx % fee_tiers.len()] as u32;
-        let asset_id_in = AssetId::from(request.from_asset.chain(), Some(token_in.to_checksum(None)));
-        let asset_id_out = AssetId::from(request.to_asset.chain(), Some(token_out.to_checksum(None)));
+        let asset_id_in = AssetId::from(from_chain, Some(token_in.to_checksum(None)));
+        let asset_id_out = AssetId::from(to_chain, Some(token_out.to_checksum(None)));
         let asset_id_intermediary: Option<AssetId> = match batch_idx {
             // direct route
             0 => None,
             // 2 hop route with intermediary token
             _ => {
                 let first_token_out = &paths_array[batch_idx][0].0[0].token_out;
-                Some(AssetId::from(request.to_asset.chain(), Some(first_token_out.to_checksum(None))))
+                Some(AssetId::from(to_chain, Some(first_token_out.to_checksum(None))))
             }
         };
         let route_data = RouteData {
@@ -205,28 +206,21 @@ impl Swapper for UniswapV3 {
     }
 
     async fn fetch_permit2_for_quote(&self, quote: &SwapQuote, provider: Arc<dyn AlienProvider>) -> Result<Option<Permit2ApprovalData>, SwapperError> {
-        if quote.request.from_asset.is_native() {
+        let from_asset = quote.request.from_asset.asset_id();
+        if from_asset.is_native() {
             return Ok(None);
         }
         let wallet_address = eth_address::parse_str(&quote.request.wallet_address)?;
         let (_, token_in, _, amount_in) = Self::parse_request(&quote.request)?;
-        self.check_permit2_approval(
-            wallet_address,
-            &token_in.to_checksum(None),
-            amount_in,
-            &quote.request.from_asset.chain(),
-            provider,
-        )
-        .await
+        self.check_permit2_approval(wallet_address, &token_in.to_checksum(None), amount_in, &from_asset.chain, provider)
+            .await
     }
 
     async fn fetch_quote_data(&self, quote: &SwapQuote, provider: Arc<dyn AlienProvider>, data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError> {
         let request = &quote.request;
+        let from_chain = request.from_asset.chain();
         let (_, token_in, token_out, amount_in) = Self::parse_request(request)?;
-        let deployment = self
-            .provider
-            .get_deployment_by_chain(&request.from_asset.chain())
-            .ok_or(SwapperError::NotSupportedChain)?;
+        let deployment = self.provider.get_deployment_by_chain(&from_chain).ok_or(SwapperError::NotSupportedChain)?;
 
         let route_data: RouteData = serde_json::from_str(&quote.data.routes.first().unwrap().route_data).map_err(|_| SwapperError::InvalidRoute)?;
         let to_amount = U256::from_str(&route_data.min_amount_out).map_err(SwapperError::from)?;
@@ -239,7 +233,7 @@ impl Swapper for UniswapV3 {
             None
         } else {
             // Check if need to approve permit2 contract
-            self.check_erc20_approval(wallet_address, &token_in.to_checksum(None), amount_in, &request.from_asset.chain(), provider)
+            self.check_erc20_approval(wallet_address, &token_in.to_checksum(None), amount_in, &from_chain, provider)
                 .await?
                 .approval_data()
         };
@@ -249,7 +243,7 @@ impl Swapper for UniswapV3 {
 
         let sig_deadline = get_sig_deadline();
 
-        let evm_chain = EVMChain::from_chain(quote.request.from_asset.chain()).ok_or(SwapperError::NotSupportedChain)?;
+        let evm_chain = EVMChain::from_chain(from_chain).ok_or(SwapperError::NotSupportedChain)?;
         let base_pair = get_base_pair(&evm_chain, true);
         let fee_preference = get_fee_token(&request.mode, base_pair.as_ref(), &token_in, &token_out);
 
