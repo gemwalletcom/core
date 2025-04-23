@@ -11,7 +11,7 @@ use crate::{
     config::swap_config::DEFAULT_SWAP_FEE_BPS,
     network::AlienProvider,
     swapper::{
-        approval::check_approval_erc20,
+        approval::{evm::check_approval_erc20, tron::check_approval_tron},
         models::{ApprovalData, ApprovalType, SwapChainAsset},
         FetchQuoteData, GemSwapProvider, SwapProviderData, SwapProviderType, SwapQuote, SwapQuoteData, SwapQuoteRequest, SwapRoute, Swapper, SwapperError,
     },
@@ -23,6 +23,7 @@ use primitives::{
 
 pub const PROVIDER_API_URL: &str = "https://api.gemwallet.com/swapper";
 const DEFAULT_GAS_LIMIT: u64 = 500000;
+const DEFAULT_TRON_FEE_LIMIT: u64 = 150000000;
 
 #[derive(Debug)]
 pub struct ProxyProvider {
@@ -40,22 +41,44 @@ impl ProxyProvider {
     ) -> Result<(Option<ApprovalData>, Option<String>), SwapperError> {
         let request = &quote.request;
         let from_asset = &request.from_asset;
+        let chain = from_asset.chain();
+        let chain_type = chain.chain_type();
 
-        if from_asset.chain().chain_type() != ChainType::Ethereum || from_asset.is_native() {
+        if from_asset.is_native() {
             return Ok((None, None));
         }
 
-        let from_asset = from_asset.asset_id();
-        let token = from_asset.token_id.clone().unwrap();
+        let token = match from_asset.asset_id().token_id {
+            Some(id) => id,
+            None => return Ok((None, None)), // Should not happen if not native
+        };
         let wallet_address = request.wallet_address.clone();
         let spender = quote_data.to.clone();
         let amount = U256::from_str(&quote.from_value).map_err(SwapperError::from)?;
-        let approval = check_approval_erc20(wallet_address, token, spender.to_string(), amount, provider, &from_asset.chain).await?;
 
-        let gas_limit: Option<String> = if matches!(approval, ApprovalType::Approve(_)) {
-            Some(DEFAULT_GAS_LIMIT.to_string())
-        } else {
-            None
+        let (approval, gas_limit) = match chain_type {
+            ChainType::Ethereum => {
+                let approval = check_approval_erc20(wallet_address, token, spender, amount, provider, &chain).await?;
+                let gas_limit = if matches!(approval, ApprovalType::Approve(_)) {
+                    Some(DEFAULT_GAS_LIMIT.to_string())
+                } else {
+                    None
+                };
+                (approval, gas_limit)
+            }
+            ChainType::Tron => {
+                let route_data = quote.data.routes.first().map(|r| r.route_data.clone()).ok_or(SwapperError::InvalidRoute)?;
+                let route_json: serde_json::Value = serde_json::from_str(&route_data).map_err(|_| SwapperError::InvalidRoute)?;
+                let spender = route_json["approveTo"].as_str().ok_or(SwapperError::InvalidRoute)?;
+                let approval = check_approval_tron(&wallet_address, &token, spender, amount, provider, &chain).await?;
+                let gas_limit: Option<String> = if matches!(approval, ApprovalType::Approve(_)) {
+                    Some(DEFAULT_TRON_FEE_LIMIT.to_string())
+                } else {
+                    None
+                };
+                (approval, gas_limit)
+            }
+            _ => (ApprovalType::None, None),
         };
 
         Ok((approval.approval_data(), gas_limit))

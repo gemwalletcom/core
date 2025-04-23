@@ -2458,6 +2458,7 @@ dependencies = [
  "bcs",
  "bigdecimal",
  "borsh",
+ "bs58",
  "futures",
  "gem_aptos",
  "gem_bsc",
