@@ -45,7 +45,7 @@ impl ProxyProvider {
         let chain_type = chain.chain_type();
 
         if from_asset.is_native() {
-            return Ok((None, None));
+            return Ok((None, quote_data.limit.clone()));
         }
 
         let token = match from_asset.asset_id().token_id {
@@ -71,11 +71,7 @@ impl ProxyProvider {
                 let route_json: serde_json::Value = serde_json::from_str(&route_data).map_err(|_| SwapperError::InvalidRoute)?;
                 let spender = route_json["approveTo"].as_str().ok_or(SwapperError::InvalidRoute)?;
                 let approval = check_approval_tron(&wallet_address, &token, spender, amount, provider, &chain).await?;
-                let gas_limit: Option<String> = if matches!(approval, ApprovalType::Approve(_)) {
-                    Some(DEFAULT_TRON_FEE_LIMIT.to_string())
-                } else {
-                    None
-                };
+                let gas_limit = quote_data.limit.clone();
                 (approval, gas_limit)
             }
             _ => (ApprovalType::None, None),
