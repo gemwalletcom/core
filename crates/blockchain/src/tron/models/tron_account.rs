@@ -26,8 +26,8 @@ struct TronAccountPermission {
 struct TronAccountUsage {
     free_net_used: Option<i32>,
     free_net_limit: Option<i32>,
-    energy_used: Option<u64>,
-    energy_limit: Option<u64>,
+    energy_used: Option<UInt64>,
+    energy_limit: Option<UInt64>,
 }
 
 #[typeshare(swift = "Sendable")]
