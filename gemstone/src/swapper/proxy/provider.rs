@@ -23,7 +23,6 @@ use primitives::{
 
 pub const PROVIDER_API_URL: &str = "https://api.gemwallet.com/swapper";
 const DEFAULT_GAS_LIMIT: u64 = 500000;
-const DEFAULT_TRON_FEE_LIMIT: u64 = 150000000;
 
 #[derive(Debug)]
 pub struct ProxyProvider {
