@@ -4,6 +4,7 @@ use serde::Deserialize;
 pub struct TronGridResponse {
     pub result: TronGridResult,
     pub energy_used: u64,
+    pub energy_penalty: u64,
     pub constant_result: Vec<String>,
 }
 

@@ -54,7 +54,7 @@ impl TronGridClient {
         }
     }
 
-    pub async fn estimate_tron_energy(
+    pub async fn estimate_energy(
         &self,
         owner_address: &str,
         contract_address: &str,
@@ -70,7 +70,8 @@ impl TronGridClient {
                 "function_selector": function_selector,
                 "parameter": parameter,
                 "fee_limit": fee_limit,
-                "call_value": call_value.parse::<u64>().unwrap_or_default()
+                "call_value": call_value.parse::<u64>().unwrap_or_default(),
+                "visible": true
             }
         );
 
@@ -81,17 +82,18 @@ impl TronGridClient {
 
         let response: TronGridResponse = serde_json::from_slice(&data).map_err(|e| SwapperError::NetworkError(e.to_string()))?;
 
-        if let TronGridResult::Error(TronErrorResult { code, message }) = response.result {
-            let msg = format!("Estimate energy failed. Code: {}, Message: {}", code, hex_to_utf8(&message).unwrap_or_default());
-            return Err(SwapperError::NetworkError(msg));
-        };
-
-        if let TronGridResult::Result(TronResult { result }) = response.result {
-            if result {
-                return Ok(response.energy_used);
+        match response.result {
+            TronGridResult::Error(TronErrorResult { code, message }) => {
+                let msg = format!("Estimate energy failed. Code: {}, Message: {}", code, hex_to_utf8(&message).unwrap_or_default());
+                Err(SwapperError::NetworkError(msg))
+            }
+            TronGridResult::Result(TronResult { result }) => {
+                if !result {
+                    Err(SwapperError::NetworkError("Estimate energy failed".to_string()))
+                } else {
+                    Ok(response.energy_used + response.energy_penalty)
+                }
             }
         }
-
-        Err(SwapperError::NetworkError("Estimate energy failed".to_string()))
     }
 }

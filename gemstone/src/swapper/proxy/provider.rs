@@ -116,7 +116,7 @@ impl ProxyProvider {
             let client = TronGridClient::new(provider.clone());
             let call_value = tx_data.value.unwrap_or_default();
             let energy = client
-                .estimate_tron_energy(
+                .estimate_energy(
                     &wallet_address,
                     &tx_data.to,
                     &tx_data.function_selector,
