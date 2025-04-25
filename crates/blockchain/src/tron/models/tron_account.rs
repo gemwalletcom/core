@@ -26,7 +26,9 @@ struct TronAccountPermission {
 struct TronAccountUsage {
     free_net_used: Option<i32>,
     free_net_limit: Option<i32>,
+    #[serde(rename = "EnergyUsed")]
     energy_used: Option<UInt64>,
+    #[serde(rename = "EnergyLimit")]
     energy_limit: Option<UInt64>,
 }
 
