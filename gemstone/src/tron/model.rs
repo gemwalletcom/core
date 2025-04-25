@@ -1,8 +1,8 @@
 use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
-pub struct TronGridResponse {
-    pub result: TronGridResult,
+pub struct TronNodeResponse {
+    pub result: TronNodeResult,
     pub energy_used: u64,
     pub energy_penalty: u64,
     pub constant_result: Vec<String>,
@@ -10,7 +10,7 @@ pub struct TronGridResponse {
 
 #[derive(Debug, Deserialize)]
 #[serde(untagged)]
-pub enum TronGridResult {
+pub enum TronNodeResult {
     Result(TronResult),
     Error(TronErrorResult),
 }

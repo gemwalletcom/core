@@ -16,7 +16,7 @@ use crate::{
         models::{ApprovalData, ApprovalType, SwapChainAsset},
         FetchQuoteData, GemSwapProvider, SwapProviderData, SwapProviderType, SwapQuote, SwapQuoteData, SwapQuoteRequest, SwapRoute, Swapper, SwapperError,
     },
-    tron::client::TronGridClient,
+    tron::client::TronClient,
 };
 use primitives::{
     swap::{Quote, QuoteData, QuoteRequest},
@@ -113,7 +113,7 @@ impl ProxyProvider {
             default_fee_limit
         } else {
             let tx_data: SymbiosisTransactionData = serde_json::from_value(proxy_quote.route_data["tx"].clone()).map_err(|_| SwapperError::InvalidRoute)?;
-            let client = TronGridClient::new(provider.clone());
+            let client = TronClient::new(provider.clone());
             let call_value = tx_data.value.unwrap_or_default();
             let energy = client
                 .estimate_energy(
