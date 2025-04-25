@@ -20,7 +20,7 @@ use crate::{
 };
 use primitives::{
     swap::{Quote, QuoteData, QuoteRequest},
-    Chain, ChainType,
+    AssetId, Chain, ChainType,
 };
 
 pub const PROVIDER_API_URL: &str = "https://api.gemwallet.com/swapper";
@@ -41,32 +41,41 @@ impl ProxyProvider {
         provider: Arc<dyn AlienProvider>,
     ) -> Result<(Option<ApprovalData>, Option<String>), SwapperError> {
         let request = &quote.request;
-        let from_asset = &request.from_asset;
-        let chain = from_asset.chain();
-        let chain_type = chain.chain_type();
+        let from_asset = request.from_asset.asset_id();
 
-        if from_asset.is_native() {
-            return Ok((None, quote_data.limit.clone()));
-        }
-
-        let token = match from_asset.asset_id().token_id {
-            Some(id) => id,
-            None => return Ok((None, None)), // Should not happen if not native
-        };
-        let wallet_address = request.wallet_address.clone();
-        let spender = quote_data.to.clone();
-        let amount = U256::from_str(&quote.from_value).map_err(SwapperError::from)?;
-
-        let (approval, gas_limit) = match chain_type {
-            ChainType::Ethereum => self.check_evm_approval(wallet_address, token, spender, amount, provider, &chain).await?,
-            ChainType::Tron => {
-                self.check_tron_approval(wallet_address, token, amount, quote_data.limit.clone(), quote, provider)
-                    .await?
+        match from_asset.chain.chain_type() {
+            ChainType::Ethereum => {
+                if from_asset.is_native() {
+                    Ok((None, None))
+                } else {
+                    let token = from_asset.token_id.unwrap();
+                    self.check_evm_approval(
+                        request.wallet_address.clone(),
+                        token,
+                        quote_data.to.clone(),
+                        U256::from_str(&quote.from_value).map_err(SwapperError::from)?,
+                        provider,
+                        &from_asset.chain,
+                    )
+                    .await
+                }
             }
-            _ => (ApprovalType::None, None),
-        };
-
-        Ok((approval.approval_data(), gas_limit))
+            ChainType::Tron => {
+                let amount = U256::from_str(&quote.from_value).map_err(SwapperError::from)?;
+                let token = from_asset.token_id.clone().unwrap();
+                self.check_tron_approval(
+                    &from_asset,
+                    request.wallet_address.clone(),
+                    token,
+                    amount,
+                    quote_data.limit.clone(),
+                    quote,
+                    provider,
+                )
+                .await
+            }
+            _ => Ok((None, None)),
+        }
     }
 
     async fn check_evm_approval(
@@ -77,32 +86,38 @@ impl ProxyProvider {
         amount: U256,
         provider: Arc<dyn AlienProvider>,
         chain: &Chain,
-    ) -> Result<(ApprovalType, Option<String>), SwapperError> {
+    ) -> Result<(Option<ApprovalData>, Option<String>), SwapperError> {
         let approval = check_approval_erc20(wallet_address, token, spender, amount, provider, chain).await?;
         let gas_limit = if matches!(approval, ApprovalType::Approve(_)) {
             Some(DEFAULT_GAS_LIMIT.to_string())
         } else {
             None
         };
-        Ok((approval, gas_limit))
+        Ok((approval.approval_data(), gas_limit))
     }
 
     async fn check_tron_approval(
         &self,
+        from_asset: &AssetId,
         wallet_address: String,
         token: String,
         amount: U256,
         default_fee_limit: Option<String>,
         quote: &SwapQuote,
         provider: Arc<dyn AlienProvider>,
-    ) -> Result<(ApprovalType, Option<String>), SwapperError> {
+    ) -> Result<(Option<ApprovalData>, Option<String>), SwapperError> {
         let route_data = quote.data.routes.first().map(|r| r.route_data.clone()).ok_or(SwapperError::InvalidRoute)?;
         let proxy_quote: Quote = serde_json::from_str(&route_data).map_err(|_| SwapperError::InvalidRoute)?;
         let spender = proxy_quote.route_data["approveTo"]
             .as_str()
             .ok_or(SwapperError::TransactionError("Failed to check approval without spender".to_string()))?;
 
-        let approval = check_approval_tron(&wallet_address, &token, spender, amount, provider.clone()).await?;
+        let approval = if from_asset.is_native() {
+            ApprovalType::None
+        } else {
+            check_approval_tron(&wallet_address, &token, spender, amount, provider.clone()).await?
+        };
+
         let fee_limit = if matches!(approval, ApprovalType::Approve(_)) {
             default_fee_limit
         } else {
@@ -121,7 +136,7 @@ impl ProxyProvider {
                 .await?;
             Some(energy.to_string())
         };
-        Ok((approval, fee_limit))
+        Ok((approval.approval_data(), fee_limit))
     }
 }
 
