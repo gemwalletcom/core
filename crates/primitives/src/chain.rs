@@ -370,48 +370,39 @@ impl Chain {
     // milliseconds
     pub fn block_time(&self) -> u32 {
         match self {
+            Self::Solana | Self::Aptos | Self::Sui | Self::Monad | Self::Sonic => 500,
+            // 1,000 ms
+            Self::Arbitrum
+            | Self::Celo
+            | Self::Fantom
+            | Self::Ink
+            | Self::Linea
+            | Self::Mantle
+            | Self::Near
+            | Self::OpBNB
+            | Self::Sei
+            | Self::Unichain
+            | Self::ZkSync
+            | Self::Abstract
+            | Self::SmartChain => 1_000,
+            Self::AvalancheC
+            | Self::Base
+            | Self::Blast
+            | Self::Hyperliquid
+            | Self::Manta
+            | Self::Optimism
+            | Self::World
+            | Self::Berachain
+            | Self::Thorchain => 2_000,
+            Self::Polygon | Self::Tron => 3_000,
+            Self::Algorand | Self::Xrp => 4_000,
+            Self::Gnosis | Self::Polkadot | Self::Ton => 5_000,
+            Self::Celestia | Self::Cosmos | Self::Injective | Self::Noble | Self::Osmosis | Self::Stellar => 6_000,
             Self::Ethereum => 12_000,
-            Self::Manta => 12_000,
-            Self::Fantom => 1_000,
-            Self::OpBNB => 1_000,
-            Self::Arbitrum => 1_000,
-            Self::Optimism | Self::Blast | Self::World => 2_000,
-            Self::Polygon => 3_000,
-            Self::Base => 2_000,
-            Self::Gnosis => 5_000,
-            Self::Bitcoin | Self::BitcoinCash => 600_000,
-            Self::Litecoin => 120_000,
-            Self::SmartChain => 3_000,
-            Self::Solana => 500,
-            Self::Thorchain => 10_000,
-            Self::Cosmos => 6_000,
-            Self::Osmosis => 6_000,
-            Self::Celestia => 6_000,
-            Self::Injective => 6_000,
-            Self::Ton => 5_000,
-            Self::Tron => 3_000,
+            Self::Cardano => 20_000,
             Self::Doge => 60_000,
-            Self::Aptos => 500,
-            Self::AvalancheC => 2_000,
-            Self::Sui => 500,
-            Self::Xrp => 4_000,
-            Self::Sei => 1_000,
-            Self::Noble => 6_000,
-            Self::ZkSync => 1_000,
-            Self::Linea => 1_000,
-            Self::Mantle => 1_000,
-            Self::Celo => 1_000,
-            Self::Near => 1_000,
-            Self::Stellar => 6_000,
-            Self::Sonic | Self::Abstract => 1_000,
-            Self::Algorand => 4_000,
-            Self::Polkadot => 5_000,
-            Self::Cardano => 60_000,
-            Self::Berachain => 2_000,
-            Self::Ink => 1_000,
-            Self::Unichain => 1_000,
-            Self::Hyperliquid => 2_000,
-            Self::Monad => 1_000,
+            Self::Litecoin => 120_000,
+            Self::Bitcoin | Self::BitcoinCash => 600_000,
         }
     }
 
