@@ -32,11 +32,17 @@ pub struct Transactions {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Transaction {
     pub hash: String,
+    pub in_msg: Option<InMessage>,
     pub block: String,
     pub transaction_type: String,
     pub total_fees: i64,
     pub out_msgs: Vec<OutMessage>,
     pub success: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct InMessage {
+    pub hash: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

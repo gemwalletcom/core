@@ -40,11 +40,12 @@ impl TonClient {
             } else {
                 TransactionState::Failed
             };
+            let hash = transaction.in_msg?.hash.clone();
             //TODO: Implement memo
             let memo: Option<String> = None; //out_message.decoded_body.clone().text;
 
             let transaction = primitives::Transaction::new(
-                transaction.hash,
+                hash,
                 asset_id.clone(),
                 from,
                 to,
