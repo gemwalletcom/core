@@ -75,5 +75,9 @@ pub fn fee_unit_type(chain: Chain) -> FeeUnitType {
 }
 
 fn chain_transaction_timeout_seconds(chain: Chain) -> u32 {
-    chain.block_time() * 100
+    match chain.chain_type() {
+        ChainType::Bitcoin => 1_209_600, // 2 weeks (mempool timeout)
+        ChainType::Solana => chain.block_time() * 150,
+        _ => chain.block_time() * 600,
+    }
 }

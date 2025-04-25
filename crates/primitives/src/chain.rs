@@ -137,8 +137,7 @@ impl Chain {
     }
 
     pub fn from_chain_id(chain_id: u64) -> Option<Self> {
-        let network_id = chain_id.to_string();
-        Self::iter().find(|&chain| chain.network_id() == network_id)
+        Self::iter().find(|&x| x.network_id() == chain_id.to_string())
     }
 
     pub fn is_utxo(&self) -> bool {
