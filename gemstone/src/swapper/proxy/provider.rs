@@ -67,8 +67,10 @@ impl ProxyProvider {
             }
             ChainType::Tron => {
                 let route_data = quote.data.routes.first().map(|r| r.route_data.clone()).ok_or(SwapperError::InvalidRoute)?;
-                let route_json: serde_json::Value = serde_json::from_str(&route_data).map_err(|_| SwapperError::InvalidRoute)?;
-                let spender = route_json["approveTo"].as_str().ok_or(SwapperError::InvalidRoute)?;
+                let proxy_quote: Quote = serde_json::from_str(&route_data).map_err(|_| SwapperError::InvalidRoute)?;
+                let spender = proxy_quote.route_data["approveTo"]
+                    .as_str()
+                    .ok_or(SwapperError::TransactionError("Failed to check approval without spender".to_string()))?;
                 let approval = check_approval_tron(&wallet_address, &token, spender, amount, provider, &chain).await?;
                 let gas_limit = quote_data.limit.clone();
                 (approval, gas_limit)
