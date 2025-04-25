@@ -62,17 +62,8 @@ impl ProxyProvider {
             }
             ChainType::Tron => {
                 let amount = U256::from_str(&quote.from_value).map_err(SwapperError::from)?;
-                let token = from_asset.token_id.clone().unwrap();
-                self.check_tron_approval(
-                    &from_asset,
-                    request.wallet_address.clone(),
-                    token,
-                    amount,
-                    quote_data.limit.clone(),
-                    quote,
-                    provider,
-                )
-                .await
+                self.check_tron_approval(&from_asset, request.wallet_address.clone(), amount, quote_data.limit.clone(), quote, provider)
+                    .await
             }
             _ => Ok((None, None)),
         }
@@ -100,7 +91,6 @@ impl ProxyProvider {
         &self,
         from_asset: &AssetId,
         wallet_address: String,
-        token: String,
         amount: U256,
         default_fee_limit: Option<String>,
         quote: &SwapQuote,
@@ -115,6 +105,7 @@ impl ProxyProvider {
         let approval = if from_asset.is_native() {
             ApprovalType::None
         } else {
+            let token = from_asset.token_id.clone().unwrap();
             check_approval_tron(&wallet_address, &token, spender, amount, provider.clone()).await?
         };
 
