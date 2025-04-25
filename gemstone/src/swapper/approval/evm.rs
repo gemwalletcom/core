@@ -1,5 +1,5 @@
-use super::{eth_address, models::ApprovalType, ApprovalData, Permit2ApprovalData, SwapperError};
 use crate::network::{jsonrpc::*, AlienProvider};
+use crate::swapper::{eth_address, models::ApprovalType, ApprovalData, Permit2ApprovalData, SwapperError};
 
 use alloy_primitives::{hex::decode as HexDecode, Address, U256};
 use alloy_sol_types::SolCall;
@@ -146,9 +146,11 @@ mod tests {
                 let param = params[0].as_object().unwrap();
                 let to = param["to"].as_str().unwrap();
                 if to == token_clone {
-                    return r#"{"id":1,"jsonrpc":"2.0","result":"0x0000000000000000000000000000000000000000000000000000000000000000"}"#.to_string();
+                    return r#"{"id":1,"jsonrpc":"2.0","result":"0x0000000000000000000000000000000000000000000000000000000000000000"}"#
+                        .to_string();
                 }
-                r#"{"id":1,"jsonrpc":"2.0","result":"0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"}"#.to_string()
+                r#"{"id":1,"jsonrpc":"2.0","result":"0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"}"#
+                    .to_string()
             })),
             timeout: Duration::from_millis(10),
         };

@@ -26,6 +26,10 @@ struct TronAccountPermission {
 struct TronAccountUsage {
     free_net_used: Option<i32>,
     free_net_limit: Option<i32>,
+    #[serde(rename = "EnergyUsed")]
+    energy_used: Option<UInt64>,
+    #[serde(rename = "EnergyLimit")]
+    energy_limit: Option<UInt64>,
 }
 
 #[typeshare(swift = "Sendable")]
@@ -40,14 +44,14 @@ struct TronVote {
 }
 
 #[typeshare(swift = "Sendable")]
-struct TronFrozen{
+struct TronFrozen {
     #[serde(rename = "type")]
     frozen_type: Option<String>,
     amount: Option<UInt64>,
 }
 
 #[typeshare(swift = "Sendable")]
-struct TronUnfrozen{
+struct TronUnfrozen {
     unfreeze_amount: Option<UInt64>,
     unfreeze_expire_time: Option<UInt64>,
 }
