@@ -6,11 +6,11 @@ use primitives::Chain;
 use std::sync::Arc;
 
 #[derive(Debug)]
-pub struct TronGridClient {
+pub struct TronClient {
     provider: Arc<dyn AlienProvider>,
 }
 
-impl TronGridClient {
+impl TronClient {
     pub fn new(provider: Arc<dyn AlienProvider>) -> Self {
         Self { provider }
     }
@@ -33,10 +33,10 @@ impl TronGridClient {
         let url = format!("{}/wallet/triggerconstantcontract", endpoint);
         let target = AlienTarget::post_json(&url, params);
         let data = self.provider.request(target).await.map_err(SwapperError::from)?;
-        let response: TronGridResponse = serde_json::from_slice(&data).map_err(SwapperError::from)?;
+        let response: TronNodeResponse = serde_json::from_slice(&data).map_err(SwapperError::from)?;
 
         match response.result {
-            TronGridResult::Result(TronResult { result }) => {
+            TronNodeResult::Result(TronResult { result }) => {
                 if !result {
                     return Err(SwapperError::NetworkError("Check approval failed. result is false".into()));
                 }
@@ -47,7 +47,7 @@ impl TronGridClient {
                 let allowance = U256::from_str_radix(constant_result, 16).map_err(SwapperError::from)?;
                 Ok(allowance)
             }
-            TronGridResult::Error(TronErrorResult { code, message }) => {
+            TronNodeResult::Error(TronErrorResult { code, message }) => {
                 let msg = format!("Check approval failed. Code: {}, Message: {}", code, hex_to_utf8(&message).unwrap_or_default());
                 Err(SwapperError::NetworkError(msg))
             }
@@ -80,14 +80,14 @@ impl TronGridClient {
         let target = AlienTarget::post_json(&url, params);
         let data = self.provider.request(target).await.map_err(SwapperError::from)?;
 
-        let response: TronGridResponse = serde_json::from_slice(&data).map_err(|e| SwapperError::NetworkError(e.to_string()))?;
+        let response: TronNodeResponse = serde_json::from_slice(&data).map_err(|e| SwapperError::NetworkError(e.to_string()))?;
 
         match response.result {
-            TronGridResult::Error(TronErrorResult { code, message }) => {
+            TronNodeResult::Error(TronErrorResult { code, message }) => {
                 let msg = format!("Estimate energy failed. Code: {}, Message: {}", code, hex_to_utf8(&message).unwrap_or_default());
                 Err(SwapperError::NetworkError(msg))
             }
-            TronGridResult::Result(TronResult { result }) => {
+            TronNodeResult::Result(TronResult { result }) => {
                 if !result {
                     Err(SwapperError::NetworkError("Estimate energy failed".to_string()))
                 } else {
