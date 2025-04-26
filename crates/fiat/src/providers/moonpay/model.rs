@@ -89,8 +89,8 @@ pub struct Data<T> {
 pub struct Webhook {
     pub id: String,
     pub status: String,
-    pub base_currency_amount: f64,
-    pub quote_currency_amount: f64,
+    pub base_currency_amount: Option<f64>,
+    pub quote_currency_amount: Option<f64>,
     pub base_currency: Asset,
     pub currency: Option<Asset>,
     pub quote_currency: Option<Asset>,

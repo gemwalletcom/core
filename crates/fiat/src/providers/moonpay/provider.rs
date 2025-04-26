@@ -80,8 +80,8 @@ impl FiatProvider for MoonPayClient {
             FiatQuoteType::Sell
         };
         let currency_amount = match transaction_type {
-            FiatQuoteType::Buy => payload.base_currency_amount,
-            FiatQuoteType::Sell => payload.quote_currency_amount,
+            FiatQuoteType::Buy => payload.base_currency_amount.unwrap_or_default(),
+            FiatQuoteType::Sell => payload.quote_currency_amount.unwrap_or_default(),
         };
 
         let status = match payload.status.as_str() {
