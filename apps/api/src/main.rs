@@ -16,6 +16,7 @@ mod status;
 mod subscriptions;
 mod swap;
 mod transactions;
+mod ws;
 
 use api_connector::PusherClient;
 use assets::{AssetsChainProvider, AssetsClient, AssetsSearchClient};
@@ -159,6 +160,7 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
             ],
         )
         .mount(settings.metrics.path, routes![metrics::get_metrics])
+        .mount("/v1/ws", routes![ws::ws_prices])
 }
 
 #[tokio::main]

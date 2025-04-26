@@ -11,6 +11,8 @@ tokio = { workspace = true }
 config = { workspace = true }
 prometheus-client = { workspace = true }
 reqwest = { workspace = true }
+futures-util = { workspace = true }
+rand = { workspace = true }
 
 storage = { path = "../../crates/storage" }
 pricer = { path = "../../crates/pricer" }
@@ -27,3 +29,4 @@ nft = { path = "../../crates/nft" }
 security_provider = { path = "../../crates/security_provider" }
 security_hashdit = { path = "../../crates/security_hashdit" }
 security_goplus = { path = "../../crates/security_goplus" }
+rocket_ws = { workspace = true }

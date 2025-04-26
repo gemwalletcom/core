@@ -70,6 +70,8 @@ url = { version = "2.5.4" }
 urlencoding = { version = "2.1.3" }
 config = { version = "0.15.11", features = ["yaml"] }
 rocket = { version = "0.5.1", features = ["json"] }
+rocket_ws =  { version = "0.1.1" } 
+
 async-trait = { version = "0.1.88" }
 async-std = { version = "1.13.1" }
 prometheus-client = { version = "0.23.1" }
