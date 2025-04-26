@@ -203,10 +203,14 @@ pusher:
   url: "http://localhost:8088"
   ios:
     topic: ""
+  
 daemon:
   service: ""
   search:
     assets_update_interval: 1800
+
+api:
+  service: ""
 
 alerter:
   update_interval_seconds: 60

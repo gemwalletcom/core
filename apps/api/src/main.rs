@@ -6,6 +6,7 @@ mod devices;
 mod fiat;
 mod markets;
 mod metrics;
+mod model;
 mod name;
 mod nft;
 mod parser;
@@ -18,12 +19,15 @@ mod swap;
 mod transactions;
 mod ws;
 
+use std::str::FromStr;
+
 use api_connector::PusherClient;
 use assets::{AssetsChainProvider, AssetsClient, AssetsSearchClient};
 use config::ConfigClient;
 use devices::DevicesClient;
 use fiat::{FiatClient, FiatProviderFactory};
 use metrics::MetricsClient;
+use model::APIService;
 use name_resolver::client::Client as NameClient;
 use name_resolver::NameProviderFactory;
 use nft::NFTClient;
@@ -36,17 +40,14 @@ use scan::{ScanClient, ScanProviderFactory};
 use search_index::SearchIndexClient;
 use settings::Settings;
 use settings_chain::ProviderFactory;
-use storage::{ClickhouseClient, DatabaseClient};
+use storage::ClickhouseClient;
 use subscriptions::SubscriptionsClient;
 use swap::SwapClient;
 use transactions::TransactionsClient;
 
-async fn rocket(settings: Settings) -> Rocket<Build> {
+async fn rocket_api(settings: Settings) -> Rocket<Build> {
     let redis_url = settings.redis.url.as_str();
     let postgres_url = settings.postgres.url.as_str();
-    let mut database_client: DatabaseClient = DatabaseClient::new(postgres_url);
-    database_client.migrations();
-
     let settings_clone = settings.clone();
     let price_client = PriceClient::new(redis_url, postgres_url);
     let clickhouse_client = ClickhouseClient::new(&settings_clone.clickhouse.url, &settings_clone.clickhouse.database);
@@ -160,6 +161,17 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
             ],
         )
         .mount(settings.metrics.path, routes![metrics::get_metrics])
+}
+
+async fn rocket_ws_prices(_settings: Settings) -> Rocket<Build> {
+    rocket::build()
+        .attach(AdHoc::on_ignite("Tokio Runtime Configuration", |rocket| async {
+            let runtime = tokio::runtime::Builder::new_multi_thread()
+                .enable_all()
+                .build()
+                .expect("Failed to create Tokio runtime");
+            rocket.manage(runtime)
+        }))
         .mount("/v1/ws", routes![ws::ws_prices])
 }
 
@@ -167,6 +179,14 @@ async fn rocket(settings: Settings) -> Rocket<Build> {
 async fn main() {
     let settings = Settings::new().unwrap();
 
-    let rocket = rocket(settings).await;
-    rocket.launch().await.expect("Failed to launch Rocket");
+    let service = std::env::args().nth(1).unwrap_or_default();
+    let service = APIService::from_str(service.as_str()).ok().unwrap_or(APIService::Api);
+
+    println!("api start service: {}", service.as_ref());
+
+    let rocket_api = match service {
+        APIService::WebsocketPrices => rocket_ws_prices(settings).await,
+        APIService::Api => rocket_api(settings).await,
+    };
+    rocket_api.launch().await.expect("Failed to launch Rocket");
 }

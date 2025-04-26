@@ -25,6 +25,7 @@ pub struct Settings {
     pub chains: Chains,
     pub parser: Parser,
     pub daemon: Daemon,
+    pub api: API,
     pub pusher: Pusher,
     pub swap: Swap,
     pub alerter: Alerter,
@@ -240,6 +241,12 @@ pub struct Parser {
 pub struct Daemon {
     pub service: String,
     pub search: DaemonSearch,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[allow(unused)]
+pub struct API {
+    pub service: String,
 }
 
 #[derive(Debug, Deserialize, Clone)]

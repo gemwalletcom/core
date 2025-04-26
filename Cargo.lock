@@ -262,6 +262,8 @@ dependencies = [
  "settings",
  "settings_chain",
  "storage",
+ "strum",
+ "strum_macros",
  "tokio",
 ]
 
