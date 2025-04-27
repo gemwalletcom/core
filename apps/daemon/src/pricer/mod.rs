@@ -84,6 +84,14 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
         }
     });
 
+    let update_fiat_rates_cache = run_job("Update fiat rates cache", Duration::from_secs(30), {
+        let settings = Arc::new(settings.clone());
+        move || {
+            let settings = Arc::clone(&settings);
+            async move { price_updater_factory(&settings.clone()).update_fiat_rates_cache().await }
+        }
+    });
+
     let update_charts = run_job("Update charts", Duration::from_secs(settings.charter.timer), {
         let settings = settings.clone();
         let coingecko_client = coingecko_client.clone();
@@ -113,6 +121,7 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
         Box::pin(update_prices_high_market_cap),
         Box::pin(update_prices_low_market_cap),
         Box::pin(update_prices_cache),
+        Box::pin(update_fiat_rates_cache),
         Box::pin(update_charts),
         Box::pin(update_markets),
     ]

@@ -4,7 +4,7 @@ use primitives::AssetMarket;
 use serde::{Deserialize, Serialize};
 use std::hash::{Hash, Hasher};
 
-use super::{Asset, CreateChart, FiatRate};
+use super::{Asset, CreateChart};
 
 #[derive(Debug, Queryable, Selectable, Identifiable, Serialize, Deserialize, Insertable, AsChangeset, Clone)]
 #[diesel(table_name = crate::schema::prices)]
@@ -128,7 +128,7 @@ impl Price {
         }
     }
 
-    pub fn for_rate(price: Price, base_rate: f64, rate: FiatRate) -> Price {
+    pub fn for_rate(price: Price, base_rate: f64, rate: primitives::FiatRate) -> Price {
         let mut new_price = price.clone();
         let rate_multiplier = rate.multiplier(base_rate);
         new_price.price = price.price * rate_multiplier;

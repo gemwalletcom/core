@@ -11,8 +11,8 @@ tokio = { workspace = true }
 config = { workspace = true }
 prometheus-client = { workspace = true }
 reqwest = { workspace = true }
+futures = { workspace = true }
 futures-util = { workspace = true }
-rand = { workspace = true }
 strum = { workspace = true }
 strum_macros = { workspace = true }
 

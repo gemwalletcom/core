@@ -30,17 +30,17 @@ impl CacherClient {
         Ok(())
     }
 
-    pub async fn get_value(&mut self, key: &str) -> Result<String, Box<dyn Error>> {
+    pub async fn get_string(&mut self, key: &str) -> Result<String, Box<dyn Error>> {
         let mut connection = self.client.get_multiplexed_async_connection().await?;
         Ok(connection.get(key).await?)
     }
 
-    pub async fn set_serialized_value<T: serde::Serialize>(&mut self, key: &str, value: &T) -> Result<(), Box<dyn Error + Send + Sync>> {
+    pub async fn set_value<T: serde::Serialize>(&mut self, key: &str, value: &T) -> Result<(), Box<dyn Error + Send + Sync>> {
         let mut connection = self.client.get_multiplexed_async_connection().await?;
         Ok(connection.set::<&str, String, ()>(key, serde_json::to_string(value)?).await?)
     }
 
-    pub async fn get_serialized_value<T: serde::de::DeserializeOwned>(&mut self, key: &str) -> Result<T, Box<dyn Error + Send + Sync>> {
+    pub async fn get_value<T: serde::de::DeserializeOwned>(&mut self, key: &str) -> Result<T, Box<dyn Error + Send + Sync>> {
         let mut connection = self.client.get_multiplexed_async_connection().await?;
         let value: String = connection.get(key).await?;
         Ok(serde_json::from_str(&value)?)

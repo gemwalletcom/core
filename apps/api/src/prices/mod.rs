@@ -1,7 +1,7 @@
 extern crate rocket;
 use pricer::price_client::PriceClient;
 use pricer::ChartClient;
-use primitives::{AssetMarketPrice, ChartPeriod, Charts, DEFAULT_FIAT_CURRENCY};
+use primitives::{AssetMarketPrice, ChartPeriod, Charts, FiatRate, DEFAULT_FIAT_CURRENCY};
 use primitives::{AssetPrices, AssetPricesRequest};
 use rocket::serde::json::Json;
 use rocket::tokio::sync::Mutex;
@@ -24,6 +24,12 @@ pub async fn get_assets_prices(request: Json<AssetPricesRequest>, price_client: 
     let prices = price_client.lock().await.get_asset_prices(currency.as_str(), asset_ids).await.unwrap();
 
     Json(prices)
+}
+
+#[get("/fiat_rates")]
+pub async fn get_fiat_rates(price_client: &State<Mutex<PriceClient>>) -> Json<Vec<FiatRate>> {
+    let rates = price_client.lock().await.get_fiat_rates().unwrap();
+    Json(rates)
 }
 
 #[get("/charts/<asset_id>?<period>&<currency>")]

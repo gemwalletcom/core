@@ -5,7 +5,7 @@ use primitives::DEFAULT_FIAT_CURRENCY;
 use std::collections::{HashMap, HashSet};
 use std::error::Error;
 use storage::models::price::PriceCache;
-use storage::models::{FiatRate, Price};
+use storage::models::Price;
 
 pub struct PriceUpdater {
     coin_gecko_client: CoinGeckoClient,
@@ -64,6 +64,12 @@ impl PriceUpdater {
         self.price_client.set_prices(prices)
     }
 
+    pub async fn update_fiat_rates_cache(&mut self) -> Result<usize, Box<dyn Error + Send + Sync>> {
+        let rates = self.price_client.get_fiat_rates()?;
+        let _ = self.price_client.set_cache_fiat_rates(rates.clone()).await?;
+        Ok(rates.len())
+    }
+
     pub async fn update_prices_cache(&mut self) -> Result<usize, Box<dyn Error + Send + Sync>> {
         let (prices_assets, prices, rates) = (
             self.price_client.get_prices_assets()?,
@@ -78,7 +84,7 @@ impl PriceUpdater {
 
         let base_rate = rates
             .iter()
-            .find(|x| x.id == DEFAULT_FIAT_CURRENCY)
+            .find(|x| x.symbol == DEFAULT_FIAT_CURRENCY)
             .map(|x| x.rate)
             .ok_or("base rate not found")?;
 
@@ -105,10 +111,10 @@ impl PriceUpdater {
             if prices.is_empty() {
                 continue;
             }
-            match self.price_client.set_cache_prices(rate.id.as_str(), prices).await {
+            match self.price_client.set_cache_prices(rate.symbol.as_str(), prices).await {
                 Ok(_) => {}
                 Err(e) => {
-                    println!("Error setting cache prices for {}: {}", rate.id, e);
+                    println!("Error setting cache prices for {}: {}", rate.symbol, e);
                 }
             }
         }
@@ -117,16 +123,8 @@ impl PriceUpdater {
     }
 
     pub async fn update_fiat_rates(&mut self) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        let rates = self
-            .coin_gecko_client
-            .get_fiat_rates()
-            .await?
-            .into_iter()
-            .map(FiatRate::from_primitive)
-            .collect::<Vec<_>>();
-
-        let count = self.price_client.set_fiat_rates(rates).await?;
-        Ok(count)
+        let rates = self.coin_gecko_client.get_fiat_rates().await?;
+        self.price_client.set_fiat_rates(rates).await
     }
 
     pub async fn clean_outdated_assets(&mut self, seconds: u64) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {

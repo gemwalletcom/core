@@ -1,9 +1,9 @@
 use chrono::NaiveDateTime;
-use primitives::{AssetMarketPrice, AssetPrices};
+use primitives::{AssetMarketPrice, AssetPrices, FiatRate};
 use redis::{AsyncCommands, RedisResult};
 use std::error::Error;
 use storage::{
-    models::{FiatRate, Price, PriceAsset, PriceCache},
+    models::{Price, PriceAsset, PriceCache},
     DatabaseClient,
 };
 
@@ -18,6 +18,7 @@ pub struct PriceClient {
 
 const PRICES_INSERT_BATCH_LIMIT: usize = 1000;
 const PRICES_ASSETS_INSERT_BATCH_LIMIT: usize = 1000;
+const FIAT_RATES_KEY: &str = "fiat_rates";
 
 impl PriceClient {
     pub fn new(redis_url: &str, database_url: &str) -> Self {
@@ -81,11 +82,13 @@ impl PriceClient {
     }
 
     pub async fn set_fiat_rates(&mut self, rates: Vec<FiatRate>) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.set_fiat_rates(rates)?)
+        Ok(self
+            .database
+            .set_fiat_rates(rates.into_iter().map(storage::models::FiatRate::from_primitive).collect())?)
     }
 
     pub fn get_fiat_rates(&mut self) -> Result<Vec<FiatRate>, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.get_fiat_rates()?)
+        Ok(self.database.get_fiat_rates()?.into_iter().map(|x| x.as_primitive()).collect())
     }
 
     // cache
@@ -102,6 +105,14 @@ impl PriceClient {
             price: Some(price.as_price_primitive()),
             market: Some(price.as_market()),
         })
+    }
+
+    pub async fn set_cache_fiat_rates(&mut self, rates: Vec<FiatRate>) -> Result<(), Box<dyn Error + Send + Sync>> {
+        self.cache_client.set_value(FIAT_RATES_KEY, &rates).await
+    }
+
+    pub async fn get_cache_fiat_rates(&mut self) -> Result<Vec<FiatRate>, Box<dyn Error + Send + Sync>> {
+        self.cache_client.get_value(FIAT_RATES_KEY).await
     }
 
     pub async fn set_cache_prices(&mut self, currency: &str, prices: Vec<PriceCache>) -> Result<usize, Box<dyn Error + Send + Sync>> {

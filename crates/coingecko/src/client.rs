@@ -131,7 +131,6 @@ impl CoinGeckoClient {
             .filter(|x| x.1.rate_type == "fiat")
             .map(|x| FiatRate {
                 symbol: x.0.to_uppercase(),
-                name: x.1.name,
                 rate: x.1.value / usd_rate,
             })
             .collect();

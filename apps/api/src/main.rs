@@ -17,9 +17,10 @@ mod status;
 mod subscriptions;
 mod swap;
 mod transactions;
-mod ws;
+mod websocket_prices;
 
 use std::str::FromStr;
+use std::sync::Arc;
 
 use api_connector::PusherClient;
 use assets::{AssetsChainProvider, AssetsClient, AssetsSearchClient};
@@ -118,6 +119,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
                 prices::get_price,
                 prices::get_assets_prices,
                 prices::get_charts,
+                prices::get_fiat_rates,
                 fiat::get_fiat_quotes,
                 fiat::get_fiat_on_ramp_quotes,
                 fiat::get_fiat_on_ramp_assets,
@@ -163,16 +165,13 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
         .mount(settings.metrics.path, routes![metrics::get_metrics])
 }
 
-async fn rocket_ws_prices(_settings: Settings) -> Rocket<Build> {
+async fn rocket_ws_prices(settings: Settings) -> Rocket<Build> {
+    let price_client = PriceClient::new(settings.redis.url.as_str(), settings.postgres.url.as_str());
+    let price_client_arc = Arc::new(Mutex::new(price_client));
+
     rocket::build()
-        .attach(AdHoc::on_ignite("Tokio Runtime Configuration", |rocket| async {
-            let runtime = tokio::runtime::Builder::new_multi_thread()
-                .enable_all()
-                .build()
-                .expect("Failed to create Tokio runtime");
-            rocket.manage(runtime)
-        }))
-        .mount("/v1/ws", routes![ws::ws_prices])
+        .attach(AdHoc::on_ignite("Manage Price Client", |rocket| async move { rocket.manage(price_client_arc) }))
+        .mount("/v1/ws", routes![websocket_prices::ws_prices])
 }
 
 #[tokio::main]

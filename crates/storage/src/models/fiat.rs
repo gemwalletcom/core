@@ -13,16 +13,19 @@ pub struct FiatRate {
 }
 
 impl FiatRate {
-    pub fn from_primitive(rate: primitives::FiatRate) -> Self {
-        FiatRate {
-            id: rate.symbol,
-            name: rate.name,
-            rate: rate.rate,
+    pub fn as_primitive(&self) -> primitives::FiatRate {
+        primitives::FiatRate {
+            symbol: self.id.clone(),
+            rate: self.rate,
         }
     }
 
-    pub fn multiplier(&self, base: f64) -> f64 {
-        self.rate * base
+    pub fn from_primitive(rate: primitives::FiatRate) -> Self {
+        FiatRate {
+            id: rate.symbol,
+            name: "".to_string(),
+            rate: rate.rate,
+        }
     }
 }
 
