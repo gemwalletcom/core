@@ -22,14 +22,6 @@ impl ScanClient {
             return Ok(local_scan);
         }
 
-        // temp solution
-        if payload.transaction_type == TransactionType::Swap {
-            return Ok(ScanTransaction {
-                is_malicious: true,
-                is_memo_required: false,
-            });
-        }
-
         let target = AddressTarget {
             chain: payload.origin.chain,
             address: payload.origin.address.clone(),
