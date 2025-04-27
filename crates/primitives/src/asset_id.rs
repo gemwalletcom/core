@@ -88,6 +88,16 @@ impl AssetId {
     }
 }
 
+pub trait AssetIdVecExt {
+    fn ids(&self) -> Vec<String>;
+}
+
+impl AssetIdVecExt for Vec<AssetId> {
+    fn ids(&self) -> Vec<String> {
+        self.iter().map(|x| x.to_string()).collect()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

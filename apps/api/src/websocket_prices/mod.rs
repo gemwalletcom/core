@@ -2,17 +2,14 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use pricer::PriceClient;
-use primitives::{AssetPrice, FiatRate, WebSocketPricePayload};
+use primitives::asset_id::AssetIdVecExt;
+use primitives::{AssetId, AssetPrice, FiatRate, WebSocketPricePayload};
 use rocket::futures::{SinkExt, StreamExt};
 use rocket::serde::json::serde_json;
 use rocket::tokio::sync::Mutex;
 use rocket::State;
 use rocket_ws::result::Error as WsError;
 use rocket_ws::{Channel, Message, WebSocket};
-use serde::Deserialize;
-
-#[derive(Debug, Deserialize)]
-pub struct AssetList(pub Vec<String>);
 
 #[derive(Debug, Clone)]
 pub enum MessageType {
@@ -58,7 +55,8 @@ pub async fn ws_prices(ws: WebSocket, mode: Option<String>, price_client: &State
 
     ws.channel(move |mut stream| {
         Box::pin(async move {
-            let mut assets: Vec<String> = Vec::new();
+            let mut assets: Vec<AssetId> = Vec::new();
+
             let message_type = MessageType::from_str(mode.as_ref().map_or("text", |v| v));
             let mut update_rates = false;
             let price_client = price_client.clone();
@@ -74,9 +72,9 @@ pub async fn ws_prices(ws: WebSocket, mode: Option<String>, price_client: &State
                                 println!("Received binary message: {:?}", data);
 
                                 serde_json::from_slice(data.as_slice())
-                                    .map(|new_assets: AssetList| {
-                                        println!("Updating asset subscription to: {:?}", new_assets.0);
-                                        assets = new_assets.0;
+                                    .map(|new_assets: Vec<AssetId>| {
+                                        println!("Updating asset subscription to: {:?}", new_assets);
+                                        assets = new_assets;
                                     })
                                     .unwrap_or_else(|e| {
                                         eprintln!("Failed to deserialize asset list: {}", e);
@@ -85,10 +83,10 @@ pub async fn ws_prices(ws: WebSocket, mode: Option<String>, price_client: &State
                             Some(Ok(Message::Text(text))) => {
                                 println!("Received message: {}", text);
 
-                                match serde_json::from_str::<AssetList>(&text) {
+                                match serde_json::from_str::<Vec<AssetId>>(&text) {
                                     Ok(new_assets) => {
-                                        println!("Updating asset subscription to: {:?}", new_assets.0);
-                                        assets = new_assets.0;
+                                        println!("Updating asset subscription to: {:?}", new_assets);
+                                        assets = new_assets;
                                     }
                                     Err(e) => {
                                         eprintln!("Failed to deserialize asset list: {}", e);
@@ -124,7 +122,7 @@ pub async fn ws_prices(ws: WebSocket, mode: Option<String>, price_client: &State
                             vec![]
                         };
 
-                        let prices = price_client.lock().await.get_cache_prices("USD", assets.iter().map(|s| s.as_str()).collect::<Vec<&str>>()).await
+                        let prices = price_client.lock().await.get_cache_prices("USD", assets.ids()).await
                             .into_iter()
                             .flatten()
                             .map(|x| x.as_asset_price_primitive())

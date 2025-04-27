@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
-use crate::Price;
+use crate::{AssetId, Price};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Sendable")]
@@ -38,7 +38,7 @@ pub struct AssetPrices {
 #[serde(rename_all = "camelCase")]
 pub struct AssetPricesRequest {
     pub currency: Option<String>,
-    pub asset_ids: Vec<String>,
+    pub asset_ids: Vec<AssetId>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -98,7 +98,7 @@ impl PriceClient {
     }
 
     pub async fn get_asset_price(&mut self, asset_id: &str, currency: &str) -> Result<AssetMarketPrice, Box<dyn Error>> {
-        let prices = self.get_cache_prices(currency, vec![asset_id]).await?;
+        let prices = self.get_cache_prices(currency, vec![asset_id.to_string()]).await?;
         let price = prices.first().cloned().ok_or(format!("No price available for asset_id: {}", asset_id))?;
 
         Ok(AssetMarketPrice {
@@ -124,7 +124,7 @@ impl PriceClient {
         self.cache_client.set_values(values).await
     }
 
-    pub async fn get_cache_prices(&mut self, currency: &str, asset_ids: Vec<&str>) -> RedisResult<Vec<PriceCache>> {
+    pub async fn get_cache_prices(&mut self, currency: &str, asset_ids: Vec<String>) -> RedisResult<Vec<PriceCache>> {
         let keys: Vec<String> = asset_ids.iter().map(|x| self.asset_key(currency, x.to_string())).collect();
         let result: Vec<Option<String>> = self.redis_client.get_multiplexed_async_connection().await?.mget(keys).await?;
 
@@ -139,7 +139,7 @@ impl PriceClient {
         Ok(prices)
     }
 
-    pub async fn get_asset_prices(&mut self, currency: &str, asset_ids: Vec<&str>) -> Result<AssetPrices, Box<dyn Error>> {
+    pub async fn get_asset_prices(&mut self, currency: &str, asset_ids: Vec<String>) -> Result<AssetPrices, Box<dyn Error>> {
         let prices = self
             .get_cache_prices(currency, asset_ids)
             .await
