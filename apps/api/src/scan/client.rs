@@ -23,7 +23,7 @@ impl ScanClient {
         }
 
         // temp solution
-        if payload.transaction_type == TransactionType::Swap && payload.origin.chain == Chain::Ethereum && payload.target.chain == Chain::Bitcoin {
+        if payload.transaction_type == TransactionType::Swap {
             return Ok(ScanTransaction {
                 is_malicious: true,
                 is_memo_required: false,
