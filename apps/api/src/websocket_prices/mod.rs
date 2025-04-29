@@ -3,6 +3,7 @@ use std::time::Duration;
 
 use pricer::PriceClient;
 use primitives::asset_id::AssetIdVecExt;
+use primitives::websocket::{WebSocketPriceAction, WebSocketPriceActionType};
 use primitives::{AssetId, AssetPrice, FiatRate, WebSocketPricePayload};
 use rocket::futures::{SinkExt, StreamExt};
 use rocket::serde::json::serde_json;
@@ -83,10 +84,22 @@ pub async fn ws_prices(ws: WebSocket, mode: Option<String>, price_client: &State
                             Some(Ok(Message::Text(text))) => {
                                 println!("Received message: {}", text);
 
-                                match serde_json::from_str::<Vec<AssetId>>(&text) {
-                                    Ok(new_assets) => {
-                                        println!("Updating asset subscription to: {:?}", new_assets);
-                                        assets = new_assets;
+                                match serde_json::from_str::<WebSocketPriceAction>(&text) {
+                                    Ok(action) => {
+                                        match action.action {
+                                            WebSocketPriceActionType::Subscribe => {
+                                                println!("Subscribe assets: {:?}", action.assets);
+                                                assets = action.assets;
+
+                                                // Send new assets to the client
+                                            }
+                                            WebSocketPriceActionType::Add => {
+                                                println!("Add assets to: {:?}", action.assets);
+                                                assets.extend_from_slice(&action.assets);
+
+                                                // Send added assets to the client
+                                            }
+                                        }
                                     }
                                     Err(e) => {
                                         eprintln!("Failed to deserialize asset list: {}", e);
