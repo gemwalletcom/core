@@ -132,7 +132,7 @@ pub fn get_base_pair(chain: &EVMChain, weth_as_native: bool) -> Option<BasePair>
         EVMChain::SmartChain => "0x55d398326f99059fF775485246999027B3197955",
         EVMChain::ZkSync => "0x493257fD37EDB34451f62EDf8D2a0C418852bA4C",
         EVMChain::Abstract => "0x0709F39376dEEe2A2dfC94A58EdEb2Eb9DF012bD",
-        EVMChain::Unichain => "0x588ce4f028d8e7b53b687865d6a67b3a54c75518",
+        EVMChain::Unichain => "0x9151434b16b9763660705744891fA906F660EcC5", // USDT0
         EVMChain::Sonic => "0x6047828dc181963ba44974801FF68e538dA5eaF9",
         EVMChain::Mantle => "0x201EBa5CC46D216Ce6DC03F6a759e8E766e956aE",
         EVMChain::Gnosis => "0x4ECaBa5870353805a9F068101A40E0f32ed605C6",
