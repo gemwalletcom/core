@@ -66,7 +66,7 @@ impl PriceUpdater {
 
     pub async fn update_fiat_rates_cache(&mut self) -> Result<usize, Box<dyn Error + Send + Sync>> {
         let rates = self.price_client.get_fiat_rates()?;
-        let _ = self.price_client.set_cache_fiat_rates(rates.clone()).await?;
+        self.price_client.set_cache_fiat_rates(rates.clone()).await?;
         Ok(rates.len())
     }
 
