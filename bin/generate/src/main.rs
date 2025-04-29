@@ -31,7 +31,6 @@ fn main() {
         "pubkey.rs",
         "ethereum_address.rs",
         "keccak.rs",
-        "fiat_rate.rs",
         "number_formatter.rs",
         "mode.rs",
         "quote.rs",
