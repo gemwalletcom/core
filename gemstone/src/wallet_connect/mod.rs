@@ -22,8 +22,8 @@ pub fn get_namespace(chain: Chain) -> Option<String> {
     }
 }
 
-pub fn get_chain_type(caip2: String) -> Option<ChainType> {
-    match WalletConnectCAIP2::from_str(&caip2).ok()? {
+pub fn get_chain_type(namespace: String) -> Option<ChainType> {
+    match WalletConnectCAIP2::from_str(&namespace).ok()? {
         WalletConnectCAIP2::Eip155 => Some(ChainType::Ethereum),
         WalletConnectCAIP2::Solana => Some(ChainType::Solana),
         WalletConnectCAIP2::Cosmos => Some(ChainType::Cosmos),
@@ -31,14 +31,14 @@ pub fn get_chain_type(caip2: String) -> Option<ChainType> {
     }
 }
 
-pub fn get_chain(caip2: String, caip10: String) -> Option<Chain> {
-    let caip2 = WalletConnectCAIP2::from_str(&caip2).ok()?;
-    match caip2 {
+pub fn get_chain(namespace: String, reference: String) -> Option<Chain> {
+    let namespace = WalletConnectCAIP2::from_str(&namespace).ok()?;
+    match namespace {
         WalletConnectCAIP2::Eip155 | WalletConnectCAIP2::Cosmos => {
-            let chain_type = get_chain_type(caip2.as_ref().to_string())?;
+            let chain_type = get_chain_type(namespace.as_ref().to_string())?;
             Chain::all()
                 .into_iter()
-                .filter(|chain| chain.chain_type() == chain_type && chain.network_id() == caip10)
+                .filter(|chain| chain.chain_type() == chain_type && chain.network_id() == reference)
                 .collect::<Vec<_>>()
                 .first()
                 .cloned()
