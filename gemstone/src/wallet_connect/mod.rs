@@ -22,6 +22,16 @@ pub fn get_namespace(chain: Chain) -> Option<String> {
     }
 }
 
+pub fn get_chain_type(caip2: String) -> Option<ChainType> {
+    let caip2 = WalletConnectCAIP2::from_str(&caip2).ok()?;
+    match caip2 {
+        WalletConnectCAIP2::Eip155 => Some(ChainType::Ethereum),
+        WalletConnectCAIP2::Solana => Some(ChainType::Solana),
+        WalletConnectCAIP2::Cosmos => Some(ChainType::Cosmos),
+        WalletConnectCAIP2::Algorand => Some(ChainType::Algorand),
+    }
+}
+
 // CAIP-20 https://github.com/ChainAgnostic/CAIPs/blob/main/CAIPs/caip-20.md
 pub fn get_reference(chain: Chain) -> Option<String> {
     match chain.chain_type() {
@@ -60,5 +70,9 @@ impl WalletConnectNamespace {
     fn get_reference(&self, chain: String) -> Option<String> {
         let chain = Chain::from_str(&chain).ok()?;
         get_reference(chain)
+    }
+
+    fn get_chain_type(&self, caip2: String) -> Option<String> {
+        Some(get_chain_type(caip2)?.as_ref().to_string())
     }
 }
