@@ -52,7 +52,7 @@ pub fn get_chain(namespace: String, reference: String) -> Option<Chain> {
 pub fn get_reference(chain: Chain) -> Option<String> {
     match chain.chain_type() {
         ChainType::Ethereum => Some(chain.network_id().to_string()),
-        ChainType::Solana => Some("4sGjMW1sUnHzSxGspuhpqLDx6wiyjNtZ".to_string()),
+        ChainType::Solana => Some(chain.network_id().chars().take(32).collect()),
         ChainType::Cosmos => get_namespace(chain).map(|namespace| format!("{}:{}", namespace, chain.network_id())),
         ChainType::Algorand => Some("wGHE2Pwdvd7S12BL5FaOP20EGYesN73k".to_string()),
         ChainType::Bitcoin
