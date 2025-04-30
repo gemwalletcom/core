@@ -41,3 +41,20 @@ pub fn eip712_domain_types() -> Vec<EIP712Type> {
         },
     ]
 }
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct EIP712Field {
+    pub name: String,
+    pub value: EIP712TypedValue,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub enum EIP712TypedValue {
+    Address { value: String },
+    Uint256 { value: String }, // Represent all uint<N> as string for simplicity
+    String { value: String },
+    Bool { value: bool },
+    Bytes { value: Vec<u8> }, // Represent all bytes<N> and dynamic bytes as Vec<u8>
+    Struct { fields: Vec<EIP712Field> },
+    Array { items: Vec<EIP712TypedValue> },
+}

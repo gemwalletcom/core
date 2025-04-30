@@ -1,9 +1,11 @@
 use crate::GemstoneError;
-use primitives::eip712::{EIP712Domain, EIP712Type};
+use primitives::eip712::{EIP712Domain, EIP712Field, EIP712Type, EIP712TypedValue};
 use serde_json::Value;
 use std::collections::HashMap;
 
 type GemEIP712MessageDomain = EIP712Domain;
+type GemEIP712TypedValue = EIP712TypedValue;
+type GemEIP712Field = EIP712Field;
 
 #[uniffi::remote(Record)]
 pub struct GemEIP712MessageDomain {
@@ -13,32 +15,32 @@ pub struct GemEIP712MessageDomain {
     pub verifying_contract: String,
 }
 
-#[derive(Debug, uniffi::Record)]
-pub struct GemEIP712Message {
-    pub domain: GemEIP712MessageDomain,
-    pub message: Vec<GemEIP712Field>,
-}
-
-#[derive(Debug, uniffi::Record)]
+#[uniffi::remote(Record)]
 pub struct GemEIP712Field {
     pub name: String,
     pub value: GemEIP712TypedValue,
 }
 
-#[derive(Debug, uniffi::Enum)]
+#[uniffi::remote(Enum)]
 pub enum GemEIP712TypedValue {
     Address { value: String },
     Uint256 { value: String },
     String { value: String },
     Bool { value: bool },
     Bytes { value: Vec<u8> },
-    Struct { fields: Vec<GemEIP712Field> },
-    Array { items: Vec<GemEIP712TypedValue> },
+    Struct { fields: Vec<EIP712Field> },
+    Array { items: Vec<EIP712TypedValue> },
+}
+
+#[derive(Debug, uniffi::Record)]
+pub struct GemEIP712Message {
+    pub domain: GemEIP712MessageDomain,
+    pub message: Vec<GemEIP712Field>,
 }
 
 impl GemEIP712Message {
-    pub fn from_json(json: &str) -> Result<Self, GemstoneError> {
-        let value: Value = serde_json::from_str(json).map_err(|e| GemstoneError::from(format!("Invalid EIP712 JSON: {}", e)))?;
+    pub fn from_json(json_str: &str) -> Result<Self, GemstoneError> {
+        let value: Value = serde_json::from_str(json_str).map_err(|e| GemstoneError::from(format!("Invalid EIP712 JSON: {}", e)))?;
 
         let domain_value = value.get("domain").ok_or_else(|| GemstoneError::from("Invalid EIP712 JSON: missing domain"))?;
         let domain: GemEIP712MessageDomain =
@@ -180,7 +182,7 @@ mod tests {
 
     #[test]
     fn test_permit2_json_parsing() {
-        let json_str = r#"{"domain":{"name":"Permit2","chainId":1,"verifyingContract":"0x000000000022D473030F116dDEE9F6B43aC78BA3"},"types":{"EIP712Domain":[{"name":"name","type":"string"},{"name":"chainId","type":"uint256"},{"name":"verifyingContract","type":"address"}],"PermitSingle":[{"name":"details","type":"PermitDetails"},{"name":"spender","type":"address"},{"name":"sigDeadline","type":"uint256"}],"PermitDetails":[{"name":"token","type":"address"},{"name":"amount","type":"uint160"},{"name":"expiration","type":"uint48"},{"name":"nonce","type":"uint48"}]},"primaryType":"PermitSingle","message":{"details":{"token":"0xdAC17F958D2ee523a2206206994597C13D831ec7","amount":"1461501637330902918203684832716283019655932542975","expiration":"1732780554","nonce":"0"},"spender":"0x3fC91A3afd70395Cd496C647d5a6CC9D4B2b7FAD","sigDeadline":"1730190354"}}"#;
+        let json_str = include_str!("./test/uniswap_permit2.json");
 
         let result = GemEIP712Message::from_json(json_str);
         assert!(result.is_ok(), "Parsing failed: {:?}", result.err());
@@ -212,8 +214,7 @@ mod tests {
                     GemEIP712TypedValue::Address { value } => assert_eq!(value, "0xdAC17F958D2ee523a2206206994597C13D831ec7"),
                     _ => panic!("Incorrect type for details.token"),
                 }
-                // 1.2 amount (uint160 - parsed as Uint256 for now as we don't have specific uint sizes yet)
-                // Note: The 'types' defined uint160, uint48, but our current parser treats them based on JSON value type.
+                // 1.2 amount (uint160 - parsed as Uint256 for now)
                 // We parse uint160 as Uint256 { value: String } because the JSON value is a string.
                 assert_eq!(fields[1].name, "amount");
                 match &fields[1].value {

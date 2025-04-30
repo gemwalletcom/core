@@ -109,3 +109,4 @@ pub use self::swap_provider::SwapProvider;
 pub mod swap;
 pub mod websocket;
 pub use self::websocket::WebSocketPricePayload;
+pub use eip712::{eip712_domain_types, EIP712Domain, EIP712Field, EIP712Type, EIP712TypedValue};

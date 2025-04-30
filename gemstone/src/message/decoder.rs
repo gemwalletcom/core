@@ -38,11 +38,11 @@ impl SignMessageDecoder {
                 Ok(MessagePreview::Text(preview))
             }
             SignDigestType::Eip712 => {
-                let utf8_str = String::from_utf8(self.message.data.clone()).map_err(|_| GemstoneError::from("Invalid UTF-8 string"))?;
+                let utf8_str = String::from_utf8(self.message.data.clone()).map_err(|_| GemstoneError::from("Invalid UTF-8 string for EIP712"))?;
                 if utf8_str.is_empty() {
-                    return Err(GemstoneError::from("Invalid EIP712 message"));
+                    return Err(GemstoneError::from("Empty EIP712 message string"));
                 }
-                let message = GemEIP712Message::from_json(&utf8_str).map_err(|_| GemstoneError::from("Invalid EIP712 message"))?;
+                let message = GemEIP712Message::from_json(&utf8_str).map_err(|e| GemstoneError::from(format!("Invalid EIP712 message: {}", e)))?;
                 Ok(MessagePreview::EIP712(message))
             }
             SignDigestType::Base58 => {
