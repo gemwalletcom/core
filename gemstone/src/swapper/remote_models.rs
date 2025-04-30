@@ -22,6 +22,7 @@ pub enum GemSwapProvider {
     Mayan,
     Reservoir,
     Symbiosis,
+    Chainflip,
 }
 
 #[uniffi::remote(Enum)]

@@ -14,6 +14,7 @@ mod permit2_data;
 pub mod across;
 pub mod asset;
 pub mod cetus;
+pub mod chainflip;
 pub mod error;
 pub mod jupiter;
 pub mod models;
@@ -131,6 +132,7 @@ impl GemSwapper {
                 Box::new(cetus::Cetus::default()),
                 Box::new(proxy::new_stonfi_v2()),
                 Box::new(proxy::new_mayan()),
+                Box::new(chainflip::ChainflipProvider::default()),
             ],
         }
     }
