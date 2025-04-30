@@ -5,11 +5,10 @@ use crate::{
     network::AlienProvider,
     swapper::{
         asset::{ARBITRUM_USDC, ETHEREUM_USDC, ETHEREUM_USDT, SOLANA_USDC},
-        slippage, FetchQuoteData, GemSwapProvider, SwapChainAsset, SwapProviderData, SwapProviderType, SwapQuote, SwapQuoteData, SwapQuoteRequest, SwapRoute,
-        Swapper, SwapperError,
+        FetchQuoteData, GemSwapProvider, SwapChainAsset, SwapProviderData, SwapProviderType, SwapQuote, SwapQuoteData, SwapQuoteRequest, SwapRoute, Swapper,
+        SwapperError,
     },
 };
-use alloy_primitives::U256;
 use primitives::{swap::QuoteAsset, Chain};
 
 use super::{broker::BrokerClient, capitalize::capitalize_first_letter, model::QuoteRequest};
@@ -54,6 +53,7 @@ impl Swapper for ChainflipProvider {
         let broker_client = BrokerClient::new(provider);
         let (src_chain, src_asset) = Self::map_asset_id(&request.from_asset);
         let (dest_chain, dest_asset) = Self::map_asset_id(&request.to_asset);
+        let fee_bps = get_swap_config().default_slippage.bps;
         let quote_request = QuoteRequest {
             amount: request.value.clone(),
             src_chain,
@@ -62,20 +62,19 @@ impl Swapper for ChainflipProvider {
             dest_asset,
             is_vault_swap: true,
             dca_enabled: true,
+            broker_commission_bps: Some(fee_bps),
         };
 
         let quote_responses = broker_client.get_quote(&quote_request).await?;
         if quote_responses.is_empty() {
             return Err(SwapperError::NoQuoteAvailable);
         }
-        let bps = get_swap_config().default_slippage.bps;
+
         let quote_response = &quote_responses[0];
-        let amount: U256 = quote_response.egress_amount.parse().map_err(SwapperError::from)?;
-        let to_value = slippage::apply_slippage_in_bp(&amount, bps);
 
         let quote = SwapQuote {
             from_value: request.value.clone(),
-            to_value: to_value.to_string(),
+            to_value: quote_response.egress_amount.clone(),
             data: SwapProviderData {
                 provider: self.provider.clone(),
                 slippage_bps: quote_response.slippage_bps(),

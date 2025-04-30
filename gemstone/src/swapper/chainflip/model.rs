@@ -10,6 +10,7 @@ pub struct QuoteRequest {
     pub dest_asset: String,
     pub is_vault_swap: bool,
     pub dca_enabled: bool,
+    pub broker_commission_bps: Option<u32>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
