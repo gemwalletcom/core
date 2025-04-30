@@ -17,7 +17,7 @@ impl BrokerClient {
         Self { provider }
     }
 
-    pub async fn get_quote(&self, request: &QuoteRequest) -> Result<QuoteResponse, SwapperError> {
+    pub async fn get_quote(&self, request: &QuoteRequest) -> Result<Vec<QuoteResponse>, SwapperError> {
         let query = serde_urlencoded::to_string(request).map_err(SwapperError::from)?;
         let url = format!("{}/v2/quote?{}", CHAINFLIP_API_URL, query);
         let target = AlienTarget::get(&url);

@@ -1,13 +1,15 @@
 use std::sync::Arc;
 
 use crate::{
+    config::swap_config::get_swap_config,
     network::AlienProvider,
     swapper::{
         asset::{ARBITRUM_USDC, ETHEREUM_USDC, ETHEREUM_USDT, SOLANA_USDC},
-        FetchQuoteData, GemSwapProvider, SwapChainAsset, SwapProviderData, SwapProviderType, SwapQuote, SwapQuoteData, SwapQuoteRequest, SwapRoute, Swapper,
-        SwapperError,
+        slippage, FetchQuoteData, GemSwapProvider, SwapChainAsset, SwapProviderData, SwapProviderType, SwapQuote, SwapQuoteData, SwapQuoteRequest, SwapRoute,
+        Swapper, SwapperError,
     },
 };
+use alloy_primitives::U256;
 use primitives::{swap::QuoteAsset, Chain};
 
 use super::{broker::BrokerClient, capitalize::capitalize_first_letter, model::QuoteRequest};
@@ -62,10 +64,18 @@ impl Swapper for ChainflipProvider {
             dca_enabled: true,
         };
 
-        let quote_response = broker_client.get_quote(&quote_request).await?;
+        let quote_responses = broker_client.get_quote(&quote_request).await?;
+        if quote_responses.is_empty() {
+            return Err(SwapperError::NoQuoteAvailable);
+        }
+        let bps = get_swap_config().default_slippage.bps;
+        let quote_response = &quote_responses[0];
+        let amount: U256 = quote_response.egress_amount.parse().map_err(SwapperError::from)?;
+        let to_value = slippage::apply_slippage_in_bp(&amount, bps);
+
         let quote = SwapQuote {
             from_value: request.value.clone(),
-            to_value: quote_response.egress_amount.clone(),
+            to_value: to_value.to_string(),
             data: SwapProviderData {
                 provider: self.provider.clone(),
                 slippage_bps: quote_response.slippage_bps(),
