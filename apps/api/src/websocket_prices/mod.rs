@@ -1,8 +1,9 @@
+use std::collections::HashSet;
 use std::sync::Arc;
 use std::time::Duration;
 
 use pricer::PriceClient;
-use primitives::asset_id::AssetIdVecExt;
+use primitives::asset_id::AssetIdHashSetExt;
 use primitives::websocket::{WebSocketPriceAction, WebSocketPriceActionType};
 use primitives::{AssetId, AssetPrice, FiatRate, WebSocketPricePayload};
 use rocket::futures::{SinkExt, StreamExt};
@@ -56,7 +57,7 @@ pub async fn ws_prices(ws: WebSocket, mode: Option<String>, price_client: &State
 
     ws.channel(move |mut stream| {
         Box::pin(async move {
-            let mut assets: Vec<AssetId> = Vec::new();
+            let mut assets: HashSet<AssetId> = HashSet::new();
 
             let message_type = MessageType::from_str(mode.as_ref().map_or("text", |v| v));
             let mut update_rates = false;
@@ -75,7 +76,7 @@ pub async fn ws_prices(ws: WebSocket, mode: Option<String>, price_client: &State
                                 serde_json::from_slice(data.as_slice())
                                     .map(|new_assets: Vec<AssetId>| {
                                         println!("Updating asset subscription to: {:?}", new_assets);
-                                        assets = new_assets;
+                                        assets.extend(new_assets);
                                     })
                                     .unwrap_or_else(|e| {
                                         eprintln!("Failed to deserialize asset list: {}", e);
@@ -86,20 +87,9 @@ pub async fn ws_prices(ws: WebSocket, mode: Option<String>, price_client: &State
 
                                 match serde_json::from_str::<WebSocketPriceAction>(&text) {
                                     Ok(action) => {
-                                        match action.action {
-                                            WebSocketPriceActionType::Subscribe => {
-                                                println!("Subscribe assets: {:?}", action.assets);
-                                                assets = action.assets;
+                                        assets.extend(action.assets.clone());
 
-                                                // Send new assets to the client
-                                            }
-                                            WebSocketPriceActionType::Add => {
-                                                println!("Add assets to: {:?}", action.assets);
-                                                assets.extend_from_slice(&action.assets);
-
-                                                // Send added assets to the client
-                                            }
-                                        }
+                                        //TODO: Send new assets to the client
                                     }
                                     Err(e) => {
                                         eprintln!("Failed to deserialize asset list: {}", e);
