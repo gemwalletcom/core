@@ -59,19 +59,19 @@ pub async fn ws_prices(ws: WebSocket, mode: Option<String>, price_client: &State
         Box::pin(async move {
             let mut assets: HashSet<AssetId> = HashSet::new();
 
-            let message_type = MessageType::from_str(mode.as_ref().map_or("text", |v| v));
+            let mode = MessageType::from_str(mode.as_ref().map_or("text", |v| v));
             let mut update_rates = false;
             let price_client = price_client.clone();
             let mut interval = rocket::tokio::time::interval(Duration::from_secs(1));
 
-            println!("WebSocket client connected");
+            println!("WebSocket client connected, mode: {:?}", mode);
 
             loop {
                 tokio::select! {
                     message = stream.next() => {
                         match message {
                             Some(Ok(Message::Binary(data))) => {
-                                println!("Received binary message: {:?}", data);
+                                println!("Received binary message: {:?}", data.len());
 
                                 match serde_json::from_slice::<WebSocketPriceAction>(&data) {
                                     Ok(message) => {
