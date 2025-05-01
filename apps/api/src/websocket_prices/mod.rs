@@ -4,7 +4,7 @@ use std::time::Duration;
 
 use pricer::PriceClient;
 use primitives::asset_id::AssetIdHashSetExt;
-use primitives::websocket::{WebSocketPriceAction, WebSocketPriceActionType};
+use primitives::websocket::WebSocketPriceAction;
 use primitives::{AssetId, AssetPrice, FiatRate, WebSocketPricePayload};
 use rocket::futures::{SinkExt, StreamExt};
 use rocket::serde::json::serde_json;
