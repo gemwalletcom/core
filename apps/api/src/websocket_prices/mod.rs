@@ -73,14 +73,19 @@ pub async fn ws_prices(ws: WebSocket, mode: Option<String>, price_client: &State
                             Some(Ok(Message::Binary(data))) => {
                                 println!("Received binary message: {:?}", data);
 
-                                serde_json::from_slice(data.as_slice())
-                                    .map(|new_assets: Vec<AssetId>| {
-                                        println!("Updating asset subscription to: {:?}", new_assets);
-                                        assets.extend(new_assets);
-                                    })
-                                    .unwrap_or_else(|e| {
-                                        eprintln!("Failed to deserialize asset list: {}", e);
-                                    });
+                                match serde_json::from_slice::<WebSocketPriceAction>(&data) {
+                                    Ok(message) => {
+                                        println!(
+                                            "Got action={:?}, updating assets: {:?}",
+                                            message.action,
+                                            message.assets.len()
+                                        );
+                                        assets.extend(message.assets);
+                                    }
+                                    Err(e) => {
+                                        eprintln!("Failed to deserialize WebSocketPriceAction: {}", e);
+                                    }
+                                }
                             }
                             Some(Ok(Message::Text(text))) => {
                                 println!("Received message: {}", text);
