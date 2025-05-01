@@ -31,6 +31,8 @@ pub use self::asset_price::{AssetMarket, AssetPrice, AssetPrices, AssetPricesReq
 pub mod asset_details;
 pub use self::asset_details::{AssetBasic, AssetFull, AssetLink, AssetMarketPrice, AssetProperties};
 pub mod asset_constants;
+pub mod asset_order;
+pub use self::asset_order::AssetOrder;
 pub mod fiat_assets;
 pub mod fiat_quote;
 pub use self::fiat_quote::{FiatQuote, FiatQuoteError, FiatQuotes};
