@@ -140,7 +140,7 @@ pub async fn ws_prices(ws: WebSocket, mode: Option<String>, price_client: &State
                             continue;
                         }
 
-                        let payload = MessagePayload::from(prices.clone(), rates).message(message_type.clone());
+                        let payload = MessagePayload::from(prices.clone(), rates).message(mode.clone());
 
                         if stream.send(payload).await.is_err() {
                             eprintln!("WebSocket send error, closing connection.");
