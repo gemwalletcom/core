@@ -28,6 +28,20 @@ impl JsonRpcRequest {
             params,
         }
     }
+
+    /// Creates an AlienTarget for this JSON-RPC request directed at a specific URL.
+    pub fn to_target(&self, url: &str) -> Result<AlienTarget, AlienError> {
+        let headers = HashMap::from([("Content-Type".into(), "application/json".into())]);
+        let body = serde_json::to_vec(self).map_err(|e| AlienError::RequestError {
+            msg: format!("Failed to serialize RPC request: {}", e),
+        })?;
+        Ok(AlienTarget {
+            url: url.into(),
+            method: AlienHttpMethod::Post,
+            headers: Some(headers),
+            body: Some(body),
+        })
+    }
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -141,6 +155,36 @@ where
 
     let results: Vec<JsonRpcResult<U>> = serde_json::from_slice(data).map_err(|err| AlienError::ResponseError { msg: err.to_string() })?;
     Ok(results)
+}
+
+/// Makes a JSON-RPC call to an arbitrary URL (not tied to a specific Chain endpoint).
+/// Handles request construction, sending via AlienProvider, and response parsing.
+pub async fn jsonrpc_call_with_endpoint<T, U>(provider: Arc<dyn AlienProvider>, url: &str, method: &str, params: T) -> Result<U, AlienError>
+where
+    T: Serialize,
+    U: DeserializeOwned + Clone,
+{
+    let params_value = serde_json::to_value(params).map_err(|e| AlienError::RequestError {
+        msg: format!("Failed to serialize RPC params: {}", e),
+    })?;
+
+    // Wrap single object/value in an array if it's not already an array
+    let params_array = match params_value {
+        serde_json::Value::Array(arr) => arr,
+        _ => vec![params_value],
+    };
+
+    let request = JsonRpcRequest::new(1, method, params_array);
+    let target = request.to_target(url)?;
+    let response_data = provider.request(target).await?;
+
+    // Deserialize into the JsonRpcResult enum first
+    let rpc_result: JsonRpcResult<U> = serde_json::from_slice(&response_data).map_err(|e| AlienError::ResponseError {
+        msg: format!("Failed to parse JSON-RPC response: {}", e),
+    })?;
+
+    // Use take() to extract the result or the RPC error
+    rpc_result.take().map_err(AlienError::from)
 }
 
 #[cfg(test)]

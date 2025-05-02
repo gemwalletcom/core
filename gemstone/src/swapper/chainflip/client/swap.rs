@@ -8,11 +8,11 @@ use std::sync::Arc;
 const CHAINFLIP_API_URL: &str = "https://chainflip-swap.chainflip.io";
 
 #[derive(Debug)]
-pub struct BrokerClient {
+pub struct ChainflipClient {
     provider: Arc<dyn AlienProvider>,
 }
 
-impl BrokerClient {
+impl ChainflipClient {
     pub fn new(provider: Arc<dyn AlienProvider>) -> Self {
         Self { provider }
     }

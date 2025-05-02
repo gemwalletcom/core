@@ -1,17 +1,22 @@
+use alloy_primitives::U256;
 use std::sync::Arc;
 
+use super::{
+    broker::{model::*, BrokerClient},
+    capitalize::capitalize_first_letter,
+    client::{ChainflipClient, QuoteRequest},
+};
 use crate::{
     config::swap_config::get_swap_config,
     network::AlienProvider,
     swapper::{
+        approval::check_approval_erc20,
         asset::{ARBITRUM_USDC, ETHEREUM_USDC, ETHEREUM_USDT, SOLANA_USDC},
         FetchQuoteData, GemSwapProvider, SwapChainAsset, SwapProviderData, SwapProviderType, SwapQuote, SwapQuoteData, SwapQuoteRequest, SwapRoute, Swapper,
         SwapperError,
     },
 };
-use primitives::{swap::QuoteAsset, Chain};
-
-use super::{broker::BrokerClient, capitalize::capitalize_first_letter, model::QuoteRequest};
+use primitives::{chain::Chain, swap::QuoteAsset, ChainType};
 
 #[derive(Debug)]
 pub struct ChainflipProvider {
@@ -27,10 +32,13 @@ impl Default for ChainflipProvider {
 }
 
 impl ChainflipProvider {
-    fn map_asset_id(asset: &QuoteAsset) -> (String, String) {
+    fn map_asset_id(asset: &QuoteAsset) -> ChainflipAsset {
         let asset_id = asset.asset_id();
         let chain_name = capitalize_first_letter(asset_id.chain.as_ref());
-        (chain_name, asset.symbol.clone())
+        ChainflipAsset {
+            chain: chain_name,
+            asset: asset.symbol.clone(),
+        }
     }
 }
 
@@ -50,16 +58,16 @@ impl Swapper for ChainflipProvider {
     }
 
     async fn fetch_quote(&self, request: &SwapQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapQuote, SwapperError> {
-        let broker_client = BrokerClient::new(provider);
-        let (src_chain, src_asset) = Self::map_asset_id(&request.from_asset);
-        let (dest_chain, dest_asset) = Self::map_asset_id(&request.to_asset);
+        let broker_client = ChainflipClient::new(provider);
+        let src_asset = Self::map_asset_id(&request.from_asset);
+        let dest_asset = Self::map_asset_id(&request.to_asset);
         let fee_bps = get_swap_config().default_slippage.bps;
         let quote_request = QuoteRequest {
             amount: request.value.clone(),
-            src_chain,
-            src_asset,
-            dest_chain,
-            dest_asset,
+            src_chain: src_asset.chain,
+            src_asset: src_asset.asset,
+            dest_chain: dest_asset.chain,
+            dest_asset: dest_asset.asset,
             is_vault_swap: true,
             dca_enabled: true,
             broker_commission_bps: Some(fee_bps),
@@ -91,8 +99,64 @@ impl Swapper for ChainflipProvider {
         Ok(quote)
     }
 
-    async fn fetch_quote_data(&self, _quote: &SwapQuote, _provider: Arc<dyn AlienProvider>, _data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError> {
-        Err(SwapperError::NotImplemented)
+    async fn fetch_quote_data(&self, quote: &SwapQuote, provider: Arc<dyn AlienProvider>, _data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError> {
+        let from_asset = quote.request.from_asset.asset_id();
+        let broker_client = BrokerClient::new(provider.clone());
+        let source_asset = Self::map_asset_id(&quote.request.from_asset);
+        let destination_asset = Self::map_asset_id(&quote.request.to_asset);
+
+        let input_amount: u128 = quote.request.value.parse()?;
+        let output_amount: u128 = quote.to_value.parse()?;
+        let slippage: u128 = quote.data.slippage_bps.into();
+        let min_price = output_amount * (10000 - slippage) / 10000;
+
+        let extra_params = VaultSwapExtraParams {
+            chain: source_asset.chain.clone(),
+            input_amount,
+            refund_parameters: RefundParameters {
+                retry_duration: 150, // 150 blocks
+                refund_address: quote.request.wallet_address.clone(),
+                min_price: min_price.to_string(),
+            },
+        };
+
+        let fee_bps = get_swap_config().default_slippage.bps;
+
+        let response = broker_client
+            .encode_vault_swap(
+                source_asset,
+                destination_asset,
+                quote.request.destination_address.clone(),
+                fee_bps,
+                Some(extra_params),
+                None,
+            )
+            .await?;
+
+        let approval: Option<_> = if from_asset.chain.chain_type() == ChainType::Ethereum && !from_asset.is_native() {
+            let approval = check_approval_erc20(
+                quote.request.wallet_address.clone(),
+                from_asset.token_id.unwrap(),
+                response.to.clone(),
+                U256::from(input_amount),
+                provider.clone(),
+                &from_asset.chain,
+            )
+            .await?;
+            approval.approval_data()
+        } else {
+            None
+        };
+
+        let swap_quote_data = SwapQuoteData {
+            to: response.to,
+            value: quote.request.value.clone(),
+            data: response.calldata,
+            approval,
+            gas_limit: None,
+        };
+
+        Ok(swap_quote_data)
     }
 
     async fn get_transaction_status(&self, _chain: Chain, _transaction_hash: &str, _provider: Arc<dyn AlienProvider>) -> Result<bool, SwapperError> {

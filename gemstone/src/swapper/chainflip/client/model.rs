@@ -29,7 +29,6 @@ pub struct QuoteResponse {
     pub intermediate_amount: Option<String>,
     pub egress_amount: String,
     pub recommended_slippage_tolerance_percent: f64,
-    pub included_fees: Vec<IncludedFee>,
     pub low_liquidity_warning: bool,
     pub estimated_duration_seconds: f64,
     #[serde(rename = "type")]
