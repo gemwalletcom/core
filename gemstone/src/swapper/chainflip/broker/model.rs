@@ -1,4 +1,7 @@
+use alloy_primitives::U256;
 use serde::{Deserialize, Serialize};
+
+use crate::swapper::SwapperError;
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Hash)]
 pub struct ChainflipAsset {
@@ -39,4 +42,25 @@ pub struct VaultSwapResponse {
     pub calldata: String,
     pub value: String,
     pub to: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ChainflipEnvironment {
+    pub ingress_egress: CahinflipIngressEgress,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CahinflipIngressEgress {
+    pub minimum_deposit_amounts: serde_json::Value,
+}
+
+impl CahinflipIngressEgress {
+    pub fn get_min_deposit_amount(&self, asset: &ChainflipAsset) -> Result<U256, SwapperError> {
+        let chain_map = self.minimum_deposit_amounts.get(&asset.chain).ok_or(SwapperError::NotSupportedChain)?;
+        let asset = chain_map.get(&asset.asset).ok_or(SwapperError::NotSupportedAsset)?;
+        let amount = asset.as_str().ok_or(SwapperError::NotSupportedAsset)?;
+
+        let u256_value = U256::from_str_radix(amount, 16).map_err(SwapperError::from)?;
+        Ok(u256_value)
+    }
 }

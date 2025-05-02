@@ -157,9 +157,21 @@ where
     Ok(results)
 }
 
-/// Makes a JSON-RPC call to an arbitrary URL (not tied to a specific Chain endpoint).
-/// Handles request construction, sending via AlienProvider, and response parsing.
 pub async fn jsonrpc_call_with_endpoint<T, U>(provider: Arc<dyn AlienProvider>, url: &str, method: &str, params: T) -> Result<U, AlienError>
+where
+    T: Serialize,
+    U: DeserializeOwned + Clone,
+{
+    jsonrpc_call_with_endpoint_cache(provider, url, method, params, None).await
+}
+
+pub async fn jsonrpc_call_with_endpoint_cache<T, U>(
+    provider: Arc<dyn AlienProvider>,
+    url: &str,
+    method: &str,
+    params: T,
+    ttl: Option<u64>,
+) -> Result<U, AlienError>
 where
     T: Serialize,
     U: DeserializeOwned + Clone,
@@ -175,7 +187,10 @@ where
     };
 
     let request = JsonRpcRequest::new(1, method, params_array);
-    let target = request.to_target(url)?;
+    let mut target = request.to_target(url)?;
+    if let Some(ttl) = ttl {
+        target = target.set_cache_ttl(ttl);
+    }
     let response_data = provider.request(target).await?;
 
     // Deserialize into the JsonRpcResult enum first
