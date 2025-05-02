@@ -1,6 +1,6 @@
 use super::{
     model::{ChainflipAsset, DcaParameters, DepositAddressResponse, RefundParameters, VaultSwapExtraParams, VaultSwapResponse},
-    ChainflipEnvironment,
+    CahinflipIngressEgress, ChainflipEnvironment,
 };
 use crate::{
     network::{jsonrpc::JsonRpcClient, AlienProvider},
@@ -24,12 +24,13 @@ impl BrokerClient {
         }
     }
 
-    pub async fn get_swap_limits(&self) -> Result<ChainflipEnvironment, SwapperError> {
+    pub async fn get_swap_limits(&self) -> Result<CahinflipIngressEgress, SwapperError> {
         self.client
             .call_method_with_param("cf_environment", json!([]), Some(60 * 60 * 24 * 30))
             .await
             .map_err(SwapperError::from)
             .map(|x| x.take().map_err(SwapperError::from))?
+            .map(|x: ChainflipEnvironment| x.ingress_egress)
     }
 
     pub async fn get_deposit_address(

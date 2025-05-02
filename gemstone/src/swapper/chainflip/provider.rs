@@ -58,14 +58,17 @@ impl Swapper for ChainflipProvider {
     }
 
     async fn fetch_quote(&self, request: &SwapQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapQuote, SwapperError> {
-        let broker_client = ChainflipClient::new(provider);
+        let chainflip_client = ChainflipClient::new(provider.clone());
+        let broker_client = BrokerClient::new(provider);
         let src_asset = Self::map_asset_id(&request.from_asset);
         let dest_asset = Self::map_asset_id(&request.to_asset);
         let fee_bps = get_swap_config().default_slippage.bps;
+        let amount = request.value.parse::<U256>()?;
+
         let quote_request = QuoteRequest {
             amount: request.value.clone(),
-            src_chain: src_asset.chain,
-            src_asset: src_asset.asset,
+            src_chain: src_asset.chain.clone(),
+            src_asset: src_asset.asset.clone(),
             dest_chain: dest_asset.chain,
             dest_asset: dest_asset.asset,
             is_vault_swap: true,
@@ -73,13 +76,19 @@ impl Swapper for ChainflipProvider {
             broker_commission_bps: Some(fee_bps),
         };
 
-        let quote_responses = broker_client.get_quote(&quote_request).await?;
+        let swap_limit_req = broker_client.get_swap_limits();
+        let quote_req = chainflip_client.get_quote(&quote_request);
+        let (swap_limit, quote_responses) = futures::try_join!(swap_limit_req, quote_req)?;
+
+        if swap_limit.get_min_deposit_amount(&src_asset)? < amount {
+            return Err(SwapperError::InputAmountTooSmall);
+        }
+
         if quote_responses.is_empty() {
             return Err(SwapperError::NoQuoteAvailable);
         }
 
         let quote_response = &quote_responses[0];
-
         let quote = SwapQuote {
             from_value: request.value.clone(),
             to_value: quote_response.egress_amount.clone(),
