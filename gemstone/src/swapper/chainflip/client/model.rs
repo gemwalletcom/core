@@ -42,3 +42,10 @@ impl QuoteResponse {
         (self.recommended_slippage_tolerance_percent * 100.0) as u32
     }
 }
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SwapTxResponse {
+    pub state: String,
+    pub swap_id: String,
+}

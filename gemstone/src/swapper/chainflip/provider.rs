@@ -169,7 +169,9 @@ impl Swapper for ChainflipProvider {
         Ok(swap_quote_data)
     }
 
-    async fn get_transaction_status(&self, _chain: Chain, _transaction_hash: &str, _provider: Arc<dyn AlienProvider>) -> Result<bool, SwapperError> {
-        Err(SwapperError::NotImplemented)
+    async fn get_transaction_status(&self, _chain: Chain, transaction_hash: &str, provider: Arc<dyn AlienProvider>) -> Result<bool, SwapperError> {
+        let chainflip_client = ChainflipClient::new(provider.clone());
+        let status = chainflip_client.get_tx_status(transaction_hash).await?;
+        Ok(status.state == "COMPLETED")
     }
 }
