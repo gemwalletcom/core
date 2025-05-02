@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
+use crate::AssetId;
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 #[typeshare(swift = "Sendable, Hashable, Equatable")]
@@ -18,9 +20,9 @@ pub struct Markets {
 #[serde(rename_all = "camelCase")]
 #[typeshare(swift = "Sendable, Hashable, Equatable")]
 pub struct MarketsAssets {
-    pub trending: Vec<String>,
-    pub gainers: Vec<String>,
-    pub losers: Vec<String>,
+    pub trending: Vec<AssetId>,
+    pub gainers: Vec<AssetId>,
+    pub losers: Vec<AssetId>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

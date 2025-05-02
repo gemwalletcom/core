@@ -1,10 +1,11 @@
+use std::collections::HashSet;
 use std::sync::Arc;
 use std::time::Duration;
 
 use pricer::PriceClient;
-use primitives::asset_id::AssetIdVecExt;
-use primitives::websocket::{WebSocketPriceAction, WebSocketPriceActionType};
-use primitives::{AssetId, AssetPrice, FiatRate, WebSocketPricePayload};
+use primitives::asset_id::AssetIdHashSetExt;
+use primitives::websocket::WebSocketPriceAction;
+use primitives::{AssetId, WebSocketPricePayload};
 use rocket::futures::{SinkExt, StreamExt};
 use rocket::serde::json::serde_json;
 use rocket::tokio::sync::Mutex;
@@ -12,53 +13,14 @@ use rocket::State;
 use rocket_ws::result::Error as WsError;
 use rocket_ws::{Channel, Message, WebSocket};
 
-#[derive(Debug, Clone)]
-pub enum MessageType {
-    Text,
-    Binary,
-}
-
-impl MessageType {
-    pub fn from_str(s: &str) -> Self {
-        match s {
-            "text" => MessageType::Text,
-            "binary" => MessageType::Binary,
-            _ => MessageType::Text,
-        }
-    }
-}
-
-pub struct MessagePayload {
-    pub payload: Vec<u8>,
-}
-
-impl MessagePayload {
-    pub fn new(payload: Vec<u8>) -> Self {
-        Self { payload }
-    }
-
-    pub fn message(&self, message_type: MessageType) -> Message {
-        match message_type {
-            MessageType::Text => Message::Text(String::from_utf8_lossy(&self.payload).to_string()),
-            MessageType::Binary => Message::Binary(self.payload.clone()),
-        }
-    }
-
-    pub fn from(prices: Vec<AssetPrice>, rates: Vec<FiatRate>) -> MessagePayload {
-        let payload = WebSocketPricePayload { prices, rates };
-        MessagePayload::new(serde_json::to_vec(&payload).unwrap())
-    }
-}
-
-#[rocket::get("/prices?<mode>")]
-pub async fn ws_prices(ws: WebSocket, mode: Option<String>, price_client: &State<Arc<Mutex<PriceClient>>>) -> Channel<'static> {
+#[rocket::get("/prices")]
+pub async fn ws_prices(ws: WebSocket, price_client: &State<Arc<Mutex<PriceClient>>>) -> Channel<'static> {
     let price_client = price_client.inner().clone();
 
     ws.channel(move |mut stream| {
         Box::pin(async move {
-            let mut assets: Vec<AssetId> = Vec::new();
+            let mut assets: HashSet<AssetId> = HashSet::new();
 
-            let message_type = MessageType::from_str(mode.as_ref().map_or("text", |v| v));
             let mut update_rates = false;
             let price_client = price_client.clone();
             let mut interval = rocket::tokio::time::interval(Duration::from_secs(1));
@@ -70,36 +32,30 @@ pub async fn ws_prices(ws: WebSocket, mode: Option<String>, price_client: &State
                     message = stream.next() => {
                         match message {
                             Some(Ok(Message::Binary(data))) => {
-                                println!("Received binary message: {:?}", data);
+                                println!("Received binary message: {:?}", data.len());
 
-                                serde_json::from_slice(data.as_slice())
-                                    .map(|new_assets: Vec<AssetId>| {
-                                        println!("Updating asset subscription to: {:?}", new_assets);
-                                        assets = new_assets;
-                                    })
-                                    .unwrap_or_else(|e| {
-                                        eprintln!("Failed to deserialize asset list: {}", e);
-                                    });
+                                match serde_json::from_slice::<WebSocketPriceAction>(&data) {
+                                    Ok(message) => {
+                                        println!(
+                                            "Got action={:?}, updating assets: {:?}",
+                                            message.action,
+                                            message.assets.len()
+                                        );
+                                        assets.extend(message.assets);
+                                    }
+                                    Err(e) => {
+                                        eprintln!("Failed to deserialize WebSocketPriceAction: {}", e);
+                                    }
+                                }
                             }
                             Some(Ok(Message::Text(text))) => {
                                 println!("Received message: {}", text);
 
                                 match serde_json::from_str::<WebSocketPriceAction>(&text) {
                                     Ok(action) => {
-                                        match action.action {
-                                            WebSocketPriceActionType::Subscribe => {
-                                                println!("Subscribe assets: {:?}", action.assets);
-                                                assets = action.assets;
+                                        assets.extend(action.assets.clone());
 
-                                                // Send new assets to the client
-                                            }
-                                            WebSocketPriceActionType::Add => {
-                                                println!("Add assets to: {:?}", action.assets);
-                                                assets.extend_from_slice(&action.assets);
-
-                                                // Send added assets to the client
-                                            }
-                                        }
+                                        //TODO: Send new assets to the client
                                     }
                                     Err(e) => {
                                         eprintln!("Failed to deserialize asset list: {}", e);
@@ -145,7 +101,9 @@ pub async fn ws_prices(ws: WebSocket, mode: Option<String>, price_client: &State
                             continue;
                         }
 
-                        let payload = MessagePayload::from(prices.clone(), rates).message(message_type.clone());
+                        let payload = WebSocketPricePayload { prices, rates };
+                        let data = serde_json::to_vec(&payload).unwrap();
+                        let payload = Message::Binary(data);
 
                         if stream.send(payload).await.is_err() {
                             eprintln!("WebSocket send error, closing connection.");
