@@ -297,6 +297,7 @@ impl Swapper for Across {
 
         let input_asset = eth_address::normalize_weth_asset(&request.from_asset.asset_id()).ok_or(SwapperError::NotSupportedPair)?;
         let output_asset = eth_address::normalize_weth_asset(&request.to_asset.asset_id()).ok_or(SwapperError::NotSupportedPair)?;
+        let original_output_asset = request.to_asset.asset_id();
         let output_token = eth_address::parse_asset_id(&output_asset)?;
 
         // Get L1 token address
@@ -368,7 +369,8 @@ impl Swapper for Across {
 
         // Calculate gas limit / price for relayer
         let remain_amount = from_amount - lpfee - relayer_fee;
-        let (message, referral_fee) = self.message_for_multicall_handler(&remain_amount, &output_asset, &wallet_address, &output_token, &referral_config);
+        let (message, referral_fee) =
+            self.message_for_multicall_handler(&remain_amount, &original_output_asset, &wallet_address, &output_token, &referral_config);
 
         let gas_price_req = eth_rpc::fetch_gas_price(provider.clone(), request.to_asset.chain());
         let gas_limit_req = self.estimate_gas_limit(
@@ -405,7 +407,7 @@ impl Swapper for Across {
             &mut v3_relay_data,
             &wallet_address,
             &output_amount,
-            &output_asset,
+            &original_output_asset,
             &output_token,
             timestamp,
             &referral_config,
