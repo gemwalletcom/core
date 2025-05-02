@@ -89,8 +89,8 @@ final class GemTestTests: XCTestCase {
 
     func testSignMessage() async throws {
         let base58 = "jo91waLQA1NNeBmZKUF".data(using: .utf8)!
-        let mesage = SignMessage(signType: .base58, data: base58)
-        let decoder = SignMessageDecoder(message: mesage)
+        let message = SignMessage(signType: .base58, data: base58)
+        let decoder = SignMessageDecoder(message: message)
         let preview = try decoder.preview()
 
         switch preview {
