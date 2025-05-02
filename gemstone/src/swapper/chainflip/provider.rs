@@ -1,4 +1,5 @@
 use alloy_primitives::U256;
+use num_bigint::BigUint;
 use std::sync::Arc;
 
 use super::{
@@ -62,7 +63,7 @@ impl Swapper for ChainflipProvider {
         let broker_client = BrokerClient::new(provider);
         let src_asset = Self::map_asset_id(&request.from_asset);
         let dest_asset = Self::map_asset_id(&request.to_asset);
-        let fee_bps = get_swap_config().default_slippage.bps;
+        let fee_bps = get_swap_config().referral_fee.thorchain.bps;
         let amount = request.value.parse::<U256>()?;
 
         let quote_request = QuoteRequest {
@@ -80,7 +81,7 @@ impl Swapper for ChainflipProvider {
         let quote_req = chainflip_client.get_quote(&quote_request);
         let (swap_limit, quote_responses) = futures::try_join!(swap_limit_req, quote_req)?;
 
-        if swap_limit.get_min_deposit_amount(&src_asset)? < amount {
+        if swap_limit.get_min_deposit_amount(&src_asset)? > amount {
             return Err(SwapperError::InputAmountTooSmall);
         }
 
@@ -114,22 +115,22 @@ impl Swapper for ChainflipProvider {
         let source_asset = Self::map_asset_id(&quote.request.from_asset);
         let destination_asset = Self::map_asset_id(&quote.request.to_asset);
 
-        let input_amount: u128 = quote.request.value.parse()?;
-        let output_amount: u128 = quote.to_value.parse()?;
-        let slippage: u128 = quote.data.slippage_bps.into();
-        let min_price = output_amount * (10000 - slippage) / 10000;
+        let input_amount: BigUint = quote.request.value.parse()?;
+        let output_amount: BigUint = quote.to_value.parse()?;
+        let slippage = quote.data.slippage_bps;
+        let min_price = output_amount * (BigUint::from(10000_u32 - slippage)) / BigUint::from(10000_u32);
 
         let extra_params = VaultSwapExtraParams {
             chain: source_asset.chain.clone(),
-            input_amount,
+            input_amount: input_amount.clone(),
             refund_parameters: RefundParameters {
                 retry_duration: 150, // 150 blocks
                 refund_address: quote.request.wallet_address.clone(),
-                min_price: min_price.to_string(),
+                min_price,
             },
         };
 
-        let fee_bps = get_swap_config().default_slippage.bps;
+        let fee_bps = get_swap_config().referral_fee.thorchain.bps;
 
         let response = broker_client
             .encode_vault_swap(
@@ -147,7 +148,7 @@ impl Swapper for ChainflipProvider {
                 quote.request.wallet_address.clone(),
                 from_asset.token_id.unwrap(),
                 response.to.clone(),
-                U256::from(input_amount),
+                U256::from_le_slice(&input_amount.to_bytes_le()),
                 provider.clone(),
                 &from_asset.chain,
             )

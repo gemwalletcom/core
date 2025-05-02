@@ -1,5 +1,7 @@
 use alloy_primitives::U256;
+use num_bigint::BigUint;
 use serde::{Deserialize, Serialize};
+use serde_serializers::{deserialize_biguint_from_hex_str, serialize_biguint_to_hex_str};
 
 use crate::swapper::SwapperError;
 
@@ -21,7 +23,8 @@ pub struct DepositAddressResponse {
 pub struct RefundParameters {
     pub retry_duration: u32,
     pub refund_address: String,
-    pub min_price: String, // U256 in hex string
+    #[serde(deserialize_with = "deserialize_biguint_from_hex_str", serialize_with = "serialize_biguint_to_hex_str")]
+    pub min_price: BigUint,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -33,14 +36,16 @@ pub struct DcaParameters {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VaultSwapExtraParams {
     pub chain: String,
-    pub input_amount: u128,
+    #[serde(deserialize_with = "deserialize_biguint_from_hex_str", serialize_with = "serialize_biguint_to_hex_str")]
+    pub input_amount: BigUint,
     pub refund_parameters: RefundParameters,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VaultSwapResponse {
     pub calldata: String,
-    pub value: String,
+    #[serde(deserialize_with = "deserialize_biguint_from_hex_str", serialize_with = "serialize_biguint_to_hex_str")]
+    pub value: BigUint,
     pub to: String,
 }
 
@@ -60,7 +65,7 @@ impl CahinflipIngressEgress {
         let asset = chain_map.get(&asset.asset).ok_or(SwapperError::NotSupportedAsset)?;
         let amount = asset.as_str().ok_or(SwapperError::NotSupportedAsset)?;
 
-        let u256_value = U256::from_str_radix(amount, 16).map_err(SwapperError::from)?;
+        let u256_value = U256::from_str_radix(amount.trim_start_matches("0x"), 16).map_err(SwapperError::from)?;
         Ok(u256_value)
     }
 }
