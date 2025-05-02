@@ -3,10 +3,7 @@ use super::{
     ChainflipEnvironment,
 };
 use crate::{
-    network::{
-        jsonrpc::{jsonrpc_call_with_endpoint, jsonrpc_call_with_endpoint_cache},
-        AlienProvider,
-    },
+    network::{jsonrpc::JsonRpcClient, AlienProvider},
     swapper::SwapperError,
 };
 use serde_json::json;
@@ -17,28 +14,22 @@ const CHAINFLIP_BROKER_KEY: &str = "ed08651813cc4d4798bf9b953b5d33fb";
 
 #[derive(Debug)]
 pub struct BrokerClient {
-    provider: Arc<dyn AlienProvider>,
+    client: JsonRpcClient,
 }
 
 impl BrokerClient {
     pub fn new(provider: Arc<dyn AlienProvider>) -> Self {
-        Self { provider }
-    }
-
-    pub fn get_endpoint(&self) -> String {
-        format!("{}/rpc/{}", CHAINFLIP_BROKER_URL, CHAINFLIP_BROKER_KEY)
+        Self {
+            client: JsonRpcClient::new(provider.clone(), format!("{}/rpc/{}", CHAINFLIP_BROKER_URL, CHAINFLIP_BROKER_KEY)),
+        }
     }
 
     pub async fn get_swap_limits(&self) -> Result<ChainflipEnvironment, SwapperError> {
-        jsonrpc_call_with_endpoint_cache(
-            self.provider.clone(),
-            &self.get_endpoint(),
-            "cf_environment",
-            json!([]),
-            Some(60 * 60 * 24 * 30),
-        )
-        .await
-        .map_err(SwapperError::from)
+        self.client
+            .call_method_with_param("cf_environment", json!([]), Some(60 * 60 * 24 * 30))
+            .await
+            .map_err(SwapperError::from)
+            .map(|x| x.take().map_err(SwapperError::from))?
     }
 
     pub async fn get_deposit_address(
@@ -62,9 +53,11 @@ impl BrokerClient {
             dca_params,
         ]);
 
-        jsonrpc_call_with_endpoint(self.provider.clone(), &self.get_endpoint(), "broker_request_swap_deposit_address", params)
+        self.client
+            .call_method_with_param("broker_request_swap_deposit_address", params, None)
             .await
             .map_err(SwapperError::from)
+            .map(|x| x.take().map_err(SwapperError::from))?
     }
 
     pub async fn encode_vault_swap(
@@ -87,8 +80,10 @@ impl BrokerClient {
             [],   // affiliate_fees
             dca_params,
         ]);
-        jsonrpc_call_with_endpoint(self.provider.clone(), &self.get_endpoint(), "broker_request_swap_parameter_encoding", params)
+        self.client
+            .call_method_with_param("broker_request_swap_parameter_encoding", params, None)
             .await
             .map_err(SwapperError::from)
+            .map(|x| x.take().map_err(SwapperError::from))?
     }
 }

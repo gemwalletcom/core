@@ -1,5 +1,5 @@
 use crate::{
-    network::{jsonrpc::batch_jsonrpc_call, AlienProvider, JsonRpcError},
+    network::{AlienProvider, JsonRpcClient, JsonRpcError},
     swapper::{
         approval::{check_approval_erc20, check_approval_permit2},
         eth_address,
@@ -138,6 +138,7 @@ impl Swapper for UniswapV3 {
         //     [...],
         // ]
         let paths_array = super::path::build_paths(&token_in, &token_out, &fee_tiers, &base_pair);
+        let client = JsonRpcClient::new_with_chain(provider.clone(), from_chain);
         let requests: Vec<_> = paths_array
             .iter()
             .map(|paths| {
@@ -147,7 +148,7 @@ impl Swapper for UniswapV3 {
                     .collect();
 
                 // batch fee_tiers.len() requests into one jsonrpc call
-                batch_jsonrpc_call(calls, provider.clone(), &from_chain)
+                client.batch_call(calls)
             })
             .collect();
 
