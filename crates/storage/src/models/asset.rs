@@ -53,7 +53,7 @@ impl Asset {
     }
 
     pub fn from_primitive_default(asset: primitives::Asset) -> Self {
-        Self::from_primitive(asset.clone(), AssetScore::default(), AssetProperties::default(asset.chain()))
+        Self::from_primitive(asset.clone(), AssetScore::default(), AssetProperties::default(asset.id))
     }
 
     pub fn from_primitive(asset: primitives::Asset, score: AssetScore, properties: primitives::AssetProperties) -> Self {

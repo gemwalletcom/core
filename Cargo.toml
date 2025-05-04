@@ -89,7 +89,7 @@ itertools = { version = "0.14.0" }
 # db
 diesel = { version = "2.2.9", features = ["postgres", "chrono", "serde_json"] }
 diesel_migrations = { version = "2.2.0" }
-redis = { version = "0.29.5", features = ["tokio-comp", "json"] }
+redis = { version = "0.29.5", features = ["tokio-comp", "json", "connection-manager"] }
 chrono = { version = "0.4.40", features = ["serde"] }
 clickhouse = { version = "0.13.2" }
 meilisearch-sdk = { version = "0.28.0" }

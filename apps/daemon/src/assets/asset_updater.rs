@@ -225,7 +225,7 @@ impl AssetUpdater {
 
     // asset, asset details
     pub async fn update_asset(&mut self, asset: Asset, score: AssetScore, asset_links: Vec<AssetLink>) -> Result<(), Box<dyn Error>> {
-        let properties = AssetProperties::default(asset.chain());
+        let properties = AssetProperties::default(asset.id.clone());
         let asset = storage::models::asset::Asset::from_primitive(asset, score, properties);
         let asset_id = asset.id.as_str();
 

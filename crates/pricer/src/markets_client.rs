@@ -12,9 +12,8 @@ pub struct MarketsClient {
 const MARKETS_KEY: &str = "markets";
 
 impl MarketsClient {
-    pub fn new(database_url: &str, redis_url: &str) -> Self {
+    pub fn new(database_url: &str, cacher: CacherClient) -> Self {
         let database = DatabaseClient::new(database_url);
-        let cacher = CacherClient::new(redis_url);
         Self { database, cacher }
     }
 

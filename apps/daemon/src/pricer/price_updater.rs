@@ -1,10 +1,9 @@
 use chrono::{Duration, Utc};
 use coingecko::{CoinGeckoClient, CoinMarket};
 use pricer::PriceClient;
-use primitives::DEFAULT_FIAT_CURRENCY;
+use primitives::AssetPriceInfo;
 use std::collections::{HashMap, HashSet};
 use std::error::Error;
-use storage::models::price::PriceCache;
 use storage::models::Price;
 
 pub struct PriceUpdater {
@@ -71,51 +70,34 @@ impl PriceUpdater {
     }
 
     pub async fn update_prices_cache(&mut self) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        let (prices_assets, prices, rates) = (
-            self.price_client.get_prices_assets()?,
-            self.price_client.get_prices()?,
-            self.price_client.get_fiat_rates()?,
-        );
-
+        let (prices_assets, prices) = (self.price_client.get_prices_assets()?, self.price_client.get_prices()?);
         let prices_assets_map: HashMap<String, HashSet<String>> = prices_assets.into_iter().fold(HashMap::new(), |mut map, price_asset| {
             map.entry(price_asset.price_id.clone()).or_default().insert(price_asset.asset_id);
             map
         });
 
-        let base_rate = rates
-            .iter()
-            .find(|x| x.symbol == DEFAULT_FIAT_CURRENCY)
-            .map(|x| x.rate)
-            .ok_or("base rate not found")?;
-
-        for rate in rates.iter() {
-            let prices: Vec<PriceCache> = prices
-                .clone()
-                .into_iter()
-                .flat_map(|price| {
-                    let new_price = Price::for_rate(price, base_rate, rate.clone());
-
-                    if let Some(asset_ids) = prices_assets_map.get(new_price.id.as_str()) {
-                        return asset_ids
-                            .iter()
-                            .map(|asset_id| PriceCache {
-                                price: new_price.clone(),
-                                asset_id: asset_id.clone(),
-                            })
-                            .collect::<Vec<PriceCache>>();
-                    }
-                    vec![]
-                })
-                .collect();
-
-            if prices.is_empty() {
-                continue;
-            }
-            match self.price_client.set_cache_prices(rate.symbol.as_str(), prices).await {
-                Ok(_) => {}
-                Err(e) => {
-                    println!("Error setting cache prices for {}: {}", rate.symbol, e);
+        let prices: Vec<AssetPriceInfo> = prices
+            .clone()
+            .into_iter()
+            .flat_map(|price| {
+                if let Some(asset_ids) = prices_assets_map.get(price.id.as_str()) {
+                    return asset_ids
+                        .iter()
+                        .map(|asset_id| price.as_price_asset_info(asset_id.as_str()))
+                        .collect::<Vec<_>>();
                 }
+                vec![]
+            })
+            .collect();
+
+        if prices.is_empty() {
+            return Ok(prices.len());
+        }
+
+        match self.price_client.set_cache_prices(prices.clone()).await {
+            Ok(_) => {}
+            Err(e) => {
+                println!("Error setting cache prices: {}", e);
             }
         }
 

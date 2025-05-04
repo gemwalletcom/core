@@ -240,6 +240,7 @@ name = "api"
 version = "1.0.0"
 dependencies = [
  "api_connector",
+ "cacher",
  "chain_primitives",
  "config",
  "fiat",
@@ -250,6 +251,7 @@ dependencies = [
  "pricer",
  "primitives",
  "prometheus-client",
+ "redis",
  "reqwest",
  "rocket",
  "rocket_ws",
@@ -818,6 +820,15 @@ dependencies = [
  "aws-smithy-types",
  "rustc_version 0.4.1",
  "tracing",
+]
+
+[[package]]
+name = "backon"
+version = "1.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fd0b50b1b78dbadd44ab18b3c794e496f3a139abb9fbc27d9c94c4eebbb96496"
+dependencies = [
+ "fastrand",
 ]
 
 [[package]]
@@ -1597,6 +1608,7 @@ version = "1.0.0"
 dependencies = [
  "api_connector",
  "aws-sdk-s3",
+ "cacher",
  "chain_primitives",
  "chrono",
  "coingecko",
@@ -4663,8 +4675,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1bc42f3a12fd4408ce64d8efef67048a924e543bd35c6591c0447fda9054695f"
 dependencies = [
  "arc-swap",
+ "backon",
  "bytes",
  "combine",
+ "futures-channel",
  "futures-util",
  "itoa",
  "num-bigint",

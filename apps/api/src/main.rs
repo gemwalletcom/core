@@ -24,6 +24,7 @@ use std::sync::Arc;
 
 use api_connector::PusherClient;
 use assets::{AssetsChainProvider, AssetsClient, AssetsSearchClient};
+use cacher::CacherClient;
 use config::ConfigClient;
 use devices::DevicesClient;
 use fiat::{FiatClient, FiatProviderFactory};
@@ -45,12 +46,14 @@ use storage::ClickhouseClient;
 use subscriptions::SubscriptionsClient;
 use swap::SwapClient;
 use transactions::TransactionsClient;
+use websocket_prices::PriceObserverConfig;
 
 async fn rocket_api(settings: Settings) -> Rocket<Build> {
     let redis_url = settings.redis.url.as_str();
     let postgres_url = settings.postgres.url.as_str();
     let settings_clone = settings.clone();
-    let price_client = PriceClient::new(redis_url, postgres_url);
+    let cacher_client = CacherClient::new(redis_url);
+    let price_client = PriceClient::new(cacher_client.clone(), postgres_url);
     let clickhouse_client = ClickhouseClient::new(&settings_clone.clickhouse.url, &settings_clone.clickhouse.database);
     let charts_client = ChartClient::new(postgres_url, clickhouse_client);
     let config_client = ConfigClient::new(postgres_url).await;
@@ -76,7 +79,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
     let swap_client = SwapClient::new(postgres_url).await;
     let providers = FiatProviderFactory::new_providers(settings_clone.clone());
     let ip_check_client = FiatProviderFactory::new_ip_check_client(settings_clone.clone());
-    let fiat_client = FiatClient::new(postgres_url, redis_url, providers, ip_check_client).await;
+    let fiat_client = FiatClient::new(postgres_url, cacher_client.clone(), providers, ip_check_client).await;
     let nft_client = NFTClient::new(
         postgres_url,
         &settings.nft.nftscan.key.secret,
@@ -84,7 +87,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
         &settings.nft.magiceden.key.secret,
     )
     .await;
-    let markets_client = MarketsClient::new(postgres_url, redis_url);
+    let markets_client = MarketsClient::new(postgres_url, cacher_client);
 
     rocket::build()
         .attach(AdHoc::on_ignite("Tokio Runtime Configuration", |rocket| async {
@@ -166,11 +169,12 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
 }
 
 async fn rocket_ws_prices(settings: Settings) -> Rocket<Build> {
-    let price_client = PriceClient::new(settings.redis.url.as_str(), settings.postgres.url.as_str());
-    let price_client_arc = Arc::new(Mutex::new(price_client));
-
+    let cacher_client = CacherClient::new(&settings.redis.url);
+    let price_client = PriceClient::new(cacher_client, settings.postgres.url.as_str());
+    let price_observer_config = PriceObserverConfig { redis_url: settings.redis.url };
     rocket::build()
-        .attach(AdHoc::on_ignite("Manage Price Client", |rocket| async move { rocket.manage(price_client_arc) }))
+        .manage(Arc::new(Mutex::new(price_client)))
+        .manage(Arc::new(Mutex::new(price_observer_config)))
         .mount("/v1/ws", routes![websocket_prices::ws_prices])
 }
 

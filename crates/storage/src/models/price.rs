@@ -1,6 +1,6 @@
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
-use primitives::AssetMarket;
+use primitives::{AssetMarket, AssetPriceInfo};
 use serde::{Deserialize, Serialize};
 use std::hash::{Hash, Hasher};
 
@@ -25,37 +25,6 @@ pub struct Price {
     pub total_supply: f64,
     pub max_supply: f64,
     pub last_updated_at: Option<NaiveDateTime>,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct PriceCache {
-    pub price: Price,
-    pub asset_id: String,
-}
-
-impl PriceCache {
-    pub fn as_price_primitive(&self) -> primitives::Price {
-        primitives::Price::new(self.price.price, self.price.price_change_percentage_24h, self.price.last_updated_at)
-    }
-    pub fn as_asset_price_primitive(&self) -> primitives::AssetPrice {
-        primitives::AssetPrice {
-            asset_id: self.asset_id.clone(),
-            price: self.price.price,
-            price_change_percentage_24h: self.price.price_change_percentage_24h,
-        }
-    }
-
-    pub fn as_market(&self) -> AssetMarket {
-        AssetMarket {
-            market_cap: Some(self.price.market_cap),
-            market_cap_fdv: Some(self.price.market_cap_fdv),
-            market_cap_rank: Some(self.price.market_cap_rank),
-            total_volume: Some(self.price.total_volume),
-            circulating_supply: Some(self.price.circulating_supply),
-            total_supply: Some(self.price.total_supply),
-            max_supply: Some(self.price.max_supply),
-        }
-    }
 }
 
 #[derive(Debug, Queryable, Selectable, Serialize, Deserialize, Insertable, AsChangeset, Clone)]
@@ -161,6 +130,14 @@ impl Price {
             coin_id: self.id.clone(),
             price: self.price as f32,
             ts: self.last_updated_at.unwrap_or_default().and_utc().timestamp() as u32,
+        }
+    }
+
+    pub fn as_price_asset_info(&self, asset_id: &str) -> AssetPriceInfo {
+        AssetPriceInfo {
+            asset_id: asset_id.to_string(),
+            price: self.as_price_primitive(),
+            market: self.as_market_primitive(),
         }
     }
 }
