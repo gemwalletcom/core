@@ -37,11 +37,15 @@ impl Stream {
                     }
 
                     let payload = WebSocketPricePayload { prices, rates: vec![] };
-                    if observer.build_and_send_payload(&mut stream, payload.clone()).await.is_err() {
-                        eprintln!("WebSocket send error on tick, closing connection.");
-                        break;
+                    match observer.build_and_send_payload(&mut stream, payload.clone()).await {
+                        Ok(_) => {
+                            eprintln!("Tick: notified prices: {}", payload.prices.len());
+                        }
+                        Err(e) => {
+                            eprintln!("WebSocket send error on tick: {e:?}");
+                            break;
+                        }
                     }
-                    println!("Tick: notified prices: {}", payload.prices.len());
 
                     observer.clear_prices_to_publish();
                 }
