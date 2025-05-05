@@ -6,6 +6,7 @@ use crate::{AssetMarket, AssetPrice, Price};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Sendable")]
 #[serde(rename_all = "camelCase")]
+#[typeshare(skip)]
 pub struct AssetPriceInfo {
     pub asset_id: String,
     pub price: Price,
