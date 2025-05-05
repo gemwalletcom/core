@@ -49,6 +49,8 @@ pub const SUI_USDC_TOKEN_ID: &str = "0xdba34672e30cb065b1f93e3ab55318768fd6fef66
 pub const SUI_WAL_TOKEN_ID: &str = "0x356a26eb9e012a68958082340d4c4116e7f55615cf27affcff209cf0ae544f59::wal::WAL";
 // SUI bridged
 pub const SUI_SBUSDT_TOKEN_ID: &str = "0x375f70cf2ae4c00bf37117d0c85a2c71545e6ee05c4a5c7d282cd66a4504b068::usdt::USDT";
+// Thorchain
+pub const THORCHAIN_TCY_TOKEN_ID: &str = "tcy";
 
 lazy_static! {
     // ethereum
@@ -400,6 +402,14 @@ lazy_static! {
         "Walrus".to_owned(),
         "WAL".to_owned(),
         9,
+        AssetType::TOKEN,
+    );
+    // Thorchain
+    pub static ref THORCHAIN_TCY: Asset = Asset::new(
+        AssetId::from_token(Chain::Thorchain, THORCHAIN_TCY_TOKEN_ID),
+        "TCY".to_owned(),
+        "TCY".to_owned(),
+        8,
         AssetType::TOKEN,
     );
 

@@ -19,7 +19,7 @@ pub struct QuoteSwapResponse {
     pub inbound_address: Option<String>,
     pub router: Option<String>,
     pub fees: QuoteFees,
-    pub total_swap_seconds: u32,
+    pub total_swap_seconds: Option<u32>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

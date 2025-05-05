@@ -65,7 +65,7 @@ mod tests {
         let price = Price {
             price: 100.0,
             price_change_percentage_24h: 5.0,
-            last_updated: None,
+            last_updated_at: None,
         };
 
         let new_price = price.new_with_rate(1.0, 2.0);
