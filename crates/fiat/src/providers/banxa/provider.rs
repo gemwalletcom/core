@@ -107,6 +107,7 @@ impl FiatProvider for BanxaClient {
             provider_id: Self::NAME.id(),
             provider_transaction_id: order.id,
             status,
+            country: order.country,
             fiat_amount: order.fiat_amount,
             fiat_currency: order.fiat,
             transaction_hash: order.tx_hash,

@@ -116,6 +116,7 @@ impl FiatProvider for RampClient {
             provider_id: Self::NAME.id(),
             provider_transaction_id: payload.purchase_view_token,
             status,
+            country: None,
             fiat_amount: payload.fiat_value,
             fiat_currency: payload.fiat_currency,
             transaction_hash: payload.final_tx_hash,

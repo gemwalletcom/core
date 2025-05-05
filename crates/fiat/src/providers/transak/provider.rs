@@ -82,6 +82,7 @@ impl FiatProvider for TransakClient {
             provider_id: Self::NAME.id(),
             provider_transaction_id: payload.id,
             status,
+            country: payload.country_code,
             fiat_amount: payload.fiat_amount,
             fiat_currency: payload.fiat_currency,
             transaction_hash: payload.transaction_hash,

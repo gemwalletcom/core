@@ -73,6 +73,7 @@ pub struct WebhookData {
     pub transaction_hash: Option<String>,
     pub wallet_address: String,
     pub conversion_price_data: Option<WebhookConversionPriceData>,
+    pub country_code: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize)]

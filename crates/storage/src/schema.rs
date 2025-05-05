@@ -183,6 +183,8 @@ diesel::table! {
         created_at -> Timestamp,
         #[max_length = 32]
         transaction_type -> Varchar,
+        #[max_length = 256]
+        country -> Nullable<Varchar>,
     }
 }
 

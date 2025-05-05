@@ -99,6 +99,7 @@ pub struct Webhook {
     pub network_fee_amount: Option<f64>,
     pub extra_fee_amount: Option<f64>,
     pub fee_amount: Option<f64>,
+    pub country: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
