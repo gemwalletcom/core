@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 
 use itertools::Itertools;
-use search_index::{sanitize_index_primary_id, AssetDocument, SearchIndexClient, ASSETS_INDEX_NAME};
+use search_index::{sanitize_index_primary_id, AssetDocument, DocumentId, SearchIndexClient, ASSETS_INDEX_NAME};
 use storage::DatabaseClient;
 
 pub struct AssetsIndexUpdater {
@@ -41,7 +41,7 @@ impl AssetsIndexUpdater {
         let db_documents_ids: HashSet<_> = documents.iter().map(|x| x.id.clone()).collect();
         let existing_documents_ids: HashSet<_> = self
             .search_index
-            .get_documents_all::<AssetDocument>(ASSETS_INDEX_NAME)
+            .get_documents_all::<DocumentId>(ASSETS_INDEX_NAME)
             .await?
             .into_iter()
             .map(|x| x.id.clone())

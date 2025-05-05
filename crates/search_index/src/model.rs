@@ -33,6 +33,11 @@ pub const ASSETS_SORTS: &[&str] = &["score.rank"];
 pub const INDEX_PRIMARY_KEY: &str = "id";
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct DocumentId {
+    pub id: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct AssetDocument {
     pub id: String,
     pub asset: Asset,
