@@ -4,9 +4,10 @@ use typeshare::typeshare;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Sendable")]
-#[serde(rename_all = "lowercase")]
 pub struct AssetScore {
     pub rank: i32,
+    #[typeshare(skip)]
+    #[serde(rename = "type")]
     pub rank_type: AssetRank,
 }
 
