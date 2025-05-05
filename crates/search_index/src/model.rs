@@ -3,8 +3,8 @@ use serde::{Deserialize, Serialize};
 
 pub const ASSETS_INDEX_NAME: &str = "assets";
 pub const ASSETS_FILTERS: &[&str] = &[
-    "asset.id.chain",
-    "asset.id.tokenId",
+    "asset.chain",
+    "asset.tokenId",
     "asset.name",
     "asset.symbol",
     "asset.type",
@@ -14,7 +14,7 @@ pub const ASSETS_FILTERS: &[&str] = &[
     "market.marketCapRank",
     "tags",
 ];
-pub const ASSETS_SEARCH_ATTRIBUTES: &[&str] = &["asset.id.tokenId", "asset.id.chain", "asset.name", "asset.symbol", "asset.type"];
+pub const ASSETS_SEARCH_ATTRIBUTES: &[&str] = &["asset.tokenId", "asset.chain", "asset.name", "asset.symbol", "asset.type"];
 pub const ASSETS_RANKING_RULES: &[&str] = &[
     "words",
     "typo",

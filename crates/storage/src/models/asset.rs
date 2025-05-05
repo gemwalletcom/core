@@ -27,16 +27,16 @@ pub struct Asset {
 
 impl Asset {
     pub fn as_primitive(&self) -> primitives::Asset {
-        primitives::asset::Asset {
-            id: AssetId {
+        primitives::asset::Asset::new(
+            AssetId {
                 chain: Chain::from_str(&self.chain).unwrap(),
                 token_id: self.token_id.clone(),
             },
-            name: self.name.clone(),
-            symbol: self.symbol.clone(),
-            asset_type: AssetType::from_str(&self.asset_type).unwrap(),
-            decimals: self.decimals,
-        }
+            self.name.clone(),
+            self.symbol.clone(),
+            self.decimals,
+            AssetType::from_str(&self.asset_type).unwrap(),
+        )
     }
 
     pub fn as_basic_primitive(&self) -> primitives::AssetBasic {
@@ -49,7 +49,7 @@ impl Asset {
     }
 
     pub fn as_score_primitive(&self) -> primitives::AssetScore {
-        primitives::AssetScore { rank: self.rank }
+        primitives::AssetScore::new(self.rank)
     }
 
     pub fn from_primitive_default(asset: primitives::Asset) -> Self {

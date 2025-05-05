@@ -284,15 +284,12 @@ impl ChainTokenDataProvider for EthereumClient {
         let symbol: String = erc20::symbolCall::abi_decode_returns(&Vec::from_hex(symbol)?).unwrap();
         let decimals: u8 = erc20::decimalsCall::abi_decode_returns(&Vec::from_hex(decimals)?).unwrap();
 
-        Ok(Asset {
-            id: AssetId {
-                chain,
-                token_id: token_id.into(),
-            },
+        Ok(Asset::new(
+            AssetId::from_token(chain, &token_id),
             name,
             symbol,
-            decimals: decimals as i32,
-            asset_type: chain.default_asset_type().unwrap(),
-        })
+            decimals as i32,
+            chain.default_asset_type().unwrap(),
+        ))
     }
 }

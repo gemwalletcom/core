@@ -28,6 +28,8 @@ impl TokenListAsset {
                 chain: self.chain,
                 token_id: Some(self.token_id.clone()),
             },
+            chain: self.chain,
+            token_id: Some(self.token_id.clone()),
             name: self.name.clone(),
             symbol: self.symbol.clone(),
             asset_type: self.asset_type.clone(),

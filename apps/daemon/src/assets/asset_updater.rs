@@ -94,13 +94,7 @@ impl AssetUpdater {
                         chain,
                         token_id: token_id.into(),
                     };
-                    let asset = Asset {
-                        id: asset_id,
-                        name: coin_info.clone().name,
-                        symbol: coin_info.clone().symbol.to_uppercase(),
-                        decimals,
-                        asset_type,
-                    };
+                    let asset = Asset::new(asset_id, coin_info.clone().name, coin_info.clone().symbol.to_uppercase(), decimals, asset_type);
                     Some(asset)
                 } else {
                     None
@@ -112,7 +106,7 @@ impl AssetUpdater {
 
     fn get_asset_score(&self, asset: Asset, coin_info: CoinInfo) -> AssetScore {
         if asset.asset_type == AssetType::NATIVE {
-            return AssetScore { rank: asset.chain().rank() };
+            return AssetScore::new(asset.chain().rank());
         }
         let mut rank = 12;
 
@@ -153,7 +147,7 @@ impl AssetUpdater {
 
         rank += asset.chain().rank() / 20;
 
-        AssetScore { rank }
+        AssetScore::new(rank)
     }
 
     fn get_asset_links(&self, coin_info: CoinInfo) -> Vec<AssetLink> {
