@@ -5,9 +5,12 @@ use crate::{asset_id::AssetId, asset_type::AssetType, Chain};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Hashable, Sendable")]
+#[serde(rename_all = "camelCase")]
 pub struct Asset {
     pub id: AssetId,
+    #[typeshare(skip)]
     pub chain: Chain,
+    #[typeshare(skip)]
     pub token_id: Option<String>,
     pub name: String,
     pub symbol: String,
