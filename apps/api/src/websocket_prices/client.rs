@@ -12,7 +12,6 @@ use redis::PushInfo;
 use redis::PushKind;
 use rocket::serde::json::serde_json;
 use rocket::tokio::sync::Mutex;
-use rocket_ws::result::Error as WsError;
 use rocket_ws::stream::DuplexStream;
 use rocket_ws::Message;
 
@@ -82,16 +81,10 @@ impl PriceObserverClient {
         &mut self,
         stream: &mut DuplexStream, // Pass stream mutably
         payload: WebSocketPricePayload,
-    ) -> Result<(), WsError> {
-        let data = match serde_json::to_vec(&payload) {
-            Ok(d) => d,
-            Err(e) => {
-                eprintln!("Failed to serialize price payload: {}", e);
-                return Ok(()); // Log error, don't terminate
-            }
-        };
-        let message = Message::Binary(data);
-        stream.send(message).await // Use the passed-in stream
+    ) -> Result<(), Box<dyn Error + Send + Sync>> {
+        let text = serde_json::to_string(&payload)?;
+        let item = Message::Text(text);
+        Ok(stream.send(item).await?)
     }
 
     pub async fn handle_ws_message(
