@@ -35,9 +35,28 @@ pub struct QuoteResponse {
     pub quote_type: String,
     pub deposit_amount: String,
     pub is_vault_swap: bool,
+    pub boost_quote: Option<BoostQuote>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BoostQuote {
+    pub intermediate_amount: Option<String>,
+    pub egress_amount: String,
+    pub recommended_slippage_tolerance_percent: f64,
+    pub low_liquidity_warning: bool,
+    pub estimated_duration_seconds: f64,
+    pub estimated_boost_fee_bps: u32,
+    pub max_boost_fee_bps: u32,
 }
 
 impl QuoteResponse {
+    pub fn slippage_bps(&self) -> u32 {
+        (self.recommended_slippage_tolerance_percent * 100.0) as u32
+    }
+}
+
+impl BoostQuote {
     pub fn slippage_bps(&self) -> u32 {
         (self.recommended_slippage_tolerance_percent * 100.0) as u32
     }
@@ -48,4 +67,17 @@ impl QuoteResponse {
 pub struct SwapTxResponse {
     pub state: String,
     pub swap_id: String,
+}
+
+#[cfg(test)]
+pub mod test {
+    use super::*;
+
+    #[test]
+    pub fn get_quote_response() {
+        let json = include_str!("./test/btc_eth_quote.json");
+        let quote_response = serde_json::from_str::<Vec<QuoteResponse>>(json).unwrap();
+
+        assert!(quote_response[0].boost_quote.is_some());
+    }
 }

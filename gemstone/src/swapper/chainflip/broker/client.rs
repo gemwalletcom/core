@@ -1,6 +1,6 @@
 use super::{
-    model::{ChainflipAsset, DcaParameters, DepositAddressResponse, RefundParameters, VaultSwapExtraParams, VaultSwapResponse},
-    CahinflipIngressEgress, ChainflipEnvironment,
+    model::{ChainflipAsset, DcaParameters, DepositAddressResponse, RefundParameters, VaultSwapEvmExtras, VaultSwapResponse},
+    ChainflipEnvironment, ChainflipIngressEgress,
 };
 use crate::{
     network::{jsonrpc::JsonRpcClient, AlienProvider},
@@ -24,7 +24,7 @@ impl BrokerClient {
         }
     }
 
-    pub async fn get_swap_limits(&self) -> Result<CahinflipIngressEgress, SwapperError> {
+    pub async fn get_swap_limits(&self) -> Result<ChainflipIngressEgress, SwapperError> {
         self.client
             .call_method_with_param("cf_environment", json!([]), Some(60 * 60 * 24 * 30))
             .await
@@ -39,6 +39,7 @@ impl BrokerClient {
         dst_asset: ChainflipAsset,
         dst_address: String,
         broker_commission_bps: u32,
+        boost_fee: Option<u32>,
         refund_params: Option<RefundParameters>,
         dca_params: Option<DcaParameters>,
     ) -> Result<DepositAddressResponse, SwapperError> {
@@ -47,9 +48,9 @@ impl BrokerClient {
             dst_asset,
             dst_address,
             broker_commission_bps,
-            null, // channel_metadata
-            null, // boost_fee
-            [],   // affiliate_fees
+            null,      // channel_metadata
+            boost_fee, // boost_fee
+            [],        // affiliate_fees
             refund_params,
             dca_params,
         ]);
@@ -67,7 +68,8 @@ impl BrokerClient {
         destination_asset: ChainflipAsset,
         destination_address: String,
         broker_commission: u32,
-        extra_params: Option<VaultSwapExtraParams>,
+        boost_fee: Option<u32>,
+        extra_params: Option<VaultSwapEvmExtras>,
         dca_params: Option<DcaParameters>,
     ) -> Result<VaultSwapResponse, SwapperError> {
         let params = json!([
@@ -76,9 +78,9 @@ impl BrokerClient {
             destination_address,
             broker_commission,
             extra_params,
-            null, // channel_metadata
-            null, // boost_fee
-            [],   // affiliate_fees
+            null,      // channel_metadata
+            boost_fee, // boost_fee
+            [],        // affiliate_fees
             dca_params,
         ]);
         self.client

@@ -34,7 +34,7 @@ pub struct DcaParameters {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct VaultSwapExtraParams {
+pub struct VaultSwapEvmExtras {
     pub chain: String,
     #[serde(deserialize_with = "deserialize_biguint_from_hex_str", serialize_with = "serialize_biguint_to_hex_str")]
     pub input_amount: BigUint,
@@ -51,15 +51,15 @@ pub struct VaultSwapResponse {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ChainflipEnvironment {
-    pub ingress_egress: CahinflipIngressEgress,
+    pub ingress_egress: ChainflipIngressEgress,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct CahinflipIngressEgress {
+pub struct ChainflipIngressEgress {
     pub minimum_deposit_amounts: serde_json::Value,
 }
 
-impl CahinflipIngressEgress {
+impl ChainflipIngressEgress {
     pub fn get_min_deposit_amount(&self, asset: &ChainflipAsset) -> Result<U256, SwapperError> {
         let chain_map = self.minimum_deposit_amounts.get(&asset.chain).ok_or(SwapperError::NotSupportedChain)?;
         let asset = chain_map.get(&asset.asset).ok_or(SwapperError::NotSupportedAsset)?;
