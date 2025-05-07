@@ -73,6 +73,12 @@ pub struct WebhookData {
     pub tx: Option<Transaction>,
     #[serde(rename = "type")]
     pub transacton_type: String,
+    pub user: Option<User>,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct User {
+    pub country_code: String,
 }
 
 #[derive(Debug, Deserialize, Clone)]

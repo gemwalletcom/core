@@ -3,7 +3,7 @@ use typeshare::typeshare;
 
 use crate::{AssetId, AssetPrice, FiatRate};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "lowercase")]
 #[typeshare(swift = "Sendable")]
 pub enum WebSocketPriceActionType {

@@ -49,358 +49,368 @@ pub const SUI_USDC_TOKEN_ID: &str = "0xdba34672e30cb065b1f93e3ab55318768fd6fef66
 pub const SUI_WAL_TOKEN_ID: &str = "0x356a26eb9e012a68958082340d4c4116e7f55615cf27affcff209cf0ae544f59::wal::WAL";
 // SUI bridged
 pub const SUI_SBUSDT_TOKEN_ID: &str = "0x375f70cf2ae4c00bf37117d0c85a2c71545e6ee05c4a5c7d282cd66a4504b068::usdt::USDT";
+// Thorchain
+pub const THORCHAIN_TCY_TOKEN_ID: &str = "tcy";
 
 lazy_static! {
     // ethereum
-    pub static ref ETHEREUM_USDT: Asset = Asset {
-        id: AssetId::from_token(Chain::Ethereum, ETHEREUM_USDT_TOKEN_ID),
-        name: USDT_NAME.to_owned(),
-        symbol: USDT_SYMBOL.to_owned(),
-        decimals: 6,
-        asset_type: AssetType::ERC20,
-    };
-    pub static ref ETHEREUM_USDC: Asset = Asset {
-        id: AssetId::from_token(Chain::Ethereum, ETHEREUM_USDC_TOKEN_ID),
-        name: USDC_SYMBOL.to_owned(),
-        symbol: USDC_SYMBOL.to_owned(),
-        decimals: 6,
-        asset_type: AssetType::ERC20,
-    };
-    pub static ref ETHEREUM_WBTC: Asset = Asset {
-        id: AssetId::from_token(Chain::Ethereum, ETHEREUM_WBTC_TOKEN_ID),
-        name: WBTC_NAME.to_owned(),
-        symbol: WBTC_SYMBOL.to_owned(),
-        decimals: 8,
-        asset_type: AssetType::ERC20,
-    };
-    pub static ref ETHEREUM_DAI: Asset = Asset {
-        id: AssetId::from_token(Chain::Ethereum, ETHEREUM_DAI_TOKEN_ID),
-        name: DAI_SYMBOL.to_owned(),
-        symbol: DAI_SYMBOL.to_owned(),
-        decimals: 18,
-        asset_type: AssetType::ERC20,
-    };
-    pub static ref ETHEREUM_WETH: Asset = Asset {
-        id: WETH_ETH_ASSET_ID.into(),
-        name: WETH_NAME.into(),
-        symbol: WETH_SYMBOL.into(),
-        decimals: 18,
-        asset_type: AssetType::ERC20,
-    };
-    pub static ref ETHEREUM_USDS: Asset = Asset {
-        id: AssetId::from_token(Chain::Ethereum, ETHEREUM_USDS_TOKEN_ID),
-        name: USDS_NAME.to_owned(),
-        symbol: USDS_SYMBOL.to_owned(),
-        decimals: 18,
-        asset_type: AssetType::ERC20,
-    };
-    pub static ref ETHEREUM_STETH: Asset = Asset {
-        id: AssetId::from_token(Chain::Ethereum, ETHEREUM_STETH_TOKEN_ID),
-        name: "stETH".to_owned(),
-        symbol: "stETH".to_owned(),
-        decimals: 18,
-        asset_type: AssetType::ERC20,
-    };
-    pub static ref ETHEREUM_CBBTC: Asset = Asset {
-        id: AssetId::from_token(Chain::Ethereum, ETHEREUM_CBBTC_TOKEN_ID),
-        name: CBBTC_NAME.to_owned(),
-        symbol: CBBTC_SYMBOL.to_owned(),
-        decimals: 8,
-        asset_type: AssetType::ERC20,
-    };
+    pub static ref ETHEREUM_USDT: Asset = Asset::new(
+        AssetId::from_token(Chain::Ethereum, ETHEREUM_USDT_TOKEN_ID),
+        USDT_NAME.to_owned(),
+        USDT_SYMBOL.to_owned(),
+        6,
+        AssetType::ERC20,
+    );
+    pub static ref ETHEREUM_USDC: Asset = Asset::new(
+        AssetId::from_token(Chain::Ethereum, ETHEREUM_USDC_TOKEN_ID),
+        USDC_NAME.to_owned(),
+        USDC_SYMBOL.to_owned(),
+        6,
+        AssetType::ERC20,
+    );
+    pub static ref ETHEREUM_WBTC: Asset = Asset::new(
+        AssetId::from_token(Chain::Ethereum, ETHEREUM_WBTC_TOKEN_ID),
+        WBTC_NAME.to_owned(),
+        WBTC_SYMBOL.to_owned(),
+        8,
+        AssetType::ERC20,
+    );
+    pub static ref ETHEREUM_DAI: Asset = Asset::new(
+        AssetId::from_token(Chain::Ethereum, ETHEREUM_DAI_TOKEN_ID),
+        DAI_NAME.to_owned(),
+        DAI_SYMBOL.to_owned(),
+        18,
+        AssetType::ERC20,
+    );
+    pub static ref ETHEREUM_WETH: Asset = Asset::new(
+        WETH_ETH_ASSET_ID.into(),
+        WETH_NAME.into(),
+        WETH_SYMBOL.into(),
+        18,
+        AssetType::ERC20,
+    );
+    pub static ref ETHEREUM_USDS: Asset = Asset::new(
+        AssetId::from_token(Chain::Ethereum, ETHEREUM_USDS_TOKEN_ID),
+        USDS_NAME.to_owned(),
+        USDS_SYMBOL.to_owned(),
+        18,
+        AssetType::ERC20,
+    );
+    pub static ref ETHEREUM_STETH: Asset = Asset::new(
+        AssetId::from_token(Chain::Ethereum, ETHEREUM_STETH_TOKEN_ID),
+        "stETH".to_owned(),
+        "stETH".to_owned(),
+        18,
+        AssetType::ERC20,
+    );
+    pub static ref ETHEREUM_CBBTC: Asset = Asset::new(
+        AssetId::from_token(Chain::Ethereum, ETHEREUM_CBBTC_TOKEN_ID),
+        CBBTC_NAME.to_owned(),
+        CBBTC_SYMBOL.to_owned(),
+        8,
+        AssetType::ERC20,
+    );
     // arbitrum
-    pub static ref ARBITRUM_WETH: Asset = Asset {
-        id: WETH_ARB_ASSET_ID.into(),
-        name: WETH_NAME.into(),
-        symbol: WETH_SYMBOL.into(),
-        decimals: 18,
-        asset_type: AssetType::ERC20,
-    };
-    pub static ref ARBITRUM_USDC: Asset = Asset {
-        id: USDC_ARB_ASSET_ID.into(),
-        name: USDC_NAME.into(),
-        symbol: USDC_SYMBOL.into(),
-        decimals: 6,
-        asset_type: AssetType::ERC20,
-    };
-    pub static ref ARBITRUM_USDT: Asset = Asset {
-        id: USDT_ARB_ASSET_ID.into(),
-        name: USDT_NAME.into(),
-        symbol: USDT_SYMBOL.into(),
-        decimals: 6,
-        asset_type: AssetType::ERC20,
-    };
+    pub static ref ARBITRUM_WETH: Asset = Asset::new(
+        WETH_ARB_ASSET_ID.into(),
+        WETH_NAME.into(),
+        WETH_SYMBOL.into(),
+        18,
+        AssetType::ERC20,
+    );
+    pub static ref ARBITRUM_USDC: Asset = Asset::new(
+        USDC_ARB_ASSET_ID.into(),
+        USDC_NAME.into(),
+        USDC_SYMBOL.into(),
+        6,
+        AssetType::ERC20,
+    );
+    pub static ref ARBITRUM_USDT: Asset = Asset::new(
+        USDT_ARB_ASSET_ID.into(),
+        USDT_NAME.into(),
+        USDT_SYMBOL.into(),
+        6,
+        AssetType::ERC20,
+    );
     // base
-    pub static ref BASE_WETH: Asset = Asset {
-        id: WETH_BASE_ASSET_ID.into(),
-        name: WETH_NAME.into(),
-        symbol: WETH_SYMBOL.into(),
-        decimals: 18,
-        asset_type: AssetType::ERC20,
-    };
-    pub static ref BASE_USDC: Asset = Asset {
-        id: AssetId::from_token(Chain::Base, BASE_USDC_TOKEN_ID),
-        name: USDC_NAME.to_owned(),
-        symbol: USDC_SYMBOL.to_owned(),
-        decimals: 6,
-        asset_type: AssetType::ERC20,
-    };
-    pub static ref BASE_CBBTC: Asset = Asset {
-        id: AssetId::from_token(Chain::Base, BASE_CBBTC_TOKEN_ID),
-        name: CBBTC_NAME.to_owned(),
-        symbol: CBBTC_SYMBOL.to_owned(),
-        decimals: 8,
-        asset_type: AssetType::ERC20,
-    };
-    pub static ref BASE_USDS: Asset = Asset {
-        id: AssetId::from_token(Chain::Base, BASE_USDS_TOKEN_ID),
-        name: USDS_NAME.to_owned(),
-        symbol: USDS_SYMBOL.to_owned(),
-        decimals: 18,
-        asset_type: AssetType::ERC20,
-    };
-    pub static ref BASE_WBTC: Asset = Asset {
-        id: AssetId::from_token(Chain::Base, BASE_WBTC_TOKEN_ID),
-        name: WBTC_NAME.to_owned(),
-        symbol: WBTC_SYMBOL.to_owned(),
-        decimals: 8,
-        asset_type: AssetType::ERC20,
-    };
+    pub static ref BASE_WETH: Asset = Asset::new(
+        WETH_BASE_ASSET_ID.into(),
+        WETH_NAME.into(),
+        WETH_SYMBOL.into(),
+        18,
+        AssetType::ERC20,
+    );
+    pub static ref BASE_USDC: Asset = Asset::new(
+        AssetId::from_token(Chain::Base, BASE_USDC_TOKEN_ID),
+        USDC_NAME.to_owned(),
+        USDC_SYMBOL.to_owned(),
+        6,
+        AssetType::ERC20,
+    );
+    pub static ref BASE_CBBTC: Asset = Asset::new(
+        AssetId::from_token(Chain::Base, BASE_CBBTC_TOKEN_ID),
+        CBBTC_NAME.to_owned(),
+        CBBTC_SYMBOL.to_owned(),
+        8,
+        AssetType::ERC20,
+    );
+    pub static ref BASE_USDS: Asset = Asset::new(
+        AssetId::from_token(Chain::Base, BASE_USDS_TOKEN_ID),
+        USDS_NAME.to_owned(),
+        USDS_SYMBOL.to_owned(),
+        18,
+        AssetType::ERC20,
+    );
+    pub static ref BASE_WBTC: Asset = Asset::new(
+        AssetId::from_token(Chain::Base, BASE_WBTC_TOKEN_ID),
+        WBTC_NAME.to_owned(),
+        WBTC_SYMBOL.to_owned(),
+        8,
+        AssetType::ERC20,
+    );
     // blast
-    pub static ref BLAST_WETH: Asset = Asset {
-        id: WETH_BLAST_ASSET_ID.into(),
-        name: WETH_NAME.into(),
-        symbol: WETH_SYMBOL.into(),
-        decimals: 18,
-        asset_type: AssetType::ERC20,
-    };
+    pub static ref BLAST_WETH: Asset = Asset::new(
+        WETH_BLAST_ASSET_ID.into(),
+        WETH_NAME.into(),
+        WETH_SYMBOL.into(),
+        18,
+        AssetType::ERC20,
+    );
     // linea
-    pub static ref LINEA_WETH: Asset = Asset {
-        id: WETH_LINEA_ASSET_ID.into(),
-        name: WETH_NAME.into(),
-        symbol: WETH_SYMBOL.into(),
-        decimals: 18,
-        asset_type: AssetType::ERC20,
-    };
-    pub static ref LINEA_USDC: Asset = Asset {
-        id: USDC_E_LINEA_ASSET_ID.into(),
-        name: USDC_NAME.into(),
-        symbol: USDC_SYMBOL.into(),
-        decimals: 6,
-        asset_type: AssetType::ERC20,
-    };
-    pub static ref LINEA_USDT: Asset = Asset {
-        id: USDT_LINEA_ASSET_ID.into(),
-        name: USDT_NAME.into(),
-        symbol: USDT_SYMBOL.into(),
-        decimals: 6,
-        asset_type: AssetType::ERC20,
-    };
+    pub static ref LINEA_WETH: Asset = Asset::new(
+        WETH_LINEA_ASSET_ID.into(),
+        WETH_NAME.into(),
+        WETH_SYMBOL.into(),
+        18,
+        AssetType::ERC20,
+    );
+    pub static ref LINEA_USDC: Asset = Asset::new(
+        USDC_E_LINEA_ASSET_ID.into(),
+        USDC_NAME.into(),
+        USDC_SYMBOL.into(),
+        6,
+        AssetType::ERC20,
+    );
+    pub static ref LINEA_USDT: Asset = Asset::new(
+        USDT_LINEA_ASSET_ID.into(),
+        USDT_NAME.into(),
+        USDT_SYMBOL.into(),
+        6,
+        AssetType::ERC20,
+    );
     // optimism
-    pub static ref OPTIMISM_WETH: Asset = Asset {
-        id: WETH_OP_ASSET_ID.into(),
-        name: WETH_NAME.into(),
-        symbol: WETH_SYMBOL.into(),
-        decimals: 18,
-        asset_type: AssetType::ERC20,
-    };
-    pub static ref OPTIMISM_USDC: Asset = Asset {
-        id: USDC_OP_ASSET_ID.into(),
-        name: USDC_NAME.into(),
-        symbol: USDC_SYMBOL.into(),
-        decimals: 6,
-        asset_type: AssetType::ERC20,
-    };
-    pub static ref OPTIMISM_USDT: Asset = Asset {
-        id: USDT_OP_ASSET_ID.into(),
-        name: USDT_NAME.into(),
-        symbol: USDT_SYMBOL.into(),
-        decimals: 6,
-        asset_type: AssetType::ERC20,
-    };
+    pub static ref OPTIMISM_WETH: Asset = Asset::new(
+        WETH_OP_ASSET_ID.into(),
+        WETH_NAME.into(),
+        WETH_SYMBOL.into(),
+        18,
+        AssetType::ERC20,
+    );
+    pub static ref OPTIMISM_USDC: Asset = Asset::new(
+        USDC_OP_ASSET_ID.into(),
+        USDC_NAME.into(),
+        USDC_SYMBOL.into(),
+        6,
+        AssetType::ERC20,
+    );
+    pub static ref OPTIMISM_USDT: Asset = Asset::new(
+        USDT_OP_ASSET_ID.into(),
+        USDT_NAME.into(),
+        USDT_SYMBOL.into(),
+        6,
+        AssetType::ERC20,
+    );
     // polygon
-    pub static ref POLYGON_WETH: Asset = Asset {
-        id: WETH_POLYGON_ASSET_ID.into(),
-        name: WETH_NAME.into(),
-        symbol: WETH_SYMBOL.into(),
-        decimals: 18,
-        asset_type: AssetType::ERC20,
-    };
-    pub static ref POLYGON_USDC: Asset = Asset {
-        id: USDC_POLYGON_ASSET_ID.into(),
-        name: USDC_NAME.into(),
-        symbol: USDC_SYMBOL.into(),
-        decimals: 6,
-        asset_type: AssetType::ERC20,
-    };
-    pub static ref POLYGON_USDT: Asset = Asset {
-        id: USDT_POLYGON_ASSET_ID.into(),
-        name: USDT_NAME.into(),
-        symbol: USDT_SYMBOL.into(),
-        decimals: 6,
-        asset_type: AssetType::ERC20,
-    };
+    pub static ref POLYGON_WETH: Asset = Asset::new(
+        WETH_POLYGON_ASSET_ID.into(),
+        WETH_NAME.into(),
+        WETH_SYMBOL.into(),
+        18,
+        AssetType::ERC20,
+    );
+    pub static ref POLYGON_USDC: Asset = Asset::new(
+        USDC_POLYGON_ASSET_ID.into(),
+        USDC_NAME.into(),
+        USDC_SYMBOL.into(),
+        6,
+        AssetType::ERC20,
+    );
+    pub static ref POLYGON_USDT: Asset = Asset::new(
+        USDT_POLYGON_ASSET_ID.into(),
+        USDT_NAME.into(),
+        USDT_SYMBOL.into(),
+        6,
+        AssetType::ERC20,
+    );
     // zksync
-    pub static ref ZKSYNC_WETH: Asset = Asset {
-        id: WETH_ZKSYNC_ASSET_ID.into(),
-        name: WETH_NAME.into(),
-        symbol: WETH_SYMBOL.into(),
-        decimals: 18,
-        asset_type: AssetType::ERC20,
-    };
-    pub static ref ZKSYNC_USDT: Asset = Asset {
-        id: USDT_ZKSYNC_ASSET_ID.into(),
-        name: USDT_NAME.into(),
-        symbol: USDT_SYMBOL.into(),
-        decimals: 6,
-        asset_type: AssetType::ERC20,
-    };
+    pub static ref ZKSYNC_WETH: Asset = Asset::new(
+        WETH_ZKSYNC_ASSET_ID.into(),
+        WETH_NAME.into(),
+        WETH_SYMBOL.into(),
+        18,
+        AssetType::ERC20,
+    );
+    pub static ref ZKSYNC_USDT: Asset = Asset::new(
+        USDT_ZKSYNC_ASSET_ID.into(),
+        USDT_NAME.into(),
+        USDT_SYMBOL.into(),
+        6,
+        AssetType::ERC20,
+    );
     // world
-    pub static ref WORLD_WETH: Asset = Asset {
-        id: WETH_WORLD_ASSET_ID.into(),
-        name: WETH_NAME.into(),
-        symbol: WETH_SYMBOL.into(),
-        decimals: 18,
-        asset_type: AssetType::ERC20,
-    };
+    pub static ref WORLD_WETH: Asset = Asset::new(
+        WETH_WORLD_ASSET_ID.into(),
+        WETH_NAME.into(),
+        WETH_SYMBOL.into(),
+        18,
+        AssetType::ERC20,
+    );
     // smartchain
-    pub static ref SMARTCHAIN_USDT: Asset = Asset {
-        id: AssetId::from_token(Chain::SmartChain, SMARTCHAIN_USDT_TOKEN_ID),
-        name: USDT_NAME.to_owned(),
-        symbol: USDT_SYMBOL.to_owned(),
-        decimals: 18,
-        asset_type: AssetType::BEP20,
-    };
-    pub static ref SMARTCHAIN_USDC: Asset = Asset {
-        id: AssetId::from_token(Chain::SmartChain, SMARTCHAIN_USDC_TOKEN_ID),
-        name: USDC_NAME.to_owned(),
-        symbol: USDC_SYMBOL.to_owned(),
-        decimals: 18,
-        asset_type: AssetType::BEP20,
-    };
-    pub static ref SMARTCHAIN_WBTC: Asset = Asset {
-        id: AssetId::from_token(Chain::SmartChain, SMARTCHAIN_WBTC_TOKEN_ID),
-        name: WBTC_NAME.to_owned(),
-        symbol: WBTC_SYMBOL.to_owned(),
-        decimals: 8,
-        asset_type: AssetType::BEP20,
-    };
+    pub static ref SMARTCHAIN_USDT: Asset = Asset::new(
+        AssetId::from_token(Chain::SmartChain, SMARTCHAIN_USDT_TOKEN_ID),
+        USDT_NAME.to_owned(),
+        USDT_SYMBOL.to_owned(),
+        18,
+        AssetType::BEP20,
+    );
+    pub static ref SMARTCHAIN_USDC: Asset = Asset::new(
+        AssetId::from_token(Chain::SmartChain, SMARTCHAIN_USDC_TOKEN_ID),
+        USDC_NAME.to_owned(),
+        USDC_SYMBOL.to_owned(),
+        18,
+        AssetType::BEP20,
+    );
+    pub static ref SMARTCHAIN_WBTC: Asset = Asset::new(
+        AssetId::from_token(Chain::SmartChain, SMARTCHAIN_WBTC_TOKEN_ID),
+        WBTC_NAME.to_owned(),
+        WBTC_SYMBOL.to_owned(),
+        8,
+        AssetType::BEP20,
+    );
     // avalanche
-    pub static ref AVALANCHE_USDT: Asset = Asset {
-        id: AssetId::from_token(Chain::AvalancheC, AVALANCHE_USDT_TOKEN_ID),
-        name: USDT_NAME.to_owned(),
-        symbol: USDT_SYMBOL.to_owned(),
-        decimals: 6,
-        asset_type: AssetType::ERC20,
-    };
-    pub static ref AVALANCHE_USDC: Asset = Asset {
-        id: AssetId::from_token(Chain::AvalancheC, AVALANCHE_USDC_TOKEN_ID),
-        name: USDC_NAME.to_owned(),
-        symbol: USDC_SYMBOL.to_owned(),
-        decimals: 6,
-        asset_type: AssetType::ERC20,
-    };
+    pub static ref AVALANCHE_USDT: Asset = Asset::new(
+        AssetId::from_token(Chain::AvalancheC, AVALANCHE_USDT_TOKEN_ID),
+        USDT_NAME.to_owned(),
+        USDT_SYMBOL.to_owned(),
+        6,
+        AssetType::ERC20,
+    );
+    pub static ref AVALANCHE_USDC: Asset = Asset::new(
+        AssetId::from_token(Chain::AvalancheC, AVALANCHE_USDC_TOKEN_ID),
+        USDC_NAME.to_owned(),
+        USDC_SYMBOL.to_owned(),
+        6,
+        AssetType::ERC20,
+    );
     // ink
-    pub static ref INK_WETH: Asset = Asset {
-        id: WETH_INK_ASSET_ID.into(),
-        name: WETH_NAME.into(),
-        symbol: WETH_SYMBOL.into(),
-        decimals: 18,
-        asset_type: AssetType::ERC20,
-    };
-    pub static ref INK_USDT: Asset = Asset {
-        id: USDT_INK_ASSET_ID.into(),
-        name: USDT_NAME.to_owned(),
-        symbol: USDT_SYMBOL.to_owned(),
-        decimals: 6,
-        asset_type: AssetType::ERC20,
-    };
+    pub static ref INK_WETH: Asset = Asset::new(
+        WETH_INK_ASSET_ID.into(),
+        WETH_NAME.into(),
+        WETH_SYMBOL.into(),
+        18,
+        AssetType::ERC20,
+    );
+    pub static ref INK_USDT: Asset = Asset::new(
+        USDT_INK_ASSET_ID.into(),
+        USDT_NAME.to_owned(),
+        USDT_SYMBOL.to_owned(),
+        6,
+        AssetType::ERC20,
+    );
     // Unichain
-    pub static ref UNICHAIN_WETH: Asset = Asset {
-        id: WETH_UNICHAIN_ASSET_ID.into(),
-        name: WETH_NAME.into(),
-        symbol: WETH_SYMBOL.into(),
-        decimals: 18,
-        asset_type: AssetType::ERC20,
-    };
-    pub static ref UNICHAIN_USDC: Asset = Asset {
-        id: USDC_UNICHAIN_ASSET_ID.into(),
-        name: USDC_NAME.to_owned(),
-        symbol: USDC_SYMBOL.to_owned(),
-        decimals: 6,
-        asset_type: AssetType::ERC20,
-    };
-    pub static ref UNICHAIN_DAI: Asset = Asset {
-        id: DAI_UNICHAIN_ASSET_ID.into(),
-        name: DAI_NAME.to_owned(),
-        symbol: DAI_SYMBOL.to_owned(),
-        decimals: 18,
-        asset_type: AssetType::ERC20,
-    };
+    pub static ref UNICHAIN_WETH: Asset = Asset::new(
+        WETH_UNICHAIN_ASSET_ID.into(),
+        WETH_NAME.into(),
+        WETH_SYMBOL.into(),
+        18,
+        AssetType::ERC20,
+    );
+    pub static ref UNICHAIN_USDC: Asset = Asset::new(
+        USDC_UNICHAIN_ASSET_ID.into(),
+        USDC_NAME.to_owned(),
+        USDC_SYMBOL.to_owned(),
+        6,
+        AssetType::ERC20,
+    );
+    pub static ref UNICHAIN_DAI: Asset = Asset::new(
+        DAI_UNICHAIN_ASSET_ID.into(),
+        DAI_NAME.to_owned(),
+        DAI_SYMBOL.to_owned(),
+        18,
+        AssetType::ERC20,
+    );
     // Solana
-    pub static ref SOLANA_USDC: Asset = Asset {
-        id: AssetId::from_token(Chain::Solana, SOLANA_USDC_TOKEN_ID),
-        name: USDC_NAME.to_owned(),
-        symbol: USDC_SYMBOL.to_owned(),
-        decimals: 6,
-        asset_type: AssetType::SPL,
-    };
-    pub static ref SOLANA_USDT: Asset = Asset {
-        id: AssetId::from_token(Chain::Solana, SOLANA_USDT_TOKEN_ID),
-        name: USDT_NAME.to_owned(),
-        symbol: USDT_SYMBOL.to_owned(),
-        decimals: 6,
-        asset_type: AssetType::SPL,
-    };
-    pub static ref SOLANA_USDS: Asset = Asset {
-        id: AssetId::from_token(Chain::Solana, SOLANA_USDS_TOKEN_ID),
-        name: USDS_NAME.to_owned(),
-        symbol: USDS_SYMBOL.to_owned(),
-        decimals: 6,
-        asset_type: AssetType::SPL,
-    };
-    pub static ref SOLANA_WBTC: Asset = Asset {
-        id: AssetId::from_token(Chain::Solana, SOLANA_WBTC_TOKEN_ID),
-        name: WBTC_NAME.to_owned(),
-        symbol: WBTC_SYMBOL.to_owned(),
-        decimals: 8,
-        asset_type: AssetType::SPL,
-    };
-    pub static ref SOLANA_CBBTC: Asset = Asset {
-        id: AssetId::from_token(Chain::Solana, SOLANA_CBBTC_TOKEN_ID),
-        name: CBBTC_NAME.to_owned(),
-        symbol: CBBTC_SYMBOL.to_owned(),
-        decimals: 8,
-        asset_type: AssetType::SPL,
-    };
-    pub static ref SOLANA_JITO_SOL: Asset = Asset {
-        id: AssetId::from_token(Chain::Solana, SOLANA_JITO_SOL_TOKEN_ID),
-        name: "Jito Staked SOL".to_owned(),
-        symbol: "JitoSOL".to_owned(),
-        decimals: 9,
-        asset_type: AssetType::SPL,
-    };
+    pub static ref SOLANA_USDC: Asset = Asset::new(
+        AssetId::from_token(Chain::Solana, SOLANA_USDC_TOKEN_ID),
+        USDC_NAME.to_owned(),
+        USDC_SYMBOL.to_owned(),
+        6,
+        AssetType::SPL,
+    );
+    pub static ref SOLANA_USDT: Asset = Asset::new(
+        AssetId::from_token(Chain::Solana, SOLANA_USDT_TOKEN_ID),
+        USDT_NAME.to_owned(),
+        USDT_SYMBOL.to_owned(),
+        6,
+        AssetType::SPL,
+    );
+    pub static ref SOLANA_USDS: Asset = Asset::new(
+        AssetId::from_token(Chain::Solana, SOLANA_USDS_TOKEN_ID),
+        USDS_NAME.to_owned(),
+        USDS_SYMBOL.to_owned(),
+        6,
+        AssetType::SPL,
+    );
+    pub static ref SOLANA_WBTC: Asset = Asset::new(
+        AssetId::from_token(Chain::Solana, SOLANA_WBTC_TOKEN_ID),
+        WBTC_NAME.to_owned(),
+        WBTC_SYMBOL.to_owned(),
+        8,
+        AssetType::SPL,
+    );
+    pub static ref SOLANA_CBBTC: Asset = Asset::new(
+        AssetId::from_token(Chain::Solana, SOLANA_CBBTC_TOKEN_ID),
+        CBBTC_NAME.to_owned(),
+        CBBTC_SYMBOL.to_owned(),
+        8,
+        AssetType::SPL,
+    );
+    pub static ref SOLANA_JITO_SOL: Asset = Asset::new(
+        AssetId::from_token(Chain::Solana, SOLANA_JITO_SOL_TOKEN_ID),
+        "Jito Staked SOL".to_owned(),
+        "JitoSOL".to_owned(),
+        9,
+        AssetType::SPL,
+    );
     // Sui
-    pub static ref SUI_USDC: Asset = Asset {
-        id: AssetId::from_token(Chain::Sui, SUI_USDC_TOKEN_ID),
-        name: USDC_NAME.to_owned(),
-        symbol: USDC_SYMBOL.to_owned(),
-        decimals: 6,
-        asset_type: AssetType::TOKEN,
-    };
-    pub static ref SUI_SBUSDT: Asset = Asset {
-        id: AssetId::from_token(Chain::Sui, SUI_SBUSDT_TOKEN_ID),
-        name: "Sui Bridged USDT".to_owned(),
-        symbol: "sbUSDT".to_owned(),
-        decimals: 6,
-        asset_type: AssetType::TOKEN,
-    };
-    pub static ref SUI_WAL: Asset = Asset {
-        id: AssetId::from_token(Chain::Sui, SUI_WAL_TOKEN_ID),
-        name: "Walrus".to_owned(),
-        symbol: "WAL".to_owned(),
-        decimals: 9,
-        asset_type: AssetType::TOKEN,
-    };
+    pub static ref SUI_USDC: Asset = Asset::new(
+        AssetId::from_token(Chain::Sui, SUI_USDC_TOKEN_ID),
+        USDC_NAME.to_owned(),
+        USDC_SYMBOL.to_owned(),
+        6,
+        AssetType::TOKEN,
+    );
+    pub static ref SUI_SBUSDT: Asset = Asset::new(
+        AssetId::from_token(Chain::Sui, SUI_SBUSDT_TOKEN_ID),
+        "Sui Bridged USDT".to_owned(),
+        "sbUSDT".to_owned(),
+        6,
+        AssetType::TOKEN,
+    );
+    pub static ref SUI_WAL: Asset = Asset::new(
+        AssetId::from_token(Chain::Sui, SUI_WAL_TOKEN_ID),
+        "Walrus".to_owned(),
+        "WAL".to_owned(),
+        9,
+        AssetType::TOKEN,
+    );
+    // Thorchain
+    pub static ref THORCHAIN_TCY: Asset = Asset::new(
+        AssetId::from_token(Chain::Thorchain, THORCHAIN_TCY_TOKEN_ID),
+        "TCY".to_owned(),
+        "TCY".to_owned(),
+        8,
+        AssetType::TOKEN,
+    );
 
 }

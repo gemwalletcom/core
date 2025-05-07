@@ -23,9 +23,8 @@ pub struct FiatClient {
 }
 
 impl FiatClient {
-    pub async fn new(database_url: &str, cacher_url: &str, providers: Vec<Box<dyn FiatProvider + Send + Sync>>, ip_check_client: IPCheckClient) -> Self {
+    pub async fn new(database_url: &str, cacher: CacherClient, providers: Vec<Box<dyn FiatProvider + Send + Sync>>, ip_check_client: IPCheckClient) -> Self {
         let database = DatabaseClient::new(database_url);
-        let cacher = CacherClient::new(cacher_url);
 
         Self {
             database,

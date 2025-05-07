@@ -102,6 +102,7 @@ impl FiatProvider for MoonPayClient {
             provider_id: Self::NAME.id(),
             provider_transaction_id: payload.id,
             status,
+            country: payload.country,
             fiat_amount,
             fiat_currency: fiat_currency.code.to_uppercase(),
             transaction_hash: payload.crypto_transaction_id,

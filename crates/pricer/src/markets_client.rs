@@ -1,7 +1,7 @@
 use std::error::Error;
 
 use cacher::CacherClient;
-use primitives::{AssetTag, Markets, MarketsAssets};
+use primitives::{AssetId, AssetTag, Markets, MarketsAssets};
 use storage::DatabaseClient;
 
 pub struct MarketsClient {
@@ -12,9 +12,8 @@ pub struct MarketsClient {
 const MARKETS_KEY: &str = "markets";
 
 impl MarketsClient {
-    pub fn new(database_url: &str, redis_url: &str) -> Self {
+    pub fn new(database_url: &str, cacher: CacherClient) -> Self {
         let database = DatabaseClient::new(database_url);
-        let cacher = CacherClient::new(redis_url);
         Self { database, cacher }
     }
 
@@ -37,8 +36,13 @@ impl MarketsClient {
         Ok(self.database.set_assets_tags_for_tag(tag.as_ref(), asset_ids)?)
     }
 
-    pub fn get_asset_ids_for_tag(&mut self, tag: AssetTag) -> Result<Vec<String>, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.get_assets_tags_for_tag(tag.as_ref())?.into_iter().map(|x| x.asset_id).collect())
+    pub fn get_asset_ids_for_tag(&mut self, tag: AssetTag) -> Result<Vec<AssetId>, Box<dyn Error + Send + Sync>> {
+        Ok(self
+            .database
+            .get_assets_tags_for_tag(tag.as_ref())?
+            .into_iter()
+            .flat_map(|x| AssetId::new(x.asset_id.as_str()))
+            .collect())
     }
 
     pub fn get_market_assets(&mut self) -> Result<MarketsAssets, Box<dyn Error + Send + Sync>> {

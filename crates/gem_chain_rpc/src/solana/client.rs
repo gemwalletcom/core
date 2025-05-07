@@ -337,16 +337,7 @@ impl ChainTokenDataProvider for SolanaClient {
         let symbol = meta.data.symbol.trim_matches(char::from(0)).to_string();
         let decimals = token_info.value.data.parsed.info.decimals;
 
-        Ok(Asset {
-            id: AssetId {
-                chain,
-                token_id: Some(token_id),
-            },
-            name,
-            symbol,
-            decimals,
-            asset_type: AssetType::SPL,
-        })
+        Ok(Asset::new(AssetId::from_token(chain, &token_id), name, symbol, decimals, AssetType::SPL))
     }
 }
 

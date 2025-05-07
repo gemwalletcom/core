@@ -149,15 +149,12 @@ impl ChainTokenDataProvider for TonClient {
     async fn get_token_data(&self, chain: Chain, token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
         let token_info = self.get_token_info(token_id.clone()).await?;
         let decimals = token_info.metadata.decimals.parse::<i32>().map_err(|_| "Invalid decimals")?;
-        Ok(Asset {
-            id: AssetId {
-                chain,
-                token_id: Some(token_id),
-            },
-            name: token_info.metadata.name,
-            symbol: token_info.metadata.symbol,
+        Ok(Asset::new(
+            AssetId::from_token(chain, &token_id),
+            token_info.metadata.name,
+            token_info.metadata.symbol,
             decimals,
-            asset_type: AssetType::JETTON,
-        })
+            AssetType::JETTON,
+        ))
     }
 }

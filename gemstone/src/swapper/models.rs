@@ -63,7 +63,9 @@ impl SwapProviderType {
             | GemSwapProvider::StonfiV2
             | GemSwapProvider::Reservoir
             | GemSwapProvider::Symbiosis => GemSwapProviderMode::OnChain,
-            GemSwapProvider::Thorchain | GemSwapProvider::Mayan | GemSwapProvider::Chainflip => GemSwapProviderMode::CrossChain,
+            | GemSwapProvider::Mayan | GemSwapProvider::Chainflip => GemSwapProviderMode::CrossChain,
+            GemSwapProvider::Mayan => GemSwapProviderMode::CrossChain,
+            GemSwapProvider::Thorchain => GemSwapProviderMode::OmniChain(Chain::Thorchain),
             GemSwapProvider::Across => GemSwapProviderMode::Bridge,
         }
     }

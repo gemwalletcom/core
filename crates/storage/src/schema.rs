@@ -171,6 +171,8 @@ diesel::table! {
         #[max_length = 32]
         status -> Varchar,
         #[max_length = 256]
+        country -> Nullable<Varchar>,
+        #[max_length = 256]
         provider_transaction_id -> Varchar,
         #[max_length = 256]
         transaction_hash -> Nullable<Varchar>,

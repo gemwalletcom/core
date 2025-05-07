@@ -1,3 +1,5 @@
+use primitives::Chain;
+
 pub type GemSwapProvider = primitives::SwapProvider;
 pub type GemSwapProviderMode = primitives::swap::SwapProviderMode;
 pub type GemQuoteAsset = primitives::swap::QuoteAsset;
@@ -30,6 +32,7 @@ pub enum GemSwapProviderMode {
     OnChain,
     CrossChain,
     Bridge,
+    OmniChain(Chain),
 }
 
 #[uniffi::remote(Enum)]

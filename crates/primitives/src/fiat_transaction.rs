@@ -11,6 +11,7 @@ pub struct FiatTransaction {
     pub provider_id: String,
     pub provider_transaction_id: String,
     pub status: FiatTransactionStatus,
+    pub country: Option<String>,
     pub symbol: String,
     pub fiat_amount: f64,
     pub fiat_currency: String,

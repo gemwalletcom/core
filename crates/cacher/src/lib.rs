@@ -2,14 +2,17 @@ use std::error::Error;
 
 use redis::{AsyncCommands, Client};
 
+pub const CACHER_DB_PUBLIC: usize = 2;
 // Work in progress. In the future use it for caching any temporary data.
+
+#[derive(Debug, Clone)]
 pub struct CacherClient {
     client: Client,
 }
 
 impl CacherClient {
     pub fn new(redis_url: &str) -> Self {
-        let client = Client::open(redis_url).unwrap();
+        let client = redis::Client::open(redis_url).unwrap();
         Self { client }
     }
 
@@ -20,6 +23,17 @@ impl CacherClient {
             .mset::<String, String, ()>(values.as_slice())
             .await?;
         // redis always returns "OK" instead of usize for the number of inserts
+        Ok(values.len())
+    }
+
+    pub async fn set_values_with_publish(&mut self, values: Vec<(String, String)>) -> Result<usize, Box<dyn Error + Send + Sync>> {
+        let mut connection = self.client.get_multiplexed_async_connection().await?;
+        let mut pipe = redis::pipe();
+        for (key, value) in &values {
+            pipe.cmd("SET").arg(key).arg(value).ignore();
+            pipe.cmd("PUBLISH").arg(key).arg(value).ignore();
+        }
+        pipe.query_async::<()>(&mut connection).await?;
         Ok(values.len())
     }
 
@@ -44,6 +58,22 @@ impl CacherClient {
         let mut connection = self.client.get_multiplexed_async_connection().await?;
         let value: String = connection.get(key).await?;
         Ok(serde_json::from_str(&value)?)
+    }
+
+    pub async fn get_values<T, I>(&mut self, keys: Vec<String>) -> Result<T, Box<dyn Error + Send + Sync>>
+    where
+        I: serde::de::DeserializeOwned,
+        T: FromIterator<I>,
+    {
+        let result: Vec<Option<String>> = self.client.get_multiplexed_async_connection().await?.mget(keys).await?;
+        let values: T = result
+            .into_iter()
+            .flatten()
+            .collect::<Vec<String>>()
+            .iter()
+            .filter_map(|x| serde_json::from_str::<I>(x).ok())
+            .collect();
+        Ok(values)
     }
 
     pub async fn get_or_set_value<T, F, Fut>(&mut self, key: &str, fetch_fn: F, ttl_seconds: Option<i64>) -> Result<T, Box<dyn Error + Send + Sync>>

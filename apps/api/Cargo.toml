@@ -15,6 +15,7 @@ futures = { workspace = true }
 futures-util = { workspace = true }
 strum = { workspace = true }
 strum_macros = { workspace = true }
+redis = { workspace = true }
 
 storage = { path = "../../crates/storage" }
 pricer = { path = "../../crates/pricer" }
@@ -27,6 +28,7 @@ api_connector = { path = "../../crates/api_connector" }
 chain_primitives = { path = "../../crates/chain_primitives" }
 search_index = { path = "../../crates/search_index" }
 nft = { path = "../../crates/nft" }
+cacher = { path = "../../crates/cacher" }
 
 security_provider = { path = "../../crates/security_provider" }
 security_hashdit = { path = "../../crates/security_hashdit" }
