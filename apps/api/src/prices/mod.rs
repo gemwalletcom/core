@@ -1,9 +1,7 @@
 extern crate rocket;
 use pricer::price_client::PriceClient;
 use pricer::ChartClient;
-use primitives::asset_id::AssetIdVecExt;
-use primitives::{AssetMarketPrice, ChartPeriod, Charts, FiatRate, DEFAULT_FIAT_CURRENCY};
-use primitives::{AssetPrices, AssetPricesRequest};
+use primitives::{AssetIdVecExt, AssetMarketPrice, AssetPrices, AssetPricesRequest, ChartPeriod, Charts, FiatRate, DEFAULT_FIAT_CURRENCY};
 use rocket::serde::json::Json;
 use rocket::tokio::sync::Mutex;
 use rocket::State;

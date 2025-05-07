@@ -113,15 +113,12 @@ impl ChainTokenDataProvider for AptosClient {
         let resource = format!("0x1::coin::CoinInfo<{}>", token_id);
         let coin_info = self.get_resource::<ResourceCoinInfo>(address.to_string(), resource).await?.data;
 
-        Ok(Asset {
-            id: AssetId {
-                chain,
-                token_id: Some(token_id),
-            },
-            name: coin_info.name,
-            symbol: coin_info.symbol,
-            decimals: coin_info.decimals,
-            asset_type: AssetType::TOKEN,
-        })
+        Ok(Asset::new(
+            AssetId::from_token(chain, &token_id),
+            coin_info.name,
+            coin_info.symbol,
+            coin_info.decimals,
+            AssetType::TOKEN,
+        ))
     }
 }

@@ -74,6 +74,7 @@ impl GemSwapper {
         match mode {
             GemSwapProviderMode::OnChain => from_chain == to_chain,
             GemSwapProviderMode::Bridge | GemSwapProviderMode::CrossChain => from_chain != to_chain,
+            GemSwapProviderMode::OmniChain(chain) => chain == from_chain || from_chain != to_chain,
         }
     }
 

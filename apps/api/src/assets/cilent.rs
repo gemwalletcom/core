@@ -86,7 +86,7 @@ impl AssetsSearchClient {
         }
 
         if !chains.is_empty() {
-            filters.push(filter_array("asset.id.chain", chains));
+            filters.push(filter_array("asset.chain", chains));
         }
         let filter = &filters.join(" AND ");
 

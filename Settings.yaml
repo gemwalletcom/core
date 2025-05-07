@@ -1,5 +1,5 @@
 redis:
-  url: "redis://default:@localhost:6379"
+  url: "redis://default:@localhost:6379?protocol=resp3"
 postgres:
   url: "postgres://username:password@localhost/api"
 clickhouse:

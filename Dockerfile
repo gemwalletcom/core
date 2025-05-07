@@ -1,4 +1,4 @@
-FROM rust:1.84.1-bookworm AS chef
+FROM rust:1.85.1-bookworm AS chef
 # We only pay the installation cost once,
 # it will be cached from the second build onwards
 RUN cargo install cargo-chef --version 0.1.71

@@ -33,7 +33,7 @@ pub use self::nft_collection::NftCollection;
 pub use self::nft_link::NftLink;
 pub use self::node::Node;
 pub use self::parser_state::ParserState;
-pub use self::price::{Price, PriceAsset, PriceCache};
+pub use self::price::{Price, PriceAsset};
 pub use self::price_alert::{NewPriceAlert, PriceAlert};
 pub use self::release::Release;
 pub use self::scan::{ScanAddress, ScanAddressType};

@@ -8,10 +8,10 @@ CREATE TABLE fiat_transactions (
     fiat_amount float NOT NULL DEFAULT 0,
     fiat_currency VARCHAR(32) NOT NULL,
     status VARCHAR(32) NOT NULL,
+    country VARCHAR(256),
     provider_transaction_id VARCHAR(256) NOT NULL,
     transaction_hash VARCHAR(256),
     address VARCHAR(256),
-
     fee_provider float DEFAULT NULL,
     fee_network float DEFAULT NULL,
     fee_partner float DEFAULT NULL,

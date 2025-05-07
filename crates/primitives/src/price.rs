@@ -11,15 +11,15 @@ pub struct Price {
     pub price: f64,
     pub price_change_percentage_24h: f64,
     #[typeshare(skip)]
-    pub last_updated: Option<NaiveDateTime>,
+    pub last_updated_at: Option<NaiveDateTime>,
 }
 
 impl Price {
-    pub fn new(price: f64, price_change_percentage_24h: f64, last_updated: Option<NaiveDateTime>) -> Self {
+    pub fn new(price: f64, price_change_percentage_24h: f64, last_updated_at: Option<NaiveDateTime>) -> Self {
         Price {
             price,
             price_change_percentage_24h,
-            last_updated,
+            last_updated_at,
         }
     }
 
@@ -30,7 +30,7 @@ impl Price {
         Price {
             price: price_value,
             price_change_percentage_24h: self.price_change_percentage_24h,
-            last_updated: self.last_updated,
+            last_updated_at: self.last_updated_at,
         }
     }
 }
@@ -65,7 +65,7 @@ mod tests {
         let price = Price {
             price: 100.0,
             price_change_percentage_24h: 5.0,
-            last_updated: None,
+            last_updated_at: None,
         };
 
         let new_price = price.new_with_rate(1.0, 2.0);

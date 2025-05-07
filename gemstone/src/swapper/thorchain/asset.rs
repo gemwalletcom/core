@@ -1,10 +1,6 @@
 use primitives::{Asset, AssetId};
 
-use crate::swapper::asset::{
-    AVALANCHE_USDC, AVALANCHE_USDC_TOKEN_ID, AVALANCHE_USDT, AVALANCHE_USDT_TOKEN_ID, BASE_CBBTC, BASE_CBBTC_TOKEN_ID, BASE_USDC, BASE_USDC_TOKEN_ID,
-    ETHEREUM_DAI, ETHEREUM_DAI_TOKEN_ID, ETHEREUM_USDC, ETHEREUM_USDC_TOKEN_ID, ETHEREUM_USDT, ETHEREUM_USDT_TOKEN_ID, ETHEREUM_WBTC, ETHEREUM_WBTC_TOKEN_ID,
-    SMARTCHAIN_USDC, SMARTCHAIN_USDC_TOKEN_ID, SMARTCHAIN_USDT, SMARTCHAIN_USDT_TOKEN_ID,
-};
+use crate::swapper::asset::*;
 
 use super::chain::THORChainName;
 
@@ -72,6 +68,10 @@ impl THORChainAsset {
             THORChainName::Base => match token_id {
                 BASE_USDC_TOKEN_ID => Some(chain.asset(BASE_USDC.clone())),
                 BASE_CBBTC_TOKEN_ID => Some(chain.asset(BASE_CBBTC.clone())),
+                _ => None,
+            },
+            THORChainName::Thorchain => match token_id {
+                THORCHAIN_TCY_TOKEN_ID => Some(chain.asset(THORCHAIN_TCY.clone())),
                 _ => None,
             },
             _ => None,
@@ -197,6 +197,12 @@ mod tests {
                 bps
             ),
             Some("=:c:qpcns7lget89x9km0t8ry5fk52e8lhl53q0a64gd65:0/1/0:g1:50".into())
+        );
+        assert_eq!(
+            THORChainAsset::from_asset_id(&AssetId::from_token(Chain::Thorchain, "tcy").to_string())
+                .unwrap()
+                .get_memo(destination_address.clone(), 0, 1, 0, fee_address.clone(), bps),
+            Some("=:THOR.TCY:0x1234567890abcdef:0/1/0:g1:50".into())
         );
     }
 }
