@@ -185,10 +185,26 @@ mod tests {
         let json_str = include_str!("./test/uniswap_permit2.json");
 
         let result = GemEIP712Message::from_json(json_str);
+
         assert!(result.is_ok(), "Parsing failed: {:?}", result.err());
 
-        let parsed_message = result;
+        let message = result.unwrap();
 
-        assert!(parsed_message.is_ok());
+        assert!(message.domain.chain_id == 1);
+        assert_eq!(message.message.len(), 3);
+    }
+
+    #[test]
+    fn test_1inch_permit_json_parsing() {
+        let json_str = include_str!("./test/1inch_permit.json");
+
+        let result = GemEIP712Message::from_json(json_str);
+
+        assert!(result.is_ok(), "Parsing failed: {:?}", result.err());
+
+        let message = result.unwrap();
+
+        assert!(message.domain.chain_id == 1);
+        assert!(message.message.len() == 5);
     }
 }
