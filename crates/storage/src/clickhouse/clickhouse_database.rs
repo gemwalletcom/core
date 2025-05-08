@@ -11,7 +11,11 @@ pub const CHARTS_TABLE_NAME: &str = "charts";
 
 impl ClickhouseClient {
     pub fn new(url: &str, database: &str) -> Self {
-        let client = Client::default().with_url(url).with_database(database);
+        let client = Client::default()
+            .with_url(url)
+            .with_database(database)
+            .with_option("max_insert_block_size", "0")
+            .with_option("max_partitions_per_insert_block", "0");
         Self { client }
     }
 
@@ -24,7 +28,7 @@ impl ClickhouseClient {
     }
 
     pub async fn add_items<T: Serialize + Clone + Row>(&self, table_name: &str, values: Vec<T>) -> Result<usize> {
-        let mut inserter = self.client.insert(table_name)?.with_option("max_insert_block_size", "50");
+        let mut inserter = self.client.insert(table_name)?;
         for value in values.clone() {
             inserter.write(&value).await?;
         }

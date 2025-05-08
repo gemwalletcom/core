@@ -20,12 +20,10 @@ impl ChartsUpdater {
 
     #[allow(unused)]
     pub async fn update_charts_all(&mut self) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        let coin_list = self.coin_gecko_client.get_coin_list().await?;
+        let coin_list = self.coin_gecko_client.get_all_coin_markets(250, 10).await?;
 
         for coin_id in coin_list.clone() {
-            let prices = self.coin_gecko_client.get_market_chart(coin_id.id.as_str()).await;
-
-            match prices {
+            match self.coin_gecko_client.get_market_chart(coin_id.id.as_str()).await {
                 Ok(prices) => {
                     let charts = prices
                         .prices
@@ -50,7 +48,7 @@ impl ChartsUpdater {
 
                     println!("update charts {}", coin_id.id.clone());
 
-                    std::thread::sleep(std::time::Duration::from_millis(100));
+                    std::thread::sleep(std::time::Duration::from_millis(250));
                 }
                 Err(err) => {
                     println!("update charts error: {}", err);

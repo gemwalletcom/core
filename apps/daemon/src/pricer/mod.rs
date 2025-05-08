@@ -142,6 +142,20 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
         }
     });
 
+    let update_all_charts = run_job("Update all charts", Duration::from_secs(settings.charter.timer), {
+        let settings = settings.clone();
+        let coingecko_client = coingecko_client.clone();
+        let cacher_client = cacher_client.clone();
+        move || {
+            let clickhouse_database = ClickhouseClient::new(&settings.clickhouse.url, &settings.clickhouse.database);
+            let charts_client = ChartClient::new(&settings.postgres.url, clickhouse_database);
+            let cacher_client = cacher_client.clone();
+            let price_client = PriceClient::new(cacher_client, &settings.postgres.url);
+            let mut charts_updater = ChartsUpdater::new(charts_client, price_client, coingecko_client.clone());
+            async move { charts_updater.update_charts_all().await }
+        }
+    });
+
     let update_markets = run_job("Update markets", Duration::from_secs(3600), {
         let settings = Arc::new(settings.clone());
         let cacher_client = cacher_client.clone();
@@ -163,6 +177,7 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
         Box::pin(update_prices_cache),
         Box::pin(update_fiat_rates_cache),
         Box::pin(update_charts),
+        Box::pin(update_all_charts),
         Box::pin(update_markets),
     ]
 }
