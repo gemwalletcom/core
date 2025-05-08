@@ -54,6 +54,10 @@ impl SearchIndexClient {
         Ok(self.client.index(index).delete_documents(&ids).await?)
     }
 
+    pub async fn delete_all_documents(&self, index: &str) -> Result<TaskInfo, Box<dyn Error + Send + Sync>> {
+        Ok(self.client.index(index).delete_all_documents().await?)
+    }
+
     pub async fn set_filterable_attributes(&self, index: &str, attributes: Vec<&str>) -> Result<TaskInfo, Box<dyn Error + Send + Sync>> {
         Ok(self.client.index(index).set_filterable_attributes(attributes).await?)
     }
