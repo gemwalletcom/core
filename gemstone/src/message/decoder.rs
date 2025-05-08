@@ -65,7 +65,7 @@ mod tests {
     use super::*;
     use crate::message::sign_type::SignDigestType;
     use alloy_primitives::hex;
-    use primitives::eip712::EIP712TypedValue;
+    use gem_evm::eip712::EIP712TypedValue;
 
     #[test]
     fn test_eip191() {

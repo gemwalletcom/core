@@ -10,10 +10,11 @@ use std::{
 };
 
 use gem_evm::{
+    eip712::EIP712Domain,
     permit2::{IAllowanceTransfer, Permit2Types},
     uniswap::command::Permit2Permit,
 };
-use primitives::{eip712::EIP712Domain, Chain};
+use primitives::Chain;
 
 #[derive(Debug, Clone, Serialize, Deserialize, uniffi::Record)]
 pub struct Permit2Detail {
@@ -87,7 +88,7 @@ pub fn permit2_data_to_eip712_json(chain: Chain, data: PermitSingle, contract: &
         domain: EIP712Domain {
             name: "Permit2".to_string(),
             version: "".into(),
-            chain_id: chain_id.parse::<u32>().unwrap(),
+            chain_id: chain_id.parse::<u64>().unwrap(),
             verifying_contract: contract.to_string(),
         },
         types: Permit2Types::default(),

@@ -1,5 +1,5 @@
 use crate::GemstoneError;
-use primitives::eip712::{EIP712Domain, EIP712Field, EIP712Type, EIP712TypedValue};
+use gem_evm::{EIP712Domain, EIP712Field, EIP712Type, EIP712TypedValue};
 use serde_json::Value;
 use std::collections::HashMap;
 
@@ -11,7 +11,7 @@ type GemEIP712Field = EIP712Field;
 pub struct GemEIP712MessageDomain {
     pub name: String,
     pub version: String,
-    pub chain_id: u32,
+    pub chain_id: u64,
     pub verifying_contract: String,
 }
 

@@ -4,6 +4,7 @@ use std::str::FromStr;
 pub mod across;
 pub mod address;
 pub mod chainlink;
+pub mod eip712;
 pub mod erc20;
 pub mod erc2612;
 pub mod ether_conv;
@@ -16,6 +17,7 @@ pub mod uniswap;
 pub mod weth;
 
 pub use address::ethereum_address_checksum;
+pub use eip712::{eip712_domain_types, EIP712Domain, EIP712Field, EIP712Type, EIP712TypedValue};
 
 pub fn parse_u256(value: &str) -> Option<U256> {
     if let Some(stripped) = value.strip_prefix("0x") {
