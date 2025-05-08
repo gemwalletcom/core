@@ -52,7 +52,7 @@ borsh.workspace = true
 lazy_static.workspace = true
 bigdecimal.workspace = true
 
-orca_whirlpools_core = "1.0.5"
+orca_whirlpools_core = "2.0.0"
 
 [build-dependencies]
 uniffi = { workspace = true, features = ["build"] }

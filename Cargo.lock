@@ -4017,9 +4017,9 @@ dependencies = [
 
 [[package]]
 name = "orca_whirlpools_core"
-version = "1.0.5"
+version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b426414bf75649943b1c57a45c12e2759e1a788dd91e4988c6da18903f852118"
+checksum = "5045fb81600bb120f6dbfffc4af806155aff543966bf27deabff4c08074a024f"
 dependencies = [
  "ethnum",
  "libm",
