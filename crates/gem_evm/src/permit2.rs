@@ -1,5 +1,5 @@
+use crate::eip712::EIP712Type;
 use alloy_sol_types::sol;
-use primitives::eip712::EIP712Type;
 use serde::{Deserialize, Serialize};
 
 // https://github.com/Uniswap/permit2/blob/main/src/interfaces/IAllowanceTransfer.sol

@@ -4,6 +4,7 @@ pub mod bsc;
 pub mod chain;
 pub mod config;
 pub mod cosmos;
+pub mod message;
 pub mod network;
 pub mod payment;
 pub mod solana;
@@ -44,6 +45,12 @@ impl From<anyhow::Error> for GemstoneError {
 impl From<&str> for GemstoneError {
     fn from(error: &str) -> Self {
         Self::AnyError { msg: error.to_string() }
+    }
+}
+
+impl From<String> for GemstoneError {
+    fn from(error: String) -> Self {
+        Self::AnyError { msg: error }
     }
 }
 

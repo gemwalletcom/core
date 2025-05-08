@@ -86,4 +86,22 @@ final class GemTestTests: XCTestCase {
 
         XCTAssertNil(expiredValue)
     }
+
+    func testSignMessage() async throws {
+        let base58 = "jo91waLQA1NNeBmZKUF".data(using: .utf8)!
+        let message = SignMessage(signType: .base58, data: base58)
+        let decoder = SignMessageDecoder(message: message)
+        let preview = try decoder.preview()
+
+        switch preview {
+            case .text(let text):
+                XCTAssertEqual(text, "this is a test")
+            case .eip712:
+                XCTFail("Unexpected result")
+        }
+
+        let result = decoder.getResult(data: Data(hex: "7468697320697320612074657374")!)
+
+        XCTAssertEqual(result, "jo91waLQA1NNeBmZKUF")
+    }
 }

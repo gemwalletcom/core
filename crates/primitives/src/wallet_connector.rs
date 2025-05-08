@@ -84,21 +84,3 @@ struct WalletConnectionSessionProposal {
     wallets: [Wallet],
     metadata: WalletConnectionSessionAppMetadata,
 }
-
-#[derive(Debug, Serialize)]
-#[typeshare(swift = "Sendable")]
-struct SignMessage {
-    #[serde(rename = "type")]
-    sign_type: SignDigestType,
-    data: Data,
-}
-
-#[derive(Debug, Serialize)]
-#[typeshare(swift = "Sendable")]
-#[serde(rename_all = "lowercase")]
-pub enum SignDigestType {
-    Sign,
-    Eip191,
-    Eip712,
-    Base58,
-}
