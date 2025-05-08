@@ -1,6 +1,6 @@
 pub mod cilent;
 pub use cilent::{AssetsChainProvider, AssetsClient, AssetsSearchClient};
-use rocket::response::status::NotFound;
+use rocket::http::Status;
 extern crate rocket;
 
 use std::str::FromStr;
@@ -11,14 +11,13 @@ use rocket::tokio::sync::Mutex;
 use rocket::State;
 
 #[get("/assets/<asset_id>")]
-pub async fn get_asset(asset_id: &str, client: &State<Mutex<AssetsClient>>) -> Result<Json<AssetFull>, NotFound<String>> {
+pub async fn get_asset(asset_id: &str, client: &State<Mutex<AssetsClient>>) -> Result<Json<AssetFull>, Status> {
     let result = client.lock().await.get_asset_full(asset_id);
     match result {
         Ok(asset) => Ok(Json(asset)),
         Err(error) => {
             println!("get_asset error: {}, {:?}", asset_id, error);
-
-            Err(NotFound(asset_id.to_string()))
+            Err(Status::NotFound)
         }
     }
 }
@@ -57,8 +56,14 @@ pub async fn get_assets_search(
     limit: Option<usize>,
     offset: Option<usize>,
     client: &State<Mutex<AssetsSearchClient>>,
-) -> Json<Vec<AssetBasic>> {
-    let chains = chains.unwrap_or_default().split(',').flat_map(Chain::from_str).map(|x| x.to_string()).collect();
+) -> Result<Json<Vec<AssetBasic>>, Status> {
+    let chains = chains
+        .unwrap_or_default()
+        .split(',')
+        .flat_map(Chain::from_str)
+        .map(|x| x.to_string())
+        .collect::<Vec<String>>();
+
     let tags = tags
         .unwrap_or_default()
         .split(',')
@@ -69,21 +74,18 @@ pub async fn get_assets_search(
     let assets = client
         .lock()
         .await
-        .get_assets_search(query.as_str(), chains, tags, limit.unwrap_or(50), offset.unwrap_or(0))
-        .await
-        .unwrap();
-    Json(assets)
-}
-
-//TODO: Delete in favor of get_assets_by_device_id
-#[get("/assets/by_device_id/<device_id>?<wallet_index>&<from_timestamp>")]
-pub async fn get_assets_ids_by_device_id(
-    device_id: &str,
-    wallet_index: i32,
-    from_timestamp: Option<u32>,
-    client: &State<Mutex<AssetsClient>>,
-) -> Json<Vec<String>> {
-    get_assets_by_device_id(device_id, wallet_index, from_timestamp, client).await
+        .get_assets_search(query.as_str(), chains.clone(), tags.clone(), limit.unwrap_or(50), offset.unwrap_or(0))
+        .await;
+    match assets {
+        Ok(assets) => Ok(Json(assets)),
+        Err(error) => {
+            println!(
+                "get_assets_search, query: {:?}, tags: {:?}, chains: {:?} error: {:?}",
+                query, tags, chains, error
+            );
+            Err(Status::InternalServerError)
+        }
+    }
 }
 
 #[get("/assets/device/<device_id>?<wallet_index>&<from_timestamp>")]
