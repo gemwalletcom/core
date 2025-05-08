@@ -10,7 +10,6 @@ pub const ORDER_TYPE_SELL: &str = "sell";
 pub struct Coin {
     pub id: String,
     pub blockchain: String,
-    pub address: String,
     pub network: String,
 }
 
