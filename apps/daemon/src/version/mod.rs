@@ -1,4 +1,6 @@
+mod model;
 mod version_updater;
+
 use job_runner::run_job;
 use settings::Settings;
 use std::future::Future;
@@ -24,5 +26,17 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
         }
     });
 
-    vec![Box::pin(update_appstore_version), Box::pin(update_apk_version)]
+    let update_samsung_store_version = run_job("update samsung store version", Duration::from_secs(43200), {
+        let settings = Arc::new(settings.clone());
+        move || {
+            let mut version_client = VersionClient::new(&settings.postgres.url);
+            async move { version_client.update_samsung_store_version().await }
+        }
+    });
+
+    vec![
+        Box::pin(update_appstore_version),
+        Box::pin(update_apk_version),
+        Box::pin(update_samsung_store_version),
+    ]
 }

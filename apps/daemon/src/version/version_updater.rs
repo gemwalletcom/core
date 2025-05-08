@@ -1,33 +1,11 @@
 use primitives::{config::Release, PlatformStore};
-use serde::{Deserialize, Serialize};
 use std::error::Error;
 use storage::database::DatabaseClient;
 
+use super::model::{GitHubRepository, ITunesLookupResponse, SamsungStoreDetail};
+
 pub struct VersionClient {
     database: DatabaseClient,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ITunesLookupResponse {
-    pub results: Vec<ITunesLoopUpResult>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ITunesLoopUpResult {
-    pub version: String,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct GitHubRepository {
-    pub name: String,
-    pub draft: bool,
-    pub prerelease: bool,
-    pub assets: Vec<GitHubRepositoryAsset>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct GitHubRepositoryAsset {
-    pub name: String,
 }
 
 impl VersionClient {
@@ -38,22 +16,18 @@ impl VersionClient {
 
     pub async fn update_ios_version(&mut self) -> Result<Release, Box<dyn Error + Send + Sync>> {
         let version = self.get_app_store_version().await?;
-        let release = Release {
-            store: PlatformStore::AppStore,
-            version: version.clone(),
-            upgrade_required: false,
-        };
-        self.set_release(release)
+        self.set_release(Release::new(PlatformStore::AppStore, version.clone(), false))
     }
 
     pub async fn update_apk_version(&mut self) -> Result<Release, Box<dyn Error + Send + Sync>> {
         let version = self.get_github_apk_version().await?;
-        let release = Release {
-            store: PlatformStore::ApkUniversal,
-            version: version.clone(),
-            upgrade_required: false,
-        };
-        self.set_release(release)
+        self.set_release(Release::new(PlatformStore::ApkUniversal, version.clone(), false))
+    }
+
+    pub async fn update_samsung_store_version(&mut self) -> Result<Release, Box<dyn Error + Send + Sync>> {
+        let url = "https://galaxystore.samsung.com/api/detail/com.gemwallet.android";
+        let response = reqwest::get(url).await?.json::<SamsungStoreDetail>().await?;
+        Ok(Release::new(PlatformStore::SamsungStore, response.details.version.clone(), false))
     }
 
     fn set_release(&mut self, release: Release) -> Result<Release, Box<dyn Error + Send + Sync>> {
