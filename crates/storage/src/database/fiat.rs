@@ -52,6 +52,7 @@ impl DatabaseClient {
 
         let update = FiatTransactionUpdate {
             status: transaction.status.clone(),
+            country: transaction.country.clone(),
             transaction_hash: transaction.transaction_hash.clone(),
             address: transaction.address.clone(),
             fee_provider: transaction.fee_provider,
