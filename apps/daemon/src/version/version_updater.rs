@@ -27,7 +27,7 @@ impl VersionClient {
     pub async fn update_samsung_store_version(&mut self) -> Result<Release, Box<dyn Error + Send + Sync>> {
         let url = "https://galaxystore.samsung.com/api/detail/com.gemwallet.android";
         let response = reqwest::get(url).await?.json::<SamsungStoreDetail>().await?;
-        Ok(Release::new(PlatformStore::SamsungStore, response.details.version.clone(), false))
+        self.set_release(Release::new(PlatformStore::SamsungStore, response.details.version.clone(), false))
     }
 
     fn set_release(&mut self, release: Release) -> Result<Release, Box<dyn Error + Send + Sync>> {
