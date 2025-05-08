@@ -23,8 +23,6 @@ impl AssetsIndexUpdater {
         let assets_tags = self.database.get_assets_tags()?;
         let assets_tags_map = assets_tags.into_iter().map(|x| (x.asset_id, x.tag_id)).into_group_map();
 
-        self.search_index.delete_all_documents(ASSETS_INDEX_NAME).await?;
-
         let documents = prices
             .clone()
             .into_iter()
