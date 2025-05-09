@@ -3,11 +3,8 @@ use num_bigint::BigInt;
 use num_bigint::ToBigInt;
 use num_traits::FromPrimitive;
 
-pub fn apply_slippage(original_price: f64, slippage_bps: u32, a_2_b: bool) -> f64 {
-    match a_2_b {
-        true => original_price * (1.0 + slippage_bps as f64 / 10000.0),
-        false => original_price * (1.0 - slippage_bps as f64 / 10000.0),
-    }
+pub fn apply_slippage(original_price: f64, slippage_bps: u32) -> f64 {
+    original_price * (1.0 - slippage_bps as f64 / 10000.0)
 }
 /// https://docs.chainflip.io/lp/integrations/lp-api#hex-price
 pub fn price_to_hex_price(price: f64, quote_asset_decimals: u32, base_asset_decimals: u32) -> Result<String, String> {
@@ -27,13 +24,8 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_apply_slippage_buy() {
-        assert_eq!(apply_slippage(100.0, 100, true), 101.0);
-    }
-
-    #[test]
     fn test_apply_slippage_sell() {
-        assert_eq!(apply_slippage(100.0, 100, false), 99.0);
+        assert_eq!(apply_slippage(100.0, 100), 99.0);
     }
 
     #[test]

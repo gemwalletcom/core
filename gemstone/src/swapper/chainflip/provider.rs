@@ -155,7 +155,7 @@ impl Swapper for ChainflipProvider {
             .estimated_price
             .parse::<f64>()
             .map_err(|_| SwapperError::TransactionError("Invalid price".to_string()))?;
-        let price_slippage = apply_slippage(price, quote.data.slippage_bps, true);
+        let price_slippage = apply_slippage(price, quote.data.slippage_bps);
         let quote_asset_decimals = quote.request.to_asset.decimals;
         let base_asset_decimals = quote.request.from_asset.decimals;
         let min_price = price_to_hex_price(price_slippage, quote_asset_decimals, base_asset_decimals).map_err(SwapperError::TransactionError)?;
