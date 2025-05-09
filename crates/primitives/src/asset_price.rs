@@ -1,4 +1,4 @@
-use chrono::NaiveDateTime;
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
@@ -11,7 +11,7 @@ pub struct AssetPrice {
     pub asset_id: AssetId,
     pub price: f64,
     pub price_change_percentage_24h: f64,
-    pub last_updated_at: NaiveDateTime,
+    pub updated_at: DateTime<Utc>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -23,7 +23,7 @@ impl PriceChainProvider for PythProvider {
                 asset_id: chain.as_asset_id(),
                 price: price.price,
                 price_change_percentage_24h: 0.0,
-                last_updated_at: Utc::now().naive_utc(),
+                updated_at: Utc::now(),
             })
             .collect())
     }
