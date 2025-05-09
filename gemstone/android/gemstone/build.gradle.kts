@@ -7,7 +7,7 @@ plugins {
 
 android {
     namespace = "com.gemwallet.gemstone"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         minSdk = 28

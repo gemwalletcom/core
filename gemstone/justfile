@@ -23,7 +23,7 @@ export HOST_ARCH := arch()
 install-ndk:
     #!/usr/bin/env bash
     SDK_MANAGER=${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager
-    NDK="ndk;26.1.10909125"
+    NDK="ndk;28.1.13356709"
 
     echo "Installing ndk"
     $SDK_MANAGER --install $NDK
