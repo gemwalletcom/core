@@ -15,8 +15,8 @@ use crate::{
     swapper::{
         approval::check_approval_erc20,
         asset::{ARBITRUM_USDC, ETHEREUM_USDC, ETHEREUM_USDT, SOLANA_USDC},
-        FetchQuoteData, GemSwapProvider, SwapChainAsset, SwapProviderData, SwapProviderType, SwapQuote, SwapQuoteData, SwapQuoteRequest, SwapRoute, Swapper,
-        SwapperError,
+        slippage, FetchQuoteData, GemSwapProvider, SwapChainAsset, SwapProviderData, SwapProviderType, SwapQuote, SwapQuoteData, SwapQuoteRequest, SwapRoute,
+        Swapper, SwapperError,
     },
 };
 use primitives::{chain::Chain, swap::QuoteAsset, ChainType};
@@ -151,23 +151,36 @@ impl Swapper for ChainflipProvider {
         let input_amount: BigUint = quote.request.value.parse()?;
 
         let route_data: ChainflipRouteData = serde_json::from_str(&quote.data.routes[0].route_data)?;
-        let price = route_data
-            .estimated_price
-            .parse::<f64>()
-            .map_err(|_| SwapperError::TransactionError("Invalid price".to_string()))?;
-        let price_slippage = apply_slippage(price, quote.data.slippage_bps);
-        let quote_asset_decimals = quote.request.to_asset.decimals;
-        let base_asset_decimals = quote.request.from_asset.decimals;
-        let min_price = price_to_hex_price(price_slippage, quote_asset_decimals, base_asset_decimals).map_err(SwapperError::TransactionError)?;
+        let chain = source_asset.chain.clone();
+        let extra_params = if from_asset.chain.chain_type() == ChainType::Ethereum {
+            let price = route_data
+                .estimated_price
+                .parse::<f64>()
+                .map_err(|_| SwapperError::TransactionError("Invalid price".to_string()))?;
+            let price_slippage = apply_slippage(price, quote.data.slippage_bps);
+            let quote_asset_decimals = quote.request.to_asset.decimals;
+            let base_asset_decimals = quote.request.from_asset.decimals;
+            let min_price = price_to_hex_price(price_slippage, quote_asset_decimals, base_asset_decimals).map_err(SwapperError::TransactionError)?;
 
-        let extra_params = VaultSwapEvmExtras {
-            chain: source_asset.chain.clone(),
-            input_amount: input_amount.clone(),
-            refund_parameters: RefundParameters {
-                retry_duration: 150, // blocks
-                refund_address: quote.request.wallet_address.clone(),
-                min_price,
-            },
+            VaultSwapExtras::Evm(VaultSwapEvmExtras {
+                chain,
+                input_amount: input_amount.clone(),
+                refund_parameters: RefundParameters {
+                    retry_duration: 150, // blocks
+                    refund_address: quote.request.wallet_address.clone(),
+                    min_price,
+                },
+            })
+        } else if from_asset.chain.chain_type() == ChainType::Bitcoin {
+            let output_amount: u128 = quote.to_value.parse()?;
+            let min_output_amount = slippage::apply_slippage_in_bp(&output_amount, quote.data.slippage_bps);
+            VaultSwapExtras::Bitcoin(VaultSwapBtcExtras {
+                chain,
+                min_output_amount,
+                retry_duration: 6, // blocks
+            })
+        } else {
+            VaultSwapExtras::None
         };
 
         let response = broker_client
@@ -177,40 +190,57 @@ impl Swapper for ChainflipProvider {
                 quote.request.destination_address.clone(),
                 route_data.fee_bps,
                 route_data.boost_fee,
-                Some(extra_params),
+                extra_params,
                 None,
             )
             .await?;
 
-        let approval = if from_asset.chain.chain_type() == ChainType::Ethereum && !from_asset.is_native() {
-            let approval = check_approval_erc20(
-                quote.request.wallet_address.clone(),
-                from_asset.token_id.unwrap(),
-                response.to.clone(),
-                U256::from_le_slice(&input_amount.to_bytes_le()),
-                provider.clone(),
-                &from_asset.chain,
-            )
-            .await?;
-            approval.approval_data()
-        } else {
-            None
-        };
-        let gas_limit = if approval.is_some() {
-            Some(DEFAULT_SWAP_ERC20_GAS_LIMIT.to_string())
-        } else {
-            None
-        };
+        match response {
+            VaultSwapResponse::Evm(response) => {
+                let approval = if from_asset.chain.chain_type() == ChainType::Ethereum && !from_asset.is_native() {
+                    let approval = check_approval_erc20(
+                        quote.request.wallet_address.clone(),
+                        from_asset.token_id.unwrap(),
+                        response.to.clone(),
+                        U256::from_le_slice(&input_amount.to_bytes_le()),
+                        provider.clone(),
+                        &from_asset.chain,
+                    )
+                    .await?;
+                    approval.approval_data()
+                } else {
+                    None
+                };
 
-        let swap_quote_data = SwapQuoteData {
-            to: response.to,
-            value: quote.request.value.clone(),
-            data: response.calldata,
-            approval,
-            gas_limit,
-        };
+                let gas_limit = if approval.is_some() {
+                    Some(DEFAULT_SWAP_ERC20_GAS_LIMIT.to_string())
+                } else {
+                    None
+                };
 
-        Ok(swap_quote_data)
+                let swap_quote_data = SwapQuoteData {
+                    to: response.to,
+                    value: quote.request.value.clone(),
+                    data: response.calldata,
+                    approval,
+                    gas_limit,
+                };
+
+                Ok(swap_quote_data)
+            }
+            VaultSwapResponse::Bitcoin(response) => {
+                let swap_quote_data = SwapQuoteData {
+                    to: response.deposit_address,
+                    value: quote.request.value.clone(),
+                    data: response.nulldata_payload,
+                    approval: None,
+                    gas_limit: None,
+                };
+
+                Ok(swap_quote_data)
+            }
+            _ => Err(SwapperError::TransactionError("Unsupported chain".to_string())),
+        }
     }
 
     async fn get_transaction_status(&self, _chain: Chain, transaction_hash: &str, provider: Arc<dyn AlienProvider>) -> Result<bool, SwapperError> {

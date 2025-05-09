@@ -1,6 +1,6 @@
 use super::{
-    model::{ChainflipAsset, DcaParameters, DepositAddressResponse, RefundParameters, VaultSwapEvmExtras, VaultSwapResponse},
-    ChainflipEnvironment, ChainflipIngressEgress,
+    model::{ChainflipAsset, DcaParameters, DepositAddressResponse, RefundParameters},
+    ChainflipEnvironment, ChainflipIngressEgress, VaultSwapExtras, VaultSwapResponse,
 };
 use crate::{
     network::{jsonrpc::JsonRpcClient, AlienProvider},
@@ -69,9 +69,16 @@ impl BrokerClient {
         destination_address: String,
         broker_commission: u32,
         boost_fee: Option<u32>,
-        extra_params: Option<VaultSwapEvmExtras>,
+        extra_params: VaultSwapExtras,
         dca_params: Option<DcaParameters>,
     ) -> Result<VaultSwapResponse, SwapperError> {
+        let extra_params: serde_json::Value = match extra_params {
+            VaultSwapExtras::Evm(evm) => serde_json::to_value(evm).unwrap(),
+            VaultSwapExtras::Bitcoin(btc) => serde_json::to_value(btc).unwrap(),
+            VaultSwapExtras::Solana(solana) => serde_json::to_value(solana).unwrap(),
+            VaultSwapExtras::None => serde_json::json!(null),
+        };
+
         let params = json!([
             source_asset,
             destination_asset,
