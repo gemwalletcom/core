@@ -23,8 +23,7 @@ pub struct DepositAddressResponse {
 pub struct RefundParameters {
     pub retry_duration: u32,
     pub refund_address: String,
-    #[serde(deserialize_with = "deserialize_biguint_from_hex_str", serialize_with = "serialize_biguint_to_hex_str")]
-    pub min_price: BigUint,
+    pub min_price: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

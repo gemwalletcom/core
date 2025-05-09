@@ -6,6 +6,7 @@ use super::{
     broker::{model::*, BrokerClient},
     capitalize::capitalize_first_letter,
     client::{ChainflipClient, QuoteRequest, QuoteResponse},
+    price::{apply_slippage, price_to_hex_price},
     ChainflipRouteData,
 };
 use crate::{
@@ -43,11 +44,12 @@ impl ChainflipProvider {
         }
     }
 
-    fn get_boost_quote(&self, quote_response: &QuoteResponse) -> (String, u32, u32, Option<u32>) {
+    fn get_boost_quote(&self, quote_response: &QuoteResponse) -> (String, u32, u32, Option<u32>, String) {
         let egress_amount: String;
         let slippage_bps: u32;
         let eta_in_seconds: u32;
         let boost_fee: Option<u32>;
+        let estimated_price: String;
 
         // Use boost quote if available
         if let Some(boost_quote) = &quote_response.boost_quote {
@@ -55,14 +57,16 @@ impl ChainflipProvider {
             slippage_bps = boost_quote.slippage_bps();
             eta_in_seconds = boost_quote.estimated_duration_seconds as u32;
             boost_fee = Some(boost_quote.estimated_boost_fee_bps);
+            estimated_price = boost_quote.estimated_price.clone();
         } else {
             egress_amount = quote_response.egress_amount.clone();
             slippage_bps = quote_response.slippage_bps();
             eta_in_seconds = quote_response.estimated_duration_seconds as u32;
             boost_fee = None;
+            estimated_price = quote_response.estimated_price.clone();
         }
 
-        (egress_amount, slippage_bps, eta_in_seconds, boost_fee)
+        (egress_amount, slippage_bps, eta_in_seconds, boost_fee, estimated_price)
     }
 }
 
@@ -113,8 +117,12 @@ impl Swapper for ChainflipProvider {
         }
 
         let quote_response = &quote_responses[0];
-        let (egress_amount, slippage_bps, eta_in_seconds, boost_fee) = self.get_boost_quote(quote_response);
-        let route_data = ChainflipRouteData { boost_fee, fee_bps };
+        let (egress_amount, slippage_bps, eta_in_seconds, boost_fee, estimated_price) = self.get_boost_quote(quote_response);
+        let route_data = ChainflipRouteData {
+            boost_fee,
+            fee_bps,
+            estimated_price,
+        };
         let quote = SwapQuote {
             from_value: request.value.clone(),
             to_value: egress_amount,
@@ -141,16 +149,22 @@ impl Swapper for ChainflipProvider {
         let destination_asset = Self::map_asset_id(&quote.request.to_asset);
 
         let input_amount: BigUint = quote.request.value.parse()?;
-        let output_amount: BigUint = quote.to_value.parse()?;
-        let slippage = quote.data.slippage_bps;
-        let min_price = output_amount * (BigUint::from(10000_u32 - slippage)) / BigUint::from(10000_u32);
+
         let route_data: ChainflipRouteData = serde_json::from_str(&quote.data.routes[0].route_data)?;
+        let price = route_data
+            .estimated_price
+            .parse::<f64>()
+            .map_err(|_| SwapperError::TransactionError("Invalid price".to_string()))?;
+        let price_slippage = apply_slippage(price, quote.data.slippage_bps, true);
+        let quote_asset_decimals = quote.request.to_asset.decimals;
+        let base_asset_decimals = quote.request.from_asset.decimals;
+        let min_price = price_to_hex_price(price_slippage, quote_asset_decimals, base_asset_decimals).map_err(SwapperError::TransactionError)?;
 
         let extra_params = VaultSwapEvmExtras {
             chain: source_asset.chain.clone(),
             input_amount: input_amount.clone(),
             refund_parameters: RefundParameters {
-                retry_duration: 150, // 150 blocks
+                retry_duration: 150, // blocks
                 refund_address: quote.request.wallet_address.clone(),
                 min_price,
             },

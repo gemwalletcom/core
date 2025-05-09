@@ -36,6 +36,7 @@ pub struct QuoteResponse {
     pub deposit_amount: String,
     pub is_vault_swap: bool,
     pub boost_quote: Option<BoostQuote>,
+    pub estimated_price: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -48,6 +49,7 @@ pub struct BoostQuote {
     pub estimated_duration_seconds: f64,
     pub estimated_boost_fee_bps: u32,
     pub max_boost_fee_bps: u32,
+    pub estimated_price: String,
 }
 
 impl QuoteResponse {

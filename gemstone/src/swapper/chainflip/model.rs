@@ -4,4 +4,5 @@ use serde::{Deserialize, Serialize};
 pub struct ChainflipRouteData {
     pub boost_fee: Option<u32>,
     pub fee_bps: u32,
+    pub estimated_price: String,
 }
