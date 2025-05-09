@@ -10,12 +10,11 @@ use crate::{Asset, AssetLink, AssetMarket, PriceAlert};
 pub struct Price {
     pub price: f64,
     pub price_change_percentage_24h: f64,
-    #[typeshare(skip)]
-    pub last_updated_at: Option<NaiveDateTime>,
+    pub last_updated_at: NaiveDateTime,
 }
 
 impl Price {
-    pub fn new(price: f64, price_change_percentage_24h: f64, last_updated_at: Option<NaiveDateTime>) -> Self {
+    pub fn new(price: f64, price_change_percentage_24h: f64, last_updated_at: NaiveDateTime) -> Self {
         Price {
             price,
             price_change_percentage_24h,

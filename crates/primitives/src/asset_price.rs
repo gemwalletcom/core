@@ -1,3 +1,4 @@
+use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
@@ -7,9 +8,10 @@ use crate::{AssetId, Price};
 #[typeshare(swift = "Sendable")]
 #[serde(rename_all = "camelCase")]
 pub struct AssetPrice {
-    pub asset_id: String,
+    pub asset_id: AssetId,
     pub price: f64,
     pub price_change_percentage_24h: f64,
+    pub last_updated_at: NaiveDateTime,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

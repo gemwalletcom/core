@@ -1,6 +1,6 @@
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
-use primitives::{AssetMarket, AssetPriceInfo};
+use primitives::{AssetId, AssetMarket, AssetPriceInfo};
 use serde::{Deserialize, Serialize};
 use std::hash::{Hash, Hasher};
 
@@ -24,7 +24,7 @@ pub struct Price {
     pub circulating_supply: f64,
     pub total_supply: f64,
     pub max_supply: f64,
-    pub last_updated_at: Option<NaiveDateTime>,
+    pub last_updated_at: NaiveDateTime,
 }
 
 #[derive(Debug, Queryable, Selectable, Serialize, Deserialize, Insertable, AsChangeset, Clone)]
@@ -76,7 +76,7 @@ impl Price {
         circulating_supply: f64,
         total_supply: f64,
         max_supply: f64,
-        last_updated_at: Option<NaiveDateTime>,
+        last_updated_at: NaiveDateTime,
     ) -> Self {
         Price {
             id,
@@ -129,13 +129,13 @@ impl Price {
         CreateChart {
             coin_id: self.id.clone(),
             price: self.price as f32,
-            ts: self.last_updated_at.unwrap_or_default().and_utc().timestamp() as u32,
+            ts: self.last_updated_at.and_utc().timestamp() as u32,
         }
     }
 
-    pub fn as_price_asset_info(&self, asset_id: &str) -> AssetPriceInfo {
+    pub fn as_price_asset_info(&self, asset_id: AssetId) -> AssetPriceInfo {
         AssetPriceInfo {
-            asset_id: asset_id.to_string(),
+            asset_id,
             price: self.as_price_primitive(),
             market: self.as_market_primitive(),
         }
