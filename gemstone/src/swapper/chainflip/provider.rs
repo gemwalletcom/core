@@ -14,12 +14,14 @@ use crate::{
     network::AlienProvider,
     swapper::{
         approval::check_approval_erc20,
-        asset::{ARBITRUM_USDC, ETHEREUM_USDC, ETHEREUM_USDT, SOLANA_USDC},
+        asset::{ARBITRUM_USDC, ETHEREUM_USDC, ETHEREUM_USDT},
         FetchQuoteData, GemSwapProvider, SwapChainAsset, SwapProviderData, SwapProviderType, SwapQuote, SwapQuoteData, SwapQuoteRequest, SwapRoute, Swapper,
         SwapperError,
     },
 };
 use primitives::{chain::Chain, swap::QuoteAsset, ChainType};
+
+const DEFAULT_SWAP_ERC20_GAS_LIMIT: u64 = 100_000;
 
 #[derive(Debug)]
 pub struct ChainflipProvider {
@@ -80,7 +82,8 @@ impl Swapper for ChainflipProvider {
         vec![
             SwapChainAsset::Assets(Chain::Bitcoin, vec![]),
             SwapChainAsset::Assets(Chain::Ethereum, vec![ETHEREUM_USDC.id.clone(), ETHEREUM_USDT.id.clone()]),
-            SwapChainAsset::Assets(Chain::Solana, vec![SOLANA_USDC.id.clone()]),
+            // Wait for Chainflip 1.9
+            // SwapChainAsset::Assets(Chain::Solana, vec![SOLANA_USDC.id.clone()]),
             SwapChainAsset::Assets(Chain::Arbitrum, vec![ARBITRUM_USDC.id.clone()]),
         ]
     }
@@ -182,7 +185,7 @@ impl Swapper for ChainflipProvider {
             )
             .await?;
 
-        let approval: Option<_> = if from_asset.chain.chain_type() == ChainType::Ethereum && !from_asset.is_native() {
+        let (approval, gas_limit) = if from_asset.chain.chain_type() == ChainType::Ethereum && !from_asset.is_native() {
             let approval = check_approval_erc20(
                 quote.request.wallet_address.clone(),
                 from_asset.token_id.unwrap(),
@@ -192,9 +195,9 @@ impl Swapper for ChainflipProvider {
                 &from_asset.chain,
             )
             .await?;
-            approval.approval_data()
+            (approval.approval_data(), Some(DEFAULT_SWAP_ERC20_GAS_LIMIT.to_string()))
         } else {
-            None
+            (None, None)
         };
 
         let swap_quote_data = SwapQuoteData {
@@ -202,7 +205,7 @@ impl Swapper for ChainflipProvider {
             value: quote.request.value.clone(),
             data: response.calldata,
             approval,
-            gas_limit: None,
+            gas_limit,
         };
 
         Ok(swap_quote_data)
