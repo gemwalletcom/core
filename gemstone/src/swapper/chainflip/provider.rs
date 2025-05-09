@@ -14,7 +14,7 @@ use crate::{
     network::AlienProvider,
     swapper::{
         approval::check_approval_erc20,
-        asset::{ARBITRUM_USDC, ETHEREUM_USDC, ETHEREUM_USDT},
+        asset::{ARBITRUM_USDC, ETHEREUM_USDC, ETHEREUM_USDT, SOLANA_USDC},
         FetchQuoteData, GemSwapProvider, SwapChainAsset, SwapProviderData, SwapProviderType, SwapQuote, SwapQuoteData, SwapQuoteRequest, SwapRoute, Swapper,
         SwapperError,
     },
@@ -82,19 +82,21 @@ impl Swapper for ChainflipProvider {
         vec![
             SwapChainAsset::Assets(Chain::Bitcoin, vec![]),
             SwapChainAsset::Assets(Chain::Ethereum, vec![ETHEREUM_USDC.id.clone(), ETHEREUM_USDT.id.clone()]),
-            // Wait for Chainflip 1.9
-            // SwapChainAsset::Assets(Chain::Solana, vec![SOLANA_USDC.id.clone()]),
+            SwapChainAsset::Assets(Chain::Solana, vec![SOLANA_USDC.id.clone()]),
             SwapChainAsset::Assets(Chain::Arbitrum, vec![ARBITRUM_USDC.id.clone()]),
         ]
     }
 
     async fn fetch_quote(&self, request: &SwapQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapQuote, SwapperError> {
-        let chainflip_client = ChainflipClient::new(provider.clone());
-        let broker_client = BrokerClient::new(provider);
+        if request.from_asset.chain() == Chain::Solana {
+            // Wait for Chainflip 1.9
+            return Err(SwapperError::NoQuoteAvailable);
+        }
         let src_asset = Self::map_asset_id(&request.from_asset);
         let dest_asset = Self::map_asset_id(&request.to_asset);
+        let chainflip_client = ChainflipClient::new(provider.clone());
+
         let fee_bps = DEFAULT_CHAINFLIP_FEE_BPS;
-        let amount = request.value.parse::<U256>()?;
 
         let quote_request = QuoteRequest {
             amount: request.value.clone(),
@@ -107,13 +109,8 @@ impl Swapper for ChainflipProvider {
             broker_commission_bps: Some(fee_bps),
         };
 
-        let swap_limit_req = broker_client.get_swap_limits();
         let quote_req = chainflip_client.get_quote(&quote_request);
-        let (swap_limit, quote_responses) = futures::try_join!(swap_limit_req, quote_req)?;
-
-        if swap_limit.get_min_deposit_amount(&src_asset)? > amount {
-            return Err(SwapperError::InputAmountTooSmall);
-        }
+        let quote_responses = quote_req.await?;
 
         if quote_responses.is_empty() {
             return Err(SwapperError::NoQuoteAvailable);
@@ -185,7 +182,7 @@ impl Swapper for ChainflipProvider {
             )
             .await?;
 
-        let (approval, gas_limit) = if from_asset.chain.chain_type() == ChainType::Ethereum && !from_asset.is_native() {
+        let approval = if from_asset.chain.chain_type() == ChainType::Ethereum && !from_asset.is_native() {
             let approval = check_approval_erc20(
                 quote.request.wallet_address.clone(),
                 from_asset.token_id.unwrap(),
@@ -195,9 +192,14 @@ impl Swapper for ChainflipProvider {
                 &from_asset.chain,
             )
             .await?;
-            (approval.approval_data(), Some(DEFAULT_SWAP_ERC20_GAS_LIMIT.to_string()))
+            approval.approval_data()
         } else {
-            (None, None)
+            None
+        };
+        let gas_limit = if approval.is_some() {
+            Some(DEFAULT_SWAP_ERC20_GAS_LIMIT.to_string())
+        } else {
+            None
         };
 
         let swap_quote_data = SwapQuoteData {
