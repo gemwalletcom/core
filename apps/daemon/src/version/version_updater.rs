@@ -47,7 +47,10 @@ impl VersionClient {
         let url = "https://api.github.com/repos/gemwalletcom/gem-android/releases";
         let client = reqwest::Client::builder().user_agent("").build()?;
         let response = client.get(url).send().await?.json::<Vec<GitHubRepository>>().await?;
-        let results = response.into_iter().filter(|x| !x.draft && !x.prerelease).collect::<Vec<_>>();
+        let results = response
+            .into_iter()
+            .filter(|x| !x.draft && !x.prerelease && x.assets.clone().into_iter().any(|x| x.name.contains("gem_wallet_universal_")))
+            .collect::<Vec<_>>();
         let result = results.first().expect("expect github repository");
         Ok(result.name.clone())
     }
