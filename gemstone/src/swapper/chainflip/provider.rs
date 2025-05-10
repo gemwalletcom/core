@@ -197,6 +197,12 @@ impl Swapper for ChainflipProvider {
 
         match response {
             VaultSwapResponse::Evm(response) => {
+                let value: String = if from_asset.is_native() {
+                    quote.request.value.clone()
+                } else {
+                    "0".to_string()
+                };
+
                 let approval = if from_asset.chain.chain_type() == ChainType::Ethereum && !from_asset.is_native() {
                     let approval = check_approval_erc20(
                         quote.request.wallet_address.clone(),
@@ -220,7 +226,7 @@ impl Swapper for ChainflipProvider {
 
                 let swap_quote_data = SwapQuoteData {
                     to: response.to,
-                    value: quote.request.value.clone(),
+                    value,
                     data: response.calldata,
                     approval,
                     gas_limit,
