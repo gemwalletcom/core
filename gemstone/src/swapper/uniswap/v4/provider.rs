@@ -3,7 +3,7 @@ use async_trait::async_trait;
 use std::{str::FromStr, sync::Arc, vec};
 
 use crate::{
-    network::{batch_jsonrpc_call, AlienProvider, JsonRpcError},
+    network::{AlienProvider, JsonRpcClient, JsonRpcError},
     swapper::{
         approval::{check_approval_erc20, check_approval_permit2},
         eth_address,
@@ -125,7 +125,8 @@ impl Swapper for UniswapV4 {
             .iter()
             .map(|pool_key| build_quote_exact_single_request(&token_in, deployment.quoter, quote_amount_in, &pool_key.1))
             .collect();
-        let batch_call = batch_jsonrpc_call(calls, provider.clone(), &from_chain);
+        let client = JsonRpcClient::new_with_chain(provider.clone(), from_chain);
+        let batch_call = client.batch_call(calls);
         let mut requests = vec![batch_call];
 
         let quote_exact_params: Vec<Vec<(Vec<TokenPair>, QuoteExactParams)>>;
@@ -135,7 +136,7 @@ impl Swapper for UniswapV4 {
             build_quote_exact_requests(deployment.quoter, &quote_exact_params)
                 .iter()
                 .for_each(|call_array| {
-                    let batch_call = batch_jsonrpc_call(call_array.to_vec(), provider.clone(), &from_chain);
+                    let batch_call = client.batch_call(call_array.to_vec());
                     requests.push(batch_call);
                 });
         } else {

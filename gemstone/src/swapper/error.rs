@@ -45,7 +45,7 @@ impl From<AlienError> for SwapperError {
 
 impl From<JsonRpcError> for SwapperError {
     fn from(err: JsonRpcError) -> Self {
-        Self::NetworkError(format!("JsonRpcError: {}", err))
+        Self::NetworkError(format!("JSON RPC error: {}", err))
     }
 }
 

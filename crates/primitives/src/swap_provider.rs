@@ -23,6 +23,7 @@ pub enum SwapProvider {
     Mayan,
     Reservoir,
     Symbiosis,
+    Chainflip,
 }
 
 impl SwapProvider {
@@ -45,6 +46,7 @@ impl SwapProvider {
             Self::Mayan => "Mayan",
             Self::Reservoir => "Reservoir",
             Self::Symbiosis => "Symbiosis",
+            Self::Chainflip => "Chainflip",
         }
     }
 
@@ -58,8 +60,7 @@ impl SwapProvider {
             Self::Across => "Across v3",
             Self::Oku => "Oku",
             Self::StonfiV2 => "STON.fi v2",
-            Self::Thorchain | Self::Jupiter | Self::Wagmi | Self::Cetus | Self::Mayan | Self::Reservoir => self.name(),
-            Self::Symbiosis => "Symbiosis",
+            Self::Thorchain | Self::Jupiter | Self::Wagmi | Self::Cetus | Self::Mayan | Self::Reservoir | Self::Symbiosis | Self::Chainflip => self.name(),
         }
     }
 }

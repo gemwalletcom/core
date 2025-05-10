@@ -1,4 +1,4 @@
-use crate::network::{jsonrpc::*, AlienProvider};
+use crate::network::{jsonrpc::JsonRpcClient, AlienProvider};
 use crate::swapper::{eth_address, models::ApprovalType, ApprovalData, Permit2ApprovalData, SwapperError};
 
 use alloy_primitives::{hex::decode as HexDecode, Address, U256};
@@ -46,7 +46,8 @@ pub async fn check_approval_erc20(
     let allowance_data = IERC20::allowanceCall { owner, spender }.abi_encode();
     let allowance_call = EthereumRpc::Call(TransactionObject::new_call(&token, allowance_data), BlockParameter::Latest);
 
-    let response = jsonrpc_call(&allowance_call, provider.clone(), chain).await.map_err(SwapperError::from)?;
+    let client = JsonRpcClient::new_with_chain(provider.clone(), *chain);
+    let response = client.call(&allowance_call).await.map_err(SwapperError::from)?;
     let result: String = response.take().map_err(SwapperError::from)?;
     let decoded = HexDecode(result).map_err(|_| SwapperError::ABIError("failed to decode allowance_call result".into()))?;
 
@@ -79,7 +80,10 @@ pub async fn check_approval_permit2(
     .abi_encode();
     let permit2_call = EthereumRpc::Call(TransactionObject::new_call(permit2_contract, permit2_data), BlockParameter::Latest);
 
-    let response = jsonrpc_call(&permit2_call, provider.clone(), chain).await.map_err(SwapperError::from)?;
+    let response = JsonRpcClient::new_with_chain(provider.clone(), *chain)
+        .call(&permit2_call)
+        .await
+        .map_err(SwapperError::from)?;
     let result: String = response.take().map_err(SwapperError::from)?;
     let decoded = HexDecode(result).unwrap();
     let allowance_return = IAllowanceTransfer::allowanceCall::abi_decode_returns(&decoded).map_err(SwapperError::from)?;
@@ -146,8 +150,7 @@ mod tests {
                 let param = params[0].as_object().unwrap();
                 let to = param["to"].as_str().unwrap();
                 if to == token_clone {
-                    return r#"{"id":1,"jsonrpc":"2.0","result":"0x0000000000000000000000000000000000000000000000000000000000000000"}"#
-                        .to_string();
+                    return r#"{"id":1,"jsonrpc":"2.0","result":"0x0000000000000000000000000000000000000000000000000000000000000000"}"#.to_string();
                 }
                 r#"{"id":1,"jsonrpc":"2.0","result":"0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"}"#
                     .to_string()

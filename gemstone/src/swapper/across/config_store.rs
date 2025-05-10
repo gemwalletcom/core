@@ -1,18 +1,17 @@
 use crate::{
-    network::{jsonrpc::jsonrpc_call_with_cache, AlienProvider, JsonRpcResult},
+    network::{jsonrpc::JsonRpcClient, AlienProvider, JsonRpcResult},
     swapper::SwapperError,
 };
 use alloy_primitives::{hex::decode as HexDecode, Address};
 use alloy_sol_types::SolCall;
 use gem_evm::{
-    across::{contracts::AcrossConfigStore, fees},
+    across::{contracts::AcrossConfigStore, deployment::ACROSS_CONFIG_STORE, fees},
     jsonrpc::{BlockParameter, EthereumRpc, TransactionObject},
     multicall3::IMulticall3,
 };
 use primitives::Chain;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 
 const CONFIG_CACHE_TTL: u64 = 60 * 60 * 24;
 
@@ -48,11 +47,17 @@ pub struct TokenConfig {
 
 pub struct ConfigStoreClient {
     pub contract: String,
-    pub provider: Arc<dyn AlienProvider>,
-    pub chain: Chain,
+    pub client: JsonRpcClient,
 }
 
 impl ConfigStoreClient {
+    pub fn new(provider: Arc<dyn AlienProvider>, chain: Chain) -> ConfigStoreClient {
+        ConfigStoreClient {
+            contract: ACROSS_CONFIG_STORE.into(),
+            client: JsonRpcClient::new_with_chain(provider.clone(), chain),
+        }
+    }
+
     pub fn config_call3(&self, l1token: &Address) -> IMulticall3::Call3 {
         IMulticall3::Call3 {
             target: self.contract.parse().unwrap(),
@@ -74,7 +79,7 @@ impl ConfigStoreClient {
     pub async fn fetch_config(&self, l1token: &Address) -> Result<TokenConfig, SwapperError> {
         let data = AcrossConfigStore::l1TokenConfigCall { l1Token: *l1token }.abi_encode();
         let call = EthereumRpc::Call(TransactionObject::new_call(&self.contract, data), BlockParameter::Latest);
-        let response: JsonRpcResult<String> = jsonrpc_call_with_cache(&call, self.provider.clone(), &self.chain, Some(CONFIG_CACHE_TTL)).await?;
+        let response: JsonRpcResult<String> = self.client.call_with_cache(&call, Some(CONFIG_CACHE_TTL)).await?;
         let result = response.take()?;
         let hex_data = HexDecode(result).map_err(|e| SwapperError::NetworkError(e.to_string()))?;
         let decoded = AcrossConfigStore::l1TokenConfigCall::abi_decode_returns(&hex_data).map_err(SwapperError::from)?;

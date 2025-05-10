@@ -24,7 +24,7 @@ use gem_evm::{
             multicall_handler,
             V3SpokePoolInterface::{self, V3RelayData},
         },
-        deployment::{AcrossDeployment, ACROSS_CONFIG_STORE, ACROSS_HUBPOOL},
+        deployment::AcrossDeployment,
         fees::{self, LpFeeCalculator, RateModel, RelayerFeeCalculator},
     },
     erc20::IERC20,
@@ -306,16 +306,8 @@ impl Swapper for Across {
         let asset_mainnet = asset_mapping.set.iter().find(|x| x.chain == Chain::Ethereum).unwrap();
         let mainnet_token = eth_address::normalize_weth_address(asset_mainnet, from_chain)?;
 
-        let hubpool_client = HubPoolClient {
-            contract: ACROSS_HUBPOOL.into(),
-            provider: provider.clone(),
-            chain: Chain::Ethereum,
-        };
-        let config_client = ConfigStoreClient {
-            contract: ACROSS_CONFIG_STORE.into(),
-            provider: provider.clone(),
-            chain: Chain::Ethereum,
-        };
+        let hubpool_client = HubPoolClient::new(provider.clone(), Chain::Ethereum);
+        let config_client = ConfigStoreClient::new(provider.clone(), Chain::Ethereum);
 
         let calls = vec![
             hubpool_client.paused_call3(),
