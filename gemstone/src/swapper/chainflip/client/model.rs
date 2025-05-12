@@ -1,4 +1,8 @@
+use num_bigint::BigUint;
 use serde::{Deserialize, Serialize};
+use serde_serializers::{deserialize_biguint_from_str, serialize_biguint};
+
+use crate::swapper::chainflip::broker::DcaParameters;
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -26,10 +30,9 @@ pub struct IncludedFee {
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct QuoteResponse {
-    pub intermediate_amount: Option<String>,
-    pub egress_amount: String,
+    #[serde(deserialize_with = "deserialize_biguint_from_str", serialize_with = "serialize_biguint")]
+    pub egress_amount: BigUint,
     pub recommended_slippage_tolerance_percent: f64,
-    pub low_liquidity_warning: bool,
     pub estimated_duration_seconds: f64,
     #[serde(rename = "type")]
     pub quote_type: String,
@@ -37,19 +40,20 @@ pub struct QuoteResponse {
     pub is_vault_swap: bool,
     pub boost_quote: Option<BoostQuote>,
     pub estimated_price: String,
+    pub dca_params: Option<DcaParameters>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct BoostQuote {
-    pub intermediate_amount: Option<String>,
-    pub egress_amount: String,
+    #[serde(deserialize_with = "deserialize_biguint_from_str", serialize_with = "serialize_biguint")]
+    pub egress_amount: BigUint,
     pub recommended_slippage_tolerance_percent: f64,
-    pub low_liquidity_warning: bool,
     pub estimated_duration_seconds: f64,
     pub estimated_boost_fee_bps: u32,
     pub max_boost_fee_bps: u32,
     pub estimated_price: String,
+    pub dca_params: Option<DcaParameters>,
 }
 
 impl QuoteResponse {

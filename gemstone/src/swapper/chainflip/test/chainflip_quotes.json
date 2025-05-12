@@ -1,0 +1,158 @@
+[
+    {
+      "intermediateAmount": "25516863276",
+      "egressAmount": "145118751424",
+      "recommendedSlippageTolerancePercent": 2.5,
+      "includedFees": [
+        {
+          "type": "INGRESS",
+          "chain": "Ethereum",
+          "asset": "ETH",
+          "amount": "0"
+        },
+        {
+          "type": "NETWORK",
+          "chain": "Ethereum",
+          "asset": "USDC",
+          "amount": "25542406"
+        },
+        {
+          "type": "EGRESS",
+          "chain": "Solana",
+          "asset": "SOL",
+          "amount": "14000"
+        }
+      ],
+      "lowLiquidityWarning": false,
+      "poolInfo": [
+        {
+          "baseAsset": {
+            "chain": "Ethereum",
+            "asset": "ETH"
+          },
+          "quoteAsset": {
+            "chain": "Ethereum",
+            "asset": "USDC"
+          },
+          "fee": {
+            "chain": "Ethereum",
+            "asset": "ETH",
+            "amount": "5000000000000000"
+          }
+        },
+        {
+          "baseAsset": {
+            "chain": "Solana",
+            "asset": "SOL"
+          },
+          "quoteAsset": {
+            "chain": "Ethereum",
+            "asset": "USDC"
+          },
+          "fee": {
+            "chain": "Ethereum",
+            "asset": "USDC",
+            "amount": "12758431"
+          }
+        }
+      ],
+      "estimatedDurationsSeconds": {
+        "swap": 12,
+        "deposit": 90,
+        "egress": 90.8
+      },
+      "estimatedDurationSeconds": 192.8,
+      "estimatedPrice": "14.5118765424",
+      "type": "REGULAR",
+      "srcAsset": {
+        "chain": "Ethereum",
+        "asset": "ETH"
+      },
+      "destAsset": {
+        "chain": "Solana",
+        "asset": "SOL"
+      },
+      "depositAmount": "10000000000000000000",
+      "isVaultSwap": true
+    },
+    {
+      "intermediateAmount": "25516863264",
+      "egressAmount": "145118751172",
+      "recommendedSlippageTolerancePercent": 2.5,
+      "includedFees": [
+        {
+          "type": "INGRESS",
+          "chain": "Ethereum",
+          "asset": "ETH",
+          "amount": "0"
+        },
+        {
+          "type": "NETWORK",
+          "chain": "Ethereum",
+          "asset": "USDC",
+          "amount": "25542408"
+        },
+        {
+          "type": "EGRESS",
+          "chain": "Solana",
+          "asset": "SOL",
+          "amount": "14000"
+        }
+      ],
+      "lowLiquidityWarning": false,
+      "poolInfo": [
+        {
+          "baseAsset": {
+            "chain": "Ethereum",
+            "asset": "ETH"
+          },
+          "quoteAsset": {
+            "chain": "Ethereum",
+            "asset": "USDC"
+          },
+          "fee": {
+            "chain": "Ethereum",
+            "asset": "ETH",
+            "amount": "5000000000000000"
+          }
+        },
+        {
+          "baseAsset": {
+            "chain": "Solana",
+            "asset": "SOL"
+          },
+          "quoteAsset": {
+            "chain": "Ethereum",
+            "asset": "USDC"
+          },
+          "fee": {
+            "chain": "Ethereum",
+            "asset": "USDC",
+            "amount": "12758431"
+          }
+        }
+      ],
+      "estimatedDurationsSeconds": {
+        "swap": 72,
+        "deposit": 90,
+        "egress": 90.8
+      },
+      "estimatedDurationSeconds": 252.8,
+      "estimatedPrice": "14.5118765172",
+      "type": "DCA",
+      "srcAsset": {
+        "chain": "Ethereum",
+        "asset": "ETH"
+      },
+      "destAsset": {
+        "chain": "Solana",
+        "asset": "SOL"
+      },
+      "depositAmount": "10000000000000000000",
+      "isVaultSwap": true,
+      "dcaParams": {
+        "numberOfChunks": 6,
+        "chunkIntervalBlocks": 2
+      }
+    }
+  ]

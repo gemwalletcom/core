@@ -26,10 +26,11 @@ pub struct RefundParameters {
     pub min_price: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
 pub struct DcaParameters {
     pub number_of_chunks: u32,
-    pub chunk_interval: u32,
+    pub chunk_interval_blocks: u32,
 }
 
 #[derive(Debug)]

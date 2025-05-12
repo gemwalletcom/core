@@ -46,29 +46,45 @@ impl ChainflipProvider {
         }
     }
 
-    fn get_boost_quote(&self, quote_response: &QuoteResponse) -> (String, u32, u32, Option<u32>, String) {
-        let egress_amount: String;
-        let slippage_bps: u32;
+    fn get_best_quote(mut quotes: Vec<QuoteResponse>, fee_bps: u32) -> (BigUint, u32, u32, ChainflipRouteData) {
+        quotes.sort_by(|a, b| b.egress_amount.cmp(&a.egress_amount));
+        let quote = &quotes[0];
+
+        let egress_amount: BigUint;
         let eta_in_seconds: u32;
+        let slippage_bps: u32;
         let boost_fee: Option<u32>;
         let estimated_price: String;
+        let dca_params: Option<DcaParameters>;
 
         // Use boost quote if available
-        if let Some(boost_quote) = &quote_response.boost_quote {
+        if let Some(boost_quote) = &quote.boost_quote {
             egress_amount = boost_quote.egress_amount.clone();
             slippage_bps = boost_quote.slippage_bps();
             eta_in_seconds = boost_quote.estimated_duration_seconds as u32;
             boost_fee = Some(boost_quote.estimated_boost_fee_bps);
             estimated_price = boost_quote.estimated_price.clone();
+            dca_params = boost_quote.dca_params.clone();
         } else {
-            egress_amount = quote_response.egress_amount.clone();
-            slippage_bps = quote_response.slippage_bps();
-            eta_in_seconds = quote_response.estimated_duration_seconds as u32;
+            egress_amount = quote.egress_amount.clone();
+            slippage_bps = quote.slippage_bps();
+            eta_in_seconds = quote.estimated_duration_seconds as u32;
             boost_fee = None;
-            estimated_price = quote_response.estimated_price.clone();
+            estimated_price = quote.estimated_price.clone();
+            dca_params = quote.dca_params.clone();
         }
 
-        (egress_amount, slippage_bps, eta_in_seconds, boost_fee, estimated_price)
+        (
+            egress_amount,
+            slippage_bps,
+            eta_in_seconds,
+            ChainflipRouteData {
+                boost_fee,
+                fee_bps,
+                estimated_price,
+                dca_params,
+            },
+        )
     }
 }
 
@@ -89,7 +105,7 @@ impl Swapper for ChainflipProvider {
 
     async fn fetch_quote(&self, request: &SwapQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapQuote, SwapperError> {
         if request.from_asset.chain() == Chain::Solana {
-            // Wait for Chainflip 1.9
+            // Wait for Chainflip 1.9.2
             return Err(SwapperError::NoQuoteAvailable);
         }
         let src_asset = Self::map_asset_id(&request.from_asset);
@@ -110,22 +126,17 @@ impl Swapper for ChainflipProvider {
         };
 
         let quote_req = chainflip_client.get_quote(&quote_request);
-        let quote_responses = quote_req.await?;
+        let quotes = quote_req.await?;
 
-        if quote_responses.is_empty() {
+        if quotes.is_empty() {
             return Err(SwapperError::NoQuoteAvailable);
         }
 
-        let quote_response = &quote_responses[0];
-        let (egress_amount, slippage_bps, eta_in_seconds, boost_fee, estimated_price) = self.get_boost_quote(quote_response);
-        let route_data = ChainflipRouteData {
-            boost_fee,
-            fee_bps,
-            estimated_price,
-        };
+        let (egress_amount, slippage_bps, eta_in_seconds, route_data) = Self::get_best_quote(quotes, fee_bps);
+
         let quote = SwapQuote {
             from_value: request.value.clone(),
-            to_value: egress_amount,
+            to_value: egress_amount.to_string(),
             data: SwapProviderData {
                 provider: self.provider.clone(),
                 slippage_bps,
@@ -191,7 +202,7 @@ impl Swapper for ChainflipProvider {
                 route_data.fee_bps,
                 route_data.boost_fee,
                 extra_params,
-                None,
+                route_data.dca_params,
             )
             .await?;
 
@@ -253,5 +264,53 @@ impl Swapper for ChainflipProvider {
         let chainflip_client = ChainflipClient::new(provider.clone());
         let status = chainflip_client.get_tx_status(transaction_hash).await?;
         Ok(status.state == "COMPLETED")
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_best_quote() {
+        let json = include_str!("./test/chainflip_quotes.json");
+        let quotes: Vec<QuoteResponse> = serde_json::from_str(json).unwrap();
+        let (egress_amount, slippage_bps, eta_in_seconds, route_data) = ChainflipProvider::get_best_quote(quotes, DEFAULT_CHAINFLIP_FEE_BPS);
+
+        assert_eq!(egress_amount.to_string(), "145118751424");
+        assert_eq!(slippage_bps, 250);
+        assert_eq!(eta_in_seconds, 192);
+        assert_eq!(
+            route_data,
+            ChainflipRouteData {
+                boost_fee: None,
+                fee_bps: DEFAULT_CHAINFLIP_FEE_BPS,
+                estimated_price: "14.5118765424".to_string(),
+                dca_params: None,
+            }
+        );
+    }
+
+    #[test]
+    fn test_best_boost_quote() {
+        let json = include_str!("./test/chainflip_boost_quotes.json");
+        let quotes: Vec<QuoteResponse> = serde_json::from_str(json).unwrap();
+        let (egress_amount, slippage_bps, eta_in_seconds, route_data) = ChainflipProvider::get_best_quote(quotes, DEFAULT_CHAINFLIP_FEE_BPS);
+
+        assert_eq!(egress_amount.to_string(), "4080936927013539226");
+        assert_eq!(slippage_bps, 100);
+        assert_eq!(eta_in_seconds, 744);
+        assert_eq!(
+            route_data,
+            ChainflipRouteData {
+                boost_fee: Some(5),
+                fee_bps: DEFAULT_CHAINFLIP_FEE_BPS,
+                estimated_price: "40.83388759199201533512".to_string(),
+                dca_params: Some(DcaParameters {
+                    number_of_chunks: 3,
+                    chunk_interval_blocks: 2,
+                }),
+            }
+        );
     }
 }
