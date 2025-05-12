@@ -30,8 +30,7 @@ impl SignMessageDecoder {
         match self.message.sign_type {
             SignDigestType::Sign | SignDigestType::Eip191 => {
                 let utf8_str = String::from_utf8(self.message.data.clone());
-                let hex_str = hex::encode_prefixed(&self.message.data);
-                let preview = utf8_str.unwrap_or(hex_str);
+                let preview = utf8_str.unwrap_or(hex::encode_prefixed(&self.message.data));
                 Ok(MessagePreview::Text(preview))
             }
             SignDigestType::Eip712 => {
@@ -46,6 +45,16 @@ impl SignMessageDecoder {
                 let decoded = bs58::decode(&self.message.data).into_vec().unwrap_or_default();
                 Ok(MessagePreview::Text(String::from_utf8_lossy(&decoded).to_string()))
             }
+        }
+    }
+
+    pub fn plain_preview(&self) -> String {
+        match self.message.sign_type {
+            SignDigestType::Sign | SignDigestType::Eip191 | SignDigestType::Base58 => match self.preview() {
+                Ok(MessagePreview::Text(preview)) => preview,
+                _ => "".to_string(),
+            },
+            SignDigestType::Eip712 => String::from_utf8(self.message.data.clone()).unwrap_or_default(),
         }
     }
 
