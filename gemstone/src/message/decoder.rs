@@ -2,7 +2,7 @@ use alloy_primitives::hex;
 use bs58;
 
 use crate::GemstoneError;
-use gem_evm::eip712::parse_eip712_json;
+use gem_evm::eip712::hash_eip712_json;
 
 use super::{
     eip712::GemEIP712Message,
@@ -60,11 +60,11 @@ impl SignMessageDecoder {
                 data
             }
             SignDigestType::Eip712 => {
-                let value = serde_json::from_slice(&self.message.data).unwrap_or_default();
-                if let Ok(message) = parse_eip712_json(&value) {
-                    return message.hash();
+                if let Ok(value) = serde_json::from_slice(&self.message.data) {
+                    hash_eip712_json(value).unwrap_or_default()
+                } else {
+                    Vec::new()
                 }
-                Vec::new()
             }
             SignDigestType::Base58 => {
                 // Check if the data is a valid base58 string in utf8
@@ -151,5 +151,123 @@ mod tests {
         let result = decoder.get_result(result_data);
 
         assert_eq!(result, "3LRFsmWKLfsR7G5PqjytR");
+    }
+
+    #[test]
+    fn test_eip712_hash() {
+        let json = serde_json::json!({
+            "types": {
+                "EIP712Domain": [
+                    {
+                        "name": "name",
+                        "type": "string"
+                    },
+                    {
+                        "name": "version",
+                        "type": "string"
+                    },
+                    {
+                        "name": "chainId",
+                        "type": "uint256"
+                    },
+                    {
+                        "name": "verifyingContract",
+                        "type": "address"
+                    }
+                ],
+                "OrderComponents": [
+                    {
+                        "name": "offerer",
+                        "type": "address"
+                    },
+                    {
+                        "name": "zone",
+                        "type": "address"
+                    },
+                    {
+                        "name": "offer",
+                        "type": "OfferItem[]"
+                    },
+                    {
+                        "name": "startTime",
+                        "type": "uint256"
+                    },
+                    {
+                        "name": "endTime",
+                        "type": "uint256"
+                    },
+                    {
+                        "name": "zoneHash",
+                        "type": "bytes32"
+                    },
+                    {
+                        "name": "salt",
+                        "type": "uint256"
+                    },
+                    {
+                        "name": "conduitKey",
+                        "type": "bytes32"
+                    },
+                    {
+                        "name": "counter",
+                        "type": "uint256"
+                    }
+                ],
+                "OfferItem": [
+                    {
+                        "name": "token",
+                        "type": "address"
+                    }
+                ],
+                "ConsiderationItem": [
+                    {
+                        "name": "token",
+                        "type": "address"
+                    },
+                    {
+                        "name": "identifierOrCriteria",
+                        "type": "uint256"
+                    },
+                    {
+                        "name": "startAmount",
+                        "type": "uint256"
+                    },
+                    {
+                        "name": "endAmount",
+                        "type": "uint256"
+                    },
+                    {
+                        "name": "recipient",
+                        "type": "address"
+                    }
+                ]
+            },
+            "primaryType": "OrderComponents",
+            "domain": {
+                "name": "Seaport",
+                "version": "1.1",
+                "chainId": "1",
+                "verifyingContract": "0x00000000006c3852cbEf3e08E8dF289169EdE581"
+            },
+            "message": {
+                "offerer": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+                "offer": [
+                    {
+                        "token": "0xA604060890923Ff400e8c6f5290461A83AEDACec"
+                    }
+                ],
+                "startTime": "1658645591",
+                "endTime": "1659250386",
+                "zone": "0x004C00500000aD104D7DBd00e3ae0A5C00560C00",
+                "zoneHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+                "salt": "16178208897136618",
+                "conduitKey": "0x0000007b02230091a7ed01230072f7006a004d60a8d4e71d599b8104250f0000",
+                "totalOriginalConsiderationItems": "2",
+                "counter": "0"
+            }
+        });
+
+        let hash = hash_eip712_json(json).unwrap();
+        assert_eq!(hex::encode(&hash), "0b8aa9f3712df0034bc29fe5b24dd88cfdba02c7f499856ab24632e2969709a8",);
     }
 }

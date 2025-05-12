@@ -1,7 +1,9 @@
+use alloy_dyn_abi::TypedData;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use serde_serializers::deserialize_u64_from_str_or_int;
 use std::collections::HashMap;
+
+use serde_serializers::deserialize_u64_from_str_or_int;
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EIP712Domain {
@@ -31,10 +33,10 @@ pub struct EIP712Field {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum EIP712TypedValue {
     Address { value: String },
-    Uint256 { value: String }, // Represent all uint<N> as string for simplicity
+    Uint256 { value: String },
     String { value: String },
     Bool { value: bool },
-    Bytes { value: Vec<u8> }, // Represent all bytes<N> and dynamic bytes as Vec<u8>
+    Bytes { value: Vec<u8> },
     Struct { fields: Vec<EIP712Field> },
     Array { items: Vec<EIP712TypedValue> },
 }
@@ -44,12 +46,6 @@ pub struct EIP712Message {
     pub domain: EIP712Domain,
     pub primary_type: String,
     pub message: Vec<EIP712Field>,
-}
-
-impl EIP712Message {
-    pub fn hash(&self) -> Vec<u8> {
-        todo!()
-    }
 }
 
 pub fn eip712_domain_types() -> Vec<EIP712Type> {
@@ -71,6 +67,14 @@ pub fn eip712_domain_types() -> Vec<EIP712Type> {
             r#type: "address".into(),
         },
     ]
+}
+
+pub fn hash_eip712_json(value: Value) -> Result<Vec<u8>, String> {
+    let typed_data: TypedData = serde_json::from_value(value).map_err(|e| format!("Invalid EIP712 JSON: parse error: {}", e))?;
+    let typed_hash = typed_data
+        .eip712_signing_hash()
+        .map_err(|e| format!("Invalid EIP712 JSON: signing hash error: {}", e))?;
+    Ok(typed_hash.to_vec())
 }
 
 pub fn parse_eip712_json(value: &Value) -> Result<EIP712Message, String> {

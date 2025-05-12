@@ -34,6 +34,7 @@ impl GemEIP712Message {
         let value = serde_json::from_str(json_str).unwrap();
         let message = parse_eip712_json(&value)?;
 
+        // Only show primary type section for now
         let mut section = GemEIP712Section {
             name: message.primary_type,
             values: vec![],
