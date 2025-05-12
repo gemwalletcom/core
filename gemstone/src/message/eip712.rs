@@ -11,19 +11,19 @@ pub struct GemEIP712MessageDomain {
     pub verifying_contract: String,
 }
 
-#[derive(Debug, uniffi::Record)]
+#[derive(Debug, PartialEq, uniffi::Record)]
 pub struct GemEIP712Message {
     pub domain: GemEIP712MessageDomain,
     pub message: Vec<GemEIP712Section>,
 }
 
-#[derive(Debug, uniffi::Record)]
+#[derive(Debug, PartialEq, uniffi::Record)]
 pub struct GemEIP712Section {
     pub name: String,
     pub values: Vec<GemEIP712Value>,
 }
 
-#[derive(Debug, uniffi::Record)]
+#[derive(Debug, PartialEq, uniffi::Record)]
 pub struct GemEIP712Value {
     pub name: String,
     pub value: String,
