@@ -69,7 +69,7 @@ pub fn eip712_domain_types() -> Vec<EIP712Type> {
     ]
 }
 
-pub fn hash_eip712_json(value: Value) -> Result<Vec<u8>, String> {
+pub fn eip712_hash_message(value: Value) -> Result<Vec<u8>, String> {
     let typed_data: TypedData = serde_json::from_value(value).map_err(|e| format!("Invalid EIP712 JSON: parse error: {}", e))?;
     let typed_hash = typed_data
         .eip712_signing_hash()

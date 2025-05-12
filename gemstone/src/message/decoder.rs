@@ -1,13 +1,12 @@
-use alloy_primitives::hex;
+use alloy_primitives::{eip191_hash_message, hex};
 use bs58;
-
-use crate::GemstoneError;
-use gem_evm::eip712::hash_eip712_json;
 
 use super::{
     eip712::GemEIP712Message,
     sign_type::{SignDigestType, SignMessage},
 };
+use crate::GemstoneError;
+use gem_evm::eip712::eip712_hash_message;
 
 #[derive(Debug, uniffi::Enum)]
 pub enum MessagePreview {
@@ -53,15 +52,10 @@ impl SignMessageDecoder {
     pub fn hash(&self) -> Vec<u8> {
         match self.message.sign_type {
             SignDigestType::Sign => self.message.data.clone(),
-            SignDigestType::Eip191 => {
-                let prefix = "\x19Ethereum Signed Message:\n";
-                let mut data = prefix.as_bytes().to_vec();
-                data.extend_from_slice(&self.message.data);
-                data
-            }
+            SignDigestType::Eip191 => eip191_hash_message(&self.message.data).to_vec(),
             SignDigestType::Eip712 => {
                 if let Ok(value) = serde_json::from_slice(&self.message.data) {
-                    hash_eip712_json(value).unwrap_or_default()
+                    eip712_hash_message(value).unwrap_or_default()
                 } else {
                     Vec::new()
                 }
@@ -94,15 +88,21 @@ mod tests {
 
     #[test]
     fn test_eip191() {
-        let data = b"test".to_vec();
+        let data = b"hello world".to_vec();
         let decoder = SignMessageDecoder::new(SignMessage {
             sign_type: SignDigestType::Eip191,
             data,
         });
         match decoder.preview() {
-            Ok(MessagePreview::Text(preview)) => assert_eq!(preview, "test"),
+            Ok(MessagePreview::Text(preview)) => assert_eq!(preview, "hello world"),
             _ => panic!("Unexpected preview result"),
         }
+
+        let hash = decoder.hash();
+        assert_eq!(
+            hex::encode_prefixed(&hash),
+            "0xd9eba16ed0ecae432b71fe008c98cc872bb4cc214d3220a36f365326cf807d68"
+        );
     }
 
     #[test]
@@ -267,7 +267,7 @@ mod tests {
             }
         });
 
-        let hash = hash_eip712_json(json).unwrap();
+        let hash = eip712_hash_message(json).unwrap();
         assert_eq!(hex::encode(&hash), "0b8aa9f3712df0034bc29fe5b24dd88cfdba02c7f499856ab24632e2969709a8",);
     }
 }

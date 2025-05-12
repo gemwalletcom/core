@@ -87,7 +87,7 @@ final class GemTestTests: XCTestCase {
         XCTAssertNil(expiredValue)
     }
 
-    func testSignMessage() async throws {
+    func testMessagePreview() async throws {
         let base58 = "jo91waLQA1NNeBmZKUF".data(using: .utf8)!
         let message = SignMessage(signType: .base58, data: base58)
         let decoder = SignMessageDecoder(message: message)
@@ -101,7 +101,14 @@ final class GemTestTests: XCTestCase {
         }
 
         let result = decoder.getResult(data: Data(hex: "7468697320697320612074657374")!)
-
         XCTAssertEqual(result, "jo91waLQA1NNeBmZKUF")
+    }
+
+    func testMessageHash() async throws {
+        let message = SignMessage(signType: .eip191, data: "hello world".data(using: .utf8)!)
+        let decoder = SignMessageDecoder(message: message)
+        let hash = decoder.hash()
+
+        XCTAssertEqual(hash.hexString(), "d9eba16ed0ecae432b71fe008c98cc872bb4cc214d3220a36f365326cf807d68")
     }
 }
