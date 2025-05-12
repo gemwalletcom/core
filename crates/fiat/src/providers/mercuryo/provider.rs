@@ -88,7 +88,7 @@ impl FiatProvider for MercuryoClient {
             provider_id: Self::NAME.id(),
             provider_transaction_id: data.merchant_transaction_id.unwrap_or(data.id),
             status,
-            country: data.user.map(|x| x.country_code),
+            country: data.user.map(|x| x.country_code.to_uppercase()),
             fiat_amount: data.fiat_amount,
             fiat_currency: data.fiat_currency,
             transaction_hash: data.tx.clone().and_then(|x| x.id),
@@ -97,8 +97,6 @@ impl FiatProvider for MercuryoClient {
             fee_network: None,
             fee_partner: data.partner_fee,
         };
-
-        print!("transaction: {:?}", transaction);
 
         Ok(transaction)
     }

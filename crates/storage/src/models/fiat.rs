@@ -103,6 +103,7 @@ pub struct FiatTransaction {
     pub provider_id: String,
     pub provider_transaction_id: String,
     pub status: String,
+    pub country: Option<String>,
     pub fiat_amount: f64,
     pub fiat_currency: String,
     pub address: Option<String>,
@@ -121,6 +122,7 @@ impl FiatTransaction {
             provider_id: transaction.provider_id,
             provider_transaction_id: transaction.provider_transaction_id,
             status: transaction.status.as_ref().to_string(),
+            country: transaction.country,
             fiat_amount: transaction.fiat_amount,
             fiat_currency: transaction.fiat_currency,
             transaction_hash: transaction.transaction_hash,
@@ -165,6 +167,7 @@ impl FiatProviderCountry {
 #[diesel(table_name = crate::schema::fiat_transactions)]
 pub struct FiatTransactionUpdate {
     pub status: String,
+    pub country: Option<String>,
     pub transaction_hash: Option<String>,
     pub address: Option<String>,
     pub fee_network: Option<f64>,

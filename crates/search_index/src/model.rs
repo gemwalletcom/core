@@ -11,7 +11,9 @@ pub const ASSETS_FILTERS: &[&str] = &[
     "score.rank",
     "properties.isEnabled",
     "market.marketCap",
+    "market.marketCapFdv",
     "market.marketCapRank",
+    "market.totalVolume",
     "tags",
 ];
 pub const ASSETS_SEARCH_ATTRIBUTES: &[&str] = &["asset.tokenId", "asset.chain", "asset.name", "asset.symbol", "asset.type"];

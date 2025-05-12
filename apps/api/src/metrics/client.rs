@@ -101,7 +101,7 @@ impl MetricsClient {
         for price in prices {
             self.pricer_updated_at
                 .get_or_create(&PricerStateLabels { asset_id: price.clone().id })
-                .set(price.last_updated_at.unwrap_or_default().and_utc().timestamp());
+                .set(price.last_updated_at.and_utc().timestamp());
 
             self.pricer_price
                 .get_or_create(&PricerStateLabels { asset_id: price.clone().id })

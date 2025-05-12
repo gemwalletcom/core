@@ -8,7 +8,7 @@ use chrono::DateTime;
 use gem_evm::ethereum_address_checksum;
 use hex::FromHex;
 use jsonrpsee::{
-    core::{client::ClientT, params::BatchRequestBuilder},
+    core::client::ClientT,
     http_client::{HttpClient, HttpClientBuilder},
     rpc_params,
 };
@@ -62,49 +62,32 @@ impl EthereumClient {
         Ok(res)
     }
 
-    async fn get_transaction_reciepts(&self, hashes: Vec<String>) -> Result<Vec<TransactionReciept>, Box<dyn Error + Send + Sync>> {
-        let hashes_chunks: Vec<Vec<String>> = hashes.chunks(10).map(|s| s.into()).collect();
-        let mut results: Vec<TransactionReciept> = Vec::new();
-        for hashes in hashes_chunks {
-            let mut batch = BatchRequestBuilder::default();
-            for hash in hashes.iter() {
-                batch.insert("eth_getTransactionReceipt", vec![json!(hash)])?;
-            }
-
-            let receipts = self
-                .client
-                .batch_request::<TransactionReciept>(batch)
-                .await?
-                .iter()
-                .filter_map(|r| r.as_ref().ok())
-                .cloned()
-                .collect::<Vec<TransactionReciept>>();
-
-            if receipts.len() != hashes.len() {
-                return Err("Failed to get all transaction reciepts".into());
-            }
-            results.extend(receipts);
-        }
-        Ok(results)
-    }
-
     async fn get_block(&self, block_number: i64) -> Result<Block, Box<dyn Error + Send + Sync>> {
-        let params = vec![json!(format!("0x{:x}", block_number)), json!(true)];
-        Ok(self.client.request("eth_getBlockByNumber", params).await?)
+        Ok(self
+            .client
+            .request("eth_getBlockByNumber", vec![json!(format!("0x{:x}", block_number)), json!(true)])
+            .await?)
     }
 
-    fn map_transaction(&self, transaction: Transaction, receipt: &TransactionReciept, timestamp: BigUint) -> Option<primitives::Transaction> {
-        let state = if receipt.status == "0x1" {
+    async fn get_block_reciepts(&self, block_number: i64) -> Result<Vec<TransactionReciept>, Box<dyn Error + Send + Sync>> {
+        Ok(self
+            .client
+            .request("eth_getBlockReceipts", vec![json!(format!("0x{:x}", block_number))])
+            .await?)
+    }
+
+    fn map_transaction(&self, transaction: Transaction, transaction_reciept: &TransactionReciept, timestamp: BigUint) -> Option<primitives::Transaction> {
+        let state = if transaction_reciept.status == "0x1" {
             TransactionState::Confirmed
         } else {
             TransactionState::Failed
         };
         let value = transaction.value.to_string();
-        let nonce = transaction.nonce;
-        let block_number = transaction.block_number;
-        let fee = receipt.get_fee().to_string();
-        let from = ethereum_address_checksum(&transaction.from).ok()?;
-        let to = ethereum_address_checksum(&transaction.to.unwrap_or_default()).ok()?;
+        let nonce = transaction.clone().nonce;
+        let block_number = transaction.clone().block_number;
+        let fee = transaction_reciept.get_fee().to_string();
+        let from = ethereum_address_checksum(&transaction.from.clone()).ok()?;
+        let to = ethereum_address_checksum(&transaction.to.clone().unwrap_or_default()).ok()?;
         let created_at = DateTime::from_timestamp(timestamp.try_into().ok()?, 0)?;
 
         // system transfer
@@ -165,9 +148,9 @@ impl EthereumClient {
             return Some(transaction);
         }
 
-        if input_prefix.starts_with(FUNCTION_1INCH_SWAP) && to == CONTRACT_1INCH && receipt.logs.len() <= 9 {
-            let first_log = receipt.logs.first()?;
-            let last_log = receipt.logs.last()?;
+        if input_prefix.starts_with(FUNCTION_1INCH_SWAP) && to == CONTRACT_1INCH && transaction_reciept.logs.len() <= 9 {
+            let first_log = transaction_reciept.logs.first()?;
+            let last_log = transaction_reciept.logs.last()?;
             let first_log_value = BigUint::from_str_radix(&first_log.clone().data[2..], 16).ok()?.to_string();
             let last_log_value = BigUint::from_str_radix(&last_log.clone().data[2..], 16).ok()?.to_string();
 
@@ -238,34 +221,17 @@ impl ChainBlockProvider for EthereumClient {
 
     async fn get_latest_block(&self) -> Result<i64, Box<dyn Error + Send + Sync>> {
         let block: String = self.client.request("eth_blockNumber", rpc_params![]).await?;
-        let block_number = i64::from_str_radix(&block[2..], 16)?;
-        Ok(block_number)
+        Ok(i64::from_str_radix(&block[2..], 16)?)
     }
 
     async fn get_transactions(&self, block_number: i64) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Send + Sync>> {
         let block = self.get_block(block_number).await?.clone();
-
-        let transactions = block
-            .transactions
-            .into_iter()
-            .filter(|x| {
-                x.input == "0x"
-                    || x.input.starts_with(FUNCTION_ERC20_TRANSFER)
-                    || x.input.starts_with(FUNCTION_ERC20_APPROVE)
-                    || x.input.starts_with(FUNCTION_1INCH_SWAP)
-            })
-            .collect::<Vec<Transaction>>();
-
-        if transactions.is_empty() {
-            return Ok(vec![]);
-        }
-
-        let hashes = transactions.clone().into_iter().map(|x| x.hash).collect();
-        let receipts = self.get_transaction_reciepts(hashes).await?;
+        let transactions_reciepts = self.get_block_reciepts(block_number).await?.clone();
+        let transactions = block.transactions;
 
         let transactions = transactions
             .into_iter()
-            .zip(receipts.iter())
+            .zip(transactions_reciepts.iter())
             .filter_map(|(transaction, receipt)| self.map_transaction(transaction, receipt, block.timestamp.clone()))
             .collect::<Vec<primitives::Transaction>>();
 

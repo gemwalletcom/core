@@ -20,6 +20,16 @@ pub struct Release {
     pub upgrade_required: bool,
 }
 
+impl Release {
+    pub fn new(store: PlatformStore, version: String, upgrade_required: bool) -> Self {
+        Self {
+            version,
+            store,
+            upgrade_required,
+        }
+    }
+}
+
 #[typeshare(swift = "Sendable")]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

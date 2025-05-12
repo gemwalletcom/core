@@ -98,7 +98,6 @@ impl AssetsSearchClient {
                 asset: x.asset,
                 properties: x.properties,
                 score: x.score,
-                links: vec![],
             })
             .collect())
     }

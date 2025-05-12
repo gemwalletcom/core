@@ -45,7 +45,7 @@ impl PriceObserverClient {
     }
 
     pub fn add_price_to_publish(&mut self, price: AssetPrice) {
-        self.prices_to_publish.insert(price.asset_id.clone(), price);
+        self.prices_to_publish.insert(price.asset_id.to_string(), price);
     }
 
     pub fn clear_prices_to_publish(&mut self) {

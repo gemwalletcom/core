@@ -44,7 +44,6 @@ impl Asset {
             asset: self.as_primitive(),
             properties: self.as_property_primitive(),
             score: self.as_score_primitive(),
-            links: vec![],
         }
     }
 

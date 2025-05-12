@@ -118,7 +118,10 @@ impl PriceClient {
             println!("Setting cache for asset_id: {:?} \n", value);
         }
 
-        let values: Vec<(String, String)> = prices.iter().map(|x| (x.asset_id.clone(), serde_json::to_string(&x).unwrap())).collect();
+        let values: Vec<(String, String)> = prices
+            .iter()
+            .map(|x| (x.asset_id.to_string().clone(), serde_json::to_string(&x).unwrap()))
+            .collect();
 
         self.cacher_client.set_values_with_publish(values).await
     }

@@ -161,6 +161,6 @@ impl CoinGeckoClient {
             "{}/api/v3/coins/{}/market_chart?vs_currency=usd&days=max&interval=daily&precision=full",
             self.url, coin_id
         );
-        Ok(self.client.get(url).send().await?.json().await?)
+        Ok(self.client.get(url).headers(self.headers()).send().await?.json().await?)
     }
 }

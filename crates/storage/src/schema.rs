@@ -337,7 +337,7 @@ diesel::table! {
         circulating_supply -> Float8,
         total_supply -> Float8,
         max_supply -> Float8,
-        last_updated_at -> Nullable<Timestamp>,
+        last_updated_at -> Timestamp,
         updated_at -> Timestamp,
         created_at -> Timestamp,
         all_time_high_date -> Nullable<Timestamp>,

@@ -1,7 +1,7 @@
-use chrono::{Duration, Utc};
+use chrono::{DateTime, Duration, Utc};
 use coingecko::{CoinGeckoClient, CoinMarket};
 use pricer::PriceClient;
-use primitives::AssetPriceInfo;
+use primitives::{AssetId, AssetPriceInfo};
 use std::collections::{HashMap, HashSet};
 use std::error::Error;
 use storage::models::Price;
@@ -40,8 +40,7 @@ impl PriceUpdater {
     fn map_coin_markets(coin_markets: Vec<CoinMarket>) -> Vec<Price> {
         coin_markets
             .into_iter()
-            .map(|x| Self::map_price_for_market(x.clone()))
-            .filter(|x| x.last_updated_at.is_some())
+            .flat_map(|x| Self::map_price_for_market(x.clone()))
             .collect::<HashSet<Price>>()
             .into_iter()
             .collect::<Vec<Price>>()
@@ -83,7 +82,7 @@ impl PriceUpdater {
                 if let Some(asset_ids) = prices_assets_map.get(price.id.as_str()) {
                     return asset_ids
                         .iter()
-                        .map(|asset_id| price.as_price_asset_info(asset_id.as_str()))
+                        .map(|asset_id| price.as_price_asset_info(AssetId::new(asset_id).unwrap()))
                         .collect::<Vec<_>>();
                 }
                 vec![]
@@ -114,8 +113,9 @@ impl PriceUpdater {
         self.price_client.delete_prices_updated_at_before(time.naive_utc())
     }
 
-    fn map_price_for_market(market: CoinMarket) -> Price {
-        Price::new(
+    fn map_price_for_market(market: CoinMarket) -> Option<Price> {
+        let last_updated_at = market.last_updated.map(|x: DateTime<Utc>| x.naive_utc())?;
+        return Some(Price::new(
             market.id,
             market.current_price.unwrap_or_default(),
             market.price_change_percentage_24h.unwrap_or_default(),
@@ -130,7 +130,7 @@ impl PriceUpdater {
             market.circulating_supply.unwrap_or_default(),
             market.total_supply.unwrap_or_default(),
             market.max_supply.unwrap_or_default(),
-            market.last_updated.map(|x| x.naive_local()),
-        )
+            last_updated_at,
+        ));
     }
 }

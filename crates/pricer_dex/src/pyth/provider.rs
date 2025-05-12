@@ -1,3 +1,4 @@
+use chrono::Utc;
 use primitives::AssetPrice;
 
 use crate::PriceChainProvider;
@@ -19,9 +20,10 @@ impl PriceChainProvider for PythProvider {
             .into_iter()
             .zip(prices.into_iter())
             .map(|(chain, price)| AssetPrice {
-                asset_id: chain.as_ref().to_string(),
+                asset_id: chain.as_asset_id(),
                 price: price.price,
                 price_change_percentage_24h: 0.0,
+                updated_at: Utc::now(),
             })
             .collect())
     }
