@@ -27,10 +27,9 @@ pub struct RefundParameters {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-#[serde(rename_all = "camelCase")]
 pub struct DcaParameters {
     pub number_of_chunks: u32,
-    pub chunk_interval_blocks: u32,
+    pub chunk_interval: u32,
 }
 
 #[derive(Debug)]
@@ -52,7 +51,7 @@ pub struct VaultSwapEvmExtras {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VaultSwapBtcExtras {
     pub chain: String,
-    pub min_output_amount: u128,
+    pub min_output_amount: String,
     pub retry_duration: u32,
 }
 
@@ -61,7 +60,7 @@ pub struct VaultSwapSolanaExtras {
     pub chain: String,
     pub from: String,
     pub event_data_account: Option<String>,
-    pub input_amount: u128,
+    pub input_amount: String,
     pub refund_parameters: RefundParameters,
 }
 

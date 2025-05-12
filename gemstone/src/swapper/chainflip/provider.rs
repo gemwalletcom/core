@@ -55,7 +55,7 @@ impl ChainflipProvider {
         let slippage_bps: u32;
         let boost_fee: Option<u32>;
         let estimated_price: String;
-        let dca_params: Option<DcaParameters>;
+        let dca_parameters: Option<DcaParameters>;
 
         // Use boost quote if available
         if let Some(boost_quote) = &quote.boost_quote {
@@ -64,14 +64,20 @@ impl ChainflipProvider {
             eta_in_seconds = boost_quote.estimated_duration_seconds as u32;
             boost_fee = Some(boost_quote.estimated_boost_fee_bps);
             estimated_price = boost_quote.estimated_price.clone();
-            dca_params = boost_quote.dca_params.clone();
+            dca_parameters = boost_quote.dca_params.as_ref().map(|dca_params| DcaParameters {
+                number_of_chunks: dca_params.number_of_chunks,
+                chunk_interval: dca_params.chunk_interval_blocks,
+            });
         } else {
             egress_amount = quote.egress_amount.clone();
             slippage_bps = quote.slippage_bps();
             eta_in_seconds = quote.estimated_duration_seconds as u32;
             boost_fee = None;
             estimated_price = quote.estimated_price.clone();
-            dca_params = quote.dca_params.clone();
+            dca_parameters = quote.dca_params.as_ref().map(|dca_params| DcaParameters {
+                number_of_chunks: dca_params.number_of_chunks,
+                chunk_interval: dca_params.chunk_interval_blocks,
+            });
         }
 
         (
@@ -82,7 +88,7 @@ impl ChainflipProvider {
                 boost_fee,
                 fee_bps,
                 estimated_price,
-                dca_params,
+                dca_parameters,
             },
         )
     }
@@ -183,11 +189,11 @@ impl Swapper for ChainflipProvider {
                 },
             })
         } else if from_asset.chain.chain_type() == ChainType::Bitcoin {
-            let output_amount: u128 = quote.to_value.parse()?;
+            let output_amount: U256 = quote.to_value.parse()?;
             let min_output_amount = slippage::apply_slippage_in_bp(&output_amount, quote.data.slippage_bps);
             VaultSwapExtras::Bitcoin(VaultSwapBtcExtras {
                 chain,
-                min_output_amount,
+                min_output_amount: min_output_amount.to_string(),
                 retry_duration: 6, // blocks
             })
         } else {
@@ -202,7 +208,7 @@ impl Swapper for ChainflipProvider {
                 route_data.fee_bps,
                 route_data.boost_fee,
                 extra_params,
-                route_data.dca_params,
+                route_data.dca_parameters,
             )
             .await?;
 
@@ -286,7 +292,7 @@ mod tests {
                 boost_fee: None,
                 fee_bps: DEFAULT_CHAINFLIP_FEE_BPS,
                 estimated_price: "14.5118765424".to_string(),
-                dca_params: None,
+                dca_parameters: None,
             }
         );
     }
@@ -306,9 +312,9 @@ mod tests {
                 boost_fee: Some(5),
                 fee_bps: DEFAULT_CHAINFLIP_FEE_BPS,
                 estimated_price: "40.83388759199201533512".to_string(),
-                dca_params: Some(DcaParameters {
+                dca_parameters: Some(DcaParameters {
                     number_of_chunks: 3,
-                    chunk_interval_blocks: 2,
+                    chunk_interval: 2,
                 }),
             }
         );

@@ -2,8 +2,6 @@ use num_bigint::BigUint;
 use serde::{Deserialize, Serialize};
 use serde_serializers::{deserialize_biguint_from_str, serialize_biguint};
 
-use crate::swapper::chainflip::broker::DcaParameters;
-
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct QuoteRequest {
@@ -29,6 +27,12 @@ pub struct IncludedFee {
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct DcaParams {
+    pub number_of_chunks: u32,
+    pub chunk_interval_blocks: u32,
+}
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct QuoteResponse {
     #[serde(deserialize_with = "deserialize_biguint_from_str", serialize_with = "serialize_biguint")]
     pub egress_amount: BigUint,
@@ -40,7 +44,7 @@ pub struct QuoteResponse {
     pub is_vault_swap: bool,
     pub boost_quote: Option<BoostQuote>,
     pub estimated_price: String,
-    pub dca_params: Option<DcaParameters>,
+    pub dca_params: Option<DcaParams>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -53,7 +57,7 @@ pub struct BoostQuote {
     pub estimated_boost_fee_bps: u32,
     pub max_boost_fee_bps: u32,
     pub estimated_price: String,
-    pub dca_params: Option<DcaParameters>,
+    pub dca_params: Option<DcaParams>,
 }
 
 impl QuoteResponse {
