@@ -51,7 +51,7 @@ impl EVMChain {
     pub fn min_priority_fee(&self) -> u64 {
         match self {
             Self::Ethereum => 1_000_000_000,                                                      // https://etherscan.io/gastracker
-            Self::SmartChain => 1_000_000_000,                                                    // https://bscscan.com/gastracker
+            Self::SmartChain => 100_000_000,                                                      // https://bscscan.com/gastracker
             Self::Polygon => 30_000_000_000,                                                      // https://polygonscan.com/gastracker
             Self::Arbitrum => 10_000_000, // https://arbiscan.io/address/0x000000000000000000000000000000000000006C#readContract getMinimumGasPrice
             Self::Optimism => 10_000_000, // https://optimistic.etherscan.io/chart/gasprice
