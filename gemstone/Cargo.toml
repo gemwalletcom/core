@@ -42,6 +42,7 @@ serde_urlencoded.workspace = true
 async-trait.workspace = true
 alloy-primitives.workspace = true
 alloy-sol-types.workspace = true
+alloy-dyn-abi.workspace = true
 hex.workspace = true
 url.workspace = true
 num-bigint.workspace = true

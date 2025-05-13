@@ -1,7 +1,7 @@
 use super::{client::JupiterClient, model::*, PROGRAM_ADDRESS};
 use crate::{
-    network::{jsonrpc::JsonRpcClient, JsonRpcResult},
-    swapper::{slippage::apply_slippage_in_bp, Swapper, *},
+    network::jsonrpc::{JsonRpcClient, JsonRpcResult},
+    swapper::{Swapper, *},
 };
 
 use alloy_primitives::U256;
@@ -140,13 +140,13 @@ impl Swapper for Jupiter {
         let swap_quote = client.get_swap_quote(quote_request).await?;
         let computed_auto_slippage = swap_quote.computed_auto_slippage.unwrap_or(swap_quote.slippage_bps);
 
+        // Updated docs: https://dev.jup.ag/docs/api/swap-api/quote
+        // The value includes platform fees and DEX fees, excluding slippage.
         let out_amount: U256 = swap_quote.out_amount.parse().map_err(SwapperError::from)?;
-        // out_amount doesn't take account of slippage and platform fee
-        let to_value = apply_slippage_in_bp(&out_amount, platform_fee_bps);
 
         let quote = SwapQuote {
             from_value: request.value.clone(),
-            to_value: to_value.to_string(),
+            to_value: out_amount.to_string(),
             data: SwapProviderData {
                 provider: self.provider().clone(),
                 routes: vec![SwapRoute {

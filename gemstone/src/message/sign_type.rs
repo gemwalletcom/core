@@ -5,3 +5,9 @@ pub enum SignDigestType {
     Eip712,
     Base58,
 }
+
+#[derive(Debug, uniffi::Record)]
+pub struct SignMessage {
+    pub sign_type: SignDigestType,
+    pub data: Vec<u8>,
+}
