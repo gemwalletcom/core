@@ -115,7 +115,7 @@ impl PriceUpdater {
 
     fn map_price_for_market(market: CoinMarket) -> Option<Price> {
         let last_updated_at = market.last_updated.map(|x: DateTime<Utc>| x.naive_utc())?;
-        return Some(Price::new(
+        Some(Price::new(
             market.id,
             market.current_price.unwrap_or_default(),
             market.price_change_percentage_24h.unwrap_or_default(),
@@ -131,6 +131,6 @@ impl PriceUpdater {
             market.total_supply.unwrap_or_default(),
             market.max_supply.unwrap_or_default(),
             last_updated_at,
-        ));
+        ))
     }
 }
