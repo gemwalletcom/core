@@ -70,11 +70,8 @@ impl SignMessageDecoder {
                 }
             }
             SignDigestType::Base58 => {
-                // Check if the data is a valid base58 string in utf8
-                if let Ok(string_data) = String::from_utf8(self.message.data.clone()) {
-                    if bs58::decode(string_data.as_bytes()).into_vec().is_ok() {
-                        return self.message.data.clone();
-                    }
+                if let Ok(decoded) = bs58::decode(&self.message.data).into_vec() {
+                    return decoded;
                 }
                 Vec::new()
             }
@@ -149,16 +146,23 @@ mod tests {
 
     #[test]
     fn test_base58() {
-        let data = b"StV1DL6CwTryKyV".to_vec(); // Base58 encoded form of "hello world"
+        let message = "X3CUgCGzyn43DTAbUKnTMDzcGWMooJT2hPSZinjfN1QUgVNYYfeoJ5zg6i4Nd5coKGUrNpEYVoD";
+        let data = message.as_bytes().to_vec();
         let decoder = SignMessageDecoder::new(SignMessage {
             sign_type: SignDigestType::Base58,
             data: data.clone(),
         });
 
         match decoder.preview() {
-            Ok(MessagePreview::Text(preview)) => assert_eq!(preview, "hello world"),
+            Ok(MessagePreview::Text(preview)) => assert_eq!(preview, "This is an example message to be signed - 1747125759060"),
             _ => panic!("Unexpected preview result for base58"),
         }
+        let hash = decoder.hash();
+
+        assert_eq!(
+            hex::encode(&hash),
+            "5468697320697320616e206578616d706c65206d65737361676520746f206265207369676e6564202d2031373437313235373539303630"
+        );
 
         let result_data = b"StV1DL6CwTryKyV"; // Data to pass to get_result, mimicking Swift test
         let result = decoder.get_result(result_data);
