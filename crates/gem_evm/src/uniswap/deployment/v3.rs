@@ -121,6 +121,16 @@ pub fn get_oku_deployment_by_chain(chain: &Chain) -> Option<V3Deployment> {
             universal_router: "0x738fD6d10bCc05c230388B4027CAd37f82fe2AF2",
             permit2: "0xB952578f3520EE8Ea45b7914994dcf4702cEe578",
         }),
+        Chain::Mantle => Some(V3Deployment {
+            quoter_v2: "0xdD489C75be1039ec7d843A6aC2Fd658350B067Cf",
+            universal_router: "0x447B8E40B0CdA8e55F405C86bC635D02d0540aB8",
+            permit2: "0x5d6b0f5335ec95cD2aB7E52f2A0750dd86502435",
+        }),
+        Chain::Gnosis => Some(V3Deployment {
+            quoter_v2: "0x7E9cB3499A6cee3baBe5c8a3D328EA7FD36578f4",
+            universal_router: "0x75FC67473A91335B5b8F8821277262a13B38c9b3",
+            permit2: "0x000000000022D473030F116dDEE9F6B43aC78BA3",
+        }),
         _ => None,
     }
 }
