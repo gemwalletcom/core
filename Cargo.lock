@@ -46,6 +46,24 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5c6cb57a04249c6480766f7f7cef5467412af1490f8d1e243141daddada3264f"
 
 [[package]]
+name = "alloy-dyn-abi"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4f90b63261b7744642f6075ed17db6de118eecbe9516ea6c6ffd444b80180b75"
+dependencies = [
+ "alloy-json-abi",
+ "alloy-primitives",
+ "alloy-sol-type-parser",
+ "alloy-sol-types",
+ "const-hex",
+ "derive_more",
+ "itoa",
+ "serde",
+ "serde_json",
+ "winnow 0.7.2",
+]
+
+[[package]]
 name = "alloy-json-abi"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2411,6 +2429,7 @@ dependencies = [
 name = "gem_evm"
 version = "1.0.0"
 dependencies = [
+ "alloy-dyn-abi",
  "alloy-primitives",
  "alloy-sol-types",
  "anyhow",
@@ -2488,6 +2507,7 @@ name = "gemstone"
 version = "0.31.1"
 dependencies = [
  "alien_provider",
+ "alloy-dyn-abi",
  "alloy-primitives",
  "alloy-sol-types",
  "anyhow",

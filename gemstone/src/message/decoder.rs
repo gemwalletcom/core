@@ -1,17 +1,14 @@
-use alloy_primitives::hex;
+use alloy_primitives::{eip191_hash_message, hex};
 use bs58;
 
+use super::{
+    eip712::GemEIP712Message,
+    sign_type::{SignDigestType, SignMessage},
+};
 use crate::GemstoneError;
+use gem_evm::eip712::eip712_hash_message;
 
-use super::{eip712::GemEIP712Message, sign_type::SignDigestType};
-
-#[derive(Debug, uniffi::Record)]
-pub struct SignMessage {
-    pub sign_type: SignDigestType,
-    pub data: Vec<u8>,
-}
-
-#[derive(Debug, uniffi::Enum)]
+#[derive(Debug, PartialEq, uniffi::Enum)]
 pub enum MessagePreview {
     Text(String),
     EIP712(GemEIP712Message),
@@ -33,8 +30,7 @@ impl SignMessageDecoder {
         match self.message.sign_type {
             SignDigestType::Sign | SignDigestType::Eip191 => {
                 let utf8_str = String::from_utf8(self.message.data.clone());
-                let hex_str = hex::encode_prefixed(&self.message.data);
-                let preview = utf8_str.unwrap_or(hex_str);
+                let preview = utf8_str.unwrap_or(hex::encode_prefixed(&self.message.data));
                 Ok(MessagePreview::Text(preview))
             }
             SignDigestType::Eip712 => {
@@ -52,6 +48,36 @@ impl SignMessageDecoder {
         }
     }
 
+    pub fn plain_preview(&self) -> String {
+        match self.message.sign_type {
+            SignDigestType::Sign | SignDigestType::Eip191 | SignDigestType::Base58 => match self.preview() {
+                Ok(MessagePreview::Text(preview)) => preview,
+                _ => "".to_string(),
+            },
+            SignDigestType::Eip712 => String::from_utf8(self.message.data.clone()).unwrap_or_default(),
+        }
+    }
+
+    pub fn hash(&self) -> Vec<u8> {
+        match self.message.sign_type {
+            SignDigestType::Sign => self.message.data.clone(),
+            SignDigestType::Eip191 => eip191_hash_message(&self.message.data).to_vec(),
+            SignDigestType::Eip712 => {
+                if let Ok(value) = serde_json::from_slice(&self.message.data) {
+                    eip712_hash_message(value).unwrap_or_default()
+                } else {
+                    Vec::new()
+                }
+            }
+            SignDigestType::Base58 => {
+                if let Ok(decoded) = bs58::decode(&self.message.data).into_vec() {
+                    return decoded;
+                }
+                Vec::new()
+            }
+        }
+    }
+
     pub fn get_result(&self, data: &[u8]) -> String {
         match self.message.sign_type {
             SignDigestType::Sign | SignDigestType::Eip191 | SignDigestType::Eip712 => hex::encode_prefixed(data),
@@ -63,21 +89,30 @@ impl SignMessageDecoder {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::message::sign_type::SignDigestType;
+    use crate::message::{
+        eip712::{GemEIP712Section, GemEIP712Value},
+        sign_type::SignDigestType,
+    };
     use alloy_primitives::hex;
-    use gem_evm::eip712::EIP712TypedValue;
+    use gem_evm::EIP712Domain;
 
     #[test]
     fn test_eip191() {
-        let data = b"test".to_vec();
+        let data = b"hello world".to_vec();
         let decoder = SignMessageDecoder::new(SignMessage {
             sign_type: SignDigestType::Eip191,
             data,
         });
         match decoder.preview() {
-            Ok(MessagePreview::Text(preview)) => assert_eq!(preview, "test"),
+            Ok(MessagePreview::Text(preview)) => assert_eq!(preview, "hello world"),
             _ => panic!("Unexpected preview result"),
         }
+
+        let hash = decoder.hash();
+        assert_eq!(
+            hex::encode_prefixed(&hash),
+            "0xd9eba16ed0ecae432b71fe008c98cc872bb4cc214d3220a36f365326cf807d68"
+        );
     }
 
     #[test]
@@ -111,16 +146,23 @@ mod tests {
 
     #[test]
     fn test_base58() {
-        let data = b"StV1DL6CwTryKyV".to_vec(); // Base58 encoded form of "hello world"
+        let message = "X3CUgCGzyn43DTAbUKnTMDzcGWMooJT2hPSZinjfN1QUgVNYYfeoJ5zg6i4Nd5coKGUrNpEYVoD";
+        let data = message.as_bytes().to_vec();
         let decoder = SignMessageDecoder::new(SignMessage {
             sign_type: SignDigestType::Base58,
             data: data.clone(),
         });
 
         match decoder.preview() {
-            Ok(MessagePreview::Text(preview)) => assert_eq!(preview, "hello world"),
+            Ok(MessagePreview::Text(preview)) => assert_eq!(preview, "This is an example message to be signed - 1747125759060"),
             _ => panic!("Unexpected preview result for base58"),
         }
+        let hash = decoder.hash();
+
+        assert_eq!(
+            hex::encode(&hash),
+            "5468697320697320616e206578616d706c65206d65737361676520746f206265207369676e6564202d2031373437313235373539303630"
+        );
 
         let result_data = b"StV1DL6CwTryKyV"; // Data to pass to get_result, mimicking Swift test
         let result = decoder.get_result(result_data);
@@ -129,81 +171,69 @@ mod tests {
     }
 
     #[test]
-    fn test_eip712() {
-        // Load the JSON content from the file
-        let json_data_str = include_str!("test/uniswap_permit2.json");
-        let data = json_data_str.as_bytes().to_vec();
+    fn test_eip712_hash() {
+        let json_str = include_str!("./test/eip712_seaport.json");
+        let json = serde_json::json!(json_str);
+        let hash = eip712_hash_message(json).unwrap();
+
+        assert_eq!(hex::encode(&hash), "0b8aa9f3712df0034bc29fe5b24dd88cfdba02c7f499856ab24632e2969709a8",);
 
         let decoder = SignMessageDecoder::new(SignMessage {
             sign_type: SignDigestType::Eip712,
-            data: data.clone(),
+            data: json_str.as_bytes().to_vec(),
         });
-
-        match decoder.preview() {
-            Ok(MessagePreview::EIP712(message)) => {
-                assert_eq!(message.domain.name, "Permit2");
-                assert_eq!(message.domain.chain_id, 1);
-                assert_eq!(message.domain.verifying_contract.to_lowercase(), "0x000000000022d473030f116ddee9f6b43ac78ba3");
-                assert_eq!(message.message.len(), 3);
-                assert_eq!(message.message[0].name, "details");
-
-                match &message.message[0].value {
-                    EIP712TypedValue::Struct { fields } => {
-                        assert_eq!(fields.len(), 4); // token, amount, expiration, nonce
-
-                        // 1.1 token (address)
-                        assert_eq!(fields[0].name, "token");
-                        match &fields[0].value {
-                            EIP712TypedValue::Address { value } => assert_eq!(value, "0xdAC17F958D2ee523a2206206994597C13D831ec7"),
-                            _ => panic!("Incorrect type for details.token"),
-                        }
-                        // 1.2 amount (uint160 - parsed as Uint256 for now)
-                        // We parse uint160 as Uint256 { value: String } because the JSON value is a string.
-                        assert_eq!(fields[1].name, "amount");
-                        match &fields[1].value {
-                            EIP712TypedValue::Uint256 { value } => assert_eq!(value, "1461501637330902918203684832716283019655932542975"),
-                            _ => panic!("Incorrect type for details.amount"),
-                        }
-                        // 1.3 expiration (uint48 - parsed as Uint256 for now)
-                        assert_eq!(fields[2].name, "expiration");
-                        match &fields[2].value {
-                            EIP712TypedValue::Uint256 { value } => assert_eq!(value, "1732780554"),
-                            _ => panic!("Incorrect type for details.expiration"),
-                        }
-                        // 1.4 nonce (uint48 - parsed as Uint256 for now)
-                        assert_eq!(fields[3].name, "nonce");
-                        match &fields[3].value {
-                            EIP712TypedValue::Uint256 { value } => assert_eq!(value, "0"),
-                            _ => panic!("Incorrect type for details.nonce"),
-                        }
-                    }
-                    _ => panic!("Incorrect type for details field"),
-                }
-
-                assert_eq!(message.message[1].name, "spender");
-                match &message.message[1].value {
-                    EIP712TypedValue::Address { value } => {
-                        assert_eq!(value.to_lowercase(), "0x3fc91a3afd70395cd496c647d5a6cc9d4b2b7fad");
-                    }
-                    _ => panic!("Expected spender field to be an Address"),
-                }
-
-                assert_eq!(message.message[2].name, "sigDeadline");
-                match &message.message[2].value {
-                    EIP712TypedValue::Uint256 { value } => {
-                        assert_eq!(value, "1730190354");
-                    }
-                    _ => panic!("Expected sigDeadline field to be a Uint256"),
-                }
-            }
-            Ok(_) => panic!("Expected EIP712 preview, got Text"),
-            Err(e) => panic!("Preview failed for EIP712: {:?}", e),
-        }
-
-        // Test get_result: Should just hex encode the input data for EIP712
-        let result_data = b"some_bytes_to_encode";
-        let result = decoder.get_result(result_data);
-
-        assert_eq!(result, hex::encode_prefixed(result_data));
+        let preview = decoder.preview().unwrap();
+        assert_eq!(
+            preview,
+            MessagePreview::EIP712(GemEIP712Message {
+                domain: EIP712Domain {
+                    name: "Seaport".to_string(),
+                    version: "1.1".to_string(),
+                    chain_id: 1,
+                    verifying_contract: "0x00000000006c3852cbEf3e08E8dF289169EdE581".to_string(),
+                },
+                message: vec![GemEIP712Section {
+                    name: "OrderComponents".to_string(),
+                    values: vec![
+                        GemEIP712Value {
+                            name: "offerer".to_string(),
+                            value: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266".to_string(),
+                        },
+                        GemEIP712Value {
+                            name: "zone".to_string(),
+                            value: "0x004C00500000aD104D7DBd00e3ae0A5C00560C00".to_string(),
+                        },
+                        GemEIP712Value {
+                            name: "offer".to_string(),
+                            value: "[...]".to_string(),
+                        },
+                        GemEIP712Value {
+                            name: "startTime".to_string(),
+                            value: "1658645591".to_string(),
+                        },
+                        GemEIP712Value {
+                            name: "endTime".to_string(),
+                            value: "1659250386".to_string(),
+                        },
+                        GemEIP712Value {
+                            name: "zoneHash".to_string(),
+                            value: "0x0000000000000000000000000000000000000000000000000000000000000000".to_string(),
+                        },
+                        GemEIP712Value {
+                            name: "salt".to_string(),
+                            value: "16178208897136618".to_string(),
+                        },
+                        GemEIP712Value {
+                            name: "conduitKey".to_string(),
+                            value: "0x0000007b02230091a7ed01230072f7006a004d60a8d4e71d599b8104250f0000".to_string(),
+                        },
+                        GemEIP712Value {
+                            name: "counter".to_string(),
+                            value: "0".to_string(),
+                        },
+                    ],
+                }],
+            })
+        );
     }
 }
