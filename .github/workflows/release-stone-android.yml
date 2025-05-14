@@ -43,10 +43,7 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
         with:
-          packages: |
-            build-tools;35.0.0
-            platforms;android-35
-            platform-tools
+          packages: 'build-tools;36.0.0 platforms;android-36 ndk;28.1.13356709'
 
       - uses: actions/cache@v3
         with:
@@ -61,9 +58,6 @@ jobs:
 
       - name: Install just
         run: sudo apt install just
-
-      - name: Setup NDK
-        run: just --unstable gemstone install-ndk
 
       - name: Build Android Bindings
         run: |

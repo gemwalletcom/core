@@ -48,7 +48,7 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
         with:
-          packages: 'build-tools;36.0.0 platforms;android-36 platform-tools'
+          packages: 'build-tools;36.0.0 platforms;android-36 ndk;28.1.13356709'
 
       - name: Restore cargo cache
         uses: Swatinem/rust-cache@v2
@@ -58,9 +58,6 @@ jobs:
 
       - name: Install just
         run: sudo apt install just
-
-      - name: Setup NDK
-        run: just --unstable install-ndk
 
       - name: Setup Gradle
         uses: gradle/gradle-build-action@v3
