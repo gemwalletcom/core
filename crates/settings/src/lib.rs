@@ -16,6 +16,7 @@ pub struct Settings {
     pub mercuryo: Mercuryo,
     pub ramp: Ramp,
     pub banxa: Banxa,
+    pub paybis: Paybis,
     pub coingecko: CoinGecko,
     pub pricer: Pricer,
     pub charter: Charter,
@@ -107,6 +108,13 @@ pub struct Ramp {
 pub struct Banxa {
     pub url: String,
     pub key: Key,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[allow(unused)]
+pub struct Paybis {
+    pub url: String,
+    pub key: KeyPublic,
 }
 
 #[derive(Debug, Deserialize, Clone)]

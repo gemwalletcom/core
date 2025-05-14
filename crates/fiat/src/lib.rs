@@ -5,7 +5,7 @@ pub use provider::FiatProvider;
 pub mod ip_check_client;
 pub mod providers;
 
-use crate::providers::{BanxaClient, MercuryoClient, MoonPayClient, RampClient, TransakClient};
+use crate::providers::{BanxaClient, MercuryoClient, MoonPayClient, PaybisClient, RampClient, TransakClient};
 use settings::Settings;
 pub mod error;
 
@@ -26,8 +26,16 @@ impl FiatProviderFactory {
         );
         let transak = TransakClient::new(request_client.clone(), settings.transak.key.public);
         let banxa = BanxaClient::new(request_client.clone(), settings.banxa.url, settings.banxa.key.public, settings.banxa.key.secret);
+        let paybis = PaybisClient::new(request_client.clone(), settings.paybis.url, settings.paybis.key.secret.clone());
 
-        vec![Box::new(moonpay), Box::new(ramp), Box::new(mercuryo), Box::new(transak), Box::new(banxa)]
+        vec![
+            Box::new(moonpay),
+            Box::new(ramp),
+            Box::new(mercuryo),
+            Box::new(transak),
+            Box::new(banxa),
+            Box::new(paybis),
+        ]
     }
 
     pub fn new_ip_check_client(settings: Settings) -> IPCheckClient {

@@ -32,6 +32,11 @@ banxa:
   key:
     public: ""
     secret: ""
+paybis:
+  url: "https://widget-api.sandbox.paybis.com"
+  key:
+    secret: ""
+
 pricer:
   timer: 60
   outdated: 604800
