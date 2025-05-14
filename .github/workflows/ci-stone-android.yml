@@ -48,10 +48,7 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
         with:
-          packages: |
-            build-tools;36.0.0
-            platforms;android-36
-            platform-tools
+          packages: 'build-tools;36.0.0 platforms;android-36 platform-tools'
 
       - name: Restore cargo cache
         uses: Swatinem/rust-cache@v2
