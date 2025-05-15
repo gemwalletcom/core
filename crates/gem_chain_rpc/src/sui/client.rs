@@ -42,7 +42,7 @@ impl SuiClient {
     pub fn get_chain(&self) -> Chain {
         Chain::Sui
     }
-    
+
     fn map_transaction(&self, transaction: super::model::Digest, block_number: i64) -> Option<primitives::Transaction> {
         let balance_changes = transaction.balance_changes.unwrap_or_default();
         let hash = transaction.digest.clone();
@@ -174,9 +174,9 @@ impl SuiClient {
             .into_iter()
             .flat_map(|x| self.map_transaction(x, block_number))
             .collect::<Vec<primitives::Transaction>>();
-        return Ok(transactions);
+        Ok(transactions)
     }
-    
+
     pub async fn get_token_data(&self, token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
         let metadata: CoinMetadata = self.client.request("suix_getCoinMetadata", vec![token_id.clone()]).await?;
 

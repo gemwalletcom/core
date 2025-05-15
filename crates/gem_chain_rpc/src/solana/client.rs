@@ -274,7 +274,7 @@ impl SolanaClient {
         let meta = decode_metadata(&value.data[0]).map_err(|_| anyhow::anyhow!("Failed to decode metadata"))?;
         Ok(meta)
     }
-    
+
     pub fn get_chain(&self) -> Chain {
         Chain::Solana
     }
@@ -283,7 +283,7 @@ impl SolanaClient {
         let block: i64 = self.client.request("getSlot", rpc_params![]).await?;
         Ok(block)
     }
-    
+
     pub async fn request_block(&self, params: Vec<Value>) -> Result<BlockTransactions, ClientError> {
         self.client.request("getBlock", params).await
     }
@@ -292,40 +292,13 @@ impl SolanaClient {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use gem_solana::jsonrpc::JsonRpcResult;
-    use serde::Deserialize;
-    
-    #[derive(Debug, Deserialize)]
-    struct SolanaParsedTokenInfo {
-        result: ValueResult<ParsedTokenAccount>,
-    }
-    
-    #[derive(Debug, Deserialize)]
-    struct ParsedTokenAccount {
-        value: TokenAccount,
-    }
-    
-    #[derive(Debug, Deserialize)]
-    struct TokenAccount {
-        data: TokenAccountData,
-    }
-    
-    #[derive(Debug, Deserialize)]
-    struct TokenAccountData {
-        parsed: TokenAccountParsed,
-    }
-    
-    #[derive(Debug, Deserialize)]
-    struct TokenAccountParsed {
-        info: TokenInfo,
-    }
-    
-    #[derive(Debug, Deserialize)]
-    struct TokenInfo {
-        decimals: u8,
-        mint_authority: String,
-    }
+    use gem_solana::jsonrpc::SolanaParsedTokenInfo;
+    use serde::{Deserialize, Serialize};
 
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    struct JsonRpcResult<T> {
+        result: T,
+    }
     #[test]
     fn test_decode_token_data() {
         let pyusd_file = concat!(env!("CARGO_MANIFEST_DIR"), "/testdata/solana/pyusd_mint.json");
