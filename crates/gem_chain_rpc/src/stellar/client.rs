@@ -1,7 +1,6 @@
 use std::error::Error;
 
-use crate::{ChainBlockProvider, ChainTokenDataProvider};
-use async_trait::async_trait;
+
 
 use primitives::{Asset, Chain};
 use reqwest_middleware::ClientWithMiddleware;
@@ -94,32 +93,16 @@ impl StellarClient {
     }
 }
 
-#[async_trait]
-impl ChainBlockProvider for StellarClient {
-    fn get_chain(&self) -> Chain {
-        Chain::Polkadot
+impl StellarClient {
+    pub fn get_chain(&self) -> Chain {
+        Chain::Stellar
     }
-
-    async fn get_latest_block(&self) -> Result<i64, Box<dyn Error + Send + Sync>> {
+    
+    pub async fn get_latest_block(&self) -> Result<i64, Box<dyn Error + Send + Sync>> {
         Ok(self.get_node_status().await?.history_latest_ledger)
     }
-
-    async fn get_transactions(&self, block_number: i64) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Send + Sync>> {
-        let block = self.get_block(block_number).await?;
-        let transactions = self
-            .get_block_payments_all(block_number)
-            .await?
-            .iter()
-            .flat_map(|x| self.map_transaction(block.clone(), x.clone()))
-            .collect::<Vec<primitives::Transaction>>();
-
-        Ok(transactions)
-    }
-}
-
-#[async_trait]
-impl ChainTokenDataProvider for StellarClient {
-    async fn get_token_data(&self, _token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
+    
+    pub async fn get_token_data(&self, _token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
         unimplemented!()
     }
 }

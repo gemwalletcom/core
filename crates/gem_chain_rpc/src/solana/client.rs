@@ -1,4 +1,3 @@
-use async_trait::async_trait;
 use chrono::Utc;
 use jsonrpsee::{
     core::{client::ClientT, params::BatchRequestBuilder, ClientError},
@@ -6,29 +5,24 @@ use jsonrpsee::{
     rpc_params,
 };
 use serde::de::DeserializeOwned;
-use serde_json::json;
+use serde_json::{json, Value};
 use std::{error::Error, fmt::Debug, str::FromStr};
 
 use super::model::{BlockTransaction, BlockTransactions, InstructionParsed};
-use crate::{ChainBlockProvider, ChainTokenDataProvider};
 use gem_solana::{
-    jsonrpc::{AccountData, SolanaParsedTokenInfo, ValueResult},
+    jsonrpc::{AccountData, ValueResult},
     metaplex::{decode_metadata, metadata::Metadata},
     pubkey::Pubkey,
     TOKEN_PROGRAM, WSOL_TOKEN_ADDRESS,
 };
-use primitives::{chain::Chain, Asset, AssetId, AssetType, Transaction, TransactionState, TransactionSwapMetadata, TransactionType};
+use primitives::{chain::Chain, AssetId, Transaction, TransactionState, TransactionSwapMetadata, TransactionType};
 
 pub struct SolanaClient {
     client: HttpClient,
 }
 
-const CLEANUP_BLOCK_ERROR: i32 = -32001;
-const MISSING_SLOT_ERROR: i32 = -32007;
-const MISSING_OR_SKIPPED_SLOT_ERROR: i32 = -32009;
-const NOT_AVAILABLE_SLOT_ERROR: i32 = -32004;
-const SYSTEM_PROGRAM_ID: &str = "11111111111111111111111111111111";
-const JUPITER_PROGRAM_ID: &str = "JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4";
+pub const SYSTEM_PROGRAM_ID: &str = "11111111111111111111111111111111";
+pub const JUPITER_PROGRAM_ID: &str = "JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4";
 
 impl SolanaClient {
     pub fn new(url: &str) -> Self {
@@ -40,7 +34,7 @@ impl SolanaClient {
         Self { client }
     }
 
-    fn map_transaction(&self, transaction: &BlockTransaction, block_number: i64) -> Option<Transaction> {
+    pub fn map_transaction(&self, transaction: &BlockTransaction, block_number: i64) -> Option<primitives::Transaction> {
         let account_keys = transaction
             .transaction
             .message
@@ -280,81 +274,56 @@ impl SolanaClient {
         let meta = decode_metadata(&value.data[0]).map_err(|_| anyhow::anyhow!("Failed to decode metadata"))?;
         Ok(meta)
     }
-}
-
-#[async_trait]
-impl ChainBlockProvider for SolanaClient {
-    fn get_chain(&self) -> Chain {
+    
+    pub fn get_chain(&self) -> Chain {
         Chain::Solana
     }
 
-    async fn get_latest_block(&self) -> Result<i64, Box<dyn Error + Send + Sync>> {
+    pub async fn get_latest_block(&self) -> Result<i64, Box<dyn Error + Send + Sync>> {
         let block: i64 = self.client.request("getSlot", rpc_params![]).await?;
         Ok(block)
     }
-
-    async fn get_transactions(&self, block_number: i64) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
-        let params = vec![
-            json!(block_number),
-            json!({
-                "encoding": "jsonParsed",
-                "maxSupportedTransactionVersion": 0,
-                "transactionDetails": "full",
-                "rewards": false
-            }),
-        ];
-        let block: Result<BlockTransactions, ClientError> = self.client.request("getBlock", params).await;
-        match block {
-            Ok(block) => {
-                let transactions = block
-                    .transactions
-                    .into_iter()
-                    .flat_map(|x| self.map_transaction(&x, block_number))
-                    .collect::<Vec<Transaction>>();
-                Ok(transactions)
-            }
-            Err(err) => match err {
-                ClientError::Call(err) => {
-                    let errors = [MISSING_SLOT_ERROR, MISSING_OR_SKIPPED_SLOT_ERROR, NOT_AVAILABLE_SLOT_ERROR, CLEANUP_BLOCK_ERROR];
-                    if errors.contains(&err.code()) {
-                        return Ok(vec![]);
-                    } else {
-                        return Err(Box::new(err));
-                    }
-                }
-                _ => return Err(Box::new(err)),
-            },
-        }
-    }
-}
-
-#[async_trait]
-impl ChainTokenDataProvider for SolanaClient {
-    async fn get_token_data(&self, token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
-        let token_info: SolanaParsedTokenInfo = self.get_account_info(&token_id, "jsonParsed").await?;
-        let meta = self.get_metaplex_data(&token_id).await?;
-        let name = meta.data.name.trim_matches(char::from(0)).to_string();
-        let symbol = meta.data.symbol.trim_matches(char::from(0)).to_string();
-        let decimals = token_info.value.data.parsed.info.decimals;
-
-        Ok(Asset::new(
-            AssetId::from_token(self.get_chain(), &token_id),
-            name,
-            symbol,
-            decimals,
-            AssetType::SPL,
-        ))
+    
+    pub async fn request_block(&self, params: Vec<Value>) -> Result<BlockTransactions, ClientError> {
+        self.client.request("getBlock", params).await
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use serde::{Deserialize, Serialize};
-
-    #[derive(Debug, Clone, Serialize, Deserialize)]
-    struct JsonRpcResult<T> {
-        result: T,
+    use gem_solana::jsonrpc::JsonRpcResult;
+    use serde::Deserialize;
+    
+    #[derive(Debug, Deserialize)]
+    struct SolanaParsedTokenInfo {
+        result: ValueResult<ParsedTokenAccount>,
+    }
+    
+    #[derive(Debug, Deserialize)]
+    struct ParsedTokenAccount {
+        value: TokenAccount,
+    }
+    
+    #[derive(Debug, Deserialize)]
+    struct TokenAccount {
+        data: TokenAccountData,
+    }
+    
+    #[derive(Debug, Deserialize)]
+    struct TokenAccountData {
+        parsed: TokenAccountParsed,
+    }
+    
+    #[derive(Debug, Deserialize)]
+    struct TokenAccountParsed {
+        info: TokenInfo,
+    }
+    
+    #[derive(Debug, Deserialize)]
+    struct TokenInfo {
+        decimals: u8,
+        mint_authority: String,
     }
 
     #[test]

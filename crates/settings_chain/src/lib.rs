@@ -1,8 +1,13 @@
 use core::str;
 
 use gem_chain_rpc::{
-    algorand::provider::AlgorandProvider, algorand::client::AlgorandClient, AptosClient, BitcoinClient, CardanoClient, ChainProvider, CosmosClient, EthereumClient, NearClient, PolkadotClient, SolanaClient,
-    StellarClient, SuiClient, TonClient, TronClient, XRPClient,
+    algorand::client::AlgorandClient, algorand::provider::AlgorandProvider, aptos::client::AptosClient, aptos::provider::AptosProvider,
+    bitcoin::client::BitcoinClient, bitcoin::provider::BitcoinProvider, cardano::client::CardanoClient, cardano::provider::CardanoProvider,
+    cosmos::client::CosmosClient, cosmos::provider::CosmosProvider, ethereum::client::EthereumClient, ethereum::provider::EthereumProvider,
+    near::client::NearClient, near::provider::NearProvider, polkadot::client::PolkadotClient, polkadot::provider::PolkadotProvider,
+    solana::client::SolanaClient, solana::provider::SolanaProvider, stellar::client::StellarClient, stellar::provider::StellarProvider, sui::client::SuiClient,
+    sui::provider::SuiProvider, ton::client::TonClient, ton::provider::TonProvider, tron::client::TronClient, tron::provider::TronProvider,
+    xrp::client::XRPClient, xrp::provider::XRPProvider, ChainProvider,
 };
 use primitives::{Asset, Chain};
 use reqwest_middleware::ClientBuilder;
@@ -30,7 +35,7 @@ impl ProviderFactory {
         let url = url.to_string();
 
         match chain {
-            Chain::Bitcoin | Chain::BitcoinCash | Chain::Litecoin | Chain::Doge => Box::new(BitcoinClient::new(chain, client, url)),
+            Chain::Bitcoin | Chain::BitcoinCash | Chain::Litecoin | Chain::Doge => Box::new(BitcoinProvider::new(BitcoinClient::new(chain, client, url))),
             Chain::Ethereum
             | Chain::SmartChain
             | Chain::Polygon
@@ -54,24 +59,21 @@ impl ProviderFactory {
             | Chain::Ink
             | Chain::Unichain
             | Chain::Hyperliquid
-            | Chain::Monad => Box::new(EthereumClient::new(chain, url)),
+            | Chain::Monad => Box::new(EthereumProvider::new(EthereumClient::new(chain, url))),
             Chain::Cosmos | Chain::Osmosis | Chain::Celestia | Chain::Thorchain | Chain::Injective | Chain::Noble | Chain::Sei => {
-                Box::new(CosmosClient::new(chain, client, url))
+                Box::new(CosmosProvider::new(CosmosClient::new(chain, client, url)))
             }
-            Chain::Solana => Box::new(SolanaClient::new(url.as_str())),
-            Chain::Ton => Box::new(TonClient::new(client, url)),
-            Chain::Tron => Box::new(TronClient::new(client, url)),
-            Chain::Aptos => Box::new(AptosClient::new(client, url)),
-            Chain::Sui => Box::new(SuiClient::new(url)),
-            Chain::Xrp => Box::new(XRPClient::new(client, url)),
-            Chain::Near => Box::new(NearClient::new(url)),
-            Chain::Cardano => Box::new(CardanoClient::new(client, url)),
-            Chain::Algorand => {
-                let algorand_client = AlgorandClient::new(client, url);
-                Box::new(AlgorandProvider::new(algorand_client))
-            },
-            Chain::Stellar => Box::new(StellarClient::new(client, url)),
-            Chain::Polkadot => Box::new(PolkadotClient::new(client, url)),
+            Chain::Solana => Box::new(SolanaProvider::new(SolanaClient::new(url.as_str()))),
+            Chain::Ton => Box::new(TonProvider::new(TonClient::new(client, url))),
+            Chain::Tron => Box::new(TronProvider::new(TronClient::new(client, url))),
+            Chain::Aptos => Box::new(AptosProvider::new(AptosClient::new(client, url))),
+            Chain::Sui => Box::new(SuiProvider::new(SuiClient::new(url))),
+            Chain::Xrp => Box::new(XRPProvider::new(XRPClient::new(client, url))),
+            Chain::Near => Box::new(NearProvider::new(NearClient::new(url))),
+            Chain::Cardano => Box::new(CardanoProvider::new(CardanoClient::new(client, url))),
+            Chain::Algorand => Box::new(AlgorandProvider::new(AlgorandClient::new(client, url))),
+            Chain::Stellar => Box::new(StellarProvider::new(StellarClient::new(client, url))),
+            Chain::Polkadot => Box::new(PolkadotProvider::new(PolkadotClient::new(client, url))),
         }
     }
 

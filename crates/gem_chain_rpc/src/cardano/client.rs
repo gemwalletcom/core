@@ -1,9 +1,7 @@
 use std::error::Error;
 
-use crate::{ChainBlockProvider, ChainTokenDataProvider};
-use async_trait::async_trait;
+use primitives::{chain::Chain, transaction_utxo::TransactionInput, TransactionDirection, TransactionType};
 use chrono::Utc;
-use primitives::{chain::Chain, transaction_utxo::TransactionInput, Asset, TransactionDirection, TransactionType};
 
 use reqwest_middleware::ClientWithMiddleware;
 
@@ -24,7 +22,7 @@ impl CardanoClient {
         }
     }
 
-    async fn get_tip_number(&self) -> Result<i64, Box<dyn Error + Send + Sync>> {
+    pub async fn get_tip_number(&self) -> Result<i64, Box<dyn Error + Send + Sync>> {
         let json = serde_json::json!({
             "query": "{ cardano { tip { number } } }"
         });
@@ -104,31 +102,16 @@ impl CardanoClient {
     }
 }
 
-#[async_trait]
-impl ChainBlockProvider for CardanoClient {
-    fn get_chain(&self) -> Chain {
+impl CardanoClient {
+    pub fn get_chain(&self) -> Chain {
         self.chain
     }
 
-    async fn get_latest_block(&self) -> Result<i64, Box<dyn Error + Send + Sync>> {
+    pub async fn get_latest_block(&self) -> Result<i64, Box<dyn Error + Send + Sync>> {
         Ok(self.get_tip_number().await?)
     }
 
-    async fn get_transactions(&self, block_number: i64) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Send + Sync>> {
-        let block = self.get_block(block_number).await?;
-        let transactions = block
-            .transactions
-            .clone()
-            .into_iter()
-            .flat_map(|x| Self::map_transaction(self.chain, &block, &x))
-            .collect::<Vec<primitives::Transaction>>();
-        Ok(transactions)
-    }
-}
-
-#[async_trait]
-impl ChainTokenDataProvider for CardanoClient {
-    async fn get_token_data(&self, _token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
+    pub async fn get_token_data(&self, _token_id: String) -> Result<primitives::Asset, Box<dyn Error + Send + Sync>> {
         unimplemented!()
     }
 }

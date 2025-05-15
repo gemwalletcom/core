@@ -1,7 +1,6 @@
 use std::{error::Error, str::FromStr};
 
-use crate::{sui::model::Digests, ChainBlockProvider, ChainTokenDataProvider};
-use async_trait::async_trait;
+use crate::sui::model::Digests;
 use chrono::Utc;
 use jsonrpsee::{
     core::client::ClientT,
@@ -40,6 +39,10 @@ impl SuiClient {
         computation_cost + storage_cost - storage_rebate
     }
 
+    pub fn get_chain(&self) -> Chain {
+        Chain::Sui
+    }
+    
     fn map_transaction(&self, transaction: super::model::Digest, block_number: i64) -> Option<primitives::Transaction> {
         let balance_changes = transaction.balance_changes.unwrap_or_default();
         let hash = transaction.digest.clone();
@@ -141,20 +144,13 @@ impl SuiClient {
 
         None
     }
-}
 
-#[async_trait]
-impl ChainBlockProvider for SuiClient {
-    fn get_chain(&self) -> Chain {
-        Chain::Sui
-    }
-
-    async fn get_latest_block(&self) -> Result<i64, Box<dyn Error + Send + Sync>> {
+    pub async fn get_latest_block(&self) -> Result<i64, Box<dyn Error + Send + Sync>> {
         let block: String = self.client.request("sui_getLatestCheckpointSequenceNumber", rpc_params![]).await?;
         Ok(block.parse::<i64>()?)
     }
 
-    async fn get_transactions(&self, block_number: i64) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
+    pub async fn get_transactions(&self, block_number: i64) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
         let params = vec![
             json!({
                 "filter": {
@@ -180,11 +176,8 @@ impl ChainBlockProvider for SuiClient {
             .collect::<Vec<primitives::Transaction>>();
         return Ok(transactions);
     }
-}
-
-#[async_trait]
-impl ChainTokenDataProvider for SuiClient {
-    async fn get_token_data(&self, token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
+    
+    pub async fn get_token_data(&self, token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
         let metadata: CoinMetadata = self.client.request("suix_getCoinMetadata", vec![token_id.clone()]).await?;
 
         Ok(Asset::new(

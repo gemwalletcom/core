@@ -1,7 +1,5 @@
 use std::error::Error;
 
-use crate::{ChainBlockProvider, ChainTokenDataProvider};
-use async_trait::async_trait;
 use chrono::Utc;
 use gem_ton::address::TonAddress;
 use primitives::{chain::Chain, Asset, AssetId, AssetType, TransactionState, TransactionType};
@@ -102,20 +100,17 @@ impl TonClient {
         let url = format!("{}/v2/jettons/{}", self.url, token_id);
         Ok(self.client.get(url).send().await?.json::<JettonInfo>().await?)
     }
-}
 
-#[async_trait]
-impl ChainBlockProvider for TonClient {
-    fn get_chain(&self) -> Chain {
+    pub fn get_chain(&self) -> Chain {
         Chain::Ton
     }
 
-    async fn get_latest_block(&self) -> Result<i64, Box<dyn Error + Send + Sync>> {
+    pub async fn get_latest_block(&self) -> Result<i64, Box<dyn Error + Send + Sync>> {
         let chainhead = self.get_master_head().await?;
         Ok(chainhead.seqno)
     }
 
-    async fn get_transactions(&self, block: i64) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Send + Sync>> {
+    pub async fn get_transactions(&self, block: i64) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Send + Sync>> {
         // let shards = self.get_blocks(block).await?.blocks;
 
         // let futures = shards.into_iter().map(|shard| {
@@ -142,11 +137,8 @@ impl ChainBlockProvider for TonClient {
 
         Ok(transactions)
     }
-}
-
-#[async_trait]
-impl ChainTokenDataProvider for TonClient {
-    async fn get_token_data(&self, token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
+    
+    pub async fn get_token_data(&self, token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
         let token_info = self.get_token_info(token_id.clone()).await?;
         let decimals = token_info.metadata.decimals.parse::<i32>().map_err(|_| "Invalid decimals")?;
         Ok(Asset::new(

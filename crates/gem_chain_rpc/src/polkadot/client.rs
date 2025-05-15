@@ -1,7 +1,6 @@
 use std::error::Error;
 
-use crate::{ChainBlockProvider, ChainTokenDataProvider};
-use async_trait::async_trait;
+
 
 use chrono::Utc;
 use primitives::{Asset, Chain};
@@ -39,9 +38,10 @@ impl PolkadotClient {
         } else {
             primitives::TransactionState::Failed
         };
+        let chain = Chain::Polkadot;
         Some(primitives::Transaction::new(
             transaction.hash.clone(),
-            self.get_chain().as_asset_id(),
+            chain.as_asset_id(),
             from_address,
             to_address,
             None,
@@ -50,7 +50,7 @@ impl PolkadotClient {
             block.number,
             transaction.nonce.unwrap_or_default().clone(),
             transaction.info.partial_fee.unwrap_or("0".to_string()),
-            self.get_chain().as_asset_id(),
+            chain.as_asset_id(),
             value,
             None,
             None,
@@ -85,39 +85,12 @@ impl PolkadotClient {
             _ => vec![],
         }
     }
-}
-
-#[async_trait]
-impl ChainBlockProvider for PolkadotClient {
-    fn get_chain(&self) -> Chain {
+    
+    pub fn get_chain(&self) -> Chain {
         Chain::Polkadot
     }
-
-    async fn get_latest_block(&self) -> Result<i64, Box<dyn Error + Send + Sync>> {
-        self.get_block_header("head")
-            .await?
-            .number
-            .parse()
-            .map_err(|_| "Failed to parse block number".into())
-    }
-
-    async fn get_transactions(&self, block_number: i64) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Send + Sync>> {
-        let block = self.get_block(block_number).await?;
-
-        let transactions = block
-            .extrinsics
-            .iter()
-            .flat_map(|x| self.map_transaction(block.clone(), x.clone()))
-            .flatten()
-            .collect::<Vec<primitives::Transaction>>();
-
-        Ok(transactions)
-    }
-}
-
-#[async_trait]
-impl ChainTokenDataProvider for PolkadotClient {
-    async fn get_token_data(&self, _token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
+    
+    pub async fn get_token_data(&self, _token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
         unimplemented!()
     }
 }

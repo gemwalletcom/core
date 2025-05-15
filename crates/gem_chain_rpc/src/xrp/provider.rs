@@ -1,0 +1,101 @@
+use std::error::Error;
+
+use crate::{ChainBlockProvider, ChainTokenDataProvider};
+use async_trait::async_trait;
+use chrono::DateTime;
+use primitives::{chain::Chain, Asset, AssetId, AssetType, TransactionState, TransactionType};
+
+use super::client::XRPClient;
+use super::model::Transaction;
+
+const RESULT_SUCCESS: &str = "tesSUCCESS";
+const TRANSACTION_TYPE_PAYMENT: &str = "Payment";
+
+pub struct XRPProvider {
+    client: XRPClient,
+}
+
+impl XRPProvider {
+    pub fn new(client: XRPClient) -> Self {
+        Self { client }
+    }
+
+    pub fn map_transaction(&self, transaction: Transaction, block_number: i64, block_timestamp: i64) -> Option<primitives::Transaction> {
+        if transaction.transaction_type == TRANSACTION_TYPE_PAYMENT && transaction.memos.unwrap_or_default().is_empty() {
+            let memo = transaction.destination_tag.map(|x| x.to_string());
+            let value = transaction.amount.clone()?.as_value_string()?;
+            let token_id = transaction.amount?.token_id();
+            let asset_id = AssetId::from(self.get_chain(), token_id);
+            let created_at = DateTime::from_timestamp(block_timestamp, 0)?;
+
+            let state = if transaction.meta.result == RESULT_SUCCESS {
+                TransactionState::Confirmed
+            } else {
+                TransactionState::Failed
+            };
+            // add check for delivered amount, for success it should be equal to amount
+            let transaction = primitives::Transaction::new(
+                transaction.hash,
+                asset_id.clone(),
+                transaction.account.unwrap_or_default(),
+                transaction.destination.unwrap_or_default(),
+                None,
+                TransactionType::Transfer,
+                state,
+                block_number.to_string(),
+                transaction.sequence.to_string(),
+                transaction.fee.unwrap_or_default(),
+                self.get_chain().as_asset_id(),
+                value,
+                memo,
+                None,
+                created_at,
+            );
+            return Some(transaction);
+        }
+        None
+    }
+}
+
+#[async_trait]
+impl ChainBlockProvider for XRPProvider {
+    fn get_chain(&self) -> Chain {
+        Chain::Xrp
+    }
+
+    async fn get_latest_block(&self) -> Result<i64, Box<dyn Error + Send + Sync>> {
+        let ledger = self.client.get_ledger_current().await?;
+        Ok(ledger.ledger_current_index)
+    }
+
+    async fn get_transactions(&self, block_number: i64) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Send + Sync>> {
+        let block = self.client.get_block_transactions(block_number).await?;
+        let block_timestamp = 946684800 + block.close_time;
+        let transactions = block.transactions;
+
+        let transactions = transactions
+            .into_iter()
+            .flat_map(|x| self.map_transaction(x, block_number, block_timestamp))
+            .collect::<Vec<primitives::Transaction>>();
+        Ok(transactions)
+    }
+}
+
+#[async_trait]
+impl ChainTokenDataProvider for XRPProvider {
+    async fn get_token_data(&self, token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
+        let response = self.client.get_account_objects(token_id.clone()).await?;
+        let account = response.account_objects.first().ok_or("No account objects found for token_id")?;
+
+        let symbol = String::from_utf8(hex::decode(&account.low_limit.currency)?.into_iter().filter(|&b| b != 0).collect())
+            .map_err(|_| "Failed to convert currency bytes to string")?;
+
+        Ok(Asset::new(
+            AssetId::from_token(self.get_chain(), &token_id),
+            symbol.clone(),
+            symbol.clone(),
+            15,
+            AssetType::TOKEN,
+        ))
+    }
+}

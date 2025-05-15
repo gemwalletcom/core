@@ -1,7 +1,5 @@
 use std::error::Error;
 
-use crate::{ChainBlockProvider, ChainTokenDataProvider};
-use async_trait::async_trait;
 use chrono::Utc;
 use num_bigint::BigUint;
 use num_traits::Num;
@@ -119,35 +117,18 @@ impl TronClient {
     }
 }
 
-#[async_trait]
-impl ChainBlockProvider for TronClient {
-    fn get_chain(&self) -> Chain {
+impl TronClient {
+    pub fn get_chain(&self) -> Chain {
         Chain::Tron
     }
 
-    async fn get_latest_block(&self) -> Result<i64, Box<dyn Error + Send + Sync>> {
+    pub async fn get_latest_block(&self) -> Result<i64, Box<dyn Error + Send + Sync>> {
         let block = self.get_block().await?;
         Ok(block.block_header.raw_data.number)
     }
-
-    async fn get_transactions(&self, block_number: i64) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Send + Sync>> {
-        let block = self.get_block_tranactions(block_number).await?;
-        let transactions = block.transactions.unwrap_or_default();
-        let reciepts = self.get_block_tranactions_reciepts(block_number).await?;
-
-        let transactions = transactions
-            .into_iter()
-            .zip(reciepts.iter())
-            .filter_map(|(transaction, receipt)| self.map_transaction(transaction, receipt.clone()))
-            .collect::<Vec<primitives::Transaction>>();
-
-        Ok(transactions)
-    }
-}
-
-#[async_trait]
-impl ChainTokenDataProvider for TronClient {
-    async fn get_token_data(&self, _token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
+    
+    pub async fn get_token_data(&self, _token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
         unimplemented!()
     }
 }
+
