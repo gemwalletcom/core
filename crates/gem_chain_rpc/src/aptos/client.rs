@@ -107,14 +107,14 @@ impl ChainBlockProvider for AptosClient {
 
 #[async_trait]
 impl ChainTokenDataProvider for AptosClient {
-    async fn get_token_data(&self, chain: Chain, token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
+    async fn get_token_data(&self, token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
         let parts: Vec<&str> = token_id.split("::").collect();
         let address = parts.first().ok_or("Invalid token id")?;
         let resource = format!("0x1::coin::CoinInfo<{}>", token_id);
         let coin_info = self.get_resource::<ResourceCoinInfo>(address.to_string(), resource).await?.data;
 
         Ok(Asset::new(
-            AssetId::from_token(chain, &token_id),
+            AssetId::from_token(self.get_chain(), &token_id),
             coin_info.name,
             coin_info.symbol,
             coin_info.decimals,

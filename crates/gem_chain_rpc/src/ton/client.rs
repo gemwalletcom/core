@@ -146,11 +146,11 @@ impl ChainBlockProvider for TonClient {
 
 #[async_trait]
 impl ChainTokenDataProvider for TonClient {
-    async fn get_token_data(&self, chain: Chain, token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
+    async fn get_token_data(&self, token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
         let token_info = self.get_token_info(token_id.clone()).await?;
         let decimals = token_info.metadata.decimals.parse::<i32>().map_err(|_| "Invalid decimals")?;
         Ok(Asset::new(
-            AssetId::from_token(chain, &token_id),
+            AssetId::from_token(self.get_chain(), &token_id),
             token_info.metadata.name,
             token_info.metadata.symbol,
             decimals,

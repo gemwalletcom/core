@@ -117,7 +117,7 @@ impl ChainBlockProvider for PolkadotClient {
 
 #[async_trait]
 impl ChainTokenDataProvider for PolkadotClient {
-    async fn get_token_data(&self, _chain: Chain, _token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
+    async fn get_token_data(&self, _token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
         unimplemented!()
     }
 }

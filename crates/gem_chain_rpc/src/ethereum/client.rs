@@ -241,7 +241,7 @@ impl ChainBlockProvider for EthereumClient {
 
 #[async_trait]
 impl ChainTokenDataProvider for EthereumClient {
-    async fn get_token_data(&self, chain: Chain, token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
+    async fn get_token_data(&self, token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
         let name: String = self.eth_call(token_id.as_str(), FUNCTION_ERC20_NAME).await?;
         let symbol: String = self.eth_call(token_id.as_str(), FUNCTION_ERC20_SYMBOL).await?;
         let decimals: String = self.eth_call(token_id.as_str(), FUNCTION_ERC20_DECIMALS).await?;
@@ -251,11 +251,11 @@ impl ChainTokenDataProvider for EthereumClient {
         let decimals: u8 = erc20::decimalsCall::abi_decode_returns(&Vec::from_hex(decimals)?).unwrap();
 
         Ok(Asset::new(
-            AssetId::from_token(chain, &token_id),
+            AssetId::from_token(self.get_chain(), &token_id),
             name,
             symbol,
             decimals as i32,
-            chain.default_asset_type().unwrap(),
+            self.get_chain().default_asset_type().unwrap(),
         ))
     }
 }

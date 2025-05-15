@@ -330,14 +330,20 @@ impl ChainBlockProvider for SolanaClient {
 
 #[async_trait]
 impl ChainTokenDataProvider for SolanaClient {
-    async fn get_token_data(&self, chain: Chain, token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
+    async fn get_token_data(&self, token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
         let token_info: SolanaParsedTokenInfo = self.get_account_info(&token_id, "jsonParsed").await?;
         let meta = self.get_metaplex_data(&token_id).await?;
         let name = meta.data.name.trim_matches(char::from(0)).to_string();
         let symbol = meta.data.symbol.trim_matches(char::from(0)).to_string();
         let decimals = token_info.value.data.parsed.info.decimals;
 
-        Ok(Asset::new(AssetId::from_token(chain, &token_id), name, symbol, decimals, AssetType::SPL))
+        Ok(Asset::new(
+            AssetId::from_token(self.get_chain(), &token_id),
+            name,
+            symbol,
+            decimals,
+            AssetType::SPL,
+        ))
     }
 }
 

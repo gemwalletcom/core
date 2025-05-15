@@ -3,11 +3,11 @@ use std::error::Error;
 use crate::{ChainBlockProvider, ChainTokenDataProvider};
 use async_trait::async_trait;
 use chrono::DateTime;
-use primitives::{chain::Chain, Asset, AssetId, TransactionState, TransactionType};
+use primitives::{chain::Chain, Asset, AssetId, AssetType, TransactionState, TransactionType};
 use reqwest_middleware::ClientWithMiddleware;
 use serde_json::json;
 
-use super::model::{Ledger, LedgerCurrent, LedgerData, LedgerResult};
+use super::model::{AccountObjects, Ledger, LedgerCurrent, LedgerData, LedgerResult};
 
 pub struct XRPClient {
     url: String,
@@ -129,7 +129,28 @@ impl ChainBlockProvider for XRPClient {
 
 #[async_trait]
 impl ChainTokenDataProvider for XRPClient {
-    async fn get_token_data(&self, _chain: Chain, _token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
-        unimplemented!()
+    async fn get_token_data(&self, token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
+        let params = json!({ "method": "account_objects", "params": [ { "ledger_index": "validated", "state": "type", "account": token_id } ] });
+
+        let response = self
+            .client
+            .post(self.url.clone())
+            .json(&params)
+            .send()
+            .await?
+            .json::<LedgerResult<AccountObjects>>()
+            .await?;
+        let account = response.result.account_objects.first().ok_or("No account objects found for token_id")?;
+
+        let symbol = String::from_utf8(hex::decode(&account.low_limit.currency)?.into_iter().filter(|&b| b != 0).collect())
+            .map_err(|_| "Failed to convert currency bytes to string")?;
+
+        Ok(Asset::new(
+            AssetId::from_token(self.get_chain(), &token_id),
+            symbol.clone(),
+            symbol.clone(),
+            15,
+            AssetType::TOKEN,
+        ))
     }
 }

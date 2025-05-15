@@ -33,7 +33,7 @@ pub use self::xrp::client::XRPClient;
 use async_trait::async_trait;
 use primitives::{chain::Chain, Asset, Transaction};
 
-use std::{error::Error, sync::Arc};
+use std::error::Error;
 
 pub trait ChainProvider: ChainBlockProvider + ChainTokenDataProvider {}
 impl<T: ChainBlockProvider + ChainTokenDataProvider> ChainProvider for T {}
@@ -47,34 +47,8 @@ pub trait ChainBlockProvider: Send + Sync {
 
 #[async_trait]
 pub trait ChainTokenDataProvider: Send + Sync {
-    async fn get_token_data(&self, chain: Chain, token_id: String) -> Result<Asset, Box<dyn std::error::Error + Send + Sync>>;
-}
-
-#[async_trait]
-impl<T: Send + Sync> ChainBlockProvider for Arc<T>
-where
-    T: ChainBlockProvider + ?Sized,
-{
-    fn get_chain(&self) -> Chain {
-        (**self).get_chain()
-    }
-
-    async fn get_latest_block(&self) -> Result<i64, Box<dyn std::error::Error + Send + Sync>> {
-        (**self).get_latest_block().await
-    }
-
-    async fn get_transactions(&self, block_number: i64) -> Result<Vec<Transaction>, Box<dyn std::error::Error + Send + Sync>> {
-        (**self).get_transactions(block_number).await
-    }
-}
-
-#[async_trait]
-impl<T: Send + Sync> ChainTokenDataProvider for Arc<T>
-where
-    T: ChainTokenDataProvider + ?Sized,
-{
-    async fn get_token_data(&self, chain: Chain, token_id: String) -> Result<Asset, Box<dyn std::error::Error + Send + Sync>> {
-        (**self).get_token_data(chain, token_id).await
+    async fn get_token_data(&self, _token_id: String) -> Result<Asset, Box<dyn std::error::Error + Send + Sync>> {
+        Err("Not implemented".into())
     }
 }
 
@@ -101,12 +75,5 @@ impl ChainBlockProvider for MockChainBlockClient {
 
     async fn get_transactions(&self, _block_number: i64) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Send + Sync>> {
         Ok(vec![])
-    }
-}
-
-#[async_trait]
-impl ChainTokenDataProvider for MockChainBlockClient {
-    async fn get_token_data(&self, _chain: Chain, _token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
-        unimplemented!()
     }
 }

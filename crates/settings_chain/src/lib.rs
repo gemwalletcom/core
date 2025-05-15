@@ -134,11 +134,6 @@ impl ChainProviders {
     }
 
     pub async fn get_token_data(&self, chain: Chain, token_id: String) -> Result<Asset, Box<dyn std::error::Error + Send + Sync>> {
-        self.providers
-            .iter()
-            .find(|x| x.get_chain() == chain)
-            .unwrap()
-            .get_token_data(chain, token_id.clone())
-            .await
+        self.providers.iter().find(|x| x.get_chain() == chain).unwrap().get_token_data(token_id).await
     }
 }

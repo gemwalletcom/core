@@ -184,11 +184,11 @@ impl ChainBlockProvider for SuiClient {
 
 #[async_trait]
 impl ChainTokenDataProvider for SuiClient {
-    async fn get_token_data(&self, chain: Chain, token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
+    async fn get_token_data(&self, token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
         let metadata: CoinMetadata = self.client.request("suix_getCoinMetadata", vec![token_id.clone()]).await?;
 
         Ok(Asset::new(
-            AssetId::from_token(chain, &token_id),
+            AssetId::from_token(self.get_chain(), &token_id),
             metadata.name,
             metadata.symbol,
             metadata.decimals,
