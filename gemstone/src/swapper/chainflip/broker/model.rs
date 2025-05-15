@@ -59,7 +59,7 @@ pub struct VaultSwapBtcExtras {
 pub struct VaultSwapSolanaExtras {
     pub chain: String,
     pub from: String,
-    pub event_data_account: Option<String>,
+    pub seed: String, // random bytes (up to 32 bytes) in hex string
     pub input_amount: String,
     pub refund_parameters: RefundParameters,
 }
@@ -89,7 +89,15 @@ pub struct BitcoinVaultSwapResponse {
 #[derive(Debug, Clone, Deserialize)]
 pub struct SolanaVaultSwapResponse {
     pub program_id: String,
+    pub accounts: Vec<AccountMeta>,
     pub data: String, // hex string
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct AccountMeta {
+    pub is_signer: bool,
+    pub is_writable: bool,
+    pub address: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -2532,6 +2532,7 @@ dependencies = [
  "num-traits",
  "orca_whirlpools_core",
  "primitives",
+ "rand 0.9.1",
  "serde",
  "serde_json",
  "serde_serializers",
@@ -4038,9 +4039,9 @@ dependencies = [
 
 [[package]]
 name = "orca_whirlpools_core"
-version = "1.0.5"
+version = "1.0.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b426414bf75649943b1c57a45c12e2759e1a788dd91e4988c6da18903f852118"
+checksum = "eea9ef0c3925d7b820da5e8d9f3cc9084c234e4e8e3a9282ca683d42600c4d0e"
 dependencies = [
  "ethnum",
  "libm",

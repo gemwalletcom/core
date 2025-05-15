@@ -1,4 +1,6 @@
-use alloy_primitives::U256;
+use alloy_primitives::{hex, U256};
+use base64::engine::general_purpose::STANDARD;
+use base64::Engine;
 use num_bigint::BigUint;
 use std::sync::Arc;
 
@@ -7,6 +9,7 @@ use super::{
     capitalize::capitalize_first_letter,
     client::{ChainflipClient, QuoteRequest, QuoteResponse},
     price::{apply_slippage, price_to_hex_price},
+    seed::generate_random_seed,
     ChainflipRouteData,
 };
 use crate::{
@@ -110,10 +113,6 @@ impl Swapper for ChainflipProvider {
     }
 
     async fn fetch_quote(&self, request: &SwapQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapQuote, SwapperError> {
-        if request.from_asset.chain() == Chain::Solana {
-            // Wait for Chainflip 1.9.2
-            return Err(SwapperError::NoQuoteAvailable);
-        }
         let src_asset = Self::map_asset_id(&request.from_asset);
         let dest_asset = Self::map_asset_id(&request.to_asset);
         let chainflip_client = ChainflipClient::new(provider.clone());
@@ -169,16 +168,15 @@ impl Swapper for ChainflipProvider {
 
         let route_data: ChainflipRouteData = serde_json::from_str(&quote.data.routes[0].route_data)?;
         let chain = source_asset.chain.clone();
+        let price = route_data
+            .estimated_price
+            .parse::<f64>()
+            .map_err(|_| SwapperError::TransactionError("Invalid price".to_string()))?;
+        let price_slippage = apply_slippage(price, quote.data.slippage_bps);
+        let quote_asset_decimals = quote.request.to_asset.decimals;
+        let base_asset_decimals = quote.request.from_asset.decimals;
+        let min_price = price_to_hex_price(price_slippage, quote_asset_decimals, base_asset_decimals).map_err(SwapperError::TransactionError)?;
         let extra_params = if from_asset.chain.chain_type() == ChainType::Ethereum {
-            let price = route_data
-                .estimated_price
-                .parse::<f64>()
-                .map_err(|_| SwapperError::TransactionError("Invalid price".to_string()))?;
-            let price_slippage = apply_slippage(price, quote.data.slippage_bps);
-            let quote_asset_decimals = quote.request.to_asset.decimals;
-            let base_asset_decimals = quote.request.from_asset.decimals;
-            let min_price = price_to_hex_price(price_slippage, quote_asset_decimals, base_asset_decimals).map_err(SwapperError::TransactionError)?;
-
             VaultSwapExtras::Evm(VaultSwapEvmExtras {
                 chain,
                 input_amount: input_amount.clone(),
@@ -195,6 +193,18 @@ impl Swapper for ChainflipProvider {
                 chain,
                 min_output_amount: min_output_amount.to_string(),
                 retry_duration: 6, // blocks
+            })
+        } else if from_asset.chain.chain_type() == ChainType::Solana {
+            VaultSwapExtras::Solana(VaultSwapSolanaExtras {
+                from: quote.request.wallet_address.clone(),
+                seed: hex::encode_prefixed(generate_random_seed(32)),
+                chain,
+                input_amount: input_amount.to_string(),
+                refund_parameters: RefundParameters {
+                    retry_duration: 10, // blocks
+                    refund_address: quote.request.wallet_address.clone(),
+                    min_price,
+                },
             })
         } else {
             VaultSwapExtras::None
@@ -262,7 +272,19 @@ impl Swapper for ChainflipProvider {
 
                 Ok(swap_quote_data)
             }
-            _ => Err(SwapperError::TransactionError("Unsupported chain".to_string())),
+            VaultSwapResponse::Solana(response) => {
+                let data = hex::decode(response.data).map_err(|_| SwapperError::TransactionError("Invalid data".to_string()))?;
+                // FIXME: construct transaction with program_id, accounts and instruction data
+                let swap_quote_data = SwapQuoteData {
+                    to: response.program_id,
+                    value: "".into(),
+                    data: STANDARD.encode(data),
+                    approval: None,
+                    gas_limit: None,
+                };
+
+                Ok(swap_quote_data)
+            }
         }
     }
 
