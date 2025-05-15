@@ -1,7 +1,7 @@
 use core::str;
 
 use gem_chain_rpc::{
-    AlgorandClient, AptosClient, BitcoinClient, CardanoClient, ChainProvider, CosmosClient, EthereumClient, NearClient, PolkadotClient, SolanaClient,
+    algorand::provider::AlgorandProvider, algorand::client::AlgorandClient, AptosClient, BitcoinClient, CardanoClient, ChainProvider, CosmosClient, EthereumClient, NearClient, PolkadotClient, SolanaClient,
     StellarClient, SuiClient, TonClient, TronClient, XRPClient,
 };
 use primitives::{Asset, Chain};
@@ -66,7 +66,10 @@ impl ProviderFactory {
             Chain::Xrp => Box::new(XRPClient::new(client, url)),
             Chain::Near => Box::new(NearClient::new(url)),
             Chain::Cardano => Box::new(CardanoClient::new(client, url)),
-            Chain::Algorand => Box::new(AlgorandClient::new(client, url)),
+            Chain::Algorand => {
+                let algorand_client = AlgorandClient::new(client, url);
+                Box::new(AlgorandProvider::new(algorand_client))
+            },
             Chain::Stellar => Box::new(StellarClient::new(client, url)),
             Chain::Polkadot => Box::new(PolkadotClient::new(client, url)),
         }
