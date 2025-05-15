@@ -45,7 +45,7 @@ impl CosmosClient {
     pub fn get_chain(&self) -> Chain {
         self.chain
     }
-    
+
     pub fn get_hash(&self, bytes: Vec<u8>) -> String {
         hex::encode(Sha256::digest(bytes.clone())).to_uppercase()
     }
@@ -98,5 +98,3 @@ impl CosmosClient {
         Ok(block)
     }
 }
-
-

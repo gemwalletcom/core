@@ -1,7 +1,7 @@
 use std::error::Error;
 
-use primitives::chain::Chain;
 use super::model::{Block, Status};
+use primitives::chain::Chain;
 use reqwest_middleware::ClientWithMiddleware;
 
 pub struct BitcoinClient {
@@ -14,7 +14,7 @@ impl BitcoinClient {
     pub fn new(chain: Chain, client: ClientWithMiddleware, url: String) -> Self {
         Self { chain, client, url }
     }
-    
+
     pub fn get_chain(&self) -> Chain {
         self.chain
     }
@@ -30,13 +30,3 @@ impl BitcoinClient {
         Ok(block)
     }
 }
-
-
-
-// Tests moved to provider.rs - these depend on map_transaction function which is now in the provider
-/*
-mod tests {
-    // Tests should be updated to use the BitcoinProvider instead of BitcoinClient
-    // for the implementation of map_transaction and related functionality
-}
-*/

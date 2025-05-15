@@ -42,5 +42,3 @@ impl AptosClient {
         Ok(self.client.get(url).send().await?.json::<Resource<T>>().await?)
     }
 }
-
-

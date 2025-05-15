@@ -1,8 +1,5 @@
 use chrono::Utc;
-use primitives::{
-    chain::Chain, AssetId, Transaction, TransactionState, 
-    TransactionSwapMetadata, TransactionType,
-};
+use primitives::{chain::Chain, AssetId, Transaction, TransactionState, TransactionSwapMetadata, TransactionType};
 
 use gem_solana::{TOKEN_PROGRAM, WSOL_TOKEN_ADDRESS};
 
@@ -30,7 +27,7 @@ impl SolanaMapper {
         let state = TransactionState::Confirmed;
         let fee_asset_id = chain.as_asset_id();
         let created_at = Utc::now();
-        
+
         // system transfer
         if (account_keys.len() == 2 || account_keys.len() == 3) && account_keys.last()? == SYSTEM_PROGRAM_ID && signatures.len() == 1 {
             let from = account_keys.first()?.clone();

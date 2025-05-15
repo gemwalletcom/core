@@ -1,7 +1,7 @@
 use chrono::Utc;
 use num_bigint::BigUint;
 use num_traits::Num;
-use primitives::{chain::Chain, Transaction, TransactionState, TransactionType, AssetId};
+use primitives::{chain::Chain, AssetId, Transaction, TransactionState, TransactionType};
 
 use super::address::TronAddress;
 use super::model::{self, TransactionReceiptData};

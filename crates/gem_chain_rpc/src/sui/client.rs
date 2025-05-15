@@ -8,7 +8,10 @@ use jsonrpsee::{
 use primitives::{chain::Chain, Asset, AssetId, AssetType};
 use serde_json::json;
 
-use super::{model::{CoinMetadata, Digests}, mapper::SuiMapper};
+use super::{
+    mapper::SuiMapper,
+    model::{CoinMetadata, Digests},
+};
 
 pub const SUI_STAKE_EVENT: &str = "0x3::validator::StakingRequestEvent";
 pub const SUI_UNSTAKE_EVENT: &str = "0x3::validator::UnstakingRequestEvent";
@@ -44,7 +47,7 @@ impl SuiClient {
             .into_iter()
             .flat_map(|x| SuiMapper::map_transaction(self.get_chain(), x, block_number))
             .collect::<Vec<primitives::Transaction>>();
-        
+
         Ok(transactions)
     }
 

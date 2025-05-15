@@ -1,13 +1,11 @@
 use chrono::Utc;
-use primitives::{
-    chain::Chain, Transaction, TransactionState, TransactionType,
-};
 use num_bigint::BigUint;
+use primitives::{chain::Chain, Transaction, TransactionState, TransactionType};
 use std::str::FromStr;
 
 use super::{
-    model::{Digest as SuiTransaction, GasUsed},
     client::{SUI_STAKE_EVENT, SUI_UNSTAKE_EVENT},
+    model::{Digest as SuiTransaction, GasUsed},
 };
 
 pub struct SuiMapper;
@@ -17,21 +15,21 @@ impl SuiMapper {
         let computation_cost = BigUint::from_str(gas_used.computation_cost.as_str()).unwrap_or_default();
         let storage_cost = BigUint::from_str(gas_used.storage_cost.as_str()).unwrap_or_default();
         let storage_rebate = BigUint::from_str(gas_used.storage_rebate.as_str()).unwrap_or_default();
-        
+
         let cost = computation_cost.clone() + storage_cost.clone();
         if storage_rebate >= cost {
             return BigUint::from(0u32);
         }
         computation_cost + storage_cost - storage_rebate
     }
-    
+
     pub fn map_transaction(chain: Chain, transaction: SuiTransaction, block_number: i64) -> Option<Transaction> {
         let balance_changes = transaction.balance_changes.unwrap_or_default();
         let effects = transaction.effects.clone();
         let hash = transaction.digest.clone();
         let fee = Self::get_fee(effects.gas_used.clone());
         let created_at = Utc::now();
-        
+
         // system transfer
         if balance_changes.len() == 2 && balance_changes[0].coin_type == chain.as_denom()? && balance_changes[1].coin_type == chain.as_denom()? {
             let (from_change, to_change) = if balance_changes[0].amount.contains('-') {
@@ -73,7 +71,7 @@ impl SuiMapper {
             );
             return Some(transaction);
         }
-        
+
         // stake
         if transaction.events.len() == 1 && transaction.events.first()?.event_type == SUI_STAKE_EVENT {
             let event = transaction.events.first()?;
@@ -99,7 +97,7 @@ impl SuiMapper {
             );
             return Some(transaction);
         }
-        
+
         // unstake
         if transaction.events.len() == 1 && transaction.events.first()?.event_type == SUI_UNSTAKE_EVENT {
             let event = transaction.events.first()?;

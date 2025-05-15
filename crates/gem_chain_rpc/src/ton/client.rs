@@ -92,7 +92,7 @@ impl TonClient {
 
         Ok(transactions)
     }
-    
+
     pub async fn get_token_data(&self, token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
         let token_info = self.get_token_info(token_id.clone()).await?;
         let decimals = token_info.metadata.decimals.parse::<i32>().map_err(|_| "Invalid decimals")?;

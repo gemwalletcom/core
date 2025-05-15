@@ -7,7 +7,6 @@ use async_trait::async_trait;
 use hex::FromHex;
 use primitives::{chain::Chain, Asset, AssetId};
 
-
 pub struct EthereumProvider {
     client: EthereumClient,
 }

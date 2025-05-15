@@ -15,7 +15,12 @@ const CONTRACT_1INCH: &str = "0x1111111254EEB25477B68fb85Ed929f73A960582";
 pub struct EthereumMapper;
 
 impl EthereumMapper {
-    pub fn map_transaction(chain: Chain, transaction: Transaction, transaction_reciept: &TransactionReciept, timestamp: BigUint) -> Option<primitives::Transaction> {
+    pub fn map_transaction(
+        chain: Chain,
+        transaction: Transaction,
+        transaction_reciept: &TransactionReciept,
+        timestamp: BigUint,
+    ) -> Option<primitives::Transaction> {
         let state = if transaction_reciept.status == "0x1" {
             TransactionState::Confirmed
         } else {
@@ -96,12 +101,18 @@ impl EthereumMapper {
             let last_log = &logs.last()?;
 
             // extract values
-            let first_log_value = first_log.data.clone().strip_prefix("0x")
+            let first_log_value = first_log
+                .data
+                .clone()
+                .strip_prefix("0x")
                 .map(|hex| BigUint::from_str_radix(hex, 16).ok())
                 .unwrap_or_default()
                 .unwrap_or_default();
-                
-            let last_log_value = last_log.data.clone().strip_prefix("0x")
+
+            let last_log_value = last_log
+                .data
+                .clone()
+                .strip_prefix("0x")
                 .map(|hex| BigUint::from_str_radix(hex, 16).ok())
                 .unwrap_or_default()
                 .unwrap_or_default();

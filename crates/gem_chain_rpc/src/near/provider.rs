@@ -32,13 +32,16 @@ impl ChainBlockProvider for NearProvider {
         let block = self.client.get_block(block_number).await;
         match block {
             Ok(block) => {
-                let chunks = futures::future::try_join_all(block.chunks.into_iter().map(|chunk| 
-                    self.client.get_chunk(block.header.height, chunk.shard_id))).await?;
+                let chunks =
+                    futures::future::try_join_all(block.chunks.into_iter().map(|chunk| self.client.get_chunk(block.header.height, chunk.shard_id))).await?;
 
                 let transactions = chunks
                     .into_iter()
-                    .flat_map(|x| x.transactions.into_iter().flat_map(|x| 
-                        NearMapper::map_transaction(self.get_chain(), block.header.clone(), x)))
+                    .flat_map(|x| {
+                        x.transactions
+                            .into_iter()
+                            .flat_map(|x| NearMapper::map_transaction(self.get_chain(), block.header.clone(), x))
+                    })
                     .collect();
                 Ok(transactions)
             }

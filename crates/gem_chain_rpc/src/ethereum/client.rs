@@ -27,7 +27,7 @@ impl EthereumClient {
 
         Self { chain, client }
     }
-    
+
     pub fn get_chain(&self) -> Chain {
         self.chain
     }
@@ -62,7 +62,7 @@ impl EthereumClient {
             .request("eth_getBlockReceipts", vec![json!(format!("0x{:x}", block_number))])
             .await?)
     }
-    
+
     pub async fn get_latest_block(&self) -> Result<i64, Box<dyn Error + Send + Sync>> {
         let block: String = self.client.request("eth_blockNumber", rpc_params![]).await?;
         Ok(i64::from_str_radix(&block[2..], 16)?)

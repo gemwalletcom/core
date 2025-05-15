@@ -39,12 +39,12 @@ impl ChainBlockProvider for BitcoinProvider {
             }
             page += 1;
         }
-        
+
         let transactions = transactions
             .into_iter()
             .flat_map(|x| BitcoinMapper::map_transaction(self.get_chain(), &x, block_number))
             .collect::<Vec<primitives::Transaction>>();
-        
+
         Ok(transactions)
     }
 }

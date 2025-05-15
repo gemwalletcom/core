@@ -24,7 +24,8 @@ impl ChainBlockProvider for PolkadotProvider {
     }
 
     async fn get_latest_block(&self) -> Result<i64, Box<dyn Error + Send + Sync>> {
-        self.client.get_block_header("head")
+        self.client
+            .get_block_header("head")
             .await?
             .number
             .parse()

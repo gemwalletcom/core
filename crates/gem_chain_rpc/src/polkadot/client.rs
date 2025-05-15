@@ -1,7 +1,5 @@
 use std::error::Error;
 
-
-
 use primitives::{Asset, Chain};
 use reqwest_middleware::ClientWithMiddleware;
 
@@ -28,11 +26,11 @@ impl PolkadotClient {
     }
 
     // Transaction mapping methods moved to PolkadotMapper
-    
+
     pub fn get_chain(&self) -> Chain {
         Chain::Polkadot
     }
-    
+
     pub async fn get_token_data(&self, _token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
         unimplemented!()
     }

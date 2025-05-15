@@ -4,9 +4,9 @@ use crate::{ChainBlockProvider, ChainTokenDataProvider};
 use async_trait::async_trait;
 use primitives::{chain::Chain, Asset, AssetId, AssetType};
 
-use gem_aptos::model::ResourceCoinInfo;
 use super::client::AptosClient;
 use super::mapper::AptosMapper;
+use gem_aptos::model::ResourceCoinInfo;
 
 pub struct AptosProvider {
     client: AptosClient,
@@ -16,7 +16,7 @@ impl AptosProvider {
     pub fn new(client: AptosClient) -> Self {
         Self { client }
     }
-    
+
     // Transaction mapping has been moved to AptosMapper
 }
 

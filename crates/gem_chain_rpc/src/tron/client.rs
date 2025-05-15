@@ -45,9 +45,8 @@ impl TronClient {
         let block = self.get_block().await?;
         Ok(block.block_header.raw_data.number)
     }
-    
+
     pub async fn get_token_data(&self, _token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
         unimplemented!()
     }
 }
-

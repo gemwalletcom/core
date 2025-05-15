@@ -36,25 +36,18 @@ impl PolkadotMapper {
         }
     }
 
-    fn map_transfer(
-        chain: Chain,
-        block: Block,
-        transaction: Extrinsic,
-        method: String,
-        to_address: String,
-        value: String,
-    ) -> Option<Transaction> {
+    fn map_transfer(chain: Chain, block: Block, transaction: Extrinsic, method: String, to_address: String, value: String) -> Option<Transaction> {
         if method != TRANSACTION_TYPE_TRANSFER_ALLOW_DEATH && method != TRANSACTION_TYPE_TRANSFER_KEEP_ALIVE {
             return None;
         }
-        
+
         let from_address = transaction.signature?.signer.id.clone();
         let state = if transaction.success {
             TransactionState::Confirmed
         } else {
             TransactionState::Failed
         };
-        
+
         Some(Transaction::new(
             transaction.hash.clone(),
             chain.as_asset_id(),

@@ -75,7 +75,10 @@ impl ChainBlockProvider for SolanaProvider {
 impl ChainTokenDataProvider for SolanaProvider {
     async fn get_token_data(&self, token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
         // Use the SolanaClient's get_account_info method with generic type parameter
-        let token_info = self.client.get_account_info::<gem_solana::jsonrpc::SolanaParsedTokenInfo>(&token_id, "jsonParsed").await?;
+        let token_info = self
+            .client
+            .get_account_info::<gem_solana::jsonrpc::SolanaParsedTokenInfo>(&token_id, "jsonParsed")
+            .await?;
         let meta: Metadata = self.client.get_metaplex_data(&token_id).await?;
         let name = meta.data.name.trim_matches(char::from(0)).to_string();
         let symbol = meta.data.symbol.trim_matches(char::from(0)).to_string();
