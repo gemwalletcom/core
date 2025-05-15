@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
 
-use serde_serializers::deserialize_u64_from_str_or_int;
+use serde_serializers::deserialize_u64_from_str;
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EIP712Domain {
@@ -12,7 +12,7 @@ pub struct EIP712Domain {
     #[serde(default)]
     pub version: String,
     #[serde(rename = "chainId")]
-    #[serde(deserialize_with = "deserialize_u64_from_str_or_int")]
+    #[serde(deserialize_with = "deserialize_u64_from_str")]
     pub chain_id: u64,
     #[serde(rename = "verifyingContract")]
     pub verifying_contract: String,

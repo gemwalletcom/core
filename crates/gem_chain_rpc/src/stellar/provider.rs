@@ -5,6 +5,7 @@ use async_trait::async_trait;
 use primitives::{chain::Chain, Asset};
 
 use super::client::StellarClient;
+use super::mapper::StellarMapper;
 
 pub struct StellarProvider {
     client: StellarClient,
@@ -33,7 +34,7 @@ impl ChainBlockProvider for StellarProvider {
             .get_block_payments_all(block_number)
             .await?
             .iter()
-            .flat_map(|x| self.client.map_transaction(block.clone(), x.clone()))
+            .flat_map(|x| StellarMapper::map_transaction(self.get_chain(), block.clone(), x.clone()))
             .collect::<Vec<primitives::Transaction>>();
 
         Ok(transactions)

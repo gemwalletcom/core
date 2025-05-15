@@ -6,6 +6,7 @@ pub mod bitcoin;
 pub mod cardano;
 pub mod cosmos;
 pub mod ethereum;
+
 pub mod near;
 pub mod polkadot;
 pub mod solana;

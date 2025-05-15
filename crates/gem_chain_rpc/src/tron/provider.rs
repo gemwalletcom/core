@@ -5,6 +5,7 @@ use async_trait::async_trait;
 use primitives::{chain::Chain, Asset};
 
 use super::client::TronClient;
+use super::mapper::TronMapper;
 
 pub struct TronProvider {
     client: TronClient,
@@ -34,7 +35,7 @@ impl ChainBlockProvider for TronProvider {
         let transactions = transactions
             .into_iter()
             .zip(reciepts.iter())
-            .filter_map(|(transaction, receipt)| self.client.map_transaction(transaction, receipt.clone()))
+            .filter_map(|(transaction, receipt)| TronMapper::map_transaction(self.get_chain(), transaction, receipt.clone()))
             .collect::<Vec<primitives::Transaction>>();
 
         Ok(transactions)

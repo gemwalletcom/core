@@ -2,11 +2,10 @@ use std::error::Error;
 
 use crate::{ChainBlockProvider, ChainTokenDataProvider};
 use async_trait::async_trait;
-use chrono::DateTime;
 use primitives::{Asset, Chain};
 
 use super::client::AlgorandClient;
-use super::model::{Block, Transaction, TRANSACTION_TYPE_PAY};
+use super::mapper::AlgorandMapper;
 
 pub struct AlgorandProvider {
     client: AlgorandClient,
@@ -17,28 +16,7 @@ impl AlgorandProvider {
         Self { client }
     }
 
-    pub fn map_transaction(&self, hash: String, block: Block, transaction: Transaction) -> Option<primitives::Transaction> {
-        match transaction.transaction_type.as_str() {
-            TRANSACTION_TYPE_PAY => Some(primitives::Transaction::new(
-                hash,
-                self.get_chain().as_asset_id(),
-                transaction.clone().snd.unwrap_or_default(),
-                transaction.clone().rcv.unwrap_or_default(),
-                None,
-                primitives::TransactionType::Transfer,
-                primitives::TransactionState::Confirmed,
-                block.rnd.to_string(),
-                0.to_string(),
-                transaction.fee.unwrap_or_default().to_string(),
-                self.get_chain().as_asset_id(),
-                transaction.amt.unwrap_or_default().to_string(),
-                transaction.clone().get_memo(),
-                None,
-                DateTime::from_timestamp(block.ts, 0)?,
-            )),
-            _ => None,
-        }
-    }
+    // Transaction mapping has been moved to AlgorandMapper
 }
 
 #[async_trait]
@@ -58,7 +36,7 @@ impl ChainBlockProvider for AlgorandProvider {
         let transactions = transactions
             .iter()
             .zip(transactions_ids.iter())
-            .flat_map(|(transaction, hash)| self.map_transaction(hash.clone(), block.clone(), transaction.txn.clone()))
+            .flat_map(|(transaction, hash)| AlgorandMapper::map_transaction(self.get_chain(), hash.clone(), block.clone(), transaction.txn.clone()))
             .collect::<Vec<primitives::Transaction>>();
 
         Ok(transactions)

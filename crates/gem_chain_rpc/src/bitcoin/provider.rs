@@ -2,11 +2,9 @@ use std::error::Error;
 
 use crate::{ChainBlockProvider, ChainTokenDataProvider};
 use async_trait::async_trait;
-use chrono::Utc;
-use primitives::{chain::Chain, transaction_utxo::TransactionInput, Asset, TransactionDirection, TransactionType};
+use primitives::{chain::Chain, Asset};
 
-use super::client::BitcoinClient;
-use super::model::Transaction;
+use super::{client::BitcoinClient, mapper::BitcoinMapper};
 
 pub struct BitcoinProvider {
     client: BitcoinClient,
@@ -15,56 +13,6 @@ pub struct BitcoinProvider {
 impl BitcoinProvider {
     pub fn new(client: BitcoinClient) -> Self {
         Self { client }
-    }
-
-    pub fn map_transaction(chain: Chain, transaction: &Transaction, _block_number: i64) -> Option<primitives::Transaction> {
-        let inputs: Vec<TransactionInput> = transaction
-            .vin
-            .iter()
-            .filter(|i| i.is_address)
-            .map(|input| TransactionInput {
-                address: input.addresses.clone().unwrap().first().unwrap().to_string(),
-                value: input.value.clone(),
-            })
-            .collect();
-
-        let outputs: Vec<TransactionInput> = transaction
-            .vout
-            .iter()
-            .filter(|o| o.is_address)
-            .map(|output| TransactionInput {
-                address: output.addresses.clone().unwrap_or_default().first().unwrap().to_string(),
-                value: output.value.clone(),
-            })
-            .collect();
-
-        if inputs.is_empty() || outputs.is_empty() {
-            return None;
-        }
-
-        let transaction = primitives::Transaction::new_with_utxo(
-            transaction.txid.clone(),
-            chain.as_asset_id(),
-            None,
-            None,
-            None,
-            TransactionType::Transfer,
-            primitives::TransactionState::Confirmed,
-            transaction.block_height.to_string(),
-            0.to_string(),
-            transaction.fees.clone(),
-            chain.as_asset_id(),
-            "0".to_string(),
-            None,
-            TransactionDirection::SelfTransfer,
-            inputs.into(),
-            outputs.into(),
-            None,
-            Utc::now(),
-            //Utc.timestamp_opt(transaction.block_time, 0).unwrap(),
-        );
-
-        Some(transaction)
     }
 }
 
@@ -94,7 +42,7 @@ impl ChainBlockProvider for BitcoinProvider {
         
         let transactions = transactions
             .into_iter()
-            .flat_map(|x| Self::map_transaction(self.get_chain(), &x, block_number))
+            .flat_map(|x| BitcoinMapper::map_transaction(self.get_chain(), &x, block_number))
             .collect::<Vec<primitives::Transaction>>();
         
         Ok(transactions)

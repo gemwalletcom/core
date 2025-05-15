@@ -2,14 +2,10 @@ use std::error::Error;
 
 use crate::{ChainBlockProvider, ChainTokenDataProvider};
 use async_trait::async_trait;
-use chrono::DateTime;
-use primitives::{chain::Chain, Asset, AssetId, AssetType, TransactionState, TransactionType};
+use primitives::{chain::Chain, Asset, AssetId, AssetType};
 
 use super::client::XRPClient;
-use super::model::Transaction;
-
-const RESULT_SUCCESS: &str = "tesSUCCESS";
-const TRANSACTION_TYPE_PAYMENT: &str = "Payment";
+use super::mapper::XRPMapper;
 
 pub struct XRPProvider {
     client: XRPClient,
@@ -20,41 +16,7 @@ impl XRPProvider {
         Self { client }
     }
 
-    pub fn map_transaction(&self, transaction: Transaction, block_number: i64, block_timestamp: i64) -> Option<primitives::Transaction> {
-        if transaction.transaction_type == TRANSACTION_TYPE_PAYMENT && transaction.memos.unwrap_or_default().is_empty() {
-            let memo = transaction.destination_tag.map(|x| x.to_string());
-            let value = transaction.amount.clone()?.as_value_string()?;
-            let token_id = transaction.amount?.token_id();
-            let asset_id = AssetId::from(self.get_chain(), token_id);
-            let created_at = DateTime::from_timestamp(block_timestamp, 0)?;
-
-            let state = if transaction.meta.result == RESULT_SUCCESS {
-                TransactionState::Confirmed
-            } else {
-                TransactionState::Failed
-            };
-            // add check for delivered amount, for success it should be equal to amount
-            let transaction = primitives::Transaction::new(
-                transaction.hash,
-                asset_id.clone(),
-                transaction.account.unwrap_or_default(),
-                transaction.destination.unwrap_or_default(),
-                None,
-                TransactionType::Transfer,
-                state,
-                block_number.to_string(),
-                transaction.sequence.to_string(),
-                transaction.fee.unwrap_or_default(),
-                self.get_chain().as_asset_id(),
-                value,
-                memo,
-                None,
-                created_at,
-            );
-            return Some(transaction);
-        }
-        None
-    }
+    // Transaction mapping has been moved to XRPMapper
 }
 
 #[async_trait]
@@ -75,7 +37,7 @@ impl ChainBlockProvider for XRPProvider {
 
         let transactions = transactions
             .into_iter()
-            .flat_map(|x| self.map_transaction(x, block_number, block_timestamp))
+            .flat_map(|x| XRPMapper::map_transaction(self.get_chain(), x, block_number, block_timestamp))
             .collect::<Vec<primitives::Transaction>>();
         Ok(transactions)
     }

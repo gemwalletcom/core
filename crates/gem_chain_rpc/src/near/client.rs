@@ -1,13 +1,12 @@
 use std::error::Error;
 
-use chrono::Utc;
 use jsonrpsee::{
     core::{client::ClientT, params::ObjectParams},
     http_client::{HttpClient, HttpClientBuilder},
 };
-use primitives::{Asset, Chain, TransactionState, TransactionType};
+use primitives::{Asset, Chain};
 
-use super::model::{Action, Block, BlockHeader, Chunk};
+use super::model::{Block, Chunk};
 
 pub struct NearClient {
     client: HttpClient,
@@ -45,35 +44,7 @@ impl NearClient {
         Ok(chunk)
     }
 
-    pub fn map_transaction(&self, header: BlockHeader, transaction: super::model::Transaction) -> Option<primitives::Transaction> {
-        if transaction.actions.len() == 1 || transaction.actions.len() == 2 {
-            match &transaction.actions.last()? {
-                Action::Transfer { deposit } => {
-                    let asset_id = Chain::Near.as_asset_id();
-                    let transaction = primitives::Transaction::new(
-                        transaction.hash,
-                        asset_id.clone(),
-                        transaction.signer_id,
-                        transaction.receiver_id,
-                        None,
-                        TransactionType::Transfer,
-                        TransactionState::Confirmed,
-                        header.height.to_string(),
-                        transaction.nonce.to_string(),
-                        "830000000000000000000".to_string(),
-                        asset_id,
-                        deposit.clone(),
-                        None,
-                        None,
-                        Utc::now(),
-                    );
-                    return Some(transaction);
-                }
-                Action::CreateAccount | Action::Other(_) => return None,
-            }
-        }
-        None
-    }
+    // Transaction mapping has been moved to NearMapper
 }
 
 impl NearClient {

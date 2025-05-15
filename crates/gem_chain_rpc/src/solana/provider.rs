@@ -8,8 +8,7 @@ use crate::{ChainBlockProvider, ChainTokenDataProvider};
 use gem_solana::metaplex::metadata::Metadata;
 use primitives::{chain::Chain, Asset, AssetId, AssetType};
 
-use super::client::SolanaClient;
-use super::model::BlockTransactions;
+use super::{client::SolanaClient, mapper::SolanaMapper, model::BlockTransactions};
 
 pub struct SolanaProvider {
     client: SolanaClient,
@@ -53,7 +52,7 @@ impl ChainBlockProvider for SolanaProvider {
                 let transactions = block
                     .transactions
                     .into_iter()
-                    .flat_map(|x| self.client.map_transaction(&x, block_number))
+                    .flat_map(|x| SolanaMapper::map_transaction(self.client.get_chain(), &x, block_number))
                     .collect::<Vec<primitives::Transaction>>();
                 Ok(transactions)
             }

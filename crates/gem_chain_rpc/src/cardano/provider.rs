@@ -5,6 +5,7 @@ use async_trait::async_trait;
 use primitives::{chain::Chain, Asset};
 
 use super::client::CardanoClient;
+use super::mapper::CardanoMapper;
 
 pub struct CardanoProvider {
     client: CardanoClient,
@@ -32,7 +33,7 @@ impl ChainBlockProvider for CardanoProvider {
             .transactions
             .clone()
             .into_iter()
-            .flat_map(|x| CardanoClient::map_transaction(self.client.get_chain(), &block, &x))
+            .flat_map(|x| CardanoMapper::map_transaction(self.client.get_chain(), &block, &x))
             .collect::<Vec<primitives::Transaction>>();
         Ok(transactions)
     }

@@ -5,6 +5,7 @@ use async_trait::async_trait;
 use primitives::{chain::Chain, Asset, Transaction};
 
 use super::client::NearClient;
+use super::mapper::NearMapper;
 
 pub struct NearProvider {
     client: NearClient,
@@ -37,7 +38,7 @@ impl ChainBlockProvider for NearProvider {
                 let transactions = chunks
                     .into_iter()
                     .flat_map(|x| x.transactions.into_iter().flat_map(|x| 
-                        self.client.map_transaction(block.header.clone(), x)))
+                        NearMapper::map_transaction(self.get_chain(), block.header.clone(), x)))
                     .collect();
                 Ok(transactions)
             }

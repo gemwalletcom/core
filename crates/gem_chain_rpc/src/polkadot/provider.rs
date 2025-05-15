@@ -5,6 +5,7 @@ use async_trait::async_trait;
 use primitives::{chain::Chain, Asset};
 
 use super::client::PolkadotClient;
+use super::mapper::PolkadotMapper;
 
 pub struct PolkadotProvider {
     client: PolkadotClient,
@@ -36,7 +37,7 @@ impl ChainBlockProvider for PolkadotProvider {
         let transactions = block
             .extrinsics
             .iter()
-            .flat_map(|x| self.client.map_transaction(block.clone(), x.clone()))
+            .flat_map(|x| PolkadotMapper::map_transaction(self.get_chain(), block.clone(), x.clone()))
             .flatten()
             .collect::<Vec<primitives::Transaction>>();
 
