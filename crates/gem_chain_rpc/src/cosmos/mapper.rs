@@ -40,23 +40,18 @@ impl CosmosMapper {
                         from_address = message.from_address;
                         to_address = message.to_address;
                     } else {
-                        let message: cosmos_sdk_proto::cosmos::bank::v1beta1::MsgSend =
-                            cosmos_sdk_proto::prost::Message::decode(&*message.value).ok()?;
+                        let message: cosmos_sdk_proto::cosmos::bank::v1beta1::MsgSend = cosmos_sdk_proto::prost::Message::decode(&*message.value).ok()?;
 
                         asset_id = chain.as_asset_id();
                         transaction_type = TransactionType::Transfer;
                         // Getting the amount requires client helper, so users of this mapper will need to extract the amount
-                        value = match Self::extract_amount(&message.amount) {
-                            Some(val) => val,
-                            None => return None,
-                        };
+                        value = Self::extract_amount(&message.amount)?;
                         from_address = message.from_address;
                         to_address = message.to_address;
                     }
                 }
                 super::client::MESSAGE_DELEGATE => {
-                    let message: cosmos_sdk_proto::cosmos::staking::v1beta1::MsgDelegate =
-                        cosmos_sdk_proto::prost::Message::decode(&*message.value).ok()?;
+                    let message: cosmos_sdk_proto::cosmos::staking::v1beta1::MsgDelegate = cosmos_sdk_proto::prost::Message::decode(&*message.value).ok()?;
 
                     asset_id = chain.as_asset_id();
                     transaction_type = TransactionType::StakeDelegate;
@@ -65,8 +60,7 @@ impl CosmosMapper {
                     to_address = message.validator_address;
                 }
                 super::client::MESSAGE_UNDELEGATE => {
-                    let message: cosmos_sdk_proto::cosmos::staking::v1beta1::MsgUndelegate =
-                        cosmos_sdk_proto::prost::Message::decode(&*message.value).ok()?;
+                    let message: cosmos_sdk_proto::cosmos::staking::v1beta1::MsgUndelegate = cosmos_sdk_proto::prost::Message::decode(&*message.value).ok()?;
 
                     asset_id = chain.as_asset_id();
                     transaction_type = TransactionType::StakeUndelegate;
@@ -121,13 +115,10 @@ impl CosmosMapper {
     }
 
     // Helper method to extract amount from coin list
-    fn extract_amount(amounts: &Vec<cosmos_sdk_proto::cosmos::base::v1beta1::Coin>) -> Option<String> {
+    fn extract_amount(amounts: &[cosmos_sdk_proto::cosmos::base::v1beta1::Coin]) -> Option<String> {
         if amounts.is_empty() {
             return None;
         }
-        
-        // We'll just take the first amount for simplicity
-        // In a real implementation, you might want to filter by denom or combine values
         Some(amounts[0].amount.clone())
     }
 }
