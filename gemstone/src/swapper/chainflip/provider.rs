@@ -1,7 +1,6 @@
 use alloy_primitives::{hex, U256};
-use base64::engine::general_purpose::STANDARD;
-use base64::Engine;
 use num_bigint::BigUint;
+use num_traits::ToPrimitive;
 use std::sync::Arc;
 
 use super::{
@@ -10,7 +9,7 @@ use super::{
     client::{ChainflipClient, QuoteRequest, QuoteResponse},
     price::{apply_slippage, price_to_hex_price},
     seed::generate_random_seed,
-    ChainflipRouteData,
+    tx_builder, ChainflipRouteData,
 };
 use crate::{
     config::swap_config::DEFAULT_CHAINFLIP_FEE_BPS,
@@ -191,7 +190,7 @@ impl Swapper for ChainflipProvider {
             let min_output_amount = slippage::apply_slippage_in_bp(&output_amount, quote.data.slippage_bps);
             VaultSwapExtras::Bitcoin(VaultSwapBtcExtras {
                 chain,
-                min_output_amount: min_output_amount.to_string(),
+                min_output_amount: BigUint::from_bytes_le(&min_output_amount.to_le_bytes::<32>()),
                 retry_duration: 6, // blocks
             })
         } else if from_asset.chain.chain_type() == ChainType::Solana {
@@ -199,7 +198,7 @@ impl Swapper for ChainflipProvider {
                 from: quote.request.wallet_address.clone(),
                 seed: hex::encode_prefixed(generate_random_seed(32)),
                 chain,
-                input_amount: input_amount.to_string(),
+                input_amount: input_amount.to_u64().unwrap(),
                 refund_parameters: RefundParameters {
                     retry_duration: 10, // blocks
                     refund_address: quote.request.wallet_address.clone(),
@@ -273,12 +272,13 @@ impl Swapper for ChainflipProvider {
                 Ok(swap_quote_data)
             }
             VaultSwapResponse::Solana(response) => {
-                let data = hex::decode(response.data).map_err(|_| SwapperError::TransactionError("Invalid data".to_string()))?;
-                // FIXME: construct transaction with program_id, accounts and instruction data
+                let data = tx_builder::build_solana_tx(quote.request.wallet_address.clone(), &response, provider.clone())
+                    .await
+                    .map_err(SwapperError::TransactionError)?;
                 let swap_quote_data = SwapQuoteData {
                     to: response.program_id,
                     value: "".into(),
-                    data: STANDARD.encode(data),
+                    data,
                     approval: None,
                     gas_limit: None,
                 };

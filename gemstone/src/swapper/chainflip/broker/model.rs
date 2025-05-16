@@ -51,7 +51,8 @@ pub struct VaultSwapEvmExtras {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VaultSwapBtcExtras {
     pub chain: String,
-    pub min_output_amount: String,
+    #[serde(deserialize_with = "deserialize_biguint_from_hex_str", serialize_with = "serialize_biguint_to_hex_str")]
+    pub min_output_amount: BigUint,
     pub retry_duration: u32,
 }
 
@@ -60,7 +61,7 @@ pub struct VaultSwapSolanaExtras {
     pub chain: String,
     pub from: String,
     pub seed: String, // random bytes (up to 32 bytes) in hex string
-    pub input_amount: String,
+    pub input_amount: u64,
     pub refund_parameters: RefundParameters,
 }
 
@@ -97,7 +98,7 @@ pub struct SolanaVaultSwapResponse {
 pub struct AccountMeta {
     pub is_signer: bool,
     pub is_writable: bool,
-    pub address: String,
+    pub pubkey: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
