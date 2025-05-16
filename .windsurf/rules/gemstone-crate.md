@@ -7,7 +7,7 @@ Gemstone is a cross platform library for iOS and Android with native async netwo
 
 ## UniFFI remote enums
 
-when you work with type alias like `pub type GemSwapProvider = primitives::SwapProvider;`, don't remove the equivalent 1:1 mapping code block like, this is needed for compilation.
+When working with a type alias like `pub type GemSwapProvider = primitives::SwapProvider;`, ensure that the corresponding 1:1 mapping `#[uniffi::remote(Enum)]` code block is not removed, as it is required for compilation.
 
 ```rust
 #[uniffi::remote(Enum)]
