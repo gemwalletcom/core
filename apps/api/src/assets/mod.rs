@@ -29,8 +29,12 @@ pub async fn get_assets(asset_ids: Json<Vec<String>>, client: &State<Mutex<Asset
 }
 
 #[post("/assets/add", format = "json", data = "<asset_id>")]
-pub async fn add_asset(asset_id: Json<AssetId>, client: &State<Mutex<AssetsClient>>, assets_chain_provider: &State<Mutex<AssetsChainProvider>>) -> Json<Asset> {
-    let asset_id = asset_id.0;
+pub async fn add_asset(
+    asset_id: Json<Vec<AssetId>>,
+    client: &State<Mutex<AssetsClient>>,
+    assets_chain_provider: &State<Mutex<AssetsChainProvider>>,
+) -> Json<Vec<Asset>> {
+    let asset_id = asset_id.0.first().unwrap();
 
     let asset = assets_chain_provider
         .lock()
@@ -38,8 +42,9 @@ pub async fn add_asset(asset_id: Json<AssetId>, client: &State<Mutex<AssetsClien
         .get_token_data(asset_id.chain, asset_id.token_id.clone().unwrap())
         .await
         .unwrap();
-    client.lock().await.add_asset(asset.clone()).unwrap();
-    Json(asset)
+    client.lock().await.add_assets(vec![asset.clone()]).unwrap();
+
+    Json(vec![asset])
 }
 
 #[get("/assets/list")]

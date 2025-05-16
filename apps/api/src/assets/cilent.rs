@@ -15,9 +15,9 @@ impl AssetsClient {
         Self { database }
     }
 
-    pub fn add_asset(&mut self, asset: Asset) -> Result<usize, Box<dyn Error>> {
-        let asset = storage::models::Asset::from_primitive_default(asset);
-        Ok(self.database.add_assets(vec![asset])?)
+    pub fn add_assets(&mut self, assets: Vec<Asset>) -> Result<usize, Box<dyn Error>> {
+        let assets: Vec<storage::models::Asset> = assets.into_iter().map(storage::models::Asset::from_primitive_default).collect();
+        Ok(self.database.add_assets(assets)?)
     }
 
     #[allow(unused)]

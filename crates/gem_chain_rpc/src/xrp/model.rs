@@ -17,6 +17,22 @@ pub struct LedgerData {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AccountObjects {
+    pub account_objects: Vec<AccountObject>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AccountObject {
+    #[serde(rename = "LowLimit")]
+    pub low_limit: AccountObjectLowLimit,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AccountObjectLowLimit {
+    pub currency: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Ledger {
     pub close_time: i64,
     pub transactions: Vec<Transaction>,

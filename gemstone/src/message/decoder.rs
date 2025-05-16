@@ -54,7 +54,10 @@ impl SignMessageDecoder {
                 Ok(MessagePreview::Text(preview)) => preview,
                 _ => "".to_string(),
             },
-            SignDigestType::Eip712 => String::from_utf8(self.message.data.clone()).unwrap_or_default(),
+            SignDigestType::Eip712 => {
+                let value: serde_json::Value = serde_json::from_slice(&self.message.data).unwrap_or_default();
+                serde_json::to_string_pretty(&value).unwrap_or_default()
+            }
         }
     }
 

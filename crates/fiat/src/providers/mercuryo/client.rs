@@ -58,8 +58,7 @@ impl MercuryoClient {
 
     pub async fn get_countries(&self) -> Result<Response<Vec<String>>, reqwest::Error> {
         let query = [("type", "alpha2")];
-        self
-            .client
+        self.client
             .get(format!("{}/v1.6/public/card-countries", MERCURYO_API_BASE_URL))
             .query(&query)
             .send()
