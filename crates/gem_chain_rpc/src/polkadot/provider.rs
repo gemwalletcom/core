@@ -1,7 +1,8 @@
 use std::error::Error;
 
-use crate::{ChainBlockProvider, ChainTokenDataProvider};
+use crate::{ChainAssetsProvider, ChainBlockProvider, ChainTokenDataProvider};
 use async_trait::async_trait;
+use primitives::AssetBalance;
 use primitives::{chain::Chain, Asset};
 
 use super::client::PolkadotClient;
@@ -50,5 +51,12 @@ impl ChainBlockProvider for PolkadotProvider {
 impl ChainTokenDataProvider for PolkadotProvider {
     async fn get_token_data(&self, token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
         self.client.get_token_data(token_id).await
+    }
+}
+
+#[async_trait]
+impl ChainAssetsProvider for PolkadotProvider {
+    async fn get_assets_balances(&self, _address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
+        Ok(vec![])
     }
 }

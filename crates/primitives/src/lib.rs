@@ -111,3 +111,5 @@ pub use self::swap_provider::SwapProvider;
 pub mod swap;
 pub mod websocket;
 pub use self::websocket::{WebSocketPriceAction, WebSocketPriceActionType, WebSocketPricePayload};
+pub mod asset_balance;
+pub use self::asset_balance::AssetBalance;

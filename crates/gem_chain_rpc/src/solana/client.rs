@@ -7,7 +7,7 @@ use serde::de::DeserializeOwned;
 use serde_json::{json, Value};
 use std::{error::Error, fmt::Debug, str::FromStr};
 
-use super::model::BlockTransactions;
+use super::model::{BlockTransactions, TokenAccountInfo};
 use gem_solana::{
     jsonrpc::{AccountData, ValueResult},
     metaplex::{decode_metadata, metadata::Metadata},
@@ -106,6 +106,19 @@ impl SolanaClient {
 
     pub async fn request_block(&self, params: Vec<Value>) -> Result<BlockTransactions, ClientError> {
         self.client.request("getBlock", params).await
+    }
+
+    pub async fn get_token_accounts_by_owner(&self, owner: &str, program_id: &str) -> Result<ValueResult<Vec<TokenAccountInfo>>, Box<dyn Error + Send + Sync>> {
+        let params = vec![
+            json!(owner),
+            json!({
+                "programId": program_id
+            }),
+            json!({
+                "encoding": "jsonParsed"
+            }),
+        ];
+        Ok(self.client.request("getTokenAccountsByOwner", params).await?)
     }
 }
 

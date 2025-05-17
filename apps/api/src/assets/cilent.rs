@@ -1,6 +1,6 @@
 use std::{error::Error, vec};
 
-use primitives::{Asset, AssetBasic, AssetFull, Chain};
+use primitives::{Asset, AssetBalance, AssetBasic, AssetFull, Chain};
 use search_index::{AssetDocument, SearchIndexClient, ASSETS_INDEX_NAME};
 use settings_chain::ChainProviders;
 use storage::DatabaseClient;
@@ -118,5 +118,9 @@ impl AssetsChainProvider {
 
     pub async fn get_token_data(&self, chain: Chain, token_id: String) -> Result<Asset, Box<dyn std::error::Error + Send + Sync>> {
         self.providers.get_token_data(chain, token_id).await
+    }
+
+    pub async fn get_assets_balances(&self, chain: Chain, address: &str) -> Result<Vec<AssetBalance>, Box<dyn std::error::Error + Send + Sync>> {
+        self.providers.get_assets_balances(chain, address.to_owned()).await
     }
 }

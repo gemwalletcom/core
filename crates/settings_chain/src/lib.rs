@@ -9,7 +9,7 @@ use gem_chain_rpc::{
     sui::provider::SuiProvider, ton::client::TonClient, ton::provider::TonProvider, tron::client::TronClient, tron::provider::TronProvider,
     xrp::client::XRPClient, xrp::provider::XRPProvider, ChainProvider,
 };
-use primitives::{Asset, Chain};
+use primitives::{Asset, AssetBalance, Chain};
 use reqwest_middleware::ClientBuilder;
 use reqwest_retry::{policies::ExponentialBackoff, RetryTransientMiddleware};
 use settings::Settings;
@@ -140,5 +140,14 @@ impl ChainProviders {
 
     pub async fn get_token_data(&self, chain: Chain, token_id: String) -> Result<Asset, Box<dyn std::error::Error + Send + Sync>> {
         self.providers.iter().find(|x| x.get_chain() == chain).unwrap().get_token_data(token_id).await
+    }
+
+    pub async fn get_assets_balances(&self, chain: Chain, address: String) -> Result<Vec<AssetBalance>, Box<dyn std::error::Error + Send + Sync>> {
+        self.providers
+            .iter()
+            .find(|x| x.get_chain() == chain)
+            .unwrap()
+            .get_assets_balances(address)
+            .await
     }
 }

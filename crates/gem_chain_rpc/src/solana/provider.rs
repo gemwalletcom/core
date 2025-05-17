@@ -4,9 +4,10 @@ use async_trait::async_trait;
 use jsonrpsee::core::ClientError;
 use serde_json::json;
 
-use crate::{ChainBlockProvider, ChainTokenDataProvider};
-use gem_solana::metaplex::metadata::Metadata;
-use primitives::{chain::Chain, Asset, AssetId, AssetType};
+use crate::{ChainAssetsProvider, ChainBlockProvider, ChainTokenDataProvider};
+
+use gem_solana::{self, metaplex::metadata::Metadata};
+use primitives::{chain::Chain, Asset, AssetBalance, AssetId, AssetType};
 
 use super::{client::SolanaClient, mapper::SolanaMapper, model::BlockTransactions};
 
@@ -72,9 +73,22 @@ impl ChainBlockProvider for SolanaProvider {
 }
 
 #[async_trait]
+impl ChainAssetsProvider for SolanaProvider {
+    async fn get_assets_balances(&self, address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
+        let accounts = self.client.get_token_accounts_by_owner(&address, gem_solana::TOKEN_PROGRAM).await?.value;
+        Ok(accounts
+            .into_iter()
+            .map(|x| AssetBalance {
+                asset_id: AssetId::from_token(self.get_chain(), &x.account.data.parsed.info.mint),
+                balance: x.account.data.parsed.info.token_amount.amount.to_string(),
+            })
+            .collect())
+    }
+}
+
+#[async_trait]
 impl ChainTokenDataProvider for SolanaProvider {
     async fn get_token_data(&self, token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
-        // Use the SolanaClient's get_account_info method with generic type parameter
         let token_info = self
             .client
             .get_account_info::<gem_solana::jsonrpc::SolanaParsedTokenInfo>(&token_id, "jsonParsed")

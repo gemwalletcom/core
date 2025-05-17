@@ -138,6 +138,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
                 assets::get_asset,
                 assets::add_asset,
                 assets::get_assets,
+                assets::get_assets_balances,
                 assets::get_assets_list,
                 assets::get_assets_search,
                 assets::get_assets_by_device_id,

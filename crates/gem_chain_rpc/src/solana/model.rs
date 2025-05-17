@@ -124,6 +124,39 @@ impl TokenBalance {
 
 #[derive(Debug, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
+pub struct TokenAccountInfo {
+    pub pubkey: String,
+    pub account: TokenAccountData,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct TokenAccountData {
+    pub data: TokenAccountDataContent,
+    pub owner: String,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct TokenAccountDataContent {
+    pub parsed: TokenAccountDataParsed,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct TokenAccountDataParsed {
+    pub info: TokenAccountInfoData,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct TokenAccountInfoData {
+    pub mint: String,
+    pub token_amount: TokenAmount,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct TokenAmount {
     #[serde(deserialize_with = "deserialize_biguint_from_str")]
     pub amount: BigUint,
