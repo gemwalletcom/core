@@ -1,6 +1,10 @@
-use num_bigint::BigUint;
 use serde::{Deserialize, Serialize};
 use serde_serializers::deserialize_biguint_from_str;
+
+pub use num_bigint::BigUint;
+
+pub const ENCODING_BASE64: &str = "base64";
+pub const ENCODING_BASE58: &str = "base58";
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -19,16 +23,20 @@ pub struct Meta {
     pub post_token_balances: Vec<TokenBalance>,
 }
 
-#[derive(Debug, Clone, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct InnerInstruction {
-    pub instructions: Vec<Instruction>,
+impl Meta {
+    pub fn get_pre_token_balance(&self, account_index: i64) -> Option<TokenBalance> {
+        self.pre_token_balances.iter().find(|b| b.account_index == account_index).cloned()
+    }
+
+    pub fn get_post_token_balance(&self, account_index: i64) -> Option<TokenBalance> {
+        self.post_token_balances.iter().find(|b| b.account_index == account_index).cloned()
+    }
 }
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct Instruction {
-    pub parsed: Option<InstructionParsed>,
+pub struct InnerInstruction {
+    pub instructions: Vec<Parsed<Option<InstructionParsed>>>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -49,16 +57,6 @@ pub struct InstructionInfo {
     pub token_amount: Option<TokenAmount>,
 }
 
-impl Meta {
-    pub fn get_pre_token_balance(&self, account_index: i64) -> Option<TokenBalance> {
-        self.pre_token_balances.iter().find(|b| b.account_index == account_index).cloned()
-    }
-
-    pub fn get_post_token_balance(&self, account_index: i64) -> Option<TokenBalance> {
-        self.post_token_balances.iter().find(|b| b.account_index == account_index).cloned()
-    }
-}
-
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Status {
@@ -69,8 +67,6 @@ pub struct Status {
 #[serde(rename_all = "camelCase")]
 pub struct Message {
     pub account_keys: Vec<AccountKey>,
-    //pub instructions: Vec<Instruction>,
-    //pub recent_blockhash: String,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -78,14 +74,6 @@ pub struct Message {
 pub struct AccountKey {
     pub pubkey: String,
 }
-
-// #[derive(Debug, Deserialize, Serialize)]
-// #[serde(rename_all = "camelCase")]
-// pub struct Instruction {
-//     pub accounts: Vec<u64>,
-//     pub data: String,
-//     pub program_id_index: u64,
-// }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -132,20 +120,8 @@ pub struct TokenAccountInfo {
 #[derive(Debug, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct TokenAccountData {
-    pub data: TokenAccountDataContent,
+    pub data: Parsed<Info<TokenAccountInfoData>>,
     pub owner: String,
-}
-
-#[derive(Debug, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct TokenAccountDataContent {
-    pub parsed: TokenAccountDataParsed,
-}
-
-#[derive(Debug, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct TokenAccountDataParsed {
-    pub info: TokenAccountInfoData,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -161,3 +137,78 @@ pub struct TokenAmount {
     #[serde(deserialize_with = "deserialize_biguint_from_str")]
     pub amount: BigUint,
 }
+
+// Models moved from gem_solana/src/jsonrpc.rs
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Configuration {
+    pub commitment: &'static str,
+    pub encoding: &'static str,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub filters: Vec<Filter>,
+}
+
+impl Configuration {
+    pub fn new(filters: Vec<Filter>) -> Self {
+        Self {
+            commitment: "confirmed",
+            encoding: "base64",
+            filters,
+        }
+    }
+}
+
+impl Default for Configuration {
+    fn default() -> Self {
+        Self {
+            commitment: "confirmed",
+            encoding: "base64",
+            filters: vec![],
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Filter {
+    pub memcmp: Memcmp,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Memcmp {
+    pub offset: u8,
+    pub bytes: String,
+    pub encoding: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ValueResult<T> {
+    pub value: T,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ValueData<T> {
+    pub data: T,
+    pub owner: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Parsed<T> {
+    pub parsed: T,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Info<T> {
+    pub info: T,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TokenInfo {
+    pub decimals: i32,
+    pub is_initialized: bool,
+    pub mint_authority: String,
+    pub supply: String,
+}
+
+pub type AccountData = ValueData<Vec<String>>;
+
+pub type ResultTokenInfo = ValueResult<ValueData<Parsed<Info<TokenInfo>>>>;

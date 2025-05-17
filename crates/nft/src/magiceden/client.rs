@@ -1,6 +1,6 @@
 use super::model::{Collection, Nft};
-use gem_chain_rpc::SolanaClient;
-use gem_solana::jsonrpc::{AccountData, ValueResult};
+use gem_solana::model::{AccountData, ValueResult};
+use gem_solana::SolanaClient;
 use reqwest::header::{HeaderMap, HeaderValue};
 use std::error::Error;
 

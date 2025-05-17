@@ -1,7 +1,7 @@
 use super::WHIRLPOOL_CONFIG;
 use base64::{engine::general_purpose::STANDARD, Engine};
 use borsh::{BorshDeserialize, BorshSerialize};
-use gem_solana::{jsonrpc::AccountData, pubkey::Pubkey};
+use gem_solana::{model::AccountData, pubkey::Pubkey};
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 

@@ -4,16 +4,14 @@ use jsonrpsee::{
     rpc_params,
 };
 use serde::de::DeserializeOwned;
-use serde_json::{json, Value};
+use serde_json::json;
 use std::{error::Error, fmt::Debug, str::FromStr};
 
-use super::model::{BlockTransactions, TokenAccountInfo};
-use gem_solana::{
-    jsonrpc::{AccountData, ValueResult},
+use crate::{
     metaplex::{decode_metadata, metadata::Metadata},
+    model::{BlockTransactions, TokenAccountInfo, ValueData, ValueResult},
     pubkey::Pubkey,
 };
-use primitives::chain::Chain;
 
 pub struct SolanaClient {
     client: HttpClient,
@@ -28,9 +26,6 @@ impl SolanaClient {
 
         Self { client }
     }
-
-    // map_transaction has been removed, use SolanaMapper directly
-
     pub async fn get_account_info<T: DeserializeOwned>(&self, account: &str, encoding: &str) -> Result<T, Box<dyn Error + Send + Sync>> {
         let rpc_method = "getAccountInfo";
         let params = vec![
@@ -89,22 +84,33 @@ impl SolanaClient {
             .0
             .to_string();
 
-        let result: ValueResult<Option<AccountData>> = self.get_account_info(&metadata_key, "base64").await?;
+        let result: ValueResult<Option<ValueData<Vec<String>>>> = self.get_account_info(&metadata_key, "base64").await?;
         let value = result.value.ok_or(anyhow::anyhow!("Failed to get metadata"))?;
         let meta = decode_metadata(&value.data[0]).map_err(|_| anyhow::anyhow!("Failed to decode metadata"))?;
         Ok(meta)
     }
 
-    pub fn get_chain(&self) -> Chain {
-        Chain::Solana
+    pub async fn get_slot(&self) -> Result<i64, Box<dyn Error + Send + Sync>> {
+        Ok(self.client.request("getSlot", rpc_params![]).await?)
     }
 
-    pub async fn get_latest_block(&self) -> Result<i64, Box<dyn Error + Send + Sync>> {
-        let block: i64 = self.client.request("getSlot", rpc_params![]).await?;
-        Ok(block)
-    }
-
-    pub async fn request_block(&self, params: Vec<Value>) -> Result<BlockTransactions, ClientError> {
+    pub async fn get_block(
+        &self,
+        slot: i64,
+        encoding: Option<&str>,
+        transaction_details: Option<&str>,
+        rewards: Option<bool>,
+        max_supported_transaction_version: Option<u8>,
+    ) -> Result<BlockTransactions, ClientError> {
+        let params = vec![
+            json!(slot),
+            json!({
+                "encoding": encoding.unwrap_or("jsonParsed"),
+                "transactionDetails": transaction_details.unwrap_or("full"),
+                "rewards": rewards.unwrap_or(false),
+                "maxSupportedTransactionVersion": max_supported_transaction_version.unwrap_or(0),
+            }),
+        ];
         self.client.request("getBlock", params).await
     }
 
@@ -124,30 +130,31 @@ impl SolanaClient {
 
 #[cfg(test)]
 mod tests {
+    use crate::model::ResultTokenInfo;
+
     use super::*;
-    use gem_solana::jsonrpc::SolanaParsedTokenInfo;
     use serde::{Deserialize, Serialize};
 
     #[derive(Debug, Clone, Serialize, Deserialize)]
     struct JsonRpcResult<T> {
         result: T,
     }
+
     #[test]
     fn test_decode_token_data() {
-        let pyusd_file = concat!(env!("CARGO_MANIFEST_DIR"), "/testdata/solana/pyusd_mint.json");
-        let usdc_file = concat!(env!("CARGO_MANIFEST_DIR"), "/testdata/solana/usdc_mint.json");
+        let pyusd_file = concat!(env!("CARGO_MANIFEST_DIR"), "/testdata/pyusd_mint.json");
+        let usdc_file = concat!(env!("CARGO_MANIFEST_DIR"), "/testdata/usdc_mint.json");
 
         let file = std::fs::File::open(pyusd_file).expect("file should open read only");
         let json: serde_json::Value = serde_json::from_reader(file).expect("file should be proper JSON");
-        let result: JsonRpcResult<SolanaParsedTokenInfo> = serde_json::from_value(json).expect("Decoded into ParsedTokenInfo");
+        let result: JsonRpcResult<ResultTokenInfo> = serde_json::from_value(json).expect("Decoded into ParsedTokenInfo");
         let parsed_info = result.result.value.data.parsed.info;
-
         assert_eq!(parsed_info.decimals, 6);
         assert_eq!(parsed_info.mint_authority, "22mKJkKjGEQ3rampp5YKaSsaYZ52BUkcnUN6evXGsXzz");
 
         let file = std::fs::File::open(usdc_file).expect("file should open read only");
         let json: serde_json::Value = serde_json::from_reader(file).expect("file should be proper JSON");
-        let result: JsonRpcResult<SolanaParsedTokenInfo> = serde_json::from_value(json).expect("Decoded into ParsedTokenInfo");
+        let result: JsonRpcResult<ResultTokenInfo> = serde_json::from_value(json).expect("Decoded into ParsedTokenInfo");
         let parsed_info = result.result.value.data.parsed.info;
 
         assert_eq!(parsed_info.decimals, 6);

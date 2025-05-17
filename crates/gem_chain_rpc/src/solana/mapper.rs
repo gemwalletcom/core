@@ -1,17 +1,14 @@
 use chrono::Utc;
-use primitives::{chain::Chain, AssetId, Transaction, TransactionState, TransactionSwapMetadata, TransactionType};
+use primitives::{chain::Chain, Asset, AssetId, AssetType, Transaction, TransactionState, TransactionSwapMetadata, TransactionType};
 
-use gem_solana::{TOKEN_PROGRAM, WSOL_TOKEN_ADDRESS};
+use gem_solana::{metaplex::metadata::Metadata, JUPITER_PROGRAM_ID, SYSTEM_PROGRAM_ID, TOKEN_PROGRAM, WSOL_TOKEN_ADDRESS};
 
-use super::model::{BlockTransaction, InstructionParsed};
-
-pub const SYSTEM_PROGRAM_ID: &str = "11111111111111111111111111111111";
-pub const JUPITER_PROGRAM_ID: &str = "JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4";
+use gem_solana::model::{BlockTransaction, InstructionParsed, TokenInfo};
 
 pub struct SolanaMapper;
 
 impl SolanaMapper {
-    pub fn map_transaction(chain: Chain, transaction: &BlockTransaction, block_number: i64) -> Option<Transaction> {
+    pub fn map_transaction(chain: Chain, transaction: &BlockTransaction, block_number: i64) -> Option<primitives::Transaction> {
         let account_keys = transaction
             .transaction
             .message
@@ -180,11 +177,20 @@ impl SolanaMapper {
 
     fn asset_id_from_program(chain: Chain, program_id: String) -> AssetId {
         if program_id == WSOL_TOKEN_ADDRESS {
-            return chain.as_asset_id();
+            chain.as_asset_id()
+        } else {
+            AssetId {
+                chain,
+                token_id: Some(program_id),
+            }
         }
-        AssetId {
-            chain,
-            token_id: Some(program_id),
-        }
+    }
+
+    pub fn map_token_data(chain: Chain, token_id: String, token_info: &TokenInfo, meta: &Metadata) -> Result<Asset, Box<dyn std::error::Error + Send + Sync>> {
+        let name = meta.data.name.trim_matches(char::from(0)).to_string();
+        let symbol = meta.data.symbol.trim_matches(char::from(0)).to_string();
+        let decimals = token_info.decimals;
+
+        Ok(Asset::new(AssetId::from_token(chain, &token_id), name, symbol, decimals, AssetType::TOKEN))
     }
 }
