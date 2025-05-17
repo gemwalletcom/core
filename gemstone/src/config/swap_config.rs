@@ -3,6 +3,7 @@ use primitives::Chain;
 
 pub static DEFAULT_SLIPPAGE_BPS: u32 = 100;
 pub static DEFAULT_SWAP_FEE_BPS: u32 = 50;
+pub static DEFAULT_CHAINFLIP_FEE_BPS: u32 = 45;
 pub static DEFAULT_BRIDGE_FEE_BPS: u32 = 25;
 
 #[derive(uniffi::Record, Debug, Clone, PartialEq)]

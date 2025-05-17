@@ -10,6 +10,13 @@ where
     serializer.serialize_str(&value.to_string())
 }
 
+pub fn serialize_biguint_to_hex_str<S>(value: &BigUint, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+{
+    serializer.serialize_str(&format!("0x{}", value.to_str_radix(16)))
+}
+
 pub fn deserialize_biguint_from_str<'de, D>(deserializer: D) -> Result<BigUint, D::Error>
 where
     D: de::Deserializer<'de>,

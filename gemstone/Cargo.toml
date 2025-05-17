@@ -52,8 +52,10 @@ bs58 = { workspace = true }
 borsh.workspace = true
 lazy_static.workspace = true
 bigdecimal.workspace = true
+rand.workspace = true
 
-orca_whirlpools_core = "1.0.5"
+orca_whirlpools_core = "1.0.8"
+solana-primitives = "0.1.2"
 
 [build-dependencies]
 uniffi = { workspace = true, features = ["build"] }

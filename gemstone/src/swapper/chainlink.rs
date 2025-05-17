@@ -2,11 +2,12 @@ use alloy_primitives::hex::decode as HexDecode;
 use alloy_sol_types::SolCall;
 use num_bigint::BigInt;
 use num_traits::FromBytes;
+use primitives::Chain;
 use std::sync::Arc;
 
 use crate::{
     network::{
-        jsonrpc::{jsonrpc_call, JsonRpcResult},
+        jsonrpc::{JsonRpcClient, JsonRpcResult},
         AlienProvider,
     },
     swapper::SwapperError,
@@ -16,20 +17,17 @@ use gem_evm::{
     jsonrpc::{BlockParameter, EthereumRpc, TransactionObject},
     multicall3::{create_call3, decode_call3_return, IMulticall3},
 };
-use primitives::Chain;
 
 pub struct ChainlinkPriceFeed {
     pub contract: String,
-    pub provider: Arc<dyn AlienProvider>,
-    pub chain: Chain,
+    pub client: JsonRpcClient,
 }
 
 impl ChainlinkPriceFeed {
     pub fn new_eth_usd_feed(provider: Arc<dyn AlienProvider>) -> ChainlinkPriceFeed {
         ChainlinkPriceFeed {
             contract: CHAINLINK_ETH_USD_FEED.into(),
-            provider,
-            chain: Chain::Ethereum,
+            client: JsonRpcClient::new_with_chain(provider, Chain::Ethereum),
         }
     }
 
@@ -49,7 +47,7 @@ impl ChainlinkPriceFeed {
     pub async fn fetch_latest_round(&self) -> Result<BigInt, SwapperError> {
         let data = AggregatorInterface::latestRoundDataCall {}.abi_encode();
         let call = EthereumRpc::Call(TransactionObject::new_call(&self.contract, data), BlockParameter::Latest);
-        let response: JsonRpcResult<String> = jsonrpc_call(&call, self.provider.clone(), &self.chain).await?;
+        let response: JsonRpcResult<String> = self.client.call(&call).await?;
         let result = response.take()?;
         let hex_data = HexDecode(result).map_err(|_| SwapperError::NetworkError("failed to latest round data".into()))?;
         let decoded = AggregatorInterface::latestRoundDataCall::abi_decode_returns(&hex_data).map_err(SwapperError::from)?;

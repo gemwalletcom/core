@@ -8,20 +8,26 @@ use std::sync::Arc;
 use sui_types::Address;
 
 use super::models::{CoinAsset, InspectResult};
-use crate::network::{jsonrpc::JsonRpcResult, jsonrpc_call, AlienError, AlienProvider};
+use crate::network::{
+    jsonrpc::{JsonRpcClient, JsonRpcResult},
+    AlienError, AlienProvider,
+};
 use primitives::Chain;
 
 pub struct SuiClient {
-    provider: Arc<dyn AlienProvider>,
+    client: JsonRpcClient,
 }
 
 impl SuiClient {
     pub fn new(provider: Arc<dyn AlienProvider>) -> Self {
-        Self { provider }
+        let endpoint = provider.get_endpoint(Chain::Sui).unwrap();
+        Self {
+            client: JsonRpcClient::new(provider, endpoint),
+        }
     }
 
     pub async fn rpc_call<T: DeserializeOwned + Clone>(&self, rpc: SuiRpc) -> Result<T, AlienError> {
-        let response: JsonRpcResult<T> = jsonrpc_call(&rpc, self.provider.clone(), &Chain::Sui).await?;
+        let response: JsonRpcResult<T> = self.client.call(&rpc).await?;
         let result = response.take()?;
         Ok(result)
     }
