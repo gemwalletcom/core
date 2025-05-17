@@ -1,10 +1,12 @@
 pub mod client;
 pub mod hash;
+pub mod jsonrpc;
 pub mod metaplex;
 pub mod model;
 pub mod pubkey;
 
 pub use client::SolanaClient;
+pub use jsonrpc::SolanaRpc;
 
 // Constants
 pub const WSOL_TOKEN_ADDRESS: &str = "So11111111111111111111111111111111111111112";
