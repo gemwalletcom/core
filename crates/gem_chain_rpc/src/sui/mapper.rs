@@ -1,11 +1,11 @@
 use chrono::Utc;
 use num_bigint::BigUint;
-use primitives::{chain::Chain, Transaction, TransactionState, TransactionType};
+use primitives::{chain::Chain, Asset, AssetId, AssetType, Transaction, TransactionState, TransactionType};
 use std::str::FromStr;
 
 use super::{
     client::{SUI_STAKE_EVENT, SUI_UNSTAKE_EVENT},
-    model::{Digest as SuiTransaction, GasUsed},
+    model::{CoinMetadata, Digest as SuiTransaction, GasUsed},
 };
 
 pub struct SuiMapper;
@@ -126,5 +126,15 @@ impl SuiMapper {
         }
 
         None
+    }
+
+    pub fn map_token(chain: Chain, metadata: CoinMetadata) -> Asset {
+        Asset::new(
+            AssetId::from_token(chain, &metadata.id.clone()),
+            metadata.name,
+            metadata.symbol,
+            metadata.decimals,
+            AssetType::TOKEN,
+        )
     }
 }

@@ -102,3 +102,10 @@ pub struct CoinMetadata {
     pub symbol: String,
     pub description: String,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Balance {
+    pub coin_type: String,
+    pub total_balance: String,
+}

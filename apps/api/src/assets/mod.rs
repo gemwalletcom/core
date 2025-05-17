@@ -5,23 +5,20 @@ extern crate rocket;
 
 use std::str::FromStr;
 
-use primitives::{Asset, AssetBalance, AssetBasic, AssetFull, AssetId, Chain};
+use primitives::{Asset, AssetBalance, AssetBasic, AssetFull, AssetId, Chain, ChainAddress};
 use rocket::serde::json::Json;
 use rocket::tokio::sync::Mutex;
 use rocket::State;
 
-#[get("/assets/balances?<chain>&<address>")]
+#[post("/assets/balances", format = "json", data = "<requests>")]
 pub async fn get_assets_balances(
-    chain: &str,
-    address: &str,
+    requests: Json<Vec<ChainAddress>>,
     assets_chain_provider: &State<Mutex<AssetsChainProvider>>,
 ) -> Result<Json<Vec<AssetBalance>>, Status> {
-    let chain = Chain::from_str(chain).unwrap();
-
-    match assets_chain_provider.lock().await.get_assets_balances(chain, address).await {
+    match assets_chain_provider.lock().await.get_assets_balances(requests.0).await {
         Ok(assets) => Ok(Json(assets)),
         Err(error) => {
-            println!("get_assets_balances error: {}, {:?}, {:?}", chain, address, error);
+            println!("get_assets_balances error: {:?}", error);
             Err(Status::InternalServerError)
         }
     }
