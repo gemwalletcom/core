@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use alien_provider::NativeProvider;
-    use gem_solana::jsonrpc::{SolanaLatestBlockhash, SolanaRpc};
+    use gem_solana::{jsonrpc::SolanaRpc, model::LatestBlockhash};
     use gemstone::{
         config::swap_config::{get_swap_config, SwapReferralFee, SwapReferralFees},
         network::JsonRpcClient,
@@ -14,7 +14,7 @@ mod tests {
     async fn test_solana_json_rpc() -> Result<(), String> {
         let rpc_client = JsonRpcClient::new_with_chain(Arc::new(NativeProvider::default()), Chain::Solana);
         let recent_blockhash = rpc_client
-            .call::<SolanaRpc, SolanaLatestBlockhash>(&SolanaRpc::GetLatestBlockhash)
+            .call::<SolanaRpc, LatestBlockhash>(&SolanaRpc::GetLatestBlockhash)
             .await
             .map_err(|e| e.to_string())?
             .take()
