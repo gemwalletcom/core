@@ -10,7 +10,7 @@ use super::{
 use crate::network::AlienProvider;
 use async_trait::async_trait;
 use client::PancakeSwapAptosClient;
-use gem_aptos::model::{TransactionPayload, NATIVE_APTOS_COIN};
+use gem_aptos::{TransactionPayload, APTOS_NATIVE_COIN};
 use model::{RouteData, PANCAKE_SWAP_APTOS_ADDRESS};
 use primitives::{AssetId, Chain};
 
@@ -32,7 +32,7 @@ impl PancakeSwapAptos {
         if let Some(token_id) = asset_id.token_id {
             return token_id;
         }
-        NATIVE_APTOS_COIN.to_string()
+        APTOS_NATIVE_COIN.to_string()
     }
 
     fn router_swap_input(&self, address: &str, assets: Vec<String>, from_value: String, to_value: String) -> TransactionPayload {

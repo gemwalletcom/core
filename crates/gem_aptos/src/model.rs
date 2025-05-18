@@ -1,8 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-pub const NATIVE_APTOS_COIN: &str = "0x1::aptos_coin::AptosCoin";
-pub const WITHDRAW_EVENT: &str = "0x1::coin::WithdrawEvent";
-pub const DEPOSIT_EVENT: &str = "0x1::coin::DepositEvent";
+use crate::{STAKE_DEPOSIT_EVENT, STAKE_WITHDRAW_EVENT};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Ledger {
@@ -13,8 +11,6 @@ pub struct Ledger {
 pub struct Block {
     pub block_height: String,
     pub transactions: Vec<Transaction>,
-    // #[serde(rename = "type")]
-    // pub transaction_type: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -25,7 +21,6 @@ pub struct Transaction {
     pub gas_used: Option<String>,
     pub gas_unit_price: Option<String>,
     pub events: Option<Vec<Event>>,
-    //pub payload: Option<Payload>,
     #[serde(rename = "type")]
     pub transaction_type: String,
     pub sequence_number: Option<String>,
@@ -56,7 +51,7 @@ impl Event {
     pub fn get_amount(&self) -> Option<String> {
         let data = self.data.clone()?;
         match self.event_type.as_str() {
-            WITHDRAW_EVENT | DEPOSIT_EVENT => serde_json::from_value::<AmountData>(data).ok()?.amount,
+            STAKE_WITHDRAW_EVENT | STAKE_DEPOSIT_EVENT => serde_json::from_value::<AmountData>(data).ok()?.amount,
             _ => None,
         }
     }
@@ -73,13 +68,32 @@ pub struct TransactionPayload {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Resource<T> {
-    pub r#type: String,
+    #[serde(rename = "type")]
+    pub resource_type: String,
     pub data: T,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ResourceCoinInfo {
-    pub decimals: i32,
+#[serde(untagged)]
+pub enum ResourceData {
+    CoinStore(CoinStore),
+    CoinInfo(CoinInfo),
+    Other(serde_json::Value),
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Coin {
+    pub value: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CoinStore {
+    pub coin: Coin,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CoinInfo {
+    pub decimals: u8,
     pub name: String,
     pub symbol: String,
 }

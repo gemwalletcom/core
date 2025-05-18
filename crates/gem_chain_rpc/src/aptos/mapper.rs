@@ -1,5 +1,5 @@
 use chrono::Utc;
-use gem_aptos::model::{Transaction as AptosTransaction, DEPOSIT_EVENT};
+use gem_aptos::{Transaction as AptosTransaction, STAKE_DEPOSIT_EVENT};
 use num_bigint::BigUint;
 use primitives::{chain::Chain, Transaction, TransactionState, TransactionType};
 use std::str::FromStr;
@@ -11,7 +11,7 @@ impl AptosMapper {
         let events = transaction.clone().events.unwrap_or_default();
 
         if transaction.transaction_type == "user_transaction" && events.len() <= 4 {
-            let deposit_event = events.iter().find(|x| x.event_type == DEPOSIT_EVENT)?;
+            let deposit_event = events.iter().find(|x| x.event_type == STAKE_DEPOSIT_EVENT)?;
 
             let asset_id = chain.as_asset_id();
             let state = if transaction.success {
