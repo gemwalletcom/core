@@ -1,5 +1,5 @@
 use crate::network::jsonrpc::{JsonRpcRequest, JsonRpcRequestConvert};
-use gem_solana::jsonrpc::{Configuration, SolanaRpc};
+use gem_solana::{model::Configuration, SolanaRpc};
 use serde_json::Value;
 
 impl JsonRpcRequestConvert for SolanaRpc {

@@ -1,7 +1,8 @@
 use std::error::Error;
 
-use crate::{ChainBlockProvider, ChainTokenDataProvider};
+use crate::{ChainAssetsProvider, ChainBlockProvider, ChainTokenDataProvider};
 use async_trait::async_trait;
+use primitives::AssetBalance;
 use primitives::{chain::Chain, Asset, Transaction};
 
 use super::client::NearClient;
@@ -58,5 +59,12 @@ impl ChainTokenDataProvider for NearProvider {
     async fn get_token_data(&self, _token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
         // The client's get_token_data is just an unimplemented stub for now
         unimplemented!()
+    }
+}
+
+#[async_trait]
+impl ChainAssetsProvider for NearProvider {
+    async fn get_assets_balances(&self, _address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
+        Ok(vec![])
     }
 }

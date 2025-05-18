@@ -2538,12 +2538,17 @@ dependencies = [
 name = "gem_solana"
 version = "1.0.0"
 dependencies = [
+ "anyhow",
  "base64 0.22.1",
  "borsh 1.5.7",
  "bs58",
  "curve25519-dalek",
+ "jsonrpsee",
+ "num-bigint",
  "primitives",
  "serde",
+ "serde_json",
+ "serde_serializers",
  "sha2",
  "thiserror 2.0.12",
 ]
@@ -5814,6 +5819,7 @@ name = "settings_chain"
 version = "1.0.0"
 dependencies = [
  "gem_chain_rpc",
+ "gem_solana",
  "primitives",
  "reqwest",
  "reqwest-middleware",

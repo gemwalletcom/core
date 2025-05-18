@@ -5,12 +5,12 @@ use jsonrpsee::{
     http_client::{HttpClient, HttpClientBuilder},
     rpc_params,
 };
-use primitives::{chain::Chain, Asset, AssetId, AssetType};
+use primitives::chain::Chain;
 use serde_json::json;
 
 use super::{
     mapper::SuiMapper,
-    model::{CoinMetadata, Digests},
+    model::{Balance, CoinMetadata, Digests},
 };
 
 pub const SUI_STAKE_EVENT: &str = "0x3::validator::StakingRequestEvent";
@@ -69,19 +69,14 @@ impl SuiClient {
             json!(true),
         ];
 
-        let block: Digests = self.client.request("suix_queryTransactionBlocks", params).await?;
-        Ok(block)
+        Ok(self.client.request("suix_queryTransactionBlocks", params).await?)
     }
 
-    pub async fn get_token_data(&self, token_id: String) -> Result<primitives::Asset, Box<dyn Error + Send + Sync>> {
-        let metadata: CoinMetadata = self.client.request("suix_getCoinMetadata", vec![token_id.clone()]).await?;
+    pub async fn get_coin_metadata(&self, token_id: String) -> Result<CoinMetadata, Box<dyn Error + Send + Sync>> {
+        Ok(self.client.request("suix_getCoinMetadata", rpc_params!(token_id.clone())).await?)
+    }
 
-        Ok(Asset::new(
-            AssetId::from_token(self.get_chain(), &token_id),
-            metadata.name,
-            metadata.symbol,
-            metadata.decimals,
-            AssetType::TOKEN,
-        ))
+    pub async fn get_all_balances(&self, address: String) -> Result<Vec<Balance>, Box<dyn Error + Send + Sync>> {
+        Ok(self.client.request("suix_getAllBalances", rpc_params!(address)).await?)
     }
 }

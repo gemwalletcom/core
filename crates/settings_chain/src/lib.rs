@@ -5,11 +5,12 @@ use gem_chain_rpc::{
     bitcoin::client::BitcoinClient, bitcoin::provider::BitcoinProvider, cardano::client::CardanoClient, cardano::provider::CardanoProvider,
     cosmos::client::CosmosClient, cosmos::provider::CosmosProvider, ethereum::client::EthereumClient, ethereum::provider::EthereumProvider,
     near::client::NearClient, near::provider::NearProvider, polkadot::client::PolkadotClient, polkadot::provider::PolkadotProvider,
-    solana::client::SolanaClient, solana::provider::SolanaProvider, stellar::client::StellarClient, stellar::provider::StellarProvider, sui::client::SuiClient,
-    sui::provider::SuiProvider, ton::client::TonClient, ton::provider::TonProvider, tron::client::TronClient, tron::provider::TronProvider,
-    xrp::client::XRPClient, xrp::provider::XRPProvider, ChainProvider,
+    solana::provider::SolanaProvider, stellar::client::StellarClient, stellar::provider::StellarProvider, sui::client::SuiClient, sui::provider::SuiProvider,
+    ton::client::TonClient, ton::provider::TonProvider, tron::client::TronClient, tron::provider::TronProvider, xrp::client::XRPClient,
+    xrp::provider::XRPProvider, ChainProvider,
 };
-use primitives::{Asset, Chain};
+use gem_solana::SolanaClient;
+use primitives::{Asset, AssetBalance, Chain};
 use reqwest_middleware::ClientBuilder;
 use reqwest_retry::{policies::ExponentialBackoff, RetryTransientMiddleware};
 use settings::Settings;
@@ -63,7 +64,7 @@ impl ProviderFactory {
             Chain::Cosmos | Chain::Osmosis | Chain::Celestia | Chain::Thorchain | Chain::Injective | Chain::Noble | Chain::Sei => {
                 Box::new(CosmosProvider::new(CosmosClient::new(chain, client, url)))
             }
-            Chain::Solana => Box::new(SolanaProvider::new(SolanaClient::new(url.as_str()))),
+            Chain::Solana => Box::new(SolanaProvider::new(SolanaClient::new(&url))),
             Chain::Ton => Box::new(TonProvider::new(TonClient::new(client, url))),
             Chain::Tron => Box::new(TronProvider::new(TronClient::new(client, url))),
             Chain::Aptos => Box::new(AptosProvider::new(AptosClient::new(client, url))),
@@ -140,5 +141,14 @@ impl ChainProviders {
 
     pub async fn get_token_data(&self, chain: Chain, token_id: String) -> Result<Asset, Box<dyn std::error::Error + Send + Sync>> {
         self.providers.iter().find(|x| x.get_chain() == chain).unwrap().get_token_data(token_id).await
+    }
+
+    pub async fn get_assets_balances(&self, chain: Chain, address: String) -> Result<Vec<AssetBalance>, Box<dyn std::error::Error + Send + Sync>> {
+        self.providers
+            .iter()
+            .find(|x| x.get_chain() == chain)
+            .unwrap()
+            .get_assets_balances(address)
+            .await
     }
 }

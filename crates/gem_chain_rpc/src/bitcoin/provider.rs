@@ -1,8 +1,8 @@
 use std::error::Error;
 
-use crate::{ChainBlockProvider, ChainTokenDataProvider};
+use crate::{ChainAssetsProvider, ChainBlockProvider, ChainTokenDataProvider};
 use async_trait::async_trait;
-use primitives::{chain::Chain, Asset};
+use primitives::{chain::Chain, Asset, AssetBalance};
 
 use super::{client::BitcoinClient, mapper::BitcoinMapper};
 
@@ -53,5 +53,12 @@ impl ChainBlockProvider for BitcoinProvider {
 impl ChainTokenDataProvider for BitcoinProvider {
     async fn get_token_data(&self, _token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
         unimplemented!()
+    }
+}
+
+#[async_trait]
+impl ChainAssetsProvider for BitcoinProvider {
+    async fn get_assets_balances(&self, _address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
+        Ok(vec![])
     }
 }

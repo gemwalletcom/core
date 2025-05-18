@@ -8,8 +8,8 @@ use alloy_primitives::U256;
 use async_trait::async_trait;
 use gem_solana::{
     get_pubkey_by_str,
-    jsonrpc::{AccountData, SolanaRpc, ValueResult},
-    TOKEN_PROGRAM, USDC_TOKEN_MINT, USDS_TOKEN_MINT, USDT_TOKEN_MINT, WSOL_TOKEN_ADDRESS,
+    model::{AccountData, ValueResult},
+    SolanaRpc, TOKEN_PROGRAM, USDC_TOKEN_MINT, USDS_TOKEN_MINT, USDT_TOKEN_MINT, WSOL_TOKEN_ADDRESS,
 };
 use primitives::{AssetId, Chain};
 use std::collections::HashSet;

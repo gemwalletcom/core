@@ -1,7 +1,8 @@
 use std::error::Error;
 
-use crate::{ChainBlockProvider, ChainTokenDataProvider};
+use crate::{ChainAssetsProvider, ChainBlockProvider, ChainTokenDataProvider};
 use async_trait::async_trait;
+use primitives::AssetBalance;
 use primitives::{chain::Chain, Asset, AssetId, AssetType};
 
 use super::client::XRPClient;
@@ -59,5 +60,12 @@ impl ChainTokenDataProvider for XRPProvider {
             15,
             AssetType::TOKEN,
         ))
+    }
+}
+
+#[async_trait]
+impl ChainAssetsProvider for XRPProvider {
+    async fn get_assets_balances(&self, _address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
+        Ok(vec![])
     }
 }

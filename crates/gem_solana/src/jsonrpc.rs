@@ -1,5 +1,6 @@
-use serde::{Deserialize, Serialize};
 use std::fmt::Display;
+
+use crate::model::Filter;
 
 pub const ENCODING_BASE64: &str = "base64";
 pub const ENCODING_BASE58: &str = "base58";
@@ -23,86 +24,3 @@ impl Display for SolanaRpc {
         }
     }
 }
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct Configuration {
-    pub commitment: &'static str,
-    pub encoding: &'static str,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub filters: Vec<Filter>,
-}
-
-impl Configuration {
-    pub fn new(filters: Vec<Filter>) -> Self {
-        Self {
-            commitment: "confirmed",
-            encoding: ENCODING_BASE64,
-            filters,
-        }
-    }
-}
-
-impl Default for Configuration {
-    fn default() -> Self {
-        Self {
-            commitment: "confirmed",
-            encoding: ENCODING_BASE64,
-            filters: vec![],
-        }
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Filter {
-    pub memcmp: Memcmp,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Memcmp {
-    pub offset: u8,
-    pub bytes: String,
-    pub encoding: String,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct AccountData {
-    pub data: Vec<String>,
-    pub owner: String,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ValueResult<T> {
-    pub value: T,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ValueData<T> {
-    pub data: T,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ParsedData<T> {
-    pub parsed: T,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ParsedInfo<T> {
-    pub info: T,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ParsedTokenInfo {
-    pub decimals: i32,
-    pub is_initialized: bool,
-    pub mint_authority: String,
-    pub supply: String,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct LatestBlockhash {
-    pub blockhash: String,
-}
-
-pub type SolanaParsedTokenInfo = ValueResult<ValueData<ParsedData<ParsedInfo<ParsedTokenInfo>>>>;
-pub type SolanaLatestBlockhash = ValueResult<LatestBlockhash>;

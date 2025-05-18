@@ -1,10 +1,10 @@
 use std::{error::Error, vec};
 
-use primitives::{Asset, AssetBasic, AssetFull, Chain};
+use futures::future::try_join_all;
+use primitives::{Asset, AssetBalance, AssetBasic, AssetFull, Chain, ChainAddress};
 use search_index::{AssetDocument, SearchIndexClient, ASSETS_INDEX_NAME};
 use settings_chain::ChainProviders;
 use storage::DatabaseClient;
-
 pub struct AssetsClient {
     database: DatabaseClient,
 }
@@ -118,5 +118,14 @@ impl AssetsChainProvider {
 
     pub async fn get_token_data(&self, chain: Chain, token_id: String) -> Result<Asset, Box<dyn std::error::Error + Send + Sync>> {
         self.providers.get_token_data(chain, token_id).await
+    }
+
+    pub async fn get_assets_balances(&self, requests: Vec<ChainAddress>) -> Result<Vec<AssetBalance>, Box<dyn std::error::Error + Send + Sync>> {
+        let futures = requests
+            .into_iter()
+            .map(|request| self.providers.get_assets_balances(request.chain, request.address));
+
+        let results: Vec<Vec<AssetBalance>> = try_join_all(futures).await?;
+        Ok(results.into_iter().flatten().collect())
     }
 }

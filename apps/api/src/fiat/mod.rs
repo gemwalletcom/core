@@ -94,7 +94,7 @@ pub async fn get_fiat_off_ramp_assets(fiat_client: &State<Mutex<FiatClient>>) ->
 
 #[post("/fiat/webhooks/<provider>", format = "json", data = "<data>")]
 pub async fn create_fiat_webhook(provider: &str, data: Json<serde_json::Value>, fiat_client: &State<Mutex<FiatClient>>) -> Json<bool> {
-    print!("webhook: {}, data: {:?}", provider, serde_json::to_string_pretty(&data.0));
+    println!("webhook: {}, data: {}", provider, serde_json::to_string(&data.0).unwrap());
     let result = fiat_client.lock().await.create_fiat_webhook(provider, data.into_inner()).await.unwrap();
     Json(result)
 }

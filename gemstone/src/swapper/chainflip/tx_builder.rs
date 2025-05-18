@@ -3,7 +3,7 @@ use crate::network::{jsonrpc::JsonRpcClient, AlienProvider};
 use alloy_primitives::hex;
 use base64::engine::general_purpose::STANDARD;
 use base64::Engine;
-use gem_solana::jsonrpc::{SolanaLatestBlockhash, SolanaRpc};
+use gem_solana::{jsonrpc::SolanaRpc, model::LatestBlockhash};
 use primitives::Chain;
 use solana_primitives::{AccountMeta, InstructionBuilder, Pubkey, TransactionBuilder};
 use std::{str::FromStr, sync::Arc};
@@ -14,7 +14,7 @@ pub async fn build_solana_tx(fee_payer: String, response: &SolanaVaultSwapRespon
     let data = hex::decode(response.data.as_str()).map_err(|_| "Invalid data".to_string())?;
     let rpc_client = JsonRpcClient::new_with_chain(provider, Chain::Solana);
     let recent_blockhash = rpc_client
-        .call::<SolanaRpc, SolanaLatestBlockhash>(&SolanaRpc::GetLatestBlockhash)
+        .call::<SolanaRpc, LatestBlockhash>(&SolanaRpc::GetLatestBlockhash)
         .await
         .map_err(|e| e.to_string())?
         .take()

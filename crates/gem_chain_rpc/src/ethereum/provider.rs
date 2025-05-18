@@ -2,10 +2,10 @@ use std::error::Error;
 
 use super::client::EthereumClient;
 use super::mapper::EthereumMapper;
-use crate::{ChainBlockProvider, ChainTokenDataProvider};
+use crate::{ChainAssetsProvider, ChainBlockProvider, ChainTokenDataProvider};
 use async_trait::async_trait;
 use hex::FromHex;
-use primitives::{chain::Chain, Asset, AssetId};
+use primitives::{chain::Chain, Asset, AssetBalance, AssetId};
 
 pub struct EthereumProvider {
     client: EthereumClient,
@@ -68,5 +68,12 @@ impl ChainTokenDataProvider for EthereumProvider {
             decimals_value as i32,
             self.get_chain().default_asset_type().unwrap(),
         ))
+    }
+}
+
+#[async_trait]
+impl ChainAssetsProvider for EthereumProvider {
+    async fn get_assets_balances(&self, _address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
+        Ok(vec![])
     }
 }

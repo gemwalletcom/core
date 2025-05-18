@@ -6,8 +6,9 @@ use crate::{
 use async_trait::async_trait;
 use gem_solana::{
     get_pubkey_by_str,
-    jsonrpc::{AccountData, Filter, Memcmp, SolanaRpc, ValueResult, ENCODING_BASE58},
+    model::{AccountData, Filter, Memcmp, ValueResult, ENCODING_BASE58},
     pubkey::Pubkey,
+    SolanaRpc,
 };
 use orca_whirlpools_core::{
     get_tick_array_start_tick_index, swap_quote_by_input_token, TickArrayFacade, TickArrays, TickFacade, WhirlpoolFacade, WhirlpoolRewardInfoFacade,

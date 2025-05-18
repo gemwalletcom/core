@@ -10,4 +10,5 @@ reqwest-retry = { workspace = true }
 
 primitives = { path = "../primitives" }
 gem_chain_rpc = { path = "../gem_chain_rpc" }
+gem_solana = { path = "../gem_solana" }
 settings = { path = "../settings" }
