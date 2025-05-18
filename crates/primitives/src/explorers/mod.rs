@@ -48,3 +48,5 @@ mod mayanscan;
 pub use mayanscan::MayanScan;
 mod socketscan;
 pub use socketscan::SocketScan;
+pub mod chainflip;
+pub use chainflip::ChainflipScan;

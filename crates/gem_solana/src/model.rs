@@ -209,6 +209,12 @@ pub struct TokenInfo {
     pub supply: String,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Blockhash {
+    pub blockhash: String,
+}
+
 pub type AccountData = ValueData<Vec<String>>;
 
 pub type ResultTokenInfo = ValueResult<ValueData<Parsed<Info<TokenInfo>>>>;
+pub type LatestBlockhash = ValueResult<Blockhash>;

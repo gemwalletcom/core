@@ -1,6 +1,6 @@
 use super::{client::JupiterClient, model::*, PROGRAM_ADDRESS};
 use crate::{
-    network::jsonrpc::{jsonrpc_call, jsonrpc_call_with_cache, JsonRpcResult},
+    network::jsonrpc::{JsonRpcClient, JsonRpcResult},
     swapper::{Swapper, *},
 };
 
@@ -62,9 +62,9 @@ impl Jupiter {
 
     pub async fn fetch_token_program(&self, mint: &str, provider: Arc<dyn AlienProvider>) -> Result<String, SwapperError> {
         let rpc_call = SolanaRpc::GetAccountInfo(mint.to_string());
-        let rpc_result: JsonRpcResult<ValueResult<Option<AccountData>>> = jsonrpc_call_with_cache(&rpc_call, provider.clone(), &Chain::Solana, Some(u64::MAX))
-            .await
-            .map_err(SwapperError::from)?;
+        let client = JsonRpcClient::new_with_chain(provider.clone(), Chain::Solana);
+        let rpc_result: JsonRpcResult<ValueResult<Option<AccountData>>> =
+            client.call_with_cache(&rpc_call, Some(u64::MAX)).await.map_err(SwapperError::from)?;
         let value = rpc_result.take()?;
 
         value
@@ -96,8 +96,8 @@ impl Jupiter {
 
         // check fee token account exists, if not, set fee_account to empty string
         let rpc_call = SolanaRpc::GetAccountInfo(fee_account.clone());
-        let rpc_result: JsonRpcResult<ValueResult<Option<AccountData>>> =
-            jsonrpc_call(&rpc_call, provider.clone(), &Chain::Solana).await.map_err(SwapperError::from)?;
+        let client = JsonRpcClient::new_with_chain(provider.clone(), Chain::Solana);
+        let rpc_result: JsonRpcResult<ValueResult<Option<AccountData>>> = client.call(&rpc_call).await.map_err(SwapperError::from)?;
         if matches!(rpc_result, JsonRpcResult::Error(_)) || matches!(rpc_result, JsonRpcResult::Value(ref resp) if resp.result.value.is_none()) {
             fee_account = String::from("");
         }

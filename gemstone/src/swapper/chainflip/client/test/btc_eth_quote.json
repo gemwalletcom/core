@@ -1,0 +1,162 @@
+[
+    {
+      "intermediateAmount": "964759906",
+      "egressAmount": "533584963872668039",
+      "recommendedSlippageTolerancePercent": 1.5,
+      "includedFees": [
+        {
+          "type": "INGRESS",
+          "chain": "Bitcoin",
+          "asset": "BTC",
+          "amount": "175"
+        },
+        {
+          "type": "NETWORK",
+          "chain": "Ethereum",
+          "asset": "USDC",
+          "amount": "965726"
+        },
+        {
+          "type": "EGRESS",
+          "chain": "Ethereum",
+          "asset": "ETH",
+          "amount": "165403829640000"
+        }
+      ],
+      "lowLiquidityWarning": false,
+      "poolInfo": [
+        {
+          "baseAsset": {
+            "chain": "Bitcoin",
+            "asset": "BTC"
+          },
+          "quoteAsset": {
+            "chain": "Ethereum",
+            "asset": "USDC"
+          },
+          "fee": {
+            "chain": "Bitcoin",
+            "asset": "BTC",
+            "amount": "499"
+          }
+        },
+        {
+          "baseAsset": {
+            "chain": "Ethereum",
+            "asset": "ETH"
+          },
+          "quoteAsset": {
+            "chain": "Ethereum",
+            "asset": "USDC"
+          },
+          "fee": {
+            "chain": "Ethereum",
+            "asset": "USDC",
+            "amount": "482379"
+          }
+        }
+      ],
+      "estimatedDurationsSeconds": {
+        "swap": 12,
+        "deposit": 1806,
+        "egress": 102
+      },
+      "estimatedDurationSeconds": 1920,
+      "estimatedPrice": "53.3843790365622022854",
+      "type": "REGULAR",
+      "srcAsset": {
+        "chain": "Bitcoin",
+        "asset": "BTC"
+      },
+      "destAsset": {
+        "chain": "Ethereum",
+        "asset": "ETH"
+      },
+      "depositAmount": "1000000",
+      "isVaultSwap": true,
+      "boostQuote": {
+        "intermediateAmount": "964277200",
+        "egressAmount": "533317994508265049",
+        "recommendedSlippageTolerancePercent": 1,
+        "includedFees": [
+          {
+            "type": "BOOST",
+            "chain": "Bitcoin",
+            "asset": "BTC",
+            "amount": "500"
+          },
+          {
+            "type": "INGRESS",
+            "chain": "Bitcoin",
+            "asset": "BTC",
+            "amount": "175"
+          },
+          {
+            "type": "NETWORK",
+            "chain": "Ethereum",
+            "asset": "USDC",
+            "amount": "965242"
+          },
+          {
+            "type": "EGRESS",
+            "chain": "Ethereum",
+            "asset": "ETH",
+            "amount": "165403829640000"
+          }
+        ],
+        "lowLiquidityWarning": false,
+        "poolInfo": [
+          {
+            "baseAsset": {
+              "chain": "Bitcoin",
+              "asset": "BTC"
+            },
+            "quoteAsset": {
+              "chain": "Ethereum",
+              "asset": "USDC"
+            },
+            "fee": {
+              "chain": "Bitcoin",
+              "asset": "BTC",
+              "amount": "499"
+            }
+          },
+          {
+            "baseAsset": {
+              "chain": "Ethereum",
+              "asset": "ETH"
+            },
+            "quoteAsset": {
+              "chain": "Ethereum",
+              "asset": "USDC"
+            },
+            "fee": {
+              "chain": "Ethereum",
+              "asset": "USDC",
+              "amount": "482138"
+            }
+          }
+        ],
+        "estimatedDurationsSeconds": {
+          "swap": 12,
+          "deposit": 606,
+          "egress": 102
+        },
+        "estimatedDurationSeconds": 720,
+        "estimatedPrice": "53.38437428643384774723",
+        "type": "REGULAR",
+        "srcAsset": {
+          "chain": "Bitcoin",
+          "asset": "BTC"
+        },
+        "destAsset": {
+          "chain": "Ethereum",
+          "asset": "ETH"
+        },
+        "depositAmount": "1000000",
+        "isVaultSwap": true,
+        "estimatedBoostFeeBps": 5,
+        "maxBoostFeeBps": 30
+      }
+    }
+  ]

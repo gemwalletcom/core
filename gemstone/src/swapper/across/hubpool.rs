@@ -1,29 +1,35 @@
+use std::sync::Arc;
+
 use alloy_primitives::{hex::decode as HexDecode, Address, U256};
 use alloy_sol_types::SolCall;
 use num_bigint::{BigInt, Sign};
-use std::sync::Arc;
+use primitives::Chain;
 
 use crate::{
-    network::{
-        jsonrpc::{jsonrpc_call, JsonRpcResult},
-        AlienProvider,
-    },
+    network::{jsonrpc::JsonRpcClient, AlienProvider, JsonRpcResult},
     swapper::SwapperError,
 };
 use gem_evm::{
-    across::contracts::HubPoolInterface,
+    across::{contracts::HubPoolInterface, deployment::ACROSS_HUBPOOL},
     jsonrpc::{BlockParameter, EthereumRpc, TransactionObject},
     multicall3::{create_call3, decode_call3_return, IMulticall3},
 };
-use primitives::Chain;
 
 pub struct HubPoolClient {
     pub contract: String,
-    pub provider: Arc<dyn AlienProvider>,
+    pub client: JsonRpcClient,
     pub chain: Chain,
 }
 
 impl HubPoolClient {
+    pub fn new(provider: Arc<dyn AlienProvider>, chain: Chain) -> HubPoolClient {
+        HubPoolClient {
+            contract: ACROSS_HUBPOOL.into(),
+            client: JsonRpcClient::new_with_chain(provider.clone(), chain),
+            chain,
+        }
+    }
+
     pub fn paused_call3(&self) -> IMulticall3::Call3 {
         create_call3(&self.contract, HubPoolInterface::pausedCall {})
     }
@@ -97,7 +103,7 @@ impl HubPoolClient {
     pub async fn fetch_utilization(&self, pool_token: &Address, amount: U256) -> Result<BigInt, SwapperError> {
         let call3 = self.utilization_call3(pool_token, amount);
         let call = EthereumRpc::Call(TransactionObject::new_call(&self.contract, call3.callData.to_vec()), BlockParameter::Latest);
-        let response: JsonRpcResult<String> = jsonrpc_call(&call, self.provider.clone(), &self.chain).await?;
+        let response: JsonRpcResult<String> = self.client.call(&call).await?;
         let result = response.take()?;
         let hex_data = HexDecode(result).map_err(|e| SwapperError::NetworkError(e.to_string()))?;
         let value = HubPoolInterface::liquidityUtilizationCurrentCall::abi_decode_returns(&hex_data).map_err(SwapperError::from)?;

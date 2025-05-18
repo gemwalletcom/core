@@ -1,6 +1,6 @@
 use crate::{
     debug_println,
-    network::{jsonrpc::jsonrpc_call, AlienProvider, JsonRpcResult},
+    network::{jsonrpc::JsonRpcClient, AlienProvider, JsonRpcResult},
     swapper::{models::*, slippage::apply_slippage_in_bp, GemSwapProvider, Swapper, SwapperError},
 };
 use async_trait::async_trait;
@@ -121,7 +121,8 @@ impl Orca {
     #[allow(unused)]
     pub async fn fetch_fee_tiers(&self, provider: Arc<dyn AlienProvider>) -> Result<Vec<FeeTier>, SwapperError> {
         let call = SolanaRpc::GetProgramAccounts(self.whirlpool_program.to_string(), Self::get_program_filters());
-        let response: JsonRpcResult<Vec<ProgramAccount>> = jsonrpc_call(&call, provider, &self.chain).await?;
+        let client = JsonRpcClient::new(provider.clone(), provider.get_endpoint(self.chain).unwrap());
+        let response: JsonRpcResult<Vec<ProgramAccount>> = client.call(&call).await?;
         let result = response.take()?;
         let fee_tiers: Vec<FeeTier> = result.iter().filter_map(|x| try_borsh_decode(x.account.data[0].as_str()).ok()).collect();
         Ok(fee_tiers)
@@ -154,7 +155,8 @@ impl Orca {
             .filter_map(|x| self.get_pool_address(token_mint_1, token_mint_2, x.tick_spacing))
             .collect::<Vec<_>>();
         let call = SolanaRpc::GetMultipleAccounts(pool_addresses.clone());
-        let response: JsonRpcResult<ValueResult<Vec<Option<AccountData>>>> = jsonrpc_call(&call, provider, &chain).await?;
+        let client = JsonRpcClient::new_with_chain(provider, chain);
+        let response: JsonRpcResult<ValueResult<Vec<Option<AccountData>>>> = client.call(&call).await?;
         let result = response.take()?.value;
 
         let mut pools: Vec<(String, Whirlpool)> = vec![];
@@ -191,7 +193,8 @@ impl Orca {
         debug_println!("tick_addresses: {:?}", tick_addresses);
 
         let call = SolanaRpc::GetMultipleAccounts(tick_addresses);
-        let response: JsonRpcResult<ValueResult<Vec<AccountData>>> = jsonrpc_call(&call, provider, &self.chain).await?;
+        let client = JsonRpcClient::new_with_chain(provider, self.chain);
+        let response: JsonRpcResult<ValueResult<Vec<AccountData>>> = client.call(&call).await?;
         let tick_accounts = response.take()?.value;
         let base64_strs: Vec<String> = tick_accounts.iter().map(|x| x.data[0].clone()).collect();
         let mut tick_array: Vec<TickArray> = vec![];
@@ -210,7 +213,8 @@ impl Orca {
         provider: Arc<dyn AlienProvider>,
     ) -> Result<Vec<AccountData>, SwapperError> {
         let rpc = SolanaRpc::GetMultipleAccounts(vec![token_mint_a.to_string(), token_mint_b.to_string()]);
-        let response: JsonRpcResult<ValueResult<Vec<AccountData>>> = jsonrpc_call(&rpc, provider.clone(), &self.chain).await?;
+        let client = JsonRpcClient::new_with_chain(provider, self.chain);
+        let response: JsonRpcResult<ValueResult<Vec<AccountData>>> = client.call(&rpc).await?;
         let token_accounts = response.take()?.value;
         Ok(token_accounts)
     }

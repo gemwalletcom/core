@@ -1,12 +1,39 @@
 #[cfg(test)]
 mod tests {
     use alien_provider::NativeProvider;
+    use gem_solana::{jsonrpc::SolanaRpc, model::LatestBlockhash};
     use gemstone::{
         config::swap_config::{get_swap_config, SwapReferralFee, SwapReferralFees},
+        network::JsonRpcClient,
         swapper::{across::Across, cetus::Cetus, models::*, orca::Orca, uniswap::v4::UniswapV4, GemSwapper, *},
     };
     use primitives::{AssetId, Chain};
     use std::{collections::HashMap, sync::Arc, time::SystemTime};
+
+    #[tokio::test]
+    async fn test_solana_json_rpc() -> Result<(), String> {
+        let rpc_client = JsonRpcClient::new_with_chain(Arc::new(NativeProvider::default()), Chain::Solana);
+        let recent_blockhash = rpc_client
+            .call::<SolanaRpc, LatestBlockhash>(&SolanaRpc::GetLatestBlockhash)
+            .await
+            .map_err(|e| e.to_string())?
+            .take()
+            .map_err(|e| e.to_string())?
+            .value
+            .blockhash;
+
+        println!("recent_blockhash: {}", recent_blockhash);
+
+        let blockhash = bs58::decode(recent_blockhash)
+            .into_vec()
+            .map_err(|_| "Failed to decode blockhash".to_string())?;
+
+        let blockhash_array: [u8; 32] = blockhash.try_into().map_err(|_| "Failed to convert blockhash to array".to_string())?;
+
+        assert_eq!(blockhash_array.len(), 32);
+
+        Ok(())
+    }
 
     #[tokio::test]
     async fn test_orca_get_quote_by_input() -> Result<(), SwapperError> {
