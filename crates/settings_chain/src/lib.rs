@@ -1,13 +1,21 @@
 use core::str;
 
 use gem_chain_rpc::{
-    algorand::client::AlgorandClient, algorand::provider::AlgorandProvider, aptos::client::AptosClient, aptos::provider::AptosProvider,
-    bitcoin::client::BitcoinClient, bitcoin::provider::BitcoinProvider, cardano::client::CardanoClient, cardano::provider::CardanoProvider,
-    cosmos::client::CosmosClient, cosmos::provider::CosmosProvider, ethereum::client::EthereumClient, ethereum::provider::EthereumProvider,
-    near::client::NearClient, near::provider::NearProvider, polkadot::client::PolkadotClient, polkadot::provider::PolkadotProvider,
-    solana::provider::SolanaProvider, stellar::client::StellarClient, stellar::provider::StellarProvider, sui::client::SuiClient, sui::provider::SuiProvider,
-    ton::client::TonClient, ton::provider::TonProvider, tron::client::TronClient, tron::provider::TronProvider, xrp::client::XRPClient,
-    xrp::provider::XRPProvider, ChainProvider,
+    algorand::{client::AlgorandClient, provider::AlgorandProvider},
+    aptos::{client::AptosClient, provider::AptosProvider},
+    bitcoin::{client::BitcoinClient, provider::BitcoinProvider},
+    cardano::{client::CardanoClient, provider::CardanoProvider},
+    cosmos::{client::CosmosClient, provider::CosmosProvider},
+    ethereum::{client::EthereumClient, provider::EthereumProvider, AlchemyClient},
+    near::{client::NearClient, provider::NearProvider},
+    polkadot::{client::PolkadotClient, provider::PolkadotProvider},
+    solana::provider::SolanaProvider,
+    stellar::{client::StellarClient, provider::StellarProvider},
+    sui::{client::SuiClient, provider::SuiProvider},
+    ton::{client::TonClient, provider::TonProvider},
+    tron::{client::TronClient, provider::TronProvider},
+    xrp::{client::XRPClient, provider::XRPProvider},
+    ChainProvider,
 };
 use gem_solana::SolanaClient;
 use primitives::{Asset, AssetBalance, Chain};
@@ -60,7 +68,10 @@ impl ProviderFactory {
             | Chain::Ink
             | Chain::Unichain
             | Chain::Hyperliquid
-            | Chain::Monad => Box::new(EthereumProvider::new(EthereumClient::new(chain, url))),
+            | Chain::Monad => {
+                let assets_provider = AlchemyClient::new(chain, "");
+                Box::new(EthereumProvider::new(EthereumClient::new(chain, url), Box::new(assets_provider)))
+            }
             Chain::Cosmos | Chain::Osmosis | Chain::Celestia | Chain::Thorchain | Chain::Injective | Chain::Noble | Chain::Sei => {
                 Box::new(CosmosProvider::new(CosmosClient::new(chain, client, url)))
             }

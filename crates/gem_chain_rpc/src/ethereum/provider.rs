@@ -1,7 +1,6 @@
 use std::error::Error;
 
-use super::client::EthereumClient;
-use super::mapper::EthereumMapper;
+use super::{client::EthereumClient, mapper::EthereumMapper};
 use crate::{ChainAssetsProvider, ChainBlockProvider, ChainTokenDataProvider};
 use async_trait::async_trait;
 use hex::FromHex;
@@ -9,11 +8,12 @@ use primitives::{chain::Chain, Asset, AssetBalance, AssetId};
 
 pub struct EthereumProvider {
     client: EthereumClient,
+    assets_provider: Box<dyn ChainAssetsProvider>,
 }
 
 impl EthereumProvider {
-    pub fn new(client: EthereumClient) -> Self {
-        Self { client }
+    pub fn new(client: EthereumClient, assets_provider: Box<dyn ChainAssetsProvider>) -> Self {
+        Self { client, assets_provider }
     }
 }
 
@@ -49,14 +49,10 @@ impl ChainTokenDataProvider for EthereumProvider {
         let symbol: String = self.client.eth_call(token_id.as_str(), super::client::FUNCTION_ERC20_SYMBOL).await?;
         let decimals: String = self.client.eth_call(token_id.as_str(), super::client::FUNCTION_ERC20_DECIMALS).await?;
 
-        // The original working implementation seems to have used the SolCall trait methods
-        // Let's try to recreate it as closely as possible
         let name_bytes = Vec::from_hex(name)?;
         let symbol_bytes = Vec::from_hex(symbol)?;
         let decimals_bytes = Vec::from_hex(decimals)?;
 
-        // We need to extract actual values from the function call objects
-        // Instead of trying to use type inference, let's hardcode the return types
         let name_value = String::from_utf8(name_bytes.clone()).unwrap_or_default();
         let symbol_value = String::from_utf8(symbol_bytes.clone()).unwrap_or_default();
         let decimals_value: u8 = decimals_bytes.first().copied().unwrap_or_default();
@@ -73,7 +69,7 @@ impl ChainTokenDataProvider for EthereumProvider {
 
 #[async_trait]
 impl ChainAssetsProvider for EthereumProvider {
-    async fn get_assets_balances(&self, _address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
-        Ok(vec![])
+    async fn get_assets_balances(&self, address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
+        self.assets_provider.get_assets_balances(address).await
     }
 }

@@ -218,6 +218,9 @@ alerter:
     price_increase_percent: 8.0
     price_decrease_percent: 10.0
 
+alchemy:
+  key: ""
+
 nft:
   nftscan:
     key:
