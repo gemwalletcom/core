@@ -25,6 +25,7 @@ pub const ETHEREUM_DAI_TOKEN_ID: &str = "0x6B175474E89094C44Da98b954EedeAC495271
 pub const ETHEREUM_STETH_TOKEN_ID: &str = "0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84";
 pub const ETHEREUM_CBBTC_TOKEN_ID: &str = "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf";
 pub const ETHEREUM_USDS_TOKEN_ID: &str = "0xdC035D45d973E3EC169d2276DDab16f1e407384F";
+pub const ETHEREUM_FLIP_TOKEN_ID: &str = "0x826180541412D574cf1336d22c0C0a287822678A";
 // SmartChain
 pub const SMARTCHAIN_USDT_TOKEN_ID: &str = "0x55d398326f99059fF775485246999027B3197955";
 pub const SMARTCHAIN_USDC_TOKEN_ID: &str = "0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d";
@@ -108,6 +109,13 @@ lazy_static! {
         CBBTC_NAME.to_owned(),
         CBBTC_SYMBOL.to_owned(),
         8,
+        AssetType::ERC20,
+    );
+    pub static ref ETHEREUM_FLIP: Asset = Asset::new(
+        AssetId::from_token(Chain::Ethereum, ETHEREUM_FLIP_TOKEN_ID),
+        "Chainflip".to_owned(),
+        "FLIP".to_owned(),
+        18,
         AssetType::ERC20,
     );
     // arbitrum
