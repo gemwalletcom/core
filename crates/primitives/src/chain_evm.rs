@@ -41,6 +41,7 @@ pub enum EVMChain {
     Unichain,
     Hyperliquid,
     Monad,
+    Rootstock,
 }
 
 impl EVMChain {
@@ -65,6 +66,7 @@ impl EVMChain {
             Self::Linea => 50_000_000,    // https://lineascan.build/gastracker
             Self::Mantle | Self::Celo | Self::Manta => 10_000_000,
             Self::Sonic => 10_000_000,
+            Self::Rootstock => 0, // no priority fee, safe dummy value
             Self::Berachain => 1_000_000_000,   // 1 Gwei
             Self::Hyperliquid => 1_000_000_000, // 1 Gwei
             Self::Monad => 1_000_000_000,       // 1 Gwei
@@ -88,6 +90,7 @@ impl EVMChain {
             | Self::Mantle
             | Self::Sonic
             | Self::Berachain
+            | Self::Rootstock
             | Self::Hyperliquid
             | Self::Monad => ChainStack::Native,
         }
@@ -142,6 +145,7 @@ impl EVMChain {
             Self::Mantle => Some("0x78c1b0C915c4FAA5FffA6CAbf0219DA63d7f4cb8"), // Wrapped Mantle (WMNT)
             Self::Manta => Some("0x0dc808adce2099a9f62aa87d9670745aba741746"),
             Self::Monad => None, //TODO: Monad
+            Self::Rootstock => Some("0x2F6f07CDcf3588944bF4C42Ac74fF24bf56e7590"),
         }
     }
 

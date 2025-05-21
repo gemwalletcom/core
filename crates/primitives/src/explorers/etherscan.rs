@@ -116,6 +116,12 @@ impl EtherScan {
                     base_url: "https://sonicscan.org",
                 },
             },
+            EVMChain::Rootstock => Self {
+                meta: Metadata {
+                    name: "Rootstock explorer",
+                    base_url: "https://explorer.rootstock.io",
+                },
+            },
             EVMChain::Abstract => Self {
                 meta: Metadata {
                     name: "Abscan",

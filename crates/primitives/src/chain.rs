@@ -58,6 +58,7 @@ pub enum Chain {
     Unichain,
     Hyperliquid,
     Monad,
+    Rootstock,
 }
 
 impl fmt::Display for Chain {
@@ -133,6 +134,7 @@ impl Chain {
             Self::Unichain => "130",
             Self::Hyperliquid => "999",
             Self::Monad => "10143", //TODO: Monad 143
+            Self::Rootstock => "30",
         }
     }
 
@@ -188,6 +190,7 @@ impl Chain {
             Self::Algorand => 283,
             Self::Polkadot => 354,
             Self::Cardano => 1815,
+            Self::Rootstock => 137,
         }
     }
 
@@ -216,6 +219,7 @@ impl Chain {
             | Self::Ink
             | Self::Unichain
             | Self::Hyperliquid
+            | Self::Rootstock
             | Self::Monad => ChainType::Ethereum,
             Self::Bitcoin | Self::BitcoinCash | Self::Doge | Self::Litecoin => ChainType::Bitcoin,
             Self::Solana => ChainType::Solana,
@@ -256,6 +260,7 @@ impl Chain {
             | Self::Ink
             | Self::Unichain
             | Self::Hyperliquid
+            | Self::Rootstock
             | Self::Monad => Some(AssetType::ERC20),
             Self::OpBNB | Self::SmartChain => Some(AssetType::BEP20),
             Self::Solana => Some(AssetType::SPL),
@@ -335,6 +340,7 @@ impl Chain {
             | Self::Doge
             | Self::Aptos
             | Self::Sonic
+            | Self::Rootstock
             | Self::Abstract
             | Self::Unichain
             | Self::Ink
@@ -401,6 +407,7 @@ impl Chain {
             Self::Cardano => 20_000,
             Self::Doge => 60_000,
             Self::Litecoin => 120_000,
+            Self::Rootstock => 30_000,
             Self::Bitcoin | Self::BitcoinCash => 600_000,
         }
     }
@@ -444,6 +451,7 @@ impl Chain {
             | Self::World
             | Self::Stellar
             | Self::Sonic
+            | Self::Rootstock
             | Self::Algorand
             | Self::Cardano => 30,
             Self::Noble => 20,

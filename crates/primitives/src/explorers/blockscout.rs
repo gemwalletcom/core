@@ -15,6 +15,15 @@ impl BlockScout {
         })
     }
 
+    pub fn new_rootstock() -> Box<Self> {
+        Box::new(Self {
+            meta: Metadata {
+                name: BLOCK_SCOUT,
+                base_url: "https://rootstock.blockscout.com",
+            },
+        })
+    }
+
     pub fn new_manta() -> Box<Self> {
         Box::new(Self {
             meta: Metadata {

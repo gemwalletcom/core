@@ -39,6 +39,7 @@ pub fn map_asset_chain(asset: Asset) -> Option<Chain> {
         "bitcoin_cash" => Some(Chain::BitcoinCash),
         "mantle" => Some(Chain::Mantle),
         "sonic" => Some(Chain::Sonic),
+        "rootstock" => Some(Chain::Rootstock),
         _ => None,
     }
 }
