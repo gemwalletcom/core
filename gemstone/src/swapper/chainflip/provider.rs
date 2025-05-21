@@ -16,7 +16,7 @@ use crate::{
     network::AlienProvider,
     swapper::{
         approval::check_approval_erc20,
-        asset::{ARBITRUM_USDC, ETHEREUM_USDC, ETHEREUM_USDT, SOLANA_USDC},
+        asset::{ARBITRUM_USDC, ETHEREUM_FLIP, ETHEREUM_USDC, ETHEREUM_USDT, SOLANA_USDC},
         slippage, FetchQuoteData, GemSwapProvider, SwapChainAsset, SwapProviderData, SwapProviderType, SwapQuote, SwapQuoteData, SwapQuoteRequest, SwapRoute,
         Swapper, SwapperError,
     },
@@ -105,7 +105,10 @@ impl Swapper for ChainflipProvider {
     fn supported_assets(&self) -> Vec<SwapChainAsset> {
         vec![
             SwapChainAsset::Assets(Chain::Bitcoin, vec![]),
-            SwapChainAsset::Assets(Chain::Ethereum, vec![ETHEREUM_USDC.id.clone(), ETHEREUM_USDT.id.clone()]),
+            SwapChainAsset::Assets(
+                Chain::Ethereum,
+                vec![ETHEREUM_USDC.id.clone(), ETHEREUM_USDT.id.clone(), ETHEREUM_FLIP.id.clone()],
+            ),
             SwapChainAsset::Assets(Chain::Solana, vec![SOLANA_USDC.id.clone()]),
             SwapChainAsset::Assets(Chain::Arbitrum, vec![ARBITRUM_USDC.id.clone()]),
         ]
