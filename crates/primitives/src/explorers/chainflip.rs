@@ -20,10 +20,25 @@ impl BlockExplorer for ChainflipScan {
         self.meta.name.into()
     }
     fn get_tx_url(&self, hash: &str) -> String {
-        // it's not hash but swap id
-        format!("{}/swaps/{}", self.meta.base_url, hash)
+        format!("{}/tx/{}", self.meta.base_url, hash)
     }
     fn get_address_url(&self, _address: &str) -> String {
         "".to_string()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_chainflip_scan() {
+        let chainflip_scan = ChainflipScan::new();
+        let tx = "54qsbkVUPoQUbwfuQeDXmNyodPWVX8VcK6sSSFyfezkg8t5XbduthFisKBcGxGjSab8QsKaPoEWEnzsK9xsFXrMF";
+        assert_eq!(chainflip_scan.name(), "Chainflip");
+        assert_eq!(
+            chainflip_scan.get_tx_url(tx),
+            "https://scan.chainflip.io/tx/54qsbkVUPoQUbwfuQeDXmNyodPWVX8VcK6sSSFyfezkg8t5XbduthFisKBcGxGjSab8QsKaPoEWEnzsK9xsFXrMF"
+        );
     }
 }
