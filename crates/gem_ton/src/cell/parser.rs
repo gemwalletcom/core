@@ -16,11 +16,7 @@ pub struct CellParser<'a> {
 impl CellParser<'_> {
     pub fn remaining_bits(&mut self) -> usize {
         let pos = self.bit_reader.position_in_bits().unwrap_or_default() as usize;
-        if self.bit_len > pos {
-            self.bit_len - pos
-        } else {
-            0
-        }
+        self.bit_len.saturating_sub(pos)
     }
 
     /// Return number of full bytes remaining
