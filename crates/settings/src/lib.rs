@@ -211,6 +211,7 @@ pub struct Chains {
     pub world: Chain,
     pub stellar: Chain,
     pub sonic: Chain,
+    pub rootstock: Chain,
     pub algorand: Chain,
     pub polkadot: Chain,
     pub cardano: Chain,

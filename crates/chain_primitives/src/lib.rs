@@ -21,6 +21,7 @@ pub fn format_token_id(chain: Chain, token_id: String) -> Option<String> {
         | Chain::Celo
         | Chain::World
         | Chain::Sonic
+        | Chain::Rootstock
         | Chain::Abstract
         | Chain::Berachain
         | Chain::Ink

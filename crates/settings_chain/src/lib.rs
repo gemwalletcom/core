@@ -63,6 +63,7 @@ impl ProviderFactory {
             | Chain::Celo
             | Chain::World
             | Chain::Sonic
+            | Chain::Rootstock
             | Chain::Abstract
             | Chain::Berachain
             | Chain::Ink
@@ -128,6 +129,7 @@ impl ProviderFactory {
             Chain::World => settings.chains.world.url.as_str(),
             Chain::Stellar => settings.chains.stellar.url.as_str(),
             Chain::Sonic => settings.chains.sonic.url.as_str(),
+            Chain::Rootstock => settings.chains.rootstock.url.as_str(),
             Chain::Algorand => settings.chains.algorand.url.as_str(),
             Chain::Polkadot => settings.chains.polkadot.url.as_str(),
             Chain::Cardano => settings.chains.cardano.url.as_str(),

@@ -145,6 +145,8 @@ chains:
     url: https://horizon.stellar.org
   sonic:
     url: https://rpc.soniclabs.com
+  rootstock:
+    url: https://public-node.rsk.co
   algorand:
     url: https://mainnet-api.algonode.cloud
   polkadot:

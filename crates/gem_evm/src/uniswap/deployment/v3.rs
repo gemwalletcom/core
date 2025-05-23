@@ -80,6 +80,11 @@ pub fn get_uniswap_router_deployment_by_chain(chain: &Chain) -> Option<V3Deploym
             permit2,
             universal_router: "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D",
         }),
+        Chain::Rootstock => Some(V3Deployment {
+            quoter_v2: "0xb51727c996C68E60F598A923a5006853cd2fEB31",
+            permit2: "0xFcf5986450E4A014fFE7ad4Ae24921B589D039b5",
+            universal_router: "0x244f68e77357f86a8522323eBF80b5FC2F814d3E",
+        }),
 
         Chain::Unichain => Some(V3Deployment {
             quoter_v2: "0x385A5cf5F83e99f7BB2852b6A19C3538b9FA7658",
@@ -120,6 +125,11 @@ pub fn get_oku_deployment_by_chain(chain: &Chain) -> Option<V3Deployment> {
             quoter_v2: "0x5911cB3633e764939edc2d92b7e1ad375Bb57649",
             universal_router: "0x738fD6d10bCc05c230388B4027CAd37f82fe2AF2",
             permit2: "0xB952578f3520EE8Ea45b7914994dcf4702cEe578",
+        }),
+        Chain::Rootstock => Some(V3Deployment {
+            quoter_v2: "0xb51727c996C68E60F598A923a5006853cd2fEB31",
+            universal_router: "0x244f68e77357f86a8522323eBF80b5FC2F814d3E",
+            permit2: "0xFcf5986450E4A014fFE7ad4Ae24921B589D039b5",
         }),
         Chain::Mantle => Some(V3Deployment {
             quoter_v2: "0xdD489C75be1039ec7d843A6aC2Fd658350B067Cf",
