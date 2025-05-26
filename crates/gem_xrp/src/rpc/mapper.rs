@@ -1,7 +1,7 @@
 use chrono::DateTime;
 use primitives::{chain::Chain, AssetId, Transaction, TransactionState, TransactionType};
 
-use super::model::Transaction as XrpTransaction;
+use crate::models::RpcTransaction as XrpClientTransaction;
 
 const RESULT_SUCCESS: &str = "tesSUCCESS";
 const TRANSACTION_TYPE_PAYMENT: &str = "Payment";
@@ -9,7 +9,7 @@ const TRANSACTION_TYPE_PAYMENT: &str = "Payment";
 pub struct XRPMapper;
 
 impl XRPMapper {
-    pub fn map_transaction(chain: Chain, transaction: XrpTransaction, block_number: i64, block_timestamp: i64) -> Option<Transaction> {
+    pub fn map_transaction(chain: Chain, transaction: XrpClientTransaction, block_number: i64, block_timestamp: i64) -> Option<Transaction> {
         if transaction.transaction_type == TRANSACTION_TYPE_PAYMENT && transaction.memos.unwrap_or_default().is_empty() {
             let memo = transaction.destination_tag.map(|x| x.to_string());
             let value = transaction.amount.clone()?.as_value_string()?;

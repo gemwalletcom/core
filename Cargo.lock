@@ -2590,6 +2590,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "gem_xrp"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "chrono",
+ "gem_chain_rpc",
+ "hex",
+ "number_formatter",
+ "primitives",
+ "reqwest-middleware",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.12",
+ "typeshare",
+]
+
+[[package]]
 name = "gemstone"
 version = "0.31.1"
 dependencies = [
@@ -5820,6 +5838,7 @@ version = "1.0.0"
 dependencies = [
  "gem_chain_rpc",
  "gem_solana",
+ "gem_xrp",
  "primitives",
  "reqwest",
  "reqwest-middleware",

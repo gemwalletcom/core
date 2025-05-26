@@ -3,7 +3,7 @@ use std::error::Error;
 use reqwest_middleware::ClientWithMiddleware;
 use serde_json::json;
 
-use super::model::{AccountObjects, Ledger, LedgerCurrent, LedgerData, LedgerResult};
+use crate::models::{AccountObjects, Ledger, LedgerCurrent, LedgerData, LedgerResult};
 
 pub struct XRPClient {
     url: String,
