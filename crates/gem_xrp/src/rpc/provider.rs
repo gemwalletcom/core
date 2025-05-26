@@ -56,7 +56,7 @@ impl ChainTokenDataProvider for XRPProvider {
             AssetId::from_token(self.get_chain(), &token_id),
             symbol.clone(),
             symbol.clone(),
-            15, // Assuming 15 decimal places for XRP tokens, this might need adjustment
+            15,
             AssetType::TOKEN,
         ))
     }
@@ -65,7 +65,6 @@ impl ChainTokenDataProvider for XRPProvider {
 #[async_trait]
 impl ChainAssetsProvider for XRPProvider {
     async fn get_assets_balances(&self, _address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
-        // Placeholder: Actual implementation for fetching asset balances is needed here.
         Ok(vec![])
     }
 }
