@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
-    use name_resolver::{base::Basenames, client::NameClient, ens::ENSClient, injective::InjectiveNameClient, suins::SuinsClient};
-    use primitives::{node_config::get_nodes_for_chain, Chain};
+    use name_resolver::{base::Basenames, client::NameClient, ens::ENSClient, hyperliquid::HLNamesClient, injective::InjectiveNameClient, suins::SuinsClient};
+    use primitives::{Chain, node_config::get_nodes_for_chain};
     use tokio_test::block_on;
 
     #[test]
@@ -46,6 +46,16 @@ mod tests {
             let address_result = client.resolve("test.sui", Chain::Sui).await;
 
             assert_eq!(address_result.unwrap(), "0x3e04ea76cee7d2db4f41c2972ac8d929606d89f7293320f0886abb41a578190c");
+        });
+    }
+
+    #[test]
+    fn test_resolve_hlnames() {
+        block_on(async {
+            let client = HLNamesClient::default();
+            let address = client.resolve("testooor.hl", Chain::Hyperliquid).await.unwrap();
+
+            assert_eq!(address, "0xF26F5551E96aE5162509B25925fFfa7F07B2D652");
         });
     }
 }
