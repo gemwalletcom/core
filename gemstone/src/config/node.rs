@@ -148,7 +148,7 @@ pub fn get_nodes_for_chain(chain: Chain) -> Vec<Node> {
             Node::new("https://mainnet.unichain.org", NodePriority::High),
             Node::new("https://unichain-rpc.publicnode.com", NodePriority::High),
         ],
-        Chain::Hyperliquid => vec![Node::new("https://rpc.hyperliquid.xyz/evm", NodePriority::High)],
+        Chain::HyperEvm => vec![Node::new("https://rpc.hyperliquid.xyz/evm", NodePriority::High)],
         Chain::Monad => vec![], //TODO: Monad
     }
 }

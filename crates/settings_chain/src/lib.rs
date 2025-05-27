@@ -67,7 +67,7 @@ impl ProviderFactory {
             | Chain::Berachain
             | Chain::Ink
             | Chain::Unichain
-            | Chain::Hyperliquid
+            | Chain::HyperEvm
             | Chain::Monad => {
                 let assets_provider = AlchemyClient::new(chain, "");
                 Box::new(EthereumProvider::new(EthereumClient::new(chain, url), Box::new(assets_provider)))
@@ -135,7 +135,7 @@ impl ProviderFactory {
             Chain::Berachain => settings.chains.berachain.url.as_str(),
             Chain::Ink => settings.chains.ink.url.as_str(),
             Chain::Unichain => settings.chains.unichain.url.as_str(),
-            Chain::Hyperliquid => settings.chains.hyperliquid.url.as_str(),
+            Chain::HyperEvm => settings.chains.hyperevm.url.as_str(),
             Chain::Monad => settings.chains.monad.url.as_str(),
         }
     }

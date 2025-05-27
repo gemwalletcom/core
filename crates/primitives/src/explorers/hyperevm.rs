@@ -1,10 +1,10 @@
 use crate::block_explorer::{BlockExplorer, Metadata};
 
-pub struct HyperLiquid {
+pub struct HyperEvm {
     pub meta: Metadata,
 }
 
-impl HyperLiquid {
+impl HyperEvm {
     pub fn new() -> Box<Self> {
         Box::new(Self {
             meta: Metadata {
@@ -15,7 +15,7 @@ impl HyperLiquid {
     }
 }
 
-impl BlockExplorer for HyperLiquid {
+impl BlockExplorer for HyperEvm {
     fn name(&self) -> String {
         self.meta.name.into()
     }
@@ -36,7 +36,7 @@ mod tests {
 
     #[test]
     fn test_get_tx_url() {
-        let explorer = HyperLiquid::new();
+        let explorer = HyperEvm::new();
         let address = "0x0361d1ce0520968024f140cdedaa3c21f793c5a7";
         let tx_id = "0x971f5a256584fae7248b5eefa5d2e85b5522192aed198a61ae6b542129822659";
 

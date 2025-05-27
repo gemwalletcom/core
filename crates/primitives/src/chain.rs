@@ -56,7 +56,7 @@ pub enum Chain {
     Berachain,
     Ink,
     Unichain,
-    Hyperliquid,
+    HyperEvm,
     Monad,
 }
 
@@ -131,7 +131,7 @@ impl Chain {
             Self::Berachain => "80094",
             Self::Ink => "57073",
             Self::Unichain => "130",
-            Self::Hyperliquid => "999",
+            Self::HyperEvm => "999",
             Self::Monad => "10143", //TODO: Monad 143
         }
     }
@@ -167,7 +167,7 @@ impl Chain {
             | Self::Berachain
             | Self::Ink
             | Self::Unichain
-            | Self::Hyperliquid
+            | Self::HyperEvm
             | Self::Monad => 60,
             Self::Bitcoin => 0,
             Self::BitcoinCash => 145,
@@ -215,7 +215,7 @@ impl Chain {
             | Self::Berachain
             | Self::Ink
             | Self::Unichain
-            | Self::Hyperliquid
+            | Self::HyperEvm
             | Self::Monad => ChainType::Ethereum,
             Self::Bitcoin | Self::BitcoinCash | Self::Doge | Self::Litecoin => ChainType::Bitcoin,
             Self::Solana => ChainType::Solana,
@@ -255,7 +255,7 @@ impl Chain {
             | Self::Berachain
             | Self::Ink
             | Self::Unichain
-            | Self::Hyperliquid
+            | Self::HyperEvm
             | Self::Monad => Some(AssetType::ERC20),
             Self::OpBNB | Self::SmartChain => Some(AssetType::BEP20),
             Self::Solana => Some(AssetType::SPL),
@@ -338,7 +338,7 @@ impl Chain {
             | Self::Abstract
             | Self::Unichain
             | Self::Ink
-            | Self::Hyperliquid
+            | Self::HyperEvm
             | Self::Sui
             | Self::Monad
             | Self::Ton => true,
@@ -387,7 +387,7 @@ impl Chain {
             Self::AvalancheC
             | Self::Base
             | Self::Blast
-            | Self::Hyperliquid
+            | Self::HyperEvm
             | Self::Manta
             | Self::Optimism
             | Self::World
@@ -419,7 +419,7 @@ impl Chain {
             | Self::Celestia
             | Self::BitcoinCash
             | Self::Polkadot
-            | Self::Hyperliquid
+            | Self::HyperEvm
             | Self::Monad => 40,
             Self::Abstract | Self::Berachain | Self::Ink | Self::Unichain => 35,
             Self::Manta

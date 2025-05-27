@@ -219,7 +219,7 @@ pub struct Chains {
     pub berachain: Chain,
     pub ink: Chain,
     pub unichain: Chain,
-    pub hyperliquid: Chain,
+    pub hyperevm: Chain,
     pub monad: Chain,
 }
 

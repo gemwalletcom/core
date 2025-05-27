@@ -33,7 +33,7 @@ impl BlockScout {
         })
     }
 
-    pub fn new_hyperliquid() -> Box<Self> {
+    pub fn new_hyperevm() -> Box<Self> {
         Box::new(Self {
             meta: Metadata {
                 name: BLOCK_SCOUT,

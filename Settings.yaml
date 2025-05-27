@@ -159,7 +159,7 @@ chains:
     url: https://rpc-qnd.inkonchain.com
   unichain:
     url: https://mainnet.unichain.org
-  hyperliquid:
+  hyperevm:
     url: https://rpc.hyperliquid.xyz/evm
   monad:
     url: https://testnet-rpc.monad.xyz #TODO: Monad
