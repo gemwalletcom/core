@@ -43,7 +43,7 @@ pub fn price_account_for_chain(chain: Chain) -> &'static str {
         Chain::Polkadot => "EcV1X1gY2yb4KXxjVQtTHTbioum2gvmPnFk4zYAt7zne",
         Chain::Cardano => "3pyn4svBbxJ9Wnn3RVeafyLWfzie6yC5eTig2S62v9SC",
         Chain::Berachain => "B72vp52SUipn1gaBadkBk5MSMjMqS8gSaNUz4jBkAm9E",
-        Chain::Hyperliquid => "5UVhvt9NzyyVuVaePfkaEaHD6hoD9Dw7PFUCfRoMh8i6",
+        Chain::HyperEvm => "5UVhvt9NzyyVuVaePfkaEaHD6hoD9Dw7PFUCfRoMh8i6",
         Chain::Fantom | Chain::Sonic => "HTgSrKu2XfDc7wEm9ZJn6tavhKFD6EHNcnEBxBsArFzL",
         Chain::Gnosis => "CtJ8EkqLmeYyGB8s4jevpeNsvmD4dxVR2krfsDLcvV8Y",
         Chain::Monad => "Gnt27xtC473ZT2Mw5u8wZ68Z3gULkSTb5DuxJy7eJotD", //TODO: Monad. USDC. FIX in the future.
