@@ -1,4 +1,5 @@
 use crate::client::NameClient;
+use alloy_ens::namehash;
 use async_trait::async_trait;
 use base64::{engine::general_purpose, Engine as _};
 use primitives::{Chain, NameProvider};
@@ -54,9 +55,9 @@ impl NameClient for InjectiveNameClient {
     }
 
     async fn resolve(&self, name: &str, _chain: Chain) -> Result<String, Box<dyn Error + Send + Sync>> {
-        let hash = crate::ens_provider::namehash::namehash(name);
+        let hash = namehash(name);
         let resolve = ResolverAddress {
-            address: ResolverNode { node: hash },
+            address: ResolverNode { node: hash.to_vec() },
         };
 
         let string = serde_json::to_string(&resolve)?;

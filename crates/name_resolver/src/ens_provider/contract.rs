@@ -1,120 +1,102 @@
-use super::namehash::namehash;
-use gem_hash::keccak::keccak256;
-use jsonrpsee::core::client::ClientT;
-use jsonrpsee::core::ClientError;
-use jsonrpsee::http_client::HttpClient;
-use serde_json::json;
+use alloy_ens::namehash;
+use alloy_primitives::{Address, Bytes, U256};
+use alloy_rpc_client::RpcClient;
+use alloy_rpc_types::TransactionRequest;
+use alloy_sol_types::{sol, SolCall};
+use alloy_transport_http::Http;
+use anyhow::{anyhow, Result};
+use std::str::FromStr;
+use url::Url;
+
+sol! {
+    #[sol(rpc)]
+    interface ENSRegistry {
+        function resolver(bytes32 node) external view returns (address);
+    }
+
+    #[sol(rpc)]
+    interface ENSResolver {
+        function addr(bytes32 node) external view returns (address);
+
+        function addr_with_coin_type(bytes32 node, uint256 coin_type) external view returns (bytes);
+    }
+}
 
 pub struct Contract {
-    pub registry: String,
-    pub client: HttpClient,
+    pub registry_address: Address,
+    pub client: RpcClient,
 }
 
 impl Contract {
-    pub async fn resolver(&self, name: &str) -> Result<String, ClientError> {
-        let hash = namehash(name);
-        let data = encode_resolver(hash);
-        let response = self.eth_call(&self.registry, data).await?;
-        let result = response.unwrap_or_default().to_string().replace('\"', "");
-        if result.is_empty() {
-            return Err(ClientError::Custom("no resolver set".into()));
+    pub fn new(rpc_url: &str, registry_address_hex: &str) -> Result<Self> {
+        let url = Url::parse(rpc_url)?;
+        let http_client = Http::new(url);
+        let rpc_client = RpcClient::new(http_client, true);
+        let registry_address = Address::from_str(registry_address_hex)?;
+        Ok(Self {
+            registry_address,
+            client: rpc_client,
+        })
+    }
+    pub async fn resolver(&self, name: &str) -> Result<Address> {
+        let node = namehash(name);
+        let call = ENSRegistry::resolverCall { node };
+        let calldata = Bytes::from(call.abi_encode());
+
+        let result_bytes = self.eth_call(self.registry_address, calldata).await?;
+        if result_bytes.is_empty() || result_bytes.iter().all(|&b| b == 0) {
+            return Err(anyhow!("No resolver set or resolver address is zero"));
         }
-        let addr = self.extract_address(&result);
-        Ok(addr)
-    }
-
-    pub async fn addr(&self, _resolver: &str, _name: &str, _coin_id: u32) -> Result<String, ClientError> {
-        todo!()
-    }
-
-    pub async fn legacy_addr(&self, resolver: &str, name: &str) -> Result<String, ClientError> {
-        let hash = namehash(name);
-        let data = encode_legacy_addr(hash);
-        let response = self.eth_call(resolver, data).await?;
-        let result = response.unwrap_or_default().to_string().replace('\"', "");
-        if result.is_empty() {
-            return Err(ClientError::Custom("no address".into()));
-        }
-        Ok(self.extract_address(&result))
-    }
-
-    async fn eth_call(&self, to: &str, data: Vec<u8>) -> Result<Option<serde_json::Value>, ClientError> {
-        let parmas = json!({
-            "to": to,
-            "data": format!("0x{}", hex::encode(data))
-        });
-        self.client.request("eth_call", vec![parmas, json!("latest")]).await
-    }
-
-    fn extract_address(&self, response: &str) -> String {
-        // take last 20 bytes
-        let result: Vec<char> = response.chars().collect();
-        format!("0x{}", String::from_iter(result[result.len() - 40..].iter()))
-    }
-}
-
-fn encode_resolver(node: Vec<u8>) -> Vec<u8> {
-    let mut data: Vec<u8> = encode_func("resolver(bytes32)");
-    data.append(&mut node.clone());
-    data
-}
-
-fn encode_func(func: &str) -> Vec<u8> {
-    let hash = keccak256(func.as_bytes());
-    hash[..4].to_vec()
-}
-
-#[allow(dead_code)]
-fn encode_addr(node: Vec<u8>, coin_id: u64) -> Vec<u8> {
-    let mut data: Vec<u8> = encode_func("addr(bytes32,uint256)");
-    let coin = encode_coin(coin_id);
-    data.append(&mut node.clone());
-    data.append(&mut coin.clone());
-    data
-}
-
-fn encode_legacy_addr(node: Vec<u8>) -> Vec<u8> {
-    let mut data: Vec<u8> = encode_func("addr(bytes32)");
-    data.append(&mut node.clone());
-    data
-}
-
-#[allow(dead_code)]
-fn encode_coin(coin_id: u64) -> Vec<u8> {
-    let mut data = vec![0; 24];
-    let int = coin_id.to_be_bytes();
-    data.extend_from_slice(&int);
-    data
-}
-
-#[cfg(test)]
-mod test {
-    use crate::ens_provider::contract::encode_coin;
-
-    use super::encode_func;
-    #[test]
-    fn test_encode_func() {
-        let cases = vec![
-            ("resolver(bytes32)", hex::decode("0178b8bf")),
-            ("addr(bytes32,uint256)", hex::decode("f1cb7e06")),
-        ];
-
-        for (name, expected) in cases {
-            let encoded: &[u8] = &encode_func(name);
-            assert_eq!(encoded, expected.unwrap());
+        // The result of resolver(bytes32) is an address, which is 20 bytes.
+        // It might be padded to 32 bytes in the return data.
+        // Address::decode expects exactly 20 bytes or a 32-byte slice where first 12 are zero.
+        if result_bytes.len() == 32 && result_bytes[0..12].iter().all(|&b| b == 0) {
+            Ok(Address::from_slice(&result_bytes[12..]))
+        } else if result_bytes.len() == 20 {
+            Ok(Address::from_slice(&result_bytes))
+        } else {
+            Err(anyhow!("Invalid resolver address format returned"))
         }
     }
 
-    #[test]
-    fn test_encode_coin() {
-        let cases = vec![
-            (60u64, hex::decode("000000000000000000000000000000000000000000000000000000000000003c")),
-            (0, hex::decode("0000000000000000000000000000000000000000000000000000000000000000")),
-        ];
+    pub async fn addr(&self, resolver_address_hex: &str, name: &str, coin_id: u32) -> Result<Bytes> {
+        let node = namehash(name);
+        let resolver_address = Address::from_str(resolver_address_hex)?;
+        let call = ENSResolver::addr_with_coin_typeCall {
+            node,
+            coin_type: U256::from(coin_id),
+        };
+        let calldata = Bytes::from(call.abi_encode());
 
-        for (coin, expected) in cases {
-            let encoded: &[u8] = &encode_coin(coin);
-            assert_eq!(encoded, expected.unwrap());
+        self.eth_call(resolver_address, calldata).await
+    }
+
+    pub async fn legacy_addr(&self, resolver_address_hex: &str, name: &str) -> Result<Address> {
+        let node = namehash(name);
+        let resolver_address = Address::from_str(resolver_address_hex)?;
+        let call = ENSResolver::addrCall { node };
+        let calldata = Bytes::from(call.abi_encode());
+
+        let result_bytes = self.eth_call(resolver_address, calldata).await?;
+        if result_bytes.is_empty() || result_bytes.iter().all(|&b| b == 0) {
+            return Err(anyhow!("No address found or address is zero"));
         }
+        if result_bytes.len() == 32 && result_bytes[0..12].iter().all(|&b| b == 0) {
+            Ok(Address::from_slice(&result_bytes[12..]))
+        } else if result_bytes.len() == 20 {
+            Ok(Address::from_slice(&result_bytes))
+        } else {
+            Err(anyhow!("Invalid address format returned"))
+        }
+    }
+
+    async fn eth_call(&self, to: Address, data: Bytes) -> Result<Bytes> {
+        let tx = TransactionRequest {
+            to: Some(alloy_primitives::TxKind::Call(to)),
+            input: data.into(), // Converts Bytes to rpc_types::Input
+            ..Default::default()
+        };
+        let params = (tx, alloy_rpc_types::BlockId::latest());
+        self.client.request("eth_call", params).await.map_err(|e| anyhow!(e))
     }
 }

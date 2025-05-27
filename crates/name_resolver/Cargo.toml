@@ -9,9 +9,18 @@ serde_json = { workspace = true }
 reqwest = { workspace = true }
 async-trait = { workspace = true }
 base64 = { workspace = true }
-jsonrpsee = { workspace = true }
 hex = { workspace = true }
 lazy_static = { workspace = true }
+alloy-primitives = { workspace = true }
+alloy-sol-types = { workspace = true }
+anyhow = { workspace = true }
+url = { workspace = true, features = ["serde"] }
+alloy-ens = "1.0.7"
+alloy-json-rpc = "1.0.7"
+alloy-rpc-client = "1.0.7"
+alloy-rpc-types = "1.0.7"
+alloy-transport-http = "1.0.7"
+alloy-contract = "1.0.7"
 
 settings = { path = "../settings" }
 primitives = { path = "../primitives" }

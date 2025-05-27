@@ -64,8 +64,8 @@ name:
     url: "https://osmosis-rest.publicnode.com"
   lens:
     url: "https://api-v2.lens.dev"
-  base:
-    url: "https://resolver-api.basename.app"
+  basenames:
+    url: "https://mainnet.base.org"
 metrics:
   path: /metrics
 assets:

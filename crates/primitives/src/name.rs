@@ -32,5 +32,5 @@ pub enum NameProvider {
     Injective,
     Icns,
     Lens,
-    Bns,
+    Basenames,
 }
