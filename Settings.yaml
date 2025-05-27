@@ -66,6 +66,9 @@ name:
     url: "https://api-v2.lens.dev"
   base:
     url: "https://mainnet.base.org"
+  hyperliquid:
+    url: "https://api.hlnames.xyz"
+    key: ""
 metrics:
   path: /metrics
 assets:

@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use name_resolver::{base::Basenames, client::NameClient, ens::ENSClient, hyperliquid::HLNamesClient, injective::InjectiveNameClient, suins::SuinsClient};
-    use primitives::{Chain, node_config::get_nodes_for_chain};
+    use primitives::{node_config::get_nodes_for_chain, Chain};
     use tokio_test::block_on;
 
     #[test]
@@ -52,7 +52,7 @@ mod tests {
     #[test]
     fn test_resolve_hlnames() {
         block_on(async {
-            let client = HLNamesClient::default();
+            let client = HLNamesClient::new(DEFAULT_API_URL_BASE.to_string(), DEFAULT_API_KEY.to_string());
             let address = client.resolve("testooor.hl", Chain::Hyperliquid).await.unwrap();
 
             assert_eq!(address, "0xF26F5551E96aE5162509B25925fFfa7F07B2D652");
