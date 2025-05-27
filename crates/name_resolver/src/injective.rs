@@ -1,11 +1,12 @@
-use crate::client::NameClient;
 use alloy_ens::namehash;
 use async_trait::async_trait;
 use base64::{engine::general_purpose, Engine as _};
-use primitives::{Chain, NameProvider};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
+
+use crate::client::NameClient;
+use primitives::{Chain, NameProvider};
 
 pub struct InjectiveNameClient {
     url: String,

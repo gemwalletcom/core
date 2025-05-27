@@ -1,7 +1,7 @@
 use alloy_ens::namehash;
 use alloy_primitives::{Address, Bytes};
 use alloy_rpc_client::RpcClient;
-use alloy_rpc_types::{BlockId, TransactionRequest as EthCallTransactionRequest};
+use alloy_rpc_types::{BlockId, TransactionRequest};
 use alloy_sol_types::SolCall;
 use alloy_transport_http::Http;
 use anyhow::{anyhow, Result};
@@ -39,7 +39,7 @@ impl Basenames {
         let node = namehash(name);
         let call_data = L2Resolver::addrCall { node }.abi_encode();
 
-        let tx = EthCallTransactionRequest {
+        let tx = TransactionRequest {
             to: Some(alloy_primitives::TxKind::Call(self.resolver_address)),
             input: Bytes::from(call_data).into(),
             ..Default::default()
@@ -47,7 +47,7 @@ impl Basenames {
 
         let response_bytes: Bytes = self
             .client
-            .request::<(EthCallTransactionRequest, BlockId), Bytes>("eth_call", (tx, BlockId::latest()))
+            .request::<(TransactionRequest, BlockId), Bytes>("eth_call", (tx, BlockId::latest()))
             .await
             .map_err(|e| anyhow!("eth_call RPC request failed: {}", e))?;
 

@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use name_resolver::{basenames::Basenames, client::NameClient, ens::ENSClient, injective::InjectiveNameClient, suins::SuinsClient};
+    use name_resolver::{base::Basenames, client::NameClient, ens::ENSClient, injective::InjectiveNameClient, suins::SuinsClient};
     use primitives::Chain;
     use tokio_test::block_on;
 

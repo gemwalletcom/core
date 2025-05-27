@@ -1,5 +1,3 @@
-// Basenames module
-
 pub mod contract;
 pub mod provider;
 
