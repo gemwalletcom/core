@@ -274,6 +274,13 @@ lazy_static! {
         AssetType::ERC20,
     );
     // smartchain
+    pub static ref SMARTCHAIN_WETH: Asset = Asset::new(
+        WETH_BSC_ASSET_ID.into(),
+        WETH_NAME.into(),
+        WETH_SYMBOL.into(),
+        18,
+        AssetType::ERC20,
+    );
     pub static ref SMARTCHAIN_USDT: Asset = Asset::new(
         AssetId::from_token(Chain::SmartChain, SMARTCHAIN_USDT_TOKEN_ID),
         USDT_NAME.to_owned(),

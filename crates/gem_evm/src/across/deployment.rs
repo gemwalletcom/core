@@ -18,6 +18,7 @@ pub struct AcrossDeployment {
 #[derive(Debug)]
 pub struct AssetMapping {
     pub capital_cost: CapitalCostConfig,
+    pub l1_token_decimals: u8,
     pub set: HashSet<AssetId>,
 }
 
@@ -69,6 +70,10 @@ impl AcrossDeployment {
                 chain_id,
                 spoke_pool: "0x09aea4b2242abC8bb4BB78D537A67a245A7bEC64",
             }),
+            Chain::SmartChain => Some(Self {
+                chain_id,
+                spoke_pool: "0x4e8E101924eDE233C13e2D8622DC8aED2872d505",
+            }),
             _ => None,
         }
     }
@@ -79,6 +84,8 @@ impl AcrossDeployment {
             59144 => "0x1015c58894961F4F7Dd7D68ba033e28Ed3ee1cDB".into(),
             // zkSync
             324 => "0x863859ef502F0Ee9676626ED5B418037252eFeb2".into(),
+            // SmartChain
+            56 => "0xAC537C12fE8f544D712d71ED4376a502EEa944d7".into(),
             _ => MULTICALL_HANDLER.into(),
         }
     }
@@ -105,6 +112,10 @@ impl AcrossDeployment {
             (Chain::Blast, vec![WETH_BLAST_ASSET_ID.into()]),
             (Chain::Ink, vec![WETH_INK_ASSET_ID.into(), USDT_INK_ASSET_ID.into()]),
             (Chain::Unichain, vec![WETH_UNICHAIN_ASSET_ID.into(), USDC_UNICHAIN_ASSET_ID.into()]),
+            (
+                Chain::SmartChain,
+                vec![WETH_BSC_ASSET_ID.into(), USDC_BSC_ASSET_ID.into(), USDT_BSC_ASSET_ID.into()],
+            ),
         ])
     }
 
@@ -130,6 +141,7 @@ impl AcrossDeployment {
                     WETH_INK_ASSET_ID.into(),
                     WETH_UNICHAIN_ASSET_ID.into(),
                 ]),
+                l1_token_decimals: 18,
             },
             AssetMapping {
                 capital_cost: CapitalCostConfig {
@@ -146,6 +158,18 @@ impl AcrossDeployment {
                     USDC_POLYGON_ASSET_ID.into(),
                     USDC_UNICHAIN_ASSET_ID.into(),
                 ]),
+                l1_token_decimals: 6,
+            },
+            // USDC on BSC decimals are 18
+            AssetMapping {
+                capital_cost: CapitalCostConfig {
+                    lower_bound: EtherConv::parse_ether("0.0001"),
+                    upper_bound: BigInt::from(0),
+                    cutoff: EtherConv::parse_ether("100000"),
+                    decimals: 18,
+                },
+                set: HashSet::from_iter([USDC_ETH_ASSET_ID.into(), USDC_BSC_ASSET_ID.into()]),
+                l1_token_decimals: 6,
             },
             AssetMapping {
                 capital_cost: CapitalCostConfig {
@@ -163,6 +187,18 @@ impl AcrossDeployment {
                     USDT_ZKSYNC_ASSET_ID.into(),
                     USDT_INK_ASSET_ID.into(),
                 ]),
+                l1_token_decimals: 6,
+            },
+            // USDT on BSC decimals are 18
+            AssetMapping {
+                capital_cost: CapitalCostConfig {
+                    lower_bound: EtherConv::parse_ether("0.0001"),
+                    upper_bound: EtherConv::parse_ether("0.0001"),
+                    cutoff: EtherConv::parse_ether("1500000"),
+                    decimals: 18,
+                },
+                set: HashSet::from_iter([USDT_ETH_ASSET_ID.into(), USDT_BSC_ASSET_ID.into()]),
+                l1_token_decimals: 6,
             },
             AssetMapping {
                 capital_cost: CapitalCostConfig {
@@ -180,6 +216,7 @@ impl AcrossDeployment {
                     DAI_POLYGON_ASSET_ID.into(),
                     DAI_ZKSYNC_ASSET_ID.into(),
                 ]),
+                l1_token_decimals: 18,
             },
             AssetMapping {
                 capital_cost: CapitalCostConfig {
@@ -198,6 +235,7 @@ impl AcrossDeployment {
                     USDC_E_WORLD_ASSET_ID.into(),
                     USDC_E_ZKSYNC_ASSET_ID.into(),
                 ]),
+                l1_token_decimals: 6,
             },
             AssetMapping {
                 capital_cost: CapitalCostConfig {
@@ -216,6 +254,7 @@ impl AcrossDeployment {
                     WBTC_WORLD_ASSET_ID.into(),
                     WBTC_ZKSYNC_ASSET_ID.into(),
                 ]),
+                l1_token_decimals: 8,
             },
             AssetMapping {
                 capital_cost: CapitalCostConfig {
@@ -230,6 +269,7 @@ impl AcrossDeployment {
                     ACX_OP_ASSET_ID.into(),
                     ACX_POLYGON_ASSET_ID.into(),
                 ]),
+                l1_token_decimals: 18,
             },
         ]
     }
