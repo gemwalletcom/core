@@ -1,13 +1,12 @@
-use crate::client::NameClient;
 use async_trait::async_trait;
-use primitives::name::NameProvider;
-use primitives::Chain;
+use primitives::{name::NameProvider, Chain};
 use reqwest::header::{HeaderMap, HeaderValue, ACCEPT};
 use serde::Deserialize;
 use std::error::Error;
 
+use crate::client::NameClient;
+
 pub const DEFAULT_API_URL_BASE: &str = "https://api.hlnames.xyz";
-pub const DEFAULT_API_KEY: &str = "CPEPKMI-HUSUX6I-SE2DHEA-YYWFG5Y";
 const API_KEY_HEADER: &str = "X-API-Key";
 
 #[derive(Debug, Deserialize)]
@@ -28,6 +27,15 @@ impl HLNamesClient {
             api_key,
             client: reqwest::Client::new(),
         }
+    }
+
+    pub fn is_valid_name(&self, name: &str) -> bool {
+        let labels = name.split('.').collect::<Vec<&str>>();
+        if labels.is_empty() {
+            return false;
+        }
+
+        !labels.iter().any(|label| label.is_empty())
     }
 
     async fn resolve_name(&self, name: &str) -> anyhow::Result<String> {
@@ -57,6 +65,11 @@ impl NameClient for HLNamesClient {
         if !self.chains().contains(&chain) {
             return Err(format!("Unsupported chain: {}", chain).into());
         }
+
+        if !self.is_valid_name(name) {
+            return Err(format!("Invalid name: {}", name).into());
+        }
+
         self.resolve_name(name).await.map_err(|e| e.into())
     }
 
@@ -66,5 +79,24 @@ impl NameClient for HLNamesClient {
 
     fn domains(&self) -> Vec<&'static str> {
         vec!["hl"]
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_is_valid_name() {
+        let client = HLNamesClient::new("".to_string(), "".to_string());
+
+        assert!(client.is_valid_name("test.hl"));
+        assert!(client.is_valid_name("a.test.hl"));
+        assert!(client.is_valid_name("a.b.test.hl"));
+
+        assert!(!client.is_valid_name("test..hl"));
+        assert!(!client.is_valid_name("test.hl."));
+        assert!(!client.is_valid_name("test.hl.."));
+        assert!(!client.is_valid_name("test.hl..hl"));
     }
 }

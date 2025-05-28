@@ -1,7 +1,7 @@
-use std::env;
+use serde::Deserialize;
+use std::{env, path::PathBuf};
 
 use config::{Config, ConfigError, Environment, File};
-use serde::Deserialize;
 
 #[derive(Debug, Deserialize, Clone)]
 #[allow(unused)]
@@ -324,9 +324,12 @@ pub struct AlerterRules {
 impl Settings {
     pub fn new() -> Result<Self, ConfigError> {
         let current_dir = env::current_dir().unwrap();
-        let setting_path = current_dir.join("Settings.yaml");
+        Self::new_setting_path(current_dir.join("Settings.yaml"))
+    }
+
+    pub fn new_setting_path(path: PathBuf) -> Result<Self, ConfigError> {
         let s = Config::builder()
-            .add_source(File::from(setting_path))
+            .add_source(File::from(path))
             .add_source(Environment::with_prefix("").prefix_separator("").separator("_"))
             .build()?;
         s.try_deserialize()

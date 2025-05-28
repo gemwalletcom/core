@@ -51,8 +51,12 @@ mod tests {
 
     #[test]
     fn test_resolve_hlnames() {
+        let current_dir = env::current_dir().unwrap();
+        let path = current_dir.join("../../Settings.yaml");
+        let settings = Settings::new_setting_path(path).unwrap();
+
         block_on(async {
-            let client = HLNamesClient::new(DEFAULT_API_URL_BASE.to_string(), DEFAULT_API_KEY.to_string());
+            let client = HLNamesClient::new(settings.name.hyperliquid.url, settings.name.hyperliquid.key);
             let address = client.resolve("testooor.hl", Chain::Hyperliquid).await.unwrap();
 
             assert_eq!(address, "0xF26F5551E96aE5162509B25925fFfa7F07B2D652");
