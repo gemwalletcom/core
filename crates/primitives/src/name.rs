@@ -5,7 +5,7 @@ use strum_macros::AsRefStr;
 use typeshare::typeshare;
 
 #[derive(Debug, Serialize)]
-#[typeshare(swift = "Sendable")]
+#[typeshare(swift = "Sendable, Hashable")]
 #[allow(dead_code)]
 pub struct NameRecord {
     pub name: String,
@@ -32,5 +32,5 @@ pub enum NameProvider {
     Injective,
     Icns,
     Lens,
-    Bns,
+    Basenames,
 }

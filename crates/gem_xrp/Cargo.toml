@@ -1,0 +1,23 @@
+[package]
+name = "gem_xrp"
+version = "0.1.0"
+edition = "2024"
+
+[features]
+default = []
+typeshare = []
+rpc = []
+
+[dependencies]
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+async-trait = { workspace = true }
+typeshare = { workspace = true }
+reqwest-middleware = { workspace = true, features = ["json"] }
+chrono = { workspace = true, features = ["serde"] }
+hex = { workspace = true }
+primitives = { path = "../primitives" }
+number_formatter = { path = "../number_formatter" }
+gem_chain_rpc = { path = "../gem_chain_rpc" }

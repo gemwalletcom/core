@@ -115,3 +115,4 @@ pub mod asset_balance;
 pub use self::asset_balance::AssetBalance;
 pub mod chain_address;
 pub use self::chain_address::ChainAddress;
+pub mod node_config;

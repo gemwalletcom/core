@@ -100,7 +100,7 @@ impl Asset {
             Chain::Berachain => chain.new_asset("Berachain".to_string(), "BERA".to_string(), 18, AssetType::NATIVE),
             Chain::Ink => chain.new_asset("Ink".to_string(), "ETH".to_string(), 18, AssetType::NATIVE),
             Chain::Unichain => chain.new_asset("Unichain".to_string(), "ETH".to_string(), 18, AssetType::NATIVE),
-            Chain::Hyperliquid => chain.new_asset("HypeEVM".to_string(), "HYPE".to_string(), 18, AssetType::NATIVE),
+            Chain::Hyperliquid => chain.new_asset("HyperEVM".to_string(), "HYPE".to_string(), 18, AssetType::NATIVE),
             Chain::Monad => chain.new_asset("Monad Testnet".to_string(), "MON".to_string(), 18, AssetType::NATIVE),
         }
     }

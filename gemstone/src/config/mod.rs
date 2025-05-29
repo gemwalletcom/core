@@ -11,13 +11,15 @@ pub mod wallet_connect;
 
 use crate::chain::ChainConfig;
 use gem_solana;
-use primitives::{BitcoinChain, Chain, EVMChain, SolanaTokenProgramId, StakeChain};
+use primitives::{
+    node_config::{self, Node},
+    BitcoinChain, Chain, EVMChain, SolanaTokenProgramId, StakeChain,
+};
 use std::{collections::HashMap, str::FromStr};
 use {
     bitcoin_chain::{get_bitcoin_chain_config, BitcoinChainConfig},
     docs::{get_docs_url, DocsUrl},
     evm_chain::{get_evm_chain_config, EVMChainConfig},
-    node::{get_nodes, get_nodes_for_chain, Node},
     public::{get_public_url, PublicUrl, ASSETS_URL},
     social::{get_social_url, SocialUrl},
     stake::{get_stake_config, StakeChainConfig},
@@ -81,12 +83,12 @@ impl Config {
     }
 
     fn get_nodes(&self) -> HashMap<String, Vec<Node>> {
-        get_nodes()
+        node_config::get_nodes()
     }
 
     fn get_nodes_for_chain(&self, chain: &str) -> Vec<Node> {
         let chain = Chain::from_str(chain).unwrap();
-        get_nodes_for_chain(chain)
+        node_config::get_nodes_for_chain(chain)
     }
 
     fn image_formatter_asset_url(&self, chain: &str, token_id: Option<String>) -> String {
