@@ -1,22 +1,20 @@
 use chrono::Utc;
+use num_bigint::Sign;
+use primitives::SwapProvider;
 use primitives::{chain::Chain, Asset, AssetId, AssetType, Transaction, TransactionState, TransactionSwapMetadata, TransactionType};
 
-use gem_solana::{metaplex::metadata::Metadata, JUPITER_PROGRAM_ID, SYSTEM_PROGRAM_ID, TOKEN_PROGRAM, WSOL_TOKEN_ADDRESS};
+use gem_solana::{metaplex::metadata::Metadata, JUPITER_PROGRAM_ID, SYSTEM_PROGRAM_ID, TOKEN_PROGRAM};
 
-use gem_solana::model::{BlockTransaction, InstructionParsed, TokenInfo};
+use gem_solana::model::{BlockTransaction, TokenInfo};
 
 pub struct SolanaMapper;
 
 impl SolanaMapper {
-    pub fn map_transaction(chain: Chain, transaction: &BlockTransaction, block_number: i64) -> Option<primitives::Transaction> {
-        let account_keys = transaction
-            .transaction
-            .message
-            .account_keys
-            .clone()
-            .into_iter()
-            .map(|x| x.pubkey)
-            .collect::<Vec<String>>();
+    const CHAIN: Chain = Chain::Solana;
+
+    pub fn map_transaction(transaction: &BlockTransaction, block_number: i64) -> Option<primitives::Transaction> {
+        let chain = Self::CHAIN;
+        let account_keys = transaction.transaction.message.account_keys.clone();
         let signatures = transaction.transaction.signatures.clone();
         let hash = transaction.transaction.signatures.first()?.to_string();
         let fee = transaction.meta.fee;
@@ -110,81 +108,70 @@ impl SolanaMapper {
         }
 
         if account_keys.contains(&JUPITER_PROGRAM_ID.to_string()) {
-            for inner_transaction in transaction.meta.inner_instructions.clone() {
-                let instructions = inner_transaction
-                    .instructions
-                    .clone()
-                    .into_iter()
-                    .flat_map(|x| {
-                        if let Some(value) = x.parsed {
-                            return Some(value);
-                        }
-                        None
-                    })
-                    .collect::<Vec<InstructionParsed>>();
+            let sender = account_keys.first()?.clone();
+            let balance_changes = transaction.get_balance_changes_by_owner(&sender);
+            let token_balance_changes = transaction.meta.get_token_balance_changes_by_owner(&sender);
 
-                let transfer_instructions = instructions
-                    .into_iter()
-                    .filter(|x| x.instruction_type == "transferChecked")
-                    .collect::<Vec<InstructionParsed>>();
-
-                // 1 - input, 2 - referral, 3 destination
-                if transfer_instructions.len() == 3 {
-                    let input = transfer_instructions.first()?.clone();
-                    let output = transfer_instructions.last()?.clone();
-
-                    let from_address = input.info.authority?;
-                    let to_address = from_address.clone();
-
-                    let from_asset = Self::asset_id_from_program(chain, input.info.mint?);
-                    let to_asset = Self::asset_id_from_program(chain, output.info.mint?);
-                    let from_value = input.info.token_amount?.amount.to_string();
-                    let to_value = output.info.token_amount?.amount.to_string();
-
-                    let swap = TransactionSwapMetadata {
-                        from_asset: from_asset.clone(),
-                        from_value: from_value.clone(),
-                        to_asset: to_asset.clone(),
-                        to_value: to_value.clone(),
-                        provider: None,
-                    };
-                    let asset_id = from_asset.clone();
-
-                    let transaction = Transaction::new(
-                        hash.clone(),
-                        asset_id,
-                        from_address,
-                        to_address,
-                        Some(JUPITER_PROGRAM_ID.to_string()),
-                        TransactionType::Swap,
-                        state,
-                        block_number.to_string(),
-                        sequence,
-                        fee.to_string(),
-                        chain.as_asset_id(),
-                        from_value.clone().to_string(),
-                        None,
-                        serde_json::to_value(swap).ok(),
-                        created_at,
-                    );
-                    return Some(transaction);
+            let (from_asset, from_value, to_asset, to_value) = match token_balance_changes.as_slice() {
+                [a] => (
+                    a.asset_id.clone(),
+                    a.amount.magnitude().clone(),
+                    balance_changes.asset_id.clone(),
+                    balance_changes.amount.magnitude().clone(),
+                ),
+                [a, b] => {
+                    let (from, to) = if a.amount.sign() == Sign::Plus { (b, a) } else { (a, b) };
+                    (
+                        from.asset_id.clone(),
+                        from.amount.magnitude().clone(),
+                        to.asset_id.clone(),
+                        to.amount.magnitude().clone(),
+                    )
                 }
-            }
+                _ => return None,
+            };
+
+            let swap = TransactionSwapMetadata {
+                from_asset: from_asset.clone(),
+                from_value: from_value.clone().to_string(),
+                to_asset: to_asset.clone(),
+                to_value: to_value.clone().to_string(),
+                provider: Some(SwapProvider::Jupiter.id().to_owned()),
+            };
+
+            let transaction = Transaction::new(
+                hash.clone(),
+                swap.from_asset.clone(),
+                sender.clone(),
+                sender.clone(),
+                Some(JUPITER_PROGRAM_ID.to_string()),
+                TransactionType::Swap,
+                state,
+                block_number.to_string(),
+                sequence,
+                fee.to_string(),
+                chain.as_asset_id(),
+                swap.from_value.clone().to_string(),
+                None,
+                serde_json::to_value(swap.clone()).ok(),
+                created_at,
+            );
+            return Some(transaction);
         }
 
         None
     }
 
-    fn asset_id_from_program(chain: Chain, program_id: String) -> AssetId {
-        if program_id == WSOL_TOKEN_ADDRESS {
-            chain.as_asset_id()
-        } else {
-            AssetId {
-                chain,
-                token_id: Some(program_id),
-            }
-        }
-    }
+    // fn asset_id_from_program(chain: Chain, program_id: String) -> AssetId {
+    //     if program_id == WSOL_TOKEN_ADDRESS {
+    //         chain.as_asset_id()
+    //     } else {
+    //         AssetId {
+    //             chain,
+    //             token_id: Some(program_id),
+    //         }
+    //     }
+    // }
 
     pub fn map_token_data(chain: Chain, token_id: String, token_info: &TokenInfo, meta: &Metadata) -> Result<Asset, Box<dyn std::error::Error + Send + Sync>> {
         let name = meta.data.name.trim_matches(char::from(0)).to_string();
@@ -192,5 +179,45 @@ impl SolanaMapper {
         let decimals = token_info.decimals;
 
         Ok(Asset::new(AssetId::from_token(chain, &token_id), name, symbol, decimals, AssetType::TOKEN))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use primitives::JsonRpcResult;
+
+    #[test]
+    fn test_transaction_swap_token_to_sol() {
+        let file = concat!(env!("CARGO_MANIFEST_DIR"), "/testdata/solana/swap_token_to_sol.json");
+        let result: JsonRpcResult<BlockTransaction> = serde_json::from_str(&std::fs::read_to_string(file).unwrap()).unwrap();
+
+        let transaction = SolanaMapper::map_transaction(&result.result, 1).unwrap();
+        let expected = TransactionSwapMetadata {
+            from_asset: AssetId::from_token(Chain::Solana, "BKpSnSdNdANUxKPsn4AQ8mf4b9BoeVs9JD1Q8cVkpump"),
+            from_value: "393647577456".to_string(),
+            to_asset: Chain::Solana.as_asset_id(),
+            to_value: "140219948".to_string(),
+            provider: Some(SwapProvider::Jupiter.id().to_owned()),
+        };
+
+        assert_eq!(transaction.metadata, Some(serde_json::to_value(expected).unwrap()));
+    }
+
+    #[test]
+    fn test_transaction_swap_token_to_token() {
+        let file = concat!(env!("CARGO_MANIFEST_DIR"), "/testdata/solana/swap_token_to_token.json");
+        let result: JsonRpcResult<BlockTransaction> = serde_json::from_str(&std::fs::read_to_string(file).unwrap()).unwrap();
+
+        let transaction = SolanaMapper::map_transaction(&result.result, 1).unwrap();
+        let expected = TransactionSwapMetadata {
+            from_asset: AssetId::from_token(Chain::Solana, "2b1kV6DkPAnxd5ixfnxCpjxmKwqjjaYmCZfHsFu24GXo"),
+            from_value: "1000000".to_string(),
+            to_asset: AssetId::from_token(Chain::Solana, "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"),
+            to_value: "999932".to_string(),
+            provider: Some(SwapProvider::Jupiter.id().to_owned()),
+        };
+
+        assert_eq!(transaction.metadata, Some(serde_json::to_value(expected).unwrap()));
     }
 }

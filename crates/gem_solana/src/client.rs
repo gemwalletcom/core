@@ -105,7 +105,7 @@ impl SolanaClient {
         let params = vec![
             json!(slot),
             json!({
-                "encoding": encoding.unwrap_or("jsonParsed"),
+                "encoding": encoding.unwrap_or("json"),
                 "transactionDetails": transaction_details.unwrap_or("full"),
                 "rewards": rewards.unwrap_or(false),
                 "maxSupportedTransactionVersion": max_supported_transaction_version.unwrap_or(0),
@@ -130,7 +130,7 @@ impl SolanaClient {
 
 #[cfg(test)]
 mod tests {
-    use crate::model::ResultTokenInfo;
+    use crate::model::{BlockTransaction, ResultTokenInfo};
 
     use super::*;
     use serde::{Deserialize, Serialize};
