@@ -19,6 +19,14 @@ pub fn new_symbiosis() -> ProxyProvider {
     }
 }
 
+pub fn new_cetus_aggregator() -> ProxyProvider {
+    ProxyProvider {
+        provider: SwapProviderType::new(GemSwapProvider::CetusAggregator),
+        url: format!("{}/{}", PROVIDER_API_URL, "cetus"),
+        assets: vec![SwapChainAsset::All(Chain::Sui)],
+    }
+}
+
 pub fn new_mayan() -> ProxyProvider {
     ProxyProvider {
         provider: SwapProviderType::new(GemSwapProvider::Mayan),
