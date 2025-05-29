@@ -34,7 +34,6 @@ pub async fn main() {
         chains
     };
 
-    // create node client
     let nodes = database.get_nodes().unwrap();
 
     let mut nodes_map: HashMap<String, Vec<String>> = HashMap::new();
@@ -50,7 +49,6 @@ pub async fn main() {
         let parser_options = ParserOptions {
             chain,
             timeout: settings.parser.timeout,
-            retry: settings.parser.retry,
         };
         let node_urls = nodes_map.clone().get(chain.as_ref()).cloned().unwrap_or_default();
 

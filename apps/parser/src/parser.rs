@@ -120,23 +120,12 @@ impl Parser {
     }
 
     async fn fetch_blocks(&mut self, blocks: Vec<i32>) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
-        let mut retry_attempts_count = 0;
-        loop {
-            let results = futures::future::try_join_all(blocks.iter().map(|block| self.provider.get_transactions(*block as i64))).await;
-            match results {
-                Ok(transactions) => return Ok(transactions.into_iter().flatten().collect::<Vec<primitives::Transaction>>()),
-                Err(err) => {
-                    if retry_attempts_count >= self.options.retry {
-                        return Err(err);
-                    }
-                    retry_attempts_count += 1;
-
-                    tokio::time::sleep(Duration::from_millis(retry_attempts_count * self.options.timeout * 2)).await;
-                }
-            }
+        let results = futures::future::try_join_all(blocks.iter().map(|block| self.provider.get_transactions(*block as i64))).await;
+        match results {
+            Ok(transactions) => Ok(transactions.into_iter().flatten().collect::<Vec<primitives::Transaction>>()),
+            Err(err) => Err(err),
         }
     }
-
     pub async fn parse_blocks(&mut self, blocks: Vec<i32>) -> Result<ParserBlocksResult, Box<dyn Error + Send + Sync>> {
         let transactions = self
             .fetch_blocks(blocks.clone())

@@ -233,7 +233,6 @@ pub struct Chain {
 #[allow(unused)]
 pub struct Parser {
     pub timeout: u64,
-    pub retry: u64,
 }
 
 #[derive(Debug, Deserialize, Clone)]
