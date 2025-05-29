@@ -60,6 +60,7 @@ impl SwapProviderType {
             | GemSwapProvider::Oku
             | GemSwapProvider::Wagmi
             | GemSwapProvider::Cetus
+            | GemSwapProvider::CetusAggregator
             | GemSwapProvider::StonfiV2
             | GemSwapProvider::Reservoir
             | GemSwapProvider::Symbiosis => GemSwapProviderMode::OnChain,
