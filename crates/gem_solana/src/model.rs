@@ -118,6 +118,10 @@ pub struct BlockTransaction {
 }
 
 impl BlockTransaction {
+    pub fn fee(&self) -> BigUint {
+        BigUint::from(self.meta.fee)
+    }
+
     pub fn get_balance_changes_by_owner(&self, owner: &str) -> TokenBalanceChange {
         // Find all account indices that belong to the owner
         let account_indices: Vec<usize> = self
@@ -142,10 +146,12 @@ impl BlockTransaction {
             let diff = total_pre - total_post;
             (num_bigint::Sign::Minus, BigUint::from(diff))
         };
+        let fee = self.fee();
+        let data = if fee > diff { BigUint::from(0u64) } else { diff - fee };
 
         TokenBalanceChange {
             asset_id: Chain::Solana.as_asset_id(),
-            amount: BigInt::from_biguint(sign, diff - self.meta.fee),
+            amount: BigInt::from_biguint(sign, data),
         }
     }
 }
