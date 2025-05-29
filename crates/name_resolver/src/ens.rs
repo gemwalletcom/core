@@ -11,7 +11,9 @@ pub struct ENSClient {
 
 impl ENSClient {
     pub fn new(url: String) -> Self {
-        Self { provider: Provider::new(url) }
+        Self {
+            provider: Provider::new(url).unwrap(),
+        }
     }
 }
 

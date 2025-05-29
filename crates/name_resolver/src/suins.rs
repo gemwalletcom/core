@@ -4,18 +4,20 @@ use primitives::chain::Chain;
 use primitives::NameProvider;
 use std::error::Error;
 
-use jsonrpsee::{
-    core::client::ClientT,
-    http_client::{HttpClient, HttpClientBuilder},
-};
+use alloy_rpc_client::RpcClient;
+use alloy_transport_http::Http;
+use url::Url;
+use anyhow::{anyhow, Result};
 
 pub struct SuinsClient {
-    client: HttpClient,
+    client: RpcClient,
 }
 
 impl SuinsClient {
     pub fn new(api_url: String) -> Self {
-        let client = HttpClientBuilder::default().build(api_url).unwrap();
+        let url = Url::parse(&api_url).expect("Invalid Suins API URL");
+        let http_transport = Http::new(url);
+        let client = RpcClient::new(http_transport, true);
         Self { client }
     }
 }
@@ -27,7 +29,8 @@ impl NameClient for SuinsClient {
     }
 
     async fn resolve(&self, name: &str, _chain: Chain) -> Result<String, Box<dyn Error + Send + Sync>> {
-        let address = self.client.request("suix_resolveNameServiceAddress", vec![serde_json::json!(name)]).await?;
+        let params = vec![serde_json::json!(name)];
+        let address: String = self.client.request("suix_resolveNameServiceAddress", params).await.map_err(|e| anyhow!(e))?;
         Ok(address)
     }
 

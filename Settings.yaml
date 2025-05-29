@@ -65,7 +65,7 @@ name:
   lens:
     url: "https://api-v2.lens.dev"
   base:
-    url: "https://resolver-api.basename.app"
+    url: "https://mainnet.base.org"
 metrics:
   path: /metrics
 assets:
@@ -187,12 +187,12 @@ scan:
   timeout_ms: 1200 # ms
   goplus:
     url: "https://api.gopluslabs.io"
-    key: 
+    key:
       public: ""
       secret: ""
   hashdit:
     url: "https://api.hashdit.io"
-    key: 
+    key:
       public: ""
       secret: ""
 
@@ -203,7 +203,7 @@ pusher:
   url: "http://localhost:8088"
   ios:
     topic: ""
-  
+
 daemon:
   service: ""
   search:
