@@ -113,12 +113,19 @@ impl SolanaMapper {
             let token_balance_changes = transaction.meta.get_token_balance_changes_by_owner(&sender);
 
             let (from_asset, from_value, to_asset, to_value) = match token_balance_changes.as_slice() {
-                [a] => (
-                    a.asset_id.clone(),
-                    a.amount.magnitude().clone(),
-                    balance_changes.asset_id.clone(),
-                    balance_changes.amount.magnitude().clone(),
-                ),
+                [a] => {
+                    let (from, to) = if a.amount.sign() == Sign::Plus {
+                        (&balance_changes, a)
+                    } else {
+                        (a, &balance_changes)
+                    };
+                    (
+                        from.asset_id.clone(),
+                        from.amount.magnitude().clone(),
+                        to.asset_id.clone(),
+                        to.amount.magnitude().clone(),
+                    )
+                }
                 [a, b] => {
                     let (from, to) = if a.amount.sign() == Sign::Plus { (b, a) } else { (a, b) };
                     (
@@ -197,7 +204,7 @@ mod tests {
             from_asset: AssetId::from_token(Chain::Solana, "BKpSnSdNdANUxKPsn4AQ8mf4b9BoeVs9JD1Q8cVkpump"),
             from_value: "393647577456".to_string(),
             to_asset: Chain::Solana.as_asset_id(),
-            to_value: "140219948".to_string(),
+            to_value: "139512057".to_string(),
             provider: Some(SwapProvider::Jupiter.id().to_owned()),
         };
 
@@ -215,6 +222,23 @@ mod tests {
             from_value: "1000000".to_string(),
             to_asset: AssetId::from_token(Chain::Solana, "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"),
             to_value: "999932".to_string(),
+            provider: Some(SwapProvider::Jupiter.id().to_owned()),
+        };
+
+        assert_eq!(transaction.metadata, Some(serde_json::to_value(expected).unwrap()));
+    }
+
+    #[test]
+    fn test_transaction_swap_sol_to_token() {
+        let file = concat!(env!("CARGO_MANIFEST_DIR"), "/testdata/solana/swap_sol_to_token.json");
+        let result: JsonRpcResult<BlockTransaction> = serde_json::from_str(&std::fs::read_to_string(file).unwrap()).unwrap();
+
+        let transaction = SolanaMapper::map_transaction(&result.result, 1).unwrap();
+        let expected = TransactionSwapMetadata {
+            from_asset: Chain::Solana.as_asset_id(),
+            from_value: "10000000".to_string(),
+            to_asset: AssetId::from_token(Chain::Solana, "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"),
+            to_value: "1678930".to_string(),
             provider: Some(SwapProvider::Jupiter.id().to_owned()),
         };
 

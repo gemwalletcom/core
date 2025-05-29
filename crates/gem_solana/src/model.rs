@@ -145,7 +145,7 @@ impl BlockTransaction {
 
         TokenBalanceChange {
             asset_id: Chain::Solana.as_asset_id(),
-            amount: BigInt::from_biguint(sign, diff),
+            amount: BigInt::from_biguint(sign, diff - self.meta.fee),
         }
     }
 }
