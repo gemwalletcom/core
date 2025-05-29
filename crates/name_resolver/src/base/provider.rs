@@ -58,10 +58,6 @@ impl Basenames {
 #[async_trait]
 impl NameClient for Basenames {
     async fn resolve(&self, name: &str, _chain: Chain) -> Result<String, Box<dyn Error + Send + Sync>> {
-        if !name.ends_with(".base.eth") {
-            return Err(anyhow!("Name does not end with .base.eth").into());
-        }
-
         match self.get_address_from_resolver(name).await {
             Ok(addr) => {
                 if addr.is_zero() {

@@ -4,6 +4,7 @@ edition = { workspace = true }
 version = { workspace = true }
 
 [dependencies]
+anyhow = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 reqwest = { workspace = true }
@@ -13,14 +14,13 @@ hex = { workspace = true }
 lazy_static = { workspace = true }
 alloy-primitives = { workspace = true }
 alloy-sol-types = { workspace = true }
-anyhow = { workspace = true }
+alloy-ens = { workspace = true }
+alloy-json-rpc = { workspace = true }
+alloy-rpc-client = { workspace = true }
+alloy-rpc-types = { workspace = true }
+alloy-transport-http = { workspace = true }
+alloy-contract = { workspace = true }
 url = { workspace = true, features = ["serde"] }
-alloy-ens = "1.0.7"
-alloy-json-rpc = "1.0.7"
-alloy-rpc-client = "1.0.7"
-alloy-rpc-types = "1.0.7"
-alloy-transport-http = "1.0.7"
-alloy-contract = "1.0.7"
 
 settings = { path = "../settings" }
 primitives = { path = "../primitives" }

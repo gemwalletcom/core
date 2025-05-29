@@ -143,7 +143,7 @@ pub struct Name {
     pub injective: URL,
     pub icns: URL,
     pub lens: URL,
-    pub basenames: URL,
+    pub base: URL,
 }
 
 #[derive(Debug, Deserialize, Clone)]

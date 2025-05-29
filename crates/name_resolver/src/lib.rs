@@ -35,7 +35,7 @@ impl NameProviderFactory {
             Box::new(injective::InjectiveNameClient::new(settings.name.injective.url)),
             Box::new(icns::IcnsClient::new(settings.name.icns.url)),
             Box::new(lens::LensClient::new(settings.name.lens.url)),
-            Box::new(base::Basenames::new(settings.name.basenames.url)),
+            Box::new(base::Basenames::new(settings.name.base.url)),
         ]
     }
 }
