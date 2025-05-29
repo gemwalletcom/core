@@ -1,12 +1,14 @@
 use std::error::Error;
 
-use crate::{ChainAssetsProvider, ChainBlockProvider, ChainTokenDataProvider};
 use async_trait::async_trait;
-use primitives::AssetBalance;
-use primitives::{chain::Chain, Asset, AssetId, AssetType};
+use gem_chain_rpc::{ChainAssetsProvider, ChainBlockProvider, ChainTokenDataProvider};
+use hex;
+use primitives::{Asset, AssetBalance, AssetId, AssetType, Transaction, chain::Chain};
 
 use super::client::XRPClient;
 use super::mapper::XRPMapper;
+
+const XRP_EPOCH_OFFSET_SECONDS: i64 = 946684800; // XRP epoch starts 2000-01-01
 
 pub struct XRPProvider {
     client: XRPClient,
@@ -16,8 +18,6 @@ impl XRPProvider {
     pub fn new(client: XRPClient) -> Self {
         Self { client }
     }
-
-    // Transaction mapping has been moved to XRPMapper
 }
 
 #[async_trait]
@@ -31,15 +31,15 @@ impl ChainBlockProvider for XRPProvider {
         Ok(ledger.ledger_current_index)
     }
 
-    async fn get_transactions(&self, block_number: i64) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Send + Sync>> {
+    async fn get_transactions(&self, block_number: i64) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
         let block = self.client.get_block_transactions(block_number).await?;
-        let block_timestamp = 946684800 + block.close_time;
+        let block_timestamp = XRP_EPOCH_OFFSET_SECONDS + block.close_time;
         let transactions = block.transactions;
 
         let transactions = transactions
             .into_iter()
             .flat_map(|x| XRPMapper::map_transaction(self.get_chain(), x, block_number, block_timestamp))
-            .collect::<Vec<primitives::Transaction>>();
+            .collect::<Vec<Transaction>>();
         Ok(transactions)
     }
 }
@@ -50,8 +50,9 @@ impl ChainTokenDataProvider for XRPProvider {
         let response = self.client.get_account_objects(token_id.clone()).await?;
         let account = response.account_objects.first().ok_or("No account objects found for token_id")?;
 
-        let symbol = String::from_utf8(hex::decode(&account.low_limit.currency)?.into_iter().filter(|&b| b != 0).collect())
-            .map_err(|_| "Failed to convert currency bytes to string")?;
+        // Decode currency from hex, filter out null bytes, then convert to String
+        let currency_bytes: Vec<u8> = hex::decode(&account.low_limit.currency)?.into_iter().filter(|&b| b != 0).collect();
+        let symbol = String::from_utf8(currency_bytes).map_err(|e| format!("Failed to convert currency bytes to string: {}", e))?;
 
         Ok(Asset::new(
             AssetId::from_token(self.get_chain(), &token_id),

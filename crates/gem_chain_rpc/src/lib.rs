@@ -14,7 +14,6 @@ pub mod stellar;
 pub mod sui;
 pub mod ton;
 pub mod tron;
-pub mod xrp;
 
 // Re-export all client implementations
 pub use self::algorand::client::AlgorandClient;
@@ -30,7 +29,6 @@ pub use self::stellar::client::StellarClient;
 pub use self::sui::client::SuiClient;
 pub use self::ton::client::TonClient;
 pub use self::tron::client::TronClient;
-pub use self::xrp::client::XRPClient;
 
 use async_trait::async_trait;
 use primitives::{chain::Chain, Asset, AssetBalance, Transaction};

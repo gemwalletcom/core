@@ -14,10 +14,10 @@ use gem_chain_rpc::{
     sui::{client::SuiClient, provider::SuiProvider},
     ton::{client::TonClient, provider::TonProvider},
     tron::{client::TronClient, provider::TronProvider},
-    xrp::{client::XRPClient, provider::XRPProvider},
     ChainProvider,
 };
 use gem_solana::SolanaClient;
+use gem_xrp::rpc::{XRPClient, XRPProvider};
 use primitives::{Asset, AssetBalance, Chain};
 use reqwest_middleware::ClientBuilder;
 use reqwest_retry::{policies::ExponentialBackoff, RetryTransientMiddleware};
