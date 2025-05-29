@@ -10,7 +10,7 @@ use std::time::Duration;
 use version_updater::VersionClient;
 
 pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + Send>>> {
-    let update_appstore_version = run_job("update app store version", Duration::from_secs(43200), {
+    let _update_appstore_version = run_job("update app store version", Duration::from_secs(43200), {
         let settings = Arc::new(settings.clone());
         move || {
             let mut version_client = VersionClient::new(&settings.postgres.url);
@@ -35,7 +35,7 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
     });
 
     vec![
-        Box::pin(update_appstore_version),
+        // Box::pin(update_appstore_version),
         Box::pin(update_apk_version),
         Box::pin(update_samsung_store_version),
     ]
