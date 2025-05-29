@@ -1,8 +1,11 @@
 #[cfg(test)]
 mod tests {
+    use std::env;
+    use tokio_test::block_on;
+
     use name_resolver::{base::Basenames, client::NameClient, ens::ENSClient, hyperliquid::HLNamesClient, injective::InjectiveNameClient, suins::SuinsClient};
     use primitives::{node_config::get_nodes_for_chain, Chain};
-    use tokio_test::block_on;
+    use settings::Settings;
 
     #[test]
     fn test_resolver_eth() {
