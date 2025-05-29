@@ -3,10 +3,12 @@ use std::error::Error;
 use async_trait::async_trait;
 use gem_chain_rpc::{ChainAssetsProvider, ChainBlockProvider, ChainTokenDataProvider};
 use hex;
-use primitives::{chain::Chain, Asset, AssetBalance, AssetId, AssetType, Transaction};
+use primitives::{Asset, AssetBalance, AssetId, AssetType, Transaction, chain::Chain};
 
 use super::client::XRPClient;
 use super::mapper::XRPMapper;
+
+const XRP_EPOCH_OFFSET_SECONDS: i64 = 946684800; // XRP epoch starts 2000-01-01
 
 pub struct XRPProvider {
     client: XRPClient,
@@ -31,7 +33,7 @@ impl ChainBlockProvider for XRPProvider {
 
     async fn get_transactions(&self, block_number: i64) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
         let block = self.client.get_block_transactions(block_number).await?;
-        let block_timestamp = 946684800 + block.close_time; // XRP epoch starts 2000-01-01
+        let block_timestamp = XRP_EPOCH_OFFSET_SECONDS + block.close_time;
         let transactions = block.transactions;
 
         let transactions = transactions

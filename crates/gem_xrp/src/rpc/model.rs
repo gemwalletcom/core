@@ -35,7 +35,6 @@ pub struct AccountObjectLowLimit {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Ledger {
     pub close_time: i64,
-    // This refers to the detailed Transaction struct below
     pub transactions: Vec<Transaction>,
 }
 

@@ -1,11 +1,7 @@
 [package]
 name = "gem_xrp"
 version = "0.1.0"
-edition = "2021"
-authors = ["Gem Wallet Team <contact@gemwallet.com>"]
-description = "XRP ledger support for Gem Wallet. Contains XRP models and client logic."
-license = "Apache-2.0"
-repository = "https://github.com/gemwalletcom/core"
+edition = "2024"
 
 [features]
 default = []
