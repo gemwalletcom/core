@@ -46,6 +46,7 @@ pub fn price_account_for_chain(chain: Chain) -> &'static str {
         Chain::Hyperliquid => "5UVhvt9NzyyVuVaePfkaEaHD6hoD9Dw7PFUCfRoMh8i6",
         Chain::Fantom | Chain::Sonic => "HTgSrKu2XfDc7wEm9ZJn6tavhKFD6EHNcnEBxBsArFzL",
         Chain::Gnosis => "CtJ8EkqLmeYyGB8s4jevpeNsvmD4dxVR2krfsDLcvV8Y",
+        Chain::Rootstock => "",
         Chain::Monad => "Gnt27xtC473ZT2Mw5u8wZ68Z3gULkSTb5DuxJy7eJotD", //TODO: Monad. USDC. FIX in the future.
     }
 }

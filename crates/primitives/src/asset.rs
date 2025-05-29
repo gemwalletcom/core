@@ -93,6 +93,7 @@ impl Asset {
             Chain::World => chain.new_asset("World".to_string(), "ETH".to_string(), 18, AssetType::NATIVE),
             Chain::Stellar => chain.new_asset("Stellar".to_string(), "XLM".to_string(), 7, AssetType::NATIVE),
             Chain::Sonic => chain.new_asset("Sonic".to_string(), "S".to_string(), 18, AssetType::NATIVE),
+            Chain::Rootstock => chain.new_asset("RBTC".to_string(), "RBTC".to_string(), 18, AssetType::NATIVE),
             Chain::Algorand => chain.new_asset("Algorand".to_string(), "ALGO".to_string(), 6, AssetType::NATIVE),
             Chain::Polkadot => chain.new_asset("Polkadot".to_string(), "DOT".to_string(), 10, AssetType::NATIVE),
             Chain::Cardano => chain.new_asset("Cardano".to_string(), "ADA".to_string(), 6, AssetType::NATIVE),
