@@ -18,7 +18,6 @@ pub struct AcrossDeployment {
 #[derive(Debug)]
 pub struct AssetMapping {
     pub capital_cost: CapitalCostConfig,
-    pub l1_token_decimals: u8,
     pub set: HashSet<AssetId>,
 }
 
@@ -112,10 +111,7 @@ impl AcrossDeployment {
             (Chain::Blast, vec![WETH_BLAST_ASSET_ID.into()]),
             (Chain::Ink, vec![WETH_INK_ASSET_ID.into(), USDT_INK_ASSET_ID.into()]),
             (Chain::Unichain, vec![WETH_UNICHAIN_ASSET_ID.into(), USDC_UNICHAIN_ASSET_ID.into()]),
-            (
-                Chain::SmartChain,
-                vec![WETH_BSC_ASSET_ID.into(), USDC_BSC_ASSET_ID.into(), USDT_BSC_ASSET_ID.into()],
-            ),
+            (Chain::SmartChain, vec![ETH_SMARTCHAIN_ASSET_ID.into()]),
         ])
     }
 
@@ -141,7 +137,6 @@ impl AcrossDeployment {
                     WETH_INK_ASSET_ID.into(),
                     WETH_UNICHAIN_ASSET_ID.into(),
                 ]),
-                l1_token_decimals: 18,
             },
             AssetMapping {
                 capital_cost: CapitalCostConfig {
@@ -158,7 +153,6 @@ impl AcrossDeployment {
                     USDC_POLYGON_ASSET_ID.into(),
                     USDC_UNICHAIN_ASSET_ID.into(),
                 ]),
-                l1_token_decimals: 6,
             },
             // USDC on BSC decimals are 18
             AssetMapping {
@@ -168,8 +162,7 @@ impl AcrossDeployment {
                     cutoff: EtherConv::parse_ether("100000"),
                     decimals: 18,
                 },
-                set: HashSet::from_iter([USDC_ETH_ASSET_ID.into(), USDC_BSC_ASSET_ID.into()]),
-                l1_token_decimals: 6,
+                set: HashSet::from_iter([USDC_ETH_ASSET_ID.into(), USDC_SMARTCHAIN_ASSET_ID.into()]),
             },
             AssetMapping {
                 capital_cost: CapitalCostConfig {
@@ -187,7 +180,6 @@ impl AcrossDeployment {
                     USDT_ZKSYNC_ASSET_ID.into(),
                     USDT_INK_ASSET_ID.into(),
                 ]),
-                l1_token_decimals: 6,
             },
             // USDT on BSC decimals are 18
             AssetMapping {
@@ -197,8 +189,7 @@ impl AcrossDeployment {
                     cutoff: EtherConv::parse_ether("1500000"),
                     decimals: 18,
                 },
-                set: HashSet::from_iter([USDT_ETH_ASSET_ID.into(), USDT_BSC_ASSET_ID.into()]),
-                l1_token_decimals: 6,
+                set: HashSet::from_iter([USDT_ETH_ASSET_ID.into(), USDT_SMARTCHAIN_ASSET_ID.into()]),
             },
             AssetMapping {
                 capital_cost: CapitalCostConfig {
@@ -216,7 +207,6 @@ impl AcrossDeployment {
                     DAI_POLYGON_ASSET_ID.into(),
                     DAI_ZKSYNC_ASSET_ID.into(),
                 ]),
-                l1_token_decimals: 18,
             },
             AssetMapping {
                 capital_cost: CapitalCostConfig {
@@ -235,7 +225,6 @@ impl AcrossDeployment {
                     USDC_E_WORLD_ASSET_ID.into(),
                     USDC_E_ZKSYNC_ASSET_ID.into(),
                 ]),
-                l1_token_decimals: 6,
             },
             AssetMapping {
                 capital_cost: CapitalCostConfig {
@@ -254,7 +243,6 @@ impl AcrossDeployment {
                     WBTC_WORLD_ASSET_ID.into(),
                     WBTC_ZKSYNC_ASSET_ID.into(),
                 ]),
-                l1_token_decimals: 8,
             },
             AssetMapping {
                 capital_cost: CapitalCostConfig {
@@ -269,7 +257,6 @@ impl AcrossDeployment {
                     ACX_OP_ASSET_ID.into(),
                     ACX_POLYGON_ASSET_ID.into(),
                 ]),
-                l1_token_decimals: 18,
             },
         ]
     }

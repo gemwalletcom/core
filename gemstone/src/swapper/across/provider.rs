@@ -245,29 +245,6 @@ impl Across {
             (false, _) => 20,    // L1 to L2
         })
     }
-
-    async fn check_available_routes(&self, input_asset: &AssetId, output_asset: &AssetId, provider: Arc<dyn AlienProvider>) -> Result<(), SwapperError> {
-        let input_token_id = input_asset.token_id.clone().ok_or(SwapperError::NotSupportedPair)?;
-        let output_token_id = output_asset.token_id.clone().ok_or(SwapperError::NotSupportedPair)?;
-        let input_chain_id = input_asset.chain.network_id();
-        let output_chain_id = output_asset.chain.network_id();
-        let api_client = AcrossApi::new(provider.clone());
-
-        let routes = api_client.available_routes().await?;
-        if routes.is_empty() {
-            return Err(SwapperError::NoQuoteAvailable);
-        }
-        let _route = routes
-            .iter()
-            .find(|x| {
-                x.origin_token == input_token_id
-                    && x.destination_token == output_token_id
-                    && x.origin_chain_id.to_string() == input_chain_id
-                    && x.destination_chain_id.to_string() == output_chain_id
-            })
-            .ok_or(SwapperError::NotSupportedPair)?;
-        Ok(())
-    }
 }
 
 #[async_trait]
@@ -298,10 +275,7 @@ impl Swapper for Across {
             SwapChainAsset::Assets(Chain::World, vec![WORLD_WETH.id.clone()]),
             SwapChainAsset::Assets(Chain::Ink, vec![INK_WETH.id.clone(), INK_USDT.id.clone()]),
             SwapChainAsset::Assets(Chain::Unichain, vec![UNICHAIN_WETH.id.clone(), UNICHAIN_USDC.id.clone()]),
-            SwapChainAsset::Assets(
-                Chain::SmartChain,
-                vec![SMARTCHAIN_WETH.id.clone(), SMARTCHAIN_USDT.id.clone(), SMARTCHAIN_USDC.id.clone()],
-            ),
+            SwapChainAsset::Assets(Chain::SmartChain, vec![SMARTCHAIN_ETH.id.clone()]),
         ]
     }
 
@@ -335,9 +309,6 @@ impl Swapper for Across {
 
         let hubpool_client = HubPoolClient::new(provider.clone(), Chain::Ethereum);
         let config_client = ConfigStoreClient::new(provider.clone(), Chain::Ethereum);
-
-        // Check available routes
-        self.check_available_routes(&input_asset, &output_asset, provider.clone()).await?;
 
         let calls = vec![
             hubpool_client.paused_call3(),
