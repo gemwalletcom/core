@@ -130,7 +130,6 @@ impl GemSwapper {
                 Box::new(uniswap::universal_router::new_wagmi()),
                 Box::new(uniswap::universal_router::new_reservoir()),
                 Box::new(pancakeswap_aptos::PancakeSwapAptos::default()),
-                Box::new(cetus::Cetus::default()),
                 Box::new(proxy::new_stonfi_v2()),
                 Box::new(proxy::new_mayan()),
                 Box::new(chainflip::ChainflipProvider::default()),
