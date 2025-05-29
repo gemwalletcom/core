@@ -113,17 +113,13 @@ impl PriceClient {
         self.cacher_client.get_value(FIAT_RATES_KEY).await
     }
 
-    pub async fn set_cache_prices(&mut self, prices: Vec<AssetPriceInfo>) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        for value in prices.clone() {
-            println!("Setting cache for asset_id: {:?} \n", value);
-        }
-
+    pub async fn set_cache_prices(&mut self, prices: Vec<AssetPriceInfo>, ttl_seconds: i64) -> Result<usize, Box<dyn Error + Send + Sync>> {
         let values: Vec<(String, String)> = prices
             .iter()
             .map(|x| (x.asset_id.to_string().clone(), serde_json::to_string(&x).unwrap()))
             .collect();
 
-        self.cacher_client.set_values_with_publish(values).await
+        self.cacher_client.set_values_with_publish_ttl(values, ttl_seconds).await
     }
 
     pub async fn get_cache_prices(&mut self, asset_ids: Vec<String>) -> Result<Vec<AssetPriceInfo>, Box<dyn Error + Send + Sync>> {

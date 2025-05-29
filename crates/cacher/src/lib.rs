@@ -37,6 +37,17 @@ impl CacherClient {
         Ok(values.len())
     }
 
+    pub async fn set_values_with_publish_ttl(&mut self, values: Vec<(String, String)>, ttl_seconds: i64) -> Result<usize, Box<dyn Error + Send + Sync>> {
+        let mut connection = self.client.get_multiplexed_async_connection().await?;
+        let mut pipe = redis::pipe();
+        for (key, value) in &values {
+            pipe.cmd("SET").arg(key).arg(value).arg("EX").arg(ttl_seconds).ignore();
+            pipe.cmd("PUBLISH").arg(key).arg(value).ignore();
+        }
+        pipe.query_async::<()>(&mut connection).await?;
+        Ok(values.len())
+    }
+
     pub async fn set_value_with_expiration(&mut self, key: &str, value: String, seconds: i64) -> Result<(), Box<dyn Error + Send + Sync>> {
         let mut connection = self.client.get_multiplexed_async_connection().await?;
         connection.set::<&str, String, ()>(key, value).await?;

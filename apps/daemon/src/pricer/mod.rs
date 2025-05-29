@@ -114,7 +114,11 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
         move || {
             let settings = Arc::clone(&settings);
             let cacher_client = cacher_client.clone();
-            async move { price_updater_factory(&cacher_client, &settings.clone()).update_prices_cache().await }
+            async move {
+                price_updater_factory(&cacher_client, &settings.clone())
+                    .update_prices_cache(settings.pricer.outdated as i64)
+                    .await
+            }
         }
     });
 
