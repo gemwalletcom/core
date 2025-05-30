@@ -1,7 +1,7 @@
-use std::env;
+use serde::Deserialize;
+use std::{env, path::PathBuf};
 
 use config::{Config, ConfigError, Environment, File};
-use serde::Deserialize;
 
 #[derive(Debug, Deserialize, Clone)]
 #[allow(unused)]
@@ -144,6 +144,7 @@ pub struct Name {
     pub icns: URL,
     pub lens: URL,
     pub base: URL,
+    pub hyperliquid: HL,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -157,6 +158,12 @@ pub struct URL {
 pub struct UD {
     pub url: String,
     pub key: KeySecret,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct HL {
+    pub url: String,
+    pub key: String,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -233,7 +240,6 @@ pub struct Chain {
 #[allow(unused)]
 pub struct Parser {
     pub timeout: u64,
-    pub retry: u64,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -317,9 +323,12 @@ pub struct AlerterRules {
 impl Settings {
     pub fn new() -> Result<Self, ConfigError> {
         let current_dir = env::current_dir().unwrap();
-        let setting_path = current_dir.join("Settings.yaml");
+        Self::new_setting_path(current_dir.join("Settings.yaml"))
+    }
+
+    pub fn new_setting_path(path: PathBuf) -> Result<Self, ConfigError> {
         let s = Config::builder()
-            .add_source(File::from(setting_path))
+            .add_source(File::from(path))
             .add_source(Environment::with_prefix("").prefix_separator("").separator("_"))
             .build()?;
         s.try_deserialize()

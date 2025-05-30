@@ -25,6 +25,7 @@ pub enum GemSwapProvider {
     Reservoir,
     Symbiosis,
     Chainflip,
+    CetusAggregator,
 }
 
 #[uniffi::remote(Enum)]

@@ -56,6 +56,7 @@ impl Explorer {
             | GemSwapProvider::Oku
             | GemSwapProvider::Wagmi
             | GemSwapProvider::Cetus
+            | GemSwapProvider::CetusAggregator
             | GemSwapProvider::StonfiV2
             | GemSwapProvider::Reservoir
             | GemSwapProvider::Symbiosis => get_block_explorer(self.chain, explorer_name),

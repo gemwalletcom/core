@@ -115,4 +115,6 @@ pub mod asset_balance;
 pub use self::asset_balance::AssetBalance;
 pub mod chain_address;
 pub use self::chain_address::ChainAddress;
+pub mod json_rpc;
+pub use self::json_rpc::JsonRpcResult;
 pub mod node_config;

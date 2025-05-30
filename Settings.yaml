@@ -66,6 +66,10 @@ name:
     url: "https://api-v2.lens.dev"
   base:
     url: "https://mainnet.base.org"
+  hyperliquid:
+    url: "https://api.hlnames.xyz"
+    key: "CPEPKMI-HUSUX6I-SE2DHEA-YYWFG5Y" # public api key
+
 metrics:
   path: /metrics
 assets:
@@ -197,8 +201,8 @@ scan:
       secret: ""
 
 parser:
-  retry: 0
   timeout: 1000
+
 pusher:
   url: "http://localhost:8088"
   ios:

@@ -5,7 +5,6 @@ use primitives::Chain;
 pub struct ParserOptions {
     pub chain: Chain,
     pub timeout: u64,
-    pub retry: u64,
 }
 
 impl ParserOptions {
@@ -41,7 +40,6 @@ mod tests {
         let options = ParserOptions {
             chain: Chain::Bitcoin,
             timeout: 0,
-            retry: 0,
         };
         let created_at = Utc::now() - Duration::seconds(options.outdated_seconds() + 1);
         assert!(options.is_transaction_outdated(created_at.naive_utc()));
@@ -52,7 +50,6 @@ mod tests {
         let options = ParserOptions {
             chain: Chain::Bitcoin,
             timeout: 0,
-            retry: 0,
         };
         let created_at = Utc::now() - Duration::seconds(options.outdated_seconds() - 1);
         assert!(!options.is_transaction_outdated(created_at.naive_utc()));

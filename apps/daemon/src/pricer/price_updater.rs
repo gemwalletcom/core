@@ -68,7 +68,7 @@ impl PriceUpdater {
         Ok(rates.len())
     }
 
-    pub async fn update_prices_cache(&mut self) -> Result<usize, Box<dyn Error + Send + Sync>> {
+    pub async fn update_prices_cache(&mut self, ttl_seconds: i64) -> Result<usize, Box<dyn Error + Send + Sync>> {
         let (prices_assets, prices) = (self.price_client.get_prices_assets()?, self.price_client.get_prices()?);
         let prices_assets_map: HashMap<String, HashSet<String>> = prices_assets.into_iter().fold(HashMap::new(), |mut map, price_asset| {
             map.entry(price_asset.price_id.clone()).or_default().insert(price_asset.asset_id);
@@ -93,7 +93,7 @@ impl PriceUpdater {
             return Ok(prices.len());
         }
 
-        match self.price_client.set_cache_prices(prices.clone()).await {
+        match self.price_client.set_cache_prices(prices.clone(), ttl_seconds).await {
             Ok(_) => {}
             Err(e) => {
                 println!("Error setting cache prices: {}", e);
