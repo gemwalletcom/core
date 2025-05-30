@@ -9,6 +9,7 @@ pub mod did;
 pub mod ens;
 pub mod ens_provider;
 pub mod eths;
+pub mod hyperliquid;
 pub mod icns;
 pub mod injective;
 pub mod lens;
@@ -36,6 +37,7 @@ impl NameProviderFactory {
             Box::new(icns::IcnsClient::new(settings.name.icns.url)),
             Box::new(lens::LensClient::new(settings.name.lens.url)),
             Box::new(base::Basenames::new(settings.name.base.url)),
+            Box::new(hyperliquid::HLNamesClient::new(settings.name.hyperliquid.url, settings.name.hyperliquid.key)),
         ]
     }
 }

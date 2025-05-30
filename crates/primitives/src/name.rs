@@ -33,4 +33,5 @@ pub enum NameProvider {
     Icns,
     Lens,
     Basenames,
+    Hyperliquid,
 }
