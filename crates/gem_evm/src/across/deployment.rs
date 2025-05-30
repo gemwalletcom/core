@@ -136,6 +136,7 @@ impl AcrossDeployment {
                     WETH_WORLD_ASSET_ID.into(),
                     WETH_INK_ASSET_ID.into(),
                     WETH_UNICHAIN_ASSET_ID.into(),
+                    ETH_SMARTCHAIN_ASSET_ID.into(),
                 ]),
             },
             AssetMapping {
