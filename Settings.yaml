@@ -201,8 +201,8 @@ scan:
       secret: ""
 
 parser:
-  retry: 0
   timeout: 1000
+
 pusher:
   url: "http://localhost:8088"
   ios:

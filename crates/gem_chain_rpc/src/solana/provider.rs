@@ -33,16 +33,13 @@ impl ChainBlockProvider for SolanaProvider {
     }
 
     async fn get_transactions(&self, block_number: i64) -> Result<Vec<PrimitiveTransaction>, Box<dyn std::error::Error + Send + Sync>> {
-        let block = self
-            .client
-            .get_block(block_number, Some("jsonParsed"), Some("full"), Some(false), Some(0))
-            .await;
+        let block = self.client.get_block(block_number, Some("json"), Some("full"), Some(false), Some(0)).await;
         match block {
             Ok(block) => {
                 let transactions = block
                     .transactions
                     .into_iter()
-                    .filter_map(|x| super::mapper::SolanaMapper::map_transaction(self.get_chain(), &x, block_number))
+                    .filter_map(|x| SolanaMapper::map_transaction(&x, block_number))
                     .collect::<Vec<_>>();
                 Ok(transactions)
             }

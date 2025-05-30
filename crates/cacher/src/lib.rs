@@ -26,22 +26,20 @@ impl CacherClient {
         Ok(values.len())
     }
 
-    pub async fn set_values_with_publish(&mut self, values: Vec<(String, String)>) -> Result<usize, Box<dyn Error + Send + Sync>> {
+    pub async fn set_values_with_publish(&mut self, values: Vec<(String, String)>, ttl_seconds: i64) -> Result<usize, Box<dyn Error + Send + Sync>> {
         let mut connection = self.client.get_multiplexed_async_connection().await?;
         let mut pipe = redis::pipe();
         for (key, value) in &values {
-            pipe.cmd("SET").arg(key).arg(value).ignore();
+            pipe.cmd("SET").arg(key).arg(value).arg("EX").arg(ttl_seconds).ignore();
             pipe.cmd("PUBLISH").arg(key).arg(value).ignore();
         }
         pipe.query_async::<()>(&mut connection).await?;
         Ok(values.len())
     }
 
-    pub async fn set_value_with_expiration(&mut self, key: &str, value: String, seconds: i64) -> Result<(), Box<dyn Error + Send + Sync>> {
+    pub async fn set_value_with_ttl(&mut self, key: &str, value: String, seconds: u64) -> Result<(), Box<dyn Error + Send + Sync>> {
         let mut connection = self.client.get_multiplexed_async_connection().await?;
-        connection.set::<&str, String, ()>(key, value).await?;
-        connection.expire::<&str, String>(key, seconds).await?;
-        Ok(())
+        Ok(connection.set_ex::<&str, String, ()>(key, value.clone(), seconds).await?)
     }
 
     pub async fn get_string(&mut self, key: &str) -> Result<String, Box<dyn Error>> {
@@ -76,7 +74,7 @@ impl CacherClient {
         Ok(values)
     }
 
-    pub async fn get_or_set_value<T, F, Fut>(&mut self, key: &str, fetch_fn: F, ttl_seconds: Option<i64>) -> Result<T, Box<dyn Error + Send + Sync>>
+    pub async fn get_or_set_value<T, F, Fut>(&mut self, key: &str, fetch_fn: F, ttl_seconds: Option<u64>) -> Result<T, Box<dyn Error + Send + Sync>>
     where
         T: serde::de::DeserializeOwned + serde::Serialize,
         F: FnOnce() -> Fut,
@@ -93,7 +91,7 @@ impl CacherClient {
 
         let serialized = serde_json::to_string(&fresh_value)?;
         if let Some(ttl) = ttl_seconds {
-            self.set_value_with_expiration(key, serialized, ttl).await?;
+            self.set_value_with_ttl(key, serialized, ttl).await?;
         } else {
             connection.set::<&str, String, ()>(key, serialized).await?;
         }
