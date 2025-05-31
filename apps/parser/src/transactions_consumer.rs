@@ -3,6 +3,7 @@ use std::{collections::HashMap, error::Error};
 use api_connector::PusherClient;
 use primitives::Transaction;
 use settings::Settings;
+use std::time::Instant;
 use storage::DatabaseClient;
 use streamer::{QueueName, StreamReader, TransactionsPayload};
 
@@ -31,17 +32,36 @@ pub async fn run_consumer_mode() -> Result<(), Box<dyn std::error::Error + Send 
 
     reader
         .read::<TransactionsPayload, _>(QueueName::Transactions, |payload| {
-            println!(
-                "parser consumer chain: {}, blocks: {:?}, transactions: {},",
-                payload.chain,
-                payload.blocks,
-                payload.transactions.len()
-            );
-
-            tokio::task::block_in_place(|| {
+            let start = Instant::now();
+            let result = tokio::task::block_in_place(|| {
                 let rt = tokio::runtime::Handle::current();
-                rt.block_on(async { consumer.process(payload).await.map(|_| ()) })
-            })
+                rt.block_on(async { consumer.process(payload.clone()).await })
+            });
+            let elapsed = start.elapsed();
+
+            match &result {
+                Ok(size) => {
+                    println!(
+                        "parser consumer processed: chain: {}, blocks: {:?}, insert transactions: {}, elapsed: {:?}",
+                        payload.chain,
+                        payload.blocks.clone(),
+                        size,
+                        elapsed
+                    );
+                }
+                Err(error) => {
+                    println!(
+                        "parser consumer failed: chain: {}, blocks: {:?}, transactions: {}, elapsed: {:?}, error: {}",
+                        payload.chain,
+                        payload.blocks.clone(),
+                        payload.transactions.clone().len(),
+                        elapsed,
+                        error
+                    );
+                }
+            }
+
+            result.map(|_| ())
         })
         .await?;
 
