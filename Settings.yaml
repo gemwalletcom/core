@@ -8,6 +8,9 @@ clickhouse:
 meilisearch:
   url: "http://localhost:7700"
   key: "test"
+rabbitmq:
+  url: "amqp://username:password@localhost:5672"
+
 coingecko:
   key:
     secret: ""

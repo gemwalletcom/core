@@ -1,20 +1,21 @@
 use chrono::Utc;
 use num_bigint::BigUint;
 use primitives::{chain::Chain, Asset, AssetId, AssetType, Transaction, TransactionState, TransactionType};
-use std::str::FromStr;
 
 use super::{
-    client::{SUI_STAKE_EVENT, SUI_UNSTAKE_EVENT},
+    constants::{SUI_STAKE_EVENT, SUI_UNSTAKE_EVENT},
     model::{CoinMetadata, Digest as SuiTransaction, GasUsed},
 };
 
 pub struct SuiMapper;
 
 impl SuiMapper {
+    const CHAIN: Chain = Chain::Sui;
+
     pub fn get_fee(gas_used: GasUsed) -> BigUint {
-        let computation_cost = BigUint::from_str(gas_used.computation_cost.as_str()).unwrap_or_default();
-        let storage_cost = BigUint::from_str(gas_used.storage_cost.as_str()).unwrap_or_default();
-        let storage_rebate = BigUint::from_str(gas_used.storage_rebate.as_str()).unwrap_or_default();
+        let computation_cost = gas_used.computation_cost;
+        let storage_cost = gas_used.storage_cost;
+        let storage_rebate = gas_used.storage_rebate;
 
         let cost = computation_cost.clone() + storage_cost.clone();
         if storage_rebate >= cost {
@@ -23,7 +24,8 @@ impl SuiMapper {
         computation_cost + storage_cost - storage_rebate
     }
 
-    pub fn map_transaction(chain: Chain, transaction: SuiTransaction, block_number: i64) -> Option<Transaction> {
+    pub fn map_transaction(transaction: SuiTransaction, block_number: i64) -> Option<Transaction> {
+        let chain = Self::CHAIN;
         let balance_changes = transaction.balance_changes.unwrap_or_default();
         let effects = transaction.effects.clone();
         let hash = transaction.digest.clone();

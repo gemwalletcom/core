@@ -130,7 +130,7 @@ impl SolanaClient {
 
 #[cfg(test)]
 mod tests {
-    use crate::model::{BlockTransaction, ResultTokenInfo};
+    use crate::model::ResultTokenInfo;
 
     use super::*;
     use serde::{Deserialize, Serialize};

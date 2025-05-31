@@ -6,15 +6,28 @@ pub mod pusher;
 use parser_proxy::{ParserProxy, ParserProxyUrlConfig};
 pub use pusher::Pusher;
 pub mod parser_proxy;
+pub mod transactions_consumer;
+pub mod transactions_consumer_config;
 
-use api_connector::PusherClient;
 use primitives::Chain;
 use settings::Settings;
 use std::{collections::HashMap, str::FromStr, time::Duration};
 use storage::DatabaseClient;
+use streamer::StreamProducer;
 
 #[tokio::main]
-pub async fn main() {
+pub async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let args: Vec<String> = std::env::args().collect();
+    let mode = args.last().cloned().unwrap_or_default();
+
+    if mode == "consumer" {
+        return transactions_consumer::run_consumer_mode().await;
+    } else {
+        return run_parser_mode().await;
+    }
+}
+
+async fn run_parser_mode() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     println!("parser init");
 
     let settings: Settings = Settings::new().unwrap();
@@ -26,6 +39,7 @@ pub async fn main() {
         .into_iter()
         .flat_map(|x| Chain::from_str(x.chain.as_ref()))
         .collect();
+
     let chain_env = std::env::args().nth(1).unwrap_or_default();
 
     let chains = if let Ok(chain) = Chain::from_str(chain_env.as_str()) {
@@ -59,19 +73,21 @@ pub async fn main() {
     }
 
     futures::future::join_all(parsers).await;
+
+    Ok(())
 }
 
 async fn parser_start(settings: Settings, parser_options: ParserOptions, chain: Chain, node_urls: Vec<String>) {
-    let pusher_client = PusherClient::new(settings.pusher.url.clone(), settings.pusher.ios.topic.clone());
-    let pusher = Pusher::new(settings.postgres.url.clone(), pusher_client);
     let database_client = DatabaseClient::new(settings.postgres.url.as_str());
 
     let url = settings_chain::ProviderFactory::url(chain, &settings);
     let node_urls = if node_urls.is_empty() { vec![url.to_string()] } else { node_urls };
     let config = ParserProxyUrlConfig { urls: node_urls };
     let proxy = ParserProxy::new(chain, config);
+    let stream_producer = StreamProducer::new(&settings.rabbitmq.url).await.unwrap();
 
-    let mut parser = Parser::new(Box::new(proxy), pusher, database_client, parser_options.clone());
+    let mut parser = Parser::new(Box::new(proxy), stream_producer, database_client, parser_options.clone());
+
     loop {
         match parser.start().await {
             Ok(_) => {

@@ -19,3 +19,4 @@ gem_chain_rpc = { path = "../../crates/gem_chain_rpc" }
 api_connector = { path = "../../crates/api_connector" }
 localizer = { path = "../../crates/localizer" }
 number_formatter = { path = "../../crates/number_formatter" }
+streamer = { path = "../../crates/streamer" }

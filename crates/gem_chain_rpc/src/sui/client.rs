@@ -13,9 +13,6 @@ use super::{
     model::{Balance, CoinMetadata, Digests},
 };
 
-pub const SUI_STAKE_EVENT: &str = "0x3::validator::StakingRequestEvent";
-pub const SUI_UNSTAKE_EVENT: &str = "0x3::validator::UnstakingRequestEvent";
-
 pub struct SuiClient {
     client: HttpClient,
 }
@@ -36,19 +33,11 @@ impl SuiClient {
     }
 
     pub async fn get_latest_block(&self) -> Result<i64, Box<dyn Error + Send + Sync>> {
-        let block: String = self.client.request("sui_getLatestCheckpointSequenceNumber", rpc_params![]).await?;
-        Ok(block.parse::<i64>()?)
-    }
-
-    pub async fn get_transactions(&self, block_number: i64) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Send + Sync>> {
-        let digests = self.get_transactions_by_block_number(block_number).await?;
-        let transactions = digests
-            .data
-            .into_iter()
-            .flat_map(|x| SuiMapper::map_transaction(self.get_chain(), x, block_number))
-            .collect::<Vec<primitives::Transaction>>();
-
-        Ok(transactions)
+        Ok(self
+            .client
+            .request::<String, _>("sui_getLatestCheckpointSequenceNumber", rpc_params![])
+            .await?
+            .parse::<i64>()?)
     }
 
     pub async fn get_transactions_by_block_number(&self, block_number: i64) -> Result<Digests, Box<dyn Error + Send + Sync>> {
@@ -59,14 +48,13 @@ impl SuiClient {
                 },
                 "options": {
                     "showEffects": true,
+                    "showBalanceChanges": true,
+                    "showEvents": true,
                     "showInput": false,
-                    "showBalanceChanges":  true,
-                    "showEvents": true
                 }
             }),
             json!(null),
             json!(50),
-            json!(true),
         ];
 
         Ok(self.client.request("suix_queryTransactionBlocks", params).await?)

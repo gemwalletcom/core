@@ -1,0 +1,12 @@
+[package]
+name = "streamer"
+version = { workspace = true }
+edition = { workspace = true }
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+futures = { workspace = true }
+lapin = { workspace = true }
+
+primitives = { path = "../primitives" }
