@@ -84,7 +84,11 @@ pub struct TransactionsConsumer {
 impl TransactionsConsumer {
     pub async fn process(&mut self, payload: TransactionsPayload) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
         let chain = payload.chain;
-        let transactions = payload.transactions;
+        let transactions = payload
+            .transactions
+            .into_iter()
+            .filter(|x| self.config.filter_transaction(x))
+            .collect::<Vec<_>>();
         let addresses = transactions.clone().into_iter().flat_map(|x| x.addresses()).collect();
         let subscriptions = self.database.get_subscriptions(chain, addresses)?;
         let mut transactions_map: HashMap<String, Transaction> = HashMap::new();

@@ -27,3 +27,9 @@ pub struct TransactionsPayload {
     pub blocks: Vec<i32>,
     pub transactions: Vec<Transaction>,
 }
+
+impl TransactionsPayload {
+    pub fn new(chain: Chain, blocks: Vec<i32>, transactions: Vec<Transaction>) -> Self {
+        Self { chain, blocks, transactions }
+    }
+}

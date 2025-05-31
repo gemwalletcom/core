@@ -6,9 +6,9 @@ use std::{
 
 use crate::ParserOptions;
 use gem_chain_rpc::ChainBlockProvider;
-use primitives::{Chain, Transaction, TransactionType};
+use primitives::{Chain, Transaction};
 use storage::DatabaseClient;
-use streamer::{QueueName, StreamProducer};
+use streamer::{QueueName, StreamProducer, TransactionsPayload};
 
 pub struct Parser {
     chain: Chain,
@@ -74,8 +74,8 @@ impl Parser {
             }
 
             loop {
-                let state = self.database.get_parser_state(self.chain)?;
                 let start = Instant::now();
+                let state = self.database.get_parser_state(self.chain)?;
                 let start_block = state.current_block + 1;
                 let end_block = cmp::min(start_block + state.parallel_blocks - 1, state.latest_block - state.await_blocks);
                 let next_blocks = (start_block..=end_block).collect::<Vec<_>>();
@@ -124,55 +124,16 @@ impl Parser {
             Err(err) => Err(err),
         }
     }
-    pub async fn parse_blocks(&mut self, blocks: Vec<i32>) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        let transactions = self
-            .fetch_blocks(blocks.clone())
-            .await?
-            .into_iter()
-            .filter(|x| filter_transaction(&x.value, &x.transaction_type, self.options.minimum_transfer_amount()))
-            .collect::<Vec<Transaction>>();
 
+    pub async fn parse_blocks(&mut self, blocks: Vec<i32>) -> Result<usize, Box<dyn Error + Send + Sync>> {
+        let transactions = self.fetch_blocks(blocks.clone()).await?;
         if transactions.is_empty() {
             return Ok(0);
         }
-
-        let payload = streamer::TransactionsPayload {
-            chain: self.chain,
-            blocks: blocks.clone(),
-            transactions: transactions.clone(),
-        };
+        let payload = TransactionsPayload::new(self.chain, blocks.clone(), transactions.clone());
 
         self.stream_producer.publish(QueueName::Transactions, &payload).await?;
 
         Ok(transactions.len())
-    }
-}
-
-fn filter_transaction(value: &str, transaction_type: &TransactionType, minimum_transfer_amount: u64) -> bool {
-    if *transaction_type == TransactionType::Transfer {
-        if let Ok(value) = value.parse::<u64>() {
-            return value >= minimum_transfer_amount;
-        }
-    }
-    true
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_filter_transaction() {
-        let test_cases = vec![
-            ("1", TransactionType::Transfer, 0, true),
-            ("500", TransactionType::Transfer, 1000, false),
-            ("1000", TransactionType::Transfer, 1000, true),
-            ("1500", TransactionType::Transfer, 1000, true),
-            ("invalid", TransactionType::Transfer, 1000, true),
-        ];
-
-        for (transaction_value, transaction_type, minimum_transfer_amount, expected) in test_cases {
-            assert_eq!(filter_transaction(transaction_value, &transaction_type, minimum_transfer_amount), expected);
-        }
     }
 }
