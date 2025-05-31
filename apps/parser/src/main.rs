@@ -48,7 +48,12 @@ async fn run_parser_mode() -> Result<(), Box<dyn std::error::Error + Send + Sync
         chains
     };
 
-    let nodes = database.get_nodes().unwrap();
+    let nodes = database
+        .get_nodes()
+        .unwrap()
+        .into_iter()
+        .filter(|x| x.priority > 5 && x.status == "active")
+        .collect::<Vec<_>>();
 
     let mut nodes_map: HashMap<String, Vec<String>> = HashMap::new();
     nodes.into_iter().for_each(|node| {
