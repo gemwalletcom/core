@@ -3,29 +3,24 @@ use std::error::Error;
 use localizer::LanguageLocalizer;
 use number_formatter::BigNumberFormatter;
 use primitives::{
-    AddressFormatter, Chain, PushNotification, PushNotificationTransaction, PushNotificationTypes, Subscription, Transaction, TransactionSwapMetadata,
-    TransactionType,
+    AddressFormatter, Chain, GorushNotification, PushNotification, PushNotificationTransaction, PushNotificationTypes, Subscription, Transaction,
+    TransactionSwapMetadata, TransactionType,
 };
 use storage::DatabaseClient;
 
 use api_connector::pusher::model::Message;
-use api_connector::PusherClient;
 
 pub struct Pusher {
-    client: PusherClient,
     database_client: DatabaseClient,
 }
 
 impl Pusher {
-    pub fn new(database_url: String, pusher_client: PusherClient) -> Self {
+    pub fn new(database_url: String) -> Self {
         let database_client = DatabaseClient::new(&database_url);
-        Self {
-            client: pusher_client,
-            database_client,
-        }
+        Self { database_client }
     }
 
-    pub fn get_address(&mut self, chain: Chain, address: &str) -> Result<String, Box<dyn Error>> {
+    pub fn get_address(&mut self, chain: Chain, address: &str) -> Result<String, Box<dyn Error + Send + Sync>> {
         let result = self.database_client.get_scan_address(chain, address);
         match result {
             Ok(address) => Ok(address.name.unwrap_or_default()),
@@ -33,7 +28,12 @@ impl Pusher {
         }
     }
 
-    pub fn message(&mut self, localizer: LanguageLocalizer, transaction: Transaction, subscription: Subscription) -> Result<Message, Box<dyn Error>> {
+    pub fn message(
+        &mut self,
+        localizer: LanguageLocalizer,
+        transaction: Transaction,
+        subscription: Subscription,
+    ) -> Result<Message, Box<dyn Error + Send + Sync>> {
         let asset = self.database_client.get_asset(transaction.asset_id.to_string().as_str())?;
         let amount = BigNumberFormatter::value(transaction.value.as_str(), asset.decimals).unwrap_or_default();
         let chain = transaction.asset_id.chain;
@@ -98,10 +98,15 @@ impl Pusher {
         format! {"{} {}", amount, symbol}
     }
 
-    pub async fn push(&mut self, device: primitives::Device, transaction: Transaction, subscription: Subscription) -> Result<usize, Box<dyn Error>> {
+    pub async fn get_messages(
+        &mut self,
+        device: primitives::Device,
+        transaction: Transaction,
+        subscription: Subscription,
+    ) -> Result<Vec<GorushNotification>, Box<dyn Error + Send + Sync>> {
         // only push if push is enabled and token is set
         if !device.is_push_enabled || device.token.is_empty() {
-            return Ok(0);
+            return Ok(vec![]);
         }
         let localizer = LanguageLocalizer::new_with_language(&device.locale);
         let message = self.message(localizer, transaction.clone(), subscription.clone())?;
@@ -116,21 +121,14 @@ impl Pusher {
             data: serde_json::to_value(&notification_transaction).ok(),
         };
 
-        let notification = self.client.new_notification(
-            device.token.as_str(),
-            device.platform,
-            message.title.as_str(),
-            message.message.unwrap_or_default().as_str(),
+        let notification = GorushNotification::new(
+            vec![device.token],
+            device.platform.as_i32(),
+            message.title,
+            message.message.unwrap_or_default(),
             data,
         );
 
-        let response = self.client.push(notification).await?;
-
-        if !response.logs.is_empty() {
-            println!("push logs: {:?}", response.logs);
-            let _ = self.database_client.update_device_is_push_enabled(&device.id, false)?;
-        }
-
-        Ok(response.counts as usize)
+        Ok(vec![notification])
     }
 }

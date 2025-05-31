@@ -13,6 +13,7 @@ pub enum DaemonService {
     Device,
     Search,
     Nft,
+    Notifications,
 }
 
 impl DaemonService {

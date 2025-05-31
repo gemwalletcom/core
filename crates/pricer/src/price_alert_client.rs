@@ -1,9 +1,8 @@
-use api_connector::pusher::model::Notification;
 use chrono::{Duration, NaiveDateTime, Utc};
 use localizer::{LanguageLocalizer, LanguageNotification};
 use number_formatter::NumberFormatter;
 use primitives::{
-    Asset, Device, Price, PriceAlertDirection, PriceAlertType, PriceAlerts, PushNotification, PushNotificationAsset, PushNotificationTypes,
+    Asset, Device, GorushNotification, Price, PriceAlertDirection, PriceAlertType, PriceAlerts, PushNotification, PushNotificationAsset, PushNotificationTypes,
     DEFAULT_FIAT_CURRENCY,
 };
 use std::collections::{HashMap, HashSet};
@@ -148,7 +147,7 @@ impl PriceAlertClient {
         Ok(notification)
     }
 
-    pub fn get_notifications_for_price_alerts(&mut self, notifications: Vec<PriceAlertNotification>) -> Vec<Notification> {
+    pub fn get_notifications_for_price_alerts(&mut self, notifications: Vec<PriceAlertNotification>) -> Vec<GorushNotification> {
         let mut results = vec![];
 
         let formatter = NumberFormatter::new();
@@ -178,7 +177,7 @@ impl PriceAlertClient {
                 data: serde_json::to_value(&price_alert_data).ok(),
                 notification_type: PushNotificationTypes::PriceAlert,
             };
-            let notification = Notification::new(
+            let notification = GorushNotification::new(
                 vec![price_alert.device.token.clone()],
                 price_alert.device.platform.as_i32(),
                 notification_message.title,

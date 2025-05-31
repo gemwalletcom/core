@@ -7,9 +7,9 @@ use std::pin::Pin;
 use std::sync::Arc;
 use std::time::Duration;
 
-use api_connector::PusherClient;
 use pricer::PriceAlertClient;
 use settings::Settings;
+use streamer::StreamProducer;
 
 pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + Send>>> {
     let price_alerts_job = run_job("Price Alerts", Duration::from_secs(settings.alerter.update_interval_seconds), {
@@ -19,9 +19,9 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
 
             async move {
                 let price_alert_client = PriceAlertClient::new(&settings.postgres.url).await;
-                let pusher_client = PusherClient::new(settings.pusher.url.clone(), settings.pusher.ios.topic.clone());
+                let stream_producer = StreamProducer::new(&settings.rabbitmq.url).await.unwrap();
 
-                PriceAlertSender::new(price_alert_client, pusher_client, settings.alerter.rules.clone())
+                PriceAlertSender::new(price_alert_client, stream_producer, settings.alerter.rules.clone())
                     .run_observer()
                     .await
             }

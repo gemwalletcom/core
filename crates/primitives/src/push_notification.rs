@@ -14,6 +14,40 @@ pub enum PushNotificationTypes {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct GorushNotifications {
+    pub notifications: Vec<GorushNotification>,
+}
+
+// Notification used to send to Pusher
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct GorushNotification {
+    pub tokens: Vec<String>,
+    pub platform: i32,
+    pub title: String,
+    pub message: String,
+    pub topic: Option<String>,
+    pub data: PushNotification,
+}
+
+impl GorushNotification {
+    pub fn new(tokens: Vec<String>, platform: i32, title: String, message: String, data: PushNotification) -> Self {
+        Self {
+            tokens,
+            platform,
+            title,
+            message,
+            topic: None,
+            data,
+        }
+    }
+
+    pub fn with_topic(mut self, topic: Option<String>) -> Self {
+        self.topic = topic;
+        self
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct PushNotification {
     #[serde(rename = "type")]
     pub notification_type: PushNotificationTypes,

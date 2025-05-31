@@ -2477,6 +2477,7 @@ dependencies = [
  "serde_json",
  "settings",
  "storage",
+ "streamer",
  "strum",
  "strum_macros",
  "tokio",

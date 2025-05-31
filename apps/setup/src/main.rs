@@ -108,8 +108,15 @@ async fn main() {
 
     println!("setup queues");
 
+    let queues = vec![
+        QueueName::Transactions,
+        QueueName::NotificationsPriceAlerts,
+        QueueName::NotificationsTransactions,
+    ];
     let streamer_reader = StreamProducer::new(&settings.rabbitmq.url).await.unwrap();
-    let _ = streamer_reader.declare_queue(QueueName::Transactions).await;
+    for queue in queues {
+        let _ = streamer_reader.declare_queue(queue).await;
+    }
 
     println!("setup complete");
 }

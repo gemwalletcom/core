@@ -1,11 +1,10 @@
 use std::{collections::HashMap, error::Error};
 
-use api_connector::PusherClient;
 use primitives::Transaction;
 use settings::Settings;
 use std::time::Instant;
 use storage::DatabaseClient;
-use streamer::{QueueName, StreamReader, TransactionsPayload};
+use streamer::{NotificationsPayload, QueueName, StreamProducer, StreamReader, TransactionsPayload};
 
 use crate::{transactions_consumer_config::TransactionsConsumerConfig, Pusher};
 
@@ -20,13 +19,14 @@ pub async fn run_consumer_mode() -> Result<(), Box<dyn std::error::Error + Send 
 
     println!("parser consumer start");
 
-    let pusher_client = PusherClient::new(settings.pusher.url.clone(), settings.pusher.ios.topic.clone());
-    let pusher = Pusher::new(settings.postgres.url.clone(), pusher_client);
+    let pusher = Pusher::new(settings.postgres.url.clone());
     let database_client = DatabaseClient::new(settings.postgres.url.as_str());
+    let stream_producer = StreamProducer::new(&settings.rabbitmq.url).await.unwrap();
 
     let mut consumer = TransactionsConsumer {
         database: database_client,
         pusher,
+        stream_producer,
         config: TransactionsConsumerConfig::default(),
     };
 
@@ -78,6 +78,7 @@ pub async fn run_consumer_mode() -> Result<(), Box<dyn std::error::Error + Send 
 pub struct TransactionsConsumer {
     pub database: DatabaseClient,
     pub pusher: Pusher,
+    pub stream_producer: StreamProducer,
     pub config: TransactionsConsumerConfig,
 }
 
@@ -118,15 +119,14 @@ impl TransactionsConsumer {
                         println!("outdated transaction: {}, created_at: {}", transaction.id, transaction.created_at);
                         continue;
                     }
+                    let notifications = self
+                        .pusher
+                        .get_messages(device.as_primitive(), transaction.clone(), subscription.as_primitive())
+                        .await?;
 
-                    match self.pusher.push(device.as_primitive(), transaction, subscription.as_primitive()).await {
-                        Ok(result) => {
-                            println!("push: result: {:?}", result);
-                        }
-                        Err(err) => {
-                            println!("push: error: {:?}", err);
-                        }
-                    }
+                    self.stream_producer
+                        .publish(QueueName::NotificationsTransactions, &NotificationsPayload { notifications })
+                        .await?;
                 }
             }
         }
