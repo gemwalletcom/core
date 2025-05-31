@@ -34,6 +34,16 @@ impl FillStatus {
     }
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AvailableRoute {
+    pub origin_chain_id: u32,
+    pub origin_token: String,
+    pub destination_chain_id: u32,
+    pub destination_token: String,
+    pub is_native: bool,
+}
+
 impl AcrossApi {
     pub async fn deposit_status(&self, chain: Chain, tx_hash: &str) -> Result<FillStatus, SwapperError> {
         let receipt = eth_rpc::fetch_tx_receipt(self.provider.clone(), chain, tx_hash).await?;
@@ -47,5 +57,15 @@ impl AcrossApi {
         let status: FillStatus = serde_json::from_slice(&response).map_err(SwapperError::from)?;
 
         Ok(status)
+    }
+
+    // https://across.to/api/available-routes
+    pub async fn available_routes(&self) -> Result<Vec<AvailableRoute>, SwapperError> {
+        let url = format!("{}/api/available-routes", self.url);
+        let target = AlienTarget::get(&url).set_cache_ttl(24 * 60 * 60);
+        let response = self.provider.request(target).await?;
+        let routes: Vec<AvailableRoute> = serde_json::from_slice(&response).map_err(SwapperError::from)?;
+
+        Ok(routes)
     }
 }
