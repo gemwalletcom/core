@@ -32,6 +32,13 @@ pub async fn run_consumer_mode() -> Result<(), Box<dyn std::error::Error + Send 
 
     reader
         .read::<TransactionsPayload, _>(QueueName::Transactions, |payload| {
+            println!(
+                "parser consumer received message: chain: {}, blocks: {:?}, transactions: {},",
+                payload.chain,
+                payload.blocks,
+                payload.transactions.len()
+            );
+
             let start = Instant::now();
             let result = tokio::task::block_in_place(|| {
                 let rt = tokio::runtime::Handle::current();
