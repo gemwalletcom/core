@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
 use diesel::prelude::*;
-use primitives::{Chain, NFTImageOld, NFTImages, NFTResource, NFTType};
+use primitives::{Chain, NFTImages, NFTResource, NFTType};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Queryable, Selectable, Insertable, AsChangeset, Serialize, Deserialize, Clone)]
@@ -57,11 +57,6 @@ impl NftAsset {
             chain: Chain::from_str(self.chain.as_str()).unwrap(),
             contract_address: Some(self.contract_address.clone()),
             token_id: self.token_id.clone(),
-            image: NFTImageOld {
-                image_url: self.image_preview_url.clone().unwrap_or_default(),
-                preview_image_url: self.image_preview_url.clone().unwrap_or_default(),
-                original_source_url: self.image_preview_url.clone().unwrap_or_default(),
-            },
             resource: NFTResource {
                 url: self.resource_url.clone().unwrap_or_default(),
                 mime_type: self.resource_mime_type.clone().unwrap_or_default(),

@@ -33,8 +33,6 @@ pub struct NFTCollection {
     pub description: Option<String>,
     pub chain: Chain,
     pub contract_address: String,
-    #[typeshare(skip)]
-    pub image: NFTImageOld,
     pub images: NFTImages,
     pub is_verified: bool,
     pub links: Vec<AssetLink>,
@@ -49,15 +47,6 @@ impl Hash for NFTCollection {
 impl NFTCollection {
     pub fn id(chain: Chain, contract_address: &str) -> String {
         format!("{}_{}", chain.as_ref(), contract_address)
-    }
-
-    pub fn image_path(&self) -> NFTImageOld {
-        let image = format!("{}/{}/collection_original.png", self.chain.as_ref(), self.contract_address);
-        NFTImageOld {
-            image_url: image.clone(),
-            preview_image_url: image.clone(),
-            original_source_url: image.clone(),
-        }
     }
 
     pub fn images(&self) -> NFTImages {
@@ -80,8 +69,6 @@ pub struct NFTAsset {
     pub name: String,
     pub description: Option<String>,
     pub chain: Chain,
-    #[typeshare(skip)]
-    pub image: NFTImageOld,
     pub resource: NFTResource,
     pub images: NFTImages,
     pub attributes: Vec<NFTAttribute>,
@@ -165,27 +152,6 @@ impl fmt::Display for NFTAssetId {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.as_ref())
     }
-}
-
-impl NFTAsset {
-    pub fn image_path(&self) -> NFTImageOld {
-        let asset_id = NFTAssetId::from_id(self.id.clone().as_str()).unwrap();
-        let image = format!("{}/{}/assets/{}_original.png", self.chain.as_ref(), asset_id.contract_address, self.token_id);
-        NFTImageOld {
-            image_url: image.clone(),
-            preview_image_url: image.clone(),
-            original_source_url: image.clone(),
-        }
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
-#[serde(rename_all = "camelCase")]
-#[typeshare(skip)]
-pub struct NFTImageOld {
-    pub image_url: String,
-    pub preview_image_url: String,
-    pub original_source_url: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]

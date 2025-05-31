@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
 use diesel::prelude::*;
-use primitives::{AssetLink, Chain, NFTImageOld, NFTImages, NFTResource};
+use primitives::{AssetLink, Chain, NFTImages, NFTResource};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Queryable, Selectable, Insertable, AsChangeset, Serialize, Deserialize, Clone)]
@@ -39,11 +39,6 @@ impl NftCollection {
             description: Some(self.description.clone()),
             chain: Chain::from_str(self.chain.as_str()).unwrap(),
             contract_address: self.contract_address.clone(),
-            image: NFTImageOld {
-                image_url: self.image_preview_url.clone().unwrap_or_default(),
-                preview_image_url: self.image_preview_url.clone().unwrap_or_default(),
-                original_source_url: self.image_preview_url.clone().unwrap_or_default(),
-            },
             images: NFTImages {
                 preview: NFTResource {
                     url: self.image_preview_url.clone().unwrap_or_default(),
