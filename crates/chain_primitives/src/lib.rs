@@ -38,7 +38,14 @@ pub fn format_token_id(chain: Chain, token_id: String) -> Option<String> {
             token_id.starts_with('r').then_some(token_id)
         }
         Chain::Algorand => token_id.parse::<i32>().ok().map(|token_id| token_id.to_string()),
-        Chain::Sui => (token_id.len() >= 64 && token_id.starts_with("0x")).then_some(token_id),
+        Chain::Sui => {
+            if token_id.len() >= 64 && token_id.starts_with("0x") && !token_id.starts_with("0x0000000000000000000000000000000000000000000000000000000000000002")
+            {
+                Some(token_id)
+            } else {
+                None
+            }
+        }
         Chain::Stellar => (token_id.len() == 56 && token_id.starts_with('G')).then_some(token_id),
         Chain::Bitcoin
         | Chain::BitcoinCash
