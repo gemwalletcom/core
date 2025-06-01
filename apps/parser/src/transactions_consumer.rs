@@ -90,6 +90,7 @@ impl TransactionsConsumer {
             .into_iter()
             .filter(|x| self.config.filter_transaction(x))
             .collect::<Vec<_>>();
+
         let addresses = transactions.clone().into_iter().flat_map(|x| x.addresses()).collect();
         let subscriptions = self.database.get_subscriptions(chain, addresses)?;
         let mut transactions_map: HashMap<String, Transaction> = HashMap::new();
@@ -122,12 +123,14 @@ impl TransactionsConsumer {
                     let notifications = self
                         .pusher
                         .get_messages(device.as_primitive(), transaction.clone(), subscription.as_primitive())
-                        .await?;
+                        .await;
 
-                    self.stream_producer
-                        .publish(QueueName::NotificationsTransactions, &NotificationsPayload { notifications })
-                        .await?;
-                }
+                    // get_messages is throwing not found error, some assets might not be found
+                    if let Some(notifications) = notifications {
+                        self.stream_producer
+                            .publish(QueueName::NotificationsTransactions, &NotificationsPayload { notifications })
+                            .await;
+                    }
             }
         }
 
