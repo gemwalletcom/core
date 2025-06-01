@@ -4,21 +4,21 @@ edition = { workspace = true }
 version = { workspace = true }
 
 [dependencies]
-anyhow = { workspace = true }
+anyhow.workspace = true
 serde = { workspace = true }
 serde_json = { workspace = true }
-reqwest = { workspace = true }
+reqwest.workspace = true
 async-trait = { workspace = true }
 base64 = { workspace = true }
 hex = { workspace = true }
 lazy_static = { workspace = true }
-alloy-primitives = { workspace = true }
-alloy-sol-types = { workspace = true }
-alloy-ens = { workspace = true }
+alloy-primitives.workspace = true
+alloy-sol-types.workspace = true
+alloy-ens.workspace = true
 alloy-json-rpc = { workspace = true }
-alloy-rpc-client = { workspace = true }
+alloy-rpc-client.workspace = true
 alloy-rpc-types = { workspace = true }
-alloy-transport-http = { workspace = true }
+alloy-transport-http.workspace = true
 alloy-contract = { workspace = true }
 url = { workspace = true, features = ["serde"] }
 
@@ -27,8 +27,10 @@ primitives = { path = "../primitives" }
 gem_hash = { path = "../gem_hash" }
 gem_evm = { path = "../gem_evm" }
 gem_ton = { path = "../gem_ton" }
+alloy-provider = "1.0.9"
 
 [dev-dependencies]
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 tokio-test = { version = "*" }
 
 [[test]]
