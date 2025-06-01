@@ -304,5 +304,11 @@ pub struct Blockhash {
 
 pub type AccountData = ValueData<Vec<String>>;
 
-pub type ResultTokenInfo = ValueResult<ValueData<Parsed<Info<TokenInfo>>>>;
 pub type LatestBlockhash = ValueResult<Blockhash>;
+
+pub type ResultTokenInfo = ValueResult<ValueData<Parsed<Info<TokenInfo>>>>;
+impl ResultTokenInfo {
+    pub fn info(&self) -> TokenInfo {
+        self.value.data.parsed.info.clone()
+    }
+}

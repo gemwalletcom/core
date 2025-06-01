@@ -1,6 +1,6 @@
 extern crate rocket;
 use api_connector::PusherClient;
-use primitives::PushNotification;
+use primitives::{GorushNotification, PushNotification};
 use std::error::Error;
 use storage::{models::UpdateDevice, DatabaseClient};
 
@@ -36,18 +36,17 @@ impl DevicesClient {
         let device = self.get_device(device_id)?;
         let device_token = self.database.get_device_token(device_id)?;
 
-        let notification = self.pusher.new_notification(
-            device_token.as_str(),
-            device.platform,
-            "Test Notification",
-            "Test Message",
+        let notification = GorushNotification::new(
+            vec![device_token],
+            device.platform as i32,
+            "Test Notification".to_string(),
+            "Test Message".to_string(),
             PushNotification {
                 notification_type: primitives::PushNotificationTypes::Test,
                 data: None,
             },
         );
-        let result = self.pusher.push(notification).await?;
-        Ok(result.counts > 0)
+        Ok(self.pusher.push_notifications(vec![notification]).await?.counts > 0)
     }
 
     pub fn delete_device(&mut self, device_id: &str) -> Result<usize, Box<dyn Error>> {

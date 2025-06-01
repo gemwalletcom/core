@@ -70,7 +70,9 @@ pub use self::address_formatter::AddressFormatter;
 pub mod utxo;
 pub use self::utxo::UTXO;
 pub mod push_notification;
-pub use self::push_notification::{PushNotification, PushNotificationAsset, PushNotificationTransaction, PushNotificationTypes};
+pub use self::push_notification::{
+    GorushNotification, GorushNotifications, PushNotification, PushNotificationAsset, PushNotificationTransaction, PushNotificationTypes,
+};
 pub mod scan;
 pub use self::scan::{AddressType, ScanAddressTarget, ScanTransaction, ScanTransactionPayload};
 pub mod transaction_metadata_types;
@@ -78,7 +80,7 @@ pub use self::transaction_metadata_types::TransactionSwapMetadata;
 pub mod wallet_connect;
 pub use self::wallet_connect::WalletConnectCAIP2;
 pub mod nft;
-pub use self::nft::{NFTAsset, NFTAssetId, NFTAttribute, NFTCollection, NFTCollectionId, NFTData, NFTImageOld, NFTImages, NFTResource, NFTType, MIME_TYPE_PNG};
+pub use self::nft::{NFTAsset, NFTAssetId, NFTAttribute, NFTCollection, NFTCollectionId, NFTData, NFTImages, NFTResource, NFTType, MIME_TYPE_PNG};
 pub mod price_alert;
 pub use self::price_alert::{PriceAlert, PriceAlertDirection, PriceAlertType, PriceAlerts};
 pub mod tag;

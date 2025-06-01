@@ -1,5 +1,5 @@
 use gem_evm::ethereum_address_checksum;
-use primitives::{Chain, LinkType, NFTAsset, NFTAssetId, NFTAttribute, NFTCollectionId, NFTImageOld, NFTImages, NFTResource, NFTType};
+use primitives::{Chain, LinkType, NFTAsset, NFTAssetId, NFTAttribute, NFTCollectionId, NFTImages, NFTResource, NFTType};
 
 use super::model::{Collection, Nft, NftAsset, Trait};
 
@@ -15,11 +15,6 @@ impl Nft {
             name: self.name.clone(),
             description: Some(self.description.clone()),
             chain: asset.chain,
-            image: NFTImageOld {
-                image_url: self.display_image_url.clone(),
-                preview_image_url: self.display_image_url.clone(),
-                original_source_url: self.display_image_url.clone(),
-            },
             resource: NFTResource::from_url(&self.image_url),
             images: NFTImages {
                 preview: NFTResource::from_url(&self.display_image_url),
@@ -67,11 +62,6 @@ impl Collection {
             description: Some(self.description.clone()),
             chain: collection.chain,
             contract_address: collection.contract_address.clone(),
-            image: NFTImageOld {
-                image_url: self.image_url.clone(),
-                preview_image_url: self.image_url.clone(),
-                original_source_url: self.image_url.clone(),
-            },
             images: NFTImages {
                 preview: NFTResource::from_url(&self.image_url),
             },

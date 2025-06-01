@@ -1,5 +1,7 @@
+use num_bigint::BigUint;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use serde_serializers::deserialize_biguint_from_str;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ResultData<T> {
@@ -56,12 +58,12 @@ pub struct Effect {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GasUsed {
-    #[serde(rename = "computationCost")]
-    pub computation_cost: String,
-    #[serde(rename = "storageCost")]
-    pub storage_cost: String,
-    #[serde(rename = "storageRebate")]
-    pub storage_rebate: String,
+    #[serde(rename = "computationCost", deserialize_with = "deserialize_biguint_from_str")]
+    pub computation_cost: BigUint,
+    #[serde(rename = "storageCost", deserialize_with = "deserialize_biguint_from_str")]
+    pub storage_cost: BigUint,
+    #[serde(rename = "storageRebate", deserialize_with = "deserialize_biguint_from_str")]
+    pub storage_rebate: BigUint,
     #[serde(rename = "nonRefundableStorageFee")]
     pub non_refundable_storage_fee: String,
 }

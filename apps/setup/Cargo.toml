@@ -9,3 +9,4 @@ storage = { path = "../../crates/storage" }
 settings = { path = "../../crates/settings" }
 primitives = { path = "../../crates/primitives" }
 search_index = { path = "../../crates/search_index" }
+streamer = { path = "../../crates/streamer" }

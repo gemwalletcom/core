@@ -8,6 +8,9 @@ clickhouse:
 meilisearch:
   url: "http://localhost:7700"
   key: "test"
+rabbitmq:
+  url: "amqp://username:password@localhost:5672"
+
 coingecko:
   key:
     secret: ""
@@ -86,7 +89,7 @@ chains:
   optimism:
     url: "https://mainnet.optimism.io"
   arbitrum:
-    url: "https://arbitrum.llamarpc.com"
+    url: "https://arb1.arbitrum.io/rpc"
   base:
     url: "https://base.drpc.org"
   opbnb:

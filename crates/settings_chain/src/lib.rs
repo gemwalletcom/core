@@ -1,3 +1,6 @@
+mod chain_providers;
+pub use chain_providers::ChainProviders;
+
 use core::str;
 
 use gem_chain_rpc::{
@@ -18,7 +21,7 @@ use gem_chain_rpc::{
 };
 use gem_solana::SolanaClient;
 use gem_xrp::rpc::{XRPClient, XRPProvider};
-use primitives::{Asset, AssetBalance, Chain};
+use primitives::Chain;
 use reqwest_middleware::ClientBuilder;
 use reqwest_retry::{policies::ExponentialBackoff, RetryTransientMiddleware};
 use settings::Settings;
@@ -37,7 +40,7 @@ impl ProviderFactory {
     }
 
     pub fn new_provider(chain: Chain, url: &str) -> Box<dyn ChainProvider> {
-        let retry_policy = ExponentialBackoff::builder().build_with_max_retries(5);
+        let retry_policy = ExponentialBackoff::builder().build_with_max_retries(3);
         let client = ClientBuilder::new(reqwest::Client::new())
             .with(RetryTransientMiddleware::new_with_policy(retry_policy))
             .build();
@@ -138,28 +141,5 @@ impl ProviderFactory {
             Chain::Hyperliquid => settings.chains.hyperliquid.url.as_str(),
             Chain::Monad => settings.chains.monad.url.as_str(),
         }
-    }
-}
-
-pub struct ChainProviders {
-    providers: Vec<Box<dyn ChainProvider>>,
-}
-
-impl ChainProviders {
-    pub fn new(providers: Vec<Box<dyn ChainProvider>>) -> Self {
-        Self { providers }
-    }
-
-    pub async fn get_token_data(&self, chain: Chain, token_id: String) -> Result<Asset, Box<dyn std::error::Error + Send + Sync>> {
-        self.providers.iter().find(|x| x.get_chain() == chain).unwrap().get_token_data(token_id).await
-    }
-
-    pub async fn get_assets_balances(&self, chain: Chain, address: String) -> Result<Vec<AssetBalance>, Box<dyn std::error::Error + Send + Sync>> {
-        self.providers
-            .iter()
-            .find(|x| x.get_chain() == chain)
-            .unwrap()
-            .get_assets_balances(address)
-            .await
     }
 }

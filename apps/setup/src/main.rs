@@ -2,6 +2,7 @@ use primitives::{AddressType, Asset, AssetTag, AssetType, Chain, FiatProviderNam
 use search_index::{SearchIndexClient, ASSETS_FILTERS, ASSETS_INDEX_NAME, ASSETS_RANKING_RULES, ASSETS_SEARCH_ATTRIBUTES, ASSETS_SORTS, INDEX_PRIMARY_KEY};
 use settings::Settings;
 use storage::{ClickhouseClient, DatabaseClient};
+use streamer::{QueueName, StreamProducer};
 
 #[tokio::main]
 async fn main() {
@@ -104,6 +105,22 @@ async fn main() {
         .set_searchable_attributes(ASSETS_INDEX_NAME, ASSETS_SEARCH_ATTRIBUTES.to_vec())
         .await;
     let _ = search_index_client.set_ranking_rules(ASSETS_INDEX_NAME, ASSETS_RANKING_RULES.to_vec()).await;
+
+    println!("setup queues");
+
+    let queues = vec![
+        QueueName::Transactions,
+        QueueName::NotificationsPriceAlerts,
+        QueueName::NotificationsTransactions,
+    ];
+    //let exchange = ExchangeName::Transactions;
+    let streamer_reader = StreamProducer::new(&settings.rabbitmq.url).await.unwrap();
+    for queue in queues.clone() {
+        let _ = streamer_reader.declare_queue(queue).await;
+    }
+
+    // let _ = streamer_reader.declare_exchange(exchange.clone()).await;
+    // let _ = streamer_reader.bind_exchange(exchange.clone(), vec![QueueName::Transactions]).await;
 
     println!("setup complete");
 }

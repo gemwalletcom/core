@@ -10,6 +10,7 @@ pub struct Settings {
     pub postgres: Database,
     pub clickhouse: ClickhouseDatabase,
     pub meilisearch: MeiliSearch,
+    pub rabbitmq: Database,
     pub fiat: Fiat,
     pub moonpay: MoonPay,
     pub transak: Transak,
