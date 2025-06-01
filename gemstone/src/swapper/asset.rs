@@ -276,7 +276,7 @@ lazy_static! {
     // smartchain
     pub static ref SMARTCHAIN_ETH: Asset = Asset::new(
         ETH_SMARTCHAIN_ASSET_ID.into(),
-        "Binance-Peg ETH".into(),
+        "Binance-Peg Ethereum".into(),
         "ETH".into(),
         18,
         AssetType::ERC20,
