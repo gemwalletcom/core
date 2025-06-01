@@ -67,7 +67,7 @@ impl EthereumClient {
         block.ok_or_else(|| anyhow!("Block not found or null response for block number: {}", block_number))
     }
 
-    pub async fn get_block_reciepts(&self, block_number: i64) -> Result<Vec<TransactionReciept>> {
+    pub async fn get_block_receipts(&self, block_number: i64) -> Result<Vec<TransactionReciept>> {
         let block_id = BlockId::Number(BlockNumberOrTag::Number(block_number as u64));
         let params = (block_id,);
 
