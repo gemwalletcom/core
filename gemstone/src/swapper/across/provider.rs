@@ -275,6 +275,7 @@ impl Swapper for Across {
             SwapChainAsset::Assets(Chain::World, vec![WORLD_WETH.id.clone()]),
             SwapChainAsset::Assets(Chain::Ink, vec![INK_WETH.id.clone(), INK_USDT.id.clone()]),
             SwapChainAsset::Assets(Chain::Unichain, vec![UNICHAIN_WETH.id.clone(), UNICHAIN_USDC.id.clone()]),
+            SwapChainAsset::Assets(Chain::SmartChain, vec![SMARTCHAIN_ETH.id.clone()]),
         ]
     }
 
@@ -515,6 +516,7 @@ mod tests {
         let weth_eth: AssetId = WETH_ETH_ASSET_ID.into();
         let weth_op: AssetId = WETH_OP_ASSET_ID.into();
         let weth_arb: AssetId = WETH_ARB_ASSET_ID.into();
+        let weth_bsc: AssetId = ETH_SMARTCHAIN_ASSET_ID.into();
 
         let usdc_eth: AssetId = USDC_ETH_ASSET_ID.into();
         let usdc_arb: AssetId = USDC_ARB_ASSET_ID.into();
@@ -522,6 +524,8 @@ mod tests {
         assert!(Across::is_supported_pair(&weth_eth, &weth_op));
         assert!(Across::is_supported_pair(&weth_op, &weth_arb));
         assert!(Across::is_supported_pair(&usdc_eth, &usdc_arb));
+        assert!(Across::is_supported_pair(&weth_eth, &weth_bsc));
+
         assert!(!Across::is_supported_pair(&weth_eth, &usdc_eth));
 
         // native asset
