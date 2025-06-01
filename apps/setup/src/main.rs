@@ -113,10 +113,14 @@ async fn main() {
         QueueName::NotificationsPriceAlerts,
         QueueName::NotificationsTransactions,
     ];
+    //let exchange = ExchangeName::Transactions;
     let streamer_reader = StreamProducer::new(&settings.rabbitmq.url).await.unwrap();
-    for queue in queues {
+    for queue in queues.clone() {
         let _ = streamer_reader.declare_queue(queue).await;
     }
+
+    // let _ = streamer_reader.declare_exchange(exchange.clone()).await;
+    // let _ = streamer_reader.bind_exchange(exchange.clone(), vec![QueueName::Transactions]).await;
 
     println!("setup complete");
 }

@@ -120,17 +120,18 @@ impl TransactionsConsumer {
                         println!("outdated transaction: {}, created_at: {}", transaction.id, transaction.created_at);
                         continue;
                     }
-                    let notifications = self
+                    let notifications_result = self
                         .pusher
                         .get_messages(device.as_primitive(), transaction.clone(), subscription.as_primitive())
                         .await;
 
-                    // get_messages is throwing not found error, some assets might not be found
-                    if let Some(notifications) = notifications {
-                        self.stream_producer
+                    if let Ok(notifications) = notifications_result {
+                        let _ = self
+                            .stream_producer
                             .publish(QueueName::NotificationsTransactions, &NotificationsPayload { notifications })
                             .await;
                     }
+                }
             }
         }
 

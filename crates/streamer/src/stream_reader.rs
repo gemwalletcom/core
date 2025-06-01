@@ -47,8 +47,8 @@ impl StreamReader {
             match delivery {
                 Ok(delivery) => {
                     let delivery_tag = delivery.delivery_tag;
-
-                    match serde_json::from_slice::<T>(&delivery.data) {
+                    let data = serde_json::from_slice::<T>(&delivery.data);
+                    match data {
                         Ok(obj) => match callback(obj) {
                             Ok(_) => self.channel.basic_ack(delivery_tag, BasicAckOptions { multiple: false }).await?,
                             Err(e) => {
@@ -57,7 +57,7 @@ impl StreamReader {
                             }
                         },
                         Err(e) => {
-                            self.channel.basic_reject(delivery_tag, BasicRejectOptions { requeue: false }).await?;
+                            self.channel.basic_reject(delivery_tag, BasicRejectOptions { requeue: true }).await?;
                             return Err(Box::new(e));
                         }
                     }
