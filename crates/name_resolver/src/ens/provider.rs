@@ -1,7 +1,6 @@
 use super::contract::Contract;
 use anyhow::Result;
 use primitives::Chain;
-use std::error::Error;
 
 static REGISTRY: &str = "0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e";
 pub struct Provider {
@@ -21,9 +20,5 @@ impl Provider {
         // TODO: support off chain lookup CCIP-Read
         let addr = self.contract.legacy_addr(&resolver_address.to_string(), name).await?;
         Ok(addr.to_checksum(None))
-    }
-
-    pub async fn get_address(&self, _resolver: &str, _chain: Chain) -> Result<String, Box<dyn Error + Send + Sync>> {
-        todo!()
     }
 }

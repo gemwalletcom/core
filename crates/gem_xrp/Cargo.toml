@@ -1,5 +1,3 @@
-cargo-features = ["edition2024"]
-
 [package]
 name = "gem_xrp"
 version = "0.1.0"

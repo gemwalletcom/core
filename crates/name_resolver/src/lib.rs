@@ -7,7 +7,6 @@ pub mod client;
 pub mod codec;
 pub mod did;
 pub mod ens;
-pub mod ens_provider;
 pub mod eths;
 pub mod hyperliquid;
 pub mod icns;
@@ -37,7 +36,7 @@ impl NameProviderFactory {
             Box::new(icns::IcnsClient::new(settings.name.icns.url)),
             Box::new(lens::LensClient::new(settings.name.lens.url)),
             Box::new(base::Basenames::new(settings.name.base.url)),
-            Box::new(hyperliquid::HLNamesClient::new(settings.name.hyperliquid.url).expect("Failed to create Hyperliquid client")),
+            Box::new(hyperliquid::HyperliquidNames::new(settings.name.hyperliquid.url)),
         ]
     }
 }
