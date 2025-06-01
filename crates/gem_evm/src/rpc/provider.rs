@@ -1,8 +1,8 @@
 use std::error::Error;
 
 use super::{client::EthereumClient, mapper::EthereumMapper};
-use crate::{ChainAssetsProvider, ChainBlockProvider, ChainTokenDataProvider};
 use async_trait::async_trait;
+use gem_chain_rpc::{ChainAssetsProvider, ChainBlockProvider, ChainTokenDataProvider};
 use hex::FromHex;
 use primitives::{chain::Chain, Asset, AssetBalance, AssetId};
 

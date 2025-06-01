@@ -12,4 +12,6 @@ primitives = { path = "../primitives" }
 gem_chain_rpc = { path = "../gem_chain_rpc" }
 gem_solana = { path = "../gem_solana" }
 settings = { path = "../settings" }
+
 gem_xrp = { path = "../gem_xrp", features = ["rpc"] }
+gem_evm = { path = "../gem_evm", features = ["rpc"] }

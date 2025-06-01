@@ -3,6 +3,11 @@ name = "gem_evm"
 version = { workspace = true }
 edition = { workspace = true }
 
+[features]
+default = []
+typeshare = []
+rpc = []
+
 [dependencies]
 
 primitives = { path = "../primitives" }
@@ -20,3 +25,8 @@ serde_json = { workspace = true }
 num-bigint = { workspace = true }
 num-traits = { workspace = true }
 bigdecimal = { workspace = true }
+typeshare = { workspace = true }
+jsonrpsee = { workspace = true }
+chrono = { workspace = true }
+async-trait = { workspace = true }
+gem_chain_rpc = { path = "../gem_chain_rpc" }

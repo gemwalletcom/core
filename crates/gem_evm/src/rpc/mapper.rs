@@ -1,5 +1,6 @@
+use crate::address::ethereum_address_checksum;
+
 use chrono::DateTime;
-use gem_evm::ethereum_address_checksum;
 use num_bigint::BigUint;
 use num_traits::Num;
 use primitives::{chain::Chain, AssetId, TransactionState, TransactionType};

@@ -3387,7 +3387,6 @@ dependencies = [
  "cosmos-sdk-proto",
  "futures",
  "gem_aptos",
- "gem_evm",
  "gem_solana",
  "gem_ton",
  "hex",
@@ -3420,16 +3419,21 @@ dependencies = [
  "alloy-primitives",
  "alloy-sol-types",
  "anyhow",
+ "async-trait",
  "bigdecimal",
+ "chrono",
+ "gem_chain_rpc",
  "gem_hash",
  "hex",
  "itoa",
+ "jsonrpsee",
  "num-bigint",
  "num-traits",
  "primitives",
  "serde",
  "serde_json",
  "serde_serializers",
+ "typeshare",
 ]
 
 [[package]]
@@ -7184,6 +7188,7 @@ name = "settings_chain"
 version = "1.0.0"
 dependencies = [
  "gem_chain_rpc",
+ "gem_evm",
  "gem_solana",
  "gem_xrp",
  "primitives",

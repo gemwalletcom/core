@@ -11,7 +11,7 @@ use num_bigint::BigUint;
 use primitives::{chain::Chain, AssetBalance, AssetId};
 use serde::Deserialize;
 
-use crate::ChainAssetsProvider;
+use gem_chain_rpc::ChainAssetsProvider;
 
 pub struct AlchemyClient {
     client: HttpClient,
