@@ -19,6 +19,9 @@ impl NotificationsConsumer {
         self.stream_reader
             .read::<NotificationsPayload, _>(queue_name.clone(), |payload| {
                 let count = payload.notifications.len();
+                if count == 0 {
+                    return Ok(());
+                }
                 println!("{} received message: queue: {}, count: {}", service, queue_name.clone(), count);
 
                 let start = Instant::now();
