@@ -3417,7 +3417,10 @@ version = "1.0.0"
 dependencies = [
  "alloy-dyn-abi",
  "alloy-primitives",
+ "alloy-rpc-client",
+ "alloy-rpc-types",
  "alloy-sol-types",
+ "alloy-transport-http",
  "anyhow",
  "async-trait",
  "bigdecimal",
@@ -3426,7 +3429,6 @@ dependencies = [
  "gem_hash",
  "hex",
  "itoa",
- "jsonrpsee",
  "num-bigint",
  "num-traits",
  "primitives",
@@ -3434,6 +3436,7 @@ dependencies = [
  "serde_json",
  "serde_serializers",
  "typeshare",
+ "url",
 ]
 
 [[package]]

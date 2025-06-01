@@ -24,12 +24,13 @@ impl ChainBlockProvider for EthereumProvider {
     }
 
     async fn get_latest_block(&self) -> Result<i64, Box<dyn Error + Send + Sync>> {
-        self.client.get_latest_block().await
+        let block = self.client.get_latest_block().await?;
+        Ok(block)
     }
 
     async fn get_transactions(&self, block_number: i64) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Send + Sync>> {
-        let block = self.client.get_block(block_number).await?.clone();
-        let transactions_reciepts = self.client.get_block_reciepts(block_number).await?.clone();
+        let block = self.client.get_block(block_number).await?;
+        let transactions_reciepts = self.client.get_block_reciepts(block_number).await?;
         let transactions = block.transactions;
 
         let transactions = transactions
