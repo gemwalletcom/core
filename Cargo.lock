@@ -2459,6 +2459,7 @@ name = "daemon"
 version = "1.0.0"
 dependencies = [
  "api_connector",
+ "async-trait",
  "aws-sdk-s3",
  "cacher",
  "chain_primitives",
@@ -5377,6 +5378,7 @@ dependencies = [
  "number_formatter",
  "primitives",
  "rand 0.9.1",
+ "serde",
  "serde_json",
  "settings",
  "settings_chain",
@@ -7453,11 +7455,13 @@ dependencies = [
 name = "streamer"
 version = "1.0.0"
 dependencies = [
+ "async-trait",
  "futures",
  "lapin",
  "primitives",
  "serde",
  "serde_json",
+ "tokio",
 ]
 
 [[package]]

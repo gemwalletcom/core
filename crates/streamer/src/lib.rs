@@ -1,7 +1,9 @@
+pub mod consumer;
 pub mod stream_producer;
 pub mod stream_reader;
 
-use primitives::{Chain, GorushNotification, Transaction};
+pub use consumer::run_consumer;
+use primitives::{AssetId, Chain, GorushNotification, Transaction};
 use serde::{Deserialize, Serialize};
 pub use stream_producer::StreamProducer;
 pub use stream_reader::StreamReader;
@@ -26,6 +28,7 @@ pub enum QueueName {
     Transactions,
     NotificationsPriceAlerts,
     NotificationsTransactions,
+    Assets,
 }
 
 impl fmt::Display for QueueName {
@@ -34,6 +37,7 @@ impl fmt::Display for QueueName {
             QueueName::Transactions => write!(f, "transactions"),
             QueueName::NotificationsPriceAlerts => write!(f, "notifications_price_alerts"),
             QueueName::NotificationsTransactions => write!(f, "notifications_transactions"),
+            QueueName::Assets => write!(f, "assets"),
         }
     }
 }
@@ -59,5 +63,16 @@ pub struct NotificationsPayload {
 impl NotificationsPayload {
     pub fn new(notifications: Vec<GorushNotification>) -> Self {
         Self { notifications }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AssetsPayload {
+    pub asset_ids: Vec<AssetId>,
+}
+
+impl AssetsPayload {
+    pub fn new(asset_ids: Vec<AssetId>) -> Self {
+        Self { asset_ids }
     }
 }

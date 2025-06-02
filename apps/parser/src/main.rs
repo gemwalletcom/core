@@ -5,9 +5,8 @@ pub use parser_options::ParserOptions;
 pub mod pusher;
 use parser_proxy::{ParserProxy, ParserProxyUrlConfig};
 pub use pusher::Pusher;
+pub mod consumers;
 pub mod parser_proxy;
-pub mod transactions_consumer;
-pub mod transactions_consumer_config;
 
 use primitives::Chain;
 use settings::Settings;
@@ -20,17 +19,19 @@ pub async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let args: Vec<String> = std::env::args().collect();
     let mode = args.last().cloned().unwrap_or_default();
 
-    if mode == "consumer" {
-        return transactions_consumer::run_consumer_mode().await;
+    let settings: Settings = Settings::new().unwrap();
+
+    if mode == "consumer_transactions" {
+        return consumers::run_consumer_transactions(settings).await;
+    } else if mode == "consumer_assets" {
+        return consumers::run_consumer_assets(settings).await;
     } else {
-        return run_parser_mode().await;
+        return run_parser_mode(settings).await;
     }
 }
 
-async fn run_parser_mode() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+async fn run_parser_mode(settings: Settings) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     println!("parser init");
-
-    let settings: Settings = Settings::new().unwrap();
 
     let mut database = DatabaseClient::new(&settings.postgres.url.clone());
     let chains: Vec<Chain> = database
