@@ -1,5 +1,5 @@
 use super::contracts::v4::IV4Router;
-use alloy_primitives::{Address, U256};
+use alloy_primitives::{Address, Bytes, U256};
 use alloy_sol_types::SolValue;
 
 pub const SWAP_EXACT_IN_SINGLE_ACTION: u8 = 0x06;
@@ -14,6 +14,7 @@ pub const TAKE_PORTION_ACTION: u8 = 0x10;
 
 // https://github.com/Uniswap/v4-periphery/blob/main/src/libraries/Actions.sol
 #[allow(non_camel_case_types)]
+#[derive(Debug, PartialEq)]
 pub enum V4Action {
     SWAP_EXACT_IN_SINGLE(IV4Router::ExactInputSingleParams),
     SWAP_EXACT_IN(IV4Router::ExactInputParams),
@@ -51,9 +52,57 @@ pub fn encode_action_data(action: &V4Action) -> Vec<u8> {
     }
 }
 
-pub fn decode_action_data(_data: &[u8]) -> Vec<V4Action> {
-    // FIXME
-    vec![]
+pub fn decode_action_data(data: &[u8]) -> Result<Vec<V4Action>, alloy_sol_types::Error> {
+    // The ABI encoding for a sequence of actions is (bytes opcodes, bytes[] action_data)
+    let (action_opcodes_bytes, action_data_bytes) = <(Bytes, Vec<Bytes>) as SolValue>::abi_decode_sequence(data)?;
+
+    let action_opcodes: Vec<u8> = action_opcodes_bytes.to_vec();
+    let action_data_list: Vec<Vec<u8>> = action_data_bytes.into_iter().map(|b| b.to_vec()).collect();
+
+    if action_opcodes.len() != action_data_list.len() {
+        return Err(alloy_sol_types::Error::Other("Mismatched opcodes and data lengths".into()));
+    }
+
+    let mut decoded_actions = Vec::with_capacity(action_opcodes.len());
+
+    for (i, opcode) in action_opcodes.iter().enumerate() {
+        let action_data = &action_data_list[i];
+        let action_data_slice = action_data.as_slice();
+        let action = match *opcode {
+            SWAP_EXACT_IN_SINGLE_ACTION => V4Action::SWAP_EXACT_IN_SINGLE(<IV4Router::ExactInputSingleParams as SolValue>::abi_decode(action_data_slice)?),
+            SWAP_EXACT_IN_ACTION => V4Action::SWAP_EXACT_IN(<IV4Router::ExactInputParams as SolValue>::abi_decode(action_data_slice)?),
+            SWAP_EXACT_OUT_SINGLE_ACTION => V4Action::SWAP_EXACT_OUT_SINGLE(<IV4Router::ExactOutputSingleParams as SolValue>::abi_decode(action_data_slice)?),
+            SWAP_EXACT_OUT_ACTION => V4Action::SWAP_EXACT_OUT(<IV4Router::ExactOutputParams as SolValue>::abi_decode(action_data_slice)?),
+            SETTLE_ACTION => {
+                let (currency, amount, payer_is_user) = <(Address, U256, bool) as SolValue>::abi_decode(action_data_slice)?;
+                V4Action::SETTLE {
+                    currency,
+                    amount,
+                    payer_is_user,
+                }
+            }
+            SETTLE_ALL_ACTION => {
+                let (currency, max_amount) = <(Address, U256) as SolValue>::abi_decode(action_data_slice)?;
+                V4Action::SETTLE_ALL { currency, max_amount }
+            }
+            TAKE_ACTION => {
+                let (currency, recipient, amount) = <(Address, Address, U256) as SolValue>::abi_decode(action_data_slice)?;
+                V4Action::TAKE { currency, recipient, amount }
+            }
+            TAKE_ALL_ACTION => {
+                let (currency, min_amount) = <(Address, U256) as SolValue>::abi_decode(action_data_slice)?;
+                V4Action::TAKE_ALL { currency, min_amount }
+            }
+            TAKE_PORTION_ACTION => {
+                let (currency, recipient, bips) = <(Address, Address, U256) as SolValue>::abi_decode(action_data_slice)?;
+                V4Action::TAKE_PORTION { currency, recipient, bips }
+            }
+            _ => return Err(alloy_sol_types::Error::Other(format!("Unknown action opcode: {}", opcode).into())),
+        };
+        decoded_actions.push(action);
+    }
+
+    Ok(decoded_actions)
 }
 
 #[rustfmt::skip]
@@ -65,11 +114,11 @@ impl V4Action {
             Self::SWAP_EXACT_OUT_SINGLE(_) =>   SWAP_EXACT_OUT_SINGLE_ACTION,
             Self::SWAP_EXACT_OUT(_) =>          SWAP_EXACT_OUT_ACTION,
 
-            Self::SETTLE { currency: _, amount: _, payer_is_user: _ }   => SETTLE_ACTION,
-            Self::SETTLE_ALL { currency: _, max_amount: _ }             => SETTLE_ALL_ACTION,
-            Self::TAKE { currency: _, recipient: _, amount: _, }        => TAKE_ACTION,
-            Self::TAKE_ALL { currency: _, min_amount: _ }               => TAKE_ALL_ACTION,
-            Self::TAKE_PORTION { currency: _, recipient: _, bips: _, }  => TAKE_PORTION_ACTION,
+            Self::SETTLE { .. }   => SETTLE_ACTION,
+            Self::SETTLE_ALL { .. }             => SETTLE_ALL_ACTION,
+            Self::TAKE { .. }        => TAKE_ACTION,
+            Self::TAKE_ALL { .. }               => TAKE_ALL_ACTION,
+            Self::TAKE_PORTION { .. }  => TAKE_PORTION_ACTION,
         }
     }
 }
@@ -125,5 +174,10 @@ mod tests {
 
         assert_eq!(params.len(), expected.len() / 2);
         assert_eq!(HexEncode(&params), expected);
+
+        // Test decode_action_data
+        let decoded_actions = decode_action_data(&params).unwrap();
+
+        assert_eq!(actions, decoded_actions, "Decoded actions do not match original actions");
     }
 }

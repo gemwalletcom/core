@@ -163,6 +163,11 @@ impl Sweep {
         let data = (self.token, self.recipient, self.amount_min);
         SweepType::abi_encode_sequence(&data)
     }
+
+    pub fn abi_decode(data: &[u8]) -> Result<Self, alloy_sol_types::Error> {
+        let (token, recipient, amount_min) = SweepType::abi_decode_sequence(data)?;
+        Ok(Self { token, recipient, amount_min })
+    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -216,6 +221,11 @@ impl UnwrapWeth {
     pub fn abi_encode(&self) -> Vec<u8> {
         let data = (self.recipient, self.amount_min);
         UnwrapWethType::abi_encode_sequence(&data)
+    }
+
+    pub fn abi_decode(data: &[u8]) -> Result<Self, alloy_sol_types::Error> {
+        let (recipient, amount_min) = UnwrapWethType::abi_decode_sequence(data)?;
+        Ok(Self { recipient, amount_min })
     }
 }
 
