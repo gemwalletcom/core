@@ -4,10 +4,10 @@ pub mod transactions_consumer_config;
 
 use std::error::Error;
 
-pub use assets_consumer::AssetsConsumer;
+pub use assets_consumer::FetchAssetsConsumer;
 use settings::Settings;
 use storage::DatabaseClient;
-use streamer::{AssetsPayload, QueueName, StreamReader, TransactionsPayload};
+use streamer::{FetchAssetsPayload, QueueName, StreamReader, TransactionsPayload};
 pub use transactions_consumer::TransactionsConsumer;
 pub use transactions_consumer_config::TransactionsConsumerConfig;
 
@@ -23,8 +23,8 @@ pub async fn run_consumers(settings: Settings) -> Result<(), Box<dyn Error + Sen
 pub async fn run_consumer_assets(settings: Settings) -> Result<(), Box<dyn Error + Send + Sync>> {
     let stream_reader = StreamReader::new(&settings.rabbitmq.url).await.unwrap();
     let database = storage::DatabaseClient::new(&settings.postgres.url);
-    let consumer = AssetsConsumer { database };
-    streamer::run_consumer::<AssetsPayload, AssetsConsumer, usize>("assets", stream_reader, QueueName::Assets, consumer).await
+    let consumer = FetchAssetsConsumer { database };
+    streamer::run_consumer::<FetchAssetsPayload, FetchAssetsConsumer, usize>("assets", stream_reader, QueueName::FetchAssets, consumer).await
 }
 
 pub async fn run_consumer_transactions(settings: Settings) -> Result<(), Box<dyn Error + Send + Sync>> {

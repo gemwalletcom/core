@@ -4,7 +4,7 @@ use async_trait::async_trait;
 use primitives::{AssetId, Transaction};
 use storage::{models, DatabaseClient};
 use streamer::{consumer::MessageConsumer, QueueName, StreamProducer, TransactionsPayload};
-use streamer::{AssetsPayload, NotificationsPayload};
+use streamer::{FetchAssetsPayload, NotificationsPayload};
 
 use crate::consumers::TransactionsConsumerConfig;
 use crate::pusher::Pusher;
@@ -80,7 +80,10 @@ impl MessageConsumer<TransactionsPayload, usize> for TransactionsConsumer {
                             .await;
                     }
                     if !missing_assets_ids.is_empty() {
-                        let _ = self.stream_producer.publish(QueueName::Assets, &AssetsPayload::new(missing_assets_ids)).await;
+                        let _ = self
+                            .stream_producer
+                            .publish(QueueName::FetchAssets, &FetchAssetsPayload::new(missing_assets_ids))
+                            .await;
                     }
                 }
             }

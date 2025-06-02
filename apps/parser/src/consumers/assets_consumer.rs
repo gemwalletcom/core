@@ -2,15 +2,15 @@ use std::error::Error;
 
 use async_trait::async_trait;
 use storage::DatabaseClient;
-use streamer::{consumer::MessageConsumer, AssetsPayload};
+use streamer::{consumer::MessageConsumer, FetchAssetsPayload};
 
-pub struct AssetsConsumer {
+pub struct FetchAssetsConsumer {
     pub database: DatabaseClient,
 }
 
 #[async_trait]
-impl MessageConsumer<AssetsPayload, usize> for AssetsConsumer {
-    async fn process(&mut self, _payload: AssetsPayload) -> Result<usize, Box<dyn Error + Send + Sync>> {
+impl MessageConsumer<FetchAssetsPayload, usize> for FetchAssetsConsumer {
+    async fn process(&mut self, _payload: FetchAssetsPayload) -> Result<usize, Box<dyn Error + Send + Sync>> {
         Ok(0)
     }
 }

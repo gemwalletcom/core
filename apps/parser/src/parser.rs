@@ -8,7 +8,7 @@ use crate::ParserOptions;
 use gem_chain_rpc::ChainBlockProvider;
 use primitives::{Chain, Transaction};
 use storage::DatabaseClient;
-use streamer::{QueueName, StreamProducer, TransactionsPayload};
+use streamer::{FetchBlocksPayload, QueueName, StreamProducer, TransactionsPayload};
 
 pub struct Parser {
     chain: Chain,
@@ -82,6 +82,15 @@ impl Parser {
                 let to_go_blocks = state.latest_block - end_block - state.await_blocks;
 
                 if next_blocks.is_empty() {
+                    break;
+                }
+
+                // fast chains
+                if state.parallel_blocks >= 5 && to_go_blocks > 50 {
+                    // send to queue
+                    let payload = FetchBlocksPayload::new(self.chain, next_blocks.clone());
+                    self.stream_producer.publish(QueueName::FetchBlocks, &payload).await?;
+                    let _ = self.database.set_parser_state_current_block(self.chain, end_block);
                     break;
                 }
 

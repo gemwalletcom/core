@@ -28,7 +28,9 @@ pub enum QueueName {
     Transactions,
     NotificationsPriceAlerts,
     NotificationsTransactions,
-    Assets,
+    // fetch new assets and blocks
+    FetchAssets,
+    FetchBlocks,
 }
 
 impl fmt::Display for QueueName {
@@ -37,7 +39,8 @@ impl fmt::Display for QueueName {
             QueueName::Transactions => write!(f, "transactions"),
             QueueName::NotificationsPriceAlerts => write!(f, "notifications_price_alerts"),
             QueueName::NotificationsTransactions => write!(f, "notifications_transactions"),
-            QueueName::Assets => write!(f, "assets"),
+            QueueName::FetchAssets => write!(f, "fetch_assets"),
+            QueueName::FetchBlocks => write!(f, "fetch_blocks"),
         }
     }
 }
@@ -67,12 +70,24 @@ impl NotificationsPayload {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct AssetsPayload {
+pub struct FetchAssetsPayload {
     pub asset_ids: Vec<AssetId>,
 }
 
-impl AssetsPayload {
+impl FetchAssetsPayload {
     pub fn new(asset_ids: Vec<AssetId>) -> Self {
         Self { asset_ids }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FetchBlocksPayload {
+    pub chain: Chain,
+    pub blocks: Vec<i32>,
+}
+
+impl FetchBlocksPayload {
+    pub fn new(chain: Chain, blocks: Vec<i32>) -> Self {
+        Self { chain, blocks }
     }
 }

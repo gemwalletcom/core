@@ -112,6 +112,8 @@ async fn main() {
         QueueName::Transactions,
         QueueName::NotificationsPriceAlerts,
         QueueName::NotificationsTransactions,
+        QueueName::FetchAssets,
+        QueueName::FetchBlocks,
     ];
     //let exchange = ExchangeName::Transactions;
     let streamer_reader = StreamProducer::new(&settings.rabbitmq.url).await.unwrap();
