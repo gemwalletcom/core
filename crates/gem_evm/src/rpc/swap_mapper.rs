@@ -35,19 +35,13 @@ impl SwapMapper {
 
         let provider = get_provider_by_chain_contract(chain, &to)?;
 
-        let swap_metadata: Option<TransactionSwapMetadata> =
-            if let Some(metadata) = Self::try_map_v3_transaction(chain, &provider, &transaction.from, &input_bytes, transaction_reciept) {
-                Some(metadata)
-            } else {
-                Self::try_map_v4_transaction(chain, &provider, &transaction.from, &input_bytes, transaction_reciept)
-            };
-        if let Some(swap_metadata) = swap_metadata {
+        if let Some(metadata) = Self::try_map_transaction(chain, &provider, &transaction.from, &input_bytes, transaction_reciept) {
             let from_checksum = ethereum_address_checksum(&transaction.from).ok()?;
             let to_checksum = ethereum_address_checksum(&to).ok()?;
             return Some(primitives::Transaction {
                 id: transaction.hash.clone(),
                 hash: transaction.hash.clone(),
-                asset_id: swap_metadata.from_asset.clone(),
+                asset_id: metadata.from_asset.clone(),
                 from: from_checksum.clone(),
                 to: from_checksum.clone(),
                 contract: Some(to_checksum.clone()),
@@ -62,7 +56,7 @@ impl SwapMapper {
                 direction: TransactionDirection::SelfTransfer,
                 utxo_inputs: vec![],
                 utxo_outputs: vec![],
-                metadata: serde_json::to_value(swap_metadata).ok(),
+                metadata: serde_json::to_value(metadata).ok(),
                 created_at,
             });
         }
@@ -109,7 +103,7 @@ impl SwapMapper {
         None
     }
 
-    fn try_map_v3_transaction(
+    fn try_map_transaction(
         chain: &Chain,
         provider: &str,
         from: &str,
@@ -148,8 +142,8 @@ impl SwapMapper {
             }
         }
 
-        // Check V3SwapExactIn
         for (command, input) in commands_vec.iter().zip(inputs_vec.iter()) {
+            // Check V3SwapExactIn
             if command == &V3_SWAP_EXACT_IN_COMMAND {
                 let swap_exact_in = V3SwapExactIn::abi_decode(input).ok()?;
                 let token_pair = decode_path(&swap_exact_in.path)?;
@@ -173,6 +167,39 @@ impl SwapMapper {
                     Self::transfer_value_from_receipt(from, &to_token, transaction_reciept).unwrap_or(swap_exact_in.amount_out_min.to_string())
                 }
             }
+            if command == &V4_SWAP_COMMAND {
+                if let Ok(decoded_actions_vec) = decode_action_data(input) {
+                    for action in decoded_actions_vec {
+                        match action {
+                            V4Action::SWAP_EXACT_IN(params) => {
+                                let path_keys = params.path;
+                                let from_token = params.currencyIn;
+                                let to_token = path_keys[path_keys.len() - 1].intermediateCurrency;
+                                from_asset = Some(AssetId {
+                                    chain: *chain,
+                                    token_id: if from_token == Address::ZERO {
+                                        None
+                                    } else {
+                                        Some(from_token.to_checksum(None))
+                                    },
+                                });
+                                to_asset = Some(AssetId {
+                                    chain: *chain,
+                                    token_id: if to_token == Address::ZERO { None } else { Some(to_token.to_checksum(None)) },
+                                });
+                                from_value = params.amountIn.to_string();
+                                to_value = if to_token == Address::ZERO {
+                                    // No logs for native transfer, so we use sweep min value here
+                                    sweep_value.clone()
+                                } else {
+                                    Self::transfer_value_from_receipt(from, &to_token.to_checksum(None), transaction_reciept)?
+                                };
+                            }
+                            _ => continue,
+                        }
+                    }
+                }
+            }
         }
 
         if let Some(from_asset) = from_asset {
@@ -190,49 +217,6 @@ impl SwapMapper {
         }
         None
     }
-
-    fn try_map_v4_transaction(
-        chain: &Chain,
-        provider: &str,
-        from: &str,
-        input_bytes: &[u8],
-        _transaction_reciept: &TransactionReciept,
-    ) -> Option<TransactionSwapMetadata> {
-        let execute_call = IUniversalRouter::executeCall::abi_decode(input_bytes).ok()?;
-        let commands_vec = execute_call.commands;
-        let inputs_vec = execute_call.inputs;
-        for (command, input) in commands_vec.iter().zip(inputs_vec.iter()) {
-            if command == &V4_SWAP_COMMAND {
-                if let Ok(decoded_actions_vec) = decode_action_data(input) {
-                    for action in decoded_actions_vec {
-                        match action {
-                            V4Action::SWAP_EXACT_IN(params) => {
-                                let path_keys = params.path;
-                                let from_token = path_keys[0].intermediateCurrency.to_checksum(None);
-                                let to_token = path_keys[path_keys.len() - 1].intermediateCurrency.to_checksum(None);
-                                return Some(TransactionSwapMetadata {
-                                    from_value: params.amountIn.to_string(),
-                                    from_asset: AssetId {
-                                        chain: *chain,
-                                        token_id: Some(from_token.clone()),
-                                    },
-                                    to_value: Self::transfer_value_from_receipt(from, &to_token, _transaction_reciept)
-                                        .unwrap_or_else(|| params.amountOutMinimum.to_string()),
-                                    to_asset: AssetId {
-                                        chain: *chain,
-                                        token_id: Some(to_token.clone()),
-                                    },
-                                    provider: Some(provider.to_string()),
-                                });
-                            }
-                            _ => continue,
-                        }
-                    }
-                }
-            }
-        }
-        None
-    }
 }
 
 #[cfg(test)]
@@ -240,6 +224,82 @@ mod tests {
     use super::*;
     use crate::rpc::swap_mapper::SwapMapper;
     use primitives::Chain;
+
+    #[test]
+    fn test_map_v4_swap_eth_dai() {
+        let tx_json = include_str!("test/v4_eth_dai_tx.json");
+        let tx_value: serde_json::Value = serde_json::from_str(tx_json).unwrap();
+        let tx: Transaction = serde_json::from_value(tx_value.get("result").unwrap().clone()).unwrap();
+
+        let receipt_json = include_str!("test/v4_eth_dai_tx_receipt.json");
+        let receipt_value: serde_json::Value = serde_json::from_str(receipt_json).unwrap();
+        let receipt: TransactionReciept = serde_json::from_value(receipt_value.get("result").unwrap().clone()).unwrap();
+
+        let swap_tx = SwapMapper::map_uniswap_transaction(&Chain::Unichain, &tx, &receipt, Utc::now()).expect("swap_metadata");
+        let metadata: TransactionSwapMetadata = serde_json::from_value(swap_tx.metadata.unwrap()).unwrap();
+
+        assert_eq!(swap_tx.from, "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7");
+        assert_eq!(swap_tx.to, "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7");
+        assert_eq!(swap_tx.contract.unwrap(), "0xEf740bf23aCaE26f6492B10de645D6B98dC8Eaf3");
+        assert_eq!(swap_tx.transaction_type, TransactionType::Swap);
+        assert_eq!(swap_tx.fee_asset_id, AssetId::from_chain(Chain::Unichain));
+        assert_eq!(swap_tx.value, "1000000000000000");
+
+        assert_eq!(
+            metadata.from_asset,
+            AssetId {
+                chain: Chain::Unichain,
+                token_id: None,
+            }
+        );
+        assert_eq!(metadata.from_value, "995000000000000");
+        assert_eq!(
+            metadata.to_asset,
+            AssetId {
+                chain: Chain::Unichain,
+                token_id: Some("0x20CAb320A855b39F724131C69424240519573f81".to_string()),
+            }
+        );
+        assert_eq!(metadata.to_value, "2696771430516915192");
+    }
+
+    #[test]
+    fn test_map_v4_swap_usdc_eth() {
+        let tx_json = include_str!("test/v4_usdc_eth_tx.json");
+        let tx_value: serde_json::Value = serde_json::from_str(tx_json).unwrap();
+        let tx: Transaction = serde_json::from_value(tx_value.get("result").unwrap().clone()).unwrap();
+
+        let receipt_json = include_str!("test/v4_usdc_eth_tx_receipt.json");
+        let receipt_value: serde_json::Value = serde_json::from_str(receipt_json).unwrap();
+        let receipt: TransactionReciept = serde_json::from_value(receipt_value.get("result").unwrap().clone()).unwrap();
+
+        let swap_tx = SwapMapper::map_uniswap_transaction(&Chain::Unichain, &tx, &receipt, Utc::now()).expect("swap_metadata");
+        let metadata: TransactionSwapMetadata = serde_json::from_value(swap_tx.metadata.unwrap()).unwrap();
+
+        assert_eq!(swap_tx.from, "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7");
+        assert_eq!(swap_tx.to, "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7");
+        assert_eq!(swap_tx.contract.unwrap(), "0xEf740bf23aCaE26f6492B10de645D6B98dC8Eaf3");
+        assert_eq!(swap_tx.transaction_type, TransactionType::Swap);
+        assert_eq!(swap_tx.fee_asset_id, AssetId::from_chain(Chain::Unichain));
+        assert_eq!(swap_tx.value, "0");
+
+        assert_eq!(
+            metadata.from_asset,
+            AssetId {
+                chain: Chain::Unichain,
+                token_id: Some("0x078D782b760474a361dDA0AF3839290b0EF57AD6".to_string()),
+            }
+        );
+        assert_eq!(metadata.from_value, "2132953");
+        assert_eq!(
+            metadata.to_asset,
+            AssetId {
+                chain: Chain::Unichain,
+                token_id: None,
+            }
+        );
+        assert_eq!(metadata.to_value, "1155057703771482");
+    }
 
     #[test]
     fn test_map_v3_swap_eth_token() {
@@ -396,7 +456,4 @@ mod tests {
         );
         assert_eq!(metadata.to_value, "9017156750431593");
     }
-
-    #[test]
-    fn test_map_v4_swap_exact_in() {}
 }
