@@ -4,7 +4,7 @@ version = { workspace = true }
 edition = { workspace = true }
 
 [features]
-default = []
+default = ["rpc"] # FIXME remove rpc from default
 typeshare = []
 rpc = []
 

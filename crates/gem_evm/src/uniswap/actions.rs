@@ -2,6 +2,16 @@ use super::contracts::v4::IV4Router;
 use alloy_primitives::{Address, U256};
 use alloy_sol_types::SolValue;
 
+pub const SWAP_EXACT_IN_SINGLE_ACTION: u8 = 0x06;
+pub const SWAP_EXACT_IN_ACTION: u8 = 0x07;
+pub const SWAP_EXACT_OUT_SINGLE_ACTION: u8 = 0x08;
+pub const SWAP_EXACT_OUT_ACTION: u8 = 0x09;
+pub const SETTLE_ACTION: u8 = 0x0b;
+pub const SETTLE_ALL_ACTION: u8 = 0x0c;
+pub const TAKE_ACTION: u8 = 0x0e;
+pub const TAKE_ALL_ACTION: u8 = 0x0f;
+pub const TAKE_PORTION_ACTION: u8 = 0x10;
+
 // https://github.com/Uniswap/v4-periphery/blob/main/src/libraries/Actions.sol
 #[allow(non_camel_case_types)]
 pub enum V4Action {
@@ -41,20 +51,25 @@ pub fn encode_action_data(action: &V4Action) -> Vec<u8> {
     }
 }
 
+pub fn decode_action_data(_data: &[u8]) -> Vec<V4Action> {
+    // FIXME
+    vec![]
+}
+
 #[rustfmt::skip]
 impl V4Action {
     pub fn byte(&self) -> u8 {
         match self {
-            Self::SWAP_EXACT_IN_SINGLE(_) =>    0x06,
-            Self::SWAP_EXACT_IN(_) =>           0x07,
-            Self::SWAP_EXACT_OUT_SINGLE(_) =>   0x08,
-            Self::SWAP_EXACT_OUT(_) =>          0x09,
+            Self::SWAP_EXACT_IN_SINGLE(_) =>    SWAP_EXACT_IN_SINGLE_ACTION,
+            Self::SWAP_EXACT_IN(_) =>           SWAP_EXACT_IN_ACTION,
+            Self::SWAP_EXACT_OUT_SINGLE(_) =>   SWAP_EXACT_OUT_SINGLE_ACTION,
+            Self::SWAP_EXACT_OUT(_) =>          SWAP_EXACT_OUT_ACTION,
 
-            Self::SETTLE { currency: _, amount: _, payer_is_user: _ }   => 0x0b,
-            Self::SETTLE_ALL { currency: _, max_amount: _ }             => 0x0c,
-            Self::TAKE { currency: _, recipient: _, amount: _, }        => 0x0e,
-            Self::TAKE_ALL { currency: _, min_amount: _ }               => 0x0f,
-            Self::TAKE_PORTION { currency: _, recipient: _, bips: _, }  => 0x10,
+            Self::SETTLE { currency: _, amount: _, payer_is_user: _ }   => SETTLE_ACTION,
+            Self::SETTLE_ALL { currency: _, max_amount: _ }             => SETTLE_ALL_ACTION,
+            Self::TAKE { currency: _, recipient: _, amount: _, }        => TAKE_ACTION,
+            Self::TAKE_ALL { currency: _, min_amount: _ }               => TAKE_ALL_ACTION,
+            Self::TAKE_PORTION { currency: _, recipient: _, bips: _, }  => TAKE_PORTION_ACTION,
         }
     }
 }

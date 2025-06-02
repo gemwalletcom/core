@@ -4,7 +4,7 @@ use std::{collections::HashSet, fmt::Display};
 use super::FeeTier;
 use primitives::EVMChain;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TokenPair {
     pub token_in: Address,
     pub token_out: Address,
@@ -204,6 +204,24 @@ pub fn build_pairs(token_pairs: &[TokenPair]) -> Bytes {
     Bytes::from(bytes)
 }
 
+pub fn decode_path(path: &Bytes) -> Option<TokenPair> {
+    // Minimum path: token_in | fee | token_out. Length = 20 + 3 + 20 = 43 bytes.
+    if path.len() < 43 {
+        return None;
+    }
+
+    let token_in = Address::from_slice(&path[0..20]);
+
+    // Fee is a uint24, stored in 3 bytes.
+    let fee_value = u32::from_be_bytes([0, path[20], path[21], path[22]]);
+    let fee_tier = FeeTier::try_from(fee_value).ok()?;
+
+    let token_out_offset = path.len() - 20;
+    let token_out = Address::from_slice(&path[token_out_offset..path.len()]);
+
+    Some(TokenPair { token_in, token_out, fee_tier })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -218,8 +236,18 @@ mod tests {
         let bytes = build_direct_pair(&token0, &token1, FeeTier::FiveHundred);
 
         assert_eq!(
-            HexEncode(bytes),
+            HexEncode(&bytes),
             "0x42000000000000000000000000000000000000060001f40b2c639c533813f4aa9d7837caf62653d097ff85"
+        );
+
+        let pair = decode_path(&bytes).unwrap();
+        assert_eq!(
+            pair,
+            TokenPair {
+                token_in: token0,
+                token_out: token1,
+                fee_tier: FeeTier::FiveHundred
+            }
         );
     }
 
@@ -235,8 +263,18 @@ mod tests {
         let bytes = build_pairs(&token_pairs);
 
         assert_eq!(
-            HexEncode(bytes),
+            HexEncode(&bytes),
             "0x6fd9d7ad17242c41f7131d257212c54a0e816691000bb84200000000000000000000000000000000000006000bb8350a791bfc2c21f9ed5d10980dad2e2638ffa7f6"
+        );
+
+        let pair = decode_path(&bytes).unwrap();
+        assert_eq!(
+            pair,
+            TokenPair {
+                token_in: token0,
+                token_out: token2,
+                fee_tier: FeeTier::ThreeThousand
+            }
         );
     }
 }

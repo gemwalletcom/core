@@ -3,5 +3,6 @@ pub mod client;
 pub mod mapper;
 pub mod model;
 pub mod provider;
+pub mod swap_mapper;
 
-pub use self::alchemy_client::AlchemyClient;
+pub use alchemy_client::AlchemyClient;

@@ -36,7 +36,7 @@ impl ChainBlockProvider for EthereumProvider {
         let transactions = transactions
             .into_iter()
             .zip(transactions_reciepts.iter())
-            .filter_map(|(transaction, receipt)| EthereumMapper::map_transaction(self.get_chain(), transaction, receipt, block.timestamp.clone()))
+            .filter_map(|(transaction, receipt)| EthereumMapper::map_transaction(self.get_chain(), &transaction, receipt, block.timestamp.clone()))
             .collect::<Vec<primitives::Transaction>>();
 
         return Ok(transactions);

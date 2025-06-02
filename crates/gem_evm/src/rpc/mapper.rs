@@ -1,21 +1,23 @@
-use crate::address::ethereum_address_checksum;
-
 use chrono::DateTime;
 use num_bigint::BigUint;
 use num_traits::Num;
+
+use super::swap_mapper::SwapMapper;
+use crate::{
+    address::ethereum_address_checksum,
+    rpc::model::{Transaction, TransactionReciept},
+};
 use primitives::{chain::Chain, AssetId, TransactionState, TransactionType};
 
-use super::model::{Transaction, TransactionReciept};
-
 const FUNCTION_ERC20_TRANSFER: &str = "0xa9059cbb";
-const FUNCTION_ERC20_APPROVE: &str = "0x095ea7b3";
+// const FUNCTION_ERC20_APPROVE: &str = "0x095ea7b3";
 
 pub struct EthereumMapper;
 
 impl EthereumMapper {
     pub fn map_transaction(
         chain: Chain,
-        transaction: Transaction,
+        transaction: &Transaction,
         transaction_reciept: &TransactionReciept,
         timestamp: BigUint,
     ) -> Option<primitives::Transaction> {
@@ -86,11 +88,12 @@ impl EthereumMapper {
             return Some(transaction);
         }
 
-        // approve
-        if transaction.input.starts_with(FUNCTION_ERC20_APPROVE) {
-            return None;
+        // Try to decode Uniswap V3 or V4 transaction
+        if transaction.to.is_some() && transaction.input.len() >= 8 {
+            if let Some(tx) = SwapMapper::map_uniswap_transaction(&chain, transaction, transaction_reciept, created_at) {
+                return Some(tx);
+            }
         }
-
         None
     }
 }
