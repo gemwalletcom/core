@@ -21,7 +21,9 @@ pub async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 
     let settings: Settings = Settings::new().unwrap();
 
-    if mode == "consumer_transactions" {
+    if mode == "consumers" {
+        return consumers::run_consumers(settings).await;
+    } else if mode == "consumer_transactions" {
         return consumers::run_consumer_transactions(settings).await;
     } else if mode == "consumer_assets" {
         return consumers::run_consumer_assets(settings).await;

@@ -13,6 +13,13 @@ pub use transactions_consumer_config::TransactionsConsumerConfig;
 
 use crate::Pusher;
 
+pub async fn run_consumers(settings: Settings) -> Result<(), Box<dyn Error + Send + Sync>> {
+    tokio::spawn(run_consumer_assets(settings.clone()));
+    tokio::spawn(run_consumer_transactions(settings.clone()));
+    std::future::pending::<()>().await;
+    Ok(())
+}
+
 pub async fn run_consumer_assets(settings: Settings) -> Result<(), Box<dyn Error + Send + Sync>> {
     let stream_reader = StreamReader::new(&settings.rabbitmq.url).await.unwrap();
     let database = storage::DatabaseClient::new(&settings.postgres.url);
