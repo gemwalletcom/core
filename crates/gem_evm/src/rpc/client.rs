@@ -47,11 +47,8 @@ impl EthereumClient {
         let params = (tx_request, BlockId::Number(BlockNumberOrTag::Latest));
         let result_bytes: AlloyBytes = self.client.request("eth_call", params).await?;
 
-        // Attempt to deserialize from the returned bytes.
-        // If T is String, it usually expects a 0x-prefixed hex string.
-        // If T is a struct, it expects JSON that matches the struct.
+        // Deserialize T (hex string or struct) from the returned bytes.
         if TypeId::of::<T>() == TypeId::of::<String>() {
-            // Assuming the string is hex-encoded bytes
             Ok(serde_json::from_value(serde_json::Value::String(result_bytes.to_string()))?)
         } else {
             serde_json::from_slice(&result_bytes).map_err(|e| anyhow!(e))

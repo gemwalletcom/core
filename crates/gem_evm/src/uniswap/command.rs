@@ -66,23 +66,6 @@ impl UniversalRouterCommand {
         }
     }
 
-    pub fn consumes_input(&self) -> bool {
-        match self {
-            Self::V3_SWAP_EXACT_IN(_)
-            | Self::V3_SWAP_EXACT_OUT(_)
-            | Self::PERMIT2_TRANSFER_FROM(_)
-            | Self::SWEEP(_)
-            | Self::TRANSFER(_)
-            | Self::PAY_PORTION(_)
-            | Self::PERMIT2_PERMIT(_)
-            | Self::WRAP_ETH(_)
-            | Self::UNWRAP_WETH(_)
-            | Self::V4_SWAP { .. } => true,
-
-            Self::PERMIT2_PERMIT_BATCH | Self::V2_SWAP_EXACT_IN | Self::V2_SWAP_EXACT_OUT | Self::PERMIT2_TRANSFER_FROM_BATCH => false,
-        }
-    }
-
     pub fn encode(&self) -> Vec<u8> {
         match self {
             Self::V3_SWAP_EXACT_IN(payload) => payload.abi_encode(),

@@ -4,12 +4,11 @@ version = { workspace = true }
 edition = { workspace = true }
 
 [features]
-default = ["rpc"] # FIXME remove rpc from default
+default = []
 typeshare = []
 rpc = []
 
 [dependencies]
-
 primitives = { path = "../primitives" }
 gem_hash = { path = "../gem_hash" }
 serde_serializers = { path = "../serde_serializers" }
@@ -25,7 +24,11 @@ serde_json = { workspace = true }
 num-bigint = { workspace = true }
 num-traits = { workspace = true }
 bigdecimal = { workspace = true }
+
+# typeshare
 typeshare = { workspace = true }
+
+# rpc feature
 alloy-rpc-client = { workspace = true }
 alloy-rpc-types = { workspace = true }
 alloy-transport-http = { workspace = true }
