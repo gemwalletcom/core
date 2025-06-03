@@ -82,7 +82,10 @@ impl MessageConsumer<TransactionsPayload, usize> for TransactionsConsumer {
                     if !missing_assets_ids.is_empty() {
                         let _ = self
                             .stream_producer
-                            .publish(QueueName::FetchAssets, &FetchAssetsPayload::new(missing_assets_ids))
+                            .publish_batch(
+                                QueueName::FetchAssets,
+                                &missing_assets_ids.into_iter().map(FetchAssetsPayload::new).collect::<Vec<_>>(),
+                            )
                             .await;
                     }
                 }

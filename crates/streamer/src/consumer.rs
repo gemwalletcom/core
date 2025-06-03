@@ -1,5 +1,6 @@
 use std::{
     error::Error,
+    fmt::Display,
     time::{Duration, Instant},
 };
 
@@ -33,7 +34,7 @@ pub async fn run_consumer<P, C, R>(
     config: ConsumerConfig,
 ) -> Result<(), Box<dyn Error + Send + Sync>>
 where
-    P: Clone + Send + 'static,
+    P: Clone + Send + Display + 'static,
     C: MessageConsumer<P, R> + Send + 'static,
     R: std::fmt::Debug,
     for<'a> P: Deserialize<'a> + std::fmt::Debug,
@@ -45,7 +46,10 @@ where
             let start = Instant::now();
             let result = tokio::task::block_in_place(|| {
                 let rt = tokio::runtime::Handle::current();
-                rt.block_on(async { consumer.process(payload.clone()).await })
+                rt.block_on(async {
+                    println!("consumer {} received message: {}", name, payload);
+                    consumer.process(payload.clone()).await
+                })
             });
             match result {
                 Ok(result) => {

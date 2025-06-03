@@ -6,7 +6,7 @@ pub mod transactions_consumer_config;
 use std::error::Error;
 
 pub use assets_consumer::FetchAssetsConsumer;
-use gem_chain_rpc::ChainBlockProvider;
+use gem_chain_rpc::{ChainBlockProvider, ChainProvider};
 use primitives::Chain;
 use settings::Settings;
 use storage::DatabaseClient;
@@ -25,8 +25,15 @@ pub async fn run_consumers(settings: Settings) -> Result<(), Box<dyn Error + Sen
 
 pub async fn run_consumer_assets(settings: Settings) -> Result<(), Box<dyn Error + Send + Sync>> {
     let stream_reader = StreamReader::new(&settings.rabbitmq.url).await.unwrap();
-    let database = storage::DatabaseClient::new(&settings.postgres.url);
-    let consumer = FetchAssetsConsumer { database };
+    let mut database = storage::DatabaseClient::new(&settings.postgres.url);
+    let nodes = database.get_nodes()?.into_iter().map(|x| x.as_primitive()).collect::<Vec<_>>();
+
+    let providers = Chain::all()
+        .into_iter()
+        .map(|chain| Box::new(ParserProxy::new_from_nodes(&settings, chain, nodes.clone())) as Box<dyn ChainProvider>)
+        .collect::<Vec<_>>();
+
+    let consumer = FetchAssetsConsumer { providers, database };
     streamer::run_consumer::<FetchAssetsPayload, FetchAssetsConsumer, usize>(
         "assets",
         stream_reader,

@@ -18,8 +18,6 @@ impl FetchBlocksConsumer {
 #[async_trait]
 impl MessageConsumer<FetchBlocksPayload, usize> for FetchBlocksConsumer {
     async fn process(&mut self, payload: FetchBlocksPayload) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        println!("blocks consumer: chain: {}, blocks: {:?}", payload.chain.as_ref(), payload.blocks);
-
         let provider = self.providers.iter().find(|x| x.get_chain() == payload.chain).ok_or("provider not found")?;
         let transactions = provider.get_transactions_in_blocks(payload.blocks.clone()).await?;
         let payload = TransactionsPayload::new(payload.chain, payload.blocks.clone(), transactions.clone());
