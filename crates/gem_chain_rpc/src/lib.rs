@@ -9,7 +9,6 @@ pub mod ethereum;
 
 pub mod near;
 pub mod polkadot;
-pub mod solana;
 pub mod stellar;
 pub mod sui;
 pub mod ton;
@@ -24,7 +23,6 @@ pub use self::cosmos::client::CosmosClient;
 pub use self::ethereum::client::EthereumClient;
 pub use self::near::client::NearClient;
 pub use self::polkadot::client::PolkadotClient;
-pub use self::solana::SolanaProvider;
 pub use self::stellar::client::StellarClient;
 pub use self::sui::client::SuiClient;
 pub use self::ton::client::TonClient;

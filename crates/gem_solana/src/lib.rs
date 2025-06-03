@@ -1,11 +1,15 @@
-pub mod client;
 pub mod hash;
 pub mod jsonrpc;
 pub mod metaplex;
 pub mod model;
 pub mod pubkey;
 
-pub use client::SolanaClient;
+#[cfg(feature = "rpc")]
+pub mod rpc;
+
+#[cfg(feature = "typeshare")]
+pub mod typeshare;
+
 pub use jsonrpc::SolanaRpc;
 
 // Constants

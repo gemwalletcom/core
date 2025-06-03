@@ -12,14 +12,13 @@ use gem_chain_rpc::{
     ethereum::{client::EthereumClient, provider::EthereumProvider, AlchemyClient},
     near::{client::NearClient, provider::NearProvider},
     polkadot::{client::PolkadotClient, provider::PolkadotProvider},
-    solana::provider::SolanaProvider,
     stellar::{client::StellarClient, provider::StellarProvider},
     sui::{client::SuiClient, provider::SuiProvider},
     ton::{client::TonClient, provider::TonProvider},
     tron::{client::TronClient, provider::TronProvider},
     ChainProvider,
 };
-use gem_solana::SolanaClient;
+use gem_solana::rpc::{SolanaClient, SolanaProvider};
 use gem_xrp::rpc::{XRPClient, XRPProvider};
 use primitives::Chain;
 use reqwest_middleware::ClientBuilder;

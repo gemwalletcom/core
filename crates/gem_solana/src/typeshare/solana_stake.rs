@@ -1,0 +1,27 @@
+use serde::{Deserialize, Serialize};
+use typeshare::typeshare;
+
+#[typeshare(swift = "Sendable")]
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SolanaValidators {
+    pub current: Vec<SolanaValidator>,
+}
+
+#[typeshare(swift = "Sendable")]
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SolanaValidator {
+    pub vote_pubkey: String,
+    pub commission: i32,
+    pub epoch_vote_account: bool,
+}
+
+#[typeshare(swift = "Sendable")]
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SolanaEpoch {
+    pub epoch: i32,
+    pub slot_index: i32,
+    pub slots_in_epoch: i32,
+}

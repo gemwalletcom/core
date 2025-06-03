@@ -1,12 +1,14 @@
-use std::error::Error;
-
 use async_trait::async_trait;
 use jsonrpsee::core::ClientError;
+use std::error::Error;
 
-use super::mapper::SolanaMapper;
-use crate::{ChainAssetsProvider, ChainBlockProvider, ChainTokenDataProvider};
+use gem_chain_rpc::{ChainAssetsProvider, ChainBlockProvider, ChainTokenDataProvider};
 
-use gem_solana::{model::ResultTokenInfo, SolanaClient, TOKEN_PROGRAM};
+use crate::{
+    model::ResultTokenInfo,
+    rpc::{client::SolanaClient, mapper::SolanaMapper},
+    TOKEN_PROGRAM,
+};
 use primitives::{chain::Chain, Asset, AssetBalance, AssetId, Transaction as PrimitiveTransaction};
 
 const CLEANUP_BLOCK_ERROR: i32 = -32001;
