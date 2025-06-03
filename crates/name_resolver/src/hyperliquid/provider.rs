@@ -4,21 +4,24 @@ use alloy_rpc_client::RpcClient;
 use alloy_rpc_types::{BlockId, TransactionRequest};
 use alloy_sol_types::SolCall;
 use alloy_transport_http::Http;
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use async_trait::async_trait;
 use std::{error::Error, str::FromStr};
 use url::Url;
 
-use super::contracts::{Registrator, Router};
-use crate::client::NameClient;
-use primitives::{Chain, NameProvider};
+use super::{
+    contracts::{Registrator, Router},
+    record::Record,
+};
+use crate::{client::NameClient, ens::normalize_domain};
+use primitives::{Chain, EVMChain, NameProvider};
 
 const ROUTER_ADDRESS: &str = "0x25d1971d6dc9812ea1111662008f07735c74bff5";
 
 #[derive(Debug)]
 pub struct HyperliquidNames {
     client: RpcClient,
-    resolver_address: Address,
+    router_address: Address,
 }
 
 impl HyperliquidNames {
@@ -26,8 +29,8 @@ impl HyperliquidNames {
         let url: Url = provider_url.parse().expect("Invalid HyperEVM node URL");
         let http_transport = Http::new(url);
         let client = RpcClient::new(http_transport, true);
-        let resolver_address = Address::from_str(ROUTER_ADDRESS).expect("Invalid Router address");
-        Self { client, resolver_address }
+        let router_address = Address::from_str(ROUTER_ADDRESS).expect("Invalid Router address");
+        Self { client, router_address }
     }
 
     pub fn is_valid_name(name: &str) -> bool {
@@ -46,16 +49,17 @@ impl NameClient for HyperliquidNames {
         vec![Chain::Hyperliquid]
     }
 
-    async fn resolve(&self, name: &str, _chain: Chain) -> Result<String, Box<dyn Error + Send + Sync>> {
-        if !Self::is_valid_name(name) {
+    async fn resolve(&self, name: &str, chain: Chain) -> Result<String, Box<dyn Error + Send + Sync>> {
+        let name = normalize_domain(name)?;
+        if !Self::is_valid_name(&name) {
             return Err(format!("Invalid name: {}", name).into());
         }
 
         // Get current registrator
-        let resolver_address = self.resolver_address;
+        let router_address = self.router_address;
         let call_data = Router::getCurrentRegistratorCall {}.abi_encode();
         let tx_request = TransactionRequest {
-            to: Some(TxKind::Call(resolver_address)),
+            to: Some(TxKind::Call(router_address)),
             input: Bytes::from(call_data).into(),
             ..Default::default()
         };
@@ -65,10 +69,10 @@ impl NameClient for HyperliquidNames {
             .request::<(TransactionRequest, BlockId), Bytes>("eth_call", (tx_request, BlockId::latest()))
             .await?;
 
-        // Get owner of name
-        let node = namehash(name);
+        // Get full record json
+        let node = namehash(&name);
         let registrator = Router::getCurrentRegistratorCall::abi_decode_returns(&result)?.0;
-        let call_data = Registrator::ownerOfCall { _namehash: node }.abi_encode();
+        let call_data = Registrator::getFullRecordJSONCall { _namehash: node }.abi_encode();
         let tx_request = TransactionRequest {
             to: Some(TxKind::Call(Address::from(registrator))),
             input: Bytes::from(call_data).into(),
@@ -79,10 +83,16 @@ impl NameClient for HyperliquidNames {
             .request::<(TransactionRequest, BlockId), Bytes>("eth_call", (tx_request, BlockId::latest()))
             .await?;
 
-        let owner_address = Registrator::ownerOfCall::abi_decode_returns(&result)?.0;
-        let address = Address::from(owner_address);
+        let record_json = Registrator::getFullRecordJSONCall::abi_decode_returns(&result)?;
+        let record: Record = serde_json::from_str(&record_json)?;
 
-        Ok(address.to_checksum(None))
+        let slip44 = chain.as_slip44();
+        let chain_address = record.data.chain_addresses.get(&slip44.to_string()).ok_or(anyhow!("Chain not found"))?;
+        if EVMChain::from_chain(chain).is_some() {
+            let address = Address::from_str(chain_address)?;
+            return Ok(address.to_checksum(None));
+        }
+        Ok(chain_address.to_string())
     }
 
     fn provider(&self) -> NameProvider {
@@ -105,6 +115,7 @@ mod tests {
         assert!(HyperliquidNames::is_valid_name("a.b.test.hl"));
         assert!(HyperliquidNames::is_valid_name("foo-bar.hl"));
         assert!(HyperliquidNames::is_valid_name("123.hl"));
+        assert!(HyperliquidNames::is_valid_name("🐈🐈🐈🐈🐈🐈🐈.hl"));
 
         assert!(!HyperliquidNames::is_valid_name("test..hl")); // Empty label
         assert!(!HyperliquidNames::is_valid_name("test.hl.")); // Trailing dot

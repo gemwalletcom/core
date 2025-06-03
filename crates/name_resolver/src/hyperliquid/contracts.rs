@@ -9,5 +9,6 @@ sol! {
     #[sol(rpc)]
     interface Registrator {
         function ownerOf(bytes32 _namehash) external view returns (address);
+        function getFullRecordJSON(bytes32 _namehash) external view returns (string);
     }
 }

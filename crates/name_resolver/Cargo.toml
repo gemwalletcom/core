@@ -21,6 +21,7 @@ alloy-rpc-types = { workspace = true }
 alloy-transport-http.workspace = true
 alloy-contract = { workspace = true }
 url = { workspace = true, features = ["serde"] }
+idna = { workspace = true }
 
 settings = { path = "../settings" }
 primitives = { path = "../primitives" }

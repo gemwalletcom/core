@@ -62,9 +62,9 @@ mod tests {
 
         block_on(async {
             let client = HyperliquidNames::new(settings.name.hyperliquid.url);
-            let address = client.resolve("testooor.hl", Chain::Hyperliquid).await.unwrap();
+            let address = client.resolve("TESTOOOR.HL", Chain::Hyperliquid).await.unwrap();
 
-            assert_eq!(address, "0xF26F5551E96aE5162509B25925fFfa7F07B2D652");
+            assert_eq!(address, "0xb43f5153B1c867BF78ACB3C35aa9b8ae366415c5");
         });
     }
 }
