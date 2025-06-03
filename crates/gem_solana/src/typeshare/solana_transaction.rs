@@ -1,12 +1,12 @@
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
-use crate::typeshare::Bool;
+use super::Int;
 
 #[typeshare(swift = "Sendable")]
 pub struct SolanaTransaction {
     pub meta: SolanaTransactionMeta,
-    pub slot: i32,
+    pub slot: Int,
 }
 
 #[typeshare(swift = "Sendable")]
@@ -31,6 +31,6 @@ pub struct SolanaInstruction {
 #[serde(rename_all = "camelCase")]
 pub struct SolanaAccountMeta {
     pub pubkey: String,
-    pub is_signer: Bool,
-    pub is_writable: Bool,
+    pub is_signer: bool,
+    pub is_writable: bool,
 }

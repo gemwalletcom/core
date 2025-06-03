@@ -1,10 +1,11 @@
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
+use super::Int;
+
 #[typeshare(swift = "Sendable")]
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SolanaPrioritizationFee {
-    #[serde(rename = "prioritizationFee")]
-    pub prioritization_fee: i32,
+    pub prioritization_fee: Int,
 }

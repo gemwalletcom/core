@@ -6,5 +6,4 @@ pub mod solana_token_account;
 pub mod solana_transaction;
 pub mod solana_value;
 
-type Int = i64;
-type Bool = bool;
+type Int = u64;
