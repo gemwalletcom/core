@@ -301,6 +301,7 @@ diesel::table! {
         is_enabled -> Bool,
         updated_at -> Timestamp,
         created_at -> Timestamp,
+        queue_behind_blocks -> Nullable<Int4>,
     }
 }
 

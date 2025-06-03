@@ -85,21 +85,22 @@ impl Parser {
                     break;
                 }
 
-                // fast chains
-                if to_go_blocks > 50 {
-                    let payload = FetchBlocksPayload::new(self.chain, next_blocks.clone());
-                    self.stream_producer.publish(QueueName::FetchBlocks, &payload).await?;
-                    let _ = self.database.set_parser_state_current_block(self.chain, end_block);
+                // queue blocks, continue parsing
+                if let Some(queue_behind_blocks) = state.queue_behind_blocks {
+                    if to_go_blocks > queue_behind_blocks {
+                        let payload = FetchBlocksPayload::new(self.chain, next_blocks.clone());
+                        self.stream_producer.publish(QueueName::FetchBlocks, &payload).await?;
+                        let _ = self.database.set_parser_state_current_block(self.chain, end_block);
 
-                    println!(
-                        "parser block add to queue: {}, blocks: {:?} to go blocks: {} in: {:?}",
-                        self.chain.as_ref(),
-                        next_blocks,
-                        to_go_blocks,
-                        start.elapsed()
-                    );
-
-                    continue;
+                        println!(
+                            "parser block add to queue: {}, blocks: {:?} to go blocks: {} in: {:?}",
+                            self.chain.as_ref(),
+                            next_blocks,
+                            to_go_blocks,
+                            start.elapsed()
+                        );
+                        continue;
+                    }
                 }
 
                 match self.parse_blocks(next_blocks.clone()).await {
