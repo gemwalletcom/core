@@ -3390,6 +3390,7 @@ dependencies = [
  "gem_aptos",
  "gem_evm",
  "gem_solana",
+ "gem_sui",
  "gem_ton",
  "hex",
  "jsonrpsee",

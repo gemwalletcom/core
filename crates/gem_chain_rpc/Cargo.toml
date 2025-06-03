@@ -28,6 +28,8 @@ gem_evm = { path = "../gem_evm" }
 gem_solana = { path = "../gem_solana" }
 gem_ton = { path = "../gem_ton" }
 gem_aptos = { path = "../gem_aptos" }
+gem_sui = { path = "../gem_sui" }
+
 alloy-primitives = { workspace = true }
 alloy-sol-types = { workspace = true }
 
