@@ -4,7 +4,7 @@ version = { workspace = true }
 edition = { workspace = true }
 
 [features]
-default = ["typeshare"]
+default = []
 rpc = []
 typeshare = []
 
