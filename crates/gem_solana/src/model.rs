@@ -292,8 +292,6 @@ pub struct Info<T> {
 #[serde(rename_all = "camelCase")]
 pub struct TokenInfo {
     pub decimals: i32,
-    pub is_initialized: bool,
-    pub mint_authority: String,
     pub supply: String,
 }
 

@@ -34,9 +34,8 @@ impl ProviderFactory {
         Self::new_provider(chain, url)
     }
 
-    pub fn new_providers(settings: &Settings) -> ChainProviders {
-        let providers = Chain::all().iter().map(|x| Self::new_from_settings(*x, &settings.clone())).collect();
-        ChainProviders::new(providers)
+    pub fn new_providers(settings: &Settings) -> Vec<Box<dyn ChainProvider>> {
+        Chain::all().iter().map(|x| Self::new_from_settings(*x, &settings.clone())).collect()
     }
 
     pub fn new_provider(chain: Chain, url: &str) -> Box<dyn ChainProvider> {

@@ -15,4 +15,5 @@ pub struct ParserState {
     pub parallel_blocks: i32,
     pub is_enabled: bool,
     pub updated_at: NaiveDateTime,
+    pub queue_behind_blocks: Option<i32>,
 }

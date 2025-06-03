@@ -21,6 +21,7 @@ impl TransactionsConsumerConfig {
             Chain::Tron | Chain::Xrp => 5_000,
             Chain::Stellar => 50_000,
             Chain::Polkadot => 10_000_000,
+            Chain::Solana => 1_000,
             _ => 0,
         }
     }

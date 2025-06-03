@@ -3,6 +3,7 @@ CREATE TABLE parser_state (
     current_block INTEGER NOT NULL default 0,
     latest_block INTEGER NOT NULL default 0,
     await_blocks INTEGER NOT NULL default 0,
+    queue_after_blocks INTEGER,
     timeout_between_blocks INTEGER NOT NULL default 0,
     timeout_latest_block INTEGER NOT NULL default 0,
     parallel_blocks INTEGER NOT NULL default 1,
@@ -13,9 +14,3 @@ CREATE TABLE parser_state (
 );
 
 SELECT diesel_manage_updated_at('parser_state');
-
-/*
-
-INSERT INTO "parser_state" ("chain", "current_block", "latest_block") VALUES ('ethereum', 18058858, 18058958);
-
-*/

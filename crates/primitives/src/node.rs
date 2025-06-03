@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use strum_macros::{AsRefStr, EnumString};
 use typeshare::typeshare;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -31,9 +32,10 @@ pub struct NodesResponse {
     pub nodes: Vec<ChainNodes>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, AsRefStr, EnumString, PartialEq)]
 #[typeshare(swift = "Equatable, CaseIterable, Sendable")]
 #[serde(rename_all = "lowercase")]
+#[strum(serialize_all = "lowercase")]
 pub enum NodeState {
     Active,
     Inactive,
