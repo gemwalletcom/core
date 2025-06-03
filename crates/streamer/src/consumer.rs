@@ -1,9 +1,24 @@
-use std::{error::Error, time::Instant};
+use std::{
+    error::Error,
+    time::{Duration, Instant},
+};
 
 use crate::{QueueName, StreamReader};
 use async_trait::async_trait;
 use serde::Deserialize;
 use tokio;
+
+pub struct ConsumerConfig {
+    pub timeout_on_error: Duration,
+}
+
+impl Default for ConsumerConfig {
+    fn default() -> Self {
+        Self {
+            timeout_on_error: Duration::from_secs(5),
+        }
+    }
+}
 
 #[async_trait]
 pub trait MessageConsumer<P, R> {
@@ -15,6 +30,7 @@ pub async fn run_consumer<P, C, R>(
     mut stream_reader: StreamReader,
     queue_name: QueueName,
     mut consumer: C,
+    config: ConsumerConfig,
 ) -> Result<(), Box<dyn Error + Send + Sync>>
 where
     P: Clone + Send + 'static,
@@ -24,7 +40,6 @@ where
 {
     println!("Running consumer {} for queue {}", name, queue_name);
 
-    // Process messages from the stream
     stream_reader
         .read::<P, _>(queue_name, move |payload| {
             let start = Instant::now();
@@ -39,7 +54,11 @@ where
                 }
                 Err(e) => {
                     println!("consumer {} Error processing message: {}, elapsed: {:?}", name, e, start.elapsed());
-                    Err(e)
+                    tokio::task::block_in_place(|| {
+                        let rt = tokio::runtime::Handle::current();
+                        rt.block_on(async { tokio::time::sleep(config.timeout_on_error).await })
+                    });
+                    Ok(())
                 }
             }
         })

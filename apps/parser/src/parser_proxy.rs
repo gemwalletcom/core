@@ -1,12 +1,14 @@
 use rand::{rng, Rng};
+use settings::Settings;
 use std::{
+    collections::HashMap,
     error::Error,
     sync::{Arc, Mutex},
 };
 
 use async_trait::async_trait;
 use gem_chain_rpc::{ChainBlockProvider, ChainProvider};
-use primitives::Chain;
+use primitives::{node::ChainNode, Chain};
 
 #[derive(Clone, Debug)]
 pub struct ParserProxyUrlConfig {
@@ -29,12 +31,29 @@ impl ParserProxy {
         }
     }
 
+    pub fn new_from_nodes(settings: &Settings, chain: Chain, nodes: Vec<ChainNode>) -> Self {
+        let mut nodes_map: HashMap<String, Vec<String>> = HashMap::new();
+        nodes.into_iter().for_each(|node| {
+            nodes_map.entry(node.chain.clone()).or_default().push(node.node.url);
+        });
+
+        let node_urls = nodes_map.clone().get(chain.as_ref()).cloned().unwrap_or_default();
+
+        let url = settings_chain::ProviderFactory::url(chain, settings);
+        let node_urls = if node_urls.is_empty() { vec![url.to_string()] } else { node_urls };
+        let config = ParserProxyUrlConfig { urls: node_urls };
+
+        Self::new(chain, config)
+    }
+
     // Support ChainBlockProvider once trait_upcasting is enabled
     pub fn new_provider(chain: Chain, url: &str) -> Box<dyn ChainProvider> {
         settings_chain::ProviderFactory::new_provider(chain, url)
     }
 
     fn handle_error(&self, error: Box<dyn Error + Send + Sync>) -> Box<dyn Error + Send + Sync> {
+        println!("parser proxy error: {}", error);
+
         if self.providers.len() < 2 {
             return error;
         }

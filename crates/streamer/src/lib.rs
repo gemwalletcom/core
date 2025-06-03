@@ -3,12 +3,12 @@ pub mod stream_producer;
 pub mod stream_reader;
 
 pub use consumer::run_consumer;
+pub use consumer::ConsumerConfig;
 use primitives::{AssetId, Chain, GorushNotification, Transaction};
 use serde::{Deserialize, Serialize};
+use std::fmt;
 pub use stream_producer::StreamProducer;
 pub use stream_reader::StreamReader;
-
-use std::fmt;
 
 #[derive(Debug, Clone)]
 pub enum ExchangeName {
@@ -48,12 +48,12 @@ impl fmt::Display for QueueName {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TransactionsPayload {
     pub chain: Chain,
-    pub blocks: Vec<i32>,
+    pub blocks: Vec<i64>,
     pub transactions: Vec<Transaction>,
 }
 
 impl TransactionsPayload {
-    pub fn new(chain: Chain, blocks: Vec<i32>, transactions: Vec<Transaction>) -> Self {
+    pub fn new(chain: Chain, blocks: Vec<i64>, transactions: Vec<Transaction>) -> Self {
         Self { chain, blocks, transactions }
     }
 }
@@ -83,11 +83,11 @@ impl FetchAssetsPayload {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FetchBlocksPayload {
     pub chain: Chain,
-    pub blocks: Vec<i32>,
+    pub blocks: Vec<i64>,
 }
 
 impl FetchBlocksPayload {
-    pub fn new(chain: Chain, blocks: Vec<i32>) -> Self {
+    pub fn new(chain: Chain, blocks: Vec<i64>) -> Self {
         Self { chain, blocks }
     }
 }

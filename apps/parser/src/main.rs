@@ -1,16 +1,17 @@
 pub mod parser;
+use gem_chain_rpc::ChainBlockProvider;
 pub use parser::Parser;
 pub mod parser_options;
 pub use parser_options::ParserOptions;
 pub mod pusher;
-use parser_proxy::{ParserProxy, ParserProxyUrlConfig};
+use parser_proxy::ParserProxy;
 pub use pusher::Pusher;
 pub mod consumers;
 pub mod parser_proxy;
 
-use primitives::Chain;
+use primitives::{node::NodeState, Chain};
 use settings::Settings;
-use std::{collections::HashMap, str::FromStr, time::Duration};
+use std::{str::FromStr, time::Duration};
 use storage::DatabaseClient;
 use streamer::StreamProducer;
 
@@ -27,6 +28,8 @@ pub async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         return consumers::run_consumer_transactions(settings).await;
     } else if mode == "consumer_assets" {
         return consumers::run_consumer_assets(settings).await;
+    } else if mode == "consumer_blocks" {
+        return consumers::run_consumer_blocks(settings).await;
     } else {
         return run_parser_mode(settings).await;
     }
@@ -55,27 +58,23 @@ async fn run_parser_mode(settings: Settings) -> Result<(), Box<dyn std::error::E
         .get_nodes()
         .unwrap()
         .into_iter()
-        .filter(|x| x.priority > 5 && x.status == "active")
+        .map(|x| x.as_primitive())
+        .filter(|x| x.node.priority > 5 && x.node.status == NodeState::Active)
         .collect::<Vec<_>>();
-
-    let mut nodes_map: HashMap<String, Vec<String>> = HashMap::new();
-    nodes.into_iter().for_each(|node| {
-        nodes_map.entry(node.chain.clone()).or_default().push(node.url);
-    });
 
     println!("parser start chains: {:?}", chains);
 
     let mut parsers = Vec::new();
     for chain in chains {
         let settings = settings.clone();
+        let proxy: ParserProxy = ParserProxy::new_from_nodes(&settings, chain, nodes.clone());
         let parser_options = ParserOptions {
             chain,
             timeout: settings.parser.timeout,
         };
-        let node_urls = nodes_map.clone().get(chain.as_ref()).cloned().unwrap_or_default();
 
         let parser = tokio::spawn(async move {
-            parser_start(settings, parser_options, chain, node_urls).await;
+            parser_start(settings.clone(), proxy, parser_options).await;
         });
         parsers.push(parser);
     }
@@ -85,15 +84,12 @@ async fn run_parser_mode(settings: Settings) -> Result<(), Box<dyn std::error::E
     Ok(())
 }
 
-async fn parser_start(settings: Settings, parser_options: ParserOptions, chain: Chain, node_urls: Vec<String>) {
+async fn parser_start(settings: Settings, proxy: ParserProxy, parser_options: ParserOptions) {
     let database_client = DatabaseClient::new(settings.postgres.url.as_str());
 
-    let url = settings_chain::ProviderFactory::url(chain, &settings);
-    let node_urls = if node_urls.is_empty() { vec![url.to_string()] } else { node_urls };
-    let config = ParserProxyUrlConfig { urls: node_urls };
-    let proxy = ParserProxy::new(chain, config);
     let stream_producer = StreamProducer::new(&settings.rabbitmq.url).await.unwrap();
 
+    let chain = proxy.get_chain();
     let mut parser = Parser::new(Box::new(proxy), stream_producer, database_client, parser_options.clone());
 
     loop {

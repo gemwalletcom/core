@@ -44,6 +44,28 @@ pub trait ChainBlockProvider: Send + Sync {
     async fn get_transactions(&self, block_number: i64) -> Result<Vec<Transaction>, Box<dyn std::error::Error + Send + Sync>>;
 }
 
+impl dyn ChainBlockProvider {
+    pub async fn get_transactions_in_blocks(&self, blocks: Vec<i64>) -> Result<Vec<Transaction>, Box<dyn std::error::Error + Send + Sync>> {
+        let transactions = futures::future::try_join_all(blocks.iter().map(|block| self.get_transactions(*block)))
+            .await?
+            .into_iter()
+            .flatten()
+            .collect::<Vec<Transaction>>();
+        Ok(transactions)
+    }
+}
+
+impl dyn ChainProvider {
+    pub async fn get_transactions_in_blocks(&self, blocks: Vec<i64>) -> Result<Vec<Transaction>, Box<dyn std::error::Error + Send + Sync>> {
+        let transactions = futures::future::try_join_all(blocks.iter().map(|block| self.get_transactions(*block)))
+            .await?
+            .into_iter()
+            .flatten()
+            .collect::<Vec<Transaction>>();
+        Ok(transactions)
+    }
+}
+
 #[async_trait]
 pub trait ChainTokenDataProvider: Send + Sync {
     async fn get_token_data(&self, _token_id: String) -> Result<Asset, Box<dyn std::error::Error + Send + Sync>> {

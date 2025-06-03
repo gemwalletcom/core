@@ -6,7 +6,7 @@ use std::{
 
 use crate::ParserOptions;
 use gem_chain_rpc::ChainBlockProvider;
-use primitives::{Chain, Transaction};
+use primitives::Chain;
 use storage::DatabaseClient;
 use streamer::{FetchBlocksPayload, QueueName, StreamProducer, TransactionsPayload};
 
@@ -78,7 +78,7 @@ impl Parser {
                 let state = self.database.get_parser_state(self.chain)?;
                 let start_block = state.current_block + 1;
                 let end_block = cmp::min(start_block + state.parallel_blocks - 1, state.latest_block - state.await_blocks);
-                let next_blocks = (start_block..=end_block).collect::<Vec<_>>();
+                let next_blocks = (start_block..=end_block).map(|x| x as i64).collect::<Vec<_>>();
                 let to_go_blocks = state.latest_block - end_block - state.await_blocks;
 
                 if next_blocks.is_empty() {
@@ -86,12 +86,20 @@ impl Parser {
                 }
 
                 // fast chains
-                if state.parallel_blocks >= 5 && to_go_blocks > 50 {
-                    // send to queue
+                if to_go_blocks > 50 {
                     let payload = FetchBlocksPayload::new(self.chain, next_blocks.clone());
                     self.stream_producer.publish(QueueName::FetchBlocks, &payload).await?;
                     let _ = self.database.set_parser_state_current_block(self.chain, end_block);
-                    break;
+
+                    println!(
+                        "parser block add to queue: {}, blocks: {:?} to go blocks: {} in: {:?}",
+                        self.chain.as_ref(),
+                        next_blocks,
+                        to_go_blocks,
+                        start.elapsed()
+                    );
+
+                    continue;
                 }
 
                 match self.parse_blocks(next_blocks.clone()).await {
@@ -126,23 +134,13 @@ impl Parser {
         }
     }
 
-    async fn fetch_blocks(&mut self, blocks: Vec<i32>) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
-        let results = futures::future::try_join_all(blocks.iter().map(|block| self.provider.get_transactions(*block as i64))).await;
-        match results {
-            Ok(transactions) => Ok(transactions.into_iter().flatten().collect::<Vec<primitives::Transaction>>()),
-            Err(err) => Err(err),
-        }
-    }
-
-    pub async fn parse_blocks(&mut self, blocks: Vec<i32>) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        let transactions = self.fetch_blocks(blocks.clone()).await?;
+    pub async fn parse_blocks(&mut self, blocks: Vec<i64>) -> Result<usize, Box<dyn Error + Send + Sync>> {
+        let transactions = self.provider.get_transactions_in_blocks(blocks.clone()).await?;
         if transactions.is_empty() {
             return Ok(0);
         }
         let payload = TransactionsPayload::new(self.chain, blocks.clone(), transactions.clone());
-
         self.stream_producer.publish(QueueName::Transactions, &payload).await?;
-
         Ok(transactions.len())
     }
 }

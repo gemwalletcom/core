@@ -41,7 +41,7 @@ use rocket::{Build, Rocket};
 use scan::{ScanClient, ScanProviderFactory};
 use search_index::SearchIndexClient;
 use settings::Settings;
-use settings_chain::ProviderFactory;
+use settings_chain::{ChainProviders, ProviderFactory};
 use storage::ClickhouseClient;
 use subscriptions::SubscriptionsClient;
 use swap::SwapClient;
@@ -61,8 +61,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
     let providers = NameProviderFactory::create_providers(settings_clone.clone());
     let name_client = NameClient::new(providers);
 
-    let providers = ProviderFactory::new_providers(&settings);
-    let assets_chain_provider = AssetsChainProvider::new(providers);
+    let assets_chain_provider = AssetsChainProvider::new(ChainProviders::new(ProviderFactory::new_providers(&settings)));
 
     let pusher_client = PusherClient::new(settings.pusher.url, settings.pusher.ios.topic);
     let devices_client = DevicesClient::new(postgres_url, pusher_client).await;
