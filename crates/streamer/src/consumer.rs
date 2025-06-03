@@ -47,17 +47,17 @@ where
             let result = tokio::task::block_in_place(|| {
                 let rt = tokio::runtime::Handle::current();
                 rt.block_on(async {
-                    println!("consumer {} received message: {}", name, payload);
+                    println!("consumer {} received: {}", name, payload);
                     consumer.process(payload.clone()).await
                 })
             });
             match result {
                 Ok(result) => {
-                    println!("consumer {} processed message result: {:?}, elapsed: {:?}", name, result, start.elapsed());
+                    println!("consumer {} result: {:?}, elapsed: {:?}", name, result, start.elapsed());
                     Ok(())
                 }
                 Err(e) => {
-                    println!("consumer {} Error processing message: {}, elapsed: {:?}", name, e, start.elapsed());
+                    println!("consumer {} error: {}, elapsed: {:?}", name, e, start.elapsed());
                     tokio::task::block_in_place(|| {
                         let rt = tokio::runtime::Handle::current();
                         rt.block_on(async { tokio::time::sleep(config.timeout_on_error).await })
