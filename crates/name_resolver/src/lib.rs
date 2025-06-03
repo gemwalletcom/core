@@ -36,7 +36,7 @@ impl NameProviderFactory {
             Box::new(icns::IcnsClient::new(settings.name.icns.url)),
             Box::new(lens::LensClient::new(settings.name.lens.url)),
             Box::new(base::Basenames::new(settings.name.base.url)),
-            Box::new(hyperliquid::HyperliquidNames::new(settings.name.hyperliquid.url)),
+            Box::new(hyperliquid::Hyperliquid::new(settings.name.hyperliquid.url)),
         ]
     }
 }

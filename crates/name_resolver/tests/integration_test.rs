@@ -3,9 +3,7 @@ mod tests {
     use std::env;
     use tokio_test::block_on;
 
-    use name_resolver::{
-        base::Basenames, client::NameClient, ens::ENSClient, hyperliquid::HyperliquidNames, injective::InjectiveNameClient, suins::SuinsClient,
-    };
+    use name_resolver::{base::Basenames, client::NameClient, ens::ENSClient, hyperliquid::Hyperliquid, injective::InjectiveNameClient, suins::SuinsClient};
     use primitives::{node_config::get_nodes_for_chain, Chain};
     use settings::Settings;
 
@@ -61,10 +59,14 @@ mod tests {
         let settings = Settings::new_setting_path(path).unwrap();
 
         block_on(async {
-            let client = HyperliquidNames::new(settings.name.hyperliquid.url);
-            let address = client.resolve("TESTOOOR.HL", Chain::Hyperliquid).await.unwrap();
+            let client = Hyperliquid::new(settings.name.hyperliquid.url);
+            let name = "TESTOOOR.HL";
+            let address = client.resolve(name, Chain::Ethereum).await.unwrap();
 
             assert_eq!(address, "0xb43f5153B1c867BF78ACB3C35aa9b8ae366415c5");
+
+            let address = client.resolve(name, Chain::Hyperliquid).await.unwrap();
+            assert_eq!(address, "0xF26F5551E96aE5162509B25925fFfa7F07B2D652");
         });
     }
 }
