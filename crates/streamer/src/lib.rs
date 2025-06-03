@@ -94,7 +94,7 @@ pub struct FetchAssetsPayload {
 
 impl fmt::Display for FetchAssetsPayload {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "asset_id: {}", self.asset_id)
+        write!(f, "chain: {}, token_id: {:?}", self.asset_id.chain.as_ref(), self.asset_id.token_id)
     }
 }
 
