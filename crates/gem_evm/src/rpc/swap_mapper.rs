@@ -38,27 +38,23 @@ impl SwapMapper {
         if let Some(metadata) = Self::try_map_transaction(chain, &provider, &transaction.from, &input_bytes, transaction_reciept) {
             let from_checksum = ethereum_address_checksum(&transaction.from).ok()?;
             let to_checksum = ethereum_address_checksum(&to).ok()?;
-            return Some(primitives::Transaction {
-                id: transaction.hash.clone(),
-                hash: transaction.hash.clone(),
-                asset_id: metadata.from_asset.clone(),
-                from: from_checksum.clone(),
-                to: from_checksum.clone(),
-                contract: Some(to_checksum.clone()),
-                transaction_type: TransactionType::Swap,
-                state: TransactionState::Confirmed,
-                block_number: transaction.block_number.to_string(),
-                sequence: transaction.nonce.to_string(),
-                fee: transaction_reciept.get_fee().to_string(),
-                fee_asset_id: AssetId::from_chain(*chain), // Native asset
-                value: transaction.value.to_string(),
-                memo: None,
-                direction: TransactionDirection::SelfTransfer,
-                utxo_inputs: vec![],
-                utxo_outputs: vec![],
-                metadata: serde_json::to_value(metadata).ok(),
+            return Some(primitives::Transaction::new(
+                transaction.hash.clone(),
+                metadata.from_asset.clone(),
+                from_checksum.clone(),
+                from_checksum.clone(),
+                Some(to_checksum.clone()),
+                TransactionType::Swap,
+                TransactionState::Confirmed,
+                transaction.block_number.to_string(),
+                transaction.nonce.to_string(),
+                transaction_reciept.get_fee().to_string(),
+                AssetId::from_chain(*chain), // Native asset
+                transaction.value.to_string(),
+                None,
+                serde_json::to_value(metadata).ok(),
                 created_at,
-            });
+            ));
         }
         None
     }
