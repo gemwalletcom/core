@@ -24,11 +24,6 @@ impl DatabaseClient {
         devices.filter(device_id.eq(_device_id)).select(Device::as_select()).first(&mut self.connection)
     }
 
-    pub fn get_device_token(&mut self, _device_id: &str) -> Result<String, diesel::result::Error> {
-        use crate::schema::devices::dsl::*;
-        devices.filter(device_id.eq(_device_id)).select(token).first(&mut self.connection)
-    }
-
     pub fn update_device(&mut self, device: UpdateDevice) -> Result<Device, diesel::result::Error> {
         use crate::schema::devices::dsl::*;
         diesel::update(devices)
