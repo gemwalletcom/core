@@ -115,6 +115,11 @@ impl Swapper for ChainflipProvider {
     }
 
     async fn fetch_quote(&self, request: &SwapQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapQuote, SwapperError> {
+        // Disable swap from BTC until Chainflip scan shows pending transactions
+        if request.from_asset.chain().chain_type() == ChainType::Bitcoin {
+            return Err(SwapperError::NoQuoteAvailable);
+        }
+
         let src_asset = Self::map_asset_id(&request.from_asset);
         let dest_asset = Self::map_asset_id(&request.to_asset);
         let chainflip_client = ChainflipClient::new(provider.clone());
