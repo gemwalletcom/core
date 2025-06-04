@@ -9,7 +9,7 @@ CREATE TABLE parser_state (
     is_enabled boolean NOT NULL default true,
     updated_at timestamp NOT NULL default current_timestamp,
     created_at timestamp NOT NULL default current_timestamp,
-    queue_after_blocks INTEGER,
+    queue_behind_blocks INTEGER,
     UNIQUE(chain)
 );
 
