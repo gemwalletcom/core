@@ -102,13 +102,14 @@ services:
       - clickhouse:/var/lib/clickhouse
 
   meilisearch:
-    image: getmeili/meilisearch:latest
+    image: getmeili/meilisearch:v1.15.0-rc.4
     container_name: meilisearch
     restart: always
     ports:
       - 7700:7700
     environment:
       MEILI_NO_ANALYTICS: true
+      MEILI_EXPERIMENTAL_ENABLE_METRICS: true
     volumes:
       - meilisearch:/meili_data
 

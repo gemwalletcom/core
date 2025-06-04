@@ -14,6 +14,7 @@ strum = { workspace = true }
 strum_macros = { workspace = true }
 aws-sdk-s3 = { workspace = true }
 itertools = { workspace = true}
+async-trait = { workspace = true }
 
 settings = { path = "../../crates/settings" }
 storage = { path = "../../crates/storage" }

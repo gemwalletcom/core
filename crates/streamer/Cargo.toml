@@ -4,9 +4,11 @@ version = { workspace = true }
 edition = { workspace = true }
 
 [dependencies]
+tokio = { workspace = true, features = ["sync", "rt"] }
 serde = { workspace = true }
 serde_json = { workspace = true }
 futures = { workspace = true }
 lapin = { workspace = true }
+async-trait = { workspace = true }
 
 primitives = { path = "../primitives" }

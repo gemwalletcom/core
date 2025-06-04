@@ -1,7 +1,7 @@
-use num_bigint::BigUint;
+use num_bigint::{BigInt, BigUint};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use serde_serializers::deserialize_biguint_from_str;
+use serde_serializers::{deserialize_bigint_from_str, deserialize_biguint_from_str};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ResultData<T> {
@@ -24,7 +24,8 @@ pub struct BalanceChange {
     pub owner: Owner,
     #[serde(rename = "coinType")]
     pub coin_type: String,
-    pub amount: String,
+    #[serde(deserialize_with = "deserialize_bigint_from_str")]
+    pub amount: BigInt,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -54,6 +55,13 @@ pub struct Effect {
     #[serde(rename = "gasUsed")]
     pub gas_used: GasUsed,
     pub status: Status,
+    #[serde(rename = "gasObject")]
+    pub gas_object: GasObject,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GasObject {
+    pub owner: Owner,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -79,6 +87,8 @@ pub struct Event {
     pub event_type: String,
     #[serde(rename = "parsedJson")]
     pub parsed_json: Option<Value>,
+    #[serde(rename = "packageId")]
+    pub package_id: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

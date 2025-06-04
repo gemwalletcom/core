@@ -59,6 +59,7 @@ impl Contract {
         }
     }
 
+    #[allow(unused)]
     pub async fn addr(&self, resolver_address_hex: &str, name: &str, coin_id: u32) -> Result<Bytes> {
         let node = namehash(name);
         let resolver_address = Address::from_str(resolver_address_hex)?;

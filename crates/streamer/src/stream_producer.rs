@@ -92,6 +92,21 @@ impl StreamProducer {
         self.publish_message("", &queue.to_string(), message).await
     }
 
+    pub async fn publish_batch<T>(&self, queue: QueueName, messages: &[T]) -> Result<bool, Box<dyn Error + Send + Sync>>
+    where
+        T: serde::Serialize,
+    {
+        let queue_str = queue.to_string();
+        for message in messages {
+            self.publish_message("", &queue_str, message).await?;
+        }
+        Ok(true)
+    }
+
+    pub async fn clear_queue(&self, queue: QueueName) -> Result<u32, Box<dyn Error + Send + Sync>> {
+        Ok(self.channel.queue_purge(&queue.to_string(), QueuePurgeOptions::default()).await?)
+    }
+
     // pub async fn publish_to_exchange<T>(&self, exchange: ExchangeName, message: &T) -> Result<bool, Box<dyn Error + Send + Sync>>
     // where
     //     T: serde::Serialize,

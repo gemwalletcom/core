@@ -1,12 +1,14 @@
 use rand::{rng, Rng};
+use settings::Settings;
 use std::{
+    collections::HashMap,
     error::Error,
     sync::{Arc, Mutex},
 };
 
 use async_trait::async_trait;
-use gem_chain_rpc::{ChainBlockProvider, ChainProvider};
-use primitives::Chain;
+use gem_chain_rpc::{ChainAssetsProvider, ChainBlockProvider, ChainProvider, ChainTokenDataProvider};
+use primitives::{node::ChainNode, Asset, AssetBalance, Chain, Transaction};
 
 #[derive(Clone, Debug)]
 pub struct ParserProxyUrlConfig {
@@ -29,12 +31,29 @@ impl ParserProxy {
         }
     }
 
+    pub fn new_from_nodes(settings: &Settings, chain: Chain, nodes: Vec<ChainNode>) -> ParserProxy {
+        let mut nodes_map: HashMap<String, Vec<String>> = HashMap::new();
+        nodes.into_iter().for_each(|node| {
+            nodes_map.entry(node.chain.clone()).or_default().push(node.node.url);
+        });
+
+        let node_urls = nodes_map.clone().get(chain.as_ref()).cloned().unwrap_or_default();
+
+        let url = settings_chain::ProviderFactory::url(chain, settings);
+        let node_urls = if node_urls.is_empty() { vec![url.to_string()] } else { node_urls };
+        let config = ParserProxyUrlConfig { urls: node_urls };
+
+        ParserProxy::new(chain, config)
+    }
+
     // Support ChainBlockProvider once trait_upcasting is enabled
     pub fn new_provider(chain: Chain, url: &str) -> Box<dyn ChainProvider> {
         settings_chain::ProviderFactory::new_provider(chain, url)
     }
 
     fn handle_error(&self, error: Box<dyn Error + Send + Sync>) -> Box<dyn Error + Send + Sync> {
+        println!("parser proxy error: {}", error);
+
         if self.providers.len() < 2 {
             return error;
         }
@@ -67,10 +86,32 @@ impl ChainBlockProvider for ParserProxy {
         }
     }
 
-    async fn get_transactions(&self, block_number: i64) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Send + Sync>> {
+    async fn get_transactions(&self, block_number: i64) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
         let provider_index = *self.provider_current_index.lock().unwrap();
         match self.providers[provider_index].get_transactions(block_number).await {
             Ok(txs) => Ok(txs),
+            Err(err) => Err(self.handle_error(err)),
+        }
+    }
+}
+
+#[async_trait]
+impl ChainTokenDataProvider for ParserProxy {
+    async fn get_token_data(&self, token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
+        let provider_index = *self.provider_current_index.lock().unwrap();
+        match self.providers[provider_index].get_token_data(token_id).await {
+            Ok(asset) => Ok(asset),
+            Err(err) => Err(self.handle_error(err)),
+        }
+    }
+}
+
+#[async_trait]
+impl ChainAssetsProvider for ParserProxy {
+    async fn get_assets_balances(&self, address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
+        let provider_index = *self.provider_current_index.lock().unwrap();
+        match self.providers[provider_index].get_assets_balances(address).await {
+            Ok(balances) => Ok(balances),
             Err(err) => Err(self.handle_error(err)),
         }
     }

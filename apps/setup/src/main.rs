@@ -112,11 +112,13 @@ async fn main() {
         QueueName::Transactions,
         QueueName::NotificationsPriceAlerts,
         QueueName::NotificationsTransactions,
+        QueueName::FetchAssets,
+        QueueName::FetchBlocks,
     ];
     //let exchange = ExchangeName::Transactions;
-    let streamer_reader = StreamProducer::new(&settings.rabbitmq.url).await.unwrap();
+    let stream_producer = StreamProducer::new(&settings.rabbitmq.url).await.unwrap();
     for queue in queues.clone() {
-        let _ = streamer_reader.declare_queue(queue).await;
+        let _ = stream_producer.declare_queue(queue).await;
     }
 
     // let _ = streamer_reader.declare_exchange(exchange.clone()).await;
