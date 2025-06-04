@@ -14,7 +14,7 @@ use crate::{
         path::decode_path,
     },
 };
-use primitives::{AssetId, Chain, TransactionDirection, TransactionState, TransactionSwapMetadata, TransactionType};
+use primitives::{AssetId, Chain, TransactionState, TransactionSwapMetadata, TransactionType};
 
 // Transfer (index_topic_1 address from, index_topic_2 address to, uint256 value)
 const TRANSFER_TOPIC: &str = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
