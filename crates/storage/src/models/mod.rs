@@ -16,7 +16,6 @@ pub mod release;
 pub mod scan;
 pub mod subscription;
 pub mod tag;
-pub mod tokenlist;
 pub mod transaction;
 pub mod transaction_addresses;
 
@@ -39,6 +38,5 @@ pub use self::release::Release;
 pub use self::scan::{ScanAddress, ScanAddressType};
 pub use self::subscription::{Subscription, SubscriptionAddressExclude};
 pub use self::tag::{AssetTag, Tag};
-pub use self::tokenlist::TokenList;
 pub use self::transaction::{Transaction, TransactionType};
 pub use self::transaction_addresses::{AddressChainIdResult, TransactionAddresses};

@@ -1,12 +1,14 @@
 use std::error::Error;
+use std::sync::Arc;
 
 use async_trait::async_trait;
 use gem_chain_rpc::ChainProvider;
 use storage::DatabaseClient;
 use streamer::{consumer::MessageConsumer, FetchAssetsPayload};
+use tokio::sync::Mutex;
 
 pub struct FetchAssetsConsumer {
-    pub database: DatabaseClient,
+    pub database: Arc<Mutex<DatabaseClient>>,
     pub providers: Vec<Box<dyn ChainProvider>>,
 }
 
@@ -23,7 +25,10 @@ impl MessageConsumer<FetchAssetsPayload, usize> for FetchAssetsConsumer {
             match provider.get_token_data(token_id.to_string()).await {
                 Ok(asset) => {
                     println!("assets consumer: found asset: {:?}", asset);
-                    self.database.add_assets(vec![storage::models::Asset::from_primitive_default(asset)])?;
+                    self.database
+                        .lock()
+                        .await
+                        .add_assets(vec![storage::models::Asset::from_primitive_default(asset)])?;
                     return Ok(1);
                 }
                 Err(e) => {

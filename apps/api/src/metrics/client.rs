@@ -5,7 +5,7 @@ use prometheus_client::encoding::EncodeLabelSet;
 use prometheus_client::metrics::family::Family;
 use prometheus_client::metrics::gauge::Gauge;
 use prometheus_client::registry::Registry;
-use storage::DatabaseClient;
+use storage::{DatabaseClient, ParserStateStore};
 
 pub struct MetricsClient {
     registry: Registry,
