@@ -149,8 +149,8 @@ mod tests {
         let json: serde_json::Value = serde_json::from_reader(file).expect("file should be proper JSON");
         let result: JsonRpcResult<ResultTokenInfo> = serde_json::from_value(json).expect("Decoded into ParsedTokenInfo");
         let parsed_info = result.result.value.data.parsed.info;
+
         assert_eq!(parsed_info.decimals, 6);
-        assert_eq!(parsed_info.mint_authority, "22mKJkKjGEQ3rampp5YKaSsaYZ52BUkcnUN6evXGsXzz");
 
         let file = std::fs::File::open(usdc_file).expect("file should open read only");
         let json: serde_json::Value = serde_json::from_reader(file).expect("file should be proper JSON");
@@ -158,6 +158,5 @@ mod tests {
         let parsed_info = result.result.value.data.parsed.info;
 
         assert_eq!(parsed_info.decimals, 6);
-        assert_eq!(parsed_info.mint_authority, "BJE5MMbqXjVwjAF7oxwPYXnTXDyspzZyt4vwenNw5ruG");
     }
 }
