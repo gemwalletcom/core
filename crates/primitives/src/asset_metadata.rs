@@ -16,4 +16,6 @@ struct AssetMetaData {
     is_active: bool,
     #[serde(rename = "stakingApr")]
     staking_apr: Option<f64>,
+    #[serde(rename = "rankScore")]
+    rank_score: i32,
 }
