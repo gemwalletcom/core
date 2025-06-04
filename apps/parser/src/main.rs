@@ -35,16 +35,6 @@ pub async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     }
 }
 
-struct NodeService {
-    database: DatabaseClient,
-}
-
-impl NodeService {
-    fn get_nodes(&self) -> Vec<primitives::Node> {
-        self.database.get_nodes().unwrap()
-    }
-}
-
 async fn run_parser_mode(settings: Settings) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     println!("parser init");
 
