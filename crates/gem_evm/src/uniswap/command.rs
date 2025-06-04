@@ -9,6 +9,21 @@ use alloy_sol_types::{sol_data, SolCall, SolType};
 pub const MSG_SENDER: &str = "0x0000000000000000000000000000000000000001";
 pub const ADDRESS_THIS: &str = "0x0000000000000000000000000000000000000002";
 
+pub const V3_SWAP_EXACT_IN_COMMAND: u8 = 0x00;
+pub const V3_SWAP_EXACT_OUT_COMMAND: u8 = 0x01;
+pub const PERMIT2_TRANSFER_FROM_COMMAND: u8 = 0x02;
+pub const PERMIT2_PERMIT_BATCH_COMMAND: u8 = 0x03;
+pub const SWEEP_COMMAND: u8 = 0x04;
+pub const TRANSFER_COMMAND: u8 = 0x05;
+pub const PAY_PORTION_COMMAND: u8 = 0x06;
+pub const V2_SWAP_EXACT_IN_COMMAND: u8 = 0x08;
+pub const V2_SWAP_EXACT_OUT_COMMAND: u8 = 0x09;
+pub const PERMIT2_PERMIT_COMMAND: u8 = 0x0a;
+pub const WRAP_ETH_COMMAND: u8 = 0x0b;
+pub const UNWRAP_WETH_COMMAND: u8 = 0x0c;
+pub const PERMIT2_TRANSFER_FROM_BATCH_COMMAND: u8 = 0x0d;
+pub const V4_SWAP_COMMAND: u8 = 0x10;
+
 #[allow(non_camel_case_types)]
 pub enum UniversalRouterCommand {
     V3_SWAP_EXACT_IN(V3SwapExactIn),
@@ -32,22 +47,22 @@ pub enum UniversalRouterCommand {
 impl UniversalRouterCommand {
     pub fn raw_value(&self) -> u8 {
         match self {
-            Self::V3_SWAP_EXACT_IN(_) => 0x00,
-            Self::V3_SWAP_EXACT_OUT(_) => 0x01,
-            Self::PERMIT2_TRANSFER_FROM(_) => 0x02,
-            Self::PERMIT2_PERMIT_BATCH => 0x03,
-            Self::SWEEP(_) => 0x04,
-            Self::TRANSFER(_) => 0x05,
-            Self::PAY_PORTION(_) => 0x06,
-            Self::V2_SWAP_EXACT_IN => 0x08,
+            Self::V3_SWAP_EXACT_IN(_) => V3_SWAP_EXACT_IN_COMMAND,
+            Self::V3_SWAP_EXACT_OUT(_) => V3_SWAP_EXACT_OUT_COMMAND,
+            Self::PERMIT2_TRANSFER_FROM(_) => PERMIT2_TRANSFER_FROM_COMMAND,
+            Self::PERMIT2_PERMIT_BATCH => PERMIT2_PERMIT_BATCH_COMMAND,
+            Self::SWEEP(_) => SWEEP_COMMAND,
+            Self::TRANSFER(_) => TRANSFER_COMMAND,
+            Self::PAY_PORTION(_) => PAY_PORTION_COMMAND,
+            Self::V2_SWAP_EXACT_IN => V2_SWAP_EXACT_IN_COMMAND,
             // COMMAND_PLACEHOLDER = 0x07;
-            Self::V2_SWAP_EXACT_OUT => 0x09,
-            Self::PERMIT2_PERMIT(_) => 0x0a,
-            Self::WRAP_ETH(_) => 0x0b,
-            Self::UNWRAP_WETH(_) => 0x0c,
-            Self::PERMIT2_TRANSFER_FROM_BATCH => 0x0d,
+            Self::V2_SWAP_EXACT_OUT => V2_SWAP_EXACT_OUT_COMMAND,
+            Self::PERMIT2_PERMIT(_) => PERMIT2_PERMIT_COMMAND,
+            Self::WRAP_ETH(_) => WRAP_ETH_COMMAND,
+            Self::UNWRAP_WETH(_) => UNWRAP_WETH_COMMAND,
+            Self::PERMIT2_TRANSFER_FROM_BATCH => PERMIT2_TRANSFER_FROM_BATCH_COMMAND,
 
-            Self::V4_SWAP { actions: _ } => 0x10,
+            Self::V4_SWAP { actions: _ } => V4_SWAP_COMMAND,
         }
     }
 
@@ -90,6 +105,17 @@ impl V3SwapExactIn {
         let data = (self.recipient, self.amount_in, self.amount_out_min, self.path.clone(), self.payer_is_user);
         V3SwapExactType::abi_encode_sequence(&data)
     }
+
+    pub fn abi_decode(data: &[u8]) -> Result<Self, alloy_sol_types::Error> {
+        let (recipient, amount_in, amount_out_min, path, payer_is_user) = V3SwapExactType::abi_decode_sequence(data)?;
+        Ok(Self {
+            recipient,
+            amount_in,
+            amount_out_min,
+            path,
+            payer_is_user,
+        })
+    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -119,6 +145,11 @@ impl Sweep {
     pub fn abi_encode(&self) -> Vec<u8> {
         let data = (self.token, self.recipient, self.amount_min);
         SweepType::abi_encode_sequence(&data)
+    }
+
+    pub fn abi_decode(data: &[u8]) -> Result<Self, alloy_sol_types::Error> {
+        let (token, recipient, amount_min) = SweepType::abi_decode_sequence(data)?;
+        Ok(Self { token, recipient, amount_min })
     }
 }
 
@@ -173,6 +204,11 @@ impl UnwrapWeth {
     pub fn abi_encode(&self) -> Vec<u8> {
         let data = (self.recipient, self.amount_min);
         UnwrapWethType::abi_encode_sequence(&data)
+    }
+
+    pub fn abi_decode(data: &[u8]) -> Result<Self, alloy_sol_types::Error> {
+        let (recipient, amount_min) = UnwrapWethType::abi_decode_sequence(data)?;
+        Ok(Self { recipient, amount_min })
     }
 }
 

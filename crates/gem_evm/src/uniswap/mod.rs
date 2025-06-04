@@ -40,14 +40,23 @@ impl TryFrom<&str> for FeeTier {
     type Error = anyhow::Error;
 
     fn try_from(value: &str) -> Result<Self, Self::Error> {
+        let u32_value = value.parse::<u32>()?;
+        Self::try_from(u32_value)
+    }
+}
+
+impl TryFrom<u32> for FeeTier {
+    type Error = anyhow::Error;
+
+    fn try_from(value: u32) -> Result<Self, Self::Error> {
         match value {
-            "100" => Ok(FeeTier::Hundred),
-            "500" => Ok(FeeTier::FiveHundred),
-            "1500" => Ok(FeeTier::ThousandFiveHundred),
-            "2500" => Ok(FeeTier::TwoThousandFiveHundred),
-            "3000" => Ok(FeeTier::ThreeThousand),
-            "10000" => Ok(FeeTier::TenThousand),
-            _ => Err(anyhow::anyhow!("invalid fee tier: {}", value)),
+            100 => Ok(FeeTier::Hundred),
+            500 => Ok(FeeTier::FiveHundred),
+            1500 => Ok(FeeTier::ThousandFiveHundred),
+            2500 => Ok(FeeTier::TwoThousandFiveHundred),
+            3000 => Ok(FeeTier::ThreeThousand),
+            10000 => Ok(FeeTier::TenThousand),
+            _ => Err(anyhow::anyhow!("Invalid fee tier: {}", value)),
         }
     }
 }

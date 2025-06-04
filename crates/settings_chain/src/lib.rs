@@ -9,7 +9,6 @@ use gem_chain_rpc::{
     bitcoin::{client::BitcoinClient, provider::BitcoinProvider},
     cardano::{client::CardanoClient, provider::CardanoProvider},
     cosmos::{client::CosmosClient, provider::CosmosProvider},
-    ethereum::{client::EthereumClient, provider::EthereumProvider, AlchemyClient},
     near::{client::NearClient, provider::NearProvider},
     polkadot::{client::PolkadotClient, provider::PolkadotProvider},
     solana::provider::SolanaProvider,
@@ -19,6 +18,7 @@ use gem_chain_rpc::{
     tron::{client::TronClient, provider::TronProvider},
     ChainProvider,
 };
+use gem_evm::rpc::{client::EthereumClient, provider::EthereumProvider, AlchemyClient};
 use gem_solana::SolanaClient;
 use gem_xrp::rpc::{XRPClient, XRPProvider};
 use primitives::Chain;

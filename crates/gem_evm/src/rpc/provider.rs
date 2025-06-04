@@ -1,8 +1,8 @@
 use std::error::Error;
 
 use super::{client::EthereumClient, mapper::EthereumMapper};
-use crate::{ChainAssetsProvider, ChainBlockProvider, ChainTokenDataProvider};
 use async_trait::async_trait;
+use gem_chain_rpc::{ChainAssetsProvider, ChainBlockProvider, ChainTokenDataProvider};
 use hex::FromHex;
 use primitives::{chain::Chain, Asset, AssetBalance, AssetId};
 
@@ -24,18 +24,19 @@ impl ChainBlockProvider for EthereumProvider {
     }
 
     async fn get_latest_block(&self) -> Result<i64, Box<dyn Error + Send + Sync>> {
-        self.client.get_latest_block().await
+        let block = self.client.get_latest_block().await?;
+        Ok(block)
     }
 
     async fn get_transactions(&self, block_number: i64) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Send + Sync>> {
-        let block = self.client.get_block(block_number).await?.clone();
-        let transactions_reciepts = self.client.get_block_reciepts(block_number).await?.clone();
+        let block = self.client.get_block(block_number).await?;
+        let transactions_reciepts = self.client.get_block_receipts(block_number).await?;
         let transactions = block.transactions;
 
         let transactions = transactions
             .into_iter()
             .zip(transactions_reciepts.iter())
-            .filter_map(|(transaction, receipt)| EthereumMapper::map_transaction(self.get_chain(), transaction, receipt, block.timestamp.clone()))
+            .filter_map(|(transaction, receipt)| EthereumMapper::map_transaction(self.get_chain(), &transaction, receipt, block.timestamp.clone()))
             .collect::<Vec<primitives::Transaction>>();
 
         return Ok(transactions);

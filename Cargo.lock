@@ -3398,7 +3398,6 @@ dependencies = [
  "cosmos-sdk-proto",
  "futures",
  "gem_aptos",
- "gem_evm",
  "gem_solana",
  "gem_sui",
  "gem_ton",
@@ -3430,9 +3429,15 @@ version = "1.0.0"
 dependencies = [
  "alloy-dyn-abi",
  "alloy-primitives",
+ "alloy-rpc-client",
+ "alloy-rpc-types",
  "alloy-sol-types",
+ "alloy-transport-http",
  "anyhow",
+ "async-trait",
  "bigdecimal",
+ "chrono",
+ "gem_chain_rpc",
  "gem_hash",
  "hex",
  "itoa",
@@ -3442,6 +3447,8 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_serializers",
+ "typeshare",
+ "url",
 ]
 
 [[package]]
@@ -3508,7 +3515,7 @@ dependencies = [
 
 [[package]]
 name = "gem_xrp"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -7218,6 +7225,7 @@ name = "settings_chain"
 version = "1.0.0"
 dependencies = [
  "gem_chain_rpc",
+ "gem_evm",
  "gem_solana",
  "gem_xrp",
  "primitives",

@@ -1,20 +1,18 @@
-use serde_serializers::deserialize_biguint_from_hex_str;
-use std::error::Error;
-
+use alloy_rpc_client::RpcClient;
+use alloy_transport_http::{reqwest::Client as ReqwestClient, Http};
+use anyhow::Result;
 use async_trait::async_trait;
-use jsonrpsee::{
-    core::client::ClientT,
-    http_client::{HttpClient, HttpClientBuilder},
-    rpc_params,
-};
 use num_bigint::BigUint;
-use primitives::{chain::Chain, AssetBalance, AssetId};
 use serde::Deserialize;
+use std::error::Error;
+use url::Url;
 
-use crate::ChainAssetsProvider;
+use gem_chain_rpc::ChainAssetsProvider;
+use primitives::{chain::Chain, AssetBalance, AssetId};
+use serde_serializers::deserialize_biguint_from_hex_str;
 
 pub struct AlchemyClient {
-    client: HttpClient,
+    client: RpcClient,
     chain: Chain,
 }
 
@@ -43,16 +41,17 @@ impl AlchemyClient {
             api_key,
         );
 
-        let client = HttpClientBuilder::default()
-            .max_response_size(256 * 1024 * 1024) // 256MB
-            .build(url)
-            .unwrap();
+        let parsed_url = Url::parse(&url).expect("Invalid Alchemy API URL");
+        let reqwest_client = ReqwestClient::new();
+        let http_transport = Http::with_client(reqwest_client, parsed_url);
+        let client = RpcClient::new(http_transport, true);
 
         Self { client, chain }
     }
 
-    pub async fn get_token_balances(&self, address: &str) -> Result<TokenBalances, Box<dyn Error + Send + Sync>> {
-        Ok(self.client.request("alchemy_getTokenBalances", rpc_params![address]).await?)
+    pub async fn get_token_balances(&self, address: &str) -> Result<TokenBalances> {
+        let response = self.client.request("alchemy_getTokenBalances", (address,)).await?;
+        Ok(response)
     }
 }
 
