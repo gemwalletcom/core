@@ -1,7 +1,8 @@
 use async_trait::async_trait;
 use std::error::Error;
 
-use crate::{client::NameClient, ens_provider::provider::Provider};
+use super::provider::Provider;
+use crate::client::NameClient;
 use gem_evm::ethereum_address_checksum;
 use primitives::{chain::Chain, name::NameProvider};
 

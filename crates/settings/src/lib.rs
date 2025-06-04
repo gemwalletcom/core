@@ -145,7 +145,7 @@ pub struct Name {
     pub icns: URL,
     pub lens: URL,
     pub base: URL,
-    pub hyperliquid: HL,
+    pub hyperliquid: URL,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -159,12 +159,6 @@ pub struct URL {
 pub struct UD {
     pub url: String,
     pub key: KeySecret,
-}
-
-#[derive(Debug, Deserialize, Clone)]
-pub struct HL {
-    pub url: String,
-    pub key: String,
 }
 
 #[derive(Debug, Deserialize, Clone)]
