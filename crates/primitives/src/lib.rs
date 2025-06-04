@@ -119,3 +119,5 @@ pub use self::chain_address::ChainAddress;
 pub mod json_rpc;
 pub use self::json_rpc::JsonRpcResult;
 pub mod node_config;
+pub mod transaction_id;
+pub use self::transaction_id::TransactionId;

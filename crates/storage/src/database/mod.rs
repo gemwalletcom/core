@@ -50,7 +50,7 @@ impl DatabaseClient {
                 use crate::schema::transactions::dsl::*;
                 let query1 = diesel::insert_into(transactions::table())
                     .values(transactions_values)
-                    .on_conflict((chain, hash))
+                    .on_conflict(super::schema::transactions::id)
                     .do_update()
                     .set((
                         block_number.eq(excluded(block_number)),
@@ -112,10 +112,10 @@ impl DatabaseClient {
         query.order(created_at.desc()).select(Transaction::as_select()).load(&mut self.connection)
     }
 
-    pub fn get_transactions_by_hash(&mut self, _hash: &str) -> Result<Vec<Transaction>, diesel::result::Error> {
+    pub fn get_transactions_by_id(&mut self, _id: &str) -> Result<Vec<Transaction>, diesel::result::Error> {
         use crate::schema::transactions::dsl::*;
         transactions
-            .filter(hash.eq(_hash))
+            .filter(id.eq(_id))
             .order(created_at.asc())
             .select(Transaction::as_select())
             .load(&mut self.connection)

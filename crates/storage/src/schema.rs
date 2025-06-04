@@ -438,8 +438,6 @@ diesel::table! {
         #[max_length = 16]
         chain -> Varchar,
         #[max_length = 256]
-        hash -> Varchar,
-        #[max_length = 256]
         from_address -> Nullable<Varchar>,
         #[max_length = 256]
         to_address -> Nullable<Varchar>,

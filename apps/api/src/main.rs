@@ -146,7 +146,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
                 subscriptions::delete_subscriptions,
                 transactions::get_transactions_by_device_id_old,
                 transactions::get_transactions_by_device_id,
-                transactions::get_transactions_by_hash,
+                transactions::get_transactions_by_id,
                 parser::get_parser_block,
                 parser::get_parser_block_finalize,
                 parser::get_parser_block_number_latest,

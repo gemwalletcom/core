@@ -7,7 +7,6 @@ CREATE TABLE transactions
 (
     id           VARCHAR(256) NOT NULL PRIMARY KEY,
     chain        VARCHAR(16)  NOT NULL REFERENCES chains (id) ON DELETE CASCADE,
-    hash         VARCHAR(256) NOT NULL,
     from_address VARCHAR(256),
     to_address   VARCHAR(256),
     contract     VARCHAR(256),
