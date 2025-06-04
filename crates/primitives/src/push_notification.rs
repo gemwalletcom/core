@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
+use crate::Platform;
+
 #[typeshare(swift = "Equatable, Sendable")]
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -30,10 +32,10 @@ pub struct GorushNotification {
 }
 
 impl GorushNotification {
-    pub fn new(tokens: Vec<String>, platform: i32, title: String, message: String, data: PushNotification) -> Self {
+    pub fn new(tokens: Vec<String>, platform: Platform, title: String, message: String, data: PushNotification) -> Self {
         Self {
             tokens,
-            platform,
+            platform: platform.as_i32(),
             title,
             message,
             topic: None,

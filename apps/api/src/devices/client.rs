@@ -38,7 +38,7 @@ impl DevicesClient {
 
         let notification = GorushNotification::new(
             vec![device_token],
-            device.platform as i32,
+            device.platform,
             "Test Notification".to_string(),
             "Test Message".to_string(),
             PushNotification {
