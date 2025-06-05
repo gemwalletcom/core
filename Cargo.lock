@@ -3398,7 +3398,7 @@ dependencies = [
  "cosmos-sdk-proto",
  "futures",
  "gem_aptos",
- "gem_evm",
+ "gem_sui",
  "gem_ton",
  "hex",
  "jsonrpsee",
