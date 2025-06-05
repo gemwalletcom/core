@@ -3,14 +3,21 @@ use strum::{EnumIter, IntoEnumIterator};
 
 #[derive(Debug, Clone, EnumIter)]
 pub enum QueueName {
+    // Process transactions, store and send notifications. Push assets to address_assets table and fetch new assets
     Transactions,
+    // Notifications for price alerts
     NotificationsPriceAlerts,
+    // Notifications for transactions
     NotificationsTransactions,
-    // fetch new assets and blocks
+    // fetch new assets and store to db
     FetchAssets,
+    // fetch new blocks and store to db
     FetchBlocks,
+    // Fetch and store nft collection
     FetchNFTCollection,
+    // Fetch and store nft collection assets
     FetchNFTCollectionAssets,
+    // Add assets/addresses association to address_assets table
     AddressAssets,
 }
 

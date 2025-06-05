@@ -1,8 +1,15 @@
 use std::fmt;
+use strum::{EnumIter, IntoEnumIterator};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, EnumIter)]
 pub enum ExchangeName {
     Transactions,
+}
+
+impl ExchangeName {
+    pub fn all() -> Vec<ExchangeName> {
+        ExchangeName::iter().collect()
+    }
 }
 
 impl fmt::Display for ExchangeName {
