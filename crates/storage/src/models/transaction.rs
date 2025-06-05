@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
-use primitives::{transaction_utxo::TransactionInput, AssetId, TransactionDirection};
+use primitives::{transaction_utxo::TransactionInput, AssetId, TransactionDirection, TransactionId};
 use serde::{Deserialize, Serialize};
 
 // #[derive(FromSqlRow, Serialize, Deserialize, Debug, Default, AsExpression)]
@@ -19,7 +19,6 @@ use serde::{Deserialize, Serialize};
 pub struct Transaction {
     pub id: String,
     pub chain: String,
-    pub hash: String,
     pub memo: Option<String>,
     pub asset_id: String,
     pub value: Option<String>,
@@ -42,7 +41,6 @@ impl Transaction {
         Self {
             id: transaction.id.to_string(),
             chain: transaction.asset_id.chain.as_ref().to_string(),
-            hash: transaction.hash,
             memo: transaction.memo,
             asset_id: transaction.asset_id.to_string(),
             value: transaction.value.into(),
@@ -63,8 +61,9 @@ impl Transaction {
 
     pub fn as_primitive(&self, addresses: Vec<String>) -> primitives::Transaction {
         //TODO: Remove addresses from here
+        let transaction_id = TransactionId::from_str(&self.id.clone()).unwrap();
         let asset_id = AssetId::new(self.asset_id.clone().as_str()).unwrap();
-        let hash = self.hash.clone();
+        let hash = transaction_id.hash.clone();
         let from = self.from_address.clone().unwrap_or_default();
         let to_address = self.to_address.clone().unwrap_or_default();
         let inputs: Option<Vec<TransactionInput>> = serde_json::from_value(self.utxo_inputs.clone().into()).ok();

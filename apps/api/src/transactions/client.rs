@@ -28,14 +28,7 @@ impl TransactionsClient {
         Ok(transactions)
     }
 
-    pub fn get_transactions_by_hash(&mut self, hash: &str) -> Result<Vec<primitives::Transaction>, Box<dyn Error>> {
-        let transactions = self
-            .database
-            .get_transactions_by_hash(hash)?
-            .into_iter()
-            .map(|x| x.as_primitive(vec![]))
-            .collect();
-
-        Ok(transactions)
+    pub fn get_transactions_by_id(&mut self, id: &str) -> Result<Vec<primitives::Transaction>, Box<dyn Error>> {
+        Ok(self.database.get_transactions_by_id(id)?.into_iter().map(|x| x.as_primitive(vec![])).collect())
     }
 }

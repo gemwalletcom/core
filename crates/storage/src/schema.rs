@@ -432,22 +432,11 @@ diesel::table! {
 }
 
 diesel::table! {
-    tokenlists (id) {
-        id -> Int4,
-        chain -> Varchar,
-        url -> Varchar,
-        version -> Int4,
-    }
-}
-
-diesel::table! {
     transactions (id) {
         #[max_length = 256]
         id -> Varchar,
         #[max_length = 16]
         chain -> Varchar,
-        #[max_length = 256]
-        hash -> Varchar,
         #[max_length = 256]
         from_address -> Nullable<Varchar>,
         #[max_length = 256]
@@ -530,7 +519,6 @@ diesel::joinable!(scan_addresses -> scan_addresses_types (type_));
 diesel::joinable!(subscriptions -> chains (chain));
 diesel::joinable!(subscriptions -> devices (device_id));
 diesel::joinable!(subscriptions_addresses_exclude -> chains (chain));
-diesel::joinable!(tokenlists -> chains (chain));
 diesel::joinable!(transactions -> chains (chain));
 diesel::joinable!(transactions -> transactions_types (kind));
 diesel::joinable!(transactions_addresses -> assets (asset_id));
@@ -565,7 +553,6 @@ diesel::allow_tables_to_appear_in_same_query!(
     subscriptions,
     subscriptions_addresses_exclude,
     tags,
-    tokenlists,
     transactions,
     transactions_addresses,
     transactions_types,

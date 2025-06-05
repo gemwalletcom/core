@@ -5,8 +5,6 @@ pub mod aptos;
 pub mod bitcoin;
 pub mod cardano;
 pub mod cosmos;
-pub mod ethereum;
-
 pub mod near;
 pub mod polkadot;
 pub mod stellar;
@@ -20,7 +18,6 @@ pub use self::aptos::client::AptosClient;
 pub use self::bitcoin::client::BitcoinClient;
 pub use self::cardano::client::CardanoClient;
 pub use self::cosmos::client::CosmosClient;
-pub use self::ethereum::client::EthereumClient;
 pub use self::near::client::NearClient;
 pub use self::polkadot::client::PolkadotClient;
 pub use self::stellar::client::StellarClient;

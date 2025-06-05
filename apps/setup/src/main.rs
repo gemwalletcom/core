@@ -1,7 +1,7 @@
 use primitives::{AddressType, Asset, AssetTag, AssetType, Chain, FiatProviderName, LinkType, NFTType, PlatformStore, TransactionType};
 use search_index::{SearchIndexClient, ASSETS_FILTERS, ASSETS_INDEX_NAME, ASSETS_RANKING_RULES, ASSETS_SEARCH_ATTRIBUTES, ASSETS_SORTS, INDEX_PRIMARY_KEY};
 use settings::Settings;
-use storage::{ClickhouseClient, DatabaseClient};
+use storage::{ClickhouseClient, DatabaseClient, LinkRepository, ParserStateStore};
 use streamer::{QueueName, StreamProducer};
 
 #[tokio::main]
@@ -28,7 +28,7 @@ async fn main() {
 
     println!("setup parser state");
     for chain in chains.clone() {
-        let _ = database_client.add_parser_state(chain);
+        let _ = database_client.add_parser_state(chain.as_ref());
     }
 
     println!("setup assets_types");
@@ -71,8 +71,8 @@ async fn main() {
     let _ = database_client.add_nft_types(types);
 
     println!("setup link types");
-    let types = LinkType::all().into_iter().map(storage::models::LinkType::from_primitive).collect::<Vec<_>>();
-    let _ = database_client.add_link_types(types);
+    let link_repository: &mut dyn LinkRepository = &mut database_client;
+    let _ = link_repository.add_link_types(LinkType::all());
 
     println!("setup scan address types");
     let address_types = AddressType::all()

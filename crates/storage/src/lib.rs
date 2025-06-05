@@ -3,7 +3,12 @@ use serde::{de::DeserializeOwned, Serialize};
 use std::error::Error;
 
 pub mod database;
-pub use self::database::DatabaseClient;
+pub use self::database::{
+    link::{LinkRepository, LinkStore},
+    nodes::{NodeRepository, NodeStore},
+    parser_state::{ParserStateRepository, ParserStateStore},
+    DatabaseClient,
+};
 pub mod clickhouse;
 pub mod models;
 pub mod schema;

@@ -5,6 +5,8 @@ pub mod device;
 pub mod fiat;
 pub mod link;
 pub mod nft;
+pub mod nodes;
+pub mod parser_state;
 pub mod price;
 pub mod price_alerts;
 pub mod release;
@@ -12,7 +14,6 @@ pub mod scan;
 pub mod subscription;
 pub mod tag;
 
-use crate::models::asset::AssetLink;
 use crate::models::*;
 use crate::schema::transactions_addresses;
 use chrono::DateTime;
@@ -22,7 +23,6 @@ use diesel::pg::PgConnection;
 use diesel::prelude::*;
 use diesel::{upsert::excluded, Connection};
 use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
-use primitives::Chain;
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("src/migrations");
 
 use primitives::TransactionsFetchOption;
@@ -38,59 +38,6 @@ impl DatabaseClient {
         Self { connection }
     }
 
-    pub fn get_nodes(&mut self) -> Result<Vec<Node>, diesel::result::Error> {
-        use crate::schema::nodes::dsl::*;
-        nodes.select(Node::as_select()).load(&mut self.connection)
-    }
-
-    pub fn get_tokenlists(&mut self) -> Result<Vec<TokenList>, diesel::result::Error> {
-        use crate::schema::tokenlists::dsl::*;
-        tokenlists.select(TokenList::as_select()).load(&mut self.connection)
-    }
-
-    pub fn set_tokenlist_version(&mut self, _chain: String, _version: i32) -> Result<usize, diesel::result::Error> {
-        use crate::schema::tokenlists::dsl::*;
-        diesel::update(tokenlists)
-            .filter(chain.eq(_chain))
-            .set(version.eq(_version))
-            .execute(&mut self.connection)
-    }
-
-    pub fn get_parser_state(&mut self, _chain: Chain) -> Result<ParserState, diesel::result::Error> {
-        use crate::schema::parser_state::dsl::*;
-        parser_state
-            .filter(chain.eq(_chain.as_ref()))
-            .select(ParserState::as_select())
-            .first(&mut self.connection)
-    }
-
-    pub fn add_parser_state(&mut self, _chain: Chain) -> Result<usize, diesel::result::Error> {
-        use crate::schema::parser_state::dsl::*;
-        diesel::insert_into(parser_state)
-            .values(chain.eq(_chain.as_ref()))
-            .on_conflict_do_nothing()
-            .execute(&mut self.connection)
-    }
-
-    pub fn get_parser_states(&mut self) -> Result<Vec<ParserState>, diesel::result::Error> {
-        use crate::schema::parser_state::dsl::*;
-        parser_state.select(ParserState::as_select()).load(&mut self.connection)
-    }
-
-    pub fn set_parser_state_latest_block(&mut self, _chain: Chain, block: i32) -> Result<usize, diesel::result::Error> {
-        use crate::schema::parser_state::dsl::*;
-        diesel::update(parser_state.find(_chain.as_ref()))
-            .set(latest_block.eq(block))
-            .execute(&mut self.connection)
-    }
-
-    pub fn set_parser_state_current_block(&mut self, _chain: Chain, block: i32) -> Result<usize, diesel::result::Error> {
-        use crate::schema::parser_state::dsl::*;
-        diesel::update(parser_state.find(_chain.as_ref()))
-            .set(current_block.eq(block))
-            .execute(&mut self.connection)
-    }
-
     pub fn add_transactions(
         &mut self,
         transactions_values: Vec<Transaction>,
@@ -103,7 +50,7 @@ impl DatabaseClient {
                 use crate::schema::transactions::dsl::*;
                 let query1 = diesel::insert_into(transactions::table())
                     .values(transactions_values)
-                    .on_conflict((chain, hash))
+                    .on_conflict(super::schema::transactions::id)
                     .do_update()
                     .set((
                         block_number.eq(excluded(block_number)),
@@ -165,10 +112,10 @@ impl DatabaseClient {
         query.order(created_at.desc()).select(Transaction::as_select()).load(&mut self.connection)
     }
 
-    pub fn get_transactions_by_hash(&mut self, _hash: &str) -> Result<Vec<Transaction>, diesel::result::Error> {
+    pub fn get_transactions_by_id(&mut self, _id: &str) -> Result<Vec<Transaction>, diesel::result::Error> {
         use crate::schema::transactions::dsl::*;
         transactions
-            .filter(hash.eq(_hash))
+            .filter(id.eq(_id))
             .order(created_at.asc())
             .select(Transaction::as_select())
             .load(&mut self.connection)
@@ -212,14 +159,6 @@ impl DatabaseClient {
     pub fn get_asset(&mut self, asset_id: &str) -> Result<Asset, diesel::result::Error> {
         use crate::schema::assets::dsl::*;
         assets.filter(id.eq(asset_id)).select(Asset::as_select()).first(&mut self.connection)
-    }
-
-    pub fn get_asset_links(&mut self, _asset_id: &str) -> Result<Vec<AssetLink>, diesel::result::Error> {
-        use crate::schema::assets_links::dsl::*;
-        assets_links
-            .filter(asset_id.eq(_asset_id))
-            .select(AssetLink::as_select())
-            .load(&mut self.connection)
     }
 
     pub fn get_assets(&mut self, asset_ids: Vec<String>) -> Result<Vec<Asset>, diesel::result::Error> {

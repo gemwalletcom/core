@@ -1,5 +1,5 @@
 use jsonrpsee::{
-    core::{client::ClientT, params::BatchRequestBuilder, ClientError},
+    core::{ClientError, client::ClientT, params::BatchRequestBuilder},
     http_client::{HttpClient, HttpClientBuilder},
     rpc_params,
 };

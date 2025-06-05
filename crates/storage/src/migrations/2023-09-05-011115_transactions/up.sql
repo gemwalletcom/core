@@ -7,7 +7,6 @@ CREATE TABLE transactions
 (
     id           VARCHAR(256) NOT NULL PRIMARY KEY,
     chain        VARCHAR(16)  NOT NULL REFERENCES chains (id) ON DELETE CASCADE,
-    hash         VARCHAR(256) NOT NULL,
     from_address VARCHAR(256),
     to_address   VARCHAR(256),
     contract     VARCHAR(256),
@@ -24,8 +23,7 @@ CREATE TABLE transactions
     fee_asset_id VARCHAR      NOT NULL REFERENCES assets (id) ON DELETE CASCADE,
     updated_at   timestamp    NOT NULL default current_timestamp,
     created_at   timestamp    NOT NULL default current_timestamp,
-    metadata     jsonb,
-    UNIQUE (chain, hash)
+    metadata     jsonb
 );
 
 SELECT diesel_manage_updated_at('transactions');

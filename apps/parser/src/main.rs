@@ -11,35 +11,37 @@ pub mod parser_proxy;
 
 use primitives::{node::NodeState, Chain};
 use settings::Settings;
-use std::{str::FromStr, time::Duration};
-use storage::DatabaseClient;
+use std::{str::FromStr, sync::Arc, time::Duration};
+use storage::{DatabaseClient, NodeStore, ParserStateStore};
 use streamer::StreamProducer;
+use tokio::sync::Mutex;
 
 #[tokio::main]
 pub async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let args: Vec<String> = std::env::args().collect();
     let mode = args.last().cloned().unwrap_or_default();
-
     let settings: Settings = Settings::new().unwrap();
+    let database = Arc::new(Mutex::new(DatabaseClient::new(&settings.postgres.url)));
 
     if mode == "consumers" {
-        return consumers::run_consumers(settings).await;
+        return consumers::run_consumers(settings, database.clone()).await;
     } else if mode == "consumer_transactions" {
-        return consumers::run_consumer_transactions(settings).await;
+        return consumers::run_consumer_transactions(settings, database.clone()).await;
     } else if mode == "consumer_assets" {
-        return consumers::run_consumer_assets(settings).await;
+        return consumers::run_consumer_assets(settings, database.clone()).await;
     } else if mode == "consumer_blocks" {
-        return consumers::run_consumer_blocks(settings).await;
+        return consumers::run_consumer_blocks(settings, database.clone()).await;
     } else {
-        return run_parser_mode(settings).await;
+        return run_parser_mode(settings.clone(), database.clone()).await;
     }
 }
 
-async fn run_parser_mode(settings: Settings) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+async fn run_parser_mode(settings: Settings, database: Arc<Mutex<DatabaseClient>>) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     println!("parser init");
 
-    let mut database = DatabaseClient::new(&settings.postgres.url.clone());
     let chains: Vec<Chain> = database
+        .lock()
+        .await
         .get_parser_states()
         .unwrap()
         .into_iter()
@@ -55,6 +57,8 @@ async fn run_parser_mode(settings: Settings) -> Result<(), Box<dyn std::error::E
     };
 
     let nodes = database
+        .lock()
+        .await
         .get_nodes()
         .unwrap()
         .into_iter()

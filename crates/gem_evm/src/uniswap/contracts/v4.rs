@@ -3,7 +3,7 @@ use alloy_sol_types::sol;
 sol! {
     type Currency is address;
     // https://github.com/Uniswap/v4-core/blob/main/src/types/PoolKey.sol
-    #[derive(Debug)]
+    #[derive(Debug, PartialEq)]
     struct PoolKey {
         /// @notice The lower currency of the pool, sorted numerically
         Currency currency0;
@@ -18,7 +18,7 @@ sol! {
     }
 
     // https://github.com/Uniswap/v4-periphery/blob/main/src/libraries/PathKey.sol
-    #[derive(Debug)]
+    #[derive(Debug, PartialEq)]
     struct PathKey {
         Currency intermediateCurrency;
         uint24 fee;
@@ -30,6 +30,7 @@ sol! {
     // https://github.com/Uniswap/v4-periphery/blob/main/src/interfaces/IV4Quoter.sol
     #[derive(Debug)]
     interface IV4Quoter {
+        #[derive(PartialEq)]
         struct QuoteExactSingleParams {
             PoolKey poolKey;
             bool zeroForOne;
@@ -37,6 +38,7 @@ sol! {
             bytes hookData;
         }
 
+        #[derive(PartialEq)]
         struct QuoteExactParams {
             Currency exactCurrency;
             PathKey[] path;
@@ -93,7 +95,7 @@ sol! {
     // https://github.com/Uniswap/v4-periphery/blob/main/src/interfaces/IV4Router.sol
     #[derive(Debug)]
     interface IV4Router {
-        /// @notice Parameters for a single-hop exact-input swap
+        #[derive(PartialEq)]
         struct ExactInputSingleParams {
             PoolKey poolKey;
             bool zeroForOne;
@@ -102,7 +104,7 @@ sol! {
             bytes hookData;
         }
 
-        /// @notice Parameters for a multi-hop exact-input swap
+        #[derive(PartialEq)]
         struct ExactInputParams {
             Currency currencyIn;
             PathKey[] path;
@@ -110,7 +112,7 @@ sol! {
             uint128 amountOutMinimum;
         }
 
-        /// @notice Parameters for a single-hop exact-output swap
+        #[derive(PartialEq)]
         struct ExactOutputSingleParams {
             PoolKey poolKey;
             bool zeroForOne;
@@ -119,7 +121,7 @@ sol! {
             bytes hookData;
         }
 
-        /// @notice Parameters for a multi-hop exact-output swap
+        #[derive(PartialEq)]
         struct ExactOutputParams {
             Currency currencyOut;
             PathKey[] path;

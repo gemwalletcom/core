@@ -179,7 +179,7 @@ impl PriceAlertClient {
             };
             let notification = GorushNotification::new(
                 vec![price_alert.device.token.clone()],
-                price_alert.device.platform.as_i32(),
+                price_alert.device.platform,
                 notification_message.title,
                 notification_message.description,
                 data,

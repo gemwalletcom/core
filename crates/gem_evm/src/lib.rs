@@ -16,6 +16,12 @@ pub mod thorchain;
 pub mod uniswap;
 pub mod weth;
 
+#[cfg(feature = "typeshare")]
+pub mod typeshare;
+
+#[cfg(feature = "rpc")]
+pub mod rpc;
+
 pub use address::ethereum_address_checksum;
 pub use eip712::{eip712_domain_types, EIP712Domain, EIP712Field, EIP712Type, EIP712TypedValue};
 
