@@ -12,7 +12,6 @@ rpc = [
     "dep:gem_chain_rpc",
     "dep:async-trait",
     "dep:anyhow",
-    "dep:num-bigint",
 ]
 
 [dependencies]
@@ -24,12 +23,11 @@ borsh = { workspace = true }
 base64 = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
-
+num-bigint = { workspace = true }
 typeshare = { workspace = true, optional = true }
 
 jsonrpsee = { workspace = true, optional = true }
 anyhow = { workspace = true, optional = true }
-num-bigint = { workspace = true, optional = true }
 async-trait = { workspace = true, optional = true }
 chrono = { workspace = true, optional = true }
 gem_chain_rpc = { path = "../gem_chain_rpc", optional = true }
