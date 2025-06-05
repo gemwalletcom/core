@@ -3,6 +3,17 @@ name = "gem_solana"
 version = { workspace = true }
 edition = { workspace = true }
 
+[features]
+default = []
+typeshare = ["dep:typeshare"]
+rpc = [
+    "dep:chrono",
+    "dep:jsonrpsee",
+    "dep:gem_chain_rpc",
+    "dep:async-trait",
+    "dep:anyhow",
+]
+
 [dependencies]
 curve25519-dalek = { workspace = true }
 thiserror = { workspace = true }
@@ -12,9 +23,13 @@ borsh = { workspace = true }
 base64 = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
-jsonrpsee = { workspace = true }
-anyhow = { workspace = true }
 num-bigint = { workspace = true }
-serde_serializers = { path = "../serde_serializers" }
+typeshare = { workspace = true, optional = true }
 
+jsonrpsee = { workspace = true, optional = true }
+anyhow = { workspace = true, optional = true }
+async-trait = { workspace = true, optional = true }
+chrono = { workspace = true, optional = true }
+gem_chain_rpc = { path = "../gem_chain_rpc", optional = true }
+serde_serializers = { path = "../serde_serializers" }
 primitives = { path = "../primitives" }

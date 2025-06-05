@@ -1,9 +1,9 @@
-use gem_solana::model::{AccountData, ValueResult};
-use gem_solana::SolanaClient;
-
-use crate::pyth::decoder::decode_price_account;
-
 use super::model::Price;
+use crate::pyth::decoder::decode_price_account;
+use gem_solana::{
+    model::{AccountData, ValueResult},
+    rpc::SolanaClient,
+};
 
 pub struct PythClient {
     client: SolanaClient,

@@ -1,11 +1,12 @@
 use chrono::Utc;
 use num_bigint::Sign;
-use primitives::SwapProvider;
-use primitives::{chain::Chain, Asset, AssetId, AssetType, Transaction, TransactionState, TransactionSwapMetadata, TransactionType};
 
-use gem_solana::{metaplex::metadata::Metadata, JUPITER_PROGRAM_ID, SYSTEM_PROGRAM_ID, TOKEN_PROGRAM};
-
-use gem_solana::model::{BlockTransaction, TokenInfo};
+use crate::{
+    metaplex::metadata::Metadata,
+    model::{BlockTransaction, TokenInfo},
+    JUPITER_PROGRAM_ID, SYSTEM_PROGRAM_ID, TOKEN_PROGRAM,
+};
+use primitives::{Asset, AssetId, AssetType, Chain, SwapProvider, Transaction, TransactionState, TransactionSwapMetadata, TransactionType};
 
 pub struct SolanaMapper;
 
@@ -196,8 +197,8 @@ mod tests {
 
     #[test]
     fn test_transaction_swap_token_to_sol() {
-        let file = concat!(env!("CARGO_MANIFEST_DIR"), "/testdata/solana/swap_token_to_sol.json");
-        let result: JsonRpcResult<BlockTransaction> = serde_json::from_str(&std::fs::read_to_string(file).unwrap()).unwrap();
+        let file = include_str!("../../testdata/swap_token_to_sol.json");
+        let result: JsonRpcResult<BlockTransaction> = serde_json::from_str(file).unwrap();
 
         let transaction = SolanaMapper::map_transaction(&result.result, 1).unwrap();
         let expected = TransactionSwapMetadata {
@@ -213,8 +214,8 @@ mod tests {
 
     #[test]
     fn test_transaction_swap_token_to_token() {
-        let file = concat!(env!("CARGO_MANIFEST_DIR"), "/testdata/solana/swap_token_to_token.json");
-        let result: JsonRpcResult<BlockTransaction> = serde_json::from_str(&std::fs::read_to_string(file).unwrap()).unwrap();
+        let file = include_str!("../../testdata/swap_token_to_token.json");
+        let result: JsonRpcResult<BlockTransaction> = serde_json::from_str(file).unwrap();
 
         let transaction = SolanaMapper::map_transaction(&result.result, 1).unwrap();
         let expected = TransactionSwapMetadata {
@@ -230,8 +231,8 @@ mod tests {
 
     #[test]
     fn test_transaction_swap_sol_to_token() {
-        let file = concat!(env!("CARGO_MANIFEST_DIR"), "/testdata/solana/swap_sol_to_token.json");
-        let result: JsonRpcResult<BlockTransaction> = serde_json::from_str(&std::fs::read_to_string(file).unwrap()).unwrap();
+        let file = include_str!("../../testdata/swap_sol_to_token.json");
+        let result: JsonRpcResult<BlockTransaction> = serde_json::from_str(file).unwrap();
 
         let transaction = SolanaMapper::map_transaction(&result.result, 1).unwrap();
         let expected = TransactionSwapMetadata {

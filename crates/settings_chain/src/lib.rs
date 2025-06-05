@@ -4,6 +4,7 @@ pub use chain_providers::ChainProviders;
 use core::str;
 
 use gem_chain_rpc::{
+    ChainProvider,
     algorand::{client::AlgorandClient, provider::AlgorandProvider},
     aptos::{client::AptosClient, provider::AptosProvider},
     bitcoin::{client::BitcoinClient, provider::BitcoinProvider},
@@ -11,19 +12,17 @@ use gem_chain_rpc::{
     cosmos::{client::CosmosClient, provider::CosmosProvider},
     near::{client::NearClient, provider::NearProvider},
     polkadot::{client::PolkadotClient, provider::PolkadotProvider},
-    solana::provider::SolanaProvider,
     stellar::{client::StellarClient, provider::StellarProvider},
     sui::{client::SuiClient, provider::SuiProvider},
     ton::{client::TonClient, provider::TonProvider},
     tron::{client::TronClient, provider::TronProvider},
-    ChainProvider,
 };
-use gem_evm::rpc::{client::EthereumClient, provider::EthereumProvider, AlchemyClient};
-use gem_solana::SolanaClient;
+use gem_evm::rpc::{AlchemyClient, client::EthereumClient, provider::EthereumProvider};
+use gem_solana::rpc::{SolanaClient, SolanaProvider};
 use gem_xrp::rpc::{XRPClient, XRPProvider};
 use primitives::Chain;
 use reqwest_middleware::ClientBuilder;
-use reqwest_retry::{policies::ExponentialBackoff, RetryTransientMiddleware};
+use reqwest_retry::{RetryTransientMiddleware, policies::ExponentialBackoff};
 use settings::Settings;
 
 pub struct ProviderFactory {}

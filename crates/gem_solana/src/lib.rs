@@ -1,11 +1,15 @@
-pub mod client;
 pub mod hash;
 pub mod jsonrpc;
 pub mod metaplex;
 pub mod model;
 pub mod pubkey;
 
-pub use client::SolanaClient;
+#[cfg(feature = "rpc")]
+pub mod rpc;
+
+#[cfg(feature = "typeshare")]
+pub mod typeshare;
+
 pub use jsonrpc::SolanaRpc;
 
 // Constants
@@ -22,8 +26,6 @@ pub const TOKEN_PROGRAM_2022: &str = "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuE
 pub const ASSOCIATED_TOKEN_ACCOUNT_PROGRAM: &str = "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL";
 pub const SYSTEM_PROGRAM_ID: &str = "11111111111111111111111111111111";
 pub const JUPITER_PROGRAM_ID: &str = "JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4";
-
-// Constants are already in scope, no need to re-export
 
 use primitives::{AssetId, SolanaTokenProgramId};
 use pubkey::Pubkey;
