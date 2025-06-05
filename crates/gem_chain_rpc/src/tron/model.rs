@@ -83,3 +83,18 @@ pub struct TronLog {
     pub topics: Option<Vec<String>>,
     pub data: Option<String>,
 }
+
+#[derive(Serialize, Debug)]
+pub struct TriggerConstantContractRequest {
+    pub owner_address: String,
+    pub contract_address: String,
+    pub function_selector: String,
+    pub parameter: String,
+    pub visible: bool,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct TriggerConstantContractResponse {
+    #[serde(default)]
+    pub constant_result: Vec<String>,
+}

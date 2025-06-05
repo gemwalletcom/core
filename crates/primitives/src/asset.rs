@@ -124,12 +124,12 @@ impl AssetVecExt for Vec<Asset> {
 }
 
 pub trait AssetHashSetExt {
-    fn ids(&self) -> Vec<AssetId>;
+    fn ids(&self) -> Vec<String>;
 }
 
 impl AssetHashSetExt for HashSet<AssetId> {
-    fn ids(&self) -> Vec<AssetId> {
-        self.iter().cloned().collect()
+    fn ids(&self) -> Vec<String> {
+        self.iter().cloned().map(|x| x.to_string()).collect()
     }
 }
 

@@ -22,6 +22,7 @@ pub mod currency;
 pub use self::asset::{Asset, AssetVecExt};
 pub mod asset_id;
 pub use self::asset_id::{AssetId, AssetIdVecExt};
+pub use crate::asset::AssetHashSetExt;
 pub mod asset_score;
 pub use self::asset_score::AssetScore;
 pub mod asset_type;

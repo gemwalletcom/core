@@ -1,7 +1,7 @@
 use std::{collections::HashMap, error::Error, sync::Arc};
 
 use async_trait::async_trait;
-use primitives::{AssetIdHashSetExt, AssetIdVecExt, AssetVecExt, Transaction};
+use primitives::{AssetIdVecExt, AssetVecExt, Transaction};
 use storage::{models, DatabaseClient};
 use streamer::{consumer::MessageConsumer, QueueName, StreamProducer, TransactionsPayload};
 use streamer::{AddressAssetsPayload, FetchAssetsPayload, NotificationsPayload};
