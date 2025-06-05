@@ -30,16 +30,9 @@ jobs:
         working-directory: gemstone
     steps:
       - uses: actions/checkout@v4
-      - name: Clean space
-        run: |
-          df -h
-          sudo rm -rf /usr/share/dotnet
-          sudo rm -rf /opt/ghc
-          sudo rm -rf "/usr/local/share/boost"
-          sudo rm -rf /opt/hostedtoolcache/CodeQL
-          sudo docker image prune --all --force
-          echo "======================================================"
-          df -h
+      
+      - name: Install OpenSSL
+        run: sudo apt-get update && sudo apt-get install -y libssl-dev
 
       - name: Set up JDK 17
         uses: actions/setup-java@v3
