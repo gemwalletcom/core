@@ -22,7 +22,6 @@ pub struct Settings {
     pub charter: Charter,
     pub name: Name,
     pub metrics: Metrics,
-    pub assets: Assets,
     pub chains: Chains,
     pub parser: Parser,
     pub daemon: Daemon,
@@ -165,12 +164,6 @@ pub struct UD {
 #[allow(unused)]
 pub struct Metrics {
     pub path: String,
-}
-
-#[derive(Debug, Deserialize, Clone)]
-#[allow(unused)]
-pub struct Assets {
-    pub url: String,
 }
 
 #[derive(Debug, Deserialize, Clone)]
