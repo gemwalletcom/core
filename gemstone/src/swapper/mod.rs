@@ -134,6 +134,7 @@ impl GemSwapper {
                 Box::new(proxy::new_mayan()),
                 Box::new(chainflip::ChainflipProvider::default()),
                 Box::new(proxy::new_cetus_aggregator()),
+                Box::new(proxy::new_relay()),
             ],
         }
     }
