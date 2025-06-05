@@ -1,4 +1,5 @@
 pub mod assets;
+pub mod assets_addresses;
 pub mod assets_links;
 pub mod assets_types;
 pub mod device;
@@ -167,29 +168,6 @@ impl DatabaseClient {
             .filter(id.eq_any(asset_ids))
             .filter(is_enabled.eq(true))
             .select(Asset::as_select())
-            .load(&mut self.connection)
-    }
-
-    pub fn get_assets_ids_by_device_id(
-        &mut self,
-        addresses: Vec<String>,
-        chains: Vec<String>,
-        from_timestamp: Option<u32>,
-    ) -> Result<Vec<String>, diesel::result::Error> {
-        use crate::schema::transactions_addresses::dsl::*;
-        let datetime = if let Some(from_timestamp) = from_timestamp {
-            DateTime::from_timestamp(from_timestamp.into(), 0).unwrap().naive_utc()
-        } else {
-            DateTime::from_timestamp(0, 0).unwrap().naive_utc()
-        };
-
-        transactions_addresses
-            .filter(address.eq_any(addresses))
-            .filter(chain_id.eq_any(chains))
-            .filter(created_at.gt(datetime))
-            .order((asset_id, created_at.desc()))
-            .distinct_on(asset_id)
-            .select(asset_id)
             .load(&mut self.connection)
     }
 

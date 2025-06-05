@@ -29,6 +29,8 @@ pub async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         return consumers::run_consumer_transactions(settings, database.clone()).await;
     } else if mode == "consumer_assets" {
         return consumers::run_consumer_assets(settings, database.clone()).await;
+    } else if mode == "consumer_assets_addresses" {
+        return consumers::run_consumer_assets_addresses(settings, database.clone()).await;
     } else if mode == "consumer_blocks" {
         return consumers::run_consumer_blocks(settings, database.clone()).await;
     } else {

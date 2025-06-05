@@ -96,6 +96,9 @@ impl StreamProducer {
     where
         T: serde::Serialize,
     {
+        if messages.is_empty() {
+            return Ok(true);
+        }
         let queue_str = queue.to_string();
         for message in messages {
             self.publish_message("", &queue_str, message).await?;

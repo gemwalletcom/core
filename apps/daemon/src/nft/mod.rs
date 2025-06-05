@@ -1,52 +1,54 @@
-// mod collections_updater;
-// mod image_uploader;
-// use collections_updater::OpenSeaUpdater;
-// use image_uploader::ImageUploaderClient;
-// use nft::OpenSeaClient;
-// mod collections_image_uploader;
-// use collections_image_uploader::CollectionsImageUploader;
+mod nft_collection_asset_consumer;
+mod nft_collection_consumer;
+use nft_collection_asset_consumer::UpdateNftCollectionAssetsConsumer;
+use nft_collection_consumer::UpdateNftCollectionConsumer;
 
-// use job_runner::run_job;
+use job_runner::run_job;
 use settings::Settings;
 use std::future::Future;
 use std::pin::Pin;
-// use std::sync::Arc;
-// use std::time::Duration;
+use std::sync::Arc;
+use std::time::Duration;
+use streamer::{run_consumer, ConsumerConfig, FetchNFTCollectionAssetPayload, FetchNFTCollectionPayload, QueueName, StreamReader};
 
-pub async fn jobs(_settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + Send>>> {
-    // let open_sea_collections_updater = run_job("Update collections", Duration::from_secs(3600), {
-    //     let settings = Arc::new(settings.clone());
+pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + Send>>> {
+    let settings_arc = Arc::new(settings);
 
-    //     move || {
-    //         let opensea_client = OpenSeaClient::new(&settings.nft.opensea.key.secret);
-    //         let mut updater = OpenSeaUpdater::new(&settings.postgres.url, opensea_client);
-    //         async move { updater.update_collections().await }
-    //     }
-    // });
+    let settings = settings_arc.clone();
+    let nft_collection_consumer_job = run_job("update nft collection consumer", Duration::from_secs(u64::MAX), move || {
+        let settings = settings.clone();
+        async move {
+            let stream_reader = StreamReader::new(&settings.rabbitmq.url).await.unwrap();
+            let consumer = UpdateNftCollectionConsumer::new();
 
-    // let collections_image_uploader = run_job("Upload collection images to R2 bucket", Duration::from_secs(3600), {
-    //     let settings = Arc::new(settings.clone());
-    //     move || {
-    //         let bucket = settings.nft.bucket.clone();
-    //         let image_uploader = ImageUploaderClient::new(bucket.clone());
-    //         let mut updater = CollectionsImageUploader::new(settings.postgres.url.as_str(), image_uploader);
-    //         async move { updater.update_collections().await }
-    //     }
-    // });
+            run_consumer::<FetchNFTCollectionPayload, UpdateNftCollectionConsumer, usize>(
+                "update nft collection consumer",
+                stream_reader,
+                QueueName::FetchNFTCollection,
+                consumer,
+                ConsumerConfig::default(),
+            )
+            .await
+        }
+    });
 
-    // let collection_assets_image_uploader = run_job("Upload collection assets images to R2 bucket", Duration::from_secs(3600), {
-    //     let settings = Arc::new(settings.clone());
-    //     move || {
-    //         let bucket = settings.nft.bucket.clone();
-    //         let image_uploader = ImageUploaderClient::new(bucket.clone());
-    //         let mut updater = CollectionsImageUploader::new(settings.postgres.url.as_str(), image_uploader);
-    //         async move { updater.update_collection_assets().await }
-    //     }
-    // });
+    let settings = settings_arc.clone();
+    let nft_collection_assets_consumer_job = run_job("update nft collection assets consumer", Duration::from_secs(u64::MAX), move || {
+        let settings = settings.clone();
+        async move {
+            let stream_reader = StreamReader::new(&settings.rabbitmq.url).await.unwrap();
+            let consumer = UpdateNftCollectionAssetsConsumer::new();
 
-    vec![
-        //Box::pin(open_sea_collections_updater),
-        // Box::pin(collections_image_uploader),
-        // Box::pin(collection_assets_image_uploader),
-    ]
+            run_consumer::<FetchNFTCollectionAssetPayload, UpdateNftCollectionAssetsConsumer, usize>(
+                "update nft collection assets consumer",
+                stream_reader,
+                QueueName::FetchNFTCollectionAssets,
+                consumer,
+                ConsumerConfig::default(),
+            )
+            .await
+        }
+    });
+
+    vec![Box::pin(nft_collection_consumer_job), Box::pin(nft_collection_assets_consumer_job)]
 }

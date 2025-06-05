@@ -106,6 +106,16 @@ impl Asset {
     }
 }
 
+pub trait AssetVecExt {
+    fn ids(&self) -> Vec<AssetId>;
+}
+
+impl AssetVecExt for Vec<Asset> {
+    fn ids(&self) -> Vec<AssetId> {
+        self.iter().map(|x| x.id.clone()).collect()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -1,10 +1,10 @@
 use std::{collections::HashMap, error::Error, sync::Arc};
 
 use async_trait::async_trait;
-use primitives::{AssetId, Transaction};
+use primitives::{AssetIdVecExt, Transaction};
 use storage::{models, DatabaseClient};
 use streamer::{consumer::MessageConsumer, QueueName, StreamProducer, TransactionsPayload};
-use streamer::{FetchAssetsPayload, NotificationsPayload};
+use streamer::{AddressAssetsPayload, FetchAssetsPayload, NotificationsPayload};
 use tokio::sync::Mutex;
 
 use crate::consumers::TransactionsConsumerConfig;
@@ -28,90 +28,72 @@ impl MessageConsumer<TransactionsPayload, usize> for TransactionsConsumer {
             .collect::<Vec<_>>();
 
         let addresses = transactions.clone().into_iter().flat_map(|x| x.addresses()).collect();
-
-        let subscriptions = {
-            let mut db_guard = self.database.lock().await;
-            db_guard.get_subscriptions(chain, addresses)?
-        };
+        let subscriptions = self.database.lock().await.get_subscriptions(chain, addresses)?;
 
         let mut transactions_map: HashMap<String, Transaction> = HashMap::new();
+        let mut fetch_assets_payload: Vec<FetchAssetsPayload> = Vec::new();
+        let mut notifications_payload: Vec<NotificationsPayload> = Vec::new();
+        let mut address_assets_payload: Vec<AddressAssetsPayload> = Vec::new();
 
         for subscription in subscriptions {
             for transaction in transactions.clone() {
                 if transaction.addresses().contains(&subscription.address) {
-                    let device = {
-                        let mut db_guard = self.database.lock().await;
-                        db_guard.get_device_by_id(subscription.device_id)?
-                    };
-
-                    println!(
-                        "push: device: {}, chain: {}, transaction: {:?}",
-                        subscription.device_id,
-                        chain.as_ref(),
-                        transaction.hash
-                    );
-
                     transactions_map.insert(transaction.clone().id, transaction.clone());
 
-                    let transaction_finalized = transaction.finalize(vec![subscription.address.clone()]).clone();
+                    let device = self.database.lock().await.get_device_by_id(subscription.device_id)?;
+                    let transaction = transaction.finalize(vec![subscription.address.clone()]).clone();
 
-                    if self.config.is_transaction_outdated(transaction_finalized.created_at.naive_utc(), chain) {
-                        println!(
-                            "outdated transaction: {}, created_at: {}",
-                            transaction_finalized.id, transaction_finalized.created_at
-                        );
-                        continue;
-                    }
-
-                    let assets_ids = transaction_finalized.asset_ids();
-                    let (assets, missing_assets_ids) = {
-                        let mut db_guard = self.database.lock().await;
-                        let current_assets = db_guard
-                            .get_assets(assets_ids.clone())?
+                    let assets_ids = transaction.asset_ids();
+                    let (existing_assets, missing_assets_ids) = {
+                        let existing_assets = self
+                            .database
+                            .lock()
+                            .await
+                            .get_assets(assets_ids.ids().clone())?
                             .into_iter()
                             .map(|x| x.as_primitive())
                             .collect::<Vec<_>>();
 
-                        let missing = assets_ids
+                        let missing_assets_ids = assets_ids
                             .into_iter()
-                            .filter(|asset_id_str| !current_assets.iter().any(|a| &a.id.to_string() == asset_id_str))
-                            .filter_map(|x| AssetId::new(x.as_str()))
+                            .filter(|asset_id| !existing_assets.iter().any(|a| &a.id == asset_id))
                             .collect::<Vec<_>>();
-                        (current_assets, missing)
+                        (existing_assets, missing_assets_ids)
                     };
 
-                    let notifications_result = self
-                        .pusher
-                        .get_messages(device.as_primitive(), transaction_finalized.clone(), subscription.as_primitive(), assets)
-                        .await;
+                    fetch_assets_payload.extend_from_slice(&missing_assets_ids.clone().into_iter().map(FetchAssetsPayload::new).collect::<Vec<_>>());
 
-                    if let Ok(notifications) = notifications_result {
-                        let _ = self
-                            .stream_producer
-                            .publish(QueueName::NotificationsTransactions, &NotificationsPayload::new(notifications))
-                            .await;
+                    if self.config.is_transaction_outdated(transaction.created_at.naive_utc(), chain) {
+                        println!("outdated transaction: {}, created_at: {}", transaction.id, transaction.created_at);
+                    } else if let Ok(notifications) = self
+                        .pusher
+                        .get_messages(device.as_primitive(), transaction.clone(), subscription.as_primitive(), existing_assets.clone())
+                        .await
+                    {
+                        notifications_payload.push(NotificationsPayload::new(notifications));
                     }
-                    if !missing_assets_ids.is_empty() {
-                        let _ = self
-                            .stream_producer
-                            .publish_batch(
-                                QueueName::FetchAssets,
-                                &missing_assets_ids.into_iter().map(FetchAssetsPayload::new).collect::<Vec<_>>(),
-                            )
-                            .await;
+
+                    let assets_addresses = transaction
+                        .assets_addresses()
+                        .into_iter()
+                        .filter(|x| existing_assets.iter().any(|a| a.id == x.asset_id) && subscription.address == x.address)
+                        .collect::<Vec<_>>();
+
+                    if !assets_addresses.is_empty() {
+                        address_assets_payload.push(AddressAssetsPayload::new(assets_addresses));
                     }
                 }
             }
         }
 
-        match self.store_batch(transactions_map.clone()).await {
-            Ok(_) => {}
-            Err(err) => {
-                println!("transaction insert: chain: {}, error: {:?}", chain.as_ref(), err);
-            }
-        }
+        let _ = self.stream_producer.publish_batch(QueueName::FetchAssets, &fetch_assets_payload).await;
+        let _ = self
+            .stream_producer
+            .publish_batch(QueueName::NotificationsTransactions, &notifications_payload)
+            .await;
+        let _ = self.stream_producer.publish_batch(QueueName::AddressAssets, &address_assets_payload).await;
 
-        Ok(transactions_map.len())
+        Ok(self.store_batch(transactions_map.clone()).await?)
     }
 }
 
@@ -122,9 +104,8 @@ impl TransactionsConsumer {
         let primitive_transactions = items
             .into_values()
             .filter(|x| {
-                let asset_ids = x.asset_ids();
-                if let Ok(assets) = db_guard.get_assets(asset_ids.clone()) {
-                    assets.len() == asset_ids.len()
+                if let Ok(assets) = db_guard.get_assets(x.asset_ids().ids().clone()) {
+                    assets.len() == x.asset_ids().len()
                 } else {
                     false
                 }

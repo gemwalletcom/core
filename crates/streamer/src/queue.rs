@@ -1,6 +1,7 @@
 use std::fmt;
+use strum::{EnumIter, IntoEnumIterator};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, EnumIter)]
 pub enum QueueName {
     Transactions,
     NotificationsPriceAlerts,
@@ -8,6 +9,15 @@ pub enum QueueName {
     // fetch new assets and blocks
     FetchAssets,
     FetchBlocks,
+    FetchNFTCollection,
+    FetchNFTCollectionAssets,
+    AddressAssets,
+}
+
+impl QueueName {
+    pub fn all() -> Vec<QueueName> {
+        QueueName::iter().collect()
+    }
 }
 
 impl fmt::Display for QueueName {
@@ -18,6 +28,9 @@ impl fmt::Display for QueueName {
             QueueName::NotificationsTransactions => write!(f, "notifications_transactions"),
             QueueName::FetchAssets => write!(f, "fetch_assets"),
             QueueName::FetchBlocks => write!(f, "fetch_blocks"),
+            QueueName::FetchNFTCollection => write!(f, "fetch_nft_collection"),
+            QueueName::FetchNFTCollectionAssets => write!(f, "fetch_nft_collection_assets"),
+            QueueName::AddressAssets => write!(f, "address_assets"),
         }
     }
 }

@@ -1,16 +1,17 @@
 use super::model::Response;
 use primitives::{GorushNotification, GorushNotifications};
+use reqwest::Client;
 
 #[derive(Clone, Debug)]
 pub struct PusherClient {
     url: String,
-    client: reqwest::Client,
+    client: Client,
     topic: String,
 }
 
 impl PusherClient {
     pub fn new(url: String, topic: String) -> Self {
-        let client = reqwest::Client::new();
+        let client = Client::new();
         Self { url, client, topic }
     }
 

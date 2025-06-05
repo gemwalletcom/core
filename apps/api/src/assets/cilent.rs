@@ -1,10 +1,10 @@
-use std::{error::Error, vec};
+use std::{error::Error, str::FromStr, vec};
 
 use futures::future::try_join_all;
-use primitives::{Asset, AssetBalance, AssetBasic, AssetFull, Chain, ChainAddress};
+use primitives::{Asset, AssetBalance, AssetBasic, AssetFull, AssetId, Chain, ChainAddress};
 use search_index::{AssetDocument, SearchIndexClient, ASSETS_INDEX_NAME};
 use settings_chain::ChainProviders;
-use storage::DatabaseClient;
+use storage::{AssetsAddressesRepository, DatabaseClient};
 pub struct AssetsClient {
     database: DatabaseClient,
 }
@@ -49,14 +49,15 @@ impl AssetsClient {
         })
     }
 
-    pub fn get_assets_by_device_id(&mut self, device_id: &str, wallet_index: i32, from_timestamp: Option<u32>) -> Result<Vec<String>, Box<dyn Error>> {
+    pub fn get_assets_by_device_id(&mut self, device_id: &str, wallet_index: i32, from_timestamp: Option<u32>) -> Result<Vec<AssetId>, Box<dyn Error>> {
         let subscriptions = self.database.get_subscriptions_by_device_id_wallet_index(device_id, wallet_index)?;
-
-        let addresses = subscriptions.clone().into_iter().map(|x| x.address).collect();
-        let chains = subscriptions.clone().into_iter().map(|x| x.chain).collect::<Vec<_>>();
-
-        let assets_ids = self.database.get_assets_ids_by_device_id(addresses, chains, from_timestamp)?;
-        Ok(assets_ids)
+        let assets_addresses_repository: &mut dyn AssetsAddressesRepository = &mut self.database;
+        let chain_addresses = subscriptions
+            .clone()
+            .into_iter()
+            .map(|x| ChainAddress::new(Chain::from_str(&x.chain).unwrap(), x.address))
+            .collect();
+        assets_addresses_repository.get_assets_by_addresses(chain_addresses, from_timestamp)
     }
 }
 

@@ -8,7 +8,7 @@ use std::time::Duration;
 use api_connector::PusherClient;
 use job_runner::run_job;
 use settings::Settings;
-use streamer::{ConsumerConfig, NotificationsPayload, QueueName, StreamReader};
+use streamer::{run_consumer, ConsumerConfig, NotificationsPayload, QueueName, StreamReader};
 
 mod notifications_consumer;
 
@@ -44,8 +44,7 @@ fn create_notification_job(settings: Settings, name: &'static str, log_prefix: &
             let pusher_client = PusherClient::new(settings.pusher.url.clone(), settings.pusher.ios.topic.clone());
             let consumer = NotificationsConsumer::new(pusher_client);
 
-            streamer::run_consumer::<NotificationsPayload, NotificationsConsumer, usize>(log_prefix, stream_reader, queue, consumer, ConsumerConfig::default())
-                .await
+            run_consumer::<NotificationsPayload, NotificationsConsumer, usize>(log_prefix, stream_reader, queue, consumer, ConsumerConfig::default()).await
         }
     };
 

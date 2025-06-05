@@ -1,6 +1,6 @@
 extern crate rocket;
 use api_connector::PusherClient;
-use primitives::{GorushNotification, PushNotification};
+use primitives::{GorushNotification, PushNotification, PushNotificationTypes};
 use std::error::Error;
 use storage::{models::UpdateDevice, DatabaseClient};
 
@@ -40,7 +40,7 @@ impl DevicesClient {
             "Test Notification".to_string(),
             "Test Message".to_string(),
             PushNotification {
-                notification_type: primitives::PushNotificationTypes::Test,
+                notification_type: PushNotificationTypes::Test,
                 data: None,
             },
         );
