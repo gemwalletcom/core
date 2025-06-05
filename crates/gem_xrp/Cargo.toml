@@ -5,8 +5,8 @@ edition = "2024"
 
 [features]
 default = []
-typeshare = []
-rpc = []
+typeshare = ["dep:typeshare"]
+rpc = ["dep:chrono", "dep:reqwest-middleware", "dep:gem_chain_rpc"]
 
 [dependencies]
 serde = { workspace = true, features = ["derive"] }
@@ -14,10 +14,12 @@ serde_json = { workspace = true }
 thiserror = { workspace = true }
 anyhow = { workspace = true }
 async-trait = { workspace = true }
-typeshare = { workspace = true }
-reqwest-middleware = { workspace = true, features = ["json"] }
-chrono = { workspace = true, features = ["serde"] }
 hex = { workspace = true }
 primitives = { path = "../primitives" }
 number_formatter = { path = "../number_formatter" }
-gem_chain_rpc = { path = "../gem_chain_rpc" }
+
+typeshare = { workspace = true, optional = true }
+
+reqwest-middleware = { workspace = true, features = ["json"], optional = true }
+chrono = { workspace = true, features = ["serde"], optional = true }
+gem_chain_rpc = { path = "../gem_chain_rpc", optional = true }

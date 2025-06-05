@@ -25,6 +25,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       ANDROID_NDK_HOME: /usr/local/lib/android/sdk/ndk/28.1.13356709
+      ANDROID_NDK_ROOT: /usr/local/lib/android/sdk/ndk/28.1.13356709
     defaults:
       run:
         working-directory: gemstone
