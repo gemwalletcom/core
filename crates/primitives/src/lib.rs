@@ -21,7 +21,7 @@ pub use self::config::{ConfigResponse, ConfigVersions, Release};
 pub mod currency;
 pub use self::asset::{Asset, AssetVecExt};
 pub mod asset_id;
-pub use self::asset_id::{AssetId, AssetIdHashSetExt, AssetIdVecExt};
+pub use self::asset_id::{AssetId, AssetIdVecExt};
 pub mod asset_score;
 pub use self::asset_score::AssetScore;
 pub mod asset_type;

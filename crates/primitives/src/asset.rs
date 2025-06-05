@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
@@ -108,11 +110,26 @@ impl Asset {
 
 pub trait AssetVecExt {
     fn ids(&self) -> Vec<AssetId>;
+    fn ids_set(&self) -> HashSet<AssetId>;
 }
 
 impl AssetVecExt for Vec<Asset> {
     fn ids(&self) -> Vec<AssetId> {
         self.iter().map(|x| x.id.clone()).collect()
+    }
+
+    fn ids_set(&self) -> HashSet<AssetId> {
+        self.iter().map(|x| x.id.clone()).collect()
+    }
+}
+
+pub trait AssetHashSetExt {
+    fn ids(&self) -> Vec<AssetId>;
+}
+
+impl AssetHashSetExt for HashSet<AssetId> {
+    fn ids(&self) -> Vec<AssetId> {
+        self.iter().cloned().collect()
     }
 }
 
