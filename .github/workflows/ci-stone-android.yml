@@ -25,21 +25,12 @@ jobs:
     runs-on: ubuntu-latest
     env:
       ANDROID_NDK_HOME: /usr/local/lib/android/sdk/ndk/28.1.13356709
+      ANDROID_NDK_ROOT: /usr/local/lib/android/sdk/ndk/28.1.13356709
     defaults:
       run:
         working-directory: gemstone
     steps:
       - uses: actions/checkout@v4
-      - name: Clean space
-        run: |
-          df -h
-          sudo rm -rf /usr/share/dotnet
-          sudo rm -rf /opt/ghc
-          sudo rm -rf "/usr/local/share/boost"
-          sudo rm -rf /opt/hostedtoolcache/CodeQL
-          sudo docker image prune --all --force
-          echo "======================================================"
-          df -h
 
       - name: Set up JDK 17
         uses: actions/setup-java@v3

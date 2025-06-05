@@ -5,8 +5,16 @@ edition = { workspace = true }
 
 [features]
 default = []
-typeshare = []
-rpc = []
+typeshare = ["dep:typeshare"]
+rpc = [
+    "dep:alloy-rpc-client",
+    "dep:alloy-rpc-types",
+    "dep:alloy-transport-http",
+    "dep:url",
+    "dep:chrono",
+    "dep:async-trait",
+    "dep:gem_chain_rpc",
+]
 
 [dependencies]
 primitives = { path = "../primitives" }
@@ -26,13 +34,13 @@ num-traits = { workspace = true }
 bigdecimal = { workspace = true }
 
 # typeshare
-typeshare = { workspace = true }
+typeshare = { workspace = true, optional = true }
 
 # rpc feature
-alloy-rpc-client = { workspace = true }
-alloy-rpc-types = { workspace = true }
-alloy-transport-http = { workspace = true }
-url = { workspace = true, features = ["serde"] }
-chrono = { workspace = true }
-async-trait = { workspace = true }
-gem_chain_rpc = { path = "../gem_chain_rpc" }
+alloy-rpc-client = { workspace = true, optional = true }
+alloy-rpc-types = { workspace = true, optional = true }
+alloy-transport-http = { workspace = true, optional = true }
+url = { workspace = true, features = ["serde"], optional = true }
+chrono = { workspace = true, optional = true }
+async-trait = { workspace = true, optional = true }
+gem_chain_rpc = { path = "../gem_chain_rpc", optional = true }
