@@ -5,7 +5,7 @@ edition = "2024"
 
 [features]
 default = []
-typeshare = []
+typeshare = ["dep:typeshare"]
 rpc = []
 
 [dependencies]
@@ -14,7 +14,9 @@ serde_json = { workspace = true }
 thiserror = { workspace = true }
 anyhow = { workspace = true }
 async-trait = { workspace = true }
-typeshare = { workspace = true }
+
+typeshare = { workspace = true, optional = true }
+
 reqwest-middleware = { workspace = true, features = ["json"] }
 chrono = { workspace = true, features = ["serde"] }
 hex = { workspace = true }
