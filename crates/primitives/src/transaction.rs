@@ -1,6 +1,6 @@
 use crate::{
     asset_id::AssetId, transaction_direction::TransactionDirection, transaction_state::TransactionState, transaction_type::TransactionType,
-    transaction_utxo::TransactionInput, Chain, TransactionSwapMetadata,
+    transaction_utxo::TransactionInput, AssetAddress, Chain, TransactionSwapMetadata,
 };
 
 use chrono::{DateTime, Utc};
@@ -250,7 +250,7 @@ impl Transaction {
         values.clone().into_iter().map(|x| x.value.parse::<i64>().unwrap()).sum::<i64>()
     }
 
-    pub fn asset_ids(&self) -> Vec<String> {
+    pub fn asset_ids(&self) -> Vec<AssetId> {
         match self.transaction_type {
             TransactionType::Transfer
             | TransactionType::TokenApproval
@@ -261,13 +261,42 @@ impl Transaction {
             | TransactionType::StakeWithdraw
             | TransactionType::AssetActivation
             | TransactionType::TransferNFT
-            | TransactionType::SmartContractCall => vec![self.asset_id.clone().to_string()],
+            | TransactionType::SmartContractCall => vec![self.asset_id.clone()],
             TransactionType::Swap => self
                 .metadata
                 .clone()
                 .and_then(|metadata| serde_json::from_value::<TransactionSwapMetadata>(metadata).ok())
-                .map(|metadata| vec![metadata.from_asset.to_string(), metadata.to_asset.to_string()])
+                .map(|metadata| vec![metadata.from_asset, metadata.to_asset])
                 .unwrap_or_default(),
         }
+    }
+
+    pub fn assets_addresses(&self) -> Vec<AssetAddress> {
+        match self.transaction_type {
+            TransactionType::Transfer
+            | TransactionType::TokenApproval
+            | TransactionType::StakeDelegate
+            | TransactionType::StakeUndelegate
+            | TransactionType::StakeRewards
+            | TransactionType::StakeRedelegate
+            | TransactionType::StakeWithdraw
+            | TransactionType::AssetActivation
+            | TransactionType::TransferNFT
+            | TransactionType::SmartContractCall => vec![AssetAddress::new(self.asset_id.clone(), self.to.clone())],
+            TransactionType::Swap => self
+                .metadata
+                .clone()
+                .and_then(|metadata| serde_json::from_value::<TransactionSwapMetadata>(metadata).ok())
+                .map(|metadata| {
+                    vec![
+                        AssetAddress::new(metadata.from_asset.clone(), self.from.clone()),
+                        AssetAddress::new(metadata.to_asset.clone(), self.to.clone()),
+                    ]
+                })
+                .unwrap_or_default(),
+        }
+        .into_iter()
+        .filter(|x| x.asset_id.is_token())
+        .collect()
     }
 }

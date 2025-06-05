@@ -108,13 +108,7 @@ async fn main() {
 
     println!("setup queues");
 
-    let queues = vec![
-        QueueName::Transactions,
-        QueueName::NotificationsPriceAlerts,
-        QueueName::NotificationsTransactions,
-        QueueName::FetchAssets,
-        QueueName::FetchBlocks,
-    ];
+    let queues = QueueName::all();
     //let exchange = ExchangeName::Transactions;
     let stream_producer = StreamProducer::new(&settings.rabbitmq.url).await.unwrap();
     for queue in queues.clone() {

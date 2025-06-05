@@ -28,6 +28,20 @@ diesel::table! {
 }
 
 diesel::table! {
+    assets_addresses (id) {
+        id -> Int4,
+        #[max_length = 32]
+        chain -> Varchar,
+        #[max_length = 256]
+        asset_id -> Varchar,
+        #[max_length = 256]
+        address -> Varchar,
+        updated_at -> Timestamp,
+        created_at -> Timestamp,
+    }
+}
+
+diesel::table! {
     assets_links (id) {
         id -> Int4,
         #[max_length = 128]
@@ -491,6 +505,8 @@ diesel::table! {
 
 diesel::joinable!(assets -> assets_types (asset_type));
 diesel::joinable!(assets -> chains (chain));
+diesel::joinable!(assets_addresses -> assets (asset_id));
+diesel::joinable!(assets_addresses -> chains (chain));
 diesel::joinable!(assets_links -> assets (asset_id));
 diesel::joinable!(assets_links -> link_types (link_type));
 diesel::joinable!(assets_tags -> assets (asset_id));
@@ -527,6 +543,7 @@ diesel::joinable!(transactions_addresses -> transactions (transaction_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
     assets,
+    assets_addresses,
     assets_links,
     assets_tags,
     assets_types,

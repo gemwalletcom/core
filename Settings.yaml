@@ -80,7 +80,7 @@ chains:
   solana:
     url: "https://api.mainnet-beta.solana.com"
   ethereum:
-    url: "https://eth.llamarpc.com"
+    url: "https://ethereum-rpc.publicnode.com"
   smartchain:
     url: "https://bsc-dataseed1.bnbchain.org"
   polygon:

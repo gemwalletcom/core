@@ -10,5 +10,7 @@ serde_json = { workspace = true }
 futures = { workspace = true }
 lapin = { workspace = true }
 async-trait = { workspace = true }
+strum = { workspace = true }
+strum_macros = { workspace = true }
 
 primitives = { path = "../primitives" }
