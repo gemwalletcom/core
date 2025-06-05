@@ -1,11 +1,12 @@
 use chrono::Utc;
 use num_bigint::Sign;
-use primitives::SwapProvider;
-use primitives::{chain::Chain, Asset, AssetId, AssetType, Transaction, TransactionState, TransactionSwapMetadata, TransactionType};
 
-use crate::metaplex::metadata::Metadata;
-use crate::model::{BlockTransaction, TokenInfo};
-use crate::{JUPITER_PROGRAM_ID, SYSTEM_PROGRAM_ID, TOKEN_PROGRAM};
+use crate::{
+    metaplex::metadata::Metadata,
+    model::{BlockTransaction, TokenInfo},
+    JUPITER_PROGRAM_ID, SYSTEM_PROGRAM_ID, TOKEN_PROGRAM,
+};
+use primitives::{Asset, AssetId, AssetType, Chain, SwapProvider, Transaction, TransactionState, TransactionSwapMetadata, TransactionType};
 
 pub struct SolanaMapper;
 
