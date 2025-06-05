@@ -23,8 +23,7 @@ CREATE TABLE transactions
     fee_asset_id VARCHAR      NOT NULL REFERENCES assets (id) ON DELETE CASCADE,
     updated_at   timestamp    NOT NULL default current_timestamp,
     created_at   timestamp    NOT NULL default current_timestamp,
-    metadata     jsonb,
-    UNIQUE (chain, hash)
+    metadata     jsonb
 );
 
 SELECT diesel_manage_updated_at('transactions');
