@@ -27,8 +27,6 @@ pub const ASSOCIATED_TOKEN_ACCOUNT_PROGRAM: &str = "ATokenGPvbdGVxr1b2hvZbsiqW5x
 pub const SYSTEM_PROGRAM_ID: &str = "11111111111111111111111111111111";
 pub const JUPITER_PROGRAM_ID: &str = "JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4";
 
-// Constants are already in scope, no need to re-export
-
 use primitives::{AssetId, SolanaTokenProgramId};
 use pubkey::Pubkey;
 use std::str::FromStr;
