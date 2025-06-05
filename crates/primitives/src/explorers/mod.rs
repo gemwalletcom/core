@@ -50,3 +50,5 @@ mod socketscan;
 pub use socketscan::SocketScan;
 pub mod chainflip;
 pub use chainflip::ChainflipScan;
+pub mod relay;
+pub use relay::RelayScan;

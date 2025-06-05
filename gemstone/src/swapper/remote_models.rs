@@ -26,6 +26,7 @@ pub enum GemSwapProvider {
     Symbiosis,
     Chainflip,
     CetusAggregator,
+    Relay,
 }
 
 #[uniffi::remote(Enum)]
@@ -33,7 +34,7 @@ pub enum GemSwapProviderMode {
     OnChain,
     CrossChain,
     Bridge,
-    OmniChain(Chain),
+    OmniChain(Vec<Chain>),
 }
 
 #[uniffi::remote(Enum)]
