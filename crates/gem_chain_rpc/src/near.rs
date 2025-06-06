@@ -25,8 +25,7 @@ impl ChainBlockProvider for NearProvider {
     }
 
     async fn get_latest_block(&self) -> Result<i64, Box<dyn Error + Send + Sync>> {
-        let block = self.client.get_final_block().await?;
-        Ok(block.header.height)
+        Ok(self.client.get_final_block().await?.header.height)
     }
 
     async fn get_transactions(&self, block_number: i64) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {

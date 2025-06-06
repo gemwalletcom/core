@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use serde_serializers::deserialize_u64_from_str;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Chainhead {
@@ -68,5 +69,6 @@ pub struct JettonInfo {
 pub struct JettonInfoMetadata {
     pub name: String,
     pub symbol: String,
-    pub decimals: String,
+    #[serde(deserialize_with = "deserialize_u64_from_str")]
+    pub decimals: u64,
 }

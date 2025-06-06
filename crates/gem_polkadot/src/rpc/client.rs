@@ -25,8 +25,6 @@ impl PolkadotClient {
         Ok(self.client.get(url).send().await?.json::<Block>().await?)
     }
 
-    // Transaction mapping methods moved to PolkadotMapper
-
     pub fn get_chain(&self) -> Chain {
         Chain::Polkadot
     }

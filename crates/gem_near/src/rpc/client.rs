@@ -43,8 +43,6 @@ impl NearClient {
         let chunk: Chunk = self.client.request("chunk", params).await?;
         Ok(chunk)
     }
-
-    // Transaction mapping has been moved to NearMapper
 }
 
 impl NearClient {

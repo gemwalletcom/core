@@ -7,3 +7,9 @@ pub struct AssetBalance {
     pub asset_id: AssetId,
     pub balance: String,
 }
+
+impl AssetBalance {
+    pub fn new(asset_id: AssetId, balance: String) -> Self {
+        Self { asset_id, balance }
+    }
+}

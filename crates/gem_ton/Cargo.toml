@@ -19,7 +19,8 @@ anyhow = { workspace = true }
 primitives = { path = "../primitives", optional = true }
 reqwest-middleware = { workspace = true, features = ["json"], optional = true }
 chrono = { workspace = true, features = ["serde"], optional = true }
+serde_serializers = { path = "../serde_serializers", optional = true }
 
 [features]
 default = []
-rpc = ["dep:primitives", "dep:reqwest-middleware", "dep:chrono"]
+rpc = ["dep:primitives", "dep:reqwest-middleware", "dep:chrono", "dep:serde_serializers"]

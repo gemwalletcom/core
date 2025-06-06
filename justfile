@@ -72,6 +72,7 @@ generate-ts-primitives:
     @typeshare ./crates/primitives --lang=typescript --output-file=primitives.ts 1>/dev/null 2>&1
 
 outdated:
+    @cargo install cargo-edit --quiet
     cargo upgrade -i --dry-run
 
 mod gemstone

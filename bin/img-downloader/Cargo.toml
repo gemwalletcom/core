@@ -11,7 +11,7 @@ reqwest-middleware = { workspace = true }
 reqwest-retry = { workspace = true }
 
 futures-util = { workspace = true }
-clap = { version = "4.5.37", features = ["derive"] }
+clap = { version = "4.5.39", features = ["derive"] }
 
 chain_primitives = { path = "../../crates/chain_primitives" }
 coingecko = { path = "../../crates/coingecko" }

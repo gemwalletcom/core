@@ -2,9 +2,9 @@ use std::error::Error;
 
 use crate::{ChainAssetsProvider, ChainBlockProvider, ChainTokenDataProvider};
 use async_trait::async_trait;
-use primitives::{chain::Chain, Asset, AssetBalance, Transaction};
+use primitives::{chain::Chain, Asset, AssetBalance, AssetId, Transaction};
 
-use gem_ton::rpc::TonClient;
+use gem_ton::{address::TonAddress, rpc::TonClient};
 
 pub struct TonProvider {
     client: TonClient,
@@ -40,7 +40,17 @@ impl ChainTokenDataProvider for TonProvider {
 
 #[async_trait]
 impl ChainAssetsProvider for TonProvider {
-    async fn get_assets_balances(&self, _address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
-        Ok(vec![])
+    async fn get_assets_balances(&self, address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
+        let response = self.client.get_assets_balances(address, true, None, None).await?;
+        let balances = response
+            .jetton_wallets
+            .into_iter()
+            .flat_map(|x| {
+                let ton_address = TonAddress::from_hex_str(&x.jetton).ok()?;
+                let asset_id = AssetId::from_token(self.get_chain(), &ton_address.to_base64_url());
+                Some(AssetBalance::new(asset_id, x.balance))
+            })
+            .collect();
+        Ok(balances)
     }
 }

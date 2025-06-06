@@ -58,8 +58,6 @@ impl StellarClient {
             }
         }
     }
-
-    // Transaction mapping has been moved to StellarMapper
 }
 
 impl StellarClient {

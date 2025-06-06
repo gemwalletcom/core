@@ -15,8 +15,6 @@ impl AlgorandProvider {
     pub fn new(client: AlgorandClient) -> Self {
         Self { client }
     }
-
-    // Transaction mapping has been moved to AlgorandMapper
 }
 
 #[async_trait]

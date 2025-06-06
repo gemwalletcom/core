@@ -6,54 +6,75 @@ use reqwest_middleware::ClientWithMiddleware;
 
 use super::mapper::TonMapper;
 use super::model::{Blocks, Chainhead, JettonInfo, Shards, Transactions};
+use super::model_rpc::AssetsBalances;
 
 pub struct TonClient {
     url: String,
     client: ClientWithMiddleware,
+    rpc_url: String,
 }
 
 impl TonClient {
     pub fn new(client: ClientWithMiddleware, url: String) -> Self {
-        Self { url, client }
+        Self {
+            url,
+            client,
+            rpc_url: "https://toncenter.com".to_string(), //TODO: Add to config
+        }
     }
 
-    // Transaction mapping methods have been moved to TonMapper
-
     pub async fn get_master_head(&self) -> Result<Chainhead, Box<dyn Error + Send + Sync>> {
-        let url = format!("{}/v2/blockchain/masterchain-head", self.url);
-        let response = self.client.get(url).send().await?.json::<Chainhead>().await?;
-        Ok(response)
+        Ok(self
+            .client
+            .get(format!("{}/v2/blockchain/masterchain-head", self.url))
+            .send()
+            .await?
+            .json()
+            .await?)
     }
 
     pub async fn get_shards(&self, sequence: i64) -> Result<Shards, Box<dyn Error + Send + Sync>> {
-        let url = format!("{}/v2/blockchain/masterchain/{}/shards", self.url, sequence);
-        let response = self.client.get(url).send().await?.json::<Shards>().await?;
-        Ok(response)
+        Ok(self
+            .client
+            .get(format!("{}/v2/blockchain/masterchain/{}/shards", self.url, sequence))
+            .send()
+            .await?
+            .json()
+            .await?)
     }
 
     pub async fn get_blocks(&self, sequence: i64) -> Result<Blocks, Box<dyn Error + Send + Sync>> {
-        let url = format!("{}/v2/blockchain/masterchain/{}/blocks", self.url, sequence);
-        let response = self.client.get(url).send().await?.json::<Blocks>().await?;
-        Ok(response)
+        Ok(self
+            .client
+            .get(format!("{}/v2/blockchain/masterchain/{}/blocks", self.url, sequence))
+            .send()
+            .await?
+            .json()
+            .await?)
     }
 
     pub async fn get_transactions_in_all_blocks(&self, block_id: String) -> Result<Transactions, Box<dyn Error + Send + Sync>> {
-        let url = format!("{}/v2/blockchain/masterchain/{}/transactions", self.url, block_id);
-        let response = self.client.get(url).send().await?.json::<Transactions>().await?;
-
-        Ok(response)
+        Ok(self
+            .client
+            .get(format!("{}/v2/blockchain/masterchain/{}/transactions", self.url, block_id))
+            .send()
+            .await?
+            .json()
+            .await?)
     }
 
     pub async fn get_block_transactions(&self, block_id: String) -> Result<Transactions, Box<dyn Error + Send + Sync>> {
-        let url = format!("{}/v2/blockchain/blocks/{}/transactions", self.url, block_id);
-        let response = self.client.get(url).send().await?.json::<Transactions>().await?;
-
-        Ok(response)
+        Ok(self
+            .client
+            .get(format!("{}/v2/blockchain/blocks/{}/transactions", self.url, block_id))
+            .send()
+            .await?
+            .json()
+            .await?)
     }
 
     pub async fn get_token_info(&self, token_id: String) -> Result<JettonInfo, Box<dyn Error + Send + Sync>> {
-        let url = format!("{}/v2/jettons/{}", self.url, token_id);
-        Ok(self.client.get(url).send().await?.json::<JettonInfo>().await?)
+        Ok(self.client.get(format!("{}/v2/jettons/{}", self.url, token_id)).send().await?.json().await?)
     }
 
     pub fn get_chain(&self) -> Chain {
@@ -61,8 +82,7 @@ impl TonClient {
     }
 
     pub async fn get_latest_block(&self) -> Result<i64, Box<dyn Error + Send + Sync>> {
-        let chainhead = self.get_master_head().await?;
-        Ok(chainhead.seqno)
+        Ok(self.get_master_head().await?.seqno)
     }
 
     pub async fn get_transactions(&self, block: i64) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Send + Sync>> {
@@ -95,7 +115,7 @@ impl TonClient {
 
     pub async fn get_token_data(&self, token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
         let token_info = self.get_token_info(token_id.clone()).await?;
-        let decimals = token_info.metadata.decimals.parse::<i32>().map_err(|_| "Invalid decimals")?;
+        let decimals = token_info.metadata.decimals as i32;
         Ok(Asset::new(
             AssetId::from_token(self.get_chain(), &token_id),
             token_info.metadata.name,
@@ -103,5 +123,23 @@ impl TonClient {
             decimals,
             AssetType::JETTON,
         ))
+    }
+
+    pub async fn get_assets_balances(
+        &self,
+        owner_address: String,
+        exclude_zero_balance: bool,
+        limit: Option<u32>,
+        offset: Option<u32>,
+    ) -> Result<AssetsBalances, Box<dyn Error + Send + Sync>> {
+        let limit_val = limit.unwrap_or(1000);
+        let offset_val = offset.unwrap_or(0);
+
+        let url = format!(
+            "{}/api/v3/jetton/wallets?owner_address={}&exclude_zero_balance={}&limit={}&offset={}",
+            self.rpc_url, owner_address, exclude_zero_balance, limit_val, offset_val
+        );
+
+        Ok(self.client.get(url).send().await?.json().await?)
     }
 }

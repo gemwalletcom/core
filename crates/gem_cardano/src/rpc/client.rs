@@ -51,8 +51,6 @@ impl CardanoClient {
             .cloned()
             .ok_or_else(|| "Block not found".into())
     }
-
-    // Transaction mapping has been moved to CardanoMapper
 }
 
 impl CardanoClient {

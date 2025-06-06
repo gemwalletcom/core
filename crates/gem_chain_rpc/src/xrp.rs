@@ -25,8 +25,7 @@ impl ChainBlockProvider for XRPProvider {
     }
 
     async fn get_latest_block(&self) -> Result<i64, Box<dyn Error + Send + Sync>> {
-        let ledger = self.client.get_ledger_current().await?;
-        Ok(ledger.ledger_current_index)
+        Ok(self.client.get_ledger_current().await?.ledger_current_index)
     }
 
     async fn get_transactions(&self, block_number: i64) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {

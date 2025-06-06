@@ -15,8 +15,6 @@ impl CosmosProvider {
     pub fn new(client: CosmosClient) -> Self {
         Self { client }
     }
-
-    // Transaction mapping has been moved to CosmosMapper
 }
 
 #[async_trait]

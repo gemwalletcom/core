@@ -62,8 +62,8 @@ serde = { version = "1.0.219", features = ["derive"] }
 serde_with = "3.12.0"
 serde_json = { version = "1.0.140" }
 serde_urlencoded = { version = "0.7.1" }
-tokio = { version = "1.44.2", features = ["macros", "rt-multi-thread"] }
-reqwest = { version = "0.12.15", features = ["json"] }
+tokio = { version = "1.45.1", features = ["macros", "rt-multi-thread"] }
+reqwest = { version = "0.12.19", features = ["json"] }
 reqwest-middleware = { version = "0.4.2" }
 reqwest-retry = { version = "0.7.0" }
 reqwest-enum = { version = "0.3.3", features = ["jsonrpc"] }
@@ -83,7 +83,7 @@ anyhow = { version = "1.0" }
 indexmap = "2.9.0"
 lazy_static = "1.5.0"
 futures-util = "0.3.31"
-uuid = { version = "1.16.0", features = ["v4"] }
+uuid = { version = "1.17.0", features = ["v4"] }
 rand = { version = "0.9.1" }
 aws-sdk-s3 = { version = "1.82.0", features = ["behavior-version-latest"] }
 itertools = { version = "0.14.0" }
@@ -91,13 +91,13 @@ itertools = { version = "0.14.0" }
 # db
 diesel = { version = "2.2.10", features = ["postgres", "chrono", "serde_json"] }
 diesel_migrations = { version = "2.2.0" }
-redis = { version = "0.30.0", features = [
+redis = { version = "0.32.0", features = [
     "tokio-comp",
     "json",
     "connection-manager",
 ] }
 chrono = { version = "0.4.41", features = ["serde"] }
-clickhouse = { version = "0.13.2" }
+clickhouse = { version = "0.13.3" }
 meilisearch-sdk = { version = "0.28.0" }
 lapin = { version = "2.5.3" }
 
@@ -126,8 +126,8 @@ sui-types = { package = "sui-sdk-types", version = "0.0.4", features = [
 ] }
 sui-transaction-builder = { package = "sui-transaction-builder", version = "0.0.4" }
 
-uniffi = { version = "0.29.2" }
-uniffi_bindgen = { version = "0.29.2" }
+uniffi = { version = "0.29.3" }
+uniffi_bindgen = { version = "0.29.3" }
 
 alloy-primitives = "1.1.0"
 alloy-sol-types = { version = "1.1.0", features = ["eip712-serde"] }
@@ -142,7 +142,7 @@ alloy-contract = "1.0.9"
 i18n-embed = { version = "0.15.4", features = ["fluent-system", "autoreload"] }
 i18n-embed-fl = { version = "0.9.4" }
 once_cell = { version = "1.21.3" }
-rust-embed = { version = "8.7.1" }
+rust-embed = { version = "8.7.2" }
 
 # numbers
 rusty-money = { git = "https://github.com/varunsrin/rusty_money.git", rev = "bbc0150", features = [
