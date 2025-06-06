@@ -24,12 +24,29 @@ pub struct AccountObjects {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AccountObject {
     #[serde(rename = "LowLimit")]
-    pub low_limit: AccountObjectLowLimit,
+    pub low_limit: AccountObjectLimit,
+    #[serde(rename = "HighLimit")]
+    pub high_limit: AccountObjectLimit,
+    #[serde(rename = "Balance")]
+    pub balance: Balance,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct AccountObjectLowLimit {
+pub struct Balance {
+    pub value: String,
+}
+
+impl AccountObjectLimit {
+    pub fn symbol(&self) -> Option<String> {
+        let currency_bytes: Vec<u8> = hex::decode(&self.currency).ok()?;
+        String::from_utf8(currency_bytes.into_iter().filter(|b| *b != 0).collect()).ok()
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AccountObjectLimit {
     pub currency: String,
+    pub issuer: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -109,4 +126,18 @@ pub struct TransactionMemo {
 pub struct TransactionMemoData {
     #[serde(rename = "MemoData")]
     pub data: Option<String>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_account_object_symbol_rlusd() {
+        let account_object = AccountObjectLimit {
+            currency: "524C555344000000000000000000000000000000".to_string(),
+            issuer: "".to_string(),
+        };
+        assert_eq!(account_object.symbol(), Some("RLUSD".to_string()));
+    }
 }

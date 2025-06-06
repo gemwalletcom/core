@@ -1,12 +1,11 @@
 use async_trait::async_trait;
-use hex;
+use gem_xrp::{XRP_DEFAULT_ASSET_DECIMALS, XRP_EPOCH_OFFSET_SECONDS};
+use number_formatter::BigNumberFormatter;
 use std::error::Error;
 
 use crate::{ChainAssetsProvider, ChainBlockProvider, ChainTokenDataProvider};
 use gem_xrp::rpc::{XRPClient, XRPMapper};
 use primitives::{Asset, AssetBalance, AssetId, AssetType, Chain, Transaction};
-
-const XRP_EPOCH_OFFSET_SECONDS: i64 = 946684800; // XRP epoch starts 2000-01-01
 
 pub struct XRPProvider {
     client: XRPClient,
@@ -45,20 +44,14 @@ impl ChainBlockProvider for XRPProvider {
 impl ChainTokenDataProvider for XRPProvider {
     async fn get_token_data(&self, token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
         let response = self.client.get_account_objects(token_id.clone()).await?;
-        let account = response
-            .account_objects
-            .first()
-            .ok_or_else(|| anyhow::anyhow!("No account objects found for token_id"))?;
-
-        // Decode currency from hex, filter out null bytes, then convert to String
-        let currency_bytes: Vec<u8> = hex::decode(&account.low_limit.currency)?.into_iter().filter(|b| *b != 0).collect();
-        let symbol = String::from_utf8(currency_bytes)?;
+        let account = response.account_objects.first().ok_or("No account objects found for token_id")?;
+        let symbol = account.high_limit.symbol().ok_or("Invalid currency")?;
 
         Ok(Asset::new(
             AssetId::from_token(self.get_chain(), &token_id),
             symbol.clone(),
             symbol.clone(),
-            15,
+            XRP_DEFAULT_ASSET_DECIMALS,
             AssetType::TOKEN,
         ))
     }
@@ -66,7 +59,18 @@ impl ChainTokenDataProvider for XRPProvider {
 
 #[async_trait]
 impl ChainAssetsProvider for XRPProvider {
-    async fn get_assets_balances(&self, _address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
-        Ok(vec![])
+    async fn get_assets_balances(&self, address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
+        let assets = self.client.get_account_objects(address.clone()).await?;
+        let balances = assets
+            .account_objects
+            .into_iter()
+            .filter(|x| x.high_limit.currency.len() > 3)
+            .flat_map(|x| {
+                let asset_id = AssetId::from_token(self.get_chain(), &x.high_limit.issuer);
+                let value = BigNumberFormatter::value_from_amount(&x.balance.value, XRP_DEFAULT_ASSET_DECIMALS as u32)?;
+                Some(AssetBalance::new(asset_id, value))
+            })
+            .collect();
+        Ok(balances)
     }
 }
