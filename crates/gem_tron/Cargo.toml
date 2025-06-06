@@ -1,0 +1,32 @@
+[package]
+name = "gem_tron"
+version = { workspace = true }
+edition = { workspace = true }
+
+[dependencies]
+# Non-RPC specific dependencies
+alloy-primitives = { workspace = true }
+alloy-sol-types = { workspace = true }
+bs58 = { workspace = true }
+hex = { workspace = true }
+sha2 = { workspace = true }
+primitives = { path = "../primitives" }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+
+# RPC specific dependencies (optional)
+
+reqwest-middleware = { workspace = true, features = ["json"], optional = true }
+chrono = { workspace = true, features = ["serde"], optional = true }
+num-bigint = { workspace = true, optional = true }
+num-traits = { workspace = true, optional = true }
+
+
+[features]
+default = []
+rpc = [
+    "dep:reqwest-middleware",
+    "dep:chrono",
+    "dep:num-bigint",
+    "dep:num-traits",
+]

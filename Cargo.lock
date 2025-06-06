@@ -3230,11 +3230,44 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "42012b0f064e01aa58b545fe3727f90f7dd4020f4a3ea735b50344965f5a57e9"
 
 [[package]]
+name = "gem_algorand"
+version = "1.0.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "base64 0.22.1",
+ "chrono",
+ "primitives",
+ "reqwest-middleware",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.12",
+ "url",
+]
+
+[[package]]
 name = "gem_aptos"
 version = "1.0.0"
 dependencies = [
+ "anyhow",
+ "async-trait",
+ "chrono",
+ "num-bigint",
+ "primitives",
+ "reqwest-middleware",
  "serde",
  "serde_json",
+ "url",
+]
+
+[[package]]
+name = "gem_bitcoin"
+version = "1.0.0"
+dependencies = [
+ "chrono",
+ "primitives",
+ "reqwest-middleware",
+ "serde",
 ]
 
 [[package]]
@@ -3249,6 +3282,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "gem_cardano"
+version = "1.0.0"
+dependencies = [
+ "chrono",
+ "primitives",
+ "reqwest-middleware",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "gem_chain_rpc"
 version = "1.0.0"
 dependencies = [
@@ -3256,28 +3300,29 @@ dependencies = [
  "alloy-sol-types",
  "anyhow",
  "async-trait",
- "base64 0.22.1",
- "bs58",
  "chrono",
- "cosmos-sdk-proto",
  "futures",
+ "gem_algorand",
  "gem_aptos",
+ "gem_bitcoin",
+ "gem_cardano",
+ "gem_cosmos",
  "gem_evm",
+ "gem_near",
+ "gem_polkadot",
  "gem_solana",
+ "gem_stellar",
  "gem_sui",
  "gem_ton",
+ "gem_tron",
  "gem_xrp",
  "hex",
  "jsonrpsee",
- "num-bigint",
- "num-traits",
  "number_formatter",
  "primitives",
- "reqwest-middleware",
  "serde",
  "serde_json",
  "serde_serializers",
- "sha2",
  "tokio",
 ]
 
@@ -3286,7 +3331,17 @@ name = "gem_cosmos"
 version = "1.0.0"
 dependencies = [
  "anyhow",
+ "base64 0.22.1",
  "bech32",
+ "chrono",
+ "cosmos-sdk-proto",
+ "hex",
+ "num-bigint",
+ "primitives",
+ "reqwest-middleware",
+ "serde",
+ "serde_json",
+ "sha2",
 ]
 
 [[package]]
@@ -3323,6 +3378,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "gem_near"
+version = "1.0.0"
+dependencies = [
+ "chrono",
+ "jsonrpsee",
+ "primitives",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "gem_polkadot"
+version = "1.0.0"
+dependencies = [
+ "chrono",
+ "primitives",
+ "reqwest-middleware",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "gem_solana"
 version = "1.0.0"
 dependencies = [
@@ -3345,6 +3422,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "gem_stellar"
+version = "0.1.0"
+dependencies = [
+ "number_formatter",
+ "primitives",
+ "reqwest-middleware",
+ "serde",
+]
+
+[[package]]
 name = "gem_sui"
 version = "1.0.0"
 dependencies = [
@@ -3352,7 +3439,10 @@ dependencies = [
  "base64 0.22.1",
  "bcs",
  "blake2",
+ "chrono",
  "hex",
+ "jsonrpsee",
+ "num-bigint",
  "primitives",
  "serde",
  "serde_json",
@@ -3369,15 +3459,36 @@ dependencies = [
  "anyhow",
  "base64 0.22.1",
  "bitstream-io",
+ "chrono",
  "crc",
  "hex",
  "lazy_static",
  "num-bigint",
  "num-traits",
+ "primitives",
+ "reqwest-middleware",
  "serde",
  "serde_json",
  "sha2",
  "thiserror 2.0.12",
+]
+
+[[package]]
+name = "gem_tron"
+version = "1.0.0"
+dependencies = [
+ "alloy-primitives",
+ "alloy-sol-types",
+ "bs58",
+ "chrono",
+ "hex",
+ "num-bigint",
+ "num-traits",
+ "primitives",
+ "reqwest-middleware",
+ "serde",
+ "serde_json",
+ "sha2",
 ]
 
 [[package]]
@@ -7058,9 +7169,20 @@ dependencies = [
 name = "settings_chain"
 version = "1.0.0"
 dependencies = [
+ "gem_algorand",
+ "gem_aptos",
+ "gem_bitcoin",
+ "gem_cardano",
  "gem_chain_rpc",
+ "gem_cosmos",
  "gem_evm",
+ "gem_near",
+ "gem_polkadot",
  "gem_solana",
+ "gem_stellar",
+ "gem_sui",
+ "gem_ton",
+ "gem_tron",
  "gem_xrp",
  "primitives",
  "reqwest",

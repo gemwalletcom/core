@@ -1,3 +1,6 @@
+#[cfg(feature = "rpc")]
+pub mod rpc;
+
 pub mod jsonrpc;
 pub mod model;
 pub mod object_id;

@@ -16,19 +16,19 @@ pub mod tron;
 pub mod xrp;
 
 // Re-export all client implementations
-pub use self::algorand::client::AlgorandClient;
-pub use self::aptos::client::AptosClient;
-pub use self::bitcoin::client::BitcoinClient;
-pub use self::cardano::client::CardanoClient;
-pub use self::cosmos::client::CosmosClient;
+pub use self::algorand::AlgorandProvider;
+pub use self::aptos::AptosProvider;
+pub use self::bitcoin::BitcoinProvider;
+pub use self::cardano::CardanoProvider;
+pub use self::cosmos::CosmosProvider;
 pub use self::ethereum::EthereumProvider;
-pub use self::near::client::NearClient;
-pub use self::polkadot::client::PolkadotClient;
+pub use self::near::NearProvider;
+pub use self::polkadot::PolkadotProvider;
 pub use self::solana::SolanaProvider;
-pub use self::stellar::client::StellarClient;
-pub use self::sui::client::SuiClient;
-pub use self::ton::client::TonClient;
-pub use self::tron::client::TronClient;
+pub use self::stellar::StellarProvider;
+pub use self::sui::SuiProvider;
+pub use self::ton::TonProvider;
+pub use self::tron::TronProvider;
 pub use self::xrp::XRPProvider;
 
 use async_trait::async_trait;

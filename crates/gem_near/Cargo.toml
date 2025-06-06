@@ -1,0 +1,22 @@
+[package]
+name = "gem_near"
+version = { workspace = true }
+edition = { workspace = true }
+
+[dependencies]
+# RPC specific dependencies
+primitives = { path = "../primitives", optional = true }
+serde = { workspace = true, features = ["derive"], optional = true }
+serde_json = { workspace = true, optional = true }
+jsonrpsee = { workspace = true, features = ["http-client"], optional = true } # Ensure http-client is enabled
+chrono = { workspace = true, features = ["serde"], optional = true }
+
+[features]
+default = []
+rpc = [
+    "dep:primitives",
+    "dep:serde",
+    "dep:serde_json",
+    "dep:jsonrpsee",
+    "dep:chrono"
+]

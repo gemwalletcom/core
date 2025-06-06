@@ -1,23 +1,15 @@
 [package]
-name = "gem_cosmos"
+name = "gem_polkadot"
 version = { workspace = true }
 edition = { workspace = true }
 
 [dependencies]
-bech32 = { workspace = true }
-anyhow = { workspace = true }
-
-# Optional RPC dependencies
+# RPC specific dependencies
 primitives = { path = "../primitives", optional = true }
 serde = { workspace = true, features = ["derive"], optional = true }
 serde_json = { workspace = true, optional = true }
 reqwest-middleware = { workspace = true, features = ["json"], optional = true }
 chrono = { workspace = true, features = ["serde"], optional = true }
-cosmos-sdk-proto = { workspace = true, optional = true }
-base64 = { workspace = true, optional = true }
-hex = { workspace = true, optional = true }
-sha2 = { workspace = true, optional = true }
-num-bigint = { workspace = true, optional = true }
 
 [features]
 default = []
@@ -26,10 +18,5 @@ rpc = [
     "dep:serde",
     "dep:serde_json",
     "dep:reqwest-middleware",
-    "dep:chrono",
-    "dep:cosmos-sdk-proto",
-    "dep:base64",
-    "dep:hex",
-    "dep:sha2",
-    "dep:num-bigint"
+    "dep:chrono"
 ]
