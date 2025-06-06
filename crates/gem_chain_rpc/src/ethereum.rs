@@ -60,16 +60,21 @@ impl ChainTokenDataProvider for EthereumProvider {
             .eth_call(token_id.as_str(), &hex::encode(IERC20::decimalsCall {}.abi_encode()))
             .await?;
 
-        let name_value = IERC20::nameCall::abi_decode_returns(&hex::decode(name)?).unwrap();
-        let symbol_value = IERC20::symbolCall::abi_decode_returns(&hex::decode(symbol)?).unwrap();
-        let decimals_value = IERC20::decimalsCall::abi_decode_returns(&hex::decode(decimals)?).unwrap();
+        let name_value = IERC20::nameCall::abi_decode_returns(&hex::decode(name)?).map_err(|e| format!("Failed to decode name: {}", e))?;
+        let symbol_value = IERC20::symbolCall::abi_decode_returns(&hex::decode(symbol)?).map_err(|e| format!("Failed to decode symbol: {}", e))?;
+        let decimals_value = IERC20::decimalsCall::abi_decode_returns(&hex::decode(decimals)?).map_err(|e| format!("Failed to decode decimals: {}", e))?;
+
+        let asset_type = self
+            .get_chain()
+            .default_asset_type()
+            .ok_or_else(|| format!("No default asset type for chain {:?}", self.get_chain()))?;
 
         Ok(Asset::new(
             AssetId::from_token(self.get_chain(), &token_id),
             name_value,
             symbol_value,
             decimals_value as i32,
-            self.get_chain().default_asset_type().unwrap(),
+            asset_type,
         ))
     }
 }
