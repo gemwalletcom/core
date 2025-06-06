@@ -33,6 +33,7 @@ pub struct Settings {
     pub alerter: Alerter,
     pub scan: Scan,
     pub nft: NFT,
+    pub alchemy: Alchemy,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -309,6 +310,12 @@ pub struct NFT {
     pub opensea: OpenSea,
     pub magiceden: MagicEden,
     pub bucket: BucketConfiguration,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[allow(unused)]
+pub struct Alchemy {
+    pub key: KeySecret,
 }
 
 #[derive(Debug, Deserialize, Clone)]

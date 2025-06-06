@@ -1,4 +1,4 @@
-use primitives::{AssetId, AssetIdVecExt, AssetVecExt};
+use primitives::{AssetId, AssetIdVecExt, AssetVecExt, Chain};
 use std::{error::Error, sync::Arc};
 use tokio::sync::Mutex;
 
@@ -7,13 +7,13 @@ use settings_chain::ChainProviders;
 use storage::{models::AssetAddress, AssetsAddressesStore, DatabaseClient};
 use streamer::{consumer::MessageConsumer, ChainAddressPayload, StreamProducer, StreamProducerQueue};
 
-pub struct AssetsAddressesFetchConsumer {
+pub struct FetchAssetsAddressesConsumer {
     pub provider: ChainProviders,
     pub database: Arc<Mutex<DatabaseClient>>,
     pub stream_producer: StreamProducer,
 }
 
-impl AssetsAddressesFetchConsumer {
+impl FetchAssetsAddressesConsumer {
     pub fn new(provider: ChainProviders, database: Arc<Mutex<DatabaseClient>>, stream_producer: StreamProducer) -> Self {
         Self {
             provider,
@@ -24,9 +24,14 @@ impl AssetsAddressesFetchConsumer {
 }
 
 #[async_trait]
-impl MessageConsumer<ChainAddressPayload, usize> for AssetsAddressesFetchConsumer {
+impl MessageConsumer<ChainAddressPayload, usize> for FetchAssetsAddressesConsumer {
     async fn process(&mut self, payload: ChainAddressPayload) -> Result<usize, Box<dyn Error + Send + Sync>> {
+        let chains = [Chain::Solana, Chain::Sui];
+
         for value in payload.values.clone() {
+            if !chains.contains(&value.chain) {
+                continue;
+            }
             let assets = self
                 .provider
                 .get_assets_balances(value.chain, value.address.clone())

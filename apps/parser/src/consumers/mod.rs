@@ -1,30 +1,30 @@
+pub mod assets_addresses_consumer;
 pub mod fetch_assets_addresses_consumer;
 pub mod fetch_assets_consumer;
 pub mod fetch_blocks_consumer;
-pub mod store_assets_addresses_consumer;
-pub mod store_transactions_consumer;
+pub mod transactions_consumer;
 pub mod transactions_consumer_config;
 
 use std::error::Error;
 use std::sync::Arc;
 
+pub use assets_addresses_consumer::AssetsAddressesConsumer;
 pub use fetch_assets_consumer::FetchAssetsConsumer;
 use gem_chain_rpc::ChainProvider;
 use primitives::Chain;
 use settings::Settings;
 use settings_chain::ChainProviders;
 use storage::{DatabaseClient, NodeStore};
-pub use store_assets_addresses_consumer::AssetsAddressesConsumer;
-pub use store_transactions_consumer::TransactionsConsumer;
 use streamer::{
     AssetsAddressPayload, ChainAddressPayload, ConsumerConfig, FetchAssetsPayload, FetchBlocksPayload, QueueName, StreamProducer, StreamReader,
     TransactionsPayload,
 };
 use tokio::sync::Mutex;
+pub use transactions_consumer::TransactionsConsumer;
 pub use transactions_consumer_config::TransactionsConsumerConfig;
 
 use crate::{
-    consumers::{fetch_assets_addresses_consumer::AssetsAddressesFetchConsumer, fetch_blocks_consumer::FetchBlocksConsumer},
+    consumers::{fetch_assets_addresses_consumer::FetchAssetsAddressesConsumer, fetch_blocks_consumer::FetchBlocksConsumer},
     parser_proxy::ParserProxy,
     Pusher,
 };
@@ -129,8 +129,8 @@ pub async fn run_consumer_fetch_assets_addresses_associations(
         .into_iter()
         .map(|chain| Box::new(ParserProxy::new_from_nodes(&settings, chain, nodes.clone())) as Box<dyn ChainProvider>)
         .collect::<Vec<_>>();
-    let consumer = AssetsAddressesFetchConsumer::new(ChainProviders::new(providers), database.clone(), stream_producer);
-    streamer::run_consumer::<ChainAddressPayload, AssetsAddressesFetchConsumer, usize>(
+    let consumer = FetchAssetsAddressesConsumer::new(ChainProviders::new(providers), database.clone(), stream_producer);
+    streamer::run_consumer::<ChainAddressPayload, FetchAssetsAddressesConsumer, usize>(
         "fetch_assets_addresses_associations",
         stream_reader,
         QueueName::FetchAssetsAddressesAssociations,
