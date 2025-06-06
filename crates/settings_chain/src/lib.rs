@@ -5,10 +5,12 @@ use core::str;
 
 use gem_algorand::rpc::AlgorandClient;
 use gem_aptos::rpc::AptosClient;
+use gem_bitcoin::BitcoinClient;
+use gem_cardano::CardanoClient;
 use gem_chain_rpc::{
     algorand::AlgorandProvider,
-    bitcoin::{client::BitcoinClient, provider::BitcoinProvider},
-    cardano::{client::CardanoClient, provider::CardanoProvider},
+    bitcoin::BitcoinProvider,
+    cardano::CardanoProvider,
     cosmos::{client::CosmosClient, provider::CosmosProvider},
     ethereum::EthereumProvider,
     near::{client::NearClient, provider::NearProvider},

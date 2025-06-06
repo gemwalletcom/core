@@ -4,7 +4,8 @@ use crate::{ChainAssetsProvider, ChainBlockProvider, ChainTokenDataProvider};
 use async_trait::async_trait;
 use primitives::{chain::Chain, Asset, AssetBalance};
 
-use super::{client::BitcoinClient, mapper::BitcoinMapper};
+use gem_bitcoin::rpc::client::BitcoinClient;
+use gem_bitcoin::rpc::mapper::BitcoinMapper;
 
 pub struct BitcoinProvider {
     client: BitcoinClient,

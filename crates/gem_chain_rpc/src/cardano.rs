@@ -5,8 +5,8 @@ use async_trait::async_trait;
 use primitives::AssetBalance;
 use primitives::{chain::Chain, Asset};
 
-use super::client::CardanoClient;
-use super::mapper::CardanoMapper;
+use gem_cardano::rpc::client::CardanoClient;
+use gem_cardano::rpc::mapper::CardanoMapper;
 
 pub struct CardanoProvider {
     client: CardanoClient,

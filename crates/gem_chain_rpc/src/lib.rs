@@ -18,8 +18,8 @@ pub mod xrp;
 // Re-export all client implementations
 pub use self::algorand::AlgorandProvider;
 pub use self::aptos::AptosProvider;
-pub use self::bitcoin::client::BitcoinClient;
-pub use self::cardano::client::CardanoClient;
+pub use self::bitcoin::BitcoinProvider;
+pub use self::cardano::CardanoProvider;
 pub use self::cosmos::client::CosmosClient;
 pub use self::ethereum::EthereumProvider;
 pub use self::near::client::NearClient;

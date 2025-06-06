@@ -1,0 +1,16 @@
+[package]
+name = "gem_cardano"
+version = "1.0.0"
+edition = "2021"
+publish = false
+
+[features]
+default = []
+rpc = ["dep:serde", "dep:serde_json", "dep:primitives", "dep:reqwest-middleware", "dep:chrono"]
+
+[dependencies]
+serde = { workspace = true, features = ["derive"], optional = true }
+serde_json = { workspace = true, optional = true }
+primitives = { path = "../primitives", optional = true }
+reqwest-middleware = { workspace = true, optional = true }
+chrono = { workspace = true, features = ["serde"], optional = true }

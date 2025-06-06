@@ -31,6 +31,8 @@ gem_evm = { path = "../gem_evm" }
 gem_solana = { path = "../gem_solana" }
 gem_xrp = { path = "../gem_xrp" }
 gem_algorand = { path = "../gem_algorand" }
+gem_bitcoin = { path = "../gem_bitcoin" }
+gem_cardano = { path = "../gem_cardano" }
 
 alloy-primitives = { workspace = true }
 alloy-sol-types = { workspace = true }

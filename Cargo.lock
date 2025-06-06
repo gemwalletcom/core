@@ -3260,6 +3260,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "gem_bitcoin"
+version = "1.0.0"
+dependencies = [
+ "chrono",
+ "primitives",
+ "reqwest-middleware",
+ "serde",
+]
+
+[[package]]
 name = "gem_bsc"
 version = "1.0.0"
 dependencies = [
@@ -3268,6 +3278,17 @@ dependencies = [
  "anyhow",
  "hex",
  "itoa",
+]
+
+[[package]]
+name = "gem_cardano"
+version = "1.0.0"
+dependencies = [
+ "chrono",
+ "primitives",
+ "reqwest-middleware",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
@@ -3285,6 +3306,8 @@ dependencies = [
  "futures",
  "gem_algorand",
  "gem_aptos",
+ "gem_bitcoin",
+ "gem_cardano",
  "gem_evm",
  "gem_solana",
  "gem_sui",
@@ -7083,6 +7106,8 @@ version = "1.0.0"
 dependencies = [
  "gem_algorand",
  "gem_aptos",
+ "gem_bitcoin",
+ "gem_cardano",
  "gem_chain_rpc",
  "gem_evm",
  "gem_solana",
