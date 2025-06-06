@@ -75,7 +75,7 @@ impl GemSwapper {
         match mode {
             GemSwapProviderMode::OnChain => from_chain == to_chain,
             GemSwapProviderMode::Bridge | GemSwapProviderMode::CrossChain => from_chain != to_chain,
-            GemSwapProviderMode::OmniChain(chain) => chain == from_chain || from_chain != to_chain,
+            GemSwapProviderMode::OmniChain(chains) => chains.contains(&from_chain) || from_chain != to_chain,
         }
     }
 
@@ -134,6 +134,7 @@ impl GemSwapper {
                 Box::new(proxy::new_mayan()),
                 Box::new(chainflip::ChainflipProvider::default()),
                 Box::new(proxy::new_cetus_aggregator()),
+                Box::new(proxy::new_relay()),
             ],
         }
     }

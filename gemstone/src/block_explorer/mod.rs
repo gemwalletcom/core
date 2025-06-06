@@ -1,7 +1,7 @@
 use primitives::{
     block_explorer::{get_block_explorer, BlockExplorer},
     chain::Chain,
-    explorers::{ChainflipScan, MayanScan, RuneScan, SocketScan},
+    explorers::{ChainflipScan, MayanScan, RelayScan, RuneScan, SocketScan},
 };
 use std::str::FromStr;
 
@@ -47,6 +47,7 @@ impl Explorer {
             GemSwapProvider::Thorchain => RuneScan::new(),
             GemSwapProvider::Across => SocketScan::new(),
             GemSwapProvider::Chainflip => ChainflipScan::new(),
+            GemSwapProvider::Relay => RelayScan::new(),
             GemSwapProvider::UniswapV3
             | GemSwapProvider::UniswapV4
             | GemSwapProvider::PancakeswapV3

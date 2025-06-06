@@ -74,3 +74,15 @@ pub fn new_mayan() -> ProxyProvider {
         ],
     }
 }
+
+pub fn new_relay() -> ProxyProvider {
+    ProxyProvider {
+        provider: SwapProviderType::new(GemSwapProvider::Relay),
+        url: format!("{}/{}", PROVIDER_API_URL, "relay"),
+        assets: vec![
+            SwapChainAsset::All(Chain::Hyperliquid),
+            SwapChainAsset::All(Chain::Manta),
+            SwapChainAsset::All(Chain::Berachain),
+        ],
+    }
+}
