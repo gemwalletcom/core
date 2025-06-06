@@ -13,6 +13,7 @@ pub trait AssetsAddressesStore {
 }
 
 pub trait AssetsAddressesRepository {
+    fn add_assets_addresses(&mut self, values: Vec<primitives::AssetAddress>) -> Result<usize, Box<dyn Error>>;
     fn get_assets_by_addresses(&mut self, values: Vec<ChainAddress>, from_timestamp: Option<u32>) -> Result<Vec<AssetId>, Box<dyn Error>>;
 }
 
@@ -43,6 +44,12 @@ impl AssetsAddressesStore for DatabaseClient {
 }
 
 impl AssetsAddressesRepository for DatabaseClient {
+    fn add_assets_addresses(&mut self, values: Vec<primitives::AssetAddress>) -> Result<usize, Box<dyn Error>> {
+        Ok(AssetsAddressesStore::add_assets_addresses(
+            self,
+            values.into_iter().map(AssetAddress::from_primitive).collect(),
+        )?)
+    }
     fn get_assets_by_addresses(&mut self, values: Vec<ChainAddress>, from_timestamp: Option<u32>) -> Result<Vec<AssetId>, Box<dyn Error>> {
         Ok(AssetsAddressesStore::get_assets_by_addresses(self, values, from_timestamp)?
             .into_iter()

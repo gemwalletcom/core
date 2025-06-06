@@ -1,5 +1,5 @@
 use gem_chain_rpc::ChainProvider;
-use primitives::{Asset, AssetBalance, Chain};
+use primitives::{Asset, AssetBalance, Chain, Transaction};
 
 pub struct ChainProviders {
     providers: Vec<Box<dyn ChainProvider>>,
@@ -20,6 +20,15 @@ impl ChainProviders {
             .find(|x| x.get_chain() == chain)
             .unwrap()
             .get_assets_balances(address)
+            .await
+    }
+
+    pub async fn get_transactions_in_blocks(&self, chain: Chain, blocks: Vec<i64>) -> Result<Vec<Transaction>, Box<dyn std::error::Error + Send + Sync>> {
+        self.providers
+            .iter()
+            .find(|x| x.get_chain() == chain)
+            .unwrap()
+            .get_transactions_in_blocks(blocks)
             .await
     }
 }

@@ -20,19 +20,21 @@ use tokio::sync::Mutex;
 pub async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let args: Vec<String> = std::env::args().collect();
     let mode = args.last().cloned().unwrap_or_default();
-    let settings: Settings = Settings::new().unwrap();
+    let settings = Settings::new().unwrap();
     let database = Arc::new(Mutex::new(DatabaseClient::new(&settings.postgres.url)));
 
     if mode == "consumers" {
         return consumers::run_consumers(settings, database.clone()).await;
     } else if mode == "consumer_transactions" {
-        return consumers::run_consumer_transactions(settings, database.clone()).await;
-    } else if mode == "consumer_assets" {
-        return consumers::run_consumer_assets(settings, database.clone()).await;
-    } else if mode == "consumer_assets_addresses" {
-        return consumers::run_consumer_assets_addresses(settings, database.clone()).await;
+        return consumers::run_consumer_store_transactions(settings.clone(), database.clone()).await;
     } else if mode == "consumer_blocks" {
-        return consumers::run_consumer_blocks(settings, database.clone()).await;
+        return consumers::run_consumer_fetch_blocks(settings, database.clone()).await;
+    } else if mode == "consumer_assets" {
+        tokio::spawn(consumers::run_consumer_fetch_assets(settings.clone(), database.clone()));
+        tokio::spawn(consumers::run_consumer_fetch_assets_addresses_associations(settings.clone(), database.clone()));
+        tokio::spawn(consumers::run_consumer_store_assets_addresses_associations(settings.clone(), database.clone()));
+        std::future::pending::<()>().await;
+        return Ok(());
     } else {
         return run_parser_mode(settings.clone(), database.clone()).await;
     }

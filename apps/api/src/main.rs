@@ -43,6 +43,7 @@ use search_index::SearchIndexClient;
 use settings::Settings;
 use settings_chain::{ChainProviders, ProviderFactory};
 use storage::ClickhouseClient;
+use streamer::StreamProducer;
 use subscriptions::SubscriptionsClient;
 use swap::SwapClient;
 use transactions::TransactionsClient;
@@ -66,7 +67,8 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
     let pusher_client = PusherClient::new(settings.pusher.url, settings.pusher.ios.topic);
     let devices_client = DevicesClient::new(postgres_url, pusher_client).await;
     let transactions_client = TransactionsClient::new(postgres_url).await;
-    let subscriptions_client = SubscriptionsClient::new(postgres_url).await;
+    let stream_producer = StreamProducer::new(&settings.rabbitmq.url).await.unwrap();
+    let subscriptions_client = SubscriptionsClient::new(postgres_url, stream_producer.clone()).await;
     let metrics_client = MetricsClient::new(postgres_url).await;
 
     let security_providers = ScanProviderFactory::create_providers(&settings_clone);
@@ -114,6 +116,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
         .manage(Mutex::new(price_alert_client))
         .manage(Mutex::new(assets_chain_provider))
         .manage(Mutex::new(markets_client))
+        .manage(Mutex::new(stream_producer))
         .mount("/", routes![status::get_status])
         .mount(
             "/v1",

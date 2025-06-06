@@ -29,6 +29,7 @@ chain_primitives = { path = "../../crates/chain_primitives" }
 search_index = { path = "../../crates/search_index" }
 nft = { path = "../../crates/nft" }
 cacher = { path = "../../crates/cacher" }
+streamer = { path = "../../crates/streamer" }
 
 security_provider = { path = "../../crates/security_provider" }
 security_hashdit = { path = "../../crates/security_hashdit" }

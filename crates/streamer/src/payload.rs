@@ -1,4 +1,4 @@
-use primitives::{AssetAddress, AssetId, Chain, GorushNotification, Transaction};
+use primitives::{AssetAddress, AssetId, Chain, ChainAddress, GorushNotification, Transaction};
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
@@ -127,17 +127,34 @@ impl fmt::Display for FetchNFTCollectionAssetPayload {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct AddressAssetsPayload {
+pub struct AssetsAddressPayload {
     pub values: Vec<AssetAddress>,
 }
 
-impl AddressAssetsPayload {
+impl AssetsAddressPayload {
     pub fn new(values: Vec<AssetAddress>) -> Self {
         Self { values }
     }
 }
 
-impl fmt::Display for AddressAssetsPayload {
+impl fmt::Display for AssetsAddressPayload {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "addresses: {}", self.values.len())
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ChainAddressPayload {
+    pub values: Vec<ChainAddress>,
+}
+
+impl ChainAddressPayload {
+    pub fn new(values: Vec<ChainAddress>) -> Self {
+        Self { values }
+    }
+}
+
+impl fmt::Display for ChainAddressPayload {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "addresses: {}", self.values.len())
     }

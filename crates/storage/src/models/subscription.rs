@@ -30,6 +30,13 @@ impl Subscription {
         }
     }
 
+    pub fn as_chain_address(&self) -> primitives::ChainAddress {
+        primitives::ChainAddress {
+            chain: primitives::Chain::from_str(self.chain.as_ref()).unwrap(),
+            address: self.address.clone(),
+        }
+    }
+
     pub fn from_primitive(subscription: primitives::Subscription, device_id: i32) -> Self {
         Self {
             device_id,

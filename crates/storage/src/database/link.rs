@@ -1,3 +1,5 @@
+use std::error::Error;
+
 use crate::{models::*, DatabaseClient};
 
 use diesel::prelude::*;
@@ -7,7 +9,7 @@ pub trait LinkStore {
 }
 
 pub trait LinkRepository {
-    fn add_link_types(&mut self, values: Vec<primitives::LinkType>) -> Result<usize, Box<dyn std::error::Error>>;
+    fn add_link_types(&mut self, values: Vec<primitives::LinkType>) -> Result<usize, Box<dyn Error>>;
 }
 
 impl LinkStore for DatabaseClient {
@@ -21,7 +23,7 @@ impl LinkStore for DatabaseClient {
 }
 
 impl LinkRepository for DatabaseClient {
-    fn add_link_types(&mut self, values: Vec<primitives::LinkType>) -> Result<usize, Box<dyn std::error::Error>> {
+    fn add_link_types(&mut self, values: Vec<primitives::LinkType>) -> Result<usize, Box<dyn Error>> {
         Ok(LinkStore::add_link_types(self, values.into_iter().map(LinkType::from_primitive).collect())?)
     }
 }

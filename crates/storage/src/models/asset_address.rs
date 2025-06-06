@@ -10,6 +10,12 @@ pub struct AssetAddress {
 }
 
 impl AssetAddress {
+    pub fn new(chain: String, asset_id: String, address: String) -> Self {
+        Self { chain, asset_id, address }
+    }
+}
+
+impl AssetAddress {
     pub fn from_primitive(asset_address: primitives::AssetAddress) -> Self {
         Self {
             chain: asset_address.asset_id.chain.as_ref().to_string(),

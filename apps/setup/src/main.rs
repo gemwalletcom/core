@@ -2,7 +2,7 @@ use primitives::{AddressType, Asset, AssetTag, AssetType, Chain, FiatProviderNam
 use search_index::{SearchIndexClient, ASSETS_FILTERS, ASSETS_INDEX_NAME, ASSETS_RANKING_RULES, ASSETS_SEARCH_ATTRIBUTES, ASSETS_SORTS, INDEX_PRIMARY_KEY};
 use settings::Settings;
 use storage::{ClickhouseClient, DatabaseClient, LinkRepository, ParserStateStore};
-use streamer::{QueueName, StreamProducer};
+use streamer::{ExchangeName, QueueName, StreamProducer};
 
 #[tokio::main]
 async fn main() {
@@ -109,14 +109,21 @@ async fn main() {
     println!("setup queues");
 
     let queues = QueueName::all();
-    //let exchange = ExchangeName::Transactions;
+    let exchanges = ExchangeName::all();
     let stream_producer = StreamProducer::new(&settings.rabbitmq.url).await.unwrap();
     for queue in queues.clone() {
         let _ = stream_producer.declare_queue(queue).await;
     }
+    for exchange in exchanges.clone() {
+        let _ = stream_producer.declare_exchange(exchange.clone()).await;
+    }
 
-    // let _ = streamer_reader.declare_exchange(exchange.clone()).await;
-    // let _ = streamer_reader.bind_exchange(exchange.clone(), vec![QueueName::Transactions]).await;
+    let _ = stream_producer
+        .bind_exchange(
+            ExchangeName::NewAddresses.clone(),
+            vec![QueueName::FetchAssetsAddressesAssociations, QueueName::FetchTransactions],
+        )
+        .await;
 
     println!("setup complete");
 }

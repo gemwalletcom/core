@@ -11,5 +11,6 @@ diesel = { workspace = true }
 diesel_migrations = { workspace = true }
 chrono = { workspace = true }
 clickhouse = { workspace = true }
+async-trait = { workspace = true }
 
 primitives = { path = "../primitives" }

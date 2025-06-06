@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::{collections::HashSet, error::Error};
 
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
@@ -111,6 +111,8 @@ impl Asset {
 pub trait AssetVecExt {
     fn ids(&self) -> Vec<AssetId>;
     fn ids_set(&self) -> HashSet<AssetId>;
+    fn asset(&self, asset_id: AssetId) -> Option<Asset>;
+    fn asset_result(&self, asset_id: AssetId) -> Result<&Asset, Box<dyn Error + Send + Sync>>;
 }
 
 impl AssetVecExt for Vec<Asset> {
@@ -120,6 +122,14 @@ impl AssetVecExt for Vec<Asset> {
 
     fn ids_set(&self) -> HashSet<AssetId> {
         self.iter().map(|x| x.id.clone()).collect()
+    }
+
+    fn asset(&self, asset_id: AssetId) -> Option<Asset> {
+        self.iter().find(|x| x.id == asset_id).cloned()
+    }
+
+    fn asset_result(&self, asset_id: AssetId) -> Result<&Asset, Box<dyn Error + Send + Sync>> {
+        self.iter().find(|x| x.id == asset_id).ok_or("Asset not found".into())
     }
 }
 

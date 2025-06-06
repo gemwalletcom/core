@@ -3,28 +3,34 @@ use std::error::Error;
 
 use primitives::Subscription;
 use storage::DatabaseClient;
+use streamer::{ChainAddressPayload, ExchangeName, StreamProducer};
 
 pub struct SubscriptionsClient {
     database: DatabaseClient,
+    stream_producer: StreamProducer,
 }
 
 impl SubscriptionsClient {
-    pub async fn new(database_url: &str) -> Self {
+    pub async fn new(database_url: &str, stream_producer: StreamProducer) -> Self {
         let database = DatabaseClient::new(database_url);
-        Self { database }
+        Self { database, stream_producer }
     }
 
-    pub fn add_subscriptions(&mut self, device_id: &str, subscriptions: Vec<Subscription>) -> Result<usize, Box<dyn Error>> {
+    pub async fn add_subscriptions(&mut self, device_id: &str, subscriptions: Vec<Subscription>) -> Result<usize, Box<dyn Error + Send + Sync>> {
         let device = self.database.get_device(device_id)?;
         let subscriptions = subscriptions
             .into_iter()
             .map(|x| storage::models::Subscription::from_primitive(x, device.id))
-            .collect();
-        let result = self.database.add_subscriptions(subscriptions)?;
+            .collect::<Vec<_>>();
+        let result = self.database.add_subscriptions(subscriptions.clone())?;
+        let payload = subscriptions.clone().into_iter().map(|x| x.as_chain_address()).collect::<Vec<_>>();
+        self.stream_producer
+            .publish_to_exchange(ExchangeName::NewAddresses, &ChainAddressPayload::new(payload))
+            .await?;
         Ok(result)
     }
 
-    pub fn get_subscriptions(&mut self, device_id: &str) -> Result<Vec<primitives::Subscription>, Box<dyn Error>> {
+    pub async fn get_subscriptions(&mut self, device_id: &str) -> Result<Vec<primitives::Subscription>, Box<dyn Error + Send + Sync>> {
         let subscriptions = self
             .database
             .get_subscriptions_by_device_id(device_id)?
@@ -34,7 +40,7 @@ impl SubscriptionsClient {
         Ok(subscriptions)
     }
 
-    pub fn delete_subscriptions(&mut self, device_id: &str, subscriptions: Vec<Subscription>) -> Result<usize, Box<dyn Error>> {
+    pub async fn delete_subscriptions(&mut self, device_id: &str, subscriptions: Vec<Subscription>) -> Result<usize, Box<dyn Error + Send + Sync>> {
         let device = self.database.get_device(device_id)?;
         let values = subscriptions
             .into_iter()

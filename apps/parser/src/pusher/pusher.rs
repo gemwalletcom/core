@@ -3,8 +3,8 @@ use std::error::Error;
 use localizer::LanguageLocalizer;
 use number_formatter::BigNumberFormatter;
 use primitives::{
-    AddressFormatter, Asset, Chain, GorushNotification, PushNotification, PushNotificationTransaction, PushNotificationTypes, Subscription, Transaction,
-    TransactionSwapMetadata, TransactionType,
+    AddressFormatter, Asset, AssetVecExt, Chain, GorushNotification, PushNotification, PushNotificationTransaction, PushNotificationTypes, Subscription,
+    Transaction, TransactionSwapMetadata, TransactionType,
 };
 use storage::DatabaseClient;
 
@@ -35,7 +35,7 @@ impl Pusher {
         subscription: Subscription,
         assets: Vec<Asset>,
     ) -> Result<Message, Box<dyn Error + Send + Sync>> {
-        let asset = assets.iter().find(|x| x.id == transaction.asset_id).ok_or("Asset not found")?;
+        let asset = assets.asset_result(transaction.asset_id.clone())?;
         let amount = BigNumberFormatter::value(transaction.value.as_str(), asset.decimals).unwrap_or_default();
         let chain = transaction.asset_id.chain;
 
@@ -79,16 +79,8 @@ impl Pusher {
             TransactionType::Swap => {
                 let metadata = transaction.metadata.ok_or("Missing metadata")?;
                 let metadata: TransactionSwapMetadata = serde_json::from_value(metadata)?;
-
-                let from_asset = assets
-                    .iter()
-                    .find(|x| x.id == metadata.from_asset)
-                    .ok_or(format!("Asset not found: {}", metadata.from_asset))?;
-                let to_asset = assets
-                    .iter()
-                    .find(|x| x.id == metadata.to_asset)
-                    .ok_or(format!("Asset not found: {}", metadata.to_asset))?;
-
+                let from_asset = assets.asset_result(metadata.from_asset.clone())?;
+                let to_asset = assets.asset_result(metadata.to_asset.clone())?;
                 let from_amount = BigNumberFormatter::value(metadata.from_value.as_str(), from_asset.decimals).unwrap_or_default();
                 let to_amount = BigNumberFormatter::value(metadata.to_value.as_str(), to_asset.decimals).unwrap_or_default();
 

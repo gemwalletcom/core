@@ -4,6 +4,7 @@ use lapin::{options::*, publisher_confirm::Confirmation, types::FieldTable, Basi
 
 use crate::{ExchangeName, QueueName};
 
+#[derive(Clone)]
 pub struct StreamProducer {
     channel: Channel,
 }
@@ -110,10 +111,10 @@ impl StreamProducer {
         Ok(self.channel.queue_purge(&queue.to_string(), QueuePurgeOptions::default()).await?)
     }
 
-    // pub async fn publish_to_exchange<T>(&self, exchange: ExchangeName, message: &T) -> Result<bool, Box<dyn Error + Send + Sync>>
-    // where
-    //     T: serde::Serialize,
-    // {
-    //     self.publish_message(&exchange.to_string(), "", message).await
-    // }
+    pub async fn publish_to_exchange<T>(&self, exchange: ExchangeName, message: &T) -> Result<bool, Box<dyn Error + Send + Sync>>
+    where
+        T: serde::Serialize,
+    {
+        self.publish_message(&exchange.to_string(), "", message).await
+    }
 }
