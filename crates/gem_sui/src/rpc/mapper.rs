@@ -1,5 +1,5 @@
-use chrono::Utc;
 use crate::SUI_COIN_TYPE; // Adjusted from gem_sui::SUI_COIN_TYPE
+use chrono::Utc;
 use num_bigint::BigUint;
 use primitives::SwapProvider;
 use primitives::TransactionSwapMetadata;
@@ -9,7 +9,7 @@ use super::model::BalanceChange; // Adjusted from crate::sui::model::BalanceChan
 
 use super::{
     constants::{SUI_STAKE_EVENT, SUI_UNSTAKE_EVENT},
-    model::{CoinMetadata, Digest as SuiTransaction, GasUsed, EventStake, EventUnstake},
+    model::{CoinMetadata, Digest as SuiTransaction, EventStake, EventUnstake, GasUsed},
 };
 
 pub struct SuiMapper;
@@ -39,7 +39,10 @@ impl SuiMapper {
         let owner = effects.gas_object.owner.get_address_owner();
 
         // system transfer
-        if balance_changes.len() == 2 && balance_changes[0].coin_type == chain.as_denom().unwrap_or_default() && balance_changes[1].coin_type == chain.as_denom().unwrap_or_default() {
+        if balance_changes.len() == 2
+            && balance_changes[0].coin_type == chain.as_denom().unwrap_or_default()
+            && balance_changes[1].coin_type == chain.as_denom().unwrap_or_default()
+        {
             let (from_change, to_change) = if balance_changes[0].amount < balance_changes[1].amount {
                 (balance_changes[0].clone(), balance_changes[1].clone())
             } else {
@@ -233,8 +236,8 @@ mod tests {
 
     #[test]
     fn test_transaction_swap_token_to_token() {
-        let file = concat!(env!("CARGO_MANIFEST_DIR"), "/testdata/sui/swap_token_to_token.json");
-        let result: JsonRpcResult<SuiTransaction> = serde_json::from_str(&std::fs::read_to_string(file).unwrap()).unwrap();
+        let file_content = include_str!("../../testdata/swap_token_to_token.json");
+        let result: JsonRpcResult<SuiTransaction> = serde_json::from_str(file_content).unwrap();
 
         let transaction = SuiMapper::map_transaction(result.result, 1).unwrap();
         let expected = TransactionSwapMetadata {
@@ -250,8 +253,8 @@ mod tests {
 
     #[test]
     fn test_transaction_swap_sui_to_token() {
-        let file = concat!(env!("CARGO_MANIFEST_DIR"), "/testdata/sui/swap_sui_to_token.json");
-        let result: JsonRpcResult<SuiTransaction> = serde_json::from_str(&std::fs::read_to_string(file).unwrap()).unwrap();
+        let file_content = include_str!("../../testdata/swap_sui_to_token.json");
+        let result: JsonRpcResult<SuiTransaction> = serde_json::from_str(file_content).unwrap();
 
         let transaction = SuiMapper::map_transaction(result.result, 1).unwrap();
         let expected = TransactionSwapMetadata {
