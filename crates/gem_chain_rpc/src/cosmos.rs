@@ -4,8 +4,8 @@ use crate::{ChainAssetsProvider, ChainBlockProvider, ChainTokenDataProvider};
 use async_trait::async_trait;
 use primitives::{Asset, AssetBalance, Chain};
 
-use gem_cosmos::rpc::client::CosmosClient;
-use gem_cosmos::rpc::mapper::CosmosMapper;
+use gem_cosmos::rpc::CosmosClient;
+use gem_cosmos::rpc::CosmosMapper;
 
 pub struct CosmosProvider {
     client: CosmosClient,

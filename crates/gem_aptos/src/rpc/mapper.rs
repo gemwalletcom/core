@@ -1,9 +1,9 @@
 use chrono::Utc;
 use num_bigint::BigUint;
-use primitives::{chain::Chain, Transaction, TransactionState, TransactionType};
+use primitives::{Chain, Transaction, TransactionState, TransactionType};
 use std::str::FromStr;
 
-use crate::{constants::STAKE_DEPOSIT_EVENT, model::Transaction as AptosTransaction};
+use crate::{Transaction as AptosTransaction, STAKE_DEPOSIT_EVENT};
 
 pub struct AptosMapper;
 

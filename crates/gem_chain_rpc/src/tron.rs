@@ -5,8 +5,8 @@ use async_trait::async_trait;
 use primitives::AssetBalance;
 use primitives::{chain::Chain, Asset};
 
-use gem_tron::TronClient;
-use gem_tron::rpc::mapper::TronMapper;
+use gem_tron::rpc::TronClient;
+use gem_tron::rpc::TronMapper;
 
 pub struct TronProvider {
     client: TronClient,

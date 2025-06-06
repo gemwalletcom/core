@@ -5,8 +5,8 @@ use async_trait::async_trait;
 use primitives::AssetBalance;
 use primitives::{chain::Chain, Asset, Transaction};
 
-use gem_near::rpc::client::NearClient;
-use gem_near::rpc::mapper::NearMapper;
+use gem_near::rpc::NearClient;
+use gem_near::rpc::NearMapper;
 
 pub struct NearProvider {
     client: NearClient,

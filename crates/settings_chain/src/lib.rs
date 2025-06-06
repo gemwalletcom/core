@@ -2,6 +2,8 @@ mod chain_providers;
 pub use chain_providers::ChainProviders;
 
 use core::str;
+use reqwest_middleware::ClientBuilder;
+use reqwest_retry::{policies::ExponentialBackoff, RetryTransientMiddleware};
 
 use gem_chain_rpc::{
     algorand::AlgorandProvider, bitcoin::BitcoinProvider, cardano::CardanoProvider, ethereum::EthereumProvider, solana::SolanaProvider, sui::SuiProvider,
@@ -10,21 +12,20 @@ use gem_chain_rpc::{
 
 use gem_algorand::rpc::AlgorandClient;
 use gem_aptos::rpc::AptosClient;
-use gem_bitcoin::BitcoinClient;
-use gem_cardano::CardanoClient;
+use gem_bitcoin::rpc::BitcoinClient;
+use gem_cardano::rpc::CardanoClient;
 use gem_cosmos::rpc::client::CosmosClient;
 use gem_evm::rpc::{AlchemyClient, EthereumClient};
 use gem_near::rpc::client::NearClient;
-use gem_polkadot::PolkadotClient;
+use gem_polkadot::rpc::PolkadotClient;
 use gem_solana::rpc::SolanaClient;
 use gem_stellar::rpc::client::StellarClient;
-use gem_sui::SuiClient;
-use gem_ton::TonClient;
-use gem_tron::TronClient;
+use gem_sui::rpc::SuiClient;
+use gem_ton::rpc::TonClient;
+use gem_tron::rpc::TronClient;
 use gem_xrp::rpc::XRPClient;
+
 use primitives::Chain;
-use reqwest_middleware::ClientBuilder;
-use reqwest_retry::{policies::ExponentialBackoff, RetryTransientMiddleware};
 use settings::Settings;
 
 pub struct ProviderFactory {}
