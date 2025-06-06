@@ -1,12 +1,10 @@
+use async_trait::async_trait;
+use hex;
 use std::error::Error;
 
-use async_trait::async_trait;
-use gem_chain_rpc::{ChainAssetsProvider, ChainBlockProvider, ChainTokenDataProvider};
-use hex;
-use primitives::{Asset, AssetBalance, AssetId, AssetType, Transaction, chain::Chain};
-
-use super::client::XRPClient;
-use super::mapper::XRPMapper;
+use crate::{ChainAssetsProvider, ChainBlockProvider, ChainTokenDataProvider};
+use gem_xrp::rpc::{XRPClient, XRPMapper};
+use primitives::{Asset, AssetBalance, AssetId, AssetType, Chain, Transaction};
 
 const XRP_EPOCH_OFFSET_SECONDS: i64 = 946684800; // XRP epoch starts 2000-01-01
 

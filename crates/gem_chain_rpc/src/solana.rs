@@ -2,9 +2,9 @@ use async_trait::async_trait;
 use jsonrpsee::core::ClientError;
 use std::error::Error;
 
-use gem_chain_rpc::{ChainAssetsProvider, ChainBlockProvider, ChainTokenDataProvider};
+use crate::{ChainAssetsProvider, ChainBlockProvider, ChainTokenDataProvider};
 
-use crate::{
+use gem_solana::{
     model::ResultTokenInfo,
     rpc::{client::SolanaClient, mapper::SolanaMapper},
     TOKEN_PROGRAM,

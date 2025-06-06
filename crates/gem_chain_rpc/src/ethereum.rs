@@ -1,11 +1,14 @@
-use super::{client::EthereumClient, mapper::EthereumMapper};
-use crate::erc20::IERC20;
 use alloy_primitives::hex;
 use alloy_sol_types::SolCall;
 use async_trait::async_trait;
-use gem_chain_rpc::{ChainAssetsProvider, ChainBlockProvider, ChainTokenDataProvider};
-use primitives::{chain::Chain, Asset, AssetBalance, AssetId};
 use std::error::Error;
+
+use crate::{ChainAssetsProvider, ChainBlockProvider, ChainTokenDataProvider};
+use gem_evm::{
+    erc20::IERC20,
+    rpc::{AlchemyClient, EthereumClient, EthereumMapper},
+};
+use primitives::{Asset, AssetBalance, AssetId, Chain};
 
 pub struct EthereumProvider {
     client: EthereumClient,
@@ -47,9 +50,15 @@ impl ChainBlockProvider for EthereumProvider {
 #[async_trait]
 impl ChainTokenDataProvider for EthereumProvider {
     async fn get_token_data(&self, token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
-        let name: String = self.client.eth_call(token_id.as_str(), super::client::FUNCTION_ERC20_NAME).await?;
-        let symbol: String = self.client.eth_call(token_id.as_str(), super::client::FUNCTION_ERC20_SYMBOL).await?;
-        let decimals: String = self.client.eth_call(token_id.as_str(), super::client::FUNCTION_ERC20_DECIMALS).await?;
+        let name: String = self.client.eth_call(token_id.as_str(), &hex::encode(IERC20::nameCall {}.abi_encode())).await?;
+        let symbol: String = self
+            .client
+            .eth_call(token_id.as_str(), &hex::encode(IERC20::symbolCall {}.abi_encode()))
+            .await?;
+        let decimals: String = self
+            .client
+            .eth_call(token_id.as_str(), &hex::encode(IERC20::decimalsCall {}.abi_encode()))
+            .await?;
 
         let name_value = IERC20::nameCall::abi_decode_returns(&hex::decode(name)?).unwrap();
         let symbol_value = IERC20::symbolCall::abi_decode_returns(&hex::decode(symbol)?).unwrap();
@@ -69,5 +78,21 @@ impl ChainTokenDataProvider for EthereumProvider {
 impl ChainAssetsProvider for EthereumProvider {
     async fn get_assets_balances(&self, address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
         self.assets_provider.get_assets_balances(address).await
+    }
+}
+
+#[async_trait]
+impl ChainAssetsProvider for AlchemyClient {
+    async fn get_assets_balances(&self, address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
+        let response = self.get_token_balances(&address).await?;
+        let balances = response
+            .token_balances
+            .into_iter()
+            .map(|x| AssetBalance {
+                asset_id: AssetId::from_token(self.chain, &x.contract_address),
+                balance: x.token_balance.to_string(),
+            })
+            .collect();
+        Ok(balances)
     }
 }

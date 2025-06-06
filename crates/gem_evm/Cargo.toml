@@ -12,7 +12,6 @@ rpc = [
     "dep:url",
     "dep:chrono",
     "dep:async-trait",
-    "dep:gem_chain_rpc",
 ]
 
 [dependencies]
@@ -41,4 +40,3 @@ alloy-rpc-types = { workspace = true, optional = true }
 url = { workspace = true, features = ["serde"], optional = true }
 chrono = { workspace = true, optional = true }
 async-trait = { workspace = true, optional = true }
-gem_chain_rpc = { path = "../gem_chain_rpc", optional = true }

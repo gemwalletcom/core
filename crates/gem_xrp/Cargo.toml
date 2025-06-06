@@ -6,7 +6,7 @@ edition = "2024"
 [features]
 default = []
 typeshare = ["dep:typeshare"]
-rpc = ["dep:chrono", "dep:reqwest-middleware", "dep:gem_chain_rpc"]
+rpc = ["dep:chrono", "dep:reqwest-middleware"]
 
 [dependencies]
 serde = { workspace = true, features = ["derive"] }
@@ -22,4 +22,3 @@ typeshare = { workspace = true, optional = true }
 
 reqwest-middleware = { workspace = true, features = ["json"], optional = true }
 chrono = { workspace = true, features = ["serde"], optional = true }
-gem_chain_rpc = { path = "../gem_chain_rpc", optional = true }
