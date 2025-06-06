@@ -34,6 +34,10 @@ impl StreamProducer {
         Ok(())
     }
 
+    pub async fn delete_queue(&self, queue: &str) -> Result<u32, Box<dyn Error + Send + Sync>> {
+        Ok(self.channel.queue_delete(queue, QueueDeleteOptions::default()).await?)
+    }
+
     pub async fn declare_exchange(&self, exchange: ExchangeName) -> Result<(), Box<dyn Error + Send + Sync>> {
         Ok(self
             .channel
