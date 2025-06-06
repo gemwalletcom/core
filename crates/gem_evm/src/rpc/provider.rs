@@ -1,10 +1,11 @@
-use std::error::Error;
-
 use super::{client::EthereumClient, mapper::EthereumMapper};
+use crate::erc20::IERC20;
+use alloy_primitives::hex;
+use alloy_sol_types::SolCall;
 use async_trait::async_trait;
 use gem_chain_rpc::{ChainAssetsProvider, ChainBlockProvider, ChainTokenDataProvider};
-use hex::FromHex;
 use primitives::{chain::Chain, Asset, AssetBalance, AssetId};
+use std::error::Error;
 
 pub struct EthereumProvider {
     client: EthereumClient,
@@ -50,13 +51,9 @@ impl ChainTokenDataProvider for EthereumProvider {
         let symbol: String = self.client.eth_call(token_id.as_str(), super::client::FUNCTION_ERC20_SYMBOL).await?;
         let decimals: String = self.client.eth_call(token_id.as_str(), super::client::FUNCTION_ERC20_DECIMALS).await?;
 
-        let name_bytes = Vec::from_hex(name)?;
-        let symbol_bytes = Vec::from_hex(symbol)?;
-        let decimals_bytes = Vec::from_hex(decimals)?;
-
-        let name_value = String::from_utf8(name_bytes.clone()).unwrap_or_default();
-        let symbol_value = String::from_utf8(symbol_bytes.clone()).unwrap_or_default();
-        let decimals_value: u8 = decimals_bytes.first().copied().unwrap_or_default();
+        let name_value = IERC20::nameCall::abi_decode_returns(&hex::decode(name)?).unwrap();
+        let symbol_value = IERC20::symbolCall::abi_decode_returns(&hex::decode(symbol)?).unwrap();
+        let decimals_value = IERC20::decimalsCall::abi_decode_returns(&hex::decode(decimals)?).unwrap();
 
         Ok(Asset::new(
             AssetId::from_token(self.get_chain(), &token_id),

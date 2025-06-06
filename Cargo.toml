@@ -138,6 +138,7 @@ alloy-rpc-client = "1.0.9"
 alloy-rpc-types = "1.0.9"
 alloy-transport-http = "1.0.9"
 alloy-contract = "1.0.9"
+alloy-provider = "1.0.9"
 
 # localizer
 i18n-embed = { version = "0.15.4", features = ["fluent-system", "autoreload"] }
