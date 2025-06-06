@@ -3,6 +3,29 @@ name = "gem_aptos"
 version = { workspace = true }
 edition = { workspace = true }
 
+[features]
+default = []
+rpc = [
+    "dep:anyhow",
+    "dep:async-trait",
+    "dep:chrono",
+    "dep:reqwest-middleware",
+    "dep:url",
+    "dep:primitives",
+    "dep:num-bigint",
+]
+
 [dependencies]
 serde = { workspace = true }
 serde_json = { workspace = true }
+
+# Dependencies for RPC client & mapper
+anyhow = { workspace = true, optional = true }
+async-trait = { workspace = true, optional = true }
+chrono = { workspace = true, optional = true }
+reqwest-middleware = { workspace = true, features = ["json"], optional = true }
+url = { workspace = true, optional = true }
+num-bigint = { workspace = true, optional = true }
+
+# Workspace local dependencies
+primitives = { path = "../primitives", optional = true }

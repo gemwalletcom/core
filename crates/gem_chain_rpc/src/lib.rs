@@ -16,8 +16,8 @@ pub mod tron;
 pub mod xrp;
 
 // Re-export all client implementations
-pub use self::algorand::client::AlgorandClient;
-pub use self::aptos::client::AptosClient;
+pub use self::algorand::AlgorandProvider;
+pub use self::aptos::AptosProvider;
 pub use self::bitcoin::client::BitcoinClient;
 pub use self::cardano::client::CardanoClient;
 pub use self::cosmos::client::CosmosClient;

@@ -1,10 +1,13 @@
 use std::error::Error;
 
 use async_trait::async_trait;
-use gem_aptos::{CoinInfo, ResourceData, APTOS_NATIVE_COIN, COIN_INFO, COIN_STORE};
+use gem_aptos::{
+    constants::{APTOS_NATIVE_COIN, COIN_INFO, COIN_STORE},
+    model::{CoinInfo, ResourceData},
+    rpc::{AptosClient, AptosMapper},
+};
 use primitives::{chain::Chain, Asset, AssetBalance, AssetId, AssetType, Transaction};
 
-use super::{client::AptosClient, mapper::AptosMapper};
 use crate::{ChainAssetsProvider, ChainBlockProvider, ChainTokenDataProvider};
 
 #[derive(Clone)]
@@ -30,8 +33,8 @@ impl ChainBlockProvider for AptosProvider {
     }
 
     async fn get_transactions(&self, block_number: i64) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
-        let transactions = self.client.get_block_transactions(block_number).await?.transactions;
-        let transactions = transactions
+        let aptos_transactions = self.client.get_block_transactions(block_number).await?.transactions;
+        let transactions = aptos_transactions
             .into_iter()
             .flat_map(|x| AptosMapper::map_transaction(self.get_chain(), x, block_number))
             .collect::<Vec<_>>();
@@ -45,19 +48,20 @@ impl ChainTokenDataProvider for AptosProvider {
     async fn get_token_data(&self, token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
         let parts: Vec<&str> = token_id.split("::").collect();
         let address = parts.first().ok_or("Invalid token id")?;
-        let resource = format!("{}<{}>", COIN_INFO, token_id);
-        let coin_info = self
+        let resource_type_str = format!("{}<{}>", COIN_INFO, token_id);
+        let coin_info_resource = self
             .client
-            .get_account_resource::<CoinInfo>(address.to_string(), &resource)
+            .get_account_resource::<CoinInfo>(address.to_string(), &resource_type_str)
             .await?
-            .unwrap()
-            .data;
+            .ok_or_else(|| format!("CoinInfo resource not found for token_id: {}", token_id))?;
+
+        let coin_info_data = coin_info_resource.data;
 
         Ok(Asset::new(
             AssetId::from_token(self.get_chain(), &token_id),
-            coin_info.name,
-            coin_info.symbol,
-            coin_info.decimals.into(),
+            coin_info_data.name,
+            coin_info_data.symbol,
+            coin_info_data.decimals.into(),
             AssetType::TOKEN,
         ))
     }

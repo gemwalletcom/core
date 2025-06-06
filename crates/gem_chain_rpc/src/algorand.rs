@@ -4,8 +4,8 @@ use crate::{ChainAssetsProvider, ChainBlockProvider, ChainTokenDataProvider};
 use async_trait::async_trait;
 use primitives::{Asset, AssetBalance, Chain};
 
-use super::client::AlgorandClient;
-use super::mapper::AlgorandMapper;
+use gem_algorand::rpc::AlgorandClient;
+use gem_algorand::rpc::AlgorandMapper;
 
 pub struct AlgorandProvider {
     client: AlgorandClient,

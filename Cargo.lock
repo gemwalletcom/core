@@ -3229,11 +3229,34 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "42012b0f064e01aa58b545fe3727f90f7dd4020f4a3ea735b50344965f5a57e9"
 
 [[package]]
+name = "gem_algorand"
+version = "1.0.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "base64 0.22.1",
+ "chrono",
+ "primitives",
+ "reqwest-middleware",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.12",
+ "url",
+]
+
+[[package]]
 name = "gem_aptos"
 version = "1.0.0"
 dependencies = [
+ "anyhow",
+ "async-trait",
+ "chrono",
+ "num-bigint",
+ "primitives",
+ "reqwest-middleware",
  "serde",
  "serde_json",
+ "url",
 ]
 
 [[package]]
@@ -3260,6 +3283,7 @@ dependencies = [
  "chrono",
  "cosmos-sdk-proto",
  "futures",
+ "gem_algorand",
  "gem_aptos",
  "gem_evm",
  "gem_solana",
@@ -7057,6 +7081,8 @@ dependencies = [
 name = "settings_chain"
 version = "1.0.0"
 dependencies = [
+ "gem_algorand",
+ "gem_aptos",
  "gem_chain_rpc",
  "gem_evm",
  "gem_solana",

@@ -30,6 +30,7 @@ gem_sui = { path = "../gem_sui" }
 gem_evm = { path = "../gem_evm" }
 gem_solana = { path = "../gem_solana" }
 gem_xrp = { path = "../gem_xrp" }
+gem_algorand = { path = "../gem_algorand" }
 
 alloy-primitives = { workspace = true }
 alloy-sol-types = { workspace = true }

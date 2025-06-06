@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::{STAKE_DEPOSIT_EVENT, STAKE_WITHDRAW_EVENT};
+use super::constants::{STAKE_DEPOSIT_EVENT, STAKE_WITHDRAW_EVENT};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Ledger {

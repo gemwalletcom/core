@@ -3,9 +3,10 @@ pub use chain_providers::ChainProviders;
 
 use core::str;
 
+use gem_algorand::rpc::AlgorandClient;
+use gem_aptos::rpc::AptosClient;
 use gem_chain_rpc::{
-    algorand::{client::AlgorandClient, provider::AlgorandProvider},
-    aptos::{client::AptosClient, provider::AptosProvider},
+    algorand::AlgorandProvider,
     bitcoin::{client::BitcoinClient, provider::BitcoinProvider},
     cardano::{client::CardanoClient, provider::CardanoProvider},
     cosmos::{client::CosmosClient, provider::CosmosProvider},
@@ -18,7 +19,7 @@ use gem_chain_rpc::{
     ton::{client::TonClient, provider::TonProvider},
     tron::{client::TronClient, provider::TronProvider},
     xrp::XRPProvider,
-    ChainProvider,
+    AptosProvider, ChainProvider,
 };
 use gem_evm::rpc::{AlchemyClient, EthereumClient};
 use gem_solana::rpc::SolanaClient;

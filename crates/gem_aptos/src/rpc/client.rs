@@ -4,8 +4,7 @@ use primitives::chain::Chain;
 use reqwest_middleware::ClientWithMiddleware;
 use serde::{de::DeserializeOwned, Serialize};
 
-use gem_aptos::model::{Block, Ledger, Resource, ResourceData};
-
+use crate::model::{Block, Ledger, Resource, ResourceData};
 pub type AccountResource<T> = Resource<T>;
 
 #[derive(Clone)]
