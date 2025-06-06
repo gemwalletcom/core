@@ -31,6 +31,6 @@ impl StreamProducerQueue for StreamProducer {
     }
 
     async fn publish_store_assets_addresses_associations(&self, payload: Vec<AssetsAddressPayload>) -> Result<bool, Box<dyn Error + Send + Sync>> {
-        self.publish_batch(QueueName::StoreAssetsAddressesAssociations, &payload).await
+        self.publish_batch(QueueName::AssetsAddressesAssociations, &payload).await
     }
 }

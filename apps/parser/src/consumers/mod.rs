@@ -73,7 +73,7 @@ pub async fn run_consumer_store_transactions(settings: Settings, database: Arc<M
         config: TransactionsConsumerConfig::default(),
     };
     streamer::run_consumer::<TransactionsPayload, TransactionsConsumer, usize>(
-        "store_transactions",
+        "transactions",
         stream_reader,
         QueueName::Transactions,
         consumer,
@@ -109,9 +109,9 @@ pub async fn run_consumer_store_assets_addresses_associations(
     let stream_reader = StreamReader::new(&settings.rabbitmq.url).await.unwrap();
     let consumer = AssetsAddressesConsumer::new(database.clone());
     streamer::run_consumer::<AssetsAddressPayload, AssetsAddressesConsumer, usize>(
-        "store_assets_addresses_associations",
+        "assets_addresses_associations",
         stream_reader,
-        QueueName::StoreAssetsAddressesAssociations,
+        QueueName::AssetsAddressesAssociations,
         consumer,
         ConsumerConfig::default(),
     )
