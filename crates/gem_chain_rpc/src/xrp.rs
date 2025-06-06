@@ -1,12 +1,10 @@
+use async_trait::async_trait;
+use hex;
 use std::error::Error;
 
-use async_trait::async_trait;
-use gem_chain_rpc::{ChainAssetsProvider, ChainBlockProvider, ChainTokenDataProvider};
-use hex;
-use primitives::{Asset, AssetBalance, AssetId, AssetType, Transaction, chain::Chain};
-
-use super::client::XRPClient;
-use super::mapper::XRPMapper;
+use crate::{ChainAssetsProvider, ChainBlockProvider, ChainTokenDataProvider};
+use gem_xrp::rpc::{XRPClient, XRPMapper};
+use primitives::{Asset, AssetBalance, AssetId, AssetType, Chain, Transaction};
 
 const XRP_EPOCH_OFFSET_SECONDS: i64 = 946684800; // XRP epoch starts 2000-01-01
 
@@ -48,11 +46,14 @@ impl ChainBlockProvider for XRPProvider {
 impl ChainTokenDataProvider for XRPProvider {
     async fn get_token_data(&self, token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
         let response = self.client.get_account_objects(token_id.clone()).await?;
-        let account = response.account_objects.first().ok_or("No account objects found for token_id")?;
+        let account = response
+            .account_objects
+            .first()
+            .ok_or_else(|| anyhow::anyhow!("No account objects found for token_id"))?;
 
         // Decode currency from hex, filter out null bytes, then convert to String
-        let currency_bytes: Vec<u8> = hex::decode(&account.low_limit.currency)?.into_iter().filter(|&b| b != 0).collect();
-        let symbol = String::from_utf8(currency_bytes).map_err(|e| format!("Failed to convert currency bytes to string: {}", e))?;
+        let currency_bytes: Vec<u8> = hex::decode(&account.low_limit.currency)?.into_iter().filter(|b| *b != 0).collect();
+        let symbol = String::from_utf8(currency_bytes)?;
 
         Ok(Asset::new(
             AssetId::from_token(self.get_chain(), &token_id),

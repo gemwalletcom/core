@@ -1,20 +1,17 @@
 use alloy_ens::namehash;
 use alloy_primitives::{Address, Bytes, U256};
-use alloy_rpc_client::RpcClient;
+use alloy_rpc_client::{ClientBuilder, RpcClient};
 use alloy_rpc_types::TransactionRequest;
 use alloy_sol_types::{sol, SolCall};
-use alloy_transport_http::Http;
 use anyhow::{anyhow, Result};
 use std::str::FromStr;
 use url::Url;
 
 sol! {
-    #[sol(rpc)]
     interface ENSRegistry {
         function resolver(bytes32 node) external view returns (address);
     }
 
-    #[sol(rpc)]
     interface ENSResolver {
         function addr(bytes32 node) external view returns (address);
 
@@ -30,8 +27,7 @@ pub struct Contract {
 impl Contract {
     pub fn new(rpc_url: &str, registry_address_hex: &str) -> Result<Self> {
         let url = Url::parse(rpc_url)?;
-        let http_client = Http::new(url);
-        let rpc_client = RpcClient::new(http_client, true);
+        let rpc_client = ClientBuilder::default().http(url);
         let registry_address = Address::from_str(registry_address_hex)?;
         Ok(Self {
             registry_address,

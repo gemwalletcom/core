@@ -136,7 +136,6 @@ alloy-ens = "1.0.9"
 alloy-json-rpc = "1.0.9"
 alloy-rpc-client = "1.0.9"
 alloy-rpc-types = "1.0.9"
-alloy-transport-http = "1.0.9"
 alloy-contract = "1.0.9"
 
 # localizer

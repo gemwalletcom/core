@@ -9,11 +9,9 @@ typeshare = ["dep:typeshare"]
 rpc = [
     "dep:alloy-rpc-client",
     "dep:alloy-rpc-types",
-    "dep:alloy-transport-http",
     "dep:url",
     "dep:chrono",
     "dep:async-trait",
-    "dep:gem_chain_rpc",
 ]
 
 [dependencies]
@@ -39,8 +37,6 @@ typeshare = { workspace = true, optional = true }
 # rpc feature
 alloy-rpc-client = { workspace = true, optional = true }
 alloy-rpc-types = { workspace = true, optional = true }
-alloy-transport-http = { workspace = true, optional = true }
 url = { workspace = true, features = ["serde"], optional = true }
 chrono = { workspace = true, optional = true }
 async-trait = { workspace = true, optional = true }
-gem_chain_rpc = { path = "../gem_chain_rpc", optional = true }

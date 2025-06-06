@@ -1,19 +1,15 @@
-use alloy_rpc_client::RpcClient;
-use alloy_transport_http::{reqwest::Client as ReqwestClient, Http};
+use alloy_rpc_client::{ClientBuilder, RpcClient};
 use anyhow::Result;
-use async_trait::async_trait;
 use num_bigint::BigUint;
 use serde::Deserialize;
-use std::error::Error;
 use url::Url;
 
-use gem_chain_rpc::ChainAssetsProvider;
-use primitives::{chain::Chain, AssetBalance, AssetId};
+use primitives::chain::Chain;
 use serde_serializers::deserialize_biguint_from_hex_str;
 
 pub struct AlchemyClient {
     client: RpcClient,
-    chain: Chain,
+    pub chain: Chain,
 }
 
 #[derive(Debug, Deserialize)]
@@ -42,31 +38,12 @@ impl AlchemyClient {
         );
 
         let parsed_url = Url::parse(&url).expect("Invalid Alchemy API URL");
-        let reqwest_client = ReqwestClient::new();
-        let http_transport = Http::with_client(reqwest_client, parsed_url);
-        let client = RpcClient::new(http_transport, true);
-
+        let client = ClientBuilder::default().http(parsed_url);
         Self { client, chain }
     }
 
     pub async fn get_token_balances(&self, address: &str) -> Result<TokenBalances> {
         let response = self.client.request("alchemy_getTokenBalances", (address,)).await?;
         Ok(response)
-    }
-}
-
-#[async_trait]
-impl ChainAssetsProvider for AlchemyClient {
-    async fn get_assets_balances(&self, address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
-        let response = self.get_token_balances(&address).await?;
-        let balances = response
-            .token_balances
-            .into_iter()
-            .map(|x| AssetBalance {
-                asset_id: AssetId::from_token(self.chain, &x.contract_address),
-                balance: x.token_balance.to_string(),
-            })
-            .collect();
-        Ok(balances)
     }
 }

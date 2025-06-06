@@ -5,12 +5,15 @@ pub mod aptos;
 pub mod bitcoin;
 pub mod cardano;
 pub mod cosmos;
+pub mod ethereum;
 pub mod near;
 pub mod polkadot;
+pub mod solana;
 pub mod stellar;
 pub mod sui;
 pub mod ton;
 pub mod tron;
+pub mod xrp;
 
 // Re-export all client implementations
 pub use self::algorand::client::AlgorandClient;
@@ -18,12 +21,15 @@ pub use self::aptos::client::AptosClient;
 pub use self::bitcoin::client::BitcoinClient;
 pub use self::cardano::client::CardanoClient;
 pub use self::cosmos::client::CosmosClient;
+pub use self::ethereum::EthereumProvider;
 pub use self::near::client::NearClient;
 pub use self::polkadot::client::PolkadotClient;
+pub use self::solana::SolanaProvider;
 pub use self::stellar::client::StellarClient;
 pub use self::sui::client::SuiClient;
 pub use self::ton::client::TonClient;
 pub use self::tron::client::TronClient;
+pub use self::xrp::XRPProvider;
 
 use async_trait::async_trait;
 use primitives::{chain::Chain, Asset, AssetBalance, Transaction};
