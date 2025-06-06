@@ -33,13 +33,13 @@ install-diesel:
     cargo install diesel_cli --no-default-features --features postgres --version 2.2.4 --force
 
 test-workspace:
-    cargo test --lib --workspace --quiet
+    cargo test --all-features --lib --workspace --quiet
 
 test-all:
-    cargo test --lib --all
+    cargo test --all-features --lib --all
 
 test CRATE:
-    cargo test --package {{CRATE}}
+    cargo test --all-features --package {{CRATE}}
 
 format:
     cargo fmt -q --all
