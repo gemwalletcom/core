@@ -1,3 +1,9 @@
+#[cfg(feature = "rpc")]
+pub mod rpc;
+
+#[cfg(feature = "rpc")]
+pub use rpc::client::SuiClient;
+
 pub mod jsonrpc;
 pub mod model;
 pub mod object_id;

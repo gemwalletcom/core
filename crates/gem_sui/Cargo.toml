@@ -3,10 +3,16 @@ name = "gem_sui"
 version = { workspace = true }
 edition = { workspace = true }
 
+[features]
+default = []
+rpc = [
+    "dep:jsonrpsee",
+    "dep:num-bigint",
+    "dep:chrono",
+]
+
 [dependencies]
-
 primitives = { path = "../primitives" }
-
 sui-types = { workspace = true }
 sui-transaction-builder = { workspace = true }
 bcs = { workspace = true }
@@ -15,6 +21,11 @@ hex = { workspace = true }
 thiserror = { workspace = true }
 base64 = { workspace = true }
 anyhow = { workspace = true }
-serde = { workspace = true }
+serde = { workspace = true, features = ["derive"] } # Assuming derive is generally needed
 serde_json = { workspace = true }
-serde_serializers = { path = "../serde_serializers" }
+serde_serializers = { path = "../serde_serializers" } # General dependency
+
+# Optional dependencies for rpc feature
+jsonrpsee = { workspace = true, features = ["http-client"], optional = true }
+num-bigint = { workspace = true, features = ["serde"], optional = true }
+chrono = { workspace = true, features = ["serde"], optional = true }

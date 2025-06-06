@@ -3,28 +3,24 @@ pub use chain_providers::ChainProviders;
 
 use core::str;
 
+use gem_chain_rpc::{
+    algorand::AlgorandProvider, bitcoin::BitcoinProvider, cardano::CardanoProvider, ethereum::EthereumProvider, solana::SolanaProvider, sui::SuiProvider,
+    ton::TonProvider, tron::TronProvider, xrp::XRPProvider, AptosProvider, ChainProvider, CosmosProvider, NearProvider, PolkadotProvider, StellarProvider,
+};
+
 use gem_algorand::rpc::AlgorandClient;
 use gem_aptos::rpc::AptosClient;
 use gem_bitcoin::BitcoinClient;
 use gem_cardano::CardanoClient;
-use gem_chain_rpc::{
-    algorand::AlgorandProvider,
-    bitcoin::BitcoinProvider,
-    cardano::CardanoProvider,
-    cosmos::{client::CosmosClient, provider::CosmosProvider},
-    ethereum::EthereumProvider,
-    near::{client::NearClient, provider::NearProvider},
-    polkadot::{client::PolkadotClient, provider::PolkadotProvider},
-    solana::SolanaProvider,
-    stellar::{client::StellarClient, provider::StellarProvider},
-    sui::{client::SuiClient, provider::SuiProvider},
-    ton::{client::TonClient, provider::TonProvider},
-    tron::{client::TronClient, provider::TronProvider},
-    xrp::XRPProvider,
-    AptosProvider, ChainProvider,
-};
+use gem_cosmos::rpc::client::CosmosClient;
 use gem_evm::rpc::{AlchemyClient, EthereumClient};
+use gem_near::rpc::client::NearClient;
+use gem_polkadot::PolkadotClient;
 use gem_solana::rpc::SolanaClient;
+use gem_stellar::rpc::client::StellarClient;
+use gem_sui::SuiClient;
+use gem_ton::TonClient;
+use gem_tron::TronClient;
 use gem_xrp::rpc::XRPClient;
 use primitives::Chain;
 use reqwest_middleware::ClientBuilder;
