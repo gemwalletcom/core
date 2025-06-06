@@ -2,7 +2,8 @@ use crate::chain::Chain;
 use crate::chain_evm::EVMChain;
 use crate::explorers::{
     AlgorandAllo, AptosExplorer, AptosScan, BlockScout, Blockchair, Blocksec, Cardanocan, EtherScan, HyperLiquid, MantleExplorer, Mempool, MintScan,
-    NearBlocks, OkxExplorer, RouteScan, RuneScan, SolanaFM, Solscan, SubScan, SuiScan, SuiVision, TonScan, TonViewer, TronScan, Viewblock, XrpScan, ZkSync,
+    NearBlocks, OkxExplorer, RouteScan, RuneScan, ScopeExplorer, SolanaFM, Solscan, SubScan, SuiScan, SuiVision, TonScan, TonViewer, TronScan, Viewblock,
+    XrpScan, ZkSync,
 };
 use std::str::FromStr;
 use typeshare::typeshare;
@@ -48,19 +49,54 @@ pub fn get_block_explorers(chain: Chain) -> Vec<Box<dyn BlockExplorer>> {
         Chain::Litecoin => vec![Blockchair::new_litecoin()],
         Chain::Doge => vec![Blockchair::new_doge()],
 
-        Chain::Ethereum => vec![EtherScan::new(EVMChain::Ethereum), Blockchair::new_ethereum(), Blocksec::new_ethereum()],
-        Chain::SmartChain => vec![EtherScan::new(EVMChain::SmartChain), Blockchair::new_bnb(), Blocksec::new_bsc()],
-        Chain::Polygon => vec![EtherScan::new(EVMChain::Polygon), Blockchair::new_polygon(), Blocksec::new_polygon()],
-        Chain::Arbitrum => vec![EtherScan::new(EVMChain::Arbitrum), Blockchair::new_arbitrum(), Blocksec::new_arbitrum()],
-        Chain::Optimism => vec![EtherScan::new(EVMChain::Optimism), Blockchair::new_optimism(), Blocksec::new_optimism()],
-        Chain::Base => vec![EtherScan::new(EVMChain::Base), Blockchair::new_base(), Blocksec::new_base()],
-        Chain::AvalancheC => vec![EtherScan::new(EVMChain::AvalancheC), RouteScan::new_avax(), Blockchair::new_avalanche()],
+        Chain::Ethereum => vec![
+            EtherScan::new(EVMChain::Ethereum),
+            Blockchair::new_ethereum(),
+            Blocksec::new_ethereum(),
+            ScopeExplorer::new(Chain::Ethereum),
+        ],
+        Chain::SmartChain => vec![
+            EtherScan::new(EVMChain::SmartChain),
+            Blockchair::new_bnb(),
+            Blocksec::new_bsc(),
+            ScopeExplorer::new(Chain::SmartChain),
+        ],
+        Chain::Polygon => vec![
+            EtherScan::new(EVMChain::Polygon),
+            Blockchair::new_polygon(),
+            Blocksec::new_polygon(),
+            ScopeExplorer::new(Chain::Polygon),
+        ],
+        Chain::Arbitrum => vec![
+            EtherScan::new(EVMChain::Arbitrum),
+            Blockchair::new_arbitrum(),
+            Blocksec::new_arbitrum(),
+            ScopeExplorer::new(Chain::Arbitrum),
+        ],
+        Chain::Optimism => vec![
+            EtherScan::new(EVMChain::Optimism),
+            Blockchair::new_optimism(),
+            Blocksec::new_optimism(),
+            ScopeExplorer::new(Chain::Optimism),
+        ],
+        Chain::Base => vec![
+            EtherScan::new(EVMChain::Base),
+            Blockchair::new_base(),
+            Blocksec::new_base(),
+            ScopeExplorer::new(Chain::Base),
+        ],
+        Chain::AvalancheC => vec![
+            EtherScan::new(EVMChain::AvalancheC),
+            RouteScan::new_avax(),
+            Blockchair::new_avalanche(),
+            ScopeExplorer::new(Chain::AvalancheC),
+        ],
         Chain::OpBNB => vec![EtherScan::new(EVMChain::OpBNB), Blockchair::new_opbnb()],
         Chain::Fantom => vec![EtherScan::new(EVMChain::Fantom), Blockchair::new_fantom()],
         Chain::Gnosis => vec![EtherScan::new(EVMChain::Gnosis), Blockchair::new_gnosis()],
         Chain::Manta => vec![BlockScout::new_manta(), EtherScan::new(EVMChain::Manta)],
         Chain::Blast => vec![EtherScan::new(EVMChain::Blast)],
-        Chain::Linea => vec![EtherScan::new(EVMChain::Linea), Blockchair::new_linea()],
+        Chain::Linea => vec![EtherScan::new(EVMChain::Linea), Blockchair::new_linea(), ScopeExplorer::new(Chain::Linea)],
         Chain::Celo => vec![BlockScout::new_celo(), EtherScan::new(EVMChain::Celo)],
         Chain::ZkSync => vec![ZkSync::new(), EtherScan::new(EVMChain::ZkSync)],
         Chain::World => vec![EtherScan::new(EVMChain::World)],

@@ -52,3 +52,5 @@ pub mod chainflip;
 pub use chainflip::ChainflipScan;
 pub mod relay;
 pub use relay::RelayScan;
+pub mod scope;
+pub use scope::ScopeExplorer;
