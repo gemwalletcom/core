@@ -341,12 +341,12 @@ impl Chain {
             | Self::Hyperliquid
             | Self::Sui
             | Self::Monad
-            | Self::Ton => true,
+            | Self::Ton
+            | Self::Xrp => true,
             Self::Osmosis
             | Self::Celestia
             | Self::Injective
             | Self::Tron
-            | Self::Xrp
             | Self::Sei
             | Self::Noble
             | Self::Near
