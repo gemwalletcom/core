@@ -1,7 +1,7 @@
 use std::{collections::HashMap, error::Error, sync::Arc};
 
 use async_trait::async_trait;
-use primitives::{AssetIdVecExt, Transaction};
+use primitives::{AssetIdVecExt, AssetVecExt, Transaction};
 use storage::{models, DatabaseClient};
 use streamer::{consumer::MessageConsumer, QueueName, StreamProducer, TransactionsPayload};
 use streamer::{AddressAssetsPayload, FetchAssetsPayload, NotificationsPayload};
@@ -55,6 +55,7 @@ impl MessageConsumer<TransactionsPayload, usize> for TransactionsConsumer {
                             .collect::<Vec<_>>();
 
                         let missing_assets_ids = assets_ids
+                            .clone()
                             .into_iter()
                             .filter(|asset_id| !existing_assets.iter().any(|a| &a.id == asset_id))
                             .collect::<Vec<_>>();
@@ -65,12 +66,16 @@ impl MessageConsumer<TransactionsPayload, usize> for TransactionsConsumer {
 
                     if self.config.is_transaction_outdated(transaction.created_at.naive_utc(), chain) {
                         println!("outdated transaction: {}, created_at: {}", transaction.id, transaction.created_at);
-                    } else if let Ok(notifications) = self
-                        .pusher
-                        .get_messages(device.as_primitive(), transaction.clone(), subscription.as_primitive(), existing_assets.clone())
-                        .await
-                    {
-                        notifications_payload.push(NotificationsPayload::new(notifications));
+                    }
+                    // make sure all assets present.
+                    if assets_ids.ids_set() == existing_assets.ids_set() {
+                        if let Ok(notifications) = self
+                            .pusher
+                            .get_messages(device.as_primitive(), transaction.clone(), subscription.as_primitive(), existing_assets.clone())
+                            .await
+                        {
+                            notifications_payload.push(NotificationsPayload::new(notifications));
+                        }
                     }
 
                     let assets_addresses = transaction

@@ -11,24 +11,25 @@ pub struct Settings {
     pub clickhouse: ClickhouseDatabase,
     pub meilisearch: MeiliSearch,
     pub rabbitmq: Database,
+
+    pub api: API,
+    pub parser: Parser,
+    pub daemon: Daemon,
+
     pub fiat: Fiat,
     pub moonpay: MoonPay,
     pub transak: Transak,
     pub mercuryo: Mercuryo,
     pub ramp: Ramp,
     pub banxa: Banxa,
-    pub coingecko: CoinGecko,
+
     pub pricer: Pricer,
+    pub coingecko: CoinGecko,
     pub charter: Charter,
     pub name: Name,
     pub metrics: Metrics,
-    pub assets: Assets,
     pub chains: Chains,
-    pub parser: Parser,
-    pub daemon: Daemon,
-    pub api: API,
     pub pusher: Pusher,
-    pub swap: Swap,
     pub alerter: Alerter,
     pub scan: Scan,
     pub nft: NFT,
@@ -169,12 +170,6 @@ pub struct Metrics {
 
 #[derive(Debug, Deserialize, Clone)]
 #[allow(unused)]
-pub struct Assets {
-    pub url: String,
-}
-
-#[derive(Debug, Deserialize, Clone)]
-#[allow(unused)]
 pub struct Chains {
     pub solana: Chain,
     pub ethereum: Chain,
@@ -265,33 +260,10 @@ pub struct PusherIOS {
 
 #[derive(Debug, Deserialize, Clone)]
 #[allow(unused)]
-pub struct Swap {
-    pub jupiter: SwapProvider,
-    pub thorchain: SwapProvider,
-    pub aftermath: SwapProvider,
-}
-
-#[derive(Debug, Deserialize, Clone)]
-#[allow(unused)]
 pub struct Scan {
     pub timeout_ms: u64,
     pub hashdit: ScanProvider,
     pub goplus: ScanProvider,
-}
-
-#[derive(Debug, Deserialize, Clone)]
-#[allow(unused)]
-pub struct SwapFee {
-    pub percent: f64,
-    pub address: String,
-}
-
-#[derive(Debug, Deserialize, Clone)]
-#[allow(unused)]
-pub struct SwapProvider {
-    pub url: String,
-    pub key: String,
-    pub fee: SwapFee,
 }
 
 #[derive(Debug, Deserialize, Clone)]

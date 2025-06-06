@@ -12,6 +12,7 @@ pub enum THORChainName {
     SmartChain,
     AvalancheC,
     Base,
+    Xrp,
 }
 
 // https://dev.thorchain.org/concepts/memo-length-reduction.html
@@ -28,6 +29,7 @@ impl THORChainName {
             THORChainName::SmartChain => "s",  // BSC.BNB
             THORChainName::AvalancheC => "a",  // AVAX.AVAX
             THORChainName::Base => "f",        // BASE.ETH
+            THORChainName::Xrp => "x",         // XRP.XRP
         }
     }
 
@@ -43,6 +45,7 @@ impl THORChainName {
             THORChainName::SmartChain => "BSC",
             THORChainName::AvalancheC => "AVAX",
             THORChainName::Base => "BASE",
+            THORChainName::Xrp => "XRP",
         }
     }
 
@@ -58,6 +61,7 @@ impl THORChainName {
             THORChainName::SmartChain => Chain::SmartChain,
             THORChainName::AvalancheC => Chain::AvalancheC,
             THORChainName::Base => Chain::Base,
+            THORChainName::Xrp => Chain::Xrp,
         }
     }
 
@@ -73,6 +77,7 @@ impl THORChainName {
             Chain::AvalancheC => Some(THORChainName::AvalancheC),
             Chain::BitcoinCash => Some(THORChainName::BitcoinCash),
             Chain::Base => Some(THORChainName::Base),
+            Chain::Xrp => Some(THORChainName::Xrp),
             _ => None,
         }
     }
@@ -85,7 +90,8 @@ impl THORChainName {
             | THORChainName::Cosmos
             | THORChainName::Bitcoin
             | THORChainName::BitcoinCash
-            | THORChainName::Litecoin => false,
+            | THORChainName::Litecoin
+            | THORChainName::Xrp => false,
         }
     }
 }

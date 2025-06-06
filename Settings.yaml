@@ -74,8 +74,6 @@ name:
 
 metrics:
   path: /metrics
-assets:
-  url: "https://raw.githubusercontent.com/gemwalletcom/assets/master"
 chains:
   solana:
     url: "https://api.mainnet-beta.solana.com"
