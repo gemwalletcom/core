@@ -52,8 +52,6 @@ impl ParserProxy {
     }
 
     fn handle_error(&self, error: Box<dyn Error + Send + Sync>) -> Box<dyn Error + Send + Sync> {
-        println!("parser proxy error: {}", error);
-
         if self.providers.len() < 2 {
             return error;
         }
@@ -62,8 +60,8 @@ impl ParserProxy {
         //TODO: Ensure it's not the same as current index
 
         println!(
-            "parser proxy switching for chain: {}, from: {}, to: {}",
-            self.chain, self.providers_urls[current_index], self.providers_urls[new_index]
+            "parser proxy switching for chain: {}, from: {}, to: {}, error: {}",
+            self.chain, self.providers_urls[current_index], self.providers_urls[new_index], error
         );
 
         *self.provider_current_index.lock().unwrap() = new_index;

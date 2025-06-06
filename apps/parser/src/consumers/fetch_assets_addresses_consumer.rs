@@ -45,7 +45,7 @@ impl MessageConsumer<ChainAddressPayload, usize> for AssetsAddressesFetchConsume
                 .database
                 .lock()
                 .await
-                .get_assets(assets_ids.ids())?
+                .get_assets(assets_ids.ids().clone())?
                 .into_iter()
                 .map(|x| x.as_primitive())
                 .collect::<Vec<_>>()

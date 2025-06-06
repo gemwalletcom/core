@@ -105,7 +105,7 @@ impl TransactionsConsumer {
             .into_values()
             .filter(|x| {
                 if let Ok(assets) = db_guard.get_assets(x.asset_ids().ids().clone()) {
-                    assets.len() == x.asset_ids().len()
+                    assets.into_iter().filter(|x| x.is_enabled).count() == x.asset_ids().len()
                 } else {
                     false
                 }

@@ -164,11 +164,7 @@ impl DatabaseClient {
 
     pub fn get_assets(&mut self, asset_ids: Vec<String>) -> Result<Vec<Asset>, diesel::result::Error> {
         use crate::schema::assets::dsl::*;
-        assets
-            .filter(id.eq_any(asset_ids))
-            .filter(is_enabled.eq(true))
-            .select(Asset::as_select())
-            .load(&mut self.connection)
+        assets.filter(id.eq_any(asset_ids)).select(Asset::as_select()).load(&mut self.connection)
     }
 
     // swap
