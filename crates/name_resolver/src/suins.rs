@@ -4,10 +4,9 @@ use primitives::chain::Chain;
 use primitives::NameProvider;
 use std::error::Error;
 
-use alloy_rpc_client::RpcClient;
-use alloy_transport_http::Http;
-use url::Url;
+use alloy_rpc_client::{ClientBuilder, RpcClient};
 use anyhow::{anyhow, Result};
+use url::Url;
 
 pub struct SuinsClient {
     client: RpcClient,
@@ -16,8 +15,7 @@ pub struct SuinsClient {
 impl SuinsClient {
     pub fn new(api_url: String) -> Self {
         let url = Url::parse(&api_url).expect("Invalid Suins API URL");
-        let http_transport = Http::new(url);
-        let client = RpcClient::new(http_transport, true);
+        let client = ClientBuilder::default().http(url);
         Self { client }
     }
 }

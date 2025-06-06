@@ -1,8 +1,6 @@
 use alloy_primitives::{Address, Bytes as AlloyBytes};
-use alloy_rpc_client::RpcClient;
+use alloy_rpc_client::{ClientBuilder, RpcClient};
 use alloy_rpc_types::{BlockId, BlockNumberOrTag, TransactionRequest as AlloyTransactionRequest};
-use alloy_transport_http::reqwest::Client as ReqwestClient;
-use alloy_transport_http::Http;
 use anyhow::{anyhow, Result};
 use serde::de::DeserializeOwned;
 use std::any::TypeId;
@@ -24,9 +22,7 @@ pub struct EthereumClient {
 impl EthereumClient {
     pub fn new(chain: Chain, url_str: String) -> Self {
         let url = Url::parse(&url_str).expect("Invalid Ethereum node URL");
-        let reqwest_client = ReqwestClient::new();
-        let http_transport = Http::with_client(reqwest_client, url);
-        let client = RpcClient::new(http_transport, true);
+        let client = ClientBuilder::default().http(url);
         Self { chain, client }
     }
 

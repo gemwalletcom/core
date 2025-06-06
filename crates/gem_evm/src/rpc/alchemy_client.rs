@@ -1,5 +1,4 @@
-use alloy_rpc_client::RpcClient;
-use alloy_transport_http::{reqwest::Client as ReqwestClient, Http};
+use alloy_rpc_client::{ClientBuilder, RpcClient};
 use anyhow::Result;
 use async_trait::async_trait;
 use num_bigint::BigUint;
@@ -42,10 +41,7 @@ impl AlchemyClient {
         );
 
         let parsed_url = Url::parse(&url).expect("Invalid Alchemy API URL");
-        let reqwest_client = ReqwestClient::new();
-        let http_transport = Http::with_client(reqwest_client, parsed_url);
-        let client = RpcClient::new(http_transport, true);
-
+        let client = ClientBuilder::default().http(parsed_url);
         Self { client, chain }
     }
 
