@@ -1,7 +1,8 @@
 use std::error::Error;
 
-use crate::{ChainAssetsProvider, ChainBlockProvider, ChainTokenDataProvider};
+use crate::{ChainAssetsProvider, ChainBlockProvider, ChainTokenDataProvider, ChainTransactionsProvider};
 use async_trait::async_trait;
+use primitives::Transaction;
 use primitives::{Asset, AssetBalance, Chain};
 
 use gem_algorand::rpc::AlgorandClient;
@@ -27,7 +28,7 @@ impl ChainBlockProvider for AlgorandProvider {
         Ok(self.client.get_transactions_params().await?.last_round)
     }
 
-    async fn get_transactions(&self, block_number: i64) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Send + Sync>> {
+    async fn get_transactions(&self, block_number: i64) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
         let (block, transactions_ids) = self.client.get_block_transactions(block_number).await?;
         let transactions = block.clone().txns.unwrap_or_default();
 
@@ -35,7 +36,7 @@ impl ChainBlockProvider for AlgorandProvider {
             .iter()
             .zip(transactions_ids.iter())
             .flat_map(|(transaction, hash)| AlgorandMapper::map_transaction(self.get_chain(), hash.clone(), block.clone(), transaction.txn.clone()))
-            .collect::<Vec<primitives::Transaction>>();
+            .collect::<Vec<Transaction>>();
 
         Ok(transactions)
     }
@@ -51,6 +52,13 @@ impl ChainTokenDataProvider for AlgorandProvider {
 #[async_trait]
 impl ChainAssetsProvider for AlgorandProvider {
     async fn get_assets_balances(&self, _address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
+        Ok(vec![])
+    }
+}
+
+#[async_trait]
+impl ChainTransactionsProvider for AlgorandProvider {
+    async fn get_transactions_by_address(&self, _address: String) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
         Ok(vec![])
     }
 }

@@ -40,12 +40,10 @@ impl SuiClient {
             .parse::<i64>()?)
     }
 
-    pub async fn get_transactions_by_block_number(&self, block_number: i64) -> Result<Digests, Box<dyn Error + Send + Sync>> {
+    async fn query_transaction_blocks(&self, filter: serde_json::Value) -> Result<Digests, Box<dyn Error + Send + Sync>> {
         let params = vec![
             json!({
-                "filter": {
-                    "Checkpoint": block_number.to_string()
-                },
+                "filter": filter,
                 "options": {
                     "showEffects": true,
                     "showBalanceChanges": true,
@@ -56,8 +54,21 @@ impl SuiClient {
             json!(null),
             json!(50),
         ];
-
         Ok(self.client.request("suix_queryTransactionBlocks", params).await?)
+    }
+
+    pub async fn get_transactions_by_block_number(&self, block_number: i64) -> Result<Digests, Box<dyn Error + Send + Sync>> {
+        let filter = json!({
+            "Checkpoint": block_number.to_string()
+        });
+        self.query_transaction_blocks(filter).await
+    }
+
+    pub async fn get_transactions_by_address(&self, address: String) -> Result<Digests, Box<dyn Error + Send + Sync>> {
+        let filter = json!({
+            "FromAddress": address
+        });
+        self.query_transaction_blocks(filter).await
     }
 
     pub async fn get_coin_metadata(&self, token_id: String) -> Result<CoinMetadata, Box<dyn Error + Send + Sync>> {

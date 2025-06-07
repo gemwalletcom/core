@@ -3,12 +3,12 @@ use alloy_sol_types::SolCall;
 use async_trait::async_trait;
 use std::error::Error;
 
-use crate::{ChainAssetsProvider, ChainBlockProvider, ChainTokenDataProvider};
+use crate::{ChainAssetsProvider, ChainBlockProvider, ChainTokenDataProvider, ChainTransactionsProvider};
 use gem_evm::{
     erc20::IERC20,
     rpc::{AlchemyClient, EthereumClient, EthereumMapper},
 };
-use primitives::{Asset, AssetBalance, AssetId, Chain};
+use primitives::{Asset, AssetBalance, AssetId, Chain, Transaction};
 
 pub struct EthereumProvider {
     client: EthereumClient,
@@ -32,7 +32,7 @@ impl ChainBlockProvider for EthereumProvider {
         Ok(block)
     }
 
-    async fn get_transactions(&self, block_number: i64) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Send + Sync>> {
+    async fn get_transactions(&self, block_number: i64) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
         let block = self.client.get_block(block_number).await?;
         let transactions_reciepts = self.client.get_block_receipts(block_number).await?;
         let transactions = block.transactions;
@@ -41,7 +41,7 @@ impl ChainBlockProvider for EthereumProvider {
             .into_iter()
             .zip(transactions_reciepts.iter())
             .filter_map(|(transaction, receipt)| EthereumMapper::map_transaction(self.get_chain(), &transaction, receipt, block.timestamp.clone()))
-            .collect::<Vec<primitives::Transaction>>();
+            .collect::<Vec<Transaction>>();
 
         return Ok(transactions);
     }
@@ -87,6 +87,15 @@ impl ChainAssetsProvider for EthereumProvider {
 }
 
 #[async_trait]
+impl ChainTransactionsProvider for EthereumProvider {
+    async fn get_transactions_by_address(&self, _address: String) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
+        Ok(vec![])
+    }
+}
+
+// AlchemyClient
+
+#[async_trait]
 impl ChainAssetsProvider for AlchemyClient {
     async fn get_assets_balances(&self, address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
         let response = self.get_token_balances(&address).await?;
@@ -99,5 +108,12 @@ impl ChainAssetsProvider for AlchemyClient {
             })
             .collect();
         Ok(balances)
+    }
+}
+
+#[async_trait]
+impl ChainTransactionsProvider for AlchemyClient {
+    async fn get_transactions_by_address(&self, _address: String) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
+        Ok(vec![])
     }
 }

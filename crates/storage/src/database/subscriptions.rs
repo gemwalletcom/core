@@ -33,11 +33,9 @@ impl DatabaseClient {
         .execute(&mut self.connection)
     }
 
-    // distinct_on is used to only select once subscription per user device
     pub fn get_subscriptions(&mut self, _chain: primitives::Chain, addresses: Vec<String>) -> Result<Vec<Subscription>, diesel::result::Error> {
         use crate::schema::subscriptions::dsl::*;
 
-        // exlcude addresses from subscriptions
         let exclude_addresses = self.get_subscriptions_exclude_addresses(addresses.clone())?;
 
         subscriptions

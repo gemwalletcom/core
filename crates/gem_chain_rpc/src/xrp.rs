@@ -3,7 +3,7 @@ use gem_xrp::{XRP_DEFAULT_ASSET_DECIMALS, XRP_EPOCH_OFFSET_SECONDS};
 use number_formatter::BigNumberFormatter;
 use std::error::Error;
 
-use crate::{ChainAssetsProvider, ChainBlockProvider, ChainTokenDataProvider};
+use crate::{ChainAssetsProvider, ChainBlockProvider, ChainTokenDataProvider, ChainTransactionsProvider};
 use gem_xrp::rpc::{XRPClient, XRPMapper};
 use primitives::{Asset, AssetBalance, AssetId, AssetType, Chain, Transaction};
 
@@ -72,5 +72,12 @@ impl ChainAssetsProvider for XRPProvider {
             })
             .collect();
         Ok(balances)
+    }
+}
+
+#[async_trait]
+impl ChainTransactionsProvider for XRPProvider {
+    async fn get_transactions_by_address(&self, _address: String) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
+        Ok(vec![])
     }
 }

@@ -1,9 +1,9 @@
 use std::error::Error;
 
-use crate::{ChainAssetsProvider, ChainBlockProvider, ChainTokenDataProvider};
+use crate::{ChainAssetsProvider, ChainBlockProvider, ChainTokenDataProvider, ChainTransactionsProvider};
 use async_trait::async_trait;
-use primitives::AssetBalance;
 use primitives::{chain::Chain, Asset};
+use primitives::{AssetBalance, Transaction};
 
 use gem_tron::rpc::TronClient;
 use gem_tron::rpc::TronMapper;
@@ -28,7 +28,7 @@ impl ChainBlockProvider for TronProvider {
         self.client.get_latest_block().await
     }
 
-    async fn get_transactions(&self, block_number: i64) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Send + Sync>> {
+    async fn get_transactions(&self, block_number: i64) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
         let block = self.client.get_block_tranactions(block_number).await?;
         let transactions = block.transactions.unwrap_or_default();
         let reciepts = self.client.get_block_tranactions_reciepts(block_number).await?;
@@ -37,7 +37,7 @@ impl ChainBlockProvider for TronProvider {
             .into_iter()
             .zip(reciepts.iter())
             .filter_map(|(transaction, receipt)| TronMapper::map_transaction(self.get_chain(), transaction, receipt.clone()))
-            .collect::<Vec<primitives::Transaction>>();
+            .collect::<Vec<Transaction>>();
 
         Ok(transactions)
     }
@@ -53,6 +53,13 @@ impl ChainTokenDataProvider for TronProvider {
 #[async_trait]
 impl ChainAssetsProvider for TronProvider {
     async fn get_assets_balances(&self, _address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
+        Ok(vec![])
+    }
+}
+
+#[async_trait]
+impl ChainTransactionsProvider for TronProvider {
+    async fn get_transactions_by_address(&self, _address: String) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
         Ok(vec![])
     }
 }

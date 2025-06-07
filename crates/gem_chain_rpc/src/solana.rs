@@ -2,14 +2,14 @@ use async_trait::async_trait;
 use jsonrpsee::core::ClientError;
 use std::error::Error;
 
-use crate::{ChainAssetsProvider, ChainBlockProvider, ChainTokenDataProvider};
+use crate::{ChainAssetsProvider, ChainBlockProvider, ChainTokenDataProvider, ChainTransactionsProvider};
 
 use gem_solana::{
     model::ResultTokenInfo,
     rpc::{client::SolanaClient, mapper::SolanaMapper},
     TOKEN_PROGRAM,
 };
-use primitives::{chain::Chain, Asset, AssetBalance, AssetId, Transaction as PrimitiveTransaction};
+use primitives::{chain::Chain, Asset, AssetBalance, AssetId, Transaction};
 
 const CLEANUP_BLOCK_ERROR: i32 = -32001;
 const MISSING_SLOT_ERROR: i32 = -32007;
@@ -36,7 +36,7 @@ impl ChainBlockProvider for SolanaProvider {
         self.client.get_slot().await
     }
 
-    async fn get_transactions(&self, block_number: i64) -> Result<Vec<PrimitiveTransaction>, Box<dyn Error + Send + Sync>> {
+    async fn get_transactions(&self, block_number: i64) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
         let block = self.client.get_block(block_number, Some("json"), Some("full"), Some(false), Some(0)).await;
         match block {
             Ok(block) => {
@@ -83,5 +83,12 @@ impl ChainTokenDataProvider for SolanaProvider {
         let token_info = self.client.get_account_info::<ResultTokenInfo>(&token_id, "jsonParsed").await?.info();
         let meta = self.client.get_metaplex_data(&token_id).await?;
         SolanaMapper::map_token_data(self.get_chain(), token_id, &token_info, &meta)
+    }
+}
+
+#[async_trait]
+impl ChainTransactionsProvider for SolanaProvider {
+    async fn get_transactions_by_address(&self, _address: String) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
+        Ok(vec![])
     }
 }

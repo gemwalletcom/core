@@ -1,7 +1,8 @@
 use std::error::Error;
 
-use crate::{ChainAssetsProvider, ChainBlockProvider, ChainTokenDataProvider};
+use crate::{ChainAssetsProvider, ChainBlockProvider, ChainTokenDataProvider, ChainTransactionsProvider};
 use async_trait::async_trait;
+use primitives::Transaction;
 use primitives::{Asset, AssetBalance, Chain};
 
 use gem_cosmos::rpc::CosmosClient;
@@ -29,7 +30,7 @@ impl ChainBlockProvider for CosmosProvider {
         return Ok(block_number);
     }
 
-    async fn get_transactions(&self, block: i64) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Send + Sync>> {
+    async fn get_transactions(&self, block: i64) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
         let response = self.client.get_block(block.to_string().as_str()).await?;
         let transactions = response.block.data.txs;
 
@@ -46,7 +47,7 @@ impl ChainBlockProvider for CosmosProvider {
             .into_iter()
             .zip(receipts.iter())
             .filter_map(|(transaction, receipt)| CosmosMapper::map_transaction(self.get_chain(), transaction, receipt.clone()))
-            .collect::<Vec<primitives::Transaction>>();
+            .collect::<Vec<Transaction>>();
 
         Ok(transactions)
     }
@@ -62,6 +63,13 @@ impl ChainTokenDataProvider for CosmosProvider {
 #[async_trait]
 impl ChainAssetsProvider for CosmosProvider {
     async fn get_assets_balances(&self, _address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
+        Ok(vec![])
+    }
+}
+
+#[async_trait]
+impl ChainTransactionsProvider for CosmosProvider {
+    async fn get_transactions_by_address(&self, _address: String) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
         Ok(vec![])
     }
 }

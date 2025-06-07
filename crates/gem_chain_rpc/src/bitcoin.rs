@@ -1,7 +1,8 @@
 use std::error::Error;
 
-use crate::{ChainAssetsProvider, ChainBlockProvider, ChainTokenDataProvider};
+use crate::{ChainAssetsProvider, ChainBlockProvider, ChainTokenDataProvider, ChainTransactionsProvider};
 use async_trait::async_trait;
+use primitives::Transaction;
 use primitives::{chain::Chain, Asset, AssetBalance};
 
 use gem_bitcoin::rpc::BitcoinClient;
@@ -28,7 +29,7 @@ impl ChainBlockProvider for BitcoinProvider {
         Ok(status.blockbook.best_height)
     }
 
-    async fn get_transactions(&self, block_number: i64) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Send + Sync>> {
+    async fn get_transactions(&self, block_number: i64) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
         let mut page: usize = 1;
         let limit: usize = 20;
         let mut transactions = Vec::new();
@@ -60,6 +61,13 @@ impl ChainTokenDataProvider for BitcoinProvider {
 #[async_trait]
 impl ChainAssetsProvider for BitcoinProvider {
     async fn get_assets_balances(&self, _address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
+        Ok(vec![])
+    }
+}
+
+#[async_trait]
+impl ChainTransactionsProvider for BitcoinProvider {
+    async fn get_transactions_by_address(&self, _address: String) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
         Ok(vec![])
     }
 }

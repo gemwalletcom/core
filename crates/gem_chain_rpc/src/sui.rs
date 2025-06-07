@@ -1,10 +1,10 @@
 use std::error::Error;
 
-use crate::{ChainAssetsProvider, ChainBlockProvider, ChainTokenDataProvider};
+use crate::{ChainAssetsProvider, ChainBlockProvider, ChainTokenDataProvider, ChainTransactionsProvider};
 use async_trait::async_trait;
 use primitives::{chain::Chain, Asset, AssetBalance, AssetId, Transaction};
 
-use gem_sui::rpc::{client::SuiClient, mapper::SuiMapper}; // Updated import
+use gem_sui::rpc::{client::SuiClient, mapper::SuiMapper};
 
 pub struct SuiProvider {
     client: SuiClient,
@@ -68,5 +68,12 @@ impl ChainAssetsProvider for SuiProvider {
             .collect::<Vec<_>>();
 
         Ok(asset_balances)
+    }
+}
+
+#[async_trait]
+impl ChainTransactionsProvider for SuiProvider {
+    async fn get_transactions_by_address(&self, _address: String) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
+        Ok(vec![])
     }
 }

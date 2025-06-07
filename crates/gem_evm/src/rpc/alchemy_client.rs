@@ -43,7 +43,6 @@ impl AlchemyClient {
     }
 
     pub async fn get_token_balances(&self, address: &str) -> Result<TokenBalances> {
-        let response = self.client.request("alchemy_getTokenBalances", (address,)).await?;
-        Ok(response)
+        Ok(self.client.request("alchemy_getTokenBalances", (address,)).await?)
     }
 }

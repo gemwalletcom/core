@@ -35,18 +35,18 @@ use async_trait::async_trait;
 use primitives::{chain::Chain, Asset, AssetBalance, Transaction};
 use std::error::Error;
 
-pub trait ChainProvider: ChainBlockProvider + ChainTokenDataProvider + ChainAssetsProvider {}
-impl<T: ChainBlockProvider + ChainTokenDataProvider + ChainAssetsProvider> ChainProvider for T {}
+pub trait ChainProvider: ChainBlockProvider + ChainTokenDataProvider + ChainAssetsProvider + ChainTransactionsProvider {}
+impl<T: ChainBlockProvider + ChainTokenDataProvider + ChainAssetsProvider + ChainTransactionsProvider> ChainProvider for T {}
 
 #[async_trait]
 pub trait ChainBlockProvider: Send + Sync {
     fn get_chain(&self) -> Chain;
-    async fn get_latest_block(&self) -> Result<i64, Box<dyn std::error::Error + Send + Sync>>;
-    async fn get_transactions(&self, block_number: i64) -> Result<Vec<Transaction>, Box<dyn std::error::Error + Send + Sync>>;
+    async fn get_latest_block(&self) -> Result<i64, Box<dyn Error + Send + Sync>>;
+    async fn get_transactions(&self, block_number: i64) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>>;
 }
 
 impl dyn ChainBlockProvider {
-    pub async fn get_transactions_in_blocks(&self, blocks: Vec<i64>) -> Result<Vec<Transaction>, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn get_transactions_in_blocks(&self, blocks: Vec<i64>) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
         let transactions = futures::future::try_join_all(blocks.iter().map(|block| self.get_transactions(*block)))
             .await?
             .into_iter()
@@ -57,7 +57,7 @@ impl dyn ChainBlockProvider {
 }
 
 impl dyn ChainProvider {
-    pub async fn get_transactions_in_blocks(&self, blocks: Vec<i64>) -> Result<Vec<Transaction>, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn get_transactions_in_blocks(&self, blocks: Vec<i64>) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
         let transactions = futures::future::try_join_all(blocks.iter().map(|block| self.get_transactions(*block)))
             .await?
             .into_iter()
@@ -69,14 +69,21 @@ impl dyn ChainProvider {
 
 #[async_trait]
 pub trait ChainTokenDataProvider: Send + Sync {
-    async fn get_token_data(&self, _token_id: String) -> Result<Asset, Box<dyn std::error::Error + Send + Sync>> {
+    async fn get_token_data(&self, _token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
         Err("Not implemented".into())
     }
 }
 
 #[async_trait]
 pub trait ChainAssetsProvider: Send + Sync {
-    async fn get_assets_balances(&self, _address: String) -> Result<Vec<AssetBalance>, Box<dyn std::error::Error + Send + Sync>> {
+    async fn get_assets_balances(&self, _address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
+        Ok(vec![])
+    }
+}
+
+#[async_trait]
+pub trait ChainTransactionsProvider: Send + Sync {
+    async fn get_transactions_by_address(&self, _address: String) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
         Ok(vec![])
     }
 }

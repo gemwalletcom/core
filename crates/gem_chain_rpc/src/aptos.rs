@@ -8,7 +8,7 @@ use gem_aptos::{
 };
 use primitives::{chain::Chain, Asset, AssetBalance, AssetId, AssetType, Transaction};
 
-use crate::{ChainAssetsProvider, ChainBlockProvider, ChainTokenDataProvider};
+use crate::{ChainAssetsProvider, ChainBlockProvider, ChainTokenDataProvider, ChainTransactionsProvider};
 
 #[derive(Clone)]
 pub struct AptosProvider {
@@ -93,5 +93,12 @@ impl ChainAssetsProvider for AptosProvider {
             .collect();
 
         Ok(balances)
+    }
+}
+
+#[async_trait]
+impl ChainTransactionsProvider for AptosProvider {
+    async fn get_transactions_by_address(&self, _address: String) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
+        Ok(vec![])
     }
 }

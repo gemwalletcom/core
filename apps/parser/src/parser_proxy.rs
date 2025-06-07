@@ -7,7 +7,7 @@ use std::{
 };
 
 use async_trait::async_trait;
-use gem_chain_rpc::{ChainAssetsProvider, ChainBlockProvider, ChainProvider, ChainTokenDataProvider};
+use gem_chain_rpc::{ChainAssetsProvider, ChainBlockProvider, ChainProvider, ChainTokenDataProvider, ChainTransactionsProvider};
 use primitives::{node::ChainNode, Asset, AssetBalance, Chain, Transaction};
 
 #[derive(Clone, Debug)]
@@ -110,6 +110,17 @@ impl ChainAssetsProvider for ParserProxy {
         let provider_index = *self.provider_current_index.lock().unwrap();
         match self.providers[provider_index].get_assets_balances(address).await {
             Ok(balances) => Ok(balances),
+            Err(err) => Err(self.handle_error(err)),
+        }
+    }
+}
+
+#[async_trait]
+impl ChainTransactionsProvider for ParserProxy {
+    async fn get_transactions_by_address(&self, address: String) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
+        let provider_index = *self.provider_current_index.lock().unwrap();
+        match self.providers[provider_index].get_transactions_by_address(address).await {
+            Ok(txs) => Ok(txs),
             Err(err) => Err(self.handle_error(err)),
         }
     }
