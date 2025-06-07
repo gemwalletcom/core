@@ -32,12 +32,14 @@ impl MessageConsumer<ChainAddressPayload, usize> for FetchAssetsAddressesConsume
             if !chains.contains(&value.chain) {
                 continue;
             }
-            let assets = self
-                .provider
-                .get_assets_balances(value.chain, value.address.clone())
-                .await?
+            let assets = self.provider.get_assets_balances(value.chain, value.address.clone()).await?;
+
+            let assets = assets.clone().into_iter().filter(|x| x.balance != "0").collect::<Vec<_>>();
+            let zero_balance_assets = assets
+                .clone()
                 .into_iter()
-                .filter(|x| x.balance != "0")
+                .filter(|x| x.balance == "0")
+                .map(|x| AssetAddress::new(x.asset_id.chain.to_string(), x.asset_id.to_string(), value.address.clone()))
                 .collect::<Vec<_>>();
 
             let assets_addresses = assets
@@ -67,7 +69,8 @@ impl MessageConsumer<ChainAddressPayload, usize> for FetchAssetsAddressesConsume
                 .filter(|x| existing_asset_ids.iter().any(|a| x.asset_id == a.to_string()))
                 .collect::<Vec<_>>();
 
-            self.database.lock().await.set_assets_addresses(results.clone())?;
+            self.database.lock().await.delete_assets_addresses(zero_balance_assets.clone())?;
+            self.database.lock().await.add_assets_addresses(results.clone())?;
 
             self.stream_producer.publish_fetch_assets(missing_asset_ids).await?;
         }

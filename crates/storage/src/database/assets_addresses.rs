@@ -6,7 +6,6 @@ use crate::{models::asset_address::AssetAddress, DatabaseClient};
 use chrono::DateTime;
 use diesel::prelude::*;
 use primitives::{AssetId, ChainAddress};
-use std::collections::HashSet;
 
 pub trait AssetsAddressesStore {
     fn add_assets_addresses(&mut self, values: Vec<AssetAddress>) -> Result<usize, diesel::result::Error>;
@@ -16,7 +15,7 @@ pub trait AssetsAddressesStore {
         from_timestamp: Option<u32>,
         include_with_prices: bool,
     ) -> Result<Vec<AssetAddress>, diesel::result::Error>;
-    fn set_assets_addresses(&mut self, values: Vec<AssetAddress>) -> Result<usize, diesel::result::Error>;
+    fn delete_assets_addresses(&mut self, values: Vec<AssetAddress>) -> Result<usize, diesel::result::Error>;
 }
 
 pub trait AssetsAddressesRepository {
@@ -27,6 +26,7 @@ pub trait AssetsAddressesRepository {
         from_timestamp: Option<u32>,
         include_with_prices: bool,
     ) -> Result<Vec<AssetId>, Box<dyn Error>>;
+    fn delete_assets_addresses(&mut self, values: Vec<primitives::AssetAddress>) -> Result<usize, Box<dyn Error>>;
 }
 
 impl AssetsAddressesStore for DatabaseClient {
@@ -70,19 +70,13 @@ impl AssetsAddressesStore for DatabaseClient {
         query.load(&mut self.connection)
     }
 
-    fn set_assets_addresses(&mut self, values: Vec<AssetAddress>) -> Result<usize, diesel::result::Error> {
-        use crate::schema::assets_addresses::dsl::*;
+    fn delete_assets_addresses(&mut self, values: Vec<AssetAddress>) -> Result<usize, diesel::result::Error> {
         if values.is_empty() {
             return Ok(0);
         }
-        let unique_chain_addresses: HashSet<(String, String)> = values.iter().map(|x| (x.chain.clone(), x.address.clone())).collect();
-
-        self.connection.transaction(|connection| {
-            for (chain_str, address_str) in unique_chain_addresses {
-                diesel::delete(assets_addresses.filter(chain.eq(chain_str)).filter(address.eq(address_str))).execute(connection)?;
-            }
-            diesel::insert_into(assets_addresses).values(&values).execute(connection)
-        })
+        let chains = values.iter().map(|x| x.chain.as_ref()).collect::<Vec<&str>>();
+        let addresses = values.iter().map(|x| x.address.clone()).collect::<Vec<String>>();
+        diesel::delete(assets_addresses.filter(chain.eq_any(chains)).filter(address.eq_any(addresses))).execute(&mut self.connection)
     }
 }
 
@@ -106,5 +100,12 @@ impl AssetsAddressesRepository for DatabaseClient {
                 .flat_map(|x| AssetId::new(x.asset_id.as_str()))
                 .collect(),
         )
+    }
+
+    fn delete_assets_addresses(&mut self, values: Vec<primitives::AssetAddress>) -> Result<usize, Box<dyn Error>> {
+        Ok(AssetsAddressesStore::delete_assets_addresses(
+            self,
+            values.into_iter().map(AssetAddress::from_primitive).collect(),
+        )?)
     }
 }
