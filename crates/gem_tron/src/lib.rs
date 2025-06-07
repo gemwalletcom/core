@@ -1,6 +1,5 @@
 // gem_tron/src/lib.rs
 
-pub mod abi;
 pub mod address;
 
 // RPC module, feature-gated

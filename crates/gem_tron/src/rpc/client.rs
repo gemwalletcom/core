@@ -2,8 +2,8 @@ use primitives::{asset_type::AssetType, chain::Chain, Asset, AssetId};
 use std::error::Error;
 
 use super::model::{Block, BlockTransactions, BlockTransactionsInfo, TriggerConstantContractRequest, TriggerConstantContractResponse};
-use crate::abi::{decode_abi_string, decode_abi_uint8};
 use crate::rpc::constants::{DECIMALS_SELECTOR, DEFAULT_OWNER_ADDRESS, NAME_SELECTOR, SYMBOL_SELECTOR};
+use gem_evm::erc20::{decode_abi_string, decode_abi_uint8};
 use reqwest_middleware::ClientWithMiddleware;
 
 pub struct TronClient {

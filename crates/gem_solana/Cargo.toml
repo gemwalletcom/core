@@ -6,7 +6,7 @@ edition = { workspace = true }
 [features]
 default = []
 typeshare = ["dep:typeshare"]
-rpc = ["dep:chrono", "dep:jsonrpsee", "dep:async-trait", "dep:anyhow"]
+rpc = ["dep:chrono", "dep:jsonrpsee", "dep:async-trait"]
 
 [dependencies]
 curve25519-dalek = { workspace = true }
@@ -19,10 +19,10 @@ serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 num-bigint = { workspace = true }
 typeshare = { workspace = true, optional = true }
-
-jsonrpsee = { workspace = true, optional = true }
-anyhow = { workspace = true, optional = true }
-async-trait = { workspace = true, optional = true }
-chrono = { workspace = true, optional = true }
+anyhow = { workspace = true }
 serde_serializers = { path = "../serde_serializers" }
 primitives = { path = "../primitives" }
+
+jsonrpsee = { workspace = true, optional = true }
+async-trait = { workspace = true, optional = true }
+chrono = { workspace = true, optional = true }

@@ -3,6 +3,11 @@ name = "gem_ton"
 version = { workspace = true }
 edition = { workspace = true }
 
+[features]
+default = []
+rpc = ["dep:reqwest-middleware", "dep:chrono", "dep:serde_serializers"]
+
+
 [dependencies]
 thiserror = { workspace = true }
 base64 = { workspace = true }
@@ -16,11 +21,8 @@ crc = "3"
 serde = { workspace = true }
 serde_json = { workspace = true }
 anyhow = { workspace = true }
-primitives = { path = "../primitives", optional = true }
+primitives = { path = "../primitives" }
+
 reqwest-middleware = { workspace = true, features = ["json"], optional = true }
 chrono = { workspace = true, features = ["serde"], optional = true }
 serde_serializers = { path = "../serde_serializers", optional = true }
-
-[features]
-default = []
-rpc = ["dep:primitives", "dep:reqwest-middleware", "dep:chrono", "dep:serde_serializers"]

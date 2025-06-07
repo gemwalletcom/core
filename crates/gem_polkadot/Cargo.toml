@@ -4,19 +4,14 @@ version = { workspace = true }
 edition = { workspace = true }
 
 [dependencies]
+primitives = { path = "../primitives" }
+serde = { workspace = true, features = ["derive"] }
+
 # RPC specific dependencies
-primitives = { path = "../primitives", optional = true }
-serde = { workspace = true, features = ["derive"], optional = true }
 serde_json = { workspace = true, optional = true }
 reqwest-middleware = { workspace = true, features = ["json"], optional = true }
 chrono = { workspace = true, features = ["serde"], optional = true }
 
 [features]
 default = []
-rpc = [
-    "dep:primitives",
-    "dep:serde",
-    "dep:serde_json",
-    "dep:reqwest-middleware",
-    "dep:chrono"
-]
+rpc = ["dep:serde_json", "dep:reqwest-middleware", "dep:chrono"]
