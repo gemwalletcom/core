@@ -26,7 +26,7 @@ impl FetchAssetsAddressesConsumer {
 #[async_trait]
 impl MessageConsumer<ChainAddressPayload, usize> for FetchAssetsAddressesConsumer {
     async fn process(&mut self, payload: ChainAddressPayload) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        let chains = [Chain::Solana, Chain::Sui];
+        let chains = [Chain::Solana, Chain::Sui, Chain::Ton, Chain::Xrp];
 
         for value in payload.values.clone() {
             if !chains.contains(&value.chain) {
@@ -67,7 +67,7 @@ impl MessageConsumer<ChainAddressPayload, usize> for FetchAssetsAddressesConsume
                 .filter(|x| existing_asset_ids.iter().any(|a| x.asset_id == a.to_string()))
                 .collect::<Vec<_>>();
 
-            self.database.lock().await.add_assets_addresses(results.clone())?;
+            self.database.lock().await.set_assets_addresses(results.clone())?;
 
             self.stream_producer.publish_fetch_assets(missing_asset_ids).await?;
         }

@@ -5,7 +5,7 @@ use std::error::Error;
 pub mod database;
 pub use self::database::{
     assets_addresses::{AssetsAddressesRepository, AssetsAddressesStore},
-    link::{LinkRepository, LinkStore},
+    link_types::{LinkRepository, LinkStore},
     nodes::{NodeRepository, NodeStore},
     parser_state::{ParserStateRepository, ParserStateStore},
     DatabaseClient,

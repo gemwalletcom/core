@@ -55,7 +55,7 @@ impl AssetsClient {
             .into_iter()
             .map(|x| ChainAddress::new(Chain::from_str(&x.chain).unwrap(), x.address))
             .collect();
-        assets_addresses_repository.get_assets_by_addresses(chain_addresses, from_timestamp)
+        assets_addresses_repository.get_assets_by_addresses(chain_addresses, from_timestamp, true)
     }
 }
 
