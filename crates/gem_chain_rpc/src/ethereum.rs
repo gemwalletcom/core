@@ -5,7 +5,7 @@ use std::error::Error;
 
 use crate::{ChainAssetsProvider, ChainBlockProvider, ChainTokenDataProvider};
 use gem_evm::{
-    erc20::IERC20,
+    erc20::{decode_abi_string, decode_abi_uint8, IERC20},
     rpc::{AlchemyClient, EthereumClient, EthereumMapper},
 };
 use primitives::{Asset, AssetBalance, AssetId, Chain};
@@ -60,9 +60,9 @@ impl ChainTokenDataProvider for EthereumProvider {
             .eth_call(token_id.as_str(), &hex::encode(IERC20::decimalsCall {}.abi_encode()))
             .await?;
 
-        let name_value = IERC20::nameCall::abi_decode_returns(&hex::decode(name)?).map_err(|e| format!("Failed to decode name: {}", e))?;
-        let symbol_value = IERC20::symbolCall::abi_decode_returns(&hex::decode(symbol)?).map_err(|e| format!("Failed to decode symbol: {}", e))?;
-        let decimals_value = IERC20::decimalsCall::abi_decode_returns(&hex::decode(decimals)?).map_err(|e| format!("Failed to decode decimals: {}", e))?;
+        let name_value = decode_abi_string(&name)?;
+        let symbol_value = decode_abi_string(&symbol)?;
+        let decimals_value = decode_abi_uint8(&decimals)?;
 
         let asset_type = self
             .get_chain()

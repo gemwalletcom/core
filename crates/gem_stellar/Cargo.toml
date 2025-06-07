@@ -1,22 +1,16 @@
 [package]
 name = "gem_stellar"
-version = "0.1.0"
-edition = "2021"
+version = { workspace = true }
+edition = { workspace = true }
 
 [features]
 default = []
-rpc = [
-    "dep:primitives",
-    "dep:reqwest-middleware",
-    "dep:serde",
-    "dep:number_formatter",
-]
+rpc = ["dep:reqwest-middleware", "dep:number_formatter"]
 
 [dependencies]
-# Optional dependencies for the rpc feature
-primitives = { path = "../primitives", optional = true }
-reqwest-middleware = { workspace = true, optional = true, features = ["json"] }
-serde = { workspace = true, features = ["derive"], optional = true }
-number_formatter = { path = "../number_formatter", optional = true }
+serde = { workspace = true, features = ["derive"] }
+primitives = { path = "../primitives" }
 
-# Non-optional dependencies (if any) would go here
+# Optional dependencies for the rpc feature
+reqwest-middleware = { workspace = true, optional = true, features = ["json"] }
+number_formatter = { path = "../number_formatter", optional = true }

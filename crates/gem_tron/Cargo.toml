@@ -4,7 +4,6 @@ version = { workspace = true }
 edition = { workspace = true }
 
 [dependencies]
-# Non-RPC specific dependencies
 alloy-primitives = { workspace = true }
 alloy-sol-types = { workspace = true }
 bs58 = { workspace = true }
@@ -15,12 +14,11 @@ serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 
 # RPC specific dependencies (optional)
-
 reqwest-middleware = { workspace = true, features = ["json"], optional = true }
 chrono = { workspace = true, features = ["serde"], optional = true }
 num-bigint = { workspace = true, optional = true }
 num-traits = { workspace = true, optional = true }
-
+gem_evm = { path = "../gem_evm", optional = true }
 
 [features]
 default = []
@@ -29,4 +27,5 @@ rpc = [
     "dep:chrono",
     "dep:num-bigint",
     "dep:num-traits",
+    "dep:gem_evm",
 ]

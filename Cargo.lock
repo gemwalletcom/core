@@ -3423,7 +3423,7 @@ dependencies = [
 
 [[package]]
 name = "gem_stellar"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "number_formatter",
  "primitives",
@@ -3482,6 +3482,7 @@ dependencies = [
  "alloy-sol-types",
  "bs58",
  "chrono",
+ "gem_evm",
  "hex",
  "num-bigint",
  "num-traits",

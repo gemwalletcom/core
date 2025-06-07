@@ -6,10 +6,11 @@ publish = false
 
 [features]
 default = []
-rpc = ["dep:serde", "dep:primitives", "dep:reqwest-middleware", "dep:chrono"]
+rpc = ["dep:reqwest-middleware", "dep:chrono"]
 
 [dependencies]
-serde = { workspace = true, features = ["derive"], optional = true }
-primitives = { path = "../primitives", optional = true }
+serde = { workspace = true, features = ["derive"] }
+primitives = { path = "../primitives" }
+
 reqwest-middleware = { workspace = true, optional = true }
 chrono = { workspace = true, features = ["serde"], optional = true }
