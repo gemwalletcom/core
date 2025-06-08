@@ -1,7 +1,7 @@
 use num_bigint::{BigInt, BigUint};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use serde_serializers::{deserialize_bigint_from_str, deserialize_biguint_from_str};
+use serde_serializers::{deserialize_bigint_from_str, deserialize_biguint_from_str, deserialize_u64_from_str};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ResultData<T> {
@@ -17,6 +17,11 @@ pub struct Digest {
     #[serde(rename = "balanceChanges")]
     pub balance_changes: Option<Vec<BalanceChange>>,
     pub events: Vec<Event>,
+    #[serde(rename = "timestampMs")]
+    #[serde(deserialize_with = "deserialize_u64_from_str")]
+    pub timestamp_ms: u64,
+    #[serde(deserialize_with = "deserialize_u64_from_str")]
+    pub checkpoint: u64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

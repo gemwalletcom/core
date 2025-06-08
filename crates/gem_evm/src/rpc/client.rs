@@ -8,26 +8,26 @@ use std::str::FromStr;
 use url::Url;
 
 use super::model::{Block, TransactionReciept};
-use primitives::chain::Chain;
+use primitives::{Chain, EVMChain};
 
 pub const FUNCTION_ERC20_NAME: &str = "0x06fdde03";
 pub const FUNCTION_ERC20_SYMBOL: &str = "0x95d89b41";
 pub const FUNCTION_ERC20_DECIMALS: &str = "0x313ce567";
 
 pub struct EthereumClient {
-    chain: Chain,
+    chain: EVMChain,
     client: RpcClient,
 }
 
 impl EthereumClient {
-    pub fn new(chain: Chain, url_str: String) -> Self {
+    pub fn new(chain: EVMChain, url_str: String) -> Self {
         let url = Url::parse(&url_str).expect("Invalid Ethereum node URL");
         let client = ClientBuilder::default().http(url);
         Self { chain, client }
     }
 
     pub fn get_chain(&self) -> Chain {
-        self.chain
+        self.chain.to_chain()
     }
 
     pub async fn eth_call<T: DeserializeOwned + 'static>(&self, contract_address: &str, call_data: &str) -> Result<T> {
@@ -56,16 +56,14 @@ impl EthereumClient {
         let include_txs = true;
         let params = (block_id, include_txs);
 
-        let block: Option<Block> = self.client.request("eth_getBlockByNumber", params).await?;
-        block.ok_or_else(|| anyhow!("Block not found or null response for block number: {}", block_number))
+        Ok(self.client.request("eth_getBlockByNumber", params).await?)
     }
 
     pub async fn get_block_receipts(&self, block_number: i64) -> Result<Vec<TransactionReciept>> {
         let block_id = BlockId::Number(BlockNumberOrTag::Number(block_number as u64));
         let params = (block_id,);
 
-        let receipts: Vec<TransactionReciept> = self.client.request("eth_getBlockReceipts", params).await?;
-        Ok(receipts)
+        Ok(self.client.request("eth_getBlockReceipts", params).await?)
     }
 
     pub async fn get_latest_block(&self) -> Result<i64> {

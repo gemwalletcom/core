@@ -1,5 +1,7 @@
 mod chain_providers;
+mod provider_config;
 pub use chain_providers::ChainProviders;
+pub use provider_config::ProviderConfig;
 
 use core::str;
 use reqwest_middleware::ClientBuilder;
@@ -25,7 +27,7 @@ use gem_ton::rpc::TonClient;
 use gem_tron::rpc::TronClient;
 use gem_xrp::rpc::XRPClient;
 
-use primitives::Chain;
+use primitives::{Chain, EVMChain};
 use settings::Settings;
 
 pub struct ProviderFactory {}
@@ -33,19 +35,20 @@ pub struct ProviderFactory {}
 impl ProviderFactory {
     pub fn new_from_settings(chain: Chain, settings: &Settings) -> Box<dyn ChainProvider> {
         let url = Self::url(chain, settings);
-        Self::new_provider(chain, url)
+        Self::new_provider(ProviderConfig::new(chain, url, settings.alchemy.key.secret.as_str()))
     }
 
     pub fn new_providers(settings: &Settings) -> Vec<Box<dyn ChainProvider>> {
         Chain::all().iter().map(|x| Self::new_from_settings(*x, &settings.clone())).collect()
     }
 
-    pub fn new_provider(chain: Chain, url: &str) -> Box<dyn ChainProvider> {
+    pub fn new_provider(config: ProviderConfig) -> Box<dyn ChainProvider> {
         let retry_policy = ExponentialBackoff::builder().build_with_max_retries(3);
         let client = ClientBuilder::new(reqwest::Client::new())
             .with(RetryTransientMiddleware::new_with_policy(retry_policy))
             .build();
-        let url = url.to_string();
+        let chain = config.chain;
+        let url = config.url;
 
         match chain {
             Chain::Bitcoin | Chain::BitcoinCash | Chain::Litecoin | Chain::Doge => Box::new(BitcoinProvider::new(BitcoinClient::new(chain, client, url))),
@@ -73,7 +76,8 @@ impl ProviderFactory {
             | Chain::Unichain
             | Chain::Hyperliquid
             | Chain::Monad => {
-                let assets_provider = AlchemyClient::new(chain, "");
+                let chain = EVMChain::from_chain(chain).unwrap();
+                let assets_provider = AlchemyClient::new(chain, &config.alchemy_key);
                 Box::new(EthereumProvider::new(EthereumClient::new(chain, url), Box::new(assets_provider)))
             }
             Chain::Cosmos | Chain::Osmosis | Chain::Celestia | Chain::Thorchain | Chain::Injective | Chain::Noble | Chain::Sei => {
@@ -83,7 +87,7 @@ impl ProviderFactory {
             Chain::Ton => Box::new(TonProvider::new(TonClient::new(client, url))),
             Chain::Tron => Box::new(TronProvider::new(TronClient::new(client, url))),
             Chain::Aptos => Box::new(AptosProvider::new(AptosClient::new(client, url))),
-            Chain::Sui => Box::new(SuiProvider::new(SuiClient::new(url))),
+            Chain::Sui => Box::new(SuiProvider::new(SuiClient::new(&url))),
             Chain::Xrp => Box::new(XRPProvider::new(XRPClient::new(client, url))),
             Chain::Near => Box::new(NearProvider::new(NearClient::new(url))),
             Chain::Cardano => Box::new(CardanoProvider::new(CardanoClient::new(client, url))),

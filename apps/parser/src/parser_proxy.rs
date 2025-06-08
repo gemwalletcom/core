@@ -1,5 +1,6 @@
 use rand::{rng, Rng};
 use settings::Settings;
+use settings_chain::{ProviderConfig, ProviderFactory};
 use std::{
     collections::HashMap,
     error::Error,
@@ -22,11 +23,16 @@ pub struct ParserProxy {
     provider_current_index: Arc<Mutex<usize>>,
 }
 impl ParserProxy {
-    pub fn new(chain: Chain, config: ParserProxyUrlConfig) -> Self {
+    pub fn new(config: ProviderConfig, proxy_config: ParserProxyUrlConfig) -> Self {
         Self {
-            chain,
-            providers: config.urls.clone().into_iter().map(|x| ParserProxy::new_provider(chain, &x)).collect(),
-            providers_urls: config.urls,
+            chain: config.chain,
+            providers: proxy_config
+                .urls
+                .clone()
+                .into_iter()
+                .map(|url| ProviderFactory::new_provider(config.with_url(&url)))
+                .collect(),
+            providers_urls: proxy_config.urls,
             provider_current_index: Arc::new(Mutex::new(0)),
         }
     }
@@ -39,16 +45,11 @@ impl ParserProxy {
 
         let node_urls = nodes_map.clone().get(chain.as_ref()).cloned().unwrap_or_default();
 
-        let url = settings_chain::ProviderFactory::url(chain, settings);
+        let url = ProviderFactory::url(chain, settings);
         let node_urls = if node_urls.is_empty() { vec![url.to_string()] } else { node_urls };
         let config = ParserProxyUrlConfig { urls: node_urls };
 
-        ParserProxy::new(chain, config)
-    }
-
-    // Support ChainBlockProvider once trait_upcasting is enabled
-    pub fn new_provider(chain: Chain, url: &str) -> Box<dyn ChainProvider> {
-        settings_chain::ProviderFactory::new_provider(chain, url)
+        ParserProxy::new(ProviderConfig::new(chain, url, settings.alchemy.key.secret.as_str()), config)
     }
 
     fn handle_error(&self, error: Box<dyn Error + Send + Sync>) -> Box<dyn Error + Send + Sync> {

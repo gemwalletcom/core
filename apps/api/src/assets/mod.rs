@@ -5,24 +5,10 @@ extern crate rocket;
 
 use std::str::FromStr;
 
-use primitives::{Asset, AssetBalance, AssetBasic, AssetFull, AssetId, Chain, ChainAddress};
+use primitives::{Asset, AssetBalance, AssetBasic, AssetFull, AssetId, Chain, ChainAddress, Transaction};
 use rocket::serde::json::Json;
 use rocket::tokio::sync::Mutex;
 use rocket::State;
-
-#[post("/assets/balances", format = "json", data = "<requests>")]
-pub async fn get_assets_balances(
-    requests: Json<Vec<ChainAddress>>,
-    assets_chain_provider: &State<Mutex<AssetsChainProvider>>,
-) -> Result<Json<Vec<AssetBalance>>, Status> {
-    match assets_chain_provider.lock().await.get_assets_balances(requests.0).await {
-        Ok(assets) => Ok(Json(assets)),
-        Err(error) => {
-            println!("get_assets_balances error: {:?}", error);
-            Err(Status::InternalServerError)
-        }
-    }
-}
 
 #[get("/assets/<asset_id>")]
 pub async fn get_asset(asset_id: &str, client: &State<Mutex<AssetsClient>>) -> Result<Json<AssetFull>, Status> {
@@ -116,4 +102,32 @@ pub async fn get_assets_by_device_id(
 ) -> Json<Vec<AssetId>> {
     let assets = client.lock().await.get_assets_by_device_id(device_id, wallet_index, from_timestamp).unwrap();
     Json(assets)
+}
+
+#[post("/assets/balances", format = "json", data = "<requests>")]
+pub async fn get_assets_balances(
+    requests: Json<Vec<ChainAddress>>,
+    assets_chain_provider: &State<Mutex<AssetsChainProvider>>,
+) -> Result<Json<Vec<AssetBalance>>, Status> {
+    match assets_chain_provider.lock().await.get_assets_balances(requests.0).await {
+        Ok(assets) => Ok(Json(assets)),
+        Err(error) => {
+            println!("get_assets_balances error: {:?}", error);
+            Err(Status::InternalServerError)
+        }
+    }
+}
+
+#[post("/assets/transactions", format = "json", data = "<requests>")]
+pub async fn get_assets_transactions(
+    requests: Json<Vec<ChainAddress>>,
+    assets_chain_provider: &State<Mutex<AssetsChainProvider>>,
+) -> Result<Json<Vec<Transaction>>, Status> {
+    match assets_chain_provider.lock().await.get_assets_transactions(requests.0).await {
+        Ok(transactions) => Ok(Json(transactions)),
+        Err(error) => {
+            println!("get_assets_transactions error: {:?}", error);
+            Err(Status::InternalServerError)
+        }
+    }
 }

@@ -18,7 +18,7 @@ pub struct SuiClient {
 }
 
 impl SuiClient {
-    pub fn new(url: String) -> Self {
+    pub fn new(url: &str) -> Self {
         let client = HttpClientBuilder::default().build(url).unwrap();
 
         Self { client }
@@ -37,7 +37,7 @@ impl SuiClient {
             .client
             .request::<String, _>("sui_getLatestCheckpointSequenceNumber", rpc_params![])
             .await?
-            .parse::<i64>()?)
+            .parse()?)
     }
 
     async fn query_transaction_blocks(&self, filter: serde_json::Value) -> Result<Digests, Box<dyn Error + Send + Sync>> {
@@ -52,7 +52,8 @@ impl SuiClient {
                 }
             }),
             json!(null),
-            json!(50),
+            json!(100),
+            json!(true),
         ];
         Ok(self.client.request("suix_queryTransactionBlocks", params).await?)
     }

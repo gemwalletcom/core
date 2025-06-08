@@ -33,4 +33,13 @@ impl ChainProviders {
             .get_transactions_in_blocks(blocks)
             .await
     }
+
+    pub async fn get_transactions_by_address(&self, chain: Chain, address: String) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
+        self.providers
+            .iter()
+            .find(|x| x.get_chain() == chain)
+            .unwrap()
+            .get_transactions_by_address(address)
+            .await
+    }
 }
