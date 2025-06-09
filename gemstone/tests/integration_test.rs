@@ -1,10 +1,9 @@
 #[cfg(test)]
 mod tests {
-    use alien_provider::NativeProvider;
     use gem_solana::{jsonrpc::SolanaRpc, model::LatestBlockhash};
     use gemstone::{
         config::swap_config::{get_swap_config, SwapReferralFee, SwapReferralFees},
-        network::JsonRpcClient,
+        network::{alien_provider::NativeProvider, JsonRpcClient},
         swapper::{across::Across, cetus::Cetus, models::*, orca::Orca, uniswap::v4::UniswapV4, GemSwapper, *},
     };
     use primitives::{AssetId, Chain};
@@ -37,9 +36,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_orca_get_quote_by_input() -> Result<(), SwapperError> {
-        let node_config = HashMap::from([(Chain::Solana, "https://solana-rpc.publicnode.com".into())]);
         let swap_provider = Orca::boxed();
-        let network_provider = Arc::new(NativeProvider::new(node_config));
+        let network_provider = Arc::new(NativeProvider::new());
 
         let request = SwapQuoteRequest {
             from_asset: AssetId::from(Chain::Solana, None).into(),
