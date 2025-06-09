@@ -64,6 +64,16 @@ pub enum JsonRpcResult<T> {
     Error(JsonRpcErrorResponse),
 }
 
+impl<T> JsonRpcResult<T> {
+    pub fn is_value(&self) -> bool {
+        matches!(self, JsonRpcResult::Value(_))
+    }
+
+    pub fn is_error(&self) -> bool {
+        matches!(self, JsonRpcResult::Error(_))
+    }
+}
+
 impl<T> JsonRpcResult<T>
 where
     T: Clone,

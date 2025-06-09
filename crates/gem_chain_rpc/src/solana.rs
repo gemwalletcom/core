@@ -1,5 +1,4 @@
 use async_trait::async_trait;
-use jsonrpsee::core::ClientError;
 use std::error::Error;
 
 use crate::{ChainAssetsProvider, ChainBlockProvider, ChainTokenDataProvider, ChainTransactionsProvider};
@@ -47,17 +46,14 @@ impl ChainBlockProvider for SolanaProvider {
                     .collect::<Vec<_>>();
                 Ok(transactions)
             }
-            Err(err) => match err {
-                ClientError::Call(err) => {
-                    let errors = [MISSING_SLOT_ERROR, MISSING_OR_SKIPPED_SLOT_ERROR, NOT_AVAILABLE_SLOT_ERROR, CLEANUP_BLOCK_ERROR];
-                    if errors.contains(&err.code()) {
-                        Ok(vec![])
-                    } else {
-                        Err(Box::new(err))
-                    }
+            Err(err) => {
+                let errors = [MISSING_SLOT_ERROR, MISSING_OR_SKIPPED_SLOT_ERROR, NOT_AVAILABLE_SLOT_ERROR, CLEANUP_BLOCK_ERROR];
+                if errors.contains(&err.code) {
+                    Ok(vec![])
+                } else {
+                    Err(Box::new(err))
                 }
-                _ => Err(Box::new(err)),
-            },
+            }
         }
     }
 }
