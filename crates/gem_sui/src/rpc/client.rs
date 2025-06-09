@@ -29,8 +29,7 @@ impl SuiClient {
     }
 
     pub async fn get_latest_block(&self) -> Result<i64, Box<dyn Error + Send + Sync>> {
-        let block_number: i64 = self.client.call("sui_getLatestCheckpointSequenceNumber", json!([])).await?;
-        Ok(block_number)
+        Ok(self.client.call("sui_getLatestCheckpointSequenceNumber", json!([])).await?)
     }
 
     async fn query_transaction_blocks(&self, filter: serde_json::Value) -> Result<Digests, Box<dyn Error + Send + Sync>> {

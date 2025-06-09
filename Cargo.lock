@@ -3289,7 +3289,6 @@ dependencies = [
  "gem_cardano",
  "gem_cosmos",
  "gem_evm",
- "gem_jsonrpc",
  "gem_near",
  "gem_polkadot",
  "gem_solana",

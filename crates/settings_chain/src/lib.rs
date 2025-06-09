@@ -87,7 +87,7 @@ impl ProviderFactory {
             Chain::Ton => Box::new(TonProvider::new(TonClient::new(client, url))),
             Chain::Tron => Box::new(TronProvider::new(TronClient::new(client, url))),
             Chain::Aptos => Box::new(AptosProvider::new(AptosClient::new(client, url))),
-            Chain::Sui => Box::new(SuiProvider::new(SuiClient::new(&url))),
+            Chain::Sui => Box::new(SuiProvider::new(SuiClient::new(url))),
             Chain::Xrp => Box::new(XRPProvider::new(XRPClient::new(client, url))),
             Chain::Near => Box::new(NearProvider::new(NearClient::new(url))),
             Chain::Cardano => Box::new(CardanoProvider::new(CardanoClient::new(client, url))),
