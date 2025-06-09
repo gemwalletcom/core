@@ -1,6 +1,7 @@
 use alloy_primitives::hex;
 use alloy_sol_types::SolCall;
 use async_trait::async_trait;
+use gem_solana::model::BigUint;
 use std::error::Error;
 
 use crate::{ChainAssetsProvider, ChainBlockProvider, ChainTokenDataProvider, ChainTransactionsProvider};
@@ -14,11 +15,16 @@ use primitives::{Asset, AssetBalance, AssetId, Chain, Transaction};
 pub struct EthereumProvider {
     client: EthereumClient,
     assets_provider: Box<dyn ChainAssetsProvider>,
+    transactions_provider: Box<dyn ChainTransactionsProvider>,
 }
 
 impl EthereumProvider {
-    pub fn new(client: EthereumClient, assets_provider: Box<dyn ChainAssetsProvider>) -> Self {
-        Self { client, assets_provider }
+    pub fn new(client: EthereumClient, assets_provider: Box<dyn ChainAssetsProvider>, transactions_provider: Box<dyn ChainTransactionsProvider>) -> Self {
+        Self {
+            client,
+            assets_provider,
+            transactions_provider,
+        }
     }
 }
 
@@ -29,8 +35,7 @@ impl ChainBlockProvider for EthereumProvider {
     }
 
     async fn get_latest_block(&self) -> Result<i64, Box<dyn Error + Send + Sync>> {
-        let block = self.client.get_latest_block().await?;
-        Ok(block)
+        Ok(self.client.get_latest_block().await?)
     }
 
     async fn get_transactions(&self, block_number: i64) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
@@ -89,8 +94,8 @@ impl ChainAssetsProvider for EthereumProvider {
 
 #[async_trait]
 impl ChainTransactionsProvider for EthereumProvider {
-    async fn get_transactions_by_address(&self, _address: String) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
-        Ok(vec![])
+    async fn get_transactions_by_address(&self, address: String) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
+        self.transactions_provider.get_transactions_by_address(address).await
     }
 }
 
@@ -103,6 +108,7 @@ impl ChainAssetsProvider for AlchemyClient {
         let balances = response
             .token_balances
             .into_iter()
+            .filter(|x| x.token_balance != BigUint::from(0u32))
             .filter_map(|x| {
                 ethereum_address_checksum(&x.contract_address).ok().map(|from| AssetBalance {
                     asset_id: AssetId::from_token(self.chain.to_chain(), &from),
@@ -117,6 +123,13 @@ impl ChainAssetsProvider for AlchemyClient {
 #[async_trait]
 impl ChainTransactionsProvider for AlchemyClient {
     async fn get_transactions_by_address(&self, _address: String) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
-        Ok(vec![])
+        return Ok(vec![]);
+        // let response = self.get_asset_transfers(_address.as_str()).await?.transfers;
+        // let transactions = response
+        //     .into_iter()
+        //     .map(|x| AlchemyMapper::map_transaction(x, self.chain.to_chain()).unwrap())
+        //     .collect();
+
+        // Ok(transactions)
     }
 }

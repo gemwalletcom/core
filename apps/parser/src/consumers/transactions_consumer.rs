@@ -66,6 +66,11 @@ impl MessageConsumer<TransactionsPayload, usize> for TransactionsConsumer {
 
                     if self.config.is_transaction_outdated(transaction.created_at.naive_utc(), chain) {
                         println!("outdated transaction: {}, created_at: {}", transaction.id, transaction.created_at);
+                    } else if payload.blocks.is_empty() {
+                        println!(
+                            "empty blocks (only store, no push), transaction: {}, created_at: {}",
+                            transaction.id, transaction.created_at
+                        );
                     } else if assets_ids.ids_set() == assets_ids.ids_set() {
                         if let Ok(notifications) = self
                             .pusher

@@ -78,7 +78,11 @@ impl ProviderFactory {
             | Chain::Monad => {
                 let chain = EVMChain::from_chain(chain).unwrap();
                 let assets_provider = AlchemyClient::new(chain, &config.alchemy_key);
-                Box::new(EthereumProvider::new(EthereumClient::new(chain, url), Box::new(assets_provider)))
+                Box::new(EthereumProvider::new(
+                    EthereumClient::new(chain, url),
+                    Box::new(assets_provider.clone()),
+                    Box::new(assets_provider.clone()),
+                ))
             }
             Chain::Cosmos | Chain::Osmosis | Chain::Celestia | Chain::Thorchain | Chain::Injective | Chain::Noble | Chain::Sei => {
                 Box::new(CosmosProvider::new(CosmosClient::new(chain, client, url)))

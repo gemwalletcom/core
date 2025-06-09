@@ -1,4 +1,4 @@
-use chrono::Utc;
+use chrono::{TimeZone, Utc};
 use primitives::{chain::Chain, transaction_utxo::TransactionInput, TransactionDirection, TransactionType};
 
 use super::model::Transaction;
@@ -6,7 +6,7 @@ use super::model::Transaction;
 pub struct BitcoinMapper;
 
 impl BitcoinMapper {
-    pub fn map_transaction(chain: Chain, transaction: &Transaction, _block_number: i64) -> Option<primitives::Transaction> {
+    pub fn map_transaction(chain: Chain, transaction: &Transaction) -> Option<primitives::Transaction> {
         let inputs: Vec<TransactionInput> = transaction
             .vin
             .iter()
@@ -30,6 +30,7 @@ impl BitcoinMapper {
         if inputs.is_empty() || outputs.is_empty() {
             return None;
         }
+        let created_at = Utc.timestamp_opt(transaction.block_time, 0).single()?;
 
         let transaction = primitives::Transaction::new_with_utxo(
             transaction.txid.clone(),
@@ -49,8 +50,7 @@ impl BitcoinMapper {
             inputs.into(),
             outputs.into(),
             None,
-            Utc::now(),
-            //Utc.timestamp_opt(transaction.block_time, 0).unwrap(),
+            created_at,
         );
 
         Some(transaction)

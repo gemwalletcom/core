@@ -136,13 +136,13 @@ chains:
   near:
     url: "https://rpc.mainnet.near.org"
   bitcoin:
-    url: ""
+    url: https://blockbook.btc.zelcore.io
   bitcoincash:
-    url: ""
+    url: https://blockbook.bch.zelcore.io
   litecoin:
-    url: ""
+    url: https://blockbook.ltc.zelcore.io
   doge:
-    url: ""
+    url: https://blockbook.doge.zelcore.io
   world:
     url: https://worldchain-mainnet.gateway.tenderly.co
   stellar:

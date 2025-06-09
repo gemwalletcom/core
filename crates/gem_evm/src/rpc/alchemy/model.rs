@@ -18,6 +18,38 @@ pub struct TokenBalances {
     pub token_balances: Vec<TokenBalance>,
 }
 
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AssetTransfers {
+    pub transfers: Vec<Transfer>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Transfer {
+    pub hash: String,
+    pub from: String,
+    pub to: String,
+    pub asset: String,
+    pub token_id: Option<String>,
+    pub category: String,
+    pub raw_contract: TransferRawData,
+    pub metadata: TransferMetadata,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TransferRawData {
+    pub value: String,
+    pub address: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TransferMetadata {
+    pub block_timestamp: String,
+}
+
 pub fn alchemy_url(chain: EVMChain, api_key: &str) -> String {
     let prefix = match chain {
         EVMChain::Ethereum => "eth",

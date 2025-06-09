@@ -74,8 +74,12 @@ impl FetchAssetsAddressesConsumer {
     }
 
     async fn process_result(&self, result: FetchAssetsAddressesResult) -> Result<bool, Box<dyn Error + Send + Sync>> {
-        let _ = self.database.lock().await.delete_assets_addresses(result.zero_balance_assets.clone());
-        let _ = self.database.lock().await.add_assets_addresses(result.assets.clone());
+        if !result.zero_balance_assets.is_empty() {
+            let _ = self.database.lock().await.delete_assets_addresses(result.zero_balance_assets.clone());
+        }
+        if !result.assets.is_empty() {
+            let _ = self.database.lock().await.add_assets_addresses(result.assets.clone());
+        }
         self.stream_producer.publish_fetch_assets(result.missing_asset_ids.clone()).await
     }
 }
@@ -83,29 +87,16 @@ impl FetchAssetsAddressesConsumer {
 #[async_trait]
 impl MessageConsumer<ChainAddressPayload, usize> for FetchAssetsAddressesConsumer {
     async fn process(&mut self, payload: ChainAddressPayload) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        // TODO: eventually support more chains
-        let chains = [
-            Chain::Ethereum,
-            Chain::SmartChain,
-            Chain::Base,
-            Chain::Arbitrum,
-            Chain::Optimism,
-            Chain::Solana,
-            Chain::Sui,
-            Chain::Ton,
-            Chain::Xrp,
-        ];
-
         for value in payload.values.clone() {
-            if !chains.contains(&value.chain) {
-                continue;
-            }
-            if let Ok(result) = self.fetch_assets_addresses(value.chain, value.address.clone()).await {
-                if let Err(e) = self.process_result(result).await {
-                    println!("Failed to process assets for chain {} and address {}: {}", value.chain, value.address, e);
+            match self.fetch_assets_addresses(value.chain, value.address.clone()).await {
+                Ok(result) => {
+                    if let Err(e) = self.process_result(result).await {
+                        println!("Failed to process assets for chain {} and address {}: {}", value.chain, value.address, e);
+                    }
                 }
-            } else if let Err(e) = self.fetch_assets_addresses(value.chain, value.address.clone()).await {
-                println!("Failed to fetch assets for chain {} and address {}: {}", value.chain, value.address, e);
+                Err(e) => {
+                    println!("Failed to fetch assets for chain {} and address {}: {}", value.chain, value.address, e);
+                }
             }
         }
 

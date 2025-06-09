@@ -1,5 +1,7 @@
 use std::error::Error;
 
+use crate::rpc::model::{Address, Transaction};
+
 use super::model::{Block, Status};
 use primitives::chain::Chain;
 use reqwest_middleware::ClientWithMiddleware;
@@ -26,7 +28,16 @@ impl BitcoinClient {
 
     pub async fn get_block(&self, block_number: i64, page: usize, limit: usize) -> Result<Block, Box<dyn Error + Send + Sync>> {
         let url = format!("{}/api/v2/block/{}?page={}&limit={}", self.url, block_number, page, limit);
-        let block: Block = self.client.get(url).send().await?.json::<Block>().await?;
-        Ok(block)
+        Ok(self.client.get(url).send().await?.json::<Block>().await?)
+    }
+
+    pub async fn get_address(&self, address: String) -> Result<Address, Box<dyn Error + Send + Sync>> {
+        let url = format!("{}/api/v2/address/{}", self.url, address);
+        Ok(self.client.get(url).send().await?.json::<Address>().await?)
+    }
+
+    pub async fn get_transaction(&self, txid: String) -> Result<Transaction, Box<dyn Error + Send + Sync>> {
+        let url = format!("{}/api/v2/tx/{}", self.url, txid);
+        Ok(self.client.get(url).send().await?.json().await?)
     }
 }

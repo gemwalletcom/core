@@ -25,8 +25,7 @@ impl ChainBlockProvider for BitcoinProvider {
     }
 
     async fn get_latest_block(&self) -> Result<i64, Box<dyn Error + Send + Sync>> {
-        let status = self.client.get_status().await?;
-        Ok(status.blockbook.best_height)
+        Ok(self.client.get_status().await?.blockbook.best_height)
     }
 
     async fn get_transactions(&self, block_number: i64) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
@@ -41,13 +40,10 @@ impl ChainBlockProvider for BitcoinProvider {
             }
             page += 1;
         }
-
-        let transactions = transactions
+        Ok(transactions
             .into_iter()
-            .flat_map(|x| BitcoinMapper::map_transaction(self.get_chain(), &x, block_number))
-            .collect::<Vec<primitives::Transaction>>();
-
-        Ok(transactions)
+            .flat_map(|x| BitcoinMapper::map_transaction(self.get_chain(), &x))
+            .collect())
     }
 }
 
@@ -67,7 +63,18 @@ impl ChainAssetsProvider for BitcoinProvider {
 
 #[async_trait]
 impl ChainTransactionsProvider for BitcoinProvider {
-    async fn get_transactions_by_address(&self, _address: String) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
-        Ok(vec![])
+    async fn get_transactions_by_address(&self, address: String) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
+        let address = self.client.get_address(address).await?;
+        let transactions_ids = address.txids.iter().take(6).collect::<Vec<_>>();
+        let mut transactions = Vec::new();
+        for transaction_id in transactions_ids {
+            let transaction = self.client.get_transaction(transaction_id.to_string()).await?;
+            transactions.push(transaction);
+        }
+
+        Ok(transactions
+            .into_iter()
+            .flat_map(|x| BitcoinMapper::map_transaction(self.get_chain(), &x))
+            .collect())
     }
 }

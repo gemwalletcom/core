@@ -1,4 +1,6 @@
 pub mod client;
+pub mod mapper;
 pub mod model;
 pub use client::AlchemyClient;
-pub use model::{TokenBalance, TokenBalances};
+pub use mapper::AlchemyMapper;
+pub use model::{AssetTransfers, TokenBalance, TokenBalances};

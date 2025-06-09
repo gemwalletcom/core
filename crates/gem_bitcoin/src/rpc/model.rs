@@ -21,6 +21,12 @@ pub struct Block {
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
+pub struct Address {
+    pub txids: Vec<String>,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct Transaction {
     pub txid: String,
     pub value: String,
