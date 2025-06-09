@@ -1,5 +1,5 @@
 use crate::{
-    network::{jsonrpc::JsonRpcClient, AlienProvider, JsonRpcResult},
+    network::{AlienProvider, JsonRpcClient, JsonRpcResult},
     swapper::SwapperError,
 };
 use alloy_primitives::{hex::decode as HexDecode, Address};

@@ -1,0 +1,15 @@
+[package]
+name = "gem_jsonrpc"
+version = { workspace = true }
+edition = { workspace = true }
+
+[features]
+default = []
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+async-trait = { workspace = true }
+thiserror = { workspace = true }
+
+primitives = { path = "../primitives" }

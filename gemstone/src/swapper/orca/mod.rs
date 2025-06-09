@@ -1,5 +1,4 @@
 mod fee_tiers;
-mod jsonrpc;
 mod models;
 mod provider;
 mod whirlpool;

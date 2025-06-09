@@ -6,7 +6,7 @@ use num_bigint::{BigInt, Sign};
 use primitives::Chain;
 
 use crate::{
-    network::{jsonrpc::JsonRpcClient, AlienProvider, JsonRpcResult},
+    network::{AlienProvider, JsonRpcClient, JsonRpcResult},
     swapper::SwapperError,
 };
 use gem_evm::{

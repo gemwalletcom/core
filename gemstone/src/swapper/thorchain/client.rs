@@ -2,11 +2,9 @@ use super::{
     asset::THORChainAsset,
     model::{InboundAddress, QuoteSwapRequest, QuoteSwapResponse, Transaction},
 };
-use crate::{
-    network::{AlienHttpMethod, AlienProvider, AlienTarget, X_CACHE_TTL},
-    swapper::SwapperError,
-};
-use std::{collections::HashMap, sync::Arc};
+use crate::network::{AlienHeader, AlienHttpMethod, AlienProvider, AlienTarget, X_CACHE_TTL};
+use crate::swapper::SwapperError;
+use std::sync::Arc;
 
 #[derive(Debug)]
 pub struct ThorChainSwapClient {
@@ -51,7 +49,7 @@ impl ThorChainSwapClient {
         let target = AlienTarget {
             url: format!("{}/thorchain/inbound_addresses", endpoint),
             method: AlienHttpMethod::Get,
-            headers: Some(HashMap::from([(X_CACHE_TTL.into(), 600.to_string())])),
+            headers: Some(vec![AlienHeader::new(X_CACHE_TTL, "600")]),
             body: None,
         };
 

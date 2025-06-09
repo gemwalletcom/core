@@ -1,4 +1,6 @@
+use primitives::jsonrpc_types::{JsonRpcRequest, JsonRpcRequestConvert};
 use serde::{Deserialize, Deserializer, Serialize};
+use serde_json::Value;
 use serde_serializers::{deserialize_u64_from_str, serialize_u64};
 use std::{fmt::Display, ops::Not};
 use sui_types::{ObjectDigest, ObjectId};
@@ -22,6 +24,48 @@ impl Display for SuiRpc {
             Self::GetAllCoins { owner: _ } => write!(f, "suix_getAllCoins"),
             Self::GetGasPrice => write!(f, "suix_getReferenceGasPrice"),
         }
+    }
+}
+
+impl JsonRpcRequestConvert for SuiRpc {
+    fn to_req(&self, id: u64) -> JsonRpcRequest {
+        let val = self;
+        let method = val.to_string();
+
+        let params: Vec<Value> = match val {
+            SuiRpc::GetObject(object_id, options) => {
+                let mut array = vec![Value::String(object_id.into())];
+                if let Some(data) = options {
+                    let object = serde_json::to_value(data).unwrap();
+                    array.push(object);
+                }
+                array
+            }
+            SuiRpc::GetMultipleObjects(object_ids, options) => {
+                let mut array = vec![Value::Array(object_ids.iter().map(|x| Value::String(x.into())).collect())];
+                if let Some(data) = options {
+                    let object = serde_json::to_value(data).unwrap();
+                    array.push(object);
+                }
+                array
+            }
+            SuiRpc::NormalizedMoveFunction(params) => params.iter().map(|x| Value::String(x.into())).collect(),
+            SuiRpc::InspectTransactionBlock(sender, tx_bytes) => {
+                vec![
+                    Value::String(sender.into()),
+                    Value::String(tx_bytes.into()),
+                    Value::Null, // gas_price
+                ]
+            }
+            SuiRpc::GetAllCoins { owner } => {
+                vec![Value::String(owner.into())]
+            }
+            SuiRpc::GetGasPrice => {
+                vec![]
+            }
+        };
+
+        JsonRpcRequest::new(id, &method, params)
     }
 }
 

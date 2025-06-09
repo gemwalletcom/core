@@ -3,11 +3,21 @@ name = "alien_provider"
 version = "0.1.0"
 edition = "2021"
 
+[features]
+default = []
+reqwest_provider = ["dep:reqwest"]
+
 [dependencies]
-gemstone = { path = "../../gemstone" }
 primitives = { path = "../primitives" }
-reqwest.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 async-trait.workspace = true
 futures.workspace = true
+uniffi.workspace = true
+thiserror.workspace = true
+anyhow.workspace = true
+
+reqwest = { workspace = true, optional = true }
+
+[build-dependencies]
+uniffi = { workspace = true, features = ["build"] }

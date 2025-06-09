@@ -1,17 +1,7 @@
-use std::fmt::Debug;
+pub use alien_provider::{jsonrpc::JsonRpcClient, target::X_CACHE_TTL, AlienError, AlienHeader, AlienHttpMethod, AlienProvider, AlienTarget};
+pub use primitives::jsonrpc_types::{JsonRpcError, JsonRpcRequest, JsonRpcResponse, JsonRpcResult};
 
-pub mod jsonrpc;
-pub mod mock;
-pub mod provider;
-pub mod target;
-pub use jsonrpc::*;
-pub use provider::*;
-pub use target::*;
-
-#[derive(Debug, Clone, uniffi::Error, thiserror::Error)]
-pub enum AlienError {
-    #[error("Request is invalid: {msg}")]
-    RequestError { msg: String },
-    #[error("Request error: {msg}")]
-    ResponseError { msg: String },
+#[uniffi::export]
+fn alien_method_to_string(method: AlienHttpMethod) -> String {
+    method.into()
 }
