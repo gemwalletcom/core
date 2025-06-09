@@ -4,7 +4,7 @@ use std::{
     time::Duration,
 };
 
-use crate::{
+use super::{
     provider::{AlienProvider, Data},
     target::AlienTarget,
     AlienError,

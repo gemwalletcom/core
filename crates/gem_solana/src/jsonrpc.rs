@@ -1,7 +1,7 @@
 use std::fmt::Display;
 
 use crate::model::{Configuration, Filter};
-use primitives::jsonrpc_types::{JsonRpcRequest, JsonRpcRequestConvert};
+use gem_jsonrpc::types::{JsonRpcRequest, JsonRpcRequestConvert};
 use serde_json::Value;
 
 pub const ENCODING_BASE64: &str = "base64";

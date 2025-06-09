@@ -1,4 +1,4 @@
-pub use crate::{AlienError, AlienTarget};
+use super::{AlienError, AlienTarget};
 
 use async_trait::async_trait;
 use primitives::Chain;
