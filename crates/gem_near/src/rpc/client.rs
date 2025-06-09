@@ -1,46 +1,44 @@
 use std::error::Error;
 
-use jsonrpsee::{
-    core::{client::ClientT, params::ObjectParams},
-    http_client::{HttpClient, HttpClientBuilder},
-};
+use gem_jsonrpc::JsonRpcClient;
 use primitives::{Asset, Chain};
+use serde_json::json;
 
 use super::model::{Block, Chunk};
 
 pub struct NearClient {
-    client: HttpClient,
+    client: JsonRpcClient,
 }
 
 impl NearClient {
     pub fn new(url: String) -> Self {
-        let client = HttpClientBuilder::default()
-            .max_response_size(256 * 1024 * 1024) // 256MB
-            .build(url)
-            .unwrap();
+        let client = JsonRpcClient::new(url).unwrap();
 
         Self { client }
     }
 
     pub async fn get_final_block(&self) -> Result<Block, Box<dyn Error + Send + Sync>> {
-        let mut params = ObjectParams::new();
-        params.insert("finality", "final")?;
-        let block: Block = self.client.request("block", params).await?;
+        let params = json!({
+            "finality": "final"
+        });
+        let block: Block = self.client.call("block", params).await?;
         Ok(block)
     }
 
     pub async fn get_block(&self, block: i64) -> Result<Block, Box<dyn Error + Send + Sync>> {
-        let mut params = ObjectParams::new();
-        params.insert("block_id", block)?;
-        let block: Block = self.client.request("block", params).await?;
+        let params = json!({
+            "block_id": block
+        });
+        let block: Block = self.client.call("block", params).await?;
         Ok(block)
     }
 
     pub async fn get_chunk(&self, block: i64, shard_id: i64) -> Result<Chunk, Box<dyn Error + Send + Sync>> {
-        let mut params = ObjectParams::new();
-        params.insert("block_id", block)?;
-        params.insert("shard_id", shard_id)?;
-        let chunk: Chunk = self.client.request("chunk", params).await?;
+        let params = json!({
+            "block_id": block,
+            "shard_id": shard_id
+        });
+        let chunk: Chunk = self.client.call("chunk", params).await?;
         Ok(chunk)
     }
 }

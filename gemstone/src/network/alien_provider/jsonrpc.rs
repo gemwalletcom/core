@@ -100,7 +100,7 @@ impl JsonRpcClient {
             _ => vec![params_value],
         };
 
-        let request = JsonRpcRequest::new(1, method, params_array);
+        let request = JsonRpcRequest::new(1, method, params_array.into());
         let mut target = AlienTarget::from_json_rpc_request(&request, &self.endpoint)?;
         if let Some(ttl) = ttl {
             target = target.set_cache_ttl(ttl);
@@ -150,22 +150,22 @@ impl JsonRpcClient {
 #[cfg(test)]
 mod tests {
     use core::panic;
+    use serde_json::json;
 
     use super::*;
 
     #[test]
     fn test_batch_into_target() {
         let requests = vec![
-            JsonRpcRequest::new(1, "eth_gasPrice", vec![]),
-            JsonRpcRequest::new(2, "eth_blockNumber", vec!["0x95222290DD7278Aa3Ddd389Cc1E1d165CC4BAfe5".into(), "latest".into()]),
-            JsonRpcRequest::new(3, "eth_chainId", vec![]),
+            JsonRpcRequest::new(1, "eth_gasPrice", json!([])),
+            JsonRpcRequest::new(2, "eth_blockNumber", json!(vec!["0x95222290DD7278Aa3Ddd389Cc1E1d165CC4BAfe5", "latest"])),
+            JsonRpcRequest::new(3, "eth_chainId", json!([])),
         ];
         let endpoint = "http://localhost:8080";
         let target = batch_into_target(&requests, endpoint);
 
         assert_eq!(target.url, endpoint);
         assert_eq!(target.method, AlienHttpMethod::Post);
-        assert_eq!(target.headers.as_ref().unwrap().get(CONTENT_TYPE).unwrap(), "Content-Type");
         assert_eq!(target.headers.as_ref().unwrap().get(CONTENT_TYPE).unwrap(), "application/json");
         assert_eq!(
             String::from_utf8(target.body.unwrap()).unwrap(),

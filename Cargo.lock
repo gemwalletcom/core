@@ -3386,7 +3386,7 @@ name = "gem_near"
 version = "1.0.0"
 dependencies = [
  "chrono",
- "jsonrpsee",
+ "gem_jsonrpc",
  "primitives",
  "serde",
  "serde_json",

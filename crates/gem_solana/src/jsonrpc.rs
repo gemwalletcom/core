@@ -46,6 +46,6 @@ impl JsonRpcRequestConvert for SolanaRpc {
             SolanaRpc::GetEpochInfo | SolanaRpc::GetLatestBlockhash => vec![],
         };
 
-        JsonRpcRequest::new(id, &method, params)
+        JsonRpcRequest::new(id, &method, params.into())
     }
 }

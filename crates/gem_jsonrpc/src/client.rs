@@ -40,9 +40,9 @@ impl JsonRpcClient {
         self._request(req).await
     }
 
-    pub async fn call<T: DeserializeOwned>(&self, method: &str, params: Vec<Value>) -> Result<T, JsonRpcError> {
+    pub async fn call<T: DeserializeOwned>(&self, method: &str, params: impl Into<Value>) -> Result<T, JsonRpcError> {
         let timestamp = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs();
-        let req = JsonRpcRequest::new(timestamp, method, params);
+        let req = JsonRpcRequest::new(timestamp, method, params.into());
         self._request(req).await
     }
 

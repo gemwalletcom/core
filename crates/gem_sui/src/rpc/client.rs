@@ -29,7 +29,7 @@ impl SuiClient {
     }
 
     pub async fn get_latest_block(&self) -> Result<i64, Box<dyn Error + Send + Sync>> {
-        let block_number: i64 = self.client.call("sui_getLatestCheckpointSequenceNumber", vec![]).await?;
+        let block_number: i64 = self.client.call("sui_getLatestCheckpointSequenceNumber", json!([])).await?;
         Ok(block_number)
     }
 

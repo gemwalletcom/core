@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use std::fmt::{Debug, Display};
 use thiserror::Error;
 
@@ -14,7 +15,7 @@ pub struct JsonRpcRequest {
     pub jsonrpc: &'static str,
     pub id: u64,
     pub method: String,
-    pub params: Vec<serde_json::Value>,
+    pub params: Value,
 }
 
 pub trait JsonRpcRequestConvert {
@@ -22,7 +23,7 @@ pub trait JsonRpcRequestConvert {
 }
 
 impl JsonRpcRequest {
-    pub fn new(id: u64, method: &str, params: Vec<serde_json::Value>) -> Self {
+    pub fn new(id: u64, method: &str, params: Value) -> Self {
         Self {
             jsonrpc: JSONRPC_VERSION,
             id,

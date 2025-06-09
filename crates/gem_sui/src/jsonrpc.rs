@@ -65,7 +65,7 @@ impl JsonRpcRequestConvert for SuiRpc {
             }
         };
 
-        JsonRpcRequest::new(id, &method, params)
+        JsonRpcRequest::new(id, &method, params.into())
     }
 }
 
