@@ -88,12 +88,13 @@ pub async fn run_consumer_store_transactions(settings: Settings, database: Arc<M
 
 pub async fn run_consumer_fetch_transactions(settings: Settings, database: Arc<Mutex<DatabaseClient>>) -> Result<(), Box<dyn Error + Send + Sync>> {
     let stream_reader = StreamReader::new(&settings.rabbitmq.url).await.unwrap();
+    let stream_producer = StreamProducer::new(&settings.rabbitmq.url).await.unwrap();
     let nodes = database.lock().await.get_nodes()?.into_iter().map(|x| x.as_primitive()).collect::<Vec<_>>();
     let providers = Chain::all()
         .into_iter()
         .map(|chain| Box::new(ParserProxy::new_from_nodes(&settings, chain, nodes.clone())) as Box<dyn ChainProvider>)
         .collect::<Vec<_>>();
-    let consumer = FetchTransactionsConsumer::new(database.clone(), ChainProviders::new(providers));
+    let consumer = FetchTransactionsConsumer::new(database.clone(), ChainProviders::new(providers), stream_producer);
     streamer::run_consumer::<ChainAddressPayload, FetchTransactionsConsumer, usize>(
         "fetch_transactions",
         stream_reader,
