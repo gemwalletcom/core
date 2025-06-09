@@ -1,10 +1,6 @@
 use std::error::Error;
 
-use jsonrpsee::{
-    core::client::ClientT,
-    http_client::{HttpClient, HttpClientBuilder},
-    rpc_params,
-};
+use gem_jsonrpc::client::JsonRpcClient;
 use primitives::chain::Chain;
 use serde_json::json;
 
@@ -14,12 +10,12 @@ use super::{
 };
 
 pub struct SuiClient {
-    client: HttpClient,
+    client: JsonRpcClient,
 }
 
 impl SuiClient {
     pub fn new(url: String) -> Self {
-        let client = HttpClientBuilder::default().build(url).unwrap();
+        let client = JsonRpcClient::new(url).unwrap();
 
         Self { client }
     }
@@ -33,11 +29,8 @@ impl SuiClient {
     }
 
     pub async fn get_latest_block(&self) -> Result<i64, Box<dyn Error + Send + Sync>> {
-        Ok(self
-            .client
-            .request::<String, _>("sui_getLatestCheckpointSequenceNumber", rpc_params![])
-            .await?
-            .parse::<i64>()?)
+        let block_number: i64 = self.client.call("sui_getLatestCheckpointSequenceNumber", vec![]).await?;
+        Ok(block_number)
     }
 
     async fn query_transaction_blocks(&self, filter: serde_json::Value) -> Result<Digests, Box<dyn Error + Send + Sync>> {
@@ -54,7 +47,8 @@ impl SuiClient {
             json!(null),
             json!(50),
         ];
-        Ok(self.client.request("suix_queryTransactionBlocks", params).await?)
+        let res: Digests = self.client.call("suix_queryTransactionBlocks", params).await?;
+        Ok(res)
     }
 
     pub async fn get_transactions_by_block_number(&self, block_number: i64) -> Result<Digests, Box<dyn Error + Send + Sync>> {
@@ -72,10 +66,10 @@ impl SuiClient {
     }
 
     pub async fn get_coin_metadata(&self, token_id: String) -> Result<CoinMetadata, Box<dyn Error + Send + Sync>> {
-        Ok(self.client.request("suix_getCoinMetadata", rpc_params!(token_id.clone())).await?)
+        Ok(self.client.call("suix_getCoinMetadata", vec![json!(token_id.clone())]).await?)
     }
 
     pub async fn get_all_balances(&self, address: String) -> Result<Vec<Balance>, Box<dyn Error + Send + Sync>> {
-        Ok(self.client.request("suix_getAllBalances", rpc_params!(address)).await?)
+        Ok(self.client.call("suix_getAllBalances", vec![json!(address.clone())]).await?)
     }
 }

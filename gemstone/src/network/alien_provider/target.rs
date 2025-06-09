@@ -1,27 +1,12 @@
-use std::fmt::Debug;
+use std::{collections::HashMap, fmt::Debug};
 
 pub const X_CACHE_TTL: &str = "x-cache-ttl";
-
-#[derive(Debug, Clone, uniffi::Record)]
-pub struct AlienHeader {
-    pub key: String,
-    pub value: String,
-}
-
-impl AlienHeader {
-    pub fn new(key: &str, value: &str) -> Self {
-        Self {
-            key: key.into(),
-            value: value.into(),
-        }
-    }
-}
 
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct AlienTarget {
     pub url: String,
     pub method: AlienHttpMethod,
-    pub headers: Option<Vec<AlienHeader>>,
+    pub headers: Option<HashMap<String, String>>,
     pub body: Option<Vec<u8>>,
 }
 
@@ -39,23 +24,17 @@ impl AlienTarget {
         Self {
             url: url.into(),
             method: AlienHttpMethod::Post,
-            headers: Some(vec![AlienHeader {
-                key: "Content-Type".into(),
-                value: "application/json".into(),
-            }]),
+            headers: Some(HashMap::from([("Content-Type".into(), "application/json".into())])),
             body: Some(serde_json::to_vec(&body).unwrap()),
         }
     }
 
     pub fn set_cache_ttl(mut self, ttl: u64) -> Self {
         if self.headers.is_none() {
-            self.headers = Some(vec![]);
+            self.headers = Some(HashMap::new());
         }
         if let Some(headers) = self.headers.as_mut() {
-            headers.push(AlienHeader {
-                key: X_CACHE_TTL.into(),
-                value: ttl.to_string(),
-            });
+            headers.insert(X_CACHE_TTL.into(), ttl.to_string());
         }
         self
     }

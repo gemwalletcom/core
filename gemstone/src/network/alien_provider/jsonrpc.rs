@@ -1,12 +1,13 @@
-use super::{AlienError, AlienHeader, AlienHttpMethod, AlienProvider, AlienTarget};
+use super::{mime::*, AlienError, AlienHttpMethod, AlienProvider, AlienTarget};
 use gem_jsonrpc::types::{JsonRpcError, JsonRpcRequest, JsonRpcRequestConvert, JsonRpcResult};
 use primitives::Chain;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use std::collections::HashMap;
 use std::{fmt::Debug, sync::Arc};
 
 impl AlienTarget {
     pub fn from_json_rpc_request(request: &JsonRpcRequest, url: &str) -> Result<Self, AlienError> {
-        let headers = vec![AlienHeader::new("Content-Type", "application/json")];
+        let headers = HashMap::from([(CONTENT_TYPE.into(), JSON.into())]);
         let body = serde_json::to_vec(request).map_err(|e| AlienError::RequestError {
             msg: format!("Failed to serialize RPC request: {}", e),
         })?;
@@ -50,10 +51,7 @@ pub fn batch_into_target<T>(requests: &T, endpoint: &str) -> AlienTarget
 where
     T: ?Sized + Serialize,
 {
-    let headers = vec![AlienHeader {
-        key: "Content-Type".into(),
-        value: "application/json".into(),
-    }];
+    let headers = HashMap::from([(CONTENT_TYPE.into(), JSON.into())]);
     let bytes = serde_json::to_vec(requests).unwrap();
     AlienTarget {
         url: endpoint.into(),
@@ -167,8 +165,8 @@ mod tests {
 
         assert_eq!(target.url, endpoint);
         assert_eq!(target.method, AlienHttpMethod::Post);
-        assert_eq!(target.headers.as_ref().unwrap().first().unwrap().key, "Content-Type");
-        assert_eq!(target.headers.as_ref().unwrap().first().unwrap().value, "application/json");
+        assert_eq!(target.headers.as_ref().unwrap().get(CONTENT_TYPE).unwrap(), "Content-Type");
+        assert_eq!(target.headers.as_ref().unwrap().get(CONTENT_TYPE).unwrap(), "application/json");
         assert_eq!(
             String::from_utf8(target.body.unwrap()).unwrap(),
             r#"[{"jsonrpc":"2.0","id":1,"method":"eth_gasPrice","params":[]},{"jsonrpc":"2.0","id":2,"method":"eth_blockNumber","params":["0x95222290DD7278Aa3Ddd389Cc1E1d165CC4BAfe5","latest"]},{"jsonrpc":"2.0","id":3,"method":"eth_chainId","params":[]}]"#

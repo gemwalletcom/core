@@ -3295,6 +3295,7 @@ dependencies = [
  "gem_cardano",
  "gem_cosmos",
  "gem_evm",
+ "gem_jsonrpc",
  "gem_near",
  "gem_polkadot",
  "gem_solana",
@@ -3369,8 +3370,12 @@ dependencies = [
 name = "gem_jsonrpc"
 version = "1.0.0"
 dependencies = [
+ "anyhow",
  "async-trait",
  "primitives",
+ "reqwest",
+ "reqwest-middleware",
+ "reqwest-retry",
  "serde",
  "serde_json",
  "thiserror 2.0.12",
@@ -3442,7 +3447,6 @@ dependencies = [
  "chrono",
  "gem_jsonrpc",
  "hex",
- "jsonrpsee",
  "num-bigint",
  "primitives",
  "serde",

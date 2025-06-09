@@ -5,7 +5,7 @@ edition = { workspace = true }
 
 [features]
 default = []
-rpc = ["dep:jsonrpsee", "dep:num-bigint", "dep:chrono"]
+rpc = ["gem_jsonrpc/client", "dep:num-bigint"]
 
 [dependencies]
 primitives = { path = "../primitives" }
@@ -20,9 +20,9 @@ anyhow = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 serde_serializers = { path = "../serde_serializers" }
+chrono = { workspace = true }
+
 gem_jsonrpc = { path = "../gem_jsonrpc" }
 
 # Optional dependencies for rpc feature
-jsonrpsee = { workspace = true, features = ["http-client"], optional = true }
 num-bigint = { workspace = true, features = ["serde"], optional = true }
-chrono = { workspace = true, features = ["serde"], optional = true }

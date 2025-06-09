@@ -1,5 +1,13 @@
 use serde::{Deserialize, Serialize};
 use std::fmt::{Debug, Display};
+use thiserror::Error;
+
+pub const JSONRPC_VERSION: &str = "2.0";
+
+pub const ERROR_INVALID_REQUEST: i32 = -32600;
+pub const ERROR_METHOD_NOT_FOUND: i32 = -32601;
+pub const ERROR_INVALID_PARAMS: i32 = -32602;
+pub const ERROR_INTERNAL_ERROR: i32 = -32603;
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct JsonRpcRequest {
@@ -16,7 +24,7 @@ pub trait JsonRpcRequestConvert {
 impl JsonRpcRequest {
     pub fn new(id: u64, method: &str, params: Vec<serde_json::Value>) -> Self {
         Self {
-            jsonrpc: "2.0",
+            jsonrpc: JSONRPC_VERSION,
             id,
             method: method.into(),
             params,
@@ -24,7 +32,7 @@ impl JsonRpcRequest {
     }
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, Error)]
 pub struct JsonRpcError {
     pub code: i32,
     pub message: String,

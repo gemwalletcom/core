@@ -1,7 +1,10 @@
 use super::model::*;
-use crate::network::{AlienError, AlienHeader, AlienHttpMethod, AlienProvider, AlienTarget};
+use crate::network::{
+    mime::{CONTENT_TYPE, JSON},
+    AlienError, AlienHttpMethod, AlienProvider, AlienTarget,
+};
 use serde_json;
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 
 pub struct JupiterClient {
     api_url: String,
@@ -21,10 +24,7 @@ impl JupiterClient {
         Ok(quote_response)
     }
     pub async fn get_swap_quote_data(&self, request: QuoteDataRequest) -> Result<QuoteDataResponse, AlienError> {
-        let headers = vec![AlienHeader {
-            key: "Content-Type".into(),
-            value: "application/json".into(),
-        }];
+        let headers = HashMap::from([(CONTENT_TYPE.into(), JSON.into())]);
         let json = serde_json::to_string(&request).map_err(|e| AlienError::RequestError { msg: e.to_string() })?;
         let target = AlienTarget {
             url: format!("{}/swap/v1/swap", self.api_url),
