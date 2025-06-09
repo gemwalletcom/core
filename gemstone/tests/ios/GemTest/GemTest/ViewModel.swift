@@ -7,23 +7,6 @@ import BigInt
 public struct ViewModel: Sendable {
     let provider = NativeProvider()
 
-    public func testFetchData() async throws {
-        let headers = [
-            "X-Header": "X-Value",
-            "Content-Type": "application/json"
-        ]
-        let body = try JSONEncoder().encode(["foo": "bar"])
-        let target = AlienTarget(
-            url: "https://httpbin.org/post?foo=bar",
-            method: .post,
-            headers: headers,
-            body: body
-        )
-        let warp = AlienProviderWarp(provider: provider)
-        let data = try await warp.teleport(targets: [target])
-        let json = try JSONSerialization.jsonObject(with: data[0])
-        print(json)
-    }
 
     public func fetchQuote(_ request: SwapQuoteRequest) async throws {
         let swapper = GemSwapper(rpcProvider: self.provider)
