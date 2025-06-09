@@ -1,5 +1,5 @@
-use crate::{AlienError, AlienHeader, AlienHttpMethod, AlienProvider, AlienTarget};
-use primitives::jsonrpc_types::{JsonRpcError, JsonRpcRequest, JsonRpcRequestConvert, JsonRpcResult};
+use super::{AlienError, AlienHeader, AlienHttpMethod, AlienProvider, AlienTarget};
+use gem_jsonrpc::types::{JsonRpcError, JsonRpcRequest, JsonRpcRequestConvert, JsonRpcResult};
 use primitives::Chain;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::{fmt::Debug, sync::Arc};

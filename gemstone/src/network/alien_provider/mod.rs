@@ -2,7 +2,6 @@ pub mod error;
 pub mod jsonrpc;
 pub mod mock;
 pub mod provider;
-
 pub mod target;
 
 pub use error::AlienError;
@@ -13,8 +12,6 @@ pub use target::{AlienHeader, AlienHttpMethod, AlienTarget};
 pub mod reqwest_provider;
 #[cfg(feature = "reqwest_provider")]
 pub use reqwest_provider::NativeProvider;
-
-uniffi::setup_scaffolding!("alien_provider");
 
 use primitives::Chain;
 use std::str::FromStr;

@@ -1,4 +1,4 @@
-use crate::{provider::Data, AlienError, AlienHttpMethod, AlienProvider, AlienTarget};
+use super::{provider::Data, AlienError, AlienHttpMethod, AlienProvider, AlienTarget};
 use primitives::{node_config::get_nodes_for_chain, Chain};
 
 use async_trait::async_trait;

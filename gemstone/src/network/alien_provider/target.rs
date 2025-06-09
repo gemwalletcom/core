@@ -86,3 +86,8 @@ impl From<AlienHttpMethod> for String {
         .into()
     }
 }
+
+#[uniffi::export]
+fn alien_method_to_string(method: AlienHttpMethod) -> String {
+    method.into()
+}

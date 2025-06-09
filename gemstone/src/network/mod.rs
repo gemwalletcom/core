@@ -1,7 +1,10 @@
-pub use alien_provider::{jsonrpc::JsonRpcClient, target::X_CACHE_TTL, AlienError, AlienHeader, AlienHttpMethod, AlienProvider, AlienTarget};
-pub use primitives::jsonrpc_types::{JsonRpcError, JsonRpcRequest, JsonRpcResponse, JsonRpcResult};
+pub mod alien_provider;
 
-#[uniffi::export]
-fn alien_method_to_string(method: AlienHttpMethod) -> String {
-    method.into()
-}
+pub use alien_provider::{
+    jsonrpc::JsonRpcClient,
+    mock::{AlienProviderMock, MockFn},
+    target::X_CACHE_TTL,
+    AlienError, AlienHeader, AlienHttpMethod, AlienProvider, AlienTarget,
+};
+
+pub use gem_jsonrpc::types::{JsonRpcError, JsonRpcRequest, JsonRpcResponse, JsonRpcResult};

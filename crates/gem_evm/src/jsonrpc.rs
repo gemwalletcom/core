@@ -1,4 +1,4 @@
-use primitives::jsonrpc_types::{JsonRpcRequest, JsonRpcRequestConvert};
+use gem_jsonrpc::types::{JsonRpcRequest, JsonRpcRequestConvert};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 

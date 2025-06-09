@@ -50,21 +50,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "alien_provider"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "async-trait",
- "futures",
- "primitives",
- "reqwest",
- "serde",
- "serde_json",
- "thiserror 2.0.12",
- "uniffi",
-]
-
-[[package]]
 name = "allocator-api2"
 version = "0.2.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3536,7 +3521,6 @@ dependencies = [
 name = "gemstone"
 version = "0.31.1"
 dependencies = [
- "alien_provider",
  "alloy-dyn-abi",
  "alloy-primitives",
  "alloy-sol-types",
@@ -3553,6 +3537,7 @@ dependencies = [
  "gem_cosmos",
  "gem_evm",
  "gem_hash",
+ "gem_jsonrpc",
  "gem_solana",
  "gem_sui",
  "gem_ton",
@@ -3563,6 +3548,7 @@ dependencies = [
  "orca_whirlpools_core",
  "primitives",
  "rand 0.9.1",
+ "reqwest",
  "serde",
  "serde_json",
  "serde_serializers",
@@ -7613,7 +7599,6 @@ dependencies = [
 name = "swapper-dump"
 version = "0.1.0"
 dependencies = [
- "alien_provider",
  "gemstone",
  "primitives",
  "tokio",
@@ -8371,7 +8356,7 @@ dependencies = [
 
 [[package]]
 name = "uniffi-bindgen"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "uniffi",
 ]
