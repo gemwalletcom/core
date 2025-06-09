@@ -1,4 +1,4 @@
-use crate::network::{jsonrpc::JsonRpcError, AlienError};
+use crate::network::{AlienError, JsonRpcError};
 use std::fmt::Debug;
 
 #[derive(Debug, thiserror::Error, uniffi::Error)]

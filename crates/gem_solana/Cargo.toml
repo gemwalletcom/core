@@ -22,6 +22,7 @@ typeshare = { workspace = true, optional = true }
 anyhow = { workspace = true }
 serde_serializers = { path = "../serde_serializers" }
 primitives = { path = "../primitives" }
+gem_jsonrpc = { path = "../gem_jsonrpc" }
 
 jsonrpsee = { workspace = true, optional = true }
 async-trait = { workspace = true, optional = true }

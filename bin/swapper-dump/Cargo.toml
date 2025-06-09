@@ -6,7 +6,9 @@ edition = "2021"
 [dependencies]
 gemstone = { path = "../../gemstone" }
 primitives = { path = "../../crates/primitives" }
-alien_provider = { path = "../../crates/alien_provider" }
+alien_provider = { path = "../../crates/alien_provider", features = [
+    "reqwest_provider",
+] }
 tokio = { workspace = true }
 
 [[bin]]

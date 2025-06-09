@@ -1,4 +1,4 @@
-use crate::network::{jsonrpc::JsonRpcClient, AlienProvider};
+use crate::network::{AlienProvider, JsonRpcClient};
 use crate::swapper::{eth_address, models::ApprovalType, ApprovalData, Permit2ApprovalData, SwapperError};
 
 use alloy_primitives::{hex::decode as HexDecode, Address, U256};
@@ -127,7 +127,7 @@ pub async fn check_approval(check_type: CheckApprovalType, provider: Arc<dyn Ali
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::network::mock::*;
+    use alien_provider::mock::*;
     use std::time::Duration;
 
     #[tokio::test]
