@@ -27,14 +27,14 @@ impl ChainBlockProvider for SuiProvider {
     }
 
     async fn get_transactions(&self, block_number: i64) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
-        let digests = self.client.get_transactions_by_block_number(block_number).await?;
-        let transactions = digests
+        Ok(self
+            .client
+            .get_transactions_by_block_number(block_number)
+            .await?
             .data
             .into_iter()
-            .flat_map(|x| SuiMapper::map_transaction(x, block_number))
-            .collect::<Vec<Transaction>>();
-
-        Ok(transactions)
+            .flat_map(SuiMapper::map_transaction)
+            .collect())
     }
 }
 
@@ -73,7 +73,14 @@ impl ChainAssetsProvider for SuiProvider {
 
 #[async_trait]
 impl ChainTransactionsProvider for SuiProvider {
-    async fn get_transactions_by_address(&self, _address: String) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
-        Ok(vec![])
+    async fn get_transactions_by_address(&self, address: String) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
+        Ok(self
+            .client
+            .get_transactions_by_address(address)
+            .await?
+            .data
+            .into_iter()
+            .flat_map(SuiMapper::map_transaction)
+            .collect())
     }
 }

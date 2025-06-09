@@ -1,7 +1,7 @@
 use std::{error::Error, str::FromStr, vec};
 
 use futures::future::try_join_all;
-use primitives::{Asset, AssetBalance, AssetBasic, AssetFull, AssetId, Chain, ChainAddress};
+use primitives::{Asset, AssetBalance, AssetBasic, AssetFull, AssetId, Chain, ChainAddress, Transaction};
 use search_index::{AssetDocument, SearchIndexClient, ASSETS_INDEX_NAME};
 use settings_chain::ChainProviders;
 use storage::{AssetsAddressesRepository, DatabaseClient};
@@ -124,7 +124,14 @@ impl AssetsChainProvider {
             .into_iter()
             .map(|request| self.providers.get_assets_balances(request.chain, request.address));
 
-        let results: Vec<Vec<AssetBalance>> = try_join_all(futures).await?;
-        Ok(results.into_iter().flatten().collect())
+        Ok(try_join_all(futures).await?.into_iter().flatten().collect())
+    }
+
+    pub async fn get_assets_transactions(&self, requests: Vec<ChainAddress>) -> Result<Vec<Transaction>, Box<dyn std::error::Error + Send + Sync>> {
+        let futures = requests
+            .into_iter()
+            .map(|request| self.providers.get_transactions_by_address(request.chain, request.address));
+
+        Ok(try_join_all(futures).await?.into_iter().flatten().collect())
     }
 }

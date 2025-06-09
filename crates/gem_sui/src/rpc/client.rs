@@ -45,7 +45,8 @@ impl SuiClient {
                 }
             }),
             json!(null),
-            json!(50),
+            json!(100),
+            json!(true),
         ];
         let res: Digests = self.client.call("suix_queryTransactionBlocks", params).await?;
         Ok(res)

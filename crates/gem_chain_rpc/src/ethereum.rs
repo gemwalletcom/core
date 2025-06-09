@@ -6,6 +6,7 @@ use std::error::Error;
 use crate::{ChainAssetsProvider, ChainBlockProvider, ChainTokenDataProvider, ChainTransactionsProvider};
 use gem_evm::{
     erc20::{decode_abi_string, decode_abi_uint8, IERC20},
+    ethereum_address_checksum,
     rpc::{AlchemyClient, EthereumClient, EthereumMapper},
 };
 use primitives::{Asset, AssetBalance, AssetId, Chain, Transaction};
@@ -102,9 +103,11 @@ impl ChainAssetsProvider for AlchemyClient {
         let balances = response
             .token_balances
             .into_iter()
-            .map(|x| AssetBalance {
-                asset_id: AssetId::from_token(self.chain, &x.contract_address),
-                balance: x.token_balance.to_string(),
+            .filter_map(|x| {
+                ethereum_address_checksum(&x.contract_address).ok().map(|from| AssetBalance {
+                    asset_id: AssetId::from_token(self.chain.to_chain(), &from),
+                    balance: x.token_balance.to_string(),
+                })
             })
             .collect();
         Ok(balances)

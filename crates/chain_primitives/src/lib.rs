@@ -39,7 +39,10 @@ pub fn format_token_id(chain: Chain, token_id: String) -> Option<String> {
         }
         Chain::Algorand => token_id.parse::<i32>().ok().map(|token_id| token_id.to_string()),
         Chain::Sui => {
-            if token_id.len() >= 64 && token_id.starts_with("0x") && !token_id.starts_with("0x0000000000000000000000000000000000000000000000000000000000000002")
+            if token_id.len() >= 64
+                && token_id.starts_with("0x")
+                && token_id.matches("::").count() == 2
+                && !token_id.starts_with("0x0000000000000000000000000000000000000000000000000000000000000002")
             {
                 Some(token_id)
             } else {
@@ -83,12 +86,25 @@ mod tests {
     #[test]
     fn test_format_token_id_sui() {
         let chain = Chain::Sui;
-
-        let valid_token_id = "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef".to_string();
-        let formatted_valid_token_id = format_token_id(chain, "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef".to_string().clone());
-        assert_eq!(formatted_valid_token_id, Some(valid_token_id));
-
+        assert_eq!(
+            format_token_id(chain, "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef".to_string()),
+            None
+        );
         assert_eq!(format_token_id(chain, "0x2::sui::SUI".to_string()), None);
+        assert_eq!(
+            format_token_id(
+                chain,
+                "0x356a26eb9e012a68958082340d4c4116e7f55615cf27affcff209cf0ae544f59::wal::WAL".to_string()
+            ),
+            Some("0x356a26eb9e012a68958082340d4c4116e7f55615cf27affcff209cf0ae544f59::wal::WAL".to_string())
+        );
+        assert_eq!(
+            format_token_id(
+                chain,
+                "0x0000000000000000000000000000000000000000000000000000000000000002::sui::SUI".to_string()
+            ),
+            None
+        );
     }
 
     #[test]

@@ -1,11 +1,13 @@
-use crate::SUI_COIN_TYPE; // Adjusted from gem_sui::SUI_COIN_TYPE
+use crate::SUI_COIN_TYPE;
+use crate::SUI_COIN_TYPE_FULL;
+use chrono::TimeZone;
 use chrono::Utc;
 use num_bigint::BigUint;
 use primitives::SwapProvider;
 use primitives::TransactionSwapMetadata;
 use primitives::{chain::Chain, Asset, AssetId, AssetType, Transaction, TransactionState, TransactionType};
 
-use super::model::BalanceChange; // Adjusted from crate::sui::model::BalanceChange
+use super::model::BalanceChange;
 
 use super::{
     constants::{SUI_STAKE_EVENT, SUI_UNSTAKE_EVENT},
@@ -29,14 +31,15 @@ impl SuiMapper {
         computation_cost + storage_cost - storage_rebate
     }
 
-    pub fn map_transaction(transaction: SuiTransaction, block_number: i64) -> Option<Transaction> {
+    pub fn map_transaction(transaction: SuiTransaction) -> Option<Transaction> {
         let chain = Self::CHAIN;
         let balance_changes = transaction.balance_changes.unwrap_or_default();
         let effects = transaction.effects.clone();
         let hash = transaction.digest.clone();
         let fee = Self::get_fee(effects.gas_used.clone());
-        let created_at = Utc::now();
+        let created_at = Utc.timestamp_millis_opt(transaction.timestamp_ms as i64).unwrap();
         let owner = effects.gas_object.owner.get_address_owner();
+        let block_number = transaction.checkpoint.to_string();
 
         // system transfer
         if balance_changes.len() == 2
@@ -71,7 +74,7 @@ impl SuiMapper {
                 None,
                 TransactionType::Transfer,
                 state,
-                block_number.to_string(),
+                block_number,
                 0.to_string(),
                 fee.to_string(),
                 chain.as_asset_id(),
@@ -97,7 +100,7 @@ impl SuiMapper {
                 None,
                 TransactionType::StakeDelegate,
                 TransactionState::Confirmed,
-                block_number.to_string(),
+                block_number,
                 0.to_string(),
                 fee.to_string(),
                 chain.as_asset_id(),
@@ -138,7 +141,7 @@ impl SuiMapper {
                 None,
                 TransactionType::Swap,
                 TransactionState::Confirmed,
-                block_number.to_string(),
+                block_number,
                 0.to_string(),
                 fee.to_string(),
                 chain.as_asset_id(),
@@ -165,7 +168,7 @@ impl SuiMapper {
                 None,
                 TransactionType::StakeUndelegate,
                 TransactionState::Confirmed,
-                block_number.to_string(),
+                block_number,
                 0.to_string(),
                 fee.to_string(),
                 chain.as_asset_id(),
@@ -213,7 +216,7 @@ impl SuiMapper {
 
     pub fn map_asset_id(coin_type: &str) -> AssetId {
         match coin_type {
-            SUI_COIN_TYPE => Chain::Sui.as_asset_id(),
+            SUI_COIN_TYPE | SUI_COIN_TYPE_FULL => Chain::Sui.as_asset_id(),
             _ => AssetId::from_token(Chain::Sui, coin_type),
         }
     }
@@ -239,7 +242,7 @@ mod tests {
         let file_content = include_str!("../../testdata/swap_token_to_token.json");
         let result: JsonRpcResult<SuiTransaction> = serde_json::from_str(file_content).unwrap();
 
-        let transaction = SuiMapper::map_transaction(result.result, 1).unwrap();
+        let transaction = SuiMapper::map_transaction(result.result).unwrap();
         let expected = TransactionSwapMetadata {
             from_asset: AssetId::from_token(Chain::Sui, "0x5c60d2434f7487703dffecb958b99827f4e1e3eef4cbbf1091318cb0b0a787c2::coin::COIN"),
             from_value: "5489450364172".to_string(),
@@ -256,7 +259,7 @@ mod tests {
         let file_content = include_str!("../../testdata/swap_sui_to_token.json");
         let result: JsonRpcResult<SuiTransaction> = serde_json::from_str(file_content).unwrap();
 
-        let transaction = SuiMapper::map_transaction(result.result, 1).unwrap();
+        let transaction = SuiMapper::map_transaction(result.result).unwrap();
         let expected = TransactionSwapMetadata {
             from_asset: Chain::Sui.as_asset_id(),
             from_value: "1000000000".to_string(),
