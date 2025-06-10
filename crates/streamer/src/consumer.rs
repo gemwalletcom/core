@@ -65,7 +65,7 @@ where
                 }
                 Err(e) => {
                     println!("consumer {} error: {}, elapsed: {:?}", name, e, start.elapsed());
-                    tokio::runtime::Handle::current().block_on(async { tokio::time::sleep(config.timeout_on_error).await });
+                    std::thread::sleep(config.timeout_on_error);
                     Ok(())
                 }
             }
