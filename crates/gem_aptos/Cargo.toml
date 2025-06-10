@@ -10,8 +10,7 @@ rpc = [
     "dep:chrono",
     "dep:reqwest-middleware",
     "dep:url",
-    "dep:num-bigint",
-    "dep:serde_serializers",
+    "dep:num-bigint"
 ]
 
 [dependencies]
@@ -19,6 +18,7 @@ primitives = { path = "../primitives" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 anyhow = { workspace = true }
+serde_serializers = { path = "../serde_serializers" }
 
 # Dependencies for RPC client & mapper
 async-trait = { workspace = true, optional = true }
@@ -26,4 +26,3 @@ chrono = { workspace = true, optional = true }
 reqwest-middleware = { workspace = true, features = ["json"], optional = true }
 url = { workspace = true, optional = true }
 num-bigint = { workspace = true, optional = true }
-serde_serializers = { path = "../serde_serializers", optional = true }
