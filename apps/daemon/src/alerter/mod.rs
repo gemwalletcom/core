@@ -19,7 +19,7 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
 
             async move {
                 let price_alert_client = PriceAlertClient::new(&settings.postgres.url).await;
-                let stream_producer = StreamProducer::new(&settings.rabbitmq.url).await.unwrap();
+                let stream_producer = StreamProducer::new(&settings.rabbitmq.url, "price_alerts").await.unwrap();
 
                 PriceAlertSender::new(price_alert_client, stream_producer, settings.alerter.rules.clone())
                     .run_observer()

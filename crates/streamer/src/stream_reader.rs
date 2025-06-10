@@ -11,8 +11,8 @@ pub struct StreamReader {
 }
 
 impl StreamReader {
-    pub async fn new(url: &str) -> Result<Self, Box<dyn Error + Send + Sync>> {
-        let connection = Connection::connect(url, ConnectionProperties::default()).await?;
+    pub async fn new(url: &str, connection_name: &str) -> Result<Self, Box<dyn Error + Send + Sync>> {
+        let connection = Connection::connect(url, ConnectionProperties::default().with_connection_name(connection_name.into())).await?;
         let channel = connection.create_channel().await?;
 
         Ok(Self { channel })

@@ -97,10 +97,9 @@ async fn run_parser_mode(settings: Settings, database: Arc<Mutex<DatabaseClient>
 
 async fn parser_start(settings: Settings, proxy: ParserProxy, parser_options: ParserOptions) {
     let database_client = DatabaseClient::new(settings.postgres.url.as_str());
-
-    let stream_producer = StreamProducer::new(&settings.rabbitmq.url).await.unwrap();
-
     let chain = proxy.get_chain();
+    let stream_producer = StreamProducer::new(&settings.rabbitmq.url, format!("parser_{}", chain).as_str()).await.unwrap();
+
     let mut parser = Parser::new(Box::new(proxy), stream_producer, database_client, parser_options.clone());
 
     loop {

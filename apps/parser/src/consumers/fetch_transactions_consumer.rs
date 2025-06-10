@@ -44,20 +44,21 @@ impl MessageConsumer<ChainAddressPayload, usize> for FetchTransactionsConsumer {
             .await
         {
             Ok(transactions) => {
-                if let Err(e) = self.process_result(payload.value.chain, transactions).await {
+                if let Err(e) = self.process_result(payload.value.chain, transactions.clone()).await {
                     println!(
                         "fetch transactions error, chain: {}, address: {}, error: {:?}",
                         payload.value.chain, payload.value.address, e
                     )
                 }
+                Ok(transactions.len())
             }
             Err(e) => {
                 println!(
                     "fetch transactions error, chain: {}, address: {}, error: {:?}",
                     payload.value.chain, payload.value.address, e
-                )
+                );
+                Ok(0)
             }
         }
-        Ok(1)
     }
 }

@@ -67,7 +67,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
     let pusher_client = PusherClient::new(settings.pusher.url, settings.pusher.ios.topic);
     let devices_client = DevicesClient::new(postgres_url, pusher_client).await;
     let transactions_client = TransactionsClient::new(postgres_url).await;
-    let stream_producer = StreamProducer::new(&settings.rabbitmq.url).await.unwrap();
+    let stream_producer = StreamProducer::new(&settings.rabbitmq.url, "api").await.unwrap();
     let subscriptions_client = SubscriptionsClient::new(postgres_url, stream_producer.clone()).await;
     let metrics_client = MetricsClient::new(postgres_url).await;
 

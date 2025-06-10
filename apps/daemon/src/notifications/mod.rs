@@ -19,13 +19,13 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
         create_notification_job(
             settings.clone(),
             "Price Alerts Notifications Consumer",
-            "price alerts notifications",
+            "price_alerts_notifications",
             QueueName::NotificationsPriceAlerts,
         ),
         create_notification_job(
             settings.clone(),
             "Transactions Notifications Consumer",
-            "transactions notifications",
+            "transactions_notifications",
             QueueName::NotificationsTransactions,
         ),
     ]
@@ -40,7 +40,7 @@ fn create_notification_job(settings: Settings, name: &'static str, log_prefix: &
         let queue = queue.clone();
 
         async move {
-            let stream_reader = StreamReader::new(&settings.rabbitmq.url).await.unwrap();
+            let stream_reader = StreamReader::new(&settings.rabbitmq.url, log_prefix).await.unwrap();
             let pusher_client = PusherClient::new(settings.pusher.url.clone(), settings.pusher.ios.topic.clone());
             let consumer = NotificationsConsumer::new(pusher_client);
 

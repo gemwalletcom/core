@@ -110,7 +110,7 @@ async fn main() {
 
     let queues = QueueName::all();
     let exchanges = ExchangeName::all();
-    let stream_producer = StreamProducer::new(&settings.rabbitmq.url).await.unwrap();
+    let stream_producer = StreamProducer::new(&settings.rabbitmq.url, "setup").await.unwrap();
     for queue in queues.clone() {
         let _ = stream_producer.declare_queue(queue).await;
     }

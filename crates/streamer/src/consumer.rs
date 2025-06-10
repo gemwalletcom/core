@@ -16,7 +16,7 @@ pub struct ConsumerConfig {
 impl Default for ConsumerConfig {
     fn default() -> Self {
         Self {
-            timeout_on_error: Duration::from_secs(5),
+            timeout_on_error: Duration::from_secs(1),
         }
     }
 }

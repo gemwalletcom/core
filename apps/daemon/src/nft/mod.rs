@@ -18,7 +18,7 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
     let nft_collection_consumer_job = run_job("update nft collection consumer", Duration::from_secs(u64::MAX), move || {
         let settings = settings.clone();
         async move {
-            let stream_reader = StreamReader::new(&settings.rabbitmq.url).await.unwrap();
+            let stream_reader = StreamReader::new(&settings.rabbitmq.url, "update_nft_collection").await.unwrap();
             let consumer = UpdateNftCollectionConsumer::new();
 
             run_consumer::<FetchNFTCollectionPayload, UpdateNftCollectionConsumer, usize>(
@@ -36,7 +36,7 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
     let nft_collection_assets_consumer_job = run_job("update nft collection assets consumer", Duration::from_secs(u64::MAX), move || {
         let settings = settings.clone();
         async move {
-            let stream_reader = StreamReader::new(&settings.rabbitmq.url).await.unwrap();
+            let stream_reader = StreamReader::new(&settings.rabbitmq.url, "nft_collection_assets").await.unwrap();
             let consumer = UpdateNftCollectionAssetsConsumer::new();
 
             run_consumer::<FetchNFTCollectionAssetPayload, UpdateNftCollectionAssetsConsumer, usize>(
