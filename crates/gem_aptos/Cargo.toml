@@ -11,6 +11,7 @@ rpc = [
     "dep:reqwest-middleware",
     "dep:url",
     "dep:num-bigint",
+    "dep:serde_serializers",
 ]
 
 [dependencies]
@@ -25,3 +26,4 @@ chrono = { workspace = true, optional = true }
 reqwest-middleware = { workspace = true, features = ["json"], optional = true }
 url = { workspace = true, optional = true }
 num-bigint = { workspace = true, optional = true }
+serde_serializers = { path = "../serde_serializers", optional = true }

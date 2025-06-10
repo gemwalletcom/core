@@ -1,13 +1,22 @@
-use chrono::Utc;
+use crate::{Transaction as AptosTransaction, STAKE_DEPOSIT_EVENT};
+use chrono::DateTime;
 use num_bigint::BigUint;
 use primitives::{Chain, Transaction, TransactionState, TransactionType};
 use std::str::FromStr;
 
-use crate::{Transaction as AptosTransaction, STAKE_DEPOSIT_EVENT};
-
 pub struct AptosMapper;
 
 impl AptosMapper {
+    pub fn map_transactions(chain: Chain, transactions: Vec<AptosTransaction>, block_number: i64) -> Vec<Transaction> {
+        let mut transactions = transactions
+            .into_iter()
+            .flat_map(|x| AptosMapper::map_transaction(chain, x, block_number))
+            .collect::<Vec<_>>();
+
+        transactions.sort_by(|a, b| b.created_at.cmp(&a.created_at));
+        transactions
+    }
+
     pub fn map_transaction(chain: Chain, transaction: AptosTransaction, block_number: i64) -> Option<Transaction> {
         let events = transaction.clone().events.unwrap_or_default();
 
@@ -25,6 +34,7 @@ impl AptosMapper {
             let gas_used = BigUint::from_str(transaction.gas_used.unwrap_or_default().as_str()).unwrap_or_default();
             let gas_unit_price = BigUint::from_str(transaction.gas_unit_price.unwrap_or_default().as_str()).unwrap_or_default();
             let fee = gas_used * gas_unit_price;
+            let created_at = DateTime::from_timestamp_micros(transaction.timestamp as i64)?;
 
             let transaction = Transaction::new(
                 transaction.hash,
@@ -41,7 +51,7 @@ impl AptosMapper {
                 value.clone(),
                 None,
                 None,
-                Utc::now(),
+                created_at,
             );
             return Some(transaction);
         }

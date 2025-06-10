@@ -57,9 +57,11 @@ impl StreamReader {
                             }
                         },
                         Err(e) => {
-                            println!("Consumer deserialization error: {}", e);
-                            self.nack(delivery_tag).await?;
-                            return Err(Box::new(e));
+                            println!("Consumer deserialization error: {}, payload: {:?}", e, String::from_utf8_lossy(&delivery.data));
+                            let _ = match self.nack(delivery_tag).await {
+                                Ok(_) => Ok(()),
+                                Err(e) => Err(e),
+                            };
                         }
                     }
                 }

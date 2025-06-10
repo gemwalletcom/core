@@ -4,7 +4,10 @@ use primitives::chain::Chain;
 use reqwest_middleware::ClientWithMiddleware;
 use serde::{de::DeserializeOwned, Serialize};
 
-use crate::model::{Block, Ledger, Resource, ResourceData};
+use crate::{
+    model::{Block, Ledger, Resource, ResourceData},
+    Transaction,
+};
 pub type AccountResource<T> = Resource<T>;
 
 #[derive(Clone)]
@@ -23,12 +26,16 @@ impl AptosClient {
     }
 
     pub async fn get_ledger(&self) -> Result<Ledger, Box<dyn Error + Send + Sync>> {
-        let url = format!("{}/v1/", self.url);
-        Ok(self.client.get(url).send().await?.json().await?)
+        Ok(self.client.get(format!("{}/v1/", self.url)).send().await?.json().await?)
     }
 
     pub async fn get_block_transactions(&self, block_number: i64) -> Result<Block, Box<dyn Error + Send + Sync>> {
         let url = format!("{}/v1/blocks/by_height/{}?with_transactions=true", self.url, block_number);
+        Ok(self.client.get(url).send().await?.json().await?)
+    }
+
+    pub async fn get_transactions_by_address(&self, address: String) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
+        let url = format!("{}/v1/accounts/{}/transactions", self.url, address);
         Ok(self.client.get(url).send().await?.json().await?)
     }
 

@@ -1,6 +1,6 @@
-use serde::{Deserialize, Serialize};
-
 use super::constants::{STAKE_DEPOSIT_EVENT, STAKE_WITHDRAW_EVENT};
+use serde::{Deserialize, Serialize};
+use serde_serializers::deserialize_u64_from_str;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Ledger {
@@ -24,6 +24,8 @@ pub struct Transaction {
     #[serde(rename = "type")]
     pub transaction_type: String,
     pub sequence_number: Option<String>,
+    #[serde(deserialize_with = "deserialize_u64_from_str")]
+    pub timestamp: u64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
