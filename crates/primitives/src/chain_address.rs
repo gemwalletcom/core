@@ -1,3 +1,5 @@
+use std::fmt;
+
 use serde::{Deserialize, Serialize};
 
 use crate::Chain;
@@ -11,5 +13,11 @@ pub struct ChainAddress {
 impl ChainAddress {
     pub fn new(chain: Chain, address: String) -> Self {
         Self { chain, address }
+    }
+}
+
+impl fmt::Display for ChainAddress {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}:{}", self.chain, self.address)
     }
 }

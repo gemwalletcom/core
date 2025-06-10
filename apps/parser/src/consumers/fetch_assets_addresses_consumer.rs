@@ -90,8 +90,9 @@ impl FetchAssetsAddressesConsumer {
 #[async_trait]
 impl MessageConsumer<ChainAddressPayload, usize> for FetchAssetsAddressesConsumer {
     async fn should_process(&mut self, payload: ChainAddressPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
-        let key = format!("fetch_assets_addresses_{}", payload.value.chain);
-        self.cacher.can_process_now(&key, &payload.value.address, 30 * 86400).await
+        self.cacher
+            .can_process_now("fetch_assets_addresses", &payload.value.to_string(), 30 * 86400)
+            .await
     }
 
     async fn process(&mut self, payload: ChainAddressPayload) -> Result<usize, Box<dyn Error + Send + Sync>> {

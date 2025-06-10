@@ -22,8 +22,7 @@ impl FetchAssetsConsumer {
 #[async_trait]
 impl MessageConsumer<FetchAssetsPayload, usize> for FetchAssetsConsumer {
     async fn should_process(&mut self, payload: FetchAssetsPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
-        let key = format!("fetch_assets_{}", payload.asset_id.chain);
-        self.cacher.can_process_now(&key, &payload.asset_id.to_string(), 30 * 86400).await
+        self.cacher.can_process_now("fetch_assets", &payload.asset_id.to_string(), 30 * 86400).await
     }
 
     async fn process(&mut self, payload: FetchAssetsPayload) -> Result<usize, Box<dyn Error + Send + Sync>> {
