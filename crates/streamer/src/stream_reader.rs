@@ -52,12 +52,29 @@ impl StreamReader {
                         Ok(obj) => match callback(obj) {
                             Ok(_) => self.channel.basic_ack(delivery_tag, BasicAckOptions { multiple: false }).await?,
                             Err(e) => {
-                                self.channel.basic_reject(delivery_tag, BasicRejectOptions { requeue: true }).await?;
+                                self.channel
+                                    .basic_nack(
+                                        delivery_tag,
+                                        BasicNackOptions {
+                                            multiple: false,
+                                            requeue: false,
+                                        },
+                                    )
+                                    .await?;
                                 return Err(e);
                             }
                         },
                         Err(e) => {
-                            self.channel.basic_reject(delivery_tag, BasicRejectOptions { requeue: true }).await?;
+                            println!("Consumer deserialization error: {}", e);
+                            self.channel
+                                .basic_nack(
+                                    delivery_tag,
+                                    BasicNackOptions {
+                                        multiple: false,
+                                        requeue: false,
+                                    },
+                                )
+                                .await?;
                             return Err(Box::new(e));
                         }
                     }

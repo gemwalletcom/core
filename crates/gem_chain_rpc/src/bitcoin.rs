@@ -5,6 +5,7 @@ use async_trait::async_trait;
 use primitives::Transaction;
 use primitives::{chain::Chain, Asset, AssetBalance};
 
+use futures::future::try_join_all;
 use gem_bitcoin::rpc::BitcoinClient;
 use gem_bitcoin::rpc::BitcoinMapper;
 
@@ -64,14 +65,12 @@ impl ChainAssetsProvider for BitcoinProvider {
 #[async_trait]
 impl ChainTransactionsProvider for BitcoinProvider {
     async fn get_transactions_by_address(&self, address: String) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
-        let address = self.client.get_address(address).await?;
-        let transactions_ids = address.txids.iter().take(6).collect::<Vec<_>>();
-        let mut transactions = Vec::new();
-        for transaction_id in transactions_ids {
-            let transaction = self.client.get_transaction(transaction_id.to_string()).await?;
-            transactions.push(transaction);
-        }
-
+        let address = self.client.get_address(&address).await?;
+        let transaction_ids = address.txids.iter().take(6).collect::<Vec<_>>();
+        let transactions = try_join_all(transaction_ids.into_iter().map(|x| self.client.get_transaction(x)))
+            .await?
+            .into_iter()
+            .collect::<Vec<_>>();
         Ok(transactions
             .into_iter()
             .flat_map(|x| BitcoinMapper::map_transaction(self.get_chain(), &x))

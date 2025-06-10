@@ -19,6 +19,9 @@ pub struct TransactionsConsumer {
 
 #[async_trait]
 impl MessageConsumer<TransactionsPayload, usize> for TransactionsConsumer {
+    async fn should_process(&mut self, _payload: TransactionsPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
+        Ok(true)
+    }
     async fn process(&mut self, payload: TransactionsPayload) -> Result<usize, Box<dyn Error + Send + Sync>> {
         let chain = payload.chain;
         let transactions = payload
@@ -88,7 +91,7 @@ impl MessageConsumer<TransactionsPayload, usize> for TransactionsConsumer {
                         .collect::<Vec<_>>();
 
                     if !assets_addresses.is_empty() {
-                        address_assets_payload.push(AssetsAddressPayload::new(assets_addresses));
+                        address_assets_payload.push(AssetsAddressPayload::new(assets_addresses.clone()));
                     }
                 }
             }

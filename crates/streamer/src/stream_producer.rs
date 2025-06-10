@@ -121,4 +121,18 @@ impl StreamProducer {
     {
         self.publish_message(&exchange.to_string(), "", message).await
     }
+
+    pub async fn publish_to_exchange_batch<T>(&self, exchange: ExchangeName, messages: &[T]) -> Result<bool, Box<dyn Error + Send + Sync>>
+    where
+        T: serde::Serialize,
+    {
+        if messages.is_empty() {
+            return Ok(true);
+        }
+        let exchange_str = exchange.to_string();
+        for message in messages {
+            self.publish_message(&exchange_str, "", message).await?;
+        }
+        Ok(true)
+    }
 }

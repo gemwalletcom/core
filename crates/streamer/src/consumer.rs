@@ -24,6 +24,7 @@ impl Default for ConsumerConfig {
 #[async_trait]
 pub trait MessageConsumer<P, R> {
     async fn process(&mut self, payload: P) -> Result<R, Box<dyn Error + Send + Sync>>;
+    async fn should_process(&mut self, payload: P) -> Result<bool, Box<dyn Error + Send + Sync>>;
 }
 
 pub async fn run_consumer<P, C, R>(
@@ -36,19 +37,26 @@ pub async fn run_consumer<P, C, R>(
 where
     P: Clone + Send + Display + 'static,
     C: MessageConsumer<P, R> + Send + 'static,
-    R: std::fmt::Debug,
+    R: std::default::Default + std::fmt::Debug,
     for<'a> P: Deserialize<'a> + std::fmt::Debug,
 {
     println!("Running consumer {} for queue {}", name, queue_name);
 
     stream_reader
         .read::<P, _>(queue_name, move |payload| {
+            println!("consumer {} received: {}", name, payload);
             let start = Instant::now();
             let result = tokio::task::block_in_place(|| {
                 let rt = tokio::runtime::Handle::current();
                 rt.block_on(async {
-                    println!("consumer {} received: {}", name, payload);
-                    consumer.process(payload.clone()).await
+                    match consumer.should_process(payload.clone()).await {
+                        Ok(true) => consumer.process(payload.clone()).await,
+                        Ok(false) => {
+                            println!("consumer {} should not process: {}", name, payload);
+                            Ok(R::default())
+                        }
+                        Err(e) => Err(e),
+                    }
                 })
             });
             match result {

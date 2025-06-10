@@ -47,6 +47,12 @@ impl fmt::Display for AssetId {
     }
 }
 
+impl From<AssetId> for String {
+    fn from(value: AssetId) -> Self {
+        value.to_string()
+    }
+}
+
 impl AssetId {
     pub fn new(asset_id: &str) -> Option<Self> {
         let split: Vec<&str> = asset_id.split('_').collect();

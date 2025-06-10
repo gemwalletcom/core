@@ -1,6 +1,7 @@
 use std::error::Error;
 
 use redis::{AsyncCommands, Client};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 pub const CACHER_DB_PUBLIC: usize = 2;
 // Work in progress. In the future use it for caching any temporary data.
@@ -97,5 +98,51 @@ impl CacherClient {
         }
 
         Ok(fresh_value)
+    }
+
+    pub async fn set_hset<T: serde::Serialize>(&mut self, hash_key: &str, field: &str, value: &T) -> Result<bool, Box<dyn Error + Send + Sync>> {
+        let mut connection = self.client.get_multiplexed_async_connection().await?;
+        let serialized_value = serde_json::to_string(value)?;
+        let redis_result: i64 = connection.hset(hash_key, field, serialized_value).await?;
+        Ok(redis_result == 1)
+    }
+
+    pub async fn get_or_set_hset<T, F, Fut>(&mut self, hash_key: &str, field: &str, fetch_fn: F) -> Result<T, Box<dyn Error + Send + Sync>>
+    where
+        T: serde::de::DeserializeOwned + serde::Serialize,
+        F: FnOnce() -> Fut,
+        Fut: std::future::Future<Output = Result<T, Box<dyn Error + Send + Sync>>>,
+    {
+        let mut connection = self.client.get_multiplexed_async_connection().await?;
+        let cached_str: Option<String> = connection.hget(hash_key, field).await?;
+
+        if let Some(value_str) = cached_str {
+            return Ok(serde_json::from_str(&value_str)?);
+        }
+
+        let fresh_value = fetch_fn().await?;
+        let serialized_fresh_value = serde_json::to_string(&fresh_value)?;
+
+        self.client
+            .get_multiplexed_async_connection()
+            .await?
+            .hset::<&str, &str, String, ()>(hash_key, field, serialized_fresh_value)
+            .await?;
+
+        Ok(fresh_value)
+    }
+
+    pub async fn can_process_now(&mut self, hash_key: &str, key: &str, timeout_seconds: u64) -> Result<bool, Box<dyn Error + Send + Sync>> {
+        let now = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs();
+        let last_processed_time: u64 = self.get_or_set_hset(hash_key, key, || async { Ok(now) }).await?;
+        if last_processed_time == now {
+            return Ok(true);
+        }
+
+        if now > last_processed_time + timeout_seconds {
+            return self.set_hset(hash_key, key, &now).await;
+        }
+
+        Ok(false)
     }
 }

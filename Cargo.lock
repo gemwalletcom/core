@@ -5334,6 +5334,7 @@ version = "1.0.0"
 dependencies = [
  "api_connector",
  "async-trait",
+ "cacher",
  "chrono",
  "futures",
  "gem_chain_rpc",

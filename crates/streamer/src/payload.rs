@@ -145,17 +145,17 @@ impl fmt::Display for AssetsAddressPayload {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ChainAddressPayload {
-    pub values: Vec<ChainAddress>,
+    pub value: ChainAddress,
 }
 
 impl ChainAddressPayload {
-    pub fn new(values: Vec<ChainAddress>) -> Self {
-        Self { values }
+    pub fn new(value: ChainAddress) -> Self {
+        Self { value }
     }
 }
 
 impl fmt::Display for ChainAddressPayload {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "addresses: {}", self.values.len())
+        write!(f, "chain: {}, address: {}", self.value.chain, self.value.address)
     }
 }

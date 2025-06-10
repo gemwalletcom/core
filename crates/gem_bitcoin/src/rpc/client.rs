@@ -31,12 +31,12 @@ impl BitcoinClient {
         Ok(self.client.get(url).send().await?.json::<Block>().await?)
     }
 
-    pub async fn get_address(&self, address: String) -> Result<Address, Box<dyn Error + Send + Sync>> {
+    pub async fn get_address(&self, address: &str) -> Result<Address, Box<dyn Error + Send + Sync>> {
         let url = format!("{}/api/v2/address/{}", self.url, address);
         Ok(self.client.get(url).send().await?.json::<Address>().await?)
     }
 
-    pub async fn get_transaction(&self, txid: String) -> Result<Transaction, Box<dyn Error + Send + Sync>> {
+    pub async fn get_transaction(&self, txid: &str) -> Result<Transaction, Box<dyn Error + Send + Sync>> {
         let url = format!("{}/api/v2/tx/{}", self.url, txid);
         Ok(self.client.get(url).send().await?.json().await?)
     }

@@ -3,6 +3,7 @@ use std::{error::Error, sync::Arc};
 use tokio::sync::Mutex;
 
 use async_trait::async_trait;
+use cacher::CacherClient;
 use settings_chain::ChainProviders;
 use storage::{models::AssetAddress, AssetsAddressesStore, DatabaseClient};
 use streamer::{consumer::MessageConsumer, ChainAddressPayload, StreamProducer, StreamProducerQueue};
@@ -11,6 +12,7 @@ pub struct FetchAssetsAddressesConsumer {
     pub provider: ChainProviders,
     pub database: Arc<Mutex<DatabaseClient>>,
     pub stream_producer: StreamProducer,
+    pub cacher: CacherClient,
 }
 
 struct FetchAssetsAddressesResult {
@@ -20,11 +22,12 @@ struct FetchAssetsAddressesResult {
 }
 
 impl FetchAssetsAddressesConsumer {
-    pub fn new(provider: ChainProviders, database: Arc<Mutex<DatabaseClient>>, stream_producer: StreamProducer) -> Self {
+    pub fn new(provider: ChainProviders, database: Arc<Mutex<DatabaseClient>>, stream_producer: StreamProducer, cacher: CacherClient) -> Self {
         Self {
             provider,
             database,
             stream_producer,
+            cacher,
         }
     }
 
@@ -86,20 +89,29 @@ impl FetchAssetsAddressesConsumer {
 
 #[async_trait]
 impl MessageConsumer<ChainAddressPayload, usize> for FetchAssetsAddressesConsumer {
+    async fn should_process(&mut self, payload: ChainAddressPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
+        let key = format!("fetch_assets_addresses_{}", payload.value.chain);
+        self.cacher.can_process_now(&key, &payload.value.address, 30 * 86400).await
+    }
+
     async fn process(&mut self, payload: ChainAddressPayload) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        for value in payload.values.clone() {
-            match self.fetch_assets_addresses(value.chain, value.address.clone()).await {
-                Ok(result) => {
-                    if let Err(e) = self.process_result(result).await {
-                        println!("Failed to process assets for chain {} and address {}: {}", value.chain, value.address, e);
-                    }
+        match self.fetch_assets_addresses(payload.value.chain, payload.value.address.clone()).await {
+            Ok(result) => {
+                if let Err(e) = self.process_result(result).await {
+                    println!(
+                        "Failed to process assets for chain {} and address {}: {}",
+                        payload.value.chain, payload.value.address, e
+                    );
                 }
-                Err(e) => {
-                    println!("Failed to fetch assets for chain {} and address {}: {}", value.chain, value.address, e);
-                }
+            }
+            Err(e) => {
+                println!(
+                    "Failed to fetch assets for chain {} and address {}: {}",
+                    payload.value.chain, payload.value.address, e
+                );
             }
         }
 
-        Ok(payload.values.len())
+        Ok(1)
     }
 }

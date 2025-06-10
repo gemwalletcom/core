@@ -23,10 +23,12 @@ impl SubscriptionsClient {
             .map(|x| storage::models::Subscription::from_primitive(x, device.id))
             .collect::<Vec<_>>();
         let result = self.database.add_subscriptions(subscriptions.clone())?;
-        let payload = subscriptions.clone().into_iter().map(|x| x.as_chain_address()).collect::<Vec<_>>();
-        self.stream_producer
-            .publish_to_exchange(ExchangeName::NewAddresses, &ChainAddressPayload::new(payload))
-            .await?;
+        let payload = subscriptions
+            .clone()
+            .into_iter()
+            .map(|x| ChainAddressPayload::new(x.as_chain_address()))
+            .collect::<Vec<_>>();
+        self.stream_producer.publish_to_exchange_batch(ExchangeName::NewAddresses, &payload).await?;
         Ok(result)
     }
 

@@ -18,6 +18,10 @@ impl AssetsAddressesConsumer {
 
 #[async_trait]
 impl MessageConsumer<AssetsAddressPayload, usize> for AssetsAddressesConsumer {
+    async fn should_process(&mut self, _payload: AssetsAddressPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
+        Ok(true)
+    }
+
     async fn process(&mut self, payload: AssetsAddressPayload) -> Result<usize, Box<dyn Error + Send + Sync>> {
         let assets_addresses = payload
             .values
