@@ -27,9 +27,6 @@ mercuryo:
   key:
     public: ""
     secret: ""
-ramp:
-  key:
-    public: ""
 banxa:
   url: ""
   key:

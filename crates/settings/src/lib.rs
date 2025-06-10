@@ -20,7 +20,6 @@ pub struct Settings {
     pub moonpay: MoonPay,
     pub transak: Transak,
     pub mercuryo: Mercuryo,
-    pub ramp: Ramp,
     pub banxa: Banxa,
 
     pub pricer: Pricer,
@@ -97,12 +96,6 @@ pub struct Transak {
 #[allow(unused)]
 pub struct Mercuryo {
     pub key: Key,
-}
-
-#[derive(Debug, Deserialize, Clone)]
-#[allow(unused)]
-pub struct Ramp {
-    pub key: KeyPublic,
 }
 
 #[derive(Debug, Deserialize, Clone)]
