@@ -26,8 +26,7 @@ impl ChainBlockProvider for CosmosProvider {
 
     async fn get_latest_block(&self) -> Result<i64, Box<dyn Error + Send + Sync>> {
         let block = self.client.get_block("latest").await?;
-        let block_number = block.block.header.height.parse::<i64>()?;
-        return Ok(block_number);
+        Ok(block.block.header.height.parse::<i64>()?)
     }
 
     async fn get_transactions(&self, block: i64) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {

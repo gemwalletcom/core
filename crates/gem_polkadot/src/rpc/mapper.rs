@@ -6,6 +6,15 @@ use super::model::{Block, Extrinsic, ExtrinsicArguments, TRANSACTION_TYPE_TRANSF
 pub struct PolkadotMapper;
 
 impl PolkadotMapper {
+    pub fn map_transactions(chain: Chain, block: Block) -> Vec<Transaction> {
+        block
+            .extrinsics
+            .iter()
+            .flat_map(|x| Self::map_transaction(chain, block.clone(), x.clone()))
+            .flatten()
+            .collect()
+    }
+
     pub fn map_transaction(chain: Chain, block: Block, transaction: Extrinsic) -> Vec<Option<Transaction>> {
         match &transaction.args.clone() {
             ExtrinsicArguments::Transfer(transfer) => {
@@ -56,7 +65,7 @@ impl PolkadotMapper {
             None,
             TransactionType::Transfer,
             state,
-            block.number,
+            block.number.to_string(),
             transaction.nonce.unwrap_or_default().clone(),
             transaction.info.partial_fee.unwrap_or("0".to_string()),
             chain.as_asset_id(),

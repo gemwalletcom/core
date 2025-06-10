@@ -1,18 +1,21 @@
 use core::str;
 
 use serde::{Deserialize, Serialize};
+use serde_serializers::deserialize_u64_from_str;
 
 pub const TRANSACTION_TYPE_TRANSFER_KEEP_ALIVE: &str = "transferKeepAlive";
 pub const TRANSACTION_TYPE_TRANSFER_ALLOW_DEATH: &str = "transferAllowDeath";
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct BlockHeader {
-    pub number: String,
+    #[serde(deserialize_with = "deserialize_u64_from_str")]
+    pub number: u64,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct Block {
-    pub number: String,
+    #[serde(deserialize_with = "deserialize_u64_from_str")]
+    pub number: u64,
     pub extrinsics: Vec<Extrinsic>,
 }
 

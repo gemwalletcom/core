@@ -41,10 +41,7 @@ impl ChainBlockProvider for BitcoinProvider {
             }
             page += 1;
         }
-        Ok(transactions
-            .into_iter()
-            .flat_map(|x| BitcoinMapper::map_transaction(self.get_chain(), &x))
-            .collect())
+        Ok(BitcoinMapper::map_transactions(self.get_chain(), transactions))
     }
 }
 
@@ -71,9 +68,6 @@ impl ChainTransactionsProvider for BitcoinProvider {
             .await?
             .into_iter()
             .collect::<Vec<_>>();
-        Ok(transactions
-            .into_iter()
-            .flat_map(|x| BitcoinMapper::map_transaction(self.get_chain(), &x))
-            .collect())
+        Ok(BitcoinMapper::map_transactions(self.get_chain(), transactions))
     }
 }

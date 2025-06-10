@@ -6,6 +6,10 @@ use super::model::Transaction;
 pub struct BitcoinMapper;
 
 impl BitcoinMapper {
+    pub fn map_transactions(chain: Chain, transactions: Vec<Transaction>) -> Vec<primitives::Transaction> {
+        transactions.into_iter().flat_map(|x| BitcoinMapper::map_transaction(chain, &x)).collect()
+    }
+
     pub fn map_transaction(chain: Chain, transaction: &Transaction) -> Option<primitives::Transaction> {
         let inputs: Vec<TransactionInput> = transaction
             .vin

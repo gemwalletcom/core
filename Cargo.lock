@@ -3397,6 +3397,7 @@ dependencies = [
  "reqwest-middleware",
  "serde",
  "serde_json",
+ "serde_serializers",
 ]
 
 [[package]]

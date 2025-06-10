@@ -47,8 +47,7 @@ where
             println!("consumer {} received: {}", name, payload);
             let start = Instant::now();
             let result = tokio::task::block_in_place(|| {
-                let rt = tokio::runtime::Handle::current();
-                rt.block_on(async {
+                tokio::runtime::Handle::current().block_on(async {
                     match consumer.should_process(payload.clone()).await {
                         Ok(true) => consumer.process(payload.clone()).await,
                         Ok(false) => {
@@ -66,10 +65,7 @@ where
                 }
                 Err(e) => {
                     println!("consumer {} error: {}, elapsed: {:?}", name, e, start.elapsed());
-                    tokio::task::block_in_place(|| {
-                        let rt = tokio::runtime::Handle::current();
-                        rt.block_on(async { tokio::time::sleep(config.timeout_on_error).await })
-                    });
+                    tokio::runtime::Handle::current().block_on(async { tokio::time::sleep(config.timeout_on_error).await });
                     Ok(())
                 }
             }

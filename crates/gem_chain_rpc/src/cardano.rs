@@ -43,7 +43,6 @@ impl ChainBlockProvider for CardanoProvider {
 #[async_trait]
 impl ChainTokenDataProvider for CardanoProvider {
     async fn get_token_data(&self, token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
-        // Forward to the client implementation
         self.client.get_token_data(token_id).await
     }
 }

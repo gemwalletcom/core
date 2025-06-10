@@ -50,31 +50,15 @@ impl StreamReader {
                     let data = serde_json::from_slice::<T>(&delivery.data);
                     match data {
                         Ok(obj) => match callback(obj) {
-                            Ok(_) => self.channel.basic_ack(delivery_tag, BasicAckOptions { multiple: false }).await?,
+                            Ok(_) => self.ack(delivery_tag).await?,
                             Err(e) => {
-                                self.channel
-                                    .basic_nack(
-                                        delivery_tag,
-                                        BasicNackOptions {
-                                            multiple: false,
-                                            requeue: false,
-                                        },
-                                    )
-                                    .await?;
+                                self.nack(delivery_tag).await?;
                                 return Err(e);
                             }
                         },
                         Err(e) => {
                             println!("Consumer deserialization error: {}", e);
-                            self.channel
-                                .basic_nack(
-                                    delivery_tag,
-                                    BasicNackOptions {
-                                        multiple: false,
-                                        requeue: false,
-                                    },
-                                )
-                                .await?;
+                            self.nack(delivery_tag).await?;
                             return Err(Box::new(e));
                         }
                     }
@@ -84,5 +68,25 @@ impl StreamReader {
         }
 
         Ok(())
+    }
+
+    async fn ack(&self, delivery_tag: u64) -> Result<(), Box<dyn Error + Send + Sync>> {
+        self.channel
+            .basic_ack(delivery_tag, BasicAckOptions { multiple: false })
+            .await
+            .map_err(|e| Box::new(e) as Box<dyn Error + Send + Sync>)
+    }
+
+    async fn nack(&self, delivery_tag: u64) -> Result<(), Box<dyn Error + Send + Sync>> {
+        self.channel
+            .basic_nack(
+                delivery_tag,
+                BasicNackOptions {
+                    multiple: false,
+                    requeue: false,
+                },
+            )
+            .await
+            .map_err(|e| Box::new(e) as Box<dyn Error + Send + Sync>)
     }
 }
