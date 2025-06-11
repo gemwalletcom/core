@@ -3,7 +3,7 @@ use crate::models::DetectResponse;
 
 use async_trait::async_trait;
 use hmac::{Hmac, Mac};
-use reqwest_enum::target::Target;
+use reqwest_enum::{target::Target, Error};
 use security_provider::{AddressTarget, ScanProvider, ScanResult};
 use sha2::Sha256;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -43,13 +43,13 @@ impl HashDitProvider {
         hex::encode(code_bytes)
     }
 
-    fn build_request(&self, target: HashDitApi) -> reqwest::RequestBuilder {
+    fn build_request(&self, target: HashDitApi) -> Result<reqwest::RequestBuilder, Error> {
         let url = format!("{}{}", target.base_url(), target.path());
         let mut request = self.client.request(target.method().into(), url);
 
         let query = target.query();
         let query_str = target.query_string();
-        let body = target.body().expect("Failed to serialize body");
+        let body = target.body()?;
 
         let timestamp = SystemTime::now()
             .duration_since(UNIX_EPOCH)
@@ -71,7 +71,7 @@ impl HashDitProvider {
             .header("X-Signature-nonce", nonce)
             .query(&query)
             .body(body.inner);
-        request
+        Ok(request)
     }
 }
 
@@ -83,7 +83,7 @@ impl ScanProvider for HashDitProvider {
 
     async fn scan_address(&self, target: &AddressTarget) -> Result<ScanResult<AddressTarget>, Box<dyn std::error::Error + Send + Sync>> {
         let api = HashDitApi::DetectAddress(target.address.clone(), target.chain.network_id().into());
-        let request = self.build_request(api);
+        let request = self.build_request(api)?;
         let response = self.client.execute(request.build()?).await?;
         let mut is_malicious = false;
         let mut reason: Option<String> = None;
