@@ -1,4 +1,4 @@
-use chrono::Utc;
+use chrono::{DateTime, Utc};
 use primitives::{chain::Chain, transaction_utxo::TransactionInput, TransactionDirection, TransactionType};
 
 use super::model::{Block, Transaction};
@@ -28,6 +28,7 @@ impl CardanoMapper {
         if inputs.is_empty() || outputs.is_empty() {
             return None;
         }
+        let created_at = DateTime::parse_from_rfc3339(&block.forged_at).ok()?.into();
 
         let transaction = primitives::Transaction::new_with_utxo(
             transaction.hash.clone(),
@@ -47,7 +48,7 @@ impl CardanoMapper {
             inputs.into(),
             outputs.into(),
             None,
-            Utc::now(),
+            created_at,
         );
 
         Some(transaction)

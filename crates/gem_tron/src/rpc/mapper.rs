@@ -1,10 +1,10 @@
-use chrono::Utc;
+use chrono::DateTime;
 use num_bigint::BigUint;
 use num_traits::Num;
 use primitives::{chain::Chain, AssetId, Transaction, TransactionState, TransactionType};
 
-use crate::address::TronAddress;
 use super::model::{self, TransactionReceiptData};
+use crate::{address::TronAddress, rpc::model::BlockTransactions};
 
 const TRANSFER_CONTRACT: &str = "TransferContract";
 const TRIGGER_SMART_CONTRACT: &str = "TriggerSmartContract";
@@ -12,6 +12,16 @@ const TRIGGER_SMART_CONTRACT: &str = "TriggerSmartContract";
 pub struct TronMapper;
 
 impl TronMapper {
+    pub fn map_transactions(chain: Chain, block: BlockTransactions, reciepts: Vec<TransactionReceiptData>) -> Vec<Transaction> {
+        block
+            .transactions
+            .unwrap_or_default()
+            .into_iter()
+            .zip(reciepts.iter())
+            .filter_map(|(transaction, receipt)| TronMapper::map_transaction(chain, transaction, receipt.clone()))
+            .collect()
+    }
+
     pub fn map_transaction(chain: Chain, transaction: model::Transaction, receipt: TransactionReceiptData) -> Option<Transaction> {
         if let (Some(value), Some(contract_result)) = (transaction.raw_data.contract.first().cloned(), transaction.ret.first().cloned()) {
             let state: TransactionState = if contract_result.contract_ret.clone() == "SUCCESS" {
@@ -20,6 +30,8 @@ impl TronMapper {
                 TransactionState::Failed
             };
             let fee = receipt.fee.unwrap_or_default().to_string();
+            let created_at = DateTime::from_timestamp_millis(receipt.block_time_stamp)?;
+
             if value.contract_type == TRANSFER_CONTRACT && !transaction.ret.is_empty() {
                 let from = TronAddress::from_hex(value.parameter.value.owner_address.unwrap_or_default().as_str()).unwrap_or_default();
                 let to = TronAddress::from_hex(value.parameter.value.to_address.unwrap_or_default().as_str()).unwrap_or_default();
@@ -39,7 +51,7 @@ impl TronMapper {
                     value.parameter.value.amount.unwrap_or_default().to_string(),
                     None,
                     None,
-                    Utc::now(),
+                    created_at,
                 );
                 return Some(transaction);
             }
@@ -77,7 +89,7 @@ impl TronMapper {
                     value.to_string(),
                     None,
                     None,
-                    Utc::now(),
+                    created_at,
                 );
 
                 return Some(transaction);
