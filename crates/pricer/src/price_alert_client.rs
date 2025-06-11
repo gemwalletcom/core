@@ -101,10 +101,12 @@ impl PriceAlertClient {
                 PriceAlertDirection::Down if price_change_percentage_24h <= -price_alert_percent => Some(PriceAlertType::PricePercentChangeDown),
                 _ => None,
             };
-        } else if price.clone().price_change_percentage_24h < -rules.price_change_decrease {
-            return Some(PriceAlertType::PriceChangesDown);
         } else if Self::is_within_past(price.clone().all_time_high_date, Duration::hours(12)) {
             return Some(PriceAlertType::AllTimeHigh);
+        } else if price.clone().price_change_percentage_24h > rules.price_change_increase {
+            return Some(PriceAlertType::PriceChangesUp);
+        } else if price.clone().price_change_percentage_24h < -rules.price_change_decrease {
+            return Some(PriceAlertType::PriceChangesDown);
         }
         None
     }
