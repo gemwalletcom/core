@@ -159,6 +159,8 @@ impl BlockTransaction {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct BlockTransactions {
+    pub block_height: i64,
+    pub block_time: i64,
     pub transactions: Vec<BlockTransaction>,
 }
 

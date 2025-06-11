@@ -1,9 +1,9 @@
-use chrono::Utc;
+use chrono::DateTime;
 use num_bigint::Sign;
 
 use crate::{
     metaplex::metadata::Metadata,
-    model::{BlockTransaction, TokenInfo},
+    model::{BlockTransaction, BlockTransactions, TokenInfo},
     JUPITER_PROGRAM_ID, SYSTEM_PROGRAM_ID, TOKEN_PROGRAM,
 };
 use primitives::{Asset, AssetId, AssetType, Chain, SwapProvider, Transaction, TransactionState, TransactionSwapMetadata, TransactionType};
@@ -13,7 +13,15 @@ pub struct SolanaMapper;
 impl SolanaMapper {
     const CHAIN: Chain = Chain::Solana;
 
-    pub fn map_transaction(transaction: &BlockTransaction, block_number: i64) -> Option<primitives::Transaction> {
+    pub fn map_transactions(transactions: &BlockTransactions) -> Vec<primitives::Transaction> {
+        transactions
+            .transactions
+            .iter()
+            .filter_map(|transaction| Self::map_transaction(transaction, transactions.block_height, transactions.block_time))
+            .collect()
+    }
+
+    pub fn map_transaction(transaction: &BlockTransaction, block_number: i64, block_time: i64) -> Option<primitives::Transaction> {
         let chain = Self::CHAIN;
         let account_keys = transaction.transaction.message.account_keys.clone();
         let signatures = transaction.transaction.signatures.clone();
@@ -22,7 +30,7 @@ impl SolanaMapper {
         let sequence = 0.to_string();
         let state = TransactionState::Confirmed;
         let fee_asset_id = chain.as_asset_id();
-        let created_at = Utc::now();
+        let created_at = DateTime::from_timestamp(block_time, 0)?;
 
         // system transfer
         if (account_keys.len() == 2 || account_keys.len() == 3) && account_keys.last()? == SYSTEM_PROGRAM_ID && signatures.len() == 1 {
