@@ -21,6 +21,7 @@ pub enum DocsUrl {
     AccountMinimalBalance,
     TokenVerification,
     AddCustomToken,
+    WalletConnect
 }
 const DOCS_URL: &str = "https://docs.gemwallet.com";
 
@@ -47,6 +48,7 @@ pub fn get_docs_url(item: DocsUrl) -> String {
         DocsUrl::AccountMinimalBalance => "/faq/account-minimal-balance/",
         DocsUrl::TokenVerification => "/faq/token-verification/",
         DocsUrl::AddCustomToken => "/guides/add-token/",
+        DocsUrl::WalletConnect => "/guides/walletconnect/",
     };
     format!("{}{}", DOCS_URL, path)
 }
