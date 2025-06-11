@@ -1,7 +1,4 @@
-use primitives::{
-    config::{ConfigResponse, ConfigVersions, Release},
-    PlatformStore,
-};
+use primitives::{ConfigResponse, ConfigVersions, PlatformStore, Release, SwapConfig, SwapProvider};
 use std::{error::Error, str::FromStr};
 use storage::DatabaseClient;
 
@@ -36,6 +33,9 @@ impl ConfigClient {
                 fiat_on_ramp_assets,
                 fiat_off_ramp_assets,
                 swap_assets: swap_assets_version,
+            },
+            swap: SwapConfig {
+                enabled_providers: SwapProvider::all(),
             },
         };
         Ok(response)

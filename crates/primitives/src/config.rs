@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
-use crate::PlatformStore;
+use crate::{PlatformStore, SwapProvider};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Sendable")]
@@ -9,6 +9,14 @@ use crate::PlatformStore;
 pub struct ConfigResponse {
     pub releases: Vec<Release>,
     pub versions: ConfigVersions,
+    pub swap: SwapConfig,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[typeshare(swift = "Sendable")]
+#[serde(rename_all = "camelCase")]
+pub struct SwapConfig {
+    pub enabled_providers: Vec<SwapProvider>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -1,9 +1,10 @@
 use serde::{Deserialize, Serialize};
 use strum::EnumString;
+use strum::{EnumIter, IntoEnumIterator};
 use strum_macros::AsRefStr;
 use typeshare::typeshare;
 
-#[derive(Debug, Copy, Clone, PartialEq, AsRefStr, EnumString, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[derive(Debug, Copy, Clone, PartialEq, AsRefStr, EnumString, Eq, PartialOrd, Ord, Serialize, Deserialize, EnumIter)]
 #[typeshare(swift = "Equatable, Sendable")]
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case")]
@@ -31,6 +32,10 @@ pub enum SwapProvider {
 impl SwapProvider {
     pub fn id(&self) -> &str {
         self.as_ref()
+    }
+
+    pub fn all() -> Vec<Self> {
+        Self::iter().collect::<Vec<_>>()
     }
 
     pub fn name(&self) -> &str {
