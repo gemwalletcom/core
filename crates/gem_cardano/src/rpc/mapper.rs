@@ -1,4 +1,4 @@
-use chrono::{DateTime, Utc};
+use chrono::DateTime;
 use primitives::{chain::Chain, transaction_utxo::TransactionInput, TransactionDirection, TransactionType};
 
 use super::model::{Block, Transaction};
