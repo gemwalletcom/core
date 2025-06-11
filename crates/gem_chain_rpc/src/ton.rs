@@ -4,7 +4,7 @@ use crate::{ChainAssetsProvider, ChainBlockProvider, ChainTokenDataProvider, Cha
 use async_trait::async_trait;
 use primitives::{chain::Chain, Asset, AssetBalance, AssetId, Transaction};
 
-use gem_ton::{address::TonAddress, rpc::TonClient};
+use gem_ton::{rpc::TonClient, TonAddress};
 
 pub struct TonProvider {
     client: TonClient,

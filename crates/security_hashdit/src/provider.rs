@@ -49,7 +49,7 @@ impl HashDitProvider {
 
         let query = target.query();
         let query_str = target.query_string();
-        let body = target.body().to_bytes();
+        let body = target.body().expect("Failed to serialize body");
 
         let timestamp = SystemTime::now()
             .duration_since(UNIX_EPOCH)
@@ -60,7 +60,7 @@ impl HashDitProvider {
         let method = target.method().to_string();
 
         // Generate message for signature
-        let msg_for_sig = self.generate_msg_for_sig(&timestamp, &nonce, &method, &target.path(), &query_str, &body);
+        let msg_for_sig = self.generate_msg_for_sig(&timestamp, &nonce, &method, &target.path(), &query_str, &body.to_bytes());
         let sig = self.compute_sig(&msg_for_sig);
 
         request = request
@@ -70,7 +70,7 @@ impl HashDitProvider {
             .header("X-Signature-timestamp", timestamp)
             .header("X-Signature-nonce", nonce)
             .query(&query)
-            .body(body);
+            .body(body.inner);
         request
     }
 }

@@ -1,6 +1,6 @@
 use crate::codec::Codec;
 
-use gem_ton::address::TonAddress;
+use gem_ton::TonAddress;
 use std::error::Error;
 
 pub struct TonCodec {}
@@ -27,7 +27,7 @@ impl Codec for TonCodec {
                 bytes.as_slice().try_into()?
             }
         };
-        let address = TonAddress::new(0, &hash_part);
+        let address = TonAddress::new(0, hash_part.into());
         Ok(address.to_base64_url())
     }
 }

@@ -1,4 +1,5 @@
-use gem_ton::address::TonAddress;
+use gem_ton::TonAddress;
+
 pub fn hex_to_base64_address(hex_str: String) -> Result<String, Box<dyn std::error::Error>> {
     let addr = TonAddress::from_hex_str(&hex_str)?;
     Ok(addr.to_base64_url())
