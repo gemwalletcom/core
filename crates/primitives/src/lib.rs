@@ -17,7 +17,7 @@ pub mod price;
 pub use self::price::{Price, PriceFull};
 pub mod asset;
 pub mod config;
-pub use self::config::{ConfigResponse, ConfigVersions, Release};
+pub use self::config::{ConfigResponse, ConfigVersions, Release, SwapConfig};
 pub mod currency;
 pub use self::asset::{Asset, AssetVecExt};
 pub mod asset_id;
