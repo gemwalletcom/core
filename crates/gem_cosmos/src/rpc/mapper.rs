@@ -23,8 +23,6 @@ impl CosmosMapper {
         };
         let created_at = DateTime::parse_from_rfc3339(&receipt.tx_response.timestamp).ok()?.into();
 
-        println!("created_at: {}", created_at);
-
         for message in transaction.clone().tx_body.messages {
             let asset_id: AssetId;
             let transaction_type: TransactionType;
