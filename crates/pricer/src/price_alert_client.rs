@@ -2,12 +2,12 @@ use chrono::{Duration, NaiveDateTime, Utc};
 use localizer::{LanguageLocalizer, LanguageNotification};
 use number_formatter::NumberFormatter;
 use primitives::{
-    Asset, Device, GorushNotification, Price, PriceAlertDirection, PriceAlertType, PriceAlerts, PushNotification, PushNotificationAsset, PushNotificationTypes,
-    DEFAULT_FIAT_CURRENCY,
+    Asset, Device, GorushNotification, Price, PriceAlert, PriceAlertDirection, PriceAlertType, PriceAlerts, PushNotification, PushNotificationAsset,
+    PushNotificationTypes, DEFAULT_FIAT_CURRENCY,
 };
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use std::error::Error;
-use storage::{models::PriceAlert, DatabaseClient};
+use storage::DatabaseClient;
 
 #[allow(dead_code)]
 pub struct PriceAlertClient {
@@ -48,7 +48,10 @@ impl PriceAlertClient {
 
     pub async fn add_price_alerts(&mut self, device_id: &str, price_alerts: PriceAlerts) -> Result<usize, Box<dyn Error>> {
         let device = self.database.get_device(device_id)?;
-        let values = price_alerts.into_iter().map(|x| PriceAlert::new_price_alert(x, device.id)).collect::<_>();
+        let values = price_alerts
+            .into_iter()
+            .map(|x| storage::models::PriceAlert::new_price_alert(x, device.id))
+            .collect::<_>();
         Ok(self.database.add_price_alerts(values)?)
     }
 
@@ -59,33 +62,21 @@ impl PriceAlertClient {
     }
 
     pub async fn get_devices_to_alert(&mut self, rules: PriceAlertRules) -> Result<Vec<PriceAlertNotification>, Box<dyn Error + Send + Sync>> {
-        let now = chrono::Utc::now();
-        let after_notified_at = now - chrono::Duration::hours(24);
-
-        let prices = self.database.get_prices()?;
-
-        let prices_assets = self.database.get_prices_assets()?;
-        let prices_assets_map: HashMap<String, HashSet<String>> = prices_assets.into_iter().fold(HashMap::new(), |mut map, price_asset| {
-            map.entry(price_asset.price_id.clone()).or_default().insert(price_asset.asset_id);
-            map
-        });
-
-        let price_alerts = self.database.get_price_alerts(after_notified_at.naive_utc())?;
+        let now = Utc::now();
+        let after_notified_at = now - Duration::days(1);
+        let price_alerts = self.database.get_price_alerts_with_prices(after_notified_at.naive_utc())?;
 
         let mut results: Vec<PriceAlertNotification> = Vec::new();
         let mut price_alert_ids: HashSet<String> = HashSet::new();
 
-        for price in prices {
-            if let Some(asset_ids) = prices_assets_map.get(&price.id) {
-                for price_alert in price_alerts.clone() {
-                    if asset_ids.clone().contains(&price_alert.asset_id) {
-                        if let Some(alert) = self.get_price_alert_type(&price_alert, price.clone(), rules.clone()) {
-                            let notification: PriceAlertNotification = self.price_alert_notification(price.as_price_primitive(), price_alert.clone(), alert)?;
-                            price_alert_ids.insert(price_alert.identifier);
-                            results.push(notification);
-                        }
-                    }
-                }
+        for (price_alert, price) in price_alerts {
+            let device_id = price_alert.device_id;
+            let price_alert = price_alert.as_primitive();
+
+            if let Some(alert) = self.get_price_alert_type(&price_alert, price.clone(), rules.clone()) {
+                let notification = self.price_alert_notification(device_id, price.as_price_primitive(), price_alert.clone(), alert)?;
+                price_alert_ids.insert(price_alert.id());
+                results.push(notification);
             }
         }
         self.database
@@ -93,9 +84,9 @@ impl PriceAlertClient {
         Ok(results)
     }
 
-    fn get_price_alert_type(&self, price_alert: &PriceAlert, price: storage::models::Price, rules: PriceAlertRules) -> Option<PriceAlertType> {
+    fn get_price_alert_type(&self, price_alert: &primitives::PriceAlert, price: storage::models::Price, rules: PriceAlertRules) -> Option<PriceAlertType> {
         if let Some(price_alert_price) = price_alert.price {
-            let direction = price_alert.as_primitive().price_direction?;
+            let direction = price_alert.price_direction.clone()?;
             let current_price = price.price;
             return match direction {
                 PriceAlertDirection::Up if current_price >= price_alert_price => Some(PriceAlertType::PriceUp),
@@ -103,7 +94,7 @@ impl PriceAlertClient {
                 _ => None,
             };
         } else if let Some(price_alert_percent) = price_alert.price_percent_change {
-            let direction = price_alert.as_primitive().price_direction?;
+            let direction = price_alert.price_direction.clone()?;
             let price_change_percentage_24h = price.clone().price_change_percentage_24h;
             return match direction {
                 PriceAlertDirection::Up if price_change_percentage_24h >= price_alert_percent => Some(PriceAlertType::PricePercentChangeUp),
@@ -127,12 +118,13 @@ impl PriceAlertClient {
 
     fn price_alert_notification(
         &mut self,
-        price: primitives::Price,
+        device_id: i32,
+        price: Price,
         price_alert: PriceAlert,
         alert_type: PriceAlertType,
     ) -> Result<PriceAlertNotification, Box<dyn Error + Send + Sync>> {
-        let asset = self.database.get_asset(&price_alert.asset_id)?.as_primitive();
-        let device = self.database.get_device_by_id(price_alert.device_id)?.as_primitive();
+        let asset = self.database.get_asset(&price_alert.asset_id.to_string())?.as_primitive();
+        let device = self.database.get_device_by_id(device_id)?.as_primitive();
         let base_rate = self.database.get_fiat_rate(DEFAULT_FIAT_CURRENCY)?;
         let rate = self.database.get_fiat_rate(&device.currency)?;
         let price = price.new_with_rate(base_rate.rate, rate.rate);
