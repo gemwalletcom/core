@@ -47,7 +47,14 @@ pub struct ExtrinsicInfo {
 pub enum ExtrinsicArguments {
     Transfer(ExtrinsicTransfer),
     Transfers(ExtrinsicCalls),
+    Timestamp(ExtrinsicTimestamp),
     Other(serde_json::Value),
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ExtrinsicTimestamp {
+    #[serde(deserialize_with = "deserialize_u64_from_str")]
+    pub now: u64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

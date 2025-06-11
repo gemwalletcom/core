@@ -1,4 +1,4 @@
-use chrono::Utc;
+use chrono::{DateTime, Utc};
 use primitives::{chain::Chain, Transaction, TransactionState, TransactionType};
 
 use super::model::{Block, Extrinsic, ExtrinsicArguments, TRANSACTION_TYPE_TRANSFER_ALLOW_DEATH, TRANSACTION_TYPE_TRANSFER_KEEP_ALIVE};
@@ -7,15 +7,25 @@ pub struct PolkadotMapper;
 
 impl PolkadotMapper {
     pub fn map_transactions(chain: Chain, block: Block) -> Vec<Transaction> {
+        let first = block.extrinsics.first();
+        let created_at = match first {
+            Some(Extrinsic {
+                args: ExtrinsicArguments::Timestamp(timestamp),
+                ..
+            }) => DateTime::from_timestamp_millis(timestamp.now as i64),
+            _ => None,
+        }
+        .expect("Timestamp not found");
+
         block
             .extrinsics
             .iter()
-            .flat_map(|x| Self::map_transaction(chain, block.clone(), x.clone()))
+            .flat_map(|x| Self::map_transaction(chain, block.clone(), x.clone(), created_at))
             .flatten()
             .collect()
     }
 
-    pub fn map_transaction(chain: Chain, block: Block, transaction: Extrinsic) -> Vec<Option<Transaction>> {
+    pub fn map_transaction(chain: Chain, block: Block, transaction: Extrinsic, created_at: DateTime<Utc>) -> Vec<Option<Transaction>> {
         match &transaction.args.clone() {
             ExtrinsicArguments::Transfer(transfer) => {
                 vec![Self::map_transfer(
@@ -25,6 +35,7 @@ impl PolkadotMapper {
                     transaction.method.method.clone(),
                     transfer.dest.id.clone(),
                     transfer.value.clone(),
+                    created_at,
                 )]
             }
             ExtrinsicArguments::Transfers(transfers) => transfers
@@ -38,6 +49,7 @@ impl PolkadotMapper {
                         x.method.method.clone(),
                         x.args.dest.id.clone(),
                         x.args.value.clone(),
+                        created_at,
                     )
                 })
                 .collect(),
@@ -45,7 +57,15 @@ impl PolkadotMapper {
         }
     }
 
-    fn map_transfer(chain: Chain, block: Block, transaction: Extrinsic, method: String, to_address: String, value: String) -> Option<Transaction> {
+    fn map_transfer(
+        chain: Chain,
+        block: Block,
+        transaction: Extrinsic,
+        method: String,
+        to_address: String,
+        value: String,
+        created_at: DateTime<Utc>,
+    ) -> Option<Transaction> {
         if method != TRANSACTION_TYPE_TRANSFER_ALLOW_DEATH && method != TRANSACTION_TYPE_TRANSFER_KEEP_ALIVE {
             return None;
         }
@@ -72,7 +92,7 @@ impl PolkadotMapper {
             value,
             None,
             None,
-            Utc::now(),
+            created_at,
         ))
     }
 }
