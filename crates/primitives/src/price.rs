@@ -64,7 +64,7 @@ mod tests {
         let price = Price {
             price: 100.0,
             price_change_percentage_24h: 5.0,
-            updated_at: Utc::now(),
+            updated_at: DateTime::default(),
         };
 
         let new_price = price.new_with_rate(1.0, 2.0);

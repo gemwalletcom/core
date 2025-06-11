@@ -80,7 +80,7 @@ impl CosmosClient {
                 .into_iter()
                 .filter(|x| x.denom == self.chain.clone().as_denom().unwrap_or_default())
                 .collect::<Vec<_>>()
-                .first()?                
+                .first()?
                 .amount
                 .clone(),
         )
@@ -88,13 +88,11 @@ impl CosmosClient {
 
     pub async fn get_transaction(&self, hash: String) -> Result<TransactionResponse, Box<dyn Error + Send + Sync>> {
         let url = format!("{}/cosmos/tx/v1beta1/txs/{}", self.url, hash);
-        let transaction = self.client.get(url).send().await?.json::<TransactionResponse>().await?;
-        Ok(transaction)
+        Ok(self.client.get(url).send().await?.json().await?)
     }
 
     pub async fn get_block(&self, block: &str) -> Result<BlockResponse, Box<dyn Error + Send + Sync>> {
         let url = format!("{}/cosmos/base/tendermint/v1beta1/blocks/{}", self.url, block);
-        let block = self.client.get(url).send().await?.json::<BlockResponse>().await?;
-        Ok(block)
+        Ok(self.client.get(url).send().await?.json().await?)
     }
 }

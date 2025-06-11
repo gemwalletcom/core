@@ -208,7 +208,7 @@ mod tests {
         let file = include_str!("../../testdata/swap_token_to_sol.json");
         let result: JsonRpcResult<BlockTransaction> = serde_json::from_str(file).unwrap();
 
-        let transaction = SolanaMapper::map_transaction(&result.result, 1).unwrap();
+        let transaction = SolanaMapper::map_transaction(&result.result, 1, 1).unwrap();
         let expected = TransactionSwapMetadata {
             from_asset: AssetId::from_token(Chain::Solana, "BKpSnSdNdANUxKPsn4AQ8mf4b9BoeVs9JD1Q8cVkpump"),
             from_value: "393647577456".to_string(),
@@ -225,7 +225,7 @@ mod tests {
         let file = include_str!("../../testdata/swap_token_to_token.json");
         let result: JsonRpcResult<BlockTransaction> = serde_json::from_str(file).unwrap();
 
-        let transaction = SolanaMapper::map_transaction(&result.result, 1).unwrap();
+        let transaction = SolanaMapper::map_transaction(&result.result, 1, 1).unwrap();
         let expected = TransactionSwapMetadata {
             from_asset: AssetId::from_token(Chain::Solana, "2b1kV6DkPAnxd5ixfnxCpjxmKwqjjaYmCZfHsFu24GXo"),
             from_value: "1000000".to_string(),
@@ -242,7 +242,7 @@ mod tests {
         let file = include_str!("../../testdata/swap_sol_to_token.json");
         let result: JsonRpcResult<BlockTransaction> = serde_json::from_str(file).unwrap();
 
-        let transaction = SolanaMapper::map_transaction(&result.result, 1).unwrap();
+        let transaction = SolanaMapper::map_transaction(&result.result, 1, 1).unwrap();
         let expected = TransactionSwapMetadata {
             from_asset: Chain::Solana.as_asset_id(),
             from_value: "10000000".to_string(),
