@@ -1,9 +1,10 @@
 use reqwest_enum::{
+    error::Error,
     http::{HTTPBody, HTTPMethod},
     target::Target,
 };
 
-use std::{collections::HashMap, time::Duration};
+use std::{borrow::Cow, collections::HashMap};
 
 pub enum HashDitApi {
     DetectAddress(String, String),
@@ -11,8 +12,8 @@ pub enum HashDitApi {
 }
 
 impl Target for HashDitApi {
-    fn base_url(&self) -> &'static str {
-        "https://api.hashdit.io"
+    fn base_url(&self) -> Cow<'_, str> {
+        "https://api.hashdit.io".into()
     }
 
     fn method(&self) -> HTTPMethod {
@@ -23,45 +24,33 @@ impl Target for HashDitApi {
         "/security-api/public/app/v1/detect".into()
     }
 
-    fn query(&self) -> HashMap<&'static str, &'static str> {
-        let mut query = HashMap::new();
+    fn query(&self) -> HashMap<String, String> {
         match self {
-            HashDitApi::DetectAddress(_, _) => {
-                query.insert("business", "gem_wallet_address_detection");
-            }
-            HashDitApi::DetectURL(_) => {
-                query.insert("business", "gem_wallet_url_detection");
-            }
+            HashDitApi::DetectAddress(_, _) => HashMap::from([("business".to_string(), "gem_wallet_address_detection".to_string())]),
+            HashDitApi::DetectURL(_) => HashMap::from([("business".to_string(), "gem_wallet_url_detection".to_string())]),
         }
-        query
     }
 
-    fn headers(&self) -> HashMap<&'static str, &'static str> {
-        let mut headers = HashMap::new();
-        headers.insert("Content-Type", "application/json;charset=UTF-8");
-        headers
+    fn headers(&self) -> HashMap<String, String> {
+        HashMap::from([("Content-Type".to_string(), "application/json;charset=UTF-8".to_string())])
     }
 
-    fn body(&self) -> HTTPBody {
+    fn body(&self) -> Result<HTTPBody, Error> {
         match self {
             HashDitApi::DetectAddress(address, chain) => {
                 let body = serde_json::json!({
                     "address": address,
                     "chain_id": chain,
                 });
-                HTTPBody::from(&body)
+                HTTPBody::from(&body).map_err(Error::SerdeJson)
             }
             HashDitApi::DetectURL(url) => {
                 let body = serde_json::json!({
                     "url": url,
                 });
-                HTTPBody::from(&body)
+                HTTPBody::from(&body).map_err(Error::SerdeJson)
             }
         }
-    }
-
-    fn timeout(&self) -> Option<Duration> {
-        None
     }
 
     fn authentication(&self) -> Option<reqwest_enum::http::AuthMethod> {

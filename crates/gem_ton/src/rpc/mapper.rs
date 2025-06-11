@@ -1,6 +1,6 @@
-use crate::address::TonAddress;
 use chrono::Utc;
 use primitives::{chain::Chain, Transaction, TransactionState, TransactionType};
+use tonlib_core::TonAddress;
 
 use super::model::Transaction as TonTransaction;
 

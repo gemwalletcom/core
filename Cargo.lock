@@ -1577,9 +1577,12 @@ dependencies = [
 
 [[package]]
 name = "bitstream-io"
-version = "2.6.0"
+version = "4.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6099cdc01846bc367c4e7dd630dc5966dccf36b652fae7a74e17b640411a91b2"
+checksum = "6afa0fc725d5ac9efc66f47b4c533ee850eb34aa6105681b5349c27157346ffa"
+dependencies = [
+ "core2",
+]
 
 [[package]]
 name = "bitvec"
@@ -2210,6 +2213,15 @@ name = "core-foundation-sys"
 version = "0.8.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "773648b94d0e5d620f64f280777445740e61fe701025087ec8b57f45c791888b"
+
+[[package]]
+name = "core2"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b49ba7ef1ad6107f8824dbe97de947cbaac53c44e7f9756a1fba0d37c1eec505"
+dependencies = [
+ "memchr",
+]
 
 [[package]]
 name = "cosmos-sdk-proto"
@@ -3458,22 +3470,14 @@ dependencies = [
 name = "gem_ton"
 version = "1.0.0"
 dependencies = [
- "anyhow",
  "base64 0.22.1",
- "bitstream-io",
  "chrono",
- "crc",
- "hex",
- "lazy_static",
- "num-bigint",
- "num-traits",
  "primitives",
  "reqwest-middleware",
  "serde",
  "serde_json",
  "serde_serializers",
- "sha2",
- "thiserror 2.0.12",
+ "tonlib-core",
 ]
 
 [[package]]
@@ -4914,6 +4918,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "nacl"
+version = "0.5.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "30aefc44d813c51b5e7952950e87c17f2e0e1a3274d63c8281a701e05323d548"
+
+[[package]]
 name = "name_resolver"
 version = "1.0.0"
 dependencies = [
@@ -5354,6 +5364,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "password-hash"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "346f04948ba92c43e8469c1ee6736c7563d71012b17d40745260fe106aac2166"
+dependencies = [
+ "base64ct",
+ "rand_core 0.6.4",
+ "subtle",
+]
+
+[[package]]
 name = "paste"
 version = "1.0.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5373,6 +5394,8 @@ checksum = "f8ed6a7761f76e3b9f92dfb0a60a6a6477c61024b775147ff0973a02653abaf2"
 dependencies = [
  "digest 0.10.7",
  "hmac",
+ "password-hash",
+ "sha2",
 ]
 
 [[package]]
@@ -6190,14 +6213,15 @@ dependencies = [
 
 [[package]]
 name = "reqwest-enum"
-version = "0.3.3"
+version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a2c12e411e33321c3f1d9506a8325b4da7fba69676c8f3bd7045d7dd92485ffa"
+checksum = "d80914e0f5ffa68bfa2aa9fe51144a57d91e3760ff495a22576f9134d47d4496"
 dependencies = [
  "futures",
  "reqwest",
  "serde",
  "serde_json",
+ "thiserror 2.0.12",
 ]
 
 [[package]]
@@ -8017,6 +8041,29 @@ dependencies = [
  "tower-layer",
  "tower-service",
  "tracing",
+]
+
+[[package]]
+name = "tonlib-core"
+version = "0.25.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "274d37db7030ec4158b6ad6106d1edbb3cc3e021c038bcc0fd45859f34633895"
+dependencies = [
+ "async-trait",
+ "base64 0.22.1",
+ "bitstream-io",
+ "crc",
+ "hex",
+ "hmac",
+ "lazy_static",
+ "nacl",
+ "num-bigint",
+ "num-traits",
+ "pbkdf2",
+ "serde",
+ "serde_json",
+ "sha2",
+ "thiserror 2.0.12",
 ]
 
 [[package]]
