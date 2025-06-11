@@ -342,7 +342,8 @@ impl Chain {
             | Self::Sui
             | Self::Monad
             | Self::Ton
-            | Self::Xrp => true,
+            | Self::Xrp
+            | Self::Berachain => true,
             Self::Osmosis
             | Self::Celestia
             | Self::Injective
@@ -353,8 +354,7 @@ impl Chain {
             | Self::Stellar
             | Self::Algorand
             | Self::Polkadot
-            | Self::Cardano
-            | Self::Berachain => false,
+            | Self::Cardano => false,
         }
     }
 
