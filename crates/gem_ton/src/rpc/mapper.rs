@@ -1,4 +1,4 @@
-use chrono::Utc;
+use chrono::DateTime;
 use primitives::{chain::Chain, Transaction, TransactionState, TransactionType};
 use tonlib_core::TonAddress;
 
@@ -8,8 +8,7 @@ pub struct TonMapper;
 
 impl TonMapper {
     pub fn parse_address(address: &str) -> Option<String> {
-        let address = TonAddress::from_hex_str(address).ok()?;
-        Some(address.to_base64_url())
+        Some(TonAddress::from_hex_str(address).ok()?.to_base64_url())
     }
 
     pub fn map_transaction(chain: Chain, transaction: TonTransaction) -> Option<Transaction> {
@@ -27,6 +26,7 @@ impl TonMapper {
             } else {
                 TransactionState::Failed
             };
+            let created_at = DateTime::from_timestamp(transaction.utime, 0)?;
             let hash = transaction.in_msg?.hash.clone();
             //TODO: Implement memo
             let memo: Option<String> = None; //out_message.decoded_body.clone().text;
@@ -46,7 +46,7 @@ impl TonMapper {
                 value,
                 memo,
                 None,
-                Utc::now(),
+                created_at,
             );
             return Some(transaction);
         }

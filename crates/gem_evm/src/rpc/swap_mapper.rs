@@ -231,7 +231,7 @@ mod tests {
         let receipt_value: serde_json::Value = serde_json::from_str(receipt_json).unwrap();
         let receipt: TransactionReciept = serde_json::from_value(receipt_value.get("result").unwrap().clone()).unwrap();
 
-        let swap_tx = SwapMapper::map_uniswap_transaction(&Chain::Unichain, &tx, &receipt, Utc::now()).expect("swap_metadata");
+        let swap_tx = SwapMapper::map_uniswap_transaction(&Chain::Unichain, &tx, &receipt, DateTime::default()).expect("swap_metadata");
         let metadata: TransactionSwapMetadata = serde_json::from_value(swap_tx.metadata.unwrap()).unwrap();
 
         assert_eq!(swap_tx.from, "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7");
@@ -269,7 +269,7 @@ mod tests {
         let receipt_value: serde_json::Value = serde_json::from_str(receipt_json).unwrap();
         let receipt: TransactionReciept = serde_json::from_value(receipt_value.get("result").unwrap().clone()).unwrap();
 
-        let swap_tx = SwapMapper::map_uniswap_transaction(&Chain::Unichain, &tx, &receipt, Utc::now()).expect("swap_metadata");
+        let swap_tx = SwapMapper::map_uniswap_transaction(&Chain::Unichain, &tx, &receipt, DateTime::default()).expect("swap_metadata");
         let metadata: TransactionSwapMetadata = serde_json::from_value(swap_tx.metadata.unwrap()).unwrap();
 
         assert_eq!(swap_tx.from, "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7");
@@ -308,7 +308,7 @@ mod tests {
         let receipt_value: serde_json::Value = serde_json::from_str(receipt_json).unwrap();
         let receipt: TransactionReciept = serde_json::from_value(receipt_value.get("result").unwrap().clone()).unwrap();
 
-        let swap_tx = SwapMapper::map_uniswap_transaction(&Chain::Ethereum, &tx, &receipt, Utc::now()).expect("swap_metadata");
+        let swap_tx = SwapMapper::map_uniswap_transaction(&Chain::Ethereum, &tx, &receipt, DateTime::default()).expect("swap_metadata");
         let metadata: TransactionSwapMetadata = serde_json::from_value(swap_tx.metadata.unwrap()).unwrap();
 
         assert_eq!(swap_tx.from, "0x10E11c7368552D5Ab9ef5eED496f614fBAAe9F0D");
@@ -347,7 +347,7 @@ mod tests {
         let receipt_value: serde_json::Value = serde_json::from_str(receipt_json).unwrap();
         let receipt: TransactionReciept = serde_json::from_value(receipt_value.get("result").unwrap().clone()).unwrap();
 
-        let swap_tx = SwapMapper::map_uniswap_transaction(&Chain::Base, &tx, &receipt, Utc::now()).unwrap();
+        let swap_tx = SwapMapper::map_uniswap_transaction(&Chain::Base, &tx, &receipt, DateTime::default()).unwrap();
         let metadata: TransactionSwapMetadata = serde_json::from_value(swap_tx.metadata.unwrap()).unwrap();
 
         assert_eq!(swap_tx.from, "0x985Cf24b63a98510298997Af83a31D8625C09bA5");
@@ -386,7 +386,7 @@ mod tests {
         let receipt_value: serde_json::Value = serde_json::from_str(receipt_json).unwrap();
         let receipt: TransactionReciept = serde_json::from_value(receipt_value.get("result").unwrap().clone()).unwrap();
 
-        let swap_tx = SwapMapper::map_uniswap_transaction(&Chain::Polygon, &tx, &receipt, Utc::now()).expect("swap_metadata");
+        let swap_tx = SwapMapper::map_uniswap_transaction(&Chain::Polygon, &tx, &receipt, DateTime::default()).expect("swap_metadata");
         let metadata: TransactionSwapMetadata = serde_json::from_value(swap_tx.metadata.unwrap()).unwrap();
 
         assert_eq!(swap_tx.from, "0x8f4b6cbF3373e065aEb3FEc6027Ff8Ca9a665DE2");
@@ -425,7 +425,7 @@ mod tests {
         let receipt_value: serde_json::Value = serde_json::from_str(receipt_json).unwrap();
         let receipt: TransactionReciept = serde_json::from_value(receipt_value.get("result").unwrap().clone()).unwrap();
 
-        let swap_tx = SwapMapper::map_uniswap_transaction(&Chain::Ethereum, &tx, &receipt, Utc::now()).expect("swap_metadata");
+        let swap_tx = SwapMapper::map_uniswap_transaction(&Chain::Ethereum, &tx, &receipt, DateTime::default()).expect("swap_metadata");
         let metadata: TransactionSwapMetadata = serde_json::from_value(swap_tx.metadata.unwrap()).unwrap();
 
         assert_eq!(swap_tx.from, "0xBa38FE5b73eA5b93d0733CF9eb10aDea6E1E3a2a");

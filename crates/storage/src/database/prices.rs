@@ -48,7 +48,6 @@ impl DatabaseClient {
         use crate::schema::prices_assets::dsl::*;
         prices_assets.select(PriceAsset::as_select()).load(&mut self.connection)
     }
-
     pub fn get_price(&mut self, asset_id: &str) -> Result<Price, diesel::result::Error> {
         use crate::schema::prices::dsl::*;
         prices

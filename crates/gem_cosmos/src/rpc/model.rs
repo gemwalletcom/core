@@ -52,6 +52,7 @@ pub struct TransactionResponseData {
     pub height: String,
     pub txhash: String,
     pub events: Vec<TransactionEvent>,
+    pub timestamp: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

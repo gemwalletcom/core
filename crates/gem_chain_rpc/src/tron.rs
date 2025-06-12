@@ -30,16 +30,9 @@ impl ChainBlockProvider for TronProvider {
 
     async fn get_transactions(&self, block_number: i64) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
         let block = self.client.get_block_tranactions(block_number).await?;
-        let transactions = block.transactions.unwrap_or_default();
         let reciepts = self.client.get_block_tranactions_reciepts(block_number).await?;
 
-        let transactions = transactions
-            .into_iter()
-            .zip(reciepts.iter())
-            .filter_map(|(transaction, receipt)| TronMapper::map_transaction(self.get_chain(), transaction, receipt.clone()))
-            .collect::<Vec<Transaction>>();
-
-        Ok(transactions)
+        Ok(TronMapper::map_transactions(self.get_chain(), block, reciepts))
     }
 }
 

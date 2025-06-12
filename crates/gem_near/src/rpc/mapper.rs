@@ -1,4 +1,4 @@
-use chrono::Utc;
+use chrono::DateTime;
 use primitives::{chain::Chain, Transaction, TransactionState, TransactionType};
 
 use super::model::{Action, BlockHeader};
@@ -8,6 +8,8 @@ pub struct NearMapper;
 impl NearMapper {
     pub fn map_transaction(chain: Chain, header: BlockHeader, transaction: super::model::Transaction) -> Option<Transaction> {
         if transaction.actions.len() == 1 || transaction.actions.len() == 2 {
+            let created_at = DateTime::from_timestamp_nanos(header.timestamp as i64);
+
             match &transaction.actions.last()? {
                 Action::Transfer { deposit } => {
                     let asset_id = chain.as_asset_id();
@@ -26,7 +28,7 @@ impl NearMapper {
                         deposit.clone(),
                         None,
                         None,
-                        Utc::now(),
+                        created_at,
                     );
                     return Some(transaction);
                 }

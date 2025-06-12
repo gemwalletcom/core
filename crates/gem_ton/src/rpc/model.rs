@@ -39,6 +39,7 @@ pub struct Transaction {
     pub total_fees: i64,
     pub out_msgs: Vec<OutMessage>,
     pub success: bool,
+    pub utime: i64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

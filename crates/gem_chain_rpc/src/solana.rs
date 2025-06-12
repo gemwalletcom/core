@@ -39,14 +39,7 @@ impl ChainBlockProvider for SolanaProvider {
     async fn get_transactions(&self, block_number: i64) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
         let block = self.client.get_block(block_number, Some("json"), Some("full"), Some(false), Some(0)).await;
         match block {
-            Ok(block) => {
-                let transactions = block
-                    .transactions
-                    .into_iter()
-                    .filter_map(|x| SolanaMapper::map_transaction(&x, block_number))
-                    .collect::<Vec<_>>();
-                Ok(transactions)
-            }
+            Ok(block) => Ok(SolanaMapper::map_transactions(&block)),
             Err(err) => match err {
                 ClientError::Call(err) => {
                     let errors = [MISSING_SLOT_ERROR, MISSING_OR_SKIPPED_SLOT_ERROR, NOT_AVAILABLE_SLOT_ERROR, CLEANUP_BLOCK_ERROR];
@@ -69,9 +62,11 @@ impl ChainAssetsProvider for SolanaProvider {
 
         Ok(accounts
             .into_iter()
-            .map(|x| AssetBalance {
-                asset_id: AssetId::from_token(self.get_chain(), &x.account.data.parsed.info.mint),
-                balance: x.account.data.parsed.info.token_amount.amount.to_string(),
+            .map(|x| {
+                AssetBalance::new(
+                    AssetId::from_token(self.get_chain(), &x.account.data.parsed.info.mint),
+                    x.account.data.parsed.info.token_amount.amount.to_string(),
+                )
             })
             .collect())
     }

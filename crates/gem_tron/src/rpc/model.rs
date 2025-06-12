@@ -69,6 +69,8 @@ pub struct TransactionReceiptData {
     pub fee: Option<i64>,
     #[serde(rename = "blockNumber")]
     pub block_number: i64,
+    #[serde(rename = "blockTimeStamp")]
+    pub block_time_stamp: i64,
     pub receipt: TransactionReceipt,
     pub log: Option<Vec<TronLog>>,
 }

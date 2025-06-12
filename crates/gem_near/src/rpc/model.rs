@@ -9,6 +9,7 @@ pub struct Block {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct BlockHeader {
     pub height: i64,
+    pub timestamp: u64,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

@@ -4,11 +4,21 @@ use crate::{models::*, DatabaseClient};
 use diesel::prelude::*;
 
 impl DatabaseClient {
-    pub fn get_price_alerts(&mut self, after_notified_at: NaiveDateTime) -> Result<Vec<PriceAlert>, diesel::result::Error> {
+    pub fn get_price_alerts_with_prices(&mut self, after_notified_at: NaiveDateTime) -> Result<Vec<(PriceAlert, Price)>, diesel::result::Error> {
         use crate::schema::price_alerts::dsl::*;
+        use crate::schema::prices;
+        use crate::schema::prices_assets;
+
         price_alerts
-            .filter(last_notified_at.lt(after_notified_at).or(last_notified_at.is_null()))
-            .select(PriceAlert::as_select())
+            .filter(
+                (price_direction.is_not_null().and(last_notified_at.is_null())).or(price_direction
+                    .is_null()
+                    .and(last_notified_at.lt(after_notified_at).or(last_notified_at.is_null()))),
+            )
+            .inner_join(prices_assets::table.on(asset_id.eq(prices_assets::asset_id)))
+            .inner_join(prices::table.on(prices_assets::price_id.eq(prices::id)))
+            .select((PriceAlert::as_select(), Price::as_select()))
+            .distinct()
             .load(&mut self.connection)
     }
 

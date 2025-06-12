@@ -1,7 +1,7 @@
 use pricer::price_alert_client::PriceAlertRules;
 use pricer::PriceAlertClient;
 use settings::AlerterRules;
-use streamer::{NotificationsPayload, QueueName, StreamProducer};
+use streamer::{NotificationsPayload, StreamProducer, StreamProducerQueue};
 
 pub struct PriceAlertSender {
     price_alert_client: PriceAlertClient,
@@ -25,11 +25,8 @@ impl PriceAlertSender {
         };
         let price_alert_notifications = self.price_alert_client.get_devices_to_alert(rules).await?;
         let notifications = self.price_alert_client.get_notifications_for_price_alerts(price_alert_notifications);
-        if notifications.is_empty() {
-            return Ok(0);
-        }
         self.stream_producer
-            .publish(QueueName::NotificationsPriceAlerts, &NotificationsPayload::new(notifications.clone()))
+            .publish_notifications_price_alerts(NotificationsPayload::new(notifications.clone()))
             .await?;
         Ok(notifications.len())
     }

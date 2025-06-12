@@ -16,7 +16,17 @@ ios_data='{
   "format": "strings",
   "export_empty_as": "base",
   "export_sort": "first_added",
-  "bundle_structure": "%LANG_ISO%.lproj/Localizable.%FORMAT%"
+  "original_filenames": false,
+  "bundle_structure": "%LANG_ISO%.lproj/Localizable.%FORMAT%",
+  "exclude_tags": ["info_plist"]
+}'
+ios_plist_data='{
+  "format": "strings",
+  "export_empty_as": "base",
+  "export_sort": "first_added",
+  "original_filenames": false,
+  "bundle_structure": "%LANG_ISO%.lproj/InfoPlist.%FORMAT%",
+  "include_tags": ["info_plist"]
 }'
 # Android
 android_data='{
@@ -55,7 +65,7 @@ json_obj_key() {
 
 download_bundle() {
     temp_file=$(mktemp)
-    echo "Downloading bundle ${1} config..."
+    echo "Downloading bundle ${1} config... to ${3}"
 
     bundle_url=$(curl --silent --request POST \
     --url https://api.lokalise.com/api2/projects/$4/files/download \
@@ -77,6 +87,7 @@ download_bundle() {
 case $1 in
   "ios")
     download_bundle "ios" "$ios_data" $2 $mobile_project_id
+    download_bundle "ios_plist" "$ios_plist_data" $2 $mobile_project_id
   ;;
   "android")
     download_bundle "android" "$android_data" $2 $mobile_project_id

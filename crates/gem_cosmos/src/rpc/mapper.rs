@@ -1,4 +1,4 @@
-use chrono::Utc;
+use chrono::DateTime;
 use primitives::{AssetId, Chain, Transaction, TransactionState, TransactionType};
 
 use super::client::TransactionDecode;
@@ -21,6 +21,7 @@ impl CosmosMapper {
         } else {
             TransactionState::Reverted
         };
+        let created_at = DateTime::parse_from_rfc3339(&receipt.tx_response.timestamp).ok()?.into();
 
         for message in transaction.clone().tx_body.messages {
             let asset_id: AssetId;
@@ -107,7 +108,7 @@ impl CosmosMapper {
                 value,
                 Some(memo),
                 None,
-                Utc::now(),
+                created_at,
             );
             return Some(transaction);
         }
