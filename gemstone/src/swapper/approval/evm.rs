@@ -127,7 +127,7 @@ pub async fn check_approval(check_type: CheckApprovalType, provider: Arc<dyn Ali
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::network::{AlienProviderMock, MockFn};
+    use crate::network::mock::{AlienProviderMock, MockFn};
     use std::time::Duration;
 
     #[tokio::test]

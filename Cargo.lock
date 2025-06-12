@@ -3382,8 +3382,11 @@ dependencies = [
 name = "gem_jsonrpc"
 version = "1.0.0"
 dependencies = [
+ "anyhow",
  "async-trait",
- "primitives",
+ "reqwest",
+ "reqwest-middleware",
+ "reqwest-retry",
  "serde",
  "serde_json",
  "thiserror 2.0.12",

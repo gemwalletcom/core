@@ -46,8 +46,8 @@ impl AlienProvider for NativeProvider {
             AlienHttpMethod::Options => todo!(),
         };
         if let Some(headers) = target.headers {
-            for header in headers.iter() {
-                req = req.header(&header.key, &header.value);
+            for (key, value) in headers.iter() {
+                req = req.header(key, value);
             }
         }
         if let Some(body) = target.body {

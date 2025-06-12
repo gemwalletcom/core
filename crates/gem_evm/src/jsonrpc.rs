@@ -124,7 +124,7 @@ impl JsonRpcRequestConvert for EthereumRpc {
             }
         };
 
-        JsonRpcRequest::new(id, method, params)
+        JsonRpcRequest::new(id, method, params.into())
     }
 }
 

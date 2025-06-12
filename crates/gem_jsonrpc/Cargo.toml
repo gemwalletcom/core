@@ -4,12 +4,17 @@ version = { workspace = true }
 edition = { workspace = true }
 
 [features]
-default = []
+default = ["types"]
+types = []
+client = ["dep:reqwest", "dep:reqwest-middleware", "dep:reqwest-retry"]
 
 [dependencies]
 serde = { workspace = true }
 serde_json = { workspace = true }
 async-trait = { workspace = true }
 thiserror = { workspace = true }
+anyhow = { workspace = true }
 
-primitives = { path = "../primitives" }
+reqwest-middleware = { workspace = true, features = ["json"], optional = true }
+reqwest = { workspace = true, features = ["json"], optional = true }
+reqwest-retry = { workspace = true, optional = true }

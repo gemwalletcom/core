@@ -14,11 +14,6 @@ struct ContentView: View {
                     .foregroundStyle(.tint)
                 Text("Gemstone lib version: " + Gemstone.libVersion())
             }
-            Button("Post Data") {
-                Task {
-                    try await self.model.testFetchData()
-                }
-            }
             Button("List Providers") {
                 Task {
                     self.model.fetchProviders()

@@ -15,7 +15,7 @@ integration-test:
     cargo test --test integration_test
 
 build-integration-tests:
-    cargo test --test integration_test --no-run
+    cargo test --test integration_test --no-run --features reqwest_provider
 
 export ANDROID_HOME := env_var_or_default("ANDROID_HOME", "~/Library/Android/sdk")
 export HOST_ARCH := arch()
