@@ -1,228 +1,147 @@
-use super::model::{EvmFeeParams, GemBasePriorityFees, GemEthereumFeeHistory, GemPriorityFeeRecord};
-use crate::network::AlienError;
-use crate::{
-    ethereum::model::EVMHistoryRewardPercentiles,
-    network::{AlienProvider, JsonRpcClient, JsonRpcResult},
-};
 use alloy_primitives::U256;
-use gem_evm::{jsonrpc::EthereumRpc, parse_u256};
-use primitives::fee::FeePriority;
-use std::{cmp::max, sync::Arc};
 
-#[derive(Debug, uniffi::Object)]
-pub struct GemEthereumService {
-    provider: Arc<dyn AlienProvider>,
-}
+use super::model::{GemEthereumFeeHistory, GemFeePriority, GemPriorityFeeRecord};
+use crate::GemstoneError;
+use gem_evm::parse_u256;
 
-impl GemEthereumService {
-    fn calculate_min_priority_fee(&self, gas_used_ratios: &[f64], base_fee: U256, default_min_priority_fee: U256) -> U256 {
-        if gas_used_ratios.is_empty() || base_fee == U256::ZERO {
-            return default_min_priority_fee;
-        }
-        let avg_ratio: f64 = gas_used_ratios.iter().sum::<f64>() / gas_used_ratios.len() as f64;
-
-        match avg_ratio {
-            r if r >= 0.9 => default_min_priority_fee,                 // congested
-            r if r >= 0.7 => default_min_priority_fee / U256::from(2), // moderate
-            _ => default_min_priority_fee / U256::from(10),            // quiet
-        }
-    }
-
-    fn calculate_priority_fees(
-        &self,
-        rewards: &[Vec<U256>],
-        rewards_percentiles: &EVMHistoryRewardPercentiles,
-        min_priority_fee: U256,
-    ) -> Result<Vec<GemPriorityFeeRecord>, AlienError> {
-        let percentile_to_priority = [
-            (rewards_percentiles.slow, FeePriority::Slow),
-            (rewards_percentiles.normal, FeePriority::Normal),
-            (rewards_percentiles.fast, FeePriority::Fast),
-        ];
-
-        let sorted_percentiles = rewards_percentiles.all();
-
-        percentile_to_priority
-            .into_iter()
-            .map(|(percentile_val, priority)| {
-                // This should always succeed as `sorted_percentiles` is built from the same source.
-                let index = sorted_percentiles
-                    .iter()
-                    .position(|p| p == &percentile_val)
-                    .ok_or_else(|| AlienError::ResponseError {
-                        msg: format!("Percentile {} not found in sorted list", percentile_val),
-                    })?;
-
-                let fees_for_percentile: Vec<U256> = rewards.iter().filter_map(|block_rewards| block_rewards.get(index).cloned()).collect();
-
-                let average = if fees_for_percentile.is_empty() {
-                    min_priority_fee
-                } else {
-                    let sum: U256 = fees_for_percentile.iter().sum();
-                    max(min_priority_fee, sum / U256::from(fees_for_percentile.len() as u64))
-                };
-
-                Ok(GemPriorityFeeRecord {
-                    priority,
-                    value: average.to_string(),
-                })
-            })
-            .collect()
-    }
-}
+#[derive(Debug, Default, uniffi::Object)]
+pub struct GemEthereumService {}
 
 #[uniffi::export]
 impl GemEthereumService {
     #[uniffi::constructor]
-    pub fn new(provider: Arc<dyn AlienProvider>) -> Self {
-        Self { provider }
+    pub fn new() -> Self {
+        Self::default()
     }
 
-    pub async fn get_base_priority_fees(&self, params: EvmFeeParams) -> Result<GemBasePriorityFees, AlienError> {
-        let parse_hex = |hex: &str, context: &str| {
-            parse_u256(hex).ok_or_else(|| AlienError::ResponseError {
-                msg: format!("Invalid {} hex: {}", context, hex),
-            })
-        };
-
-        let client = JsonRpcClient::new_with_chain(self.provider.clone(), params.chain);
-        let call = EthereumRpc::FeeHistory {
-            blocks: params.history_blocks,
-            reward_percentiles: params.reward_percentiles.all(),
-        };
-
-        let resp: JsonRpcResult<GemEthereumFeeHistory> = client.call(&call).await?;
-        let fee_history_data = resp.take()?;
-
-        let base_fee_per_gas_hex = fee_history_data.base_fee_per_gas.last().ok_or_else(|| AlienError::ResponseError {
-            msg: "Unable to retrieve base fee from history".to_string(),
+    pub fn calculate_min_priority_fee(&self, gas_used_ratios: Vec<f64>, base_fee: String, default_min_priority_fee: u64) -> Result<u64, GemstoneError> {
+        let base_fee = parse_u256(&base_fee).ok_or_else(|| GemstoneError::AnyError {
+            msg: format!("Invalid base_fee: {}", base_fee),
         })?;
 
-        let base_fee_per_gas = parse_hex(&base_fee_per_gas_hex.to_string(), "base_fee_per_gas")?;
-        let default_min_priority_fee = parse_hex(&params.min_priority_fee, "min_priority_fee")?;
+        if gas_used_ratios.is_empty() || base_fee == U256::ZERO {
+            return Ok(default_min_priority_fee);
+        }
+        let avg_ratio: f64 = gas_used_ratios.iter().sum::<f64>() / gas_used_ratios.len() as f64;
 
-        let actual_min_priority_fee = self.calculate_min_priority_fee(&fee_history_data.gas_used_ratio, base_fee_per_gas, default_min_priority_fee);
+        let result = match avg_ratio {
+            r if r >= 0.9 => default_min_priority_fee,     // congested
+            r if r >= 0.7 => default_min_priority_fee / 2, // moderate
+            _ => default_min_priority_fee / 10,            // quiet
+        };
+        Ok(result)
+    }
 
-        let rewards_u256: Result<Vec<Vec<U256>>, AlienError> = fee_history_data
-            .reward
+    pub fn calculate_priority_fees(
+        &self,
+        fee_history: GemEthereumFeeHistory,
+        priorities: &[GemFeePriority],
+        min_priority_fee: u64,
+    ) -> Result<Vec<GemPriorityFeeRecord>, GemstoneError> {
+        if fee_history.reward.is_empty() {
+            return Err(GemstoneError::AnyError {
+                msg: "fee_history.reward is empty".into(),
+            });
+        }
+
+        if priorities.len() != fee_history.reward[0].len() {
+            return Err(GemstoneError::AnyError {
+                msg: "priorities.len() != fee_history.reward[0].len()".into(),
+            });
+        }
+
+        let rewards = &fee_history.reward;
+
+        let mut columns: Vec<Vec<U256>> = vec![Vec::new(); priorities.len()];
+        for row in rewards {
+            for (i, hex_fee) in row.iter().enumerate().take(priorities.len()) {
+                if let Some(bn) = parse_u256(hex_fee) {
+                    columns[i].push(bn);
+                }
+            }
+        }
+
+        let result = priorities
             .iter()
-            .map(|block_rewards_str| {
-                block_rewards_str
-                    .iter()
-                    .map(|r_str| parse_hex(r_str, "reward"))
-                    .collect::<Result<Vec<U256>, _>>()
+            .zip(columns.iter())
+            .map(|(&priority, fees)| {
+                let value = if fees.is_empty() {
+                    // no data → use min
+                    U256::from(min_priority_fee).to_string()
+                } else {
+                    // sum, average = sum / count, then max(min, avg)
+                    let sum = fees.iter().cloned().fold(U256::ZERO, |a, b| a + b);
+                    let avg = sum / U256::from(fees.len());
+                    let min_bu = U256::from(min_priority_fee);
+                    let chosen = if avg < min_bu { min_bu } else { avg };
+                    chosen.to_string()
+                };
+
+                GemPriorityFeeRecord { priority, value }
             })
             .collect();
-        let rewards_u256 = rewards_u256?;
 
-        let priority_fees = self.calculate_priority_fees(&rewards_u256, &params.reward_percentiles, actual_min_priority_fee)?;
-
-        Ok(GemBasePriorityFees {
-            base_fee: base_fee_per_gas.to_string(),
-            priority_fees,
-        })
+        Ok(result)
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::network::JsonRpcResponse;
+
     use super::*;
-    use crate::network::mock::AlienProviderMock;
-    use primitives::Chain;
 
     #[test]
     fn test_calculate_min_priority_fee_logic() {
-        let service = GemEthereumService::new(Arc::new(AlienProviderMock::new("".to_string())));
-        let default_fee = U256::from(1_000_000_000u64); // 1 Gwei
-        let base_fee = U256::from(20_000_000_000u64); // 20 Gwei
+        let service = GemEthereumService::new();
+        let default_fee = 1_000_000_000;
+        let base_fee = "0x4a817c800".to_string(); // 20 Gwei
 
         // Congested
         let ratios_congested = vec![0.9, 0.95, 1.0];
-        assert_eq!(service.calculate_min_priority_fee(&ratios_congested, base_fee, default_fee), default_fee);
+        assert_eq!(
+            service.calculate_min_priority_fee(ratios_congested, base_fee.clone(), default_fee).unwrap(),
+            1000000000
+        );
 
         // Moderate
         let ratios_moderate = vec![0.7, 0.8, 0.75];
         assert_eq!(
-            service.calculate_min_priority_fee(&ratios_moderate, base_fee, default_fee),
-            default_fee / U256::from(2)
+            service.calculate_min_priority_fee(ratios_moderate, base_fee.clone(), default_fee).unwrap(),
+            500000000
         );
 
         // Quiet
         let ratios_quiet = vec![0.1, 0.2, 0.3];
         assert_eq!(
-            service.calculate_min_priority_fee(&ratios_quiet, base_fee, default_fee),
-            default_fee / U256::from(10)
+            service.calculate_min_priority_fee(ratios_quiet, base_fee.clone(), default_fee).unwrap(),
+            100000000
         );
 
         // Empty ratios
-        assert_eq!(service.calculate_min_priority_fee(&[], base_fee, default_fee), default_fee);
+        assert_eq!(service.calculate_min_priority_fee(vec![], base_fee, default_fee).unwrap(), 1000000000);
     }
 
     #[test]
     fn test_calculate_priority_fees_logic() {
-        let service = GemEthereumService::new(Arc::new(AlienProviderMock::new("".to_string())));
-        let rewards_percentiles = EVMHistoryRewardPercentiles {
-            slow: 10,
-            normal: 50,
-            fast: 90,
-        };
-        let min_priority_fee = U256::from(1_000_000_000u64); // 1 Gwei
+        let service = GemEthereumService::new();
+        let min_priority_fee = 100000000; // 0.1 Gwei
 
-        let rewards = vec![
-            vec![U256::from(1_100_000_000u64), U256::from(2_000_000_000u64), U256::from(3_000_000_000u64)],
-            vec![U256::from(900_000_000u64), U256::from(2_200_000_000u64), U256::from(3_500_000_000u64)],
-        ];
+        let json_str = include_str!("./test/fee_history.json");
+        let response: JsonRpcResponse<GemEthereumFeeHistory> = serde_json::from_str(json_str).unwrap();
+        let fee_history: GemEthereumFeeHistory = response.result;
 
-        let result = service.calculate_priority_fees(&rewards, &rewards_percentiles, min_priority_fee).unwrap();
+        let priorities = vec![GemFeePriority::Slow, GemFeePriority::Normal, GemFeePriority::Fast];
+        let result = service.calculate_priority_fees(fee_history, &priorities, min_priority_fee).unwrap();
 
-        let slow_fee = result.iter().find(|f| f.priority == FeePriority::Slow).unwrap();
-        let normal_fee = result.iter().find(|f| f.priority == FeePriority::Normal).unwrap();
-        let fast_fee = result.iter().find(|f| f.priority == FeePriority::Fast).unwrap();
+        assert_eq!(result.len(), 3);
 
-        assert_eq!(slow_fee.value, "1000000000");
-        assert_eq!(normal_fee.value, "2100000000");
-        assert_eq!(fast_fee.value, "3250000000");
-    }
+        let slow_fee = &result[0];
+        let normal_fee = &result[1];
+        let fast_fee = &result[2];
 
-    #[tokio::test]
-    async fn test_get_base_priority_fees_full() {
-        let mock_response = r#"{
-            "jsonrpc": "2.0",
-            "id": 1,
-            "result": {
-                "baseFeePerGas": ["0x75bcd15", "0x7735940"],
-                "gasUsedRatio": [0.1, 0.2],
-                "reward": [
-                    ["0x3b9aca00", "0x77359400", "0xb2d05e00"],
-                    ["0x3b9aca00", "0x77359400", "0xb2d05e00"]
-                ]
-            }
-        }"#
-        .to_string();
-
-        let mock_provider = Arc::new(AlienProviderMock::new(mock_response));
-        let service = GemEthereumService::new(mock_provider);
-
-        let params = EvmFeeParams {
-            history_blocks: 2,
-            reward_percentiles: EVMHistoryRewardPercentiles {
-                slow: 10,
-                normal: 50,
-                fast: 90,
-            },
-            min_priority_fee: "0x3b9aca00".to_string(), // 1 Gwei
-            chain: Chain::Ethereum,
-        };
-
-        let result = service.get_base_priority_fees(params).await.unwrap();
-
-        assert_eq!(result.base_fee, "125000000"); // 0x7735940
-        let slow_fee = result.priority_fees.iter().find(|f| f.priority == FeePriority::Slow).unwrap();
-        let normal_fee = result.priority_fees.iter().find(|f| f.priority == FeePriority::Normal).unwrap();
-        let fast_fee = result.priority_fees.iter().find(|f| f.priority == FeePriority::Fast).unwrap();
-
-        assert_eq!(slow_fee.value, "1000000000");
-        assert_eq!(normal_fee.value, "2000000000");
-        assert_eq!(fast_fee.value, "3000000000");
+        assert_eq!(slow_fee.value, "148893464");
+        assert_eq!(normal_fee.value, "584926205");
+        assert_eq!(fast_fee.value, "962019260");
     }
 }
