@@ -5,10 +5,10 @@ use crate::GemstoneError;
 use gem_evm::parse_u256;
 
 #[derive(Debug, Default, uniffi::Object)]
-pub struct GemEthereumService {}
+pub struct GemFeeCalculator {}
 
 #[uniffi::export]
-impl GemEthereumService {
+impl GemFeeCalculator {
     #[uniffi::constructor]
     pub fn new() -> Self {
         Self::default()
@@ -72,8 +72,8 @@ impl GemEthereumService {
                     // sum, average = sum / count, then max(min, avg)
                     let sum = fees.iter().cloned().fold(U256::ZERO, |a, b| a + b);
                     let avg = sum / U256::from(fees.len());
-                    let min_bu = U256::from(min_priority_fee);
-                    let chosen = if avg < min_bu { min_bu } else { avg };
+                    let min_value = U256::from(min_priority_fee);
+                    let chosen = if avg < min_value { min_value } else { avg };
                     chosen.to_string()
                 };
 
@@ -93,7 +93,7 @@ mod tests {
 
     #[test]
     fn test_calculate_min_priority_fee_logic() {
-        let service = GemEthereumService::new();
+        let service = GemFeeCalculator::new();
         let default_fee = 1_000_000_000;
         let base_fee = "0x4a817c800".to_string(); // 20 Gwei
 
@@ -124,7 +124,7 @@ mod tests {
 
     #[test]
     fn test_calculate_priority_fees_logic() {
-        let service = GemEthereumService::new();
+        let service = GemFeeCalculator::new();
         let min_priority_fee = 100000000; // 0.1 Gwei
 
         let json_str = include_str!("./test/fee_history.json");

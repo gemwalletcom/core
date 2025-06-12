@@ -15,20 +15,12 @@ pub struct EVMHistoryRewardPercentiles {
     pub fast: u64,
 }
 
-impl EVMHistoryRewardPercentiles {
-    pub fn all(&self) -> Vec<u64> {
-        let mut all = vec![self.slow, self.normal, self.fast];
-        all.sort();
-        all
-    }
-}
-
 pub fn get_evm_chain_config(chain: EVMChain) -> EVMChainConfig {
     EVMChainConfig {
         min_priority_fee: chain.min_priority_fee(),
         is_opstack: chain.is_opstack(),
         rewards_percentiles: EVMHistoryRewardPercentiles {
-            slow: 40,
+            slow: 20,
             normal: 40,
             fast: 60,
         },
