@@ -19,6 +19,12 @@ use crate::{
         GemSwapProvider, Swapper, SwapperError,
     },
 };
+use alloy_primitives::{
+    hex::{decode as HexDecode, encode_prefixed as HexEncode},
+    Address, Bytes, U256,
+};
+use alloy_sol_types::{SolCall, SolValue};
+use async_trait::async_trait;
 use gem_evm::{
     across::{
         contracts::{
@@ -34,13 +40,6 @@ use gem_evm::{
 };
 use num_bigint::{BigInt, Sign};
 use primitives::{AssetId, Chain, EVMChain};
-
-use alloy_primitives::{
-    hex::{decode as HexDecode, encode_prefixed as HexEncode},
-    Address, Bytes, U256,
-};
-use alloy_sol_types::{SolCall, SolValue};
-use async_trait::async_trait;
 use std::{fmt::Debug, str::FromStr, sync::Arc};
 
 #[derive(Debug)]

@@ -1,37 +1,14 @@
-use super::{target::AlienHttpMethod, AlienError, AlienProvider, AlienTarget};
+use super::{mime::*, AlienError, AlienHttpMethod, AlienProvider, AlienTarget};
+use gem_jsonrpc::types::{JsonRpcError, JsonRpcRequest, JsonRpcRequestConvert, JsonRpcResult};
 use primitives::Chain;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
-use std::{
-    collections::HashMap,
-    fmt::{Debug, Display},
-    sync::Arc,
-};
+use std::collections::HashMap;
+use std::{fmt::Debug, sync::Arc};
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct JsonRpcRequest {
-    pub jsonrpc: &'static str,
-    pub id: u64,
-    pub method: String,
-    pub params: Vec<serde_json::Value>,
-}
-
-pub trait JsonRpcRequestConvert {
-    fn to_req(&self, id: u64) -> JsonRpcRequest;
-}
-
-impl JsonRpcRequest {
-    pub fn new(id: u64, method: &str, params: Vec<serde_json::Value>) -> Self {
-        Self {
-            jsonrpc: "2.0",
-            id,
-            method: method.into(),
-            params,
-        }
-    }
-
-    pub fn to_target(&self, url: &str) -> Result<AlienTarget, AlienError> {
-        let headers = HashMap::from([("Content-Type".into(), "application/json".into())]);
-        let body = serde_json::to_vec(self).map_err(|e| AlienError::RequestError {
+impl AlienTarget {
+    pub fn from_json_rpc_request(request: &JsonRpcRequest, url: &str) -> Result<Self, AlienError> {
+        let headers = HashMap::from([(CONTENT_TYPE.into(), JSON.into())]);
+        let body = serde_json::to_vec(request).map_err(|e| AlienError::RequestError {
             msg: format!("Failed to serialize RPC request: {}", e),
         })?;
         Ok(AlienTarget {
@@ -43,15 +20,9 @@ impl JsonRpcRequest {
     }
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct JsonRpcError {
-    pub code: i32,
-    pub message: String,
-}
-
-impl Display for JsonRpcError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{} ({})", self.message, self.code)
+impl From<JsonRpcError> for AlienError {
+    fn from(err: JsonRpcError) -> Self {
+        Self::ResponseError { msg: err.message }
     }
 }
 
@@ -61,12 +32,6 @@ impl From<AlienError> for JsonRpcError {
             code: -1,
             message: err.to_string(),
         }
-    }
-}
-
-impl From<JsonRpcError> for AlienError {
-    fn from(err: JsonRpcError) -> Self {
-        Self::ResponseError { msg: err.message }
     }
 }
 
@@ -82,30 +47,11 @@ pub struct JsonRpcErrorResponse {
     pub error: JsonRpcError,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
-#[serde(untagged)]
-pub enum JsonRpcResult<T> {
-    Value(JsonRpcResponse<T>),
-    Error(JsonRpcErrorResponse),
-}
-
-impl<T> JsonRpcResult<T>
-where
-    T: Clone,
-{
-    pub fn take(&self) -> Result<T, JsonRpcError> {
-        match self {
-            JsonRpcResult::Value(value) => Ok(value.result.clone()),
-            JsonRpcResult::Error(error) => Err(error.error.clone()),
-        }
-    }
-}
-
 pub fn batch_into_target<T>(requests: &T, endpoint: &str) -> AlienTarget
 where
     T: ?Sized + Serialize,
 {
-    let headers = HashMap::from([("Content-Type".into(), "application/json".into())]);
+    let headers = HashMap::from([(CONTENT_TYPE.into(), JSON.into())]);
     let bytes = serde_json::to_vec(requests).unwrap();
     AlienTarget {
         url: endpoint.into(),
@@ -154,8 +100,8 @@ impl JsonRpcClient {
             _ => vec![params_value],
         };
 
-        let request = JsonRpcRequest::new(1, method, params_array);
-        let mut target = request.to_target(&self.endpoint)?;
+        let request = JsonRpcRequest::new(1, method, params_array.into());
+        let mut target = AlienTarget::from_json_rpc_request(&request, &self.endpoint)?;
         if let Some(ttl) = ttl {
             target = target.set_cache_ttl(ttl);
         }
@@ -204,22 +150,23 @@ impl JsonRpcClient {
 #[cfg(test)]
 mod tests {
     use core::panic;
+    use serde_json::json;
 
     use super::*;
 
     #[test]
     fn test_batch_into_target() {
         let requests = vec![
-            JsonRpcRequest::new(1, "eth_gasPrice", vec![]),
-            JsonRpcRequest::new(2, "eth_blockNumber", vec!["0x95222290DD7278Aa3Ddd389Cc1E1d165CC4BAfe5".into(), "latest".into()]),
-            JsonRpcRequest::new(3, "eth_chainId", vec![]),
+            JsonRpcRequest::new(1, "eth_gasPrice", json!([])),
+            JsonRpcRequest::new(2, "eth_blockNumber", json!(vec!["0x95222290DD7278Aa3Ddd389Cc1E1d165CC4BAfe5", "latest"])),
+            JsonRpcRequest::new(3, "eth_chainId", json!([])),
         ];
         let endpoint = "http://localhost:8080";
         let target = batch_into_target(&requests, endpoint);
 
         assert_eq!(target.url, endpoint);
         assert_eq!(target.method, AlienHttpMethod::Post);
-        assert_eq!(target.headers.unwrap().get("Content-Type").unwrap(), "application/json");
+        assert_eq!(target.headers.as_ref().unwrap().get(CONTENT_TYPE).unwrap(), "application/json");
         assert_eq!(
             String::from_utf8(target.body.unwrap()).unwrap(),
             r#"[{"jsonrpc":"2.0","id":1,"method":"eth_gasPrice","params":[]},{"jsonrpc":"2.0","id":2,"method":"eth_blockNumber","params":["0x95222290DD7278Aa3Ddd389Cc1E1d165CC4BAfe5","latest"]},{"jsonrpc":"2.0","id":3,"method":"eth_chainId","params":[]}]"#

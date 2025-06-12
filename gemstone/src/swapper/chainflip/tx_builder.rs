@@ -1,5 +1,5 @@
 use super::broker::SolanaVaultSwapResponse;
-use crate::network::{jsonrpc::JsonRpcClient, AlienProvider};
+use crate::network::{AlienProvider, JsonRpcClient};
 use alloy_primitives::hex;
 use base64::engine::general_purpose::STANDARD;
 use base64::Engine;

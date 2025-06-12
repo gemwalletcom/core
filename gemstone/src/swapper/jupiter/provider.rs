@@ -1,6 +1,6 @@
 use super::{client::JupiterClient, model::*, PROGRAM_ADDRESS};
 use crate::{
-    network::jsonrpc::{JsonRpcClient, JsonRpcResult},
+    network::{JsonRpcClient, JsonRpcResult},
     swapper::{Swapper, *},
 };
 

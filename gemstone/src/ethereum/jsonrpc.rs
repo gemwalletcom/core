@@ -1,18 +1,20 @@
-use crate::debug_println;
-use crate::network::{AlienProvider, JsonRpcClient, JsonRpcRequest, JsonRpcRequestConvert, JsonRpcResult};
-use crate::swapper::SwapperError;
+use alloy_primitives::{hex::decode as HexDecode, U256};
+use alloy_sol_types::SolCall;
+use serde::{Deserialize, Serialize};
+use std::sync::Arc;
+
+use crate::{
+    debug_println,
+    network::{AlienProvider, JsonRpcClient, JsonRpcResult},
+    swapper::SwapperError,
+};
+
 use gem_evm::{
     jsonrpc::{BlockParameter, EthereumRpc, TransactionObject},
     multicall3::{self, IMulticall3},
     parse_u256,
 };
 use primitives::{Chain, EVMChain};
-
-use alloy_primitives::{hex::decode as HexDecode, U256};
-use alloy_sol_types::SolCall;
-use serde::{Deserialize, Serialize};
-use serde_json::{json, Value};
-use std::sync::Arc;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TxReceiptLog {
@@ -25,34 +27,6 @@ pub struct TxReceiptLog {
 pub struct TxReceipt {
     pub status: String,
     pub logs: Vec<TxReceiptLog>,
-}
-
-impl JsonRpcRequestConvert for EthereumRpc {
-    fn to_req(&self, id: u64) -> JsonRpcRequest {
-        let method = self.method_name();
-        let params: Vec<Value> = match self {
-            EthereumRpc::GasPrice => vec![],
-            EthereumRpc::GetBalance(address) => {
-                vec![Value::String(address.to_string())]
-            }
-            EthereumRpc::Call(tx, block) => {
-                let value = serde_json::to_value(tx).unwrap();
-                vec![value, block.into()]
-            }
-            EthereumRpc::GetTransactionReceipt(tx_hash) => {
-                vec![Value::String(tx_hash.to_string())]
-            }
-            EthereumRpc::EstimateGas(tx, block) => {
-                let value = serde_json::to_value(tx).unwrap();
-                vec![value, block.into()]
-            }
-            EthereumRpc::FeeHistory { blocks, reward_percentiles } => {
-                vec![Value::from(*blocks), Value::Array(reward_percentiles.iter().map(|x| json!(x)).collect())]
-            }
-        };
-
-        JsonRpcRequest::new(id, method, params)
-    }
 }
 
 pub async fn fetch_gas_price(provider: Arc<dyn AlienProvider>, chain: Chain) -> Result<U256, SwapperError> {

@@ -17,7 +17,7 @@ members = [
 
     "bin/img-downloader",
     "bin/generate",
-    "bin/uniffi-bindgen",
+    "bin/uniffi-*",
     "bin/swapper-dump",
 
     "gemstone",
@@ -43,7 +43,6 @@ members = [
     "crates/serde_serializers",
     "crates/number_formatter",
     "crates/pricer_dex",
-    "crates/alien_provider",
     "crates/streamer",
 ]
 
@@ -136,7 +135,6 @@ alloy-ens = "1.0.9"
 alloy-json-rpc = "1.0.9"
 alloy-rpc-client = "1.0.9"
 alloy-rpc-types = "1.0.9"
-alloy-contract = "1.0.9"
 
 # localizer
 i18n-embed = { version = "0.15.4", features = ["fluent-system", "autoreload"] }

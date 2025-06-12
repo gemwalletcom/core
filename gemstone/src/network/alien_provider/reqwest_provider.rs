@@ -1,52 +1,37 @@
+use super::{provider::Data, AlienError, AlienHttpMethod, AlienProvider, AlienTarget};
+use primitives::{node_config::get_nodes_for_chain, Chain};
+
 use async_trait::async_trait;
 use futures::{future::try_join_all, TryFutureExt};
-use gemstone::network::{provider::AlienProvider, target::*, *};
-use primitives::Chain;
 use reqwest::Client;
-use std::collections::HashMap;
 
 #[derive(Debug)]
 pub struct NativeProvider {
-    pub node_config: HashMap<Chain, String>,
     pub client: Client,
 }
 
 impl NativeProvider {
-    pub fn new(node_config: HashMap<Chain, String>) -> Self {
-        Self {
-            node_config,
-            client: Client::new(),
-        }
+    pub fn new() -> Self {
+        Self { client: Client::new() }
     }
 }
 
 impl Default for NativeProvider {
     fn default() -> Self {
-        Self::new(HashMap::from([
-            (Chain::Ethereum, "https://eth.llamarpc.com".into()),
-            (Chain::Optimism, "https://optimism.llamarpc.com".into()),
-            (Chain::Arbitrum, "https://arbitrum.llamarpc.com".into()),
-            (Chain::Solana, "https://solana-rpc.publicnode.com".into()),
-            (Chain::Sui, "https://fullnode.mainnet.sui.io".into()),
-            (Chain::Abstract, "https://api.mainnet.abs.xyz".into()),
-            (Chain::Unichain, "https://mainnet.unichain.org".into()),
-            (Chain::SmartChain, "https://binance.llamarpc.com".into()),
-            (Chain::Linea, "https://rpc.linea.build".into()),
-            (Chain::Ink, "https://rpc-qnd.inkonchain.com".into()),
-        ]))
+        Self::new()
     }
 }
 
 #[async_trait]
 impl AlienProvider for NativeProvider {
     fn get_endpoint(&self, chain: Chain) -> Result<String, AlienError> {
-        Ok(self
-            .node_config
-            .get(&chain)
-            .ok_or(AlienError::ResponseError {
+        let nodes = get_nodes_for_chain(chain);
+        if nodes.is_empty() {
+            return Err(AlienError::ResponseError {
                 msg: format!("not supported chain: {:?}", chain),
-            })?
-            .to_string())
+            });
+        }
+        Ok(nodes[0].url.clone())
     }
 
     async fn request(&self, target: AlienTarget) -> Result<Data, AlienError> {

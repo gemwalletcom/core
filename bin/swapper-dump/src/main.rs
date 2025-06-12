@@ -1,5 +1,4 @@
-use alien_provider::NativeProvider;
-use gemstone::swapper::GemSwapper;
+use gemstone::{network::alien_provider::NativeProvider, swapper::GemSwapper};
 use primitives::Chain;
 use std::{
     collections::{HashMap, HashSet},

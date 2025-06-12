@@ -21,7 +21,7 @@ impl JupiterClient {
         Ok(quote_response)
     }
     pub async fn get_swap_quote_data(&self, request: QuoteDataRequest) -> Result<QuoteDataResponse, AlienError> {
-        let headers = HashMap::from([("Content-Type".to_string(), "application/json".to_string())]);
+        let headers = HashMap::from([("Content-Type".into(), "application/json".into())]);
         let json = serde_json::to_string(&request).map_err(|e| AlienError::RequestError { msg: e.to_string() })?;
         let target = AlienTarget {
             url: format!("{}/swap/v1/swap", self.api_url),

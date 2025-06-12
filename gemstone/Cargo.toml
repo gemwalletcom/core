@@ -12,6 +12,10 @@ crate-type = [
 
 name = "gemstone"
 
+[features]
+default = []
+reqwest_provider = ["dep:reqwest"]
+
 [dependencies]
 primitives = { path = "../crates/primitives" }
 gem_cosmos = { path = "../crates/gem_cosmos" }
@@ -22,7 +26,10 @@ gem_evm = { path = "../crates/gem_evm" }
 gem_sui = { path = "../crates/gem_sui" }
 gem_aptos = { path = "../crates/gem_aptos" }
 gem_hash = { path = "../crates/gem_hash" }
+gem_jsonrpc = { path = "../crates/gem_jsonrpc" }
 serde_serializers = { path = "../crates/serde_serializers" }
+
+reqwest = { workspace = true, optional = true }
 
 bcs.workspace = true
 sui-types.workspace = true
@@ -62,7 +69,6 @@ uniffi = { workspace = true, features = ["build"] }
 
 [dev-dependencies]
 tokio.workspace = true
-alien_provider = { path = "../crates/alien_provider" }
 
 [[test]]
 name = "integration_test"

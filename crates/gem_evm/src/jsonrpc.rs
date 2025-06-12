@@ -1,4 +1,6 @@
+use gem_jsonrpc::types::{JsonRpcRequest, JsonRpcRequestConvert};
 use serde::{Deserialize, Serialize};
+use serde_json::{json, Value};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TransactionObject {
@@ -100,6 +102,34 @@ impl EthereumRpc {
             EthereumRpc::EstimateGas(_, _) => "eth_estimateGas",
             EthereumRpc::FeeHistory { .. } => "eth_feeHistory",
         }
+    }
+}
+
+impl JsonRpcRequestConvert for EthereumRpc {
+    fn to_req(&self, id: u64) -> JsonRpcRequest {
+        let method = self.method_name();
+        let params: Vec<Value> = match self {
+            EthereumRpc::GasPrice => vec![],
+            EthereumRpc::GetBalance(address) => {
+                vec![Value::String(address.to_string())]
+            }
+            EthereumRpc::Call(tx, block) => {
+                let value = serde_json::to_value(tx).unwrap();
+                vec![value, block.into()]
+            }
+            EthereumRpc::GetTransactionReceipt(tx_hash) => {
+                vec![Value::String(tx_hash.to_string())]
+            }
+            EthereumRpc::EstimateGas(tx, block) => {
+                let value = serde_json::to_value(tx).unwrap();
+                vec![value, block.into()]
+            }
+            EthereumRpc::FeeHistory { blocks, reward_percentiles } => {
+                vec![Value::from(*blocks), Value::Array(reward_percentiles.iter().map(|x| json!(x)).collect())]
+            }
+        };
+
+        JsonRpcRequest::new(id, method, params.into())
     }
 }
 
