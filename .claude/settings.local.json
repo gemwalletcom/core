@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cargo build:*)",
+      "Bash(cargo run:*)",
+      "Bash(cargo test:*)",
+      "Bash(cargo update:*)",
+      "Bash(grep:*)",
+      "WebFetchTool(domain:github.com)"
+    ],
+    "deny": []
+  }
+}
