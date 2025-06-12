@@ -3,7 +3,7 @@ use super::{
     ChainflipEnvironment, ChainflipIngressEgress, VaultSwapExtras, VaultSwapResponse,
 };
 use crate::{
-    network::{jsonrpc::JsonRpcClient, AlienProvider},
+    network::{AlienProvider, JsonRpcClient},
     swapper::SwapperError,
 };
 use serde_json::json;

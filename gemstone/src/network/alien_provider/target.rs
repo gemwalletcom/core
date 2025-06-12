@@ -40,7 +40,7 @@ impl AlienTarget {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, uniffi::Enum)]
+#[derive(Debug, Clone, Copy, PartialEq, uniffi::Enum)]
 pub enum AlienHttpMethod {
     Get,
     Post,

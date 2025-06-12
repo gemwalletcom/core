@@ -8,10 +8,7 @@ use std::sync::Arc;
 use sui_types::Address;
 
 use super::models::{CoinAsset, InspectResult};
-use crate::network::{
-    jsonrpc::{JsonRpcClient, JsonRpcResult},
-    AlienError, AlienProvider,
-};
+use crate::network::{AlienError, AlienProvider, JsonRpcClient, JsonRpcResult};
 use primitives::Chain;
 
 pub struct SuiClient {

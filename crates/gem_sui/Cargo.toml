@@ -5,11 +5,7 @@ edition = { workspace = true }
 
 [features]
 default = []
-rpc = [
-    "dep:jsonrpsee",
-    "dep:num-bigint",
-    "dep:chrono",
-]
+rpc = ["dep:jsonrpsee", "dep:num-bigint", "dep:chrono"]
 
 [dependencies]
 primitives = { path = "../primitives" }
@@ -21,9 +17,10 @@ hex = { workspace = true }
 thiserror = { workspace = true }
 base64 = { workspace = true }
 anyhow = { workspace = true }
-serde = { workspace = true, features = ["derive"] } # Assuming derive is generally needed
+serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
-serde_serializers = { path = "../serde_serializers" } # General dependency
+serde_serializers = { path = "../serde_serializers" }
+gem_jsonrpc = { path = "../gem_jsonrpc" }
 
 # Optional dependencies for rpc feature
 jsonrpsee = { workspace = true, features = ["http-client"], optional = true }

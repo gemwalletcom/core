@@ -1,6 +1,6 @@
 use crate::{
     debug_println,
-    network::{jsonrpc::JsonRpcClient, AlienProvider, JsonRpcResult},
+    network::{AlienProvider, JsonRpcClient, JsonRpcResult},
     swapper::{models::*, slippage::apply_slippage_in_bp, GemSwapProvider, Swapper, SwapperError},
 };
 use async_trait::async_trait;

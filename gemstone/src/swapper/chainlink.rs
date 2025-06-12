@@ -7,8 +7,7 @@ use std::sync::Arc;
 
 use crate::{
     network::{
-        jsonrpc::{JsonRpcClient, JsonRpcResult},
-        AlienProvider,
+        AlienProvider, {JsonRpcClient, JsonRpcResult},
     },
     swapper::SwapperError,
 };

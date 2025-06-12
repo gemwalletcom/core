@@ -92,12 +92,10 @@ pub struct SharedObject {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{
-        network::jsonrpc::*,
-        sui::rpc::{
-            models::{InspectEvent, InspectResult},
-            CoinAsset,
-        },
+    use crate::network::JsonRpcResponse;
+    use crate::sui::rpc::{
+        models::{InspectEvent, InspectResult},
+        CoinAsset,
     };
     use serde_json;
 
