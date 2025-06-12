@@ -44,16 +44,7 @@ impl ChainBlockProvider for XRPProvider {
 impl ChainTokenDataProvider for XRPProvider {
     async fn get_token_data(&self, token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
         let response = self.client.get_account_objects(token_id.clone()).await?;
-        let account = response.account_objects.first().ok_or("No account objects found for token_id")?;
-        let symbol = account.high_limit.symbol().ok_or("Invalid currency")?;
-
-        Ok(Asset::new(
-            AssetId::from_token(self.get_chain(), &token_id),
-            symbol.clone(),
-            symbol.clone(),
-            XRP_DEFAULT_ASSET_DECIMALS,
-            AssetType::TOKEN,
-        ))
+        XRPMapper::map_token_data(self.get_chain(), response.account_objects)
     }
 }
 
