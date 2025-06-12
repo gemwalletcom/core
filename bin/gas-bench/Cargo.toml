@@ -1,0 +1,14 @@
+[package]
+name = "gas-bench"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+anyhow = { workspace = true }
+clap = { version = "4.5.4", features = ["derive"] }
+futures = { workspace = true }
+tokio = { workspace = true }
+
+primitives = { path = "../../crates/primitives" }
+gemstone = { path = "../../gemstone", features = ["reqwest_provider"] }
+gem_evm = { path = "../../crates/gem_evm" }

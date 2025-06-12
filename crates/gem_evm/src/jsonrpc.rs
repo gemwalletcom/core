@@ -1,6 +1,6 @@
 use gem_jsonrpc::types::{JsonRpcRequest, JsonRpcRequestConvert};
 use serde::{Deserialize, Serialize};
-use serde_json::{json, Value};
+use serde_json::Value;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TransactionObject {
@@ -125,7 +125,11 @@ impl JsonRpcRequestConvert for EthereumRpc {
                 vec![value, block.into()]
             }
             EthereumRpc::FeeHistory { blocks, reward_percentiles } => {
-                vec![Value::from(*blocks), Value::Array(reward_percentiles.iter().map(|x| json!(x)).collect())]
+                vec![
+                    Value::from(*blocks),
+                    Value::String("latest".to_string()),
+                    Value::Array(reward_percentiles.iter().map(|x| Value::from(*x)).collect()),
+                ]
             }
         };
 
