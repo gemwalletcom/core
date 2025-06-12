@@ -7,11 +7,21 @@ pub struct EVMChainConfig {
     pub rewards_percentiles: EVMHistoryRewardPercentiles,
 }
 
+type Int = u64;
+
 #[derive(uniffi::Record, Debug, Clone, PartialEq)]
 pub struct EVMHistoryRewardPercentiles {
-    pub slow: i64,
-    pub normal: i64,
-    pub fast: i64,
+    pub slow: Int,
+    pub normal: Int,
+    pub fast: Int,
+}
+
+impl EVMHistoryRewardPercentiles {
+    pub fn all(&self) -> Vec<u64> {
+        let mut all = vec![self.slow, self.normal, self.fast];
+        all.sort();
+        all
+    }
 }
 
 pub fn get_evm_chain_config(chain: EVMChain) -> EVMChainConfig {

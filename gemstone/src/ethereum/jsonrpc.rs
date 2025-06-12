@@ -1,6 +1,6 @@
-use super::SwapperError;
 use crate::debug_println;
 use crate::network::{AlienProvider, JsonRpcClient, JsonRpcRequest, JsonRpcRequestConvert, JsonRpcResult};
+use crate::swapper::SwapperError;
 use gem_evm::{
     jsonrpc::{BlockParameter, EthereumRpc, TransactionObject},
     multicall3::{self, IMulticall3},
@@ -11,7 +11,7 @@ use primitives::{Chain, EVMChain};
 use alloy_primitives::{hex::decode as HexDecode, U256};
 use alloy_sol_types::SolCall;
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
+use serde_json::{json, Value};
 use std::sync::Arc;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -45,6 +45,9 @@ impl JsonRpcRequestConvert for EthereumRpc {
             EthereumRpc::EstimateGas(tx, block) => {
                 let value = serde_json::to_value(tx).unwrap();
                 vec![value, block.into()]
+            }
+            EthereumRpc::FeeHistory { blocks, reward_percentiles } => {
+                vec![Value::from(*blocks), Value::Array(reward_percentiles.iter().map(|x| json!(x)).collect())]
             }
         };
 

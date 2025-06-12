@@ -87,6 +87,7 @@ pub enum EthereumRpc {
     GasPrice,
     GetBalance(&'static str),
     GetTransactionReceipt(String),
+    FeeHistory { blocks: u64, reward_percentiles: Vec<u64> },
 }
 
 impl EthereumRpc {
@@ -97,6 +98,7 @@ impl EthereumRpc {
             EthereumRpc::Call(_, _) => "eth_call",
             EthereumRpc::GetTransactionReceipt(_) => "eth_getTransactionReceipt",
             EthereumRpc::EstimateGas(_, _) => "eth_estimateGas",
+            EthereumRpc::FeeHistory { .. } => "eth_feeHistory",
         }
     }
 }

@@ -36,6 +36,15 @@ pub struct AlienProviderMock {
     pub timeout: Duration,
 }
 
+impl AlienProviderMock {
+    pub fn new(string: String) -> Self {
+        Self {
+            response: MockFn(Box::new(move |_| string.clone())),
+            timeout: Duration::from_millis(100),
+        }
+    }
+}
+
 #[async_trait]
 impl AlienProvider for AlienProviderMock {
     async fn request(&self, target: AlienTarget) -> Result<Data, AlienError> {

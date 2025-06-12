@@ -4,6 +4,7 @@ pub mod bsc;
 pub mod chain;
 pub mod config;
 pub mod cosmos;
+pub mod ethereum;
 pub mod message;
 pub mod network;
 pub mod payment;
