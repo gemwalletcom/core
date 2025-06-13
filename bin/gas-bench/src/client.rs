@@ -12,10 +12,16 @@ use primitives::Chain;
 use std::fmt::Display;
 use std::sync::Arc;
 
+/// Represents unified gas fee data collected from a source.
 #[derive(Debug)]
 pub struct GemstoneFeeData {
+    /// The latest block number.
     pub latest_block: u64,
-    pub suggest_base_fee: String, // gwei
+    /// The suggested base fee in gwei.
+    pub suggest_base_fee: String,
+    /// Gas used ratio for the block, if available (e.g., "50.5%").
+    pub gas_used_ratio: Option<String>,
+    /// A list of priority fees for different priority levels.
     pub priority_fees: Vec<GemPriorityFeeRecord>,
 }
 
@@ -29,6 +35,7 @@ impl Display for GemstoneFeeData {
     }
 }
 
+#[derive(Debug)]
 pub struct GemstoneClient {
     native_provider: Arc<NativeProvider>,
 }
@@ -56,14 +63,17 @@ impl GemstoneClient {
         let service = GemFeeCalculator::new();
         let min_priority_fee = 100000000; // 0.1 Gwei
         let priorities = vec![GemFeePriority::Slow, GemFeePriority::Normal, GemFeePriority::Fast];
-        let mut calculated_priority_fees = service.calculate_priority_fees(fee_history_data, &priorities, min_priority_fee)?;
+        let mut calculated_priority_fees = service.calculate_priority_fees(fee_history_data.clone(), &priorities, min_priority_fee)?;
         calculated_priority_fees
             .iter_mut()
             .for_each(|fee| fee.value = EtherConv::to_gwei(&BigInt::from_str_radix(&fee.value, 10).expect("Invalid priority fee")));
 
+        let gas_used_ratio_str = fee_history_data.gas_used_ratio.last().map(|val_ref| format!("{:.1}%", *val_ref * 100.0));
+
         Ok(GemstoneFeeData {
             latest_block: oldest_block + blocks - 1,
             suggest_base_fee: EtherConv::to_gwei(&base_fee_for_next),
+            gas_used_ratio: gas_used_ratio_str,
             priority_fees: calculated_priority_fees,
         })
     }

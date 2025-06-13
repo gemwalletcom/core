@@ -27,21 +27,23 @@ pub struct NetworkMetrics {
     pub fee_ewma_25: f64,
 }
 
-#[allow(unused)]
 #[derive(Debug, Deserialize)]
 pub struct GasflowResponse {
     pub current_block_number: u64,
     pub current_base_fee_gwei: f64,
-    pub timestamp: u64,
     pub predicted_quantiles: PredictedQuantiles,
     pub network_metrics: NetworkMetrics,
 }
 
 impl GasflowResponse {
+    /// Converts the raw Gasflow API data into the common `GemstoneFeeData` format.
     pub fn fee_data(&self) -> GemstoneFeeData {
+        let gas_used_ratio_str = Some(format!("{:.1}%", self.network_metrics.gas_ratio_5 * 100.0));
+
         GemstoneFeeData {
             latest_block: self.current_block_number,
             suggest_base_fee: self.current_base_fee_gwei.to_string(),
+            gas_used_ratio: gas_used_ratio_str,
             priority_fees: vec![
                 GemPriorityFeeRecord {
                     priority: GemFeePriority::Slow,
