@@ -197,7 +197,8 @@ final class GemTestTests: XCTestCase {
                 0.7324794824330592,
                 0.30713043651039335,
                 0.28207058333333335,
-            ]
+            ],
+            oldestBlock: "0x15a339f"
         )
 
         let calculator = GemFeeCalculator()
