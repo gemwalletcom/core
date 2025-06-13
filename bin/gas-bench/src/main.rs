@@ -59,10 +59,14 @@ async fn run(args: Cli) -> Result<()> {
 
     let mut last_printed_block_opt: Option<u64> = None;
     let mut block_data: HashMap<u64, Vec<SourceFeeDetail>> = HashMap::new();
+    println!(
+        "gas-bench: with history blocks: {}, reward percentiles: {:?}",
+        args.blocks, args.reward_percentiles
+    );
 
     loop {
         ticker.tick().await;
-        println!("\nFetching new gas fee data...");
+        println!("gas-bench: fetching new gas fee data...");
 
         let gemstone_client_clone = GemstoneClient::new(native_provider.clone());
         let reward_percentiles_clone = args.reward_percentiles.clone();
@@ -83,7 +87,7 @@ async fn run(args: Cli) -> Result<()> {
         let (gemstone_res, etherscan_res, gasflow_res) = tokio::join!(fee_history_future, etherscan_future, gasflow_future);
 
         if args.debug {
-            eprintln!("Debug: Processing new fetch cycle, block_data currently has {} entries.", block_data.len());
+            eprintln!("gas-bench: processing new fetch cycle, block_data currently has {} entries.", block_data.len());
         }
 
         let process_fee_data = |source_name: &str, data: &GemstoneFeeData| -> SourceFeeDetail {
@@ -114,7 +118,7 @@ async fn run(args: Cli) -> Result<()> {
             }
         } else if let Err(e) = gemstone_res {
             if args.debug {
-                eprintln!("Error fetching Gemstone data: {:?}", e);
+                eprintln!("gas-bench: Error fetching Gemstone data: {:?}", e);
             }
         }
 
@@ -213,11 +217,11 @@ async fn run(args: Cli) -> Result<()> {
 async fn main() -> Result<()> {
     let args = Cli::parse();
     if args.debug {
-        eprintln!("Debug mode enabled by CLI flag.");
+        eprintln!("gas-bench: debug mode enabled by CLI flag.");
     }
 
     if let Err(e) = run(args).await {
-        eprintln!("Application error: {}", e);
+        eprintln!("gas-bench: run error: {}", e);
         std::process::exit(1);
     }
 
