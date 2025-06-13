@@ -3232,12 +3232,18 @@ checksum = "42012b0f064e01aa58b545fe3727f90f7dd4020f4a3ea735b50344965f5a57e9"
 name = "gas-bench"
 version = "1.0.0"
 dependencies = [
+ "alloy-primitives",
  "anyhow",
  "clap",
  "futures",
  "gem_evm",
  "gemstone",
+ "num-bigint",
+ "num-traits",
  "primitives",
+ "reqwest",
+ "serde",
+ "serde_serializers",
  "tokio",
 ]
 
