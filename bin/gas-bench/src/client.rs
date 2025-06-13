@@ -45,7 +45,7 @@ impl GemstoneClient {
         Self { native_provider }
     }
 
-    pub async fn fetch_and_calculate_gemstone_fees(&self, blocks: u64, reward_percentiles: Vec<u64>) -> Result<GemstoneFeeData> {
+    pub async fn fetch_base_priority_fees(&self, blocks: u64, reward_percentiles: Vec<u64>, min_priority_fee: u64) -> Result<GemstoneFeeData> {
         let client = JsonRpcClient::new_with_chain(self.native_provider.clone(), Chain::Ethereum);
         let call = EthereumRpc::FeeHistory { blocks, reward_percentiles };
 
@@ -61,7 +61,6 @@ impl GemstoneClient {
         let base_fee_for_next = BigInt::from_str_radix(&base_fee_for_next.replace("0x", ""), 16).expect("Invalid base fee");
 
         let service = GemFeeCalculator::new();
-        let min_priority_fee = 100000000; // 0.1 Gwei
         let priorities = vec![GemFeePriority::Slow, GemFeePriority::Normal, GemFeePriority::Fast];
         let mut calculated_priority_fees = service.calculate_priority_fees(fee_history_data.clone(), &priorities, min_priority_fee)?;
         calculated_priority_fees

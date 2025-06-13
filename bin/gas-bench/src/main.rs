@@ -41,12 +41,16 @@ struct Cli {
     debug: bool,
 
     /// The number of blocks to fetch
-    #[clap(short, long, default_value_t = 6)]
+    #[clap(short, long, default_value_t = 4)]
     blocks: u64,
 
     /// The reward percentiles to fetch
-    #[clap(short, long, value_delimiter = ',', default_value = "20,50,70")]
+    #[clap(short, long, value_delimiter = ',', default_value = "20,40,60")]
     reward_percentiles: Vec<u64>,
+
+    /// The minimum priority fee in wei (default: 0.01 Gwei)
+    #[clap(short, long, default_value_t = 10000000)]
+    min_priority_fee: u64,
 
     /// The Etherscan API key
     #[clap(long, env = "ETHERSCAN_API_KEY")]
@@ -66,13 +70,15 @@ async fn run(args: Cli) -> Result<()> {
 
     loop {
         ticker.tick().await;
-        println!("gas-bench: fetching new gas fee data...");
+        if args.debug {
+            eprintln!("gas-bench: fetching new gas fee data...");
+        }
 
         let gemstone_client_clone = GemstoneClient::new(native_provider.clone());
         let reward_percentiles_clone = args.reward_percentiles.clone();
         let etherscan_api_key_clone = args.etherscan_api_key.clone();
 
-        let fee_history_future = gemstone_client_clone.fetch_and_calculate_gemstone_fees(args.blocks, reward_percentiles_clone);
+        let fee_history_future = gemstone_client_clone.fetch_base_priority_fees(args.blocks, reward_percentiles_clone, args.min_priority_fee);
 
         let etherscan_future = async move {
             let client = EtherscanClient::new(etherscan_api_key_clone);
