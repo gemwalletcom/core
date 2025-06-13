@@ -1,5 +1,9 @@
+use std::error::Error;
+
 use chrono::DateTime;
-use primitives::{chain::Chain, AssetId, Transaction, TransactionState, TransactionType};
+use primitives::{Asset, AssetId, AssetType, Transaction, TransactionState, TransactionType, chain::Chain};
+
+use crate::{XRP_DEFAULT_ASSET_DECIMALS, rpc::model::AccountObject};
 
 use super::model::Transaction as XrpTransaction;
 
@@ -43,5 +47,19 @@ impl XRPMapper {
             return Some(transaction);
         }
         None
+    }
+
+    pub fn map_token_data(chain: Chain, account_objects: Vec<AccountObject>) -> Result<Asset, Box<dyn Error + Send + Sync>> {
+        let account = account_objects.first().ok_or("No account objects found for token_id")?;
+        let symbol = account.low_limit.symbol().ok_or("Invalid currency")?;
+        let token_id = &account.low_limit.issuer;
+
+        Ok(Asset::new(
+            AssetId::from_token(chain, token_id),
+            symbol.clone(),
+            symbol.clone(),
+            XRP_DEFAULT_ASSET_DECIMALS,
+            AssetType::TOKEN,
+        ))
     }
 }

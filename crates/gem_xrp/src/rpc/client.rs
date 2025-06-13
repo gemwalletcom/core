@@ -60,7 +60,7 @@ impl XRPClient {
     }
 
     pub async fn get_account_objects(&self, token_id: String) -> Result<AccountObjects, Box<dyn Error + Send + Sync>> {
-        let params = json!({ "method": "account_objects", "params": [ { "ledger_index": "validated", "state": "type", "account": token_id } ] });
+        let params = json!({ "method": "account_objects", "params": [ { "ledger_index": "validated", "type": "state", "account": token_id } ] });
 
         let response = self
             .client
