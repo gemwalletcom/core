@@ -7,13 +7,14 @@ use super::{
 use crate::{
     config::swap_config::SwapReferralFee,
     debug_println,
+    ethereum::jsonrpc as eth_rpc,
     network::AlienProvider,
     swapper::{
         across::{DEFAULT_DEPOSIT_GAS_LIMIT, DEFAULT_FILL_GAS_LIMIT},
         approval::check_approval_erc20,
         asset::*,
         chainlink::ChainlinkPriceFeed,
-        eth_address, eth_rpc,
+        eth_address,
         models::*,
         GemSwapProvider, Swapper, SwapperError,
     },

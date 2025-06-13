@@ -8,7 +8,6 @@ mod approval;
 mod chainlink;
 mod custom_types;
 mod eth_address;
-mod eth_rpc;
 mod permit2_data;
 
 pub mod across;

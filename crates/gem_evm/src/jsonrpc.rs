@@ -89,6 +89,7 @@ pub enum EthereumRpc {
     GasPrice,
     GetBalance(&'static str),
     GetTransactionReceipt(String),
+    FeeHistory { blocks: u64, reward_percentiles: Vec<u64> },
 }
 
 impl EthereumRpc {
@@ -99,6 +100,7 @@ impl EthereumRpc {
             EthereumRpc::Call(_, _) => "eth_call",
             EthereumRpc::GetTransactionReceipt(_) => "eth_getTransactionReceipt",
             EthereumRpc::EstimateGas(_, _) => "eth_estimateGas",
+            EthereumRpc::FeeHistory { .. } => "eth_feeHistory",
         }
     }
 }
@@ -121,6 +123,13 @@ impl JsonRpcRequestConvert for EthereumRpc {
             EthereumRpc::EstimateGas(tx, block) => {
                 let value = serde_json::to_value(tx).unwrap();
                 vec![value, block.into()]
+            }
+            EthereumRpc::FeeHistory { blocks, reward_percentiles } => {
+                vec![
+                    Value::from(*blocks),
+                    Value::String("latest".to_string()),
+                    Value::Array(reward_percentiles.iter().map(|x| Value::from(*x)).collect()),
+                ]
             }
         };
 

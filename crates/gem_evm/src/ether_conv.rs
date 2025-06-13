@@ -12,6 +12,11 @@ impl EtherConv {
     pub fn parse_ether(ether: &str) -> BigInt {
         to_bn_wei(ether, 18)
     }
+
+    pub fn to_gwei(wei: &BigInt) -> String {
+        let gwei_value = BigDecimal::from_bigint(wei.clone(), 0) / BigDecimal::from(10u64.pow(9));
+        gwei_value.to_string()
+    }
 }
 
 pub fn to_bn_wei(value: &str, decimals: u32) -> BigInt {
