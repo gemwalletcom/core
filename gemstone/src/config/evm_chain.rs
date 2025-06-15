@@ -24,6 +24,6 @@ pub fn get_evm_chain_config(chain: EVMChain) -> EVMChainConfig {
             normal: 40,
             fast: 60,
         },
-        fee_history_blocks: 5,
+        fee_history_blocks: 4,
     }
 }
