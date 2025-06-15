@@ -24,6 +24,6 @@ struct SolanaInstruction {
 #[serde(rename_all = "camelCase")]
 struct SolanaAccountMeta {
     pubkey: String,
-    is_signer: Bool,
-    is_writable: Bool,
+    is_signer: bool,
+    is_writable: bool,
 }
