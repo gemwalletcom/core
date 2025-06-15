@@ -5,7 +5,7 @@ use std::error::Error;
 
 use crate::{ChainAssetsProvider, ChainBlockProvider, ChainTokenDataProvider, ChainTransactionsProvider};
 use gem_xrp::rpc::{XRPClient, XRPMapper};
-use primitives::{Asset, AssetBalance, AssetId, AssetType, Chain, Transaction};
+use primitives::{Asset, AssetBalance, AssetId, Chain, Transaction};
 
 pub struct XRPProvider {
     client: XRPClient,
