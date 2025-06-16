@@ -8049,9 +8049,9 @@ dependencies = [
 
 [[package]]
 name = "tonlib-core"
-version = "0.25.7"
+version = "0.26.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "274d37db7030ec4158b6ad6106d1edbb3cc3e021c038bcc0fd45859f34633895"
+checksum = "a2f2ad357c9868d3bbd554db0d4c5ad288da806ce9a40494ee81112a7b492226"
 dependencies = [
  "async-trait",
  "base64 0.22.1",
