@@ -62,7 +62,7 @@ serde_with = "3.13.0"
 serde_json = { version = "1.0.140" }
 serde_urlencoded = { version = "0.7.1" }
 tokio = { version = "1.45.1", features = ["macros", "rt-multi-thread"] }
-reqwest = { version = "0.12.19", features = ["json"] }
+reqwest = { version = "0.12.20", features = ["json"] }
 reqwest-middleware = { version = "0.4.2" }
 reqwest-retry = { version = "0.7.0" }
 reqwest-enum = { version = "0.4.0", features = ["jsonrpc"] }
@@ -98,7 +98,7 @@ redis = { version = "0.32.0", features = [
 chrono = { version = "0.4.41", features = ["serde"] }
 clickhouse = { version = "0.13.3" }
 meilisearch-sdk = { version = "0.28.0" }
-lapin = { version = "2.5.3" }
+lapin = { version = "3.0.0" }
 
 # crypto
 base64 = { version = "0.22.1" }
