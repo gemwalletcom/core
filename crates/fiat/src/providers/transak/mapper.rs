@@ -28,6 +28,7 @@ pub fn map_asset_chain(asset: Asset) -> Option<Chain> {
         "unichain" => Some(Chain::Unichain),
         "stellar" => Some(Chain::Stellar),
         "algorand" => Some(Chain::Algorand),
+        "berachain" => Some(Chain::Berachain),
         "mainnet" => match asset.coin_id.as_str() {
             "bitcoin" => Some(Chain::Bitcoin),
             "litecoin" => Some(Chain::Litecoin),
