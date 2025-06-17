@@ -9,7 +9,8 @@ use crate::{
 };
 use primitives::{chain::Chain, AssetId, TransactionState, TransactionType};
 
-const FUNCTION_ERC20_TRANSFER: &str = "0xa9059cbb";
+pub const INPUT_0X: &str = "0x";
+pub const FUNCTION_ERC20_TRANSFER: &str = "0xa9059cbb";
 
 pub struct EthereumMapper;
 
