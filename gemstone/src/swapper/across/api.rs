@@ -1,6 +1,7 @@
 use crate::{
+    ethereum::jsonrpc as eth_rpc,
     network::{AlienProvider, AlienTarget},
-    swapper::{eth_rpc, SwapperError},
+    swapper::SwapperError,
 };
 use primitives::Chain;
 use serde::{Deserialize, Serialize};

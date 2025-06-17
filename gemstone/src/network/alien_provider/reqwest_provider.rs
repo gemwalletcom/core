@@ -8,11 +8,20 @@ use reqwest::Client;
 #[derive(Debug)]
 pub struct NativeProvider {
     pub client: Client,
+    debug: bool,
 }
 
 impl NativeProvider {
     pub fn new() -> Self {
-        Self { client: Client::new() }
+        Self {
+            client: Client::new(),
+            debug: true,
+        }
+    }
+
+    pub fn set_debug(mut self, debug: bool) -> Self {
+        self.debug = debug;
+        self
     }
 }
 
@@ -35,7 +44,9 @@ impl AlienProvider for NativeProvider {
     }
 
     async fn request(&self, target: AlienTarget) -> Result<Data, AlienError> {
-        println!("==> request: url: {:?}, method: {:?}", target.url, target.method);
+        if self.debug {
+            println!("==> request: url: {:?}, method: {:?}", target.url, target.method);
+        }
         let mut req = match target.method {
             AlienHttpMethod::Get => self.client.get(target.url),
             AlienHttpMethod::Post => self.client.post(target.url),
@@ -51,7 +62,7 @@ impl AlienProvider for NativeProvider {
             }
         }
         if let Some(body) = target.body {
-            if cfg!(debug_assertions) && body.len() <= 4096 {
+            if self.debug && body.len() <= 4096 {
                 if let Ok(json) = serde_json::from_slice::<serde_json::Value>(&body) {
                     println!("=== json: {:?}", json);
                 } else {
@@ -73,8 +84,10 @@ impl AlienProvider for NativeProvider {
                 msg: format!("request error: {:?}", e),
             })
             .await?;
-        println!("<== response body size: {:?}", bytes.len());
-        if cfg!(debug_assertions) && bytes.len() <= 4096 {
+        if self.debug {
+            println!("<== response body size: {:?}", bytes.len());
+        }
+        if self.debug && bytes.len() <= 4096 {
             if let Ok(json) = serde_json::from_slice::<serde_json::Value>(&bytes) {
                 println!("=== json: {:?}", json);
             } else {

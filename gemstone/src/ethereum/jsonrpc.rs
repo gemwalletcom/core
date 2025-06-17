@@ -3,9 +3,12 @@ use alloy_sol_types::SolCall;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
-use super::SwapperError;
-use crate::debug_println;
-use crate::network::{AlienProvider, JsonRpcClient, JsonRpcResult};
+use crate::{
+    debug_println,
+    network::{AlienProvider, JsonRpcClient, JsonRpcResult},
+    swapper::SwapperError,
+};
+
 use gem_evm::{
     jsonrpc::{BlockParameter, EthereumRpc, TransactionObject},
     multicall3::{self, IMulticall3},

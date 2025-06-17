@@ -1,0 +1,22 @@
+[package]
+name = "gas-bench"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+clap = { version = "4.5.4", features = ["derive", "env"] }
+
+alloy-primitives = { workspace = true }
+anyhow = { workspace = true }
+futures = { workspace = true }
+tokio = { workspace = true }
+num-bigint = { workspace = true }
+num-traits = { workspace = true }
+reqwest = { workspace = true, features = ["json"] }
+serde = { workspace = true, features = ["derive"] }
+prettytable-rs = "^0.10"
+
+primitives = { path = "../../crates/primitives" }
+gemstone = { path = "../../gemstone", features = ["reqwest_provider"] }
+gem_evm = { path = "../../crates/gem_evm" }
+serde_serializers = { path = "../../crates/serde_serializers" }
