@@ -8,7 +8,11 @@ use crate::{ChainAssetsProvider, ChainBlockProvider, ChainTokenDataProvider, Cha
 use gem_evm::{
     erc20::{decode_abi_string, decode_abi_uint8, IERC20},
     ethereum_address_checksum,
-    rpc::{alchemy::AlchemyClient, EthereumClient, EthereumMapper},
+    rpc::{
+        alchemy::AlchemyClient,
+        ankr::{AnkrClient, AnkrMapper},
+        EthereumClient, EthereumMapper,
+    },
 };
 use primitives::{Asset, AssetBalance, AssetId, Chain, Transaction};
 
@@ -119,5 +123,15 @@ impl ChainTransactionsProvider for AlchemyClient {
         return Ok(vec![]);
         //let transactions = self.get_asset_transfers(address.as_str()).await?.transactions;
         //Ok(AlchemyMapper::map_transactions(transactions, self.chain.to_chain()))
+    }
+}
+
+// AnkrClient
+
+#[async_trait]
+impl ChainTransactionsProvider for AnkrClient {
+    async fn get_transactions_by_address(&self, address: String) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
+        let transactions = self.get_transactions_by_address(address.as_str()).await?.transactions;
+        Ok(AnkrMapper::map_transactions(transactions, self.chain.to_chain()))
     }
 }

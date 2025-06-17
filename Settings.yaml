@@ -223,6 +223,10 @@ alchemy:
   key:
     secret: ""
 
+ankr:
+  key:
+    secret: ""
+
 nft:
   nftscan:
     key:

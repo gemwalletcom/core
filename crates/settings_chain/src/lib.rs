@@ -17,7 +17,7 @@ use gem_aptos::rpc::AptosClient;
 use gem_bitcoin::rpc::BitcoinClient;
 use gem_cardano::rpc::CardanoClient;
 use gem_cosmos::rpc::client::CosmosClient;
-use gem_evm::rpc::{AlchemyClient, EthereumClient};
+use gem_evm::rpc::{ankr::AnkrClient, AlchemyClient, EthereumClient};
 use gem_near::rpc::client::NearClient;
 use gem_polkadot::rpc::PolkadotClient;
 use gem_solana::rpc::SolanaClient;
@@ -35,7 +35,12 @@ pub struct ProviderFactory {}
 impl ProviderFactory {
     pub fn new_from_settings(chain: Chain, settings: &Settings) -> Box<dyn ChainProvider> {
         let url = Self::url(chain, settings);
-        Self::new_provider(ProviderConfig::new(chain, url, settings.alchemy.key.secret.as_str()))
+        Self::new_provider(ProviderConfig::new(
+            chain,
+            url,
+            settings.alchemy.key.secret.as_str(),
+            settings.ankr.key.secret.as_str(),
+        ))
     }
 
     pub fn new_providers(settings: &Settings) -> Vec<Box<dyn ChainProvider>> {
@@ -78,10 +83,11 @@ impl ProviderFactory {
             | Chain::Monad => {
                 let chain = EVMChain::from_chain(chain).unwrap();
                 let assets_provider = AlchemyClient::new(chain, config.alchemy_key.clone());
+                let transactions_provider = AnkrClient::new(chain, config.ankr_key.clone());
                 Box::new(EthereumProvider::new(
                     EthereumClient::new(chain, url),
                     Box::new(assets_provider.clone()),
-                    Box::new(assets_provider.clone()),
+                    Box::new(transactions_provider.clone()),
                 ))
             }
             Chain::Cosmos | Chain::Osmosis | Chain::Celestia | Chain::Thorchain | Chain::Injective | Chain::Noble | Chain::Sei => {

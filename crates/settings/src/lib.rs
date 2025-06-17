@@ -33,6 +33,7 @@ pub struct Settings {
     pub scan: Scan,
     pub nft: NFT,
     pub alchemy: Alchemy,
+    pub ankr: Ankr,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -308,6 +309,12 @@ pub struct NFT {
 #[derive(Debug, Deserialize, Clone)]
 #[allow(unused)]
 pub struct Alchemy {
+    pub key: KeySecret,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[allow(unused)]
+pub struct Ankr {
     pub key: KeySecret,
 }
 

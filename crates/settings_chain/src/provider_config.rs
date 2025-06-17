@@ -5,14 +5,16 @@ pub struct ProviderConfig {
     pub chain: Chain,
     pub url: String,
     pub alchemy_key: String,
+    pub ankr_key: String,
 }
 
 impl ProviderConfig {
-    pub fn new(chain: Chain, url: &str, alchemy_key: &str) -> Self {
+    pub fn new(chain: Chain, url: &str, alchemy_key: &str, ankr_key: &str) -> Self {
         Self {
             chain,
             url: url.to_string(),
             alchemy_key: alchemy_key.to_string(),
+            ankr_key: ankr_key.to_string(),
         }
     }
 

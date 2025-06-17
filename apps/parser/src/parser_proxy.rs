@@ -49,7 +49,10 @@ impl ParserProxy {
         let node_urls = if node_urls.is_empty() { vec![url.to_string()] } else { node_urls };
         let config = ParserProxyUrlConfig { urls: node_urls };
 
-        ParserProxy::new(ProviderConfig::new(chain, url, settings.alchemy.key.secret.as_str()), config)
+        ParserProxy::new(
+            ProviderConfig::new(chain, url, settings.alchemy.key.secret.as_str(), settings.ankr.key.secret.as_str()),
+            config,
+        )
     }
 
     fn handle_error(&self, error: Box<dyn Error + Send + Sync>) -> Box<dyn Error + Send + Sync> {
