@@ -77,7 +77,7 @@ impl ProviderFactory {
             | Chain::Hyperliquid
             | Chain::Monad => {
                 let chain = EVMChain::from_chain(chain).unwrap();
-                let assets_provider = AlchemyClient::new(chain, &config.alchemy_key);
+                let assets_provider = AlchemyClient::new(chain, config.alchemy_key.clone());
                 Box::new(EthereumProvider::new(
                     EthereumClient::new(chain, url),
                     Box::new(assets_provider.clone()),

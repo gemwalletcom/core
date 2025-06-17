@@ -2,13 +2,12 @@ use num_bigint::BigUint;
 use primitives::EVMChain;
 use serde::Deserialize;
 use serde_serializers::deserialize_biguint_from_hex_str;
+use serde_serializers::deserialize_biguint_from_str;
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct TokenBalance {
-    pub contract_address: String,
-    #[serde(deserialize_with = "deserialize_biguint_from_hex_str")]
-    pub token_balance: BigUint,
+pub struct Transactions {
+    pub transactions: Vec<Transaction>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -20,62 +19,68 @@ pub struct TokenBalances {
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct AssetTransfers {
-    pub transfers: Vec<Transfer>,
+pub struct TokenBalance {
+    pub contract_address: String,
+    #[serde(deserialize_with = "deserialize_biguint_from_hex_str")]
+    pub token_balance: BigUint,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct Transfer {
+pub struct Transaction {
+    pub block_timestamp: u64,
+    pub block_number: u64,
     pub hash: String,
-    pub from: String,
-    pub to: String,
-    pub asset: String,
-    pub token_id: Option<String>,
-    pub category: String,
-    pub raw_contract: TransferRawData,
-    pub metadata: TransferMetadata,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct TransferRawData {
+    pub from_address: String,
+    pub to_address: String,
     pub value: String,
-    pub address: Option<String>,
+    #[serde(deserialize_with = "deserialize_biguint_from_str")]
+    pub gas: BigUint,
+    #[serde(deserialize_with = "deserialize_biguint_from_str")]
+    pub gas_price: BigUint,
+    pub nonce: String,
+    pub contract_address: Option<String>,
+    pub logs: Vec<Log>,
+    pub internal_transactions: Vec<InternalTransaction>,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct TransferMetadata {
-    pub block_timestamp: String,
+pub struct Log {}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct InternalTransaction {}
+
+pub fn alchemy_rpc_url(chain: EVMChain, api_key: &str) -> String {
+    format!("https://{}.g.alchemy.com/v2/{}", evm_chain_to_network(chain), api_key)
 }
 
-pub fn alchemy_url(chain: EVMChain, api_key: &str) -> String {
-    let prefix = match chain {
-        EVMChain::Ethereum => "eth",
-        EVMChain::Base => "base",
-        EVMChain::Arbitrum => "arb",
-        EVMChain::Optimism => "opt",
-        EVMChain::Polygon => "polygon",
-        EVMChain::SmartChain => "bnb",
-        EVMChain::AvalancheC => "avalanche",
-        EVMChain::OpBNB => "opbnb",
-        EVMChain::Fantom => "fantom",
-        EVMChain::Gnosis => "gnosis",
-        EVMChain::Blast => "blast",
-        EVMChain::ZkSync => "zksync",
-        EVMChain::Linea => "linea",
-        EVMChain::Mantle => "mantle",
-        EVMChain::Celo => "celo",
-        EVMChain::World => "worldchain",
-        EVMChain::Sonic => "sonic",
-        EVMChain::Abstract => "abstract",
-        EVMChain::Berachain => "berachain",
-        EVMChain::Ink => "ink",
-        EVMChain::Unichain => "unichain",
-        EVMChain::Manta => "manta",             // TODO: no support
-        EVMChain::Hyperliquid => "hyperliquid", // TODO: no support
-        EVMChain::Monad => "monad",             // TODO: no support
-    };
-    format!("https://{}-mainnet.g.alchemy.com/v2/{}", prefix, api_key)
+pub fn evm_chain_to_network(chain: EVMChain) -> String {
+    match chain {
+        EVMChain::Ethereum => "eth-mainnet".to_string(),
+        EVMChain::Base => "base-mainnet".to_string(),
+        EVMChain::Arbitrum => "arb-mainnet".to_string(),
+        EVMChain::Optimism => "opt-mainnet".to_string(),
+        EVMChain::Polygon => "polygon-mainnet".to_string(),
+        EVMChain::SmartChain => "bnb-mainnet".to_string(),
+        EVMChain::AvalancheC => "avalanche-mainnet".to_string(),
+        EVMChain::OpBNB => "opbnb-mainnet".to_string(),
+        EVMChain::Fantom => "fantom-mainnet".to_string(),
+        EVMChain::Gnosis => "gnosis-mainnet".to_string(),
+        EVMChain::Blast => "blast-mainnet".to_string(),
+        EVMChain::ZkSync => "zksync-mainnet".to_string(),
+        EVMChain::Linea => "linea-mainnet".to_string(),
+        EVMChain::Mantle => "mantle-mainnet".to_string(),
+        EVMChain::Celo => "celo-mainnet".to_string(),
+        EVMChain::World => "worldchain-mainnet".to_string(),
+        EVMChain::Sonic => "sonic-mainnet".to_string(),
+        EVMChain::Abstract => "abstract-mainnet".to_string(),
+        EVMChain::Berachain => "berachain-mainnet".to_string(),
+        EVMChain::Ink => "ink-mainnet".to_string(),
+        EVMChain::Unichain => "unichain-mainnet".to_string(),
+        EVMChain::Manta => "manta-mainnet".to_string(),
+        EVMChain::Hyperliquid => "hyperliquid-mainnet".to_string(),
+        EVMChain::Monad => "monad-mainnet".to_string(),
+    }
 }

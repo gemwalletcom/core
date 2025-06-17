@@ -8,7 +8,7 @@ use crate::{ChainAssetsProvider, ChainBlockProvider, ChainTokenDataProvider, Cha
 use gem_evm::{
     erc20::{decode_abi_string, decode_abi_uint8, IERC20},
     ethereum_address_checksum,
-    rpc::{AlchemyClient, EthereumClient, EthereumMapper},
+    rpc::{alchemy::AlchemyClient, EthereumClient, EthereumMapper},
 };
 use primitives::{Asset, AssetBalance, AssetId, Chain, Transaction};
 
@@ -41,15 +41,8 @@ impl ChainBlockProvider for EthereumProvider {
     async fn get_transactions(&self, block_number: i64) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
         let block = self.client.get_block(block_number).await?;
         let transactions_reciepts = self.client.get_block_receipts(block_number).await?;
-        let transactions = block.transactions;
 
-        let transactions = transactions
-            .into_iter()
-            .zip(transactions_reciepts.iter())
-            .filter_map(|(transaction, receipt)| EthereumMapper::map_transaction(self.get_chain(), &transaction, receipt, block.timestamp.clone()))
-            .collect::<Vec<Transaction>>();
-
-        return Ok(transactions);
+        Ok(EthereumMapper::map_transactions(self.get_chain(), block.clone(), transactions_reciepts.clone()))
     }
 }
 
@@ -124,12 +117,7 @@ impl ChainAssetsProvider for AlchemyClient {
 impl ChainTransactionsProvider for AlchemyClient {
     async fn get_transactions_by_address(&self, _address: String) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
         return Ok(vec![]);
-        // let response = self.get_asset_transfers(_address.as_str()).await?.transfers;
-        // let transactions = response
-        //     .into_iter()
-        //     .map(|x| AlchemyMapper::map_transaction(x, self.chain.to_chain()).unwrap())
-        //     .collect();
-
-        // Ok(transactions)
+        //let transactions = self.get_asset_transfers(address.as_str()).await?.transactions;
+        //Ok(AlchemyMapper::map_transactions(transactions, self.chain.to_chain()))
     }
 }
