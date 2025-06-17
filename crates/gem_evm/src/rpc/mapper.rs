@@ -5,7 +5,7 @@ use num_traits::Num;
 use super::swap_mapper::SwapMapper;
 use crate::{
     address::ethereum_address_checksum,
-    rpc::model::{Transaction, TransactionReciept},
+    rpc::model::{Block, Transaction, TransactionReciept},
 };
 use primitives::{chain::Chain, AssetId, TransactionState, TransactionType};
 
@@ -14,6 +14,15 @@ const FUNCTION_ERC20_TRANSFER: &str = "0xa9059cbb";
 pub struct EthereumMapper;
 
 impl EthereumMapper {
+    pub fn map_transactions(chain: Chain, block: Block, transactions_reciepts: Vec<TransactionReciept>) -> Vec<primitives::Transaction> {
+        block
+            .transactions
+            .into_iter()
+            .zip(transactions_reciepts.iter())
+            .filter_map(|(transaction, receipt)| EthereumMapper::map_transaction(chain, &transaction, receipt, block.timestamp.clone()))
+            .collect()
+    }
+
     pub fn map_transaction(
         chain: Chain,
         transaction: &Transaction,

@@ -42,6 +42,8 @@ pub struct Payment {
     pub to: Option<String>,
     pub amount: Option<String>,
 
+    pub created_at: String,
+
     // create account
     pub source_account: Option<String>,
     pub funder: Option<String>,
@@ -87,4 +89,16 @@ impl Payment {
     pub fn get_memo(&self) -> Option<String> {
         None
     }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Account {
+    pub balances: Vec<Balance>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Balance {
+    pub balance: String,
+    pub asset_type: String,
+    pub asset_issuer: Option<String>,
 }

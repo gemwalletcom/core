@@ -29,16 +29,8 @@ impl ChainBlockProvider for StellarProvider {
     }
 
     async fn get_transactions(&self, block_number: i64) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
-        let block = self.client.get_block(block_number).await?;
-        let transactions = self
-            .client
-            .get_block_payments_all(block_number)
-            .await?
-            .iter()
-            .flat_map(|x| StellarMapper::map_transaction(self.get_chain(), block.clone(), x.clone()))
-            .collect::<Vec<Transaction>>();
-
-        Ok(transactions)
+        let transactions = self.client.get_block_payments_all(block_number).await?;
+        Ok(StellarMapper::map_transactions(self.get_chain(), transactions))
     }
 }
 
@@ -51,14 +43,16 @@ impl ChainTokenDataProvider for StellarProvider {
 
 #[async_trait]
 impl ChainAssetsProvider for StellarProvider {
-    async fn get_assets_balances(&self, _address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
-        Ok(vec![])
+    async fn get_assets_balances(&self, address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
+        let account = self.client.get_account(address).await?;
+        Ok(StellarMapper::map_balances(self.get_chain(), account))
     }
 }
 
 #[async_trait]
 impl ChainTransactionsProvider for StellarProvider {
-    async fn get_transactions_by_address(&self, _address: String) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
-        Ok(vec![])
+    async fn get_transactions_by_address(&self, address: String) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
+        let payments = self.client.get_account_payments(address).await?;
+        Ok(StellarMapper::map_transactions(self.get_chain(), payments))
     }
 }
