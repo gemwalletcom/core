@@ -4402,6 +4402,15 @@ dependencies = [
 
 [[package]]
 name = "itertools"
+version = "0.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "413ee7dfc52ee1a4949ceeb7dbc8a33f2d6c088194d9f922fb8318faf1f01186"
+dependencies = [
+ "either",
+]
+
+[[package]]
+name = "itertools"
 version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2b192c782037fadd9cfa75548310488aabdbf3d2da73885b31bd0abd03351285"
@@ -7520,9 +7529,9 @@ dependencies = [
 
 [[package]]
 name = "sui-sdk-types"
-version = "0.0.4"
+version = "0.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bfa372a5893e7cfd80cb57b18839fc595200ca0abd0d0dadfe3c951f510ba5a3"
+checksum = "de7fb22164935584730c622f8da443dc8e88d8758cae26d720a5c86d037f8970"
 dependencies = [
  "base64ct",
  "bcs",
@@ -7530,6 +7539,7 @@ dependencies = [
  "bnum",
  "bs58",
  "hex",
+ "itertools 0.13.0",
  "roaring",
  "serde",
  "serde_derive",
@@ -7540,9 +7550,9 @@ dependencies = [
 
 [[package]]
 name = "sui-transaction-builder"
-version = "0.0.4"
+version = "0.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4803809d289936d5657ee13d7d8376ef3d01f2b156734af60e59685491605986"
+checksum = "bc82e24fa537425aa86d78c9938543b3ff885c5fc348ce1356cd46907f471bf2"
 dependencies = [
  "base64ct",
  "bcs",
