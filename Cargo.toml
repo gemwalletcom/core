@@ -122,17 +122,17 @@ itoa = { version = "1.0.15" }
 curve25519-dalek = { version = "4.1.3" }
 borsh = { version = "1.5.7", features = ["derive"] }
 bcs = { version = "0.1.6" }
-sui-types = { package = "sui-sdk-types", version = "0.0.4", features = [
+sui-types = { package = "sui-sdk-types", version = "0.0.5", features = [
     "serde",
 ] }
-sui-transaction-builder = { package = "sui-transaction-builder", version = "0.0.4" }
+sui-transaction-builder = { package = "sui-transaction-builder", version = "0.0.5" }
 
 uniffi = { version = "0.29.3" }
 uniffi_bindgen = { version = "0.29.3" }
 
-alloy-primitives = "1.1.0"
-alloy-sol-types = { version = "1.1.0", features = ["eip712-serde"] }
-alloy-dyn-abi = { version = "1.1.0", features = ["eip712"] }
+alloy-primitives = "1.2.0"
+alloy-sol-types = { version = "1.2.0", features = ["eip712-serde"] }
+alloy-dyn-abi = { version = "1.2.0", features = ["eip712"] }
 alloy-ens = "1.0.9"
 alloy-json-rpc = "1.0.9"
 alloy-rpc-client = "1.0.9"
