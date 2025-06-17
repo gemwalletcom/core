@@ -21,8 +21,8 @@ pub struct Block {
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct Address {
-    pub txids: Vec<String>,
+pub struct AddressTransactions {
+    pub transactions: Vec<Transaction>,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
