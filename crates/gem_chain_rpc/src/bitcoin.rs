@@ -54,7 +54,7 @@ impl ChainTokenDataProvider for BitcoinProvider {
 #[async_trait]
 impl ChainAssetsProvider for BitcoinProvider {
     async fn get_assets_balances(&self, _address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
-        Ok(vec![])
+        Ok(vec![]) //TODO: ChainAssetsProvider
     }
 }
 

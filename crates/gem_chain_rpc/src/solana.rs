@@ -84,6 +84,6 @@ impl ChainTokenDataProvider for SolanaProvider {
 #[async_trait]
 impl ChainTransactionsProvider for SolanaProvider {
     async fn get_transactions_by_address(&self, _address: String) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
-        Ok(vec![])
+        Ok(vec![]) //TODO: ChainTransactionsProvider
     }
 }

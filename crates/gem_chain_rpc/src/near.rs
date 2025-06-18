@@ -64,13 +64,13 @@ impl ChainTokenDataProvider for NearProvider {
 #[async_trait]
 impl ChainAssetsProvider for NearProvider {
     async fn get_assets_balances(&self, _address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
-        Ok(vec![])
+        Ok(vec![]) //TODO: ChainAssetsProvider
     }
 }
 
 #[async_trait]
 impl ChainTransactionsProvider for NearProvider {
     async fn get_transactions_by_address(&self, _address: String) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
-        Ok(vec![])
+        Ok(vec![]) //TODO: ChainTransactionsProvider
     }
 }

@@ -58,6 +58,6 @@ impl ChainAssetsProvider for TonProvider {
 #[async_trait]
 impl ChainTransactionsProvider for TonProvider {
     async fn get_transactions_by_address(&self, _address: String) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
-        Ok(vec![])
+        Ok(vec![]) //TODO: ChainTransactionsProvider
     }
 }
