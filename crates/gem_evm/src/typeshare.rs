@@ -16,7 +16,8 @@ struct EthereumTransactionReciept {
 #[typeshare(swift = "Sendable")]
 #[serde(rename_all = "camelCase")]
 struct EthereumFeeHistory {
-    reward: Vec<Vec<String>>,
-    #[serde(rename = "baseFeePerGas")]
-    base_fee_per_gas: Vec<String>,
+    pub reward: Vec<Vec<String>>,
+    pub base_fee_per_gas: Vec<String>,
+    pub gas_used_ratio: Vec<f64>,
+    pub oldest_block: String,
 }

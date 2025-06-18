@@ -165,13 +165,13 @@ mod tests {
             TransactionType::Transfer,
             TransactionState::Confirmed,
             "96608991".to_string(),
-            "1".to_string(),
+            "95916370".to_string(),
             "11".to_string(),
             Chain::Xrp.as_asset_id(),
             "1".to_string(),
             None,
             None,
-            DateTime::from_timestamp(802465831, 0).unwrap(),
+            DateTime::from_timestamp(1749150631, 0).unwrap(),
         );
 
         assert_eq!(transactions.first().unwrap(), &expected_tx);
