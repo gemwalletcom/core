@@ -1,5 +1,5 @@
 use jsonrpsee::{
-    core::{ClientError, client::ClientT, params::BatchRequestBuilder},
+    core::{client::ClientT, params::BatchRequestBuilder, ClientError},
     http_client::{HttpClient, HttpClientBuilder},
     rpc_params,
 };
@@ -9,7 +9,7 @@ use std::{error::Error, fmt::Debug, str::FromStr};
 
 use crate::{
     metaplex::{decode_metadata, metadata::Metadata},
-    model::{BlockTransactions, TokenAccountInfo, ValueData, ValueResult},
+    model::{BlockTransactions, Signature, TokenAccountInfo, ValueData, ValueResult},
     pubkey::Pubkey,
 };
 
@@ -35,8 +35,7 @@ impl SolanaClient {
                 "commitment": "confirmed",
             }),
         ];
-        let info: T = self.client.request(rpc_method, params).await?;
-        Ok(info)
+        Ok(self.client.request(rpc_method, params).await?)
     }
 
     pub async fn get_account_info_batch<T: DeserializeOwned + Debug + Clone>(
@@ -125,6 +124,16 @@ impl SolanaClient {
             }),
         ];
         Ok(self.client.request("getTokenAccountsByOwner", params).await?)
+    }
+
+    pub async fn get_signatures_for_address(&self, address: &str, limit: u64) -> Result<Vec<Signature>, Box<dyn Error + Send + Sync>> {
+        let params = vec![
+            json!(address),
+            json!({
+                "limit": limit
+            }),
+        ];
+        Ok(self.client.request("getSignaturesForAddress", params).await?)
     }
 }
 

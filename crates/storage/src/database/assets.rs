@@ -24,12 +24,12 @@ impl DatabaseClient {
             .execute(&mut self.connection)
     }
 
-    pub fn get_assets_is_buyable(&mut self) -> Result<Vec<String>, diesel::result::Error> {
-        assets.filter(is_buyable.eq(true)).select(id).load(&mut self.connection)
+    pub fn get_assets_is_buyable(&mut self) -> Result<Vec<Asset>, diesel::result::Error> {
+        assets.filter(is_buyable.eq(true)).select(Asset::as_select()).load(&mut self.connection)
     }
 
-    pub fn get_assets_is_sellable(&mut self) -> Result<Vec<String>, diesel::result::Error> {
-        assets.filter(is_sellable.eq(true)).select(id).load(&mut self.connection)
+    pub fn get_assets_is_sellable(&mut self) -> Result<Vec<Asset>, diesel::result::Error> {
+        assets.filter(is_sellable.eq(true)).select(Asset::as_select()).load(&mut self.connection)
     }
 
     pub fn set_assets_is_swap_enabled(&mut self, asset_ids: Vec<String>, value: bool) -> Result<usize, diesel::result::Error> {

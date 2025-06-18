@@ -104,6 +104,12 @@ pub struct Transaction {
     pub signatures: Vec<String>,
 }
 
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Signature {
+    pub signature: String,
+}
+
 #[derive(Debug, Deserialize, Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct TransactionMessage {

@@ -83,7 +83,17 @@ impl ChainTokenDataProvider for SolanaProvider {
 
 #[async_trait]
 impl ChainTransactionsProvider for SolanaProvider {
-    async fn get_transactions_by_address(&self, _address: String) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
-        Ok(vec![]) //TODO: ChainTransactionsProvider
+    async fn get_transactions_by_address(&self, address: String) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
+        let transaction_ids = self
+            .client
+            .get_signatures_for_address(&address, 5)
+            .await?
+            .into_iter()
+            .map(|x| x.signature)
+            .collect::<Vec<String>>();
+
+        println!("transaction_ids: {:?}", transaction_ids);
+
+        Ok(vec![])
     }
 }

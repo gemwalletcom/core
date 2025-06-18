@@ -42,7 +42,7 @@ impl FiatClient {
         let assets = self.database.get_assets_is_buyable()?;
         Ok(FiatAssets {
             version: assets.clone().len() as u32,
-            asset_ids: assets,
+            asset_ids: assets.into_iter().map(|x| x.id).collect::<Vec<String>>(),
         })
     }
 
@@ -54,7 +54,7 @@ impl FiatClient {
         let assets = self.database.get_assets_is_sellable()?;
         Ok(FiatAssets {
             version: assets.clone().len() as u32,
-            asset_ids: assets,
+            asset_ids: assets.into_iter().map(|x| x.id).collect::<Vec<String>>(),
         })
     }
 
