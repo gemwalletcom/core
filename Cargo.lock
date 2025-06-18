@@ -3526,6 +3526,7 @@ dependencies = [
  "reqwest-middleware",
  "serde",
  "serde_json",
+ "serde_serializers",
  "thiserror 2.0.12",
  "typeshare",
 ]

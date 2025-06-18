@@ -1,6 +1,6 @@
 use number_formatter::BigNumberFormatter;
 use serde::{Deserialize, Serialize};
-
+use serde_serializers::deserialize_u64_from_str;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LedgerResult<T> {
     pub result: T,
@@ -52,7 +52,44 @@ pub struct AccountObjectLimit {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Ledger {
     pub close_time: i64,
+    #[serde(deserialize_with = "deserialize_u64_from_str")]
+    pub ledger_index: u64,
     pub transactions: Vec<Transaction>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AccountLedger {
+    pub transactions: Vec<AccountLedgerTransaction>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AccountLedgerTransaction {
+    pub hash: String,
+    pub ledger_index: i64,
+    pub tx_json: AccountLedgerTransactionJSON,
+    #[serde(rename = "meta")]
+    pub meta: TransactionMeta,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AccountLedgerTransactionJSON {
+    #[serde(rename = "Fee")]
+    pub fee: Option<String>,
+    #[serde(rename = "Account")]
+    pub account: Option<String>,
+    #[serde(rename = "DeliverMax")]
+    pub amount: Option<Amount>,
+    #[serde(rename = "Destination")]
+    pub destination: Option<String>,
+    #[serde(rename = "TransactionType")]
+    pub transaction_type: String,
+    #[serde(rename = "Sequence")]
+    pub sequence: i64,
+    pub date: i64,
+    #[serde(rename = "DestinationTag")]
+    pub destination_tag: Option<i64>,
+    #[serde(rename = "Memos")]
+    pub memos: Option<Vec<TransactionMemo>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -70,7 +107,6 @@ pub struct Transaction {
     pub transaction_type: String,
     #[serde(rename = "Sequence")]
     pub sequence: i64,
-    pub date: Option<i64>,
     #[serde(rename = "DestinationTag")]
     pub destination_tag: Option<i64>,
     #[serde(rename = "Memos")]

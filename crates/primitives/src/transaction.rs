@@ -16,7 +16,7 @@ pub struct TransactionsFetchOption {
     pub from_timestamp: Option<u32>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[typeshare(swift = "Sendable, Equatable")]
 pub struct Transaction {
     pub id: String,

@@ -3,6 +3,8 @@ use std::error::Error;
 use reqwest_middleware::ClientWithMiddleware;
 use serde_json::json;
 
+use crate::rpc::model::AccountLedger;
+
 use super::model::{AccountObjects, Ledger, LedgerCurrent, LedgerData, LedgerResult};
 
 pub struct XRPClient {
@@ -22,16 +24,15 @@ impl XRPClient {
                 "params": [{}]
             }
         );
-        let response = self
+        Ok(self
             .client
             .post(self.url.clone())
             .json(&params)
             .send()
             .await?
             .json::<LedgerResult<LedgerCurrent>>()
-            .await?;
-
-        Ok(response.result)
+            .await?
+            .result)
     }
 
     pub async fn get_block_transactions(&self, block_number: i64) -> Result<Ledger, Box<dyn Error + Send + Sync>> {
@@ -47,30 +48,52 @@ impl XRPClient {
                 ]
             }
         );
-        let response = self
+        Ok(self
             .client
             .post(self.url.clone())
             .json(&params)
             .send()
             .await?
             .json::<LedgerResult<LedgerData>>()
-            .await?;
+            .await?
+            .result
+            .ledger)
+    }
 
-        Ok(response.result.ledger)
+    pub async fn get_account_transactions(&self, address: String, limit: i64) -> Result<AccountLedger, Box<dyn Error + Send + Sync>> {
+        let params = json!(
+            {
+                "method": "account_tx",
+                "params": [
+                    {
+                        "account": address,
+                        "limit": limit,
+                        "api_version": 2
+                    }
+                ]
+            }
+        );
+        Ok(self
+            .client
+            .post(self.url.clone())
+            .json(&params)
+            .send()
+            .await?
+            .json::<LedgerResult<AccountLedger>>()
+            .await?
+            .result)
     }
 
     pub async fn get_account_objects(&self, token_id: String) -> Result<AccountObjects, Box<dyn Error + Send + Sync>> {
         let params = json!({ "method": "account_objects", "params": [ { "ledger_index": "validated", "type": "state", "account": token_id } ] });
-
-        let response = self
+        Ok(self
             .client
             .post(self.url.clone())
             .json(&params)
             .send()
             .await?
             .json::<LedgerResult<AccountObjects>>()
-            .await?;
-
-        Ok(response.result)
+            .await?
+            .result)
     }
 }
