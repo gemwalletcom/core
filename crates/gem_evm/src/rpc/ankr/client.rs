@@ -2,9 +2,10 @@ use std::error::Error;
 
 use alloy_rpc_client::{ClientBuilder, RpcClient};
 use primitives::EVMChain;
+use serde_json::json;
 use url::Url;
 
-use crate::rpc::ankr::model::{ankr_chain, Transactions};
+use crate::rpc::ankr::model::{ankr_chain, TokenBalances, Transactions};
 
 #[derive(Clone)]
 pub struct AnkrClient {
@@ -32,6 +33,23 @@ impl AnkrClient {
             Ok(self.rpc_client.request("ankr_getTransactionsByAddress", params).await?)
         } else {
             Ok(Transactions { transactions: vec![] })
+        }
+    }
+
+    /// Reference: https://www.ankr.com/docs/advanced-api/token-methods/#ankr_getaccountbalance
+    pub async fn get_token_balances(&self, address: &str) -> Result<TokenBalances, Box<dyn Error + Send + Sync>> {
+        if let Some(chain) = ankr_chain(self.chain) {
+            let params = json!([
+                {
+                    "walletAddress": address,
+                    "blockchain": chain,
+                    "onlyWhitelisted": true,
+                }
+            ]);
+
+            Ok(self.rpc_client.request("ankr_getAccountBalance", params).await?)
+        } else {
+            Ok(TokenBalances { assets: vec![] })
         }
     }
 }

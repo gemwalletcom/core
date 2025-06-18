@@ -135,3 +135,22 @@ impl ChainTransactionsProvider for AnkrClient {
         Ok(AnkrMapper::map_transactions(transactions, self.chain.to_chain()))
     }
 }
+
+#[async_trait]
+impl ChainAssetsProvider for AnkrClient {
+    async fn get_assets_balances(&self, address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
+        let response = self.get_token_balances(&address).await?;
+        let balances = response
+            .assets
+            .into_iter()
+            .filter(|x| x.contract_address.is_some())
+            .filter_map(|x| {
+                ethereum_address_checksum(&x.contract_address?).ok().map(|from| AssetBalance {
+                    asset_id: AssetId::from_token(self.chain.to_chain(), &from),
+                    balance: x.balance_raw_integer.to_string(),
+                })
+            })
+            .collect();
+        Ok(balances)
+    }
+}

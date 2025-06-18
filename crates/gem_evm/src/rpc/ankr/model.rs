@@ -34,6 +34,27 @@ pub struct Transactions {
     pub transactions: Vec<Transaction>,
 }
 
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TokenBalances {
+    pub assets: Vec<TokenBalance>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TokenBalance {
+    pub contract_address: Option<String>,
+    #[serde(deserialize_with = "deserialize_biguint_from_hex_str")]
+    pub balance_raw_integer: BigUint,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AccountBalance {
+    pub address: Option<String>,
+    pub assets: Vec<TokenBalance>,
+}
+
 pub fn ankr_chain(chain: EVMChain) -> Option<String> {
     match chain {
         EVMChain::Ethereum => Some("eth".to_string()),
