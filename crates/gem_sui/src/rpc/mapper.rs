@@ -39,7 +39,6 @@ impl SuiMapper {
         let fee = Self::get_fee(effects.gas_used.clone());
         let created_at = Utc.timestamp_millis_opt(transaction.timestamp_ms as i64).unwrap();
         let owner = effects.gas_object.owner.get_address_owner();
-        let block_number = transaction.checkpoint.to_string();
 
         // system transfer
         if balance_changes.len() == 2
@@ -74,8 +73,6 @@ impl SuiMapper {
                 None,
                 TransactionType::Transfer,
                 state,
-                block_number,
-                0.to_string(),
                 fee.to_string(),
                 chain.as_asset_id(),
                 value.to_string(),
@@ -100,8 +97,6 @@ impl SuiMapper {
                 None,
                 TransactionType::StakeDelegate,
                 TransactionState::Confirmed,
-                block_number,
-                0.to_string(),
                 fee.to_string(),
                 chain.as_asset_id(),
                 stake.amount,
@@ -141,8 +136,6 @@ impl SuiMapper {
                 None,
                 TransactionType::Swap,
                 TransactionState::Confirmed,
-                block_number,
-                0.to_string(),
                 fee.to_string(),
                 chain.as_asset_id(),
                 swap.clone().from_value,
@@ -168,8 +161,6 @@ impl SuiMapper {
                 None,
                 TransactionType::StakeUndelegate,
                 TransactionState::Confirmed,
-                block_number,
-                0.to_string(),
                 fee.to_string(),
                 chain.as_asset_id(),
                 value,

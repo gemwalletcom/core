@@ -34,7 +34,7 @@ impl ChainBlockProvider for AptosProvider {
 
     async fn get_transactions(&self, block_number: i64) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
         let transactions = self.client.get_block_transactions(block_number).await?.transactions;
-        Ok(AptosMapper::map_transactions(self.get_chain(), transactions, block_number))
+        Ok(AptosMapper::map_transactions(self.get_chain(), transactions))
     }
 }
 
@@ -95,6 +95,6 @@ impl ChainAssetsProvider for AptosProvider {
 impl ChainTransactionsProvider for AptosProvider {
     async fn get_transactions_by_address(&self, address: String) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
         let transactions = self.client.get_transactions_by_address(address).await?;
-        Ok(AptosMapper::map_transactions(self.get_chain(), transactions, 0))
+        Ok(AptosMapper::map_transactions(self.get_chain(), transactions))
     }
 }

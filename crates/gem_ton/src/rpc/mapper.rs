@@ -39,8 +39,6 @@ impl TonMapper {
                 None,
                 TransactionType::Transfer,
                 state,
-                transaction.block.to_string(),
-                0.to_string(),
                 transaction.total_fees.to_string(),
                 asset_id,
                 value,

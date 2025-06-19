@@ -7,17 +7,17 @@ use std::str::FromStr;
 pub struct AptosMapper;
 
 impl AptosMapper {
-    pub fn map_transactions(chain: Chain, transactions: Vec<AptosTransaction>, block_number: i64) -> Vec<Transaction> {
+    pub fn map_transactions(chain: Chain, transactions: Vec<AptosTransaction>) -> Vec<Transaction> {
         let mut transactions = transactions
             .into_iter()
-            .flat_map(|x| AptosMapper::map_transaction(chain, x, block_number))
+            .flat_map(|x| AptosMapper::map_transaction(chain, x))
             .collect::<Vec<_>>();
 
         transactions.sort_by(|a, b| b.created_at.cmp(&a.created_at));
         transactions
     }
 
-    pub fn map_transaction(chain: Chain, transaction: AptosTransaction, block_number: i64) -> Option<Transaction> {
+    pub fn map_transaction(chain: Chain, transaction: AptosTransaction) -> Option<Transaction> {
         let events = transaction.clone().events.unwrap_or_default();
 
         if transaction.transaction_type == "user_transaction" && events.len() <= 4 {
@@ -44,8 +44,6 @@ impl AptosMapper {
                 None,
                 TransactionType::Transfer,
                 state,
-                block_number.to_string(),
-                transaction.sequence_number.unwrap_or_default(),
                 fee.to_string(),
                 asset_id,
                 value.clone(),

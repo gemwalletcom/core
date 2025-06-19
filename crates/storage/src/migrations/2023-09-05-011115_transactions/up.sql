@@ -11,8 +11,6 @@ CREATE TABLE transactions
     to_address   VARCHAR(256),
     contract     VARCHAR(256),
     memo         VARCHAR(256),
-    sequence     INTEGER,
-    block_number INTEGER      NOT NULL,
     state        VARCHAR(16)  NOT NULL,
     kind         VARCHAR(16)  NOT NULL REFERENCES transactions_types (id) ON DELETE CASCADE,
     value        VARCHAR(256),

@@ -29,8 +29,6 @@ impl AlchemyMapper {
                 contract_address,
                 primitives::TransactionType::Transfer,
                 primitives::TransactionState::Confirmed,
-                transaction.block_number.to_string(),
-                transaction.nonce,
                 fee,
                 chain.as_asset_id(),
                 transaction.value.clone(),

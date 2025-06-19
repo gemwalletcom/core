@@ -38,8 +38,6 @@ impl CardanoMapper {
             None,
             TransactionType::Transfer,
             primitives::TransactionState::Confirmed,
-            block.number.to_string(),
-            0.to_string(),
             transaction.fee.clone(),
             chain.as_asset_id(),
             "0".to_string(),

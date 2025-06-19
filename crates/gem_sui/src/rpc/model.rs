@@ -20,8 +20,6 @@ pub struct Digest {
     #[serde(rename = "timestampMs")]
     #[serde(deserialize_with = "deserialize_u64_from_str")]
     pub timestamp_ms: u64,
-    #[serde(deserialize_with = "deserialize_u64_from_str")]
-    pub checkpoint: u64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

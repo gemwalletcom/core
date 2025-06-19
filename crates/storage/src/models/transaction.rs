@@ -24,8 +24,6 @@ pub struct Transaction {
     pub value: Option<String>,
     pub fee: Option<String>,
     pub fee_asset_id: String,
-    pub block_number: i32,     // remove
-    pub sequence: Option<i32>, // remove
     pub from_address: Option<String>,
     pub to_address: Option<String>,
     pub kind: String,
@@ -62,8 +60,6 @@ impl Transaction {
             value: transaction.value.into(),
             fee: transaction.fee.into(),
             fee_asset_id: transaction.fee_asset_id.to_string(),
-            block_number: transaction.block_number.parse::<i32>().unwrap_or_default(),
-            sequence: transaction.sequence.parse::<i32>().unwrap_or_default().into(),
             from_address: transaction.from.into(),
             to_address: transaction.to.into(),
             kind: transaction.transaction_type.as_ref().to_string(),
@@ -102,8 +98,6 @@ impl Transaction {
             None,
             transaction_type,
             primitives::TransactionState::new(self.state.as_str()).unwrap(),
-            self.block_number.to_string(),
-            self.sequence.unwrap_or_default().to_string(),
             self.fee.clone().unwrap(),
             AssetId::new(self.fee_asset_id.clone().as_str()).unwrap(),
             self.value.clone().unwrap_or_default(),

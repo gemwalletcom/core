@@ -36,8 +36,6 @@ impl EthereumMapper {
             TransactionState::Failed
         };
         let value = transaction.value.to_string();
-        let nonce = transaction.clone().nonce;
-        let block_number = transaction.clone().block_number;
         let fee = transaction_reciept.get_fee().to_string();
         let from = ethereum_address_checksum(&transaction.from.clone()).ok()?;
         let to = ethereum_address_checksum(&transaction.to.clone().unwrap_or_default()).ok()?;
@@ -53,8 +51,6 @@ impl EthereumMapper {
                 None,
                 TransactionType::Transfer,
                 state,
-                block_number.to_string(),
-                nonce.to_string(),
                 fee.to_string(),
                 chain.as_asset_id(),
                 value,
@@ -85,8 +81,6 @@ impl EthereumMapper {
                 None,
                 TransactionType::Transfer,
                 state,
-                block_number.to_string(),
-                nonce.to_string(),
                 fee.to_string(),
                 chain.as_asset_id(),
                 amount.to_string(),

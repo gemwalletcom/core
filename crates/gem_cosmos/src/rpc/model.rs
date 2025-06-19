@@ -49,7 +49,6 @@ pub struct TransactionResponseBody {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TransactionResponseData {
     pub code: i64,
-    pub height: String,
     pub txhash: String,
     pub events: Vec<TransactionEvent>,
     pub timestamp: String,

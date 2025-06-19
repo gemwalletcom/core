@@ -20,17 +20,16 @@ impl PolkadotMapper {
         block
             .extrinsics
             .iter()
-            .flat_map(|x| Self::map_transaction(chain, block.clone(), x.clone(), created_at))
+            .flat_map(|x| Self::map_transaction(chain, x.clone(), created_at))
             .flatten()
             .collect()
     }
 
-    pub fn map_transaction(chain: Chain, block: Block, transaction: Extrinsic, created_at: DateTime<Utc>) -> Vec<Option<Transaction>> {
+    pub fn map_transaction(chain: Chain, transaction: Extrinsic, created_at: DateTime<Utc>) -> Vec<Option<Transaction>> {
         match &transaction.args.clone() {
             ExtrinsicArguments::Transfer(transfer) => {
                 vec![Self::map_transfer(
                     chain,
-                    block,
                     transaction.clone(),
                     transaction.method.method.clone(),
                     transfer.dest.id.clone(),
@@ -44,7 +43,6 @@ impl PolkadotMapper {
                 .map(|x| {
                     Self::map_transfer(
                         chain,
-                        block.clone(),
                         transaction.clone(),
                         x.method.method.clone(),
                         x.args.dest.id.clone(),
@@ -57,15 +55,7 @@ impl PolkadotMapper {
         }
     }
 
-    fn map_transfer(
-        chain: Chain,
-        block: Block,
-        transaction: Extrinsic,
-        method: String,
-        to_address: String,
-        value: String,
-        created_at: DateTime<Utc>,
-    ) -> Option<Transaction> {
+    fn map_transfer(chain: Chain, transaction: Extrinsic, method: String, to_address: String, value: String, created_at: DateTime<Utc>) -> Option<Transaction> {
         if method != TRANSACTION_TYPE_TRANSFER_ALLOW_DEATH && method != TRANSACTION_TYPE_TRANSFER_KEEP_ALIVE {
             return None;
         }
@@ -85,8 +75,6 @@ impl PolkadotMapper {
             None,
             TransactionType::Transfer,
             state,
-            block.number.to_string(),
-            transaction.nonce.unwrap_or_default().clone(),
             transaction.info.partial_fee.unwrap_or("0".to_string()),
             chain.as_asset_id(),
             value,

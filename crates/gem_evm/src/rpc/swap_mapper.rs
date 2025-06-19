@@ -46,8 +46,6 @@ impl SwapMapper {
                 Some(to_checksum.clone()),
                 TransactionType::Swap,
                 TransactionState::Confirmed,
-                transaction.block_number.to_string(),
-                transaction.nonce.to_string(),
                 transaction_reciept.get_fee().to_string(),
                 AssetId::from_chain(*chain), // Native asset
                 transaction.value.to_string(),

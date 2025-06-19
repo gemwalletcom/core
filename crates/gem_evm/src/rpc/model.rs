@@ -13,8 +13,6 @@ pub struct Block {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Transaction {
-    #[serde(deserialize_with = "deserialize_biguint_from_hex_str")]
-    pub block_number: BigUint,
     pub from: String,
     // pub gas: String,
     // pub gas_price: String,
@@ -22,8 +20,6 @@ pub struct Transaction {
     // pub max_fee_per_gas: Option<String>,
     pub hash: String,
     pub input: String,
-    #[serde(deserialize_with = "deserialize_biguint_from_hex_str")]
-    pub nonce: BigUint,
     pub to: Option<String>,
     #[serde(deserialize_with = "deserialize_biguint_from_hex_str")]
     pub value: BigUint,

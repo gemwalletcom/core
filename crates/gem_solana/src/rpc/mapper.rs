@@ -17,17 +17,16 @@ impl SolanaMapper {
         transactions
             .transactions
             .iter()
-            .filter_map(|transaction| Self::map_transaction(transaction, transactions.block_height, transactions.block_time))
+            .filter_map(|transaction| Self::map_transaction(transaction, transactions.block_time))
             .collect()
     }
 
-    pub fn map_transaction(transaction: &BlockTransaction, block_number: i64, block_time: i64) -> Option<primitives::Transaction> {
+    pub fn map_transaction(transaction: &BlockTransaction, block_time: i64) -> Option<primitives::Transaction> {
         let chain = Self::CHAIN;
         let account_keys = transaction.transaction.message.account_keys.clone();
         let signatures = transaction.transaction.signatures.clone();
         let hash = transaction.transaction.signatures.first()?.to_string();
         let fee = transaction.meta.fee;
-        let sequence = 0.to_string();
         let state = TransactionState::Confirmed;
         let fee_asset_id = chain.as_asset_id();
         let created_at = DateTime::from_timestamp(block_time, 0)?;
@@ -47,8 +46,6 @@ impl SolanaMapper {
                 None,
                 TransactionType::Transfer,
                 state,
-                block_number.to_string(),
-                sequence,
                 fee.to_string(),
                 fee_asset_id,
                 value.to_string(),
@@ -104,8 +101,6 @@ impl SolanaMapper {
                 None,
                 TransactionType::Transfer,
                 state,
-                block_number.to_string(),
-                sequence,
                 fee.to_string(),
                 fee_asset_id,
                 value.to_string(),
@@ -163,8 +158,6 @@ impl SolanaMapper {
                 Some(JUPITER_PROGRAM_ID.to_string()),
                 TransactionType::Swap,
                 state,
-                block_number.to_string(),
-                sequence,
                 fee.to_string(),
                 chain.as_asset_id(),
                 swap.from_value.clone().to_string(),
@@ -208,7 +201,7 @@ mod tests {
         let file = include_str!("../../testdata/swap_token_to_sol.json");
         let result: JsonRpcResult<BlockTransaction> = serde_json::from_str(file).unwrap();
 
-        let transaction = SolanaMapper::map_transaction(&result.result, 1, 1).unwrap();
+        let transaction = SolanaMapper::map_transaction(&result.result, 1).unwrap();
         let expected = TransactionSwapMetadata {
             from_asset: AssetId::from_token(Chain::Solana, "BKpSnSdNdANUxKPsn4AQ8mf4b9BoeVs9JD1Q8cVkpump"),
             from_value: "393647577456".to_string(),
@@ -225,7 +218,7 @@ mod tests {
         let file = include_str!("../../testdata/swap_token_to_token.json");
         let result: JsonRpcResult<BlockTransaction> = serde_json::from_str(file).unwrap();
 
-        let transaction = SolanaMapper::map_transaction(&result.result, 1, 1).unwrap();
+        let transaction = SolanaMapper::map_transaction(&result.result, 1).unwrap();
         let expected = TransactionSwapMetadata {
             from_asset: AssetId::from_token(Chain::Solana, "2b1kV6DkPAnxd5ixfnxCpjxmKwqjjaYmCZfHsFu24GXo"),
             from_value: "1000000".to_string(),
@@ -242,7 +235,7 @@ mod tests {
         let file = include_str!("../../testdata/swap_sol_to_token.json");
         let result: JsonRpcResult<BlockTransaction> = serde_json::from_str(file).unwrap();
 
-        let transaction = SolanaMapper::map_transaction(&result.result, 1, 1).unwrap();
+        let transaction = SolanaMapper::map_transaction(&result.result, 1).unwrap();
         let expected = TransactionSwapMetadata {
             from_asset: Chain::Solana.as_asset_id(),
             from_value: "10000000".to_string(),

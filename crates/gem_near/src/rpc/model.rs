@@ -28,7 +28,6 @@ pub struct Transaction {
     pub hash: String,
     pub signer_id: String,
     pub receiver_id: String,
-    pub nonce: i64,
     pub actions: Vec<Action>,
 }
 

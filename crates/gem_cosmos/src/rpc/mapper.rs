@@ -9,12 +9,10 @@ pub struct CosmosMapper;
 impl CosmosMapper {
     pub fn map_transaction(chain: Chain, transaction: TransactionDecode, receipt: TransactionResponse) -> Option<Transaction> {
         let tx_auth = transaction.tx.auth_info.clone()?;
-        let sequence = tx_auth.signer_infos.first()?.sequence;
         let default_denom = chain.as_denom()?;
         let fee = tx_auth.fee?.amount.into_iter().filter(|x| x.denom == default_denom).collect::<Vec<_>>();
         let fee = fee.first()?.amount.clone();
         let memo = transaction.tx_body.memo.clone();
-        let block_number = receipt.tx_response.height.clone();
         let hash = receipt.tx_response.txhash.clone();
         let state = if receipt.tx_response.code == 0 {
             TransactionState::Confirmed
@@ -101,8 +99,6 @@ impl CosmosMapper {
                 None,
                 transaction_type,
                 state,
-                block_number,
-                sequence.to_string(),
                 fee,
                 asset_id.clone(),
                 value,

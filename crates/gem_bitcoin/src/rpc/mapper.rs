@@ -44,8 +44,6 @@ impl BitcoinMapper {
             None,
             TransactionType::Transfer,
             primitives::TransactionState::Confirmed,
-            transaction.block_height.to_string(),
-            0.to_string(),
             transaction.fees.clone(),
             chain.as_asset_id(),
             "0".to_string(),

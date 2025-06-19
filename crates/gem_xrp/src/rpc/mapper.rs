@@ -21,7 +21,7 @@ impl XRPMapper {
         ledger
             .transactions
             .into_iter()
-            .flat_map(|x| Self::map_block_transaction(chain, x, ledger.ledger_index, ledger.close_time))
+            .flat_map(|x| Self::map_block_transaction(chain, x, ledger.close_time))
             .collect::<Vec<Transaction>>()
     }
 
@@ -41,10 +41,8 @@ impl XRPMapper {
         amount: Option<Amount>,
         destination_tag: Option<i64>,
         fee: Option<String>,
-        sequence: i64,
         transaction_type: String,
         meta_result: String,
-        block_number: u64,
         timestamp: i64,
     ) -> Option<Transaction> {
         if transaction_type == TRANSACTION_TYPE_PAYMENT {
@@ -68,8 +66,6 @@ impl XRPMapper {
                 None,
                 TransactionType::Transfer,
                 state,
-                block_number.to_string(),
-                sequence.to_string(),
                 fee.unwrap_or_default(),
                 chain.as_asset_id(),
                 value,
@@ -90,15 +86,13 @@ impl XRPMapper {
             transaction.tx_json.amount,
             transaction.tx_json.destination_tag,
             transaction.tx_json.fee,
-            transaction.tx_json.sequence,
             transaction.tx_json.transaction_type,
             transaction.meta.result,
-            transaction.ledger_index as u64,
             XRP_EPOCH_OFFSET_SECONDS + transaction.tx_json.date,
         )
     }
 
-    pub fn map_block_transaction(chain: Chain, transaction: XrpTransaction, block_number: u64, close_time: i64) -> Option<Transaction> {
+    pub fn map_block_transaction(chain: Chain, transaction: XrpTransaction, close_time: i64) -> Option<Transaction> {
         Self::map_transaction_common(
             chain,
             transaction.hash,
@@ -107,10 +101,8 @@ impl XRPMapper {
             transaction.amount,
             transaction.destination_tag,
             transaction.fee,
-            transaction.sequence,
             transaction.transaction_type,
             transaction.meta.result,
-            block_number,
             XRP_EPOCH_OFFSET_SECONDS + close_time,
         )
     }
@@ -164,8 +156,6 @@ mod tests {
             None,
             TransactionType::Transfer,
             TransactionState::Confirmed,
-            "96608991".to_string(),
-            "95916370".to_string(),
             "11".to_string(),
             Chain::Xrp.as_asset_id(),
             "1".to_string(),

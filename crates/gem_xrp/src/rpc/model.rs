@@ -83,8 +83,6 @@ pub struct AccountLedgerTransactionJSON {
     pub destination: Option<String>,
     #[serde(rename = "TransactionType")]
     pub transaction_type: String,
-    #[serde(rename = "Sequence")]
-    pub sequence: i64,
     pub date: i64,
     #[serde(rename = "DestinationTag")]
     pub destination_tag: Option<i64>,
@@ -105,8 +103,6 @@ pub struct Transaction {
     pub destination: Option<String>,
     #[serde(rename = "TransactionType")]
     pub transaction_type: String,
-    #[serde(rename = "Sequence")]
-    pub sequence: i64,
     #[serde(rename = "DestinationTag")]
     pub destination_tag: Option<i64>,
     #[serde(rename = "Memos")]

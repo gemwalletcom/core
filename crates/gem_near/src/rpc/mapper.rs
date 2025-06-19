@@ -21,8 +21,6 @@ impl NearMapper {
                         None,
                         TransactionType::Transfer,
                         TransactionState::Confirmed,
-                        header.height.to_string(),
-                        transaction.nonce.to_string(),
                         "830000000000000000000".to_string(), // Standard Near transaction fee
                         asset_id,
                         deposit.clone(),

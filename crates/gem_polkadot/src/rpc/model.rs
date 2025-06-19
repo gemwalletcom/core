@@ -22,7 +22,6 @@ pub struct Block {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Extrinsic {
     pub hash: String,
-    pub nonce: Option<String>,
     pub method: ExtrinsicMethod,
     pub info: ExtrinsicInfo,
     pub success: bool,

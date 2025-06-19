@@ -16,8 +16,6 @@ impl AlgorandMapper {
                 None,
                 TransactionType::Transfer,
                 TransactionState::Confirmed,
-                block.rnd.to_string(),
-                0.to_string(),
                 transaction.fee.unwrap_or_default().to_string(),
                 chain.as_asset_id(),
                 transaction.amt.unwrap_or_default().to_string(),

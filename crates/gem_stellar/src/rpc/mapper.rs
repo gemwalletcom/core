@@ -29,8 +29,6 @@ impl StellarMapper {
                         None,
                         TransactionType::Transfer,
                         transaction.get_state(),
-                        "0".to_string(),
-                        0.to_string(),
                         "1000".to_string(), // TODO: Calculate from block/transaction
                         chain.as_asset_id(),
                         transaction.get_value()?,
