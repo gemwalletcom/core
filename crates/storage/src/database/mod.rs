@@ -54,8 +54,6 @@ impl DatabaseClient {
                     .on_conflict(super::schema::transactions::id)
                     .do_update()
                     .set((
-                        block_number.eq(excluded(block_number)),
-                        sequence.eq(excluded(sequence)),
                         fee.eq(excluded(fee)),
                         fee_asset_id.eq(excluded(fee_asset_id)),
                         memo.eq(excluded(memo)),
