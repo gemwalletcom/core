@@ -1,5 +1,7 @@
 use chrono::DateTime;
-use primitives::{chain::Chain, Transaction, TransactionState, TransactionType};
+use primitives::{chain::Chain, AssetBalance, AssetId, Transaction, TransactionState, TransactionType};
+
+use crate::rpc::model::Asset;
 
 use super::model::{Block, Transaction as AlgoTransaction, TRANSACTION_TYPE_PAY};
 
@@ -25,5 +27,12 @@ impl AlgorandMapper {
             )),
             _ => None,
         }
+    }
+
+    pub fn map_assets_balance(assets: Vec<Asset>) -> Vec<AssetBalance> {
+        assets
+            .into_iter()
+            .map(|asset| AssetBalance::new(AssetId::from_token(Chain::Algorand, &asset.asset_id.to_string()), asset.amount.to_string()))
+            .collect()
     }
 }
