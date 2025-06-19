@@ -12,6 +12,14 @@ pub struct Block {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
+pub struct BlockTransactionsIds {
+    pub transactions: Vec<String>,
+    #[serde(deserialize_with = "deserialize_biguint_from_hex_str")]
+    pub timestamp: BigUint,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct Transaction {
     pub from: String,
     // pub gas: String,
@@ -23,6 +31,7 @@ pub struct Transaction {
     pub to: Option<String>,
     #[serde(deserialize_with = "deserialize_biguint_from_hex_str")]
     pub value: BigUint,
+    pub block_number: String,
     // #[serde(rename = "type")]
     // pub transaction_type: String,
 }

@@ -8,11 +8,7 @@ use crate::{ChainAssetsProvider, ChainBlockProvider, ChainTokenDataProvider, Cha
 use gem_evm::{
     erc20::{decode_abi_string, decode_abi_uint8, IERC20},
     ethereum_address_checksum,
-    rpc::{
-        alchemy::AlchemyClient,
-        ankr::{AnkrClient, AnkrMapper},
-        EthereumClient, EthereumMapper,
-    },
+    rpc::{alchemy::AlchemyClient, ankr::AnkrClient, EthereumClient, EthereumMapper},
 };
 use primitives::{Asset, AssetBalance, AssetId, Chain, Transaction};
 
@@ -119,10 +115,8 @@ impl ChainAssetsProvider for AlchemyClient {
 
 #[async_trait]
 impl ChainTransactionsProvider for AlchemyClient {
-    async fn get_transactions_by_address(&self, _address: String) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
-        return Ok(vec![]);
-        //let transactions = self.get_asset_transfers(address.as_str()).await?.transactions;
-        //Ok(AlchemyMapper::map_transactions(transactions, self.chain.to_chain()))
+    async fn get_transactions_by_address(&self, address: String) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
+        Ok(self.get_transactions_by_address(address.as_str()).await?)
     }
 }
 
@@ -131,8 +125,7 @@ impl ChainTransactionsProvider for AlchemyClient {
 #[async_trait]
 impl ChainTransactionsProvider for AnkrClient {
     async fn get_transactions_by_address(&self, address: String) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
-        let transactions = self.get_transactions_by_address(address.as_str()).await?.transactions;
-        Ok(AnkrMapper::map_transactions(transactions, self.chain.to_chain()))
+        Ok(self.get_transactions_by_address(address.as_str(), 25).await?)
     }
 }
 

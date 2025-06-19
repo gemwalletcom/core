@@ -3366,6 +3366,7 @@ dependencies = [
  "async-trait",
  "bigdecimal",
  "chrono",
+ "futures",
  "gem_hash",
  "gem_jsonrpc",
  "hex",

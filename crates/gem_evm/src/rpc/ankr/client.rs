@@ -5,29 +5,58 @@ use primitives::EVMChain;
 use serde_json::json;
 use url::Url;
 
-use crate::rpc::ankr::model::{ankr_chain, TokenBalances, Transactions};
+use crate::rpc::{
+    ankr::model::{ankr_chain, TokenBalances, Transactions},
+    EthereumClient, EthereumMapper,
+};
 
 #[derive(Clone)]
 pub struct AnkrClient {
     pub chain: EVMChain,
+    pub client: EthereumClient,
     rpc_client: RpcClient,
 }
 
 impl AnkrClient {
-    pub fn new(chain: EVMChain, api_key: String) -> Self {
+    pub fn new(client: EthereumClient, api_key: String) -> Self {
         let url = format!("https://rpc.ankr.com/multichain/{}", api_key);
         let rpc_client = ClientBuilder::default().http(Url::parse(&url).expect("Invalid Ankr API URL"));
 
-        Self { chain, rpc_client }
+        Self {
+            chain: client.chain,
+            client,
+            rpc_client,
+        }
+    }
+
+    pub async fn get_transactions_by_address(&self, address: &str, limit: i64) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Send + Sync>> {
+        let transaction_ids = self.get_transactions_ids_by_address(address, limit).await?;
+        Ok(self
+            .client
+            .get_transactions(transaction_ids.clone())
+            .await?
+            .into_iter()
+            .filter_map(|x| EthereumMapper::map_transaction(self.chain.to_chain(), &x.1.clone(), &x.2.clone(), x.0.timestamp.clone()))
+            .collect())
+    }
+
+    pub async fn get_transactions_ids_by_address(&self, address: &str, limit: i64) -> Result<Vec<String>, Box<dyn Error + Send + Sync>> {
+        Ok(self
+            .get_ankr_transactions_by_address(address, limit)
+            .await?
+            .transactions
+            .into_iter()
+            .map(|x| x.hash)
+            .collect::<Vec<String>>())
     }
 
     /// Reference: https://www.ankr.com/docs/advanced-api/query-methods/#ankr_gettransactionsbyaddress
-    pub async fn get_transactions_by_address(&self, address: &str) -> Result<Transactions, Box<dyn Error + Send + Sync>> {
+    pub async fn get_ankr_transactions_by_address(&self, address: &str, limit: i64) -> Result<Transactions, Box<dyn Error + Send + Sync>> {
         if let Some(chain) = ankr_chain(self.chain) {
             let params = serde_json::json!({
                 "address": address,
                 "blockchain": chain,
-                "page_size": 50,
+                "page_size": limit,
                 "desc_order": true
             });
             Ok(self.rpc_client.request("ankr_getTransactionsByAddress", params).await?)

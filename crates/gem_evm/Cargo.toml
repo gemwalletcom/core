@@ -12,6 +12,7 @@ rpc = [
     "dep:url",
     "dep:chrono",
     "dep:async-trait",
+    "dep:futures",
 ]
 
 [dependencies]
@@ -41,3 +42,4 @@ alloy-rpc-types = { workspace = true, optional = true }
 url = { workspace = true, features = ["serde"], optional = true }
 chrono = { workspace = true, optional = true }
 async-trait = { workspace = true, optional = true }
+futures = { workspace = true, optional = true }

@@ -82,10 +82,11 @@ impl ProviderFactory {
             | Chain::Hyperliquid
             | Chain::Monad => {
                 let chain = EVMChain::from_chain(chain).unwrap();
-                let assets_provider = AlchemyClient::new(chain, config.alchemy_key.clone());
-                let transactions_provider = AnkrClient::new(chain, config.ankr_key.clone());
+                let client = EthereumClient::new(chain, url);
+                let assets_provider = AlchemyClient::new(client.clone(), config.alchemy_key.clone());
+                let transactions_provider = AnkrClient::new(client.clone(), config.ankr_key.clone());
                 Box::new(EthereumProvider::new(
-                    EthereumClient::new(chain, url),
+                    client,
                     Box::new(assets_provider.clone()),
                     Box::new(transactions_provider.clone()),
                 ))
