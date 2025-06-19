@@ -19,7 +19,6 @@ pub struct TransactionsFetchOption {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[typeshare(swift = "Sendable, Equatable")]
 pub struct Transaction {
-    pub id: String,
     pub hash: String,
     #[serde(rename = "assetId")]
     pub asset_id: AssetId,
@@ -56,8 +55,8 @@ impl Transaction {
         contract: Option<String>,
         transaction_type: TransactionType,
         state: TransactionState,
-        block_number: String,
-        sequence: String,
+        block_number: String, // remove
+        sequence: String,     // remove
         fee: String,
         fee_asset_id: AssetId,
         value: String,
@@ -65,9 +64,7 @@ impl Transaction {
         metadata: Option<serde_json::Value>,
         created_at: DateTime<Utc>,
     ) -> Self {
-        let id = Self::id_from(asset_id.clone().chain, hash.clone());
         Self {
-            id,
             hash,
             asset_id,
             from: from_address,
@@ -87,6 +84,10 @@ impl Transaction {
             metadata,
             created_at,
         }
+    }
+
+    pub fn id(&self) -> String {
+        Self::id_from(self.asset_id.clone().chain, self.hash.clone())
     }
 
     pub fn new_with_utxo(
@@ -109,9 +110,7 @@ impl Transaction {
         metadata: Option<serde_json::Value>,
         created_at: DateTime<Utc>,
     ) -> Self {
-        let id = Self::id_from(asset_id.clone().chain, hash.clone());
         Self {
-            id,
             hash,
             asset_id,
             from: from.unwrap_or_default(),
@@ -217,7 +216,6 @@ impl Transaction {
         };
 
         Transaction {
-            id: self.id.clone(),
             hash: self.hash.clone(),
             asset_id: self.asset_id.clone(),
             from,

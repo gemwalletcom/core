@@ -24,8 +24,8 @@ pub struct Transaction {
     pub value: Option<String>,
     pub fee: Option<String>,
     pub fee_asset_id: String,
-    pub block_number: i32,
-    pub sequence: Option<i32>,
+    pub block_number: i32,     // remove
+    pub sequence: Option<i32>, // remove
     pub from_address: Option<String>,
     pub to_address: Option<String>,
     pub kind: String,
@@ -38,8 +38,24 @@ pub struct Transaction {
 
 impl Transaction {
     pub fn from_primitive(transaction: primitives::Transaction) -> Self {
+        let utxo_inputs = if transaction.utxo_inputs.is_empty() {
+            None
+        } else {
+            serde_json::to_value(transaction.utxo_inputs.clone()).ok()
+        };
+        let utxo_outputs = if transaction.clone().utxo_outputs.is_empty() {
+            None
+        } else {
+            serde_json::to_value(transaction.clone().utxo_outputs.clone()).ok()
+        };
+        let metadata = if transaction.metadata.is_none() {
+            None
+        } else {
+            serde_json::to_value(transaction.metadata.clone()).ok()
+        };
+
         Self {
-            id: transaction.id.to_string(),
+            id: transaction.id(),
             chain: transaction.asset_id.chain.as_ref().to_string(),
             memo: transaction.memo,
             asset_id: transaction.asset_id.to_string(),
@@ -53,9 +69,9 @@ impl Transaction {
             kind: transaction.transaction_type.as_ref().to_string(),
             state: transaction.state.to_string(),
             created_at: transaction.created_at.naive_utc(),
-            utxo_inputs: serde_json::to_value(transaction.utxo_inputs).ok(),
-            utxo_outputs: serde_json::to_value(transaction.utxo_outputs).ok(),
-            metadata: serde_json::to_value(transaction.metadata).ok(),
+            utxo_inputs,
+            utxo_outputs,
+            metadata,
         }
     }
 
