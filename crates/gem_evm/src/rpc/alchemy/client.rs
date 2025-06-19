@@ -1,9 +1,6 @@
 use std::error::Error;
 
-use crate::rpc::{
-    alchemy::{model::alchemy_rpc_url, Transactions},
-    EthereumClient, EthereumMapper,
-};
+use crate::rpc::{alchemy::model::alchemy_rpc_url, EthereumClient, EthereumMapper};
 use alloy_rpc_client::{ClientBuilder, RpcClient};
 use primitives::EVMChain;
 use url::Url;
@@ -13,25 +10,30 @@ use crate::rpc::alchemy::TokenBalances;
 #[derive(Clone)]
 pub struct AlchemyClient {
     pub chain: EVMChain,
-    pub client: EthereumClient,
+    api_key: String,
+    ethereum_client: EthereumClient,
     rpc_client: RpcClient,
 }
 
 impl AlchemyClient {
     const DISABLED_RPC_CHAINS: [EVMChain; 5] = [EVMChain::Mantle, EVMChain::Hyperliquid, EVMChain::OpBNB, EVMChain::Monad, EVMChain::Fantom];
 
-    pub fn new(client: EthereumClient, api_key: String) -> Self {
-        let chain = client.chain;
+    pub fn new(ethereum_client: EthereumClient, api_key: String) -> Self {
+        let chain = ethereum_client.chain;
         let rpc_client = ClientBuilder::default().http(Url::parse(&alchemy_rpc_url(chain, &api_key)).expect("Invalid Alchemy API URL"));
 
-        Self { chain, client, rpc_client }
+        Self {
+            chain,
+            api_key,
+            ethereum_client,
+            rpc_client,
+        }
     }
 
-    pub async fn get_transactions_by_address(&self, _address: &str) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Send + Sync>> {
-        //TODO: Implement list
-        let transactions_ids = vec![]; //self.get_asset_transfers(address.as_str()).await?.transactions;
+    pub async fn get_transactions_by_address(&self, address: &str) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Send + Sync>> {
+        let transactions_ids = self.get_transactions_ids_by_address(address).await?;
         Ok(self
-            .client
+            .ethereum_client
             .get_transactions(transactions_ids.clone())
             .await?
             .into_iter()
@@ -49,25 +51,12 @@ impl AlchemyClient {
         }
         Ok(self.rpc_client.request("alchemy_getTokenBalances", (address,)).await?)
     }
+    // https://www.alchemy.com/docs/data/portfolio-apis/portfolio-api-endpoints/portfolio-api-endpoints/get-transaction-history-by-address
+    //TODO: implement
+    pub async fn get_transactions_ids_by_address(&self, _address: &str) -> Result<Vec<String>, Box<dyn Error + Send + Sync>> {
+        let _url = format!("https://api.g.alchemy.com/data/v1/{}/transactions/history/by-address", &self.api_key);
+        //let client = ClientBuilder::default().http(Url::parse(&url).expect("Invalid Alchemy API URL"));
 
-    // https://www.alchemy.com/docs/data/transfers-api/transfers-endpoints/alchemy-get-asset-transfers
-    pub async fn get_asset_transfers(&self, address: &str) -> Result<Transactions, Box<dyn Error + Send + Sync>> {
-        if Self::DISABLED_RPC_CHAINS.contains(&self.chain) {
-            return Ok(Transactions { transactions: vec![] });
-        }
-        let params = serde_json::json!([{
-            "fromBlock": "0x0",
-            //"fromAddress": address,
-            "toAddress": address,
-            "excludeZeroValue": true,
-            "category": [
-                "external",
-                "internal",
-                "erc20",
-            ],
-            "order": "desc"
-        }]);
-
-        Ok(self.rpc_client.request("alchemy_getAssetTransfers", params).await?)
+        Ok(vec![])
     }
 }
