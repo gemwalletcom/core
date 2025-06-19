@@ -9,7 +9,7 @@ use std::{error::Error, fmt::Debug, str::FromStr};
 
 use crate::{
     metaplex::{decode_metadata, metadata::Metadata},
-    model::{BlockTransactions, Signature, TokenAccountInfo, ValueData, ValueResult},
+    model::{BlockTransaction, BlockTransactions, Signature, TokenAccountInfo, ValueData, ValueResult},
     pubkey::Pubkey,
 };
 
@@ -124,6 +124,43 @@ impl SolanaClient {
             }),
         ];
         Ok(self.client.request("getTokenAccountsByOwner", params).await?)
+    }
+
+    pub async fn get_transaction(&self, signature: &str) -> Result<Vec<Signature>, Box<dyn Error + Send + Sync>> {
+        let params = vec![
+            json!(signature),
+            json!({
+                "maxSupportedTransactionVersion": 0
+            }),
+        ];
+        Ok(self.client.request("getTransaction", params).await?)
+    }
+
+    pub async fn get_transactions(&self, signatures: Vec<String>) -> Result<Vec<BlockTransaction>, Box<dyn Error + Send + Sync>> {
+        let mut batch = BatchRequestBuilder::default();
+
+        for signature in &signatures {
+            batch.insert(
+                "getTransaction",
+                vec![
+                    json!(signature),
+                    json!({
+                        "maxSupportedTransactionVersion": 0,
+                        "transactionDetails": "full",
+                    }),
+                ],
+            )?;
+        }
+
+        let data = self
+            .client
+            .batch_request::<BlockTransaction>(batch)
+            .await?
+            .iter()
+            .map(|x| x.as_ref().unwrap().clone())
+            .collect();
+
+        Ok(data)
     }
 
     pub async fn get_signatures_for_address(&self, address: &str, limit: u64) -> Result<Vec<Signature>, Box<dyn Error + Send + Sync>> {

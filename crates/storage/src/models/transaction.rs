@@ -51,6 +51,8 @@ impl Transaction {
         } else {
             serde_json::to_value(transaction.metadata.clone()).ok()
         };
+        let from_address = if transaction.from.is_empty() { None } else { Some(transaction.from) };
+        let to_address = if transaction.to.is_empty() { None } else { Some(transaction.to) };
 
         Self {
             id: transaction.id,
@@ -60,8 +62,8 @@ impl Transaction {
             value: transaction.value.into(),
             fee: transaction.fee.into(),
             fee_asset_id: transaction.fee_asset_id.to_string(),
-            from_address: transaction.from.into(),
-            to_address: transaction.to.into(),
+            from_address,
+            to_address,
             kind: transaction.transaction_type.as_ref().to_string(),
             state: transaction.state.to_string(),
             created_at: transaction.created_at.naive_utc(),

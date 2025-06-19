@@ -39,7 +39,7 @@ impl ChainBlockProvider for SolanaProvider {
     async fn get_transactions(&self, block_number: i64) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
         let block = self.client.get_block(block_number, Some("json"), Some("full"), Some(false), Some(0)).await;
         match block {
-            Ok(block) => Ok(SolanaMapper::map_transactions(&block)),
+            Ok(block) => Ok(SolanaMapper::map_block_transactions(&block)),
             Err(err) => match err {
                 ClientError::Call(err) => {
                     let errors = [MISSING_SLOT_ERROR, MISSING_OR_SKIPPED_SLOT_ERROR, NOT_AVAILABLE_SLOT_ERROR, CLEANUP_BLOCK_ERROR];
@@ -84,16 +84,10 @@ impl ChainTokenDataProvider for SolanaProvider {
 #[async_trait]
 impl ChainTransactionsProvider for SolanaProvider {
     async fn get_transactions_by_address(&self, address: String) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
-        let transaction_ids = self
-            .client
-            .get_signatures_for_address(&address, 5)
-            .await?
-            .into_iter()
-            .map(|x| x.signature)
-            .collect::<Vec<String>>();
+        let signatures = self.client.get_signatures_for_address(&address, 20).await?;
+        let transaction_ids = signatures.clone().into_iter().map(|x| x.signature).collect();
+        let transactions = self.client.get_transactions(transaction_ids).await?;
 
-        println!("transaction_ids: {:?}", transaction_ids);
-
-        Ok(vec![])
+        Ok(SolanaMapper::map_signatures_transactions(transactions, signatures))
     }
 }

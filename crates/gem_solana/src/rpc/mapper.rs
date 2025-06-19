@@ -3,7 +3,7 @@ use num_bigint::Sign;
 
 use crate::{
     metaplex::metadata::Metadata,
-    model::{BlockTransaction, BlockTransactions, TokenInfo},
+    model::{BlockTransaction, BlockTransactions, Signature, TokenInfo},
     JUPITER_PROGRAM_ID, SYSTEM_PROGRAM_ID, TOKEN_PROGRAM,
 };
 use primitives::{Asset, AssetId, AssetType, Chain, SwapProvider, Transaction, TransactionState, TransactionSwapMetadata, TransactionType};
@@ -13,11 +13,19 @@ pub struct SolanaMapper;
 impl SolanaMapper {
     const CHAIN: Chain = Chain::Solana;
 
-    pub fn map_transactions(transactions: &BlockTransactions) -> Vec<primitives::Transaction> {
+    pub fn map_block_transactions(transactions: &BlockTransactions) -> Vec<primitives::Transaction> {
         transactions
             .transactions
             .iter()
             .filter_map(|transaction| Self::map_transaction(transaction, transactions.block_time))
+            .collect()
+    }
+
+    pub fn map_signatures_transactions(transactions: Vec<BlockTransaction>, signatures: Vec<Signature>) -> Vec<primitives::Transaction> {
+        transactions
+            .iter()
+            .zip(signatures.iter())
+            .filter_map(|(transaction, signature)| Self::map_transaction(transaction, signature.block_time))
             .collect()
     }
 
