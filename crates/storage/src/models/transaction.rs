@@ -53,7 +53,7 @@ impl Transaction {
         };
 
         Self {
-            id: transaction.id(),
+            id: transaction.id,
             chain: transaction.asset_id.chain.as_ref().to_string(),
             memo: transaction.memo,
             asset_id: transaction.asset_id.to_string(),

@@ -14,7 +14,7 @@ pub struct TransactionAddresses {
 
 impl TransactionAddresses {
     pub fn from_primitive(transaction: primitives::Transaction) -> Vec<TransactionAddresses> {
-        let transaction_id = transaction.id();
+        let transaction_id = transaction.id.clone();
         match transaction.transaction_type {
             TransactionType::Transfer
             | TransactionType::TokenApproval

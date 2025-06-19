@@ -19,6 +19,7 @@ pub struct TransactionsFetchOption {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[typeshare(swift = "Sendable, Equatable")]
 pub struct Transaction {
+    pub id: String,
     pub hash: String,
     #[serde(rename = "assetId")]
     pub asset_id: AssetId,
@@ -63,6 +64,7 @@ impl Transaction {
         created_at: DateTime<Utc>,
     ) -> Self {
         Self {
+            id: Self::id_from(asset_id.chain, hash.clone()),
             hash,
             asset_id,
             from: from_address,
@@ -84,10 +86,6 @@ impl Transaction {
         }
     }
 
-    pub fn id(&self) -> String {
-        Self::id_from(self.asset_id.clone().chain, self.hash.clone())
-    }
-
     pub fn new_with_utxo(
         hash: String,
         asset_id: AssetId,
@@ -107,6 +105,7 @@ impl Transaction {
         created_at: DateTime<Utc>,
     ) -> Self {
         Self {
+            id: Self::id_from(asset_id.chain, hash.clone()),
             hash,
             asset_id,
             from: from.unwrap_or_default(),
@@ -212,6 +211,7 @@ impl Transaction {
         };
 
         Transaction {
+            id: Self::id_from(self.asset_id.chain, self.hash.clone()),
             hash: self.hash.clone(),
             asset_id: self.asset_id.clone(),
             from,

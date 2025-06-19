@@ -41,7 +41,7 @@ impl MessageConsumer<TransactionsPayload, usize> for TransactionsConsumer {
         for subscription in subscriptions {
             for transaction in transactions.clone() {
                 if transaction.addresses().contains(&subscription.address) {
-                    transactions_map.insert(transaction.clone().id(), transaction.clone());
+                    transactions_map.insert(transaction.clone().id.clone(), transaction.clone());
 
                     let device = self.database.lock().await.get_device_by_id(subscription.device_id)?;
                     let transaction = transaction.finalize(vec![subscription.address.clone()]).clone();
@@ -68,11 +68,11 @@ impl MessageConsumer<TransactionsPayload, usize> for TransactionsConsumer {
                     fetch_assets_payload.extend_from_slice(&missing_assets_ids);
 
                     if self.config.is_transaction_outdated(transaction.created_at.naive_utc(), chain) {
-                        println!("outdated transaction: {}, created_at: {}", transaction.id(), transaction.created_at);
+                        println!("outdated transaction: {}, created_at: {}", transaction.id.clone(), transaction.created_at);
                     } else if payload.blocks.is_empty() {
                         println!(
                             "empty blocks (only store, no push), transaction: {}, created_at: {}",
-                            transaction.id(),
+                            transaction.id.clone(),
                             transaction.created_at
                         );
                     } else if assets_ids.ids_set() == assets_ids.ids_set() {
