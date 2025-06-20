@@ -14,6 +14,7 @@ serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 
 # RPC specific dependencies (optional)
+reqwest = { workspace = true, optional = true }
 reqwest-middleware = { workspace = true, features = ["json"], optional = true }
 chrono = { workspace = true, features = ["serde"], optional = true }
 num-bigint = { workspace = true, optional = true }
@@ -23,6 +24,7 @@ gem_evm = { path = "../gem_evm", optional = true }
 [features]
 default = []
 rpc = [
+    "dep:reqwest",
     "dep:reqwest-middleware",
     "dep:chrono",
     "dep:num-bigint",

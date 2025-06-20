@@ -2,19 +2,27 @@ use std::error::Error;
 
 use crate::{ChainAssetsProvider, ChainBlockProvider, ChainTokenDataProvider, ChainTransactionsProvider};
 use async_trait::async_trait;
+use gem_tron::rpc::trongrid::client::TronGridClient;
 use primitives::{chain::Chain, Asset};
 use primitives::{AssetBalance, Transaction};
 
+use gem_tron::rpc::trongrid::mapper::TronGridMapper;
 use gem_tron::rpc::TronClient;
 use gem_tron::rpc::TronMapper;
 
 pub struct TronProvider {
     client: TronClient,
+    assets_provider: Box<dyn ChainAssetsProvider>,
+    transactions_provider: Box<dyn ChainTransactionsProvider>,
 }
 
 impl TronProvider {
-    pub fn new(client: TronClient) -> Self {
-        Self { client }
+    pub fn new(client: TronClient, assets_provider: Box<dyn ChainAssetsProvider>, transactions_provider: Box<dyn ChainTransactionsProvider>) -> Self {
+        Self {
+            client,
+            assets_provider,
+            transactions_provider,
+        }
     }
 }
 
@@ -45,14 +53,41 @@ impl ChainTokenDataProvider for TronProvider {
 
 #[async_trait]
 impl ChainAssetsProvider for TronProvider {
-    async fn get_assets_balances(&self, _address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
-        Ok(vec![]) //TODO: ChainAssetsProvider
+    async fn get_assets_balances(&self, address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
+        self.assets_provider.get_assets_balances(address).await
     }
 }
 
 #[async_trait]
 impl ChainTransactionsProvider for TronProvider {
-    async fn get_transactions_by_address(&self, _address: String) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
-        Ok(vec![]) //TODO: ChainTransactionsProvider
+    async fn get_transactions_by_address(&self, address: String) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
+        self.transactions_provider.get_transactions_by_address(address).await
+    }
+}
+
+// Tron Grid
+#[async_trait]
+impl ChainAssetsProvider for TronGridClient {
+    async fn get_assets_balances(&self, address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
+        let accounts = self.get_accounts_by_address(&address).await?.data;
+        if let Some(account) = accounts.first() {
+            Ok(TronGridMapper::map_asset_balances(account.clone()))
+        } else {
+            Ok(vec![])
+        }
+    }
+}
+
+#[async_trait]
+impl ChainTransactionsProvider for TronGridClient {
+    async fn get_transactions_by_address(&self, address: String) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
+        let transactions = self.get_transactions_by_address(&address).await?.data;
+        if transactions.is_empty() {
+            return Ok(vec![]);
+        }
+        let transaction_ids = transactions.iter().map(|x| x.tx_id.clone()).collect::<Vec<String>>();
+        let reciepts = self.get_transactions_reciepts(transaction_ids).await?;
+
+        Ok(TronGridMapper::map_transactions(transactions.clone(), reciepts))
     }
 }

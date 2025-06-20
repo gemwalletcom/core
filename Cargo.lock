@@ -3508,6 +3508,7 @@ dependencies = [
  "num-bigint",
  "num-traits",
  "primitives",
+ "reqwest",
  "reqwest-middleware",
  "serde",
  "serde_json",
