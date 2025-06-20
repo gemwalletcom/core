@@ -25,13 +25,12 @@ pub async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 
     if mode == "consumers" {
         return consumers::run_consumers(settings, database.clone()).await;
-    } else if mode == "consumer_transactions" {
-        tokio::spawn(consumers::run_consumer_store_transactions(settings.clone(), database.clone()));
-        tokio::spawn(consumers::run_consumer_fetch_transactions(settings.clone(), database.clone()));
-        std::future::pending::<()>().await;
-        return Ok(());
-    } else if mode == "consumer_blocks" {
-        return consumers::run_consumer_fetch_blocks(settings, database.clone()).await;
+    } else if mode == "consumer_fetch_transactions" {
+        return consumers::run_consumer_fetch_transactions(settings.clone(), database.clone()).await;
+    } else if mode == "consumer_store_transactions" {
+        return consumers::run_consumer_store_transactions(settings.clone(), database.clone()).await;
+    } else if mode == "consumer_fetch_blocks" {
+        return consumers::run_consumer_fetch_blocks(settings.clone(), database.clone()).await;
     } else if mode == "consumer_assets" {
         tokio::spawn(consumers::run_consumer_fetch_assets(settings.clone(), database.clone()));
         tokio::spawn(consumers::run_consumer_fetch_assets_addresses_associations(settings.clone(), database.clone()));
