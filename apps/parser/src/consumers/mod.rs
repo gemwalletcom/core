@@ -78,7 +78,7 @@ pub async fn run_consumer_store_transactions(settings: Settings, database: Arc<M
     streamer::run_consumer::<TransactionsPayload, TransactionsConsumer, usize>(
         name,
         stream_reader,
-        QueueName::Transactions,
+        QueueName::StoreTransactions,
         consumer,
         ConsumerConfig::default(),
     )

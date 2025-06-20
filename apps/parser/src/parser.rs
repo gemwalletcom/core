@@ -141,7 +141,7 @@ impl Parser {
             return Ok(0);
         }
         let payload = TransactionsPayload::new(self.chain, blocks.clone(), transactions.clone());
-        self.stream_producer.publish(QueueName::Transactions, &payload).await?;
+        self.stream_producer.publish(QueueName::StoreTransactions, &payload).await?;
         Ok(transactions.len())
     }
 }

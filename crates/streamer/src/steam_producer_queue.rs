@@ -27,7 +27,7 @@ impl StreamProducerQueue for StreamProducer {
         if payload.transactions.is_empty() {
             return Ok(true);
         }
-        self.publish(QueueName::Transactions, &payload).await
+        self.publish(QueueName::StoreTransactions, &payload).await
     }
 
     async fn publish_notifications_transactions(&self, payload: Vec<NotificationsPayload>) -> Result<bool, Box<dyn Error + Send + Sync>> {

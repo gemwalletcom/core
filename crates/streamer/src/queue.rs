@@ -4,7 +4,7 @@ use strum::{EnumIter, IntoEnumIterator};
 #[derive(Debug, Clone, EnumIter)]
 pub enum QueueName {
     // Process transactions, store and send notifications. Push assets to address_assets table and fetch new assets
-    Transactions,
+    StoreTransactions,
     // Notifications for price alerts
     NotificationsPriceAlerts,
     // Notifications for transactions
@@ -34,7 +34,7 @@ impl QueueName {
 impl fmt::Display for QueueName {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            QueueName::Transactions => write!(f, "transactions"),
+            QueueName::StoreTransactions => write!(f, "store_transactions"),
             QueueName::NotificationsPriceAlerts => write!(f, "notifications_price_alerts"),
             QueueName::NotificationsTransactions => write!(f, "notifications_transactions"),
             QueueName::FetchAssets => write!(f, "fetch_assets"),
