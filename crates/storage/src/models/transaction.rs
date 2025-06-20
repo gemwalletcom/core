@@ -53,13 +53,18 @@ impl Transaction {
         };
         let from_address = if transaction.from.is_empty() { None } else { Some(transaction.from) };
         let to_address = if transaction.to.is_empty() { None } else { Some(transaction.to) };
+        let value = if transaction.value.is_empty() || transaction.value == "0" {
+            None
+        } else {
+            Some(transaction.value)
+        };
 
         Self {
             id: transaction.id,
             chain: transaction.asset_id.chain.as_ref().to_string(),
             memo: transaction.memo,
             asset_id: transaction.asset_id.to_string(),
-            value: transaction.value.into(),
+            value,
             fee: transaction.fee.into(),
             fee_asset_id: transaction.fee_asset_id.to_string(),
             from_address,
@@ -102,7 +107,7 @@ impl Transaction {
             primitives::TransactionState::new(self.state.as_str()).unwrap(),
             self.fee.clone().unwrap(),
             AssetId::new(self.fee_asset_id.clone().as_str()).unwrap(),
-            self.value.clone().unwrap_or_default(),
+            self.value.clone().unwrap_or("0".to_string()),
             self.memo.clone(),
             direction,
             inputs.clone(),
