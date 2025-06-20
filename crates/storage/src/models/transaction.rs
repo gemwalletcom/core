@@ -2,17 +2,9 @@ use std::str::FromStr;
 
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
-use primitives::{transaction_utxo::TransactionInput, AssetId, TransactionDirection, TransactionId};
+use primitives::{transaction_utxo::TransactionInput, AssetId, TransactionId};
 use serde::{Deserialize, Serialize};
 
-// #[derive(FromSqlRow, Serialize, Deserialize, Debug, Default, AsExpression)]
-// #[diesel(sql_type = Jsonb)]
-// pub struct TransactionUTXO {
-//pub address: String,
-//pub value: String,
-//}
-
-//AsChangeset
 #[derive(Debug, Queryable, Selectable, Serialize, Deserialize, Insertable, Clone)]
 #[diesel(table_name = crate::schema::transactions)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
@@ -79,7 +71,6 @@ impl Transaction {
     }
 
     pub fn as_primitive(&self, addresses: Vec<String>) -> primitives::Transaction {
-        //TODO: Remove addresses from here
         let transaction_id = TransactionId::from_str(&self.id.clone()).unwrap();
         let asset_id = AssetId::new(self.asset_id.clone().as_str()).unwrap();
         let hash = transaction_id.hash.clone();
@@ -116,15 +107,6 @@ impl Transaction {
             self.created_at.and_utc(),
         )
     }
-}
-
-pub struct TransactionC {
-    pub from_address: Option<String>,
-    pub to_address: Option<String>,
-    pub value: String,
-    pub direction: TransactionDirection,
-    pub inputs: Option<Vec<TransactionInput>>,
-    pub outputs: Option<Vec<TransactionInput>>,
 }
 
 #[derive(Debug, Queryable, Selectable, Insertable, Serialize, Deserialize, Clone)]
