@@ -6,26 +6,7 @@ use serde_serializers::deserialize_biguint_from_hex_str;
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Transaction {
-    pub input: String,
-    #[serde(deserialize_with = "deserialize_biguint_from_hex_str")]
-    pub block_number: BigUint,
-    #[serde(deserialize_with = "deserialize_biguint_from_hex_str")]
-    pub timestamp: BigUint,
-    pub from: String,
-    pub to: String,
-    #[serde(deserialize_with = "deserialize_biguint_from_hex_str")]
-    pub value: BigUint,
     pub hash: String,
-    #[serde(deserialize_with = "deserialize_biguint_from_hex_str")]
-    pub gas: BigUint,
-    #[serde(deserialize_with = "deserialize_biguint_from_hex_str")]
-    pub gas_price: BigUint,
-    #[serde(deserialize_with = "deserialize_biguint_from_hex_str")]
-    pub gas_used: BigUint,
-    #[serde(deserialize_with = "deserialize_biguint_from_hex_str")]
-    pub nonce: BigUint,
-    pub contract_address: Option<String>,
-    pub status: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -46,13 +27,6 @@ pub struct TokenBalance {
     pub contract_address: Option<String>,
     #[serde(deserialize_with = "deserialize_biguint_from_hex_str")]
     pub balance_raw_integer: BigUint,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct AccountBalance {
-    pub address: Option<String>,
-    pub assets: Vec<TokenBalance>,
 }
 
 pub fn ankr_chain(chain: EVMChain) -> Option<String> {

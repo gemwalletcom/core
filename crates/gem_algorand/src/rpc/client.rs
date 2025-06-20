@@ -2,6 +2,8 @@ use std::error::Error;
 
 use reqwest_middleware::ClientWithMiddleware;
 
+use crate::rpc::model::Account;
+
 use super::model::{Block, BlockResponse, BlockTransactionIds, TransactionsParams};
 
 pub struct AlgorandClient {
@@ -16,7 +18,12 @@ impl AlgorandClient {
 
     pub async fn get_transactions_params(&self) -> Result<TransactionsParams, Box<dyn Error + Send + Sync>> {
         let url = format!("{}/v2/transactions/params", self.url);
-        Ok(self.client.get(url).send().await?.json::<TransactionsParams>().await?)
+        Ok(self.client.get(url).send().await?.json().await?)
+    }
+
+    pub async fn get_account(&self, address: &str) -> Result<Account, Box<dyn Error + Send + Sync>> {
+        let url = format!("{}/v2/accounts/{}", self.url, address);
+        Ok(self.client.get(url).send().await?.json().await?)
     }
 
     pub async fn get_block(&self, block_number: i64) -> Result<Block, Box<dyn Error + Send + Sync>> {

@@ -51,8 +51,9 @@ impl ChainTokenDataProvider for AlgorandProvider {
 
 #[async_trait]
 impl ChainAssetsProvider for AlgorandProvider {
-    async fn get_assets_balances(&self, _address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
-        Ok(vec![]) //TODO: ChainAssetsProvider
+    async fn get_assets_balances(&self, address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
+        let account = self.client.get_account(&address).await?;
+        Ok(AlgorandMapper::map_assets_balance(account.assets))
     }
 }
 

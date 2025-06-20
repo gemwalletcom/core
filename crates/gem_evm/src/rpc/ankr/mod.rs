@@ -4,4 +4,4 @@ pub mod model;
 
 pub use client::AnkrClient;
 pub use mapper::AnkrMapper;
-pub use model::{AccountBalance, TokenBalance, Transaction, Transactions};
+pub use model::{TokenBalance, Transaction, Transactions};

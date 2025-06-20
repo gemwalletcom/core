@@ -459,8 +459,6 @@ diesel::table! {
         contract -> Nullable<Varchar>,
         #[max_length = 256]
         memo -> Nullable<Varchar>,
-        sequence -> Nullable<Int4>,
-        block_number -> Int4,
         #[max_length = 16]
         state -> Varchar,
         #[max_length = 16]

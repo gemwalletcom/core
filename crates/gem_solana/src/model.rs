@@ -97,16 +97,17 @@ pub struct AccountKey {
     pub pubkey: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Transaction {
     pub message: TransactionMessage,
     pub signatures: Vec<String>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Signature {
+    pub block_time: i64,
     pub signature: String,
 }
 
@@ -116,7 +117,7 @@ pub struct TransactionMessage {
     pub account_keys: Vec<String>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct BlockTransaction {
     pub meta: Meta,
@@ -167,6 +168,14 @@ impl BlockTransaction {
 pub struct BlockTransactions {
     pub block_time: i64,
     pub transactions: Vec<BlockTransaction>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SingleTransaction {
+    pub block_time: i64,
+    pub meta: Meta,
+    pub transaction: Transaction,
 }
 
 #[derive(Debug, Deserialize, Clone)]

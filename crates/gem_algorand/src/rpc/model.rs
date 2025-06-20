@@ -53,3 +53,15 @@ impl Transaction {
             .map(|s| s.to_string())
     }
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Account {
+    pub assets: Vec<Asset>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Asset {
+    #[serde(rename = "asset-id")]
+    pub asset_id: i64,
+    pub amount: i64,
+}

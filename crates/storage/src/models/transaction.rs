@@ -2,17 +2,9 @@ use std::str::FromStr;
 
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
-use primitives::{transaction_utxo::TransactionInput, AssetId, TransactionDirection, TransactionId};
+use primitives::{transaction_utxo::TransactionInput, AssetId, TransactionId};
 use serde::{Deserialize, Serialize};
 
-// #[derive(FromSqlRow, Serialize, Deserialize, Debug, Default, AsExpression)]
-// #[diesel(sql_type = Jsonb)]
-// pub struct TransactionUTXO {
-//pub address: String,
-//pub value: String,
-//}
-
-//AsChangeset
 #[derive(Debug, Queryable, Selectable, Serialize, Deserialize, Insertable, Clone)]
 #[diesel(table_name = crate::schema::transactions)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
@@ -51,17 +43,24 @@ impl Transaction {
         } else {
             serde_json::to_value(transaction.metadata.clone()).ok()
         };
+        let from_address = if transaction.from.is_empty() { None } else { Some(transaction.from) };
+        let to_address = if transaction.to.is_empty() { None } else { Some(transaction.to) };
+        let value = if transaction.value.is_empty() || transaction.value == "0" {
+            None
+        } else {
+            Some(transaction.value)
+        };
 
         Self {
-            id: transaction.id(),
+            id: transaction.id,
             chain: transaction.asset_id.chain.as_ref().to_string(),
             memo: transaction.memo,
             asset_id: transaction.asset_id.to_string(),
-            value: transaction.value.into(),
+            value,
             fee: transaction.fee.into(),
             fee_asset_id: transaction.fee_asset_id.to_string(),
-            from_address: transaction.from.into(),
-            to_address: transaction.to.into(),
+            from_address,
+            to_address,
             kind: transaction.transaction_type.as_ref().to_string(),
             state: transaction.state.to_string(),
             created_at: transaction.created_at.naive_utc(),
@@ -72,7 +71,6 @@ impl Transaction {
     }
 
     pub fn as_primitive(&self, addresses: Vec<String>) -> primitives::Transaction {
-        //TODO: Remove addresses from here
         let transaction_id = TransactionId::from_str(&self.id.clone()).unwrap();
         let asset_id = AssetId::new(self.asset_id.clone().as_str()).unwrap();
         let hash = transaction_id.hash.clone();
@@ -100,7 +98,7 @@ impl Transaction {
             primitives::TransactionState::new(self.state.as_str()).unwrap(),
             self.fee.clone().unwrap(),
             AssetId::new(self.fee_asset_id.clone().as_str()).unwrap(),
-            self.value.clone().unwrap_or_default(),
+            self.value.clone().unwrap_or("0".to_string()),
             self.memo.clone(),
             direction,
             inputs.clone(),
@@ -109,15 +107,6 @@ impl Transaction {
             self.created_at.and_utc(),
         )
     }
-}
-
-pub struct TransactionC {
-    pub from_address: Option<String>,
-    pub to_address: Option<String>,
-    pub value: String,
-    pub direction: TransactionDirection,
-    pub inputs: Option<Vec<TransactionInput>>,
-    pub outputs: Option<Vec<TransactionInput>>,
 }
 
 #[derive(Debug, Queryable, Selectable, Insertable, Serialize, Deserialize, Clone)]
