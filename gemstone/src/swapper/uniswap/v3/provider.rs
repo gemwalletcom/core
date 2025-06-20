@@ -2,7 +2,7 @@ use crate::{
     network::{AlienProvider, JsonRpcClient, JsonRpcError},
     swapper::{
         approval::{check_approval_erc20, check_approval_permit2},
-        eth_address::{self},
+        eth_address,
         models::*,
         slippage::apply_slippage_in_bp,
         uniswap::{
@@ -54,16 +54,6 @@ impl UniswapV3 {
         Ok((evm_chain, token_in, token_out, amount_in))
     }
 
-    fn spender(&self, chain: &Chain) -> Result<Address, SwapperError> {
-        let deployment = self.provider.get_deployment_by_chain(chain).ok_or(SwapperError::NotSupportedChain)?;
-
-        if !self.provider.has_permit2() {
-            // If provider has permit2, we use it as spender
-            return eth_address::parse_str(deployment.universal_router);
-        }
-        eth_address::parse_str(deployment.permit2)
-    }
-
     async fn check_erc20_approval(
         &self,
         wallet_address: Address,
@@ -72,9 +62,14 @@ impl UniswapV3 {
         chain: &Chain,
         provider: Arc<dyn AlienProvider>,
     ) -> Result<ApprovalType, SwapperError> {
-        let spender = self.spender(chain)?;
-        // Check token allowance, spender is permit2
-        check_approval_erc20(wallet_address.to_string(), token.to_string(), spender.to_string(), amount, provider, chain).await
+        let deployment = self.provider.get_deployment_by_chain(chain).ok_or(SwapperError::NotSupportedChain)?;
+        let spender = if self.provider.has_permit2() {
+            deployment.permit2.to_string()
+        } else {
+            deployment.universal_router.to_string()
+        };
+        // Check token allowance, spender is permit2 or universal router
+        check_approval_erc20(wallet_address.to_string(), token.to_string(), spender, amount, provider, chain).await
     }
 
     async fn check_permit2_approval(
@@ -85,11 +80,10 @@ impl UniswapV3 {
         chain: &Chain,
         provider: Arc<dyn AlienProvider>,
     ) -> Result<Option<Permit2ApprovalData>, SwapperError> {
-        let deployment = self.provider.get_deployment_by_chain(chain).ok_or(SwapperError::NotSupportedChain)?;
-        let permit2_address = Address::from_str(deployment.permit2).map_err(|_| SwapperError::InvalidAddress("Invalid Permit2 address".to_string()))?;
-        if permit2_address == Address::ZERO {
+        if !self.provider.has_permit2() {
             return Ok(None);
         }
+        let deployment = self.provider.get_deployment_by_chain(chain).ok_or(SwapperError::NotSupportedChain)?;
 
         Ok(check_approval_permit2(
             deployment.permit2,
@@ -239,7 +233,6 @@ impl Swapper for UniswapV3 {
         let approval: Option<ApprovalData> = if quote.request.from_asset.is_native() {
             None
         } else {
-            // Check if need to approve permit2 contract
             self.check_erc20_approval(wallet_address, &token_in.to_checksum(None), amount_in, &from_chain, provider)
                 .await?
                 .approval_data()

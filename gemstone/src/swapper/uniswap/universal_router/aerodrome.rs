@@ -24,7 +24,7 @@ impl UniversalRouterProvider for AerodromeUniversalRouter {
     }
 
     fn get_tiers(&self) -> Vec<gem_evm::uniswap::FeeTier> {
-        vec![FeeTier::Hundred, FeeTier::FiveHundred, FeeTier::TwoThousandFiveHundred, FeeTier::TenThousand]
+        vec![FeeTier::Hundred, FeeTier::FiveHundred, FeeTier::ThreeThousand, FeeTier::TenThousand]
     }
 
     fn get_deployment_by_chain(&self, chain: &Chain) -> Option<V3Deployment> {
