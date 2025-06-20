@@ -85,6 +85,9 @@ impl ChainTokenDataProvider for SolanaProvider {
 impl ChainTransactionsProvider for SolanaProvider {
     async fn get_transactions_by_address(&self, address: String) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
         let signatures = self.client.get_signatures_for_address(&address, 20).await?;
+        if signatures.is_empty() {
+            return Ok(vec![]);
+        }
         let transaction_ids = signatures.clone().into_iter().map(|x| x.signature).collect();
         let transactions = self.client.get_transactions(transaction_ids).await?;
 

@@ -31,6 +31,9 @@ impl AnkrClient {
 
     pub async fn get_transactions_by_address(&self, address: &str, limit: i64) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Send + Sync>> {
         let transaction_ids = self.get_transactions_ids_by_address(address, limit).await?;
+        if transaction_ids.is_empty() {
+            return Ok(vec![]);
+        }
         Ok(self
             .client
             .get_transactions(transaction_ids.clone())

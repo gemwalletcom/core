@@ -21,8 +21,8 @@ pub struct Block {
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct AddressTransactions {
-    pub transactions: Vec<Transaction>,
+pub struct AddressDetails {
+    pub transactions: Option<Vec<Transaction>>,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
