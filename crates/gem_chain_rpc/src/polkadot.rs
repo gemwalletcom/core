@@ -44,7 +44,7 @@ impl ChainTokenDataProvider for PolkadotProvider {
 #[async_trait]
 impl ChainAssetsProvider for PolkadotProvider {
     async fn get_assets_balances(&self, _address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
-        Ok(vec![]) //TODO: ChainAssetsProvider
+        Ok(vec![])
     }
 }
 

@@ -6,15 +6,10 @@ use crate::{ChainAssetsProvider, ChainBlockProvider, ChainTokenDataProvider, Cha
 
 use gem_solana::{
     model::ResultTokenInfo,
-    rpc::{client::SolanaClient, mapper::SolanaMapper},
+    rpc::{client::SolanaClient, mapper::SolanaMapper, CLEANUP_BLOCK_ERROR, MISSING_OR_SKIPPED_SLOT_ERROR, MISSING_SLOT_ERROR, NOT_AVAILABLE_SLOT_ERROR},
     TOKEN_PROGRAM,
 };
 use primitives::{chain::Chain, Asset, AssetBalance, AssetId, Transaction};
-
-const CLEANUP_BLOCK_ERROR: i32 = -32001;
-const MISSING_SLOT_ERROR: i32 = -32007;
-const MISSING_OR_SKIPPED_SLOT_ERROR: i32 = -32009;
-const NOT_AVAILABLE_SLOT_ERROR: i32 = -32004;
 
 pub struct SolanaProvider {
     client: SolanaClient,
