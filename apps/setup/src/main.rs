@@ -114,8 +114,6 @@ async fn main() {
     for queue in queues.clone() {
         let _ = stream_producer.declare_queue(queue).await;
     }
-    let _ = stream_producer.delete_queue("address_assets").await;
-    let _ = stream_producer.delete_queue("store_assets_addresses_associations").await;
 
     for exchange in exchanges.clone() {
         let _ = stream_producer.declare_exchange(exchange.clone()).await;
