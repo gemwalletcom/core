@@ -59,5 +59,10 @@ pub fn get_provider_by_chain_contract(chain: &Chain, contract: &str) -> Option<S
             return Some(SwapProvider::Reservoir.id().to_string());
         }
     }
+    if let Some(deployment) = v3::get_aerodrome_router_deployment_by_chain(chain) {
+        if deployment.universal_router.to_lowercase() == contract.to_lowercase() {
+            return Some(SwapProvider::Aerodrome.id().to_string());
+        }
+    }
     None
 }

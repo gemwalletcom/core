@@ -10,6 +10,11 @@ sol! {
     interface IUniversalRouter {
         function execute(bytes calldata commands, bytes[] calldata inputs, uint256 deadline) external payable;
     }
+
+    #[derive(Debug)]
+    interface Dispatcher {
+        function execute(bytes calldata commands, bytes[] calldata inputs) public payable override isNotLocked;
+    }
 }
 
 // https://github.com/Uniswap/v3-periphery/blob/main/contracts/interfaces/IQuoterV2.sol

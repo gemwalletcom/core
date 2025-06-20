@@ -164,3 +164,15 @@ pub fn get_reservoir_deployment_by_chain(chain: &Chain) -> Option<V3Deployment> 
         _ => None,
     }
 }
+
+pub fn get_aerodrome_router_deployment_by_chain(chain: &Chain) -> Option<V3Deployment> {
+    // https://aerodrome.finance/security
+    match chain {
+        Chain::Base => Some(V3Deployment {
+            quoter_v2: "0x254cF9E1E6e233aa1AC962CB9B05b2cfeAaE15b0",
+            universal_router: "0x6Cb442acF35158D5eDa88fe602221b67B400Be3E",
+            permit2: "0x0000000000000000000000000000000000000000", // Aerodrome does not use permit2
+        }),
+        _ => None,
+    }
+}

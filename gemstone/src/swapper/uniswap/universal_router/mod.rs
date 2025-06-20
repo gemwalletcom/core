@@ -1,3 +1,4 @@
+mod aerodrome;
 mod oku;
 mod pancakeswap;
 mod reservoir;
@@ -12,6 +13,10 @@ pub fn new_uniswap_v3() -> UniswapV3 {
 
 pub fn new_pancakeswap() -> UniswapV3 {
     UniswapV3::new(Box::new(pancakeswap::PancakeSwapUniversalRouter::default()))
+}
+
+pub fn new_aerodrome() -> UniswapV3 {
+    UniswapV3::new(Box::new(aerodrome::AerodromeUniversalRouter::default()))
 }
 
 pub fn new_oku() -> UniswapV3 {
