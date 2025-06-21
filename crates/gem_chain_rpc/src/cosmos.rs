@@ -2,6 +2,7 @@ use std::error::Error;
 
 use crate::{ChainAssetsProvider, ChainBlockProvider, ChainTokenDataProvider, ChainTransactionsProvider};
 use async_trait::async_trait;
+use futures::future;
 use primitives::Transaction;
 use primitives::{Asset, AssetBalance, Chain};
 
@@ -25,30 +26,22 @@ impl ChainBlockProvider for CosmosProvider {
     }
 
     async fn get_latest_block(&self) -> Result<i64, Box<dyn Error + Send + Sync>> {
-        let block = self.client.get_block("latest").await?;
-        Ok(block.block.header.height.parse::<i64>()?)
+        Ok(self.client.get_block("latest").await?.block.header.height.parse()?)
     }
 
     async fn get_transactions(&self, block: i64) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
         let response = self.client.get_block(block.to_string().as_str()).await?;
-        let transactions = response.block.data.txs;
-
-        let txs = transactions
+        let transaction_ids = response
+            .block
+            .data
+            .txs
             .clone()
             .into_iter()
-            .flat_map(|x| self.client.map_transaction_decode(x))
+            .flat_map(CosmosMapper::map_transaction_decode)
             .collect::<Vec<_>>();
-        let txs_futures = txs.clone().into_iter().map(|x| self.client.get_transaction(x.hash));
-        let receipts = futures::future::try_join_all(txs_futures).await?;
+        let receipts = future::try_join_all(transaction_ids.into_iter().map(|x| self.client.get_transaction(x))).await?;
 
-        let transactions = txs
-            .clone()
-            .into_iter()
-            .zip(receipts.iter())
-            .filter_map(|(transaction, receipt)| CosmosMapper::map_transaction(self.get_chain(), transaction, receipt.clone()))
-            .collect::<Vec<Transaction>>();
-
-        Ok(transactions)
+        Ok(CosmosMapper::map_transactions(self.get_chain(), receipts))
     }
 }
 
@@ -68,7 +61,8 @@ impl ChainAssetsProvider for CosmosProvider {
 
 #[async_trait]
 impl ChainTransactionsProvider for CosmosProvider {
-    async fn get_transactions_by_address(&self, _address: String) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
-        Ok(vec![]) //TODO: ChainTransactionsProvider
+    async fn get_transactions_by_address(&self, address: String) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
+        let transactions = self.client.get_transactions_by_address(&address, 20).await?;
+        Ok(CosmosMapper::map_transactions(self.get_chain(), transactions))
     }
 }

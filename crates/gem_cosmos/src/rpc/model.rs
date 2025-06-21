@@ -5,6 +5,8 @@ use base64::{engine::general_purpose, Engine as _};
 use num_bigint::BigInt;
 use serde::{Deserialize, Serialize};
 
+use crate::rpc::message::{AuthInfo, CosmosMessage, MsgSend};
+
 pub const EVENTS_WITHDRAW_REWARDS_TYPE: &str = "withdraw_rewards";
 pub const EVENTS_ATTRIBUTE_AMOUNT: &str = "amount";
 
@@ -31,6 +33,11 @@ pub struct BlockData {
 
 // transaction
 
+#[derive(Debug, Clone)]
+pub struct TransactionDecode {
+    pub hash: String,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TransactionResponse {
     pub tx: TransactionResponseTx,
@@ -38,12 +45,21 @@ pub struct TransactionResponse {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TransactionResponseTx {
-    pub body: TransactionResponseBody,
+pub struct TransactionsResponse {
+    pub txs: Vec<TransactionResponseTx>,
+    pub tx_responses: Vec<TransactionResponseData>,
 }
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TransactionResponseBody {
-    pub messages: Vec<serde_json::Value>,
+pub struct TransactionResponseTx {
+    pub body: TransactionBody,
+    pub auth_info: AuthInfo,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TransactionBody {
+    pub memo: String,
+    pub messages: Vec<CosmosMessage>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -74,7 +90,7 @@ impl TransactionResponse {
             .events
             .clone()
             .into_iter()
-            .filter(|x| x.event_type == EVENTS_WITHDRAW_REWARDS_TYPE) // Corrected: super::model:: removed
+            .filter(|x| x.event_type == EVENTS_WITHDRAW_REWARDS_TYPE)
             .flat_map(|x| x.attributes)
             .collect::<Vec<_>>();
 
@@ -109,14 +125,7 @@ impl TransactionResponse {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct MessageSend {
-    pub from_address: String,
-    pub to_address: String,
-    pub amount: Vec<Coin>,
-}
-
-impl MessageSend {
+impl MsgSend {
     pub fn get_amount(&self, denom: &str) -> Option<BigInt> {
         let value = self
             .amount
@@ -127,10 +136,4 @@ impl MessageSend {
             .sum();
         Some(value)
     }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Coin {
-    pub denom: String,
-    pub amount: String,
 }

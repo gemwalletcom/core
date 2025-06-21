@@ -1,88 +1,102 @@
+use base64::{engine::general_purpose, Engine as _};
 use chrono::DateTime;
 use primitives::{AssetId, Chain, Transaction, TransactionState, TransactionType};
+use sha2::{Digest, Sha256};
 
-use super::client::TransactionDecode;
-use super::model::TransactionResponse;
+use crate::rpc::client::MESSAGES;
+use crate::rpc::message::{AuthInfo, CosmosMessage};
+use crate::rpc::model::{TransactionBody, TransactionResponse};
 
 pub struct CosmosMapper;
 
 impl CosmosMapper {
-    pub fn map_transaction(chain: Chain, transaction: TransactionDecode, receipt: TransactionResponse) -> Option<Transaction> {
-        let tx_auth = transaction.tx.auth_info.clone()?;
+    pub fn map_transaction_decode(body: String) -> Option<String> {
+        let bytes = general_purpose::STANDARD.decode(body.clone()).ok()?;
+        let tx: cosmos_sdk_proto::cosmos::tx::v1beta1::Tx = cosmos_sdk_proto::prost::Message::decode(&*bytes).ok()?;
+        let tx_body = tx.clone().body?;
+
+        // only decode supported transactions.
+        if tx_body
+            .clone()
+            .messages
+            .into_iter()
+            .filter(|x| MESSAGES.contains(&x.type_url.as_str()))
+            .collect::<Vec<_>>()
+            .is_empty()
+        {
+            return None;
+        }
+        Some(Self::get_hash(bytes.clone()))
+    }
+
+    pub fn get_hash(bytes: Vec<u8>) -> String {
+        hex::encode(Sha256::digest(bytes.clone())).to_uppercase()
+    }
+
+    pub fn map_transactions(chain: Chain, transactions: Vec<TransactionResponse>) -> Vec<primitives::Transaction> {
+        transactions
+            .clone()
+            .into_iter()
+            .filter_map(|x| CosmosMapper::map_transaction(chain, x.tx.body.clone(), x.tx.auth_info.clone(), x.clone()))
+            .collect::<Vec<Transaction>>()
+    }
+
+    pub fn map_transaction(chain: Chain, body: TransactionBody, auth_info: AuthInfo, transaction: TransactionResponse) -> Option<Transaction> {
+        let hash = transaction.tx_response.txhash.clone();
         let default_denom = chain.as_denom()?;
-        let fee = tx_auth.fee?.amount.into_iter().filter(|x| x.denom == default_denom).collect::<Vec<_>>();
+        let fee = auth_info.fee.amount.into_iter().filter(|x| x.denom == default_denom).collect::<Vec<_>>();
         let fee = fee.first()?.amount.clone();
-        let memo = transaction.tx_body.memo.clone();
-        let hash = receipt.tx_response.txhash.clone();
-        let state = if receipt.tx_response.code == 0 {
+        let memo = if body.memo.is_empty() { None } else { Some(body.memo.clone()) };
+
+        let state = if transaction.tx_response.code == 0 {
             TransactionState::Confirmed
         } else {
             TransactionState::Reverted
         };
-        let created_at = DateTime::parse_from_rfc3339(&receipt.tx_response.timestamp).ok()?.into();
+        let created_at = DateTime::parse_from_rfc3339(&transaction.tx_response.timestamp).ok()?.into();
 
-        for message in transaction.clone().tx_body.messages {
+        if body.messages.len() > 1 {
+            return None;
+        }
+
+        for message in body.messages {
             let asset_id: AssetId;
             let transaction_type: TransactionType;
             let value: String;
             let from_address: String;
             let to_address: String;
-
-            match message.type_url.as_str() {
-                super::client::MESSAGE_SEND | super::client::MESSAGE_SEND_BETA => {
-                    // special handling for thorchain as it uses a different message type and decoding does not work
-                    if message.type_url.as_str() == super::client::MESSAGE_SEND {
-                        let message: super::model::MessageSend = serde_json::from_slice(&message.value).ok()?;
-                        asset_id = chain.as_asset_id();
-                        transaction_type = TransactionType::Transfer;
-                        value = message.amount.first()?.amount.clone();
-                        from_address = message.from_address;
-                        to_address = message.to_address;
-                    } else {
-                        let message: cosmos_sdk_proto::cosmos::bank::v1beta1::MsgSend = cosmos_sdk_proto::prost::Message::decode(&*message.value).ok()?;
-
-                        asset_id = chain.as_asset_id();
-                        transaction_type = TransactionType::Transfer;
-                        // Getting the amount requires client helper, so users of this mapper will need to extract the amount
-                        value = Self::extract_amount(&message.amount)?;
-                        from_address = message.from_address;
-                        to_address = message.to_address;
-                    }
+            match message {
+                CosmosMessage::MsgSend(message) => {
+                    asset_id = chain.as_asset_id();
+                    transaction_type = TransactionType::Transfer;
+                    value = message.amount.first()?.amount.clone();
+                    from_address = message.from_address;
+                    to_address = message.to_address;
                 }
-                super::client::MESSAGE_DELEGATE => {
-                    let message: cosmos_sdk_proto::cosmos::staking::v1beta1::MsgDelegate = cosmos_sdk_proto::prost::Message::decode(&*message.value).ok()?;
-
+                CosmosMessage::MsgDelegate(message) => {
                     asset_id = chain.as_asset_id();
                     transaction_type = TransactionType::StakeDelegate;
                     value = message.amount?.amount.clone();
                     from_address = message.delegator_address;
                     to_address = message.validator_address;
                 }
-                super::client::MESSAGE_UNDELEGATE => {
-                    let message: cosmos_sdk_proto::cosmos::staking::v1beta1::MsgUndelegate = cosmos_sdk_proto::prost::Message::decode(&*message.value).ok()?;
-
+                CosmosMessage::MsgUndelegate(message) => {
                     asset_id = chain.as_asset_id();
                     transaction_type = TransactionType::StakeUndelegate;
                     value = message.amount?.amount.clone();
                     from_address = message.delegator_address;
                     to_address = message.validator_address;
                 }
-                super::client::MESSAGE_REDELEGATE => {
-                    let message: cosmos_sdk_proto::cosmos::staking::v1beta1::MsgBeginRedelegate =
-                        cosmos_sdk_proto::prost::Message::decode(&*message.value).ok()?;
-
+                CosmosMessage::MsgBeginRedelegate(message) => {
                     asset_id = chain.as_asset_id();
                     transaction_type = TransactionType::StakeRedelegate;
                     value = message.amount?.amount.clone();
                     from_address = message.delegator_address;
                     to_address = message.validator_dst_address;
                 }
-                super::client::MESSAGE_REWARD_BETA => {
-                    let message: cosmos_sdk_proto::cosmos::distribution::v1beta1::MsgWithdrawDelegatorReward =
-                        cosmos_sdk_proto::prost::Message::decode(&*message.value).ok()?;
-
+                CosmosMessage::MsgWithdrawDelegatorReward(message) => {
                     asset_id = chain.as_asset_id();
-                    value = receipt.get_rewards_value(chain.as_denom()?).unwrap_or_default().to_string();
+                    value = transaction.get_rewards_value(chain.as_denom()?)?.to_string();
                     transaction_type = TransactionType::StakeRewards;
                     from_address = message.delegator_address;
                     to_address = message.validator_address;
@@ -91,6 +105,7 @@ impl CosmosMapper {
                     continue;
                 }
             }
+
             let transaction = Transaction::new(
                 hash,
                 asset_id.clone(),
@@ -102,7 +117,7 @@ impl CosmosMapper {
                 fee,
                 asset_id.clone(),
                 value,
-                Some(memo),
+                memo,
                 None,
                 created_at,
             );
@@ -110,12 +125,85 @@ impl CosmosMapper {
         }
         None
     }
+}
 
-    // Helper method to extract amount from coin list
-    fn extract_amount(amounts: &[cosmos_sdk_proto::cosmos::base::v1beta1::Coin]) -> Option<String> {
-        if amounts.is_empty() {
-            return None;
-        }
-        Some(amounts[0].amount.clone())
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_transfer() {
+        let file_content = include_str!("../../testdata/transfer.json");
+        let result: TransactionResponse = serde_json::from_str(file_content).unwrap();
+
+        let transaction = CosmosMapper::map_transactions(Chain::Cosmos, vec![result]).first().unwrap().clone();
+        let expected = Transaction::new(
+            "BC5E330F0AFA34489B9796E8101A2B027CC8AE8E820AFC7901C3C1E75C2895DD".to_string(),
+            Chain::Cosmos.as_asset_id(),
+            "cosmos1wev8ptzj27aueu04wgvvl4gvurax6rj5f0v7rw".to_string(),
+            "cosmos1hgp84me0lze8t4jfrwsr05aep2kr57zrk4gecx".to_string(),
+            None,
+            TransactionType::Transfer,
+            TransactionState::Confirmed,
+            "1600".to_string(),
+            Chain::Cosmos.as_asset_id(),
+            "50000000".to_string(),
+            Some("6439432658467882".to_string()),
+            None,
+            DateTime::parse_from_rfc3339("2025-06-20T04:09:19Z").unwrap().into(),
+        );
+
+        assert_eq!(transaction, expected);
+    }
+
+    #[test]
+    fn test_delegate() {
+        let file_content = include_str!("../../testdata/delegate.json");
+        let result: TransactionResponse = serde_json::from_str(file_content).unwrap();
+
+        let transaction = CosmosMapper::map_transactions(Chain::Cosmos, vec![result]).first().unwrap().clone();
+        let expected = Transaction::new(
+            "FD334515F2D872B6689D7B52598796BF91C42111C857D6E80E984BC6DB4B0575".to_string(),
+            Chain::Cosmos.as_asset_id(),
+            "cosmos1z64xeecaqudhe2scx0m4mtvh7d0g5khyakpsmw".to_string(),
+            "cosmosvaloper1jlr62guqwrwkdt4m3y00zh2rrsamhjf9num5xr".to_string(),
+            None,
+            TransactionType::StakeDelegate,
+            TransactionState::Confirmed,
+            "5194".to_string(),
+            Chain::Cosmos.as_asset_id(),
+            "17732657".to_string(),
+            Some("".to_string()),
+            None,
+            DateTime::parse_from_rfc3339("2025-06-21T20:33:42Z").unwrap().into(),
+        );
+
+        assert_eq!(transaction, expected);
+    }
+
+    #[test]
+    fn test_rewards() {
+        let file_content = include_str!("../../testdata/rewards.json");
+
+        let result: TransactionResponse = serde_json::from_str(file_content).unwrap();
+
+        let transaction = CosmosMapper::map_transactions(Chain::Cosmos, vec![result]).first().unwrap().clone();
+        let expected = Transaction::new(
+            "0B615F5DDDB216574DF8AC07B104C3C902B23974C7957DF4275E1572CDDAFCB4".to_string(),
+            Chain::Cosmos.as_asset_id(),
+            "cosmos1cvh8mpz04az0x7vht6h6ekksg8wd650r39ltwj".to_string(),
+            "cosmosvaloper1tflk30mq5vgqjdly92kkhhq3raev2hnz6eete3".to_string(),
+            None,
+            TransactionType::StakeRewards,
+            TransactionState::Confirmed,
+            "25000".to_string(),
+            Chain::Cosmos.as_asset_id(),
+            "2385518".to_string(),
+            Some("".to_string()),
+            None,
+            DateTime::parse_from_rfc3339("2025-06-21T20:51:28Z").unwrap().into(),
+        );
+
+        assert_eq!(transaction, expected);
     }
 }
