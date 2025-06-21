@@ -11,12 +11,14 @@ use tokio;
 
 pub struct ConsumerConfig {
     pub timeout_on_error: Duration,
+    pub skip_on_error: bool,
 }
 
 impl Default for ConsumerConfig {
     fn default() -> Self {
         Self {
             timeout_on_error: Duration::from_secs(1),
+            skip_on_error: true,
         }
     }
 }
@@ -65,8 +67,12 @@ where
                 }
                 Err(e) => {
                     println!("consumer {} error: {}, elapsed: {:?}", name, e, start.elapsed());
-                    std::thread::sleep(config.timeout_on_error);
-                    Ok(())
+                    if config.skip_on_error {
+                        Ok(())
+                    } else {
+                        std::thread::sleep(config.timeout_on_error);
+                        Err(e)
+                    }
                 }
             }
         })

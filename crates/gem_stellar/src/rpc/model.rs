@@ -91,7 +91,7 @@ impl Payment {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct Account {
     pub balances: Vec<Balance>,
 }

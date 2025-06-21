@@ -1,6 +1,6 @@
 use std::error::Error;
 
-use reqwest_middleware::ClientWithMiddleware;
+use reqwest_middleware::{ClientWithMiddleware, reqwest::StatusCode};
 use serde_json::json;
 
 use crate::rpc::model::AccountLedger;
@@ -73,27 +73,19 @@ impl XRPClient {
                 ]
             }
         );
-        Ok(self
-            .client
-            .post(self.url.clone())
-            .json(&params)
-            .send()
-            .await?
-            .json::<LedgerResult<AccountLedger>>()
-            .await?
-            .result)
+        let response = self.client.post(self.url.clone()).json(&params).send().await?;
+        if response.status() == StatusCode::NOT_FOUND {
+            return Ok(AccountLedger::default());
+        }
+        Ok(response.json::<LedgerResult<AccountLedger>>().await?.result)
     }
 
     pub async fn get_account_objects(&self, token_id: String) -> Result<AccountObjects, Box<dyn Error + Send + Sync>> {
         let params = json!({ "method": "account_objects", "params": [ { "ledger_index": "validated", "type": "state", "account": token_id } ] });
-        Ok(self
-            .client
-            .post(self.url.clone())
-            .json(&params)
-            .send()
-            .await?
-            .json::<LedgerResult<AccountObjects>>()
-            .await?
-            .result)
+        let response = self.client.post(self.url.clone()).json(&params).send().await?;
+        if response.status() == StatusCode::NOT_FOUND {
+            return Ok(AccountObjects::default());
+        }
+        Ok(response.json::<LedgerResult<AccountObjects>>().await?.result)
     }
 }

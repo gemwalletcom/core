@@ -16,7 +16,7 @@ pub struct LedgerData {
     pub ledger: Ledger,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct AccountObjects {
     pub account_objects: Vec<AccountObject>,
 }
@@ -57,7 +57,7 @@ pub struct Ledger {
     pub transactions: Vec<Transaction>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct AccountLedger {
     pub transactions: Vec<AccountLedgerTransaction>,
 }

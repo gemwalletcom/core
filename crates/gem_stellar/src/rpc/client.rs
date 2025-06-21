@@ -39,7 +39,11 @@ impl StellarClient {
 
     pub async fn get_account(&self, account_id: String) -> Result<Account, Box<dyn Error + Send + Sync>> {
         let url = format!("{}/accounts/{}", self.url, account_id);
-        Ok(self.client.get(url).send().await?.json().await?)
+        let response = self.client.get(url).send().await?;
+        if response.status() == StatusCode::NOT_FOUND {
+            return Ok(Account::default());
+        }
+        Ok(response.json().await?)
     }
 
     pub async fn get_account_payments(&self, account_id: String) -> Result<Vec<Payment>, Box<dyn Error + Send + Sync>> {
@@ -50,11 +54,9 @@ impl StellarClient {
         ];
         let url = format!("{}/accounts/{}/payments", self.url, account_id);
         let response = self.client.get(url).query(&query).send().await?;
-
         if response.status() == StatusCode::NOT_FOUND {
             return Ok(Vec::new());
         }
-
         Ok(response.json::<Embedded<Payment>>().await?._embedded.records)
     }
 
