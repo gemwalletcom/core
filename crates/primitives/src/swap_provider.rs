@@ -12,6 +12,7 @@ pub enum SwapProvider {
     UniswapV3,
     UniswapV4,
     PancakeswapV3,
+    Aerodrome,
     PancakeswapAptosV2,
     Thorchain,
     Orca,
@@ -42,6 +43,7 @@ impl SwapProvider {
         match self {
             Self::UniswapV3 | Self::UniswapV4 => "Uniswap",
             Self::PancakeswapV3 | Self::PancakeswapAptosV2 => "PancakeSwap",
+            Self::Aerodrome => "Aerodrome",
             Self::Thorchain => "THORChain",
             Self::Orca => "Orca",
             Self::Jupiter => "Jupiter",
@@ -77,6 +79,7 @@ impl SwapProvider {
             | Self::Symbiosis
             | Self::Chainflip
             | Self::CetusAggregator
+            | Self::Aerodrome
             | Self::Relay => self.name(),
         }
     }

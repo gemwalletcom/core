@@ -12,6 +12,7 @@ pub enum GemSwapProvider {
     UniswapV3,
     UniswapV4,
     PancakeswapV3,
+    Aerodrome,
     PancakeswapAptosV2,
     Thorchain,
     Orca,

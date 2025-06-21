@@ -11,6 +11,7 @@ pub mod path;
 #[repr(u32)]
 pub enum FeeTier {
     Hundred = 100,
+    FourHundred = 400,
     FiveHundred = 500,
     ThousandFiveHundred = 1500,
     TwoThousandFiveHundred = 2500,
@@ -27,6 +28,7 @@ impl FeeTier {
     pub fn default_tick_spacing(&self) -> I24 {
         match self {
             FeeTier::Hundred => I24::unchecked_from(1),
+            FeeTier::FourHundred => I24::unchecked_from(10),
             FeeTier::FiveHundred => I24::unchecked_from(10),
             FeeTier::ThousandFiveHundred => I24::unchecked_from(50),
             FeeTier::TwoThousandFiveHundred => I24::unchecked_from(50),

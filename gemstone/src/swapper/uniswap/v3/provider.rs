@@ -63,16 +63,13 @@ impl UniswapV3 {
         provider: Arc<dyn AlienProvider>,
     ) -> Result<ApprovalType, SwapperError> {
         let deployment = self.provider.get_deployment_by_chain(chain).ok_or(SwapperError::NotSupportedChain)?;
-        // Check token allowance, spender is permit2
-        check_approval_erc20(
-            wallet_address.to_string(),
-            token.to_string(),
-            deployment.permit2.to_string(),
-            amount,
-            provider,
-            chain,
-        )
-        .await
+        let spender = if self.provider.has_permit2() {
+            deployment.permit2.to_string()
+        } else {
+            deployment.universal_router.to_string()
+        };
+        // Check token allowance, spender is permit2 or universal router
+        check_approval_erc20(wallet_address.to_string(), token.to_string(), spender, amount, provider, chain).await
     }
 
     async fn check_permit2_approval(
@@ -83,6 +80,9 @@ impl UniswapV3 {
         chain: &Chain,
         provider: Arc<dyn AlienProvider>,
     ) -> Result<Option<Permit2ApprovalData>, SwapperError> {
+        if !self.provider.has_permit2() {
+            return Ok(None);
+        }
         let deployment = self.provider.get_deployment_by_chain(chain).ok_or(SwapperError::NotSupportedChain)?;
 
         Ok(check_approval_permit2(
@@ -233,7 +233,6 @@ impl Swapper for UniswapV3 {
         let approval: Option<ApprovalData> = if quote.request.from_asset.is_native() {
             None
         } else {
-            // Check if need to approve permit2 contract
             self.check_erc20_approval(wallet_address, &token_in.to_checksum(None), amount_in, &from_chain, provider)
                 .await?
                 .approval_data()

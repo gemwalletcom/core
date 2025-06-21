@@ -63,7 +63,8 @@ impl SwapProviderType {
             | GemSwapProvider::CetusAggregator
             | GemSwapProvider::StonfiV2
             | GemSwapProvider::Reservoir
-            | GemSwapProvider::Symbiosis => GemSwapProviderMode::OnChain,
+            | GemSwapProvider::Symbiosis
+            | GemSwapProvider::Aerodrome => GemSwapProviderMode::OnChain,
             GemSwapProvider::Mayan | GemSwapProvider::Chainflip => GemSwapProviderMode::CrossChain,
             GemSwapProvider::Thorchain => GemSwapProviderMode::OmniChain(vec![Chain::Thorchain]),
             GemSwapProvider::Relay => GemSwapProviderMode::OmniChain(vec![Chain::Hyperliquid, Chain::Manta, Chain::Berachain]),
