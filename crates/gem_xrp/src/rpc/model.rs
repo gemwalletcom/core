@@ -1,9 +1,15 @@
 use number_formatter::BigNumberFormatter;
 use serde::{Deserialize, Serialize};
 use serde_serializers::deserialize_u64_from_str;
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LedgerResult<T> {
     pub result: T,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LedgerError {
+    pub error: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
