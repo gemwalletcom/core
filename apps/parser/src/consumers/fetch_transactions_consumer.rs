@@ -38,27 +38,11 @@ impl MessageConsumer<ChainAddressPayload, usize> for FetchTransactionsConsumer {
         self.cacher.can_process_now("fetch_transactions", &payload.value.to_string(), 30 * 86400).await
     }
     async fn process(&mut self, payload: ChainAddressPayload) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        match self
+        let transactions = self
             .providers
             .get_transactions_by_address(payload.value.chain, payload.value.address.clone())
-            .await
-        {
-            Ok(transactions) => {
-                if let Err(e) = self.process_result(payload.value.chain, transactions.clone()).await {
-                    println!(
-                        "fetch transactions error, chain: {}, address: {}, error: {:?}",
-                        payload.value.chain, payload.value.address, e
-                    )
-                }
-                Ok(transactions.len())
-            }
-            Err(e) => {
-                println!(
-                    "fetch transactions error, chain: {}, address: {}, error: {:?}",
-                    payload.value.chain, payload.value.address, e
-                );
-                Ok(0)
-            }
-        }
+            .await?;
+        let _ = self.process_result(payload.value.chain, transactions.clone()).await;
+        Ok(transactions.len())
     }
 }

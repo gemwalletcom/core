@@ -15,7 +15,8 @@ pub struct FetchAssetsAddressesConsumer {
     pub cacher: CacherClient,
 }
 
-struct FetchAssetsAddressesResult {
+#[derive(Clone)]
+pub struct FetchAssetsAddressesResult {
     assets: Vec<AssetAddress>,
     zero_balance_assets: Vec<AssetAddress>,
     missing_asset_ids: Vec<AssetId>,
@@ -96,23 +97,8 @@ impl MessageConsumer<ChainAddressPayload, usize> for FetchAssetsAddressesConsume
     }
 
     async fn process(&mut self, payload: ChainAddressPayload) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        match self.fetch_assets_addresses(payload.value.chain, payload.value.address.clone()).await {
-            Ok(result) => {
-                if let Err(e) = self.process_result(result).await {
-                    println!(
-                        "Failed to process assets for chain {} and address {}: {}",
-                        payload.value.chain, payload.value.address, e
-                    );
-                }
-            }
-            Err(e) => {
-                println!(
-                    "Failed to fetch assets for chain {} and address {}: {}",
-                    payload.value.chain, payload.value.address, e
-                );
-            }
-        }
-
-        Ok(1)
+        let result = self.fetch_assets_addresses(payload.value.chain, payload.value.address.clone()).await?;
+        let _ = self.process_result(result.clone()).await;
+        Ok(result.assets.len())
     }
 }
