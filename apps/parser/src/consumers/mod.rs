@@ -12,7 +12,7 @@ pub use assets_addresses_consumer::AssetsAddressesConsumer;
 use cacher::CacherClient;
 pub use fetch_assets_consumer::FetchAssetsConsumer;
 use settings::Settings;
-use settings_chain::{ChainProviders, ProviderFactory};
+use settings_chain::ChainProviders;
 use storage::DatabaseClient;
 use streamer::{
     AssetsAddressPayload, ChainAddressPayload, ConsumerConfig, FetchAssetsPayload, FetchBlocksPayload, QueueName, StreamProducer, StreamReader,
@@ -43,7 +43,7 @@ pub async fn run_consumers(settings: Settings, database: Arc<Mutex<DatabaseClien
 
 pub async fn run_consumer_fetch_assets(settings: Settings, database: Arc<Mutex<DatabaseClient>>) -> Result<(), Box<dyn Error + Send + Sync>> {
     let name = "fetch_assets";
-    let stream_reader = StreamReader::new(&settings.rabbitmq.url, name).await.unwrap();
+    let stream_reader = StreamReader::new(&settings.rabbitmq.url, name).await?;
     let cacher = CacherClient::new(&settings.redis.url);
     let consumer = FetchAssetsConsumer {
         providers: ChainProviders::from_settings(&settings),
@@ -56,8 +56,8 @@ pub async fn run_consumer_fetch_assets(settings: Settings, database: Arc<Mutex<D
 
 pub async fn run_consumer_store_transactions(settings: Settings, database: Arc<Mutex<DatabaseClient>>) -> Result<(), Box<dyn Error + Send + Sync>> {
     let name = "store_transactions";
-    let stream_reader = StreamReader::new(&settings.rabbitmq.url, name).await.unwrap();
-    let stream_producer = StreamProducer::new(&settings.rabbitmq.url, name).await.unwrap();
+    let stream_reader = StreamReader::new(&settings.rabbitmq.url, name).await?;
+    let stream_producer = StreamProducer::new(&settings.rabbitmq.url, name).await?;
     let pusher = Pusher::new(&settings.postgres.url);
 
     let consumer = TransactionsConsumer {
@@ -78,8 +78,8 @@ pub async fn run_consumer_store_transactions(settings: Settings, database: Arc<M
 
 pub async fn run_consumer_fetch_transactions(settings: Settings, database: Arc<Mutex<DatabaseClient>>) -> Result<(), Box<dyn Error + Send + Sync>> {
     let name = "fetch_transactions";
-    let stream_reader = StreamReader::new(&settings.rabbitmq.url, name).await.unwrap();
-    let stream_producer = StreamProducer::new(&settings.rabbitmq.url, name).await.unwrap();
+    let stream_reader = StreamReader::new(&settings.rabbitmq.url, name).await?;
+    let stream_producer = StreamProducer::new(&settings.rabbitmq.url, name).await?;
     let cacher = CacherClient::new(&settings.redis.url);
     let consumer = FetchTransactionsConsumer::new(database.clone(), ChainProviders::from_settings(&settings), stream_producer, cacher);
     streamer::run_consumer::<ChainAddressPayload, FetchTransactionsConsumer, usize>(
@@ -94,8 +94,8 @@ pub async fn run_consumer_fetch_transactions(settings: Settings, database: Arc<M
 
 pub async fn run_consumer_fetch_blocks(settings: Settings) -> Result<(), Box<dyn Error + Send + Sync>> {
     let name = "fetch_blocks";
-    let stream_reader = StreamReader::new(&settings.rabbitmq.url, name).await.unwrap();
-    let stream_producer = StreamProducer::new(&settings.rabbitmq.url, name).await.unwrap();
+    let stream_reader = StreamReader::new(&settings.rabbitmq.url, name).await?;
+    let stream_producer = StreamProducer::new(&settings.rabbitmq.url, name).await?;
     let consumer = FetchBlocksConsumer::new(ChainProviders::from_settings(&settings), stream_producer);
     streamer::run_consumer::<FetchBlocksPayload, FetchBlocksConsumer, usize>(name, stream_reader, QueueName::FetchBlocks, consumer, ConsumerConfig::default())
         .await
@@ -106,7 +106,7 @@ pub async fn run_consumer_store_assets_addresses_associations(
     database: Arc<Mutex<DatabaseClient>>,
 ) -> Result<(), Box<dyn Error + Send + Sync>> {
     let name = "store_assets_addresses_associations";
-    let stream_reader = StreamReader::new(&settings.rabbitmq.url, name).await.unwrap();
+    let stream_reader = StreamReader::new(&settings.rabbitmq.url, name).await?;
     let consumer = AssetsAddressesConsumer::new(database.clone());
     streamer::run_consumer::<AssetsAddressPayload, AssetsAddressesConsumer, usize>(
         name,
@@ -123,8 +123,8 @@ pub async fn run_consumer_fetch_assets_addresses_associations(
     database: Arc<Mutex<DatabaseClient>>,
 ) -> Result<(), Box<dyn Error + Send + Sync>> {
     let name = "fetch_assets_addresses_associations";
-    let stream_reader = StreamReader::new(&settings.rabbitmq.url, name).await.unwrap();
-    let stream_producer = StreamProducer::new(&settings.rabbitmq.url, name).await.unwrap();
+    let stream_reader = StreamReader::new(&settings.rabbitmq.url, name).await?;
+    let stream_producer = StreamProducer::new(&settings.rabbitmq.url, name).await?;
     let cacher = CacherClient::new(&settings.redis.url);
     let consumer = FetchAssetsAddressesConsumer::new(ChainProviders::from_settings(&settings), database.clone(), stream_producer, cacher);
     streamer::run_consumer::<ChainAddressPayload, FetchAssetsAddressesConsumer, usize>(
