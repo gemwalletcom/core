@@ -11,6 +11,13 @@ impl TonMapper {
         Some(TonAddress::from_hex_str(address).ok()?.to_base64_url())
     }
 
+    pub fn map_transactions(chain: Chain, transactions: Vec<TonTransaction>) -> Vec<Transaction> {
+        transactions
+            .into_iter()
+            .flat_map(|x| Self::map_transaction(chain, x))
+            .collect::<Vec<Transaction>>()
+    }
+
     pub fn map_transaction(chain: Chain, transaction: TonTransaction) -> Option<Transaction> {
         if transaction.transaction_type == "TransOrd" && transaction.out_msgs.len() == 1 && transaction.out_msgs.first()?.op_code.is_none() {
             let asset_id = chain.as_asset_id();

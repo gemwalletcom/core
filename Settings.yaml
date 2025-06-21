@@ -227,6 +227,10 @@ ankr:
   key:
     secret: ""
 
+trongrid:
+  key:
+    secret: ""
+
 nft:
   nftscan:
     key:

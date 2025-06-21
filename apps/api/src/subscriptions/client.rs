@@ -49,12 +49,6 @@ impl SubscriptionsClient {
             .map(|x| storage::models::Subscription::from_primitive(x, device.id))
             .collect::<Vec<storage::models::Subscription>>();
 
-        //TODO: Implement to delete all subscriptions at once
-        let mut result = 0;
-        for subscription in values {
-            let size = self.database.delete_subscription(subscription)?;
-            result += size;
-        }
-        Ok(result)
+        Ok(self.database.delete_subscriptions(values)?)
     }
 }

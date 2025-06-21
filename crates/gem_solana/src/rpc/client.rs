@@ -138,7 +138,6 @@ impl SolanaClient {
 
     pub async fn get_transactions(&self, signatures: Vec<String>) -> Result<Vec<BlockTransaction>, Box<dyn Error + Send + Sync>> {
         let mut batch = BatchRequestBuilder::default();
-
         for signature in &signatures {
             batch.insert(
                 "getTransaction",
@@ -157,8 +156,12 @@ impl SolanaClient {
             .batch_request::<BlockTransaction>(batch)
             .await?
             .iter()
-            .map(|x| x.as_ref().unwrap().clone())
-            .collect();
+            .filter_map(|x| x.as_ref().ok().cloned())
+            .collect::<Vec<_>>();
+
+        if data.len() != signatures.len() {
+            return Err(format!("Failed to get all transactions: expected {} transactions, got {}", signatures.len(), data.len()).into());
+        }
 
         Ok(data)
     }

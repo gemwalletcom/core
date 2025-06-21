@@ -22,6 +22,14 @@ impl DatabaseClient {
             .load(&mut self.connection)
     }
 
+    pub fn delete_subscriptions(&mut self, values: Vec<Subscription>) -> Result<usize, diesel::result::Error> {
+        let mut result = 0;
+        for subscription in values {
+            result += self.delete_subscription(subscription)?;
+        }
+        Ok(result)
+    }
+
     pub fn delete_subscription(&mut self, subscription: Subscription) -> Result<usize, diesel::result::Error> {
         use crate::schema::subscriptions::dsl::*;
         diesel::delete(
@@ -55,10 +63,10 @@ impl DatabaseClient {
             .load(&mut self.connection)
     }
 
-    pub fn add_subscriptions(&mut self, _subscriptions: Vec<Subscription>) -> Result<usize, diesel::result::Error> {
+    pub fn add_subscriptions(&mut self, values: Vec<Subscription>) -> Result<usize, diesel::result::Error> {
         use crate::schema::subscriptions::dsl::*;
         diesel::insert_into(subscriptions)
-            .values(&_subscriptions)
+            .values(&values)
             .on_conflict_do_nothing()
             .execute(&mut self.connection)
     }

@@ -1,7 +1,7 @@
 use std::error::Error;
 
 use primitives::{Asset, Chain};
-use reqwest_middleware::ClientWithMiddleware;
+use reqwest_middleware::{reqwest::StatusCode, ClientWithMiddleware};
 
 use super::model::{Account, Block, Embedded, NodeStatus, Payment};
 
@@ -39,7 +39,11 @@ impl StellarClient {
 
     pub async fn get_account(&self, account_id: String) -> Result<Account, Box<dyn Error + Send + Sync>> {
         let url = format!("{}/accounts/{}", self.url, account_id);
-        Ok(self.client.get(url).send().await?.json().await?)
+        let response = self.client.get(url).send().await?;
+        if response.status() == StatusCode::NOT_FOUND {
+            return Ok(Account::default());
+        }
+        Ok(response.json().await?)
     }
 
     pub async fn get_account_payments(&self, account_id: String) -> Result<Vec<Payment>, Box<dyn Error + Send + Sync>> {
@@ -49,16 +53,11 @@ impl StellarClient {
             ("include_failed", "true".to_string()),
         ];
         let url = format!("{}/accounts/{}/payments", self.url, account_id);
-        Ok(self
-            .client
-            .get(url)
-            .query(&query)
-            .send()
-            .await?
-            .json::<Embedded<Payment>>()
-            .await?
-            ._embedded
-            .records)
+        let response = self.client.get(url).query(&query).send().await?;
+        if response.status() == StatusCode::NOT_FOUND {
+            return Ok(Vec::new());
+        }
+        Ok(response.json::<Embedded<Payment>>().await?._embedded.records)
     }
 
     pub async fn get_block_payments(&self, block_number: i64, limit: usize, cursor: Option<String>) -> Result<Vec<Payment>, Box<dyn Error + Send + Sync>> {

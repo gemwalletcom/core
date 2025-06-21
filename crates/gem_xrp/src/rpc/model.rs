@@ -1,9 +1,15 @@
 use number_formatter::BigNumberFormatter;
 use serde::{Deserialize, Serialize};
 use serde_serializers::deserialize_u64_from_str;
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LedgerResult<T> {
     pub result: T,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LedgerError {
+    pub error: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -16,7 +22,7 @@ pub struct LedgerData {
     pub ledger: Ledger,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct AccountObjects {
     pub account_objects: Vec<AccountObject>,
 }
@@ -57,7 +63,7 @@ pub struct Ledger {
     pub transactions: Vec<Transaction>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct AccountLedger {
     pub transactions: Vec<AccountLedgerTransaction>,
 }

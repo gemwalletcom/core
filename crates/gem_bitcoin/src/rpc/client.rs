@@ -1,6 +1,6 @@
 use std::error::Error;
 
-use crate::rpc::model::{AddressTransactions, Transaction};
+use crate::rpc::model::{AddressDetails, Transaction};
 
 use super::model::{Block, Status};
 use primitives::chain::Chain;
@@ -31,7 +31,7 @@ impl BitcoinClient {
         Ok(self.client.get(url).send().await?.json().await?)
     }
 
-    pub async fn get_address_transactions(&self, address: &str, limit: usize) -> Result<AddressTransactions, Box<dyn Error + Send + Sync>> {
+    pub async fn get_address_details(&self, address: &str, limit: usize) -> Result<AddressDetails, Box<dyn Error + Send + Sync>> {
         let url = format!("{}/api/v2/address/{}?pageSize={}&details=txs", self.url, address, limit);
         Ok(self.client.get(url).send().await?.json().await?)
     }

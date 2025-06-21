@@ -50,7 +50,7 @@ impl ChainTokenDataProvider for CardanoProvider {
 #[async_trait]
 impl ChainAssetsProvider for CardanoProvider {
     async fn get_assets_balances(&self, _address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
-        Ok(vec![]) //TODO: ChainAssetsProvider
+        Ok(vec![])
     }
 }
 

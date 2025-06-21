@@ -50,7 +50,13 @@ impl ParserProxy {
         let config = ParserProxyUrlConfig { urls: node_urls };
 
         ParserProxy::new(
-            ProviderConfig::new(chain, url, settings.alchemy.key.secret.as_str(), settings.ankr.key.secret.as_str()),
+            ProviderConfig::new(
+                chain,
+                url,
+                settings.alchemy.key.secret.as_str(),
+                settings.ankr.key.secret.as_str(),
+                settings.trongrid.key.secret.as_str(),
+            ),
             config,
         )
     }

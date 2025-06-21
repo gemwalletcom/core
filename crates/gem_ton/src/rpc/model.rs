@@ -73,3 +73,19 @@ pub struct JettonInfoMetadata {
     #[serde(deserialize_with = "deserialize_u64_from_str")]
     pub decimals: u64,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct JettonBalances {
+    pub balances: Vec<JettonBalance>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct JettonBalance {
+    pub balance: String,
+    pub jetton: Jetton,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Jetton {
+    pub address: String,
+}

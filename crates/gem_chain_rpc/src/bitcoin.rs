@@ -61,7 +61,7 @@ impl ChainAssetsProvider for BitcoinProvider {
 #[async_trait]
 impl ChainTransactionsProvider for BitcoinProvider {
     async fn get_transactions_by_address(&self, address: String) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
-        let transactions = self.client.get_address_transactions(&address, 20).await?.transactions;
+        let transactions = self.client.get_address_details(&address, 20).await?.transactions.unwrap_or_default();
         Ok(BitcoinMapper::map_transactions(self.get_chain(), transactions))
     }
 }

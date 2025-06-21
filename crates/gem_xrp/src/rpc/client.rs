@@ -1,9 +1,9 @@
 use std::error::Error;
 
-use reqwest_middleware::ClientWithMiddleware;
+use reqwest_middleware::{ClientWithMiddleware, reqwest::Response};
 use serde_json::json;
 
-use crate::rpc::model::AccountLedger;
+use crate::rpc::model::{AccountLedger, LedgerError};
 
 use super::model::{AccountObjects, Ledger, LedgerCurrent, LedgerData, LedgerResult};
 
@@ -60,6 +60,16 @@ impl XRPClient {
             .ledger)
     }
 
+    async fn handle_ledger_response<T: serde::de::DeserializeOwned + Default + 'static>(&self, response: Response) -> Result<T, Box<dyn Error + Send + Sync>> {
+        let body = response.bytes().await?;
+        let body_ref = body.as_ref();
+
+        if serde_json::from_slice::<LedgerResult<LedgerError>>(body_ref).is_ok() {
+            return Ok(T::default());
+        }
+        Ok(serde_json::from_slice::<LedgerResult<T>>(body_ref)?.result)
+    }
+
     pub async fn get_account_transactions(&self, address: String, limit: i64) -> Result<AccountLedger, Box<dyn Error + Send + Sync>> {
         let params = json!(
             {
@@ -73,27 +83,13 @@ impl XRPClient {
                 ]
             }
         );
-        Ok(self
-            .client
-            .post(self.url.clone())
-            .json(&params)
-            .send()
-            .await?
-            .json::<LedgerResult<AccountLedger>>()
-            .await?
-            .result)
+        let response = self.client.post(self.url.clone()).json(&params).send().await?;
+        self.handle_ledger_response::<AccountLedger>(response).await
     }
 
     pub async fn get_account_objects(&self, token_id: String) -> Result<AccountObjects, Box<dyn Error + Send + Sync>> {
         let params = json!({ "method": "account_objects", "params": [ { "ledger_index": "validated", "type": "state", "account": token_id } ] });
-        Ok(self
-            .client
-            .post(self.url.clone())
-            .json(&params)
-            .send()
-            .await?
-            .json::<LedgerResult<AccountObjects>>()
-            .await?
-            .result)
+        let response = self.client.post(self.url.clone()).json(&params).send().await?;
+        self.handle_ledger_response::<AccountObjects>(response).await
     }
 }

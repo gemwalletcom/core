@@ -24,7 +24,7 @@ use gem_solana::rpc::SolanaClient;
 use gem_stellar::rpc::client::StellarClient;
 use gem_sui::rpc::SuiClient;
 use gem_ton::rpc::TonClient;
-use gem_tron::rpc::TronClient;
+use gem_tron::rpc::{trongrid::client::TronGridClient, TronClient};
 use gem_xrp::rpc::XRPClient;
 
 use primitives::{Chain, EVMChain};
@@ -40,6 +40,7 @@ impl ProviderFactory {
             url,
             settings.alchemy.key.secret.as_str(),
             settings.ankr.key.secret.as_str(),
+            settings.trongrid.key.secret.as_str(),
         ))
     }
 
@@ -96,7 +97,11 @@ impl ProviderFactory {
             }
             Chain::Solana => Box::new(SolanaProvider::new(SolanaClient::new(&url))),
             Chain::Ton => Box::new(TonProvider::new(TonClient::new(client, url))),
-            Chain::Tron => Box::new(TronProvider::new(TronClient::new(client, url))),
+            Chain::Tron => {
+                let client = TronClient::new(client, url.clone());
+                let grid_client = TronGridClient::new(client.clone(), url.clone(), config.trongrid_key.clone());
+                Box::new(TronProvider::new(client, Box::new(grid_client.clone()), Box::new(grid_client.clone())))
+            }
             Chain::Aptos => Box::new(AptosProvider::new(AptosClient::new(client, url))),
             Chain::Sui => Box::new(SuiProvider::new(SuiClient::new(&url))),
             Chain::Xrp => Box::new(XRPProvider::new(XRPClient::new(client, url))),

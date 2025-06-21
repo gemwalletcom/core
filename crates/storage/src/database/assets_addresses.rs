@@ -31,6 +31,9 @@ pub trait AssetsAddressesRepository {
 
 impl AssetsAddressesStore for DatabaseClient {
     fn add_assets_addresses(&mut self, values: Vec<AssetAddress>) -> Result<usize, diesel::result::Error> {
+        if values.is_empty() {
+            return Ok(0);
+        }
         diesel::insert_into(assets_addresses)
             .values(&values)
             .on_conflict((asset_id, address))

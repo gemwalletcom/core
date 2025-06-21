@@ -9,6 +9,9 @@ impl DatabaseClient {
     }
 
     pub fn add_assets(&mut self, values: Vec<Asset>) -> Result<usize, diesel::result::Error> {
+        if values.is_empty() {
+            return Ok(0);
+        }
         diesel::insert_into(assets)
             .values(values)
             .on_conflict_do_nothing()

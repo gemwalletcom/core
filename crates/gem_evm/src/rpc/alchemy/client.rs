@@ -32,6 +32,9 @@ impl AlchemyClient {
 
     pub async fn get_transactions_by_address(&self, address: &str) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Send + Sync>> {
         let transactions_ids = self.get_transactions_ids_by_address(address).await?;
+        if transactions_ids.is_empty() {
+            return Ok(vec![]);
+        }
         Ok(self
             .ethereum_client
             .get_transactions(transactions_ids.clone())
