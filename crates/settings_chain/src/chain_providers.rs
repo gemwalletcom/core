@@ -2,6 +2,9 @@ use std::error::Error;
 
 use gem_chain_rpc::ChainProvider;
 use primitives::{Asset, AssetBalance, Chain, Transaction};
+use settings::Settings;
+
+use crate::ProviderFactory;
 
 pub struct ChainProviders {
     providers: Vec<Box<dyn ChainProvider>>,
@@ -10,6 +13,10 @@ pub struct ChainProviders {
 impl ChainProviders {
     pub fn new(providers: Vec<Box<dyn ChainProvider>>) -> Self {
         Self { providers }
+    }
+
+    pub fn from_settings(settings: &Settings) -> Self {
+        Self::new(ProviderFactory::new_providers(settings))
     }
 
     pub async fn get_token_data(&self, chain: Chain, token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
