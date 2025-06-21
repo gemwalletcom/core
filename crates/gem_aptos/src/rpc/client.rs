@@ -1,7 +1,7 @@
 use std::error::Error;
 
 use primitives::chain::Chain;
-use reqwest_middleware::ClientWithMiddleware;
+use reqwest_middleware::{reqwest::StatusCode, ClientWithMiddleware};
 use serde::{de::DeserializeOwned, Serialize};
 
 use crate::{
@@ -36,7 +36,11 @@ impl AptosClient {
 
     pub async fn get_transactions_by_address(&self, address: String) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
         let url = format!("{}/v1/accounts/{}/transactions", self.url, address);
-        Ok(self.client.get(url).send().await?.json().await?)
+        let response = self.client.get(url).send().await?;
+        if response.status() == StatusCode::NOT_FOUND {
+            return Ok(vec![]);
+        }
+        Ok(response.json().await?)
     }
 
     pub async fn get_account_resource<T: Serialize + DeserializeOwned>(
