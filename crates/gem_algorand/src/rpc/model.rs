@@ -12,6 +12,12 @@ pub struct TransactionsParams {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BlockHeaders {
+    #[serde(rename = "current-round")]
+    pub current_round: i64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BlockResponse {
     pub block: Block,
 }
@@ -23,25 +29,27 @@ pub struct BlockTransactionIds {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Block {
-    pub ts: i64,
-    pub rnd: i64,
-    pub txns: Option<Vec<TransactionPayload>>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TransactionPayload {
-    pub txn: Transaction,
+    pub transactions: Vec<Transaction>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Transaction {
-    pub amt: Option<i64>,
+    pub id: String,
+    #[serde(rename = "round-time")]
+    pub round_time: i64,
     pub fee: Option<i64>,
-    pub rcv: Option<String>,
-    pub snd: Option<String>,
+    pub sender: Option<String>,
     pub note: Option<String>,
-    #[serde(rename = "type")]
+    #[serde(rename = "payment-transaction")]
+    pub payment_transaction: Option<PaymentTransaction>,
+    #[serde(rename = "tx-type")]
     pub transaction_type: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PaymentTransaction {
+    pub amount: Option<i64>,
+    pub receiver: Option<String>,
 }
 
 impl Transaction {
@@ -57,6 +65,30 @@ impl Transaction {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Account {
     pub assets: Vec<Asset>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AssetResponse {
+    pub asset: AssetDetails,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AssetDetails {
+    pub index: i64,
+    pub params: AssetParams,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AssetParams {
+    pub decimals: i64,
+    pub name: String,
+    #[serde(rename = "unit-name")]
+    pub unit_name: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Transactions {
+    pub transactions: Vec<Transaction>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

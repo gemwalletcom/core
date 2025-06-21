@@ -25,27 +25,20 @@ impl ChainBlockProvider for AlgorandProvider {
     }
 
     async fn get_latest_block(&self) -> Result<i64, Box<dyn Error + Send + Sync>> {
-        Ok(self.client.get_transactions_params().await?.last_round)
+        Ok(self.client.get_block_headers().await?.current_round)
     }
 
     async fn get_transactions(&self, block_number: i64) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
-        let (block, transactions_ids) = self.client.get_block_transactions(block_number).await?;
-        let transactions = block.clone().txns.unwrap_or_default();
-
-        let transactions = transactions
-            .iter()
-            .zip(transactions_ids.iter())
-            .flat_map(|(transaction, hash)| AlgorandMapper::map_transaction(self.get_chain(), hash.clone(), block.clone(), transaction.txn.clone()))
-            .collect::<Vec<Transaction>>();
-
-        Ok(transactions)
+        let block = self.client.get_block(block_number).await?;
+        Ok(AlgorandMapper::map_transactions(self.get_chain(), block.transactions))
     }
 }
 
 #[async_trait]
 impl ChainTokenDataProvider for AlgorandProvider {
-    async fn get_token_data(&self, _token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
-        unimplemented!()
+    async fn get_token_data(&self, token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
+        let asset = self.client.get_asset(&token_id).await?;
+        Ok(AlgorandMapper::map_asset(asset.asset))
     }
 }
 
@@ -59,7 +52,8 @@ impl ChainAssetsProvider for AlgorandProvider {
 
 #[async_trait]
 impl ChainTransactionsProvider for AlgorandProvider {
-    async fn get_transactions_by_address(&self, _address: String) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
-        Ok(vec![]) //TODO: ChainTransactionsProvider
+    async fn get_transactions_by_address(&self, address: String) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
+        let transactions = self.client.get_account_transactions(&address).await?.transactions;
+        Ok(AlgorandMapper::map_transactions(self.get_chain(), transactions))
     }
 }
