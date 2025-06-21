@@ -173,7 +173,7 @@ mod tests {
             "5194".to_string(),
             Chain::Cosmos.as_asset_id(),
             "17732657".to_string(),
-            Some("".to_string()),
+            None,
             None,
             DateTime::parse_from_rfc3339("2025-06-21T20:33:42Z").unwrap().into(),
         );
@@ -199,7 +199,7 @@ mod tests {
             "25000".to_string(),
             Chain::Cosmos.as_asset_id(),
             "2385518".to_string(),
-            Some("".to_string()),
+            None,
             None,
             DateTime::parse_from_rfc3339("2025-06-21T20:51:28Z").unwrap().into(),
         );
