@@ -39,8 +39,10 @@ impl ChainBlockProvider for EthereumProvider {
     }
 
     async fn get_transactions(&self, block_number: i64) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
-        let (block, transactions_reciepts, has_code_flags) = self.client.get_block_with_codes(block_number).await?;
-        Ok(EthereumMapper::map_transactions(self.get_chain(), block, transactions_reciepts, has_code_flags))
+        let block = self.client.get_block(block_number).await?;
+        let transactions_reciepts = self.client.get_block_receipts(block_number).await?;
+
+        Ok(EthereumMapper::map_transactions(self.get_chain(), block, transactions_reciepts))
     }
 }
 

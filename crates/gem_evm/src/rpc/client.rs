@@ -71,13 +71,6 @@ impl EthereumClient {
         Ok(self.client.request("eth_getBlockReceipts", params).await?)
     }
 
-    pub async fn get_block_with_codes(&self, block_number: i64) -> Result<(Block, Vec<TransactionReciept>, Vec<bool>), Box<dyn Error + Send + Sync>> {
-        let block = self.get_block(block_number).await?;
-        let transactions_reciepts = self.get_block_receipts(block_number).await?;
-        let has_code_flags = self.get_codes_by_transactions(&block.transactions).await?;
-
-        Ok((block, transactions_reciepts, has_code_flags))
-    }
 
     pub async fn get_latest_block(&self) -> Result<i64> {
         let block_hex: String = self.client.request("eth_blockNumber", ()).await?;
@@ -134,69 +127,4 @@ impl EthereumClient {
         Ok(try_join_all(futures).await?)
     }
 
-    pub async fn eth_get_code(&self, address: &str) -> Result<String> {
-        let to_address = Address::from_str(address)?;
-        let params = (to_address, BlockId::Number(BlockNumberOrTag::Latest));
-        let code: String = self.client.request("eth_getCode", params).await?;
-        Ok(code)
-    }
-
-    pub async fn get_codes(&self, addresses: Vec<String>) -> Result<Vec<String>, Box<dyn Error + Send + Sync>> {
-        let mut batch = self.client.new_batch();
-        let mut futures = Vec::new();
-        for address in &addresses {
-            let to_address = Address::from_str(address)
-                .map_err(|_| format!("Invalid address format: {}", address))?;
-            let params = (to_address, BlockId::Number(BlockNumberOrTag::Latest));
-            futures.push(batch.add_call("eth_getCode", &params)?);
-        }
-        batch.send().await?;
-        Ok(try_join_all(futures).await?)
-    }
-
-    pub async fn get_codes_by_transactions(&self, transactions: &[Transaction]) -> Result<Vec<bool>, Box<dyn Error + Send + Sync>> {
-        let mut has_code_flags = Vec::with_capacity(transactions.len());
-        let mut addresses_to_check = Vec::new();
-        let mut indices_to_check = Vec::new();
-
-        // Pre-filter: only check addresses for transactions with non-empty input
-        for (i, tx) in transactions.iter().enumerate() {
-            if tx.to.is_some() && !tx.input.is_empty() && tx.input != "0x" {
-                addresses_to_check.push(tx.to.clone().unwrap());
-                indices_to_check.push(i);
-                has_code_flags.push(false); // placeholder, will be updated
-            } else {
-                has_code_flags.push(false); // definitely not a smart contract call
-            }
-        }
-
-        // Batch check codes only for relevant addresses
-        if !addresses_to_check.is_empty() {
-            let codes = self.get_codes(addresses_to_check).await?;
-            for (idx, code) in indices_to_check.into_iter().zip(codes.iter()) {
-                has_code_flags[idx] = !code.is_empty() && code != "0x";
-            }
-        }
-
-        Ok(has_code_flags)
-    }
-
-    pub async fn get_transactions_with_codes(
-        &self,
-        hashes: Vec<String>,
-    ) -> Result<Vec<(BlockTransactionsIds, Transaction, TransactionReciept, bool)>, Box<dyn Error + Send + Sync>> {
-        let transactions = self.get_transactions_by_hash(hashes.clone()).await?;
-        let reciepts = self.get_transactions_receipts(hashes.clone()).await?;
-        let block_ids = transactions.iter().map(|tx| tx.block_number.clone()).collect::<Vec<String>>();
-        let blocks = self.get_blocks(block_ids.clone(), false).await?;
-        let has_code_flags = self.get_codes_by_transactions(&transactions).await?;
-
-        Ok(blocks
-            .into_iter()
-            .zip(transactions.into_iter())
-            .zip(reciepts.into_iter())
-            .zip(has_code_flags.into_iter())
-            .map(|(((block, transaction), receipt), has_code)| (block, transaction, receipt, has_code))
-            .collect())
-    }
 }

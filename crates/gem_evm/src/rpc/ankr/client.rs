@@ -36,11 +36,11 @@ impl AnkrClient {
         }
         Ok(self
             .client
-            .get_transactions_with_codes(transaction_ids.clone())
+            .get_transactions(transaction_ids.clone())
             .await?
             .into_iter()
-            .filter_map(|(block, transaction, receipt, has_code)| {
-                EthereumMapper::map_transaction(self.chain.to_chain(), &transaction, &receipt, block.timestamp, has_code)
+            .filter_map(|(block, transaction, receipt)| {
+                EthereumMapper::map_transaction(self.chain.to_chain(), &transaction, &receipt, block.timestamp)
             })
             .collect())
     }

@@ -37,11 +37,11 @@ impl AlchemyClient {
         }
         Ok(self
             .ethereum_client
-            .get_transactions_with_codes(transactions_ids.clone())
+            .get_transactions(transactions_ids.clone())
             .await?
             .into_iter()
-            .filter_map(|(block, transaction, receipt, has_code)| {
-                EthereumMapper::map_transaction(self.chain.to_chain(), &transaction, &receipt, block.timestamp, has_code)
+            .filter_map(|(block, transaction, receipt)| {
+                EthereumMapper::map_transaction(self.chain.to_chain(), &transaction, &receipt, block.timestamp)
             })
             .collect())
     }

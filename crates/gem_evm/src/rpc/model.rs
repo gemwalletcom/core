@@ -22,7 +22,7 @@ pub struct BlockTransactionsIds {
 #[serde(rename_all = "camelCase")]
 pub struct Transaction {
     pub from: String,
-    // pub gas: String,
+    pub gas: String,
     // pub gas_price: String,
     // pub max_priority_fee_per_gas: Option<String>,
     // pub max_fee_per_gas: Option<String>,
