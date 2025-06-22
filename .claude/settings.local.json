@@ -6,7 +6,10 @@
       "Bash(cargo test:*)",
       "Bash(cargo update:*)",
       "Bash(grep:*)",
-      "WebFetchTool(domain:github.com)"
+      "WebFetchTool(domain:github.com)",
+      "Bash(cargo check:*)",
+      "Bash(git checkout:*)",
+      "Bash(git add:*)"
     ],
     "deny": []
   }
