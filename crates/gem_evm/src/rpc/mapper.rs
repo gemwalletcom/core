@@ -21,12 +21,15 @@ impl EthereumMapper {
         transactions_reciepts: Vec<TransactionReciept>,
         has_code_flags: Vec<bool>,
     ) -> Vec<primitives::Transaction> {
+        let timestamp = block.timestamp.clone();
         block
             .transactions
             .into_iter()
             .zip(transactions_reciepts.iter())
             .zip(has_code_flags.iter())
-            .filter_map(|((transaction, receipt), &has_code)| EthereumMapper::map_transaction(chain, &transaction, receipt, block.timestamp.clone(), has_code))
+            .filter_map(|((transaction, receipt), &has_code)| {
+                EthereumMapper::map_transaction(chain, &transaction, receipt, timestamp.clone(), has_code)
+            })
             .collect()
     }
 

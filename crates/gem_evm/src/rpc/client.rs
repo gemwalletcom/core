@@ -145,15 +145,10 @@ impl EthereumClient {
         let mut batch = self.client.new_batch();
         let mut futures = Vec::new();
         for address in &addresses {
-            if let Ok(to_address) = Address::from_str(address) {
-                let params = (to_address, BlockId::Number(BlockNumberOrTag::Latest));
-                futures.push(batch.add_call("eth_getCode", &params)?);
-            } else {
-                futures.push(batch.add_call(
-                    "eth_getCode",
-                    &("0x0000000000000000000000000000000000000000", BlockId::Number(BlockNumberOrTag::Latest)),
-                )?);
-            }
+            let to_address = Address::from_str(address)
+                .map_err(|_| format!("Invalid address format: {}", address))?;
+            let params = (to_address, BlockId::Number(BlockNumberOrTag::Latest));
+            futures.push(batch.add_call("eth_getCode", &params)?);
         }
         batch.send().await?;
         Ok(try_join_all(futures).await?)
@@ -192,7 +187,7 @@ impl EthereumClient {
     ) -> Result<Vec<(BlockTransactionsIds, Transaction, TransactionReciept, bool)>, Box<dyn Error + Send + Sync>> {
         let transactions = self.get_transactions_by_hash(hashes.clone()).await?;
         let reciepts = self.get_transactions_receipts(hashes.clone()).await?;
-        let block_ids = transactions.iter().map(|x| x.block_number.clone()).collect::<Vec<String>>();
+        let block_ids = transactions.iter().map(|tx| tx.block_number.clone()).collect::<Vec<String>>();
         let blocks = self.get_blocks(block_ids.clone(), false).await?;
         let has_code_flags = self.get_codes_by_transactions(&transactions).await?;
 
@@ -201,7 +196,7 @@ impl EthereumClient {
             .zip(transactions.into_iter())
             .zip(reciepts.into_iter())
             .zip(has_code_flags.into_iter())
-            .map(|(((block, tx), receipt), has_code)| (block, tx, receipt, has_code))
+            .map(|(((block, transaction), receipt), has_code)| (block, transaction, receipt, has_code))
             .collect())
     }
 }
