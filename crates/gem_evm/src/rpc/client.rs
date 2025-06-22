@@ -74,10 +74,7 @@ impl EthereumClient {
     pub async fn get_block_with_codes(&self, block_number: i64) -> Result<(Block, Vec<TransactionReciept>, Vec<bool>), Box<dyn Error + Send + Sync>> {
         let block = self.get_block(block_number).await?;
         let transactions_reciepts = self.get_block_receipts(block_number).await?;
-
-        let to_addresses: Vec<String> = block.transactions.iter().filter_map(|tx| tx.to.clone()).collect();
-        let codes = self.get_codes(to_addresses).await?;
-        let has_code_flags: Vec<bool> = codes.iter().map(|code| !code.is_empty() && code != "0x").collect();
+        let has_code_flags = self.get_codes_by_transactions(&block.transactions).await?;
 
         Ok((block, transactions_reciepts, has_code_flags))
     }
@@ -162,6 +159,33 @@ impl EthereumClient {
         Ok(try_join_all(futures).await?)
     }
 
+    pub async fn get_codes_by_transactions(&self, transactions: &[Transaction]) -> Result<Vec<bool>, Box<dyn Error + Send + Sync>> {
+        let mut has_code_flags = Vec::with_capacity(transactions.len());
+        let mut addresses_to_check = Vec::new();
+        let mut indices_to_check = Vec::new();
+
+        // Pre-filter: only check addresses for transactions with non-empty input
+        for (i, tx) in transactions.iter().enumerate() {
+            if tx.to.is_some() && !tx.input.is_empty() && tx.input != "0x" {
+                addresses_to_check.push(tx.to.clone().unwrap());
+                indices_to_check.push(i);
+                has_code_flags.push(false); // placeholder, will be updated
+            } else {
+                has_code_flags.push(false); // definitely not a smart contract call
+            }
+        }
+
+        // Batch check codes only for relevant addresses
+        if !addresses_to_check.is_empty() {
+            let codes = self.get_codes(addresses_to_check).await?;
+            for (idx, code) in indices_to_check.into_iter().zip(codes.iter()) {
+                has_code_flags[idx] = !code.is_empty() && code != "0x";
+            }
+        }
+
+        Ok(has_code_flags)
+    }
+
     pub async fn get_transactions_with_codes(
         &self,
         hashes: Vec<String>,
@@ -170,10 +194,7 @@ impl EthereumClient {
         let reciepts = self.get_transactions_receipts(hashes.clone()).await?;
         let block_ids = transactions.iter().map(|x| x.block_number.clone()).collect::<Vec<String>>();
         let blocks = self.get_blocks(block_ids.clone(), false).await?;
-
-        let to_addresses: Vec<String> = transactions.iter().filter_map(|tx| tx.to.clone()).collect();
-        let codes = self.get_codes(to_addresses).await?;
-        let has_code_flags: Vec<bool> = codes.iter().map(|code| !code.is_empty() && code != "0x").collect();
+        let has_code_flags = self.get_codes_by_transactions(&transactions).await?;
 
         Ok(blocks
             .into_iter()
