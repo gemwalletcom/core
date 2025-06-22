@@ -36,10 +36,10 @@ impl AnkrClient {
         }
         Ok(self
             .client
-            .get_transactions(transaction_ids.clone())
+            .get_transactions_with_codes(transaction_ids.clone())
             .await?
             .into_iter()
-            .filter_map(|x| EthereumMapper::map_transaction(self.chain.to_chain(), &x.1.clone(), &x.2.clone(), x.0.timestamp.clone()))
+            .filter_map(|x| EthereumMapper::map_transaction(self.chain.to_chain(), &x.1, &x.2, x.0.timestamp.clone(), x.3))
             .collect())
     }
 

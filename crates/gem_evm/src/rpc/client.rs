@@ -71,6 +71,17 @@ impl EthereumClient {
         Ok(self.client.request("eth_getBlockReceipts", params).await?)
     }
 
+    pub async fn get_block_with_codes(&self, block_number: i64) -> Result<(Block, Vec<TransactionReciept>, Vec<bool>), Box<dyn Error + Send + Sync>> {
+        let block = self.get_block(block_number).await?;
+        let transactions_reciepts = self.get_block_receipts(block_number).await?;
+
+        let to_addresses: Vec<String> = block.transactions.iter().filter_map(|tx| tx.to.clone()).collect();
+        let codes = self.get_codes(to_addresses).await?;
+        let has_code_flags: Vec<bool> = codes.iter().map(|code| !code.is_empty() && code != "0x").collect();
+
+        Ok((block, transactions_reciepts, has_code_flags))
+    }
+
     pub async fn get_latest_block(&self) -> Result<i64> {
         let block_hex: String = self.client.request("eth_blockNumber", ()).await?;
         if !block_hex.starts_with("0x") {
@@ -124,5 +135,52 @@ impl EthereumClient {
         }
         batch.send().await?;
         Ok(try_join_all(futures).await?)
+    }
+
+    pub async fn eth_get_code(&self, address: &str) -> Result<String> {
+        let to_address = Address::from_str(address)?;
+        let params = (to_address, BlockId::Number(BlockNumberOrTag::Latest));
+        let code: String = self.client.request("eth_getCode", params).await?;
+        Ok(code)
+    }
+
+    pub async fn get_codes(&self, addresses: Vec<String>) -> Result<Vec<String>, Box<dyn Error + Send + Sync>> {
+        let mut batch = self.client.new_batch();
+        let mut futures = Vec::new();
+        for address in &addresses {
+            if let Ok(to_address) = Address::from_str(address) {
+                let params = (to_address, BlockId::Number(BlockNumberOrTag::Latest));
+                futures.push(batch.add_call("eth_getCode", &params)?);
+            } else {
+                futures.push(batch.add_call(
+                    "eth_getCode",
+                    &("0x0000000000000000000000000000000000000000", BlockId::Number(BlockNumberOrTag::Latest)),
+                )?);
+            }
+        }
+        batch.send().await?;
+        Ok(try_join_all(futures).await?)
+    }
+
+    pub async fn get_transactions_with_codes(
+        &self,
+        hashes: Vec<String>,
+    ) -> Result<Vec<(BlockTransactionsIds, Transaction, TransactionReciept, bool)>, Box<dyn Error + Send + Sync>> {
+        let transactions = self.get_transactions_by_hash(hashes.clone()).await?;
+        let reciepts = self.get_transactions_receipts(hashes.clone()).await?;
+        let block_ids = transactions.iter().map(|x| x.block_number.clone()).collect::<Vec<String>>();
+        let blocks = self.get_blocks(block_ids.clone(), false).await?;
+
+        let to_addresses: Vec<String> = transactions.iter().filter_map(|tx| tx.to.clone()).collect();
+        let codes = self.get_codes(to_addresses).await?;
+        let has_code_flags: Vec<bool> = codes.iter().map(|code| !code.is_empty() && code != "0x").collect();
+
+        Ok(blocks
+            .into_iter()
+            .zip(transactions.into_iter())
+            .zip(reciepts.into_iter())
+            .zip(has_code_flags.into_iter())
+            .map(|(((block, tx), receipt), has_code)| (block, tx, receipt, has_code))
+            .collect())
     }
 }
