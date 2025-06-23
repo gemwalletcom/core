@@ -11,6 +11,7 @@ use primitives::{chain::Chain, AssetId, TransactionState, TransactionType};
 
 pub const INPUT_0X: &str = "0x";
 pub const FUNCTION_ERC20_TRANSFER: &str = "0xa9059cbb";
+pub const TRANSFER_GAS_LIMIT: u64 = 21000;
 
 pub struct EthereumMapper;
 
@@ -41,8 +42,12 @@ impl EthereumMapper {
         let to = ethereum_address_checksum(&transaction.to.clone().unwrap_or_default()).ok()?;
         let created_at = DateTime::from_timestamp(timestamp.clone().try_into().ok()?, 0)?;
 
-        // system transfer
-        if transaction.input == "0x" {
+        let is_native_transfer = transaction.input == INPUT_0X && transaction.gas == TRANSFER_GAS_LIMIT;
+        let is_native_transfer_with_data = transaction.input.len() > 2
+            && transaction.gas > TRANSFER_GAS_LIMIT
+            && Self::get_data_cost(&transaction.input).is_some_and(|data_cost| transaction_reciept.gas_used <= BigUint::from(TRANSFER_GAS_LIMIT + data_cost));
+
+        if is_native_transfer || is_native_transfer_with_data {
             let transaction = primitives::Transaction::new(
                 transaction.hash.clone(),
                 chain.as_asset_id(),
@@ -98,13 +103,8 @@ impl EthereumMapper {
             }
         }
 
-        // Check for smart contract call using intrinsic transaction properties
-        let is_smart_contract_call = transaction.to.is_some()
-            && !transaction.input.is_empty()
-            && transaction.input != INPUT_0X
-            && Self::has_smart_contract_indicators(transaction, transaction_reciept);
-
-        if is_smart_contract_call {
+        // Check for smart contract call
+        if transaction.to.is_some() && transaction.input.len() > 2 && Self::has_smart_contract_indicators(transaction, transaction_reciept) {
             let transaction = primitives::Transaction::new(
                 transaction.hash.clone(),
                 chain.as_asset_id(),
@@ -125,13 +125,19 @@ impl EthereumMapper {
         None
     }
 
+    fn get_data_cost(input: &str) -> Option<u64> {
+        let bytes = hex::decode(input.trim_start_matches("0x")).ok()?;
+        let data_cost = bytes.iter().map(|byte| if *byte == 0 { 4 } else { 68 }).sum();
+
+        Some(data_cost)
+    }
+
     fn has_smart_contract_indicators(transaction: &Transaction, transaction_reciept: &TransactionReciept) -> bool {
-        // Smart contract calls typically have:
         // 1. Gas limit > 21,000 (simple transfers use exactly 21,000)
         // 2. Receipt has logs (contract execution emits events)
         let has_logs = !transaction_reciept.logs.is_empty();
 
-        transaction.gas > 21_000 || has_logs
+        transaction.gas > TRANSFER_GAS_LIMIT && has_logs
     }
 }
 
@@ -140,23 +146,19 @@ mod tests {
     use super::*;
     use crate::rpc::model::{Transaction, TransactionReciept};
     use num_bigint::BigUint;
-    use primitives::{Chain, TransactionType};
+    use primitives::{Chain, JsonRpcResult, TransactionType};
 
     #[test]
     fn test_map_smart_contract_call() {
         let contract_call_tx_json: serde_json::Value = serde_json::from_str(include_str!("test/contract_call_tx.json")).unwrap();
-        let contract_call_tx: Transaction = serde_json::from_value(contract_call_tx_json["result"].clone()).unwrap();
+        let contract_call_tx: Transaction = serde_json::from_value::<JsonRpcResult<Transaction>>(contract_call_tx_json).unwrap().result;
 
         let contract_call_receipt_json: serde_json::Value = serde_json::from_str(include_str!("test/contract_call_tx_receipt.json")).unwrap();
-        let contract_call_receipt: TransactionReciept = serde_json::from_value(contract_call_receipt_json["result"].clone()).unwrap();
+        let contract_call_receipt = serde_json::from_value::<JsonRpcResult<TransactionReciept>>(contract_call_receipt_json)
+            .unwrap()
+            .result;
 
-        let timestamp = BigUint::from(1735671600u64);
-
-        // Test smart contract call detection using intrinsic properties
-        let result = EthereumMapper::map_transaction(Chain::Ethereum, &contract_call_tx, &contract_call_receipt, &timestamp);
-
-        assert!(result.is_some());
-        let transaction = result.unwrap();
+        let transaction = EthereumMapper::map_transaction(Chain::Ethereum, &contract_call_tx, &contract_call_receipt, &BigUint::from(1735671600u64)).unwrap();
 
         assert_eq!(transaction.transaction_type, TransactionType::SmartContractCall);
         assert_eq!(transaction.hash, "0x876707912c2d625723aa14bf268d83ede36c2657c70da500628e40e6b51577c9");
@@ -167,10 +169,12 @@ mod tests {
     #[test]
     fn test_has_smart_contract_indicators() {
         let contract_call_tx_json: serde_json::Value = serde_json::from_str(include_str!("test/contract_call_tx.json")).unwrap();
-        let contract_call_tx: Transaction = serde_json::from_value(contract_call_tx_json["result"].clone()).unwrap();
+        let contract_call_tx: Transaction = serde_json::from_value::<JsonRpcResult<Transaction>>(contract_call_tx_json).unwrap().result;
 
         let contract_call_receipt_json: serde_json::Value = serde_json::from_str(include_str!("test/contract_call_tx_receipt.json")).unwrap();
-        let contract_call_receipt: TransactionReciept = serde_json::from_value(contract_call_receipt_json["result"].clone()).unwrap();
+        let contract_call_receipt = serde_json::from_value::<JsonRpcResult<TransactionReciept>>(contract_call_receipt_json)
+            .unwrap()
+            .result;
 
         // Should detect smart contract call (has logs and gas > 21000)
         assert!(EthereumMapper::has_smart_contract_indicators(&contract_call_tx, &contract_call_receipt));
