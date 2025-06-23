@@ -42,8 +42,12 @@ impl EthereumMapper {
         let to = ethereum_address_checksum(&transaction.to.clone().unwrap_or_default()).ok()?;
         let created_at = DateTime::from_timestamp(timestamp.clone().try_into().ok()?, 0)?;
 
-        // native transfer
-        if transaction.input == INPUT_0X && transaction.gas == TRANSFER_GAS_LIMIT {
+        let is_native_transfer = transaction.input == INPUT_0X && transaction.gas == TRANSFER_GAS_LIMIT;
+        let is_native_transfer_with_data = transaction.input.len() > 2
+            && transaction.gas > TRANSFER_GAS_LIMIT
+            && Self::get_data_cost(&transaction.input).is_some_and(|data_cost| transaction_reciept.gas_used <= BigUint::from(TRANSFER_GAS_LIMIT + data_cost));
+
+        if is_native_transfer || is_native_transfer_with_data {
             let transaction = primitives::Transaction::new(
                 transaction.hash.clone(),
                 chain.as_asset_id(),
@@ -60,30 +64,6 @@ impl EthereumMapper {
                 created_at,
             );
             return Some(transaction);
-        }
-
-        // native transfer with data
-        if transaction.input.len() > 2 && transaction.gas > TRANSFER_GAS_LIMIT {
-            if let Some(data_cost) = Self::get_data_cost(&transaction.input) {
-                if transaction_reciept.gas_used <= BigUint::from(TRANSFER_GAS_LIMIT + data_cost) {
-                    let transaction = primitives::Transaction::new(
-                        transaction.hash.clone(),
-                        chain.as_asset_id(),
-                        from,
-                        to,
-                        None,
-                        TransactionType::Transfer,
-                        state,
-                        fee.to_string(),
-                        chain.as_asset_id(),
-                        value,
-                        None,
-                        None,
-                        created_at,
-                    );
-                    return Some(transaction);
-                }
-            }
         }
 
         // erc20 transfer
@@ -124,10 +104,7 @@ impl EthereumMapper {
         }
 
         // Check for smart contract call
-        let is_smart_contract_call =
-            transaction.to.is_some() && transaction.input.len() > 2 && Self::has_smart_contract_indicators(transaction, transaction_reciept);
-
-        if is_smart_contract_call {
+        if transaction.to.is_some() && transaction.input.len() > 2 && Self::has_smart_contract_indicators(transaction, transaction_reciept) {
             let transaction = primitives::Transaction::new(
                 transaction.hash.clone(),
                 chain.as_asset_id(),
@@ -177,17 +154,11 @@ mod tests {
         let contract_call_tx: Transaction = serde_json::from_value::<JsonRpcResult<Transaction>>(contract_call_tx_json).unwrap().result;
 
         let contract_call_receipt_json: serde_json::Value = serde_json::from_str(include_str!("test/contract_call_tx_receipt.json")).unwrap();
-        let contract_call_receipt: TransactionReciept = serde_json::from_value::<JsonRpcResult<TransactionReciept>>(contract_call_receipt_json)
+        let contract_call_receipt = serde_json::from_value::<JsonRpcResult<TransactionReciept>>(contract_call_receipt_json)
             .unwrap()
             .result;
 
-        let timestamp = BigUint::from(1735671600u64);
-
-        // Test smart contract call detection using intrinsic properties
-        let result = EthereumMapper::map_transaction(Chain::Ethereum, &contract_call_tx, &contract_call_receipt, &timestamp);
-
-        assert!(result.is_some());
-        let transaction = result.unwrap();
+        let transaction = EthereumMapper::map_transaction(Chain::Ethereum, &contract_call_tx, &contract_call_receipt, &BigUint::from(1735671600u64)).unwrap();
 
         assert_eq!(transaction.transaction_type, TransactionType::SmartContractCall);
         assert_eq!(transaction.hash, "0x876707912c2d625723aa14bf268d83ede36c2657c70da500628e40e6b51577c9");
@@ -201,7 +172,7 @@ mod tests {
         let contract_call_tx: Transaction = serde_json::from_value::<JsonRpcResult<Transaction>>(contract_call_tx_json).unwrap().result;
 
         let contract_call_receipt_json: serde_json::Value = serde_json::from_str(include_str!("test/contract_call_tx_receipt.json")).unwrap();
-        let contract_call_receipt: TransactionReciept = serde_json::from_value::<JsonRpcResult<TransactionReciept>>(contract_call_receipt_json)
+        let contract_call_receipt = serde_json::from_value::<JsonRpcResult<TransactionReciept>>(contract_call_receipt_json)
             .unwrap()
             .result;
 
