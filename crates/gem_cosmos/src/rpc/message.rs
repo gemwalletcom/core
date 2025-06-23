@@ -13,6 +13,7 @@ pub enum CosmosMessage {
     MsgWithdrawDelegatorReward(MsgWithdrawDelegatorReward),
     #[serde(rename = "/cosmos.staking.v1beta1.MsgDelegate")]
     MsgDelegate(MsgDelegate),
+    #[serde(other)]
     Unknown(serde_json::Value),
 }
 
