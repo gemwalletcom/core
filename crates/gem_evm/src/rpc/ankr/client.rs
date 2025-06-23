@@ -39,7 +39,9 @@ impl AnkrClient {
             .get_transactions(transaction_ids.clone())
             .await?
             .into_iter()
-            .filter_map(|x| EthereumMapper::map_transaction(self.chain.to_chain(), &x.1.clone(), &x.2.clone(), x.0.timestamp.clone()))
+            .filter_map(|(block, transaction, receipt)| {
+                EthereumMapper::map_transaction(self.chain.to_chain(), &transaction, &receipt, &block.timestamp)
+            })
             .collect())
     }
 

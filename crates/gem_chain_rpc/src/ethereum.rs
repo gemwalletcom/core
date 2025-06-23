@@ -42,7 +42,7 @@ impl ChainBlockProvider for EthereumProvider {
         let block = self.client.get_block(block_number).await?;
         let transactions_reciepts = self.client.get_block_receipts(block_number).await?;
 
-        Ok(EthereumMapper::map_transactions(self.get_chain(), block.clone(), transactions_reciepts.clone()))
+        Ok(EthereumMapper::map_transactions(self.get_chain(), block, transactions_reciepts))
     }
 }
 
