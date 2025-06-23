@@ -48,20 +48,10 @@ impl TonClient {
             .await?)
     }
 
-    pub async fn get_transactions_in_all_blocks(&self, block_id: String) -> Result<Transactions, Box<dyn Error + Send + Sync>> {
+    pub async fn get_transactions(&self, block_id: String) -> Result<Transactions, Box<dyn Error + Send + Sync>> {
         Ok(self
             .client
             .get(format!("{}/v2/blockchain/masterchain/{}/transactions", self.url, block_id))
-            .send()
-            .await?
-            .json()
-            .await?)
-    }
-
-    pub async fn get_block_transactions(&self, block_id: String) -> Result<Transactions, Box<dyn Error + Send + Sync>> {
-        Ok(self
-            .client
-            .get(format!("{}/v2/blockchain/blocks/{}/transactions", self.url, block_id))
             .send()
             .await?
             .json()
