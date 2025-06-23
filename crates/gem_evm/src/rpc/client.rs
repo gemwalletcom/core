@@ -4,10 +4,13 @@ use alloy_rpc_types::{BlockId, BlockNumberOrTag, TransactionRequest as AlloyTran
 use anyhow::{anyhow, Result};
 use futures::future::try_join_all;
 use serde::de::DeserializeOwned;
+use serde_json::Value;
 use std::any::TypeId;
 use std::error::Error;
 use std::str::FromStr;
 use url::Url;
+
+use crate::trace_call::model::TraceCallResult;
 
 use crate::rpc::model::BlockTransactionsIds;
 
@@ -124,5 +127,21 @@ impl EthereumClient {
         }
         batch.send().await?;
         Ok(try_join_all(futures).await?)
+    }
+
+    pub async fn trace_call(&self, tx_request: AlloyTransactionRequest, trace_types: Vec<String>) -> Result<TraceCallResult> {
+        let params = (tx_request, trace_types, BlockId::Number(BlockNumberOrTag::Latest));
+        Ok(self.client.request("trace_call", params).await?)
+    }
+
+    pub async fn trace_transaction(&self, tx_hash: &str) -> Result<TraceCallResult> {
+        let params = (tx_hash,);
+        Ok(self.client.request("trace_transaction", params).await?)
+    }
+
+    /// Raw trace_call that returns untyped JSON for advanced use cases
+    pub async fn trace_call_raw(&self, tx_request: AlloyTransactionRequest, trace_types: Vec<String>) -> Result<Value> {
+        let params = (tx_request, trace_types, BlockId::Number(BlockNumberOrTag::Latest));
+        Ok(self.client.request("trace_call", params).await?)
     }
 }

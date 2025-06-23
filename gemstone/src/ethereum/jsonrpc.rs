@@ -1,7 +1,10 @@
 use alloy_primitives::{hex::decode as HexDecode, U256};
 use alloy_sol_types::SolCall;
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use std::sync::Arc;
+
+use gem_evm::trace_call::model::TraceCallResult;
 
 use crate::{
     debug_println,
@@ -79,4 +82,19 @@ pub async fn multicall3_call(
     let decoded = IMulticall3::aggregate3Call::abi_decode_returns(&hex_data).map_err(|_| SwapperError::ABIError("failed to decode aggregate3Call".into()))?;
 
     Ok(decoded)
+}
+
+pub async fn trace_call(provider: Arc<dyn AlienProvider>, chain: Chain, tx: TransactionObject, trace_types: Vec<String>) -> Result<TraceCallResult, SwapperError> {
+    let call = EthereumRpc::TraceCall(tx, trace_types, BlockParameter::Latest);
+    let client = JsonRpcClient::new_with_chain(provider, chain);
+    let resp: JsonRpcResult<TraceCallResult> = client.call(&call).await?;
+    Ok(resp.take()?)
+}
+
+/// Raw trace_call that returns untyped JSON for advanced use cases
+pub async fn trace_call_raw(provider: Arc<dyn AlienProvider>, chain: Chain, tx: TransactionObject, trace_types: Vec<String>) -> Result<Value, SwapperError> {
+    let call = EthereumRpc::TraceCall(tx, trace_types, BlockParameter::Latest);
+    let client = JsonRpcClient::new_with_chain(provider, chain);
+    let resp: JsonRpcResult<Value> = client.call(&call).await?;
+    Ok(resp.take()?)
 }

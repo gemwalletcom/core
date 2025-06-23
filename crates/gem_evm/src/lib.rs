@@ -13,6 +13,7 @@ pub mod lido;
 pub mod multicall3;
 pub mod permit2;
 pub mod thorchain;
+pub mod trace_call;
 pub mod uniswap;
 pub mod weth;
 
