@@ -40,14 +40,14 @@ All commands use `just` task runner:
 ### Building
 - `just build` - Build workspace
 - `just build-gemstone` - Build cross-platform library
-- `just build-ios` - Build iOS Swift Package
-- `just build-android` - Build Android AAR
+- `just gemstone build-ios` - Build iOS Swift Package (in gemstone/)
+- `just gemstone build-android` - Build Android AAR (in gemstone/)
 
 ### Testing
 - `just test-workspace` - Run all workspace tests
 - `just test-all` - Run all tests including integration
 - `just test <CRATE>` - Test specific crate
-- `just test-ios` - Run iOS integration tests
+- `just gemstone test-ios` - Run iOS integration tests (in gemstone/)
 
 ### Code Quality
 - `just format` - Format all code
@@ -60,8 +60,8 @@ All commands use `just` task runner:
 - `just setup-services` - Start Docker services (PostgreSQL, Redis, ClickHouse, Meilisearch, RabbitMQ)
 
 ### Mobile Development
-- `just install-ios-targets` - Install iOS Rust targets
-- `just install-android-targets` - Install Android Rust targets and cargo-ndk
+- `just gemstone install-ios-targets` - Install iOS Rust targets (in gemstone/)
+- `just gemstone install-android-targets` - Install Android Rust targets and cargo-ndk (in gemstone/)
 - Mobile builds require UniFFI bindings generation and platform-specific compilation
 
 ### Utilities
@@ -116,7 +116,7 @@ Follow the existing code style patterns unless explicitly asked to change:
 ### Async Patterns
 - Tokio runtime throughout
 - Async client structs with `Result<T, Error>` methods
-- `Arc<Mutex<T>>` for shared async state
+- `Arc<tokio::sync::Mutex<T>>` for shared async state
 
 ### Testing
 - Integration tests in separate `tests/` directories
