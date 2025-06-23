@@ -427,9 +427,9 @@ mod examples {
         // Create transaction request  
         let tx_request = TransactionRequest {
             from: Some("0x6bde9f8888e560adffdf14eb18a12ad96727e9c7".parse().unwrap()),
-            to: Some("0x66a9893cc07d91d95644aedd05d03f95e1dba8af".parse().into()),
-            value: Some(0.into()),
-            input: Some("0x3593564c".parse().unwrap().into()),
+            to: Some(alloy_primitives::TxKind::Call("0x66a9893cc07d91d95644aedd05d03f95e1dba8af".parse().unwrap())),
+            value: Some(alloy_primitives::U256::from(0)),
+            input: "0x3593564c".parse::<alloy_primitives::Bytes>().unwrap().into(),
             ..Default::default()
         };
         
@@ -440,23 +440,23 @@ mod examples {
             .expect("trace_call failed");
         
         // Direct access to typed fields
-        if let Some(state_diff) = trace_result.state_diff {
+        if let Some(ref state_diff) = trace_result.state_diff {
             println!("Found state changes for {} addresses", state_diff.len());
             
             for (address, diff) in state_diff {
-                if let Some(balance_changes) = diff.balance {
+                if let Some(_balance_changes) = &diff.balance {
                     println!("Address {} has balance changes", address);
                 }
                 
-                if let Some(storage_changes) = diff.storage {
+                if let Some(storage_changes) = &diff.storage {
                     println!("Address {} has {} storage changes", address, storage_changes.len());
                 }
             }
         }
         
         // Extract participant addresses from trace
-        if let Some(trace) = trace_result.trace {
-            let participants = extract_addresses_from_trace(&trace);
+        if let Some(ref trace) = trace_result.trace {
+            let participants = extract_addresses_from_trace(trace);
             println!("Found {} participant addresses", participants.len());
         }
         
