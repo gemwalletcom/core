@@ -16,13 +16,13 @@ pub struct EthereumMapper;
 
 impl EthereumMapper {
     pub fn map_transactions(chain: Chain, block: Block, transactions_reciepts: Vec<TransactionReciept>) -> Vec<primitives::Transaction> {
-        let timestamp = block.timestamp.clone();
+        let timestamp = &block.timestamp;
         block
             .transactions
             .into_iter()
             .zip(transactions_reciepts.iter())
             .filter_map(|(transaction, receipt)| {
-                EthereumMapper::map_transaction(chain, &transaction, receipt, timestamp.clone())
+                EthereumMapper::map_transaction(chain, &transaction, receipt, timestamp)
             })
             .collect()
     }
@@ -31,7 +31,7 @@ impl EthereumMapper {
         chain: Chain,
         transaction: &Transaction,
         transaction_reciept: &TransactionReciept,
-        timestamp: BigUint,
+        timestamp: &BigUint,
     ) -> Option<primitives::Transaction> {
         let state = if transaction_reciept.status == "0x1" {
             TransactionState::Confirmed
@@ -42,7 +42,7 @@ impl EthereumMapper {
         let fee = transaction_reciept.get_fee().to_string();
         let from = ethereum_address_checksum(&transaction.from.clone()).ok()?;
         let to = ethereum_address_checksum(&transaction.to.clone().unwrap_or_default()).ok()?;
-        let created_at = DateTime::from_timestamp(timestamp.try_into().ok()?, 0)?;
+        let created_at = DateTime::from_timestamp(timestamp.clone().try_into().ok()?, 0)?;
 
         // system transfer
         if transaction.input == "0x" {
@@ -165,7 +165,7 @@ mod tests {
         let timestamp = BigUint::from(1735671600u64);
 
         // Test smart contract call detection using intrinsic properties
-        let result = EthereumMapper::map_transaction(Chain::Ethereum, &contract_call_tx, &contract_call_receipt, timestamp);
+        let result = EthereumMapper::map_transaction(Chain::Ethereum, &contract_call_tx, &contract_call_receipt, &timestamp);
 
         assert!(result.is_some());
         let transaction = result.unwrap();

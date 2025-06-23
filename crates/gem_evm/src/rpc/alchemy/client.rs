@@ -41,7 +41,7 @@ impl AlchemyClient {
             .await?
             .into_iter()
             .filter_map(|(block, transaction, receipt)| {
-                EthereumMapper::map_transaction(self.chain.to_chain(), &transaction, &receipt, block.timestamp)
+                EthereumMapper::map_transaction(self.chain.to_chain(), &transaction, &receipt, &block.timestamp)
             })
             .collect())
     }
