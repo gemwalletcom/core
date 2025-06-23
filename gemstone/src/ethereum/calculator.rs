@@ -1,21 +1,16 @@
 use alloy_primitives::U256;
+use primitives::{Chain, EVMChain};
 
 use super::model::{GemEthereumFeeHistory, GemFeePriority, GemPriorityFeeRecord};
-use crate::GemstoneError;
+use crate::{config::evm_chain::get_evm_chain_config, GemstoneError};
 use gem_evm::parse_u256;
 
 #[derive(Debug, Default, uniffi::Object)]
 pub struct GemFeeCalculator {}
 
-#[uniffi::export]
 impl GemFeeCalculator {
-    #[uniffi::constructor]
-    pub fn new() -> Self {
-        Self::default()
-    }
-
-    pub fn calculate_min_priority_fee(&self, gas_used_ratios: Vec<f64>, base_fee: String, default_min_priority_fee: u64) -> Result<u64, GemstoneError> {
-        let base_fee = parse_u256(&base_fee).ok_or_else(|| GemstoneError::AnyError {
+    pub fn calculate_min_priority_fee(&self, gas_used_ratios: Vec<f64>, base_fee: &str, default_min_priority_fee: u64) -> Result<u64, GemstoneError> {
+        let base_fee = parse_u256(base_fee).ok_or_else(|| GemstoneError::AnyError {
             msg: format!("Invalid base_fee: {}", base_fee),
         })?;
 
@@ -85,6 +80,26 @@ impl GemFeeCalculator {
     }
 }
 
+#[uniffi::export]
+impl GemFeeCalculator {
+    #[uniffi::constructor]
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn caluclate_base_priority_fees(&self, chain: Chain, history: GemEthereumFeeHistory) -> Result<Vec<GemPriorityFeeRecord>, GemstoneError> {
+        let evm_chain = EVMChain::from_chain(chain).ok_or(GemstoneError::AnyError { msg: "Invalid chain".into() })?;
+        let config = get_evm_chain_config(evm_chain);
+        let base_fee = history.base_fee_per_gas.last().ok_or(GemstoneError::AnyError {
+            msg: "Invalid base fee".into(),
+        })?;
+
+        let min_priority_fee = self.calculate_min_priority_fee(history.gas_used_ratio.clone(), base_fee, config.min_priority_fee)?;
+        let priorities = vec![GemFeePriority::Slow, GemFeePriority::Normal, GemFeePriority::Fast];
+        self.calculate_priority_fees(history, &priorities, min_priority_fee)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::network::JsonRpcResponse;
@@ -100,26 +115,20 @@ mod tests {
         // Congested
         let ratios_congested = vec![0.9, 0.95, 1.0];
         assert_eq!(
-            service.calculate_min_priority_fee(ratios_congested, base_fee.clone(), default_fee).unwrap(),
+            service.calculate_min_priority_fee(ratios_congested, &base_fee, default_fee).unwrap(),
             1000000000
         );
 
         // Moderate
         let ratios_moderate = vec![0.7, 0.8, 0.75];
-        assert_eq!(
-            service.calculate_min_priority_fee(ratios_moderate, base_fee.clone(), default_fee).unwrap(),
-            500000000
-        );
+        assert_eq!(service.calculate_min_priority_fee(ratios_moderate, &base_fee, default_fee).unwrap(), 500000000);
 
         // Quiet
         let ratios_quiet = vec![0.1, 0.2, 0.3];
-        assert_eq!(
-            service.calculate_min_priority_fee(ratios_quiet, base_fee.clone(), default_fee).unwrap(),
-            100000000
-        );
+        assert_eq!(service.calculate_min_priority_fee(ratios_quiet, &base_fee, default_fee).unwrap(), 100000000);
 
         // Empty ratios
-        assert_eq!(service.calculate_min_priority_fee(vec![], base_fee, default_fee).unwrap(), 1000000000);
+        assert_eq!(service.calculate_min_priority_fee(vec![], &base_fee, default_fee).unwrap(), 1000000000);
     }
 
     #[test]

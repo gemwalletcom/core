@@ -1,3 +1,5 @@
+use std::cmp::min;
+
 use primitives::EVMChain;
 
 #[derive(uniffi::Record, Debug, Clone, PartialEq)]
@@ -16,6 +18,10 @@ pub struct EVMHistoryRewardPercentiles {
 }
 
 pub fn get_evm_chain_config(chain: EVMChain) -> EVMChainConfig {
+    let block_time = chain.to_chain().block_time();
+    // max 15 blocks
+    let blocks = min(60 * 1000 / block_time, 15);
+
     EVMChainConfig {
         min_priority_fee: chain.min_priority_fee(),
         is_opstack: chain.is_opstack(),
@@ -24,6 +30,6 @@ pub fn get_evm_chain_config(chain: EVMChain) -> EVMChainConfig {
             normal: 40,
             fast: 60,
         },
-        fee_history_blocks: 4,
+        fee_history_blocks: blocks as u64,
     }
 }

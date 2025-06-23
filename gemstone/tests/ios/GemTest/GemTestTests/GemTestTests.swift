@@ -203,18 +203,10 @@ final class GemTestTests: XCTestCase {
 
         let calculator = GemFeeCalculator()
 
-        let minPriorityFee: UInt64 = try calculator.calculateMinPriorityFee(
-            gasUsedRatios: feeHisotry.gasUsedRatio,
-            baseFee: feeHisotry.baseFeePerGas.last!,
-            defaultMinPriorityFee: 1_000_000_000
-        )
 
-        let priorityFee = try calculator.calculatePriorityFees(
-            feeHistory: feeHisotry,
-            priorities: [.slow, .normal, .fast],
-            minPriorityFee: minPriorityFee
-        )
 
-        print(minPriorityFee, priorityFee)
+        let priorityFee = try calculator.caluclateBasePriorityFees(chain: "ethereum", history: feeHisotry)
+
+        print(priorityFee)
     }
 }
