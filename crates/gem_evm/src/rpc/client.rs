@@ -71,7 +71,6 @@ impl EthereumClient {
         Ok(self.client.request("eth_getBlockReceipts", params).await?)
     }
 
-
     pub async fn get_latest_block(&self) -> Result<i64> {
         let block_hex: String = self.client.request("eth_blockNumber", ()).await?;
         if !block_hex.starts_with("0x") {
@@ -126,5 +125,4 @@ impl EthereumClient {
         batch.send().await?;
         Ok(try_join_all(futures).await?)
     }
-
 }
