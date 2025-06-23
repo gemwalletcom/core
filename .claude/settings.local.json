@@ -6,6 +6,7 @@
       "Bash(cargo test:*)",
       "Bash(cargo update:*)",
       "Bash(cargo check:*)",
+      "Bash(cargo clippy:*)",
       "Bash(grep:*)",
       "WebFetch(domain:github.com)",
       "Bash(git checkout:*)",
