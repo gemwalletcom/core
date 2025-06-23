@@ -1,6 +1,6 @@
 use num_bigint::BigUint;
 use serde::{Deserialize, Serialize};
-use serde_serializers::{deserialize_biguint_from_hex_str, deserialize_biguint_from_option_hex_str};
+use serde_serializers::{deserialize_biguint_from_hex_str, deserialize_biguint_from_option_hex_str, deserialize_u64_from_str_or_int};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -22,7 +22,8 @@ pub struct BlockTransactionsIds {
 #[serde(rename_all = "camelCase")]
 pub struct Transaction {
     pub from: String,
-    pub gas: String,
+    #[serde(deserialize_with = "deserialize_u64_from_str_or_int")]
+    pub gas: u64,
     // pub gas_price: String,
     // pub max_priority_fee_per_gas: Option<String>,
     // pub max_fee_per_gas: Option<String>,

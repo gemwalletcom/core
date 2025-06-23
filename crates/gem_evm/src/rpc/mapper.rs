@@ -132,18 +132,9 @@ impl EthereumMapper {
         // Smart contract calls typically have:
         // 1. Gas limit > 21,000 (simple transfers use exactly 21,000)
         // 2. Receipt has logs (contract execution emits events)
-        let gas_limit = Self::parse_hex_to_u64(&transaction.gas).unwrap_or(0);
         let has_logs = !transaction_reciept.logs.is_empty();
         
-        gas_limit > 21_000 || has_logs
-    }
-
-    fn parse_hex_to_u64(hex_str: &str) -> Option<u64> {
-        if let Some(stripped) = hex_str.strip_prefix("0x") {
-            u64::from_str_radix(stripped, 16).ok()
-        } else {
-            hex_str.parse().ok()
-        }
+        transaction.gas > 21_000 || has_logs
     }
 }
 
@@ -187,8 +178,7 @@ mod tests {
         // Should detect smart contract call (has logs and gas > 21000)
         assert!(EthereumMapper::has_smart_contract_indicators(&contract_call_tx, &contract_call_receipt));
         
-        // Test gas parsing
-        assert_eq!(EthereumMapper::parse_hex_to_u64("0x61a80"), Some(400000)); // > 21000
-        assert_eq!(EthereumMapper::parse_hex_to_u64("0x5208"), Some(21000)); // exactly 21000
+        // Verify gas was parsed correctly from hex "0x61a80" = 400000
+        assert_eq!(contract_call_tx.gas, 400000); // > 21000
     }
 }
