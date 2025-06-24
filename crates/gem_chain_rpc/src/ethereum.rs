@@ -102,11 +102,12 @@ impl ChainAssetsProvider for AlchemyClient {
     async fn get_assets_balances(&self, address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
         let response = self.get_token_balances(&address).await?;
         let balances = response
-            .token_balances
+            .data
+            .tokens
             .into_iter()
             .filter(|x| x.token_balance != BigUint::from(0u32))
             .filter_map(|x| {
-                ethereum_address_checksum(&x.contract_address).ok().map(|from| AssetBalance {
+                ethereum_address_checksum(&x.token_address).ok().map(|from| AssetBalance {
                     asset_id: AssetId::from_token(self.chain.to_chain(), &from),
                     balance: x.token_balance.to_string(),
                 })

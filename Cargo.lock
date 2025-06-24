@@ -3031,6 +3031,7 @@ dependencies = [
  "num-bigint",
  "num-traits",
  "primitives",
+ "reqwest-middleware",
  "serde",
  "serde_json",
  "serde_serializers",
