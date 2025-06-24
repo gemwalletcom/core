@@ -25,23 +25,20 @@ impl NearClient {
     pub async fn get_final_block(&self) -> Result<Block, Box<dyn Error + Send + Sync>> {
         let mut params = ObjectParams::new();
         params.insert("finality", "final")?;
-        let block: Block = self.client.request("block", params).await?;
-        Ok(block)
+        Ok(self.client.request("block", params).await?)
     }
 
     pub async fn get_block(&self, block: i64) -> Result<Block, Box<dyn Error + Send + Sync>> {
         let mut params = ObjectParams::new();
         params.insert("block_id", block)?;
-        let block: Block = self.client.request("block", params).await?;
-        Ok(block)
+        Ok(self.client.request("block", params).await?)
     }
 
     pub async fn get_chunk(&self, block: i64, shard_id: i64) -> Result<Chunk, Box<dyn Error + Send + Sync>> {
         let mut params = ObjectParams::new();
         params.insert("block_id", block)?;
         params.insert("shard_id", shard_id)?;
-        let chunk: Chunk = self.client.request("chunk", params).await?;
-        Ok(chunk)
+        Ok(self.client.request("chunk", params).await?)
     }
 }
 

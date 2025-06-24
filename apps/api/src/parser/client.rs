@@ -17,8 +17,7 @@ impl ParserClient {
         transaction_type: Option<&str>,
     ) -> Result<Vec<Transaction>, Box<dyn std::error::Error + Send + Sync>> {
         let provider = settings_chain::ProviderFactory::new_from_settings(chain, &self.settings);
-        let transactions = provider.get_transactions(block_number).await?;
-        Ok(self.filter_transactions(transactions, transaction_type))
+        Ok(self.filter_transactions(provider.get_transactions(block_number).await?, transaction_type))
     }
 
     pub async fn get_block_finalize(
