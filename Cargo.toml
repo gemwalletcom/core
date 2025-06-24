@@ -133,9 +133,6 @@ alloy-primitives = "1.2.0"
 alloy-sol-types = { version = "1.2.0", features = ["eip712-serde"] }
 alloy-dyn-abi = { version = "1.2.0", features = ["eip712"] }
 alloy-ens = "1.0.9"
-alloy-json-rpc = "1.0.9"
-alloy-rpc-client = "1.0.9"
-alloy-rpc-types = "1.0.9"
 
 # localizer
 i18n-embed = { version = "0.15.4", features = ["fluent-system", "autoreload"] }

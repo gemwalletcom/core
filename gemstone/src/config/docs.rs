@@ -22,7 +22,7 @@ pub enum DocsUrl {
     TokenVerification,
     AddCustomToken,
     WalletConnect,
-    HowStoreSecretPhrase
+    HowStoreSecretPhrase,
 }
 const DOCS_URL: &str = "https://docs.gemwallet.com";
 
