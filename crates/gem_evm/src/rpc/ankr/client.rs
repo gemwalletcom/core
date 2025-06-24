@@ -1,9 +1,8 @@
 use std::error::Error;
 
-use alloy_rpc_client::{ClientBuilder, RpcClient};
+use gem_jsonrpc::JsonRpcClient;
 use primitives::EVMChain;
 use serde_json::json;
-use url::Url;
 
 use crate::rpc::{
     ankr::model::{ankr_chain, TokenBalances, Transactions},
@@ -14,13 +13,13 @@ use crate::rpc::{
 pub struct AnkrClient {
     pub chain: EVMChain,
     pub client: EthereumClient,
-    rpc_client: RpcClient,
+    rpc_client: JsonRpcClient,
 }
 
 impl AnkrClient {
     pub fn new(client: EthereumClient, api_key: String) -> Self {
         let url = format!("https://rpc.ankr.com/multichain/{}", api_key);
-        let rpc_client = ClientBuilder::default().http(Url::parse(&url).expect("Invalid Ankr API URL"));
+        let rpc_client = JsonRpcClient::new(url).expect("Invalid Ankr API URL");
 
         Self {
             chain: client.chain,
@@ -62,7 +61,7 @@ impl AnkrClient {
                 "page_size": limit,
                 "desc_order": true
             });
-            Ok(self.rpc_client.request("ankr_getTransactionsByAddress", params).await?)
+            Ok(self.rpc_client.call("ankr_getTransactionsByAddress", params).await?)
         } else {
             Ok(Transactions { transactions: vec![] })
         }
@@ -79,7 +78,7 @@ impl AnkrClient {
                 }
             ]);
 
-            Ok(self.rpc_client.request("ankr_getAccountBalance", params).await?)
+            Ok(self.rpc_client.call("ankr_getAccountBalance", params).await?)
         } else {
             Ok(TokenBalances { assets: vec![] })
         }

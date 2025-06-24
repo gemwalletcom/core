@@ -1,9 +1,9 @@
 use std::error::Error;
 
 use crate::rpc::{alchemy::model::alchemy_rpc_url, EthereumClient, EthereumMapper};
-use alloy_rpc_client::{ClientBuilder, RpcClient};
+use gem_jsonrpc::JsonRpcClient;
 use primitives::EVMChain;
-use url::Url;
+use serde_json::json;
 
 use crate::rpc::alchemy::TokenBalances;
 
@@ -12,7 +12,7 @@ pub struct AlchemyClient {
     pub chain: EVMChain,
     api_key: String,
     ethereum_client: EthereumClient,
-    rpc_client: RpcClient,
+    rpc_client: JsonRpcClient,
 }
 
 impl AlchemyClient {
@@ -20,7 +20,7 @@ impl AlchemyClient {
 
     pub fn new(ethereum_client: EthereumClient, api_key: String) -> Self {
         let chain = ethereum_client.chain;
-        let rpc_client = ClientBuilder::default().http(Url::parse(&alchemy_rpc_url(chain, &api_key)).expect("Invalid Alchemy API URL"));
+        let rpc_client = JsonRpcClient::new(alchemy_rpc_url(chain, &api_key)).expect("Invalid Alchemy API URL");
 
         Self {
             chain,
@@ -52,7 +52,7 @@ impl AlchemyClient {
                 token_balances: vec![],
             });
         }
-        Ok(self.rpc_client.request("alchemy_getTokenBalances", (address,)).await?)
+        Ok(self.rpc_client.call("alchemy_getTokenBalances", json!([address])).await?)
     }
     // https://www.alchemy.com/docs/data/portfolio-apis/portfolio-api-endpoints/portfolio-api-endpoints/get-transaction-history-by-address
     //TODO: implement

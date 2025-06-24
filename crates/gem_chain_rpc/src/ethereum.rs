@@ -49,14 +49,17 @@ impl ChainBlockProvider for EthereumProvider {
 #[async_trait]
 impl ChainTokenDataProvider for EthereumProvider {
     async fn get_token_data(&self, token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
-        let name: String = self.client.eth_call(token_id.as_str(), &hex::encode(IERC20::nameCall {}.abi_encode())).await?;
+        let name: String = self
+            .client
+            .eth_call(token_id.as_str(), &hex::encode_prefixed(IERC20::nameCall {}.abi_encode()))
+            .await?;
         let symbol: String = self
             .client
-            .eth_call(token_id.as_str(), &hex::encode(IERC20::symbolCall {}.abi_encode()))
+            .eth_call(token_id.as_str(), &hex::encode_prefixed(IERC20::symbolCall {}.abi_encode()))
             .await?;
         let decimals: String = self
             .client
-            .eth_call(token_id.as_str(), &hex::encode(IERC20::decimalsCall {}.abi_encode()))
+            .eth_call(token_id.as_str(), &hex::encode_prefixed(IERC20::decimalsCall {}.abi_encode()))
             .await?;
 
         let name_value = decode_abi_string(&name)?;

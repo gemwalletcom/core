@@ -17,7 +17,9 @@
       "Bash(just test:*)",
       "Bash(just build)",
       "Bash(just format)",
-      "Bash(just lint)"
+      "Bash(just lint)",
+      "Bash(rg:*)",
+      "Bash(mkdir:*)"
     ],
     "deny": []
   }

@@ -6,14 +6,7 @@ edition = { workspace = true }
 [features]
 default = []
 typeshare = ["dep:typeshare"]
-rpc = [
-    "dep:alloy-rpc-client",
-    "dep:alloy-rpc-types",
-    "dep:url",
-    "dep:chrono",
-    "dep:async-trait",
-    "dep:futures",
-]
+rpc = ["gem_jsonrpc/client", "dep:chrono", "dep:async-trait", "dep:futures"]
 
 [dependencies]
 primitives = { path = "../primitives" }
@@ -37,9 +30,15 @@ bigdecimal = { workspace = true }
 typeshare = { workspace = true, optional = true }
 
 # rpc feature
-alloy-rpc-client = { workspace = true, optional = true }
-alloy-rpc-types = { workspace = true, optional = true }
-url = { workspace = true, features = ["serde"], optional = true }
 chrono = { workspace = true, optional = true }
 async-trait = { workspace = true, optional = true }
 futures = { workspace = true, optional = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
+num-bigint = { workspace = true }
+
+[[test]]
+name = "integration_test"
+test = false
+required-features = ["rpc"]
