@@ -2,7 +2,6 @@ use num_bigint::BigUint;
 use primitives::EVMChain;
 use serde::Deserialize;
 use serde_serializers::deserialize_biguint_from_hex_str;
-use serde_serializers::deserialize_biguint_from_str;
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -12,15 +11,21 @@ pub struct Transactions {
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct Data<T> {
+    pub data: T,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct TokenBalances {
-    pub address: Option<String>,
-    pub token_balances: Vec<TokenBalance>,
+    pub tokens: Vec<TokenBalance>,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TokenBalance {
-    pub contract_address: String,
+    pub address: String,
+    pub token_address: String,
     #[serde(deserialize_with = "deserialize_biguint_from_hex_str")]
     pub token_balance: BigUint,
 }
@@ -28,32 +33,7 @@ pub struct TokenBalance {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Transaction {
-    pub block_timestamp: u64,
-    pub block_number: u64,
     pub hash: String,
-    pub from_address: String,
-    pub to_address: String,
-    pub value: String,
-    #[serde(deserialize_with = "deserialize_biguint_from_str")]
-    pub gas: BigUint,
-    #[serde(deserialize_with = "deserialize_biguint_from_str")]
-    pub gas_price: BigUint,
-    pub nonce: String,
-    pub contract_address: Option<String>,
-    pub logs: Vec<Log>,
-    pub internal_transactions: Vec<InternalTransaction>,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct Log {}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct InternalTransaction {}
-
-pub fn alchemy_rpc_url(chain: EVMChain, api_key: &str) -> String {
-    format!("https://{}.g.alchemy.com/v2/{}", evm_chain_to_network(chain), api_key)
 }
 
 pub fn evm_chain_to_network(chain: EVMChain) -> String {

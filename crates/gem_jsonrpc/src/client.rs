@@ -6,6 +6,7 @@ use std::time::SystemTime;
 
 pub type CallTuple = (String, Value);
 
+#[derive(Clone)]
 pub struct JsonRpcClient {
     url: String,
     client: ClientWithMiddleware,

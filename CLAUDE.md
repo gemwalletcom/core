@@ -28,6 +28,8 @@ Individual `gem_*` crates for each blockchain with unified RPC client patterns:
 - `primitives/` - Central types and models shared across the system
 - `storage/` - Database models, migrations, and data access layer using Diesel ORM
 - `name_resolver/` - ENS, SNS, and other naming service integrations
+- `gem_evm/` - EVM blockchain support with unified RPC client patterns
+- `gem_jsonrpc/` - Internal JSON-RPC client library (replaces external alloy dependencies)
 - `fiat/` - Integration with fiat providers (MoonPay, Transak, Mercuryo, Banxa)
 - `nft/` - NFT marketplace integrations (OpenSea, Magic Eden, NFTScan)
 - `pricer/` - Asset pricing from CoinGecko and DEX sources
@@ -48,6 +50,7 @@ All commands use `just` task runner:
 - `just test-all` - Run all tests including integration
 - `just test <CRATE>` - Test specific crate
 - `just gemstone test-ios` - Run iOS integration tests (in gemstone/)
+- `cargo test --test integration_test --package <CRATE> --features <FEATURE>` - Run integration tests manually
 
 ### Code Quality
 - `just format` - Format all code
@@ -74,6 +77,7 @@ All commands use `just` task runner:
 - **Framework**: Rust workspace with Rocket web framework
 - **Database**: PostgreSQL (primary), ClickHouse (analytics), Redis (caching)
 - **Message Queue**: RabbitMQ with Lapin
+- **RPC**: Custom `gem_jsonrpc` client library for blockchain interactions
 - **Mobile**: UniFFI for iOS/Android bindings
 - **Serialization**: Serde with custom serializers
 - **Async**: Tokio runtime
@@ -123,6 +127,8 @@ Follow the existing code style patterns unless explicitly asked to change:
 - `#[tokio::test]` for async tests
 - Descriptive test names with `test_` prefix
 - `Result<(), Box<dyn std::error::Error + Send + Sync>>` for test error handling
+- Integration tests configured with `test = false` and `required-features` for manual execution
+- Use real blockchain networks for RPC client testing (Ethereum mainnet, etc.)
 
 ## Key Development Patterns
 
@@ -132,3 +138,18 @@ Follow the existing code style patterns unless explicitly asked to change:
 - Extensive use of async/await with Tokio
 - Database models use Diesel ORM with automatic migrations
 - Cross-platform compatibility considerations for mobile performance
+
+### RPC Client Patterns
+- Use `gem_jsonrpc::JsonRpcClient` for blockchain RPC interactions
+- Prefer `alloy_primitives::hex::encode_prefixed()` for hex encoding with 0x prefix
+- Use `alloy_primitives::Address::to_string()` instead of manual formatting
+- RPC calls expect hex strings directly - avoid double encoding
+- Batch operations use `JsonRpcClient::batch_call()` for multiple requests
+- Error handling with `JsonRpcError` type and proper propagation
+
+### Integration Testing
+- Add integration tests for RPC functionality to verify real network compatibility
+- Use `#[tokio::test]` for async integration tests
+- Test with recent blocks for batch operations (more reliable than historical blocks)
+- Integration tests should verify both successful calls and proper error handling
+- Use realistic contract addresses (USDC, etc.) for eth_call testing

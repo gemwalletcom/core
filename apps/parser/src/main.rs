@@ -31,12 +31,12 @@ pub async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         return consumers::run_consumer_store_transactions(settings.clone(), database.clone()).await;
     } else if mode == "consumer_fetch_blocks" {
         return consumers::run_consumer_fetch_blocks(settings.clone()).await;
-    } else if mode == "consumer_assets" {
-        tokio::spawn(consumers::run_consumer_fetch_assets(settings.clone(), database.clone()));
-        tokio::spawn(consumers::run_consumer_fetch_assets_addresses_associations(settings.clone(), database.clone()));
-        tokio::spawn(consumers::run_consumer_store_assets_addresses_associations(settings.clone(), database.clone()));
-        std::future::pending::<()>().await;
-        return Ok(());
+    } else if mode == "consumer_fetch_assets" {
+        return consumers::run_consumer_fetch_assets(settings.clone(), database.clone()).await;
+    } else if mode == "consumer_fetch_assets_mappings" {
+        return consumers::run_consumer_fetch_assets_mappings(settings.clone(), database.clone()).await;
+    } else if mode == "consumer_store_assets_mappings" {
+        return consumers::run_consumer_store_assets_mappings(settings.clone(), database.clone()).await;
     } else {
         return run_parser_mode(settings.clone(), database.clone()).await;
     }

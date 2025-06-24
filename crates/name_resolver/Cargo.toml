@@ -15,10 +15,7 @@ lazy_static = { workspace = true }
 alloy-primitives.workspace = true
 alloy-sol-types.workspace = true
 alloy-ens.workspace = true
-alloy-json-rpc = { workspace = true }
-alloy-rpc-client.workspace = true
-alloy-rpc-types = { workspace = true }
-url = { workspace = true, features = ["serde"] }
+gem_jsonrpc = { path = "../gem_jsonrpc", features = ["client"] }
 idna = { workspace = true }
 
 settings = { path = "../settings" }

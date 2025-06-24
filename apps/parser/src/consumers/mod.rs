@@ -34,8 +34,8 @@ pub async fn run_consumers(settings: Settings, database: Arc<Mutex<DatabaseClien
     tokio::spawn(run_consumer_fetch_assets(settings.clone(), database.clone()));
     tokio::spawn(run_consumer_store_transactions(settings.clone(), database.clone()));
     tokio::spawn(run_consumer_fetch_transactions(settings.clone(), database.clone()));
-    tokio::spawn(run_consumer_fetch_assets_addresses_associations(settings.clone(), database.clone()));
-    tokio::spawn(run_consumer_store_assets_addresses_associations(settings.clone(), database.clone()));
+    tokio::spawn(run_consumer_fetch_assets_mappings(settings.clone(), database.clone()));
+    tokio::spawn(run_consumer_store_assets_mappings(settings.clone(), database.clone()));
     tokio::spawn(run_consumer_fetch_blocks(settings.clone()));
     std::future::pending::<()>().await;
     Ok(())
@@ -101,11 +101,8 @@ pub async fn run_consumer_fetch_blocks(settings: Settings) -> Result<(), Box<dyn
         .await
 }
 
-pub async fn run_consumer_store_assets_addresses_associations(
-    settings: Settings,
-    database: Arc<Mutex<DatabaseClient>>,
-) -> Result<(), Box<dyn Error + Send + Sync>> {
-    let name = "store_assets_addresses_associations";
+pub async fn run_consumer_store_assets_mappings(settings: Settings, database: Arc<Mutex<DatabaseClient>>) -> Result<(), Box<dyn Error + Send + Sync>> {
+    let name = "store_assets_mappings";
     let stream_reader = StreamReader::new(&settings.rabbitmq.url, name).await?;
     let consumer = AssetsAddressesConsumer::new(database.clone());
     streamer::run_consumer::<AssetsAddressPayload, AssetsAddressesConsumer, usize>(
@@ -118,11 +115,8 @@ pub async fn run_consumer_store_assets_addresses_associations(
     .await
 }
 
-pub async fn run_consumer_fetch_assets_addresses_associations(
-    settings: Settings,
-    database: Arc<Mutex<DatabaseClient>>,
-) -> Result<(), Box<dyn Error + Send + Sync>> {
-    let name = "fetch_assets_addresses_associations";
+pub async fn run_consumer_fetch_assets_mappings(settings: Settings, database: Arc<Mutex<DatabaseClient>>) -> Result<(), Box<dyn Error + Send + Sync>> {
+    let name = "fetch_assets_mappings";
     let stream_reader = StreamReader::new(&settings.rabbitmq.url, name).await?;
     let stream_producer = StreamProducer::new(&settings.rabbitmq.url, name).await?;
     let cacher = CacherClient::new(&settings.redis.url);

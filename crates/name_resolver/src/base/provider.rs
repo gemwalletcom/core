@@ -1,13 +1,12 @@
 use alloy_ens::namehash;
-use alloy_primitives::{Address, Bytes};
-use alloy_rpc_client::{ClientBuilder, RpcClient};
-use alloy_rpc_types::{BlockId, TransactionRequest};
+use alloy_primitives::{hex, Address, Bytes};
 use alloy_sol_types::SolCall;
 use anyhow::{anyhow, Result};
 use async_trait::async_trait;
+use gem_jsonrpc::JsonRpcClient;
+use serde_json::json;
 use std::error::Error;
 use std::str::FromStr;
-use url::Url;
 
 use super::contract::L2Resolver;
 use crate::client::NameClient;
@@ -16,15 +15,14 @@ use primitives::{chain::Chain, name::NameProvider};
 const L2_RESOLVER_ADDRESS: &str = "0xC6d566A56A1aFf6508b41f6c90ff131615583BCD";
 
 pub struct Basenames {
-    client: RpcClient,
+    client: JsonRpcClient,
     resolver_address: Address,
     chain: Chain,
 }
 
 impl Basenames {
     pub fn new(provider_url: String) -> Self {
-        let url: Url = provider_url.parse().expect("Invalid provider URL");
-        let client = ClientBuilder::default().http(url);
+        let client = JsonRpcClient::new(provider_url).expect("Invalid provider URL");
         let resolver_address = Address::from_str(L2_RESOLVER_ADDRESS).expect("Invalid resolver address");
         Self {
             client,
@@ -37,17 +35,21 @@ impl Basenames {
         let node = namehash(name);
         let call_data = L2Resolver::addrCall { node }.abi_encode();
 
-        let tx = TransactionRequest {
-            to: Some(alloy_primitives::TxKind::Call(self.resolver_address)),
-            input: Bytes::from(call_data).into(),
-            ..Default::default()
-        };
+        let params = json!([
+            {
+                "to": self.resolver_address.to_string(),
+                "data": hex::encode_prefixed(&call_data)
+            },
+            "latest"
+        ]);
 
-        let response_bytes: Bytes = self
+        let result: String = self
             .client
-            .request::<(TransactionRequest, BlockId), Bytes>("eth_call", (tx, BlockId::latest()))
+            .call("eth_call", params)
             .await
             .map_err(|e| anyhow!("eth_call RPC request failed: {}", e))?;
+
+        let response_bytes = Bytes::from(hex::decode(&result).map_err(|e| anyhow!("Failed to decode hex response: {}", e))?);
 
         L2Resolver::addrCall::abi_decode_returns(response_bytes.as_ref()).map_err(|e| anyhow!("Failed to decode ABI returns for addr: {}", e))
     }
