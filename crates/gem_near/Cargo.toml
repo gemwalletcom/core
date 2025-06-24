@@ -10,9 +10,9 @@ serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true, optional = true }
 
 # RPC specific dependencies
-jsonrpsee = { workspace = true, features = ["http-client"], optional = true }
+gem_jsonrpc = { path = "../gem_jsonrpc", features = ["client"], optional = true }
 chrono = { workspace = true, features = ["serde"], optional = true }
 
 [features]
 default = []
-rpc = ["dep:serde_json", "dep:jsonrpsee", "dep:chrono"]
+rpc = ["dep:serde_json", "dep:gem_jsonrpc", "dep:chrono"]

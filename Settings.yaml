@@ -131,7 +131,7 @@ chains:
   celo:
     url: "https://forno.celo.org"
   near:
-    url: "https://rpc.mainnet.near.org"
+    url: "https://rpc.mainnet.fastnear.com"
   bitcoin:
     url: https://blockbook.btc.zelcore.io
   bitcoincash:
