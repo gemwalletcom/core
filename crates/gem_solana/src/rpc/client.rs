@@ -1,28 +1,23 @@
-use jsonrpsee::{
-    core::{client::ClientT, params::BatchRequestBuilder, ClientError},
-    http_client::{HttpClient, HttpClientBuilder},
-    rpc_params,
-};
-use serde::de::DeserializeOwned;
-use serde_json::json;
-use std::{error::Error, fmt::Debug, str::FromStr};
-
 use crate::{
     metaplex::{decode_metadata, metadata::Metadata},
     model::{BlockTransaction, BlockTransactions, Signature, TokenAccountInfo, ValueData, ValueResult},
     pubkey::Pubkey,
 };
+use gem_jsonrpc::{
+    types::{JsonRpcError, JsonRpcRequest, JsonRpcResult},
+    JsonRpcClient,
+};
+use serde::de::DeserializeOwned;
+use serde_json::json;
+use std::{error::Error, fmt::Debug, str::FromStr};
 
 pub struct SolanaClient {
-    client: HttpClient,
+    client: JsonRpcClient,
 }
 
 impl SolanaClient {
     pub fn new(url: &str) -> Self {
-        let client = HttpClientBuilder::default()
-            .max_response_size(100 * 1024 * 1024) // 100MB
-            .build(url)
-            .unwrap();
+        let client = JsonRpcClient::new(url.to_string()).unwrap();
 
         Self { client }
     }
@@ -35,7 +30,8 @@ impl SolanaClient {
                 "commitment": "confirmed",
             }),
         ];
-        Ok(self.client.request(rpc_method, params).await?)
+        let info: T = self.client.call(rpc_method, params).await?;
+        Ok(info)
     }
 
     pub async fn get_account_info_batch<T: DeserializeOwned + Debug + Clone>(
@@ -47,29 +43,40 @@ impl SolanaClient {
         let accounts_chunks: Vec<Vec<String>> = accounts.chunks(batch).map(|s| s.into()).collect();
         let mut results: Vec<T> = Vec::new();
         for accounts in accounts_chunks {
-            let mut batch = BatchRequestBuilder::default();
-            for account in accounts.iter() {
-                let params = vec![
-                    json!(account),
-                    json!({
-                        "encoding": encoding,
-                        "commitment": "confirmed",
-                    }),
-                ];
-                batch.insert("getAccountInfo", params)?;
-            }
+            let calls = accounts
+                .iter()
+                .map(|account| {
+                    (
+                        "getAccountInfo".into(),
+                        json!({
+                            "params": [
+                                account,
+                                {
+                                    "encoding": encoding,
+                                    "commitment": "confirmed",
+                                }
+                            ],
+                        }),
+                    )
+                })
+                .collect::<Vec<_>>();
 
             let data = self
                 .client
-                .batch_request::<T>(batch)
+                .batch_call::<T>(calls)
                 .await?
-                .iter()
-                .filter_map(|r| r.as_ref().ok())
-                .cloned()
+                .into_iter()
+                .filter_map(|rpc_result| match rpc_result {
+                    JsonRpcResult::Value(value) => Some(value.result),
+                    JsonRpcResult::Error(e) => {
+                        eprintln!("Error fetching account info for {}: {:?}", accounts.join(", "), e);
+                        None
+                    }
+                })
                 .collect::<Vec<T>>();
 
             if data.len() != accounts.len() {
-                return Err("Failed to get all transaction reciepts".into());
+                return Err("Failed to get all transaction receipts".into());
             }
             results.extend(data);
         }
@@ -90,7 +97,7 @@ impl SolanaClient {
     }
 
     pub async fn get_slot(&self) -> Result<i64, Box<dyn Error + Send + Sync>> {
-        Ok(self.client.request("getSlot", rpc_params![]).await?)
+        Ok(self.client.call("getSlot", json!([])).await?)
     }
 
     pub async fn get_block(
@@ -100,7 +107,7 @@ impl SolanaClient {
         transaction_details: Option<&str>,
         rewards: Option<bool>,
         max_supported_transaction_version: Option<u8>,
-    ) -> Result<BlockTransactions, ClientError> {
+    ) -> Result<BlockTransactions, JsonRpcError> {
         let params = vec![
             json!(slot),
             json!({
@@ -110,7 +117,50 @@ impl SolanaClient {
                 "maxSupportedTransactionVersion": max_supported_transaction_version.unwrap_or(0),
             }),
         ];
-        self.client.request("getBlock", params).await
+        self.client.call("getBlock", params).await
+    }
+
+    pub async fn get_transaction(&self, signature: &str) -> Result<Vec<Signature>, Box<dyn Error + Send + Sync>> {
+        let params = vec![
+            json!(signature),
+            json!({
+                "maxSupportedTransactionVersion": 0
+            }),
+        ];
+        Ok(self.client.call("getTransaction", params).await?)
+    }
+
+    pub async fn get_transactions(&self, signatures: Vec<String>) -> Result<Vec<BlockTransaction>, Box<dyn Error + Send + Sync>> {
+        let requests = signatures
+            .iter()
+            .enumerate()
+            .map(|(index, signature)| {
+                JsonRpcRequest::new(
+                    index as u64 + 1,
+                    "getTransaction",
+                    vec![
+                        json!(signature),
+                        json!({
+                            "maxSupportedTransactionVersion": 0,
+                            "transactionDetails": "full",
+                        }),
+                    ]
+                    .into(),
+                )
+            })
+            .collect::<Vec<_>>();
+        let results = self.client.batch_request::<BlockTransaction>(requests).await?;
+        Ok(results.into_iter().flat_map(|x| x.take().ok()).collect())
+    }
+
+    pub async fn get_signatures_for_address(&self, address: &str, limit: u64) -> Result<Vec<Signature>, Box<dyn Error + Send + Sync>> {
+        let params = vec![
+            json!(address),
+            json!({
+                "limit": limit
+            }),
+        ];
+        Ok(self.client.call("getSignaturesForAddress", params).await?)
     }
 
     pub async fn get_token_accounts_by_owner(&self, owner: &str, program_id: &str) -> Result<ValueResult<Vec<TokenAccountInfo>>, Box<dyn Error + Send + Sync>> {
@@ -123,57 +173,7 @@ impl SolanaClient {
                 "encoding": "jsonParsed"
             }),
         ];
-        Ok(self.client.request("getTokenAccountsByOwner", params).await?)
-    }
-
-    pub async fn get_transaction(&self, signature: &str) -> Result<Vec<Signature>, Box<dyn Error + Send + Sync>> {
-        let params = vec![
-            json!(signature),
-            json!({
-                "maxSupportedTransactionVersion": 0
-            }),
-        ];
-        Ok(self.client.request("getTransaction", params).await?)
-    }
-
-    pub async fn get_transactions(&self, signatures: Vec<String>) -> Result<Vec<BlockTransaction>, Box<dyn Error + Send + Sync>> {
-        let mut batch = BatchRequestBuilder::default();
-        for signature in &signatures {
-            batch.insert(
-                "getTransaction",
-                vec![
-                    json!(signature),
-                    json!({
-                        "maxSupportedTransactionVersion": 0,
-                        "transactionDetails": "full",
-                    }),
-                ],
-            )?;
-        }
-
-        let data = self
-            .client
-            .batch_request::<BlockTransaction>(batch)
-            .await?
-            .iter()
-            .filter_map(|x| x.as_ref().ok().cloned())
-            .collect::<Vec<_>>();
-
-        if data.len() != signatures.len() {
-            return Err(format!("Failed to get all transactions: expected {} transactions, got {}", signatures.len(), data.len()).into());
-        }
-
-        Ok(data)
-    }
-
-    pub async fn get_signatures_for_address(&self, address: &str, limit: u64) -> Result<Vec<Signature>, Box<dyn Error + Send + Sync>> {
-        let params = vec![
-            json!(address),
-            json!({
-                "limit": limit
-            }),
-        ];
-        Ok(self.client.request("getSignaturesForAddress", params).await?)
+        Ok(self.client.call("getTokenAccountsByOwner", params).await?)
     }
 }
 

@@ -1,6 +1,7 @@
 mod chain_providers;
 mod provider_config;
 pub use chain_providers::ChainProviders;
+use gem_jsonrpc::JsonRpcClient;
 pub use provider_config::ProviderConfig;
 
 use core::str;
@@ -103,9 +104,9 @@ impl ProviderFactory {
                 Box::new(TronProvider::new(client, Box::new(grid_client.clone()), Box::new(grid_client.clone())))
             }
             Chain::Aptos => Box::new(AptosProvider::new(AptosClient::new(client, url))),
-            Chain::Sui => Box::new(SuiProvider::new(SuiClient::new(&url))),
+            Chain::Sui => Box::new(SuiProvider::new(SuiClient::new(JsonRpcClient::new_with_client(url, client)))),
             Chain::Xrp => Box::new(XRPProvider::new(XRPClient::new(client, url))),
-            Chain::Near => Box::new(NearProvider::new(NearClient::new(url))),
+            Chain::Near => Box::new(NearProvider::new(NearClient::new(JsonRpcClient::new_with_client(url, client)))),
             Chain::Cardano => Box::new(CardanoProvider::new(CardanoClient::new(client, url))),
             Chain::Algorand => Box::new(AlgorandProvider::new(AlgorandClient::new(client, url))),
             Chain::Stellar => Box::new(StellarProvider::new(StellarClient::new(client, url))),
