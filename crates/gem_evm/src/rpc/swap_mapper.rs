@@ -9,7 +9,7 @@ use crate::{
     uniswap::{
         actions::{decode_action_data, V4Action},
         command::{Sweep, UnwrapWeth, V3SwapExactIn, SWEEP_COMMAND, UNWRAP_WETH_COMMAND, V3_SWAP_EXACT_IN_COMMAND, V4_SWAP_COMMAND, WRAP_ETH_COMMAND},
-        contracts::v3::IUniversalRouter,
+        contracts::IUniversalRouter,
         deployment::get_provider_by_chain_contract,
         path::decode_path,
     },
@@ -216,7 +216,7 @@ impl SwapMapper {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{rpc::swap_mapper::SwapMapper, uniswap::contracts::v3::Dispatcher};
+    use crate::{rpc::swap_mapper::SwapMapper, uniswap::contracts::Dispatcher};
     use primitives::{Chain, JsonRpcResult};
 
     #[test]

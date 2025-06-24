@@ -63,7 +63,7 @@ impl UniswapV3 {
         provider: Arc<dyn AlienProvider>,
     ) -> Result<ApprovalType, SwapperError> {
         let deployment = self.provider.get_deployment_by_chain(chain).ok_or(SwapperError::NotSupportedChain)?;
-        let spender = if self.provider.has_permit2() {
+        let spender = if self.provider.use_permit2() {
             deployment.permit2.to_string()
         } else {
             deployment.universal_router.to_string()
@@ -80,7 +80,7 @@ impl UniswapV3 {
         chain: &Chain,
         provider: Arc<dyn AlienProvider>,
     ) -> Result<Option<Permit2ApprovalData>, SwapperError> {
-        if !self.provider.has_permit2() {
+        if !self.provider.use_permit2() {
             return Ok(None);
         }
         let deployment = self.provider.get_deployment_by_chain(chain).ok_or(SwapperError::NotSupportedChain)?;
