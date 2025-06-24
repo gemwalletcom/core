@@ -16,7 +16,10 @@ use crate::{
 };
 use gem_evm::{
     jsonrpc::EthereumRpc,
-    uniswap::{command::encode_commands, path::get_base_pair},
+    uniswap::{
+        command::{encode_commands, encode_commands_with_deadline},
+        path::get_base_pair,
+    },
 };
 use primitives::{AssetId, Chain, EVMChain};
 
@@ -63,7 +66,7 @@ impl UniswapV3 {
         provider: Arc<dyn AlienProvider>,
     ) -> Result<ApprovalType, SwapperError> {
         let deployment = self.provider.get_deployment_by_chain(chain).ok_or(SwapperError::NotSupportedChain)?;
-        let spender = if self.provider.has_permit2() {
+        let spender = if self.provider.use_permit2() {
             deployment.permit2.to_string()
         } else {
             deployment.universal_router.to_string()
@@ -80,7 +83,7 @@ impl UniswapV3 {
         chain: &Chain,
         provider: Arc<dyn AlienProvider>,
     ) -> Result<Option<Permit2ApprovalData>, SwapperError> {
-        if !self.provider.has_permit2() {
+        if !self.provider.use_permit2() {
             return Ok(None);
         }
         let deployment = self.provider.get_deployment_by_chain(chain).ok_or(SwapperError::NotSupportedChain)?;
@@ -258,7 +261,11 @@ impl Swapper for UniswapV3 {
             permit,
             fee_preference.is_input_token,
         )?;
-        let encoded = encode_commands(&commands, U256::from(sig_deadline));
+        let encoded = if self.provider.use_permit2() {
+            encode_commands_with_deadline(&commands, U256::from(sig_deadline))
+        } else {
+            encode_commands(&commands)
+        };
 
         let wrap_input_eth = request.from_asset.is_native();
         let value = if wrap_input_eth { request.value.clone() } else { String::from("0") };

@@ -1,22 +1,5 @@
 use alloy_sol_types::sol;
 
-// https://github.com/Uniswap/universal-router/blob/main/contracts/interfaces/IUniversalRouter.sol
-sol! {
-    /// @notice Executes encoded commands along with provided inputs. Reverts if deadline has expired.
-    /// @param commands A set of concatenated commands, each 1 byte in length
-    /// @param inputs An array of byte strings containing abi encoded inputs for each command
-    /// @param deadline The deadline by which the transaction must be executed
-    #[derive(Debug, PartialEq)]
-    interface IUniversalRouter {
-        function execute(bytes calldata commands, bytes[] calldata inputs, uint256 deadline) external payable;
-    }
-
-    #[derive(Debug)]
-    interface Dispatcher {
-        function execute(bytes calldata commands, bytes[] calldata inputs) public payable override isNotLocked;
-    }
-}
-
 // https://github.com/Uniswap/v3-periphery/blob/main/contracts/interfaces/IQuoterV2.sol
 sol! {
     /// @title QuoterV2 Interface

@@ -37,7 +37,7 @@ impl UniversalRouterProvider for AerodromeUniversalRouter {
         get_aerodrome_router_deployment_by_chain(chain)
     }
 
-    fn has_permit2(&self) -> bool {
+    fn use_permit2(&self) -> bool {
         false
     }
 }
