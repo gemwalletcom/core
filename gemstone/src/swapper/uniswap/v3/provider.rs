@@ -16,10 +16,7 @@ use crate::{
 };
 use gem_evm::{
     jsonrpc::EthereumRpc,
-    uniswap::{
-        command::{encode_commands, encode_commands},
-        path::get_base_pair,
-    },
+    uniswap::{command::encode_commands, path::get_base_pair},
 };
 use primitives::{AssetId, Chain, EVMChain};
 

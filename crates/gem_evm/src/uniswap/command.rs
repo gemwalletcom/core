@@ -2,7 +2,7 @@ use super::{
     actions::{self, V4Action},
     contracts::IUniversalRouter,
 };
-use crate::{permit2::IAllowanceTransfer, uniswap::contracts::Dispatcher};
+use crate::permit2::IAllowanceTransfer;
 use alloy_primitives::{Address, Bytes, U256};
 use alloy_sol_types::{sol_data, SolCall, SolType};
 
