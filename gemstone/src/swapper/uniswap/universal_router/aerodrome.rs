@@ -38,6 +38,6 @@ impl UniversalRouterProvider for AerodromeUniversalRouter {
     }
 
     fn use_permit2(&self) -> bool {
-        false
+        true
     }
 }

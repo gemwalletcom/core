@@ -17,7 +17,7 @@ use crate::{
 use gem_evm::{
     jsonrpc::EthereumRpc,
     uniswap::{
-        command::{encode_commands, encode_commands_with_deadline},
+        command::{encode_commands, encode_commands},
         path::get_base_pair,
     },
 };
@@ -261,11 +261,7 @@ impl Swapper for UniswapV3 {
             permit,
             fee_preference.is_input_token,
         )?;
-        let encoded = if self.provider.use_permit2() {
-            encode_commands_with_deadline(&commands, U256::from(sig_deadline))
-        } else {
-            encode_commands(&commands)
-        };
+        let encoded = encode_commands(&commands, U256::from(sig_deadline));
 
         let wrap_input_eth = request.from_asset.is_native();
         let value = if wrap_input_eth { request.value.clone() } else { String::from("0") };
