@@ -1,12 +1,11 @@
 use alloy_ens::namehash;
-use alloy_primitives::{Address, Bytes, TxKind, U256};
-use alloy_rpc_client::{ClientBuilder, RpcClient};
-use alloy_rpc_types::{BlockId, TransactionRequest};
+use alloy_primitives::{hex, Address, Bytes, U256};
 use alloy_sol_types::SolCall;
 use anyhow::{anyhow, Result};
 use async_trait::async_trait;
+use gem_jsonrpc::JsonRpcClient;
+use serde_json::json;
 use std::{error::Error, str::FromStr};
-use url::Url;
 
 use super::{
     contracts::{Registrator, Router},
@@ -18,17 +17,15 @@ use primitives::{Chain, EVMChain, NameProvider};
 const ROUTER_ADDRESS: &str = "0x25d1971d6dc9812ea1111662008f07735c74bff5";
 const HYPERLIQUID_NAMES_ADDRESS: &str = "0x1d9d87eBc14e71490bB87f1C39F65BDB979f3cb7";
 
-#[derive(Debug)]
 pub struct Hyperliquid {
-    client: RpcClient,
+    client: JsonRpcClient,
     router_address: Address,
     hyperliquid_names_address: Address,
 }
 
 impl Hyperliquid {
     pub fn new(provider_url: String) -> Self {
-        let url: Url = provider_url.parse().expect("Invalid HyperEVM node URL");
-        let client = ClientBuilder::default().http(url);
+        let client = JsonRpcClient::new(provider_url).expect("Invalid HyperEVM node URL");
         let router_address = Address::from_str(ROUTER_ADDRESS).expect("Invalid Router address");
         let hyperliquid_names_address = Address::from_str(HYPERLIQUID_NAMES_ADDRESS).expect("Invalid Hyperliquid names address");
         Self {
@@ -65,15 +62,15 @@ impl NameClient for Hyperliquid {
         if chain == Chain::Hyperliquid {
             let token_id = U256::from_be_bytes::<32>(node.as_slice().try_into().expect("node should be 32 bytes"));
             let call_data = HyperliquidNames::tokenIdToAddressCall { _tokenId: token_id }.abi_encode();
-            let tx_request = TransactionRequest {
-                to: Some(TxKind::Call(self.hyperliquid_names_address)),
-                input: Bytes::from(call_data).into(),
-                ..Default::default()
-            };
-            let result = self
-                .client
-                .request::<(TransactionRequest, BlockId), Bytes>("eth_call", (tx_request, BlockId::latest()))
-                .await?;
+            let params = json!([
+                {
+                    "to": self.hyperliquid_names_address.to_string(),
+                    "data": hex::encode_prefixed(&call_data)
+                },
+                "latest"
+            ]);
+            let result_str: String = self.client.call("eth_call", params).await?;
+            let result = Bytes::from(hex::decode(&result_str).map_err(|e| anyhow!("Failed to decode hex response: {}", e))?);
             let address = HyperliquidNames::tokenIdToAddressCall::abi_decode_returns(&result)?.0;
             let address = Address::from(address);
             return Ok(address.to_checksum(None));
@@ -82,29 +79,29 @@ impl NameClient for Hyperliquid {
         // Get Linked Address for other chains
         let router_address = self.router_address;
         let call_data = Router::getCurrentRegistratorCall {}.abi_encode();
-        let tx_request = TransactionRequest {
-            to: Some(TxKind::Call(router_address)),
-            input: Bytes::from(call_data).into(),
-            ..Default::default()
-        };
+        let params = json!([
+            {
+                "to": router_address.to_string(),
+                "data": hex::encode_prefixed(&call_data)
+            },
+            "latest"
+        ]);
 
-        let result = self
-            .client
-            .request::<(TransactionRequest, BlockId), Bytes>("eth_call", (tx_request, BlockId::latest()))
-            .await?;
+        let result_str: String = self.client.call("eth_call", params).await?;
+        let result = Bytes::from(hex::decode(&result_str).map_err(|e| anyhow!("Failed to decode hex response: {}", e))?);
 
         // Get full record json
         let registrator = Router::getCurrentRegistratorCall::abi_decode_returns(&result)?.0;
         let call_data = Registrator::getFullRecordJSONCall { _namehash: node }.abi_encode();
-        let tx_request = TransactionRequest {
-            to: Some(TxKind::Call(Address::from(registrator))),
-            input: Bytes::from(call_data).into(),
-            ..Default::default()
-        };
-        let result = self
-            .client
-            .request::<(TransactionRequest, BlockId), Bytes>("eth_call", (tx_request, BlockId::latest()))
-            .await?;
+        let params = json!([
+            {
+                "to": Address::from(registrator).to_string(),
+                "data": hex::encode_prefixed(&call_data)
+            },
+            "latest"
+        ]);
+        let result_str: String = self.client.call("eth_call", params).await?;
+        let result = Bytes::from(hex::decode(&result_str).map_err(|e| anyhow!("Failed to decode hex response: {}", e))?);
 
         let record_json = Registrator::getFullRecordJSONCall::abi_decode_returns(&result)?;
         let record: Record = serde_json::from_str(&record_json)?;

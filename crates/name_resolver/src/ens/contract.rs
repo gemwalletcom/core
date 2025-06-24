@@ -1,11 +1,10 @@
 use alloy_ens::namehash;
-use alloy_primitives::{Address, Bytes, U256};
-use alloy_rpc_client::{ClientBuilder, RpcClient};
-use alloy_rpc_types::TransactionRequest;
+use alloy_primitives::{hex, Address, Bytes, U256};
 use alloy_sol_types::{sol, SolCall};
 use anyhow::{anyhow, Result};
+use gem_jsonrpc::JsonRpcClient;
+use serde_json::json;
 use std::str::FromStr;
-use url::Url;
 
 sol! {
     interface ENSRegistry {
@@ -21,18 +20,14 @@ sol! {
 
 pub struct Contract {
     pub registry_address: Address,
-    pub client: RpcClient,
+    pub client: JsonRpcClient,
 }
 
 impl Contract {
     pub fn new(rpc_url: &str, registry_address_hex: &str) -> Result<Self> {
-        let url = Url::parse(rpc_url)?;
-        let rpc_client = ClientBuilder::default().http(url);
+        let client = JsonRpcClient::new(rpc_url.to_string())?;
         let registry_address = Address::from_str(registry_address_hex)?;
-        Ok(Self {
-            registry_address,
-            client: rpc_client,
-        })
+        Ok(Self { registry_address, client })
     }
     pub async fn resolver(&self, name: &str) -> Result<Address> {
         let node = namehash(name);
@@ -88,12 +83,15 @@ impl Contract {
     }
 
     async fn eth_call(&self, to: Address, data: Bytes) -> Result<Bytes> {
-        let tx = TransactionRequest {
-            to: Some(alloy_primitives::TxKind::Call(to)),
-            input: data.into(), // Converts Bytes to rpc_types::Input
-            ..Default::default()
-        };
-        let params = (tx, alloy_rpc_types::BlockId::latest());
-        self.client.request("eth_call", params).await.map_err(|e| anyhow!(e))
+        let params = json!([
+            {
+                "to": to.to_string(),
+                "data": hex::encode_prefixed(&data)
+            },
+            "latest"
+        ]);
+        let result: String = self.client.call("eth_call", params).await.map_err(|e| anyhow!(e))?;
+        let bytes = hex::decode(&result).map_err(|e| anyhow!("Failed to decode hex response: {}", e))?;
+        Ok(Bytes::from(bytes))
     }
 }

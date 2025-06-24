@@ -4829,16 +4829,14 @@ name = "name_resolver"
 version = "1.0.0"
 dependencies = [
  "alloy-ens",
- "alloy-json-rpc",
  "alloy-primitives",
- "alloy-rpc-client",
- "alloy-rpc-types",
  "alloy-sol-types",
  "anyhow",
  "async-trait",
  "base64 0.22.1",
  "gem_evm",
  "gem_hash",
+ "gem_jsonrpc",
  "gem_ton",
  "hex",
  "idna",
@@ -4850,7 +4848,6 @@ dependencies = [
  "settings",
  "tokio",
  "tokio-test",
- "url",
 ]
 
 [[package]]
