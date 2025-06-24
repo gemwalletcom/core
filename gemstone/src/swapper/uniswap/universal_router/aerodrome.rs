@@ -36,8 +36,4 @@ impl UniversalRouterProvider for AerodromeUniversalRouter {
     fn get_deployment_by_chain(&self, chain: &Chain) -> Option<V3Deployment> {
         get_aerodrome_router_deployment_by_chain(chain)
     }
-
-    fn use_permit2(&self) -> bool {
-        true
-    }
 }
