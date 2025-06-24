@@ -28,7 +28,7 @@ use gem_ton::rpc::TonClient;
 use gem_tron::rpc::{trongrid::client::TronGridClient, TronClient};
 use gem_xrp::rpc::XRPClient;
 
-use primitives::{Chain, EVMChain};
+use primitives::{chain_cosmos::CosmosChain, Chain, EVMChain};
 use settings::Settings;
 
 pub struct ProviderFactory {}
@@ -94,6 +94,7 @@ impl ProviderFactory {
                 ))
             }
             Chain::Cosmos | Chain::Osmosis | Chain::Celestia | Chain::Thorchain | Chain::Injective | Chain::Noble | Chain::Sei => {
+                let chain = CosmosChain::from_chain(chain).unwrap();
                 Box::new(CosmosProvider::new(CosmosClient::new(chain, client, url)))
             }
             Chain::Solana => Box::new(SolanaProvider::new(SolanaClient::new(&url))),
