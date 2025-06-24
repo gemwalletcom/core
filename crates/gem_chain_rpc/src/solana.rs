@@ -1,12 +1,11 @@
 use async_trait::async_trait;
-use jsonrpsee::core::ClientError;
 use std::error::Error;
 
 use crate::{ChainAssetsProvider, ChainBlockProvider, ChainTokenDataProvider, ChainTransactionsProvider};
 
 use gem_solana::{
     model::ResultTokenInfo,
-    rpc::{client::SolanaClient, mapper::SolanaMapper, CLEANUP_BLOCK_ERROR, MISSING_OR_SKIPPED_SLOT_ERROR, MISSING_SLOT_ERROR, NOT_AVAILABLE_SLOT_ERROR},
+    rpc::{client::SolanaClient, mapper::SolanaMapper, MISSING_BLOCKS_ERRORS},
     TOKEN_PROGRAM,
 };
 use primitives::{chain::Chain, Asset, AssetBalance, AssetId, Transaction};
@@ -35,17 +34,13 @@ impl ChainBlockProvider for SolanaProvider {
         let block = self.client.get_block(block_number, Some("json"), Some("full"), Some(false), Some(0)).await;
         match block {
             Ok(block) => Ok(SolanaMapper::map_block_transactions(&block)),
-            Err(err) => match err {
-                ClientError::Call(err) => {
-                    let errors = [MISSING_SLOT_ERROR, MISSING_OR_SKIPPED_SLOT_ERROR, NOT_AVAILABLE_SLOT_ERROR, CLEANUP_BLOCK_ERROR];
-                    if errors.contains(&err.code()) {
-                        Ok(vec![])
-                    } else {
-                        Err(Box::new(err))
-                    }
+            Err(err) => {
+                if MISSING_BLOCKS_ERRORS.contains(&err.code) {
+                    Ok(vec![])
+                } else {
+                    Err(Box::new(err))
                 }
-                _ => Err(Box::new(err)),
-            },
+            }
         }
     }
 }

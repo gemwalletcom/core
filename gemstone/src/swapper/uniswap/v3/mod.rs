@@ -13,9 +13,6 @@ use std::fmt::Debug;
 pub trait UniversalRouterProvider: Send + Sync + Debug {
     fn provider(&self) -> &SwapProviderType;
     fn get_tiers(&self) -> Vec<FeeTier>;
-    fn has_permit2(&self) -> bool {
-        true
-    }
     fn get_deployment_by_chain(&self, chain: &Chain) -> Option<V3Deployment>;
 }
 

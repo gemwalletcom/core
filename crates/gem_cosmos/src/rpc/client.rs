@@ -3,7 +3,7 @@ use std::error::Error;
 use crate::rpc::model::TransactionsResponse;
 
 use super::model::{BlockResponse, TransactionResponse};
-use primitives::Chain;
+use primitives::chain_cosmos::CosmosChain;
 use reqwest_middleware::ClientWithMiddleware;
 
 pub const MESSAGE_DELEGATE: &str = "/cosmos.staking.v1beta1.MsgDelegate";
@@ -23,17 +23,17 @@ pub const MESSAGES: &[&str] = &[
 ];
 
 pub struct CosmosClient {
-    chain: Chain,
+    chain: CosmosChain,
     url: String,
     client: ClientWithMiddleware,
 }
 
 impl CosmosClient {
-    pub fn new(chain: Chain, client: ClientWithMiddleware, url: String) -> Self {
+    pub fn new(chain: CosmosChain, client: ClientWithMiddleware, url: String) -> Self {
         Self { chain, url, client }
     }
 
-    pub fn get_chain(&self) -> Chain {
+    pub fn get_chain(&self) -> CosmosChain {
         self.chain
     }
 
@@ -41,7 +41,7 @@ impl CosmosClient {
         Some(
             coins
                 .into_iter()
-                .filter(|x| x.denom == self.chain.clone().as_denom().unwrap_or_default())
+                .filter(|x| x.denom == self.chain.as_chain().as_denom().unwrap_or_default())
                 .collect::<Vec<_>>()
                 .first()?
                 .amount
@@ -60,8 +60,26 @@ impl CosmosClient {
     }
 
     pub async fn get_transactions_by_address(&self, address: &str, limit: usize) -> Result<Vec<TransactionResponse>, Box<dyn Error + Send + Sync>> {
-        let inbound = self.get_transactions_by_query(format!("message.sender='{}'", address), limit).await?;
-        let outbound = self.get_transactions_by_query(format!("message.recipient='{}'", address), limit).await?;
+        let query_name = match self.chain {
+            CosmosChain::Cosmos => Some("query"),
+            CosmosChain::Osmosis => Some("query"),
+            CosmosChain::Celestia => Some("events"),
+            CosmosChain::Thorchain => None,
+            CosmosChain::Injective => Some("query"),
+            CosmosChain::Sei => Some("events"),
+            CosmosChain::Noble => Some("query"),
+        };
+        if query_name.is_none() {
+            return Ok(vec![]);
+        }
+        let query_name = query_name.unwrap();
+
+        let inbound = self
+            .get_transactions_by_query(query_name, &format!("message.sender='{}'", address), limit)
+            .await?;
+        let outbound = self
+            .get_transactions_by_query(query_name, &format!("message.recipient='{}'", address), limit)
+            .await?;
         let responses = inbound.tx_responses.into_iter().chain(outbound.tx_responses.into_iter()).collect::<Vec<_>>();
         let txs = inbound.txs.into_iter().chain(outbound.txs.into_iter()).collect::<Vec<_>>();
         Ok(responses
@@ -71,9 +89,13 @@ impl CosmosClient {
             .collect::<Vec<_>>())
     }
 
-    pub async fn get_transactions_by_query(&self, query: String, limit: usize) -> Result<TransactionsResponse, Box<dyn Error + Send + Sync>> {
+    pub async fn get_transactions_by_query(&self, query_name: &str, query: &str, limit: usize) -> Result<TransactionsResponse, Box<dyn Error + Send + Sync>> {
         let url = format!("{}/cosmos/tx/v1beta1/txs", self.url);
-        let query = [("query", query), ("pagination.limit", limit.to_string()), ("page", 1.to_string())];
+        let query = [
+            (query_name.to_string(), query.to_string()),
+            ("pagination.limit".to_string(), limit.to_string()),
+            ("page".to_string(), 1.to_string()),
+        ];
         Ok(self.client.get(url).query(&query).send().await?.json().await?)
     }
 }

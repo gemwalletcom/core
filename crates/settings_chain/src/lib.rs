@@ -1,6 +1,7 @@
 mod chain_providers;
 mod provider_config;
 pub use chain_providers::ChainProviders;
+use gem_jsonrpc::JsonRpcClient;
 pub use provider_config::ProviderConfig;
 
 use core::str;
@@ -27,7 +28,7 @@ use gem_ton::rpc::TonClient;
 use gem_tron::rpc::{trongrid::client::TronGridClient, TronClient};
 use gem_xrp::rpc::XRPClient;
 
-use primitives::{Chain, EVMChain};
+use primitives::{chain_cosmos::CosmosChain, Chain, EVMChain};
 use settings::Settings;
 
 pub struct ProviderFactory {}
@@ -93,6 +94,7 @@ impl ProviderFactory {
                 ))
             }
             Chain::Cosmos | Chain::Osmosis | Chain::Celestia | Chain::Thorchain | Chain::Injective | Chain::Noble | Chain::Sei => {
+                let chain = CosmosChain::from_chain(chain).unwrap();
                 Box::new(CosmosProvider::new(CosmosClient::new(chain, client, url)))
             }
             Chain::Solana => Box::new(SolanaProvider::new(SolanaClient::new(&url))),
@@ -103,9 +105,9 @@ impl ProviderFactory {
                 Box::new(TronProvider::new(client, Box::new(grid_client.clone()), Box::new(grid_client.clone())))
             }
             Chain::Aptos => Box::new(AptosProvider::new(AptosClient::new(client, url))),
-            Chain::Sui => Box::new(SuiProvider::new(SuiClient::new(&url))),
+            Chain::Sui => Box::new(SuiProvider::new(SuiClient::new(JsonRpcClient::new_with_client(url, client)))),
             Chain::Xrp => Box::new(XRPProvider::new(XRPClient::new(client, url))),
-            Chain::Near => Box::new(NearProvider::new(NearClient::new(url))),
+            Chain::Near => Box::new(NearProvider::new(NearClient::new(JsonRpcClient::new_with_client(url, client)))),
             Chain::Cardano => Box::new(CardanoProvider::new(CardanoClient::new(client, url))),
             Chain::Algorand => Box::new(AlgorandProvider::new(AlgorandClient::new(client, url))),
             Chain::Stellar => Box::new(StellarProvider::new(StellarClient::new(client, url))),

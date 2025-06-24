@@ -116,7 +116,6 @@ hmac = { version = "0.12.1" }
 sha2 = { version = "0.10.9" }
 strum = { version = "0.27.1", features = ["derive"] }
 strum_macros = "0.27.1"
-jsonrpsee = { version = "0.25.1", features = ["http-client"] }
 tiny-keccak = { version = "2.0.2", features = ["keccak"] }
 itoa = { version = "1.0.15" }
 curve25519-dalek = { version = "4.1.3" }

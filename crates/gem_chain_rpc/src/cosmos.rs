@@ -22,7 +22,7 @@ impl CosmosProvider {
 #[async_trait]
 impl ChainBlockProvider for CosmosProvider {
     fn get_chain(&self) -> Chain {
-        self.client.get_chain()
+        self.client.get_chain().as_chain()
     }
 
     async fn get_latest_block(&self) -> Result<i64, Box<dyn Error + Send + Sync>> {
