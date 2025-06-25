@@ -1,6 +1,7 @@
 use num_bigint::BigUint;
 use serde::{Deserialize, Serialize};
 use serde_serializers::{deserialize_biguint_from_hex_str, deserialize_biguint_from_option_hex_str, deserialize_u64_from_str_or_int};
+use std::collections::HashMap;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -65,4 +66,59 @@ pub struct Log {
     pub address: String,
     pub topics: Vec<String>,
     pub data: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TraceReplayTransaction {
+    pub output: String,
+    #[serde(default)]
+    pub state_diff: HashMap<String, StateChange>,
+    pub transaction_hash: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct StateChange {
+    pub balance: Diff<String>,
+    // pub code: String,
+    // pub nonce: Diff<String>,
+    pub storage: HashMap<String, Change<String>>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(untagged)]
+pub enum Diff<T> {
+    Change(Change<T>),
+    Keep(String),
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct Change<T> {
+    #[serde(rename = "*")]
+    pub from_to: FromTo<T>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct FromTo<T> {
+    pub from: T,
+    pub to: T,
+}
+
+#[cfg(test)]
+mod tests {
+    use gem_jsonrpc::types::JsonRpcResponse;
+
+    use super::*;
+
+    #[test]
+    fn test_decode_trace_replay_transaction() {
+        let json_str = include_str!("../../tests/data/trace_replay_tx.json");
+        let trace_replay_transaction = serde_json::from_str::<JsonRpcResponse<TraceReplayTransaction>>(json_str).unwrap().result;
+
+        assert_eq!(
+            trace_replay_transaction.output,
+            "0x00000000000000000000000000000000000000000000000002442b58bef3a87300000000000000000000000000000000000000000000002a48acab6204b00000"
+        );
+    }
 }

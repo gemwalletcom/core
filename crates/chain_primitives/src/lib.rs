@@ -1,5 +1,6 @@
-use gem_evm::ethereum_address_checksum;
+use alloy_primitives::Address;
 use primitives::Chain;
+use std::str::FromStr;
 
 pub fn format_token_id(chain: Chain, token_id: String) -> Option<String> {
     match chain {
@@ -26,7 +27,7 @@ pub fn format_token_id(chain: Chain, token_id: String) -> Option<String> {
         | Chain::Ink
         | Chain::Unichain
         | Chain::Hyperliquid
-        | Chain::Monad => ethereum_address_checksum(&token_id).ok(),
+        | Chain::Monad => Address::from_str(&token_id).ok().map(|address| address.to_checksum(None)),
         Chain::Solana | Chain::Ton | Chain::Near => Some(token_id),
         Chain::Tron => (token_id.len() == 34 && token_id.starts_with('T')).then_some(token_id),
         Chain::Xrp => {
@@ -79,7 +80,7 @@ mod tests {
         let valid_token_id = "0x1234567890abcdef1234567890abcdef12345678".to_string();
         let formatted_valid_token_id = format_token_id(chain, valid_token_id.clone());
 
-        assert_eq!(formatted_valid_token_id, ethereum_address_checksum(&valid_token_id).ok());
+        assert_eq!(formatted_valid_token_id.unwrap(), "0x1234567890AbcdEF1234567890aBcdef12345678");
         assert_eq!(format_token_id(chain, "0x123".to_string()), None);
     }
 

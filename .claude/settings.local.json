@@ -7,19 +7,22 @@
       "Bash(cargo update:*)",
       "Bash(cargo check:*)",
       "Bash(cargo clippy:*)",
-      "Bash(grep:*)",
       "WebFetch(domain:github.com)",
       "Bash(git checkout:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(git push:*)",
       "Bash(git restore:*)",
+      "Bash(gh pr create:*)",
+      "Bash(gh pr view:*)",
       "Bash(just test:*)",
       "Bash(just build)",
       "Bash(just format)",
       "Bash(just lint)",
+      "Bash(grep:*)",
       "Bash(rg:*)",
-      "Bash(mkdir:*)"
+      "Bash(mkdir:*)",
+      "Bash(find:*)"
     ],
     "deny": []
   }

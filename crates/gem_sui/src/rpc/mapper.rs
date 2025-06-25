@@ -230,7 +230,7 @@ mod tests {
 
     #[test]
     fn test_transaction_swap_token_to_token() {
-        let file_content = include_str!("../../testdata/swap_token_to_token.json");
+        let file_content = include_str!("../../tests/data/swap_token_to_token.json");
         let result: JsonRpcResult<SuiTransaction> = serde_json::from_str(file_content).unwrap();
 
         let transaction = SuiMapper::map_transaction(result.result).unwrap();
@@ -247,7 +247,7 @@ mod tests {
 
     #[test]
     fn test_transaction_swap_sui_to_token() {
-        let file_content = include_str!("../../testdata/swap_sui_to_token.json");
+        let file_content = include_str!("../../tests/data/swap_sui_to_token.json");
         let result: JsonRpcResult<SuiTransaction> = serde_json::from_str(file_content).unwrap();
 
         let transaction = SuiMapper::map_transaction(result.result).unwrap();
