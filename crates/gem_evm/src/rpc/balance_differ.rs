@@ -11,6 +11,12 @@ use std::collections::HashMap;
 
 pub const TRANSFER_TOPIC: &str = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
 
+struct TransferLog {
+    pub from: String,
+    pub to: String,
+    pub value: BigInt,
+}
+
 #[derive(Debug)]
 pub struct BalanceDiffer {
     pub chain: Chain,
@@ -109,12 +115,6 @@ impl BalanceDiffer {
     }
 }
 
-struct TransferLog {
-    pub from: String,
-    pub to: String,
-    pub value: BigInt,
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -134,11 +134,7 @@ mod tests {
         let differ = BalanceDiffer::new(Chain::Ethereum);
         let diff_map = differ.calculate(&trace_replay_transaction, &receipt);
 
-        // Check that the map contains the expected address
         let sender_address = "0x52A07c930157d07D9EffD147ecF41C5cBbC6000c";
-
-        assert!(diff_map.contains_key(sender_address), "Map should contain address {}", sender_address);
-
         let sender_diffs = diff_map.get(sender_address).unwrap();
 
         // Check native balance change: from 0x28268111de83a9d (180821357773732509) to 0x4bd382b322e4810 (341490904926668816)
@@ -149,7 +145,7 @@ mod tests {
 
         assert_eq!(native_diff.from_value, Some(BigInt::from_str("180821357773732509").unwrap()));
         assert_eq!(native_diff.to_value, Some(BigInt::from_str("341490904926668816").unwrap()));
-        assert_eq!(native_diff.diff, BigInt::from_str("160669547152936307").unwrap()); // 341490904926668816 - 180821357773732509
+        assert_eq!(native_diff.diff, BigInt::from_str("160669547152936307").unwrap());
 
         // Check ERC20 token net change: -780 NEWT
         let newt_asset_id = AssetId {
@@ -163,19 +159,13 @@ mod tests {
 
         assert_eq!(token_diff.from_value, None);
         assert_eq!(token_diff.to_value, None);
-        assert_eq!(token_diff.diff, BigInt::from_str("-780000000000000000000").unwrap()); // -780 NEWT
+        assert_eq!(token_diff.diff, BigInt::from_str("-780000000000000000000").unwrap());
 
-        let contract_address = "0x000000000004444c5dc75cB358380D2e3dE08A90";
-        assert!(
-            diff_map.contains_key(contract_address),
-            "Map should contain contract address {}",
-            contract_address
-        );
-
-        let contract_diffs = diff_map.get(contract_address).unwrap();
+        let pool_address = "0x000000000004444c5dc75cB358380D2e3dE08A90";
+        let pool_diffs = diff_map.get(pool_address).unwrap();
 
         // Check native balance change: from 0x8d849264a8118b46324 to 0x8d846e21f2859c0bab1
-        let contract_native_diff = contract_diffs
+        let contract_native_diff = pool_diffs
             .iter()
             .find(|d| d.asset_id == AssetId::from_chain(Chain::Ethereum))
             .expect("Native diff not found in contract's diffs");
@@ -185,18 +175,16 @@ mod tests {
         assert_eq!(contract_native_diff.diff, BigInt::from_str("-163303146652936307").unwrap()); // negative diff
 
         // Check ERC20 token net change: +778.05 NEWT
-        let contract_token_diff = contract_diffs
+        let pool_token_diff = pool_diffs
             .iter()
             .find(|d| d.asset_id == newt_asset_id)
             .expect("Token diff not found in contract's diffs");
 
-        assert_eq!(contract_token_diff.from_value, None);
-        assert_eq!(contract_token_diff.to_value, None);
-        assert_eq!(contract_token_diff.diff, BigInt::from_str("778050000000000000000").unwrap()); // +778.05 NEWT
+        assert_eq!(pool_token_diff.from_value, None);
+        assert_eq!(pool_token_diff.to_value, None);
+        assert_eq!(pool_token_diff.diff, BigInt::from_str("778050000000000000000").unwrap());
 
         let rabby_address = "0x39041F1B366fE33F9A5a79dE5120F2Aee2577ebc";
-        assert!(diff_map.contains_key(rabby_address), "Map should contain Rabby address {}", rabby_address);
-
         let rabby_diffs = diff_map.get(rabby_address).unwrap();
         let rabby_token_diff = rabby_diffs
             .iter()
@@ -206,6 +194,5 @@ mod tests {
         assert_eq!(rabby_token_diff.from_value, None);
         assert_eq!(rabby_token_diff.to_value, None);
         assert_eq!(rabby_token_diff.diff, BigInt::from_str("1950000000000000000").unwrap());
-        // +1.95 NEWT
     }
 }

@@ -117,14 +117,14 @@ impl SuiMapper {
                 .collect::<Vec<_>>();
             // TODO: Handle other swap providers
             let swap = match owner_balance_changes.len() {
-                2 => Self::detect_swap_from_balance_changes(owner_balance_changes.clone(), &fee)?,
+                2 => Self::map_swap_from_balance_changes(owner_balance_changes.clone(), &fee)?,
                 3 => {
                     let owner_balance_changes_filtered = owner_balance_changes
                         .iter()
                         .filter(|x| x.coin_type != SUI_COIN_TYPE)
                         .cloned()
                         .collect::<Vec<_>>();
-                    Self::detect_swap_from_balance_changes(owner_balance_changes_filtered.clone(), &fee)?
+                    Self::map_swap_from_balance_changes(owner_balance_changes_filtered.clone(), &fee)?
                 }
                 _ => return None,
             };
@@ -175,7 +175,7 @@ impl SuiMapper {
         None
     }
 
-    pub fn detect_swap_from_balance_changes(balance_changes: Vec<BalanceChange>, fee: &BigUint) -> Option<TransactionSwapMetadata> {
+    pub fn map_swap_from_balance_changes(balance_changes: Vec<BalanceChange>, fee: &BigUint) -> Option<TransactionSwapMetadata> {
         // Convert Sui BalanceChange to BalanceDiff
         let balance_diffs: Vec<BalanceDiff> = balance_changes
             .into_iter()
@@ -188,12 +188,7 @@ impl SuiMapper {
             .collect();
 
         let native_asset_id = Chain::Sui.as_asset_id();
-        SwapMapper::map_swap(
-            &balance_diffs,
-            fee,
-            &native_asset_id,
-            Some(SwapProvider::Cetus.id().to_owned()),
-        )
+        SwapMapper::map_swap(&balance_diffs, fee, &native_asset_id, Some(SwapProvider::Cetus.id().to_owned()))
     }
 
     pub fn map_asset_id(coin_type: &str) -> AssetId {
