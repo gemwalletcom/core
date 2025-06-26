@@ -1,12 +1,15 @@
 use alloy_primitives::{hex, Address, Bytes};
 use anyhow::anyhow;
-use gem_jsonrpc::{types::JsonRpcError, JsonRpcClient};
+use gem_jsonrpc::{
+    types::{JsonRpcError, JsonRpcResult},
+    JsonRpcClient,
+};
 use serde::de::DeserializeOwned;
 use serde_json::json;
 use std::any::TypeId;
 use std::str::FromStr;
 
-use crate::rpc::model::{BlockTransactionsIds, TraceReplayTransaction};
+use crate::rpc::model::{BlockTransactionsIds, TransactionReplayTrace};
 
 use super::model::{Block, Transaction, TransactionReciept};
 use primitives::{Chain, EVMChain};
@@ -69,7 +72,7 @@ impl EthereumClient {
         i64::from_str_radix(block_hex, 16).map_err(|e| anyhow!("Invalid block number format: {}", e))
     }
 
-    pub async fn get_blocks(&self, blocks: Vec<String>, include_transactions: bool) -> Result<Vec<BlockTransactionsIds>, JsonRpcError> {
+    pub async fn get_blocks(&self, blocks: &[String], include_transactions: bool) -> Result<Vec<BlockTransactionsIds>, JsonRpcError> {
         let calls: Vec<(String, serde_json::Value)> = blocks
             .iter()
             .map(|block| ("eth_getBlockByNumber".to_string(), json!([block, include_transactions])))
@@ -79,62 +82,77 @@ impl EthereumClient {
         let mut blocks_result = Vec::new();
         for result in results {
             match result {
-                gem_jsonrpc::types::JsonRpcResult::Value(value) => blocks_result.push(value.result),
-                gem_jsonrpc::types::JsonRpcResult::Error(error) => return Err(error.error),
+                JsonRpcResult::Value(value) => blocks_result.push(value.result),
+                JsonRpcResult::Error(error) => return Err(error.error),
             }
         }
         Ok(blocks_result)
     }
 
-    pub async fn get_transactions(&self, hashes: Vec<String>) -> Result<Vec<(BlockTransactionsIds, Transaction, TransactionReciept)>, JsonRpcError> {
-        let transactions = self.get_transactions_by_hash(hashes.clone()).await?;
-        let reciepts = self.get_transactions_receipts(hashes.clone()).await?;
+    pub async fn get_transactions(
+        &self,
+        hashes: &[String],
+    ) -> Result<Vec<(BlockTransactionsIds, Transaction, TransactionReciept, TransactionReplayTrace)>, JsonRpcError> {
+        let transactions = self.get_transactions_by_hash(hashes).await?;
+        let reciepts = self.get_transactions_receipts(hashes).await?;
+        let traces = self.trace_replay_transactions(hashes).await?;
         let block_ids = transactions.iter().map(|x| x.block_number.clone()).collect::<Vec<String>>();
-        let blocks = self.get_blocks(block_ids.clone(), false).await?;
+        let blocks = self.get_blocks(&block_ids, false).await?;
 
         Ok(blocks
             .into_iter()
             .zip(transactions.into_iter())
             .zip(reciepts.into_iter())
-            .map(|((block, tx), receipt)| (block, tx, receipt))
+            .zip(traces.into_iter())
+            .map(|(((block, tx), receipt), trace)| (block, tx, receipt, trace))
             .collect())
     }
 
-    pub async fn get_transactions_by_hash(&self, hashes: Vec<String>) -> Result<Vec<Transaction>, JsonRpcError> {
+    pub async fn get_transactions_by_hash(&self, hashes: &[String]) -> Result<Vec<Transaction>, JsonRpcError> {
         let calls: Vec<(String, serde_json::Value)> = hashes.iter().map(|hash| ("eth_getTransactionByHash".to_string(), json!([hash]))).collect();
 
         let results = self.client.batch_call::<Transaction>(calls).await?;
         let mut transactions = Vec::new();
         for result in results {
             match result {
-                gem_jsonrpc::types::JsonRpcResult::Value(value) => transactions.push(value.result),
-                gem_jsonrpc::types::JsonRpcResult::Error(error) => return Err(error.error),
+                JsonRpcResult::Value(value) => transactions.push(value.result),
+                JsonRpcResult::Error(error) => return Err(error.error),
             }
         }
         Ok(transactions)
     }
 
-    pub async fn get_transactions_receipts(&self, hashes: Vec<String>) -> Result<Vec<TransactionReciept>, JsonRpcError> {
+    pub async fn get_transactions_receipts(&self, hashes: &[String]) -> Result<Vec<TransactionReciept>, JsonRpcError> {
         let calls: Vec<(String, serde_json::Value)> = hashes.iter().map(|hash| ("eth_getTransactionReceipt".to_string(), json!([hash]))).collect();
 
         let results = self.client.batch_call::<TransactionReciept>(calls).await?;
         let mut receipts = Vec::new();
         for result in results {
             match result {
-                gem_jsonrpc::types::JsonRpcResult::Value(value) => receipts.push(value.result),
-                gem_jsonrpc::types::JsonRpcResult::Error(error) => return Err(error.error),
+                JsonRpcResult::Value(value) => receipts.push(value.result),
+                JsonRpcResult::Error(error) => return Err(error.error),
             }
         }
         Ok(receipts)
     }
 
-    pub async fn trace_replay_block_transactions(&self, block_number: i64) -> Result<Vec<TraceReplayTransaction>, JsonRpcError> {
+    pub async fn trace_replay_block_transactions(&self, block_number: i64) -> Result<Vec<TransactionReplayTrace>, JsonRpcError> {
         let params = json!([format!("0x{:x}", block_number), json!(["stateDiff"])]);
         self.client.call("trace_replayBlockTransactions", params).await
     }
 
-    pub async fn trace_replay_transaction(&self, tx_hash: &str) -> Result<TraceReplayTransaction, JsonRpcError> {
-        let params = json!([tx_hash, json!("stateDiff")]);
-        self.client.call("trace_replayTransaction", params).await
+    pub async fn trace_replay_transactions(&self, tx_hash: &[String]) -> Result<Vec<TransactionReplayTrace>, JsonRpcError> {
+        let calls: Vec<(String, serde_json::Value)> = tx_hash
+            .iter()
+            .map(|hash| ("trace_replayTransaction".to_string(), json!([hash, json!("stateDiff")])))
+            .collect();
+        let results = self.client.batch_call::<TransactionReplayTrace>(calls).await?;
+        results.into_iter().try_fold(Vec::new(), |mut acc, result| {
+            match result {
+                JsonRpcResult::Value(value) => acc.push(value.result),
+                JsonRpcResult::Error(error) => return Err(error.error),
+            }
+            Ok(acc)
+        })
     }
 }

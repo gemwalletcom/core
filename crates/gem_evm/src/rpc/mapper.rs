@@ -1,11 +1,15 @@
 use chrono::DateTime;
+use itertools::izip;
 use num_bigint::BigUint;
 use num_traits::Num;
 
 use super::swap_mapper::SwapMapper;
 use crate::{
     address::ethereum_address_checksum,
-    rpc::model::{Block, Transaction, TransactionReciept},
+    rpc::{
+        balance_differ::BalanceDiffer,
+        model::{Block, Transaction, TransactionReciept, TransactionReplayTrace},
+    },
 };
 use primitives::{chain::Chain, AssetId, TransactionState, TransactionType};
 
@@ -16,12 +20,14 @@ pub const TRANSFER_GAS_LIMIT: u64 = 21000;
 pub struct EthereumMapper;
 
 impl EthereumMapper {
-    pub fn map_transactions(chain: Chain, block: Block, transactions_reciepts: Vec<TransactionReciept>) -> Vec<primitives::Transaction> {
-        block
-            .transactions
-            .into_iter()
-            .zip(transactions_reciepts.iter())
-            .filter_map(|(transaction, receipt)| EthereumMapper::map_transaction(chain, &transaction, receipt, &block.timestamp))
+    pub fn map_transactions(
+        chain: Chain,
+        block: Block,
+        transactions_reciepts: Vec<TransactionReciept>,
+        traces: Vec<TransactionReplayTrace>,
+    ) -> Vec<primitives::Transaction> {
+        izip!(block.transactions.into_iter(), transactions_reciepts.iter(), traces.iter())
+            .filter_map(|(transaction, receipt, trace)| EthereumMapper::map_transaction(chain, &transaction, receipt, trace, &block.timestamp))
             .collect()
     }
 
@@ -29,6 +35,7 @@ impl EthereumMapper {
         chain: Chain,
         transaction: &Transaction,
         transaction_reciept: &TransactionReciept,
+        trace: &TransactionReplayTrace,
         timestamp: &BigUint,
     ) -> Option<primitives::Transaction> {
         let state = if transaction_reciept.status == "0x1" {
@@ -103,6 +110,12 @@ impl EthereumMapper {
             }
         }
 
+        let differ = BalanceDiffer::new(chain);
+        let diff_map = differ.calculate(trace, transaction_reciept);
+        if let Some(_diffs) = diff_map.get(&from) {
+            // TODO: implement smart contract call
+        }
+
         // Check for smart contract call
         if transaction.to.is_some() && transaction.input.len() > 2 && Self::has_smart_contract_indicators(transaction, transaction_reciept) {
             let transaction = primitives::Transaction::new(
@@ -157,8 +170,16 @@ mod tests {
         let contract_call_receipt = serde_json::from_value::<JsonRpcResult<TransactionReciept>>(contract_call_receipt_json)
             .unwrap()
             .result;
+        let empty_trace = TransactionReplayTrace::default();
 
-        let transaction = EthereumMapper::map_transaction(Chain::Ethereum, &contract_call_tx, &contract_call_receipt, &BigUint::from(1735671600u64)).unwrap();
+        let transaction = EthereumMapper::map_transaction(
+            Chain::Ethereum,
+            &contract_call_tx,
+            &contract_call_receipt,
+            &empty_trace,
+            &BigUint::from(1735671600u64),
+        )
+        .unwrap();
 
         assert_eq!(transaction.transaction_type, TransactionType::SmartContractCall);
         assert_eq!(transaction.hash, "0x876707912c2d625723aa14bf268d83ede36c2657c70da500628e40e6b51577c9");

@@ -1,5 +1,8 @@
-use crate::rpc::model::{Log, TraceReplayTransaction, TransactionReciept};
-use alloy_primitives::hex;
+use crate::{
+    ethereum_address_checksum,
+    rpc::model::{Diff, Log, TransactionReciept, TransactionReplayTrace},
+};
+use alloy_primitives::{hex, Address};
 use chain_primitives::{BalanceDiff, BalanceDiffMap};
 use num_bigint::{BigInt, BigUint};
 use num_traits::Num;
@@ -9,21 +12,22 @@ use std::collections::HashMap;
 pub const TRANSFER_TOPIC: &str = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
 
 #[derive(Debug)]
-pub struct Differ {
+pub struct BalanceDiffer {
     pub chain: Chain,
 }
 
-impl Differ {
+impl BalanceDiffer {
     pub fn new(chain: Chain) -> Self {
         Self { chain }
     }
 
-    pub fn calculate(&self, trace: TraceReplayTransaction, receipt: TransactionReciept) -> BalanceDiffMap {
+    pub fn calculate(&self, trace: &TransactionReplayTrace, receipt: &TransactionReciept) -> BalanceDiffMap {
         let mut map: BalanceDiffMap = HashMap::new();
 
         // Native balance diff
-        for (address, state) in trace.state_diff {
-            if let super::model::Diff::Change(change) = state.balance {
+        for (address, state) in &trace.state_diff {
+            if let Diff::Change(change) = &state.balance {
+                let checksum_address = ethereum_address_checksum(address).unwrap_or_default();
                 let from_value = BigInt::from_str_radix(&change.from_to.from[2..], 16).unwrap_or_default();
                 let to_value = BigInt::from_str_radix(&change.from_to.to[2..], 16).unwrap_or_default();
 
@@ -38,7 +42,7 @@ impl Differ {
                         to_value: Some(to_value.clone()),
                         diff: diff_value,
                     };
-                    map.entry(address).or_default().push(diff);
+                    map.entry(checksum_address).or_default().push(diff);
                 }
             }
         }
@@ -46,15 +50,15 @@ impl Differ {
         // ERC20 token net transfers - collect all transfers per address/token and calculate net
         let mut token_transfers: HashMap<String, HashMap<String, BigInt>> = HashMap::new();
 
-        for log in receipt.logs {
-            if let Some(transfer) = self.parse_log(&log) {
-                let token_address = log.address;
+        for log in &receipt.logs {
+            if let Some(transfer) = self.parse_log(log) {
+                let token_address = ethereum_address_checksum(&log.address).unwrap_or_default();
 
                 // Subtract from sender
                 *token_transfers.entry(transfer.from).or_default().entry(token_address.clone()).or_default() -= transfer.value.clone();
 
                 // Add to receiver
-                *token_transfers.entry(transfer.to).or_default().entry(token_address).or_default() += transfer.value;
+                *token_transfers.entry(transfer.to).or_default().entry(token_address.clone()).or_default() += transfer.value;
             }
         }
 
@@ -96,8 +100,8 @@ impl Differ {
             return None;
         }
 
-        let from = hex::encode_prefixed(&from_bytes[12..]);
-        let to = hex::encode_prefixed(&to_bytes[12..]);
+        let from = Address::from_slice(&from_bytes[12..]).to_checksum(None);
+        let to = Address::from_slice(&to_bytes[12..]).to_checksum(None);
 
         let value = BigUint::from_str_radix(&log.data[2..], 16).ok()?;
 
@@ -121,17 +125,17 @@ mod tests {
     #[test]
     fn test_calculate() {
         // https://etherscan.io/tx/0x23fe2ead060a3812a1f03c2e082b6fc8888b7c655a8f58f4ed19de00e8c9aaa6
-        let json_str = include_str!("../../tests/data/trace_replay_tx.json");
-        let trace_replay_transaction = serde_json::from_str::<JsonRpcResponse<TraceReplayTransaction>>(json_str).unwrap().result;
+        let json_str = include_str!("../../tests/data/trace_replay_tx_trace.json");
+        let trace_replay_transaction = serde_json::from_str::<JsonRpcResponse<TransactionReplayTrace>>(json_str).unwrap().result;
 
         let json_str = include_str!("../../tests/data/trace_replay_tx_receipt.json");
         let receipt = serde_json::from_str::<JsonRpcResponse<TransactionReciept>>(json_str).unwrap().result;
 
-        let differ = Differ::new(Chain::Ethereum);
-        let diff_map = differ.calculate(trace_replay_transaction, receipt);
+        let differ = BalanceDiffer::new(Chain::Ethereum);
+        let diff_map = differ.calculate(&trace_replay_transaction, &receipt);
 
         // Check that the map contains the expected address
-        let sender_address = "0x52a07c930157d07d9effd147ecf41c5cbbc6000c";
+        let sender_address = "0x52A07c930157d07D9EffD147ecF41C5cBbC6000c";
 
         assert!(diff_map.contains_key(sender_address), "Map should contain address {}", sender_address);
 
@@ -150,7 +154,7 @@ mod tests {
         // Check ERC20 token net change: -780 NEWT
         let newt_asset_id = AssetId {
             chain: Chain::Ethereum,
-            token_id: Some("0xd0ec028a3d21533fdd200838f39c85b03679285d".to_string()),
+            token_id: Some("0xD0eC028a3D21533Fdd200838F39c85B03679285D".to_string()),
         };
         let token_diff = sender_diffs
             .iter()
@@ -161,8 +165,7 @@ mod tests {
         assert_eq!(token_diff.to_value, None);
         assert_eq!(token_diff.diff, BigInt::from_str("-780000000000000000000").unwrap()); // -780 NEWT
 
-        // Check address 0x000000000004444c5dc75cb358380d2e3de08a90
-        let contract_address = "0x000000000004444c5dc75cb358380d2e3de08a90";
+        let contract_address = "0x000000000004444c5dc75cB358380D2e3dE08A90";
         assert!(
             diff_map.contains_key(contract_address),
             "Map should contain contract address {}",
@@ -191,8 +194,7 @@ mod tests {
         assert_eq!(contract_token_diff.to_value, None);
         assert_eq!(contract_token_diff.diff, BigInt::from_str("778050000000000000000").unwrap()); // +778.05 NEWT
 
-        // Check Rabby Fee wallet: 0x39041f1b366fe33f9a5a79de5120f2aee2577ebc should receive +1.95 NEWT
-        let rabby_address = "0x39041f1b366fe33f9a5a79de5120f2aee2577ebc";
+        let rabby_address = "0x39041F1B366fE33F9A5a79dE5120F2Aee2577ebc";
         assert!(diff_map.contains_key(rabby_address), "Map should contain Rabby address {}", rabby_address);
 
         let rabby_diffs = diff_map.get(rabby_address).unwrap();

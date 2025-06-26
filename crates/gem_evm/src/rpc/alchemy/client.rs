@@ -45,10 +45,12 @@ impl AlchemyClient {
         let transactions_ids = transactions.iter().map(|x| x.hash.clone()).collect::<Vec<String>>();
         Ok(self
             .ethereum_client
-            .get_transactions(transactions_ids.clone())
+            .get_transactions(&transactions_ids)
             .await?
             .into_iter()
-            .filter_map(|(block, transaction, receipt)| EthereumMapper::map_transaction(self.chain.to_chain(), &transaction, &receipt, &block.timestamp))
+            .filter_map(|(block, transaction, receipt, trace)| {
+                EthereumMapper::map_transaction(self.chain.to_chain(), &transaction, &receipt, &trace, &block.timestamp)
+            })
             .collect())
     }
 

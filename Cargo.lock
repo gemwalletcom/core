@@ -3030,6 +3030,7 @@ dependencies = [
  "gem_hash",
  "gem_jsonrpc",
  "hex",
+ "itertools 0.14.0",
  "itoa",
  "num-bigint",
  "num-traits",

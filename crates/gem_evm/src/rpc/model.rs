@@ -68,9 +68,9 @@ pub struct Log {
     pub data: String,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Default, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct TraceReplayTransaction {
+pub struct TransactionReplayTrace {
     pub output: String,
     #[serde(default)]
     pub state_diff: HashMap<String, StateChange>,
@@ -81,8 +81,6 @@ pub struct TraceReplayTransaction {
 #[serde(rename_all = "camelCase")]
 pub struct StateChange {
     pub balance: Diff<String>,
-    // pub code: String,
-    // pub nonce: Diff<String>,
     pub storage: HashMap<String, Change<String>>,
 }
 
@@ -113,8 +111,8 @@ mod tests {
 
     #[test]
     fn test_decode_trace_replay_transaction() {
-        let json_str = include_str!("../../tests/data/trace_replay_tx.json");
-        let trace_replay_transaction = serde_json::from_str::<JsonRpcResponse<TraceReplayTransaction>>(json_str).unwrap().result;
+        let json_str = include_str!("../../tests/data/trace_replay_tx_trace.json");
+        let trace_replay_transaction = serde_json::from_str::<JsonRpcResponse<TransactionReplayTrace>>(json_str).unwrap().result;
 
         assert_eq!(
             trace_replay_transaction.output,

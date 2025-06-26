@@ -1,7 +1,7 @@
 pub mod alchemy;
 pub mod ankr;
+pub mod balance_differ;
 pub mod client;
-pub mod differ;
 pub mod mapper;
 pub mod model;
 pub mod swap_mapper;
