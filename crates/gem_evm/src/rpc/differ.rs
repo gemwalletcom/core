@@ -1,0 +1,209 @@
+use crate::rpc::model::{Log, TraceReplayTransaction, TransactionReciept};
+use alloy_primitives::hex;
+use chain_primitives::{BalanceDiff, BalanceDiffMap};
+use num_bigint::{BigInt, BigUint};
+use num_traits::Num;
+use primitives::{AssetId, Chain};
+use std::collections::HashMap;
+
+pub const TRANSFER_TOPIC: &str = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
+
+#[derive(Debug)]
+pub struct Differ {
+    pub chain: Chain,
+}
+
+impl Differ {
+    pub fn new(chain: Chain) -> Self {
+        Self { chain }
+    }
+
+    pub fn calculate(&self, trace: TraceReplayTransaction, receipt: TransactionReciept) -> BalanceDiffMap {
+        let mut map: BalanceDiffMap = HashMap::new();
+
+        // Native balance diff
+        for (address, state) in trace.state_diff {
+            if let super::model::Diff::Change(change) = state.balance {
+                let from_value = BigInt::from_str_radix(&change.from_to.from[2..], 16).unwrap_or_default();
+                let to_value = BigInt::from_str_radix(&change.from_to.to[2..], 16).unwrap_or_default();
+
+                if from_value != to_value {
+                    let diff_value = to_value.clone() - from_value.clone();
+                    let diff = BalanceDiff {
+                        asset_id: AssetId {
+                            chain: self.chain,
+                            token_id: None,
+                        },
+                        from_value: Some(from_value.clone()),
+                        to_value: Some(to_value.clone()),
+                        diff: diff_value,
+                    };
+                    map.entry(address).or_default().push(diff);
+                }
+            }
+        }
+
+        // ERC20 token net transfers - collect all transfers per address/token and calculate net
+        let mut token_transfers: HashMap<String, HashMap<String, BigInt>> = HashMap::new();
+
+        for log in receipt.logs {
+            if let Some(transfer) = self.parse_log(&log) {
+                let token_address = log.address;
+
+                // Subtract from sender
+                *token_transfers.entry(transfer.from).or_default().entry(token_address.clone()).or_default() -= transfer.value.clone();
+
+                // Add to receiver
+                *token_transfers.entry(transfer.to).or_default().entry(token_address).or_default() += transfer.value;
+            }
+        }
+
+        // Convert net transfers to BalanceDiff entries
+        for (address, tokens) in token_transfers {
+            for (token_address, net_diff) in tokens {
+                if net_diff != BigInt::from(0) {
+                    let asset_id = AssetId {
+                        chain: self.chain,
+                        token_id: Some(token_address),
+                    };
+
+                    let diff = BalanceDiff {
+                        asset_id,
+                        from_value: None,
+                        to_value: None,
+                        diff: net_diff,
+                    };
+
+                    map.entry(address.clone()).or_default().push(diff);
+                }
+            }
+        }
+
+        map
+    }
+
+    fn parse_log(&self, log: &Log) -> Option<TransferLog> {
+        // Transfer(address,address,uint256)
+        if log.topics.is_empty() || log.topics[0] != TRANSFER_TOPIC || log.topics.len() < 3 {
+            return None;
+        }
+
+        // topics[1] is from, topics[2] is to. They are 32 bytes, address is last 20 bytes.
+        let from_bytes = hex::decode(&log.topics[1]).ok()?;
+        let to_bytes = hex::decode(&log.topics[2]).ok()?;
+
+        if from_bytes.len() != 32 || to_bytes.len() != 32 {
+            return None;
+        }
+
+        let from = hex::encode_prefixed(&from_bytes[12..]);
+        let to = hex::encode_prefixed(&to_bytes[12..]);
+
+        let value = BigUint::from_str_radix(&log.data[2..], 16).ok()?;
+
+        Some(TransferLog { from, to, value: value.into() })
+    }
+}
+
+struct TransferLog {
+    pub from: String,
+    pub to: String,
+    pub value: BigInt,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use gem_jsonrpc::types::JsonRpcResponse;
+    use primitives::Chain;
+    use std::str::FromStr;
+
+    #[test]
+    fn test_calculate() {
+        // https://etherscan.io/tx/0x23fe2ead060a3812a1f03c2e082b6fc8888b7c655a8f58f4ed19de00e8c9aaa6
+        let json_str = include_str!("../../tests/data/trace_replay_tx.json");
+        let trace_replay_transaction = serde_json::from_str::<JsonRpcResponse<TraceReplayTransaction>>(json_str).unwrap().result;
+
+        let json_str = include_str!("../../tests/data/trace_replay_tx_receipt.json");
+        let receipt = serde_json::from_str::<JsonRpcResponse<TransactionReciept>>(json_str).unwrap().result;
+
+        let differ = Differ::new(Chain::Ethereum);
+        let diff_map = differ.calculate(trace_replay_transaction, receipt);
+
+        // Check that the map contains the expected address
+        let sender_address = "0x52a07c930157d07d9effd147ecf41c5cbbc6000c";
+
+        assert!(diff_map.contains_key(sender_address), "Map should contain address {}", sender_address);
+
+        let sender_diffs = diff_map.get(sender_address).unwrap();
+
+        // Check native balance change: from 0x28268111de83a9d (180821357773732509) to 0x4bd382b322e4810 (341490904926668816)
+        let native_diff = sender_diffs
+            .iter()
+            .find(|d| d.asset_id == AssetId::from_chain(Chain::Ethereum))
+            .expect("Native diff not found in sender's diffs");
+
+        assert_eq!(native_diff.from_value, Some(BigInt::from_str("180821357773732509").unwrap()));
+        assert_eq!(native_diff.to_value, Some(BigInt::from_str("341490904926668816").unwrap()));
+        assert_eq!(native_diff.diff, BigInt::from_str("160669547152936307").unwrap()); // 341490904926668816 - 180821357773732509
+
+        // Check ERC20 token net change: -780 NEWT
+        let newt_asset_id = AssetId {
+            chain: Chain::Ethereum,
+            token_id: Some("0xd0ec028a3d21533fdd200838f39c85b03679285d".to_string()),
+        };
+        let token_diff = sender_diffs
+            .iter()
+            .find(|d| d.asset_id == newt_asset_id)
+            .expect("Token diff not found in sender's diffs");
+
+        assert_eq!(token_diff.from_value, None);
+        assert_eq!(token_diff.to_value, None);
+        assert_eq!(token_diff.diff, BigInt::from_str("-780000000000000000000").unwrap()); // -780 NEWT
+
+        // Check address 0x000000000004444c5dc75cb358380d2e3de08a90
+        let contract_address = "0x000000000004444c5dc75cb358380d2e3de08a90";
+        assert!(
+            diff_map.contains_key(contract_address),
+            "Map should contain contract address {}",
+            contract_address
+        );
+
+        let contract_diffs = diff_map.get(contract_address).unwrap();
+
+        // Check native balance change: from 0x8d849264a8118b46324 to 0x8d846e21f2859c0bab1
+        let contract_native_diff = contract_diffs
+            .iter()
+            .find(|d| d.asset_id == AssetId::from_chain(Chain::Ethereum))
+            .expect("Native diff not found in contract's diffs");
+
+        assert_eq!(contract_native_diff.from_value, Some(BigInt::from_str("41768699565210634314532").unwrap()));
+        assert_eq!(contract_native_diff.to_value, Some(BigInt::from_str("41768536262063981378225").unwrap()));
+        assert_eq!(contract_native_diff.diff, BigInt::from_str("-163303146652936307").unwrap()); // negative diff
+
+        // Check ERC20 token net change: +778.05 NEWT
+        let contract_token_diff = contract_diffs
+            .iter()
+            .find(|d| d.asset_id == newt_asset_id)
+            .expect("Token diff not found in contract's diffs");
+
+        assert_eq!(contract_token_diff.from_value, None);
+        assert_eq!(contract_token_diff.to_value, None);
+        assert_eq!(contract_token_diff.diff, BigInt::from_str("778050000000000000000").unwrap()); // +778.05 NEWT
+
+        // Check Rabby Fee wallet: 0x39041f1b366fe33f9a5a79de5120f2aee2577ebc should receive +1.95 NEWT
+        let rabby_address = "0x39041f1b366fe33f9a5a79de5120f2aee2577ebc";
+        assert!(diff_map.contains_key(rabby_address), "Map should contain Rabby address {}", rabby_address);
+
+        let rabby_diffs = diff_map.get(rabby_address).unwrap();
+        let rabby_token_diff = rabby_diffs
+            .iter()
+            .find(|d| d.asset_id == newt_asset_id)
+            .expect("Token diff not found in Rabby's diffs");
+
+        assert_eq!(rabby_token_diff.from_value, None);
+        assert_eq!(rabby_token_diff.to_value, None);
+        assert_eq!(rabby_token_diff.diff, BigInt::from_str("1950000000000000000").unwrap());
+        // +1.95 NEWT
+    }
+}

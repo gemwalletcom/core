@@ -10,6 +10,7 @@ rpc = ["gem_jsonrpc/client", "dep:chrono", "dep:async-trait", "dep:futures"]
 
 [dependencies]
 primitives = { path = "../primitives" }
+chain_primitives = { path = "../chain_primitives" }
 gem_hash = { path = "../gem_hash" }
 serde_serializers = { path = "../serde_serializers" }
 gem_jsonrpc = { path = "../gem_jsonrpc" }
