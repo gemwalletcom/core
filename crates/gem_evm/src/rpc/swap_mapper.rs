@@ -57,7 +57,7 @@ impl SwapMapper {
         None
     }
 
-    pub fn make_swap_transaction(
+    fn make_swap_transaction(
         chain: &Chain,
         transaction: &Transaction,
         transaction_reciept: &TransactionReciept,
@@ -65,7 +65,7 @@ impl SwapMapper {
         created_at: DateTime<Utc>,
     ) -> Option<primitives::Transaction> {
         let from_checksum = ethereum_address_checksum(&transaction.from).ok()?;
-        let contract_checksum = transaction.to.as_ref().map(|to| ethereum_address_checksum(to).ok()).unwrap();
+        let contract_checksum = transaction.to.as_ref().and_then(|to| ethereum_address_checksum(to).ok());
         Some(primitives::Transaction::new(
             transaction.hash.clone(),
             metadata.from_asset.clone(),
