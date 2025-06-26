@@ -3128,6 +3128,7 @@ dependencies = [
  "base64 0.22.1",
  "bcs",
  "blake2",
+ "chain_primitives",
  "chrono",
  "gem_jsonrpc",
  "hex",

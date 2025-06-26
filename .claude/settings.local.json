@@ -22,7 +22,9 @@
       "Bash(grep:*)",
       "Bash(rg:*)",
       "Bash(mkdir:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(rm:*)",
+      "Bash(ls:*)"
     ],
     "deny": []
   }

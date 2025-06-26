@@ -6,10 +6,7 @@ use num_traits::Num;
 use super::swap_mapper::SwapMapper;
 use crate::{
     address::ethereum_address_checksum,
-    rpc::{
-        balance_differ::BalanceDiffer,
-        model::{Block, Transaction, TransactionReciept, TransactionReplayTrace},
-    },
+    rpc::model::{Block, Transaction, TransactionReciept, TransactionReplayTrace},
 };
 use primitives::{chain::Chain, AssetId, TransactionState, TransactionType};
 
@@ -103,17 +100,10 @@ impl EthereumMapper {
             return Some(transaction);
         }
 
-        // Try to decode Uniswap V3 or V4 transaction
         if transaction.to.is_some() && transaction.input.len() >= 8 {
-            if let Some(tx) = SwapMapper::map_uniswap_transaction(&chain, transaction, transaction_reciept, created_at) {
+            if let Some(tx) = SwapMapper::map_transaction(&chain, transaction, transaction_reciept, trace, created_at) {
                 return Some(tx);
             }
-        }
-
-        let differ = BalanceDiffer::new(chain);
-        let diff_map = differ.calculate(trace, transaction_reciept);
-        if let Some(_diffs) = diff_map.get(&from) {
-            // TODO: implement smart contract call
         }
 
         // Check for smart contract call
