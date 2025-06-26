@@ -11,6 +11,8 @@ struct Wallet {
     is_pinned: bool,
     #[serde(rename = "imageUrl")]
     image_url: Option<String>,
+    #[serde(rename = "creationType")]
+    creation_type: WalletCreationType,
 }
 
 #[typeshare(swift = "Equatable, Hashable, Sendable")]
@@ -20,6 +22,12 @@ pub enum WalletType {
     single,
     private_key,
     view,
+}
+
+#[typeshare(swift = "Equatable, Hashable, Sendable")]
+pub enum WalletCreationType {
+    imported,
+    created,
 }
 
 #[typeshare(swift = "Equatable, Sendable")]
