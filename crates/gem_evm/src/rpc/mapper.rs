@@ -104,24 +104,24 @@ impl EthereumMapper {
         }
 
         // Check for smart contract call
-        if transaction.to.is_some() && transaction.input.len() > 2 && Self::has_smart_contract_indicators(transaction, transaction_reciept) {
-            let transaction = primitives::Transaction::new(
-                transaction.hash.clone(),
-                chain.as_asset_id(),
-                from,
-                to,
-                None,
-                TransactionType::SmartContractCall,
-                state,
-                fee.to_string(),
-                chain.as_asset_id(),
-                value,
-                None,
-                None,
-                created_at,
-            );
-            return Some(transaction);
-        }
+        // if transaction.to.is_some() && transaction.input.len() > 2 && Self::has_smart_contract_indicators(transaction, transaction_reciept) {
+        //     let transaction = primitives::Transaction::new(
+        //         transaction.hash.clone(),
+        //         chain.as_asset_id(),
+        //         from,
+        //         to,
+        //         None,
+        //         TransactionType::SmartContractCall,
+        //         state,
+        //         fee.to_string(),
+        //         chain.as_asset_id(),
+        //         value,
+        //         None,
+        //         None,
+        //         created_at,
+        //     );
+        //     return Some(transaction);
+        // }
         None
     }
 
@@ -132,13 +132,13 @@ impl EthereumMapper {
         Some(data_cost)
     }
 
-    fn has_smart_contract_indicators(transaction: &Transaction, transaction_reciept: &TransactionReciept) -> bool {
-        // 1. Gas limit > 21,000 (simple transfers use exactly 21,000)
-        // 2. Receipt has logs (contract execution emits events)
-        let has_logs = !transaction_reciept.logs.is_empty();
+    // fn has_smart_contract_indicators(transaction: &Transaction, transaction_reciept: &TransactionReciept) -> bool {
+    //     // 1. Gas limit > 21,000 (simple transfers use exactly 21,000)
+    //     // 2. Receipt has logs (contract execution emits events)
+    //     let has_logs = !transaction_reciept.logs.is_empty();
 
-        transaction.gas > TRANSFER_GAS_LIMIT && has_logs
-    }
+    //     transaction.gas > TRANSFER_GAS_LIMIT && has_logs
+    // }
 }
 
 #[cfg(test)]

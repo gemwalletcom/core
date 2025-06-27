@@ -7,18 +7,18 @@ use streamer::{consumer::MessageConsumer, StreamProducer, TransactionsPayload};
 use streamer::{AssetId, AssetsAddressPayload, NotificationsPayload, StreamProducerQueue};
 use tokio::sync::Mutex;
 
-use crate::consumers::TransactionsConsumerConfig;
+use crate::consumers::StoreTransactionsConsumerConfig;
 use crate::pusher::Pusher;
 
-pub struct TransactionsConsumer {
+pub struct StoreTransactionsConsumer {
     pub database: Arc<Mutex<DatabaseClient>>,
     pub stream_producer: StreamProducer,
     pub pusher: Pusher,
-    pub config: TransactionsConsumerConfig,
+    pub config: StoreTransactionsConsumerConfig,
 }
 
 #[async_trait]
-impl MessageConsumer<TransactionsPayload, usize> for TransactionsConsumer {
+impl MessageConsumer<TransactionsPayload, usize> for StoreTransactionsConsumer {
     async fn should_process(&mut self, _payload: TransactionsPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
         Ok(true)
     }
@@ -75,7 +75,8 @@ impl MessageConsumer<TransactionsPayload, usize> for TransactionsConsumer {
                             transaction.id.clone(),
                             transaction.created_at
                         );
-                    } else if assets_ids.ids_set() == assets_ids.ids_set() {
+                    } else if assets_ids.ids_set() == assets_ids.ids_set() && !payload.blocks.is_empty() {
+                        // important check (!payload.blocks.is_empty()) to avoid notifing users about transactions that are not parsed in the block
                         if let Ok(notifications) = self
                             .pusher
                             .get_messages(device.as_primitive(), transaction.clone(), subscription.as_primitive(), existing_assets.clone())
@@ -106,7 +107,7 @@ impl MessageConsumer<TransactionsPayload, usize> for TransactionsConsumer {
     }
 }
 
-impl TransactionsConsumer {
+impl StoreTransactionsConsumer {
     async fn store_batch(&mut self, items: HashMap<String, Transaction>) -> Result<usize, Box<dyn Error + Send + Sync>> {
         let mut db_guard = self.database.lock().await;
 

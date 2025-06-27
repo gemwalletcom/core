@@ -2,8 +2,8 @@ use chrono::{Duration, NaiveDateTime, Utc};
 use primitives::{Chain, Transaction, TransactionType};
 
 #[derive(Default)]
-pub struct TransactionsConsumerConfig {}
-impl TransactionsConsumerConfig {
+pub struct StoreTransactionsConsumerConfig {}
+impl StoreTransactionsConsumerConfig {
     pub fn is_transaction_outdated(&self, transaction_created_at: NaiveDateTime, chain: Chain) -> bool {
         Utc::now().naive_utc() - transaction_created_at > Duration::seconds(self.outdated_seconds(chain))
     }
@@ -51,21 +51,21 @@ mod tests {
 
     #[test]
     fn test_is_transaction_outdated_positive() {
-        let options = TransactionsConsumerConfig::default();
+        let options = StoreTransactionsConsumerConfig::default();
         let created_at = Utc::now() - Duration::seconds(options.outdated_seconds(Chain::Bitcoin) + 1);
         assert!(options.is_transaction_outdated(created_at.naive_utc(), Chain::Bitcoin));
     }
 
     #[test]
     fn test_is_transaction_outdated_negative() {
-        let options = TransactionsConsumerConfig::default();
+        let options = StoreTransactionsConsumerConfig::default();
         let created_at = Utc::now() - Duration::seconds(options.outdated_seconds(Chain::Bitcoin) - 1);
         assert!(!options.is_transaction_outdated(created_at.naive_utc(), Chain::Bitcoin));
     }
 
     #[test]
     fn test_filter_transaction() {
-        let options = TransactionsConsumerConfig::default();
+        let options = StoreTransactionsConsumerConfig::default();
         let test_cases = vec![
             ("1", TransactionType::Transfer, 0, true),
             ("500", TransactionType::Transfer, 1000, false),
