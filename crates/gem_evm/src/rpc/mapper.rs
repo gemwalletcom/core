@@ -132,13 +132,13 @@ impl EthereumMapper {
         Some(data_cost)
     }
 
-    // fn has_smart_contract_indicators(transaction: &Transaction, transaction_reciept: &TransactionReciept) -> bool {
-    //     // 1. Gas limit > 21,000 (simple transfers use exactly 21,000)
-    //     // 2. Receipt has logs (contract execution emits events)
-    //     let has_logs = !transaction_reciept.logs.is_empty();
+    fn has_smart_contract_indicators(transaction: &Transaction, transaction_reciept: &TransactionReciept) -> bool {
+        // 1. Gas limit > 21,000 (simple transfers use exactly 21,000)
+        // 2. Receipt has logs (contract execution emits events)
+        let has_logs = !transaction_reciept.logs.is_empty();
 
-    //     transaction.gas > TRANSFER_GAS_LIMIT && has_logs
-    // }
+        transaction.gas > TRANSFER_GAS_LIMIT && has_logs
+    }
 }
 
 #[cfg(test)]
