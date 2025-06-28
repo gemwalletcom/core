@@ -1,6 +1,9 @@
 #[cfg(feature = "rpc")]
 pub mod rpc;
 
+#[cfg(feature = "typeshare")]
+pub mod typeshare;
+
 pub mod jsonrpc;
 pub mod model;
 pub mod object_id;

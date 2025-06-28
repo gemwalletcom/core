@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
-use super::Int;
+use crate::typeshare::UInt64;
 
 #[typeshare(swift = "Sendable")]
 #[derive(Serialize, Deserialize)]
@@ -23,7 +23,7 @@ pub struct SolanaValidator {
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SolanaEpoch {
-    pub epoch: Int,
-    pub slot_index: Int,
-    pub slots_in_epoch: Int,
+    pub epoch: UInt64,
+    pub slot_index: UInt64,
+    pub slots_in_epoch: UInt64,
 }

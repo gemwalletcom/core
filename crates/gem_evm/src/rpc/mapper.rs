@@ -132,7 +132,7 @@ impl EthereumMapper {
         Some(data_cost)
     }
 
-    fn has_smart_contract_indicators(transaction: &Transaction, transaction_reciept: &TransactionReciept) -> bool {
+    fn _has_smart_contract_indicators(transaction: &Transaction, transaction_reciept: &TransactionReciept) -> bool {
         // 1. Gas limit > 21,000 (simple transfers use exactly 21,000)
         // 2. Receipt has logs (contract execution emits events)
         let has_logs = !transaction_reciept.logs.is_empty();
@@ -177,7 +177,7 @@ mod tests {
             .result;
 
         // Should detect smart contract call (has logs and gas > 21000)
-        assert!(EthereumMapper::has_smart_contract_indicators(&contract_call_tx, &contract_call_receipt));
+        assert!(EthereumMapper::_has_smart_contract_indicators(&contract_call_tx, &contract_call_receipt));
 
         // Verify gas was parsed correctly from hex "0x61a80" = 400000
         assert_eq!(contract_call_tx.gas, 400000); // > 21000

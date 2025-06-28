@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
-use super::Int;
+use crate::typeshare::UInt64;
 
 #[typeshare(swift = "Sendable")]
 #[derive(Serialize, Deserialize)]
@@ -30,8 +30,8 @@ pub struct SolanaTokenAccount {
 #[typeshare(swift = "Sendable")]
 #[typeshare(swiftGenericConstraints = "T: Sendable")]
 pub struct SolanaAccount<T> {
-    pub lamports: Int,
-    pub space: Int,
+    pub lamports: UInt64,
+    pub space: UInt64,
     pub owner: String,
     pub data: T,
 }

@@ -1289,14 +1289,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "blockchain"
-version = "1.0.0"
-dependencies = [
- "serde",
- "typeshare",
-]
-
-[[package]]
 name = "blocking"
 version = "1.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2910,6 +2902,7 @@ dependencies = [
  "serde",
  "serde_json",
  "thiserror 2.0.12",
+ "typeshare",
  "url",
 ]
 
@@ -2926,6 +2919,7 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_serializers",
+ "typeshare",
  "url",
 ]
 
@@ -2937,6 +2931,7 @@ dependencies = [
  "primitives",
  "reqwest-middleware",
  "serde",
+ "typeshare",
 ]
 
 [[package]]
@@ -2959,6 +2954,7 @@ dependencies = [
  "reqwest-middleware",
  "serde",
  "serde_json",
+ "typeshare",
 ]
 
 [[package]]
@@ -3010,6 +3006,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2",
+ "typeshare",
 ]
 
 [[package]]
@@ -3036,6 +3033,14 @@ dependencies = [
  "serde_json",
  "serde_serializers",
  "tokio",
+ "typeshare",
+]
+
+[[package]]
+name = "gem_graphql"
+version = "1.0.0"
+dependencies = [
+ "serde",
  "typeshare",
 ]
 
@@ -3069,6 +3074,7 @@ dependencies = [
  "primitives",
  "serde",
  "serde_json",
+ "typeshare",
 ]
 
 [[package]]
@@ -3081,6 +3087,7 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_serializers",
+ "typeshare",
 ]
 
 [[package]]
@@ -3114,6 +3121,7 @@ dependencies = [
  "primitives",
  "reqwest-middleware",
  "serde",
+ "typeshare",
 ]
 
 [[package]]
@@ -3135,6 +3143,7 @@ dependencies = [
  "sui-sdk-types",
  "sui-transaction-builder",
  "thiserror 2.0.12",
+ "typeshare",
 ]
 
 [[package]]
@@ -3149,6 +3158,7 @@ dependencies = [
  "serde_json",
  "serde_serializers",
  "tonlib-core",
+ "typeshare",
 ]
 
 [[package]]
@@ -3169,6 +3179,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2",
+ "typeshare",
 ]
 
 [[package]]
