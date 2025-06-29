@@ -40,9 +40,11 @@ impl ChainBlockProvider for EthereumProvider {
 
     async fn get_transactions(&self, block_number: i64) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
         let block = self.client.get_block(block_number).await?;
-        let transactions_reciepts = self.client.get_block_receipts(block_number).await?;
+        let receipts_req = self.client.get_block_receipts(block_number);
+        let traces_req = self.client.trace_replay_block_transactions(block_number);
+        let (receipts, traces) = futures::join!(receipts_req, traces_req);
 
-        Ok(EthereumMapper::map_transactions(self.get_chain(), block, transactions_reciepts))
+        Ok(EthereumMapper::map_transactions(self.get_chain(), block, receipts?, traces.ok()))
     }
 }
 

@@ -1,11 +1,12 @@
 use chrono::DateTime;
+use itertools::izip;
 use num_bigint::BigUint;
 use num_traits::Num;
 
 use super::swap_mapper::SwapMapper;
 use crate::{
     address::ethereum_address_checksum,
-    rpc::model::{Block, Transaction, TransactionReciept},
+    rpc::model::{Block, Transaction, TransactionReciept, TransactionReplayTrace},
 };
 use primitives::{chain::Chain, AssetId, TransactionState, TransactionType};
 
@@ -16,19 +17,30 @@ pub const TRANSFER_GAS_LIMIT: u64 = 21000;
 pub struct EthereumMapper;
 
 impl EthereumMapper {
-    pub fn map_transactions(chain: Chain, block: Block, transactions_reciepts: Vec<TransactionReciept>) -> Vec<primitives::Transaction> {
-        block
-            .transactions
-            .into_iter()
-            .zip(transactions_reciepts.iter())
-            .filter_map(|(transaction, receipt)| EthereumMapper::map_transaction(chain, &transaction, receipt, &block.timestamp))
-            .collect()
+    pub fn map_transactions(
+        chain: Chain,
+        block: Block,
+        transactions_reciepts: Vec<TransactionReciept>,
+        traces: Option<Vec<TransactionReplayTrace>>,
+    ) -> Vec<primitives::Transaction> {
+        match traces {
+            Some(traces) => izip!(block.transactions.into_iter(), transactions_reciepts.iter(), traces.iter())
+                .filter_map(|(transaction, receipt, trace)| EthereumMapper::map_transaction(chain, &transaction, receipt, Some(trace), &block.timestamp))
+                .collect(),
+            None => block
+                .transactions
+                .into_iter()
+                .zip(transactions_reciepts.iter())
+                .filter_map(|(transaction, receipt)| EthereumMapper::map_transaction(chain, &transaction, receipt, None, &block.timestamp))
+                .collect(),
+        }
     }
 
     pub fn map_transaction(
         chain: Chain,
         transaction: &Transaction,
         transaction_reciept: &TransactionReciept,
+        trace: Option<&TransactionReplayTrace>,
         timestamp: &BigUint,
     ) -> Option<primitives::Transaction> {
         let state = if transaction_reciept.status == "0x1" {
@@ -96,9 +108,8 @@ impl EthereumMapper {
             return Some(transaction);
         }
 
-        // Try to decode Uniswap V3 or V4 transaction
         if transaction.to.is_some() && transaction.input.len() >= 8 {
-            if let Some(tx) = SwapMapper::map_uniswap_transaction(&chain, transaction, transaction_reciept, created_at) {
+            if let Some(tx) = SwapMapper::map_transaction(&chain, transaction, transaction_reciept, trace, created_at) {
                 return Some(tx);
             }
         }
@@ -132,7 +143,6 @@ impl EthereumMapper {
         Some(data_cost)
     }
 
-
     #[allow(unused)]
     fn has_smart_contract_indicators(transaction: &Transaction, transaction_reciept: &TransactionReciept) -> bool {
         // 1. Gas limit > 21,000 (simple transfers use exactly 21,000)
@@ -152,15 +162,15 @@ mod tests {
 
     #[test]
     fn test_map_smart_contract_call() {
-        let contract_call_tx_json: serde_json::Value = serde_json::from_str(include_str!("test/contract_call_tx.json")).unwrap();
+        let contract_call_tx_json: serde_json::Value = serde_json::from_str(include_str!("../../tests/data/contract_call_tx.json")).unwrap();
         let contract_call_tx: Transaction = serde_json::from_value::<JsonRpcResult<Transaction>>(contract_call_tx_json).unwrap().result;
 
-        let contract_call_receipt_json: serde_json::Value = serde_json::from_str(include_str!("test/contract_call_tx_receipt.json")).unwrap();
+        let contract_call_receipt_json: serde_json::Value = serde_json::from_str(include_str!("../../tests/data/contract_call_tx_receipt.json")).unwrap();
         let contract_call_receipt = serde_json::from_value::<JsonRpcResult<TransactionReciept>>(contract_call_receipt_json)
             .unwrap()
             .result;
 
-        let _transaction = EthereumMapper::map_transaction(Chain::Ethereum, &contract_call_tx, &contract_call_receipt, &BigUint::from(1735671600u64));
+        let _transaction = EthereumMapper::map_transaction(Chain::Ethereum, &contract_call_tx, &contract_call_receipt, None, &BigUint::from(1735671600u64));
 
         // assert_eq!(transaction.transaction_type, TransactionType::SmartContractCall);
         // assert_eq!(transaction.hash, "0x876707912c2d625723aa14bf268d83ede36c2657c70da500628e40e6b51577c9");
@@ -170,10 +180,10 @@ mod tests {
 
     #[test]
     fn test_has_smart_contract_indicators() {
-        let contract_call_tx_json: serde_json::Value = serde_json::from_str(include_str!("test/contract_call_tx.json")).unwrap();
+        let contract_call_tx_json: serde_json::Value = serde_json::from_str(include_str!("../../tests/data/contract_call_tx.json")).unwrap();
         let contract_call_tx: Transaction = serde_json::from_value::<JsonRpcResult<Transaction>>(contract_call_tx_json).unwrap().result;
 
-        let contract_call_receipt_json: serde_json::Value = serde_json::from_str(include_str!("test/contract_call_tx_receipt.json")).unwrap();
+        let contract_call_receipt_json: serde_json::Value = serde_json::from_str(include_str!("../../tests/data/contract_call_tx_receipt.json")).unwrap();
         let contract_call_receipt = serde_json::from_value::<JsonRpcResult<TransactionReciept>>(contract_call_receipt_json)
             .unwrap()
             .result;

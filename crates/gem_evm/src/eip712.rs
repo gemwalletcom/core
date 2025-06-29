@@ -210,7 +210,7 @@ mod tests {
 
     #[test]
     fn test_permit2_json_parsing() {
-        let json_str = include_str!("./test/uniswap_permit2.json");
+        let json_str = include_str!("../tests/data/uniswap_permit2.json");
         let value = serde_json::from_str(json_str).unwrap();
         let result = parse_eip712_json(&value);
 
@@ -273,7 +273,7 @@ mod tests {
 
     #[test]
     fn test_1inch_permit_json_parsing() {
-        let json_str = include_str!("./test/1inch_permit.json");
+        let json_str = include_str!("../tests/data/1inch_permit.json");
         let value = serde_json::from_str(json_str).unwrap();
         let result = parse_eip712_json(&value);
 

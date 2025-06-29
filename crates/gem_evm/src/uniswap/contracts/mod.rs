@@ -14,13 +14,4 @@ sol! {
     interface IUniversalRouter {
         function execute(bytes calldata commands, bytes[] calldata inputs, uint256 deadline) external payable;
     }
-
-    /// @inheritdoc Dispatcher
-    /// @notice Executes encoded commands along with provided inputs.
-    /// @param commands A set of concatenated commands, each 1 byte in length
-    /// @param inputs An array of byte strings containing abi encoded inputs for each command
-    #[derive(Debug)]
-    interface Dispatcher {
-        function execute(bytes calldata commands, bytes[] calldata inputs) public payable override isNotLocked;
-    }
 }
