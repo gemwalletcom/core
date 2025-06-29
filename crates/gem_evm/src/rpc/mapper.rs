@@ -24,17 +24,15 @@ impl EthereumMapper {
         traces: Option<Vec<TransactionReplayTrace>>,
     ) -> Vec<primitives::Transaction> {
         match traces {
-            Some(traces) => {
-                izip!(block.transactions.into_iter(), transactions_reciepts.iter(), traces.iter())
-                    .filter_map(|(transaction, receipt, trace)| EthereumMapper::map_transaction(chain, &transaction, receipt, Some(trace), &block.timestamp))
-                    .collect()
-            }
-            None => {
-                block.transactions.into_iter()
-                    .zip(transactions_reciepts.iter())
-                    .filter_map(|(transaction, receipt)| EthereumMapper::map_transaction(chain, &transaction, receipt, None, &block.timestamp))
-                    .collect()
-            }
+            Some(traces) => izip!(block.transactions.into_iter(), transactions_reciepts.iter(), traces.iter())
+                .filter_map(|(transaction, receipt, trace)| EthereumMapper::map_transaction(chain, &transaction, receipt, Some(trace), &block.timestamp))
+                .collect(),
+            None => block
+                .transactions
+                .into_iter()
+                .zip(transactions_reciepts.iter())
+                .filter_map(|(transaction, receipt)| EthereumMapper::map_transaction(chain, &transaction, receipt, None, &block.timestamp))
+                .collect(),
         }
     }
 
@@ -145,7 +143,6 @@ impl EthereumMapper {
         Some(data_cost)
     }
 
-
     #[allow(unused)]
     fn has_smart_contract_indicators(transaction: &Transaction, transaction_reciept: &TransactionReciept) -> bool {
         // 1. Gas limit > 21,000 (simple transfers use exactly 21,000)
@@ -173,14 +170,7 @@ mod tests {
             .unwrap()
             .result;
 
-        let _transaction = EthereumMapper::map_transaction(
-            Chain::Ethereum,
-            &contract_call_tx,
-            &contract_call_receipt,
-            None,
-            &BigUint::from(1735671600u64),
-        )
-        .unwrap();
+        let _transaction = EthereumMapper::map_transaction(Chain::Ethereum, &contract_call_tx, &contract_call_receipt, None, &BigUint::from(1735671600u64));
 
         // assert_eq!(transaction.transaction_type, TransactionType::SmartContractCall);
         // assert_eq!(transaction.hash, "0x876707912c2d625723aa14bf268d83ede36c2657c70da500628e40e6b51577c9");
