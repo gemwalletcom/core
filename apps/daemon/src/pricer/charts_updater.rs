@@ -1,20 +1,20 @@
 use coingecko::CoinGeckoClient;
-use pricer::{ChartClient, PriceClient};
+use pricer::PriceClient;
 use std::error::Error;
-use storage::models::CreateChart;
+use storage::models::NewChart;
 
 pub struct ChartsUpdater {
     coin_gecko_client: CoinGeckoClient,
-    charts_client: ChartClient,
+
     prices_client: PriceClient,
 }
 
 impl ChartsUpdater {
-    pub fn new(charts_client: ChartClient, prices_client: PriceClient, coin_gecko_client: CoinGeckoClient) -> Self {
+    pub fn new(prices_client: PriceClient, coin_gecko_client: CoinGeckoClient) -> Self {
         Self {
             coin_gecko_client,
             prices_client,
-            charts_client,
+
         }
     }
 
@@ -29,22 +29,16 @@ impl ChartsUpdater {
                         .prices
                         .clone()
                         .into_iter()
-                        .map(|x| CreateChart {
+                        .map(|x| NewChart {
                             coin_id: coin_id.id.clone(),
                             price: x[1] as f32,
-                            ts: (x[0] / 1_000_f64) as u32,
+                            ts: chrono::DateTime::from_timestamp((x[0] / 1_000_f64) as i64, 0).unwrap().naive_utc(),
                         })
-                        .filter(|x| x.ts > 0 && x.price > 0.0)
-                        .collect::<Vec<CreateChart>>();
+                        .filter(|x| x.price > 0.0)
+                        .collect::<Vec<NewChart>>();
 
-                    match self.charts_client.set_charts(charts).await {
-                        Ok(_) => {
-                            println!("set charts {}", coin_id.id.clone());
-                        }
-                        Err(err) => {
-                            println!("set charts error: {}", err);
-                        }
-                    };
+                    // The set_charts method was removed, as chart insertion is now handled by the daemon's job scheduler.
+                    // Removed the call to set_charts. The daemon's job scheduler is responsible for chart insertion.
 
                     println!("update charts {}", coin_id.id.clone());
 
@@ -65,9 +59,10 @@ impl ChartsUpdater {
             .clone()
             .into_iter()
             .map(|x| x.as_chart())
-            .filter(|x| x.ts > 0 && x.price > 0.0)
-            .collect::<Vec<CreateChart>>();
+            .filter(|x| x.price > 0.0)
+            .collect::<Vec<NewChart>>();
 
-        self.charts_client.set_charts(charts).await
+        // The set_charts method was removed, as chart insertion is now handled by the daemon's job scheduler.
+        Ok(charts.len())
     }
 }

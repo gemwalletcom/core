@@ -85,6 +85,33 @@ diesel::table! {
 }
 
 diesel::table! {
+    charts (coin_id, ts) {
+        #[max_length = 255]
+        coin_id -> Varchar,
+        price -> Float4,
+        ts -> Timestamptz,
+    }
+}
+
+diesel::table! {
+    charts_daily_avg (coin_id, ts) {
+        #[max_length = 255]
+        coin_id -> Varchar,
+        price -> Float4,
+        ts -> Date,
+    }
+}
+
+diesel::table! {
+    charts_hourly_avg (coin_id, ts) {
+        #[max_length = 255]
+        coin_id -> Varchar,
+        price -> Float4,
+        ts -> Timestamptz,
+    }
+}
+
+diesel::table! {
     devices (id) {
         id -> Int4,
         #[max_length = 32]
@@ -509,6 +536,7 @@ diesel::joinable!(assets_links -> assets (asset_id));
 diesel::joinable!(assets_links -> link_types (link_type));
 diesel::joinable!(assets_tags -> assets (asset_id));
 diesel::joinable!(assets_tags -> tags (tag_id));
+diesel::joinable!(charts -> prices (coin_id));
 diesel::joinable!(devices -> fiat_rates (currency));
 diesel::joinable!(fiat_assets -> assets (asset_id));
 diesel::joinable!(fiat_assets -> fiat_providers (provider));
@@ -546,6 +574,9 @@ diesel::allow_tables_to_appear_in_same_query!(
     assets_tags,
     assets_types,
     chains,
+    charts,
+    charts_daily_avg,
+    charts_hourly_avg,
     devices,
     fiat_assets,
     fiat_providers,

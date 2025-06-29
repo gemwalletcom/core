@@ -66,7 +66,7 @@ localize:
     @sh scripts/localize.sh core crates/localizer/i18n
 
 setup-services:
-    docker compose up -d redis postgres clickhouse meilisearch rabbitmq
+    docker compose up -d redis postgres meilisearch rabbitmq
 
 generate-ts-primitives:
     @typeshare ./crates/primitives --lang=typescript --output-file=primitives.ts 1>/dev/null 2>&1

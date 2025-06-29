@@ -24,7 +24,7 @@ pub use self::asset::Asset;
 pub use self::asset_address::AssetAddress;
 pub use self::asset_type::AssetType;
 pub use self::chain::Chain;
-pub use self::chart::{CreateChart, GetChart};
+pub use self::chart::{Chart, NewChart, HourlyChart, DailyChart};
 pub use self::device::Device;
 pub use self::device::UpdateDevice;
 pub use self::fiat::{FiatAsset, FiatProvider, FiatProviderCountry, FiatRate, FiatTransaction, FiatTransactionUpdate};

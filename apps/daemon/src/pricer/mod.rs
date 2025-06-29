@@ -11,13 +11,13 @@ use job_runner::run_job;
 use markets_updater::MarketsUpdater;
 use price_asset_updater::PriceAssetUpdater;
 use price_updater::UpdatePrices;
-use pricer::{ChartClient, MarketsClient, PriceClient};
+use pricer::{MarketsClient, PriceClient};
 use settings::Settings;
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
 use std::time::Duration;
-use storage::ClickhouseClient;
+
 
 pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + Send>>> {
     let coingecko_client = CoinGeckoClient::new(&settings.coingecko.key.secret);
@@ -137,11 +137,10 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
         let coingecko_client = coingecko_client.clone();
         let cacher_client = cacher_client.clone();
         move || {
-            let clickhouse_database = ClickhouseClient::new(&settings.clickhouse.url, &settings.clickhouse.database);
-            let charts_client = ChartClient::new(&settings.postgres.url, clickhouse_database);
+
             let cacher_client = cacher_client.clone();
             let price_client = PriceClient::new(cacher_client, &settings.postgres.url);
-            let mut charts_updater = ChartsUpdater::new(charts_client, price_client, coingecko_client.clone());
+            let mut charts_updater = ChartsUpdater::new(price_client, coingecko_client.clone());
             async move { charts_updater.update_charts().await }
         }
     });
@@ -151,8 +150,7 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
     //     let coingecko_client = coingecko_client.clone();
     //     let cacher_client = cacher_client.clone();
     //     move || {
-    //         let clickhouse_database = ClickhouseClient::new(&settings.clickhouse.url, &settings.clickhouse.database);
-    //         let charts_client = ChartClient::new(&settings.postgres.url, clickhouse_database);
+
     //         let cacher_client = cacher_client.clone();
     //         let price_client = PriceClient::new(cacher_client, &settings.postgres.url);
     //         let mut charts_updater = ChartsUpdater::new(charts_client, price_client, coingecko_client.clone());
@@ -170,6 +168,7 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
         }
     });
 
+
     vec![
         Box::pin(clean_updated_assets),
         Box::pin(update_fiat_assets),
@@ -181,8 +180,8 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
         Box::pin(update_prices_cache),
         Box::pin(update_fiat_rates_cache),
         Box::pin(update_charts),
-        //Box::pin(update_all_charts),
         Box::pin(update_markets),
+
     ]
 }
 
