@@ -21,18 +21,28 @@ impl EthereumMapper {
         chain: Chain,
         block: Block,
         transactions_reciepts: Vec<TransactionReciept>,
-        traces: Vec<TransactionReplayTrace>,
+        traces: Option<Vec<TransactionReplayTrace>>,
     ) -> Vec<primitives::Transaction> {
-        izip!(block.transactions.into_iter(), transactions_reciepts.iter(), traces.iter())
-            .filter_map(|(transaction, receipt, trace)| EthereumMapper::map_transaction(chain, &transaction, receipt, trace, &block.timestamp))
-            .collect()
+        match traces {
+            Some(traces) => {
+                izip!(block.transactions.into_iter(), transactions_reciepts.iter(), traces.iter())
+                    .filter_map(|(transaction, receipt, trace)| EthereumMapper::map_transaction(chain, &transaction, receipt, Some(trace), &block.timestamp))
+                    .collect()
+            }
+            None => {
+                block.transactions.into_iter()
+                    .zip(transactions_reciepts.iter())
+                    .filter_map(|(transaction, receipt)| EthereumMapper::map_transaction(chain, &transaction, receipt, None, &block.timestamp))
+                    .collect()
+            }
+        }
     }
 
     pub fn map_transaction(
         chain: Chain,
         transaction: &Transaction,
         transaction_reciept: &TransactionReciept,
-        trace: &TransactionReplayTrace,
+        trace: Option<&TransactionReplayTrace>,
         timestamp: &BigUint,
     ) -> Option<primitives::Transaction> {
         let state = if transaction_reciept.status == "0x1" {
@@ -160,13 +170,12 @@ mod tests {
         let contract_call_receipt = serde_json::from_value::<JsonRpcResult<TransactionReciept>>(contract_call_receipt_json)
             .unwrap()
             .result;
-        let empty_trace = TransactionReplayTrace::default();
 
         let transaction = EthereumMapper::map_transaction(
             Chain::Ethereum,
             &contract_call_tx,
             &contract_call_receipt,
-            &empty_trace,
+            None,
             &BigUint::from(1735671600u64),
         )
         .unwrap();

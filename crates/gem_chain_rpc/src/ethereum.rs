@@ -44,7 +44,7 @@ impl ChainBlockProvider for EthereumProvider {
         let traces_req = self.client.trace_replay_block_transactions(block_number);
         let (receipts, traces) = futures::join!(receipts_req, traces_req);
 
-        Ok(EthereumMapper::map_transactions(self.get_chain(), block, receipts?, traces?))
+        Ok(EthereumMapper::map_transactions(self.get_chain(), block, receipts?, traces.ok()))
     }
 }
 

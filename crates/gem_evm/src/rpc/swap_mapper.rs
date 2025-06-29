@@ -30,7 +30,7 @@ impl SwapMapper {
         chain: &Chain,
         transaction: &Transaction,
         transaction_reciept: &TransactionReciept,
-        trace: &TransactionReplayTrace,
+        trace: Option<&TransactionReplayTrace>,
         created_at: DateTime<Utc>,
     ) -> Option<primitives::Transaction> {
         // Check if it is a uniswap transaction
@@ -42,15 +42,17 @@ impl SwapMapper {
         }
 
         // Calculate balance diffs for swap detection
-        let from = ethereum_address_checksum(&transaction.from).ok()?;
-        let differ = BalanceDiffer::new(*chain);
-        let diff_map = differ.calculate(trace, transaction_reciept);
+        if let Some(trace) = trace {
+            let from = ethereum_address_checksum(&transaction.from).ok()?;
+            let differ = BalanceDiffer::new(*chain);
+            let diff_map = differ.calculate(trace, transaction_reciept);
 
-        if let Some(diff) = diff_map.get(&from) {
-            let native_asset_id = chain.as_asset_id();
-            let fee = transaction_reciept.get_fee();
-            if let Some(swap_metadata) = BalanceSwapMapper::map_swap(diff, &fee, &native_asset_id, None) {
-                return Self::make_swap_transaction(chain, transaction, transaction_reciept, &swap_metadata, created_at);
+            if let Some(diff) = diff_map.get(&from) {
+                let native_asset_id = chain.as_asset_id();
+                let fee = transaction_reciept.get_fee();
+                if let Some(swap_metadata) = BalanceSwapMapper::map_swap(diff, &fee, &native_asset_id, None) {
+                    return Self::make_swap_transaction(chain, transaction, transaction_reciept, &swap_metadata, created_at);
+                }
             }
         }
 
@@ -258,7 +260,7 @@ mod tests {
             &Chain::Unichain,
             &transaction,
             &receipt,
-            &TransactionReplayTrace::default(),
+            None,
             DateTime::default(),
         )
         .expect("swap_metadata");
@@ -302,7 +304,7 @@ mod tests {
             &Chain::Unichain,
             &transaction,
             &receipt,
-            &TransactionReplayTrace::default(),
+            None,
             DateTime::default(),
         )
         .expect("swap_metadata");
@@ -347,7 +349,7 @@ mod tests {
             &Chain::Ethereum,
             &transaction,
             &receipt,
-            &TransactionReplayTrace::default(),
+            None,
             DateTime::default(),
         )
         .expect("swap_metadata");
@@ -388,7 +390,7 @@ mod tests {
         let receipt_value: JsonRpcResult<TransactionReciept> = serde_json::from_str(receipt_json).unwrap();
         let receipt = receipt_value.result;
 
-        let swap_tx = SwapMapper::map_transaction(&Chain::Base, &transaction, &receipt, &TransactionReplayTrace::default(), DateTime::default()).unwrap();
+        let swap_tx = SwapMapper::map_transaction(&Chain::Base, &transaction, &receipt, None, DateTime::default()).unwrap();
         let metadata: TransactionSwapMetadata = serde_json::from_value(swap_tx.metadata.unwrap()).unwrap();
 
         assert_eq!(swap_tx.from, "0x985Cf24b63a98510298997Af83a31D8625C09bA5");
@@ -425,7 +427,7 @@ mod tests {
         let receipt_json = include_str!("../../tests/data/v3_pol_usdt_tx_receipt.json");
         let receipt = serde_json::from_str::<JsonRpcResult<TransactionReciept>>(receipt_json).unwrap().result;
 
-        let swap_tx = SwapMapper::map_transaction(&Chain::Polygon, &transaction, &receipt, &TransactionReplayTrace::default(), DateTime::default())
+        let swap_tx = SwapMapper::map_transaction(&Chain::Polygon, &transaction, &receipt, None, DateTime::default())
             .expect("swap_metadata");
         let metadata: TransactionSwapMetadata = serde_json::from_value(swap_tx.metadata.unwrap()).unwrap();
 
@@ -467,7 +469,7 @@ mod tests {
             &Chain::Ethereum,
             &transaction,
             &receipt,
-            &TransactionReplayTrace::default(),
+            None,
             DateTime::default(),
         )
         .unwrap();
@@ -514,7 +516,7 @@ mod tests {
             &Chain::Ethereum,
             &transaction,
             &receipt,
-            &trace,
+            Some(&trace),
             DateTime::from_timestamp(1735671600, 0).expect("invalid timestamp"),
         )
         .unwrap();
