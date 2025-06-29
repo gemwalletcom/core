@@ -109,7 +109,7 @@ fn process_paths(paths: Vec<String>, _folder: &str, platform: &Platform, platfor
         let kt_new_file_name = file_name(path, LANG_KOTLIN_ETX);
         let kt_new_path = if raw_module_name != module_name {
             let chain_name = get_chain_name_from_crate(raw_module_name).to_lowercase();
-            format!("{}/generated/{}", chain_name, kt_new_file_name)
+            format!("{}/{}", chain_name, kt_new_file_name)
         } else {
             let directory_paths_lowercased: Vec<String> = directory_paths_capitalized.iter().map(|x| x.to_lowercase()).collect();
             format!("{}/{}", directory_paths_lowercased.join("/"), kt_new_file_name)
@@ -121,12 +121,17 @@ fn process_paths(paths: Vec<String>, _folder: &str, platform: &Platform, platfor
         let input_path = format!("./{}/src/{}", vec[0], directory_paths.join("/"));
 
         let ios_output_path = output_path(Platform::IOS, platform_directory_path, str_capitlize(module_name).as_str(), ios_new_path);
-        let android_output_path = output_path(Platform::Android, platform_directory_path, module_name.to_lowercase().as_str(), kt_new_path.clone());
-        
+        let android_output_path = output_path(
+            Platform::Android,
+            platform_directory_path,
+            module_name.to_lowercase().as_str(),
+            kt_new_path.clone(),
+        );
+
         // Generate package name based on the path structure
         let android_package_name = if raw_module_name != module_name {
             let chain_name = get_chain_name_from_crate(raw_module_name).to_lowercase();
-            format!("{}.{}.{}.generated", ANDROID_PACKAGE_PREFIX, module_name, chain_name)
+            format!("{}.{}.{}", ANDROID_PACKAGE_PREFIX, module_name, chain_name)
         } else {
             let directory_paths_lowercased: Vec<String> = directory_paths_capitalized.iter().map(|x| x.to_lowercase()).collect();
             let directory_package = directory_paths_lowercased.join(".");
