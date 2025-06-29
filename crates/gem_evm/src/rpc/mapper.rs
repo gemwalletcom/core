@@ -132,6 +132,7 @@ impl EthereumMapper {
         Some(data_cost)
     }
 
+
     #[allow(unused)]
     fn has_smart_contract_indicators(transaction: &Transaction, transaction_reciept: &TransactionReciept) -> bool {
         // 1. Gas limit > 21,000 (simple transfers use exactly 21,000)
