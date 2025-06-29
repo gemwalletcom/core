@@ -81,12 +81,12 @@ futures = { version = "0.3.31" }
 thiserror = { version = "2.0.12" }
 anyhow = { version = "1.0" }
 clap = { version = "4.5.4", features = ["derive"] }
-indexmap = "2.9.0"
+indexmap = "2.10.0"
 lazy_static = "1.5.0"
 futures-util = "0.3.31"
 uuid = { version = "1.17.0", features = ["v4"] }
 rand = { version = "0.9.1" }
-aws-sdk-s3 = { version = "1.93.0", features = ["behavior-version-latest"] }
+aws-sdk-s3 = { version = "1.94.0", features = ["behavior-version-latest"] }
 itertools = { version = "0.14.0" }
 
 # db

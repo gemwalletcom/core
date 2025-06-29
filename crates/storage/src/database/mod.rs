@@ -54,10 +54,18 @@ impl DatabaseClient {
                     .on_conflict(super::schema::transactions::id)
                     .do_update()
                     .set((
+                        from_address.eq(excluded(from_address)),
+                        to_address.eq(excluded(to_address)),
+                        value.eq(excluded(value)),
+                        kind.eq(excluded(kind)),
+                        state.eq(excluded(state)),
                         fee.eq(excluded(fee)),
                         fee_asset_id.eq(excluded(fee_asset_id)),
                         memo.eq(excluded(memo)),
-                        updated_at.eq(excluded(updated_at)),
+                        metadata.eq(excluded(metadata)),
+                        utxo_inputs.eq(excluded(utxo_inputs)),
+                        utxo_outputs.eq(excluded(utxo_outputs)),
+                        memo.eq(excluded(memo)),
                     ))
                     .execute(conn);
 

@@ -3,8 +3,8 @@ pub mod fetch_assets_addresses_consumer;
 pub mod fetch_assets_consumer;
 pub mod fetch_blocks_consumer;
 pub mod fetch_transactions_consumer;
-pub mod transactions_consumer;
-pub mod transactions_consumer_config;
+pub mod store_transactions_consumer;
+pub mod store_transactions_consumer_config;
 use std::error::Error;
 use std::sync::Arc;
 
@@ -14,13 +14,13 @@ pub use fetch_assets_consumer::FetchAssetsConsumer;
 use settings::Settings;
 use settings_chain::ChainProviders;
 use storage::DatabaseClient;
+pub use store_transactions_consumer::StoreTransactionsConsumer;
+pub use store_transactions_consumer_config::StoreTransactionsConsumerConfig;
 use streamer::{
     AssetsAddressPayload, ChainAddressPayload, ConsumerConfig, FetchAssetsPayload, FetchBlocksPayload, QueueName, StreamProducer, StreamReader,
     TransactionsPayload,
 };
 use tokio::sync::Mutex;
-pub use transactions_consumer::TransactionsConsumer;
-pub use transactions_consumer_config::TransactionsConsumerConfig;
 
 use crate::{
     consumers::{
@@ -60,13 +60,13 @@ pub async fn run_consumer_store_transactions(settings: Settings, database: Arc<M
     let stream_producer = StreamProducer::new(&settings.rabbitmq.url, name).await?;
     let pusher = Pusher::new(&settings.postgres.url);
 
-    let consumer = TransactionsConsumer {
+    let consumer = StoreTransactionsConsumer {
         database: database.clone(),
         stream_producer,
         pusher,
-        config: TransactionsConsumerConfig::default(),
+        config: StoreTransactionsConsumerConfig::default(),
     };
-    streamer::run_consumer::<TransactionsPayload, TransactionsConsumer, usize>(
+    streamer::run_consumer::<TransactionsPayload, StoreTransactionsConsumer, usize>(
         name,
         stream_reader,
         QueueName::StoreTransactions,
