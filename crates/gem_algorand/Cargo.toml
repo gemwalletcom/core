@@ -5,6 +5,7 @@ edition = { workspace = true }
 
 [features]
 default = []
+typeshare = ["dep:typeshare"]
 rpc = ["dep:chrono", "dep:reqwest-middleware"]
 
 [dependencies]
@@ -18,5 +19,6 @@ base64 = { workspace = true }
 
 chrono = { workspace = true, optional = true }
 reqwest-middleware = { workspace = true, features = ["json"], optional = true }
+typeshare = { workspace = true, optional = true }
 
 primitives = { path = "../primitives" }

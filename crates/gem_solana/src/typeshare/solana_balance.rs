@@ -1,12 +1,12 @@
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
-use super::Int;
+use crate::typeshare::UInt64;
 
 #[typeshare(swift = "Sendable")]
 #[derive(Serialize, Deserialize)]
 pub struct SolanaBalance {
-    pub value: Int,
+    pub value: UInt64,
 }
 
 #[typeshare(swift = "Sendable")]

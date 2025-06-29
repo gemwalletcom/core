@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
-use super::Int;
+use crate::typeshare::Int;
 
 #[typeshare(swift = "Sendable")]
 #[derive(Serialize, Deserialize)]

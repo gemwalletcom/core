@@ -1,12 +1,12 @@
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
-use super::Int;
+use crate::typeshare::UInt64;
 
 #[typeshare(swift = "Sendable")]
 pub struct SolanaTransaction {
     pub meta: SolanaTransactionMeta,
-    pub slot: Int,
+    pub slot: UInt64,
 }
 
 #[typeshare(swift = "Sendable")]

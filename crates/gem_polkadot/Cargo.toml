@@ -7,6 +7,7 @@ edition = { workspace = true }
 primitives = { path = "../primitives" }
 
 serde = { workspace = true, features = ["derive"] }
+typeshare = { workspace = true, optional = true }
 
 # RPC specific dependencies
 serde_json = { workspace = true, optional = true }
@@ -16,4 +17,5 @@ serde_serializers = { path = "../serde_serializers", optional = true }
 
 [features]
 default = []
+typeshare = ["dep:typeshare"]
 rpc = ["dep:serde_json", "dep:reqwest-middleware", "dep:chrono", "dep:serde_serializers"]
