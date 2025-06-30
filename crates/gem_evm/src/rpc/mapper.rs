@@ -178,7 +178,7 @@ mod tests {
             .result;
 
         // Should detect smart contract call (has logs and gas > 21000)
-        assert!(EthereumMapper::_has_smart_contract_indicators(&contract_call_tx, &contract_call_receipt));
+        assert!(EthereumMapper::has_smart_contract_indicators(&contract_call_tx, &contract_call_receipt));
 
         // Verify gas was parsed correctly from hex "0x61a80" = 400000
         assert_eq!(contract_call_tx.gas, 400000); // > 21000
