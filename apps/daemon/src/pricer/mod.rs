@@ -18,7 +18,6 @@ use std::pin::Pin;
 use std::sync::Arc;
 use std::time::Duration;
 
-
 pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + Send>>> {
     let coingecko_client = CoinGeckoClient::new(&settings.coingecko.key.secret);
     let cacher_client = CacherClient::new(&settings.redis.url);
@@ -132,31 +131,65 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
         }
     });
 
-    let update_charts = run_job("Update charts", Duration::from_secs(settings.charter.timer), {
+    let update_hourly_charts_job = run_job("Aggregate hourly charts", Duration::from_secs(60), {
         let settings = settings.clone();
         let coingecko_client = coingecko_client.clone();
         let cacher_client = cacher_client.clone();
         move || {
-
             let cacher_client = cacher_client.clone();
             let price_client = PriceClient::new(cacher_client, &settings.postgres.url);
             let mut charts_updater = ChartsUpdater::new(price_client, coingecko_client.clone());
-            async move { charts_updater.update_charts().await }
+            async move { charts_updater.aggregate_hourly_charts().await }
         }
     });
 
-    // let update_all_charts = run_job("Update all charts", Duration::from_secs(settings.charter.timer), {
-    //     let settings = settings.clone();
-    //     let coingecko_client = coingecko_client.clone();
-    //     let cacher_client = cacher_client.clone();
-    //     move || {
+    let update_daily_charts_job = run_job("Aggregate daily charts", Duration::from_secs(360), {
+        let settings = settings.clone();
+        let coingecko_client = coingecko_client.clone();
+        let cacher_client = cacher_client.clone();
+        move || {
+            let cacher_client = cacher_client.clone();
+            let price_client = PriceClient::new(cacher_client, &settings.postgres.url);
+            let mut charts_updater = ChartsUpdater::new(price_client, coingecko_client.clone());
+            async move { charts_updater.aggregate_daily_charts().await }
+        }
+    });
 
-    //         let cacher_client = cacher_client.clone();
-    //         let price_client = PriceClient::new(cacher_client, &settings.postgres.url);
-    //         let mut charts_updater = ChartsUpdater::new(charts_client, price_client, coingecko_client.clone());
-    //         async move { charts_updater.update_charts_all().await }
-    //     }
-    // });
+    let update_all_charts_job = run_job("Aggregate all charts", Duration::from_secs(86400), {
+        let settings = settings.clone();
+        let coingecko_client = coingecko_client.clone();
+        let cacher_client = cacher_client.clone();
+        move || {
+            let cacher_client = cacher_client.clone();
+            let price_client = PriceClient::new(cacher_client, &settings.postgres.url);
+            let mut charts_updater = ChartsUpdater::new(price_client, coingecko_client.clone());
+            async move { charts_updater.aggregate_charts().await }
+        }
+    });
+
+    let cleanup_old_charts_data_job = run_job("Cleanup old charts data", Duration::from_secs(86400), {
+        let settings = settings.clone();
+        let coingecko_client = coingecko_client.clone();
+        let cacher_client = cacher_client.clone();
+        move || {
+            let cacher_client = cacher_client.clone();
+            let price_client = PriceClient::new(cacher_client, &settings.postgres.url);
+            let mut charts_updater = ChartsUpdater::new(price_client, coingecko_client.clone());
+            async move { charts_updater.cleanup_old_charts_data().await }
+        }
+    });
+
+    let update_all_charts = run_job("Update all charts", Duration::from_secs(settings.charter.timer), {
+        let settings = settings.clone();
+        let coingecko_client = coingecko_client.clone();
+        let cacher_client = cacher_client.clone();
+        move || {
+            let cacher_client = cacher_client.clone();
+            let price_client = PriceClient::new(cacher_client, &settings.postgres.url);
+            let mut charts_updater = ChartsUpdater::new(price_client, coingecko_client.clone());
+            async move { charts_updater.update_charts_all().await }
+        }
+    });
 
     let update_markets = run_job("Update markets", Duration::from_secs(3600), {
         let settings = Arc::new(settings.clone());
@@ -168,7 +201,6 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
         }
     });
 
-
     vec![
         Box::pin(clean_updated_assets),
         Box::pin(update_fiat_assets),
@@ -179,9 +211,12 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
         Box::pin(update_prices_low_market_cap),
         Box::pin(update_prices_cache),
         Box::pin(update_fiat_rates_cache),
-        Box::pin(update_charts),
+        Box::pin(update_all_charts),
+        Box::pin(update_hourly_charts_job),
+        Box::pin(update_daily_charts_job),
+        Box::pin(update_all_charts_job),
+        Box::pin(cleanup_old_charts_data_job),
         Box::pin(update_markets),
-
     ]
 }
 

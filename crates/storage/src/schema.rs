@@ -88,8 +88,8 @@ diesel::table! {
     charts (coin_id, ts) {
         #[max_length = 255]
         coin_id -> Varchar,
-        price -> Float4,
-        ts -> Timestamptz,
+        price -> Float8,
+        ts -> Timestamp,
     }
 }
 
@@ -97,8 +97,8 @@ diesel::table! {
     charts_daily_avg (coin_id, ts) {
         #[max_length = 255]
         coin_id -> Varchar,
-        price -> Float4,
-        ts -> Date,
+        price -> Float8,
+        ts -> Timestamp,
     }
 }
 
@@ -106,8 +106,8 @@ diesel::table! {
     charts_hourly_avg (coin_id, ts) {
         #[max_length = 255]
         coin_id -> Varchar,
-        price -> Float4,
-        ts -> Timestamptz,
+        price -> Float8,
+        ts -> Timestamp,
     }
 }
 
@@ -537,6 +537,8 @@ diesel::joinable!(assets_links -> link_types (link_type));
 diesel::joinable!(assets_tags -> assets (asset_id));
 diesel::joinable!(assets_tags -> tags (tag_id));
 diesel::joinable!(charts -> prices (coin_id));
+diesel::joinable!(charts_daily_avg -> prices (coin_id));
+diesel::joinable!(charts_hourly_avg -> prices (coin_id));
 diesel::joinable!(devices -> fiat_rates (currency));
 diesel::joinable!(fiat_assets -> assets (asset_id));
 diesel::joinable!(fiat_assets -> fiat_providers (provider));

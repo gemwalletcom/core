@@ -1,7 +1,7 @@
+use chrono::{DateTime, Duration, NaiveDateTime, Utc};
 use primitives::{ChartPeriod, ChartValue, DEFAULT_FIAT_CURRENCY};
 use std::error::Error;
-use storage::{DatabaseClient, database::charts::{ChartGranularity, get_charts}};
-use chrono::{DateTime, NaiveDateTime, Duration, Utc};
+use storage::{database::charts::ChartGranularity, DatabaseClient};
 
 pub struct ChartClient {
     database: DatabaseClient,
@@ -17,19 +17,21 @@ impl ChartClient {
         Ok(self.database.get_price(asset_id)?.id.clone())
     }
 
-
     pub async fn get_charts_prices(&mut self, coin_id: &str, period: ChartPeriod, currency: &str) -> Result<Vec<ChartValue>, Box<dyn Error>> {
         let base_rate = self.database.get_fiat_rate(DEFAULT_FIAT_CURRENCY)?;
         let rate = self.database.get_fiat_rate(currency)?.as_primitive();
         let rate_multiplier = rate.multiplier(base_rate.rate);
 
         let (start_time, end_time) = Self::get_time_range_for_period(&period);
-        let charts = get_charts(self.database.get_connection(), coin_id.to_string(), ChartGranularity::Minute, start_time, end_time).await?;
+        let charts = self
+            .database
+            .get_charts(coin_id.to_string(), ChartGranularity::Minute, start_time, end_time)
+            .await?;
         let prices = charts
             .into_iter()
             .map(|x| ChartValue {
                 timestamp: x.ts.and_utc().timestamp() as i32,
-                value: ((x.price as f64) * rate_multiplier) as f32,
+                value: (x.price * rate_multiplier) as f32,
             })
             .collect();
         Ok(prices)

@@ -3,8 +3,8 @@ pub mod assets_addresses;
 pub mod assets_links;
 pub mod assets_types;
 
-pub mod devices;
 pub mod charts;
+pub mod devices;
 pub mod fiat;
 pub mod link_types;
 pub mod nft;
@@ -27,17 +27,11 @@ use diesel::{upsert::excluded, Connection};
 use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("src/migrations");
 
-use primitives::TransactionsFetchOption;
 use chrono::DateTime;
+use primitives::TransactionsFetchOption;
 
 pub struct DatabaseClient {
     connection: PgConnection,
-}
-
-impl DatabaseClient {
-    pub fn get_connection(&mut self) -> &mut PgConnection {
-        &mut self.connection
-    }
 }
 
 impl DatabaseClient {
@@ -219,38 +213,5 @@ impl DatabaseClient {
             .values(values)
             .on_conflict_do_nothing()
             .execute(&mut self.connection)
-    }
-
-
-
-    pub async fn aggregate_hourly_charts(
-        &mut self,
-    ) -> Result<(), diesel::result::Error> {
-        diesel::sql_query("SELECT aggregate_hourly_charts();")
-            .execute(&mut self.connection)?;
-
-        Ok(())
-    }
-
-    pub async fn aggregate_daily_charts(
-        &mut self,
-    ) -> Result<(), diesel::result::Error> {
-        diesel::sql_query("SELECT aggregate_daily_charts();")
-            .execute(&mut self.connection)?;
-
-        Ok(())
-    }
-
-    pub async fn cleanup_old_charts_data(
-        &mut self,
-    ) -> Result<(), diesel::result::Error> {
-        diesel::sql_query(
-            "DELETE FROM charts WHERE ts < NOW() - INTERVAL '30 days';
-             DELETE FROM charts_hourly_avg WHERE ts < NOW() - INTERVAL '30 days';
-             DELETE FROM charts_daily_avg WHERE ts < NOW() - INTERVAL '30 days';"
-        )
-        .execute(&mut self.connection)?;
-
-        Ok(())
     }
 }

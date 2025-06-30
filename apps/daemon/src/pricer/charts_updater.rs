@@ -1,7 +1,7 @@
 use coingecko::CoinGeckoClient;
 use pricer::PriceClient;
 use std::error::Error;
-use storage::models::NewChart;
+use storage::models::Chart;
 
 pub struct ChartsUpdater {
     coin_gecko_client: CoinGeckoClient,
@@ -14,7 +14,6 @@ impl ChartsUpdater {
         Self {
             coin_gecko_client,
             prices_client,
-
         }
     }
 
@@ -29,16 +28,15 @@ impl ChartsUpdater {
                         .prices
                         .clone()
                         .into_iter()
-                        .map(|x| NewChart {
+                        .map(|x| Chart {
                             coin_id: coin_id.id.clone(),
-                            price: x[1] as f32,
+                            price: x[1],
                             ts: chrono::DateTime::from_timestamp((x[0] / 1_000_f64) as i64, 0).unwrap().naive_utc(),
                         })
                         .filter(|x| x.price > 0.0)
-                        .collect::<Vec<NewChart>>();
+                        .collect::<Vec<Chart>>();
 
-                    // The set_charts method was removed, as chart insertion is now handled by the daemon's job scheduler.
-                    // Removed the call to set_charts. The daemon's job scheduler is responsible for chart insertion.
+                    self.prices_client.add_charts(charts).await?;
 
                     println!("update charts {}", coin_id.id.clone());
 
@@ -53,16 +51,19 @@ impl ChartsUpdater {
         Ok(coin_list.len())
     }
 
-    pub async fn update_charts(&mut self) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        let prices = self.prices_client.get_prices()?;
-        let charts = prices
-            .clone()
-            .into_iter()
-            .map(|x| x.as_chart())
-            .filter(|x| x.price > 0.0)
-            .collect::<Vec<NewChart>>();
+    pub async fn aggregate_hourly_charts(&mut self) -> Result<usize, Box<dyn Error + Send + Sync>> {
+        self.prices_client.aggregate_hourly_charts().await
+    }
 
-        // The set_charts method was removed, as chart insertion is now handled by the daemon's job scheduler.
-        Ok(charts.len())
+    pub async fn aggregate_daily_charts(&mut self) -> Result<usize, Box<dyn Error + Send + Sync>> {
+        self.prices_client.aggregate_daily_charts().await
+    }
+
+    pub async fn aggregate_charts(&mut self) -> Result<usize, Box<dyn Error + Send + Sync>> {
+        self.prices_client.aggregate_charts().await
+    }
+
+    pub async fn cleanup_old_charts_data(&mut self) -> Result<usize, Box<dyn Error + Send + Sync>> {
+        self.prices_client.cleanup_old_charts_data().await
     }
 }

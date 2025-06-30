@@ -4,8 +4,9 @@ use primitives::{AssetId, AssetMarket, AssetPriceInfo};
 use serde::{Deserialize, Serialize};
 use std::hash::{Hash, Hasher};
 
+use crate::models::Chart;
+
 use super::Asset;
-use crate::models::NewChart;
 
 #[derive(Debug, Queryable, Selectable, Identifiable, Serialize, Deserialize, Insertable, AsChangeset, Clone)]
 #[diesel(table_name = crate::schema::prices)]
@@ -126,13 +127,11 @@ impl Price {
         }
     }
 
-    pub fn as_chart(&self) -> NewChart {
-        NewChart {
+    pub fn as_chart(&self) -> Chart {
+        Chart {
             coin_id: self.id.clone(),
-            price: self.price as f32,
+            price: self.price,
             ts: DateTime::from_timestamp(self.last_updated_at.and_utc().timestamp(), 0).unwrap().naive_utc(),
-
-
         }
     }
 
