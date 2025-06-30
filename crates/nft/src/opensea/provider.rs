@@ -18,6 +18,7 @@ impl NFTProvider for OpenSeaClient {
         Ok(self
             .get_nfts_by_account(chain.as_ref(), &address)
             .await?
+            .nfts
             .into_iter()
             .flat_map(|x| x.as_asset_id(chain))
             .collect())
