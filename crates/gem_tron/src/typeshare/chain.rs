@@ -20,7 +20,10 @@ pub struct TronChainParameter {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Sendable")]
 pub enum TronChainParameterKey {
+    #[serde(rename = "getCreateNewAccountFeeInSystemContract")]
     GetCreateNewAccountFeeInSystemContract,
+    #[serde(rename = "getCreateAccountFee")]
     GetCreateAccountFee,
+    #[serde(rename = "getEnergyFee")]
     GetEnergyFee,
 }
