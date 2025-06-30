@@ -1,9 +1,9 @@
-pub mod bitcoin_account;
-pub mod bitcoin_block;
-pub mod bitcoin_fee;
-pub mod bitcoin_transaction;
+pub mod account;
+pub mod block;
+pub mod fee;
+pub mod transaction;
 
-pub use bitcoin_account::*;
-pub use bitcoin_block::*;
-pub use bitcoin_fee::*;
-pub use bitcoin_transaction::*;
+pub use account::*;
+pub use block::*;
+pub use fee::*;
+pub use transaction::*;

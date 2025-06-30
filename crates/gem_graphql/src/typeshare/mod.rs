@@ -1,5 +1,5 @@
-pub mod graphql_request;
-pub mod graphql_response;
+pub mod request;
+pub mod response;
 
-pub use graphql_request::*;
-pub use graphql_response::*;
+pub use request::*;
+pub use response::*;

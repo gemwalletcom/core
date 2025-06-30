@@ -3,8 +3,7 @@ use typeshare::typeshare;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Sendable")]
-pub struct PolkadotAccountBalance {
-    pub free: String,
-    pub reserved: String,
-    pub nonce: String,
+#[typeshare(swiftGenericConstraints = "T: Sendable")]
+pub struct XRPResult<T> {
+    pub result: T,
 }

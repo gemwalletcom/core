@@ -84,8 +84,9 @@ fn process_paths(paths: Vec<String>, _folder: &str, platform: &Platform, platfor
         let vec: Vec<&str> = path.split("/src/").collect();
         let first_parts: Vec<&str> = vec[0].split('/').collect();
         let raw_module_name = first_parts[1];
-
         let module_name = map_crate_module_name(raw_module_name);
+        let chain_name = get_chain_name_from_crate(raw_module_name);
+
         let directory_paths: Vec<&str> = vec[1].split('/').collect();
         let mut directory_paths_capitalized = directory_paths
             .iter()
@@ -93,14 +94,16 @@ fn process_paths(paths: Vec<String>, _folder: &str, platform: &Platform, platfor
             .map(|&x| str_capitlize(x))
             .collect::<Vec<_>>();
 
-        let path: &str = &directory_paths_capitalized.pop().unwrap(); //.as_str();
-                                                                      //FIX: Change extension for kotlin
-        let ios_new_file_name = file_name(path, LANGUAGE_SWIFT);
+        let path: &str = &directory_paths_capitalized.pop().unwrap();
+        let ios_new_file_name = if raw_module_name != module_name {
+            format!("{}{}", chain_name, file_name(path, LANGUAGE_SWIFT))
+        } else {
+            file_name(path, LANGUAGE_SWIFT)
+        };
 
-        // prepend the chain name and Generated folder to the path if module name is different from raw module name
+        // prepend the chain name and Models folder to the path if module name is different from raw module name
         let ios_new_path = if raw_module_name != module_name {
-            let chain_name = get_chain_name_from_crate(raw_module_name);
-            format!("{}/Generated/{}", chain_name, ios_new_file_name.as_str())
+            format!("{}/Models/{}", chain_name, ios_new_file_name.as_str())
         } else {
             format!("{}/{}", directory_paths_capitalized.clone().join("/"), ios_new_file_name.as_str())
         };
@@ -108,8 +111,7 @@ fn process_paths(paths: Vec<String>, _folder: &str, platform: &Platform, platfor
         // For Kotlin, create the same structure as iOS but with lowercase chain names
         let kt_new_file_name = file_name(path, LANG_KOTLIN_ETX);
         let kt_new_path = if raw_module_name != module_name {
-            let chain_name = get_chain_name_from_crate(raw_module_name).to_lowercase();
-            format!("{}/{}", chain_name, kt_new_file_name)
+            format!("{}/{}", chain_name.to_lowercase(), kt_new_file_name)
         } else {
             let directory_paths_lowercased: Vec<String> = directory_paths_capitalized.iter().map(|x| x.to_lowercase()).collect();
             format!("{}/{}", directory_paths_lowercased.join("/"), kt_new_file_name)
@@ -117,7 +119,6 @@ fn process_paths(paths: Vec<String>, _folder: &str, platform: &Platform, platfor
         if ignored_files.contains(directory_paths.last().unwrap()) {
             continue;
         }
-        //FIX: change input/output file for kotlin
         let input_path = format!("./{}/src/{}", vec[0], directory_paths.join("/"));
 
         let ios_output_path = output_path(Platform::IOS, platform_directory_path, str_capitlize(module_name).as_str(), ios_new_path);
@@ -130,8 +131,7 @@ fn process_paths(paths: Vec<String>, _folder: &str, platform: &Platform, platfor
 
         // Generate package name based on the path structure
         let android_package_name = if raw_module_name != module_name {
-            let chain_name = get_chain_name_from_crate(raw_module_name).to_lowercase();
-            format!("{}.{}.{}", ANDROID_PACKAGE_PREFIX, module_name, chain_name)
+            format!("{}.{}.{}", ANDROID_PACKAGE_PREFIX, module_name, chain_name.to_lowercase())
         } else {
             let directory_paths_lowercased: Vec<String> = directory_paths_capitalized.iter().map(|x| x.to_lowercase()).collect();
             let directory_package = directory_paths_lowercased.join(".");

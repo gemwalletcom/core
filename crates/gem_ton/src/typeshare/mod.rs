@@ -1,11 +1,11 @@
-pub mod ton_block;
-pub mod ton_fee;
-pub mod ton_result;
-pub mod ton_transaction;
-pub mod ton_wallet;
+pub mod block;
+pub mod fee;
+pub mod result;
+pub mod transaction;
+pub mod wallet;
 
-pub use ton_block::*;
-pub use ton_fee::*;
-pub use ton_result::*;
-pub use ton_transaction::*;
-pub use ton_wallet::*;
+pub use block::*;
+pub use fee::*;
+pub use result::*;
+pub use transaction::*;
+pub use wallet::*;

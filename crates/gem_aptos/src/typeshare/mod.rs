@@ -1,11 +1,11 @@
-pub mod aptos_account;
-pub mod aptos_fee;
-pub mod aptos_ledger;
-pub mod aptos_resource;
-pub mod aptos_transaction;
+pub mod account;
+pub mod fee;
+pub mod ledger;
+pub mod resource;
+pub mod transaction;
 
-pub use aptos_account::*;
-pub use aptos_fee::*;
-pub use aptos_ledger::*;
-pub use aptos_resource::*;
-pub use aptos_transaction::*;
+pub use account::*;
+pub use fee::*;
+pub use ledger::*;
+pub use resource::*;
+pub use transaction::*;
