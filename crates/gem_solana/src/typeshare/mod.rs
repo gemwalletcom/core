@@ -1,4 +1,4 @@
-pub mod balance;
+pub mod balances;
 pub mod blockhash;
 pub mod prioritization_fee;
 pub mod stake;
