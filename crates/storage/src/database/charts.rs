@@ -73,7 +73,6 @@ impl DatabaseClient {
     }
 
     pub async fn cleanup_charts_data(&mut self) -> Result<usize, diesel::result::Error> {
-        return Ok(0);
         diesel::sql_query("SELECT cleanup_all_charts_data();").execute(&mut self.connection)
     }
 }
