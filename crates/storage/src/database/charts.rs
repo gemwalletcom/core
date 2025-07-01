@@ -39,7 +39,7 @@ impl DatabaseClient {
                 .filter(coin_id.eq(target_coin_id))
                 .filter(sql::<diesel::sql_types::Bool>(&created_at_filter))
                 .group_by(sql::<diesel::sql_types::Numeric>("1"))
-                .order(sql::<diesel::sql_types::Numeric>("1").asc())
+                .order(sql::<diesel::sql_types::Numeric>("1").desc())
                 .load(&mut self.connection),
             ChartGranularity::Hourly | ChartGranularity::Hour6 => charts_hourly
                 .select((
@@ -49,7 +49,7 @@ impl DatabaseClient {
                 .filter(hourly_coin_id.eq(target_coin_id))
                 .filter(sql::<diesel::sql_types::Bool>(&created_at_filter))
                 .group_by(sql::<diesel::sql_types::Numeric>("1"))
-                .order(sql::<diesel::sql_types::Numeric>("1").asc())
+                .order(sql::<diesel::sql_types::Numeric>("1").desc())
                 .load(&mut self.connection),
             ChartGranularity::Daily => charts_daily
                 .select((
@@ -59,7 +59,7 @@ impl DatabaseClient {
                 .filter(daily_coin_id.eq(target_coin_id))
                 .filter(sql::<diesel::sql_types::Bool>(&created_at_filter))
                 .group_by(sql::<diesel::sql_types::Numeric>("1"))
-                .order(sql::<diesel::sql_types::Numeric>("1").asc())
+                .order(sql::<diesel::sql_types::Numeric>("1").desc())
                 .load(&mut self.connection),
         }
     }
