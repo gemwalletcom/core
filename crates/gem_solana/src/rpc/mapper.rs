@@ -267,21 +267,21 @@ mod tests {
         let file = include_str!("../../testdata/transfer_sol.json");
         let result: JsonRpcResult<BlockTransaction> = serde_json::from_str(file).unwrap();
 
-        let transaction = SolanaMapper::map_transaction(&result.result, 1751375099).unwrap();
+        let transaction = SolanaMapper::map_transaction(&result.result, 1751394455).unwrap();
         let expected = Transaction::new(
-            "3Hn5LusRYXzVjHpZV8wahCMAMYeVVLXyxMF8CzoGGhc7RAVNA9AXDXmGXgHNkWCsNYkVNt9VvmFxgD92uY4QcVxZ".to_string(),
+            "t6DpS6U7G2UG4QwDq4mPM7F45Rnttxp2pHGRwTYsF7frxAs7KmSWWDcpMneMUULbKndkZy8iUvSU1AZUsqzDCPN".to_string(),
             Chain::Solana.as_asset_id(),
-            "492tvYL73k9hnjo494V11RT3rBqS455nWpLPWdBUdmok".to_string(),
-            "DiRZLazRs2HYkZAEeu6TsjXtqnsB8goAR1f7P6PSKWJZ".to_string(),
+            "DyB4TbDBqPUsCfsJMuoqjktEAod7D3KMNULSo7R1Rb61".to_string(),
+            "DfXygSm4jCyNCybVYYK6DwvWqjKee8pbDmJGcLWNDXjh".to_string(),
             None,
             TransactionType::Transfer,
             TransactionState::Confirmed,
-            "10000".to_string(),
+            "5000".to_string(),
             Chain::Solana.as_asset_id(),
-            "680000000".to_string(),
+            "2173".to_string(),
             None,
             None,
-            DateTime::from_timestamp(1751375099, 0).unwrap(),
+            DateTime::from_timestamp(1751394455, 0).unwrap(),
         );
 
         assert_eq!(transaction, expected);
