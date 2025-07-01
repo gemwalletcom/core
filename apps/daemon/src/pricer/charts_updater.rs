@@ -1,54 +1,46 @@
-use coingecko::CoinGeckoClient;
-use pricer::{ChartClient, PriceClient};
+use coingecko::{model::ChartInterval, CoinGeckoClient};
+use pricer::PriceClient;
 use std::error::Error;
-use storage::models::CreateChart;
+use storage::models::Chart;
 
 pub struct ChartsUpdater {
     coin_gecko_client: CoinGeckoClient,
-    charts_client: ChartClient,
+
     prices_client: PriceClient,
 }
 
 impl ChartsUpdater {
-    pub fn new(charts_client: ChartClient, prices_client: PriceClient, coin_gecko_client: CoinGeckoClient) -> Self {
+    pub fn new(prices_client: PriceClient, coin_gecko_client: CoinGeckoClient) -> Self {
         Self {
             coin_gecko_client,
             prices_client,
-            charts_client,
         }
     }
 
     #[allow(unused)]
     pub async fn update_charts_all(&mut self) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        let coin_list = self.coin_gecko_client.get_all_coin_markets(250, 10).await?;
+        let coin_list = self.coin_gecko_client.get_all_coin_markets(None, 250, 50).await?;
 
         for coin_id in coin_list.clone() {
-            match self.coin_gecko_client.get_market_chart(coin_id.id.as_str()).await {
+            match self.coin_gecko_client.get_market_chart(coin_id.id.as_str(), ChartInterval::Daily).await {
                 Ok(prices) => {
                     let charts = prices
                         .prices
                         .clone()
                         .into_iter()
-                        .map(|x| CreateChart {
+                        .map(|x| Chart {
                             coin_id: coin_id.id.clone(),
-                            price: x[1] as f32,
-                            ts: (x[0] / 1_000_f64) as u32,
+                            price: x[1],
+                            created_at: chrono::DateTime::from_timestamp((x[0] / 1_000_f64) as i64, 0).unwrap().naive_utc(),
                         })
-                        .filter(|x| x.ts > 0 && x.price > 0.0)
-                        .collect::<Vec<CreateChart>>();
+                        .filter(|x| x.price > 0.0)
+                        .collect::<Vec<Chart>>();
 
-                    match self.charts_client.set_charts(charts).await {
-                        Ok(_) => {
-                            println!("set charts {}", coin_id.id.clone());
-                        }
-                        Err(err) => {
-                            println!("set charts error: {}", err);
-                        }
-                    };
+                    self.prices_client.add_charts(charts).await?;
 
                     println!("update charts {}", coin_id.id.clone());
 
-                    std::thread::sleep(std::time::Duration::from_millis(250));
+                    tokio::time::sleep(std::time::Duration::from_millis(250)).await;
                 }
                 Err(err) => {
                     println!("update charts error: {}", err);
@@ -59,15 +51,15 @@ impl ChartsUpdater {
         Ok(coin_list.len())
     }
 
-    pub async fn update_charts(&mut self) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        let prices = self.prices_client.get_prices()?;
-        let charts = prices
-            .clone()
-            .into_iter()
-            .map(|x| x.as_chart())
-            .filter(|x| x.ts > 0 && x.price > 0.0)
-            .collect::<Vec<CreateChart>>();
+    pub async fn aggregate_hourly_charts(&mut self) -> Result<usize, Box<dyn Error + Send + Sync>> {
+        self.prices_client.aggregate_hourly_charts().await
+    }
 
-        self.charts_client.set_charts(charts).await
+    pub async fn aggregate_daily_charts(&mut self) -> Result<usize, Box<dyn Error + Send + Sync>> {
+        self.prices_client.aggregate_daily_charts().await
+    }
+
+    pub async fn cleanup_charts_data(&mut self) -> Result<usize, Box<dyn Error + Send + Sync>> {
+        self.prices_client.cleanup_charts_data().await
     }
 }

@@ -10,11 +10,8 @@ pub use self::database::{
     parser_state::{ParserStateRepository, ParserStateStore},
     DatabaseClient,
 };
-pub mod clickhouse;
 pub mod models;
 pub mod schema;
-
-pub use self::clickhouse::clickhouse_database::ClickhouseClient;
 
 pub struct RedisClient {
     conn: MultiplexedConnection,

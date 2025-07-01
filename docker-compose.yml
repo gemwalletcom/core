@@ -88,17 +88,6 @@ services:
       RABBITMQ_DEFAULT_USER: username
       RABBITMQ_DEFAULT_PASS: password
 
-  clickhouse:
-    image: clickhouse/clickhouse-server
-    container_name: clickhouse
-    restart: always
-    ports:
-      - 8123:8123 # HTTP interface
-      - 9000:9000 # Native interface
-      - 9009:9009 # TCP interface
-    volumes:
-      - clickhouse:/var/lib/clickhouse
-
   meilisearch:
     image: getmeili/meilisearch:v1.15.0-rc.4
     container_name: meilisearch
@@ -113,5 +102,5 @@ services:
 
 volumes:
   postgres:
-  clickhouse:
+
   meilisearch:

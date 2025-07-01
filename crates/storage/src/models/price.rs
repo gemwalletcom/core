@@ -1,10 +1,12 @@
-use chrono::NaiveDateTime;
+use chrono::{DateTime, NaiveDateTime};
 use diesel::prelude::*;
 use primitives::{AssetId, AssetMarket, AssetPriceInfo};
 use serde::{Deserialize, Serialize};
 use std::hash::{Hash, Hasher};
 
-use super::{Asset, CreateChart};
+use crate::models::Chart;
+
+use super::Asset;
 
 #[derive(Debug, Queryable, Selectable, Identifiable, Serialize, Deserialize, Insertable, AsChangeset, Clone)]
 #[diesel(table_name = crate::schema::prices)]
@@ -125,11 +127,11 @@ impl Price {
         }
     }
 
-    pub fn as_chart(&self) -> CreateChart {
-        CreateChart {
+    pub fn as_chart(&self) -> Chart {
+        Chart {
             coin_id: self.id.clone(),
-            price: self.price as f32,
-            ts: self.last_updated_at.and_utc().timestamp() as u32,
+            price: self.price,
+            created_at: DateTime::from_timestamp(self.last_updated_at.and_utc().timestamp(), 0).unwrap().naive_utc(),
         }
     }
 

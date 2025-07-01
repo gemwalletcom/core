@@ -42,7 +42,6 @@ use scan::{ScanClient, ScanProviderFactory};
 use search_index::SearchIndexClient;
 use settings::Settings;
 use settings_chain::{ChainProviders, ProviderFactory};
-use storage::ClickhouseClient;
 use streamer::StreamProducer;
 use subscriptions::SubscriptionsClient;
 use swap::SwapClient;
@@ -55,8 +54,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
     let settings_clone = settings.clone();
     let cacher_client = CacherClient::new(redis_url);
     let price_client = PriceClient::new(cacher_client.clone(), postgres_url);
-    let clickhouse_client = ClickhouseClient::new(&settings_clone.clickhouse.url, &settings_clone.clickhouse.database);
-    let charts_client = ChartClient::new(postgres_url, clickhouse_client);
+    let charts_client = ChartClient::new(postgres_url);
     let config_client = ConfigClient::new(postgres_url).await;
     let price_alert_client = PriceAlertClient::new(postgres_url).await;
     let providers = NameProviderFactory::create_providers(settings_clone.clone());

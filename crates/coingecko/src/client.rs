@@ -1,5 +1,5 @@
 use crate::model::{
-    Coin, CoinIds, CoinInfo, CoinMarket, CoinQuery, CointListQuery, Data, ExchangeRates, Global, MarketChart, SearchTrending, TopGainersLosers,
+    ChartInterval, Coin, CoinIds, CoinInfo, CoinMarket, CoinQuery, CointListQuery, Data, ExchangeRates, Global, MarketChart, SearchTrending, TopGainersLosers,
 };
 use primitives::{FiatRate, DEFAULT_FIAT_CURRENCY};
 use reqwest::header::{HeaderMap, HeaderValue, USER_AGENT};
@@ -137,9 +137,14 @@ impl CoinGeckoClient {
         Ok(fiat_rates)
     }
 
-    pub async fn get_all_coin_markets(&self, per_page: usize, pages: usize) -> Result<Vec<CoinMarket>, Box<dyn Error + Send + Sync>> {
+    pub async fn get_all_coin_markets(
+        &self,
+        start_page: Option<usize>,
+        per_page: usize,
+        pages: usize,
+    ) -> Result<Vec<CoinMarket>, Box<dyn Error + Send + Sync>> {
         let mut all_coin_markets = Vec::new();
-        let mut page = 1;
+        let mut page = start_page.unwrap_or(1);
 
         loop {
             let coin_markets = self.get_coin_markets(page, per_page).await?;
@@ -156,10 +161,12 @@ impl CoinGeckoClient {
         Ok(all_coin_markets)
     }
 
-    pub async fn get_market_chart(&self, coin_id: &str) -> Result<MarketChart, Box<dyn Error + Send + Sync>> {
+    pub async fn get_market_chart(&self, coin_id: &str, interval: ChartInterval) -> Result<MarketChart, Box<dyn Error + Send + Sync>> {
         let url = format!(
-            "{}/api/v3/coins/{}/market_chart?vs_currency=usd&days=max&interval=daily&precision=full",
-            self.url, coin_id
+            "{}/api/v3/coins/{}/market_chart?vs_currency=usd&days=max&interval={}&precision=full",
+            self.url,
+            coin_id,
+            interval.to_str()
         );
         Ok(self.client.get(url).headers(self.headers()).send().await?.json().await?)
     }

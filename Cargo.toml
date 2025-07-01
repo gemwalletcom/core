@@ -98,7 +98,7 @@ redis = { version = "0.32.0", features = [
     "connection-manager",
 ] }
 chrono = { version = "0.4.41", features = ["serde"] }
-clickhouse = { version = "0.13.3" }
+
 meilisearch-sdk = { version = "0.28.0" }
 lapin = { version = "3.0.0" }
 
