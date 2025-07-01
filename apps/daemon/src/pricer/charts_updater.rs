@@ -19,7 +19,7 @@ impl ChartsUpdater {
 
     #[allow(unused)]
     pub async fn update_charts_all(&mut self) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        let coin_list = self.coin_gecko_client.get_all_coin_markets(None, 250, 50).await?;
+        let coin_list = self.coin_gecko_client.get_all_coin_markets(None, 250, 10).await?;
 
         for coin_id in coin_list.clone() {
             match self.coin_gecko_client.get_market_chart(coin_id.id.as_str(), ChartInterval::Daily, "max").await {
