@@ -57,7 +57,7 @@ impl PriceUpdater {
     }
 
     pub async fn update_prices_pages(&mut self, pages: usize) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
-        let coin_markets = self.coin_gecko_client.get_all_coin_markets(MAX_MARKETS_PER_PAGE, pages).await?;
+        let coin_markets = self.coin_gecko_client.get_all_coin_markets(None, MAX_MARKETS_PER_PAGE, pages).await?;
         let prices = Self::map_coin_markets(coin_markets);
         self.price_client.set_prices(prices)
     }

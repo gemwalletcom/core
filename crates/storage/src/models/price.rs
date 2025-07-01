@@ -131,7 +131,7 @@ impl Price {
         Chart {
             coin_id: self.id.clone(),
             price: self.price,
-            ts: DateTime::from_timestamp(self.last_updated_at.and_utc().timestamp(), 0).unwrap().naive_utc(),
+            created_at: DateTime::from_timestamp(self.last_updated_at.and_utc().timestamp(), 0).unwrap().naive_utc(),
         }
     }
 

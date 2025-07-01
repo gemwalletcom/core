@@ -25,12 +25,12 @@ impl ChartClient {
         let (start_time, end_time) = Self::get_time_range_for_period(&period);
         let charts = self
             .database
-            .get_charts(coin_id.to_string(), ChartGranularity::Minute, start_time, end_time)
+            .get_charts(coin_id.to_string(), Self::get_chart_granularity_for_period(&period), start_time, end_time)
             .await?;
         let prices = charts
             .into_iter()
             .map(|x| ChartValue {
-                timestamp: x.ts.and_utc().timestamp() as i32,
+                timestamp: x.created_at.and_utc().timestamp() as i32,
                 value: (x.price * rate_multiplier) as f32,
             })
             .collect();
@@ -49,5 +49,15 @@ impl ChartClient {
             ChartPeriod::All => (DateTime::from_timestamp(0, 0).unwrap().naive_utc(), now),
         };
         (start_time, end_time)
+    }
+
+    fn get_chart_granularity_for_period(period: &ChartPeriod) -> ChartGranularity {
+        match period {
+            ChartPeriod::Hour => ChartGranularity::Minute,
+            ChartPeriod::Day => ChartGranularity::Minute15,
+            ChartPeriod::Week => ChartGranularity::Hourly,
+            ChartPeriod::Month => ChartGranularity::Hour6,
+            ChartPeriod::Quarter | ChartPeriod::Year | ChartPeriod::All => ChartGranularity::Daily,
+        }
     }
 }

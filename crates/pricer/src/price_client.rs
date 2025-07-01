@@ -160,11 +160,7 @@ impl PriceClient {
         Ok(self.database.aggregate_daily_charts().await?)
     }
 
-    pub async fn aggregate_charts(&mut self) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.aggregate_charts().await?)
-    }
-
-    pub async fn cleanup_old_charts_data(&mut self) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.cleanup_old_charts_data().await?)
+    pub async fn cleanup_charts_data(&mut self) -> Result<usize, Box<dyn Error + Send + Sync>> {
+        Ok(self.database.cleanup_charts_data().await?)
     }
 }

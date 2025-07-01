@@ -7,43 +7,43 @@ use diesel::prelude::*;
 pub struct Chart {
     pub coin_id: String,
     pub price: f64,
-    pub ts: NaiveDateTime,
+    pub created_at: NaiveDateTime,
 }
 
 #[derive(Debug, Clone, Queryable, Selectable)]
-#[diesel(table_name = crate::schema::charts_hourly_avg)]
+#[diesel(table_name = crate::schema::charts_hourly)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct HourlyChart {
     pub coin_id: String,
     pub price: f64,
-    pub ts: NaiveDateTime,
+    pub created_at: NaiveDateTime,
 }
 
 #[derive(Debug, Clone, Queryable, Selectable)]
-#[diesel(table_name = crate::schema::charts_daily_avg)]
+#[diesel(table_name = crate::schema::charts_daily)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct DailyChart {
     pub coin_id: String,
     pub price: f64,
-    pub ts: NaiveDateTime,
+    pub created_at: NaiveDateTime,
 }
 
 impl From<HourlyChart> for Chart {
-    fn from(hourly_chart: HourlyChart) -> Self {
+    fn from(chart: HourlyChart) -> Self {
         Chart {
-            coin_id: hourly_chart.coin_id,
-            price: hourly_chart.price,
-            ts: hourly_chart.ts,
+            coin_id: chart.coin_id,
+            price: chart.price,
+            created_at: chart.created_at,
         }
     }
 }
 
 impl From<DailyChart> for Chart {
-    fn from(daily_chart: DailyChart) -> Self {
+    fn from(chart: DailyChart) -> Self {
         Chart {
-            coin_id: daily_chart.coin_id,
-            price: daily_chart.price,
-            ts: daily_chart.ts,
+            coin_id: chart.coin_id,
+            price: chart.price,
+            created_at: chart.created_at,
         }
     }
 }

@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::{collections::HashMap, error::Error, sync::Arc};
 
 use async_trait::async_trait;
@@ -29,7 +30,7 @@ impl MessageConsumer<TransactionsPayload, usize> for StoreTransactionsConsumer {
             .into_iter()
             .filter(|x| self.config.filter_transaction(x))
             .collect::<Vec<_>>();
-
+        let is_notify_devices = !payload.blocks.is_empty();
         let addresses = transactions.clone().into_iter().flat_map(|x| x.addresses()).collect();
         let subscriptions = self.database.lock().await.get_subscriptions(chain, addresses)?;
 
@@ -70,13 +71,9 @@ impl MessageConsumer<TransactionsPayload, usize> for StoreTransactionsConsumer {
                     if self.config.is_transaction_outdated(transaction.created_at.naive_utc(), chain) {
                         println!("outdated transaction: {}, created_at: {}", transaction.id.clone(), transaction.created_at);
                     } else if payload.blocks.is_empty() {
-                        println!(
-                            "empty blocks (only store, no push), transaction: {}, created_at: {}",
-                            transaction.id.clone(),
-                            transaction.created_at
-                        );
-                    } else if assets_ids.ids_set() == assets_ids.ids_set() && !payload.blocks.is_empty() {
-                        // important check (!payload.blocks.is_empty()) to avoid notifing users about transactions that are not parsed in the block
+                        println!("empty blocks, transaction: {}, created_at: {}", transaction.id.clone(), transaction.created_at);
+                    } else if assets_ids.ids_set() == assets_ids.ids_set() && is_notify_devices {
+                        // important check is_notify_devices to avoid notifing users about transactions that are not parsed in the block
                         if let Ok(notifications) = self
                             .pusher
                             .get_messages(device.as_primitive(), transaction.clone(), subscription.as_primitive(), existing_assets.clone())
@@ -99,30 +96,33 @@ impl MessageConsumer<TransactionsPayload, usize> for StoreTransactionsConsumer {
             }
         }
 
+        let transactions_count = self.store_transactions(transactions_map.clone()).await?;
         let _ = self.stream_producer.publish_fetch_assets(fetch_assets_payload).await;
         let _ = self.stream_producer.publish_notifications_transactions(notifications_payload).await;
         let _ = self.stream_producer.publish_store_assets_addresses_associations(address_assets_payload).await;
-
-        Ok(self.store_batch(transactions_map.clone()).await?)
+        Ok(transactions_count)
     }
 }
 
 impl StoreTransactionsConsumer {
-    async fn store_batch(&mut self, items: HashMap<String, Transaction>) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        let mut db_guard = self.database.lock().await;
+    async fn store_transactions(&mut self, transactions: HashMap<String, Transaction>) -> Result<usize, Box<dyn Error + Send + Sync>> {
+        let transactions_asset_ids: Vec<String> = transactions.values().flat_map(|x| x.asset_ids().ids()).collect();
+        let enabled_asset_ids: HashSet<String> = self
+            .database
+            .lock()
+            .await
+            .get_assets(transactions_asset_ids)?
+            .into_iter()
+            .filter(|x| x.is_enabled)
+            .map(|x| x.id)
+            .collect();
 
-        let primitive_transactions = items
+        let transactions = transactions
             .into_values()
-            .filter(|x| {
-                if let Ok(assets) = db_guard.get_assets(x.asset_ids().ids().clone()) {
-                    assets.into_iter().filter(|x| x.is_enabled).count() == x.asset_ids().len()
-                } else {
-                    false
-                }
-            })
+            .filter(|x| x.asset_ids().ids().iter().all(|asset_id| enabled_asset_ids.contains(asset_id)))
             .collect::<Vec<Transaction>>();
 
-        let transaction_chunks = primitive_transactions.chunks(300);
+        let transaction_chunks = transactions.chunks(100);
 
         for chunk in transaction_chunks {
             let transactions_to_store = chunk
@@ -145,9 +145,12 @@ impl StoreTransactionsConsumer {
                 continue;
             }
 
-            db_guard.add_transactions(transactions_to_store.clone(), transaction_addresses_to_store.clone())?;
+            self.database
+                .lock()
+                .await
+                .add_transactions(transactions_to_store.clone(), transaction_addresses_to_store.clone())?;
         }
 
-        Ok(primitive_transactions.len())
+        Ok(transactions.len())
     }
 }
