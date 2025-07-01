@@ -4,7 +4,7 @@ use pricer::PriceClient;
 use primitives::{AssetId, AssetPriceInfo};
 use std::collections::{HashMap, HashSet};
 use std::error::Error;
-use storage::models::Price;
+use storage::models::{Chart, Price};
 
 pub struct PriceUpdater {
     coin_gecko_client: CoinGeckoClient,
@@ -51,7 +51,9 @@ impl PriceUpdater {
         for ids in ids_chunks {
             let coin_markets = self.coin_gecko_client.get_coin_markets_ids(ids.to_vec(), MAX_MARKETS_PER_PAGE).await?;
             let prices = Self::map_coin_markets(coin_markets);
-            self.price_client.set_prices(prices)?;
+            self.price_client.set_prices(prices.clone())?;
+            let charts = prices.iter().map(|x| Chart::from_price(x.clone())).collect::<Vec<Chart>>();
+            self.price_client.add_charts(charts).await?;
         }
         Ok(ids.len())
     }

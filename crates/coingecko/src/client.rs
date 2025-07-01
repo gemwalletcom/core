@@ -161,11 +161,12 @@ impl CoinGeckoClient {
         Ok(all_coin_markets)
     }
 
-    pub async fn get_market_chart(&self, coin_id: &str, interval: ChartInterval) -> Result<MarketChart, Box<dyn Error + Send + Sync>> {
+    pub async fn get_market_chart(&self, coin_id: &str, interval: ChartInterval, days: &str) -> Result<MarketChart, Box<dyn Error + Send + Sync>> {
         let url = format!(
-            "{}/api/v3/coins/{}/market_chart?vs_currency=usd&days=max&interval={}&precision=full",
+            "{}/api/v3/coins/{}/market_chart?vs_currency=usd&days={}&interval={}&precision=full",
             self.url,
             coin_id,
+            days,
             interval.to_str()
         );
         Ok(self.client.get(url).headers(self.headers()).send().await?.json().await?)
