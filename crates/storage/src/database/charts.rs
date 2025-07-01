@@ -1,11 +1,12 @@
-use crate::models::{Chart, DailyChart, HourlyChart};
-use crate::schema::charts::dsl::{charts, coin_id, created_at};
-use crate::schema::charts_daily::dsl::{charts_daily, coin_id as daily_coin_id, created_at as daily_created_at};
-use crate::schema::charts_hourly::dsl::{charts_hourly, coin_id as hourly_coin_id, created_at as hourly_created_at};
+use crate::models::Chart;
+use crate::schema::charts::dsl::{charts, coin_id};
+use crate::schema::charts_daily::dsl::{charts_daily, coin_id as daily_coin_id};
+use crate::schema::charts_hourly::dsl::{charts_hourly, coin_id as hourly_coin_id};
 use crate::DatabaseClient;
-use chrono::NaiveDateTime;
+use diesel::dsl::sql;
 use diesel::prelude::*;
 use diesel::result::Error;
+use primitives::ChartPeriod;
 
 pub enum ChartGranularity {
     Minute,
@@ -15,17 +16,7 @@ pub enum ChartGranularity {
     Daily,
 }
 
-impl ChartGranularity {
-    pub fn as_interval_string(&self) -> &str {
-        match self {
-            ChartGranularity::Minute => "1 minute",
-            ChartGranularity::Minute15 => "15 minutes",
-            ChartGranularity::Hourly => "1 hour",
-            ChartGranularity::Hour6 => "6 hours",
-            ChartGranularity::Daily => "1 day",
-        }
-    }
-}
+pub type ChartResult = (chrono::NaiveDateTime, f64);
 
 impl DatabaseClient {
     pub async fn add_charts(&mut self, values: Vec<Chart>) -> Result<usize, Error> {
@@ -35,32 +26,75 @@ impl DatabaseClient {
             .execute(&mut self.connection)
     }
 
-    pub async fn get_charts(
-        &mut self,
-        target_coin_id: String,
-        interval: ChartGranularity,
-        from: NaiveDateTime,
-        to: NaiveDateTime,
-    ) -> Result<Vec<Chart>, Error> {
-        match interval {
+    pub async fn get_charts(&mut self, target_coin_id: String, period: &ChartPeriod) -> Result<Vec<ChartResult>, Error> {
+        let date_selection = format!("date_bin('{}', created_at, timestamp '2000-01-01')", self.period_sql(period.clone()));
+        let granularity = Self::get_chart_granularity_for_period(period);
+        let created_at_filter = format!("created_at >= now() - INTERVAL '{} minutes'", self.period_minutes(period.clone()));
+        match granularity {
             ChartGranularity::Minute | ChartGranularity::Minute15 => charts
-                .filter(coin_id.eq(target_coin_id.clone()))
-                .filter(created_at.between(from, to))
-                .order(created_at.asc())
-                .load::<Chart>(&mut self.connection)
-                .map(|x| x.into_iter().collect()),
+                .select((
+                    sql::<diesel::sql_types::Timestamp>(date_selection.as_str()),
+                    sql::<diesel::sql_types::Double>("AVG(price)"),
+                ))
+                .filter(coin_id.eq(target_coin_id))
+                .filter(sql::<diesel::sql_types::Bool>(&created_at_filter))
+                .group_by(sql::<diesel::sql_types::Numeric>("1"))
+                .order(sql::<diesel::sql_types::Numeric>("1").desc())
+                .load(&mut self.connection),
             ChartGranularity::Hourly | ChartGranularity::Hour6 => charts_hourly
-                .filter(hourly_coin_id.eq(target_coin_id.clone()))
-                .filter(hourly_created_at.between(from, to))
-                .order(hourly_created_at.asc())
-                .load::<HourlyChart>(&mut self.connection)
-                .map(|x| x.into_iter().map(Chart::from).collect()),
+                .select((
+                    sql::<diesel::sql_types::Timestamp>(date_selection.as_str()),
+                    sql::<diesel::sql_types::Double>("AVG(price)"),
+                ))
+                .filter(hourly_coin_id.eq(target_coin_id))
+                .filter(sql::<diesel::sql_types::Bool>(&created_at_filter))
+                .group_by(sql::<diesel::sql_types::Numeric>("1"))
+                .order(sql::<diesel::sql_types::Numeric>("1").desc())
+                .load(&mut self.connection),
             ChartGranularity::Daily => charts_daily
-                .filter(daily_coin_id.eq(target_coin_id.clone()))
-                .filter(daily_created_at.between(from, to))
-                .order(daily_created_at.asc())
-                .load::<DailyChart>(&mut self.connection)
-                .map(|x| x.into_iter().map(Chart::from).collect()),
+                .select((
+                    sql::<diesel::sql_types::Timestamp>(date_selection.as_str()),
+                    sql::<diesel::sql_types::Double>("AVG(price)"),
+                ))
+                .filter(daily_coin_id.eq(target_coin_id))
+                .filter(sql::<diesel::sql_types::Bool>(&created_at_filter))
+                .group_by(sql::<diesel::sql_types::Numeric>("1"))
+                .order(sql::<diesel::sql_types::Numeric>("1").desc())
+                .load(&mut self.connection),
+        }
+    }
+
+    fn get_chart_granularity_for_period(period: &ChartPeriod) -> ChartGranularity {
+        match period {
+            ChartPeriod::Hour => ChartGranularity::Minute,
+            ChartPeriod::Day => ChartGranularity::Minute15,
+            ChartPeriod::Week => ChartGranularity::Hourly,
+            ChartPeriod::Month => ChartGranularity::Hour6,
+            ChartPeriod::Quarter | ChartPeriod::Year | ChartPeriod::All => ChartGranularity::Daily,
+        }
+    }
+
+    fn period_sql(&self, period: ChartPeriod) -> &str {
+        match period {
+            ChartPeriod::Hour => "1 minutes",
+            ChartPeriod::Day => "15 minutes",
+            ChartPeriod::Week => "1 hour",
+            ChartPeriod::Month => "6 hour",
+            ChartPeriod::Quarter => "1 day",
+            ChartPeriod::Year => "3 day",
+            ChartPeriod::All => "3 day",
+        }
+    }
+
+    fn period_minutes(&self, period: ChartPeriod) -> i32 {
+        match period {
+            ChartPeriod::Hour => 60,
+            ChartPeriod::Day => 1440,
+            ChartPeriod::Week => 10_080,
+            ChartPeriod::Month => 43_200,
+            ChartPeriod::Quarter => 131_400,
+            ChartPeriod::Year => 525_600,
+            ChartPeriod::All => 10_525_600,
         }
     }
 
