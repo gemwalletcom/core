@@ -55,16 +55,6 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
         }
     });
 
-    let update_prices_assets_pages = run_job("Update prices assets 30 pages", Duration::from_secs(86400), {
-        let settings = Arc::new(settings.clone());
-        let cacher_client = cacher_client.clone();
-        move || {
-            let settings = Arc::clone(&settings);
-            let cacher_client = cacher_client.clone();
-            async move { price_updater_factory(&cacher_client, &settings.clone()).update_prices_pages(30).await }
-        }
-    });
-
     let update_prices_top_market_cap = run_job("Update prices top (top 500) market cap", Duration::from_secs(settings.pricer.timer), {
         let settings = Arc::new(settings.clone());
         let cacher_client = cacher_client.clone();
@@ -193,7 +183,6 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
         Box::pin(clean_updated_assets),
         Box::pin(update_fiat_assets),
         Box::pin(update_prices_assets),
-        Box::pin(update_prices_assets_pages),
         Box::pin(update_prices_top_market_cap),
         Box::pin(update_prices_high_market_cap),
         Box::pin(update_prices_low_market_cap),

@@ -1,5 +1,5 @@
 use crate::model::{
-    ChartInterval, Coin, CoinIds, CoinInfo, CoinMarket, CoinQuery, CointListQuery, Data, ExchangeRates, Global, MarketChart, SearchTrending, TopGainersLosers,
+    Coin, CoinIds, CoinInfo, CoinMarket, CoinQuery, CointListQuery, Data, ExchangeRates, Global, MarketChart, SearchTrending, TopGainersLosers,
 };
 use primitives::{FiatRate, DEFAULT_FIAT_CURRENCY};
 use reqwest::header::{HeaderMap, HeaderValue, USER_AGENT};
@@ -161,13 +161,10 @@ impl CoinGeckoClient {
         Ok(all_coin_markets)
     }
 
-    pub async fn get_market_chart(&self, coin_id: &str, interval: ChartInterval, days: &str) -> Result<MarketChart, Box<dyn Error + Send + Sync>> {
+    pub async fn get_market_chart(&self, coin_id: &str, interval: &str, days: &str) -> Result<MarketChart, Box<dyn Error + Send + Sync>> {
         let url = format!(
             "{}/api/v3/coins/{}/market_chart?vs_currency=usd&days={}&interval={}&precision=full",
-            self.url,
-            coin_id,
-            days,
-            interval.to_str()
+            self.url, days, coin_id, interval
         );
         Ok(self.client.get(url).headers(self.headers()).send().await?.json().await?)
     }

@@ -178,18 +178,3 @@ impl CoinIds {
         self.0.iter().map(|x| x.id.clone()).collect()
     }
 }
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub enum ChartInterval {
-    Daily,
-    Hourly,
-}
-
-impl ChartInterval {
-    pub fn to_str(&self) -> &str {
-        match self {
-            ChartInterval::Daily => "daily",
-            ChartInterval::Hourly => "hourly",
-        }
-    }
-}
