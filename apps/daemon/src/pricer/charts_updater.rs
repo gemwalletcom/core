@@ -22,7 +22,7 @@ impl ChartsUpdater {
         let coin_list = self.coin_gecko_client.get_all_coin_markets(None, 250, 10).await?;
 
         for coin_id in coin_list.clone() {
-            match self.coin_gecko_client.get_market_chart(coin_id.id.as_str(), "auto", "max").await {
+            match self.coin_gecko_client.get_market_chart(coin_id.id.as_str(), "daily", "max").await {
                 Ok(prices) => {
                     let charts = prices
                         .prices
