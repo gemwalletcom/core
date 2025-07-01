@@ -4,7 +4,7 @@ use num_bigint::Sign;
 use crate::{
     metaplex::metadata::Metadata,
     model::{BlockTransaction, BlockTransactions, Signature, TokenInfo},
-    JUPITER_PROGRAM_ID, SYSTEM_PROGRAM_ID, TOKEN_PROGRAM,
+    COMPUTE_BUDGET_PROGRAM_ID, JUPITER_PROGRAM_ID, SYSTEM_PROGRAM_ID, TOKEN_PROGRAM,
 };
 use primitives::{Asset, AssetId, AssetType, Chain, SwapProvider, Transaction, TransactionState, TransactionSwapMetadata, TransactionType};
 
@@ -39,10 +39,17 @@ impl SolanaMapper {
         let fee_asset_id = chain.as_asset_id();
         let created_at = DateTime::from_timestamp(block_time, 0)?;
 
+        // only accept single signature transactions
+        if signatures.len() != 1 {
+            return None;
+        }
+
         // system transfer
-        if (account_keys.len() == 2 || account_keys.len() == 3) && account_keys.last()? == SYSTEM_PROGRAM_ID && signatures.len() == 1 {
+        if (account_keys.len() == 3) && account_keys.last()? == SYSTEM_PROGRAM_ID
+            || (account_keys.len() == 4 && account_keys.last()? == SYSTEM_PROGRAM_ID && account_keys.contains(&COMPUTE_BUDGET_PROGRAM_ID.to_string()))
+        {
             let from = account_keys.first()?.clone();
-            let to = account_keys[account_keys.len() - 2].clone();
+            let to = account_keys[1].clone();
 
             let value = transaction.meta.pre_balances[0] - transaction.meta.post_balances[0] - fee;
 
@@ -253,5 +260,55 @@ mod tests {
         };
 
         assert_eq!(transaction.metadata, Some(serde_json::to_value(expected).unwrap()));
+    }
+
+    #[test]
+    fn test_transaction_transfer_sol() {
+        let file = include_str!("../../testdata/transfer_sol.json");
+        let result: JsonRpcResult<BlockTransaction> = serde_json::from_str(file).unwrap();
+
+        let transaction = SolanaMapper::map_transaction(&result.result, 1751375099).unwrap();
+        let expected = Transaction::new(
+            "3Hn5LusRYXzVjHpZV8wahCMAMYeVVLXyxMF8CzoGGhc7RAVNA9AXDXmGXgHNkWCsNYkVNt9VvmFxgD92uY4QcVxZ".to_string(),
+            Chain::Solana.as_asset_id(),
+            "492tvYL73k9hnjo494V11RT3rBqS455nWpLPWdBUdmok".to_string(),
+            "DiRZLazRs2HYkZAEeu6TsjXtqnsB8goAR1f7P6PSKWJZ".to_string(),
+            None,
+            TransactionType::Transfer,
+            TransactionState::Confirmed,
+            "10000".to_string(),
+            Chain::Solana.as_asset_id(),
+            "680000000".to_string(),
+            None,
+            None,
+            DateTime::from_timestamp(1751375099, 0).unwrap(),
+        );
+
+        assert_eq!(transaction, expected);
+    }
+
+    #[test]
+    fn test_transaction_transfer_sol_with_compute() {
+        let file = include_str!("../../testdata/transfer_sol_with_compute.json");
+        let result: JsonRpcResult<BlockTransaction> = serde_json::from_str(file).unwrap();
+
+        let transaction = SolanaMapper::map_transaction(&result.result, 1750884182).unwrap();
+        let expected = Transaction::new(
+            "2QeBm7G7qLmVTCVKAkbSUuZvcFjg6mBRVqaVSKWSZsTqJxHVTzMUwxDtu1Myfu8RzpUv5YMEBFFpGbwVM9ZQY8DL".to_string(),
+            Chain::Solana.as_asset_id(),
+            "8wytzyCBXco7yqgrLDiecpEt452MSuNWRe7xsLgAAX1H".to_string(),
+            "7nVDzZUjrBA3gHs3gNcHidhmR96CH7KpKsU8pyBZGHUr".to_string(),
+            None,
+            TransactionType::Transfer,
+            TransactionState::Confirmed,
+            "7500".to_string(),
+            Chain::Solana.as_asset_id(),
+            "69000000".to_string(),
+            None,
+            None,
+            DateTime::from_timestamp(1750884182, 0).unwrap(),
+        );
+
+        assert_eq!(transaction, expected);
     }
 }
