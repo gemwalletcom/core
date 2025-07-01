@@ -115,7 +115,7 @@ impl DatabaseClient {
 
         if let Some(from_timestamp) = options.from_timestamp {
             let datetime = DateTime::from_timestamp(from_timestamp.into(), 0).unwrap().naive_utc();
-            query = query.filter(created_at.gt(datetime));
+            query = query.filter(created_at.gt(datetime).or(updated_at.gt(datetime)));
         }
 
         query.order(created_at.desc()).select(Transaction::as_select()).load(&mut self.connection)
