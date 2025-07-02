@@ -71,7 +71,7 @@ pub async fn get_nft_asset(asset_id: &str, client: &State<Mutex<NFTClient>>) -> 
 #[get("/nft/assets/<asset_id>/image_preview")]
 pub async fn get_nft_asset_image_preview(asset_id: &str, client: &State<Mutex<NFTClient>>) -> Result<Redirect, NotFound<String>> {
     let result = client.lock().await.get_nft_asset(asset_id).unwrap();
-    Ok(Redirect::to(result.images.preview.url))
+    Ok(Redirect::permanent(result.images.preview.url))
 }
 
 // from db
