@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
+use super::{Int64, UInt64};
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Sendable")]
 pub struct TronTransactionBroadcast {
@@ -31,8 +33,8 @@ pub struct TronTransactionContractRef {
 #[typeshare(swift = "Sendable")]
 pub struct TronTransactionReceipt {
     #[serde(rename = "blockNumber")]
-    pub block_number: i32,
-    pub fee: Option<i32>,
+    pub block_number: UInt64,
+    pub fee: Option<Int64>,
     pub result: Option<String>,
     pub receipt: Option<TronReceipt>,
 }

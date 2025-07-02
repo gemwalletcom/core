@@ -1,11 +1,13 @@
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
+use super::UInt64;
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Sendable")]
 #[serde(rename_all = "camelCase")]
 pub struct CardanoBlock {
-    pub number: i32,
+    pub number: UInt64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

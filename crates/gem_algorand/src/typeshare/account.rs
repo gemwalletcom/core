@@ -9,7 +9,7 @@ pub struct AlgorandAccount {
     pub amount: UInt64,
     pub assets: Vec<AlgorandAccountAsset>,
     #[serde(rename = "min-balance")]
-    pub min_balance: i32,
+    pub min_balance: UInt64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

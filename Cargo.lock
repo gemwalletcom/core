@@ -2985,14 +2985,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "gem_graphql"
-version = "1.0.0"
-dependencies = [
- "serde",
- "typeshare",
-]
-
-[[package]]
 name = "gem_hash"
 version = "1.0.0"
 dependencies = [

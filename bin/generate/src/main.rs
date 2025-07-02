@@ -21,7 +21,6 @@ fn main() {
         "crates/gem_cardano",
         "crates/gem_cosmos",
         "crates/gem_evm",
-        "crates/gem_graphql",
         "crates/gem_near",
         "crates/gem_polkadot",
         "crates/gem_solana",

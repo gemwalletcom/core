@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
-type UInt64 = u64;
+use super::{Int64, UInt64};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Sendable")]
@@ -26,19 +26,19 @@ pub struct TronAccount {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Sendable")]
 pub struct TronAccountPermission {
-    pub threshold: i32,
+    pub threshold: Int64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Sendable")]
 #[serde(rename_all = "camelCase")]
 pub struct TronAccountUsage {
-    pub free_net_used: Option<i32>,
-    pub free_net_limit: Option<i32>,
+    pub free_net_used: Option<Int64>,
+    pub free_net_limit: Option<Int64>,
     #[serde(rename = "EnergyUsed")]
-    pub energy_used: Option<UInt64>,
+    pub energy_used: Option<Int64>,
     #[serde(rename = "EnergyLimit")]
-    pub energy_limit: Option<UInt64>,
+    pub energy_limit: Option<Int64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

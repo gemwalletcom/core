@@ -2,7 +2,9 @@
 prefix = ''
 
 [swift.type_mappings]
-"UInt32" = "UInt64"
+"UInt32" = "UInt32"
+"UInt64" = "UInt64"
+"Int" = "Int"
 "Int32" = "Int"
 "Int64" = "Int64"
 "BigInt" = "BigInt"
