@@ -1,8 +1,8 @@
 extern crate rocket;
 use primitives::{Chain, NFTAsset, NFTData, ResponseResult};
+use rocket::response::Redirect;
 use rocket::{response::status::NotFound, serde::json::Json, tokio::sync::Mutex, State};
 use std::str::FromStr;
-
 pub mod client;
 pub use self::client::NFTClient;
 
@@ -66,6 +66,12 @@ pub async fn get_nft_asset(asset_id: &str, client: &State<Mutex<NFTClient>>) -> 
         Ok(data) => Ok(Json(ResponseResult::new(data))),
         Err(err) => Err(NotFound(err.to_string())),
     }
+}
+
+#[get("/nft/assets/<asset_id>/image_preview")]
+pub async fn get_nft_asset_image_preview(asset_id: &str, client: &State<Mutex<NFTClient>>) -> Result<Redirect, NotFound<String>> {
+    let result = client.lock().await.get_nft_asset(asset_id).unwrap();
+    Ok(Redirect::to(result.images.preview.url))
 }
 
 // from db

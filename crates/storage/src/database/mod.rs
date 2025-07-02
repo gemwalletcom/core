@@ -2,6 +2,8 @@ pub mod assets;
 pub mod assets_addresses;
 pub mod assets_links;
 pub mod assets_types;
+
+pub mod charts;
 pub mod devices;
 pub mod fiat;
 pub mod link_types;
@@ -14,10 +16,10 @@ pub mod releases;
 pub mod scan_addresses;
 pub mod subscriptions;
 pub mod tag;
+pub mod transactions;
 
 use crate::models::*;
 use crate::schema::transactions_addresses;
-use chrono::DateTime;
 use diesel::associations::HasTable;
 use diesel::dsl::count;
 use diesel::pg::PgConnection;
@@ -26,10 +28,11 @@ use diesel::{upsert::excluded, Connection};
 use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("src/migrations");
 
+use chrono::DateTime;
 use primitives::TransactionsFetchOption;
 
 pub struct DatabaseClient {
-    pub(crate) connection: PgConnection,
+    connection: PgConnection,
 }
 
 impl DatabaseClient {
@@ -65,7 +68,6 @@ impl DatabaseClient {
                         metadata.eq(excluded(metadata)),
                         utxo_inputs.eq(excluded(utxo_inputs)),
                         utxo_outputs.eq(excluded(utxo_outputs)),
-                        memo.eq(excluded(memo)),
                     ))
                     .execute(conn);
 
@@ -113,19 +115,10 @@ impl DatabaseClient {
 
         if let Some(from_timestamp) = options.from_timestamp {
             let datetime = DateTime::from_timestamp(from_timestamp.into(), 0).unwrap().naive_utc();
-            query = query.filter(created_at.gt(datetime));
+            query = query.filter(created_at.gt(datetime).or(updated_at.gt(datetime)));
         }
 
         query.order(created_at.desc()).select(Transaction::as_select()).load(&mut self.connection)
-    }
-
-    pub fn get_transactions_by_id(&mut self, _id: &str) -> Result<Vec<Transaction>, diesel::result::Error> {
-        use crate::schema::transactions::dsl::*;
-        transactions
-            .filter(id.eq(_id))
-            .order(created_at.asc())
-            .select(Transaction::as_select())
-            .load(&mut self.connection)
     }
 
     pub fn get_transactions_addresses(&mut self, min_count: i64, limit: i64) -> Result<Vec<AddressChainIdResult>, diesel::result::Error> {

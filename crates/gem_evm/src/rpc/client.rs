@@ -91,7 +91,7 @@ impl EthereumClient {
     pub async fn get_transactions(&self, hashes: Vec<String>) -> Result<Vec<(BlockTransactionsIds, Transaction, TransactionReciept)>, JsonRpcError> {
         let transactions = self.get_transactions_by_hash(hashes.clone()).await?;
         let reciepts = self.get_transactions_receipts(hashes.clone()).await?;
-        let block_ids = transactions.iter().map(|x| x.block_number.clone()).collect::<Vec<String>>();
+        let block_ids = reciepts.iter().map(|x| x.block_number.clone()).collect::<Vec<String>>();
         let blocks = self.get_blocks(block_ids.clone(), false).await?;
 
         Ok(blocks

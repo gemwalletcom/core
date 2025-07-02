@@ -8,7 +8,6 @@ use config::{Config, ConfigError, Environment, File};
 pub struct Settings {
     pub redis: Database,
     pub postgres: Database,
-    pub clickhouse: ClickhouseDatabase,
     pub meilisearch: MeiliSearch,
     pub rabbitmq: Database,
 
@@ -47,13 +46,6 @@ pub struct Fiat {
 #[allow(unused)]
 pub struct Database {
     pub url: String,
-}
-
-#[derive(Debug, Deserialize, Clone)]
-#[allow(unused)]
-pub struct ClickhouseDatabase {
-    pub url: String,
-    pub database: String,
 }
 
 #[derive(Debug, Deserialize, Clone)]

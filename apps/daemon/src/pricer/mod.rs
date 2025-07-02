@@ -11,13 +11,12 @@ use job_runner::run_job;
 use markets_updater::MarketsUpdater;
 use price_asset_updater::PriceAssetUpdater;
 use price_updater::UpdatePrices;
-use pricer::{ChartClient, MarketsClient, PriceClient};
+use pricer::{MarketsClient, PriceClient};
 use settings::Settings;
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
 use std::time::Duration;
-use storage::ClickhouseClient;
 
 pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + Send>>> {
     let coingecko_client = CoinGeckoClient::new(&settings.coingecko.key.secret);
@@ -53,16 +52,6 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
             let settings = Arc::clone(&settings);
             let cacher_client = cacher_client.clone();
             async move { price_asset_updater_factory(&cacher_client, &settings.clone()).update_prices_assets().await }
-        }
-    });
-
-    let update_prices_assets_pages = run_job("Update prices assets 30 pages", Duration::from_secs(86400), {
-        let settings = Arc::new(settings.clone());
-        let cacher_client = cacher_client.clone();
-        move || {
-            let settings = Arc::clone(&settings);
-            let cacher_client = cacher_client.clone();
-            async move { price_updater_factory(&cacher_client, &settings.clone()).update_prices_pages(30).await }
         }
     });
 
@@ -132,30 +121,50 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
         }
     });
 
-    let update_charts = run_job("Update charts", Duration::from_secs(settings.charter.timer), {
+    let update_hourly_charts_job = run_job("Aggregate hourly charts", Duration::from_secs(60), {
         let settings = settings.clone();
         let coingecko_client = coingecko_client.clone();
         let cacher_client = cacher_client.clone();
         move || {
-            let clickhouse_database = ClickhouseClient::new(&settings.clickhouse.url, &settings.clickhouse.database);
-            let charts_client = ChartClient::new(&settings.postgres.url, clickhouse_database);
             let cacher_client = cacher_client.clone();
             let price_client = PriceClient::new(cacher_client, &settings.postgres.url);
-            let mut charts_updater = ChartsUpdater::new(charts_client, price_client, coingecko_client.clone());
-            async move { charts_updater.update_charts().await }
+            let mut charts_updater = ChartsUpdater::new(price_client, coingecko_client.clone());
+            async move { charts_updater.aggregate_hourly_charts().await }
         }
     });
 
-    // let update_all_charts = run_job("Update all charts", Duration::from_secs(settings.charter.timer), {
+    let update_daily_charts_job = run_job("Aggregate daily charts", Duration::from_secs(360), {
+        let settings = settings.clone();
+        let coingecko_client = coingecko_client.clone();
+        let cacher_client = cacher_client.clone();
+        move || {
+            let cacher_client = cacher_client.clone();
+            let price_client = PriceClient::new(cacher_client, &settings.postgres.url);
+            let mut charts_updater = ChartsUpdater::new(price_client, coingecko_client.clone());
+            async move { charts_updater.aggregate_daily_charts().await }
+        }
+    });
+
+    let cleanup_charts_data_job = run_job("Cleanup charts data", Duration::from_secs(86400), {
+        let settings = settings.clone();
+        let coingecko_client = coingecko_client.clone();
+        let cacher_client = cacher_client.clone();
+        move || {
+            let cacher_client = cacher_client.clone();
+            let price_client = PriceClient::new(cacher_client, &settings.postgres.url);
+            let mut charts_updater = ChartsUpdater::new(price_client, coingecko_client.clone());
+            async move { charts_updater.cleanup_charts_data().await }
+        }
+    });
+
+    // let update_all_charts = run_job("Update all charts", Duration::from_secs(86400), {
     //     let settings = settings.clone();
     //     let coingecko_client = coingecko_client.clone();
     //     let cacher_client = cacher_client.clone();
     //     move || {
-    //         let clickhouse_database = ClickhouseClient::new(&settings.clickhouse.url, &settings.clickhouse.database);
-    //         let charts_client = ChartClient::new(&settings.postgres.url, clickhouse_database);
     //         let cacher_client = cacher_client.clone();
     //         let price_client = PriceClient::new(cacher_client, &settings.postgres.url);
-    //         let mut charts_updater = ChartsUpdater::new(charts_client, price_client, coingecko_client.clone());
+    //         let mut charts_updater = ChartsUpdater::new(price_client, coingecko_client.clone());
     //         async move { charts_updater.update_charts_all().await }
     //     }
     // });
@@ -174,14 +183,15 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
         Box::pin(clean_updated_assets),
         Box::pin(update_fiat_assets),
         Box::pin(update_prices_assets),
-        Box::pin(update_prices_assets_pages),
         Box::pin(update_prices_top_market_cap),
         Box::pin(update_prices_high_market_cap),
         Box::pin(update_prices_low_market_cap),
         Box::pin(update_prices_cache),
         Box::pin(update_fiat_rates_cache),
-        Box::pin(update_charts),
-        //Box::pin(update_all_charts),
+        // Box::pin(update_all_charts),
+        Box::pin(update_hourly_charts_job),
+        Box::pin(update_daily_charts_job),
+        Box::pin(cleanup_charts_data_job),
         Box::pin(update_markets),
     ]
 }

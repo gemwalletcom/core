@@ -49,7 +49,10 @@ pub fn format_token_id(chain: Chain, token_id: String) -> Option<String> {
                 None
             }
         }
-        Chain::Stellar => (token_id.len() == 56 && token_id.starts_with('G')).then_some(token_id),
+        Chain::Stellar => {
+            let token_id = token_id.split('-').next_back().unwrap_or(&token_id);
+            (token_id.len() == 56 && token_id.starts_with('G')).then(|| token_id.to_string())
+        }
         Chain::Bitcoin
         | Chain::BitcoinCash
         | Chain::Litecoin
@@ -131,5 +134,15 @@ mod tests {
             format_token_id(chain, "rsoLo2S1kiGeCcn6hCUXVrCpGMWLrRrLZz".to_string()),
             Some("rsoLo2S1kiGeCcn6hCUXVrCpGMWLrRrLZz".to_string())
         );
+    }
+
+    #[test]
+    fn test_format_token_id_stellar() {
+        let chain = Chain::Stellar;
+        let token_id = "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN";
+
+        assert_eq!(format_token_id(chain, token_id.to_string()), Some(token_id.to_string()));
+        assert_eq!(format_token_id(chain, format!("USDC-{token_id}")), Some(token_id.to_string()));
+        assert_eq!(format_token_id(Chain::Stellar, "INVALID".to_string()), None);
     }
 }
