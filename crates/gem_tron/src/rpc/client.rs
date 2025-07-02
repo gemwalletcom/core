@@ -3,7 +3,7 @@ use std::error::Error;
 
 use super::model::{Block, BlockTransactions, BlockTransactionsInfo, TriggerConstantContractRequest, TriggerConstantContractResponse};
 use crate::rpc::constants::{DECIMALS_SELECTOR, DEFAULT_OWNER_ADDRESS, NAME_SELECTOR, SYMBOL_SELECTOR};
-use crate::rpc::model::TransactionReceiptData;
+use crate::rpc::model::{Transaction, TransactionReceiptData};
 use gem_evm::erc20::{decode_abi_string, decode_abi_uint8};
 use reqwest_middleware::ClientWithMiddleware;
 
@@ -36,6 +36,16 @@ impl TronClient {
         Ok(self
             .client
             .get(format!("{}/walletsolidity/gettransactioninfobyblocknum?num={}", self.url, block))
+            .send()
+            .await?
+            .json()
+            .await?)
+    }
+
+    pub async fn get_transaction(&self, id: String) -> Result<Transaction, Box<dyn Error + Send + Sync>> {
+        Ok(self
+            .client
+            .get(format!("{}/walletsolidity/gettransactionbyid?value={}", self.url, id))
             .send()
             .await?
             .json()
