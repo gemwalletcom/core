@@ -200,15 +200,15 @@ mod tests {
 
     #[test]
     fn test_erc20_transfer() {
-        let erc20_transfer_tx = serde_json::from_value::<JsonRpcResult<Transaction>>(serde_json::from_str(include_str!("test/transfer_erc20.json")).unwrap())
+        let erc20_transfer_tx = serde_json::from_value::<JsonRpcResult<Transaction>>(serde_json::from_str(include_str!("../../tests/data/transfer_erc20.json")).unwrap())
             .unwrap()
             .result;
         let erc20_transfer_receipt =
-            serde_json::from_value::<JsonRpcResult<TransactionReciept>>(serde_json::from_str(include_str!("test/transfer_erc20_receipt.json")).unwrap())
+            serde_json::from_value::<JsonRpcResult<TransactionReciept>>(serde_json::from_str(include_str!("../../tests/data/transfer_erc20_receipt.json")).unwrap())
                 .unwrap()
                 .result;
 
-        let transaction = EthereumMapper::map_transaction(Chain::Arbitrum, &erc20_transfer_tx, &erc20_transfer_receipt, &BigUint::from(1735671600u64)).unwrap();
+        let transaction = EthereumMapper::map_transaction(Chain::Arbitrum, &erc20_transfer_tx, &erc20_transfer_receipt, None, &BigUint::from(1735671600u64)).unwrap();
         assert_eq!(transaction.transaction_type, TransactionType::Transfer);
         assert_eq!(
             transaction.asset_id,
