@@ -89,6 +89,7 @@ pub struct StateChange {
 pub enum Diff<T> {
     Change(Change<T>),
     Add(Add<T>),
+    Delete(Delete<T>),
     Keep(String),
 }
 
@@ -101,6 +102,12 @@ pub struct Change<T> {
 #[derive(Debug, Clone, Deserialize)]
 pub struct Add<T> {
     #[serde(rename = "+")]
+    pub value: T,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct Delete<T> {
+    #[serde(rename = "-")]
     pub value: T,
 }
 
