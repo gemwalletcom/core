@@ -1,9 +1,11 @@
 extern crate rocket;
-use primitives::{Chain, NFTAsset, NFTData, ResponseResult};
-use rocket::response::Redirect;
-use rocket::{response::status::NotFound, serde::json::Json, tokio::sync::Mutex, State};
 use std::str::FromStr;
+
+use primitives::{Chain, NFTAsset, NFTData, ResponseResult};
+use rocket::{response::status::NotFound, serde::json::Json, tokio::sync::Mutex, State};
 pub mod client;
+pub mod image_fetcher;
+
 pub use self::client::NFTClient;
 
 // by device
@@ -68,11 +70,11 @@ pub async fn get_nft_asset(asset_id: &str, client: &State<Mutex<NFTClient>>) -> 
     }
 }
 
-#[get("/nft/assets/<asset_id>/image_preview")]
-pub async fn get_nft_asset_image_preview(asset_id: &str, client: &State<Mutex<NFTClient>>) -> Result<Redirect, NotFound<String>> {
-    let result = client.lock().await.get_nft_asset(asset_id).unwrap();
-    Ok(Redirect::permanent(result.images.preview.url))
-}
+use rocket::http::ContentType;
+use rocket::response::{self, Responder};
+use rocket::Request;
+use std::collections::HashMap;
+use std::io::Cursor;
 
 // from db
 
@@ -82,5 +84,50 @@ pub async fn get_nft_collection(collection_id: &str, client: &State<Mutex<NFTCli
     match result {
         Ok(data) => Ok(Json(ResponseResult::new(data))),
         Err(err) => Err(NotFound(err.to_string())),
+    }
+}
+
+#[get("/nft/assets/<asset_id>/image_preview")]
+pub async fn get_nft_asset_image_preview(asset_id: &str, client: &State<Mutex<NFTClient>>) -> Result<ImageResponse, NotFound<String>> {
+    let (image_data, content_type, upstream_headers) = client.lock().await.get_nft_asset_image(asset_id).await.map_err(|e| NotFound(e.to_string()))?;
+    let content_type = ContentType::parse_flexible(content_type.as_ref().unwrap_or(&"image/png".to_string())).unwrap_or(ContentType::PNG);
+    let cache_control = upstream_headers
+        .get("cache-control")
+        .map(|s| s.to_string())
+        .unwrap_or_else(|| "public, max-age=604800, immutable".to_string());
+    let last_modified = upstream_headers.get("last-modified").map(|s| s.to_string());
+    let mut headers = HashMap::new();
+    headers.insert("cache-control".to_string(), cache_control);
+    if let Some(last_modified) = last_modified {
+        headers.insert("last-modified".to_string(), last_modified);
+    }
+    Ok(ImageResponse::new(image_data, content_type, headers))
+}
+
+pub struct ImageResponse {
+    data: Vec<u8>,
+    content_type: ContentType,
+    headers: HashMap<String, String>,
+}
+
+impl ImageResponse {
+    pub fn new(data: Vec<u8>, content_type: ContentType, headers: HashMap<String, String>) -> Self {
+        Self {
+            data,
+            content_type,
+            headers: headers.into_iter().map(|(k, v)| (k.to_lowercase(), v)).collect(),
+        }
+    }
+}
+
+impl<'r> Responder<'r, 'static> for ImageResponse {
+    fn respond_to(self, _: &'r Request<'_>) -> response::Result<'static> {
+        let mut response = response::Response::build();
+        response.header(self.content_type);
+        for (name, value) in self.headers {
+            response.raw_header(name, value);
+        }
+        response.sized_body(self.data.len(), Cursor::new(self.data));
+        response.ok()
     }
 }
