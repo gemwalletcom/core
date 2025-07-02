@@ -1,9 +1,10 @@
-pub mod solana_balance;
-pub mod solana_blockhash;
-pub mod solana_prioritization_fee;
-pub mod solana_stake;
-pub mod solana_token_account;
-pub mod solana_transaction;
-pub mod solana_value;
+pub mod balances;
+pub mod blockhash;
+pub mod prioritization_fee;
+pub mod stake;
+pub mod token_account;
+pub mod transaction;
+pub mod value;
 
-type Int = u64;
+type UInt64 = u64;
+type Int = i64;
