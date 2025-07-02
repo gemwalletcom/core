@@ -5,3 +5,6 @@ pub use model::*;
 
 #[cfg(feature = "rpc")]
 pub mod rpc;
+
+#[cfg(feature = "typeshare")]
+pub mod typeshare;

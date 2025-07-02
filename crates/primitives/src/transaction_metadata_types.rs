@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
-use crate::AssetId;
+use crate::{AssetId, NFTAssetId};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Sendable")]
@@ -18,5 +18,5 @@ pub struct TransactionSwapMetadata {
 #[typeshare(swift = "Sendable")]
 #[serde(rename_all = "camelCase")]
 pub struct TransactionNFTTransferMetadata {
-    pub asset_id: String,
+    pub asset_id: NFTAssetId,
 }

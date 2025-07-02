@@ -1,7 +1,7 @@
 use primitives::{AddressType, Asset, AssetTag, AssetType, Chain, FiatProviderName, LinkType, NFTType, PlatformStore, TransactionType};
 use search_index::{SearchIndexClient, ASSETS_FILTERS, ASSETS_INDEX_NAME, ASSETS_RANKING_RULES, ASSETS_SEARCH_ATTRIBUTES, ASSETS_SORTS, INDEX_PRIMARY_KEY};
 use settings::Settings;
-use storage::{ClickhouseClient, DatabaseClient, LinkRepository, ParserStateStore};
+use storage::{DatabaseClient, LinkRepository, ParserStateStore};
 use streamer::{ExchangeName, QueueName, StreamProducer};
 
 #[tokio::main]
@@ -14,10 +14,6 @@ async fn main() {
     let mut database_client: DatabaseClient = DatabaseClient::new(postgres_url);
     database_client.migrations();
     println!("postgres migrations complete");
-
-    let clickhouse_database = ClickhouseClient::new(&settings.clickhouse.url, &settings.clickhouse.database);
-    let _ = clickhouse_database.migrations().await;
-    println!("clickhouse migrations complete");
 
     let chains = Chain::all();
 

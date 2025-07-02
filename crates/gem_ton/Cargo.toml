@@ -6,6 +6,7 @@ edition = { workspace = true }
 [features]
 default = []
 rpc = ["dep:reqwest-middleware", "dep:serde_serializers"]
+typeshare = ["dep:typeshare"]
 
 
 [dependencies]
@@ -18,3 +19,4 @@ primitives = { path = "../primitives" }
 
 reqwest-middleware = { workspace = true, features = ["json"], optional = true }
 serde_serializers = { path = "../serde_serializers", optional = true }
+typeshare = { workspace = true, optional = true }

@@ -81,7 +81,15 @@ impl ChainAssetsProvider for TronGridClient {
 #[async_trait]
 impl ChainTransactionsProvider for TronGridClient {
     async fn get_transactions_by_address(&self, address: String) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
-        let transactions = self.get_transactions_by_address(&address).await?.data;
+        let native_transactions = self.get_transactions_by_address(&address, 16).await?.data;
+        let token_transactions = self.get_token_transactions(&address, 16).await?;
+
+        let transactions = native_transactions
+            .clone()
+            .into_iter()
+            .chain(token_transactions)
+            .collect::<Vec<gem_tron::rpc::model::Transaction>>();
+
         if transactions.is_empty() {
             return Ok(vec![]);
         }

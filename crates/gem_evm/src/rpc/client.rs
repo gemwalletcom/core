@@ -96,7 +96,7 @@ impl EthereumClient {
         let transactions = self.get_transactions_by_hash(hashes).await?;
         let reciepts = self.get_transactions_receipts(hashes).await?;
         let traces = self.trace_replay_transactions(hashes).await?;
-        let block_ids = transactions.iter().map(|x| x.block_number.clone()).collect::<Vec<String>>();
+        let block_ids = reciepts.iter().map(|x| x.block_number.clone()).collect::<Vec<String>>();
         let blocks = self.get_blocks(&block_ids, false).await?;
 
         Ok(blocks

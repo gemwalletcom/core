@@ -60,7 +60,7 @@ All commands use `just` task runner:
 
 ### Database
 - `just migrate` - Run Diesel migrations
-- `just setup-services` - Start Docker services (PostgreSQL, Redis, ClickHouse, Meilisearch, RabbitMQ)
+- `just setup-services` - Start Docker services (PostgreSQL, Redis, Meilisearch, RabbitMQ)
 
 ### Mobile Development
 - `just gemstone install-ios-targets` - Install iOS Rust targets (in gemstone/)
@@ -75,7 +75,7 @@ All commands use `just` task runner:
 ## Technology Stack
 
 - **Framework**: Rust workspace with Rocket web framework
-- **Database**: PostgreSQL (primary), ClickHouse (analytics), Redis (caching)
+- **Database**: PostgreSQL (primary), Redis (caching)
 - **Message Queue**: RabbitMQ with Lapin
 - **RPC**: Custom `gem_jsonrpc` client library for blockchain interactions
 - **Mobile**: UniFFI for iOS/Android bindings

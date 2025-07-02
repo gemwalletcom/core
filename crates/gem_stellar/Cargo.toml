@@ -6,6 +6,7 @@ edition = { workspace = true }
 [features]
 default = []
 rpc = ["dep:reqwest-middleware", "dep:number_formatter", "dep:chrono"]
+typeshare = ["dep:typeshare"]
 
 [dependencies]
 serde = { workspace = true, features = ["derive"] }
@@ -15,3 +16,4 @@ primitives = { path = "../primitives" }
 reqwest-middleware = { workspace = true, optional = true, features = ["json"] }
 number_formatter = { path = "../number_formatter", optional = true }
 chrono = { workspace = true, features = ["serde"], optional = true }
+typeshare = { workspace = true, optional = true }

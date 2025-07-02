@@ -24,7 +24,6 @@ members = [
     "gemstone",
 
     "crates/primitives",
-    "crates/blockchain",
     "crates/fiat",
     "crates/cacher",
     "crates/name_resolver",
@@ -59,7 +58,7 @@ default-members = [
 [workspace.dependencies]
 typeshare = "1.0.4"
 serde = { version = "1.0.219", features = ["derive"] }
-serde_with = "3.13.0"
+serde_with = "3.14.0"
 serde_json = { version = "1.0.140" }
 serde_urlencoded = { version = "0.7.1" }
 tokio = { version = "1.45.1", features = ["macros", "rt-multi-thread"] }
@@ -86,7 +85,7 @@ lazy_static = "1.5.0"
 futures-util = "0.3.31"
 uuid = { version = "1.17.0", features = ["v4"] }
 rand = { version = "0.9.1" }
-aws-sdk-s3 = { version = "1.94.0", features = ["behavior-version-latest"] }
+aws-sdk-s3 = { version = "1.95.0", features = ["behavior-version-latest"] }
 itertools = { version = "0.14.0" }
 
 # db
@@ -98,7 +97,7 @@ redis = { version = "0.32.0", features = [
     "connection-manager",
 ] }
 chrono = { version = "0.4.41", features = ["serde"] }
-clickhouse = { version = "0.13.3" }
+
 meilisearch-sdk = { version = "0.28.0" }
 lapin = { version = "3.0.0" }
 

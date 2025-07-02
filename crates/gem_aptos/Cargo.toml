@@ -5,6 +5,7 @@ edition = { workspace = true }
 
 [features]
 default = []
+typeshare = ["dep:typeshare"]
 rpc = [
     "dep:async-trait",
     "dep:chrono",
@@ -19,6 +20,7 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 anyhow = { workspace = true }
 serde_serializers = { path = "../serde_serializers" }
+typeshare = { workspace = true, optional = true }
 
 # Dependencies for RPC client & mapper
 async-trait = { workspace = true, optional = true }

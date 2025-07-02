@@ -66,7 +66,7 @@ where
                     Ok(())
                 }
                 Err(e) => {
-                    println!("consumer {} error: {}, elapsed: {:?}", name, e, start.elapsed());
+                    println!("consumer {}, payload: {}, error: {}, elapsed: {:?}", name, payload, e, start.elapsed());
                     if config.skip_on_error {
                         Ok(())
                     } else {

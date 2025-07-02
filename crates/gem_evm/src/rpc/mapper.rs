@@ -12,6 +12,7 @@ use primitives::{chain::Chain, AssetId, TransactionState, TransactionType};
 
 pub const INPUT_0X: &str = "0x";
 pub const FUNCTION_ERC20_TRANSFER: &str = "0xa9059cbb";
+pub const ERC20_TRANSFER_TOPIC: &str = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
 pub const TRANSFER_GAS_LIMIT: u64 = 21000;
 
 pub struct EthereumMapper;
@@ -79,33 +80,35 @@ impl EthereumMapper {
         }
 
         // erc20 transfer
-        if transaction.input.starts_with(FUNCTION_ERC20_TRANSFER) && transaction.input.len() >= 10 + 64 + 64 {
-            let address = &transaction.input[10..74];
-            let amount = &transaction.input[74..];
 
-            let address = format!("0x{}", address);
-            let address = address.trim_start_matches("0x000000000000000000000000");
-            let address = ethereum_address_checksum(&format!("0x{}", address)).ok()?;
-
-            let amount = BigUint::from_str_radix(amount, 16).ok()?;
-
-            let token_id = ethereum_address_checksum(&to).ok()?;
-            let transaction = primitives::Transaction::new(
-                transaction.hash.clone(),
-                AssetId::from_token(chain, &token_id),
-                from.clone(),
-                address,
-                None,
-                TransactionType::Transfer,
-                state,
-                fee.to_string(),
-                chain.as_asset_id(),
-                amount.to_string(),
-                None,
-                None,
-                created_at,
-            );
-            return Some(transaction);
+        if transaction.input.starts_with(FUNCTION_ERC20_TRANSFER)
+            && transaction_reciept
+                .logs
+                .first()
+                .is_some_and(|log| log.topics.first().is_some_and(|x| x == ERC20_TRANSFER_TOPIC))
+        {
+            if let Some(log) = transaction_reciept.logs.first() {
+                let address = log.topics.last()?.trim_start_matches("0x000000000000000000000000");
+                let address = ethereum_address_checksum(address).ok()?;
+                let amount = BigUint::from_str_radix(&log.data.replace("0x", ""), 16).ok()?;
+                let token_id = ethereum_address_checksum(&to).ok()?;
+                let transaction = primitives::Transaction::new(
+                    transaction.hash.clone(),
+                    AssetId::from_token(chain, &token_id),
+                    from.clone(),
+                    address,
+                    None,
+                    TransactionType::Transfer,
+                    state,
+                    fee.to_string(),
+                    chain.as_asset_id(),
+                    amount.to_string(),
+                    None,
+                    None,
+                    created_at,
+                );
+                return Some(transaction);
+            }
         }
 
         if transaction.to.is_some() && transaction.input.len() >= 8 {
@@ -193,5 +196,26 @@ mod tests {
 
         // Verify gas was parsed correctly from hex "0x61a80" = 400000
         assert_eq!(contract_call_tx.gas, 400000); // > 21000
+    }
+
+    #[test]
+    fn test_erc20_transfer() {
+        let erc20_transfer_tx = serde_json::from_value::<JsonRpcResult<Transaction>>(serde_json::from_str(include_str!("test/transfer_erc20.json")).unwrap())
+            .unwrap()
+            .result;
+        let erc20_transfer_receipt =
+            serde_json::from_value::<JsonRpcResult<TransactionReciept>>(serde_json::from_str(include_str!("test/transfer_erc20_receipt.json")).unwrap())
+                .unwrap()
+                .result;
+
+        let transaction = EthereumMapper::map_transaction(Chain::Arbitrum, &erc20_transfer_tx, &erc20_transfer_receipt, &BigUint::from(1735671600u64)).unwrap();
+        assert_eq!(transaction.transaction_type, TransactionType::Transfer);
+        assert_eq!(
+            transaction.asset_id,
+            AssetId::from_token(Chain::Arbitrum, "0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9")
+        );
+        assert_eq!(transaction.from, "0x8d7460E51bCf4eD26877cb77E56f3ce7E9f5EB8F");
+        assert_eq!(transaction.to, "0x2Fc617E933a52713247CE25730f6695920B3befe");
+        assert_eq!(transaction.value, "4801292");
     }
 }

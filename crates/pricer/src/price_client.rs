@@ -2,7 +2,7 @@ use chrono::NaiveDateTime;
 use primitives::{AssetMarketPrice, AssetPriceInfo, AssetPrices, FiatRate};
 use std::error::Error;
 use storage::{
-    models::{Price, PriceAsset},
+    models::{Chart, Price, PriceAsset},
     DatabaseClient,
 };
 
@@ -143,7 +143,24 @@ impl PriceClient {
         })
     }
 
+    // charts
+    pub async fn add_charts(&mut self, charts: Vec<Chart>) -> Result<usize, Box<dyn Error + Send + Sync>> {
+        Ok(self.database.add_charts(charts).await?)
+    }
+
     pub fn delete_prices_updated_at_before(&mut self, time: NaiveDateTime) -> Result<usize, Box<dyn Error + Send + Sync>> {
         Ok(self.database.delete_prices_updated_at_before(time)?)
+    }
+
+    pub async fn aggregate_hourly_charts(&mut self) -> Result<usize, Box<dyn Error + Send + Sync>> {
+        Ok(self.database.aggregate_hourly_charts().await?)
+    }
+
+    pub async fn aggregate_daily_charts(&mut self) -> Result<usize, Box<dyn Error + Send + Sync>> {
+        Ok(self.database.aggregate_daily_charts().await?)
+    }
+
+    pub async fn cleanup_charts_data(&mut self) -> Result<usize, Box<dyn Error + Send + Sync>> {
+        Ok(self.database.cleanup_charts_data().await?)
     }
 }
