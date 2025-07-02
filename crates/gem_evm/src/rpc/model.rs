@@ -81,13 +81,14 @@ pub struct TransactionReplayTrace {
 #[serde(rename_all = "camelCase")]
 pub struct StateChange {
     pub balance: Diff<String>,
-    pub storage: HashMap<String, Change<String>>,
+    pub storage: HashMap<String, Diff<String>>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(untagged)]
 pub enum Diff<T> {
     Change(Change<T>),
+    Add(Add<T>),
     Keep(String),
 }
 
@@ -95,6 +96,12 @@ pub enum Diff<T> {
 pub struct Change<T> {
     #[serde(rename = "*")]
     pub from_to: FromTo<T>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct Add<T> {
+    #[serde(rename = "+")]
+    pub value: T,
 }
 
 #[derive(Debug, Clone, Deserialize)]

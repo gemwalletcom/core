@@ -53,7 +53,7 @@ mod tests {
         let prev_block = latest_block - 1;
 
         let block_numbers = vec![format!("0x{:x}", prev_block), format!("0x{:x}", latest_block)];
-        let blocks = client.get_blocks(block_numbers, false).await;
+        let blocks = client.get_blocks(&block_numbers, false).await;
 
         assert!(blocks.is_ok());
 
@@ -64,5 +64,18 @@ mod tests {
         for block in &blocks_data {
             assert!(block.timestamp > BigUint::from(0u32));
         }
+    }
+
+    #[tokio::test]
+    async fn test_ethereum_client_trace_replay_block_transactions() {
+        let nodes = get_nodes_for_chain(Chain::Ethereum);
+        let client = EthereumClient::new(EVMChain::Ethereum, nodes[0].url.clone());
+        let traces = client.trace_replay_block_transactions(22831914).await;
+
+        assert!(traces.is_ok());
+
+        let traces_data = traces.unwrap();
+
+        assert_eq!(traces_data.len(), 157);
     }
 }
