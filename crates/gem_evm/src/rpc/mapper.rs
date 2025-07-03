@@ -8,7 +8,7 @@ use crate::{
     address::ethereum_address_checksum,
     rpc::model::{Block, Transaction, TransactionReciept, TransactionReplayTrace},
 };
-use primitives::{AssetId, NFTAssetId, TransactionState, TransactionType, chain::Chain, transaction_metadata_types::TransactionNFTTransferMetadata};
+use primitives::{chain::Chain, transaction_metadata_types::TransactionNFTTransferMetadata, AssetId, NFTAssetId, TransactionState, TransactionType};
 
 pub const INPUT_0X: &str = "0x";
 pub const FUNCTION_ERC20_TRANSFER: &str = "0xa9059cbb";
@@ -303,15 +303,17 @@ mod tests {
 
     #[test]
     fn test_nft_eip721_transfer() {
-        let transaction = serde_json::from_value::<JsonRpcResult<Transaction>>(serde_json::from_str(include_str!("test/transfer_nft_eip721.json")).unwrap())
-            .unwrap()
-            .result;
-        let transaction_reciept =
-            serde_json::from_value::<JsonRpcResult<TransactionReciept>>(serde_json::from_str(include_str!("test/transfer_nft_eip721_receipt.json")).unwrap())
+        let transaction =
+            serde_json::from_value::<JsonRpcResult<Transaction>>(serde_json::from_str(include_str!("../../tests/data/transfer_nft_eip721.json")).unwrap())
                 .unwrap()
                 .result;
+        let transaction_reciept = serde_json::from_value::<JsonRpcResult<TransactionReciept>>(
+            serde_json::from_str(include_str!("../../tests/data/transfer_nft_eip721_receipt.json")).unwrap(),
+        )
+        .unwrap()
+        .result;
 
-        let transaction = EthereumMapper::map_transaction(Chain::Ethereum, &transaction, &transaction_reciept, &BigUint::from(1735671600u64)).unwrap();
+        let transaction = EthereumMapper::map_transaction(Chain::Ethereum, &transaction, &transaction_reciept, None, &BigUint::from(1735671600u64)).unwrap();
         assert_eq!(transaction.transaction_type, TransactionType::TransferNFT);
 
         assert_eq!(transaction.asset_id, AssetId::from_chain(Chain::Ethereum));
@@ -329,15 +331,17 @@ mod tests {
 
     #[test]
     fn test_nft_eip1155_transfer() {
-        let transaction = serde_json::from_value::<JsonRpcResult<Transaction>>(serde_json::from_str(include_str!("test/transfer_nft_eip1155.json")).unwrap())
-            .unwrap()
-            .result;
-        let transaction_reciept =
-            serde_json::from_value::<JsonRpcResult<TransactionReciept>>(serde_json::from_str(include_str!("test/transfer_nft_eip1155_receipt.json")).unwrap())
+        let transaction =
+            serde_json::from_value::<JsonRpcResult<Transaction>>(serde_json::from_str(include_str!("../../tests/data/transfer_nft_eip1155.json")).unwrap())
                 .unwrap()
                 .result;
+        let transaction_reciept = serde_json::from_value::<JsonRpcResult<TransactionReciept>>(
+            serde_json::from_str(include_str!("../../tests/data/transfer_nft_eip1155_receipt.json")).unwrap(),
+        )
+        .unwrap()
+        .result;
 
-        let transaction = EthereumMapper::map_transaction(Chain::Ethereum, &transaction, &transaction_reciept, &BigUint::from(1735671600u64)).unwrap();
+        let transaction = EthereumMapper::map_transaction(Chain::Ethereum, &transaction, &transaction_reciept, None, &BigUint::from(1735671600u64)).unwrap();
         assert_eq!(transaction.transaction_type, TransactionType::TransferNFT);
 
         assert_eq!(transaction.asset_id, AssetId::from_chain(Chain::Ethereum));
