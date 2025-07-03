@@ -38,6 +38,11 @@ impl SwapMapper {
         let from_value = Self::calculate_actual_value(&sent_diff.diff, &sent_diff.asset_id, fee, native_asset_id);
         let to_value = Self::calculate_actual_value(&received_diff.diff, &received_diff.asset_id, fee, native_asset_id);
 
+        // Ignore Mint txs
+        if from_value == BigUint::from(0u8) {
+            return None;
+        }
+
         Some(TransactionSwapMetadata {
             from_asset: sent_diff.asset_id.clone(),
             from_value: from_value.to_string(),
