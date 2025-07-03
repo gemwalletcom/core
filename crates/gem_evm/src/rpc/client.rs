@@ -25,8 +25,8 @@ pub struct EthereumClient {
 }
 
 impl EthereumClient {
-    pub fn new(chain: EVMChain, url_str: String) -> Self {
-        let client = JsonRpcClient::new(url_str).expect("Invalid Ethereum node URL");
+    pub fn new(chain: EVMChain, url: &str) -> Self {
+        let client = JsonRpcClient::new(url.to_string()).expect("Invalid Ethereum node URL");
         Self { chain, client }
     }
 

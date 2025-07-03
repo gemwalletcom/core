@@ -212,6 +212,13 @@ pub struct Chains {
 #[allow(unused)]
 pub struct Chain {
     pub url: String,
+    pub archival_url: Option<String>,
+}
+
+impl Chain {
+    pub fn get_url(&self) -> &str {
+        self.archival_url.as_ref().unwrap_or(&self.url)
+    }
 }
 
 #[derive(Debug, Deserialize, Clone)]
