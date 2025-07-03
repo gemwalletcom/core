@@ -131,6 +131,10 @@ impl Transaction {
         format!("{}_{}", chain.as_ref(), hash)
     }
 
+    pub fn is_sent(&self, address: String) -> bool {
+        self.input_addresses().contains(&address) || self.from == address
+    }
+
     pub fn is_utxo_tx(&self) -> bool {
         !self.utxo_inputs.is_empty() && !self.utxo_outputs.is_empty()
     }

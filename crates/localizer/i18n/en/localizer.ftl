@@ -21,3 +21,5 @@ notification_price_alert_down_title = 📉 {$symbol} Price Alert
 notification_price_alert_down_description = Price decreased by {$price_change} to {$price}
 notification_price_alert_all_time_high_title = 🔥 {$symbol} All-Time High
 notification_price_alert_all_time_high_description = {$symbol} has reached a new all-time high at {$price}.
+notification_nft_sent_title = 🖼️ Sent NFT: {$value}
+notification_nft_received_title = 🖼️ Received NFT: {$value}
