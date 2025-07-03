@@ -309,6 +309,28 @@ pub struct Info<T> {
 pub struct TokenInfo {
     pub decimals: i32,
     pub supply: String,
+    pub extensions: Option<Vec<Extension>>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TokenMetadata {
+    pub name: String,
+    pub symbol: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ExtensionBase<T> {
+    #[serde(rename = "extension")]
+    pub extension_type: String,
+    pub state: T,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum Extension {
+    TokenMetadata(ExtensionBase<TokenMetadata>),
+    Other(ExtensionBase<serde_json::Value>),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

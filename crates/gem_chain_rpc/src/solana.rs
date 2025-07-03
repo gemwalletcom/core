@@ -66,8 +66,13 @@ impl ChainAssetsProvider for SolanaProvider {
 impl ChainTokenDataProvider for SolanaProvider {
     async fn get_token_data(&self, token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
         let token_info = self.client.get_account_info::<ResultTokenInfo>(&token_id, "jsonParsed").await?.info();
-        let meta = self.client.get_metaplex_data(&token_id).await?;
-        SolanaMapper::map_token_data(self.get_chain(), token_id, &token_info, &meta)
+        match token_info.extensions {
+            Some(_) => SolanaMapper::map_token_data_spl_token_2022(self.get_chain(), token_id, &token_info),
+            None => {
+                let meta = self.client.get_metaplex_data(&token_id).await?;
+                SolanaMapper::map_token_data(self.get_chain(), token_id, &token_info, &meta)
+            }
+        }
     }
 }
 
