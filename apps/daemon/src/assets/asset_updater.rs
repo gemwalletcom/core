@@ -2,6 +2,7 @@ use chain_primitives::format_token_id;
 use coingecko::mapper::COINGECKO_CHAIN_MAP;
 use coingecko::{get_chain_for_coingecko_platform_id, CoinGeckoClient, CoinInfo};
 use primitives::{Asset, AssetId, AssetLink, AssetProperties, AssetScore, AssetType, LinkType};
+use std::cmp::max;
 use std::collections::HashSet;
 use std::error::Error;
 use storage::DatabaseClient;
@@ -112,16 +113,16 @@ impl AssetUpdater {
         // market cap calculation
         let market_cap_rank = coin_info.market_cap_rank.unwrap_or_default();
         rank += match market_cap_rank {
-            1..25 => 14,
-            25..50 => 9,
-            50..100 => 8,
-            100..250 => 5,
-            250..500 => 4,
-            500..1000 => 2,
-            1000..2000 => 1,
-            2000..4000 => -2,
-            4000..5000 => -4,
-            _ => -5, // Default case (no change)
+            1..25 => 15,
+            25..50 => 12,
+            50..100 => 10,
+            100..250 => 8,
+            250..500 => 6,
+            500..1000 => 4,
+            1000..2000 => 2,
+            2000..4000 => 0,
+            4000..5000 => -1,
+            _ => -2, // Default case (no change)
         };
 
         if coin_info.platforms.len() > 6 {
@@ -145,6 +146,8 @@ impl AssetUpdater {
         }
 
         rank += asset.chain().rank() / 20;
+
+        rank = rank.max(16);
 
         AssetScore::new(rank)
     }
