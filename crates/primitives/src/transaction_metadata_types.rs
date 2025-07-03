@@ -18,5 +18,19 @@ pub struct TransactionSwapMetadata {
 #[typeshare(swift = "Sendable")]
 #[serde(rename_all = "camelCase")]
 pub struct TransactionNFTTransferMetadata {
-    pub asset_id: NFTAssetId,
+    pub asset_id: String,
+    pub name: Option<String>,
+}
+
+impl TransactionNFTTransferMetadata {
+    pub fn new(asset_id: String, name: Option<String>) -> Self {
+        Self { asset_id, name }
+    }
+
+    pub fn from_asset_id(asset_id: NFTAssetId) -> Self {
+        Self {
+            asset_id: asset_id.to_string(),
+            name: None,
+        }
+    }
 }

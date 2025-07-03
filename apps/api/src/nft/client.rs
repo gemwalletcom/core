@@ -1,13 +1,16 @@
-use std::{error::Error, vec};
+use std::{error::Error, sync::Arc, vec};
 
 use nft::NFT;
 use primitives::{Chain, NFTAsset, NFTAssetId, NFTCollection, NFTCollectionId, NFTData};
 use std::collections::HashMap;
 use storage::DatabaseClient;
 
+use crate::nft::image_fetcher::ImageFetcher;
+
 pub struct NFTClient {
     database: DatabaseClient,
     nft: NFT,
+    image_fetcher: Arc<ImageFetcher>,
 }
 
 impl NFTClient {
@@ -15,9 +18,9 @@ impl NFTClient {
         Self {
             database: DatabaseClient::new(database_url),
             nft: NFT::new(nftscan_key, opensea_key, magiceden_key),
+            image_fetcher: Arc::new(ImageFetcher::new()),
         }
     }
-
     pub async fn update_collection(&mut self, _collection_id: &str) -> Result<bool, Box<dyn Error + Send + Sync>> {
         Ok(true)
     }
@@ -175,5 +178,10 @@ impl NFTClient {
                 Ok(NFTData { collection, assets })
             })
             .collect::<Result<Vec<_>, _>>()
+    }
+
+    pub async fn get_nft_asset_image(&mut self, asset_id: &str) -> Result<(Vec<u8>, Option<String>, HashMap<String, String>), Box<dyn Error + Send + Sync>> {
+        let asset = self.get_nft_asset(asset_id)?;
+        self.image_fetcher.fetch(&asset.images.preview.url).await
     }
 }

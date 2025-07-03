@@ -17,6 +17,10 @@ impl ImageFormatter {
     pub fn get_validator_url(url: &str, chain: &str, id: &str) -> String {
         format!("{}/blockchains/{}/validators/{}/logo.png", url, chain, id)
     }
+
+    pub fn get_nft_asset_url(url: &str, id: &str) -> String {
+        format!("{}/v1/nft/assets/{}/image_preview", url, id)
+    }
 }
 #[cfg(test)]
 mod tests {

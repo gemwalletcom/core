@@ -99,6 +99,10 @@ impl Config {
         primitives::ImageFormatter::get_validator_url(ASSETS_URL, chain, id)
     }
 
+    fn image_formatter_nft_asset_url(&self, url: &str, id: &str) -> String {
+        primitives::ImageFormatter::get_nft_asset_url(url, id)
+    }
+
     fn get_block_explorers(&self, chain: &str) -> Vec<String> {
         primitives::block_explorer::get_block_explorers_by_chain(chain)
             .into_iter()
