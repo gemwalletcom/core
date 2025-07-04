@@ -15,7 +15,13 @@ use orca_whirlpools_core::{
     TICK_ARRAY_SIZE,
 };
 use primitives::Chain;
-use std::{cmp::Ordering, iter::zip, str::FromStr, sync::Arc, vec};
+use std::{
+    cmp::Ordering,
+    iter::zip,
+    str::FromStr,
+    sync::Arc,
+    time::{SystemTime, UNIX_EPOCH},
+};
 
 use super::{
     fee_tiers::get_splash_pool_fee_tiers,
@@ -90,7 +96,8 @@ impl Swapper for Orca {
         let result: [TickArrayFacade; 5] = std::array::from_fn(|i| tick_array_facades[i]);
         let tick_arrays = TickArrays::from(result);
 
-        let quote = swap_quote_by_input_token(amount_in, true, slippage_bps, pool.into(), tick_arrays, None, None)
+        let timestamp = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs();
+        let quote = swap_quote_by_input_token(amount_in, true, slippage_bps, pool.into(), None, tick_arrays, timestamp, None, None)
             .map_err(|c| SwapperError::NetworkError(format!("swap_quote_by_input_token error: {:?}", c)))?;
         let to_value = apply_slippage_in_bp(&quote.token_est_out, fee_bps);
 
@@ -252,6 +259,7 @@ impl Orca {
 impl From<&Whirlpool> for WhirlpoolFacade {
     fn from(val: &Whirlpool) -> Self {
         Self {
+            fee_tier_index_seed: val.fee_tier_index_seed,
             tick_spacing: val.tick_spacing,
             fee_rate: val.fee_rate,
             protocol_fee_rate: val.protocol_fee_rate,
@@ -324,8 +332,9 @@ mod tests {
         let slippage_bps = 100;
         let base64_str = "P5XRDOGAYwkT5EH4ORPKaLBjT7Al/eqohzfoQRDRJV41ezN33e4czf8EAAQAkAEBACUn6rOx9gIAAAAAAAAAAADZ0q3a01wPfgAAAAAAAAAApsj///QCNRYAAAAA7MHhBAAAAAAGm4hX/quBhPtof2NGGMA12sQ53BrrO1WYoPAAAAAAAchN8kM4mDvkqFswl7r0C8lXEQjSiawAs2jfF11Edc96okZrwvdXv2MAAAAAAAAAAMb6evO+2606PWXzaqvJdDGxu+TC0vbg5HymAgNFL11hFl+VcsWpaqUC3VEQVKJqbSWO98HW1sGu4SkZFNxRAjLtNOmyVWgdCwAAAAAAAAAAaZY8ZwAAAAAMANCv64YU2n8Zq6AtQPGMaSWF9lAg387T1eX5qcDE4Q8bkJQIzrVDfhKReyB9qZTQ6FenQB4SLAPfa/fG1/wqvR0xrxfe/zwmhIFgCsr+SxQJjA/hQbf0oc34STRkRAMAAAAAAAAAAAAAAAAAAAAAIxHh3tFPDkQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAC9HTGvF97/PCaEgWAKyv5LFAmMD+FBt/ShzfhJNGREAwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAL0dMa8X3v88JoSBYArK/ksUCYwP4UG39KHN+Ek0ZEQDAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
         let pool: Whirlpool = try_borsh_decode(base64_str).unwrap();
+        let timestamp = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs();
 
-        let quote = swap_quote_by_input_token(amount_in, true, slippage_bps, (&pool).into(), tick_arrays, None, None)
+        let quote = swap_quote_by_input_token(amount_in, true, slippage_bps, (&pool).into(), None, tick_arrays, timestamp, None, None)
             .map_err(|c| SwapperError::ComputeQuoteError(format!("swap_quote_by_input_token error: {:?}", c)))?;
         assert_eq!(quote.token_min_out, 239958);
         Ok(())

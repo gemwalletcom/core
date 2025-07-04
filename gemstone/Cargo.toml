@@ -61,7 +61,7 @@ lazy_static.workspace = true
 bigdecimal.workspace = true
 rand.workspace = true
 
-orca_whirlpools_core = "1.0.8"
+orca_whirlpools_core = "2.0.0"
 solana-primitives = "0.1.2"
 
 [build-dependencies]

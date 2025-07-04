@@ -49,8 +49,8 @@ pub struct Whirlpool {
     pub whirlpools_config: Pubkey, // 32
     pub whirlpool_bump: [u8; 1],   // 1
 
-    pub tick_spacing: u16,          // 2
-    pub tick_spacing_seed: [u8; 2], // 2
+    pub tick_spacing: u16,            // 2
+    pub fee_tier_index_seed: [u8; 2], // 2
 
     // Stored as hundredths of a basis point
     // u16::MAX corresponds to ~6.5%
