@@ -12,6 +12,8 @@ rpc = [
     "dep:async-trait",
     "dep:futures",
     "dep:lazy_static",
+    "dep:itertools",
+    "dep:reqwest-middleware",
 ]
 
 [dependencies]
@@ -21,8 +23,8 @@ gem_hash = { path = "../gem_hash" }
 serde_serializers = { path = "../serde_serializers" }
 gem_jsonrpc = { path = "../gem_jsonrpc" }
 
-reqwest-middleware = { workspace = true }
-itertools = { workspace = true }
+reqwest-middleware = { workspace = true, optional = true }
+itertools = { workspace = true, optional = true }
 hex = { workspace = true }
 itoa = { workspace = true }
 anyhow = { workspace = true }
