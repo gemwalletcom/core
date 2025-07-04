@@ -12,6 +12,7 @@ pub mod jsonrpc;
 pub mod lido;
 pub mod multicall3;
 pub mod permit2;
+#[cfg(feature = "rpc")]
 pub mod registry;
 pub mod thorchain;
 pub mod uniswap;

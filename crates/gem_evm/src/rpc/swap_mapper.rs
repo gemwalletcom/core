@@ -39,10 +39,12 @@ impl SwapMapper {
         contract_registry: Option<&ContractRegistry>,
     ) -> Option<primitives::Transaction> {
         // Check if it is a uniswap transaction
-        if let Some(provider) = get_provider_by_chain_contract(chain, &transaction.to.clone().unwrap_or_default()) {
-            let input_bytes = hex::decode(transaction.input.clone()).ok()?;
-            if let Some(swap_metadata) = Self::try_map_uniswap_transaction(chain, &provider, &transaction.from, &input_bytes, transaction_reciept) {
-                return Self::make_swap_transaction(chain, transaction, transaction_reciept, &swap_metadata, created_at);
+        if let Some(to_address) = &transaction.to {
+            if let Some(provider) = get_provider_by_chain_contract(chain, to_address) {
+                let input_bytes = hex::decode(transaction.input.clone()).ok()?;
+                if let Some(swap_metadata) = Self::try_map_uniswap_transaction(chain, &provider, &transaction.from, &input_bytes, transaction_reciept) {
+                    return Self::make_swap_transaction(chain, transaction, transaction_reciept, &swap_metadata, created_at);
+                }
             }
         }
 
@@ -50,7 +52,7 @@ impl SwapMapper {
         if let Some(trace) = trace {
             let to = Address::from_str(&transaction.to.clone().unwrap_or_default()).ok()?;
             let contract_registry = contract_registry?;
-            let registry_entry = contract_registry.get_by_address(&to)?;
+            let registry_entry = contract_registry.get_by_address(&to, *chain)?;
 
             let from = ethereum_address_checksum(&transaction.from).ok()?;
             let differ = BalanceDiffer::new(*chain);

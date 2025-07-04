@@ -6,7 +6,13 @@ edition = { workspace = true }
 [features]
 default = []
 typeshare = ["dep:typeshare"]
-rpc = ["gem_jsonrpc/client", "dep:chrono", "dep:async-trait", "dep:futures"]
+rpc = [
+    "gem_jsonrpc/client",
+    "dep:chrono",
+    "dep:async-trait",
+    "dep:futures",
+    "dep:lazy_static",
+]
 
 [dependencies]
 primitives = { path = "../primitives" }
@@ -36,6 +42,7 @@ typeshare = { workspace = true, optional = true }
 chrono = { workspace = true, optional = true }
 async-trait = { workspace = true, optional = true }
 futures = { workspace = true, optional = true }
+lazy_static = { workspace = true, optional = true }
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }

@@ -276,8 +276,8 @@ impl ContractRegistry {
         Self { entries }
     }
 
-    pub fn get_by_address(&self, address: &Address) -> Option<&ContractEntry> {
-        self.entries.iter().find(|entry| entry.address == *address)
+    pub fn get_by_address(&self, address: &Address, chain: Chain) -> Option<&ContractEntry> {
+        self.entries.iter().find(|entry| entry.address == *address && entry.chain == chain)
     }
 
     pub fn get_by_chain(&self, chain: Chain) -> Vec<&ContractEntry> {
@@ -300,7 +300,7 @@ mod tests {
         let registry = ContractRegistry::new();
         let test_address = address!("0x5968feacba91d55010975e0cfe8acfc32664ad33");
 
-        let entry = registry.get_by_address(&test_address).unwrap();
+        let entry = registry.get_by_address(&test_address, Chain::SmartChain).unwrap();
 
         assert_eq!(entry.provider, "PancakeSwap v3");
         assert_eq!(entry.chain, Chain::SmartChain);

@@ -1,5 +1,6 @@
 use chrono::DateTime;
 use itertools::izip;
+use lazy_static::lazy_static;
 use num_bigint::BigUint;
 use num_traits::Num;
 
@@ -19,6 +20,9 @@ pub const TRANSFER_TOPIC: &str = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4
 pub const TRANSFER_SINGLE: &str = "0xc3d58168c5ae7397731d063d5bbf3d657854427343f4c083240f7aacaa2d0f62";
 pub const TRANSFER_GAS_LIMIT: u64 = 21000;
 
+lazy_static! {
+    pub static ref CONTRACT_REGISTRY: ContractRegistry = ContractRegistry::default();
+}
 pub struct EthereumMapper;
 
 impl EthereumMapper {
@@ -28,11 +32,10 @@ impl EthereumMapper {
         transactions_reciepts: Vec<TransactionReciept>,
         traces: Option<Vec<TransactionReplayTrace>>,
     ) -> Vec<primitives::Transaction> {
-        let contract_registry = ContractRegistry::default();
         match traces {
             Some(traces) => izip!(block.transactions.into_iter(), transactions_reciepts.iter(), traces.iter())
                 .filter_map(|(transaction, receipt, trace)| {
-                    EthereumMapper::map_transaction(chain, &transaction, receipt, Some(trace), &block.timestamp, Some(&contract_registry))
+                    EthereumMapper::map_transaction(chain, &transaction, receipt, Some(trace), &block.timestamp, Some(&CONTRACT_REGISTRY))
                 })
                 .collect(),
             None => block
@@ -40,7 +43,7 @@ impl EthereumMapper {
                 .into_iter()
                 .zip(transactions_reciepts.iter())
                 .filter_map(|(transaction, receipt)| {
-                    EthereumMapper::map_transaction(chain, &transaction, receipt, None, &block.timestamp, Some(&contract_registry))
+                    EthereumMapper::map_transaction(chain, &transaction, receipt, None, &block.timestamp, Some(&CONTRACT_REGISTRY))
                 })
                 .collect(),
         }
