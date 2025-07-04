@@ -176,7 +176,6 @@ impl SuiMapper {
     }
 
     pub fn map_swap_from_balance_changes(balance_changes: Vec<BalanceChange>, fee: &BigUint) -> Option<TransactionSwapMetadata> {
-        // Convert Sui BalanceChange to BalanceDiff
         let balance_diffs: Vec<BalanceDiff> = balance_changes
             .into_iter()
             .map(|change| BalanceDiff {
