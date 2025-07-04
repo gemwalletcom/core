@@ -1,6 +1,9 @@
 use crate::{
     ethereum_address_checksum,
-    rpc::model::{Diff, Log, TransactionReciept, TransactionReplayTrace},
+    rpc::{
+        mapper::TRANSFER_TOPIC,
+        model::{Diff, Log, TransactionReciept, TransactionReplayTrace},
+    },
 };
 use alloy_primitives::{hex, Address};
 use chain_primitives::{BalanceDiff, BalanceDiffMap};
@@ -8,8 +11,6 @@ use num_bigint::{BigInt, BigUint};
 use num_traits::Num;
 use primitives::{AssetId, Chain};
 use std::collections::HashMap;
-
-pub const TRANSFER_TOPIC: &str = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
 
 struct TransferLog {
     pub from: String,
