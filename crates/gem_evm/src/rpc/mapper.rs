@@ -6,6 +6,7 @@ use num_traits::Num;
 use super::swap_mapper::SwapMapper;
 use crate::{
     address::ethereum_address_checksum,
+    registry::ContractRegistry,
     rpc::model::{Block, Transaction, TransactionReciept, TransactionReplayTrace},
 };
 use primitives::{chain::Chain, transaction_metadata_types::TransactionNFTTransferMetadata, AssetId, NFTAssetId, TransactionState, TransactionType};
@@ -27,15 +28,20 @@ impl EthereumMapper {
         transactions_reciepts: Vec<TransactionReciept>,
         traces: Option<Vec<TransactionReplayTrace>>,
     ) -> Vec<primitives::Transaction> {
+        let contract_registry = ContractRegistry::default();
         match traces {
             Some(traces) => izip!(block.transactions.into_iter(), transactions_reciepts.iter(), traces.iter())
-                .filter_map(|(transaction, receipt, trace)| EthereumMapper::map_transaction(chain, &transaction, receipt, Some(trace), &block.timestamp))
+                .filter_map(|(transaction, receipt, trace)| {
+                    EthereumMapper::map_transaction(chain, &transaction, receipt, Some(trace), &block.timestamp, Some(&contract_registry))
+                })
                 .collect(),
             None => block
                 .transactions
                 .into_iter()
                 .zip(transactions_reciepts.iter())
-                .filter_map(|(transaction, receipt)| EthereumMapper::map_transaction(chain, &transaction, receipt, None, &block.timestamp))
+                .filter_map(|(transaction, receipt)| {
+                    EthereumMapper::map_transaction(chain, &transaction, receipt, None, &block.timestamp, Some(&contract_registry))
+                })
                 .collect(),
         }
     }
@@ -46,6 +52,7 @@ impl EthereumMapper {
         transaction_reciept: &TransactionReciept,
         trace: Option<&TransactionReplayTrace>,
         timestamp: &BigUint,
+        contract_registry: Option<&ContractRegistry>,
     ) -> Option<primitives::Transaction> {
         let state = if transaction_reciept.status == "0x1" {
             TransactionState::Confirmed
@@ -185,7 +192,7 @@ impl EthereumMapper {
 
         // Try to decode Uniswap V3 or V4 transaction
         if transaction.to.is_some() && transaction.input.len() >= 8 {
-            if let Some(tx) = SwapMapper::map_transaction(&chain, transaction, transaction_reciept, trace, created_at) {
+            if let Some(tx) = SwapMapper::map_transaction(&chain, transaction, transaction_reciept, trace, created_at, contract_registry) {
                 return Some(tx);
             }
         }
@@ -246,7 +253,14 @@ mod tests {
             .unwrap()
             .result;
 
-        let _transaction = EthereumMapper::map_transaction(Chain::Ethereum, &contract_call_tx, &contract_call_receipt, None, &BigUint::from(1735671600u64));
+        let _transaction = EthereumMapper::map_transaction(
+            Chain::Ethereum,
+            &contract_call_tx,
+            &contract_call_receipt,
+            None,
+            &BigUint::from(1735671600u64),
+            None,
+        );
 
         // assert_eq!(transaction.transaction_type, TransactionType::SmartContractCall);
         // assert_eq!(transaction.hash, "0x876707912c2d625723aa14bf268d83ede36c2657c70da500628e40e6b51577c9");
@@ -289,6 +303,7 @@ mod tests {
             &erc20_transfer_receipt,
             None,
             &BigUint::from(1735671600u64),
+            None,
         )
         .unwrap();
         assert_eq!(transaction.transaction_type, TransactionType::Transfer);
@@ -313,7 +328,8 @@ mod tests {
         .unwrap()
         .result;
 
-        let transaction = EthereumMapper::map_transaction(Chain::Ethereum, &transaction, &transaction_reciept, None, &BigUint::from(1735671600u64)).unwrap();
+        let transaction =
+            EthereumMapper::map_transaction(Chain::Ethereum, &transaction, &transaction_reciept, None, &BigUint::from(1735671600u64), None).unwrap();
         assert_eq!(transaction.transaction_type, TransactionType::TransferNFT);
 
         assert_eq!(transaction.asset_id, AssetId::from_chain(Chain::Ethereum));
@@ -341,7 +357,8 @@ mod tests {
         .unwrap()
         .result;
 
-        let transaction = EthereumMapper::map_transaction(Chain::Ethereum, &transaction, &transaction_reciept, None, &BigUint::from(1735671600u64)).unwrap();
+        let transaction =
+            EthereumMapper::map_transaction(Chain::Ethereum, &transaction, &transaction_reciept, None, &BigUint::from(1735671600u64), None).unwrap();
         assert_eq!(transaction.transaction_type, TransactionType::TransferNFT);
 
         assert_eq!(transaction.asset_id, AssetId::from_chain(Chain::Ethereum));

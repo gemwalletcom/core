@@ -5,33 +5,14 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "type": "lldb",
+            "name": "Debug API",
+            "type": "lldb-dap",
             "request": "launch",
-            "name": "Run api",
-            "cargo": {
-                "args": [
-                    "build",
-                    "--package=api"
-                ],
-                "filter": {
-                    "name": "api",
-                    "kind": "bin"
-                }
-            },
+            "program": "${workspaceFolder}/target/debug/api",
             "args": [],
-        },
-        {
-            "type": "lldb",
-            "request": "launch",
-            "name": "Run tests",
-            "cargo": {
-                "args": [
-                    "test",
-                    "--workspace"
-                ]
-            },
-            "args": [],
-            "cwd": "${workspaceFolder}"
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "cargo build --package api",
+            "env": {}
         },
     ]
 }
