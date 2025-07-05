@@ -6,15 +6,25 @@ edition = { workspace = true }
 [features]
 default = []
 typeshare = ["dep:typeshare"]
-rpc = ["gem_jsonrpc/client", "dep:chrono", "dep:async-trait", "dep:futures"]
+rpc = [
+    "gem_jsonrpc/client",
+    "dep:chrono",
+    "dep:async-trait",
+    "dep:futures",
+    "dep:lazy_static",
+    "dep:itertools",
+    "dep:reqwest-middleware",
+]
 
 [dependencies]
 primitives = { path = "../primitives" }
+chain_primitives = { path = "../chain_primitives" }
 gem_hash = { path = "../gem_hash" }
 serde_serializers = { path = "../serde_serializers" }
 gem_jsonrpc = { path = "../gem_jsonrpc" }
-reqwest-middleware = { workspace = true }
 
+reqwest-middleware = { workspace = true, optional = true }
+itertools = { workspace = true, optional = true }
 hex = { workspace = true }
 itoa = { workspace = true }
 anyhow = { workspace = true }
@@ -34,6 +44,7 @@ typeshare = { workspace = true, optional = true }
 chrono = { workspace = true, optional = true }
 async-trait = { workspace = true, optional = true }
 futures = { workspace = true, optional = true }
+lazy_static = { workspace = true, optional = true }
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }

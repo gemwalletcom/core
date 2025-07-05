@@ -10,6 +10,7 @@ typeshare = ["dep:typeshare"]
 
 [dependencies]
 primitives = { path = "../primitives" }
+chain_primitives = { path = "../chain_primitives" }
 sui-types = { workspace = true }
 sui-transaction-builder = { workspace = true }
 bcs = { workspace = true }

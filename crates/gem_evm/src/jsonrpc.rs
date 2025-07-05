@@ -1,6 +1,6 @@
 use gem_jsonrpc::types::{JsonRpcRequest, JsonRpcRequestConvert};
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
+use serde_json::{json, Value};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TransactionObject {
@@ -90,6 +90,7 @@ pub enum EthereumRpc {
     GetBalance(&'static str),
     GetTransactionReceipt(String),
     FeeHistory { blocks: u64, reward_percentiles: Vec<u64> },
+    TraceRawTransaction(String),
 }
 
 impl EthereumRpc {
@@ -101,6 +102,7 @@ impl EthereumRpc {
             EthereumRpc::GetTransactionReceipt(_) => "eth_getTransactionReceipt",
             EthereumRpc::EstimateGas(_, _) => "eth_estimateGas",
             EthereumRpc::FeeHistory { .. } => "eth_feeHistory",
+            EthereumRpc::TraceRawTransaction(_) => "trace_rawTransaction",
         }
     }
 }
@@ -111,14 +113,14 @@ impl JsonRpcRequestConvert for EthereumRpc {
         let params: Vec<Value> = match self {
             EthereumRpc::GasPrice => vec![],
             EthereumRpc::GetBalance(address) => {
-                vec![Value::String(address.to_string())]
+                vec![json!(address)]
             }
             EthereumRpc::Call(tx, block) => {
                 let value = serde_json::to_value(tx).unwrap();
                 vec![value, block.into()]
             }
             EthereumRpc::GetTransactionReceipt(tx_hash) => {
-                vec![Value::String(tx_hash.to_string())]
+                vec![json!(tx_hash)]
             }
             EthereumRpc::EstimateGas(tx, block) => {
                 let value = serde_json::to_value(tx).unwrap();
@@ -126,10 +128,13 @@ impl JsonRpcRequestConvert for EthereumRpc {
             }
             EthereumRpc::FeeHistory { blocks, reward_percentiles } => {
                 vec![
-                    Value::from(*blocks),
-                    Value::String("latest".to_string()),
-                    Value::Array(reward_percentiles.iter().map(|x| Value::from(*x)).collect()),
+                    json!(blocks),
+                    json!("latest"),
+                    json!(reward_percentiles.iter().map(|x| json!(x)).collect::<Vec<_>>()),
                 ]
+            }
+            EthereumRpc::TraceRawTransaction(raw_tx) => {
+                vec![json!(raw_tx), json!(vec!["stateDiff"])]
             }
         };
 

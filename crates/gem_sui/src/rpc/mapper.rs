@@ -1,5 +1,6 @@
 use crate::SUI_COIN_TYPE;
 use crate::SUI_COIN_TYPE_FULL;
+use chain_primitives::{BalanceDiff, SwapMapper};
 use chrono::TimeZone;
 use chrono::Utc;
 use num_bigint::BigUint;
@@ -116,14 +117,14 @@ impl SuiMapper {
                 .collect::<Vec<_>>();
             // TODO: Handle other swap providers
             let swap = match owner_balance_changes.len() {
-                2 => Self::map_owner_balance_changes_swap_metadata(owner_balance_changes.clone(), fee.clone())?,
+                2 => Self::map_swap_from_balance_changes(owner_balance_changes.clone(), &fee)?,
                 3 => {
                     let owner_balance_changes_filtered = owner_balance_changes
                         .iter()
                         .filter(|x| x.coin_type != SUI_COIN_TYPE)
                         .cloned()
                         .collect::<Vec<_>>();
-                    Self::map_owner_balance_changes_swap_metadata(owner_balance_changes_filtered.clone(), fee.clone())?
+                    Self::map_swap_from_balance_changes(owner_balance_changes_filtered.clone(), &fee)?
                 }
                 _ => return None,
             };
@@ -174,35 +175,19 @@ impl SuiMapper {
         None
     }
 
-    pub fn map_owner_balance_changes_swap_metadata(balance_changes: Vec<BalanceChange>, fee: BigUint) -> Option<TransactionSwapMetadata> {
-        if balance_changes.len() != 2 {
-            return None;
-        }
-        let (from_token, to_token) = if balance_changes.first()?.amount > balance_changes.last()?.amount {
-            (balance_changes.first()?, balance_changes.last()?)
-        } else {
-            (balance_changes.last()?, balance_changes.first()?)
-        };
+    pub fn map_swap_from_balance_changes(balance_changes: Vec<BalanceChange>, fee: &BigUint) -> Option<TransactionSwapMetadata> {
+        let balance_diffs: Vec<BalanceDiff> = balance_changes
+            .into_iter()
+            .map(|change| BalanceDiff {
+                asset_id: Self::map_asset_id(&change.coin_type),
+                from_value: None,
+                to_value: None,
+                diff: change.amount,
+            })
+            .collect();
 
-        let from_value = if to_token.coin_type == SUI_COIN_TYPE && to_token.amount.magnitude() >= &fee {
-            to_token.amount.magnitude() - fee.clone()
-        } else {
-            to_token.amount.magnitude().clone()
-        };
-
-        let to_value = if from_token.coin_type == SUI_COIN_TYPE && from_token.amount.magnitude() >= &fee {
-            from_token.amount.magnitude() - fee.clone()
-        } else {
-            from_token.amount.magnitude().clone()
-        };
-
-        Some(TransactionSwapMetadata {
-            from_asset: Self::map_asset_id(&to_token.coin_type),
-            from_value: from_value.to_string(),
-            to_asset: Self::map_asset_id(&from_token.coin_type),
-            to_value: to_value.to_string(),
-            provider: Some(SwapProvider::Cetus.id().to_owned()),
-        })
+        let native_asset_id = Chain::Sui.as_asset_id();
+        SwapMapper::map_swap(&balance_diffs, fee, &native_asset_id, Some(SwapProvider::Cetus.id().to_owned()))
     }
 
     pub fn map_asset_id(coin_type: &str) -> AssetId {
@@ -230,7 +215,7 @@ mod tests {
 
     #[test]
     fn test_transaction_swap_token_to_token() {
-        let file_content = include_str!("../../testdata/swap_token_to_token.json");
+        let file_content = include_str!("../../tests/data/swap_token_to_token.json");
         let result: JsonRpcResult<SuiTransaction> = serde_json::from_str(file_content).unwrap();
 
         let transaction = SuiMapper::map_transaction(result.result).unwrap();
@@ -247,7 +232,7 @@ mod tests {
 
     #[test]
     fn test_transaction_swap_sui_to_token() {
-        let file_content = include_str!("../../testdata/swap_sui_to_token.json");
+        let file_content = include_str!("../../tests/data/swap_sui_to_token.json");
         let result: JsonRpcResult<SuiTransaction> = serde_json::from_str(file_content).unwrap();
 
         let transaction = SuiMapper::map_transaction(result.result).unwrap();

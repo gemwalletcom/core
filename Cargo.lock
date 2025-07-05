@@ -1515,7 +1515,9 @@ checksum = "613afe47fcd5fac7ccf1db93babcb082c5994d996f20b8b159f2ad1658eb5724"
 name = "chain_primitives"
 version = "1.0.0"
 dependencies = [
- "gem_evm",
+ "alloy-primitives",
+ "num-bigint",
+ "num-traits",
  "primitives",
 ]
 
@@ -2967,12 +2969,15 @@ dependencies = [
  "anyhow",
  "async-trait",
  "bigdecimal",
+ "chain_primitives",
  "chrono",
  "futures",
  "gem_hash",
  "gem_jsonrpc",
  "hex",
+ "itertools 0.14.0",
  "itoa",
+ "lazy_static",
  "num-bigint",
  "num-traits",
  "primitives",
@@ -3072,6 +3077,7 @@ dependencies = [
  "base64 0.22.1",
  "bcs",
  "blake2",
+ "chain_primitives",
  "chrono",
  "gem_jsonrpc",
  "hex",

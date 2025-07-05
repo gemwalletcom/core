@@ -2,10 +2,15 @@ use alloy_primitives::{hex, Address};
 use alloy_sol_types::SolCall;
 use chrono::{DateTime, Utc};
 use num_bigint::BigUint;
+use std::str::FromStr;
 
 use crate::{
     ethereum_address_checksum,
-    rpc::model::{Transaction, TransactionReciept},
+    registry::ContractRegistry,
+    rpc::{
+        balance_differ::BalanceDiffer,
+        model::{Transaction, TransactionReciept, TransactionReplayTrace},
+    },
     uniswap::{
         actions::{decode_action_data, V4Action},
         command::{Sweep, UnwrapWeth, V3SwapExactIn, SWEEP_COMMAND, UNWRAP_WETH_COMMAND, V3_SWAP_EXACT_IN_COMMAND, V4_SWAP_COMMAND, WRAP_ETH_COMMAND},
@@ -14,6 +19,7 @@ use crate::{
         path::decode_path,
     },
 };
+use chain_primitives::SwapMapper as BalanceSwapMapper;
 use primitives::{AssetId, Chain, TransactionState, TransactionSwapMetadata, TransactionType};
 
 // Transfer (index_topic_1 address from, index_topic_2 address to, uint256 value)
@@ -24,37 +30,70 @@ const WITHDRAWAL_TOPIC: &str = "0x7fcf532c15f0a6db0bd6d0e038bea71d30d808c7d98cb3
 pub struct SwapMapper;
 
 impl SwapMapper {
-    pub fn map_uniswap_transaction(
+    pub fn map_transaction(
         chain: &Chain,
         transaction: &Transaction,
         transaction_reciept: &TransactionReciept,
+        trace: Option<&TransactionReplayTrace>,
+        created_at: DateTime<Utc>,
+        contract_registry: Option<&ContractRegistry>,
+    ) -> Option<primitives::Transaction> {
+        // Check if it is a uniswap transaction
+        if let Some(to_address) = &transaction.to {
+            if let Some(provider) = get_provider_by_chain_contract(chain, to_address) {
+                let input_bytes = hex::decode(transaction.input.clone()).ok()?;
+                if let Some(swap_metadata) = Self::try_map_uniswap_transaction(chain, &provider, &transaction.from, &input_bytes, transaction_reciept) {
+                    return Self::make_swap_transaction(chain, transaction, transaction_reciept, &swap_metadata, created_at);
+                }
+            }
+        }
+
+        // Calculate balance diffs for swap detection
+        if let Some(trace) = trace {
+            let to = Address::from_str(&transaction.to.clone().unwrap_or_default()).ok()?;
+            let contract_registry = contract_registry?;
+            let registry_entry = contract_registry.get_by_address(&to, *chain)?;
+
+            let from = ethereum_address_checksum(&transaction.from).ok()?;
+            let differ = BalanceDiffer::new(*chain);
+            let diff_map = differ.calculate(trace, transaction_reciept);
+
+            if let Some(diff) = diff_map.get(&from) {
+                let native_asset_id = chain.as_asset_id();
+                let fee = transaction_reciept.get_fee();
+                if let Some(swap_metadata) = BalanceSwapMapper::map_swap(diff, &fee, &native_asset_id, Some(registry_entry.provider.to_string())) {
+                    return Self::make_swap_transaction(chain, transaction, transaction_reciept, &swap_metadata, created_at);
+                }
+            }
+        }
+
+        None
+    }
+
+    fn make_swap_transaction(
+        chain: &Chain,
+        transaction: &Transaction,
+        transaction_reciept: &TransactionReciept,
+        metadata: &TransactionSwapMetadata,
         created_at: DateTime<Utc>,
     ) -> Option<primitives::Transaction> {
-        let to = transaction.to.clone()?;
-        let input_bytes = hex::decode(transaction.input.clone()).ok()?;
-
-        let provider = get_provider_by_chain_contract(chain, &to)?;
-
-        if let Some(metadata) = Self::try_map_transaction(chain, &provider, &transaction.from, &input_bytes, transaction_reciept) {
-            let from_checksum = ethereum_address_checksum(&transaction.from).ok()?;
-            let to_checksum = ethereum_address_checksum(&to).ok()?;
-            return Some(primitives::Transaction::new(
-                transaction.hash.clone(),
-                metadata.from_asset.clone(),
-                from_checksum.clone(),
-                from_checksum.clone(),
-                Some(to_checksum.clone()),
-                TransactionType::Swap,
-                TransactionState::Confirmed,
-                transaction_reciept.get_fee().to_string(),
-                AssetId::from_chain(*chain), // Native asset
-                transaction.value.to_string(),
-                None,
-                serde_json::to_value(metadata).ok(),
-                created_at,
-            ));
-        }
-        None
+        let from_checksum = ethereum_address_checksum(&transaction.from).ok()?;
+        let contract_checksum = transaction.to.as_ref().and_then(|to| ethereum_address_checksum(to).ok());
+        Some(primitives::Transaction::new(
+            transaction.hash.clone(),
+            metadata.from_asset.clone(),
+            from_checksum.clone(),
+            from_checksum.clone(),
+            contract_checksum,
+            TransactionType::Swap,
+            TransactionState::Confirmed,
+            transaction_reciept.get_fee().to_string(),
+            AssetId::from_chain(*chain),
+            transaction.value.to_string(),
+            None,
+            serde_json::to_value(metadata).ok(),
+            created_at,
+        ))
     }
 
     fn withdraw_value_from_receipt(token: &str, reciept: &TransactionReciept) -> Option<String> {
@@ -97,7 +136,7 @@ impl SwapMapper {
         None
     }
 
-    pub fn try_map_transaction(
+    pub fn try_map_uniswap_transaction(
         chain: &Chain,
         provider: &str,
         from: &str,
@@ -216,19 +255,19 @@ impl SwapMapper {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{rpc::swap_mapper::SwapMapper, uniswap::contracts::Dispatcher};
+    use crate::rpc::swap_mapper::SwapMapper;
     use primitives::{Chain, JsonRpcResult};
 
     #[test]
     fn test_map_v4_swap_eth_dai() {
-        let tx_json = include_str!("test/v4_eth_dai_tx.json");
+        let tx_json = include_str!("../../tests/data/v4_eth_dai_tx.json");
         let transaction = serde_json::from_str::<JsonRpcResult<Transaction>>(tx_json).unwrap().result;
 
-        let receipt_json = include_str!("test/v4_eth_dai_tx_receipt.json");
+        let receipt_json = include_str!("../../tests/data/v4_eth_dai_tx_receipt.json");
         let receipt_value: JsonRpcResult<TransactionReciept> = serde_json::from_str(receipt_json).unwrap();
         let receipt = receipt_value.result;
 
-        let swap_tx = SwapMapper::map_uniswap_transaction(&Chain::Unichain, &transaction, &receipt, DateTime::default()).expect("swap_metadata");
+        let swap_tx = SwapMapper::map_transaction(&Chain::Unichain, &transaction, &receipt, None, DateTime::default(), None).expect("swap_metadata");
         let metadata: TransactionSwapMetadata = serde_json::from_value(swap_tx.metadata.unwrap()).unwrap();
 
         assert_eq!(swap_tx.from, "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7");
@@ -258,14 +297,14 @@ mod tests {
 
     #[test]
     fn test_map_v4_swap_usdc_eth() {
-        let tx_json = include_str!("test/v4_usdc_eth_tx.json");
+        let tx_json = include_str!("../../tests/data/v4_usdc_eth_tx.json");
         let transaction = serde_json::from_str::<JsonRpcResult<Transaction>>(tx_json).unwrap().result;
 
-        let receipt_json = include_str!("test/v4_usdc_eth_tx_receipt.json");
+        let receipt_json = include_str!("../../tests/data/v4_usdc_eth_tx_receipt.json");
         let receipt_value: JsonRpcResult<TransactionReciept> = serde_json::from_str(receipt_json).unwrap();
         let receipt = receipt_value.result;
 
-        let swap_tx = SwapMapper::map_uniswap_transaction(&Chain::Unichain, &transaction, &receipt, DateTime::default()).expect("swap_metadata");
+        let swap_tx = SwapMapper::map_transaction(&Chain::Unichain, &transaction, &receipt, None, DateTime::default(), None).expect("swap_metadata");
         let metadata: TransactionSwapMetadata = serde_json::from_value(swap_tx.metadata.unwrap()).unwrap();
 
         assert_eq!(swap_tx.from, "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7");
@@ -296,14 +335,14 @@ mod tests {
     #[test]
     fn test_map_v3_swap_eth_token() {
         // https://app.blocksec.com/explorer/tx/eth/0xfdbc3270b7edf1e63c0aaec9466a71348a1e63bdf069af2d51e9902f996e9d75
-        let tx_json = include_str!("test/v3_eth_token_tx.json");
+        let tx_json = include_str!("../../tests/data/v3_eth_token_tx.json");
         let transaction = serde_json::from_str::<JsonRpcResult<Transaction>>(tx_json).unwrap().result;
 
-        let receipt_json = include_str!("test/v3_eth_token_tx_receipt.json");
+        let receipt_json = include_str!("../../tests/data/v3_eth_token_tx_receipt.json");
         let receipt_value: JsonRpcResult<TransactionReciept> = serde_json::from_str(receipt_json).unwrap();
         let receipt = receipt_value.result;
 
-        let swap_tx = SwapMapper::map_uniswap_transaction(&Chain::Ethereum, &transaction, &receipt, DateTime::default()).expect("swap_metadata");
+        let swap_tx = SwapMapper::map_transaction(&Chain::Ethereum, &transaction, &receipt, None, DateTime::default(), None).expect("swap_metadata");
         let metadata: TransactionSwapMetadata = serde_json::from_value(swap_tx.metadata.unwrap()).unwrap();
 
         assert_eq!(swap_tx.from, "0x10E11c7368552D5Ab9ef5eED496f614fBAAe9F0D");
@@ -334,14 +373,14 @@ mod tests {
     #[test]
     fn test_map_v3_swap_token_eth() {
         // https://app.blocksec.com/explorer/tx/base/0xc6c2898ddc2d2165bc6c018ec6ebf58d99922c74b9a0e323b50c029d10b09858
-        let tx_json = include_str!("test/v3_token_eth_tx.json");
+        let tx_json = include_str!("../../tests/data/v3_token_eth_tx.json");
         let transaction = serde_json::from_str::<JsonRpcResult<Transaction>>(tx_json).unwrap().result;
 
-        let receipt_json = include_str!("test/v3_token_eth_tx_receipt.json");
+        let receipt_json = include_str!("../../tests/data/v3_token_eth_tx_receipt.json");
         let receipt_value: JsonRpcResult<TransactionReciept> = serde_json::from_str(receipt_json).unwrap();
         let receipt = receipt_value.result;
 
-        let swap_tx = SwapMapper::map_uniswap_transaction(&Chain::Base, &transaction, &receipt, DateTime::default()).unwrap();
+        let swap_tx = SwapMapper::map_transaction(&Chain::Base, &transaction, &receipt, None, DateTime::default(), None).expect("swap_metadata");
         let metadata: TransactionSwapMetadata = serde_json::from_value(swap_tx.metadata.unwrap()).unwrap();
 
         assert_eq!(swap_tx.from, "0x985Cf24b63a98510298997Af83a31D8625C09bA5");
@@ -372,13 +411,13 @@ mod tests {
     #[test]
     fn test_map_v3_swap_pol_usdt() {
         // https://app.blocksec.com/explorer/tx/polygon/0x815759e89e4290873109e482f1f3284cdaca3eb76ff24591a9ac2c6056a2dbcc
-        let tx_json = include_str!("test/v3_pol_usdt_tx.json");
+        let tx_json = include_str!("../../tests/data/v3_pol_usdt_tx.json");
         let transaction = serde_json::from_str::<JsonRpcResult<Transaction>>(tx_json).unwrap().result;
 
-        let receipt_json = include_str!("test/v3_pol_usdt_tx_receipt.json");
+        let receipt_json = include_str!("../../tests/data/v3_pol_usdt_tx_receipt.json");
         let receipt = serde_json::from_str::<JsonRpcResult<TransactionReciept>>(receipt_json).unwrap().result;
 
-        let swap_tx = SwapMapper::map_uniswap_transaction(&Chain::Polygon, &transaction, &receipt, DateTime::default()).expect("swap_metadata");
+        let swap_tx = SwapMapper::map_transaction(&Chain::Polygon, &transaction, &receipt, None, DateTime::default(), None).expect("swap_metadata");
         let metadata: TransactionSwapMetadata = serde_json::from_value(swap_tx.metadata.unwrap()).unwrap();
 
         assert_eq!(swap_tx.from, "0x8f4b6cbF3373e065aEb3FEc6027Ff8Ca9a665DE2");
@@ -409,13 +448,13 @@ mod tests {
     #[test]
     fn test_map_v3_swap_usdc_paxg() {
         // https://app.blocksec.com/explorer/tx/eth/0x65b5ff389386caf23a9998318d936e434c5bbca850877f1ca03eb246b3ad82e1
-        let tx_json = include_str!("test/v3_usdc_paxg_tx.json");
+        let tx_json = include_str!("../../tests/data/v3_usdc_paxg_tx.json");
         let transaction = serde_json::from_str::<JsonRpcResult<Transaction>>(tx_json).unwrap().result;
 
-        let receipt_json = include_str!("test/v3_usdc_paxg_receipt.json");
+        let receipt_json = include_str!("../../tests/data/v3_usdc_paxg_receipt.json");
         let receipt = serde_json::from_str::<JsonRpcResult<TransactionReciept>>(receipt_json).unwrap().result;
 
-        let swap_tx = SwapMapper::map_uniswap_transaction(&Chain::Ethereum, &transaction, &receipt, DateTime::default()).expect("swap_metadata");
+        let swap_tx = SwapMapper::map_transaction(&Chain::Ethereum, &transaction, &receipt, None, DateTime::default(), None).expect("swap_metadata");
         let metadata: TransactionSwapMetadata = serde_json::from_value(swap_tx.metadata.unwrap()).unwrap();
 
         assert_eq!(swap_tx.from, "0xBa38FE5b73eA5b93d0733CF9eb10aDea6E1E3a2a");
@@ -444,17 +483,76 @@ mod tests {
     }
 
     #[test]
-    fn test_decode_input() {
-        let inputs = "24856bc30000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000100000000000000000000000000d13da05b9288ba4961973110594bd0fe3428791f000000000000000000000000000000000000000000000bd7cef0845bead5543f000000000000000000000000000000000000000000000000000000001dc1d9c600000000000000000000000000000000000000000000000000000000000000a00000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000002b1111111111166b7fe7bd91427724b487980afc69000064833589fcd6edb6e08f4c7c32d4f71b54bda02913000000000000000000000000000000000000000000";
-        let input_bytes = hex::decode(inputs).unwrap();
-        let execute_call = Dispatcher::executeCall::abi_decode(&input_bytes).unwrap();
+    fn test_swap_from_balance_diff() {
+        let tx_json = include_str!("../../tests/data/trace_replay_tx.json");
+        let transaction = serde_json::from_str::<JsonRpcResult<Transaction>>(tx_json).unwrap().result;
 
-        assert_eq!(execute_call.commands[0], V3_SWAP_EXACT_IN_COMMAND);
+        let receipt_json = include_str!("../../tests/data/trace_replay_tx_receipt.json");
+        let receipt = serde_json::from_str::<JsonRpcResult<TransactionReciept>>(receipt_json).unwrap().result;
 
-        let swap_exact_in = V3SwapExactIn::abi_decode(&execute_call.inputs[0]).unwrap();
-        let path = decode_path(&swap_exact_in.path).unwrap();
+        let trace_json = include_str!("../../tests/data/trace_replay_tx_trace.json");
+        let trace = serde_json::from_str::<JsonRpcResult<TransactionReplayTrace>>(trace_json).unwrap().result;
 
-        assert_eq!(path.token_in.to_string(), "0x1111111111166b7FE7bd91427724B487980aFc69");
-        assert_eq!(path.token_out.to_string(), "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913");
+        let contract_registry = ContractRegistry::default();
+        let swap_tx = SwapMapper::map_transaction(
+            &Chain::Ethereum,
+            &transaction,
+            &receipt,
+            Some(&trace),
+            DateTime::from_timestamp(1735671600, 0).expect("invalid timestamp"),
+            Some(&contract_registry),
+        )
+        .unwrap();
+
+        assert_eq!(swap_tx.from, "0x52A07c930157d07D9EffD147ecF41C5cBbC6000c");
+        assert_eq!(swap_tx.to, "0x52A07c930157d07D9EffD147ecF41C5cBbC6000c");
+        assert_eq!(swap_tx.contract.unwrap(), "0x111111125421cA6dc452d289314280a0f8842A65");
+        assert_eq!(swap_tx.transaction_type, TransactionType::Swap);
+        assert_eq!(swap_tx.fee_asset_id, AssetId::from_chain(Chain::Ethereum));
+        assert_eq!(swap_tx.value, "0");
+
+        let metadata: TransactionSwapMetadata = serde_json::from_value(swap_tx.metadata.unwrap()).unwrap();
+
+        assert_eq!(
+            metadata.from_asset,
+            AssetId {
+                chain: Chain::Ethereum,
+                token_id: Some("0xD0eC028a3D21533Fdd200838F39c85B03679285D".to_string()),
+            }
+        );
+        assert_eq!(metadata.from_value, "780000000000000000000");
+        assert_eq!(
+            metadata.to_asset,
+            AssetId {
+                chain: Chain::Ethereum,
+                token_id: None,
+            }
+        );
+        assert_eq!(metadata.to_value, "158035947652936307");
+    }
+
+    #[test]
+    fn test_map_transaction_v2_token_eth() {
+        let tx_json = include_str!("../../tests/data/v2_token_eth_tx.json");
+        let transaction = serde_json::from_str::<JsonRpcResult<Transaction>>(tx_json).unwrap().result;
+
+        let receipt_json = include_str!("../../tests/data/v2_token_eth_tx_receipt.json");
+        let receipt = serde_json::from_str::<JsonRpcResult<TransactionReciept>>(receipt_json).unwrap().result;
+
+        let trace_json = include_str!("../../tests/data/v2_token_eth_tx_trace.json");
+        let trace = serde_json::from_str::<JsonRpcResult<TransactionReplayTrace>>(trace_json).unwrap().result;
+
+        let contract_registry = ContractRegistry::default();
+        let swap_tx = SwapMapper::map_transaction(
+            &Chain::Ethereum,
+            &transaction,
+            &receipt,
+            Some(&trace),
+            DateTime::from_timestamp(1735671600, 0).expect("invalid timestamp"),
+            Some(&contract_registry),
+        )
+        .unwrap();
+
+        assert!(swap_tx.metadata.is_some());
     }
 }

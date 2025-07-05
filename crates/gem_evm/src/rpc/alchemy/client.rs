@@ -1,11 +1,14 @@
 use std::error::Error;
 
-use crate::rpc::{
-    alchemy::{
-        model::{evm_chain_to_network, Data},
-        Transactions,
+use crate::{
+    registry::ContractRegistry,
+    rpc::{
+        alchemy::{
+            model::{evm_chain_to_network, Data},
+            Transactions,
+        },
+        EthereumClient, EthereumMapper,
     },
-    EthereumClient, EthereumMapper,
 };
 use primitives::EVMChain;
 use reqwest_middleware::ClientWithMiddleware;
@@ -43,12 +46,22 @@ impl AlchemyClient {
             return Ok(vec![]);
         }
         let transactions_ids = transactions.iter().map(|x| x.hash.clone()).collect::<Vec<String>>();
+        let contract_registry = ContractRegistry::default();
         Ok(self
             .ethereum_client
-            .get_transactions(transactions_ids.clone())
+            .get_transactions(&transactions_ids)
             .await?
             .into_iter()
-            .filter_map(|(block, transaction, receipt)| EthereumMapper::map_transaction(self.chain.to_chain(), &transaction, &receipt, &block.timestamp))
+            .filter_map(|(block, transaction, receipt, trace)| {
+                EthereumMapper::map_transaction(
+                    self.chain.to_chain(),
+                    &transaction,
+                    &receipt,
+                    Some(&trace),
+                    &block.timestamp,
+                    Some(&contract_registry),
+                )
+            })
             .collect())
     }
 

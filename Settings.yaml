@@ -73,17 +73,17 @@ chains:
   solana:
     url: "https://api.mainnet-beta.solana.com"
   ethereum:
-    url: "https://ethereum-rpc.publicnode.com"
+    url: "https://eth-pokt.nodies.app"
   smartchain:
     url: "https://bsc-dataseed1.bnbchain.org"
   polygon:
-    url: "https://polygon.llamarpc.com"
+    url: "https://polygon-public.nodies.app"
   optimism:
     url: "https://mainnet.optimism.io"
   arbitrum:
     url: "https://arb1.arbitrum.io/rpc"
   base:
-    url: "https://base.drpc.org"
+    url: "https://base-public.nodies.app"
   opbnb:
     url: "https://opbnb-mainnet-rpc.bnbchain.org"
   avalanchec:

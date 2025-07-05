@@ -4,9 +4,12 @@ use gem_jsonrpc::JsonRpcClient;
 use primitives::EVMChain;
 use serde_json::json;
 
-use crate::rpc::{
-    ankr::model::{ankr_chain, TokenBalances, Transactions},
-    EthereumClient, EthereumMapper,
+use crate::{
+    registry::ContractRegistry,
+    rpc::{
+        ankr::model::{ankr_chain, TokenBalances, Transactions},
+        EthereumClient, EthereumMapper,
+    },
 };
 
 #[derive(Clone)]
@@ -33,12 +36,22 @@ impl AnkrClient {
         if transaction_ids.is_empty() {
             return Ok(vec![]);
         }
+        let contract_registry = ContractRegistry::default();
         Ok(self
             .client
-            .get_transactions(transaction_ids.clone())
+            .get_transactions(&transaction_ids)
             .await?
             .into_iter()
-            .filter_map(|(block, transaction, receipt)| EthereumMapper::map_transaction(self.chain.to_chain(), &transaction, &receipt, &block.timestamp))
+            .filter_map(|(block, transaction, receipt, trace)| {
+                EthereumMapper::map_transaction(
+                    self.chain.to_chain(),
+                    &transaction,
+                    &receipt,
+                    Some(&trace),
+                    &block.timestamp,
+                    Some(&contract_registry),
+                )
+            })
             .collect())
     }
 
