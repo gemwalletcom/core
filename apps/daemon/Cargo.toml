@@ -29,3 +29,4 @@ chain_primitives = { path = "../../crates/chain_primitives" }
 search_index = { path = "../../crates/search_index" }
 cacher = { path = "../../crates/cacher" }
 streamer = { path = "../../crates/streamer" }
+localizer = { path = "../../crates/localizer" }

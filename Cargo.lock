@@ -1964,6 +1964,7 @@ dependencies = [
  "futures",
  "itertools 0.14.0",
  "job_runner",
+ "localizer",
  "nft",
  "pricer",
  "primitives",

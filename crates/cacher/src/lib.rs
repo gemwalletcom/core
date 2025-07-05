@@ -2,9 +2,8 @@ use std::error::Error;
 
 use redis::{AsyncCommands, Client};
 use std::time::{SystemTime, UNIX_EPOCH};
-
-pub const CACHER_DB_PUBLIC: usize = 2;
-// Work in progress. In the future use it for caching any temporary data.
+mod keys;
+pub use keys::*;
 
 #[derive(Debug, Clone)]
 pub struct CacherClient {

@@ -35,7 +35,7 @@ impl SubscriptionsClient {
     pub async fn get_subscriptions(&mut self, device_id: &str) -> Result<Vec<primitives::Subscription>, Box<dyn Error + Send + Sync>> {
         let subscriptions = self
             .database
-            .get_subscriptions_by_device_id(device_id)?
+            .get_subscriptions_by_device_id_str(device_id)?
             .into_iter()
             .map(|x| x.as_primitive())
             .collect();

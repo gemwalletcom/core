@@ -34,6 +34,13 @@ impl StreamProducer {
         Ok(())
     }
 
+    pub async fn declare_queues(&self, queues: Vec<QueueName>) -> Result<(), Box<dyn Error + Send + Sync>> {
+        for queue in queues {
+            self.declare_queue(queue).await?;
+        }
+        Ok(())
+    }
+
     pub async fn delete_queue(&self, queue: &str) -> Result<u32, Box<dyn Error + Send + Sync>> {
         Ok(self.channel.queue_delete(queue, QueueDeleteOptions::default()).await?)
     }
@@ -48,6 +55,13 @@ impl StreamProducer {
                 FieldTable::default(),
             )
             .await?)
+    }
+
+    pub async fn declare_exchanges(&self, exchanges: Vec<ExchangeName>) -> Result<(), Box<dyn Error + Send + Sync>> {
+        for exchange in exchanges {
+            self.declare_exchange(exchange).await?;
+        }
+        Ok(())
     }
 
     pub async fn bind_exchange(&self, exchange: ExchangeName, queues: Vec<QueueName>) -> Result<(), Box<dyn Error + Send + Sync>> {

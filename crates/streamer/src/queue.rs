@@ -9,6 +9,8 @@ pub enum QueueName {
     NotificationsPriceAlerts,
     // Notifications for transactions
     NotificationsTransactions,
+    // Notifications for observers
+    NotificationsObservers,
     // fetch new assets and store to db
     FetchAssets,
     // fetch new blocks and store to db
@@ -37,6 +39,7 @@ impl fmt::Display for QueueName {
             QueueName::StoreTransactions => write!(f, "store_transactions"),
             QueueName::NotificationsPriceAlerts => write!(f, "notifications_price_alerts"),
             QueueName::NotificationsTransactions => write!(f, "notifications_transactions"),
+            QueueName::NotificationsObservers => write!(f, "notifications_observers"),
             QueueName::FetchAssets => write!(f, "fetch_assets"),
             QueueName::FetchBlocks => write!(f, "fetch_blocks"),
             QueueName::FetchNFTCollection => write!(f, "fetch_nft_collection"),

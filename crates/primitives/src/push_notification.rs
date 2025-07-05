@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
-use crate::Platform;
+use crate::{AssetId, Device, Platform};
 
 #[typeshare(swift = "Equatable, Sendable")]
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -43,6 +43,17 @@ impl GorushNotification {
         }
     }
 
+    pub fn from_device(device: Device, title: String, message: String, data: PushNotification) -> Self {
+        Self {
+            tokens: vec![device.token],
+            platform: device.platform.as_i32(),
+            title,
+            message,
+            topic: None,
+            data,
+        }
+    }
+
     pub fn with_topic(mut self, topic: Option<String>) -> Self {
         self.topic = topic;
         self
@@ -54,6 +65,18 @@ pub struct PushNotification {
     #[serde(rename = "type")]
     pub notification_type: PushNotificationTypes,
     pub data: Option<serde_json::Value>,
+}
+
+impl PushNotification {
+    pub fn new_buy_asset(asset_id: AssetId) -> Self {
+        Self {
+            notification_type: PushNotificationTypes::BuyAsset,
+            data: serde_json::to_value(PushNotificationAsset {
+                asset_id: asset_id.to_string(),
+            })
+            .ok(),
+        }
+    }
 }
 
 // Only used to decode notification type

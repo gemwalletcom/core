@@ -107,14 +107,8 @@ async fn main() {
     let queues = QueueName::all();
     let exchanges = ExchangeName::all();
     let stream_producer = StreamProducer::new(&settings.rabbitmq.url, "setup").await.unwrap();
-    for queue in queues.clone() {
-        let _ = stream_producer.declare_queue(queue).await;
-    }
-
-    for exchange in exchanges.clone() {
-        let _ = stream_producer.declare_exchange(exchange.clone()).await;
-    }
-
+    let _ = stream_producer.declare_queues(queues.clone()).await;
+    let _ = stream_producer.declare_exchanges(exchanges.clone()).await;
     let _ = stream_producer
         .bind_exchange(
             ExchangeName::NewAddresses.clone(),

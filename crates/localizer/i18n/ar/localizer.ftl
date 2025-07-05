@@ -23,3 +23,8 @@ notification_price_alert_all_time_high_title = 🔥 {$symbol} أعلى مستو�
 notification_price_alert_all_time_high_description = وصل {$symbol} إلى أعلى مستوى له على الإطلاق عند {$price}.
 notification_nft_sent_title = 🖼️ تم إرسال NFT: {$value}
 notification_nft_received_title = 🖼️ تم استلام NFT: {$value}
+notification_onboarding_buy_asset_title = 🚀 اشتري {$name}
+notification_onboarding_create_import_wallet_title = 💎 إنشاء أو استيراد المحفظة
+notification_onboarding_create_import_wallet_description = قم بإنشاء محفظة جديدة أو استيراد محفظتك ببضع نقرات فقط.
+notification_onboarding_welcome_description = ابدأ رحلتك مع العملات المشفرة. انقر لإعداد محفظة العملات المشفرة الخاصة بك.
+notification_onboarding_buy_asset_description = اشتري {$name} اليوم بشكل آمن - بسيط وموثوق وفوري.

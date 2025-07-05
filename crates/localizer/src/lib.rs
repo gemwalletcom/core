@@ -202,4 +202,12 @@ impl LanguageLocalizer {
             to_value = to_value
         )
     }
+
+    // onboarding
+    pub fn notification_onboarding_buy_asset(&self, name: &str) -> (String, String) {
+        (
+            fl!(self.loader.as_ref(), "notification_onboarding_buy_asset_title", name = name),
+            fl!(self.loader.as_ref(), "notification_onboarding_buy_asset_description", name = name),
+        )
+    }
 }

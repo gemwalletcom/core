@@ -10,6 +10,7 @@ pub trait StreamProducerQueue {
     async fn publish_transactions(&self, payload: TransactionsPayload) -> Result<bool, Box<dyn Error + Send + Sync>>;
     async fn publish_notifications_transactions(&self, payload: Vec<NotificationsPayload>) -> Result<bool, Box<dyn Error + Send + Sync>>;
     async fn publish_notifications_price_alerts(&self, payload: NotificationsPayload) -> Result<bool, Box<dyn Error + Send + Sync>>;
+    async fn publish_notifications_observers(&self, payload: NotificationsPayload) -> Result<bool, Box<dyn Error + Send + Sync>>;
     async fn publish_store_assets_addresses_associations(&self, payload: Vec<AssetsAddressPayload>) -> Result<bool, Box<dyn Error + Send + Sync>>;
 }
 
@@ -42,6 +43,13 @@ impl StreamProducerQueue for StreamProducer {
             return Ok(true);
         }
         self.publish(QueueName::NotificationsPriceAlerts, &payload).await
+    }
+
+    async fn publish_notifications_observers(&self, payload: NotificationsPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
+        if payload.notifications.is_empty() {
+            return Ok(true);
+        }
+        self.publish(QueueName::NotificationsObservers, &payload).await
     }
 
     async fn publish_store_assets_addresses_associations(&self, payload: Vec<AssetsAddressPayload>) -> Result<bool, Box<dyn Error + Send + Sync>> {

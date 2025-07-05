@@ -3,7 +3,15 @@ use crate::{models::*, DatabaseClient};
 use diesel::prelude::*;
 
 impl DatabaseClient {
-    pub fn get_subscriptions_by_device_id(&mut self, _device_id: &str) -> Result<Vec<Subscription>, diesel::result::Error> {
+    pub fn get_subscriptions_by_device_id(&mut self, _device_id: i32) -> Result<Vec<Subscription>, diesel::result::Error> {
+        use crate::schema::subscriptions::dsl::*;
+        subscriptions
+            .filter(device_id.eq(_device_id))
+            .select(Subscription::as_select())
+            .load(&mut self.connection)
+    }
+
+    pub fn get_subscriptions_by_device_id_str(&mut self, _device_id: &str) -> Result<Vec<Subscription>, diesel::result::Error> {
         use crate::schema::subscriptions::dsl::*;
         subscriptions
             .inner_join(devices::table)
@@ -77,5 +85,10 @@ impl DatabaseClient {
             .values(values)
             .on_conflict_do_nothing()
             .execute(&mut self.connection)
+    }
+
+    pub fn delete_subscriptions_for_device_ids(&mut self, device_ids: Vec<i32>) -> Result<usize, diesel::result::Error> {
+        use crate::schema::subscriptions::dsl::*;
+        diesel::delete(subscriptions.filter(device_id.eq_any(device_ids))).execute(&mut self.connection)
     }
 }

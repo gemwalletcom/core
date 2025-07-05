@@ -48,13 +48,27 @@ impl DatabaseClient {
 
     // Delete subscriptions for inactive devices
     pub fn delete_devices_subscriptions_after_days(&mut self, days: i64) -> Result<usize, diesel::result::Error> {
+        use crate::schema::devices::dsl::*;
         let cutoff_date = Utc::now() - Duration::days(days);
+        let device_ids: Vec<i32> = devices.filter(updated_at.lt(cutoff_date.naive_utc())).select(id).load(&mut self.connection)?;
+        self.delete_subscriptions_for_device_ids(device_ids)
+    }
 
-        let device_ids_query = crate::schema::devices::table
-            .filter(crate::schema::devices::updated_at.lt(cutoff_date.naive_utc()))
-            .select(crate::schema::devices::id);
-
-        diesel::delete(crate::schema::subscriptions::table.filter(crate::schema::subscriptions::device_id.eq_any(device_ids_query)))
-            .execute(&mut self.connection)
+    pub fn devices_inactive_days(&mut self, min_days: i64, max_days: i64, push_enabled: Option<bool>) -> Result<Vec<Device>, diesel::result::Error> {
+        use crate::schema::devices::dsl::*;
+        let min_days_cutoff = Utc::now() - Duration::days(min_days);
+        let max_days_cutoff = Utc::now() - Duration::days(max_days);
+        let mut query = devices.into_boxed();
+        query = query.filter(
+            created_at
+                .between(max_days_cutoff.naive_utc(), min_days_cutoff.naive_utc())
+                .and(diesel::dsl::sql::<diesel::sql_types::Bool>(
+                    "DATE_TRUNC('hour', updated_at) = DATE_TRUNC('hour', created_at)",
+                )),
+        );
+        if let Some(enabled) = push_enabled {
+            query = query.filter(is_push_enabled.eq(enabled));
+        }
+        query.select(Device::as_select()).load(&mut self.connection)
     }
 }
