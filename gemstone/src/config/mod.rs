@@ -21,7 +21,7 @@ use {
     docs::{get_docs_url, DocsUrl},
     evm_chain::{get_evm_chain_config, EVMChainConfig},
     public::{get_public_url, PublicUrl, ASSETS_URL},
-    social::{get_social_url, SocialUrl},
+    social::{get_social_url, get_social_url_deeplink, SocialUrl},
     stake::{get_stake_config, StakeChainConfig},
     swap_config::{get_swap_config, SwapConfig},
     validators::get_validators,
@@ -57,6 +57,10 @@ impl Config {
 
     fn get_social_url(&self, item: SocialUrl) -> Option<String> {
         get_social_url(item).map(|x| x.to_string())
+    }
+
+    fn get_social_url_deeplink(&self, item: SocialUrl) -> Option<String> {
+        get_social_url_deeplink(item)
     }
 
     fn get_public_url(&self, item: PublicUrl) -> String {

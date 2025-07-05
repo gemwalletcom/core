@@ -3,8 +3,8 @@ use std::error::Error;
 use localizer::LanguageLocalizer;
 use number_formatter::BigNumberFormatter;
 use primitives::{
-    AddressFormatter, Asset, AssetVecExt, Chain, GorushNotification, PushNotification, PushNotificationTransaction, PushNotificationTypes, Subscription,
-    Transaction, TransactionSwapMetadata, TransactionType,
+    AddressFormatter, Asset, AssetVecExt, Chain, GorushNotification, NFTAssetId, PushNotification, PushNotificationTransaction, PushNotificationTypes,
+    Subscription, Transaction, TransactionNFTTransferMetadata, TransactionSwapMetadata, TransactionType,
 };
 use storage::DatabaseClient;
 
@@ -43,13 +43,27 @@ impl Pusher {
         let from_address = self.get_address(chain, transaction.from.as_str())?;
 
         match transaction.transaction_type {
-            TransactionType::Transfer | TransactionType::TransferNFT | TransactionType::SmartContractCall => {
-                let is_sent = transaction.input_addresses().contains(&subscription.address) || transaction.from == subscription.address;
-
-                let title = localizer.notification_transfer_title(is_sent, self.get_value(amount, asset.symbol.clone()).as_str());
-
+            TransactionType::Transfer | TransactionType::SmartContractCall => {
+                let is_sent = transaction.is_sent(subscription.address.clone());
+                let value = self.get_value(amount, asset.symbol.clone());
+                let title = localizer.notification_transfer_title(is_sent, value.as_str());
                 let message = localizer.notification_transfer_description(is_sent, to_address.as_str(), from_address.as_str());
-
+                Ok(Message { title, message: Some(message) })
+            }
+            TransactionType::TransferNFT => {
+                let metadata = transaction.clone().metadata.ok_or("Missing metadata")?;
+                let metadata: TransactionNFTTransferMetadata = serde_json::from_value(metadata)?;
+                let nft_asset_id = NFTAssetId::from_id(&metadata.asset_id.clone()).ok_or("Missing nft asset id")?;
+                let name = if let Some(name) = metadata.name {
+                    name
+                } else if nft_asset_id.token_id.len() < 6 {
+                    format!("#{}", nft_asset_id.token_id)
+                } else {
+                    format!("#{}...", nft_asset_id.token_id.get(..6).unwrap_or(&nft_asset_id.token_id))
+                };
+                let is_sent = transaction.is_sent(subscription.address.clone());
+                let title = localizer.notification_nft_transfer_title(is_sent, &name);
+                let message = localizer.notification_transfer_description(is_sent, to_address.as_str(), from_address.as_str());
                 Ok(Message { title, message: Some(message) })
             }
             TransactionType::TokenApproval => Ok(Message {

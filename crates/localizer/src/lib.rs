@@ -114,6 +114,14 @@ impl LanguageLocalizer {
         }
     }
 
+    pub fn notification_nft_transfer_title(&self, is_sent: bool, value: &str) -> String {
+        if is_sent {
+            fl!(self.loader.as_ref(), "notification_nft_sent_title", value = value)
+        } else {
+            fl!(self.loader.as_ref(), "notification_nft_received_title", value = value)
+        }
+    }
+
     pub fn notification_transfer_description(&self, is_sent: bool, to_address: &str, from_address: &str) -> String {
         if is_sent {
             fl!(self.loader.as_ref(), "notification_sent_description", address = to_address)

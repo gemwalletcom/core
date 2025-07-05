@@ -21,3 +21,5 @@ notification_price_alert_down_title = 📉 {$symbol} Сповіщення про
 notification_price_alert_down_description = Ціна знижена на {$price_change} до {$price}
 notification_price_alert_all_time_high_title = 🔥 {$symbol} Максимум за весь час
 notification_price_alert_all_time_high_description = {$symbol} досяг нового історичного максимуму за {$price}.
+notification_nft_sent_title = 🖼️ Відправлено NFT: {$value}
+notification_nft_received_title = 🖼️ Отримано NFT: {$value}

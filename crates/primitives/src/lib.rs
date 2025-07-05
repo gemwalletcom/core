@@ -76,7 +76,7 @@ pub use self::push_notification::{
 pub mod scan;
 pub use self::scan::{AddressType, ScanAddressTarget, ScanTransaction, ScanTransactionPayload};
 pub mod transaction_metadata_types;
-pub use self::transaction_metadata_types::TransactionSwapMetadata;
+pub use self::transaction_metadata_types::{TransactionNFTTransferMetadata, TransactionSwapMetadata};
 pub mod wallet_connect;
 pub use self::wallet_connect::WalletConnectCAIP2;
 pub mod nft;
