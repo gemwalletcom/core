@@ -10,18 +10,25 @@ use gem_evm::{
     ethereum_address_checksum,
     rpc::{alchemy::AlchemyClient, ankr::AnkrClient, EthereumClient, EthereumMapper},
 };
-use primitives::{Asset, AssetBalance, AssetId, Chain, Transaction};
+use primitives::{Asset, AssetBalance, AssetId, Chain, NodeType, Transaction};
 
 pub struct EthereumProvider {
     client: EthereumClient,
+    node_type: NodeType,
     assets_provider: Box<dyn ChainAssetsProvider>,
     transactions_provider: Box<dyn ChainTransactionsProvider>,
 }
 
 impl EthereumProvider {
-    pub fn new(client: EthereumClient, assets_provider: Box<dyn ChainAssetsProvider>, transactions_provider: Box<dyn ChainTransactionsProvider>) -> Self {
+    pub fn new(
+        client: EthereumClient,
+        node_type: NodeType,
+        assets_provider: Box<dyn ChainAssetsProvider>,
+        transactions_provider: Box<dyn ChainTransactionsProvider>,
+    ) -> Self {
         Self {
             client,
+            node_type,
             assets_provider,
             transactions_provider,
         }
@@ -40,11 +47,14 @@ impl ChainBlockProvider for EthereumProvider {
 
     async fn get_transactions(&self, block_number: i64) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
         let block = self.client.get_block(block_number).await?;
-        let receipts_req = self.client.get_block_receipts(block_number);
-        let traces_req = self.client.trace_replay_block_transactions(block_number);
-        let (receipts, traces) = futures::join!(receipts_req, traces_req);
-
-        Ok(EthereumMapper::map_transactions(self.get_chain(), block, receipts?, traces.ok()))
+        let reciepts = self.client.get_block_receipts(block_number).await?;
+        match self.node_type {
+            NodeType::Default => Ok(EthereumMapper::map_transactions(self.get_chain(), block, reciepts, None)),
+            NodeType::Archive => {
+                let traces = self.client.trace_replay_block_transactions(block_number).await?;
+                Ok(EthereumMapper::map_transactions(self.get_chain(), block, reciepts, Some(traces)))
+            }
+        }
     }
 }
 

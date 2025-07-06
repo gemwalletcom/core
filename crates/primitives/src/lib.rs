@@ -13,6 +13,7 @@ pub use self::chain_bitcoin::BitcoinChain;
 pub mod name;
 pub use self::name::NameProvider;
 pub mod node;
+pub use self::node::{Node, NodeType};
 pub mod price;
 pub use self::price::{Price, PriceFull};
 pub mod asset;

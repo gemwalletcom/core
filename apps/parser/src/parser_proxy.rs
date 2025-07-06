@@ -9,7 +9,7 @@ use std::{
 
 use async_trait::async_trait;
 use gem_chain_rpc::{ChainAssetsProvider, ChainBlockProvider, ChainProvider, ChainTokenDataProvider, ChainTransactionsProvider};
-use primitives::{node::ChainNode, Asset, AssetBalance, Chain, Transaction};
+use primitives::{node::ChainNode, Asset, AssetBalance, Chain, Node, Transaction};
 
 #[derive(Clone, Debug)]
 pub struct ParserProxyUrlConfig {
@@ -38,21 +38,32 @@ impl ParserProxy {
     }
 
     pub fn new_from_nodes(settings: &Settings, chain: Chain, nodes: Vec<ChainNode>) -> ParserProxy {
-        let mut nodes_map: HashMap<String, Vec<String>> = HashMap::new();
+        let mut nodes_map: HashMap<String, Vec<Node>> = HashMap::new();
         nodes.into_iter().for_each(|node| {
-            nodes_map.entry(node.chain.clone()).or_default().push(node.node.url);
+            nodes_map.entry(node.chain.clone()).or_default().push(node.node);
         });
 
-        let node_urls = nodes_map.clone().get(chain.as_ref()).cloned().unwrap_or_default();
+        let url_type = ProviderFactory::url(chain, settings);
+        let node_type = ProviderFactory::get_node_type(url_type.clone());
+        let url = url_type.get_url();
 
-        let url = ProviderFactory::url(chain, settings);
-        let node_urls = if node_urls.is_empty() { vec![url.to_string()] } else { node_urls };
+        let node_urls = nodes_map
+            .clone()
+            .get(chain.as_ref())
+            .cloned()
+            .unwrap_or_default()
+            .into_iter()
+            .filter(|x| x.node_type == node_type)
+            .map(|x| x.url)
+            .collect::<Vec<String>>();
+
+        let node_urls = if node_urls.is_empty() { vec![url.clone()] } else { node_urls };
         let config = ParserProxyUrlConfig { urls: node_urls };
-
         ParserProxy::new(
             ProviderConfig::new(
                 chain,
-                url,
+                &url,
+                node_type,
                 settings.alchemy.key.secret.as_str(),
                 settings.ankr.key.secret.as_str(),
                 settings.trongrid.key.secret.as_str(),

@@ -327,6 +327,7 @@ diesel::table! {
         priority -> Int4,
         updated_at -> Nullable<Timestamp>,
         created_at -> Nullable<Timestamp>,
+        node_type -> Varchar,
     }
 }
 
