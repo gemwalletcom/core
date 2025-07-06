@@ -67,10 +67,10 @@ where
                 }
                 Err(e) => {
                     println!("consumer {}, payload: {}, error: {}, elapsed: {:?}", name, payload, e, start.elapsed());
+                    std::thread::sleep(config.timeout_on_error);
                     if config.skip_on_error {
                         Ok(())
                     } else {
-                        std::thread::sleep(config.timeout_on_error);
                         Err(e)
                     }
                 }
