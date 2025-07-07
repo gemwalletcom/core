@@ -61,9 +61,9 @@ fn main() {
     //ignored_files(platform);
 
     for folder in folders {
-        let src_path = format!("{}/src", folder);
+        let src_path = format!("{folder}/src");
 
-        let typeshare_dir_path = format!("{}/typeshare", src_path);
+        let typeshare_dir_path = format!("{src_path}/typeshare");
         // process typeshare/ directory if crate has typeshare directory
         if fs::metadata(&typeshare_dir_path).is_ok() {
             let paths = get_paths(folder, typeshare_dir_path);
@@ -141,7 +141,7 @@ fn process_paths(paths: Vec<String>, _folder: &str, platform: &Platform, platfor
                 if directory_package.is_empty() {
                     String::new()
                 } else {
-                    format!(".{}", directory_package)
+                    format!(".{directory_package}")
                 }
             )
         };
@@ -172,8 +172,8 @@ fn process_paths(paths: Vec<String>, _folder: &str, platform: &Platform, platfor
 
 fn output_path(platform: Platform, directory: &str, module_name: &str, path: String) -> String {
     match platform {
-        Platform::IOS => format!("{}/{}/Sources/{}", directory, module_name, path),
-        Platform::Android => format!("{}/{}/{}", directory, module_name, path),
+        Platform::IOS => format!("{directory}/{module_name}/Sources/{path}"),
+        Platform::Android => format!("{directory}/{module_name}/{path}"),
     }
 }
 
@@ -181,15 +181,15 @@ fn file_name(name: &str, file_extension: &str) -> String {
     let split: Vec<&str> = name.split('.').collect();
     let new_split: Vec<&str> = split[0].split('_').collect();
     let new_name = new_split.iter().map(|&x| str_capitlize(x)).collect::<Vec<_>>().join("");
-    format!("{}.{}", new_name, file_extension)
+    format!("{new_name}.{file_extension}")
 }
 
 fn generate_files(language: &str, input_path: &str, output_path: &str, package_name: &str) {
     Command::new("typeshare")
         .arg(input_path)
-        .arg(format!("--lang={}", language))
-        .arg(format!("--output-file={}", output_path))
-        .arg(format!("--java-package={}", package_name))
+        .arg(format!("--lang={language}"))
+        .arg(format!("--output-file={output_path}"))
+        .arg(format!("--java-package={package_name}"))
         .output()
         .unwrap();
 }
@@ -198,7 +198,7 @@ fn get_paths(_folder: &str, path: String) -> Vec<String> {
     let paths = match fs::read_dir(&path) {
         Ok(paths) => paths,
         Err(_) => {
-            eprintln!("Warning: Could not read directory: {}", path);
+            eprintln!("Warning: Could not read directory: {path}");
             return vec![];
         }
     };

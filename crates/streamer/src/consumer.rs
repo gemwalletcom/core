@@ -42,18 +42,18 @@ where
     R: std::default::Default + std::fmt::Debug,
     for<'a> P: Deserialize<'a> + std::fmt::Debug,
 {
-    println!("Running consumer {} for queue {}", name, queue_name);
+    println!("Running consumer {name} for queue {queue_name}");
 
     stream_reader
         .read::<P, _>(queue_name, move |payload| {
-            println!("consumer {} received: {}", name, payload);
+            println!("consumer {name} received: {payload}");
             let start = Instant::now();
             let result = tokio::task::block_in_place(|| {
                 tokio::runtime::Handle::current().block_on(async {
                     match consumer.should_process(payload.clone()).await {
                         Ok(true) => consumer.process(payload.clone()).await,
                         Ok(false) => {
-                            println!("consumer {} should not process: {}", name, payload);
+                            println!("consumer {name} should not process: {payload}");
                             Ok(R::default())
                         }
                         Err(e) => Err(e),

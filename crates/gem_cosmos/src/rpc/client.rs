@@ -75,10 +75,10 @@ impl CosmosClient {
         let query_name = query_name.unwrap();
 
         let inbound = self
-            .get_transactions_by_query(query_name, &format!("message.sender='{}'", address), limit)
+            .get_transactions_by_query(query_name, &format!("message.sender='{address}'"), limit)
             .await?;
         let outbound = self
-            .get_transactions_by_query(query_name, &format!("message.recipient='{}'", address), limit)
+            .get_transactions_by_query(query_name, &format!("message.recipient='{address}'"), limit)
             .await?;
         let responses = inbound.tx_responses.into_iter().chain(outbound.tx_responses.into_iter()).collect::<Vec<_>>();
         let txs = inbound.txs.into_iter().chain(outbound.txs.into_iter()).collect::<Vec<_>>();

@@ -45,9 +45,9 @@ impl PancakeSwapAptosClient {
     pub async fn get_quote(&self, endpoint: &str, from_asset: &str, to_asset: &str, value: &str, slippage_bps: u32) -> Result<String, SwapperError> {
         let (asset1, asset2) = self.sort_assets(from_asset, to_asset);
         let address = PANCAKE_SWAP_APTOS_ADDRESS;
-        let resource = format!("{}::swap::TokenPairReserve<{}, {}>", address, asset1, asset2);
-        let path = format!("/v1/accounts/{}/resource/{}", address, resource);
-        let url = format!("{}{}", endpoint, path);
+        let resource = format!("{address}::swap::TokenPairReserve<{asset1}, {asset2}>");
+        let path = format!("/v1/accounts/{address}/resource/{resource}");
+        let url = format!("{endpoint}{path}");
 
         let target = AlienTarget::get(&url);
         let data = self.provider.request(target).await.map_err(SwapperError::from)?;

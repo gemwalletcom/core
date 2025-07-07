@@ -91,7 +91,7 @@ impl Swapper for Orca {
         let tick_arrays = TickArrays::from(result);
 
         let quote = swap_quote_by_input_token(amount_in, true, slippage_bps, pool.into(), tick_arrays, None, None)
-            .map_err(|c| SwapperError::NetworkError(format!("swap_quote_by_input_token error: {:?}", c)))?;
+            .map_err(|c| SwapperError::NetworkError(format!("swap_quote_by_input_token error: {c:?}")))?;
         let to_value = apply_slippage_in_bp(&quote.token_est_out, fee_bps);
 
         Ok(SwapQuote {
@@ -326,7 +326,7 @@ mod tests {
         let pool: Whirlpool = try_borsh_decode(base64_str).unwrap();
 
         let quote = swap_quote_by_input_token(amount_in, true, slippage_bps, (&pool).into(), tick_arrays, None, None)
-            .map_err(|c| SwapperError::ComputeQuoteError(format!("swap_quote_by_input_token error: {:?}", c)))?;
+            .map_err(|c| SwapperError::ComputeQuoteError(format!("swap_quote_by_input_token error: {c:?}")))?;
         assert_eq!(quote.token_min_out, 239958);
         Ok(())
     }

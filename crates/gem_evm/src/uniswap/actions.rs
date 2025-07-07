@@ -97,7 +97,7 @@ pub fn decode_action_data(data: &[u8]) -> Result<Vec<V4Action>, alloy_sol_types:
                 let (currency, recipient, bips) = <(Address, Address, U256) as SolValue>::abi_decode(action_data_slice)?;
                 V4Action::TAKE_PORTION { currency, recipient, bips }
             }
-            _ => return Err(alloy_sol_types::Error::Other(format!("Unknown action opcode: {}", opcode).into())),
+            _ => return Err(alloy_sol_types::Error::Other(format!("Unknown action opcode: {opcode}").into())),
         };
         decoded_actions.push(action);
     }

@@ -47,7 +47,7 @@ impl SuiClient {
     pub async fn get_gas_price(&self) -> Result<u64, AlienError> {
         let gas_price: String = self.rpc_call(SuiRpc::GetGasPrice).await?;
         gas_price.parse::<u64>().map_err(|e| AlienError::ResponseError {
-            msg: format!("Failed to parse gas price: {:?}", e),
+            msg: format!("Failed to parse gas price: {e:?}"),
         })
     }
 

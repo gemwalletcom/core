@@ -38,6 +38,6 @@ impl std::fmt::Display for TransactionState {
             Self::Failed => "failed".to_string(),
             Self::Reverted => "reverted".to_string(),
         };
-        write!(f, "{}", str)
+        write!(f, "{str}")
     }
 }

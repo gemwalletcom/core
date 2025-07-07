@@ -25,9 +25,9 @@ impl Display for TokenPairs {
         write!(f, "[")?;
         let mut iter = self.0.iter();
         if let Some(first) = iter.next() {
-            write!(f, "{}", first)?; // Write first element without a leading comma
+            write!(f, "{first}")?; // Write first element without a leading comma
             for item in iter {
-                write!(f, ", {}", item)?; // Write subsequent elements with a leading comma
+                write!(f, ", {item}")?; // Write subsequent elements with a leading comma
             }
         }
         write!(f, "]")

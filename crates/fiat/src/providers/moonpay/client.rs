@@ -29,7 +29,7 @@ impl MoonPayClient {
 
     pub async fn get_ip_address(&self, ip_address: &str) -> Result<MoonPayIpAddress, reqwest::Error> {
         self.client
-            .get(format!("{}/v4/ip_address/", MOONPAY_API_BASE_URL))
+            .get(format!("{MOONPAY_API_BASE_URL}/v4/ip_address/"))
             .query(&[("ipAddress", ip_address), ("apiKey", &self.api_key)])
             .send()
             .await?
@@ -39,7 +39,7 @@ impl MoonPayClient {
 
     pub async fn get_buy_quote(&self, symbol: String, fiat_currency: String, fiat_amount: f64) -> Result<MoonPayBuyQuote, reqwest::Error> {
         self.client
-            .get(format!("{}/v3/currencies/{}/buy_quote/", MOONPAY_API_BASE_URL, symbol))
+            .get(format!("{MOONPAY_API_BASE_URL}/v3/currencies/{symbol}/buy_quote/"))
             .query(&[
                 ("baseCurrencyCode", fiat_currency),
                 ("baseCurrencyAmount", fiat_amount.to_string()),
@@ -54,7 +54,7 @@ impl MoonPayClient {
 
     pub async fn get_sell_quote(&self, symbol: String, fiat_currency: String, crypto_amount: f64) -> Result<MoonPaySellQuote, reqwest::Error> {
         self.client
-            .get(format!("{}/v3/currencies/{}/sell_quote/", MOONPAY_API_BASE_URL, symbol))
+            .get(format!("{MOONPAY_API_BASE_URL}/v3/currencies/{symbol}/sell_quote/"))
             .query(&[
                 ("quoteCurrencyCode", fiat_currency),
                 ("baseCurrencyAmount", crypto_amount.to_string()),
@@ -68,11 +68,11 @@ impl MoonPayClient {
     }
 
     pub async fn get_assets(&self) -> Result<Vec<Asset>, reqwest::Error> {
-        self.client.get(format!("{}/v3/currencies", MOONPAY_API_BASE_URL)).send().await?.json().await
+        self.client.get(format!("{MOONPAY_API_BASE_URL}/v3/currencies")).send().await?.json().await
     }
 
     pub async fn get_countries(&self) -> Result<Vec<Country>, reqwest::Error> {
-        self.client.get(format!("{}/v3/countries", MOONPAY_API_BASE_URL)).send().await?.json().await
+        self.client.get(format!("{MOONPAY_API_BASE_URL}/v3/countries")).send().await?.json().await
     }
 
     pub async fn get_transactions(&self) -> Result<Vec<String>, reqwest::Error> {

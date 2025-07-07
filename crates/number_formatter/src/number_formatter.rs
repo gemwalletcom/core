@@ -31,7 +31,7 @@ impl NumberFormatter {
     }
 
     pub fn percent(&self, value: f64, _locale: &str) -> String {
-        format!("{:.2}%", value)
+        format!("{value:.2}%")
     }
 }
 

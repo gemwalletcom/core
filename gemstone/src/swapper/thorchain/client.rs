@@ -47,7 +47,7 @@ impl ThorChainSwapClient {
     #[allow(dead_code)]
     pub async fn get_inbound_addresses(&self, endpoint: &str) -> Result<Vec<InboundAddress>, SwapperError> {
         let target = AlienTarget {
-            url: format!("{}/thorchain/inbound_addresses", endpoint),
+            url: format!("{endpoint}/thorchain/inbound_addresses"),
             method: AlienHttpMethod::Get,
             headers: Some(HashMap::from([(X_CACHE_TTL.into(), "600".into())])),
             body: None,
@@ -59,7 +59,7 @@ impl ThorChainSwapClient {
     }
 
     pub async fn get_transaction_status(&self, endpoint: &str, transaction_hash: &str) -> Result<Transaction, SwapperError> {
-        let target = AlienTarget::get(format!("{}/thorchain/tx/{}", endpoint, transaction_hash).as_str());
+        let target = AlienTarget::get(format!("{endpoint}/thorchain/tx/{transaction_hash}").as_str());
 
         let data = self.provider.request(target).await.map_err(SwapperError::from)?;
 

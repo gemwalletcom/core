@@ -32,7 +32,7 @@ impl MercuryoClient {
             network: network.clone(),
             widget_id: self.widget_id.clone(),
         };
-        let url = format!("{}/v1.6/widget/buy/rate", MERCURYO_API_BASE_URL);
+        let url = format!("{MERCURYO_API_BASE_URL}/v1.6/widget/buy/rate");
         Ok(self.client.get(url.as_str()).query(&query).send().await?.json::<Response<Quote>>().await?.data)
     }
 
@@ -45,13 +45,13 @@ impl MercuryoClient {
             network: network.clone(),
             widget_id: self.widget_id.clone(),
         };
-        let url = format!("{}/v1.6/public/convert", MERCURYO_API_BASE_URL);
+        let url = format!("{MERCURYO_API_BASE_URL}/v1.6/public/convert");
 
         Ok(self.client.get(url.as_str()).query(&query).send().await?.json::<Response<Quote>>().await?.data)
     }
 
     pub async fn get_assets(&self) -> Result<Vec<Asset>, reqwest::Error> {
-        let url = format!("{}/v1.6/lib/currencies", MERCURYO_API_BASE_URL);
+        let url = format!("{MERCURYO_API_BASE_URL}/v1.6/lib/currencies");
         let response = self.client.get(&url).send().await?.json::<Response<Currencies>>().await?;
         Ok(response.data.config.crypto_currencies)
     }
@@ -59,7 +59,7 @@ impl MercuryoClient {
     pub async fn get_countries(&self) -> Result<Response<Vec<String>>, reqwest::Error> {
         let query = [("type", "alpha2")];
         self.client
-            .get(format!("{}/v1.6/public/card-countries", MERCURYO_API_BASE_URL))
+            .get(format!("{MERCURYO_API_BASE_URL}/v1.6/public/card-countries"))
             .query(&query)
             .send()
             .await?

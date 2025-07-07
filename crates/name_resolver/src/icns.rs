@@ -52,13 +52,13 @@ impl NameClient for IcnsClient {
     async fn resolve(&self, name: &str, chain: Chain) -> Result<String, Box<dyn Error + Send + Sync>> {
         let suffix = name.split('.').next_back().unwrap_or_default();
         if !DOMAIN_MAP.contains_key(suffix) {
-            return Err(format!("unsupported domain: {}", suffix).into());
+            return Err(format!("unsupported domain: {suffix}").into());
         }
 
         // chain type should match domain type
         let suffix_chain = DOMAIN_MAP.get(suffix).unwrap();
         if *suffix_chain != chain {
-            return Err(format!("domain: {} doesn't match chain: {}", suffix, chain).into());
+            return Err(format!("domain: {suffix} doesn't match chain: {chain}").into());
         }
 
         let query = serde_json::json!({

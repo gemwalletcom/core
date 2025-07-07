@@ -111,7 +111,7 @@ impl Pusher {
     }
 
     pub fn get_value(&self, amount: String, symbol: String) -> String {
-        format! {"{} {}", amount, symbol}
+        format! {"{amount} {symbol}"}
     }
 
     pub async fn get_messages(

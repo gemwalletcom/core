@@ -92,7 +92,7 @@ impl PriceUpdater {
         match self.price_client.set_cache_prices(prices.clone(), ttl_seconds).await {
             Ok(_) => {}
             Err(e) => {
-                println!("Error setting cache prices: {}", e);
+                println!("Error setting cache prices: {e}");
             }
         }
 

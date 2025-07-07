@@ -43,12 +43,12 @@ impl ChainTokenDataProvider for AptosProvider {
     async fn get_token_data(&self, token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
         let parts: Vec<&str> = token_id.split("::").collect();
         let address = parts.first().ok_or("Invalid token id")?;
-        let resource_type_str = format!("{}<{}>", COIN_INFO, token_id);
+        let resource_type_str = format!("{COIN_INFO}<{token_id}>");
         let coin_info_resource = self
             .client
             .get_account_resource::<CoinInfo>(address.to_string(), &resource_type_str)
             .await?
-            .ok_or_else(|| format!("CoinInfo resource not found for token_id: {}", token_id))?;
+            .ok_or_else(|| format!("CoinInfo resource not found for token_id: {token_id}"))?;
 
         let coin_info_data = coin_info_resource.data;
 
@@ -71,7 +71,7 @@ impl ChainAssetsProvider for AptosProvider {
             .filter_map(|resource| {
                 let token_type = resource
                     .resource_type
-                    .strip_prefix(&format!("{}<", COIN_STORE))
+                    .strip_prefix(&format!("{COIN_STORE}<"))
                     .and_then(|s| s.strip_suffix('>'))?;
 
                 if token_type == APTOS_NATIVE_COIN {

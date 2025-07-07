@@ -21,7 +21,7 @@ pub struct PayTransfer {
 }
 
 pub fn parse(uri: &str) -> Result<RequestType> {
-    let scheme = format!("{}:", SOLANA_PAY_SCHEME);
+    let scheme = format!("{SOLANA_PAY_SCHEME}:");
     if !uri.starts_with(&scheme) {
         return Err(anyhow!("Not supported scheme"));
     }

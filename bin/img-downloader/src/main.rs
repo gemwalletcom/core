@@ -92,7 +92,7 @@ impl Downloader {
     }
 
     async fn handle_coin_id(&self, coin_id: &str, folder: &Path) -> Result<(), Box<dyn Error + Send + Sync>> {
-        println!("==> process: {}", coin_id);
+        println!("==> process: {coin_id}");
         let coin_info = self.client.get_coin(coin_id).await?;
         if self.is_native_asset(&coin_info) {
             return Ok(());
@@ -102,7 +102,7 @@ impl Downloader {
             let chain = get_chain_for_coingecko_platform_id(platform);
             if chain.is_none() || address.is_empty() {
                 if self.args.verbose {
-                    println!("<== {} not supported, skip", platform);
+                    println!("<== {platform} not supported, skip");
                 }
                 continue;
             }
@@ -112,7 +112,7 @@ impl Downloader {
             if let Some(denom) = chain.as_denom() {
                 if denom == address {
                     if self.args.verbose {
-                        println!("<== skip native denom: {}", denom);
+                        println!("<== skip native denom: {denom}");
                     }
                     continue;
                 }
@@ -133,8 +133,8 @@ impl Downloader {
                 fs::create_dir_all(path.clone())?;
 
                 path = path.join("logo.png");
-                println!("==> download image for {}/{}", chain, address);
-                println!("==> image url: {}", image_url);
+                println!("==> download image for {chain}/{address}");
+                println!("==> image url: {image_url}");
                 crate::download_image(&image_url, path.to_str().unwrap()).await?;
 
                 sleep(Duration::from_millis(self.args.delay.into()));

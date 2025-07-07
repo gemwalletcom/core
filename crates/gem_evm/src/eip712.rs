@@ -70,16 +70,16 @@ pub fn eip712_domain_types() -> Vec<EIP712Type> {
 }
 
 pub fn eip712_hash_message(value: Value) -> Result<Vec<u8>, String> {
-    let typed_data: TypedData = serde_json::from_value(value).map_err(|e| format!("Invalid EIP712 JSON: parse error: {}", e))?;
+    let typed_data: TypedData = serde_json::from_value(value).map_err(|e| format!("Invalid EIP712 JSON: parse error: {e}"))?;
     let typed_hash = typed_data
         .eip712_signing_hash()
-        .map_err(|e| format!("Invalid EIP712 JSON: signing hash error: {}", e))?;
+        .map_err(|e| format!("Invalid EIP712 JSON: signing hash error: {e}"))?;
     Ok(typed_hash.to_vec())
 }
 
 pub fn parse_eip712_json(value: &Value) -> Result<EIP712Message, String> {
     let domain_value = value.get("domain").ok_or_else(|| "Invalid EIP712 JSON: missing domain".to_string())?;
-    let domain: EIP712Domain = serde_json::from_value(domain_value.clone()).map_err(|e| format!("Invalid EIP712 JSON: domain parse error: {}", e))?;
+    let domain: EIP712Domain = serde_json::from_value(domain_value.clone()).map_err(|e| format!("Invalid EIP712 JSON: domain parse error: {e}"))?;
 
     let types_value = value
         .get("types")
@@ -90,7 +90,7 @@ pub fn parse_eip712_json(value: &Value) -> Result<EIP712Message, String> {
         .map(|(k, v)| {
             serde_json::from_value(v.clone())
                 .map(|fields| (k.clone(), fields))
-                .map_err(|e| format!("Invalid EIP712 JSON: types field '{}' parse error: {}", k, e))
+                .map_err(|e| format!("Invalid EIP712 JSON: types field '{k}' parse error: {e}"))
         })
         .collect::<Result<_, _>>()?;
 
@@ -105,7 +105,7 @@ pub fn parse_eip712_json(value: &Value) -> Result<EIP712Message, String> {
 
     let message_fields = match message_typed_value {
         EIP712TypedValue::Struct { fields } => fields,
-        _ => return Err(format!("Primary type '{}' did not resolve to a Struct", primary_type_name)),
+        _ => return Err(format!("Primary type '{primary_type_name}' did not resolve to a Struct")),
     };
 
     Ok(EIP712Message {
@@ -120,7 +120,7 @@ pub fn parse_value(type_name: &str, json_value: &Value, all_types: &HashMap<Stri
     if let Some(base_type) = type_name.strip_suffix("[]") {
         let items_json = json_value
             .as_array()
-            .ok_or_else(|| format!("Expected array for type '{}', got: {:?}", type_name, json_value))?;
+            .ok_or_else(|| format!("Expected array for type '{type_name}', got: {json_value:?}"))?;
         let mut items = Vec::with_capacity(items_json.len());
         for item_json in items_json {
             items.push(parse_value(base_type, item_json, all_types)?);
@@ -132,28 +132,28 @@ pub fn parse_value(type_name: &str, json_value: &Value, all_types: &HashMap<Stri
             "address" => {
                 let s = json_value
                     .as_str()
-                    .ok_or_else(|| format!("Expected string for address, got: {:?}", json_value))?;
+                    .ok_or_else(|| format!("Expected string for address, got: {json_value:?}"))?;
                 Ok(EIP712TypedValue::Address { value: s.to_string() })
             }
             "string" => {
                 let s = json_value
                     .as_str()
-                    .ok_or_else(|| format!("Expected string for string type, got: {:?}", json_value))?;
+                    .ok_or_else(|| format!("Expected string for string type, got: {json_value:?}"))?;
                 Ok(EIP712TypedValue::String { value: s.to_string() })
             }
             "bool" => {
                 let b = json_value
                     .as_bool()
-                    .ok_or_else(|| format!("Expected boolean for bool type, got: {:?}", json_value))?;
+                    .ok_or_else(|| format!("Expected boolean for bool type, got: {json_value:?}"))?;
                 Ok(EIP712TypedValue::Bool { value: b })
             }
             "bytes" => {
                 // Dynamic bytes
                 let s = json_value
                     .as_str()
-                    .ok_or_else(|| format!("Expected hex string for bytes type, got: {:?}", json_value))?;
+                    .ok_or_else(|| format!("Expected hex string for bytes type, got: {json_value:?}"))?;
                 let bytes_vec =
-                    hex::decode(s.strip_prefix("0x").unwrap_or(s)).map_err(|e| format!("Invalid hex string for bytes type: {}, error: {}", s, e))?;
+                    hex::decode(s.strip_prefix("0x").unwrap_or(s)).map_err(|e| format!("Invalid hex string for bytes type: {s}, error: {e}"))?;
                 Ok(EIP712TypedValue::Bytes { value: bytes_vec })
             }
             // Wildcard for uint<N>, bytes<N>, and structs
@@ -162,26 +162,26 @@ pub fn parse_value(type_name: &str, json_value: &Value, all_types: &HashMap<Stri
                     let value_str = match json_value {
                         Value::Number(n) => n.to_string(),
                         Value::String(s) => s.clone(),
-                        _ => return Err(format!("Expected number or string for uint type '{}', got: {:?}", other_type_name, json_value)),
+                        _ => return Err(format!("Expected number or string for uint type '{other_type_name}', got: {json_value:?}")),
                     };
                     Ok(EIP712TypedValue::Uint256 { value: value_str })
                 } else if other_type_name.starts_with("bytes") {
                     // Fixed-size bytes<N>
                     let s = json_value
                         .as_str()
-                        .ok_or_else(|| format!("Expected hex string for bytes type '{}', got: {:?}", other_type_name, json_value))?;
+                        .ok_or_else(|| format!("Expected hex string for bytes type '{other_type_name}', got: {json_value:?}"))?;
                     let bytes_vec = hex::decode(s.strip_prefix("0x").unwrap_or(s))
-                        .map_err(|e| format!("Invalid hex string for bytes type '{}': {}, error: {}", other_type_name, s, e))?;
+                        .map_err(|e| format!("Invalid hex string for bytes type '{other_type_name}': {s}, error: {e}"))?;
                     Ok(EIP712TypedValue::Bytes { value: bytes_vec })
                 } else {
                     // Assume it's a struct type defined in 'all_types'
                     let defined_fields = all_types
                         .get(other_type_name)
-                        .ok_or_else(|| format!("Unknown or unsupported type '{}'", other_type_name))?;
+                        .ok_or_else(|| format!("Unknown or unsupported type '{other_type_name}'"))?;
 
                     let message_obj = json_value
                         .as_object()
-                        .ok_or_else(|| format!("Expected object for struct type '{}', got: {:?}", other_type_name, json_value))?;
+                        .ok_or_else(|| format!("Expected object for struct type '{other_type_name}', got: {json_value:?}"))?;
 
                     let mut struct_fields = Vec::with_capacity(defined_fields.len());
                     for field_def in defined_fields {

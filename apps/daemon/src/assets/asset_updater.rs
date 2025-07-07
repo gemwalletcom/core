@@ -59,7 +59,7 @@ impl AssetUpdater {
                     }
                 }
                 Err(err) => {
-                    println!("error getting coin info for coin {}: {}", coin, err);
+                    println!("error getting coin info for coin {coin}: {err}");
                 }
             }
         }
@@ -158,7 +158,7 @@ impl AssetUpdater {
 
         if let Some(value) = links.clone().twitter_screen_name {
             if !value.is_empty() {
-                results.push(AssetLink::new(&format!("https://x.com/{}", value), LinkType::X));
+                results.push(AssetLink::new(&format!("https://x.com/{value}"), LinkType::X));
             }
         }
 
@@ -179,7 +179,7 @@ impl AssetUpdater {
 
         if let Some(value) = links.clone().telegram_channel_identifier {
             if !value.is_empty() {
-                results.push(AssetLink::new(&format!("https://t.me/{}", value), LinkType::Telegram));
+                results.push(AssetLink::new(&format!("https://t.me/{value}"), LinkType::Telegram));
             }
         };
 

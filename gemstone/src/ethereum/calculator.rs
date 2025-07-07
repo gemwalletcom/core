@@ -11,7 +11,7 @@ pub struct GemFeeCalculator {}
 impl GemFeeCalculator {
     pub fn calculate_min_priority_fee(&self, gas_used_ratios: Vec<f64>, base_fee: &str, default_min_priority_fee: u64) -> Result<u64, GemstoneError> {
         let base_fee = parse_u256(base_fee).ok_or_else(|| GemstoneError::AnyError {
-            msg: format!("Invalid base_fee: {}", base_fee),
+            msg: format!("Invalid base_fee: {base_fee}"),
         })?;
 
         if gas_used_ratios.is_empty() || base_fee == U256::ZERO {

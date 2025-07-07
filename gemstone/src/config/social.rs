@@ -39,11 +39,11 @@ pub fn get_social_url_deeplink(item: SocialUrl) -> Option<String> {
 
 pub fn build_social_url_deeplink(item: SocialUrl, value: &str) -> Option<String> {
     match item {
-        SocialUrl::X => Some(format!("twitter://user?screen_name={}", value)),
-        SocialUrl::Discord => Some(format!("https://discord.gg/{}", value)),
-        SocialUrl::Telegram => Some(format!("tg://resolve?domain={}", value)),
-        SocialUrl::GitHub => Some(format!("https://github.com/{}", value)),
-        SocialUrl::YouTube => Some(format!("youtube://www.youtube.com/@{}", value)),
+        SocialUrl::X => Some(format!("twitter://user?screen_name={value}")),
+        SocialUrl::Discord => Some(format!("https://discord.gg/{value}")),
+        SocialUrl::Telegram => Some(format!("tg://resolve?domain={value}")),
+        SocialUrl::GitHub => Some(format!("https://github.com/{value}")),
+        SocialUrl::YouTube => Some(format!("youtube://www.youtube.com/@{value}")),
         SocialUrl::Reddit | SocialUrl::Facebook | SocialUrl::Website | SocialUrl::Coingecko => None,
     }
 }

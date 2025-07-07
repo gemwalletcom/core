@@ -19,7 +19,7 @@ where
         if hex_str.is_empty() {
             return Ok(BigInt::from(0));
         }
-        BigInt::parse_bytes(hex_str.as_bytes(), 16).ok_or_else(|| de::Error::custom(format!("Invalid hex string: {}", s)))
+        BigInt::parse_bytes(hex_str.as_bytes(), 16).ok_or_else(|| de::Error::custom(format!("Invalid hex string: {s}")))
     } else {
         // Handle regular decimal strings
         s.parse::<BigInt>().map_err(de::Error::custom)

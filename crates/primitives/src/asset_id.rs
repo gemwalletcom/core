@@ -43,7 +43,7 @@ impl fmt::Display for AssetId {
             }
             None => self.chain.as_ref().to_owned(),
         };
-        write!(f, "{}", str)
+        write!(f, "{str}")
     }
 }
 

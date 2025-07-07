@@ -32,7 +32,7 @@ impl StreamReader {
             .channel
             .basic_consume(
                 &queue.to_string(),
-                &format!("consumer-{}", queue),
+                &format!("consumer-{queue}"),
                 BasicConsumeOptions {
                     no_local: false,
                     no_ack: false,

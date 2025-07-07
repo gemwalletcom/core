@@ -37,7 +37,7 @@ impl AlienProvider for NativeProvider {
         let nodes = get_nodes_for_chain(chain);
         if nodes.is_empty() {
             return Err(AlienError::ResponseError {
-                msg: format!("not supported chain: {:?}", chain),
+                msg: format!("not supported chain: {chain:?}"),
             });
         }
         Ok(nodes[0].url.clone())
@@ -64,7 +64,7 @@ impl AlienProvider for NativeProvider {
         if let Some(body) = target.body {
             if self.debug && body.len() <= 4096 {
                 if let Ok(json) = serde_json::from_slice::<serde_json::Value>(&body) {
-                    println!("=== json: {:?}", json);
+                    println!("=== json: {json:?}");
                 } else {
                     println!("=== body: {:?}", String::from_utf8(body.to_vec()).unwrap());
                 }
@@ -75,13 +75,13 @@ impl AlienProvider for NativeProvider {
         let response = req
             .send()
             .map_err(|e| AlienError::ResponseError {
-                msg: format!("reqwest send error: {:?}", e),
+                msg: format!("reqwest send error: {e:?}"),
             })
             .await?;
         let bytes = response
             .bytes()
             .map_err(|e| AlienError::ResponseError {
-                msg: format!("request error: {:?}", e),
+                msg: format!("request error: {e:?}"),
             })
             .await?;
         if self.debug {
@@ -89,7 +89,7 @@ impl AlienProvider for NativeProvider {
         }
         if self.debug && bytes.len() <= 4096 {
             if let Ok(json) = serde_json::from_slice::<serde_json::Value>(&bytes) {
-                println!("=== json: {:?}", json);
+                println!("=== json: {json:?}");
             } else {
                 println!("=== body: {:?}", String::from_utf8(bytes.to_vec()).unwrap());
             }

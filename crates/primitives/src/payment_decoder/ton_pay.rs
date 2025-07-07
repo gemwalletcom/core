@@ -12,7 +12,7 @@ pub struct TonPayment {
 }
 
 pub fn parse(uri: &str) -> Result<TonPayment> {
-    let scheme = format!("{}:", TON_PAY_SCHEME);
+    let scheme = format!("{TON_PAY_SCHEME}:");
     if !uri.starts_with(&scheme) {
         return Err(anyhow!("Not supported scheme"));
     }

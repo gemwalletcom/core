@@ -11,7 +11,7 @@ pub fn bs58_to_hex(address: &str) -> Result<Vec<u8>, SwapperError> {
     bs58::decode(address)
         .with_check(None)
         .into_vec()
-        .map_err(|e| SwapperError::InvalidAddress(format!("Failed to decode address '{}': {}", address, e)))
+        .map_err(|e| SwapperError::InvalidAddress(format!("Failed to decode address '{address}': {e}")))
 }
 
 pub fn hex_to_utf8(hex: &str) -> Option<String> {
