@@ -1,5 +1,5 @@
 use chrono::{Duration, NaiveDateTime, Utc};
-use primitives::{Chain, Transaction, TransactionType};
+use primitives::{AssetId, Chain, Transaction, TransactionType};
 
 #[derive(Default)]
 pub struct StoreTransactionsConsumerConfig {}
@@ -16,28 +16,26 @@ impl StoreTransactionsConsumerConfig {
         }
     }
 
-    pub fn minimum_transfer_amount(&self, chain: Chain) -> u64 {
+    pub fn minimum_transfer_amount(&self, chain: Chain) -> Option<u64> {
         match chain {
-            Chain::Tron | Chain::Xrp => 5_000,
-            Chain::Stellar => 50_000,
-            Chain::Polkadot => 10_000_000,
-            Chain::Solana => 1_000,
-            _ => 0,
+            Chain::Tron | Chain::Xrp => Some(10_000),
+            Chain::Stellar => Some(50_000),
+            Chain::Polkadot => Some(10_000_000),
+            Chain::Solana => Some(10_000),
+            _ => None,
         }
     }
 
     pub fn filter_transaction(&self, transaction: &Transaction) -> bool {
-        self.filter_transaction_by_value(
-            &transaction.value,
-            &transaction.transaction_type,
-            self.minimum_transfer_amount(transaction.asset_id.chain),
-        )
+        self.filter_transaction_by_value(&transaction.value, &transaction.asset_id, &transaction.transaction_type)
     }
 
-    pub fn filter_transaction_by_value(&self, value: &str, transaction_type: &TransactionType, minimum_transfer_amount: u64) -> bool {
-        if *transaction_type == TransactionType::Transfer {
+    pub fn filter_transaction_by_value(&self, value: &str, asset_id: &AssetId, transaction_type: &TransactionType) -> bool {
+        if *transaction_type == TransactionType::Transfer && asset_id.is_native() {
             if let Ok(value) = value.parse::<u64>() {
-                return value >= minimum_transfer_amount;
+                if let Some(minimum_transfer_amount) = self.minimum_transfer_amount(asset_id.chain) {
+                    return value > minimum_transfer_amount;
+                }
             }
         }
         true
@@ -67,18 +65,17 @@ mod tests {
     fn test_filter_transaction() {
         let options = StoreTransactionsConsumerConfig::default();
         let test_cases = vec![
-            ("1", TransactionType::Transfer, 0, true),
-            ("500", TransactionType::Transfer, 1000, false),
-            ("1000", TransactionType::Transfer, 1000, true),
-            ("1500", TransactionType::Transfer, 1000, true),
-            ("invalid", TransactionType::Transfer, 1000, true),
+            ("1", AssetId::from_chain(Chain::Ethereum), TransactionType::Transfer, true),
+            ("10000", AssetId::from_chain(Chain::Solana), TransactionType::Transfer, false),
+            ("10000", AssetId::from(Chain::Solana, Some("1".to_string())), TransactionType::Transfer, true),
+            ("10001", AssetId::from_chain(Chain::Solana), TransactionType::Transfer, true),
+            ("1001", AssetId::from_chain(Chain::Ethereum), TransactionType::Transfer, true),
+            ("1500", AssetId::from_chain(Chain::Ethereum), TransactionType::Transfer, true),
+            ("invalid", AssetId::from_chain(Chain::Ethereum), TransactionType::Transfer, true),
         ];
 
-        for (transaction_value, transaction_type, minimum_transfer_amount, expected) in test_cases {
-            assert_eq!(
-                options.filter_transaction_by_value(transaction_value, &transaction_type, minimum_transfer_amount),
-                expected
-            );
+        for (transaction_value, asset_id, transaction_type, expected) in test_cases {
+            assert_eq!(options.filter_transaction_by_value(transaction_value, &asset_id, &transaction_type), expected);
         }
     }
 }
