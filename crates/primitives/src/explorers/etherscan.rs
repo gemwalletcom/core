@@ -140,6 +140,12 @@ impl EtherScan {
                     base_url: "https://testnet.monadexplorer.com", //TODO: Monad. Replace with etherscan
                 },
             },
+            EVMChain::Hyperliquid => Self {
+                meta: Metadata {
+                    name: "HyperEvmScan",
+                    base_url: "https://hyperevmscan.io",
+                },
+            },
             _ => todo!(),
         })
     }
