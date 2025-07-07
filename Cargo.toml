@@ -24,6 +24,7 @@ members = [
     "gemstone",
 
     "crates/primitives",
+    "crates/defi",
     "crates/fiat",
     "crates/cacher",
     "crates/name_resolver",
@@ -109,7 +110,7 @@ bs58 = { version = "0.5.1", features = ["check"] }
 hex = { version = "0.4.3" }
 num-bigint = { version = "0.4.6", features = ["std", "serde"] }
 num-traits = { version = "0.2.19" }
-bigdecimal = "0.4"
+bigdecimal = { version = "0.4", features = ["serde"] }
 cosmos-sdk-proto = { version = "0.27.0" }
 hmac = { version = "0.12.1" }
 sha2 = { version = "0.10.9" }

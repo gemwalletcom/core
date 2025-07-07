@@ -2,6 +2,7 @@
 extern crate rocket;
 mod assets;
 mod config;
+mod defi;
 mod devices;
 mod fiat;
 mod markets;
@@ -26,6 +27,7 @@ use api_connector::PusherClient;
 use assets::{AssetsChainProvider, AssetsClient, AssetsSearchClient};
 use cacher::CacherClient;
 use config::ConfigClient;
+use defi::DeFiClient;
 use devices::DevicesClient;
 use fiat::{FiatClient, FiatProviderFactory};
 use metrics::MetricsClient;
@@ -79,6 +81,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
     let providers = FiatProviderFactory::new_providers(settings_clone.clone());
     let ip_check_client = FiatProviderFactory::new_ip_check_client(settings_clone.clone());
     let fiat_client = FiatClient::new(postgres_url, cacher_client.clone(), providers, ip_check_client).await;
+    let defi_client = DeFiClient::new(cacher_client.clone(), settings.defi.debank.secret.clone());
     let nft_client = NFTClient::new(
         postgres_url,
         &settings.nft.nftscan.key.secret,
@@ -97,6 +100,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
             rocket.manage(runtime)
         }))
         .manage(Mutex::new(fiat_client))
+        .manage(Mutex::new(defi_client))
         .manage(Mutex::new(price_client))
         .manage(Mutex::new(charts_client))
         .manage(Mutex::new(config_client))
@@ -165,6 +169,8 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
                 price_alerts::delete_price_alerts,
                 scan::scan_transaction,
                 markets::get_markets,
+                defi::get_portfolio,
+                defi::get_positions,
             ],
         )
         .mount(settings.metrics.path, routes![metrics::get_metrics])

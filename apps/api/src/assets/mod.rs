@@ -84,9 +84,7 @@ pub async fn get_assets_search(
     match assets {
         Ok(assets) => Ok(Json(assets)),
         Err(error) => {
-            println!(
-                "get_assets_search, query: {query:?}, tags: {tags:?}, chains: {chains:?} error: {error:?}"
-            );
+            println!("get_assets_search, query: {query:?}, tags: {tags:?}, chains: {chains:?} error: {error:?}");
             Err(Status::InternalServerError)
         }
     }

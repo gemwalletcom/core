@@ -248,3 +248,7 @@ nft:
     key:
       public: ""
       secret: ""
+
+defi:
+  debank:
+    secret: ""

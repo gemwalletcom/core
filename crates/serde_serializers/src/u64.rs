@@ -27,8 +27,7 @@ where
             if let Some(hex_val) = s.strip_prefix("0x") {
                 u64::from_str_radix(hex_val, 16).map_err(|_| de::Error::custom(format!("Invalid hex string for u64: {s}")))
             } else {
-                s.parse::<u64>()
-                    .map_err(|_| de::Error::custom(format!("Invalid decimal string for u64: {s}")))
+                s.parse::<u64>().map_err(|_| de::Error::custom(format!("Invalid decimal string for u64: {s}")))
             }
         }
         _ => Err(de::Error::custom("u64 must be a number or a string")),

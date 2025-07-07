@@ -125,4 +125,9 @@ pub mod transaction_id;
 pub use self::transaction_id::TransactionId;
 pub mod asset_address;
 pub use self::asset_address::AssetAddress;
+pub mod defi_portfolio;
 pub mod graphql;
+pub use self::defi_portfolio::{
+    AssetAttributes, DeFiAsset, DeFiAssetType, DeFiPortfolio, DeFiPortfolioRequest, DeFiPosition, DeFiPositionFilters, DeFiPositionType, DeFiPositionsRequest,
+    DeFiProtocol, DeFiProtocolCategory, PortfolioPerformance, PortfolioSummary, PositionMetadata, PositionStats, YieldInfo, YieldReward, YieldSource,
+};

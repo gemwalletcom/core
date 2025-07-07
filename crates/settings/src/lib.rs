@@ -31,6 +31,7 @@ pub struct Settings {
     pub alerter: Alerter,
     pub scan: Scan,
     pub nft: NFT,
+    pub defi: DeFi,
     pub alchemy: Alchemy,
     pub ankr: Ankr,
     pub trongrid: Trongrid,
@@ -369,6 +370,11 @@ pub struct BucketConfiguration {
     pub key: Key,
     pub name: String,
     pub url: String,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct DeFi {
+    pub debank: KeySecret,
 }
 
 #[derive(Debug, Deserialize, Clone)]
