@@ -147,7 +147,7 @@ impl FiatClient {
     }
 
     pub async fn get_ip_address(&mut self, ip_address: &str) -> Result<IPAddressInfo, Box<dyn Error + Send + Sync>> {
-        let key = format!("fiat_ip_resolver_ip_address:{}", ip_address);
+        let key = format!("fiat_ip_resolver_ip_address:{ip_address}");
         self.cacher
             .get_or_set_value(&key, || self.ip_check_client.get_ip_address(ip_address), Some(86400))
             .await
@@ -224,7 +224,7 @@ impl FiatClient {
 
 #[allow(dead_code)]
 fn precision(val: f64, precision: usize) -> f64 {
-    format!("{:.prec$}", val, prec = precision).parse::<f64>().unwrap()
+    format!("{val:.precision$}").parse::<f64>().unwrap()
 }
 
 fn sort_by_crypto_amount(a: &FiatQuote, b: &FiatQuote) -> std::cmp::Ordering {

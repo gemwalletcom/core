@@ -52,7 +52,7 @@ impl RedisClient {
     where
         T: DeserializeOwned,
     {
-        let keys: Vec<String> = self.conn.keys(format!("{}*", prefix)).await?;
+        let keys: Vec<String> = self.conn.keys(format!("{prefix}*")).await?;
         let response: Vec<Option<String>> = self.conn.mget(keys).await?;
         let values: Vec<String> = response.into_iter().flatten().collect();
 
@@ -66,7 +66,7 @@ impl RedisClient {
     }
 
     pub async fn get_keys(&mut self, prefix: &str) -> Result<Vec<String>, Box<dyn Error>> {
-        let keys: Vec<String> = self.conn.keys(format!("{}*", prefix)).await?;
+        let keys: Vec<String> = self.conn.keys(format!("{prefix}*")).await?;
         Ok(keys)
     }
 }

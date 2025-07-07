@@ -22,7 +22,7 @@ impl ChainflipClient {
 
     pub async fn get_quote(&self, request: &QuoteRequest) -> Result<Vec<QuoteResponse>, SwapperError> {
         let query = serde_urlencoded::to_string(request).map_err(SwapperError::from)?;
-        let url = format!("{}/v2/quote?{}", CHAINFLIP_API_URL, query);
+        let url = format!("{CHAINFLIP_API_URL}/v2/quote?{query}");
         let target = AlienTarget::get(&url);
         let response = self.provider.request(target).await.map_err(SwapperError::from)?;
         let value: serde_json::Value = serde_json::from_slice(&response).map_err(SwapperError::from)?;
@@ -37,7 +37,7 @@ impl ChainflipClient {
     }
 
     pub async fn get_tx_status(&self, tx_hash: &str) -> Result<SwapTxResponse, SwapperError> {
-        let url = format!("{}/v2/swap/{}", CHAINFLIP_API_URL, tx_hash);
+        let url = format!("{CHAINFLIP_API_URL}/v2/swap/{tx_hash}");
         let target = AlienTarget::get(&url);
         let response = self.provider.request(target).await.map_err(SwapperError::from)?;
         let status = serde_json::from_slice(&response).map_err(SwapperError::from)?;

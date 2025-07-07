@@ -30,7 +30,7 @@ impl AlchemyClient {
 
     pub fn new(ethereum_client: EthereumClient, client: ClientWithMiddleware, api_key: String) -> Self {
         let chain = ethereum_client.chain;
-        let url = format!("https://api.g.alchemy.com/data/v1/{}", api_key);
+        let url = format!("https://api.g.alchemy.com/data/v1/{api_key}");
 
         Self {
             chain,

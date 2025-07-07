@@ -43,7 +43,7 @@ impl ChartsUpdater {
                     tokio::time::sleep(std::time::Duration::from_millis(250)).await;
                 }
                 Err(err) => {
-                    println!("update charts error: {}", err);
+                    println!("update charts error: {err}");
                     continue;
                 }
             }

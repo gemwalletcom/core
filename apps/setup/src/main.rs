@@ -17,7 +17,7 @@ async fn main() {
 
     let chains = Chain::all();
 
-    println!("chains: {:?}", chains);
+    println!("chains: {chains:?}");
 
     println!("setup add chains");
     let _ = database_client.add_chains(chains.clone().into_iter().map(|x| x.to_string()).collect());
@@ -88,7 +88,7 @@ async fn main() {
     let assets_tags = AssetTag::all().into_iter().map(storage::models::Tag::from_primitive).collect::<Vec<_>>();
     let _ = database_client.add_tags(assets_tags);
 
-    println!("setup search index: {:?}", search_indexes);
+    println!("setup search index: {search_indexes:?}");
 
     let search_index_client = SearchIndexClient::new(&settings.meilisearch.url, settings.meilisearch.key.as_str());
 

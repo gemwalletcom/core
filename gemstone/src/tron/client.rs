@@ -30,7 +30,7 @@ impl TronClient {
         );
 
         let endpoint = self.provider.get_endpoint(Chain::Tron).map_err(SwapperError::from)?;
-        let url = format!("{}/wallet/triggerconstantcontract", endpoint);
+        let url = format!("{endpoint}/wallet/triggerconstantcontract");
         let target = AlienTarget::post_json(&url, params);
         let data = self.provider.request(target).await.map_err(SwapperError::from)?;
         let response: TronNodeResponse = serde_json::from_slice(&data).map_err(SwapperError::from)?;
@@ -76,7 +76,7 @@ impl TronClient {
         );
 
         let endpoint = self.provider.get_endpoint(Chain::Tron).map_err(SwapperError::from)?;
-        let url = format!("{}/wallet/triggerconstantcontract", endpoint);
+        let url = format!("{endpoint}/wallet/triggerconstantcontract");
         let target = AlienTarget::post_json(&url, params);
         let data = self.provider.request(target).await.map_err(SwapperError::from)?;
 

@@ -24,7 +24,7 @@ impl ProxyClient {
     }
 
     pub async fn get_quote(&self, endpoint: &str, request: QuoteRequest) -> Result<Quote, SwapperError> {
-        let url = format!("{}/quote", endpoint);
+        let url = format!("{endpoint}/quote");
         let target = AlienTarget::post_json(&url, serde_json::json!(request));
         let data = self.provider.request(target).await.map_err(SwapperError::from)?;
 
@@ -35,7 +35,7 @@ impl ProxyClient {
     }
 
     pub async fn get_quote_data(&self, endpoint: &str, quote: Quote) -> Result<QuoteData, SwapperError> {
-        let url = format!("{}/quote_data", endpoint);
+        let url = format!("{endpoint}/quote_data");
         let target = AlienTarget::post_json(&url, serde_json::json!(quote));
 
         let data = self.provider.request(target).await.map_err(SwapperError::from)?;

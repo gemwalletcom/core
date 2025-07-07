@@ -133,7 +133,7 @@ impl Cetus {
             .events
             .as_array()
             .map(|x| x.first().unwrap())
-            .ok_or(SwapperError::ComputeQuoteError(format!("Failed to get event from InspectResult: {:?}", result)))?;
+            .ok_or(SwapperError::ComputeQuoteError(format!("Failed to get event from InspectResult: {result:?}")))?;
         let event_data: InspectEvent<SuiData<CalculatedSwapResult>> = serde_json::from_value(event.clone())?;
         Ok(event_data.parsed_json.data)
     }
@@ -259,7 +259,7 @@ impl Swapper for Cetus {
         let route = &quote.data.routes.first().ok_or(SwapperError::InvalidRoute)?;
         let sender_address = quote.request.wallet_address.parse().map_err(SwapperError::from)?;
         let route_data: RoutePoolData =
-            serde_json::from_str(&route.route_data).map_err(|e| SwapperError::TransactionError(format!("Invalid route data: {}", e)))?;
+            serde_json::from_str(&route.route_data).map_err(|e| SwapperError::TransactionError(format!("Invalid route data: {e}")))?;
 
         let from_asset = &route.input;
         let from_coin = Self::get_coin_address(from_asset);
@@ -292,7 +292,7 @@ impl Swapper for Cetus {
 
         // Build tx
         let mut ptb = TransactionBuilder::build_swap_transaction(&cetus_config, &swap_params, &all_coin_assets)
-            .map_err(|e| SwapperError::TransactionError(format!("Failed to build swap transaction: {}", e)))?;
+            .map_err(|e| SwapperError::TransactionError(format!("Failed to build swap transaction: {e}")))?;
 
         let tx = gem_sui::tx::prefill_tx(ptb.clone());
 

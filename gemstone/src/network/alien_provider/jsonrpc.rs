@@ -9,7 +9,7 @@ impl AlienTarget {
     pub fn from_json_rpc_request(request: &JsonRpcRequest, url: &str) -> Result<Self, AlienError> {
         let headers = HashMap::from([(CONTENT_TYPE.into(), JSON.into())]);
         let body = serde_json::to_vec(request).map_err(|e| AlienError::RequestError {
-            msg: format!("Failed to serialize RPC request: {}", e),
+            msg: format!("Failed to serialize RPC request: {e}"),
         })?;
         Ok(AlienTarget {
             url: url.into(),
@@ -91,7 +91,7 @@ impl JsonRpcClient {
         U: DeserializeOwned,
     {
         let params_value = serde_json::to_value(params).map_err(|e| AlienError::RequestError {
-            msg: format!("Failed to serialize RPC params: {}", e),
+            msg: format!("Failed to serialize RPC params: {e}"),
         })?;
 
         // Wrap single object/value in an array if it's not already an array
@@ -109,7 +109,7 @@ impl JsonRpcClient {
 
         // Deserialize into the JsonRpcResult enum first
         let rpc_result: JsonRpcResult<U> = serde_json::from_slice(&response_data).map_err(|e| AlienError::ResponseError {
-            msg: format!("Failed to parse JSON-RPC response: {}", e),
+            msg: format!("Failed to parse JSON-RPC response: {e}"),
         })?;
 
         Ok(rpc_result)

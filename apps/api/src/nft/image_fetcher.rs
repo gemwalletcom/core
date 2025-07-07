@@ -23,7 +23,7 @@ impl ImageFetcher {
             .collect::<HashMap<String, String>>();
 
         let content_type = response.headers().get("content-type").and_then(|ct| ct.to_str().ok()).map(|s| s.to_string());
-        let bytes = response.bytes().await.map_err(|e| format!("Failed to read response: {}", e))?.to_vec();
+        let bytes = response.bytes().await.map_err(|e| format!("Failed to read response: {e}"))?.to_vec();
         Ok((bytes, content_type, headers))
     }
 }

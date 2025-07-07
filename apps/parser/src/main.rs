@@ -72,7 +72,7 @@ async fn run_parser_mode(settings: Settings, database: Arc<Mutex<DatabaseClient>
         .filter(|x| x.node.priority > 5 && x.node.status == NodeState::Active)
         .collect::<Vec<_>>();
 
-    println!("parser start chains: {:?}", chains);
+    println!("parser start chains: {chains:?}");
 
     let mut parsers = Vec::new();
     for chain in chains {
@@ -97,20 +97,20 @@ async fn run_parser_mode(settings: Settings, database: Arc<Mutex<DatabaseClient>
 async fn parser_start(settings: Settings, proxy: ParserProxy, parser_options: ParserOptions) {
     let database_client = DatabaseClient::new(settings.postgres.url.as_str());
     let chain = proxy.get_chain();
-    let stream_producer = StreamProducer::new(&settings.rabbitmq.url, format!("parser_{}", chain).as_str()).await.unwrap();
+    let stream_producer = StreamProducer::new(&settings.rabbitmq.url, format!("parser_{chain}").as_str()).await.unwrap();
 
     let mut parser = Parser::new(Box::new(proxy), stream_producer, database_client, parser_options.clone());
 
     loop {
         match parser.start().await {
             Ok(_) => {
-                println!("parser start complete, chain: {}", chain)
+                println!("parser start complete, chain: {chain}")
             }
             Err(e) => {
-                println!("parser start error, chain: {}, error: {:?}", chain, e);
+                println!("parser start error, chain: {chain}, error: {e:?}");
             }
         }
         tokio::time::sleep(Duration::from_millis(parser_options.timeout)).await;
-        println!("parser restart timeout, chain: {}", chain);
+        println!("parser restart timeout, chain: {chain}");
     }
 }

@@ -47,7 +47,7 @@ pub enum DecodedLinkType {
 impl fmt::Display for DecodedLinkType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            DecodedLinkType::SolanaPay(link) => write!(f, "{}", link),
+            DecodedLinkType::SolanaPay(link) => write!(f, "{link}"),
         }
     }
 }

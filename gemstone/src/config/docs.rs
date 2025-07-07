@@ -52,7 +52,7 @@ pub fn get_docs_url(item: DocsUrl) -> String {
         DocsUrl::WalletConnect => "/guides/walletconnect/",
         DocsUrl::HowStoreSecretPhrase => "/faq/secure-recovery-phrase/#how-to-secure-my-secret-phrase/",
     };
-    format!("{}{}", DOCS_URL, path)
+    format!("{DOCS_URL}{path}")
 }
 
 #[cfg(test)]

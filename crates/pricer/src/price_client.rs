@@ -88,7 +88,7 @@ impl PriceClient {
             .get_fiat_rates()?
             .iter()
             .find(|x| x.id == symbol)
-            .ok_or(format!("No fiat rate found for symbol: {}", symbol))?
+            .ok_or(format!("No fiat rate found for symbol: {symbol}"))?
             .as_primitive())
     }
 
@@ -97,7 +97,7 @@ impl PriceClient {
     pub async fn get_asset_price(&mut self, asset_id: &str, currency: &str) -> Result<AssetMarketPrice, Box<dyn Error + Send + Sync>> {
         let rate = self.get_fiat_rate(currency)?.rate;
         let prices = self.get_cache_prices(vec![asset_id.to_string()]).await?;
-        let price = prices.first().cloned().ok_or(format!("No price available for asset_id: {}", asset_id))?;
+        let price = prices.first().cloned().ok_or(format!("No price available for asset_id: {asset_id}"))?;
 
         Ok(AssetMarketPrice {
             price: Some(price.as_price_primitive_with_rate(rate)),

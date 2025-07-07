@@ -37,7 +37,7 @@ pub struct DatabaseClient {
 
 impl DatabaseClient {
     pub fn new(database_url: &str) -> Self {
-        let connection = PgConnection::establish(database_url).unwrap_or_else(|_| panic!("Error connecting to {}", database_url));
+        let connection = PgConnection::establish(database_url).unwrap_or_else(|_| panic!("Error connecting to {database_url}"));
 
         Self { connection }
     }

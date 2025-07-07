@@ -37,15 +37,15 @@ pub enum SwapperError {
 impl From<AlienError> for SwapperError {
     fn from(err: AlienError) -> Self {
         match err {
-            AlienError::RequestError { msg } => Self::NetworkError(format!("Alien request error: {}", msg)),
-            AlienError::ResponseError { msg } => Self::NetworkError(format!("Alien response error: {}", msg)),
+            AlienError::RequestError { msg } => Self::NetworkError(format!("Alien request error: {msg}")),
+            AlienError::ResponseError { msg } => Self::NetworkError(format!("Alien response error: {msg}")),
         }
     }
 }
 
 impl From<JsonRpcError> for SwapperError {
     fn from(err: JsonRpcError) -> Self {
-        Self::NetworkError(format!("JSON RPC error: {}", err))
+        Self::NetworkError(format!("JSON RPC error: {err}"))
     }
 }
 
@@ -63,19 +63,19 @@ impl From<sui_types::AddressParseError> for SwapperError {
 
 impl From<serde_json::Error> for SwapperError {
     fn from(err: serde_json::Error) -> Self {
-        Self::NetworkError(format!("serde_json::Error: {}", err))
+        Self::NetworkError(format!("serde_json::Error: {err}"))
     }
 }
 
 impl From<serde_urlencoded::ser::Error> for SwapperError {
     fn from(err: serde_urlencoded::ser::Error) -> Self {
-        Self::NetworkError(format!("Request query error: {}", err))
+        Self::NetworkError(format!("Request query error: {err}"))
     }
 }
 
 impl From<alloy_sol_types::Error> for SwapperError {
     fn from(err: alloy_sol_types::Error) -> Self {
-        Self::ABIError(format!("AlloyError: {}", err))
+        Self::ABIError(format!("AlloyError: {err}"))
     }
 }
 

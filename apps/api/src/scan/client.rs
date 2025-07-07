@@ -57,7 +57,7 @@ impl ScanClient {
             .into_iter()
             .filter_map(|result| match result {
                 Err(e) => {
-                    println!("error scanning: {}", e);
+                    println!("error scanning: {e}");
                     None
                 }
                 Ok(result) => Some(result),

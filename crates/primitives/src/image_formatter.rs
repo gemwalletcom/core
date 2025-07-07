@@ -5,8 +5,8 @@ pub struct ImageFormatter {}
 impl ImageFormatter {
     pub fn get_asset_url(url: &str, chain: &str, token_id: Option<&str>) -> String {
         match token_id {
-            Some(token_id) => format!("{}/blockchains/{}/assets/{}/logo.png", url, chain, token_id),
-            None => format!("{}/blockchains/{}/logo.png", url, chain),
+            Some(token_id) => format!("{url}/blockchains/{chain}/assets/{token_id}/logo.png"),
+            None => format!("{url}/blockchains/{chain}/logo.png"),
         }
     }
 
@@ -15,11 +15,11 @@ impl ImageFormatter {
     }
 
     pub fn get_validator_url(url: &str, chain: &str, id: &str) -> String {
-        format!("{}/blockchains/{}/validators/{}/logo.png", url, chain, id)
+        format!("{url}/blockchains/{chain}/validators/{id}/logo.png")
     }
 
     pub fn get_nft_asset_url(url: &str, id: &str) -> String {
-        format!("{}/v1/nft/assets/{}/image_preview", url, id)
+        format!("{url}/v1/nft/assets/{id}/image_preview")
     }
 }
 #[cfg(test)]

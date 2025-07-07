@@ -21,7 +21,7 @@ pub struct AnkrClient {
 
 impl AnkrClient {
     pub fn new(client: EthereumClient, api_key: String) -> Self {
-        let url = format!("https://rpc.ankr.com/multichain/{}", api_key);
+        let url = format!("https://rpc.ankr.com/multichain/{api_key}");
         let rpc_client = JsonRpcClient::new(url).expect("Invalid Ankr API URL");
 
         Self {

@@ -100,7 +100,7 @@ impl CoinGeckoClient {
 
     pub async fn get_coin_markets_id(&self, id: &str) -> Result<CoinMarket, Box<dyn Error + Send + Sync>> {
         let markets = self.get_coin_markets_ids(vec![id.to_string()], 1).await?;
-        markets.first().cloned().ok_or_else(|| format!("market {} not found", id).into())
+        markets.first().cloned().ok_or_else(|| format!("market {id} not found").into())
     }
 
     pub async fn get_coin(&self, id: &str) -> Result<CoinInfo, Box<dyn Error + Send + Sync>> {

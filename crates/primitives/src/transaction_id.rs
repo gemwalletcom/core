@@ -45,13 +45,13 @@ impl FromStr for TransactionId {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let parts: Vec<&str> = s.splitn(2, '_').collect();
         if parts.len() != 2 {
-            return Err(format!("Invalid TransactionId format: expected chain_hash, got {}", s));
+            return Err(format!("Invalid TransactionId format: expected chain_hash, got {s}"));
         }
 
         let chain_str = parts[0];
         let hash_str = parts[1];
 
-        let chain = Chain::from_str(chain_str).map_err(|e| format!("Invalid chain identifier '{}': {}", chain_str, e))?;
+        let chain = Chain::from_str(chain_str).map_err(|e| format!("Invalid chain identifier '{chain_str}': {e}"))?;
 
         Ok(TransactionId::new(chain, hash_str.to_string()))
     }
@@ -84,7 +84,7 @@ mod tests {
     fn test_display_trait_to_string() {
         let tx_id = TransactionId::new(Chain::Ethereum, "0x123".to_string());
         assert_eq!(tx_id.to_string(), "ethereum_0x123"); // This now uses Display::to_string()
-        assert_eq!(format!("{}", tx_id), "ethereum_0x123"); // Also test format!()
+        assert_eq!(format!("{tx_id}"), "ethereum_0x123"); // Also test format!()
     }
 
     #[test]

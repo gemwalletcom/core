@@ -124,7 +124,7 @@ async fn run(args: Cli) -> Result<()> {
             }
         } else if let Err(e) = gemstone_res {
             if args.debug {
-                eprintln!("gas-bench: Error fetching Gemstone data: {:?}", e);
+                eprintln!("gas-bench: Error fetching Gemstone data: {e:?}");
             }
         }
 
@@ -136,7 +136,7 @@ async fn run(args: Cli) -> Result<()> {
             }
         } else if let Err(e) = etherscan_res {
             if args.debug {
-                eprintln!("Error fetching Etherscan data: {:?}", e);
+                eprintln!("Error fetching Etherscan data: {e:?}");
             }
         }
 
@@ -148,7 +148,7 @@ async fn run(args: Cli) -> Result<()> {
             }
         } else if let Err(e) = gasflow_res {
             if args.debug {
-                eprintln!("Error fetching Gasflow data: {:?}", e);
+                eprintln!("Error fetching Gasflow data: {e:?}");
             }
         }
 
@@ -159,7 +159,7 @@ async fn run(args: Cli) -> Result<()> {
             for block_num in sorted_debug_keys {
                 if let Some(details) = block_data.get(block_num) {
                     let sources: Vec<&str> = details.iter().map(|d| d.source_name.as_str()).collect();
-                    eprintln!("  Block {}: {:?}", block_num, sources);
+                    eprintln!("  Block {block_num}: {sources:?}");
                 }
             }
         }
@@ -178,17 +178,17 @@ async fn run(args: Cli) -> Result<()> {
         };
 
         if args.debug {
-            eprintln!("Debug: last_printed_block_opt: {:?}", last_printed_block_opt);
-            eprintln!("Debug: block_to_print_this_iteration: {:?}", block_to_print_this_iteration);
+            eprintln!("Debug: last_printed_block_opt: {last_printed_block_opt:?}");
+            eprintln!("Debug: block_to_print_this_iteration: {block_to_print_this_iteration:?}");
         }
 
         if let Some(current_block_to_print) = block_to_print_this_iteration {
             if args.debug {
-                eprintln!("Debug: Attempting to print table for block: {}", current_block_to_print);
+                eprintln!("Debug: Attempting to print table for block: {current_block_to_print}");
             }
             if let Some(details_for_block) = block_data.get(&current_block_to_print) {
                 if details_for_block.len() >= 2 {
-                    println!("\n--- Block: {} ---", current_block_to_print);
+                    println!("\n--- Block: {current_block_to_print} ---");
                     let mut table = Table::new();
                     table.set_format(*format::consts::FORMAT_NO_BORDER_LINE_SEPARATOR);
                     table.add_row(Row::new(vec![
@@ -227,7 +227,7 @@ async fn main() -> Result<()> {
     }
 
     if let Err(e) = run(args).await {
-        eprintln!("gas-bench: run error: {}", e);
+        eprintln!("gas-bench: run error: {e}");
         std::process::exit(1);
     }
 

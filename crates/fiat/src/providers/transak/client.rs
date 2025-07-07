@@ -44,7 +44,7 @@ impl TransakClient {
         network: String,
         country_code: String,
     ) -> Result<TransakQuote, reqwest::Error> {
-        let url = format!("{}/api/v1/pricing/public/quotes", TRANSAK_API_URL);
+        let url = format!("{TRANSAK_API_URL}/api/v1/pricing/public/quotes");
         let mut query = vec![
             ("isBuyOrSell", quote_type.to_string()),
             ("quoteCountryCode", country_code.to_string()),
@@ -101,12 +101,12 @@ impl TransakClient {
     }
 
     pub async fn get_supported_assets(&self) -> Result<Response<Vec<Asset>>, reqwest::Error> {
-        let url = format!("{}/api/v2/currencies/crypto-currencies", TRANSAK_API_URL);
+        let url = format!("{TRANSAK_API_URL}/api/v2/currencies/crypto-currencies");
         self.client.get(&url).send().await?.json().await
     }
 
     pub async fn get_countries(&self) -> Result<Response<Vec<Country>>, reqwest::Error> {
-        let url = format!("{}/api/v2/countries", TRANSAK_API_URL);
+        let url = format!("{TRANSAK_API_URL}/api/v2/countries");
         self.client.get(&url).send().await?.json().await
     }
 

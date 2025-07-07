@@ -15,7 +15,7 @@ impl MayanExplorer {
     }
 
     pub async fn get_transaction_status(&self, tx_hash: &str) -> Result<MayanTransactionResult, SwapperError> {
-        let url = format!("https://explorer-api.mayan.finance/v3/swap/trx/{}", tx_hash);
+        let url = format!("https://explorer-api.mayan.finance/v3/swap/trx/{tx_hash}");
         let target = AlienTarget::get(&url);
         let response = self.provider.request(target).await?;
         let result: MayanTransactionResult = serde_json::from_slice(&response).map_err(SwapperError::from)?;

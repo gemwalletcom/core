@@ -135,7 +135,7 @@ impl PriceObserverClient {
     pub fn handle_redis_message(&mut self, message: &PushInfo) -> Result<(), String> {
         match (message.kind.clone(), message.data.last()) {
             (PushKind::Message, Some(redis::Value::BulkString(value))) => {
-                let asset_price_info = serde_json::from_slice::<AssetPriceInfo>(value).map_err(|e| format!("Failed to deserialize AssetPrice: {}", e))?;
+                let asset_price_info = serde_json::from_slice::<AssetPriceInfo>(value).map_err(|e| format!("Failed to deserialize AssetPrice: {e}"))?;
                 let asset_price = asset_price_info.as_asset_price_primitive();
                 self.add_price_to_publish(asset_price);
                 Ok(())

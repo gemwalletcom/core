@@ -61,6 +61,6 @@ impl Client {
                 }
             }
         }
-        Err(format!("No provider found for name: {}", name).into())
+        Err(format!("No provider found for name: {name}").into())
     }
 }

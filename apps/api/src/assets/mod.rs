@@ -16,7 +16,7 @@ pub async fn get_asset(asset_id: &str, client: &State<Mutex<AssetsClient>>) -> R
     match result {
         Ok(asset) => Ok(Json(asset)),
         Err(error) => {
-            println!("get_asset error: {}, {:?}", asset_id, error);
+            println!("get_asset error: {asset_id}, {error:?}");
             Err(Status::NotFound)
         }
     }
@@ -85,8 +85,7 @@ pub async fn get_assets_search(
         Ok(assets) => Ok(Json(assets)),
         Err(error) => {
             println!(
-                "get_assets_search, query: {:?}, tags: {:?}, chains: {:?} error: {:?}",
-                query, tags, chains, error
+                "get_assets_search, query: {query:?}, tags: {tags:?}, chains: {chains:?} error: {error:?}"
             );
             Err(Status::InternalServerError)
         }
@@ -112,7 +111,7 @@ pub async fn get_assets_balances(
     match assets_chain_provider.lock().await.get_assets_balances(requests.0).await {
         Ok(assets) => Ok(Json(assets)),
         Err(error) => {
-            println!("get_assets_balances error: {:?}", error);
+            println!("get_assets_balances error: {error:?}");
             Err(Status::InternalServerError)
         }
     }
@@ -126,7 +125,7 @@ pub async fn get_assets_transactions(
     match assets_chain_provider.lock().await.get_assets_transactions(requests.0).await {
         Ok(transactions) => Ok(Json(transactions)),
         Err(error) => {
-            println!("get_assets_transactions error: {:?}", error);
+            println!("get_assets_transactions error: {error:?}");
             Err(Status::InternalServerError)
         }
     }

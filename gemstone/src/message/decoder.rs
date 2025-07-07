@@ -38,7 +38,7 @@ impl SignMessageDecoder {
                 if utf8_str.is_empty() {
                     return Err(GemstoneError::from("Empty EIP712 message string"));
                 }
-                let message = GemEIP712Message::from_json(&utf8_str).map_err(|e| GemstoneError::from(format!("Invalid EIP712 message: {}", e)))?;
+                let message = GemEIP712Message::from_json(&utf8_str).map_err(|e| GemstoneError::from(format!("Invalid EIP712 message: {e}")))?;
                 Ok(MessagePreview::EIP712(message))
             }
             SignDigestType::Base58 => {

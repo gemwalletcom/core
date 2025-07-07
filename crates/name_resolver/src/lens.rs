@@ -41,7 +41,7 @@ impl NameClient for LensClient {
         parts.reverse();
         let handle = parts.join("/");
 
-        let query = format!("query {{handleToAddress(request: {{handle: \"{}\" }} )}}", handle);
+        let query = format!("query {{handleToAddress(request: {{handle: \"{handle}\" }} )}}");
         let query = serde_json::json!({
             "query": query,
         });

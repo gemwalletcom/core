@@ -43,10 +43,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     for provider in sorted_providers {
         if let Some(chains) = provider_chains.get(provider) {
             let mut sorted_chains: Vec<_> = chains.iter().collect();
-            sorted_chains.sort_by_key(|chain| format!("{:?}", chain));
+            sorted_chains.sort_by_key(|chain| format!("{chain:?}"));
             println!("{}({}):", provider, chains.len());
             for chain in sorted_chains {
-                println!("    {:?}", chain);
+                println!("    {chain:?}");
             }
             println!();
         }
@@ -58,15 +58,15 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     println!("==================================");
 
     let mut chains: Vec<_> = chain_providers.keys().collect();
-    chains.sort_by_key(|chain| format!("{:?}", chain));
+    chains.sort_by_key(|chain| format!("{chain:?}"));
 
     for chain in chains {
         if let Some(providers) = chain_providers.get(chain) {
             let mut sorted_providers: Vec<_> = providers.iter().collect();
             sorted_providers.sort();
-            println!("{:?}:", chain);
+            println!("{chain:?}:");
             for provider in sorted_providers {
-                println!("    {}", provider);
+                println!("    {provider}");
             }
             println!();
         }

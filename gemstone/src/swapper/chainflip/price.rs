@@ -9,7 +9,7 @@ pub fn apply_slippage(original_price: f64, slippage_bps: u32) -> f64 {
 /// https://docs.chainflip.io/lp/integrations/lp-api#hex-price
 pub fn price_to_hex_price(price: f64, quote_asset_decimals: u32, base_asset_decimals: u32) -> Result<String, String> {
     if price.is_nan() || price.is_infinite() {
-        return Err(format!("Input price ({}) is NaN or Infinity.", price));
+        return Err(format!("Input price ({price}) is NaN or Infinity."));
     }
     let price = BigDecimal::from_f64(price).ok_or("Failed to convert price to BigDecimal")?;
     let shifted = price * BigInt::from(2).pow(128);

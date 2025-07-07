@@ -54,7 +54,7 @@ impl NameClient for Hyperliquid {
     async fn resolve(&self, name: &str, chain: Chain) -> Result<String, Box<dyn Error + Send + Sync>> {
         let name = normalize_domain(name)?;
         if !Self::is_valid_name(&name) {
-            return Err(format!("Invalid name: {}", name).into());
+            return Err(format!("Invalid name: {name}").into());
         }
         let node = namehash(&name);
 
