@@ -22,6 +22,7 @@ impl StoreTransactionsConsumerConfig {
             Chain::Stellar => Some(50_000),
             Chain::Polkadot => Some(10_000_000),
             Chain::Solana => Some(10_000),
+            Chain::Ethereum | Chain::SmartChain => Some(10_000_000_000_000),
             _ => None,
         }
     }
