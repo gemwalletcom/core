@@ -39,36 +39,49 @@ impl SuiMapper {
         let hash = transaction.digest.clone();
         let fee = Self::get_fee(effects.gas_used.clone());
         let created_at = Utc.timestamp_millis_opt(transaction.timestamp_ms as i64).unwrap();
+        let state = if effects.status.status == "success" {
+            TransactionState::Confirmed
+        } else {
+            TransactionState::Failed
+        };
         let owner = effects.gas_object.owner.get_address_owner();
 
-        // system transfer
-        if balance_changes.len() == 2
-            && balance_changes[0].coin_type == chain.as_denom().unwrap_or_default()
-            && balance_changes[1].coin_type == chain.as_denom().unwrap_or_default()
-        {
-            let (from_change, to_change) = if balance_changes[0].amount < balance_changes[1].amount {
-                (balance_changes[0].clone(), balance_changes[1].clone())
-            } else {
-                (balance_changes[1].clone(), balance_changes[0].clone())
-            };
+        // system & token transfer
+        if transaction.events.is_empty() && (balance_changes.len() == 2 || balance_changes.len() == 3) {
+            let sui_coin_type = chain.as_denom().unwrap_or_default();
+            let (from_change, to_change) =
+                if balance_changes.len() == 2 && balance_changes[0].coin_type == sui_coin_type && balance_changes[1].coin_type == sui_coin_type {
+                    if balance_changes[0].amount < balance_changes[1].amount {
+                        (balance_changes[0].clone(), balance_changes[1].clone())
+                    } else {
+                        (balance_changes[1].clone(), balance_changes[0].clone())
+                    }
+                } else if balance_changes.len() == 3 && balance_changes[0].coin_type == sui_coin_type {
+                    if balance_changes[1].amount < balance_changes[2].amount {
+                        (balance_changes[1].clone(), balance_changes[2].clone())
+                    } else {
+                        (balance_changes[2].clone(), balance_changes[1].clone())
+                    }
+                } else {
+                    return None;
+                };
 
+            let asset_id = if from_change.coin_type == sui_coin_type {
+                chain.as_asset_id()
+            } else {
+                AssetId::from_token(chain, &from_change.coin_type)
+            };
             let from = from_change.owner.get_address_owner();
             let to = to_change.owner.get_address_owner();
+            let value = to_change.amount;
 
             if from.is_none() || to.is_none() {
                 return None;
             }
 
-            let value = to_change.amount;
-            let state = if effects.status.status == "success" {
-                TransactionState::Confirmed
-            } else {
-                TransactionState::Failed
-            };
-
             let transaction = Transaction::new(
                 hash,
-                chain.as_asset_id(),
+                asset_id,
                 from.unwrap_or_default(),
                 to.unwrap_or_default(),
                 None,
@@ -97,7 +110,7 @@ impl SuiMapper {
                 stake.validator_address,
                 None,
                 TransactionType::StakeDelegate,
-                TransactionState::Confirmed,
+                state,
                 fee.to_string(),
                 chain.as_asset_id(),
                 stake.amount,
@@ -161,7 +174,7 @@ impl SuiMapper {
                 stake.validator_address,
                 None,
                 TransactionType::StakeUndelegate,
-                TransactionState::Confirmed,
+                state,
                 fee.to_string(),
                 chain.as_asset_id(),
                 value,
@@ -215,7 +228,7 @@ mod tests {
 
     #[test]
     fn test_transaction_swap_token_to_token() {
-        let file_content = include_str!("../../tests/data/swap_token_to_token.json");
+        let file_content = include_str!("../../testdata/swap_token_to_token.json");
         let result: JsonRpcResult<SuiTransaction> = serde_json::from_str(file_content).unwrap();
 
         let transaction = SuiMapper::map_transaction(result.result).unwrap();
@@ -232,7 +245,7 @@ mod tests {
 
     #[test]
     fn test_transaction_swap_sui_to_token() {
-        let file_content = include_str!("../../tests/data/swap_sui_to_token.json");
+        let file_content = include_str!("../../testdata/swap_sui_to_token.json");
         let result: JsonRpcResult<SuiTransaction> = serde_json::from_str(file_content).unwrap();
 
         let transaction = SuiMapper::map_transaction(result.result).unwrap();
@@ -245,5 +258,38 @@ mod tests {
         };
 
         assert_eq!(transaction.metadata, Some(serde_json::to_value(expected).unwrap()));
+    }
+
+    #[test]
+    fn test_transaction_sui_transfer() {
+        let file_content = include_str!("../../testdata/transfer_sui.json");
+        let result: JsonRpcResult<SuiTransaction> = serde_json::from_str(file_content).unwrap();
+
+        let transaction = SuiMapper::map_transaction(result.result).unwrap();
+
+        assert_eq!(transaction.hash, "CJ16PEqq49KFp758iEVwxEkd3CwP7zDfqGYLuLuu9Z63");
+        assert_eq!(transaction.from, "0x93f65b8c16c263343bbf66cf9f8eef69cb1dbc92d13f0c331b0dcaeb76b4aab6");
+        assert_eq!(transaction.to, "0x9d6b98b18fd26b5efeec68d020dcf1be7a94c2c315353779bc6b3aed44188ddf");
+        assert_eq!(transaction.transaction_type, TransactionType::Transfer);
+        assert_eq!(transaction.value, "100000000");
+        assert_eq!(transaction.asset_id, Chain::Sui.as_asset_id());
+    }
+
+    #[test]
+    fn test_transaction_token_transfer() {
+        let file_content = include_str!("../../testdata/transfer_token.json");
+        let result: JsonRpcResult<SuiTransaction> = serde_json::from_str(file_content).unwrap();
+
+        let transaction = SuiMapper::map_transaction(result.result).unwrap();
+
+        assert_eq!(transaction.hash, "4MjZc5GrgP6peCwbA1LyS5rXNdJxKjWbd2TrSDZQBXKf");
+        assert_eq!(transaction.from, "0x5987852fa4832e820031fd373d6ec8a2cfe84031a59851b8aca60c79b1aa9c2d");
+        assert_eq!(transaction.to, "0xf0e295b8e40b4d554f1f0e4ac78d79227f1921ccd3059d017d0225553384c781");
+        assert_eq!(transaction.transaction_type, TransactionType::Transfer);
+        assert_eq!(transaction.value, "10231646");
+        assert_eq!(
+            transaction.asset_id,
+            AssetId::from_token(Chain::Sui, "0xc060006111016b8a020ad5b33834984a437aaa7d3c74c18e09a95d48aceab08c::coin::COIN")
+        );
     }
 }
