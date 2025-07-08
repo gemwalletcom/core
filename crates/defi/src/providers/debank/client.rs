@@ -37,7 +37,6 @@ impl DeBankClient {
             )));
         }
         let result = response.json::<T>().await?;
-
         Ok(result)
     }
 

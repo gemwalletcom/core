@@ -170,7 +170,6 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
                 scan::scan_transaction,
                 markets::get_markets,
                 defi::get_portfolio,
-                defi::get_positions,
             ],
         )
         .mount(settings.metrics.path, routes![metrics::get_metrics])

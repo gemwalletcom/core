@@ -1,9 +1,8 @@
 use bigdecimal::BigDecimal;
-use primitives::{Chain, DeFiPositionType};
 use serde::{Deserialize, Serialize};
+use serde_serializers::{deserialize_bigdecimal_from_f64, deserialize_option_bigdecimal_from_f64};
 use std::collections::HashMap;
 
-// DeBank API specific models
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DeBankChain {
     pub id: String,
@@ -21,7 +20,9 @@ pub struct DeBankTokenItem {
     pub decimals: u8,
     pub logo_url: Option<String>,
     pub protocol_id: Option<String>,
+    #[serde(deserialize_with = "deserialize_option_bigdecimal_from_f64", default)]
     pub price: Option<BigDecimal>,
+    #[serde(deserialize_with = "deserialize_bigdecimal_from_f64")]
     pub amount: BigDecimal,
     pub is_verified: Option<bool>,
     pub is_core: Option<bool>,
@@ -36,6 +37,7 @@ pub struct DeBankProtocol {
     pub site_url: Option<String>,
     pub logo_url: Option<String>,
     pub has_supported_portfolio: bool,
+    #[serde(deserialize_with = "deserialize_option_bigdecimal_from_f64", default)]
     pub tvl: Option<BigDecimal>,
     pub portfolio_item_list: Option<Vec<DeBankPortfolioItem>>,
 }
@@ -54,8 +56,11 @@ pub struct DeBankPortfolioItem {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DeBankPortfolioStats {
+    #[serde(deserialize_with = "deserialize_bigdecimal_from_f64")]
     pub asset_usd_value: BigDecimal,
+    #[serde(deserialize_with = "deserialize_bigdecimal_from_f64")]
     pub debt_usd_value: BigDecimal,
+    #[serde(deserialize_with = "deserialize_bigdecimal_from_f64")]
     pub net_usd_value: BigDecimal,
 }
 
@@ -64,6 +69,7 @@ pub struct DeBankPortfolioDetail {
     pub supply_token_list: Option<Vec<DeBankTokenItem>>,
     pub reward_token_list: Option<Vec<DeBankTokenItem>>,
     pub borrow_token_list: Option<Vec<DeBankTokenItem>>,
+    #[serde(deserialize_with = "deserialize_option_bigdecimal_from_f64", default)]
     pub health_rate: Option<BigDecimal>,
     pub description: Option<String>,
     pub unlock_at: Option<u64>,
@@ -77,77 +83,6 @@ pub struct DeBankPool {
     pub adapter_id: String,
     pub controller: String,
     pub index: Option<String>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ErrorResponse {
-    pub message: String,
-}
-
-// Internal mapping structures
-pub struct DeBankMapping;
-
-impl DeBankMapping {
-    pub fn chain_to_debank_id(chain: &Chain) -> Option<&'static str> {
-        match chain {
-            Chain::Ethereum => Some("eth"),
-            Chain::Polygon => Some("matic"),
-            Chain::SmartChain => Some("bsc"),
-            Chain::AvalancheC => Some("avax"),
-            Chain::Arbitrum => Some("arb"),
-            Chain::Optimism => Some("op"),
-            Chain::Fantom => Some("ftm"),
-            Chain::Base => Some("base"),
-            Chain::Linea => Some("linea"),
-            Chain::ZkSync => Some("era"),
-            Chain::Manta => Some("manta"),
-            Chain::Celo => Some("celo"),
-            Chain::Mantle => Some("mnt"),
-            Chain::Sonic => Some("sonic"),
-            Chain::Gnosis => Some("xdai"),
-            Chain::Blast => Some("blast"),
-            _ => None,
-        }
-    }
-
-    pub fn debank_id_to_chain(chain_id: &str) -> Option<Chain> {
-        match chain_id {
-            "eth" => Some(Chain::Ethereum),
-            "bsc" => Some(Chain::SmartChain),
-            "base" => Some(Chain::Base),
-            "arb" => Some(Chain::Arbitrum),
-            "matic" => Some(Chain::Polygon),
-            "avax" => Some(Chain::AvalancheC),
-            "op" => Some(Chain::Optimism),
-            "mnt" => Some(Chain::Mantle),
-            "ftm" => Some(Chain::Fantom),
-            "sonic" => Some(Chain::Sonic),
-            "xdai" => Some(Chain::Gnosis),
-            "blast" => Some(Chain::Blast),
-            "linea" => Some(Chain::Linea),
-            "era" => Some(Chain::ZkSync),
-            "manta" => Some(Chain::Manta),
-            "celo" => Some(Chain::Celo),
-            _ => None,
-        }
-    }
-
-    pub fn position_type_from_detail_type(detail_type: &str) -> DeFiPositionType {
-        match detail_type {
-            "common" => DeFiPositionType::Wallet,
-            "lending" => DeFiPositionType::Lending,
-            "liquidity_pool" => DeFiPositionType::Liquidity,
-            "farming" => DeFiPositionType::Farming,
-            "staked" => DeFiPositionType::Staking,
-            "locked" => DeFiPositionType::Locked,
-            "vesting" => DeFiPositionType::Vesting,
-            "perpetuals" => DeFiPositionType::Perpetual,
-            "options" => DeFiPositionType::Options,
-            "leveraged_farming" => DeFiPositionType::Leverage,
-            "insurance" => DeFiPositionType::Vault,
-            _ => DeFiPositionType::Wallet,
-        }
-    }
 }
 
 #[cfg(test)]

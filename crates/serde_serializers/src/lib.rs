@@ -1,3 +1,5 @@
+pub mod bigdecimal;
+pub use bigdecimal::{deserialize_bigdecimal_from_f64, deserialize_option_bigdecimal_from_f64};
 pub mod bigint;
 pub use bigint::{deserialize_bigint_from_str, serialize_bigint};
 pub mod biguint;
