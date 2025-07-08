@@ -1,0 +1,83 @@
+{
+    "jsonrpc": "2.0",
+    "id": 43,
+    "result": {
+      "digest": "CJ16PEqq49KFp758iEVwxEkd3CwP7zDfqGYLuLuu9Z63",
+      "effects": {
+        "messageVersion": "v1",
+        "status": {
+          "status": "success"
+        },
+        "executedEpoch": "704",
+        "gasUsed": {
+          "computationCost": "747000",
+          "storageCost": "1976000",
+          "storageRebate": "978120",
+          "nonRefundableStorageFee": "9880"
+        },
+        "modifiedAtVersions": [
+          {
+            "objectId": "0xf6c8e0049fe442feac25a743681180d4feb5211bc73e14083c6b4956ea2f1936",
+            "sequenceNumber": "476673345"
+          }
+        ],
+        "transactionDigest": "CJ16PEqq49KFp758iEVwxEkd3CwP7zDfqGYLuLuu9Z63",
+        "created": [
+          {
+            "owner": {
+              "AddressOwner": "0x9d6b98b18fd26b5efeec68d020dcf1be7a94c2c315353779bc6b3aed44188ddf"
+            },
+            "reference": {
+              "objectId": "0x16ee212488cd60974b1a39fc8bdc582f1b290c9c9b8f36731e0ed94a0e14d480",
+              "version": 476673346,
+              "digest": "qZfk8pBqpiGoPhY5XAzUJimFAC2beC5CjVtah4zn59x"
+            }
+          }
+        ],
+        "mutated": [
+          {
+            "owner": {
+              "AddressOwner": "0x93f65b8c16c263343bbf66cf9f8eef69cb1dbc92d13f0c331b0dcaeb76b4aab6"
+            },
+            "reference": {
+              "objectId": "0xf6c8e0049fe442feac25a743681180d4feb5211bc73e14083c6b4956ea2f1936",
+              "version": 476673346,
+              "digest": "CbUAvetQsiezjj6y3N2suryGnaRbTebmd5HNh2s54XGT"
+            }
+          }
+        ],
+        "gasObject": {
+          "owner": {
+            "AddressOwner": "0x93f65b8c16c263343bbf66cf9f8eef69cb1dbc92d13f0c331b0dcaeb76b4aab6"
+          },
+          "reference": {
+            "objectId": "0xf6c8e0049fe442feac25a743681180d4feb5211bc73e14083c6b4956ea2f1936",
+            "version": 476673346,
+            "digest": "CbUAvetQsiezjj6y3N2suryGnaRbTebmd5HNh2s54XGT"
+          }
+        },
+        "dependencies": [
+          "AqtTWk11YTdr5fEMpiv3VA16hB3EdTJAd9y8MM1UcvXW"
+        ]
+      },
+      "events": [],
+      "balanceChanges": [
+        {
+          "owner": {
+            "AddressOwner": "0x93f65b8c16c263343bbf66cf9f8eef69cb1dbc92d13f0c331b0dcaeb76b4aab6"
+          },
+          "coinType": "0x2::sui::SUI",
+          "amount": "-101744880"
+        },
+        {
+          "owner": {
+            "AddressOwner": "0x9d6b98b18fd26b5efeec68d020dcf1be7a94c2c315353779bc6b3aed44188ddf"
+          },
+          "coinType": "0x2::sui::SUI",
+          "amount": "100000000"
+        }
+      ],
+      "timestampMs": "1742168333886",
+      "checkpoint": "123444604"
+    }
+  }
