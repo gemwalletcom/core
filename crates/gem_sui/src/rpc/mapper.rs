@@ -45,10 +45,10 @@ impl SuiMapper {
             TransactionState::Failed
         };
         let owner = effects.gas_object.owner.get_address_owner();
+        let sui_coin_type = chain.as_denom()?;
 
         // system & token transfer
         if transaction.events.is_empty() && (balance_changes.len() == 2 || balance_changes.len() == 3) {
-            let sui_coin_type = chain.as_denom().unwrap_or_default();
             let (from_change, to_change) =
                 if balance_changes.len() == 2 && balance_changes[0].coin_type == sui_coin_type && balance_changes[1].coin_type == sui_coin_type {
                     if balance_changes[0].amount < balance_changes[1].amount {
@@ -71,19 +71,15 @@ impl SuiMapper {
             } else {
                 AssetId::from_token(chain, &from_change.coin_type)
             };
-            let from = from_change.owner.get_address_owner();
-            let to = to_change.owner.get_address_owner();
+            let from = from_change.owner.get_address_owner()?;
+            let to = to_change.owner.get_address_owner()?;
             let value = to_change.amount;
-
-            if from.is_none() || to.is_none() {
-                return None;
-            }
 
             let transaction = Transaction::new(
                 hash,
                 asset_id,
-                from.unwrap_or_default(),
-                to.unwrap_or_default(),
+                from,
+                to,
                 None,
                 TransactionType::Transfer,
                 state,
