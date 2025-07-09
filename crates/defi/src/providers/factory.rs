@@ -32,19 +32,9 @@ impl DefiProviderFactory {
     pub fn get_providers_for_chain(&self, chain: &Chain) -> Vec<Arc<dyn DeFiProvider>> {
         self.providers
             .values()
-            .filter(|provider| provider.supported_chains().contains(chain))
+            .filter(|provider| provider.supported_chain_types().contains(&chain.chain_type()))
             .cloned()
             .collect()
-    }
-
-    pub fn list_supported_chains(&self) -> Vec<Chain> {
-        let mut chains = std::collections::HashSet::new();
-        for provider in self.providers.values() {
-            for chain in provider.supported_chains() {
-                chains.insert(chain);
-            }
-        }
-        chains.into_iter().collect()
     }
 }
 

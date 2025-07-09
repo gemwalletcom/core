@@ -5,7 +5,7 @@ use super::client::DeBankClient;
 use super::models::DeBankTokenItem;
 use crate::error::DeFiError;
 use crate::provider::DeFiProvider;
-use primitives::{AssetId, Chain, DeFiAsset, DeFiAssetType, DeFiPortfolio, DeFiPosition, DeFiPositionFilters, DeFiPositionType, DeFiProtocol, PositionStats};
+use primitives::{AssetId, Chain, ChainType, DeFiAsset, DeFiPortfolio, DeFiPosition, DeFiPositionFilters, DeFiProtocol, PositionStats};
 
 pub struct DeBankProvider {
     client: DeBankClient,
@@ -62,24 +62,7 @@ impl DeBankProvider {
         }
     }
 
-    pub fn to_position_type(&self, detail_type: &str) -> DeFiPositionType {
-        match detail_type {
-            "common" => DeFiPositionType::Wallet,
-            "lending" => DeFiPositionType::Lending,
-            "liquidity_pool" => DeFiPositionType::Liquidity,
-            "farming" => DeFiPositionType::Farming,
-            "staked" => DeFiPositionType::Staking,
-            "locked" => DeFiPositionType::Locked,
-            "vesting" => DeFiPositionType::Vesting,
-            "perpetuals" => DeFiPositionType::Perpetual,
-            "options" => DeFiPositionType::Options,
-            "leveraged_farming" => DeFiPositionType::Leverage,
-            "insurance" => DeFiPositionType::Vault,
-            _ => DeFiPositionType::Wallet,
-        }
-    }
-
-    fn convert_token_to_asset(&self, token: &DeBankTokenItem, asset_type: DeFiAssetType) -> Result<DeFiAsset, DeFiError> {
+    fn convert_token_to_asset(&self, token: &DeBankTokenItem, asset_type: String) -> Result<DeFiAsset, DeFiError> {
         let chain = self.map_debank_chain(&token.chain).unwrap_or(Chain::Ethereum);
         let asset_id = AssetId {
             chain,
@@ -100,13 +83,6 @@ impl DeBankProvider {
             asset_type,
         })
     }
-
-    fn convert_position_type(&self, detail_types: &[String]) -> DeFiPositionType {
-        if let Some(detail_type) = detail_types.iter().next() {
-            return self.to_position_type(detail_type);
-        }
-        DeFiPositionType::Wallet
-    }
 }
 
 #[async_trait]
@@ -115,17 +91,8 @@ impl DeFiProvider for DeBankProvider {
         "DeBank"
     }
 
-    fn supported_chains(&self) -> Vec<Chain> {
-        vec![
-            Chain::Ethereum,
-            Chain::Polygon,
-            Chain::SmartChain,
-            Chain::AvalancheC,
-            Chain::Arbitrum,
-            Chain::Optimism,
-            Chain::Fantom,
-            Chain::Base,
-        ]
+    fn supported_chain_types(&self) -> Vec<ChainType> {
+        vec![ChainType::Ethereum]
     }
 
     async fn get_portfolio(&self, address: &str, chains: Vec<Chain>) -> Result<DeFiPortfolio, DeFiError> {
@@ -157,14 +124,14 @@ impl DeFiProvider for DeBankProvider {
                 continue;
             }
 
-            if let Some(ref portfolio_items) = protocol.portfolio_item_list {
-                for item in portfolio_items {
+            if !protocol.portfolio_item_list.is_empty() {
+                for item in protocol.portfolio_item_list {
                     let mut assets = Vec::new();
 
                     // Convert supply tokens
                     if let Some(supply_tokens) = &item.detail.supply_token_list {
                         for token in supply_tokens {
-                            if let Ok(asset) = self.convert_token_to_asset(token, DeFiAssetType::Supply) {
+                            if let Ok(asset) = self.convert_token_to_asset(token, "Supply".to_string()) {
                                 assets.push(asset);
                             }
                         }
@@ -173,7 +140,7 @@ impl DeFiProvider for DeBankProvider {
                     // Convert reward tokens
                     if let Some(reward_tokens) = &item.detail.reward_token_list {
                         for token in reward_tokens {
-                            if let Ok(asset) = self.convert_token_to_asset(token, DeFiAssetType::Reward) {
+                            if let Ok(asset) = self.convert_token_to_asset(token, "Reward".to_string()) {
                                 assets.push(asset);
                             }
                         }
@@ -182,7 +149,7 @@ impl DeFiProvider for DeBankProvider {
                     // Convert borrow tokens
                     if let Some(borrow_tokens) = &item.detail.borrow_token_list {
                         for token in borrow_tokens {
-                            if let Ok(asset) = self.convert_token_to_asset(token, DeFiAssetType::Borrow) {
+                            if let Ok(asset) = self.convert_token_to_asset(token, "Borrow".to_string()) {
                                 assets.push(asset);
                             }
                         }
@@ -197,7 +164,7 @@ impl DeFiProvider for DeBankProvider {
                             logo_url: protocol.logo_url.clone(),
                             website: protocol.site_url.clone(),
                         },
-                        position_type: self.convert_position_type(&item.detail_types),
+                        position_type: item.detail_types.join(","),
                         name: item.name.clone(),
                         stats: PositionStats {
                             asset_value_usd: item.stats.asset_usd_value.clone(),

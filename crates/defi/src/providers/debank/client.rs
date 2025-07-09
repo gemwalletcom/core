@@ -1,4 +1,7 @@
-use reqwest::Client;
+use reqwest::{
+    header::{HeaderMap, HeaderValue},
+    Client,
+};
 
 use super::models::DeBankProtocol;
 use crate::{error::DeFiError, providers::debank::DeBankChain};
@@ -19,22 +22,14 @@ impl DeBankClient {
     }
 
     async fn request<T: serde::de::DeserializeOwned>(&self, endpoint: &str, params: Vec<(&str, &str)>) -> Result<T, DeFiError> {
-        let mut headers = reqwest::header::HeaderMap::new();
-
-        headers.insert(
-            "AccessKey",
-            self.api_key.parse().map_err(|_| DeFiError::AuthError("Invalid API key format".to_string()))?,
-        );
+        let mut headers = HeaderMap::new();
+        headers.insert("AccessKey", HeaderValue::from_str(&self.api_key).unwrap());
 
         let url = format!("{}{}", self.base_url, endpoint);
         let response = self.client.get(&url).headers(headers).query(&params).send().await?;
 
         if !response.status().is_success() {
-            return Err(DeFiError::NetworkError(format!(
-                "HTTP {}: {}",
-                response.status(),
-                response.text().await.unwrap_or_default()
-            )));
+            return Err(DeFiError::NetworkError(format!("HTTP status: {}", response.status(),)));
         }
         let result = response.json::<T>().await?;
         Ok(result)

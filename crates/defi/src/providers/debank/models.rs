@@ -1,7 +1,6 @@
 use bigdecimal::BigDecimal;
 use serde::{Deserialize, Serialize};
 use serde_serializers::{deserialize_bigdecimal_from_f64, deserialize_option_bigdecimal_from_f64};
-use std::collections::HashMap;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DeBankChain {
@@ -15,8 +14,6 @@ pub struct DeBankTokenItem {
     pub chain: String,
     pub name: String,
     pub symbol: String,
-    pub display_symbol: Option<String>,
-    pub optimized_symbol: Option<String>,
     pub decimals: u8,
     pub logo_url: Option<String>,
     pub protocol_id: Option<String>,
@@ -24,9 +21,8 @@ pub struct DeBankTokenItem {
     pub price: Option<BigDecimal>,
     #[serde(deserialize_with = "deserialize_bigdecimal_from_f64")]
     pub amount: BigDecimal,
-    pub is_verified: Option<bool>,
-    pub is_core: Option<bool>,
-    pub is_wallet: Option<bool>,
+    pub is_verified: bool,
+    pub time_at: Option<f64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -37,20 +33,18 @@ pub struct DeBankProtocol {
     pub site_url: Option<String>,
     pub logo_url: Option<String>,
     pub has_supported_portfolio: bool,
-    #[serde(deserialize_with = "deserialize_option_bigdecimal_from_f64", default)]
-    pub tvl: Option<BigDecimal>,
-    pub portfolio_item_list: Option<Vec<DeBankPortfolioItem>>,
+    #[serde(deserialize_with = "deserialize_bigdecimal_from_f64", default)]
+    pub tvl: BigDecimal,
+    pub portfolio_item_list: Vec<DeBankPortfolioItem>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DeBankPortfolioItem {
     pub stats: DeBankPortfolioStats,
-    pub asset_dict: Option<HashMap<String, BigDecimal>>,
     pub asset_token_list: Option<Vec<DeBankTokenItem>>,
     pub name: String,
     pub detail_types: Vec<String>,
     pub detail: DeBankPortfolioDetail,
-    pub proxy_detail: Option<serde_json::Value>,
     pub pool: Option<DeBankPool>,
 }
 
@@ -80,9 +74,7 @@ pub struct DeBankPool {
     pub id: String,
     pub chain: String,
     pub project_id: String,
-    pub adapter_id: String,
     pub controller: String,
-    pub index: Option<String>,
 }
 
 #[cfg(test)]

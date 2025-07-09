@@ -128,6 +128,5 @@ pub use self::asset_address::AssetAddress;
 pub mod defi_portfolio;
 pub mod graphql;
 pub use self::defi_portfolio::{
-    DeFiAsset, DeFiAssetType, DeFiPortfolio, DeFiPortfolioRequest, DeFiPosition, DeFiPositionFilters, DeFiPositionType, DeFiPositionsRequest, DeFiProtocol,
-    DeFiProtocolCategory, PositionStats,
+    DeFiAsset, DeFiPortfolio, DeFiPortfolioRequest, DeFiPosition, DeFiPositionFilters, DeFiPositionsRequest, DeFiProtocol, PositionStats,
 };
