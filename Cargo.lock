@@ -6366,6 +6366,7 @@ dependencies = [
  "security_provider",
  "serde",
  "serde_json",
+ "tokio",
 ]
 
 [[package]]
@@ -6392,6 +6393,7 @@ dependencies = [
  "primitives",
  "serde",
  "serde_json",
+ "tokio",
 ]
 
 [[package]]

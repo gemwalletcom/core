@@ -112,7 +112,11 @@ async fn main() {
     let _ = stream_producer
         .bind_exchange(
             ExchangeName::NewAddresses.clone(),
-            vec![QueueName::FetchAssetsAddressesAssociations, QueueName::FetchTransactions],
+            vec![
+                QueueName::FetchAssetsAddressesAssociations,
+                QueueName::FetchTransactions,
+                QueueName::FetchNftAssetsAddressesAssociations,
+            ],
         )
         .await;
 

@@ -66,12 +66,13 @@ impl ScanClient {
         Ok(results)
     }
 
+    #[allow(dead_code)]
     pub async fn scan_token(&mut self, chain: primitives::Chain, token_id: &str) -> Result<Vec<ScanResult<TokenTarget>>, Box<dyn Error + Send + Sync>> {
         let target = TokenTarget {
             token_id: token_id.to_string(),
             chain,
         };
-        
+
         let results = future::join_all(self.security_providers.iter().map(|provider| provider.scan_token(&target)))
             .await
             .into_iter()
