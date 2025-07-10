@@ -42,8 +42,8 @@ pub fn build_quote_exact_request(v4_quoter: &str, params: &IV4Quoter::QuoteExact
 
 // Returns (amountOut, gasEstimate)
 pub fn decode_quoter_response(response: &JsonRpcResponse<String>) -> Result<(U256, U256), SwapperError> {
-    let hex = response.result.trim_start_matches("0x");
-    let decoded = hex::decode(&hex).map_err(|e| SwapperError::NetworkError(e.to_string()))?;
+    let hex = response.result.strip_prefix("0x").unwrap_or(&response.result);
+    let decoded = hex::decode(hex).map_err(|e| SwapperError::NetworkError(e.to_string()))?;
     let quoter_return = IV4Quoter::quoteExactInputSingleCall::abi_decode_returns(&decoded).map_err(SwapperError::from)?;
 
     Ok((quoter_return.amountOut, quoter_return.gasEstimate))
