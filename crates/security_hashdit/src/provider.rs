@@ -4,7 +4,7 @@ use crate::models::DetectResponse;
 use async_trait::async_trait;
 use hmac::{Hmac, Mac};
 use reqwest_enum::{target::Target, Error};
-use security_provider::{AddressTarget, ScanProvider, ScanResult};
+use security_provider::{AddressTarget, ScanProvider, ScanResult, TokenTarget, mapper};
 use sha2::Sha256;
 use std::time::{SystemTime, UNIX_EPOCH};
 type HmacSha256 = Hmac<Sha256>;
@@ -82,7 +82,7 @@ impl ScanProvider for HashDitProvider {
     }
 
     async fn scan_address(&self, target: &AddressTarget) -> Result<ScanResult<AddressTarget>, Box<dyn std::error::Error + Send + Sync>> {
-        let api = HashDitApi::DetectAddress(target.address.clone(), target.chain.network_id().into());
+        let api = HashDitApi::DetectAddress(target.address.clone(), mapper::chain_to_provider_id(target.chain));
         let request = self.build_request(api)?;
         let response = self.client.execute(request.build()?).await?;
         let mut is_malicious = false;
@@ -108,6 +108,40 @@ impl ScanProvider for HashDitProvider {
         }
 
         // Implement HashDit-specific scanning logic
+        Ok(ScanResult {
+            target: target.clone(),
+            is_malicious,
+            reason,
+            provider: PROVIDER_NAME.into(),
+        })
+    }
+
+    async fn scan_token(&self, target: &TokenTarget) -> Result<ScanResult<TokenTarget>, Box<dyn std::error::Error + Send + Sync>> {
+        let api = HashDitApi::DetectToken(target.token_id.clone(), mapper::chain_to_provider_id(target.chain));
+        let request = self.build_request(api)?;
+        let response = self.client.execute(request.build()?).await?;
+        let mut is_malicious = false;
+        let mut reason: Option<String> = None;
+
+        let body = response.json::<DetectResponse>().await?;
+        if let Some(error_data) = body.error_data {
+            return Err(Box::from(error_data));
+        }
+        if let Some(data) = body.data {
+            if data.has_result {
+                // 0 - Very Low Risk
+                // 1 - Some Risk
+                // 2 - Low Risk
+                // 3 - Medium Risk
+                // 4 - High Risk
+                // 5 - Significant Risk
+                is_malicious = data.risk_level >= 3;
+                reason = Some(format!("Risk level: {}", data.risk_level));
+            } else {
+                return Err(Box::from("No data found"));
+            }
+        }
+
         Ok(ScanResult {
             target: target.clone(),
             is_malicious,

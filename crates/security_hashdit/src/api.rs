@@ -8,6 +8,7 @@ use std::{borrow::Cow, collections::HashMap};
 
 pub enum HashDitApi {
     DetectAddress(String, String),
+    DetectToken(String, String),
     DetectURL(String),
 }
 
@@ -27,6 +28,7 @@ impl Target for HashDitApi {
     fn query(&self) -> HashMap<String, String> {
         match self {
             HashDitApi::DetectAddress(_, _) => HashMap::from([("business".to_string(), "gem_wallet_address_detection".to_string())]),
+            HashDitApi::DetectToken(_, _) => HashMap::from([("business".to_string(), "gem_wallet_token_detection".to_string())]),
             HashDitApi::DetectURL(_) => HashMap::from([("business".to_string(), "gem_wallet_url_detection".to_string())]),
         }
     }
@@ -40,6 +42,13 @@ impl Target for HashDitApi {
             HashDitApi::DetectAddress(address, chain) => {
                 let body = serde_json::json!({
                     "address": address,
+                    "chain_id": chain,
+                });
+                HTTPBody::from(&body).map_err(Error::SerdeJson)
+            }
+            HashDitApi::DetectToken(token_address, chain) => {
+                let body = serde_json::json!({
+                    "address": token_address,
                     "chain_id": chain,
                 });
                 HTTPBody::from(&body).map_err(Error::SerdeJson)

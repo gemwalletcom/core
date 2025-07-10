@@ -2,9 +2,17 @@ use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use std::result::Result;
 
+pub mod mapper;
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AddressTarget {
     pub address: String,
+    pub chain: primitives::Chain,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TokenTarget {
+    pub token_id: String,
     pub chain: primitives::Chain,
 }
 
@@ -13,6 +21,7 @@ pub struct AddressTarget {
 #[serde(untagged)]
 pub enum ScanTarget {
     Address(AddressTarget),
+    Token(TokenTarget),
     URL(String),
 }
 
@@ -27,6 +36,7 @@ pub struct ScanRequest {
 #[serde(rename_all = "lowercase")]
 pub enum ScanTargetType {
     Address,
+    Token,
     URL,
 }
 
@@ -42,5 +52,6 @@ pub struct ScanResult<T> {
 pub trait ScanProvider: Send + Sync {
     fn name(&self) -> &'static str;
     async fn scan_address(&self, target: &AddressTarget) -> Result<ScanResult<AddressTarget>, Box<dyn std::error::Error + Send + Sync>>;
+    async fn scan_token(&self, target: &TokenTarget) -> Result<ScanResult<TokenTarget>, Box<dyn std::error::Error + Send + Sync>>;
     async fn scan_url(&self, target: &str) -> Result<ScanResult<String>, Box<dyn std::error::Error + Send + Sync>>;
 }

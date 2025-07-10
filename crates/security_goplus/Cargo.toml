@@ -9,3 +9,6 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 security_provider = { path = "../security_provider" }
 reqwest = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true }
