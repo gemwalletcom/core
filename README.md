@@ -3,12 +3,14 @@
 [![Rust](https://img.shields.io/badge/language-Rust-orange?logo=rust)](https://www.rust-lang.org/)
 [![GitHub release](https://img.shields.io/github/v/release/gemwalletcom/core)](https://github.com/gemwalletcom/core/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/gemwalletcom/core)
+[![Telegram](https://img.shields.io/badge/Telegram-2CA5E0?style=flat&logo=telegram&logoColor=white)](https://t.me/gemwallet_developers)
+![GitHub Repo stars](https://img.shields.io/github/stars/gemwalletcom/core?style=social)
+
 [![Unit Tests](https://github.com/gemwalletcom/core/actions/workflows/ci.yml/badge.svg)](https://github.com/gemwalletcom/core/actions/workflows/ci.yml)
 [![Docker Build](https://github.com/gemwalletcom/core/actions/workflows/docker.yml/badge.svg)](https://github.com/gemwalletcom/core/actions/workflows/docker.yml)
 [![iOS Tests](https://github.com/gemwalletcom/core/actions/workflows/ci-stone-ios.yml/badge.svg)](https://github.com/gemwalletcom/core/actions/workflows/ci-stone-ios.yml)
 [![Android Build](https://github.com/gemwalletcom/core/actions/workflows/ci-stone-android.yml/badge.svg)](https://github.com/gemwalletcom/core/actions/workflows/ci-stone-android.yml)
-[![Telegram](https://img.shields.io/badge/Telegram-2CA5E0?style=flat&logo=telegram&logoColor=white)](https://t.me/gemwallet_developers)
-![GitHub Repo stars](https://img.shields.io/github/stars/gemwalletcom/core?style=social)
 
 # Introduction
 
