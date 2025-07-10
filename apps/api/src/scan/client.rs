@@ -1,7 +1,7 @@
 extern crate rocket;
 use primitives::{ScanTransaction, ScanTransactionPayload};
 use rocket::futures::future;
-use security_provider::{AddressTarget, ScanProvider, ScanResult};
+use security_provider::{AddressTarget, ScanProvider, ScanResult, TokenTarget};
 use std::error::Error;
 use storage::DatabaseClient;
 
@@ -58,6 +58,27 @@ impl ScanClient {
             .filter_map(|result| match result {
                 Err(e) => {
                     println!("error scanning: {e}");
+                    None
+                }
+                Ok(result) => Some(result),
+            })
+            .collect();
+        Ok(results)
+    }
+
+    #[allow(dead_code)]
+    pub async fn scan_token(&mut self, chain: primitives::Chain, token_id: &str) -> Result<Vec<ScanResult<TokenTarget>>, Box<dyn Error + Send + Sync>> {
+        let target = TokenTarget {
+            token_id: token_id.to_string(),
+            chain,
+        };
+
+        let results = future::join_all(self.security_providers.iter().map(|provider| provider.scan_token(&target)))
+            .await
+            .into_iter()
+            .filter_map(|result| match result {
+                Err(e) => {
+                    println!("error scanning token: {e}");
                     None
                 }
                 Ok(result) => Some(result),

@@ -10,3 +10,4 @@ primitives = { path = "../primitives" }
 
 [dev-dependencies]
 serde_json = { workspace = true }
+tokio = { workspace = true }
