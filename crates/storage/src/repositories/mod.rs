@@ -7,5 +7,7 @@ pub mod devices_repository;
 pub mod fiat_repository;
 pub mod link_types_repository;
 pub mod nft_repository;
+pub mod nodes_repository;
+pub mod parser_state_repository;
 pub mod subscriptions_repository;
 pub mod repository_factory;

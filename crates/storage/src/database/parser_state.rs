@@ -2,19 +2,12 @@ use crate::{models::*, DatabaseClient};
 
 use diesel::prelude::*;
 
-pub trait ParserStateStore {
+pub(crate) trait ParserStateStore {
     fn get_parser_state(&mut self, chain: &str) -> Result<ParserState, diesel::result::Error>;
     fn add_parser_state(&mut self, chain: &str) -> Result<usize, diesel::result::Error>;
     fn get_parser_states(&mut self) -> Result<Vec<ParserState>, diesel::result::Error>;
     fn set_parser_state_latest_block(&mut self, chain: &str, block: i32) -> Result<usize, diesel::result::Error>;
     fn set_parser_state_current_block(&mut self, chain: &str, block: i32) -> Result<usize, diesel::result::Error>;
-}
-
-pub trait ParserStateRepository {
-    //     fn get_parser_state(&mut self, _chain: Chain) -> Result<ParserState, diesel::result::Error>;
-    //     fn add_parser_state(&mut self, _chain: Chain) -> Result<usize, diesel::result::Error>;
-    //     fn get_parser_states(&mut self) -> Result<Vec<ParserState>, diesel::result::Error>;
-    //     fn set_parser_state_latest_block(&mut self, _chain: Chain, block: i32) -> Result<usize, diesel::result::Error>;
 }
 
 impl ParserStateStore for DatabaseClient {
@@ -54,4 +47,25 @@ impl ParserStateStore for DatabaseClient {
     }
 }
 
-impl ParserStateRepository for DatabaseClient {}
+// Public methods for backward compatibility
+impl DatabaseClient {
+    pub fn get_parser_state(&mut self, chain: &str) -> Result<ParserState, diesel::result::Error> {
+        ParserStateStore::get_parser_state(self, chain)
+    }
+
+    pub fn add_parser_state(&mut self, chain: &str) -> Result<usize, diesel::result::Error> {
+        ParserStateStore::add_parser_state(self, chain)
+    }
+
+    pub fn get_parser_states(&mut self) -> Result<Vec<ParserState>, diesel::result::Error> {
+        ParserStateStore::get_parser_states(self)
+    }
+
+    pub fn set_parser_state_latest_block(&mut self, chain: &str, block: i32) -> Result<usize, diesel::result::Error> {
+        ParserStateStore::set_parser_state_latest_block(self, chain, block)
+    }
+
+    pub fn set_parser_state_current_block(&mut self, chain: &str, block: i32) -> Result<usize, diesel::result::Error> {
+        ParserStateStore::set_parser_state_current_block(self, chain, block)
+    }
+}
