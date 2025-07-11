@@ -21,35 +21,20 @@ impl AssetsClient {
     }
 
     #[allow(unused)]
-    pub fn get_asset(&mut self, asset_id: &str) -> Result<Asset, Box<dyn Error>> {
-        Ok(self.database.get_asset(asset_id)?.as_primitive())
+    pub fn get_asset(&mut self, asset_id: &str) -> Result<Asset, Box<dyn Error + Send + Sync>> {
+        Ok(self.database.repositories().assets().get_asset(asset_id)?)
     }
 
     pub fn get_assets_list(&mut self) -> Result<Vec<AssetBasic>, Box<dyn Error + Send + Sync>> {
         Ok(self.database.repositories().assets().get_assets_by_filter(vec![])?)
     }
 
-    pub fn get_assets(&mut self, asset_ids: Vec<String>) -> Result<Vec<AssetBasic>, Box<dyn Error>> {
-        Ok(self.database.get_assets(asset_ids)?.into_iter().map(|x| x.as_basic_primitive()).collect())
+    pub fn get_assets(&mut self, asset_ids: Vec<String>) -> Result<Vec<AssetBasic>, Box<dyn Error + Send + Sync>> {
+        self.database.repositories().assets().get_assets_basic(asset_ids)
     }
 
-    pub fn get_asset_full(&mut self, asset_id: &str) -> Result<AssetFull, Box<dyn Error>> {
-        let asset = self.database.get_asset(asset_id)?;
-        let links = self
-            .database
-            .repositories()
-            .assets_links()
-            .get_asset_links(asset_id)
-            .map_err(|e| -> Box<dyn Error> { e })?;
-        let tags = self.database.get_assets_tags_for_asset(asset_id)?;
-
-        Ok(AssetFull {
-            asset: asset.as_primitive(),
-            properties: asset.as_property_primitive(),
-            links,
-            score: asset.as_score_primitive(),
-            tags: tags.into_iter().map(|x| x.tag_id).collect(),
-        })
+    pub fn get_asset_full(&mut self, asset_id: &str) -> Result<AssetFull, Box<dyn Error + Send + Sync>> {
+        self.database.repositories().assets().get_asset_full(asset_id)
     }
 
     pub fn get_assets_by_device_id(

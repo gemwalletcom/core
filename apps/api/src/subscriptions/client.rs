@@ -17,12 +17,11 @@ impl SubscriptionsClient {
     }
 
     pub async fn add_subscriptions(&mut self, device_id: &str, subscriptions: Vec<Subscription>) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        let device = self.database.get_device(device_id)?;
         let result = self
             .database
             .repositories()
             .subscriptions()
-            .add_subscriptions(subscriptions.clone(), device.id)?;
+            .add_subscriptions(subscriptions.clone(), device_id)?;
         let payload = subscriptions
             .clone()
             .into_iter()
@@ -37,7 +36,6 @@ impl SubscriptionsClient {
     }
 
     pub async fn delete_subscriptions(&mut self, device_id: &str, subscriptions: Vec<Subscription>) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        let device = self.database.get_device(device_id)?;
-        Ok(self.database.repositories().subscriptions().delete_subscriptions(subscriptions, device.id)?)
+        Ok(self.database.repositories().subscriptions().delete_subscriptions(subscriptions, device_id)?)
     }
 }

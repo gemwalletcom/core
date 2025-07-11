@@ -29,6 +29,8 @@ impl TransactionsClient {
 
         let transactions = self
             .database
+            .repositories()
+            .transactions()
             .get_transactions_by_device_id(device_id, addresses.clone(), chains.clone(), options)?
             .into_iter()
             .map(|x| x.as_primitive(addresses.clone()).finalize(addresses.clone()))
@@ -37,6 +39,13 @@ impl TransactionsClient {
     }
 
     pub fn get_transactions_by_id(&mut self, id: &str) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.get_transactions_by_id(id)?.into_iter().map(|x| x.as_primitive(vec![])).collect())
+        Ok(self
+            .database
+            .repositories()
+            .transactions()
+            .get_transactions_by_id(id)?
+            .into_iter()
+            .map(|x| x.as_primitive(vec![]))
+            .collect())
     }
 }

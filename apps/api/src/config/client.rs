@@ -25,8 +25,8 @@ impl ConfigClient {
             .assets()
             .get_assets_by_filter(vec![AssetFilter::IsSellable(true)])?
             .len() as i32;
-        let swap_assets_version = self.database.get_swap_assets_version()?;
-        let releases = self.database.get_releases()?;
+        let swap_assets_version = self.database.repositories().assets().get_swap_assets_version()?;
+        let releases = self.database.repositories().releases().get_releases()?;
 
         let releases = releases
             .into_iter()

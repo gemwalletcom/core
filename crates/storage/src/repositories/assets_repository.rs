@@ -12,7 +12,9 @@ pub trait AssetsRepository {
     fn upsert_assets(&mut self, values: Vec<PrimitiveAsset>) -> Result<usize, Box<dyn Error + Send + Sync>>;
     fn get_assets_by_filter(&mut self, filters: Vec<AssetFilter>) -> Result<Vec<AssetBasic>, Box<dyn Error + Send + Sync>>;
     fn get_asset(&mut self, asset_id: &str) -> Result<PrimitiveAsset, Box<dyn Error + Send + Sync>>;
+    fn get_asset_full(&mut self, asset_id: &str) -> Result<primitives::AssetFull, Box<dyn Error + Send + Sync>>;
     fn get_assets(&mut self, asset_ids: Vec<String>) -> Result<Vec<PrimitiveAsset>, Box<dyn Error + Send + Sync>>;
+    fn get_assets_basic(&mut self, asset_ids: Vec<String>) -> Result<Vec<AssetBasic>, Box<dyn Error + Send + Sync>>;
     fn get_swap_assets(&mut self) -> Result<Vec<String>, Box<dyn Error + Send + Sync>>;
     fn get_swap_assets_version(&mut self) -> Result<i32, Box<dyn Error + Send + Sync>>;
     fn add_chains(&mut self, values: Vec<String>) -> Result<usize, Box<dyn Error + Send + Sync>>;
@@ -49,8 +51,32 @@ impl AssetsRepository for DatabaseClient {
         Ok(AssetsStore::get_asset(self, asset_id)?.as_primitive())
     }
 
+    fn get_asset_full(&mut self, asset_id: &str) -> Result<primitives::AssetFull, Box<dyn Error + Send + Sync>> {
+        use crate::database::assets_links::AssetsLinksStore;
+        use crate::database::tag::TagStore;
+
+        let asset = AssetsStore::get_asset(self, asset_id)?;
+        let links = AssetsLinksStore::get_asset_links(self, asset_id)?
+            .into_iter()
+            .map(|x| x.as_primitive())
+            .collect();
+        let tags = TagStore::get_assets_tags_for_asset(self, asset_id)?.into_iter().map(|x| x.tag_id).collect();
+
+        Ok(primitives::AssetFull {
+            asset: asset.as_primitive(),
+            properties: asset.as_property_primitive(),
+            score: asset.as_score_primitive(),
+            links,
+            tags,
+        })
+    }
+
     fn get_assets(&mut self, asset_ids: Vec<String>) -> Result<Vec<PrimitiveAsset>, Box<dyn Error + Send + Sync>> {
         Ok(AssetsStore::get_assets(self, asset_ids)?.into_iter().map(|x| x.as_primitive()).collect())
+    }
+
+    fn get_assets_basic(&mut self, asset_ids: Vec<String>) -> Result<Vec<AssetBasic>, Box<dyn Error + Send + Sync>> {
+        Ok(AssetsStore::get_assets(self, asset_ids)?.into_iter().map(|x| x.as_basic_primitive()).collect())
     }
 
     fn get_swap_assets(&mut self) -> Result<Vec<String>, Box<dyn Error + Send + Sync>> {

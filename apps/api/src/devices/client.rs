@@ -15,24 +15,24 @@ impl DevicesClient {
         Self { database, pusher }
     }
 
-    pub fn add_device(&mut self, device: primitives::device::Device) -> Result<primitives::device::Device, Box<dyn Error>> {
+    pub fn add_device(&mut self, device: primitives::device::Device) -> Result<primitives::device::Device, Box<dyn Error + Send + Sync>> {
         let add_device = UpdateDevice::from_primitive(device.clone());
         let device = self.database.repositories().devices().add_device(add_device)?;
-        Ok(device.as_primitive())
+        Ok(device)
     }
 
-    pub fn get_device(&mut self, device_id: &str) -> Result<primitives::Device, Box<dyn Error>> {
+    pub fn get_device(&mut self, device_id: &str) -> Result<primitives::Device, Box<dyn Error + Send + Sync>> {
         let device = self.database.repositories().devices().get_device(device_id)?;
-        Ok(device.as_primitive())
+        Ok(device)
     }
 
-    pub fn update_device(&mut self, device: primitives::device::Device) -> Result<primitives::device::Device, Box<dyn Error>> {
+    pub fn update_device(&mut self, device: primitives::device::Device) -> Result<primitives::device::Device, Box<dyn Error + Send + Sync>> {
         let update_device = UpdateDevice::from_primitive(device);
         let device = self.database.repositories().devices().update_device(update_device)?;
-        Ok(device.as_primitive())
+        Ok(device)
     }
 
-    pub async fn send_push_notification_device(&mut self, device_id: &str) -> Result<bool, Box<dyn Error>> {
+    pub async fn send_push_notification_device(&mut self, device_id: &str) -> Result<bool, Box<dyn Error + Send + Sync>> {
         let device = self.get_device(device_id)?;
         let notification = GorushNotification::new(
             vec![device.token],
@@ -47,7 +47,7 @@ impl DevicesClient {
         Ok(self.pusher.push_notifications(vec![notification]).await?.counts > 0)
     }
 
-    pub fn delete_device(&mut self, device_id: &str) -> Result<usize, Box<dyn Error>> {
+    pub fn delete_device(&mut self, device_id: &str) -> Result<usize, Box<dyn Error + Send + Sync>> {
         Ok(self.database.repositories().devices().delete_device(device_id)?)
     }
 }
