@@ -11,6 +11,11 @@ pub use self::database::{
     DatabaseClient,
 };
 pub mod models;
+pub mod repositories;
+pub use self::repositories::{
+    subscriptions_repository::SubscriptionsRepository,
+    repository_factory::{RepositoryFactory, DatabaseClientExt},
+};
 pub mod schema;
 
 pub struct RedisClient {

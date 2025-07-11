@@ -4,16 +4,18 @@ use futures::future::try_join_all;
 use primitives::{Asset, AssetBalance, AssetBasic, AssetFull, AssetId, Chain, ChainAddress, Transaction};
 use search_index::{AssetDocument, SearchIndexClient, ASSETS_INDEX_NAME};
 use settings_chain::ChainProviders;
-use storage::{AssetsAddressesRepository, DatabaseClient};
+use storage::{DatabaseClient, DatabaseClientExt};
+
 pub struct AssetsClient {
-    database: DatabaseClient,
+    database: Box<DatabaseClient>,
 }
 
 impl AssetsClient {
     pub async fn new(database_url: &str) -> Self {
-        let database = DatabaseClient::new(database_url);
+        let database = Box::new(DatabaseClient::new(database_url));
         Self { database }
     }
+
 
     pub fn add_assets(&mut self, assets: Vec<Asset>) -> Result<usize, Box<dyn Error>> {
         let assets: Vec<storage::models::Asset> = assets.into_iter().map(storage::models::Asset::from_primitive_default).collect();
@@ -47,15 +49,23 @@ impl AssetsClient {
         })
     }
 
-    pub fn get_assets_by_device_id(&mut self, device_id: &str, wallet_index: i32, from_timestamp: Option<u32>) -> Result<Vec<AssetId>, Box<dyn Error>> {
-        let subscriptions = self.database.get_subscriptions_by_device_id_wallet_index(device_id, wallet_index)?;
-        let assets_addresses_repository: &mut dyn AssetsAddressesRepository = &mut self.database;
+    pub fn get_assets_by_device_id(
+        &mut self,
+        device_id: &str,
+        wallet_index: i32,
+        from_timestamp: Option<u32>,
+    ) -> Result<Vec<AssetId>, Box<dyn Error + Send + Sync>> {
+        let mut repos = self.database.repositories();
+        let subscriptions = repos.subscriptions()
+            .get_subscriptions_by_device_id_wallet_index(device_id, wallet_index)?;
+
         let chain_addresses = subscriptions
-            .clone()
             .into_iter()
             .map(|x| ChainAddress::new(Chain::from_str(&x.chain).unwrap(), x.address))
             .collect();
-        assets_addresses_repository.get_assets_by_addresses(chain_addresses, from_timestamp, true)
+
+        repos.assets_addresses()
+            .get_assets_by_addresses(chain_addresses, from_timestamp, true)
     }
 }
 

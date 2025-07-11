@@ -3,24 +3,26 @@ use std::{collections::HashSet, error::Error, sync::Arc, vec};
 use nft_provider::{NFTProviderClient, NFTProviderConfig};
 use primitives::{Chain, NFTAsset, NFTAssetId, NFTCollection, NFTCollectionId, NFTData};
 use std::collections::HashMap;
-use storage::DatabaseClient;
+use storage::{DatabaseClient, DatabaseClientExt};
 
 use crate::image_fetcher::ImageFetcher;
 
 pub struct NFTClient {
-    database: DatabaseClient,
+    database: Box<DatabaseClient>,
     nft: NFTProviderClient,
     image_fetcher: Arc<ImageFetcher>,
 }
 
 impl NFTClient {
     pub async fn new(database_url: &str, config: NFTProviderConfig) -> Self {
+        let database = Box::new(DatabaseClient::new(database_url));
         Self {
-            database: DatabaseClient::new(database_url),
+            database,
             nft: NFTProviderClient::new(config),
             image_fetcher: Arc::new(ImageFetcher::new()),
         }
     }
+
     pub async fn update_collection(&mut self, _collection_id: &str) -> Result<bool, Box<dyn Error + Send + Sync>> {
         Ok(true)
     }
@@ -105,13 +107,10 @@ impl NFTClient {
     }
 
     pub fn get_subscriptions(&mut self, device_id: &str, wallet_index: i32) -> Result<Vec<primitives::Subscription>, Box<dyn Error + Send + Sync>> {
-        let subscriptions = self
-            .database
-            .get_subscriptions_by_device_id_wallet_index(device_id, wallet_index)?
-            .into_iter()
-            .map(|x| x.as_primitive())
-            .collect();
-        Ok(subscriptions)
+        let subscriptions = self.database.repositories()
+            .subscriptions()
+            .get_subscriptions_by_device_id_wallet_index(device_id, wallet_index)?;
+        Ok(subscriptions.into_iter().map(|x| x.as_primitive()).collect())
     }
 
     pub async fn get_nft_assets_by_chain(&mut self, chain: Chain, address: &str) -> Result<Vec<NFTData>, Box<dyn Error + Send + Sync>> {
