@@ -3,8 +3,14 @@ use primitives::Chain;
 
 use diesel::prelude::*;
 
-impl DatabaseClient {
-    pub fn get_scan_address(&mut self, _chain: Chain, value: &str) -> Result<ScanAddress, diesel::result::Error> {
+pub(crate) trait ScanAddressesStore {
+    fn get_scan_address(&mut self, _chain: Chain, value: &str) -> Result<ScanAddress, diesel::result::Error>;
+    fn get_scan_addresses(&mut self, queries: &[(Chain, &str)]) -> Result<Vec<ScanAddress>, diesel::result::Error>;
+    fn add_scan_address_types(&mut self, values: Vec<ScanAddressType>) -> Result<usize, diesel::result::Error>;
+}
+
+impl ScanAddressesStore for DatabaseClient {
+    fn get_scan_address(&mut self, _chain: Chain, value: &str) -> Result<ScanAddress, diesel::result::Error> {
         use crate::schema::scan_addresses::dsl::*;
         scan_addresses
             .filter(chain.eq(_chain.as_ref()))
@@ -13,7 +19,7 @@ impl DatabaseClient {
             .first(&mut self.connection)
     }
 
-    pub fn get_scan_addresses(&mut self, queries: &[(Chain, &str)]) -> Result<Vec<ScanAddress>, diesel::result::Error> {
+    fn get_scan_addresses(&mut self, queries: &[(Chain, &str)]) -> Result<Vec<ScanAddress>, diesel::result::Error> {
         use crate::schema::scan_addresses::dsl::*;
         use diesel::prelude::*;
         let conditions = queries
@@ -28,7 +34,7 @@ impl DatabaseClient {
         query.select(ScanAddress::as_select()).load(&mut self.connection) // Returns a Vec<ScanAddress>
     }
 
-    pub fn add_scan_address_types(&mut self, values: Vec<ScanAddressType>) -> Result<usize, diesel::result::Error> {
+    fn add_scan_address_types(&mut self, values: Vec<ScanAddressType>) -> Result<usize, diesel::result::Error> {
         use crate::schema::scan_addresses_types::dsl::*;
         diesel::insert_into(scan_addresses_types)
             .values(values)

@@ -3,8 +3,16 @@ use chrono::NaiveDateTime;
 use crate::{models::*, DatabaseClient};
 use diesel::prelude::*;
 
-impl DatabaseClient {
-    pub fn get_price_alerts_with_prices(&mut self, after_notified_at: NaiveDateTime) -> Result<Vec<(PriceAlert, Price)>, diesel::result::Error> {
+pub(crate) trait PriceAlertsStore {
+    fn get_price_alerts(&mut self, after_notified_at: NaiveDateTime) -> Result<Vec<(PriceAlert, Price)>, diesel::result::Error>;
+    fn get_price_alerts_for_device_id(&mut self, device_id: i32) -> Result<Vec<PriceAlert>, diesel::result::Error>;
+    fn add_price_alerts(&mut self, values: Vec<NewPriceAlert>) -> Result<usize, diesel::result::Error>;
+    fn delete_price_alerts(&mut self, device_id: i32, ids: Vec<String>) -> Result<usize, diesel::result::Error>;
+    fn update_price_alerts_set_notified_at(&mut self, ids: Vec<String>, last_notified_at: NaiveDateTime) -> Result<usize, diesel::result::Error>;
+}
+
+impl PriceAlertsStore for DatabaseClient {
+    fn get_price_alerts(&mut self, after_notified_at: NaiveDateTime) -> Result<Vec<(PriceAlert, Price)>, diesel::result::Error> {
         use crate::schema::price_alerts::dsl::*;
         use crate::schema::prices;
         use crate::schema::prices_assets;
@@ -22,7 +30,7 @@ impl DatabaseClient {
             .load(&mut self.connection)
     }
 
-    pub fn get_price_alerts_for_device_id(&mut self, _device_id: i32) -> Result<Vec<PriceAlert>, diesel::result::Error> {
+    fn get_price_alerts_for_device_id(&mut self, _device_id: i32) -> Result<Vec<PriceAlert>, diesel::result::Error> {
         use crate::schema::price_alerts::dsl::*;
         price_alerts
             .filter(device_id.eq(_device_id))
@@ -30,7 +38,7 @@ impl DatabaseClient {
             .load(&mut self.connection)
     }
 
-    pub fn add_price_alerts(&mut self, values: Vec<NewPriceAlert>) -> Result<usize, diesel::result::Error> {
+    fn add_price_alerts(&mut self, values: Vec<NewPriceAlert>) -> Result<usize, diesel::result::Error> {
         use crate::schema::price_alerts::dsl::*;
         diesel::insert_into(price_alerts)
             .values(values)
@@ -38,12 +46,12 @@ impl DatabaseClient {
             .execute(&mut self.connection)
     }
 
-    pub fn delete_price_alerts(&mut self, _device_id: i32, ids: Vec<String>) -> Result<usize, diesel::result::Error> {
+    fn delete_price_alerts(&mut self, _device_id: i32, ids: Vec<String>) -> Result<usize, diesel::result::Error> {
         use crate::schema::price_alerts::dsl::*;
         diesel::delete(price_alerts.filter(device_id.eq(_device_id).and(identifier.eq_any(ids)))).execute(&mut self.connection)
     }
 
-    pub fn update_price_alerts_set_notified_at(&mut self, ids: Vec<String>, _last_notified_at: NaiveDateTime) -> Result<usize, diesel::result::Error> {
+    fn update_price_alerts_set_notified_at(&mut self, ids: Vec<String>, _last_notified_at: NaiveDateTime) -> Result<usize, diesel::result::Error> {
         use crate::schema::price_alerts::dsl::*;
         diesel::update(price_alerts)
             .filter(identifier.eq_any(&ids))

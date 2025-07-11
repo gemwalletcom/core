@@ -7,7 +7,7 @@ use primitives::{
 };
 use std::collections::HashSet;
 use std::error::Error;
-use storage::DatabaseClient;
+use storage::{DatabaseClient, DatabaseClientExt};
 
 #[allow(dead_code)]
 pub struct PriceAlertClient {
@@ -39,6 +39,8 @@ impl PriceAlertClient {
         let device = self.database.get_device(device_id)?;
         let values = self
             .database
+            .repositories()
+            .price_alerts()
             .get_price_alerts_for_device_id(device.id)?
             .into_iter()
             .map(|x| x.as_primitive())
@@ -52,19 +54,19 @@ impl PriceAlertClient {
             .into_iter()
             .map(|x| storage::models::PriceAlert::new_price_alert(x, device.id))
             .collect::<_>();
-        Ok(self.database.add_price_alerts(values)?)
+        Ok(self.database.repositories().price_alerts().add_price_alerts(values)?)
     }
 
     pub async fn delete_price_alerts(&mut self, device_id: &str, price_alerts: PriceAlerts) -> Result<usize, Box<dyn Error + Send + Sync>> {
         let device = self.database.get_device(device_id)?;
         let ids = price_alerts.iter().map(|x| x.id()).collect::<HashSet<_>>().into_iter().collect();
-        Ok(self.database.delete_price_alerts(device.id, ids)?)
+        Ok(self.database.repositories().price_alerts().delete_price_alerts(device.id, ids)?)
     }
 
     pub async fn get_devices_to_alert(&mut self, rules: PriceAlertRules) -> Result<Vec<PriceAlertNotification>, Box<dyn Error + Send + Sync>> {
         let now = Utc::now();
         let after_notified_at = now - Duration::days(1);
-        let price_alerts = self.database.get_price_alerts_with_prices(after_notified_at.naive_utc())?;
+        let price_alerts = self.database.repositories().price_alerts().get_price_alerts(after_notified_at.naive_utc())?;
 
         let mut results: Vec<PriceAlertNotification> = Vec::new();
         let mut price_alert_ids: HashSet<String> = HashSet::new();
@@ -80,6 +82,8 @@ impl PriceAlertClient {
             }
         }
         self.database
+            .repositories()
+            .price_alerts()
             .update_price_alerts_set_notified_at(price_alert_ids.into_iter().collect(), now.naive_utc())?;
         Ok(results)
     }

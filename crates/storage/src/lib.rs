@@ -21,7 +21,12 @@ pub use self::repositories::{
     nft_repository::NftRepository,
     nodes_repository::NodesRepository,
     parser_state_repository::ParserStateRepository,
+    price_alerts_repository::PriceAlertsRepository,
+    prices_repository::PricesRepository,
+    releases_repository::ReleasesRepository,
+    scan_addresses_repository::ScanAddressesRepository,
     subscriptions_repository::SubscriptionsRepository,
+    tag_repository::TagRepository,
     repository_factory::{RepositoryFactory, DatabaseClientExt},
 };
 pub mod schema;

@@ -5,8 +5,20 @@ use diesel::prelude::*;
 use diesel::upsert::excluded;
 use price::PriceAssetData;
 
-impl DatabaseClient {
-    pub fn set_prices(&mut self, values: Vec<Price>) -> Result<usize, diesel::result::Error> {
+pub(crate) trait PricesStore {
+    fn set_prices(&mut self, values: Vec<Price>) -> Result<usize, diesel::result::Error>;
+    fn set_prices_assets(&mut self, values: Vec<PriceAsset>) -> Result<usize, diesel::result::Error>;
+    fn get_prices(&mut self) -> Result<Vec<Price>, diesel::result::Error>;
+    fn get_prices_assets(&mut self) -> Result<Vec<PriceAsset>, diesel::result::Error>;
+    fn get_price(&mut self, asset_id: &str) -> Result<Price, diesel::result::Error>;
+    fn get_prices_assets_for_asset_id(&mut self, id: &str) -> Result<Vec<PriceAsset>, diesel::result::Error>;
+    fn get_prices_assets_for_price_ids(&mut self, ids: Vec<String>) -> Result<Vec<PriceAsset>, diesel::result::Error>;
+    fn delete_prices_updated_at_before(&mut self, time: NaiveDateTime) -> Result<usize, diesel::result::Error>;
+    fn get_prices_assets_list(&mut self) -> Result<Vec<PriceAssetData>, diesel::result::Error>;
+}
+
+impl PricesStore for DatabaseClient {
+    fn set_prices(&mut self, values: Vec<Price>) -> Result<usize, diesel::result::Error> {
         use crate::schema::prices::dsl::*;
         diesel::insert_into(prices)
             .values(&values)
@@ -31,7 +43,7 @@ impl DatabaseClient {
             .execute(&mut self.connection)
     }
 
-    pub fn set_prices_assets(&mut self, values: Vec<PriceAsset>) -> Result<usize, diesel::result::Error> {
+    fn set_prices_assets(&mut self, values: Vec<PriceAsset>) -> Result<usize, diesel::result::Error> {
         use crate::schema::prices_assets::dsl::*;
         diesel::insert_into(prices_assets)
             .values(&values)
@@ -39,16 +51,16 @@ impl DatabaseClient {
             .execute(&mut self.connection)
     }
 
-    pub fn get_prices(&mut self) -> Result<Vec<Price>, diesel::result::Error> {
+    fn get_prices(&mut self) -> Result<Vec<Price>, diesel::result::Error> {
         use crate::schema::prices::dsl::*;
         prices.order(market_cap.desc()).select(Price::as_select()).load(&mut self.connection)
     }
 
-    pub fn get_prices_assets(&mut self) -> Result<Vec<PriceAsset>, diesel::result::Error> {
+    fn get_prices_assets(&mut self) -> Result<Vec<PriceAsset>, diesel::result::Error> {
         use crate::schema::prices_assets::dsl::*;
         prices_assets.select(PriceAsset::as_select()).load(&mut self.connection)
     }
-    pub fn get_price(&mut self, asset_id: &str) -> Result<Price, diesel::result::Error> {
+    fn get_price(&mut self, asset_id: &str) -> Result<Price, diesel::result::Error> {
         use crate::schema::prices::dsl::*;
         prices
             .inner_join(prices_assets::table)
@@ -57,12 +69,12 @@ impl DatabaseClient {
             .first(&mut self.connection)
     }
 
-    pub fn get_prices_assets_for_asset_id(&mut self, id: &str) -> Result<Vec<PriceAsset>, diesel::result::Error> {
+    fn get_prices_assets_for_asset_id(&mut self, id: &str) -> Result<Vec<PriceAsset>, diesel::result::Error> {
         use crate::schema::prices_assets::dsl::*;
         prices_assets.filter(asset_id.eq(id)).select(PriceAsset::as_select()).load(&mut self.connection)
     }
 
-    pub fn get_prices_assets_for_price_ids(&mut self, ids: Vec<String>) -> Result<Vec<PriceAsset>, diesel::result::Error> {
+    fn get_prices_assets_for_price_ids(&mut self, ids: Vec<String>) -> Result<Vec<PriceAsset>, diesel::result::Error> {
         use crate::schema::prices_assets::dsl::*;
         prices_assets
             .filter(price_id.eq_any(ids))
@@ -70,12 +82,12 @@ impl DatabaseClient {
             .load(&mut self.connection)
     }
 
-    pub fn delete_prices_updated_at_before(&mut self, time: NaiveDateTime) -> Result<usize, diesel::result::Error> {
+    fn delete_prices_updated_at_before(&mut self, time: NaiveDateTime) -> Result<usize, diesel::result::Error> {
         use crate::schema::prices::dsl::*;
         diesel::delete(prices.filter(last_updated_at.lt(time).or(last_updated_at.is_null()))).execute(&mut self.connection)
     }
 
-    pub fn get_prices_assets_list(&mut self) -> Result<Vec<PriceAssetData>, diesel::result::Error> {
+    fn get_prices_assets_list(&mut self) -> Result<Vec<PriceAssetData>, diesel::result::Error> {
         use crate::schema::{assets, prices, prices_assets};
 
         let query = assets::table

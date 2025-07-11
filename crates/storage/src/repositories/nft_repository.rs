@@ -5,7 +5,6 @@ use crate::database::nft::NftStore;
 use crate::models::{NftAsset, NftCollection, NftType, nft_asset::UpdateNftAssetImageUrl, nft_collection::UpdateNftCollectionImageUrl, nft_link::NftLink};
 
 pub trait NftRepository {
-    fn get_nft_assets_all(&mut self) -> Result<Vec<NftAsset>, Box<dyn Error + Send + Sync>>;
     fn get_nft_assets(&mut self, asset_ids: Vec<String>) -> Result<Vec<NftAsset>, Box<dyn Error + Send + Sync>>;
     fn get_nft_asset(&mut self, asset_id: &str) -> Result<NftAsset, Box<dyn Error + Send + Sync>>;
     fn add_nft_assets(&mut self, values: Vec<NftAsset>) -> Result<usize, Box<dyn Error + Send + Sync>>;
@@ -21,9 +20,6 @@ pub trait NftRepository {
 }
 
 impl NftRepository for DatabaseClient {
-    fn get_nft_assets_all(&mut self) -> Result<Vec<NftAsset>, Box<dyn Error + Send + Sync>> {
-        Ok(NftStore::get_nft_assets_all(self)?)
-    }
 
     fn get_nft_assets(&mut self, asset_ids: Vec<String>) -> Result<Vec<NftAsset>, Box<dyn Error + Send + Sync>> {
         Ok(NftStore::get_nft_assets(self, asset_ids)?)
@@ -40,6 +36,7 @@ impl NftRepository for DatabaseClient {
     fn update_nft_asset_image_url(&mut self, update: UpdateNftAssetImageUrl) -> Result<usize, Box<dyn Error + Send + Sync>> {
         Ok(NftStore::update_nft_asset_image_url(self, update)?)
     }
+
 
     fn get_nft_collections_all(&mut self) -> Result<Vec<NftCollection>, Box<dyn Error + Send + Sync>> {
         Ok(NftStore::get_nft_collections_all(self)?)
