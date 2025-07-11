@@ -32,7 +32,7 @@ impl SubscriptionsClient {
     }
 
     pub async fn get_subscriptions(&mut self, device_id: &str) -> Result<Vec<primitives::Subscription>, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.repositories().subscriptions().get_subscriptions_by_device_id(device_id)?)
+        Ok(self.database.repositories().subscriptions().get_subscriptions_by_device_id(device_id, None)?)
     }
 
     pub async fn delete_subscriptions(&mut self, device_id: &str, subscriptions: Vec<Subscription>) -> Result<usize, Box<dyn Error + Send + Sync>> {

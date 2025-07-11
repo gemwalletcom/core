@@ -23,9 +23,9 @@ impl InactiveDevicesObserver {
 
     pub async fn observe(&mut self) -> Result<usize, Box<dyn Error + Send + Sync>> {
         // 7 days to 14 days
-        let devices = self.database.devices_inactive_days(10, 14, Some(true))?;
+        let devices = self.database.repositories().devices().devices_inactive_days(10, 14, Some(true))?;
         for device in &devices {
-            let subscriptions = self.database.repositories().subscriptions().get_subscriptions_by_device_id(&device.device_id)?;
+            let subscriptions = self.database.repositories().subscriptions().get_subscriptions_by_device_id(&device.id, None)?;
             if subscriptions.is_empty() {
                 continue;
             }
@@ -39,7 +39,7 @@ impl InactiveDevicesObserver {
             let language_localizer = LanguageLocalizer::new_with_language(&device.locale);
             let asset = Asset::from_chain(Chain::Bitcoin);
             let (title, description) = language_localizer.notification_onboarding_buy_asset(&asset.name);
-            let notification = GorushNotification::from_device(device.clone().as_primitive(), title, description, PushNotification::new_buy_asset(asset.id));
+            let notification = GorushNotification::from_device(device.clone(), title, description, PushNotification::new_buy_asset(asset.id));
             let payload = NotificationsPayload::new(vec![notification]);
             self.stream_producer.publish_notifications_observers(payload).await?;
         }

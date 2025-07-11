@@ -3,8 +3,7 @@ use crate::{models::*, DatabaseClient};
 use diesel::prelude::*;
 
 pub(crate) trait SubscriptionsStore {
-    fn get_subscriptions_by_device_id(&mut self, device_id: &str) -> Result<Vec<Subscription>, diesel::result::Error>;
-    fn get_subscriptions_by_device_id_wallet_index(&mut self, device_id: &str, wallet_index: i32) -> Result<Vec<Subscription>, diesel::result::Error>;
+    fn get_subscriptions_by_device_id(&mut self, device_id: &str, wallet_index: Option<i32>) -> Result<Vec<Subscription>, diesel::result::Error>;
     fn get_subscriptions(&mut self, chain: primitives::Chain, addresses: Vec<String>) -> Result<Vec<Subscription>, diesel::result::Error>;
     fn get_subscriptions_with_device(
         &mut self,
@@ -19,23 +18,16 @@ pub(crate) trait SubscriptionsStore {
 }
 
 impl SubscriptionsStore for DatabaseClient {
-    fn get_subscriptions_by_device_id(&mut self, _device_id: &str) -> Result<Vec<Subscription>, diesel::result::Error> {
+    fn get_subscriptions_by_device_id(&mut self, _device_id: &str, _wallet_index: Option<i32>) -> Result<Vec<Subscription>, diesel::result::Error> {
         use crate::schema::subscriptions::dsl::*;
-        subscriptions
-            .inner_join(devices::table)
-            .filter(devices::device_id.eq(_device_id))
-            .select(Subscription::as_select())
-            .load(&mut self.connection)
-    }
 
-    fn get_subscriptions_by_device_id_wallet_index(&mut self, _device_id: &str, _wallet_index: i32) -> Result<Vec<Subscription>, diesel::result::Error> {
-        use crate::schema::subscriptions::dsl::*;
-        subscriptions
-            .filter(wallet_index.eq(_wallet_index))
-            .inner_join(devices::table)
-            .filter(devices::device_id.eq(_device_id))
-            .select(Subscription::as_select())
-            .load(&mut self.connection)
+        let mut query = subscriptions.inner_join(devices::table).filter(devices::device_id.eq(_device_id)).into_boxed();
+
+        if let Some(index) = _wallet_index {
+            query = query.filter(wallet_index.eq(index));
+        }
+
+        query.select(Subscription::as_select()).load(&mut self.connection)
     }
 
     fn delete_subscriptions(&mut self, values: Vec<Subscription>) -> Result<usize, diesel::result::Error> {

@@ -5,11 +5,10 @@ use crate::DatabaseClient;
 use primitives::{Chain, DeviceSubscription, Subscription as PrimitiveSubscription};
 
 pub trait SubscriptionsRepository {
-    fn get_subscriptions_by_device_id(&mut self, device_id: &str) -> Result<Vec<PrimitiveSubscription>, Box<dyn Error + Send + Sync>>;
-    fn get_subscriptions_by_device_id_wallet_index(
+    fn get_subscriptions_by_device_id(
         &mut self,
         device_id: &str,
-        wallet_index: i32,
+        wallet_index: Option<i32>,
     ) -> Result<Vec<PrimitiveSubscription>, Box<dyn Error + Send + Sync>>;
     fn get_subscriptions(&mut self, chain: Chain, addresses: Vec<String>) -> Result<Vec<DeviceSubscription>, Box<dyn Error + Send + Sync>>;
     fn add_subscriptions(&mut self, values: Vec<PrimitiveSubscription>, device_id: &str) -> Result<usize, Box<dyn Error + Send + Sync>>;
@@ -20,19 +19,12 @@ pub trait SubscriptionsRepository {
 }
 
 impl SubscriptionsRepository for DatabaseClient {
-    fn get_subscriptions_by_device_id(&mut self, device_id: &str) -> Result<Vec<PrimitiveSubscription>, Box<dyn Error + Send + Sync>> {
-        Ok(SubscriptionsStore::get_subscriptions_by_device_id(self, device_id)?
-            .into_iter()
-            .map(|x| x.as_primitive())
-            .collect())
-    }
-
-    fn get_subscriptions_by_device_id_wallet_index(
+    fn get_subscriptions_by_device_id(
         &mut self,
         device_id: &str,
-        wallet_index: i32,
+        wallet_index: Option<i32>,
     ) -> Result<Vec<PrimitiveSubscription>, Box<dyn Error + Send + Sync>> {
-        Ok(SubscriptionsStore::get_subscriptions_by_device_id_wallet_index(self, device_id, wallet_index)?
+        Ok(SubscriptionsStore::get_subscriptions_by_device_id(self, device_id, wallet_index)?
             .into_iter()
             .map(|x| x.as_primitive())
             .collect())

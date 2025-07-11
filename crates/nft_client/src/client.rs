@@ -118,7 +118,7 @@ impl NFTClient {
             .database
             .repositories()
             .subscriptions()
-            .get_subscriptions_by_device_id_wallet_index(device_id, wallet_index)?;
+            .get_subscriptions_by_device_id(device_id, Some(wallet_index))?;
         Ok(subscriptions)
     }
 

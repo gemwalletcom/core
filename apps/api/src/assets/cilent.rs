@@ -44,7 +44,7 @@ impl AssetsClient {
         from_timestamp: Option<u32>,
     ) -> Result<Vec<AssetId>, Box<dyn Error + Send + Sync>> {
         let mut repos = self.database.repositories();
-        let subscriptions = repos.subscriptions().get_subscriptions_by_device_id_wallet_index(device_id, wallet_index)?;
+        let subscriptions = repos.subscriptions().get_subscriptions_by_device_id(device_id, Some(wallet_index))?;
 
         let chain_addresses = subscriptions.into_iter().map(|x| ChainAddress::new(x.chain, x.address)).collect();
 
