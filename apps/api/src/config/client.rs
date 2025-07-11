@@ -1,6 +1,6 @@
 use primitives::{ConfigResponse, ConfigVersions, PlatformStore, Release, SwapConfig, SwapProvider};
 use std::{error::Error, str::FromStr};
-use storage::DatabaseClient;
+use storage::{DatabaseClient, DatabaseClientExt, AssetFilter};
 
 pub struct ConfigClient {
     database: DatabaseClient,
@@ -12,9 +12,9 @@ impl ConfigClient {
         Self { database }
     }
 
-    pub fn get_config(&mut self) -> Result<ConfigResponse, Box<dyn Error>> {
-        let fiat_on_ramp_assets = self.database.get_assets_is_buyable()?.len() as i32;
-        let fiat_off_ramp_assets = self.database.get_assets_is_sellable()?.len() as i32;
+    pub fn get_config(&mut self) -> Result<ConfigResponse, Box<dyn Error + Send + Sync>> {
+        let fiat_on_ramp_assets = self.database.repositories().assets().get_assets_by_filter(vec![AssetFilter::IsBuyable(true)])?.len() as i32;
+        let fiat_off_ramp_assets = self.database.repositories().assets().get_assets_by_filter(vec![AssetFilter::IsSellable(true)])?.len() as i32;
         let swap_assets_version = self.database.get_swap_assets_version()?;
         let releases = self.database.get_releases()?;
 

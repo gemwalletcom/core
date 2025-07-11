@@ -17,9 +17,8 @@ impl AssetsClient {
     }
 
 
-    pub fn add_assets(&mut self, assets: Vec<Asset>) -> Result<usize, Box<dyn Error>> {
-        let assets: Vec<storage::models::Asset> = assets.into_iter().map(storage::models::Asset::from_primitive_default).collect();
-        Ok(self.database.add_assets(assets)?)
+    pub fn add_assets(&mut self, assets: Vec<Asset>) -> Result<usize, Box<dyn Error + Send + Sync>> {
+        Ok(self.database.repositories().assets().add_assets(assets)?)
     }
 
     #[allow(unused)]
@@ -27,8 +26,8 @@ impl AssetsClient {
         Ok(self.database.get_asset(asset_id)?.as_primitive())
     }
 
-    pub fn get_assets_list(&mut self) -> Result<Vec<AssetBasic>, Box<dyn Error>> {
-        Ok(self.database.get_assets_list()?.into_iter().map(|x| x.as_basic_primitive()).collect())
+    pub fn get_assets_list(&mut self) -> Result<Vec<AssetBasic>, Box<dyn Error + Send + Sync>> {
+        Ok(self.database.repositories().assets().get_assets_by_filter(vec![])?)
     }
 
     pub fn get_assets(&mut self, asset_ids: Vec<String>) -> Result<Vec<AssetBasic>, Box<dyn Error>> {

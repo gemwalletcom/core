@@ -4,7 +4,7 @@ use coingecko::{get_chain_for_coingecko_platform_id, CoinGeckoClient, CoinInfo};
 use primitives::{Asset, AssetId, AssetLink, AssetProperties, AssetScore, AssetType, LinkType};
 use std::collections::HashSet;
 use std::error::Error;
-use storage::DatabaseClient;
+use storage::{DatabaseClient, DatabaseClientExt};
 pub struct AssetUpdater {
     coin_gecko_client: CoinGeckoClient,
     database: DatabaseClient,
@@ -224,8 +224,8 @@ impl AssetUpdater {
         let asset = storage::models::asset::Asset::from_primitive(asset, score, properties);
         let asset_id = asset.id.as_str();
 
-        let _ = self.database.add_assets(vec![asset.clone()]);
-        let _ = self.database.update_assets_rank(vec![asset.clone()]);
+        let _ = self.database.repositories().assets().add_assets(vec![asset.clone().as_primitive()]);
+        let _ = self.database.repositories().assets().upsert_assets(vec![asset.clone().as_primitive()]);
         let _ = self.update_links(asset_id, asset_links.clone()).await;
         Ok(())
     }

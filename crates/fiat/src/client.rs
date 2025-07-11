@@ -13,7 +13,7 @@ use crate::{
 use futures::future::join_all;
 use primitives::{Asset, FiatAssets, FiatProviderCountry, FiatQuote, FiatQuoteError, FiatQuoteRequest, FiatQuoteType, FiatQuotes};
 use reqwest::Client as RequestClient;
-use storage::DatabaseClient;
+use storage::{AssetFilter, DatabaseClient, DatabaseClientExt};
 
 pub struct FiatClient {
     database: DatabaseClient,
@@ -39,23 +39,27 @@ impl FiatClient {
     }
 
     pub async fn get_on_ramp_assets(&mut self) -> Result<FiatAssets, Box<dyn Error + Send + Sync>> {
-        let assets = self.database.get_assets_is_buyable()?;
+        let assets = self.database.repositories().assets().get_assets_by_filter(vec![AssetFilter::IsBuyable(true)])?;
         Ok(FiatAssets {
             version: assets.clone().len() as u32,
-            asset_ids: assets.into_iter().map(|x| x.id).collect::<Vec<String>>(),
+            asset_ids: assets.into_iter().map(|x| x.asset.id.to_string()).collect::<Vec<String>>(),
+        })
+    }
+
+    pub async fn get_off_ramp_assets(&mut self) -> Result<FiatAssets, Box<dyn Error + Send + Sync>> {
+        let assets = self
+            .database
+            .repositories()
+            .assets()
+            .get_assets_by_filter(vec![AssetFilter::IsSellable(true)])?;
+        Ok(FiatAssets {
+            version: assets.clone().len() as u32,
+            asset_ids: assets.into_iter().map(|x| x.asset.id.to_string()).collect::<Vec<String>>(),
         })
     }
 
     pub async fn get_fiat_providers_countries(&mut self) -> Result<Vec<FiatProviderCountry>, Box<dyn Error + Send + Sync>> {
         Ok(self.database.get_fiat_providers_countries()?.into_iter().map(|x| x.as_primitive()).collect())
-    }
-
-    pub async fn get_off_ramp_assets(&mut self) -> Result<FiatAssets, Box<dyn Error + Send + Sync>> {
-        let assets = self.database.get_assets_is_sellable()?;
-        Ok(FiatAssets {
-            version: assets.clone().len() as u32,
-            asset_ids: assets.into_iter().map(|x| x.id).collect::<Vec<String>>(),
-        })
     }
 
     pub async fn create_fiat_webhook(&mut self, provider_name: &str, data: serde_json::Value) -> Result<bool, Box<dyn std::error::Error + Send + Sync>> {

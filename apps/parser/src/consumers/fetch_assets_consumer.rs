@@ -3,7 +3,7 @@ use std::{error::Error, sync::Arc};
 use async_trait::async_trait;
 use cacher::CacherClient;
 use settings_chain::ChainProviders;
-use storage::DatabaseClient;
+use storage::{DatabaseClient, DatabaseClientExt};
 use streamer::{consumer::MessageConsumer, FetchAssetsPayload};
 use tokio::sync::Mutex;
 
@@ -32,7 +32,9 @@ impl MessageConsumer<FetchAssetsPayload, usize> for FetchAssetsConsumer {
                 .database
                 .lock()
                 .await
-                .add_assets(vec![storage::models::Asset::from_primitive_default(asset)])?);
+                .repositories()
+                .assets()
+                .add_assets(vec![asset])?);
         }
         Ok(0)
     }

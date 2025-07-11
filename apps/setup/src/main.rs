@@ -1,7 +1,7 @@
 use primitives::{AddressType, Asset, AssetTag, AssetType, Chain, FiatProviderName, LinkType, NFTType, PlatformStore, TransactionType};
 use search_index::{SearchIndexClient, ASSETS_FILTERS, ASSETS_INDEX_NAME, ASSETS_RANKING_RULES, ASSETS_SEARCH_ATTRIBUTES, ASSETS_SORTS, INDEX_PRIMARY_KEY};
 use settings::Settings;
-use storage::{DatabaseClient, LinkRepository, ParserStateStore};
+use storage::{DatabaseClient, DatabaseClientExt, LinkRepository, ParserStateStore};
 use streamer::{ExchangeName, QueueName, StreamProducer};
 
 #[tokio::main]
@@ -36,9 +36,8 @@ async fn main() {
     let assets = chains
         .into_iter()
         .map(Asset::from_chain)
-        .map(storage::models::Asset::from_primitive_default)
         .collect::<Vec<_>>();
-    let _ = database_client.add_assets(assets);
+    let _ = database_client.repositories().assets().add_assets(assets);
 
     println!("setup fiat providers");
     let providers = FiatProviderName::all()

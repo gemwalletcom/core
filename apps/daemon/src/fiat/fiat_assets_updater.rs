@@ -1,7 +1,7 @@
 use chrono::{Duration, Utc};
 use fiat::{model::FiatProviderAsset, FiatProvider};
 use primitives::{AssetTag, Diff};
-use storage::database::DatabaseClient;
+use storage::{DatabaseClient, DatabaseClientExt, AssetUpdate, AssetFilter};
 
 pub struct FiatAssetsUpdater {
     database: DatabaseClient,
@@ -18,24 +18,26 @@ impl FiatAssetsUpdater {
         let enabled_asset_ids = self.database.get_fiat_assets_is_enabled()?;
 
         // buyable
-        let buyable_assets_ids = self.database.get_assets_is_buyable()?.into_iter().map(|x| x.id).collect::<Vec<String>>();
+        let buyable_assets_ids = self.database.repositories().assets().get_assets_by_filter(vec![AssetFilter::IsBuyable(true)])?.into_iter().map(|x| x.asset.id.to_string()).collect::<Vec<String>>();
         let buyable_result = Diff::compare(buyable_assets_ids, enabled_asset_ids.clone());
 
-        let _ = self.database.set_assets_is_buyable(buyable_result.missing.clone(), true);
-        let _ = self.database.set_assets_is_buyable(buyable_result.different.clone(), false);
+        let _ = self.database.repositories().assets().update_assets(buyable_result.missing.clone(), AssetUpdate::IsBuyable(true));
+        let _ = self.database.repositories().assets().update_assets(buyable_result.different.clone(), AssetUpdate::IsBuyable(false));
 
         // sellable
         let sellable_assets_ids = self
             .database
-            .get_assets_is_sellable()?
+            .repositories()
+            .assets()
+            .get_assets_by_filter(vec![AssetFilter::IsSellable(true)])?
             .into_iter()
-            .filter(|x| x.rank > 25)
-            .map(|x| x.id)
+            .filter(|x| x.score.rank > 25)
+            .map(|x| x.asset.id.to_string())
             .collect::<Vec<String>>();
 
         let sellable_result = Diff::compare(sellable_assets_ids, enabled_asset_ids.clone());
-        let _ = self.database.set_assets_is_sellable(sellable_result.missing.clone(), true);
-        let _ = self.database.set_assets_is_sellable(sellable_result.different.clone(), false);
+        let _ = self.database.repositories().assets().update_assets(sellable_result.missing.clone(), AssetUpdate::IsSellable(true));
+        let _ = self.database.repositories().assets().update_assets(sellable_result.different.clone(), AssetUpdate::IsSellable(false));
 
         Ok(1)
     }
