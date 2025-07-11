@@ -19,17 +19,10 @@ pub mod tag;
 pub mod transactions;
 pub mod migrations;
 
-use crate::models::*;
-use crate::schema::transactions_addresses;
-use diesel::associations::HasTable;
-use diesel::dsl::count;
 use diesel::pg::PgConnection;
-use diesel::prelude::*;
-use diesel::{upsert::excluded, Connection};
-use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
+use diesel::Connection;
+use diesel_migrations::{embed_migrations, EmbeddedMigrations};
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("src/migrations");
-
-use chrono::DateTime;
 
 pub struct DatabaseClient {
     connection: PgConnection,

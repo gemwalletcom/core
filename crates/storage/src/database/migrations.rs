@@ -1,5 +1,4 @@
 use crate::DatabaseClient;
-use diesel::prelude::*;
 use diesel_migrations::{MigrationHarness};
 use super::{MIGRATIONS};
 

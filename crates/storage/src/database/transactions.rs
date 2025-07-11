@@ -1,6 +1,6 @@
 use crate::{models::*, DatabaseClient, schema::transactions_addresses};
 use diesel::prelude::*;
-use diesel::{upsert::excluded, Connection};
+use diesel::{upsert::excluded};
 use diesel::dsl::count;
 use chrono::DateTime;
 
