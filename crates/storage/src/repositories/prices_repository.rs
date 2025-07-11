@@ -1,9 +1,9 @@
-use std::error::Error;
 use chrono::NaiveDateTime;
+use std::error::Error;
 
-use crate::DatabaseClient;
 use crate::database::prices::PricesStore;
-use crate::models::{Price, PriceAsset, price::PriceAssetData};
+use crate::models::{price::PriceAssetData, Price, PriceAsset};
+use crate::DatabaseClient;
 
 pub trait PricesRepository {
     fn set_prices(&mut self, values: Vec<Price>) -> Result<usize, Box<dyn Error + Send + Sync>>;

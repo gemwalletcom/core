@@ -38,14 +38,13 @@ pub struct SecurityToken {
     pub is_blacklisted: Option<String>,
 }
 
-
 impl SecurityToken {
     pub fn is_malicious(&self) -> bool {
-        self.is_honeypot.as_deref() == Some("1") || 
-        self.fake_token.as_deref() == Some("1") || 
-        self.is_airdrop_scam.as_deref() == Some("1") || 
-        self.cannot_buy.as_deref() == Some("1") || 
-        self.cannot_sell_all.as_deref() == Some("1") || 
-        self.is_blacklisted.as_deref() == Some("1")
+        self.is_honeypot.as_deref() == Some("1")
+            || self.fake_token.as_deref() == Some("1")
+            || self.is_airdrop_scam.as_deref() == Some("1")
+            || self.cannot_buy.as_deref() == Some("1")
+            || self.cannot_sell_all.as_deref() == Some("1")
+            || self.is_blacklisted.as_deref() == Some("1")
     }
 }

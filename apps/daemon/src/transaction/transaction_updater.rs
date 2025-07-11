@@ -22,7 +22,11 @@ impl TransactionUpdater {
                 chain: x.chain_id,
             })
             .collect();
-        let subscriptions_excluded_added = self.database.repositories().subscriptions().add_subscriptions_exclude_addresses(subscriptions_exclude)?;
+        let subscriptions_excluded_added = self
+            .database
+            .repositories()
+            .subscriptions()
+            .add_subscriptions_exclude_addresses(subscriptions_exclude)?;
 
         let addresses = addresses_result.clone().into_iter().map(|x| x.address).collect::<Vec<_>>();
         let result = self.database.delete_transactions_addresses(addresses.clone())?;

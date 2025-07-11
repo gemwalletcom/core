@@ -1,7 +1,7 @@
 use std::error::Error;
 
-use crate::DatabaseClient;
 use crate::database::link_types::LinkTypesStore;
+use crate::DatabaseClient;
 
 pub trait LinkTypesRepository {
     fn add_link_types(&mut self, values: Vec<primitives::LinkType>) -> Result<usize, Box<dyn Error + Send + Sync>>;

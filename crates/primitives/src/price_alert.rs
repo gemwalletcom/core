@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use strum_macros::{AsRefStr, EnumString};
 use typeshare::typeshare;
 
-use crate::{Asset, AssetId, Price, Device, DEFAULT_FIAT_CURRENCY};
+use crate::{Asset, AssetId, Device, Price, DEFAULT_FIAT_CURRENCY};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Hashable, Sendable")]

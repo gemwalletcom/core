@@ -20,7 +20,10 @@ async fn main() {
     println!("chains: {chains:?}");
 
     println!("setup add chains");
-    let _ = database_client.repositories().assets().add_chains(chains.clone().into_iter().map(|x| x.to_string()).collect());
+    let _ = database_client
+        .repositories()
+        .assets()
+        .add_chains(chains.clone().into_iter().map(|x| x.to_string()).collect());
 
     println!("setup parser state");
     for chain in chains.clone() {
@@ -33,10 +36,7 @@ async fn main() {
     let _ = database_client.repositories().assets_types().add_assets_types(assets_types);
 
     println!("setup assets");
-    let assets = chains
-        .into_iter()
-        .map(Asset::from_chain)
-        .collect::<Vec<_>>();
+    let assets = chains.into_iter().map(Asset::from_chain).collect::<Vec<_>>();
     let _ = database_client.repositories().assets().add_assets(assets);
 
     println!("setup fiat providers");

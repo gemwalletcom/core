@@ -1,6 +1,6 @@
+use super::MIGRATIONS;
 use crate::DatabaseClient;
-use diesel_migrations::{MigrationHarness};
-use super::{MIGRATIONS};
+use diesel_migrations::MigrationHarness;
 
 pub(crate) trait MigrationsStore {
     fn run_migrations(&mut self);

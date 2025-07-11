@@ -36,11 +36,7 @@ impl PriceAlertClient {
     }
 
     pub async fn get_price_alerts(&mut self, device_id: &str) -> Result<PriceAlerts, Box<dyn Error + Send + Sync>> {
-        let device_alerts = self
-            .database
-            .repositories()
-            .price_alerts()
-            .get_price_alerts_for_device_id(device_id)?;
+        let device_alerts = self.database.repositories().price_alerts().get_price_alerts_for_device_id(device_id)?;
         Ok(device_alerts.into_iter().map(|x| x.price_alert).collect())
     }
 
@@ -99,7 +95,6 @@ impl PriceAlertClient {
         }
         None
     }
-
 
     fn price_alert_notification(
         &mut self,

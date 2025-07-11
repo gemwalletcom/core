@@ -4,7 +4,7 @@ use std::error::Error;
 
 pub mod database;
 pub use self::database::{
-    assets::{AssetUpdate, AssetFilter},
+    assets::{AssetFilter, AssetUpdate},
     DatabaseClient,
 };
 pub mod models;
@@ -18,18 +18,18 @@ pub use self::repositories::{
     devices_repository::DevicesRepository,
     fiat_repository::FiatRepository,
     link_types_repository::LinkTypesRepository,
+    migrations_repository::MigrationsRepository,
     nft_repository::NftRepository,
     nodes_repository::NodesRepository,
     parser_state_repository::ParserStateRepository,
     price_alerts_repository::PriceAlertsRepository,
     prices_repository::PricesRepository,
     releases_repository::ReleasesRepository,
+    repository_factory::{DatabaseClientExt, RepositoryFactory},
     scan_addresses_repository::ScanAddressesRepository,
     subscriptions_repository::SubscriptionsRepository,
     tag_repository::TagRepository,
     transactions_repository::TransactionsRepository,
-    migrations_repository::MigrationsRepository,
-    repository_factory::{RepositoryFactory, DatabaseClientExt},
 };
 pub mod schema;
 

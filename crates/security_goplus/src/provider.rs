@@ -1,6 +1,6 @@
 use crate::models::{Response, SecurityAddress, SecurityToken};
 use async_trait::async_trait;
-use security_provider::{AddressTarget, ScanProvider, ScanResult, TokenTarget, mapper};
+use security_provider::{mapper, AddressTarget, ScanProvider, ScanResult, TokenTarget};
 use std::result::Result;
 
 static PROVIDER_NAME: &str = "GoPlus";
@@ -43,7 +43,11 @@ impl ScanProvider for GoPlusProvider {
         Ok(ScanResult {
             target: target.clone(),
             is_malicious: response.result.is_malicious(),
-            reason: if response.result.is_malicious() { Some("Token security risk detected".to_string()) } else { None },
+            reason: if response.result.is_malicious() {
+                Some("Token security risk detected".to_string())
+            } else {
+                None
+            },
             provider: self.name().into(),
         })
     }

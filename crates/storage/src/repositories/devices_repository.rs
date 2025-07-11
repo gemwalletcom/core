@@ -1,7 +1,7 @@
 use std::error::Error;
 
-use crate::DatabaseClient;
 use crate::database::devices::DevicesStore;
+use crate::DatabaseClient;
 
 pub trait DevicesRepository {
     fn add_device(&mut self, device: crate::models::UpdateDevice) -> Result<primitives::Device, Box<dyn Error + Send + Sync>>;
@@ -11,7 +11,12 @@ pub trait DevicesRepository {
     fn delete_device(&mut self, device_id: &str) -> Result<usize, Box<dyn Error + Send + Sync>>;
     fn update_device_is_push_enabled(&mut self, device_id: &str, value: bool) -> Result<usize, Box<dyn Error + Send + Sync>>;
     fn delete_devices_subscriptions_after_days(&mut self, days: i64) -> Result<usize, Box<dyn Error + Send + Sync>>;
-    fn devices_inactive_days(&mut self, min_days: i64, max_days: i64, push_enabled: Option<bool>) -> Result<Vec<primitives::Device>, Box<dyn Error + Send + Sync>>;
+    fn devices_inactive_days(
+        &mut self,
+        min_days: i64,
+        max_days: i64,
+        push_enabled: Option<bool>,
+    ) -> Result<Vec<primitives::Device>, Box<dyn Error + Send + Sync>>;
 }
 
 impl DevicesRepository for DatabaseClient {
@@ -47,7 +52,12 @@ impl DevicesRepository for DatabaseClient {
         Ok(DevicesStore::delete_devices_subscriptions_after_days(self, days)?)
     }
 
-    fn devices_inactive_days(&mut self, min_days: i64, max_days: i64, push_enabled: Option<bool>) -> Result<Vec<primitives::Device>, Box<dyn Error + Send + Sync>> {
+    fn devices_inactive_days(
+        &mut self,
+        min_days: i64,
+        max_days: i64,
+        push_enabled: Option<bool>,
+    ) -> Result<Vec<primitives::Device>, Box<dyn Error + Send + Sync>> {
         let result = DevicesStore::devices_inactive_days(self, min_days, max_days, push_enabled)?;
         Ok(result.into_iter().map(|x| x.as_primitive()).collect())
     }

@@ -1,8 +1,8 @@
 use std::error::Error;
 
-use crate::{models::Asset, DatabaseClient};
 use crate::database::assets::AssetsStore;
-use crate::database::assets::{AssetUpdate, AssetFilter};
+use crate::database::assets::{AssetFilter, AssetUpdate};
+use crate::{models::Asset, DatabaseClient};
 use primitives::{Asset as PrimitiveAsset, AssetBasic};
 
 pub trait AssetsRepository {
@@ -20,17 +20,11 @@ pub trait AssetsRepository {
 
 impl AssetsRepository for DatabaseClient {
     fn get_assets_all(&mut self) -> Result<Vec<PrimitiveAsset>, Box<dyn Error + Send + Sync>> {
-        Ok(AssetsStore::get_assets_all(self)?
-            .into_iter()
-            .map(|x| x.as_primitive())
-            .collect())
+        Ok(AssetsStore::get_assets_all(self)?.into_iter().map(|x| x.as_primitive()).collect())
     }
 
     fn add_assets(&mut self, values: Vec<PrimitiveAsset>) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        Ok(AssetsStore::add_assets(
-            self,
-            values.into_iter().map(Asset::from_primitive_default).collect(),
-        )?)
+        Ok(AssetsStore::add_assets(self, values.into_iter().map(Asset::from_primitive_default).collect())?)
     }
 
     fn update_assets(&mut self, asset_ids: Vec<String>, update: AssetUpdate) -> Result<usize, Box<dyn Error + Send + Sync>> {
@@ -56,10 +50,7 @@ impl AssetsRepository for DatabaseClient {
     }
 
     fn get_assets(&mut self, asset_ids: Vec<String>) -> Result<Vec<PrimitiveAsset>, Box<dyn Error + Send + Sync>> {
-        Ok(AssetsStore::get_assets(self, asset_ids)?
-            .into_iter()
-            .map(|x| x.as_primitive())
-            .collect())
+        Ok(AssetsStore::get_assets(self, asset_ids)?.into_iter().map(|x| x.as_primitive()).collect())
     }
 
     fn get_swap_assets(&mut self) -> Result<Vec<String>, Box<dyn Error + Send + Sync>> {

@@ -1,13 +1,19 @@
-use crate::{models::*, DatabaseClient, schema::transactions_addresses};
-use diesel::prelude::*;
-use diesel::{upsert::excluded};
-use diesel::dsl::count;
+use crate::{models::*, schema::transactions_addresses, DatabaseClient};
 use chrono::DateTime;
+use diesel::dsl::count;
+use diesel::prelude::*;
+use diesel::upsert::excluded;
 
 pub(crate) trait TransactionsStore {
     fn get_transactions_by_id(&mut self, _id: &str) -> Result<Vec<Transaction>, diesel::result::Error>;
     fn add_transactions(&mut self, transactions_values: Vec<Transaction>, addresses_values: Vec<TransactionAddresses>) -> Result<bool, diesel::result::Error>;
-    fn get_transactions_by_device_id(&mut self, _device_id: &str, addresses: Vec<String>, chains: Vec<String>, options: primitives::TransactionsFetchOption) -> Result<Vec<Transaction>, diesel::result::Error>;
+    fn get_transactions_by_device_id(
+        &mut self,
+        _device_id: &str,
+        addresses: Vec<String>,
+        chains: Vec<String>,
+        options: primitives::TransactionsFetchOption,
+    ) -> Result<Vec<Transaction>, diesel::result::Error>;
     fn get_transactions_addresses(&mut self, min_count: i64, limit: i64) -> Result<Vec<crate::models::AddressChainIdResult>, diesel::result::Error>;
     fn delete_transactions_addresses(&mut self, addresses: Vec<String>) -> Result<usize, diesel::result::Error>;
     fn get_transactions_without_addresses(&mut self, limit: i64) -> Result<Vec<String>, diesel::result::Error>;
@@ -25,11 +31,7 @@ impl TransactionsStore for DatabaseClient {
             .load(&mut self.connection)
     }
 
-    fn add_transactions(
-        &mut self,
-        transactions_values: Vec<Transaction>,
-        addresses_values: Vec<TransactionAddresses>,
-    ) -> Result<bool, diesel::result::Error> {
+    fn add_transactions(&mut self, transactions_values: Vec<Transaction>, addresses_values: Vec<TransactionAddresses>) -> Result<bool, diesel::result::Error> {
         self.connection
             .build_transaction()
             .read_write()

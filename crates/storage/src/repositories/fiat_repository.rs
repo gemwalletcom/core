@@ -1,8 +1,8 @@
-use std::error::Error;
 use chrono::NaiveDateTime;
+use std::error::Error;
 
-use crate::DatabaseClient;
 use crate::database::fiat::FiatStore;
+use crate::DatabaseClient;
 
 pub trait FiatRepository {
     fn add_fiat_assets(&mut self, values: Vec<crate::models::FiatAsset>) -> Result<usize, Box<dyn Error + Send + Sync>>;

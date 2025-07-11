@@ -65,7 +65,7 @@ pub mod transaction_direction;
 pub use self::transaction_direction::TransactionDirection;
 pub mod subscription;
 pub mod transaction_utxo;
-pub use self::subscription::{Subscription, DeviceSubscription};
+pub use self::subscription::{DeviceSubscription, Subscription};
 pub mod address_formatter;
 pub use self::address_formatter::AddressFormatter;
 pub mod utxo;

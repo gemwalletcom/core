@@ -80,10 +80,22 @@ impl FetchAssetsAddressesConsumer {
 
     async fn process_result(&self, result: FetchAssetsAddressesResult) -> Result<bool, Box<dyn Error + Send + Sync>> {
         if !result.zero_balance_assets.is_empty() {
-            let _ = self.database.lock().await.repositories().assets_addresses().delete_assets_addresses(result.zero_balance_assets.clone().into_iter().map(|x| x.as_primitive()).collect());
+            let _ = self
+                .database
+                .lock()
+                .await
+                .repositories()
+                .assets_addresses()
+                .delete_assets_addresses(result.zero_balance_assets.clone().into_iter().map(|x| x.as_primitive()).collect());
         }
         if !result.assets.is_empty() {
-            let _ = self.database.lock().await.repositories().assets_addresses().add_assets_addresses(result.assets.clone().into_iter().map(|x| x.as_primitive()).collect());
+            let _ = self
+                .database
+                .lock()
+                .await
+                .repositories()
+                .assets_addresses()
+                .add_assets_addresses(result.assets.clone().into_iter().map(|x| x.as_primitive()).collect());
         }
         self.stream_producer.publish_fetch_assets(result.missing_asset_ids.clone()).await
     }

@@ -49,7 +49,14 @@ impl PriceClient {
             .map(|x| x.id.to_string())
             .collect::<Vec<_>>();
 
-        let prices_ids = self.database.repositories().prices().get_prices()?.iter().map(|x| x.id.clone()).collect::<Vec<_>>();
+        let prices_ids = self
+            .database
+            .repositories()
+            .prices()
+            .get_prices()?
+            .iter()
+            .map(|x| x.id.clone())
+            .collect::<Vec<_>>();
 
         let values = values
             .into_iter()

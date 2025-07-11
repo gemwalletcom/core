@@ -72,7 +72,6 @@ impl ChartsStore for DatabaseClient {
         }
     }
 
-
     fn aggregate_hourly_charts(&mut self) -> Result<usize, diesel::result::Error> {
         diesel::sql_query("SELECT aggregate_hourly_charts();").execute(&mut self.connection)
     }

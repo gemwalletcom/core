@@ -13,7 +13,7 @@ where
     D: de::Deserializer<'de>,
 {
     let s: String = de::Deserialize::deserialize(deserializer)?;
-    
+
     // Handle hex strings (0x prefixed)
     if let Some(hex_str) = s.strip_prefix("0x") {
         if hex_str.is_empty() {

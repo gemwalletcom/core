@@ -13,10 +13,10 @@ pub(crate) trait PriceAlertsStore {
 
 impl PriceAlertsStore for DatabaseClient {
     fn get_price_alerts(&mut self, after_notified_at: NaiveDateTime) -> Result<Vec<(PriceAlert, Price, crate::models::Device)>, diesel::result::Error> {
+        use crate::schema::devices;
         use crate::schema::price_alerts::dsl::*;
         use crate::schema::prices;
         use crate::schema::prices_assets;
-        use crate::schema::devices;
 
         price_alerts
             .filter(
@@ -33,8 +33,8 @@ impl PriceAlertsStore for DatabaseClient {
     }
 
     fn get_price_alerts_for_device_id(&mut self, _device_id: &str) -> Result<Vec<(PriceAlert, crate::models::Device)>, diesel::result::Error> {
-        use crate::schema::price_alerts::dsl::*;
         use crate::schema::devices;
+        use crate::schema::price_alerts::dsl::*;
 
         price_alerts
             .inner_join(devices::table.on(device_id.eq(devices::id)))
@@ -63,6 +63,4 @@ impl PriceAlertsStore for DatabaseClient {
             .set(last_notified_at.eq(_last_notified_at))
             .execute(&mut self.connection)
     }
-
-
 }

@@ -1,7 +1,7 @@
 use std::error::Error;
 
-use crate::DatabaseClient;
 use crate::database::parser_state::ParserStateStore;
+use crate::DatabaseClient;
 
 pub trait ParserStateRepository {
     fn get_parser_state(&mut self, chain: &str) -> Result<crate::models::ParserState, Box<dyn Error + Send + Sync>>;

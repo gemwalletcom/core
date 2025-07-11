@@ -1,8 +1,8 @@
 use std::error::Error;
 
-use crate::DatabaseClient;
 use crate::database::scan_addresses::ScanAddressesStore;
 use crate::models::{ScanAddress, ScanAddressType};
+use crate::DatabaseClient;
 use primitives::Chain;
 
 pub trait ScanAddressesRepository {

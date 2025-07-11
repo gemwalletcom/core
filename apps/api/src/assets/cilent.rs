@@ -16,7 +16,6 @@ impl AssetsClient {
         Self { database }
     }
 
-
     pub fn add_assets(&mut self, assets: Vec<Asset>) -> Result<usize, Box<dyn Error + Send + Sync>> {
         Ok(self.database.repositories().assets().add_assets(assets)?)
     }
@@ -36,7 +35,12 @@ impl AssetsClient {
 
     pub fn get_asset_full(&mut self, asset_id: &str) -> Result<AssetFull, Box<dyn Error>> {
         let asset = self.database.get_asset(asset_id)?;
-        let links = self.database.repositories().assets_links().get_asset_links(asset_id).map_err(|e| -> Box<dyn Error> { e })?;
+        let links = self
+            .database
+            .repositories()
+            .assets_links()
+            .get_asset_links(asset_id)
+            .map_err(|e| -> Box<dyn Error> { e })?;
         let tags = self.database.get_assets_tags_for_asset(asset_id)?;
 
         Ok(AssetFull {
@@ -55,16 +59,11 @@ impl AssetsClient {
         from_timestamp: Option<u32>,
     ) -> Result<Vec<AssetId>, Box<dyn Error + Send + Sync>> {
         let mut repos = self.database.repositories();
-        let subscriptions = repos.subscriptions()
-            .get_subscriptions_by_device_id_wallet_index(device_id, wallet_index)?;
+        let subscriptions = repos.subscriptions().get_subscriptions_by_device_id_wallet_index(device_id, wallet_index)?;
 
-        let chain_addresses = subscriptions
-            .into_iter()
-            .map(|x| ChainAddress::new(x.chain, x.address))
-            .collect();
+        let chain_addresses = subscriptions.into_iter().map(|x| ChainAddress::new(x.chain, x.address)).collect();
 
-        repos.assets_addresses()
-            .get_assets_by_addresses(chain_addresses, from_timestamp, true)
+        repos.assets_addresses().get_assets_by_addresses(chain_addresses, from_timestamp, true)
     }
 }
 

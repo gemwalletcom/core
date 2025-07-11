@@ -80,10 +80,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
     let providers = FiatProviderFactory::new_providers(settings_clone.clone());
     let ip_check_client = FiatProviderFactory::new_ip_check_client(settings_clone.clone());
     let fiat_client = FiatClient::new(postgres_url, cacher_client.clone(), providers, ip_check_client).await;
-    let nft_config = NFTProviderConfig::new(
-        settings.nft.opensea.key.secret.clone(),
-        settings.nft.magiceden.key.secret.clone(),
-    );
+    let nft_config = NFTProviderConfig::new(settings.nft.opensea.key.secret.clone(), settings.nft.magiceden.key.secret.clone());
     let nft_client = NFTClient::new(postgres_url, nft_config).await;
     let markets_client = MarketsClient::new(postgres_url, cacher_client);
 

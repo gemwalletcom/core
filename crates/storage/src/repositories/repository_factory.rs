@@ -1,4 +1,8 @@
-use crate::{AssetsAddressesRepository, AssetsLinksRepository, AssetsRepository, AssetsTypesRepository, ChartsRepository, DatabaseClient, DevicesRepository, FiatRepository, LinkTypesRepository, NftRepository, NodesRepository, ParserStateRepository, PriceAlertsRepository, PricesRepository, ReleasesRepository, ScanAddressesRepository, SubscriptionsRepository, TagRepository, TransactionsRepository, MigrationsRepository};
+use crate::{
+    AssetsAddressesRepository, AssetsLinksRepository, AssetsRepository, AssetsTypesRepository, ChartsRepository, DatabaseClient, DevicesRepository,
+    FiatRepository, LinkTypesRepository, MigrationsRepository, NftRepository, NodesRepository, ParserStateRepository, PriceAlertsRepository, PricesRepository,
+    ReleasesRepository, ScanAddressesRepository, SubscriptionsRepository, TagRepository, TransactionsRepository,
+};
 
 pub struct RepositoryFactory<'a> {
     database: &'a mut DatabaseClient,

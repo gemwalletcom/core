@@ -153,3 +153,9 @@ Follow the existing code style patterns unless explicitly asked to change:
 - Test with recent blocks for batch operations (more reliable than historical blocks)
 - Integration tests should verify both successful calls and proper error handling
 - Use realistic contract addresses (USDC, etc.) for eth_call testing
+
+### Code Formatting and Commits
+- **ALWAYS run `just format` before committing code**
+- The formatter will automatically fix formatting issues across all crates
+- This ensures consistent code style throughout the workspace
+- Commit messages should be descriptive and follow conventional commit format

@@ -130,9 +130,7 @@ pub fn parse_value(type_name: &str, json_value: &Value, all_types: &HashMap<Stri
         // 2. Handle Non-Array Types
         match type_name {
             "address" => {
-                let s = json_value
-                    .as_str()
-                    .ok_or_else(|| format!("Expected string for address, got: {json_value:?}"))?;
+                let s = json_value.as_str().ok_or_else(|| format!("Expected string for address, got: {json_value:?}"))?;
                 Ok(EIP712TypedValue::Address { value: s.to_string() })
             }
             "string" => {
@@ -152,8 +150,7 @@ pub fn parse_value(type_name: &str, json_value: &Value, all_types: &HashMap<Stri
                 let s = json_value
                     .as_str()
                     .ok_or_else(|| format!("Expected hex string for bytes type, got: {json_value:?}"))?;
-                let bytes_vec =
-                    hex::decode(s.strip_prefix("0x").unwrap_or(s)).map_err(|e| format!("Invalid hex string for bytes type: {s}, error: {e}"))?;
+                let bytes_vec = hex::decode(s.strip_prefix("0x").unwrap_or(s)).map_err(|e| format!("Invalid hex string for bytes type: {s}, error: {e}"))?;
                 Ok(EIP712TypedValue::Bytes { value: bytes_vec })
             }
             // Wildcard for uint<N>, bytes<N>, and structs

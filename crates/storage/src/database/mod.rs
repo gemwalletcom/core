@@ -7,6 +7,7 @@ pub mod charts;
 pub mod devices;
 pub mod fiat;
 pub mod link_types;
+pub mod migrations;
 pub mod nft;
 pub mod nodes;
 pub mod parser_state;
@@ -17,7 +18,6 @@ pub mod scan_addresses;
 pub mod subscriptions;
 pub mod tag;
 pub mod transactions;
-pub mod migrations;
 
 use diesel::pg::PgConnection;
 use diesel::Connection;
@@ -34,7 +34,4 @@ impl DatabaseClient {
 
         Self { connection }
     }
-
-
-
 }

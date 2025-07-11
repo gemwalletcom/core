@@ -1,7 +1,7 @@
 use std::error::Error;
 
-use crate::DatabaseClient;
 use crate::database::nodes::NodesStore;
+use crate::DatabaseClient;
 use primitives::node::ChainNode;
 
 pub trait NodesRepository {

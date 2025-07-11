@@ -29,6 +29,12 @@ impl MessageConsumer<AssetsAddressPayload, usize> for AssetsAddressesConsumer {
             .map(storage::models::AssetAddress::from_primitive)
             .collect::<Vec<_>>();
 
-        Ok(self.database.lock().await.repositories().assets_addresses().add_assets_addresses(assets_addresses.clone().into_iter().map(|x| x.as_primitive()).collect())?)
+        Ok(self
+            .database
+            .lock()
+            .await
+            .repositories()
+            .assets_addresses()
+            .add_assets_addresses(assets_addresses.clone().into_iter().map(|x| x.as_primitive()).collect())?)
     }
 }

@@ -76,7 +76,12 @@ impl MessageConsumer<TransactionsPayload, usize> for StoreTransactionsConsumer {
                         // important check is_notify_devices to avoid notifing users about transactions that are not parsed in the block
                         if let Ok(notifications) = self
                             .pusher
-                            .get_messages(subscription.device.clone(), transaction.clone(), subscription.subscription.clone(), existing_assets.clone())
+                            .get_messages(
+                                subscription.device.clone(),
+                                transaction.clone(),
+                                subscription.subscription.clone(),
+                                existing_assets.clone(),
+                            )
                             .await
                         {
                             notifications_payload.push(NotificationsPayload::new(notifications));

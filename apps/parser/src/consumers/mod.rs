@@ -140,10 +140,7 @@ pub async fn run_consumer_fetch_nft_assets_mappings(settings: Settings, database
     let stream_reader = StreamReader::new(&settings.rabbitmq.url, name).await?;
     let stream_producer = StreamProducer::new(&settings.rabbitmq.url, name).await?;
     let cacher = CacherClient::new(&settings.redis.url);
-    let nft_config = NFTProviderConfig::new(
-        settings.nft.opensea.key.secret.clone(),
-        settings.nft.magiceden.key.secret.clone(),
-    );
+    let nft_config = NFTProviderConfig::new(settings.nft.opensea.key.secret.clone(), settings.nft.magiceden.key.secret.clone());
     let nft_client = NFTClient::new(&settings.postgres.url, nft_config).await;
     let nft_client = Arc::new(Mutex::new(nft_client));
     let consumer = FetchNftAssetsAddressesConsumer::new(database.clone(), stream_producer, cacher, nft_client);

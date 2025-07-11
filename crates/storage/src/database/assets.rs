@@ -50,22 +50,14 @@ impl AssetsStore for DatabaseClient {
         if asset_ids.is_empty() {
             return Ok(0);
         }
-        
+
         let target = assets.filter(id.eq_any(&asset_ids));
-        
+
         match update {
-            AssetUpdate::IsSwappable(value) => {
-                diesel::update(target).set(is_swappable.eq(value)).execute(&mut self.connection)
-            }
-            AssetUpdate::IsBuyable(value) => {
-                diesel::update(target).set(is_buyable.eq(value)).execute(&mut self.connection)
-            }
-            AssetUpdate::IsSellable(value) => {
-                diesel::update(target).set(is_sellable.eq(value)).execute(&mut self.connection)
-            }
-            AssetUpdate::Rank(value) => {
-                diesel::update(target).set(rank.eq(value)).execute(&mut self.connection)
-            }
+            AssetUpdate::IsSwappable(value) => diesel::update(target).set(is_swappable.eq(value)).execute(&mut self.connection),
+            AssetUpdate::IsBuyable(value) => diesel::update(target).set(is_buyable.eq(value)).execute(&mut self.connection),
+            AssetUpdate::IsSellable(value) => diesel::update(target).set(is_sellable.eq(value)).execute(&mut self.connection),
+            AssetUpdate::Rank(value) => diesel::update(target).set(rank.eq(value)).execute(&mut self.connection),
         }
     }
 
@@ -80,7 +72,7 @@ impl AssetsStore for DatabaseClient {
 
     fn get_assets_by_filter(&mut self, filters: Vec<AssetFilter>) -> Result<Vec<Asset>, diesel::result::Error> {
         let mut query = assets.filter(is_enabled.eq(true)).into_boxed();
-        
+
         for filter in filters {
             match filter {
                 AssetFilter::IsBuyable(value) => {
@@ -94,7 +86,7 @@ impl AssetsStore for DatabaseClient {
                 }
             }
         }
-        
+
         query.select(Asset::as_select()).load(&mut self.connection)
     }
 

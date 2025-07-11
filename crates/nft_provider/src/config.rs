@@ -6,9 +6,6 @@ pub struct NFTProviderConfig {
 
 impl NFTProviderConfig {
     pub fn new(opensea_key: String, magiceden_key: String) -> Self {
-        Self {
-            opensea_key,
-            magiceden_key,
-        }
+        Self { opensea_key, magiceden_key }
     }
 }

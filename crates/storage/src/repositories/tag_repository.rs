@@ -1,8 +1,8 @@
 use std::error::Error;
 
-use crate::DatabaseClient;
 use crate::database::tag::TagStore;
-use crate::models::{Tag, AssetTag};
+use crate::models::{AssetTag, Tag};
+use crate::DatabaseClient;
 
 pub trait TagRepository {
     fn add_tags(&mut self, values: Vec<Tag>) -> Result<usize, Box<dyn Error + Send + Sync>>;
