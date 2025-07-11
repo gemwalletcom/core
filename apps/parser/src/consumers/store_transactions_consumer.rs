@@ -32,7 +32,7 @@ impl MessageConsumer<TransactionsPayload, usize> for StoreTransactionsConsumer {
             .collect::<Vec<_>>();
         let is_notify_devices = !payload.blocks.is_empty();
         let addresses = transactions.clone().into_iter().flat_map(|x| x.addresses()).collect();
-        let subscriptions = self.database.lock().await.repositories().subscriptions().get_subscriptions_with_device_info(chain, addresses)?;
+        let subscriptions = self.database.lock().await.repositories().subscriptions().get_subscriptions(chain, addresses)?;
 
         let mut transactions_map: HashMap<String, Transaction> = HashMap::new();
         let mut fetch_assets_payload: Vec<AssetId> = Vec::new();
@@ -41,11 +41,10 @@ impl MessageConsumer<TransactionsPayload, usize> for StoreTransactionsConsumer {
 
         for subscription in subscriptions {
             for transaction in transactions.clone() {
-                if transaction.addresses().contains(&subscription.address) {
+                if transaction.addresses().contains(&subscription.subscription.address) {
                     transactions_map.insert(transaction.clone().id.clone(), transaction.clone());
 
-                    let device = self.database.lock().await.get_device_by_id(subscription.device_id)?;
-                    let transaction = transaction.finalize(vec![subscription.address.clone()]).clone();
+                    let transaction = transaction.finalize(vec![subscription.subscription.address.clone()]).clone();
 
                     let assets_ids = transaction.asset_ids();
                     let (existing_assets, missing_assets_ids) = {
@@ -76,7 +75,7 @@ impl MessageConsumer<TransactionsPayload, usize> for StoreTransactionsConsumer {
                         // important check is_notify_devices to avoid notifing users about transactions that are not parsed in the block
                         if let Ok(notifications) = self
                             .pusher
-                            .get_messages(device.as_primitive(), transaction.clone(), subscription.as_primitive(), existing_assets.clone())
+                            .get_messages(subscription.device.clone(), transaction.clone(), subscription.subscription.clone(), existing_assets.clone())
                             .await
                         {
                             notifications_payload.push(NotificationsPayload::new(notifications));
@@ -86,7 +85,7 @@ impl MessageConsumer<TransactionsPayload, usize> for StoreTransactionsConsumer {
                     let assets_addresses = transaction
                         .assets_addresses()
                         .into_iter()
-                        .filter(|x| existing_assets.iter().any(|a| a.id == x.asset_id) && subscription.address == x.address)
+                        .filter(|x| existing_assets.iter().any(|a| a.id == x.asset_id) && subscription.subscription.address == x.address)
                         .collect::<Vec<_>>();
 
                     if !assets_addresses.is_empty() {

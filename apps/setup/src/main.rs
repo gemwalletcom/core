@@ -30,7 +30,7 @@ async fn main() {
     println!("setup assets_types");
 
     let assets_types = AssetType::all();
-    let _ = database_client.add_assets_types(assets_types);
+    let _ = database_client.repositories().assets_types().add_assets_types(assets_types);
 
     println!("setup assets");
     let assets = chains
