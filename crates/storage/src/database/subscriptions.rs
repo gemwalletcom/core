@@ -51,13 +51,15 @@ impl SubscriptionsStore for DatabaseClient {
 
     fn get_subscriptions(&mut self, _chain: primitives::Chain, addresses: Vec<String>) -> Result<Vec<Subscription>, diesel::result::Error> {
         use crate::schema::subscriptions::dsl::*;
-
-        let exclude_addresses = self.get_subscriptions_exclude_addresses(addresses.clone())?;
+        use crate::schema::subscriptions_addresses_exclude;
 
         subscriptions
+            .left_join(subscriptions_addresses_exclude::table.on(
+                subscriptions_addresses_exclude::address.eq(address)
+            ))
             .filter(chain.eq(_chain.as_ref()))
             .filter(address.eq_any(addresses))
-            .filter(address.ne_all(exclude_addresses))
+            .filter(subscriptions_addresses_exclude::address.is_null())
             .distinct_on((device_id, chain, address))
             .select(Subscription::as_select())
             .load(&mut self.connection)
@@ -65,14 +67,16 @@ impl SubscriptionsStore for DatabaseClient {
 
     fn get_subscriptions_with_device(&mut self, _chain: primitives::Chain, addresses: Vec<String>) -> Result<Vec<(Subscription, crate::models::Device)>, diesel::result::Error> {
         use crate::schema::subscriptions::dsl::*;
-
-        let exclude_addresses = self.get_subscriptions_exclude_addresses(addresses.clone())?;
+        use crate::schema::subscriptions_addresses_exclude;
 
         subscriptions
             .inner_join(devices::table)
+            .left_join(subscriptions_addresses_exclude::table.on(
+                subscriptions_addresses_exclude::address.eq(address)
+            ))
             .filter(chain.eq(_chain.as_ref()))
             .filter(address.eq_any(addresses))
-            .filter(address.ne_all(exclude_addresses))
+            .filter(subscriptions_addresses_exclude::address.is_null())
             .distinct_on((device_id, chain, address))
             .select((Subscription::as_select(), crate::models::Device::as_select()))
             .load(&mut self.connection)
