@@ -17,6 +17,7 @@ pub use self::repositories::{
     assets_links_repository::AssetsLinksRepository,
     assets_repository::AssetsRepository,
     assets_types_repository::AssetsTypesRepository,
+    charts_repository::ChartsRepository,
     subscriptions_repository::SubscriptionsRepository,
     repository_factory::{RepositoryFactory, DatabaseClientExt},
 };

@@ -1,6 +1,6 @@
 use primitives::{ChartPeriod, ChartValue, DEFAULT_FIAT_CURRENCY};
 use std::error::Error;
-use storage::DatabaseClient;
+use storage::{DatabaseClient, DatabaseClientExt};
 
 pub struct ChartClient {
     database: DatabaseClient,
@@ -21,7 +21,8 @@ impl ChartClient {
         let rate = self.database.get_fiat_rate(currency)?.as_primitive();
         let rate_multiplier = rate.multiplier(base_rate.rate);
 
-        let charts = self.database.get_charts(coin_id.to_string(), &period).await?;
+        let charts = self.database.repositories().charts().get_charts(coin_id.to_string(), &period)
+            .map_err(|e| -> Box<dyn Error> { e })?;
         let prices = charts
             .into_iter()
             .map(|x| ChartValue {

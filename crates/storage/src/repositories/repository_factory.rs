@@ -1,4 +1,4 @@
-use crate::{AssetsAddressesRepository, AssetsLinksRepository, AssetsRepository, AssetsTypesRepository, DatabaseClient, SubscriptionsRepository};
+use crate::{AssetsAddressesRepository, AssetsLinksRepository, AssetsRepository, AssetsTypesRepository, ChartsRepository, DatabaseClient, SubscriptionsRepository};
 
 pub struct RepositoryFactory<'a> {
     database: &'a mut DatabaseClient,
@@ -26,6 +26,10 @@ impl<'a> RepositoryFactory<'a> {
     }
 
     pub fn assets_types(&mut self) -> &mut dyn AssetsTypesRepository {
+        self.database
+    }
+
+    pub fn charts(&mut self) -> &mut dyn ChartsRepository {
         self.database
     }
 }

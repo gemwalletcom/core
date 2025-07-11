@@ -3,7 +3,7 @@ use primitives::{AssetMarketPrice, AssetPriceInfo, AssetPrices, FiatRate};
 use std::error::Error;
 use storage::{
     models::{Chart, Price, PriceAsset},
-    DatabaseClient,
+    DatabaseClient, DatabaseClientExt,
 };
 
 use cacher::CacherClient;
@@ -145,7 +145,7 @@ impl PriceClient {
 
     // charts
     pub async fn add_charts(&mut self, charts: Vec<Chart>) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.add_charts(charts).await?)
+        Ok(self.database.repositories().charts().add_charts(charts)?)
     }
 
     pub fn delete_prices_updated_at_before(&mut self, time: NaiveDateTime) -> Result<usize, Box<dyn Error + Send + Sync>> {
@@ -153,14 +153,14 @@ impl PriceClient {
     }
 
     pub async fn aggregate_hourly_charts(&mut self) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.aggregate_hourly_charts().await?)
+        Ok(self.database.repositories().charts().aggregate_hourly_charts()?)
     }
 
     pub async fn aggregate_daily_charts(&mut self) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.aggregate_daily_charts().await?)
+        Ok(self.database.repositories().charts().aggregate_daily_charts()?)
     }
 
     pub async fn cleanup_charts_data(&mut self) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.cleanup_charts_data().await?)
+        Ok(self.database.repositories().charts().cleanup_charts_data()?)
     }
 }

@@ -18,15 +18,23 @@ pub enum ChartGranularity {
 
 pub type ChartResult = (chrono::NaiveDateTime, f64);
 
-impl DatabaseClient {
-    pub async fn add_charts(&mut self, values: Vec<Chart>) -> Result<usize, Error> {
+pub(crate) trait ChartsStore {
+    fn add_charts(&mut self, values: Vec<Chart>) -> Result<usize, Error>;
+    fn get_charts(&mut self, target_coin_id: String, period: &ChartPeriod) -> Result<Vec<ChartResult>, Error>;
+    fn aggregate_hourly_charts(&mut self) -> Result<usize, diesel::result::Error>;
+    fn aggregate_daily_charts(&mut self) -> Result<usize, diesel::result::Error>;
+    fn cleanup_charts_data(&mut self) -> Result<usize, diesel::result::Error>;
+}
+
+impl ChartsStore for DatabaseClient {
+    fn add_charts(&mut self, values: Vec<Chart>) -> Result<usize, Error> {
         diesel::insert_into(charts)
             .values(values)
             .on_conflict_do_nothing()
             .execute(&mut self.connection)
     }
 
-    pub async fn get_charts(&mut self, target_coin_id: String, period: &ChartPeriod) -> Result<Vec<ChartResult>, Error> {
+    fn get_charts(&mut self, target_coin_id: String, period: &ChartPeriod) -> Result<Vec<ChartResult>, Error> {
         let date_selection = format!("date_bin('{}', created_at, timestamp '2000-01-01')", self.period_sql(period.clone()));
         let granularity = Self::get_chart_granularity_for_period(period);
         let created_at_filter = format!("created_at >= now() - INTERVAL '{} minutes'", self.period_minutes(period.clone()));
@@ -64,6 +72,21 @@ impl DatabaseClient {
         }
     }
 
+
+    fn aggregate_hourly_charts(&mut self) -> Result<usize, diesel::result::Error> {
+        diesel::sql_query("SELECT aggregate_hourly_charts();").execute(&mut self.connection)
+    }
+
+    fn aggregate_daily_charts(&mut self) -> Result<usize, diesel::result::Error> {
+        diesel::sql_query("SELECT aggregate_daily_charts();").execute(&mut self.connection)
+    }
+
+    fn cleanup_charts_data(&mut self) -> Result<usize, diesel::result::Error> {
+        diesel::sql_query("SELECT cleanup_all_charts_data();").execute(&mut self.connection)
+    }
+}
+
+impl DatabaseClient {
     fn get_chart_granularity_for_period(period: &ChartPeriod) -> ChartGranularity {
         match period {
             ChartPeriod::Hour => ChartGranularity::Minute,
@@ -96,17 +119,5 @@ impl DatabaseClient {
             ChartPeriod::Year => 525_600,
             ChartPeriod::All => 10_525_600,
         }
-    }
-
-    pub async fn aggregate_hourly_charts(&mut self) -> Result<usize, diesel::result::Error> {
-        diesel::sql_query("SELECT aggregate_hourly_charts();").execute(&mut self.connection)
-    }
-
-    pub async fn aggregate_daily_charts(&mut self) -> Result<usize, diesel::result::Error> {
-        diesel::sql_query("SELECT aggregate_daily_charts();").execute(&mut self.connection)
-    }
-
-    pub async fn cleanup_charts_data(&mut self) -> Result<usize, diesel::result::Error> {
-        diesel::sql_query("SELECT cleanup_all_charts_data();").execute(&mut self.connection)
     }
 }

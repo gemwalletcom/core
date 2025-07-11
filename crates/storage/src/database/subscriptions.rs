@@ -54,12 +54,12 @@ impl SubscriptionsStore for DatabaseClient {
         use crate::schema::subscriptions_addresses_exclude;
 
         subscriptions
-            .left_join(subscriptions_addresses_exclude::table.on(
-                subscriptions_addresses_exclude::address.eq(address)
-            ))
             .filter(chain.eq(_chain.as_ref()))
             .filter(address.eq_any(addresses))
-            .filter(subscriptions_addresses_exclude::address.is_null())
+            .filter(diesel::dsl::not(diesel::dsl::exists(
+                subscriptions_addresses_exclude::table
+                    .filter(subscriptions_addresses_exclude::address.eq(address))
+            )))
             .distinct_on((device_id, chain, address))
             .select(Subscription::as_select())
             .load(&mut self.connection)
@@ -71,12 +71,12 @@ impl SubscriptionsStore for DatabaseClient {
 
         subscriptions
             .inner_join(devices::table)
-            .left_join(subscriptions_addresses_exclude::table.on(
-                subscriptions_addresses_exclude::address.eq(address)
-            ))
             .filter(chain.eq(_chain.as_ref()))
             .filter(address.eq_any(addresses))
-            .filter(subscriptions_addresses_exclude::address.is_null())
+            .filter(diesel::dsl::not(diesel::dsl::exists(
+                subscriptions_addresses_exclude::table
+                    .filter(subscriptions_addresses_exclude::address.eq(address))
+            )))
             .distinct_on((device_id, chain, address))
             .select((Subscription::as_select(), crate::models::Device::as_select()))
             .load(&mut self.connection)
