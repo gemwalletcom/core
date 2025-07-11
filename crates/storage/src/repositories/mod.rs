@@ -4,5 +4,6 @@ pub mod assets_repository;
 pub mod assets_types_repository;
 pub mod charts_repository;
 pub mod devices_repository;
+pub mod fiat_repository;
 pub mod subscriptions_repository;
 pub mod repository_factory;
