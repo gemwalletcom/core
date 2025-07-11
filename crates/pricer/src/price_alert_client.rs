@@ -35,7 +35,7 @@ impl PriceAlertClient {
         Self { database }
     }
 
-    pub async fn get_price_alerts(&mut self, device_id: &str) -> Result<PriceAlerts, Box<dyn Error>> {
+    pub async fn get_price_alerts(&mut self, device_id: &str) -> Result<PriceAlerts, Box<dyn Error + Send + Sync>> {
         let device = self.database.get_device(device_id)?;
         let values = self
             .database
@@ -46,7 +46,7 @@ impl PriceAlertClient {
         Ok(values)
     }
 
-    pub async fn add_price_alerts(&mut self, device_id: &str, price_alerts: PriceAlerts) -> Result<usize, Box<dyn Error>> {
+    pub async fn add_price_alerts(&mut self, device_id: &str, price_alerts: PriceAlerts) -> Result<usize, Box<dyn Error + Send + Sync>> {
         let device = self.database.get_device(device_id)?;
         let values = price_alerts
             .into_iter()
@@ -55,7 +55,7 @@ impl PriceAlertClient {
         Ok(self.database.add_price_alerts(values)?)
     }
 
-    pub async fn delete_price_alerts(&mut self, device_id: &str, price_alerts: PriceAlerts) -> Result<usize, Box<dyn Error>> {
+    pub async fn delete_price_alerts(&mut self, device_id: &str, price_alerts: PriceAlerts) -> Result<usize, Box<dyn Error + Send + Sync>> {
         let device = self.database.get_device(device_id)?;
         let ids = price_alerts.iter().map(|x| x.id()).collect::<HashSet<_>>().into_iter().collect();
         Ok(self.database.delete_price_alerts(device.id, ids)?)

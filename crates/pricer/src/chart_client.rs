@@ -16,13 +16,12 @@ impl ChartClient {
         Ok(self.database.get_price(asset_id)?.id.clone())
     }
 
-    pub async fn get_charts_prices(&mut self, coin_id: &str, period: ChartPeriod, currency: &str) -> Result<Vec<ChartValue>, Box<dyn Error>> {
+    pub async fn get_charts_prices(&mut self, coin_id: &str, period: ChartPeriod, currency: &str) -> Result<Vec<ChartValue>, Box<dyn Error + Send + Sync>> {
         let base_rate = self.database.get_fiat_rate(DEFAULT_FIAT_CURRENCY)?;
         let rate = self.database.get_fiat_rate(currency)?.as_primitive();
         let rate_multiplier = rate.multiplier(base_rate.rate);
 
-        let charts = self.database.repositories().charts().get_charts(coin_id.to_string(), &period)
-            .map_err(|e| -> Box<dyn Error> { e })?;
+        let charts = self.database.repositories().charts().get_charts(coin_id.to_string(), &period)?;
         let prices = charts
             .into_iter()
             .map(|x| ChartValue {
