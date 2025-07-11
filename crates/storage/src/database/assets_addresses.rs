@@ -5,7 +5,7 @@ use chrono::DateTime;
 use diesel::prelude::*;
 use primitives::ChainAddress;
 
-pub trait AssetsAddressesStore {
+pub(crate) trait AssetsAddressesStore {
     fn add_assets_addresses(&mut self, values: Vec<AssetAddress>) -> Result<usize, diesel::result::Error>;
     fn get_assets_by_addresses(
         &mut self,

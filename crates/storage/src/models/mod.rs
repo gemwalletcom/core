@@ -20,7 +20,7 @@ pub mod tag;
 pub mod transaction;
 pub mod transaction_addresses;
 
-pub use self::asset::Asset;
+pub use self::asset::{Asset, AssetLink};
 pub use self::asset_address::AssetAddress;
 pub use self::asset_type::AssetType;
 pub use self::chain::Chain;

@@ -23,4 +23,11 @@ impl AssetAddress {
             address: asset_address.address.clone(),
         }
     }
+
+    pub fn as_primitive(&self) -> primitives::AssetAddress {
+        primitives::AssetAddress {
+            asset_id: primitives::AssetId::new(&self.asset_id).unwrap(),
+            address: self.address.clone(),
+        }
+    }
 }

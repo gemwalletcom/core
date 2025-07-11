@@ -3,7 +3,7 @@ use std::{collections::HashMap, error::Error, sync::Arc};
 
 use async_trait::async_trait;
 use primitives::{AssetIdVecExt, Transaction};
-use storage::{models, DatabaseClient, SubscriptionsStore};
+use storage::{models, DatabaseClient, DatabaseClientExt};
 use streamer::{consumer::MessageConsumer, StreamProducer, TransactionsPayload};
 use streamer::{AssetId, AssetsAddressPayload, NotificationsPayload, StreamProducerQueue};
 use tokio::sync::Mutex;
@@ -32,7 +32,7 @@ impl MessageConsumer<TransactionsPayload, usize> for StoreTransactionsConsumer {
             .collect::<Vec<_>>();
         let is_notify_devices = !payload.blocks.is_empty();
         let addresses = transactions.clone().into_iter().flat_map(|x| x.addresses()).collect();
-        let subscriptions = self.database.lock().await.get_subscriptions(chain, addresses)?;
+        let subscriptions = self.database.lock().await.repositories().subscriptions().get_subscriptions_with_device_info(chain, addresses)?;
 
         let mut transactions_map: HashMap<String, Transaction> = HashMap::new();
         let mut fetch_assets_payload: Vec<AssetId> = Vec::new();

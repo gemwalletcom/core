@@ -4,18 +4,17 @@ use std::error::Error;
 
 pub mod database;
 pub use self::database::{
-    assets::{AssetsStore, AssetUpdate, AssetFilter},
-    assets_addresses::AssetsAddressesStore,
+    assets::{AssetUpdate, AssetFilter},
     link_types::{LinkRepository, LinkStore},
     nodes::{NodeRepository, NodeStore},
     parser_state::{ParserStateRepository, ParserStateStore},
-    subscriptions::SubscriptionsStore,
     DatabaseClient,
 };
 pub mod models;
 pub mod repositories;
 pub use self::repositories::{
     assets_addresses_repository::AssetsAddressesRepository,
+    assets_links_repository::AssetsLinksRepository,
     assets_repository::AssetsRepository,
     subscriptions_repository::SubscriptionsRepository,
     repository_factory::{RepositoryFactory, DatabaseClientExt},

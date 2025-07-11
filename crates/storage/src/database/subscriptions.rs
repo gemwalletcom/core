@@ -2,7 +2,7 @@ use crate::schema::devices;
 use crate::{models::*, DatabaseClient};
 use diesel::prelude::*;
 
-pub trait SubscriptionsStore {
+pub(crate) trait SubscriptionsStore {
     fn get_subscriptions_by_device_id(&mut self, device_id: &str) -> Result<Vec<Subscription>, diesel::result::Error>;
     fn get_subscriptions_by_device_id_wallet_index(&mut self, device_id: &str, wallet_index: i32) -> Result<Vec<Subscription>, diesel::result::Error>;
     fn get_subscriptions(&mut self, chain: primitives::Chain, addresses: Vec<String>) -> Result<Vec<Subscription>, diesel::result::Error>;

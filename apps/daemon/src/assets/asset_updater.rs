@@ -231,11 +231,7 @@ impl AssetUpdater {
     }
 
     pub async fn update_links(&mut self, asset_id: &str, asset_links: Vec<AssetLink>) -> Result<(), Box<dyn Error>> {
-        let asset_links = asset_links
-            .into_iter()
-            .map(|x| storage::models::asset::AssetLink::from_primitive(asset_id, x))
-            .collect::<Vec<_>>();
-        let _ = self.database.add_assets_links(asset_links);
+        let _ = self.database.repositories().assets_links().add_assets_links(asset_id, asset_links);
         Ok(())
     }
 }

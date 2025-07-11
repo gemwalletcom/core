@@ -36,7 +36,7 @@ impl AssetsClient {
 
     pub fn get_asset_full(&mut self, asset_id: &str) -> Result<AssetFull, Box<dyn Error>> {
         let asset = self.database.get_asset(asset_id)?;
-        let links = self.database.get_asset_links(asset_id)?.into_iter().map(|link| link.as_primitive()).collect();
+        let links = self.database.repositories().assets_links().get_asset_links(asset_id).map_err(|e| -> Box<dyn Error> { e })?;
         let tags = self.database.get_assets_tags_for_asset(asset_id)?;
 
         Ok(AssetFull {

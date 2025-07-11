@@ -1,6 +1,7 @@
 use std::error::Error;
 
-use crate::{models::Asset, AssetsStore, DatabaseClient};
+use crate::{models::Asset, DatabaseClient};
+use crate::database::assets::AssetsStore;
 use crate::database::assets::{AssetUpdate, AssetFilter};
 use primitives::{Asset as PrimitiveAsset, AssetBasic};
 

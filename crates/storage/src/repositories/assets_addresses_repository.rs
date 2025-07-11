@@ -1,6 +1,7 @@
 use std::error::Error;
 
-use crate::{models::asset_address::AssetAddress, AssetsAddressesStore, DatabaseClient};
+use crate::{models::asset_address::AssetAddress, DatabaseClient};
+use crate::database::assets_addresses::AssetsAddressesStore;
 use primitives::{AssetAddress as PrimitiveAssetAddress, AssetId, ChainAddress};
 
 pub trait AssetsAddressesRepository {

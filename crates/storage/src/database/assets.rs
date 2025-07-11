@@ -18,7 +18,7 @@ pub enum AssetFilter {
     IsSellable(bool),
 }
 
-pub trait AssetsStore {
+pub(crate) trait AssetsStore {
     fn get_assets_all(&mut self) -> Result<Vec<Asset>, diesel::result::Error>;
     fn add_assets(&mut self, values: Vec<Asset>) -> Result<usize, diesel::result::Error>;
     fn update_assets(&mut self, asset_ids: Vec<String>, update: AssetUpdate) -> Result<usize, diesel::result::Error>;
