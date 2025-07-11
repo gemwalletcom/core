@@ -4,7 +4,7 @@ use std::error::Error;
 
 pub mod database;
 pub use self::database::{
-    assets_addresses::{AssetsAddressesRepository, AssetsAddressesStore},
+    assets_addresses::AssetsAddressesStore,
     link_types::{LinkRepository, LinkStore},
     nodes::{NodeRepository, NodeStore},
     parser_state::{ParserStateRepository, ParserStateStore},
@@ -13,6 +13,7 @@ pub use self::database::{
 pub mod models;
 pub mod repositories;
 pub use self::repositories::{
+    assets_addresses_repository::AssetsAddressesRepository,
     subscriptions_repository::SubscriptionsRepository,
     repository_factory::{RepositoryFactory, DatabaseClientExt},
 };

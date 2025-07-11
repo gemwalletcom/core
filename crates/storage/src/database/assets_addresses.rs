@@ -1,11 +1,9 @@
-use std::error::Error;
-
 use crate::schema::assets_addresses::dsl::*;
 
 use crate::{models::asset_address::AssetAddress, DatabaseClient};
 use chrono::DateTime;
 use diesel::prelude::*;
-use primitives::{AssetId, ChainAddress};
+use primitives::ChainAddress;
 
 pub trait AssetsAddressesStore {
     fn add_assets_addresses(&mut self, values: Vec<AssetAddress>) -> Result<usize, diesel::result::Error>;
@@ -16,17 +14,6 @@ pub trait AssetsAddressesStore {
         include_with_prices: bool,
     ) -> Result<Vec<AssetAddress>, diesel::result::Error>;
     fn delete_assets_addresses(&mut self, values: Vec<AssetAddress>) -> Result<usize, diesel::result::Error>;
-}
-
-pub trait AssetsAddressesRepository {
-    fn add_assets_addresses(&mut self, values: Vec<primitives::AssetAddress>) -> Result<usize, Box<dyn Error + Send + Sync>>;
-    fn get_assets_by_addresses(
-        &mut self,
-        values: Vec<ChainAddress>,
-        from_timestamp: Option<u32>,
-        include_with_prices: bool,
-    ) -> Result<Vec<AssetId>, Box<dyn Error + Send + Sync>>;
-    fn delete_assets_addresses(&mut self, values: Vec<primitives::AssetAddress>) -> Result<usize, Box<dyn Error + Send + Sync>>;
 }
 
 impl AssetsAddressesStore for DatabaseClient {
@@ -80,35 +67,5 @@ impl AssetsAddressesStore for DatabaseClient {
         let chains = values.iter().map(|x| x.chain.as_ref()).collect::<Vec<&str>>();
         let addresses = values.iter().map(|x| x.address.clone()).collect::<Vec<String>>();
         diesel::delete(assets_addresses.filter(chain.eq_any(chains)).filter(address.eq_any(addresses))).execute(&mut self.connection)
-    }
-}
-
-impl AssetsAddressesRepository for DatabaseClient {
-    fn add_assets_addresses(&mut self, values: Vec<primitives::AssetAddress>) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        Ok(AssetsAddressesStore::add_assets_addresses(
-            self,
-            values.into_iter().map(AssetAddress::from_primitive).collect(),
-        )?)
-    }
-
-    fn get_assets_by_addresses(
-        &mut self,
-        values: Vec<ChainAddress>,
-        from_timestamp: Option<u32>,
-        include_with_prices: bool,
-    ) -> Result<Vec<AssetId>, Box<dyn Error + Send + Sync>> {
-        Ok(
-            AssetsAddressesStore::get_assets_by_addresses(self, values, from_timestamp, include_with_prices)?
-                .into_iter()
-                .flat_map(|x| AssetId::new(x.asset_id.as_str()))
-                .collect(),
-        )
-    }
-
-    fn delete_assets_addresses(&mut self, values: Vec<primitives::AssetAddress>) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        Ok(AssetsAddressesStore::delete_assets_addresses(
-            self,
-            values.into_iter().map(AssetAddress::from_primitive).collect(),
-        )?)
     }
 }
