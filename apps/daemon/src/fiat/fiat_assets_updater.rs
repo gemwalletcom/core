@@ -1,7 +1,7 @@
 use chrono::{Duration, Utc};
 use fiat::{model::FiatProviderAsset, FiatProvider};
 use primitives::{AssetTag, Diff};
-use storage::{AssetFilter, AssetUpdate, DatabaseClient, DatabaseClientExt};
+use storage::{AssetFilter, AssetUpdate, DatabaseClient};
 
 pub struct FiatAssetsUpdater {
     database: DatabaseClient,
@@ -20,7 +20,6 @@ impl FiatAssetsUpdater {
         // buyable
         let buyable_assets_ids = self
             .database
-            .repositories()
             .assets()
             .get_assets_by_filter(vec![AssetFilter::IsBuyable(true)])?
             .into_iter()
@@ -30,19 +29,16 @@ impl FiatAssetsUpdater {
 
         let _ = self
             .database
-            .repositories()
             .assets()
             .update_assets(buyable_result.missing.clone(), AssetUpdate::IsBuyable(true));
         let _ = self
             .database
-            .repositories()
             .assets()
             .update_assets(buyable_result.different.clone(), AssetUpdate::IsBuyable(false));
 
         // sellable
         let sellable_assets_ids = self
             .database
-            .repositories()
             .assets()
             .get_assets_by_filter(vec![AssetFilter::IsSellable(true)])?
             .into_iter()
@@ -53,12 +49,10 @@ impl FiatAssetsUpdater {
         let sellable_result = Diff::compare(sellable_assets_ids, enabled_asset_ids.clone());
         let _ = self
             .database
-            .repositories()
             .assets()
             .update_assets(sellable_result.missing.clone(), AssetUpdate::IsSellable(true));
         let _ = self
             .database
-            .repositories()
             .assets()
             .update_assets(sellable_result.different.clone(), AssetUpdate::IsSellable(false));
 
@@ -67,10 +61,9 @@ impl FiatAssetsUpdater {
 
     pub async fn update_trending_fiat_assets(&mut self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
         let from = Utc::now() - Duration::days(30);
-        let asset_ids = self.database.repositories().fiat().get_fiat_assets_popular(from.naive_utc(), 30)?;
+        let asset_ids = self.database.fiat().get_fiat_assets_popular(from.naive_utc(), 30)?;
         Ok(self
             .database
-            .repositories()
             .tag()
             .set_assets_tags_for_tag(AssetTag::TrendingFiatPurchase.as_ref(), asset_ids.clone())?)
     }

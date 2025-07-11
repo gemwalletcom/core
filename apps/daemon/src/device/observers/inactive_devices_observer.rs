@@ -2,7 +2,7 @@ use cacher::{CacherClient, INACTIVE_DEVICE_OBSERVER, INACTIVE_DEVICE_OBSERVER_TI
 use localizer::LanguageLocalizer;
 use primitives::{Asset, Chain, GorushNotification, PushNotification};
 use std::error::Error;
-use storage::{database::DatabaseClient, DatabaseClientExt};
+use storage::database::DatabaseClient;
 use streamer::{NotificationsPayload, StreamProducer, StreamProducerQueue};
 
 pub struct InactiveDevicesObserver {
@@ -23,9 +23,9 @@ impl InactiveDevicesObserver {
 
     pub async fn observe(&mut self) -> Result<usize, Box<dyn Error + Send + Sync>> {
         // 7 days to 14 days
-        let devices = self.database.repositories().devices().devices_inactive_days(10, 14, Some(true))?;
+        let devices = self.database.devices().devices_inactive_days(10, 14, Some(true))?;
         for device in &devices {
-            let subscriptions = self.database.repositories().subscriptions().get_subscriptions_by_device_id(&device.id, None)?;
+            let subscriptions = self.database.subscriptions().get_subscriptions_by_device_id(&device.id, None)?;
             if subscriptions.is_empty() {
                 continue;
             }

@@ -4,7 +4,7 @@ use coingecko::{get_chain_for_coingecko_platform_id, CoinGeckoClient, CoinInfo};
 use primitives::{Asset, AssetId, AssetLink, AssetProperties, AssetScore, AssetType, LinkType};
 use std::collections::HashSet;
 use std::error::Error;
-use storage::{DatabaseClient, DatabaseClientExt};
+use storage::DatabaseClient;
 pub struct AssetUpdater {
     coin_gecko_client: CoinGeckoClient,
     database: DatabaseClient,
@@ -21,7 +21,6 @@ impl AssetUpdater {
     pub async fn update_assets(&mut self) -> Result<usize, Box<dyn Error + Send + Sync>> {
         let ids = self
             .database
-            .repositories()
             .prices()
             .get_prices()?
             .into_iter()
@@ -226,14 +225,14 @@ impl AssetUpdater {
         let asset = storage::models::asset::Asset::from_primitive(asset, score, properties);
         let asset_id = asset.id.as_str();
 
-        let _ = self.database.repositories().assets().add_assets(vec![asset.clone().as_primitive()]);
-        let _ = self.database.repositories().assets().upsert_assets(vec![asset.clone().as_primitive()]);
+        let _ = self.database.assets().add_assets(vec![asset.clone().as_primitive()]);
+        let _ = self.database.assets().upsert_assets(vec![asset.clone().as_primitive()]);
         let _ = self.update_links(asset_id, asset_links.clone()).await;
         Ok(())
     }
 
     pub async fn update_links(&mut self, asset_id: &str, asset_links: Vec<AssetLink>) -> Result<(), Box<dyn Error>> {
-        let _ = self.database.repositories().assets_links().add_assets_links(asset_id, asset_links);
+        let _ = self.database.assets_links().add_assets_links(asset_id, asset_links);
         Ok(())
     }
 }

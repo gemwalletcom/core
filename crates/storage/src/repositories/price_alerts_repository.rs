@@ -10,7 +10,7 @@ pub trait PriceAlertsRepository {
         &mut self,
         after_notified_at: NaiveDateTime,
     ) -> Result<Vec<(primitives::PriceAlert, primitives::Price, primitives::Device)>, Box<dyn Error + Send + Sync>>;
-    fn get_price_alerts_for_device_id(&mut self, device_id: &str) -> Result<Vec<primitives::price_alert::DevicePriceAlert>, Box<dyn Error + Send + Sync>>;
+    fn get_price_alerts_for_device_id(&mut self, device_id: &str) -> Result<Vec<primitives::DevicePriceAlert>, Box<dyn Error + Send + Sync>>;
     fn add_price_alerts(&mut self, device_id: &str, price_alerts: primitives::PriceAlerts) -> Result<usize, Box<dyn Error + Send + Sync>>;
     fn delete_price_alerts(&mut self, device_id: &str, ids: Vec<String>) -> Result<usize, Box<dyn Error + Send + Sync>>;
     fn update_price_alerts_set_notified_at(&mut self, ids: Vec<String>, last_notified_at: NaiveDateTime) -> Result<usize, Box<dyn Error + Send + Sync>>;
@@ -28,11 +28,11 @@ impl PriceAlertsRepository for DatabaseClient {
             .collect())
     }
 
-    fn get_price_alerts_for_device_id(&mut self, device_id: &str) -> Result<Vec<primitives::price_alert::DevicePriceAlert>, Box<dyn Error + Send + Sync>> {
+    fn get_price_alerts_for_device_id(&mut self, device_id: &str) -> Result<Vec<primitives::DevicePriceAlert>, Box<dyn Error + Send + Sync>> {
         let results = PriceAlertsStore::get_price_alerts_for_device_id(self, device_id)?;
         Ok(results
             .into_iter()
-            .map(|(alert, device)| primitives::price_alert::DevicePriceAlert {
+            .map(|(alert, device)| primitives::DevicePriceAlert {
                 device: device.as_primitive(),
                 price_alert: alert.as_primitive(),
             })

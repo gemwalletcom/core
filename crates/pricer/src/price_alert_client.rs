@@ -7,7 +7,7 @@ use primitives::{
 };
 use std::collections::HashSet;
 use std::error::Error;
-use storage::{DatabaseClient, DatabaseClientExt};
+use storage::DatabaseClient;
 
 #[allow(dead_code)]
 pub struct PriceAlertClient {
@@ -36,23 +36,23 @@ impl PriceAlertClient {
     }
 
     pub async fn get_price_alerts(&mut self, device_id: &str) -> Result<PriceAlerts, Box<dyn Error + Send + Sync>> {
-        let device_alerts = self.database.repositories().price_alerts().get_price_alerts_for_device_id(device_id)?;
+        let device_alerts = self.database.price_alerts().get_price_alerts_for_device_id(device_id)?;
         Ok(device_alerts.into_iter().map(|x| x.price_alert).collect())
     }
 
     pub async fn add_price_alerts(&mut self, device_id: &str, price_alerts: PriceAlerts) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.repositories().price_alerts().add_price_alerts(device_id, price_alerts)?)
+        Ok(self.database.price_alerts().add_price_alerts(device_id, price_alerts)?)
     }
 
     pub async fn delete_price_alerts(&mut self, device_id: &str, price_alerts: PriceAlerts) -> Result<usize, Box<dyn Error + Send + Sync>> {
         let ids = price_alerts.iter().map(|x| x.id()).collect::<HashSet<_>>().into_iter().collect();
-        Ok(self.database.repositories().price_alerts().delete_price_alerts(device_id, ids)?)
+        Ok(self.database.price_alerts().delete_price_alerts(device_id, ids)?)
     }
 
     pub async fn get_devices_to_alert(&mut self, rules: PriceAlertRules) -> Result<Vec<PriceAlertNotification>, Box<dyn Error + Send + Sync>> {
         let now = Utc::now();
         let after_notified_at = now - Duration::days(1);
-        let price_alerts = self.database.repositories().price_alerts().get_price_alerts(after_notified_at.naive_utc())?;
+        let price_alerts = self.database.price_alerts().get_price_alerts(after_notified_at.naive_utc())?;
 
         let mut results: Vec<PriceAlertNotification> = Vec::new();
         let mut price_alert_ids: HashSet<String> = HashSet::new();
@@ -65,7 +65,6 @@ impl PriceAlertClient {
             }
         }
         self.database
-            .repositories()
             .price_alerts()
             .update_price_alerts_set_notified_at(price_alert_ids.into_iter().collect(), now.naive_utc())?;
         Ok(results)
@@ -103,9 +102,9 @@ impl PriceAlertClient {
         price_alert: PriceAlert,
         alert_type: PriceAlertType,
     ) -> Result<PriceAlertNotification, Box<dyn Error + Send + Sync>> {
-        let asset = self.database.repositories().assets().get_asset(&price_alert.asset_id.to_string())?;
-        let base_rate = self.database.repositories().fiat().get_fiat_rate(DEFAULT_FIAT_CURRENCY)?;
-        let rate = self.database.repositories().fiat().get_fiat_rate(&device.currency)?;
+        let asset = self.database.assets().get_asset(&price_alert.asset_id.to_string())?;
+        let base_rate = self.database.fiat().get_fiat_rate(DEFAULT_FIAT_CURRENCY)?;
+        let rate = self.database.fiat().get_fiat_rate(&device.currency)?;
         let price = price.new_with_rate(base_rate.rate, rate.rate);
 
         let notification = PriceAlertNotification {

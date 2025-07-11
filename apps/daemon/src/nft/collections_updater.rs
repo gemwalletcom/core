@@ -5,7 +5,7 @@ use nft_provider::opensea::{model::Collection, OpenSeaClient};
 use primitives::{Chain, LinkType};
 use storage::{
     models::{nft_collection::UpdateNftCollectionImageUrl, NftCollection, NftLink},
-    DatabaseClient, DatabaseClientExt,
+    DatabaseClient,
 };
 
 pub struct OpenSeaUpdater {
@@ -20,7 +20,7 @@ impl OpenSeaUpdater {
     }
 
     pub async fn update_collections(&mut self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
-        let collections = self.database.repositories().nft().get_nft_collections_all()?;
+        let collections = self.database.nft().get_nft_collections_all()?;
 
         for collection in collections.clone() {
             let chain = Chain::from_str(collection.chain.as_str())?;

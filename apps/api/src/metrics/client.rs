@@ -5,7 +5,7 @@ use prometheus_client::encoding::EncodeLabelSet;
 use prometheus_client::metrics::family::Family;
 use prometheus_client::metrics::gauge::Gauge;
 use prometheus_client::registry::Registry;
-use storage::{DatabaseClient, DatabaseClientExt};
+use storage::DatabaseClient;
 
 pub struct MetricsClient {
     registry: Registry,
@@ -72,7 +72,7 @@ impl MetricsClient {
     }
 
     pub fn update_parser_states(&mut self) {
-        let states = self.database.repositories().parser_state().get_parser_states().unwrap_or_default();
+        let states = self.database.parser_state().get_parser_states().unwrap_or_default();
 
         for state in states {
             self.parser_current_block
@@ -93,7 +93,6 @@ impl MetricsClient {
     pub fn update_pricer(&mut self) {
         let prices = self
             .database
-            .repositories()
             .prices()
             .get_prices()
             .unwrap_or_default()

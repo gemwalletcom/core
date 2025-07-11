@@ -40,7 +40,7 @@ impl SubscriptionsRepository for DatabaseClient {
     }
 
     fn get_subscriptions(&mut self, chain: Chain, addresses: Vec<String>) -> Result<Vec<DeviceSubscription>, Box<dyn Error + Send + Sync>> {
-        Ok(SubscriptionsStore::get_subscriptions_with_device(self, chain, addresses)?
+        Ok(SubscriptionsStore::get_subscriptions(self, chain, addresses)?
             .into_iter()
             .map(|(subscription, device)| DeviceSubscription {
                 device: device.as_primitive(),

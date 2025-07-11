@@ -3,7 +3,7 @@ use std::{collections::HashSet, error::Error, sync::Arc, vec};
 use nft_provider::{NFTProviderClient, NFTProviderConfig};
 use primitives::{Chain, NFTAsset, NFTAssetId, NFTCollection, NFTCollectionId, NFTData};
 use std::collections::HashMap;
-use storage::{DatabaseClient, DatabaseClientExt};
+use storage::DatabaseClient;
 
 use crate::image_fetcher::ImageFetcher;
 
@@ -48,7 +48,6 @@ impl NFTClient {
         let ids = collection_ids.iter().map(|x| x.id()).collect();
         let existing_collection_ids: Vec<String> = self
             .database
-            .repositories()
             .nft()
             .get_nft_collections(ids)?
             .into_iter()
@@ -80,15 +79,15 @@ impl NFTClient {
             .filter(|x| !x.url.is_empty())
             .collect();
 
-        self.database.repositories().nft().add_nft_collections(new_collections)?;
-        self.database.repositories().nft().add_nft_collections_links(links)?;
+        self.database.nft().add_nft_collections(new_collections)?;
+        self.database.nft().add_nft_collections_links(links)?;
 
         Ok(collections)
     }
 
     pub async fn preload_assets(&mut self, asset_ids: Vec<NFTAssetId>) -> Result<Vec<NFTAsset>, Box<dyn Error + Send + Sync>> {
         let ids = asset_ids.iter().map(|x| x.to_string()).collect();
-        let existing_asset_ids: Vec<String> = self.database.repositories().nft().get_nft_assets(ids)?.into_iter().map(|x| x.id).collect();
+        let existing_asset_ids: Vec<String> = self.database.nft().get_nft_assets(ids)?.into_iter().map(|x| x.id).collect();
         let missing_asset_ids = asset_ids
             .into_iter()
             .filter(|id| !existing_asset_ids.contains(&id.to_string()))
@@ -108,17 +107,13 @@ impl NFTClient {
             .map(storage::models::NftAsset::from_primitive)
             .collect::<Vec<_>>();
 
-        self.database.repositories().nft().add_nft_assets(new_assets)?;
+        self.database.nft().add_nft_assets(new_assets)?;
 
         Ok(assets)
     }
 
     pub fn get_subscriptions(&mut self, device_id: &str, wallet_index: i32) -> Result<Vec<primitives::Subscription>, Box<dyn Error + Send + Sync>> {
-        let subscriptions = self
-            .database
-            .repositories()
-            .subscriptions()
-            .get_subscriptions_by_device_id(device_id, Some(wallet_index))?;
+        let subscriptions = self.database.subscriptions().get_subscriptions_by_device_id(device_id, Some(wallet_index))?;
         Ok(subscriptions)
     }
 
@@ -134,10 +129,9 @@ impl NFTClient {
     }
 
     pub fn get_collection(&mut self, collection_id: &str) -> Result<NFTCollection, Box<dyn Error + Send + Sync>> {
-        let collection = self.database.repositories().nft().get_nft_collection(collection_id)?;
+        let collection = self.database.nft().get_nft_collection(collection_id)?;
         let links: Vec<primitives::AssetLink> = self
             .database
-            .repositories()
             .nft()
             .get_nft_collection_links(collection_id)?
             .into_iter()
@@ -148,18 +142,11 @@ impl NFTClient {
     }
 
     pub fn get_assets(&mut self, asset_ids: Vec<String>) -> Result<Vec<NFTAsset>, Box<dyn Error + Send + Sync>> {
-        Ok(self
-            .database
-            .repositories()
-            .nft()
-            .get_nft_assets(asset_ids)?
-            .into_iter()
-            .map(|x| x.as_primitive())
-            .collect())
+        Ok(self.database.nft().get_nft_assets(asset_ids)?.into_iter().map(|x| x.as_primitive()).collect())
     }
 
     pub fn get_nft_asset(&mut self, id: &str) -> Result<NFTAsset, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.repositories().nft().get_nft_asset(id)?.as_primitive())
+        Ok(self.database.nft().get_nft_asset(id)?.as_primitive())
     }
 
     // computed nfts from db

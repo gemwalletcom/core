@@ -4,7 +4,7 @@ use futures::future::try_join_all;
 use primitives::{Asset, AssetBalance, AssetBasic, AssetFull, AssetId, Chain, ChainAddress, Transaction};
 use search_index::{AssetDocument, SearchIndexClient, ASSETS_INDEX_NAME};
 use settings_chain::ChainProviders;
-use storage::{DatabaseClient, DatabaseClientExt};
+use storage::DatabaseClient;
 
 pub struct AssetsClient {
     database: Box<DatabaseClient>,
@@ -17,24 +17,24 @@ impl AssetsClient {
     }
 
     pub fn add_assets(&mut self, assets: Vec<Asset>) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.repositories().assets().add_assets(assets)?)
+        Ok(self.database.assets().add_assets(assets)?)
     }
 
     #[allow(unused)]
     pub fn get_asset(&mut self, asset_id: &str) -> Result<Asset, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.repositories().assets().get_asset(asset_id)?)
+        Ok(self.database.assets().get_asset(asset_id)?)
     }
 
     pub fn get_assets_list(&mut self) -> Result<Vec<AssetBasic>, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.repositories().assets().get_assets_by_filter(vec![])?)
+        Ok(self.database.assets().get_assets_by_filter(vec![])?)
     }
 
     pub fn get_assets(&mut self, asset_ids: Vec<String>) -> Result<Vec<AssetBasic>, Box<dyn Error + Send + Sync>> {
-        self.database.repositories().assets().get_assets_basic(asset_ids)
+        self.database.assets().get_assets_basic(asset_ids)
     }
 
     pub fn get_asset_full(&mut self, asset_id: &str) -> Result<AssetFull, Box<dyn Error + Send + Sync>> {
-        self.database.repositories().assets().get_asset_full(asset_id)
+        self.database.assets().get_asset_full(asset_id)
     }
 
     pub fn get_assets_by_device_id(
@@ -43,12 +43,11 @@ impl AssetsClient {
         wallet_index: i32,
         from_timestamp: Option<u32>,
     ) -> Result<Vec<AssetId>, Box<dyn Error + Send + Sync>> {
-        let mut repos = self.database.repositories();
-        let subscriptions = repos.subscriptions().get_subscriptions_by_device_id(device_id, Some(wallet_index))?;
+        let subscriptions = self.database.subscriptions().get_subscriptions_by_device_id(device_id, Some(wallet_index))?;
 
         let chain_addresses = subscriptions.into_iter().map(|x| ChainAddress::new(x.chain, x.address)).collect();
 
-        repos.assets_addresses().get_assets_by_addresses(chain_addresses, from_timestamp, true)
+        self.database.assets_addresses().get_assets_by_addresses(chain_addresses, from_timestamp, true)
     }
 }
 

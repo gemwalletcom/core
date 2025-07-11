@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 use itertools::Itertools;
 use search_index::{sanitize_index_primary_id, AssetDocument, DocumentId, SearchIndexClient, ASSETS_INDEX_NAME};
-use storage::{DatabaseClient, DatabaseClientExt};
+use storage::DatabaseClient;
 
 pub struct AssetsIndexUpdater {
     database: DatabaseClient,
@@ -19,8 +19,8 @@ impl AssetsIndexUpdater {
     }
 
     pub async fn update(&mut self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
-        let prices = self.database.repositories().prices().get_prices_assets_list()?;
-        let assets_tags = self.database.repositories().tag().get_assets_tags()?;
+        let prices = self.database.prices().get_prices_assets_list()?;
+        let assets_tags = self.database.tag().get_assets_tags()?;
         let assets_tags_map = assets_tags.into_iter().map(|x| (x.asset_id, x.tag_id)).into_group_map();
 
         let documents = prices

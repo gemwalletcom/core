@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::error::Error;
 use storage::models::SubscriptionAddressExclude;
-use storage::{DatabaseClient, DatabaseClientExt};
+use storage::DatabaseClient;
 
 pub struct TransactionUpdater {
     database: DatabaseClient,
@@ -13,7 +13,7 @@ impl TransactionUpdater {
         Self { database }
     }
     pub async fn update(&mut self) -> Result<HashMap<String, usize>, Box<dyn Error + Send + Sync>> {
-        let addresses_result = self.database.repositories().transactions().get_transactions_addresses(5000, 5)?;
+        let addresses_result = self.database.transactions().get_transactions_addresses(5000, 5)?;
         let subscriptions_exclude = addresses_result
             .clone()
             .into_iter()
@@ -22,19 +22,14 @@ impl TransactionUpdater {
                 chain: x.chain_id,
             })
             .collect();
-        let subscriptions_excluded_added = self
-            .database
-            .repositories()
-            .subscriptions()
-            .add_subscriptions_exclude_addresses(subscriptions_exclude)?;
+        let subscriptions_excluded_added = self.database.subscriptions().add_subscriptions_exclude_addresses(subscriptions_exclude)?;
 
         let addresses = addresses_result.clone().into_iter().map(|x| x.address).collect::<Vec<_>>();
-        let result = self.database.repositories().transactions().delete_transactions_addresses(addresses.clone())?;
+        let result = self.database.transactions().delete_transactions_addresses(addresses.clone())?;
 
-        let transactions_without_addresses = self.database.repositories().transactions().get_transactions_without_addresses(10000)?;
+        let transactions_without_addresses = self.database.transactions().get_transactions_without_addresses(10000)?;
         let transactions = self
             .database
-            .repositories()
             .transactions()
             .delete_transactions_by_ids(transactions_without_addresses.clone())?;
 

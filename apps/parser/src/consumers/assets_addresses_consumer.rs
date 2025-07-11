@@ -2,7 +2,7 @@ use std::error::Error;
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use storage::{DatabaseClient, DatabaseClientExt};
+use storage::DatabaseClient;
 use streamer::{consumer::MessageConsumer, AssetsAddressPayload};
 use tokio::sync::Mutex;
 
@@ -33,7 +33,6 @@ impl MessageConsumer<AssetsAddressPayload, usize> for AssetsAddressesConsumer {
             .database
             .lock()
             .await
-            .repositories()
             .assets_addresses()
             .add_assets_addresses(assets_addresses.clone().into_iter().map(|x| x.as_primitive()).collect())?)
     }

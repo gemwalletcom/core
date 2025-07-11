@@ -3,7 +3,7 @@ use std::{collections::HashMap, error::Error, sync::Arc};
 
 use async_trait::async_trait;
 use primitives::{AssetIdVecExt, Transaction};
-use storage::{models, DatabaseClient, DatabaseClientExt};
+use storage::{models, DatabaseClient};
 use streamer::{consumer::MessageConsumer, StreamProducer, TransactionsPayload};
 use streamer::{AssetId, AssetsAddressPayload, NotificationsPayload, StreamProducerQueue};
 use tokio::sync::Mutex;
@@ -32,7 +32,7 @@ impl MessageConsumer<TransactionsPayload, usize> for StoreTransactionsConsumer {
             .collect::<Vec<_>>();
         let is_notify_devices = !payload.blocks.is_empty();
         let addresses = transactions.clone().into_iter().flat_map(|x| x.addresses()).collect();
-        let subscriptions = self.database.lock().await.repositories().subscriptions().get_subscriptions(chain, addresses)?;
+        let subscriptions = self.database.lock().await.subscriptions().get_subscriptions(chain, addresses)?;
 
         let mut transactions_map: HashMap<String, Transaction> = HashMap::new();
         let mut fetch_assets_payload: Vec<AssetId> = Vec::new();
@@ -52,7 +52,6 @@ impl MessageConsumer<TransactionsPayload, usize> for StoreTransactionsConsumer {
                             .database
                             .lock()
                             .await
-                            .repositories()
                             .assets()
                             .get_assets(assets_ids.ids().clone())?
                             .into_iter()
@@ -116,7 +115,6 @@ impl StoreTransactionsConsumer {
             .database
             .lock()
             .await
-            .repositories()
             .assets()
             .get_assets_basic(transactions_asset_ids)?
             .into_iter()
@@ -155,7 +153,6 @@ impl StoreTransactionsConsumer {
             self.database
                 .lock()
                 .await
-                .repositories()
                 .transactions()
                 .add_transactions(transactions_to_store.clone(), transaction_addresses_to_store.clone())?;
         }

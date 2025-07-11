@@ -5,7 +5,7 @@ use tokio::sync::Mutex;
 use async_trait::async_trait;
 use cacher::CacherClient;
 use settings_chain::ChainProviders;
-use storage::{models::AssetAddress, DatabaseClient, DatabaseClientExt};
+use storage::{models::AssetAddress, DatabaseClient};
 use streamer::{consumer::MessageConsumer, ChainAddressPayload, StreamProducer, StreamProducerQueue};
 
 pub struct FetchAssetsAddressesConsumer {
@@ -53,7 +53,6 @@ impl FetchAssetsAddressesConsumer {
             .database
             .lock()
             .await
-            .repositories()
             .assets()
             .get_assets(assets_ids.ids().clone())?
             .into_iter()
@@ -84,7 +83,6 @@ impl FetchAssetsAddressesConsumer {
                 .database
                 .lock()
                 .await
-                .repositories()
                 .assets_addresses()
                 .delete_assets_addresses(result.zero_balance_assets.clone().into_iter().map(|x| x.as_primitive()).collect());
         }
@@ -93,7 +91,6 @@ impl FetchAssetsAddressesConsumer {
                 .database
                 .lock()
                 .await
-                .repositories()
                 .assets_addresses()
                 .add_assets_addresses(result.assets.clone().into_iter().map(|x| x.as_primitive()).collect());
         }

@@ -1,7 +1,7 @@
 use std::error::Error;
 
 use primitives::TransactionsFetchOption;
-use storage::{DatabaseClient, DatabaseClientExt};
+use storage::DatabaseClient;
 
 pub struct TransactionsClient {
     database: Box<DatabaseClient>,
@@ -19,17 +19,12 @@ impl TransactionsClient {
         options: TransactionsFetchOption,
     ) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Send + Sync>> {
         let wallet_index = options.wallet_index;
-        let subscriptions = self
-            .database
-            .repositories()
-            .subscriptions()
-            .get_subscriptions_by_device_id(device_id, Some(wallet_index))?;
+        let subscriptions = self.database.subscriptions().get_subscriptions_by_device_id(device_id, Some(wallet_index))?;
         let addresses = subscriptions.clone().into_iter().map(|x| x.address).collect::<Vec<String>>();
         let chains = subscriptions.clone().into_iter().map(|x| x.chain.as_ref().to_string()).collect::<Vec<String>>();
 
         let transactions = self
             .database
-            .repositories()
             .transactions()
             .get_transactions_by_device_id(device_id, addresses.clone(), chains.clone(), options)?
             .into_iter()
@@ -41,7 +36,6 @@ impl TransactionsClient {
     pub fn get_transactions_by_id(&mut self, id: &str) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Send + Sync>> {
         Ok(self
             .database
-            .repositories()
             .transactions()
             .get_transactions_by_id(id)?
             .into_iter()

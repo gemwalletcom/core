@@ -24,6 +24,12 @@ use diesel::Connection;
 use diesel_migrations::{embed_migrations, EmbeddedMigrations};
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("src/migrations");
 
+use crate::{
+    AssetsAddressesRepository, AssetsLinksRepository, AssetsRepository, AssetsTypesRepository, ChartsRepository, DevicesRepository, FiatRepository,
+    LinkTypesRepository, MigrationsRepository, NftRepository, NodesRepository, ParserStateRepository, PriceAlertsRepository, PricesRepository,
+    ReleasesRepository, ScanAddressesRepository, SubscriptionsRepository, TagRepository, TransactionsRepository,
+};
+
 pub struct DatabaseClient {
     connection: PgConnection,
 }
@@ -33,5 +39,82 @@ impl DatabaseClient {
         let connection = PgConnection::establish(database_url).unwrap_or_else(|_| panic!("Error connecting to {database_url}"));
 
         Self { connection }
+    }
+
+    // Direct repository access methods
+    pub fn assets(&mut self) -> &mut dyn AssetsRepository {
+        self
+    }
+
+    pub fn assets_addresses(&mut self) -> &mut dyn AssetsAddressesRepository {
+        self
+    }
+
+    pub fn assets_links(&mut self) -> &mut dyn AssetsLinksRepository {
+        self
+    }
+
+    pub fn assets_types(&mut self) -> &mut dyn AssetsTypesRepository {
+        self
+    }
+
+    pub fn charts(&mut self) -> &mut dyn ChartsRepository {
+        self
+    }
+
+    pub fn devices(&mut self) -> &mut dyn DevicesRepository {
+        self
+    }
+
+    pub fn fiat(&mut self) -> &mut dyn FiatRepository {
+        self
+    }
+
+    pub fn link_types(&mut self) -> &mut dyn LinkTypesRepository {
+        self
+    }
+
+    pub fn migrations(&mut self) -> &mut dyn MigrationsRepository {
+        self
+    }
+
+    pub fn nft(&mut self) -> &mut dyn NftRepository {
+        self
+    }
+
+    pub fn nodes(&mut self) -> &mut dyn NodesRepository {
+        self
+    }
+
+    pub fn parser_state(&mut self) -> &mut dyn ParserStateRepository {
+        self
+    }
+
+    pub fn price_alerts(&mut self) -> &mut dyn PriceAlertsRepository {
+        self
+    }
+
+    pub fn prices(&mut self) -> &mut dyn PricesRepository {
+        self
+    }
+
+    pub fn releases(&mut self) -> &mut dyn ReleasesRepository {
+        self
+    }
+
+    pub fn scan_addresses(&mut self) -> &mut dyn ScanAddressesRepository {
+        self
+    }
+
+    pub fn subscriptions(&mut self) -> &mut dyn SubscriptionsRepository {
+        self
+    }
+
+    pub fn tag(&mut self) -> &mut dyn TagRepository {
+        self
+    }
+
+    pub fn transactions(&mut self) -> &mut dyn TransactionsRepository {
+        self
     }
 }

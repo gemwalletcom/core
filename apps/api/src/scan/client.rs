@@ -3,7 +3,7 @@ use primitives::{ScanTransaction, ScanTransactionPayload};
 use rocket::futures::future;
 use security_provider::{AddressTarget, ScanProvider, ScanResult, TokenTarget};
 use std::error::Error;
-use storage::{DatabaseClient, DatabaseClientExt};
+use storage::DatabaseClient;
 
 pub struct ScanClient {
     database: DatabaseClient,
@@ -41,7 +41,7 @@ impl ScanClient {
             (payload.origin.chain, payload.origin.address.as_str()),
             (payload.target.chain, payload.target.address.as_str()),
         ];
-        let addresses = self.database.repositories().scan_addresses().get_scan_addresses(&queries)?;
+        let addresses = self.database.scan_addresses().get_scan_addresses(&queries)?;
         let is_malicious = addresses.iter().any(|address| address.is_fraudulent);
         let is_memo_required = addresses.iter().any(|address| address.is_memo_required);
 

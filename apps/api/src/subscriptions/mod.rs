@@ -9,7 +9,7 @@ use rocket::State;
 
 #[get("/subscriptions/<device_id>")]
 pub async fn get_subscriptions(device_id: &str, client: &State<Mutex<SubscriptionsClient>>) -> Json<Vec<Subscription>> {
-    let subscriptions = client.lock().await.get_subscriptions(device_id).await.unwrap();
+    let subscriptions = client.lock().await.get_subscriptions_by_device_id(device_id).await.unwrap();
     Json(subscriptions)
 }
 

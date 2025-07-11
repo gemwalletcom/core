@@ -130,6 +130,47 @@ Follow the existing code style patterns unless explicitly asked to change:
 - Integration tests configured with `test = false` and `required-features` for manual execution
 - Use real blockchain networks for RPC client testing (Ethereum mainnet, etc.)
 
+## Repository Pattern
+
+Services access repositories through direct methods on `DatabaseClient`. This pattern:
+- Provides clean separation between data access and business logic
+- Each repository handles a specific domain (assets, devices, etc.)
+- DatabaseClient implements all repository traits directly
+- Repository methods return primitive types, not database models
+- Simplified API with direct method calls
+
+Example:
+```rust
+pub struct AssetsClient {
+    database: Box<DatabaseClient>,
+}
+
+impl AssetsClient {
+    pub fn new(database_url: &str) -> Self {
+        let database = Box::new(DatabaseClient::new(database_url));
+        Self { database }
+    }
+    
+    pub fn get_asset(&mut self, id: &str) -> Result<Asset, Box<dyn Error + Send + Sync>> {
+        self.database.assets().get_asset(id)
+    }
+    
+    pub fn get_assets_by_device_id(&mut self, device_id: &str) -> Result<Vec<Asset>, Box<dyn Error + Send + Sync>> {
+        let subscriptions = self.database.subscriptions().get_subscriptions_by_device_id(device_id)?;
+        // ... process subscriptions
+        self.database.assets().get_assets(asset_ids)
+    }
+}
+```
+
+Direct repository access methods available on DatabaseClient:
+- `assets()` - Asset operations
+- `devices()` - Device operations  
+- `subscriptions()` - Subscription operations
+- `prices()` - Price operations
+- `transactions()` - Transaction operations
+- And many more...
+
 ## Key Development Patterns
 
 - Each blockchain has its own crate with unified RPC client patterns

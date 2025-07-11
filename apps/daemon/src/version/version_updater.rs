@@ -1,6 +1,6 @@
 use primitives::{config::Release, PlatformStore};
 use std::error::Error;
-use storage::{DatabaseClient, DatabaseClientExt};
+use storage::DatabaseClient;
 
 use super::model::{GitHubRepository, ITunesLookupResponse, SamsungStoreDetail};
 
@@ -32,7 +32,7 @@ impl VersionClient {
 
     fn set_release(&mut self, release: Release) -> Result<Release, Box<dyn Error + Send + Sync>> {
         let releases = storage::models::Release::from_primitive(release.clone()).clone();
-        let _ = self.database.repositories().releases().update_release(releases)?;
+        let _ = self.database.releases().update_release(releases)?;
         Ok(release)
     }
 

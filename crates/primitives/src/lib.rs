@@ -83,7 +83,7 @@ pub use self::wallet_connect::WalletConnectCAIP2;
 pub mod nft;
 pub use self::nft::{NFTAsset, NFTAssetId, NFTAttribute, NFTCollection, NFTCollectionId, NFTData, NFTImages, NFTResource, NFTType, MIME_TYPE_PNG};
 pub mod price_alert;
-pub use self::price_alert::{PriceAlert, PriceAlertDirection, PriceAlertType, PriceAlerts};
+pub use self::price_alert::{DevicePriceAlert, PriceAlert, PriceAlertDirection, PriceAlertType, PriceAlerts};
 pub mod tag;
 pub use self::tag::AssetTag;
 pub mod chain_cosmos;
