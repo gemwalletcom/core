@@ -3,7 +3,7 @@ use std::{collections::HashMap, error::Error, sync::Arc};
 
 use async_trait::async_trait;
 use primitives::{AssetIdVecExt, Transaction};
-use storage::{models, DatabaseClient};
+use storage::{models, DatabaseClient, SubscriptionsStore};
 use streamer::{consumer::MessageConsumer, StreamProducer, TransactionsPayload};
 use streamer::{AssetId, AssetsAddressPayload, NotificationsPayload, StreamProducerQueue};
 use tokio::sync::Mutex;

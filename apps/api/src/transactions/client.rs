@@ -25,7 +25,7 @@ impl TransactionsClient {
             .subscriptions()
             .get_subscriptions_by_device_id_wallet_index(device_id, wallet_index)?;
         let addresses = subscriptions.clone().into_iter().map(|x| x.address).collect::<Vec<String>>();
-        let chains = subscriptions.clone().into_iter().map(|x| x.chain).collect::<Vec<String>>();
+        let chains = subscriptions.clone().into_iter().map(|x| x.chain.as_ref().to_string()).collect::<Vec<String>>();
 
         let transactions = self
             .database

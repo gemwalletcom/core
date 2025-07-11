@@ -1,4 +1,4 @@
-use std::{error::Error, str::FromStr, vec};
+use std::{error::Error, vec};
 
 use futures::future::try_join_all;
 use primitives::{Asset, AssetBalance, AssetBasic, AssetFull, AssetId, Chain, ChainAddress, Transaction};
@@ -60,7 +60,7 @@ impl AssetsClient {
 
         let chain_addresses = subscriptions
             .into_iter()
-            .map(|x| ChainAddress::new(Chain::from_str(&x.chain).unwrap(), x.address))
+            .map(|x| ChainAddress::new(x.chain, x.address))
             .collect();
 
         repos.assets_addresses()

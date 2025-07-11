@@ -110,7 +110,7 @@ impl NFTClient {
         let subscriptions = self.database.repositories()
             .subscriptions()
             .get_subscriptions_by_device_id_wallet_index(device_id, wallet_index)?;
-        Ok(subscriptions.into_iter().map(|x| x.as_primitive()).collect())
+        Ok(subscriptions)
     }
 
     pub async fn get_nft_assets_by_chain(&mut self, chain: Chain, address: &str) -> Result<Vec<NFTData>, Box<dyn Error + Send + Sync>> {

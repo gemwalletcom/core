@@ -9,8 +9,8 @@ impl<'a> RepositoryFactory<'a> {
         Self { database }
     }
 
-    pub fn subscriptions(&mut self) -> SubscriptionsRepository {
-        SubscriptionsRepository::new(self.database)
+    pub fn subscriptions(&mut self) -> &mut dyn SubscriptionsRepository {
+        self.database
     }
 
     pub fn assets(&mut self) -> &mut dyn AssetsRepository {

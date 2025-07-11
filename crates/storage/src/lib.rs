@@ -9,6 +9,7 @@ pub use self::database::{
     link_types::{LinkRepository, LinkStore},
     nodes::{NodeRepository, NodeStore},
     parser_state::{ParserStateRepository, ParserStateStore},
+    subscriptions::SubscriptionsStore,
     DatabaseClient,
 };
 pub mod models;
