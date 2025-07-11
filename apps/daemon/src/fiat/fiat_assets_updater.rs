@@ -67,9 +67,11 @@ impl FiatAssetsUpdater {
 
     pub async fn update_trending_fiat_assets(&mut self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
         let from = Utc::now() - Duration::days(30);
-        let asset_ids = self.database.get_fiat_assets_popular(from.naive_utc(), 30)?;
+        let asset_ids = self.database.repositories().fiat().get_fiat_assets_popular(from.naive_utc(), 30)?;
         Ok(self
             .database
+            .repositories()
+            .tag()
             .set_assets_tags_for_tag(AssetTag::TrendingFiatPurchase.as_ref(), asset_ids.clone())?)
     }
 

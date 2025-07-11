@@ -13,7 +13,7 @@ impl TransactionUpdater {
         Self { database }
     }
     pub async fn update(&mut self) -> Result<HashMap<String, usize>, Box<dyn Error + Send + Sync>> {
-        let addresses_result = self.database.get_transactions_addresses(5000, 5)?;
+        let addresses_result = self.database.repositories().transactions().get_transactions_addresses(5000, 5)?;
         let subscriptions_exclude = addresses_result
             .clone()
             .into_iter()
@@ -29,10 +29,14 @@ impl TransactionUpdater {
             .add_subscriptions_exclude_addresses(subscriptions_exclude)?;
 
         let addresses = addresses_result.clone().into_iter().map(|x| x.address).collect::<Vec<_>>();
-        let result = self.database.delete_transactions_addresses(addresses.clone())?;
+        let result = self.database.repositories().transactions().delete_transactions_addresses(addresses.clone())?;
 
-        let transactions_without_addresses = self.database.get_transactions_without_addresses(10000)?;
-        let transactions = self.database.delete_transactions_by_ids(transactions_without_addresses.clone())?;
+        let transactions_without_addresses = self.database.repositories().transactions().get_transactions_without_addresses(10000)?;
+        let transactions = self
+            .database
+            .repositories()
+            .transactions()
+            .delete_transactions_by_ids(transactions_without_addresses.clone())?;
 
         let result = HashMap::from([
             ("addresses".to_string(), addresses.len()),

@@ -118,10 +118,10 @@ impl StoreTransactionsConsumer {
             .await
             .repositories()
             .assets()
-            .get_assets(transactions_asset_ids)?
+            .get_assets_basic(transactions_asset_ids)?
             .into_iter()
-            .filter(|x| x.is_enabled)
-            .map(|x| x.id.to_string())
+            .filter(|x| x.properties.is_enabled)
+            .map(|x| x.asset.id.to_string())
             .collect();
 
         let transactions = transactions

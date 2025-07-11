@@ -72,7 +72,6 @@ async fn run_parser_mode(settings: Settings, database: Arc<Mutex<DatabaseClient>
         .get_nodes()
         .unwrap()
         .into_iter()
-        .map(|x| x.as_primitive())
         .filter(|x| x.node.priority > 5 && x.node.status == NodeState::Active)
         .collect::<Vec<_>>();
 

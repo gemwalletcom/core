@@ -21,6 +21,8 @@ impl AssetUpdater {
     pub async fn update_assets(&mut self) -> Result<usize, Box<dyn Error + Send + Sync>> {
         let ids = self
             .database
+            .repositories()
+            .prices()
             .get_prices()?
             .into_iter()
             .map(|x| x.id)
