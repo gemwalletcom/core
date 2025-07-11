@@ -24,6 +24,11 @@ pub(crate) trait AssetsStore {
     fn update_assets(&mut self, asset_ids: Vec<String>, update: AssetUpdate) -> Result<usize, diesel::result::Error>;
     fn upsert_assets(&mut self, values: Vec<Asset>) -> Result<usize, diesel::result::Error>;
     fn get_assets_by_filter(&mut self, filters: Vec<AssetFilter>) -> Result<Vec<Asset>, diesel::result::Error>;
+    fn get_asset(&mut self, asset_id: &str) -> Result<Asset, diesel::result::Error>;
+    fn get_assets(&mut self, asset_ids: Vec<String>) -> Result<Vec<Asset>, diesel::result::Error>;
+    fn get_swap_assets(&mut self) -> Result<Vec<String>, diesel::result::Error>;
+    fn get_swap_assets_version(&mut self) -> Result<i32, diesel::result::Error>;
+    fn add_chains(&mut self, values: Vec<String>) -> Result<usize, diesel::result::Error>;
 }
 
 impl AssetsStore for DatabaseClient {
@@ -91,5 +96,36 @@ impl AssetsStore for DatabaseClient {
         }
         
         query.select(Asset::as_select()).load(&mut self.connection)
+    }
+
+    fn get_asset(&mut self, asset_id: &str) -> Result<Asset, diesel::result::Error> {
+        assets.filter(id.eq(asset_id)).select(Asset::as_select()).first(&mut self.connection)
+    }
+
+    fn get_assets(&mut self, asset_ids: Vec<String>) -> Result<Vec<Asset>, diesel::result::Error> {
+        assets.filter(id.eq_any(asset_ids)).select(Asset::as_select()).load(&mut self.connection)
+    }
+
+    fn get_swap_assets(&mut self) -> Result<Vec<String>, diesel::result::Error> {
+        assets
+            .filter(rank.gt(21))
+            .filter(is_swappable.eq(true))
+            .select(id)
+            .order(rank.desc())
+            .load(&mut self.connection)
+    }
+
+    fn get_swap_assets_version(&mut self) -> Result<i32, diesel::result::Error> {
+        Ok((std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs() / 3600) as i32)
+    }
+
+    fn add_chains(&mut self, values: Vec<String>) -> Result<usize, diesel::result::Error> {
+        let chain_values = values.iter().map(|chain| crate::models::Chain { id: chain.clone() }).collect::<Vec<_>>();
+
+        use crate::schema::chains::dsl::*;
+        diesel::insert_into(chains)
+            .values(chain_values)
+            .on_conflict_do_nothing()
+            .execute(&mut self.connection)
     }
 }

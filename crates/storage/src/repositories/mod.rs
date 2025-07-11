@@ -16,4 +16,5 @@ pub mod scan_addresses_repository;
 pub mod subscriptions_repository;
 pub mod tag_repository;
 pub mod transactions_repository;
+pub mod migrations_repository;
 pub mod repository_factory;

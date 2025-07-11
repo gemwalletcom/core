@@ -17,6 +17,7 @@ pub mod scan_addresses;
 pub mod subscriptions;
 pub mod tag;
 pub mod transactions;
+pub mod migrations;
 
 use crate::models::*;
 use crate::schema::transactions_addresses;
@@ -29,7 +30,6 @@ use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("src/migrations");
 
 use chrono::DateTime;
-use primitives::TransactionsFetchOption;
 
 pub struct DatabaseClient {
     connection: PgConnection,
@@ -42,167 +42,6 @@ impl DatabaseClient {
         Self { connection }
     }
 
-    pub fn add_transactions(
-        &mut self,
-        transactions_values: Vec<Transaction>,
-        addresses_values: Vec<TransactionAddresses>,
-    ) -> Result<bool, diesel::result::Error> {
-        self.connection
-            .build_transaction()
-            .read_write()
-            .run::<_, diesel::result::Error, _>(|conn: &mut PgConnection| {
-                use crate::schema::transactions::dsl::*;
-                let query1 = diesel::insert_into(transactions::table())
-                    .values(transactions_values)
-                    .on_conflict(super::schema::transactions::id)
-                    .do_update()
-                    .set((
-                        from_address.eq(excluded(from_address)),
-                        to_address.eq(excluded(to_address)),
-                        value.eq(excluded(value)),
-                        kind.eq(excluded(kind)),
-                        state.eq(excluded(state)),
-                        fee.eq(excluded(fee)),
-                        fee_asset_id.eq(excluded(fee_asset_id)),
-                        memo.eq(excluded(memo)),
-                        metadata.eq(excluded(metadata)),
-                        utxo_inputs.eq(excluded(utxo_inputs)),
-                        utxo_outputs.eq(excluded(utxo_outputs)),
-                    ))
-                    .execute(conn);
 
-                if let Some(error) = query1.err() {
-                    return Err(error);
-                }
 
-                use crate::schema::transactions_addresses::dsl::*;
-                let query2 = diesel::insert_into(transactions_addresses::table())
-                    .values(&addresses_values)
-                    .on_conflict((
-                        super::schema::transactions_addresses::transaction_id,
-                        super::schema::transactions_addresses::address,
-                        super::schema::transactions_addresses::asset_id,
-                    ))
-                    .do_nothing()
-                    .execute(conn);
-
-                if let Some(error) = query2.err() {
-                    return Err(error);
-                }
-
-                Ok(true)
-            })
-    }
-
-    pub fn get_transactions_by_device_id(
-        &mut self,
-        _device_id: &str,
-        addresses: Vec<String>,
-        chains: Vec<String>,
-        options: TransactionsFetchOption,
-    ) -> Result<Vec<Transaction>, diesel::result::Error> {
-        use crate::schema::transactions::dsl::*;
-
-        let mut query = transactions
-            .into_boxed()
-            .inner_join(transactions_addresses::table)
-            .filter(transactions_addresses::chain_id.eq_any(chains.clone()))
-            .filter(transactions_addresses::address.eq_any(addresses));
-
-        if let Some(_asset_id) = options.asset_id {
-            query = query.filter(asset_id.eq(_asset_id));
-        }
-
-        if let Some(from_timestamp) = options.from_timestamp {
-            let datetime = DateTime::from_timestamp(from_timestamp.into(), 0).unwrap().naive_utc();
-            query = query.filter(created_at.gt(datetime).or(updated_at.gt(datetime)));
-        }
-
-        query.order(created_at.desc()).select(Transaction::as_select()).load(&mut self.connection)
-    }
-
-    pub fn get_transactions_addresses(&mut self, min_count: i64, limit: i64) -> Result<Vec<AddressChainIdResult>, diesel::result::Error> {
-        use crate::schema::transactions_addresses::dsl::*;
-        transactions_addresses
-            .select((address, chain_id))
-            .group_by((address, chain_id))
-            .having(count(address).gt(min_count))
-            .order_by(count(address).desc())
-            .limit(limit)
-            .load::<AddressChainIdResult>(&mut self.connection)
-    }
-
-    pub fn delete_transactions_addresses(&mut self, addresses: Vec<String>) -> Result<usize, diesel::result::Error> {
-        use crate::schema::transactions_addresses::dsl::*;
-        diesel::delete(transactions_addresses)
-            .filter(address.eq_any(addresses))
-            .execute(&mut self.connection)
-    }
-
-    pub fn get_transactions_without_addresses(&mut self, limit: i64) -> Result<Vec<String>, diesel::result::Error> {
-        use crate::schema::transactions::dsl::*;
-        use crate::schema::transactions_addresses::dsl as addr;
-
-        transactions
-            .left_outer_join(addr::transactions_addresses.on(id.eq(addr::transaction_id)))
-            .filter(addr::transaction_id.is_null())
-            .select(id)
-            .limit(limit)
-            .load(&mut self.connection)
-    }
-
-    pub fn delete_transactions_by_ids(&mut self, ids: Vec<String>) -> Result<usize, diesel::result::Error> {
-        use crate::schema::transactions::dsl::*;
-        diesel::delete(transactions.filter(id.eq_any(ids))).execute(&mut self.connection)
-    }
-
-    pub fn get_asset(&mut self, asset_id: &str) -> Result<Asset, diesel::result::Error> {
-        use crate::schema::assets::dsl::*;
-        assets.filter(id.eq(asset_id)).select(Asset::as_select()).first(&mut self.connection)
-    }
-
-    pub fn get_assets(&mut self, asset_ids: Vec<String>) -> Result<Vec<Asset>, diesel::result::Error> {
-        use crate::schema::assets::dsl::*;
-        assets.filter(id.eq_any(asset_ids)).select(Asset::as_select()).load(&mut self.connection)
-    }
-
-    // swap
-
-    pub fn get_swap_assets(&mut self) -> Result<Vec<String>, diesel::result::Error> {
-        use crate::schema::assets::dsl::*;
-        assets
-            .filter(rank.gt(21))
-            .filter(is_swappable.eq(true))
-            .select(id)
-            .order(rank.desc())
-            .load(&mut self.connection)
-    }
-
-    pub fn get_swap_assets_version(&mut self) -> Result<i32, diesel::result::Error> {
-        Ok((std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs() / 3600) as i32)
-    }
-
-    pub fn add_chains(&mut self, _chains: Vec<String>) -> Result<usize, diesel::result::Error> {
-        let values = _chains.iter().map(|chain| super::models::Chain { id: chain.clone() }).collect::<Vec<_>>();
-
-        use crate::schema::chains::dsl::*;
-        diesel::insert_into(chains)
-            .values(values)
-            .on_conflict_do_nothing()
-            .execute(&mut self.connection)
-    }
-
-    // nft
-
-    pub fn migrations(&mut self) {
-        self.connection.run_pending_migrations(MIGRATIONS).unwrap();
-    }
-
-    pub fn add_transactions_types(&mut self, values: Vec<TransactionType>) -> Result<usize, diesel::result::Error> {
-        use crate::schema::transactions_types::dsl::*;
-        diesel::insert_into(transactions_types)
-            .values(values)
-            .on_conflict_do_nothing()
-            .execute(&mut self.connection)
-    }
 }

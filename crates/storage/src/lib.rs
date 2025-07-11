@@ -28,6 +28,7 @@ pub use self::repositories::{
     subscriptions_repository::SubscriptionsRepository,
     tag_repository::TagRepository,
     transactions_repository::TransactionsRepository,
+    migrations_repository::MigrationsRepository,
     repository_factory::{RepositoryFactory, DatabaseClientExt},
 };
 pub mod schema;
