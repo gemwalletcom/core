@@ -1,5 +1,5 @@
 [package]
-name = "nft"
+name = "nft_provider"
 version = { workspace = true }
 edition = { workspace = true }
 

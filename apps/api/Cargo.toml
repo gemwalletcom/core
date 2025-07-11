@@ -27,7 +27,8 @@ primitives = { path = "../../crates/primitives" }
 api_connector = { path = "../../crates/api_connector" }
 chain_primitives = { path = "../../crates/chain_primitives" }
 search_index = { path = "../../crates/search_index" }
-nft = { path = "../../crates/nft" }
+nft_provider = { path = "../../crates/nft_provider" }
+nft_client = { path = "../../crates/nft_client" }
 cacher = { path = "../../crates/cacher" }
 streamer = { path = "../../crates/streamer" }
 

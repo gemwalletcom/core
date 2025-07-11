@@ -331,7 +331,8 @@ dependencies = [
  "futures",
  "futures-util",
  "name_resolver",
- "nft",
+ "nft_client",
+ "nft_provider",
  "pricer",
  "primitives",
  "prometheus-client",
@@ -1965,7 +1966,7 @@ dependencies = [
  "itertools 0.14.0",
  "job_runner",
  "localizer",
- "nft",
+ "nft_provider",
  "pricer",
  "primitives",
  "reqwest",
@@ -4467,7 +4468,18 @@ dependencies = [
 ]
 
 [[package]]
-name = "nft"
+name = "nft_client"
+version = "1.0.0"
+dependencies = [
+ "async-trait",
+ "nft_provider",
+ "primitives",
+ "reqwest",
+ "storage",
+]
+
+[[package]]
+name = "nft_provider"
 version = "1.0.0"
 dependencies = [
  "async-trait",
@@ -4835,6 +4847,8 @@ dependencies = [
  "futures",
  "gem_chain_rpc",
  "localizer",
+ "nft_client",
+ "nft_provider",
  "number_formatter",
  "primitives",
  "rand 0.9.1",

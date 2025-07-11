@@ -7,6 +7,12 @@ pub struct ImageFetcher {
     client: HttpClient,
 }
 
+impl Default for ImageFetcher {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ImageFetcher {
     pub fn new() -> Self {
         Self {

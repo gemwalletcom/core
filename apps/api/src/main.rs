@@ -32,7 +32,8 @@ use metrics::MetricsClient;
 use model::APIService;
 use name_resolver::client::Client as NameClient;
 use name_resolver::NameProviderFactory;
-use nft::NFTClient;
+use nft_client::NFTClient;
+use nft_provider::NFTProviderConfig;
 use parser::ParserClient;
 use pricer::{ChartClient, MarketsClient, PriceAlertClient, PriceClient};
 use rocket::fairing::AdHoc;
@@ -79,13 +80,11 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
     let providers = FiatProviderFactory::new_providers(settings_clone.clone());
     let ip_check_client = FiatProviderFactory::new_ip_check_client(settings_clone.clone());
     let fiat_client = FiatClient::new(postgres_url, cacher_client.clone(), providers, ip_check_client).await;
-    let nft_client = NFTClient::new(
-        postgres_url,
-        &settings.nft.nftscan.key.secret,
-        &settings.nft.opensea.key.secret,
-        &settings.nft.magiceden.key.secret,
-    )
-    .await;
+    let nft_config = NFTProviderConfig::new(
+        settings.nft.opensea.key.secret.clone(),
+        settings.nft.magiceden.key.secret.clone(),
+    );
+    let nft_client = NFTClient::new(postgres_url, nft_config).await;
     let markets_client = MarketsClient::new(postgres_url, cacher_client);
 
     rocket::build()

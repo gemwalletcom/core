@@ -12,6 +12,8 @@ use std::sync::Arc;
 pub use assets_addresses_consumer::AssetsAddressesConsumer;
 use cacher::CacherClient;
 pub use fetch_assets_consumer::FetchAssetsConsumer;
+use nft_client::NFTClient;
+use nft_provider::NFTProviderConfig;
 use settings::Settings;
 use settings_chain::ChainProviders;
 use storage::DatabaseClient;
@@ -138,7 +140,13 @@ pub async fn run_consumer_fetch_nft_assets_mappings(settings: Settings, database
     let stream_reader = StreamReader::new(&settings.rabbitmq.url, name).await?;
     let stream_producer = StreamProducer::new(&settings.rabbitmq.url, name).await?;
     let cacher = CacherClient::new(&settings.redis.url);
-    let consumer = FetchNftAssetsAddressesConsumer::new(database.clone(), stream_producer, cacher);
+    let nft_config = NFTProviderConfig::new(
+        settings.nft.opensea.key.secret.clone(),
+        settings.nft.magiceden.key.secret.clone(),
+    );
+    let nft_client = NFTClient::new(&settings.postgres.url, nft_config).await;
+    let nft_client = Arc::new(Mutex::new(nft_client));
+    let consumer = FetchNftAssetsAddressesConsumer::new(database.clone(), stream_producer, cacher, nft_client);
     streamer::run_consumer::<ChainAddressPayload, FetchNftAssetsAddressesConsumer, usize>(
         name,
         stream_reader,

@@ -14,6 +14,10 @@ impl NFTProvider for MagicEdenClient {
         "MagicEden"
     }
 
+    fn get_chains(&self) -> Vec<Chain> {
+        vec![Chain::Solana]
+    }
+
     async fn get_assets(&self, chain: Chain, address: String) -> Result<Vec<NFTAssetId>, Box<dyn Error + Send + Sync>> {
         Ok(self
             .get_nfts_by_account(&address)

@@ -1,0 +1,12 @@
+[package]
+name = "nft_client"
+version = { workspace = true }
+edition = { workspace = true }
+
+[dependencies]
+async-trait = { workspace = true }
+reqwest = { workspace = true }
+
+primitives = { path = "../primitives" }
+storage = { path = "../storage" }
+nft_provider = { path = "../nft_provider" }

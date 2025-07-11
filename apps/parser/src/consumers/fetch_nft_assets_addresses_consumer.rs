@@ -3,6 +3,7 @@ use tokio::sync::Mutex;
 
 use async_trait::async_trait;
 use cacher::CacherClient;
+use nft_client::NFTClient;
 use storage::DatabaseClient;
 use streamer::{consumer::MessageConsumer, ChainAddressPayload, StreamProducer};
 
@@ -10,31 +11,31 @@ pub struct FetchNftAssetsAddressesConsumer {
     pub database: Arc<Mutex<DatabaseClient>>,
     pub stream_producer: StreamProducer,
     pub cacher: CacherClient,
+    pub nft_client: Arc<Mutex<NFTClient>>,
 }
 
 impl FetchNftAssetsAddressesConsumer {
-    pub fn new(database: Arc<Mutex<DatabaseClient>>, stream_producer: StreamProducer, cacher: CacherClient) -> Self {
+    pub fn new(database: Arc<Mutex<DatabaseClient>>, stream_producer: StreamProducer, cacher: CacherClient, nft_client: Arc<Mutex<NFTClient>>) -> Self {
         Self {
             database,
             stream_producer,
             cacher,
+            nft_client,
         }
     }
 }
 
 #[async_trait]
 impl MessageConsumer<ChainAddressPayload, usize> for FetchNftAssetsAddressesConsumer {
-    async fn should_process(&mut self, _payload: ChainAddressPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
-        // self.cacher
-        //     .can_process_now("fetch_nft_assets_addresses", &payload.value.to_string(), 30 * 86400)
-        //     .await
-        Ok(true)
+    async fn should_process(&mut self, payload: ChainAddressPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
+        self.cacher
+            .can_process_now("fetch_nft_assets_addresses", &payload.value.to_string(), 30 * 86400)
+            .await
     }
 
     async fn process(&mut self, payload: ChainAddressPayload) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        let _map = HashMap::from([(payload.value.chain, payload.value.address.clone())]);
-        //let assets = self.nft.get_assets(map).await?;
-        //println!("consumer fetch_nft_assets_mappings result: {assets:?}");
-        Ok(0)
+        let map = HashMap::from([(payload.value.chain, payload.value.address.clone())]);
+        let assets = self.nft_client.lock().await.fetch_assets_for_addresses(map).await?;
+        Ok(assets.len())
     }
 }

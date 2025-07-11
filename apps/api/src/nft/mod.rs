@@ -3,10 +3,7 @@ use std::str::FromStr;
 
 use primitives::{Chain, NFTAsset, NFTData, ResponseResult};
 use rocket::{response::status::NotFound, serde::json::Json, tokio::sync::Mutex, State};
-pub mod client;
-pub mod image_fetcher;
-
-pub use self::client::NFTClient;
+use nft_client::NFTClient;
 
 // by device
 

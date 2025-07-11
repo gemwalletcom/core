@@ -1,23 +1,23 @@
-use std::{error::Error, sync::Arc, vec};
+use std::{collections::HashSet, error::Error, sync::Arc, vec};
 
-use nft::NFT;
+use nft_provider::{NFTProviderClient, NFTProviderConfig};
 use primitives::{Chain, NFTAsset, NFTAssetId, NFTCollection, NFTCollectionId, NFTData};
 use std::collections::HashMap;
 use storage::DatabaseClient;
 
-use crate::nft::image_fetcher::ImageFetcher;
+use crate::image_fetcher::ImageFetcher;
 
 pub struct NFTClient {
     database: DatabaseClient,
-    nft: NFT,
+    nft: NFTProviderClient,
     image_fetcher: Arc<ImageFetcher>,
 }
 
 impl NFTClient {
-    pub async fn new(database_url: &str, nftscan_key: &str, opensea_key: &str, magiceden_key: &str) -> Self {
+    pub async fn new(database_url: &str, config: NFTProviderConfig) -> Self {
         Self {
             database: DatabaseClient::new(database_url),
-            nft: NFT::new(nftscan_key, opensea_key, magiceden_key),
+            nft: NFTProviderClient::new(config),
             image_fetcher: Arc::new(ImageFetcher::new()),
         }
     }
@@ -32,26 +32,12 @@ impl NFTClient {
     pub async fn get_nft_assets(&mut self, device_id: &str, wallet_index: i32) -> Result<Vec<NFTData>, Box<dyn Error + Send + Sync>> {
         let subscriptions = self.get_subscriptions(device_id, wallet_index)?;
         let addresses: HashMap<Chain, String> = subscriptions.into_iter().map(|x| (x.chain, x.address)).collect();
-
-        let addresses: HashMap<Chain, String> = addresses
-            .into_iter()
-            .filter(|x| matches!(x.0, Chain::Ethereum | Chain::Solana))
-            //.filter(|x| matches!(x.0, Chain::Solana))
-            .collect();
-        let assets = self.nft.get_assets(addresses).await?;
-        self.preload(assets).await
+        self.fetch_assets_for_addresses(addresses).await
     }
 
     pub async fn preload(&mut self, assets: Vec<NFTAssetId>) -> Result<Vec<NFTData>, Box<dyn Error + Send + Sync>> {
-        let collection_ids: Vec<NFTCollectionId> = assets
-            .clone()
-            .iter()
-            .map(|x| x.get_collection_id())
-            .collect::<std::collections::HashSet<_>>()
-            .into_iter()
-            .collect();
-
-        self.preload_collections(collection_ids).await?;
+        let collection_ids: HashSet<NFTCollectionId> = assets.clone().into_iter().map(|x| x.get_collection_id()).collect();
+        self.preload_collections(collection_ids.into_iter().collect()).await?;
         self.preload_assets(assets.clone()).await?;
         self.get_nfts(assets).await
     }
@@ -183,5 +169,10 @@ impl NFTClient {
     pub async fn get_nft_asset_image(&mut self, asset_id: &str) -> Result<(Vec<u8>, Option<String>, HashMap<String, String>), Box<dyn Error + Send + Sync>> {
         let asset = self.get_nft_asset(asset_id)?;
         self.image_fetcher.fetch(&asset.images.preview.url).await
+    }
+
+    pub async fn fetch_assets_for_addresses(&mut self, addresses: HashMap<Chain, String>) -> Result<Vec<NFTData>, Box<dyn Error + Send + Sync>> {
+        let asset_ids = self.nft.get_assets(addresses).await?;
+        self.preload(asset_ids.clone()).await
     }
 }
