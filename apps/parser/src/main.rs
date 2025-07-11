@@ -12,7 +12,7 @@ pub mod parser_proxy;
 use primitives::{node::NodeState, Chain};
 use settings::Settings;
 use std::{str::FromStr, sync::Arc, time::Duration};
-use storage::{DatabaseClient, NodeStore, ParserStateStore};
+use storage::{DatabaseClient, DatabaseClientExt};
 use streamer::StreamProducer;
 use tokio::sync::Mutex;
 
@@ -67,6 +67,8 @@ async fn run_parser_mode(settings: Settings, database: Arc<Mutex<DatabaseClient>
     let nodes = database
         .lock()
         .await
+        .repositories()
+        .nodes()
         .get_nodes()
         .unwrap()
         .into_iter()

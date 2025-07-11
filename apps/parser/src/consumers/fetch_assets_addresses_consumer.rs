@@ -53,9 +53,10 @@ impl FetchAssetsAddressesConsumer {
             .database
             .lock()
             .await
+            .repositories()
+            .assets()
             .get_assets(assets_ids.ids().clone())?
             .into_iter()
-            .map(|x| x.as_primitive())
             .collect::<Vec<_>>()
             .ids();
 

@@ -52,9 +52,10 @@ impl MessageConsumer<TransactionsPayload, usize> for StoreTransactionsConsumer {
                             .database
                             .lock()
                             .await
+                            .repositories()
+                            .assets()
                             .get_assets(assets_ids.ids().clone())?
                             .into_iter()
-                            .map(|x| x.as_primitive())
                             .collect::<Vec<_>>();
 
                         let missing_assets_ids = assets_ids
@@ -110,10 +111,12 @@ impl StoreTransactionsConsumer {
             .database
             .lock()
             .await
+            .repositories()
+            .assets()
             .get_assets(transactions_asset_ids)?
             .into_iter()
             .filter(|x| x.is_enabled)
-            .map(|x| x.id)
+            .map(|x| x.id.to_string())
             .collect();
 
         let transactions = transactions
@@ -147,6 +150,8 @@ impl StoreTransactionsConsumer {
             self.database
                 .lock()
                 .await
+                .repositories()
+                .transactions()
                 .add_transactions(transactions_to_store.clone(), transaction_addresses_to_store.clone())?;
         }
 

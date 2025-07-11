@@ -7,7 +7,7 @@ use std::{
 use crate::ParserOptions;
 use gem_chain_rpc::ChainBlockProvider;
 use primitives::Chain;
-use storage::{DatabaseClient, ParserStateStore};
+use storage::{DatabaseClient, DatabaseClientExt};
 use streamer::{FetchBlocksPayload, QueueName, StreamProducer, TransactionsPayload};
 
 pub struct Parser {
@@ -36,7 +36,7 @@ impl Parser {
 
     pub async fn start(&mut self) -> Result<(), Box<dyn Error + Send + Sync>> {
         loop {
-            let state = self.database.get_parser_state(self.chain.as_ref())?;
+            let state = self.database.repositories().parser_state().get_parser_state(self.chain.as_ref())?;
             let timeout = cmp::max(state.timeout_latest_block as u64, self.options.timeout);
 
             if !state.is_enabled {
@@ -47,10 +47,10 @@ impl Parser {
 
             match self.provider.get_latest_block().await {
                 Ok(latest_block) => {
-                    let _ = self.database.set_parser_state_latest_block(self.chain.as_ref(), latest_block as i32);
+                    let _ = self.database.repositories().parser_state().set_parser_state_latest_block(self.chain.as_ref(), latest_block as i32);
                     // initial start
                     if state.current_block == 0 {
-                        let _ = self.database.set_parser_state_current_block(self.chain.as_ref(), latest_block as i32);
+                        let _ = self.database.repositories().parser_state().set_parser_state_current_block(self.chain.as_ref(), latest_block as i32);
                     }
                     if next_current_block >= latest_block as i32 {
                         println!(
@@ -75,7 +75,7 @@ impl Parser {
 
             loop {
                 let start = Instant::now();
-                let state = self.database.get_parser_state(self.chain.as_ref())?;
+                let state = self.database.repositories().parser_state().get_parser_state(self.chain.as_ref())?;
                 let start_block = state.current_block + 1;
                 let end_block = cmp::min(start_block + state.parallel_blocks - 1, state.latest_block - state.await_blocks);
                 let next_blocks = (start_block..=end_block).map(|x| x as i64).collect::<Vec<_>>();
@@ -90,7 +90,7 @@ impl Parser {
                     if to_go_blocks > queue_behind_blocks {
                         let payload = FetchBlocksPayload::new(self.chain, next_blocks.clone());
                         self.stream_producer.publish(QueueName::FetchBlocks, &payload).await?;
-                        let _ = self.database.set_parser_state_current_block(self.chain.as_ref(), end_block);
+                        let _ = self.database.repositories().parser_state().set_parser_state_current_block(self.chain.as_ref(), end_block);
 
                         println!(
                             "parser block add to queue: {}, blocks: {:?} to go blocks: {} in: {:?}",
@@ -105,7 +105,7 @@ impl Parser {
 
                 match self.parse_blocks(next_blocks.clone()).await {
                     Ok(result) => {
-                        let _ = self.database.set_parser_state_current_block(self.chain.as_ref(), end_block);
+                        let _ = self.database.repositories().parser_state().set_parser_state_current_block(self.chain.as_ref(), end_block);
 
                         println!(
                             "parser block complete: {}, blocks: {:?} transactions: {} to go blocks: {} in: {:?}",
