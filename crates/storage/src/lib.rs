@@ -27,6 +27,7 @@ pub use self::repositories::{
     scan_addresses_repository::ScanAddressesRepository,
     subscriptions_repository::SubscriptionsRepository,
     tag_repository::TagRepository,
+    transactions_repository::TransactionsRepository,
     repository_factory::{RepositoryFactory, DatabaseClientExt},
 };
 pub mod schema;

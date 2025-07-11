@@ -6,7 +6,6 @@ use nft_collection::UpdateNftCollectionImageUrl;
 use nft_link::NftLink;
 
 pub(crate) trait NftStore {
-    fn get_nft_assets_all(&mut self) -> Result<Vec<NftAsset>, diesel::result::Error>;
     fn get_nft_assets(&mut self, asset_ids: Vec<String>) -> Result<Vec<NftAsset>, diesel::result::Error>;
     fn get_nft_asset(&mut self, asset_id: &str) -> Result<NftAsset, diesel::result::Error>;
     fn add_nft_assets(&mut self, values: Vec<NftAsset>) -> Result<usize, diesel::result::Error>;
@@ -23,11 +22,6 @@ pub(crate) trait NftStore {
 
 impl NftStore for DatabaseClient {
     // assets
-
-    fn get_nft_assets_all(&mut self) -> Result<Vec<NftAsset>, diesel::result::Error> {
-        use crate::schema::nft_assets::dsl::*;
-        nft_assets.select(NftAsset::as_select()).load(&mut self.connection)
-    }
 
     fn get_nft_assets(&mut self, asset_ids: Vec<String>) -> Result<Vec<NftAsset>, diesel::result::Error> {
         use crate::schema::nft_assets::dsl::*;

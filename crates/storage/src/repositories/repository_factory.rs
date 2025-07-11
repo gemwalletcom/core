@@ -1,4 +1,4 @@
-use crate::{AssetsAddressesRepository, AssetsLinksRepository, AssetsRepository, AssetsTypesRepository, ChartsRepository, DatabaseClient, DevicesRepository, FiatRepository, LinkTypesRepository, NftRepository, NodesRepository, ParserStateRepository, PriceAlertsRepository, PricesRepository, ReleasesRepository, ScanAddressesRepository, SubscriptionsRepository, TagRepository};
+use crate::{AssetsAddressesRepository, AssetsLinksRepository, AssetsRepository, AssetsTypesRepository, ChartsRepository, DatabaseClient, DevicesRepository, FiatRepository, LinkTypesRepository, NftRepository, NodesRepository, ParserStateRepository, PriceAlertsRepository, PricesRepository, ReleasesRepository, ScanAddressesRepository, SubscriptionsRepository, TagRepository, TransactionsRepository};
 
 pub struct RepositoryFactory<'a> {
     database: &'a mut DatabaseClient,
@@ -74,6 +74,10 @@ impl<'a> RepositoryFactory<'a> {
     }
 
     pub fn tag(&mut self) -> &mut dyn TagRepository {
+        self.database
+    }
+
+    pub fn transactions(&mut self) -> &mut dyn TransactionsRepository {
         self.database
     }
 }
