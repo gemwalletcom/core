@@ -1,4 +1,4 @@
-use chrono::{Duration, NaiveDateTime, Utc};
+use chrono::{Duration, Utc};
 use localizer::{LanguageLocalizer, LanguageNotification};
 use number_formatter::NumberFormatter;
 use primitives::{
@@ -36,31 +36,21 @@ impl PriceAlertClient {
     }
 
     pub async fn get_price_alerts(&mut self, device_id: &str) -> Result<PriceAlerts, Box<dyn Error + Send + Sync>> {
-        let device = self.database.get_device(device_id)?;
-        let values = self
+        let device_alerts = self
             .database
             .repositories()
             .price_alerts()
-            .get_price_alerts_for_device_id(device.id)?
-            .into_iter()
-            .map(|x| x.as_primitive())
-            .collect::<_>();
-        Ok(values)
+            .get_price_alerts_for_device_id(device_id)?;
+        Ok(device_alerts.into_iter().map(|x| x.price_alert).collect())
     }
 
     pub async fn add_price_alerts(&mut self, device_id: &str, price_alerts: PriceAlerts) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        let device = self.database.get_device(device_id)?;
-        let values = price_alerts
-            .into_iter()
-            .map(|x| storage::models::PriceAlert::new_price_alert(x, device.id))
-            .collect::<_>();
-        Ok(self.database.repositories().price_alerts().add_price_alerts(values)?)
+        Ok(self.database.repositories().price_alerts().add_price_alerts(device_id, price_alerts)?)
     }
 
     pub async fn delete_price_alerts(&mut self, device_id: &str, price_alerts: PriceAlerts) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        let device = self.database.get_device(device_id)?;
         let ids = price_alerts.iter().map(|x| x.id()).collect::<HashSet<_>>().into_iter().collect();
-        Ok(self.database.repositories().price_alerts().delete_price_alerts(device.id, ids)?)
+        Ok(self.database.repositories().price_alerts().delete_price_alerts(device_id, ids)?)
     }
 
     pub async fn get_devices_to_alert(&mut self, rules: PriceAlertRules) -> Result<Vec<PriceAlertNotification>, Box<dyn Error + Send + Sync>> {
@@ -71,12 +61,9 @@ impl PriceAlertClient {
         let mut results: Vec<PriceAlertNotification> = Vec::new();
         let mut price_alert_ids: HashSet<String> = HashSet::new();
 
-        for (price_alert, price) in price_alerts {
-            let device_id = price_alert.device_id;
-            let price_alert = price_alert.as_primitive();
-
+        for (price_alert, price, device) in price_alerts {
             if let Some(alert) = self.get_price_alert_type(&price_alert, price.clone(), rules.clone()) {
-                let notification = self.price_alert_notification(device_id, price.as_price_primitive(), price_alert.clone(), alert)?;
+                let notification = self.price_alert_notification(device, price, price_alert.clone(), alert)?;
                 price_alert_ids.insert(price_alert.id());
                 results.push(notification);
             }
@@ -88,7 +75,7 @@ impl PriceAlertClient {
         Ok(results)
     }
 
-    fn get_price_alert_type(&self, price_alert: &primitives::PriceAlert, price: storage::models::Price, rules: PriceAlertRules) -> Option<PriceAlertType> {
+    fn get_price_alert_type(&self, price_alert: &primitives::PriceAlert, price: primitives::Price, rules: PriceAlertRules) -> Option<PriceAlertType> {
         if let Some(price_alert_price) = price_alert.price {
             let direction = price_alert.price_direction.clone()?;
             let current_price = price.price;
@@ -99,40 +86,31 @@ impl PriceAlertClient {
             };
         } else if let Some(price_alert_percent) = price_alert.price_percent_change {
             let direction = price_alert.price_direction.clone()?;
-            let price_change_percentage_24h = price.clone().price_change_percentage_24h;
+            let price_change_percentage_24h = price.price_change_percentage_24h;
             return match direction {
                 PriceAlertDirection::Up if price_change_percentage_24h >= price_alert_percent => Some(PriceAlertType::PricePercentChangeUp),
                 PriceAlertDirection::Down if price_change_percentage_24h <= -price_alert_percent => Some(PriceAlertType::PricePercentChangeDown),
                 _ => None,
             };
-        } else if Self::is_within_past(price.clone().all_time_high_date, Duration::hours(12)) {
-            return Some(PriceAlertType::AllTimeHigh);
-        } else if price.clone().price_change_percentage_24h > rules.price_change_increase {
+        } else if price.price_change_percentage_24h > rules.price_change_increase {
             return Some(PriceAlertType::PriceChangesUp);
-        } else if price.clone().price_change_percentage_24h < -rules.price_change_decrease {
+        } else if price.price_change_percentage_24h < -rules.price_change_decrease {
             return Some(PriceAlertType::PriceChangesDown);
         }
         None
     }
 
-    fn is_within_past(date_time: Option<NaiveDateTime>, duration: Duration) -> bool {
-        if let Some(date_time) = date_time {
-            return date_time >= (Utc::now().naive_utc() - duration) && date_time <= Utc::now().naive_utc();
-        }
-        false
-    }
 
     fn price_alert_notification(
         &mut self,
-        device_id: i32,
-        price: Price,
+        device: primitives::Device,
+        price: primitives::Price,
         price_alert: PriceAlert,
         alert_type: PriceAlertType,
     ) -> Result<PriceAlertNotification, Box<dyn Error + Send + Sync>> {
-        let asset = self.database.get_asset(&price_alert.asset_id.to_string())?.as_primitive();
-        let device = self.database.get_device_by_id(device_id)?.as_primitive();
-        let base_rate = self.database.get_fiat_rate(DEFAULT_FIAT_CURRENCY)?;
-        let rate = self.database.get_fiat_rate(&device.currency)?;
+        let asset = self.database.repositories().assets().get_asset(&price_alert.asset_id.to_string())?;
+        let base_rate = self.database.repositories().fiat().get_fiat_rate(DEFAULT_FIAT_CURRENCY)?;
+        let rate = self.database.repositories().fiat().get_fiat_rate(&device.currency)?;
         let price = price.new_with_rate(base_rate.rate, rate.rate);
 
         let notification = PriceAlertNotification {

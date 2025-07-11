@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use strum_macros::{AsRefStr, EnumString};
 use typeshare::typeshare;
 
-use crate::{Asset, AssetId, Price, DEFAULT_FIAT_CURRENCY};
+use crate::{Asset, AssetId, Price, Device, DEFAULT_FIAT_CURRENCY};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Hashable, Sendable")]
@@ -79,6 +79,14 @@ pub enum PriceAlertNotificationType {
 }
 
 pub type PriceAlerts = Vec<PriceAlert>;
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[typeshare(swift = "Equatable, Hashable, Sendable")]
+#[serde(rename_all = "camelCase")]
+pub struct DevicePriceAlert {
+    pub device: Device,
+    pub price_alert: PriceAlert,
+}
 
 #[cfg(test)]
 mod tests {

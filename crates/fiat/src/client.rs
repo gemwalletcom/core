@@ -59,7 +59,7 @@ impl FiatClient {
     }
 
     pub async fn get_fiat_providers_countries(&mut self) -> Result<Vec<FiatProviderCountry>, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.get_fiat_providers_countries()?.into_iter().map(|x| x.as_primitive()).collect())
+        Ok(self.database.repositories().fiat().get_fiat_providers_countries()?)
     }
 
     pub async fn create_fiat_webhook(&mut self, provider_name: &str, data: serde_json::Value) -> Result<bool, Box<dyn std::error::Error + Send + Sync>> {
@@ -68,7 +68,7 @@ impl FiatClient {
                 let transaction = provider.webhook(data).await?;
                 let transaction = storage::models::FiatTransaction::from_primitive(transaction.clone());
 
-                let _ = self.database.add_fiat_transaction(transaction)?;
+                let _ = self.database.repositories().fiat().add_fiat_transaction(transaction)?;
 
                 return Ok(true);
             }
@@ -79,6 +79,8 @@ impl FiatClient {
     fn get_fiat_mapping(&mut self, asset_id: &str) -> Result<FiatMappingMap, Box<dyn Error + Send + Sync>> {
         let list = self
             .database
+            .repositories()
+            .fiat()
             .get_fiat_assets_for_asset_id(asset_id)?
             .into_iter()
             .filter(|x| x.is_enabled())
@@ -109,11 +111,11 @@ impl FiatClient {
     }
 
     pub async fn get_asset(&mut self, asset_id: &str) -> Result<Asset, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.get_asset(asset_id)?.as_primitive())
+        Ok(self.database.repositories().assets().get_asset(asset_id)?)
     }
 
     pub async fn get_quotes(&mut self, request: FiatQuoteRequest) -> Result<FiatQuotes, Box<dyn Error + Send + Sync>> {
-        let asset = self.database.get_asset(&request.asset_id)?.as_primitive();
+        let asset = self.database.repositories().assets().get_asset(&request.asset_id)?;
         let fiat_providers_countries = self.get_fiat_providers_countries().await?;
         let ip_address_info = self.get_ip_address(&request.ip_address).await?;
         let fiat_mapping_map = self.get_fiat_mapping(&request.asset_id)?;

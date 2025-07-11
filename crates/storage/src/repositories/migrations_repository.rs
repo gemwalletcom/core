@@ -1,12 +1,14 @@
-use crate::DatabaseClient;
 use crate::database::migrations::MigrationsStore;
+use crate::DatabaseClient;
+use std::error::Error;
 
 pub trait MigrationsRepository {
-    fn migrations(&mut self);
+    fn run_migrations(&mut self) -> Result<(), Box<dyn Error + Send + Sync>>;
 }
 
 impl MigrationsRepository for DatabaseClient {
-    fn migrations(&mut self) {
-        MigrationsStore::migrations(self);
+    fn run_migrations(&mut self) -> Result<(), Box<dyn Error + Send + Sync>> {
+        MigrationsStore::run_migrations(self);
+        Ok(())
     }
 }

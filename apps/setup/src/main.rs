@@ -1,7 +1,7 @@
 use primitives::{AddressType, Asset, AssetTag, AssetType, Chain, FiatProviderName, LinkType, NFTType, PlatformStore, TransactionType};
 use search_index::{SearchIndexClient, ASSETS_FILTERS, ASSETS_INDEX_NAME, ASSETS_RANKING_RULES, ASSETS_SEARCH_ATTRIBUTES, ASSETS_SORTS, INDEX_PRIMARY_KEY};
 use settings::Settings;
-use storage::{DatabaseClient, DatabaseClientExt, LinkRepository, ParserStateStore};
+use storage::{DatabaseClient, DatabaseClientExt};
 use streamer::{ExchangeName, QueueName, StreamProducer};
 
 #[tokio::main]
@@ -12,7 +12,7 @@ async fn main() {
 
     let postgres_url = settings.postgres.url.as_str();
     let mut database_client: DatabaseClient = DatabaseClient::new(postgres_url);
-    database_client.migrations();
+    database_client.repositories().migrations().run_migrations().unwrap();
     println!("postgres migrations complete");
 
     let chains = Chain::all();
@@ -20,11 +20,11 @@ async fn main() {
     println!("chains: {chains:?}");
 
     println!("setup add chains");
-    let _ = database_client.add_chains(chains.clone().into_iter().map(|x| x.to_string()).collect());
+    let _ = database_client.repositories().assets().add_chains(chains.clone().into_iter().map(|x| x.to_string()).collect());
 
     println!("setup parser state");
     for chain in chains.clone() {
-        let _ = database_client.add_parser_state(chain.as_ref());
+        let _ = database_client.repositories().parser_state().add_parser_state(chain.as_ref());
     }
 
     println!("setup assets_types");
@@ -44,7 +44,7 @@ async fn main() {
         .into_iter()
         .map(storage::models::FiatProvider::from_primitive)
         .collect::<Vec<_>>();
-    let _ = database_client.add_fiat_providers(providers);
+    let _ = database_client.repositories().fiat().add_fiat_providers(providers);
 
     println!("setup releases");
 
@@ -57,35 +57,34 @@ async fn main() {
         })
         .collect::<Vec<_>>();
 
-    let _ = database_client.add_releases(releases);
+    let _ = database_client.repositories().releases().add_releases(releases);
 
     let search_indexes = vec![ASSETS_INDEX_NAME];
 
     println!("setup nft types");
     let types = NFTType::all().into_iter().map(storage::models::NftType::from_primitive).collect::<Vec<_>>();
-    let _ = database_client.add_nft_types(types);
+    let _ = database_client.repositories().nft().add_nft_types(types);
 
     println!("setup link types");
-    let link_repository: &mut dyn LinkRepository = &mut database_client;
-    let _ = link_repository.add_link_types(LinkType::all());
+    let _ = database_client.repositories().link_types().add_link_types(LinkType::all());
 
     println!("setup scan address types");
     let address_types = AddressType::all()
         .into_iter()
         .map(storage::models::ScanAddressType::from_primitive)
         .collect::<Vec<_>>();
-    let _ = database_client.add_scan_address_types(address_types);
+    let _ = database_client.repositories().scan_addresses().add_scan_address_types(address_types);
 
     println!("setup transaction types");
     let address_types = TransactionType::all()
         .into_iter()
         .map(storage::models::TransactionType::from_primitive)
         .collect::<Vec<_>>();
-    let _ = database_client.add_transactions_types(address_types);
+    let _ = database_client.repositories().transactions().add_transactions_types(address_types);
 
     println!("setup assets tags");
     let assets_tags = AssetTag::all().into_iter().map(storage::models::Tag::from_primitive).collect::<Vec<_>>();
-    let _ = database_client.add_tags(assets_tags);
+    let _ = database_client.repositories().tag().add_tags(assets_tags);
 
     println!("setup search index: {search_indexes:?}");
 

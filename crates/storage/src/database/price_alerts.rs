@@ -4,18 +4,19 @@ use crate::{models::*, DatabaseClient};
 use diesel::prelude::*;
 
 pub(crate) trait PriceAlertsStore {
-    fn get_price_alerts(&mut self, after_notified_at: NaiveDateTime) -> Result<Vec<(PriceAlert, Price)>, diesel::result::Error>;
-    fn get_price_alerts_for_device_id(&mut self, device_id: i32) -> Result<Vec<PriceAlert>, diesel::result::Error>;
+    fn get_price_alerts(&mut self, after_notified_at: NaiveDateTime) -> Result<Vec<(PriceAlert, Price, crate::models::Device)>, diesel::result::Error>;
+    fn get_price_alerts_for_device_id(&mut self, device_id: &str) -> Result<Vec<(PriceAlert, crate::models::Device)>, diesel::result::Error>;
     fn add_price_alerts(&mut self, values: Vec<NewPriceAlert>) -> Result<usize, diesel::result::Error>;
     fn delete_price_alerts(&mut self, device_id: i32, ids: Vec<String>) -> Result<usize, diesel::result::Error>;
     fn update_price_alerts_set_notified_at(&mut self, ids: Vec<String>, last_notified_at: NaiveDateTime) -> Result<usize, diesel::result::Error>;
 }
 
 impl PriceAlertsStore for DatabaseClient {
-    fn get_price_alerts(&mut self, after_notified_at: NaiveDateTime) -> Result<Vec<(PriceAlert, Price)>, diesel::result::Error> {
+    fn get_price_alerts(&mut self, after_notified_at: NaiveDateTime) -> Result<Vec<(PriceAlert, Price, crate::models::Device)>, diesel::result::Error> {
         use crate::schema::price_alerts::dsl::*;
         use crate::schema::prices;
         use crate::schema::prices_assets;
+        use crate::schema::devices;
 
         price_alerts
             .filter(
@@ -25,16 +26,20 @@ impl PriceAlertsStore for DatabaseClient {
             )
             .inner_join(prices_assets::table.on(asset_id.eq(prices_assets::asset_id)))
             .inner_join(prices::table.on(prices_assets::price_id.eq(prices::id)))
-            .select((PriceAlert::as_select(), Price::as_select()))
+            .inner_join(devices::table.on(device_id.eq(devices::id)))
+            .select((PriceAlert::as_select(), Price::as_select(), crate::models::Device::as_select()))
             .distinct()
             .load(&mut self.connection)
     }
 
-    fn get_price_alerts_for_device_id(&mut self, _device_id: i32) -> Result<Vec<PriceAlert>, diesel::result::Error> {
+    fn get_price_alerts_for_device_id(&mut self, _device_id: &str) -> Result<Vec<(PriceAlert, crate::models::Device)>, diesel::result::Error> {
         use crate::schema::price_alerts::dsl::*;
+        use crate::schema::devices;
+
         price_alerts
-            .filter(device_id.eq(_device_id))
-            .select(PriceAlert::as_select())
+            .inner_join(devices::table.on(device_id.eq(devices::id)))
+            .filter(devices::device_id.eq(_device_id))
+            .select((PriceAlert::as_select(), crate::models::Device::as_select()))
             .load(&mut self.connection)
     }
 
@@ -58,4 +63,6 @@ impl PriceAlertsStore for DatabaseClient {
             .set(last_notified_at.eq(_last_notified_at))
             .execute(&mut self.connection)
     }
+
+
 }

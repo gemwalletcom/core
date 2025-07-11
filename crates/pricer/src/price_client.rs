@@ -25,15 +25,15 @@ impl PriceClient {
 
     // db
 
-    pub fn get_coin_id(&mut self, asset_id: &str) -> Result<String, Box<dyn Error>> {
-        let prices = self.database.get_prices_assets_for_asset_id(asset_id)?;
+    pub fn get_coin_id(&mut self, asset_id: &str) -> Result<String, Box<dyn Error + Send + Sync>> {
+        let prices = self.database.repositories().prices().get_prices_assets_for_asset_id(asset_id)?;
         let price = prices.first().ok_or("no price for asset_id")?;
         Ok(price.price_id.clone())
     }
 
     pub fn set_prices(&mut self, prices: Vec<Price>) -> Result<usize, Box<dyn Error + Send + Sync>> {
         for chunk in prices.chunks(PRICES_INSERT_BATCH_LIMIT).clone() {
-            self.database.set_prices(chunk.to_vec())?;
+            self.database.repositories().prices().set_prices(chunk.to_vec())?;
         }
         Ok(prices.len())
     }
@@ -42,12 +42,14 @@ impl PriceClient {
         // filter non existing prices and assets
         let assets_ids = self
             .database
+            .repositories()
+            .assets()
             .get_assets(values.iter().map(|x| x.asset_id.clone()).collect())?
             .iter()
-            .map(|x| x.id.clone())
+            .map(|x| x.id.to_string())
             .collect::<Vec<_>>();
 
-        let prices_ids = self.database.get_prices()?.iter().map(|x| x.id.clone()).collect::<Vec<_>>();
+        let prices_ids = self.database.repositories().prices().get_prices()?.iter().map(|x| x.id.clone()).collect::<Vec<_>>();
 
         let values = values
             .into_iter()
@@ -55,41 +57,45 @@ impl PriceClient {
             .collect::<Vec<_>>();
 
         for chunk in values.chunks(PRICES_ASSETS_INSERT_BATCH_LIMIT).clone() {
-            self.database.set_prices_assets(chunk.to_vec())?;
+            self.database.repositories().prices().set_prices_assets(chunk.to_vec())?;
         }
         Ok(values.len())
     }
 
     pub fn get_prices(&mut self) -> Result<Vec<Price>, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.get_prices()?)
+        Ok(self.database.repositories().prices().get_prices()?)
     }
 
     pub fn get_prices_ids(&mut self) -> Result<Vec<String>, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.get_prices()?.into_iter().map(|x| x.id).collect())
+        Ok(self.database.repositories().prices().get_prices()?.into_iter().map(|x| x.id).collect())
     }
 
     pub fn get_prices_assets(&mut self) -> Result<Vec<PriceAsset>, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.get_prices_assets()?)
+        Ok(self.database.repositories().prices().get_prices_assets()?)
     }
 
     pub async fn set_fiat_rates(&mut self, rates: Vec<FiatRate>) -> Result<usize, Box<dyn Error + Send + Sync>> {
         Ok(self
             .database
+            .repositories()
+            .fiat()
             .set_fiat_rates(rates.into_iter().map(storage::models::FiatRate::from_primitive).collect())?)
     }
 
     pub fn get_fiat_rates(&mut self) -> Result<Vec<FiatRate>, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.get_fiat_rates()?.into_iter().map(|x| x.as_primitive()).collect())
+        Ok(self.database.repositories().fiat().get_fiat_rates()?)
     }
 
     pub fn get_fiat_rate(&mut self, symbol: &str) -> Result<FiatRate, Box<dyn Error + Send + Sync>> {
         Ok(self
             .database
+            .repositories()
+            .fiat()
             .get_fiat_rates()?
             .iter()
-            .find(|x| x.id == symbol)
+            .find(|x| x.symbol == symbol)
             .ok_or(format!("No fiat rate found for symbol: {symbol}"))?
-            .as_primitive())
+            .clone())
     }
 
     // cache
@@ -149,7 +155,7 @@ impl PriceClient {
     }
 
     pub fn delete_prices_updated_at_before(&mut self, time: NaiveDateTime) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.delete_prices_updated_at_before(time)?)
+        Ok(self.database.repositories().prices().delete_prices_updated_at_before(time)?)
     }
 
     pub async fn aggregate_hourly_charts(&mut self) -> Result<usize, Box<dyn Error + Send + Sync>> {
