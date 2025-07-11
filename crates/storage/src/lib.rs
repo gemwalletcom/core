@@ -5,7 +5,6 @@ use std::error::Error;
 pub mod database;
 pub use self::database::{
     assets::{AssetUpdate, AssetFilter},
-    link_types::{LinkRepository, LinkStore},
     nodes::{NodeRepository, NodeStore},
     parser_state::{ParserStateRepository, ParserStateStore},
     DatabaseClient,
@@ -20,6 +19,8 @@ pub use self::repositories::{
     charts_repository::ChartsRepository,
     devices_repository::DevicesRepository,
     fiat_repository::FiatRepository,
+    link_types_repository::LinkTypesRepository,
+    nft_repository::NftRepository,
     subscriptions_repository::SubscriptionsRepository,
     repository_factory::{RepositoryFactory, DatabaseClientExt},
 };
