@@ -55,7 +55,7 @@ impl FiatClient {
     }
 
     pub async fn get_fiat_providers_countries(&mut self) -> Result<Vec<FiatProviderCountry>, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.fiat().get_fiat_providers_countries()?)
+        self.database.fiat().get_fiat_providers_countries()
     }
 
     pub async fn create_fiat_webhook(&mut self, provider_name: &str, data: serde_json::Value) -> Result<bool, Box<dyn std::error::Error + Send + Sync>> {
@@ -106,7 +106,7 @@ impl FiatClient {
     }
 
     pub async fn get_asset(&mut self, asset_id: &str) -> Result<Asset, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.assets().get_asset(asset_id)?)
+        self.database.assets().get_asset(asset_id)
     }
 
     pub async fn get_quotes(&mut self, request: FiatQuoteRequest) -> Result<FiatQuotes, Box<dyn Error + Send + Sync>> {

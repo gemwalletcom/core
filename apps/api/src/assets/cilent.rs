@@ -17,16 +17,16 @@ impl AssetsClient {
     }
 
     pub fn add_assets(&mut self, assets: Vec<Asset>) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.assets().add_assets(assets)?)
+        self.database.assets().add_assets(assets)
     }
 
     #[allow(unused)]
     pub fn get_asset(&mut self, asset_id: &str) -> Result<Asset, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.assets().get_asset(asset_id)?)
+        self.database.assets().get_asset(asset_id)
     }
 
     pub fn get_assets_list(&mut self) -> Result<Vec<AssetBasic>, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.assets().get_assets_by_filter(vec![])?)
+        self.database.assets().get_assets_by_filter(vec![])
     }
 
     pub fn get_assets(&mut self, asset_ids: Vec<String>) -> Result<Vec<AssetBasic>, Box<dyn Error + Send + Sync>> {

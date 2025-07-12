@@ -41,12 +41,12 @@ impl PriceAlertClient {
     }
 
     pub async fn add_price_alerts(&mut self, device_id: &str, price_alerts: PriceAlerts) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.price_alerts().add_price_alerts(device_id, price_alerts)?)
+        self.database.price_alerts().add_price_alerts(device_id, price_alerts)
     }
 
     pub async fn delete_price_alerts(&mut self, device_id: &str, price_alerts: PriceAlerts) -> Result<usize, Box<dyn Error + Send + Sync>> {
         let ids = price_alerts.iter().map(|x| x.id()).collect::<HashSet<_>>().into_iter().collect();
-        Ok(self.database.price_alerts().delete_price_alerts(device_id, ids)?)
+        self.database.price_alerts().delete_price_alerts(device_id, ids)
     }
 
     pub async fn get_devices_to_alert(&mut self, rules: PriceAlertRules) -> Result<Vec<PriceAlertNotification>, Box<dyn Error + Send + Sync>> {
@@ -58,7 +58,7 @@ impl PriceAlertClient {
         let mut price_alert_ids: HashSet<String> = HashSet::new();
 
         for (price_alert, price, device) in price_alerts {
-            if let Some(alert) = self.get_price_alert_type(&price_alert, price.clone(), rules.clone()) {
+            if let Some(alert) = self.get_price_alert_type(&price_alert, price, rules.clone()) {
                 let notification = self.price_alert_notification(device, price, price_alert.clone(), alert)?;
                 price_alert_ids.insert(price_alert.id());
                 results.push(notification);
