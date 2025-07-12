@@ -45,8 +45,8 @@ impl StakeChain {
     /// Get if chain support ability to change amount on unstake
     pub fn get_change_amount_on_unstake(&self) -> bool {
         match self {
-            Self::Cosmos | Self::Osmosis | Self::Injective | Self::Sei | Self::Celestia | Self::Solana | Self::SmartChain | Self::Tron => true,
-            Self::Sui => false,
+            Self::Cosmos | Self::Osmosis | Self::Injective | Self::Sei | Self::Celestia | Self::SmartChain | Self::Tron => true,
+            Self::Sui | Self::Solana => false,
         }
     }
 
