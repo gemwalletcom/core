@@ -30,7 +30,7 @@ install-ndk:
 
 install-ios-targets:
     #!/usr/bin/env bash
-    rustup target add aarch64-apple-ios-sim aarch64-apple-ios aarch64-apple-ios-macabi
+    rustup target add aarch64-apple-ios-sim aarch64-apple-ios aarch64-apple-ios-macabi aarch64-apple-darwin
     if [ ${HOST_ARCH} == "x86_64" ]; then \
         rustup target add x86_64-apple-ios; \
     fi
@@ -73,7 +73,7 @@ build-targets:
     if [ ${HOST_ARCH} == "x86_64" ]; then \
         IPHONEOS_DEPLOYMENT_TARGET=${DEPLOYMENT_TARGET} cargo build --timings --target x86_64-apple-ios --${BUILD_MODE}
     else \
-        IPHONEOS_DEPLOYMENT_TARGET=${DEPLOYMENT_TARGET} cargo build --timings --target aarch64-apple-ios-sim --target aarch64-apple-ios --target aarch64-apple-ios-macabi --${BUILD_MODE}
+        IPHONEOS_DEPLOYMENT_TARGET=${DEPLOYMENT_TARGET} cargo build --timings --target aarch64-apple-ios-sim --target aarch64-apple-ios --target aarch64-apple-ios-macabi --target aarch64-apple-darwin --${BUILD_MODE}
     fi
 
 bindgen-swift:
@@ -95,7 +95,7 @@ assemble-frameworks:
     EOF
     )
     cd ${TARGET_DIR} && find . -type d -name ${FW_FFI_FILE} | xargs rm -rf
-    targets=(aarch64-apple-ios-sim aarch64-apple-ios aarch64-apple-ios-macabi)
+    targets=(aarch64-apple-ios-sim aarch64-apple-ios aarch64-apple-ios-macabi aarch64-apple-darwin)
     if [ ${HOST_ARCH} == "x86_64" ]; then
         targets=(x86_64-apple-ios)
     fi
@@ -111,7 +111,7 @@ xcframework:
     if [ ${HOST_ARCH} == "x86_64" ]; then \
         xcodebuild -create-xcframework -framework ${TARGET_DIR}/x86_64-apple-ios/${BUILD_MODE_TARGET}/${FW_FFI_FILE} -output ${TARGET_XC_FW_FOLDER}/Sources/${XC_FW_FFI_NAME}; \
     else \
-        xcodebuild -create-xcframework -framework ${TARGET_DIR}/aarch64-apple-ios/${BUILD_MODE_TARGET}/${FW_FFI_FILE} -framework ${TARGET_DIR}/aarch64-apple-ios-sim/${BUILD_MODE_TARGET}/${FW_FFI_FILE} -framework ${TARGET_DIR}/aarch64-apple-ios-macabi/${BUILD_MODE_TARGET}/${FW_FFI_FILE} -output ${TARGET_XC_FW_FOLDER}/Sources/${XC_FW_FFI_NAME}; \
+        xcodebuild -create-xcframework -framework ${TARGET_DIR}/aarch64-apple-ios/${BUILD_MODE_TARGET}/${FW_FFI_FILE} -framework ${TARGET_DIR}/aarch64-apple-ios-sim/${BUILD_MODE_TARGET}/${FW_FFI_FILE} -framework ${TARGET_DIR}/aarch64-apple-ios-macabi/${BUILD_MODE_TARGET}/${FW_FFI_FILE} -framework ${TARGET_DIR}/aarch64-apple-darwin/${BUILD_MODE_TARGET}/${FW_FFI_FILE} -output ${TARGET_XC_FW_FOLDER}/Sources/${XC_FW_FFI_NAME}; \
     fi
 
 cp-xcframework-source:

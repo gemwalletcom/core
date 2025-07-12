@@ -1,6 +1,5 @@
 use primitives::Chain;
 use security_provider::{mapper, ScanResult, TokenTarget};
-use serde_json;
 
 #[test]
 fn test_token_target_serialization() {
@@ -32,7 +31,7 @@ fn test_scan_result_token_target() {
 
     assert_eq!(result.target.token_id, target.token_id);
     assert_eq!(result.target.chain, target.chain);
-    assert_eq!(result.is_malicious, true);
+    assert!(result.is_malicious);
     assert_eq!(result.reason, Some("Test reason".to_string()));
     assert_eq!(result.provider, "test_provider");
 }
