@@ -62,7 +62,7 @@ impl PriceClient {
     }
 
     pub fn get_prices(&mut self) -> Result<Vec<Price>, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.prices().get_prices()?)
+        self.database.prices().get_prices()
     }
 
     pub fn get_prices_ids(&mut self) -> Result<Vec<String>, Box<dyn Error + Send + Sync>> {
@@ -70,18 +70,18 @@ impl PriceClient {
     }
 
     pub fn get_prices_assets(&mut self) -> Result<Vec<PriceAsset>, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.prices().get_prices_assets()?)
+        self.database.prices().get_prices_assets()
     }
 
     pub async fn set_fiat_rates(&mut self, rates: Vec<FiatRate>) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        Ok(self
+        self
             .database
             .fiat()
-            .set_fiat_rates(rates.into_iter().map(storage::models::FiatRate::from_primitive).collect())?)
+            .set_fiat_rates(rates.into_iter().map(storage::models::FiatRate::from_primitive).collect())
     }
 
     pub fn get_fiat_rates(&mut self) -> Result<Vec<FiatRate>, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.fiat().get_fiat_rates()?)
+        self.database.fiat().get_fiat_rates()
     }
 
     pub fn get_fiat_rate(&mut self, symbol: &str) -> Result<FiatRate, Box<dyn Error + Send + Sync>> {
@@ -148,22 +148,22 @@ impl PriceClient {
 
     // charts
     pub async fn add_charts(&mut self, charts: Vec<Chart>) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.charts().add_charts(charts)?)
+        self.database.charts().add_charts(charts)
     }
 
     pub fn delete_prices_updated_at_before(&mut self, time: NaiveDateTime) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.prices().delete_prices_updated_at_before(time)?)
+        self.database.prices().delete_prices_updated_at_before(time)
     }
 
     pub async fn aggregate_hourly_charts(&mut self) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.charts().aggregate_hourly_charts()?)
+        self.database.charts().aggregate_hourly_charts()
     }
 
     pub async fn aggregate_daily_charts(&mut self) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.charts().aggregate_daily_charts()?)
+        self.database.charts().aggregate_daily_charts()
     }
 
     pub async fn cleanup_charts_data(&mut self) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.charts().cleanup_charts_data()?)
+        self.database.charts().cleanup_charts_data()
     }
 }

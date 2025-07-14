@@ -48,6 +48,6 @@ impl DevicesClient {
     }
 
     pub fn delete_device(&mut self, device_id: &str) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.devices().delete_device(device_id)?)
+        self.database.devices().delete_device(device_id)
     }
 }
