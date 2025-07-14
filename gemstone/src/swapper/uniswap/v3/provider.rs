@@ -11,7 +11,7 @@ use crate::{
             quote_result::get_best_quote,
             swap_route::{build_swap_route, RouteData},
         },
-        Swapper, SwapperError,
+        GemApprovalData, Swapper, SwapperError,
     },
 };
 use gem_evm::{
@@ -223,7 +223,7 @@ impl Swapper for UniswapV3 {
         let permit = data.permit2_data().map(|data| data.into());
 
         let mut gas_limit: Option<String> = None;
-        let approval: Option<ApprovalData> = if quote.request.from_asset.is_native() {
+        let approval: Option<GemApprovalData> = if quote.request.from_asset.is_native() {
             None
         } else {
             self.check_erc20_approval(wallet_address, &token_in.to_checksum(None), amount_in, &from_chain, provider)

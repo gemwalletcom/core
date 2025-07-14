@@ -6,6 +6,7 @@ pub type GemQuoteAsset = primitives::swap::QuoteAsset;
 pub type GemSwapMode = primitives::swap::SwapMode;
 pub type GemSlippage = primitives::swap::Slippage;
 pub type GemSlippageMode = primitives::swap::SlippageMode;
+pub type GemApprovalData = primitives::swap::ApprovalData;
 
 #[uniffi::remote(Enum)]
 pub enum GemSwapProvider {
@@ -28,6 +29,13 @@ pub enum GemSwapProvider {
     Chainflip,
     CetusAggregator,
     Relay,
+}
+
+#[uniffi::remote(Record)]
+pub struct GemApprovalData {
+    pub token: String,
+    pub spender: String,
+    pub value: String,
 }
 
 #[uniffi::remote(Enum)]

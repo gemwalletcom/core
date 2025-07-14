@@ -13,8 +13,9 @@ use crate::{
     network::AlienProvider,
     swapper::{
         approval::{evm::check_approval_erc20, tron::check_approval_tron},
-        models::{ApprovalData, ApprovalType, SwapChainAsset},
-        FetchQuoteData, GemSwapProvider, SwapProviderData, SwapProviderType, SwapQuote, SwapQuoteData, SwapQuoteRequest, SwapRoute, Swapper, SwapperError,
+        models::{ApprovalType, SwapChainAsset},
+        FetchQuoteData, GemApprovalData, GemSwapProvider, SwapProviderData, SwapProviderType, SwapQuote, SwapQuoteData, SwapQuoteRequest, SwapRoute, Swapper,
+        SwapperError,
     },
     tron::client::TronClient,
 };
@@ -39,7 +40,7 @@ impl ProxyProvider {
         quote: &SwapQuote,
         quote_data: &QuoteData,
         provider: Arc<dyn AlienProvider>,
-    ) -> Result<(Option<ApprovalData>, Option<String>), SwapperError> {
+    ) -> Result<(Option<GemApprovalData>, Option<String>), SwapperError> {
         let request = &quote.request;
         let from_asset = request.from_asset.asset_id();
 
@@ -77,7 +78,7 @@ impl ProxyProvider {
         amount: U256,
         provider: Arc<dyn AlienProvider>,
         chain: &Chain,
-    ) -> Result<(Option<ApprovalData>, Option<String>), SwapperError> {
+    ) -> Result<(Option<GemApprovalData>, Option<String>), SwapperError> {
         let approval = check_approval_erc20(wallet_address, token, spender, amount, provider, chain).await?;
         let gas_limit = if matches!(approval, ApprovalType::Approve(_)) {
             Some(DEFAULT_GAS_LIMIT.to_string())
@@ -95,7 +96,7 @@ impl ProxyProvider {
         default_fee_limit: Option<String>,
         quote: &SwapQuote,
         provider: Arc<dyn AlienProvider>,
-    ) -> Result<(Option<ApprovalData>, Option<String>), SwapperError> {
+    ) -> Result<(Option<GemApprovalData>, Option<String>), SwapperError> {
         let route_data = quote.data.routes.first().map(|r| r.route_data.clone()).ok_or(SwapperError::InvalidRoute)?;
         let proxy_quote: Quote = serde_json::from_str(&route_data).map_err(|_| SwapperError::InvalidRoute)?;
         let spender = proxy_quote.route_data["approveTo"]

@@ -112,13 +112,13 @@ pub struct SwapQuote {
 
 #[derive(Debug, Clone, PartialEq, uniffi::Enum)]
 pub enum ApprovalType {
-    Approve(ApprovalData),
+    Approve(GemApprovalData),
     Permit2(Permit2ApprovalData),
     None,
 }
 
 impl ApprovalType {
-    pub fn approval_data(&self) -> Option<ApprovalData> {
+    pub fn approval_data(&self) -> Option<GemApprovalData> {
         match self {
             Self::Approve(data) => Some(data.clone()),
             _ => None,
@@ -130,13 +130,6 @@ impl ApprovalType {
             _ => None,
         }
     }
-}
-
-#[derive(Debug, Clone, PartialEq, uniffi::Record)]
-pub struct ApprovalData {
-    pub token: String,
-    pub spender: String,
-    pub value: String,
 }
 
 #[derive(Debug, Clone, PartialEq, uniffi::Record)]
@@ -153,7 +146,7 @@ pub struct SwapQuoteData {
     pub to: String,
     pub value: String,
     pub data: String,
-    pub approval: Option<ApprovalData>,
+    pub approval: Option<GemApprovalData>,
     pub gas_limit: Option<String>,
 }
 

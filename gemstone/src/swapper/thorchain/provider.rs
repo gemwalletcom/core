@@ -3,9 +3,9 @@ use super::DEFAULT_DEPOSIT_GAS_LIMIT;
 use super::{asset::THORChainAsset, chain::THORChainName, ThorChain, QUOTE_INTERVAL, QUOTE_MINIMUM, QUOTE_QUANTITY};
 use crate::network::AlienProvider;
 use crate::swapper::approval::check_approval_erc20;
-use crate::swapper::asset::*;
 use crate::swapper::thorchain::client::ThorChainSwapClient;
-use crate::swapper::{ApprovalData, FetchQuoteData, SwapProviderData, SwapProviderType, SwapQuote, SwapQuoteData, SwapQuoteRequest, SwapRoute, SwapperError};
+use crate::swapper::{asset::*, GemApprovalData};
+use crate::swapper::{FetchQuoteData, SwapProviderData, SwapProviderType, SwapQuote, SwapQuoteData, SwapQuoteRequest, SwapRoute, SwapperError};
 use crate::swapper::{SwapChainAsset, Swapper};
 use alloy_primitives::{hex::encode_prefixed as HexEncode, Address, U256};
 use alloy_sol_types::SolCall;
@@ -135,7 +135,7 @@ impl Swapper for ThorChain {
         let route_data: RouteData = serde_json::from_str(&quote.data.routes.first().unwrap().route_data).map_err(|_| SwapperError::InvalidRoute)?;
         let value = quote.request.value.clone();
 
-        let approval: Option<ApprovalData> = {
+        let approval: Option<GemApprovalData> = {
             if from_asset.use_evm_router() {
                 let from_amount: U256 = value.to_string().parse().map_err(SwapperError::from)?;
                 check_approval_erc20(

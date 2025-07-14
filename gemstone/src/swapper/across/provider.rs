@@ -16,7 +16,7 @@ use crate::{
         chainlink::ChainlinkPriceFeed,
         eth_address,
         models::*,
-        GemSwapProvider, Swapper, SwapperError,
+        GemApprovalData, GemSwapProvider, Swapper, SwapperError,
     },
 };
 use alloy_primitives::{
@@ -460,7 +460,7 @@ impl Swapper for Across {
         let input_is_native = quote.request.from_asset.is_native();
         let value: &str = if input_is_native { &quote.from_value } else { "0" };
 
-        let approval: Option<ApprovalData> = {
+        let approval: Option<GemApprovalData> = {
             if input_is_native {
                 None
             } else {

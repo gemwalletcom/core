@@ -1,5 +1,5 @@
 use crate::network::{AlienProvider, JsonRpcClient};
-use crate::swapper::{eth_address, models::ApprovalType, ApprovalData, Permit2ApprovalData, SwapperError};
+use crate::swapper::{eth_address, models::ApprovalType, GemApprovalData, Permit2ApprovalData, SwapperError};
 
 use alloy_primitives::{hex::decode as HexDecode, Address, U256};
 use alloy_sol_types::SolCall;
@@ -53,7 +53,7 @@ pub async fn check_approval_erc20(
 
     let allowance = IERC20::allowanceCall::abi_decode_returns(&decoded).map_err(SwapperError::from)?;
     if allowance < amount {
-        return Ok(ApprovalType::Approve(ApprovalData {
+        return Ok(ApprovalType::Approve(GemApprovalData {
             token: token.to_string(),
             spender: spender.to_string(),
             value: amount.to_string(),
