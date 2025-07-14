@@ -1,21 +1,25 @@
 use alloy_dyn_abi::TypedData;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use std::collections::HashMap;
-
 use serde_serializers::deserialize_u64_from_str_or_int;
+use std::collections::HashMap;
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EIP712Domain {
     pub name: String,
-    #[serde(skip_serializing_if = "String::is_empty")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(default)]
-    pub version: String,
+    pub version: Option<String>,
     #[serde(rename = "chainId")]
     #[serde(deserialize_with = "deserialize_u64_from_str_or_int")]
     pub chain_id: u64,
     #[serde(rename = "verifyingContract")]
-    pub verifying_contract: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
+    pub verifying_contract: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
+    pub salts: Option<Vec<u8>>,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

@@ -88,9 +88,10 @@ mod tests {
             primary_type: "Permit".to_string(),
             domain: EIP712Domain {
                 name: "Liquid staked Ether 2.0".to_string(),
-                version: "2".to_string(),
+                version: Some("2".to_string()),
                 chain_id: 1,
-                verifying_contract: "0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84".to_string(),
+                verifying_contract: Some("0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84".to_string()),
+                salts: None,
             },
             message: permit,
         };

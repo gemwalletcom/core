@@ -6,9 +6,10 @@ type GemEIP712MessageDomain = EIP712Domain;
 #[uniffi::remote(Record)]
 pub struct GemEIP712MessageDomain {
     pub name: String,
-    pub version: String,
+    pub version: Option<String>,
     pub chain_id: u64,
-    pub verifying_contract: String,
+    pub verifying_contract: Option<String>,
+    pub salts: Option<Vec<u8>>,
 }
 
 #[derive(Debug, PartialEq, uniffi::Record)]
