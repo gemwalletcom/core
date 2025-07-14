@@ -203,9 +203,7 @@ final class GemTestTests: XCTestCase {
 
         let calculator = GemFeeCalculator()
 
-
-
-        let priorityFee = try calculator.caluclateBasePriorityFees(chain: "ethereum", history: feeHisotry)
+        let priorityFee = try calculator.calculateBasePriorityFees(chain: "ethereum", history: feeHisotry)
 
         print(priorityFee)
     }

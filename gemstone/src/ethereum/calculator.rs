@@ -87,7 +87,7 @@ impl GemFeeCalculator {
         Self::default()
     }
 
-    pub fn caluclate_base_priority_fees(&self, chain: Chain, history: GemEthereumFeeHistory) -> Result<Vec<GemPriorityFeeRecord>, GemstoneError> {
+    pub fn calculate_base_priority_fees(&self, chain: Chain, history: GemEthereumFeeHistory) -> Result<Vec<GemPriorityFeeRecord>, GemstoneError> {
         let evm_chain = EVMChain::from_chain(chain).ok_or(GemstoneError::AnyError { msg: "Invalid chain".into() })?;
         let config = get_evm_chain_config(evm_chain);
         let base_fee = history.base_fee_per_gas.last().ok_or(GemstoneError::AnyError {
