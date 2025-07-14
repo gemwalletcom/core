@@ -7,7 +7,7 @@ pub type GemSwapMode = primitives::swap::SwapMode;
 pub type GemSlippage = primitives::swap::Slippage;
 pub type GemSlippageMode = primitives::swap::SlippageMode;
 pub type GemApprovalData = primitives::swap::ApprovalData;
-pub type GemSwapQuoteData = primitives::swap::QuoteData;
+pub type GemSwapQuoteData = primitives::swap::SwapQuoteData;
 
 #[uniffi::remote(Record)]
 pub struct GemSwapQuoteData {
