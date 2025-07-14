@@ -13,7 +13,6 @@ pub struct Subscription {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-#[typeshare(swift = "Equatable, Hashable, Sendable")]
 pub struct DeviceSubscription {
     pub device: Device,
     pub subscription: Subscription,

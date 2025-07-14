@@ -74,8 +74,7 @@ impl PriceClient {
     }
 
     pub async fn set_fiat_rates(&mut self, rates: Vec<FiatRate>) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        self
-            .database
+        self.database
             .fiat()
             .set_fiat_rates(rates.into_iter().map(storage::models::FiatRate::from_primitive).collect())
     }

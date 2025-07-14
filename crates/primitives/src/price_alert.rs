@@ -81,7 +81,6 @@ pub enum PriceAlertNotificationType {
 pub type PriceAlerts = Vec<PriceAlert>;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-#[typeshare(swift = "Equatable, Hashable, Sendable")]
 #[serde(rename_all = "camelCase")]
 pub struct DevicePriceAlert {
     pub device: Device,
