@@ -59,12 +59,3 @@ pub struct Quote {
     pub eta_in_seconds: u32,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare]
-pub struct QuoteData {
-    pub to: String,
-    pub value: String,
-    pub data: String,
-    pub approval: Option<ApprovalData>,
-    pub gas_limit: Option<String>,
-}
