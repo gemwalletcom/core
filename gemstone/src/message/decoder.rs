@@ -194,6 +194,7 @@ mod tests {
                     version: Some("1.1".to_string()),
                     chain_id: 1,
                     verifying_contract: Some("0x00000000006c3852cbEf3e08E8dF289169EdE581".to_string()),
+                    salts: None,
                 },
                 message: vec![GemEIP712Section {
                     name: "OrderComponents".to_string(),
@@ -257,6 +258,7 @@ mod tests {
                     version: Some("1".to_string()),
                     chain_id: 137,
                     verifying_contract: None,
+                    salts: None,
                 },
                 message: vec![GemEIP712Section {
                     name: "ClobAuth".to_string(),

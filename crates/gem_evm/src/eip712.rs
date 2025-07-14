@@ -17,6 +17,9 @@ pub struct EIP712Domain {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(default)]
     pub verifying_contract: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
+    pub salts: Option<Vec<u8>>,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

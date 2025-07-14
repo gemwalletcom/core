@@ -9,6 +9,7 @@ pub struct GemEIP712MessageDomain {
     pub version: Option<String>,
     pub chain_id: u64,
     pub verifying_contract: Option<String>,
+    pub salts: Option<Vec<u8>>,
 }
 
 #[derive(Debug, PartialEq, uniffi::Record)]

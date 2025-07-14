@@ -90,6 +90,7 @@ pub fn permit2_data_to_eip712_json(chain: Chain, data: PermitSingle, contract: &
             version: None,
             chain_id: chain_id.parse::<u64>().unwrap(),
             verifying_contract: Some(contract.to_string()),
+            salts: None,
         },
         types: Permit2Types::default(),
         primary_type: "PermitSingle".into(),
