@@ -239,4 +239,47 @@ mod tests {
             })
         );
     }
+
+    #[test]
+    fn test_eip712_ploymarket_hash() {
+        let json_str = include_str!("./test/eip712_polymarket.json");
+
+        let decoder = SignMessageDecoder::new(SignMessage {
+            sign_type: SignDigestType::Eip712,
+            data: json_str.as_bytes().to_vec(),
+        });
+        let preview = decoder.preview().unwrap();
+        assert_eq!(
+            preview,
+            MessagePreview::EIP712(GemEIP712Message {
+                domain: EIP712Domain {
+                    name: "ClobAuthDomain".to_string(),
+                    version: "1".to_string(),
+                    chain_id: 137,
+                    verifying_contract: "".to_string(),
+                },
+                message: vec![GemEIP712Section {
+                    name: "ClobAuth".to_string(),
+                    values: vec![
+                        GemEIP712Value {
+                            name: "address".to_string(),
+                            value: "0x514bcb1f9aabb904e6106bd1052b66d2706dbbb7".to_string(),
+                        },
+                        GemEIP712Value {
+                            name: "timestamp".to_string(),
+                            value: "1752326774".to_string(),
+                        },
+                        GemEIP712Value {
+                            name: "nonce".to_string(),
+                            value: "0".to_string(),
+                        },
+                        GemEIP712Value {
+                            name: "message".to_string(),
+                            value: "This message attests that I control the given wallet".to_string(),
+                        },
+                    ],
+                }],
+            })
+        );
+    }
 }

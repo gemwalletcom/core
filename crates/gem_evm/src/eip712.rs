@@ -5,16 +5,26 @@ use std::collections::HashMap;
 
 use serde_serializers::deserialize_u64_from_str_or_int;
 
+fn is_zero(value: &u64) -> bool {
+    *value == 0
+}
+
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EIP712Domain {
+    #[serde(skip_serializing_if = "String::is_empty")]
+    #[serde(default)]
     pub name: String,
     #[serde(skip_serializing_if = "String::is_empty")]
     #[serde(default)]
     pub version: String,
     #[serde(rename = "chainId")]
     #[serde(deserialize_with = "deserialize_u64_from_str_or_int")]
+    #[serde(skip_serializing_if = "is_zero")]
+    #[serde(default)]
     pub chain_id: u64,
     #[serde(rename = "verifyingContract")]
+    #[serde(skip_serializing_if = "String::is_empty")]
+    #[serde(default)]
     pub verifying_contract: String,
 }
 
