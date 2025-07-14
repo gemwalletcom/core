@@ -17,7 +17,7 @@ use crate::{
     swapper::{
         approval::check_approval_erc20,
         asset::{ARBITRUM_USDC, ETHEREUM_FLIP, ETHEREUM_USDC, ETHEREUM_USDT, SOLANA_USDC},
-        slippage, FetchQuoteData, GemSwapProvider, SwapChainAsset, SwapProviderData, SwapProviderType, SwapQuote, SwapQuoteData, SwapQuoteRequest, SwapRoute,
+        slippage, FetchQuoteData, GemSwapProvider, SwapChainAsset, SwapProviderData, SwapProviderType, SwapQuote, GemSwapQuoteData, SwapQuoteRequest, SwapRoute,
         Swapper, SwapperError,
     },
 };
@@ -165,7 +165,7 @@ impl Swapper for ChainflipProvider {
         Ok(quote)
     }
 
-    async fn fetch_quote_data(&self, quote: &SwapQuote, provider: Arc<dyn AlienProvider>, _data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError> {
+    async fn fetch_quote_data(&self, quote: &SwapQuote, provider: Arc<dyn AlienProvider>, _data: FetchQuoteData) -> Result<GemSwapQuoteData, SwapperError> {
         let from_asset = quote.request.from_asset.asset_id();
         let broker_client = BrokerClient::new(provider.clone());
         let source_asset = Self::map_asset_id(&quote.request.from_asset);
@@ -258,7 +258,7 @@ impl Swapper for ChainflipProvider {
                     None
                 };
 
-                let swap_quote_data = SwapQuoteData {
+                let swap_quote_data = GemSwapQuoteData {
                     to: response.to,
                     value,
                     data: response.calldata,
@@ -269,7 +269,7 @@ impl Swapper for ChainflipProvider {
                 Ok(swap_quote_data)
             }
             VaultSwapResponse::Bitcoin(response) => {
-                let swap_quote_data = SwapQuoteData {
+                let swap_quote_data = GemSwapQuoteData {
                     to: response.deposit_address,
                     value: quote.request.value.clone(),
                     data: response.nulldata_payload,
@@ -283,7 +283,7 @@ impl Swapper for ChainflipProvider {
                 let data = tx_builder::build_solana_tx(quote.request.wallet_address.clone(), &response, provider.clone())
                     .await
                     .map_err(SwapperError::TransactionError)?;
-                let swap_quote_data = SwapQuoteData {
+                let swap_quote_data = GemSwapQuoteData {
                     to: response.program_id,
                     value: "".into(),
                     data,

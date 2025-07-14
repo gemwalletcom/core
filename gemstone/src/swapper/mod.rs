@@ -40,7 +40,7 @@ pub trait Swapper: Send + Sync + Debug {
     async fn fetch_permit2_for_quote(&self, _quote: &SwapQuote, _provider: Arc<dyn AlienProvider>) -> Result<Option<Permit2ApprovalData>, SwapperError> {
         Ok(None)
     }
-    async fn fetch_quote_data(&self, quote: &SwapQuote, provider: Arc<dyn AlienProvider>, data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError>;
+    async fn fetch_quote_data(&self, quote: &SwapQuote, provider: Arc<dyn AlienProvider>, data: FetchQuoteData) -> Result<GemSwapQuoteData, SwapperError>;
     async fn get_transaction_status(&self, _chain: Chain, _transaction_hash: &str, _provider: Arc<dyn AlienProvider>) -> Result<bool, SwapperError> {
         if self.provider().mode() == GemSwapProviderMode::OnChain {
             Ok(true)
@@ -223,7 +223,7 @@ impl GemSwapper {
         provider.fetch_permit2_for_quote(quote, self.rpc_provider.clone()).await
     }
 
-    pub async fn fetch_quote_data(&self, quote: &SwapQuote, data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError> {
+    pub async fn fetch_quote_data(&self, quote: &SwapQuote, data: FetchQuoteData) -> Result<GemSwapQuoteData, SwapperError> {
         let provider = self.get_swapper_by_provider(&quote.data.provider.id).ok_or(SwapperError::NoAvailableProvider)?;
         let mut quote_data = provider.fetch_quote_data(quote, self.rpc_provider.clone(), data).await?;
         if let Some(gas_limit) = quote_data.gas_limit.take() {

@@ -142,15 +142,6 @@ pub struct Permit2ApprovalData {
 }
 
 #[derive(Debug, Clone, uniffi::Record)]
-pub struct SwapQuoteData {
-    pub to: String,
-    pub value: String,
-    pub data: String,
-    pub approval: Option<GemApprovalData>,
-    pub gas_limit: Option<String>,
-}
-
-#[derive(Debug, Clone, uniffi::Record)]
 pub struct SwapProviderData {
     pub provider: SwapProviderType,
     pub slippage_bps: u32,

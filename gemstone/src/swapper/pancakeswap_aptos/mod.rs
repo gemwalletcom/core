@@ -3,7 +3,7 @@ use std::sync::Arc;
 mod client;
 mod model;
 use super::{
-    FetchQuoteData, GemSwapProvider, SwapChainAsset, SwapProviderData, SwapProviderType, SwapQuote, SwapQuoteData, SwapQuoteRequest, SwapRoute, Swapper,
+    FetchQuoteData, GemSwapProvider, SwapChainAsset, SwapProviderData, SwapProviderType, SwapQuote, GemSwapQuoteData, SwapQuoteRequest, SwapRoute, Swapper,
     SwapperError,
 };
 
@@ -105,7 +105,7 @@ impl Swapper for PancakeSwapAptos {
         Ok(quote)
     }
 
-    async fn fetch_quote_data(&self, quote: &SwapQuote, _provider: Arc<dyn AlienProvider>, _data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError> {
+    async fn fetch_quote_data(&self, quote: &SwapQuote, _provider: Arc<dyn AlienProvider>, _data: FetchQuoteData) -> Result<GemSwapQuoteData, SwapperError> {
         let routes = quote.data.clone().routes;
         let route_data: RouteData = serde_json::from_str(&routes.first().unwrap().route_data).map_err(|_| SwapperError::InvalidRoute)?;
 
@@ -119,7 +119,7 @@ impl Swapper for PancakeSwapAptos {
             route_data.min_value.clone(),
         );
 
-        let data = SwapQuoteData {
+        let data = GemSwapQuoteData {
             to: PANCAKE_SWAP_APTOS_ADDRESS.to_string(),
             value: quote.from_value.clone(),
             data: serde_json::to_string(&payload).unwrap(),

@@ -28,7 +28,7 @@ use crate::{
     },
     swapper::{
         slippage::apply_slippage_in_bp, FetchQuoteData, GemSwapMode, GemSwapProvider, SwapChainAsset, SwapProviderData, SwapProviderType, SwapQuote,
-        SwapQuoteData, SwapQuoteRequest, SwapRoute, Swapper, SwapperError,
+        GemSwapQuoteData, SwapQuoteRequest, SwapRoute, Swapper, SwapperError,
     },
 };
 use gem_sui::{
@@ -254,7 +254,7 @@ impl Swapper for Cetus {
         })
     }
 
-    async fn fetch_quote_data(&self, quote: &SwapQuote, provider: Arc<dyn AlienProvider>, _data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError> {
+    async fn fetch_quote_data(&self, quote: &SwapQuote, provider: Arc<dyn AlienProvider>, _data: FetchQuoteData) -> Result<GemSwapQuoteData, SwapperError> {
         // Validate quote data
         let route = &quote.data.routes.first().ok_or(SwapperError::InvalidRoute)?;
         let sender_address = quote.request.wallet_address.parse().map_err(SwapperError::from)?;
@@ -314,7 +314,7 @@ impl Swapper for Cetus {
         let tx = ptb.finish().map_err(|e| SwapperError::TransactionError(e.to_string()))?;
         let tx_output = TxOutput::from_tx(&tx).unwrap();
 
-        Ok(SwapQuoteData {
+        Ok(GemSwapQuoteData {
             to: "".to_string(),
             value: "".to_string(),
             data: tx_output.base64_encoded(),

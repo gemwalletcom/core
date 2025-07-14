@@ -16,7 +16,7 @@ use crate::{
         chainlink::ChainlinkPriceFeed,
         eth_address,
         models::*,
-        GemApprovalData, GemSwapProvider, Swapper, SwapperError,
+        GemApprovalData, GemSwapProvider, GemSwapQuoteData, Swapper, SwapperError,
     },
 };
 use alloy_primitives::{
@@ -433,7 +433,7 @@ impl Swapper for Across {
         })
     }
 
-    async fn fetch_quote_data(&self, quote: &SwapQuote, provider: Arc<dyn AlienProvider>, data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError> {
+    async fn fetch_quote_data(&self, quote: &SwapQuote, provider: Arc<dyn AlienProvider>, data: FetchQuoteData) -> Result<GemSwapQuoteData, SwapperError> {
         let from_chain = quote.request.from_asset.chain();
         let deployment = AcrossDeployment::deployment_by_chain(&from_chain).ok_or(SwapperError::NotSupportedChain)?;
         let dst_chain_id: u32 = quote.request.to_asset.chain().network_id().parse().unwrap();
@@ -488,7 +488,7 @@ impl Swapper for Across {
             gas_limit = Some(_gas_limit.to_string());
         }
 
-        let quote_data = SwapQuoteData {
+        let quote_data = GemSwapQuoteData {
             to: deployment.spoke_pool.into(),
             value: value.to_string(),
             data: HexEncode(deposit_v3_call.clone()),

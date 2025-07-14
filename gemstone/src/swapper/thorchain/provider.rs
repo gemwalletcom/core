@@ -5,7 +5,7 @@ use crate::network::AlienProvider;
 use crate::swapper::approval::check_approval_erc20;
 use crate::swapper::thorchain::client::ThorChainSwapClient;
 use crate::swapper::{asset::*, GemApprovalData};
-use crate::swapper::{FetchQuoteData, SwapProviderData, SwapProviderType, SwapQuote, SwapQuoteData, SwapQuoteRequest, SwapRoute, SwapperError};
+use crate::swapper::{FetchQuoteData, SwapProviderData, SwapProviderType, SwapQuote, GemSwapQuoteData, SwapQuoteRequest, SwapRoute, SwapperError};
 use crate::swapper::{SwapChainAsset, Swapper};
 use alloy_primitives::{hex::encode_prefixed as HexEncode, Address, U256};
 use alloy_sol_types::SolCall;
@@ -116,7 +116,7 @@ impl Swapper for ThorChain {
         Ok(quote)
     }
 
-    async fn fetch_quote_data(&self, quote: &SwapQuote, provider: Arc<dyn AlienProvider>, _data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError> {
+    async fn fetch_quote_data(&self, quote: &SwapQuote, provider: Arc<dyn AlienProvider>, _data: FetchQuoteData) -> Result<GemSwapQuoteData, SwapperError> {
         let fee = quote.request.options.clone().fee.unwrap_or_default().thorchain;
         let from_asset = THORChainAsset::from_asset_id(&quote.request.from_asset.id).ok_or(SwapperError::NotSupportedAsset)?;
         let to_asset = THORChainAsset::from_asset_id(&quote.request.to_asset.id).ok_or(SwapperError::NotSupportedAsset)?;
@@ -176,7 +176,7 @@ impl Swapper for ThorChain {
             }
             .abi_encode();
 
-            SwapQuoteData {
+            GemSwapQuoteData {
                 to,
                 value: "0".to_string(),
                 data: HexEncode(call.clone()),
@@ -184,7 +184,7 @@ impl Swapper for ThorChain {
                 gas_limit,
             }
         } else {
-            SwapQuoteData {
+            GemSwapQuoteData {
                 to: route_data.inbound_address.unwrap_or_default(),
                 value,
                 data: self.data(from_asset.chain, memo),

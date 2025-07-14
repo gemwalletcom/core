@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
-use crate::{AssetId, Chain};
+use crate::{swap::ApprovalData, AssetId, Chain};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare]
@@ -65,5 +65,6 @@ pub struct QuoteData {
     pub to: String,
     pub value: String,
     pub data: String,
-    pub limit: Option<String>,
+    pub approval: Option<ApprovalData>,
+    pub gas_limit: Option<String>,
 }

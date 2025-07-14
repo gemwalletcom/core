@@ -14,8 +14,8 @@ use crate::{
     swapper::{
         approval::{evm::check_approval_erc20, tron::check_approval_tron},
         models::{ApprovalType, SwapChainAsset},
-        FetchQuoteData, GemApprovalData, GemSwapProvider, SwapProviderData, SwapProviderType, SwapQuote, SwapQuoteData, SwapQuoteRequest, SwapRoute, Swapper,
-        SwapperError,
+        FetchQuoteData, GemApprovalData, GemSwapProvider, GemSwapQuoteData, SwapProviderData, SwapProviderType, SwapQuote, SwapQuoteRequest, SwapRoute,
+        Swapper, SwapperError,
     },
     tron::client::TronClient,
 };
@@ -63,8 +63,15 @@ impl ProxyProvider {
             }
             ChainType::Tron => {
                 let amount = U256::from_str(&quote.from_value).map_err(SwapperError::from)?;
-                self.check_tron_approval(&from_asset, request.wallet_address.clone(), amount, quote_data.limit.clone(), quote, provider)
-                    .await
+                self.check_tron_approval(
+                    &from_asset,
+                    request.wallet_address.clone(),
+                    amount,
+                    quote_data.gas_limit.clone(),
+                    quote,
+                    provider,
+                )
+                .await
             }
             _ => Ok((None, None)),
         }
@@ -174,7 +181,7 @@ impl Swapper for ProxyProvider {
         })
     }
 
-    async fn fetch_quote_data(&self, quote: &SwapQuote, provider: Arc<dyn AlienProvider>, _data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError> {
+    async fn fetch_quote_data(&self, quote: &SwapQuote, provider: Arc<dyn AlienProvider>, _data: FetchQuoteData) -> Result<GemSwapQuoteData, SwapperError> {
         let routes = quote.data.clone().routes;
         let route_data: Quote = serde_json::from_str(&routes.first().unwrap().route_data).map_err(|_| SwapperError::InvalidRoute)?;
         let client = ProxyClient::new(provider.clone());
@@ -182,7 +189,7 @@ impl Swapper for ProxyProvider {
         let data = client.get_quote_data(&self.url, route_data).await?;
         let (approval, gas_limit) = self.check_approval(quote, &data, provider).await?;
 
-        Ok(SwapQuoteData {
+        Ok(GemSwapQuoteData {
             to: data.to,
             value: data.value,
             data: data.data,

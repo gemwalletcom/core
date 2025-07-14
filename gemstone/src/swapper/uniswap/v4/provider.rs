@@ -14,7 +14,7 @@ use crate::{
             quote_result::get_best_quote,
             swap_route::{build_swap_route, get_intermediaries, RouteData},
         },
-        FetchQuoteData, GemApprovalData, GemSwapProvider, Permit2ApprovalData, SwapChainAsset, SwapProviderData, SwapProviderType, SwapQuote, SwapQuoteData,
+        FetchQuoteData, GemApprovalData, GemSwapProvider, Permit2ApprovalData, SwapChainAsset, SwapProviderData, SwapProviderType, SwapQuote, GemSwapQuoteData,
         SwapQuoteRequest, Swapper, SwapperError,
     },
 };
@@ -220,7 +220,7 @@ impl Swapper for UniswapV4 {
         Ok(permit2_data)
     }
 
-    async fn fetch_quote_data(&self, quote: &SwapQuote, provider: Arc<dyn AlienProvider>, data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError> {
+    async fn fetch_quote_data(&self, quote: &SwapQuote, provider: Arc<dyn AlienProvider>, data: FetchQuoteData) -> Result<GemSwapQuoteData, SwapperError> {
         let request = &quote.request;
         let from_asset = request.from_asset.asset_id();
         let (_, token_in, token_out, amount_in) = Self::parse_request(request)?;
@@ -270,7 +270,7 @@ impl Swapper for UniswapV4 {
         let wrap_input_eth = request.from_asset.is_native();
         let value = if wrap_input_eth { request.value.clone() } else { String::from("0") };
 
-        Ok(SwapQuoteData {
+        Ok(GemSwapQuoteData {
             to: deployment.universal_router.into(),
             value,
             data: HexEncode(encoded),

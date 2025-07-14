@@ -7,6 +7,16 @@ pub type GemSwapMode = primitives::swap::SwapMode;
 pub type GemSlippage = primitives::swap::Slippage;
 pub type GemSlippageMode = primitives::swap::SlippageMode;
 pub type GemApprovalData = primitives::swap::ApprovalData;
+pub type GemSwapQuoteData = primitives::swap::QuoteData;
+
+#[uniffi::remote(Record)]
+pub struct GemSwapQuoteData {
+    pub to: String,
+    pub value: String,
+    pub data: String,
+    pub approval: Option<GemApprovalData>,
+    pub gas_limit: Option<String>,
+}
 
 #[uniffi::remote(Enum)]
 pub enum GemSwapProvider {

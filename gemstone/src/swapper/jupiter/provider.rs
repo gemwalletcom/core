@@ -163,7 +163,7 @@ impl Swapper for Jupiter {
         Ok(quote)
     }
 
-    async fn fetch_quote_data(&self, quote: &SwapQuote, provider: Arc<dyn AlienProvider>, _data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError> {
+    async fn fetch_quote_data(&self, quote: &SwapQuote, provider: Arc<dyn AlienProvider>, _data: FetchQuoteData) -> Result<GemSwapQuoteData, SwapperError> {
         if quote.data.routes.is_empty() {
             return Err(SwapperError::InvalidRoute);
         }
@@ -198,7 +198,7 @@ impl Swapper for Jupiter {
             return Err(SwapperError::TransactionError(simulation_error.error));
         }
 
-        let data = SwapQuoteData {
+        let data = GemSwapQuoteData {
             to: PROGRAM_ADDRESS.to_string(),
             value: "".to_string(),
             data: quote_data.swap_transaction,

@@ -1,7 +1,7 @@
 use crate::{
     debug_println,
     network::{AlienProvider, JsonRpcClient, JsonRpcResult},
-    swapper::{models::*, slippage::apply_slippage_in_bp, GemSwapProvider, Swapper, SwapperError},
+    swapper::{models::*, slippage::apply_slippage_in_bp, GemSwapProvider, GemSwapQuoteData, Swapper, SwapperError},
 };
 use async_trait::async_trait;
 use gem_solana::{
@@ -112,7 +112,7 @@ impl Swapper for Orca {
         })
     }
 
-    async fn fetch_quote_data(&self, _quote: &SwapQuote, _provider: Arc<dyn AlienProvider>, _data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError> {
+    async fn fetch_quote_data(&self, _quote: &SwapQuote, _provider: Arc<dyn AlienProvider>, _data: FetchQuoteData) -> Result<GemSwapQuoteData, SwapperError> {
         Err(SwapperError::NotImplemented)
     }
 }

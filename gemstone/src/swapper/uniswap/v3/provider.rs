@@ -11,7 +11,7 @@ use crate::{
             quote_result::get_best_quote,
             swap_route::{build_swap_route, RouteData},
         },
-        GemApprovalData, Swapper, SwapperError,
+        GemApprovalData, GemSwapQuoteData, Swapper, SwapperError,
     },
 };
 use gem_evm::{
@@ -210,7 +210,7 @@ impl Swapper for UniswapV3 {
             .await
     }
 
-    async fn fetch_quote_data(&self, quote: &SwapQuote, provider: Arc<dyn AlienProvider>, data: FetchQuoteData) -> Result<SwapQuoteData, SwapperError> {
+    async fn fetch_quote_data(&self, quote: &SwapQuote, provider: Arc<dyn AlienProvider>, data: FetchQuoteData) -> Result<GemSwapQuoteData, SwapperError> {
         let request = &quote.request;
         let from_chain = request.from_asset.chain();
         let (_, token_in, token_out, amount_in) = Self::parse_request(request)?;
@@ -256,7 +256,7 @@ impl Swapper for UniswapV3 {
         let wrap_input_eth = request.from_asset.is_native();
         let value = if wrap_input_eth { request.value.clone() } else { String::from("0") };
 
-        Ok(SwapQuoteData {
+        Ok(GemSwapQuoteData {
             to: deployment.universal_router.into(),
             value,
             data: HexEncode(encoded),
