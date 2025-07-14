@@ -191,9 +191,9 @@ mod tests {
             MessagePreview::EIP712(GemEIP712Message {
                 domain: EIP712Domain {
                     name: "Seaport".to_string(),
-                    version: "1.1".to_string(),
+                    version: Some("1.1".to_string()),
                     chain_id: 1,
-                    verifying_contract: "0x00000000006c3852cbEf3e08E8dF289169EdE581".to_string(),
+                    verifying_contract: Some("0x00000000006c3852cbEf3e08E8dF289169EdE581".to_string()),
                 },
                 message: vec![GemEIP712Section {
                     name: "OrderComponents".to_string(),
@@ -254,9 +254,9 @@ mod tests {
             MessagePreview::EIP712(GemEIP712Message {
                 domain: EIP712Domain {
                     name: "ClobAuthDomain".to_string(),
-                    version: "1".to_string(),
+                    version: Some("1".to_string()),
                     chain_id: 137,
-                    verifying_contract: "".to_string(),
+                    verifying_contract: None,
                 },
                 message: vec![GemEIP712Section {
                     name: "ClobAuth".to_string(),
