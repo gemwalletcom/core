@@ -1,4 +1,4 @@
-use crate::swapper::{GemSlippage, GemSlippageMode};
+use crate::swapper::{SwapperSlippage, SwapperSlippageMode};
 use primitives::Chain;
 
 pub static DEFAULT_SLIPPAGE_BPS: u32 = 100;
@@ -8,7 +8,7 @@ pub static DEFAULT_BRIDGE_FEE_BPS: u32 = 25;
 
 #[derive(uniffi::Record, Debug, Clone, PartialEq)]
 pub struct SwapConfig {
-    pub default_slippage: GemSlippage,
+    pub default_slippage: SwapperSlippage,
     pub permit2_expiration: u64,
     pub permit2_sig_deadline: u64,
     pub referral_fee: SwapReferralFees,
@@ -48,9 +48,9 @@ impl SwapReferralFees {
 
 pub fn get_swap_config() -> SwapConfig {
     SwapConfig {
-        default_slippage: GemSlippage {
+        default_slippage: SwapperSlippage {
             bps: DEFAULT_SLIPPAGE_BPS,
-            mode: GemSlippageMode::Exact,
+            mode: SwapperSlippageMode::Exact,
         },
         permit2_expiration: 60 * 60 * 24 * 30, // 30 days
         permit2_sig_deadline: 60 * 30,         // 30 minutes
@@ -89,15 +89,15 @@ pub fn get_swap_config() -> SwapConfig {
 }
 
 #[uniffi::export]
-pub fn get_default_slippage(chain: &Chain) -> GemSlippage {
+pub fn get_default_slippage(chain: &Chain) -> SwapperSlippage {
     match chain {
-        Chain::Solana => GemSlippage {
+        Chain::Solana => SwapperSlippage {
             bps: DEFAULT_SLIPPAGE_BPS * 3,
-            mode: GemSlippageMode::Auto,
+            mode: SwapperSlippageMode::Auto,
         },
-        _ => GemSlippage {
+        _ => SwapperSlippage {
             bps: DEFAULT_SLIPPAGE_BPS,
-            mode: GemSlippageMode::Exact,
+            mode: SwapperSlippageMode::Exact,
         },
     }
 }

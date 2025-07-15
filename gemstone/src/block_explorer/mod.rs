@@ -5,7 +5,7 @@ use primitives::{
 };
 use std::str::FromStr;
 
-use crate::swapper::GemSwapProvider;
+use crate::swapper::SwapperProvider;
 
 #[derive(uniffi::Object)]
 pub struct Explorer {
@@ -41,27 +41,27 @@ impl Explorer {
     }
 
     pub fn get_transaction_swap_url(&self, explorer_name: &str, transaction_id: &str, provider_id: &str) -> Option<ExplorerURL> {
-        let provider = GemSwapProvider::from_str(provider_id).ok()?;
+        let provider = SwapperProvider::from_str(provider_id).ok()?;
         let explorer: Box<dyn BlockExplorer> = match provider {
-            GemSwapProvider::Mayan => MayanScan::new(),
-            GemSwapProvider::Thorchain => RuneScan::new(),
-            GemSwapProvider::Across => SocketScan::new(),
-            GemSwapProvider::Chainflip => ChainflipScan::new(),
-            GemSwapProvider::Relay => RelayScan::new(),
-            GemSwapProvider::UniswapV3
-            | GemSwapProvider::UniswapV4
-            | GemSwapProvider::PancakeswapV3
-            | GemSwapProvider::PancakeswapAptosV2
-            | GemSwapProvider::Orca
-            | GemSwapProvider::Jupiter
-            | GemSwapProvider::Oku
-            | GemSwapProvider::Wagmi
-            | GemSwapProvider::Cetus
-            | GemSwapProvider::CetusAggregator
-            | GemSwapProvider::StonfiV2
-            | GemSwapProvider::Reservoir
-            | GemSwapProvider::Aerodrome
-            | GemSwapProvider::Symbiosis => get_block_explorer(self.chain, explorer_name),
+            SwapperProvider::Mayan => MayanScan::new(),
+            SwapperProvider::Thorchain => RuneScan::new(),
+            SwapperProvider::Across => SocketScan::new(),
+            SwapperProvider::Chainflip => ChainflipScan::new(),
+            SwapperProvider::Relay => RelayScan::new(),
+            SwapperProvider::UniswapV3
+            | SwapperProvider::UniswapV4
+            | SwapperProvider::PancakeswapV3
+            | SwapperProvider::PancakeswapAptosV2
+            | SwapperProvider::Orca
+            | SwapperProvider::Jupiter
+            | SwapperProvider::Oku
+            | SwapperProvider::Wagmi
+            | SwapperProvider::Cetus
+            | SwapperProvider::CetusAggregator
+            | SwapperProvider::StonfiV2
+            | SwapperProvider::Reservoir
+            | SwapperProvider::Aerodrome
+            | SwapperProvider::Symbiosis => get_block_explorer(self.chain, explorer_name),
         };
         Some(ExplorerURL::new(&explorer.name(), &explorer.get_tx_url(transaction_id)))
     }
@@ -329,7 +329,7 @@ mod tests {
             .get_transaction_swap_url(
                 "runescan",
                 "0x0299923c9a0a40e3a296058ac2c5c3a7b41f91803ea36ad9645492ccca0f8631",
-                GemSwapProvider::Thorchain.as_ref(),
+                SwapperProvider::Thorchain.as_ref(),
             )
             .unwrap();
 
@@ -343,7 +343,7 @@ mod tests {
             .get_transaction_swap_url(
                 "solscan",
                 "0x56acc6a58fc0bdd9e9be5cc2a3ff079b91b933f562cf0fe760f1d8d6b76f4876",
-                GemSwapProvider::Mayan.as_ref(),
+                SwapperProvider::Mayan.as_ref(),
             )
             .unwrap();
 

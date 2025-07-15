@@ -86,7 +86,7 @@ struct ContentView: View {
         .onAppear {}
     }
 
-    func testQuote(quote: SwapQuoteRequest) {
+    func testQuote(quote: SwapperQuoteRequest) {
         Task {
             do {
                 try await self.model.fetchQuote(quote)
@@ -96,7 +96,7 @@ struct ContentView: View {
         }
     }
 
-    func testQuote(quote: SwapQuoteRequest, id: SwapProvider) {
+    func testQuote(quote: SwapperQuoteRequest, id: SwapProvider) {
         Task {
             do {
                 try await self.model.fetchQuoteById(quote, provider: id)

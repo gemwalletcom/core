@@ -4,9 +4,9 @@ use super::{asset::THORChainAsset, chain::THORChainName, ThorChain, QUOTE_INTERV
 use crate::network::AlienProvider;
 use crate::swapper::approval::check_approval_erc20;
 use crate::swapper::thorchain::client::ThorChainSwapClient;
-use crate::swapper::{asset::*, GemApprovalData};
-use crate::swapper::{FetchQuoteData, SwapProviderData, SwapProviderType, SwapQuote, GemSwapQuoteData, SwapQuoteRequest, SwapRoute, SwapperError};
-use crate::swapper::{SwapChainAsset, Swapper};
+use crate::swapper::{asset::*, SwapperApprovalData};
+use crate::swapper::{FetchQuoteData, SwapperProviderData, SwapperProviderType, SwapperQuote, SwapperQuoteData, SwapperQuoteRequest, SwapperRoute, SwapperError};
+use crate::swapper::{SwapperChainAsset, Swapper};
 use alloy_primitives::{hex::encode_prefixed as HexEncode, Address, U256};
 use alloy_sol_types::SolCall;
 use async_trait::async_trait;
@@ -18,18 +18,18 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 #[async_trait]
 impl Swapper for ThorChain {
-    fn provider(&self) -> &SwapProviderType {
+    fn provider(&self) -> &SwapperProviderType {
         &self.provider
     }
 
-    fn supported_assets(&self) -> Vec<SwapChainAsset> {
+    fn supported_assets(&self) -> Vec<SwapperChainAsset> {
         Chain::all()
             .into_iter()
             .filter_map(|chain| THORChainName::from_chain(&chain).map(|name| name.chain()))
             .collect::<Vec<Chain>>()
             .into_iter()
             .map(|chain| match chain {
-                Chain::Ethereum => SwapChainAsset::Assets(
+                Chain::Ethereum => SwapperChainAsset::Assets(
                     chain,
                     vec![
                         ETHEREUM_USDT.id.clone(),
@@ -38,16 +38,16 @@ impl Swapper for ThorChain {
                         ETHEREUM_WBTC.id.clone(),
                     ],
                 ),
-                Chain::Thorchain => SwapChainAsset::Assets(chain, vec![THORCHAIN_TCY.id.clone()]),
-                Chain::SmartChain => SwapChainAsset::Assets(chain, vec![SMARTCHAIN_USDT.id.clone(), SMARTCHAIN_USDC.id.clone()]),
-                Chain::AvalancheC => SwapChainAsset::Assets(chain, vec![AVALANCHE_USDT.id.clone(), AVALANCHE_USDC.id.clone()]),
-                Chain::Base => SwapChainAsset::Assets(chain, vec![BASE_USDC.id.clone(), BASE_CBBTC.id.clone()]),
-                _ => SwapChainAsset::Assets(chain, vec![]),
+                Chain::Thorchain => SwapperChainAsset::Assets(chain, vec![THORCHAIN_TCY.id.clone()]),
+                Chain::SmartChain => SwapperChainAsset::Assets(chain, vec![SMARTCHAIN_USDT.id.clone(), SMARTCHAIN_USDC.id.clone()]),
+                Chain::AvalancheC => SwapperChainAsset::Assets(chain, vec![AVALANCHE_USDT.id.clone(), AVALANCHE_USDC.id.clone()]),
+                Chain::Base => SwapperChainAsset::Assets(chain, vec![BASE_USDC.id.clone(), BASE_CBBTC.id.clone()]),
+                _ => SwapperChainAsset::Assets(chain, vec![]),
             })
             .collect()
     }
 
-    async fn fetch_quote(&self, request: &SwapQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapQuote, SwapperError> {
+    async fn fetch_quote(&self, request: &SwapperQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapperQuote, SwapperError> {
         let endpoint = provider.get_endpoint(Chain::Thorchain).map_err(SwapperError::from)?;
         let client = ThorChainSwapClient::new(provider.clone());
 
@@ -96,12 +96,12 @@ impl Swapper for ThorChain {
             inbound_address: quote.inbound_address.clone(),
         };
 
-        let quote = SwapQuote {
+        let quote = SwapperQuote {
             from_value: request.clone().value,
             to_value: to_value.to_string(),
-            data: SwapProviderData {
+            data: SwapperProviderData {
                 provider: self.provider().clone(),
-                routes: vec![SwapRoute {
+                routes: vec![SwapperRoute {
                     input: request.from_asset.asset_id(),
                     output: request.to_asset.asset_id(),
                     route_data: serde_json::to_string(&route_data).unwrap_or_default(),
@@ -116,7 +116,7 @@ impl Swapper for ThorChain {
         Ok(quote)
     }
 
-    async fn fetch_quote_data(&self, quote: &SwapQuote, provider: Arc<dyn AlienProvider>, _data: FetchQuoteData) -> Result<GemSwapQuoteData, SwapperError> {
+    async fn fetch_quote_data(&self, quote: &SwapperQuote, provider: Arc<dyn AlienProvider>, _data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
         let fee = quote.request.options.clone().fee.unwrap_or_default().thorchain;
         let from_asset = THORChainAsset::from_asset_id(&quote.request.from_asset.id).ok_or(SwapperError::NotSupportedAsset)?;
         let to_asset = THORChainAsset::from_asset_id(&quote.request.to_asset.id).ok_or(SwapperError::NotSupportedAsset)?;
@@ -135,7 +135,7 @@ impl Swapper for ThorChain {
         let route_data: RouteData = serde_json::from_str(&quote.data.routes.first().unwrap().route_data).map_err(|_| SwapperError::InvalidRoute)?;
         let value = quote.request.value.clone();
 
-        let approval: Option<GemApprovalData> = {
+        let approval: Option<SwapperApprovalData> = {
             if from_asset.use_evm_router() {
                 let from_amount: U256 = value.to_string().parse().map_err(SwapperError::from)?;
                 check_approval_erc20(
@@ -176,7 +176,7 @@ impl Swapper for ThorChain {
             }
             .abi_encode();
 
-            GemSwapQuoteData {
+            SwapperQuoteData {
                 to,
                 value: "0".to_string(),
                 data: HexEncode(call.clone()),
@@ -184,7 +184,7 @@ impl Swapper for ThorChain {
                 gas_limit,
             }
         } else {
-            GemSwapQuoteData {
+            SwapperQuoteData {
                 to: route_data.inbound_address.unwrap_or_default(),
                 value,
                 data: self.data(from_asset.chain, memo),

@@ -3,7 +3,7 @@
 import Foundation
 import Gemstone
 
-extension SwapProviderType: @retroactive CustomStringConvertible {
+extension SwapperProviderType: @retroactive CustomStringConvertible {
     public var description: String {
         let json: [String: Any] = [
             "id": String(describing: id),
@@ -14,7 +14,7 @@ extension SwapProviderType: @retroactive CustomStringConvertible {
     }
 }
 
-extension SwapQuote: @retroactive CustomStringConvertible {
+extension SwapperQuote: @retroactive CustomStringConvertible {
     public var description: String {
         let provider: [String: Any] = [
             "name": data.provider.name,
@@ -43,7 +43,7 @@ extension SwapQuote: @retroactive CustomStringConvertible {
     }
 }
 
-extension SwapQuoteData: @retroactive CustomStringConvertible {
+extension SwapperQuoteData: @retroactive CustomStringConvertible {
     public var description: String {
         var json: [String: Any] = [
             "to": to,
@@ -64,7 +64,7 @@ extension SwapQuoteData: @retroactive CustomStringConvertible {
     }
 }
 
-public extension GemQuoteAsset {
+public extension SwapperQuoteAsset {
     init(id: String, decimals: UInt32) {
         self.init(
             id: id,

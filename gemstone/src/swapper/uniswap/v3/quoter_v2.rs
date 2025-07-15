@@ -7,17 +7,17 @@ use gem_evm::{
 
 use crate::{
     network::JsonRpcResponse,
-    swapper::{GemSwapMode, SwapperError},
+    swapper::{SwapperError, SwapperMode},
 };
 
-pub fn build_quoter_request(mode: &GemSwapMode, wallet_address: &str, quoter_v2: &str, amount_in: U256, path: &Bytes) -> EthereumRpc {
+pub fn build_quoter_request(mode: &SwapperMode, wallet_address: &str, quoter_v2: &str, amount_in: U256, path: &Bytes) -> EthereumRpc {
     let call_data: Vec<u8> = match mode {
-        GemSwapMode::ExactIn => IQuoterV2::quoteExactInputCall {
+        SwapperMode::ExactIn => IQuoterV2::quoteExactInputCall {
             path: path.clone(),
             amountIn: amount_in,
         }
         .abi_encode(),
-        GemSwapMode::ExactOut => IQuoterV2::quoteExactOutputCall {
+        SwapperMode::ExactOut => IQuoterV2::quoteExactOutputCall {
             path: path.clone(),
             amountOut: amount_in,
         }

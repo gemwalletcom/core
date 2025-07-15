@@ -17,7 +17,7 @@ use crate::{
     swapper::{
         approval::check_approval_erc20,
         asset::{ARBITRUM_USDC, ETHEREUM_FLIP, ETHEREUM_USDC, ETHEREUM_USDT, SOLANA_USDC},
-        slippage, FetchQuoteData, GemSwapProvider, SwapChainAsset, SwapProviderData, SwapProviderType, SwapQuote, GemSwapQuoteData, SwapQuoteRequest, SwapRoute,
+        slippage, FetchQuoteData, SwapperProvider, SwapperChainAsset, SwapperProviderData, SwapperProviderType, SwapperQuote, SwapperQuoteData, SwapperQuoteRequest, SwapperRoute,
         Swapper, SwapperError,
     },
 };
@@ -27,13 +27,13 @@ const DEFAULT_SWAP_ERC20_GAS_LIMIT: u64 = 100_000;
 
 #[derive(Debug)]
 pub struct ChainflipProvider {
-    provider: SwapProviderType,
+    provider: SwapperProviderType,
 }
 
 impl Default for ChainflipProvider {
     fn default() -> Self {
         Self {
-            provider: SwapProviderType::new(GemSwapProvider::Chainflip),
+            provider: SwapperProviderType::new(SwapperProvider::Chainflip),
         }
     }
 }
@@ -98,23 +98,23 @@ impl ChainflipProvider {
 
 #[async_trait::async_trait]
 impl Swapper for ChainflipProvider {
-    fn provider(&self) -> &SwapProviderType {
+    fn provider(&self) -> &SwapperProviderType {
         &self.provider
     }
 
-    fn supported_assets(&self) -> Vec<SwapChainAsset> {
+    fn supported_assets(&self) -> Vec<SwapperChainAsset> {
         vec![
-            SwapChainAsset::Assets(Chain::Bitcoin, vec![]),
-            SwapChainAsset::Assets(
+            SwapperChainAsset::Assets(Chain::Bitcoin, vec![]),
+            SwapperChainAsset::Assets(
                 Chain::Ethereum,
                 vec![ETHEREUM_USDC.id.clone(), ETHEREUM_USDT.id.clone(), ETHEREUM_FLIP.id.clone()],
             ),
-            SwapChainAsset::Assets(Chain::Solana, vec![SOLANA_USDC.id.clone()]),
-            SwapChainAsset::Assets(Chain::Arbitrum, vec![ARBITRUM_USDC.id.clone()]),
+            SwapperChainAsset::Assets(Chain::Solana, vec![SOLANA_USDC.id.clone()]),
+            SwapperChainAsset::Assets(Chain::Arbitrum, vec![ARBITRUM_USDC.id.clone()]),
         ]
     }
 
-    async fn fetch_quote(&self, request: &SwapQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapQuote, SwapperError> {
+    async fn fetch_quote(&self, request: &SwapperQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapperQuote, SwapperError> {
         // Disable swap from BTC until Chainflip scan shows pending transactions
         if request.from_asset.chain().chain_type() == ChainType::Bitcoin {
             return Err(SwapperError::NoQuoteAvailable);
@@ -146,13 +146,13 @@ impl Swapper for ChainflipProvider {
 
         let (egress_amount, slippage_bps, eta_in_seconds, route_data) = Self::get_best_quote(quotes, fee_bps);
 
-        let quote = SwapQuote {
+        let quote = SwapperQuote {
             from_value: request.value.clone(),
             to_value: egress_amount.to_string(),
-            data: SwapProviderData {
+            data: SwapperProviderData {
                 provider: self.provider.clone(),
                 slippage_bps,
-                routes: vec![SwapRoute {
+                routes: vec![SwapperRoute {
                     input: request.from_asset.asset_id(),
                     output: request.to_asset.asset_id(),
                     route_data: serde_json::to_string(&route_data).unwrap(),
@@ -165,7 +165,7 @@ impl Swapper for ChainflipProvider {
         Ok(quote)
     }
 
-    async fn fetch_quote_data(&self, quote: &SwapQuote, provider: Arc<dyn AlienProvider>, _data: FetchQuoteData) -> Result<GemSwapQuoteData, SwapperError> {
+    async fn fetch_quote_data(&self, quote: &SwapperQuote, provider: Arc<dyn AlienProvider>, _data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
         let from_asset = quote.request.from_asset.asset_id();
         let broker_client = BrokerClient::new(provider.clone());
         let source_asset = Self::map_asset_id(&quote.request.from_asset);
@@ -258,7 +258,7 @@ impl Swapper for ChainflipProvider {
                     None
                 };
 
-                let swap_quote_data = GemSwapQuoteData {
+                let swap_quote_data = SwapperQuoteData {
                     to: response.to,
                     value,
                     data: response.calldata,
@@ -269,7 +269,7 @@ impl Swapper for ChainflipProvider {
                 Ok(swap_quote_data)
             }
             VaultSwapResponse::Bitcoin(response) => {
-                let swap_quote_data = GemSwapQuoteData {
+                let swap_quote_data = SwapperQuoteData {
                     to: response.deposit_address,
                     value: quote.request.value.clone(),
                     data: response.nulldata_payload,
@@ -283,7 +283,7 @@ impl Swapper for ChainflipProvider {
                 let data = tx_builder::build_solana_tx(quote.request.wallet_address.clone(), &response, provider.clone())
                     .await
                     .map_err(SwapperError::TransactionError)?;
-                let swap_quote_data = GemSwapQuoteData {
+                let swap_quote_data = SwapperQuoteData {
                     to: response.program_id,
                     value: "".into(),
                     data,

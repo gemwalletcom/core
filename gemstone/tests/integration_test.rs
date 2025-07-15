@@ -39,14 +39,14 @@ mod tests {
         let swap_provider = Orca::boxed();
         let network_provider = Arc::new(NativeProvider::new());
 
-        let request = SwapQuoteRequest {
+        let request = SwapperQuoteRequest {
             from_asset: AssetId::from(Chain::Solana, None).into(),
             to_asset: AssetId::from(Chain::Solana, Some("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v".into())).into(),
             wallet_address: "G7B17AigRCGvwnxFc5U8zY5T3NBGduLzT7KYApNU2VdR".into(),
             destination_address: "G7B17AigRCGvwnxFc5U8zY5T3NBGduLzT7KYApNU2VdR".into(),
             value: "1000000".into(),
-            mode: GemSwapMode::ExactIn,
-            options: GemSwapOptions::default(),
+            mode: SwapperMode::ExactIn,
+            options: SwapperOptions::default(),
         };
         let quote = swap_provider.fetch_quote(&request, network_provider.clone()).await?;
 
@@ -80,7 +80,7 @@ mod tests {
 
         let (from_asset, to_asset) = trade_pairs.get(&Chain::Abstract).cloned().unwrap();
 
-        let options = GemSwapOptions {
+        let options = SwapperOptions {
             slippage: 100.into(),
             fee: Some(SwapReferralFees::evm(SwapReferralFee {
                 bps: 25,
@@ -89,13 +89,13 @@ mod tests {
             preferred_providers: vec![],
         };
 
-        let request = SwapQuoteRequest {
+        let request = SwapperQuoteRequest {
             from_asset: from_asset.into(),
             to_asset: to_asset.into(),
             wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
             destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
             value: "20000000000000000".into(), // 0.02 ETH
-            mode: GemSwapMode::ExactIn,
+            mode: SwapperMode::ExactIn,
             options,
         };
 
@@ -116,7 +116,7 @@ mod tests {
     async fn test_across_quote() -> Result<(), SwapperError> {
         let swap_provider = Across::boxed();
         let network_provider = Arc::new(NativeProvider::default());
-        let mut options = GemSwapOptions {
+        let mut options = SwapperOptions {
             slippage: 100.into(),
             fee: Some(SwapReferralFees::evm(SwapReferralFee {
                 bps: 25,
@@ -129,13 +129,13 @@ mod tests {
             address: "0x0D9DAB1A248f63B0a48965bA8435e4de7497a3dC".into(),
         };
 
-        let request = SwapQuoteRequest {
+        let request = SwapperQuoteRequest {
             from_asset: AssetId::from_chain(Chain::Optimism).into(),
             to_asset: AssetId::from_chain(Chain::Arbitrum).into(),
             wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
             destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
             value: "20000000000000000".into(), // 0.02 ETH
-            mode: GemSwapMode::ExactIn,
+            mode: SwapperMode::ExactIn,
             options,
         };
 
@@ -159,22 +159,22 @@ mod tests {
     async fn test_v4_quoter() -> Result<(), SwapperError> {
         let swap_provider = UniswapV4::boxed();
         let network_provider = Arc::new(NativeProvider::default());
-        let options = GemSwapOptions {
+        let options = SwapperOptions {
             slippage: 100.into(),
             fee: Some(SwapReferralFees::evm(SwapReferralFee {
                 bps: 25,
                 address: "0x0D9DAB1A248f63B0a48965bA8435e4de7497a3dC".into(),
             })),
-            preferred_providers: vec![GemSwapProvider::UniswapV4],
+            preferred_providers: vec![SwapperProvider::UniswapV4],
         };
 
-        let request = SwapQuoteRequest {
+        let request = SwapperQuoteRequest {
             from_asset: AssetId::from_chain(Chain::Unichain).into(),
             to_asset: AssetId::from(Chain::Unichain, Some("0x078D782b760474a361dDA0AF3839290b0EF57AD6".to_string())).into(),
             wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
             destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
             value: "10000000000000000".into(), // 0.01 ETH
-            mode: GemSwapMode::ExactIn,
+            mode: SwapperMode::ExactIn,
             options,
         };
 
@@ -199,13 +199,13 @@ mod tests {
         let swap_provider = Cetus::boxed();
         let network_provider = Arc::new(NativeProvider::default());
         let config = get_swap_config();
-        let options = GemSwapOptions {
+        let options = SwapperOptions {
             slippage: 50.into(),
             fee: Some(config.referral_fee),
             preferred_providers: vec![],
         };
 
-        let request = SwapQuoteRequest {
+        let request = SwapperQuoteRequest {
             from_asset: AssetId::from_chain(Chain::Sui).into(),
             to_asset: AssetId {
                 chain: Chain::Sui,
@@ -215,7 +215,7 @@ mod tests {
             wallet_address: "0xa9bd0493f9bd1f792a4aedc1f99d54535a75a46c38fd56a8f2c6b7c8d75817a1".into(),
             destination_address: "0xa9bd0493f9bd1f792a4aedc1f99d54535a75a46c38fd56a8f2c6b7c8d75817a1".into(),
             value: "1500000000".into(), // 1.5 SUI
-            mode: GemSwapMode::ExactIn,
+            mode: SwapperMode::ExactIn,
             options,
         };
 

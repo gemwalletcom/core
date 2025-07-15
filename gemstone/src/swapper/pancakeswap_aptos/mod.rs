@@ -3,7 +3,7 @@ use std::sync::Arc;
 mod client;
 mod model;
 use super::{
-    FetchQuoteData, GemSwapProvider, SwapChainAsset, SwapProviderData, SwapProviderType, SwapQuote, GemSwapQuoteData, SwapQuoteRequest, SwapRoute, Swapper,
+    FetchQuoteData, SwapperProvider, SwapperChainAsset, SwapperProviderData, SwapperProviderType, SwapperQuote, SwapperQuoteData, SwapperQuoteRequest, SwapperRoute, Swapper,
     SwapperError,
 };
 
@@ -16,13 +16,13 @@ use primitives::{AssetId, Chain};
 
 #[derive(Debug)]
 pub struct PancakeSwapAptos {
-    pub provider: SwapProviderType,
+    pub provider: SwapperProviderType,
 }
 
 impl Default for PancakeSwapAptos {
     fn default() -> Self {
         Self {
-            provider: SwapProviderType::new(GemSwapProvider::PancakeswapAptosV2),
+            provider: SwapperProviderType::new(SwapperProvider::PancakeswapAptosV2),
         }
     }
 }
@@ -53,15 +53,15 @@ impl PancakeSwapAptos {
 
 #[async_trait]
 impl Swapper for PancakeSwapAptos {
-    fn provider(&self) -> &SwapProviderType {
+    fn provider(&self) -> &SwapperProviderType {
         &self.provider
     }
 
-    fn supported_assets(&self) -> Vec<SwapChainAsset> {
-        vec![SwapChainAsset::All(Chain::Aptos)]
+    fn supported_assets(&self) -> Vec<SwapperChainAsset> {
+        vec![SwapperChainAsset::All(Chain::Aptos)]
     }
 
-    async fn fetch_quote(&self, request: &SwapQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapQuote, SwapperError> {
+    async fn fetch_quote(&self, request: &SwapperQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapperQuote, SwapperError> {
         let endpoint: String = provider.get_endpoint(Chain::Aptos).unwrap();
         let client = PancakeSwapAptosClient::new(provider);
 
@@ -85,12 +85,12 @@ impl Swapper for PancakeSwapAptos {
         };
         let route_data = serde_json::to_string(&route_data).unwrap();
 
-        let quote = SwapQuote {
+        let quote = SwapperQuote {
             from_value: request.value.clone(),
             to_value: quote_value.clone(),
-            data: SwapProviderData {
+            data: SwapperProviderData {
                 provider: self.provider().clone(),
-                routes: vec![SwapRoute {
+                routes: vec![SwapperRoute {
                     input: request.from_asset.asset_id(),
                     output: request.to_asset.asset_id(),
                     route_data,
@@ -105,7 +105,7 @@ impl Swapper for PancakeSwapAptos {
         Ok(quote)
     }
 
-    async fn fetch_quote_data(&self, quote: &SwapQuote, _provider: Arc<dyn AlienProvider>, _data: FetchQuoteData) -> Result<GemSwapQuoteData, SwapperError> {
+    async fn fetch_quote_data(&self, quote: &SwapperQuote, _provider: Arc<dyn AlienProvider>, _data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
         let routes = quote.data.clone().routes;
         let route_data: RouteData = serde_json::from_str(&routes.first().unwrap().route_data).map_err(|_| SwapperError::InvalidRoute)?;
 
@@ -119,7 +119,7 @@ impl Swapper for PancakeSwapAptos {
             route_data.min_value.clone(),
         );
 
-        let data = GemSwapQuoteData {
+        let data = SwapperQuoteData {
             to: PANCAKE_SWAP_APTOS_ADDRESS.to_string(),
             value: quote.from_value.clone(),
             data: serde_json::to_string(&payload).unwrap(),

@@ -34,15 +34,15 @@ use std::collections::HashSet;
 
 #[async_trait]
 pub trait Swapper: Send + Sync + Debug {
-    fn provider(&self) -> &SwapProviderType;
-    fn supported_assets(&self) -> Vec<SwapChainAsset>;
-    async fn fetch_quote(&self, request: &SwapQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapQuote, SwapperError>;
-    async fn fetch_permit2_for_quote(&self, _quote: &SwapQuote, _provider: Arc<dyn AlienProvider>) -> Result<Option<Permit2ApprovalData>, SwapperError> {
+    fn provider(&self) -> &SwapperProviderType;
+    fn supported_assets(&self) -> Vec<SwapperChainAsset>;
+    async fn fetch_quote(&self, request: &SwapperQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapperQuote, SwapperError>;
+    async fn fetch_permit2_for_quote(&self, _quote: &SwapperQuote, _provider: Arc<dyn AlienProvider>) -> Result<Option<Permit2ApprovalData>, SwapperError> {
         Ok(None)
     }
-    async fn fetch_quote_data(&self, quote: &SwapQuote, provider: Arc<dyn AlienProvider>, data: FetchQuoteData) -> Result<GemSwapQuoteData, SwapperError>;
+    async fn fetch_quote_data(&self, quote: &SwapperQuote, provider: Arc<dyn AlienProvider>, data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError>;
     async fn get_transaction_status(&self, _chain: Chain, _transaction_hash: &str, _provider: Arc<dyn AlienProvider>) -> Result<bool, SwapperError> {
-        if self.provider().mode() == GemSwapProviderMode::OnChain {
+        if self.provider().mode() == SwapperProviderMode::OnChain {
             Ok(true)
         } else {
             Err(SwapperError::NotImplemented)
@@ -55,8 +55,8 @@ impl dyn Swapper {
         self.supported_assets()
             .into_iter()
             .map(|x| match x.clone() {
-                SwapChainAsset::All(chain) => chain,
-                SwapChainAsset::Assets(chain, _) => chain,
+                SwapperChainAsset::All(chain) => chain,
+                SwapperChainAsset::Assets(chain, _) => chain,
             })
             .collect()
     }
@@ -70,11 +70,11 @@ pub struct GemSwapper {
 
 impl GemSwapper {
     // filter provider types that does not support cross chain / bridge swaps
-    fn filter_by_provider_mode(mode: GemSwapProviderMode, from_chain: Chain, to_chain: Chain) -> bool {
+    fn filter_by_provider_mode(mode: SwapperProviderMode, from_chain: Chain, to_chain: Chain) -> bool {
         match mode {
-            GemSwapProviderMode::OnChain => from_chain == to_chain,
-            GemSwapProviderMode::Bridge | GemSwapProviderMode::CrossChain => from_chain != to_chain,
-            GemSwapProviderMode::OmniChain(chains) => chains.contains(&from_chain) || from_chain != to_chain,
+            SwapperProviderMode::OnChain => from_chain == to_chain,
+            SwapperProviderMode::Bridge | SwapperProviderMode::CrossChain => from_chain != to_chain,
+            SwapperProviderMode::OmniChain(chains) => chains.contains(&from_chain) || from_chain != to_chain,
         }
     }
 
@@ -82,14 +82,14 @@ impl GemSwapper {
         supported_chains.contains(&from_chain) && supported_chains.contains(&to_chain)
     }
 
-    fn filter_supported_assets(supported_assets: Vec<SwapChainAsset>, asset_id: AssetId) -> bool {
+    fn filter_supported_assets(supported_assets: Vec<SwapperChainAsset>, asset_id: AssetId) -> bool {
         supported_assets.into_iter().any(|x| match x {
-            SwapChainAsset::All(_) => false,
-            SwapChainAsset::Assets(chain, assets) => chain == asset_id.chain || assets.contains(&asset_id),
+            SwapperChainAsset::All(_) => false,
+            SwapperChainAsset::Assets(chain, assets) => chain == asset_id.chain || assets.contains(&asset_id),
         })
     }
 
-    fn filter_by_preferred_providers(preferred_providers: &[GemSwapProvider], provider: &GemSwapProvider) -> bool {
+    fn filter_by_preferred_providers(preferred_providers: &[SwapperProvider], provider: &SwapperProvider) -> bool {
         // if no preferred providers, return all
         if preferred_providers.is_empty() {
             return true;
@@ -97,7 +97,7 @@ impl GemSwapper {
         preferred_providers.contains(provider)
     }
 
-    fn get_swapper_by_provider<'a>(&'a self, provider: &GemSwapProvider) -> Option<&'a dyn Swapper> {
+    fn get_swapper_by_provider<'a>(&'a self, provider: &SwapperProvider) -> Option<&'a dyn Swapper> {
         self.swappers.iter().find(|x| x.provider().id == *provider).map(|v| &**v)
     }
 
@@ -148,7 +148,7 @@ impl GemSwapper {
             .collect()
     }
 
-    pub fn supported_chains_for_from_asset(&self, asset_id: &AssetId) -> SwapAssetList {
+    pub fn supported_chains_for_from_asset(&self, asset_id: &AssetId) -> SwapperAssetList {
         let chains: Vec<Chain> = vec![asset_id.chain];
         let mut asset_ids: Vec<AssetId> = Vec::new();
 
@@ -157,21 +157,21 @@ impl GemSwapper {
                 continue;
             }
             provider.supported_assets().into_iter().for_each(|x| match x {
-                SwapChainAsset::All(_) => {}
-                SwapChainAsset::Assets(chain, assets) => {
+                SwapperChainAsset::All(_) => {}
+                SwapperChainAsset::Assets(chain, assets) => {
                     asset_ids.push(chain.as_asset_id());
                     asset_ids.extend(assets);
                 }
             });
         }
-        SwapAssetList { chains, asset_ids }
+        SwapperAssetList { chains, asset_ids }
     }
 
-    pub fn get_providers(&self) -> Vec<SwapProviderType> {
+    pub fn get_providers(&self) -> Vec<SwapperProviderType> {
         self.swappers.iter().map(|x| x.provider().clone()).collect()
     }
 
-    pub async fn fetch_quote(&self, request: &SwapQuoteRequest) -> Result<Vec<SwapQuote>, SwapperError> {
+    pub async fn fetch_quote(&self, request: &SwapperQuoteRequest) -> Result<Vec<SwapperQuote>, SwapperError> {
         if request.from_asset.id == request.to_asset.id {
             return Err(SwapperError::NotSupportedPair);
         }
@@ -213,17 +213,17 @@ impl GemSwapper {
         Ok(quotes)
     }
 
-    pub async fn fetch_quote_by_provider(&self, provider: GemSwapProvider, request: SwapQuoteRequest) -> Result<SwapQuote, SwapperError> {
+    pub async fn fetch_quote_by_provider(&self, provider: SwapperProvider, request: SwapperQuoteRequest) -> Result<SwapperQuote, SwapperError> {
         let provider = self.get_swapper_by_provider(&provider).ok_or(SwapperError::NoAvailableProvider)?;
         provider.fetch_quote(&request, self.rpc_provider.clone()).await
     }
 
-    pub async fn fetch_permit2_for_quote(&self, quote: &SwapQuote) -> Result<Option<Permit2ApprovalData>, SwapperError> {
+    pub async fn fetch_permit2_for_quote(&self, quote: &SwapperQuote) -> Result<Option<Permit2ApprovalData>, SwapperError> {
         let provider = self.get_swapper_by_provider(&quote.data.provider.id).ok_or(SwapperError::NoAvailableProvider)?;
         provider.fetch_permit2_for_quote(quote, self.rpc_provider.clone()).await
     }
 
-    pub async fn fetch_quote_data(&self, quote: &SwapQuote, data: FetchQuoteData) -> Result<GemSwapQuoteData, SwapperError> {
+    pub async fn fetch_quote_data(&self, quote: &SwapperQuote, data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
         let provider = self.get_swapper_by_provider(&quote.data.provider.id).ok_or(SwapperError::NoAvailableProvider)?;
         let mut quote_data = provider.fetch_quote_data(quote, self.rpc_provider.clone(), data).await?;
         if let Some(gas_limit) = quote_data.gas_limit.take() {
@@ -232,7 +232,7 @@ impl GemSwapper {
         Ok(quote_data)
     }
 
-    pub async fn get_transaction_status(&self, chain: Chain, swap_provider: GemSwapProvider, transaction_hash: &str) -> Result<bool, SwapperError> {
+    pub async fn get_transaction_status(&self, chain: Chain, swap_provider: SwapperProvider, transaction_hash: &str) -> Result<bool, SwapperError> {
         let provider = self.get_swapper_by_provider(&swap_provider).ok_or(SwapperError::NoAvailableProvider)?;
         provider.get_transaction_status(chain, transaction_hash, self.rpc_provider.clone()).await
     }
@@ -248,20 +248,20 @@ mod tests {
     #[test]
     fn test_filter_by_provider_type() {
         let providers = [
-            GemSwapProvider::UniswapV3,
-            GemSwapProvider::PancakeswapV3,
-            GemSwapProvider::Jupiter,
-            GemSwapProvider::Thorchain,
+            SwapperProvider::UniswapV3,
+            SwapperProvider::PancakeswapV3,
+            SwapperProvider::Jupiter,
+            SwapperProvider::Thorchain,
         ];
 
         // Cross chain swaps (same chain will be filtered out)
         let filtered = providers
             .iter()
-            .filter(|x| GemSwapper::filter_by_provider_mode(SwapProviderType::new(**x).mode(), Chain::Ethereum, Chain::Optimism))
+            .filter(|x| GemSwapper::filter_by_provider_mode(SwapperProviderType::new(**x).mode(), Chain::Ethereum, Chain::Optimism))
             .cloned()
             .collect::<Vec<_>>();
 
-        assert_eq!(filtered, vec![GemSwapProvider::Thorchain]);
+        assert_eq!(filtered, vec![SwapperProvider::Thorchain]);
     }
 
     #[test]
@@ -296,7 +296,7 @@ mod tests {
         assert_eq!(filtered.len(), 2);
         assert_eq!(
             filtered.iter().map(|x| x.provider().id).collect::<BTreeSet<_>>(),
-            BTreeSet::from([GemSwapProvider::UniswapV3, GemSwapProvider::PancakeswapV3])
+            BTreeSet::from([SwapperProvider::UniswapV3, SwapperProvider::PancakeswapV3])
         );
 
         let from_chain = Chain::Solana;
@@ -309,7 +309,7 @@ mod tests {
             .collect::<Vec<_>>();
 
         assert_eq!(filtered.len(), 1);
-        assert_eq!(filtered[0].provider().id, GemSwapProvider::Jupiter);
+        assert_eq!(filtered[0].provider().id, SwapperProvider::Jupiter);
 
         let from_chain = Chain::SmartChain;
         let to_chain = Chain::Bitcoin;
@@ -321,7 +321,7 @@ mod tests {
             .collect::<Vec<_>>();
 
         assert_eq!(filtered.len(), 1);
-        assert_eq!(filtered[0].provider().id, GemSwapProvider::Thorchain);
+        assert_eq!(filtered[0].provider().id, SwapperProvider::Thorchain);
     }
 
     #[test]
@@ -329,8 +329,8 @@ mod tests {
         let asset_id = AssetId::from_chain(Chain::Ethereum);
         let asset_id_usdt: AssetId = USDT_ETH_ASSET_ID.into();
         let supported_assets = vec![
-            SwapChainAsset::All(Chain::Ethereum),
-            SwapChainAsset::Assets(
+            SwapperChainAsset::All(Chain::Ethereum),
+            SwapperChainAsset::Assets(
                 Chain::Ethereum,
                 vec![AssetId::from_token(Chain::Ethereum, &asset_id_usdt.clone().token_id.unwrap())],
             ),

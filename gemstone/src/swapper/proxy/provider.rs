@@ -13,14 +13,14 @@ use crate::{
     network::AlienProvider,
     swapper::{
         approval::{evm::check_approval_erc20, tron::check_approval_tron},
-        models::{ApprovalType, SwapChainAsset},
-        FetchQuoteData, GemApprovalData, GemSwapProvider, GemSwapQuoteData, SwapProviderData, SwapProviderType, SwapQuote, SwapQuoteRequest, SwapRoute,
-        Swapper, SwapperError,
+        models::{ApprovalType, SwapperChainAsset},
+        FetchQuoteData, Swapper, SwapperApprovalData, SwapperError, SwapperProvider, SwapperProviderData, SwapperProviderType, SwapperQuote, SwapperQuoteData,
+        SwapperQuoteRequest, SwapperRoute,
     },
     tron::client::TronClient,
 };
 use primitives::{
-    swap::{Quote, QuoteData, QuoteRequest},
+    swap::{ProxyQuote, ProxyQuoteRequest, SwapQuoteData},
     AssetId, Chain, ChainType,
 };
 
@@ -29,18 +29,18 @@ const DEFAULT_GAS_LIMIT: u64 = 500000;
 
 #[derive(Debug)]
 pub struct ProxyProvider {
-    pub provider: SwapProviderType,
+    pub provider: SwapperProviderType,
     pub url: String,
-    pub assets: Vec<SwapChainAsset>,
+    pub assets: Vec<SwapperChainAsset>,
 }
 
 impl ProxyProvider {
     pub async fn check_approval(
         &self,
-        quote: &SwapQuote,
-        quote_data: &QuoteData,
+        quote: &SwapperQuote,
+        quote_data: &SwapQuoteData,
         provider: Arc<dyn AlienProvider>,
-    ) -> Result<(Option<GemApprovalData>, Option<String>), SwapperError> {
+    ) -> Result<(Option<SwapperApprovalData>, Option<String>), SwapperError> {
         let request = &quote.request;
         let from_asset = request.from_asset.asset_id();
 
@@ -85,7 +85,7 @@ impl ProxyProvider {
         amount: U256,
         provider: Arc<dyn AlienProvider>,
         chain: &Chain,
-    ) -> Result<(Option<GemApprovalData>, Option<String>), SwapperError> {
+    ) -> Result<(Option<SwapperApprovalData>, Option<String>), SwapperError> {
         let approval = check_approval_erc20(wallet_address, token, spender, amount, provider, chain).await?;
         let gas_limit = if matches!(approval, ApprovalType::Approve(_)) {
             Some(DEFAULT_GAS_LIMIT.to_string())
@@ -101,11 +101,11 @@ impl ProxyProvider {
         wallet_address: String,
         amount: U256,
         default_fee_limit: Option<String>,
-        quote: &SwapQuote,
+        quote: &SwapperQuote,
         provider: Arc<dyn AlienProvider>,
-    ) -> Result<(Option<GemApprovalData>, Option<String>), SwapperError> {
+    ) -> Result<(Option<SwapperApprovalData>, Option<String>), SwapperError> {
         let route_data = quote.data.routes.first().map(|r| r.route_data.clone()).ok_or(SwapperError::InvalidRoute)?;
-        let proxy_quote: Quote = serde_json::from_str(&route_data).map_err(|_| SwapperError::InvalidRoute)?;
+        let proxy_quote: ProxyQuote = serde_json::from_str(&route_data).map_err(|_| SwapperError::InvalidRoute)?;
         let spender = proxy_quote.route_data["approveTo"]
             .as_str()
             .ok_or(SwapperError::TransactionError("Failed to check approval without spender".to_string()))?;
@@ -141,17 +141,17 @@ impl ProxyProvider {
 
 #[async_trait]
 impl Swapper for ProxyProvider {
-    fn provider(&self) -> &SwapProviderType {
+    fn provider(&self) -> &SwapperProviderType {
         &self.provider
     }
 
-    fn supported_assets(&self) -> Vec<SwapChainAsset> {
+    fn supported_assets(&self) -> Vec<SwapperChainAsset> {
         self.assets.clone()
     }
 
-    async fn fetch_quote(&self, request: &SwapQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapQuote, SwapperError> {
+    async fn fetch_quote(&self, request: &SwapperQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapperQuote, SwapperError> {
         let client = ProxyClient::new(provider);
-        let quote_request = QuoteRequest {
+        let quote_request = ProxyQuoteRequest {
             from_address: request.wallet_address.clone(),
             to_address: request.destination_address.clone(),
             from_asset: request.from_asset.clone(),
@@ -163,12 +163,12 @@ impl Swapper for ProxyProvider {
 
         let quote = client.get_quote(&self.url, quote_request.clone()).await?;
 
-        Ok(SwapQuote {
+        Ok(SwapperQuote {
             from_value: request.value.clone(),
             to_value: quote.output_value.clone(),
-            data: SwapProviderData {
+            data: SwapperProviderData {
                 provider: self.provider().clone(),
-                routes: vec![SwapRoute {
+                routes: vec![SwapperRoute {
                     input: request.from_asset.asset_id(),
                     output: request.to_asset.asset_id(),
                     route_data: serde_json::to_string(&quote).unwrap(),
@@ -181,15 +181,15 @@ impl Swapper for ProxyProvider {
         })
     }
 
-    async fn fetch_quote_data(&self, quote: &SwapQuote, provider: Arc<dyn AlienProvider>, _data: FetchQuoteData) -> Result<GemSwapQuoteData, SwapperError> {
+    async fn fetch_quote_data(&self, quote: &SwapperQuote, provider: Arc<dyn AlienProvider>, _data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
         let routes = quote.data.clone().routes;
-        let route_data: Quote = serde_json::from_str(&routes.first().unwrap().route_data).map_err(|_| SwapperError::InvalidRoute)?;
+        let route_data: ProxyQuote = serde_json::from_str(&routes.first().unwrap().route_data).map_err(|_| SwapperError::InvalidRoute)?;
         let client = ProxyClient::new(provider.clone());
 
         let data = client.get_quote_data(&self.url, route_data).await?;
         let (approval, gas_limit) = self.check_approval(quote, &data, provider).await?;
 
-        Ok(GemSwapQuoteData {
+        Ok(SwapperQuoteData {
             to: data.to,
             value: data.value,
             data: data.data,
@@ -200,7 +200,7 @@ impl Swapper for ProxyProvider {
 
     async fn get_transaction_status(&self, _chain: Chain, transaction_hash: &str, provider: Arc<dyn AlienProvider>) -> Result<bool, SwapperError> {
         match self.provider.id {
-            GemSwapProvider::Mayan => {
+            SwapperProvider::Mayan => {
                 let client = MayanExplorer::new(provider);
                 let result = client.get_transaction_status(transaction_hash).await?;
                 Ok(result.client_status == MayanClientStatus::Completed)

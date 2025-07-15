@@ -8,7 +8,7 @@ use chain::THORChainName;
 use num_bigint::BigInt;
 use std::str::FromStr;
 
-use super::{GemSwapProvider, SwapProviderType};
+use super::{SwapperProvider, SwapperProviderType};
 
 const QUOTE_MINIMUM: i64 = 0;
 const QUOTE_INTERVAL: i64 = 1;
@@ -19,13 +19,13 @@ const DEFAULT_DEPOSIT_GAS_LIMIT: u64 = 90_000;
 
 #[derive(Debug)]
 pub struct ThorChain {
-    pub provider: SwapProviderType,
+    pub provider: SwapperProviderType,
 }
 
 impl Default for ThorChain {
     fn default() -> Self {
         Self {
-            provider: SwapProviderType::new(GemSwapProvider::Thorchain),
+            provider: SwapperProviderType::new(SwapperProvider::Thorchain),
         }
     }
 }

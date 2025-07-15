@@ -7,10 +7,10 @@ use std::str::FromStr;
 use super::remote_models::*;
 
 #[derive(Debug, Clone, PartialEq, uniffi::Object)]
-pub struct SwapProviderConfig(SwapProviderType);
+pub struct SwapProviderConfig(SwapperProviderType);
 
 impl SwapProviderConfig {
-    pub fn id(&self) -> GemSwapProvider {
+    pub fn id(&self) -> SwapperProvider {
         self.0.id
     }
 }
@@ -18,29 +18,29 @@ impl SwapProviderConfig {
 #[uniffi::export]
 impl SwapProviderConfig {
     #[uniffi::constructor]
-    pub fn new(id: GemSwapProvider) -> Self {
-        Self(SwapProviderType::new(id))
+    pub fn new(id: SwapperProvider) -> Self {
+        Self(SwapperProviderType::new(id))
     }
     #[uniffi::constructor]
     pub fn from_string(id: String) -> Self {
-        let id = GemSwapProvider::from_str(&id).unwrap();
-        Self(SwapProviderType::new(id))
+        let id = SwapperProvider::from_str(&id).unwrap();
+        Self(SwapperProviderType::new(id))
     }
-    pub fn inner(&self) -> SwapProviderType {
+    pub fn inner(&self) -> SwapperProviderType {
         self.0.clone()
     }
 }
 
 #[derive(Debug, Clone, PartialEq, uniffi::Record)]
-pub struct SwapProviderType {
-    pub id: GemSwapProvider,
+pub struct SwapperProviderType {
+    pub id: SwapperProvider,
     pub name: String,
     pub protocol: String,
     pub protocol_id: String,
 }
 
-impl SwapProviderType {
-    pub fn new(id: GemSwapProvider) -> Self {
+impl SwapperProviderType {
+    pub fn new(id: SwapperProvider) -> Self {
         Self {
             id,
             name: id.name().to_string(),
@@ -49,49 +49,49 @@ impl SwapProviderType {
         }
     }
 
-    pub fn mode(&self) -> GemSwapProviderMode {
+    pub fn mode(&self) -> SwapperProviderMode {
         match self.id {
-            GemSwapProvider::UniswapV3
-            | GemSwapProvider::UniswapV4
-            | GemSwapProvider::PancakeswapV3
-            | GemSwapProvider::PancakeswapAptosV2
-            | GemSwapProvider::Orca
-            | GemSwapProvider::Jupiter
-            | GemSwapProvider::Oku
-            | GemSwapProvider::Wagmi
-            | GemSwapProvider::Cetus
-            | GemSwapProvider::CetusAggregator
-            | GemSwapProvider::StonfiV2
-            | GemSwapProvider::Reservoir
-            | GemSwapProvider::Symbiosis
-            | GemSwapProvider::Aerodrome => GemSwapProviderMode::OnChain,
-            GemSwapProvider::Mayan | GemSwapProvider::Chainflip => GemSwapProviderMode::CrossChain,
-            GemSwapProvider::Thorchain => GemSwapProviderMode::OmniChain(vec![Chain::Thorchain]),
-            GemSwapProvider::Relay => GemSwapProviderMode::OmniChain(vec![Chain::Hyperliquid, Chain::Manta, Chain::Berachain]),
-            GemSwapProvider::Across => GemSwapProviderMode::Bridge,
+            SwapperProvider::UniswapV3
+            | SwapperProvider::UniswapV4
+            | SwapperProvider::PancakeswapV3
+            | SwapperProvider::PancakeswapAptosV2
+            | SwapperProvider::Orca
+            | SwapperProvider::Jupiter
+            | SwapperProvider::Oku
+            | SwapperProvider::Wagmi
+            | SwapperProvider::Cetus
+            | SwapperProvider::CetusAggregator
+            | SwapperProvider::StonfiV2
+            | SwapperProvider::Reservoir
+            | SwapperProvider::Symbiosis
+            | SwapperProvider::Aerodrome => SwapperProviderMode::OnChain,
+            SwapperProvider::Mayan | SwapperProvider::Chainflip => SwapperProviderMode::CrossChain,
+            SwapperProvider::Thorchain => SwapperProviderMode::OmniChain(vec![Chain::Thorchain]),
+            SwapperProvider::Relay => SwapperProviderMode::OmniChain(vec![Chain::Hyperliquid, Chain::Manta, Chain::Berachain]),
+            SwapperProvider::Across => SwapperProviderMode::Bridge,
         }
     }
 }
 
 #[derive(Debug, Clone, uniffi::Record)]
-pub struct SwapQuoteRequest {
-    pub from_asset: GemQuoteAsset,
-    pub to_asset: GemQuoteAsset,
+pub struct SwapperQuoteRequest {
+    pub from_asset: SwapperQuoteAsset,
+    pub to_asset: SwapperQuoteAsset,
     pub wallet_address: String,
     pub destination_address: String,
     pub value: String,
-    pub mode: GemSwapMode,
-    pub options: GemSwapOptions,
+    pub mode: SwapperMode,
+    pub options: SwapperOptions,
 }
 
 #[derive(Debug, Clone, uniffi::Record)]
-pub struct GemSwapOptions {
-    pub slippage: GemSlippage,
+pub struct SwapperOptions {
+    pub slippage: SwapperSlippage,
     pub fee: Option<SwapReferralFees>,
-    pub preferred_providers: Vec<GemSwapProvider>,
+    pub preferred_providers: Vec<SwapperProvider>,
 }
 
-impl Default for GemSwapOptions {
+impl Default for SwapperOptions {
     fn default() -> Self {
         Self {
             slippage: DEFAULT_SLIPPAGE_BPS.into(),
@@ -102,23 +102,23 @@ impl Default for GemSwapOptions {
 }
 
 #[derive(Debug, Clone, uniffi::Record)]
-pub struct SwapQuote {
+pub struct SwapperQuote {
     pub from_value: String,
     pub to_value: String,
-    pub data: SwapProviderData,
-    pub request: SwapQuoteRequest,
+    pub data: SwapperProviderData,
+    pub request: SwapperQuoteRequest,
     pub eta_in_seconds: Option<u32>,
 }
 
 #[derive(Debug, Clone, PartialEq, uniffi::Enum)]
 pub enum ApprovalType {
-    Approve(GemApprovalData),
+    Approve(SwapperApprovalData),
     Permit2(Permit2ApprovalData),
     None,
 }
 
 impl ApprovalType {
-    pub fn approval_data(&self) -> Option<GemApprovalData> {
+    pub fn approval_data(&self) -> Option<SwapperApprovalData> {
         match self {
             Self::Approve(data) => Some(data.clone()),
             _ => None,
@@ -142,14 +142,14 @@ pub struct Permit2ApprovalData {
 }
 
 #[derive(Debug, Clone, uniffi::Record)]
-pub struct SwapProviderData {
-    pub provider: SwapProviderType,
+pub struct SwapperProviderData {
+    pub provider: SwapperProviderType,
     pub slippage_bps: u32,
-    pub routes: Vec<SwapRoute>,
+    pub routes: Vec<SwapperRoute>,
 }
 
 #[derive(Debug, Clone, uniffi::Record)]
-pub struct SwapRoute {
+pub struct SwapperRoute {
     pub input: AssetId,
     pub output: AssetId,
     pub route_data: String,
@@ -173,12 +173,12 @@ impl FetchQuoteData {
 }
 
 #[derive(Debug, Clone, uniffi::Enum, PartialEq)]
-pub enum SwapChainAsset {
+pub enum SwapperChainAsset {
     All(Chain),
     Assets(Chain, Vec<AssetId>),
 }
 
-impl SwapChainAsset {
+impl SwapperChainAsset {
     pub fn get_chain(&self) -> Chain {
         match self {
             Self::All(chain) => *chain,
@@ -188,7 +188,7 @@ impl SwapChainAsset {
 }
 
 #[derive(Debug, Clone, uniffi::Record, PartialEq)]
-pub struct SwapAssetList {
+pub struct SwapperAssetList {
     pub chains: Vec<Chain>,
     pub asset_ids: Vec<AssetId>,
 }

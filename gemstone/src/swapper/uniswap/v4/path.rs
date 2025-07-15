@@ -5,7 +5,7 @@ use gem_evm::uniswap::{
     FeeTier,
 };
 
-use crate::swapper::{eth_address, uniswap::swap_route::RouteData, SwapRoute, SwapperError};
+use crate::swapper::{eth_address, uniswap::swap_route::RouteData, SwapperRoute, SwapperError};
 
 // return (currency0, currency1)
 fn sort_addresses(token_in: &Address, token_out: &Address) -> (Address, Address) {
@@ -87,10 +87,10 @@ pub fn build_quote_exact_params(
         .collect()
 }
 
-impl TryFrom<&SwapRoute> for PathKey {
+impl TryFrom<&SwapperRoute> for PathKey {
     type Error = SwapperError;
 
-    fn try_from(value: &SwapRoute) -> Result<Self, Self::Error> {
+    fn try_from(value: &SwapperRoute) -> Result<Self, Self::Error> {
         let token_id = value.output.token_id.as_ref().ok_or(SwapperError::InvalidAddress(value.output.to_string()))?;
         let currency = eth_address::parse_str(token_id)?;
 
