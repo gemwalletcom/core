@@ -184,7 +184,7 @@ mod tests {
         assert_eq!(
             result,
             vec![
-                ApprovalType::Approve(ApprovalData {
+                ApprovalType::Approve(GemApprovalData {
                     token: token.clone(),
                     spender: permit2_contract.clone(),
                     value: amount.to_string()

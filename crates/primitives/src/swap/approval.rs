@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
-use crate::SwapProvider;
+use crate::swap::Quote;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[typeshare(swift = "Equatable, Hashable, Sendable")]
@@ -16,7 +16,6 @@ pub struct ApprovalData {
 #[typeshare(swift = "Equatable, Hashable, Sendable")]
 #[serde(rename_all = "camelCase")]
 pub struct SwapQuoteData {
-    pub quote: SwapQuote,
     pub to: String,
     pub value: String,
     pub data: String,
@@ -27,10 +26,7 @@ pub struct SwapQuoteData {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Hashable, Sendable")]
 #[serde(rename_all = "camelCase")]
-pub struct SwapQuote {
-    pub from_value: String,
-    pub to_value: String,
-    pub provider: SwapProvider,
-    pub wallet_address: String,
-    pub slippage_bps: u32,
+pub struct SwapQuoteDataResult {
+    pub quote: Quote,
+    pub data: SwapQuoteData,
 }
