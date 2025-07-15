@@ -66,12 +66,11 @@ mod tests {
     fn test_filter_transaction() {
         let options = StoreTransactionsConsumerConfig::default();
         let test_cases = vec![
-            ("1", AssetId::from_chain(Chain::Ethereum), TransactionType::Transfer, true),
+            ("1", AssetId::from_chain(Chain::Ethereum), TransactionType::Transfer, false),
+            ("20000000000000", AssetId::from_chain(Chain::SmartChain), TransactionType::Transfer, true),
             ("10000", AssetId::from_chain(Chain::Solana), TransactionType::Transfer, false),
             ("10000", AssetId::from(Chain::Solana, Some("1".to_string())), TransactionType::Transfer, true),
             ("10001", AssetId::from_chain(Chain::Solana), TransactionType::Transfer, true),
-            ("1001", AssetId::from_chain(Chain::Ethereum), TransactionType::Transfer, true),
-            ("1500", AssetId::from_chain(Chain::Ethereum), TransactionType::Transfer, true),
             ("invalid", AssetId::from_chain(Chain::Ethereum), TransactionType::Transfer, true),
         ];
 

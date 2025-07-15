@@ -1,4 +1,4 @@
-use crate::swapper::{uniswap::v3::UniversalRouterProvider, GemSwapProvider, SwapProviderType};
+use crate::swapper::{uniswap::v3::UniversalRouterProvider, SwapperProvider, SwapperProviderType};
 use gem_evm::uniswap::{
     deployment::v3::{get_aerodrome_router_deployment_by_chain, V3Deployment},
     FeeTier,
@@ -7,19 +7,19 @@ use primitives::Chain;
 
 #[derive(Debug)]
 pub struct AerodromeUniversalRouter {
-    pub provider: SwapProviderType,
+    pub provider: SwapperProviderType,
 }
 
 impl Default for AerodromeUniversalRouter {
     fn default() -> Self {
         Self {
-            provider: SwapProviderType::new(GemSwapProvider::Aerodrome),
+            provider: SwapperProviderType::new(SwapperProvider::Aerodrome),
         }
     }
 }
 
 impl UniversalRouterProvider for AerodromeUniversalRouter {
-    fn provider(&self) -> &SwapProviderType {
+    fn provider(&self) -> &SwapperProviderType {
         &self.provider
     }
 

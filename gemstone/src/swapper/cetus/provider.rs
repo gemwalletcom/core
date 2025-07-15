@@ -27,8 +27,8 @@ use crate::{
         },
     },
     swapper::{
-        slippage::apply_slippage_in_bp, FetchQuoteData, GemSwapMode, GemSwapProvider, SwapChainAsset, SwapProviderData, SwapProviderType, SwapQuote,
-        GemSwapQuoteData, SwapQuoteRequest, SwapRoute, Swapper, SwapperError,
+        slippage::apply_slippage_in_bp, FetchQuoteData, SwapperMode, SwapperProvider, SwapperChainAsset, SwapperProviderData, SwapperProviderType, SwapperQuote,
+        SwapperQuoteData, SwapperQuoteRequest, SwapperRoute, Swapper, SwapperError,
     },
 };
 use gem_sui::{
@@ -40,13 +40,13 @@ use primitives::{AssetId, Chain};
 
 #[derive(Debug)]
 pub struct Cetus {
-    provider: SwapProviderType,
+    provider: SwapperProviderType,
 }
 
 impl Default for Cetus {
     fn default() -> Self {
         Self {
-            provider: SwapProviderType::new(GemSwapProvider::Cetus),
+            provider: SwapperProviderType::new(SwapperProvider::Cetus),
         }
     }
 }
@@ -141,15 +141,15 @@ impl Cetus {
 
 #[async_trait]
 impl Swapper for Cetus {
-    fn provider(&self) -> &SwapProviderType {
+    fn provider(&self) -> &SwapperProviderType {
         &self.provider
     }
 
-    fn supported_assets(&self) -> Vec<SwapChainAsset> {
-        vec![SwapChainAsset::All(Chain::Sui)]
+    fn supported_assets(&self) -> Vec<SwapperChainAsset> {
+        vec![SwapperChainAsset::All(Chain::Sui)]
     }
 
-    async fn fetch_quote(&self, request: &SwapQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapQuote, SwapperError> {
+    async fn fetch_quote(&self, request: &SwapperQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapperQuote, SwapperError> {
         let from_coin = Self::get_coin_address(&request.from_asset.asset_id());
         let to_coin = Self::get_coin_address(&request.to_asset.asset_id());
         let amount_in = BigInt::from_str(&request.value).map_err(SwapperError::from)?;
@@ -159,7 +159,7 @@ impl Swapper for Cetus {
             return Err(SwapperError::NoQuoteAvailable);
         }
 
-        let buy_amount_in = request.mode == GemSwapMode::ExactIn;
+        let buy_amount_in = request.mode == SwapperMode::ExactIn;
         // Sort pools by liquidity and take top 2
         let mut sorted_pools = pools;
         sorted_pools.sort_by(|a, b| b.object.liquidity.cmp(&a.object.liquidity));
@@ -236,13 +236,13 @@ impl Swapper for Cetus {
             fee_rate: pool.fee.to_string(),
         };
 
-        Ok(SwapQuote {
+        Ok(SwapperQuote {
             from_value: request.value.clone(),
             to_value: to_value.to_string(),
-            data: SwapProviderData {
+            data: SwapperProviderData {
                 provider: self.provider.clone(),
                 slippage_bps,
-                routes: vec![SwapRoute {
+                routes: vec![SwapperRoute {
                     input: AssetId::from(Chain::Sui, Some(from_coin.clone())),
                     output: AssetId::from(Chain::Sui, Some(to_coin.clone())),
                     route_data: serde_json::to_string(&route_data).unwrap(),
@@ -254,7 +254,7 @@ impl Swapper for Cetus {
         })
     }
 
-    async fn fetch_quote_data(&self, quote: &SwapQuote, provider: Arc<dyn AlienProvider>, _data: FetchQuoteData) -> Result<GemSwapQuoteData, SwapperError> {
+    async fn fetch_quote_data(&self, quote: &SwapperQuote, provider: Arc<dyn AlienProvider>, _data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
         // Validate quote data
         let route = &quote.data.routes.first().ok_or(SwapperError::InvalidRoute)?;
         let sender_address = quote.request.wallet_address.parse().map_err(SwapperError::from)?;
@@ -282,7 +282,7 @@ impl Swapper for Cetus {
                 shared_version: route_data.initial_shared_version,
             },
             a2b,
-            by_amount_in: quote.request.mode == GemSwapMode::ExactIn,
+            by_amount_in: quote.request.mode == SwapperMode::ExactIn,
             amount: BigInt::from_str(&quote.from_value)?,
             amount_limit: BigInt::from_le_bytes(amount_limit.as_le_slice()),
             coin_type_a: route_data.coin_a.clone(),
@@ -314,7 +314,7 @@ impl Swapper for Cetus {
         let tx = ptb.finish().map_err(|e| SwapperError::TransactionError(e.to_string()))?;
         let tx_output = TxOutput::from_tx(&tx).unwrap();
 
-        Ok(GemSwapQuoteData {
+        Ok(SwapperQuoteData {
             to: "".to_string(),
             value: "".to_string(),
             data: tx_output.base64_encoded(),

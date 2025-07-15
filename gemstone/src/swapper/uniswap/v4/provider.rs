@@ -14,8 +14,8 @@ use crate::{
             quote_result::get_best_quote,
             swap_route::{build_swap_route, get_intermediaries, RouteData},
         },
-        FetchQuoteData, GemApprovalData, GemSwapProvider, Permit2ApprovalData, SwapChainAsset, SwapProviderData, SwapProviderType, SwapQuote, GemSwapQuoteData,
-        SwapQuoteRequest, Swapper, SwapperError,
+        FetchQuoteData, Permit2ApprovalData, Swapper, SwapperApprovalData, SwapperChainAsset, SwapperError, SwapperProvider, SwapperProviderData,
+        SwapperProviderType, SwapperQuote, SwapperQuoteData, SwapperQuoteRequest,
     },
 };
 use gem_evm::{
@@ -39,13 +39,13 @@ use super::{
 
 #[derive(Debug)]
 pub struct UniswapV4 {
-    pub provider: SwapProviderType,
+    pub provider: SwapperProviderType,
 }
 
 impl Default for UniswapV4 {
     fn default() -> Self {
         Self {
-            provider: SwapProviderType::new(GemSwapProvider::UniswapV4),
+            provider: SwapperProviderType::new(SwapperProvider::UniswapV4),
         }
     }
 }
@@ -77,7 +77,7 @@ impl UniswapV4 {
         }
     }
 
-    fn parse_request(request: &SwapQuoteRequest) -> Result<(EVMChain, Address, Address, u128), SwapperError> {
+    fn parse_request(request: &SwapperQuoteRequest) -> Result<(EVMChain, Address, Address, u128), SwapperError> {
         let evm_chain = EVMChain::from_chain(request.from_asset.chain()).ok_or(SwapperError::NotSupportedChain)?;
         let token_in = Self::parse_asset_address(&request.from_asset.id, evm_chain)?;
         let token_out = Self::parse_asset_address(&request.to_asset.id, evm_chain)?;
@@ -89,13 +89,17 @@ impl UniswapV4 {
 
 #[async_trait]
 impl Swapper for UniswapV4 {
-    fn provider(&self) -> &SwapProviderType {
+    fn provider(&self) -> &SwapperProviderType {
         &self.provider
     }
-    fn supported_assets(&self) -> Vec<SwapChainAsset> {
-        Chain::all().iter().filter(|x| self.support_chain(x)).map(|x| SwapChainAsset::All(*x)).collect()
+    fn supported_assets(&self) -> Vec<SwapperChainAsset> {
+        Chain::all()
+            .iter()
+            .filter(|x| self.support_chain(x))
+            .map(|x| SwapperChainAsset::All(*x))
+            .collect()
     }
-    async fn fetch_quote(&self, request: &SwapQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapQuote, SwapperError> {
+    async fn fetch_quote(&self, request: &SwapperQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapperQuote, SwapperError> {
         let from_chain = request.from_asset.chain();
         let to_chain = request.to_asset.chain();
         // Check deployment and weth contract
@@ -184,10 +188,10 @@ impl Swapper for UniswapV4 {
         };
         let routes = build_swap_route(&asset_id_in, asset_id_intermediary.as_ref(), &asset_id_out, &route_data, gas_estimate);
 
-        Ok(SwapQuote {
+        Ok(SwapperQuote {
             from_value: request.value.clone(),
             to_value: to_value.to_string(),
-            data: SwapProviderData {
+            data: SwapperProviderData {
                 provider: self.provider().clone(),
                 routes: routes.clone(),
                 slippage_bps: request.options.slippage.bps,
@@ -197,7 +201,7 @@ impl Swapper for UniswapV4 {
         })
     }
 
-    async fn fetch_permit2_for_quote(&self, quote: &SwapQuote, provider: Arc<dyn AlienProvider>) -> Result<Option<Permit2ApprovalData>, SwapperError> {
+    async fn fetch_permit2_for_quote(&self, quote: &SwapperQuote, provider: Arc<dyn AlienProvider>) -> Result<Option<Permit2ApprovalData>, SwapperError> {
         let from_asset = quote.request.from_asset.asset_id();
         if from_asset.is_native() {
             return Ok(None);
@@ -220,7 +224,7 @@ impl Swapper for UniswapV4 {
         Ok(permit2_data)
     }
 
-    async fn fetch_quote_data(&self, quote: &SwapQuote, provider: Arc<dyn AlienProvider>, data: FetchQuoteData) -> Result<GemSwapQuoteData, SwapperError> {
+    async fn fetch_quote_data(&self, quote: &SwapperQuote, provider: Arc<dyn AlienProvider>, data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
         let request = &quote.request;
         let from_asset = request.from_asset.asset_id();
         let (_, token_in, token_out, amount_in) = Self::parse_request(request)?;
@@ -231,7 +235,7 @@ impl Swapper for UniswapV4 {
         let permit = data.permit2_data().map(|data| data.into());
 
         let mut gas_limit: Option<String> = None;
-        let approval: Option<GemApprovalData> = if quote.request.from_asset.is_native() {
+        let approval: Option<SwapperApprovalData> = if quote.request.from_asset.is_native() {
             None
         } else {
             // Check if need to approve permit2 contract
@@ -270,7 +274,7 @@ impl Swapper for UniswapV4 {
         let wrap_input_eth = request.from_asset.is_native();
         let value = if wrap_input_eth { request.value.clone() } else { String::from("0") };
 
-        Ok(GemSwapQuoteData {
+        Ok(SwapperQuoteData {
             to: deployment.universal_router.into(),
             value,
             data: HexEncode(encoded),
@@ -282,20 +286,20 @@ impl Swapper for UniswapV4 {
 
 #[cfg(test)]
 mod tests {
-    use crate::swapper::{GemSwapMode, GemSwapOptions};
+    use crate::swapper::{SwapperMode, SwapperOptions};
 
     use super::*;
 
     #[test]
     fn test_is_base_pair() {
-        let request = SwapQuoteRequest {
+        let request = SwapperQuoteRequest {
             from_asset: AssetId::from(Chain::SmartChain, Some("0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82".to_string())).into(),
             to_asset: AssetId::from_chain(Chain::SmartChain).into(),
             wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
             destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
             value: "40000000000000000".into(), // 0.04 Cake
-            mode: GemSwapMode::ExactIn,
-            options: GemSwapOptions::default(),
+            mode: SwapperMode::ExactIn,
+            options: SwapperOptions::default(),
         };
 
         let (evm_chain, token_in, token_out, _) = UniswapV4::parse_request(&request).unwrap();

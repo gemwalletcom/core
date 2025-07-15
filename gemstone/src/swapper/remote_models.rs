@@ -1,25 +1,25 @@
 use primitives::Chain;
 
-pub type GemSwapProvider = primitives::SwapProvider;
-pub type GemSwapProviderMode = primitives::swap::SwapProviderMode;
-pub type GemQuoteAsset = primitives::swap::QuoteAsset;
-pub type GemSwapMode = primitives::swap::SwapMode;
-pub type GemSlippage = primitives::swap::Slippage;
-pub type GemSlippageMode = primitives::swap::SlippageMode;
-pub type GemApprovalData = primitives::swap::ApprovalData;
-pub type GemSwapQuoteData = primitives::swap::SwapQuoteData;
+pub type SwapperProvider = primitives::SwapProvider;
+pub type SwapperProviderMode = primitives::swap::SwapProviderMode;
+pub type SwapperQuoteAsset = primitives::swap::QuoteAsset;
+pub type SwapperMode = primitives::swap::SwapMode;
+pub type SwapperSlippage = primitives::swap::Slippage;
+pub type SwapperSlippageMode = primitives::swap::SlippageMode;
+pub type SwapperApprovalData = primitives::swap::ApprovalData;
+pub type SwapperQuoteData = primitives::swap::SwapQuoteData;
 
 #[uniffi::remote(Record)]
-pub struct GemSwapQuoteData {
+pub struct SwapperQuoteData {
     pub to: String,
     pub value: String,
     pub data: String,
-    pub approval: Option<GemApprovalData>,
+    pub approval: Option<SwapperApprovalData>,
     pub gas_limit: Option<String>,
 }
 
 #[uniffi::remote(Enum)]
-pub enum GemSwapProvider {
+pub enum SwapperProvider {
     UniswapV3,
     UniswapV4,
     PancakeswapV3,
@@ -42,14 +42,14 @@ pub enum GemSwapProvider {
 }
 
 #[uniffi::remote(Record)]
-pub struct GemApprovalData {
+pub struct SwapperApprovalData {
     pub token: String,
     pub spender: String,
     pub value: String,
 }
 
 #[uniffi::remote(Enum)]
-pub enum GemSwapProviderMode {
+pub enum SwapperProviderMode {
     OnChain,
     CrossChain,
     Bridge,
@@ -57,25 +57,25 @@ pub enum GemSwapProviderMode {
 }
 
 #[uniffi::remote(Enum)]
-pub enum GemSwapMode {
+pub enum SwapperMode {
     ExactIn,
     ExactOut,
 }
 
 #[uniffi::remote(Record)]
-pub struct GemSlippage {
+pub struct SwapperSlippage {
     pub bps: u32,
-    pub mode: GemSlippageMode,
+    pub mode: SwapperSlippageMode,
 }
 
 #[uniffi::remote(Enum)]
-pub enum GemSlippageMode {
+pub enum SwapperSlippageMode {
     Auto,
     Exact,
 }
 
 #[uniffi::remote(Record)]
-pub struct GemQuoteAsset {
+pub struct SwapperQuoteAsset {
     pub id: String,
     pub symbol: String,
     pub decimals: u32,

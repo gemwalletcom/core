@@ -1,16 +1,17 @@
 pub mod approval;
 pub mod mode;
 pub mod slippage;
-use serde::{Deserialize, Serialize};
+pub use approval::SwapQuoteData;
 pub use approval::*;
 pub use mode::*;
+use serde::{Deserialize, Serialize};
 pub use slippage::*;
-
-pub use crate::swap::approval::SwapQuoteData as QuoteData;
+use typeshare::typeshare;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Quote {
-    pub quote: QuoteRequest,
+#[typeshare]
+pub struct ProxyQuote {
+    pub quote: ProxyQuoteRequest,
     pub output_value: String,
     pub output_min_value: String,
     pub route_data: serde_json::Value,
@@ -18,7 +19,8 @@ pub struct Quote {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct QuoteRequest {
+#[typeshare]
+pub struct ProxyQuoteRequest {
     pub from_address: String,
     pub to_address: String,
     pub from_asset: QuoteAsset,

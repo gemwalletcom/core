@@ -7,7 +7,7 @@ import Gemstone
 public struct ViewModel: Sendable {
     let provider = NativeProvider()
 
-    public func fetchQuote(_ request: SwapQuoteRequest) async throws {
+    public func fetchQuote(_ request: SwapperQuoteRequest) async throws {
         let swapper = GemSwapper(rpcProvider: self.provider)
         var quotes = try await swapper.fetchQuote(request: request)
         quotes = quotes.sorted(by: { lhs, rhs in
@@ -28,7 +28,7 @@ public struct ViewModel: Sendable {
         try await self.fetchQuoteData(quote: quote)
     }
 
-    public func fetchQuoteById(_ request: SwapQuoteRequest, provider: SwapProvider) async throws {
+    public func fetchQuoteById(_ request: SwapperQuoteRequest, provider: SwapProvider) async throws {
         let swapper = GemSwapper(rpcProvider: self.provider)
         let quote = try await swapper.fetchQuoteByProvider(provider: provider, request: request)
         self.dumpQuote(quote)
@@ -36,7 +36,7 @@ public struct ViewModel: Sendable {
         try await self.fetchQuoteData(quote: quote)
     }
 
-    public func fetchQuoteData(quote: SwapQuote) async throws {
+    public func fetchQuoteData(quote: SwapperQuote) async throws {
         let swapper = GemSwapper(rpcProvider: self.provider)
 
         if let permit2 = try await swapper.fetchPermit2ForQuote(quote: quote) {
@@ -70,7 +70,7 @@ public struct ViewModel: Sendable {
         }
     }
 
-    func dumpQuote(_ quote: SwapQuote) {
+    func dumpQuote(_ quote: SwapperQuote) {
         let route = quote.data.routes.first!
         print("<== fetchQuote:\n", quote.description)
         print("==> amount out: \(quote.toValue)")

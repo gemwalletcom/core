@@ -51,7 +51,7 @@ pub enum AssetRank {
     Migrated,
     Deprecated,
     Spam,
-    Fradulent,
+    Fraudulent,
     Unknown,
 }
 
@@ -69,7 +69,7 @@ impl AssetRank {
             AssetRank::Migrated => -10,
             AssetRank::Deprecated => -12,
             AssetRank::Spam => -15,
-            AssetRank::Fradulent => -20,
+            AssetRank::Fraudulent => -20,
         }
     }
 

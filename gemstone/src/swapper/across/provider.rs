@@ -16,7 +16,7 @@ use crate::{
         chainlink::ChainlinkPriceFeed,
         eth_address,
         models::*,
-        GemApprovalData, GemSwapProvider, GemSwapQuoteData, Swapper, SwapperError,
+        SwapperApprovalData, SwapperProvider, SwapperQuoteData, Swapper, SwapperError,
     },
 };
 use alloy_primitives::{
@@ -44,13 +44,13 @@ use std::{fmt::Debug, str::FromStr, sync::Arc};
 
 #[derive(Debug)]
 pub struct Across {
-    pub provider: SwapProviderType,
+    pub provider: SwapperProviderType,
 }
 
 impl Default for Across {
     fn default() -> Self {
         Self {
-            provider: SwapProviderType::new(GemSwapProvider::Across),
+            provider: SwapperProviderType::new(SwapperProvider::Across),
         }
     }
 }
@@ -249,37 +249,37 @@ impl Across {
 
 #[async_trait]
 impl Swapper for Across {
-    fn provider(&self) -> &SwapProviderType {
+    fn provider(&self) -> &SwapperProviderType {
         &self.provider
     }
 
-    fn supported_assets(&self) -> Vec<SwapChainAsset> {
+    fn supported_assets(&self) -> Vec<SwapperChainAsset> {
         vec![
-            SwapChainAsset::Assets(
+            SwapperChainAsset::Assets(
                 Chain::Arbitrum,
                 vec![ARBITRUM_WETH.id.clone(), ARBITRUM_USDC.id.clone(), ARBITRUM_USDT.id.clone()],
             ),
-            SwapChainAsset::Assets(
+            SwapperChainAsset::Assets(
                 Chain::Ethereum,
                 vec![ETHEREUM_WETH.id.clone(), ETHEREUM_USDC.id.clone(), ETHEREUM_USDT.id.clone()],
             ),
-            SwapChainAsset::Assets(Chain::Base, vec![BASE_WETH.id.clone(), BASE_USDC.id.clone()]),
-            SwapChainAsset::Assets(Chain::Blast, vec![BLAST_WETH.id.clone()]),
-            SwapChainAsset::Assets(Chain::Linea, vec![LINEA_WETH.id.clone(), LINEA_USDT.id.clone()]),
-            SwapChainAsset::Assets(
+            SwapperChainAsset::Assets(Chain::Base, vec![BASE_WETH.id.clone(), BASE_USDC.id.clone()]),
+            SwapperChainAsset::Assets(Chain::Blast, vec![BLAST_WETH.id.clone()]),
+            SwapperChainAsset::Assets(Chain::Linea, vec![LINEA_WETH.id.clone(), LINEA_USDT.id.clone()]),
+            SwapperChainAsset::Assets(
                 Chain::Optimism,
                 vec![OPTIMISM_WETH.id.clone(), OPTIMISM_USDC.id.clone(), OPTIMISM_USDT.id.clone()],
             ),
-            SwapChainAsset::Assets(Chain::Polygon, vec![POLYGON_WETH.id.clone()]),
-            SwapChainAsset::Assets(Chain::ZkSync, vec![ZKSYNC_WETH.id.clone(), ZKSYNC_USDT.id.clone()]),
-            SwapChainAsset::Assets(Chain::World, vec![WORLD_WETH.id.clone()]),
-            SwapChainAsset::Assets(Chain::Ink, vec![INK_WETH.id.clone(), INK_USDT.id.clone()]),
-            SwapChainAsset::Assets(Chain::Unichain, vec![UNICHAIN_WETH.id.clone(), UNICHAIN_USDC.id.clone()]),
-            SwapChainAsset::Assets(Chain::SmartChain, vec![SMARTCHAIN_ETH.id.clone()]),
+            SwapperChainAsset::Assets(Chain::Polygon, vec![POLYGON_WETH.id.clone()]),
+            SwapperChainAsset::Assets(Chain::ZkSync, vec![ZKSYNC_WETH.id.clone(), ZKSYNC_USDT.id.clone()]),
+            SwapperChainAsset::Assets(Chain::World, vec![WORLD_WETH.id.clone()]),
+            SwapperChainAsset::Assets(Chain::Ink, vec![INK_WETH.id.clone(), INK_USDT.id.clone()]),
+            SwapperChainAsset::Assets(Chain::Unichain, vec![UNICHAIN_WETH.id.clone(), UNICHAIN_USDC.id.clone()]),
+            SwapperChainAsset::Assets(Chain::SmartChain, vec![SMARTCHAIN_ETH.id.clone()]),
         ]
     }
 
-    async fn fetch_quote(&self, request: &SwapQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapQuote, SwapperError> {
+    async fn fetch_quote(&self, request: &SwapperQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapperQuote, SwapperError> {
         // does not support same chain swap
         if request.from_asset.chain() == request.to_asset.chain() {
             return Err(SwapperError::NotSupportedPair);
@@ -415,13 +415,13 @@ impl Swapper for Across {
         )?;
         let route_data = HexEncode(v3_relay_data.abi_encode());
 
-        Ok(SwapQuote {
+        Ok(SwapperQuote {
             from_value: request.value.clone(),
             to_value: to_value.to_string(),
-            data: SwapProviderData {
+            data: SwapperProviderData {
                 provider: self.provider().clone(),
                 slippage_bps: request.options.slippage.bps,
-                routes: vec![SwapRoute {
+                routes: vec![SwapperRoute {
                     input: input_asset.clone(),
                     output: output_asset.clone(),
                     route_data,
@@ -433,7 +433,7 @@ impl Swapper for Across {
         })
     }
 
-    async fn fetch_quote_data(&self, quote: &SwapQuote, provider: Arc<dyn AlienProvider>, data: FetchQuoteData) -> Result<GemSwapQuoteData, SwapperError> {
+    async fn fetch_quote_data(&self, quote: &SwapperQuote, provider: Arc<dyn AlienProvider>, data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
         let from_chain = quote.request.from_asset.chain();
         let deployment = AcrossDeployment::deployment_by_chain(&from_chain).ok_or(SwapperError::NotSupportedChain)?;
         let dst_chain_id: u32 = quote.request.to_asset.chain().network_id().parse().unwrap();
@@ -460,7 +460,7 @@ impl Swapper for Across {
         let input_is_native = quote.request.from_asset.is_native();
         let value: &str = if input_is_native { &quote.from_value } else { "0" };
 
-        let approval: Option<GemApprovalData> = {
+        let approval: Option<SwapperApprovalData> = {
             if input_is_native {
                 None
             } else {
@@ -488,7 +488,7 @@ impl Swapper for Across {
             gas_limit = Some(_gas_limit.to_string());
         }
 
-        let quote_data = GemSwapQuoteData {
+        let quote_data = SwapperQuoteData {
             to: deployment.spoke_pool.into(),
             value: value.to_string(),
             data: HexEncode(deposit_v3_call.clone()),

@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use crate::swapper::{eth_address, slippage::apply_slippage_in_bp, GemSwapMode, SwapQuoteRequest, SwapRoute, SwapperError};
+use crate::swapper::{eth_address, slippage::apply_slippage_in_bp, SwapperQuoteRequest, SwapperRoute, SwapperError, SwapperMode};
 use alloy_primitives::{Address, U256};
 use gem_evm::uniswap::{
     actions::V4Action::{SETTLE, SWAP_EXACT_IN, TAKE},
@@ -9,12 +9,12 @@ use gem_evm::uniswap::{
 };
 
 pub fn build_commands(
-    request: &SwapQuoteRequest,
+    request: &SwapperQuoteRequest,
     token_in: &Address,
     token_out: &Address,
     amount_in: u128,
     quote_amount: u128,
-    swap_routes: &[SwapRoute],
+    swap_routes: &[SwapperRoute],
     permit: Option<Permit2Permit>,
     fee_token_is_input: bool,
 ) -> Result<Vec<UniversalRouterCommand>, SwapperError> {
@@ -29,7 +29,7 @@ pub fn build_commands(
     let mut commands: Vec<UniversalRouterCommand> = vec![];
 
     match mode {
-        GemSwapMode::ExactIn => {
+        SwapperMode::ExactIn => {
             let amount_out = apply_slippage_in_bp(&quote_amount, options.slippage.bps + fee_options.bps);
             // Insert permit2 if needed
             if let Some(permit) = permit {
@@ -86,7 +86,7 @@ pub fn build_commands(
                 commands.push(command);
             }
         }
-        GemSwapMode::ExactOut => {
+        SwapperMode::ExactOut => {
             todo!("swap exact out not implemented");
         }
     }
@@ -98,7 +98,7 @@ fn build_v4_swap_command(
     token_out: &Address,
     amount_in: u128,
     amount_out_min: u128,
-    swap_routes: &[SwapRoute],
+    swap_routes: &[SwapperRoute],
     recipient: &Address,
 ) -> Result<UniversalRouterCommand, SwapperError> {
     if swap_routes.is_empty() {

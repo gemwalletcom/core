@@ -2,7 +2,7 @@
 import Foundation
 import Gemstone
 
-public typealias SwapProvider = GemSwapProvider
+public typealias SwapProvider = SwapperProvider
 
 extension AlienTarget: URLRequestConvertible {
     func asRequest() throws -> URLRequest {

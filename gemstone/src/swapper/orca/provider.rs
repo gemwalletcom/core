@@ -1,7 +1,7 @@
 use crate::{
     debug_println,
     network::{AlienProvider, JsonRpcClient, JsonRpcResult},
-    swapper::{models::*, slippage::apply_slippage_in_bp, GemSwapProvider, GemSwapQuoteData, Swapper, SwapperError},
+    swapper::{models::*, slippage::apply_slippage_in_bp, Swapper, SwapperError, SwapperProvider, SwapperQuoteData},
 };
 use async_trait::async_trait;
 use gem_solana::{
@@ -26,7 +26,7 @@ use super::{
 
 #[derive(Debug)]
 pub struct Orca {
-    pub provider: SwapProviderType,
+    pub provider: SwapperProviderType,
     pub whirlpool_program: Pubkey,
     pub whirlpool_config: Pubkey,
     pub chain: Chain,
@@ -41,7 +41,7 @@ impl Orca {
 impl Default for Orca {
     fn default() -> Self {
         Self {
-            provider: SwapProviderType::new(GemSwapProvider::Orca),
+            provider: SwapperProviderType::new(SwapperProvider::Orca),
             whirlpool_program: Pubkey::from_str(WHIRLPOOL_PROGRAM).unwrap(),
             whirlpool_config: Pubkey::from_str(WHIRLPOOL_CONFIG).unwrap(),
             chain: Chain::Solana,
@@ -51,15 +51,15 @@ impl Default for Orca {
 
 #[async_trait]
 impl Swapper for Orca {
-    fn provider(&self) -> &SwapProviderType {
+    fn provider(&self) -> &SwapperProviderType {
         &self.provider
     }
 
-    fn supported_assets(&self) -> Vec<SwapChainAsset> {
-        vec![SwapChainAsset::All(Chain::Solana)]
+    fn supported_assets(&self) -> Vec<SwapperChainAsset> {
+        vec![SwapperChainAsset::All(Chain::Solana)]
     }
 
-    async fn fetch_quote(&self, request: &SwapQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapQuote, SwapperError> {
+    async fn fetch_quote(&self, request: &SwapperQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapperQuote, SwapperError> {
         let amount_in = request.value.parse::<u64>().map_err(SwapperError::from)?;
         let options = request.options.clone();
         let slippage_bps = options.slippage.bps as u16;
@@ -94,12 +94,12 @@ impl Swapper for Orca {
             .map_err(|c| SwapperError::NetworkError(format!("swap_quote_by_input_token error: {c:?}")))?;
         let to_value = apply_slippage_in_bp(&quote.token_est_out, fee_bps);
 
-        Ok(SwapQuote {
+        Ok(SwapperQuote {
             from_value: request.value.clone(),
             to_value: to_value.to_string(),
-            data: SwapProviderData {
+            data: SwapperProviderData {
                 provider: self.provider().clone(),
-                routes: vec![SwapRoute {
+                routes: vec![SwapperRoute {
                     input: request.from_asset.asset_id(),
                     output: request.to_asset.asset_id(),
                     route_data: pool.fee_rate.to_string(),
@@ -112,7 +112,12 @@ impl Swapper for Orca {
         })
     }
 
-    async fn fetch_quote_data(&self, _quote: &SwapQuote, _provider: Arc<dyn AlienProvider>, _data: FetchQuoteData) -> Result<GemSwapQuoteData, SwapperError> {
+    async fn fetch_quote_data(
+        &self,
+        _quote: &SwapperQuote,
+        _provider: Arc<dyn AlienProvider>,
+        _data: FetchQuoteData,
+    ) -> Result<SwapperQuoteData, SwapperError> {
         Err(SwapperError::NotImplemented)
     }
 }

@@ -1,4 +1,4 @@
-use crate::swapper::{uniswap::v3::UniversalRouterProvider, GemSwapProvider, SwapProviderType};
+use crate::swapper::{uniswap::v3::UniversalRouterProvider, SwapperProviderType, SwapperProvider};
 use gem_evm::uniswap::{
     deployment::v3::{get_pancakeswap_router_deployment_by_chain, V3Deployment},
     FeeTier,
@@ -7,19 +7,19 @@ use primitives::Chain;
 
 #[derive(Debug)]
 pub struct PancakeSwapUniversalRouter {
-    pub provider: SwapProviderType,
+    pub provider: SwapperProviderType,
 }
 
 impl Default for PancakeSwapUniversalRouter {
     fn default() -> Self {
         Self {
-            provider: SwapProviderType::new(GemSwapProvider::PancakeswapV3),
+            provider: SwapperProviderType::new(SwapperProvider::PancakeswapV3),
         }
     }
 }
 
 impl UniversalRouterProvider for PancakeSwapUniversalRouter {
-    fn provider(&self) -> &SwapProviderType {
+    fn provider(&self) -> &SwapperProviderType {
         &self.provider
     }
 

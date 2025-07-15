@@ -1,4 +1,4 @@
-use crate::swapper::GemSwapMode;
+use crate::swapper::SwapperMode;
 use alloy_primitives::Address;
 use gem_evm::uniswap::path::BasePair;
 
@@ -9,9 +9,9 @@ pub struct FeePreference {
 }
 
 // Return (fee token, is_input_token)
-pub fn get_fee_token(mode: &GemSwapMode, base_pair: Option<&BasePair>, input: &Address, output: &Address) -> FeePreference {
+pub fn get_fee_token(mode: &SwapperMode, base_pair: Option<&BasePair>, input: &Address, output: &Address) -> FeePreference {
     let use_input_as_fee_token = match mode {
-        GemSwapMode::ExactIn => {
+        SwapperMode::ExactIn => {
             if let Some(pair) = base_pair {
                 let set = pair.to_set();
                 set.contains(input) && !set.contains(output)
@@ -19,7 +19,7 @@ pub fn get_fee_token(mode: &GemSwapMode, base_pair: Option<&BasePair>, input: &A
                 false
             }
         }
-        GemSwapMode::ExactOut => true,
+        SwapperMode::ExactOut => true,
     };
     FeePreference {
         fee_token: if use_input_as_fee_token { *input } else { *output },
@@ -30,7 +30,7 @@ pub fn get_fee_token(mode: &GemSwapMode, base_pair: Option<&BasePair>, input: &A
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::swapper::GemSwapMode;
+    use crate::swapper::SwapperMode;
     use alloy_primitives::address;
     use gem_evm::uniswap::path::get_base_pair;
     use primitives::EVMChain;
@@ -38,7 +38,7 @@ mod tests {
     #[test]
     fn test_get_fee_token() {
         let evm_chain = EVMChain::Ethereum;
-        let mode = GemSwapMode::ExactIn;
+        let mode = SwapperMode::ExactIn;
         let base_pair = get_base_pair(&evm_chain, true);
 
         let weth = address!("0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2");

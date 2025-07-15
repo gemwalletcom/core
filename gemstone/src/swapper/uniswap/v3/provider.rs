@@ -11,7 +11,7 @@ use crate::{
             quote_result::get_best_quote,
             swap_route::{build_swap_route, RouteData},
         },
-        GemApprovalData, GemSwapQuoteData, Swapper, SwapperError,
+        SwapperApprovalData, SwapperQuoteData, Swapper, SwapperError,
     },
 };
 use gem_evm::{
@@ -45,7 +45,7 @@ impl UniswapV3 {
         eth_address::normalize_weth_address(&asset_id, evm_chain)
     }
 
-    fn parse_request(request: &SwapQuoteRequest) -> Result<(EVMChain, Address, Address, U256), SwapperError> {
+    fn parse_request(request: &SwapperQuoteRequest) -> Result<(EVMChain, Address, Address, U256), SwapperError> {
         let evm_chain = EVMChain::from_chain(request.from_asset.chain()).ok_or(SwapperError::NotSupportedChain)?;
         let token_in = Self::get_asset_address(&request.from_asset.id, evm_chain)?;
         let token_out = Self::get_asset_address(&request.to_asset.id, evm_chain)?;
@@ -94,15 +94,15 @@ impl UniswapV3 {
 
 #[async_trait]
 impl Swapper for UniswapV3 {
-    fn provider(&self) -> &SwapProviderType {
+    fn provider(&self) -> &SwapperProviderType {
         self.provider.provider()
     }
 
-    fn supported_assets(&self) -> Vec<SwapChainAsset> {
-        Chain::all().iter().filter(|x| self.support_chain(x)).map(|x| SwapChainAsset::All(*x)).collect()
+    fn supported_assets(&self) -> Vec<SwapperChainAsset> {
+        Chain::all().iter().filter(|x| self.support_chain(x)).map(|x| SwapperChainAsset::All(*x)).collect()
     }
 
-    async fn fetch_quote(&self, request: &SwapQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapQuote, SwapperError> {
+    async fn fetch_quote(&self, request: &SwapperQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapperQuote, SwapperError> {
         let from_chain = request.from_asset.chain();
         let to_chain = request.to_asset.chain();
         // Check deployment and weth contract
@@ -186,10 +186,10 @@ impl Swapper for UniswapV3 {
         };
         let routes = build_swap_route(&asset_id_in, asset_id_intermediary.as_ref(), &asset_id_out, &route_data, gas_estimate);
 
-        Ok(SwapQuote {
+        Ok(SwapperQuote {
             from_value: request.value.clone(),
             to_value: to_value.to_string(),
-            data: SwapProviderData {
+            data: SwapperProviderData {
                 provider: self.provider().clone(),
                 routes: routes.clone(),
                 slippage_bps: request.options.slippage.bps,
@@ -199,7 +199,7 @@ impl Swapper for UniswapV3 {
         })
     }
 
-    async fn fetch_permit2_for_quote(&self, quote: &SwapQuote, provider: Arc<dyn AlienProvider>) -> Result<Option<Permit2ApprovalData>, SwapperError> {
+    async fn fetch_permit2_for_quote(&self, quote: &SwapperQuote, provider: Arc<dyn AlienProvider>) -> Result<Option<Permit2ApprovalData>, SwapperError> {
         let from_asset = quote.request.from_asset.asset_id();
         if from_asset.is_native() {
             return Ok(None);
@@ -210,7 +210,7 @@ impl Swapper for UniswapV3 {
             .await
     }
 
-    async fn fetch_quote_data(&self, quote: &SwapQuote, provider: Arc<dyn AlienProvider>, data: FetchQuoteData) -> Result<GemSwapQuoteData, SwapperError> {
+    async fn fetch_quote_data(&self, quote: &SwapperQuote, provider: Arc<dyn AlienProvider>, data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
         let request = &quote.request;
         let from_chain = request.from_asset.chain();
         let (_, token_in, token_out, amount_in) = Self::parse_request(request)?;
@@ -223,7 +223,7 @@ impl Swapper for UniswapV3 {
         let permit = data.permit2_data().map(|data| data.into());
 
         let mut gas_limit: Option<String> = None;
-        let approval: Option<GemApprovalData> = if quote.request.from_asset.is_native() {
+        let approval: Option<SwapperApprovalData> = if quote.request.from_asset.is_native() {
             None
         } else {
             self.check_erc20_approval(wallet_address, &token_in.to_checksum(None), amount_in, &from_chain, provider)
@@ -256,7 +256,7 @@ impl Swapper for UniswapV3 {
         let wrap_input_eth = request.from_asset.is_native();
         let value = if wrap_input_eth { request.value.clone() } else { String::from("0") };
 
-        Ok(GemSwapQuoteData {
+        Ok(SwapperQuoteData {
             to: deployment.universal_router.into(),
             value,
             data: HexEncode(encoded),
