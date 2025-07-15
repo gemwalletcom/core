@@ -5,7 +5,7 @@ use strum_macros::AsRefStr;
 use typeshare::typeshare;
 
 #[derive(Debug, Copy, Clone, PartialEq, AsRefStr, EnumString, Eq, PartialOrd, Ord, Serialize, Deserialize, EnumIter)]
-#[typeshare(swift = "Equatable, Sendable")]
+#[typeshare(swift = "Equatable, Sendable, Hashable")]
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case")]
 pub enum SwapProvider {

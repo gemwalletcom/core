@@ -71,7 +71,17 @@ impl From<AssetId> for QuoteAsset {
 pub struct SwapQuote {
     pub from_value: String,
     pub to_value: String,
-    pub provider: SwapProvider,
+    pub provider_data: SwapProviderData,
     pub wallet_address: String,
     pub slippage_bps: u32,
+    pub eta_in_seconds: Option<u32>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[typeshare(swift = "Equatable, Hashable, Sendable")]
+#[serde(rename_all = "camelCase")]
+pub struct SwapProviderData {
+    pub provider: SwapProvider,
+    pub name: String,
+    pub protocol_name: String,
 }
