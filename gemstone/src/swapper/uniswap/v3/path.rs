@@ -7,7 +7,7 @@ use gem_evm::uniswap::{
 use crate::swapper::{
     eth_address,
     uniswap::swap_route::{get_intermediaries, RouteData},
-    SwapperRoute, SwapperError,
+    SwapperError, SwapperRoute,
 };
 
 pub fn build_paths(token_in: &Address, token_out: &Address, fee_tiers: &[FeeTier], base_pair: &BasePair) -> Vec<Vec<(Vec<TokenPair>, Bytes)>> {

@@ -1,4 +1,4 @@
-use crate::swapper::{uniswap::v3::UniversalRouterProvider, SwapperProviderType, SwapperProvider};
+use crate::swapper::{uniswap::v3::UniversalRouterProvider, SwapperProvider, SwapperProviderType};
 use gem_evm::uniswap::{
     deployment::v3::{get_oku_deployment_by_chain, V3Deployment},
     FeeTier,

@@ -3,8 +3,8 @@ use std::sync::Arc;
 mod client;
 mod model;
 use super::{
-    FetchQuoteData, SwapperProvider, SwapperChainAsset, SwapperProviderData, SwapperProviderType, SwapperQuote, SwapperQuoteData, SwapperQuoteRequest, SwapperRoute, Swapper,
-    SwapperError,
+    FetchQuoteData, Swapper, SwapperChainAsset, SwapperError, SwapperProvider, SwapperProviderData, SwapperProviderType, SwapperQuote, SwapperQuoteData,
+    SwapperQuoteRequest, SwapperRoute,
 };
 
 use crate::network::AlienProvider;

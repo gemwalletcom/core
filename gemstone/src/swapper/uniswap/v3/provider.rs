@@ -11,7 +11,7 @@ use crate::{
             quote_result::get_best_quote,
             swap_route::{build_swap_route, RouteData},
         },
-        SwapperApprovalData, SwapperQuoteData, Swapper, SwapperError,
+        Swapper, SwapperApprovalData, SwapperError, SwapperQuoteData,
     },
 };
 use gem_evm::{
@@ -99,7 +99,11 @@ impl Swapper for UniswapV3 {
     }
 
     fn supported_assets(&self) -> Vec<SwapperChainAsset> {
-        Chain::all().iter().filter(|x| self.support_chain(x)).map(|x| SwapperChainAsset::All(*x)).collect()
+        Chain::all()
+            .iter()
+            .filter(|x| self.support_chain(x))
+            .map(|x| SwapperChainAsset::All(*x))
+            .collect()
     }
 
     async fn fetch_quote(&self, request: &SwapperQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapperQuote, SwapperError> {

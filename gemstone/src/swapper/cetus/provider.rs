@@ -27,8 +27,8 @@ use crate::{
         },
     },
     swapper::{
-        slippage::apply_slippage_in_bp, FetchQuoteData, SwapperMode, SwapperProvider, SwapperChainAsset, SwapperProviderData, SwapperProviderType, SwapperQuote,
-        SwapperQuoteData, SwapperQuoteRequest, SwapperRoute, Swapper, SwapperError,
+        slippage::apply_slippage_in_bp, FetchQuoteData, Swapper, SwapperChainAsset, SwapperError, SwapperMode, SwapperProvider, SwapperProviderData,
+        SwapperProviderType, SwapperQuote, SwapperQuoteData, SwapperQuoteRequest, SwapperRoute,
     },
 };
 use gem_sui::{

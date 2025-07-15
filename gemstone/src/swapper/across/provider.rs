@@ -16,7 +16,7 @@ use crate::{
         chainlink::ChainlinkPriceFeed,
         eth_address,
         models::*,
-        SwapperApprovalData, SwapperProvider, SwapperQuoteData, Swapper, SwapperError,
+        Swapper, SwapperApprovalData, SwapperError, SwapperProvider, SwapperQuoteData,
     },
 };
 use alloy_primitives::{

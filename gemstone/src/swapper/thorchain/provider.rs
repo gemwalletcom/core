@@ -5,8 +5,10 @@ use crate::network::AlienProvider;
 use crate::swapper::approval::check_approval_erc20;
 use crate::swapper::thorchain::client::ThorChainSwapClient;
 use crate::swapper::{asset::*, SwapperApprovalData};
-use crate::swapper::{FetchQuoteData, SwapperProviderData, SwapperProviderType, SwapperQuote, SwapperQuoteData, SwapperQuoteRequest, SwapperRoute, SwapperError};
-use crate::swapper::{SwapperChainAsset, Swapper};
+use crate::swapper::{
+    FetchQuoteData, SwapperError, SwapperProviderData, SwapperProviderType, SwapperQuote, SwapperQuoteData, SwapperQuoteRequest, SwapperRoute,
+};
+use crate::swapper::{Swapper, SwapperChainAsset};
 use alloy_primitives::{hex::encode_prefixed as HexEncode, Address, U256};
 use alloy_sol_types::SolCall;
 use async_trait::async_trait;

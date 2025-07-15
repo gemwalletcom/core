@@ -17,8 +17,8 @@ use crate::{
     swapper::{
         approval::check_approval_erc20,
         asset::{ARBITRUM_USDC, ETHEREUM_FLIP, ETHEREUM_USDC, ETHEREUM_USDT, SOLANA_USDC},
-        slippage, FetchQuoteData, SwapperProvider, SwapperChainAsset, SwapperProviderData, SwapperProviderType, SwapperQuote, SwapperQuoteData, SwapperQuoteRequest, SwapperRoute,
-        Swapper, SwapperError,
+        slippage, FetchQuoteData, Swapper, SwapperChainAsset, SwapperError, SwapperProvider, SwapperProviderData, SwapperProviderType, SwapperQuote,
+        SwapperQuoteData, SwapperQuoteRequest, SwapperRoute,
     },
 };
 use primitives::{chain::Chain, swap::QuoteAsset, ChainType};

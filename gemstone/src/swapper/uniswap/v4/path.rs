@@ -5,7 +5,7 @@ use gem_evm::uniswap::{
     FeeTier,
 };
 
-use crate::swapper::{eth_address, uniswap::swap_route::RouteData, SwapperRoute, SwapperError};
+use crate::swapper::{eth_address, uniswap::swap_route::RouteData, SwapperError, SwapperRoute};
 
 // return (currency0, currency1)
 fn sort_addresses(token_in: &Address, token_out: &Address) -> (Address, Address) {

@@ -1,5 +1,5 @@
 use crate::network::{AlienProvider, JsonRpcClient};
-use crate::swapper::{eth_address, models::ApprovalType, SwapperApprovalData, Permit2ApprovalData, SwapperError};
+use crate::swapper::{eth_address, models::ApprovalType, Permit2ApprovalData, SwapperApprovalData, SwapperError};
 
 use alloy_primitives::{hex::decode as HexDecode, Address, U256};
 use alloy_sol_types::SolCall;
