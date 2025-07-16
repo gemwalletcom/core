@@ -1,13 +1,11 @@
+use crate::hmac_signature::generate_hmac_signature;
 use crate::model::{filter_token_id, FiatProviderAsset};
 
 use super::mapper::map_asset_chain;
 use super::model::{Asset, Country, MoonPayBuyQuote, MoonPayIpAddress, MoonPaySellQuote};
-use base64::{engine::general_purpose, Engine as _};
-use hmac::{Hmac, Mac};
 use number_formatter::BigNumberFormatter;
 use primitives::{FiatBuyQuote, FiatProviderName, FiatQuote, FiatQuoteType, FiatQuoteTypeResult, FiatSellQuote};
 use reqwest::Client;
-use sha2::Sha256;
 use url::Url;
 
 pub struct MoonPayClient {
@@ -175,11 +173,6 @@ impl MoonPayClient {
     }
 
     fn generate_signature(&self, query: &str) -> String {
-        type HmacSha256 = Hmac<Sha256>;
-        let mut mac = HmacSha256::new_from_slice(self.secret_key.as_bytes()).expect("HMAC can take key of any size");
-        mac.update(query.as_bytes());
-        let result = mac.finalize();
-        let signature = result.into_bytes();
-        general_purpose::STANDARD.encode(signature)
+        generate_hmac_signature(&self.secret_key, query)
     }
 }

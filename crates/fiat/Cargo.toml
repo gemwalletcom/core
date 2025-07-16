@@ -26,3 +26,19 @@ chain_primitives = { path = "../chain_primitives" }
 serde_serializers = { path = "../serde_serializers" }
 number_formatter = { path = "../number_formatter" }
 cacher = { path = "../cacher" }
+
+[dev-dependencies]
+tokio-test = { version = "*" }
+
+# Integration tests that require manual execution
+[[test]]
+name = "paybis_integration_test"
+test = false
+
+[[test]]
+name = "moonpay_integration_test"
+test = false
+
+[[test]]
+name = "transak_integration_test"
+test = false

@@ -1,0 +1,298 @@
+{
+    "id": "268ddd18-86a5-40c9-bedb-26e38bc2d7b7",
+    "currencyCodeTo": "BTC-TESTNET",
+    "currencyCodeFrom": "USD",
+    "requestedAmount": {
+      "amount": "100.00",
+      "currencyCode": "USD"
+    },
+    "requestedAmountType": "from",
+    "paymentMethods": [
+      {
+        "id": "gem-wallet-credit-card",
+        "name": "Credit\/Debit Card",
+        "amountTo": {
+          "amount": "0.00078738",
+          "currencyCode": "BTC"
+        },
+        "amountFrom": {
+          "amount": "100.00",
+          "currencyCode": "USD"
+        },
+        "amountToEquivalent": {
+          "amount": "92.01",
+          "currencyCode": "USD"
+        },
+        "fees": {
+          "networkFee": {
+            "amount": "3.00",
+            "currencyCode": "USD"
+          },
+          "serviceFee": {
+            "amount": "4.99",
+            "currencyCode": "USD"
+          },
+          "totalFee": {
+            "amount": "7.99",
+            "currencyCode": "USD"
+          }
+        },
+        "feesInCrypto": {
+          "networkFee": {
+            "amount": "0.00002567",
+            "currencyCode": "BTC"
+          },
+          "serviceFee": {
+            "amount": "0.0000427",
+            "currencyCode": "BTC"
+          },
+          "totalFee": {
+            "amount": "0.00006837",
+            "currencyCode": "BTC"
+          }
+        },
+        "expiration": "2025-07-15T21:23:49+00:00",
+        "expiresAt": "2025-07-15T21:23:49+00:00"
+      },
+      {
+        "id": "gem-wallet-trustly",
+        "name": "Online Banking",
+        "amountTo": {
+          "amount": "0.00079585",
+          "currencyCode": "BTC"
+        },
+        "amountFrom": {
+          "amount": "100.00",
+          "currencyCode": "USD"
+        },
+        "amountToEquivalent": {
+          "amount": "93.00",
+          "currencyCode": "USD"
+        },
+        "fees": {
+          "networkFee": {
+            "amount": "3.00",
+            "currencyCode": "USD"
+          },
+          "serviceFee": {
+            "amount": "4.00",
+            "currencyCode": "USD"
+          },
+          "totalFee": {
+            "amount": "7.00",
+            "currencyCode": "USD"
+          }
+        },
+        "feesInCrypto": {
+          "networkFee": {
+            "amount": "0.00002567",
+            "currencyCode": "BTC"
+          },
+          "serviceFee": {
+            "amount": "0.00003423",
+            "currencyCode": "BTC"
+          },
+          "totalFee": {
+            "amount": "0.0000599",
+            "currencyCode": "BTC"
+          }
+        },
+        "expiration": "2025-07-15T21:23:49+00:00",
+        "expiresAt": "2025-07-15T21:23:49+00:00"
+      },
+      {
+        "id": "gem-wallet_bridgerpay_revolutpay",
+        "name": "Revolut Pay",
+        "amountTo": {
+          "amount": "0.00080022",
+          "currencyCode": "BTC"
+        },
+        "amountFrom": {
+          "amount": "100.00",
+          "currencyCode": "USD"
+        },
+        "amountToEquivalent": {
+          "amount": "93.51",
+          "currencyCode": "USD"
+        },
+        "fees": {
+          "networkFee": {
+            "amount": "3.00",
+            "currencyCode": "USD"
+          },
+          "serviceFee": {
+            "amount": "3.49",
+            "currencyCode": "USD"
+          },
+          "totalFee": {
+            "amount": "6.49",
+            "currencyCode": "USD"
+          }
+        },
+        "feesInCrypto": {
+          "networkFee": {
+            "amount": "0.00002567",
+            "currencyCode": "BTC"
+          },
+          "serviceFee": {
+            "amount": "0.00002986",
+            "currencyCode": "BTC"
+          },
+          "totalFee": {
+            "amount": "0.00005553",
+            "currencyCode": "BTC"
+          }
+        },
+        "expiration": "2025-07-15T21:23:49+00:00",
+        "expiresAt": "2025-07-15T21:23:49+00:00"
+      },
+      {
+        "id": "gem-wallet_bridgerpay_astropay",
+        "name": "AstroPay",
+        "amountTo": {
+          "amount": "0.00077454",
+          "currencyCode": "BTC"
+        },
+        "amountFrom": {
+          "amount": "100.00",
+          "currencyCode": "USD"
+        },
+        "amountToEquivalent": {
+          "amount": "90.51",
+          "currencyCode": "USD"
+        },
+        "fees": {
+          "networkFee": {
+            "amount": "3.00",
+            "currencyCode": "USD"
+          },
+          "serviceFee": {
+            "amount": "6.49",
+            "currencyCode": "USD"
+          },
+          "totalFee": {
+            "amount": "9.49",
+            "currencyCode": "USD"
+          }
+        },
+        "feesInCrypto": {
+          "networkFee": {
+            "amount": "0.00002567",
+            "currencyCode": "BTC"
+          },
+          "serviceFee": {
+            "amount": "0.00005553",
+            "currencyCode": "BTC"
+          },
+          "totalFee": {
+            "amount": "0.00008121",
+            "currencyCode": "BTC"
+          }
+        },
+        "expiration": "2025-07-15T21:23:49+00:00",
+        "expiresAt": "2025-07-15T21:23:49+00:00"
+      },
+      {
+        "id": "gem-wallet_apm_bridgerpay_skrill",
+        "name": "Skrill",
+        "amountTo": {
+          "amount": "0.00076256",
+          "currencyCode": "BTC"
+        },
+        "amountFrom": {
+          "amount": "100.00",
+          "currencyCode": "USD"
+        },
+        "amountToEquivalent": {
+          "amount": "89.11",
+          "currencyCode": "USD"
+        },
+        "fees": {
+          "networkFee": {
+            "amount": "3.00",
+            "currencyCode": "USD"
+          },
+          "serviceFee": {
+            "amount": "7.89",
+            "currencyCode": "USD"
+          },
+          "totalFee": {
+            "amount": "10.89",
+            "currencyCode": "USD"
+          }
+        },
+        "feesInCrypto": {
+          "networkFee": {
+            "amount": "0.00002567",
+            "currencyCode": "BTC"
+          },
+          "serviceFee": {
+            "amount": "0.00006751",
+            "currencyCode": "BTC"
+          },
+          "totalFee": {
+            "amount": "0.00009319",
+            "currencyCode": "BTC"
+          }
+        },
+        "expiration": "2025-07-15T21:23:49+00:00",
+        "expiresAt": "2025-07-15T21:23:49+00:00"
+      },
+      {
+        "id": "gem-wallet_bridgerpay_neteller",
+        "name": "Neteller",
+        "amountTo": {
+          "amount": "0.00076188",
+          "currencyCode": "BTC"
+        },
+        "amountFrom": {
+          "amount": "100.00",
+          "currencyCode": "USD"
+        },
+        "amountToEquivalent": {
+          "amount": "89.03",
+          "currencyCode": "USD"
+        },
+        "fees": {
+          "networkFee": {
+            "amount": "3.00",
+            "currencyCode": "USD"
+          },
+          "serviceFee": {
+            "amount": "7.97",
+            "currencyCode": "USD"
+          },
+          "totalFee": {
+            "amount": "10.97",
+            "currencyCode": "USD"
+          }
+        },
+        "feesInCrypto": {
+          "networkFee": {
+            "amount": "0.00002567",
+            "currencyCode": "BTC"
+          },
+          "serviceFee": {
+            "amount": "0.0000682",
+            "currencyCode": "BTC"
+          },
+          "totalFee": {
+            "amount": "0.00009387",
+            "currencyCode": "BTC"
+          }
+        },
+        "expiration": "2025-07-15T21:23:49+00:00",
+        "expiresAt": "2025-07-15T21:23:49+00:00"
+      }
+    ],
+    "exchangeRate": {
+      "from": "USD",
+      "to": "BTC-TESTNET",
+      "rate": "0.00000855755"
+    },
+    "exchangeRateCryptoToFiat": {
+      "from": "BTC",
+      "to": "USD",
+      "rate": "116855.87287"
+    }
+  }

@@ -30,6 +30,10 @@ banxa:
   key:
     public: "" 
     secret: ""
+paybis:
+  key:
+    public: "f4f39690-97e7-4c56-925a-71ec45496a8f"
+    secret: ""
 pricer:
   timer: 60
   outdated: 604800
