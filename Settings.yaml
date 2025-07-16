@@ -32,7 +32,7 @@ banxa:
     secret: ""
 paybis:
   key:
-    public: "f4f39690-97e7-4c56-925a-71ec45496a8f"
+    public: ""
     secret: ""
 pricer:
   timer: 60

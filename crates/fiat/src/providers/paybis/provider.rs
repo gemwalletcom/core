@@ -49,6 +49,8 @@ impl FiatProvider for PaybisClient {
             .flat_map(Self::map_asset)
             .collect::<Vec<FiatProviderAsset>>();
 
+        println!("assets: {:#?}", assets);
+
         Ok(assets)
     }
 

@@ -1,6 +1,20 @@
-use primitives::Chain;
+use primitives::{AssetId, Chain};
 
 use super::model::Currency;
+
+pub fn map_asset_id(currency: Currency) -> Option<AssetId> {
+    if !currency.is_crypto() {
+        return None;
+    }
+    match currency.code.as_str() {
+        "BTC" => Some(AssetId::from_chain(Chain::Bitcoin)),
+        "BCH" => Some(AssetId::from_chain(Chain::BitcoinCash)),
+        "ETH" => Some(AssetId::from_chain(Chain::Ethereum)),
+        "XRP" => Some(AssetId::from_chain(Chain::Xrp)),
+        "SOL" => Some(AssetId::from_chain(Chain::Solana)),
+        _ => None,
+    }
+}
 
 pub fn map_asset_chain(currency: &Currency) -> Option<Chain> {
     match currency.blockchain_name.as_deref()? {

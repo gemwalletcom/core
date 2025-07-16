@@ -1,5 +1,6 @@
 use crate::hmac_signature::generate_hmac_signature;
-use crate::model::{filter_token_id, FiatProviderAsset};
+use crate::model::FiatProviderAsset;
+use crate::providers::paybis::mapper::map_asset_id;
 
 use super::mapper::map_asset_chain;
 use super::model::{Currency, PaybisAssetsResponse, PaybisQuote, QuoteRequest};
@@ -32,9 +33,9 @@ impl PaybisClient {
             currency_code_from: fiat_currency,
             currency_code_to: crypto_currency,
         };
-
+        let url = format!("{PAYBIS_API_BASE_URL}/v2/public/quote");
         self.client
-            .post(format!("{}/v2/public/quote", PAYBIS_API_BASE_URL))
+            .post(url)
             .query(&[("apikey", &self.api_key)])
             .json(&request_body)
             .send()
@@ -51,9 +52,9 @@ impl PaybisClient {
             currency_code_from: crypto_currency,
             currency_code_to: fiat_currency,
         };
-
+        let url = format!("{PAYBIS_API_BASE_URL}/v2/public/quote");
         self.client
-            .post(format!("{PAYBIS_API_BASE_URL}/v2/public/quote"))
+            .post(url)
             .query(&[("apikey", &self.api_key)])
             .json(&request_body)
             .send()
@@ -63,27 +64,17 @@ impl PaybisClient {
     }
 
     pub async fn get_assets(&self) -> Result<PaybisAssetsResponse, reqwest::Error> {
-        self.client
-            .get(format!("{PAYBIS_API_BASE_URL}/v2/public/currency/pairs/buy-crypto"))
-            .query(&[("apikey", &self.api_key)])
-            .send()
-            .await?
-            .json()
-            .await
+        let url = format!("{PAYBIS_API_BASE_URL}/v2/public/currency/pairs/buy-crypto");
+        self.client.get(url).query(&[("apikey", &self.api_key)]).send().await?.json().await
     }
 
     pub fn map_asset(currency: Currency) -> Option<FiatProviderAsset> {
-        if !currency.is_crypto() {
-            return None;
-        }
-
-        let chain = map_asset_chain(&currency)?;
-        let token_id = filter_token_id(Some(chain), None);
+        let asset = map_asset_id(currency.clone())?;
 
         Some(FiatProviderAsset {
             id: currency.code.clone(),
-            chain: Some(chain),
-            token_id,
+            chain: Some(asset.chain),
+            token_id: asset.token_id,
             symbol: currency.code.clone(),
             network: currency.blockchain_name.clone(),
             enabled: true,
