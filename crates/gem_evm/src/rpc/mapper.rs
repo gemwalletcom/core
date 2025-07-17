@@ -69,7 +69,7 @@ impl EthereumMapper {
         let from = ethereum_address_checksum(&transaction.from.clone()).ok()?;
         let to = ethereum_address_checksum(&transaction.to.clone().unwrap_or_default()).ok()?;
         let created_at = DateTime::from_timestamp(timestamp.clone().try_into().ok()?, 0)?;
-
+        let is_smart_contract_call = transaction.to.is_some() && transaction.input.len() > 2;
         let is_native_transfer = transaction.input == INPUT_0X && transaction.gas == TRANSFER_GAS_LIMIT;
         let is_native_transfer_with_data = transaction.input.len() > 2
             && transaction.gas > TRANSFER_GAS_LIMIT
@@ -94,24 +94,39 @@ impl EthereumMapper {
             return Some(transaction);
         }
 
-        // erc20 transfer
+        // erc20 transfer - check both direct transfer calls and smart contract calls that emit transfer events
 
-        if transaction.input.starts_with(FUNCTION_ERC20_TRANSFER)
-            && transaction_reciept
-                .logs
-                .first()
-                .is_some_and(|log| log.topics.first().is_some_and(|x| x == TRANSFER_TOPIC))
-        {
-            if let Some(log) = transaction_reciept.logs.first() {
-                let address = log.topics.last()?.trim_start_matches("0x000000000000000000000000");
-                let address = ethereum_address_checksum(address).ok()?;
-                let amount = BigUint::from_str_radix(&log.data.replace("0x", ""), 16).ok()?;
-                let token_id = ethereum_address_checksum(&to).ok()?;
-                let transaction = primitives::Transaction::new(
+        // Look for any ERC20 Transfer event in the logs
+        // Limit search to avoid processing contracts with excessive logs
+        let logs_to_check = if transaction_reciept.logs.len() > 4 {
+            4
+        } else {
+            transaction_reciept.logs.len()
+        };
+        let transfer_log = transaction_reciept.logs.iter().take(logs_to_check).find(|log| {
+            // ERC20 transfers have exactly 3 topics (event signature, from, to)
+            // NFT transfers have 4 topics (event signature, from, to, tokenId)
+            log.topics.len() == 3 && log.topics.first().is_some_and(|x| x == TRANSFER_TOPIC)
+        });
+
+        if let Some(log) = transfer_log {
+            // Extract transfer details from the log
+            let from_address_in_log = log.topics.get(1)?.trim_start_matches("0x000000000000000000000000");
+            let from_address_in_log = ethereum_address_checksum(from_address_in_log).ok()?;
+            let to_address_in_log = log.topics.get(2)?.trim_start_matches("0x000000000000000000000000");
+            let to_address_in_log = ethereum_address_checksum(to_address_in_log).ok()?;
+            let amount = BigUint::from_str_radix(&log.data.replace("0x", ""), 16).ok()?;
+            let token_id = ethereum_address_checksum(&log.address).ok()?;
+
+            // Check if this is a relevant ERC20 transfer
+            let is_direct_transfer = transaction.input.starts_with(FUNCTION_ERC20_TRANSFER);
+
+            if is_direct_transfer || (is_smart_contract_call && (from_address_in_log == from || from_address_in_log == to)) {
+                return Some(primitives::Transaction::new(
                     hash,
                     AssetId::from_token(chain, &token_id),
                     from.clone(),
-                    address,
+                    to_address_in_log,
                     None,
                     TransactionType::Transfer,
                     state,
@@ -121,8 +136,7 @@ impl EthereumMapper {
                     None,
                     None,
                     created_at,
-                );
-                return Some(transaction);
+                ));
             }
         }
 
@@ -375,5 +389,29 @@ mod tests {
                 None,
             )))
         );
+    }
+
+    #[test]
+    fn test_smart_contract_erc20_transfer() {
+        let sc_erc20_tx =
+            serde_json::from_value::<JsonRpcResult<Transaction>>(serde_json::from_str(include_str!("../../tests/data/contract_erc20_tx.json")).unwrap())
+                .unwrap()
+                .result;
+        let sc_erc20_receipt = serde_json::from_value::<JsonRpcResult<TransactionReciept>>(
+            serde_json::from_str(include_str!("../../tests/data/contract_erc20_receipt.json")).unwrap(),
+        )
+        .unwrap()
+        .result;
+
+        let transaction = EthereumMapper::map_transaction(Chain::Arbitrum, &sc_erc20_tx, &sc_erc20_receipt, None, &BigUint::from(1735671600u64), None).unwrap();
+
+        assert_eq!(transaction.transaction_type, TransactionType::Transfer);
+        assert_eq!(
+            transaction.asset_id,
+            AssetId::from_token(Chain::Arbitrum, "0xaf88d065e77c8cC2239327C5EDb3A432268e5831")
+        );
+        assert_eq!(transaction.from, "0x58E1b0E63C905D5982324FCd9108582623b8132e");
+        assert_eq!(transaction.to, "0x0D9DAB1A248f63B0a48965bA8435e4de7497a3dC");
+        assert_eq!(transaction.value, "930678651");
     }
 }
