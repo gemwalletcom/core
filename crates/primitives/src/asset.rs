@@ -3,7 +3,7 @@ use std::{collections::HashSet, error::Error};
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
-use crate::{asset_id::AssetId, asset_type::AssetType, Chain};
+use crate::{asset_id::AssetId, asset_type::AssetType, AssetBasic, AssetProperties, AssetScore, Chain};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Hashable, Sendable")]
@@ -54,6 +54,10 @@ impl Asset {
 
     pub fn full_name(&self) -> String {
         format!("{} ({})", self.name, self.symbol)
+    }
+
+    pub fn as_basic_primitive(&self) -> AssetBasic {
+        AssetBasic::new(self.clone(), AssetProperties::default(self.id.clone()), AssetScore::default())
     }
 
     pub fn from_chain(chain: Chain) -> Asset {

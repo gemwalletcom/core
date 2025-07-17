@@ -17,6 +17,7 @@ impl AssetsClient {
     }
 
     pub fn add_assets(&mut self, assets: Vec<Asset>) -> Result<usize, Box<dyn Error + Send + Sync>> {
+        let assets = assets.into_iter().map(|x| x.as_basic_primitive()).collect();
         self.database.assets().add_assets(assets)
     }
 
@@ -83,14 +84,7 @@ impl AssetsSearchClient {
 
         let assets: Vec<AssetDocument> = self.client.search(ASSETS_INDEX_NAME, query, filter, [].as_ref(), limit, offset).await?;
 
-        Ok(assets
-            .into_iter()
-            .map(|x| AssetBasic {
-                asset: x.asset,
-                properties: x.properties,
-                score: x.score,
-            })
-            .collect())
+        Ok(assets.into_iter().map(|x| AssetBasic::new(x.asset, x.properties, x.score)).collect())
     }
 }
 

@@ -33,7 +33,10 @@ async fn main() {
     let _ = database_client.assets_types().add_assets_types(assets_types);
 
     println!("setup assets");
-    let assets = chains.into_iter().map(Asset::from_chain).collect::<Vec<_>>();
+    let assets = chains
+        .into_iter()
+        .map(|x| Asset::from_chain(x).as_basic_primitive())
+        .collect::<Vec<_>>();
     let _ = database_client.assets().add_assets(assets);
 
     println!("setup fiat providers");

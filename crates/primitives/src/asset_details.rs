@@ -23,6 +23,12 @@ pub struct AssetBasic {
     pub score: AssetScore,
 }
 
+impl AssetBasic {
+    pub fn new(asset: Asset, properties: AssetProperties, score: AssetScore) -> Self {
+        Self { asset, properties, score }
+    }
+}
+
 #[typeshare(swift = "Sendable")]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
