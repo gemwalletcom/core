@@ -28,7 +28,10 @@ impl AssetsRepository for DatabaseClient {
     }
 
     fn add_assets(&mut self, values: Vec<AssetBasic>) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        Ok(AssetsStore::add_assets(self, values.into_iter().map(|basic| Asset::from_primitive(basic.asset, basic.score, basic.properties)).collect())?)
+        Ok(AssetsStore::add_assets(
+            self,
+            values.into_iter().map(|x| Asset::from_primitive(x.asset, x.score, x.properties)).collect(),
+        )?)
     }
 
     fn update_assets(&mut self, asset_ids: Vec<String>, updates: Vec<AssetUpdate>) -> Result<usize, Box<dyn Error + Send + Sync>> {

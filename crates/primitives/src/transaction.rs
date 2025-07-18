@@ -1,6 +1,6 @@
 use crate::{
     asset_id::AssetId, transaction_direction::TransactionDirection, transaction_state::TransactionState, transaction_type::TransactionType,
-    transaction_utxo::TransactionInput, AssetAddress, Chain, TransactionSwapMetadata,
+    transaction_utxo::TransactionInput, AddressName, AssetAddress, Chain, TransactionSwapMetadata,
 };
 
 use chrono::{DateTime, Utc};
@@ -14,6 +14,19 @@ pub struct TransactionsFetchOption {
     pub wallet_index: i32,
     pub asset_id: Option<String>,
     pub from_timestamp: Option<u32>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[typeshare(swift = "Sendable, Equatable")]
+pub struct TransactionsResponse {
+    pub transactions: Vec<Transaction>,
+    pub address_names: Vec<AddressName>,
+}
+
+impl TransactionsResponse {
+    pub fn new(transactions: Vec<Transaction>, address_names: Vec<AddressName>) -> Self {
+        Self { transactions, address_names }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -213,7 +226,6 @@ impl Transaction {
                 value = Self::utxo_calculate_value(&self.utxo_outputs, addresses).to_string()
             }
         };
-
         Transaction {
             id: Self::id_from(self.asset_id.chain, self.hash.clone()),
             hash: self.hash.clone(),
