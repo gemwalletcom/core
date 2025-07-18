@@ -5,7 +5,7 @@ use typeshare::typeshare;
 use crate::{AssetId, Price};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-#[typeshare(swift = "Sendable")]
+#[typeshare(swift = "Sendable, Equatable, Hashable")]
 #[serde(rename_all = "camelCase")]
 pub struct AssetPrice {
     pub asset_id: AssetId,

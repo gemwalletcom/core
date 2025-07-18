@@ -1,12 +1,21 @@
+use serde::{Deserialize, Serialize};
+use typeshare::typeshare;
+use crate::{Transaction, Asset, Price, AssetPrice, AddressName};
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Sendable")]
-struct TransactionExtended {
-    transaction: Transaction,
-    asset: Asset,
+pub struct TransactionExtended {
+    pub transaction: Transaction,
+    pub asset: Asset,
     #[serde(rename = "feeAsset")]
-    feeAsset: Asset,
-    price: Option<Price>,
+    pub feeAsset: Asset,
+    pub price: Option<Price>,
     #[serde(rename = "feePrice")]
-    fee_price: Option<Price>,
-    assets: Vec<Asset>,
-    prices: Vec<AssetPrice>,
+    pub fee_price: Option<Price>,
+    pub assets: Vec<Asset>,
+    pub prices: Vec<AssetPrice>,
+    #[serde(rename = "fromAddress")]
+    pub from_address: Option<AddressName>,
+    #[serde(rename = "toAddress")]
+    pub to_address: Option<AddressName>,
 }

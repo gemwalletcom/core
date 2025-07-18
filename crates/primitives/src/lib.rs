@@ -68,6 +68,8 @@ pub mod transaction_utxo;
 pub use self::subscription::{DeviceSubscription, Subscription};
 pub mod address_formatter;
 pub use self::address_formatter::AddressFormatter;
+pub mod address_name;
+pub use self::address_name::AddressName;
 pub mod utxo;
 pub use self::utxo::UTXO;
 pub mod push_notification;
