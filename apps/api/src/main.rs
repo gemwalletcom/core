@@ -142,8 +142,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
                 subscriptions::add_subscriptions,
                 subscriptions::get_subscriptions,
                 subscriptions::delete_subscriptions,
-                transactions::get_transactions_by_device_id_old,
-                transactions::get_transactions_by_device_id,
+                transactions::get_transactions_by_device_id_v1,
                 transactions::get_transactions_by_id,
                 parser::get_parser_block,
                 parser::get_parser_block_finalize,
@@ -163,6 +162,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
                 markets::get_markets,
             ],
         )
+        .mount("/v2", routes![transactions::get_transactions_by_device_id_v2])
         .mount(settings.metrics.path, routes![metrics::get_metrics])
 }
 

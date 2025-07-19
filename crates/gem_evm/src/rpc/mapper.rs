@@ -94,49 +94,10 @@ impl EthereumMapper {
             return Some(transaction);
         }
 
-        // erc20 transfer - check both direct transfer calls and smart contract calls that emit transfer events
-
-        // Look for any ERC20 Transfer event in the logs
-        // Limit search to avoid processing contracts with excessive logs
-        let logs_to_check = if transaction_reciept.logs.len() > 4 {
-            4
-        } else {
-            transaction_reciept.logs.len()
-        };
-        let transfer_log = transaction_reciept.logs.iter().take(logs_to_check).find(|log| {
-            // ERC20 transfers have exactly 3 topics (event signature, from, to)
-            // NFT transfers have 4 topics (event signature, from, to, tokenId)
-            log.topics.len() == 3 && log.topics.first().is_some_and(|x| x == TRANSFER_TOPIC)
-        });
-
-        if let Some(log) = transfer_log {
-            // Extract transfer details from the log
-            let from_address_in_log = log.topics.get(1)?.trim_start_matches("0x000000000000000000000000");
-            let from_address_in_log = ethereum_address_checksum(from_address_in_log).ok()?;
-            let to_address_in_log = log.topics.get(2)?.trim_start_matches("0x000000000000000000000000");
-            let to_address_in_log = ethereum_address_checksum(to_address_in_log).ok()?;
-            let amount = BigUint::from_str_radix(&log.data.replace("0x", ""), 16).ok()?;
-            let token_id = ethereum_address_checksum(&log.address).ok()?;
-
-            // Check if this is a relevant ERC20 transfer
-            let is_direct_transfer = transaction.input.starts_with(FUNCTION_ERC20_TRANSFER);
-
-            if is_direct_transfer || (is_smart_contract_call && (from_address_in_log == from || from_address_in_log == to)) {
-                return Some(primitives::Transaction::new(
-                    hash,
-                    AssetId::from_token(chain, &token_id),
-                    from.clone(),
-                    to_address_in_log,
-                    None,
-                    TransactionType::Transfer,
-                    state,
-                    fee.to_string(),
-                    fee_asset_id,
-                    amount.to_string(),
-                    None,
-                    None,
-                    created_at,
-                ));
+        // Try to decode Uniswap V3 or V4 transaction
+        if transaction.to.is_some() && transaction.input.len() >= 8 {
+            if let Some(tx) = SwapMapper::map_transaction(&chain, transaction, transaction_reciept, trace, created_at, contract_registry) {
+                return Some(tx);
             }
         }
 
@@ -207,10 +168,41 @@ impl EthereumMapper {
             }
         }
 
-        // Try to decode Uniswap V3 or V4 transaction
-        if transaction.to.is_some() && transaction.input.len() >= 8 {
-            if let Some(tx) = SwapMapper::map_transaction(&chain, transaction, transaction_reciept, trace, created_at, contract_registry) {
-                return Some(tx);
+        // erc20 transfer - check both direct transfer calls and smart contract calls that emit transfer events
+        let transfer_log = transaction_reciept.logs.iter().find(|log| {
+            // ERC20 transfers have exactly 3 topics (event signature, from, to)
+            log.topics.len() == 3 && log.topics.first().is_some_and(|x| x == TRANSFER_TOPIC)
+        });
+
+        if let Some(log) = transfer_log {
+            let from_address_in_log = log.topics.get(1)?.trim_start_matches("0x000000000000000000000000");
+            let from_address_in_log = ethereum_address_checksum(from_address_in_log).ok()?;
+            let to_address_in_log = log.topics.get(2)?.trim_start_matches("0x000000000000000000000000");
+            let to_address_in_log = ethereum_address_checksum(to_address_in_log).ok()?;
+            let amount = BigUint::from_str_radix(&log.data.replace("0x", ""), 16).ok()?;
+            let token_id = ethereum_address_checksum(&log.address).ok()?;
+
+            // Check if this is a relevant ERC20 transfer
+            let is_direct_transfer = transaction.input.starts_with(FUNCTION_ERC20_TRANSFER);
+
+            if is_direct_transfer
+                || (is_smart_contract_call && (from_address_in_log == from || from_address_in_log == to)) && transaction_reciept.logs.len() <= 2
+            {
+                return Some(primitives::Transaction::new(
+                    hash,
+                    AssetId::from_token(chain, &token_id),
+                    from.clone(),
+                    to_address_in_log,
+                    None,
+                    TransactionType::Transfer,
+                    state,
+                    fee.to_string(),
+                    fee_asset_id,
+                    amount.to_string(),
+                    None,
+                    None,
+                    created_at,
+                ));
             }
         }
 
