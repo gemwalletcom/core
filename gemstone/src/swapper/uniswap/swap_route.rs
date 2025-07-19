@@ -11,7 +11,7 @@ pub struct RouteData {
 }
 
 pub fn get_intermediaries(token_in: &Address, token_out: &Address, base_pair: &BasePair) -> Vec<Address> {
-    let array = base_pair.to_array();
+    let array = base_pair.path_building_array();
     get_intermediaries_by_array(token_in, token_out, &array)
 }
 

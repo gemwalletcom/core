@@ -1,6 +1,6 @@
 use alloy_primitives::{hex::encode_prefixed as HexEncode, Address, U256};
 use async_trait::async_trait;
-use std::{str::FromStr, sync::Arc, vec};
+use std::{collections::HashSet, str::FromStr, sync::Arc, vec};
 
 use crate::{
     network::{AlienProvider, JsonRpcClient, JsonRpcError},
@@ -64,7 +64,7 @@ impl UniswapV4 {
     }
 
     fn is_base_pair(token_in: &Address, token_out: &Address, evm_chain: &EVMChain) -> bool {
-        let base_set = get_base_pair(evm_chain, false).unwrap().to_set();
+        let base_set: HashSet<Address> = HashSet::from_iter(get_base_pair(evm_chain, false).unwrap().path_building_array());
         base_set.contains(token_in) || base_set.contains(token_out)
     }
 
