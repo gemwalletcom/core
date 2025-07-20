@@ -1,6 +1,7 @@
 #[macro_use]
 extern crate rocket;
 mod assets;
+mod chain;
 mod config;
 mod devices;
 mod fiat;
@@ -62,6 +63,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
     let name_client = NameClient::new(providers);
 
     let assets_chain_provider = AssetsChainProvider::new(ChainProviders::new(ProviderFactory::new_providers(&settings)));
+    let chain_providers = ChainProviders::new(ProviderFactory::new_providers(&settings));
 
     let pusher_client = PusherClient::new(settings.pusher.url, settings.pusher.ios.topic);
     let devices_client = DevicesClient::new(postgres_url, pusher_client).await;
@@ -109,6 +111,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
         .manage(Mutex::new(nft_client))
         .manage(Mutex::new(price_alert_client))
         .manage(Mutex::new(assets_chain_provider))
+        .manage(Mutex::new(chain_providers))
         .manage(Mutex::new(markets_client))
         .manage(Mutex::new(stream_producer))
         .mount("/", routes![status::get_status])
@@ -160,6 +163,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
                 price_alerts::delete_price_alerts,
                 scan::scan_transaction,
                 markets::get_markets,
+                chain::staking::get_validators,
             ],
         )
         .mount("/v2", routes![transactions::get_transactions_by_device_id_v2])

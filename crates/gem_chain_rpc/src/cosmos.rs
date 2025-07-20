@@ -1,10 +1,10 @@
 use std::error::Error;
 
-use crate::{ChainAssetsProvider, ChainBlockProvider, ChainTokenDataProvider, ChainTransactionsProvider};
+use crate::{ChainAssetsProvider, ChainBlockProvider, ChainStakeProvider, ChainTokenDataProvider, ChainTransactionsProvider};
 use async_trait::async_trait;
 use futures::future;
 use primitives::Transaction;
-use primitives::{Asset, AssetBalance, Chain};
+use primitives::{Asset, AssetBalance, Chain, StakeValidator};
 
 use gem_cosmos::rpc::CosmosClient;
 use gem_cosmos::rpc::CosmosMapper;
@@ -64,5 +64,13 @@ impl ChainTransactionsProvider for CosmosProvider {
     async fn get_transactions_by_address(&self, address: String) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
         let transactions = self.client.get_transactions_by_address(&address, 20).await?;
         Ok(CosmosMapper::map_transactions(self.get_chain(), transactions))
+    }
+}
+
+#[async_trait]
+impl ChainStakeProvider for CosmosProvider {
+    async fn get_validators(&self) -> Result<Vec<StakeValidator>, Box<dyn Error + Send + Sync>> {
+        let validators = self.client.get_validators().await?;
+        Ok(CosmosMapper::map_validators(validators.validators))
     }
 }

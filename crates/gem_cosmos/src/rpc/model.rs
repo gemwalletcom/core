@@ -137,3 +137,19 @@ impl MsgSend {
         Some(value)
     }
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ValidatorsResponse {
+    pub validators: Vec<Validator>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Validator {
+    pub operator_address: String,
+    pub description: ValidatorDescription,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ValidatorDescription {
+    pub moniker: String,
+}

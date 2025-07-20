@@ -1,10 +1,9 @@
 use std::error::Error;
 
-use crate::{ChainAssetsProvider, ChainBlockProvider, ChainTokenDataProvider, ChainTransactionsProvider};
+use crate::{ChainAssetsProvider, ChainBlockProvider, ChainStakeProvider, ChainTokenDataProvider, ChainTransactionsProvider};
 use async_trait::async_trait;
 use gem_tron::rpc::trongrid::client::TronGridClient;
-use primitives::{chain::Chain, Asset};
-use primitives::{AssetBalance, Transaction};
+use primitives::{chain::Chain, Asset, AssetBalance, Transaction};
 
 use gem_tron::rpc::trongrid::mapper::TronGridMapper;
 use gem_tron::rpc::TronClient;
@@ -63,6 +62,11 @@ impl ChainTransactionsProvider for TronProvider {
     async fn get_transactions_by_address(&self, address: String) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
         self.transactions_provider.get_transactions_by_address(address).await
     }
+}
+
+#[async_trait]
+impl ChainStakeProvider for TronProvider {
+    // Default implementation returns empty vector
 }
 
 // Tron Grid
