@@ -1,6 +1,6 @@
 use std::error::Error;
 
-use crate::{ChainAssetsProvider, ChainBlockProvider, ChainTokenDataProvider, ChainTransactionsProvider};
+use crate::{ChainAssetsProvider, ChainBlockProvider, ChainStakeProvider, ChainTokenDataProvider, ChainTransactionsProvider};
 use async_trait::async_trait;
 use primitives::{chain::Chain, Asset, AssetBalance, AssetId, Transaction};
 
@@ -65,4 +65,9 @@ impl ChainTransactionsProvider for TonProvider {
         let transactions = self.client.get_transactions_by_address(address, 20).await?.transactions;
         Ok(TonMapper::map_transactions(self.get_chain(), transactions))
     }
+}
+
+#[async_trait]
+impl ChainStakeProvider for TonProvider {
+    // Default implementation returns empty vector
 }

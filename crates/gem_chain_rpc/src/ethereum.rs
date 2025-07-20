@@ -4,7 +4,7 @@ use async_trait::async_trait;
 use gem_solana::model::BigUint;
 use std::error::Error;
 
-use crate::{ChainAssetsProvider, ChainBlockProvider, ChainTokenDataProvider, ChainTransactionsProvider};
+use crate::{ChainAssetsProvider, ChainBlockProvider, ChainStakeProvider, ChainTokenDataProvider, ChainTransactionsProvider};
 use gem_evm::{
     erc20::{decode_abi_string, decode_abi_uint8, IERC20},
     ethereum_address_checksum,
@@ -105,6 +105,11 @@ impl ChainTransactionsProvider for EthereumProvider {
     async fn get_transactions_by_address(&self, address: String) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
         self.transactions_provider.get_transactions_by_address(address).await
     }
+}
+
+#[async_trait]
+impl ChainStakeProvider for EthereumProvider {
+    // Default implementation returns empty vector
 }
 
 // AlchemyClient

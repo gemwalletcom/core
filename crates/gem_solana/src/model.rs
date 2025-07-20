@@ -11,6 +11,20 @@ pub const ENCODING_BASE58: &str = "base58";
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct VoteAccounts {
+    pub current: Vec<VoteAccount>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct VoteAccount {
+    pub vote_pubkey: String,
+    pub node_pubkey: String,
+    pub commission: u8,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Block {
     pub blockhash: String,
 }
@@ -347,4 +361,36 @@ impl ResultTokenInfo {
     pub fn info(&self) -> TokenInfo {
         self.value.data.parsed.info.clone()
     }
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ValidatorConfig {
+    pub pubkey: String,
+    pub account: ValidatorConfigAccount,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ValidatorConfigAccount {
+    pub data: ValidatorConfigData,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ValidatorConfigData {
+    pub parsed: ValidatorConfigParsed,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ValidatorConfigParsed {
+    pub info: ValidatorConfigInfo,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ValidatorConfigInfo {
+    pub name: String,
+    pub config_data: Option<serde_json::Value>,
 }

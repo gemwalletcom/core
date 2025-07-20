@@ -37,7 +37,7 @@ pub use self::parser_state::ParserState;
 pub use self::price::{Price, PriceAsset};
 pub use self::price_alert::{NewPriceAlert, PriceAlert};
 pub use self::release::Release;
-pub use self::scan_addresses::{ScanAddress, ScanAddressType};
+pub use self::scan_addresses::{NewScanAddress, ScanAddress, ScanAddressType};
 pub use self::subscription::{Subscription, SubscriptionAddressExclude};
 pub use self::tag::{AssetTag, Tag};
 pub use self::transaction::{Transaction, TransactionType};

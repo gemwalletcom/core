@@ -32,11 +32,11 @@ pub use self::tron::TronProvider;
 pub use self::xrp::XRPProvider;
 
 use async_trait::async_trait;
-use primitives::{chain::Chain, Asset, AssetBalance, Transaction};
+use primitives::{chain::Chain, Asset, AssetBalance, StakeValidator, Transaction};
 use std::error::Error;
 
-pub trait ChainProvider: ChainBlockProvider + ChainTokenDataProvider + ChainAssetsProvider + ChainTransactionsProvider {}
-impl<T: ChainBlockProvider + ChainTokenDataProvider + ChainAssetsProvider + ChainTransactionsProvider> ChainProvider for T {}
+pub trait ChainProvider: ChainBlockProvider + ChainTokenDataProvider + ChainAssetsProvider + ChainTransactionsProvider + ChainStakeProvider {}
+impl<T: ChainBlockProvider + ChainTokenDataProvider + ChainAssetsProvider + ChainTransactionsProvider + ChainStakeProvider> ChainProvider for T {}
 
 #[async_trait]
 pub trait ChainBlockProvider: Send + Sync {
@@ -88,6 +88,13 @@ pub trait ChainTransactionsProvider: Send + Sync {
     }
 }
 
+#[async_trait]
+pub trait ChainStakeProvider: Send + Sync {
+    async fn get_validators(&self) -> Result<Vec<StakeValidator>, Box<dyn Error + Send + Sync>> {
+        Ok(vec![])
+    }
+}
+
 pub struct MockChainBlockClient {
     pub chain: Chain,
 }
@@ -115,5 +122,20 @@ impl ChainBlockProvider for MockChainBlockClient {
 
 #[async_trait]
 impl ChainAssetsProvider for MockChainBlockClient {
+    // Default implementation returns empty vector
+}
+
+#[async_trait]
+impl ChainTokenDataProvider for MockChainBlockClient {
+    // Default implementation
+}
+
+#[async_trait]
+impl ChainTransactionsProvider for MockChainBlockClient {
+    // Default implementation returns empty vector
+}
+
+#[async_trait]
+impl ChainStakeProvider for MockChainBlockClient {
     // Default implementation returns empty vector
 }

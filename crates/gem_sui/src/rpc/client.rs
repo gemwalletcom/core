@@ -6,7 +6,7 @@ use serde_json::json;
 
 use super::{
     mapper::SuiMapper,
-    model::{Balance, CoinMetadata, Digests, GasUsed},
+    model::{Balance, CoinMetadata, Digests, GasUsed, ValidatorSet},
 };
 
 pub struct SuiClient {
@@ -68,5 +68,9 @@ impl SuiClient {
 
     pub async fn get_all_balances(&self, address: String) -> Result<Vec<Balance>, Box<dyn Error + Send + Sync>> {
         Ok(self.client.call("suix_getAllBalances", vec![json!(address.clone())]).await?)
+    }
+
+    pub async fn get_validators(&self) -> Result<ValidatorSet, Box<dyn Error + Send + Sync>> {
+        Ok(self.client.call("suix_getValidatorsApy", json!([])).await?)
     }
 }

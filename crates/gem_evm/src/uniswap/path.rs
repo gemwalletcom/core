@@ -59,7 +59,6 @@ pub struct BasePair {
 }
 
 impl BasePair {
-
     pub fn path_building_array(&self) -> Vec<Address> {
         let mut array = vec![self.native];
         array.extend(self.stables.iter().cloned());

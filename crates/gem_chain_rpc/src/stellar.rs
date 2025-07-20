@@ -1,6 +1,6 @@
 use std::error::Error;
 
-use crate::{ChainAssetsProvider, ChainBlockProvider, ChainTokenDataProvider, ChainTransactionsProvider};
+use crate::{ChainAssetsProvider, ChainBlockProvider, ChainStakeProvider, ChainTokenDataProvider, ChainTransactionsProvider};
 use async_trait::async_trait;
 use primitives::{chain::Chain, Asset};
 use primitives::{AssetBalance, Transaction};
@@ -55,4 +55,9 @@ impl ChainTransactionsProvider for StellarProvider {
         let payments = self.client.get_account_payments(address).await?;
         Ok(StellarMapper::map_transactions(self.get_chain(), payments))
     }
+}
+
+#[async_trait]
+impl ChainStakeProvider for StellarProvider {
+    // Default implementation returns empty vector
 }

@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use std::error::Error;
 
-use crate::{ChainAssetsProvider, ChainBlockProvider, ChainTokenDataProvider, ChainTransactionsProvider};
+use crate::{ChainAssetsProvider, ChainBlockProvider, ChainStakeProvider, ChainTokenDataProvider, ChainTransactionsProvider};
 use gem_xrp::rpc::{XRPClient, XRPMapper};
 use primitives::{Asset, AssetBalance, Chain, Transaction};
 
@@ -53,4 +53,9 @@ impl ChainTransactionsProvider for XRPProvider {
         let block = self.client.get_account_transactions(address.clone(), 20).await?;
         Ok(XRPMapper::map_account_transactions(self.get_chain(), block))
     }
+}
+
+#[async_trait]
+impl ChainStakeProvider for XRPProvider {
+    // Default implementation returns empty vector
 }

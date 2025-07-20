@@ -124,3 +124,14 @@ pub struct Balance {
     pub coin_type: String,
     pub total_balance: String,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ValidatorSet {
+    pub apys: Vec<ValidatorApy>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ValidatorApy {
+    pub address: String,
+    pub apy: f64,
+}
