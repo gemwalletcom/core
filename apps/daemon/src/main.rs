@@ -6,6 +6,7 @@ mod model;
 mod nft;
 mod notifications;
 mod pricer;
+mod scan;
 mod search;
 mod transaction;
 mod version;
@@ -43,6 +44,7 @@ pub async fn main() {
         DaemonService::Search => search::jobs(settings.clone()).await,
         DaemonService::Nft => nft::jobs(settings.clone()).await,
         DaemonService::Notifications => notifications::jobs(settings.clone()).await,
+        DaemonService::Scan => scan::jobs(settings.clone()).await,
     };
 
     let _ = futures::future::join_all(services).await;

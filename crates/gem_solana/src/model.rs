@@ -373,19 +373,7 @@ pub struct ValidatorConfig {
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ValidatorConfigAccount {
-    pub data: ValidatorConfigData,
-}
-
-#[derive(Debug, Clone, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ValidatorConfigData {
-    pub parsed: ValidatorConfigParsed,
-}
-
-#[derive(Debug, Clone, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ValidatorConfigParsed {
-    pub info: ValidatorConfigInfo,
+    pub data: Parsed<Info<ValidatorConfigInfo>>,
 }
 
 #[derive(Debug, Clone, Deserialize)]

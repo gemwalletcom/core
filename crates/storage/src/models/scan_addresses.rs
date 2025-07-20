@@ -61,7 +61,7 @@ impl NewScanAddress {
             address: scan_address.address,
             name: scan_address.name,
             type_: scan_address.address_type.map(|t| t.as_ref().to_lowercase()),
-            is_verified: false,
+            is_verified: scan_address.is_verified.unwrap_or(false),
             is_fraudulent: scan_address.is_malicious.unwrap_or(false),
             is_memo_required: scan_address.is_memo_required.unwrap_or(false),
         }

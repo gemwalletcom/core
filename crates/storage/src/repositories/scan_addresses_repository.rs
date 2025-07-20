@@ -31,10 +31,7 @@ impl ScanAddressesRepository for DatabaseClient {
     }
 
     fn add_scan_addresses(&mut self, values: Vec<ScanAddress>) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        let new_addresses = values
-            .into_iter()
-            .map(NewScanAddress::from_primitive)
-            .collect();
+        let new_addresses = values.into_iter().map(NewScanAddress::from_primitive).collect();
         Ok(ScanAddressesStore::add_scan_addresses(self, new_addresses)?)
     }
 }

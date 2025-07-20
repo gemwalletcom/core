@@ -6,7 +6,7 @@ use serde_json::json;
 
 use super::{
     mapper::SuiMapper,
-    model::{Balance, CoinMetadata, Digests, GasUsed, ValidatorSet},
+    model::{Balance, CoinMetadata, Digests, GasUsed, SuiSystemState, ValidatorSet},
 };
 
 pub struct SuiClient {
@@ -72,5 +72,9 @@ impl SuiClient {
 
     pub async fn get_validators(&self) -> Result<ValidatorSet, Box<dyn Error + Send + Sync>> {
         Ok(self.client.call("suix_getValidatorsApy", json!([])).await?)
+    }
+
+    pub async fn get_latest_sui_system_state(&self) -> Result<SuiSystemState, Box<dyn Error + Send + Sync>> {
+        Ok(self.client.call("suix_getLatestSuiSystemState", json!([])).await?)
     }
 }

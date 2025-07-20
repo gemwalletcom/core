@@ -1,11 +1,11 @@
 use base64::{engine::general_purpose, Engine as _};
 use chrono::DateTime;
-use primitives::{AssetId, Chain, Transaction, TransactionState, TransactionType};
+use primitives::{AssetId, Chain, StakeValidator, Transaction, TransactionState, TransactionType};
 use sha2::{Digest, Sha256};
 
 use crate::rpc::client::MESSAGES;
 use crate::rpc::message::{AuthInfo, CosmosMessage};
-use crate::rpc::model::{TransactionBody, TransactionResponse};
+use crate::rpc::model::{TransactionBody, TransactionResponse, Validator};
 
 pub struct CosmosMapper;
 
@@ -124,6 +124,13 @@ impl CosmosMapper {
             return Some(transaction);
         }
         None
+    }
+
+    pub fn map_validators(validators: Vec<Validator>) -> Vec<StakeValidator> {
+        validators
+            .into_iter()
+            .map(|v| StakeValidator::new(v.operator_address, v.description.moniker))
+            .collect()
     }
 }
 

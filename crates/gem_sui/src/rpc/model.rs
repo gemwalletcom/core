@@ -135,3 +135,16 @@ pub struct ValidatorApy {
     pub address: String,
     pub apy: f64,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SuiSystemState {
+    pub active_validators: Vec<ValidatorInfo>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ValidatorInfo {
+    pub sui_address: String,
+    pub name: String,
+}

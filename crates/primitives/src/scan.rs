@@ -59,4 +59,5 @@ pub struct ScanAddress {
     pub address_type: Option<AddressType>,
     pub is_malicious: Option<bool>,
     pub is_memo_required: Option<bool>,
+    pub is_verified: Option<bool>,
 }

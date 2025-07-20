@@ -88,14 +88,7 @@ impl ChainTransactionsProvider for SuiProvider {
 #[async_trait]
 impl ChainStakeProvider for SuiProvider {
     async fn get_validators(&self) -> Result<Vec<StakeValidator>, Box<dyn Error + Send + Sync>> {
-        let validators = self.client.get_validators().await?;
-        Ok(validators
-            .apys
-            .into_iter()
-            .map(|v| StakeValidator {
-                id: v.address.clone(),
-                name: v.address,
-            })
-            .collect())
+        let system_state = self.client.get_latest_sui_system_state().await?;
+        Ok(SuiMapper::map_validators(system_state))
     }
 }

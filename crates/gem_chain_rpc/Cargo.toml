@@ -36,9 +36,9 @@ alloy-sol-types = { workspace = true }
 
 [dev-dependencies]
 tokio.workspace = true
-gem_jsonrpc = { path = "../gem_jsonrpc" }
 reqwest.workspace = true
 reqwest-middleware.workspace = true
+gem_jsonrpc = { path = "../gem_jsonrpc" }
 
 [[test]]
 name = "integration_test"

@@ -3,8 +3,7 @@ use std::error::Error;
 use crate::{ChainAssetsProvider, ChainBlockProvider, ChainStakeProvider, ChainTokenDataProvider, ChainTransactionsProvider};
 use async_trait::async_trait;
 use gem_tron::rpc::trongrid::client::TronGridClient;
-use primitives::{chain::Chain, Asset};
-use primitives::{AssetBalance, Transaction};
+use primitives::{chain::Chain, Asset, AssetBalance, Transaction};
 
 use gem_tron::rpc::trongrid::mapper::TronGridMapper;
 use gem_tron::rpc::TronClient;

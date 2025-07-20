@@ -453,4 +453,8 @@ impl Chain {
     pub fn all() -> Vec<Self> {
         Self::iter().collect::<Vec<_>>()
     }
+
+    pub fn stakeable() -> Vec<Self> {
+        Self::all().into_iter().filter(|x| x.is_stake_supported()).collect()
+    }
 }

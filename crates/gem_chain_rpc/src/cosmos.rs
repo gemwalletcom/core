@@ -71,13 +71,6 @@ impl ChainTransactionsProvider for CosmosProvider {
 impl ChainStakeProvider for CosmosProvider {
     async fn get_validators(&self) -> Result<Vec<StakeValidator>, Box<dyn Error + Send + Sync>> {
         let validators = self.client.get_validators().await?;
-        Ok(validators
-            .validators
-            .into_iter()
-            .map(|v| StakeValidator {
-                id: v.operator_address,
-                name: v.description.moniker,
-            })
-            .collect())
+        Ok(CosmosMapper::map_validators(validators.validators))
     }
 }

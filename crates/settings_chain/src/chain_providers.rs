@@ -1,7 +1,7 @@
 use std::error::Error;
 
 use gem_chain_rpc::ChainProvider;
-use primitives::{Asset, AssetBalance, Chain, Transaction};
+use primitives::{Asset, AssetBalance, Chain, StakeValidator, Transaction};
 use settings::Settings;
 
 use crate::ProviderFactory;
@@ -48,5 +48,9 @@ impl ChainProviders {
             .unwrap()
             .get_transactions_by_address(address)
             .await
+    }
+
+    pub async fn get_validators(&self, chain: Chain) -> Result<Vec<StakeValidator>, Box<dyn Error + Send + Sync>> {
+        self.providers.iter().find(|x| x.get_chain() == chain).unwrap().get_validators().await
     }
 }
