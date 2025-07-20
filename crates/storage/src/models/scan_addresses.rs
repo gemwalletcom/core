@@ -3,16 +3,21 @@ use primitives::{AddressName as PrimitivesAddressName, Chain};
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 
-#[derive(Debug, Queryable, Selectable, Serialize, Deserialize, Insertable, AsChangeset, Clone)]
+#[derive(Debug, Queryable, Selectable, Serialize, Deserialize, Clone)]
 #[diesel(table_name = crate::schema::scan_addresses)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct ScanAddress {
+    pub id: i32,
     pub chain: String,
-    pub name: Option<String>,
     pub address: String,
+    pub name: Option<String>,
+    #[diesel(column_name = type_)]
+    pub type_: Option<String>,
     pub is_verified: bool,
     pub is_fraudulent: bool,
     pub is_memo_required: bool,
+    pub updated_at: chrono::NaiveDateTime,
+    pub created_at: chrono::NaiveDateTime,
 }
 
 impl ScanAddress {
@@ -22,6 +27,18 @@ impl ScanAddress {
             address: self.address,
             name,
         })
+    }
+
+    pub fn as_scan_address_primitive(self) -> primitives::ScanAddress {
+        primitives::ScanAddress {
+            chain: Chain::from_str(&self.chain).unwrap(),
+            address: self.address,
+            name: self.name,
+            address_type: self.type_.and_then(|x| primitives::AddressType::from_str(&x).ok()),
+            is_malicious: Some(self.is_fraudulent),
+            is_memo_required: Some(self.is_memo_required),
+            is_verified: Some(self.is_verified),
+        }
     }
 }
 

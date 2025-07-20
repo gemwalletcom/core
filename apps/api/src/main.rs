@@ -157,6 +157,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
                 price_alerts::add_price_alerts,
                 price_alerts::delete_price_alerts,
                 scan::scan_transaction,
+                scan::get_scan_address,
                 markets::get_markets,
                 chain::staking::get_validators,
                 chain::token::get_token,

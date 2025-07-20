@@ -86,4 +86,9 @@ impl ScanClient {
             .collect();
         Ok(results)
     }
+
+    pub async fn get_scan_address(&mut self, address: &str) -> Result<Vec<primitives::ScanAddress>, Box<dyn Error + Send + Sync>> {
+        let scan_addresses = self.database.scan_addresses().get_scan_addresses_by_addresses(vec![address.to_string()])?;
+        Ok(scan_addresses.into_iter().map(|addr| addr.as_scan_address_primitive()).collect())
+    }
 }
