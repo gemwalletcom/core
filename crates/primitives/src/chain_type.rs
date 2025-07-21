@@ -21,4 +21,5 @@ pub enum ChainType {
     Algorand,
     Polkadot,
     Cardano,
+    HyperCore,
 }
