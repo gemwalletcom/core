@@ -1,11 +1,7 @@
 pub mod client;
 pub use client::DevicesClient;
-extern crate rocket;
 use primitives::device::Device;
-use rocket::http::Status;
-use rocket::serde::json::Json;
-use rocket::tokio::sync::Mutex;
-use rocket::State;
+use rocket::{delete, get, http::Status, post, put, serde::json::Json, tokio::sync::Mutex, State};
 
 #[post("/devices", format = "json", data = "<device>")]
 pub async fn add_device(device: Json<Device>, client: &State<Mutex<DevicesClient>>) -> Json<Device> {

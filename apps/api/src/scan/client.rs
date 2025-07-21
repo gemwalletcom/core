@@ -1,4 +1,3 @@
-extern crate rocket;
 use primitives::{ScanTransaction, ScanTransactionPayload};
 use rocket::futures::future;
 use security_provider::{AddressTarget, ScanProvider, ScanResult, TokenTarget};

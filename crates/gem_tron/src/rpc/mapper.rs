@@ -1,9 +1,9 @@
 use chrono::DateTime;
 use num_bigint::BigUint;
 use num_traits::Num;
-use primitives::{chain::Chain, AssetId, Transaction, TransactionState, TransactionType};
+use primitives::{chain::Chain, AssetId, StakeValidator, Transaction, TransactionState, TransactionType};
 
-use super::model::{self, TransactionReceiptData};
+use super::model::{self, TransactionReceiptData, WitnessesList};
 use crate::{address::TronAddress, rpc::model::BlockTransactions};
 
 const TRANSFER_CONTRACT: &str = "TransferContract";
@@ -92,5 +92,9 @@ impl TronMapper {
             }
         }
         None
+    }
+
+    pub fn map_validators(witnesses: WitnessesList) -> Vec<StakeValidator> {
+        witnesses.witnesses.into_iter().map(|x| StakeValidator::new(x.address, x.url)).collect()
     }
 }

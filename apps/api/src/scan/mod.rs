@@ -1,6 +1,5 @@
-extern crate rocket;
 use primitives::{ResponseResult, ScanAddress, ScanTransaction, ScanTransactionPayload};
-use rocket::{serde::json::Json, tokio::sync::Mutex, State};
+use rocket::{get, post, serde::json::Json, tokio::sync::Mutex, State};
 
 pub mod client;
 pub mod providers;

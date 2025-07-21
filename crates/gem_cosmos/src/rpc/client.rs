@@ -2,7 +2,7 @@ use std::error::Error;
 
 use crate::rpc::model::TransactionsResponse;
 
-use super::model::{BlockResponse, TransactionResponse, ValidatorsResponse};
+use super::model::{AnnualProvisionsResponse, BlockResponse, InflationResponse, StakingPoolResponse, TransactionResponse, ValidatorsResponse};
 use primitives::chain_cosmos::CosmosChain;
 use reqwest_middleware::ClientWithMiddleware;
 
@@ -106,5 +106,20 @@ impl CosmosClient {
             ("pagination.limit".to_string(), "100".to_string()),
         ];
         Ok(self.client.get(url).query(&query).send().await?.json().await?)
+    }
+
+    pub async fn get_staking_pool(&self) -> Result<StakingPoolResponse, Box<dyn Error + Send + Sync>> {
+        let url = format!("{}/cosmos/staking/v1beta1/pool", self.url);
+        Ok(self.client.get(url).send().await?.json().await?)
+    }
+
+    pub async fn get_inflation(&self) -> Result<InflationResponse, Box<dyn Error + Send + Sync>> {
+        let url = format!("{}/cosmos/mint/v1beta1/inflation", self.url);
+        Ok(self.client.get(url).send().await?.json().await?)
+    }
+
+    pub async fn get_annual_provisions(&self) -> Result<AnnualProvisionsResponse, Box<dyn Error + Send + Sync>> {
+        let url = format!("{}/cosmos/mint/v1beta1/annual_provisions", self.url);
+        Ok(self.client.get(url).send().await?.json().await?)
     }
 }

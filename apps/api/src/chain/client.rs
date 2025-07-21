@@ -27,4 +27,8 @@ impl ChainClient {
     pub async fn get_validators(&self, chain: Chain) -> Result<Vec<primitives::StakeValidator>, Box<dyn Error + Send + Sync>> {
         self.providers.get_validators(chain).await
     }
+
+    pub async fn get_staking_apy(&self, chain: Chain) -> Result<f64, Box<dyn Error + Send + Sync>> {
+        self.providers.get_staking_apy(chain).await
+    }
 }

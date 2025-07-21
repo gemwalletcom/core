@@ -1,5 +1,3 @@
-#[macro_use]
-extern crate rocket;
 mod assets;
 mod chain;
 mod config;
@@ -39,7 +37,7 @@ use parser::ParserClient;
 use pricer::{ChartClient, MarketsClient, PriceAlertClient, PriceClient};
 use rocket::fairing::AdHoc;
 use rocket::tokio::sync::Mutex;
-use rocket::{Build, Rocket};
+use rocket::{routes, Build, Rocket};
 use scan::{ScanClient, ScanProviderFactory};
 use search_index::SearchIndexClient;
 use settings::Settings;
@@ -160,6 +158,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
                 scan::get_scan_address,
                 markets::get_markets,
                 chain::staking::get_validators,
+                chain::staking::get_staking_apy,
                 chain::token::get_token,
                 chain::balance::get_balances,
                 chain::transaction::get_transactions,

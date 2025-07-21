@@ -1,10 +1,7 @@
-extern crate rocket;
 use pricer::price_client::PriceClient;
 use pricer::ChartClient;
 use primitives::{AssetIdVecExt, AssetMarketPrice, AssetPrices, AssetPricesRequest, ChartPeriod, Charts, FiatRate, DEFAULT_FIAT_CURRENCY};
-use rocket::serde::json::Json;
-use rocket::tokio::sync::Mutex;
-use rocket::State;
+use rocket::{get, post, serde::json::Json, tokio::sync::Mutex, State};
 
 #[get("/prices/<asset_id>?<currency>")]
 pub async fn get_price(asset_id: &str, currency: Option<&str>, price_client: &State<Mutex<PriceClient>>) -> Json<AssetMarketPrice> {
