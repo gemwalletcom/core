@@ -1,6 +1,8 @@
 use crate::{
     metaplex::{decode_metadata, metadata::Metadata},
-    model::{BlockTransaction, BlockTransactions, Signature, TokenAccountInfo, ValidatorConfig, ValueData, ValueResult, VoteAccounts},
+    model::{
+        BlockTransaction, BlockTransactions, EpochInfo, InflationRate, Signature, TokenAccountInfo, ValidatorConfig, ValueData, ValueResult, VoteAccounts,
+    },
     pubkey::Pubkey,
 };
 use gem_jsonrpc::{
@@ -182,6 +184,16 @@ impl SolanaClient {
             "commitment": "finalized"
         })];
         Ok(self.client.call("getVoteAccounts", params).await?)
+    }
+
+    pub async fn get_inflation_rate(&self) -> Result<InflationRate, Box<dyn Error + Send + Sync>> {
+        let params: Vec<serde_json::Value> = vec![];
+        Ok(self.client.call("getInflationRate", params).await?)
+    }
+
+    pub async fn get_epoch_info(&self) -> Result<EpochInfo, Box<dyn Error + Send + Sync>> {
+        let params: Vec<serde_json::Value> = vec![];
+        Ok(self.client.call("getEpochInfo", params).await?)
     }
 
     pub async fn get_validator_configs(&self) -> Result<Vec<ValidatorConfig>, Box<dyn Error + Send + Sync>> {

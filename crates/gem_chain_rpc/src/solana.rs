@@ -111,4 +111,20 @@ impl ChainStakeProvider for SolanaProvider {
             })
             .collect())
     }
+
+    async fn get_staking_apy(&self) -> Result<f64, Box<dyn Error + Send + Sync>> {
+        let inflation_rate = self.client.get_inflation_rate().await?;
+        let epoch_info = self.client.get_epoch_info().await?;
+
+        let annual_rate = inflation_rate.validator;
+        let slots_in_epoch = epoch_info.slots_in_epoch as f64;
+        let slot_duration_sec = 0.4;
+        let epoch_days = (slots_in_epoch * slot_duration_sec) / 86400.0;
+        let epochs_per_year = 365.0 / epoch_days;
+
+        let per_epoch = annual_rate / epochs_per_year;
+        let apy = (1.0 + per_epoch).powf(epochs_per_year) - 1.0;
+
+        Ok(apy * 100.0)
+    }
 }

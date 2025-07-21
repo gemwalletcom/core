@@ -158,6 +158,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
                 scan::get_scan_address,
                 markets::get_markets,
                 chain::staking::get_validators,
+                chain::staking::get_staking_apy,
                 chain::token::get_token,
                 chain::balance::get_balances,
                 chain::transaction::get_transactions,

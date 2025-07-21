@@ -382,3 +382,16 @@ pub struct ValidatorConfigInfo {
     pub name: String,
     pub config_data: Option<serde_json::Value>,
 }
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct InflationRate {
+    pub validator: f64,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct EpochInfo {
+    pub epoch: u64,
+    pub slots_in_epoch: u64,
+}

@@ -93,6 +93,10 @@ pub trait ChainStakeProvider: Send + Sync {
     async fn get_validators(&self) -> Result<Vec<StakeValidator>, Box<dyn Error + Send + Sync>> {
         Ok(vec![])
     }
+
+    async fn get_staking_apy(&self) -> Result<f64, Box<dyn Error + Send + Sync>> {
+        Ok(0.0)
+    }
 }
 
 pub struct MockChainBlockClient {

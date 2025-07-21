@@ -91,4 +91,10 @@ impl ChainStakeProvider for SuiProvider {
         let system_state = self.client.get_latest_sui_system_state().await?;
         Ok(SuiMapper::map_validators(system_state))
     }
+
+    async fn get_staking_apy(&self) -> Result<f64, Box<dyn Error + Send + Sync>> {
+        let validator_set = self.client.get_validators().await?;
+        let max_apy = validator_set.apys.into_iter().map(|v| v.apy).fold(0.0, f64::max);
+        Ok(max_apy * 100.0)
+    }
 }
