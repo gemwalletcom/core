@@ -52,3 +52,5 @@ pub mod relay;
 pub use relay::RelayScan;
 pub mod scope;
 pub use scope::ScopeExplorer;
+pub mod hyperliquid;
+pub use hyperliquid::HyperliquidExplorer;

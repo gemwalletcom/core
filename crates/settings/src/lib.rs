@@ -206,6 +206,7 @@ pub struct Chains {
     pub ink: Chain,
     pub unichain: Chain,
     pub hyperliquid: Chain,
+    pub hypercore: Chain,
     pub monad: Chain,
 }
 

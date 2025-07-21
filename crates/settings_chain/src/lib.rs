@@ -84,6 +84,7 @@ impl ProviderFactory {
             | Chain::Ink
             | Chain::Unichain
             | Chain::Hyperliquid
+            | Chain::HyperCore
             | Chain::Monad => {
                 let chain = EVMChain::from_chain(chain).unwrap();
                 let ethereum_client = EthereumClient::new(chain, &url);
@@ -165,6 +166,7 @@ impl ProviderFactory {
             Chain::Ink => settings.chains.ink.get_type(),
             Chain::Unichain => settings.chains.unichain.get_type(),
             Chain::Hyperliquid => settings.chains.hyperliquid.get_type(),
+            Chain::HyperCore => settings.chains.hypercore.get_type(),
             Chain::Monad => settings.chains.monad.get_type(),
         }
     }
