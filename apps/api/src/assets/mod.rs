@@ -1,14 +1,10 @@
 pub mod cilent;
 pub use cilent::{AssetsClient, AssetsSearchClient};
-use rocket::http::Status;
-extern crate rocket;
+use rocket::{get, http::Status, post, serde::json::Json, tokio::sync::Mutex, State};
 
 use std::str::FromStr;
 
 use primitives::{Asset, AssetBasic, AssetFull, AssetId, Chain};
-use rocket::serde::json::Json;
-use rocket::tokio::sync::Mutex;
-use rocket::State;
 
 #[get("/assets/<asset_id>")]
 pub async fn get_asset(asset_id: &str, client: &State<Mutex<AssetsClient>>) -> Result<Json<AssetFull>, Status> {

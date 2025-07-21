@@ -1,10 +1,7 @@
 pub mod client;
 
-extern crate rocket;
 use primitives::fiat_assets::FiatAssets;
-use rocket::serde::json::Json;
-use rocket::tokio::sync::Mutex;
-use rocket::State;
+use rocket::{get, serde::json::Json, tokio::sync::Mutex, State};
 
 pub use client::SwapClient;
 

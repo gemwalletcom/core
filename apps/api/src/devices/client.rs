@@ -1,4 +1,3 @@
-extern crate rocket;
 use api_connector::PusherClient;
 use primitives::{GorushNotification, PushNotification, PushNotificationTypes};
 use std::error::Error;

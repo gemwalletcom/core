@@ -1,5 +1,3 @@
-#[macro_use]
-extern crate rocket;
 mod assets;
 mod chain;
 mod config;
@@ -39,7 +37,7 @@ use parser::ParserClient;
 use pricer::{ChartClient, MarketsClient, PriceAlertClient, PriceClient};
 use rocket::fairing::AdHoc;
 use rocket::tokio::sync::Mutex;
-use rocket::{Build, Rocket};
+use rocket::{routes, Build, Rocket};
 use scan::{ScanClient, ScanProviderFactory};
 use search_index::SearchIndexClient;
 use settings::Settings;

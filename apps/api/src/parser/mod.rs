@@ -1,13 +1,10 @@
 mod client;
 pub use client::ParserClient;
 
-extern crate rocket;
 use std::str::FromStr;
 
 use primitives::{Chain, Transaction};
-use rocket::serde::json::Json;
-use rocket::tokio::sync::Mutex;
-use rocket::State;
+use rocket::{get, serde::json::Json, tokio::sync::Mutex, State};
 
 #[get("/parser/chains/<chain>/blocks/<block_number>?<transaction_type>")]
 pub async fn get_parser_block(

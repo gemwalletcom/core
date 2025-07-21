@@ -1,6 +1,4 @@
-use rocket::serde::json::Json;
-use rocket::tokio::sync::Mutex;
-use rocket::State;
+use rocket::{get, serde::json::Json, tokio::sync::Mutex, State};
 use std::str::FromStr;
 
 use primitives::{AssetBalance, Chain, ChainAddress};
