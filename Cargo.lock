@@ -3004,6 +3004,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "gem_hypercore"
+version = "1.0.0"
+dependencies = [
+ "serde",
+ "typeshare",
+]
+
+[[package]]
 name = "gem_jsonrpc"
 version = "1.0.0"
 dependencies = [

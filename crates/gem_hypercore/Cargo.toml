@@ -1,0 +1,12 @@
+[package]
+name = "gem_hypercore"
+version = { workspace = true }
+edition = { workspace = true }
+
+[features]
+default = []
+typeshare = ["dep:typeshare"]
+
+[dependencies]
+serde = { workspace = true, features = ["derive"] }
+typeshare = { workspace = true, optional = true }
