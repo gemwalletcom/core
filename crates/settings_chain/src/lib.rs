@@ -166,7 +166,7 @@ impl ProviderFactory {
             Chain::Ink => settings.chains.ink.get_type(),
             Chain::Unichain => settings.chains.unichain.get_type(),
             Chain::Hyperliquid => settings.chains.hyperliquid.get_type(),
-            Chain::HyperCore => settings.chains.arbitrum.get_type(),
+            Chain::HyperCore => settings.chains.hypercore.get_type(),
             Chain::Monad => settings.chains.monad.get_type(),
         }
     }

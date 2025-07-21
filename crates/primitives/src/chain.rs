@@ -56,8 +56,8 @@ pub enum Chain {
     Berachain,
     Ink,
     Unichain,
-    Hyperliquid, // HyperEVM, chain id is same as Arbitrum
-    HyperCore,
+    Hyperliquid, // HyperEVM, chain id 999
+    HyperCore,   // Hyperliquid native chain, uses Arbitrum's chain id 42161
     Monad,
 }
 
