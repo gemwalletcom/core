@@ -56,7 +56,8 @@ pub enum Chain {
     Berachain,
     Ink,
     Unichain,
-    Hyperliquid,
+    Hyperliquid, // HyperEVM, chain id is same as Arbitrum
+    HyperCore,
     Monad,
 }
 
@@ -132,6 +133,7 @@ impl Chain {
             Self::Ink => "57073",
             Self::Unichain => "130",
             Self::Hyperliquid => "999",
+            Self::HyperCore => "42161",
             Self::Monad => "10143", //TODO: Monad 143
         }
     }
@@ -168,6 +170,7 @@ impl Chain {
             | Self::Ink
             | Self::Unichain
             | Self::Hyperliquid
+            | Self::HyperCore
             | Self::Monad => 60,
             Self::Bitcoin => 0,
             Self::BitcoinCash => 145,
@@ -216,6 +219,7 @@ impl Chain {
             | Self::Ink
             | Self::Unichain
             | Self::Hyperliquid
+            | Self::HyperCore
             | Self::Monad => ChainType::Ethereum,
             Self::Bitcoin | Self::BitcoinCash | Self::Doge | Self::Litecoin => ChainType::Bitcoin,
             Self::Solana => ChainType::Solana,
@@ -256,6 +260,7 @@ impl Chain {
             | Self::Ink
             | Self::Unichain
             | Self::Hyperliquid
+            | Self::HyperCore
             | Self::Monad => Some(AssetType::ERC20),
             Self::OpBNB | Self::SmartChain => Some(AssetType::BEP20),
             Self::Solana => Some(AssetType::SPL),
@@ -339,6 +344,7 @@ impl Chain {
             | Self::Unichain
             | Self::Ink
             | Self::Hyperliquid
+            | Self::HyperCore
             | Self::Sui
             | Self::Monad
             | Self::Ton
@@ -388,6 +394,7 @@ impl Chain {
             | Self::Base
             | Self::Blast
             | Self::Hyperliquid
+            | Self::HyperCore
             | Self::Manta
             | Self::Optimism
             | Self::World
@@ -420,6 +427,7 @@ impl Chain {
             | Self::BitcoinCash
             | Self::Polkadot
             | Self::Hyperliquid
+            | Self::HyperCore
             | Self::Monad => 40,
             Self::Abstract | Self::Berachain | Self::Ink | Self::Unichain => 35,
             Self::Manta
