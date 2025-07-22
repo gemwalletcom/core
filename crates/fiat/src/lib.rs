@@ -2,10 +2,11 @@ pub mod client;
 pub mod model;
 pub mod provider;
 pub use provider::FiatProvider;
+pub mod hmac_signature;
 pub mod ip_check_client;
 pub mod providers;
 
-use crate::providers::{BanxaClient, MercuryoClient, MoonPayClient, TransakClient};
+use crate::providers::{BanxaClient, MercuryoClient, MoonPayClient, PaybisClient, TransakClient};
 use settings::Settings;
 pub mod error;
 
@@ -25,8 +26,9 @@ impl FiatProviderFactory {
         );
         let transak = TransakClient::new(request_client.clone(), settings.transak.key.public);
         let banxa = BanxaClient::new(request_client.clone(), settings.banxa.url, settings.banxa.key.public, settings.banxa.key.secret);
+        let paybis = PaybisClient::new(request_client.clone(), settings.paybis.key.public, settings.paybis.key.secret);
 
-        vec![Box::new(moonpay), Box::new(mercuryo), Box::new(transak), Box::new(banxa)]
+        vec![Box::new(moonpay), Box::new(mercuryo), Box::new(transak), Box::new(banxa), Box::new(paybis)]
     }
 
     pub fn new_ip_check_client(settings: Settings) -> IPCheckClient {
