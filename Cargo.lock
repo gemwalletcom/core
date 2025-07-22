@@ -2928,6 +2928,7 @@ dependencies = [
  "gem_cardano",
  "gem_cosmos",
  "gem_evm",
+ "gem_hypercore",
  "gem_jsonrpc",
  "gem_near",
  "gem_polkadot",
@@ -3008,6 +3009,7 @@ dependencies = [
 name = "gem_hypercore"
 version = "1.0.0"
 dependencies = [
+ "async-trait",
  "serde",
  "typeshare",
 ]
@@ -6573,6 +6575,7 @@ dependencies = [
  "gem_chain_rpc",
  "gem_cosmos",
  "gem_evm",
+ "gem_hypercore",
  "gem_jsonrpc",
  "gem_near",
  "gem_polkadot",

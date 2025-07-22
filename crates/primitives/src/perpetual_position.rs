@@ -18,6 +18,7 @@ pub struct PriceTarget {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[typeshare(swift = "Equatable, Sendable")]
+#[serde(rename_all = "camelCase")]
 pub struct PerpetualPosition {
     pub id: String,
     pub perpetual_id: String,

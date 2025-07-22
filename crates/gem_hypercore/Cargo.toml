@@ -8,5 +8,6 @@ default = []
 typeshare = ["dep:typeshare"]
 
 [dependencies]
+async-trait = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 typeshare = { workspace = true, optional = true }
