@@ -48,7 +48,7 @@ pub struct HypercorePosition {
     pub position_value: String,
     pub unrealized_pnl: String,
     pub return_on_equity: String,
-    pub liquidation_px: String,
+    pub liquidation_px: Option<String>,
     pub margin_used: String,
     pub max_leverage: u32,
     pub cum_funding: HypercoreCumulativeFunding,
@@ -75,6 +75,4 @@ pub enum HypercoreLeverageType {
 #[serde(rename_all = "camelCase")]
 pub struct HypercoreCumulativeFunding {
     pub all_time: String,
-    pub since_open: String,
-    pub since_change: String,
 }
