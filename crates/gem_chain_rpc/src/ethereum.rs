@@ -4,13 +4,13 @@ use async_trait::async_trait;
 use gem_solana::model::BigUint;
 use std::error::Error;
 
-use crate::{ChainAssetsProvider, ChainBlockProvider, ChainStakeProvider, ChainTokenDataProvider, ChainTransactionsProvider};
+use crate::{ChainAssetsProvider, ChainBlockProvider, ChainStakeProvider, ChainTokenDataProvider, ChainTransactionsProvider, SmartChainProvider};
 use gem_evm::{
     erc20::{decode_abi_string, decode_abi_uint8, IERC20},
     ethereum_address_checksum,
     rpc::{alchemy::AlchemyClient, ankr::AnkrClient, EthereumClient, EthereumMapper},
 };
-use primitives::{Asset, AssetBalance, AssetId, Chain, NodeType, Transaction};
+use primitives::{Asset, AssetBalance, AssetId, Chain, EVMChain, NodeType, StakeValidator, Transaction};
 
 pub struct EthereumProvider {
     client: EthereumClient,
@@ -109,7 +109,25 @@ impl ChainTransactionsProvider for EthereumProvider {
 
 #[async_trait]
 impl ChainStakeProvider for EthereumProvider {
-    // Default implementation returns empty vector
+    async fn get_validators(&self) -> Result<Vec<StakeValidator>, Box<dyn Error + Send + Sync>> {
+        match self.client.chain {
+            EVMChain::SmartChain => {
+                let provider = SmartChainProvider::new(self.client.clone());
+                provider.get_validators().await
+            }
+            _ => Ok(Vec::new()),
+        }
+    }
+
+    async fn get_staking_apy(&self) -> Result<f64, Box<dyn Error + Send + Sync>> {
+        match self.client.chain {
+            EVMChain::SmartChain => {
+                let provider = SmartChainProvider::new(self.client.clone());
+                provider.get_staking_apy().await
+            }
+            _ => Ok(0.0),
+        }
+    }
 }
 
 // AlchemyClient

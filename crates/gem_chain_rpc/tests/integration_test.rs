@@ -1,11 +1,12 @@
 #[cfg(test)]
 mod tests {
-    use gem_chain_rpc::{ChainStakeProvider, ChainTokenDataProvider, CosmosProvider, SolanaProvider, SuiProvider};
+    use gem_chain_rpc::{ChainStakeProvider, ChainTokenDataProvider, CosmosProvider, SmartChainProvider, SolanaProvider, SuiProvider};
     use gem_cosmos::rpc::CosmosClient;
+    use gem_evm::rpc::EthereumClient;
     use gem_jsonrpc::JsonRpcClient;
     use gem_solana::rpc::client::SolanaClient;
     use gem_sui::rpc::client::SuiClient;
-    use primitives::chain_cosmos::CosmosChain;
+    use primitives::{chain_cosmos::CosmosChain, EVMChain};
     use reqwest_middleware::ClientBuilder;
 
     #[tokio::test]
@@ -69,6 +70,27 @@ mod tests {
             assert!(!validator.id.is_empty());
             assert!(!validator.name.is_empty());
         }
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_smartchain_get_validators() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let ethereum_client = EthereumClient::new(EVMChain::SmartChain, "https://bsc-dataseed.binance.org");
+        let provider = SmartChainProvider::new(ethereum_client);
+
+        let validators = provider.get_validators().await?;
+        assert!(!validators.is_empty());
+
+        // Check that validators have valid data
+        for validator in validators.iter().take(5) {
+            assert!(!validator.id.is_empty());
+            assert!(!validator.name.is_empty());
+        }
+
+        // Test APY as well
+        let apy = provider.get_staking_apy().await?;
+        assert!(apy >= 0.0);
 
         Ok(())
     }
