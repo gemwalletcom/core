@@ -2924,6 +2924,7 @@ dependencies = [
  "gem_algorand",
  "gem_aptos",
  "gem_bitcoin",
+ "gem_bsc",
  "gem_cardano",
  "gem_cosmos",
  "gem_evm",
