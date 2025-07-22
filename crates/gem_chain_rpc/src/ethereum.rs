@@ -111,20 +111,14 @@ impl ChainTransactionsProvider for EthereumProvider {
 impl ChainStakeProvider for EthereumProvider {
     async fn get_validators(&self) -> Result<Vec<StakeValidator>, Box<dyn Error + Send + Sync>> {
         match self.client.chain {
-            EVMChain::SmartChain => {
-                let provider = SmartChainProvider::new(self.client.clone());
-                provider.get_validators().await
-            }
-            _ => Ok(Vec::new()),
+            EVMChain::SmartChain => SmartChainProvider::new(self.client.clone()).get_validators().await,
+            _ => Ok(vec![]),
         }
     }
 
     async fn get_staking_apy(&self) -> Result<f64, Box<dyn Error + Send + Sync>> {
         match self.client.chain {
-            EVMChain::SmartChain => {
-                let provider = SmartChainProvider::new(self.client.clone());
-                provider.get_staking_apy().await
-            }
+            EVMChain::SmartChain => SmartChainProvider::new(self.client.clone()).get_staking_apy().await,
             _ => Ok(0.0),
         }
     }

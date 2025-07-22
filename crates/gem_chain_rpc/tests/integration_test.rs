@@ -75,7 +75,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_smartchain_get_validators() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    async fn test_smartchain_get_validators_and_apy() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let ethereum_client = EthereumClient::new(EVMChain::SmartChain, "https://bsc-dataseed.binance.org");
         let provider = SmartChainProvider::new(ethereum_client);
 
@@ -88,7 +88,6 @@ mod tests {
             assert!(!validator.name.is_empty());
         }
 
-        // Test APY as well
         let apy = provider.get_staking_apy().await?;
         assert!(apy >= 0.0);
 
