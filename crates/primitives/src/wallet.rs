@@ -22,7 +22,7 @@ pub enum WalletType {
     view,
 }
 
-#[typeshare(swift = "Equatable, Sendable")]
+#[typeshare(swift = "Equatable, Sendable, Hashable")]
 struct WalletId {
     id: String,
 }
