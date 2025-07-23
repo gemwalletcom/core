@@ -1,6 +1,6 @@
 #[derive(Debug, Serialize)]
 #[typeshare(swift = "CaseIterable, Sendable")]
-pub enum WalletConnectBlockchainEthereumMethods {
+pub enum WalletConnectEthereumMethods {
     #[serde(rename = "chainId")]
     chain_id,
     #[serde(rename = "sign")]
@@ -25,7 +25,7 @@ pub enum WalletConnectBlockchainEthereumMethods {
 
 #[derive(Debug, Serialize)]
 #[typeshare(swift = "CaseIterable, Sendable")]
-pub enum WalletConnectBlockchainSolanaMethods {
+pub enum WalletConnectSolanaMethods {
     #[serde(rename = "signMessage")]
     sign_message,
     #[serde(rename = "signTransaction")]
