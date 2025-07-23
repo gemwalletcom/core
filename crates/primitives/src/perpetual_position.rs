@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-#[typeshare(swift = "Equatable, Sendable")]
+#[typeshare(swift = "Equatable, Sendable, Hashable")]
 #[serde(rename_all = "lowercase")]
 pub enum PerpetualMarginType {
     Cross,
@@ -10,19 +10,20 @@ pub enum PerpetualMarginType {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-#[typeshare(swift = "Equatable, Sendable")]
+#[typeshare(swift = "Equatable, Sendable, Hashable")]
 pub struct PriceTarget {
     pub price: Option<f64>,
     pub percentage: Option<f64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-#[typeshare(swift = "Equatable, Sendable")]
+#[typeshare(swift = "Equatable, Sendable, Hashable")]
 #[serde(rename_all = "camelCase")]
 pub struct PerpetualPosition {
     pub id: String,
     pub perpetual_id: String,
     pub size: f64,
+    pub size_value: f64,
     pub leverage: u8,
     pub liquidation_price: Option<f64>,
     pub margin_type: PerpetualMarginType,
