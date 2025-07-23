@@ -4,6 +4,7 @@ use lazy_static::lazy_static;
 use num_bigint::BigUint;
 use num_traits::Num;
 
+use super::staking_mapper::StakingMapper;
 use super::swap_mapper::SwapMapper;
 use crate::{
     address::ethereum_address_checksum,
@@ -69,6 +70,11 @@ impl EthereumMapper {
         let from = ethereum_address_checksum(&transaction.from.clone()).ok()?;
         let to = ethereum_address_checksum(&transaction.to.clone().unwrap_or_default()).ok()?;
         let created_at = DateTime::from_timestamp(timestamp.clone().try_into().ok()?, 0)?;
+        // Try to decode BSC staking transaction first
+        if let Some(tx) = StakingMapper::map_transaction(&chain, transaction, transaction_reciept, created_at) {
+            return Some(tx);
+        }
+
         let is_smart_contract_call = transaction.to.is_some() && transaction.input.len() > 2;
         let is_native_transfer = transaction.input == INPUT_0X && transaction.gas == TRANSFER_GAS_LIMIT;
         let is_native_transfer_with_data = transaction.input.len() > 2
@@ -405,5 +411,45 @@ mod tests {
         assert_eq!(transaction.from, "0x58E1b0E63C905D5982324FCd9108582623b8132e");
         assert_eq!(transaction.to, "0x0D9DAB1A248f63B0a48965bA8435e4de7497a3dC");
         assert_eq!(transaction.value, "930678651");
+    }
+
+    #[test]
+    fn test_bsc_staking_integration() {
+        // Test BSC delegate transaction integration with main mapper
+        let transaction = Transaction {
+            hash: "0x21442c7c30a6c1d6be3b5681275adb1f1402cef066579c4f53ec4f1c8c056ab0".to_string(),
+            from: "0xf1a3687303606a6fd48179ce503164cdcbabeab6".to_string(),
+            to: Some("0x0000000000000000000000000000000000002002".to_string()),
+            value: BigUint::parse_bytes(b"1158e460913d00000", 16).unwrap(),
+            gas: 280395,
+            input: "0x982ef0a7000000000000000000000000d34403249b2d82aaddb14e778422c966265e5fb50000000000000000000000000000000000000000000000000000000000000000"
+                .to_string(),
+        };
+
+        let receipt = TransactionReciept {
+            gas_used: BigUint::from(21000u32),
+            effective_gas_price: BigUint::from(20000000000u64),
+            l1_fee: None,
+            logs: vec![],
+            status: "0x1".to_string(),
+            block_number: "0x1234".to_string(),
+        };
+
+        let result = EthereumMapper::map_transaction(
+            Chain::SmartChain,
+            &transaction,
+            &receipt,
+            None,
+            &BigUint::from(1735671600u64),
+            None,
+        );
+
+        assert!(result.is_some());
+        let tx = result.unwrap();
+        assert_eq!(tx.transaction_type, TransactionType::StakeDelegate);
+        assert_eq!(tx.from, "0xf1a3687303606a6fD48179Ce503164CDcBAbeaB6");
+        assert_eq!(tx.to, "0xd34403249B2d82AAdDB14e778422c966265e5Fb5");
+        assert_eq!(tx.contract.unwrap(), "0x0000000000000000000000000000000000002002");
+        assert!(tx.metadata.is_none());
     }
 }
