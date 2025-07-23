@@ -3,19 +3,6 @@ use typeshare::typeshare;
 
 use crate::{AssetId, NFTAssetId};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare(swift = "Sendable")]
-#[serde(rename_all = "camelCase")]
-pub struct TransactionStakeMetadata {
-    pub asset_id: AssetId,
-    pub validator: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub to_validator: Option<String>,
-    pub delegator: Option<String>,
-    pub value: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub shares: Option<String>,
-}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Sendable")]

@@ -7,7 +7,7 @@ use crate::{
     rpc::model::{Transaction, TransactionReciept},
 };
 use gem_bsc::stake_hub;
-use primitives::{AssetId, Chain, TransactionStakeMetadata, TransactionState, TransactionType};
+use primitives::{AssetId, Chain, TransactionState, TransactionType};
 
 pub struct StakingMapper;
 
@@ -35,9 +35,7 @@ impl StakingMapper {
         }
 
         let method_id = &input_bytes[0..4];
-        let (stake_metadata, transaction_type) = Self::try_map_staking_transaction(chain, method_id, &input_bytes, transaction)?;
-
-        Self::make_staking_transaction(chain, transaction, transaction_reciept, &stake_metadata, transaction_type, created_at)
+        Self::try_map_staking_transaction(chain, method_id, &input_bytes, transaction, transaction_reciept, created_at)
     }
 
     fn try_map_staking_transaction(
@@ -45,7 +43,9 @@ impl StakingMapper {
         method_id: &[u8],
         input_bytes: &[u8],
         transaction: &Transaction,
-    ) -> Option<(TransactionStakeMetadata, TransactionType)> {
+        transaction_reciept: &TransactionReciept,
+        created_at: DateTime<Utc>,
+    ) -> Option<primitives::Transaction> {
         match method_id {
             // delegate(address,bool) - 0x982ef0a7
             [0x98, 0x2e, 0xf0, 0xa7] => {
@@ -54,16 +54,24 @@ impl StakingMapper {
                         return None;
                     }
 
-                    Some((
-                        TransactionStakeMetadata {
-                            asset_id: AssetId::from_chain(*chain),
-                            validator: Some(operator_address),
-                            to_validator: None,
-                            delegator: Some(transaction.from.clone()),
-                            value: transaction.value.to_string(),
-                            shares: None,
-                        },
+                    let from_checksum = ethereum_address_checksum(&transaction.from).ok()?;
+                    let to_checksum = ethereum_address_checksum(&operator_address).ok()?;
+                    let contract_checksum = transaction.to.as_ref().and_then(|to| ethereum_address_checksum(to).ok());
+
+                    Some(primitives::Transaction::new(
+                        transaction.hash.clone(),
+                        AssetId::from_chain(*chain),
+                        from_checksum,
+                        to_checksum,
+                        contract_checksum,
                         TransactionType::StakeDelegate,
+                        TransactionState::Confirmed,
+                        transaction_reciept.get_fee().to_string(),
+                        AssetId::from_chain(*chain),
+                        transaction.value.to_string(),
+                        None,
+                        None,
+                        created_at,
                     ))
                 } else {
                     None
@@ -71,17 +79,25 @@ impl StakingMapper {
             }
             // undelegate(address,uint256) - 0x4d99dd16
             [0x4d, 0x99, 0xdd, 0x16] => {
-                if let Ok((operator_address, shares)) = stake_hub::decode_undelegate_call(input_bytes) {
-                    Some((
-                        TransactionStakeMetadata {
-                            asset_id: AssetId::from_chain(*chain),
-                            validator: Some(operator_address),
-                            to_validator: None,
-                            delegator: Some(transaction.from.clone()),
-                            value: "0".to_string(), // For undelegate, the value is in shares, not native token
-                            shares: Some(shares),
-                        },
+                if let Ok((operator_address, _shares)) = stake_hub::decode_undelegate_call(input_bytes) {
+                    let from_checksum = ethereum_address_checksum(&transaction.from).ok()?;
+                    let to_checksum = ethereum_address_checksum(&operator_address).ok()?;
+                    let contract_checksum = transaction.to.as_ref().and_then(|to| ethereum_address_checksum(to).ok());
+
+                    Some(primitives::Transaction::new(
+                        transaction.hash.clone(),
+                        AssetId::from_chain(*chain),
+                        from_checksum,
+                        to_checksum,
+                        contract_checksum,
                         TransactionType::StakeUndelegate,
+                        TransactionState::Confirmed,
+                        transaction_reciept.get_fee().to_string(),
+                        AssetId::from_chain(*chain),
+                        "0".to_string(), // For undelegate, the value is in shares, not native token
+                        None,
+                        None,
+                        created_at,
                     ))
                 } else {
                     None
@@ -89,17 +105,25 @@ impl StakingMapper {
             }
             // redelegate(address,address,uint256,bool) - 0x59491871
             [0x59, 0x49, 0x18, 0x71] => {
-                if let Ok((src_validator, dst_validator, shares, _delegate_vote_power)) = stake_hub::decode_redelegate_call(input_bytes) {
-                    Some((
-                        TransactionStakeMetadata {
-                            asset_id: AssetId::from_chain(*chain),
-                            validator: Some(src_validator),
-                            to_validator: Some(dst_validator),
-                            delegator: Some(transaction.from.clone()),
-                            value: "0".to_string(), // For redelegate, the value is in shares
-                            shares: Some(shares),
-                        },
+                if let Ok((_src_validator, dst_validator, _shares, _delegate_vote_power)) = stake_hub::decode_redelegate_call(input_bytes) {
+                    let from_checksum = ethereum_address_checksum(&transaction.from).ok()?;
+                    let to_checksum = ethereum_address_checksum(&dst_validator).ok()?;
+                    let contract_checksum = transaction.to.as_ref().and_then(|to| ethereum_address_checksum(to).ok());
+
+                    Some(primitives::Transaction::new(
+                        transaction.hash.clone(),
+                        AssetId::from_chain(*chain),
+                        from_checksum,
+                        to_checksum,
+                        contract_checksum,
                         TransactionType::StakeRedelegate,
+                        TransactionState::Confirmed,
+                        transaction_reciept.get_fee().to_string(),
+                        AssetId::from_chain(*chain),
+                        "0".to_string(), // For redelegate, the value is in shares
+                        None,
+                        None,
+                        created_at,
                     ))
                 } else {
                     None
@@ -107,34 +131,6 @@ impl StakingMapper {
             }
             _ => None,
         }
-    }
-
-    fn make_staking_transaction(
-        chain: &Chain,
-        transaction: &Transaction,
-        transaction_reciept: &TransactionReciept,
-        metadata: &TransactionStakeMetadata,
-        transaction_type: TransactionType,
-        created_at: DateTime<Utc>,
-    ) -> Option<primitives::Transaction> {
-        let from_checksum = ethereum_address_checksum(&transaction.from).ok()?;
-        let contract_checksum = transaction.to.as_ref().and_then(|to| ethereum_address_checksum(to).ok());
-
-        Some(primitives::Transaction::new(
-            transaction.hash.clone(),
-            metadata.asset_id.clone(),
-            from_checksum.clone(),
-            from_checksum,
-            contract_checksum,
-            transaction_type,
-            TransactionState::Confirmed,
-            transaction_reciept.get_fee().to_string(),
-            AssetId::from_chain(*chain),
-            transaction.value.to_string(),
-            None,
-            serde_json::to_value(metadata).ok(),
-            created_at,
-        ))
     }
 }
 
@@ -175,17 +171,10 @@ mod tests {
 
         assert_eq!(stake_tx.transaction_type, TransactionType::StakeDelegate);
         assert_eq!(stake_tx.from, "0xf1a3687303606a6fD48179Ce503164CDcBAbeaB6");
-        assert_eq!(stake_tx.to, "0xf1a3687303606a6fD48179Ce503164CDcBAbeaB6");
+        assert_eq!(stake_tx.to, "0xd34403249B2d82AAdDB14e778422c966265e5Fb5");
         assert_eq!(stake_tx.contract.unwrap(), "0x0000000000000000000000000000000000002002");
         assert_eq!(stake_tx.value, "20000000000000000000");
-
-        let metadata: TransactionStakeMetadata = serde_json::from_value(stake_tx.metadata.unwrap()).unwrap();
-        assert_eq!(metadata.asset_id, AssetId::from_chain(Chain::SmartChain));
-        assert_eq!(metadata.validator.unwrap(), "0xd34403249B2d82AAdDB14e778422c966265e5Fb5");
-        assert!(metadata.to_validator.is_none());
-        assert_eq!(metadata.delegator.unwrap(), "0xf1a3687303606a6fd48179ce503164cdcbabeab6");
-        assert_eq!(metadata.value, "20000000000000000000");
-        assert!(metadata.shares.is_none());
+        assert!(stake_tx.metadata.is_none());
     }
 
     #[test]
@@ -209,17 +198,10 @@ mod tests {
 
         assert_eq!(stake_tx.transaction_type, TransactionType::StakeUndelegate);
         assert_eq!(stake_tx.from, "0x9Ccd32825A39209E0d14a5d8D27e9E545B901d8F");
-        assert_eq!(stake_tx.to, "0x9Ccd32825A39209E0d14a5d8D27e9E545B901d8F");
+        assert_eq!(stake_tx.to, "0x5c38FF8Ca2b16099C086bF36546e99b13D152C4c");
         assert_eq!(stake_tx.contract.unwrap(), "0x0000000000000000000000000000000000002002");
         assert_eq!(stake_tx.value, "0");
-
-        let metadata: TransactionStakeMetadata = serde_json::from_value(stake_tx.metadata.unwrap()).unwrap();
-        assert_eq!(metadata.asset_id, AssetId::from_chain(Chain::SmartChain));
-        assert_eq!(metadata.validator.unwrap(), "0x5c38FF8Ca2b16099C086bF36546e99b13D152C4c");
-        assert!(metadata.to_validator.is_none());
-        assert_eq!(metadata.delegator.unwrap(), "0x9ccd32825a39209e0d14a5d8d27e9e545b901d8f");
-        assert_eq!(metadata.value, "0");
-        assert_eq!(metadata.shares.unwrap(), "415946947323922080");
+        assert!(stake_tx.metadata.is_none());
     }
 
     #[test]
@@ -242,17 +224,10 @@ mod tests {
 
         assert_eq!(stake_tx.transaction_type, TransactionType::StakeRedelegate);
         assert_eq!(stake_tx.from, "0xB5a0A71Be7B79F2A8Bd19B3A4D54d1b85fA2d50b");
-        assert_eq!(stake_tx.to, "0xB5a0A71Be7B79F2A8Bd19B3A4D54d1b85fA2d50b");
+        assert_eq!(stake_tx.to, "0xB58ac55EB6B10e4f7918D77C92aA1cF5bB2DEd5e");
         assert_eq!(stake_tx.contract.unwrap(), "0x0000000000000000000000000000000000002002");
         assert_eq!(stake_tx.value, "0");
-
-        let metadata: TransactionStakeMetadata = serde_json::from_value(stake_tx.metadata.unwrap()).unwrap();
-        assert_eq!(metadata.asset_id, AssetId::from_chain(Chain::SmartChain));
-        assert_eq!(metadata.validator.unwrap(), "0x0813D0D092b97C157A8e68A65ccdF41b956883ae");
-        assert_eq!(metadata.to_validator.unwrap(), "0xB58ac55EB6B10e4f7918D77C92aA1cF5bB2DEd5e");
-        assert_eq!(metadata.delegator.unwrap(), "0xb5a0a71be7b79f2a8bd19b3a4d54d1b85fa2d50b");
-        assert_eq!(metadata.value, "0");
-        assert_eq!(metadata.shares.unwrap(), "2337013854984033567");
+        assert!(stake_tx.metadata.is_none());
     }
 
     #[test]
