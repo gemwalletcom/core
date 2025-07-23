@@ -92,7 +92,7 @@ impl DatabaseClient {
             ChartPeriod::Day => ChartGranularity::Minute15,
             ChartPeriod::Week => ChartGranularity::Hourly,
             ChartPeriod::Month => ChartGranularity::Hour6,
-            ChartPeriod::Quarter | ChartPeriod::Year | ChartPeriod::All => ChartGranularity::Daily,
+            ChartPeriod::Year | ChartPeriod::All => ChartGranularity::Daily,
         }
     }
 
@@ -102,7 +102,6 @@ impl DatabaseClient {
             ChartPeriod::Day => "15 minutes",
             ChartPeriod::Week => "1 hour",
             ChartPeriod::Month => "6 hour",
-            ChartPeriod::Quarter => "1 day",
             ChartPeriod::Year => "3 day",
             ChartPeriod::All => "3 day",
         }
@@ -114,7 +113,6 @@ impl DatabaseClient {
             ChartPeriod::Day => 1440,
             ChartPeriod::Week => 10_080,
             ChartPeriod::Month => 43_200,
-            ChartPeriod::Quarter => 131_400,
             ChartPeriod::Year => 525_600,
             ChartPeriod::All => 10_525_600,
         }
