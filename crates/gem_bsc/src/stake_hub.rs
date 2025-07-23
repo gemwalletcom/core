@@ -4,6 +4,7 @@ use anyhow::Error;
 use std::str::FromStr;
 
 pub const HUB_READER_ADDRESS: &str = "0x830295c0abe7358f7e24bc38408095621474280b";
+pub const STAKE_HUB_ADDRESS: &str = "0x0000000000000000000000000000000000002002";
 
 sol! {
     #[derive(Debug, PartialEq)]

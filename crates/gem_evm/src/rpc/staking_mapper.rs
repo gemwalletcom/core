@@ -8,8 +8,6 @@ use crate::{
 };
 use primitives::{AssetId, Chain, StakeType, TransactionStakeMetadata, TransactionState, TransactionType};
 
-const STAKE_HUB_ADDRESS: &str = "0x0000000000000000000000000000000000002002";
-
 pub struct StakingMapper;
 
 impl StakingMapper {
@@ -26,7 +24,7 @@ impl StakingMapper {
 
         // Check if transaction is to the StakeHub contract
         let to_address = transaction.to.as_ref()?;
-        if to_address.to_lowercase() != STAKE_HUB_ADDRESS.to_lowercase() {
+        if to_address.to_lowercase() != gem_bsc::stake_hub::STAKE_HUB_ADDRESS.to_lowercase() {
             return None;
         }
 
