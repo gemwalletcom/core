@@ -11,6 +11,7 @@ pub struct ChartCandleStick {
     pub high: f64,
     pub low: f64,
     pub close: f64,
+    pub volume: f64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]

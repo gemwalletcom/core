@@ -11,4 +11,5 @@ pub struct HypercoreCandlestick {
     pub h: String, // High price
     pub l: String, // Low price
     pub c: String, // Close price
+    pub v: String, // Volume
 }
