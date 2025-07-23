@@ -70,10 +70,6 @@ impl EthereumMapper {
         let from = ethereum_address_checksum(&transaction.from.clone()).ok()?;
         let to = ethereum_address_checksum(&transaction.to.clone().unwrap_or_default()).ok()?;
         let created_at = DateTime::from_timestamp(timestamp.clone().try_into().ok()?, 0)?;
-        // Try to decode BSC staking transaction first
-        if let Some(tx) = StakingMapper::map_transaction(&chain, transaction, transaction_reciept, created_at) {
-            return Some(tx);
-        }
 
         let is_smart_contract_call = transaction.to.is_some() && transaction.input.len() > 2;
         let is_native_transfer = transaction.input == INPUT_0X && transaction.gas == TRANSFER_GAS_LIMIT;
@@ -210,6 +206,11 @@ impl EthereumMapper {
                     created_at,
                 ));
             }
+        }
+
+        // Try to decode BSC staking transaction
+        if let Some(tx) = StakingMapper::map_transaction(&chain, transaction, transaction_reciept, created_at) {
+            return Some(tx);
         }
 
         // Check for smart contract call
@@ -427,7 +428,7 @@ mod tests {
         };
 
         let receipt = TransactionReciept {
-            gas_used: BigUint::from(21000u32),
+            gas_used: BigUint::from(100000u32), // More realistic gas usage for staking tx
             effective_gas_price: BigUint::from(20000000000u64),
             l1_fee: None,
             logs: vec![],
