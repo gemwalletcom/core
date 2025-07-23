@@ -30,7 +30,7 @@ impl StakingMapper {
 
         // Check if transaction is to the StakeHub contract
         let to_address = transaction.to.as_ref()?;
-        if to_address.to_lowercase() != stake_hub::STAKE_HUB_ADDRESS.to_lowercase() {
+        if to_address != stake_hub::STAKE_HUB_ADDRESS {
             return None;
         }
 
@@ -61,96 +61,86 @@ impl StakingMapper {
                         return None;
                     }
 
-                    let from_checksum = ethereum_address_checksum(&transaction.from).ok()?;
-                    let to_checksum = ethereum_address_checksum(&operator_address).ok()?;
-                    let contract_checksum = transaction.to.as_ref().and_then(|to| ethereum_address_checksum(to).ok());
-                    let state = if transaction_reciept.status == "0x1" {
-                        TransactionState::Confirmed
-                    } else {
-                        TransactionState::Failed
-                    };
-
-                    Some(primitives::Transaction::new(
-                        transaction.hash.clone(),
-                        AssetId::from_chain(*chain),
-                        from_checksum,
-                        to_checksum,
-                        contract_checksum,
+                    Self::create_staking_transaction(
+                        chain,
+                        transaction,
+                        transaction_reciept,
+                        &operator_address,
                         TransactionType::StakeDelegate,
-                        state,
-                        transaction_reciept.get_fee().to_string(),
-                        AssetId::from_chain(*chain),
-                        transaction.value.to_string(),
-                        None,
-                        None,
+                        &transaction.value.to_string(),
                         created_at,
-                    ))
+                    )
                 } else {
                     None
                 }
             }
             FUNCTION_BSC_UNDELEGATE => {
                 if let Ok((operator_address, _shares)) = stake_hub::decode_undelegate_call(input_bytes) {
-                    let from_checksum = ethereum_address_checksum(&transaction.from).ok()?;
-                    let to_checksum = ethereum_address_checksum(&operator_address).ok()?;
-                    let contract_checksum = transaction.to.as_ref().and_then(|to| ethereum_address_checksum(to).ok());
-                    let state = if transaction_reciept.status == "0x1" {
-                        TransactionState::Confirmed
-                    } else {
-                        TransactionState::Failed
-                    };
-
-                    Some(primitives::Transaction::new(
-                        transaction.hash.clone(),
-                        AssetId::from_chain(*chain),
-                        from_checksum,
-                        to_checksum,
-                        contract_checksum,
+                    Self::create_staking_transaction(
+                        chain,
+                        transaction,
+                        transaction_reciept,
+                        &operator_address,
                         TransactionType::StakeUndelegate,
-                        state,
-                        transaction_reciept.get_fee().to_string(),
-                        AssetId::from_chain(*chain),
-                        "0".to_string(), // For undelegate, the value is in shares, not native token
-                        None,
-                        None,
+                        "0", // For undelegate, the value is in shares, not native token
                         created_at,
-                    ))
+                    )
                 } else {
                     None
                 }
             }
             FUNCTION_BSC_REDELEGATE => {
                 if let Ok((_src_validator, dst_validator, _shares, _delegate_vote_power)) = stake_hub::decode_redelegate_call(input_bytes) {
-                    let from_checksum = ethereum_address_checksum(&transaction.from).ok()?;
-                    let to_checksum = ethereum_address_checksum(&dst_validator).ok()?;
-                    let contract_checksum = transaction.to.as_ref().and_then(|to| ethereum_address_checksum(to).ok());
-                    let state = if transaction_reciept.status == "0x1" {
-                        TransactionState::Confirmed
-                    } else {
-                        TransactionState::Failed
-                    };
-
-                    Some(primitives::Transaction::new(
-                        transaction.hash.clone(),
-                        AssetId::from_chain(*chain),
-                        from_checksum,
-                        to_checksum,
-                        contract_checksum,
+                    Self::create_staking_transaction(
+                        chain,
+                        transaction,
+                        transaction_reciept,
+                        &dst_validator,
                         TransactionType::StakeRedelegate,
-                        state,
-                        transaction_reciept.get_fee().to_string(),
-                        AssetId::from_chain(*chain),
-                        "0".to_string(), // For redelegate, the value is in shares
-                        None,
-                        None,
+                        "0", // For redelegate, the value is in shares
                         created_at,
-                    ))
+                    )
                 } else {
                     None
                 }
             }
             _ => None,
         }
+    }
+
+    fn create_staking_transaction(
+        chain: &Chain,
+        transaction: &Transaction,
+        transaction_reciept: &TransactionReciept,
+        validator_address: &str,
+        transaction_type: TransactionType,
+        value: &str,
+        created_at: DateTime<Utc>,
+    ) -> Option<primitives::Transaction> {
+        let from_checksum = ethereum_address_checksum(&transaction.from).ok()?;
+        let to_checksum = ethereum_address_checksum(validator_address).ok()?;
+        let contract_checksum = transaction.to.as_ref().and_then(|to| ethereum_address_checksum(to).ok());
+        let state = if transaction_reciept.status == "0x1" {
+            TransactionState::Confirmed
+        } else {
+            TransactionState::Failed
+        };
+
+        Some(primitives::Transaction::new(
+            transaction.hash.clone(),
+            AssetId::from_chain(*chain),
+            from_checksum,
+            to_checksum,
+            contract_checksum,
+            transaction_type,
+            state,
+            transaction_reciept.get_fee().to_string(),
+            AssetId::from_chain(*chain),
+            value.to_string(),
+            None,
+            None,
+            created_at,
+        ))
     }
 }
 
