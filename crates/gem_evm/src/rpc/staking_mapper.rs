@@ -12,6 +12,15 @@ use primitives::{AssetId, Chain, StakeType, TransactionStakeMetadata, Transactio
 pub struct StakingMapper;
 
 impl StakingMapper {
+    fn stake_type_to_transaction_type(stake_type: &StakeType) -> TransactionType {
+        match stake_type {
+            StakeType::Stake => TransactionType::StakeDelegate,
+            StakeType::Unstake => TransactionType::StakeUndelegate,
+            StakeType::Redelegate => TransactionType::StakeRedelegate,
+            StakeType::Rewards => TransactionType::StakeRewards,
+            StakeType::Withdraw => TransactionType::StakeWithdraw,
+        }
+    }
     pub fn map_transaction(
         chain: &Chain,
         transaction: &Transaction,
@@ -53,6 +62,7 @@ impl StakingMapper {
                         stake_type: StakeType::Stake,
                         asset_id: AssetId::from_chain(*chain),
                         validator: Some(operator_address),
+                        to_validator: None,
                         delegator: Some(transaction.from.clone()),
                         value: transaction.value.to_string(),
                         shares: None,
@@ -68,6 +78,7 @@ impl StakingMapper {
                         stake_type: StakeType::Unstake,
                         asset_id: AssetId::from_chain(*chain),
                         validator: Some(operator_address),
+                        to_validator: None,
                         delegator: Some(transaction.from.clone()),
                         value: "0".to_string(), // For undelegate, the value is in shares, not native token
                         shares: Some(shares),
@@ -82,7 +93,8 @@ impl StakingMapper {
                     Some(TransactionStakeMetadata {
                         stake_type: StakeType::Redelegate,
                         asset_id: AssetId::from_chain(*chain),
-                        validator: Some(format!("{src_validator}:{dst_validator}")), // Store both validators
+                        validator: Some(src_validator),
+                        to_validator: Some(dst_validator),
                         delegator: Some(transaction.from.clone()),
                         value: "0".to_string(), // For redelegate, the value is in shares
                         shares: Some(shares),
@@ -111,7 +123,7 @@ impl StakingMapper {
             from_checksum.clone(),
             from_checksum,
             contract_checksum,
-            TransactionType::StakeDelegate,
+            Self::stake_type_to_transaction_type(&metadata.stake_type),
             TransactionState::Confirmed,
             transaction_reciept.get_fee().to_string(),
             AssetId::from_chain(*chain),
@@ -146,7 +158,7 @@ mod tests {
             hash: "0x21442c7c30a6c1d6be3b5681275adb1f1402cef066579c4f53ec4f1c8c056ab0".to_string(),
             from: "0xf1a3687303606a6fd48179ce503164cdcbabeab6".to_string(),
             to: Some("0x0000000000000000000000000000000000002002".to_string()),
-            value: BigUint::parse_bytes(b"1158e460913d00000", 16).unwrap(), // 1.25 BNB in hex
+            value: BigUint::parse_bytes(b"1158e460913d00000", 16).unwrap(), // 1.25 BNB in wei (hex)
             gas: 280395,
             input: "0x982ef0a7000000000000000000000000d34403249b2d82aaddb14e778422c966265e5fb50000000000000000000000000000000000000000000000000000000000000000"
                 .to_string(),
@@ -168,6 +180,7 @@ mod tests {
         assert_eq!(metadata.stake_type, StakeType::Stake);
         assert_eq!(metadata.asset_id, AssetId::from_chain(Chain::SmartChain));
         assert_eq!(metadata.validator.unwrap(), "0xd34403249B2d82AAdDB14e778422c966265e5Fb5");
+        assert!(metadata.to_validator.is_none());
         assert_eq!(metadata.delegator.unwrap(), "0xf1a3687303606a6fd48179ce503164cdcbabeab6");
         assert_eq!(metadata.value, "20000000000000000000");
         assert!(metadata.shares.is_none());
@@ -192,7 +205,7 @@ mod tests {
         assert!(result.is_some());
         let stake_tx = result.unwrap();
 
-        assert_eq!(stake_tx.transaction_type, TransactionType::StakeDelegate);
+        assert_eq!(stake_tx.transaction_type, TransactionType::StakeUndelegate);
         assert_eq!(stake_tx.from, "0x9Ccd32825A39209E0d14a5d8D27e9E545B901d8F");
         assert_eq!(stake_tx.to, "0x9Ccd32825A39209E0d14a5d8D27e9E545B901d8F");
         assert_eq!(stake_tx.contract.unwrap(), "0x0000000000000000000000000000000000002002");
@@ -202,6 +215,7 @@ mod tests {
         assert_eq!(metadata.stake_type, StakeType::Unstake);
         assert_eq!(metadata.asset_id, AssetId::from_chain(Chain::SmartChain));
         assert_eq!(metadata.validator.unwrap(), "0x5c38FF8Ca2b16099C086bF36546e99b13D152C4c");
+        assert!(metadata.to_validator.is_none());
         assert_eq!(metadata.delegator.unwrap(), "0x9ccd32825a39209e0d14a5d8d27e9e545b901d8f");
         assert_eq!(metadata.value, "0");
         assert_eq!(metadata.shares.unwrap(), "415946947323922080");
@@ -225,7 +239,7 @@ mod tests {
         assert!(result.is_some());
         let stake_tx = result.unwrap();
 
-        assert_eq!(stake_tx.transaction_type, TransactionType::StakeDelegate);
+        assert_eq!(stake_tx.transaction_type, TransactionType::StakeRedelegate);
         assert_eq!(stake_tx.from, "0xB5a0A71Be7B79F2A8Bd19B3A4D54d1b85fA2d50b");
         assert_eq!(stake_tx.to, "0xB5a0A71Be7B79F2A8Bd19B3A4D54d1b85fA2d50b");
         assert_eq!(stake_tx.contract.unwrap(), "0x0000000000000000000000000000000000002002");
@@ -234,10 +248,8 @@ mod tests {
         let metadata: TransactionStakeMetadata = serde_json::from_value(stake_tx.metadata.unwrap()).unwrap();
         assert_eq!(metadata.stake_type, StakeType::Redelegate);
         assert_eq!(metadata.asset_id, AssetId::from_chain(Chain::SmartChain));
-        assert_eq!(
-            metadata.validator.unwrap(),
-            "0x0813D0D092b97C157A8e68A65ccdF41b956883ae:0xB58ac55EB6B10e4f7918D77C92aA1cF5bB2DEd5e"
-        );
+        assert_eq!(metadata.validator.unwrap(), "0x0813D0D092b97C157A8e68A65ccdF41b956883ae");
+        assert_eq!(metadata.to_validator.unwrap(), "0xB58ac55EB6B10e4f7918D77C92aA1cF5bB2DEd5e");
         assert_eq!(metadata.delegator.unwrap(), "0xb5a0a71be7b79f2a8bd19b3a4d54d1b85fa2d50b");
         assert_eq!(metadata.value, "0");
         assert_eq!(metadata.shares.unwrap(), "2337013854984033567");

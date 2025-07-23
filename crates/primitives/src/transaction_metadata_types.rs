@@ -21,8 +21,11 @@ pub struct TransactionStakeMetadata {
     pub stake_type: StakeType,
     pub asset_id: AssetId,
     pub validator: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub to_validator: Option<String>,
     pub delegator: Option<String>,
     pub value: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub shares: Option<String>,
 }
 
