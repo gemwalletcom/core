@@ -1,6 +1,5 @@
-#[macro_use]
-extern crate rocket;
 mod assets;
+mod chain;
 mod config;
 mod devices;
 mod fiat;
@@ -23,7 +22,7 @@ use std::str::FromStr;
 use std::sync::Arc;
 
 use api_connector::PusherClient;
-use assets::{AssetsChainProvider, AssetsClient, AssetsSearchClient};
+use assets::{AssetsClient, AssetsSearchClient};
 use cacher::CacherClient;
 use config::ConfigClient;
 use devices::DevicesClient;
@@ -38,7 +37,7 @@ use parser::ParserClient;
 use pricer::{ChartClient, MarketsClient, PriceAlertClient, PriceClient};
 use rocket::fairing::AdHoc;
 use rocket::tokio::sync::Mutex;
-use rocket::{Build, Rocket};
+use rocket::{routes, Build, Rocket};
 use scan::{ScanClient, ScanProviderFactory};
 use search_index::SearchIndexClient;
 use settings::Settings;
@@ -61,7 +60,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
     let providers = NameProviderFactory::create_providers(settings_clone.clone());
     let name_client = NameClient::new(providers);
 
-    let assets_chain_provider = AssetsChainProvider::new(ChainProviders::new(ProviderFactory::new_providers(&settings)));
+    let chain_client = chain::ChainClient::new(ChainProviders::new(ProviderFactory::new_providers(&settings)));
 
     let pusher_client = PusherClient::new(settings.pusher.url, settings.pusher.ios.topic);
     let devices_client = DevicesClient::new(postgres_url, pusher_client).await;
@@ -108,7 +107,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
         .manage(Mutex::new(swap_client))
         .manage(Mutex::new(nft_client))
         .manage(Mutex::new(price_alert_client))
-        .manage(Mutex::new(assets_chain_provider))
+        .manage(Mutex::new(chain_client))
         .manage(Mutex::new(markets_client))
         .manage(Mutex::new(stream_producer))
         .mount("/", routes![status::get_status])
@@ -132,11 +131,8 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
                 devices::delete_device,
                 devices::send_push_notification_device,
                 assets::get_asset,
-                assets::add_asset,
                 assets::get_assets,
-                assets::get_assets_balances,
-                assets::get_assets_transactions,
-                assets::get_assets_list,
+                assets::add_asset,
                 assets::get_assets_search,
                 assets::get_assets_by_device_id,
                 subscriptions::add_subscriptions,
@@ -159,7 +155,13 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
                 price_alerts::add_price_alerts,
                 price_alerts::delete_price_alerts,
                 scan::scan_transaction,
+                scan::get_scan_address,
                 markets::get_markets,
+                chain::staking::get_validators,
+                chain::staking::get_staking_apy,
+                chain::token::get_token,
+                chain::balance::get_balances,
+                chain::transaction::get_transactions,
             ],
         )
         .mount("/v2", routes![transactions::get_transactions_by_device_id_v2])

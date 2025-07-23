@@ -161,6 +161,8 @@ chains:
     url: https://mainnet.unichain.org
   hyperliquid:
     url: https://rpc.hyperliquid.xyz/evm
+  hypercore:
+    url: https://api.hyperliquid.xyz
   monad:
     url: https://testnet-rpc.monad.xyz #TODO: Monad
 
@@ -229,6 +231,9 @@ ankr:
 trongrid:
   key:
     secret: ""
+
+assets:
+  url: "https://raw.githubusercontent.com/gemwalletcom/assets/refs/heads/master"
 
 nft:
   nftscan:

@@ -76,7 +76,7 @@ pub use self::push_notification::{
     GorushNotification, GorushNotifications, PushNotification, PushNotificationAsset, PushNotificationTransaction, PushNotificationTypes,
 };
 pub mod scan;
-pub use self::scan::{AddressType, ScanAddressTarget, ScanTransaction, ScanTransactionPayload};
+pub use self::scan::{AddressType, ScanAddress, ScanAddressTarget, ScanTransaction, ScanTransactionPayload};
 pub mod transaction_metadata_types;
 pub use self::transaction_metadata_types::{TransactionNFTTransferMetadata, TransactionSwapMetadata};
 pub mod wallet_connect;
@@ -98,6 +98,8 @@ pub use self::image_formatter::ImageFormatter;
 pub mod block_explorer;
 pub mod encoding_type;
 pub mod explorers;
+pub mod validator;
+pub use self::validator::StakeValidator;
 pub mod solana_token_program;
 pub use self::solana_token_program::SolanaTokenProgramId;
 pub mod fee;
@@ -127,3 +129,9 @@ pub use self::transaction_id::TransactionId;
 pub mod asset_address;
 pub use self::asset_address::AssetAddress;
 pub mod graphql;
+pub mod perpetual;
+pub use self::perpetual::Perpetual;
+pub mod perpetual_provider;
+pub use self::perpetual_provider::PerpetualProvider;
+pub mod perpetual_position;
+pub use self::perpetual_position::{PerpetualMarginType, PerpetualPosition, PriceTarget};

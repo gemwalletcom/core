@@ -1,5 +1,5 @@
 use alloy_primitives::{aliases::U24, Address, Bytes};
-use std::{collections::HashSet, fmt::Display};
+use std::fmt::Display;
 
 use super::FeeTier;
 use primitives::EVMChain;
@@ -59,15 +59,17 @@ pub struct BasePair {
 }
 
 impl BasePair {
-    pub fn to_set(&self) -> HashSet<Address> {
-        HashSet::from_iter(self.to_array())
-    }
-
-    pub fn to_array(&self) -> Vec<Address> {
+    pub fn path_building_array(&self) -> Vec<Address> {
         let mut array = vec![self.native];
         array.extend(self.stables.iter().cloned());
-        // alternatives is not used for now
-        // array.extend(self.alternatives.iter().cloned());
+        // alternatives is not used for path building to reduce requests
+        array
+    }
+
+    pub fn fee_token_array(&self) -> Vec<Address> {
+        let mut array = vec![self.native];
+        array.extend(self.stables.iter().cloned());
+        array.extend(self.alternatives.iter().cloned());
         array
     }
 }

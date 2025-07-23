@@ -9,7 +9,8 @@ use reqwest_retry::{policies::ExponentialBackoff, RetryTransientMiddleware};
 
 use gem_chain_rpc::{
     algorand::AlgorandProvider, bitcoin::BitcoinProvider, cardano::CardanoProvider, ethereum::EthereumProvider, solana::SolanaProvider, sui::SuiProvider,
-    ton::TonProvider, tron::TronProvider, xrp::XRPProvider, AptosProvider, ChainProvider, CosmosProvider, NearProvider, PolkadotProvider, StellarProvider,
+    ton::TonProvider, tron::TronProvider, xrp::XRPProvider, AptosProvider, ChainProvider, CosmosProvider, HyperCoreProvider, NearProvider, PolkadotProvider,
+    StellarProvider,
 };
 
 use gem_algorand::rpc::AlgorandClient;
@@ -18,6 +19,7 @@ use gem_bitcoin::rpc::BitcoinClient;
 use gem_cardano::rpc::CardanoClient;
 use gem_cosmos::rpc::client::CosmosClient;
 use gem_evm::rpc::{ankr::AnkrClient, AlchemyClient, EthereumClient};
+use gem_hypercore::rpc::client::HyperCoreClient;
 use gem_near::rpc::client::NearClient;
 use gem_polkadot::rpc::PolkadotClient;
 use gem_solana::rpc::SolanaClient;
@@ -115,6 +117,7 @@ impl ProviderFactory {
             Chain::Algorand => Box::new(AlgorandProvider::new(AlgorandClient::new(client, url))),
             Chain::Stellar => Box::new(StellarProvider::new(StellarClient::new(client, url))),
             Chain::Polkadot => Box::new(PolkadotProvider::new(PolkadotClient::new(client, url))),
+            Chain::HyperCore => Box::new(HyperCoreProvider::new(HyperCoreClient::new())),
         }
     }
 
@@ -165,6 +168,7 @@ impl ProviderFactory {
             Chain::Ink => settings.chains.ink.get_type(),
             Chain::Unichain => settings.chains.unichain.get_type(),
             Chain::Hyperliquid => settings.chains.hyperliquid.get_type(),
+            Chain::HyperCore => settings.chains.hypercore.get_type(),
             Chain::Monad => settings.chains.monad.get_type(),
         }
     }

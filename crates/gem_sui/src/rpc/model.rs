@@ -124,3 +124,27 @@ pub struct Balance {
     pub coin_type: String,
     pub total_balance: String,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ValidatorSet {
+    pub apys: Vec<ValidatorApy>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ValidatorApy {
+    pub address: String,
+    pub apy: f64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SuiSystemState {
+    pub active_validators: Vec<ValidatorInfo>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ValidatorInfo {
+    pub sui_address: String,
+    pub name: String,
+}

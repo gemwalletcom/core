@@ -34,6 +34,7 @@ pub struct Settings {
     pub alchemy: Alchemy,
     pub ankr: Ankr,
     pub trongrid: Trongrid,
+    pub assets: Assets,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -205,6 +206,7 @@ pub struct Chains {
     pub ink: Chain,
     pub unichain: Chain,
     pub hyperliquid: Chain,
+    pub hypercore: Chain,
     pub monad: Chain,
 }
 
@@ -375,4 +377,10 @@ pub struct BucketConfiguration {
 #[allow(unused)]
 pub struct DaemonSearch {
     pub assets_update_interval: u64,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[allow(unused)]
+pub struct Assets {
+    pub url: String,
 }

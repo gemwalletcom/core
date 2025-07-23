@@ -1,14 +1,10 @@
 pub mod cilent;
-pub use cilent::{AssetsChainProvider, AssetsClient, AssetsSearchClient};
-use rocket::http::Status;
-extern crate rocket;
+pub use cilent::{AssetsClient, AssetsSearchClient};
+use rocket::{get, http::Status, post, serde::json::Json, tokio::sync::Mutex, State};
 
 use std::str::FromStr;
 
-use primitives::{Asset, AssetBalance, AssetBasic, AssetFull, AssetId, Chain, ChainAddress, Transaction};
-use rocket::serde::json::Json;
-use rocket::tokio::sync::Mutex;
-use rocket::State;
+use primitives::{Asset, AssetBasic, AssetFull, AssetId, Chain};
 
 #[get("/assets/<asset_id>")]
 pub async fn get_asset(asset_id: &str, client: &State<Mutex<AssetsClient>>) -> Result<Json<AssetFull>, Status> {
@@ -32,11 +28,11 @@ pub async fn get_assets(asset_ids: Json<Vec<String>>, client: &State<Mutex<Asset
 pub async fn add_asset(
     asset_id: Json<Vec<AssetId>>,
     client: &State<Mutex<AssetsClient>>,
-    assets_chain_provider: &State<Mutex<AssetsChainProvider>>,
+    chain_client: &State<Mutex<crate::chain::ChainClient>>,
 ) -> Json<Vec<Asset>> {
     let asset_id = asset_id.0.first().unwrap();
 
-    let asset = assets_chain_provider
+    let asset = chain_client
         .lock()
         .await
         .get_token_data(asset_id.chain, asset_id.token_id.clone().unwrap())
@@ -45,12 +41,6 @@ pub async fn add_asset(
     client.lock().await.add_assets(vec![asset.clone()]).unwrap();
 
     Json(vec![asset])
-}
-
-#[get("/assets/list")]
-pub async fn get_assets_list(client: &State<Mutex<AssetsClient>>) -> Json<Vec<AssetBasic>> {
-    let assets = client.lock().await.get_assets_list().unwrap();
-    Json(assets)
 }
 
 #[get("/assets/search?<query>&<chains>&<tags>&<limit>&<offset>")]
@@ -99,32 +89,4 @@ pub async fn get_assets_by_device_id(
 ) -> Json<Vec<AssetId>> {
     let assets = client.lock().await.get_assets_by_device_id(device_id, wallet_index, from_timestamp).unwrap();
     Json(assets)
-}
-
-#[post("/assets/balances", format = "json", data = "<requests>")]
-pub async fn get_assets_balances(
-    requests: Json<Vec<ChainAddress>>,
-    assets_chain_provider: &State<Mutex<AssetsChainProvider>>,
-) -> Result<Json<Vec<AssetBalance>>, Status> {
-    match assets_chain_provider.lock().await.get_assets_balances(requests.0).await {
-        Ok(assets) => Ok(Json(assets)),
-        Err(error) => {
-            println!("get_assets_balances error: {error:?}");
-            Err(Status::InternalServerError)
-        }
-    }
-}
-
-#[post("/assets/transactions", format = "json", data = "<requests>")]
-pub async fn get_assets_transactions(
-    requests: Json<Vec<ChainAddress>>,
-    assets_chain_provider: &State<Mutex<AssetsChainProvider>>,
-) -> Result<Json<Vec<Transaction>>, Status> {
-    match assets_chain_provider.lock().await.get_assets_transactions(requests.0).await {
-        Ok(transactions) => Ok(Json(transactions)),
-        Err(error) => {
-            println!("get_assets_transactions error: {error:?}");
-            Err(Status::InternalServerError)
-        }
-    }
 }

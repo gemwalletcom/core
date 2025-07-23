@@ -18,7 +18,8 @@ pub fn get_namespace(chain: Chain) -> Option<String> {
         | ChainType::Near
         | ChainType::Stellar
         | ChainType::Polkadot
-        | ChainType::Cardano => None,
+        | ChainType::Cardano
+        | ChainType::HyperCore => None,
     }
 }
 
@@ -64,7 +65,8 @@ pub fn get_reference(chain: Chain) -> Option<String> {
         | ChainType::Near
         | ChainType::Stellar
         | ChainType::Polkadot
-        | ChainType::Cardano => None,
+        | ChainType::Cardano
+        | ChainType::HyperCore => None,
     }
 }
 

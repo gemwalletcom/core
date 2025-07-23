@@ -8,7 +8,7 @@ use gem_aptos::{
 };
 use primitives::{chain::Chain, Asset, AssetBalance, AssetId, AssetType, Transaction};
 
-use crate::{ChainAssetsProvider, ChainBlockProvider, ChainTokenDataProvider, ChainTransactionsProvider};
+use crate::{ChainAssetsProvider, ChainBlockProvider, ChainStakeProvider, ChainTokenDataProvider, ChainTransactionsProvider};
 
 #[derive(Clone)]
 pub struct AptosProvider {
@@ -97,4 +97,9 @@ impl ChainTransactionsProvider for AptosProvider {
         let transactions = self.client.get_transactions_by_address(address).await?;
         Ok(AptosMapper::map_transactions(self.get_chain(), transactions))
     }
+}
+
+#[async_trait]
+impl ChainStakeProvider for AptosProvider {
+    // Default implementation returns empty vector
 }

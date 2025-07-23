@@ -1,6 +1,6 @@
 use std::error::Error;
 
-use crate::{ChainAssetsProvider, ChainBlockProvider, ChainTokenDataProvider, ChainTransactionsProvider};
+use crate::{ChainAssetsProvider, ChainBlockProvider, ChainStakeProvider, ChainTokenDataProvider, ChainTransactionsProvider};
 use async_trait::async_trait;
 use primitives::AssetBalance;
 use primitives::{chain::Chain, Asset, Transaction};
@@ -73,4 +73,9 @@ impl ChainTransactionsProvider for NearProvider {
     async fn get_transactions_by_address(&self, _address: String) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
         Ok(vec![])
     }
+}
+
+#[async_trait]
+impl ChainStakeProvider for NearProvider {
+    // Default implementation returns empty vector
 }

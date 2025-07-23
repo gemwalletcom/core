@@ -1,7 +1,10 @@
 use primitives::{asset_type::AssetType, chain::Chain, Asset, AssetId};
 use std::error::Error;
 
-use super::model::{Block, BlockTransactions, BlockTransactionsInfo, TriggerConstantContractRequest, TriggerConstantContractResponse};
+use super::model::{
+    Block, BlockTransactions, BlockTransactionsInfo, ChainParameter, ChainParametersResponse, TriggerConstantContractRequest, TriggerConstantContractResponse,
+    WitnessesList,
+};
 use crate::rpc::constants::{DECIMALS_SELECTOR, DEFAULT_OWNER_ADDRESS, NAME_SELECTOR, SYMBOL_SELECTOR};
 use crate::rpc::model::{Transaction, TransactionReceiptData};
 use gem_evm::erc20::{decode_abi_string, decode_abi_uint8};
@@ -88,6 +91,21 @@ impl TronClient {
 
     pub async fn get_latest_block(&self) -> Result<i64, Box<dyn Error + Send + Sync>> {
         Ok(self.get_block().await?.block_header.raw_data.number)
+    }
+
+    pub async fn get_witnesses_list(&self) -> Result<WitnessesList, Box<dyn Error + Send + Sync>> {
+        Ok(self.client.get(format!("{}/wallet/listwitnesses", self.url)).send().await?.json().await?)
+    }
+
+    pub async fn get_chain_parameters(&self) -> Result<Vec<ChainParameter>, Box<dyn Error + Send + Sync>> {
+        Ok(self
+            .client
+            .get(format!("{}/wallet/getchainparameters", self.url))
+            .send()
+            .await?
+            .json::<ChainParametersResponse>()
+            .await?
+            .chain_parameter)
     }
 
     pub async fn get_token_data(&self, token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {

@@ -30,3 +30,4 @@ search_index = { path = "../../crates/search_index" }
 cacher = { path = "../../crates/cacher" }
 streamer = { path = "../../crates/streamer" }
 localizer = { path = "../../crates/localizer" }
+settings_chain = { path = "../../crates/settings_chain" }

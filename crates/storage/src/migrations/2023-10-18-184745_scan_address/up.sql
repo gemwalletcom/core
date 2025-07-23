@@ -6,7 +6,7 @@ CREATE TABLE scan_addresses (
     id SERIAL PRIMARY KEY,
     chain VARCHAR NOT NULL REFERENCES chains (id) ON DELETE CASCADE,
     address VARCHAR(128) NOT NULL,
-    name VARCHAR(64),
+    name VARCHAR(128),
     type VARCHAR(32) REFERENCES scan_addresses_types (id) ON DELETE CASCADE,
     is_verified boolean NOT NULL DEFAULT false,
     is_fraudulent boolean NOT NULL DEFAULT false,

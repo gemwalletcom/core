@@ -1,10 +1,9 @@
 use std::error::Error;
 
-use crate::{ChainAssetsProvider, ChainBlockProvider, ChainTokenDataProvider, ChainTransactionsProvider};
+use crate::{ChainAssetsProvider, ChainBlockProvider, ChainStakeProvider, ChainTokenDataProvider, ChainTransactionsProvider};
 use async_trait::async_trait;
 use gem_tron::rpc::trongrid::client::TronGridClient;
-use primitives::{chain::Chain, Asset};
-use primitives::{AssetBalance, Transaction};
+use primitives::{chain::Chain, Asset, AssetBalance, Transaction};
 
 use gem_tron::rpc::trongrid::mapper::TronGridMapper;
 use gem_tron::rpc::TronClient;
@@ -62,6 +61,47 @@ impl ChainAssetsProvider for TronProvider {
 impl ChainTransactionsProvider for TronProvider {
     async fn get_transactions_by_address(&self, address: String) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
         self.transactions_provider.get_transactions_by_address(address).await
+    }
+}
+
+#[async_trait]
+impl ChainStakeProvider for TronProvider {
+    async fn get_validators(&self) -> Result<Vec<primitives::StakeValidator>, Box<dyn Error + Send + Sync>> {
+        let witnesses = self.client.get_witnesses_list().await?;
+        Ok(TronMapper::map_validators(witnesses))
+    }
+
+    async fn get_staking_apy(&self) -> Result<f64, Box<dyn Error + Send + Sync>> {
+        let params = self.client.get_chain_parameters().await?;
+        let witnesses = self.client.get_witnesses_list().await?;
+
+        let block_reward = params
+            .iter()
+            .find(|p| p.key == "getWitnessPayPerBlock")
+            .and_then(|p| p.value)
+            .unwrap_or(16_000_000) as f64
+            / 1_000_000.0;
+
+        let voting_reward = params
+            .iter()
+            .find(|p| p.key == "getWitness127PayPerBlock")
+            .and_then(|p| p.value)
+            .unwrap_or(160_000_000) as f64
+            / 1_000_000.0;
+
+        let blocks_per_year = 365.25 * 24.0 * 60.0 * 60.0 / 3.0;
+        let annual_rewards = (block_reward + voting_reward) * blocks_per_year;
+
+        let total_votes: i64 = witnesses.witnesses.iter().map(|x| x.vote_count.unwrap_or(0)).sum();
+        let total_staked_trx = total_votes as f64;
+
+        if total_staked_trx == 0.0 {
+            return Ok(0.0);
+        }
+
+        let apy = (annual_rewards / total_staked_trx) * 100.0;
+
+        Ok(apy)
     }
 }
 

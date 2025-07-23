@@ -1,6 +1,6 @@
 use std::error::Error;
 
-use crate::{ChainAssetsProvider, ChainBlockProvider, ChainTokenDataProvider, ChainTransactionsProvider};
+use crate::{ChainAssetsProvider, ChainBlockProvider, ChainStakeProvider, ChainTokenDataProvider, ChainTransactionsProvider};
 use async_trait::async_trait;
 use primitives::Transaction;
 use primitives::{chain::Chain, Asset, AssetBalance};
@@ -64,4 +64,9 @@ impl ChainTransactionsProvider for BitcoinProvider {
         let transactions = self.client.get_address_details(&address, 20).await?.transactions.unwrap_or_default();
         Ok(BitcoinMapper::map_transactions(self.get_chain(), transactions))
     }
+}
+
+#[async_trait]
+impl ChainStakeProvider for BitcoinProvider {
+    // Default implementation returns empty vector
 }

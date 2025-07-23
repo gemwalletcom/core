@@ -1,5 +1,3 @@
-extern crate rocket;
-
 use std::error::Error;
 
 use primitives::FiatAssets;
