@@ -6,6 +6,7 @@ use crate::{
     ethereum_address_checksum,
     rpc::model::{Transaction, TransactionReciept},
 };
+use gem_bsc::stake_hub;
 use primitives::{AssetId, Chain, StakeType, TransactionStakeMetadata, TransactionState, TransactionType};
 
 pub struct StakingMapper;
@@ -24,7 +25,7 @@ impl StakingMapper {
 
         // Check if transaction is to the StakeHub contract
         let to_address = transaction.to.as_ref()?;
-        if to_address.to_lowercase() != gem_bsc::stake_hub::STAKE_HUB_ADDRESS.to_lowercase() {
+        if to_address.to_lowercase() != stake_hub::STAKE_HUB_ADDRESS.to_lowercase() {
             return None;
         }
 
@@ -43,7 +44,7 @@ impl StakingMapper {
         match method_id {
             // delegate(address,bool) - 0x982ef0a7
             [0x98, 0x2e, 0xf0, 0xa7] => {
-                if let Ok((operator_address, _delegate_vote_power)) = gem_bsc::stake_hub::decode_delegate_call(input_bytes) {
+                if let Ok((operator_address, _delegate_vote_power)) = stake_hub::decode_delegate_call(input_bytes) {
                     if transaction.value == BigUint::from(0u32) {
                         return None;
                     }
@@ -62,7 +63,7 @@ impl StakingMapper {
             }
             // undelegate(address,uint256) - 0x4d99dd16
             [0x4d, 0x99, 0xdd, 0x16] => {
-                if let Ok((operator_address, shares)) = gem_bsc::stake_hub::decode_undelegate_call(input_bytes) {
+                if let Ok((operator_address, shares)) = stake_hub::decode_undelegate_call(input_bytes) {
                     Some(TransactionStakeMetadata {
                         stake_type: StakeType::Unstake,
                         asset_id: AssetId::from_chain(*chain),
@@ -77,7 +78,7 @@ impl StakingMapper {
             }
             // redelegate(address,address,uint256,bool) - 0x59491871
             [0x59, 0x49, 0x18, 0x71] => {
-                if let Ok((src_validator, dst_validator, shares, _delegate_vote_power)) = gem_bsc::stake_hub::decode_redelegate_call(input_bytes) {
+                if let Ok((src_validator, dst_validator, shares, _delegate_vote_power)) = stake_hub::decode_redelegate_call(input_bytes) {
                     Some(TransactionStakeMetadata {
                         stake_type: StakeType::Redelegate,
                         asset_id: AssetId::from_chain(*chain),
@@ -140,6 +141,7 @@ mod tests {
 
     #[test]
     fn test_map_delegate_transaction() {
+        // https://bscscan.com/tx/0x21442c7c30a6c1d6be3b5681275adb1f1402cef066579c4f53ec4f1c8c056ab0
         let transaction = Transaction {
             hash: "0x21442c7c30a6c1d6be3b5681275adb1f1402cef066579c4f53ec4f1c8c056ab0".to_string(),
             from: "0xf1a3687303606a6fd48179ce503164cdcbabeab6".to_string(),
@@ -173,6 +175,7 @@ mod tests {
 
     #[test]
     fn test_map_undelegate_transaction() {
+        // https://bscscan.com/tx/0x7afc2d0a7c5a5fdc18cd61d4e699138e75bf338b972554f78b0b761f63727b39
         let transaction = Transaction {
             hash: "0x7afc2d0a7c5a5fdc18cd61d4e699138e75bf338b972554f78b0b761f63727b39".to_string(),
             from: "0x9ccd32825a39209e0d14a5d8d27e9e545b901d8f".to_string(),
@@ -206,6 +209,7 @@ mod tests {
 
     #[test]
     fn test_map_redelegate_transaction() {
+        // https://bscscan.com/tx/0xc31c1ff67a9b6784d5eb2aafe51fb8d93c64034514ab7423a0d12aa8ced3ee9c
         let transaction = Transaction {
             hash: "0xc31c1ff67a9b6784d5eb2aafe51fb8d93c64034514ab7423a0d12aa8ced3ee9c".to_string(),
             from: "0xb5a0a71be7b79f2a8bd19b3a4d54d1b85fa2d50b".to_string(),
