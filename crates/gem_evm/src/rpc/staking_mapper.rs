@@ -51,8 +51,7 @@ impl StakingMapper {
         transaction_reciept: &TransactionReciept,
         created_at: DateTime<Utc>,
     ) -> Option<primitives::Transaction> {
-        let method_hex = hex::encode(method_id);
-        let method_signature = format!("0x{method_hex}");
+        let method_signature = hex::encode_prefixed(method_id);
         
         match method_signature.as_str() {
             FUNCTION_BSC_DELEGATE => {
