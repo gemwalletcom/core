@@ -2981,6 +2981,7 @@ dependencies = [
  "chain_primitives",
  "chrono",
  "futures",
+ "gem_bsc",
  "gem_hash",
  "gem_jsonrpc",
  "hex",

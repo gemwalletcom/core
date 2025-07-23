@@ -3,6 +3,29 @@ use typeshare::typeshare;
 
 use crate::{AssetId, NFTAssetId};
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[typeshare(swift = "Sendable")]
+#[serde(rename_all = "camelCase")]
+pub enum StakeType {
+    Stake,
+    Unstake,
+    Redelegate,
+    Rewards,
+    Withdraw,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[typeshare(swift = "Sendable")]
+#[serde(rename_all = "camelCase")]
+pub struct TransactionStakeMetadata {
+    pub stake_type: StakeType,
+    pub asset_id: AssetId,
+    pub validator: Option<String>,
+    pub delegator: Option<String>,
+    pub value: String,
+    pub shares: Option<String>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Sendable")]
 #[serde(rename_all = "camelCase")]
