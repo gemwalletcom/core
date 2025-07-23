@@ -187,25 +187,6 @@ pub fn encode_claim_batch_call(operator_addresses: Vec<String>, request_numbers:
     Ok(call.abi_encode())
 }
 
-pub fn decode_delegate_call(input: &[u8]) -> Result<(String, bool), Error> {
-    let call = IStakeHub::delegateCall::abi_decode(input).map_err(Error::msg)?;
-    Ok((call.operatorAddress.to_string(), call.delegateVotePower))
-}
-
-pub fn decode_undelegate_call(input: &[u8]) -> Result<(String, String), Error> {
-    let call = IStakeHub::undelegateCall::abi_decode(input).map_err(Error::msg)?;
-    Ok((call.operatorAddress.to_string(), call.shares.to_string()))
-}
-
-pub fn decode_redelegate_call(input: &[u8]) -> Result<(String, String, String, bool), Error> {
-    let call = IStakeHub::redelegateCall::abi_decode(input).map_err(Error::msg)?;
-    Ok((
-        call.srcValidator.to_string(),
-        call.dstValidator.to_string(),
-        call.shares.to_string(),
-        call.delegateVotePower,
-    ))
-}
 
 #[cfg(test)]
 mod tests {
@@ -285,38 +266,4 @@ mod tests {
         assert_eq!(hex::encode(data), "d7c2dfc8000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000001000000000000000000000000e5572297718e1943a92bfede2e67a060439e8efd00000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000");
     }
 
-    #[test]
-    fn test_decode_delegate_call() {
-        let input = hex::decode(
-            "982ef0a7000000000000000000000000d34403249b2d82aaddb14e778422c966265e5fb50000000000000000000000000000000000000000000000000000000000000000",
-        )
-        .unwrap();
-        let (operator_address, delegate_vote_power) = decode_delegate_call(&input).unwrap();
-
-        assert_eq!(operator_address, "0xd34403249B2d82AAdDB14e778422c966265e5Fb5");
-        assert!(!delegate_vote_power);
-    }
-
-    #[test]
-    fn test_decode_undelegate_call() {
-        let input = hex::decode(
-            "4d99dd160000000000000000000000005c38ff8ca2b16099c086bf36546e99b13d152c4c00000000000000000000000000000000000000000000000005c5bd8b78a686a0",
-        )
-        .unwrap();
-        let (operator_address, shares) = decode_undelegate_call(&input).unwrap();
-
-        assert_eq!(operator_address, "0x5c38FF8Ca2b16099C086bF36546e99b13D152C4c");
-        assert_eq!(shares, "415946947323922080");
-    }
-
-    #[test]
-    fn test_decode_redelegate_call() {
-        let input = hex::decode("594918710000000000000000000000000813d0d092b97c157a8e68a65ccdf41b956883ae000000000000000000000000b58ac55eb6b10e4f7918d77c92aa1cf5bb2ded5e000000000000000000000000000000000000000000000000206ebdb8157d551f0000000000000000000000000000000000000000000000000000000000000000").unwrap();
-        let (src_validator, dst_validator, shares, delegate_vote_power) = decode_redelegate_call(&input).unwrap();
-
-        assert_eq!(src_validator, "0x0813D0D092b97C157A8e68A65ccdF41b956883ae");
-        assert_eq!(dst_validator, "0xB58ac55EB6B10e4f7918D77C92aA1cF5bB2DEd5e");
-        assert_eq!(shares, "2337013854984033567");
-        assert!(!delegate_vote_power);
-    }
 }

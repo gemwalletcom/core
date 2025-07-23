@@ -431,7 +431,15 @@ mod tests {
             gas_used: BigUint::from(100000u32), // More realistic gas usage for staking tx
             effective_gas_price: BigUint::from(20000000000u64),
             l1_fee: None,
-            logs: vec![],
+            logs: vec![crate::rpc::model::Log {
+                address: "0x0000000000000000000000000000000000002002".to_string(),
+                topics: vec![
+                    "0x24d7bda8602b916d64417f0dbfe2e2e88ec9b1157bd9f596dfdb91ba26624e04".to_string(), // Delegated event
+                    "0x000000000000000000000000d34403249B2d82AAdDB14e778422c966265e5Fb5".to_string(), // operatorAddress
+                    "0x000000000000000000000000f1a3687303606a6fD48179Ce503164CDcBAbeaB6".to_string(), // delegator
+                ],
+                data: "0x00000000000000000000000000000000000000000000000d5cc0065cf2d900aa0000000000000000000000000000000000000000000000001158e460913d00000".to_string(), // shares, bnbAmount
+            }],
             status: "0x1".to_string(),
             block_number: "0x1234".to_string(),
         };
