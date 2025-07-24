@@ -3,7 +3,6 @@ use typeshare::typeshare;
 
 use crate::{AssetId, NFTAssetId};
 
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Sendable")]
 #[serde(rename_all = "camelCase")]

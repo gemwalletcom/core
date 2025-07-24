@@ -223,10 +223,10 @@ impl StakingMapper {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::rpc::model::{Transaction, TransactionReciept};
+    use crate::rpc::model::{Log, Transaction, TransactionReciept};
     use num_bigint::BigUint;
 
-    fn create_test_receipt_with_log(log: crate::rpc::model::Log) -> TransactionReciept {
+    fn create_test_receipt_with_log(log: Log) -> TransactionReciept {
         TransactionReciept {
             gas_used: BigUint::from(100000u32),
             effective_gas_price: BigUint::from(20000000000u64),
@@ -244,12 +244,12 @@ mod tests {
             hash: "0xd85c4496230adf8a7c0fc1e98713127fb31a0f8f72874acea443e2f615f3c1b6".to_string(),
             from: "0x51ed60604637989d19d29e43c5d94b098a0d1af7".to_string(),
             to: Some("0x0000000000000000000000000000000000002002".to_string()),
-            value: BigUint::from(1000000000000000000u64), // 1 BNB
+            value: BigUint::from(1000000000000000000u64),
             gas: 280395,
             input: "0x".to_string(),
         };
 
-        let log = crate::rpc::model::Log {
+        let log = Log {
             address: "0x0000000000000000000000000000000000002002".to_string(),
             topics: vec![
                 EVENT_BSC_DELEGATED.to_string(),
@@ -286,7 +286,7 @@ mod tests {
             input: "0x".to_string(),
         };
 
-        let log = crate::rpc::model::Log {
+        let log = Log {
             address: "0x0000000000000000000000000000000000002002".to_string(),
             topics: vec![
                 EVENT_BSC_UNDELEGATED.to_string(),
@@ -323,7 +323,7 @@ mod tests {
             input: "0x".to_string(),
         };
 
-        let log = crate::rpc::model::Log {
+        let log = Log {
             address: "0x0000000000000000000000000000000000002002".to_string(),
             topics: vec![
                 EVENT_BSC_REDELEGATED.to_string(),
@@ -360,7 +360,7 @@ mod tests {
             input: "0x".to_string(),
         };
 
-        let log = crate::rpc::model::Log {
+        let log = Log {
             address: "0x0000000000000000000000000000000000002002".to_string(),
             topics: vec![
                 EVENT_BSC_CLAIMED.to_string(),
@@ -395,8 +395,7 @@ mod tests {
             input: "0x".to_string(),
         };
 
-        // Create a valid BSC staking event log
-        let log = crate::rpc::model::Log {
+        let log = Log {
             address: "0x0000000000000000000000000000000000002002".to_string(),
             topics: vec![
                 EVENT_BSC_DELEGATED.to_string(),
@@ -425,7 +424,7 @@ mod tests {
                 .to_string(),
         };
 
-        let log = crate::rpc::model::Log {
+        let log = Log {
             address: "0x1234567890123456789012345678901234567890".to_string(),
             topics: vec![
                 EVENT_BSC_DELEGATED.to_string(),
