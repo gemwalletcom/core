@@ -8,11 +8,10 @@ use crate::{
 use gem_bsc::stake_hub;
 use primitives::{AssetId, Chain, TransactionState, TransactionType};
 
-// BSC staking event signatures
-const EVENT_BSC_DELEGATED: &str = "0x24d7bda8602b916d64417f0dbfe2e2e88ec9b1157bd9f596dfdb91ba26624e04"; // Delegated(address indexed operatorAddress, address indexed delegator, uint256 shares, uint256 bnbAmount)
-const EVENT_BSC_UNDELEGATED: &str = "0x3aace7340547de7b9156593a7652dc07ee900cea3fd8f82cb6c9d38b40829802"; // Undelegated(address indexed operatorAddress, address indexed delegator, uint256 shares, uint256 bnbAmount)
-const EVENT_BSC_REDELEGATED: &str = "0xfdac6e81913996d95abcc289e90f2d8bd235487ce6fe6f821e7d21002a1915b4"; // Redelegated(address indexed srcValidator, address indexed dstValidator, address indexed delegator, uint256 oldShares, uint256 newShares, uint256 bnbAmount)
-const EVENT_BSC_CLAIMED: &str = "0xf7a40077ff7a04c7e61f6f26fb13774259ddf1b6bce9ecf26a8276cdd3992683"; // Claimed(address indexed operatorAddress, address indexed delegator, uint256 bnbAmount)
+const EVENT_BSC_DELEGATED: &str = "0x24d7bda8602b916d64417f0dbfe2e2e88ec9b1157bd9f596dfdb91ba26624e04";
+const EVENT_BSC_UNDELEGATED: &str = "0x3aace7340547de7b9156593a7652dc07ee900cea3fd8f82cb6c9d38b40829802";
+const EVENT_BSC_REDELEGATED: &str = "0xfdac6e81913996d95abcc289e90f2d8bd235487ce6fe6f821e7d21002a1915b4";
+const EVENT_BSC_CLAIMED: &str = "0xf7a40077ff7a04c7e61f6f26fb13774259ddf1b6bce9ecf26a8276cdd3992683";
 
 pub struct StakingMapper;
 
@@ -23,7 +22,6 @@ impl StakingMapper {
         transaction_reciept: &TransactionReciept,
         created_at: DateTime<Utc>,
     ) -> Option<primitives::Transaction> {
-        // Only handle SmartChain (BSC) staking transactions for now
         if *chain != Chain::SmartChain {
             return None;
         }
@@ -37,14 +35,11 @@ impl StakingMapper {
         transaction_reciept: &TransactionReciept,
         created_at: DateTime<Utc>,
     ) -> Option<primitives::Transaction> {
-        // Look for staking events in the transaction logs
         for log in &transaction_reciept.logs {
-            // Check if log is from StakeHub contract
             if log.address != stake_hub::STAKE_HUB_ADDRESS {
                 continue;
             }
 
-            // Check if log has topics (event signature + indexed parameters)
             if log.topics.is_empty() {
                 continue;
             }
@@ -77,9 +72,6 @@ impl StakingMapper {
         log: &crate::rpc::model::Log,
         created_at: DateTime<Utc>,
     ) -> Option<primitives::Transaction> {
-        // Delegated(address indexed operatorAddress, address indexed delegator, uint256 shares, uint256 bnbAmount)
-        // Topics: [event_sig, operatorAddress, delegator]
-        // Data: shares, bnbAmount
         if log.topics.len() != 3 {
             return None;
         }
@@ -87,12 +79,11 @@ impl StakingMapper {
         let operator_address = ethereum_address_checksum(log.topics[1].trim_start_matches("0x000000000000000000000000")).ok()?;
         let _delegator = ethereum_address_checksum(log.topics[2].trim_start_matches("0x000000000000000000000000")).ok()?;
         
-        // Parse bnbAmount from data (second 32-byte chunk)
         let data_without_prefix = log.data.trim_start_matches("0x");
-        if data_without_prefix.len() < 128 { // 64 bytes = 128 hex chars
+        if data_without_prefix.len() < 128 {
             return None;
         }
-        let bnb_amount_hex = &data_without_prefix[64..128]; // Skip first 32 bytes (shares), get next 32 bytes (bnbAmount)
+        let bnb_amount_hex = &data_without_prefix[64..128];
         let bnb_amount = num_bigint::BigUint::from_str_radix(bnb_amount_hex, 16).ok()?;
 
         Self::create_staking_transaction(
@@ -113,9 +104,6 @@ impl StakingMapper {
         log: &crate::rpc::model::Log,
         created_at: DateTime<Utc>,
     ) -> Option<primitives::Transaction> {
-        // Undelegated(address indexed operatorAddress, address indexed delegator, uint256 shares, uint256 bnbAmount)
-        // Topics: [event_sig, operatorAddress, delegator]
-        // Data: shares, bnbAmount
         if log.topics.len() != 3 {
             return None;
         }
@@ -123,12 +111,11 @@ impl StakingMapper {
         let operator_address = ethereum_address_checksum(log.topics[1].trim_start_matches("0x000000000000000000000000")).ok()?;
         let _delegator = ethereum_address_checksum(log.topics[2].trim_start_matches("0x000000000000000000000000")).ok()?;
         
-        // Parse bnbAmount from data (second 32-byte chunk)
         let data_without_prefix = log.data.trim_start_matches("0x");
-        if data_without_prefix.len() < 128 { // 64 bytes = 128 hex chars
+        if data_without_prefix.len() < 128 {
             return None;
         }
-        let bnb_amount_hex = &data_without_prefix[64..128]; // Skip first 32 bytes (shares), get next 32 bytes (bnbAmount)
+        let bnb_amount_hex = &data_without_prefix[64..128];
         let bnb_amount = num_bigint::BigUint::from_str_radix(bnb_amount_hex, 16).ok()?;
 
         Self::create_staking_transaction(
@@ -149,9 +136,6 @@ impl StakingMapper {
         log: &crate::rpc::model::Log,
         created_at: DateTime<Utc>,
     ) -> Option<primitives::Transaction> {
-        // Redelegated(address indexed srcValidator, address indexed dstValidator, address indexed delegator, uint256 oldShares, uint256 newShares, uint256 bnbAmount)
-        // Topics: [event_sig, srcValidator, dstValidator, delegator]
-        // Data: oldShares, newShares, bnbAmount
         if log.topics.len() != 4 {
             return None;
         }
@@ -160,12 +144,11 @@ impl StakingMapper {
         let dst_validator = ethereum_address_checksum(log.topics[2].trim_start_matches("0x000000000000000000000000")).ok()?;
         let _delegator = ethereum_address_checksum(log.topics[3].trim_start_matches("0x000000000000000000000000")).ok()?;
         
-        // Parse bnbAmount from data (third 32-byte chunk)
         let data_without_prefix = log.data.trim_start_matches("0x");
-        if data_without_prefix.len() < 192 { // 96 bytes = 192 hex chars
+        if data_without_prefix.len() < 192 {
             return None;
         }
-        let bnb_amount_hex = &data_without_prefix[128..192]; // Skip first 64 bytes (oldShares, newShares), get next 32 bytes (bnbAmount)
+        let bnb_amount_hex = &data_without_prefix[128..192];
         let bnb_amount = num_bigint::BigUint::from_str_radix(bnb_amount_hex, 16).ok()?;
 
         Self::create_staking_transaction(
@@ -186,9 +169,6 @@ impl StakingMapper {
         log: &crate::rpc::model::Log,
         created_at: DateTime<Utc>,
     ) -> Option<primitives::Transaction> {
-        // Claimed(address indexed operatorAddress, address indexed delegator, uint256 bnbAmount)
-        // Topics: [event_sig, operatorAddress, delegator]
-        // Data: bnbAmount
         if log.topics.len() != 3 {
             return None;
         }
@@ -196,12 +176,11 @@ impl StakingMapper {
         let operator_address = ethereum_address_checksum(log.topics[1].trim_start_matches("0x000000000000000000000000")).ok()?;
         let _delegator = ethereum_address_checksum(log.topics[2].trim_start_matches("0x000000000000000000000000")).ok()?;
         
-        // Parse bnbAmount from data (first 32-byte chunk)
         let data_without_prefix = log.data.trim_start_matches("0x");
-        if data_without_prefix.len() < 64 { // 32 bytes = 64 hex chars
+        if data_without_prefix.len() < 64 {
             return None;
         }
-        let bnb_amount_hex = &data_without_prefix[0..64]; // First 32 bytes (bnbAmount)
+        let bnb_amount_hex = &data_without_prefix[0..64];
         let bnb_amount = num_bigint::BigUint::from_str_radix(bnb_amount_hex, 16).ok()?;
 
         Self::create_staking_transaction(
@@ -285,10 +264,10 @@ mod tests {
             address: "0x0000000000000000000000000000000000002002".to_string(),
             topics: vec![
                 EVENT_BSC_DELEGATED.to_string(),
-                "0x000000000000000000000000d34403249B2d82AAdDB14e778422c966265e5Fb5".to_string(), // operatorAddress
-                "0x00000000000000000000000051eD60604637989d19D29e43c5D94B098A0d1Af7".to_string(), // delegator
+                "0x000000000000000000000000d34403249B2d82AAdDB14e778422c966265e5Fb5".to_string(),
+                "0x00000000000000000000000051eD60604637989d19D29e43c5D94B098A0d1Af7".to_string(),
             ],
-            data: "0x00000000000000000000000000000000000000000000000d5cc0065cf2d900aa0000000000000000000000000000000000000000000000000de0b6b3a7640000".to_string(), // shares, bnbAmount (1 BNB)
+            data: "0x00000000000000000000000000000000000000000000000d5cc0065cf2d900aa0000000000000000000000000000000000000000000000000de0b6b3a7640000".to_string(),
         };
 
         let receipt = create_test_receipt_with_log(log);
@@ -301,7 +280,7 @@ mod tests {
         assert_eq!(transaction.from, "0x51eD60604637989d19D29e43c5D94B098A0d1Af7");
         assert_eq!(transaction.to, "0xd34403249B2d82AAdDB14e778422c966265e5Fb5");
         assert_eq!(transaction.contract.unwrap(), "0x0000000000000000000000000000000000002002");
-        assert_eq!(transaction.value, "1000000000000000000"); // 1 BNB from event log
+        assert_eq!(transaction.value, "1000000000000000000");
         assert!(transaction.metadata.is_none());
     }
 
@@ -321,10 +300,10 @@ mod tests {
             address: "0x0000000000000000000000000000000000002002".to_string(),
             topics: vec![
                 EVENT_BSC_UNDELEGATED.to_string(),
-                "0x0000000000000000000000005c38FF8Ca2b16099C086bF36546e99b13D152C4c".to_string(), // operatorAddress
-                "0x000000000000000000000000a103B70852B1fE3eF3a0B60B818279F9D0D337d9".to_string(), // delegator
+                "0x0000000000000000000000005c38FF8Ca2b16099C086bF36546e99b13D152C4c".to_string(),
+                "0x000000000000000000000000a103B70852B1fE3eF3a0B60B818279F9D0D337d9".to_string(),
             ],
-            data: "0x00000000000000000000000000000000000000000000000e537dc9fb36dd5dc000000000000000000000000000000000000000000000000000e7b0506bd8c409".to_string(), // shares, bnbAmount
+            data: "0x00000000000000000000000000000000000000000000000e537dc9fb36dd5dc000000000000000000000000000000000000000000000000000e7b0506bd8c409".to_string(),
         };
 
         let receipt = create_test_receipt_with_log(log);
@@ -337,7 +316,7 @@ mod tests {
         assert_eq!(transaction.from, "0xa103B70852B1fE3eF3a0B60B818279F9D0D337d9");
         assert_eq!(transaction.to, "0x5c38FF8Ca2b16099C086bF36546e99b13D152C4c");
         assert_eq!(transaction.contract.unwrap(), "0x0000000000000000000000000000000000002002");
-        assert_eq!(transaction.value, "65214579073401865"); // bnbAmount from event log
+        assert_eq!(transaction.value, "65214579073401865");
         assert!(transaction.metadata.is_none());
     }
 
@@ -357,11 +336,11 @@ mod tests {
             address: "0x0000000000000000000000000000000000002002".to_string(),
             topics: vec![
                 EVENT_BSC_REDELEGATED.to_string(),
-                "0x0000000000000000000000000813D0D092b97C157A8e68A65ccdF41b956883ae".to_string(), // srcValidator
-                "0x000000000000000000000000B58ac55EB6B10e4f7918D77C92aA1cF5bB2DEd5e".to_string(), // dstValidator
-                "0x000000000000000000000000B5a0A71Be7B79F2A8Bd19B3A4D54d1b85fA2d50b".to_string(), // delegator
+                "0x0000000000000000000000000813D0D092b97C157A8e68A65ccdF41b956883ae".to_string(),
+                "0x000000000000000000000000B58ac55EB6B10e4f7918D77C92aA1cF5bB2DEd5e".to_string(),
+                "0x000000000000000000000000B5a0A71Be7B79F2A8Bd19B3A4D54d1b85fA2d50b".to_string(),
             ],
-            data: "0x000000000000000000000000000000000000000000000000206ebdb8157d551f000000000000000000000000000000000000000000000000206ebdb8157d551f000000000000000000000000000000000000000000000000206ebdb8157d551f".to_string(), // oldShares, newShares, bnbAmount
+            data: "0x000000000000000000000000000000000000000000000000206ebdb8157d551f000000000000000000000000000000000000000000000000206ebdb8157d551f000000000000000000000000000000000000000000000000206ebdb8157d551f".to_string(),
         };
 
         let receipt = create_test_receipt_with_log(log);
@@ -374,7 +353,7 @@ mod tests {
         assert_eq!(transaction.from, "0xB5a0A71Be7B79F2A8Bd19B3A4D54d1b85fA2d50b");
         assert_eq!(transaction.to, "0xB58ac55EB6B10e4f7918D77C92aA1cF5bB2DEd5e");
         assert_eq!(transaction.contract.unwrap(), "0x0000000000000000000000000000000000002002");
-        assert_eq!(transaction.value, "2337013854984033567"); // bnbAmount from event log
+        assert_eq!(transaction.value, "2337013854984033567");
         assert!(transaction.metadata.is_none());
     }
 
@@ -395,10 +374,10 @@ mod tests {
             address: "0x0000000000000000000000000000000000002002".to_string(),
             topics: vec![
                 EVENT_BSC_CLAIMED.to_string(),
-                "0x000000000000000000000000B12e8137eF499a1d81552DB11664a9E617fd350A".to_string(), // operatorAddress
-                "0x00000000000000000000000047B47f2586089F68Ec17384a437F96800f499274".to_string(), // delegator
+                "0x000000000000000000000000B12e8137eF499a1d81552DB11664a9E617fd350A".to_string(),
+                "0x00000000000000000000000047B47f2586089F68Ec17384a437F96800f499274".to_string(),
             ],
-            data: "0x00000000000000000000000000000000000000000000000037894851e6c7d8ed".to_string(), // bnbAmount
+            data: "0x00000000000000000000000000000000000000000000000037894851e6c7d8ed".to_string(),
         };
 
         let receipt = create_test_receipt_with_log(log);
@@ -411,7 +390,7 @@ mod tests {
         assert_eq!(transaction.from, "0x47B47f2586089F68Ec17384a437F96800f499274");
         assert_eq!(transaction.to, "0xB12e8137eF499a1d81552DB11664a9E617fd350A");
         assert_eq!(transaction.contract.unwrap(), "0x0000000000000000000000000000000000002002");
-        assert_eq!(transaction.value, "4001809260496804077"); // bnbAmount from event log
+        assert_eq!(transaction.value, "4001809260496804077");
         assert!(transaction.metadata.is_none());
     }
 
@@ -438,10 +417,9 @@ mod tests {
         };
 
         let receipt = create_test_receipt_with_log(log);
-        // Test with Ethereum chain instead of SmartChain
         let result = StakingMapper::map_transaction(&Chain::Ethereum, &transaction, &receipt, DateTime::default());
 
-        assert!(result.is_none()); // Should return None because it's not BSC
+        assert!(result.is_none());
     }
 
     #[test]
@@ -456,9 +434,8 @@ mod tests {
                 .to_string(),
         };
 
-        // Create log with non-stakehub contract address
         let log = crate::rpc::model::Log {
-            address: "0x1234567890123456789012345678901234567890".to_string(), // Different from stake hub address
+            address: "0x1234567890123456789012345678901234567890".to_string(),
             topics: vec![
                 EVENT_BSC_DELEGATED.to_string(),
                 "0x000000000000000000000000d34403249B2d82AAdDB14e778422c966265e5Fb5".to_string(),
