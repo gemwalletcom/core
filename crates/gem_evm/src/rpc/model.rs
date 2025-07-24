@@ -1,4 +1,5 @@
 use num_bigint::BigUint;
+use primitives::TransactionState;
 use serde::{Deserialize, Serialize};
 use serde_serializers::{deserialize_biguint_from_hex_str, deserialize_biguint_from_option_hex_str, deserialize_u64_from_str_or_int};
 use std::collections::HashMap;
@@ -58,6 +59,14 @@ impl TransactionReciept {
             return fee + l1_fee;
         }
         fee
+    }
+
+    pub fn get_state(&self) -> TransactionState {
+        if self.status == "0x1" {
+            TransactionState::Confirmed
+        } else {
+            TransactionState::Failed
+        }
     }
 }
 

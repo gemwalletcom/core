@@ -11,7 +11,7 @@ use crate::{
     registry::ContractRegistry,
     rpc::model::{Block, Transaction, TransactionReciept, TransactionReplayTrace},
 };
-use primitives::{chain::Chain, transaction_metadata_types::TransactionNFTTransferMetadata, AssetId, NFTAssetId, TransactionState, TransactionType};
+use primitives::{chain::Chain, transaction_metadata_types::TransactionNFTTransferMetadata, AssetId, NFTAssetId, TransactionType};
 
 pub const INPUT_0X: &str = "0x";
 pub const FUNCTION_ERC20_TRANSFER: &str = "0xa9059cbb";
@@ -58,11 +58,7 @@ impl EthereumMapper {
         timestamp: &BigUint,
         contract_registry: Option<&ContractRegistry>,
     ) -> Option<primitives::Transaction> {
-        let state = if transaction_reciept.status == "0x1" {
-            TransactionState::Confirmed
-        } else {
-            TransactionState::Failed
-        };
+        let state = transaction_reciept.get_state();
         let hash = transaction.hash.clone();
         let value = transaction.value.to_string();
         let fee = transaction_reciept.get_fee().to_string();
@@ -255,7 +251,7 @@ impl EthereumMapper {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::rpc::model::{Transaction, TransactionReciept};
+    use crate::rpc::model::{Log, Transaction, TransactionReciept};
     use num_bigint::BigUint;
     use primitives::{Chain, JsonRpcResult};
 
@@ -415,8 +411,7 @@ mod tests {
     }
 
     #[test]
-    fn test_bsc_staking_integration() {
-        // Test BSC delegate transaction integration with main mapper
+    fn test_map_smartchain_staking_transaction() {
         let transaction = Transaction {
             hash: "0x21442c7c30a6c1d6be3b5681275adb1f1402cef066579c4f53ec4f1c8c056ab0".to_string(),
             from: "0xf1a3687303606a6fd48179ce503164cdcbabeab6".to_string(),
@@ -428,30 +423,24 @@ mod tests {
         };
 
         let receipt = TransactionReciept {
-            gas_used: BigUint::from(100000u32), // More realistic gas usage for staking tx
+            gas_used: BigUint::from(100000u32),
             effective_gas_price: BigUint::from(20000000000u64),
             l1_fee: None,
-            logs: vec![crate::rpc::model::Log {
+            logs: vec![Log {
                 address: "0x0000000000000000000000000000000000002002".to_string(),
                 topics: vec![
                     "0x24d7bda8602b916d64417f0dbfe2e2e88ec9b1157bd9f596dfdb91ba26624e04".to_string(), // Delegated event
                     "0x000000000000000000000000d34403249B2d82AAdDB14e778422c966265e5Fb5".to_string(), // operatorAddress
                     "0x000000000000000000000000f1a3687303606a6fD48179Ce503164CDcBAbeaB6".to_string(), // delegator
                 ],
-                data: "0x00000000000000000000000000000000000000000000000d5cc0065cf2d900aa0000000000000000000000000000000000000000000000001158e460913d00000".to_string(), // shares, bnbAmount
+                data: "0x00000000000000000000000000000000000000000000000d5cc0065cf2d900aa0000000000000000000000000000000000000000000000001158e460913d00000"
+                    .to_string(),
             }],
             status: "0x1".to_string(),
             block_number: "0x1234".to_string(),
         };
 
-        let result = EthereumMapper::map_transaction(
-            Chain::SmartChain,
-            &transaction,
-            &receipt,
-            None,
-            &BigUint::from(1735671600u64),
-            None,
-        );
+        let result = EthereumMapper::map_transaction(Chain::SmartChain, &transaction, &receipt, None, &BigUint::from(1735671600u64), None);
 
         assert!(result.is_some());
         let tx = result.unwrap();
