@@ -18,6 +18,8 @@ pub enum TransactionType {
     StakeWithdraw,
     AssetActivation,
     SmartContractCall,
+    PerpetualOpenPosition,
+    PerpetualClosePosition,
 }
 
 impl Default for TransactionType {

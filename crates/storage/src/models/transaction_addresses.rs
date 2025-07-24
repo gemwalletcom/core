@@ -25,7 +25,9 @@ impl TransactionAddresses {
             | TransactionType::StakeWithdraw
             | TransactionType::TransferNFT
             | TransactionType::AssetActivation
-            | TransactionType::SmartContractCall => transaction
+            | TransactionType::SmartContractCall
+            | TransactionType::PerpetualOpenPosition
+            | TransactionType::PerpetualClosePosition => transaction
                 .addresses()
                 .into_iter()
                 .map(|x| Self {

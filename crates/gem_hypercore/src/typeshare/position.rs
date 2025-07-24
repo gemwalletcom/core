@@ -75,4 +75,5 @@ pub enum HypercoreLeverageType {
 #[serde(rename_all = "camelCase")]
 pub struct HypercoreCumulativeFunding {
     pub all_time: String,
+    pub since_open: String,
 }

@@ -25,6 +25,7 @@ pub struct PerpetualPosition {
     pub size: f64,
     pub size_value: f64,
     pub leverage: u8,
+    pub entry_price: Option<f64>,
     pub liquidation_price: Option<f64>,
     pub margin_type: PerpetualMarginType,
     pub margin_amount: f64,

@@ -1,4 +1,4 @@
-use crate::{AssetId, PerpetualPosition, PerpetualProvider};
+use crate::{AssetId, PerpetualPosition, PerpetualProvider, Asset};
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
@@ -18,9 +18,10 @@ pub struct Perpetual {
     pub leverage: Vec<u8>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Sendable, Hashable")]
 pub struct PerpetualPositionData {
     pub perpetual: Perpetual,
+    pub asset: Asset,
     pub positions: Vec<PerpetualPosition>,
 }
