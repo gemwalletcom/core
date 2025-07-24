@@ -173,8 +173,8 @@ impl StakingMapper {
             return None;
         }
 
-        let _operator_address = ethereum_address_checksum(log.topics[1].trim_start_matches("0x000000000000000000000000")).ok()?;
-        let delegator = ethereum_address_checksum(log.topics[2].trim_start_matches("0x000000000000000000000000")).ok()?;
+        let operator_address = ethereum_address_checksum(log.topics[1].trim_start_matches("0x000000000000000000000000")).ok()?;
+        let _delegator = ethereum_address_checksum(log.topics[2].trim_start_matches("0x000000000000000000000000")).ok()?;
         
         let data_without_prefix = log.data.trim_start_matches("0x");
         if data_without_prefix.len() < 64 {
@@ -187,7 +187,7 @@ impl StakingMapper {
             chain,
             transaction,
             transaction_reciept,
-            &delegator,
+            &operator_address,
             TransactionType::StakeRewards, // Claim is a rewards transaction
             &bnb_amount.to_string(),
             created_at,
@@ -388,7 +388,7 @@ mod tests {
 
         assert_eq!(transaction.transaction_type, TransactionType::StakeRewards);
         assert_eq!(transaction.from, "0x47B47f2586089F68Ec17384a437F96800f499274");
-        assert_eq!(transaction.to, "0x47B47f2586089F68Ec17384a437F96800f499274");
+        assert_eq!(transaction.to, "0xB12e8137eF499a1d81552DB11664a9E617fd350A");
         assert_eq!(transaction.contract.unwrap(), "0x0000000000000000000000000000000000002002");
         assert_eq!(transaction.value, "4001809260496804077");
         assert!(transaction.metadata.is_none());
