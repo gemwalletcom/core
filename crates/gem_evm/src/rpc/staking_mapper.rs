@@ -3,7 +3,7 @@ use num_bigint::BigUint;
 use num_traits::Num;
 
 use crate::{
-    ethereum_address_checksum,
+    address::{ethereum_address_checksum, ethereum_address_from_topic},
     rpc::model::{Log, Transaction, TransactionReciept},
 };
 use gem_bsc::stake_hub;
@@ -73,14 +73,12 @@ impl StakingMapper {
             return None;
         }
 
-        let operator_address = ethereum_address_checksum(log.topics[1].trim_start_matches("0x000000000000000000000000")).ok()?;
-
-        let data_without_prefix = log.data.trim_start_matches("0x");
-        if data_without_prefix.len() < 128 {
-            return None;
-        }
-        let bnb_amount_hex = &data_without_prefix[64..128];
-        let bnb_amount = BigUint::from_str_radix(bnb_amount_hex, 16).ok()?;
+        let operator_address = ethereum_address_from_topic(&log.topics[1])?;
+        let value = log
+            .data
+            .trim_start_matches("0x")
+            .get(64..128)
+            .and_then(|s| BigUint::from_str_radix(s, 16).ok())?;
 
         Self::create_staking_transaction(
             chain,
@@ -88,7 +86,7 @@ impl StakingMapper {
             reciept,
             &operator_address,
             TransactionType::StakeDelegate,
-            &bnb_amount.to_string(),
+            &value.to_string(),
             created_at,
         )
     }
@@ -104,15 +102,13 @@ impl StakingMapper {
             return None;
         }
 
-        let operator_address = ethereum_address_checksum(log.topics[1].trim_start_matches("0x000000000000000000000000")).ok()?;
-        let _delegator = ethereum_address_checksum(log.topics[2].trim_start_matches("0x000000000000000000000000")).ok()?;
-
-        let data_without_prefix = log.data.trim_start_matches("0x");
-        if data_without_prefix.len() < 128 {
-            return None;
-        }
-        let bnb_amount_hex = &data_without_prefix[64..128];
-        let bnb_amount = BigUint::from_str_radix(bnb_amount_hex, 16).ok()?;
+        let operator_address = ethereum_address_from_topic(&log.topics[1])?;
+        let _delegator = ethereum_address_from_topic(&log.topics[2])?;
+        let value = log
+            .data
+            .trim_start_matches("0x")
+            .get(64..128)
+            .and_then(|s| BigUint::from_str_radix(s, 16).ok())?;
 
         Self::create_staking_transaction(
             chain,
@@ -120,7 +116,7 @@ impl StakingMapper {
             reciept,
             &operator_address,
             TransactionType::StakeUndelegate,
-            &bnb_amount.to_string(),
+            &value.to_string(),
             created_at,
         )
     }
@@ -136,14 +132,12 @@ impl StakingMapper {
             return None;
         }
 
-        let dst_validator = ethereum_address_checksum(log.topics[2].trim_start_matches("0x000000000000000000000000")).ok()?;
-
-        let data_without_prefix = log.data.trim_start_matches("0x");
-        if data_without_prefix.len() < 192 {
-            return None;
-        }
-        let bnb_amount_hex = &data_without_prefix[128..192];
-        let bnb_amount = BigUint::from_str_radix(bnb_amount_hex, 16).ok()?;
+        let dst_validator = ethereum_address_from_topic(&log.topics[2])?;
+        let value = log
+            .data
+            .trim_start_matches("0x")
+            .get(128..192)
+            .and_then(|s| BigUint::from_str_radix(s, 16).ok())?;
 
         Self::create_staking_transaction(
             chain,
@@ -151,7 +145,7 @@ impl StakingMapper {
             reciept,
             &dst_validator,
             TransactionType::StakeRedelegate,
-            &bnb_amount.to_string(),
+            &value.to_string(),
             created_at,
         )
     }
@@ -167,15 +161,9 @@ impl StakingMapper {
             return None;
         }
 
-        let operator_address = ethereum_address_checksum(log.topics[1].trim_start_matches("0x000000000000000000000000")).ok()?;
-        let _delegator = ethereum_address_checksum(log.topics[2].trim_start_matches("0x000000000000000000000000")).ok()?;
-
-        let data_without_prefix = log.data.trim_start_matches("0x");
-        if data_without_prefix.len() < 64 {
-            return None;
-        }
-        let bnb_amount_hex = &data_without_prefix[0..64];
-        let bnb_amount = BigUint::from_str_radix(bnb_amount_hex, 16).ok()?;
+        let operator_address = ethereum_address_from_topic(&log.topics[1])?;
+        let _delegator = ethereum_address_from_topic(&log.topics[2])?;
+        let value = log.data.trim_start_matches("0x").get(..64).and_then(|s| BigUint::from_str_radix(s, 16).ok())?;
 
         Self::create_staking_transaction(
             chain,
@@ -183,7 +171,7 @@ impl StakingMapper {
             reciept,
             &operator_address,
             TransactionType::StakeRewards,
-            &bnb_amount.to_string(),
+            &value.to_string(),
             created_at,
         )
     }

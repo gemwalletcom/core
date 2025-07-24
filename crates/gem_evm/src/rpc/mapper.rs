@@ -7,7 +7,7 @@ use num_traits::Num;
 use super::staking_mapper::StakingMapper;
 use super::swap_mapper::SwapMapper;
 use crate::{
-    address::ethereum_address_checksum,
+    address::{ethereum_address_checksum, ethereum_address_from_topic},
     registry::ContractRegistry,
     rpc::model::{Block, Transaction, TransactionReciept, TransactionReplayTrace},
 };
@@ -108,8 +108,7 @@ impl EthereumMapper {
                 .is_some_and(|log| log.topics.len() == 4 && log.topics.first().is_some_and(|x| x == TRANSFER_TOPIC))
         {
             if let Some(log) = transaction_reciept.logs.last() {
-                let address = log.topics[2].trim_start_matches("0x000000000000000000000000");
-                let address = ethereum_address_checksum(address).ok()?;
+                let address = ethereum_address_from_topic(&log.topics[2])?;
                 let token_id = BigUint::from_str_radix(&log.topics[3].replace("0x", ""), 16).ok()?;
                 let contract_address = ethereum_address_checksum(&log.address).ok()?;
                 let metadata = TransactionNFTTransferMetadata::from_asset_id(NFTAssetId::new(chain, &contract_address, &token_id.to_string()));
@@ -142,7 +141,7 @@ impl EthereumMapper {
                 .is_some_and(|log| log.topics.len() == 4 && log.topics.first().is_some_and(|x| x == TRANSFER_SINGLE))
         {
             if let Some(log) = transaction_reciept.logs.last() {
-                let to_address = ethereum_address_checksum(log.topics[3].trim_start_matches("0x000000000000000000000000")).ok()?;
+                let to_address = ethereum_address_from_topic(&log.topics[3])?;
                 let token_id = BigUint::from_str_radix(&log.data.replace("0x", "")[0..64], 16).ok()?;
                 let contract_address = ethereum_address_checksum(&log.address).ok()?;
                 let metadata = TransactionNFTTransferMetadata::from_asset_id(NFTAssetId::new(chain, &contract_address, &token_id.to_string()));
@@ -173,10 +172,8 @@ impl EthereumMapper {
         });
 
         if let Some(log) = transfer_log {
-            let from_address_in_log = log.topics.get(1)?.trim_start_matches("0x000000000000000000000000");
-            let from_address_in_log = ethereum_address_checksum(from_address_in_log).ok()?;
-            let to_address_in_log = log.topics.get(2)?.trim_start_matches("0x000000000000000000000000");
-            let to_address_in_log = ethereum_address_checksum(to_address_in_log).ok()?;
+            let from_address_in_log = ethereum_address_from_topic(log.topics.get(1)?)?;
+            let to_address_in_log = ethereum_address_from_topic(log.topics.get(2)?)?;
             let amount = BigUint::from_str_radix(&log.data.replace("0x", ""), 16).ok()?;
             let token_id = ethereum_address_checksum(&log.address).ok()?;
 
