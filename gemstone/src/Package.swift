@@ -5,7 +5,7 @@ import PackageDescription
 let package = Package(
     name: "Gemstone",
     platforms: [
-        .iOS(.v17)
+        .iOS(.v17), .macOS(.v15)
     ],
     products: [
         .library(
