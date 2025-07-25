@@ -130,7 +130,7 @@ pub mod asset_address;
 pub use self::asset_address::AssetAddress;
 pub mod graphql;
 pub mod perpetual;
-pub use self::perpetual::Perpetual;
+pub use self::perpetual::{Perpetual, PerpetualDirection, PerpetualPositionData};
 pub mod perpetual_provider;
 pub use self::perpetual_provider::PerpetualProvider;
 pub mod perpetual_position;

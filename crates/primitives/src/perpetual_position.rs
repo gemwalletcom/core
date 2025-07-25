@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
+use crate::PerpetualDirection;
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[typeshare(swift = "Equatable, Sendable, Hashable")]
 #[serde(rename_all = "lowercase")]
@@ -28,6 +30,7 @@ pub struct PerpetualPosition {
     pub entry_price: Option<f64>,
     pub liquidation_price: Option<f64>,
     pub margin_type: PerpetualMarginType,
+    pub direction: PerpetualDirection,
     pub margin_amount: f64,
     pub take_profit: Option<PriceTarget>,
     pub stop_loss: Option<PriceTarget>,
