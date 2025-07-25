@@ -219,7 +219,6 @@ impl Chain {
             | Self::Ink
             | Self::Unichain
             | Self::Hyperliquid
-            | Self::HyperCore
             | Self::Monad => ChainType::Ethereum,
             Self::Bitcoin | Self::BitcoinCash | Self::Doge | Self::Litecoin => ChainType::Bitcoin,
             Self::Solana => ChainType::Solana,
@@ -234,6 +233,7 @@ impl Chain {
             Self::Algorand => ChainType::Algorand,
             Self::Polkadot => ChainType::Polkadot,
             Self::Cardano => ChainType::Cardano,
+            Self::HyperCore => ChainType::HyperCore,
         }
     }
 
