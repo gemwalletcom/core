@@ -32,7 +32,7 @@ pub enum PerpetualDirection {
 pub struct PerpetualPositionData {
     pub perpetual: Perpetual,
     pub asset: Asset,
-    pub positions: Vec<PerpetualPosition>,
+    pub position: PerpetualPosition,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
