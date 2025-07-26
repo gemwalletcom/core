@@ -133,7 +133,7 @@ impl Chain {
             Self::Ink => "57073",
             Self::Unichain => "130",
             Self::Hyperliquid => "999",
-            Self::HyperCore => "42161",
+            Self::HyperCore => "1337",
             Self::Monad => "10143", //TODO: Monad 143
         }
     }
