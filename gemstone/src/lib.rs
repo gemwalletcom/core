@@ -5,7 +5,7 @@ pub mod chain;
 pub mod config;
 pub mod cosmos;
 pub mod ethereum;
-pub mod hypercore;
+pub mod hyperliquid;
 pub mod message;
 pub mod network;
 pub mod payment;
