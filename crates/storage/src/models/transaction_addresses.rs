@@ -28,7 +28,6 @@ impl TransactionAddresses {
             | TransactionType::SmartContractCall
             | TransactionType::PerpetualOpenPosition
             | TransactionType::PerpetualClosePosition
-            | TransactionType::PerpetualApproval
             | TransactionType::PerpetualWithdraw => transaction
                 .addresses()
                 .into_iter()
