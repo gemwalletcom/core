@@ -133,31 +133,30 @@ impl PaybisClient {
         let mut params = BTreeMap::new();
         params.insert("currencyCodeFrom", from_currency.to_string());
         params.insert("currencyCodeTo", to_currency.to_string());
-        
+        params.insert("partnerId", self.api_key.clone());
+        params.insert("requestedAmount", amount.to_string());
+        params.insert("requestedAmountType", "from".to_string());
+        params.insert("walletAddress", wallet_address.to_string());
+
         if is_buy {
             params.insert("flow", "buyCrypto".to_string());
         } else {
             params.insert("flow", "sellCrypto".to_string());
         }
-        
-        params.insert("partnerId", self.api_key.clone());
-        params.insert("requestedAmount", amount.to_string());
-        params.insert("requestedAmountType", "from".to_string());
-        params.insert("walletAddress", wallet_address.to_string());
 
         // Add all parameters to URL in sorted order
         for (key, value) in params {
             url.query_pairs_mut().append_pair(key, &value);
         }
 
-        self.sign(url)
+        self.sign(url).expect("Failed to sign URL")
     }
 
-    fn sign(&self, mut url: Url) -> String {
-        let query = url.query().unwrap_or("");
+    fn sign(&self, mut url: Url) -> Option<String> {
+        let query = url.query()?;
         let signature = generate_hmac_signature(&self.secret_key, query);
         url.query_pairs_mut().append_pair("signature", &signature);
-        url.as_str().to_string()
+        Some(url.as_str().to_string())
     }
 }
 
