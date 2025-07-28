@@ -281,6 +281,8 @@ impl Transaction {
                 .and_then(|metadata| serde_json::from_value::<TransactionSwapMetadata>(metadata).ok())
                 .map(|metadata| vec![metadata.from_asset, metadata.to_asset])
                 .unwrap_or_default(),
+            TransactionType::PerpetualApproval => vec![],
+            TransactionType::PerpetualWithdraw => vec![self.asset_id.clone()],
         }
     }
 
@@ -309,6 +311,8 @@ impl Transaction {
                     ]
                 })
                 .unwrap_or_default(),
+            TransactionType::PerpetualApproval => vec![],
+            TransactionType::PerpetualWithdraw => vec![AssetAddress::new(self.asset_id.clone(), self.to.clone())],
         }
         .into_iter()
         .filter(|x| x.asset_id.is_token())

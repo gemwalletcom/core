@@ -27,7 +27,9 @@ impl TransactionAddresses {
             | TransactionType::AssetActivation
             | TransactionType::SmartContractCall
             | TransactionType::PerpetualOpenPosition
-            | TransactionType::PerpetualClosePosition => transaction
+            | TransactionType::PerpetualClosePosition
+            | TransactionType::PerpetualApproval
+            | TransactionType::PerpetualWithdraw => transaction
                 .addresses()
                 .into_iter()
                 .map(|x| Self {

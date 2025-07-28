@@ -121,6 +121,13 @@ impl Pusher {
                 let message = format!("Closed perpetual position for {value} at {to_address}");
                 Ok(Message { title, message: Some(message) })
             }
+            TransactionType::PerpetualApproval => Err("Perpetual approval not supported".into()),
+            TransactionType::PerpetualWithdraw => {
+                let value = self.get_value(amount, asset.symbol.clone());
+                let title = format!("Perpetual Withdraw: {value}");
+                let message = format!("Withdrew {value} from perpetual position");
+                Ok(Message { title, message: Some(message) })
+            }
         }
     }
 
