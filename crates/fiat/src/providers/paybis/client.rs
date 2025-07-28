@@ -2,11 +2,11 @@ use crate::hmac_signature::generate_hmac_signature;
 use crate::model::FiatProviderAsset;
 use crate::providers::paybis::mapper::map_asset_id;
 
-use super::mapper::map_asset_chain;
 use super::model::{Currency, PaybisAssetsResponse, PaybisQuote, QuoteRequest};
 use number_formatter::BigNumberFormatter;
 use primitives::{FiatBuyQuote, FiatProviderName, FiatQuote, FiatQuoteType, FiatSellQuote};
 use reqwest::Client;
+use std::collections::BTreeMap;
 use url::Url;
 
 const PAYBIS_API_BASE_URL: &str = "https://widget-api.paybis.com";
@@ -129,22 +129,26 @@ impl PaybisClient {
     pub fn redirect_url(&self, wallet_address: &str, from_currency: &str, to_currency: &str, amount: f64, is_buy: bool) -> String {
         let mut url = Url::parse(PAYBIS_WIDGET_URL).unwrap();
 
-        // Add parameters in alphabetical order as required by Paybis
-        url.query_pairs_mut()
-            .append_pair("partnerId", &self.api_key)
-            .append_pair("currencyCodeFrom", from_currency)
-            .append_pair("currencyCodeTo", to_currency);
-
+        // Use BTreeMap to ensure parameters are always sorted alphabetically
+        let mut params = BTreeMap::new();
+        params.insert("currencyCodeFrom", from_currency.to_string());
+        params.insert("currencyCodeTo", to_currency.to_string());
+        
         if is_buy {
-            url.query_pairs_mut().append_pair("flow", "buyCrypto");
+            params.insert("flow", "buyCrypto".to_string());
         } else {
-            url.query_pairs_mut().append_pair("flow", "sellCrypto");
+            params.insert("flow", "sellCrypto".to_string());
         }
+        
+        params.insert("partnerId", self.api_key.clone());
+        params.insert("requestedAmount", amount.to_string());
+        params.insert("requestedAmountType", "from".to_string());
+        params.insert("walletAddress", wallet_address.to_string());
 
-        url.query_pairs_mut()
-            .append_pair("requestedAmount", &amount.to_string())
-            .append_pair("requestedAmountType", "from")
-            .append_pair("walletAddress", wallet_address);
+        // Add all parameters to URL in sorted order
+        for (key, value) in params {
+            url.query_pairs_mut().append_pair(key, &value);
+        }
 
         self.sign(url)
     }
@@ -168,7 +172,7 @@ mod tests {
         let redirect_url = paybis_client.redirect_url("bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq", "USD", "BTC", 100.0, true);
         let url = Url::parse(&redirect_url).unwrap();
 
-        assert_eq!(url.as_str(), "https://widget.paybis.com/?apiKey=test_api_key&currencyCodeFrom=USD&currencyCodeTo=BTC&flow=buyCrypto&requestedAmount=100&requestedAmountType=from&walletAddress=bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq&signature=i%2F7LoGHh4AilGGlHpEk%2BHeFiayY7%2BveW%2B6X0auIpJP8%3D");
+        assert_eq!(url.as_str(), "https://widget.paybis.com/?currencyCodeFrom=USD&currencyCodeTo=BTC&flow=buyCrypto&partnerId=test_api_key&requestedAmount=100&requestedAmountType=from&walletAddress=bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq&signature=X7gyrLY3co8KBGUl8%2FM6vKtY%2F%2B7n8Hb99Smg%2F725vyw%3D");
     }
 
     #[test]
@@ -178,6 +182,6 @@ mod tests {
         let redirect_url = paybis_client.redirect_url("0x742d35Cc6634C0532925a3b844Bc9e7595f5843", "ETH", "EUR", 2.5, false);
 
         let url = Url::parse(&redirect_url).unwrap();
-        assert_eq!(url.as_str(), "https://widget.paybis.com/?apiKey=test_api_key&currencyCodeFrom=ETH&currencyCodeTo=EUR&flow=sellCrypto&requestedAmount=2.5&requestedAmountType=from&walletAddress=0x742d35Cc6634C0532925a3b844Bc9e7595f5843&signature=DkG9%2BnLiq%2BOcA%2Fyuxq4lrL%2F1Z4Yvq6ktY2RXYnU9n2s%3D");
+        assert_eq!(url.as_str(), "https://widget.paybis.com/?currencyCodeFrom=ETH&currencyCodeTo=EUR&flow=sellCrypto&partnerId=test_api_key&requestedAmount=2.5&requestedAmountType=from&walletAddress=0x742d35Cc6634C0532925a3b844Bc9e7595f5843&signature=uKyvDcC8D29AIRFfQALLhjDpXsIkqiahqbEhf9O86LA%3D");
     }
 }
