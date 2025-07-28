@@ -21,7 +21,7 @@ impl HyperApproveBuilderFee {
             hyperliquid_chain: MAINNET.to_string(),
             signature_chain_id: SIGNATURE_CHAIN_ID.to_string(),
             max_fee_rate,
-            builder,
+            builder: builder.to_lowercase(),
             nonce,
         }
     }

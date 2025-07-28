@@ -1,9 +1,9 @@
 #[derive(uniffi::Record, serde::Serialize)]
 pub struct HyperPlaceOrder {
+    pub grouping: HyperGrouping,
+    pub orders: Vec<HyperOrder>,
     #[serde(rename = "type")]
     pub action_type: String,
-    pub orders: Vec<HyperOrder>,
-    pub grouping: HyperGrouping,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub builder: Option<HyperBuilder>,
 }
@@ -11,9 +11,9 @@ pub struct HyperPlaceOrder {
 impl HyperPlaceOrder {
     pub fn new(orders: Vec<HyperOrder>, grouping: HyperGrouping, builder: Option<HyperBuilder>) -> Self {
         Self {
-            action_type: "order".to_string(),
-            orders,
             grouping,
+            orders,
+            action_type: "order".to_string(),
             builder,
         }
     }
@@ -27,10 +27,10 @@ pub struct HyperOrder {
     pub is_buy: bool,
     #[serde(rename = "p")]
     pub price: String,
-    #[serde(rename = "s")]
-    pub size: String,
     #[serde(rename = "r")]
     pub reduce_only: bool,
+    #[serde(rename = "s")]
+    pub size: String,
     #[serde(rename = "t")]
     pub order_type: HyperOrderType,
     #[serde(rename = "c", skip_serializing_if = "Option::is_none")]
@@ -106,8 +106,8 @@ pub fn make_market_close(asset: u32, price: String, size: String, reduce_only: b
             asset,
             is_buy: false,
             price,
-            size,
             reduce_only,
+            size,
             order_type: HyperOrderType::Limit {
                 limit: HyperLimitOrder::new(HyperTimeInForce::FrontendMarket),
             },
@@ -124,8 +124,8 @@ pub fn make_market_open(asset: u32, is_buy: bool, price: String, size: String, r
             asset,
             is_buy,
             price,
-            size,
             reduce_only,
+            size,
             order_type: HyperOrderType::Limit {
                 limit: HyperLimitOrder::new(HyperTimeInForce::FrontendMarket),
             },

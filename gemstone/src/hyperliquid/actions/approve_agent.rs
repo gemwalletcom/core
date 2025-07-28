@@ -18,12 +18,12 @@ pub struct HyperApproveAgent {
 impl HyperApproveAgent {
     pub fn new(agent_address: String, agent_name: String, nonce: u64) -> Self {
         Self {
-            action_type: "approveAgent".to_string(),
-            hyperliquid_chain: MAINNET.to_string(),
-            signature_chain_id: SIGNATURE_CHAIN_ID.to_string(),
-            agent_address,
+            agent_address: agent_address.to_lowercase(),
             agent_name,
+            hyperliquid_chain: MAINNET.to_string(),
             nonce,
+            signature_chain_id: SIGNATURE_CHAIN_ID.to_string(),
+            action_type: "approveAgent".to_string(),
         }
     }
 }

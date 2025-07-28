@@ -16,12 +16,12 @@ pub struct HyperWithdrawalRequest {
 impl HyperWithdrawalRequest {
     pub fn new(amount: String, time: u64, destination: String) -> Self {
         Self {
-            action_type: "withdraw3".to_string(),
+            amount,
+            destination: destination.to_lowercase(),
             hyperliquid_chain: MAINNET.to_string(),
             signature_chain_id: SIGNATURE_CHAIN_ID.to_string(),
-            amount,
             time,
-            destination,
+            action_type: "withdraw3".to_string(),
         }
     }
 }
