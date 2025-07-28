@@ -18,6 +18,7 @@ pub enum AssetType {
     JETTON, // Ton
     SYNTH,  // Thorchain
     ASA,    // Algorand
+    PERPETUAL,
 }
 
 impl AssetType {
