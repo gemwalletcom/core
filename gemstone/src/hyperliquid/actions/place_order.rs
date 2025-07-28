@@ -117,11 +117,11 @@ pub fn make_market_close(asset: u32, price: String, size: String, reduce_only: b
     )
 }
 
-pub fn make_market_open(asset: u32, price: String, size: String, reduce_only: bool) -> HyperPlaceOrder {
+pub fn make_market_open(asset: u32, is_buy: bool, price: String, size: String, reduce_only: bool) -> HyperPlaceOrder {
     HyperPlaceOrder::new(
         vec![HyperOrder {
             asset,
-            is_buy: true,
+            is_buy,
             price,
             size,
             reduce_only,

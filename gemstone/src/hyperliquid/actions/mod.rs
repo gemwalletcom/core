@@ -16,10 +16,10 @@ pub const MAINNET: &str = "Mainnet";
 pub const SIGNATURE_CHAIN_ID: &str = "0xa4b1";
 
 #[derive(uniffi::Object)]
-pub struct HyperCoreActions {}
+pub struct HyperCoreModelFactory {}
 
 #[uniffi::export]
-impl HyperCoreActions {
+impl HyperCoreModelFactory {
     #[uniffi::constructor]
     fn new() -> Self {
         Self {}
@@ -37,8 +37,8 @@ impl HyperCoreActions {
         place_order::make_market_close(asset, price, size, reduce_only)
     }
 
-    fn make_market_open(&self, asset: u32, price: String, size: String, reduce_only: bool) -> place_order::HyperPlaceOrder {
-        place_order::make_market_open(asset, price, size, reduce_only)
+    fn make_market_open(&self, asset: u32, is_buy: bool, price: String, size: String, reduce_only: bool) -> place_order::HyperPlaceOrder {
+        place_order::make_market_open(asset, is_buy, price, size, reduce_only)
     }
 
     fn make_withdraw(&self, amount: String, address: String, nonce: u64) -> withdrawal::HyperWithdrawalRequest {
@@ -52,7 +52,7 @@ mod tests {
 
     #[test]
     fn test_make_market_close_action() {
-        let actions = HyperCoreActions::new();
+        let actions = HyperCoreModelFactory::new();
         let order = actions.make_market_close(14, "3.8185".to_string(), "6.2".to_string(), true);
 
         // Verify the structure matches the expected format
@@ -94,8 +94,8 @@ mod tests {
 
     #[test]
     fn test_make_market_open_action() {
-        let actions = HyperCoreActions::new();
-        let order = actions.make_market_open(5, "200.21".to_string(), "0.28".to_string(), false);
+        let actions = HyperCoreModelFactory::new();
+        let order = actions.make_market_open(5, true, "200.21".to_string(), "0.28".to_string(), false);
 
         // Verify the structure matches the expected format
         assert_eq!(order.action_type, "order");
@@ -130,6 +130,35 @@ mod tests {
         assert_eq!(json["orders"][0]["b"], true);
         assert_eq!(json["orders"][0]["p"], "200.21");
         assert_eq!(json["orders"][0]["s"], "0.28");
+        assert_eq!(json["orders"][0]["r"], false);
+        assert_eq!(json["orders"][0]["t"]["limit"]["tif"], "FrontendMarket");
+    }
+
+    #[test]
+    fn test_make_market_open_short_action() {
+        let actions = HyperCoreModelFactory::new();
+        let order = actions.make_market_open(25, false, "3.032".to_string(), "1".to_string(), false);
+
+        // Verify the structure matches the expected format for short
+        assert_eq!(order.action_type, "order");
+        assert_eq!(order.grouping, place_order::HyperGrouping::Na);
+        assert_eq!(order.orders.len(), 1);
+
+        let order_item = &order.orders[0];
+        assert_eq!(order_item.asset, 25);
+        assert!(!order_item.is_buy); // Short position
+        assert_eq!(order_item.price, "3.032");
+        assert_eq!(order_item.size, "1");
+        assert!(!order_item.reduce_only);
+
+        // Test JSON serialization for short
+        let json = serde_json::to_value(&order).unwrap();
+        assert_eq!(json["type"], "order");
+        assert_eq!(json["grouping"], "na");
+        assert_eq!(json["orders"][0]["a"], 25);
+        assert_eq!(json["orders"][0]["b"], false); // Short
+        assert_eq!(json["orders"][0]["p"], "3.032");
+        assert_eq!(json["orders"][0]["s"], "1");
         assert_eq!(json["orders"][0]["r"], false);
         assert_eq!(json["orders"][0]["t"]["limit"]["tif"], "FrontendMarket");
     }
