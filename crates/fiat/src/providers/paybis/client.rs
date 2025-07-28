@@ -9,7 +9,7 @@ use primitives::{FiatBuyQuote, FiatProviderName, FiatQuote, FiatQuoteType, FiatS
 use reqwest::Client;
 use url::Url;
 
-const PAYBIS_API_BASE_URL: &str = "https://widget-api.sandbox.paybis.com";
+const PAYBIS_API_BASE_URL: &str = "https://widget-api.paybis.com";
 const PAYBIS_WIDGET_URL: &str = "https://widget.paybis.com";
 
 pub struct PaybisClient {
@@ -131,7 +131,7 @@ impl PaybisClient {
 
         // Add parameters in alphabetical order as required by Paybis
         url.query_pairs_mut()
-            .append_pair("apiKey", &self.api_key)
+            .append_pair("partnerId", &self.api_key)
             .append_pair("currencyCodeFrom", from_currency)
             .append_pair("currencyCodeTo", to_currency);
 
