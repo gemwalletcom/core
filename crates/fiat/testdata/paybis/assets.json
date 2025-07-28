@@ -1,0 +1,769 @@
+{
+  "data": [
+    {
+      "name": "gem-wallet-credit-card",
+      "displayName": "Credit/Debit Card",
+      "pairs": [
+        {
+          "from": "USD",
+          "to": [
+            {
+              "currency": "BTC",
+              "currencyCode": "BTC-TESTNET"
+            },
+            {
+              "currency": "DOGE",
+              "currencyCode": "DOGE"
+            },
+            {
+              "currency": "BNB",
+              "currencyCode": "BNBSC-TESTNET"
+            },
+            {
+              "currency": "USDT",
+              "currencyCode": "USDT-TRC20-SHASTA"
+            },
+            {
+              "currency": "SOL",
+              "currencyCode": "SOL"
+            },
+            {
+              "currency": "TON",
+              "currencyCode": "TON-TESTNET"
+            },
+            {
+              "currency": "POL",
+              "currencyCode": "POL-AMOY"
+            },
+            {
+              "currency": "VRA",
+              "currencyCode": "VRA"
+            },
+            {
+              "currency": "ETH",
+              "currencyCode": "ETH-SEPOLIA"
+            },
+            {
+              "currency": "USDT",
+              "currencyCode": "USDT-SEPOLIA"
+            },
+            {
+              "currency": "USDC",
+              "currencyCode": "USDC-SEPOLIA"
+            },
+            {
+              "currency": "LTC",
+              "currencyCode": "LTC-TESTNET"
+            },
+            {
+              "currency": "ADA",
+              "currencyCode": "ADA-TESTNET"
+            },
+            {
+              "currency": "DOT",
+              "currencyCode": "DOT"
+            },
+            {
+              "currency": "XRP",
+              "currencyCode": "XRP"
+            },
+            {
+              "currency": "SHIB",
+              "currencyCode": "SHIB"
+            },
+            {
+              "currency": "WBTC",
+              "currencyCode": "WBTC"
+            },
+            {
+              "currency": "DAI",
+              "currencyCode": "DAI"
+            },
+            {
+              "currency": "BCH",
+              "currencyCode": "BCH"
+            },
+            {
+              "currency": "XLM",
+              "currencyCode": "XLM-TESTNET"
+            },
+            {
+              "currency": "LINK",
+              "currencyCode": "LINK"
+            },
+            {
+              "currency": "UNI",
+              "currencyCode": "UNI"
+            },
+            {
+              "currency": "SAND",
+              "currencyCode": "SAND"
+            },
+            {
+              "currency": "AXS",
+              "currencyCode": "AXS"
+            },
+            {
+              "currency": "XTZ",
+              "currencyCode": "XTZ"
+            },
+            {
+              "currency": "MKR",
+              "currencyCode": "MKR"
+            },
+            {
+              "currency": "AAVE",
+              "currencyCode": "AAVE"
+            },
+            {
+              "currency": "BAT",
+              "currencyCode": "BAT"
+            },
+            {
+              "currency": "ENJ",
+              "currencyCode": "ENJ"
+            },
+            {
+              "currency": "CHZ",
+              "currencyCode": "CHZ"
+            },
+            {
+              "currency": "CRV",
+              "currencyCode": "CRV"
+            },
+            {
+              "currency": "TRX",
+              "currencyCode": "TRX-SHASTA"
+            },
+            {
+              "currency": "HOT",
+              "currencyCode": "HOT"
+            },
+            {
+              "currency": "COMP",
+              "currencyCode": "COMP"
+            },
+            {
+              "currency": "YFI",
+              "currencyCode": "YFI"
+            },
+            {
+              "currency": "SXP",
+              "currencyCode": "SXP"
+            },
+            {
+              "currency": "KNC",
+              "currencyCode": "KNC"
+            },
+            {
+              "currency": "SUSHI",
+              "currencyCode": "SUSHI"
+            },
+            {
+              "currency": "PERP",
+              "currencyCode": "PERP"
+            },
+            {
+              "currency": "NMR",
+              "currencyCode": "NMR"
+            }
+          ]
+        }
+      ],
+      "defaultCurrency": "USD"
+    }
+  ], 
+  "meta": {
+    "currencies": [
+      {
+        "name": "Aave",
+        "code": "AAVE",
+        "hasDestinationTag": false,
+        "image": "https:\/\/widget.sandbox.paybis.com\/i\/aave.svg",
+        "blockchainName": "ethereum"
+      },
+      {
+        "name": "Cardano Testnet",
+        "code": "ADA-TESTNET",
+        "hasDestinationTag": false,
+        "image": "https:\/\/widget.sandbox.paybis.com\/i\/ada.svg",
+        "blockchainName": "cardano"
+      },
+      {
+        "name": "United Arab Emirates dirham",
+        "code": "AED",
+        "hasDestinationTag": false,
+        "image": ""
+      },
+      {
+        "name": "Argentine peso",
+        "code": "ARS",
+        "hasDestinationTag": false,
+        "image": ""
+      },
+      {
+        "name": "Australian dollar",
+        "code": "AUD",
+        "hasDestinationTag": false,
+        "image": ""
+      },
+      {
+        "name": "Axie Infinity",
+        "code": "AXS",
+        "hasDestinationTag": false,
+        "image": "https:\/\/widget.sandbox.paybis.com\/i\/axs.svg",
+        "blockchainName": "ethereum"
+      },
+      {
+        "name": "Azerbaijan Manat",
+        "code": "AZN",
+        "hasDestinationTag": false,
+        "image": ""
+      },
+      {
+        "name": "Basic Attention Token",
+        "code": "BAT",
+        "hasDestinationTag": false,
+        "image": "https:\/\/widget.sandbox.paybis.com\/i\/bat.svg",
+        "blockchainName": "ethereum"
+      },
+      {
+        "name": "Bitcoin Cash",
+        "code": "BCH",
+        "hasDestinationTag": false,
+        "image": "https:\/\/widget.sandbox.paybis.com\/i\/bch.svg",
+        "blockchainName": "bitcoin-cash"
+      },
+      {
+        "name": "Bangladeshi Taka",
+        "code": "BDT",
+        "hasDestinationTag": false,
+        "image": ""
+      },
+      {
+        "name": "Binance Coin (BEP2)",
+        "code": "BNB",
+        "hasDestinationTag": true,
+        "image": "https:\/\/widget.sandbox.paybis.com\/i\/bnb.svg",
+        "blockchainName": "binance-chain"
+      },
+      {
+        "name": "Binance Smart Chain Testnet",
+        "code": "BNBSC-TESTNET",
+        "hasDestinationTag": false,
+        "image": "https:\/\/widget.sandbox.paybis.com\/i\/bnb.svg",
+        "blockchainName": "binance-smart-chain"
+      },
+      {
+        "name": "Brazilian real",
+        "code": "BRL",
+        "hasDestinationTag": false,
+        "image": ""
+      },
+      {
+        "name": "Bitcoin (Testnet)",
+        "code": "BTC-TESTNET",
+        "hasDestinationTag": false,
+        "image": "https:\/\/widget.sandbox.paybis.com\/i\/btc.svg",
+        "blockchainName": "bitcoin"
+      },
+      {
+        "name": "Belarusian Ruble",
+        "code": "BYN",
+        "hasDestinationTag": false,
+        "image": ""
+      },
+      {
+        "name": "Canadian dollar",
+        "code": "CAD",
+        "hasDestinationTag": false,
+        "image": ""
+      },
+      {
+        "name": "Swiss Franc",
+        "code": "CHF",
+        "hasDestinationTag": false,
+        "image": ""
+      },
+      {
+        "name": "Chiliz",
+        "code": "CHZ",
+        "hasDestinationTag": false,
+        "image": "https:\/\/widget.sandbox.paybis.com\/i\/chz.svg",
+        "blockchainName": "ethereum"
+      },
+      {
+        "name": "Chilean peso",
+        "code": "CLP",
+        "hasDestinationTag": false,
+        "image": ""
+      },
+      {
+        "name": "Compound",
+        "code": "COMP",
+        "hasDestinationTag": false,
+        "image": "https:\/\/widget.sandbox.paybis.com\/i\/comp.svg",
+        "blockchainName": "ethereum"
+      },
+      {
+        "name": "Colombian peso",
+        "code": "COP",
+        "hasDestinationTag": false,
+        "image": ""
+      },
+      {
+        "name": "Costa Rican Colon",
+        "code": "CRC",
+        "hasDestinationTag": false,
+        "image": ""
+      },
+      {
+        "name": "Curve DAO Token",
+        "code": "CRV",
+        "hasDestinationTag": false,
+        "image": "https:\/\/widget.sandbox.paybis.com\/i\/crv.svg",
+        "blockchainName": "ethereum"
+      },
+      {
+        "name": "Czech Koruna",
+        "code": "CZK",
+        "hasDestinationTag": false,
+        "image": ""
+      },
+      {
+        "name": "Dai",
+        "code": "DAI",
+        "hasDestinationTag": false,
+        "image": "https:\/\/widget.sandbox.paybis.com\/i\/dai.svg",
+        "blockchainName": "ethereum"
+      },
+      {
+        "name": "Danish krone",
+        "code": "DKK",
+        "hasDestinationTag": false,
+        "image": ""
+      },
+      {
+        "name": "Dogecoin",
+        "code": "DOGE",
+        "hasDestinationTag": false,
+        "image": "https:\/\/widget.sandbox.paybis.com\/i\/doge.svg",
+        "blockchainName": "dogecoin"
+      },
+      {
+        "name": "Dominican Republic Peso",
+        "code": "DOP",
+        "hasDestinationTag": false,
+        "image": ""
+      },
+      {
+        "name": "Polkadot",
+        "code": "DOT",
+        "hasDestinationTag": false,
+        "image": "https:\/\/widget.sandbox.paybis.com\/i\/dot.svg",
+        "blockchainName": "polkadot"
+      },
+      {
+        "name": "Algerian Dinar",
+        "code": "DZD",
+        "hasDestinationTag": false,
+        "image": ""
+      },
+      {
+        "name": "Egyptian Pound",
+        "code": "EGP",
+        "hasDestinationTag": false,
+        "image": ""
+      },
+      {
+        "name": "Enjin Coin",
+        "code": "ENJ",
+        "hasDestinationTag": false,
+        "image": "https:\/\/widget.sandbox.paybis.com\/i\/enj.svg",
+        "blockchainName": "ethereum"
+      },
+      {
+        "name": "Ethereum Sepolia",
+        "code": "ETH-SEPOLIA",
+        "hasDestinationTag": false,
+        "image": "https:\/\/widget.sandbox.paybis.com\/i\/eth.svg",
+        "blockchainName": "ethereum"
+      },
+      {
+        "name": "Euro",
+        "code": "EUR",
+        "hasDestinationTag": false,
+        "image": ""
+      },
+      {
+        "name": "Pound sterling",
+        "code": "GBP",
+        "hasDestinationTag": false,
+        "image": ""
+      },
+      {
+        "name": "Georgian Lari",
+        "code": "GEL",
+        "hasDestinationTag": false,
+        "image": ""
+      },
+      {
+        "name": "Hong Kong dollar",
+        "code": "HKD",
+        "hasDestinationTag": false,
+        "image": ""
+      },
+      {
+        "name": "Holo",
+        "code": "HOT",
+        "hasDestinationTag": false,
+        "image": "https:\/\/widget.sandbox.paybis.com\/i\/hot.svg",
+        "blockchainName": "ethereum"
+      },
+      {
+        "name": "Hungarian Forint",
+        "code": "HUF",
+        "hasDestinationTag": false,
+        "image": ""
+      },
+      {
+        "name": "Indonesian Rupiah",
+        "code": "IDR",
+        "hasDestinationTag": false,
+        "image": ""
+      },
+      {
+        "name": "Israeli Shekel",
+        "code": "ILS",
+        "hasDestinationTag": false,
+        "image": ""
+      },
+      {
+        "name": "Indian Rupee",
+        "code": "INR",
+        "hasDestinationTag": false,
+        "image": ""
+      },
+      {
+        "name": "Japanese yen",
+        "code": "JPY",
+        "hasDestinationTag": false,
+        "image": ""
+      },
+      {
+        "name": "Kenyan Shilling",
+        "code": "KES",
+        "hasDestinationTag": false,
+        "image": ""
+      },
+      {
+        "name": "Kyber Network Crystal",
+        "code": "KNC",
+        "hasDestinationTag": false,
+        "image": "https:\/\/widget.sandbox.paybis.com\/i\/knc.svg",
+        "blockchainName": "ethereum"
+      },
+      {
+        "name": "Korean Won",
+        "code": "KRW",
+        "hasDestinationTag": false,
+        "image": ""
+      },
+      {
+        "name": "Kuwaiti Dinar",
+        "code": "KWD",
+        "hasDestinationTag": false,
+        "image": ""
+      },
+      {
+        "name": "Chainlink",
+        "code": "LINK",
+        "hasDestinationTag": false,
+        "image": "https:\/\/widget.sandbox.paybis.com\/i\/link.svg",
+        "blockchainName": "ethereum"
+      },
+      {
+        "name": "Litecoin (Testnet)",
+        "code": "LTC-TESTNET",
+        "hasDestinationTag": false,
+        "image": "https:\/\/widget.sandbox.paybis.com\/i\/ltc.svg",
+        "blockchainName": "litecoin"
+      },
+      {
+        "name": "Morocco Dirham",
+        "code": "MAD",
+        "hasDestinationTag": false,
+        "image": ""
+      },
+      {
+        "name": "Maker",
+        "code": "MKR",
+        "hasDestinationTag": false,
+        "image": "https:\/\/widget.sandbox.paybis.com\/i\/mkr.svg",
+        "blockchainName": "ethereum"
+      },
+      {
+        "name": "Mexican peso",
+        "code": "MXN",
+        "hasDestinationTag": false,
+        "image": ""
+      },
+      {
+        "name": "Malaysian Ringgit",
+        "code": "MYR",
+        "hasDestinationTag": false,
+        "image": ""
+      },
+      {
+        "name": "Nigerian Naira",
+        "code": "NGN",
+        "hasDestinationTag": false,
+        "image": ""
+      },
+      {
+        "name": "Numeraire",
+        "code": "NMR",
+        "hasDestinationTag": false,
+        "image": "https:\/\/widget.sandbox.paybis.com\/i\/nmr.svg",
+        "blockchainName": "ethereum"
+      },
+      {
+        "name": "Norwegian Krone",
+        "code": "NOK",
+        "hasDestinationTag": false,
+        "image": ""
+      },
+      {
+        "name": "Peruvian Sol",
+        "code": "PEN",
+        "hasDestinationTag": false,
+        "image": ""
+      },
+      {
+        "name": "Perpetual Protocol",
+        "code": "PERP",
+        "hasDestinationTag": false,
+        "image": "https:\/\/widget.sandbox.paybis.com\/i\/perp.svg",
+        "blockchainName": "ethereum"
+      },
+      {
+        "name": "Philippine Peso",
+        "code": "PHP",
+        "hasDestinationTag": false,
+        "image": ""
+      },
+      {
+        "name": "Polish Zloty",
+        "code": "PLN",
+        "hasDestinationTag": false,
+        "image": ""
+      },
+      {
+        "name": "Polygon",
+        "code": "POL-AMOY",
+        "hasDestinationTag": false,
+        "image": "https:\/\/widget.sandbox.paybis.com\/i\/pol.svg",
+        "blockchainName": "polygon"
+      },
+      {
+        "name": "Romanian Leu",
+        "code": "RON",
+        "hasDestinationTag": false,
+        "image": ""
+      },
+      {
+        "name": "The Sandbox",
+        "code": "SAND",
+        "hasDestinationTag": false,
+        "image": "https:\/\/widget.sandbox.paybis.com\/i\/sand.svg",
+        "blockchainName": "ethereum"
+      },
+      {
+        "name": "Saudi Riyal",
+        "code": "SAR",
+        "hasDestinationTag": false,
+        "image": ""
+      },
+      {
+        "name": "Swedish Krona",
+        "code": "SEK",
+        "hasDestinationTag": false,
+        "image": ""
+      },
+      {
+        "name": "Singapore Dollar",
+        "code": "SGD",
+        "hasDestinationTag": false,
+        "image": ""
+      },
+      {
+        "name": "Shiba Inu",
+        "code": "SHIB",
+        "hasDestinationTag": false,
+        "image": "https:\/\/widget.sandbox.paybis.com\/i\/shib.svg",
+        "blockchainName": "ethereum"
+      },
+      {
+        "name": "Solana",
+        "code": "SOL",
+        "hasDestinationTag": false,
+        "image": "https:\/\/widget.sandbox.paybis.com\/i\/sol.svg",
+        "blockchainName": "solana"
+      },
+      {
+        "name": "SushiSwap",
+        "code": "SUSHI",
+        "hasDestinationTag": false,
+        "image": "https:\/\/widget.sandbox.paybis.com\/i\/sushi.svg",
+        "blockchainName": "ethereum"
+      },
+      {
+        "name": "Swipe",
+        "code": "SXP",
+        "hasDestinationTag": false,
+        "image": "https:\/\/widget.sandbox.paybis.com\/i\/sxp.svg",
+        "blockchainName": "ethereum"
+      },
+      {
+        "name": "Thai Baht",
+        "code": "THB",
+        "hasDestinationTag": false,
+        "image": ""
+      },
+      {
+        "name": "Tunisian Dinar",
+        "code": "TND",
+        "hasDestinationTag": false,
+        "image": ""
+      },
+      {
+        "name": "Toncoin Testnet",
+        "code": "TON-TESTNET",
+        "hasDestinationTag": true,
+        "image": "https:\/\/widget.sandbox.paybis.com\/i\/ton.svg",
+        "blockchainName": "ton"
+      },
+      {
+        "name": "Tron",
+        "code": "TRX-SHASTA",
+        "hasDestinationTag": false,
+        "image": "https:\/\/widget.sandbox.paybis.com\/i\/trx.svg",
+        "blockchainName": "tron"
+      },
+      {
+        "name": "Turkish lira",
+        "code": "TRY",
+        "hasDestinationTag": false,
+        "image": ""
+      },
+      {
+        "name": "Ukrainian Hryvnia",
+        "code": "UAH",
+        "hasDestinationTag": false,
+        "image": ""
+      },
+      {
+        "name": "Uniswap",
+        "code": "UNI",
+        "hasDestinationTag": false,
+        "image": "https:\/\/widget.sandbox.paybis.com\/i\/uni.svg",
+        "blockchainName": "ethereum"
+      },
+      {
+        "name": "United States dollar",
+        "code": "USD",
+        "hasDestinationTag": false,
+        "image": ""
+      },
+      {
+        "name": "USD Coin (Sepolia)",
+        "code": "USDC-SEPOLIA",
+        "hasDestinationTag": false,
+        "image": "https:\/\/widget.sandbox.paybis.com\/i\/usdc.svg",
+        "blockchainName": "ethereum"
+      },
+      {
+        "name": "USDT (Sepolia)",
+        "code": "USDT-SEPOLIA",
+        "hasDestinationTag": false,
+        "image": "https:\/\/widget.sandbox.paybis.com\/i\/usdt.svg",
+        "blockchainName": "ethereum"
+      },
+      {
+        "name": "Tether",
+        "code": "USDT-TRC20-SHASTA",
+        "hasDestinationTag": false,
+        "image": "https:\/\/widget.sandbox.paybis.com\/i\/usdt.svg",
+        "blockchainName": "tron"
+      },
+      {
+        "name": "Vietnamese Dong",
+        "code": "VND",
+        "hasDestinationTag": false,
+        "image": ""
+      },
+      {
+        "name": "Verasity",
+        "code": "VRA",
+        "hasDestinationTag": false,
+        "image": "https:\/\/widget.sandbox.paybis.com\/i\/vra.svg",
+        "blockchainName": "ethereum"
+      },
+      {
+        "name": "Wrapped Bitcoin",
+        "code": "WBTC",
+        "hasDestinationTag": false,
+        "image": "https:\/\/widget.sandbox.paybis.com\/i\/wbtc.svg",
+        "blockchainName": "ethereum"
+      },
+      {
+        "name": "Central African CFA Franc",
+        "code": "XAF",
+        "hasDestinationTag": false,
+        "image": ""
+      },
+      {
+        "name": "Stellar Testnet",
+        "code": "XLM-TESTNET",
+        "hasDestinationTag": true,
+        "image": "https:\/\/widget.sandbox.paybis.com\/i\/xlm.svg",
+        "blockchainName": "stellar"
+      },
+      {
+        "name": "West African CFA Franc",
+        "code": "XOF",
+        "hasDestinationTag": false,
+        "image": ""
+      },
+      {
+        "name": "Ripple",
+        "code": "XRP",
+        "hasDestinationTag": true,
+        "image": "https:\/\/widget.sandbox.paybis.com\/i\/xrp.svg",
+        "blockchainName": "ripple"
+      },
+      {
+        "name": "Tezos",
+        "code": "XTZ",
+        "hasDestinationTag": false,
+        "image": "https:\/\/widget.sandbox.paybis.com\/i\/xtz.svg",
+        "blockchainName": "tezos"
+      },
+      {
+        "name": "Yearn Finance",
+        "code": "YFI",
+        "hasDestinationTag": false,
+        "image": "https:\/\/widget.sandbox.paybis.com\/i\/yfi.svg",
+        "blockchainName": "ethereum"
+      },
+      {
+        "name": "South African Rand",
+        "code": "ZAR",
+        "hasDestinationTag": false,
+        "image": ""
+      }
+    ],
+    "defaultCurrency": "USD"
+  }
+}
+
