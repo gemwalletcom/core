@@ -100,3 +100,29 @@ pub struct TriggerConstantContractResponse {
     #[serde(default)]
     pub constant_result: Vec<String>,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct WitnessesList {
+    pub witnesses: Vec<WitnessAccount>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WitnessAccount {
+    pub address: String,
+    pub vote_count: Option<i64>,
+    pub url: String,
+    pub is_jobs: Option<bool>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ChainParametersResponse {
+    pub chain_parameter: Vec<ChainParameter>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ChainParameter {
+    pub key: String,
+    pub value: Option<i64>,
+}

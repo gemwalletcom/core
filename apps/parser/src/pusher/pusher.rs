@@ -107,6 +107,20 @@ impl Pusher {
                 })
             }
             TransactionType::AssetActivation => todo!(),
+            TransactionType::PerpetualOpenPosition => {
+                let _is_sent = transaction.is_sent(subscription.address.clone());
+                let value = self.get_value(amount, asset.symbol.clone());
+                let title = format!("Opened Perpetual Position: {}", value);
+                let message = format!("Opened perpetual position for {} at {}", value, to_address);
+                Ok(Message { title, message: Some(message) })
+            }
+            TransactionType::PerpetualClosePosition => {
+                let _is_sent = transaction.is_sent(subscription.address.clone());
+                let value = self.get_value(amount, asset.symbol.clone());
+                let title = format!("Closed Perpetual Position: {}", value);
+                let message = format!("Closed perpetual position for {} at {}", value, to_address);
+                Ok(Message { title, message: Some(message) })
+            }
         }
     }
 

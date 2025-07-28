@@ -34,6 +34,7 @@ pub struct ScanAddressTarget {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, EnumIter, AsRefStr, EnumString)]
+#[typeshare(swift = "Equatable, Sendable")]
 #[serde(rename_all = "lowercase")]
 #[strum(serialize_all = "lowercase")]
 pub enum AddressType {
@@ -46,4 +47,18 @@ impl AddressType {
     pub fn all() -> Vec<Self> {
         Self::iter().collect::<Vec<_>>()
     }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[typeshare(swift = "Equatable, Sendable")]
+#[serde(rename_all = "camelCase")]
+pub struct ScanAddress {
+    pub chain: Chain,
+    pub address: String,
+    pub name: Option<String>,
+    #[serde(rename = "type")]
+    pub address_type: Option<AddressType>,
+    pub is_malicious: Option<bool>,
+    pub is_memo_required: Option<bool>,
+    pub is_verified: Option<bool>,
 }

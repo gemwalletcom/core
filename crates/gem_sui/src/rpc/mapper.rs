@@ -12,8 +12,9 @@ use super::model::BalanceChange;
 
 use super::{
     constants::{SUI_STAKE_EVENT, SUI_UNSTAKE_EVENT},
-    model::{CoinMetadata, Digest as SuiTransaction, EventStake, EventUnstake, GasUsed},
+    model::{CoinMetadata, Digest as SuiTransaction, EventStake, EventUnstake, GasUsed, SuiSystemState},
 };
+use primitives::StakeValidator;
 
 pub struct SuiMapper;
 
@@ -214,6 +215,14 @@ impl SuiMapper {
             metadata.decimals,
             AssetType::TOKEN,
         )
+    }
+
+    pub fn map_validators(system_state: SuiSystemState) -> Vec<StakeValidator> {
+        system_state
+            .active_validators
+            .into_iter()
+            .map(|v| StakeValidator::new(v.sui_address, v.name))
+            .collect()
     }
 }
 

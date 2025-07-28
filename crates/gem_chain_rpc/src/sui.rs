@@ -1,8 +1,8 @@
 use std::error::Error;
 
-use crate::{ChainAssetsProvider, ChainBlockProvider, ChainTokenDataProvider, ChainTransactionsProvider};
+use crate::{ChainAssetsProvider, ChainBlockProvider, ChainStakeProvider, ChainTokenDataProvider, ChainTransactionsProvider};
 use async_trait::async_trait;
-use primitives::{chain::Chain, Asset, AssetBalance, AssetId, Transaction};
+use primitives::{chain::Chain, Asset, AssetBalance, AssetId, StakeValidator, Transaction};
 
 use gem_sui::rpc::{client::SuiClient, mapper::SuiMapper};
 
@@ -82,5 +82,19 @@ impl ChainTransactionsProvider for SuiProvider {
             .into_iter()
             .flat_map(SuiMapper::map_transaction)
             .collect())
+    }
+}
+
+#[async_trait]
+impl ChainStakeProvider for SuiProvider {
+    async fn get_validators(&self) -> Result<Vec<StakeValidator>, Box<dyn Error + Send + Sync>> {
+        let system_state = self.client.get_latest_sui_system_state().await?;
+        Ok(SuiMapper::map_validators(system_state))
+    }
+
+    async fn get_staking_apy(&self) -> Result<f64, Box<dyn Error + Send + Sync>> {
+        let validator_set = self.client.get_validators().await?;
+        let max_apy = validator_set.apys.into_iter().map(|v| v.apy).fold(0.0, f64::max);
+        Ok(max_apy * 100.0)
     }
 }

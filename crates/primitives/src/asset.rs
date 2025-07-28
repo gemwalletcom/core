@@ -3,7 +3,7 @@ use std::{collections::HashSet, error::Error};
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
-use crate::{asset_id::AssetId, asset_type::AssetType, Chain};
+use crate::{asset_id::AssetId, asset_type::AssetType, AssetBasic, AssetProperties, AssetScore, Chain};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Hashable, Sendable")]
@@ -56,6 +56,10 @@ impl Asset {
         format!("{} ({})", self.name, self.symbol)
     }
 
+    pub fn as_basic_primitive(&self) -> AssetBasic {
+        AssetBasic::new(self.clone(), AssetProperties::default(self.id.clone()), AssetScore::default())
+    }
+
     pub fn from_chain(chain: Chain) -> Asset {
         match chain {
             Chain::Ethereum => chain.new_asset("Ethereum".to_string(), "ETH".to_string(), 18, AssetType::NATIVE),
@@ -103,6 +107,7 @@ impl Asset {
             Chain::Ink => chain.new_asset("Ink".to_string(), "ETH".to_string(), 18, AssetType::NATIVE),
             Chain::Unichain => chain.new_asset("Unichain".to_string(), "ETH".to_string(), 18, AssetType::NATIVE),
             Chain::Hyperliquid => chain.new_asset("HyperEVM".to_string(), "HYPE".to_string(), 18, AssetType::NATIVE),
+            Chain::HyperCore => chain.new_asset("Hyperliquid".to_string(), "HYPE".to_string(), 18, AssetType::NATIVE),
             Chain::Monad => chain.new_asset("Monad Testnet".to_string(), "MON".to_string(), 18, AssetType::NATIVE),
         }
     }

@@ -29,6 +29,7 @@ fn main() {
         "crates/gem_ton",
         "crates/gem_tron",
         "crates/gem_xrp",
+        "crates/gem_hypercore",
     ];
     folders.extend(gem_crates);
 

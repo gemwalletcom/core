@@ -1,12 +1,9 @@
-extern crate rocket;
 use std::str::FromStr;
 
 pub use fiat::{FiatClient, FiatProviderFactory};
 
 use primitives::{FiatAssets, FiatQuoteRequest, FiatQuoteType, FiatQuotes};
-use rocket::serde::json::Json;
-use rocket::tokio::sync::Mutex;
-use rocket::State;
+use rocket::{get, post, serde::json::Json, tokio::sync::Mutex, State};
 
 // on ramp
 

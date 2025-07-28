@@ -30,11 +30,11 @@ impl FiatAssetsUpdater {
         let _ = self
             .database
             .assets()
-            .update_assets(buyable_result.missing.clone(), AssetUpdate::IsBuyable(true));
+            .update_assets_bulk(buyable_result.missing.clone(), AssetUpdate::IsBuyable(true));
         let _ = self
             .database
             .assets()
-            .update_assets(buyable_result.different.clone(), AssetUpdate::IsBuyable(false));
+            .update_assets_bulk(buyable_result.different.clone(), AssetUpdate::IsBuyable(false));
 
         // sellable
         let sellable_assets_ids = self
@@ -50,11 +50,11 @@ impl FiatAssetsUpdater {
         let _ = self
             .database
             .assets()
-            .update_assets(sellable_result.missing.clone(), AssetUpdate::IsSellable(true));
+            .update_assets_bulk(sellable_result.missing.clone(), AssetUpdate::IsSellable(true));
         let _ = self
             .database
             .assets()
-            .update_assets(sellable_result.different.clone(), AssetUpdate::IsSellable(false));
+            .update_assets_bulk(sellable_result.different.clone(), AssetUpdate::IsSellable(false));
 
         Ok(1)
     }

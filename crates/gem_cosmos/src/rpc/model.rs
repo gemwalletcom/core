@@ -137,3 +137,40 @@ impl MsgSend {
         Some(value)
     }
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ValidatorsResponse {
+    pub validators: Vec<Validator>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Validator {
+    pub operator_address: String,
+    pub description: ValidatorDescription,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ValidatorDescription {
+    pub moniker: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct StakingPoolResponse {
+    pub pool: StakingPool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct StakingPool {
+    pub bonded_tokens: String,
+    pub not_bonded_tokens: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct InflationResponse {
+    pub inflation: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AnnualProvisionsResponse {
+    pub annual_provisions: String,
+}

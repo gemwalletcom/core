@@ -1,9 +1,7 @@
-use std::{error::Error, vec};
+use std::error::Error;
 
-use futures::future::try_join_all;
-use primitives::{Asset, AssetBalance, AssetBasic, AssetFull, AssetId, Chain, ChainAddress, Transaction};
+use primitives::{Asset, AssetBasic, AssetFull, AssetId, ChainAddress};
 use search_index::{AssetDocument, SearchIndexClient, ASSETS_INDEX_NAME};
-use settings_chain::ChainProviders;
 use storage::DatabaseClient;
 
 pub struct AssetsClient {
@@ -17,16 +15,13 @@ impl AssetsClient {
     }
 
     pub fn add_assets(&mut self, assets: Vec<Asset>) -> Result<usize, Box<dyn Error + Send + Sync>> {
+        let assets = assets.into_iter().map(|x| x.as_basic_primitive()).collect();
         self.database.assets().add_assets(assets)
     }
 
     #[allow(unused)]
     pub fn get_asset(&mut self, asset_id: &str) -> Result<Asset, Box<dyn Error + Send + Sync>> {
         self.database.assets().get_asset(asset_id)
-    }
-
-    pub fn get_assets_list(&mut self) -> Result<Vec<AssetBasic>, Box<dyn Error + Send + Sync>> {
-        self.database.assets().get_assets_by_filter(vec![])
     }
 
     pub fn get_assets(&mut self, asset_ids: Vec<String>) -> Result<Vec<AssetBasic>, Box<dyn Error + Send + Sync>> {
@@ -83,47 +78,10 @@ impl AssetsSearchClient {
 
         let assets: Vec<AssetDocument> = self.client.search(ASSETS_INDEX_NAME, query, filter, [].as_ref(), limit, offset).await?;
 
-        Ok(assets
-            .into_iter()
-            .map(|x| AssetBasic {
-                asset: x.asset,
-                properties: x.properties,
-                score: x.score,
-            })
-            .collect())
+        Ok(assets.into_iter().map(|x| AssetBasic::new(x.asset, x.properties, x.score)).collect())
     }
 }
 
 fn filter_array(field: &str, values: Vec<String>) -> String {
     format!("{} IN [\"{}\"]", field, values.join("\",\""))
-}
-
-pub struct AssetsChainProvider {
-    providers: ChainProviders,
-}
-
-impl AssetsChainProvider {
-    pub fn new(providers: ChainProviders) -> Self {
-        Self { providers }
-    }
-
-    pub async fn get_token_data(&self, chain: Chain, token_id: String) -> Result<Asset, Box<dyn std::error::Error + Send + Sync>> {
-        self.providers.get_token_data(chain, token_id).await
-    }
-
-    pub async fn get_assets_balances(&self, requests: Vec<ChainAddress>) -> Result<Vec<AssetBalance>, Box<dyn std::error::Error + Send + Sync>> {
-        let futures = requests
-            .into_iter()
-            .map(|request| self.providers.get_assets_balances(request.chain, request.address));
-
-        Ok(try_join_all(futures).await?.into_iter().flatten().collect())
-    }
-
-    pub async fn get_assets_transactions(&self, requests: Vec<ChainAddress>) -> Result<Vec<Transaction>, Box<dyn std::error::Error + Send + Sync>> {
-        let futures = requests
-            .into_iter()
-            .map(|request| self.providers.get_transactions_by_address(request.chain, request.address));
-
-        Ok(try_join_all(futures).await?.into_iter().flatten().collect())
-    }
 }

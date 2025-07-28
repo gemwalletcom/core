@@ -5,4 +5,5 @@ use typeshare::typeshare;
 pub enum EncodingType {
     Hex,
     Base58,
+    Base32,
 }

@@ -5,7 +5,7 @@ use typeshare::typeshare;
 use crate::{AssetId, Price};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-#[typeshare(swift = "Sendable")]
+#[typeshare(swift = "Sendable, Equatable, Hashable")]
 #[serde(rename_all = "camelCase")]
 pub struct AssetPrice {
     pub asset_id: AssetId,
@@ -76,7 +76,6 @@ pub enum ChartPeriod {
     Day,
     Week,
     Month,
-    Quarter,
     Year,
     All,
 }
@@ -88,7 +87,6 @@ impl ChartPeriod {
             "day" => Some(Self::Day),
             "week" => Some(Self::Week),
             "month" => Some(Self::Month),
-            "quarter" => Some(Self::Quarter),
             "year" => Some(Self::Year),
             "all" => Some(Self::All),
             _ => None,
@@ -101,7 +99,6 @@ impl ChartPeriod {
             ChartPeriod::Day => 1440,
             ChartPeriod::Week => 10_080,
             ChartPeriod::Month => 43_200,
-            ChartPeriod::Quarter => 131_400,
             ChartPeriod::Year => 525_600,
             ChartPeriod::All => 10_525_600,
         }

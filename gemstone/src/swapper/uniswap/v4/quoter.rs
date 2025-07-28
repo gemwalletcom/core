@@ -93,7 +93,7 @@ mod tests {
         let v4_quoter = "0x1f3131a13296fb91c90870043742c3cdbff1a8d7";
         let amount_in = 10000000000000000_u128;
 
-        let quote_params = build_quote_exact_params(amount_in, &token_in, &token_out, &fee_tiers, &base_pair.to_array());
+        let quote_params = build_quote_exact_params(amount_in, &token_in, &token_out, &fee_tiers, &base_pair.path_building_array());
         let rpc_calls = build_quote_exact_requests(v4_quoter, &quote_params);
 
         assert_eq!(rpc_calls.len(), 3); // 3 intermediaries (ETH, USDC, USDT)

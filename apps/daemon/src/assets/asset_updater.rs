@@ -1,10 +1,10 @@
 use chain_primitives::format_token_id;
 use coingecko::mapper::COINGECKO_CHAIN_MAP;
 use coingecko::{get_chain_for_coingecko_platform_id, CoinGeckoClient, CoinInfo};
-use primitives::{Asset, AssetId, AssetLink, AssetProperties, AssetScore, AssetType, LinkType};
+use primitives::{Asset, AssetBasic, AssetId, AssetLink, AssetProperties, AssetScore, AssetType, LinkType};
 use std::collections::HashSet;
 use std::error::Error;
-use storage::DatabaseClient;
+use storage::{AssetUpdate, DatabaseClient};
 pub struct AssetUpdater {
     coin_gecko_client: CoinGeckoClient,
     database: DatabaseClient,
@@ -222,12 +222,11 @@ impl AssetUpdater {
     // asset, asset details
     pub async fn update_asset(&mut self, asset: Asset, score: AssetScore, asset_links: Vec<AssetLink>) -> Result<(), Box<dyn Error>> {
         let properties = AssetProperties::default(asset.id.clone());
-        let asset = storage::models::asset::Asset::from_primitive(asset, score, properties);
-        let asset_id = asset.id.as_str();
-
-        let _ = self.database.assets().add_assets(vec![asset.clone().as_primitive()]);
-        let _ = self.database.assets().upsert_assets(vec![asset.clone().as_primitive()]);
-        let _ = self.update_links(asset_id, asset_links.clone()).await;
+        let asset_id = asset.id.to_string();
+        let asset = AssetBasic::new(asset.clone(), properties, score.clone());
+        let _ = self.database.assets().add_assets(vec![asset]);
+        let _ = self.database.assets().update_asset(asset_id.clone(), AssetUpdate::Rank(score.rank));
+        let _ = self.update_links(&asset_id, asset_links.clone()).await;
         Ok(())
     }
 

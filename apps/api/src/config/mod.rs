@@ -1,11 +1,8 @@
 pub mod client;
 pub use client::ConfigClient;
-extern crate rocket;
 
 use primitives::config::ConfigResponse;
-use rocket::serde::json::Json;
-use rocket::tokio::sync::Mutex;
-use rocket::State;
+use rocket::{get, serde::json::Json, tokio::sync::Mutex, State};
 
 #[get("/config")]
 pub async fn get_config(config_client: &State<Mutex<ConfigClient>>) -> Json<ConfigResponse> {

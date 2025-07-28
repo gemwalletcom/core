@@ -1,9 +1,8 @@
-extern crate rocket;
 use std::str::FromStr;
 
 use nft_client::NFTClient;
 use primitives::{Chain, NFTAsset, NFTData, ResponseResult};
-use rocket::{response::status::NotFound, serde::json::Json, tokio::sync::Mutex, State};
+use rocket::{get, put, response::status::NotFound, serde::json::Json, tokio::sync::Mutex, State};
 
 // by device
 

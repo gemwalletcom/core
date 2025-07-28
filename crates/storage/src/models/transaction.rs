@@ -27,6 +27,10 @@ pub struct Transaction {
 }
 
 impl Transaction {
+    pub fn get_addresses(&self) -> Vec<String> {
+        vec![self.from_address.clone(), self.to_address.clone()].into_iter().flatten().collect()
+    }
+
     pub fn from_primitive(transaction: primitives::Transaction) -> Self {
         let utxo_inputs = if transaction.utxo_inputs.is_empty() {
             None
@@ -88,24 +92,27 @@ impl Transaction {
         };
         let transaction_type = primitives::TransactionType::from_str(self.kind.as_str()).ok().unwrap();
 
-        primitives::Transaction::new_with_utxo(
-            hash.clone(),
+        primitives::Transaction {
+            id: transaction_id.to_string(),
+            hash: hash.clone(),
             asset_id,
-            from.clone().into(),
-            to_address.clone().into(),
-            None,
+            from: from.clone(),
+            to: to_address.clone(),
+            contract: None,
             transaction_type,
-            primitives::TransactionState::new(self.state.as_str()).unwrap(),
-            self.fee.clone().unwrap(),
-            AssetId::new(self.fee_asset_id.clone().as_str()).unwrap(),
-            self.value.clone().unwrap_or("0".to_string()),
-            self.memo.clone(),
+            state: primitives::TransactionState::new(self.state.as_str()).unwrap(),
+            block_number: "0".to_string(),
+            sequence: "0".to_string(),
+            fee: self.fee.clone().unwrap(),
+            fee_asset_id: AssetId::new(self.fee_asset_id.clone().as_str()).unwrap(),
+            value: self.value.clone().unwrap_or("0".to_string()),
+            memo: self.memo.clone(),
             direction,
-            inputs.clone(),
-            outputs.clone(),
-            self.metadata.clone(),
-            self.created_at.and_utc(),
-        )
+            utxo_inputs: inputs.unwrap_or_default(),
+            utxo_outputs: outputs.unwrap_or_default(),
+            metadata: self.metadata.clone(),
+            created_at: self.created_at.and_utc(),
+        }
     }
 }
 

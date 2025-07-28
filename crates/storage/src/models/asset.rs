@@ -40,11 +40,7 @@ impl Asset {
     }
 
     pub fn as_basic_primitive(&self) -> primitives::AssetBasic {
-        AssetBasic {
-            asset: self.as_primitive(),
-            properties: self.as_property_primitive(),
-            score: self.as_score_primitive(),
-        }
+        AssetBasic::new(self.as_primitive(), self.as_property_primitive(), self.as_score_primitive())
     }
 
     pub fn as_score_primitive(&self) -> primitives::AssetScore {

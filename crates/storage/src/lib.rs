@@ -8,6 +8,7 @@ pub use self::database::{
     DatabaseClient,
 };
 pub mod models;
+pub use self::models::ScanAddressType;
 pub mod repositories;
 pub use self::repositories::{
     assets_addresses_repository::AssetsAddressesRepository, assets_links_repository::AssetsLinksRepository, assets_repository::AssetsRepository,

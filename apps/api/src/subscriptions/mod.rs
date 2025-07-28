@@ -1,11 +1,8 @@
 pub mod client;
 pub use client::SubscriptionsClient;
 
-extern crate rocket;
 use primitives::Subscription;
-use rocket::serde::json::Json;
-use rocket::tokio::sync::Mutex;
-use rocket::State;
+use rocket::{delete, get, post, serde::json::Json, tokio::sync::Mutex, State};
 
 #[get("/subscriptions/<device_id>")]
 pub async fn get_subscriptions(device_id: &str, client: &State<Mutex<SubscriptionsClient>>) -> Json<Vec<Subscription>> {

@@ -419,7 +419,7 @@ diesel::table! {
         chain -> Varchar,
         #[max_length = 128]
         address -> Varchar,
-        #[max_length = 64]
+        #[max_length = 128]
         name -> Nullable<Varchar>,
         #[sql_name = "type"]
         #[max_length = 32]

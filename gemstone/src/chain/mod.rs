@@ -53,7 +53,8 @@ pub fn is_memo_supported(chain: Chain) -> bool {
         | ChainType::Aptos
         | ChainType::Sui
         | ChainType::Polkadot
-        | ChainType::Cardano => false,
+        | ChainType::Cardano
+        | ChainType::HyperCore => false,
     }
 }
 

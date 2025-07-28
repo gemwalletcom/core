@@ -27,6 +27,7 @@ pub fn format_token_id(chain: Chain, token_id: String) -> Option<String> {
         | Chain::Ink
         | Chain::Unichain
         | Chain::Hyperliquid
+        | Chain::HyperCore
         | Chain::Monad => Address::from_str(&token_id).ok().map(|address| address.to_checksum(None)),
         Chain::Solana | Chain::Ton | Chain::Near => Some(token_id),
         Chain::Tron => (token_id.len() == 34 && token_id.starts_with('T')).then_some(token_id),
