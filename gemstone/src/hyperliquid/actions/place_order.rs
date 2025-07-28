@@ -4,6 +4,7 @@ pub struct HyperPlaceOrder {
     pub action_type: String,
     pub orders: Vec<HyperOrder>,
     pub grouping: HyperGrouping,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub builder: Option<HyperBuilder>,
 }
 
@@ -32,7 +33,7 @@ pub struct HyperOrder {
     pub reduce_only: bool,
     #[serde(rename = "t")]
     pub order_type: HyperOrderType,
-    #[serde(rename = "c")]
+    #[serde(rename = "c", skip_serializing_if = "Option::is_none")]
     pub client_order_id: Option<String>,
 }
 

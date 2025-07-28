@@ -1,0 +1,28 @@
+{
+    "action": {
+        "grouping": "na",
+        "orders": [
+            {
+                "a": 5,
+                "b": true,
+                "p": "200.21",
+                "r": false,
+                "s": "0.28",
+                "t": {
+                    "limit": {
+                        "tif": "FrontendMarket"
+                    }
+                }
+            }
+        ],
+        "type": "order"
+    },
+    "isFrontend": true,
+    "nonce": 1753576312346,
+    "signature": {
+        "r": "0xf3d38b1bf49efb57622bc054d115be8b8d8440b00e45610412d22ffb5ae798f9",
+        "s": "0x3785cc770743535a79ead405b776bd5996bd62e680a10d614829bb5a73362209",
+        "v": 28
+    },
+    "vaultAddress": null
+}

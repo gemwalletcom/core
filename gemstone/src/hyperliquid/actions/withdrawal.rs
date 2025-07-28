@@ -2,15 +2,15 @@ use super::{MAINNET, SIGNATURE_CHAIN_ID};
 
 #[derive(uniffi::Record, serde::Serialize)]
 pub struct HyperWithdrawalRequest {
-    #[serde(rename = "type")]
-    pub action_type: String,
+    pub amount: String,
+    pub destination: String,
     #[serde(rename = "hyperliquidChain")]
     pub hyperliquid_chain: String,
     #[serde(rename = "signatureChainId")]
     pub signature_chain_id: String,
-    pub amount: String,
     pub time: u64,
-    pub destination: String,
+    #[serde(rename = "type")]
+    pub action_type: String,
 }
 
 impl HyperWithdrawalRequest {

@@ -2,17 +2,17 @@ use super::{MAINNET, SIGNATURE_CHAIN_ID};
 
 #[derive(uniffi::Record, serde::Serialize)]
 pub struct HyperApproveAgent {
-    #[serde(rename = "type")]
-    pub action_type: String,
-    #[serde(rename = "hyperliquidChain")]
-    pub hyperliquid_chain: String,
-    #[serde(rename = "signatureChainId")]
-    pub signature_chain_id: String,
     #[serde(rename = "agentAddress")]
     pub agent_address: String,
     #[serde(rename = "agentName")]
     pub agent_name: String,
+    #[serde(rename = "hyperliquidChain")]
+    pub hyperliquid_chain: String,
     pub nonce: u64,
+    #[serde(rename = "signatureChainId")]
+    pub signature_chain_id: String,
+    #[serde(rename = "type")]
+    pub action_type: String,
 }
 
 impl HyperApproveAgent {
