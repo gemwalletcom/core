@@ -26,7 +26,7 @@ impl HyperCoreModelFactory {
     }
 
     fn make_approve_agent(&self, name: String, address: String, nonce: u64) -> approve_agent::HyperApproveAgent {
-        approve_agent::HyperApproveAgent::new(name, address, nonce)
+        approve_agent::HyperApproveAgent::new(address, name, nonce)
     }
 
     fn make_approve_builder(&self, max_fee_rate: String, builder: String, nonce: u64) -> approve_builder_fee::HyperApproveBuilderFee {
