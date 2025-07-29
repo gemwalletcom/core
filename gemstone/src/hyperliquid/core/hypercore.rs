@@ -58,18 +58,6 @@ mod tests {
     use crate::hyperliquid::actions;
 
     #[test]
-    fn test_action_close_order_matches_test_data() {
-        let order = actions::make_market_close(14, "3.8185".to_string(), "6.2".to_string(), true);
-        let generated_action: serde_json::Value = serde_json::to_value(&order).unwrap();
-
-        // Load expected data from test file
-        let test_data: serde_json::Value = serde_json::from_str(include_str!("../test/hl_action_close_order.json")).unwrap();
-        let expected_action = &test_data["action"];
-
-        assert_eq!(generated_action, *expected_action);
-    }
-
-    #[test]
     fn test_action_open_long_matches_test_data() {
         let order = actions::make_market_open(5, true, "200.21".to_string(), "0.28".to_string(), false);
         let generated_action: serde_json::Value = serde_json::to_value(&order).unwrap();

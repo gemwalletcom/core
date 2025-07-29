@@ -105,24 +105,6 @@ pub struct HyperBuilder {
     pub fee: u32, // tenths of a basis point , 10 means 1bp
 }
 
-pub fn make_market_close(asset: u32, price: String, size: String, reduce_only: bool) -> HyperPlaceOrder {
-    HyperPlaceOrder::new(
-        vec![HyperOrder {
-            asset,
-            is_buy: false,
-            price,
-            reduce_only,
-            size,
-            order_type: HyperOrderType::Limit {
-                limit: HyperLimitOrder::new(HyperTimeInForce::FrontendMarket),
-            },
-            client_order_id: None,
-        }],
-        HyperGrouping::Na,
-        None,
-    )
-}
-
 pub fn make_market_open(asset: u32, is_buy: bool, price: String, size: String, reduce_only: bool) -> HyperPlaceOrder {
     HyperPlaceOrder::new(
         vec![HyperOrder {

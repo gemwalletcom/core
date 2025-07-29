@@ -33,10 +33,6 @@ impl HyperCoreModelFactory {
         approve_builder_fee::HyperApproveBuilderFee::new(max_fee_rate, builder, nonce)
     }
 
-    fn make_market_close(&self, asset: u32, price: String, size: String, reduce_only: bool) -> place_order::HyperPlaceOrder {
-        place_order::make_market_close(asset, price, size, reduce_only)
-    }
-
     fn make_market_open(&self, asset: u32, is_buy: bool, price: String, size: String, reduce_only: bool) -> place_order::HyperPlaceOrder {
         place_order::make_market_open(asset, is_buy, price, size, reduce_only)
     }
@@ -76,28 +72,6 @@ impl HyperCoreModelFactory {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn test_make_market_close_action() {
-        let factory = HyperCoreModelFactory::new();
-        let order = factory.make_market_close(14, "3.8185".to_string(), "6.2".to_string(), true);
-        let action_json = factory.serialize_order(order);
-
-        let signature = "264ef7d5a3bae37de2b9c3874fa3a887930492f61f3bf6f02c9d13abc71c3cab58671fe688c59470a666c462ec56bec568fae07b0eaa58ff8e34fe3b53cd05cc1b";
-        let timestamp = 1753575651770u64;
-
-        let signed_request = factory.build_signed_request(signature.to_string(), action_json, timestamp);
-
-        let parsed: serde_json::Value = serde_json::from_str(&signed_request).unwrap();
-        let expected: serde_json::Value = serde_json::from_str(include_str!("../test/hl_action_close_order.json")).unwrap();
-
-        assert_eq!(parsed["action"], expected["action"]);
-        assert_eq!(parsed["isFrontend"], expected["isFrontend"]);
-        assert_eq!(parsed["nonce"], expected["nonce"]);
-        assert_eq!(parsed["signature"]["r"], expected["signature"]["r"]);
-        assert_eq!(parsed["signature"]["s"], expected["signature"]["s"]);
-        assert_eq!(parsed["signature"]["v"], expected["signature"]["v"]);
-    }
 
     #[test]
     fn test_make_market_open_action() {
