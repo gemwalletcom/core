@@ -11,8 +11,7 @@ pub struct HyperApproveAgent {
     pub nonce: u64,
     #[serde(rename = "signatureChainId")]
     pub signature_chain_id: String,
-    #[serde(rename = "type")]
-    pub action_type: String,
+    pub r#type: String,
 }
 
 impl HyperApproveAgent {
@@ -23,7 +22,7 @@ impl HyperApproveAgent {
             hyperliquid_chain: MAINNET.to_string(),
             nonce,
             signature_chain_id: SIGNATURE_CHAIN_ID.to_string(),
-            action_type: "approveAgent".to_string(),
+            r#type: "approveAgent".to_string(),
         }
     }
 }

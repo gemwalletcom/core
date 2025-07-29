@@ -1,9 +1,11 @@
+// IMPORTANT: Field order matters for msgpack serialization and hash calculation
+// This must match the exact order from Python SDK
+// Do not change field order unless you know the exact Python order.
 #[derive(uniffi::Record, serde::Serialize)]
 pub struct HyperPlaceOrder {
-    pub grouping: HyperGrouping,
+    pub r#type: String,
     pub orders: Vec<HyperOrder>,
-    #[serde(rename = "type")]
-    pub action_type: String,
+    pub grouping: HyperGrouping,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub builder: Option<HyperBuilder>,
 }
@@ -11,14 +13,17 @@ pub struct HyperPlaceOrder {
 impl HyperPlaceOrder {
     pub fn new(orders: Vec<HyperOrder>, grouping: HyperGrouping, builder: Option<HyperBuilder>) -> Self {
         Self {
-            grouping,
+            r#type: "order".to_string(),
             orders,
-            action_type: "order".to_string(),
+            grouping,
             builder,
         }
     }
 }
 
+// IMPORTANT: Field order matters for msgpack serialization and hash calculation
+// This must match the exact order from Python SDK
+// Do not change field order unless you know the exact Python order.
 #[derive(uniffi::Record, serde::Serialize)]
 pub struct HyperOrder {
     #[serde(rename = "a")]
@@ -27,10 +32,10 @@ pub struct HyperOrder {
     pub is_buy: bool,
     #[serde(rename = "p")]
     pub price: String,
-    #[serde(rename = "r")]
-    pub reduce_only: bool,
     #[serde(rename = "s")]
     pub size: String,
+    #[serde(rename = "r")]
+    pub reduce_only: bool,
     #[serde(rename = "t")]
     pub order_type: HyperOrderType,
     #[serde(rename = "c", skip_serializing_if = "Option::is_none")]

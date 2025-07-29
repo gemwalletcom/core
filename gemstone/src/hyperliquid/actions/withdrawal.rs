@@ -9,8 +9,7 @@ pub struct HyperWithdrawalRequest {
     #[serde(rename = "signatureChainId")]
     pub signature_chain_id: String,
     pub time: u64,
-    #[serde(rename = "type")]
-    pub action_type: String,
+    pub r#type: String,
 }
 
 impl HyperWithdrawalRequest {
@@ -21,7 +20,7 @@ impl HyperWithdrawalRequest {
             hyperliquid_chain: MAINNET.to_string(),
             signature_chain_id: SIGNATURE_CHAIN_ID.to_string(),
             time,
-            action_type: "withdraw3".to_string(),
+            r#type: "withdraw3".to_string(),
         }
     }
 }

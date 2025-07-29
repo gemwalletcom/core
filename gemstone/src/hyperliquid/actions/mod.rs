@@ -1,19 +1,19 @@
 pub mod approve_agent;
 pub mod approve_builder_fee;
-pub mod cancel_order;
 pub mod place_order;
 pub mod set_referrer;
 pub mod withdrawal;
 
 pub use approve_agent::*;
 pub use approve_builder_fee::*;
-pub use cancel_order::*;
 pub use place_order::*;
 pub use set_referrer::*;
 pub use withdrawal::*;
 
 pub const MAINNET: &str = "Mainnet";
 pub const SIGNATURE_CHAIN_ID: &str = "0xa4b1";
+
+use alloy_primitives::hex;
 
 #[derive(uniffi::Object)]
 pub struct HyperCoreModelFactory {}
@@ -41,8 +41,35 @@ impl HyperCoreModelFactory {
         place_order::make_market_open(asset, is_buy, price, size, reduce_only)
     }
 
+    fn serialize_order(&self, order: place_order::HyperPlaceOrder) -> String {
+        serde_json::to_string(&order).unwrap()
+    }
+
     fn make_withdraw(&self, amount: String, address: String, nonce: u64) -> withdrawal::HyperWithdrawalRequest {
         withdrawal::HyperWithdrawalRequest::new(amount, nonce, address)
+    }
+
+    fn build_signed_request(&self, signature: String, action: String, timestamp: u64) -> String {
+        let sig_bytes = hex::decode(signature).unwrap();
+
+        let r = hex::encode_prefixed(&sig_bytes[0..32]);
+        let s = hex::encode_prefixed(&sig_bytes[32..64]);
+        let v = sig_bytes[64] as u64;
+
+        let action_json: serde_json::Value = serde_json::from_str(&action).unwrap();
+
+        let signed_request = serde_json::json!({
+            "action": action_json,
+            "signature": {
+                "r": r,
+                "s": s,
+                "v": v
+            },
+            "nonce": timestamp,
+            "isFrontend": true
+        });
+
+        serde_json::to_string(&signed_request).unwrap()
     }
 }
 
@@ -52,86 +79,51 @@ mod tests {
 
     #[test]
     fn test_make_market_close_action() {
-        let actions = HyperCoreModelFactory::new();
-        let order = actions.make_market_close(14, "3.8185".to_string(), "6.2".to_string(), true);
+        let factory = HyperCoreModelFactory::new();
+        let order = factory.make_market_close(14, "3.8185".to_string(), "6.2".to_string(), true);
+        let action_json = factory.serialize_order(order);
 
-        // Verify the structure matches the expected format
-        assert_eq!(order.action_type, "order");
-        assert_eq!(order.grouping, place_order::HyperGrouping::Na);
-        assert_eq!(order.orders.len(), 1);
+        let signature = "264ef7d5a3bae37de2b9c3874fa3a887930492f61f3bf6f02c9d13abc71c3cab58671fe688c59470a666c462ec56bec568fae07b0eaa58ff8e34fe3b53cd05cc1b";
+        let timestamp = 1753575651770u64;
 
-        let order_item = &order.orders[0];
-        assert_eq!(order_item.asset, 14);
-        assert!(!order_item.is_buy);
-        assert_eq!(order_item.price, "3.8185");
-        assert_eq!(order_item.size, "6.2");
-        assert!(order_item.reduce_only);
+        let signed_request = factory.build_signed_request(signature.to_string(), action_json, timestamp);
 
-        // Check the order type structure
-        match &order_item.order_type {
-            place_order::HyperOrderType::Limit { limit } => {
-                match limit.tif {
-                    place_order::HyperTimeInForce::FrontendMarket => {
-                        // This is expected for market sell
-                    }
-                    _ => panic!("Expected FrontendMarket TimeInForce"),
-                }
-            }
-            _ => panic!("Expected Limit order type"),
-        }
+        let parsed: serde_json::Value = serde_json::from_str(&signed_request).unwrap();
+        let expected: serde_json::Value = serde_json::from_str(include_str!("../test/hl_action_close_order.json")).unwrap();
 
-        // Test JSON serialization to ensure it matches expected structure
-        let json = serde_json::to_value(&order).unwrap();
-        assert_eq!(json["type"], "order");
-        assert_eq!(json["grouping"], "na");
-        assert_eq!(json["orders"][0]["a"], 14);
-        assert_eq!(json["orders"][0]["b"], false);
-        assert_eq!(json["orders"][0]["p"], "3.8185");
-        assert_eq!(json["orders"][0]["s"], "6.2");
-        assert_eq!(json["orders"][0]["r"], true);
-        assert_eq!(json["orders"][0]["t"]["limit"]["tif"], "FrontendMarket");
+        assert_eq!(parsed["action"], expected["action"]);
+        assert_eq!(parsed["isFrontend"], expected["isFrontend"]);
+        assert_eq!(parsed["nonce"], expected["nonce"]);
+        assert_eq!(parsed["signature"]["r"], expected["signature"]["r"]);
+        assert_eq!(parsed["signature"]["s"], expected["signature"]["s"]);
+        assert_eq!(parsed["signature"]["v"], expected["signature"]["v"]);
     }
 
     #[test]
     fn test_make_market_open_action() {
-        let actions = HyperCoreModelFactory::new();
-        let order = actions.make_market_open(5, true, "200.21".to_string(), "0.28".to_string(), false);
+        let factory = HyperCoreModelFactory::new();
+        let order = factory.make_market_open(5, true, "200.21".to_string(), "0.28".to_string(), false);
+        let action_json = factory.serialize_order(order);
 
-        // Verify the structure matches the expected format
-        assert_eq!(order.action_type, "order");
-        assert_eq!(order.grouping, place_order::HyperGrouping::Na);
-        assert_eq!(order.orders.len(), 1);
+        // Create signed request using build_signed_request
+        let signature = "f3d38b1bf49efb57622bc054d115be8b8d8440b00e45610412d22ffb5ae798f93785cc770743535a79ead405b776bd5996bd62e680a10d614829bb5a733622091c";
+        let timestamp = 1753576312346u64;
 
-        let order_item = &order.orders[0];
-        assert_eq!(order_item.asset, 5);
-        assert!(order_item.is_buy);
-        assert_eq!(order_item.price, "200.21");
-        assert_eq!(order_item.size, "0.28");
-        assert!(!order_item.reduce_only);
+        let signed_request = factory.build_signed_request(signature.to_string(), action_json, timestamp);
 
-        // Check the order type structure
-        match &order_item.order_type {
-            place_order::HyperOrderType::Limit { limit } => {
-                match limit.tif {
-                    place_order::HyperTimeInForce::FrontendMarket => {
-                        // This is expected for market buy
-                    }
-                    _ => panic!("Expected FrontendMarket TimeInForce"),
-                }
-            }
-            _ => panic!("Expected Limit order type"),
-        }
+        // Parse the result and compare with expected test data
+        let parsed: serde_json::Value = serde_json::from_str(&signed_request).unwrap();
 
-        // Test JSON serialization to ensure it matches expected structure
-        let json = serde_json::to_value(&order).unwrap();
-        assert_eq!(json["type"], "order");
-        assert_eq!(json["grouping"], "na");
-        assert_eq!(json["orders"][0]["a"], 5);
-        assert_eq!(json["orders"][0]["b"], true);
-        assert_eq!(json["orders"][0]["p"], "200.21");
-        assert_eq!(json["orders"][0]["s"], "0.28");
-        assert_eq!(json["orders"][0]["r"], false);
-        assert_eq!(json["orders"][0]["t"]["limit"]["tif"], "FrontendMarket");
+        // Load expected test data
+        let expected: serde_json::Value = serde_json::from_str(include_str!("../test/hl_action_open_long_order.json")).unwrap();
+
+        // Compare the structure
+        assert_eq!(parsed["action"], expected["action"]);
+        assert_eq!(parsed["isFrontend"], expected["isFrontend"]);
+        assert_eq!(parsed["nonce"], expected["nonce"]);
+        assert_eq!(parsed["signature"]["r"], expected["signature"]["r"]);
+        assert_eq!(parsed["signature"]["s"], expected["signature"]["s"]);
+        assert_eq!(parsed["signature"]["v"], expected["signature"]["v"]);
     }
 
     #[test]
@@ -140,7 +132,7 @@ mod tests {
         let order = actions.make_market_open(25, false, "3.032".to_string(), "1".to_string(), false);
 
         // Verify the structure matches the expected format for short
-        assert_eq!(order.action_type, "order");
+        assert_eq!(order.r#type, "order");
         assert_eq!(order.grouping, place_order::HyperGrouping::Na);
         assert_eq!(order.orders.len(), 1);
 
