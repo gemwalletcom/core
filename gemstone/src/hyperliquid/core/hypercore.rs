@@ -59,7 +59,7 @@ mod tests {
 
     #[test]
     fn test_action_open_long_matches_test_data() {
-        let order = actions::make_market_open(5, true, "200.21".to_string(), "0.28".to_string(), false);
+        let order = actions::make_market_order(5, true, "200.21".to_string(), "0.28".to_string(), false);
         let generated_action: serde_json::Value = serde_json::to_value(&order).unwrap();
 
         // Load expected data from test file
@@ -71,7 +71,7 @@ mod tests {
 
     #[test]
     fn test_action_open_short_matches_test_data() {
-        let order = actions::make_market_open(25, false, "3.032".to_string(), "1".to_string(), false);
+        let order = actions::make_market_order(25, false, "3.032".to_string(), "1".to_string(), false);
         let generated_action: serde_json::Value = serde_json::to_value(&order).unwrap();
 
         // Load expected data from test file

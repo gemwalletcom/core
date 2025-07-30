@@ -33,8 +33,8 @@ impl HyperCoreModelFactory {
         approve_builder_fee::HyperApproveBuilderFee::new(max_fee_rate, builder, nonce)
     }
 
-    fn make_market_open(&self, asset: u32, is_buy: bool, price: String, size: String, reduce_only: bool) -> place_order::HyperPlaceOrder {
-        place_order::make_market_open(asset, is_buy, price, size, reduce_only)
+    fn make_market_order(&self, asset: u32, is_buy: bool, price: String, size: String, reduce_only: bool) -> place_order::HyperPlaceOrder {
+        place_order::make_market_order(asset, is_buy, price, size, reduce_only)
     }
 
     fn serialize_order(&self, order: place_order::HyperPlaceOrder) -> String {
@@ -74,9 +74,9 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_make_market_open_action() {
+    fn test_make_market_order_action() {
         let factory = HyperCoreModelFactory::new();
-        let order = factory.make_market_open(5, true, "200.21".to_string(), "0.28".to_string(), false);
+        let order = factory.make_market_order(5, true, "200.21".to_string(), "0.28".to_string(), false);
         let action_json = factory.serialize_order(order);
 
         // Create signed request using build_signed_request
@@ -101,9 +101,9 @@ mod tests {
     }
 
     #[test]
-    fn test_make_market_open_short_action() {
+    fn test_make_market_order_short_action() {
         let actions = HyperCoreModelFactory::new();
-        let order = actions.make_market_open(25, false, "3.032".to_string(), "1".to_string(), false);
+        let order = actions.make_market_order(25, false, "3.032".to_string(), "1".to_string(), false);
 
         // Verify the structure matches the expected format for short
         assert_eq!(order.r#type, "order");
