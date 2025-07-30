@@ -136,4 +136,26 @@ mod tests {
         assert_eq!(json["orders"][0]["r"], false);
         assert_eq!(json["orders"][0]["t"]["limit"]["tif"], "FrontendMarket");
     }
+
+    #[test]
+    fn test_make_set_referrer_action() {
+        let factory = HyperCoreModelFactory::new();
+        let set_referrer = factory.make_set_referrer("GEMWALLET".to_string());
+        let action_json = factory.serialize_set_referrer(&set_referrer);
+
+        // Create signed request using build_signed_request
+        let signature = "750edadc6664badceff6d1cd2a96e0aed1e28b0063d9a665e6a8901983de83667872605712424e287f8d02b888ba826a872b0e89a95a50d49388d74e10c41bb31b";
+        let timestamp = 1753882649539u64;
+
+        let signed_request = factory.build_signed_request(signature.to_string(), action_json, timestamp);
+
+        // Parse the result and compare with expected test data
+        let parsed: serde_json::Value = serde_json::from_str(&signed_request).unwrap();
+
+        // Load expected test data
+        let expected: serde_json::Value = serde_json::from_str(include_str!("../test/hl_action_set_referrer.json")).unwrap();
+
+        // Compare the entire JSON structure
+        assert_eq!(parsed, expected);
+    }
 }

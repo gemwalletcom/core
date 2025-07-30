@@ -1,0 +1,13 @@
+{
+    "action": {
+        "code": "GEMWALLET",
+        "type": "setReferrer"
+    },
+    "isFrontend": true,
+    "nonce": 1753882649539,
+    "signature": {
+        "r": "0x750edadc6664badceff6d1cd2a96e0aed1e28b0063d9a665e6a8901983de8366",
+        "s": "0x7872605712424e287f8d02b888ba826a872b0e89a95a50d49388d74e10c41bb3",
+        "v": 27
+    }
+}
