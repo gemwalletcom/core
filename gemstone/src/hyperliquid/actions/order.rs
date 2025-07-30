@@ -105,7 +105,7 @@ pub struct HyperBuilder {
     pub fee: u32, // tenths of a basis point , 10 means 1bp
 }
 
-pub fn make_market_order(asset: u32, is_buy: bool, price: String, size: String, reduce_only: bool) -> HyperPlaceOrder {
+pub fn make_market_order(asset: u32, is_buy: bool, price: String, size: String, reduce_only: bool, builder: Option<HyperBuilder>) -> HyperPlaceOrder {
     HyperPlaceOrder::new(
         vec![HyperOrder {
             asset,
@@ -119,6 +119,6 @@ pub fn make_market_order(asset: u32, is_buy: bool, price: String, size: String, 
             client_order_id: None,
         }],
         HyperGrouping::Na,
-        None,
+        builder,
     )
 }

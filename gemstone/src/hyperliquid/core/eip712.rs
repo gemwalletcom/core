@@ -155,16 +155,3 @@ pub fn approve_builder_fee_types() -> Vec<EIP712Type> {
         },
     ]
 }
-
-pub fn set_referrer_types() -> Vec<EIP712Type> {
-    vec![
-        EIP712Type {
-            name: "type".to_string(),
-            r#type: "string".to_string(),
-        },
-        EIP712Type {
-            name: "code".to_string(),
-            r#type: "string".to_string(),
-        },
-    ]
-}
