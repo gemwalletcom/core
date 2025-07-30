@@ -10,6 +10,7 @@ pub struct Perpetual {
     pub name: String,
     pub provider: PerpetualProvider,
     pub asset_id: AssetId,
+    pub identifier: String,
     pub price: f64,
     pub price_percent_change_24h: f64,
     pub open_interest: f64,
