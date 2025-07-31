@@ -53,7 +53,6 @@ fn main() {
         "number_formatter.rs",
         "mode.rs",
         "quote.rs",
-        "referral.rs",
         "slippage.rs",
     ]
     .to_vec();
