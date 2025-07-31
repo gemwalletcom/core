@@ -74,56 +74,59 @@ impl SolanaMapper {
         let pre_token_balances = transaction.meta.pre_token_balances.clone();
         let post_token_balances = transaction.meta.post_token_balances.clone();
 
-        // SPL transfer. Limit to 7 accounts.
-        if account_keys.contains(&TOKEN_PROGRAM.to_string())
-            && account_keys.len() <= 7
-            && (pre_token_balances.len() == 1 || pre_token_balances.len() == 2)
-            && post_token_balances.len() == 2
-        {
-            let token_id = transaction.meta.pre_token_balances.first()?.mint.clone();
-            let asset_id = AssetId {
-                chain,
-                token_id: Some(token_id),
-            };
+        // SPL token transfer
+        if let Some(first_balance) = pre_token_balances.first() {
+            let token_id = &first_balance.mint;
+            if account_keys.contains(&TOKEN_PROGRAM.to_string())
+                && (pre_token_balances.len() == 1 || pre_token_balances.len() == 2)
+                && post_token_balances.len() == 2
+                && pre_token_balances.iter().all(|b| &b.mint == token_id)
+                && post_token_balances.iter().all(|b| &b.mint == token_id)
+            {
+                let asset_id = AssetId {
+                    chain,
+                    token_id: Some(token_id.clone()),
+                };
 
-            let sender_account_index: i64 = if transaction.meta.pre_token_balances.len() == 1 {
-                transaction.meta.pre_token_balances.first()?.account_index
-            } else if pre_token_balances.first()?.get_amount() >= post_token_balances.first()?.get_amount() {
-                pre_token_balances.first()?.account_index
-            } else {
-                post_token_balances.last()?.account_index
-            };
-            let recipient_account_index = post_token_balances.iter().find(|b| b.account_index != sender_account_index)?.account_index;
+                let sender_account_index: i64 = if transaction.meta.pre_token_balances.len() == 1 {
+                    transaction.meta.pre_token_balances.first()?.account_index
+                } else if pre_token_balances.first()?.get_amount() >= post_token_balances.first()?.get_amount() {
+                    pre_token_balances.first()?.account_index
+                } else {
+                    post_token_balances.last()?.account_index
+                };
+                let recipient_account_index = post_token_balances.iter().find(|b| b.account_index != sender_account_index)?.account_index;
 
-            let sender = transaction.meta.get_post_token_balance(sender_account_index)?;
-            let recipient = transaction.meta.get_post_token_balance(recipient_account_index)?;
-            let from_value = transaction.meta.get_pre_token_balance(sender_account_index)?.get_amount();
-            let to_value = transaction.meta.get_post_token_balance(sender_account_index)?.get_amount();
+                let sender = transaction.meta.get_post_token_balance(sender_account_index)?;
+                let recipient = transaction.meta.get_post_token_balance(recipient_account_index)?;
+                let from_value = transaction.meta.get_pre_token_balance(sender_account_index)?.get_amount();
+                let to_value = transaction.meta.get_post_token_balance(sender_account_index)?.get_amount();
 
-            if to_value > from_value {
-                return None;
+                if to_value > from_value {
+                    return None;
+                }
+                let value = from_value - to_value;
+
+                let from = sender.owner.clone();
+                let to = recipient.owner.clone();
+
+                let transaction = Transaction::new(
+                    hash,
+                    asset_id,
+                    from,
+                    to,
+                    None,
+                    TransactionType::Transfer,
+                    state,
+                    fee.to_string(),
+                    fee_asset_id,
+                    value.to_string(),
+                    None,
+                    None,
+                    created_at,
+                );
+                return Some(transaction);
             }
-            let value = from_value - to_value;
-
-            let from = sender.owner.clone();
-            let to = recipient.owner.clone();
-
-            let transaction = Transaction::new(
-                hash,
-                asset_id,
-                from,
-                to,
-                None,
-                TransactionType::Transfer,
-                state,
-                fee.to_string(),
-                fee_asset_id,
-                value.to_string(),
-                None,
-                None,
-                created_at,
-            );
-            return Some(transaction);
         }
 
         if account_keys.contains(&JUPITER_PROGRAM_ID.to_string()) {
@@ -354,5 +357,35 @@ mod tests {
         assert_eq!(token_data.name, "PayPal USD");
         assert_eq!(token_data.symbol, "PYUSD");
         assert_eq!(token_data.decimals, 6);
+    }
+
+    #[test]
+    fn test_transaction_transfer_usdc() {
+        let file = include_str!("../../testdata/usdc_transfer.json");
+        let result: JsonRpcResult<crate::model::SingleTransaction> = serde_json::from_str(file).unwrap();
+
+        let block_transaction = BlockTransaction {
+            meta: result.result.meta,
+            transaction: result.result.transaction,
+        };
+
+        let transaction = SolanaMapper::map_transaction(&block_transaction, result.result.block_time).unwrap();
+        let expected = Transaction::new(
+            "4dHnggcXjvmMJY2J6iGqse12PeCYQzuTySgwJa36K8MuntmwNrCNztvYRX5ZGpQXzKjaf7g5vaZM7LTuXLNbi2Zx".to_string(),
+            AssetId::from_token(Chain::Solana, "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"),
+            "37BenMAXFJMo3GaXKb2XLsNQXmd6VbbdShZWnwDj9D6k".to_string(),
+            "3UJQqKq8Xyx4aVRmHgEwpQZiW7toYRQCTy6Bgp1RdKnK".to_string(),
+            None,
+            TransactionType::Transfer,
+            TransactionState::Confirmed,
+            "5500".to_string(),
+            Chain::Solana.as_asset_id(),
+            "100000".to_string(),
+            None,
+            None,
+            DateTime::from_timestamp(1753346616, 0).unwrap(),
+        );
+
+        assert_eq!(transaction, expected);
     }
 }
