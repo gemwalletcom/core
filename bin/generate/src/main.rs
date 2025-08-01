@@ -220,8 +220,8 @@ fn get_paths(_folder: &str, path: String) -> Vec<String> {
 //TODO: Pass from the command
 fn ignored_files_by_platform(platform: Platform) -> Vec<&'static str> {
     match platform {
-        Platform::IOS => vec!["balance.rs"],
-        Platform::Android => vec!["asset_data.rs", "balance.rs"],
+        Platform::IOS => vec![""],
+        Platform::Android => vec!["asset_data.rs"],
     }
 }
 
