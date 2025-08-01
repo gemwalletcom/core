@@ -1,3 +1,4 @@
+pub mod balance;
 pub mod candlestick;
 pub mod metadata;
 pub mod order;
