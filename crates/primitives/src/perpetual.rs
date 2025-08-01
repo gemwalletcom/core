@@ -42,3 +42,17 @@ pub struct PerpetualData {
     pub perpetual: Perpetual,
     pub asset: Asset,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[typeshare(swift = "Equatable, Sendable, Hashable")]
+pub struct PerpetualPositionsSummary {
+    pub positions: Vec<PerpetualPosition>,
+    pub balance: PerpetualBalance,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[typeshare(swift = "Equatable, Sendable, Hashable")]
+pub struct PerpetualBalance {
+    pub available: f64,
+    pub reserved: f64,
+}
