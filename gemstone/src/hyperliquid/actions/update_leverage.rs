@@ -1,27 +1,22 @@
-use super::{MAINNET, SIGNATURE_CHAIN_ID};
-
+// IMPORTANT: Field order matters for msgpack serialization and hash calculation
+// This must match the exact order from Python SDK
+// Do not change field order unless you know the exact Python order.
 #[derive(uniffi::Record, serde::Serialize)]
 pub struct HyperUpdateLeverage {
-    #[serde(rename = "hyperliquidChain")]
-    pub hyperliquid_chain: String,
+    pub r#type: String,
     pub asset: u32,
     #[serde(rename = "isCross")]
     pub is_cross: bool,
     pub leverage: u64,
-    #[serde(rename = "signatureChainId")]
-    pub signature_chain_id: String,
-    pub r#type: String,
 }
 
 impl HyperUpdateLeverage {
     pub fn new(asset: u32, is_cross: bool, leverage: u64) -> Self {
         Self {
-            hyperliquid_chain: MAINNET.to_string(),
+            r#type: "updateLeverage".to_string(),
             asset,
             is_cross,
             leverage,
-            signature_chain_id: SIGNATURE_CHAIN_ID.to_string(),
-            r#type: "updateLeverage".to_string(),
         }
     }
 }

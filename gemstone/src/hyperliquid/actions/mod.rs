@@ -179,8 +179,6 @@ mod tests {
         assert_eq!(update_leverage.asset, 25);
         assert_eq!(update_leverage.is_cross, true);
         assert_eq!(update_leverage.leverage, 10);
-        assert_eq!(update_leverage.hyperliquid_chain, "Mainnet");
-        assert_eq!(update_leverage.signature_chain_id, "0xa4b1");
 
         // Test JSON serialization
         let json = serde_json::to_value(&update_leverage).unwrap();
@@ -188,8 +186,6 @@ mod tests {
         assert_eq!(json["asset"], 25);
         assert_eq!(json["isCross"], true);
         assert_eq!(json["leverage"], 10);
-        assert_eq!(json["hyperliquidChain"], "Mainnet");
-        assert_eq!(json["signatureChainId"], "0xa4b1");
     }
 
     #[test]
