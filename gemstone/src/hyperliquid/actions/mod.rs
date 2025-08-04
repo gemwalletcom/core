@@ -2,12 +2,14 @@ pub mod approve_agent;
 pub mod approve_builder_fee;
 pub mod order;
 pub mod set_referrer;
+pub mod update_leverage;
 pub mod withdrawal;
 
 pub use approve_agent::*;
 pub use approve_builder_fee::*;
 pub use order::*;
 pub use set_referrer::*;
+pub use update_leverage::*;
 pub use withdrawal::*;
 
 pub const MAINNET: &str = "Mainnet";
@@ -51,6 +53,14 @@ impl HyperCoreModelFactory {
 
     fn serialize_set_referrer(&self, set_referrer: &HyperSetReferrer) -> String {
         serde_json::to_string(set_referrer).unwrap()
+    }
+
+    fn make_update_leverage(&self, asset: u32, is_cross: bool, leverage: u64) -> HyperUpdateLeverage {
+        HyperUpdateLeverage::new(asset, is_cross, leverage)
+    }
+
+    fn serialize_update_leverage(&self, update_leverage: &HyperUpdateLeverage) -> String {
+        serde_json::to_string(update_leverage).unwrap()
     }
 
     fn build_signed_request(&self, signature: String, action: String, timestamp: u64) -> String {
@@ -157,5 +167,41 @@ mod tests {
 
         // Compare the entire JSON structure
         assert_eq!(parsed, expected);
+    }
+
+    #[test]
+    fn test_make_update_leverage_action() {
+        let factory = HyperCoreModelFactory::new();
+        let update_leverage = factory.make_update_leverage(25, true, 10);
+
+        // Verify the structure
+        assert_eq!(update_leverage.r#type, "updateLeverage");
+        assert_eq!(update_leverage.asset, 25);
+        assert_eq!(update_leverage.is_cross, true);
+        assert_eq!(update_leverage.leverage, 10);
+
+        // Test JSON serialization
+        let json = serde_json::to_value(&update_leverage).unwrap();
+        assert_eq!(json["type"], "updateLeverage");
+        assert_eq!(json["asset"], 25);
+        assert_eq!(json["isCross"], true);
+        assert_eq!(json["leverage"], 10);
+    }
+
+    #[test]
+    fn test_make_update_leverage_isolated() {
+        let factory = HyperCoreModelFactory::new();
+        let update_leverage = factory.make_update_leverage(5, false, 5);
+
+        // Verify isolated leverage
+        assert_eq!(update_leverage.asset, 5);
+        assert_eq!(update_leverage.is_cross, false);
+        assert_eq!(update_leverage.leverage, 5);
+
+        // Test JSON serialization for isolated
+        let json = serde_json::to_value(&update_leverage).unwrap();
+        assert_eq!(json["asset"], 5);
+        assert_eq!(json["isCross"], false);
+        assert_eq!(json["leverage"], 5);
     }
 }

@@ -33,6 +33,12 @@ impl HyperCore {
         self.l1_action_typed_data(action_value, nonce)
     }
 
+    // L1 payload
+    fn update_leverage_typed_data(&self, update_leverage: actions::HyperUpdateLeverage, nonce: u64) -> String {
+        let action_value = serde_json::to_value(&update_leverage).unwrap();
+        self.l1_action_typed_data(action_value, nonce)
+    }
+
     // User signed payload
     fn withdrawal_request_typed_data(&self, request: actions::HyperWithdrawalRequest) -> String {
         let action_value = serde_json::to_value(&request).unwrap();
@@ -194,5 +200,30 @@ mod tests {
         assert_eq!(message["agentAddress"], "0xbec81216a5edeaed508709d8526078c750e307ad");
         assert_eq!(message["agentName"], "");
         assert_eq!(message["nonce"], 1753576844319u64);
+    }
+
+    #[test]
+    fn test_update_leverage_typed_data() {
+        let hypercore = HyperCore::new();
+        let update_leverage = actions::HyperUpdateLeverage::new(25, true, 10);
+        let nonce = 1753577591421u64;
+
+        let eip712_json = hypercore.update_leverage_typed_data(update_leverage, nonce);
+
+        // Parse the JSON to verify structure
+        let parsed: serde_json::Value = serde_json::from_str(&eip712_json).unwrap();
+
+        // Verify EIP712 structure is present
+        assert!(parsed["types"].is_object());
+        assert!(parsed["domain"].is_object());
+        assert!(parsed["message"].is_object());
+        assert_eq!(parsed["primaryType"], "Agent");
+
+        // Verify the action was properly serialized
+        let action_value = serde_json::to_value(&actions::HyperUpdateLeverage::new(25, true, 10)).unwrap();
+        assert_eq!(action_value["type"], "updateLeverage");
+        assert_eq!(action_value["asset"], 25);
+        assert_eq!(action_value["isCross"], true);
+        assert_eq!(action_value["leverage"], 10);
     }
 }
