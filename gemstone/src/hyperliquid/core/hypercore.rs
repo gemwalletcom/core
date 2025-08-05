@@ -220,7 +220,7 @@ mod tests {
         assert_eq!(parsed["primaryType"], "Agent");
 
         // Verify the action was properly serialized
-        let action_value = serde_json::to_value(&actions::HyperUpdateLeverage::new(25, true, 10)).unwrap();
+        let action_value = serde_json::to_value(actions::HyperUpdateLeverage::new(25, true, 10)).unwrap();
         assert_eq!(action_value["type"], "updateLeverage");
         assert_eq!(action_value["asset"], 25);
         assert_eq!(action_value["isCross"], true);

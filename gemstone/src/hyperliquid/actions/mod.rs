@@ -177,7 +177,7 @@ mod tests {
         // Verify the structure
         assert_eq!(update_leverage.r#type, "updateLeverage");
         assert_eq!(update_leverage.asset, 25);
-        assert_eq!(update_leverage.is_cross, true);
+        assert!(update_leverage.is_cross);
         assert_eq!(update_leverage.leverage, 10);
 
         // Test JSON serialization
@@ -195,7 +195,7 @@ mod tests {
 
         // Verify isolated leverage
         assert_eq!(update_leverage.asset, 5);
-        assert_eq!(update_leverage.is_cross, false);
+        assert!(!update_leverage.is_cross);
         assert_eq!(update_leverage.leverage, 5);
 
         // Test JSON serialization for isolated
