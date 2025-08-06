@@ -111,7 +111,25 @@ impl From<IERC20Calls> for DecodedCall {
                     ("value", "uint256", approve.value.to_string()),
                 ]
             ),
-            _ => todo!(),
+            IERC20Calls::name(_) => (
+                "name",
+                vec![]
+            ),
+            IERC20Calls::symbol(_) => (
+                "symbol", 
+                vec![]
+            ),
+            IERC20Calls::decimals(_) => (
+                "decimals",
+                vec![]
+            ),
+            IERC20Calls::allowance(allowance) => (
+                "allowance",
+                vec![
+                    ("owner", "address", allowance.owner.to_string()),
+                    ("spender", "address", allowance.spender.to_string()),
+                ]
+            ),
         };
 
         DecodedCall {
@@ -194,5 +212,26 @@ mod tests {
         let result = decode_call("0x1234", None);  // Only 2 bytes, need 4
         assert!(result.is_err());
         assert!(result.unwrap_err().to_string().contains("Calldata too short"));
+    }
+
+    #[test]
+    fn test_decode_erc20_view_functions() {
+        // Test ERC20 name() function - 0x06fdde03
+        let name_calldata = "0x06fdde03";
+        let name_result = decode_call(name_calldata, None).unwrap();
+        assert_eq!(name_result.function, "name");
+        assert_eq!(name_result.params.len(), 0);
+
+        // Test ERC20 allowance(address,address) function - 0xdd62ed3e
+        let allowance_calldata = "0xdd62ed3e0000000000000000000000008ba1f109551bd432803012645aac136c0c3def25000000000000000000000000271682deb8c4e0901d1a1550ad2e64d568e69909";
+        let allowance_result = decode_call(allowance_calldata, None).unwrap();
+        assert_eq!(allowance_result.function, "allowance");
+        assert_eq!(allowance_result.params.len(), 2);
+        assert_eq!(allowance_result.params[0].name, "owner");
+        assert_eq!(allowance_result.params[0].r#type, "address");
+        assert_eq!(allowance_result.params[0].value, "0x8Ba1f109551bd432803012645aAC136C0c3Def25");
+        assert_eq!(allowance_result.params[1].name, "spender");
+        assert_eq!(allowance_result.params[1].r#type, "address");
+        assert_eq!(allowance_result.params[1].value, "0x271682DEB8C4E0901D1a1550aD2e64D568E69909");
     }
 }
