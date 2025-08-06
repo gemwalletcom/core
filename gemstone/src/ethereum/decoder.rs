@@ -13,17 +13,19 @@ impl EthereumDecoder {
     pub fn decode_call_internal(calldata: &str, abi: Option<&str>) -> Result<DecodedCall> {
         let calldata = hex::decode(calldata)?;
 
+        // Check minimum calldata length early
+        if calldata.len() < 4 {
+            return Err(anyhow!("Calldata too short"));
+        }
+
         // Try ERC20 interface first if no ABI provided
-        if abi.is_none() && calldata.len() >= 4 {
+        if abi.is_none() {
             if let Ok(call) = IERC20Calls::abi_decode(&calldata) {
                 return Ok(call.into());
             }
         }
 
         if let Some(abi_str) = abi {
-            if calldata.len() < 4 {
-                return Err(anyhow!("Calldata too short"));
-            }
             let abi = serde_json::from_str::<JsonAbi>(abi_str)?;
             let selector = &calldata[..4];
 
@@ -219,5 +221,13 @@ mod tests {
         assert_eq!(decoded.params[2].name, "tokenId");
         assert_eq!(decoded.params[2].r#type, "uint256");
         assert_eq!(decoded.params[2].value, "123");
+    }
+
+    #[test]
+    fn test_decode_short_calldata() {
+        // Test that short calldata returns proper error
+        let result = EthereumDecoder::decode_call_internal("0x1234", None);  // Only 2 bytes, need 4
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("Calldata too short"));
     }
 }
