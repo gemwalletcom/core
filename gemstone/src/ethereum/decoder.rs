@@ -106,58 +106,41 @@ pub struct DecodedCall {
 
 impl From<IERC20Calls> for DecodedCall {
     fn from(call: IERC20Calls) -> Self {
-        match call {
-            IERC20Calls::transfer(transfer) => DecodedCall {
-                function: "transfer".to_string(),
-                params: vec![
-                    DecodedCallParam {
-                        name: "to".to_string(),
-                        r#type: "address".to_string(),
-                        value: transfer.to.to_string(),
-                    },
-                    DecodedCallParam {
-                        name: "value".to_string(),
-                        r#type: "uint256".to_string(),
-                        value: transfer.value.to_string(),
-                    },
-                ],
-            },
-            IERC20Calls::transferFrom(transfer_from) => DecodedCall {
-                function: "transferFrom".to_string(),
-                params: vec![
-                    DecodedCallParam {
-                        name: "from".to_string(),
-                        r#type: "address".to_string(),
-                        value: transfer_from.from.to_string(),
-                    },
-                    DecodedCallParam {
-                        name: "to".to_string(),
-                        r#type: "address".to_string(),
-                        value: transfer_from.to.to_string(),
-                    },
-                    DecodedCallParam {
-                        name: "value".to_string(),
-                        r#type: "uint256".to_string(),
-                        value: transfer_from.value.to_string(),
-                    },
-                ],
-            },
-            IERC20Calls::approve(approve) => DecodedCall {
-                function: "approve".to_string(),
-                params: vec![
-                    DecodedCallParam {
-                        name: "spender".to_string(),
-                        r#type: "address".to_string(),
-                        value: approve.spender.to_string(),
-                    },
-                    DecodedCallParam {
-                        name: "value".to_string(),
-                        r#type: "uint256".to_string(),
-                        value: approve.value.to_string(),
-                    },
-                ],
-            },
+        let (function, params) = match call {
+            IERC20Calls::transfer(transfer) => (
+                "transfer",
+                vec![
+                    ("to", "address", transfer.to.to_string()),
+                    ("value", "uint256", transfer.value.to_string()),
+                ]
+            ),
+            IERC20Calls::transferFrom(transfer_from) => (
+                "transferFrom", 
+                vec![
+                    ("from", "address", transfer_from.from.to_string()),
+                    ("to", "address", transfer_from.to.to_string()),
+                    ("value", "uint256", transfer_from.value.to_string()),
+                ]
+            ),
+            IERC20Calls::approve(approve) => (
+                "approve",
+                vec![
+                    ("spender", "address", approve.spender.to_string()),
+                    ("value", "uint256", approve.value.to_string()),
+                ]
+            ),
             _ => todo!(),
+        };
+
+        DecodedCall {
+            function: function.to_string(),
+            params: params.into_iter()
+                .map(|(name, r#type, value)| DecodedCallParam {
+                    name: name.to_string(),
+                    r#type: r#type.to_string(),
+                    value,
+                })
+                .collect(),
         }
     }
 }
