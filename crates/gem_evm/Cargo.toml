@@ -32,6 +32,7 @@ anyhow = { workspace = true }
 alloy-primitives = { workspace = true }
 alloy-sol-types = { workspace = true, features = ["eip712-serde"] }
 alloy-dyn-abi = { workspace = true, features = ["eip712"] }
+alloy-json-abi = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 num-bigint = { workspace = true }
