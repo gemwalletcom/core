@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NearIntentsTransactionResult {
-    pub status: String,
+    pub status: NearIntentsTransactionStatus,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]

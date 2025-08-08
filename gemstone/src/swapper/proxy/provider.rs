@@ -6,7 +6,7 @@ use std::sync::Arc;
 use super::{
     client::ProxyClient,
     mayan::{MayanClientStatus, MayanExplorer},
-    near::OneClickApi,
+    near::{NearIntentsTransactionStatus, OneClickApi},
     symbiosis::model::SymbiosisTransactionData,
 };
 use crate::{
@@ -209,7 +209,7 @@ impl Swapper for ProxyProvider {
             SwapperProvider::NearIntents => {
                 let client = OneClickApi::new(provider);
                 let result = client.get_transaction_status(transaction_hash).await?;
-                Ok(result.status.to_uppercase() == "SUCCESS")
+                Ok(result.status == NearIntentsTransactionStatus::Success)
             }
             _ => Ok(true),
         }
