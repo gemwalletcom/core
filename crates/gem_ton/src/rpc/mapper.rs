@@ -39,7 +39,7 @@ impl TonMapper {
             let from = Self::parse_address(&out_message.source.address)?;
             let to = match &out_message.destination {
                 Some(destination) => Self::parse_address(&destination.address)?,
-                None => "".into(),
+                None => return None,
             };
             let value = out_message.value.to_string();
 
@@ -265,6 +265,38 @@ mod tests {
                     "value": 1000000000,
                     "op_code": "0x12345678",
                     "decoded_op_name": "transfer"
+                }
+            ],
+            "success": true,
+            "utime": 1750000000
+        }"#;
+
+        let ton_tx: crate::rpc::model::Transaction = serde_json::from_str(json_data).unwrap();
+        let result = TonMapper::map_transaction(Chain::Ton, ton_tx);
+
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn test_reject_outgoing_transaction_without_destination() {
+        // Outgoing transaction without destination should be rejected (malformed data)
+        let json_data = r#"{
+            "hash": "test_hash",
+            "in_msg": {
+                "hash": "test_in_msg_hash"
+            },
+            "block": "test_block",
+            "transaction_type": "TransOrd",
+            "total_fees": 100000,
+            "out_msgs": [
+                {
+                    "source": {
+                        "address": "0:6996055eb4b51d04ed733ef08387cb6b57347e44f386a0ad6c434b57ca535f57"
+                    },
+                    "destination": null,
+                    "value": 1000000000,
+                    "op_code": null,
+                    "decoded_op_name": null
                 }
             ],
             "success": true,
