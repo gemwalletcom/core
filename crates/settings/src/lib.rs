@@ -20,6 +20,7 @@ pub struct Settings {
     pub transak: Transak,
     pub mercuryo: Mercuryo,
     pub banxa: Banxa,
+    pub paybis: Paybis,
 
     pub pricer: Pricer,
     pub coingecko: CoinGecko,
@@ -97,6 +98,12 @@ pub struct Mercuryo {
 #[allow(unused)]
 pub struct Banxa {
     pub url: String,
+    pub key: Key,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[allow(unused)]
+pub struct Paybis {
     pub key: Key,
 }
 
