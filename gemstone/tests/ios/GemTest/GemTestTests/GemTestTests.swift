@@ -207,4 +207,51 @@ final class GemTestTests: XCTestCase {
 
         print(priorityFee)
     }
+
+    func testEthereumCallDecoder() throws {
+        let decoder = EthereumDecoder()
+        
+        // Test ERC-20 transfer without ABI (should auto-detect)
+        let erc20Transfer = "0xa9059cbb00000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe50000000000000000000000000000000000000000000000000de0b6b3a7640000"
+        let erc20Result = try decoder.decodeCall(calldata: erc20Transfer, abi: nil)
+        
+        XCTAssertEqual(erc20Result.function, "transfer")
+        XCTAssertEqual(erc20Result.params.count, 2)
+        XCTAssertEqual(erc20Result.params[0].name, "to")
+        XCTAssertEqual(erc20Result.params[0].type, "address")
+        XCTAssertEqual(erc20Result.params[0].value, "0x95222290DD7278Aa3Ddd389Cc1E1d165CC4BAfe5")
+        XCTAssertEqual(erc20Result.params[1].name, "value")
+        XCTAssertEqual(erc20Result.params[1].type, "uint256")
+        XCTAssertEqual(erc20Result.params[1].value, "1000000000000000000")
+        
+        // Test ERC-721 safeTransferFrom with custom ABI
+        let erc721Transfer = "0x42842e0e0000000000000000000000008ba1f109551bd432803012645aac136c0c3def25000000000000000000000000271682deb8c4e0901d1a1550ad2e64d568e69909000000000000000000000000000000000000000000000000000000000000007b"
+        let erc721ABI = """
+        [{
+            "inputs": [
+                {"name": "from", "type": "address"},
+                {"name": "to", "type": "address"},
+                {"name": "tokenId", "type": "uint256"}
+            ],
+            "name": "safeTransferFrom",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        }]
+        """
+        
+        let erc721Result = try decoder.decodeCall(calldata: erc721Transfer, abi: erc721ABI)
+        
+        XCTAssertEqual(erc721Result.function, "safeTransferFrom")
+        XCTAssertEqual(erc721Result.params.count, 3)
+        XCTAssertEqual(erc721Result.params[0].name, "from")
+        XCTAssertEqual(erc721Result.params[0].type, "address")
+        XCTAssertEqual(erc721Result.params[0].value, "0x8Ba1f109551bd432803012645aAC136C0c3Def25")
+        XCTAssertEqual(erc721Result.params[1].name, "to")
+        XCTAssertEqual(erc721Result.params[1].type, "address")
+        XCTAssertEqual(erc721Result.params[1].value, "0x271682DEB8C4E0901D1a1550aD2e64D568E69909")
+        XCTAssertEqual(erc721Result.params[2].name, "tokenId")
+        XCTAssertEqual(erc721Result.params[2].type, "uint256")
+        XCTAssertEqual(erc721Result.params[2].value, "123")
+    }
 }
