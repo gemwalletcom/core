@@ -45,6 +45,10 @@ pub struct Transaction {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct InMessage {
     pub hash: String,
+    pub msg_type: Option<String>,
+    pub value: Option<i64>,
+    pub source: Option<Address>,
+    pub destination: Option<Address>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
