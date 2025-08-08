@@ -19,6 +19,7 @@ pub struct ChainConfig {
     pub is_stake_supported: bool,
     pub is_nft_supported: bool,
     pub is_memo_supported: bool,
+    pub is_send_max_supported: bool,
 }
 
 pub fn get_chain_config(chain: Chain) -> ChainConfig {
@@ -40,6 +41,7 @@ pub fn get_chain_config(chain: Chain) -> ChainConfig {
         is_stake_supported: chain.is_stake_supported(),
         is_nft_supported: chain.is_nft_supported(),
         is_memo_supported: is_memo_supported(chain),
+        is_send_max_supported: chain.is_send_max_supported(),
     }
 }
 

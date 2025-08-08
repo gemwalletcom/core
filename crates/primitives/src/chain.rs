@@ -465,4 +465,8 @@ impl Chain {
     pub fn stakeable() -> Vec<Self> {
         Self::all().into_iter().filter(|x| x.is_stake_supported()).collect()
     }
+
+    pub fn is_send_max_supported(&self) -> bool {
+        !matches!(self, Self::Solana)
+    }
 }
