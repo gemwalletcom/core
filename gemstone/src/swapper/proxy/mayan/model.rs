@@ -87,6 +87,7 @@ mod tests {
         assert_eq!(result.steps[1].status, MayanTransactionStepStatus::Active);
         assert_eq!(result.steps[1].r#type, MayanTransactionStepType::BlockCounter);
         assert_eq!(result.client_status, MayanClientStatus::InProgress);
+
         let json = include_str!("../test/swift_refunded.json");
         let result: MayanTransactionResult = serde_json::from_str(json).unwrap();
 

@@ -24,6 +24,11 @@ pub enum DocsUrl {
     WalletConnect,
     HowStoreSecretPhrase,
     NoQuotes,
+    Staking,
+    PerpetualsFundingRate,
+    PerpetualsLiquidationPrice,
+    PerpetualsOpenInterest,
+    PerpetualsFundingPayments,
 }
 const DOCS_URL: &str = "https://docs.gemwallet.com";
 
@@ -53,6 +58,11 @@ pub fn get_docs_url(item: DocsUrl) -> String {
         DocsUrl::WalletConnect => "/guides/walletconnect/",
         DocsUrl::HowStoreSecretPhrase => "/faq/secure-recovery-phrase/#how-to-secure-my-secret-phrase/",
         DocsUrl::NoQuotes => "/troubleshoot/quote-error/",
+        DocsUrl::Staking => "/defi/stake/",
+        DocsUrl::PerpetualsFundingRate => "/defi/perps/perps-terms/#what-is-perpetual-funding/",
+        DocsUrl::PerpetualsLiquidationPrice => "/defi/perps/perps-terms/#what-is-a-perpetual-liquidation-price/",
+        DocsUrl::PerpetualsOpenInterest => "/defi/perps/perps-terms/#what-is-a-perpetual-open-interest/",
+        DocsUrl::PerpetualsFundingPayments => "/defi/perps/perps-terms/#what-is-perpetual-funding-payments/",
     };
     format!("{DOCS_URL}{path}")
 }

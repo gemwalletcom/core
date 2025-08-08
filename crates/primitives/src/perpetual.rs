@@ -10,6 +10,7 @@ pub struct Perpetual {
     pub name: String,
     pub provider: PerpetualProvider,
     pub asset_id: AssetId,
+    pub identifier: String,
     pub price: f64,
     pub price_percent_change_24h: f64,
     pub open_interest: f64,
@@ -40,4 +41,18 @@ pub struct PerpetualPositionData {
 pub struct PerpetualData {
     pub perpetual: Perpetual,
     pub asset: Asset,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[typeshare(swift = "Equatable, Sendable, Hashable")]
+pub struct PerpetualPositionsSummary {
+    pub positions: Vec<PerpetualPosition>,
+    pub balance: PerpetualBalance,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[typeshare(swift = "Equatable, Sendable, Hashable")]
+pub struct PerpetualBalance {
+    pub available: f64,
+    pub reserved: f64,
 }

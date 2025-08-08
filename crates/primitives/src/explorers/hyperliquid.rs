@@ -29,7 +29,7 @@ impl BlockExplorer for HyperliquidExplorer {
     }
 
     fn get_token_url(&self, _token: &str) -> Option<String> {
-        None
+        Some(format!("{}/token/{}", self.meta.base_url, _token))
     }
 }
 
@@ -59,5 +59,14 @@ mod tests {
             result,
             "https://app.hyperliquid.xyz/explorer/address/0x953cb34f310cdef2ec0351e8c20e87bd53bd3bce"
         );
+    }
+
+    #[test]
+    fn test_hyperliquid_explorer_token_url() {
+        let explorer = HyperliquidExplorer::new();
+        let token = "0x0d01dc56dcaaca66ad901c959b4011ec";
+        let result = explorer.get_token_url(token).unwrap();
+
+        assert_eq!(result, "https://app.hyperliquid.xyz/explorer/token/0x0d01dc56dcaaca66ad901c959b4011ec");
     }
 }
