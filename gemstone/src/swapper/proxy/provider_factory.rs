@@ -116,7 +116,6 @@ pub fn new_near_intents() -> ProxyProvider {
             SwapperChainAsset::All(Chain::Tron),
             SwapperChainAsset::All(Chain::Doge),
             SwapperChainAsset::All(Chain::Xrp),
-            SwapperChainAsset::All(Chain::Cardano),
             SwapperChainAsset::All(Chain::Berachain),
             SwapperChainAsset::All(Chain::Gnosis),
         ],
