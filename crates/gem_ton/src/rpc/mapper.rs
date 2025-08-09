@@ -340,4 +340,13 @@ mod tests {
         let transaction = result.unwrap();
         assert_eq!(transaction.state, primitives::TransactionState::Failed);
     }
+
+    #[test]
+    fn test_map_empty_transactions_list() {
+        // Empty transactions list should return empty result (handles "no blocks found" case)
+        let transactions = vec![];
+        let result = TonMapper::map_transactions(Chain::Ton, transactions);
+
+        assert!(result.is_empty());
+    }
 }

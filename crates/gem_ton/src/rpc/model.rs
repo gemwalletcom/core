@@ -93,3 +93,8 @@ pub struct JettonBalance {
 pub struct Jetton {
     pub address: String,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TonApiError {
+    pub error: String,
+}

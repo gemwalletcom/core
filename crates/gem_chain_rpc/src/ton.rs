@@ -30,8 +30,18 @@ impl ChainBlockProvider for TonProvider {
     }
 
     async fn get_transactions(&self, block_number: i64) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
-        let transactions = self.client.get_transactions(block_number.to_string()).await?.transactions;
-        Ok(TonMapper::map_transactions(self.get_chain(), transactions))
+        match self.client.get_transactions(block_number.to_string()).await {
+            Ok(response) => Ok(TonMapper::map_transactions(self.get_chain(), response.transactions)),
+            Err(e) => {
+                let error_msg = e.to_string();
+                // Handle "no blocks found" as empty result instead of error
+                if error_msg.contains("no blocks found") {
+                    Ok(vec![])
+                } else {
+                    Err(e)
+                }
+            }
+        }
     }
 }
 
