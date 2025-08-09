@@ -63,19 +63,19 @@ impl TonClient {
                 // Success - parse as Transactions
                 match serde_json::from_str::<Transactions>(&response_text) {
                     Ok(transactions) => Ok(transactions),
-                    Err(e) => Err(format!("Failed to parse successful TON API response: {}", e).into()),
+                    Err(e) => Err(format!("Failed to parse successful TON API response: {e}").into()),
                 }
-            },
+            }
             404 => {
                 // Not Found - parse as error and propagate
                 match serde_json::from_str::<TonApiError>(&response_text) {
                     Ok(error_response) => Err(error_response.error.into()),
                     Err(_) => Err("Block not found".into()),
                 }
-            },
+            }
             _ => {
                 // Other HTTP errors
-                Err(format!("TON API error: HTTP {} - {}", status, response_text).into())
+                Err(format!("TON API error: HTTP {status} - {response_text}").into())
             }
         }
     }
