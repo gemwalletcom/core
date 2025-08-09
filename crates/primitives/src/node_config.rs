@@ -80,7 +80,10 @@ pub fn get_nodes_for_chain(chain: Chain) -> Vec<Node> {
             Node::new("https://base.merkle.io", NodePriority::High),
         ],
         Chain::AvalancheC => vec![Node::new("https://avalanche.drpc.org", NodePriority::High)],
-        Chain::Sui => vec![Node::new("https://sui-rpc.publicnode.com", NodePriority::High)],
+        Chain::Sui => vec![
+            Node::new("https://sui-rpc.publicnode.com", NodePriority::High),
+            Node::new("https://rpc-mainnet.suiscan.xyz", NodePriority::High),
+        ],
         Chain::Xrp => vec![
             Node::new("https://s1.ripple.com:51234", NodePriority::High),
             Node::new("https://s2.ripple.com:51234", NodePriority::High),
