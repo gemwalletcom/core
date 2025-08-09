@@ -55,4 +55,5 @@ pub struct PerpetualPositionsSummary {
 pub struct PerpetualBalance {
     pub available: f64,
     pub reserved: f64,
+    pub withdrawable: f64,
 }
