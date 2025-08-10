@@ -62,9 +62,9 @@ impl TonClient {
             200 => Ok(serde_json::from_str::<Transactions>(&response_text).map_err(|e| format!("Failed to parse TON API response: {e}"))?),
             _ => {
                 if let Ok(api_error) = serde_json::from_str::<ApiError>(&response_text) {
-                    Err(format!("TON API error ({}): {}", status, api_error.error).into())
+                    Err(format!("TON API error ({status}): {}", api_error.error).into())
                 } else {
-                    Err(format!("TON API error ({}): {}", status, response_text).into())
+                    Err(format!("TON API error ({status}): {response_text}").into())
                 }
             }
         }
