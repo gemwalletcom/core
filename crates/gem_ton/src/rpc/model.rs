@@ -134,6 +134,6 @@ pub struct DecodedBody {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TonApiError {
+pub struct ApiError {
     pub error: String,
 }

@@ -4,7 +4,7 @@ use primitives::{chain::Chain, Asset, AssetId, AssetType};
 
 use reqwest_middleware::ClientWithMiddleware;
 
-use crate::rpc::model::{JettonBalances, JettonInfo, TonApiError};
+use crate::rpc::model::{ApiError, JettonBalances, JettonInfo};
 
 use super::model::{Blocks, Chainhead, Shards, Transactions};
 
@@ -59,15 +59,14 @@ impl TonClient {
         let response_text = response.text().await?;
 
         match status.as_u16() {
-            200 => Ok(serde_json::from_str::<Transactions>(&response_text).map_err(|e| format!("Failed to parse successful TON API response: {e}"))?),
-            404 => {
-                if let Ok(error_response) = serde_json::from_str::<TonApiError>(&response_text) {
-                    Err(error_response.error.into())
+            200 => Ok(serde_json::from_str::<Transactions>(&response_text).map_err(|e| format!("Failed to parse TON API response: {e}"))?),
+            _ => {
+                if let Ok(api_error) = serde_json::from_str::<ApiError>(&response_text) {
+                    Err(format!("TON API error ({}): {}", status, api_error.error).into())
                 } else {
-                    Err("Block not found".into())
+                    Err(format!("TON API error ({}): {}", status, response_text).into())
                 }
             }
-            _ => Err(format!("TON API error: HTTP {status} - {response_text}").into()),
         }
     }
 
