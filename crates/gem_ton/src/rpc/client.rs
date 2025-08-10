@@ -59,24 +59,16 @@ impl TonClient {
         let response_text = response.text().await?;
 
         match status.as_u16() {
-            200 => {
-                // Success - parse as Transactions
-                match serde_json::from_str::<Transactions>(&response_text) {
-                    Ok(transactions) => Ok(transactions),
-                    Err(e) => Err(format!("Failed to parse successful TON API response: {e}").into()),
-                }
-            }
+            200 => Ok(serde_json::from_str::<Transactions>(&response_text)
+                .map_err(|e| format!("Failed to parse successful TON API response: {e}"))?),
             404 => {
-                // Not Found - parse as error and propagate
-                match serde_json::from_str::<TonApiError>(&response_text) {
-                    Ok(error_response) => Err(error_response.error.into()),
-                    Err(_) => Err("Block not found".into()),
+                if let Ok(error_response) = serde_json::from_str::<TonApiError>(&response_text) {
+                    Err(error_response.error.into())
+                } else {
+                    Err("Block not found".into())
                 }
             }
-            _ => {
-                // Other HTTP errors
-                Err(format!("TON API error: HTTP {status} - {response_text}").into())
-            }
+            _ => Err(format!("TON API error: HTTP {status} - {response_text}").into()),
         }
     }
 

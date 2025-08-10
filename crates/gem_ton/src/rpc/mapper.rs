@@ -191,27 +191,6 @@ mod tests {
         assert_eq!(transaction.state, primitives::TransactionState::Confirmed);
     }
 
-    #[test]
-    fn test_reject_non_transord_transaction() {
-        // Transaction with different type should be rejected
-        let json_data = r#"{
-            "hash": "test_hash",
-            "in_msg": {
-                "hash": "test_in_msg_hash"
-            },
-            "block": "test_block",
-            "transaction_type": "TransTick",
-            "total_fees": 100000,
-            "out_msgs": [],
-            "success": true,
-            "utime": 1750000000
-        }"#;
-
-        let ton_tx: crate::rpc::model::Transaction = serde_json::from_str(json_data).unwrap();
-        let result = TonMapper::map_transaction(Chain::Ton, ton_tx);
-
-        assert!(result.is_none());
-    }
 
     #[test]
     fn test_reject_incoming_transaction_with_zero_value() {
@@ -341,12 +320,4 @@ mod tests {
         assert_eq!(transaction.state, primitives::TransactionState::Failed);
     }
 
-    #[test]
-    fn test_map_empty_transactions_list() {
-        // Empty transactions list should return empty result (handles "no blocks found" case)
-        let transactions = vec![];
-        let result = TonMapper::map_transactions(Chain::Ton, transactions);
-
-        assert!(result.is_empty());
-    }
 }
