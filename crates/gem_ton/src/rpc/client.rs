@@ -59,8 +59,7 @@ impl TonClient {
         let response_text = response.text().await?;
 
         match status.as_u16() {
-            200 => Ok(serde_json::from_str::<Transactions>(&response_text)
-                .map_err(|e| format!("Failed to parse successful TON API response: {e}"))?),
+            200 => Ok(serde_json::from_str::<Transactions>(&response_text).map_err(|e| format!("Failed to parse successful TON API response: {e}"))?),
             404 => {
                 if let Ok(error_response) = serde_json::from_str::<TonApiError>(&response_text) {
                     Err(error_response.error.into())

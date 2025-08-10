@@ -129,6 +129,7 @@ Follow the existing code style patterns unless explicitly asked to change:
 - `Result<(), Box<dyn std::error::Error + Send + Sync>>` for test error handling
 - Integration tests configured with `test = false` and `required-features` for manual execution
 - Use real blockchain networks for RPC client testing (Ethereum mainnet, etc.)
+- **Test Data Management**: For long JSON test data (>20 lines), prefer storing in `tests/data/` directory and loading with `include_str!()` macro rather than inline strings to improve readability and maintainability
 
 ## Repository Pattern
 

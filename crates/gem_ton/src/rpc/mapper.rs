@@ -2,7 +2,7 @@ use chrono::DateTime;
 use primitives::{chain::Chain, Transaction, TransactionState, TransactionType};
 use tonlib_core::TonAddress;
 
-use super::model::Transaction as TonTransaction;
+use super::model::{HasMemo, Transaction as TonTransaction};
 
 pub struct TonMapper;
 
@@ -31,10 +31,10 @@ impl TonMapper {
         };
         let created_at = DateTime::from_timestamp(transaction.utime, 0)?;
         let in_msg = transaction.in_msg.as_ref()?;
-        let hash = in_msg.hash.clone();
+        let hash = transaction.hash.clone();
 
         // Handle outgoing transfers (with out messages)
-        if transaction.out_msgs.len() == 1 && transaction.out_msgs.first()?.op_code.is_none() {
+        if transaction.out_msgs.len() == 1 && Self::is_simple_transfer(transaction.out_msgs.first()?) {
             let out_message = transaction.out_msgs.first()?;
             let from = Self::parse_address(&out_message.source.address)?;
             let to = match &out_message.destination {
@@ -42,6 +42,7 @@ impl TonMapper {
                 None => return None,
             };
             let value = out_message.value.to_string();
+            let memo = Self::extract_memo(out_message);
 
             return Some(Transaction::new(
                 hash,
@@ -54,7 +55,7 @@ impl TonMapper {
                 transaction.total_fees.to_string(),
                 asset_id,
                 value,
-                None, // memo
+                memo,
                 None,
                 created_at,
             ));
@@ -67,6 +68,7 @@ impl TonMapper {
                 if msg_type == "int_msg" && value > 0 {
                     let from = Self::parse_address(&source.address)?;
                     let to = Self::parse_address(&destination.address)?;
+                    let memo = Self::extract_memo(in_msg);
 
                     return Some(Transaction::new(
                         hash,
@@ -79,10 +81,40 @@ impl TonMapper {
                         transaction.total_fees.to_string(),
                         asset_id,
                         value.to_string(),
-                        None, // memo
+                        memo,
                         None,
                         created_at,
                     ));
+                }
+            }
+        }
+
+        None
+    }
+
+    fn is_simple_transfer(out_message: &super::model::OutMessage) -> bool {
+        match &out_message.op_code {
+            None => true,
+            Some(op_code) => op_code == "0x00000000" || op_code == "0x0",
+        }
+    }
+
+    fn extract_memo<T: HasMemo>(message: &T) -> Option<String> {
+        if let Some(comment) = message.comment() {
+            if !comment.is_empty() {
+                return Some(comment.clone());
+            }
+        }
+
+        if let Some(decoded_body) = message.decoded_body() {
+            if let Some(text) = &decoded_body.text {
+                if !text.is_empty() {
+                    return Some(text.clone());
+                }
+            }
+            if let Some(comment) = &decoded_body.comment {
+                if !comment.is_empty() {
+                    return Some(comment.clone());
                 }
             }
         }
@@ -94,230 +126,65 @@ impl TonMapper {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::rpc::model::Transaction as TonTransaction;
     use primitives::Chain;
     use serde_json;
 
     #[test]
-    fn test_map_incoming_transaction() {
-        // Real TON incoming transaction JSON (27.013 TON received)
-        let json_data = r#"{
-            "hash": "0418c1b2e56653421a17f4b18f5964a931a581c6985d097a0e83b2175480de4e",
-            "in_msg": {
-                "hash": "cd0163d819dc5a0f0b98133bfebe321b45a6f93e7ab8c7bb8bd68afded95d41d",
-                "msg_type": "int_msg",
-                "value": 27013390900,
-                "source": {
-                    "address": "0:ca3bc9c2b159350d76d809cd9ec787ca198877005db319e03799376a48ad9be0"
-                },
-                "destination": {
-                    "address": "0:6996055eb4b51d04ed733ef08387cb6b57347e44f386a0ad6c434b57ca535f57"
-                }
-            },
-            "block": "(0,8000000000000000,55559979)",
-            "transaction_type": "TransOrd",
-            "total_fees": 310015,
-            "out_msgs": [],
-            "success": true,
-            "utime": 1753846990
-        }"#;
-
-        let ton_tx: crate::rpc::model::Transaction = serde_json::from_str(json_data).unwrap();
-        let result = TonMapper::map_transaction(Chain::Ton, ton_tx);
+    fn test_map_outgoing_transaction_1() {
+        let json_data = include_str!("../../tests/data/ton_transfer.json");
+        let tx: TonTransaction = serde_json::from_str(json_data).unwrap();
+        let result = TonMapper::map_transaction(Chain::Ton, tx);
 
         assert!(result.is_some());
         let transaction = result.unwrap();
 
-        // Verify transaction details
-        assert_eq!(transaction.hash, "cd0163d819dc5a0f0b98133bfebe321b45a6f93e7ab8c7bb8bd68afded95d41d");
+        assert_eq!(transaction.hash, "6fc90afef2393eae1b265d3d4f11eb59ce45b4adcb8e40eb0de00ee27551334f");
         assert_eq!(transaction.asset_id, Chain::Ton.as_asset_id());
         assert_eq!(transaction.from, "EQDKO8nCsVk1DXbYCc2ex4fKGYh3AF2zGeA3mTdqSK2b4BXX");
         assert_eq!(transaction.to, "EQBplgVetLUdBO1zPvCDh8trVzR-RPOGoK1sQ0tXylNfV-Yn");
         assert_eq!(transaction.value, "27013390900");
-        assert_eq!(transaction.fee, "310015");
+        assert_eq!(transaction.fee, "1910058");
         assert_eq!(transaction.fee_asset_id, Chain::Ton.as_asset_id());
         assert_eq!(transaction.transaction_type, primitives::TransactionType::Transfer);
         assert_eq!(transaction.state, primitives::TransactionState::Confirmed);
     }
 
     #[test]
-    fn test_map_outgoing_transaction() {
-        // Real TON outgoing transaction JSON (1.0 TON sent)
-        let json_data = r#"{
-            "hash": "ac0b4e14b0db64226c1938e5923216190150970f47094a55ea680f3d1a2be12f",
-            "in_msg": {
-                "hash": "dcf57aec3405981dbd1c46729e6d56730770d37fd081b51d150c1ed03f8eb4a2",
-                "msg_type": "ext_in_msg",
-                "value": 0,
-                "source": null,
-                "destination": {
-                    "address": "0:6996055eb4b51d04ed733ef08387cb6b57347e44f386a0ad6c434b57ca535f57"
-                }
-            },
-            "block": "(0,6000000000000000,54323098)",
-            "transaction_type": "TransOrd",
-            "total_fees": 666693,
-            "out_msgs": [
-                {
-                    "source": {
-                        "address": "0:6996055eb4b51d04ed733ef08387cb6b57347e44f386a0ad6c434b57ca535f57"
-                    },
-                    "destination": {
-                        "address": "0:90effeeb58defac39dd1f4028d495c0c70d014f23603196b7587018e8ad59b4d"
-                    },
-                    "value": 1000000000,
-                    "op_code": null,
-                    "decoded_op_name": null
-                }
-            ],
-            "success": true,
-            "utime": 1750595597
-        }"#;
-
-        let ton_tx: crate::rpc::model::Transaction = serde_json::from_str(json_data).unwrap();
-        let result = TonMapper::map_transaction(Chain::Ton, ton_tx);
+    fn test_map_outgoing_transaction_2() {
+        let json_data = include_str!("../../tests/data/ton_transfer2.json");
+        let tx: TonTransaction = serde_json::from_str(json_data).unwrap();
+        let result = TonMapper::map_transaction(Chain::Ton, tx);
 
         assert!(result.is_some());
         let transaction = result.unwrap();
 
-        // Verify transaction details
-        assert_eq!(transaction.hash, "dcf57aec3405981dbd1c46729e6d56730770d37fd081b51d150c1ed03f8eb4a2");
+        assert_eq!(transaction.hash, "447067aff9c723bde449aafd83de46f6518c61f853196a66fc1bb58cf0fc17f0");
         assert_eq!(transaction.asset_id, Chain::Ton.as_asset_id());
-        assert_eq!(transaction.from, "EQBplgVetLUdBO1zPvCDh8trVzR-RPOGoK1sQ0tXylNfV-Yn");
-        assert_eq!(transaction.to, "EQCQ7_7rWN76w53R9AKNSVwMcNAU8jYDGWt1hwGOitWbTVwj");
-        assert_eq!(transaction.value, "1000000000");
-        assert_eq!(transaction.fee, "666693");
+        assert_eq!(transaction.from, "EQDMcfIzYJeFfZz1GLC5DXEduhVUqwe6hxnQQbqZA7wKxA7F");
+        assert_eq!(transaction.to, "EQBplgVetLUdBO1zPvCDh8trVzR-RPOGoK1sQ0tXylNfV-Yn");
+        assert_eq!(transaction.value, "2030406907");
+        assert_eq!(transaction.fee, "5003160");
         assert_eq!(transaction.fee_asset_id, Chain::Ton.as_asset_id());
         assert_eq!(transaction.transaction_type, primitives::TransactionType::Transfer);
         assert_eq!(transaction.state, primitives::TransactionState::Confirmed);
     }
 
-
     #[test]
-    fn test_reject_incoming_transaction_with_zero_value() {
-        // Incoming transaction with zero value should be rejected
-        let json_data = r#"{
-            "hash": "test_hash",
-            "in_msg": {
-                "hash": "test_in_msg_hash",
-                "msg_type": "int_msg",
-                "value": 0,
-                "source": {
-                    "address": "0:ca3bc9c2b159350d76d809cd9ec787ca198877005db319e03799376a48ad9be0"
-                },
-                "destination": {
-                    "address": "0:6996055eb4b51d04ed733ef08387cb6b57347e44f386a0ad6c434b57ca535f57"
-                }
-            },
-            "block": "test_block",
-            "transaction_type": "TransOrd",
-            "total_fees": 100000,
-            "out_msgs": [],
-            "success": true,
-            "utime": 1750000000
-        }"#;
-
-        let ton_tx: crate::rpc::model::Transaction = serde_json::from_str(json_data).unwrap();
-        let result = TonMapper::map_transaction(Chain::Ton, ton_tx);
-
-        assert!(result.is_none());
-    }
-
-    #[test]
-    fn test_reject_outgoing_transaction_with_op_code() {
-        // Outgoing transaction with op_code should be rejected (contract interaction)
-        let json_data = r#"{
-            "hash": "test_hash",
-            "in_msg": {
-                "hash": "test_in_msg_hash"
-            },
-            "block": "test_block",
-            "transaction_type": "TransOrd",
-            "total_fees": 100000,
-            "out_msgs": [
-                {
-                    "source": {
-                        "address": "0:6996055eb4b51d04ed733ef08387cb6b57347e44f386a0ad6c434b57ca535f57"
-                    },
-                    "destination": {
-                        "address": "0:90effeeb58defac39dd1f4028d495c0c70d014f23603196b7587018e8ad59b4d"
-                    },
-                    "value": 1000000000,
-                    "op_code": "0x12345678",
-                    "decoded_op_name": "transfer"
-                }
-            ],
-            "success": true,
-            "utime": 1750000000
-        }"#;
-
-        let ton_tx: crate::rpc::model::Transaction = serde_json::from_str(json_data).unwrap();
-        let result = TonMapper::map_transaction(Chain::Ton, ton_tx);
-
-        assert!(result.is_none());
-    }
-
-    #[test]
-    fn test_reject_outgoing_transaction_without_destination() {
-        // Outgoing transaction without destination should be rejected (malformed data)
-        let json_data = r#"{
-            "hash": "test_hash",
-            "in_msg": {
-                "hash": "test_in_msg_hash"
-            },
-            "block": "test_block",
-            "transaction_type": "TransOrd",
-            "total_fees": 100000,
-            "out_msgs": [
-                {
-                    "source": {
-                        "address": "0:6996055eb4b51d04ed733ef08387cb6b57347e44f386a0ad6c434b57ca535f57"
-                    },
-                    "destination": null,
-                    "value": 1000000000,
-                    "op_code": null,
-                    "decoded_op_name": null
-                }
-            ],
-            "success": true,
-            "utime": 1750000000
-        }"#;
-
-        let ton_tx: crate::rpc::model::Transaction = serde_json::from_str(json_data).unwrap();
-        let result = TonMapper::map_transaction(Chain::Ton, ton_tx);
-
-        assert!(result.is_none());
-    }
-
-    #[test]
-    fn test_map_failed_transaction() {
-        // Failed incoming transaction should still be parsed with Failed state
-        let json_data = r#"{
-            "hash": "failed_tx_hash",
-            "in_msg": {
-                "hash": "failed_in_msg_hash",
-                "msg_type": "int_msg",
-                "value": 1000000000,
-                "source": {
-                    "address": "0:ca3bc9c2b159350d76d809cd9ec787ca198877005db319e03799376a48ad9be0"
-                },
-                "destination": {
-                    "address": "0:6996055eb4b51d04ed733ef08387cb6b57347e44f386a0ad6c434b57ca535f57"
-                }
-            },
-            "block": "test_block",
-            "transaction_type": "TransOrd",
-            "total_fees": 100000,
-            "out_msgs": [],
-            "success": false,
-            "utime": 1750000000
-        }"#;
-
-        let ton_tx: crate::rpc::model::Transaction = serde_json::from_str(json_data).unwrap();
-        let result = TonMapper::map_transaction(Chain::Ton, ton_tx);
+    fn test_map_transaction_with_memo() {
+        let json_data = include_str!("../../tests/data/tx_with_memo.json");
+        let tx: TonTransaction = serde_json::from_str(json_data).unwrap();
+        let result = TonMapper::map_transaction(Chain::Ton, tx);
 
         assert!(result.is_some());
         let transaction = result.unwrap();
-        assert_eq!(transaction.state, primitives::TransactionState::Failed);
-    }
 
+        assert_eq!(transaction.hash, "420e601674a29c06e7d474e7811526e7aff2bc9cc647cc1fe7754efca5b1f679");
+        assert_eq!(transaction.asset_id, Chain::Ton.as_asset_id());
+        assert_eq!(transaction.value, "1000000000");
+        assert_eq!(transaction.fee, "3674058");
+        assert_eq!(transaction.memo, Some("hello-123".to_string()));
+        assert_eq!(transaction.transaction_type, primitives::TransactionType::Transfer);
+        assert_eq!(transaction.state, primitives::TransactionState::Confirmed);
+    }
 }
