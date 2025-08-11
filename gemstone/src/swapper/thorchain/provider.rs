@@ -1,22 +1,32 @@
-use super::model::RouteData;
-use super::DEFAULT_DEPOSIT_GAS_LIMIT;
-use super::{asset::THORChainAsset, chain::THORChainName, ThorChain, QUOTE_INTERVAL, QUOTE_MINIMUM, QUOTE_QUANTITY};
-use crate::network::AlienProvider;
-use crate::swapper::approval::check_approval_erc20;
-use crate::swapper::thorchain::client::ThorChainSwapClient;
-use crate::swapper::{asset::*, SwapperApprovalData};
-use crate::swapper::{
-    FetchQuoteData, SwapperError, SwapperProviderData, SwapperProviderType, SwapperQuote, SwapperQuoteData, SwapperQuoteRequest, SwapperRoute,
-};
-use crate::swapper::{Swapper, SwapperChainAsset};
+use std::{str::FromStr, sync::Arc, time::{SystemTime, UNIX_EPOCH}};
+
 use alloy_primitives::{hex::encode_prefixed as HexEncode, Address, U256};
 use alloy_sol_types::SolCall;
 use async_trait::async_trait;
 use gem_evm::thorchain::contracts::RouterInterface;
-use primitives::Chain;
-use std::str::FromStr;
-use std::sync::Arc;
-use std::time::{SystemTime, UNIX_EPOCH};
+use primitives::{block_explorer::BlockExplorer, explorers::RuneScan, Chain};
+
+use super::{
+    asset::THORChainAsset, 
+    chain::THORChainName, 
+    client::ThorChainSwapClient,
+    model::RouteData,
+    ThorChain, 
+    DEFAULT_DEPOSIT_GAS_LIMIT,
+    QUOTE_INTERVAL, 
+    QUOTE_MINIMUM, 
+    QUOTE_QUANTITY
+};
+use crate::{
+    network::AlienProvider,
+    swapper::{
+        approval::check_approval_erc20,
+        asset::*,
+        Swapper, SwapperApprovalData, SwapperChainAsset, SwapperError, SwapperProviderData, 
+        SwapperProviderType, SwapperQuote, SwapperQuoteData, SwapperQuoteRequest, 
+        SwapperRoute, SwapperSwapResult, FetchQuoteData
+    }
+};
 
 #[async_trait]
 impl Swapper for ThorChain {
@@ -198,12 +208,39 @@ impl Swapper for ThorChain {
         Ok(data)
     }
 
-    async fn get_transaction_status(&self, _chain: Chain, transaction_hash: &str, provider: Arc<dyn AlienProvider>) -> Result<bool, SwapperError> {
+    async fn get_swap_result(&self, chain: Chain, transaction_hash: &str, provider: Arc<dyn AlienProvider>) -> Result<SwapperSwapResult, SwapperError> {
         let endpoint = provider.get_endpoint(Chain::Thorchain).map_err(SwapperError::from)?;
         let client = ThorChainSwapClient::new(provider);
 
         let status = client.get_transaction_status(&endpoint, transaction_hash).await?;
 
-        Ok(status.observed_tx.status == "done")
+        let runescan = RuneScan::new();
+        let swap_status = status.observed_tx.swap_status();
+        let destination_chain = THORChainName::parse_dest_from_memo(&status.tx.memo);
+
+        // Extract the first non-zero destination transaction hash from out_hashes
+        let destination_tx_hash = if let Some(out_hashes) = &status.observed_tx.out_hashes {
+            out_hashes
+                .iter()
+                .find(|hash| *hash != "0000000000000000000000000000000000000000000000000000000000000000" && !hash.is_empty())
+                .cloned()
+        } else {
+            None
+        };
+
+        let (to_chain, to_tx_hash) = match (destination_chain, destination_tx_hash) {
+            (Some(dest_chain), Some(dest_hash)) => (Some(dest_chain), Some(dest_hash)),
+            (Some(dest_chain), None) => (Some(dest_chain), None),
+            _ => (None, None),
+        };
+
+        Ok(SwapperSwapResult {
+            status: swap_status,
+            from_chain: chain,
+            from_tx_hash: transaction_hash.to_string(),
+            to_chain,
+            to_tx_hash,
+            explorer_url: runescan.get_tx_url(transaction_hash),
+        })
     }
 }

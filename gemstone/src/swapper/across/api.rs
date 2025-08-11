@@ -3,7 +3,7 @@ use crate::{
     network::{AlienProvider, AlienTarget},
     swapper::SwapperError,
 };
-use primitives::Chain;
+use primitives::{Chain, swap::SwapStatus};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
@@ -23,20 +23,28 @@ impl AcrossApi {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct FillStatus {
-    pub fill_status: String,
-    pub fill_tx_hash: String,
-    pub destination_chain_id: u32,
+#[serde(rename_all = "camelCase")]
+pub struct DepositStatus {
+    pub status: String,
+    pub deposit_id: String,
+    pub deposit_tx_hash: String,
+    pub fill_tx: Option<String>,
+    pub destination_chain_id: u64,
+    pub deposit_refund_tx_hash: Option<String>,
 }
 
-impl FillStatus {
-    pub fn is_filled(&self) -> bool {
-        self.fill_status == "FILLED"
+impl DepositStatus {
+    pub fn swap_status(&self) -> SwapStatus {
+        match self.status.as_str() {
+            "filled" => SwapStatus::Completed,
+            "refunded" => SwapStatus::Failed,
+            _ => SwapStatus::Pending,
+        }
     }
 }
 
 impl AcrossApi {
-    pub async fn deposit_status(&self, chain: Chain, tx_hash: &str) -> Result<FillStatus, SwapperError> {
+    pub async fn deposit_status(&self, chain: Chain, tx_hash: &str) -> Result<DepositStatus, SwapperError> {
         let receipt = eth_rpc::fetch_tx_receipt(self.provider.clone(), chain, tx_hash).await?;
         if receipt.logs.len() < 2 || receipt.logs[1].topics.len() < 4 {
             return Err(SwapperError::NetworkError("invalid tx receipt".into()));
@@ -45,7 +53,7 @@ impl AcrossApi {
         let url = format!("{}/deposit/status?originChainId={}&depositId={}", self.url, chain.network_id(), &deposit_id);
         let target = AlienTarget::get(&url);
         let response = self.provider.request(target).await?;
-        let status: FillStatus = serde_json::from_slice(&response).map_err(SwapperError::from)?;
+        let status: DepositStatus = serde_json::from_slice(&response).map_err(SwapperError::from)?;
 
         Ok(status)
     }

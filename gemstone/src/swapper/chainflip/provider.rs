@@ -1,7 +1,7 @@
 use alloy_primitives::{hex, U256};
 use num_bigint::BigUint;
 use num_traits::ToPrimitive;
-use std::sync::Arc;
+use std::{str::FromStr, sync::Arc};
 
 use super::{
     broker::{model::*, BrokerClient},
@@ -18,10 +18,10 @@ use crate::{
         approval::check_approval_erc20,
         asset::{ARBITRUM_USDC, ETHEREUM_FLIP, ETHEREUM_USDC, ETHEREUM_USDT, SOLANA_USDC},
         slippage, FetchQuoteData, Swapper, SwapperChainAsset, SwapperError, SwapperProvider, SwapperProviderData, SwapperProviderType, SwapperQuote,
-        SwapperQuoteData, SwapperQuoteRequest, SwapperRoute,
+        SwapperQuoteData, SwapperQuoteRequest, SwapperRoute, SwapperSwapResult,
     },
 };
-use primitives::{chain::Chain, swap::QuoteAsset, ChainType};
+use primitives::{block_explorer::BlockExplorer, chain::Chain, explorers::ChainflipScan, swap::QuoteAsset, ChainType};
 
 const DEFAULT_SWAP_ERC20_GAS_LIMIT: u64 = 100_000;
 
@@ -46,6 +46,10 @@ impl ChainflipProvider {
             chain: chain_name,
             asset: asset.symbol.clone(),
         }
+    }
+
+    fn map_chainflip_chain_to_chain(chainflip_chain: &str) -> Option<Chain> {
+        Chain::from_str(&chainflip_chain.to_lowercase()).ok()
     }
 
     fn get_best_quote(mut quotes: Vec<QuoteResponse>, fee_bps: u32) -> (BigUint, u32, u32, ChainflipRouteData) {
@@ -296,10 +300,22 @@ impl Swapper for ChainflipProvider {
         }
     }
 
-    async fn get_transaction_status(&self, _chain: Chain, transaction_hash: &str, provider: Arc<dyn AlienProvider>) -> Result<bool, SwapperError> {
+    async fn get_swap_result(&self, chain: Chain, transaction_hash: &str, provider: Arc<dyn AlienProvider>) -> Result<SwapperSwapResult, SwapperError> {
         let chainflip_client = ChainflipClient::new(provider.clone());
         let status = chainflip_client.get_tx_status(transaction_hash).await?;
-        Ok(status.state == "COMPLETED")
+
+        let chainflip_scan = ChainflipScan::new();
+        let swap_status = status.swap_status();
+        let to_tx_hash = status.swap_egress.as_ref().and_then(|egress| egress.tx_ref.clone());
+
+        Ok(SwapperSwapResult {
+            status: swap_status,
+            from_chain: chain,
+            from_tx_hash: transaction_hash.to_string(),
+            to_chain: Self::map_chainflip_chain_to_chain(&status.dest_chain),
+            to_tx_hash,
+            explorer_url: chainflip_scan.get_tx_url(transaction_hash),
+        })
     }
 }
 

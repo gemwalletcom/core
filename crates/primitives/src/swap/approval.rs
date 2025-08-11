@@ -85,3 +85,13 @@ pub struct SwapProviderData {
     pub name: String,
     pub protocol_name: String,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[typeshare(swift = "Equatable, Hashable, Sendable")]
+#[serde(rename_all = "camelCase")]
+pub enum SwapStatus {
+    Pending,
+    Completed,
+    Failed,
+    Refunded,
+}

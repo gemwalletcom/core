@@ -8,6 +8,7 @@ pub type SwapperSlippage = primitives::swap::Slippage;
 pub type SwapperSlippageMode = primitives::swap::SlippageMode;
 pub type SwapperApprovalData = primitives::swap::ApprovalData;
 pub type SwapperQuoteData = primitives::swap::SwapQuoteData;
+pub type SwapperSwapStatus = primitives::swap::SwapStatus;
 
 #[uniffi::remote(Record)]
 pub struct SwapperQuoteData {
@@ -78,4 +79,12 @@ pub struct SwapperQuoteAsset {
     pub id: String,
     pub symbol: String,
     pub decimals: u32,
+}
+
+#[uniffi::remote(Enum)]
+pub enum SwapperSwapStatus {
+    Pending,
+    Completed,
+    Failed,
+    Refunded,
 }

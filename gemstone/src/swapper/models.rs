@@ -191,3 +191,13 @@ pub struct SwapperAssetList {
     pub chains: Vec<Chain>,
     pub asset_ids: Vec<AssetId>,
 }
+
+#[derive(Debug, Clone, uniffi::Record)]
+pub struct SwapperSwapResult {
+    pub status: SwapperSwapStatus,
+    pub from_chain: Chain,
+    pub from_tx_hash: String,
+    pub to_chain: Option<Chain>,
+    pub to_tx_hash: Option<String>,
+    pub explorer_url: String,
+}

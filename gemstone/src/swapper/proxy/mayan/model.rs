@@ -1,4 +1,5 @@
 // use chrono::{DateTime, Utc};
+use primitives::swap::SwapStatus;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -13,11 +14,8 @@ pub struct MayanTransactionResult {
     pub to_token_address: String,
     pub from_amount: String,
     pub to_amount: String,
-    pub initiated_at: String,
-    pub completed_at: Option<String>,
     pub fulfill_tx_hash: Option<String>,
     pub refund_tx_hash: Option<String>,
-    pub service: String,
     pub steps: Vec<MayanTransactionStep>,
     pub client_status: MayanClientStatus,
 }
@@ -28,6 +26,16 @@ pub enum MayanClientStatus {
     Completed,
     InProgress,
     Refunded,
+}
+
+impl MayanClientStatus {
+    pub fn swap_status(&self) -> SwapStatus {
+        match self {
+            MayanClientStatus::Completed => SwapStatus::Completed,
+            MayanClientStatus::Refunded => SwapStatus::Refunded,
+            MayanClientStatus::InProgress => SwapStatus::Pending,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]

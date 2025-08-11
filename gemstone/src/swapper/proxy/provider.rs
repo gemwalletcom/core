@@ -5,7 +5,7 @@ use std::sync::Arc;
 
 use super::{
     client::ProxyClient,
-    mayan::{MayanClientStatus, MayanExplorer},
+    mayan::{map_mayan_chain_to_chain, MayanClientStatus, MayanExplorer},
     symbiosis::model::SymbiosisTransactionData,
 };
 use crate::{
@@ -14,12 +14,15 @@ use crate::{
     swapper::{
         approval::{evm::check_approval_erc20, tron::check_approval_tron},
         models::{ApprovalType, SwapperChainAsset},
+        remote_models::SwapperProviderMode,
         FetchQuoteData, Swapper, SwapperApprovalData, SwapperError, SwapperProvider, SwapperProviderData, SwapperProviderType, SwapperQuote, SwapperQuoteData,
-        SwapperQuoteRequest, SwapperRoute,
+        SwapperQuoteRequest, SwapperRoute, SwapperSwapResult,
     },
     tron::client::TronClient,
 };
 use primitives::{
+    block_explorer::BlockExplorer,
+    explorers::mayanscan::MayanScan,
     swap::{ProxyQuote, ProxyQuoteRequest, SwapQuoteData},
     AssetId, Chain, ChainType,
 };
@@ -198,14 +201,38 @@ impl Swapper for ProxyProvider {
         })
     }
 
-    async fn get_transaction_status(&self, _chain: Chain, transaction_hash: &str, provider: Arc<dyn AlienProvider>) -> Result<bool, SwapperError> {
+    async fn get_swap_result(&self, chain: Chain, transaction_hash: &str, provider: Arc<dyn AlienProvider>) -> Result<SwapperSwapResult, SwapperError> {
         match self.provider.id {
             SwapperProvider::Mayan => {
                 let client = MayanExplorer::new(provider);
                 let result = client.get_transaction_status(transaction_hash).await?;
-                Ok(result.client_status == MayanClientStatus::Completed)
+
+                let mayanscan = MayanScan::new();
+                let swap_status = result.client_status.swap_status();
+                let dest_chain = map_mayan_chain_to_chain(&result.dest_chain);
+
+                let (to_chain, to_tx_hash) = match result.client_status {
+                    MayanClientStatus::Completed => (dest_chain, result.fulfill_tx_hash),
+                    MayanClientStatus::Refunded | MayanClientStatus::InProgress => (dest_chain, None),
+                };
+
+                Ok(SwapperSwapResult {
+                    status: swap_status,
+                    from_chain: chain,
+                    from_tx_hash: transaction_hash.to_string(),
+                    to_chain,
+                    to_tx_hash,
+                    explorer_url: mayanscan.get_tx_url(transaction_hash),
+                })
             }
-            _ => Ok(true),
+            // For OnChain providers, use the default implementation
+            _ => {
+                if self.provider.mode() == SwapperProviderMode::OnChain {
+                    Ok(self.get_onchain_swap_status(chain, transaction_hash))
+                } else {
+                    Err(SwapperError::NotImplemented)
+                }
+            }
         }
     }
 }

@@ -16,7 +16,7 @@ use crate::{
         chainlink::ChainlinkPriceFeed,
         eth_address,
         models::*,
-        Swapper, SwapperApprovalData, SwapperError, SwapperProvider, SwapperQuoteData,
+        Swapper, SwapperApprovalData, SwapperError, SwapperProvider, SwapperQuoteData, SwapperSwapResult,
     },
 };
 use alloy_primitives::{
@@ -39,7 +39,7 @@ use gem_evm::{
     weth::WETH9,
 };
 use num_bigint::{BigInt, Sign};
-use primitives::{AssetId, Chain, EVMChain};
+use primitives::{block_explorer::BlockExplorer, explorers::SocketScan, swap::SwapStatus, AssetId, Chain, EVMChain};
 use std::{fmt::Debug, str::FromStr, sync::Arc};
 
 #[derive(Debug)]
@@ -498,10 +498,29 @@ impl Swapper for Across {
 
         Ok(quote_data)
     }
-    async fn get_transaction_status(&self, chain: Chain, transaction_hash: &str, provider: Arc<dyn AlienProvider>) -> Result<bool, SwapperError> {
+    async fn get_swap_result(&self, chain: Chain, transaction_hash: &str, provider: Arc<dyn AlienProvider>) -> Result<SwapperSwapResult, SwapperError> {
         let api = AcrossApi::new(provider.clone());
         let status = api.deposit_status(chain, transaction_hash).await?;
-        Ok(status.is_filled())
+
+        let socketscan = SocketScan::new();
+        let swap_status = status.swap_status();
+        let destination_chain = Chain::from_chain_id(status.destination_chain_id);
+
+        // Determine the transaction hash to show based on status
+        let (to_chain, to_tx_hash) = match swap_status {
+            SwapStatus::Completed => (destination_chain, status.fill_tx.clone()),
+            SwapStatus::Failed | SwapStatus::Refunded => (Some(chain), None),
+            SwapStatus::Pending => (destination_chain, None),
+        };
+
+        Ok(SwapperSwapResult {
+            status: swap_status,
+            from_chain: chain,
+            from_tx_hash: transaction_hash.to_string(),
+            to_chain,
+            to_tx_hash,
+            explorer_url: socketscan.get_tx_url(transaction_hash),
+        })
     }
 }
 
