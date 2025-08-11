@@ -3,7 +3,7 @@ use crate::{
     network::{AlienProvider, AlienTarget},
     swapper::SwapperError,
 };
-use primitives::{Chain, swap::SwapStatus};
+use primitives::{swap::SwapStatus, Chain};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
@@ -37,7 +37,7 @@ impl DepositStatus {
     pub fn swap_status(&self) -> SwapStatus {
         match self.status.as_str() {
             "filled" => SwapStatus::Completed,
-            "refunded" => SwapStatus::Failed,
+            "refunded" => SwapStatus::Refunded,
             _ => SwapStatus::Pending,
         }
     }

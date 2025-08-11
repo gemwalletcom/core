@@ -1,4 +1,8 @@
-use std::{str::FromStr, sync::Arc, time::{SystemTime, UNIX_EPOCH}};
+use std::{
+    str::FromStr,
+    sync::Arc,
+    time::{SystemTime, UNIX_EPOCH},
+};
 
 use alloy_primitives::{hex::encode_prefixed as HexEncode, Address, U256};
 use alloy_sol_types::SolCall;
@@ -7,26 +11,18 @@ use gem_evm::thorchain::contracts::RouterInterface;
 use primitives::{block_explorer::BlockExplorer, explorers::RuneScan, Chain};
 
 use super::{
-    asset::THORChainAsset, 
-    chain::THORChainName, 
-    client::ThorChainSwapClient,
-    model::RouteData,
-    ThorChain, 
-    DEFAULT_DEPOSIT_GAS_LIMIT,
-    QUOTE_INTERVAL, 
-    QUOTE_MINIMUM, 
-    QUOTE_QUANTITY
+    asset::THORChainAsset, chain::THORChainName, client::ThorChainSwapClient, model::RouteData, ThorChain, DEFAULT_DEPOSIT_GAS_LIMIT, QUOTE_INTERVAL,
+    QUOTE_MINIMUM, QUOTE_QUANTITY,
 };
 use crate::{
     network::AlienProvider,
     swapper::{
-        approval::check_approval_erc20,
-        asset::*,
-        Swapper, SwapperApprovalData, SwapperChainAsset, SwapperError, SwapperProviderData, 
-        SwapperProviderType, SwapperQuote, SwapperQuoteData, SwapperQuoteRequest, 
-        SwapperRoute, SwapperSwapResult, FetchQuoteData
-    }
+        approval::check_approval_erc20, asset::*, FetchQuoteData, Swapper, SwapperApprovalData, SwapperChainAsset, SwapperError, SwapperProviderData,
+        SwapperProviderType, SwapperQuote, SwapperQuoteData, SwapperQuoteRequest, SwapperRoute, SwapperSwapResult,
+    },
 };
+
+const ZERO_HASH: &str = "0000000000000000000000000000000000000000000000000000000000000000";
 
 #[async_trait]
 impl Swapper for ThorChain {
@@ -220,10 +216,7 @@ impl Swapper for ThorChain {
 
         // Extract the first non-zero destination transaction hash from out_hashes
         let destination_tx_hash = if let Some(out_hashes) = &status.observed_tx.out_hashes {
-            out_hashes
-                .iter()
-                .find(|hash| *hash != "0000000000000000000000000000000000000000000000000000000000000000" && !hash.is_empty())
-                .cloned()
+            out_hashes.iter().find(|hash| *hash != ZERO_HASH && !hash.is_empty()).cloned()
         } else {
             None
         };
