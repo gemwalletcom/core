@@ -8,6 +8,7 @@ pub enum AssetUpdate {
     IsSwappable(bool),
     IsBuyable(bool),
     IsSellable(bool),
+    IsEnabled(bool),
     Rank(i32),
 }
 
@@ -37,7 +38,6 @@ impl AssetsStore for DatabaseClient {
     fn get_assets_all(&mut self) -> Result<Vec<Asset>, diesel::result::Error> {
         assets.filter(is_enabled.eq(true)).select(Asset::as_select()).load(&mut self.connection)
     }
-
     fn add_assets(&mut self, values: Vec<Asset>) -> Result<usize, diesel::result::Error> {
         if values.is_empty() {
             return Ok(0);
@@ -62,6 +62,7 @@ impl AssetsStore for DatabaseClient {
                     AssetUpdate::IsSwappable(value) => diesel::update(target).set(is_swappable.eq(value)).execute(conn)?,
                     AssetUpdate::IsBuyable(value) => diesel::update(target).set(is_buyable.eq(value)).execute(conn)?,
                     AssetUpdate::IsSellable(value) => diesel::update(target).set(is_sellable.eq(value)).execute(conn)?,
+                    AssetUpdate::IsEnabled(value) => diesel::update(target).set(is_enabled.eq(value)).execute(conn)?,
                     AssetUpdate::Rank(value) => diesel::update(target).set(rank.eq(value)).execute(conn)?,
                 };
                 total_updated += updated;
@@ -83,6 +84,7 @@ impl AssetsStore for DatabaseClient {
             AssetUpdate::IsSwappable(value) => diesel::update(target).set(is_swappable.eq(value)).execute(&mut self.connection),
             AssetUpdate::IsBuyable(value) => diesel::update(target).set(is_buyable.eq(value)).execute(&mut self.connection),
             AssetUpdate::IsSellable(value) => diesel::update(target).set(is_sellable.eq(value)).execute(&mut self.connection),
+            AssetUpdate::IsEnabled(value) => diesel::update(target).set(is_enabled.eq(value)).execute(&mut self.connection),
             AssetUpdate::Rank(value) => diesel::update(target).set(rank.eq(value)).execute(&mut self.connection),
         }
     }
