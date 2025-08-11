@@ -41,6 +41,7 @@ pub struct PerpetualPositionData {
 pub struct PerpetualData {
     pub perpetual: Perpetual,
     pub asset: Asset,
+    pub metadata: PerpetualMetadata,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -56,4 +57,11 @@ pub struct PerpetualBalance {
     pub available: f64,
     pub reserved: f64,
     pub withdrawable: f64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[typeshare(swift = "Equatable, Sendable, Hashable")]
+#[serde(rename_all = "camelCase")]
+pub struct PerpetualMetadata {
+    pub is_pinned: bool,
 }

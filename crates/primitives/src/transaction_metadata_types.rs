@@ -6,6 +6,15 @@ use crate::{AssetId, NFTAssetId};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Sendable")]
 #[serde(rename_all = "camelCase")]
+pub struct TransactionPerpetualMetadata {
+    pub pnl: Option<f64>,
+    pub price: Option<f64>,
+    pub amount: Option<f64>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[typeshare(swift = "Sendable")]
+#[serde(rename_all = "camelCase")]
 pub struct TransactionSwapMetadata {
     pub from_asset: AssetId,
     pub from_value: String,
