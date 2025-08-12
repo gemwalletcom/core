@@ -1,4 +1,5 @@
 use num_bigint::BigUint;
+use primitives::swap::SwapStatus;
 use serde::{Deserialize, Serialize};
 use serde_serializers::{deserialize_biguint_from_str, serialize_biguint};
 
@@ -77,6 +78,24 @@ impl BoostQuote {
 pub struct SwapTxResponse {
     pub state: String,
     pub swap_id: String,
+    pub dest_chain: String,
+    pub swap_egress: Option<SwapEgress>,
+}
+
+impl SwapTxResponse {
+    pub fn swap_status(&self) -> SwapStatus {
+        match self.state.as_str() {
+            "COMPLETED" => SwapStatus::Completed,
+            "FAILED" => SwapStatus::Failed,
+            _ => SwapStatus::Pending,
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SwapEgress {
+    pub tx_ref: Option<String>,
 }
 
 #[cfg(test)]

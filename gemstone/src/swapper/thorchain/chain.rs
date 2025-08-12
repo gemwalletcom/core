@@ -1,6 +1,7 @@
 use primitives::Chain;
+use strum::IntoEnumIterator;
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, strum_macros::EnumIter)]
 pub enum THORChainName {
     Doge,
     Thorchain,
@@ -92,6 +93,39 @@ impl THORChainName {
             | THORChainName::BitcoinCash
             | THORChainName::Litecoin
             | THORChainName::Xrp => false,
+        }
+    }
+
+    /// Parse THORChain symbol to THORChainName
+    /// Supports both long names (ETH, BSC, AVAX) and short names (e, s, a)
+    pub fn from_symbol(symbol: &str) -> Option<THORChainName> {
+        THORChainName::iter().find(|variant| variant.long_name() == symbol || variant.short_name() == symbol)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_from_symbol() {
+        // Ensure from_symbol works with all existing long/short names
+        for variant in THORChainName::iter() {
+            // Test that long names can be parsed back
+            assert_eq!(
+                THORChainName::from_symbol(variant.long_name()),
+                Some(variant.clone()),
+                "Failed to parse long name: {}",
+                variant.long_name()
+            );
+
+            // Test that short names can be parsed back
+            assert_eq!(
+                THORChainName::from_symbol(variant.short_name()),
+                Some(variant.clone()),
+                "Failed to parse short name: {}",
+                variant.short_name()
+            );
         }
     }
 }

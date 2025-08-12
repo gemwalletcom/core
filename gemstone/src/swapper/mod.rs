@@ -1,6 +1,5 @@
 use crate::{debug_println, network::AlienProvider};
 
-use async_trait::async_trait;
 use num_traits::ToPrimitive;
 use std::{fmt::Debug, sync::Arc};
 
@@ -9,6 +8,7 @@ mod chainlink;
 mod custom_types;
 mod eth_address;
 mod permit2_data;
+mod swapper_trait;
 
 pub mod across;
 pub mod asset;
@@ -27,39 +27,10 @@ pub mod uniswap;
 pub use error::*;
 pub use models::*;
 pub use remote_models::*;
+pub use swapper_trait::*;
 
 use primitives::{AssetId, Chain, EVMChain};
 use std::collections::HashSet;
-
-#[async_trait]
-pub trait Swapper: Send + Sync + Debug {
-    fn provider(&self) -> &SwapperProviderType;
-    fn supported_assets(&self) -> Vec<SwapperChainAsset>;
-    async fn fetch_quote(&self, request: &SwapperQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapperQuote, SwapperError>;
-    async fn fetch_permit2_for_quote(&self, _quote: &SwapperQuote, _provider: Arc<dyn AlienProvider>) -> Result<Option<Permit2ApprovalData>, SwapperError> {
-        Ok(None)
-    }
-    async fn fetch_quote_data(&self, quote: &SwapperQuote, provider: Arc<dyn AlienProvider>, data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError>;
-    async fn get_transaction_status(&self, _chain: Chain, _transaction_hash: &str, _provider: Arc<dyn AlienProvider>) -> Result<bool, SwapperError> {
-        if self.provider().mode() == SwapperProviderMode::OnChain {
-            Ok(true)
-        } else {
-            Err(SwapperError::NotImplemented)
-        }
-    }
-}
-
-impl dyn Swapper {
-    fn supported_chains(&self) -> Vec<Chain> {
-        self.supported_assets()
-            .into_iter()
-            .map(|x| match x.clone() {
-                SwapperChainAsset::All(chain) => chain,
-                SwapperChainAsset::Assets(chain, _) => chain,
-            })
-            .collect()
-    }
-}
 
 #[derive(Debug, uniffi::Object)]
 pub struct GemSwapper {
@@ -231,9 +202,9 @@ impl GemSwapper {
         Ok(quote_data)
     }
 
-    pub async fn get_transaction_status(&self, chain: Chain, swap_provider: SwapperProvider, transaction_hash: &str) -> Result<bool, SwapperError> {
+    pub async fn get_swap_result(&self, chain: Chain, swap_provider: SwapperProvider, transaction_hash: &str) -> Result<SwapperSwapResult, SwapperError> {
         let provider = self.get_swapper_by_provider(&swap_provider).ok_or(SwapperError::NoAvailableProvider)?;
-        provider.get_transaction_status(chain, transaction_hash, self.rpc_provider.clone()).await
+        provider.get_swap_result(chain, transaction_hash, self.rpc_provider.clone()).await
     }
 }
 

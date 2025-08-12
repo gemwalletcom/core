@@ -1,4 +1,5 @@
 use num_bigint::BigInt;
+use primitives::swap::SwapStatus;
 use serde::{Deserialize, Serialize};
 use serde_serializers::deserialize_bigint_from_str;
 
@@ -27,12 +28,28 @@ pub struct QuoteFees {}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Transaction {
+    pub tx: TransactionTx,
     pub observed_tx: TransactionObserved,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TransactionTx {
+    pub memo: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TransactionObserved {
-    pub status: String, // done
+    pub status: Option<String>,
+    pub out_hashes: Option<Vec<String>>,
+}
+
+impl TransactionObserved {
+    pub fn swap_status(&self) -> SwapStatus {
+        match self.status.as_deref() {
+            Some("done") => SwapStatus::Completed,
+            _ => SwapStatus::Failed, // TODO: Handle refunded status detection later
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
