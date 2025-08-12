@@ -26,7 +26,6 @@ pub enum SwapperProvider {
     Aerodrome,
     PancakeswapAptosV2,
     Thorchain,
-    Orca,
     Jupiter,
     Across,
     Oku,

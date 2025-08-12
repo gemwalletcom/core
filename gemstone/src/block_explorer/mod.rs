@@ -52,7 +52,6 @@ impl Explorer {
             | SwapperProvider::UniswapV4
             | SwapperProvider::PancakeswapV3
             | SwapperProvider::PancakeswapAptosV2
-            | SwapperProvider::Orca
             | SwapperProvider::Jupiter
             | SwapperProvider::Oku
             | SwapperProvider::Wagmi

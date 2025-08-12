@@ -4,7 +4,7 @@ mod tests {
     use gemstone::{
         config::swap_config::{get_swap_config, SwapReferralFee, SwapReferralFees},
         network::{alien_provider::NativeProvider, JsonRpcClient},
-        swapper::{across::Across, cetus::Cetus, models::*, orca::Orca, uniswap::v4::UniswapV4, GemSwapper, *},
+        swapper::{across::Across, cetus::Cetus, models::*, uniswap::v4::UniswapV4, GemSwapper, *},
     };
     use primitives::{AssetId, Chain};
     use std::{collections::HashMap, sync::Arc, time::SystemTime};
@@ -30,28 +30,6 @@ mod tests {
         let blockhash_array: [u8; 32] = blockhash.try_into().map_err(|_| "Failed to convert blockhash to array".to_string())?;
 
         assert_eq!(blockhash_array.len(), 32);
-
-        Ok(())
-    }
-
-    #[tokio::test]
-    async fn test_orca_get_quote_by_input() -> Result<(), SwapperError> {
-        let swap_provider = Orca::boxed();
-        let network_provider = Arc::new(NativeProvider::new());
-
-        let request = SwapperQuoteRequest {
-            from_asset: AssetId::from(Chain::Solana, None).into(),
-            to_asset: AssetId::from(Chain::Solana, Some("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v".into())).into(),
-            wallet_address: "G7B17AigRCGvwnxFc5U8zY5T3NBGduLzT7KYApNU2VdR".into(),
-            destination_address: "G7B17AigRCGvwnxFc5U8zY5T3NBGduLzT7KYApNU2VdR".into(),
-            value: "1000000".into(),
-            mode: SwapperMode::ExactIn,
-            options: SwapperOptions::default(),
-        };
-        let quote = swap_provider.fetch_quote(&request, network_provider.clone()).await?;
-
-        assert_eq!(quote.from_value, "1000000");
-        assert!(quote.to_value.parse::<u64>().unwrap() > 0);
 
         Ok(())
     }

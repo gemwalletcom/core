@@ -134,15 +134,15 @@ impl PaymentURLDecoder {
                     let amount = params.get("amount").cloned();
                     let memo = params.get("memo").cloned();
 
-                    return Ok(Payment {
+                    Ok(Payment {
                         address,
                         amount,
                         memo,
                         asset_id,
                         link: None,
-                    });
+                    })
                 } else {
-                    return Err(anyhow!("BIP21 format is incorrect"));
+                    Err(anyhow!("BIP21 format is incorrect"))
                 }
             }
             // Handle any other case (shouldn't normally happen)
