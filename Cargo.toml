@@ -86,7 +86,7 @@ clap = { version = "4.5.4", features = ["derive"] }
 indexmap = "2.10.0"
 lazy_static = "1.5.0"
 futures-util = "0.3.31"
-uuid = { version = "1.17.0", features = ["v4"] }
+uuid = { version = "1.18.0", features = ["v4"] }
 rand = { version = "0.9.1" }
 aws-sdk-s3 = { version = "1.101.0", features = ["behavior-version-latest"] }
 itertools = { version = "0.14.0" }
