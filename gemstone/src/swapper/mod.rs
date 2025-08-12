@@ -17,7 +17,6 @@ pub mod chainflip;
 pub mod error;
 pub mod jupiter;
 pub mod models;
-pub mod orca;
 pub mod pancakeswap_aptos;
 pub mod proxy;
 pub mod remote_models;

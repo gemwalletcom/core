@@ -11,13 +11,12 @@ When working with a type alias like `pub type GemSwapProvider = primitives::Swap
 
 ```rust
 #[uniffi::remote(Enum)]
-pub enum GemSwapProvider {
+pub enum SwapperSwapProvider {
     UniswapV3,
     UniswapV4,
     PancakeswapV3,
     PancakeswapAptosV2,
     Thorchain,
-    Orca,
     Jupiter,
     Across,
     Oku,

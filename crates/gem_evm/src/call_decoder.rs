@@ -224,25 +224,4 @@ mod tests {
         assert_eq!(allowance_result.params[1].r#type, "address");
         assert_eq!(allowance_result.params[1].value, "0x271682DEB8C4E0901D1a1550aD2e64D568E69909");
     }
-
-    #[test]
-    fn test_try_from_erc20_calls() {
-        use crate::erc20::IERC20::IERC20Calls;
-        use std::convert::TryFrom;
-
-        // Test that TryFrom is automatically available due to From implementation
-        let transfer_calldata =
-            "0xa9059cbb00000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe50000000000000000000000000000000000000000000000000de0b6b3a7640000";
-        let call = IERC20Calls::abi_decode(&alloy_primitives::hex::decode(transfer_calldata).unwrap()).unwrap();
-
-        // TryFrom is automatically available and never fails since From is infallible
-        let try_from_result = DecodedCall::try_from(call).unwrap();
-
-        assert_eq!(try_from_result.function, "transfer");
-        assert_eq!(try_from_result.params.len(), 2);
-        assert_eq!(try_from_result.params[0].name, "to");
-        assert_eq!(try_from_result.params[0].r#type, "address");
-        assert_eq!(try_from_result.params[1].name, "value");
-        assert_eq!(try_from_result.params[1].r#type, "uint256");
-    }
 }

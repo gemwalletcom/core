@@ -2422,12 +2422,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "ethnum"
-version = "1.5.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ca81e6b4777c89fd810c25a4be2b1bd93ea034fbe58e6a75216a34c6b82c539b"
-
-[[package]]
 name = "event-listener"
 version = "5.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3194,7 +3188,6 @@ dependencies = [
  "lazy_static",
  "num-bigint",
  "num-traits",
- "orca_whirlpools_core",
  "primitives",
  "rand 0.9.1",
  "reqwest",
@@ -4695,28 +4688,6 @@ dependencies = [
  "libc",
  "pkg-config",
  "vcpkg",
-]
-
-[[package]]
-name = "orca_whirlpools_core"
-version = "1.0.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "eea9ef0c3925d7b820da5e8d9f3cc9084c234e4e8e3a9282ca683d42600c4d0e"
-dependencies = [
- "ethnum",
- "libm",
- "orca_whirlpools_macros",
-]
-
-[[package]]
-name = "orca_whirlpools_macros"
-version = "1.0.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b093a9e60ca608c1dff40fcd841a2d5680b96f877080b6279044c159ebd50b78"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.104",
 ]
 
 [[package]]

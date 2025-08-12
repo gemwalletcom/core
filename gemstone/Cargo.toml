@@ -62,7 +62,6 @@ rand.workspace = true
 rmp.workspace = true
 rmp-serde.workspace = true
 
-orca_whirlpools_core = "1.0.8"
 solana-primitives = "0.1.2"
 
 [build-dependencies]
