@@ -1,6 +1,7 @@
 mod asset;
 mod chain;
 mod client;
+mod memo;
 mod model;
 mod provider;
 

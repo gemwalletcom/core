@@ -39,7 +39,7 @@ use gem_evm::{
     weth::WETH9,
 };
 use num_bigint::{BigInt, Sign};
-use primitives::{block_explorer::BlockExplorer, explorers::SocketScan, swap::SwapStatus, AssetId, Chain, EVMChain};
+use primitives::{swap::SwapStatus, AssetId, Chain, EVMChain};
 use std::{fmt::Debug, str::FromStr, sync::Arc};
 
 #[derive(Debug)]
@@ -502,7 +502,6 @@ impl Swapper for Across {
         let api = AcrossApi::new(provider.clone());
         let status = api.deposit_status(chain, transaction_hash).await?;
 
-        let socketscan = SocketScan::new();
         let swap_status = status.swap_status();
         let destination_chain = Chain::from_chain_id(status.destination_chain_id);
 
@@ -519,7 +518,6 @@ impl Swapper for Across {
             from_tx_hash: transaction_hash.to_string(),
             to_chain,
             to_tx_hash,
-            explorer_url: socketscan.get_tx_url(transaction_hash),
         })
     }
 }

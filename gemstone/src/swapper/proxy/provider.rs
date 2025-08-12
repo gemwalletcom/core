@@ -21,8 +21,6 @@ use crate::{
     tron::client::TronClient,
 };
 use primitives::{
-    block_explorer::BlockExplorer,
-    explorers::mayanscan::MayanScan,
     swap::{ProxyQuote, ProxyQuoteRequest, SwapQuoteData},
     AssetId, Chain, ChainType,
 };
@@ -207,7 +205,6 @@ impl Swapper for ProxyProvider {
                 let client = MayanExplorer::new(provider);
                 let result = client.get_transaction_status(transaction_hash).await?;
 
-                let mayanscan = MayanScan::new();
                 let swap_status = result.client_status.swap_status();
                 let dest_chain = map_mayan_chain_to_chain(&result.dest_chain);
 
@@ -222,7 +219,6 @@ impl Swapper for ProxyProvider {
                     from_tx_hash: transaction_hash.to_string(),
                     to_chain,
                     to_tx_hash,
-                    explorer_url: mayanscan.get_tx_url(transaction_hash),
                 })
             }
             // For OnChain providers, use the default implementation

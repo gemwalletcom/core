@@ -7,7 +7,7 @@ use crate::network::AlienProvider;
 use async_trait::async_trait;
 use std::{fmt::Debug, sync::Arc};
 
-use primitives::{block_explorer::get_block_explorers, swap::SwapStatus, Chain};
+use primitives::{swap::SwapStatus, Chain};
 
 #[async_trait]
 pub trait Swapper: Send + Sync + Debug {
@@ -28,20 +28,12 @@ pub trait Swapper: Send + Sync + Debug {
 
     /// Default OnChain provider swap status implementation
     fn get_onchain_swap_status(&self, chain: Chain, transaction_hash: &str) -> SwapperSwapResult {
-        let explorers = get_block_explorers(chain);
-        let explorer_url = if let Some(explorer) = explorers.first() {
-            explorer.get_tx_url(transaction_hash)
-        } else {
-            String::new()
-        };
-
         SwapperSwapResult {
             status: SwapStatus::Completed,
             from_chain: chain,
             from_tx_hash: transaction_hash.to_string(),
             to_chain: Some(chain),
             to_tx_hash: Some(transaction_hash.to_string()),
-            explorer_url,
         }
     }
 }

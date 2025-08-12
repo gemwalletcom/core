@@ -8,10 +8,10 @@ use alloy_primitives::{hex::encode_prefixed as HexEncode, Address, U256};
 use alloy_sol_types::SolCall;
 use async_trait::async_trait;
 use gem_evm::thorchain::contracts::RouterInterface;
-use primitives::{block_explorer::BlockExplorer, explorers::RuneScan, Chain};
+use primitives::Chain;
 
 use super::{
-    asset::THORChainAsset, chain::THORChainName, client::ThorChainSwapClient, model::RouteData, ThorChain, DEFAULT_DEPOSIT_GAS_LIMIT, QUOTE_INTERVAL,
+    asset::THORChainAsset, chain::THORChainName, client::ThorChainSwapClient, memo::ThorchainMemo, model::RouteData, ThorChain, DEFAULT_DEPOSIT_GAS_LIMIT, QUOTE_INTERVAL,
     QUOTE_MINIMUM, QUOTE_QUANTITY,
 };
 use crate::{
@@ -210,9 +210,9 @@ impl Swapper for ThorChain {
 
         let status = client.get_transaction_status(&endpoint, transaction_hash).await?;
 
-        let runescan = RuneScan::new();
         let swap_status = status.observed_tx.swap_status();
-        let destination_chain = THORChainName::parse_dest_from_memo(&status.tx.memo);
+        let memo_parsed = ThorchainMemo::parse(&status.tx.memo);
+        let destination_chain = memo_parsed.as_ref().and_then(|m| m.destination_chain());
 
         // Extract the first non-zero destination transaction hash from out_hashes
         let destination_tx_hash = if let Some(out_hashes) = &status.observed_tx.out_hashes {
@@ -233,7 +233,6 @@ impl Swapper for ThorChain {
             from_tx_hash: transaction_hash.to_string(),
             to_chain,
             to_tx_hash,
-            explorer_url: runescan.get_tx_url(transaction_hash),
         })
     }
 }

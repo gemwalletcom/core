@@ -199,5 +199,4 @@ pub struct SwapperSwapResult {
     pub from_tx_hash: String,
     pub to_chain: Option<Chain>,
     pub to_tx_hash: Option<String>,
-    pub explorer_url: String,
 }

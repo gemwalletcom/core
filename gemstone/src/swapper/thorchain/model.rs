@@ -47,7 +47,7 @@ impl TransactionObserved {
     pub fn swap_status(&self) -> SwapStatus {
         match self.status.as_deref() {
             Some("done") => SwapStatus::Completed,
-            _ => SwapStatus::Pending, // TODO: Handle refunded status detection later
+            _ => SwapStatus::Failed, // TODO: Handle refunded status detection later
         }
     }
 }

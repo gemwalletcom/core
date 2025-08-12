@@ -21,7 +21,7 @@ use crate::{
         SwapperQuoteData, SwapperQuoteRequest, SwapperRoute, SwapperSwapResult,
     },
 };
-use primitives::{block_explorer::BlockExplorer, chain::Chain, explorers::ChainflipScan, swap::QuoteAsset, ChainType};
+use primitives::{chain::Chain, swap::QuoteAsset, ChainType};
 
 const DEFAULT_SWAP_ERC20_GAS_LIMIT: u64 = 100_000;
 
@@ -304,9 +304,8 @@ impl Swapper for ChainflipProvider {
         let chainflip_client = ChainflipClient::new(provider.clone());
         let status = chainflip_client.get_tx_status(transaction_hash).await?;
 
-        let chainflip_scan = ChainflipScan::new();
         let swap_status = status.swap_status();
-        let to_tx_hash = status.swap_egress.as_ref().and_then(|egress| egress.tx_ref.clone());
+        let to_tx_hash = status.swap_egress.as_ref().and_then(|x| x.tx_ref.clone());
 
         Ok(SwapperSwapResult {
             status: swap_status,
@@ -314,7 +313,6 @@ impl Swapper for ChainflipProvider {
             from_tx_hash: transaction_hash.to_string(),
             to_chain: Self::map_chainflip_chain_to_chain(&status.dest_chain),
             to_tx_hash,
-            explorer_url: chainflip_scan.get_tx_url(transaction_hash),
         })
     }
 }
