@@ -30,6 +30,7 @@ pub fn map_asset_chain(asset: Asset) -> Option<Chain> {
         "algorand" => Some(Chain::Algorand),
         "berachain" => Some(Chain::Berachain),
         "hyperevm" => Some(Chain::Hyperliquid),
+        "hyperliquid" => Some(Chain::HyperCore),
         "mainnet" => match asset.coin_id.as_str() {
             "bitcoin" => Some(Chain::Bitcoin),
             "litecoin" => Some(Chain::Litecoin),
