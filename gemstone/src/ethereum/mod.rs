@@ -3,4 +3,4 @@ pub mod decoder;
 pub mod jsonrpc;
 pub mod model;
 
-pub use decoder::{GemDecodedCall, GemDecodedCallParam, EthereumDecoder};
+pub use decoder::{EthereumDecoder, GemDecodedCall, GemDecodedCallParam};

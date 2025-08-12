@@ -37,4 +37,3 @@ impl EthereumDecoder {
         Self::decode_call_internal(&calldata, abi.as_deref()).map_err(GemstoneError::from)
     }
 }
-

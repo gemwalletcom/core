@@ -91,50 +91,39 @@ impl From<IERC20Calls> for DecodedCall {
         let (function, params) = match call {
             IERC20Calls::transfer(transfer) => (
                 "transfer",
-                vec![
-                    ("to", "address", transfer.to.to_string()),
-                    ("value", "uint256", transfer.value.to_string()),
-                ]
+                vec![("to", "address", transfer.to.to_string()), ("value", "uint256", transfer.value.to_string())],
             ),
             IERC20Calls::transferFrom(transfer_from) => (
-                "transferFrom", 
+                "transferFrom",
                 vec![
                     ("from", "address", transfer_from.from.to_string()),
                     ("to", "address", transfer_from.to.to_string()),
                     ("value", "uint256", transfer_from.value.to_string()),
-                ]
+                ],
             ),
             IERC20Calls::approve(approve) => (
                 "approve",
                 vec![
                     ("spender", "address", approve.spender.to_string()),
                     ("value", "uint256", approve.value.to_string()),
-                ]
+                ],
             ),
-            IERC20Calls::name(_) => (
-                "name",
-                vec![]
-            ),
-            IERC20Calls::symbol(_) => (
-                "symbol", 
-                vec![]
-            ),
-            IERC20Calls::decimals(_) => (
-                "decimals",
-                vec![]
-            ),
+            IERC20Calls::name(_) => ("name", vec![]),
+            IERC20Calls::symbol(_) => ("symbol", vec![]),
+            IERC20Calls::decimals(_) => ("decimals", vec![]),
             IERC20Calls::allowance(allowance) => (
                 "allowance",
                 vec![
                     ("owner", "address", allowance.owner.to_string()),
                     ("spender", "address", allowance.spender.to_string()),
-                ]
+                ],
             ),
         };
 
         DecodedCall {
             function: function.to_string(),
-            params: params.into_iter()
+            params: params
+                .into_iter()
                 .map(|(name, r#type, value)| DecodedCallParam {
                     name: name.to_string(),
                     r#type: r#type.to_string(),
@@ -144,7 +133,6 @@ impl From<IERC20Calls> for DecodedCall {
         }
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -210,7 +198,7 @@ mod tests {
     #[test]
     fn test_decode_short_calldata() {
         // Test that short calldata returns proper error
-        let result = decode_call("0x1234", None);  // Only 2 bytes, need 4
+        let result = decode_call("0x1234", None); // Only 2 bytes, need 4
         assert!(result.is_err());
         assert!(result.unwrap_err().to_string().contains("Calldata too short"));
     }
@@ -224,7 +212,8 @@ mod tests {
         assert_eq!(name_result.params.len(), 0);
 
         // Test ERC20 allowance(address,address) function - 0xdd62ed3e
-        let allowance_calldata = "0xdd62ed3e0000000000000000000000008ba1f109551bd432803012645aac136c0c3def25000000000000000000000000271682deb8c4e0901d1a1550ad2e64d568e69909";
+        let allowance_calldata =
+            "0xdd62ed3e0000000000000000000000008ba1f109551bd432803012645aac136c0c3def25000000000000000000000000271682deb8c4e0901d1a1550ad2e64d568e69909";
         let allowance_result = decode_call(allowance_calldata, None).unwrap();
         assert_eq!(allowance_result.function, "allowance");
         assert_eq!(allowance_result.params.len(), 2);
@@ -238,16 +227,17 @@ mod tests {
 
     #[test]
     fn test_try_from_erc20_calls() {
-        use std::convert::TryFrom;
         use crate::erc20::IERC20::IERC20Calls;
-        
+        use std::convert::TryFrom;
+
         // Test that TryFrom is automatically available due to From implementation
-        let transfer_calldata = "0xa9059cbb00000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe50000000000000000000000000000000000000000000000000de0b6b3a7640000";
+        let transfer_calldata =
+            "0xa9059cbb00000000000000000000000095222290dd7278aa3ddd389cc1e1d165cc4bafe50000000000000000000000000000000000000000000000000de0b6b3a7640000";
         let call = IERC20Calls::abi_decode(&alloy_primitives::hex::decode(transfer_calldata).unwrap()).unwrap();
-        
+
         // TryFrom is automatically available and never fails since From is infallible
         let try_from_result = DecodedCall::try_from(call).unwrap();
-        
+
         assert_eq!(try_from_result.function, "transfer");
         assert_eq!(try_from_result.params.len(), 2);
         assert_eq!(try_from_result.params[0].name, "to");

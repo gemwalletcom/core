@@ -9,7 +9,6 @@ pub trait AssetsRepository {
     fn get_assets_all(&mut self) -> Result<Vec<PrimitiveAsset>, Box<dyn Error + Send + Sync>>;
     fn add_assets(&mut self, values: Vec<AssetBasic>) -> Result<usize, Box<dyn Error + Send + Sync>>;
     fn update_assets(&mut self, asset_ids: Vec<String>, updates: Vec<AssetUpdate>) -> Result<usize, Box<dyn Error + Send + Sync>>;
-    fn update_assets_bulk(&mut self, asset_ids: Vec<String>, update: AssetUpdate) -> Result<usize, Box<dyn Error + Send + Sync>>;
     fn update_asset(&mut self, asset_id: String, update: AssetUpdate) -> Result<usize, Box<dyn Error + Send + Sync>>;
     fn upsert_assets(&mut self, values: Vec<PrimitiveAsset>) -> Result<usize, Box<dyn Error + Send + Sync>>;
     fn get_assets_by_filter(&mut self, filters: Vec<AssetFilter>) -> Result<Vec<AssetBasic>, Box<dyn Error + Send + Sync>>;
@@ -36,10 +35,6 @@ impl AssetsRepository for DatabaseClient {
 
     fn update_assets(&mut self, asset_ids: Vec<String>, updates: Vec<AssetUpdate>) -> Result<usize, Box<dyn Error + Send + Sync>> {
         Ok(AssetsStore::update_assets(self, asset_ids, updates)?)
-    }
-
-    fn update_assets_bulk(&mut self, asset_ids: Vec<String>, update: AssetUpdate) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        Ok(AssetsStore::update_assets_bulk(self, asset_ids, update)?)
     }
 
     fn update_asset(&mut self, asset_id: String, update: AssetUpdate) -> Result<usize, Box<dyn Error + Send + Sync>> {
