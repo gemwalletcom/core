@@ -45,6 +45,23 @@ pub struct Transaction {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct InMessage {
     pub hash: String,
+    pub msg_type: Option<String>,
+    pub value: Option<i64>,
+    pub source: Option<Address>,
+    pub destination: Option<Address>,
+    pub body: Option<String>,
+    pub comment: Option<String>,
+    pub decoded_body: Option<DecodedBody>,
+}
+
+impl HasMemo for InMessage {
+    fn comment(&self) -> &Option<String> {
+        &self.comment
+    }
+
+    fn decoded_body(&self) -> &Option<DecodedBody> {
+        &self.decoded_body
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -54,6 +71,19 @@ pub struct OutMessage {
     pub value: i64,
     pub op_code: Option<String>,
     pub decoded_op_name: Option<String>,
+    pub body: Option<String>,
+    pub comment: Option<String>,
+    pub decoded_body: Option<DecodedBody>,
+}
+
+impl HasMemo for OutMessage {
+    fn comment(&self) -> &Option<String> {
+        &self.comment
+    }
+
+    fn decoded_body(&self) -> &Option<DecodedBody> {
+        &self.decoded_body
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -89,3 +119,17 @@ pub struct JettonBalance {
 pub struct Jetton {
     pub address: String,
 }
+
+pub trait HasMemo {
+    fn comment(&self) -> &Option<String>;
+    fn decoded_body(&self) -> &Option<DecodedBody>;
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DecodedBody {
+    #[serde(rename = "type")]
+    pub body_type: Option<String>,
+    pub comment: Option<String>,
+    pub text: Option<String>,
+}
+
