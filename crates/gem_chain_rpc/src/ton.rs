@@ -30,8 +30,8 @@ impl ChainBlockProvider for TonProvider {
     }
 
     async fn get_transactions(&self, block_number: i64) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
-        let response = self.client.get_transactions(block_number.to_string()).await?;
-        Ok(TonMapper::map_transactions(self.get_chain(), response.transactions))
+        let transactions = self.client.get_transactions(block_number.to_string()).await?.transactions;
+        Ok(TonMapper::map_transactions(self.get_chain(), transactions))
     }
 }
 
