@@ -51,6 +51,7 @@ fn is_suspicious(rank: i32, name: &str, symbol: &str) -> bool {
         SuspiciousAsset::new("Tether".to_string(), "USDT".to_string()),
         SuspiciousAsset::new("Tether USD".to_string(), "USDT".to_string()),
         SuspiciousAsset::new("Tether USD".to_string(), "$USD₮".to_string()),
+        SuspiciousAsset::new("USD Coin".to_string(), "USDC".to_string()),
     ];
     rank <= 15 && suspicious_assets.iter().any(|x| x.name == name && x.symbol == symbol)
 }
