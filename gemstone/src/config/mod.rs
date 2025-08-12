@@ -2,6 +2,7 @@ pub mod bitcoin_chain;
 pub mod docs;
 pub mod evm_chain;
 pub mod node;
+pub mod perpetual_config;
 pub mod public;
 pub mod social;
 pub mod stake;
@@ -20,6 +21,7 @@ use {
     bitcoin_chain::{get_bitcoin_chain_config, BitcoinChainConfig},
     docs::{get_docs_url, DocsUrl},
     evm_chain::{get_evm_chain_config, EVMChainConfig},
+    perpetual_config::{get_perpetual_config, PerpetualConfig},
     public::{get_public_url, PublicUrl, ASSETS_URL},
     social::{get_social_url, get_social_url_deeplink, SocialUrl},
     stake::{get_stake_config, StakeChainConfig},
@@ -49,6 +51,10 @@ impl Config {
 
     fn get_swap_config(&self) -> SwapConfig {
         get_swap_config()
+    }
+
+    fn get_perpetual_config(&self) -> PerpetualConfig {
+        get_perpetual_config()
     }
 
     fn get_docs_url(&self, item: DocsUrl) -> String {
