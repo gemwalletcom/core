@@ -2,18 +2,26 @@ pub mod approve_agent;
 pub mod approve_builder_fee;
 pub mod order;
 pub mod set_referrer;
+pub mod spot_send;
 pub mod update_leverage;
+pub mod usd_class_transfer;
+pub mod usd_send;
 pub mod withdrawal;
 
 pub use approve_agent::*;
 pub use approve_builder_fee::*;
 pub use order::*;
 pub use set_referrer::*;
+pub use spot_send::*;
 pub use update_leverage::*;
+pub use usd_class_transfer::*;
+pub use usd_send::*;
 pub use withdrawal::*;
 
 pub const MAINNET: &str = "Mainnet";
 pub const SIGNATURE_CHAIN_ID: &str = "0xa4b1";
+pub const HYPERCORE_CHAIN_ID: &str = "0x3e7";
+pub const HYPERCORE_EVM_BRIDGE_ADDRESS: &str = "0x2222222222222222222222222222222222222222";
 
 use alloy_primitives::hex;
 
@@ -61,6 +69,38 @@ impl HyperCoreModelFactory {
 
     fn serialize_update_leverage(&self, update_leverage: &HyperUpdateLeverage) -> String {
         serde_json::to_string(update_leverage).unwrap()
+    }
+
+    fn transfer_to_hyper_evm(&self, amount: String, time: u64, token: String) -> HyperSpotSend {
+        HyperSpotSend::new(amount, HYPERCORE_EVM_BRIDGE_ADDRESS.to_string(), time, token)
+    }
+
+    fn send_spot_token_to_address(&self, amount: String, destination: String, time: u64, token: String) -> HyperSpotSend {
+        HyperSpotSend::new(amount, destination, time, token)
+    }
+
+    fn serialize_spot_send(&self, spot_send: &HyperSpotSend) -> String {
+        serde_json::to_string(spot_send).unwrap()
+    }
+
+    fn send_perps_usd_to_address(&self, amount: String, destination: String, time: u64) -> HyperUsdSend {
+        HyperUsdSend::new(amount, destination, time)
+    }
+
+    fn serialize_usd_send(&self, usd_send: &HyperUsdSend) -> String {
+        serde_json::to_string(usd_send).unwrap()
+    }
+
+    fn transfer_spot_to_perps(&self, amount: String, nonce: u64) -> HyperUsdClassTransfer {
+        HyperUsdClassTransfer::new(amount, true, nonce)
+    }
+
+    fn transfer_perps_to_spot(&self, amount: String, nonce: u64) -> HyperUsdClassTransfer {
+        HyperUsdClassTransfer::new(amount, false, nonce)
+    }
+
+    fn serialize_usd_class_transfer(&self, usd_class_transfer: &HyperUsdClassTransfer) -> String {
+        serde_json::to_string(usd_class_transfer).unwrap()
     }
 
     fn build_signed_request(&self, signature: String, action: String, timestamp: u64) -> String {
@@ -203,5 +243,78 @@ mod tests {
         assert_eq!(json["asset"], 5);
         assert_eq!(json["isCross"], false);
         assert_eq!(json["leverage"], 5);
+    }
+
+    #[test]
+    fn test_transfer_to_hyper_evm() {
+        let factory = HyperCoreModelFactory::new();
+        let spot_send = factory.transfer_to_hyper_evm("0.1".to_string(), 1754996222238, "HYPE:0x0d01dc56dcaaca66ad901c959b4011ec".to_string());
+        let action_json = factory.serialize_spot_send(&spot_send);
+
+        let signature = "01df5d20fb1d09eed99ccf2381c1fc00e21538fcfa0babfe523bf094bb292f0825b3c888612fc55a9fdbed92828aa3c64a8c25e9b71da81b59e6fd5ddfddf6841b";
+        let timestamp = 1754996222238u64;
+
+        let signed_request = factory.build_signed_request(signature.to_string(), action_json, timestamp);
+
+        let parsed: serde_json::Value = serde_json::from_str(&signed_request).unwrap();
+        let expected: serde_json::Value = serde_json::from_str(include_str!("../test/hl_action_core_to_evm.json")).unwrap();
+
+        assert_eq!(parsed, expected);
+    }
+
+    #[test]
+    fn test_send_spot_token_to_address() {
+        let factory = HyperCoreModelFactory::new();
+        let spot_send = factory.send_spot_token_to_address(
+            "0.02".to_string(),
+            "0x1085c5f70f7f7591d97da281a64688385455c2bd".to_string(),
+            1755004027201,
+            "USDC:0x6d1e7cde53ba9467b783cb7c530ce054".to_string(),
+        );
+        let action_json = factory.serialize_spot_send(&spot_send);
+
+        let signature = "382d6358765ddbefb1ced7fdcd14406b8500a2b2a61332bd67ac0ce3746b9d3e5c3156b7ef4ad6d17b0ff7966e7aad1b19a4649eddcd186ad3f46013a013980d1c";
+        let timestamp = 1755004027201u64;
+
+        let signed_request = factory.build_signed_request(signature.to_string(), action_json, timestamp);
+
+        let parsed: serde_json::Value = serde_json::from_str(&signed_request).unwrap();
+        let expected: serde_json::Value = serde_json::from_str(include_str!("../test/hl_action_spot_send_l1.json")).unwrap();
+
+        assert_eq!(parsed, expected);
+    }
+
+    #[test]
+    fn test_transfer_spot_to_perps() {
+        let factory = HyperCoreModelFactory::new();
+        let usd_class_transfer = factory.transfer_spot_to_perps("10".to_string(), 1754986567194);
+        let action_json = factory.serialize_usd_class_transfer(&usd_class_transfer);
+
+        let signature = "922ab18d3babc74d86c8bb0c259c121193afc57b156b512914ae81c2faad1fb316fc542cdbae9cca3984646759c9e54645a6a92e8adc597d25f0c59a23922a931b";
+        let timestamp = 1754986567194u64;
+
+        let signed_request = factory.build_signed_request(signature.to_string(), action_json, timestamp);
+
+        let parsed: serde_json::Value = serde_json::from_str(&signed_request).unwrap();
+        let expected: serde_json::Value = serde_json::from_str(include_str!("../test/hl_action_spot_to_perps.json")).unwrap();
+
+        assert_eq!(parsed, expected);
+    }
+
+    #[test]
+    fn test_transfer_perps_to_spot() {
+        let factory = HyperCoreModelFactory::new();
+        let usd_class_transfer = factory.transfer_perps_to_spot("10".to_string(), 1754986301493);
+        let action_json = factory.serialize_usd_class_transfer(&usd_class_transfer);
+
+        let signature = "2a0d2571330681c146a744ce32aa31fff5ff720dff6c6e440a2724f64c99e3126c7e4296752d20f79573b3bfea00f95f092105235269e38a4bd3e987e0486b851b";
+        let timestamp = 1754986301493u64;
+
+        let signed_request = factory.build_signed_request(signature.to_string(), action_json, timestamp);
+
+        let parsed: serde_json::Value = serde_json::from_str(&signed_request).unwrap();
+        let expected: serde_json::Value = serde_json::from_str(include_str!("../test/hl_action_perp_to_spot.json")).unwrap();
+
+        assert_eq!(parsed, expected);
     }
 }
