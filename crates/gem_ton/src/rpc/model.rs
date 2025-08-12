@@ -133,7 +133,3 @@ pub struct DecodedBody {
     pub text: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ApiError {
-    pub error: String,
-}
