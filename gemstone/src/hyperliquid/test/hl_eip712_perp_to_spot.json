@@ -1,0 +1,55 @@
+{
+    "domain": {
+        "name": "HyperliquidSignTransaction",
+        "version": "1",
+        "chainId": 42161,
+        "verifyingContract": "0x0000000000000000000000000000000000000000"
+    },
+    "message": {
+        "type": "usdClassTransfer",
+        "amount": "10",
+        "toPerp": false,
+        "nonce": 1754986301493,
+        "signatureChainId": "0xa4b1",
+        "hyperliquidChain": "Mainnet"
+    },
+    "primaryType": "HyperliquidTransaction:UsdClassTransfer",
+    "types": {
+        "EIP712Domain": [
+            {
+                "name": "name",
+                "type": "string"
+            },
+            {
+                "name": "version",
+                "type": "string"
+            },
+            {
+                "name": "chainId",
+                "type": "uint256"
+            },
+            {
+                "name": "verifyingContract",
+                "type": "address"
+            }
+        ],
+        "HyperliquidTransaction:UsdClassTransfer": [
+            {
+                "name": "hyperliquidChain",
+                "type": "string"
+            },
+            {
+                "name": "amount",
+                "type": "string"
+            },
+            {
+                "name": "toPerp",
+                "type": "bool"
+            },
+            {
+                "name": "nonce",
+                "type": "uint64"
+            }
+        ]
+    }
+}

@@ -132,4 +132,3 @@ pub struct DecodedBody {
     pub comment: Option<String>,
     pub text: Option<String>,
 }
-

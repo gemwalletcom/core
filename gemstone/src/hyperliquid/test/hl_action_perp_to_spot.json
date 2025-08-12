@@ -1,0 +1,17 @@
+{
+    "action": {
+        "amount": "10",
+        "hyperliquidChain": "Mainnet",
+        "nonce": 1754986301493,
+        "signatureChainId": "0xa4b1",
+        "toPerp": false,
+        "type": "usdClassTransfer"
+    },
+    "isFrontend": true,
+    "nonce": 1754986301493,
+    "signature": {
+        "r": "0x2a0d2571330681c146a744ce32aa31fff5ff720dff6c6e440a2724f64c99e312",
+        "s": "0x6c7e4296752d20f79573b3bfea00f95f092105235269e38a4bd3e987e0486b85",
+        "v": 27
+    }
+}
