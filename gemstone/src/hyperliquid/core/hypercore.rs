@@ -12,6 +12,16 @@ impl HyperCore {
         let phantom_agent = PhantomAgent::new(hash);
         eip712::create_l1_eip712_json(&phantom_agent)
     }
+
+    fn spot_send_typed_data(&self, spot_send: actions::HyperSpotSend) -> String {
+        let action_value = serde_json::to_value(&spot_send).unwrap();
+        eip712::create_user_signed_eip712_json(&action_value, "HyperliquidTransaction:SpotSend", eip712::spot_send_types())
+    }
+
+    fn usd_class_transfer_typed_data(&self, usd_class_transfer: actions::HyperUsdClassTransfer) -> String {
+        let action_value = serde_json::to_value(&usd_class_transfer).unwrap();
+        eip712::create_user_signed_eip712_json(&action_value, "HyperliquidTransaction:UsdClassTransfer", eip712::usd_class_transfer_types())
+    }
 }
 
 #[uniffi::export]
@@ -58,13 +68,11 @@ impl HyperCore {
     }
 
     fn transfer_to_hyper_evm_typed_data(&self, spot_send: actions::HyperSpotSend) -> String {
-        let action_value = serde_json::to_value(&spot_send).unwrap();
-        eip712::create_user_signed_eip712_json(&action_value, "HyperliquidTransaction:SpotSend", eip712::spot_send_types())
+        self.spot_send_typed_data(spot_send)
     }
 
     fn send_spot_token_to_address_typed_data(&self, spot_send: actions::HyperSpotSend) -> String {
-        let action_value = serde_json::to_value(&spot_send).unwrap();
-        eip712::create_user_signed_eip712_json(&action_value, "HyperliquidTransaction:SpotSend", eip712::spot_send_types())
+        self.spot_send_typed_data(spot_send)
     }
 
     fn send_perps_usd_to_address_typed_data(&self, usd_send: actions::HyperUsdSend) -> String {
@@ -73,13 +81,11 @@ impl HyperCore {
     }
 
     fn transfer_spot_to_perps_typed_data(&self, usd_class_transfer: actions::HyperUsdClassTransfer) -> String {
-        let action_value = serde_json::to_value(&usd_class_transfer).unwrap();
-        eip712::create_user_signed_eip712_json(&action_value, "HyperliquidTransaction:UsdClassTransfer", eip712::usd_class_transfer_types())
+        self.usd_class_transfer_typed_data(usd_class_transfer)
     }
 
     fn transfer_perps_to_spot_typed_data(&self, usd_class_transfer: actions::HyperUsdClassTransfer) -> String {
-        let action_value = serde_json::to_value(&usd_class_transfer).unwrap();
-        eip712::create_user_signed_eip712_json(&action_value, "HyperliquidTransaction:UsdClassTransfer", eip712::usd_class_transfer_types())
+        self.usd_class_transfer_typed_data(usd_class_transfer)
     }
 }
 
