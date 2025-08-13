@@ -7,9 +7,8 @@ use crate::{AssetId, NFTAssetId};
 #[typeshare(swift = "Sendable")]
 #[serde(rename_all = "camelCase")]
 pub struct TransactionPerpetualMetadata {
-    pub pnl: Option<f64>,
-    pub price: Option<f64>,
-    pub amount: Option<f64>,
+    pub pnl: f64,
+    pub price: f64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

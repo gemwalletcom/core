@@ -16,6 +16,7 @@ pub enum BannerEvent {
     EnableNotifications,
     AccountBlockedMultiSignature,
     ActivateAsset,
+    SuspiciousAsset,
 }
 
 #[typeshare(swift = "Equatable, CaseIterable, Sendable")]

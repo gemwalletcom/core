@@ -31,4 +31,5 @@ pub struct HypercorePerpetualFill {
     pub closed_pnl: String,
     pub fee: String,
     pub builder_fee: Option<String>,
+    pub px: String,
 }
