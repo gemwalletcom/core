@@ -175,7 +175,7 @@ impl NameClient for AllDomainsClient {
     }
 
     fn domains(&self) -> Vec<&'static str> {
-        vec!["skr", "poor"]
+        vec!["skr", "saga", "poor", "bonk", "solana"]
     }
 
     fn chains(&self) -> Vec<Chain> {
