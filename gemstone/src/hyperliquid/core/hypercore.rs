@@ -95,7 +95,7 @@ mod tests {
     use crate::hyperliquid::actions;
 
     #[test]
-    fn test_action_open_long_matches_test_data() {
+    fn test_action_open_long() {
         let order = actions::make_market_order(5, true, "200.21", "0.28", false, None);
         let generated_action: serde_json::Value = serde_json::to_value(&order).unwrap();
 
@@ -107,7 +107,7 @@ mod tests {
     }
 
     #[test]
-    fn test_action_open_short_matches_test_data() {
+    fn test_action_open_short() {
         let order = actions::make_market_order(25, false, "3.032", "1", false, None);
         let generated_action: serde_json::Value = serde_json::to_value(&order).unwrap();
 
@@ -119,7 +119,7 @@ mod tests {
     }
 
     #[test]
-    fn test_eip712_approve_agent_matches_test_data() {
+    fn test_eip712_approve_agent() {
         let hypercore = HyperCore::new();
         let agent = actions::HyperApproveAgent::new("0xbec81216a5edeaed508709d8526078c750e307ad".to_string(), "".to_string(), 1753576844319);
 
@@ -136,7 +136,7 @@ mod tests {
     }
 
     #[test]
-    fn test_eip712_withdrawal_matches_test_data() {
+    fn test_eip712_withdrawal() {
         let hypercore = HyperCore::new();
         let withdrawal = actions::HyperWithdrawalRequest::new("2".to_string(), 1753577591421, "0x514bcb1f9aabb904e6106bd1052b66d2706dbbb7".to_string());
 
@@ -259,7 +259,7 @@ mod tests {
     }
 
     #[test]
-    fn test_eip712_spot_send_core_to_evm_matches_test_data() {
+    fn test_eip712_spot_send_core_to_evm() {
         let hypercore = HyperCore::new();
         let spot_send = actions::HyperSpotSend::new(
             "0.1".to_string(),
@@ -278,7 +278,7 @@ mod tests {
     }
 
     #[test]
-    fn test_eip712_spot_send_l1_matches_test_data() {
+    fn test_eip712_spot_send_l1() {
         let hypercore = HyperCore::new();
         let spot_send = actions::HyperSpotSend::new(
             "0.02".to_string(),
@@ -297,7 +297,7 @@ mod tests {
     }
 
     #[test]
-    fn test_eip712_usd_send_matches_test_data() {
+    fn test_eip712_usd_send() {
         let hypercore = HyperCore::new();
         let usd_send = actions::HyperUsdSend::new("1".to_string(), "0xe51d0862078098c84346b6203b50b996f7dafe28".to_string(), 1754987223323);
 
@@ -311,7 +311,7 @@ mod tests {
     }
 
     #[test]
-    fn test_eip712_usd_class_transfer_perp_to_spot_matches_test_data() {
+    fn test_eip712_usd_class_transfer_perp_to_spot() {
         let hypercore = HyperCore::new();
         let usd_class_transfer = actions::HyperUsdClassTransfer::new(
             "10".to_string(),
