@@ -32,3 +32,12 @@ pub struct HypercoreToken {
     pub wei_decimals: i32,
     pub index: i32,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[typeshare(swift = "Equatable, Sendable")]
+#[serde(rename_all = "camelCase")]
+pub struct HypercoreDelegationBalance {
+    pub delegated: String,
+    pub undelegated: String,
+    pub total_pending_withdrawal: String,
+}
