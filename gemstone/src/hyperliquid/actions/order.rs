@@ -114,7 +114,7 @@ fn calculate_execution_price(trigger_px: &str, add_slippage: bool) -> String {
     } else {
         trigger * (1.0 - SLIPPAGE_BUFFER_PERCENT)
     };
-    format!("{:.6}", execution_price).trim_end_matches('0').trim_end_matches('.').to_string()
+    format!("{execution_price:.6}").trim_end_matches('0').trim_end_matches('.').to_string()
 }
 pub fn make_market_order_type() -> HyperOrderType {
     HyperOrderType::Limit {
