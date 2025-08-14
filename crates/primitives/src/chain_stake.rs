@@ -17,6 +17,7 @@ pub enum StakeChain {
     Sui,
     SmartChain,
     Tron,
+    HyperCore,
 }
 
 impl StakeChain {
@@ -28,6 +29,7 @@ impl StakeChain {
             Self::Sui => 86400,
             Self::Osmosis | Self::Tron => 1_209_600,
             Self::SmartChain => 604800,
+            Self::HyperCore => 604800,
         }
     }
 
@@ -39,13 +41,14 @@ impl StakeChain {
             Self::Sui => 1_000_000_000,                    // 1 SUI
             Self::SmartChain => 1_000_000_000_000_000_000, // 1 BNB
             Self::Tron => 1_000_000,                       // 1 TRX
+            Self::HyperCore => 1_000_000_000_000_000_000,  // 1 HLC
         }
     }
 
     /// Get if chain support ability to change amount on unstake
     pub fn get_change_amount_on_unstake(&self) -> bool {
         match self {
-            Self::Cosmos | Self::Osmosis | Self::Injective | Self::Sei | Self::Celestia | Self::SmartChain | Self::Tron => true,
+            Self::Cosmos | Self::Osmosis | Self::Injective | Self::Sei | Self::Celestia | Self::SmartChain | Self::Tron | Self::HyperCore => true,
             Self::Sui | Self::Solana => false,
         }
     }
@@ -54,21 +57,21 @@ impl StakeChain {
     pub fn get_can_redelegate(&self) -> bool {
         match self {
             Self::Cosmos | Self::Osmosis | Self::Injective | Self::Sei | Self::Celestia | Self::SmartChain | Self::Tron => true,
-            Self::Sui | Self::Solana => false,
+            Self::Sui | Self::Solana | Self::HyperCore => false,
         }
     }
 
     pub fn get_can_withdraw(&self) -> bool {
         match self {
             Self::Solana | Self::Tron | Self::SmartChain => true,
-            Self::Cosmos | Self::Osmosis | Self::Injective | Self::Sei | Self::Celestia | Self::Sui => false,
+            Self::Cosmos | Self::Osmosis | Self::Injective | Self::Sei | Self::Celestia | Self::Sui | Self::HyperCore => false,
         }
     }
 
     pub fn get_can_claim_rewards(&self) -> bool {
         match self {
             Self::Cosmos | Self::Osmosis | Self::Injective | Self::Sei | Self::Celestia | Self::Tron => true,
-            Self::SmartChain | Self::Sui | Self::Solana => false,
+            Self::SmartChain | Self::Sui | Self::Solana | Self::HyperCore => false,
         }
     }
 }

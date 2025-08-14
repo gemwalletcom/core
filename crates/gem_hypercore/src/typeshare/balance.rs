@@ -52,3 +52,13 @@ pub struct HypercoreDelegationBalance {
     pub amount: String,
     pub locked_until_timestamp: UInt64,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[typeshare(swift = "Equatable, Sendable")]
+#[serde(rename_all = "camelCase")]
+pub struct HypercoreValidator {
+    pub validator: String,
+    pub name: String,
+    pub commission: String,
+    pub is_active: bool,
+}
