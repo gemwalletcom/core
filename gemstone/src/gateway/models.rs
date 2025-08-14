@@ -1,11 +1,13 @@
+use primitives::AssetId;
+
 #[derive(Debug, Clone, uniffi::Record)]
-pub struct AssetBalanceWrapper {
-    pub asset_id: String,
-    pub balance: BalanceWrapper,
+pub struct GemAssetBalance {
+    pub asset_id: AssetId,
+    pub balance: GemBalance,
 }
 
 #[derive(Debug, Clone, uniffi::Record)]
-pub struct BalanceWrapper {
+pub struct GemBalance {
     pub available: String,
     pub frozen: String,
     pub locked: String,

@@ -4,7 +4,7 @@ use std::sync::Arc;
 pub mod models;
 
 pub use models::*;
-use primitives::Chain;
+use primitives::{AssetId, Chain};
 
 #[derive(Debug, uniffi::Object)]
 pub struct GemGateway {
@@ -19,10 +19,10 @@ impl GemGateway {
         Self { chain }
     }
 
-    pub async fn coin_balance(&self, address: String) -> Result<AssetBalanceWrapper, GatewayError> {
-        Ok(AssetBalanceWrapper {
-            asset_id: self.chain.as_asset_id().to_string(),
-            balance: BalanceWrapper {
+    pub async fn coin_balance(&self, address: String) -> Result<GemAssetBalance, GatewayError> {
+        Ok(GemAssetBalance {
+            asset_id: self.chain.as_asset_id(),
+            balance: GemBalance {
                 available: "1000000000000000000".to_string(),
                 frozen: "0".to_string(),
                 locked: "0".to_string(),
@@ -35,12 +35,12 @@ impl GemGateway {
         })
     }
 
-    pub async fn token_balance(&self, address: String, token_ids: Vec<String>) -> Result<Vec<AssetBalanceWrapper>, GatewayError> {
+    pub async fn token_balance(&self, address: String, token_ids: Vec<String>) -> Result<Vec<GemAssetBalance>, GatewayError> {
         let balances = token_ids
             .into_iter()
-            .map(|token_id| AssetBalanceWrapper {
-                asset_id: token_id,
-                balance: BalanceWrapper {
+            .map(|token_id| GemAssetBalance {
+                asset_id: AssetId::from_token(self.chain, &token_id),
+                balance: GemBalance {
                     available: "1000000000000000000".to_string(),
                     frozen: "0".to_string(),
                     locked: "0".to_string(),
@@ -56,10 +56,10 @@ impl GemGateway {
         Ok(balances)
     }
 
-    pub async fn get_stake_balance(&self, address: String) -> Result<Option<AssetBalanceWrapper>, GatewayError> {
-        Ok(Some(AssetBalanceWrapper {
-            asset_id: self.chain.as_asset_id().to_string(),
-            balance: BalanceWrapper {
+    pub async fn get_stake_balance(&self, address: String) -> Result<Option<GemAssetBalance>, GatewayError> {
+        Ok(Some(GemAssetBalance {
+            asset_id: self.chain.as_asset_id(),
+            balance: GemBalance {
                 available: "0".to_string(),
                 frozen: "0".to_string(),
                 locked: "0".to_string(),
