@@ -157,7 +157,7 @@ impl NameClient for AllDomainsClient {
 
         let name_origin_tld_key = self.get_origin_name_account_key().await?;
 
-        let tld_name = format!(".{}", tld);
+        let tld_name = format!(".{tld}");
         let parent_hashed_name = self.get_hashed_name(&tld_name).await?;
         let (parent_account_key, _) = self.get_name_account_key_with_bump(&parent_hashed_name, None, Some(name_origin_tld_key))?;
 
