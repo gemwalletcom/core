@@ -1,0 +1,43 @@
+{
+    "action": {
+        "grouping": "positionTpsl",
+        "orders": [
+            {
+                "a": 7,
+                "b": false,
+                "p": "671.6",
+                "r": true,
+                "s": "0.197",
+                "t": {
+                    "trigger": {
+                        "isMarket": true,
+                        "tpsl": "sl",
+                        "triggerPx": "730"
+                    }
+                }
+            },
+            {
+                "a": 7,
+                "b": false,
+                "p": "782",
+                "r": true,
+                "s": "0.197",
+                "t": {
+                    "trigger": {
+                        "isMarket": true,
+                        "tpsl": "tp",
+                        "triggerPx": "850"
+                    }
+                }
+            }
+        ],
+        "type": "order"
+    },
+    "isFrontend": true,
+    "nonce": 1755132472149,
+    "signature": {
+        "r": "0xe7573d3fadf28422e2068a7f477bed470bfea5627dcd0282283822250440bff0",
+        "s": "0x027462c40186ea0d4b50df44cf0f7b176acd21affbe03d4b0417b12cddb139b9",
+        "v": 27
+    }
+}

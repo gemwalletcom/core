@@ -11,8 +11,8 @@ use gem_evm::thorchain::contracts::RouterInterface;
 use primitives::Chain;
 
 use super::{
-    asset::THORChainAsset, chain::THORChainName, client::ThorChainSwapClient, memo::ThorchainMemo, model::RouteData, ThorChain, DEFAULT_DEPOSIT_GAS_LIMIT, QUOTE_INTERVAL,
-    QUOTE_MINIMUM, QUOTE_QUANTITY,
+    asset::THORChainAsset, chain::THORChainName, client::ThorChainSwapClient, memo::ThorchainMemo, model::RouteData, ThorChain, DEFAULT_DEPOSIT_GAS_LIMIT,
+    QUOTE_INTERVAL, QUOTE_MINIMUM, QUOTE_QUANTITY,
 };
 use crate::{
     network::AlienProvider,

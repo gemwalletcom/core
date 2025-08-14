@@ -1,19 +1,30 @@
 pub mod approve_agent;
 pub mod approve_builder_fee;
+pub mod cancel_order;
 pub mod order;
 pub mod set_referrer;
+pub mod spot_send;
 pub mod update_leverage;
+pub mod usd_class_transfer;
+pub mod usd_send;
 pub mod withdrawal;
 
 pub use approve_agent::*;
 pub use approve_builder_fee::*;
+pub use cancel_order::*;
 pub use order::*;
 pub use set_referrer::*;
+pub use spot_send::*;
 pub use update_leverage::*;
+pub use usd_class_transfer::*;
+pub use usd_send::*;
 pub use withdrawal::*;
 
 pub const MAINNET: &str = "Mainnet";
 pub const SIGNATURE_CHAIN_ID: &str = "0xa4b1";
+pub const HYPERCORE_SIGNATURE_CHAIN_ID: &str = "0x3e7";
+pub const HYPERCORE_EVM_BRIDGE_ADDRESS: &str = "0x2222222222222222222222222222222222222222";
+pub const SLIPPAGE_BUFFER_PERCENT: f64 = 0.08;
 
 use alloy_primitives::hex;
 
@@ -36,11 +47,45 @@ impl HyperCoreModelFactory {
     }
 
     fn make_market_order(&self, asset: u32, is_buy: bool, price: String, size: String, reduce_only: bool, builder: Option<HyperBuilder>) -> HyperPlaceOrder {
-        order::make_market_order(asset, is_buy, price, size, reduce_only, builder)
+        order::make_market_order(asset, is_buy, &price, &size, reduce_only, builder)
+    }
+
+    fn make_market_with_tp_sl(
+        &self,
+        asset: u32,
+        is_buy: bool,
+        price: String,
+        size: String,
+        reduce_only: bool,
+        tp_trigger: Option<String>,
+        sl_trigger: Option<String>,
+        builder: Option<HyperBuilder>,
+    ) -> HyperPlaceOrder {
+        order::make_market_with_tp_sl(asset, is_buy, &price, &size, reduce_only, tp_trigger, sl_trigger, builder)
     }
 
     fn serialize_order(&self, order: &HyperPlaceOrder) -> String {
         serde_json::to_string(order).unwrap()
+    }
+
+    fn make_cancel_orders(&self, orders: Vec<HyperCancelOrder>) -> HyperCancel {
+        HyperCancel::new(orders)
+    }
+
+    fn serialize_cancel_action(&self, cancel_action: &HyperCancel) -> String {
+        serde_json::to_string(cancel_action).unwrap()
+    }
+
+    fn make_position_tp_sl(
+        &self,
+        asset: u32,
+        is_buy: bool,
+        size: String,
+        tp_trigger: String,
+        sl_trigger: String,
+        builder: Option<HyperBuilder>,
+    ) -> HyperPlaceOrder {
+        order::make_position_tp_sl(asset, is_buy, &size, Some(tp_trigger), Some(sl_trigger), builder)
     }
 
     fn make_withdraw(&self, amount: String, address: String, nonce: u64) -> HyperWithdrawalRequest {
@@ -63,8 +108,40 @@ impl HyperCoreModelFactory {
         serde_json::to_string(update_leverage).unwrap()
     }
 
+    fn transfer_to_hyper_evm(&self, amount: String, time: u64, token: String) -> HyperSpotSend {
+        HyperSpotSend::new(amount, HYPERCORE_EVM_BRIDGE_ADDRESS.to_string(), time, token)
+    }
+
+    fn send_spot_token_to_address(&self, amount: String, destination: String, time: u64, token: String) -> HyperSpotSend {
+        HyperSpotSend::new(amount, destination, time, token)
+    }
+
+    fn serialize_spot_send(&self, spot_send: &HyperSpotSend) -> String {
+        serde_json::to_string(spot_send).unwrap()
+    }
+
+    fn send_perps_usd_to_address(&self, amount: String, destination: String, time: u64) -> HyperUsdSend {
+        HyperUsdSend::new(amount, destination, time)
+    }
+
+    fn serialize_usd_send(&self, usd_send: &HyperUsdSend) -> String {
+        serde_json::to_string(usd_send).unwrap()
+    }
+
+    fn transfer_spot_to_perps(&self, amount: String, nonce: u64) -> HyperUsdClassTransfer {
+        HyperUsdClassTransfer::new(amount, true, nonce)
+    }
+
+    fn transfer_perps_to_spot(&self, amount: String, nonce: u64) -> HyperUsdClassTransfer {
+        HyperUsdClassTransfer::new(amount, false, nonce)
+    }
+
+    fn serialize_usd_class_transfer(&self, usd_class_transfer: &HyperUsdClassTransfer) -> String {
+        serde_json::to_string(usd_class_transfer).unwrap()
+    }
+
     fn build_signed_request(&self, signature: String, action: String, timestamp: u64) -> String {
-        let sig_bytes = hex::decode(signature).unwrap();
+        let sig_bytes = hex::decode(&signature).unwrap();
 
         let r = hex::encode_prefixed(&sig_bytes[0..32]);
         let s = hex::encode_prefixed(&sig_bytes[32..64]);
@@ -203,5 +280,180 @@ mod tests {
         assert_eq!(json["asset"], 5);
         assert_eq!(json["isCross"], false);
         assert_eq!(json["leverage"], 5);
+    }
+
+    #[test]
+    fn test_transfer_to_hyper_evm() {
+        let factory = HyperCoreModelFactory::new();
+        let spot_send = factory.transfer_to_hyper_evm("0.1".to_string(), 1754996222238, "HYPE:0x0d01dc56dcaaca66ad901c959b4011ec".to_string());
+        let action_json = factory.serialize_spot_send(&spot_send);
+
+        let signature = "01df5d20fb1d09eed99ccf2381c1fc00e21538fcfa0babfe523bf094bb292f0825b3c888612fc55a9fdbed92828aa3c64a8c25e9b71da81b59e6fd5ddfddf6841b";
+        let timestamp = 1754996222238u64;
+
+        let signed_request = factory.build_signed_request(signature.to_string(), action_json, timestamp);
+
+        let parsed: serde_json::Value = serde_json::from_str(&signed_request).unwrap();
+        let expected: serde_json::Value = serde_json::from_str(include_str!("../test/hl_action_core_to_evm.json")).unwrap();
+
+        assert_eq!(parsed, expected);
+    }
+
+    #[test]
+    fn test_send_spot_token_to_address() {
+        let factory = HyperCoreModelFactory::new();
+        let spot_send = factory.send_spot_token_to_address(
+            "0.02".to_string(),
+            "0x1085c5f70f7f7591d97da281a64688385455c2bd".to_string(),
+            1755004027201,
+            "USDC:0x6d1e7cde53ba9467b783cb7c530ce054".to_string(),
+        );
+        let action_json = factory.serialize_spot_send(&spot_send);
+
+        let signature = "382d6358765ddbefb1ced7fdcd14406b8500a2b2a61332bd67ac0ce3746b9d3e5c3156b7ef4ad6d17b0ff7966e7aad1b19a4649eddcd186ad3f46013a013980d1c";
+        let timestamp = 1755004027201u64;
+
+        let signed_request = factory.build_signed_request(signature.to_string(), action_json, timestamp);
+
+        let parsed: serde_json::Value = serde_json::from_str(&signed_request).unwrap();
+        let expected: serde_json::Value = serde_json::from_str(include_str!("../test/hl_action_spot_send_l1.json")).unwrap();
+
+        assert_eq!(parsed, expected);
+    }
+
+    #[test]
+    fn test_transfer_spot_to_perps() {
+        let factory = HyperCoreModelFactory::new();
+        let usd_class_transfer = factory.transfer_spot_to_perps("10".to_string(), 1754986567194);
+        let action_json = factory.serialize_usd_class_transfer(&usd_class_transfer);
+
+        let signature = "922ab18d3babc74d86c8bb0c259c121193afc57b156b512914ae81c2faad1fb316fc542cdbae9cca3984646759c9e54645a6a92e8adc597d25f0c59a23922a931b";
+        let timestamp = 1754986567194u64;
+
+        let signed_request = factory.build_signed_request(signature.to_string(), action_json, timestamp);
+
+        let parsed: serde_json::Value = serde_json::from_str(&signed_request).unwrap();
+        let expected: serde_json::Value = serde_json::from_str(include_str!("../test/hl_action_spot_to_perps.json")).unwrap();
+
+        assert_eq!(parsed, expected);
+    }
+
+    #[test]
+    fn test_transfer_perps_to_spot() {
+        let factory = HyperCoreModelFactory::new();
+        let usd_class_transfer = factory.transfer_perps_to_spot("10".to_string(), 1754986301493);
+        let action_json = factory.serialize_usd_class_transfer(&usd_class_transfer);
+
+        let signature = "2a0d2571330681c146a744ce32aa31fff5ff720dff6c6e440a2724f64c99e3126c7e4296752d20f79573b3bfea00f95f092105235269e38a4bd3e987e0486b851b";
+        let timestamp = 1754986301493u64;
+
+        let signed_request = factory.build_signed_request(signature.to_string(), action_json, timestamp);
+
+        let parsed: serde_json::Value = serde_json::from_str(&signed_request).unwrap();
+        let expected: serde_json::Value = serde_json::from_str(include_str!("../test/hl_action_perp_to_spot.json")).unwrap();
+
+        assert_eq!(parsed, expected);
+    }
+
+    #[test]
+    fn test_cancel_orders() {
+        let factory = HyperCoreModelFactory::new();
+        let cancels = vec![HyperCancelOrder::new(0, 133614972850), HyperCancelOrder::new(7, 133610221604)];
+        let cancel_action = factory.make_cancel_orders(cancels);
+        let action_json = factory.serialize_cancel_action(&cancel_action);
+
+        let signature = "6d7f8feddf09ac204b786ff82a508134b28ba7d91ed412fef5ae0b8561ea26d31c31d3653a2ef71334e733cc81a541db2982724c785002f82e634c71c64726b01b";
+        let timestamp = 1755132902800u64;
+
+        let signed_request = factory.build_signed_request(signature.to_string(), action_json, timestamp);
+
+        let parsed: serde_json::Value = serde_json::from_str(&signed_request).unwrap();
+        let expected: serde_json::Value = serde_json::from_str(include_str!("../test/hl_action_cancel_orders.json")).unwrap();
+
+        assert_eq!(parsed, expected);
+    }
+
+    #[test]
+    fn test_update_position_tp_sl() {
+        let factory = HyperCoreModelFactory::new();
+        let order = factory.make_position_tp_sl(7, false, "0.197".to_string(), "850".to_string(), "730".to_string(), None);
+        let action_json = factory.serialize_order(&order);
+
+        let signature = "e7573d3fadf28422e2068a7f477bed470bfea5627dcd0282283822250440bff0027462c40186ea0d4b50df44cf0f7b176acd21affbe03d4b0417b12cddb139b91b";
+        let timestamp = 1755132472149u64;
+
+        let signed_request = factory.build_signed_request(signature.to_string(), action_json, timestamp);
+
+        let parsed: serde_json::Value = serde_json::from_str(&signed_request).unwrap();
+        let expected: serde_json::Value = serde_json::from_str(include_str!("../test/hl_action_update_position_tp_sl.json")).unwrap();
+
+        assert_eq!(parsed, expected);
+    }
+
+    #[test]
+    fn test_market_with_tp_sl() {
+        let factory = HyperCoreModelFactory::new();
+        let order = factory.make_market_with_tp_sl(
+            25,
+            false,
+            "3.0535".to_string(),
+            "5".to_string(),
+            false,                   // entry order reduce_only: false
+            Some("3".to_string()),   // tp_trigger: lower price for short TP
+            Some("3.5".to_string()), // sl_trigger: higher price for short SL
+            None,
+        );
+        let action_json = factory.serialize_order(&order);
+
+        let signature = "d49f4af2a7a7037008a3fffd072914b509a685b8e3fc8c08450ff47e300b14cc1716da99ec62e121d97aac2f44c24fcdd4b64bf18ab11afe469c006552317ba61c";
+        let timestamp = 1755135350327u64;
+
+        let signed_request = factory.build_signed_request(signature.to_string(), action_json, timestamp);
+
+        let parsed: serde_json::Value = serde_json::from_str(&signed_request).unwrap();
+        let expected: serde_json::Value = serde_json::from_str(include_str!("../test/hl_action_market_short_tp_sl.json")).unwrap();
+
+        assert_eq!(parsed, expected);
+    }
+
+    #[test]
+    fn test_market_with_tp() {
+        let factory = HyperCoreModelFactory::new();
+        let order = factory.make_market_with_tp_sl(25, false, "3.0535".to_string(), "5".to_string(), false, Some("3".to_string()), None, None);
+        assert_eq!(order.grouping, HyperGrouping::NormalTpsl);
+        assert_eq!(order.orders.len(), 2);
+
+        let entry_order = &order.orders[0];
+        assert_eq!(entry_order.asset, 25);
+        assert!(!entry_order.is_buy);
+        assert_eq!(entry_order.price, "3.0535");
+        assert!(!entry_order.reduce_only);
+
+        let tp_order = &order.orders[1];
+        assert_eq!(tp_order.asset, 25);
+        assert!(tp_order.is_buy);
+        assert_eq!(tp_order.price, "3.24");
+        assert!(tp_order.reduce_only);
+    }
+
+    #[test]
+    fn test_market_with_sl() {
+        let factory = HyperCoreModelFactory::new();
+        let order = factory.make_market_with_tp_sl(25, false, "3.0535".to_string(), "5".to_string(), false, None, Some("3.5".to_string()), None);
+
+        assert_eq!(order.grouping, HyperGrouping::NormalTpsl);
+        assert_eq!(order.orders.len(), 2);
+
+        let entry_order = &order.orders[0];
+        assert_eq!(entry_order.asset, 25);
+        assert!(!entry_order.is_buy);
+        assert_eq!(entry_order.price, "3.0535");
+        assert!(!entry_order.reduce_only);
+
+        let sl_order = &order.orders[1];
+        assert_eq!(sl_order.asset, 25);
+        assert!(sl_order.is_buy);
+        assert_eq!(sl_order.price, "3.78");
+        assert!(sl_order.reduce_only);
     }
 }

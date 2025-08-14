@@ -1,0 +1,55 @@
+{
+    "domain": {
+        "name": "HyperliquidSignTransaction",
+        "version": "1",
+        "chainId": 999,
+        "verifyingContract": "0x0000000000000000000000000000000000000000"
+    },
+    "message": {
+        "destination": "0xe51d0862078098c84346b6203b50b996f7dafe28",
+        "amount": "1",
+        "time": 1754987223323,
+        "type": "usdSend",
+        "signatureChainId": "0x3e7",
+        "hyperliquidChain": "Mainnet"
+    },
+    "primaryType": "HyperliquidTransaction:UsdSend",
+    "types": {
+        "EIP712Domain": [
+            {
+                "name": "name",
+                "type": "string"
+            },
+            {
+                "name": "version",
+                "type": "string"
+            },
+            {
+                "name": "chainId",
+                "type": "uint256"
+            },
+            {
+                "name": "verifyingContract",
+                "type": "address"
+            }
+        ],
+        "HyperliquidTransaction:UsdSend": [
+            {
+                "name": "hyperliquidChain",
+                "type": "string"
+            },
+            {
+                "name": "destination",
+                "type": "string"
+            },
+            {
+                "name": "amount",
+                "type": "string"
+            },
+            {
+                "name": "time",
+                "type": "uint64"
+            }
+        ]
+    }
+}
