@@ -4451,6 +4451,7 @@ dependencies = [
  "gem_evm",
  "gem_hash",
  "gem_jsonrpc",
+ "gem_solana",
  "gem_ton",
  "hex",
  "idna",
@@ -4460,6 +4461,7 @@ dependencies = [
  "serde",
  "serde_json",
  "settings",
+ "sha2",
  "tokio",
  "tokio-test",
 ]

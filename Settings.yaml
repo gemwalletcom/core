@@ -70,6 +70,8 @@ name:
     url: "https://mainnet.base.org"
   hyperliquid:
     url: "https://rpc.hyperliquid.xyz/evm"
+  alldomains:
+    url: "https://api.mainnet-beta.solana.com"
 
 metrics:
   path: /metrics

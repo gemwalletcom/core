@@ -41,7 +41,6 @@ impl ThorchainMemo {
     pub fn token_symbol(&self) -> Option<String> {
         self.asset.find('.').map(|dot_pos| self.asset[dot_pos + 1..].to_string())
     }
-
 }
 
 #[cfg(test)]
@@ -98,7 +97,6 @@ mod tests {
         assert_eq!(parsed.destination_chain(), Some(Chain::SmartChain));
         assert_eq!(parsed.token_symbol(), Some("USDT".to_string()));
     }
-
 
     #[test]
     fn test_parse_invalid_memos() {
