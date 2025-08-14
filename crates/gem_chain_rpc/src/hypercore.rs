@@ -2,12 +2,11 @@ use std::error::Error;
 
 use crate::{ChainAssetsProvider, ChainBlockProvider, ChainStakeProvider, ChainTokenDataProvider, ChainTransactionsProvider};
 use async_trait::async_trait;
-use primitives::{chain::Chain, Asset, AssetBalance, Transaction};
+use primitives::{chain::Chain, Asset, AssetBalance, StakeValidator, Transaction};
 
 use gem_hypercore::rpc::client::HyperCoreClient;
 
 pub struct HyperCoreProvider {
-    #[allow(dead_code)]
     client: HyperCoreClient,
 }
 
@@ -55,5 +54,18 @@ impl ChainTransactionsProvider for HyperCoreProvider {
 
 #[async_trait]
 impl ChainStakeProvider for HyperCoreProvider {
-    // Default implementation returns empty vector
+    async fn get_validators(&self) -> Result<Vec<StakeValidator>, Box<dyn Error + Send + Sync>> {
+        Ok(self
+            .client
+            .get_validators()
+            .await?
+            .into_iter()
+            .filter(|x| x.is_active)
+            .map(|x| StakeValidator::new(x.validator, x.name))
+            .collect())
+    }
+
+    async fn get_staking_apy(&self) -> Result<f64, Box<dyn Error + Send + Sync>> {
+        self.client.get_staking_apy().await
+    }
 }

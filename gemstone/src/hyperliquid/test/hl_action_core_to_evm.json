@@ -1,0 +1,18 @@
+{
+    "action": {
+        "amount": "0.1",
+        "destination": "0x2222222222222222222222222222222222222222",
+        "hyperliquidChain": "Mainnet",
+        "signatureChainId": "0xa4b1",
+        "time": 1754996222238,
+        "token": "HYPE:0x0d01dc56dcaaca66ad901c959b4011ec",
+        "type": "spotSend"
+    },
+    "isFrontend": true,
+    "nonce": 1754996222238,
+    "signature": {
+        "r": "0x01df5d20fb1d09eed99ccf2381c1fc00e21538fcfa0babfe523bf094bb292f08",
+        "s": "0x25b3c888612fc55a9fdbed92828aa3c64a8c25e9b71da81b59e6fd5ddfddf684",
+        "v": 27
+    }
+}

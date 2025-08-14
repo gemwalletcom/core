@@ -12,6 +12,16 @@ impl HyperCore {
         let phantom_agent = PhantomAgent::new(hash);
         eip712::create_l1_eip712_json(&phantom_agent)
     }
+
+    fn spot_send_typed_data(&self, spot_send: actions::HyperSpotSend) -> String {
+        let action_value = serde_json::to_value(&spot_send).unwrap();
+        eip712::create_user_signed_eip712_json(&action_value, "HyperliquidTransaction:SpotSend", eip712::spot_send_types())
+    }
+
+    fn usd_class_transfer_typed_data(&self, usd_class_transfer: actions::HyperUsdClassTransfer) -> String {
+        let action_value = serde_json::to_value(&usd_class_transfer).unwrap();
+        eip712::create_user_signed_eip712_json(&action_value, "HyperliquidTransaction:UsdClassTransfer", eip712::usd_class_transfer_types())
+    }
 }
 
 #[uniffi::export]
@@ -56,6 +66,27 @@ impl HyperCore {
         let action_value = serde_json::to_value(&fee).unwrap();
         eip712::create_user_signed_eip712_json(&action_value, "HyperliquidTransaction:ApproveBuilderFee", eip712::approve_builder_fee_types())
     }
+
+    fn transfer_to_hyper_evm_typed_data(&self, spot_send: actions::HyperSpotSend) -> String {
+        self.spot_send_typed_data(spot_send)
+    }
+
+    fn send_spot_token_to_address_typed_data(&self, spot_send: actions::HyperSpotSend) -> String {
+        self.spot_send_typed_data(spot_send)
+    }
+
+    fn send_perps_usd_to_address_typed_data(&self, usd_send: actions::HyperUsdSend) -> String {
+        let action_value = serde_json::to_value(&usd_send).unwrap();
+        eip712::create_user_signed_eip712_json(&action_value, "HyperliquidTransaction:UsdSend", eip712::usd_send_types())
+    }
+
+    fn transfer_spot_to_perps_typed_data(&self, usd_class_transfer: actions::HyperUsdClassTransfer) -> String {
+        self.usd_class_transfer_typed_data(usd_class_transfer)
+    }
+
+    fn transfer_perps_to_spot_typed_data(&self, usd_class_transfer: actions::HyperUsdClassTransfer) -> String {
+        self.usd_class_transfer_typed_data(usd_class_transfer)
+    }
 }
 
 #[cfg(test)]
@@ -64,8 +95,8 @@ mod tests {
     use crate::hyperliquid::actions;
 
     #[test]
-    fn test_action_open_long_matches_test_data() {
-        let order = actions::make_market_order(5, true, "200.21".to_string(), "0.28".to_string(), false, None);
+    fn test_action_open_long() {
+        let order = actions::make_market_order(5, true, "200.21", "0.28", false, None);
         let generated_action: serde_json::Value = serde_json::to_value(&order).unwrap();
 
         // Load expected data from test file
@@ -76,8 +107,8 @@ mod tests {
     }
 
     #[test]
-    fn test_action_open_short_matches_test_data() {
-        let order = actions::make_market_order(25, false, "3.032".to_string(), "1".to_string(), false, None);
+    fn test_action_open_short() {
+        let order = actions::make_market_order(25, false, "3.032", "1", false, None);
         let generated_action: serde_json::Value = serde_json::to_value(&order).unwrap();
 
         // Load expected data from test file
@@ -88,7 +119,7 @@ mod tests {
     }
 
     #[test]
-    fn test_eip712_approve_agent_matches_test_data() {
+    fn test_eip712_approve_agent() {
         let hypercore = HyperCore::new();
         let agent = actions::HyperApproveAgent::new("0xbec81216a5edeaed508709d8526078c750e307ad".to_string(), "".to_string(), 1753576844319);
 
@@ -105,7 +136,7 @@ mod tests {
     }
 
     #[test]
-    fn test_eip712_withdrawal_matches_test_data() {
+    fn test_eip712_withdrawal() {
         let hypercore = HyperCore::new();
         let withdrawal = actions::HyperWithdrawalRequest::new("2".to_string(), 1753577591421, "0x514bcb1f9aabb904e6106bd1052b66d2706dbbb7".to_string());
 
@@ -225,5 +256,104 @@ mod tests {
         assert_eq!(action_value["asset"], 25);
         assert_eq!(action_value["isCross"], true);
         assert_eq!(action_value["leverage"], 10);
+    }
+
+    #[test]
+    fn test_eip712_spot_send_core_to_evm() {
+        let hypercore = HyperCore::new();
+        let spot_send = actions::HyperSpotSend::new(
+            "0.1".to_string(),
+            "0x2222222222222222222222222222222222222222".to_string(),
+            1754996222238,
+            "HYPE:0x0d01dc56dcaaca66ad901c959b4011ec".to_string(),
+        );
+
+        let eip712_json = hypercore.transfer_to_hyper_evm_typed_data(spot_send);
+
+        // Parse both generated and expected JSON for comparison
+        let parsed: serde_json::Value = serde_json::from_str(&eip712_json).unwrap();
+        let expected: serde_json::Value = serde_json::from_str(include_str!("../test/hl_eip712_core_to_evm.json")).unwrap();
+
+        assert_eq!(parsed, expected);
+    }
+
+    #[test]
+    fn test_eip712_spot_send_l1() {
+        let hypercore = HyperCore::new();
+        let spot_send = actions::HyperSpotSend::new(
+            "0.02".to_string(),
+            "0x1085c5f70f7f7591d97da281a64688385455c2bd".to_string(),
+            1755004027201,
+            "USDC:0x6d1e7cde53ba9467b783cb7c530ce054".to_string(),
+        );
+
+        let eip712_json = hypercore.send_spot_token_to_address_typed_data(spot_send);
+
+        // Parse both generated and expected JSON for comparison
+        let parsed: serde_json::Value = serde_json::from_str(&eip712_json).unwrap();
+        let expected: serde_json::Value = serde_json::from_str(include_str!("../test/hl_eip712_spot_send_l1.json")).unwrap();
+
+        assert_eq!(parsed, expected);
+    }
+
+    #[test]
+    fn test_eip712_usd_send() {
+        let hypercore = HyperCore::new();
+        let usd_send = actions::HyperUsdSend::new("1".to_string(), "0xe51d0862078098c84346b6203b50b996f7dafe28".to_string(), 1754987223323);
+
+        let eip712_json = hypercore.send_perps_usd_to_address_typed_data(usd_send);
+
+        // Parse both generated and expected JSON for comparison
+        let parsed: serde_json::Value = serde_json::from_str(&eip712_json).unwrap();
+        let expected: serde_json::Value = serde_json::from_str(include_str!("../test/hl_eip712_perp_send_l1.json")).unwrap();
+
+        assert_eq!(parsed, expected);
+    }
+
+    #[test]
+    fn test_eip712_usd_class_transfer_perp_to_spot() {
+        let hypercore = HyperCore::new();
+        let usd_class_transfer = actions::HyperUsdClassTransfer::new(
+            "10".to_string(),
+            false, // perp to spot
+            1754986301493,
+        );
+
+        let eip712_json = hypercore.transfer_perps_to_spot_typed_data(usd_class_transfer);
+
+        // Parse both generated and expected JSON for comparison
+        let parsed: serde_json::Value = serde_json::from_str(&eip712_json).unwrap();
+        let expected: serde_json::Value = serde_json::from_str(include_str!("../test/hl_eip712_perp_to_spot.json")).unwrap();
+
+        assert_eq!(parsed, expected);
+    }
+
+    #[test]
+    fn test_eip712_usd_class_transfer_spot_to_perp_structure() {
+        // Test the spot to perp transfer structure (no corresponding test file yet)
+        let hypercore = HyperCore::new();
+        let usd_class_transfer = actions::HyperUsdClassTransfer::new(
+            "10".to_string(),
+            true, // spot to perp
+            1754986567194,
+        );
+
+        let eip712_json = hypercore.transfer_spot_to_perps_typed_data(usd_class_transfer);
+
+        // Parse and verify structure
+        let parsed: serde_json::Value = serde_json::from_str(&eip712_json).unwrap();
+
+        // Verify domain
+        assert_eq!(parsed["domain"]["name"], "HyperliquidSignTransaction");
+        assert_eq!(parsed["domain"]["version"], "1");
+        assert_eq!(parsed["primaryType"], "HyperliquidTransaction:UsdClassTransfer");
+
+        // Verify message
+        assert_eq!(parsed["message"]["type"], "usdClassTransfer");
+        assert_eq!(parsed["message"]["amount"], "10");
+        assert_eq!(parsed["message"]["toPerp"], true);
+        assert_eq!(parsed["message"]["nonce"], 1754986567194u64);
+        assert_eq!(parsed["message"]["signatureChainId"], "0xa4b1");
+        assert_eq!(parsed["message"]["hyperliquidChain"], "Mainnet");
     }
 }

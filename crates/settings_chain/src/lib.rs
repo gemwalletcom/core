@@ -117,7 +117,7 @@ impl ProviderFactory {
             Chain::Algorand => Box::new(AlgorandProvider::new(AlgorandClient::new(client, url))),
             Chain::Stellar => Box::new(StellarProvider::new(StellarClient::new(client, url))),
             Chain::Polkadot => Box::new(PolkadotProvider::new(PolkadotClient::new(client, url))),
-            Chain::HyperCore => Box::new(HyperCoreProvider::new(HyperCoreClient::new())),
+            Chain::HyperCore => Box::new(HyperCoreProvider::new(HyperCoreClient::new(&url))),
         }
     }
 

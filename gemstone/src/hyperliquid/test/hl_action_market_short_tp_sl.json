@@ -1,0 +1,55 @@
+{
+    "action": {
+        "grouping": "normalTpsl",
+        "orders": [
+            {
+                "a": 25,
+                "b": false,
+                "p": "3.0535",
+                "r": false,
+                "s": "5",
+                "t": {
+                    "limit": {
+                        "tif": "FrontendMarket"
+                    }
+                }
+            },
+            {
+                "a": 25,
+                "b": true,
+                "p": "3.78",
+                "r": true,
+                "s": "5",
+                "t": {
+                    "trigger": {
+                        "isMarket": true,
+                        "tpsl": "sl",
+                        "triggerPx": "3.5"
+                    }
+                }
+            },
+            {
+                "a": 25,
+                "b": true,
+                "p": "3.24",
+                "r": true,
+                "s": "5",
+                "t": {
+                    "trigger": {
+                        "isMarket": true,
+                        "tpsl": "tp",
+                        "triggerPx": "3"
+                    }
+                }
+            }
+        ],
+        "type": "order"
+    },
+    "isFrontend": true,
+    "nonce": 1755135350327,
+    "signature": {
+        "r": "0xd49f4af2a7a7037008a3fffd072914b509a685b8e3fc8c08450ff47e300b14cc",
+        "s": "0x1716da99ec62e121d97aac2f44c24fcdd4b64bf18ab11afe469c006552317ba6",
+        "v": 28
+    }
+}

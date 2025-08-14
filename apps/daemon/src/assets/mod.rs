@@ -1,11 +1,14 @@
 mod asset_rank_updater;
 mod asset_updater;
+mod staking_apy_updater;
 
 use asset_rank_updater::AssetRankUpdater;
 use asset_updater::AssetUpdater;
 use coingecko::CoinGeckoClient;
 use job_runner::run_job;
 use settings::Settings;
+use settings_chain::ChainProviders;
+use staking_apy_updater::StakeApyUpdater;
 use std::future::Future;
 use std::pin::Pin;
 use std::time::Duration;
@@ -45,10 +48,20 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
         }
     });
 
+    let update_staking_apy = run_job("Update staking APY", Duration::from_secs(86400), {
+        let settings = settings.clone();
+        move || {
+            let chain_providers = ChainProviders::from_settings(&settings);
+            let mut updater = StakeApyUpdater::new(chain_providers, &settings.postgres.url);
+            async move { updater.update_staking_apy().await }
+        }
+    });
+
     vec![
         Box::pin(update_assets),
         Box::pin(update_tranding_assets),
         Box::pin(update_recently_added_assets),
         Box::pin(update_suspicious_assets),
+        Box::pin(update_staking_apy),
     ]
 }
