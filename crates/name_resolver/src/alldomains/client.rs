@@ -6,20 +6,21 @@ use serde_json::{self, json};
 use sha2::{Digest, Sha256};
 
 use gem_jsonrpc::JsonRpcClient;
-use gem_solana::{model::NameRecordHeader, pubkey::Pubkey};
+use gem_solana::pubkey::Pubkey;
 use primitives::{chain::Chain, name::NameProvider};
 
 use crate::client::NameClient;
 
-pub const ANS_PROGRAM_ID: &str = "ALTNSZ46uaAUU7XUV6awvdorLGqAsPwa9shm7h4uP2FK";
-pub const TLD_HOUSE_PROGRAM_ID: &str = "TLDHkysf5pCnKsVA4gXpNvmy7psXLPEu4LAdDJthT9S";
-pub const NAME_HOUSE_PROGRAM_ID: &str = "NH3uX6FtVE2fNREAioP7hm5RaozotZxeL6khU1EHx51";
-pub const ROOT_ANS_PUBLIC_KEY: &str = "3mX9b4AZaQehNoQGfckVcmgmA6bkBoFcbLj9RMmMyNcU";
-pub const ORIGIN_TLD: &str = "ANS";
-pub const HASH_PREFIX: &str = "ALT Name Service";
-pub const TLD_HOUSE_PREFIX: &str = "tld_house";
-pub const NAME_HOUSE_PREFIX: &str = "name_house";
-pub const NFT_RECORD_PREFIX: &str = "nft_record";
+use super::model::NameRecordHeader;
+
+const ANS_PROGRAM_ID: &str = "ALTNSZ46uaAUU7XUV6awvdorLGqAsPwa9shm7h4uP2FK";
+const TLD_HOUSE_PROGRAM_ID: &str = "TLDHkysf5pCnKsVA4gXpNvmy7psXLPEu4LAdDJthT9S";
+const NAME_HOUSE_PROGRAM_ID: &str = "NH3uX6FtVE2fNREAioP7hm5RaozotZxeL6khU1EHx51";
+const ROOT_ANS_PUBLIC_KEY: &str = "3mX9b4AZaQehNoQGfckVcmgmA6bkBoFcbLj9RMmMyNcU";
+const HASH_PREFIX: &str = "ALT Name Service";
+const TLD_HOUSE_PREFIX: &str = "tld_house";
+const NAME_HOUSE_PREFIX: &str = "name_house";
+const NFT_RECORD_PREFIX: &str = "nft_record";
 
 pub struct AllDomainsClient {
     client: JsonRpcClient,
@@ -33,13 +34,10 @@ impl AllDomainsClient {
     }
 
     async fn get_hashed_name(&self, name: &str) -> Result<[u8; 32], Box<dyn Error + Send + Sync>> {
-        let input = format!("{}{}", HASH_PREFIX, name);
         let mut hasher = Sha256::new();
-        hasher.update(input.as_bytes());
-        let result = hasher.finalize();
-        let mut hash = [0u8; 32];
-        hash.copy_from_slice(&result);
-        Ok(hash)
+        hasher.update(HASH_PREFIX.as_bytes());
+        hasher.update(name.as_bytes());
+        Ok(hasher.finalize().into())
     }
 
     fn get_name_account_key_with_bump(
@@ -52,7 +50,7 @@ impl AllDomainsClient {
         seeds.push(hashed_name.as_ref());
 
         let default_pubkey = Pubkey::from([0u8; 32]);
-        let name_class_key = name_class.unwrap_or_else(|| Pubkey::from([0u8; 32]));
+        let name_class_key = name_class.unwrap_or(default_pubkey.clone());
         let parent_name_key = parent_name.unwrap_or(default_pubkey);
         seeds.push(name_class_key.as_ref());
         seeds.push(parent_name_key.as_ref());
