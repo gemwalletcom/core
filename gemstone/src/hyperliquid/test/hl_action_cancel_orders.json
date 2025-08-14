@@ -1,0 +1,22 @@
+{
+    "action": {
+        "cancels": [
+            {
+                "a": 0,
+                "o": 133614972850
+            },
+            {
+                "a": 7,
+                "o": 133610221604
+            }
+        ],
+        "type": "cancel"
+    },
+    "isFrontend": true,
+    "nonce": 1755132902800,
+    "signature": {
+        "r": "0x6d7f8feddf09ac204b786ff82a508134b28ba7d91ed412fef5ae0b8561ea26d3",
+        "s": "0x1c31d3653a2ef71334e733cc81a541db2982724c785002f82e634c71c64726b0",
+        "v": 27
+    }
+}

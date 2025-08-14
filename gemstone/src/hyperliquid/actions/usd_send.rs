@@ -1,4 +1,4 @@
-use super::{HYPERCORE_CHAIN_ID, MAINNET};
+use super::{HYPERCORE_SIGNATURE_CHAIN_ID, MAINNET};
 
 #[derive(uniffi::Record, serde::Serialize)]
 pub struct HyperUsdSend {
@@ -19,7 +19,7 @@ impl HyperUsdSend {
             amount,
             time,
             r#type: "usdSend".to_string(),
-            signature_chain_id: HYPERCORE_CHAIN_ID.to_string(),
+            signature_chain_id: HYPERCORE_SIGNATURE_CHAIN_ID.to_string(),
             hyperliquid_chain: MAINNET.to_string(),
         }
     }
