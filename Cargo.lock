@@ -3008,7 +3008,10 @@ name = "gem_hypercore"
 version = "1.0.0"
 dependencies = [
  "async-trait",
+ "reqwest",
  "serde",
+ "serde_json",
+ "serde_serializers",
  "typeshare",
 ]
 

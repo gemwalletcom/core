@@ -1,3 +1,6 @@
+use std::str::FromStr;
+
+use crate::Chain;
 use serde::{Deserialize, Serialize};
 use strum::EnumIter;
 use strum_macros::{AsRefStr, EnumString};
@@ -21,6 +24,10 @@ pub enum StakeChain {
 }
 
 impl StakeChain {
+    pub fn chain(&self) -> Chain {
+        Chain::from_str(self.as_ref()).unwrap()
+    }
+
     /// Get the lock time in seconds
     pub fn get_lock_time(&self) -> u64 {
         match self {

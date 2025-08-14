@@ -10,6 +10,7 @@ pub enum AssetUpdate {
     IsSellable(bool),
     IsEnabled(bool),
     Rank(i32),
+    StakingApr(Option<f64>),
 }
 
 #[derive(Debug, Clone)]
@@ -64,6 +65,7 @@ impl AssetsStore for DatabaseClient {
                         AssetUpdate::IsSellable(value) => diesel::update(target).set(is_sellable.eq(*value)).execute(conn)?,
                         AssetUpdate::IsEnabled(value) => diesel::update(target).set(is_enabled.eq(*value)).execute(conn)?,
                         AssetUpdate::Rank(value) => diesel::update(target).set(rank.eq(*value)).execute(conn)?,
+                        AssetUpdate::StakingApr(value) => diesel::update(target).set(staking_apr.eq(*value)).execute(conn)?,
                     };
                     total_updated += updated;
                 }
@@ -82,6 +84,7 @@ impl AssetsStore for DatabaseClient {
             AssetUpdate::IsSellable(value) => diesel::update(target).set(is_sellable.eq(value)).execute(&mut self.connection),
             AssetUpdate::IsEnabled(value) => diesel::update(target).set(is_enabled.eq(value)).execute(&mut self.connection),
             AssetUpdate::Rank(value) => diesel::update(target).set(rank.eq(value)).execute(&mut self.connection),
+            AssetUpdate::StakingApr(value) => diesel::update(target).set(staking_apr.eq(value)).execute(&mut self.connection),
         }
     }
 
