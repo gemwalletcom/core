@@ -143,6 +143,7 @@ pub struct Name {
     pub lens: URL,
     pub base: URL,
     pub hyperliquid: URL,
+    pub alldomains: URL,
 }
 
 #[derive(Debug, Deserialize, Clone)]

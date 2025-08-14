@@ -1,6 +1,7 @@
 use client::NameClient;
 use settings::Settings;
 
+pub mod alldomains;
 pub mod aptos;
 pub mod base;
 pub mod client;
@@ -37,6 +38,7 @@ impl NameProviderFactory {
             Box::new(lens::LensClient::new(settings.name.lens.url)),
             Box::new(base::Basenames::new(settings.name.base.url)),
             Box::new(hyperliquid::Hyperliquid::new(settings.name.hyperliquid.url)),
+            Box::new(alldomains::AllDomainsClient::new(settings.name.alldomains.url)),
         ]
     }
 }

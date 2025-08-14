@@ -127,6 +127,7 @@ sui-types = { package = "sui-sdk-types", version = "0.0.5", features = [
     "serde",
 ] }
 sui-transaction-builder = { package = "sui-transaction-builder", version = "0.0.5" }
+solana-primitives = "0.1.2"
 
 uniffi = { version = "0.29.3" }
 uniffi_bindgen = { version = "0.29.3" }
