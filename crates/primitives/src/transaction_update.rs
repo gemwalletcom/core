@@ -1,6 +1,5 @@
 use crate::transaction_state::TransactionState;
 use serde::{Deserialize, Serialize};
-use typeshare::typeshare;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct TransactionUpdate {
