@@ -18,21 +18,18 @@ pub struct GemGateway {
 impl GemGateway {
     #[uniffi::constructor]
     pub fn new(chain: Chain, rpc_provider: Arc<dyn AlienProvider>) -> Self {
+        let hypercore_client = rpc_provider
+            .get_endpoint(chain)
+            .ok()
+            .map(|base_url| {
+                let native_client = NativeClient::new(base_url, rpc_provider.clone());
+                HyperCoreClient::new(native_client)
+            });
+
         Self {
             chain,
             rpc_provider,
-            hypercore_client: None,
-        }
-    }
-
-    #[uniffi::constructor]
-    pub fn new_with_native_client(chain: Chain, base_url: String, provider: Arc<dyn AlienProvider>) -> Self {
-        let native_client = NativeClient::new(base_url, provider.clone());
-        let hypercore_client = HyperCoreClient::new(native_client);
-        Self {
-            chain,
-            rpc_provider: provider,
-            hypercore_client: Some(hypercore_client),
+            hypercore_client,
         }
     }
 
