@@ -1,6 +1,7 @@
 mod chain_providers;
 mod provider_config;
 pub use chain_providers::ChainProviders;
+use gem_client::ReqwestClient;
 use gem_jsonrpc::JsonRpcClient;
 pub use provider_config::ProviderConfig;
 
@@ -55,11 +56,13 @@ impl ProviderFactory {
 
     pub fn new_provider(config: ProviderConfig) -> Box<dyn ChainProvider> {
         let retry_policy = ExponentialBackoff::builder().build_with_max_retries(3);
-        let client = ClientBuilder::new(reqwest::Client::new())
+        let reqwest_client = reqwest::Client::new();
+        let client = ClientBuilder::new(reqwest_client.clone())
             .with(RetryTransientMiddleware::new_with_policy(retry_policy))
             .build();
         let chain = config.chain;
         let url = config.url;
+        let gem_client = ReqwestClient::new(url.clone(), reqwest_client);
 
         match chain {
             Chain::Bitcoin | Chain::BitcoinCash | Chain::Litecoin | Chain::Doge => Box::new(BitcoinProvider::new(BitcoinClient::new(chain, client, url))),
@@ -117,7 +120,7 @@ impl ProviderFactory {
             Chain::Algorand => Box::new(AlgorandProvider::new(AlgorandClient::new(client, url))),
             Chain::Stellar => Box::new(StellarProvider::new(StellarClient::new(client, url))),
             Chain::Polkadot => Box::new(PolkadotProvider::new(PolkadotClient::new(client, url))),
-            Chain::HyperCore => Box::new(HyperCoreProvider::new(HyperCoreClient::new(&url))),
+            Chain::HyperCore => Box::new(HyperCoreProvider::new(HyperCoreClient::new(gem_client))),
         }
     }
 

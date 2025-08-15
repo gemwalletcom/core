@@ -25,6 +25,7 @@ gem_sui = { path = "../gem_sui", features = ["rpc"] }
 gem_ton = { path = "../gem_ton", features = ["rpc"] }
 gem_tron = { path = "../gem_tron", features = ["rpc"] }
 gem_hypercore = { path = "../gem_hypercore" }
+gem_client = { path = "../gem_client", features = ["reqwest"] }
 gem_jsonrpc = { path = "../gem_jsonrpc", features = ["client"] }
 
 settings = { path = "../settings" }

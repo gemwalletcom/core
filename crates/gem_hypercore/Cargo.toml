@@ -11,6 +11,6 @@ async-trait = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 typeshare = { workspace = true }
-reqwest = { workspace = true }
 
+gem_client = { path = "../gem_client", features = ["reqwest"] }
 serde_serializers = { path = "../serde_serializers" }

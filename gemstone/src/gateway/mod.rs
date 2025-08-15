@@ -1,4 +1,4 @@
-use crate::network::AlienProvider;
+use crate::network::{AlienProvider, NativeClient};
 use std::sync::Arc;
 
 pub mod models;
@@ -9,14 +9,14 @@ use primitives::{AssetId, Chain};
 #[derive(Debug, uniffi::Object)]
 pub struct GemGateway {
     pub chain: Chain,
-    //pub rpc_provider: Arc<dyn AlienProvider>,
+    pub rpc_provider: Arc<dyn AlienProvider>,
 }
 
 #[uniffi::export]
 impl GemGateway {
     #[uniffi::constructor]
-    pub fn new(chain: Chain) -> Self {
-        Self { chain }
+    pub fn new(chain: Chain, rpc_provider: Arc<dyn AlienProvider>) -> Self {
+        Self { chain, rpc_provider }
     }
 
     pub async fn coin_balance(&self, address: String) -> Result<GemAssetBalance, GatewayError> {

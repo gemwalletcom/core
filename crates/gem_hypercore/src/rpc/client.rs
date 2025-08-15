@@ -1,29 +1,19 @@
 use crate::typeshare::balance::HypercoreValidator;
+use gem_client::Client;
+use serde_json::json;
 use std::error::Error;
 
-pub struct HyperCoreClient {
-    url: String,
-    client: reqwest::Client,
+pub struct HyperCoreClient<C: Client> {
+    client: C,
 }
 
-impl HyperCoreClient {
-    pub fn new(url: &str) -> Self {
-        Self {
-            url: url.to_string(),
-            client: reqwest::Client::new(),
-        }
+impl<C: Client> HyperCoreClient<C> {
+    pub fn new(client: C) -> Self {
+        Self { client }
     }
 
     pub async fn get_validators(&self) -> Result<Vec<HypercoreValidator>, Box<dyn Error + Send + Sync>> {
-        let response = self
-            .client
-            .post(format!("{}/info", self.url))
-            .json(&serde_json::json!({"type": "validatorSummaries"}))
-            .send()
-            .await?
-            .json::<Vec<HypercoreValidator>>()
-            .await?;
-        Ok(response)
+        Ok(self.client.post("/info", &json!({"type": "validatorSummaries"})).await?)
     }
 
     pub async fn get_staking_apy(&self) -> Result<f64, Box<dyn Error + Send + Sync>> {

@@ -2922,6 +2922,7 @@ dependencies = [
  "gem_bitcoin",
  "gem_bsc",
  "gem_cardano",
+ "gem_client",
  "gem_cosmos",
  "gem_evm",
  "gem_hypercore",
@@ -2943,6 +2944,17 @@ dependencies = [
  "serde_json",
  "serde_serializers",
  "tokio",
+]
+
+[[package]]
+name = "gem_client"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.12",
 ]
 
 [[package]]
@@ -3008,7 +3020,7 @@ name = "gem_hypercore"
 version = "1.0.0"
 dependencies = [
  "async-trait",
- "reqwest",
+ "gem_client",
  "serde",
  "serde_json",
  "serde_serializers",
@@ -3181,6 +3193,7 @@ dependencies = [
  "futures",
  "gem_aptos",
  "gem_bsc",
+ "gem_client",
  "gem_cosmos",
  "gem_evm",
  "gem_hash",
@@ -6575,6 +6588,7 @@ dependencies = [
  "gem_bitcoin",
  "gem_cardano",
  "gem_chain_rpc",
+ "gem_client",
  "gem_cosmos",
  "gem_evm",
  "gem_hypercore",
