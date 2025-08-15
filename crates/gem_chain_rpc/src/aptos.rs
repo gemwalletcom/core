@@ -78,10 +78,7 @@ impl ChainAssetsProvider for AptosProvider {
                     return None;
                 };
                 match resource.data {
-                    ResourceData::CoinStore(coin_store) => Some(AssetBalance::new(
-                        AssetId::from_token(self.get_chain(), token_type),
-                        coin_store.coin.value,
-                    )),
+                    ResourceData::CoinStore(coin_store) => Some(AssetBalance::new(AssetId::from_token(self.get_chain(), token_type), coin_store.coin.value)),
                     _ => None,
                 }
             })
