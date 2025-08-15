@@ -1,4 +1,4 @@
-use chrono::NaiveDate;
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use strum::{AsRefStr, Display, EnumString};
 use typeshare::typeshare;
@@ -23,7 +23,7 @@ pub struct DelegationBase {
     pub balance: String,
     pub shares: String,
     pub rewards: String,
-    pub completion_date: Option<NaiveDate>,
+    pub completion_date: Option<DateTime<Utc>>,
     pub delegation_id: String,
     pub validator_id: String,
 }

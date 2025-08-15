@@ -1,9 +1,9 @@
 use crate::network::{AlienError, AlienProvider, AlienTarget};
 use async_trait::async_trait;
-use gem_client::{Client, ClientError};
+use gem_client::{Client, ClientError, ContentType};
 use primitives::Chain;
 use serde::{de::DeserializeOwned, Serialize};
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 
 #[derive(Debug)]
 pub struct AlienClient {
@@ -39,15 +39,30 @@ impl Client for AlienClient {
         serde_json::from_slice(&response_data).map_err(|e| ClientError::Serialization(format!("Failed to deserialize response: {e}")))
     }
 
-    async fn post<T, R>(&self, path: &str, body: &T) -> Result<R, ClientError>
+    async fn post<T, R>(&self, path: &str, body: &T, headers: Option<HashMap<String, String>>) -> Result<R, ClientError>
     where
         T: Serialize + Send + Sync,
         R: DeserializeOwned,
     {
         let url = self.build_url(path);
-        let json_value = serde_json::to_value(body).map_err(|e| ClientError::Serialization(format!("Failed to serialize request: {e}")))?;
 
-        let target = AlienTarget::post_json(&url, json_value);
+        let data = match headers.as_ref().and_then(|h| h.get("Content-Type")).and_then(|s| ContentType::from_str(s)) {
+            Some(ContentType::TextPlain) => {
+                let json_value = serde_json::to_value(body)?;
+                match json_value {
+                    serde_json::Value::String(s) => s.into_bytes(),
+                    _ => return Err(ClientError::Serialization("Expected string body for text/plain content-type".to_string())),
+                }
+            }
+            _ => serde_json::to_vec(body)?,
+        };
+
+        let target = AlienTarget {
+            url,
+            method: crate::network::AlienHttpMethod::Post,
+            headers,
+            body: Some(data),
+        };
 
         let response_data = self
             .provider

@@ -5,21 +5,22 @@ use async_trait::async_trait;
 use primitives::Transaction;
 use primitives::{chain::Chain, Asset, AssetBalance};
 
-use gem_bitcoin::rpc::BitcoinClient;
+use gem_bitcoin::rpc::client::BitcoinClient;
 use gem_bitcoin::rpc::BitcoinMapper;
+use gem_client::Client;
 
-pub struct BitcoinProvider {
-    client: BitcoinClient,
+pub struct BitcoinProvider<C: Client> {
+    client: BitcoinClient<C>,
 }
 
-impl BitcoinProvider {
-    pub fn new(client: BitcoinClient) -> Self {
+impl<C: Client> BitcoinProvider<C> {
+    pub fn new(client: BitcoinClient<C>) -> Self {
         Self { client }
     }
 }
 
 #[async_trait]
-impl ChainBlockProvider for BitcoinProvider {
+impl<C: Client> ChainBlockProvider for BitcoinProvider<C> {
     fn get_chain(&self) -> Chain {
         self.client.get_chain()
     }
@@ -45,21 +46,21 @@ impl ChainBlockProvider for BitcoinProvider {
 }
 
 #[async_trait]
-impl ChainTokenDataProvider for BitcoinProvider {
+impl<C: Client> ChainTokenDataProvider for BitcoinProvider<C> {
     async fn get_token_data(&self, _token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
         unimplemented!()
     }
 }
 
 #[async_trait]
-impl ChainAssetsProvider for BitcoinProvider {
+impl<C: Client> ChainAssetsProvider for BitcoinProvider<C> {
     async fn get_assets_balances(&self, _address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
         Ok(vec![])
     }
 }
 
 #[async_trait]
-impl ChainTransactionsProvider for BitcoinProvider {
+impl<C: Client> ChainTransactionsProvider for BitcoinProvider<C> {
     async fn get_transactions_by_address(&self, address: String) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
         let transactions = self.client.get_address_details(&address, 20).await?.transactions.unwrap_or_default();
         Ok(BitcoinMapper::map_transactions(self.get_chain(), transactions))
@@ -67,6 +68,6 @@ impl ChainTransactionsProvider for BitcoinProvider {
 }
 
 #[async_trait]
-impl ChainStakeProvider for BitcoinProvider {
+impl<C: Client> ChainStakeProvider for BitcoinProvider<C> {
     // Default implementation returns empty vector
 }

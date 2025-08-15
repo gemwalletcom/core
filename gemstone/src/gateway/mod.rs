@@ -1,5 +1,6 @@
 use crate::network::{AlienClient, AlienProvider};
 use chain_traits::ChainTraits;
+use gem_bitcoin::rpc::client::BitcoinClient;
 use gem_hypercore::rpc::client::HyperCoreClient;
 use std::sync::Arc;
 
@@ -19,6 +20,7 @@ impl GemGateway {
         let alien_client = AlienClient::new(url, self.provider.clone());
         match chain {
             Chain::HyperCore => Ok(Arc::new(HyperCoreClient::new(alien_client))),
+            Chain::Bitcoin | Chain::BitcoinCash | Chain::Litecoin | Chain::Doge => Ok(Arc::new(BitcoinClient::new(alien_client, chain))),
             _ => Err(GatewayError::InvalidChain(chain.to_string())),
         }
     }
@@ -32,8 +34,9 @@ impl GemGateway {
     }
 
     pub async fn get_balance_coin(&self, chain: Chain, address: String) -> Result<GemAssetBalance, GatewayError> {
-        let provider = self.provider(chain).await?;
-        let balance = provider
+        let balance = self
+            .provider(chain)
+            .await?
             .get_balance_coin(address)
             .await
             .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
@@ -41,8 +44,9 @@ impl GemGateway {
     }
 
     pub async fn get_balance_tokens(&self, chain: Chain, address: String, token_ids: Vec<String>) -> Result<Vec<GemAssetBalance>, GatewayError> {
-        let provider = self.provider(chain).await?;
-        let balance = provider
+        let balance = self
+            .provider(chain)
+            .await?
             .get_balance_tokens(address, token_ids)
             .await
             .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
@@ -50,8 +54,9 @@ impl GemGateway {
     }
 
     pub async fn get_balance_staking(&self, chain: Chain, address: String) -> Result<Option<GemAssetBalance>, GatewayError> {
-        let provider = self.provider(chain).await?;
-        let balance = provider
+        let balance = self
+            .provider(chain)
+            .await?
             .get_balance_staking(address)
             .await
             .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
@@ -60,14 +65,19 @@ impl GemGateway {
 
     // staking
     pub async fn get_staking_validators(&self, chain: Chain) -> Result<Vec<GemDelegationValidator>, GatewayError> {
-        let provider = self.provider(chain).await?;
-        let validators = provider.get_staking_validators().await.map_err(|e| GatewayError::NetworkError(e.to_string()))?;
+        let validators = self
+            .provider(chain)
+            .await?
+            .get_staking_validators()
+            .await
+            .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
         Ok(validators.into_iter().map(|v| v.into()).collect())
     }
 
     pub async fn get_staking_delegations(&self, chain: Chain, address: String) -> Result<Vec<GemDelegationBase>, GatewayError> {
-        let provider = self.provider(chain).await?;
-        let delegations = provider
+        let delegations = self
+            .provider(chain)
+            .await?
             .get_staking_delegations(address)
             .await
             .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
@@ -75,21 +85,43 @@ impl GemGateway {
     }
 
     pub async fn transaction_broadcast(&self, chain: Chain, data: String) -> Result<String, GatewayError> {
-        let provider = self.provider(chain).await?;
-        let hash = provider
+        let hash = self
+            .provider(chain)
+            .await?
             .transaction_broadcast(data)
             .await
             .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
         Ok(hash)
     }
 
-    pub async fn get_transaction_status(&self, chain: Chain, hash: String) -> Result<String, GatewayError> {
-        let provider = self.provider(chain).await?;
-        let status = provider
+    pub async fn get_transaction_status(&self, chain: Chain, hash: String) -> Result<GemTransactionUpdate, GatewayError> {
+        let status = self
+            .provider(chain)
+            .await?
             .get_transaction_status(hash)
             .await
             .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
-        Ok(status)
+        Ok(status.into())
+    }
+
+    pub async fn get_chain_id(&self, chain: Chain) -> Result<String, GatewayError> {
+        let chain_id = self
+            .provider(chain)
+            .await?
+            .get_chain_id()
+            .await
+            .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
+        Ok(chain_id)
+    }
+
+    pub async fn get_block_number(&self, chain: Chain) -> Result<u64, GatewayError> {
+        let block_number = self
+            .provider(chain)
+            .await?
+            .get_block_number()
+            .await
+            .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
+        Ok(block_number)
     }
 }
 

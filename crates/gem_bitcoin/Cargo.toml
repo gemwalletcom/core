@@ -7,12 +7,14 @@ publish = false
 [features]
 default = []
 rpc = ["dep:reqwest-middleware", "dep:chrono"]
-typeshare = ["dep:typeshare"]
 
 [dependencies]
 serde = { workspace = true, features = ["derive"] }
 primitives = { path = "../primitives" }
+gem_client = { path = "../gem_client" }
+chain_traits = { path = "../chain_traits" }
+async-trait = { workspace = true }
 
 reqwest-middleware = { workspace = true, optional = true }
 chrono = { workspace = true, features = ["serde"], optional = true }
-typeshare = { workspace = true, optional = true }
+typeshare = { workspace = true }

@@ -1,5 +1,6 @@
 use async_trait::async_trait;
 use chain_traits::ChainTransactions;
+use primitives::{TransactionState, TransactionUpdate};
 use std::error::Error;
 
 use gem_client::Client;
@@ -12,7 +13,7 @@ impl<C: Client> ChainTransactions for HyperCoreClient<C> {
         self.transaction_broadcast(data).await
     }
 
-    async fn get_transaction_status(&self, hash: String) -> Result<String, Box<dyn Error + Sync + Send>> {
-        Ok(hash)
+    async fn get_transaction_status(&self, _hash: String) -> Result<TransactionUpdate, Box<dyn Error + Sync + Send>> {
+        Ok(TransactionUpdate::new(TransactionState::Confirmed))
     }
 }

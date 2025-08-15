@@ -19,7 +19,6 @@ pub struct GemBalance {
     pub withdrawable: String,
 }
 
-// Conversion from primitives to UniFFI types
 impl From<AssetBalance> for GemAssetBalance {
     fn from(value: AssetBalance) -> Self {
         Self {
@@ -122,6 +121,19 @@ impl From<primitives::DelegationBase> for GemDelegationBase {
             completion_date: None,
             delegation_id: value.delegation_id,
             validator_id: value.validator_id,
+        }
+    }
+}
+
+#[derive(Debug, Clone, uniffi::Enum)]
+pub enum GemTransactionUpdate {
+    TransactionStateChange(String),
+}
+
+impl From<primitives::TransactionUpdate> for GemTransactionUpdate {
+    fn from(value: primitives::TransactionUpdate) -> Self {
+        match value {
+            primitives::TransactionUpdate::TransactionStateChange(state) => GemTransactionUpdate::TransactionStateChange(state.to_string()),
         }
     }
 }

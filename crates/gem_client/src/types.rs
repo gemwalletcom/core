@@ -11,3 +11,9 @@ pub enum ClientError {
     #[error("Serialization error: {0}")]
     Serialization(String),
 }
+
+impl From<serde_json::Error> for ClientError {
+    fn from(err: serde_json::Error) -> Self {
+        ClientError::Serialization(format!("JSON error: {err}"))
+    }
+}
