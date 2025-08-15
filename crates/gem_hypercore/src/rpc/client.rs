@@ -22,18 +22,18 @@ impl<C: Client> HyperCoreClient<C> {
 
     pub async fn transaction_broadcast(&self, data: String) -> Result<String, Box<dyn Error + Send + Sync>> {
         let json_data: serde_json::Value = serde_json::from_str(&data)?;
-        let response: serde_json::Value = self.client.post("/exchange", &json_data).await?;
+        let response: serde_json::Value = self.client.post("/exchange", &json_data, None).await?;
         match serde_json::from_value::<TransactionBroadcastResponse>(response)?.into_result(data) {
             HyperCoreBroadcastResult::Success(result) => Ok(result),
             HyperCoreBroadcastResult::Error(error) => Err(error.into()),
         }
     }
     pub async fn get_staking_validators(&self) -> Result<Vec<HypercoreValidator>, Box<dyn Error + Send + Sync>> {
-        Ok(self.client.post("/info", &json!({"type": "validatorSummaries"})).await?)
+        Ok(self.client.post("/info", &json!({"type": "validatorSummaries"}), None).await?)
     }
 
     pub async fn get_staking_delegations(&self, user: &str) -> Result<Vec<HypercoreDelegationBalance>, Box<dyn Error + Send + Sync>> {
-        Ok(self.client.post("/info", &json!({"type": "delegations", "user": user})).await?)
+        Ok(self.client.post("/info", &json!({"type": "delegations", "user": user}), None).await?)
     }
 
     pub async fn get_staking_apy(&self) -> Result<f64, Box<dyn Error + Send + Sync>> {
@@ -50,6 +50,7 @@ impl<C: Client> HyperCoreClient<C> {
                     "type": "spotClearinghouseState",
                     "user": user
                 }),
+                None,
             )
             .await?)
     }
@@ -63,6 +64,7 @@ impl<C: Client> HyperCoreClient<C> {
                     "type": "delegatorSummary",
                     "user": user
                 }),
+                None,
             )
             .await?)
     }

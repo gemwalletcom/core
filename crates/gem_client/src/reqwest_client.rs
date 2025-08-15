@@ -1,6 +1,7 @@
-use crate::{Client, ClientError};
+use crate::{Client, ClientError, ContentType};
 use async_trait::async_trait;
 use serde::{de::DeserializeOwned, Serialize};
+use std::collections::HashMap;
 
 #[derive(Debug)]
 pub struct ReqwestClient {
@@ -61,22 +62,24 @@ impl Client for ReqwestClient {
         self.send_request(response).await
     }
 
-    async fn post<T, R>(&self, path: &str, body: &T) -> Result<R, ClientError>
+    async fn post<T, R>(&self, path: &str, body: &T, headers: Option<HashMap<String, String>>) -> Result<R, ClientError>
     where
         T: Serialize + Send + Sync,
         R: DeserializeOwned,
     {
         let url = self.build_url(path);
+        let headers = headers.unwrap_or_else(|| HashMap::from([("Content-Type".to_string(), ContentType::ApplicationJson.as_str().to_string())]));
+
         let json_body = serde_json::to_vec(body).map_err(|e| ClientError::Serialization(format!("Failed to serialize request: {e}")))?;
 
-        let response = self
-            .client
-            .post(&url)
-            .header("Content-Type", "application/json")
-            .body(json_body)
-            .send()
-            .await
-            .map_err(Self::map_reqwest_error)?;
+        let mut request = self.client.post(&url).body(json_body);
+
+        // Add all headers
+        for (key, value) in headers {
+            request = request.header(&key, &value);
+        }
+
+        let response = request.send().await.map_err(Self::map_reqwest_error)?;
 
         self.send_request(response).await
     }

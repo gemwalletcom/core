@@ -2885,7 +2885,10 @@ dependencies = [
 name = "gem_bitcoin"
 version = "1.0.0"
 dependencies = [
+ "async-trait",
+ "chain_traits",
  "chrono",
+ "gem_client",
  "primitives",
  "reqwest-middleware",
  "serde",
@@ -3205,6 +3208,7 @@ dependencies = [
  "chain_traits",
  "futures",
  "gem_aptos",
+ "gem_bitcoin",
  "gem_bsc",
  "gem_client",
  "gem_cosmos",

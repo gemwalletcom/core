@@ -1,20 +1,25 @@
 use std::error::Error;
 
 use crate::rpc::model::{AddressDetails, Transaction};
+use crate::typeshare::account::BitcoinAccount;
+use crate::typeshare::block::{BitcoinBlock, BitcoinNodeInfo};
+use crate::typeshare::transaction::BitcoinTransactionBroacastResult;
 
 use super::model::{Block, Status};
+use chain_traits::ChainTraits;
+use gem_client::{Client, ContentType};
 use primitives::chain::Chain;
-use reqwest_middleware::ClientWithMiddleware;
+use std::collections::HashMap;
 
-pub struct BitcoinClient {
-    chain: Chain,
-    client: ClientWithMiddleware,
-    url: String,
+#[derive(Debug)]
+pub struct BitcoinClient<C: Client> {
+    client: C,
+    pub chain: Chain,
 }
 
-impl BitcoinClient {
-    pub fn new(chain: Chain, client: ClientWithMiddleware, url: String) -> Self {
-        Self { chain, client, url }
+impl<C: Client> BitcoinClient<C> {
+    pub fn new(client: C, chain: Chain) -> Self {
+        Self { client, chain }
     }
 
     pub fn get_chain(&self) -> Chain {
@@ -22,22 +27,37 @@ impl BitcoinClient {
     }
 
     pub async fn get_status(&self) -> Result<Status, Box<dyn Error + Send + Sync>> {
-        let url = format!("{}/api/", self.url);
-        Ok(self.client.get(url).send().await?.json().await?)
+        Ok(self.client.get("/api/").await?)
     }
 
     pub async fn get_block(&self, block_number: i64, page: usize, limit: usize) -> Result<Block, Box<dyn Error + Send + Sync>> {
-        let url = format!("{}/api/v2/block/{}?page={}&limit={}", self.url, block_number, page, limit);
-        Ok(self.client.get(url).send().await?.json().await?)
+        Ok(self.client.get(&format!("/api/v2/block/{block_number}?page={page}&limit={limit}")).await?)
     }
 
     pub async fn get_address_details(&self, address: &str, limit: usize) -> Result<AddressDetails, Box<dyn Error + Send + Sync>> {
-        let url = format!("{}/api/v2/address/{}?pageSize={}&details=txs", self.url, address, limit);
-        Ok(self.client.get(url).send().await?.json().await?)
+        Ok(self.client.get(&format!("/api/v2/address/{address}?pageSize={limit}&details=txs")).await?)
     }
 
     pub async fn get_transaction(&self, txid: &str) -> Result<Transaction, Box<dyn Error + Send + Sync>> {
-        let url = format!("{}/api/v2/tx/{}", self.url, txid);
-        Ok(self.client.get(url).send().await?.json().await?)
+        Ok(self.client.get(&format!("/api/v2/tx/{txid}")).await?)
+    }
+
+    pub async fn get_balance(&self, address: &str) -> Result<BitcoinAccount, Box<dyn Error + Send + Sync>> {
+        Ok(self.client.get(&format!("/api/v2/address/{address}")).await?)
+    }
+
+    pub async fn get_block_info(&self, block_number: u64) -> Result<BitcoinBlock, Box<dyn Error + Send + Sync>> {
+        Ok(self.client.get(&format!("/api/v2/block/{block_number}")).await?)
+    }
+
+    pub async fn get_node_info(&self) -> Result<BitcoinNodeInfo, Box<dyn Error + Send + Sync>> {
+        Ok(self.client.get("/api/").await?)
+    }
+
+    pub async fn broadcast_transaction(&self, data: String) -> Result<BitcoinTransactionBroacastResult, Box<dyn Error + Send + Sync>> {
+        let headers = Some(HashMap::from([("Content-Type".to_string(), ContentType::TextPlain.as_str().to_string())]));
+        Ok(self.client.post("/api/v2/sendtx/", &data, headers).await?)
     }
 }
+
+impl<C: Client> ChainTraits for BitcoinClient<C> {}

@@ -16,7 +16,7 @@ use gem_chain_rpc::{
 
 use gem_algorand::rpc::AlgorandClient;
 use gem_aptos::rpc::AptosClient;
-use gem_bitcoin::rpc::BitcoinClient;
+use gem_bitcoin::rpc::client::BitcoinClient;
 use gem_cardano::rpc::CardanoClient;
 use gem_cosmos::rpc::client::CosmosClient;
 use gem_evm::rpc::{ankr::AnkrClient, AlchemyClient, EthereumClient};
@@ -65,7 +65,7 @@ impl ProviderFactory {
         let gem_client = ReqwestClient::new(url.clone(), reqwest_client);
 
         match chain {
-            Chain::Bitcoin | Chain::BitcoinCash | Chain::Litecoin | Chain::Doge => Box::new(BitcoinProvider::new(BitcoinClient::new(chain, client, url))),
+            Chain::Bitcoin | Chain::BitcoinCash | Chain::Litecoin | Chain::Doge => Box::new(BitcoinProvider::new(BitcoinClient::new(gem_client, chain))),
             Chain::Ethereum
             | Chain::SmartChain
             | Chain::Polygon

@@ -5,8 +5,7 @@ use serde_serializers::deserialize_f64_from_str;
 use typeshare::typeshare;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare(swift = "Equatable, Se,
-pub(crate) id: Stringndable")]
+#[typeshare(swift = "Equatable, Sendable")]
 #[serde(rename_all = "camelCase")]
 pub struct HypercoreBalance {
     pub coin: String,

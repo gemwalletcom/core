@@ -139,3 +139,5 @@ pub mod chart;
 pub use self::chart::{ChartCandleStick, ChartDateValue};
 pub mod delegation;
 pub use self::delegation::{Delegation, DelegationBase, DelegationState, DelegationValidator};
+pub mod transaction_update;
+pub use self::transaction_update::TransactionUpdate;
