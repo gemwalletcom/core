@@ -125,15 +125,28 @@ impl From<primitives::DelegationBase> for GemDelegationBase {
     }
 }
 
+#[derive(Debug, Clone, uniffi::Record)]
+pub struct GemTransactionUpdate {
+    pub state: String,
+    //pub changes: Vec<GemTransactionChange>,
+}
+
 #[derive(Debug, Clone, uniffi::Enum)]
-pub enum GemTransactionUpdate {
+pub enum GemTransactionChange {
     TransactionStateChange(String),
+}
+
+impl From<primitives::TransactionChange> for GemTransactionChange {
+    fn from(value: primitives::TransactionChange) -> Self {
+        match value {}
+    }
 }
 
 impl From<primitives::TransactionUpdate> for GemTransactionUpdate {
     fn from(value: primitives::TransactionUpdate) -> Self {
-        match value {
-            primitives::TransactionUpdate::TransactionStateChange(state) => GemTransactionUpdate::TransactionStateChange(state.to_string()),
+        GemTransactionUpdate {
+            state: value.state.to_string(),
+            //changes: value.changes.into_iter().map(|change| change.into()).collect(),
         }
     }
 }
