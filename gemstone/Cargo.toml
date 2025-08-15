@@ -64,7 +64,6 @@ bigdecimal.workspace = true
 rand.workspace = true
 rmp.workspace = true
 rmp-serde.workspace = true
-
 solana-primitives.workspace = true
 
 [build-dependencies]
