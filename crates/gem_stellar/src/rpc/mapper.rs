@@ -51,7 +51,7 @@ impl StellarMapper {
             .filter(|x| x.asset_type == "credit_alphanum4")
             .filter_map(|x| {
                 let asset_id = AssetId::from_token(chain, &x.asset_issuer?);
-                let value = BigNumberFormatter::value_from_amount(&x.balance, 7)?;
+                let value = BigNumberFormatter::value_from_amount(&x.balance, 7).ok()?;
                 Some(AssetBalance::new(asset_id, value))
             })
             .collect()

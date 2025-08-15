@@ -34,9 +34,9 @@ impl Client for NativeClient {
             .provider
             .request(target)
             .await
-            .map_err(|e| ClientError::Network(format!("Alien provider error: {}", e)))?;
+            .map_err(|e| ClientError::Network(format!("Alien provider error: {e}")))?;
 
-        serde_json::from_slice(&response_data).map_err(|e| ClientError::Serialization(format!("Failed to deserialize response: {}", e)))
+        serde_json::from_slice(&response_data).map_err(|e| ClientError::Serialization(format!("Failed to deserialize response: {e}")))
     }
 
     async fn post<T, R>(&self, path: &str, body: &T) -> Result<R, ClientError>
@@ -45,7 +45,7 @@ impl Client for NativeClient {
         R: DeserializeOwned,
     {
         let url = self.build_url(path);
-        let json_value = serde_json::to_value(body).map_err(|e| ClientError::Serialization(format!("Failed to serialize request: {}", e)))?;
+        let json_value = serde_json::to_value(body).map_err(|e| ClientError::Serialization(format!("Failed to serialize request: {e}")))?;
 
         let target = AlienTarget::post_json(&url, json_value);
 
@@ -53,9 +53,9 @@ impl Client for NativeClient {
             .provider
             .request(target)
             .await
-            .map_err(|e| ClientError::Network(format!("Alien provider error: {}", e)))?;
+            .map_err(|e| ClientError::Network(format!("Alien provider error: {e}")))?;
 
-        serde_json::from_slice(&response_data).map_err(|e| ClientError::Serialization(format!("Failed to deserialize response: {}", e)))
+        serde_json::from_slice(&response_data).map_err(|e| ClientError::Serialization(format!("Failed to deserialize response: {e}")))
     }
 }
 

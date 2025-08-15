@@ -1,119 +1,61 @@
 use crate::network::{AlienProvider, NativeClient};
+use chain_traits::ChainBalances;
 use gem_hypercore::rpc::client::HyperCoreClient;
 use std::sync::Arc;
 
 pub mod models;
 
 pub use models::*;
-use primitives::{AssetId, Chain};
+use primitives::Chain;
 
 #[derive(Debug, uniffi::Object)]
 pub struct GemGateway {
-    pub chain: Chain,
-    pub rpc_provider: Arc<dyn AlienProvider>,
-    pub hypercore_client: Option<HyperCoreClient<NativeClient>>,
+    pub provider: Arc<dyn AlienProvider>,
+}
+
+impl GemGateway {
+    pub async fn provider(&self, chain: Chain) -> Result<Arc<dyn ChainBalances>, GatewayError> {
+        let url = self.provider.get_endpoint(chain).unwrap();
+        let native_client = NativeClient::new(url, self.provider.clone());
+        match chain {
+            Chain::HyperCore => Ok(Arc::new(HyperCoreClient::new(native_client))),
+            _ => Err(GatewayError::InvalidChain(chain.to_string())),
+        }
+    }
 }
 
 #[uniffi::export]
 impl GemGateway {
     #[uniffi::constructor]
-    pub fn new(chain: Chain, rpc_provider: Arc<dyn AlienProvider>) -> Self {
-        let hypercore_client = rpc_provider
-            .get_endpoint(chain)
-            .ok()
-            .map(|base_url| {
-                let native_client = NativeClient::new(base_url, rpc_provider.clone());
-                HyperCoreClient::new(native_client)
-            });
-
-        Self {
-            chain,
-            rpc_provider,
-            hypercore_client,
-        }
+    pub fn new(provider: Arc<dyn AlienProvider>) -> Self {
+        Self { provider }
     }
 
-    pub async fn coin_balance(&self, address: String) -> Result<GemAssetBalance, GatewayError> {
-        if let Some(ref hypercore_client) = self.hypercore_client {
-            let balances = hypercore_client
-                .spot_balances(&address)
-                .await
-                .map_err(|e| GatewayError::NetworkError(format!("HyperCore API error: {}", e)))?;
-
-            // Find the native coin balance (token index 0)
-            let native_balance = balances
-                .balances
-                .iter()
-                .find(|b| b.token == 0)
-                .map(|b| b.total.clone())
-                .unwrap_or_else(|| "0".to_string());
-
-            Ok(GemAssetBalance {
-                asset_id: self.chain.as_asset_id(),
-                balance: GemBalance {
-                    available: native_balance,
-                    frozen: "0".to_string(),
-                    locked: "0".to_string(),
-                    staked: "0".to_string(),
-                    pending: "0".to_string(),
-                    rewards: "0".to_string(),
-                    reserved: "0".to_string(),
-                    withdrawable: "0".to_string(),
-                },
-            })
-        } else {
-            // Fallback for when no hypercore client is available
-            Ok(GemAssetBalance {
-                asset_id: self.chain.as_asset_id(),
-                balance: GemBalance {
-                    available: "0".to_string(),
-                    frozen: "0".to_string(),
-                    locked: "0".to_string(),
-                    staked: "0".to_string(),
-                    pending: "0".to_string(),
-                    rewards: "0".to_string(),
-                    reserved: "0".to_string(),
-                    withdrawable: "0".to_string(),
-                },
-            })
-        }
+    pub async fn coin_balance(&self, chain: Chain, address: String) -> Result<GemAssetBalance, GatewayError> {
+        let provider = self.provider(chain).await?;
+        let balance = provider
+            .get_coin_balance(address)
+            .await
+            .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
+        Ok(balance.into())
     }
 
-    pub async fn token_balance(&self, address: String, token_ids: Vec<String>) -> Result<Vec<GemAssetBalance>, GatewayError> {
-        let balances = token_ids
-            .into_iter()
-            .map(|token_id| GemAssetBalance {
-                asset_id: AssetId::from_token(self.chain, &token_id),
-                balance: GemBalance {
-                    available: "1000000000000000000".to_string(),
-                    frozen: "0".to_string(),
-                    locked: "0".to_string(),
-                    staked: "0".to_string(),
-                    pending: "0".to_string(),
-                    rewards: "0".to_string(),
-                    reserved: "0".to_string(),
-                    withdrawable: "0".to_string(),
-                },
-            })
-            .collect();
-
-        Ok(balances)
+    pub async fn token_balance(&self, chain: Chain, address: String, token_ids: Vec<String>) -> Result<Vec<GemAssetBalance>, GatewayError> {
+        let provider = self.provider(chain).await?;
+        let balance = provider
+            .get_tokens_balance(address, token_ids)
+            .await
+            .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
+        Ok(balance.into_iter().map(|b| b.into()).collect())
     }
 
-    pub async fn get_stake_balance(&self, address: String) -> Result<Option<GemAssetBalance>, GatewayError> {
-        Ok(Some(GemAssetBalance {
-            asset_id: self.chain.as_asset_id(),
-            balance: GemBalance {
-                available: "0".to_string(),
-                frozen: "0".to_string(),
-                locked: "0".to_string(),
-                staked: "5000000000000000000".to_string(),
-                pending: "0".to_string(),
-                rewards: "100000000000000000".to_string(),
-                reserved: "0".to_string(),
-                withdrawable: "0".to_string(),
-            },
-        }))
+    pub async fn get_stake_balance(&self, chain: Chain, address: String) -> Result<Option<GemAssetBalance>, GatewayError> {
+        let provider = self.provider(chain).await?;
+        let balance = provider
+            .get_stake_balance(address)
+            .await
+            .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
+        Ok(balance.map(|b| b.into()))
     }
 }
 

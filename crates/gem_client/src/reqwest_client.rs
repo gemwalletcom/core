@@ -25,10 +25,10 @@ impl ReqwestClient {
         let body_bytes = response
             .bytes()
             .await
-            .map_err(|e| ClientError::Network(format!("Failed to read response body: {}", e)))?;
+            .map_err(|e| ClientError::Network(format!("Failed to read response body: {e}")))?;
 
         if status.is_success() {
-            serde_json::from_slice(&body_bytes).map_err(|e| ClientError::Serialization(format!("Failed to deserialize response: {}", e)))
+            serde_json::from_slice(&body_bytes).map_err(|e| ClientError::Serialization(format!("Failed to deserialize response: {e}")))
         } else {
             let body_text = String::from_utf8_lossy(&body_bytes).to_string();
             Err(ClientError::Http {
@@ -42,7 +42,7 @@ impl ReqwestClient {
         if e.is_timeout() {
             ClientError::Timeout
         } else if e.is_connect() {
-            ClientError::Network(format!("Connection error: {}", e))
+            ClientError::Network(format!("Connection error: {e}"))
         } else {
             ClientError::Network(e.to_string())
         }
@@ -67,7 +67,7 @@ impl Client for ReqwestClient {
         R: DeserializeOwned,
     {
         let url = self.build_url(path);
-        let json_body = serde_json::to_vec(body).map_err(|e| ClientError::Serialization(format!("Failed to serialize request: {}", e)))?;
+        let json_body = serde_json::to_vec(body).map_err(|e| ClientError::Serialization(format!("Failed to serialize request: {e}")))?;
 
         let response = self
             .client

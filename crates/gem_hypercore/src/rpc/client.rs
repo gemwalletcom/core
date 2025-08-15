@@ -1,16 +1,21 @@
-use crate::typeshare::balance::{HypercoreBalances, HypercoreValidator};
+use crate::typeshare::balance::{HypercoreBalances, HypercoreStakeBalance, HypercoreValidator};
 use gem_client::Client;
+use primitives::Chain;
 use serde_json::json;
 use std::error::Error;
 
 #[derive(Debug)]
 pub struct HyperCoreClient<C: Client> {
     client: C,
+    pub chain: Chain,
 }
 
 impl<C: Client> HyperCoreClient<C> {
     pub fn new(client: C) -> Self {
-        Self { client }
+        Self {
+            client,
+            chain: Chain::HyperCore,
+        }
     }
 
     pub async fn get_validators(&self) -> Result<Vec<HypercoreValidator>, Box<dyn Error + Send + Sync>> {
@@ -28,13 +33,26 @@ impl<C: Client> HyperCoreClient<C> {
             * 100.0)
     }
 
-    pub async fn spot_balances(&self, user: &str) -> Result<HypercoreBalances, Box<dyn Error + Send + Sync>> {
+    pub async fn get_spot_balances(&self, user: &str) -> Result<HypercoreBalances, Box<dyn Error + Send + Sync>> {
         Ok(self
             .client
             .post(
                 "/info",
                 &serde_json::json!({
                     "type": "spotClearinghouseState",
+                    "user": user
+                }),
+            )
+            .await?)
+    }
+
+    pub async fn get_stake_balance(&self, user: &str) -> Result<HypercoreStakeBalance, Box<dyn Error + Send + Sync>> {
+        Ok(self
+            .client
+            .post(
+                "/info",
+                &serde_json::json!({
+                    "type": "delegatorSummary",
                     "user": user
                 }),
             )

@@ -60,10 +60,10 @@ impl ChainAssetsProvider for SuiProvider {
                     Some(AssetId::from_token(self.client.get_chain(), &x.coin_type))
                 };
 
-                asset_id.map(|asset_id| AssetBalance {
+                asset_id.map(|asset_id| AssetBalance::new(
                     asset_id,
-                    balance: x.total_balance,
-                })
+                    x.total_balance,
+                ))
             })
             .collect::<Vec<_>>();
 

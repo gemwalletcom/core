@@ -52,7 +52,7 @@ pub struct Payment {
 }
 impl Payment {
     fn amount_formatter(value: &str) -> Option<String> {
-        BigNumberFormatter::value_from_amount(value, Asset::from_chain(Chain::Stellar).decimals as u32)
+        BigNumberFormatter::value_from_amount(value, Asset::from_chain(Chain::Stellar).decimals as u32).ok()
     }
 
     pub fn from_address(&self) -> Option<String> {

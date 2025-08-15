@@ -1525,6 +1525,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "chain_traits"
+version = "1.0.0"
+dependencies = [
+ "async-trait",
+ "primitives",
+]
+
+[[package]]
 name = "chrono"
 version = "0.4.41"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3020,7 +3028,10 @@ name = "gem_hypercore"
 version = "1.0.0"
 dependencies = [
  "async-trait",
+ "chain_traits",
  "gem_client",
+ "number_formatter",
+ "primitives",
  "serde",
  "serde_json",
  "serde_serializers",
@@ -3190,6 +3201,7 @@ dependencies = [
  "bigdecimal",
  "borsh 1.5.7",
  "bs58",
+ "chain_traits",
  "futures",
  "gem_aptos",
  "gem_bsc",

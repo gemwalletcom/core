@@ -14,3 +14,6 @@ typeshare = { workspace = true }
 
 gem_client = { path = "../gem_client", features = ["reqwest"] }
 serde_serializers = { path = "../serde_serializers" }
+number_formatter = { path = "../number_formatter" }
+primitives = { path = "../primitives" }
+chain_traits = { path = "../chain_traits" }

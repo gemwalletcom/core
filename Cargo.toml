@@ -32,6 +32,7 @@ members = [
     "crates/settings_chain",
     "crates/pricer",
     "crates/chain_primitives",
+    "crates/chain_traits",
 
     "crates/security_*",
     "crates/gem_*",
