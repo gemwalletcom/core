@@ -12,6 +12,18 @@ pub enum FeePriority {
     Fast,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FeePriorityValue {
+    pub priority: FeePriority,
+    pub value: String,
+}
+
+impl FeePriorityValue {
+    pub fn new(priority: FeePriority, value: String) -> Self {
+        Self { priority, value }
+    }
+}
+
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, AsRefStr, EnumString, EnumIter)]
 #[serde(rename_all = "camelCase")]
 #[strum(serialize_all = "camelCase")]

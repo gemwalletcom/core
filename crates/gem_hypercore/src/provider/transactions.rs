@@ -1,6 +1,7 @@
 use async_trait::async_trait;
 use chain_traits::ChainTransactions;
-use primitives::{TransactionState, TransactionUpdate};
+use primitives::transaction_metadata_types::TransactionPerpetualMetadata;
+use primitives::{TransactionChange, TransactionMetadata, TransactionState, TransactionStateRequest, TransactionUpdate};
 use std::error::Error;
 
 use gem_client::Client;
@@ -13,7 +14,34 @@ impl<C: Client> ChainTransactions for HyperCoreClient<C> {
         self.transaction_broadcast(data).await
     }
 
-    async fn get_transaction_status(&self, _hash: String) -> Result<TransactionUpdate, Box<dyn Error + Sync + Send>> {
-        Ok(TransactionUpdate::new(TransactionState::Confirmed))
+    async fn get_transaction_status(&self, request: TransactionStateRequest) -> Result<TransactionUpdate, Box<dyn Error + Sync + Send>> {
+        self.transaction_state(request).await
+    }
+}
+
+impl<C: Client> HyperCoreClient<C> {
+    pub async fn transaction_state(&self, request: TransactionStateRequest) -> Result<TransactionUpdate, Box<dyn Error + Sync + Send>> {
+        let oid = request.id.parse::<u64>()?;
+        let start_time = (request.created_at - 5) * 1000;
+        let fills = self.get_user_fills_by_time(&request.sender_address, start_time).await?;
+        let matching_fill = fills.iter().find(|fill| fill.oid == oid);
+
+        match matching_fill {
+            Some(fill) => {
+                let pnl = fill.closed_pnl.parse::<f64>().unwrap_or(0.0);
+                let price = fill.px.parse::<f64>().unwrap_or(0.0);
+
+                let mut update = TransactionUpdate::new(TransactionState::Confirmed);
+                update.changes = vec![
+                    TransactionChange::HashChange {
+                        old: request.id,
+                        new: fill.hash.clone(),
+                    },
+                    TransactionChange::Metadata(TransactionMetadata::Perpetual(TransactionPerpetualMetadata { pnl, price })),
+                ];
+                Ok(update)
+            }
+            None => Ok(TransactionUpdate::new(TransactionState::Pending)),
+        }
     }
 }

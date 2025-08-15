@@ -3,7 +3,7 @@ use async_trait::async_trait;
 use gem_client::{Client, ClientError, ContentType};
 use primitives::Chain;
 use serde::{de::DeserializeOwned, Serialize};
-use std::{collections::HashMap, sync::Arc};
+use std::{collections::HashMap, str::FromStr, sync::Arc};
 
 #[derive(Debug)]
 pub struct AlienClient {
@@ -46,7 +46,16 @@ impl Client for AlienClient {
     {
         let url = self.build_url(path);
 
-        let data = match headers.as_ref().and_then(|h| h.get("Content-Type")).and_then(|s| ContentType::from_str(s)) {
+        let mut request_headers = HashMap::from([("Content-Type".to_string(), ContentType::ApplicationJson.as_str().to_string())]);
+        
+        if let Some(provided_headers) = headers {
+            request_headers.extend(provided_headers);
+        }
+
+        let content_type = request_headers.get("Content-Type")
+            .and_then(|s| ContentType::from_str(s).ok());
+
+        let data = match content_type {
             Some(ContentType::TextPlain) => {
                 let json_value = serde_json::to_value(body)?;
                 match json_value {
@@ -60,7 +69,7 @@ impl Client for AlienClient {
         let target = AlienTarget {
             url,
             method: crate::network::AlienHttpMethod::Post,
-            headers,
+            headers: Some(request_headers),
             body: Some(data),
         };
 

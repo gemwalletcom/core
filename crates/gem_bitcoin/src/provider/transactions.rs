@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 use chain_traits::ChainTransactions;
-use primitives::{TransactionState, TransactionUpdate};
+use primitives::{TransactionState, TransactionUpdate, TransactionStateRequest};
 use std::error::Error;
 
 use gem_client::Client;
@@ -19,8 +19,8 @@ impl<C: Client> ChainTransactions for BitcoinClient<C> {
         result.result.ok_or_else(|| "unknown hash".into())
     }
 
-    async fn get_transaction_status(&self, hash: String) -> Result<TransactionUpdate, Box<dyn Error + Sync + Send>> {
-        let transaction = self.get_transaction(&hash).await?;
+    async fn get_transaction_status(&self, request: TransactionStateRequest) -> Result<TransactionUpdate, Box<dyn Error + Sync + Send>> {
+        let transaction = self.get_transaction(&request.id).await?;
         let status = if transaction.block_height > 0 {
             TransactionState::Confirmed
         } else {

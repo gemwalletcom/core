@@ -7,7 +7,7 @@ use std::sync::Arc;
 pub mod models;
 
 pub use models::*;
-use primitives::Chain;
+use primitives::{BitcoinChain, Chain};
 
 #[derive(Debug, uniffi::Object)]
 pub struct GemGateway {
@@ -20,7 +20,9 @@ impl GemGateway {
         let alien_client = AlienClient::new(url, self.provider.clone());
         match chain {
             Chain::HyperCore => Ok(Arc::new(HyperCoreClient::new(alien_client))),
-            Chain::Bitcoin | Chain::BitcoinCash | Chain::Litecoin | Chain::Doge => Ok(Arc::new(BitcoinClient::new(alien_client, chain))),
+            Chain::Bitcoin | Chain::BitcoinCash | Chain::Litecoin | Chain::Doge => {
+                Ok(Arc::new(BitcoinClient::new(alien_client, BitcoinChain::from_chain(chain).unwrap())))
+            }
             _ => Err(GatewayError::InvalidChain(chain.to_string())),
         }
     }
@@ -94,11 +96,11 @@ impl GemGateway {
         Ok(hash)
     }
 
-    pub async fn get_transaction_status(&self, chain: Chain, hash: String) -> Result<GemTransactionUpdate, GatewayError> {
+    pub async fn get_transaction_status(&self, chain: Chain, request: GemTransactionStateRequest) -> Result<GemTransactionUpdate, GatewayError> {
         let status = self
             .provider(chain)
             .await?
-            .get_transaction_status(hash)
+            .get_transaction_status(request.into())
             .await
             .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
         Ok(status.into())
@@ -122,6 +124,26 @@ impl GemGateway {
             .await
             .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
         Ok(block_number)
+    }
+
+    pub async fn get_fees(&self, chain: Chain) -> Result<Vec<GemFeePriorityValue>, GatewayError> {
+        let fees = self
+            .provider(chain)
+            .await?
+            .get_fees()
+            .await
+            .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
+        Ok(fees.into_iter().map(|f| f.into()).collect())
+    }
+
+    pub async fn get_utxos(&self, chain: Chain, address: String) -> Result<Vec<GemUTXO>, GatewayError> {
+        let utxos = self
+            .provider(chain)
+            .await?
+            .get_utxos(address)
+            .await
+            .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
+        Ok(utxos.into_iter().map(|u| u.into()).collect())
     }
 }
 

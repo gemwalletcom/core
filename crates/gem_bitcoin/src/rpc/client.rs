@@ -3,27 +3,29 @@ use std::error::Error;
 use crate::rpc::model::{AddressDetails, Transaction};
 use crate::typeshare::account::BitcoinAccount;
 use crate::typeshare::block::{BitcoinBlock, BitcoinNodeInfo};
-use crate::typeshare::transaction::BitcoinTransactionBroacastResult;
+use crate::typeshare::fee::BitcoinFeeResult;
+use crate::typeshare::transaction::{BitcoinTransactionBroacastResult, BitcoinUTXO};
 
 use super::model::{Block, Status};
 use chain_traits::ChainTraits;
 use gem_client::{Client, ContentType};
 use primitives::chain::Chain;
+use primitives::BitcoinChain;
 use std::collections::HashMap;
 
 #[derive(Debug)]
 pub struct BitcoinClient<C: Client> {
     client: C,
-    pub chain: Chain,
+    pub chain: BitcoinChain,
 }
 
 impl<C: Client> BitcoinClient<C> {
-    pub fn new(client: C, chain: Chain) -> Self {
+    pub fn new(client: C, chain: BitcoinChain) -> Self {
         Self { client, chain }
     }
 
     pub fn get_chain(&self) -> Chain {
-        self.chain
+        self.chain.get_chain()
     }
 
     pub async fn get_status(&self) -> Result<Status, Box<dyn Error + Send + Sync>> {
@@ -57,6 +59,15 @@ impl<C: Client> BitcoinClient<C> {
     pub async fn broadcast_transaction(&self, data: String) -> Result<BitcoinTransactionBroacastResult, Box<dyn Error + Send + Sync>> {
         let headers = Some(HashMap::from([("Content-Type".to_string(), ContentType::TextPlain.as_str().to_string())]));
         Ok(self.client.post("/api/v2/sendtx/", &data, headers).await?)
+    }
+
+    pub async fn get_utxos(&self, address: &str) -> Result<Vec<BitcoinUTXO>, Box<dyn Error + Send + Sync>> {
+        Ok(self.client.get(&format!("/api/v2/utxo/{address}")).await?)
+    }
+
+    pub async fn get_fee_priority(&self, blocks: i32) -> Result<String, Box<dyn Error + Send + Sync>> {
+        let result: BitcoinFeeResult = self.client.get(&format!("/api/v2/estimatefee/{blocks}")).await?;
+        Ok(result.result)
     }
 }
 

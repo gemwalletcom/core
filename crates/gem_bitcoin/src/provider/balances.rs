@@ -11,7 +11,7 @@ use crate::rpc::client::BitcoinClient;
 impl<C: Client> ChainBalances for BitcoinClient<C> {
     async fn get_balance_coin(&self, address: String) -> Result<AssetBalance, Box<dyn Error + Sync + Send>> {
         let account = self.get_balance(&address).await?;
-        Ok(AssetBalance::new(self.chain.as_asset_id(), account.balance))
+        Ok(AssetBalance::new(self.chain.get_chain().as_asset_id(), account.balance))
     }
 
     async fn get_balance_tokens(&self, _address: String, _token_ids: Vec<String>) -> Result<Vec<AssetBalance>, Box<dyn Error + Sync + Send>> {
