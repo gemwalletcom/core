@@ -1,4 +1,6 @@
-use crate::typeshare::balance::{HypercoreBalances, HypercoreStakeBalance, HypercoreValidator};
+use crate::typeshare::balance::{HypercoreBalances, HypercoreDelegationBalance, HypercoreStakeBalance, HypercoreValidator};
+use crate::typeshare::response::{HyperCoreBroadcastResult, HypercoreUnifiedResponse};
+use chain_traits::ChainTraits;
 use gem_client::Client;
 use primitives::Chain;
 use serde_json::json;
@@ -18,19 +20,25 @@ impl<C: Client> HyperCoreClient<C> {
         }
     }
 
-    pub async fn get_validators(&self) -> Result<Vec<HypercoreValidator>, Box<dyn Error + Send + Sync>> {
+    pub async fn transaction_broadcast(&self, data: String) -> Result<String, Box<dyn Error + Send + Sync>> {
+        let json_data: serde_json::Value = serde_json::from_str(&data)?;
+        let response: serde_json::Value = self.client.post("/exchange", &json_data).await?;
+        match serde_json::from_value::<HypercoreUnifiedResponse>(response)?.into_result(data) {
+            HyperCoreBroadcastResult::Success(result) => Ok(result),
+            HyperCoreBroadcastResult::Error(error) => Err(error.into()),
+        }
+    }
+    pub async fn get_staking_validators(&self) -> Result<Vec<HypercoreValidator>, Box<dyn Error + Send + Sync>> {
         Ok(self.client.post("/info", &json!({"type": "validatorSummaries"})).await?)
     }
 
+    pub async fn get_staking_delegations(&self, user: &str) -> Result<Vec<HypercoreDelegationBalance>, Box<dyn Error + Send + Sync>> {
+        Ok(self.client.post("/info", &json!({"type": "delegations", "user": user})).await?)
+    }
+
     pub async fn get_staking_apy(&self) -> Result<f64, Box<dyn Error + Send + Sync>> {
-        Ok(self
-            .get_validators()
-            .await?
-            .into_iter()
-            .filter(|x| x.is_active)
-            .flat_map(|x| x.stats.into_iter().map(|(_, stat)| stat.predicted_apr))
-            .fold(0.0, f64::max)
-            * 100.0)
+        let validators = self.get_staking_validators().await?;
+        Ok(HypercoreValidator::max_apr(validators))
     }
 
     pub async fn get_spot_balances(&self, user: &str) -> Result<HypercoreBalances, Box<dyn Error + Send + Sync>> {
@@ -59,3 +67,5 @@ impl<C: Client> HyperCoreClient<C> {
             .await?)
     }
 }
+
+impl<C: Client> ChainTraits for HyperCoreClient<C> {}

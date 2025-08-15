@@ -1,4 +1,4 @@
-use primitives::{AssetBalance, AssetId, Balance};
+use primitives::{AssetBalance, AssetId, Balance, Chain};
 
 // UniFFI wrapper types that derive from primitives
 #[derive(Debug, Clone, uniffi::Record)]
@@ -72,6 +72,56 @@ impl GemBalance {
             rewards: rewards.unwrap_or("0".to_string()),
             reserved: "0".to_string(),
             withdrawable: "0".to_string(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, uniffi::Record)]
+pub struct GemDelegationValidator {
+    pub chain: Chain,
+    pub id: String,
+    pub name: String,
+    pub is_active: bool,
+    pub commision: f64,
+    pub apr: f64,
+}
+
+#[derive(Debug, Clone, uniffi::Record)]
+pub struct GemDelegationBase {
+    pub asset_id: AssetId,
+    pub state: String,
+    pub balance: String,
+    pub shares: String,
+    pub rewards: String,
+    pub completion_date: Option<i64>,
+    pub delegation_id: String,
+    pub validator_id: String,
+}
+
+impl From<primitives::DelegationValidator> for GemDelegationValidator {
+    fn from(value: primitives::DelegationValidator) -> Self {
+        Self {
+            chain: value.chain,
+            id: value.id,
+            name: value.name,
+            is_active: value.is_active,
+            commision: value.commision,
+            apr: value.apr,
+        }
+    }
+}
+
+impl From<primitives::DelegationBase> for GemDelegationBase {
+    fn from(value: primitives::DelegationBase) -> Self {
+        Self {
+            asset_id: value.asset_id,
+            state: value.state.as_ref().to_string(),
+            balance: value.balance,
+            shares: value.shares,
+            rewards: value.rewards,
+            completion_date: None,
+            delegation_id: value.delegation_id,
+            validator_id: value.validator_id,
         }
     }
 }

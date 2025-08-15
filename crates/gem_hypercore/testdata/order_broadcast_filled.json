@@ -1,0 +1,17 @@
+{
+  "status": "ok",
+  "response": {
+    "type": "order",
+    "data": {
+      "statuses": [
+        {
+          "filled": {
+            "totalSz": "126.0",
+            "avgPx": "0.95002",
+            "oid": 134896397196
+          }
+        }
+      ]
+    }
+  }
+}

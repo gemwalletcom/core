@@ -1,0 +1,14 @@
+{
+  "status": "ok",
+  "response": {
+    "data": {
+      "statuses": [
+        {
+          "resting": {
+            "oid": 789012
+          }
+        }
+      ]
+    }
+  }
+}

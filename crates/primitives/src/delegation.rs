@@ -1,3 +1,10 @@
+use chrono::NaiveDate;
+use serde::{Deserialize, Serialize};
+use strum::{AsRefStr, Display, EnumString};
+use typeshare::typeshare;
+
+use crate::{AssetId, Chain, Price};
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Hashable, Sendable")]
 #[serde(rename_all = "camelCase")]
@@ -16,7 +23,7 @@ pub struct DelegationBase {
     pub balance: String,
     pub shares: String,
     pub rewards: String,
-    pub completion_date: Option<Date>,
+    pub completion_date: Option<NaiveDate>,
     pub delegation_id: String,
     pub validator_id: String,
 }
@@ -33,9 +40,10 @@ pub struct DelegationValidator {
     pub apr: f64,
 }
 
-#[derive(Copy, Clone, Debug, Serialize, Deserialize)]
+#[derive(Copy, Clone, Debug, Serialize, Deserialize, Display, AsRefStr, EnumString)]
 #[typeshare(swift = "Equatable, CaseIterable, Sendable")]
 #[serde(rename_all = "lowercase")]
+#[strum(serialize_all = "lowercase")]
 pub enum DelegationState {
     Active,
     Pending,

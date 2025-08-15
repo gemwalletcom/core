@@ -1,0 +1,13 @@
+{
+  "status": "ok",
+  "response": {
+    "type": "order",
+    "data": {
+      "statuses": [
+        {
+          "error": "Reduce only order would increase position. asset=159"
+        }
+      ]
+    }
+  }
+}

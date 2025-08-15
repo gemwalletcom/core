@@ -1,10 +1,12 @@
 use crate::typeshare::UInt64;
+use gem_evm::ethereum_address_checksum;
 use serde::{Deserialize, Serialize};
 use serde_serializers::deserialize_f64_from_str;
 use typeshare::typeshare;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare(swift = "Equatable, Sendable")]
+#[typeshare(swift = "Equatable, Se,
+pub(crate) id: Stringndable")]
 #[serde(rename_all = "camelCase")]
 pub struct HypercoreBalance {
     pub coin: String,
@@ -53,6 +55,12 @@ pub struct HypercoreDelegationBalance {
     pub locked_until_timestamp: UInt64,
 }
 
+impl HypercoreDelegationBalance {
+    pub fn validator_address(&self) -> String {
+        ethereum_address_checksum(&self.validator).unwrap_or(self.validator.clone())
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Sendable")]
 #[serde(rename_all = "camelCase")]
@@ -63,6 +71,23 @@ pub struct HypercoreValidator {
     pub is_active: bool,
     #[typeshare(skip)]
     pub stats: Vec<(String, HypercoreValidatorStats)>,
+}
+
+impl HypercoreValidator {
+    pub fn validator_address(&self) -> String {
+        ethereum_address_checksum(&self.validator).unwrap_or(self.validator.clone())
+    }
+}
+
+impl HypercoreValidator {
+    pub fn max_apr(validators: Vec<HypercoreValidator>) -> f64 {
+        validators
+            .into_iter()
+            .filter(|x| x.is_active)
+            .map(|x| x.stats.into_iter().map(|(_, stat)| stat.predicted_apr).fold(0.0, f64::max))
+            .fold(0.0, f64::max)
+            * 100.0
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

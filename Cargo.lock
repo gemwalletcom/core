@@ -3030,6 +3030,7 @@ dependencies = [
  "async-trait",
  "chain_traits",
  "gem_client",
+ "gem_evm",
  "number_formatter",
  "primitives",
  "serde",
