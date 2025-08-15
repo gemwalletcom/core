@@ -229,8 +229,8 @@ impl Swapper for ProxyProvider {
                     status: result.swap_status(),
                     from_chain: chain,
                     from_tx_hash: transaction_hash.to_string(),
-                    to_chain: None,   // FIXME
-                    to_tx_hash: None, // FIXME
+                    to_chain: result.to_chain(),
+                    to_tx_hash: result.to_tx_hash(),
                 })
             }
             // For OnChain providers, use the default implementation
