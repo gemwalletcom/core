@@ -1,9 +1,9 @@
 use std::error::Error;
 
 use async_trait::async_trait;
-use primitives::{AssetBalance, DelegationBase, DelegationValidator, TransactionUpdate};
+use primitives::{AssetBalance, DelegationBase, DelegationValidator, FeePriorityValue, TransactionUpdate, TransactionStateRequest, UTXO};
 
-pub trait ChainTraits: ChainBalances + ChainStaking + ChainTransactions + ChainState {}
+pub trait ChainTraits: ChainBalances + ChainStaking + ChainTransactions + ChainState + ChainAccount {}
 
 #[async_trait]
 pub trait ChainBalances: Send + Sync {
@@ -21,11 +21,17 @@ pub trait ChainStaking: Send + Sync {
 #[async_trait]
 pub trait ChainTransactions: Send + Sync {
     async fn transaction_broadcast(&self, data: String) -> Result<String, Box<dyn Error + Sync + Send>>;
-    async fn get_transaction_status(&self, hash: String) -> Result<TransactionUpdate, Box<dyn Error + Sync + Send>>;
+    async fn get_transaction_status(&self, request: TransactionStateRequest) -> Result<TransactionUpdate, Box<dyn Error + Sync + Send>>;
 }
 
 #[async_trait]
 pub trait ChainState: Send + Sync {
     async fn get_chain_id(&self) -> Result<String, Box<dyn Error + Sync + Send>>;
     async fn get_block_number(&self) -> Result<u64, Box<dyn Error + Sync + Send>>;
+    async fn get_fees(&self) -> Result<Vec<FeePriorityValue>, Box<dyn Error + Sync + Send>>;
+}
+
+#[async_trait]
+pub trait ChainAccount: Send + Sync {
+    async fn get_utxos(&self, address: String) -> Result<Vec<UTXO>, Box<dyn Error + Sync + Send>>;
 }

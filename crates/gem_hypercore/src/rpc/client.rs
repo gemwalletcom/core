@@ -1,4 +1,5 @@
 use crate::typeshare::balance::{HypercoreBalances, HypercoreDelegationBalance, HypercoreStakeBalance, HypercoreValidator};
+use crate::typeshare::order::HypercorePerpetualFill;
 use crate::typeshare::response::{HyperCoreBroadcastResult, TransactionBroadcastResponse};
 use chain_traits::ChainTraits;
 use gem_client::Client;
@@ -63,6 +64,21 @@ impl<C: Client> HyperCoreClient<C> {
                 &serde_json::json!({
                     "type": "delegatorSummary",
                     "user": user
+                }),
+                None,
+            )
+            .await?)
+    }
+
+    pub async fn get_user_fills_by_time(&self, user: &str, start_time: i64) -> Result<Vec<HypercorePerpetualFill>, Box<dyn Error + Send + Sync>> {
+        Ok(self
+            .client
+            .post(
+                "/info",
+                &serde_json::json!({
+                    "type": "userFillsByTime",
+                    "user": user,
+                    "startTime": start_time
                 }),
                 None,
             )

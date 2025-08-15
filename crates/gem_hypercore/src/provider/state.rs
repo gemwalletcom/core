@@ -1,5 +1,6 @@
 use async_trait::async_trait;
 use chain_traits::ChainState;
+use primitives::{FeePriority, FeePriorityValue};
 use std::error::Error;
 
 use gem_client::Client;
@@ -14,5 +15,9 @@ impl<C: Client> ChainState for HyperCoreClient<C> {
 
     async fn get_block_number(&self) -> Result<u64, Box<dyn Error + Sync + Send>> {
         Ok(1)
+    }
+
+    async fn get_fees(&self) -> Result<Vec<FeePriorityValue>, Box<dyn Error + Sync + Send>> {
+        Ok(vec![FeePriorityValue::new(FeePriority::Normal, "1".to_string())])
     }
 }
