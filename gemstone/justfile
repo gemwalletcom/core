@@ -42,12 +42,14 @@ install-android-targets:
 test-ios:
     #!/usr/bin/env bash
     set -o pipefail
+    # Get available iOS version and device
+    IOS_VERSION=$(xcrun simctl list devices available | grep -E '^-- iOS' | head -1 | sed 's/-- iOS \([0-9.]*\) --.*/\1/')
     DEVICE_ID=$(xcrun simctl list devices available | grep iPhone | head -1 | sed 's/.*(\([A-F0-9-]*\)).*/\1/')
-    echo "Using iOS Simulator: $DEVICE_ID"
+    echo "Using iOS $IOS_VERSION Simulator: $DEVICE_ID"
     xcodebuild -project tests/ios/GemTest/GemTest.xcodeproj \
     -scheme GemTest \
     -sdk iphonesimulator \
-    -destination "platform=iOS Simulator,id=$DEVICE_ID" \
+    -destination "platform=iOS Simulator,OS=$IOS_VERSION,id=$DEVICE_ID" \
     test | xcbeautify
 
 export LIB_NAME := "gemstone"
