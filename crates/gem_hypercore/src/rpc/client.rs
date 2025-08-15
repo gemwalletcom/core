@@ -26,4 +26,17 @@ impl<C: Client> HyperCoreClient<C> {
             .fold(0.0, f64::max)
             * 100.0)
     }
+
+    pub async fn spot_balances(&self, user: &str) -> Result<HypercoreBalances, Box<dyn Error + Send + Sync>> {
+        Ok(self
+            .client
+            .post(
+                "/info",
+                &serde_json::json!({
+                    "type": "spotClearinghouseState",
+                    "user": user
+                }),
+            )
+            .await?)
+    }
 }

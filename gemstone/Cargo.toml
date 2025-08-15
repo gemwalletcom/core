@@ -63,7 +63,7 @@ rand.workspace = true
 rmp.workspace = true
 rmp-serde.workspace = true
 
-solana-primitives = "0.1.2"
+solana-primitives.workspace = true
 
 [build-dependencies]
 uniffi = { workspace = true, features = ["build"] }

@@ -34,4 +34,5 @@ pub enum NameProvider {
     Lens,
     Basenames,
     Hyperliquid,
+    AllDomains,
 }
