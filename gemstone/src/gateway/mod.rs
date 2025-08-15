@@ -1,4 +1,4 @@
-use crate::network::{AlienProvider, NativeClient};
+use crate::network::{AlienClient, AlienProvider};
 use chain_traits::ChainBalances;
 use gem_hypercore::rpc::client::HyperCoreClient;
 use std::sync::Arc;
@@ -16,9 +16,9 @@ pub struct GemGateway {
 impl GemGateway {
     pub async fn provider(&self, chain: Chain) -> Result<Arc<dyn ChainBalances>, GatewayError> {
         let url = self.provider.get_endpoint(chain).unwrap();
-        let native_client = NativeClient::new(url, self.provider.clone());
+        let alien_client = AlienClient::new(url, self.provider.clone());
         match chain {
-            Chain::HyperCore => Ok(Arc::new(HyperCoreClient::new(native_client))),
+            Chain::HyperCore => Ok(Arc::new(HyperCoreClient::new(alien_client))),
             _ => Err(GatewayError::InvalidChain(chain.to_string())),
         }
     }
