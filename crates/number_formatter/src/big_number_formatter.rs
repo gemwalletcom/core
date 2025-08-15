@@ -21,16 +21,16 @@ impl BigNumberFormatter {
         Some(decimal.to_string())
     }
 
-    pub fn value_from_amount(amount: &str, decimals: u32) -> Option<String> {
-        let big_decimal = BigDecimal::from_str(amount).expect("Invalid decimal number");
+    pub fn value_from_amount(amount: &str, decimals: u32) -> Result<String, String> {
+        let big_decimal = BigDecimal::from_str(amount).map_err(|_| "Invalid decimal number".to_string())?;
         let multiplier = BigInt::from(10).pow(decimals);
         let multiplier_decimal = BigDecimal::from(multiplier);
         let scaled_value = big_decimal * multiplier_decimal;
-        Some(scaled_value.with_scale(0).to_string())
+        Ok(scaled_value.with_scale(0).to_string())
     }
 
     pub fn f64_as_value(amount: f64, decimals: u32) -> Option<String> {
-        Some(Self::value_from_amount(amount.to_string().as_str(), decimals)?.to_string())
+        Self::value_from_amount(&amount.to_string(), decimals).ok()
     }
 }
 
@@ -76,5 +76,10 @@ mod tests {
 
         let result = BigNumberFormatter::value_from_amount("0", 0).unwrap();
         assert_eq!(result, "0");
+
+        // Test case 2: Invalid input
+        let result = BigNumberFormatter::value_from_amount("invalid", 3);
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), "Invalid decimal number");
     }
 }

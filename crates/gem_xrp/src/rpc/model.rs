@@ -135,7 +135,7 @@ impl Amount {
     pub fn as_value_string(&self) -> Option<String> {
         match self {
             Amount::Str(amount) => Some(amount.clone()),
-            Amount::Amount(amount) => BigNumberFormatter::value_from_amount(&amount.value, 15),
+            Amount::Amount(amount) => BigNumberFormatter::value_from_amount(&amount.value, 15).ok(),
         }
     }
 

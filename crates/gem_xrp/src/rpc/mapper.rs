@@ -127,7 +127,7 @@ impl XRPMapper {
             .filter(|x| x.high_limit.currency.len() > 3)
             .flat_map(|x| {
                 let asset_id = AssetId::from_token(chain, &x.high_limit.issuer);
-                let value = BigNumberFormatter::value_from_amount(&x.balance.value, XRP_DEFAULT_ASSET_DECIMALS as u32)?;
+                let value = BigNumberFormatter::value_from_amount(&x.balance.value, XRP_DEFAULT_ASSET_DECIMALS as u32).ok()?;
                 Some(AssetBalance::new(asset_id, value))
             })
             .collect()

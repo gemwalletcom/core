@@ -4,20 +4,21 @@ use crate::{ChainAssetsProvider, ChainBlockProvider, ChainStakeProvider, ChainTo
 use async_trait::async_trait;
 use primitives::{chain::Chain, Asset, AssetBalance, StakeValidator, Transaction};
 
+use gem_client::Client;
 use gem_hypercore::rpc::client::HyperCoreClient;
 
-pub struct HyperCoreProvider {
-    client: HyperCoreClient,
+pub struct HyperCoreProvider<C: Client> {
+    client: HyperCoreClient<C>,
 }
 
-impl HyperCoreProvider {
-    pub fn new(client: HyperCoreClient) -> Self {
+impl<C: Client> HyperCoreProvider<C> {
+    pub fn new(client: HyperCoreClient<C>) -> Self {
         Self { client }
     }
 }
 
 #[async_trait]
-impl ChainBlockProvider for HyperCoreProvider {
+impl<C: Client> ChainBlockProvider for HyperCoreProvider<C> {
     fn get_chain(&self) -> Chain {
         Chain::HyperCore
     }
@@ -32,28 +33,28 @@ impl ChainBlockProvider for HyperCoreProvider {
 }
 
 #[async_trait]
-impl ChainTokenDataProvider for HyperCoreProvider {
+impl<C: Client> ChainTokenDataProvider for HyperCoreProvider<C> {
     async fn get_token_data(&self, _token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
         unimplemented!("HyperCoreProvider::get_token_data")
     }
 }
 
 #[async_trait]
-impl ChainAssetsProvider for HyperCoreProvider {
+impl<C: Client> ChainAssetsProvider for HyperCoreProvider<C> {
     async fn get_assets_balances(&self, _address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
         Ok(vec![])
     }
 }
 
 #[async_trait]
-impl ChainTransactionsProvider for HyperCoreProvider {
+impl<C: Client> ChainTransactionsProvider for HyperCoreProvider<C> {
     async fn get_transactions_by_address(&self, _address: String) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
         Ok(vec![])
     }
 }
 
 #[async_trait]
-impl ChainStakeProvider for HyperCoreProvider {
+impl<C: Client> ChainStakeProvider for HyperCoreProvider<C> {
     async fn get_validators(&self) -> Result<Vec<StakeValidator>, Box<dyn Error + Send + Sync>> {
         Ok(self
             .client

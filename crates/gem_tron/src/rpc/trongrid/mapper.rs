@@ -25,10 +25,9 @@ impl TronGridMapper {
             .trc20
             .into_iter()
             .flat_map(|trc20_map| {
-                trc20_map.into_iter().map(|(contract_address, balance)| AssetBalance {
-                    asset_id: AssetId::from(Self::get_chain(), Some(contract_address.clone())),
-                    balance: balance.to_string(),
-                })
+                trc20_map
+                    .into_iter()
+                    .map(|(contract_address, balance)| AssetBalance::new(AssetId::from(Self::get_chain(), Some(contract_address.clone())), balance.to_string()))
             })
             .collect()
     }

@@ -1,0 +1,15 @@
+[package]
+name = "gem_client"
+version = "0.1.0"
+edition = "2021"
+
+[features]
+default = []
+reqwest = ["dep:reqwest"]
+
+[dependencies]
+async-trait = { workspace = true }
+thiserror = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+reqwest = { workspace = true, optional = true }
