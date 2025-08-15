@@ -6,12 +6,12 @@ use serde::{de::DeserializeOwned, Serialize};
 use std::sync::Arc;
 
 #[derive(Debug)]
-pub struct NativeClient {
+pub struct AlienClient {
     base_url: String,
     provider: Arc<dyn AlienProvider>,
 }
 
-impl NativeClient {
+impl AlienClient {
     pub fn new(base_url: String, provider: Arc<dyn AlienProvider>) -> Self {
         Self { base_url, provider }
     }
@@ -22,7 +22,7 @@ impl NativeClient {
 }
 
 #[async_trait]
-impl Client for NativeClient {
+impl Client for AlienClient {
     async fn get<R>(&self, path: &str) -> Result<R, ClientError>
     where
         R: DeserializeOwned,
@@ -60,7 +60,7 @@ impl Client for NativeClient {
 }
 
 #[async_trait]
-impl AlienProvider for NativeClient {
+impl AlienProvider for AlienClient {
     async fn request(&self, target: AlienTarget) -> Result<Vec<u8>, AlienError> {
         self.provider.request(target).await
     }
