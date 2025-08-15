@@ -40,10 +40,14 @@ install-android-targets:
     cargo install cargo-ndk@3.5.4
 
 test-ios:
-    @set -o pipefail && xcodebuild -project tests/ios/GemTest/GemTest.xcodeproj \
+    #!/usr/bin/env bash
+    set -o pipefail
+    DEVICE_ID=$(xcrun simctl list devices available | grep iPhone | head -1 | sed 's/.*(\([^)]*\)).*/\1/')
+    echo "Using iOS Simulator: $DEVICE_ID"
+    xcodebuild -project tests/ios/GemTest/GemTest.xcodeproj \
     -scheme GemTest \
     -sdk iphonesimulator \
-    -destination "platform=iOS Simulator,OS=latest" \
+    -destination "platform=iOS Simulator,id=$DEVICE_ID" \
     test | xcbeautify
 
 export LIB_NAME := "gemstone"
