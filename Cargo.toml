@@ -89,7 +89,7 @@ lazy_static = "1.5.0"
 futures-util = "0.3.31"
 uuid = { version = "1.18.0", features = ["v4"] }
 rand = { version = "0.9.1" }
-aws-sdk-s3 = { version = "1.102.0", features = ["behavior-version-latest"] }
+aws-sdk-s3 = { version = "1.103.0", features = ["behavior-version-latest"] }
 itertools = { version = "0.14.0" }
 
 # db
