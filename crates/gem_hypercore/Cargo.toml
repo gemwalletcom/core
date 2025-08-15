@@ -5,6 +5,7 @@ edition = { workspace = true }
 
 [features]
 default = []
+reqwest = ["gem_client/reqwest"]
 
 [dependencies]
 async-trait = { workspace = true }
@@ -12,7 +13,7 @@ serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 typeshare = { workspace = true }
 
-gem_client = { path = "../gem_client", features = ["reqwest"] }
+gem_client = { path = "../gem_client" }
 serde_serializers = { path = "../serde_serializers" }
 number_formatter = { path = "../number_formatter" }
 primitives = { path = "../primitives" }

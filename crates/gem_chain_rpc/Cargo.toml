@@ -31,7 +31,7 @@ gem_cosmos = { path = "../gem_cosmos", features = ["rpc"] }
 gem_near = { path = "../gem_near", features = ["rpc"] }
 gem_polkadot = { path = "../gem_polkadot", features = ["rpc"] }
 gem_stellar = { path = "../gem_stellar", features = ["rpc"] }
-gem_hypercore = { path = "../gem_hypercore" }
+gem_hypercore = { path = "../gem_hypercore", features = ["reqwest"] }
 gem_client = { path = "../gem_client" }
 
 alloy-primitives = { workspace = true }
