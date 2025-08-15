@@ -42,7 +42,7 @@ install-android-targets:
 test-ios:
     #!/usr/bin/env bash
     set -o pipefail
-    DEVICE_ID=$(xcrun simctl list devices available | grep iPhone | head -1 | sed 's/.*(\([^)]*\)).*/\1/')
+    DEVICE_ID=$(xcrun simctl list devices available | grep iPhone | head -1 | sed 's/.*(\([A-F0-9-]*\)).*/\1/')
     echo "Using iOS Simulator: $DEVICE_ID"
     xcodebuild -project tests/ios/GemTest/GemTest.xcodeproj \
     -scheme GemTest \
