@@ -1,5 +1,5 @@
 use crate::typeshare::balance::{HypercoreBalances, HypercoreDelegationBalance, HypercoreStakeBalance, HypercoreValidator};
-use crate::typeshare::response::{HyperCoreBroadcastResult, HypercoreUnifiedResponse};
+use crate::typeshare::response::{HyperCoreBroadcastResult, TransactionBroadcastResponse};
 use chain_traits::ChainTraits;
 use gem_client::Client;
 use primitives::Chain;
@@ -23,7 +23,7 @@ impl<C: Client> HyperCoreClient<C> {
     pub async fn transaction_broadcast(&self, data: String) -> Result<String, Box<dyn Error + Send + Sync>> {
         let json_data: serde_json::Value = serde_json::from_str(&data)?;
         let response: serde_json::Value = self.client.post("/exchange", &json_data).await?;
-        match serde_json::from_value::<HypercoreUnifiedResponse>(response)?.into_result(data) {
+        match serde_json::from_value::<TransactionBroadcastResponse>(response)?.into_result(data) {
             HyperCoreBroadcastResult::Success(result) => Ok(result),
             HyperCoreBroadcastResult::Error(error) => Err(error.into()),
         }

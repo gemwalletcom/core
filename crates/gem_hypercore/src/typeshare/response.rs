@@ -64,7 +64,7 @@ pub struct HypercoreOrderResting {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
-pub enum HypercoreUnifiedResponse {
+pub enum TransactionBroadcastResponse {
     OrderResponse(HypercoreOrderResponse),
     SimpleResponse(HypercoreResponse),
     ErrorResponse(HypercoreErrorResponse),
@@ -76,10 +76,10 @@ pub enum HyperCoreBroadcastResult {
     Error(String),
 }
 
-impl HypercoreUnifiedResponse {
+impl TransactionBroadcastResponse {
     pub fn into_result(self, data: String) -> HyperCoreBroadcastResult {
         match self {
-            HypercoreUnifiedResponse::OrderResponse(order) => {
+            TransactionBroadcastResponse::OrderResponse(order) => {
                 if order.status == "ok" {
                     if let Some(status) = order.response.and_then(|r| r.data).and_then(|d| d.statuses).and_then(|s| s.first().cloned()) {
                         if let Some(error) = status.error {
@@ -97,11 +97,11 @@ impl HypercoreUnifiedResponse {
                     HyperCoreBroadcastResult::Error("Order failed".to_string())
                 }
             }
-            HypercoreUnifiedResponse::SimpleResponse(simple) => match simple.status.as_str() {
+            TransactionBroadcastResponse::SimpleResponse(simple) => match simple.status.as_str() {
                 "ok" => HyperCoreBroadcastResult::Success(data),
                 _ => HyperCoreBroadcastResult::Error("Request failed".to_string()),
             },
-            HypercoreUnifiedResponse::ErrorResponse(error) => HyperCoreBroadcastResult::Error(error.response),
+            TransactionBroadcastResponse::ErrorResponse(error) => HyperCoreBroadcastResult::Error(error.response),
         }
     }
 }
@@ -113,14 +113,14 @@ mod tests {
     #[test]
     fn test_order_broadcast_error() {
         let json = include_str!("../../testdata/order_broadcast_error.json");
-        let response: HypercoreUnifiedResponse = serde_json::from_str(json).unwrap();
+        let response: TransactionBroadcastResponse = serde_json::from_str(json).unwrap();
         assert!(matches!(response.into_result("test".to_string()), HyperCoreBroadcastResult::Error(_)));
     }
 
     #[test]
     fn test_order_broadcast_filled() {
         let json = include_str!("../../testdata/order_broadcast_filled.json");
-        let response: HypercoreUnifiedResponse = serde_json::from_str(json).unwrap();
+        let response: TransactionBroadcastResponse = serde_json::from_str(json).unwrap();
         match response.into_result("test".to_string()) {
             HyperCoreBroadcastResult::Success(oid) => assert_eq!(oid, "134896397196"),
             _ => panic!("Expected success"),
@@ -130,7 +130,7 @@ mod tests {
     #[test]
     fn test_order_broadcast_resting() {
         let json = include_str!("../../testdata/order_broadcast_resting.json");
-        let response: HypercoreUnifiedResponse = serde_json::from_str(json).unwrap();
+        let response: TransactionBroadcastResponse = serde_json::from_str(json).unwrap();
         match response.into_result("test".to_string()) {
             HyperCoreBroadcastResult::Success(oid) => assert_eq!(oid, "789012"),
             _ => panic!("Expected success"),
@@ -140,7 +140,7 @@ mod tests {
     #[test]
     fn test_order_broadcast_simple_error() {
         let json = include_str!("../../testdata/order_broadcast_simple_error.json");
-        let response: HypercoreUnifiedResponse = serde_json::from_str(json).unwrap();
+        let response: TransactionBroadcastResponse = serde_json::from_str(json).unwrap();
         assert!(matches!(response.into_result("test".to_string()), HyperCoreBroadcastResult::Error(_)));
     }
 }
