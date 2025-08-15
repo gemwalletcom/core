@@ -3197,6 +3197,7 @@ dependencies = [
  "gem_cosmos",
  "gem_evm",
  "gem_hash",
+ "gem_hypercore",
  "gem_jsonrpc",
  "gem_solana",
  "gem_sui",

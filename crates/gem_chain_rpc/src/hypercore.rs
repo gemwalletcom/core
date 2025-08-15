@@ -4,8 +4,8 @@ use crate::{ChainAssetsProvider, ChainBlockProvider, ChainStakeProvider, ChainTo
 use async_trait::async_trait;
 use primitives::{chain::Chain, Asset, AssetBalance, StakeValidator, Transaction};
 
-use gem_hypercore::rpc::client::HyperCoreClient;
 use gem_client::Client;
+use gem_hypercore::rpc::client::HyperCoreClient;
 
 pub struct HyperCoreProvider<C: Client> {
     client: HyperCoreClient<C>,

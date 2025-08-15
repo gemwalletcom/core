@@ -1,8 +1,9 @@
-use crate::typeshare::balance::HypercoreValidator;
+use crate::typeshare::balance::{HypercoreBalances, HypercoreValidator};
 use gem_client::Client;
 use serde_json::json;
 use std::error::Error;
 
+#[derive(Debug)]
 pub struct HyperCoreClient<C: Client> {
     client: C,
 }
