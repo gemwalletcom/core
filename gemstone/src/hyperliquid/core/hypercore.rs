@@ -87,6 +87,18 @@ impl HyperCore {
     fn transfer_perps_to_spot_typed_data(&self, usd_class_transfer: actions::HyperUsdClassTransfer) -> String {
         self.usd_class_transfer_typed_data(usd_class_transfer)
     }
+
+    // User signed payload
+    fn c_deposit_typed_data(&self, c_deposit: actions::HyperCDeposit) -> String {
+        let action_value = serde_json::to_value(&c_deposit).unwrap();
+        eip712::create_user_signed_eip712_json(&action_value, "HyperliquidTransaction:CDeposit", eip712::c_deposit_types())
+    }
+
+    // User signed payload
+    fn token_delegate_typed_data(&self, token_delegate: actions::HyperTokenDelegate) -> String {
+        let action_value = serde_json::to_value(&token_delegate).unwrap();
+        eip712::create_user_signed_eip712_json(&action_value, "HyperliquidTransaction:TokenDelegate", eip712::token_delegate_types())
+    }
 }
 
 #[cfg(test)]
@@ -355,5 +367,33 @@ mod tests {
         assert_eq!(parsed["message"]["nonce"], 1754986567194u64);
         assert_eq!(parsed["message"]["signatureChainId"], "0xa4b1");
         assert_eq!(parsed["message"]["hyperliquidChain"], "Mainnet");
+    }
+
+    #[test]
+    fn test_eip712_c_deposit() {
+        let hypercore = HyperCore::new();
+        let c_deposit = actions::HyperCDeposit::new(10000000, 1755231476741);
+
+        let eip712_json = hypercore.c_deposit_typed_data(c_deposit);
+
+        // Parse both generated and expected JSON for comparison
+        let parsed: serde_json::Value = serde_json::from_str(&eip712_json).unwrap();
+        let expected: serde_json::Value = serde_json::from_str(include_str!("../test/hl_eip712_spot_to_stake_balance.json")).unwrap();
+
+        assert_eq!(parsed, expected);
+    }
+
+    #[test]
+    fn test_eip712_token_delegate() {
+        let hypercore = HyperCore::new();
+        let token_delegate = actions::HyperTokenDelegate::new("0x5ac99df645f3414876c816caa18b2d234024b487".to_string(), 10000000, false, 1755231522831);
+
+        let eip712_json = hypercore.token_delegate_typed_data(token_delegate);
+
+        // Parse both generated and expected JSON for comparison
+        let parsed: serde_json::Value = serde_json::from_str(&eip712_json).unwrap();
+        let expected: serde_json::Value = serde_json::from_str(include_str!("../test/hl_eip712_stake_to_validator.json")).unwrap();
+
+        assert_eq!(parsed, expected);
     }
 }

@@ -1,0 +1,60 @@
+{
+    "domain": {
+        "name": "HyperliquidSignTransaction",
+        "version": "1",
+        "chainId": 999,
+        "verifyingContract": "0x0000000000000000000000000000000000000000"
+    },
+    "message": {
+        "type": "tokenDelegate",
+        "validator": "0x5ac99df645f3414876c816caa18b2d234024b487",
+        "wei": 10000000,
+        "isUndelegate": false,
+        "nonce": 1755231522831,
+        "signatureChainId": "0x3e7",
+        "hyperliquidChain": "Mainnet"
+    },
+    "primaryType": "HyperliquidTransaction:TokenDelegate",
+    "types": {
+        "EIP712Domain": [
+            {
+                "name": "name",
+                "type": "string"
+            },
+            {
+                "name": "version",
+                "type": "string"
+            },
+            {
+                "name": "chainId",
+                "type": "uint256"
+            },
+            {
+                "name": "verifyingContract",
+                "type": "address"
+            }
+        ],
+        "HyperliquidTransaction:TokenDelegate": [
+            {
+                "name": "hyperliquidChain",
+                "type": "string"
+            },
+            {
+                "name": "validator",
+                "type": "address"
+            },
+            {
+                "name": "wei",
+                "type": "uint64"
+            },
+            {
+                "name": "isUndelegate",
+                "type": "bool"
+            },
+            {
+                "name": "nonce",
+                "type": "uint64"
+            }
+        ]
+    }
+}
