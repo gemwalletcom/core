@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 use chain_traits::ChainTransactions;
-use primitives::{TransactionState, TransactionUpdate, TransactionStateRequest};
+use primitives::{TransactionState, TransactionStateRequest, TransactionUpdate};
 use std::error::Error;
 
 use gem_client::Client;

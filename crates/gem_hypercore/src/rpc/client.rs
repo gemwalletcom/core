@@ -1,5 +1,8 @@
 use crate::typeshare::balance::{HypercoreBalances, HypercoreDelegationBalance, HypercoreStakeBalance, HypercoreValidator};
+use crate::typeshare::candlestick::HypercoreCandlestick;
+use crate::typeshare::metadata::HypercoreMetadataResponse;
 use crate::typeshare::order::HypercorePerpetualFill;
+use crate::typeshare::position::HypercoreAssetPositions;
 use crate::typeshare::response::{HyperCoreBroadcastResult, TransactionBroadcastResponse};
 use chain_traits::ChainTraits;
 use gem_client::Client;
@@ -79,6 +82,58 @@ impl<C: Client> HyperCoreClient<C> {
                     "type": "userFillsByTime",
                     "user": user,
                     "startTime": start_time
+                }),
+                None,
+            )
+            .await?)
+    }
+
+    pub async fn get_clearinghouse_state(&self, user: &str) -> Result<HypercoreAssetPositions, Box<dyn Error + Send + Sync>> {
+        Ok(self
+            .client
+            .post(
+                "/info",
+                &serde_json::json!({
+                    "type": "clearinghouseState",
+                    "user": user
+                }),
+                None,
+            )
+            .await?)
+    }
+
+    pub async fn get_metadata(&self) -> Result<HypercoreMetadataResponse, Box<dyn Error + Send + Sync>> {
+        Ok(self
+            .client
+            .post(
+                "/info",
+                &serde_json::json!({
+                    "type": "metaAndAssetCtxs"
+                }),
+                None,
+            )
+            .await?)
+    }
+
+    pub async fn get_candlesticks(
+        &self,
+        coin: &str,
+        interval: &str,
+        start_time: i64,
+        end_time: i64,
+    ) -> Result<Vec<HypercoreCandlestick>, Box<dyn Error + Send + Sync>> {
+        Ok(self
+            .client
+            .post(
+                "/info",
+                &serde_json::json!({
+                    "type": "candleSnapshot",
+                    "req": {
+                        "coin": coin,
+                        "interval": interval,
+                        "startTime": start_time,
+                        "endTime": end_time
+                    }
                 }),
                 None,
             )

@@ -1,9 +1,11 @@
 use std::error::Error;
 
 use async_trait::async_trait;
-use primitives::{AssetBalance, DelegationBase, DelegationValidator, FeePriorityValue, TransactionUpdate, TransactionStateRequest, UTXO};
+use primitives::chart::ChartCandleStick;
+use primitives::perpetual::{PerpetualData, PerpetualPositionsSummary};
+use primitives::{AssetBalance, ChartPeriod, DelegationBase, DelegationValidator, FeePriorityValue, TransactionStateRequest, TransactionUpdate, UTXO};
 
-pub trait ChainTraits: ChainBalances + ChainStaking + ChainTransactions + ChainState + ChainAccount {}
+pub trait ChainTraits: ChainBalances + ChainStaking + ChainTransactions + ChainState + ChainAccount + ChainPerpetual {}
 
 #[async_trait]
 pub trait ChainBalances: Send + Sync {
@@ -14,8 +16,13 @@ pub trait ChainBalances: Send + Sync {
 
 #[async_trait]
 pub trait ChainStaking: Send + Sync {
-    async fn get_staking_validators(&self) -> Result<Vec<DelegationValidator>, Box<dyn Error + Sync + Send>>;
-    async fn get_staking_delegations(&self, address: String) -> Result<Vec<DelegationBase>, Box<dyn Error + Sync + Send>>;
+    async fn get_staking_validators(&self) -> Result<Vec<DelegationValidator>, Box<dyn Error + Sync + Send>> {
+        Ok(vec![])
+    }
+
+    async fn get_staking_delegations(&self, _address: String) -> Result<Vec<DelegationBase>, Box<dyn Error + Sync + Send>> {
+        Ok(vec![])
+    }
 }
 
 #[async_trait]
@@ -34,4 +41,19 @@ pub trait ChainState: Send + Sync {
 #[async_trait]
 pub trait ChainAccount: Send + Sync {
     async fn get_utxos(&self, address: String) -> Result<Vec<UTXO>, Box<dyn Error + Sync + Send>>;
+}
+
+#[async_trait]
+pub trait ChainPerpetual: Send + Sync {
+    async fn get_positions(&self, _address: String) -> Result<PerpetualPositionsSummary, Box<dyn Error + Sync + Send>> {
+        Err("Chain does not support perpetual trading".into())
+    }
+
+    async fn get_perpetuals_data(&self) -> Result<Vec<PerpetualData>, Box<dyn Error + Sync + Send>> {
+        Err("Chain does not support perpetual trading".into())
+    }
+
+    async fn get_candlesticks(&self, _symbol: String, _period: ChartPeriod) -> Result<Vec<ChartCandleStick>, Box<dyn Error + Sync + Send>> {
+        Err("Chain does not support perpetual trading".into())
+    }
 }

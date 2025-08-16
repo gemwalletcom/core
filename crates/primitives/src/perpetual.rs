@@ -1,5 +1,6 @@
 use crate::{Asset, AssetId, PerpetualPosition, PerpetualProvider};
 use serde::{Deserialize, Serialize};
+use strum::{AsRefStr, EnumString};
 use typeshare::typeshare;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -19,12 +20,12 @@ pub struct Perpetual {
     pub leverage: Vec<u8>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, AsRefStr, EnumString)]
 #[typeshare(swift = "Equatable, Sendable, Hashable")]
+#[serde(rename_all = "lowercase")]
+#[strum(serialize_all = "lowercase")]
 pub enum PerpetualDirection {
-    #[serde(rename = "short")]
     Short,
-    #[serde(rename = "long")]
     Long,
 }
 

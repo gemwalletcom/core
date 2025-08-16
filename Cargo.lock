@@ -3034,6 +3034,7 @@ version = "1.0.0"
 dependencies = [
  "async-trait",
  "chain_traits",
+ "chrono",
  "gem_client",
  "gem_evm",
  "number_formatter",
@@ -3208,6 +3209,7 @@ dependencies = [
  "borsh 1.5.7",
  "bs58",
  "chain_traits",
+ "chrono",
  "futures",
  "gem_aptos",
  "gem_bitcoin",

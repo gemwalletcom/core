@@ -47,13 +47,12 @@ impl Client for AlienClient {
         let url = self.build_url(path);
 
         let mut request_headers = HashMap::from([("Content-Type".to_string(), ContentType::ApplicationJson.as_str().to_string())]);
-        
+
         if let Some(provided_headers) = headers {
             request_headers.extend(provided_headers);
         }
 
-        let content_type = request_headers.get("Content-Type")
-            .and_then(|s| ContentType::from_str(s).ok());
+        let content_type = request_headers.get("Content-Type").and_then(|s| ContentType::from_str(s).ok());
 
         let data = match content_type {
             Some(ContentType::TextPlain) => {

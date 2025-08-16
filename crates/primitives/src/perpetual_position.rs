@@ -1,11 +1,13 @@
 use serde::{Deserialize, Serialize};
+use strum::{AsRefStr, EnumString};
 use typeshare::typeshare;
 
 use crate::{AssetId, PerpetualDirection};
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, AsRefStr, EnumString)]
 #[typeshare(swift = "Equatable, Sendable, Hashable")]
 #[serde(rename_all = "lowercase")]
+#[strum(serialize_all = "lowercase")]
 pub enum PerpetualMarginType {
     Cross,
     Isolated,

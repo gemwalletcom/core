@@ -7,7 +7,7 @@ use std::sync::Arc;
 pub mod models;
 
 pub use models::*;
-use primitives::{BitcoinChain, Chain};
+use primitives::{BitcoinChain, Chain, ChartPeriod};
 
 #[derive(Debug, uniffi::Object)]
 pub struct GemGateway {
@@ -144,6 +144,39 @@ impl GemGateway {
             .await
             .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
         Ok(utxos.into_iter().map(|u| u.into()).collect())
+    }
+
+    pub async fn get_positions(&self, chain: Chain, address: String) -> Result<GemPerpetualPositionsSummary, GatewayError> {
+        let positions = self
+            .provider(chain)
+            .await?
+            .get_positions(address)
+            .await
+            .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
+        Ok(positions.into())
+    }
+
+    pub async fn get_perpetuals_data(&self, chain: Chain) -> Result<Vec<GemPerpetualData>, GatewayError> {
+        let data = self
+            .provider(chain)
+            .await?
+            .get_perpetuals_data()
+            .await
+            .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
+
+        Ok(data.into_iter().map(|d| d.into()).collect())
+    }
+
+    pub async fn get_candlesticks(&self, chain: Chain, symbol: String, period: String) -> Result<Vec<GemChartCandleStick>, GatewayError> {
+        let chart_period = ChartPeriod::new(period).ok_or_else(|| GatewayError::ParseError(format!("Invalid chart period")))?;
+        let candlesticks = self
+            .provider(chain)
+            .await?
+            .get_candlesticks(symbol, chart_period)
+            .await
+            .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
+
+        Ok(candlesticks.into_iter().map(|c| c.into()).collect())
     }
 }
 

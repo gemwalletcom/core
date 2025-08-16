@@ -1,7 +1,6 @@
 use async_trait::async_trait;
 use chain_traits::ChainTransactions;
-use primitives::transaction_metadata_types::TransactionPerpetualMetadata;
-use primitives::{TransactionChange, TransactionMetadata, TransactionState, TransactionStateRequest, TransactionUpdate};
+use primitives::{TransactionChange, TransactionMetadata, TransactionPerpetualMetadata, TransactionState, TransactionStateRequest, TransactionUpdate};
 use std::error::Error;
 
 use gem_client::Client;
