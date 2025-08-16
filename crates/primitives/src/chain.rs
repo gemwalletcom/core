@@ -344,23 +344,23 @@ impl Chain {
             | Self::Unichain
             | Self::Ink
             | Self::Hyperliquid
-            | Self::HyperCore
             | Self::Sui
             | Self::Monad
             | Self::Ton
             | Self::Xrp
-            | Self::Berachain => true,
+            | Self::Berachain
+            | Self::Tron
+            | Self::Near => true,
             Self::Osmosis
             | Self::Celestia
             | Self::Injective
-            | Self::Tron
             | Self::Sei
             | Self::Noble
-            | Self::Near
             | Self::Stellar
             | Self::Algorand
             | Self::Polkadot
-            | Self::Cardano => false,
+            | Self::Cardano
+            | Self::HyperCore => false,
         }
     }
 
