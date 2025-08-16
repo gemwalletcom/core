@@ -3,12 +3,14 @@ use std::str::FromStr;
 const APPLICATION_JSON: &'static str = "application/json";
 const TEXT_PLAIN: &'static str = "text/plain";
 const APPLICATION_FORM_URL_ENCODED: &'static str = "application/x-www-form-urlencoded";
+const APPLICATION_X_BINARY: &'static str = "application/x-binary";
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum ContentType {
     ApplicationJson,
     TextPlain,
     ApplicationFormUrlEncoded,
+    ApplicationXBinary,
 }
 
 impl ContentType {
@@ -18,6 +20,7 @@ impl ContentType {
             ContentType::ApplicationJson => APPLICATION_JSON,
             ContentType::TextPlain => TEXT_PLAIN,
             ContentType::ApplicationFormUrlEncoded => APPLICATION_FORM_URL_ENCODED,
+            ContentType::ApplicationXBinary => APPLICATION_X_BINARY,
         }
     }
 }
@@ -30,6 +33,7 @@ impl FromStr for ContentType {
             APPLICATION_JSON => Ok(ContentType::ApplicationJson),  
             TEXT_PLAIN => Ok(ContentType::TextPlain),
             APPLICATION_FORM_URL_ENCODED => Ok(ContentType::ApplicationFormUrlEncoded),
+            APPLICATION_X_BINARY => Ok(ContentType::ApplicationXBinary),
             _ => Err("Unknown content type"),
         }
     }

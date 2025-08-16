@@ -2854,7 +2854,9 @@ dependencies = [
  "anyhow",
  "async-trait",
  "base64 0.22.1",
+ "chain_traits",
  "chrono",
+ "gem_client",
  "primitives",
  "reqwest-middleware",
  "serde",
@@ -2965,6 +2967,7 @@ name = "gem_client"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "hex",
  "reqwest",
  "serde",
  "serde_json",
@@ -3219,6 +3222,7 @@ dependencies = [
  "chain_traits",
  "chrono",
  "futures",
+ "gem_algorand",
  "gem_aptos",
  "gem_bitcoin",
  "gem_bsc",

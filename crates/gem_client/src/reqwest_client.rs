@@ -1,7 +1,7 @@
 use crate::{Client, ClientError, ContentType};
 use async_trait::async_trait;
 use serde::{de::DeserializeOwned, Serialize};
-use std::collections::HashMap;
+use std::{collections::HashMap, str::FromStr};
 
 #[derive(Debug)]
 pub struct ReqwestClient {
@@ -70,9 +70,27 @@ impl Client for ReqwestClient {
         let url = self.build_url(path);
         let headers = headers.unwrap_or_else(|| HashMap::from([("Content-Type".to_string(), ContentType::ApplicationJson.as_str().to_string())]));
 
-        let json_body = serde_json::to_vec(body).map_err(|e| ClientError::Serialization(format!("Failed to serialize request: {e}")))?;
+        let content_type = headers.get("Content-Type").and_then(|s| ContentType::from_str(s).ok());
 
-        let mut request = self.client.post(&url).body(json_body);
+        let request_body = match content_type {
+            Some(ContentType::TextPlain) | Some(ContentType::ApplicationFormUrlEncoded) | Some(ContentType::ApplicationXBinary) => {
+                let json_value = serde_json::to_value(body).map_err(|e| ClientError::Serialization(format!("Failed to serialize request: {e}")))?;
+                match json_value {
+                    serde_json::Value::String(s) => {
+                        if content_type == Some(ContentType::ApplicationXBinary) {
+                            // For binary content, decode hex string to bytes
+                            hex::decode(&s).map_err(|e| ClientError::Serialization(format!("Failed to decode hex string: {e}")))?
+                        } else {
+                            s.into_bytes()
+                        }
+                    },
+                    _ => return Err(ClientError::Serialization("Expected string body for text/plain or binary content-type".to_string())),
+                }
+            }
+            _ => serde_json::to_vec(body).map_err(|e| ClientError::Serialization(format!("Failed to serialize request: {e}")))?,
+        };
+
+        let mut request = self.client.post(&url).body(request_body);
 
         // Add all headers
         for (key, value) in headers {

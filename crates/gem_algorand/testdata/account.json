@@ -1,0 +1,29 @@
+{
+  "address": "RXIOUIR5IGFZMIZ7CR7FJXDYY4JI7NZG5UCWCZZNWXUPFJRLG6K6X5ITXM",
+  "amount": 72716422,
+  "amount-without-pending-rewards": 72716422,
+  "apps-local-state": [],
+  "apps-total-schema": {
+    "num-byte-slice": 0,
+    "num-uint": 0
+  },
+  "assets": [
+    {
+      "amount": 26823378,
+      "asset-id": 31566704,
+      "is-frozen": false
+    }
+  ],
+  "created-apps": [],
+  "created-assets": [],
+  "min-balance": 200000,
+  "pending-rewards": 0,
+  "reward-base": 218288,
+  "rewards": 0,
+  "round": 52807924,
+  "status": "Offline",
+  "total-apps-opted-in": 0,
+  "total-assets-opted-in": 1,
+  "total-created-apps": 0,
+  "total-created-assets": 0
+}

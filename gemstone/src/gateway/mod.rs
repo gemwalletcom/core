@@ -1,6 +1,7 @@
 use crate::gateway::models::asset::GemAsset;
 use crate::network::{AlienClient, AlienProvider};
 use chain_traits::ChainTraits;
+use gem_algorand::rpc::client::AlgorandClient;
 use gem_bitcoin::rpc::client::BitcoinClient;
 use gem_cardano::rpc::client::CardanoClient;
 use gem_hypercore::rpc::client::HyperCoreClient;
@@ -30,6 +31,7 @@ impl GemGateway {
             Chain::Cardano => Ok(Arc::new(CardanoClient::new(alien_client))),
             Chain::Stellar => Ok(Arc::new(StellarClient::new(alien_client))),
             Chain::Xrp => Ok(Arc::new(XRPClient::new(alien_client))),
+            Chain::Algorand => Ok(Arc::new(AlgorandClient::new(alien_client))),
             _ => Err(GatewayError::InvalidChain(chain.to_string())),
         }
     }

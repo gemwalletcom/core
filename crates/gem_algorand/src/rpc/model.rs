@@ -9,6 +9,12 @@ pub const TRANSACTION_TYPE_PAY: &str = "pay";
 pub struct TransactionsParams {
     #[serde(rename = "last-round")]
     pub last_round: i64,
+    #[serde(rename = "genesis-hash")]
+    pub genesis_hash: String,
+    #[serde(rename = "genesis-id")]
+    pub genesis_id: String,
+    #[serde(rename = "min-fee")]
+    pub min_fee: i64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -64,6 +70,9 @@ impl Transaction {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Account {
+    pub amount: i64,
+    #[serde(rename = "min-balance")]
+    pub min_balance: i64,
     pub assets: Vec<Asset>,
 }
 
@@ -96,4 +105,17 @@ pub struct Asset {
     #[serde(rename = "asset-id")]
     pub asset_id: i64,
     pub amount: i64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TransactionBroadcast {
+    #[serde(rename = "txId")]
+    pub tx_id: Option<String>,
+    pub message: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TransactionStatus {
+    #[serde(rename = "confirmed-round")]
+    pub confirmed_round: i64,
 }

@@ -13,3 +13,4 @@ thiserror = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 reqwest = { workspace = true, optional = true }
+hex = { workspace = true }

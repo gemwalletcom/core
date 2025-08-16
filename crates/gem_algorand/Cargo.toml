@@ -6,7 +6,7 @@ edition = { workspace = true }
 [features]
 default = []
 typeshare = ["dep:typeshare"]
-rpc = ["dep:chrono", "dep:reqwest-middleware"]
+rpc = ["dep:chrono", "dep:reqwest-middleware", "dep:chain_traits", "dep:gem_client"]
 
 [dependencies]
 anyhow = { workspace = true }
@@ -22,3 +22,5 @@ reqwest-middleware = { workspace = true, features = ["json"], optional = true }
 typeshare = { workspace = true, optional = true }
 
 primitives = { path = "../primitives" }
+chain_traits = { path = "../chain_traits", optional = true }
+gem_client = { path = "../gem_client", optional = true }
