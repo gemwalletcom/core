@@ -56,6 +56,4 @@ impl ChainTransactionsProvider for PolkadotProvider {
 }
 
 #[async_trait]
-impl ChainStakeProvider for PolkadotProvider {
-    // Default implementation returns empty vector
-}
+impl ChainStakeProvider for PolkadotProvider { }

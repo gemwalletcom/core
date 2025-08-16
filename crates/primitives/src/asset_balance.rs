@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 pub struct AssetBalance {
     pub asset_id: AssetId,
     pub balance: Balance,
+    pub is_active: Option<bool>,
 }
 
 impl AssetBalance {
@@ -13,11 +14,24 @@ impl AssetBalance {
         Self {
             asset_id,
             balance: Balance::coin_balance(balance),
+            is_active: None,
         }
     }
 
     pub fn new_balance(asset_id: AssetId, balance: Balance) -> Self {
-        Self { asset_id, balance }
+        Self { 
+            asset_id, 
+            balance,
+            is_active: None,
+        }
+    }
+
+    pub fn new_with_active(asset_id: AssetId, balance: Balance, is_active: bool) -> Self {
+        Self { 
+            asset_id, 
+            balance,
+            is_active: Some(is_active),
+        }
     }
 }
 

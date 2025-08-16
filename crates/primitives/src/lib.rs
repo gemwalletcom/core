@@ -141,3 +141,5 @@ pub mod delegation;
 pub use self::delegation::{Delegation, DelegationBase, DelegationState, DelegationValidator};
 pub mod transaction_update;
 pub use self::transaction_update::{TransactionChange, TransactionMetadata, TransactionStateRequest, TransactionUpdate};
+pub mod transaction_preload;
+pub use self::transaction_preload::{TransactionPreload, TransactionPreloadInput};

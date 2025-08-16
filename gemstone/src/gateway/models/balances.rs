@@ -4,6 +4,7 @@ use primitives::{AssetBalance, AssetId, Balance};
 pub struct GemAssetBalance {
     pub asset_id: AssetId,
     pub balance: GemBalance,
+    pub is_active: bool,
 }
 
 #[derive(Debug, Clone, uniffi::Record)]
@@ -23,6 +24,7 @@ impl From<AssetBalance> for GemAssetBalance {
         Self {
             asset_id: value.asset_id,
             balance: value.balance.into(),
+            is_active: value.is_active.unwrap_or(true),
         }
     }
 }

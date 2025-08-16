@@ -56,6 +56,4 @@ impl ChainTransactionsProvider for XRPProvider {
 }
 
 #[async_trait]
-impl ChainStakeProvider for XRPProvider {
-    // Default implementation returns empty vector
-}
+impl ChainStakeProvider for XRPProvider { }

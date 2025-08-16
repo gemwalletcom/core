@@ -1,16 +1,23 @@
 use std::str::FromStr;
 
+const APPLICATION_JSON: &'static str = "application/json";
+const TEXT_PLAIN: &'static str = "text/plain";
+const APPLICATION_FORM_URL_ENCODED: &'static str = "application/x-www-form-urlencoded";
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum ContentType {
     ApplicationJson,
     TextPlain,
+    ApplicationFormUrlEncoded,
 }
 
 impl ContentType {
+
     pub const fn as_str(&self) -> &'static str {
         match self {
-            ContentType::ApplicationJson => "application/json",
-            ContentType::TextPlain => "text/plain",
+            ContentType::ApplicationJson => APPLICATION_JSON,
+            ContentType::TextPlain => TEXT_PLAIN,
+            ContentType::ApplicationFormUrlEncoded => APPLICATION_FORM_URL_ENCODED,
         }
     }
 }
@@ -20,8 +27,9 @@ impl FromStr for ContentType {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "application/json" => Ok(ContentType::ApplicationJson),
-            "text/plain" => Ok(ContentType::TextPlain),
+            APPLICATION_JSON => Ok(ContentType::ApplicationJson),  
+            TEXT_PLAIN => Ok(ContentType::TextPlain),
+            APPLICATION_FORM_URL_ENCODED => Ok(ContentType::ApplicationFormUrlEncoded),
             _ => Err("Unknown content type"),
         }
     }

@@ -63,6 +63,4 @@ impl<C: Client> ChainTransactionsProvider for CardanoProvider<C> {
 }
 
 #[async_trait]
-impl<C: Client> ChainStakeProvider for CardanoProvider<C> {
-    // Default implementation returns empty vector
-}
+impl<C: Client> ChainStakeProvider for CardanoProvider<C> { }

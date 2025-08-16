@@ -3,9 +3,9 @@ use std::error::Error;
 use async_trait::async_trait;
 use primitives::chart::ChartCandleStick;
 use primitives::perpetual::{PerpetualData, PerpetualPositionsSummary};
-use primitives::{AssetBalance, ChartPeriod, DelegationBase, DelegationValidator, FeePriorityValue, TransactionStateRequest, TransactionUpdate, UTXO};
+use primitives::{Asset, AssetBalance, ChartPeriod, DelegationBase, DelegationValidator, FeePriorityValue, TransactionPreload, TransactionPreloadInput, TransactionStateRequest, TransactionUpdate, UTXO};
 
-pub trait ChainTraits: ChainBalances + ChainStaking + ChainTransactions + ChainState + ChainAccount + ChainPerpetual {}
+pub trait ChainTraits: ChainBalances + ChainStaking + ChainTransactions + ChainState + ChainAccount + ChainPerpetual + ChainToken + ChainPreload {}
 
 #[async_trait]
 pub trait ChainBalances: Send + Sync {
@@ -40,7 +40,9 @@ pub trait ChainState: Send + Sync {
 
 #[async_trait]
 pub trait ChainAccount: Send + Sync {
-    async fn get_utxos(&self, address: String) -> Result<Vec<UTXO>, Box<dyn Error + Sync + Send>>;
+    async fn get_utxos(&self, _address: String) -> Result<Vec<UTXO>, Box<dyn Error + Sync + Send>> {
+        Ok(vec![])
+    }
 }
 
 #[async_trait]
@@ -55,5 +57,23 @@ pub trait ChainPerpetual: Send + Sync {
 
     async fn get_candlesticks(&self, _symbol: String, _period: ChartPeriod) -> Result<Vec<ChartCandleStick>, Box<dyn Error + Sync + Send>> {
         Err("Chain does not support perpetual trading".into())
+    }
+}
+
+#[async_trait]
+pub trait ChainToken: Send + Sync {
+    async fn get_token_data(&self, _token_id: String) -> Result<Asset, Box<dyn Error + Sync + Send>> {
+        Err("Chain does not support tokens".into())
+    }
+    
+    fn get_is_token_address(&self, _token_id: &str) -> bool {
+        false
+    }
+}
+
+#[async_trait]
+pub trait ChainPreload: Send + Sync {
+    async fn get_transaction_preload(&self, _input: TransactionPreloadInput) -> Result<TransactionPreload, Box<dyn Error + Sync + Send>> {
+        Ok(TransactionPreload::default())
     }
 }

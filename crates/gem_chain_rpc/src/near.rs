@@ -76,6 +76,4 @@ impl ChainTransactionsProvider for NearProvider {
 }
 
 #[async_trait]
-impl ChainStakeProvider for NearProvider {
-    // Default implementation returns empty vector
-}
+impl ChainStakeProvider for NearProvider { }

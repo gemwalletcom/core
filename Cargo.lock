@@ -3111,12 +3111,16 @@ dependencies = [
 name = "gem_stellar"
 version = "1.0.0"
 dependencies = [
+ "async-trait",
+ "chain_traits",
  "chrono",
+ "gem_client",
  "number_formatter",
  "primitives",
- "reqwest-middleware",
  "serde",
+ "serde_json",
  "typeshare",
+ "urlencoding",
 ]
 
 [[package]]
@@ -3223,6 +3227,7 @@ dependencies = [
  "gem_hypercore",
  "gem_jsonrpc",
  "gem_solana",
+ "gem_stellar",
  "gem_sui",
  "gem_ton",
  "hex",

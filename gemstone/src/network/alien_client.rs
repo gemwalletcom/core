@@ -55,7 +55,7 @@ impl Client for AlienClient {
         let content_type = request_headers.get("Content-Type").and_then(|s| ContentType::from_str(s).ok());
 
         let data = match content_type {
-            Some(ContentType::TextPlain) => {
+            Some(ContentType::TextPlain) | Some(ContentType::ApplicationFormUrlEncoded) => {
                 let json_value = serde_json::to_value(body)?;
                 match json_value {
                     serde_json::Value::String(s) => s.into_bytes(),

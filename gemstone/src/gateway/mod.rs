@@ -1,8 +1,10 @@
+use crate::gateway::models::asset::GemAsset;
 use crate::network::{AlienClient, AlienProvider};
 use chain_traits::ChainTraits;
 use gem_bitcoin::rpc::client::BitcoinClient;
 use gem_cardano::rpc::client::CardanoClient;
 use gem_hypercore::rpc::client::HyperCoreClient;
+use gem_stellar::rpc::client::StellarClient;
 use std::sync::Arc;
 
 pub mod models;
@@ -25,6 +27,7 @@ impl GemGateway {
                 Ok(Arc::new(BitcoinClient::new(alien_client, BitcoinChain::from_chain(chain).unwrap())))
             }
             Chain::Cardano => Ok(Arc::new(CardanoClient::new(alien_client))),
+            Chain::Stellar => Ok(Arc::new(StellarClient::new(alien_client))),
             _ => Err(GatewayError::InvalidChain(chain.to_string())),
         }
     }
@@ -148,6 +151,16 @@ impl GemGateway {
         Ok(utxos.into_iter().map(|u| u.into()).collect())
     }
 
+    pub async fn get_transaction_preload(&self, chain: Chain, input: GemTransactionPreloadInput) -> Result<GemTransactionPreload, GatewayError> {
+        let preload = self
+            .provider(chain)
+            .await?
+            .get_transaction_preload(input.into())
+            .await
+            .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
+        Ok(preload.into())
+    }
+
     pub async fn get_positions(&self, chain: Chain, address: String) -> Result<GemPerpetualPositionsSummary, GatewayError> {
         let positions = self
             .provider(chain)
@@ -179,6 +192,20 @@ impl GemGateway {
             .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
 
         Ok(candlesticks.into_iter().map(|c| c.into()).collect())
+    }
+
+    pub async fn get_token_data(&self, chain: Chain, token_id: String) -> Result<GemAsset, GatewayError> {
+        Ok(self
+            .provider(chain)
+            .await?
+            .get_token_data(token_id)
+            .await
+            .map_err(|e| GatewayError::NetworkError(e.to_string()))?
+            .into())
+    }
+
+    pub async fn get_is_token_address(&self, chain: Chain, token_id: String) -> Result<bool, GatewayError> {
+        Ok(self.provider(chain).await?.get_is_token_address(&token_id))
     }
 }
 

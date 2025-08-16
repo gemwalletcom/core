@@ -3,14 +3,24 @@ use chain_traits::ChainBalances;
 use std::error::Error;
 
 use gem_client::Client;
-use primitives::AssetBalance;
+use primitives::{AssetBalance, BitcoinChain};
 
 use crate::rpc::client::BitcoinClient;
+
+impl<C: Client> BitcoinClient<C> {
+    fn full_address(&self, address: &str) -> String {
+        match self.chain {
+            BitcoinChain::BitcoinCash => format!("bitcoincash:{}", address),
+            _ => address.to_string(),
+        }
+    }
+}
 
 #[async_trait]
 impl<C: Client> ChainBalances for BitcoinClient<C> {
     async fn get_balance_coin(&self, address: String) -> Result<AssetBalance, Box<dyn Error + Sync + Send>> {
-        let account = self.get_balance(&address).await?;
+        let full_address = self.full_address(&address);
+        let account = self.get_balance(&full_address).await?;
         Ok(AssetBalance::new(self.chain.get_chain().as_asset_id(), account.balance))
     }
 

@@ -59,6 +59,4 @@ impl ChainTransactionsProvider for AlgorandProvider {
 }
 
 #[async_trait]
-impl ChainStakeProvider for AlgorandProvider {
-    // Default implementation returns empty vector
-}
+impl ChainStakeProvider for AlgorandProvider {}

@@ -4,7 +4,7 @@ use crate::typeshare::metadata::HypercoreMetadataResponse;
 use crate::typeshare::order::HypercorePerpetualFill;
 use crate::typeshare::position::HypercoreAssetPositions;
 use crate::typeshare::response::{HyperCoreBroadcastResult, TransactionBroadcastResponse};
-use chain_traits::ChainTraits;
+use chain_traits::{ChainTraits, ChainPreload};
 use gem_client::Client;
 use primitives::Chain;
 use serde_json::json;
@@ -140,5 +140,7 @@ impl<C: Client> HyperCoreClient<C> {
             .await?)
     }
 }
+
+impl<C: Client> ChainPreload for HyperCoreClient<C> {}
 
 impl<C: Client> ChainTraits for HyperCoreClient<C> {}

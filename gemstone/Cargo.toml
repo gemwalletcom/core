@@ -31,6 +31,7 @@ gem_client = { path = "../crates/gem_client" }
 gem_hypercore = { path = "../crates/gem_hypercore" }
 gem_bitcoin = { path = "../crates/gem_bitcoin" }
 gem_cardano = { path = "../crates/gem_cardano" }
+gem_stellar = { path = "../crates/gem_stellar", features = ["rpc", "typeshare"] }
 serde_serializers = { path = "../crates/serde_serializers" }
 chain_traits = { path = "../crates/chain_traits" }
 

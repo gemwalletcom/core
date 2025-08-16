@@ -68,6 +68,4 @@ impl ChainTransactionsProvider for TonProvider {
 }
 
 #[async_trait]
-impl ChainStakeProvider for TonProvider {
-    // Default implementation returns empty vector
-}
+impl ChainStakeProvider for TonProvider { }

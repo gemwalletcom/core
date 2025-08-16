@@ -7,7 +7,7 @@ use crate::typeshare::fee::BitcoinFeeResult;
 use crate::typeshare::transaction::{BitcoinTransactionBroacastResult, BitcoinUTXO};
 
 use super::model::{Block, Status};
-use chain_traits::{ChainPerpetual, ChainStaking, ChainTraits};
+use chain_traits::{ChainPerpetual, ChainStaking, ChainToken, ChainTraits};
 use gem_client::{Client, ContentType};
 use primitives::chain::Chain;
 use primitives::BitcoinChain;
@@ -74,5 +74,7 @@ impl<C: Client> BitcoinClient<C> {
 impl<C: Client> ChainStaking for BitcoinClient<C> {}
 
 impl<C: Client> ChainPerpetual for BitcoinClient<C> {}
+
+impl<C: Client> ChainToken for BitcoinClient<C> {}
 
 impl<C: Client> ChainTraits for BitcoinClient<C> {}

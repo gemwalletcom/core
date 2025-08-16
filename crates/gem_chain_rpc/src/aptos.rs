@@ -97,6 +97,4 @@ impl ChainTransactionsProvider for AptosProvider {
 }
 
 #[async_trait]
-impl ChainStakeProvider for AptosProvider {
-    // Default implementation returns empty vector
-}
+impl ChainStakeProvider for AptosProvider { }
