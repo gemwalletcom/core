@@ -62,7 +62,8 @@ impl ProviderFactory {
             .build();
         let chain = config.chain;
         let url = config.url;
-        let gem_client = ReqwestClient::new(url.clone(), reqwest_client);
+        let gem_client = ReqwestClient::new(url.clone(), reqwest_client.clone());
+        let cardano_client = ReqwestClient::new(url.clone(), reqwest_client);
 
         match chain {
             Chain::Bitcoin | Chain::BitcoinCash | Chain::Litecoin | Chain::Doge => Box::new(BitcoinProvider::new(BitcoinClient::new(
@@ -119,7 +120,7 @@ impl ProviderFactory {
             Chain::Sui => Box::new(SuiProvider::new(SuiClient::new(JsonRpcClient::new_with_client(url, client)))),
             Chain::Xrp => Box::new(XRPProvider::new(XRPClient::new(client, url))),
             Chain::Near => Box::new(NearProvider::new(NearClient::new(JsonRpcClient::new_with_client(url, client)))),
-            Chain::Cardano => Box::new(CardanoProvider::new(CardanoClient::new(client, url))),
+            Chain::Cardano => Box::new(CardanoProvider::new(CardanoClient::new(cardano_client))),
             Chain::Algorand => Box::new(AlgorandProvider::new(AlgorandClient::new(client, url))),
             Chain::Stellar => Box::new(StellarProvider::new(StellarClient::new(client, url))),
             Chain::Polkadot => Box::new(PolkadotProvider::new(PolkadotClient::new(client, url))),

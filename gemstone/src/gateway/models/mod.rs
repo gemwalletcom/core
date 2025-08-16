@@ -18,6 +18,7 @@ pub struct GemUTXO {
     pub transaction_id: String,
     pub vout: u32,
     pub value: String,
+    pub address: String,
 }
 
 // ChainState models
@@ -34,6 +35,7 @@ impl From<UTXO> for GemUTXO {
             transaction_id: utxo.transaction_id,
             vout: utxo.vout as u32,
             value: utxo.value,
+            address: utxo.address,
         }
     }
 }

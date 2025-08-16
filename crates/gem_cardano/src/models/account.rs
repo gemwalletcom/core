@@ -13,6 +13,13 @@ pub struct CardanoBalance {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Sendable")]
 #[serde(rename_all = "camelCase")]
+pub struct CardanoBalanceResponse {
+    pub utxos: CardanoAggregateBalance,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[typeshare(swift = "Sendable")]
+#[serde(rename_all = "camelCase")]
 pub struct CardanoAggregateBalance {
     pub aggregate: CardanoAggregateSum,
 }
@@ -30,3 +37,4 @@ pub struct CardanoAggregateSum {
 pub struct CardanoAggregateSumValue {
     pub value: Option<String>,
 }
+

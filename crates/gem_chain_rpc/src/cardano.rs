@@ -7,19 +7,20 @@ use primitives::{AssetBalance, Transaction};
 
 use gem_cardano::rpc::CardanoClient;
 use gem_cardano::rpc::CardanoMapper;
+use gem_client::Client;
 
-pub struct CardanoProvider {
-    client: CardanoClient,
+pub struct CardanoProvider<C: Client> {
+    client: CardanoClient<C>,
 }
 
-impl CardanoProvider {
-    pub fn new(client: CardanoClient) -> Self {
+impl<C: Client> CardanoProvider<C> {
+    pub fn new(client: CardanoClient<C>) -> Self {
         Self { client }
     }
 }
 
 #[async_trait]
-impl ChainBlockProvider for CardanoProvider {
+impl<C: Client> ChainBlockProvider for CardanoProvider<C> {
     fn get_chain(&self) -> Chain {
         Chain::Cardano
     }
@@ -41,27 +42,27 @@ impl ChainBlockProvider for CardanoProvider {
 }
 
 #[async_trait]
-impl ChainTokenDataProvider for CardanoProvider {
+impl<C: Client> ChainTokenDataProvider for CardanoProvider<C> {
     async fn get_token_data(&self, token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
         self.client.get_token_data(token_id).await
     }
 }
 
 #[async_trait]
-impl ChainAssetsProvider for CardanoProvider {
+impl<C: Client> ChainAssetsProvider for CardanoProvider<C> {
     async fn get_assets_balances(&self, _address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
         Ok(vec![])
     }
 }
 
 #[async_trait]
-impl ChainTransactionsProvider for CardanoProvider {
+impl<C: Client> ChainTransactionsProvider for CardanoProvider<C> {
     async fn get_transactions_by_address(&self, _address: String) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
         Ok(vec![])
     }
 }
 
 #[async_trait]
-impl ChainStakeProvider for CardanoProvider {
+impl<C: Client> ChainStakeProvider for CardanoProvider<C> {
     // Default implementation returns empty vector
 }

@@ -4,10 +4,6 @@ version = { workspace = true }
 edition = { workspace = true }
 publish = false
 
-[features]
-default = []
-rpc = ["dep:reqwest-middleware", "dep:chrono"]
-
 [dependencies]
 serde = { workspace = true, features = ["derive"] }
 primitives = { path = "../primitives" }
@@ -16,7 +12,5 @@ chain_traits = { path = "../chain_traits" }
 number_formatter = { path = "../number_formatter" }
 async-trait = { workspace = true }
 futures = { workspace = true }
-
-reqwest-middleware = { workspace = true, optional = true }
-chrono = { workspace = true, features = ["serde"], optional = true }
+chrono = { workspace = true, features = ["serde"] }
 typeshare = { workspace = true }

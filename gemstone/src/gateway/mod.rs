@@ -1,6 +1,7 @@
 use crate::network::{AlienClient, AlienProvider};
 use chain_traits::ChainTraits;
 use gem_bitcoin::rpc::client::BitcoinClient;
+use gem_cardano::rpc::client::CardanoClient;
 use gem_hypercore::rpc::client::HyperCoreClient;
 use std::sync::Arc;
 
@@ -23,6 +24,7 @@ impl GemGateway {
             Chain::Bitcoin | Chain::BitcoinCash | Chain::Litecoin | Chain::Doge => {
                 Ok(Arc::new(BitcoinClient::new(alien_client, BitcoinChain::from_chain(chain).unwrap())))
             }
+            Chain::Cardano => Ok(Arc::new(CardanoClient::new(alien_client))),
             _ => Err(GatewayError::InvalidChain(chain.to_string())),
         }
     }

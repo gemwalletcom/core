@@ -2892,7 +2892,6 @@ dependencies = [
  "gem_client",
  "number_formatter",
  "primitives",
- "reqwest-middleware",
  "serde",
  "typeshare",
 ]
@@ -2912,9 +2911,11 @@ dependencies = [
 name = "gem_cardano"
 version = "1.0.0"
 dependencies = [
+ "async-trait",
+ "chain_traits",
  "chrono",
+ "gem_client",
  "primitives",
- "reqwest-middleware",
  "serde",
  "serde_json",
  "typeshare",
@@ -3214,6 +3215,7 @@ dependencies = [
  "gem_aptos",
  "gem_bitcoin",
  "gem_bsc",
+ "gem_cardano",
  "gem_client",
  "gem_cosmos",
  "gem_evm",

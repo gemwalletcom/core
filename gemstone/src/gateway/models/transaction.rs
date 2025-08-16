@@ -1,4 +1,4 @@
-use primitives::{TransactionPerpetualMetadata, TransactionStateRequest, TransactionUpdate, TransactionChange, TransactionMetadata};
+use primitives::{TransactionChange, TransactionMetadata, TransactionPerpetualMetadata, TransactionStateRequest, TransactionUpdate};
 
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct GemTransactionUpdate {
