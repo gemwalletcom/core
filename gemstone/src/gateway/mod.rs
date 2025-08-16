@@ -168,7 +168,7 @@ impl GemGateway {
     }
 
     pub async fn get_candlesticks(&self, chain: Chain, symbol: String, period: String) -> Result<Vec<GemChartCandleStick>, GatewayError> {
-        let chart_period = ChartPeriod::new(period).ok_or_else(|| GatewayError::ParseError(format!("Invalid chart period")))?;
+        let chart_period = ChartPeriod::new(period).ok_or_else(|| GatewayError::ParseError("Invalid chart period".to_string()))?;
         let candlesticks = self
             .provider(chain)
             .await?
