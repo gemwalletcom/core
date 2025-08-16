@@ -62,6 +62,19 @@ impl Balance {
         }
     }
 
+    pub fn with_reserved(available: String, reserved: String) -> Self {
+        Self {
+            available,
+            reserved,
+            frozen: "0".to_string(),
+            locked: "0".to_string(),
+            staked: "0".to_string(),
+            pending: "0".to_string(),
+            rewards: "0".to_string(),
+            withdrawable: "0".to_string(),
+        }
+    }
+
     pub fn stake_balance(staked: String, pending: String, rewards: Option<String>) -> Self {
         Self {
             available: "0".to_string(),

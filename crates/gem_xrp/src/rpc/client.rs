@@ -1,95 +1,160 @@
 use std::error::Error;
-
-use reqwest_middleware::{ClientWithMiddleware, reqwest::Response};
 use serde_json::json;
 
-use crate::rpc::model::{AccountLedger, LedgerError};
+use crate::rpc::model::*;
 
-use super::model::{AccountObjects, Ledger, LedgerCurrent, LedgerData, LedgerResult};
+use chain_traits::{ChainPerpetual, ChainStaking, ChainTraits};
+use gem_client::Client;
+use primitives::Chain;
 
-pub struct XRPClient {
-    url: String,
-    client: ClientWithMiddleware,
+#[derive(Debug)]
+pub struct XRPClient<C: Client> {
+    client: C,
+    pub chain: Chain,
 }
 
-impl XRPClient {
-    pub fn new(client: ClientWithMiddleware, url: String) -> Self {
-        Self { url, client }
+impl<C: Client> XRPClient<C> {
+    pub fn new(client: C) -> Self {
+        Self { 
+            client, 
+            chain: Chain::Xrp 
+        }
+    }
+
+    pub fn get_chain(&self) -> Chain {
+        self.chain
+    }
+
+    pub async fn get_account_info(&self, address: &str) -> Result<AccountInfo, Box<dyn Error + Send + Sync>> {
+        let params = json!({
+            "method": "account_info",
+            "params": [
+                {
+                    "account": address,
+                    "ledger_index": "current"
+                }
+            ]
+        });
+        
+        let result: LedgerResult<AccountInfoResult> = self.client.post("", &params, None).await?;
+        
+        if let Some(account_data) = result.result.account_data {
+            Ok(account_data)
+        } else {
+            Err("Account not found".into())
+        }
     }
 
     pub async fn get_ledger_current(&self) -> Result<LedgerCurrent, Box<dyn Error + Send + Sync>> {
-        let params = json!(
-            {
-                "method": "ledger_current",
-                "params": [{}]
-            }
-        );
-        Ok(self
-            .client
-            .post(self.url.clone())
-            .json(&params)
-            .send()
-            .await?
-            .json::<LedgerResult<LedgerCurrent>>()
-            .await?
-            .result)
+        let params = json!({
+            "method": "ledger_current",
+            "params": [{}]
+        });
+        
+        let result: LedgerResult<LedgerCurrent> = self.client.post("", &params, None).await?;
+        Ok(result.result)
     }
+
+    pub async fn get_last_ledger_sequence(&self) -> Result<u32, Box<dyn Error + Send + Sync>> {
+        let current = self.get_ledger_current().await?;
+        Ok((current.ledger_current_index + 20) as u32)
+    }
+
+    pub async fn get_fees(&self) -> Result<FeesResult, Box<dyn Error + Send + Sync>> {
+        let params = json!({
+            "method": "fee",
+            "params": [{}]
+        });
+        
+        let result: LedgerResult<FeesResult> = self.client.post("", &params, None).await?;
+        Ok(result.result)
+    }
+
+    pub async fn broadcast_transaction(&self, data: &str) -> Result<TransactionBroadcast, Box<dyn Error + Send + Sync>> {
+        let params = json!({
+            "method": "submit",
+            "params": [
+                {
+                    "tx_blob": data,
+                    "fail_hard": true
+                }
+            ]
+        });
+        
+        let result: LedgerResult<TransactionBroadcast> = self.client.post("", &params, None).await?;
+        
+        Ok(result.result)
+    }
+
+    pub async fn get_transaction_status(&self, transaction_id: &str) -> Result<TransactionStatus, Box<dyn Error + Send + Sync>> {
+        let params = json!({
+            "method": "tx",
+            "params": [
+                {
+                    "transaction": transaction_id
+                }
+            ]
+        });
+        
+        let result: LedgerResult<TransactionStatus> = self.client.post("", &params, None).await?;
+        Ok(result.result)
+    }
+
+    pub async fn get_account_objects(&self, address: &str) -> Result<AccountObjects, Box<dyn Error + Send + Sync>> {
+        let params = json!({
+            "method": "account_objects",
+            "params": [
+                {
+                    "account": address,
+                    "type": "state",
+                    "ledger_index": "validated"
+                }
+            ]
+        });
+        
+        let result: LedgerResult<AccountObjects> = self.client.post("", &params, None).await?;
+        Ok(result.result)
+    }
+
 
     pub async fn get_block_transactions(&self, block_number: i64) -> Result<Ledger, Box<dyn Error + Send + Sync>> {
-        let params = json!(
-            {
-                "method": "ledger",
-                "params": [
-                    {
-                        "ledger_index": block_number,
-                        "transactions": true,
-                        "expand": true
-                    }
-                ]
-            }
-        );
-        Ok(self
-            .client
-            .post(self.url.clone())
-            .json(&params)
-            .send()
-            .await?
-            .json::<LedgerResult<LedgerData>>()
-            .await?
-            .result
-            .ledger)
+        let params = json!({
+            "method": "ledger",
+            "params": [
+                {
+                    "ledger_index": block_number,
+                    "transactions": true,
+                    "expand": true
+                }
+            ]
+        });
+        
+        let result: LedgerResult<LedgerData> = self.client.post("", &params, None).await?;
+        Ok(result.result.ledger)
     }
 
-    async fn handle_ledger_response<T: serde::de::DeserializeOwned + Default + 'static>(&self, response: Response) -> Result<T, Box<dyn Error + Send + Sync>> {
-        let body = response.bytes().await?;
-        let body_ref = body.as_ref();
-
-        if serde_json::from_slice::<LedgerResult<LedgerError>>(body_ref).is_ok() {
-            return Ok(T::default());
-        }
-        Ok(serde_json::from_slice::<LedgerResult<T>>(body_ref)?.result)
-    }
-
-    pub async fn get_account_transactions(&self, address: String, limit: i64) -> Result<AccountLedger, Box<dyn Error + Send + Sync>> {
-        let params = json!(
-            {
-                "method": "account_tx",
-                "params": [
-                    {
-                        "account": address,
-                        "limit": limit,
-                        "api_version": 2
-                    }
-                ]
-            }
-        );
-        let response = self.client.post(self.url.clone()).json(&params).send().await?;
-        self.handle_ledger_response::<AccountLedger>(response).await
-    }
-
-    pub async fn get_account_objects(&self, token_id: String) -> Result<AccountObjects, Box<dyn Error + Send + Sync>> {
-        let params = json!({ "method": "account_objects", "params": [ { "ledger_index": "validated", "type": "state", "account": token_id } ] });
-        let response = self.client.post(self.url.clone()).json(&params).send().await?;
-        self.handle_ledger_response::<AccountObjects>(response).await
+    pub async fn get_account_transactions(&self, address: String, limit: u32) -> Result<AccountLedger, Box<dyn Error + Send + Sync>> {
+        let params = json!({
+            "method": "account_tx",
+            "params": [
+                {
+                    "account": address,
+                    "limit": limit,
+                    "ledger_index_max": -1,
+                    "ledger_index_min": -1
+                }
+            ]
+        });
+        
+        let result: LedgerResult<AccountLedger> = self.client.post("", &params, None).await?;
+        Ok(result.result)
     }
 }
+
+impl<C: Client> ChainStaking for XRPClient<C> {}
+
+impl<C: Client> ChainPerpetual for XRPClient<C> {}
+
+impl<C: Client> chain_traits::ChainAccount for XRPClient<C> {}
+
+impl<C: Client> ChainTraits for XRPClient<C> {}

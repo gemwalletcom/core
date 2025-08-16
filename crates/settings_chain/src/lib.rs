@@ -117,11 +117,11 @@ impl ProviderFactory {
             }
             Chain::Aptos => Box::new(AptosProvider::new(AptosClient::new(client, url))),
             Chain::Sui => Box::new(SuiProvider::new(SuiClient::new(JsonRpcClient::new_with_client(url, client)))),
-            Chain::Xrp => Box::new(XRPProvider::new(XRPClient::new(client, url))),
+            Chain::Xrp => Box::new(XRPProvider::new(XRPClient::new(gem_client))),
             Chain::Near => Box::new(NearProvider::new(NearClient::new(JsonRpcClient::new_with_client(url, client)))),
-            Chain::Cardano => Box::new(CardanoProvider::new(CardanoClient::new(ReqwestClient::new(url.clone(), reqwest_client.clone())))),
+            Chain::Cardano => Box::new(CardanoProvider::new(CardanoClient::new(gem_client))),
             Chain::Algorand => Box::new(AlgorandProvider::new(AlgorandClient::new(client, url))),
-            Chain::Stellar => Box::new(StellarProvider::new(StellarClient::new(ReqwestClient::new(url.clone(), reqwest_client)))),
+            Chain::Stellar => Box::new(StellarProvider::new(StellarClient::new(gem_client))),
             Chain::Polkadot => Box::new(PolkadotProvider::new(PolkadotClient::new(client, url))),
             Chain::HyperCore => Box::new(HyperCoreProvider::new(HyperCoreClient::new(gem_client))),
         }

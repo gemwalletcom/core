@@ -5,6 +5,7 @@ use gem_bitcoin::rpc::client::BitcoinClient;
 use gem_cardano::rpc::client::CardanoClient;
 use gem_hypercore::rpc::client::HyperCoreClient;
 use gem_stellar::rpc::client::StellarClient;
+use gem_xrp::rpc::client::XRPClient;
 use std::sync::Arc;
 
 pub mod models;
@@ -28,6 +29,7 @@ impl GemGateway {
             }
             Chain::Cardano => Ok(Arc::new(CardanoClient::new(alien_client))),
             Chain::Stellar => Ok(Arc::new(StellarClient::new(alien_client))),
+            Chain::Xrp => Ok(Arc::new(XRPClient::new(alien_client))),
             _ => Err(GatewayError::InvalidChain(chain.to_string())),
         }
     }

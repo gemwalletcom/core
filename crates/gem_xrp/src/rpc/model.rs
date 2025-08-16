@@ -166,6 +166,58 @@ pub struct TransactionMemoData {
     pub data: Option<String>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AccountInfo {
+    #[serde(rename = "Balance")]
+    pub balance: String,
+    #[serde(rename = "Sequence")]
+    pub sequence: u64,
+    #[serde(rename = "OwnerCount")]
+    pub owner_count: u32,
+    #[serde(rename = "Account")]
+    pub account: Option<String>,
+    #[serde(rename = "Flags")]
+    pub flags: Option<u32>,
+    #[serde(rename = "LedgerEntryType")]
+    pub ledger_entry_type: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AccountInfoResult {
+    pub account_data: Option<AccountInfo>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Fee {
+    #[serde(deserialize_with = "deserialize_u64_from_str")]
+    pub minimum_fee: u64,
+    #[serde(deserialize_with = "deserialize_u64_from_str")]
+    pub median_fee: u64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FeesResult {
+    pub drops: Fee,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TransactionBroadcast {
+    pub accepted: Option<bool>,
+    pub engine_result_message: Option<String>,
+    pub hash: Option<String>,
+    pub tx_json: Option<TransactionJson>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TransactionJson {
+    pub hash: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TransactionStatus {
+    pub status: String,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

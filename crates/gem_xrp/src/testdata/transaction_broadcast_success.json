@@ -1,0 +1,31 @@
+{
+  "result": {
+    "accepted": true,
+    "account_sequence_available": 82046082,
+    "account_sequence_next": 82046082,
+    "applied": true,
+    "broadcast": true,
+    "engine_result": "tesSUCCESS",
+    "engine_result_code": 0,
+    "engine_result_message": "The transaction was applied. Only final in a validated ledger.",
+    "kept": true,
+    "open_ledger_cost": "10",
+    "queued": false,
+    "status": "success",
+    "tx_blob": "12000022000000002404E3EC81201B05DA8FEC6140000000000F4240684000000000001388732103EE216ED53289A5364CB0CC31856D3B271343D927A9E3160E13707E22473DDA747447304502210088BA38852E6406B6C20894D754768650928FF26A9034BAF45521D02E3A52DB63022043AED91A0919CA9E833E7196BB363054E99DAD027502A190D7ED523CCE54F35C81143212F339EF5E4061CB9BA8F59C5AF4009B8536E2831407BE669E2D72EC190FFE43A81E640371607960AB",
+    "tx_json": {
+      "Account": "rnZmVGX6f4pUYyS4oXYJzoLdRojQV8y297",
+      "Amount": "1000000",
+      "Destination": "r6AFdJSwGhJxYHETx2KqCTo1wxrtz9roM",
+      "Fee": "5000",
+      "Flags": 0,
+      "LastLedgerSequence": 98209772,
+      "Sequence": 82046081,
+      "SigningPubKey": "03EE216ED53289A5364CB0CC31856D3B271343D927A9E3160E13707E22473DDA74",
+      "TransactionType": "Payment",
+      "TxnSignature": "304502210088BA38852E6406B6C20894D754768650928FF26A9034BAF45521D02E3A52DB63022043AED91A0919CA9E833E7196BB363054E99DAD027502A190D7ED523CCE54F35C",
+      "hash": "04F53F220DD1BCB7CCF279D66FFB986EA41383EFC9378CA1EBF1823D7C89264F"
+    },
+    "validated_ledger_index": 98209759
+  }
+}

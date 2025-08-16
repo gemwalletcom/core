@@ -10,3 +10,6 @@ pub mod typeshare;
 pub mod rpc;
 #[cfg(feature = "rpc")]
 pub use rpc::constants::*;
+
+#[cfg(feature = "rpc")]
+pub mod provider;

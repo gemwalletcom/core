@@ -23,10 +23,7 @@ pub fn map_native_balance(
     let available = available_decimal.to_string();
     let reserved_str = reserved_amount.to_string();
     
-    let mut balance = Balance::coin_balance(available);
-    balance.reserved = reserved_str;
-    
-    Ok(AssetBalance::new_balance(asset_id, balance))
+    Ok(AssetBalance::new_balance(asset_id, Balance::with_reserved(available, reserved_str)))
 }
 
 pub fn map_token_balances(
@@ -34,12 +31,20 @@ pub fn map_token_balances(
     token_ids: Vec<String>,
 ) -> Vec<AssetBalance> {
     token_ids.into_iter().map(|token_id| {
-        if let Some(balance) = account.balances.iter().find(|b| {
-            b.asset_issuer.as_deref() == Some(&token_id) && b.asset_type != "native"
-        }) {
-            let amount = BigNumberFormatter::value_from_amount(&balance.balance, STELLAR_DECIMALS).unwrap_or("0".to_owned());
-            AssetBalance::new_with_active(AssetId::from_token(Chain::Stellar, &token_id), Balance::coin_balance(amount), true)
+        // Parse issuer::symbol format only
+        if let Some((issuer, symbol)) = token_id.split_once("::") {
+            if let Some(balance) = account.balances.iter().find(|b| {
+                b.asset_issuer.as_deref() == Some(issuer) && 
+                b.asset_code.as_deref() == Some(symbol) &&
+                b.asset_type != "native"
+            }) {
+                let amount = BigNumberFormatter::value_from_amount(&balance.balance, STELLAR_DECIMALS).unwrap_or("0".to_owned());
+                AssetBalance::new_with_active(AssetId::from_token(Chain::Stellar, &token_id), Balance::coin_balance(amount), true)
+            } else {
+                AssetBalance::new_with_active(AssetId::from_token(Chain::Stellar, &token_id), Balance::coin_balance("0".to_owned()), false)
+            }
         } else {
+            // Invalid format - only support issuer::symbol
             AssetBalance::new_with_active(AssetId::from_token(Chain::Stellar, &token_id), Balance::coin_balance("0".to_owned()), false)
         }
     }).collect()
@@ -68,7 +73,7 @@ mod tests {
     fn map_token_balances_existing_and_missing() {
         let account: StellarAccount = serde_json::from_str(include_str!("../../testdata/balance.json")).unwrap();
         let token_ids = vec![
-            "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN".to_string(),
+            "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN::USDC".to_string(),
             "NONEXISTENT_TOKEN".to_string(),
         ];
         
