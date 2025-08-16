@@ -1,0 +1,50 @@
+{
+    "domain": {
+        "name": "HyperliquidSignTransaction",
+        "version": "1",
+        "chainId": 999,
+        "verifyingContract": "0x0000000000000000000000000000000000000000"
+    },
+    "message": {
+        "type": "cDeposit",
+        "wei": 10000000,
+        "nonce": 1755231476741,
+        "signatureChainId": "0x3e7",
+        "hyperliquidChain": "Mainnet"
+    },
+    "primaryType": "HyperliquidTransaction:CDeposit",
+    "types": {
+        "EIP712Domain": [
+            {
+                "name": "name",
+                "type": "string"
+            },
+            {
+                "name": "version",
+                "type": "string"
+            },
+            {
+                "name": "chainId",
+                "type": "uint256"
+            },
+            {
+                "name": "verifyingContract",
+                "type": "address"
+            }
+        ],
+        "HyperliquidTransaction:CDeposit": [
+            {
+                "name": "hyperliquidChain",
+                "type": "string"
+            },
+            {
+                "name": "wei",
+                "type": "uint64"
+            },
+            {
+                "name": "nonce",
+                "type": "uint64"
+            }
+        ]
+    }
+}

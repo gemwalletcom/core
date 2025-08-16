@@ -1,8 +1,7 @@
 use super::SLIPPAGE_BUFFER_PERCENT;
 
 // IMPORTANT: Field order matters for msgpack serialization and hash calculation
-// This must match the exact order from Python SDK
-// Do not change field order unless you know the exact Python order.
+// Do not change field order unless you know the exact order in Python SDK.
 #[derive(uniffi::Record, serde::Serialize)]
 pub struct HyperPlaceOrder {
     pub r#type: String,
@@ -24,8 +23,7 @@ impl HyperPlaceOrder {
 }
 
 // IMPORTANT: Field order matters for msgpack serialization and hash calculation
-// This must match the exact order from Python SDK
-// Do not change field order unless you know the exact Python order.
+// Do not change field order unless you know the exact order in Python SDK.
 #[derive(uniffi::Record, serde::Serialize)]
 pub struct HyperOrder {
     #[serde(rename = "a")]

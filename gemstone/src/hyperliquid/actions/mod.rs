@@ -1,9 +1,11 @@
 pub mod approve_agent;
 pub mod approve_builder_fee;
+pub mod c_deposit;
 pub mod cancel_order;
 pub mod order;
 pub mod set_referrer;
 pub mod spot_send;
+pub mod token_delegate;
 pub mod update_leverage;
 pub mod usd_class_transfer;
 pub mod usd_send;
@@ -11,10 +13,12 @@ pub mod withdrawal;
 
 pub use approve_agent::*;
 pub use approve_builder_fee::*;
+pub use c_deposit::*;
 pub use cancel_order::*;
 pub use order::*;
 pub use set_referrer::*;
 pub use spot_send::*;
+pub use token_delegate::*;
 pub use update_leverage::*;
 pub use usd_class_transfer::*;
 pub use usd_send::*;
@@ -138,6 +142,26 @@ impl HyperCoreModelFactory {
 
     fn serialize_usd_class_transfer(&self, usd_class_transfer: &HyperUsdClassTransfer) -> String {
         serde_json::to_string(usd_class_transfer).unwrap()
+    }
+
+    fn make_transfer_to_staking(&self, wei: u64, nonce: u64) -> HyperCDeposit {
+        HyperCDeposit::new(wei, nonce)
+    }
+
+    fn serialize_c_deposit(&self, c_deposit: &HyperCDeposit) -> String {
+        serde_json::to_string(c_deposit).unwrap()
+    }
+
+    fn make_delegate(&self, validator: String, wei: u64, nonce: u64) -> HyperTokenDelegate {
+        HyperTokenDelegate::new(validator, wei, false, nonce)
+    }
+
+    fn make_undelegate(&self, validator: String, wei: u64, nonce: u64) -> HyperTokenDelegate {
+        HyperTokenDelegate::new(validator, wei, true, nonce)
+    }
+
+    fn serialize_token_delegate(&self, token_delegate: &HyperTokenDelegate) -> String {
+        serde_json::to_string(token_delegate).unwrap()
     }
 
     fn build_signed_request(&self, signature: String, action: String, timestamp: u64) -> String {
@@ -455,5 +479,39 @@ mod tests {
         assert!(sl_order.is_buy);
         assert_eq!(sl_order.price, "3.78");
         assert!(sl_order.reduce_only);
+    }
+
+    #[test]
+    fn test_make_c_deposit_action() {
+        let factory = HyperCoreModelFactory::new();
+        let c_deposit = factory.make_transfer_to_staking(10000000, 1755231476741);
+        let action_json = factory.serialize_c_deposit(&c_deposit);
+
+        let signature = "8e5d7b14d80a8a5d2334509c1f055be0ea8a78c0632ef43bd17b0f788de3538e426730e6231d72d3b6ea892b791bf68351de0c754d073bf6f2174accb4176d751c";
+        let timestamp = 1755231476741u64;
+
+        let signed_request = factory.build_signed_request(signature.to_string(), action_json, timestamp);
+
+        let parsed: serde_json::Value = serde_json::from_str(&signed_request).unwrap();
+        let expected: serde_json::Value = serde_json::from_str(include_str!("../test/hl_action_spot_to_stake.json")).unwrap();
+
+        assert_eq!(parsed, expected);
+    }
+
+    #[test]
+    fn test_make_token_delegate_action() {
+        let factory = HyperCoreModelFactory::new();
+        let token_delegate = factory.make_delegate("0x5ac99df645f3414876c816caa18b2d234024b487".to_string(), 10000000, 1755231522831);
+        let action_json = factory.serialize_token_delegate(&token_delegate);
+
+        let signature = "3d16b033812211ff3b0bf7793cc628cd4db7cc273dab2264225386a158db842e36175c089b06dc245e273d7d7deedad4bd46fb5ce256a5c8de1d6a55a72580081c";
+        let timestamp = 1755231522831u64;
+
+        let signed_request = factory.build_signed_request(signature.to_string(), action_json, timestamp);
+
+        let parsed: serde_json::Value = serde_json::from_str(&signed_request).unwrap();
+        let expected: serde_json::Value = serde_json::from_str(include_str!("../test/hl_action_stake_to_validator.json")).unwrap();
+
+        assert_eq!(parsed, expected);
     }
 }

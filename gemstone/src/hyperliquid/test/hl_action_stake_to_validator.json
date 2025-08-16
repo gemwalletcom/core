@@ -1,0 +1,18 @@
+{
+    "action": {
+        "hyperliquidChain": "Mainnet",
+        "isUndelegate": false,
+        "nonce": 1755231522831,
+        "signatureChainId": "0x3e7",
+        "type": "tokenDelegate",
+        "validator": "0x5ac99df645f3414876c816caa18b2d234024b487",
+        "wei": 10000000
+    },
+    "isFrontend": true,
+    "nonce": 1755231522831,
+    "signature": {
+        "r": "0x3d16b033812211ff3b0bf7793cc628cd4db7cc273dab2264225386a158db842e",
+        "s": "0x36175c089b06dc245e273d7d7deedad4bd46fb5ce256a5c8de1d6a55a7258008",
+        "v": 28
+    }
+}
