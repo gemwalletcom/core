@@ -3114,6 +3114,7 @@ dependencies = [
  "async-trait",
  "chain_traits",
  "chrono",
+ "futures",
  "gem_client",
  "number_formatter",
  "primitives",

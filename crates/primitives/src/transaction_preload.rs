@@ -30,3 +30,62 @@ impl Default for TransactionPreload {
         }
     }
 }
+
+impl TransactionPreload {
+    pub fn builder() -> TransactionPreloadBuilder {
+        TransactionPreloadBuilder::default()
+    }
+}
+
+#[derive(Default)]
+pub struct TransactionPreloadBuilder {
+    block_hash: String,
+    block_number: i64,
+    utxos: Vec<UTXO>,
+    sequence: i64,
+    chain_id: String,
+    is_destination_address_exist: bool,
+}
+
+impl TransactionPreloadBuilder {
+    pub fn block_hash(mut self, block_hash: String) -> Self {
+        self.block_hash = block_hash;
+        self
+    }
+
+    pub fn block_number(mut self, block_number: i64) -> Self {
+        self.block_number = block_number;
+        self
+    }
+
+    pub fn utxos(mut self, utxos: Vec<UTXO>) -> Self {
+        self.utxos = utxos;
+        self
+    }
+
+    pub fn sequence(mut self, sequence: i64) -> Self {
+        self.sequence = sequence;
+        self
+    }
+
+    pub fn chain_id(mut self, chain_id: String) -> Self {
+        self.chain_id = chain_id;
+        self
+    }
+
+    pub fn is_destination_address_exist(mut self, is_destination_address_exist: bool) -> Self {
+        self.is_destination_address_exist = is_destination_address_exist;
+        self
+    }
+
+    pub fn build(self) -> TransactionPreload {
+        TransactionPreload {
+            block_hash: self.block_hash,
+            block_number: self.block_number,
+            utxos: self.utxos,
+            sequence: self.sequence,
+            chain_id: self.chain_id,
+            is_destination_address_exist: self.is_destination_address_exist,
+        }
+    }
+}

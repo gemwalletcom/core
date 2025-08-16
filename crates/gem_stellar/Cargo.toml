@@ -5,7 +5,7 @@ edition = { workspace = true }
 
 [features]
 default = ["typeshare"]
-rpc = ["dep:number_formatter", "dep:chrono", "dep:async-trait", "dep:chain_traits", "dep:urlencoding"]
+rpc = ["dep:number_formatter", "dep:chrono", "dep:async-trait", "dep:chain_traits", "dep:urlencoding", "dep:futures"]
 typeshare = ["dep:typeshare"]
 
 [dependencies]
@@ -18,6 +18,7 @@ chrono = { workspace = true, features = ["serde"], optional = true }
 async-trait = { workspace = true, optional = true }
 chain_traits = { path = "../chain_traits", optional = true }
 urlencoding = { workspace = true, optional = true }
+futures = { workspace = true, optional = true }
 typeshare = { workspace = true, optional = true }
 serde_json = { workspace = true }
 gem_client = { path = "../gem_client" }

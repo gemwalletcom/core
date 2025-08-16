@@ -19,13 +19,8 @@ impl<C: Client> ChainPreload for BitcoinClient<C> {
             address: input.sender_address.clone(),
         }).collect();
         
-        Ok(TransactionPreload {
-            block_hash: String::new(),
-            block_number: 0,
-            utxos,
-            sequence: 0,
-            chain_id: String::new(),
-            is_destination_address_exist: true,
-        })
+        Ok(TransactionPreload::builder()
+            .utxos(utxos)
+            .build())
     }
 }
