@@ -1,0 +1,16 @@
+{
+    "action": {
+        "hyperliquidChain": "Mainnet",
+        "nonce": 1755231476741,
+        "signatureChainId": "0x3e7",
+        "type": "cDeposit",
+        "wei": 10000000
+    },
+    "isFrontend": true,
+    "nonce": 1755231476741,
+    "signature": {
+        "r": "0x8e5d7b14d80a8a5d2334509c1f055be0ea8a78c0632ef43bd17b0f788de3538e",
+        "s": "0x426730e6231d72d3b6ea892b791bf68351de0c754d073bf6f2174accb4176d75",
+        "v": 28
+    }
+}

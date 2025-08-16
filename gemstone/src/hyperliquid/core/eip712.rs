@@ -222,3 +222,45 @@ pub fn usd_class_transfer_types() -> Vec<EIP712Type> {
         },
     ]
 }
+
+pub fn c_deposit_types() -> Vec<EIP712Type> {
+    vec![
+        EIP712Type {
+            name: "hyperliquidChain".to_string(),
+            r#type: "string".to_string(),
+        },
+        EIP712Type {
+            name: "wei".to_string(),
+            r#type: "uint64".to_string(),
+        },
+        EIP712Type {
+            name: "nonce".to_string(),
+            r#type: "uint64".to_string(),
+        },
+    ]
+}
+
+pub fn token_delegate_types() -> Vec<EIP712Type> {
+    vec![
+        EIP712Type {
+            name: "hyperliquidChain".to_string(),
+            r#type: "string".to_string(),
+        },
+        EIP712Type {
+            name: "validator".to_string(),
+            r#type: "address".to_string(),
+        },
+        EIP712Type {
+            name: "wei".to_string(),
+            r#type: "uint64".to_string(),
+        },
+        EIP712Type {
+            name: "isUndelegate".to_string(),
+            r#type: "bool".to_string(),
+        },
+        EIP712Type {
+            name: "nonce".to_string(),
+            r#type: "uint64".to_string(),
+        },
+    ]
+}
