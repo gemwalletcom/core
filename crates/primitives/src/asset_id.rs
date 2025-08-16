@@ -86,6 +86,10 @@ impl AssetId {
         AssetId { chain, token_id: None }
     }
 
+    pub fn sub_token_id(ids: &[String]) -> String {
+        ids.join("::")
+    }
+
     pub fn is_native(&self) -> bool {
         self.token_id.is_none()
     }
@@ -132,5 +136,30 @@ mod tests {
         let asset_id = AssetId::new("ton_EQAvlWFDxGF2lXm67y4yzC17wYKD9A0guwPkMs1gOsM__NOT").unwrap();
         assert_eq!(asset_id.chain, Chain::Ton);
         assert_eq!(asset_id.token_id, Some("EQAvlWFDxGF2lXm67y4yzC17wYKD9A0guwPkMs1gOsM__NOT".to_owned()));
+    }
+
+    #[test]
+    fn test_sub_token_id() {
+        // Test with single component
+        let result = AssetId::sub_token_id(&["test".to_string()]);
+        assert_eq!(result, "test");
+
+        // Test with two components
+        let result = AssetId::sub_token_id(&["perpetual".to_string(), "BTC".to_string()]);
+        assert_eq!(result, "perpetual::BTC");
+
+        // Test with multiple components
+        let result = AssetId::sub_token_id(&["type".to_string(), "subtype".to_string(), "coin".to_string()]);
+        assert_eq!(result, "type::subtype::coin");
+
+        // Test with empty vector
+        let result = AssetId::sub_token_id(&[]);
+        assert_eq!(result, "");
+
+        // Test creating AssetId with sub_token_id
+        let asset_id = AssetId::from(Chain::HyperCore, Some(AssetId::sub_token_id(&["perpetual".to_string(), "ETH".to_string()])));
+        assert_eq!(asset_id.chain, Chain::HyperCore);
+        assert_eq!(asset_id.token_id, Some("perpetual::ETH".to_string()));
+        assert_eq!(asset_id.to_string(), "hypercore_perpetual::ETH");
     }
 }

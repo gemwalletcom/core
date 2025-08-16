@@ -1,5 +1,5 @@
-use crate::transaction_state::TransactionState;
 use crate::transaction_metadata_types::TransactionPerpetualMetadata;
+use crate::transaction_state::TransactionState;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]

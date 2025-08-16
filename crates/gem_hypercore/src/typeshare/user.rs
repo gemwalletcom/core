@@ -25,4 +25,3 @@ pub struct HypercoreUserFee {
     pub user_cross_rate: String,
     pub active_referral_discount: String,
 }
-

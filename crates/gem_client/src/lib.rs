@@ -1,11 +1,11 @@
-mod types;
 mod content_type;
+mod types;
 
 #[cfg(feature = "reqwest")]
 mod reqwest_client;
 
-pub use types::ClientError;
 pub use content_type::ContentType;
+pub use types::ClientError;
 
 #[cfg(feature = "reqwest")]
 pub use reqwest_client::ReqwestClient;

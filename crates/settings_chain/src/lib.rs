@@ -65,7 +65,10 @@ impl ProviderFactory {
         let gem_client = ReqwestClient::new(url.clone(), reqwest_client);
 
         match chain {
-            Chain::Bitcoin | Chain::BitcoinCash | Chain::Litecoin | Chain::Doge => Box::new(BitcoinProvider::new(BitcoinClient::new(gem_client, primitives::BitcoinChain::from_chain(chain).unwrap()))),
+            Chain::Bitcoin | Chain::BitcoinCash | Chain::Litecoin | Chain::Doge => Box::new(BitcoinProvider::new(BitcoinClient::new(
+                gem_client,
+                primitives::BitcoinChain::from_chain(chain).unwrap(),
+            ))),
             Chain::Ethereum
             | Chain::SmartChain
             | Chain::Polygon

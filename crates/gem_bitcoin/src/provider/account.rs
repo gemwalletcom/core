@@ -11,7 +11,7 @@ use crate::rpc::client::BitcoinClient;
 impl<C: Client> ChainAccount for BitcoinClient<C> {
     async fn get_utxos(&self, address: String) -> Result<Vec<UTXO>, Box<dyn Error + Sync + Send>> {
         let bitcoin_utxos = self.get_utxos(&address).await?;
-        
+
         let utxos = bitcoin_utxos
             .into_iter()
             .map(|utxo| UTXO {
@@ -21,7 +21,7 @@ impl<C: Client> ChainAccount for BitcoinClient<C> {
                 address: address.clone(),
             })
             .collect();
-        
+
         Ok(utxos)
     }
 }
