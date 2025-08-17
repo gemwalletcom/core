@@ -1,10 +1,8 @@
 use serde::{Deserialize, Serialize};
-use typeshare::typeshare;
 
 use super::UInt64;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare(swift = "Sendable")]
 pub struct AlgorandTransactionParams {
     #[serde(rename = "min-fee")]
     pub min_fee: UInt64,
@@ -17,7 +15,6 @@ pub struct AlgorandTransactionParams {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare(swift = "Sendable")]
 pub struct AlgorandTransactionBroadcast {
     #[serde(rename = "txId")]
     pub tx_id: Option<String>,
@@ -26,7 +23,6 @@ pub struct AlgorandTransactionBroadcast {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare(swift = "Sendable")]
 pub struct AlgorandTransactionStatus {
     #[serde(rename = "confirmed-round")]
     pub confirmed_round: UInt64,

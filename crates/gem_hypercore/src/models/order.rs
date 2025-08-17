@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::typeshare::UInt64;
+use crate::models::UInt64;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

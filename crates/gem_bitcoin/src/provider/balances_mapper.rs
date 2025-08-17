@@ -1,5 +1,5 @@
 use primitives::{AssetBalance, BitcoinChain};
-use crate::typeshare::account::BitcoinAccount;
+use crate::models::account::BitcoinAccount;
 
 pub fn map_balance_coin(account: &BitcoinAccount, chain: BitcoinChain) -> AssetBalance {
     AssetBalance::new(chain.get_chain().as_asset_id(), account.balance.clone())
@@ -8,7 +8,7 @@ pub fn map_balance_coin(account: &BitcoinAccount, chain: BitcoinChain) -> AssetB
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::typeshare::account::BitcoinAccount;
+    use crate::models::account::BitcoinAccount;
     use primitives::BitcoinChain;
 
     #[test]

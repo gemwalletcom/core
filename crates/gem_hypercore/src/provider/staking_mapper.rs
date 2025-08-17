@@ -1,6 +1,6 @@
 use primitives::{DelegationBase, DelegationState, DelegationValidator, Chain};
 use number_formatter::BigNumberFormatter;
-use crate::typeshare::balance::{HypercoreValidator, HypercoreDelegationBalance};
+use crate::models::balance::{HypercoreValidator, HypercoreDelegationBalance};
 
 pub fn map_validators_to_delegation_validators(validators: Vec<HypercoreValidator>, chain: Chain) -> Vec<DelegationValidator> {
     let apy = HypercoreValidator::max_apr(validators.clone());

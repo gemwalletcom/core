@@ -7,7 +7,6 @@ publish = false
 [dependencies]
 primitives = { path = "../primitives" }
 serde = { workspace = true, features = ["derive"] }
-typeshare = { workspace = true }
 serde_json = { workspace = true }
 chrono = { workspace = true, features = ["serde"] }
 async-trait = { workspace = true }

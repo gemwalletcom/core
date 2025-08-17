@@ -2862,7 +2862,6 @@ dependencies = [
  "serde",
  "serde_json",
  "thiserror 2.0.12",
- "typeshare",
  "url",
 ]
 
@@ -2895,7 +2894,6 @@ dependencies = [
  "number_formatter",
  "primitives",
  "serde",
- "typeshare",
 ]
 
 [[package]]
@@ -2920,7 +2918,6 @@ dependencies = [
  "primitives",
  "serde",
  "serde_json",
- "typeshare",
 ]
 
 [[package]]
@@ -3046,7 +3043,6 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_serializers",
- "typeshare",
 ]
 
 [[package]]
@@ -3123,7 +3119,6 @@ dependencies = [
  "primitives",
  "serde",
  "serde_json",
- "typeshare",
  "urlencoding",
 ]
 
@@ -3203,7 +3198,6 @@ dependencies = [
  "serde_json",
  "serde_serializers",
  "thiserror 2.0.12",
- "typeshare",
 ]
 
 [[package]]

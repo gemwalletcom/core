@@ -2,7 +2,7 @@ use chrono::DateTime;
 use number_formatter::BigNumberFormatter;
 use primitives::{chain::Chain, AssetBalance, AssetId, Balance, Transaction, TransactionType};
 
-use crate::typeshare::account::StellarAccount;
+use crate::models::account::StellarAccount;
 
 use super::model::{Payment, TRANSACTION_TYPE_CREATE_ACCOUNT, TRANSACTION_TYPE_PAYMENT};
 

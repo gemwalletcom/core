@@ -1,9 +1,9 @@
-use crate::typeshare::balance::{HypercoreBalances, HypercoreDelegationBalance, HypercoreStakeBalance, HypercoreValidator};
-use crate::typeshare::candlestick::HypercoreCandlestick;
-use crate::typeshare::metadata::HypercoreMetadataResponse;
-use crate::typeshare::order::HypercorePerpetualFill;
-use crate::typeshare::position::HypercoreAssetPositions;
-use crate::typeshare::response::{HyperCoreBroadcastResult, TransactionBroadcastResponse};
+use crate::models::balance::{HypercoreBalances, HypercoreDelegationBalance, HypercoreStakeBalance, HypercoreValidator};
+use crate::models::candlestick::HypercoreCandlestick;
+use crate::models::metadata::HypercoreMetadataResponse;
+use crate::models::order::HypercorePerpetualFill;
+use crate::models::position::HypercoreAssetPositions;
+use crate::models::response::{HyperCoreBroadcastResult, TransactionBroadcastResponse};
 use chain_traits::{ChainTraits, ChainPreload};
 use gem_client::Client;
 use primitives::Chain;

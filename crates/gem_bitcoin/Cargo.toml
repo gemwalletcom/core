@@ -13,4 +13,3 @@ number_formatter = { path = "../number_formatter" }
 async-trait = { workspace = true }
 futures = { workspace = true }
 chrono = { workspace = true, features = ["serde"] }
-typeshare = { workspace = true }

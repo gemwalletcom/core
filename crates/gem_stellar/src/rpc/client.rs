@@ -1,10 +1,10 @@
 use std::error::Error;
 
-use crate::typeshare::account::StellarAccount;
-use crate::typeshare::node::StellarNodeStatus;
-use crate::typeshare::fee::StellarFees;
-use crate::typeshare::transaction::{StellarTransactionBroadcast, StellarTransactionStatus};
-use crate::typeshare::common::{StellarAsset, StellarEmbedded};
+use crate::models::account::StellarAccount;
+use crate::models::node::StellarNodeStatus;
+use crate::models::fee::StellarFees;
+use crate::models::transaction::{StellarTransactionBroadcast, StellarTransactionStatus};
+use crate::models::common::{StellarAsset, StellarEmbedded};
 
 use chain_traits::{ChainPerpetual, ChainStaking, ChainTraits};
 use gem_client::{Client, ContentType};

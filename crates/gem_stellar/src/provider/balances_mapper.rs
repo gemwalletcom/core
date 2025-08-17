@@ -1,7 +1,7 @@
 use std::error::Error;
 use number_formatter::BigNumberFormatter;
 use primitives::{AssetBalance, Balance, AssetId, Chain};
-use crate::typeshare::account::StellarAccount;
+use crate::models::account::StellarAccount;
 
 const STELLAR_DECIMALS: u32 = 7;
 
@@ -55,7 +55,7 @@ pub fn map_token_balances(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::typeshare::account::StellarAccount;
+    use crate::models::account::StellarAccount;
     use serde_json;
 
     #[test]

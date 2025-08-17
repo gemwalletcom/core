@@ -1,5 +1,5 @@
 use primitives::{FeePriorityValue, FeePriority};
-use crate::typeshare::fee::StellarFees;
+use crate::models::fee::StellarFees;
 
 pub fn map_fee_stats_to_priorities(fees: &StellarFees) -> Vec<FeePriorityValue> {
     let min_fee = std::cmp::max(
@@ -19,7 +19,7 @@ pub fn map_fee_stats_to_priorities(fees: &StellarFees) -> Vec<FeePriorityValue> 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::typeshare::fee::{StellarFees, StellarFeeCharged};
+    use crate::models::fee::{StellarFees, StellarFeeCharged};
 
     #[test]
     fn test_map_fee_stats_to_priorities() {

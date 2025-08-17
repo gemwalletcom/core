@@ -1,11 +1,9 @@
-use crate::typeshare::UInt64;
+use crate::models::UInt64;
 use gem_evm::ethereum_address_checksum;
 use serde::{Deserialize, Serialize};
 use serde_serializers::deserialize_f64_from_str;
-use typeshare::typeshare;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare(swift = "Equatable, Sendable")]
 #[serde(rename_all = "camelCase")]
 pub struct HypercoreBalance {
     pub coin: String,
@@ -14,21 +12,18 @@ pub struct HypercoreBalance {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare(swift = "Equatable, Sendable")]
 #[serde(rename_all = "camelCase")]
 pub struct HypercoreBalances {
     pub balances: Vec<HypercoreBalance>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare(swift = "Equatable, Sendable")]
 #[serde(rename_all = "camelCase")]
 pub struct HypercoreTokens {
     pub tokens: Vec<HypercoreToken>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare(swift = "Equatable, Sendable")]
 #[serde(rename_all = "camelCase")]
 pub struct HypercoreToken {
     pub name: String,
@@ -37,7 +32,6 @@ pub struct HypercoreToken {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare(swift = "Equatable, Sendable")]
 #[serde(rename_all = "camelCase")]
 pub struct HypercoreStakeBalance {
     pub delegated: String,
@@ -46,7 +40,6 @@ pub struct HypercoreStakeBalance {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare(swift = "Equatable, Sendable")]
 #[serde(rename_all = "camelCase")]
 pub struct HypercoreDelegationBalance {
     pub validator: String,
@@ -61,14 +54,12 @@ impl HypercoreDelegationBalance {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare(swift = "Equatable, Sendable")]
 #[serde(rename_all = "camelCase")]
 pub struct HypercoreValidator {
     pub validator: String,
     pub name: String,
     pub commission: String,
     pub is_active: bool,
-    #[typeshare(skip)]
     pub stats: Vec<(String, HypercoreValidatorStats)>,
 }
 

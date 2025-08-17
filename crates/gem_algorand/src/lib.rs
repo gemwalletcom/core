@@ -12,5 +12,4 @@ pub mod provider {
     pub mod transactions_mapper;
 }
 
-#[cfg(feature = "typeshare")]
-pub mod typeshare;
+pub mod models;

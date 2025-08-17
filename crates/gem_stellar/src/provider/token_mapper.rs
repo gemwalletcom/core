@@ -1,5 +1,5 @@
 use primitives::{Asset, AssetId, AssetType, Chain};
-use crate::typeshare::common::StellarAsset;
+use crate::models::common::StellarAsset;
 
 const STELLAR_TOKEN_DECIMALS: i32 = 7;
 

@@ -1,10 +1,8 @@
 use serde::{Deserialize, Serialize};
-use typeshare::typeshare;
 
 use super::UInt64;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare(swift = "Sendable")]
 pub struct AlgorandAccount {
     pub amount: UInt64,
     pub assets: Vec<AlgorandAccountAsset>,
@@ -13,7 +11,6 @@ pub struct AlgorandAccount {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare(swift = "Sendable")]
 pub struct AlgorandAccountAsset {
     pub amount: UInt64,
     #[serde(rename = "asset-id")]

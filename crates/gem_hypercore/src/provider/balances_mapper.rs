@@ -1,5 +1,5 @@
 use primitives::{AssetBalance, Balance, Chain};
-use crate::typeshare::balance::HypercoreStakeBalance;
+use crate::models::balance::HypercoreStakeBalance;
 use number_formatter::BigNumberFormatter;
 use std::error::Error;
 
@@ -21,7 +21,7 @@ pub fn map_balance_staking(balance: &HypercoreStakeBalance, chain: Chain) -> Res
 mod tests {
     use super::*;
     use primitives::Chain;
-    use crate::typeshare::balance::HypercoreStakeBalance;
+    use crate::models::balance::HypercoreStakeBalance;
 
     #[test]
     fn test_map_balance_coin() {

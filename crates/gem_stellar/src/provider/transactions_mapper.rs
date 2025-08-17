@@ -1,6 +1,6 @@
 use primitives::{TransactionUpdate, TransactionState, TransactionChange};
 use std::error::Error;
-use crate::typeshare::transaction::{StellarTransactionBroadcast, StellarTransactionStatus};
+use crate::models::transaction::{StellarTransactionBroadcast, StellarTransactionStatus};
 
 pub fn map_transaction_broadcast(response: &StellarTransactionBroadcast) -> Result<String, Box<dyn Error + Sync + Send>> {
     if let Some(hash) = &response.hash {
@@ -30,7 +30,7 @@ pub fn map_transaction_status(tx: &StellarTransactionStatus) -> TransactionUpdat
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::typeshare::transaction::{StellarTransactionBroadcast, StellarTransactionStatus};
+    use crate::models::transaction::{StellarTransactionBroadcast, StellarTransactionStatus};
 
     #[test]
     fn test_map_transaction_broadcast_success() {

@@ -11,7 +11,6 @@ reqwest = ["gem_client/reqwest"]
 async-trait = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
-typeshare = { workspace = true }
 chrono = { workspace = true }
 
 gem_client = { path = "../gem_client" }
