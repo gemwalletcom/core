@@ -1,8 +1,8 @@
-use std::error::Error;
-
-use crate::rpc::model::{Account, AssetResponse, BlockHeaders, Transactions, TransactionsParams};
-
 use super::model::Block;
+use crate::rpc::model::{Account, AssetResponse, BlockHeaders, Transactions, TransactionsParams};
+use gem_client::ContentType;
+use std::collections::HashMap;
+use std::error::Error;
 
 #[cfg(feature = "rpc")]
 use chain_traits::{ChainPerpetual, ChainStaking, ChainTraits};
@@ -54,9 +54,6 @@ impl<C: Client> AlgorandClient<C> {
     }
 
     pub async fn broadcast_transaction(&self, data: &str) -> Result<super::model::TransactionBroadcast, Box<dyn Error + Send + Sync>> {
-        use gem_client::ContentType;
-        use std::collections::HashMap;
-
         let headers = Some(HashMap::from([(
             "Content-Type".to_string(),
             ContentType::ApplicationXBinary.as_str().to_string(),

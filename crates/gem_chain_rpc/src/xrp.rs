@@ -23,7 +23,7 @@ impl<C: Client> ChainBlockProvider for XRPProvider<C> {
     }
 
     async fn get_latest_block(&self) -> Result<i64, Box<dyn Error + Send + Sync>> {
-        Ok(self.client.get_ledger_current().await?.ledger_current_index as i64)
+        Ok(self.client.get_ledger_current().await?.ledger_current_index)
     }
 
     async fn get_transactions(&self, block_number: i64) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
