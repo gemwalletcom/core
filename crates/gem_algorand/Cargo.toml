@@ -6,6 +6,7 @@ edition = { workspace = true }
 [features]
 default = []
 rpc = ["dep:chrono", "dep:reqwest-middleware", "dep:chain_traits", "dep:gem_client"]
+reqwest = ["gem_client/reqwest"]
 
 [dependencies]
 anyhow = { workspace = true }

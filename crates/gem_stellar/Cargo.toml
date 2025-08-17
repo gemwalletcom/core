@@ -6,6 +6,7 @@ edition = { workspace = true }
 [features]
 default = []
 rpc = ["dep:number_formatter", "dep:chrono", "dep:async-trait", "dep:chain_traits", "dep:urlencoding", "dep:futures"]
+reqwest = ["gem_client/reqwest"]
 
 [dependencies]
 serde = { workspace = true, features = ["derive"] }

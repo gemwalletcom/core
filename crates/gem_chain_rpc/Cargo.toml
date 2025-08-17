@@ -23,14 +23,14 @@ gem_sui = { path = "../gem_sui", features = ["rpc"] }
 gem_evm = { path = "../gem_evm", features = ["rpc"] }
 gem_bsc = { path = "../gem_bsc" }
 gem_solana = { path = "../gem_solana", features = ["rpc"] }
-gem_xrp = { path = "../gem_xrp", features = ["rpc"] }
-gem_algorand = { path = "../gem_algorand", features = ["rpc"] }
+gem_xrp = { path = "../gem_xrp", features = ["rpc", "reqwest"] }
+gem_algorand = { path = "../gem_algorand", features = ["rpc", "reqwest"] }
 gem_bitcoin = { path = "../gem_bitcoin" }
 gem_cardano = { path = "../gem_cardano" }
 gem_cosmos = { path = "../gem_cosmos", features = ["rpc"] }
-gem_near = { path = "../gem_near", features = ["rpc"] }
+gem_near = { path = "../gem_near", features = ["rpc", "reqwest"] }
 gem_polkadot = { path = "../gem_polkadot", features = ["rpc"] }
-gem_stellar = { path = "../gem_stellar", features = ["rpc"] }
+gem_stellar = { path = "../gem_stellar", features = ["rpc", "reqwest"] }
 gem_hypercore = { path = "../gem_hypercore", features = ["reqwest"] }
 gem_client = { path = "../gem_client" }
 
