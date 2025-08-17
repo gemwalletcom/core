@@ -1,5 +1,7 @@
 #[cfg(feature = "rpc")]
 pub mod rpc;
 
-#[cfg(feature = "typeshare")]
-pub mod typeshare;
+#[cfg(feature = "rpc")]
+pub mod provider;
+
+pub mod models;

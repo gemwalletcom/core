@@ -3063,12 +3063,16 @@ dependencies = [
 name = "gem_near"
 version = "1.0.0"
 dependencies = [
+ "async-trait",
+ "bs58",
+ "chain_traits",
  "chrono",
+ "gem_client",
  "gem_jsonrpc",
+ "hex",
  "primitives",
  "serde",
  "serde_json",
- "typeshare",
 ]
 
 [[package]]
@@ -3227,6 +3231,7 @@ dependencies = [
  "gem_hash",
  "gem_hypercore",
  "gem_jsonrpc",
+ "gem_near",
  "gem_solana",
  "gem_stellar",
  "gem_sui",

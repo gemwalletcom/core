@@ -46,3 +46,5 @@ pub struct AccessKey {
     pub nonce: i64,
     pub permission: String,
 }
+
+pub use crate::models::*;

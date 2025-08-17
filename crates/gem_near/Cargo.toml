@@ -8,13 +8,16 @@ edition = { workspace = true }
 primitives = { path = "../primitives" }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true, optional = true }
-typeshare = { workspace = true, optional = true }
 
 # RPC specific dependencies
 gem_jsonrpc = { path = "../gem_jsonrpc", features = ["client"], optional = true }
+gem_client = { path = "../gem_client", optional = true }
+chain_traits = { path = "../chain_traits", optional = true }
+async-trait = { workspace = true, optional = true }
 chrono = { workspace = true, features = ["serde"], optional = true }
+bs58 = { workspace = true, optional = true }
+hex = { workspace = true, optional = true }
 
 [features]
 default = []
-rpc = ["dep:serde_json", "dep:gem_jsonrpc", "dep:chrono"]
-typeshare = ["dep:typeshare"]
+rpc = ["dep:serde_json", "dep:gem_jsonrpc", "dep:gem_client", "dep:chain_traits", "dep:async-trait", "dep:chrono", "dep:bs58", "dep:hex"]

@@ -7,6 +7,7 @@ use gem_cardano::rpc::client::CardanoClient;
 use gem_hypercore::rpc::client::HyperCoreClient;
 use gem_stellar::rpc::client::StellarClient;
 use gem_xrp::rpc::client::XRPClient;
+use gem_near::rpc::client::NearClient;
 use std::sync::Arc;
 
 pub mod models;
@@ -32,6 +33,7 @@ impl GemGateway {
             Chain::Stellar => Ok(Arc::new(StellarClient::new(alien_client))),
             Chain::Xrp => Ok(Arc::new(XRPClient::new(alien_client))),
             Chain::Algorand => Ok(Arc::new(AlgorandClient::new(alien_client))),
+            Chain::Near => Ok(Arc::new(NearClient::new(alien_client))),
             _ => Err(GatewayError::InvalidChain(chain.to_string())),
         }
     }

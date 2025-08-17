@@ -9,8 +9,8 @@ use reqwest_middleware::ClientBuilder;
 use reqwest_retry::{policies::ExponentialBackoff, RetryTransientMiddleware};
 
 use gem_chain_rpc::{
-    algorand::AlgorandProvider, bitcoin::BitcoinProvider, cardano::CardanoProvider, ethereum::EthereumProvider, solana::SolanaProvider, sui::SuiProvider,
-    ton::TonProvider, tron::TronProvider, xrp::XRPProvider, AptosProvider, ChainProvider, CosmosProvider, HyperCoreProvider, NearProvider, PolkadotProvider,
+    algorand::AlgorandProvider, bitcoin::BitcoinProvider, cardano::CardanoProvider, ethereum::EthereumProvider, near::NearProvider, solana::SolanaProvider, sui::SuiProvider,
+    ton::TonProvider, tron::TronProvider, xrp::XRPProvider, AptosProvider, ChainProvider, CosmosProvider, HyperCoreProvider, PolkadotProvider,
     StellarProvider,
 };
 
@@ -118,10 +118,10 @@ impl ProviderFactory {
             Chain::Aptos => Box::new(AptosProvider::new(AptosClient::new(client, url))),
             Chain::Sui => Box::new(SuiProvider::new(SuiClient::new(JsonRpcClient::new_with_client(url, client)))),
             Chain::Xrp => Box::new(XRPProvider::new(XRPClient::new(gem_client))),
-            Chain::Near => Box::new(NearProvider::new(NearClient::new(JsonRpcClient::new_with_client(url, client)))),
             Chain::Cardano => Box::new(CardanoProvider::new(CardanoClient::new(gem_client))),
             Chain::Algorand => Box::new(AlgorandProvider::new(AlgorandClient::new(gem_client))),
             Chain::Stellar => Box::new(StellarProvider::new(StellarClient::new(gem_client))),
+            Chain::Near => Box::new(NearProvider::new(NearClient::new(gem_client))),
             Chain::Polkadot => Box::new(PolkadotProvider::new(PolkadotClient::new(client, url))),
             Chain::HyperCore => Box::new(HyperCoreProvider::new(HyperCoreClient::new(gem_client))),
         }
