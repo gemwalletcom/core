@@ -3,8 +3,8 @@ use serde::{Deserialize, Serialize};
 type Int = u64;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct BitcoinBlock {
-    #[serde(rename = "previousBlockHash")]
     pub previous_block_hash: Option<String>,
 }
 
@@ -14,11 +14,9 @@ pub struct BitcoinNodeInfo {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct BitcoinBlockbook {
-    #[serde(rename = "inSync")]
     pub in_sync: bool,
-    #[serde(rename = "lastBlockTime")]
     pub last_block_time: String,
-    #[serde(rename = "bestHeight")]
     pub best_height: Int,
 }

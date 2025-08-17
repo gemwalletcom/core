@@ -3,8 +3,8 @@ use serde::{Deserialize, Serialize};
 use super::UInt64;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct BitcoinTransaction {
-    #[serde(rename = "blockHeight")]
     pub block_height: UInt64,
 }
 
