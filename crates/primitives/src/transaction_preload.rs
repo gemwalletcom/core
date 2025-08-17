@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::{UTXO};
+use crate::UTXO;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TransactionPreloadInput {

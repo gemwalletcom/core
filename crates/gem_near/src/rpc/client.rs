@@ -1,10 +1,10 @@
 use std::error::Error;
 
+use chain_traits::{ChainAccount, ChainPerpetual, ChainStaking, ChainToken, ChainTraits};
 use gem_client::Client;
 use primitives::{Asset, Chain, JsonRpcResult};
+use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
-use serde::{Serialize, Deserialize};
-use chain_traits::{ChainStaking, ChainPerpetual, ChainAccount, ChainToken, ChainTraits};
 
 #[derive(Debug, Serialize, Deserialize)]
 struct JsonRpcRequest {
@@ -22,10 +22,7 @@ pub struct NearClient<C: Client> {
 
 impl<C: Client> NearClient<C> {
     pub fn new(client: C) -> Self {
-        Self { 
-            client,
-            chain: Chain::Near
-        }
+        Self { client, chain: Chain::Near }
     }
 
     pub async fn get_near_account(&self, address: &str) -> Result<crate::models::NearAccount, Box<dyn Error + Send + Sync>> {
@@ -42,8 +39,12 @@ impl<C: Client> NearClient<C> {
         let response: JsonRpcResult<crate::models::NearAccount> = self.client.post("", &request, None).await?;
         Ok(response.result)
     }
-    
-    pub async fn get_near_account_access_key(&self, address: &str, public_key: &str) -> Result<crate::models::NearAccountAccessKey, Box<dyn Error + Send + Sync>> {
+
+    pub async fn get_near_account_access_key(
+        &self,
+        address: &str,
+        public_key: &str,
+    ) -> Result<crate::models::NearAccountAccessKey, Box<dyn Error + Send + Sync>> {
         let request = JsonRpcRequest {
             jsonrpc: "2.0".to_string(),
             method: "query".to_string(),
@@ -58,7 +59,7 @@ impl<C: Client> NearClient<C> {
         let response: JsonRpcResult<crate::models::NearAccountAccessKey> = self.client.post("", &request, None).await?;
         Ok(response.result)
     }
-    
+
     pub async fn get_near_latest_block(&self) -> Result<crate::models::NearBlock, Box<dyn Error + Send + Sync>> {
         let request = JsonRpcRequest {
             jsonrpc: "2.0".to_string(),
@@ -69,7 +70,7 @@ impl<C: Client> NearClient<C> {
         let response: JsonRpcResult<crate::models::NearBlock> = self.client.post("", &request, None).await?;
         Ok(response.result)
     }
-    
+
     pub async fn get_near_gas_price(&self) -> Result<crate::models::NearGasPrice, Box<dyn Error + Send + Sync>> {
         let request = JsonRpcRequest {
             jsonrpc: "2.0".to_string(),
@@ -80,7 +81,7 @@ impl<C: Client> NearClient<C> {
         let response: JsonRpcResult<crate::models::NearGasPrice> = self.client.post("", &request, None).await?;
         Ok(response.result)
     }
-    
+
     pub async fn get_near_genesis_config(&self) -> Result<crate::models::NearGenesisConfig, Box<dyn Error + Send + Sync>> {
         let request = JsonRpcRequest {
             jsonrpc: "2.0".to_string(),
@@ -91,7 +92,7 @@ impl<C: Client> NearClient<C> {
         let response: JsonRpcResult<crate::models::NearGenesisConfig> = self.client.post("", &request, None).await?;
         Ok(response.result)
     }
-    
+
     pub async fn broadcast_near_transaction(&self, signed_tx_base64: &str) -> Result<crate::models::NearBroadcastResult, Box<dyn Error + Send + Sync>> {
         let request = JsonRpcRequest {
             jsonrpc: "2.0".to_string(),
@@ -102,8 +103,12 @@ impl<C: Client> NearClient<C> {
         let response: JsonRpcResult<crate::models::NearBroadcastResult> = self.client.post("", &request, None).await?;
         Ok(response.result)
     }
-    
-    pub async fn get_near_transaction_status(&self, tx_hash: &str, sender_account_id: &str) -> Result<crate::models::NearBroadcastResult, Box<dyn Error + Send + Sync>> {
+
+    pub async fn get_near_transaction_status(
+        &self,
+        tx_hash: &str,
+        sender_account_id: &str,
+    ) -> Result<crate::models::NearBroadcastResult, Box<dyn Error + Send + Sync>> {
         let request = JsonRpcRequest {
             jsonrpc: "2.0".to_string(),
             method: "tx".to_string(),

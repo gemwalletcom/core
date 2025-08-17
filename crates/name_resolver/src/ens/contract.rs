@@ -25,7 +25,7 @@ pub struct Contract {
 
 impl Contract {
     pub fn new(rpc_url: &str, registry_address_hex: &str) -> Result<Self> {
-        let client = JsonRpcClient::new(rpc_url.to_string())?;
+        let client = JsonRpcClient::new_reqwest(rpc_url.to_string());
         let registry_address = Address::from_str(registry_address_hex)?;
         Ok(Self { registry_address, client })
     }
@@ -90,7 +90,7 @@ impl Contract {
             },
             "latest"
         ]);
-        let result: String = self.client.call("eth_call", params).await.map_err(|e| anyhow!(e))?;
+        let result: String = self.client.call("eth_call", params).await.map_err(|e| anyhow!("{}", e))?;
         let bytes = hex::decode(&result).map_err(|e| anyhow!("Failed to decode hex response: {}", e))?;
         Ok(Bytes::from(bytes))
     }

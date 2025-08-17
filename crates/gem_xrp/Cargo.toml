@@ -6,6 +6,7 @@ edition = "2024"
 [features]
 default = []
 rpc = ["dep:chrono", "dep:serde_serializers", "dep:chain_traits", "dep:gem_client", "dep:futures"]
+reqwest = ["gem_client/reqwest"]
 
 [dependencies]
 serde = { workspace = true, features = ["derive"] }

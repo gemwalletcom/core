@@ -63,4 +63,4 @@ impl<C: Client> ChainTransactionsProvider for CardanoProvider<C> {
 }
 
 #[async_trait]
-impl<C: Client> ChainStakeProvider for CardanoProvider<C> { }
+impl<C: Client> ChainStakeProvider for CardanoProvider<C> {}

@@ -6,7 +6,7 @@ use std::error::Error;
 use gem_client::Client;
 use primitives::{DelegationBase, DelegationState, DelegationValidator};
 
-use crate::{rpc::client::HyperCoreClient, models::balance::HypercoreValidator};
+use crate::{models::balance::HypercoreValidator, rpc::client::HyperCoreClient};
 
 #[async_trait]
 impl<C: Client> ChainStaking for HyperCoreClient<C> {

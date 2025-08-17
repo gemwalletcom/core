@@ -5,9 +5,9 @@ use async_trait::async_trait;
 use primitives::{chain::Chain, Asset};
 use primitives::{AssetBalance, Transaction};
 
+use gem_client::Client;
 use gem_stellar::rpc::client::StellarClient;
 use gem_stellar::rpc::mapper::StellarMapper;
-use gem_client::Client;
 
 pub struct StellarProvider<C: Client> {
     client: StellarClient<C>,
@@ -59,5 +59,4 @@ impl<C: Client> ChainTransactionsProvider for StellarProvider<C> {
 }
 
 #[async_trait]
-impl<C: Client> ChainStakeProvider for StellarProvider<C> { }
-
+impl<C: Client> ChainStakeProvider for StellarProvider<C> {}

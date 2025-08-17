@@ -68,4 +68,4 @@ impl ChainTransactionsProvider for TonProvider {
 }
 
 #[async_trait]
-impl ChainStakeProvider for TonProvider { }
+impl ChainStakeProvider for TonProvider {}

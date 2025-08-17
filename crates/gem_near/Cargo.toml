@@ -21,3 +21,4 @@ hex = { workspace = true, optional = true }
 [features]
 default = []
 rpc = ["dep:serde_json", "dep:gem_jsonrpc", "dep:gem_client", "dep:chain_traits", "dep:async-trait", "dep:chrono", "dep:bs58", "dep:hex"]
+reqwest = ["gem_client/reqwest"]

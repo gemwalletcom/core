@@ -7,8 +7,6 @@ edition = { workspace = true }
 tokio = { workspace = true }
 serde = { workspace = true }
 reqwest = { workspace = true, features = ["stream"] }
-reqwest-middleware = { workspace = true }
-reqwest-retry = { workspace = true }
 
 futures-util = { workspace = true }
 clap = { version = "4.5.40", features = ["derive"] }

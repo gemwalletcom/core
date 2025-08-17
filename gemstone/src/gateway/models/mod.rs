@@ -10,7 +10,7 @@ pub use staking::*;
 pub use transaction::*;
 
 // Re-export simpler models inline
-use primitives::{FeePriorityValue, UTXO, TransactionPreload, TransactionPreloadInput};
+use primitives::{FeePriorityValue, TransactionPreload, TransactionPreloadInput, UTXO};
 
 // ChainAccount models
 #[derive(Debug, Clone, uniffi::Record)]

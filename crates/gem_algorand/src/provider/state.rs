@@ -3,7 +3,7 @@ use chain_traits::ChainState;
 use std::error::Error;
 
 use gem_client::Client;
-use primitives::{FeePriorityValue, FeePriority};
+use primitives::{FeePriority, FeePriorityValue};
 
 use crate::rpc::client::AlgorandClient;
 

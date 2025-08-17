@@ -11,11 +11,13 @@ use crate::{
     },
 };
 use primitives::EVMChain;
+#[cfg(feature = "reqwest")]
 use reqwest_middleware::ClientWithMiddleware;
 use serde_json::json;
 
 use crate::rpc::alchemy::TokenBalances;
 
+#[cfg(feature = "reqwest")]
 #[derive(Clone)]
 pub struct AlchemyClient {
     pub chain: EVMChain,
@@ -24,6 +26,7 @@ pub struct AlchemyClient {
     ethereum_client: EthereumClient,
 }
 
+#[cfg(feature = "reqwest")]
 impl AlchemyClient {
     const DISABLED_RPC_CHAINS: [EVMChain; 5] = [EVMChain::Mantle, EVMChain::Hyperliquid, EVMChain::OpBNB, EVMChain::Monad, EVMChain::Fantom];
     const ENABLED_TRANSACTION_CHAINS: [EVMChain; 2] = [EVMChain::Ethereum, EVMChain::Base];

@@ -29,8 +29,8 @@ gem_hash = { path = "../crates/gem_hash" }
 gem_jsonrpc = { path = "../crates/gem_jsonrpc" }
 gem_client = { path = "../crates/gem_client" }
 gem_hypercore = { path = "../crates/gem_hypercore" }
-gem_bitcoin = { path = "../crates/gem_bitcoin" }
-gem_cardano = { path = "../crates/gem_cardano" }
+gem_bitcoin = { path = "../crates/gem_bitcoin", features = ["rpc"] }
+gem_cardano = { path = "../crates/gem_cardano", features = ["rpc"] }
 gem_algorand = { path = "../crates/gem_algorand", features = ["rpc"] }
 gem_stellar = { path = "../crates/gem_stellar", features = ["rpc"] }
 gem_xrp = { path = "../crates/gem_xrp", features = ["rpc"] }

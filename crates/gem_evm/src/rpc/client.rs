@@ -1,8 +1,13 @@
 use alloy_primitives::{hex, Address, Bytes};
 use anyhow::anyhow;
+#[cfg(feature = "reqwest")]
 use gem_jsonrpc::{
     types::{JsonRpcError, JsonRpcResult},
     JsonRpcClient,
+};
+#[cfg(not(feature = "reqwest"))]
+use gem_jsonrpc::{
+    types::{JsonRpcError, JsonRpcResult},
 };
 use serde::de::DeserializeOwned;
 use serde_json::json;
@@ -18,15 +23,17 @@ pub const FUNCTION_ERC20_NAME: &str = "0x06fdde03";
 pub const FUNCTION_ERC20_SYMBOL: &str = "0x95d89b41";
 pub const FUNCTION_ERC20_DECIMALS: &str = "0x313ce567";
 
+#[cfg(feature = "reqwest")]
 #[derive(Clone)]
 pub struct EthereumClient {
     pub chain: EVMChain,
     client: JsonRpcClient,
 }
 
+#[cfg(feature = "reqwest")]
 impl EthereumClient {
     pub fn new(chain: EVMChain, url: &str) -> Self {
-        let client = JsonRpcClient::new(url.to_string()).expect("Invalid Ethereum node URL");
+        let client = JsonRpcClient::new_reqwest(url.to_string());
         Self { chain, client }
     }
 

@@ -4,7 +4,7 @@ use crate::models::metadata::HypercoreMetadataResponse;
 use crate::models::order::HypercorePerpetualFill;
 use crate::models::position::HypercoreAssetPositions;
 use crate::models::response::{HyperCoreBroadcastResult, TransactionBroadcastResponse};
-use chain_traits::{ChainTraits, ChainPreload};
+use chain_traits::{ChainPreload, ChainTraits};
 use gem_client::Client;
 use primitives::Chain;
 use serde_json::json;

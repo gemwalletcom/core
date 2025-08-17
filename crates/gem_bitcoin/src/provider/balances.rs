@@ -5,8 +5,8 @@ use std::error::Error;
 use gem_client::Client;
 use primitives::{AssetBalance, BitcoinChain};
 
-use crate::rpc::client::BitcoinClient;
 use super::balances_mapper::map_balance_coin;
+use crate::rpc::client::BitcoinClient;
 
 impl<C: Client> BitcoinClient<C> {
     fn full_address(&self, address: &str) -> String {

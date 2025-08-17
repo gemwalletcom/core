@@ -4,11 +4,16 @@ version = { workspace = true }
 edition = { workspace = true }
 publish = false
 
+[features]
+default = []
+rpc = ["dep:chain_traits", "dep:gem_client"]
+reqwest = ["gem_client/reqwest"]
+
 [dependencies]
 primitives = { path = "../primitives" }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 chrono = { workspace = true, features = ["serde"] }
 async-trait = { workspace = true }
-chain_traits = { path = "../chain_traits" }
-gem_client = { path = "../gem_client" }
+chain_traits = { path = "../chain_traits", optional = true }
+gem_client = { path = "../gem_client", optional = true }

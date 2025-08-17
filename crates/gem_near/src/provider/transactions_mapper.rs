@@ -1,11 +1,11 @@
-use primitives::{TransactionUpdate, TransactionState, TransactionChange};
-use std::error::Error;
 use crate::models::transaction::NearBroadcastResult;
+use primitives::{TransactionChange, TransactionState, TransactionUpdate};
+use std::error::Error;
 
 pub fn map_transaction_broadcast(response: &NearBroadcastResult) -> Result<String, Box<dyn Error + Sync + Send>> {
     match response.final_execution_status.as_str() {
         "FINAL" => Ok(response.transaction.hash.clone()),
-        _ => Err(format!("Broadcast failed with status: {}", response.final_execution_status).into())
+        _ => Err(format!("Broadcast failed with status: {}", response.final_execution_status).into()),
     }
 }
 
@@ -14,23 +14,20 @@ pub fn map_transaction_status(response: &NearBroadcastResult) -> TransactionUpda
         "FINAL" => TransactionState::Confirmed,
         _ => TransactionState::Failed,
     };
-    
+
     let mut changes = vec![];
     if !response.transaction_outcome.outcome.tokens_burnt.is_empty() {
         changes.push(TransactionChange::NetworkFee(response.transaction_outcome.outcome.tokens_burnt.clone()));
     }
-    
-    TransactionUpdate {
-        state,
-        changes,
-    }
+
+    TransactionUpdate { state, changes }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::models::transaction::{NearBroadcastResult, NearBroadcastTransaction, NearOutcome, NearTransactionOutcome};
     use primitives::JsonRpcResult;
-    use crate::models::transaction::{NearBroadcastResult, NearBroadcastTransaction, NearTransactionOutcome, NearOutcome};
 
     fn create_test_transaction() -> NearBroadcastTransaction {
         NearBroadcastTransaction {
@@ -56,7 +53,7 @@ mod tests {
             transaction: create_test_transaction(),
             transaction_outcome: create_test_outcome("417494768750000000000"),
         };
-        
+
         let result = map_transaction_broadcast(&response).unwrap();
         assert_eq!(result, "5qSP5dRVr5KQ37Dd9CV2gi7KDuvtU4eFaRK7cDKREVL2");
     }
@@ -68,7 +65,7 @@ mod tests {
             transaction: create_test_transaction(),
             transaction_outcome: create_test_outcome("0"),
         };
-        
+
         let result = map_transaction_broadcast(&response);
         assert!(result.is_err());
         assert!(result.unwrap_err().to_string().contains("EXECUTION_FAILURE"));
@@ -81,7 +78,7 @@ mod tests {
             transaction: create_test_transaction(),
             transaction_outcome: create_test_outcome("417494768750000000000"),
         };
-        
+
         let result = map_transaction_status(&response);
         assert_eq!(result.state, TransactionState::Confirmed);
         assert_eq!(result.changes.len(), 1);
@@ -97,7 +94,7 @@ mod tests {
             transaction: create_test_transaction(),
             transaction_outcome: create_test_outcome("0"),
         };
-        
+
         let result = map_transaction_status(&response);
         assert_eq!(result.state, TransactionState::Failed);
     }
@@ -106,10 +103,10 @@ mod tests {
     fn test_map_real_transaction_response() {
         let data = include_str!("../../testdata/successful_transaction.json");
         let response: JsonRpcResult<NearBroadcastResult> = serde_json::from_str(data).unwrap();
-        
+
         let hash = map_transaction_broadcast(&response.result).unwrap();
         assert_eq!(hash, "5qSP5dRVr5KQ37Dd9CV2gi7KDuvtU4eFaRK7cDKREVL2");
-        
+
         let status_update = map_transaction_status(&response.result);
         assert_eq!(status_update.state, TransactionState::Confirmed);
         assert_eq!(status_update.changes.len(), 1);

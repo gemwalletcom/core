@@ -5,9 +5,9 @@ use gem_algorand::rpc::client::AlgorandClient;
 use gem_bitcoin::rpc::client::BitcoinClient;
 use gem_cardano::rpc::client::CardanoClient;
 use gem_hypercore::rpc::client::HyperCoreClient;
+use gem_near::rpc::client::NearClient;
 use gem_stellar::rpc::client::StellarClient;
 use gem_xrp::rpc::client::XRPClient;
-use gem_near::rpc::client::NearClient;
 use std::sync::Arc;
 
 pub mod models;

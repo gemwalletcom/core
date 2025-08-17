@@ -1,6 +1,7 @@
 use std::error::Error;
 
-use gem_jsonrpc::client::JsonRpcClient;
+#[cfg(feature = "reqwest")]
+use gem_jsonrpc::JsonRpcClient;
 use primitives::chain::Chain;
 use serde_json::json;
 
@@ -9,10 +10,12 @@ use super::{
     model::{Balance, CoinMetadata, Digests, GasUsed, SuiSystemState, ValidatorSet},
 };
 
+#[cfg(feature = "reqwest")]
 pub struct SuiClient {
     client: JsonRpcClient,
 }
 
+#[cfg(feature = "reqwest")]
 impl SuiClient {
     pub fn new(client: JsonRpcClient) -> Self {
         Self { client }

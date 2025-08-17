@@ -11,7 +11,7 @@ use crate::rpc::client::AlgorandClient;
 impl<C: Client> ChainToken for AlgorandClient<C> {
     async fn get_token_data(&self, token_id: String) -> Result<Asset, Box<dyn Error + Sync + Send>> {
         let asset = self.get_asset(&token_id).await?.asset;
-        
+
         Ok(Asset {
             id: AssetId {
                 chain: self.get_chain(),
@@ -25,12 +25,10 @@ impl<C: Client> ChainToken for AlgorandClient<C> {
             asset_type: AssetType::ASA,
         })
     }
-    
+
     fn get_is_token_address(&self, token_id: &str) -> bool {
-        if token_id.len() > 4 {
-            if let Ok(_) = token_id.parse::<u64>() {
-                return true;
-            }
+        if token_id.len() > 4 && token_id.parse::<u64>().is_ok() {
+            return true;
         }
         false
     }

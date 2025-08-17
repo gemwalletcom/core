@@ -3,7 +3,10 @@ use std::error::Error;
 use async_trait::async_trait;
 use primitives::chart::ChartCandleStick;
 use primitives::perpetual::{PerpetualData, PerpetualPositionsSummary};
-use primitives::{Asset, AssetBalance, ChartPeriod, DelegationBase, DelegationValidator, FeePriorityValue, TransactionPreload, TransactionPreloadInput, TransactionStateRequest, TransactionUpdate, UTXO};
+use primitives::{
+    Asset, AssetBalance, ChartPeriod, DelegationBase, DelegationValidator, FeePriorityValue, TransactionPreload, TransactionPreloadInput,
+    TransactionStateRequest, TransactionUpdate, UTXO,
+};
 
 pub trait ChainTraits: ChainBalances + ChainStaking + ChainTransactions + ChainState + ChainAccount + ChainPerpetual + ChainToken + ChainPreload {}
 
@@ -65,7 +68,7 @@ pub trait ChainToken: Send + Sync {
     async fn get_token_data(&self, _token_id: String) -> Result<Asset, Box<dyn Error + Sync + Send>> {
         Err("Chain does not support tokens".into())
     }
-    
+
     fn get_is_token_address(&self, _token_id: &str) -> bool {
         false
     }

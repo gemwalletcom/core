@@ -1,6 +1,6 @@
-use std::error::Error;
-use primitives::{TransactionPreload, TransactionPreloadInput};
 use crate::models::{NearAccountAccessKey, NearBlock};
+use primitives::{TransactionPreload, TransactionPreloadInput};
+use std::error::Error;
 
 pub fn address_to_public_key(address: &str) -> Result<String, Box<dyn Error + Sync + Send>> {
     let address_bytes = hex::decode(address)?;
@@ -40,22 +40,20 @@ mod tests {
             sender_address: "sender.near".to_string(),
             destination_address: "receiver.near".to_string(),
         };
-        
-        let access_key = NearAccountAccessKey {
-            nonce: 116479371000026,
-        };
-        
+
+        let access_key = NearAccountAccessKey { nonce: 116479371000026 };
+
         let block = NearBlock {
             header: NearBlockHeader {
                 hash: "F45xbjXiyHn5noj1692RVqeuNC6X232qhKpvvPrv92iz".to_string(),
                 height: 12345,
             },
         };
-        
+
         let result = map_transaction_preload(&input, &access_key, &block, true);
-        
+
         assert_eq!(result.sequence, 116479371000027);
         assert_eq!(result.block_hash, "F45xbjXiyHn5noj1692RVqeuNC6X232qhKpvvPrv92iz");
-        assert_eq!(result.is_destination_address_exist, true);
+        assert!(result.is_destination_address_exist);
     }
 }

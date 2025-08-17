@@ -6,8 +6,8 @@ use gem_client::Client;
 use number_formatter::BigNumberFormatter;
 use primitives::AssetBalance;
 
-use crate::rpc::client::HyperCoreClient;
 use super::balances_mapper::{map_balance_coin, map_balance_staking};
+use crate::rpc::client::HyperCoreClient;
 
 #[async_trait]
 impl<C: Client> ChainBalances for HyperCoreClient<C> {

@@ -7,8 +7,7 @@ use settings::Settings;
 
 use clap::Parser;
 use futures_util::StreamExt;
-use reqwest_middleware::ClientBuilder;
-use reqwest_retry::{policies::ExponentialBackoff, RetryTransientMiddleware};
+use reqwest::{retry, StatusCode};
 use std::{error::Error, fs, io::Write, path::Path, thread::sleep, time::Duration};
 
 /// Assets image downloader from coingecko
@@ -24,11 +23,26 @@ impl Downloader {
     }
 
     fn new_coingecko_client(api_key: String) -> CoinGeckoClient {
-        let retry_policy = ExponentialBackoff::builder().build_with_max_retries(10);
-        let client = ClientBuilder::new(reqwest::Client::new())
-            .with(RetryTransientMiddleware::new_with_policy(retry_policy))
-            .build();
-        CoinGeckoClient::new_with_client_middleware(client, api_key.as_str())
+        let retry_policy = retry::for_host("api.coingecko.com")
+            .max_retries_per_request(10)
+            .classify_fn(|req_rep| {
+                match req_rep.status() {
+                    Some(StatusCode::TOO_MANY_REQUESTS) | 
+                    Some(StatusCode::INTERNAL_SERVER_ERROR) |
+                    Some(StatusCode::BAD_GATEWAY) |
+                    Some(StatusCode::SERVICE_UNAVAILABLE) |
+                    Some(StatusCode::GATEWAY_TIMEOUT) => req_rep.retryable(),
+                    None => req_rep.retryable(), // Network errors
+                    _ => req_rep.success(),
+                }
+            });
+        
+        let reqwest_client = reqwest::Client::builder()
+            .retry(retry_policy)
+            .build()
+            .expect("Failed to build reqwest client");
+            
+        CoinGeckoClient::new_with_reqwest_client(reqwest_client, api_key.as_str())
     }
 
     async fn start(&self) -> Result<(), Box<dyn Error + Send + Sync>> {

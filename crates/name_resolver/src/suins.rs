@@ -13,7 +13,7 @@ pub struct SuinsClient {
 
 impl SuinsClient {
     pub fn new(api_url: String) -> Self {
-        let client = JsonRpcClient::new(api_url).expect("Invalid Suins API URL");
+        let client = JsonRpcClient::new_reqwest(api_url);
         Self { client }
     }
 }

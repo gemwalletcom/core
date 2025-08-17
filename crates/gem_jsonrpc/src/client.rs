@@ -1,5 +1,5 @@
-use crate::types::{JsonRpcError, JsonRpcRequest, JsonRpcRequestConvert, JsonRpcResult, ERROR_INTERNAL_ERROR, ERROR_INVALID_REQUEST};
-use reqwest_middleware::{ClientBuilder, ClientWithMiddleware};
+use crate::types::{JsonRpcError, JsonRpcRequest, JsonRpcRequestConvert, JsonRpcResult, ERROR_INTERNAL_ERROR};
+use gem_client::{Client, ClientError};
 use serde::de::DeserializeOwned;
 use serde_json::Value;
 use std::time::SystemTime;
@@ -7,13 +7,13 @@ use std::time::SystemTime;
 pub type CallTuple = (String, Value);
 
 #[derive(Clone)]
-pub struct JsonRpcClient {
+pub struct JsonRpcClient<C: Client + Clone> {
     url: String,
-    client: ClientWithMiddleware,
+    client: C,
 }
 
-impl From<reqwest::Error> for JsonRpcError {
-    fn from(value: reqwest::Error) -> Self {
+impl From<ClientError> for JsonRpcError {
+    fn from(value: ClientError) -> Self {
         JsonRpcError {
             code: ERROR_INTERNAL_ERROR,
             message: value.to_string(),
@@ -21,22 +21,8 @@ impl From<reqwest::Error> for JsonRpcError {
     }
 }
 
-impl From<reqwest_middleware::Error> for JsonRpcError {
-    fn from(value: reqwest_middleware::Error) -> Self {
-        JsonRpcError {
-            code: ERROR_INTERNAL_ERROR,
-            message: value.to_string(),
-        }
-    }
-}
-
-impl JsonRpcClient {
-    pub fn new(url: String) -> Result<Self, anyhow::Error> {
-        let client = ClientBuilder::new(reqwest::Client::new()).build();
-        Ok(Self { url, client })
-    }
-
-    pub fn new_with_client(url: String, client: ClientWithMiddleware) -> Self {
+impl<C: Client + Clone> JsonRpcClient<C> {
+    pub fn new(url: String, client: C) -> Self {
         Self { url, client }
     }
 
@@ -67,15 +53,8 @@ impl JsonRpcClient {
             return Ok(Vec::new());
         }
 
-        let body = serde_json::to_vec(&requests).map_err(|_| JsonRpcError {
-            code: ERROR_INVALID_REQUEST,
-            message: "Failed to serialize requests".into(),
-        })?;
-        let response = self.client.post(&self.url).body(body).send().await?;
-        if response.status().is_client_error() || response.status().is_server_error() {
-            return Err(JsonRpcError::from(reqwest_middleware::Error::from(response.error_for_status().unwrap_err())));
-        }
-        let results = response.json::<Vec<JsonRpcResult<T>>>().await?;
+        let path = if self.url.is_empty() { "" } else { &self.url };
+        let results: Vec<JsonRpcResult<T>> = self.client.post(path, &requests, None).await?;
         if results.len() != requests.len() {
             return Err(JsonRpcError {
                 message: "Batch call response length mismatch".into(),
@@ -87,12 +66,36 @@ impl JsonRpcClient {
     }
 
     async fn _request<T: DeserializeOwned>(&self, req: JsonRpcRequest) -> Result<T, JsonRpcError> {
-        let res = self.client.post(&self.url).json(&req).send().await?;
-        let result = res.json::<JsonRpcResult<T>>().await?;
+        let path = if self.url.is_empty() { "" } else { &self.url };
+        let result: JsonRpcResult<T> = self.client.post(path, &req, None).await?;
 
         match result {
             JsonRpcResult::Value(value) => Ok(value.result),
             JsonRpcResult::Error(error) => Err(error.error),
         }
     }
+}
+
+#[cfg(feature = "reqwest")]
+impl JsonRpcClient<gem_client::ReqwestClient> {
+    pub fn new_reqwest(url: String) -> Self {
+        use gem_client::ReqwestClient;
+        let reqwest_client = reqwest::Client::new();
+        let client = ReqwestClient::new(url.clone(), reqwest_client);
+        Self { url: "".to_string(), client }
+    }
+}
+
+// Convenience functions for creating JsonRpcClient
+#[cfg(feature = "reqwest")]
+impl JsonRpcClient<gem_client::ReqwestClient> {
+    pub fn new_default(url: String) -> Result<Self, anyhow::Error> {
+        Ok(Self::new_reqwest(url))
+    }
+}
+
+// Module-level convenience function
+#[cfg(feature = "reqwest")]
+pub fn new_client(url: String) -> Result<JsonRpcClient<gem_client::ReqwestClient>, anyhow::Error> {
+    Ok(JsonRpcClient::new_reqwest(url))
 }

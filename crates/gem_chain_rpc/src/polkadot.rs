@@ -56,4 +56,4 @@ impl ChainTransactionsProvider for PolkadotProvider {
 }
 
 #[async_trait]
-impl ChainStakeProvider for PolkadotProvider { }
+impl ChainStakeProvider for PolkadotProvider {}

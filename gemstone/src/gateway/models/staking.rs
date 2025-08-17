@@ -1,4 +1,4 @@
-use primitives::{DelegationBase, DelegationValidator, AssetId, Chain};
+use primitives::{AssetId, Chain, DelegationBase, DelegationValidator};
 
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct GemDelegationValidator {

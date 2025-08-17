@@ -1,6 +1,6 @@
-use primitives::{TransactionUpdate, TransactionState, TransactionChange};
-use std::error::Error;
 use crate::models::transaction::{StellarTransactionBroadcast, StellarTransactionStatus};
+use primitives::{TransactionChange, TransactionState, TransactionUpdate};
+use std::error::Error;
 
 pub fn map_transaction_broadcast(response: &StellarTransactionBroadcast) -> Result<String, Box<dyn Error + Sync + Send>> {
     if let Some(hash) = &response.hash {
@@ -18,9 +18,9 @@ pub fn map_transaction_status(tx: &StellarTransactionStatus) -> TransactionUpdat
     } else {
         TransactionState::Failed
     };
-    
+
     let network_fee = tx.fee_charged.parse::<u64>().unwrap_or(0);
-    
+
     TransactionUpdate {
         state,
         changes: vec![TransactionChange::NetworkFee(network_fee.to_string())],
@@ -38,7 +38,7 @@ mod tests {
             hash: Some("test_hash_123".to_string()),
             error_message: None,
         };
-        
+
         let result = map_transaction_broadcast(&response).unwrap();
         assert_eq!(result, "test_hash_123");
     }
@@ -49,7 +49,7 @@ mod tests {
             successful: true,
             fee_charged: "1000".to_string(),
         };
-        
+
         let result = map_transaction_status(&status);
         assert_eq!(result.state, TransactionState::Confirmed);
         assert_eq!(result.changes.len(), 1);

@@ -21,20 +21,24 @@ impl<C: Client> ChainToken for StellarClient<C> {
         } else {
             (token_id.as_str(), None)
         };
-        
+
         let assets = self.get_assets_by_issuer(issuer).await?;
-        
+
         let asset = if let Some(sym) = symbol {
-            assets._embedded.records
+            assets
+                ._embedded
+                .records
                 .iter()
                 .find(|a| a.asset_code == sym)
                 .ok_or_else(|| format!("Asset not found: {}", token_id))?
         } else {
-            assets._embedded.records
+            assets
+                ._embedded
+                .records
                 .first()
                 .ok_or_else(|| format!("No assets found for issuer: {}", issuer))?
         };
-        
+
         Ok(Asset {
             id: AssetId::from(self.chain, Some(token_id.clone())),
             chain: self.chain,
@@ -45,7 +49,7 @@ impl<C: Client> ChainToken for StellarClient<C> {
             asset_type: AssetType::TOKEN,
         })
     }
-    
+
     fn get_is_token_address(&self, token_id: &str) -> bool {
         token_id.len() >= 56 && token_id.starts_with("G")
     }

@@ -65,9 +65,7 @@ impl Client for AlienClient {
             Some(ContentType::ApplicationXBinary) => {
                 let json_value = serde_json::to_value(body)?;
                 match json_value {
-                    serde_json::Value::String(s) => {
-                        hex::decode(&s).map_err(|e| ClientError::Serialization(format!("Failed to decode hex string: {e}")))?
-                    },
+                    serde_json::Value::String(s) => hex::decode(&s).map_err(|e| ClientError::Serialization(format!("Failed to decode hex string: {e}")))?,
                     _ => return Err(ClientError::Serialization("Expected hex string body for binary content-type".to_string())),
                 }
             }

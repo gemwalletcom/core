@@ -31,4 +31,3 @@ pub struct CardanoAggregateSum {
 pub struct CardanoAggregateSumValue {
     pub value: Option<String>,
 }
-

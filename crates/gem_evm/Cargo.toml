@@ -13,8 +13,8 @@ rpc = [
     "dep:futures",
     "dep:lazy_static",
     "dep:itertools",
-    "dep:reqwest-middleware",
 ]
+reqwest = ["gem_jsonrpc/reqwest", "dep:reqwest-middleware"]
 
 [dependencies]
 primitives = { path = "../primitives" }

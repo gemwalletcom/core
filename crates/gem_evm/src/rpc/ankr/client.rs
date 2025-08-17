@@ -1,5 +1,6 @@
 use std::error::Error;
 
+#[cfg(feature = "reqwest")]
 use gem_jsonrpc::JsonRpcClient;
 use primitives::EVMChain;
 use serde_json::json;
@@ -12,6 +13,7 @@ use crate::{
     },
 };
 
+#[cfg(feature = "reqwest")]
 #[derive(Clone)]
 pub struct AnkrClient {
     pub chain: EVMChain,
@@ -19,10 +21,11 @@ pub struct AnkrClient {
     rpc_client: JsonRpcClient,
 }
 
+#[cfg(feature = "reqwest")]
 impl AnkrClient {
     pub fn new(client: EthereumClient, api_key: String) -> Self {
         let url = format!("https://rpc.ankr.com/multichain/{api_key}");
-        let rpc_client = JsonRpcClient::new(url).expect("Invalid Ankr API URL");
+        let rpc_client = JsonRpcClient::new_reqwest(url);
 
         Self {
             chain: client.chain,

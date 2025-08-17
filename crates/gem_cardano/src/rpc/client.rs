@@ -1,11 +1,11 @@
 use std::error::Error;
 
+use chain_traits::{ChainPerpetual, ChainStaking, ChainTraits};
 use gem_client::Client;
 use primitives::chain::Chain;
-use chain_traits::{ChainPerpetual, ChainStaking, ChainTraits};
 
 use super::model::{Block, Blocks, Data};
-use crate::models::{CardanoUTXO, CardanoGenesisData, CardanoBalanceResponse, CardanoTransactionBroadcast, CardanoUTXOS, CardanoBlockData};
+use crate::models::{CardanoBalanceResponse, CardanoBlockData, CardanoGenesisData, CardanoTransactionBroadcast, CardanoUTXO, CardanoUTXOS};
 use primitives::graphql::GraphqlData;
 
 #[derive(Debug)]
@@ -46,13 +46,13 @@ impl<C: Client> CardanoClient<C> {
             "query": "query GetBalance($address: String!) { utxos: utxos_aggregate(where: { address: { _eq: $address }  } ) { aggregate { sum { value } } } }"
         });
         let response: GraphqlData<CardanoBalanceResponse> = self.client.post("/", &json, None).await?;
-        
+
         if let Some(errors) = response.errors {
             if let Some(error) = errors.first() {
                 return Err(error.message.clone().into());
             }
         }
-        
+
         if let Some(data) = response.data {
             Ok(data.utxos.aggregate.sum.value.unwrap_or_else(|| "0".to_string()))
         } else {
@@ -87,19 +87,19 @@ impl<C: Client> CardanoClient<C> {
             "query": "mutation SubmitTransaction($transaction: String!) { submitTransaction(transaction: $transaction) { hash } }"
         });
         let response: GraphqlData<CardanoTransactionBroadcast> = self.client.post("/", &json, None).await?;
-        
+
         if let Some(errors) = response.errors {
             if let Some(error) = errors.first() {
                 return Err(error.message.clone().into());
             }
         }
-        
+
         if let Some(data) = response.data {
             if let Some(submit_transaction) = data.submit_transaction {
                 return Ok(submit_transaction.hash);
             }
         }
-        
+
         Err("Failed to broadcast transaction - no data or hash returned".into())
     }
 }
@@ -125,4 +125,3 @@ impl<C: Client> ChainPerpetual for CardanoClient<C> {}
 impl<C: Client> chain_traits::ChainPreload for CardanoClient<C> {}
 
 impl<C: Client> ChainTraits for CardanoClient<C> {}
-

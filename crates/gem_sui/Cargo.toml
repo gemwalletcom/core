@@ -6,6 +6,7 @@ edition = { workspace = true }
 [features]
 default = []
 rpc = ["gem_jsonrpc/client", "dep:num-bigint"]
+reqwest = ["gem_jsonrpc/reqwest"]
 typeshare = ["dep:typeshare"]
 
 [dependencies]

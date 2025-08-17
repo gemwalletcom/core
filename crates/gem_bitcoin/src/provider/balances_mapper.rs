@@ -1,5 +1,5 @@
-use primitives::{AssetBalance, BitcoinChain};
 use crate::models::account::BitcoinAccount;
+use primitives::{AssetBalance, BitcoinChain};
 
 pub fn map_balance_coin(account: &BitcoinAccount, chain: BitcoinChain) -> AssetBalance {
     AssetBalance::new(chain.get_chain().as_asset_id(), account.balance.clone())
@@ -17,7 +17,7 @@ mod tests {
             balance: "100000000".to_string(),
         };
         let result = map_balance_coin(&account, BitcoinChain::Bitcoin);
-        
+
         assert_eq!(result.balance.available, "100000000");
         assert_eq!(result.asset_id.chain, primitives::Chain::Bitcoin);
     }
