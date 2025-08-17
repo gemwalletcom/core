@@ -83,8 +83,12 @@ impl Client for ReqwestClient {
                         } else {
                             s.into_bytes()
                         }
-                    },
-                    _ => return Err(ClientError::Serialization("Expected string body for text/plain or binary content-type".to_string())),
+                    }
+                    _ => {
+                        return Err(ClientError::Serialization(
+                            "Expected string body for text/plain or binary content-type".to_string(),
+                        ))
+                    }
                 }
             }
             _ => serde_json::to_vec(body).map_err(|e| ClientError::Serialization(format!("Failed to serialize request: {e}")))?,

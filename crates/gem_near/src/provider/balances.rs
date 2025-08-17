@@ -5,8 +5,8 @@ use std::error::Error;
 use gem_client::Client;
 use primitives::AssetBalance;
 
-use crate::rpc::client::NearClient;
 use super::balances_mapper;
+use crate::rpc::client::NearClient;
 
 #[async_trait]
 impl<C: Client> ChainBalances for NearClient<C> {

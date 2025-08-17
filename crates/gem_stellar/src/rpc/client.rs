@@ -1,10 +1,10 @@
 use std::error::Error;
 
 use crate::models::account::StellarAccount;
-use crate::models::node::StellarNodeStatus;
-use crate::models::fee::StellarFees;
-use crate::models::transaction::{StellarTransactionBroadcast, StellarTransactionStatus};
 use crate::models::common::{StellarAsset, StellarEmbedded};
+use crate::models::fee::StellarFees;
+use crate::models::node::StellarNodeStatus;
+use crate::models::transaction::{StellarTransactionBroadcast, StellarTransactionStatus};
 
 use chain_traits::{ChainPerpetual, ChainStaking, ChainTraits};
 use gem_client::{Client, ContentType};
@@ -19,10 +19,7 @@ pub struct StellarClient<C: Client> {
 
 impl<C: Client> StellarClient<C> {
     pub fn new(client: C) -> Self {
-        Self { 
-            client, 
-            chain: Chain::Stellar 
-        }
+        Self { client, chain: Chain::Stellar }
     }
 
     pub fn get_chain(&self) -> Chain {
@@ -33,13 +30,9 @@ impl<C: Client> StellarClient<C> {
         Ok(self.client.get("/").await?)
     }
 
-
     pub async fn get_stellar_account(&self, address: &str) -> Result<StellarAccount, Box<dyn Error + Send + Sync>> {
         Ok(self.client.get(&format!("/accounts/{}", address)).await?)
     }
-
-
-
 
     pub async fn get_transaction_status(&self, transaction_id: &str) -> Result<StellarTransactionStatus, Box<dyn Error + Send + Sync>> {
         Ok(self.client.get(&format!("/transactions/{}", transaction_id)).await?)
@@ -52,17 +45,16 @@ impl<C: Client> StellarClient<C> {
     pub async fn broadcast_transaction(&self, data: &str) -> Result<StellarTransactionBroadcast, Box<dyn Error + Send + Sync>> {
         let encoded_data = urlencoding::encode(data);
         let body = format!("tx={}", encoded_data);
-        let headers = Some(HashMap::from([
-            ("Content-Type".to_string(), ContentType::ApplicationFormUrlEncoded.as_str().to_string())
-        ]));
-        
+        let headers = Some(HashMap::from([(
+            "Content-Type".to_string(),
+            ContentType::ApplicationFormUrlEncoded.as_str().to_string(),
+        )]));
+
         Ok(self.client.post("/transactions", &body, headers).await?)
     }
 
     pub async fn get_assets_by_issuer(&self, issuer: &str) -> Result<StellarEmbedded<StellarAsset>, Box<dyn Error + Send + Sync>> {
-        Ok(self.client
-            .get(&format!("/assets?asset_issuer={}&limit=200", issuer))
-            .await?)
+        Ok(self.client.get(&format!("/assets?asset_issuer={}&limit=200", issuer)).await?)
     }
 
     pub async fn get_account(&self, account_id: String) -> Result<super::model::Account, Box<dyn Error + Send + Sync>> {
@@ -76,7 +68,12 @@ impl<C: Client> StellarClient<C> {
         Ok(result._embedded.records)
     }
 
-    pub async fn get_block_payments(&self, block_number: i64, limit: usize, cursor: Option<String>) -> Result<Vec<super::model::Payment>, Box<dyn Error + Send + Sync>> {
+    pub async fn get_block_payments(
+        &self,
+        block_number: i64,
+        limit: usize,
+        cursor: Option<String>,
+    ) -> Result<Vec<super::model::Payment>, Box<dyn Error + Send + Sync>> {
         let cursor_param = cursor.unwrap_or_default();
         let url = format!("/ledgers/{}/payments?limit={}&include_failed=true&cursor={}", block_number, limit, cursor_param);
         let result: super::model::Embedded<super::model::Payment> = self.client.get(&url).await?;

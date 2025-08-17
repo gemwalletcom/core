@@ -3,7 +3,7 @@ use chain_traits::ChainTransactions;
 use std::error::Error;
 
 use gem_client::Client;
-use primitives::{TransactionStateRequest, TransactionUpdate, TransactionState};
+use primitives::{TransactionState, TransactionStateRequest, TransactionUpdate};
 
 use crate::rpc::client::NearClient;
 
@@ -15,15 +15,12 @@ impl<C: Client> ChainTransactions for NearClient<C> {
 
     async fn get_transaction_status(&self, request: TransactionStateRequest) -> Result<TransactionUpdate, Box<dyn Error + Sync + Send>> {
         let result = self.get_near_transaction_status(&request.id, &request.sender_address).await?;
-        
+
         let state = match result.final_execution_status.as_str() {
             "FINAL" => TransactionState::Confirmed,
             _ => TransactionState::Pending,
         };
-        
-        Ok(TransactionUpdate {
-            state,
-            changes: vec![],
-        })
+
+        Ok(TransactionUpdate { state, changes: vec![] })
     }
 }

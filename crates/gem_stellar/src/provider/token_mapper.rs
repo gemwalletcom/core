@@ -1,5 +1,5 @@
-use primitives::{Asset, AssetId, AssetType, Chain};
 use crate::models::common::StellarAsset;
+use primitives::{Asset, AssetId, AssetType, Chain};
 
 const STELLAR_TOKEN_DECIMALS: i32 = 7;
 
@@ -28,7 +28,7 @@ mod tests {
         };
         let token_id = "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN::USDC".to_string();
         let chain = Chain::Stellar;
-        
+
         let result = map_token_data(&stellar_asset, token_id, chain);
         assert_eq!(result.symbol, "USDC");
         assert_eq!(result.chain, Chain::Stellar);

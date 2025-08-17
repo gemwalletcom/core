@@ -1,5 +1,5 @@
-use std::error::Error;
 use serde_json::json;
+use std::error::Error;
 
 use crate::rpc::model::*;
 
@@ -15,10 +15,7 @@ pub struct XRPClient<C: Client> {
 
 impl<C: Client> XRPClient<C> {
     pub fn new(client: C) -> Self {
-        Self { 
-            client, 
-            chain: Chain::Xrp 
-        }
+        Self { client, chain: Chain::Xrp }
     }
 
     pub fn get_chain(&self) -> Chain {
@@ -35,9 +32,9 @@ impl<C: Client> XRPClient<C> {
                 }
             ]
         });
-        
+
         let result: LedgerResult<AccountInfoResult> = self.client.post("", &params, None).await?;
-        
+
         if let Some(account_data) = result.result.account_data {
             Ok(account_data)
         } else {
@@ -50,7 +47,7 @@ impl<C: Client> XRPClient<C> {
             "method": "ledger_current",
             "params": [{}]
         });
-        
+
         let result: LedgerResult<LedgerCurrent> = self.client.post("", &params, None).await?;
         Ok(result.result)
     }
@@ -65,7 +62,7 @@ impl<C: Client> XRPClient<C> {
             "method": "fee",
             "params": [{}]
         });
-        
+
         let result: LedgerResult<FeesResult> = self.client.post("", &params, None).await?;
         Ok(result.result)
     }
@@ -80,9 +77,9 @@ impl<C: Client> XRPClient<C> {
                 }
             ]
         });
-        
+
         let result: LedgerResult<TransactionBroadcast> = self.client.post("", &params, None).await?;
-        
+
         Ok(result.result)
     }
 
@@ -95,7 +92,7 @@ impl<C: Client> XRPClient<C> {
                 }
             ]
         });
-        
+
         let result: LedgerResult<TransactionStatus> = self.client.post("", &params, None).await?;
         Ok(result.result)
     }
@@ -111,11 +108,10 @@ impl<C: Client> XRPClient<C> {
                 }
             ]
         });
-        
+
         let result: LedgerResult<AccountObjects> = self.client.post("", &params, None).await?;
         Ok(result.result)
     }
-
 
     pub async fn get_block_transactions(&self, block_number: i64) -> Result<Ledger, Box<dyn Error + Send + Sync>> {
         let params = json!({
@@ -128,7 +124,7 @@ impl<C: Client> XRPClient<C> {
                 }
             ]
         });
-        
+
         let result: LedgerResult<LedgerData> = self.client.post("", &params, None).await?;
         Ok(result.result.ledger)
     }
@@ -145,7 +141,7 @@ impl<C: Client> XRPClient<C> {
                 }
             ]
         });
-        
+
         let result: LedgerResult<AccountLedger> = self.client.post("", &params, None).await?;
         Ok(result.result)
     }

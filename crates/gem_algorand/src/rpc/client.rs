@@ -19,9 +19,9 @@ pub struct AlgorandClient<C: Client> {
 
 impl<C: Client> AlgorandClient<C> {
     pub fn new(client: C) -> Self {
-        Self { 
-            client, 
-            chain: Chain::Algorand 
+        Self {
+            client,
+            chain: Chain::Algorand,
         }
     }
 
@@ -54,13 +54,14 @@ impl<C: Client> AlgorandClient<C> {
     }
 
     pub async fn broadcast_transaction(&self, data: &str) -> Result<super::model::TransactionBroadcast, Box<dyn Error + Send + Sync>> {
-        use std::collections::HashMap;
         use gem_client::ContentType;
-        
-        let headers = Some(HashMap::from([
-            ("Content-Type".to_string(), ContentType::ApplicationXBinary.as_str().to_string())
-        ]));
-        
+        use std::collections::HashMap;
+
+        let headers = Some(HashMap::from([(
+            "Content-Type".to_string(),
+            ContentType::ApplicationXBinary.as_str().to_string(),
+        )]));
+
         Ok(self.client.post("/v2/transactions", &data, headers).await?)
     }
 

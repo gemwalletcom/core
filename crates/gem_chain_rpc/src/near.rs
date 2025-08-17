@@ -4,8 +4,8 @@ use crate::{ChainAssetsProvider, ChainBlockProvider, ChainStakeProvider, ChainTo
 use async_trait::async_trait;
 use primitives::{chain::Chain, Asset, AssetBalance, Transaction};
 
-use gem_near::rpc::client::NearClient;
 use gem_client::Client;
+use gem_near::rpc::client::NearClient;
 
 pub struct NearProvider<C: Client> {
     client: NearClient<C>,

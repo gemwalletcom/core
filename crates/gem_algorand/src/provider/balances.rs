@@ -5,8 +5,8 @@ use std::error::Error;
 use gem_client::Client;
 use primitives::AssetBalance;
 
-use crate::rpc::client::AlgorandClient;
 use super::balances_mapper::{map_balance_coin, map_balance_tokens};
+use crate::rpc::client::AlgorandClient;
 
 #[async_trait]
 impl<C: Client> ChainBalances for AlgorandClient<C> {

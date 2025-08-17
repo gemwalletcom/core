@@ -5,8 +5,8 @@ use std::error::Error;
 use gem_client::Client;
 use primitives::FeePriorityValue;
 
-use crate::rpc::client::NearClient;
 use super::state_mapper;
+use crate::rpc::client::NearClient;
 
 #[async_trait]
 impl<C: Client> ChainState for NearClient<C> {

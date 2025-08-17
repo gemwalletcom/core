@@ -75,7 +75,7 @@ impl StellarMapper {
 
     pub fn map_balances(chain: Chain, account: StellarAccount) -> Vec<AssetBalance> {
         let mut balances = Vec::new();
-        
+
         for balance in account.balances {
             match balance.asset_type.as_str() {
                 "native" => {
@@ -86,7 +86,7 @@ impl StellarMapper {
                     }
                 }
                 "credit_alphanum4" | "credit_alphanum12" => {
-                    // Token balances  
+                    // Token balances
                     if let (Some(asset_issuer), Some(asset_code)) = (&balance.asset_issuer, &balance.asset_code) {
                         let token_id = format!("{}-{}", asset_code, asset_issuer);
                         let asset_id = AssetId::from_token(chain, &token_id);
@@ -101,7 +101,7 @@ impl StellarMapper {
                 }
             }
         }
-        
+
         balances
     }
 }

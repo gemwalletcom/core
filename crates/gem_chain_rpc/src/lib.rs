@@ -103,7 +103,6 @@ pub trait ChainStakeProvider: Send + Sync {
     }
 }
 
-
 pub struct MockChainBlockClient {
     pub chain: Chain,
 }
@@ -130,13 +129,13 @@ impl ChainBlockProvider for MockChainBlockClient {
 }
 
 #[async_trait]
-impl ChainAssetsProvider for MockChainBlockClient { }
+impl ChainAssetsProvider for MockChainBlockClient {}
 
 #[async_trait]
-impl ChainTokenDataProvider for MockChainBlockClient { }
+impl ChainTokenDataProvider for MockChainBlockClient {}
 
 #[async_trait]
-impl ChainTransactionsProvider for MockChainBlockClient { }
+impl ChainTransactionsProvider for MockChainBlockClient {}
 
 #[async_trait]
-impl ChainStakeProvider for MockChainBlockClient { }
+impl ChainStakeProvider for MockChainBlockClient {}

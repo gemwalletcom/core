@@ -1,3 +1,3 @@
-pub mod rpc;
-pub mod provider;
 pub mod models;
+pub mod provider;
+pub mod rpc;

@@ -11,7 +11,7 @@ use crate::rpc::client::AlgorandClient;
 impl<C: Client> ChainPreload for AlgorandClient<C> {
     async fn get_transaction_preload(&self, _input: TransactionPreloadInput) -> Result<TransactionPreload, Box<dyn Error + Sync + Send>> {
         let params = self.get_transactions_params().await?;
-        
+
         Ok(TransactionPreload {
             block_hash: params.genesis_hash,
             block_number: params.last_round,

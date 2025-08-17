@@ -1,10 +1,10 @@
 use std::error::Error;
 
-use crate::rpc::model::{AddressDetails, Transaction};
 use crate::models::account::BitcoinAccount;
 use crate::models::block::{BitcoinBlock, BitcoinNodeInfo};
 use crate::models::fee::BitcoinFeeResult;
 use crate::models::transaction::{BitcoinTransactionBroacastResult, BitcoinUTXO};
+use crate::rpc::model::{AddressDetails, Transaction};
 
 use super::model::{Block, Status};
 use chain_traits::{ChainPerpetual, ChainStaking, ChainToken, ChainTraits};

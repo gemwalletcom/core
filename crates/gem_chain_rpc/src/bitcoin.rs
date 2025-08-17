@@ -67,6 +67,5 @@ impl<C: Client> ChainTransactionsProvider for BitcoinProvider<C> {
     }
 }
 
-
 #[async_trait]
-impl<C: Client> ChainStakeProvider for BitcoinProvider<C> { }
+impl<C: Client> ChainStakeProvider for BitcoinProvider<C> {}

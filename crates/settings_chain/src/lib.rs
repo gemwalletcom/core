@@ -9,9 +9,9 @@ use reqwest_middleware::ClientBuilder;
 use reqwest_retry::{policies::ExponentialBackoff, RetryTransientMiddleware};
 
 use gem_chain_rpc::{
-    algorand::AlgorandProvider, bitcoin::BitcoinProvider, cardano::CardanoProvider, ethereum::EthereumProvider, near::NearProvider, solana::SolanaProvider, sui::SuiProvider,
-    ton::TonProvider, tron::TronProvider, xrp::XRPProvider, AptosProvider, ChainProvider, CosmosProvider, HyperCoreProvider, PolkadotProvider,
-    StellarProvider,
+    algorand::AlgorandProvider, bitcoin::BitcoinProvider, cardano::CardanoProvider, ethereum::EthereumProvider, near::NearProvider, solana::SolanaProvider,
+    sui::SuiProvider, ton::TonProvider, tron::TronProvider, xrp::XRPProvider, AptosProvider, ChainProvider, CosmosProvider, HyperCoreProvider,
+    PolkadotProvider, StellarProvider,
 };
 
 use gem_algorand::rpc::AlgorandClient;

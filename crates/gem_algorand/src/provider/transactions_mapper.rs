@@ -21,7 +21,7 @@ mod tests {
             tx_id: Some("G4MBO3DS7ACGA3XF5XD5Y52ZVJL6ZYROTCVB2I3BQHBYHTPQ7VOA".to_string()),
             message: None,
         };
-        
+
         let result = map_transaction_broadcast(&broadcast);
         assert_eq!(result, Ok("G4MBO3DS7ACGA3XF5XD5Y52ZVJL6ZYROTCVB2I3BQHBYHTPQ7VOA".to_string()));
     }

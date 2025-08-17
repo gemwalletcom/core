@@ -97,4 +97,4 @@ impl ChainTransactionsProvider for AptosProvider {
 }
 
 #[async_trait]
-impl ChainStakeProvider for AptosProvider { }
+impl ChainStakeProvider for AptosProvider {}

@@ -7,4 +7,3 @@ pub use account::*;
 pub use block::*;
 pub use fee::*;
 pub use transaction::*;
-

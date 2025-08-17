@@ -11,16 +11,17 @@ use crate::rpc::client::BitcoinClient;
 impl<C: Client> ChainPreload for BitcoinClient<C> {
     async fn get_transaction_preload(&self, input: TransactionPreloadInput) -> Result<TransactionPreload, Box<dyn Error + Sync + Send>> {
         let bitcoin_utxos = self.get_utxos(&input.sender_address).await?;
-        
-        let utxos: Vec<UTXO> = bitcoin_utxos.into_iter().map(|utxo| UTXO {
-            transaction_id: utxo.txid,
-            vout: utxo.vout,
-            value: utxo.value,
-            address: input.sender_address.clone(),
-        }).collect();
-        
-        Ok(TransactionPreload::builder()
-            .utxos(utxos)
-            .build())
+
+        let utxos: Vec<UTXO> = bitcoin_utxos
+            .into_iter()
+            .map(|utxo| UTXO {
+                transaction_id: utxo.txid,
+                vout: utxo.vout,
+                value: utxo.value,
+                address: input.sender_address.clone(),
+            })
+            .collect();
+
+        Ok(TransactionPreload::builder().utxos(utxos).build())
     }
 }
