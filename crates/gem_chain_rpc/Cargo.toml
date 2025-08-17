@@ -25,8 +25,8 @@ gem_bsc = { path = "../gem_bsc" }
 gem_solana = { path = "../gem_solana", features = ["rpc"] }
 gem_xrp = { path = "../gem_xrp", features = ["rpc", "reqwest"] }
 gem_algorand = { path = "../gem_algorand", features = ["rpc", "reqwest"] }
-gem_bitcoin = { path = "../gem_bitcoin" }
-gem_cardano = { path = "../gem_cardano" }
+gem_bitcoin = { path = "../gem_bitcoin", features = ["rpc", "reqwest"] }
+gem_cardano = { path = "../gem_cardano", features = ["rpc", "reqwest"] }
 gem_cosmos = { path = "../gem_cosmos", features = ["rpc"] }
 gem_near = { path = "../gem_near", features = ["rpc", "reqwest"] }
 gem_polkadot = { path = "../gem_polkadot", features = ["rpc"] }
