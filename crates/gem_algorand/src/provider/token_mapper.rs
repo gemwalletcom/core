@@ -1,7 +1,7 @@
 use primitives::{Asset, AssetId, AssetType, Chain};
 use crate::rpc::model::AssetInfo;
 
-pub fn map_asset_info_to_asset(asset_info: &AssetInfo, token_id: String, chain: Chain) -> Asset {
+pub fn map_token_data(asset_info: &AssetInfo, token_id: String, chain: Chain) -> Asset {
     Asset {
         id: AssetId {
             chain,
