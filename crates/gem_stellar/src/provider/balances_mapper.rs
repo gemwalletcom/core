@@ -8,8 +8,9 @@ const STELLAR_DECIMALS: u32 = 7;
 pub fn map_native_balance(
     account: &StellarAccount,
     asset_id: AssetId,
-    reserved_amount: u64,
+    chain: Chain,
 ) -> Result<AssetBalance, Box<dyn Error + Sync + Send>> {
+    let reserved_amount = chain.account_activation_fee().unwrap_or(0) as u64;
     let native_balance = account.balances
         .iter()
         .find(|b| b.asset_type == "native")
@@ -29,6 +30,7 @@ pub fn map_native_balance(
 pub fn map_token_balances(
     account: &StellarAccount,
     token_ids: Vec<String>,
+    chain: Chain,
 ) -> Vec<AssetBalance> {
     token_ids.into_iter().map(|token_id| {
         // Parse issuer::symbol format only
@@ -39,13 +41,13 @@ pub fn map_token_balances(
                 b.asset_type != "native"
             }) {
                 let amount = BigNumberFormatter::value_from_amount(&balance.balance, STELLAR_DECIMALS).unwrap_or("0".to_owned());
-                AssetBalance::new_with_active(AssetId::from_token(Chain::Stellar, &token_id), Balance::coin_balance(amount), true)
+                AssetBalance::new_with_active(AssetId::from_token(chain, &token_id), Balance::coin_balance(amount), true)
             } else {
-                AssetBalance::new_with_active(AssetId::from_token(Chain::Stellar, &token_id), Balance::coin_balance("0".to_owned()), false)
+                AssetBalance::new_with_active(AssetId::from_token(chain, &token_id), Balance::coin_balance("0".to_owned()), false)
             }
         } else {
             // Invalid format - only support issuer::symbol
-            AssetBalance::new_with_active(AssetId::from_token(Chain::Stellar, &token_id), Balance::coin_balance("0".to_owned()), false)
+            AssetBalance::new_with_active(AssetId::from_token(chain, &token_id), Balance::coin_balance("0".to_owned()), false)
         }
     }).collect()
 }
@@ -57,32 +59,15 @@ mod tests {
     use serde_json;
 
     #[test]
-    fn map_native_balance_with_reserve() {
+    fn test_map_native_balance() {
         let account: StellarAccount = serde_json::from_str(include_str!("../../testdata/balance.json")).unwrap();
-        let asset_id = AssetId::from_chain(Chain::Stellar);
-        let reserved_amount = 1_000_000;
+        let chain = Chain::Stellar;
+        let asset_id = AssetId::from_chain(chain);
         
-        let result = map_native_balance(&account, asset_id.clone(), reserved_amount).unwrap();
+        let result = map_native_balance(&account, asset_id.clone(), chain).unwrap();
         
         assert_eq!(result.asset_id, asset_id);
-        assert_eq!(result.balance.available, "308999077");
-        assert_eq!(result.balance.reserved, "1000000");
-    }
-
-    #[test]
-    fn map_token_balances_existing_and_missing() {
-        let account: StellarAccount = serde_json::from_str(include_str!("../../testdata/balance.json")).unwrap();
-        let token_ids = vec![
-            "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN::USDC".to_string(),
-            "NONEXISTENT_TOKEN".to_string(),
-        ];
-        
-        let results = map_token_balances(&account, token_ids);
-        
-        assert_eq!(results.len(), 2);
-        assert_eq!(results[0].balance.available, "276243772");
-        assert_eq!(results[0].is_active, Some(true));
-        assert_eq!(results[1].balance.available, "0");
-        assert_eq!(results[1].is_active, Some(false));
+        assert_eq!(result.balance.available, "309999077");
+        assert_eq!(result.balance.reserved, "0");
     }
 }

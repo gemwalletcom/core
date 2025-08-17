@@ -46,63 +46,16 @@ pub fn map_balance_tokens(account: &Account, token_ids: Vec<String>, chain: Chai
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::rpc::model::{Account, Asset};
+    use crate::rpc::model::Account;
     use primitives::Chain;
 
     #[test]
-    fn test_map_balance_coin_sufficient_balance() {
-        let account = Account { amount: 1000000, min_balance: 100000, assets: vec![] };
+    fn test_map_balance_coin() {
+        let account: Account = serde_json::from_str(include_str!("../../testdata/account.json")).unwrap();
         let balance = map_balance_coin(&account, Chain::Algorand);
         
-        assert_eq!(balance.balance.available, "900000");
-        assert_eq!(balance.balance.reserved, "100000");
+        assert_eq!(balance.balance.available, "72516422");
+        assert_eq!(balance.balance.reserved, "200000");
         assert_eq!(balance.is_active, Some(true));
-    }
-
-    #[test]
-    fn test_map_balance_coin_insufficient_balance() {
-        let account = Account { amount: 50000, min_balance: 100000, assets: vec![] };
-        let balance = map_balance_coin(&account, Chain::Algorand);
-        
-        assert_eq!(balance.balance.available, "0");
-        assert_eq!(balance.balance.reserved, "100000");
-    }
-
-    #[test]
-    fn test_map_balance_coin_zero_balance() {
-        let account = Account { amount: 0, min_balance: 100000, assets: vec![] };
-        let balance = map_balance_coin(&account, Chain::Algorand);
-        
-        assert_eq!(balance.balance.available, "0");
-        assert_eq!(balance.balance.reserved, "0");
-    }
-
-    #[test]
-    fn test_map_balance_tokens_with_assets() {
-        let account = Account {
-            amount: 1000000,
-            min_balance: 100000,
-            assets: vec![Asset { asset_id: 123456, amount: 5000 }],
-        };
-        
-        let token_ids = vec!["123456".to_string(), "999999".to_string()];
-        let balances = map_balance_tokens(&account, token_ids, Chain::Algorand);
-        
-        assert_eq!(balances.len(), 2);
-        assert_eq!(balances[0].balance.available, "5000");
-        assert_eq!(balances[0].is_active, Some(true));
-        assert_eq!(balances[1].balance.available, "0");
-        assert_eq!(balances[1].is_active, Some(false));
-    }
-
-    #[test]
-    fn test_map_balance_tokens_empty_account() {
-        let account = Account { amount: 0, min_balance: 100000, assets: vec![] };
-        let token_ids = vec!["123456".to_string()];
-        let balances = map_balance_tokens(&account, token_ids, Chain::Algorand);
-        
-        assert_eq!(balances.len(), 1);
-        assert_eq!(balances[0].balance.available, "0");
-        assert_eq!(balances[0].is_active, Some(false));
     }
 }

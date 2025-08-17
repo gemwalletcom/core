@@ -6,6 +6,7 @@ use gem_client::Client;
 use primitives::{AssetBalance, BitcoinChain};
 
 use crate::rpc::client::BitcoinClient;
+use super::balances_mapper::map_balance_coin;
 
 impl<C: Client> BitcoinClient<C> {
     fn full_address(&self, address: &str) -> String {
@@ -21,7 +22,7 @@ impl<C: Client> ChainBalances for BitcoinClient<C> {
     async fn get_balance_coin(&self, address: String) -> Result<AssetBalance, Box<dyn Error + Sync + Send>> {
         let full_address = self.full_address(&address);
         let account = self.get_balance(&full_address).await?;
-        Ok(AssetBalance::new(self.chain.get_chain().as_asset_id(), account.balance))
+        Ok(map_balance_coin(&account, self.chain))
     }
 
     async fn get_balance_tokens(&self, _address: String, _token_ids: Vec<String>) -> Result<Vec<AssetBalance>, Box<dyn Error + Sync + Send>> {

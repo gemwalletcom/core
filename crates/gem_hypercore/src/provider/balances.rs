@@ -4,9 +4,10 @@ use std::error::Error;
 
 use gem_client::Client;
 use number_formatter::BigNumberFormatter;
-use primitives::{AssetBalance, Balance};
+use primitives::AssetBalance;
 
 use crate::rpc::client::HyperCoreClient;
+use super::balances_mapper::{map_balance_coin, map_balance_staking};
 
 #[async_trait]
 impl<C: Client> ChainBalances for HyperCoreClient<C> {
@@ -20,7 +21,7 @@ impl<C: Client> ChainBalances for HyperCoreClient<C> {
             .ok_or("not found")?
             .total;
         let available: String = BigNumberFormatter::value_from_amount(&total, 18)?;
-        Ok(AssetBalance::new(self.chain.as_asset_id(), available))
+        Ok(map_balance_coin(available, self.chain))
     }
 
     async fn get_balance_tokens(&self, _address: String, _token_ids: Vec<String>) -> Result<Vec<AssetBalance>, Box<dyn Error + Sync + Send>> {
@@ -29,12 +30,6 @@ impl<C: Client> ChainBalances for HyperCoreClient<C> {
 
     async fn get_balance_staking(&self, address: String) -> Result<Option<AssetBalance>, Box<dyn Error + Sync + Send>> {
         let balance = self.get_stake_balance(&address).await?;
-        let available = BigNumberFormatter::value_from_amount(&balance.delegated, 18)?;
-        let pending = BigNumberFormatter::value_from_amount(&balance.total_pending_withdrawal, 18)?;
-
-        Ok(Some(AssetBalance::new_balance(
-            self.chain.as_asset_id(),
-            Balance::stake_balance(available, pending, None),
-        )))
+        Ok(Some(map_balance_staking(&balance, self.chain)?))
     }
 }

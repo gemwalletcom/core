@@ -14,8 +14,7 @@ impl<C: Client> ChainState for CardanoClient<C> {
     }
 
     async fn get_block_number(&self) -> Result<u64, Box<dyn Error + Sync + Send>> {
-        let block_number = self.get_latest_block().await?;
-        Ok(block_number as u64)
+        Ok(self.get_latest_block().await? as u64)
     }
 
     async fn get_fees(&self) -> Result<Vec<FeePriorityValue>, Box<dyn Error + Sync + Send>> {
