@@ -38,6 +38,11 @@ impl CoinGeckoClient {
         }
     }
 
+    pub fn new_with_reqwest_client(reqwest_client: reqwest::Client, api_key: &str) -> Self {
+        let client = ClientBuilder::new(reqwest_client).build();
+        Self::new_with_client_middleware(client, api_key)
+    }
+
     fn url_for_api_key(api_key: String) -> String {
         if !api_key.is_empty() {
             return COINGECKO_API_PRO_URL.to_string();

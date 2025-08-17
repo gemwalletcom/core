@@ -6,7 +6,7 @@ use gem_jsonrpc::JsonRpcClient;
 pub use provider_config::ProviderConfig;
 
 use reqwest_middleware::ClientBuilder;
-use reqwest_retry::{policies::ExponentialBackoff, RetryTransientMiddleware};
+use reqwest::{retry, StatusCode};
 
 use gem_chain_rpc::{
     algorand::AlgorandProvider, bitcoin::BitcoinProvider, cardano::CardanoProvider, ethereum::EthereumProvider, near::NearProvider, solana::SolanaProvider,
@@ -55,10 +55,31 @@ impl ProviderFactory {
     }
 
     pub fn new_provider(config: ProviderConfig) -> Box<dyn ChainProvider> {
-        let retry_policy = ExponentialBackoff::builder().build_with_max_retries(3);
-        let reqwest_client = reqwest::Client::new();
+        let host = config.url.parse::<url::Url>()
+            .ok()
+            .and_then(|u| u.host_str().map(String::from))
+            .unwrap_or_default();
+            
+        let retry_policy = retry::for_host(host)
+            .max_retries_per_request(3)
+            .classify_fn(|req_rep| {
+                match req_rep.status() {
+                    Some(StatusCode::TOO_MANY_REQUESTS) | 
+                    Some(StatusCode::INTERNAL_SERVER_ERROR) |
+                    Some(StatusCode::BAD_GATEWAY) |
+                    Some(StatusCode::SERVICE_UNAVAILABLE) |
+                    Some(StatusCode::GATEWAY_TIMEOUT) => req_rep.retryable(),
+                    None => req_rep.retryable(), // Network errors
+                    _ => req_rep.success(),
+                }
+            });
+            
+        let reqwest_client = reqwest::Client::builder()
+            .retry(retry_policy)
+            .build()
+            .expect("Failed to build reqwest client");
+            
         let client = ClientBuilder::new(reqwest_client.clone())
-            .with(RetryTransientMiddleware::new_with_policy(retry_policy))
             .build();
         let chain = config.chain;
         let url = config.url;
@@ -116,7 +137,7 @@ impl ProviderFactory {
                 Box::new(TronProvider::new(client, Box::new(grid_client.clone()), Box::new(grid_client.clone())))
             }
             Chain::Aptos => Box::new(AptosProvider::new(AptosClient::new(client, url))),
-            Chain::Sui => Box::new(SuiProvider::new(SuiClient::new(JsonRpcClient::new_with_client(url, client)))),
+            Chain::Sui => Box::new(SuiProvider::new(SuiClient::new(JsonRpcClient::new(url, gem_client.clone())))),
             Chain::Xrp => Box::new(XRPProvider::new(XRPClient::new(gem_client))),
             Chain::Cardano => Box::new(CardanoProvider::new(CardanoClient::new(gem_client))),
             Chain::Algorand => Box::new(AlgorandProvider::new(AlgorandClient::new(gem_client))),

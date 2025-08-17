@@ -64,9 +64,8 @@ serde_with = "3.14.0"
 serde_json = { version = "1.0.140", features = ["preserve_order"] }
 serde_urlencoded = { version = "0.7.1" }
 tokio = { version = "1.47.0", features = ["macros", "rt-multi-thread"] }
-reqwest = { version = "0.12.20", features = ["json"] }
+reqwest = { version = "0.12.23", features = ["json"] }
 reqwest-middleware = { version = "0.4.2" }
-reqwest-retry = { version = "0.7.0" }
 reqwest-enum = { version = "0.4.0", features = ["jsonrpc"] }
 idna = "1.0.3"
 url = { version = "2.5.4" }

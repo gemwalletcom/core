@@ -29,7 +29,7 @@ pub struct AllDomainsClient {
 impl AllDomainsClient {
     pub fn new(url: String) -> Self {
         Self {
-            client: JsonRpcClient::new(url).expect("Failed to create JsonRpcClient"),
+            client: JsonRpcClient::new_reqwest(url),
         }
     }
 

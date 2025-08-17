@@ -25,7 +25,7 @@ pub struct Hyperliquid {
 
 impl Hyperliquid {
     pub fn new(provider_url: String) -> Self {
-        let client = JsonRpcClient::new(provider_url).expect("Invalid HyperEVM node URL");
+        let client = JsonRpcClient::new_reqwest(provider_url);
         let router_address = Address::from_str(ROUTER_ADDRESS).expect("Invalid Router address");
         let hyperliquid_names_address = Address::from_str(HYPERLIQUID_NAMES_ADDRESS).expect("Invalid Hyperliquid names address");
         Self {

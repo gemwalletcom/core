@@ -22,7 +22,7 @@ pub struct Basenames {
 
 impl Basenames {
     pub fn new(provider_url: String) -> Self {
-        let client = JsonRpcClient::new(provider_url).expect("Invalid provider URL");
+        let client = JsonRpcClient::new_reqwest(provider_url);
         let resolver_address = Address::from_str(L2_RESOLVER_ADDRESS).expect("Invalid resolver address");
         Self {
             client,
