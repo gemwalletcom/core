@@ -6,7 +6,8 @@ edition = { workspace = true }
 [features]
 default = ["types"]
 types = []
-client = ["dep:reqwest", "dep:reqwest-middleware", "dep:reqwest-retry"]
+client = ["dep:gem_client"]
+reqwest = ["client", "gem_client/reqwest", "dep:reqwest"]
 
 [dependencies]
 serde = { workspace = true }
@@ -15,6 +16,5 @@ async-trait = { workspace = true }
 thiserror = { workspace = true }
 anyhow = { workspace = true }
 
-reqwest-middleware = { workspace = true, features = ["json"], optional = true }
-reqwest = { workspace = true, features = ["json"], optional = true }
-reqwest-retry = { workspace = true, optional = true }
+gem_client = { path = "../gem_client", optional = true }
+reqwest = { workspace = true, optional = true }

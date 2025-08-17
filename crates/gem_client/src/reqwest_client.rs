@@ -3,7 +3,7 @@ use async_trait::async_trait;
 use serde::{de::DeserializeOwned, Serialize};
 use std::{collections::HashMap, str::FromStr};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ReqwestClient {
     base_url: String,
     client: reqwest::Client,

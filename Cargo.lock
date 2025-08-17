@@ -3051,9 +3051,8 @@ version = "1.0.0"
 dependencies = [
  "anyhow",
  "async-trait",
+ "gem_client",
  "reqwest",
- "reqwest-middleware",
- "reqwest-retry",
  "serde",
  "serde_json",
  "thiserror 2.0.12",

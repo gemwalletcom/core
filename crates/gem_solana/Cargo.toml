@@ -7,6 +7,7 @@ edition = { workspace = true }
 default = []
 typeshare = ["dep:typeshare"]
 rpc = ["gem_jsonrpc/client", "dep:async-trait"]
+reqwest = ["gem_jsonrpc/reqwest"]
 
 [dependencies]
 curve25519-dalek = { workspace = true }

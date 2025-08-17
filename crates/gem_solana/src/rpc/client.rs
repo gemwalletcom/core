@@ -5,21 +5,29 @@ use crate::{
     },
     pubkey::Pubkey,
 };
+#[cfg(feature = "reqwest")]
 use gem_jsonrpc::{
     types::{JsonRpcError, JsonRpcRequest, JsonRpcResult},
     JsonRpcClient,
+};
+
+#[cfg(not(feature = "reqwest"))]
+use gem_jsonrpc::{
+    types::{JsonRpcError, JsonRpcRequest, JsonRpcResult},
 };
 use serde::de::DeserializeOwned;
 use serde_json::json;
 use std::{error::Error, fmt::Debug, str::FromStr};
 
+#[cfg(feature = "reqwest")]
 pub struct SolanaClient {
     client: JsonRpcClient,
 }
 
+#[cfg(feature = "reqwest")]
 impl SolanaClient {
     pub fn new(url: &str) -> Self {
-        let client = JsonRpcClient::new(url.to_string()).unwrap();
+        let client = JsonRpcClient::new_reqwest(url.to_string());
 
         Self { client }
     }

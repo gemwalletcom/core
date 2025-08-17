@@ -19,10 +19,10 @@ number_formatter = { path = "../number_formatter" }
 gem_ton = { path = "../gem_ton", features = ["rpc"] }
 gem_tron = { path = "../gem_tron", features = ["rpc"] }
 gem_aptos = { path = "../gem_aptos", features = ["rpc"] }
-gem_sui = { path = "../gem_sui", features = ["rpc"] }
-gem_evm = { path = "../gem_evm", features = ["rpc"] }
+gem_sui = { path = "../gem_sui", features = ["rpc", "reqwest"] }
+gem_evm = { path = "../gem_evm", features = ["rpc", "reqwest"] }
 gem_bsc = { path = "../gem_bsc" }
-gem_solana = { path = "../gem_solana", features = ["rpc"] }
+gem_solana = { path = "../gem_solana", features = ["rpc", "reqwest"] }
 gem_xrp = { path = "../gem_xrp", features = ["rpc", "reqwest"] }
 gem_algorand = { path = "../gem_algorand", features = ["rpc", "reqwest"] }
 gem_bitcoin = { path = "../gem_bitcoin", features = ["rpc", "reqwest"] }
