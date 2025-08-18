@@ -16,7 +16,6 @@ static USER_AGENT_VALUE: HeaderValue =
 #[derive(Clone)]
 pub struct CoinGeckoClient {
     client: ReqwestClient,
-    api_key: String,
 }
 
 impl CoinGeckoClient {
@@ -24,19 +23,13 @@ impl CoinGeckoClient {
         let reqwest_client = Self::build_reqwest_client(api_key);
         let url = Self::url_for_api_key(api_key.to_string());
         let client = ReqwestClient::new(url, reqwest_client);
-        Self {
-            client,
-            api_key: api_key.to_string(),
-        }
+        Self { client }
     }
 
     pub fn new_with_reqwest_client(reqwest_client: reqwest::Client, api_key: &str) -> Self {
         let url = Self::url_for_api_key(api_key.to_string());
         let client = ReqwestClient::new(url, reqwest_client);
-        Self {
-            client,
-            api_key: api_key.to_string(),
-        }
+        Self { client }
     }
 
     fn build_reqwest_client(api_key: &str) -> reqwest::Client {
