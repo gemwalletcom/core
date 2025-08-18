@@ -13,7 +13,7 @@ pub struct TransactionPreload {
     pub block_hash: String,
     pub block_number: i64,
     pub utxos: Vec<UTXO>,
-    pub sequence: i64,
+    pub sequence: u64,
     pub chain_id: String,
     pub is_destination_address_exist: bool,
 }
@@ -42,7 +42,7 @@ pub struct TransactionPreloadBuilder {
     block_hash: String,
     block_number: i64,
     utxos: Vec<UTXO>,
-    sequence: i64,
+    sequence: u64,
     chain_id: String,
     is_destination_address_exist: bool,
 }
@@ -63,7 +63,7 @@ impl TransactionPreloadBuilder {
         self
     }
 
-    pub fn sequence(mut self, sequence: i64) -> Self {
+    pub fn sequence(mut self, sequence: u64) -> Self {
         self.sequence = sequence;
         self
     }

@@ -1,0 +1,76 @@
+use std::error::Error;
+use crate::model::Transaction;
+use primitives::{TransactionUpdate, TransactionState, TransactionChange};
+
+pub fn map_transaction_state(
+    transaction: &Transaction,
+) -> Result<TransactionUpdate, Box<dyn Error + Sync + Send>> {
+    let state = if transaction.success {
+        TransactionState::Confirmed
+    } else {
+        TransactionState::Reverted
+    };
+
+    let mut changes = Vec::new();
+
+    if let (Some(gas_used), Some(gas_unit_price)) = (transaction.gas_used, transaction.gas_unit_price) {
+        let fee = gas_used * gas_unit_price;
+        changes.push(TransactionChange::NetworkFee(fee.to_string()));
+    }
+
+    Ok(TransactionUpdate {
+        state,
+        changes,
+    })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::model::Transaction;
+
+    #[test]
+    fn test_map_transaction_state_success() {
+        let transaction = Transaction {
+            hash: "0x123".to_string(),
+            sender: Some("0xabc".to_string()),
+            success: true,
+            gas_used: Some("1000".to_string()),
+            gas_unit_price: Some("100".to_string()),
+            events: None,
+            transaction_type: "user_transaction".to_string(),
+            sequence_number: Some("1".to_string()),
+            timestamp: 1234567890,
+        };
+
+        let result = map_transaction_state(&transaction).unwrap();
+        
+        assert_eq!(result.state, TransactionState::Confirmed);
+        assert_eq!(result.changes.len(), 1);
+        if let TransactionChange::NetworkFee(fee) = &result.changes[0] {
+            assert_eq!(fee, "100000");
+        } else {
+            panic!("Expected NetworkFee change");
+        }
+    }
+
+    #[test]
+    fn test_map_transaction_state_reverted() {
+        let transaction = Transaction {
+            hash: "0x123".to_string(),
+            sender: Some("0xabc".to_string()),
+            success: false,
+            gas_used: Some("500".to_string()),
+            gas_unit_price: Some("50".to_string()),
+            events: None,
+            transaction_type: "user_transaction".to_string(),
+            sequence_number: Some("1".to_string()),
+            timestamp: 1234567890,
+        };
+
+        let result = map_transaction_state(&transaction).unwrap();
+        
+        assert_eq!(result.state, TransactionState::Reverted);
+        assert_eq!(result.changes.len(), 1);
+    }
+}

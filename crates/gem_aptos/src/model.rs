@@ -1,10 +1,12 @@
 use super::constants::{STAKE_DEPOSIT_EVENT, STAKE_WITHDRAW_EVENT};
 use serde::{Deserialize, Serialize};
-use serde_serializers::deserialize_u64_from_str;
+use serde_serializers::{deserialize_u64_from_str, deserialize_option_u64_from_str};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Ledger {
-    pub block_height: String,
+    pub chain_id: i32,
+    #[serde(deserialize_with = "deserialize_u64_from_str")]
+    pub ledger_version: u64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -15,16 +17,18 @@ pub struct Block {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Transaction {
-    pub hash: String,
+    pub hash: Option<String>,
     pub sender: Option<String>,
     pub success: bool,
-    pub gas_used: Option<String>,
-    pub gas_unit_price: Option<String>,
+    #[serde(default, deserialize_with = "deserialize_option_u64_from_str")]
+    pub gas_used: Option<u64>,
+    #[serde(default, deserialize_with = "deserialize_option_u64_from_str")]
+    pub gas_unit_price: Option<u64>,
     pub events: Option<Vec<Event>>,
-    #[serde(rename = "type")]
-    pub transaction_type: String,
+    #[serde(rename = "type", default)]
+    pub transaction_type: Option<String>,
     pub sequence_number: Option<String>,
-    #[serde(deserialize_with = "deserialize_u64_from_str")]
+    #[serde(default, deserialize_with = "deserialize_u64_from_str")]
     pub timestamp: u64,
 }
 
@@ -71,16 +75,18 @@ pub struct TransactionPayload {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Resource<T> {
     #[serde(rename = "type")]
-    pub resource_type: String,
+    pub type_field: String,
     pub data: T,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(untagged)]
-pub enum ResourceData {
-    CoinStore(CoinStore),
-    CoinInfo(CoinInfo),
-    Other(serde_json::Value),
+pub struct ResourceData {
+    pub coin: Option<CoinData>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CoinData {
+    pub value: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -98,4 +104,55 @@ pub struct CoinInfo {
     pub decimals: u8,
     pub name: String,
     pub symbol: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Account {
+    #[serde(deserialize_with = "deserialize_u64_from_str")]
+    pub sequence_number: u64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TransactionResponse {
+    pub hash: Option<String>,
+    pub message: Option<String>,
+    pub error_code: Option<String>,
+    pub vm_error_code: Option<u64>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GasFee {
+    pub deprioritized_gas_estimate: u64,
+    pub gas_estimate: u64,
+    pub prioritized_gas_estimate: u64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SubmitTransactionRequest {
+    pub sender: String,
+    pub sequence_number: String,
+    pub max_gas_amount: String,
+    pub gas_unit_price: String,
+    pub expiration_timestamp_secs: String,
+    pub payload: TransactionPayload,
+    pub signature: TransactionSignature,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TransactionSignature {
+    #[serde(rename = "type")]
+    pub signature_type: String,
+    pub public_key: Option<String>,
+    pub signature: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TransactionSimulation {
+    pub expiration_timestamp_secs: String,
+    pub gas_unit_price: String,
+    pub max_gas_amount: String,
+    pub payload: TransactionPayload,
+    pub sender: String,
+    pub sequence_number: String,
+    pub signature: TransactionSignature,
 }

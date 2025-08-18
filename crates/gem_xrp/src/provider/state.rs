@@ -16,7 +16,7 @@ impl<C: Client> ChainState for XRPClient<C> {
         Ok(self.get_ledger_current().await?.ledger_current_index as u64)
     }
 
-    async fn get_fees(&self) -> Result<Vec<FeePriorityValue>, Box<dyn Error + Sync + Send>> {
+    async fn get_fee_rates(&self) -> Result<Vec<FeePriorityValue>, Box<dyn Error + Sync + Send>> {
         let fees = self.get_fees().await?;
 
         let minimum_fee = fees.drops.minimum_fee;

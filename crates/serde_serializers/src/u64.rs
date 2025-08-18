@@ -33,3 +33,44 @@ where
         _ => Err(de::Error::custom("u64 must be a number or a string")),
     }
 }
+
+pub fn deserialize_option_u64_from_str<'de, D>(deserializer: D) -> Result<Option<u64>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let s: Option<String> = Option::deserialize(deserializer)?;
+    match s {
+        Some(str_val) => str_val.parse::<u64>().map(Some).map_err(serde::de::Error::custom),
+        None => Ok(None),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde::{Deserialize, Serialize};
+
+    #[derive(Debug, Serialize, Deserialize, PartialEq)]
+    struct TestStruct {
+        #[serde(default, deserialize_with = "deserialize_option_u64_from_str")]
+        pub gas_used: Option<u64>,
+    }
+
+    #[test]
+    fn test_deserialize_option_u64_from_str() {
+        // Test with string value
+        let json = r#"{"gas_used": "123"}"#;
+        let result: TestStruct = serde_json::from_str(json).unwrap();
+        assert_eq!(result.gas_used, Some(123));
+
+        // Test with null value
+        let json = r#"{"gas_used": null}"#;
+        let result: TestStruct = serde_json::from_str(json).unwrap();
+        assert_eq!(result.gas_used, None);
+
+        // Test with missing field (should use default)
+        let json = r#"{}"#;
+        let result: TestStruct = serde_json::from_str(json).unwrap();
+        assert_eq!(result.gas_used, None);
+    }
+}

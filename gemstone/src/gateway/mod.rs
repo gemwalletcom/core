@@ -2,6 +2,7 @@ use crate::gateway::models::asset::GemAsset;
 use crate::network::{AlienClient, AlienProvider};
 use chain_traits::ChainTraits;
 use gem_algorand::rpc::client::AlgorandClient;
+use gem_aptos::rpc::client::AptosClient;
 use gem_bitcoin::rpc::client::BitcoinClient;
 use gem_cardano::rpc::client::CardanoClient;
 use gem_hypercore::rpc::client::HyperCoreClient;
@@ -34,6 +35,7 @@ impl GemGateway {
             Chain::Xrp => Ok(Arc::new(XRPClient::new(alien_client))),
             Chain::Algorand => Ok(Arc::new(AlgorandClient::new(alien_client))),
             Chain::Near => Ok(Arc::new(NearClient::new(alien_client))),
+            Chain::Aptos => Ok(Arc::new(AptosClient::new(alien_client))),
             _ => Err(GatewayError::InvalidChain(chain.to_string())),
         }
     }
@@ -137,11 +139,11 @@ impl GemGateway {
         Ok(block_number)
     }
 
-    pub async fn get_fees(&self, chain: Chain) -> Result<Vec<GemFeePriorityValue>, GatewayError> {
+    pub async fn get_fee_rates(&self, chain: Chain) -> Result<Vec<GemFeePriorityValue>, GatewayError> {
         let fees = self
             .provider(chain)
             .await?
-            .get_fees()
+            .get_fee_rates()
             .await
             .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
         Ok(fees.into_iter().map(|f| f.into()).collect())
@@ -165,6 +167,17 @@ impl GemGateway {
             .await
             .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
         Ok(preload.into())
+    }
+    
+    pub async fn get_transaction_load(&self, chain: Chain, input: GemTransactionLoadInput) -> Result<GemTransactionData, GatewayError> {
+        let load_data = self
+            .provider(chain)
+            .await?
+            .get_transaction_load(input.clone().into())
+            .await
+            .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
+        
+        Ok(models::transaction::map_transaction_load_data(load_data, &input))
     }
 
     pub async fn get_positions(&self, chain: Chain, address: String) -> Result<GemPerpetualPositionsSummary, GatewayError> {

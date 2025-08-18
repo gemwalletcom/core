@@ -2,7 +2,6 @@ use crate::{Transaction as AptosTransaction, STAKE_DEPOSIT_EVENT};
 use chrono::DateTime;
 use num_bigint::BigUint;
 use primitives::{Chain, Transaction, TransactionState, TransactionType};
-use std::str::FromStr;
 
 pub struct AptosMapper;
 
@@ -20,7 +19,7 @@ impl AptosMapper {
     pub fn map_transaction(chain: Chain, transaction: AptosTransaction) -> Option<Transaction> {
         let events = transaction.clone().events.unwrap_or_default();
 
-        if transaction.transaction_type == "user_transaction" && events.len() <= 4 {
+        if transaction.transaction_type.as_deref() == Some("user_transaction") && events.len() <= 4 {
             let deposit_event = events.iter().find(|x| x.event_type == STAKE_DEPOSIT_EVENT)?;
 
             let asset_id = chain.as_asset_id();
@@ -31,13 +30,13 @@ impl AptosMapper {
             };
             let to = &deposit_event.guid.account_address;
             let value = &deposit_event.get_amount()?;
-            let gas_used = BigUint::from_str(transaction.gas_used.unwrap_or_default().as_str()).unwrap_or_default();
-            let gas_unit_price = BigUint::from_str(transaction.gas_unit_price.unwrap_or_default().as_str()).unwrap_or_default();
+            let gas_used = BigUint::from(transaction.gas_used.unwrap_or_default());
+            let gas_unit_price = BigUint::from(transaction.gas_unit_price.unwrap_or_default());
             let fee = gas_used * gas_unit_price;
             let created_at = DateTime::from_timestamp_micros(transaction.timestamp as i64)?;
 
             let transaction = Transaction::new(
-                transaction.hash,
+                transaction.hash.unwrap_or_default(),
                 asset_id.clone(),
                 transaction.sender.unwrap_or_default(),
                 to.clone(),

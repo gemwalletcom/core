@@ -1529,6 +1529,7 @@ name = "chain_traits"
 version = "1.0.0"
 dependencies = [
  "async-trait",
+ "num-bigint",
  "primitives",
 ]
 
@@ -2871,14 +2872,14 @@ version = "1.0.0"
 dependencies = [
  "anyhow",
  "async-trait",
+ "chain_traits",
  "chrono",
+ "gem_client",
  "num-bigint",
  "primitives",
- "reqwest-middleware",
  "serde",
  "serde_json",
  "serde_serializers",
- "typeshare",
  "url",
 ]
 
@@ -5212,6 +5213,7 @@ version = "1.0.0"
 dependencies = [
  "anyhow",
  "chrono",
+ "num-bigint",
  "serde",
  "serde_json",
  "strum",

@@ -16,7 +16,7 @@ impl<C: Client> ChainPreload for AlgorandClient<C> {
             block_hash: params.genesis_hash,
             block_number: params.last_round,
             utxos: vec![],
-            sequence: params.last_round,
+            sequence: params.last_round as u64,
             chain_id: params.genesis_id,
             is_destination_address_exist: true,
         })

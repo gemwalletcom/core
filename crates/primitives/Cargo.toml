@@ -13,3 +13,4 @@ strum_macros = { workspace = true }
 anyhow = { workspace = true }
 urlencoding = { workspace = true }
 url = { workspace = true }
+num-bigint = { workspace = true }

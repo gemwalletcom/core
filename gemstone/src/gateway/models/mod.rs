@@ -40,7 +40,7 @@ pub struct GemTransactionPreload {
     pub block_hash: String,
     pub block_number: i64,
     pub utxos: Vec<GemUTXO>,
-    pub sequence: i64,
+    pub sequence: u64,
     pub chain_id: String,
     pub is_destination_address_exist: bool,
 }
@@ -51,6 +51,17 @@ impl From<UTXO> for GemUTXO {
         Self {
             transaction_id: utxo.transaction_id,
             vout: utxo.vout as u32,
+            value: utxo.value,
+            address: utxo.address,
+        }
+    }
+}
+
+impl From<GemUTXO> for UTXO {
+    fn from(utxo: GemUTXO) -> Self {
+        Self {
+            transaction_id: utxo.transaction_id,
+            vout: utxo.vout as i32,
             value: utxo.value,
             address: utxo.address,
         }

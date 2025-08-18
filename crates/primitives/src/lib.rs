@@ -142,4 +142,6 @@ pub use self::delegation::{Delegation, DelegationBase, DelegationState, Delegati
 pub mod transaction_update;
 pub use self::transaction_update::{TransactionChange, TransactionMetadata, TransactionStateRequest, TransactionUpdate};
 pub mod transaction_preload;
-pub use self::transaction_preload::{TransactionPreload, TransactionPreloadBuilder, TransactionPreloadInput};
+pub use self::transaction_preload::{TransactionPreload, TransactionPreloadInput, TransactionPreloadBuilder};
+pub mod transaction_load;
+pub use self::transaction_load::{TransactionLoadInput, TransactionLoadData, TransactionInputType, GasPrice, TransactionFee};

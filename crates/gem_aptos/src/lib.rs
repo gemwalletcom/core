@@ -6,5 +6,8 @@ pub use model::*;
 #[cfg(feature = "rpc")]
 pub mod rpc;
 
-#[cfg(feature = "typeshare")]
-pub mod typeshare;
+#[cfg(feature = "rpc")]
+pub mod provider;
+
+#[cfg(feature = "rpc")]
+pub use rpc::client::AptosClient;

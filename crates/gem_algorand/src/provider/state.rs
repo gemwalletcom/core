@@ -17,7 +17,7 @@ impl<C: Client> ChainState for AlgorandClient<C> {
         Ok(self.get_transactions_params().await?.last_round as u64)
     }
 
-    async fn get_fees(&self) -> Result<Vec<FeePriorityValue>, Box<dyn Error + Sync + Send>> {
+    async fn get_fee_rates(&self) -> Result<Vec<FeePriorityValue>, Box<dyn Error + Sync + Send>> {
         Ok(vec![FeePriorityValue {
             priority: FeePriority::Normal,
             value: self.get_transactions_params().await?.min_fee.to_string(),
