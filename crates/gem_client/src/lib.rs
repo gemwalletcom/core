@@ -4,11 +4,17 @@ mod types;
 #[cfg(feature = "reqwest")]
 mod reqwest_client;
 
+#[cfg(feature = "reqwest")]
+pub mod retry;
+
 pub use content_type::ContentType;
 pub use types::ClientError;
 
 #[cfg(feature = "reqwest")]
 pub use reqwest_client::ReqwestClient;
+
+#[cfg(feature = "reqwest")]
+pub use retry::{aggressive_retry_policy, retry_policy, standard_retry_policy};
 
 use async_trait::async_trait;
 use serde::{de::DeserializeOwned, Serialize};

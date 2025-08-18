@@ -1,11 +1,10 @@
 mod chain_providers;
 mod provider_config;
 pub use chain_providers::ChainProviders;
-use gem_client::ReqwestClient;
+use gem_client::{retry::standard_retry_policy, ReqwestClient};
 use gem_jsonrpc::JsonRpcClient;
 pub use provider_config::ProviderConfig;
 
-use reqwest::{retry, StatusCode};
 use reqwest_middleware::ClientBuilder;
 
 use gem_chain_rpc::{
@@ -62,17 +61,7 @@ impl ProviderFactory {
             .and_then(|u| u.host_str().map(String::from))
             .unwrap_or_default();
 
-        let retry_policy = retry::for_host(host).max_retries_per_request(3).classify_fn(|req_rep| {
-            match req_rep.status() {
-                Some(StatusCode::TOO_MANY_REQUESTS)
-                | Some(StatusCode::INTERNAL_SERVER_ERROR)
-                | Some(StatusCode::BAD_GATEWAY)
-                | Some(StatusCode::SERVICE_UNAVAILABLE)
-                | Some(StatusCode::GATEWAY_TIMEOUT) => req_rep.retryable(),
-                None => req_rep.retryable(), // Network errors
-                _ => req_rep.success(),
-            }
-        });
+        let retry_policy = standard_retry_policy(host);
 
         let reqwest_client = reqwest::Client::builder().retry(retry_policy).build().expect("Failed to build reqwest client");
 
