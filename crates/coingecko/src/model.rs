@@ -108,6 +108,93 @@ pub struct CoinQuery {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct CoinMarketsQuery {
+    pub vs_currency: String,
+    pub order: String,
+    pub per_page: usize,
+    pub page: usize,
+    pub sparkline: bool,
+    pub locale: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub ids: Option<String>,
+}
+
+impl CoinMarketsQuery {
+    pub fn new(page: usize, per_page: usize) -> Self {
+        Self {
+            vs_currency: "usd".to_string(),
+            order: "market_cap_desc".to_string(),
+            per_page,
+            page,
+            sparkline: false,
+            locale: "en".to_string(),
+            ids: None,
+        }
+    }
+
+    pub fn with_ids(ids: Vec<String>, per_page: usize) -> Self {
+        Self {
+            vs_currency: "usd".to_string(),
+            order: "market_cap_desc".to_string(),
+            per_page,
+            page: 1,
+            sparkline: false,
+            locale: "en".to_string(),
+            ids: Some(ids.join(",")),
+        }
+    }
+
+    pub fn with_currency(mut self, currency: &str) -> Self {
+        self.vs_currency = currency.to_string();
+        self
+    }
+
+    pub fn with_order(mut self, order: &str) -> Self {
+        self.order = order.to_string();
+        self
+    }
+
+    pub fn with_sparkline(mut self, sparkline: bool) -> Self {
+        self.sparkline = sparkline;
+        self
+    }
+
+    pub fn with_locale(mut self, locale: &str) -> Self {
+        self.locale = locale.to_string();
+        self
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct MarketChartQuery {
+    pub vs_currency: String,
+    pub days: String,
+    pub interval: String,
+    pub precision: String,
+}
+
+impl MarketChartQuery {
+    pub fn new(days: &str, interval: &str) -> Self {
+        Self {
+            vs_currency: "usd".to_string(),
+            days: days.to_string(),
+            interval: interval.to_string(),
+            precision: "full".to_string(),
+        }
+    }
+
+    pub fn with_currency(mut self, currency: &str) -> Self {
+        self.vs_currency = currency.to_string();
+        self
+    }
+
+    pub fn with_precision(mut self, precision: &str) -> Self {
+        self.precision = precision.to_string();
+        self
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct CoinMarketLinks {
     pub homepage: Vec<String>,
     pub blockchain_site: Vec<Option<String>>,
@@ -177,4 +264,16 @@ impl CoinIds {
     pub fn ids(&self) -> Vec<String> {
         self.0.iter().map(|x| x.id.clone()).collect()
     }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct CoinGeckoErrorResponse {
+    pub error: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(untagged)]
+pub enum CoinGeckoResponse<T> {
+    Success(T),
+    Error(CoinGeckoErrorResponse),
 }

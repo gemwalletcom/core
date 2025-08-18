@@ -1,46 +1,56 @@
 use crate::model::{
-    Coin, CoinIds, CoinInfo, CoinMarket, CoinQuery, CointListQuery, Data, ExchangeRates, Global, MarketChart, SearchTrending, TopGainersLosers,
+    Coin, CoinGeckoResponse, CoinIds, CoinInfo, CoinMarket, CoinMarketsQuery, CoinQuery, CointListQuery, Data, ExchangeRates, Global, MarketChart,
+    MarketChartQuery, SearchTrending, TopGainersLosers,
 };
+use gem_client::{Client, ClientError, ReqwestClient};
 use primitives::{FiatRate, DEFAULT_FIAT_CURRENCY};
 use reqwest::header::{HeaderMap, HeaderValue, USER_AGENT};
-use reqwest_middleware::{ClientBuilder, ClientWithMiddleware};
 use std::error::Error;
 
 pub const COINGECKO_API_HOST: &str = "api.coingecko.com";
 pub const COINGECKO_API_PRO_HOST: &str = "pro-api.coingecko.com";
+pub const COINGECKO_API_KEY_HEADER: &str = "x-cg-pro-api-key";
 static USER_AGENT_VALUE: HeaderValue =
     HeaderValue::from_static("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36");
 
 #[derive(Clone)]
 pub struct CoinGeckoClient {
-    client: ClientWithMiddleware,
-    url: String,
+    client: ReqwestClient,
     api_key: String,
 }
 
 impl CoinGeckoClient {
     pub fn new(api_key: &str) -> Self {
-        let client = ClientBuilder::new(reqwest::Client::new()).build();
-        let url = Self::url_for_api_key(api_key.to_string().clone());
+        let reqwest_client = Self::build_reqwest_client(api_key);
+        let url = Self::url_for_api_key(api_key.to_string());
+        let client = ReqwestClient::new(url, reqwest_client);
         Self {
             client,
-            url,
-            api_key: api_key.to_string(),
-        }
-    }
-
-    pub fn new_with_client_middleware(client: ClientWithMiddleware, api_key: &str) -> Self {
-        let url = Self::url_for_api_key(api_key.to_string().clone());
-        Self {
-            client,
-            url,
             api_key: api_key.to_string(),
         }
     }
 
     pub fn new_with_reqwest_client(reqwest_client: reqwest::Client, api_key: &str) -> Self {
-        let client = ClientBuilder::new(reqwest_client).build();
-        Self::new_with_client_middleware(client, api_key)
+        let url = Self::url_for_api_key(api_key.to_string());
+        let client = ReqwestClient::new(url, reqwest_client);
+        Self {
+            client,
+            api_key: api_key.to_string(),
+        }
+    }
+
+    fn build_reqwest_client(api_key: &str) -> reqwest::Client {
+        let mut headers = HeaderMap::new();
+        headers.insert(USER_AGENT, USER_AGENT_VALUE.clone());
+
+        if !api_key.is_empty() {
+            headers.insert(COINGECKO_API_KEY_HEADER, HeaderValue::from_str(api_key).expect("Invalid API key"));
+        }
+
+        reqwest::Client::builder()
+            .default_headers(headers)
+            .build()
+            .expect("Failed to create HTTP client")
     }
 
     fn url_for_api_key(api_key: String) -> String {
@@ -48,57 +58,67 @@ impl CoinGeckoClient {
         format!("https://{}", host)
     }
 
-    fn headers(&self) -> HeaderMap {
-        let mut headers = HeaderMap::new();
-        headers.insert(USER_AGENT, USER_AGENT_VALUE.clone());
-        if !self.api_key.is_empty() {
-            headers.insert("x-cg-pro-api-key", HeaderValue::from_str(self.api_key.as_str()).unwrap());
+    async fn handle_response<R>(&self, result: Result<CoinGeckoResponse<R>, ClientError>) -> Result<R, Box<dyn Error + Send + Sync>>
+    where
+        R: serde::de::DeserializeOwned,
+    {
+        match result {
+            Ok(CoinGeckoResponse::Success(data)) => Ok(data),
+            Ok(CoinGeckoResponse::Error(error)) => Err(format!("CoinGecko API error: {}", error.error).into()),
+            Err(ClientError::Http { status, body }) => {
+                // Try to parse as CoinGecko error response
+                if let Ok(error_response) = serde_json::from_str::<crate::model::CoinGeckoErrorResponse>(&body) {
+                    Err(format!("CoinGecko API error: {}", error_response.error).into())
+                } else {
+                    Err(format!("HTTP error {}: {}", status, body).into())
+                }
+            }
+            Err(e) => Err(format!("Client error: {}", e).into()),
         }
-        headers
     }
 
     pub async fn get_global(&self) -> Result<Global, Box<dyn Error + Send + Sync>> {
-        let url = format!("{}/api/v3/global", self.url);
-        Ok(self.client.get(&url).headers(self.headers()).send().await?.json::<Data<Global>>().await?.data)
+        let result = self.client.get("/api/v3/global").await;
+        let data: Data<Global> = self.handle_response(result).await?;
+        Ok(data.data)
     }
 
     pub async fn get_search_trending(&self) -> Result<SearchTrending, Box<dyn Error + Send + Sync>> {
-        let url = format!("{}/api/v3/search/trending", self.url);
-        Ok(self.client.get(&url).headers(self.headers()).send().await?.json().await?)
+        let result = self.client.get("/api/v3/search/trending").await;
+        self.handle_response(result).await
     }
 
     pub async fn get_top_gainers_losers(&self) -> Result<TopGainersLosers, Box<dyn Error + Send + Sync>> {
-        let url = format!("{}/api/v3/coins/top_gainers_losers?vs_currency=usd", self.url);
-        Ok(self.client.get(&url).headers(self.headers()).send().await?.json().await?)
+        self.get_top_gainers_losers_with_currency("usd").await
+    }
+
+    pub async fn get_top_gainers_losers_with_currency(&self, vs_currency: &str) -> Result<TopGainersLosers, Box<dyn Error + Send + Sync>> {
+        let query = [("vs_currency", vs_currency)];
+        let result = self.client.get_with_query("/api/v3/coins/top_gainers_losers", Some(&query)).await;
+        self.handle_response(result).await
     }
 
     pub async fn get_coin_list(&self) -> Result<Vec<Coin>, Box<dyn Error + Send + Sync>> {
-        let url = format!("{}/api/v3/coins/list", self.url);
         let query = CointListQuery { include_platform: true };
-        Ok(self.client.get(&url).query(&query).headers(self.headers()).send().await?.json().await?)
+        let result = self.client.get_with_query("/api/v3/coins/list", Some(&query)).await;
+        self.handle_response(result).await
     }
 
     pub async fn get_coin_list_new(&self) -> Result<CoinIds, Box<dyn Error + Send + Sync>> {
-        let url = format!("{}/api/v3/coins/list/new", self.url);
-        Ok(self.client.get(&url).headers(self.headers()).send().await?.json().await?)
+        let result = self.client.get("/api/v3/coins/list/new").await;
+        self.handle_response(result).await
     }
 
     pub async fn get_coin_markets(&self, page: usize, per_page: usize) -> Result<Vec<CoinMarket>, Box<dyn Error + Send + Sync>> {
-        let url = format!(
-            "{}/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page={}&page={}&sparkline=false&locale=en",
-            self.url, per_page, page
-        );
-        Ok(self.client.get(&url).headers(self.headers()).send().await?.json().await?)
+        let query = CoinMarketsQuery::new(page, per_page);
+        let result = self.client.get_with_query("/api/v3/coins/markets", Some(&query)).await;
+        self.handle_response(result).await
     }
 
     pub async fn get_coin_markets_ids(&self, ids: Vec<String>, per_page: usize) -> Result<Vec<CoinMarket>, Box<dyn Error + Send + Sync>> {
-        let url = format!(
-            "{}/api/v3/coins/markets?vs_currency=usd&ids={}&order=market_cap_desc&sparkline=false&locale=en&per_page={}",
-            self.url,
-            ids.join(","),
-            per_page
-        );
-        Ok(self.client.get(&url).headers(self.headers()).send().await?.json().await?)
+        let query = CoinMarketsQuery::with_ids(ids, per_page);
+        let result = self.client.get_with_query("/api/v3/coins/markets", Some(&query)).await;
+        self.handle_response(result).await
     }
 
     pub async fn get_coin_markets_id(&self, id: &str) -> Result<CoinMarket, Box<dyn Error + Send + Sync>> {
@@ -107,7 +127,7 @@ impl CoinGeckoClient {
     }
 
     pub async fn get_coin(&self, id: &str) -> Result<CoinInfo, Box<dyn Error + Send + Sync>> {
-        let url = format!("{}/api/v3/coins/{}", self.url, id);
+        let path = format!("/api/v3/coins/{}", id);
         let query = CoinQuery {
             market_data: false,
             community_data: true,
@@ -115,12 +135,13 @@ impl CoinGeckoClient {
             localization: true,
             developer_data: true,
         };
-        Ok(self.client.get(&url).query(&query).headers(self.headers()).send().await?.json().await?)
+        let result = self.client.get_with_query(&path, Some(&query)).await;
+        self.handle_response(result).await
     }
 
     pub async fn get_fiat_rates(&self) -> Result<Vec<FiatRate>, Box<dyn Error + Send + Sync>> {
-        let url = format!("{}/api/v3/exchange_rates", self.url);
-        let rates = self.client.get(&url).headers(self.headers()).send().await?.json::<ExchangeRates>().await?;
+        let result = self.client.get("/api/v3/exchange_rates").await;
+        let rates: ExchangeRates = self.handle_response(result).await?;
         let usd_rate = rates
             .rates
             .get(DEFAULT_FIAT_CURRENCY.to_lowercase().as_str())
@@ -165,10 +186,9 @@ impl CoinGeckoClient {
     }
 
     pub async fn get_market_chart(&self, coin_id: &str, interval: &str, days: &str) -> Result<MarketChart, Box<dyn Error + Send + Sync>> {
-        let url = format!(
-            "{}/api/v3/coins/{}/market_chart?vs_currency=usd&days={}&interval={}&precision=full",
-            self.url, days, coin_id, interval
-        );
-        Ok(self.client.get(url).headers(self.headers()).send().await?.json().await?)
+        let path = format!("/api/v3/coins/{}/market_chart", coin_id);
+        let query = MarketChartQuery::new(days, interval);
+        let result = self.client.get_with_query(&path, Some(&query)).await;
+        self.handle_response(result).await
     }
 }

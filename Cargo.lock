@@ -1634,11 +1634,12 @@ name = "coingecko"
 version = "1.0.0"
 dependencies = [
  "chrono",
+ "gem_client",
  "lazy_static",
  "primitives",
  "reqwest",
- "reqwest-middleware",
  "serde",
+ "serde_json",
 ]
 
 [[package]]

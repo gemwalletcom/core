@@ -27,7 +27,22 @@ impl Client for AlienClient {
     where
         R: DeserializeOwned,
     {
-        let url = self.build_url(path);
+        self.get_with_query::<(), R>(path, None).await
+    }
+
+    async fn get_with_query<T, R>(&self, path: &str, query: Option<&T>) -> Result<R, ClientError>
+    where
+        T: Serialize + Send + Sync,
+        R: DeserializeOwned,
+    {
+        let full_path = if let Some(q) = query {
+            let query_string = serde_urlencoded::to_string(q).map_err(|e| ClientError::Serialization(format!("Failed to serialize query: {}", e)))?;
+            format!("{}?{}", path, query_string)
+        } else {
+            path.to_string()
+        };
+
+        let url = self.build_url(&full_path);
         let target = AlienTarget::get(&url);
 
         let response_data = self

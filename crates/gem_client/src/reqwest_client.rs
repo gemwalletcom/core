@@ -56,8 +56,22 @@ impl Client for ReqwestClient {
     where
         R: DeserializeOwned,
     {
+        self.get_with_query::<(), R>(path, None).await
+    }
+
+    async fn get_with_query<T, R>(&self, path: &str, query: Option<&T>) -> Result<R, ClientError>
+    where
+        T: Serialize + Send + Sync,
+        R: DeserializeOwned,
+    {
         let url = self.build_url(path);
-        let response = self.client.get(&url).send().await.map_err(Self::map_reqwest_error)?;
+        let mut request = self.client.get(&url);
+
+        if let Some(q) = query {
+            request = request.query(q);
+        }
+
+        let response = request.send().await.map_err(Self::map_reqwest_error)?;
 
         self.send_request(response).await
     }

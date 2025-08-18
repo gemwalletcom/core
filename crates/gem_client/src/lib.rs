@@ -27,6 +27,10 @@ pub trait Client: Send + Sync + Debug {
     async fn get<R>(&self, path: &str) -> Result<R, ClientError>
     where
         R: DeserializeOwned;
+    async fn get_with_query<T, R>(&self, path: &str, query: Option<&T>) -> Result<R, ClientError>
+    where
+        T: Serialize + Send + Sync,
+        R: DeserializeOwned;
     async fn post<T, R>(&self, path: &str, body: &T, headers: Option<HashMap<String, String>>) -> Result<R, ClientError>
     where
         T: Serialize + Send + Sync,
