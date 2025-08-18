@@ -65,7 +65,7 @@ impl<C: Client> ChainStaking for CosmosClient<C> {
             rewards,
             validators.validators,
             chain,
-            &denom
+            denom
         ))
     }
 }

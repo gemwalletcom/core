@@ -229,7 +229,7 @@ mod tests {
     fn test_map_validators() {
         let validators_response: crate::rpc::model::ValidatorsResponse = serde_json::from_str(include_str!("../../testdata/staking_validators.json")).unwrap();
         
-        let result = map_validators_to_delegation_validators(
+        let result = map_staking_validators(
             validators_response.validators,
             Chain::Cosmos,
             Some(18.5)

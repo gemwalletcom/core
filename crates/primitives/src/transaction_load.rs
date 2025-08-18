@@ -45,19 +45,10 @@ impl TransactionLoadInput {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub struct SignerInputBlock {
     pub number: i64,
     pub hash: String,
-}
-
-impl Default for SignerInputBlock {
-    fn default() -> Self {
-        Self {
-            number: 0,
-            hash: String::new(),
-        }
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -14,8 +14,8 @@ impl<C: Client> ChainPreload for XRPClient<C> {
         let (account, latest_block) = futures::try_join!(self.get_account_info(&input.sender_address), self.get_ledger_current())?;
 
         Ok(TransactionPreload::builder()
-            .block_number(latest_block.ledger_current_index as i64)
-            .sequence(account.sequence as u64)
+            .block_number(latest_block.ledger_current_index)
+            .sequence(account.sequence)
             .build())
     }
 }

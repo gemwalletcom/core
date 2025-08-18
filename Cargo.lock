@@ -3152,8 +3152,11 @@ dependencies = [
 name = "gem_ton"
 version = "1.0.0"
 dependencies = [
+ "async-trait",
  "base64 0.22.1",
+ "chain_traits",
  "chrono",
+ "gem_client",
  "primitives",
  "reqwest-middleware",
  "serde",

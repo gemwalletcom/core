@@ -61,7 +61,7 @@ impl<C: Client> ChainBalances for CosmosClient<C> {
             unbonding,
             rewards,
             chain,
-            &denom  
+            denom  
         )))
     }
 }
