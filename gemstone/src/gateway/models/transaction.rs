@@ -35,8 +35,18 @@ pub struct GemTransactionStateRequest {
 }
 
 #[derive(Debug, Clone, uniffi::Enum)]
+pub enum GemStakeOperation {
+    Delegate { asset: GemAsset, validator_address: String },
+    Undelegate { asset: GemAsset, validator_address: String },
+    Redelegate { asset: GemAsset, src_validator_address: String, dst_validator_address: String },
+    WithdrawRewards { validator_addresses: Vec<String> },
+}
+
+#[derive(Debug, Clone, uniffi::Enum)]
 pub enum GemTransactionInputType {
     Transfer { asset: GemAsset },
+    Swap { from_asset: GemAsset, to_asset: GemAsset },
+    Stake { operation: GemStakeOperation },
 }
 
 #[derive(Debug, Clone, uniffi::Record)]
@@ -141,10 +151,35 @@ impl From<GemTransactionLoadInput> for TransactionLoadInput {
     }
 }
 
+impl From<GemStakeOperation> for primitives::StakeOperation {
+    fn from(value: GemStakeOperation) -> Self {
+        match value {
+            GemStakeOperation::Delegate { asset, validator_address } => {
+                primitives::StakeOperation::Delegate(asset.into(), validator_address)
+            }
+            GemStakeOperation::Undelegate { asset, validator_address } => {
+                primitives::StakeOperation::Undelegate(asset.into(), validator_address)
+            }
+            GemStakeOperation::Redelegate { asset, src_validator_address, dst_validator_address } => {
+                primitives::StakeOperation::Redelegate(asset.into(), src_validator_address, dst_validator_address)
+            }
+            GemStakeOperation::WithdrawRewards { validator_addresses } => {
+                primitives::StakeOperation::WithdrawRewards(validator_addresses)
+            }
+        }
+    }
+}
+
 impl From<GemTransactionInputType> for TransactionInputType {
     fn from(value: GemTransactionInputType) -> Self {
         match value {
             GemTransactionInputType::Transfer { asset } => TransactionInputType::Transfer(asset.into()),
+            GemTransactionInputType::Swap { from_asset, to_asset } => {
+                TransactionInputType::Swap(from_asset.into(), to_asset.into())
+            }
+            GemTransactionInputType::Stake { operation } => {
+                TransactionInputType::Stake(operation.into())
+            }
         }
     }
 }
@@ -159,7 +194,7 @@ impl From<GemGasPrice> for GasPrice {
 
 pub fn map_transaction_load_data(load_data: TransactionLoadData, input: &GemTransactionLoadInput) -> GemTransactionData {
     GemTransactionData {
-        account_number: 0,
+        account_number: load_data.account_number as i32,
         sequence: load_data.sequence as i32,
         block_hash: input.block_hash.clone(),
         block_number: input.block_number,

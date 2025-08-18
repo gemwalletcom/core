@@ -2,8 +2,8 @@ use crate::models::balance::{HypercoreDelegationBalance, HypercoreValidator};
 use number_formatter::BigNumberFormatter;
 use primitives::{Chain, DelegationBase, DelegationState, DelegationValidator};
 
-pub fn map_validators_to_delegation_validators(validators: Vec<HypercoreValidator>, chain: Chain) -> Vec<DelegationValidator> {
-    let apy = HypercoreValidator::max_apr(validators.clone());
+pub fn map_validators_to_delegation_validators(validators: Vec<HypercoreValidator>, chain: Chain, apy: Option<f64>) -> Vec<DelegationValidator> {
+    let calculated_apy = apy.unwrap_or_else(|| HypercoreValidator::max_apr(validators.clone()));
     validators
         .into_iter()
         .map(|x| DelegationValidator {
@@ -12,7 +12,7 @@ pub fn map_validators_to_delegation_validators(validators: Vec<HypercoreValidato
             name: x.name,
             is_active: x.is_active,
             commision: x.commission.parse::<f64>().unwrap_or(0.0),
-            apr: apy,
+            apr: calculated_apy,
         })
         .collect()
 }
@@ -48,7 +48,7 @@ mod tests {
             stats: vec![],
         }];
 
-        let result = map_validators_to_delegation_validators(validators, Chain::SmartChain);
+        let result = map_validators_to_delegation_validators(validators, Chain::SmartChain, None);
         assert_eq!(result.len(), 1);
         assert_eq!(result[0].name, "Test Validator");
         assert!(result[0].is_active);

@@ -144,4 +144,4 @@ pub use self::transaction_update::{TransactionChange, TransactionMetadata, Trans
 pub mod transaction_preload;
 pub use self::transaction_preload::{TransactionPreload, TransactionPreloadInput, TransactionPreloadBuilder};
 pub mod transaction_load;
-pub use self::transaction_load::{TransactionLoadInput, TransactionLoadData, TransactionInputType, GasPrice, TransactionFee};
+pub use self::transaction_load::{TransactionLoadInput, TransactionLoadData, TransactionInputType, StakeOperation, GasPrice, TransactionFee};

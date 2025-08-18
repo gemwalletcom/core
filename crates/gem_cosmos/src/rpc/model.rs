@@ -146,12 +146,25 @@ pub struct ValidatorsResponse {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Validator {
     pub operator_address: String,
+    pub jailed: bool,
+    pub status: String,
     pub description: ValidatorDescription,
+    pub commission: ValidatorCommission,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ValidatorDescription {
     pub moniker: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ValidatorCommission {
+    pub commission_rates: ValidatorCommissionRates,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ValidatorCommissionRates {
+    pub rate: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

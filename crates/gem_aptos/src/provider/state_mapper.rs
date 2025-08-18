@@ -32,13 +32,13 @@ mod tests {
     #[test]
     fn test_map_transaction_state_success() {
         let transaction = Transaction {
-            hash: "0x123".to_string(),
+            hash: Some("0x123".to_string()),
             sender: Some("0xabc".to_string()),
             success: true,
-            gas_used: Some("1000".to_string()),
-            gas_unit_price: Some("100".to_string()),
+            gas_used: Some(1000),
+            gas_unit_price: Some(100),
             events: None,
-            transaction_type: "user_transaction".to_string(),
+            transaction_type: Some("user_transaction".to_string()),
             sequence_number: Some("1".to_string()),
             timestamp: 1234567890,
         };
@@ -57,13 +57,13 @@ mod tests {
     #[test]
     fn test_map_transaction_state_reverted() {
         let transaction = Transaction {
-            hash: "0x123".to_string(),
+            hash: Some("0x123".to_string()),
             sender: Some("0xabc".to_string()),
             success: false,
-            gas_used: Some("500".to_string()),
-            gas_unit_price: Some("50".to_string()),
+            gas_used: Some(500),
+            gas_unit_price: Some(50),
             events: None,
-            transaction_type: "user_transaction".to_string(),
+            transaction_type: Some("user_transaction".to_string()),
             sequence_number: Some("1".to_string()),
             timestamp: 1234567890,
         };

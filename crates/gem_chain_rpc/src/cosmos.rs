@@ -8,19 +8,20 @@ use primitives::{chain_cosmos::CosmosChain, Asset, AssetBalance, Chain, StakeVal
 
 use gem_cosmos::rpc::CosmosClient;
 use gem_cosmos::rpc::CosmosMapper;
+use gem_client::Client;
 
-pub struct CosmosProvider {
-    client: CosmosClient,
+pub struct CosmosProvider<C: Client> {
+    client: CosmosClient<C>,
 }
 
-impl CosmosProvider {
-    pub fn new(client: CosmosClient) -> Self {
+impl<C: Client> CosmosProvider<C> {
+    pub fn new(client: CosmosClient<C>) -> Self {
         Self { client }
     }
 }
 
 #[async_trait]
-impl ChainBlockProvider for CosmosProvider {
+impl<C: Client + Send + Sync> ChainBlockProvider for CosmosProvider<C> {
     fn get_chain(&self) -> Chain {
         self.client.get_chain().as_chain()
     }
@@ -46,21 +47,21 @@ impl ChainBlockProvider for CosmosProvider {
 }
 
 #[async_trait]
-impl ChainTokenDataProvider for CosmosProvider {
+impl<C: Client + Send + Sync> ChainTokenDataProvider for CosmosProvider<C> {
     async fn get_token_data(&self, _token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
         unimplemented!()
     }
 }
 
 #[async_trait]
-impl ChainAssetsProvider for CosmosProvider {
+impl<C: Client + Send + Sync> ChainAssetsProvider for CosmosProvider<C> {
     async fn get_assets_balances(&self, _address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
         Ok(vec![])
     }
 }
 
 #[async_trait]
-impl ChainTransactionsProvider for CosmosProvider {
+impl<C: Client + Send + Sync> ChainTransactionsProvider for CosmosProvider<C> {
     async fn get_transactions_by_address(&self, address: String) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
         let transactions = self.client.get_transactions_by_address(&address, 20).await?;
         Ok(CosmosMapper::map_transactions(self.get_chain(), transactions))
@@ -68,7 +69,7 @@ impl ChainTransactionsProvider for CosmosProvider {
 }
 
 #[async_trait]
-impl ChainStakeProvider for CosmosProvider {
+impl<C: Client + Send + Sync> ChainStakeProvider for CosmosProvider<C> {
     async fn get_validators(&self) -> Result<Vec<StakeValidator>, Box<dyn Error + Send + Sync>> {
         let validators = self.client.get_validators().await?;
         Ok(CosmosMapper::map_validators(validators.validators))

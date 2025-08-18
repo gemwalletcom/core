@@ -114,6 +114,10 @@ impl<C: Client> AptosClient<C> {
                     AssetSubtype::TOKEN => Ok(1500),
                 }
             }
+            TransactionInputType::Swap(_, _) => Ok(1500),
+            TransactionInputType::Stake(_) => {
+                Err("Aptos does not support staking".into())
+            }
         }
     }
     

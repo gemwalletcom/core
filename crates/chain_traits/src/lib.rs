@@ -16,7 +16,11 @@ pub trait ChainBalances: Send + Sync {
 
 #[async_trait]
 pub trait ChainStaking: Send + Sync {
-    async fn get_staking_validators(&self) -> Result<Vec<DelegationValidator>, Box<dyn Error + Sync + Send>> {
+    async fn get_staking_apy(&self) -> Result<Option<f64>, Box<dyn Error + Sync + Send>> {
+        Ok(None)
+    }
+
+    async fn get_staking_validators(&self, _apy: Option<f64>) -> Result<Vec<DelegationValidator>, Box<dyn Error + Sync + Send>> {
         Ok(vec![])
     }
 
@@ -79,6 +83,7 @@ pub trait ChainPreload: Send + Sync {
     
     async fn get_transaction_load(&self, input: TransactionLoadInput) -> Result<TransactionLoadData, Box<dyn Error + Sync + Send>> {
         Ok(TransactionLoadData {
+            account_number: 0,
             sequence: input.sequence,
             fee: TransactionFee::default(),
         })

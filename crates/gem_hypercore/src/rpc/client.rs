@@ -32,7 +32,7 @@ impl<C: Client> HyperCoreClient<C> {
             HyperCoreBroadcastResult::Error(error) => Err(error.into()),
         }
     }
-    pub async fn get_staking_validators(&self) -> Result<Vec<HypercoreValidator>, Box<dyn Error + Send + Sync>> {
+    pub async fn get_validators(&self) -> Result<Vec<HypercoreValidator>, Box<dyn Error + Send + Sync>> {
         Ok(self.client.post("/info", &json!({"type": "validatorSummaries"}), None).await?)
     }
 
@@ -41,7 +41,7 @@ impl<C: Client> HyperCoreClient<C> {
     }
 
     pub async fn get_staking_apy(&self) -> Result<f64, Box<dyn Error + Send + Sync>> {
-        let validators = self.get_staking_validators().await?;
+        let validators = self.get_validators().await?;
         Ok(HypercoreValidator::max_apr(validators))
     }
 

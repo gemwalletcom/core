@@ -3,8 +3,18 @@ use num_bigint::BigInt;
 use crate::{Asset, UTXO, TransactionPreloadInput};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum StakeOperation {
+    Delegate(Asset, String),
+    Undelegate(Asset, String),
+    Redelegate(Asset, String, String),
+    WithdrawRewards(Vec<String>),
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum TransactionInputType {
     Transfer(Asset),
+    Swap(Asset, Asset),
+    Stake(StakeOperation),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -82,6 +92,7 @@ impl TransactionFee {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TransactionLoadData {
+    pub account_number: u64,
     pub sequence: u64,
     pub fee: TransactionFee,
 }
@@ -89,6 +100,7 @@ pub struct TransactionLoadData {
 impl TransactionLoadData {
     pub fn builder() -> TransactionLoadDataBuilder {
         TransactionLoadDataBuilder {
+            account_number: None,
             sequence: None,
             fee: None,
         }
@@ -96,11 +108,17 @@ impl TransactionLoadData {
 }
 
 pub struct TransactionLoadDataBuilder {
+    account_number: Option<u64>,
     sequence: Option<u64>,
     fee: Option<TransactionFee>,
 }
 
 impl TransactionLoadDataBuilder {
+    pub fn account_number(mut self, account_number: u64) -> Self {
+        self.account_number = Some(account_number);
+        self
+    }
+
     pub fn sequence(mut self, sequence: u64) -> Self {
         self.sequence = Some(sequence);
         self
@@ -113,6 +131,7 @@ impl TransactionLoadDataBuilder {
 
     pub fn build(self) -> TransactionLoadData {
         TransactionLoadData {
+            account_number: self.account_number.expect("account_number is required"),
             sequence: self.sequence.expect("sequence is required"),
             fee: self.fee.expect("fee is required"),
         }

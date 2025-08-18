@@ -112,7 +112,7 @@ impl ProviderFactory {
             }
             Chain::Cosmos | Chain::Osmosis | Chain::Celestia | Chain::Thorchain | Chain::Injective | Chain::Noble | Chain::Sei => {
                 let chain = CosmosChain::from_chain(chain).unwrap();
-                Box::new(CosmosProvider::new(CosmosClient::new(chain, client, url)))
+                Box::new(CosmosProvider::new(CosmosClient::new(chain, gem_client, url)))
             }
             Chain::Solana => Box::new(SolanaProvider::new(SolanaClient::new(&url))),
             Chain::Ton => Box::new(TonProvider::new(TonClient::new(client, url))),

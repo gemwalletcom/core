@@ -3,8 +3,11 @@ use std::error::Error;
 use crate::rpc::model::TransactionsResponse;
 
 use super::model::{AnnualProvisionsResponse, BlockResponse, InflationResponse, StakingPoolResponse, TransactionResponse, ValidatorsResponse};
+use crate::models::account::CosmosBalances;
+use crate::models::staking::{CosmosDelegations, CosmosUnboundingDelegations, CosmosRewards};
 use primitives::chain_cosmos::CosmosChain;
-use reqwest_middleware::ClientWithMiddleware;
+use gem_client::Client;
+use chain_traits::{ChainTraits, ChainAccount, ChainPerpetual};
 
 pub const MESSAGE_DELEGATE: &str = "/cosmos.staking.v1beta1.MsgDelegate";
 pub const MESSAGE_UNDELEGATE: &str = "/cosmos.staking.v1beta1.MsgUndelegate";
@@ -22,15 +25,14 @@ pub const MESSAGES: &[&str] = &[
     MESSAGE_REWARD_BETA,
 ];
 
-pub struct CosmosClient {
+pub struct CosmosClient<C: Client> {
     chain: CosmosChain,
-    url: String,
-    client: ClientWithMiddleware,
+    pub client: C,
 }
 
-impl CosmosClient {
-    pub fn new(chain: CosmosChain, client: ClientWithMiddleware, url: String) -> Self {
-        Self { chain, url, client }
+impl<C: Client> CosmosClient<C> {
+    pub fn new(chain: CosmosChain, client: C, _url: String) -> Self {
+        Self { chain, client }
     }
 
     pub fn get_chain(&self) -> CosmosChain {
@@ -50,13 +52,13 @@ impl CosmosClient {
     }
 
     pub async fn get_transaction(&self, hash: String) -> Result<TransactionResponse, Box<dyn Error + Send + Sync>> {
-        let url = format!("{}/cosmos/tx/v1beta1/txs/{}", self.url, hash);
-        Ok(self.client.get(url).send().await?.json().await?)
+        let url = format!("/cosmos/tx/v1beta1/txs/{}", hash);
+        Ok(self.client.get(&url).await?)
     }
 
     pub async fn get_block(&self, block: &str) -> Result<BlockResponse, Box<dyn Error + Send + Sync>> {
-        let url = format!("{}/cosmos/base/tendermint/v1beta1/blocks/{}", self.url, block);
-        Ok(self.client.get(url).send().await?.json().await?)
+        let url = format!("/cosmos/base/tendermint/v1beta1/blocks/{}", block);
+        Ok(self.client.get(&url).await?)
     }
 
     pub async fn get_transactions_by_address(&self, address: &str, limit: usize) -> Result<Vec<TransactionResponse>, Box<dyn Error + Send + Sync>> {
@@ -90,36 +92,89 @@ impl CosmosClient {
     }
 
     pub async fn get_transactions_by_query(&self, query_name: &str, query: &str, limit: usize) -> Result<TransactionsResponse, Box<dyn Error + Send + Sync>> {
-        let url = format!("{}/cosmos/tx/v1beta1/txs", self.url);
-        let query = [
-            (query_name.to_string(), query.to_string()),
-            ("pagination.limit".to_string(), limit.to_string()),
-            ("page".to_string(), 1.to_string()),
-        ];
-        Ok(self.client.get(url).query(&query).send().await?.json().await?)
+        let url = format!("/cosmos/tx/v1beta1/txs?{}={}&pagination.limit={}&page=1", query_name, query, limit);
+        Ok(self.client.get(&url).await?)
     }
 
     pub async fn get_validators(&self) -> Result<ValidatorsResponse, Box<dyn Error + Send + Sync>> {
-        let url = format!("{}/cosmos/staking/v1beta1/validators", self.url);
-        let query = [
-            ("status".to_string(), "BOND_STATUS_BONDED".to_string()),
-            ("pagination.limit".to_string(), "100".to_string()),
-        ];
-        Ok(self.client.get(url).query(&query).send().await?.json().await?)
+        let url = "/cosmos/staking/v1beta1/validators?status=BOND_STATUS_BONDED&pagination.limit=100";
+        Ok(self.client.get(url).await?)
     }
 
     pub async fn get_staking_pool(&self) -> Result<StakingPoolResponse, Box<dyn Error + Send + Sync>> {
-        let url = format!("{}/cosmos/staking/v1beta1/pool", self.url);
-        Ok(self.client.get(url).send().await?.json().await?)
+        let url = "/cosmos/staking/v1beta1/pool";
+        Ok(self.client.get(url).await?)
     }
 
     pub async fn get_inflation(&self) -> Result<InflationResponse, Box<dyn Error + Send + Sync>> {
-        let url = format!("{}/cosmos/mint/v1beta1/inflation", self.url);
-        Ok(self.client.get(url).send().await?.json().await?)
+        let url = "/cosmos/mint/v1beta1/inflation";
+        Ok(self.client.get(url).await?)
     }
 
     pub async fn get_annual_provisions(&self) -> Result<AnnualProvisionsResponse, Box<dyn Error + Send + Sync>> {
-        let url = format!("{}/cosmos/mint/v1beta1/annual_provisions", self.url);
-        Ok(self.client.get(url).send().await?.json().await?)
+        let url = "/cosmos/mint/v1beta1/annual_provisions";
+        Ok(self.client.get(url).await?)
+    }
+
+    pub async fn get_balances(&self, address: &str) -> Result<CosmosBalances, Box<dyn Error + Send + Sync>> {
+        let url = format!("/cosmos/bank/v1beta1/balances/{}", address);
+        Ok(self.client.get(&url).await?)
+    }
+
+    pub async fn get_delegations(&self, address: &str) -> Result<CosmosDelegations, Box<dyn Error + Send + Sync>> {
+        let url = format!("/cosmos/staking/v1beta1/delegations/{}", address);
+        Ok(self.client.get(&url).await?)
+    }
+
+    pub async fn get_unbonding_delegations(&self, address: &str) -> Result<CosmosUnboundingDelegations, Box<dyn Error + Send + Sync>> {
+        let url = format!("/cosmos/staking/v1beta1/delegators/{}/unbonding_delegations", address);
+        Ok(self.client.get(&url).await?)
+    }
+
+    pub async fn get_delegation_rewards(&self, address: &str) -> Result<CosmosRewards, Box<dyn Error + Send + Sync>> {
+        let url = format!("/cosmos/distribution/v1beta1/delegators/{}/rewards", address);
+        Ok(self.client.get(&url).await?)
+    }
+
+    pub fn get_base_fee(&self) -> u64 {
+        match self.chain {
+            CosmosChain::Thorchain => 2_000_000,
+            CosmosChain::Cosmos => 3_000,
+            CosmosChain::Osmosis => 10_000,
+            CosmosChain::Celestia => 3_000,
+            CosmosChain::Sei => 100_000,
+            CosmosChain::Injective => 100_000_000_000_000,
+            CosmosChain::Noble => 25_000,
+        }
+    }
+
+    pub async fn get_account_info(&self, address: &str) -> Result<crate::models::account::CosmosAccount, Box<dyn Error + Send + Sync>> {
+        use crate::models::account::{CosmosAccountResponse, CosmosAccount, CosmosInjectiveAccount};
+        
+        let url = format!("/cosmos/auth/v1beta1/accounts/{}", address);
+        
+        match self.chain {
+            primitives::chain_cosmos::CosmosChain::Injective => {
+                let response: CosmosAccountResponse<CosmosInjectiveAccount> = self.client.get(&url).await?;
+                Ok(response.account.base_account)
+            }
+            _ => {
+                let response: CosmosAccountResponse<CosmosAccount> = self.client.get(&url).await?;
+                Ok(response.account)
+            }
+        }
+    }
+
+    pub async fn broadcast_transaction(&self, data: &str) -> Result<crate::models::transaction::CosmosBroadcastResponse, Box<dyn Error + Send + Sync>> {
+        use crate::models::transaction::CosmosBroadcastRequest;
+        
+        let request: CosmosBroadcastRequest = serde_json::from_str(data)?;
+        Ok(self.client.post("/cosmos/tx/v1beta1/txs", &request, None).await?)
     }
 }
+
+impl<C: Client> ChainAccount for CosmosClient<C> {}
+
+impl<C: Client> ChainPerpetual for CosmosClient<C> {}
+
+impl<C: Client> ChainTraits for CosmosClient<C> {}

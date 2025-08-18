@@ -80,13 +80,13 @@ mod tests {
         use crate::Transaction;
         
         let transaction = Transaction {
-            hash: "0xabc123".to_string(),
+            hash: Some("0xabc123".to_string()),
             sender: Some("0x123".to_string()),
             success: true,
             gas_used: Some(100),
             gas_unit_price: Some(1),
             events: None,
-            transaction_type: "user_transaction".to_string(),
+            transaction_type: Some("user_transaction".to_string()),
             sequence_number: Some("1".to_string()),
             timestamp: 1234567890,
         };
@@ -101,13 +101,13 @@ mod tests {
         use crate::Transaction;
         
         let transaction = Transaction {
-            hash: "0xdef456".to_string(),
+            hash: Some("0xdef456".to_string()),
             sender: Some("0x456".to_string()),
             success: false,
             gas_used: Some(50),
             gas_unit_price: Some(1),
             events: None,
-            transaction_type: "user_transaction".to_string(),
+            transaction_type: Some("user_transaction".to_string()),
             sequence_number: Some("2".to_string()),
             timestamp: 1234567891,
         };

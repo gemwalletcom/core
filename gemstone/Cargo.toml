@@ -18,7 +18,7 @@ reqwest_provider = ["dep:reqwest"]
 
 [dependencies]
 primitives = { path = "../crates/primitives" }
-gem_cosmos = { path = "../crates/gem_cosmos" }
+gem_cosmos = { path = "../crates/gem_cosmos", features = ["rpc"] }
 gem_solana = { path = "../crates/gem_solana" }
 gem_ton = { path = "../crates/gem_ton" }
 gem_bsc = { path = "../crates/gem_bsc" }

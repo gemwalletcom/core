@@ -1,0 +1,71 @@
+{
+    "validators": [
+      {
+        "operator_address": "cosmosvaloper1q9p73lx07tjqc34vs8jrsu5pg3q4ha534uqv4w",
+        "consensus_pubkey": {
+          "@type": "/cosmos.crypto.ed25519.PubKey",
+          "key": "Y3FwPLeVHUhR+Or59OJ1SCq0OiS/tBye2YdKA3dzy/s="
+        },
+        "jailed": false,
+        "status": "BOND_STATUS_BONDED",
+        "tokens": "47803181",
+        "delegator_shares": "47803181.000000000000000000",
+        "description": {
+          "moniker": "Unstake as we will shut down",
+          "identity": "C58922A0F158B2D1",
+          "website": "https://www.3stakes.com",
+          "security_contact": "support@3stakes.com",
+          "details": "3Stakes.com is a Dutch team validating in the Ecosystem. Our operations will be CO2 neutral as we will offset any emissions created from our operations. We will be looking to create validators for new chains in the Cosmos ecosystem and participate in testnets."
+        },
+        "unbonding_height": "27056706",
+        "unbonding_time": "2025-09-03T15:08:30.405051966Z",
+        "commission": {
+          "commission_rates": {
+            "rate": "0.050000000000000000",
+            "max_rate": "0.100000000000000000",
+            "max_change_rate": "0.010000000000000000"
+          },
+          "update_time": "2022-04-15T08:52:23.793881126Z"
+        },
+        "min_self_delegation": "1",
+        "unbonding_on_hold_ref_count": "0",
+        "unbonding_ids": [
+          "1395381",
+          "1395868"
+        ]
+      },
+      {
+        "operator_address": "cosmosvaloper1q6d3d089hg59x6gcx92uumx70s5y5wadklue8s",
+        "consensus_pubkey": {
+          "@type": "/cosmos.crypto.ed25519.PubKey",
+          "key": "uEUR1gpesU4bnSWL2TOXOf3org2mCYhQHMYkiCJyMD4="
+        },
+        "jailed": false,
+        "status": "BOND_STATUS_BONDED",
+        "tokens": "938561041511",
+        "delegator_shares": "938561041511.000000000000000000",
+        "description": {
+          "moniker": "Ubik Capital",
+          "identity": "8265DEAF50B61DF7",
+          "website": "https://www.ubik.capital",
+          "security_contact": "",
+          "details": "Ubik Capital secures major proof of stake networks and is a trusted staking provider with years of industry experience. By delegating to us, you agree to the Terms of Service at: https://ubik.capital"
+        },
+        "unbonding_height": "16925816",
+        "unbonding_time": "2023-09-30T06:17:37.572905825Z",
+        "commission": {
+          "commission_rates": {
+            "rate": "0.050000000000000000",
+            "max_rate": "0.200000000000000000",
+            "max_change_rate": "0.010000000000000000"
+          },
+          "update_time": "2024-03-20T10:40:35.784132044Z"
+        },
+        "min_self_delegation": "1",
+        "unbonding_on_hold_ref_count": "0",
+        "unbonding_ids": [
+          "131285"
+        ]
+      }
+    ]
+}

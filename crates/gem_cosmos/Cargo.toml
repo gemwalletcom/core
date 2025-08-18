@@ -14,9 +14,13 @@ serde = { workspace = true, features = ["derive"] }
 
 # Optional RPC dependencies
 serde_json = { workspace = true, optional = true }
-reqwest-middleware = { workspace = true, features = ["json"], optional = true }
 chrono = { workspace = true, features = ["serde"], optional = true }
 cosmos-sdk-proto = { workspace = true, optional = true }
+async-trait = { workspace = true, optional = true }
+gem_client = { path = "../gem_client", optional = true }
+chain_traits = { path = "../chain_traits", optional = true }
+futures = { workspace = true, optional = true }
+number_formatter = { path = "../number_formatter", optional = true }
 
 num-bigint = { workspace = true, optional = true }
 
@@ -24,8 +28,12 @@ num-bigint = { workspace = true, optional = true }
 default = []
 rpc = [
     "dep:serde_json",
-    "dep:reqwest-middleware",
     "dep:chrono",
     "dep:cosmos-sdk-proto",
+    "dep:async-trait",
+    "dep:gem_client",
+    "dep:chain_traits",
+    "dep:futures",
     "dep:num-bigint",
+    "dep:number_formatter",
 ]
