@@ -5,7 +5,7 @@ use primitives::Chain;
 use serde::{de::DeserializeOwned, Serialize};
 use std::{collections::HashMap, str::FromStr, sync::Arc};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct AlienClient {
     base_url: String,
     provider: Arc<dyn AlienProvider>,

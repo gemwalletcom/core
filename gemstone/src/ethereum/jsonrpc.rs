@@ -5,7 +5,7 @@ use std::sync::Arc;
 
 use crate::{
     debug_println,
-    network::{AlienProvider, JsonRpcClient, JsonRpcResult},
+    network::{jsonrpc_client_with_chain, AlienProvider},
     swapper::SwapperError,
 };
 
@@ -31,26 +31,24 @@ pub struct TxReceipt {
 
 pub async fn fetch_gas_price(provider: Arc<dyn AlienProvider>, chain: Chain) -> Result<U256, SwapperError> {
     let call = EthereumRpc::GasPrice;
-    let client = JsonRpcClient::new_with_chain(provider, chain);
-    let resp: JsonRpcResult<String> = client.call(&call).await?;
-    let value = resp.take()?;
+    let client = jsonrpc_client_with_chain(provider, chain);
+    let value: String = client.request(call).await?;
 
     parse_u256(&value).ok_or(SwapperError::InvalidAmount("invalid gas price".into()))
 }
 
 pub async fn estimate_gas(provider: Arc<dyn AlienProvider>, chain: Chain, tx: TransactionObject) -> Result<U256, SwapperError> {
     let call = EthereumRpc::EstimateGas(tx, BlockParameter::Latest);
-    let client = JsonRpcClient::new_with_chain(provider, chain);
-    let resp: JsonRpcResult<String> = client.call(&call).await?;
-    let value = resp.take()?;
+    let client = jsonrpc_client_with_chain(provider, chain);
+    let value: String = client.request(call).await?;
     parse_u256(&value).ok_or(SwapperError::InvalidAmount("invalid gas limit".into()))
 }
 
 pub async fn fetch_tx_receipt(provider: Arc<dyn AlienProvider>, chain: Chain, tx_hash: &str) -> Result<TxReceipt, SwapperError> {
     let call = EthereumRpc::GetTransactionReceipt(tx_hash.into());
-    let client = JsonRpcClient::new_with_chain(provider, chain);
-    let resp: JsonRpcResult<TxReceipt> = client.call(&call).await?;
-    Ok(resp.take()?)
+    let client = jsonrpc_client_with_chain(provider, chain);
+    let result: TxReceipt = client.request(call).await?;
+    Ok(result)
 }
 
 pub async fn multicall3_call(
@@ -71,9 +69,8 @@ pub async fn multicall3_call(
     let data = IMulticall3::aggregate3Call { calls }.abi_encode();
     let call = EthereumRpc::Call(TransactionObject::new_call(multicall_address, data), BlockParameter::Latest);
 
-    let client = JsonRpcClient::new_with_chain(provider.clone(), *chain);
-    let response: JsonRpcResult<String> = client.call(&call).await?;
-    let result = response.take()?;
+    let client = jsonrpc_client_with_chain(provider.clone(), *chain);
+    let result: String = client.request(call).await?;
     let hex_data = HexDecode(result).map_err(|e| SwapperError::NetworkError(e.to_string()))?;
 
     let decoded = IMulticall3::aggregate3Call::abi_decode_returns(&hex_data).map_err(|_| SwapperError::ABIError("failed to decode aggregate3Call".into()))?;

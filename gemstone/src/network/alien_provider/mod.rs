@@ -1,5 +1,4 @@
 pub mod error;
-pub mod jsonrpc;
 pub mod mime;
 pub mod mock;
 pub mod provider;

@@ -1,5 +1,5 @@
 use crate::{
-    network::{AlienProvider, JsonRpcClient, JsonRpcError},
+    network::{jsonrpc_client_with_chain, AlienProvider},
     swapper::{
         approval::{check_approval_erc20, check_approval_permit2},
         eth_address,
@@ -18,7 +18,9 @@ use gem_evm::{
     jsonrpc::EthereumRpc,
     uniswap::{command::encode_commands, path::get_base_pair},
 };
+use gem_jsonrpc::types::JsonRpcRequestConvert;
 use primitives::{AssetId, Chain, EVMChain};
+use serde_json::Value;
 
 use alloy_primitives::{hex::encode_prefixed as HexEncode, Address, Bytes, U256};
 use async_trait::async_trait;
@@ -135,7 +137,7 @@ impl Swapper for UniswapV3 {
         //     [...],
         // ]
         let paths_array = super::path::build_paths(&token_in, &token_out, &fee_tiers, &base_pair);
-        let client = JsonRpcClient::new_with_chain(provider.clone(), from_chain);
+        let client = jsonrpc_client_with_chain(provider.clone(), from_chain);
         let requests: Vec<_> = paths_array
             .iter()
             .map(|paths| {
@@ -145,16 +147,19 @@ impl Swapper for UniswapV3 {
                     .collect();
 
                 // batch fee_tiers.len() requests into one jsonrpc call
-                client.batch_call(calls)
+                let call_tuples: Vec<(String, Value)> = calls
+                    .iter()
+                    .map(|call| {
+                        let req = call.to_req(0);
+                        (req.method, req.params)
+                    })
+                    .collect();
+                client.batch_call(call_tuples)
             })
             .collect();
 
         // fire batch requests in parallel
-        let batch_results: Vec<_> = futures::future::join_all(requests)
-            .await
-            .into_iter()
-            .map(|r| r.map_err(JsonRpcError::from))
-            .collect();
+        let batch_results = futures::future::join_all(requests).await;
 
         let quote_result = get_best_quote(&batch_results, super::quoter_v2::decode_quoter_response)?;
 

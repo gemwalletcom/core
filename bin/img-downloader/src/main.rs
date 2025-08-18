@@ -2,7 +2,7 @@ mod cli_args;
 use cli_args::Args;
 
 use coingecko::get_chain_for_coingecko_platform_id;
-use coingecko::{CoinGeckoClient, CoinInfo};
+use coingecko::{CoinGeckoClient, CoinInfo, COINGECKO_API_HOST};
 use settings::Settings;
 
 use clap::Parser;
@@ -23,25 +23,20 @@ impl Downloader {
     }
 
     fn new_coingecko_client(api_key: String) -> CoinGeckoClient {
-        let retry_policy = retry::for_host("api.coingecko.com")
-            .max_retries_per_request(10)
-            .classify_fn(|req_rep| {
-                match req_rep.status() {
-                    Some(StatusCode::TOO_MANY_REQUESTS) | 
-                    Some(StatusCode::INTERNAL_SERVER_ERROR) |
-                    Some(StatusCode::BAD_GATEWAY) |
-                    Some(StatusCode::SERVICE_UNAVAILABLE) |
-                    Some(StatusCode::GATEWAY_TIMEOUT) => req_rep.retryable(),
-                    None => req_rep.retryable(), // Network errors
-                    _ => req_rep.success(),
-                }
-            });
-        
-        let reqwest_client = reqwest::Client::builder()
-            .retry(retry_policy)
-            .build()
-            .expect("Failed to build reqwest client");
-            
+        let retry_policy = retry::for_host(COINGECKO_API_HOST).max_retries_per_request(10).classify_fn(|req_rep| {
+            match req_rep.status() {
+                Some(StatusCode::TOO_MANY_REQUESTS)
+                | Some(StatusCode::INTERNAL_SERVER_ERROR)
+                | Some(StatusCode::BAD_GATEWAY)
+                | Some(StatusCode::SERVICE_UNAVAILABLE)
+                | Some(StatusCode::GATEWAY_TIMEOUT) => req_rep.retryable(),
+                None => req_rep.retryable(), // Network errors
+                _ => req_rep.success(),
+            }
+        });
+
+        let reqwest_client = reqwest::Client::builder().retry(retry_policy).build().expect("Failed to build reqwest client");
+
         CoinGeckoClient::new_with_reqwest_client(reqwest_client, api_key.as_str())
     }
 

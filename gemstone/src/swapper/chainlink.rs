@@ -6,9 +6,7 @@ use primitives::Chain;
 use std::sync::Arc;
 
 use crate::{
-    network::{
-        AlienProvider, {JsonRpcClient, JsonRpcResult},
-    },
+    network::{jsonrpc_client_with_chain, AlienProvider, JsonRpcClient},
     swapper::SwapperError,
 };
 use gem_evm::{
@@ -19,14 +17,14 @@ use gem_evm::{
 
 pub struct ChainlinkPriceFeed {
     pub contract: String,
-    pub client: JsonRpcClient,
+    pub client: JsonRpcClient<crate::network::AlienClient>,
 }
 
 impl ChainlinkPriceFeed {
     pub fn new_eth_usd_feed(provider: Arc<dyn AlienProvider>) -> ChainlinkPriceFeed {
         ChainlinkPriceFeed {
             contract: CHAINLINK_ETH_USD_FEED.into(),
-            client: JsonRpcClient::new_with_chain(provider, Chain::Ethereum),
+            client: jsonrpc_client_with_chain(provider, Chain::Ethereum),
         }
     }
 
@@ -46,8 +44,7 @@ impl ChainlinkPriceFeed {
     pub async fn fetch_latest_round(&self) -> Result<BigInt, SwapperError> {
         let data = AggregatorInterface::latestRoundDataCall {}.abi_encode();
         let call = EthereumRpc::Call(TransactionObject::new_call(&self.contract, data), BlockParameter::Latest);
-        let response: JsonRpcResult<String> = self.client.call(&call).await?;
-        let result = response.take()?;
+        let result: String = self.client.request(call).await?;
         let hex_data = HexDecode(result).map_err(|_| SwapperError::NetworkError("failed to latest round data".into()))?;
         let decoded = AggregatorInterface::latestRoundDataCall::abi_decode_returns(&hex_data).map_err(SwapperError::from)?;
 

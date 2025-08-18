@@ -3,7 +3,7 @@ use super::{
     ChainflipEnvironment, ChainflipIngressEgress, VaultSwapExtras, VaultSwapResponse,
 };
 use crate::{
-    network::{AlienProvider, JsonRpcClient},
+    network::{AlienClient, AlienProvider, JsonRpcClient},
     swapper::SwapperError,
 };
 use serde_json::json;
@@ -14,13 +14,15 @@ const CHAINFLIP_BROKER_KEY: &str = "ed08651813cc4d4798bf9b953b5d33fb";
 
 #[derive(Debug)]
 pub struct BrokerClient {
-    client: JsonRpcClient,
+    client: JsonRpcClient<AlienClient>,
 }
 
 impl BrokerClient {
     pub fn new(provider: Arc<dyn AlienProvider>) -> Self {
+        let endpoint = format!("{CHAINFLIP_BROKER_URL}/rpc/{CHAINFLIP_BROKER_KEY}");
+        let alien_client = AlienClient::new(endpoint.clone(), provider);
         Self {
-            client: JsonRpcClient::new(provider.clone(), format!("{CHAINFLIP_BROKER_URL}/rpc/{CHAINFLIP_BROKER_KEY}")),
+            client: JsonRpcClient::new(endpoint, alien_client),
         }
     }
 
