@@ -6,6 +6,7 @@ use std::sync::Arc;
 use super::{
     client::ProxyClient,
     mayan::{map_mayan_chain_to_chain, MayanClientStatus, MayanExplorer},
+    near::OneClickApi,
     symbiosis::model::SymbiosisTransactionData,
 };
 use crate::{
@@ -219,6 +220,17 @@ impl Swapper for ProxyProvider {
                     from_tx_hash: transaction_hash.to_string(),
                     to_chain,
                     to_tx_hash,
+                })
+            }
+            SwapperProvider::NearIntents => {
+                let client = OneClickApi::new(provider);
+                let result = client.get_transaction_status(transaction_hash).await?;
+                Ok(SwapperSwapResult {
+                    status: result.swap_status(),
+                    from_chain: chain,
+                    from_tx_hash: transaction_hash.to_string(),
+                    to_chain: result.to_chain(),
+                    to_tx_hash: result.to_tx_hash(),
                 })
             }
             // For OnChain providers, use the default implementation

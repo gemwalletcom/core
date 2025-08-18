@@ -26,3 +26,30 @@ impl BlockExplorer for NearBlocks {
         format!("{}/address/{}", self.meta.base_url, address)
     }
 }
+
+pub struct NearIntentsExplorer {
+    pub meta: Metadata,
+}
+
+impl NearIntentsExplorer {
+    pub fn new() -> Box<Self> {
+        Box::new(Self {
+            meta: Metadata {
+                name: "NEAR Intents",
+                base_url: "https://explorer.near-intents.org",
+            },
+        })
+    }
+}
+
+impl BlockExplorer for NearIntentsExplorer {
+    fn name(&self) -> String {
+        self.meta.name.into()
+    }
+    fn get_tx_url(&self, hash: &str) -> String {
+        format!("{}/transactions/{}", self.meta.base_url, hash)
+    }
+    fn get_address_url(&self, address: &str) -> String {
+        format!("{}/address/{}", self.meta.base_url, address)
+    }
+}

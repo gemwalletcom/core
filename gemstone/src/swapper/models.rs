@@ -64,7 +64,7 @@ impl SwapperProviderType {
             | SwapperProvider::Reservoir
             | SwapperProvider::Symbiosis
             | SwapperProvider::Aerodrome => SwapperProviderMode::OnChain,
-            SwapperProvider::Mayan | SwapperProvider::Chainflip => SwapperProviderMode::CrossChain,
+            SwapperProvider::Mayan | SwapperProvider::Chainflip | SwapperProvider::NearIntents => SwapperProviderMode::CrossChain,
             SwapperProvider::Thorchain => SwapperProviderMode::OmniChain(vec![Chain::Thorchain]),
             SwapperProvider::Relay => SwapperProviderMode::OmniChain(vec![Chain::Hyperliquid, Chain::Manta, Chain::Berachain]),
             SwapperProvider::Across => SwapperProviderMode::Bridge,
