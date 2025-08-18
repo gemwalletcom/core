@@ -18,9 +18,7 @@ use gem_evm::{
     jsonrpc::EthereumRpc,
     uniswap::{command::encode_commands, path::get_base_pair},
 };
-use gem_jsonrpc::types::JsonRpcRequestConvert;
 use primitives::{AssetId, Chain, EVMChain};
-use serde_json::Value;
 
 use alloy_primitives::{hex::encode_prefixed as HexEncode, Address, Bytes, U256};
 use async_trait::async_trait;
@@ -146,15 +144,8 @@ impl Swapper for UniswapV3 {
                     .map(|path| super::quoter_v2::build_quoter_request(&request.mode, &request.wallet_address, deployment.quoter_v2, quote_amount_in, &path.1))
                     .collect();
 
-                // batch fee_tiers.len() requests into one jsonrpc call
-                let call_tuples: Vec<(String, Value)> = calls
-                    .iter()
-                    .map(|call| {
-                        let req = call.to_req(0);
-                        (req.method, req.params)
-                    })
-                    .collect();
-                client.batch_call(call_tuples)
+                // Use the more convenient batch_call_requests method
+                client.batch_call_requests(calls)
             })
             .collect();
 
