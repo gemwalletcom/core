@@ -1,224 +1,366 @@
-use crate::block_explorer::{BlockExplorer, Metadata};
+use crate::block_explorer::BlockExplorer;
+use crate::explorers::metadata::{Metadata, MultiChainExplorer};
+use std::sync::LazyLock;
 
-static BLOCKCHAIR_NAME: &str = "Blockchair";
+static BLOCKCHAIR_FACTORY: LazyLock<MultiChainExplorer> = LazyLock::new(|| {
+    MultiChainExplorer::new("Blockchair")
+        .add_chain(
+            "bitcoin",
+            Metadata {
+                name: "Blockchair",
+                base_url: "https://blockchair.com/bitcoin",
+                tx_path: "transaction",
+                address_path: "address",
+                token_path: None,
+                validator_path: None,
+            },
+        )
+        .add_chain(
+            "bitcoin_cash",
+            Metadata {
+                name: "Blockchair",
+                base_url: "https://blockchair.com/bitcoin-cash",
+                tx_path: "transaction",
+                address_path: "address",
+                token_path: None,
+                validator_path: None,
+            },
+        )
+        .add_chain(
+            "litecoin",
+            Metadata {
+                name: "Blockchair",
+                base_url: "https://blockchair.com/litecoin",
+                tx_path: "transaction",
+                address_path: "address",
+                token_path: None,
+                validator_path: None,
+            },
+        )
+        .add_chain(
+            "dogecoin",
+            Metadata {
+                name: "Blockchair",
+                base_url: "https://blockchair.com/dogecoin",
+                tx_path: "transaction",
+                address_path: "address",
+                token_path: None,
+                validator_path: None,
+            },
+        )
+        .add_chain(
+            "ethereum",
+            Metadata {
+                name: "Blockchair",
+                base_url: "https://blockchair.com/ethereum",
+                tx_path: "transaction",
+                address_path: "address",
+                token_path: None,
+                validator_path: None,
+            },
+        )
+        .add_chain(
+            "base",
+            Metadata {
+                name: "Blockchair",
+                base_url: "https://blockchair.com/base",
+                tx_path: "transaction",
+                address_path: "address",
+                token_path: None,
+                validator_path: None,
+            },
+        )
+        .add_chain(
+            "polygon",
+            Metadata {
+                name: "Blockchair",
+                base_url: "https://blockchair.com/polygon",
+                tx_path: "transaction",
+                address_path: "address",
+                token_path: None,
+                validator_path: None,
+            },
+        )
+        .add_chain(
+            "arbitrum",
+            Metadata {
+                name: "Blockchair",
+                base_url: "https://blockchair.com/arbitrum-one",
+                tx_path: "transaction",
+                address_path: "address",
+                token_path: None,
+                validator_path: None,
+            },
+        )
+        .add_chain(
+            "optimism",
+            Metadata {
+                name: "Blockchair",
+                base_url: "https://blockchair.com/optimism",
+                tx_path: "transaction",
+                address_path: "address",
+                token_path: None,
+                validator_path: None,
+            },
+        )
+        .add_chain(
+            "avalanche",
+            Metadata {
+                name: "Blockchair",
+                base_url: "https://blockchair.com/avalanche",
+                tx_path: "transaction",
+                address_path: "address",
+                token_path: None,
+                validator_path: None,
+            },
+        )
+        .add_chain(
+            "solana",
+            Metadata {
+                name: "Blockchair",
+                base_url: "https://blockchair.com/solana",
+                tx_path: "transaction",
+                address_path: "address",
+                token_path: None,
+                validator_path: None,
+            },
+        )
+        .add_chain(
+            "stellar",
+            Metadata {
+                name: "Blockchair",
+                base_url: "https://blockchair.com/stellar",
+                tx_path: "transaction",
+                address_path: "address",
+                token_path: None,
+                validator_path: None,
+            },
+        )
+        .add_chain(
+            "bnb",
+            Metadata {
+                name: "Blockchair",
+                base_url: "https://blockchair.com/bnb",
+                tx_path: "transaction",
+                address_path: "address",
+                token_path: None,
+                validator_path: None,
+            },
+        )
+        .add_chain(
+            "opbnb",
+            Metadata {
+                name: "Blockchair",
+                base_url: "https://blockchair.com/opbnb",
+                tx_path: "transaction",
+                address_path: "address",
+                token_path: None,
+                validator_path: None,
+            },
+        )
+        .add_chain(
+            "fantom",
+            Metadata {
+                name: "Blockchair",
+                base_url: "https://blockchair.com/fantom",
+                tx_path: "transaction",
+                address_path: "address",
+                token_path: None,
+                validator_path: None,
+            },
+        )
+        .add_chain(
+            "gnosis",
+            Metadata {
+                name: "Blockchair",
+                base_url: "https://blockchair.com/gnosis-chain",
+                tx_path: "transaction",
+                address_path: "address",
+                token_path: None,
+                validator_path: None,
+            },
+        )
+        .add_chain(
+            "linea",
+            Metadata {
+                name: "Blockchair",
+                base_url: "https://blockchair.com/linea",
+                tx_path: "transaction",
+                address_path: "address",
+                token_path: None,
+                validator_path: None,
+            },
+        )
+        .add_chain(
+            "ton",
+            Metadata {
+                name: "Blockchair",
+                base_url: "https://blockchair.com/ton",
+                tx_path: "transaction",
+                address_path: "address",
+                token_path: None,
+                validator_path: None,
+            },
+        )
+        .add_chain(
+            "tron",
+            Metadata {
+                name: "Blockchair",
+                base_url: "https://blockchair.com/tron",
+                tx_path: "transaction",
+                address_path: "address",
+                token_path: None,
+                validator_path: None,
+            },
+        )
+        .add_chain(
+            "xrp",
+            Metadata {
+                name: "Blockchair",
+                base_url: "https://blockchair.com/xrp-ledger",
+                tx_path: "transaction",
+                address_path: "address",
+                token_path: None,
+                validator_path: None,
+            },
+        )
+        .add_chain(
+            "aptos",
+            Metadata {
+                name: "Blockchair",
+                base_url: "https://blockchair.com/aptos",
+                tx_path: "transaction",
+                address_path: "address",
+                token_path: None,
+                validator_path: None,
+            },
+        )
+        .add_chain(
+            "polkadot",
+            Metadata {
+                name: "Blockchair",
+                base_url: "https://blockchair.com/polkadot",
+                tx_path: "transaction",
+                address_path: "address",
+                token_path: None,
+                validator_path: None,
+            },
+        )
+});
 
-macro_rules! blockchair_url {
-    ($chain:expr) => {
-        concat!("https://blockchair.com/", $chain)
-    };
+pub fn new_bitcoin() -> Box<dyn BlockExplorer> {
+    BLOCKCHAIR_FACTORY.for_chain("bitcoin").unwrap()
 }
 
-pub struct Blockchair {
-    pub meta: Metadata,
+pub fn new_bitcoin_cash() -> Box<dyn BlockExplorer> {
+    BLOCKCHAIR_FACTORY.for_chain("bitcoin_cash").unwrap()
 }
 
-impl Blockchair {
-    pub fn new_bitcoin() -> Box<Self> {
-        Box::new(Self {
-            meta: Metadata {
-                name: BLOCKCHAIR_NAME,
-                base_url: blockchair_url!("bitcoin"),
-            },
-        })
-    }
-
-    pub fn new_bitcoin_cash() -> Box<Self> {
-        Box::new(Self {
-            meta: Metadata {
-                name: BLOCKCHAIR_NAME,
-                base_url: blockchair_url!("bitcoin-cash"),
-            },
-        })
-    }
-
-    pub fn new_litecoin() -> Box<Self> {
-        Box::new(Self {
-            meta: Metadata {
-                name: BLOCKCHAIR_NAME,
-                base_url: blockchair_url!("litecoin"),
-            },
-        })
-    }
-
-    pub fn new_doge() -> Box<Self> {
-        Box::new(Self {
-            meta: Metadata {
-                name: BLOCKCHAIR_NAME,
-                base_url: blockchair_url!("dogecoin"),
-            },
-        })
-    }
-
-    pub fn new_ethereum() -> Box<Self> {
-        Box::new(Self {
-            meta: Metadata {
-                name: BLOCKCHAIR_NAME,
-                base_url: blockchair_url!("ethereum"),
-            },
-        })
-    }
-
-    pub fn new_base() -> Box<Self> {
-        Box::new(Self {
-            meta: Metadata {
-                name: BLOCKCHAIR_NAME,
-                base_url: blockchair_url!("base"),
-            },
-        })
-    }
-
-    pub fn new_bnb() -> Box<Self> {
-        Box::new(Self {
-            meta: Metadata {
-                name: BLOCKCHAIR_NAME,
-                base_url: blockchair_url!("bnb"),
-            },
-        })
-    }
-
-    pub fn new_polygon() -> Box<Self> {
-        Box::new(Self {
-            meta: Metadata {
-                name: BLOCKCHAIR_NAME,
-                base_url: blockchair_url!("polygon"),
-            },
-        })
-    }
-
-    pub fn new_arbitrum() -> Box<Self> {
-        Box::new(Self {
-            meta: Metadata {
-                name: BLOCKCHAIR_NAME,
-                base_url: blockchair_url!("arbitrum-one"),
-            },
-        })
-    }
-
-    pub fn new_optimism() -> Box<Self> {
-        Box::new(Self {
-            meta: Metadata {
-                name: BLOCKCHAIR_NAME,
-                base_url: blockchair_url!("optimism"),
-            },
-        })
-    }
-
-    pub fn new_avalanche() -> Box<Self> {
-        Box::new(Self {
-            meta: Metadata {
-                name: BLOCKCHAIR_NAME,
-                base_url: blockchair_url!("avalanche"),
-            },
-        })
-    }
-
-    pub fn new_opbnb() -> Box<Self> {
-        Box::new(Self {
-            meta: Metadata {
-                name: BLOCKCHAIR_NAME,
-                base_url: blockchair_url!("opbnb"),
-            },
-        })
-    }
-
-    pub fn new_fantom() -> Box<Self> {
-        Box::new(Self {
-            meta: Metadata {
-                name: BLOCKCHAIR_NAME,
-                base_url: blockchair_url!("fantom"),
-            },
-        })
-    }
-
-    pub fn new_gnosis() -> Box<Self> {
-        Box::new(Self {
-            meta: Metadata {
-                name: BLOCKCHAIR_NAME,
-                base_url: blockchair_url!("gnosis-chain"),
-            },
-        })
-    }
-
-    pub fn new_linea() -> Box<Self> {
-        Box::new(Self {
-            meta: Metadata {
-                name: BLOCKCHAIR_NAME,
-                base_url: blockchair_url!("linea"),
-            },
-        })
-    }
-
-    pub fn new_solana() -> Box<Self> {
-        Box::new(Self {
-            meta: Metadata {
-                name: BLOCKCHAIR_NAME,
-                base_url: blockchair_url!("solana"),
-            },
-        })
-    }
-
-    pub fn new_ton() -> Box<Self> {
-        Box::new(Self {
-            meta: Metadata {
-                name: BLOCKCHAIR_NAME,
-                base_url: blockchair_url!("ton"),
-            },
-        })
-    }
-
-    pub fn new_tron() -> Box<Self> {
-        Box::new(Self {
-            meta: Metadata {
-                name: BLOCKCHAIR_NAME,
-                base_url: blockchair_url!("tron"),
-            },
-        })
-    }
-
-    pub fn new_xrp() -> Box<Self> {
-        Box::new(Self {
-            meta: Metadata {
-                name: BLOCKCHAIR_NAME,
-                base_url: blockchair_url!("xrp-ledger"),
-            },
-        })
-    }
-
-    pub fn new_aptos() -> Box<Self> {
-        Box::new(Self {
-            meta: Metadata {
-                name: BLOCKCHAIR_NAME,
-                base_url: blockchair_url!("aptos"),
-            },
-        })
-    }
-    pub fn new_stellar() -> Box<Self> {
-        Box::new(Self {
-            meta: Metadata {
-                name: BLOCKCHAIR_NAME,
-                base_url: blockchair_url!("stellar"),
-            },
-        })
-    }
-
-    pub fn new_polkadot() -> Box<Self> {
-        Box::new(Self {
-            meta: Metadata {
-                name: BLOCKCHAIR_NAME,
-                base_url: blockchair_url!("polkadot"),
-            },
-        })
-    }
+pub fn new_litecoin() -> Box<dyn BlockExplorer> {
+    BLOCKCHAIR_FACTORY.for_chain("litecoin").unwrap()
 }
 
-impl BlockExplorer for Blockchair {
-    fn name(&self) -> String {
-        self.meta.name.into()
+pub fn new_doge() -> Box<dyn BlockExplorer> {
+    BLOCKCHAIR_FACTORY.for_chain("dogecoin").unwrap()
+}
+
+pub fn new_ethereum() -> Box<dyn BlockExplorer> {
+    BLOCKCHAIR_FACTORY.for_chain("ethereum").unwrap()
+}
+
+pub fn new_base() -> Box<dyn BlockExplorer> {
+    BLOCKCHAIR_FACTORY.for_chain("base").unwrap()
+}
+
+pub fn new_polygon() -> Box<dyn BlockExplorer> {
+    BLOCKCHAIR_FACTORY.for_chain("polygon").unwrap()
+}
+
+pub fn new_arbitrum() -> Box<dyn BlockExplorer> {
+    BLOCKCHAIR_FACTORY.for_chain("arbitrum").unwrap()
+}
+
+pub fn new_optimism() -> Box<dyn BlockExplorer> {
+    BLOCKCHAIR_FACTORY.for_chain("optimism").unwrap()
+}
+
+pub fn new_avalanche() -> Box<dyn BlockExplorer> {
+    BLOCKCHAIR_FACTORY.for_chain("avalanche").unwrap()
+}
+
+pub fn new_solana() -> Box<dyn BlockExplorer> {
+    BLOCKCHAIR_FACTORY.for_chain("solana").unwrap()
+}
+
+pub fn new_stellar() -> Box<dyn BlockExplorer> {
+    BLOCKCHAIR_FACTORY.for_chain("stellar").unwrap()
+}
+
+pub fn new_bnb() -> Box<dyn BlockExplorer> {
+    BLOCKCHAIR_FACTORY.for_chain("bnb").unwrap()
+}
+
+pub fn new_opbnb() -> Box<dyn BlockExplorer> {
+    BLOCKCHAIR_FACTORY.for_chain("opbnb").unwrap()
+}
+
+pub fn new_fantom() -> Box<dyn BlockExplorer> {
+    BLOCKCHAIR_FACTORY.for_chain("fantom").unwrap()
+}
+
+pub fn new_gnosis() -> Box<dyn BlockExplorer> {
+    BLOCKCHAIR_FACTORY.for_chain("gnosis").unwrap()
+}
+
+pub fn new_linea() -> Box<dyn BlockExplorer> {
+    BLOCKCHAIR_FACTORY.for_chain("linea").unwrap()
+}
+
+pub fn new_ton() -> Box<dyn BlockExplorer> {
+    BLOCKCHAIR_FACTORY.for_chain("ton").unwrap()
+}
+
+pub fn new_tron() -> Box<dyn BlockExplorer> {
+    BLOCKCHAIR_FACTORY.for_chain("tron").unwrap()
+}
+
+pub fn new_xrp() -> Box<dyn BlockExplorer> {
+    BLOCKCHAIR_FACTORY.for_chain("xrp").unwrap()
+}
+
+pub fn new_aptos() -> Box<dyn BlockExplorer> {
+    BLOCKCHAIR_FACTORY.for_chain("aptos").unwrap()
+}
+
+pub fn new_polkadot() -> Box<dyn BlockExplorer> {
+    BLOCKCHAIR_FACTORY.for_chain("polkadot").unwrap()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_blockchair_bitcoin() {
+        let explorer = new_bitcoin();
+        assert_eq!(explorer.name(), "Blockchair");
+        assert_eq!(explorer.get_tx_url("abc123"), "https://blockchair.com/bitcoin/transaction/abc123");
+        assert_eq!(explorer.get_address_url("addr123"), "https://blockchair.com/bitcoin/address/addr123");
     }
-    fn get_tx_url(&self, hash: &str) -> String {
-        format!("{}/transaction/{}", self.meta.base_url, hash)
+
+    #[test]
+    fn test_blockchair_ethereum() {
+        let explorer = new_ethereum();
+        assert_eq!(explorer.name(), "Blockchair");
+        assert_eq!(explorer.get_tx_url("abc123"), "https://blockchair.com/ethereum/transaction/abc123");
+        assert_eq!(explorer.get_address_url("addr123"), "https://blockchair.com/ethereum/address/addr123");
     }
-    fn get_address_url(&self, address: &str) -> String {
-        format!("{}/address/{}", self.meta.base_url, address)
+
+    #[test]
+    fn test_blockchair_stellar() {
+        let explorer = new_stellar();
+        assert_eq!(explorer.name(), "Blockchair");
+        assert_eq!(explorer.get_tx_url("abc123"), "https://blockchair.com/stellar/transaction/abc123");
+        assert_eq!(explorer.get_address_url("addr123"), "https://blockchair.com/stellar/address/addr123");
     }
 }

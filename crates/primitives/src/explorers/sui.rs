@@ -1,69 +1,26 @@
-use crate::block_explorer::{BlockExplorer, Metadata};
+use crate::block_explorer::BlockExplorer;
+use crate::explorers::metadata::{GenericExplorer, Metadata};
 
-pub struct SuiScan {
-    pub meta: Metadata,
+pub fn new_sui_scan() -> Box<dyn BlockExplorer> {
+    GenericExplorer::new(Metadata {
+        name: "SuiScan",
+        base_url: "https://suiscan.xyz/mainnet",
+        tx_path: "tx",
+        address_path: "account",
+        token_path: Some("coin"),
+        validator_path: Some("validator"),
+    })
 }
 
-impl SuiScan {
-    pub fn new() -> Box<Self> {
-        Box::new(Self {
-            meta: Metadata {
-                name: "SuiScan",
-                base_url: "https://suiscan.xyz/mainnet",
-            },
-        })
-    }
-}
-
-impl BlockExplorer for SuiScan {
-    fn name(&self) -> String {
-        self.meta.name.into()
-    }
-    fn get_tx_url(&self, hash: &str) -> String {
-        format!("{}/tx/{}", self.meta.base_url, hash)
-    }
-    fn get_address_url(&self, address: &str) -> String {
-        format!("{}/account/{}", self.meta.base_url, address)
-    }
-    fn get_token_url(&self, token: &str) -> Option<String> {
-        format!("{}/coin/{}", self.meta.base_url, token).into()
-    }
-    fn get_validator_url(&self, validator: &str) -> Option<String> {
-        format!("{}/validator/{}", self.meta.base_url, validator).into()
-    }
-}
-
-pub struct SuiVision {
-    pub meta: Metadata,
-}
-
-impl SuiVision {
-    pub fn new() -> Box<Self> {
-        Box::new(Self {
-            meta: Metadata {
-                name: "SuiVision",
-                base_url: "https://suivision.xyz",
-            },
-        })
-    }
-}
-impl BlockExplorer for SuiVision {
-    fn name(&self) -> String {
-        self.meta.name.into()
-    }
-    fn get_tx_url(&self, hash: &str) -> String {
-        format!("{}/txblock/{}", self.meta.base_url, hash)
-    }
-    fn get_address_url(&self, address: &str) -> String {
-        format!("{}/account/{}", self.meta.base_url, address)
-    }
-    fn get_token_url(&self, token: &str) -> Option<String> {
-        format!("{}/coin/{}", self.meta.base_url, token).into()
-    }
-
-    fn get_validator_url(&self, validator: &str) -> Option<String> {
-        format!("{}/validator/{}", self.meta.base_url, validator).into()
-    }
+pub fn new_sui_vision() -> Box<dyn BlockExplorer> {
+    GenericExplorer::new(Metadata {
+        name: "SuiVision",
+        base_url: "https://suivision.xyz",
+        tx_path: "txblock",
+        address_path: "account",
+        token_path: Some("coin"),
+        validator_path: Some("validators"),
+    })
 }
 
 #[cfg(test)]
@@ -72,11 +29,13 @@ mod tests {
 
     #[test]
     fn test_get_token_url() {
-        let explorer = SuiScan::new();
-        let token = "0xdba34672e30cb065b1f93e3ab55318768fd6fef66c15942c9f7cb846e2f900e7::usdc::USDC";
-        assert_eq!(
-            explorer.get_token_url(token).unwrap(),
-            "https://suiscan.xyz/mainnet/coin/0xdba34672e30cb065b1f93e3ab55318768fd6fef66c15942c9f7cb846e2f900e7::usdc::USDC"
-        );
+        let sui_scan = new_sui_scan();
+        let sui_vision = new_sui_vision();
+
+        assert_eq!(sui_scan.get_token_url("token123"), Some("https://suiscan.xyz/mainnet/coin/token123".to_string()));
+        assert_eq!(sui_vision.get_token_url("token123"), Some("https://suivision.xyz/coin/token123".to_string()));
+
+        assert_eq!(sui_scan.get_validator_url("val123"), Some("https://suiscan.xyz/mainnet/validator/val123".to_string()));
+        assert_eq!(sui_vision.get_validator_url("val123"), Some("https://suivision.xyz/validators/val123".to_string()));
     }
 }

@@ -1,31 +1,17 @@
-use crate::block_explorer::{BlockExplorer, Metadata};
+use crate::block_explorer::BlockExplorer;
+use crate::explorers::metadata::{GenericExplorer, Metadata};
 
-pub struct MantleExplorer {
-    pub meta: Metadata,
-}
+pub struct MantleExplorer;
 
 impl MantleExplorer {
-    pub fn new() -> Box<Self> {
-        Box::new(Self {
-            meta: Metadata {
-                name: "Mantle Explorer",
-                base_url: "https://explorer.mantle.xyz",
-            },
+    pub fn boxed() -> Box<dyn BlockExplorer> {
+        GenericExplorer::new(Metadata {
+            name: "Mantle Explorer",
+            base_url: "https://explorer.mantle.xyz",
+            tx_path: "tx",
+            address_path: "address",
+            token_path: Some("token"),
+            validator_path: None,
         })
-    }
-}
-
-impl BlockExplorer for MantleExplorer {
-    fn name(&self) -> String {
-        self.meta.name.into()
-    }
-    fn get_tx_url(&self, hash: &str) -> String {
-        format!("{}/tx/{}", self.meta.base_url, hash)
-    }
-    fn get_address_url(&self, address: &str) -> String {
-        format!("{}/address/{}", self.meta.base_url, address)
-    }
-    fn get_token_url(&self, _token: &str) -> Option<String> {
-        Some(format!("{}/token/{}", self.meta.base_url, _token))
     }
 }

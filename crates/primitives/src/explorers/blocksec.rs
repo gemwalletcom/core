@@ -56,7 +56,7 @@ impl BlockExplorer for Blocksec {
     }
     fn get_address_url(&self, _address: &str) -> String {
         // delegate to etherscan
-        EtherScan::new(self.chain).get_address_url(_address)
+        EtherScan::boxed(self.chain).get_address_url(_address)
     }
 }
 
