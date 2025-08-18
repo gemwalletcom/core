@@ -54,3 +54,5 @@ pub mod scope;
 pub use scope::ScopeExplorer;
 pub mod hyperliquid;
 pub use hyperliquid::HyperliquidExplorer;
+pub mod stellar_expert;
+pub use stellar_expert::StellarExpert;
