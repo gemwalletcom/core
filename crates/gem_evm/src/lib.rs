@@ -19,8 +19,7 @@ pub mod thorchain;
 pub mod uniswap;
 pub mod weth;
 
-#[cfg(feature = "typeshare")]
-pub mod typeshare;
+pub mod models;
 
 #[cfg(feature = "rpc")]
 pub mod rpc;

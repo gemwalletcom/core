@@ -2988,7 +2988,6 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2",
- "typeshare",
 ]
 
 [[package]]
@@ -3020,7 +3019,6 @@ dependencies = [
  "serde_json",
  "serde_serializers",
  "tokio",
- "typeshare",
 ]
 
 [[package]]
@@ -3085,7 +3083,6 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_serializers",
- "typeshare",
 ]
 
 [[package]]
@@ -3107,7 +3104,6 @@ dependencies = [
  "serde_serializers",
  "sha2",
  "thiserror 2.0.12",
- "typeshare",
 ]
 
 [[package]]
@@ -3146,7 +3142,6 @@ dependencies = [
  "sui-sdk-types",
  "sui-transaction-builder",
  "thiserror 2.0.12",
- "typeshare",
 ]
 
 [[package]]
@@ -3161,7 +3156,6 @@ dependencies = [
  "serde_json",
  "serde_serializers",
  "tonlib-core",
- "typeshare",
 ]
 
 [[package]]
@@ -3182,7 +3176,6 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2",
- "typeshare",
 ]
 
 [[package]]

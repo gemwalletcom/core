@@ -1,5 +1,5 @@
 use std::error::Error;
-use crate::model::Account;
+use crate::models::Account;
 use primitives::TransactionPreload;
 
 pub fn map_transaction_preload(
@@ -18,7 +18,7 @@ pub fn map_transaction_preload(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::model::Account;
+    use crate::models::Account;
 
     #[test]
     fn test_transaction_preload() {

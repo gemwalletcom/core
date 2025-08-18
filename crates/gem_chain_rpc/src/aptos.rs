@@ -3,7 +3,7 @@ use std::error::Error;
 use async_trait::async_trait;
 use gem_aptos::{
     constants::{APTOS_NATIVE_COIN, COIN_INFO, COIN_STORE},
-    model::CoinInfo,
+    models::CoinInfo,
     rpc::client::AptosClient,
 };
 use gem_client::Client;

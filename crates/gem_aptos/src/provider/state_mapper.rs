@@ -1,5 +1,5 @@
 use std::error::Error;
-use crate::model::Transaction;
+use crate::models::Transaction;
 use primitives::{TransactionUpdate, TransactionState, TransactionChange};
 
 pub fn map_transaction_state(
@@ -27,7 +27,7 @@ pub fn map_transaction_state(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::model::Transaction;
+    use crate::models::Transaction;
 
     #[test]
     fn test_map_transaction_state_success() {

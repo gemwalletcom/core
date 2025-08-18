@@ -1,5 +1,5 @@
 use std::error::Error;
-use crate::model::{Resource, CoinInfo};
+use crate::models::{Resource, CoinInfo};
 use primitives::{Asset, AssetId, AssetType, Chain};
 
 pub fn map_token_data(
@@ -22,7 +22,7 @@ pub fn map_token_data(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{model::{CoinInfo, Resource}, APTOS_NATIVE_COIN};
+    use crate::{models::{CoinInfo, Resource}, APTOS_NATIVE_COIN};
 
     #[test]
     fn test_map_token_data() {

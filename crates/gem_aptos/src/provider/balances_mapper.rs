@@ -1,4 +1,4 @@
-use crate::model::{Resource, ResourceData};
+use crate::models::{Resource, ResourceData};
 
 use primitives::{AssetBalance, Balance, AssetId, Chain};
 
@@ -35,7 +35,7 @@ pub fn map_token_balances(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{model::{CoinData, Resource, ResourceData}, APTOS_NATIVE_COIN};
+    use crate::{models::{CoinData, Resource, ResourceData}, APTOS_NATIVE_COIN};
 
     #[test]
     fn test_map_native_balance() {

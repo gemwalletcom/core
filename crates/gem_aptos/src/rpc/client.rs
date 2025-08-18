@@ -5,7 +5,7 @@ use gem_client::Client;
 use serde::{de::DeserializeOwned, Serialize};
 
 use crate::{
-    model::{Block, Ledger, Resource, ResourceData, Account, TransactionResponse, GasFee, TransactionSimulation, TransactionSignature, TransactionPayload},
+    models::{Block, Ledger, Resource, ResourceData, Account, TransactionResponse, GasFee, TransactionSimulation, TransactionSignature, TransactionPayload},
     Transaction,
 };
 use primitives::{TransactionLoadInput, TransactionInputType, AssetSubtype};

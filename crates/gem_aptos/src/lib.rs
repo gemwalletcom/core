@@ -1,7 +1,7 @@
 pub mod constants;
 pub use constants::*;
-pub mod model;
-pub use model::*;
+pub mod models;
+pub use models::*;
 
 #[cfg(feature = "rpc")]
 pub mod rpc;

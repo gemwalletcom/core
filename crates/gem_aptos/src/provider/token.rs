@@ -6,7 +6,7 @@ use gem_client::Client;
 use primitives::Asset;
 
 use crate::rpc::client::AptosClient;
-use crate::model::CoinInfo;
+use crate::models::CoinInfo;
 use super::token_mapper::map_token_data;
 
 #[async_trait]

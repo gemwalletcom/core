@@ -12,26 +12,7 @@ static LANGUAGE_KOTLIN: &str = "kotlin";
 static LANG_KOTLIN_ETX: &str = "kt";
 
 fn main() {
-    let mut folders = vec!["crates/primitives"];
-    // Add all gem_* crates that have typeshare models
-    let gem_crates = vec![
-        "crates/gem_algorand",
-        "crates/gem_aptos",
-        "crates/gem_bitcoin",
-        "crates/gem_cardano",
-        "crates/gem_cosmos",
-        "crates/gem_evm",
-        "crates/gem_near",
-        "crates/gem_polkadot",
-        "crates/gem_solana",
-        "crates/gem_stellar",
-        "crates/gem_sui",
-        "crates/gem_ton",
-        "crates/gem_tron",
-        "crates/gem_xrp",
-        "crates/gem_hypercore",
-    ];
-    folders.extend(gem_crates);
+    let folders = vec!["crates/primitives"];
 
     let platform_str = std::env::args().nth(1).expect("no platform specified");
     let platform_directory_path = std::env::args().nth(2).expect("no path specified");
@@ -58,21 +39,10 @@ fn main() {
     .to_vec();
     ignored_files.append(&mut ignored_files_by_platform(platform.clone()));
 
-    //ignored_files(platform);
-
     for folder in folders {
         let src_path = format!("{folder}/src");
-
-        let typeshare_dir_path = format!("{src_path}/typeshare");
-        // process typeshare/ directory if crate has typeshare directory
-        if fs::metadata(&typeshare_dir_path).is_ok() {
-            let paths = get_paths(folder, typeshare_dir_path);
-            process_paths(paths, folder, &platform, &platform_directory_path, &ignored_files);
-        } else {
-            // For other crates like primitives, scan all files
-            let paths = get_paths(folder, src_path);
-            process_paths(paths, folder, &platform, &platform_directory_path, &ignored_files);
-        }
+        let paths = get_paths(folder, src_path);
+        process_paths(paths, folder, &platform, &platform_directory_path, &ignored_files);
     }
 }
 
@@ -81,10 +51,16 @@ fn process_paths(paths: Vec<String>, _folder: &str, platform: &Platform, platfor
         // Example path:
         // ./crates/primitives/src/utxo.rs
         let vec: Vec<&str> = path.split("/src/").collect();
+        if vec.len() < 2 {
+            continue;
+        }
+        
         let first_parts: Vec<&str> = vec[0].split('/').collect();
-        let raw_module_name = first_parts[1];
-        let module_name = map_crate_module_name(raw_module_name);
-        let chain_name = get_chain_name_from_crate(raw_module_name);
+        if first_parts.len() < 2 {
+            continue;
+        }
+        
+        let module_name = first_parts[1];
 
         let directory_paths: Vec<&str> = vec[1].split('/').collect();
         let mut directory_paths_capitalized = directory_paths
@@ -93,72 +69,51 @@ fn process_paths(paths: Vec<String>, _folder: &str, platform: &Platform, platfor
             .map(|&x| str_capitlize(x))
             .collect::<Vec<_>>();
 
-        let path: &str = &directory_paths_capitalized.pop().unwrap();
-        let ios_new_file_name = if raw_module_name != module_name {
-            format!("{}{}", chain_name, file_name(path, LANGUAGE_SWIFT))
-        } else {
-            file_name(path, LANGUAGE_SWIFT)
-        };
-
-        // prepend the chain name and Models folder to the path if module name is different from raw module name
-        let ios_new_path = if raw_module_name != module_name {
-            format!("{}/Models/{}", chain_name, ios_new_file_name.as_str())
-        } else {
-            format!("{}/{}", directory_paths_capitalized.clone().join("/"), ios_new_file_name.as_str())
-        };
-
-        // For Kotlin, create the same structure as iOS but with lowercase chain names
-        let kt_new_file_name = file_name(path, LANG_KOTLIN_ETX);
-        let kt_new_path = if raw_module_name != module_name {
-            format!("{}/{}", chain_name.to_lowercase(), kt_new_file_name)
-        } else {
-            let directory_paths_lowercased: Vec<String> = directory_paths_capitalized.iter().map(|x| x.to_lowercase()).collect();
-            format!("{}/{}", directory_paths_lowercased.join("/"), kt_new_file_name)
-        };
-        if ignored_files.contains(directory_paths.last().unwrap()) {
+        if directory_paths_capitalized.is_empty() {
             continue;
         }
+
+        let file_path = directory_paths_capitalized.pop().unwrap();
+        
+        if ignored_files.contains(directory_paths.last().unwrap_or(&"")) {
+            continue;
+        }
+
+        let ios_new_file_name = file_name(&file_path, LANGUAGE_SWIFT);
+        let ios_new_path = format!("{}/{}", directory_paths_capitalized.join("/"), ios_new_file_name);
+
+        let kt_new_file_name = file_name(&file_path, LANG_KOTLIN_ETX);
+        let directory_paths_lowercased: Vec<String> = directory_paths_capitalized.iter().map(|x| x.to_lowercase()).collect();
+        let kt_new_path = format!("{}/{}", directory_paths_lowercased.join("/"), kt_new_file_name);
+        
         let input_path = format!("./{}/src/{}", vec[0], directory_paths.join("/"));
 
         let ios_output_path = output_path(Platform::IOS, platform_directory_path, str_capitlize(module_name).as_str(), ios_new_path);
         let android_output_path = output_path(
             Platform::Android,
             platform_directory_path,
-            module_name.to_lowercase().as_str(),
+            module_name,
             kt_new_path.clone(),
         );
 
-        // Generate package name based on the path structure
-        let android_package_name = if raw_module_name != module_name {
-            format!("{}.{}.{}", ANDROID_PACKAGE_PREFIX, module_name, chain_name.to_lowercase())
-        } else {
-            let directory_paths_lowercased: Vec<String> = directory_paths_capitalized.iter().map(|x| x.to_lowercase()).collect();
-            let directory_package = directory_paths_lowercased.join(".");
-            format!(
-                "{}.{}{}",
-                ANDROID_PACKAGE_PREFIX,
-                module_name,
-                if directory_package.is_empty() {
-                    String::new()
-                } else {
-                    format!(".{directory_package}")
-                }
-            )
-        };
+        let directory_paths_lowercased: Vec<String> = directory_paths_capitalized.iter().map(|x| x.to_lowercase()).collect();
+        let directory_package = directory_paths_lowercased.join(".");
+        let android_package_name = format!(
+            "{}.{}{}",
+            ANDROID_PACKAGE_PREFIX,
+            module_name,
+            if directory_package.is_empty() {
+                String::new()
+            } else {
+                format!(".{directory_package}")
+            }
+        );
 
         match platform {
             Platform::IOS => {
-                // println!(
-                //     "Generate file for iOS: {}, output: {}",
-                //     input_path, ios_output_path
-                // );
                 generate_files(LANGUAGE_SWIFT, input_path.as_str(), ios_output_path.as_str(), "");
             }
             Platform::Android => {
-                // println!(
-                //     "Generate file for Android: {}, output: {}",
-                //     input_path, android_output_path
-                // );
                 generate_files(
                     LANGUAGE_KOTLIN,
                     input_path.as_str(),
@@ -233,21 +188,6 @@ fn str_capitlize(s: &str) -> String {
     format!("{}{}", s[..1].to_string().to_uppercase(), &s[1..])
 }
 
-fn map_crate_module_name(crate_name: &str) -> &str {
-    if crate_name.starts_with("gem_") {
-        "blockchain"
-    } else {
-        crate_name
-    }
-}
-
-fn get_chain_name_from_crate(crate_name: &str) -> String {
-    let chain_name = crate_name.split("_").last().unwrap();
-    match chain_name {
-        "evm" => "Ethereum".to_string(),
-        _ => str_capitlize(chain_name),
-    }
-}
 
 #[cfg(test)]
 mod tests {
