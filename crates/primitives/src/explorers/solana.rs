@@ -1,24 +1,24 @@
 use crate::block_explorer::BlockExplorer;
-use crate::explorers::metadata::{GenericExplorer, Metadata};
+use crate::explorers::metadata::{Explorer, Metadata, TX_PATH, ADDRESS_PATH, ACCOUNT_PATH, TOKEN_PATH};
 
 pub fn new_solscan() -> Box<dyn BlockExplorer> {
-    GenericExplorer::new(Metadata {
+    Explorer::boxed(Metadata {
         name: "Solscan",
         base_url: "https://solscan.io",
-        tx_path: "tx",
-        address_path: "account",
-        token_path: Some("token"),
+        tx_path: TX_PATH,
+        address_path: ACCOUNT_PATH,
+        token_path: Some(TOKEN_PATH),
         validator_path: None,
     })
 }
 
 pub fn new_solana_fm() -> Box<dyn BlockExplorer> {
-    GenericExplorer::new(Metadata {
+    Explorer::boxed(Metadata {
         name: "SolanaFM",
         base_url: "https://solana.fm",
-        tx_path: "tx",
-        address_path: "address",
-        token_path: Some("address"),
+        tx_path: TX_PATH,
+        address_path: ADDRESS_PATH,
+        token_path: Some(ADDRESS_PATH),
         validator_path: None,
     })
 }

@@ -4,14 +4,14 @@ pub struct XrpScan;
 
 impl XrpScan {
     pub fn boxed() -> Box<dyn BlockExplorer> {
-        Box::new(XrpScanCustom)
+        Box::new(XrpScanExplorer)
     }
 }
 
 // Custom implementation needed because token_url uses address_path
-struct XrpScanCustom;
+struct XrpScanExplorer;
 
-impl BlockExplorer for XrpScanCustom {
+impl BlockExplorer for XrpScanExplorer {
     fn name(&self) -> String {
         "XrpScan".into()
     }

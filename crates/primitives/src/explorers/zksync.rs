@@ -4,14 +4,14 @@ pub struct ZkSync;
 
 impl ZkSync {
     pub fn boxed() -> Box<dyn BlockExplorer> {
-        Box::new(ZkSyncCustom)
+        Box::new(ZkSyncExplorer)
     }
 }
 
 // Custom implementation needed because token_url uses address_path
-struct ZkSyncCustom;
+struct ZkSyncExplorer;
 
-impl BlockExplorer for ZkSyncCustom {
+impl BlockExplorer for ZkSyncExplorer {
     fn name(&self) -> String {
         "zkSync.io".into()
     }

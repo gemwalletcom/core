@@ -1,16 +1,16 @@
 use crate::block_explorer::BlockExplorer;
-use crate::explorers::metadata::{Metadata, MultiChainExplorer};
+use crate::explorers::metadata::{Metadata, MultiChainExplorer, TRANSACTION_PATH, ADDRESS_PATH};
 use std::sync::LazyLock;
 
 static BLOCKCHAIR_FACTORY: LazyLock<MultiChainExplorer> = LazyLock::new(|| {
-    MultiChainExplorer::new("Blockchair")
+    MultiChainExplorer::new()
         .add_chain(
             "bitcoin",
             Metadata {
                 name: "Blockchair",
                 base_url: "https://blockchair.com/bitcoin",
-                tx_path: "transaction",
-                address_path: "address",
+                tx_path: TRANSACTION_PATH,
+                address_path: ADDRESS_PATH,
                 token_path: None,
                 validator_path: None,
             },
@@ -20,8 +20,8 @@ static BLOCKCHAIR_FACTORY: LazyLock<MultiChainExplorer> = LazyLock::new(|| {
             Metadata {
                 name: "Blockchair",
                 base_url: "https://blockchair.com/bitcoin-cash",
-                tx_path: "transaction",
-                address_path: "address",
+                tx_path: TRANSACTION_PATH,
+                address_path: ADDRESS_PATH,
                 token_path: None,
                 validator_path: None,
             },
@@ -31,8 +31,8 @@ static BLOCKCHAIR_FACTORY: LazyLock<MultiChainExplorer> = LazyLock::new(|| {
             Metadata {
                 name: "Blockchair",
                 base_url: "https://blockchair.com/litecoin",
-                tx_path: "transaction",
-                address_path: "address",
+                tx_path: TRANSACTION_PATH,
+                address_path: ADDRESS_PATH,
                 token_path: None,
                 validator_path: None,
             },
@@ -42,8 +42,8 @@ static BLOCKCHAIR_FACTORY: LazyLock<MultiChainExplorer> = LazyLock::new(|| {
             Metadata {
                 name: "Blockchair",
                 base_url: "https://blockchair.com/dogecoin",
-                tx_path: "transaction",
-                address_path: "address",
+                tx_path: TRANSACTION_PATH,
+                address_path: ADDRESS_PATH,
                 token_path: None,
                 validator_path: None,
             },
@@ -53,8 +53,8 @@ static BLOCKCHAIR_FACTORY: LazyLock<MultiChainExplorer> = LazyLock::new(|| {
             Metadata {
                 name: "Blockchair",
                 base_url: "https://blockchair.com/ethereum",
-                tx_path: "transaction",
-                address_path: "address",
+                tx_path: TRANSACTION_PATH,
+                address_path: ADDRESS_PATH,
                 token_path: None,
                 validator_path: None,
             },
@@ -64,8 +64,8 @@ static BLOCKCHAIR_FACTORY: LazyLock<MultiChainExplorer> = LazyLock::new(|| {
             Metadata {
                 name: "Blockchair",
                 base_url: "https://blockchair.com/base",
-                tx_path: "transaction",
-                address_path: "address",
+                tx_path: TRANSACTION_PATH,
+                address_path: ADDRESS_PATH,
                 token_path: None,
                 validator_path: None,
             },
@@ -75,8 +75,8 @@ static BLOCKCHAIR_FACTORY: LazyLock<MultiChainExplorer> = LazyLock::new(|| {
             Metadata {
                 name: "Blockchair",
                 base_url: "https://blockchair.com/polygon",
-                tx_path: "transaction",
-                address_path: "address",
+                tx_path: TRANSACTION_PATH,
+                address_path: ADDRESS_PATH,
                 token_path: None,
                 validator_path: None,
             },
@@ -86,8 +86,8 @@ static BLOCKCHAIR_FACTORY: LazyLock<MultiChainExplorer> = LazyLock::new(|| {
             Metadata {
                 name: "Blockchair",
                 base_url: "https://blockchair.com/arbitrum-one",
-                tx_path: "transaction",
-                address_path: "address",
+                tx_path: TRANSACTION_PATH,
+                address_path: ADDRESS_PATH,
                 token_path: None,
                 validator_path: None,
             },
@@ -97,8 +97,8 @@ static BLOCKCHAIR_FACTORY: LazyLock<MultiChainExplorer> = LazyLock::new(|| {
             Metadata {
                 name: "Blockchair",
                 base_url: "https://blockchair.com/optimism",
-                tx_path: "transaction",
-                address_path: "address",
+                tx_path: TRANSACTION_PATH,
+                address_path: ADDRESS_PATH,
                 token_path: None,
                 validator_path: None,
             },
@@ -108,8 +108,8 @@ static BLOCKCHAIR_FACTORY: LazyLock<MultiChainExplorer> = LazyLock::new(|| {
             Metadata {
                 name: "Blockchair",
                 base_url: "https://blockchair.com/avalanche",
-                tx_path: "transaction",
-                address_path: "address",
+                tx_path: TRANSACTION_PATH,
+                address_path: ADDRESS_PATH,
                 token_path: None,
                 validator_path: None,
             },
@@ -119,8 +119,8 @@ static BLOCKCHAIR_FACTORY: LazyLock<MultiChainExplorer> = LazyLock::new(|| {
             Metadata {
                 name: "Blockchair",
                 base_url: "https://blockchair.com/solana",
-                tx_path: "transaction",
-                address_path: "address",
+                tx_path: TRANSACTION_PATH,
+                address_path: ADDRESS_PATH,
                 token_path: None,
                 validator_path: None,
             },
@@ -130,8 +130,8 @@ static BLOCKCHAIR_FACTORY: LazyLock<MultiChainExplorer> = LazyLock::new(|| {
             Metadata {
                 name: "Blockchair",
                 base_url: "https://blockchair.com/stellar",
-                tx_path: "transaction",
-                address_path: "address",
+                tx_path: TRANSACTION_PATH,
+                address_path: ADDRESS_PATH,
                 token_path: None,
                 validator_path: None,
             },
@@ -141,8 +141,8 @@ static BLOCKCHAIR_FACTORY: LazyLock<MultiChainExplorer> = LazyLock::new(|| {
             Metadata {
                 name: "Blockchair",
                 base_url: "https://blockchair.com/bnb",
-                tx_path: "transaction",
-                address_path: "address",
+                tx_path: TRANSACTION_PATH,
+                address_path: ADDRESS_PATH,
                 token_path: None,
                 validator_path: None,
             },
@@ -152,8 +152,8 @@ static BLOCKCHAIR_FACTORY: LazyLock<MultiChainExplorer> = LazyLock::new(|| {
             Metadata {
                 name: "Blockchair",
                 base_url: "https://blockchair.com/opbnb",
-                tx_path: "transaction",
-                address_path: "address",
+                tx_path: TRANSACTION_PATH,
+                address_path: ADDRESS_PATH,
                 token_path: None,
                 validator_path: None,
             },
@@ -163,8 +163,8 @@ static BLOCKCHAIR_FACTORY: LazyLock<MultiChainExplorer> = LazyLock::new(|| {
             Metadata {
                 name: "Blockchair",
                 base_url: "https://blockchair.com/fantom",
-                tx_path: "transaction",
-                address_path: "address",
+                tx_path: TRANSACTION_PATH,
+                address_path: ADDRESS_PATH,
                 token_path: None,
                 validator_path: None,
             },
@@ -174,8 +174,8 @@ static BLOCKCHAIR_FACTORY: LazyLock<MultiChainExplorer> = LazyLock::new(|| {
             Metadata {
                 name: "Blockchair",
                 base_url: "https://blockchair.com/gnosis-chain",
-                tx_path: "transaction",
-                address_path: "address",
+                tx_path: TRANSACTION_PATH,
+                address_path: ADDRESS_PATH,
                 token_path: None,
                 validator_path: None,
             },
@@ -185,8 +185,8 @@ static BLOCKCHAIR_FACTORY: LazyLock<MultiChainExplorer> = LazyLock::new(|| {
             Metadata {
                 name: "Blockchair",
                 base_url: "https://blockchair.com/linea",
-                tx_path: "transaction",
-                address_path: "address",
+                tx_path: TRANSACTION_PATH,
+                address_path: ADDRESS_PATH,
                 token_path: None,
                 validator_path: None,
             },
@@ -196,8 +196,8 @@ static BLOCKCHAIR_FACTORY: LazyLock<MultiChainExplorer> = LazyLock::new(|| {
             Metadata {
                 name: "Blockchair",
                 base_url: "https://blockchair.com/ton",
-                tx_path: "transaction",
-                address_path: "address",
+                tx_path: TRANSACTION_PATH,
+                address_path: ADDRESS_PATH,
                 token_path: None,
                 validator_path: None,
             },
@@ -207,8 +207,8 @@ static BLOCKCHAIR_FACTORY: LazyLock<MultiChainExplorer> = LazyLock::new(|| {
             Metadata {
                 name: "Blockchair",
                 base_url: "https://blockchair.com/tron",
-                tx_path: "transaction",
-                address_path: "address",
+                tx_path: TRANSACTION_PATH,
+                address_path: ADDRESS_PATH,
                 token_path: None,
                 validator_path: None,
             },
@@ -218,8 +218,8 @@ static BLOCKCHAIR_FACTORY: LazyLock<MultiChainExplorer> = LazyLock::new(|| {
             Metadata {
                 name: "Blockchair",
                 base_url: "https://blockchair.com/xrp-ledger",
-                tx_path: "transaction",
-                address_path: "address",
+                tx_path: TRANSACTION_PATH,
+                address_path: ADDRESS_PATH,
                 token_path: None,
                 validator_path: None,
             },
@@ -229,8 +229,8 @@ static BLOCKCHAIR_FACTORY: LazyLock<MultiChainExplorer> = LazyLock::new(|| {
             Metadata {
                 name: "Blockchair",
                 base_url: "https://blockchair.com/aptos",
-                tx_path: "transaction",
-                address_path: "address",
+                tx_path: TRANSACTION_PATH,
+                address_path: ADDRESS_PATH,
                 token_path: None,
                 validator_path: None,
             },
@@ -240,8 +240,8 @@ static BLOCKCHAIR_FACTORY: LazyLock<MultiChainExplorer> = LazyLock::new(|| {
             Metadata {
                 name: "Blockchair",
                 base_url: "https://blockchair.com/polkadot",
-                tx_path: "transaction",
-                address_path: "address",
+                tx_path: TRANSACTION_PATH,
+                address_path: ADDRESS_PATH,
                 token_path: None,
                 validator_path: None,
             },

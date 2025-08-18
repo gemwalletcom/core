@@ -1,28 +1,17 @@
-use crate::block_explorer::{BlockExplorer, Metadata};
+use crate::block_explorer::BlockExplorer;
+use crate::explorers::metadata::{Explorer, Metadata, ADDRESS_PATH, TX_PATH};
 
-pub struct MayanScan {
-    pub meta: Metadata,
-}
+pub struct MayanScan;
 
 impl MayanScan {
-    pub fn new() -> Box<Self> {
-        Box::new(Self {
-            meta: Metadata {
-                name: "Mayan Explorer",
-                base_url: "https://explorer.mayan.finance",
-            },
+    pub fn boxed() -> Box<dyn BlockExplorer> {
+        Explorer::boxed(Metadata {
+            name: "Mayan Explorer",
+            base_url: "https://explorer.mayan.finance",
+            tx_path: TX_PATH,
+            address_path: ADDRESS_PATH,
+            token_path: None,
+            validator_path: None,
         })
-    }
-}
-impl BlockExplorer for MayanScan {
-    fn name(&self) -> String {
-        self.meta.name.into()
-    }
-    fn get_tx_url(&self, hash: &str) -> String {
-        format!("{}/tx/{}", self.meta.base_url, hash)
-    }
-    // this method is not supported on mayan
-    fn get_address_url(&self, address: &str) -> String {
-        format!("{}/address/{}", self.meta.base_url, address)
     }
 }

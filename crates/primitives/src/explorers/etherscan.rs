@@ -1,194 +1,194 @@
 use crate::block_explorer::BlockExplorer;
 use crate::chain_evm::EVMChain;
-use crate::explorers::metadata::{GenericExplorer, Metadata};
+use crate::explorers::metadata::{Explorer, Metadata, ADDRESS_PATH, TOKEN_PATH, TX_PATH};
 
 pub struct EtherScan;
 
 impl EtherScan {
     pub fn boxed(chain: EVMChain) -> Box<dyn BlockExplorer> {
         match chain {
-            EVMChain::Ethereum => GenericExplorer::new(Metadata {
+            EVMChain::Ethereum => Explorer::boxed(Metadata {
                 name: "Etherscan",
                 base_url: "https://etherscan.io",
-                tx_path: "tx",
-                address_path: "address",
-                token_path: Some("token"),
+                tx_path: TX_PATH,
+                address_path: ADDRESS_PATH,
+                token_path: Some(TOKEN_PATH),
                 validator_path: None,
             }),
-            EVMChain::SmartChain => GenericExplorer::new(Metadata {
+            EVMChain::SmartChain => Explorer::boxed(Metadata {
                 name: "BscScan",
                 base_url: "https://bscscan.com",
-                tx_path: "tx",
-                address_path: "address",
-                token_path: Some("token"),
+                tx_path: TX_PATH,
+                address_path: ADDRESS_PATH,
+                token_path: Some(TOKEN_PATH),
                 validator_path: None,
             }),
-            EVMChain::Polygon => GenericExplorer::new(Metadata {
+            EVMChain::Polygon => Explorer::boxed(Metadata {
                 name: "PolygonScan",
                 base_url: "https://polygonscan.com",
-                tx_path: "tx",
-                address_path: "address",
-                token_path: Some("token"),
+                tx_path: TX_PATH,
+                address_path: ADDRESS_PATH,
+                token_path: Some(TOKEN_PATH),
                 validator_path: None,
             }),
-            EVMChain::Arbitrum => GenericExplorer::new(Metadata {
+            EVMChain::Arbitrum => Explorer::boxed(Metadata {
                 name: "ArbiScan",
                 base_url: "https://arbiscan.io",
-                tx_path: "tx",
-                address_path: "address",
-                token_path: Some("token"),
+                tx_path: TX_PATH,
+                address_path: ADDRESS_PATH,
+                token_path: Some(TOKEN_PATH),
                 validator_path: None,
             }),
-            EVMChain::Optimism => GenericExplorer::new(Metadata {
+            EVMChain::Optimism => Explorer::boxed(Metadata {
                 name: "Etherscan",
                 base_url: "https://optimistic.etherscan.io",
-                tx_path: "tx",
-                address_path: "address",
-                token_path: Some("token"),
+                tx_path: TX_PATH,
+                address_path: ADDRESS_PATH,
+                token_path: Some(TOKEN_PATH),
                 validator_path: None,
             }),
-            EVMChain::Base => GenericExplorer::new(Metadata {
+            EVMChain::Base => Explorer::boxed(Metadata {
                 name: "BaseScan",
                 base_url: "https://basescan.org",
-                tx_path: "tx",
-                address_path: "address",
-                token_path: Some("token"),
+                tx_path: TX_PATH,
+                address_path: ADDRESS_PATH,
+                token_path: Some(TOKEN_PATH),
                 validator_path: None,
             }),
-            EVMChain::AvalancheC => GenericExplorer::new(Metadata {
+            EVMChain::AvalancheC => Explorer::boxed(Metadata {
                 name: "SnowScan",
                 base_url: "https://snowscan.xyz",
-                tx_path: "tx",
-                address_path: "address",
-                token_path: Some("token"),
+                tx_path: TX_PATH,
+                address_path: ADDRESS_PATH,
+                token_path: Some(TOKEN_PATH),
                 validator_path: None,
             }),
-            EVMChain::OpBNB => GenericExplorer::new(Metadata {
+            EVMChain::OpBNB => Explorer::boxed(Metadata {
                 name: "opBNBScan",
                 base_url: "https://opbnb.bscscan.com",
-                tx_path: "tx",
-                address_path: "address",
-                token_path: Some("token"),
+                tx_path: TX_PATH,
+                address_path: ADDRESS_PATH,
+                token_path: Some(TOKEN_PATH),
                 validator_path: None,
             }),
-            EVMChain::Fantom => GenericExplorer::new(Metadata {
+            EVMChain::Fantom => Explorer::boxed(Metadata {
                 name: "FTMScan",
                 base_url: "https://ftmscan.com",
-                tx_path: "tx",
-                address_path: "address",
-                token_path: Some("token"),
+                tx_path: TX_PATH,
+                address_path: ADDRESS_PATH,
+                token_path: Some(TOKEN_PATH),
                 validator_path: None,
             }),
-            EVMChain::Gnosis => GenericExplorer::new(Metadata {
+            EVMChain::Gnosis => Explorer::boxed(Metadata {
                 name: "GnosisScan",
                 base_url: "https://gnosisscan.io",
-                tx_path: "tx",
-                address_path: "address",
-                token_path: Some("token"),
+                tx_path: TX_PATH,
+                address_path: ADDRESS_PATH,
+                token_path: Some(TOKEN_PATH),
                 validator_path: None,
             }),
-            EVMChain::Manta => GenericExplorer::new(Metadata {
+            EVMChain::Manta => Explorer::boxed(Metadata {
                 name: "Socialscan",
                 base_url: "https://manta.socialscan.io",
-                tx_path: "tx",
-                address_path: "address",
-                token_path: Some("token"),
+                tx_path: TX_PATH,
+                address_path: ADDRESS_PATH,
+                token_path: Some(TOKEN_PATH),
                 validator_path: None,
             }),
-            EVMChain::Blast => GenericExplorer::new(Metadata {
+            EVMChain::Blast => Explorer::boxed(Metadata {
                 name: "BlastScan",
                 base_url: "https://blastscan.io",
-                tx_path: "tx",
-                address_path: "address",
-                token_path: Some("token"),
+                tx_path: TX_PATH,
+                address_path: ADDRESS_PATH,
+                token_path: Some(TOKEN_PATH),
                 validator_path: None,
             }),
-            EVMChain::Linea => GenericExplorer::new(Metadata {
+            EVMChain::Linea => Explorer::boxed(Metadata {
                 name: "LineaScan",
                 base_url: "https://lineascan.build",
-                tx_path: "tx",
-                address_path: "address",
-                token_path: Some("token"),
+                tx_path: TX_PATH,
+                address_path: ADDRESS_PATH,
+                token_path: Some(TOKEN_PATH),
                 validator_path: None,
             }),
-            EVMChain::ZkSync => GenericExplorer::new(Metadata {
+            EVMChain::ZkSync => Explorer::boxed(Metadata {
                 name: "zkSync Era Explorer",
                 base_url: "https://era.zksync.network",
-                tx_path: "tx",
-                address_path: "address",
-                token_path: Some("token"),
+                tx_path: TX_PATH,
+                address_path: ADDRESS_PATH,
+                token_path: Some(TOKEN_PATH),
                 validator_path: None,
             }),
-            EVMChain::Celo => GenericExplorer::new(Metadata {
+            EVMChain::Celo => Explorer::boxed(Metadata {
                 name: "CeloScan",
                 base_url: "https://celoscan.io",
-                tx_path: "tx",
-                address_path: "address",
-                token_path: Some("token"),
+                tx_path: TX_PATH,
+                address_path: ADDRESS_PATH,
+                token_path: Some(TOKEN_PATH),
                 validator_path: None,
             }),
-            EVMChain::Mantle => GenericExplorer::new(Metadata {
+            EVMChain::Mantle => Explorer::boxed(Metadata {
                 name: "MantleScan",
                 base_url: "https://mantlescan.xyz",
-                tx_path: "tx",
-                address_path: "address",
-                token_path: Some("token"),
+                tx_path: TX_PATH,
+                address_path: ADDRESS_PATH,
+                token_path: Some(TOKEN_PATH),
                 validator_path: None,
             }),
-            EVMChain::World => GenericExplorer::new(Metadata {
+            EVMChain::World => Explorer::boxed(Metadata {
                 name: "WorldScan",
                 base_url: "https://worldscan.org",
-                tx_path: "tx",
-                address_path: "address",
-                token_path: Some("token"),
+                tx_path: TX_PATH,
+                address_path: ADDRESS_PATH,
+                token_path: Some(TOKEN_PATH),
                 validator_path: None,
             }),
-            EVMChain::Sonic => GenericExplorer::new(Metadata {
+            EVMChain::Sonic => Explorer::boxed(Metadata {
                 name: "SonicScan",
                 base_url: "https://sonicscan.org",
-                tx_path: "tx",
-                address_path: "address",
-                token_path: Some("token"),
+                tx_path: TX_PATH,
+                address_path: ADDRESS_PATH,
+                token_path: Some(TOKEN_PATH),
                 validator_path: None,
             }),
-            EVMChain::Abstract => GenericExplorer::new(Metadata {
+            EVMChain::Abstract => Explorer::boxed(Metadata {
                 name: "Abscan",
                 base_url: "https://abscan.org",
-                tx_path: "tx",
-                address_path: "address",
-                token_path: Some("token"),
+                tx_path: TX_PATH,
+                address_path: ADDRESS_PATH,
+                token_path: Some(TOKEN_PATH),
                 validator_path: None,
             }),
-            EVMChain::Berachain => GenericExplorer::new(Metadata {
+            EVMChain::Berachain => Explorer::boxed(Metadata {
                 name: "Berascan",
                 base_url: "https://berascan.com",
-                tx_path: "tx",
-                address_path: "address",
-                token_path: Some("token"),
+                tx_path: TX_PATH,
+                address_path: ADDRESS_PATH,
+                token_path: Some(TOKEN_PATH),
                 validator_path: None,
             }),
-            EVMChain::Unichain => GenericExplorer::new(Metadata {
+            EVMChain::Unichain => Explorer::boxed(Metadata {
                 name: "Uniscan",
                 base_url: "https://uniscan.xyz",
-                tx_path: "tx",
-                address_path: "address",
-                token_path: Some("token"),
+                tx_path: TX_PATH,
+                address_path: ADDRESS_PATH,
+                token_path: Some(TOKEN_PATH),
                 validator_path: None,
             }),
-            EVMChain::Monad => GenericExplorer::new(Metadata {
+            EVMChain::Monad => Explorer::boxed(Metadata {
                 name: "Monad",
                 base_url: "https://testnet.monadexplorer.com",
-                tx_path: "tx",
-                address_path: "address",
-                token_path: Some("token"),
+                tx_path: TX_PATH,
+                address_path: ADDRESS_PATH,
+                token_path: Some(TOKEN_PATH),
                 validator_path: None,
             }),
-            EVMChain::Hyperliquid => GenericExplorer::new(Metadata {
+            EVMChain::Hyperliquid => Explorer::boxed(Metadata {
                 name: "HyperEvmScan",
                 base_url: "https://hyperevmscan.io",
-                tx_path: "tx",
-                address_path: "address",
-                token_path: Some("token"),
+                tx_path: TX_PATH,
+                address_path: ADDRESS_PATH,
+                token_path: Some(TOKEN_PATH),
                 validator_path: None,
             }),
             _ => todo!(),

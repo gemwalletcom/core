@@ -1,8 +1,7 @@
-use crate::block_explorer::{BlockExplorer, Metadata};
+use crate::block_explorer::BlockExplorer;
+use crate::explorers::metadata::{Explorer, Metadata, ACCOUNT_PATH};
 
-pub struct SubScan {
-    pub meta: Metadata,
-}
+pub struct SubScan;
 
 macro_rules! subscan_url {
     ($chain:expr) => {
@@ -11,24 +10,14 @@ macro_rules! subscan_url {
 }
 
 impl SubScan {
-    pub fn new_polkadot() -> Box<Self> {
-        Box::new(Self {
-            meta: Metadata {
-                name: "SubScan",
-                base_url: subscan_url!("polkadot"),
-            },
+    pub fn new_polkadot() -> Box<dyn BlockExplorer> {
+        Explorer::boxed(Metadata {
+            name: "SubScan",
+            base_url: subscan_url!("polkadot"),
+            tx_path: "/extrinsic",
+            address_path: ACCOUNT_PATH,
+            token_path: None,
+            validator_path: None,
         })
-    }
-}
-
-impl BlockExplorer for SubScan {
-    fn name(&self) -> String {
-        self.meta.name.into()
-    }
-    fn get_tx_url(&self, hash: &str) -> String {
-        format!("{}/extrinsic/{}", self.meta.base_url, hash)
-    }
-    fn get_address_url(&self, address: &str) -> String {
-        format!("{}/account/{}", self.meta.base_url, address)
     }
 }

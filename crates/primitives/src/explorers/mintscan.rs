@@ -1,18 +1,18 @@
 use crate::block_explorer::BlockExplorer;
-use crate::explorers::metadata::{Metadata, MultiChainExplorer};
+use crate::explorers::metadata::{Metadata, MultiChainExplorer, TX_PATH, ADDRESS_PATH, VALIDATORS_PATH, ASSETS_PATH};
 use std::sync::LazyLock;
 
 static MINTSCAN_FACTORY: LazyLock<MultiChainExplorer> = LazyLock::new(|| {
-    MultiChainExplorer::new("Mintscan")
+    MultiChainExplorer::new()
         .add_chain(
             "cosmos",
             Metadata {
                 name: "Mintscan",
                 base_url: "https://www.mintscan.io/cosmos",
-                tx_path: "tx",
-                address_path: "address",
-                token_path: Some("assets"),
-                validator_path: Some("validators"),
+                tx_path: TX_PATH,
+                address_path: ADDRESS_PATH,
+                token_path: Some(ASSETS_PATH),
+                validator_path: Some(VALIDATORS_PATH),
             },
         )
         .add_chain(
@@ -20,10 +20,10 @@ static MINTSCAN_FACTORY: LazyLock<MultiChainExplorer> = LazyLock::new(|| {
             Metadata {
                 name: "Mintscan",
                 base_url: "https://www.mintscan.io/osmosis",
-                tx_path: "tx",
-                address_path: "address",
-                token_path: Some("assets"),
-                validator_path: Some("validators"),
+                tx_path: TX_PATH,
+                address_path: ADDRESS_PATH,
+                token_path: Some(ASSETS_PATH),
+                validator_path: Some(VALIDATORS_PATH),
             },
         )
         .add_chain(
@@ -31,10 +31,10 @@ static MINTSCAN_FACTORY: LazyLock<MultiChainExplorer> = LazyLock::new(|| {
             Metadata {
                 name: "Mintscan",
                 base_url: "https://www.mintscan.io/celestia",
-                tx_path: "tx",
-                address_path: "address",
-                token_path: Some("assets"),
-                validator_path: Some("validators"),
+                tx_path: TX_PATH,
+                address_path: ADDRESS_PATH,
+                token_path: Some(ASSETS_PATH),
+                validator_path: Some(VALIDATORS_PATH),
             },
         )
         .add_chain(
@@ -42,10 +42,10 @@ static MINTSCAN_FACTORY: LazyLock<MultiChainExplorer> = LazyLock::new(|| {
             Metadata {
                 name: "Mintscan",
                 base_url: "https://www.mintscan.io/injective-protocol",
-                tx_path: "tx",
-                address_path: "address",
-                token_path: Some("assets"),
-                validator_path: Some("validators"),
+                tx_path: TX_PATH,
+                address_path: ADDRESS_PATH,
+                token_path: Some(ASSETS_PATH),
+                validator_path: Some(VALIDATORS_PATH),
             },
         )
         .add_chain(
@@ -53,10 +53,10 @@ static MINTSCAN_FACTORY: LazyLock<MultiChainExplorer> = LazyLock::new(|| {
             Metadata {
                 name: "Mintscan",
                 base_url: "https://www.mintscan.io/sei",
-                tx_path: "tx",
-                address_path: "address",
-                token_path: Some("assets"),
-                validator_path: Some("validators"),
+                tx_path: TX_PATH,
+                address_path: ADDRESS_PATH,
+                token_path: Some(ASSETS_PATH),
+                validator_path: Some(VALIDATORS_PATH),
             },
         )
         .add_chain(
@@ -64,10 +64,10 @@ static MINTSCAN_FACTORY: LazyLock<MultiChainExplorer> = LazyLock::new(|| {
             Metadata {
                 name: "Mintscan",
                 base_url: "https://www.mintscan.io/noble",
-                tx_path: "tx",
-                address_path: "address",
-                token_path: Some("assets"),
-                validator_path: Some("validators"),
+                tx_path: TX_PATH,
+                address_path: ADDRESS_PATH,
+                token_path: Some(ASSETS_PATH),
+                validator_path: Some(VALIDATORS_PATH),
             },
         )
 });

@@ -1,13 +1,13 @@
 use crate::block_explorer::BlockExplorer;
-use crate::explorers::metadata::{GenericExplorer, Metadata};
+use crate::explorers::metadata::{Explorer, Metadata, TX_PATH, ACCOUNT_PATH, ASSET_PATH};
 
 pub fn new() -> Box<dyn BlockExplorer> {
-    GenericExplorer::new(Metadata {
+    Explorer::boxed(Metadata {
         name: "StellarExpert",
         base_url: "https://stellar.expert/explorer/public",
-        tx_path: "tx",
-        address_path: "account",
-        token_path: Some("asset"),
+        tx_path: TX_PATH,
+        address_path: ACCOUNT_PATH,
+        token_path: Some(ASSET_PATH),
         validator_path: None,
     })
 }

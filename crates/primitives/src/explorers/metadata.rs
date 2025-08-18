@@ -1,6 +1,20 @@
 use crate::block_explorer::BlockExplorer;
 use std::collections::HashMap;
 
+// Common path constants for block explorers
+pub const TX_PATH: &str = "/tx";
+pub const TXN_PATH: &str = "/txn";
+pub const TXNS_PATH: &str = "/txns";
+pub const TRANSACTION_PATH: &str = "/transaction";
+pub const ADDRESS_PATH: &str = "/address";
+pub const ACCOUNT_PATH: &str = "/account";
+pub const TOKEN_PATH: &str = "/token";
+pub const COIN_PATH: &str = "/coin";
+pub const VALIDATOR_PATH: &str = "/validator";
+pub const VALIDATORS_PATH: &str = "/validators";
+pub const ASSETS_PATH: &str = "/assets";
+pub const ASSET_PATH: &str = "/asset";
+
 #[derive(Debug, Clone)]
 pub struct Metadata {
     pub name: &'static str,
@@ -11,37 +25,35 @@ pub struct Metadata {
     pub validator_path: Option<&'static str>,
 }
 
-pub struct GenericExplorer {
+pub struct Explorer {
     config: Metadata,
 }
 
-impl GenericExplorer {
-    pub fn new(config: Metadata) -> Box<Self> {
-        Box::new(Self { config })
+impl Explorer {
+    pub fn boxed(config: Metadata) -> Box<dyn BlockExplorer> {
+        Box::new(Self { config }) as Box<dyn BlockExplorer>
     }
 }
 
-impl BlockExplorer for GenericExplorer {
+impl BlockExplorer for Explorer {
     fn name(&self) -> String {
         self.config.name.into()
     }
 
     fn get_tx_url(&self, hash: &str) -> String {
-        format!("{}/{}/{}", self.config.base_url, self.config.tx_path, hash)
+        format!("{}{}/{}", self.config.base_url, self.config.tx_path, hash)
     }
 
     fn get_address_url(&self, address: &str) -> String {
-        format!("{}/{}/{}", self.config.base_url, self.config.address_path, address)
+        format!("{}{}/{}", self.config.base_url, self.config.address_path, address)
     }
 
     fn get_token_url(&self, token: &str) -> Option<String> {
-        self.config.token_path.map(|path| format!("{}/{}/{}", self.config.base_url, path, token))
+        self.config.token_path.map(|path| format!("{}{}/{}", self.config.base_url, path, token))
     }
 
     fn get_validator_url(&self, validator: &str) -> Option<String> {
-        self.config
-            .validator_path
-            .map(|path| format!("{}/{}/{}", self.config.base_url, path, validator))
+        self.config.validator_path.map(|path| format!("{}{}/{}", self.config.base_url, path, validator))
     }
 }
 
@@ -49,8 +61,14 @@ pub struct MultiChainExplorer {
     configs: HashMap<&'static str, Metadata>,
 }
 
+impl Default for MultiChainExplorer {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl MultiChainExplorer {
-    pub fn new(_name: &'static str) -> Self {
+    pub fn new() -> Self {
         Self { configs: HashMap::new() }
     }
 
@@ -62,7 +80,7 @@ impl MultiChainExplorer {
     pub fn for_chain(&self, chain: &'static str) -> Option<Box<dyn BlockExplorer>> {
         self.configs
             .get(chain)
-            .map(|config| Box::new(GenericExplorer { config: config.clone() }) as Box<dyn BlockExplorer>)
+            .map(|config| Box::new(Explorer { config: config.clone() }) as Box<dyn BlockExplorer>)
     }
 }
 
@@ -70,7 +88,7 @@ impl MultiChainExplorer {
 macro_rules! simple_explorer {
     ($name:ident, $display_name:expr, $base:expr, $tx:expr, $addr:expr, $token:expr, $val:expr) => {
         pub fn $name() -> Box<dyn $crate::block_explorer::BlockExplorer> {
-            $crate::explorers::metadata::GenericExplorer::new($crate::explorers::metadata::Metadata {
+            $crate::explorers::metadata::Explorer::new($crate::explorers::metadata::Metadata {
                 name: $display_name,
                 base_url: $base,
                 tx_path: $tx,
@@ -91,12 +109,12 @@ mod tests {
         let config = Metadata {
             name: "TestExplorer",
             base_url: "https://test.com",
-            tx_path: "tx",
-            address_path: "address",
-            token_path: Some("token"),
-            validator_path: Some("validator"),
+            tx_path: TX_PATH,
+            address_path: ADDRESS_PATH,
+            token_path: Some(TOKEN_PATH),
+            validator_path: Some(VALIDATOR_PATH),
         };
-        let explorer = GenericExplorer::new(config);
+        let explorer = Explorer::boxed(config);
 
         assert_eq!(explorer.name(), "TestExplorer");
         assert_eq!(explorer.get_tx_url("abc123"), "https://test.com/tx/abc123");
@@ -110,12 +128,12 @@ mod tests {
         let config = Metadata {
             name: "SimpleExplorer",
             base_url: "https://simple.com",
-            tx_path: "transaction",
-            address_path: "account",
+            tx_path: TRANSACTION_PATH,
+            address_path: ACCOUNT_PATH,
             token_path: None,
             validator_path: None,
         };
-        let explorer = GenericExplorer::new(config);
+        let explorer = Explorer::boxed(config);
 
         assert_eq!(explorer.get_token_url("token123"), None);
         assert_eq!(explorer.get_validator_url("val123"), None);
@@ -123,14 +141,14 @@ mod tests {
 
     #[test]
     fn test_multi_chain_explorer() {
-        let multi_explorer = MultiChainExplorer::new("MultiTest")
+        let multi_explorer = MultiChainExplorer::new()
             .add_chain(
                 "chain1",
                 Metadata {
                     name: "MultiTest",
                     base_url: "https://chain1.com",
-                    tx_path: "tx",
-                    address_path: "address",
+                    tx_path: TX_PATH,
+                    address_path: ADDRESS_PATH,
                     token_path: None,
                     validator_path: None,
                 },
@@ -140,9 +158,9 @@ mod tests {
                 Metadata {
                     name: "MultiTest",
                     base_url: "https://chain2.com",
-                    tx_path: "transaction",
-                    address_path: "account",
-                    token_path: Some("token"),
+                    tx_path: TRANSACTION_PATH,
+                    address_path: ACCOUNT_PATH,
+                    token_path: Some(TOKEN_PATH),
                     validator_path: None,
                 },
             );

@@ -1,25 +1,28 @@
 use crate::block_explorer::BlockExplorer;
+use crate::explorers::metadata::{Explorer, Metadata, TRANSACTION_PATH, TX_PATH, ADDRESS_PATH};
 
 pub fn new_ton_viewer() -> Box<dyn BlockExplorer> {
-    Box::new(TonViewer)
+    Explorer::boxed(Metadata {
+        name: "TonViewer",
+        base_url: "https://tonviewer.com",
+        tx_path: TRANSACTION_PATH,
+        address_path: "",
+        token_path: Some(""),
+        validator_path: Some(""),
+    })
 }
 
-pub struct TonViewer;
+pub struct TonScan;
 
-impl BlockExplorer for TonViewer {
-    fn name(&self) -> String {
-        "TonViewer".into()
-    }
-
-    fn get_tx_url(&self, hash: &str) -> String {
-        format!("https://tonviewer.com/transaction/{}", hash)
-    }
-
-    fn get_address_url(&self, address: &str) -> String {
-        format!("https://tonviewer.com/{}", address)
-    }
-
-    fn get_token_url(&self, token: &str) -> Option<String> {
-        Some(format!("https://tonviewer.com/{}", token))
+impl TonScan {
+    pub fn boxed() -> Box<dyn BlockExplorer> {
+        Explorer::boxed(Metadata {
+            name: "Tonscan",
+            base_url: "https://tonscan.org",
+            tx_path: TX_PATH,
+            address_path: ADDRESS_PATH,
+            token_path: Some("/jetton"),
+            validator_path: Some(ADDRESS_PATH),
+        })
     }
 }

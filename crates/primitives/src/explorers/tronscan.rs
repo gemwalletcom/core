@@ -1,34 +1,17 @@
-use crate::block_explorer::{BlockExplorer, Metadata};
+use crate::block_explorer::BlockExplorer;
+use crate::explorers::metadata::{Explorer, Metadata, ADDRESS_PATH, TRANSACTION_PATH};
 
-pub struct TronScan {
-    pub meta: Metadata,
-}
+pub struct TronScan;
 
 impl TronScan {
-    pub fn new() -> Box<Self> {
-        Box::new(Self {
-            meta: Metadata {
-                name: "TRONSCAN",
-                base_url: "https://tronscan.org",
-            },
+    pub fn boxed() -> Box<dyn BlockExplorer> {
+        Explorer::boxed(Metadata {
+            name: "TRONSCAN",
+            base_url: "https://tronscan.org/#",
+            tx_path: TRANSACTION_PATH,
+            address_path: ADDRESS_PATH,
+            token_path: Some("/token20"),
+            validator_path: Some(ADDRESS_PATH),
         })
-    }
-}
-
-impl BlockExplorer for TronScan {
-    fn name(&self) -> String {
-        self.meta.name.into()
-    }
-    fn get_tx_url(&self, hash: &str) -> String {
-        format!("{}/#/transaction/{}", self.meta.base_url, hash)
-    }
-    fn get_address_url(&self, address: &str) -> String {
-        format!("{}/#/address/{}", self.meta.base_url, address)
-    }
-    fn get_token_url(&self, _token: &str) -> Option<String> {
-        Some(format!("{}/#/token20/{}", self.meta.base_url, _token))
-    }
-    fn get_validator_url(&self, validator: &str) -> Option<String> {
-        self.get_address_url(validator).into()
     }
 }

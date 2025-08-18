@@ -1,8 +1,8 @@
 use crate::block_explorer::BlockExplorer;
-use crate::explorers::metadata::{GenericExplorer, Metadata};
+use crate::explorers::metadata::{Explorer, Metadata};
 
 pub fn new() -> Box<dyn BlockExplorer> {
-    GenericExplorer::new(Metadata {
+    Explorer::boxed(Metadata {
         name: "Mempool",
         base_url: "https://mempool.space",
         tx_path: "tx",
