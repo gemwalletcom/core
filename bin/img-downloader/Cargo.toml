@@ -14,4 +14,5 @@ clap = { version = "4.5.40", features = ["derive"] }
 chain_primitives = { path = "../../crates/chain_primitives" }
 coingecko = { path = "../../crates/coingecko" }
 settings = { path = "../../crates/settings" }
+gem_client = { path = "../../crates/gem_client", features = ["reqwest"] }
 gem_evm = { path = "../../crates/gem_evm" }

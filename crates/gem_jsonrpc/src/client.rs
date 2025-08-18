@@ -6,7 +6,7 @@ use std::time::SystemTime;
 
 pub type CallTuple = (String, Value);
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct JsonRpcClient<C: Client + Clone> {
     url: String,
     client: C,
@@ -29,13 +29,48 @@ impl<C: Client + Clone> JsonRpcClient<C> {
     pub async fn request<T: JsonRpcRequestConvert, U: DeserializeOwned>(&self, request: T) -> Result<U, JsonRpcError> {
         let timestamp = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs();
         let req = request.to_req(timestamp);
-        self._request(req).await
+        let result = self._request(req, None).await?;
+        match result {
+            JsonRpcResult::Value(value) => Ok(value.result),
+            JsonRpcResult::Error(error) => Err(error.error),
+        }
     }
 
     pub async fn call<T: DeserializeOwned>(&self, method: &str, params: impl Into<Value>) -> Result<T, JsonRpcError> {
         let timestamp = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs();
         let req = JsonRpcRequest::new(timestamp, method, params.into());
-        self._request(req).await
+        let result = self._request(req, None).await?;
+        match result {
+            JsonRpcResult::Value(value) => Ok(value.result),
+            JsonRpcResult::Error(error) => Err(error.error),
+        }
+    }
+
+    pub async fn call_with_cache<T: JsonRpcRequestConvert, U: DeserializeOwned>(&self, call: &T, ttl: Option<u64>) -> Result<JsonRpcResult<U>, JsonRpcError> {
+        let timestamp = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs();
+        let req = call.to_req(timestamp);
+        self._request(req, ttl).await
+    }
+
+    pub async fn call_method_with_param<T, U>(&self, method: &str, params: T, ttl: Option<u64>) -> Result<JsonRpcResult<U>, JsonRpcError>
+    where
+        T: serde::Serialize,
+        U: DeserializeOwned,
+    {
+        let params_value = serde_json::to_value(params).map_err(|e| JsonRpcError {
+            code: ERROR_INTERNAL_ERROR,
+            message: format!("Failed to serialize RPC params: {e}"),
+        })?;
+
+        // Wrap single object/value in an array if it's not already an array
+        let params_array = match params_value {
+            serde_json::Value::Array(arr) => arr,
+            _ => vec![params_value],
+        };
+
+        let timestamp = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs();
+        let request = JsonRpcRequest::new(timestamp, method, params_array.into());
+        self._request(request, ttl).await
     }
 
     pub async fn batch_call<T: DeserializeOwned>(&self, calls: Vec<CallTuple>) -> Result<Vec<JsonRpcResult<T>>, JsonRpcError> {
@@ -45,6 +80,11 @@ impl<C: Client + Clone> JsonRpcClient<C> {
             .map(|(index, (method, params))| JsonRpcRequest::new(index as u64 + 1, method, params.clone()))
             .collect();
 
+        self.batch_request(requests).await
+    }
+
+    pub async fn batch_call_requests<T: JsonRpcRequestConvert, U: DeserializeOwned>(&self, calls: Vec<T>) -> Result<Vec<JsonRpcResult<U>>, JsonRpcError> {
+        let requests: Vec<JsonRpcRequest> = calls.iter().enumerate().map(|(index, request)| request.to_req(index as u64 + 1)).collect();
         self.batch_request(requests).await
     }
 
@@ -65,14 +105,18 @@ impl<C: Client + Clone> JsonRpcClient<C> {
         Ok(results)
     }
 
-    async fn _request<T: DeserializeOwned>(&self, req: JsonRpcRequest) -> Result<T, JsonRpcError> {
+    async fn _request<T: DeserializeOwned>(&self, req: JsonRpcRequest, ttl: Option<u64>) -> Result<JsonRpcResult<T>, JsonRpcError> {
         let path = if self.url.is_empty() { "" } else { &self.url };
-        let result: JsonRpcResult<T> = self.client.post(path, &req, None).await?;
 
-        match result {
-            JsonRpcResult::Value(value) => Ok(value.result),
-            JsonRpcResult::Error(error) => Err(error.error),
-        }
+        // Build cache headers if TTL is provided
+        let headers = ttl.map(|ttl_seconds| {
+            let mut headers = std::collections::HashMap::new();
+            headers.insert("Cache-Control".to_string(), format!("max-age={}", ttl_seconds));
+            headers
+        });
+
+        let result: JsonRpcResult<T> = self.client.post(path, &req, headers).await?;
+        Ok(result)
     }
 }
 

@@ -3,7 +3,7 @@ use async_trait::async_trait;
 use std::{collections::HashSet, str::FromStr, sync::Arc, vec};
 
 use crate::{
-    network::{AlienProvider, JsonRpcClient, JsonRpcError},
+    network::{jsonrpc_client_with_chain, AlienProvider},
     swapper::{
         approval::{check_approval_erc20, check_approval_permit2},
         eth_address,
@@ -129,8 +129,8 @@ impl Swapper for UniswapV4 {
             .iter()
             .map(|pool_key| build_quote_exact_single_request(&token_in, deployment.quoter, quote_amount_in, &pool_key.1))
             .collect();
-        let client = JsonRpcClient::new_with_chain(provider.clone(), from_chain);
-        let batch_call = client.batch_call(calls);
+        let client = jsonrpc_client_with_chain(provider.clone(), from_chain);
+        let batch_call = client.batch_call_requests(calls);
         let mut requests = vec![batch_call];
 
         let quote_exact_params: Vec<Vec<(Vec<TokenPair>, QuoteExactParams)>>;
@@ -140,7 +140,7 @@ impl Swapper for UniswapV4 {
             build_quote_exact_requests(deployment.quoter, &quote_exact_params)
                 .iter()
                 .for_each(|call_array| {
-                    let batch_call = client.batch_call(call_array.to_vec());
+                    let batch_call = client.batch_call_requests(call_array.clone());
                     requests.push(batch_call);
                 });
         } else {
@@ -148,11 +148,7 @@ impl Swapper for UniswapV4 {
         }
 
         // fire batch requests in parallel
-        let batch_results: Vec<_> = futures::future::join_all(requests)
-            .await
-            .into_iter()
-            .map(|r| r.map_err(JsonRpcError::from))
-            .collect();
+        let batch_results = futures::future::join_all(requests).await;
 
         let quote_result = get_best_quote(&batch_results, super::quoter::decode_quoter_response)?;
 

@@ -5,7 +5,7 @@ use gemstone::ethereum::{
     calculator::GemFeeCalculator,
     model::{GemEthereumFeeHistory, GemFeePriority, GemPriorityFeeRecord},
 };
-use gemstone::network::{alien_provider::NativeProvider, JsonRpcClient};
+use gemstone::network::{alien_provider::NativeProvider, jsonrpc_client_with_chain};
 use num_bigint::BigInt;
 use num_traits::Num;
 use primitives::Chain;
@@ -46,11 +46,10 @@ impl GemstoneClient {
     }
 
     pub async fn fetch_base_priority_fees(&self, blocks: u64, reward_percentiles: Vec<u64>, min_priority_fee: u64) -> Result<GemstoneFeeData> {
-        let client = JsonRpcClient::new_with_chain(self.native_provider.clone(), Chain::Ethereum);
+        let client = jsonrpc_client_with_chain(self.native_provider.clone(), Chain::Ethereum);
         let call = EthereumRpc::FeeHistory { blocks, reward_percentiles };
 
-        let resp = client.call(&call).await?;
-        let fee_history_data: GemEthereumFeeHistory = resp.take()?;
+        let fee_history_data: GemEthereumFeeHistory = client.request(call).await?;
 
         let oldest_block = u64::from_str_radix(&fee_history_data.oldest_block.replace("0x", ""), 16).expect("Invalid block number");
 

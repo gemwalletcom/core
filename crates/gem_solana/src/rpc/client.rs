@@ -12,9 +12,7 @@ use gem_jsonrpc::{
 };
 
 #[cfg(not(feature = "reqwest"))]
-use gem_jsonrpc::{
-    types::{JsonRpcError, JsonRpcRequest, JsonRpcResult},
-};
+use gem_jsonrpc::types::{JsonRpcError, JsonRpcRequest, JsonRpcResult};
 use serde::de::DeserializeOwned;
 use serde_json::json;
 use std::{error::Error, fmt::Debug, str::FromStr};

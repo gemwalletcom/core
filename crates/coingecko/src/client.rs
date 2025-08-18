@@ -6,8 +6,8 @@ use reqwest::header::{HeaderMap, HeaderValue, USER_AGENT};
 use reqwest_middleware::{ClientBuilder, ClientWithMiddleware};
 use std::error::Error;
 
-const COINGECKO_API_URL: &str = "https://api.coingecko.com";
-const COINGECKO_API_PRO_URL: &str = "https://pro-api.coingecko.com";
+pub const COINGECKO_API_HOST: &str = "api.coingecko.com";
+pub const COINGECKO_API_PRO_HOST: &str = "pro-api.coingecko.com";
 static USER_AGENT_VALUE: HeaderValue =
     HeaderValue::from_static("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36");
 
@@ -44,10 +44,8 @@ impl CoinGeckoClient {
     }
 
     fn url_for_api_key(api_key: String) -> String {
-        if !api_key.is_empty() {
-            return COINGECKO_API_PRO_URL.to_string();
-        }
-        COINGECKO_API_URL.to_string()
+        let host = if !api_key.is_empty() { COINGECKO_API_PRO_HOST } else { COINGECKO_API_HOST };
+        format!("https://{}", host)
     }
 
     fn headers(&self) -> HeaderMap {

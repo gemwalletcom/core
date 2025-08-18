@@ -1,5 +1,5 @@
 use crate::{
-    network::{AlienProvider, JsonRpcClient, JsonRpcResult},
+    network::{jsonrpc_client_with_chain, AlienProvider, JsonRpcClient, JsonRpcResult},
     swapper::SwapperError,
 };
 use alloy_primitives::{hex::decode as HexDecode, Address};
@@ -47,14 +47,14 @@ pub struct TokenConfig {
 
 pub struct ConfigStoreClient {
     pub contract: String,
-    pub client: JsonRpcClient,
+    pub client: JsonRpcClient<crate::network::AlienClient>,
 }
 
 impl ConfigStoreClient {
     pub fn new(provider: Arc<dyn AlienProvider>, chain: Chain) -> ConfigStoreClient {
         ConfigStoreClient {
             contract: ACROSS_CONFIG_STORE.into(),
-            client: JsonRpcClient::new_with_chain(provider.clone(), chain),
+            client: jsonrpc_client_with_chain(provider.clone(), chain),
         }
     }
 

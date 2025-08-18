@@ -1,4 +1,4 @@
-use crate::network::{AlienProvider, JsonRpcClient};
+use crate::network::{jsonrpc_client_with_chain, AlienProvider};
 use crate::swapper::{eth_address, models::ApprovalType, Permit2ApprovalData, SwapperApprovalData, SwapperError};
 
 use alloy_primitives::{hex::decode as HexDecode, Address, U256};
@@ -46,9 +46,8 @@ pub async fn check_approval_erc20(
     let allowance_data = IERC20::allowanceCall { owner, spender }.abi_encode();
     let allowance_call = EthereumRpc::Call(TransactionObject::new_call(&token, allowance_data), BlockParameter::Latest);
 
-    let client = JsonRpcClient::new_with_chain(provider.clone(), *chain);
-    let response = client.call(&allowance_call).await.map_err(SwapperError::from)?;
-    let result: String = response.take().map_err(SwapperError::from)?;
+    let client = jsonrpc_client_with_chain(provider.clone(), *chain);
+    let result: String = client.request(allowance_call).await.map_err(SwapperError::from)?;
     let decoded = HexDecode(result).map_err(|_| SwapperError::ABIError("failed to decode allowance_call result".into()))?;
 
     let allowance = IERC20::allowanceCall::abi_decode_returns(&decoded).map_err(SwapperError::from)?;
@@ -80,11 +79,10 @@ pub async fn check_approval_permit2(
     .abi_encode();
     let permit2_call = EthereumRpc::Call(TransactionObject::new_call(permit2_contract, permit2_data), BlockParameter::Latest);
 
-    let response = JsonRpcClient::new_with_chain(provider.clone(), *chain)
-        .call(&permit2_call)
+    let result: String = jsonrpc_client_with_chain(provider.clone(), *chain)
+        .request(permit2_call)
         .await
         .map_err(SwapperError::from)?;
-    let result: String = response.take().map_err(SwapperError::from)?;
     let decoded = HexDecode(result).unwrap();
     let allowance_return = IAllowanceTransfer::allowanceCall::abi_decode_returns(&decoded).map_err(SwapperError::from)?;
 

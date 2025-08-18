@@ -1,5 +1,5 @@
 use crate::{
-    network::{AlienProvider, JsonRpcClient, JsonRpcError},
+    network::{jsonrpc_client_with_chain, AlienProvider},
     swapper::{
         approval::{check_approval_erc20, check_approval_permit2},
         eth_address,
@@ -135,7 +135,7 @@ impl Swapper for UniswapV3 {
         //     [...],
         // ]
         let paths_array = super::path::build_paths(&token_in, &token_out, &fee_tiers, &base_pair);
-        let client = JsonRpcClient::new_with_chain(provider.clone(), from_chain);
+        let client = jsonrpc_client_with_chain(provider.clone(), from_chain);
         let requests: Vec<_> = paths_array
             .iter()
             .map(|paths| {
@@ -144,17 +144,13 @@ impl Swapper for UniswapV3 {
                     .map(|path| super::quoter_v2::build_quoter_request(&request.mode, &request.wallet_address, deployment.quoter_v2, quote_amount_in, &path.1))
                     .collect();
 
-                // batch fee_tiers.len() requests into one jsonrpc call
-                client.batch_call(calls)
+                // Use the more convenient batch_call_requests method
+                client.batch_call_requests(calls)
             })
             .collect();
 
         // fire batch requests in parallel
-        let batch_results: Vec<_> = futures::future::join_all(requests)
-            .await
-            .into_iter()
-            .map(|r| r.map_err(JsonRpcError::from))
-            .collect();
+        let batch_results = futures::future::join_all(requests).await;
 
         let quote_result = get_best_quote(&batch_results, super::quoter_v2::decode_quoter_response)?;
 

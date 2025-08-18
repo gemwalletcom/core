@@ -6,7 +6,7 @@ use num_bigint::{BigInt, Sign};
 use primitives::Chain;
 
 use crate::{
-    network::{AlienProvider, JsonRpcClient, JsonRpcResult},
+    network::{jsonrpc_client_with_chain, AlienProvider, JsonRpcClient},
     swapper::SwapperError,
 };
 use gem_evm::{
@@ -17,7 +17,7 @@ use gem_evm::{
 
 pub struct HubPoolClient {
     pub contract: String,
-    pub client: JsonRpcClient,
+    pub client: JsonRpcClient<crate::network::AlienClient>,
     pub chain: Chain,
 }
 
@@ -25,7 +25,7 @@ impl HubPoolClient {
     pub fn new(provider: Arc<dyn AlienProvider>, chain: Chain) -> HubPoolClient {
         HubPoolClient {
             contract: ACROSS_HUBPOOL.into(),
-            client: JsonRpcClient::new_with_chain(provider.clone(), chain),
+            client: jsonrpc_client_with_chain(provider.clone(), chain),
             chain,
         }
     }
@@ -103,8 +103,7 @@ impl HubPoolClient {
     pub async fn fetch_utilization(&self, pool_token: &Address, amount: U256) -> Result<BigInt, SwapperError> {
         let call3 = self.utilization_call3(pool_token, amount);
         let call = EthereumRpc::Call(TransactionObject::new_call(&self.contract, call3.callData.to_vec()), BlockParameter::Latest);
-        let response: JsonRpcResult<String> = self.client.call(&call).await?;
-        let result = response.take()?;
+        let result: String = self.client.request(call).await?;
         let hex_data = HexDecode(result).map_err(|e| SwapperError::NetworkError(e.to_string()))?;
         let value = HubPoolInterface::liquidityUtilizationCurrentCall::abi_decode_returns(&hex_data).map_err(SwapperError::from)?;
         let result = BigInt::from_bytes_le(num_bigint::Sign::Plus, &value.to_le_bytes::<32>());

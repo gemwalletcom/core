@@ -1,5 +1,5 @@
 use super::broker::SolanaVaultSwapResponse;
-use crate::network::{AlienProvider, JsonRpcClient};
+use crate::network::{jsonrpc_client_with_chain, AlienProvider};
 use alloy_primitives::hex;
 use base64::engine::general_purpose::STANDARD;
 use base64::Engine;
@@ -12,15 +12,9 @@ pub async fn build_solana_tx(fee_payer: String, response: &SolanaVaultSwapRespon
     let fee_payer = Pubkey::from_str(fee_payer.as_str()).map_err(|_| "Invalid fee payer".to_string())?;
     let program_id = Pubkey::from_str(response.program_id.as_str()).map_err(|_| "Invalid program ID".to_string())?;
     let data = hex::decode(response.data.as_str()).map_err(|_| "Invalid data".to_string())?;
-    let rpc_client = JsonRpcClient::new_with_chain(provider, Chain::Solana);
-    let recent_blockhash = rpc_client
-        .call::<SolanaRpc, LatestBlockhash>(&SolanaRpc::GetLatestBlockhash)
-        .await
-        .map_err(|e| e.to_string())?
-        .take()
-        .map_err(|e| e.to_string())?
-        .value
-        .blockhash;
+    let rpc_client = jsonrpc_client_with_chain(provider, Chain::Solana);
+    let blockhash_response: LatestBlockhash = rpc_client.request(SolanaRpc::GetLatestBlockhash).await.map_err(|e| e.to_string())?;
+    let recent_blockhash = blockhash_response.value.blockhash;
 
     let blockhash = bs58::decode(recent_blockhash)
         .into_vec()

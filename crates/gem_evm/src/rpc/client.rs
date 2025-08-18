@@ -1,13 +1,11 @@
 use alloy_primitives::{hex, Address, Bytes};
 use anyhow::anyhow;
+#[cfg(not(feature = "reqwest"))]
+use gem_jsonrpc::types::{JsonRpcError, JsonRpcResult};
 #[cfg(feature = "reqwest")]
 use gem_jsonrpc::{
     types::{JsonRpcError, JsonRpcResult},
     JsonRpcClient,
-};
-#[cfg(not(feature = "reqwest"))]
-use gem_jsonrpc::{
-    types::{JsonRpcError, JsonRpcResult},
 };
 use serde::de::DeserializeOwned;
 use serde_json::json;

@@ -3,7 +3,7 @@ mod tests {
     use gem_solana::{jsonrpc::SolanaRpc, model::LatestBlockhash};
     use gemstone::{
         config::swap_config::{get_swap_config, SwapReferralFee, SwapReferralFees},
-        network::{alien_provider::NativeProvider, JsonRpcClient},
+        network::{alien_provider::NativeProvider, jsonrpc_client_with_chain},
         swapper::{across::Across, cetus::Cetus, models::*, uniswap::v4::UniswapV4, GemSwapper, *},
     };
     use primitives::{AssetId, Chain};
@@ -11,15 +11,9 @@ mod tests {
 
     #[tokio::test]
     async fn test_solana_json_rpc() -> Result<(), String> {
-        let rpc_client = JsonRpcClient::new_with_chain(Arc::new(NativeProvider::default()), Chain::Solana);
-        let recent_blockhash = rpc_client
-            .call::<SolanaRpc, LatestBlockhash>(&SolanaRpc::GetLatestBlockhash)
-            .await
-            .map_err(|e| e.to_string())?
-            .take()
-            .map_err(|e| e.to_string())?
-            .value
-            .blockhash;
+        let rpc_client = jsonrpc_client_with_chain(Arc::new(NativeProvider::default()), Chain::Solana);
+        let response: LatestBlockhash = rpc_client.request(SolanaRpc::GetLatestBlockhash).await.map_err(|e| e.to_string())?;
+        let recent_blockhash = response.value.blockhash;
 
         println!("recent_blockhash: {}", recent_blockhash);
 
