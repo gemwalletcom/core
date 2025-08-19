@@ -8,7 +8,6 @@ pub type CallTuple = (String, Value);
 
 #[derive(Clone, Debug)]
 pub struct JsonRpcClient<C: Client + Clone> {
-    url: String,
     client: C,
 }
 
@@ -22,8 +21,8 @@ impl From<ClientError> for JsonRpcError {
 }
 
 impl<C: Client + Clone> JsonRpcClient<C> {
-    pub fn new(url: String, client: C) -> Self {
-        Self { url, client }
+    pub fn new(client: C) -> Self {
+        Self { client }
     }
 
     pub async fn request<T: JsonRpcRequestConvert, U: DeserializeOwned>(&self, request: T) -> Result<U, JsonRpcError> {
@@ -93,8 +92,7 @@ impl<C: Client + Clone> JsonRpcClient<C> {
             return Ok(Vec::new());
         }
 
-        let path = if self.url.is_empty() { "" } else { &self.url };
-        let results: Vec<JsonRpcResult<T>> = self.client.post(path, &requests, None).await?;
+        let results: Vec<JsonRpcResult<T>> = self.client.post("", &requests, None).await?;
         if results.len() != requests.len() {
             return Err(JsonRpcError {
                 message: "Batch call response length mismatch".into(),
@@ -106,8 +104,6 @@ impl<C: Client + Clone> JsonRpcClient<C> {
     }
 
     async fn _request<T: DeserializeOwned>(&self, req: JsonRpcRequest, ttl: Option<u64>) -> Result<JsonRpcResult<T>, JsonRpcError> {
-        let path = if self.url.is_empty() { "" } else { &self.url };
-
         // Build cache headers if TTL is provided
         let headers = ttl.map(|ttl_seconds| {
             let mut headers = std::collections::HashMap::new();
@@ -115,7 +111,7 @@ impl<C: Client + Clone> JsonRpcClient<C> {
             headers
         });
 
-        let result: JsonRpcResult<T> = self.client.post(path, &req, headers).await?;
+        let result: JsonRpcResult<T> = self.client.post("", &req, headers).await?;
         Ok(result)
     }
 }
@@ -125,8 +121,8 @@ impl JsonRpcClient<gem_client::ReqwestClient> {
     pub fn new_reqwest(url: String) -> Self {
         use gem_client::ReqwestClient;
         let reqwest_client = reqwest::Client::new();
-        let client = ReqwestClient::new(url.clone(), reqwest_client);
-        Self { url: "".to_string(), client }
+        let client = ReqwestClient::new(url, reqwest_client);
+        Self { client }
     }
 }
 

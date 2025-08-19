@@ -75,11 +75,11 @@ impl<C: Client> ChainAssetsProvider for AptosProvider<C> {
                 if token_type == APTOS_NATIVE_COIN {
                     return None;
                 };
-                if let Some(coin_data) = &resource.data.coin {
-                    Some(AssetBalance::new(AssetId::from_token(self.get_chain(), token_type), coin_data.value.clone()))
-                } else {
-                    None
-                }
+                resource
+                    .data
+                    .coin
+                    .as_ref()
+                    .map(|coin_data| AssetBalance::new(AssetId::from_token(self.get_chain(), token_type), coin_data.value.clone()))
             })
             .collect();
 

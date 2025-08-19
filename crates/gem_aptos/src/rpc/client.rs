@@ -68,7 +68,7 @@ impl<C: Client> AptosClient<C> {
             .await?;
 
         if let Some(message) = &response.message {
-            return Err(Box::new(std::io::Error::new(std::io::ErrorKind::Other, message.clone())));
+            return Err(Box::new(std::io::Error::other(message.clone())));
         }
 
         Ok(response)

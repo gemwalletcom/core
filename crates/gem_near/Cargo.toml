@@ -18,7 +18,15 @@ chrono = { workspace = true, features = ["serde"], optional = true }
 bs58 = { workspace = true, optional = true }
 hex = { workspace = true, optional = true }
 
+[dev-dependencies]
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
+reqwest = { workspace = true }
+
+[[test]]
+name = "integration_test"
+test = false
+
 [features]
 default = []
 rpc = ["dep:serde_json", "dep:gem_jsonrpc", "dep:gem_client", "dep:chain_traits", "dep:async-trait", "dep:chrono", "dep:bs58", "dep:hex"]
-reqwest = ["gem_client/reqwest"]
+reqwest = ["gem_client/reqwest", "gem_jsonrpc/reqwest"]

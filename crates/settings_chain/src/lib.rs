@@ -121,12 +121,12 @@ impl ProviderFactory {
                 Box::new(TronProvider::new(client, Box::new(grid_client.clone()), Box::new(grid_client.clone())))
             }
             Chain::Aptos => Box::new(AptosProvider::new(AptosClient::new(gem_client))),
-            Chain::Sui => Box::new(SuiProvider::new(SuiClient::new(gem_client))),
+            Chain::Sui => Box::new(SuiProvider::new(SuiClient::new(JsonRpcClient::new(gem_client)))),
             Chain::Xrp => Box::new(XRPProvider::new(XRPClient::new(gem_client))),
             Chain::Cardano => Box::new(CardanoProvider::new(CardanoClient::new(gem_client))),
             Chain::Algorand => Box::new(AlgorandProvider::new(AlgorandClient::new(gem_client))),
             Chain::Stellar => Box::new(StellarProvider::new(StellarClient::new(gem_client))),
-            Chain::Near => Box::new(NearProvider::new(NearClient::new(gem_client))),
+            Chain::Near => Box::new(NearProvider::new(NearClient::new(JsonRpcClient::new(gem_client)))),
             Chain::Polkadot => Box::new(PolkadotProvider::new(PolkadotClient::new(gem_client))),
             Chain::HyperCore => Box::new(HyperCoreProvider::new(HyperCoreClient::new(gem_client))),
         }
