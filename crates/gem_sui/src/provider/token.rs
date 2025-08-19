@@ -14,7 +14,7 @@ use crate::rpc::client::SuiClient;
 
 #[cfg(feature = "rpc")]
 #[async_trait]
-impl<C: Client> ChainToken for SuiClient<C> {
+impl<C: Client + Clone> ChainToken for SuiClient<C> {
     async fn get_token_data(&self, token_id: String) -> Result<Asset, Box<dyn Error + Sync + Send>> {
         self.get_token_data(token_id).await
     }

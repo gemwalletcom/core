@@ -7,18 +7,18 @@ use primitives::{chain::Chain, Asset, AssetBalance, AssetId, StakeValidator, Tra
 use gem_client::Client;
 use gem_sui::rpc::client::SuiClient;
 
-pub struct SuiProvider<C: Client> {
+pub struct SuiProvider<C: Client + Clone> {
     client: SuiClient<C>,
 }
 
-impl<C: Client> SuiProvider<C> {
+impl<C: Client + Clone> SuiProvider<C> {
     pub fn new(client: SuiClient<C>) -> Self {
         Self { client }
     }
 }
 
 #[async_trait]
-impl<C: Client> ChainBlockProvider for SuiProvider<C> {
+impl<C: Client + Clone> ChainBlockProvider for SuiProvider<C> {
     fn get_chain(&self) -> Chain {
         Chain::Sui
     }
@@ -33,14 +33,14 @@ impl<C: Client> ChainBlockProvider for SuiProvider<C> {
 }
 
 #[async_trait]
-impl<C: Client> ChainTokenDataProvider for SuiProvider<C> {
+impl<C: Client + Clone> ChainTokenDataProvider for SuiProvider<C> {
     async fn get_token_data(&self, token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
         self.client.get_token_data(token_id).await
     }
 }
 
 #[async_trait]
-impl<C: Client> ChainAssetsProvider for SuiProvider<C> {
+impl<C: Client + Clone> ChainAssetsProvider for SuiProvider<C> {
     async fn get_assets_balances(&self, address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
         let balances = self.client.get_all_balances(address).await?;
 
@@ -62,14 +62,14 @@ impl<C: Client> ChainAssetsProvider for SuiProvider<C> {
 }
 
 #[async_trait]
-impl<C: Client> ChainTransactionsProvider for SuiProvider<C> {
+impl<C: Client + Clone> ChainTransactionsProvider for SuiProvider<C> {
     async fn get_transactions_by_address(&self, _address: String) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
         Ok(vec![])
     }
 }
 
 #[async_trait]
-impl<C: Client> ChainStakeProvider for SuiProvider<C> {
+impl<C: Client + Clone> ChainStakeProvider for SuiProvider<C> {
     async fn get_validators(&self) -> Result<Vec<StakeValidator>, Box<dyn Error + Send + Sync>> {
         let validators = self.client.get_validators().await?;
         let stake_validators = validators.apys

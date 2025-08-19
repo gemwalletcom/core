@@ -16,7 +16,7 @@ use super::staking_mapper;
 
 #[cfg(feature = "rpc")]
 #[async_trait]
-impl<C: Client> ChainStaking for SuiClient<C> {
+impl<C: Client + Clone> ChainStaking for SuiClient<C> {
     async fn get_staking_apy(&self) -> Result<Option<f64>, Box<dyn Error + Sync + Send>> {
         let validators = self.get_validators().await?;
         let max_apy = validators.apys

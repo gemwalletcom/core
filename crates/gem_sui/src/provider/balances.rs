@@ -9,7 +9,7 @@ use crate::provider::balances_mapper;
 use crate::rpc::client::SuiClient;
 
 #[async_trait]
-impl<C: Client> ChainBalances for SuiClient<C> {
+impl<C: Client + Clone> ChainBalances for SuiClient<C> {
     async fn get_balance_coin(&self, address: String) -> Result<AssetBalance, Box<dyn Error + Sync + Send>> {
         let balance = self.get_balance(address).await?;
         Ok(balances_mapper::map_coin_balance(balance))

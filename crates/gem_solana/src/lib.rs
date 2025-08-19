@@ -4,12 +4,18 @@ pub mod metaplex;
 pub mod model;
 pub mod pubkey;
 
-#[cfg(feature = "rpc")]
+#[cfg(any(feature = "rpc", feature = "reqwest"))]
 pub mod rpc;
+
+#[cfg(feature = "rpc")]
+pub mod provider;
 
 pub mod models;
 
 pub use jsonrpc::SolanaRpc;
+
+#[cfg(all(feature = "reqwest", not(feature = "rpc")))]
+pub use rpc::client::SolanaClient;
 
 // Constants
 pub const WSOL_TOKEN_ADDRESS: &str = "So11111111111111111111111111111111111111112";

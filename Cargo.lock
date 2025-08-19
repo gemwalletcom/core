@@ -3105,8 +3105,10 @@ dependencies = [
  "base64 0.22.1",
  "borsh 1.5.7",
  "bs58",
+ "chain_traits",
  "chrono",
  "curve25519-dalek",
+ "gem_client",
  "gem_jsonrpc",
  "num-bigint",
  "primitives",
@@ -3115,6 +3117,7 @@ dependencies = [
  "serde_serializers",
  "sha2",
  "thiserror 2.0.12",
+ "tokio",
 ]
 
 [[package]]
@@ -5205,6 +5208,7 @@ dependencies = [
  "base64 0.22.1",
  "chrono",
  "gem_chain_rpc",
+ "gem_client",
  "gem_solana",
  "primitives",
  "serde",

@@ -234,13 +234,38 @@ pub struct TokenAccountInfo {
 pub struct TokenAccountData {
     pub data: Parsed<Info<TokenAccountInfoData>>,
     pub owner: String,
+    pub lamports: u64,
 }
 
 #[derive(Debug, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct TokenAccountInfoData {
-    pub mint: String,
-    pub token_amount: TokenAmount,
+    pub mint: Option<String>,
+    pub token_amount: Option<TokenAmount>,
+    pub stake: Option<StakeInfo>,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct StakeInfo {
+    pub delegation: StakeDelegation,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct StakeDelegation {
+    pub activation_epoch: String,
+    pub deactivation_epoch: String,
+    pub stake: String,
+    pub voter: String,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct EpochInfo {
+    pub epoch: u64,
+    pub slots_in_epoch: u64,
+    pub slot_index: u64,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -389,9 +414,3 @@ pub struct InflationRate {
     pub validator: f64,
 }
 
-#[derive(Debug, Clone, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct EpochInfo {
-    pub epoch: u64,
-    pub slots_in_epoch: u64,
-}

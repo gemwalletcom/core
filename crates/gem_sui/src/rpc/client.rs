@@ -5,10 +5,12 @@ use gem_jsonrpc::JsonRpcClient;
 #[cfg(feature = "rpc")]
 use gem_client::Client;
 #[cfg(feature = "rpc")]
+use gem_jsonrpc::client::JsonRpcClient as GenericJsonRpcClient;
+#[cfg(feature = "rpc")]
 use async_trait::async_trait;
 #[cfg(feature = "rpc")]
 use chain_traits::{ChainAccount, ChainPerpetual, ChainTraits, ChainTransactions, ChainPreload};
-use primitives::{chain::Chain, Asset, JsonRpcResult, TransactionStateRequest, TransactionUpdate};
+use primitives::{chain::Chain, Asset, TransactionStateRequest, TransactionUpdate};
 
 use super::{
     model::Balance,
@@ -23,8 +25,9 @@ pub struct SuiClient {
 }
 
 #[cfg(feature = "rpc")]
-pub struct SuiClient<C: Client> {
-    pub client: C,
+pub struct SuiClient<C: Client + Clone> {
+    client: GenericJsonRpcClient<C>,
+    pub chain: Chain,
 }
 
 #[cfg(all(feature = "reqwest", not(feature = "rpc")))]
@@ -35,31 +38,24 @@ impl SuiClient {
 }
 
 #[cfg(feature = "rpc")]
-impl<C: Client> SuiClient<C> {
-    pub fn new(client: C) -> Self {
-        Self { client }
+impl<C: Client + Clone> SuiClient<C> {
+    pub fn new(client: GenericJsonRpcClient<C>) -> Self {
+        Self { client, chain: Chain::Sui }
     }
     
-    pub fn get_client(&self) -> &C {
+    pub fn get_client(&self) -> &GenericJsonRpcClient<C> {
         &self.client
     }
 
     pub fn get_chain(&self) -> Chain {
-        Chain::Sui
+        self.chain
     }
 
     async fn rpc_call<T>(&self, method: &str, params: serde_json::Value) -> Result<T, Box<dyn Error + Send + Sync>>
     where
         T: serde::de::DeserializeOwned,
     {
-        let rpc_request = serde_json::json!({
-            "jsonrpc": "2.0",
-            "id": 1,
-            "method": method,
-            "params": params
-        });
-        let response: JsonRpcResult<T> = self.client.post("", &rpc_request, None).await?;
-        Ok(response.result)
+        Ok(self.client.call(method, params).await?)
     }
 
     pub async fn get_balance(&self, address: String) -> Result<Balance, Box<dyn Error + Send + Sync>> {
@@ -136,22 +132,22 @@ impl<C: Client> SuiClient<C> {
 }
 
 #[cfg(feature = "rpc")]
-impl<C: Client> ChainTraits for SuiClient<C> {}
+impl<C: Client + Clone> ChainTraits for SuiClient<C> {}
 
 #[cfg(feature = "rpc")]
-impl<C: Client> ChainAccount for SuiClient<C> {}
+impl<C: Client + Clone> ChainAccount for SuiClient<C> {}
 
 #[cfg(feature = "rpc")]
-impl<C: Client> ChainPerpetual for SuiClient<C> {}
+impl<C: Client + Clone> ChainPerpetual for SuiClient<C> {}
 
 
 
 #[cfg(feature = "rpc")]
-impl<C: Client> ChainPreload for SuiClient<C> {}
+impl<C: Client + Clone> ChainPreload for SuiClient<C> {}
 
 #[cfg(feature = "rpc")]
 #[async_trait]
-impl<C: Client> ChainTransactions for SuiClient<C> {
+impl<C: Client + Clone> ChainTransactions for SuiClient<C> {
     async fn transaction_broadcast(&self, _data: String) -> Result<String, Box<dyn std::error::Error + Sync + Send>> {
         unimplemented!()
     }

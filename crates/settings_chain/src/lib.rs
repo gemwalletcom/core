@@ -21,12 +21,13 @@ use gem_evm::rpc::{ankr::AnkrClient, AlchemyClient, EthereumClient};
 use gem_hypercore::rpc::client::HyperCoreClient;
 use gem_near::rpc::client::NearClient;
 use gem_polkadot::rpc::PolkadotClient;
-use gem_solana::rpc::SolanaClient;
+use gem_solana::rpc::client::SolanaClient;
 use gem_stellar::rpc::client::StellarClient;
 use gem_sui::rpc::SuiClient;
 use gem_ton::rpc::TonClient;
 use gem_tron::rpc::{trongrid::client::TronGridClient, TronClient};
 use gem_xrp::rpc::XRPClient;
+use gem_jsonrpc::client::JsonRpcClient;
 
 use primitives::{chain_cosmos::CosmosChain, Chain, EVMChain, NodeType};
 use settings::{ChainURLType, Settings};
@@ -113,7 +114,7 @@ impl ProviderFactory {
                 let chain = CosmosChain::from_chain(chain).unwrap();
                 Box::new(CosmosProvider::new(CosmosClient::new(chain, gem_client, url)))
             }
-            Chain::Solana => Box::new(SolanaProvider::new(SolanaClient::new(&url))),
+            Chain::Solana => Box::new(SolanaProvider::<ReqwestClient>::new(SolanaClient::new(JsonRpcClient::new(gem_client)))),
             Chain::Ton => Box::new(TonProvider::new(TonClient::new(gem_client))),
             Chain::Tron => {
                 let client = TronClient::new(client, url.clone());
@@ -121,7 +122,7 @@ impl ProviderFactory {
                 Box::new(TronProvider::new(client, Box::new(grid_client.clone()), Box::new(grid_client.clone())))
             }
             Chain::Aptos => Box::new(AptosProvider::new(AptosClient::new(gem_client))),
-            Chain::Sui => Box::new(SuiProvider::new(SuiClient::new(JsonRpcClient::new(gem_client)))),
+            Chain::Sui => Box::new(SuiProvider::<ReqwestClient>::new(SuiClient::new(JsonRpcClient::new(gem_client)))),
             Chain::Xrp => Box::new(XRPProvider::new(XRPClient::new(gem_client))),
             Chain::Cardano => Box::new(CardanoProvider::new(CardanoClient::new(gem_client))),
             Chain::Algorand => Box::new(AlgorandProvider::new(AlgorandClient::new(gem_client))),

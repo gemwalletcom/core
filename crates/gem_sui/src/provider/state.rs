@@ -14,7 +14,7 @@ use crate::rpc::client::SuiClient;
 
 #[cfg(feature = "rpc")]
 #[async_trait]
-impl<C: Client> ChainState for SuiClient<C> {
+impl<C: Client + Clone> ChainState for SuiClient<C> {
     async fn get_chain_id(&self) -> Result<String, Box<dyn Error + Sync + Send>> {
         self.get_chain_id().await
     }
