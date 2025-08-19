@@ -1,14 +1,14 @@
 use std::error::Error;
 
-use primitives::chain::Chain;
 use gem_client::Client;
+use primitives::chain::Chain;
 use serde::{de::DeserializeOwned, Serialize};
 
 use crate::{
-    models::{Block, Ledger, Resource, ResourceData, Account, TransactionResponse, GasFee, TransactionSimulation, TransactionSignature, TransactionPayload},
+    models::{Account, Block, GasFee, Ledger, Resource, ResourceData, TransactionPayload, TransactionResponse, TransactionSignature, TransactionSimulation},
     Transaction,
 };
-use primitives::{TransactionLoadInput, TransactionInputType, AssetSubtype};
+use primitives::{AssetSubtype, TransactionInputType, TransactionLoadInput};
 pub type AccountResource<T> = Resource<T>;
 
 #[derive(Debug)]
@@ -19,10 +19,7 @@ pub struct AptosClient<C: Client> {
 
 impl<C: Client> AptosClient<C> {
     pub fn new(client: C) -> Self {
-        Self { 
-            client, 
-            chain: Chain::Aptos 
-        }
+        Self { client, chain: Chain::Aptos }
     }
 
     pub fn get_chain(&self) -> Chain {
@@ -30,12 +27,12 @@ impl<C: Client> AptosClient<C> {
     }
 
     pub async fn get_ledger(&self) -> Result<Ledger, Box<dyn Error + Send + Sync>> {
-        Ok(self.client.get("/v1/").await?)
+        Ok(self.client.get("/v1/", None::<&()>).await?)
     }
 
     pub async fn get_block_transactions(&self, block_number: i64) -> Result<Block, Box<dyn Error + Send + Sync>> {
         let url = format!("/v1/blocks/by_height/{}?with_transactions=true", block_number);
-        Ok(self.client.get(&url).await?)
+        Ok(self.client.get(&url, None::<&()>).await?)
     }
 
     pub async fn get_transactions_by_address(&self, address: String) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
@@ -48,47 +45,50 @@ impl<C: Client> AptosClient<C> {
         address: String,
         resource: &str,
     ) -> Result<Option<AccountResource<T>>, Box<dyn Error + Send + Sync>> {
-        Ok(self.client.get(&format!("/v1/accounts/{}/resource/{}", address, resource)).await?)
+        Ok(self.client.get(&format!("/v1/accounts/{}/resource/{}", address, resource), None::<&()>).await?)
     }
 
     pub async fn get_account_balance(&self, address: &str, asset_type: &str) -> Result<u64, Box<dyn Error + Send + Sync>> {
-        Ok(self.client.get(&format!("/v1/accounts/{}/balance/{}", address, asset_type)).await?)
+        Ok(self
+            .client
+            .get(&format!("/v1/accounts/{}/balance/{}", address, asset_type), None::<&()>)
+            .await?)
     }
 
     pub async fn get_account_resources(&self, address: &str) -> Result<Vec<Resource<ResourceData>>, Box<dyn Error + Send + Sync>> {
-        Ok(self.client.get(&format!("/v1/accounts/{}/resources", address)).await?)
+        Ok(self.client.get(&format!("/v1/accounts/{}/resources", address), None::<&()>).await?)
     }
 
     pub async fn get_account(&self, address: &str) -> Result<Account, Box<dyn Error + Send + Sync>> {
-        Ok(self.client.get(&format!("/v1/accounts/{}", address)).await?)
+        Ok(self.client.get(&format!("/v1/accounts/{}", address), None::<&()>).await?)
     }
 
     pub async fn submit_transaction(&self, data: &str) -> Result<TransactionResponse, Box<dyn Error + Send + Sync>> {
         let json_value: serde_json::Value = serde_json::from_str(data)?;
-        let response = self.client.post::<serde_json::Value, TransactionResponse>("/v1/transactions", &json_value, None).await?;
-        
+        let response = self
+            .client
+            .post::<serde_json::Value, TransactionResponse>("/v1/transactions", &json_value, None)
+            .await?;
+
         if let Some(message) = &response.message {
-            return Err(Box::new(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                message.clone()
-            )));
+            return Err(Box::new(std::io::Error::other(message.clone())));
         }
-        
+
         Ok(response)
     }
 
     pub async fn get_resources(&self, address: &str) -> Result<Vec<Resource<ResourceData>>, Box<dyn Error + Send + Sync>> {
-        Ok(self.client.get(&format!("/v1/accounts/{}/resources", address)).await?)
+        Ok(self.client.get(&format!("/v1/accounts/{}/resources", address), None::<&()>).await?)
     }
 
     pub async fn get_transaction_by_hash(&self, hash: &str) -> Result<Transaction, Box<dyn Error + Send + Sync>> {
-        Ok(self.client.get(&format!("/v1/transactions/by_hash/{}", hash)).await?)
+        Ok(self.client.get(&format!("/v1/transactions/by_hash/{}", hash), None::<&()>).await?)
     }
 
     pub async fn get_gas_price(&self) -> Result<GasFee, Box<dyn Error + Send + Sync>> {
-        Ok(self.client.get("/v1/estimate_gas_price").await?)
+        Ok(self.client.get("/v1/estimate_gas_price", None::<&()>).await?)
     }
-    
+
     pub async fn calculate_gas_limit(&self, input: &TransactionLoadInput) -> Result<u64, Box<dyn Error + Send + Sync>> {
         match &input.input_type {
             TransactionInputType::Transfer(asset) => {
@@ -97,30 +97,30 @@ impl<C: Client> AptosClient<C> {
                 } else {
                     AssetSubtype::TOKEN
                 };
-                
+
                 match asset_type {
                     AssetSubtype::NATIVE => {
                         // For native transfers, simulate the transaction
-                        let simulated = self.simulate_transaction(
-                            &input.sender_address,
-                            &input.destination_address,
-                            &input.sequence.to_string(),
-                            &input.value,
-                            &input.gas_price.gas_price.to_string(),
-                            1500,
-                        ).await?;
+                        let simulated = self
+                            .simulate_transaction(
+                                &input.sender_address,
+                                &input.destination_address,
+                                &input.sequence.to_string(),
+                                &input.value,
+                                &input.gas_price.gas_price.to_string(),
+                                1500,
+                            )
+                            .await?;
                         Ok(simulated.gas_used.unwrap_or(1500))
                     }
                     AssetSubtype::TOKEN => Ok(1500),
                 }
             }
             TransactionInputType::Swap(_, _) => Ok(1500),
-            TransactionInputType::Stake(_) => {
-                Err("Aptos does not support staking".into())
-            }
+            TransactionInputType::Stake(_) => Err("Aptos does not support staking".into()),
         }
     }
-    
+
     pub async fn simulate_transaction(
         &self,
         sender: &str,
@@ -131,12 +131,9 @@ impl<C: Client> AptosClient<C> {
         max_gas_amount: u64,
     ) -> Result<Transaction, Box<dyn Error + Send + Sync>> {
         use std::time::{SystemTime, UNIX_EPOCH};
-        
-        let expiration = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap()
-            .as_secs() + 1_000_000;
-            
+
+        let expiration = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() + 1_000_000;
+
         let simulation = TransactionSimulation {
             expiration_timestamp_secs: expiration.to_string(),
             gas_unit_price: gas_price.to_string(),
@@ -144,10 +141,7 @@ impl<C: Client> AptosClient<C> {
             payload: TransactionPayload {
                 function: "0x1::aptos_account::transfer".to_string(),
                 type_arguments: vec![],
-                arguments: vec![
-                    recipient.to_string(),
-                    value.to_string(),
-                ],
+                arguments: vec![recipient.to_string(), value.to_string()],
                 payload_type: "entry_function_payload".to_string(),
             },
             sender: sender.to_string(),
@@ -158,10 +152,9 @@ impl<C: Client> AptosClient<C> {
                 signature: None,
             },
         };
-        
+
         let response: Vec<Transaction> = self.client.post("/v1/transactions/simulate", &simulation, None).await?;
-        response.into_iter().next()
-            .ok_or_else(|| "No simulation result".into())
+        response.into_iter().next().ok_or_else(|| "No simulation result".into())
     }
 }
 
@@ -169,7 +162,7 @@ impl<C: Client> AptosClient<C> {
 mod chain_trait_impls {
     use super::*;
     use async_trait::async_trait;
-    use chain_traits::{ChainStaking, ChainAccount, ChainPerpetual};
+    use chain_traits::{ChainAccount, ChainPerpetual, ChainStaking};
 
     #[async_trait]
     impl<C: Client> ChainStaking for AptosClient<C> {}

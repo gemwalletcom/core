@@ -1,6 +1,9 @@
-use primitives::{TransactionChange, TransactionMetadata, TransactionPerpetualMetadata, TransactionStateRequest, TransactionUpdate, TransactionLoadInput, TransactionLoadData, TransactionInputType, GasPrice};
 use crate::gateway::models::asset::GemAsset;
 use crate::gateway::models::GemUTXO;
+use primitives::{
+    GasPrice, TransactionChange, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionMetadata, TransactionPerpetualMetadata,
+    TransactionStateRequest, TransactionUpdate,
+};
 
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct GemTransactionUpdate {
@@ -36,10 +39,22 @@ pub struct GemTransactionStateRequest {
 
 #[derive(Debug, Clone, uniffi::Enum)]
 pub enum GemStakeOperation {
-    Delegate { asset: GemAsset, validator_address: String },
-    Undelegate { asset: GemAsset, validator_address: String },
-    Redelegate { asset: GemAsset, src_validator_address: String, dst_validator_address: String },
-    WithdrawRewards { validator_addresses: Vec<String> },
+    Delegate {
+        asset: GemAsset,
+        validator_address: String,
+    },
+    Undelegate {
+        asset: GemAsset,
+        validator_address: String,
+    },
+    Redelegate {
+        asset: GemAsset,
+        src_validator_address: String,
+        dst_validator_address: String,
+    },
+    WithdrawRewards {
+        validator_addresses: Vec<String>,
+    },
 }
 
 #[derive(Debug, Clone, uniffi::Enum)]
@@ -154,18 +169,14 @@ impl From<GemTransactionLoadInput> for TransactionLoadInput {
 impl From<GemStakeOperation> for primitives::StakeOperation {
     fn from(value: GemStakeOperation) -> Self {
         match value {
-            GemStakeOperation::Delegate { asset, validator_address } => {
-                primitives::StakeOperation::Delegate(asset.into(), validator_address)
-            }
-            GemStakeOperation::Undelegate { asset, validator_address } => {
-                primitives::StakeOperation::Undelegate(asset.into(), validator_address)
-            }
-            GemStakeOperation::Redelegate { asset, src_validator_address, dst_validator_address } => {
-                primitives::StakeOperation::Redelegate(asset.into(), src_validator_address, dst_validator_address)
-            }
-            GemStakeOperation::WithdrawRewards { validator_addresses } => {
-                primitives::StakeOperation::WithdrawRewards(validator_addresses)
-            }
+            GemStakeOperation::Delegate { asset, validator_address } => primitives::StakeOperation::Delegate(asset.into(), validator_address),
+            GemStakeOperation::Undelegate { asset, validator_address } => primitives::StakeOperation::Undelegate(asset.into(), validator_address),
+            GemStakeOperation::Redelegate {
+                asset,
+                src_validator_address,
+                dst_validator_address,
+            } => primitives::StakeOperation::Redelegate(asset.into(), src_validator_address, dst_validator_address),
+            GemStakeOperation::WithdrawRewards { validator_addresses } => primitives::StakeOperation::WithdrawRewards(validator_addresses),
         }
     }
 }
@@ -174,12 +185,8 @@ impl From<GemTransactionInputType> for TransactionInputType {
     fn from(value: GemTransactionInputType) -> Self {
         match value {
             GemTransactionInputType::Transfer { asset } => TransactionInputType::Transfer(asset.into()),
-            GemTransactionInputType::Swap { from_asset, to_asset } => {
-                TransactionInputType::Swap(from_asset.into(), to_asset.into())
-            }
-            GemTransactionInputType::Stake { operation } => {
-                TransactionInputType::Stake(operation.into())
-            }
+            GemTransactionInputType::Swap { from_asset, to_asset } => TransactionInputType::Swap(from_asset.into(), to_asset.into()),
+            GemTransactionInputType::Stake { operation } => TransactionInputType::Stake(operation.into()),
         }
     }
 }
@@ -208,4 +215,3 @@ pub fn map_transaction_load_data(load_data: TransactionLoadData, input: &GemTran
         message_bytes: "".to_string(),
     }
 }
-

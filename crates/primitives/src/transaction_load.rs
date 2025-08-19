@@ -1,6 +1,6 @@
-use serde::{Deserialize, Serialize};
+use crate::{Asset, TransactionPreloadInput, UTXO};
 use num_bigint::BigInt;
-use crate::{Asset, UTXO, TransactionPreloadInput};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum StakeOperation {
@@ -72,7 +72,7 @@ impl TransactionFee {
     pub fn calculate(gas_limit: u64, gas_price: &GasPrice) -> Self {
         let gas_limit_bigint = BigInt::from(gas_limit);
         let total_fee = &gas_price.gas_price * &gas_limit_bigint;
-        
+
         Self {
             fee: total_fee,
             gas_price: gas_price.gas_price.clone(),
@@ -139,9 +139,9 @@ mod tests {
             gas_price: BigInt::from(100u64),
         };
         let gas_limit = 1000u64;
-        
+
         let fee = TransactionFee::calculate(gas_limit, &gas_price);
-        
+
         assert_eq!(fee.fee, BigInt::from(100000u64)); // 100 * 1000
         assert_eq!(fee.gas_price, BigInt::from(100u64));
         assert_eq!(fee.gas_limit, BigInt::from(1000u64));

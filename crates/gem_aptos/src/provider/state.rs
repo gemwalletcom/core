@@ -3,7 +3,7 @@ use chain_traits::ChainState;
 use std::error::Error;
 
 use gem_client::Client;
-use primitives::{FeePriorityValue, FeePriority};
+use primitives::{FeePriority, FeePriorityValue};
 
 use crate::rpc::client::AptosClient;
 
@@ -19,14 +19,14 @@ impl<C: Client> ChainState for AptosClient<C> {
 
     async fn get_fee_rates(&self) -> Result<Vec<FeePriorityValue>, Box<dyn Error + Sync + Send>> {
         let gas_fee = self.get_gas_price().await?;
-        
+
         Ok(vec![
             FeePriorityValue {
                 priority: FeePriority::Slow,
                 value: gas_fee.deprioritized_gas_estimate.to_string(),
             },
             FeePriorityValue {
-                priority: FeePriority::Normal, 
+                priority: FeePriority::Normal,
                 value: gas_fee.gas_estimate.to_string(),
             },
             FeePriorityValue {
