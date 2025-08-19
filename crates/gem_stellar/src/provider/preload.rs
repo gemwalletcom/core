@@ -4,7 +4,8 @@ use futures;
 use std::error::Error;
 
 use gem_client::Client;
-use primitives::{TransactionPreload, TransactionPreloadInput};
+use primitives::{TransactionFee, TransactionLoadData, TransactionLoadInput, TransactionPreload, TransactionPreloadInput};
+use primitives::transaction_load::TransactionLoadMetadata;
 
 use crate::rpc::client::StellarClient;
 
@@ -24,5 +25,14 @@ impl<C: Client> ChainPreload for StellarClient<C> {
             .sequence(sequence)
             .is_destination_address_exist(is_destination_address_exist)
             .build())
+    }
+
+    async fn get_transaction_load(&self, input: TransactionLoadInput) -> Result<TransactionLoadData, Box<dyn Error + Sync + Send>> {
+        Ok(TransactionLoadData {
+            fee: TransactionFee::default(),
+            metadata: TransactionLoadMetadata::Stellar {
+                sequence: input.sequence,
+            },
+        })
     }
 }

@@ -38,7 +38,7 @@ pub struct TransactionLoadInput {
     pub gas_price: GasPrice,
     pub sequence: u64,
     pub block_hash: String,
-    pub block_number: i64,
+    pub block_number: u64,
     pub chain_id: String,
     pub utxos: Vec<UTXO>,
     pub memo: Option<String>,
@@ -120,11 +120,59 @@ impl SignerInputToken {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum TransactionLoadMetadata {
+    Solana {
+        sender_token_address: String,
+        recipient_token_address: Option<String>,
+        token_program: SolanaTokenProgramId,
+        sequence: u64,
+    },
+    Ton {
+        jetton_wallet_address: String,
+        sequence: u64,
+    },
+    Cosmos {
+        account_number: u64,
+        sequence: u64,
+        chain_id: String,
+    },
+    Bitcoin {
+        utxos: Vec<UTXO>,
+    },
+    Cardano {
+        utxos: Vec<UTXO>,
+    },
+    Evm {
+        chain_id: String,
+        block_hash: String,
+        block_number: u64,
+    },
+    Near {
+        sequence: u64,
+        block_hash: String,
+        is_destination_exist: bool,
+    },
+    Stellar {
+        sequence: u64,
+    },
+    Xrp {
+        sequence: u64,
+    },
+    Algorand {
+        sequence: u64,
+    },
+    Aptos {
+        sequence: u64,
+    },
+    Polkadot {
+        sequence: u64,
+    },
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TransactionLoadData {
-    pub account_number: u64,
-    pub sequence: u64,
     pub fee: TransactionFee,
-    pub token: SignerInputToken,
+    pub metadata: TransactionLoadMetadata,
 }
 
 

@@ -2,8 +2,10 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CosmosAccount {
-    pub account_number: String,
-    pub sequence: String,
+    #[serde(deserialize_with = "serde_serializers::deserialize_u64_from_str")]
+    pub account_number: u64,
+    #[serde(deserialize_with = "serde_serializers::deserialize_u64_from_str")]
+    pub sequence: u64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

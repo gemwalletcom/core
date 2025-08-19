@@ -2991,6 +2991,7 @@ dependencies = [
  "primitives",
  "serde",
  "serde_json",
+ "serde_serializers",
  "sha2",
 ]
 

@@ -15,10 +15,10 @@ impl<C: Client> ChainPreload for PolkadotClient<C> {
 
     async fn get_transaction_load(&self, input: TransactionLoadInput) -> Result<TransactionLoadData, Box<dyn Error + Sync + Send>> {
         Ok(TransactionLoadData {
-            account_number: 0,
-            sequence: input.sequence,
             fee: primitives::TransactionFee::default(),
-            token: primitives::SignerInputToken::default(),
+            metadata: primitives::transaction_load::TransactionLoadMetadata::Polkadot {
+                sequence: input.sequence,
+            },
         })
     }
 }

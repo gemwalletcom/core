@@ -3,7 +3,8 @@ use chain_traits::ChainPreload;
 use std::error::Error;
 
 use gem_client::Client;
-use primitives::{SignerInputToken, TransactionLoadData, TransactionLoadInput, TransactionPreload, TransactionPreloadInput};
+use primitives::{TransactionLoadData, TransactionLoadInput, TransactionPreload, TransactionPreloadInput};
+use primitives::transaction_load::TransactionLoadMetadata;
 
 use crate::{provider::preload_mapper, rpc::client::CosmosClient};
 
@@ -21,10 +22,12 @@ impl<C: Client> ChainPreload for CosmosClient<C> {
         let fee = preload_mapper::calculate_transaction_fee(&input.input_type, self.get_chain(), &input.gas_price);
 
         Ok(TransactionLoadData {
-            account_number: account.account_number.parse().unwrap_or(0),
-            sequence: account.sequence.parse().unwrap_or(0),
             fee,
-            token: SignerInputToken::default(),
+            metadata: TransactionLoadMetadata::Cosmos {
+                account_number: account.account_number,
+                sequence: account.sequence,
+                chain_id: self.get_chain().as_chain().network_id().to_string(),
+            },
         })
     }
 }

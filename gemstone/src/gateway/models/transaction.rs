@@ -4,6 +4,7 @@ use primitives::{
     GasPrice, TransactionChange, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionMetadata, TransactionPerpetualMetadata,
     TransactionStateRequest, TransactionUpdate,
 };
+use primitives::transaction_load::TransactionLoadMetadata;
 use primitives::transaction_load::FeeOption;
 use std::collections::HashMap;
 
@@ -107,17 +108,60 @@ pub struct GemSignerInputToken {
     pub token_program: String,
 }
 
+#[derive(Debug, Clone, uniffi::Enum)]
+pub enum GemTransactionLoadMetadata {
+    Solana {
+        sender_token_address: String,
+        recipient_token_address: Option<String>,
+        token_program: String,
+        sequence: i64,
+    },
+    Ton {
+        jetton_wallet_address: String,
+        sequence: i64,
+    },
+    Cosmos {
+        account_number: i64,
+        sequence: i64,
+        chain_id: String,
+    },
+    Bitcoin {
+        utxos: Vec<GemUTXO>,
+    },
+    Cardano {
+        utxos: Vec<GemUTXO>,
+    },
+    Evm {
+        chain_id: String,
+        block_hash: String,
+        block_number: i64,
+    },
+    Near {
+        sequence: i64,
+        block_hash: String,
+        is_destination_exist: bool,
+    },
+    Stellar {
+        sequence: i64,
+    },
+    Xrp {
+        sequence: i64,
+    },
+    Algorand {
+        sequence: i64,
+    },
+    Aptos {
+        sequence: i64,
+    },
+    Polkadot {
+        sequence: i64,
+    },
+}
+
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct GemTransactionData {
-    pub account_number: i32,
-    pub sequence: i32,
-    pub block_hash: String,
-    pub block_number: i64,
-    pub chain_id: String,
     pub fee: GemTransactionLoadFee,
-    pub utxos: Vec<GemUTXO>,
-    pub message_bytes: String,
-    pub token: GemSignerInputToken,
+    pub metadata: GemTransactionLoadMetadata,
 }
 
 impl From<TransactionChange> for GemTransactionChange {
@@ -178,7 +222,7 @@ impl From<GemTransactionLoadInput> for TransactionLoadInput {
             gas_price: value.gas_price.into(),
             sequence: value.sequence,
             block_hash: value.block_hash,
-            block_number: value.block_number,
+            block_number: value.block_number as u64,
             chain_id: value.chain_id,
             utxos: value.utxos.into_iter().map(|utxo| utxo.into()).collect(),
             memo: value.memo,
@@ -227,26 +271,73 @@ impl From<FeeOption> for GemFeeOption {
     }
 }
 
+impl From<TransactionLoadMetadata> for GemTransactionLoadMetadata {
+    fn from(value: TransactionLoadMetadata) -> Self {
+        match value {
+            TransactionLoadMetadata::Solana {
+                sender_token_address,
+                recipient_token_address,
+                token_program,
+                sequence,
+            } => GemTransactionLoadMetadata::Solana {
+                sender_token_address,
+                recipient_token_address,
+                token_program: token_program.as_ref().to_string(),
+                sequence: sequence as i64,
+            },
+            TransactionLoadMetadata::Ton { jetton_wallet_address, sequence } => GemTransactionLoadMetadata::Ton { 
+                jetton_wallet_address,
+                sequence: sequence as i64,
+            },
+            TransactionLoadMetadata::Cosmos { account_number, sequence, chain_id } => GemTransactionLoadMetadata::Cosmos { 
+                account_number: account_number as i64,
+                sequence: sequence as i64,
+                chain_id,
+            },
+            TransactionLoadMetadata::Bitcoin { utxos } => GemTransactionLoadMetadata::Bitcoin {
+                utxos: utxos.into_iter().map(|utxo| utxo.into()).collect(),
+            },
+            TransactionLoadMetadata::Cardano { utxos } => GemTransactionLoadMetadata::Cardano {
+                utxos: utxos.into_iter().map(|utxo| utxo.into()).collect(),
+            },
+            TransactionLoadMetadata::Evm { chain_id, block_hash, block_number } => GemTransactionLoadMetadata::Evm {
+                chain_id,
+                block_hash,
+                block_number: block_number as i64,
+            },
+            TransactionLoadMetadata::Near { sequence, block_hash, is_destination_exist } => GemTransactionLoadMetadata::Near {
+                sequence: sequence as i64,
+                block_hash,
+                is_destination_exist,
+            },
+            TransactionLoadMetadata::Stellar { sequence } => GemTransactionLoadMetadata::Stellar {
+                sequence: sequence as i64,
+            },
+            TransactionLoadMetadata::Xrp { sequence } => GemTransactionLoadMetadata::Xrp {
+                sequence: sequence as i64,
+            },
+            TransactionLoadMetadata::Algorand { sequence } => GemTransactionLoadMetadata::Algorand {
+                sequence: sequence as i64,
+            },
+            TransactionLoadMetadata::Aptos { sequence } => GemTransactionLoadMetadata::Aptos {
+                sequence: sequence as i64,
+            },
+            TransactionLoadMetadata::Polkadot { sequence } => GemTransactionLoadMetadata::Polkadot {
+                sequence: sequence as i64,
+            },
+        }
+    }
+}
 
-pub fn map_transaction_load_data(load_data: TransactionLoadData, input: &GemTransactionLoadInput) -> GemTransactionData {
+
+pub fn map_transaction_load_data(load_data: TransactionLoadData, _input: &GemTransactionLoadInput) -> GemTransactionData {
     GemTransactionData {
-        account_number: load_data.account_number as i32,
-        sequence: load_data.sequence as i32,
-        block_hash: input.block_hash.clone(),
-        block_number: input.block_number,
-        chain_id: input.chain_id.clone(),
         fee: GemTransactionLoadFee {
             fee: load_data.fee.fee.to_string(),
             gas_price: load_data.fee.gas_price.to_string(),
             gas_limit: load_data.fee.gas_limit.to_string(),
             options: load_data.fee.options.into_iter().map(|(key, value)| (key.into(), value)).collect(),
         },
-        utxos: input.utxos.clone(),
-        message_bytes: "".to_string(),
-        token: GemSignerInputToken {
-            sender_token_address: load_data.token.sender_token_address,
-            recipient_token_address: load_data.token.recipient_token_address,
-            token_program: load_data.token.token_program.as_ref().to_string(),
-        },
+        metadata: load_data.metadata.into(),
     }
 }

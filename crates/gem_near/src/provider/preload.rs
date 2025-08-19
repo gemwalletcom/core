@@ -3,7 +3,8 @@ use chain_traits::ChainPreload;
 use std::error::Error;
 
 use gem_client::Client;
-use primitives::{TransactionPreload, TransactionPreloadInput};
+use primitives::{TransactionFee, TransactionLoadData, TransactionLoadInput, TransactionPreload, TransactionPreloadInput};
+use primitives::transaction_load::TransactionLoadMetadata;
 
 use super::preload_mapper;
 use crate::rpc::client::NearClient;
@@ -22,5 +23,16 @@ impl<C: Client + Clone> ChainPreload for NearClient<C> {
             &block,
             is_destination_address_exist,
         ))
+    }
+
+    async fn get_transaction_load(&self, input: TransactionLoadInput) -> Result<TransactionLoadData, Box<dyn Error + Sync + Send>> {
+        Ok(TransactionLoadData {
+            fee: TransactionFee::default(),
+            metadata: TransactionLoadMetadata::Near {
+                sequence: input.sequence,
+                block_hash: input.block_hash,
+                is_destination_exist: true, // Use a default or extract from input if needed
+            },
+        })
     }
 }

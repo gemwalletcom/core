@@ -4,7 +4,7 @@ use async_trait::async_trait;
 use primitives::chart::ChartCandleStick;
 use primitives::perpetual::{PerpetualData, PerpetualPositionsSummary};
 use primitives::{
-    Asset, AssetBalance, ChartPeriod, DelegationBase, DelegationValidator, FeePriorityValue, SignerInputToken, TransactionFee, TransactionLoadData, TransactionLoadInput,
+    Asset, AssetBalance, ChartPeriod, DelegationBase, DelegationValidator, FeePriorityValue, TransactionLoadData, TransactionLoadInput,
     TransactionPreload, TransactionPreloadInput, TransactionStateRequest, TransactionUpdate, UTXO,
 };
 
@@ -84,12 +84,7 @@ pub trait ChainPreload: Send + Sync {
         Ok(TransactionPreload::default())
     }
 
-    async fn get_transaction_load(&self, input: TransactionLoadInput) -> Result<TransactionLoadData, Box<dyn Error + Sync + Send>> {
-        Ok(TransactionLoadData {
-            account_number: 0,
-            sequence: input.sequence,
-            fee: TransactionFee::default(),
-            token: SignerInputToken::default(),
-        })
+    async fn get_transaction_load(&self, _input: TransactionLoadInput) -> Result<TransactionLoadData, Box<dyn Error + Sync + Send>> {
+        Err("Chain does not support transaction loading".into())
     }
 }

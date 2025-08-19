@@ -3,7 +3,8 @@ use chain_traits::ChainPreload;
 use std::error::Error;
 
 use gem_client::Client;
-use primitives::{SignerInputToken, TransactionFee, TransactionLoadData, TransactionLoadInput, TransactionPreload, TransactionPreloadInput};
+use primitives::{TransactionFee, TransactionLoadData, TransactionLoadInput, TransactionPreload, TransactionPreloadInput};
+use primitives::transaction_load::TransactionLoadMetadata;
 
 use super::preload_mapper::map_transaction_preload;
 use crate::rpc::client::AptosClient;
@@ -20,10 +21,10 @@ impl<C: Client> ChainPreload for AptosClient<C> {
         let fee = TransactionFee::calculate(gas_limit, &input.gas_price);
 
         Ok(TransactionLoadData {
-            account_number: 0,
-            sequence: input.sequence,
             fee,
-            token: SignerInputToken::default(),
+            metadata: TransactionLoadMetadata::Aptos {
+                sequence: input.sequence,
+            },
         })
     }
 }

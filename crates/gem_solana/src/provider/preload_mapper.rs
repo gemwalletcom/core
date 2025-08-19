@@ -1,5 +1,6 @@
 use num_bigint::BigInt;
 use primitives::{AssetSubtype, FeePriority, FeePriorityValue, GasPrice, SignerInputToken, SolanaTokenProgramId, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput};
+use primitives::transaction_load::TransactionLoadMetadata;
 use std::collections::HashMap;
 
 use crate::{models::prioritization_fee::SolanaPrioritizationFee, model::ValueResult, model::TokenAccountInfo, get_token_program_id_by_address};
@@ -118,27 +119,51 @@ pub fn map_transaction_load(
 ) -> TransactionLoadData {
     let fee = calculate_transaction_fee(&input.input_type, &input.gas_price, &prioritization_fees);
     
-    let token = match &input.input_type {
+    let metadata = match &input.input_type {
         TransactionInputType::Transfer(asset) => {
             match &asset.id.token_id {
                 Some(_) => {
                     if let Some((sender_accounts, recipient_accounts)) = token_accounts {
-                        map_token_transfer_info(sender_accounts, recipient_accounts)
+                        let token_info = map_token_transfer_info(sender_accounts, recipient_accounts);
+                        Some(TransactionLoadMetadata::Solana {
+                            sender_token_address: token_info.sender_token_address,
+                            recipient_token_address: token_info.recipient_token_address,
+                            token_program: token_info.token_program,
+                            sequence: input.sequence,
+                        })
                     } else {
-                        SignerInputToken::default()
+                        Some(TransactionLoadMetadata::Solana {
+                            sender_token_address: String::new(),
+                            recipient_token_address: None,
+                            token_program: SolanaTokenProgramId::Token,
+                            sequence: input.sequence,
+                        })
                     }
                 },
-                None => SignerInputToken::default(),
+                None => Some(TransactionLoadMetadata::Solana {
+                    sender_token_address: String::new(),
+                    recipient_token_address: None,
+                    token_program: SolanaTokenProgramId::Token,
+                    sequence: input.sequence,
+                }),
             }
         },
-        _ => SignerInputToken::default(),
+        _ => Some(TransactionLoadMetadata::Solana {
+            sender_token_address: String::new(),
+            recipient_token_address: None,
+            token_program: SolanaTokenProgramId::Token,
+            sequence: input.sequence,
+        }),
     };
 
     TransactionLoadData {
-        account_number: 0,
-        sequence: input.sequence,
         fee,
-        token,
+        metadata: metadata.unwrap_or(TransactionLoadMetadata::Solana {
+            sender_token_address: String::new(),
+            recipient_token_address: None,
+            token_program: SolanaTokenProgramId::Token,
+            sequence: input.sequence,
+        }),
     }
 }
 
@@ -252,7 +277,11 @@ mod tests {
 
         let result = map_transaction_load(input, fees, None);
 
-        assert_eq!(result.sequence, 123);
+        if let TransactionLoadMetadata::Solana { sequence, .. } = result.metadata {
+            assert_eq!(sequence, 123);
+        } else {
+            panic!("Expected Solana metadata");
+        }
         assert!(result.fee.fee > BigInt::from(0));
     }
 }

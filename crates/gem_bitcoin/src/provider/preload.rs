@@ -3,7 +3,8 @@ use chain_traits::ChainPreload;
 use std::error::Error;
 
 use gem_client::Client;
-use primitives::{TransactionPreload, TransactionPreloadInput, UTXO};
+use primitives::{TransactionLoadData, TransactionLoadInput, TransactionPreload, TransactionPreloadInput, UTXO};
+use primitives::transaction_load::TransactionLoadMetadata;
 
 use crate::rpc::client::BitcoinClient;
 
@@ -23,5 +24,14 @@ impl<C: Client> ChainPreload for BitcoinClient<C> {
             .collect();
 
         Ok(TransactionPreload::builder().utxos(utxos).build())
+    }
+
+    async fn get_transaction_load(&self, input: TransactionLoadInput) -> Result<TransactionLoadData, Box<dyn Error + Sync + Send>> {
+        Ok(TransactionLoadData {
+            fee: primitives::TransactionFee::default(),
+            metadata: TransactionLoadMetadata::Bitcoin { 
+                utxos: input.utxos 
+            },
+        })
     }
 }
