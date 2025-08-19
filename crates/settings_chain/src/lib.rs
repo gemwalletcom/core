@@ -2,7 +2,6 @@ mod chain_providers;
 mod provider_config;
 pub use chain_providers::ChainProviders;
 use gem_client::{retry::standard_retry_policy, ReqwestClient};
-use gem_jsonrpc::JsonRpcClient;
 pub use provider_config::ProviderConfig;
 
 use reqwest_middleware::ClientBuilder;
@@ -122,7 +121,7 @@ impl ProviderFactory {
                 Box::new(TronProvider::new(client, Box::new(grid_client.clone()), Box::new(grid_client.clone())))
             }
             Chain::Aptos => Box::new(AptosProvider::new(AptosClient::new(gem_client))),
-            Chain::Sui => Box::new(SuiProvider::new(SuiClient::new(JsonRpcClient::new(url, gem_client)))),
+            Chain::Sui => Box::new(SuiProvider::new(SuiClient::new(gem_client))),
             Chain::Xrp => Box::new(XRPProvider::new(XRPClient::new(gem_client))),
             Chain::Cardano => Box::new(CardanoProvider::new(CardanoClient::new(gem_client))),
             Chain::Algorand => Box::new(AlgorandProvider::new(AlgorandClient::new(gem_client))),
