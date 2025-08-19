@@ -11,7 +11,7 @@ use crate::rpc::client::NearClient;
 #[async_trait]
 impl<C: Client + Clone> ChainBalances for NearClient<C> {
     async fn get_balance_coin(&self, address: String) -> Result<AssetBalance, Box<dyn Error + Sync + Send>> {
-        let account = self.get_near_account(&address).await?;
+        let account = self.get_account(&address).await?;
         let asset_id = self.get_chain().as_asset_id();
         balances_mapper::map_native_balance(&account, asset_id, self.get_chain())
     }

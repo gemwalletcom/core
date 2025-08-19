@@ -15,7 +15,11 @@ impl<C: Client + Clone> NearClient<C> {
         Self { client, chain: Chain::Near }
     }
 
-    pub async fn get_near_account(&self, address: &str) -> Result<crate::models::NearAccount, JsonRpcError> {
+    pub fn get_chain(&self) -> Chain {
+        self.chain
+    }
+
+    pub async fn get_account(&self, address: &str) -> Result<crate::models::NearAccount, JsonRpcError> {
         let params = json!({
             "request_type": "view_account",
             "finality": "final",
@@ -24,7 +28,7 @@ impl<C: Client + Clone> NearClient<C> {
         self.client.call("query", params).await
     }
 
-    pub async fn get_near_account_access_key(&self, address: &str, public_key: &str) -> Result<crate::models::NearAccountAccessKey, JsonRpcError> {
+    pub async fn get_account_access_key(&self, address: &str, public_key: &str) -> Result<crate::models::NearAccountAccessKey, JsonRpcError> {
         let params = json!({
             "request_type": "view_access_key",
             "finality": "final",
@@ -34,39 +38,33 @@ impl<C: Client + Clone> NearClient<C> {
         self.client.call("query", params).await
     }
 
-    pub async fn get_near_latest_block(&self) -> Result<crate::models::NearBlock, JsonRpcError> {
+    pub async fn get_latest_block(&self) -> Result<crate::models::NearBlock, JsonRpcError> {
         let params = json!({"finality": "final"});
         self.client.call("block", params).await
     }
 
-    pub async fn get_near_gas_price(&self) -> Result<crate::models::NearGasPrice, JsonRpcError> {
+    pub async fn get_gas_price(&self) -> Result<crate::models::NearGasPrice, JsonRpcError> {
         let params = json!([null]);
         self.client.call("gas_price", params).await
     }
 
-    pub async fn get_near_genesis_config(&self) -> Result<crate::models::NearGenesisConfig, JsonRpcError> {
+    pub async fn get_genesis_config(&self) -> Result<crate::models::NearGenesisConfig, JsonRpcError> {
         let params = json!({});
         self.client.call("EXPERIMENTAL_genesis_config", params).await
     }
 
-    pub async fn broadcast_near_transaction(&self, signed_tx_base64: &str) -> Result<crate::models::NearBroadcastResult, JsonRpcError> {
+    pub async fn broadcast_transaction(&self, signed_tx_base64: &str) -> Result<crate::models::NearBroadcastResult, JsonRpcError> {
         let params = json!({"signed_tx_base64": signed_tx_base64});
         self.client.call("send_tx", params).await
     }
 
-    pub async fn get_near_transaction_status(&self, tx_hash: &str, sender_account_id: &str) -> Result<crate::models::NearBroadcastResult, JsonRpcError> {
+    pub async fn get_transaction_status(&self, tx_hash: &str, sender_account_id: &str) -> Result<crate::models::NearBroadcastResult, JsonRpcError> {
         let params = json!({
             "tx_hash": tx_hash,
             "sender_account_id": sender_account_id,
             "wait_until": "EXECUTED"
         });
         self.client.call("tx", params).await
-    }
-}
-
-impl<C: Client + Clone> NearClient<C> {
-    pub fn get_chain(&self) -> Chain {
-        self.chain
     }
 
     pub async fn get_token_data(&self, _token_id: String) -> Result<Asset, JsonRpcError> {

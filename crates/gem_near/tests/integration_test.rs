@@ -21,7 +21,7 @@ mod integration_tests {
         let jsonrpc_client = new_client("https://rpc.mainnet.near.org".to_string())?;
         let near_client: NearClient<gem_client::ReqwestClient> = NearClient::new(jsonrpc_client);
         
-        let genesis_config = near_client.get_near_genesis_config().await?;
+        let genesis_config = near_client.get_genesis_config().await?;
         assert_eq!(genesis_config.chain_id, "mainnet");
         
         Ok(())

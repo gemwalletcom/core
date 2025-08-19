@@ -24,7 +24,7 @@ impl<C: Client + Clone> ChainBlockProvider for NearProvider<C> {
     }
 
     async fn get_latest_block(&self) -> Result<i64, Box<dyn Error + Send + Sync>> {
-        Ok(self.client.get_near_latest_block().await?.header.height as i64)
+        Ok(self.client.get_latest_block().await?.header.height as i64)
     }
 
     async fn get_transactions(&self, _block_number: i64) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
@@ -42,7 +42,7 @@ impl<C: Client + Clone> ChainTokenDataProvider for NearProvider<C> {
 #[async_trait]
 impl<C: Client + Clone> ChainAssetsProvider for NearProvider<C> {
     async fn get_assets_balances(&self, address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
-        let account = self.client.get_near_account(&address).await?;
+        let account = self.client.get_account(&address).await?;
         let asset_id = self.get_chain().as_asset_id();
         let balance = AssetBalance::new(asset_id, account.amount);
         Ok(vec![balance])
