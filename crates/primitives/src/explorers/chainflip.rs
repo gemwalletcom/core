@@ -1,29 +1,18 @@
-use crate::block_explorer::{BlockExplorer, Metadata};
+use crate::block_explorer::BlockExplorer;
+use crate::explorers::metadata::{Explorer, Metadata, TX_PATH};
 
-pub struct ChainflipScan {
-    pub meta: Metadata,
-}
+pub struct ChainflipScan;
 
 impl ChainflipScan {
-    pub fn new() -> Box<Self> {
-        Box::new(Self {
-            meta: Metadata {
-                name: "Chainflip",
-                base_url: "https://scan.chainflip.io",
-            },
+    pub fn boxed() -> Box<dyn BlockExplorer> {
+        Explorer::boxed(Metadata {
+            name: "Chainflip",
+            base_url: "https://scan.chainflip.io",
+            tx_path: TX_PATH,
+            address_path: "",
+            token_path: None,
+            validator_path: None,
         })
-    }
-}
-
-impl BlockExplorer for ChainflipScan {
-    fn name(&self) -> String {
-        self.meta.name.into()
-    }
-    fn get_tx_url(&self, hash: &str) -> String {
-        format!("{}/tx/{}", self.meta.base_url, hash)
-    }
-    fn get_address_url(&self, _address: &str) -> String {
-        "".to_string()
     }
 }
 
@@ -33,7 +22,7 @@ mod tests {
 
     #[test]
     fn test_chainflip_scan() {
-        let chainflip_scan = ChainflipScan::new();
+        let chainflip_scan = ChainflipScan::boxed();
         let tx = "54qsbkVUPoQUbwfuQeDXmNyodPWVX8VcK6sSSFyfezkg8t5XbduthFisKBcGxGjSab8QsKaPoEWEnzsK9xsFXrMF";
         assert_eq!(chainflip_scan.name(), "Chainflip");
         assert_eq!(

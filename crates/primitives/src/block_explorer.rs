@@ -1,9 +1,8 @@
 use crate::chain::Chain;
 use crate::chain_evm::EVMChain;
 use crate::explorers::{
-    AlgorandAllo, AptosExplorer, AptosScan, BlockScout, Blockchair, Blocksec, Cardanocan, EtherScan, HyperliquidExplorer, MantleExplorer, Mempool, MintScan,
-    NearBlocks, OkxExplorer, RouteScan, RuneScan, ScopeExplorer, SolanaFM, Solscan, StellarExpert, SubScan, SuiScan, SuiVision, TonScan, TonViewer, TronScan,
-    Viewblock, XrpScan, ZkSync,
+    aptos, blockchair, mempool, mintscan, solana, stellar_expert, sui, ton, AlgorandAllo, BlockScout, Blocksec, Cardanocan, EtherScan, HyperliquidExplorer,
+    MantleExplorer, NearBlocks, OkxExplorer, RouteScan, RuneScan, ScopeExplorer, SubScan, TonScan, TronScan, Viewblock, XrpScan, ZkSync,
 };
 use std::str::FromStr;
 use typeshare::typeshare;
@@ -18,10 +17,13 @@ pub trait BlockExplorer: Send + Sync {
     fn get_validator_url(&self, _validator: &str) -> Option<String> {
         None
     }
-}
-pub struct Metadata {
-    pub name: &'static str,
-    pub base_url: &'static str,
+
+    fn new() -> Box<Self>
+    where
+        Self: Default + Sized,
+    {
+        Box::new(Self::default())
+    }
 }
 
 #[typeshare(swift = "Equatable, Hashable, Sendable")]
@@ -44,90 +46,90 @@ pub fn get_block_explorer(chain: Chain, name: &str) -> Box<dyn BlockExplorer> {
 
 pub fn get_block_explorers(chain: Chain) -> Vec<Box<dyn BlockExplorer>> {
     match chain {
-        Chain::Bitcoin => vec![Blockchair::new_bitcoin(), Mempool::new()],
-        Chain::BitcoinCash => vec![Blockchair::new_bitcoin_cash()],
-        Chain::Litecoin => vec![Blockchair::new_litecoin()],
-        Chain::Doge => vec![Blockchair::new_doge()],
+        Chain::Bitcoin => vec![blockchair::new_bitcoin(), mempool::new()],
+        Chain::BitcoinCash => vec![blockchair::new_bitcoin_cash()],
+        Chain::Litecoin => vec![blockchair::new_litecoin()],
+        Chain::Doge => vec![blockchair::new_doge()],
 
         Chain::Ethereum => vec![
-            EtherScan::new(EVMChain::Ethereum),
-            Blockchair::new_ethereum(),
+            EtherScan::boxed(EVMChain::Ethereum),
+            blockchair::new_ethereum(),
             Blocksec::new_ethereum(),
-            ScopeExplorer::new(Chain::Ethereum),
+            ScopeExplorer::boxed(Chain::Ethereum),
         ],
         Chain::SmartChain => vec![
-            EtherScan::new(EVMChain::SmartChain),
-            Blockchair::new_bnb(),
+            EtherScan::boxed(EVMChain::SmartChain),
+            blockchair::new_bnb(),
             Blocksec::new_bsc(),
-            ScopeExplorer::new(Chain::SmartChain),
+            ScopeExplorer::boxed(Chain::SmartChain),
         ],
         Chain::Polygon => vec![
-            EtherScan::new(EVMChain::Polygon),
-            Blockchair::new_polygon(),
+            EtherScan::boxed(EVMChain::Polygon),
+            blockchair::new_polygon(),
             Blocksec::new_polygon(),
-            ScopeExplorer::new(Chain::Polygon),
+            ScopeExplorer::boxed(Chain::Polygon),
         ],
         Chain::Arbitrum => vec![
-            EtherScan::new(EVMChain::Arbitrum),
-            Blockchair::new_arbitrum(),
+            EtherScan::boxed(EVMChain::Arbitrum),
+            blockchair::new_arbitrum(),
             Blocksec::new_arbitrum(),
-            ScopeExplorer::new(Chain::Arbitrum),
+            ScopeExplorer::boxed(Chain::Arbitrum),
         ],
         Chain::Optimism => vec![
-            EtherScan::new(EVMChain::Optimism),
-            Blockchair::new_optimism(),
+            EtherScan::boxed(EVMChain::Optimism),
+            blockchair::new_optimism(),
             Blocksec::new_optimism(),
-            ScopeExplorer::new(Chain::Optimism),
+            ScopeExplorer::boxed(Chain::Optimism),
         ],
         Chain::Base => vec![
-            EtherScan::new(EVMChain::Base),
-            Blockchair::new_base(),
+            EtherScan::boxed(EVMChain::Base),
+            blockchair::new_base(),
             Blocksec::new_base(),
-            ScopeExplorer::new(Chain::Base),
+            ScopeExplorer::boxed(Chain::Base),
         ],
         Chain::AvalancheC => vec![
-            EtherScan::new(EVMChain::AvalancheC),
+            EtherScan::boxed(EVMChain::AvalancheC),
             RouteScan::new_avax(),
-            Blockchair::new_avalanche(),
-            ScopeExplorer::new(Chain::AvalancheC),
+            blockchair::new_avalanche(),
+            ScopeExplorer::boxed(Chain::AvalancheC),
         ],
-        Chain::OpBNB => vec![EtherScan::new(EVMChain::OpBNB), Blockchair::new_opbnb()],
-        Chain::Fantom => vec![EtherScan::new(EVMChain::Fantom), Blockchair::new_fantom()],
-        Chain::Gnosis => vec![EtherScan::new(EVMChain::Gnosis), Blockchair::new_gnosis()],
-        Chain::Manta => vec![BlockScout::new_manta(), EtherScan::new(EVMChain::Manta)],
-        Chain::Blast => vec![EtherScan::new(EVMChain::Blast)],
-        Chain::Linea => vec![EtherScan::new(EVMChain::Linea), Blockchair::new_linea(), ScopeExplorer::new(Chain::Linea)],
-        Chain::Celo => vec![BlockScout::new_celo(), EtherScan::new(EVMChain::Celo)],
-        Chain::ZkSync => vec![ZkSync::new(), EtherScan::new(EVMChain::ZkSync)],
-        Chain::World => vec![EtherScan::new(EVMChain::World)],
-        Chain::Solana => vec![Solscan::new(), SolanaFM::new(), Blockchair::new_solana()],
-        Chain::Thorchain => vec![RuneScan::new(), Viewblock::new()],
+        Chain::OpBNB => vec![EtherScan::boxed(EVMChain::OpBNB), blockchair::new_opbnb()],
+        Chain::Fantom => vec![EtherScan::boxed(EVMChain::Fantom), blockchair::new_fantom()],
+        Chain::Gnosis => vec![EtherScan::boxed(EVMChain::Gnosis), blockchair::new_gnosis()],
+        Chain::Manta => vec![BlockScout::new_manta(), EtherScan::boxed(EVMChain::Manta)],
+        Chain::Blast => vec![EtherScan::boxed(EVMChain::Blast)],
+        Chain::Linea => vec![EtherScan::boxed(EVMChain::Linea), blockchair::new_linea(), ScopeExplorer::boxed(Chain::Linea)],
+        Chain::Celo => vec![BlockScout::new_celo(), EtherScan::boxed(EVMChain::Celo)],
+        Chain::ZkSync => vec![ZkSync::boxed(), EtherScan::boxed(EVMChain::ZkSync)],
+        Chain::World => vec![EtherScan::boxed(EVMChain::World)],
+        Chain::Solana => vec![solana::new_solscan(), solana::new_solana_fm(), blockchair::new_solana()],
+        Chain::Thorchain => vec![RuneScan::boxed(), Viewblock::boxed()],
 
-        Chain::Cosmos => vec![MintScan::new_cosmos()],
-        Chain::Osmosis => vec![MintScan::new_osmosis()],
-        Chain::Celestia => vec![MintScan::new_celestia()],
-        Chain::Injective => vec![MintScan::new_injective()],
-        Chain::Sei => vec![MintScan::new_sei()],
-        Chain::Noble => vec![MintScan::new_noble()],
-        Chain::Mantle => vec![MantleExplorer::new(), EtherScan::new(EVMChain::Mantle)],
+        Chain::Cosmos => vec![mintscan::new_cosmos()],
+        Chain::Osmosis => vec![mintscan::new_osmosis()],
+        Chain::Celestia => vec![mintscan::new_celestia()],
+        Chain::Injective => vec![mintscan::new_injective()],
+        Chain::Sei => vec![mintscan::new_sei()],
+        Chain::Noble => vec![mintscan::new_noble()],
+        Chain::Mantle => vec![MantleExplorer::boxed(), EtherScan::boxed(EVMChain::Mantle)],
 
-        Chain::Ton => vec![TonViewer::new(), TonScan::new(), Blockchair::new_ton()],
-        Chain::Tron => vec![TronScan::new(), Blockchair::new_tron()],
-        Chain::Xrp => vec![XrpScan::new(), Blockchair::new_xrp()],
-        Chain::Aptos => vec![AptosScan::new(), AptosExplorer::new(), Blockchair::new_aptos()],
-        Chain::Sui => vec![SuiScan::new(), SuiVision::new()],
-        Chain::Near => vec![NearBlocks::new()],
-        Chain::Stellar => vec![StellarExpert::new(), Blockchair::new_stellar()],
-        Chain::Sonic => vec![EtherScan::new(EVMChain::Sonic), RouteScan::new_sonic()],
-        Chain::Algorand => vec![AlgorandAllo::new()],
-        Chain::Polkadot => vec![SubScan::new_polkadot(), Blockchair::new_polkadot()],
-        Chain::Cardano => vec![Cardanocan::new()],
-        Chain::Abstract => vec![EtherScan::new(EVMChain::Abstract)],
-        Chain::Berachain => vec![EtherScan::new(EVMChain::Berachain)],
+        Chain::Ton => vec![ton::new_ton_viewer(), TonScan::boxed(), blockchair::new_ton()],
+        Chain::Tron => vec![TronScan::boxed(), blockchair::new_tron()],
+        Chain::Xrp => vec![XrpScan::boxed(), blockchair::new_xrp()],
+        Chain::Aptos => vec![aptos::new_aptos_scan(), aptos::new_aptos_explorer(), blockchair::new_aptos()],
+        Chain::Sui => vec![sui::new_sui_scan(), sui::new_sui_vision()],
+        Chain::Near => vec![NearBlocks::boxed()],
+        Chain::Stellar => vec![stellar_expert::new(), blockchair::new_stellar()],
+        Chain::Sonic => vec![EtherScan::boxed(EVMChain::Sonic), RouteScan::new_sonic()],
+        Chain::Algorand => vec![AlgorandAllo::boxed()],
+        Chain::Polkadot => vec![SubScan::new_polkadot(), blockchair::new_polkadot()],
+        Chain::Cardano => vec![Cardanocan::boxed()],
+        Chain::Abstract => vec![EtherScan::boxed(EVMChain::Abstract)],
+        Chain::Berachain => vec![EtherScan::boxed(EVMChain::Berachain)],
         Chain::Ink => vec![RouteScan::new_ink(), BlockScout::new_ink(), OkxExplorer::new_ink()],
-        Chain::Unichain => vec![EtherScan::new(EVMChain::Unichain)],
-        Chain::Hyperliquid => vec![EtherScan::new(EVMChain::Hyperliquid), BlockScout::new_hyperliquid()],
-        Chain::HyperCore => vec![HyperliquidExplorer::new()],
-        Chain::Monad => vec![EtherScan::new(EVMChain::Monad)],
+        Chain::Unichain => vec![EtherScan::boxed(EVMChain::Unichain)],
+        Chain::Hyperliquid => vec![EtherScan::boxed(EVMChain::Hyperliquid), BlockScout::new_hyperliquid()],
+        Chain::HyperCore => vec![HyperliquidExplorer::boxed()],
+        Chain::Monad => vec![EtherScan::boxed(EVMChain::Monad)],
     }
 }

@@ -1,167 +1,36 @@
-use crate::block_explorer::{BlockExplorer, Metadata};
+use crate::block_explorer::BlockExplorer;
 use crate::chain_evm::EVMChain;
+use crate::explorers::metadata::{Explorer, Metadata};
 
-pub struct EtherScan {
-    pub meta: Metadata,
-}
+pub struct EtherScan;
 
 impl EtherScan {
-    pub fn new(chain: EVMChain) -> Box<Self> {
-        Box::new(match chain {
-            EVMChain::Ethereum => Self {
-                meta: Metadata {
-                    name: "Etherscan",
-                    base_url: "https://etherscan.io",
-                },
-            },
-            EVMChain::SmartChain => Self {
-                meta: Metadata {
-                    name: "BscScan",
-                    base_url: "https://bscscan.com",
-                },
-            },
-            EVMChain::Polygon => Self {
-                meta: Metadata {
-                    name: "PolygonScan",
-                    base_url: "https://polygonscan.com",
-                },
-            },
-            EVMChain::Arbitrum => Self {
-                meta: Metadata {
-                    name: "ArbiScan",
-                    base_url: "https://arbiscan.io",
-                },
-            },
-            EVMChain::Optimism => Self {
-                meta: Metadata {
-                    name: "Etherscan",
-                    base_url: "https://optimistic.etherscan.io",
-                },
-            },
-            EVMChain::Base => Self {
-                meta: Metadata {
-                    name: "BaseScan",
-                    base_url: "https://basescan.org",
-                },
-            },
-            EVMChain::AvalancheC => Self {
-                meta: Metadata {
-                    name: "SnowScan",
-                    base_url: "https://snowscan.xyz",
-                },
-            },
-            EVMChain::OpBNB => Self {
-                meta: Metadata {
-                    name: "opBNBScan",
-                    base_url: "https://opbnb.bscscan.com",
-                },
-            },
-            EVMChain::Fantom => Self {
-                meta: Metadata {
-                    name: "FTMScan",
-                    base_url: "https://ftmscan.com",
-                },
-            },
-            EVMChain::Gnosis => Self {
-                meta: Metadata {
-                    name: "GnosisScan",
-                    base_url: "https://gnosisscan.io",
-                },
-            },
-            EVMChain::Manta => Self {
-                meta: Metadata {
-                    name: "Socialscan",
-                    base_url: "https://manta.socialscan.io",
-                },
-            },
-            EVMChain::Blast => Self {
-                meta: Metadata {
-                    name: "BlastScan",
-                    base_url: "https://blastscan.io",
-                },
-            },
-            EVMChain::Linea => Self {
-                meta: Metadata {
-                    name: "LineaScan",
-                    base_url: "https://lineascan.build",
-                },
-            },
-            EVMChain::ZkSync => Self {
-                meta: Metadata {
-                    name: "zkSync Era Explorer",
-                    base_url: "https://era.zksync.network",
-                },
-            },
-            EVMChain::Celo => Self {
-                meta: Metadata {
-                    name: "CeloScan",
-                    base_url: "https://celoscan.io",
-                },
-            },
-            EVMChain::Mantle => Self {
-                meta: Metadata {
-                    name: "MantleScan",
-                    base_url: "https://mantlescan.xyz",
-                },
-            },
-            EVMChain::World => Self {
-                meta: Metadata {
-                    name: "WorldScan",
-                    base_url: "https://worldscan.org",
-                },
-            },
-            EVMChain::Sonic => Self {
-                meta: Metadata {
-                    name: "SonicScan",
-                    base_url: "https://sonicscan.org",
-                },
-            },
-            EVMChain::Abstract => Self {
-                meta: Metadata {
-                    name: "Abscan",
-                    base_url: "https://abscan.org",
-                },
-            },
-            EVMChain::Berachain => Self {
-                meta: Metadata {
-                    name: "Berascan",
-                    base_url: "https://berascan.com",
-                },
-            },
-            EVMChain::Unichain => Self {
-                meta: Metadata {
-                    name: "Uniscan",
-                    base_url: "https://uniscan.xyz",
-                },
-            },
-            EVMChain::Monad => Self {
-                meta: Metadata {
-                    name: "Monad",
-                    base_url: "https://testnet.monadexplorer.com", //TODO: Monad. Replace with etherscan
-                },
-            },
-            EVMChain::Hyperliquid => Self {
-                meta: Metadata {
-                    name: "HyperEvmScan",
-                    base_url: "https://hyperevmscan.io",
-                },
-            },
+    pub fn boxed(chain: EVMChain) -> Box<dyn BlockExplorer> {
+        match chain {
+            EVMChain::Ethereum => Explorer::boxed(Metadata::with_token("Etherscan", "https://etherscan.io")),
+            EVMChain::SmartChain => Explorer::boxed(Metadata::with_token("BscScan", "https://bscscan.com")),
+            EVMChain::Polygon => Explorer::boxed(Metadata::with_token("PolygonScan", "https://polygonscan.com")),
+            EVMChain::Arbitrum => Explorer::boxed(Metadata::with_token("ArbiScan", "https://arbiscan.io")),
+            EVMChain::Optimism => Explorer::boxed(Metadata::with_token("Etherscan", "https://optimistic.etherscan.io")),
+            EVMChain::Base => Explorer::boxed(Metadata::with_token("BaseScan", "https://basescan.org")),
+            EVMChain::AvalancheC => Explorer::boxed(Metadata::with_token("SnowScan", "https://snowscan.xyz")),
+            EVMChain::OpBNB => Explorer::boxed(Metadata::with_token("opBNBScan", "https://opbnb.bscscan.com")),
+            EVMChain::Fantom => Explorer::boxed(Metadata::with_token("FTMScan", "https://ftmscan.com")),
+            EVMChain::Gnosis => Explorer::boxed(Metadata::with_token("GnosisScan", "https://gnosisscan.io")),
+            EVMChain::Manta => Explorer::boxed(Metadata::with_token("Socialscan", "https://manta.socialscan.io")),
+            EVMChain::Blast => Explorer::boxed(Metadata::with_token("BlastScan", "https://blastscan.io")),
+            EVMChain::Linea => Explorer::boxed(Metadata::with_token("LineaScan", "https://lineascan.build")),
+            EVMChain::ZkSync => Explorer::boxed(Metadata::with_token("zkSync Era Explorer", "https://era.zksync.network")),
+            EVMChain::Celo => Explorer::boxed(Metadata::with_token("CeloScan", "https://celoscan.io")),
+            EVMChain::Mantle => Explorer::boxed(Metadata::with_token("MantleScan", "https://mantlescan.xyz")),
+            EVMChain::World => Explorer::boxed(Metadata::with_token("WorldScan", "https://worldscan.org")),
+            EVMChain::Sonic => Explorer::boxed(Metadata::with_token("SonicScan", "https://sonicscan.org")),
+            EVMChain::Abstract => Explorer::boxed(Metadata::with_token("Abscan", "https://abscan.org")),
+            EVMChain::Berachain => Explorer::boxed(Metadata::with_token("Berascan", "https://berascan.com")),
+            EVMChain::Unichain => Explorer::boxed(Metadata::with_token("Uniscan", "https://uniscan.xyz")),
+            EVMChain::Monad => Explorer::boxed(Metadata::with_token("Monad", "https://testnet.monadexplorer.com")),
+            EVMChain::Hyperliquid => Explorer::boxed(Metadata::with_token("HyperEvmScan", "https://hyperevmscan.io")),
             _ => todo!(),
-        })
-    }
-}
-
-impl BlockExplorer for EtherScan {
-    fn name(&self) -> String {
-        self.meta.name.into()
-    }
-    fn get_tx_url(&self, hash: &str) -> String {
-        format!("{}/tx/{}", self.meta.base_url, hash)
-    }
-    fn get_address_url(&self, address: &str) -> String {
-        format!("{}/address/{}", self.meta.base_url, address)
-    }
-    fn get_token_url(&self, token: &str) -> Option<String> {
-        Some(format!("{}/token/{}", self.meta.base_url, token))
+        }
     }
 }

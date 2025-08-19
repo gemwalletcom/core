@@ -1,67 +1,24 @@
-use crate::block_explorer::{BlockExplorer, Metadata};
+use crate::block_explorer::BlockExplorer;
+use crate::explorers::metadata::{Explorer, Metadata, ACCOUNT_PATH, COIN_PATH, TRANSACTION_PATH, TXN_PATH};
 
-pub struct AptosExplorer {
-    pub meta: Metadata,
+pub fn new_aptos_scan() -> Box<dyn BlockExplorer> {
+    Explorer::boxed(Metadata {
+        name: "AptosScan",
+        base_url: "https://aptoscan.com",
+        tx_path: TRANSACTION_PATH,
+        address_path: ACCOUNT_PATH,
+        token_path: Some(COIN_PATH),
+        validator_path: None,
+    })
 }
 
-impl AptosExplorer {
-    pub fn new() -> Box<Self> {
-        Box::new(Self {
-            meta: Metadata {
-                name: "Aptos",
-                base_url: "https://explorer.aptoslabs.com",
-            },
-        })
-    }
-}
-
-impl BlockExplorer for AptosExplorer {
-    fn name(&self) -> String {
-        self.meta.name.into()
-    }
-    fn get_tx_url(&self, hash: &str) -> String {
-        format!("{}/txn/{}", self.meta.base_url, hash)
-    }
-    fn get_address_url(&self, address: &str) -> String {
-        format!("{}/account/{}", self.meta.base_url, address)
-    }
-    fn get_token_url(&self, token: &str) -> Option<String> {
-        Some(format!("{}/coin/{}", self.meta.base_url, token))
-    }
-    fn get_validator_url(&self, validator: &str) -> Option<String> {
-        self.get_address_url(validator).into()
-    }
-}
-
-pub struct AptosScan {
-    pub meta: Metadata,
-}
-
-impl AptosScan {
-    pub fn new() -> Box<Self> {
-        Box::new(Self {
-            meta: Metadata {
-                name: "AptosScan",
-                base_url: "https://aptoscan.com",
-            },
-        })
-    }
-}
-impl BlockExplorer for AptosScan {
-    fn name(&self) -> String {
-        self.meta.name.into()
-    }
-    fn get_tx_url(&self, hash: &str) -> String {
-        format!("{}/transaction/{}", self.meta.base_url, hash)
-    }
-    fn get_address_url(&self, address: &str) -> String {
-        format!("{}/account/{}", self.meta.base_url, address)
-    }
-    fn get_token_url(&self, _token: &str) -> Option<String> {
-        Some(format!("{}/coin/{}", self.meta.base_url, _token))
-    }
-
-    fn get_validator_url(&self, validator: &str) -> Option<String> {
-        self.get_address_url(validator).into()
-    }
+pub fn new_aptos_explorer() -> Box<dyn BlockExplorer> {
+    Explorer::boxed(Metadata {
+        name: "AptosExplorer",
+        base_url: "https://explorer.aptoslabs.com",
+        tx_path: TXN_PATH,
+        address_path: ACCOUNT_PATH,
+        token_path: Some(COIN_PATH),
+        validator_path: None,
+    })
 }

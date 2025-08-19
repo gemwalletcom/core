@@ -124,8 +124,7 @@ pub fn map_staking_delegations(
                 shares: "0".to_string(),
                 rewards,
                 completion_date: entry.completion_time.parse::<chrono::DateTime<chrono::Utc>>()
-                    .ok()
-                    .map(|dt| dt.into()),
+                    .ok(),
                 delegation_id: entry.creation_height,
                 validator_id: unbonding.validator_address.clone(),
             });

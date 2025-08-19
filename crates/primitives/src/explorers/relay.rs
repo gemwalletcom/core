@@ -1,29 +1,25 @@
-use crate::block_explorer::{BlockExplorer, Metadata};
+use crate::block_explorer::BlockExplorer;
 
-pub struct RelayScan {
-    pub meta: Metadata,
-}
+pub struct RelayScan;
 
 impl RelayScan {
-    pub fn new() -> Box<Self> {
-        Box::new(Self {
-            meta: Metadata {
-                name: "Relay",
-                base_url: "https://relay.link/transaction",
-            },
-        })
+    pub fn boxed() -> Box<dyn BlockExplorer> {
+        Box::new(RelayExplorer)
     }
 }
 
-impl BlockExplorer for RelayScan {
+// Custom implementation needed for query parameter pattern
+struct RelayExplorer;
+
+impl BlockExplorer for RelayExplorer {
     fn name(&self) -> String {
-        self.meta.name.into()
+        "Relay".into()
     }
     fn get_tx_url(&self, hash: &str) -> String {
-        format!("{}/{}", self.meta.base_url, hash)
+        format!("https://relay.link/transaction/{}", hash)
     }
     fn get_address_url(&self, address: &str) -> String {
-        format!("{}?address={}", self.meta.base_url, address)
+        format!("https://relay.link/transaction?address={}", address)
     }
 }
 
@@ -33,7 +29,7 @@ mod tests {
 
     #[test]
     fn test_relay_scan() {
-        let relay_scan = RelayScan::new();
+        let relay_scan = RelayScan::boxed();
         let address = "0x4dece432bd65b664b9f92b983231dac48eccfa19";
         let tx = "0x1d2a1cc47871b3779457dacd61db6e122ded1d5875e0c71650337386ef95d9b4";
 

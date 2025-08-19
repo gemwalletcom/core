@@ -43,11 +43,11 @@ impl Explorer {
     pub fn get_transaction_swap_url(&self, explorer_name: &str, transaction_id: &str, provider_id: &str) -> Option<ExplorerURL> {
         let provider = SwapperProvider::from_str(provider_id).ok()?;
         let explorer: Box<dyn BlockExplorer> = match provider {
-            SwapperProvider::Mayan => MayanScan::new(),
-            SwapperProvider::Thorchain => RuneScan::new(),
-            SwapperProvider::Across => SocketScan::new(),
-            SwapperProvider::Chainflip => ChainflipScan::new(),
-            SwapperProvider::Relay => RelayScan::new(),
+            SwapperProvider::Mayan => MayanScan::boxed(),
+            SwapperProvider::Thorchain => RuneScan::boxed(),
+            SwapperProvider::Across => SocketScan::boxed(),
+            SwapperProvider::Chainflip => ChainflipScan::boxed(),
+            SwapperProvider::Relay => RelayScan::boxed(),
             SwapperProvider::UniswapV3
             | SwapperProvider::UniswapV4
             | SwapperProvider::PancakeswapV3

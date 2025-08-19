@@ -1,34 +1,32 @@
-use crate::block_explorer::{BlockExplorer, Metadata};
+use crate::block_explorer::BlockExplorer;
 use crate::Chain;
 
-pub struct ScopeExplorer {
-    pub meta: Metadata,
-    pub chain_id: String,
-}
+pub struct ScopeExplorer;
 
 impl ScopeExplorer {
-    pub fn new(chain: Chain) -> Box<Self> {
-        Box::new(Self {
-            meta: Metadata {
-                name: "Scope.sh",
-                base_url: "https://scope.sh",
-            },
+    pub fn boxed(chain: Chain) -> Box<dyn BlockExplorer> {
+        Box::new(ScopeChainExplorer {
             chain_id: chain.network_id().to_string(),
         })
     }
 }
 
-impl BlockExplorer for ScopeExplorer {
+// Custom implementation needed for dynamic chain_id
+struct ScopeChainExplorer {
+    chain_id: String,
+}
+
+impl BlockExplorer for ScopeChainExplorer {
     fn name(&self) -> String {
-        self.meta.name.into()
+        "Scope.sh".into()
     }
 
     fn get_tx_url(&self, hash: &str) -> String {
-        format!("{}/{}/tx/{}", self.meta.base_url, self.chain_id, hash)
+        format!("https://scope.sh/{}/tx/{}", self.chain_id, hash)
     }
 
     fn get_address_url(&self, address: &str) -> String {
-        format!("{}/{}/address/{}", self.meta.base_url, self.chain_id, address).to_string()
+        format!("https://scope.sh/{}/address/{}", self.chain_id, address)
     }
 
     fn get_token_url(&self, token: &str) -> Option<String> {
@@ -42,7 +40,7 @@ mod tests {
 
     #[test]
     fn test_scope_explorer_tx_url() {
-        let explorer = ScopeExplorer::new(Chain::Ethereum);
+        let explorer = ScopeExplorer::boxed(Chain::Ethereum);
         let tx_hash = "0x72d1ca34265d6d600df0f9ef1a43eb2995a7c2b784f99306ced2b917f0757d55";
 
         assert_eq!(
@@ -53,7 +51,7 @@ mod tests {
 
     #[test]
     fn test_scope_explorer_address_url() {
-        let explorer = ScopeExplorer::new(Chain::Ethereum);
+        let explorer = ScopeExplorer::boxed(Chain::Ethereum);
         let address = "0xc9f5296eb3ac266c94568d790b6e91eba7d76a11";
 
         assert_eq!(
@@ -64,7 +62,7 @@ mod tests {
 
     #[test]
     fn test_scope_explorer_token_url() {
-        let explorer = ScopeExplorer::new(Chain::Ethereum);
+        let explorer = ScopeExplorer::boxed(Chain::Ethereum);
         let token_address = "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48";
 
         assert_eq!(
@@ -73,7 +71,7 @@ mod tests {
         );
 
         // Test with a different chain_id
-        let explorer_polygon = ScopeExplorer::new(Chain::Polygon);
+        let explorer_polygon = ScopeExplorer::boxed(Chain::Polygon);
         assert_eq!(
             explorer_polygon.get_token_url(token_address),
             Some("https://scope.sh/137/address/0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48".to_string())

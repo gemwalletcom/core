@@ -68,8 +68,7 @@ impl<C: Client> AptosClient<C> {
         let response = self.client.post::<serde_json::Value, TransactionResponse>("/v1/transactions", &json_value, None).await?;
         
         if let Some(message) = &response.message {
-            return Err(Box::new(std::io::Error::new(
-                std::io::ErrorKind::Other,
+            return Err(Box::new(std::io::Error::other(
                 message.clone()
             )));
         }

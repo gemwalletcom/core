@@ -1,40 +1,33 @@
-use crate::block_explorer::{BlockExplorer, Metadata};
+use crate::block_explorer::BlockExplorer;
 
-pub struct OkxExplorer {
-    pub meta: Metadata,
-    pub chain_path: &'static str,
-}
+pub struct OkxExplorer;
 
 impl OkxExplorer {
-    pub fn new_ink() -> Box<Self> {
-        Box::new(Self {
-            meta: Metadata {
-                name: "OKX Explorer",
-                base_url: "https://www.okx.com/web3/explorer",
-            },
-            chain_path: "inkchain",
-        })
+    pub fn new_ink() -> Box<dyn BlockExplorer> {
+        Box::new(OkxInkExplorer)
     }
 }
 
-impl BlockExplorer for OkxExplorer {
+// Custom implementation needed for chain_path pattern
+struct OkxInkExplorer;
+
+impl BlockExplorer for OkxInkExplorer {
     fn name(&self) -> String {
-        self.meta.name.into()
+        "OKX Explorer".into()
     }
     fn get_tx_url(&self, hash: &str) -> String {
-        format!("{}/{}/tx/{}", self.meta.base_url, self.chain_path, hash)
+        format!("https://www.okx.com/web3/explorer/inkchain/tx/{}", hash)
     }
     fn get_address_url(&self, address: &str) -> String {
-        format!("{}/{}/address/{}", self.meta.base_url, self.chain_path, address)
+        format!("https://www.okx.com/web3/explorer/inkchain/address/{}", address)
     }
-    fn get_token_url(&self, _token: &str) -> Option<String> {
-        Some(format!("{}/{}/token/{}", self.meta.base_url, self.chain_path, _token))
+    fn get_token_url(&self, token: &str) -> Option<String> {
+        Some(format!("https://www.okx.com/web3/explorer/inkchain/token/{}", token))
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::block_explorer::BlockExplorer;
 
     use super::OkxExplorer;
 
