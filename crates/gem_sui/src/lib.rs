@@ -1,6 +1,9 @@
 #[cfg(feature = "rpc")]
 pub mod rpc;
 
+#[cfg(feature = "rpc")]
+pub mod provider;
+
 pub mod models;
 
 pub mod jsonrpc;

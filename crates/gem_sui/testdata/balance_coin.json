@@ -1,0 +1,10 @@
+{
+    "jsonrpc": "2.0",
+    "id": 18,
+    "result": {
+      "coinType": "0x2::sui::SUI",
+      "coinObjectCount": 1,
+      "totalBalance": "52855428706",
+      "lockedBalance": {}
+    }
+  }

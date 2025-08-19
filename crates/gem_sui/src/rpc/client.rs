@@ -1,23 +1,40 @@
 use std::error::Error;
 
-#[cfg(feature = "reqwest")]
+#[cfg(all(feature = "reqwest", not(feature = "rpc")))]
 use gem_jsonrpc::JsonRpcClient;
-use primitives::chain::Chain;
-use serde_json::json;
+#[cfg(feature = "rpc")]
+use gem_client::Client;
+#[cfg(feature = "rpc")]
+use async_trait::async_trait;
+#[cfg(feature = "rpc")]
+use chain_traits::{ChainAccount, ChainPerpetual, ChainStaking, ChainTraits, ChainState, ChainTransactions, ChainToken, ChainPreload};
+use primitives::{chain::Chain, Asset, FeePriorityValue, TransactionStateRequest, TransactionUpdate};
 
 use super::{
-    mapper::SuiMapper,
-    model::{Balance, CoinMetadata, Digests, GasUsed, SuiSystemState, ValidatorSet},
+    model::Balance,
 };
+use crate::models::staking::SuiStakeDelegation;
 
-#[cfg(feature = "reqwest")]
+#[cfg(all(feature = "reqwest", not(feature = "rpc")))]
 pub struct SuiClient {
     client: JsonRpcClient,
 }
 
-#[cfg(feature = "reqwest")]
+#[cfg(feature = "rpc")]
+pub struct SuiClient<C: Client> {
+    pub client: C,
+}
+
+#[cfg(all(feature = "reqwest", not(feature = "rpc")))]
 impl SuiClient {
     pub fn new(client: JsonRpcClient) -> Self {
+        Self { client }
+    }
+}
+
+#[cfg(feature = "rpc")]
+impl<C: Client> SuiClient<C> {
+    pub fn new(client: C) -> Self {
         Self { client }
     }
 
@@ -25,59 +42,65 @@ impl SuiClient {
         Chain::Sui
     }
 
-    pub fn get_fee(&self, gas_used: GasUsed) -> num_bigint::BigUint {
-        SuiMapper::get_fee(gas_used)
-    }
-
-    pub async fn get_latest_block(&self) -> Result<i64, Box<dyn Error + Send + Sync>> {
-        Ok(self.client.call::<String>("sui_getLatestCheckpointSequenceNumber", json!([])).await?.parse()?)
-    }
-
-    async fn query_transaction_blocks(&self, filter: serde_json::Value) -> Result<Digests, Box<dyn Error + Send + Sync>> {
-        let params = vec![
-            json!({
-                "filter": filter,
-                "options": {
-                    "showEffects": true,
-                    "showBalanceChanges": true,
-                    "showEvents": true,
-                    "showInput": false,
-                }
-            }),
-            json!(null),
-            json!(100),
-            json!(true),
-        ];
-        Ok(self.client.call("suix_queryTransactionBlocks", params).await?)
-    }
-
-    pub async fn get_transactions_by_block_number(&self, block_number: i64) -> Result<Digests, Box<dyn Error + Send + Sync>> {
-        let filter = json!({
-            "Checkpoint": block_number.to_string()
-        });
-        self.query_transaction_blocks(filter).await
-    }
-
-    pub async fn get_transactions_by_address(&self, address: String) -> Result<Digests, Box<dyn Error + Send + Sync>> {
-        let filter = json!({
-            "FromAddress": address
-        });
-        self.query_transaction_blocks(filter).await
-    }
-
-    pub async fn get_coin_metadata(&self, token_id: String) -> Result<CoinMetadata, Box<dyn Error + Send + Sync>> {
-        Ok(self.client.call("suix_getCoinMetadata", vec![json!(token_id.clone())]).await?)
+    pub async fn get_balance(&self, address: String) -> Result<Balance, Box<dyn Error + Send + Sync>> {
+        Ok(self.client.get(&format!("/accounts/{}/balance", address)).await?)
     }
 
     pub async fn get_all_balances(&self, address: String) -> Result<Vec<Balance>, Box<dyn Error + Send + Sync>> {
-        Ok(self.client.call("suix_getAllBalances", vec![json!(address.clone())]).await?)
+        Ok(self.client.get(&format!("/accounts/{}/balances", address)).await?)
     }
 
-    pub async fn get_validators(&self) -> Result<ValidatorSet, Box<dyn Error + Send + Sync>> {
-        Ok(self.client.call("suix_getValidatorsApy", json!([])).await?)
+    pub async fn get_token_data(&self, _token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
+        unimplemented!()
     }
 
-    pub async fn get_latest_sui_system_state(&self) -> Result<SuiSystemState, Box<dyn Error + Send + Sync>> {
-        Ok(self.client.call("suix_getLatestSuiSystemState", json!([])).await?)
+    pub async fn get_stake_delegations(&self, address: String) -> Result<Vec<SuiStakeDelegation>, Box<dyn Error + Send + Sync>> {
+        Ok(self.client.get(&format!("/accounts/{}/stakes", address)).await?)
     }
 }
+
+#[cfg(feature = "rpc")]
+impl<C: Client> ChainTraits for SuiClient<C> {}
+
+#[cfg(feature = "rpc")]
+impl<C: Client> ChainAccount for SuiClient<C> {}
+
+#[cfg(feature = "rpc")]
+impl<C: Client> ChainPerpetual for SuiClient<C> {}
+
+#[cfg(feature = "rpc")]
+impl<C: Client> ChainStaking for SuiClient<C> {}
+
+#[cfg(feature = "rpc")]
+#[async_trait]
+impl<C: Client> ChainState for SuiClient<C> {
+    async fn get_chain_id(&self) -> Result<String, Box<dyn std::error::Error + Sync + Send>> {
+        Ok("sui".to_string())
+    }
+
+    async fn get_block_number(&self) -> Result<u64, Box<dyn std::error::Error + Sync + Send>> {
+        unimplemented!()
+    }
+
+    async fn get_fee_rates(&self) -> Result<Vec<FeePriorityValue>, Box<dyn std::error::Error + Sync + Send>> {
+        unimplemented!()
+    }
+}
+
+#[cfg(feature = "rpc")]
+#[async_trait]
+impl<C: Client> ChainTransactions for SuiClient<C> {
+    async fn transaction_broadcast(&self, _data: String) -> Result<String, Box<dyn std::error::Error + Sync + Send>> {
+        unimplemented!()
+    }
+
+    async fn get_transaction_status(&self, _request: TransactionStateRequest) -> Result<TransactionUpdate, Box<dyn std::error::Error + Sync + Send>> {
+        unimplemented!()
+    }
+}
+
+#[cfg(feature = "rpc")]
+impl<C: Client> ChainToken for SuiClient<C> {}
+
+#[cfg(feature = "rpc")]
+impl<C: Client> ChainPreload for SuiClient<C> {}

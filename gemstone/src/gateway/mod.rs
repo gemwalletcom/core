@@ -9,6 +9,7 @@ use gem_cosmos::rpc::client::CosmosClient;
 use gem_hypercore::rpc::client::HyperCoreClient;
 use gem_near::rpc::client::NearClient;
 use gem_stellar::rpc::client::StellarClient;
+use gem_sui::rpc::client::SuiClient;
 use gem_polkadot::rpc::client::PolkadotClient;
 use gem_ton::rpc::client::TonClient;
 use gem_xrp::rpc::client::XRPClient;
@@ -35,6 +36,7 @@ impl GemGateway {
             }
             Chain::Cardano => Ok(Arc::new(CardanoClient::new(alien_client))),
             Chain::Stellar => Ok(Arc::new(StellarClient::new(alien_client))),
+            Chain::Sui => Ok(Arc::new(SuiClient::new(alien_client))),
             Chain::Xrp => Ok(Arc::new(XRPClient::new(alien_client))),
             Chain::Algorand => Ok(Arc::new(AlgorandClient::new(alien_client))),
             Chain::Near => Ok(Arc::new(NearClient::new(alien_client))),

@@ -3136,14 +3136,18 @@ name = "gem_sui"
 version = "1.0.0"
 dependencies = [
  "anyhow",
+ "async-trait",
  "base64 0.22.1",
  "bcs",
  "blake2",
  "chain_primitives",
+ "chain_traits",
  "chrono",
+ "gem_client",
  "gem_jsonrpc",
  "hex",
  "num-bigint",
+ "number_formatter",
  "primitives",
  "serde",
  "serde_json",

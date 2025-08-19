@@ -122,7 +122,8 @@ pub struct CoinMetadata {
 #[serde(rename_all = "camelCase")]
 pub struct Balance {
     pub coin_type: String,
-    pub total_balance: String,
+    #[serde(deserialize_with = "deserialize_bigint_from_str")]
+    pub total_balance: BigInt,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -141,6 +142,7 @@ pub struct ValidatorApy {
 pub struct SuiSystemState {
     pub active_validators: Vec<ValidatorInfo>,
 }
+
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

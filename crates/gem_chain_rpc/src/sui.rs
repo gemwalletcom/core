@@ -4,20 +4,21 @@ use crate::{ChainAssetsProvider, ChainBlockProvider, ChainStakeProvider, ChainTo
 use async_trait::async_trait;
 use primitives::{chain::Chain, Asset, AssetBalance, AssetId, StakeValidator, Transaction};
 
+use gem_client::Client;
 use gem_sui::rpc::{client::SuiClient, mapper::SuiMapper};
 
-pub struct SuiProvider {
-    client: SuiClient,
+pub struct SuiProvider<C: Client> {
+    client: SuiClient<C>,
 }
 
-impl SuiProvider {
-    pub fn new(client: SuiClient) -> Self {
+impl<C: Client> SuiProvider<C> {
+    pub fn new(client: SuiClient<C>) -> Self {
         Self { client }
     }
 }
 
 #[async_trait]
-impl ChainBlockProvider for SuiProvider {
+impl<C: Client> ChainBlockProvider for SuiProvider<C> {
     fn get_chain(&self) -> Chain {
         Chain::Sui
     }
@@ -39,7 +40,7 @@ impl ChainBlockProvider for SuiProvider {
 }
 
 #[async_trait]
-impl ChainTokenDataProvider for SuiProvider {
+impl<C: Client> ChainTokenDataProvider for SuiProvider<C> {
     async fn get_token_data(&self, token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
         let metadata = self.client.get_coin_metadata(token_id.clone()).await?;
         Ok(SuiMapper::map_token(self.get_chain(), metadata))
@@ -47,7 +48,7 @@ impl ChainTokenDataProvider for SuiProvider {
 }
 
 #[async_trait]
-impl ChainAssetsProvider for SuiProvider {
+impl<C: Client> ChainAssetsProvider for SuiProvider<C> {
     async fn get_assets_balances(&self, address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
         let balances = self.client.get_all_balances(address).await?;
 
@@ -69,7 +70,7 @@ impl ChainAssetsProvider for SuiProvider {
 }
 
 #[async_trait]
-impl ChainTransactionsProvider for SuiProvider {
+impl<C: Client> ChainTransactionsProvider for SuiProvider<C> {
     async fn get_transactions_by_address(&self, address: String) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
         Ok(self
             .client
@@ -83,7 +84,7 @@ impl ChainTransactionsProvider for SuiProvider {
 }
 
 #[async_trait]
-impl ChainStakeProvider for SuiProvider {
+impl<C: Client> ChainStakeProvider for SuiProvider<C> {
     async fn get_validators(&self) -> Result<Vec<StakeValidator>, Box<dyn Error + Send + Sync>> {
         let system_state = self.client.get_latest_sui_system_state().await?;
         Ok(SuiMapper::map_validators(system_state))
