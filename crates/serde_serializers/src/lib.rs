@@ -7,4 +7,4 @@ pub use biguint::{
 pub mod f64;
 pub use f64::{deserialize_f64_from_str, deserialize_option_f64_from_str, serialize_f64};
 pub mod u64;
-pub use u64::{deserialize_u64_from_str, deserialize_u64_from_str_or_int, deserialize_option_u64_from_str, serialize_u64};
+pub use u64::{deserialize_option_u64_from_str, deserialize_u64_from_str, deserialize_u64_from_str_or_int, serialize_u64};

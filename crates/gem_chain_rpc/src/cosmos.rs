@@ -6,9 +6,9 @@ use futures::future;
 use primitives::Transaction;
 use primitives::{chain_cosmos::CosmosChain, Asset, AssetBalance, Chain, StakeValidator};
 
+use gem_client::Client;
 use gem_cosmos::rpc::CosmosClient;
 use gem_cosmos::rpc::CosmosMapper;
-use gem_client::Client;
 
 pub struct CosmosProvider<C: Client> {
     client: CosmosClient<C>,

@@ -52,12 +52,19 @@ impl ReqwestClient {
 
 #[async_trait]
 impl Client for ReqwestClient {
-    async fn get<R>(&self, path: &str) -> Result<R, ClientError>
+    async fn get<T, R>(&self, path: &str, query: Option<&T>) -> Result<R, ClientError>
     where
+        T: Serialize + Send + Sync,
         R: DeserializeOwned,
     {
         let url = self.build_url(path);
-        let response = self.client.get(&url).send().await.map_err(Self::map_reqwest_error)?;
+        let mut request = self.client.get(&url);
+
+        if let Some(q) = query {
+            request = request.query(q);
+        }
+
+        let response = request.send().await.map_err(Self::map_reqwest_error)?;
 
         self.send_request(response).await
     }

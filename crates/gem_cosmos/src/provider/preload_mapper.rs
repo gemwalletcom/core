@@ -1,5 +1,5 @@
-use primitives::{TransactionInputType, TransactionFee, StakeOperation, chain_cosmos::CosmosChain};
 use num_bigint::BigInt;
+use primitives::{chain_cosmos::CosmosChain, StakeOperation, TransactionFee, TransactionInputType};
 
 fn get_fee(chain: CosmosChain, input_type: &TransactionInputType) -> BigInt {
     match chain {
@@ -41,14 +41,14 @@ fn get_gas_limit(input_type: &TransactionInputType, _chain: CosmosChain) -> u64 
             StakeOperation::Delegate(_, _) | StakeOperation::Undelegate(_, _) => 1_000_000,
             StakeOperation::Redelegate(_, _, _) => 1_250_000,
             StakeOperation::WithdrawRewards(_) => 750_000,
-        }
+        },
     }
 }
 
 pub fn calculate_transaction_fee(input_type: &TransactionInputType, chain: CosmosChain, gas_price: &primitives::GasPrice) -> TransactionFee {
     let gas_limit = get_gas_limit(input_type, chain);
     let fee = get_fee(chain, input_type);
-    
+
     TransactionFee {
         fee,
         gas_price: gas_price.gas_price.clone(),

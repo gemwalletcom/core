@@ -30,9 +30,9 @@ impl From<GemAsset> for Asset {
             let chain = Chain::from_str(&gem_asset.id).unwrap_or(Chain::Bitcoin);
             AssetId::from_chain(chain)
         });
-        
+
         let asset_type = AssetType::from_str(&gem_asset.asset_type).unwrap_or(AssetType::NATIVE);
-        
+
         Asset {
             id: id.clone(),
             chain: id.chain,

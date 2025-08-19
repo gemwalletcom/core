@@ -8,9 +8,9 @@ pub use provider_config::ProviderConfig;
 use reqwest_middleware::ClientBuilder;
 
 use gem_chain_rpc::{
-    algorand::AlgorandProvider, aptos::AptosProvider, bitcoin::BitcoinProvider, cardano::CardanoProvider, ethereum::EthereumProvider, near::NearProvider, solana::SolanaProvider, sui::SuiProvider,
-    ton::TonProvider, tron::TronProvider, xrp::XRPProvider, ChainProvider, CosmosProvider, HyperCoreProvider, PolkadotProvider,
-    StellarProvider,
+    algorand::AlgorandProvider, aptos::AptosProvider, bitcoin::BitcoinProvider, cardano::CardanoProvider, ethereum::EthereumProvider, near::NearProvider,
+    solana::SolanaProvider, sui::SuiProvider, ton::TonProvider, tron::TronProvider, xrp::XRPProvider, ChainProvider, CosmosProvider, HyperCoreProvider,
+    PolkadotProvider, StellarProvider,
 };
 
 use gem_algorand::rpc::AlgorandClient;

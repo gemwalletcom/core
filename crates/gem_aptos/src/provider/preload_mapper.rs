@@ -1,10 +1,8 @@
-use std::error::Error;
 use crate::models::Account;
 use primitives::TransactionPreload;
+use std::error::Error;
 
-pub fn map_transaction_preload(
-    account: &Account,
-) -> Result<TransactionPreload, Box<dyn Error + Sync + Send>> {
+pub fn map_transaction_preload(account: &Account) -> Result<TransactionPreload, Box<dyn Error + Sync + Send>> {
     Ok(TransactionPreload {
         block_hash: String::new(),
         block_number: 0,
@@ -22,10 +20,8 @@ mod tests {
 
     #[test]
     fn test_transaction_preload() {
-        let account = Account {
-            sequence_number: 42,
-        };
-        
+        let account = Account { sequence_number: 42 };
+
         let result = map_transaction_preload(&account).unwrap();
         assert_eq!(result.sequence, 42);
     }

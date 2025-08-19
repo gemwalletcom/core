@@ -5,8 +5,8 @@ use std::error::Error;
 use gem_client::Client;
 use primitives::{TransactionStateRequest, TransactionUpdate};
 
-use crate::rpc::client::AptosClient;
 use super::transactions_mapper::{map_transaction_broadcast, map_transaction_status};
+use crate::rpc::client::AptosClient;
 
 #[async_trait]
 impl<C: Client> ChainTransactions for AptosClient<C> {

@@ -24,8 +24,9 @@ pub type Data = Vec<u8>;
 
 #[async_trait]
 pub trait Client: Send + Sync + Debug {
-    async fn get<R>(&self, path: &str) -> Result<R, ClientError>
+    async fn get<T, R>(&self, path: &str, query: Option<&T>) -> Result<R, ClientError>
     where
+        T: Serialize + Send + Sync,
         R: DeserializeOwned;
     async fn post<T, R>(&self, path: &str, body: &T, headers: Option<HashMap<String, String>>) -> Result<R, ClientError>
     where
