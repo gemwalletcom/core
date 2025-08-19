@@ -19,9 +19,9 @@ pub struct SuiClient {
 impl SuiClient {
     pub fn new(provider: Arc<dyn AlienProvider>) -> Self {
         let endpoint = provider.get_endpoint(Chain::Sui).unwrap();
-        let alien_client = AlienClient::new(endpoint.clone(), provider);
+        let alien_client = AlienClient::new(endpoint, provider);
         Self {
-            client: JsonRpcClient::new(endpoint, alien_client),
+            client: JsonRpcClient::new(alien_client),
         }
     }
 

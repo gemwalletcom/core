@@ -8,7 +8,7 @@ mod integration_tests {
     async fn test_near_client_generic_interface() {
         // This should compile, demonstrating the generic interface works
         let reqwest_client = ReqwestClient::new("https://example.com".to_string(), reqwest::Client::new());
-        let jsonrpc_client = JsonRpcClient::new("".to_string(), reqwest_client);
+        let jsonrpc_client = JsonRpcClient::new(reqwest_client);
         let near_client: NearClient<ReqwestClient> = NearClient::new(jsonrpc_client);
         
         // Test that basic properties work

@@ -13,5 +13,5 @@ pub use gem_jsonrpc::types::{JsonRpcError, JsonRpcRequest, JsonRpcResponse, Json
 pub fn jsonrpc_client_with_chain(provider: Arc<dyn AlienProvider>, chain: Chain) -> JsonRpcClient<AlienClient> {
     let endpoint = provider.get_endpoint(chain).expect("Failed to get endpoint for chain");
     let alien_client = AlienClient::new(endpoint, provider);
-    JsonRpcClient::new("".to_string(), alien_client)
+    JsonRpcClient::new(alien_client)
 }
