@@ -132,8 +132,7 @@ mod tests {
 
     #[test]
     fn test_map_outgoing_transaction_1() {
-        let json_data = include_str!("../../tests/data/ton_transfer.json");
-        let tx: TonTransaction = serde_json::from_str(json_data).unwrap();
+        let tx: TonTransaction = serde_json::from_str(include_str!("../../testdata/ton_transfer.json")).unwrap();
         let result = TonMapper::map_transaction(Chain::Ton, tx);
 
         assert!(result.is_some());
@@ -152,8 +151,7 @@ mod tests {
 
     #[test]
     fn test_map_outgoing_transaction_2() {
-        let json_data = include_str!("../../tests/data/ton_transfer2.json");
-        let tx: TonTransaction = serde_json::from_str(json_data).unwrap();
+        let tx: TonTransaction = serde_json::from_str(include_str!("../../testdata/ton_transfer2.json")).unwrap();
         let result = TonMapper::map_transaction(Chain::Ton, tx);
 
         assert!(result.is_some());
@@ -172,8 +170,7 @@ mod tests {
 
     #[test]
     fn test_map_transaction_with_memo() {
-        let json_data = include_str!("../../tests/data/tx_with_memo.json");
-        let tx: TonTransaction = serde_json::from_str(json_data).unwrap();
+        let tx: TonTransaction = serde_json::from_str(include_str!("../../testdata/tx_with_memo.json")).unwrap();
         let result = TonMapper::map_transaction(Chain::Ton, tx);
 
         assert!(result.is_some());

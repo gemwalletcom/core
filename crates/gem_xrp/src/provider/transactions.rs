@@ -24,6 +24,6 @@ impl<C: Client> ChainTransactions for XRPClient<C> {
             primitives::TransactionState::Pending
         };
 
-        Ok(TransactionUpdate::new(transaction_state))
+        Ok(TransactionUpdate::new_state(transaction_state))
     }
 }

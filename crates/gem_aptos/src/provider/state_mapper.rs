@@ -1,10 +1,8 @@
-use std::error::Error;
 use crate::models::Transaction;
-use primitives::{TransactionUpdate, TransactionState, TransactionChange};
+use primitives::{TransactionChange, TransactionState, TransactionUpdate};
+use std::error::Error;
 
-pub fn map_transaction_state(
-    transaction: &Transaction,
-) -> Result<TransactionUpdate, Box<dyn Error + Sync + Send>> {
+pub fn map_transaction_state(transaction: &Transaction) -> Result<TransactionUpdate, Box<dyn Error + Sync + Send>> {
     let state = if transaction.success {
         TransactionState::Confirmed
     } else {
@@ -18,10 +16,7 @@ pub fn map_transaction_state(
         changes.push(TransactionChange::NetworkFee(fee.to_string()));
     }
 
-    Ok(TransactionUpdate {
-        state,
-        changes,
-    })
+    Ok(TransactionUpdate { state, changes })
 }
 
 #[cfg(test)]
@@ -44,7 +39,7 @@ mod tests {
         };
 
         let result = map_transaction_state(&transaction).unwrap();
-        
+
         assert_eq!(result.state, TransactionState::Confirmed);
         assert_eq!(result.changes.len(), 1);
         if let TransactionChange::NetworkFee(fee) = &result.changes[0] {
@@ -69,7 +64,7 @@ mod tests {
         };
 
         let result = map_transaction_state(&transaction).unwrap();
-        
+
         assert_eq!(result.state, TransactionState::Reverted);
         assert_eq!(result.changes.len(), 1);
     }

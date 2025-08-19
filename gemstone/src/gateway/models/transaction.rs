@@ -1,6 +1,11 @@
-use primitives::{TransactionChange, TransactionMetadata, TransactionPerpetualMetadata, TransactionStateRequest, TransactionUpdate, TransactionLoadInput, TransactionLoadData, TransactionInputType, GasPrice};
 use crate::gateway::models::asset::GemAsset;
 use crate::gateway::models::GemUTXO;
+use primitives::{
+    GasPrice, TransactionChange, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionMetadata, TransactionPerpetualMetadata,
+    TransactionStateRequest, TransactionUpdate,
+};
+use primitives::transaction_load::FeeOption;
+use std::collections::HashMap;
 
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct GemTransactionUpdate {
@@ -36,10 +41,22 @@ pub struct GemTransactionStateRequest {
 
 #[derive(Debug, Clone, uniffi::Enum)]
 pub enum GemStakeOperation {
-    Delegate { asset: GemAsset, validator_address: String },
-    Undelegate { asset: GemAsset, validator_address: String },
-    Redelegate { asset: GemAsset, src_validator_address: String, dst_validator_address: String },
-    WithdrawRewards { validator_addresses: Vec<String> },
+    Delegate {
+        asset: GemAsset,
+        validator_address: String,
+    },
+    Undelegate {
+        asset: GemAsset,
+        validator_address: String,
+    },
+    Redelegate {
+        asset: GemAsset,
+        src_validator_address: String,
+        dst_validator_address: String,
+    },
+    WithdrawRewards {
+        validator_addresses: Vec<String>,
+    },
 }
 
 #[derive(Debug, Clone, uniffi::Enum)]
@@ -66,6 +83,12 @@ pub struct GemTransactionLoadInput {
     pub block_number: i64,
     pub chain_id: String,
     pub utxos: Vec<GemUTXO>,
+    pub memo: Option<String>,
+}
+
+#[derive(Debug, Clone, Hash, Eq, PartialEq, uniffi::Enum)]
+pub enum GemFeeOption {
+    TokenAccountCreation,
 }
 
 #[derive(Debug, Clone, uniffi::Record)]
@@ -73,6 +96,14 @@ pub struct GemTransactionLoadFee {
     pub fee: String,
     pub gas_price: String,
     pub gas_limit: String,
+    pub options: HashMap<GemFeeOption, String>,
+}
+
+#[derive(Debug, Clone, uniffi::Record)]
+pub struct GemSignerInputToken {
+    pub sender_token_address: String,
+    pub recipient_token_address: Option<String>,
+    pub token_program: String,
 }
 
 #[derive(Debug, Clone, uniffi::Record)]
@@ -85,6 +116,7 @@ pub struct GemTransactionData {
     pub fee: GemTransactionLoadFee,
     pub utxos: Vec<GemUTXO>,
     pub message_bytes: String,
+    pub token: GemSignerInputToken,
 }
 
 impl From<TransactionChange> for GemTransactionChange {
@@ -147,6 +179,7 @@ impl From<GemTransactionLoadInput> for TransactionLoadInput {
             block_number: value.block_number,
             chain_id: value.chain_id,
             utxos: value.utxos.into_iter().map(|utxo| utxo.into()).collect(),
+            memo: value.memo,
         }
     }
 }
@@ -154,18 +187,14 @@ impl From<GemTransactionLoadInput> for TransactionLoadInput {
 impl From<GemStakeOperation> for primitives::StakeOperation {
     fn from(value: GemStakeOperation) -> Self {
         match value {
-            GemStakeOperation::Delegate { asset, validator_address } => {
-                primitives::StakeOperation::Delegate(asset.into(), validator_address)
-            }
-            GemStakeOperation::Undelegate { asset, validator_address } => {
-                primitives::StakeOperation::Undelegate(asset.into(), validator_address)
-            }
-            GemStakeOperation::Redelegate { asset, src_validator_address, dst_validator_address } => {
-                primitives::StakeOperation::Redelegate(asset.into(), src_validator_address, dst_validator_address)
-            }
-            GemStakeOperation::WithdrawRewards { validator_addresses } => {
-                primitives::StakeOperation::WithdrawRewards(validator_addresses)
-            }
+            GemStakeOperation::Delegate { asset, validator_address } => primitives::StakeOperation::Delegate(asset.into(), validator_address),
+            GemStakeOperation::Undelegate { asset, validator_address } => primitives::StakeOperation::Undelegate(asset.into(), validator_address),
+            GemStakeOperation::Redelegate {
+                asset,
+                src_validator_address,
+                dst_validator_address,
+            } => primitives::StakeOperation::Redelegate(asset.into(), src_validator_address, dst_validator_address),
+            GemStakeOperation::WithdrawRewards { validator_addresses } => primitives::StakeOperation::WithdrawRewards(validator_addresses),
         }
     }
 }
@@ -174,12 +203,8 @@ impl From<GemTransactionInputType> for TransactionInputType {
     fn from(value: GemTransactionInputType) -> Self {
         match value {
             GemTransactionInputType::Transfer { asset } => TransactionInputType::Transfer(asset.into()),
-            GemTransactionInputType::Swap { from_asset, to_asset } => {
-                TransactionInputType::Swap(from_asset.into(), to_asset.into())
-            }
-            GemTransactionInputType::Stake { operation } => {
-                TransactionInputType::Stake(operation.into())
-            }
+            GemTransactionInputType::Swap { from_asset, to_asset } => TransactionInputType::Swap(from_asset.into(), to_asset.into()),
+            GemTransactionInputType::Stake { operation } => TransactionInputType::Stake(operation.into()),
         }
     }
 }
@@ -192,6 +217,15 @@ impl From<GemGasPrice> for GasPrice {
     }
 }
 
+impl From<FeeOption> for GemFeeOption {
+    fn from(value: FeeOption) -> Self {
+        match value {
+            FeeOption::TokenAccountCreation => GemFeeOption::TokenAccountCreation,
+        }
+    }
+}
+
+
 pub fn map_transaction_load_data(load_data: TransactionLoadData, input: &GemTransactionLoadInput) -> GemTransactionData {
     GemTransactionData {
         account_number: load_data.account_number as i32,
@@ -203,9 +237,14 @@ pub fn map_transaction_load_data(load_data: TransactionLoadData, input: &GemTran
             fee: load_data.fee.fee.to_string(),
             gas_price: load_data.fee.gas_price.to_string(),
             gas_limit: load_data.fee.gas_limit.to_string(),
+            options: load_data.fee.options.into_iter().map(|(key, value)| (key.into(), value)).collect(),
         },
         utxos: input.utxos.clone(),
         message_bytes: "".to_string(),
+        token: GemSignerInputToken {
+            sender_token_address: load_data.token.sender_token_address,
+            recipient_token_address: load_data.token.recipient_token_address,
+            token_program: load_data.token.token_program,
+        },
     }
 }
-

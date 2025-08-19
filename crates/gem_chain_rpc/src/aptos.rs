@@ -70,10 +70,7 @@ impl<C: Client> ChainAssetsProvider for AptosProvider<C> {
         let balances = resources
             .into_iter()
             .filter_map(|resource| {
-                let token_type = resource
-                    .type_field
-                    .strip_prefix(&format!("{COIN_STORE}<"))
-                    .and_then(|s| s.strip_suffix('>'))?;
+                let token_type = resource.type_field.strip_prefix(&format!("{COIN_STORE}<")).and_then(|s| s.strip_suffix('>'))?;
 
                 if token_type == APTOS_NATIVE_COIN {
                     return None;
@@ -94,10 +91,10 @@ impl<C: Client> ChainAssetsProvider for AptosProvider<C> {
 impl<C: Client> ChainTransactionsProvider for AptosProvider<C> {
     async fn get_transactions_by_address(&self, address: String) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
         let _transactions = self.client.get_transactions_by_address(address).await?;
-        // TODO: Map transactions using the provider mapper pattern 
+        // TODO: Map transactions using the provider mapper pattern
         Ok(vec![])
     }
 }
 
 #[async_trait]
-impl<C: Client> ChainStakeProvider for AptosProvider<C> { }
+impl<C: Client> ChainStakeProvider for AptosProvider<C> {}

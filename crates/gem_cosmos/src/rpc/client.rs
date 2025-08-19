@@ -4,10 +4,10 @@ use crate::rpc::model::TransactionsResponse;
 
 use super::model::{AnnualProvisionsResponse, BlockResponse, InflationResponse, StakingPoolResponse, TransactionResponse, ValidatorsResponse};
 use crate::models::account::CosmosBalances;
-use crate::models::staking::{CosmosDelegations, CosmosUnboundingDelegations, CosmosRewards};
-use primitives::chain_cosmos::CosmosChain;
+use crate::models::staking::{CosmosDelegations, CosmosRewards, CosmosUnboundingDelegations};
+use chain_traits::{ChainAccount, ChainPerpetual, ChainTraits};
 use gem_client::Client;
-use chain_traits::{ChainTraits, ChainAccount, ChainPerpetual};
+use primitives::chain_cosmos::CosmosChain;
 
 pub const MESSAGE_DELEGATE: &str = "/cosmos.staking.v1beta1.MsgDelegate";
 pub const MESSAGE_UNDELEGATE: &str = "/cosmos.staking.v1beta1.MsgUndelegate";
@@ -149,10 +149,10 @@ impl<C: Client> CosmosClient<C> {
     }
 
     pub async fn get_account_info(&self, address: &str) -> Result<crate::models::account::CosmosAccount, Box<dyn Error + Send + Sync>> {
-        use crate::models::account::{CosmosAccountResponse, CosmosAccount, CosmosInjectiveAccount};
-        
+        use crate::models::account::{CosmosAccount, CosmosAccountResponse, CosmosInjectiveAccount};
+
         let url = format!("/cosmos/auth/v1beta1/accounts/{}", address);
-        
+
         match self.chain {
             primitives::chain_cosmos::CosmosChain::Injective => {
                 let response: CosmosAccountResponse<CosmosInjectiveAccount> = self.client.get(&url).await?;
@@ -167,7 +167,7 @@ impl<C: Client> CosmosClient<C> {
 
     pub async fn broadcast_transaction(&self, data: &str) -> Result<crate::models::transaction::CosmosBroadcastResponse, Box<dyn Error + Send + Sync>> {
         use crate::models::transaction::CosmosBroadcastRequest;
-        
+
         let request: CosmosBroadcastRequest = serde_json::from_str(data)?;
         Ok(self.client.post("/cosmos/tx/v1beta1/txs", &request, None).await?)
     }

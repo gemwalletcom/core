@@ -1,11 +1,11 @@
-use gem_ton::TonAddress;
+use crate::TonAddress;
 
-pub fn hex_to_base64_address(hex_str: String) -> Result<String, Box<dyn std::error::Error>> {
+pub fn hex_to_base64_address(hex_str: String) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
     let addr = TonAddress::from_hex_str(&hex_str)?;
     Ok(addr.to_base64_url())
 }
 
-pub fn base64_to_hex_address(base64_str: String) -> Result<String, Box<dyn std::error::Error>> {
+pub fn base64_to_hex_address(base64_str: String) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
     let addr = TonAddress::from_base64_url(&base64_str)?;
     Ok(addr.to_hex())
 }

@@ -5,17 +5,18 @@ use gem_algorand::rpc::client::AlgorandClient;
 use gem_aptos::rpc::client::AptosClient;
 use gem_bitcoin::rpc::client::BitcoinClient;
 use gem_cardano::rpc::client::CardanoClient;
+use gem_cosmos::rpc::client::CosmosClient;
 use gem_hypercore::rpc::client::HyperCoreClient;
 use gem_near::rpc::client::NearClient;
 use gem_stellar::rpc::client::StellarClient;
+use gem_ton::rpc::client::TonClient;
 use gem_xrp::rpc::client::XRPClient;
-use gem_cosmos::rpc::client::CosmosClient;
 use std::sync::Arc;
 
 pub mod models;
 
 pub use models::*;
-use primitives::{BitcoinChain, Chain, ChartPeriod, chain_cosmos::CosmosChain};
+use primitives::{chain_cosmos::CosmosChain, BitcoinChain, Chain, ChartPeriod};
 
 #[derive(Debug, uniffi::Object)]
 pub struct GemGateway {
@@ -40,6 +41,7 @@ impl GemGateway {
             Chain::Cosmos | Chain::Osmosis | Chain::Celestia | Chain::Thorchain | Chain::Injective | Chain::Sei | Chain::Noble => {
                 Ok(Arc::new(CosmosClient::new(CosmosChain::from_chain(chain).unwrap(), alien_client, url)))
             }
+            Chain::Ton => Ok(Arc::new(TonClient::new(alien_client))),
             _ => Err(GatewayError::InvalidChain(chain.to_string())),
         }
     }
@@ -85,13 +87,10 @@ impl GemGateway {
     // staking
     pub async fn get_staking_validators(&self, chain: Chain) -> Result<Vec<GemDelegationValidator>, GatewayError> {
         let provider = self.provider(chain).await?;
-        
+
         // First get the APY
-        let apy = provider
-            .get_staking_apy()
-            .await
-            .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
-        
+        let apy = provider.get_staking_apy().await.map_err(|e| GatewayError::NetworkError(e.to_string()))?;
+
         // Then get validators with the APY
         let validators = provider
             .get_staking_validators(apy)
@@ -179,7 +178,7 @@ impl GemGateway {
             .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
         Ok(preload.into())
     }
-    
+
     pub async fn get_transaction_load(&self, chain: Chain, input: GemTransactionLoadInput) -> Result<GemTransactionData, GatewayError> {
         let load_data = self
             .provider(chain)
@@ -187,7 +186,7 @@ impl GemGateway {
             .get_transaction_load(input.clone().into())
             .await
             .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
-        
+
         Ok(models::transaction::map_transaction_load_data(load_data, &input))
     }
 

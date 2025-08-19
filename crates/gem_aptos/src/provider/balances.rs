@@ -5,8 +5,8 @@ use std::error::Error;
 use gem_client::Client;
 use primitives::AssetBalance;
 
+use super::balances_mapper::{map_native_balance, map_token_balances};
 use crate::{rpc::client::AptosClient, APTOS_NATIVE_COIN};
-use super::balances_mapper::{map_token_balances, map_native_balance};
 
 #[async_trait]
 impl<C: Client> ChainBalances for AptosClient<C> {
