@@ -10,6 +10,9 @@ pub mod rpc;
 #[cfg(feature = "rpc")]
 pub mod provider;
 
+#[cfg(test)]
+pub mod testkit;
+
 pub mod models;
 
 pub use jsonrpc::SolanaRpc;

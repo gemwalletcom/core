@@ -246,7 +246,7 @@ pub fn map_transaction_load_data(load_data: TransactionLoadData, input: &GemTran
         token: GemSignerInputToken {
             sender_token_address: load_data.token.sender_token_address,
             recipient_token_address: load_data.token.recipient_token_address,
-            token_program: load_data.token.token_program,
+            token_program: load_data.token.token_program.as_ref().to_string(),
         },
     }
 }

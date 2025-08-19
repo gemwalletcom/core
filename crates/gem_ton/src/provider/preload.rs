@@ -4,7 +4,7 @@ use futures;
 use gem_client::Client;
 use num_bigint::BigInt;
 use primitives::transaction_load::FeeOption;
-use primitives::{AssetSubtype, SignerInputToken, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionPreload, TransactionPreloadInput};
+use primitives::{AssetSubtype, SignerInputToken, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionPreload, TransactionPreloadInput, SolanaTokenProgramId};
 use std::collections::HashMap;
 use std::error::Error;
 
@@ -80,7 +80,7 @@ impl<C: Client> ChainPreload for TonClient<C> {
             token: SignerInputToken {
                 sender_token_address: jetton_wallet_address,
                 recipient_token_address: None,
-                token_program: "".to_string(),
+                token_program: SolanaTokenProgramId::Token,
             },
         })
     }

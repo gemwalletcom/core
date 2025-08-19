@@ -102,6 +102,8 @@ pub mod validator;
 pub use self::validator::StakeValidator;
 pub mod solana_token_program;
 pub use self::solana_token_program::SolanaTokenProgramId;
+pub mod solana_types;
+pub use self::solana_types::{SolanaAccountMeta, SolanaInstruction};
 pub mod fee;
 pub use self::fee::{FeePriority, FeePriorityValue, FeeUnitType};
 pub mod response;

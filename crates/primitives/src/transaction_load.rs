@@ -1,4 +1,4 @@
-use crate::{Asset, TransactionPreloadInput, UTXO};
+use crate::{Asset, TransactionPreloadInput, UTXO, SolanaTokenProgramId};
 use num_bigint::BigInt;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -92,11 +92,21 @@ impl TransactionFee {
     }
 }
 
-#[derive(Default, Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SignerInputToken {
     pub sender_token_address: String,
     pub recipient_token_address: Option<String>,
-    pub token_program: String,
+    pub token_program: SolanaTokenProgramId,
+}
+
+impl Default for SignerInputToken {
+    fn default() -> Self {
+        Self {
+            sender_token_address: String::new(),
+            recipient_token_address: None,
+            token_program: SolanaTokenProgramId::Token,
+        }
+    }
 }
 
 impl SignerInputToken {
@@ -104,7 +114,7 @@ impl SignerInputToken {
         Self {
             sender_token_address: address,
             recipient_token_address: None,
-            token_program: String::new(),
+            token_program: SolanaTokenProgramId::Token,
         }
     }
 }

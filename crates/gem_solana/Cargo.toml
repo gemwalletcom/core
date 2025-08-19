@@ -30,3 +30,5 @@ chain_traits = { path = "../chain_traits", optional = true }
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["macros", "rt"] }
+reqwest = { workspace = true }
+

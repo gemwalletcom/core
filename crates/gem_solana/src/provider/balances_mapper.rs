@@ -20,9 +20,8 @@ pub fn map_token_balances(accounts: &ValueResult<Vec<TokenAccountInfo>>, token_i
                 .as_ref()
                 .map(|ta| ta.amount.to_string())
                 .unwrap_or_else(|| "0".to_string());
-            let asset_id = AssetId::from_token(Chain::Solana, token_id);
             AssetBalance::new(
-                asset_id,
+                AssetId::from_token(Chain::Solana, token_id),
                 balance_amount
             )
         })
@@ -51,26 +50,17 @@ pub fn map_token_accounts(accounts: &ValueResult<Vec<TokenAccountInfo>>, token_i
     }
 }
 
-pub fn map_staking_balance(stake_accounts: Vec<crate::model::TokenAccountInfo>) -> Option<AssetBalance> {
-    if stake_accounts.is_empty() {
-        return None;
-    }
-    
-    // Sum up all lamports from stake accounts (matching Swift implementation)
+pub fn map_staking_balance(stake_accounts: Vec<TokenAccountInfo>) -> Option<AssetBalance> {
     let total_staked: u64 = stake_accounts
         .iter()
-        .map(|account| account.account.lamports)
+        .map(|x| x.account.lamports)
         .sum();
-    
-    if total_staked == 0 {
-        return None;
-    }
     
     Some(AssetBalance::new_staking(
         AssetId::from_chain(Chain::Solana),
         total_staked.to_string(),
-        "0".to_string(), // pending not used for Solana
-        "0".to_string()  // rewards calculation would need additional logic
+        "0".to_string(),
+        "0".to_string()
     ))
 }
 

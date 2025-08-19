@@ -7,7 +7,7 @@ use gem_client::Client;
 #[cfg(feature = "rpc")]
 use gem_jsonrpc::client::JsonRpcClient as GenericJsonRpcClient;
 #[cfg(feature = "rpc")]
-use chain_traits::{ChainTraits, ChainStaking, ChainTransactions, ChainState, ChainAccount, ChainPerpetual, ChainToken};
+use chain_traits::{ChainTraits, ChainAccount, ChainPerpetual};
 use std::error::Error;
 use primitives::Chain;
 
@@ -335,58 +335,78 @@ impl<C: Client + Clone> SolanaClient<C> {
         Ok(stake_accounts)
     }
 
-}
-
-#[cfg(feature = "rpc")]
-#[async_trait::async_trait]
-impl<C: Client + Clone> ChainStaking for SolanaClient<C> {}
-
-#[cfg(feature = "rpc")]
-#[async_trait::async_trait]
-impl<C: Client + Clone> ChainTransactions for SolanaClient<C> {
-    async fn transaction_broadcast(&self, _data: String) -> Result<String, Box<dyn Error + Sync + Send>> {
-        Err("Transaction broadcast not implemented for Solana".into())
+    pub async fn get_vote_accounts(&self) -> Result<crate::model::VoteAccounts, Box<dyn Error + Send + Sync>> {
+        let params = serde_json::json!([{
+            "keepUnstakedDelinquents": true,
+            "commitment": "finalized"
+        }]);
+        self.rpc_call("getVoteAccounts", params).await
     }
-    
-    async fn get_transaction_status(&self, request: primitives::TransactionStateRequest) -> Result<primitives::TransactionUpdate, Box<dyn Error + Sync + Send>> {
-        let transaction = self.get_transaction(&request.id).await?;
-        
-        if transaction.slot > 0 {
-            if transaction.meta.err.is_some() {
-                Ok(primitives::TransactionUpdate {
-                    state: primitives::TransactionState::Failed,
-                    changes: vec![],
-                })
-            } else {
-                Ok(primitives::TransactionUpdate {
-                    state: primitives::TransactionState::Confirmed,
-                    changes: vec![],
-                })
+
+    pub async fn get_inflation_rate(&self) -> Result<crate::model::InflationRate, Box<dyn Error + Send + Sync>> {
+        self.rpc_call("getInflationRate", serde_json::json!([])).await
+    }
+
+    pub async fn send_transaction(&self, data: String, skip_preflight: Option<bool>) -> Result<String, Box<dyn Error + Send + Sync>> {
+        let mut params = serde_json::json!([
+            data,
+            {
+                "encoding": "base64"
             }
-        } else {
-            Ok(primitives::TransactionUpdate {
-                state: primitives::TransactionState::Pending,
-                changes: vec![],
-            })
+        ]);
+
+        if let Some(skip) = skip_preflight {
+            params = serde_json::json!([
+                data,
+                {
+                    "encoding": "base64",
+                    "skipPreflight": skip
+                }
+            ]);
         }
+
+        self.rpc_call("sendTransaction", params).await
     }
+
+    pub async fn get_recent_prioritization_fees(&self) -> Result<Vec<crate::models::prioritization_fee::SolanaPrioritizationFee>, Box<dyn Error + Send + Sync>> {
+        self.rpc_call("getRecentPrioritizationFees", serde_json::json!([])).await
+    }
+
+    pub async fn get_token_mint_info(&self, token_mint: &str) -> Result<crate::model::ResultTokenInfo, Box<dyn Error + Send + Sync>> {
+        self.rpc_call("getAccountInfo", serde_json::json!([
+            token_mint,
+            {
+                "encoding": "jsonParsed"
+            }
+        ])).await
+    }
+
+    pub async fn get_metaplex_metadata(&self, token_mint: &str) -> Result<crate::metaplex::metadata::Metadata, Box<dyn Error + Send + Sync>> {
+        use crate::{pubkey::Pubkey, metaplex::metadata::Metadata, metaplex::decode_metadata, model::{ValueResult, ValueData}};
+        use std::str::FromStr;
+        
+        let pubkey = Pubkey::from_str(token_mint)?;
+        let metadata_key = Metadata::find_pda(pubkey)
+            .ok_or::<Box<dyn Error + Send + Sync>>("metadata program account not found".into())?
+            .0
+            .to_string();
+
+        let result: ValueResult<Option<ValueData<Vec<String>>>> = self.rpc_call("getAccountInfo", serde_json::json!([
+            metadata_key,
+            {
+                "encoding": "base64"
+            }
+        ])).await?;
+        
+        let value = result.value.ok_or("Failed to get metadata")?;
+        let meta = decode_metadata(&value.data[0]).map_err(|_| "Failed to decode metadata")?;
+        Ok(meta)
+    }
+
 }
 
-#[cfg(feature = "rpc")]
-#[async_trait::async_trait]
-impl<C: Client + Clone> ChainState for SolanaClient<C> {
-    async fn get_chain_id(&self) -> Result<String, Box<dyn Error + Sync + Send>> {
-        self.get_genesis_hash().await
-    }
-    
-    async fn get_block_number(&self) -> Result<u64, Box<dyn Error + Sync + Send>> {
-        self.get_slot().await
-    }
-    
-    async fn get_fee_rates(&self) -> Result<Vec<primitives::FeePriorityValue>, Box<dyn Error + Sync + Send>> {
-        Err("Fee rates not implemented for Solana".into())
-    }
-}
+
+
 
 #[cfg(feature = "rpc")]
 #[async_trait::async_trait]
@@ -396,17 +416,6 @@ impl<C: Client + Clone> ChainAccount for SolanaClient<C> {}
 #[async_trait::async_trait]
 impl<C: Client + Clone> ChainPerpetual for SolanaClient<C> {}
 
-#[cfg(feature = "rpc")]
-#[async_trait::async_trait]
-impl<C: Client + Clone> ChainToken for SolanaClient<C> {
-    async fn get_token_data(&self, _token_id: String) -> Result<primitives::Asset, Box<dyn Error + Sync + Send>> {
-        Err("Token data not implemented for Solana".into())
-    }
-
-    fn get_is_token_address(&self, token_id: &str) -> bool {
-        token_id.len() >= 40 && token_id.len() <= 60 && bs58::decode(token_id).into_vec().is_ok()
-    }
-}
 
 
 #[cfg(feature = "rpc")]

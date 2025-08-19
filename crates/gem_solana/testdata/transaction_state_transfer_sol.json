@@ -1,0 +1,91 @@
+{
+    "jsonrpc": "2.0",
+    "result": {
+      "blockTime": 1755634669,
+      "meta": {
+        "computeUnitsConsumed": 9860,
+        "costUnits": 11192,
+        "err": null,
+        "fee": 5000,
+        "innerInstructions": [],
+        "loadedAddresses": {
+          "readonly": [],
+          "writable": []
+        },
+        "logMessages": [
+          "Program ComputeBudget111111111111111111111111111111 invoke [1]",
+          "Program ComputeBudget111111111111111111111111111111 success",
+          "Program Stake11111111111111111111111111111111111111 invoke [1]",
+          "Program log: Instruction: Withdraw",
+          "Program Stake11111111111111111111111111111111111111 consumed 9710 of 99850 compute units",
+          "Program Stake11111111111111111111111111111111111111 success"
+        ],
+        "postBalances": [
+          1387269709,
+          0,
+          1169280,
+          114979200,
+          1,
+          1141440
+        ],
+        "postTokenBalances": [],
+        "preBalances": [
+          1376791564,
+          10483145,
+          1169280,
+          114979200,
+          1,
+          1141440
+        ],
+        "preTokenBalances": [],
+        "rewards": [],
+        "status": {
+          "Ok": null
+        }
+      },
+      "slot": 361169359,
+      "transaction": {
+        "message": {
+          "accountKeys": [
+            "8wytzyCBXco7yqgrLDiecpEt452MSuNWRe7xsLgAAX1H",
+            "ASQQcxX1n6J1wtWEM14SoWsFmCtY2bvpV8dcKFJPZgWd",
+            "SysvarC1ock11111111111111111111111111111111",
+            "SysvarStakeHistory1111111111111111111111111",
+            "ComputeBudget111111111111111111111111111111",
+            "Stake11111111111111111111111111111111111111"
+          ],
+          "header": {
+            "numReadonlySignedAccounts": 0,
+            "numReadonlyUnsignedAccounts": 4,
+            "numRequiredSignatures": 1
+          },
+          "instructions": [
+            {
+              "accounts": [],
+              "data": "JC3gyu",
+              "programIdIndex": 4,
+              "stackHeight": 1
+            },
+            {
+              "accounts": [
+                1,
+                0,
+                2,
+                3,
+                0
+              ],
+              "data": "5Nvj7aVaZetwKjyR",
+              "programIdIndex": 5,
+              "stackHeight": 1
+            }
+          ],
+          "recentBlockhash": "CHDpVwyUzZB2d9FU55wB4EERoqJUsPKCXY7s55K2tMbW"
+        },
+        "signatures": [
+          "2BMrwZEGZ6m8hfVz6iMHeDq8JjXRHEcQgPMt6M9QsUSK4ReVvNWdmZsmPiCfH1Ebhi14vvmk1Am3rFZnkBS3LjsQ"
+        ]
+      },
+      "version": "legacy"
+    },
+    "id": 1755634766
+  }
