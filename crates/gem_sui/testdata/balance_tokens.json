@@ -1,0 +1,54 @@
+{
+    "jsonrpc": "2.0",
+    "id": 20,
+    "result": [
+      {
+        "coinType": "0xce7ff77a83ea0cb6fd39bd8748e2ec89a3f41e8efdc3f4eb123e0ca37b184db2::buck::BUCK",
+        "coinObjectCount": 1,
+        "totalBalance": "0",
+        "lockedBalance": {}
+      },
+      {
+        "coinType": "0xdba34672e30cb065b1f93e3ab55318768fd6fef66c15942c9f7cb846e2f900e7::usdc::USDC",
+        "coinObjectCount": 1,
+        "totalBalance": "3685298",
+        "lockedBalance": {}
+      },
+      {
+        "coinType": "0x6864a6f921804860930db6ddbe2e16acdf8504495ea7481637a1c8b9a8fe54b::cetus::CETUS",
+        "coinObjectCount": 1,
+        "totalBalance": "0",
+        "lockedBalance": {}
+      },
+      {
+        "coinType": "0xda1644f58a955833a15abae24f8cc65b5bd8152ce013fde8be0a6a3dcf51fe36::token::TOKEN",
+        "coinObjectCount": 1,
+        "totalBalance": "1000",
+        "lockedBalance": {}
+      },
+      {
+        "coinType": "0x909cba62ce96d54de25bec9502de5ca7b4f28901747bbf96b76c2e63ec5f1cba::coin::COIN",
+        "coinObjectCount": 1,
+        "totalBalance": "0",
+        "lockedBalance": {}
+      },
+      {
+        "coinType": "0xe4239cd951f6c53d9c41e25270d80d31f925ad1655e5ba5b543843d4a66975ee::SUIP::SUIP",
+        "coinObjectCount": 1,
+        "totalBalance": "0",
+        "lockedBalance": {}
+      },
+      {
+        "coinType": "0x2::sui::SUI",
+        "coinObjectCount": 1,
+        "totalBalance": "52855428706",
+        "lockedBalance": {}
+      },
+      {
+        "coinType": "0x5d4b302506645c37ff133b98c4b50a5ae14841659738d6d733d59d0d217a93bf::coin::COIN",
+        "coinObjectCount": 1,
+        "totalBalance": "0",
+        "lockedBalance": {}
+      }
+    ]
+  }

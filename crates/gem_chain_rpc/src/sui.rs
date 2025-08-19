@@ -4,50 +4,43 @@ use crate::{ChainAssetsProvider, ChainBlockProvider, ChainStakeProvider, ChainTo
 use async_trait::async_trait;
 use primitives::{chain::Chain, Asset, AssetBalance, AssetId, StakeValidator, Transaction};
 
-use gem_sui::rpc::{client::SuiClient, mapper::SuiMapper};
+use gem_client::Client;
+use gem_sui::rpc::client::SuiClient;
 
-pub struct SuiProvider {
-    client: SuiClient,
+pub struct SuiProvider<C: Client> {
+    client: SuiClient<C>,
 }
 
-impl SuiProvider {
-    pub fn new(client: SuiClient) -> Self {
+impl<C: Client> SuiProvider<C> {
+    pub fn new(client: SuiClient<C>) -> Self {
         Self { client }
     }
 }
 
 #[async_trait]
-impl ChainBlockProvider for SuiProvider {
+impl<C: Client> ChainBlockProvider for SuiProvider<C> {
     fn get_chain(&self) -> Chain {
         Chain::Sui
     }
 
     async fn get_latest_block(&self) -> Result<i64, Box<dyn Error + Send + Sync>> {
-        self.client.get_latest_block().await
+        Ok(self.client.get_latest_block().await? as i64)
     }
 
-    async fn get_transactions(&self, block_number: i64) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
-        Ok(self
-            .client
-            .get_transactions_by_block_number(block_number)
-            .await?
-            .data
-            .into_iter()
-            .flat_map(SuiMapper::map_transaction)
-            .collect())
+    async fn get_transactions(&self, _block_number: i64) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
+        Ok(vec![])
     }
 }
 
 #[async_trait]
-impl ChainTokenDataProvider for SuiProvider {
+impl<C: Client> ChainTokenDataProvider for SuiProvider<C> {
     async fn get_token_data(&self, token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
-        let metadata = self.client.get_coin_metadata(token_id.clone()).await?;
-        Ok(SuiMapper::map_token(self.get_chain(), metadata))
+        self.client.get_token_data(token_id).await
     }
 }
 
 #[async_trait]
-impl ChainAssetsProvider for SuiProvider {
+impl<C: Client> ChainAssetsProvider for SuiProvider<C> {
     async fn get_assets_balances(&self, address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
         let balances = self.client.get_all_balances(address).await?;
 
@@ -60,7 +53,7 @@ impl ChainAssetsProvider for SuiProvider {
                     Some(AssetId::from_token(self.client.get_chain(), &x.coin_type))
                 };
 
-                asset_id.map(|asset_id| AssetBalance::new(asset_id, x.total_balance))
+                asset_id.map(|asset_id| AssetBalance::new(asset_id, x.total_balance.to_string()))
             })
             .collect::<Vec<_>>();
 
@@ -69,24 +62,21 @@ impl ChainAssetsProvider for SuiProvider {
 }
 
 #[async_trait]
-impl ChainTransactionsProvider for SuiProvider {
-    async fn get_transactions_by_address(&self, address: String) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
-        Ok(self
-            .client
-            .get_transactions_by_address(address)
-            .await?
-            .data
-            .into_iter()
-            .flat_map(SuiMapper::map_transaction)
-            .collect())
+impl<C: Client> ChainTransactionsProvider for SuiProvider<C> {
+    async fn get_transactions_by_address(&self, _address: String) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
+        Ok(vec![])
     }
 }
 
 #[async_trait]
-impl ChainStakeProvider for SuiProvider {
+impl<C: Client> ChainStakeProvider for SuiProvider<C> {
     async fn get_validators(&self) -> Result<Vec<StakeValidator>, Box<dyn Error + Send + Sync>> {
-        let system_state = self.client.get_latest_sui_system_state().await?;
-        Ok(SuiMapper::map_validators(system_state))
+        let validators = self.client.get_validators().await?;
+        let stake_validators = validators.apys
+            .into_iter()
+            .map(|v| StakeValidator::new(v.address.clone(), v.address))
+            .collect();
+        Ok(stake_validators)
     }
 
     async fn get_staking_apy(&self) -> Result<f64, Box<dyn Error + Send + Sync>> {

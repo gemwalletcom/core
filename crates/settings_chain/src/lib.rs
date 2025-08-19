@@ -2,7 +2,6 @@ mod chain_providers;
 mod provider_config;
 pub use chain_providers::ChainProviders;
 use gem_client::{retry::standard_retry_policy, ReqwestClient};
-use gem_jsonrpc::JsonRpcClient;
 pub use provider_config::ProviderConfig;
 
 use reqwest_middleware::ClientBuilder;
