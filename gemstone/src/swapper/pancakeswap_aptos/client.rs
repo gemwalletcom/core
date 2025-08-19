@@ -2,7 +2,7 @@ use crate::{
     network::{AlienProvider, AlienTarget},
     swapper::SwapperError,
 };
-use gem_aptos::model::Resource;
+use gem_aptos::models::Resource;
 use num_bigint::BigUint;
 use std::{str::FromStr, sync::Arc};
 

@@ -20,11 +20,9 @@ chrono = { workspace = true, features = ["serde"], optional = true }
 num-bigint = { workspace = true, optional = true }
 num-traits = { workspace = true, optional = true }
 gem_evm = { path = "../gem_evm", optional = true }
-typeshare = { workspace = true, optional = true }
 
 [features]
 default = []
-typeshare = ["dep:typeshare"]
 rpc = [
     "dep:reqwest",
     "dep:reqwest-middleware",

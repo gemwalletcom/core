@@ -18,7 +18,7 @@ impl<C: Client> ChainState for NearClient<C> {
         Ok(self.get_near_latest_block().await?.header.height)
     }
 
-    async fn get_fees(&self) -> Result<Vec<FeePriorityValue>, Box<dyn Error + Sync + Send>> {
+    async fn get_fee_rates(&self) -> Result<Vec<FeePriorityValue>, Box<dyn Error + Sync + Send>> {
         let gas_price = self.get_near_gas_price().await?;
         state_mapper::map_gas_price_to_priorities(&gas_price)
     }

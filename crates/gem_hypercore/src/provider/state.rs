@@ -17,7 +17,7 @@ impl<C: Client> ChainState for HyperCoreClient<C> {
         Ok(1)
     }
 
-    async fn get_fees(&self) -> Result<Vec<FeePriorityValue>, Box<dyn Error + Sync + Send>> {
+    async fn get_fee_rates(&self) -> Result<Vec<FeePriorityValue>, Box<dyn Error + Sync + Send>> {
         Ok(vec![FeePriorityValue::new(FeePriority::Normal, "1".to_string())])
     }
 }

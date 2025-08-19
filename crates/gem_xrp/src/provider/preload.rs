@@ -15,7 +15,7 @@ impl<C: Client> ChainPreload for XRPClient<C> {
 
         Ok(TransactionPreload::builder()
             .block_number(latest_block.ledger_current_index)
-            .sequence(account.sequence as i64)
+            .sequence(account.sequence)
             .build())
     }
 }

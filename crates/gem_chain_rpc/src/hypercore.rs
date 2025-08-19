@@ -58,7 +58,7 @@ impl<C: Client> ChainStakeProvider for HyperCoreProvider<C> {
     async fn get_validators(&self) -> Result<Vec<StakeValidator>, Box<dyn Error + Send + Sync>> {
         Ok(self
             .client
-            .get_staking_validators()
+            .get_validators()
             .await?
             .into_iter()
             .filter(|x| x.is_active)

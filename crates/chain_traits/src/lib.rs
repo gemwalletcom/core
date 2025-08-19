@@ -3,10 +3,7 @@ use std::error::Error;
 use async_trait::async_trait;
 use primitives::chart::ChartCandleStick;
 use primitives::perpetual::{PerpetualData, PerpetualPositionsSummary};
-use primitives::{
-    Asset, AssetBalance, ChartPeriod, DelegationBase, DelegationValidator, FeePriorityValue, TransactionPreload, TransactionPreloadInput,
-    TransactionStateRequest, TransactionUpdate, UTXO,
-};
+use primitives::{Asset, AssetBalance, ChartPeriod, DelegationBase, DelegationValidator, FeePriorityValue, TransactionPreload, TransactionPreloadInput, TransactionStateRequest, TransactionUpdate, TransactionLoadInput, TransactionLoadData, TransactionFee, UTXO};
 
 pub trait ChainTraits: ChainBalances + ChainStaking + ChainTransactions + ChainState + ChainAccount + ChainPerpetual + ChainToken + ChainPreload {}
 
@@ -19,7 +16,11 @@ pub trait ChainBalances: Send + Sync {
 
 #[async_trait]
 pub trait ChainStaking: Send + Sync {
-    async fn get_staking_validators(&self) -> Result<Vec<DelegationValidator>, Box<dyn Error + Sync + Send>> {
+    async fn get_staking_apy(&self) -> Result<Option<f64>, Box<dyn Error + Sync + Send>> {
+        Ok(None)
+    }
+
+    async fn get_staking_validators(&self, _apy: Option<f64>) -> Result<Vec<DelegationValidator>, Box<dyn Error + Sync + Send>> {
         Ok(vec![])
     }
 
@@ -38,7 +39,7 @@ pub trait ChainTransactions: Send + Sync {
 pub trait ChainState: Send + Sync {
     async fn get_chain_id(&self) -> Result<String, Box<dyn Error + Sync + Send>>;
     async fn get_block_number(&self) -> Result<u64, Box<dyn Error + Sync + Send>>;
-    async fn get_fees(&self) -> Result<Vec<FeePriorityValue>, Box<dyn Error + Sync + Send>>;
+    async fn get_fee_rates(&self) -> Result<Vec<FeePriorityValue>, Box<dyn Error + Sync + Send>>;
 }
 
 #[async_trait]
@@ -78,5 +79,13 @@ pub trait ChainToken: Send + Sync {
 pub trait ChainPreload: Send + Sync {
     async fn get_transaction_preload(&self, _input: TransactionPreloadInput) -> Result<TransactionPreload, Box<dyn Error + Sync + Send>> {
         Ok(TransactionPreload::default())
+    }
+    
+    async fn get_transaction_load(&self, input: TransactionLoadInput) -> Result<TransactionLoadData, Box<dyn Error + Sync + Send>> {
+        Ok(TransactionLoadData {
+            account_number: 0,
+            sequence: input.sequence,
+            fee: TransactionFee::default(),
+        })
     }
 }

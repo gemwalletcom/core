@@ -1,0 +1,17 @@
+{
+  "tx_response": {
+    "height": "0",
+    "txhash": "62CC30451A83DE94A76D73812A7A16A947802085C77B0166A862C39ABF8B324D",
+    "codespace": "",
+    "code": 0,
+    "data": "",
+    "raw_log": "",
+    "logs": [],
+    "info": "",
+    "gas_wanted": "0",
+    "gas_used": "0",
+    "tx": null,
+    "timestamp": "",
+    "events": []
+  }
+}

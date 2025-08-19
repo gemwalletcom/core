@@ -15,7 +15,7 @@ pub fn map_transaction_preload(
     is_destination_address_exist: bool,
 ) -> TransactionPreload {
     TransactionPreload {
-        sequence: access_key.nonce + 1,
+        sequence: (access_key.nonce + 1) as u64,
         block_hash: block.header.hash.clone(),
         is_destination_address_exist,
         ..Default::default()

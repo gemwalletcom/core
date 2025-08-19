@@ -17,7 +17,7 @@ impl<C: Client> ChainPreload for StellarClient<C> {
         );
 
         let current_sequence: i64 = sender_account?.sequence.parse().unwrap_or(0);
-        let sequence = current_sequence + 1;
+        let sequence = (current_sequence + 1) as u64;
         let is_destination_address_exist = destination_result.is_ok();
 
         Ok(TransactionPreload::builder()

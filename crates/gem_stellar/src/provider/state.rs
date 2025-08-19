@@ -17,7 +17,7 @@ impl<C: Client> ChainState for StellarClient<C> {
         Ok(self.get_node_status().await?.network_passphrase)
     }
 
-    async fn get_fees(&self) -> Result<Vec<primitives::FeePriorityValue>, Box<dyn Error + Sync + Send>> {
+    async fn get_fee_rates(&self) -> Result<Vec<primitives::FeePriorityValue>, Box<dyn Error + Sync + Send>> {
         let fees = self.get_fees().await?;
 
         let min_fee = std::cmp::max(

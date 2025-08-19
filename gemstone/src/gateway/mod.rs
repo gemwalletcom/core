@@ -2,18 +2,20 @@ use crate::gateway::models::asset::GemAsset;
 use crate::network::{AlienClient, AlienProvider};
 use chain_traits::ChainTraits;
 use gem_algorand::rpc::client::AlgorandClient;
+use gem_aptos::rpc::client::AptosClient;
 use gem_bitcoin::rpc::client::BitcoinClient;
 use gem_cardano::rpc::client::CardanoClient;
 use gem_hypercore::rpc::client::HyperCoreClient;
 use gem_near::rpc::client::NearClient;
 use gem_stellar::rpc::client::StellarClient;
 use gem_xrp::rpc::client::XRPClient;
+use gem_cosmos::rpc::client::CosmosClient;
 use std::sync::Arc;
 
 pub mod models;
 
 pub use models::*;
-use primitives::{BitcoinChain, Chain, ChartPeriod};
+use primitives::{BitcoinChain, Chain, ChartPeriod, chain_cosmos::CosmosChain};
 
 #[derive(Debug, uniffi::Object)]
 pub struct GemGateway {
@@ -23,7 +25,7 @@ pub struct GemGateway {
 impl GemGateway {
     pub async fn provider(&self, chain: Chain) -> Result<Arc<dyn ChainTraits>, GatewayError> {
         let url = self.provider.get_endpoint(chain).unwrap();
-        let alien_client = AlienClient::new(url, self.provider.clone());
+        let alien_client = AlienClient::new(url.clone(), self.provider.clone());
         match chain {
             Chain::HyperCore => Ok(Arc::new(HyperCoreClient::new(alien_client))),
             Chain::Bitcoin | Chain::BitcoinCash | Chain::Litecoin | Chain::Doge => {
@@ -34,6 +36,10 @@ impl GemGateway {
             Chain::Xrp => Ok(Arc::new(XRPClient::new(alien_client))),
             Chain::Algorand => Ok(Arc::new(AlgorandClient::new(alien_client))),
             Chain::Near => Ok(Arc::new(NearClient::new(alien_client))),
+            Chain::Aptos => Ok(Arc::new(AptosClient::new(alien_client))),
+            Chain::Cosmos | Chain::Osmosis | Chain::Celestia | Chain::Thorchain | Chain::Injective | Chain::Sei | Chain::Noble => {
+                Ok(Arc::new(CosmosClient::new(CosmosChain::from_chain(chain).unwrap(), alien_client, url)))
+            }
             _ => Err(GatewayError::InvalidChain(chain.to_string())),
         }
     }
@@ -78,10 +84,17 @@ impl GemGateway {
 
     // staking
     pub async fn get_staking_validators(&self, chain: Chain) -> Result<Vec<GemDelegationValidator>, GatewayError> {
-        let validators = self
-            .provider(chain)
-            .await?
-            .get_staking_validators()
+        let provider = self.provider(chain).await?;
+        
+        // First get the APY
+        let apy = provider
+            .get_staking_apy()
+            .await
+            .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
+        
+        // Then get validators with the APY
+        let validators = provider
+            .get_staking_validators(apy)
             .await
             .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
         Ok(validators.into_iter().map(|v| v.into()).collect())
@@ -137,11 +150,11 @@ impl GemGateway {
         Ok(block_number)
     }
 
-    pub async fn get_fees(&self, chain: Chain) -> Result<Vec<GemFeePriorityValue>, GatewayError> {
+    pub async fn get_fee_rates(&self, chain: Chain) -> Result<Vec<GemFeePriorityValue>, GatewayError> {
         let fees = self
             .provider(chain)
             .await?
-            .get_fees()
+            .get_fee_rates()
             .await
             .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
         Ok(fees.into_iter().map(|f| f.into()).collect())
@@ -165,6 +178,17 @@ impl GemGateway {
             .await
             .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
         Ok(preload.into())
+    }
+    
+    pub async fn get_transaction_load(&self, chain: Chain, input: GemTransactionLoadInput) -> Result<GemTransactionData, GatewayError> {
+        let load_data = self
+            .provider(chain)
+            .await?
+            .get_transaction_load(input.clone().into())
+            .await
+            .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
+        
+        Ok(models::transaction::map_transaction_load_data(load_data, &input))
     }
 
     pub async fn get_positions(&self, chain: Chain, address: String) -> Result<GemPerpetualPositionsSummary, GatewayError> {

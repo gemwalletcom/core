@@ -8,9 +8,9 @@ pub use provider_config::ProviderConfig;
 use reqwest_middleware::ClientBuilder;
 
 use gem_chain_rpc::{
-    algorand::AlgorandProvider, bitcoin::BitcoinProvider, cardano::CardanoProvider, ethereum::EthereumProvider, near::NearProvider, solana::SolanaProvider,
-    sui::SuiProvider, ton::TonProvider, tron::TronProvider, xrp::XRPProvider, AptosProvider, ChainProvider, CosmosProvider, HyperCoreProvider,
-    PolkadotProvider, StellarProvider,
+    algorand::AlgorandProvider, aptos::AptosProvider, bitcoin::BitcoinProvider, cardano::CardanoProvider, ethereum::EthereumProvider, near::NearProvider, solana::SolanaProvider, sui::SuiProvider,
+    ton::TonProvider, tron::TronProvider, xrp::XRPProvider, ChainProvider, CosmosProvider, HyperCoreProvider, PolkadotProvider,
+    StellarProvider,
 };
 
 use gem_algorand::rpc::AlgorandClient;
@@ -112,7 +112,7 @@ impl ProviderFactory {
             }
             Chain::Cosmos | Chain::Osmosis | Chain::Celestia | Chain::Thorchain | Chain::Injective | Chain::Noble | Chain::Sei => {
                 let chain = CosmosChain::from_chain(chain).unwrap();
-                Box::new(CosmosProvider::new(CosmosClient::new(chain, client, url)))
+                Box::new(CosmosProvider::new(CosmosClient::new(chain, gem_client, url)))
             }
             Chain::Solana => Box::new(SolanaProvider::new(SolanaClient::new(&url))),
             Chain::Ton => Box::new(TonProvider::new(TonClient::new(client, url))),
@@ -121,8 +121,8 @@ impl ProviderFactory {
                 let grid_client = TronGridClient::new(client.clone(), url.clone(), config.trongrid_key.clone());
                 Box::new(TronProvider::new(client, Box::new(grid_client.clone()), Box::new(grid_client.clone())))
             }
-            Chain::Aptos => Box::new(AptosProvider::new(AptosClient::new(client, url))),
-            Chain::Sui => Box::new(SuiProvider::new(SuiClient::new(JsonRpcClient::new(url, gem_client.clone())))),
+            Chain::Aptos => Box::new(AptosProvider::new(AptosClient::new(gem_client))),
+            Chain::Sui => Box::new(SuiProvider::new(SuiClient::new(JsonRpcClient::new(url, gem_client)))),
             Chain::Xrp => Box::new(XRPProvider::new(XRPClient::new(gem_client))),
             Chain::Cardano => Box::new(CardanoProvider::new(CardanoClient::new(gem_client))),
             Chain::Algorand => Box::new(AlgorandProvider::new(AlgorandClient::new(gem_client))),

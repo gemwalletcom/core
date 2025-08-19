@@ -1,10 +1,13 @@
 pub mod constants;
 pub use constants::*;
-pub mod model;
-pub use model::*;
+pub mod models;
+pub use models::*;
 
 #[cfg(feature = "rpc")]
 pub mod rpc;
 
-#[cfg(feature = "typeshare")]
-pub mod typeshare;
+#[cfg(feature = "rpc")]
+pub mod provider;
+
+#[cfg(feature = "rpc")]
+pub use rpc::client::AptosClient;

@@ -19,7 +19,7 @@ impl<C: Client> ChainState for BitcoinClient<C> {
         Ok(node_info.blockbook.best_height)
     }
 
-    async fn get_fees(&self) -> Result<Vec<FeePriorityValue>, Box<dyn Error + Sync + Send>> {
+    async fn get_fee_rates(&self) -> Result<Vec<FeePriorityValue>, Box<dyn Error + Sync + Send>> {
         let priority = self.chain.get_blocks_fee_priority();
         let (slow, normal, fast) = futures::try_join!(self.get_fee(priority.slow), self.get_fee(priority.normal), self.get_fee(priority.fast))?;
         Ok(vec![

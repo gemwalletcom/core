@@ -17,7 +17,7 @@ impl<C: Client> ChainState for CardanoClient<C> {
         Ok(self.get_latest_block().await? as u64)
     }
 
-    async fn get_fees(&self) -> Result<Vec<FeePriorityValue>, Box<dyn Error + Sync + Send>> {
+    async fn get_fee_rates(&self) -> Result<Vec<FeePriorityValue>, Box<dyn Error + Sync + Send>> {
         Ok(vec![FeePriorityValue {
             priority: primitives::FeePriority::Normal,
             value: "1".to_string(),

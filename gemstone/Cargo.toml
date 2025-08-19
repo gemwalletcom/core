@@ -18,13 +18,13 @@ reqwest_provider = ["dep:reqwest"]
 
 [dependencies]
 primitives = { path = "../crates/primitives" }
-gem_cosmos = { path = "../crates/gem_cosmos" }
+gem_cosmos = { path = "../crates/gem_cosmos", features = ["rpc"] }
 gem_solana = { path = "../crates/gem_solana" }
 gem_ton = { path = "../crates/gem_ton" }
 gem_bsc = { path = "../crates/gem_bsc" }
 gem_evm = { path = "../crates/gem_evm" }
 gem_sui = { path = "../crates/gem_sui" }
-gem_aptos = { path = "../crates/gem_aptos" }
+gem_aptos = { path = "../crates/gem_aptos", features = ["rpc"] }
 gem_hash = { path = "../crates/gem_hash" }
 gem_jsonrpc = { path = "../crates/gem_jsonrpc" }
 gem_client = { path = "../crates/gem_client" }

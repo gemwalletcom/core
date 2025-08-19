@@ -1,0 +1,17 @@
+{
+  "tx_response": {
+    "height": "0",
+    "txhash": "46FCC65619C9B0473C6D35A0672114452901AF326CF6ADC8803333EF2EA22C25",
+    "codespace": "sdk",
+    "code": 4,
+    "data": "",
+    "raw_log": "signature verification failed; please verify account number (1343971) and chain-id (cosmoshub-4): (unable to verify single signer signature): unauthorized",
+    "logs": [],
+    "info": "",
+    "gas_wanted": "0",
+    "gas_used": "0",
+    "tx": null,
+    "timestamp": "",
+    "events": []
+  }
+}

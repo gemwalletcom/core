@@ -33,6 +33,14 @@ impl AssetBalance {
             is_active: Some(is_active),
         }
     }
+
+    pub fn new_staking(asset_id: AssetId, staked: String, pending: String, rewards: String) -> Self {
+        Self {
+            asset_id,
+            balance: Balance::stake_balance(staked, pending, Some(rewards)),
+            is_active: None,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]

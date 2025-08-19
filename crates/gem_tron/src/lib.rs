@@ -6,6 +6,4 @@ pub mod address;
 #[cfg(feature = "rpc")]
 pub mod rpc;
 
-// Typeshare module, feature-gated
-#[cfg(feature = "typeshare")]
-pub mod typeshare;
+pub mod models;

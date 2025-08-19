@@ -1529,6 +1529,7 @@ name = "chain_traits"
 version = "1.0.0"
 dependencies = [
  "async-trait",
+ "num-bigint",
  "primitives",
 ]
 
@@ -2872,14 +2873,14 @@ version = "1.0.0"
 dependencies = [
  "anyhow",
  "async-trait",
+ "chain_traits",
  "chrono",
+ "gem_client",
  "num-bigint",
  "primitives",
- "reqwest-middleware",
  "serde",
  "serde_json",
  "serde_serializers",
- "typeshare",
  "url",
 ]
 
@@ -2977,18 +2978,21 @@ name = "gem_cosmos"
 version = "1.0.0"
 dependencies = [
  "anyhow",
+ "async-trait",
  "base64 0.22.1",
  "bech32",
+ "chain_traits",
  "chrono",
  "cosmos-sdk-proto",
+ "futures",
+ "gem_client",
  "hex",
  "num-bigint",
+ "number_formatter",
  "primitives",
- "reqwest-middleware",
  "serde",
  "serde_json",
  "sha2",
- "typeshare",
 ]
 
 [[package]]
@@ -3020,7 +3024,6 @@ dependencies = [
  "serde_json",
  "serde_serializers",
  "tokio",
- "typeshare",
 ]
 
 [[package]]
@@ -3085,7 +3088,6 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_serializers",
- "typeshare",
 ]
 
 [[package]]
@@ -3107,7 +3109,6 @@ dependencies = [
  "serde_serializers",
  "sha2",
  "thiserror 2.0.12",
- "typeshare",
 ]
 
 [[package]]
@@ -3146,22 +3147,23 @@ dependencies = [
  "sui-sdk-types",
  "sui-transaction-builder",
  "thiserror 2.0.12",
- "typeshare",
 ]
 
 [[package]]
 name = "gem_ton"
 version = "1.0.0"
 dependencies = [
+ "async-trait",
  "base64 0.22.1",
+ "chain_traits",
  "chrono",
+ "gem_client",
  "primitives",
  "reqwest-middleware",
  "serde",
  "serde_json",
  "serde_serializers",
  "tonlib-core",
- "typeshare",
 ]
 
 [[package]]
@@ -3182,7 +3184,6 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2",
- "typeshare",
 ]
 
 [[package]]
@@ -5213,6 +5214,7 @@ version = "1.0.0"
 dependencies = [
  "anyhow",
  "chrono",
+ "num-bigint",
  "serde",
  "serde_json",
  "strum",
