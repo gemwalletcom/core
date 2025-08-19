@@ -36,4 +36,5 @@ pub struct TransactionStateRequest {
     pub id: String,
     pub sender_address: String,
     pub created_at: i64,
+    pub block_number: i64,
 }

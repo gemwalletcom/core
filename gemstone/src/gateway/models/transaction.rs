@@ -37,6 +37,7 @@ pub struct GemTransactionStateRequest {
     pub id: String,
     pub sender_address: String,
     pub created_at: i64,
+    pub block_number: i64,
 }
 
 #[derive(Debug, Clone, uniffi::Enum)]
@@ -153,6 +154,7 @@ impl From<GemTransactionStateRequest> for TransactionStateRequest {
             id: value.id,
             sender_address: value.sender_address,
             created_at: value.created_at,
+            block_number: value.block_number,
         }
     }
 }

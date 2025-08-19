@@ -35,6 +35,7 @@ gem_algorand = { path = "../crates/gem_algorand", features = ["rpc"] }
 gem_stellar = { path = "../crates/gem_stellar", features = ["rpc"] }
 gem_xrp = { path = "../crates/gem_xrp", features = ["rpc"] }
 gem_near = { path = "../crates/gem_near", features = ["rpc"] }
+gem_polkadot = { path = "../crates/gem_polkadot", features = ["rpc"] }
 serde_serializers = { path = "../crates/serde_serializers" }
 chain_traits = { path = "../crates/chain_traits" }
 
