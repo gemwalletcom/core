@@ -26,6 +26,6 @@ impl<C: Client> ChainTransactions for BitcoinClient<C> {
         } else {
             TransactionState::Pending
         };
-        Ok(TransactionUpdate::new(status))
+        Ok(TransactionUpdate::new_state(status))
     }
 }

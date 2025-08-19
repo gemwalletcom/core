@@ -1,9 +1,9 @@
+use crate::{BagOfCells, Cell, CellBuilder, TonAddress};
 use base64::engine::general_purpose::STANDARD;
 use base64::Engine;
-use gem_ton::{BagOfCells, Cell, CellBuilder, TonAddress};
 
 /// Encode user address to tvm.Slice for get_wallet_address smart contract call
-pub fn encode_get_wallet_address_slice(address: &str) -> Result<String, Box<dyn std::error::Error>> {
+pub fn encode_get_wallet_address_slice(address: &str) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
     let mut writer = CellBuilder::new();
     let addr = TonAddress::from_base64_url(address)?;
     let cell = writer.store_address(&addr)?.build()?;
@@ -13,7 +13,7 @@ pub fn encode_get_wallet_address_slice(address: &str) -> Result<String, Box<dyn 
 }
 
 /// Decode Cell data from smc.runResult to bounceable address
-pub fn decode_data_to_address(data: &str, len: u64) -> Result<String, Box<dyn std::error::Error>> {
+pub fn decode_data_to_address(data: &str, len: u64) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
     let cell = Cell::new(STANDARD.decode(data)?, usize::try_from(len)?, vec![], false)?;
     let mut reader = cell.parser();
     let addr = reader.load_address()?;

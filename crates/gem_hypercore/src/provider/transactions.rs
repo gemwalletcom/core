@@ -30,7 +30,7 @@ impl<C: Client> HyperCoreClient<C> {
                 let pnl = fill.closed_pnl.parse::<f64>().unwrap_or(0.0);
                 let price = fill.px.parse::<f64>().unwrap_or(0.0);
 
-                let mut update = TransactionUpdate::new(TransactionState::Confirmed);
+                let mut update = TransactionUpdate::new_state(TransactionState::Confirmed);
                 update.changes = vec![
                     TransactionChange::HashChange {
                         old: request.id,
@@ -40,7 +40,7 @@ impl<C: Client> HyperCoreClient<C> {
                 ];
                 Ok(update)
             }
-            None => Ok(TransactionUpdate::new(TransactionState::Pending)),
+            None => Ok(TransactionUpdate::new_state(TransactionState::Pending)),
         }
     }
 }

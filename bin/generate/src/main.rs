@@ -54,12 +54,12 @@ fn process_paths(paths: Vec<String>, _folder: &str, platform: &Platform, platfor
         if vec.len() < 2 {
             continue;
         }
-        
+
         let first_parts: Vec<&str> = vec[0].split('/').collect();
         if first_parts.len() < 2 {
             continue;
         }
-        
+
         let module_name = first_parts[1];
 
         let directory_paths: Vec<&str> = vec[1].split('/').collect();
@@ -74,7 +74,7 @@ fn process_paths(paths: Vec<String>, _folder: &str, platform: &Platform, platfor
         }
 
         let file_path = directory_paths_capitalized.pop().unwrap();
-        
+
         if ignored_files.contains(directory_paths.last().unwrap_or(&"")) {
             continue;
         }
@@ -85,16 +85,11 @@ fn process_paths(paths: Vec<String>, _folder: &str, platform: &Platform, platfor
         let kt_new_file_name = file_name(&file_path, LANG_KOTLIN_ETX);
         let directory_paths_lowercased: Vec<String> = directory_paths_capitalized.iter().map(|x| x.to_lowercase()).collect();
         let kt_new_path = format!("{}/{}", directory_paths_lowercased.join("/"), kt_new_file_name);
-        
+
         let input_path = format!("./{}/src/{}", vec[0], directory_paths.join("/"));
 
         let ios_output_path = output_path(Platform::IOS, platform_directory_path, str_capitlize(module_name).as_str(), ios_new_path);
-        let android_output_path = output_path(
-            Platform::Android,
-            platform_directory_path,
-            module_name,
-            kt_new_path.clone(),
-        );
+        let android_output_path = output_path(Platform::Android, platform_directory_path, module_name, kt_new_path.clone());
 
         let directory_paths_lowercased: Vec<String> = directory_paths_capitalized.iter().map(|x| x.to_lowercase()).collect();
         let directory_package = directory_paths_lowercased.join(".");
@@ -187,7 +182,6 @@ fn clear_path(path: DirEntry) -> String {
 fn str_capitlize(s: &str) -> String {
     format!("{}{}", s[..1].to_string().to_uppercase(), &s[1..])
 }
-
 
 #[cfg(test)]
 mod tests {

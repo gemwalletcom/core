@@ -8,9 +8,9 @@ pub use provider_config::ProviderConfig;
 use reqwest_middleware::ClientBuilder;
 
 use gem_chain_rpc::{
-    algorand::AlgorandProvider, aptos::AptosProvider, bitcoin::BitcoinProvider, cardano::CardanoProvider, ethereum::EthereumProvider, near::NearProvider, solana::SolanaProvider, sui::SuiProvider,
-    ton::TonProvider, tron::TronProvider, xrp::XRPProvider, ChainProvider, CosmosProvider, HyperCoreProvider, PolkadotProvider,
-    StellarProvider,
+    algorand::AlgorandProvider, aptos::AptosProvider, bitcoin::BitcoinProvider, cardano::CardanoProvider, ethereum::EthereumProvider, near::NearProvider,
+    solana::SolanaProvider, sui::SuiProvider, ton::TonProvider, tron::TronProvider, xrp::XRPProvider, ChainProvider, CosmosProvider, HyperCoreProvider,
+    PolkadotProvider, StellarProvider,
 };
 
 use gem_algorand::rpc::AlgorandClient;
@@ -115,7 +115,7 @@ impl ProviderFactory {
                 Box::new(CosmosProvider::new(CosmosClient::new(chain, gem_client, url)))
             }
             Chain::Solana => Box::new(SolanaProvider::new(SolanaClient::new(&url))),
-            Chain::Ton => Box::new(TonProvider::new(TonClient::new(client, url))),
+            Chain::Ton => Box::new(TonProvider::new(TonClient::new(gem_client))),
             Chain::Tron => {
                 let client = TronClient::new(client, url.clone());
                 let grid_client = TronGridClient::new(client.clone(), url.clone(), config.trongrid_key.clone());

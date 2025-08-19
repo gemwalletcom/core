@@ -11,7 +11,7 @@ use crate::rpc::client::CosmosClient;
 impl<C: Client> ChainState for CosmosClient<C> {
     async fn get_chain_id(&self) -> Result<String, Box<dyn Error + Sync + Send>> {
         use crate::models::block::CosmosNodeInfoResponse;
-        
+
         let node_info: CosmosNodeInfoResponse = self.client.get("/cosmos/base/tendermint/v1beta1/node_info").await?;
         Ok(node_info.default_node_info.network)
     }
@@ -24,7 +24,7 @@ impl<C: Client> ChainState for CosmosClient<C> {
     async fn get_fee_rates(&self) -> Result<Vec<FeePriorityValue>, Box<dyn Error + Sync + Send>> {
         let base_fee = self.get_base_fee();
         let cosmos_chain = self.get_chain();
-        
+
         Ok(crate::provider::state_mapper::calculate_fee_rates(cosmos_chain, base_fee.into()))
     }
 }

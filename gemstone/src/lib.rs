@@ -13,7 +13,6 @@ pub mod payment;
 pub mod solana;
 pub mod sui;
 pub mod swapper;
-pub mod ton;
 pub mod tron;
 pub mod wallet_connect;
 

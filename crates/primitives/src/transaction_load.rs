@@ -1,6 +1,13 @@
-use serde::{Deserialize, Serialize};
+use crate::{Asset, TransactionPreloadInput, UTXO};
 use num_bigint::BigInt;
-use crate::{Asset, UTXO, TransactionPreloadInput};
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+use strum_macros::{AsRefStr, Display, EnumString};
+
+#[derive(Debug, Clone, Serialize, Deserialize, AsRefStr, Display, EnumString, PartialEq, Eq, Hash)]
+pub enum FeeOption {
+    TokenAccountCreation,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum StakeOperation {
@@ -34,6 +41,7 @@ pub struct TransactionLoadInput {
     pub block_number: i64,
     pub chain_id: String,
     pub utxos: Vec<UTXO>,
+    pub memo: Option<String>,
 }
 
 impl TransactionLoadInput {
@@ -56,6 +64,7 @@ pub struct TransactionFee {
     pub fee: BigInt,
     pub gas_price: BigInt,
     pub gas_limit: BigInt,
+    pub options: HashMap<FeeOption, String>,
 }
 
 impl Default for TransactionFee {
@@ -64,6 +73,7 @@ impl Default for TransactionFee {
             fee: BigInt::from(0),
             gas_price: BigInt::from(0),
             gas_limit: BigInt::from(0),
+            options: HashMap::new(),
         }
     }
 }
@@ -72,11 +82,29 @@ impl TransactionFee {
     pub fn calculate(gas_limit: u64, gas_price: &GasPrice) -> Self {
         let gas_limit_bigint = BigInt::from(gas_limit);
         let total_fee = &gas_price.gas_price * &gas_limit_bigint;
-        
+
         Self {
             fee: total_fee,
             gas_price: gas_price.gas_price.clone(),
             gas_limit: gas_limit_bigint,
+            options: HashMap::new(),
+        }
+    }
+}
+
+#[derive(Default, Debug, Clone, Serialize, Deserialize)]
+pub struct SignerInputToken {
+    pub sender_token_address: String,
+    pub recipient_token_address: Option<String>,
+    pub token_program: String,
+}
+
+impl SignerInputToken {
+    pub fn new_sender_token_address(address: String) -> Self {
+        Self {
+            sender_token_address: address,
+            recipient_token_address: None,
+            token_program: String::new(),
         }
     }
 }
@@ -86,48 +114,9 @@ pub struct TransactionLoadData {
     pub account_number: u64,
     pub sequence: u64,
     pub fee: TransactionFee,
+    pub token: SignerInputToken,
 }
 
-impl TransactionLoadData {
-    pub fn builder() -> TransactionLoadDataBuilder {
-        TransactionLoadDataBuilder {
-            account_number: None,
-            sequence: None,
-            fee: None,
-        }
-    }
-}
-
-pub struct TransactionLoadDataBuilder {
-    account_number: Option<u64>,
-    sequence: Option<u64>,
-    fee: Option<TransactionFee>,
-}
-
-impl TransactionLoadDataBuilder {
-    pub fn account_number(mut self, account_number: u64) -> Self {
-        self.account_number = Some(account_number);
-        self
-    }
-
-    pub fn sequence(mut self, sequence: u64) -> Self {
-        self.sequence = Some(sequence);
-        self
-    }
-
-    pub fn fee(mut self, fee: TransactionFee) -> Self {
-        self.fee = Some(fee);
-        self
-    }
-
-    pub fn build(self) -> TransactionLoadData {
-        TransactionLoadData {
-            account_number: self.account_number.expect("account_number is required"),
-            sequence: self.sequence.expect("sequence is required"),
-            fee: self.fee.expect("fee is required"),
-        }
-    }
-}
 
 #[cfg(test)]
 mod tests {
@@ -139,9 +128,9 @@ mod tests {
             gas_price: BigInt::from(100u64),
         };
         let gas_limit = 1000u64;
-        
+
         let fee = TransactionFee::calculate(gas_limit, &gas_price);
-        
+
         assert_eq!(fee.fee, BigInt::from(100000u64)); // 100 * 1000
         assert_eq!(fee.gas_price, BigInt::from(100u64));
         assert_eq!(fee.gas_limit, BigInt::from(1000u64));
