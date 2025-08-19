@@ -12,10 +12,7 @@ pub struct Blocksec {
 
 impl Blocksec {
     pub fn new(chain: EVMChain, tx_suffix: Option<&'static str>) -> Box<Self> {
-        Box::new(Self {
-            chain,
-            tx_suffix,
-        })
+        Box::new(Self { chain, tx_suffix })
     }
 
     pub fn new_ethereum() -> Box<Self> {
@@ -47,7 +44,11 @@ impl BlockExplorer for Blocksec {
         BLOCKSEC_NAME.into()
     }
     fn get_tx_url(&self, hash: &str) -> String {
-        format!("https://app.blocksec.com/explorer/tx/{}/{}", self.tx_suffix.unwrap_or_else(|| self.chain.as_ref()), hash)
+        format!(
+            "https://app.blocksec.com/explorer/tx/{}/{}",
+            self.tx_suffix.unwrap_or_else(|| self.chain.as_ref()),
+            hash
+        )
     }
     fn get_address_url(&self, _address: &str) -> String {
         // delegate to etherscan

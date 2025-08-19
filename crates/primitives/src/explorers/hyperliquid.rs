@@ -1,18 +1,11 @@
 use crate::block_explorer::BlockExplorer;
-use crate::explorers::metadata::{Explorer, Metadata, TX_PATH, ADDRESS_PATH, TOKEN_PATH};
+use crate::explorers::metadata::{Explorer, Metadata};
 
 pub struct HyperliquidExplorer;
 
 impl HyperliquidExplorer {
     pub fn boxed() -> Box<dyn BlockExplorer> {
-        Explorer::boxed(Metadata {
-            name: "Hyperliquid",
-            base_url: "https://app.hyperliquid.xyz/explorer",
-            tx_path: TX_PATH,
-            address_path: ADDRESS_PATH,
-            token_path: Some(TOKEN_PATH),
-            validator_path: None,
-        })
+        Explorer::boxed(Metadata::with_token("Hyperliquid", "https://app.hyperliquid.xyz/explorer"))
     }
 }
 

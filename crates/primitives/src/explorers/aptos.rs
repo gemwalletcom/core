@@ -1,5 +1,5 @@
 use crate::block_explorer::BlockExplorer;
-use crate::explorers::metadata::{Explorer, Metadata, TRANSACTION_PATH, TXN_PATH, ACCOUNT_PATH, COIN_PATH};
+use crate::explorers::metadata::{Explorer, Metadata, ACCOUNT_PATH, COIN_PATH, TRANSACTION_PATH, TXN_PATH};
 
 pub fn new_aptos_scan() -> Box<dyn BlockExplorer> {
     Explorer::boxed(Metadata {

@@ -1,5 +1,5 @@
 use crate::block_explorer::BlockExplorer;
-use crate::explorers::metadata::{Explorer, Metadata, TX_PATH, ACCOUNT_PATH, ASSET_PATH};
+use crate::explorers::metadata::{Explorer, Metadata, ACCOUNT_PATH, ASSET_PATH, TX_PATH};
 
 pub fn new() -> Box<dyn BlockExplorer> {
     Explorer::boxed(Metadata {

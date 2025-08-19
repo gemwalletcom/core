@@ -1,5 +1,5 @@
 use crate::block_explorer::BlockExplorer;
-use crate::explorers::metadata::{Explorer, Metadata, TRANSACTION_PATH, TX_PATH, ADDRESS_PATH};
+use crate::explorers::metadata::{Explorer, Metadata, ADDRESS_PATH, TRANSACTION_PATH, TX_PATH};
 
 pub fn new_ton_viewer() -> Box<dyn BlockExplorer> {
     Explorer::boxed(Metadata {

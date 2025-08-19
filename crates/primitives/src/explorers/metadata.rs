@@ -1,7 +1,6 @@
 use crate::block_explorer::BlockExplorer;
 use std::collections::HashMap;
 
-// Common path constants for block explorers
 pub const TX_PATH: &str = "/tx";
 pub const TXN_PATH: &str = "/txn";
 pub const TXNS_PATH: &str = "/txns";
@@ -23,6 +22,80 @@ pub struct Metadata {
     pub address_path: &'static str,
     pub token_path: Option<&'static str>,
     pub validator_path: Option<&'static str>,
+}
+
+impl Metadata {
+    /// Create a common explorer with /tx and /address paths (most common pattern)
+    pub fn new(name: &'static str, base_url: &'static str) -> Self {
+        Self {
+            name,
+            base_url,
+            tx_path: TX_PATH,
+            address_path: ADDRESS_PATH,
+            token_path: None,
+            validator_path: None,
+        }
+    }
+
+    /// Create a common explorer with /tx, /address, and /token paths
+    pub fn with_token(name: &'static str, base_url: &'static str) -> Self {
+        Self {
+            name,
+            base_url,
+            tx_path: TX_PATH,
+            address_path: ADDRESS_PATH,
+            token_path: Some(TOKEN_PATH),
+            validator_path: None,
+        }
+    }
+
+    /// Create a validator-enabled explorer with /tx, /address, and /validator paths
+    pub fn with_validator(name: &'static str, base_url: &'static str) -> Self {
+        Self {
+            name,
+            base_url,
+            tx_path: TX_PATH,
+            address_path: ADDRESS_PATH,
+            token_path: None,
+            validator_path: Some(VALIDATOR_PATH),
+        }
+    }
+
+    /// Create a full-featured explorer with all standard paths
+    pub fn full(name: &'static str, base_url: &'static str) -> Self {
+        Self {
+            name,
+            base_url,
+            tx_path: TX_PATH,
+            address_path: ADDRESS_PATH,
+            token_path: Some(TOKEN_PATH),
+            validator_path: Some(VALIDATOR_PATH),
+        }
+    }
+
+    /// Create an explorer using /transaction path instead of /tx (Blockchair style)
+    pub fn blockchair(name: &'static str, base_url: &'static str) -> Self {
+        Self {
+            name,
+            base_url,
+            tx_path: TRANSACTION_PATH,
+            address_path: ADDRESS_PATH,
+            token_path: None,
+            validator_path: None,
+        }
+    }
+
+    /// Create a Mintscan-style explorer with assets and validators
+    pub fn mintscan(name: &'static str, base_url: &'static str) -> Self {
+        Self {
+            name,
+            base_url,
+            tx_path: TX_PATH,
+            address_path: ADDRESS_PATH,
+            token_path: Some(ASSETS_PATH),
+            validator_path: Some(VALIDATORS_PATH),
+        }
+    }
 }
 
 pub struct Explorer {
@@ -121,6 +194,38 @@ mod tests {
 
         assert_eq!(explorer.get_token_url("token123"), None);
         assert_eq!(explorer.get_validator_url("val123"), None);
+    }
+
+    #[test]
+    fn test_metadata_helpers() {
+        let simple = Metadata::new("Simple", "https://simple.com");
+        assert_eq!(simple.name, "Simple");
+        assert_eq!(simple.base_url, "https://simple.com");
+        assert_eq!(simple.tx_path, TX_PATH);
+        assert_eq!(simple.address_path, ADDRESS_PATH);
+        assert_eq!(simple.token_path, None);
+        assert_eq!(simple.validator_path, None);
+
+        let with_token = Metadata::with_token("WithToken", "https://token.com");
+        assert_eq!(with_token.token_path, Some(TOKEN_PATH));
+        assert_eq!(with_token.validator_path, None);
+
+        let with_validator = Metadata::with_validator("WithValidator", "https://validator.com");
+        assert_eq!(with_validator.token_path, None);
+        assert_eq!(with_validator.validator_path, Some(VALIDATOR_PATH));
+
+        let full = Metadata::full("Full", "https://full.com");
+        assert_eq!(full.token_path, Some(TOKEN_PATH));
+        assert_eq!(full.validator_path, Some(VALIDATOR_PATH));
+
+        let transaction_style = Metadata::blockchair("Transaction", "https://transaction.com");
+        assert_eq!(transaction_style.tx_path, TRANSACTION_PATH);
+        assert_eq!(transaction_style.address_path, ADDRESS_PATH);
+        assert_eq!(transaction_style.token_path, None);
+
+        let cosmos_style = Metadata::mintscan("Cosmos", "https://cosmos.com");
+        assert_eq!(cosmos_style.token_path, Some(ASSETS_PATH));
+        assert_eq!(cosmos_style.validator_path, Some(VALIDATORS_PATH));
     }
 
     #[test]

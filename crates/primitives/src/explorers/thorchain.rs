@@ -1,18 +1,11 @@
 use crate::block_explorer::BlockExplorer;
-use crate::explorers::metadata::{Explorer, Metadata, ADDRESS_PATH, TX_PATH};
+use crate::explorers::metadata::{Explorer, Metadata};
 
 pub struct Viewblock;
 
 impl Viewblock {
     pub fn boxed() -> Box<dyn BlockExplorer> {
-        Explorer::boxed(Metadata {
-            name: "Viewblock",
-            base_url: "https://viewblock.io/thorchain",
-            tx_path: TX_PATH,
-            address_path: ADDRESS_PATH,
-            token_path: None,
-            validator_path: None,
-        })
+        Explorer::boxed(Metadata::new("Viewblock", "https://viewblock.io/thorchain"))
     }
 }
 
