@@ -52,14 +52,7 @@ impl ReqwestClient {
 
 #[async_trait]
 impl Client for ReqwestClient {
-    async fn get<R>(&self, path: &str) -> Result<R, ClientError>
-    where
-        R: DeserializeOwned,
-    {
-        self.get_with_query::<(), R>(path, None).await
-    }
-
-    async fn get_with_query<T, R>(&self, path: &str, query: Option<&T>) -> Result<R, ClientError>
+    async fn get<T, R>(&self, path: &str, query: Option<&T>) -> Result<R, ClientError>
     where
         T: Serialize + Send + Sync,
         R: DeserializeOwned,

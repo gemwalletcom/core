@@ -29,31 +29,37 @@ impl<C: Client> BitcoinClient<C> {
     }
 
     pub async fn get_status(&self) -> Result<Status, Box<dyn Error + Send + Sync>> {
-        Ok(self.client.get("/api/").await?)
+        Ok(self.client.get("/api/", None::<&()>).await?)
     }
 
     pub async fn get_block(&self, block_number: i64, page: usize, limit: usize) -> Result<Block, Box<dyn Error + Send + Sync>> {
-        Ok(self.client.get(&format!("/api/v2/block/{block_number}?page={page}&limit={limit}")).await?)
+        Ok(self
+            .client
+            .get(&format!("/api/v2/block/{block_number}?page={page}&limit={limit}"), None::<&()>)
+            .await?)
     }
 
     pub async fn get_address_details(&self, address: &str, limit: usize) -> Result<AddressDetails, Box<dyn Error + Send + Sync>> {
-        Ok(self.client.get(&format!("/api/v2/address/{address}?pageSize={limit}&details=txs")).await?)
+        Ok(self
+            .client
+            .get(&format!("/api/v2/address/{address}?pageSize={limit}&details=txs"), None::<&()>)
+            .await?)
     }
 
     pub async fn get_transaction(&self, txid: &str) -> Result<Transaction, Box<dyn Error + Send + Sync>> {
-        Ok(self.client.get(&format!("/api/v2/tx/{txid}")).await?)
+        Ok(self.client.get(&format!("/api/v2/tx/{txid}"), None::<&()>).await?)
     }
 
     pub async fn get_balance(&self, address: &str) -> Result<BitcoinAccount, Box<dyn Error + Send + Sync>> {
-        Ok(self.client.get(&format!("/api/v2/address/{address}")).await?)
+        Ok(self.client.get(&format!("/api/v2/address/{address}"), None::<&()>).await?)
     }
 
     pub async fn get_block_info(&self, block_number: u64) -> Result<BitcoinBlock, Box<dyn Error + Send + Sync>> {
-        Ok(self.client.get(&format!("/api/v2/block/{block_number}")).await?)
+        Ok(self.client.get(&format!("/api/v2/block/{block_number}"), None::<&()>).await?)
     }
 
     pub async fn get_node_info(&self) -> Result<BitcoinNodeInfo, Box<dyn Error + Send + Sync>> {
-        Ok(self.client.get("/api/").await?)
+        Ok(self.client.get("/api/", None::<&()>).await?)
     }
 
     pub async fn broadcast_transaction(&self, data: String) -> Result<BitcoinTransactionBroacastResult, Box<dyn Error + Send + Sync>> {
@@ -62,11 +68,11 @@ impl<C: Client> BitcoinClient<C> {
     }
 
     pub async fn get_utxos(&self, address: &str) -> Result<Vec<BitcoinUTXO>, Box<dyn Error + Send + Sync>> {
-        Ok(self.client.get(&format!("/api/v2/utxo/{address}")).await?)
+        Ok(self.client.get(&format!("/api/v2/utxo/{address}"), None::<&()>).await?)
     }
 
     pub async fn get_fee_priority(&self, blocks: i32) -> Result<String, Box<dyn Error + Send + Sync>> {
-        let result: BitcoinFeeResult = self.client.get(&format!("/api/v2/estimatefee/{blocks}")).await?;
+        let result: BitcoinFeeResult = self.client.get(&format!("/api/v2/estimatefee/{blocks}"), None::<&()>).await?;
         Ok(result.result)
     }
 }

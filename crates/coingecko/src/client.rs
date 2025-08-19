@@ -71,13 +71,13 @@ impl CoinGeckoClient {
     }
 
     pub async fn get_global(&self) -> Result<Global, Box<dyn Error + Send + Sync>> {
-        let result = self.client.get("/api/v3/global").await;
+        let result = self.client.get("/api/v3/global", None::<&()>).await;
         let data: Data<Global> = self.handle_response(result).await?;
         Ok(data.data)
     }
 
     pub async fn get_search_trending(&self) -> Result<SearchTrending, Box<dyn Error + Send + Sync>> {
-        let result = self.client.get("/api/v3/search/trending").await;
+        let result = self.client.get("/api/v3/search/trending", None::<&()>).await;
         self.handle_response(result).await
     }
 
@@ -87,30 +87,30 @@ impl CoinGeckoClient {
 
     pub async fn get_top_gainers_losers_with_currency(&self, vs_currency: &str) -> Result<TopGainersLosers, Box<dyn Error + Send + Sync>> {
         let query = [("vs_currency", vs_currency)];
-        let result = self.client.get_with_query("/api/v3/coins/top_gainers_losers", Some(&query)).await;
+        let result = self.client.get("/api/v3/coins/top_gainers_losers", Some(&query)).await;
         self.handle_response(result).await
     }
 
     pub async fn get_coin_list(&self) -> Result<Vec<Coin>, Box<dyn Error + Send + Sync>> {
         let query = CointListQuery { include_platform: true };
-        let result = self.client.get_with_query("/api/v3/coins/list", Some(&query)).await;
+        let result = self.client.get("/api/v3/coins/list", Some(&query)).await;
         self.handle_response(result).await
     }
 
     pub async fn get_coin_list_new(&self) -> Result<CoinIds, Box<dyn Error + Send + Sync>> {
-        let result = self.client.get("/api/v3/coins/list/new").await;
+        let result = self.client.get("/api/v3/coins/list/new", None::<&()>).await;
         self.handle_response(result).await
     }
 
     pub async fn get_coin_markets(&self, page: usize, per_page: usize) -> Result<Vec<CoinMarket>, Box<dyn Error + Send + Sync>> {
         let query = CoinMarketsQuery::new(page, per_page);
-        let result = self.client.get_with_query("/api/v3/coins/markets", Some(&query)).await;
+        let result = self.client.get("/api/v3/coins/markets", Some(&query)).await;
         self.handle_response(result).await
     }
 
     pub async fn get_coin_markets_ids(&self, ids: Vec<String>, per_page: usize) -> Result<Vec<CoinMarket>, Box<dyn Error + Send + Sync>> {
         let query = CoinMarketsQuery::with_ids(ids, per_page);
-        let result = self.client.get_with_query("/api/v3/coins/markets", Some(&query)).await;
+        let result = self.client.get("/api/v3/coins/markets", Some(&query)).await;
         self.handle_response(result).await
     }
 
@@ -128,12 +128,12 @@ impl CoinGeckoClient {
             localization: true,
             developer_data: true,
         };
-        let result = self.client.get_with_query(&path, Some(&query)).await;
+        let result = self.client.get(&path, Some(&query)).await;
         self.handle_response(result).await
     }
 
     pub async fn get_fiat_rates(&self) -> Result<Vec<FiatRate>, Box<dyn Error + Send + Sync>> {
-        let result = self.client.get("/api/v3/exchange_rates").await;
+        let result = self.client.get("/api/v3/exchange_rates", None::<&()>).await;
         let rates: ExchangeRates = self.handle_response(result).await?;
         let usd_rate = rates
             .rates
@@ -181,7 +181,7 @@ impl CoinGeckoClient {
     pub async fn get_market_chart(&self, coin_id: &str, interval: &str, days: &str) -> Result<MarketChart, Box<dyn Error + Send + Sync>> {
         let path = format!("/api/v3/coins/{}/market_chart", coin_id);
         let query = MarketChartQuery::new(days, interval);
-        let result = self.client.get_with_query(&path, Some(&query)).await;
+        let result = self.client.get(&path, Some(&query)).await;
         self.handle_response(result).await
     }
 }

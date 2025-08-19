@@ -24,10 +24,7 @@ pub type Data = Vec<u8>;
 
 #[async_trait]
 pub trait Client: Send + Sync + Debug {
-    async fn get<R>(&self, path: &str) -> Result<R, ClientError>
-    where
-        R: DeserializeOwned;
-    async fn get_with_query<T, R>(&self, path: &str, query: Option<&T>) -> Result<R, ClientError>
+    async fn get<T, R>(&self, path: &str, query: Option<&T>) -> Result<R, ClientError>
     where
         T: Serialize + Send + Sync,
         R: DeserializeOwned;

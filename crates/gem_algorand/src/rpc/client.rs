@@ -30,27 +30,27 @@ impl<C: Client> AlgorandClient<C> {
     }
 
     pub async fn get_block_headers(&self) -> Result<BlockHeaders, Box<dyn Error + Send + Sync>> {
-        Ok(self.client.get("/v2/block-headers").await?)
+        Ok(self.client.get("/v2/block-headers", None::<&()>).await?)
     }
 
     pub async fn get_account(&self, address: &str) -> Result<Account, Box<dyn Error + Send + Sync>> {
-        Ok(self.client.get(&format!("/v2/accounts/{}", address)).await?)
+        Ok(self.client.get(&format!("/v2/accounts/{}", address), None::<&()>).await?)
     }
 
     pub async fn get_asset(&self, asset_id: &str) -> Result<AssetResponse, Box<dyn Error + Send + Sync>> {
-        Ok(self.client.get(&format!("/v2/assets/{}", asset_id)).await?)
+        Ok(self.client.get(&format!("/v2/assets/{}", asset_id), None::<&()>).await?)
     }
 
     pub async fn get_account_transactions(&self, address: &str) -> Result<Transactions, Box<dyn Error + Send + Sync>> {
-        Ok(self.client.get(&format!("/v2/accounts/{}/transactions", address)).await?)
+        Ok(self.client.get(&format!("/v2/accounts/{}/transactions", address), None::<&()>).await?)
     }
 
     pub async fn get_block(&self, block_number: i64) -> Result<Block, Box<dyn Error + Send + Sync>> {
-        Ok(self.client.get(&format!("/v2/blocks/{}", block_number)).await?)
+        Ok(self.client.get(&format!("/v2/blocks/{}", block_number), None::<&()>).await?)
     }
 
     pub async fn get_transactions_params(&self) -> Result<TransactionsParams, Box<dyn Error + Send + Sync>> {
-        Ok(self.client.get("/v2/transactions/params").await?)
+        Ok(self.client.get("/v2/transactions/params", None::<&()>).await?)
     }
 
     pub async fn broadcast_transaction(&self, data: &str) -> Result<super::model::TransactionBroadcast, Box<dyn Error + Send + Sync>> {
@@ -63,7 +63,7 @@ impl<C: Client> AlgorandClient<C> {
     }
 
     pub async fn get_transaction_status(&self, transaction_id: &str) -> Result<super::model::TransactionStatus, Box<dyn Error + Send + Sync>> {
-        Ok(self.client.get(&format!("/v2/transactions/pending/{}", transaction_id)).await?)
+        Ok(self.client.get(&format!("/v2/transactions/pending/{}", transaction_id), None::<&()>).await?)
     }
 }
 
