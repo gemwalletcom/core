@@ -84,22 +84,6 @@ impl MultiChainExplorer {
     }
 }
 
-#[macro_export]
-macro_rules! simple_explorer {
-    ($name:ident, $display_name:expr, $base:expr, $tx:expr, $addr:expr, $token:expr, $val:expr) => {
-        pub fn $name() -> Box<dyn $crate::block_explorer::BlockExplorer> {
-            $crate::explorers::metadata::Explorer::new($crate::explorers::metadata::Metadata {
-                name: $display_name,
-                base_url: $base,
-                tx_path: $tx,
-                address_path: $addr,
-                token_path: $token,
-                validator_path: $val,
-            })
-        }
-    };
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
