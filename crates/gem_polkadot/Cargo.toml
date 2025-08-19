@@ -3,17 +3,29 @@ name = "gem_polkadot"
 version = { workspace = true }
 edition = { workspace = true }
 
-[dependencies]
-primitives = { path = "../primitives" }
-
-serde = { workspace = true, features = ["derive"] }
-
-# RPC specific dependencies
-serde_json = { workspace = true, optional = true }
-reqwest-middleware = { workspace = true, features = ["json"], optional = true }
-chrono = { workspace = true, features = ["serde"], optional = true }
-serde_serializers = { path = "../serde_serializers", optional = true }
-
 [features]
 default = []
-rpc = ["dep:serde_json", "dep:reqwest-middleware", "dep:chrono", "dep:serde_serializers"]
+rpc = [
+    "dep:serde_json",
+    "dep:serde_serializers",
+    "dep:async-trait",
+    "dep:gem_client",
+    "dep:chain_traits",
+    "dep:number_formatter",
+    "dep:futures",
+]
+
+[dependencies]
+primitives = { path = "../primitives" }
+serde = { workspace = true, features = ["derive"] }
+num-bigint = { workspace = true }
+chrono = { workspace = true, features = ["serde"] }
+
+# Optional RPC dependencies
+serde_json = { workspace = true, optional = true }
+serde_serializers = { path = "../serde_serializers", optional = true }
+async-trait = { workspace = true, optional = true }
+gem_client = { path = "../gem_client", optional = true }
+chain_traits = { path = "../chain_traits", optional = true }
+number_formatter = { path = "../number_formatter", optional = true }
+futures = { workspace = true, optional = true }

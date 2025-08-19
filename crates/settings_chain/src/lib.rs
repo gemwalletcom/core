@@ -128,7 +128,7 @@ impl ProviderFactory {
             Chain::Algorand => Box::new(AlgorandProvider::new(AlgorandClient::new(gem_client))),
             Chain::Stellar => Box::new(StellarProvider::new(StellarClient::new(gem_client))),
             Chain::Near => Box::new(NearProvider::new(NearClient::new(gem_client))),
-            Chain::Polkadot => Box::new(PolkadotProvider::new(PolkadotClient::new(client, url))),
+            Chain::Polkadot => Box::new(PolkadotProvider::new(PolkadotClient::new(gem_client))),
             Chain::HyperCore => Box::new(HyperCoreProvider::new(HyperCoreClient::new(gem_client))),
         }
     }

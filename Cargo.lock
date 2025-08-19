@@ -3081,9 +3081,14 @@ dependencies = [
 name = "gem_polkadot"
 version = "1.0.0"
 dependencies = [
+ "async-trait",
+ "chain_traits",
  "chrono",
+ "futures",
+ "gem_client",
+ "num-bigint",
+ "number_formatter",
  "primitives",
- "reqwest-middleware",
  "serde",
  "serde_json",
  "serde_serializers",
@@ -3236,6 +3241,7 @@ dependencies = [
  "gem_hypercore",
  "gem_jsonrpc",
  "gem_near",
+ "gem_polkadot",
  "gem_solana",
  "gem_stellar",
  "gem_sui",

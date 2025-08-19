@@ -9,6 +9,7 @@ use gem_cosmos::rpc::client::CosmosClient;
 use gem_hypercore::rpc::client::HyperCoreClient;
 use gem_near::rpc::client::NearClient;
 use gem_stellar::rpc::client::StellarClient;
+use gem_polkadot::rpc::client::PolkadotClient;
 use gem_ton::rpc::client::TonClient;
 use gem_xrp::rpc::client::XRPClient;
 use std::sync::Arc;
@@ -42,6 +43,7 @@ impl GemGateway {
                 Ok(Arc::new(CosmosClient::new(CosmosChain::from_chain(chain).unwrap(), alien_client, url)))
             }
             Chain::Ton => Ok(Arc::new(TonClient::new(alien_client))),
+            Chain::Polkadot => Ok(Arc::new(PolkadotClient::new(alien_client))),
             _ => Err(GatewayError::InvalidChain(chain.to_string())),
         }
     }
