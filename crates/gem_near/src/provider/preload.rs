@@ -9,7 +9,7 @@ use super::preload_mapper;
 use crate::rpc::client::NearClient;
 
 #[async_trait]
-impl<C: Client> ChainPreload for NearClient<C> {
+impl<C: Client + Clone> ChainPreload for NearClient<C> {
     async fn get_transaction_preload(&self, input: TransactionPreloadInput) -> Result<TransactionPreload, Box<dyn Error + Sync + Send>> {
         let public_key = preload_mapper::address_to_public_key(&input.sender_address)?;
         let access_key = self.get_near_account_access_key(&input.sender_address, &public_key).await?;

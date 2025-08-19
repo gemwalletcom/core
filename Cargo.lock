@@ -3073,8 +3073,10 @@ dependencies = [
  "gem_jsonrpc",
  "hex",
  "primitives",
+ "reqwest",
  "serde",
  "serde_json",
+ "tokio",
 ]
 
 [[package]]

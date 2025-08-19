@@ -8,7 +8,7 @@ use primitives::{TransactionState, TransactionStateRequest, TransactionUpdate};
 use crate::rpc::client::NearClient;
 
 #[async_trait]
-impl<C: Client> ChainTransactions for NearClient<C> {
+impl<C: Client + Clone> ChainTransactions for NearClient<C> {
     async fn transaction_broadcast(&self, data: String) -> Result<String, Box<dyn Error + Sync + Send>> {
         Ok(self.broadcast_near_transaction(&data).await?.transaction.hash)
     }

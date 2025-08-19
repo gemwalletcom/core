@@ -9,7 +9,7 @@ use super::state_mapper;
 use crate::rpc::client::NearClient;
 
 #[async_trait]
-impl<C: Client> ChainState for NearClient<C> {
+impl<C: Client + Clone> ChainState for NearClient<C> {
     async fn get_chain_id(&self) -> Result<String, Box<dyn Error + Sync + Send>> {
         Ok(self.get_near_genesis_config().await?.chain_id)
     }

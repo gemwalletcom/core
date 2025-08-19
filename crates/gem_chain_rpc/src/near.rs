@@ -7,18 +7,18 @@ use primitives::{chain::Chain, Asset, AssetBalance, Transaction};
 use gem_client::Client;
 use gem_near::rpc::client::NearClient;
 
-pub struct NearProvider<C: Client> {
+pub struct NearProvider<C: Client + Clone> {
     client: NearClient<C>,
 }
 
-impl<C: Client> NearProvider<C> {
+impl<C: Client + Clone> NearProvider<C> {
     pub fn new(client: NearClient<C>) -> Self {
         Self { client }
     }
 }
 
 #[async_trait]
-impl<C: Client> ChainBlockProvider for NearProvider<C> {
+impl<C: Client + Clone> ChainBlockProvider for NearProvider<C> {
     fn get_chain(&self) -> Chain {
         Chain::Near
     }
@@ -33,14 +33,14 @@ impl<C: Client> ChainBlockProvider for NearProvider<C> {
 }
 
 #[async_trait]
-impl<C: Client> ChainTokenDataProvider for NearProvider<C> {
+impl<C: Client + Clone> ChainTokenDataProvider for NearProvider<C> {
     async fn get_token_data(&self, token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
-        self.client.get_token_data(token_id).await
+        Ok(self.client.get_token_data(token_id).await?)
     }
 }
 
 #[async_trait]
-impl<C: Client> ChainAssetsProvider for NearProvider<C> {
+impl<C: Client + Clone> ChainAssetsProvider for NearProvider<C> {
     async fn get_assets_balances(&self, address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
         let account = self.client.get_near_account(&address).await?;
         let asset_id = self.get_chain().as_asset_id();
@@ -50,11 +50,11 @@ impl<C: Client> ChainAssetsProvider for NearProvider<C> {
 }
 
 #[async_trait]
-impl<C: Client> ChainTransactionsProvider for NearProvider<C> {
+impl<C: Client + Clone> ChainTransactionsProvider for NearProvider<C> {
     async fn get_transactions_by_address(&self, _address: String) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
         Ok(vec![])
     }
 }
 
 #[async_trait]
-impl<C: Client> ChainStakeProvider for NearProvider<C> {}
+impl<C: Client + Clone> ChainStakeProvider for NearProvider<C> {}
