@@ -166,6 +166,12 @@ pub enum TransactionLoadMetadata {
     },
     Polkadot {
         sequence: u64,
+        genesis_hash: String,
+        block_hash: String,
+        block_number: u64,
+        spec_version: u64,
+        transaction_version: u64,
+        period: u64,
     },
 }
 

@@ -155,6 +155,12 @@ pub enum GemTransactionLoadMetadata {
     },
     Polkadot {
         sequence: i64,
+        genesis_hash: String,
+        block_hash: String,
+        block_number: i64,
+        spec_version: u64,
+        transaction_version: u64,
+        period: i64,
     },
 }
 
@@ -322,8 +328,22 @@ impl From<TransactionLoadMetadata> for GemTransactionLoadMetadata {
             TransactionLoadMetadata::Aptos { sequence } => GemTransactionLoadMetadata::Aptos {
                 sequence: sequence as i64,
             },
-            TransactionLoadMetadata::Polkadot { sequence } => GemTransactionLoadMetadata::Polkadot {
+            TransactionLoadMetadata::Polkadot { 
+                sequence, 
+                genesis_hash, 
+                block_hash, 
+                block_number, 
+                spec_version, 
+                transaction_version, 
+                period 
+            } => GemTransactionLoadMetadata::Polkadot {
                 sequence: sequence as i64,
+                genesis_hash,
+                block_hash,
+                block_number: block_number as i64,
+                spec_version,
+                transaction_version,
+                period: period as i64,
             },
         }
     }

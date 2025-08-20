@@ -7,4 +7,4 @@ pub mod provider;
 pub mod models;
 
 #[cfg(feature = "rpc")]
-pub use provider::*;
+pub use rpc::client::PolkadotClient;

@@ -2,12 +2,13 @@ use std::error::Error;
 
 use primitives::{Asset, Chain};
 use gem_client::Client;
-use chain_traits::{ChainAccount, ChainPerpetual, ChainStaking, ChainTraits};
+use chain_traits::{ChainAccount, ChainPerpetual, ChainTraits};
 
 use super::model::{Block, BlockHeader};
 use crate::models::account::PolkadotAccountBalance;
 use crate::models::block::PolkadotNodeVersion;
-use crate::models::transaction::PolkadotTransactionBroadcastResponse;
+use crate::models::transaction::{PolkadotTransactionBroadcastResponse, PolkadotTransactionMaterial};
+use crate::models::fee::PolkadotEstimateFee;
 
 pub struct PolkadotClient<C: Client> {
     pub client: C,
@@ -20,6 +21,15 @@ impl<C: Client> PolkadotClient<C> {
 
     pub async fn get_balance(&self, address: String) -> Result<PolkadotAccountBalance, Box<dyn Error + Send + Sync>> {
         Ok(self.client.get(&format!("/accounts/{}/balance-info", address)).await?)
+    }
+
+    pub async fn get_transaction_material(&self) -> Result<PolkadotTransactionMaterial, Box<dyn Error + Send + Sync>> {
+        Ok(self.client.get("/transaction/material").await?)
+    }
+
+    pub async fn estimate_fee(&self, tx: &str) -> Result<PolkadotEstimateFee, Box<dyn Error + Send + Sync>> {
+        let payload = serde_json::json!({ "tx": tx });
+        Ok(self.client.post("/transaction/fee-estimate", &payload, None).await?)
     }
 
     pub async fn get_node_version(&self) -> Result<PolkadotNodeVersion, Box<dyn Error + Send + Sync>> {
@@ -59,4 +69,3 @@ impl<C: Client> PolkadotClient<C> {
 impl<C: Client> ChainTraits for PolkadotClient<C> {}
 impl<C: Client> ChainAccount for PolkadotClient<C> {}
 impl<C: Client> ChainPerpetual for PolkadotClient<C> {}
-impl<C: Client> ChainStaking for PolkadotClient<C> {}

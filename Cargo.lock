@@ -3085,16 +3085,19 @@ name = "gem_polkadot"
 version = "1.0.0"
 dependencies = [
  "async-trait",
+ "bs58",
  "chain_traits",
  "chrono",
  "futures",
  "gem_client",
+ "hex",
  "num-bigint",
  "number_formatter",
  "primitives",
  "serde",
  "serde_json",
  "serde_serializers",
+ "tokio",
 ]
 
 [[package]]

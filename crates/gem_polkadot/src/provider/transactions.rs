@@ -24,11 +24,13 @@ impl<C: Client> ChainTransactions for PolkadotClient<C> {
 
     async fn get_transaction_status(&self, request: TransactionStateRequest) -> Result<TransactionUpdate, Box<dyn Error + Sync + Send>> {
         let block_number = request.block_number;
+        if block_number <= 0 {
+            return Err("Invalid block number".into());
+        }
         
         let block_head = self.get_block_head().await?;
         let from_block = block_number as u64;
         let to_block = std::cmp::min(block_head.number, from_block + 64);
-        
         let blocks = self.get_blocks(&from_block.to_string(), &to_block.to_string()).await?;
         
         for block in blocks {

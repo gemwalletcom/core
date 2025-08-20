@@ -2,13 +2,11 @@ use primitives::{AssetBalance, Balance, Chain};
 use crate::models::account::PolkadotAccountBalance;
 
 pub fn map_coin_balance(balance: PolkadotAccountBalance) -> AssetBalance {
-    let free = balance.free.parse::<num_bigint::BigInt>().unwrap_or_default();
-    let reserved = balance.reserved.parse::<num_bigint::BigInt>().unwrap_or_default();
-    let available = std::cmp::max(free - &reserved, num_bigint::BigInt::from(0));
+    let available = std::cmp::max(&balance.free - &balance.reserved, num_bigint::BigInt::from(0));
     
     AssetBalance::new_balance(
         Chain::Polkadot.as_asset_id(),
-        Balance::with_reserved(available.to_string(), reserved.to_string()),
+        Balance::with_reserved(available.to_string(), balance.reserved.to_string()),
     )
 }
 
@@ -19,9 +17,9 @@ mod tests {
     #[test]
     fn test_map_coin_balance() {
         let balance = PolkadotAccountBalance {
-            free: "1000000000000".to_string(),
-            reserved: "100000000000".to_string(),
-            nonce: "1".to_string(),
+            free: num_bigint::BigInt::from(1000000000000_u64),
+            reserved: num_bigint::BigInt::from(100000000000_u64),
+            nonce: 1,
         };
 
         let result = map_coin_balance(balance);
