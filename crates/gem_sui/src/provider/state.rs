@@ -8,8 +8,6 @@ use gem_client::Client;
 use primitives::{FeeRate, FeePriority};
 #[cfg(feature = "rpc")]
 use std::error::Error;
-#[cfg(feature = "rpc")]
-use num_bigint::BigInt;
 
 #[cfg(feature = "rpc")]
 use crate::rpc::client::SuiClient;
@@ -27,6 +25,6 @@ impl<C: Client + Clone> ChainState for SuiClient<C> {
 
     async fn get_fee_rates(&self) -> Result<Vec<FeeRate>, Box<dyn Error + Sync + Send>> {
         let gas_price = self.get_gas_price().await?;
-        Ok(vec![FeeRate::regular(FeePriority::Normal, BigInt::from(gas_price))])
+        Ok(vec![FeeRate::regular(FeePriority::Normal, gas_price)])
     }
 }

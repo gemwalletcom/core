@@ -129,7 +129,7 @@ impl<C: Client> TronClient<C> {
         };
         
         let account: TronEmptyAccount = self.client.post("/wallet/getaccount", &request, None).await?;
-        Ok(account.address.map_or(true, |addr| addr.is_empty()))
+        Ok(account.address.is_none_or(|addr| addr.is_empty()))
     }
 
     pub async fn broadcast_transaction(&self, data: String) -> Result<TronTransactionBroadcast, Box<dyn Error + Send + Sync>> {

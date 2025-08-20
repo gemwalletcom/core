@@ -34,7 +34,7 @@ impl<C: Client> ChainState for BitcoinClient<C> {
 impl<C: Client> BitcoinClient<C> {
     async fn get_fee(&self, blocks: i32) -> Result<BigInt, Box<dyn Error + Sync + Send>> {
         let fee_sat_per_kb = self.get_fee_priority(blocks).await?;
-        Ok(calculate_fee_rate(&fee_sat_per_kb, self.chain.minimum_byte_fee() as u32)?)
+        calculate_fee_rate(&fee_sat_per_kb, self.chain.minimum_byte_fee() as u32)
     }
 }
 

@@ -34,7 +34,7 @@ impl<C: Client> ChainPreload for PolkadotClient<C> {
         let fee = BigInt::from(160_000_000u128);
         
         let fee = TransactionFee {
-            fee: fee,
+            fee,
             gas_price: input.gas_price.gas_price.clone(),
             gas_limit: BigInt::from(1u64),
             options: std::collections::HashMap::new(),

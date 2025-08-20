@@ -22,6 +22,11 @@ pub mod models;
 pub use models::*;
 use primitives::{chain_cosmos::CosmosChain, BitcoinChain, Chain, ChartPeriod};
 
+#[async_trait::async_trait]
+pub trait GemGatewayTrait {
+    async fn get_data(&self, chain: Chain) -> Result<i32, GatewayError>;
+}
+
 #[derive(Debug, uniffi::Object)]
 pub struct GemGateway {
     pub provider: Arc<dyn AlienProvider>,
@@ -52,6 +57,13 @@ impl GemGateway {
             Chain::Solana => Ok(Arc::new(SolanaClient::new(jsonrpc_client_with_chain(self.provider.clone(), chain)))),
             _ => Err(GatewayError::InvalidChain(chain.to_string())),
         }
+    }
+}
+
+#[async_trait::async_trait]
+impl GemGatewayTrait for GemGateway {
+    async fn get_data(&self, _chain: Chain) -> Result<i32, GatewayError> {
+       Ok(1)
     }
 }
 

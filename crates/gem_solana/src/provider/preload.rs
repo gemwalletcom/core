@@ -94,7 +94,7 @@ impl<C: Client + Clone> SolanaClient<C> {
             .map(|account| account.pubkey.clone());
 
         Ok(SignerInputToken {
-            sender_token_address: sender_token_address,
+            sender_token_address,
             recipient_token_address,
             token_program,
         })

@@ -5,7 +5,7 @@ use std::error::Error;
 use gem_client::Client;
 use primitives::Asset;
 
-use crate::{rpc::client::SolanaClient, rpc::mapper::SolanaMapper};
+use crate::{model::Extension, rpc::{client::SolanaClient, mapper::SolanaMapper}};
 
 #[async_trait]
 impl<C: Client + Clone> ChainToken for SolanaClient<C> {
@@ -14,8 +14,8 @@ impl<C: Client + Clone> ChainToken for SolanaClient<C> {
         let token_info = token_info_result.info();
         
         if let Some(extensions) = &token_info.extensions {
-            if let Some(ext) = extensions.iter().find(|ext| matches!(ext, crate::model::Extension::TokenMetadata(_))) {
-                if let crate::model::Extension::TokenMetadata(_token_metadata) = ext {
+            for ext in extensions {
+                if let Extension::TokenMetadata(_token_metadata) = ext {
                     return SolanaMapper::map_token_data_spl_token_2022(self.get_chain(), token_id, &token_info);
                 }
             }
