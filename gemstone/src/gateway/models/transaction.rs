@@ -162,6 +162,14 @@ pub enum GemTransactionLoadMetadata {
         transaction_version: u64,
         period: i64,
     },
+    Tron {
+        block_number: i64,
+        block_version: i64,
+        block_timestamp: i64,
+        transaction_tree_root: String,
+        parent_hash: String,
+        witness_address: String,
+    },
 }
 
 #[derive(Debug, Clone, uniffi::Record)]
@@ -344,6 +352,21 @@ impl From<TransactionLoadMetadata> for GemTransactionLoadMetadata {
                 spec_version,
                 transaction_version,
                 period: period as i64,
+            },
+            TransactionLoadMetadata::Tron {
+                block_number,
+                block_version,
+                block_timestamp,
+                transaction_tree_root,
+                parent_hash,
+                witness_address,
+            } => GemTransactionLoadMetadata::Tron {
+                block_number: block_number as i64,
+                block_version: block_version as i64,
+                block_timestamp: block_timestamp as i64,
+                transaction_tree_root,
+                parent_hash,
+                witness_address,
             },
         }
     }

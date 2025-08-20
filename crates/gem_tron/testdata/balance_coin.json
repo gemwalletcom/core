@@ -1,0 +1,95 @@
+{
+    "address": "TEB39Rt69QkgD1BKhqaRNqGxfQzCarkRCb",
+    "balance": 2928601454,
+    "votes": [
+      {
+        "vote_address": "TCEo1hMAdaJrQmvnGTCcGT2LqrGU4N7Jqf",
+        "vote_count": 650
+      }
+    ],
+    "create_time": 1688690673000,
+    "latest_opration_time": 1750796031000,
+    "allowance": 10498200,
+    "latest_consume_time": 1750796031000,
+    "latest_consume_free_time": 1730859150000,
+    "net_window_size": 28800000,
+    "net_window_optimized": true,
+    "account_resource": {
+      "latest_consume_time_for_energy": 1727747913000,
+      "energy_window_size": 28800000,
+      "energy_window_optimized": true
+    },
+    "owner_permission": {
+      "permission_name": "owner",
+      "threshold": 1,
+      "keys": [
+        {
+          "address": "TEB39Rt69QkgD1BKhqaRNqGxfQzCarkRCb",
+          "weight": 1
+        }
+      ]
+    },
+    "active_permission": [
+      {
+        "type": "Active",
+        "id": 2,
+        "permission_name": "active",
+        "threshold": 1,
+        "operations": "7fff1fc0033ec307000000000000000000000000000000000000000000000000",
+        "keys": [
+          {
+            "address": "TEB39Rt69QkgD1BKhqaRNqGxfQzCarkRCb",
+            "weight": 1
+          }
+        ]
+      }
+    ],
+    "frozenV2": [
+      {
+        "amount": 650000000
+      },
+      {
+        "type": "ENERGY"
+      },
+      {
+        "type": "TRON_POWER"
+      }
+    ],
+    "assetV2": [
+      {
+        "key": "1004978",
+        "value": 800
+      },
+      {
+        "key": "1004920",
+        "value": 8888888
+      },
+      {
+        "key": "1005027",
+        "value": 8888880000
+      },
+      {
+        "key": "1005026",
+        "value": 8888880000
+      }
+    ],
+    "free_asset_net_usageV2": [
+      {
+        "key": "1004978",
+        "value": 0
+      },
+      {
+        "key": "1004920",
+        "value": 0
+      },
+      {
+        "key": "1005027",
+        "value": 0
+      },
+      {
+        "key": "1005026",
+        "value": 0
+      }
+    ],
+    "asset_optimized": true
+  }

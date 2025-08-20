@@ -173,6 +173,14 @@ pub enum TransactionLoadMetadata {
         transaction_version: u64,
         period: u64,
     },
+    Tron {
+        block_number: u64,
+        block_version: u64,
+        block_timestamp: u64,
+        transaction_tree_root: String,
+        parent_hash: String,
+        witness_address: String,
+    },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

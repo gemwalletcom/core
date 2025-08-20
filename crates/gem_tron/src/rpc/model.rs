@@ -99,6 +99,13 @@ pub struct TriggerConstantContractRequest {
 pub struct TriggerConstantContractResponse {
     #[serde(default)]
     pub constant_result: Vec<String>,
+    pub result: Option<TriggerContractResult>,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct TriggerContractResult {
+    pub code: Option<String>,
+    pub message: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -125,4 +132,12 @@ pub struct ChainParametersResponse {
 pub struct ChainParameter {
     pub key: String,
     pub value: Option<i64>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TronTransactionBroadcast {
+    #[serde(rename = "txid")]
+    pub txid: Option<String>,
+    pub code: Option<String>,
+    pub message: Option<String>,
 }

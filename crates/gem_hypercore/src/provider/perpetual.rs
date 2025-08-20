@@ -22,12 +22,12 @@ impl<C: Client> ChainPerpetual for HyperCoreClient<C> {
 
     async fn get_candlesticks(&self, symbol: String, period: ChartPeriod) -> Result<Vec<ChartCandleStick>, Box<dyn Error + Sync + Send>> {
         let interval = match period {
-            ChartPeriod::Hour => "1h",
-            ChartPeriod::Day => "1d",
-            ChartPeriod::Week => "1w",
-            ChartPeriod::Month => "1M",
-            ChartPeriod::Year => "1y",
-            ChartPeriod::All => "1d",
+            ChartPeriod::Hour => "1m",
+            ChartPeriod::Day => "30m",
+            ChartPeriod::Week => "4h",
+            ChartPeriod::Month => "12h",
+            ChartPeriod::Year => "1w",
+            ChartPeriod::All => "1M",
         };
 
         let end_time = chrono::Utc::now().timestamp() * 1000;

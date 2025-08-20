@@ -25,7 +25,7 @@ use gem_solana::rpc::client::SolanaClient;
 use gem_stellar::rpc::client::StellarClient;
 use gem_sui::rpc::SuiClient;
 use gem_ton::rpc::TonClient;
-use gem_tron::rpc::{trongrid::client::TronGridClient, TronClient};
+use gem_tron::rpc::client::TronClient;
 use gem_xrp::rpc::XRPClient;
 use gem_jsonrpc::client::JsonRpcClient;
 
@@ -116,11 +116,7 @@ impl ProviderFactory {
             }
             Chain::Solana => Box::new(SolanaProvider::<ReqwestClient>::new(SolanaClient::new(JsonRpcClient::new(gem_client)))),
             Chain::Ton => Box::new(TonProvider::new(TonClient::new(gem_client))),
-            Chain::Tron => {
-                let client = TronClient::new(client, url.clone());
-                let grid_client = TronGridClient::new(client.clone(), url.clone(), config.trongrid_key.clone());
-                Box::new(TronProvider::new(client, Box::new(grid_client.clone()), Box::new(grid_client.clone())))
-            }
+            Chain::Tron => Box::new(TronProvider::new(TronClient::new(gem_client))),
             Chain::Aptos => Box::new(AptosProvider::new(AptosClient::new(gem_client))),
             Chain::Sui => Box::new(SuiProvider::<ReqwestClient>::new(SuiClient::new(JsonRpcClient::new(gem_client)))),
             Chain::Xrp => Box::new(XRPProvider::new(XRPClient::new(gem_client))),

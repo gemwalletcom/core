@@ -2929,6 +2929,7 @@ dependencies = [
  "alloy-sol-types",
  "anyhow",
  "async-trait",
+ "chain_traits",
  "chrono",
  "futures",
  "gem_algorand",
@@ -3194,18 +3195,21 @@ version = "1.0.0"
 dependencies = [
  "alloy-primitives",
  "alloy-sol-types",
+ "async-trait",
  "bs58",
+ "chain_traits",
  "chrono",
+ "gem_client",
  "gem_evm",
  "hex",
  "num-bigint",
  "num-traits",
  "primitives",
  "reqwest",
- "reqwest-middleware",
  "serde",
  "serde_json",
  "sha2",
+ "tokio",
 ]
 
 [[package]]
@@ -3260,6 +3264,7 @@ dependencies = [
  "gem_stellar",
  "gem_sui",
  "gem_ton",
+ "gem_tron",
  "gem_xrp",
  "hex",
  "lazy_static",

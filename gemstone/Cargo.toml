@@ -21,6 +21,7 @@ primitives = { path = "../crates/primitives" }
 gem_cosmos = { path = "../crates/gem_cosmos", features = ["rpc"] }
 gem_solana = { path = "../crates/gem_solana", features = ["rpc"] }
 gem_ton = { path = "../crates/gem_ton", features = ["rpc"] }
+gem_tron = { path = "../crates/gem_tron", features = ["rpc"] }
 gem_bsc = { path = "../crates/gem_bsc" }
 gem_evm = { path = "../crates/gem_evm" }
 gem_sui = { path = "../crates/gem_sui", features = ["rpc"] }

@@ -18,6 +18,15 @@ pub struct FeePriorityValue {
     pub value: String,
 }
 
+impl Default for FeePriorityValue {
+    fn default() -> Self {
+        Self {
+            priority: FeePriority::Normal,
+            value: "1".to_string(),
+        }
+    }
+}
+
 impl FeePriorityValue {
     pub fn new(priority: FeePriority, value: String) -> Self {
         Self { priority, value }
