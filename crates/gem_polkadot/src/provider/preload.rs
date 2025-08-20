@@ -4,53 +4,37 @@ use std::error::Error;
 use num_bigint::BigInt;
 
 use gem_client::Client;
-use primitives::{TransactionLoadData, TransactionLoadInput, TransactionPreload, TransactionPreloadInput, TransactionFee};
-use primitives::transaction_load::TransactionLoadMetadata;
+use primitives::{TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput, TransactionFee};
 
 use crate::rpc::client::PolkadotClient;
 
 
 #[async_trait]
 impl<C: Client> ChainPreload for PolkadotClient<C> {
-    async fn get_transaction_preload(&self, _input: TransactionPreloadInput) -> Result<TransactionPreload, Box<dyn Error + Sync + Send>> {
-        let block = self.get_block_head().await?;
-        Ok(TransactionPreload::builder()
-            .block_number(block.number as i64)
-            .build())
+    async fn get_transaction_preload(&self, input: TransactionPreloadInput) -> Result<TransactionLoadMetadata, Box<dyn Error + Sync + Send>> {
+        let material = self.get_transaction_material().await?;
+        let sender_balance = self.get_balance(input.sender_address).await?;
+        
+        Ok(TransactionLoadMetadata::Polkadot {
+            sequence: sender_balance.nonce,
+            genesis_hash: material.genesis_hash,
+            block_hash: material.at.hash,
+            block_number: material.at.height,
+            spec_version: material.spec_version,
+            transaction_version: material.tx_version,
+            period: 64,
+        })
     }
 
-    async fn get_transaction_load(&self, input: TransactionLoadInput) -> Result<TransactionLoadData, Box<dyn Error + Sync + Send>> {
-        let transaction_material = self.get_transaction_material().await?;
-        let sender_balance = self.get_balance(input.sender_address.clone()).await?;
-        let nonce = sender_balance.nonce;
-        let _ = self.get_balance(input.destination_address.clone()).await?;
-        
-        let spec_version = transaction_material.spec_version;
-        let transaction_version = transaction_material.tx_version;
-        let block_number = transaction_material.at.height;
-        
-        // For now, use a hardcoded fee of 0.016 DOT (16,000,000,000 Planck units)
-        // TODO: Implement proper fee estimation once transaction encoding is stabilized
-        let fee = BigInt::from(160_000_000u128);
-        
-        let fee = TransactionFee {
-            fee,
-            gas_price: input.gas_price.gas_price.clone(),
-            gas_limit: BigInt::from(1u64),
-            options: std::collections::HashMap::new(),
-        };
+    async fn get_transaction_fee(&self, tx: String) -> Result<TransactionFee, Box<dyn Error + Sync + Send>> {
+        let fee = self.estimate_fee(&tx).await?;
+        Ok(TransactionFee::new_from_fee(BigInt::from(fee.partial_fee)))
+    }
 
+    async fn get_transaction_load(&self, input: TransactionLoadInput) -> Result<TransactionLoadData, Box<dyn Error + Sync + Send>> {        
         Ok(TransactionLoadData {
-            fee,
-            metadata: TransactionLoadMetadata::Polkadot {
-                sequence: nonce,
-                genesis_hash: transaction_material.genesis_hash,
-                block_hash: transaction_material.at.hash,
-                block_number,
-                spec_version,
-                transaction_version,
-                period: 64,
-            },
+            fee: TransactionFee::default(), // fee would be calculated from get_transaction_fee
+            metadata: input.metadata
         })
     }
 }

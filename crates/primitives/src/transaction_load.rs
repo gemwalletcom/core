@@ -36,12 +36,9 @@ pub struct TransactionLoadInput {
     pub destination_address: String,
     pub value: String,
     pub gas_price: GasPrice,
-    pub sequence: u64,
-    pub block_hash: String,
-    pub block_number: u64,
-    pub chain_id: String,
-    pub utxos: Vec<UTXO>,
     pub memo: Option<String>,
+    pub is_max_value: bool,
+    pub metadata: TransactionLoadMetadata,
 }
 
 impl TransactionLoadInput {
@@ -74,6 +71,74 @@ impl Default for TransactionFee {
             gas_price: BigInt::from(0),
             gas_limit: BigInt::from(0),
             options: HashMap::new(),
+        }
+    }
+}
+
+impl TransactionFee {
+    pub fn new_from_fee(fee: BigInt) -> Self {
+        Self {
+            fee,
+            gas_price: BigInt::from(1),
+            gas_limit: BigInt::from(1),
+            options: HashMap::new(),
+        }
+    }
+}
+impl TransactionLoadMetadata {
+    pub fn get_sequence(&self) -> Result<u64, Box<dyn std::error::Error + Send + Sync>> {
+        match self {
+            TransactionLoadMetadata::Solana { sequence, .. } => Ok(*sequence),
+            TransactionLoadMetadata::Ton { sequence, .. } => Ok(*sequence),
+            TransactionLoadMetadata::Cosmos { sequence, .. } => Ok(*sequence),
+            TransactionLoadMetadata::Near { sequence, .. } => Ok(*sequence),
+            TransactionLoadMetadata::Stellar { sequence, .. } => Ok(*sequence),
+            TransactionLoadMetadata::Xrp { sequence } => Ok(*sequence),
+            TransactionLoadMetadata::Algorand { sequence } => Ok(*sequence),
+            TransactionLoadMetadata::Aptos { sequence } => Ok(*sequence),
+            TransactionLoadMetadata::Polkadot { sequence, .. } => Ok(*sequence),
+            TransactionLoadMetadata::Evm { nonce, .. } => Ok(*nonce),
+            _ => Err("Sequence not available for this metadata type".into()),
+        }
+    }
+
+    pub fn get_block_number(&self) -> Result<u64, Box<dyn std::error::Error + Send + Sync>> {
+        match self {
+            TransactionLoadMetadata::Polkadot { block_number, .. } => Ok(*block_number),
+            TransactionLoadMetadata::Tron { block_number, .. } => Ok(*block_number),
+            _ => Err("Block number not available for this metadata type".into()),
+        }
+    }
+
+    pub fn get_block_hash(&self) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+        match self {
+            TransactionLoadMetadata::Near { block_hash, .. } => Ok(block_hash.clone()),
+            TransactionLoadMetadata::Polkadot { block_hash, .. } => Ok(block_hash.clone()),
+            _ => Err("Block hash not available for this metadata type".into()),
+        }
+    }
+
+    pub fn get_chain_id(&self) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+        match self {
+            TransactionLoadMetadata::Cosmos { chain_id, .. } => Ok(chain_id.clone()),
+            TransactionLoadMetadata::Evm { chain_id, .. } => Ok(chain_id.to_string()),
+            _ => Err("Chain ID not available for this metadata type".into()),
+        }
+    }
+
+    pub fn get_utxos(&self) -> Result<Vec<crate::UTXO>, Box<dyn std::error::Error + Send + Sync>> {
+        match self {
+            TransactionLoadMetadata::Bitcoin { utxos } => Ok(utxos.clone()),
+            TransactionLoadMetadata::Cardano { utxos } => Ok(utxos.clone()),
+            _ => Err("UTXOs not available for this metadata type".into()),
+        }
+    }
+
+    pub fn get_is_destination_address_exist(&self) -> Result<bool, Box<dyn std::error::Error + Send + Sync>> {
+        match self {
+            TransactionLoadMetadata::Near { is_destination_address_exist, .. } => Ok(*is_destination_address_exist),
+            TransactionLoadMetadata::Stellar { is_destination_address_exist, .. } => Ok(*is_destination_address_exist),
+            _ => Err("Destination existence flag not available for this metadata type".into()),
         }
     }
 }
@@ -121,6 +186,7 @@ impl SignerInputToken {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum TransactionLoadMetadata {
+    None,
     Solana {
         sender_token_address: String,
         recipient_token_address: Option<String>,
@@ -143,17 +209,17 @@ pub enum TransactionLoadMetadata {
         utxos: Vec<UTXO>,
     },
     Evm {
-        chain_id: String,
-        block_hash: String,
-        block_number: u64,
+        nonce: u64,
+        chain_id: u64,
     },
     Near {
         sequence: u64,
         block_hash: String,
-        is_destination_exist: bool,
+        is_destination_address_exist: bool,
     },
     Stellar {
         sequence: u64,
+        is_destination_address_exist: bool,
     },
     Xrp {
         sequence: u64,
@@ -187,6 +253,12 @@ pub enum TransactionLoadMetadata {
 pub struct TransactionLoadData {
     pub fee: TransactionFee,
     pub metadata: TransactionLoadMetadata,
+}
+
+impl TransactionLoadData {
+    pub fn new_from(&self, fee: TransactionFee) -> Self {
+        Self { fee, metadata: self.metadata.clone() }
+    }
 }
 
 

@@ -1,8 +1,8 @@
-use primitives::{TransactionPreload, TransactionPreloadInput, UTXO};
+use primitives::{TransactionLoadMetadata, TransactionPreloadInput, UTXO};
 
 use crate::models::BitcoinUTXO;
 
-pub fn map_transaction_preload(utxos: Vec<BitcoinUTXO>, input: TransactionPreloadInput) -> TransactionPreload {
+pub fn map_transaction_preload(utxos: Vec<BitcoinUTXO>, input: TransactionPreloadInput) -> TransactionLoadMetadata {
     let utxos = utxos
             .into_iter()
             .map(|utxo| UTXO {
@@ -13,5 +13,5 @@ pub fn map_transaction_preload(utxos: Vec<BitcoinUTXO>, input: TransactionPreloa
             })
             .collect();
 
-    TransactionPreload::builder().utxos(utxos).build()
+    TransactionLoadMetadata::Bitcoin { utxos }
 }

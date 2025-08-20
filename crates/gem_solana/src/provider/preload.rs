@@ -3,25 +3,35 @@ use chain_traits::ChainPreload;
 use std::error::Error;
 
 use gem_client::Client;
-use primitives::{SignerInputToken, TransactionLoadData, TransactionLoadInput, TransactionPreload, TransactionPreloadInput, TransactionInputType, SolanaTokenProgramId, AssetSubtype};
-use primitives::transaction_load::TransactionLoadMetadata;
+use primitives::{SignerInputToken, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput, TransactionInputType, SolanaTokenProgramId, AssetSubtype};
 
 use crate::{provider::preload_mapper, rpc::client::SolanaClient, get_token_program_id_by_address};
 
 #[cfg(feature = "rpc")]
 #[async_trait]
 impl<C: Client + Clone> ChainPreload for SolanaClient<C> {
-    async fn get_transaction_preload(&self, _input: TransactionPreloadInput) -> Result<TransactionPreload, Box<dyn Error + Sync + Send>> {
-        let blockhash_result = self.get_latest_blockhash().await?;
-        Ok(TransactionPreload::builder()
-            .block_hash(blockhash_result.value.blockhash)
-            .build())
+    async fn get_transaction_preload(&self, _input: TransactionPreloadInput) -> Result<TransactionLoadMetadata, Box<dyn Error + Sync + Send>> {
+        // For Solana, we need to get the sequence number (account nonce)
+        // For now, use a default sequence - this would normally come from RPC
+        let sequence = 0;
+            
+        Ok(TransactionLoadMetadata::Solana {
+            sender_token_address: String::new(), // Will be populated during load
+            recipient_token_address: None, // Will be populated during load
+            token_program: SolanaTokenProgramId::Token, // Default
+            sequence,
+        })
     }
 
     async fn get_transaction_load(&self, input: TransactionLoadInput) -> Result<TransactionLoadData, Box<dyn Error + Sync + Send>> {
         let prioritization_fees = self.get_recent_prioritization_fees().await?;
         let fee = preload_mapper::calculate_transaction_fee(&input.input_type, &input.gas_price, &prioritization_fees);
         
+        let sequence = match &input.metadata {
+            TransactionLoadMetadata::Solana { sequence, .. } => *sequence,
+            _ => return Err("Invalid metadata type for Solana".into()),
+        };
+
         let metadata = match &input.input_type {
             TransactionInputType::Transfer(asset) => {
                 match asset.id.token_subtype() {
@@ -32,45 +42,25 @@ impl<C: Client + Clone> ChainPreload for SolanaClient<C> {
                                 &input.sender_address,
                                 &input.destination_address
                             ).await?;
-                            Some(TransactionLoadMetadata::Solana {
+                            TransactionLoadMetadata::Solana {
                                 sender_token_address: token_info.sender_token_address,
                                 recipient_token_address: token_info.recipient_token_address,
                                 token_program: token_info.token_program,
-                                sequence: input.sequence,
-                            })
+                                sequence,
+                            }
                         } else {
-                            Some(TransactionLoadMetadata::Solana {
-                                sender_token_address: String::new(),
-                                recipient_token_address: None,
-                                token_program: SolanaTokenProgramId::Token,
-                                sequence: input.sequence,
-                            })
+                            input.metadata
                         }
                     },
-                    AssetSubtype::NATIVE => Some(TransactionLoadMetadata::Solana {
-                        sender_token_address: String::new(),
-                        recipient_token_address: None,
-                        token_program: SolanaTokenProgramId::Token,
-                        sequence: input.sequence,
-                    }),
+                    AssetSubtype::NATIVE => input.metadata,
                 }
             },
-            _ => Some(TransactionLoadMetadata::Solana {
-                sender_token_address: String::new(),
-                recipient_token_address: None,
-                token_program: SolanaTokenProgramId::Token,
-                sequence: input.sequence,
-            }),
+            _ => input.metadata,
         };
 
         Ok(TransactionLoadData {
             fee,
-            metadata: metadata.unwrap_or(TransactionLoadMetadata::Solana {
-                sender_token_address: String::new(),
-                recipient_token_address: None,
-                token_program: SolanaTokenProgramId::Token,
-                sequence: input.sequence,
-            }),
+            metadata,
         })
     }
 }

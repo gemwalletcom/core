@@ -3,14 +3,16 @@ pub mod balances;
 pub mod perpetual;
 pub mod staking;
 pub mod transaction;
+pub mod transaction_metadata;
 
 pub use balances::*;
 pub use perpetual::*;
 pub use staking::*;
 pub use transaction::*;
+pub use transaction_metadata::*;
 
 // Re-export simpler models inline
-use primitives::{FeeRate, TransactionPreload, TransactionPreloadInput, UTXO};
+use primitives::{FeeRate, TransactionPreloadInput, UTXO};
 
 // ChainAccount models
 #[derive(Debug, Clone, uniffi::Record)]
@@ -41,15 +43,6 @@ pub struct GemTransactionPreloadInput {
     pub destination_address: String,
 }
 
-#[derive(Debug, Clone, uniffi::Record)]
-pub struct GemTransactionPreload {
-    pub block_hash: String,
-    pub block_number: i64,
-    pub utxos: Vec<GemUTXO>,
-    pub sequence: u64,
-    pub chain_id: String,
-    pub is_destination_address_exist: bool,
-}
 
 // Conversion implementations
 impl From<UTXO> for GemUTXO {
@@ -112,15 +105,3 @@ impl From<GemTransactionPreloadInput> for TransactionPreloadInput {
     }
 }
 
-impl From<TransactionPreload> for GemTransactionPreload {
-    fn from(preload: TransactionPreload) -> Self {
-        Self {
-            block_hash: preload.block_hash,
-            block_number: preload.block_number,
-            utxos: preload.utxos.into_iter().map(GemUTXO::from).collect(),
-            sequence: preload.sequence,
-            chain_id: preload.chain_id,
-            is_destination_address_exist: preload.is_destination_address_exist,
-        }
-    }
-}

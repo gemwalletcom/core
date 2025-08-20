@@ -3,15 +3,14 @@ use chain_traits::ChainPreload;
 use std::error::Error;
 
 use gem_client::Client;
-use primitives::{TransactionFee, TransactionLoadData, TransactionLoadInput, TransactionPreload, TransactionPreloadInput};
-use primitives::transaction_load::TransactionLoadMetadata;
+use primitives::{TransactionFee, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput};
 
 use super::preload_mapper::map_transaction_preload;
 use crate::rpc::client::AptosClient;
 
 #[async_trait]
 impl<C: Client> ChainPreload for AptosClient<C> {
-    async fn get_transaction_preload(&self, input: TransactionPreloadInput) -> Result<TransactionPreload, Box<dyn Error + Sync + Send>> {
+    async fn get_transaction_preload(&self, input: TransactionPreloadInput) -> Result<TransactionLoadMetadata, Box<dyn Error + Sync + Send>> {
         let account = self.get_account(&input.sender_address).await?;
         map_transaction_preload(&account)
     }
@@ -22,9 +21,7 @@ impl<C: Client> ChainPreload for AptosClient<C> {
 
         Ok(TransactionLoadData {
             fee,
-            metadata: TransactionLoadMetadata::Aptos {
-                sequence: input.sequence,
-            },
+            metadata: input.metadata,
         })
     }
 }

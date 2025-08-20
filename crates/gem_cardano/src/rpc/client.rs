@@ -4,7 +4,6 @@ use chain_traits::{ChainPerpetual, ChainPreload, ChainStaking, ChainTraits};
 use gem_client::Client;
 use primitives::chain::Chain;
 use primitives::{TransactionLoadData, TransactionLoadInput};
-use primitives::transaction_load::TransactionLoadMetadata;
 use async_trait::async_trait;
 
 use super::model::{Block, Blocks, Data};
@@ -130,9 +129,7 @@ impl<C: Client> ChainPreload for CardanoClient<C> {
     async fn get_transaction_load(&self, input: TransactionLoadInput) -> Result<TransactionLoadData, Box<dyn Error + Sync + Send>> {
         Ok(TransactionLoadData {
             fee: primitives::TransactionFee::default(),
-            metadata: TransactionLoadMetadata::Cardano { 
-                utxos: input.utxos 
-            },
+            metadata: input.metadata,
         })
     }
 }

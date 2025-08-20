@@ -1,11 +1,9 @@
 use async_trait::async_trait;
 use chain_traits::ChainPreload;
-use futures;
 use gem_client::Client;
 use num_bigint::BigInt;
 use primitives::transaction_load::FeeOption;
-use primitives::{AssetSubtype, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionPreload, TransactionPreloadInput};
-use primitives::transaction_load::TransactionLoadMetadata;
+use primitives::{AssetSubtype, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput};
 use std::collections::HashMap;
 use std::error::Error;
 
@@ -64,17 +62,28 @@ fn check_jetton_account_exists(jetton_wallets: &JettonWalletsResponse, token_id:
 
 #[async_trait]
 impl<C: Client> ChainPreload for TonClient<C> {
-    async fn get_transaction_preload(&self, _input: TransactionPreloadInput) -> Result<TransactionPreload, Box<dyn Error + Sync + Send>> {
-        Ok(TransactionPreload {
-            ..TransactionPreload::default()
+    async fn get_transaction_preload(&self, input: TransactionPreloadInput) -> Result<TransactionLoadMetadata, Box<dyn Error + Sync + Send>> {
+        let wallet_info = self.get_wallet_information(input.sender_address.clone()).await?;
+        let sequence = wallet_info.seqno.unwrap_or(0) as u64;
+        
+        // For preload, we need to gather jetton wallet information if needed
+        // Since we don't have transaction details in TransactionPreloadInput, we'll use empty string
+        // The actual jetton wallet address will be determined based on transaction type during load
+        let jetton_wallet_address = String::new();
+
+        Ok(TransactionLoadMetadata::Ton {
+            jetton_wallet_address,
+            sequence,
         })
     }
 
     async fn get_transaction_load(&self, input: TransactionLoadInput) -> Result<TransactionLoadData, Box<dyn Error + Sync + Send>> {
-        let (wallet_info, account_exists, jetton_wallet_address) = self.get_wallet_and_account_info(&input).await?;
+        // Extract metadata and determine if we need to fetch additional jetton data
+        let (jetton_wallet_address, account_exists) = self.get_jetton_info_for_transaction(&input).await?;
         let fee = calculate_transaction_fee(&input, account_exists);
 
-        let sequence = wallet_info.seqno.unwrap_or(0) as u64;
+        // Use the sequence from the metadata passed in
+        let sequence = input.metadata.get_sequence()?;
         let metadata = TransactionLoadMetadata::Ton { 
             jetton_wallet_address,
             sequence,
@@ -85,21 +94,17 @@ impl<C: Client> ChainPreload for TonClient<C> {
             metadata,
         })
     }
-
 }
 
 impl<C: Client> TonClient<C> {
-    async fn get_wallet_and_account_info(&self, input: &TransactionLoadInput) -> Result<(crate::rpc::model::TonWalletInfo, bool, String), Box<dyn Error + Sync + Send>> {
+    async fn get_jetton_info_for_transaction(&self, input: &TransactionLoadInput) -> Result<(String, bool), Box<dyn Error + Sync + Send>> {
         match &input.input_type {
             TransactionInputType::Transfer(asset) => match asset.id.token_subtype() {
                 AssetSubtype::TOKEN => {
                     let token_id = asset.id.token_id.as_ref().ok_or("Missing token ID")?;
                     let jetton_token_id = crate::address::base64_to_hex_address(token_id.clone())?.to_uppercase();
                     
-                    let (wallet_info, jetton_wallets) = futures::try_join!(
-                        self.get_wallet_information(input.sender_address.clone()),
-                        self.get_jetton_wallets(input.sender_address.clone())
-                    )?;
+                    let jetton_wallets = self.get_jetton_wallets(input.sender_address.clone()).await?;
                     
                     let jetton_wallet_address = jetton_wallets
                         .jetton_wallets
@@ -109,19 +114,15 @@ impl<C: Client> TonClient<C> {
                         .ok_or_else(|| format!("Jetton wallet not found for token {}", jetton_token_id))?;
                     
                     let account_exists = check_jetton_account_exists(&jetton_wallets, token_id);
-                    Ok((wallet_info, account_exists, jetton_wallet_address))
+                    Ok((jetton_wallet_address, account_exists))
                 }
                 AssetSubtype::NATIVE => {
-                    let wallet_info = self.get_wallet_information(input.sender_address.clone()).await?;
-                    Ok((wallet_info, true, "".to_string()))
+                    Ok(("".to_string(), true))
                 }
             },
             TransactionInputType::Swap(_, to_asset) => {
                 if let Some(token_id) = &to_asset.id.token_id {
-                    let (wallet_info, jetton_wallets) = futures::try_join!(
-                        self.get_wallet_information(input.sender_address.clone()),
-                        self.get_jetton_wallets(input.sender_address.clone())
-                    )?;
+                    let jetton_wallets = self.get_jetton_wallets(input.sender_address.clone()).await?;
                     let jetton_token_id = crate::address::base64_to_hex_address(token_id.clone())?.to_uppercase();
                     
                     let jetton_wallet_address = jetton_wallets
@@ -132,15 +133,13 @@ impl<C: Client> TonClient<C> {
                         .ok_or_else(|| format!("Jetton wallet not found for token {}", token_id))?;
                     
                     let account_exists = check_jetton_account_exists(&jetton_wallets, token_id);
-                    Ok((wallet_info, account_exists, jetton_wallet_address))
+                    Ok((jetton_wallet_address, account_exists))
                 } else {
-                    let wallet_info = self.get_wallet_information(input.sender_address.clone()).await?;
-                    Ok((wallet_info, true, "".to_string()))
+                    Ok(("".to_string(), true))
                 }
             },
             TransactionInputType::Stake(_) => {
-                let wallet_info = self.get_wallet_information(input.sender_address.clone()).await?;
-                Ok((wallet_info, true, "".to_string()))
+                Ok(("".to_string(), true))
             }
         }
     }
@@ -173,12 +172,12 @@ mod tests {
             destination_address: "test".to_string(),
             value: "1000".to_string(),
             gas_price: GasPrice { gas_price: BigInt::from(10_000_000u64) },
-            sequence: 0,
-            block_hash: "".to_string(),
-            block_number: 0,
-            chain_id: "".to_string(),
-            utxos: vec![],
             memo,
+            is_max_value: false,
+            metadata: TransactionLoadMetadata::Ton {
+                jetton_wallet_address: "".to_string(),
+                sequence: 0,
+            },
         }
     }
 

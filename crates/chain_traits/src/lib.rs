@@ -4,8 +4,7 @@ use async_trait::async_trait;
 use primitives::chart::ChartCandleStick;
 use primitives::perpetual::{PerpetualData, PerpetualPositionsSummary};
 use primitives::{
-    Asset, AssetBalance, ChartPeriod, DelegationBase, DelegationValidator, FeeRate, TransactionLoadData, TransactionLoadInput,
-    TransactionPreload, TransactionPreloadInput, TransactionStateRequest, TransactionUpdate, UTXO,
+    Asset, AssetBalance, ChartPeriod, DelegationBase, DelegationValidator, FeeRate, TransactionFee, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput, TransactionStateRequest, TransactionUpdate, UTXO
 };
 
 pub trait ChainTraits: ChainBalances + ChainStaking + ChainTransactions + ChainState + ChainAccount + ChainPerpetual + ChainToken + ChainPreload {}
@@ -80,11 +79,15 @@ pub trait ChainToken: Send + Sync {
 
 #[async_trait]
 pub trait ChainPreload: Send + Sync {
-    async fn get_transaction_preload(&self, _input: TransactionPreloadInput) -> Result<TransactionPreload, Box<dyn Error + Sync + Send>> {
-        Ok(TransactionPreload::default())
+    async fn get_transaction_preload(&self, _input: TransactionPreloadInput) -> Result<TransactionLoadMetadata, Box<dyn Error + Sync + Send>> {
+        Ok(TransactionLoadMetadata::None)
     }
 
     async fn get_transaction_load(&self, _input: TransactionLoadInput) -> Result<TransactionLoadData, Box<dyn Error + Sync + Send>> {
         Err("Chain does not support transaction loading".into())
+    }
+
+    async fn get_transaction_fee(&self, _data: String) -> Result<TransactionFee, Box<dyn Error + Sync + Send>> {
+        Err("Chain does not support transaction fee".into())
     }
 }

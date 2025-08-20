@@ -22,9 +22,11 @@ pub mod models;
 pub use models::*;
 use primitives::{chain_cosmos::CosmosChain, BitcoinChain, Chain, ChartPeriod};
 
+#[uniffi::export(with_foreign)]
 #[async_trait::async_trait]
-pub trait GemGatewayTrait {
-    async fn get_data(&self, chain: Chain) -> Result<i32, GatewayError>;
+pub trait GemGatewayEstimateFee: Send + Sync {
+    async fn get_fee(&self, chain: Chain, input: GemTransactionLoadInput) -> Result<Option<GemTransactionLoadFee>, GatewayError>;
+    async fn get_fee_data(&self, chain: Chain, input: GemTransactionLoadInput) -> Result<Option<String>, GatewayError>;
 }
 
 #[derive(Debug, uniffi::Object)]
@@ -61,9 +63,13 @@ impl GemGateway {
 }
 
 #[async_trait::async_trait]
-impl GemGatewayTrait for GemGateway {
-    async fn get_data(&self, _chain: Chain) -> Result<i32, GatewayError> {
-       Ok(1)
+impl GemGatewayEstimateFee for GemGateway {
+    async fn get_fee(&self, _chain: Chain, _input: GemTransactionLoadInput) -> Result<Option<GemTransactionLoadFee>, GatewayError> {
+       Ok(None)
+    }
+
+    async fn get_fee_data(&self, _chain: Chain, _input: GemTransactionLoadInput) -> Result<Option<String>, GatewayError> {
+       Ok(None)
     }
 }
 
@@ -184,25 +190,51 @@ impl GemGateway {
         Ok(utxos.into_iter().map(|u| u.into()).collect())
     }
 
-    pub async fn get_transaction_preload(&self, chain: Chain, input: GemTransactionPreloadInput) -> Result<GemTransactionPreload, GatewayError> {
-        let preload = self
+    pub async fn get_transaction_preload(&self, chain: Chain, input: GemTransactionPreloadInput) -> Result<GemTransactionLoadMetadata, GatewayError> {
+        let metadata = self
             .provider(chain)
             .await?
             .get_transaction_preload(input.into())
             .await
             .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
-        Ok(preload.into())
+        Ok(metadata.into())
     }
 
-    pub async fn get_transaction_load(&self, chain: Chain, input: GemTransactionLoadInput) -> Result<GemTransactionData, GatewayError> {
+    pub async fn get_fee(&self, chain: Chain, input: GemTransactionLoadInput, provider: Arc<dyn GemGatewayEstimateFee>) -> Result<Option<GemTransactionLoadFee>, GatewayError> {
+        let fee = provider.get_fee(chain, input.clone()).await?;
+        if let Some(fee) = fee {
+            return Ok(Some(fee.into()));
+        }
+        if let Some(fee_data) = provider.get_fee_data(chain, input.clone()).await? {
+            let data = self
+            .provider(chain)
+            .await?
+            .get_transaction_fee(fee_data)
+            .await
+            .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
+            return Ok(Some(data.into()));
+        }
+        Ok(None)
+    }
+
+
+    pub async fn get_transaction_load(&self, chain: Chain, input: GemTransactionLoadInput, provider: Arc<dyn GemGatewayEstimateFee>) -> Result<GemTransactionData, GatewayError> {
+        let fee = self.get_fee(chain, input.clone(), provider.clone()).await?;
+        
         let load_data = self
             .provider(chain)
             .await?
             .get_transaction_load(input.clone().into())
             .await
             .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
+        
+        let data = if let Some(fee) = fee {
+            load_data.new_from(fee.into())
+        } else {
+            load_data
+        };
 
-        Ok(models::transaction::map_transaction_load_data(load_data, &input))
+        Ok(models::transaction::map_transaction_load_data(data, &input))
     }
 
     pub async fn get_positions(&self, chain: Chain, address: String) -> Result<GemPerpetualPositionsSummary, GatewayError> {

@@ -123,51 +123,36 @@ pub fn map_transaction_load(
 ) -> TransactionLoadData {
     let fee = calculate_transaction_fee(&input.input_type, &input.gas_price, &prioritization_fees);
     
+    let sequence = match &input.metadata {
+        TransactionLoadMetadata::Solana { sequence, .. } => *sequence,
+        _ => 0, // Default sequence if wrong metadata type
+    };
+
     let metadata = match &input.input_type {
         TransactionInputType::Transfer(asset) => {
             match &asset.id.token_id {
                 Some(_) => {
                     if let Some((sender_accounts, recipient_accounts)) = token_accounts {
                         let token_info = map_token_transfer_info(sender_accounts, recipient_accounts);
-                        Some(TransactionLoadMetadata::Solana {
+                        TransactionLoadMetadata::Solana {
                             sender_token_address: token_info.sender_token_address,
                             recipient_token_address: token_info.recipient_token_address,
                             token_program: token_info.token_program,
-                            sequence: input.sequence,
-                        })
+                            sequence,
+                        }
                     } else {
-                        Some(TransactionLoadMetadata::Solana {
-                            sender_token_address: String::new(),
-                            recipient_token_address: None,
-                            token_program: SolanaTokenProgramId::Token,
-                            sequence: input.sequence,
-                        })
+                        input.metadata
                     }
                 },
-                None => Some(TransactionLoadMetadata::Solana {
-                    sender_token_address: String::new(),
-                    recipient_token_address: None,
-                    token_program: SolanaTokenProgramId::Token,
-                    sequence: input.sequence,
-                }),
+                None => input.metadata,
             }
         },
-        _ => Some(TransactionLoadMetadata::Solana {
-            sender_token_address: String::new(),
-            recipient_token_address: None,
-            token_program: SolanaTokenProgramId::Token,
-            sequence: input.sequence,
-        }),
+        _ => input.metadata,
     };
 
     TransactionLoadData {
         fee,
-        metadata: metadata.unwrap_or(TransactionLoadMetadata::Solana {
-            sender_token_address: String::new(),
-            recipient_token_address: None,
-            token_program: SolanaTokenProgramId::Token,
-            sequence: input.sequence,
-        }),
+        metadata,
     }
 }
 

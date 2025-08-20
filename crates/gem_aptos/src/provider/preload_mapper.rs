@@ -1,15 +1,10 @@
 use crate::models::Account;
-use primitives::TransactionPreload;
+use primitives::TransactionLoadMetadata;
 use std::error::Error;
 
-pub fn map_transaction_preload(account: &Account) -> Result<TransactionPreload, Box<dyn Error + Sync + Send>> {
-    Ok(TransactionPreload {
-        block_hash: String::new(),
-        block_number: 0,
-        utxos: vec![],
+pub fn map_transaction_preload(account: &Account) -> Result<TransactionLoadMetadata, Box<dyn Error + Sync + Send>> {
+    Ok(TransactionLoadMetadata::Aptos {
         sequence: account.sequence_number,
-        chain_id: String::new(),
-        is_destination_address_exist: true,
     })
 }
 
@@ -23,6 +18,9 @@ mod tests {
         let account = Account { sequence_number: 42 };
 
         let result = map_transaction_preload(&account).unwrap();
-        assert_eq!(result.sequence, 42);
+        match result {
+            TransactionLoadMetadata::Aptos { sequence } => assert_eq!(sequence, 42),
+            _ => panic!("Expected Aptos metadata"),
+        }
     }
 }

@@ -2,6 +2,7 @@ use std::error::Error;
 
 use gem_client::Client;
 use primitives::chain::Chain;
+use primitives::transaction_load::TransactionLoadMetadata;
 use serde::{de::DeserializeOwned, Serialize};
 
 use crate::{
@@ -87,6 +88,11 @@ impl<C: Client> AptosClient<C> {
     }
 
     pub async fn calculate_gas_limit(&self, input: &TransactionLoadInput) -> Result<u64, Box<dyn Error + Send + Sync>> {
+        let sequence = match &input.metadata {
+            TransactionLoadMetadata::Aptos { sequence } => *sequence,
+            _ => return Err("Invalid metadata type for Aptos".into()),
+        };
+
         match &input.input_type {
             TransactionInputType::Transfer(asset) => {
                 let asset_type = if asset.id.token_id.is_none() {
@@ -102,7 +108,7 @@ impl<C: Client> AptosClient<C> {
                             .simulate_transaction(
                                 &input.sender_address,
                                 &input.destination_address,
-                                &input.sequence.to_string(),
+                                &sequence.to_string(),
                                 &input.value,
                                 &input.gas_price.gas_price.to_string(),
                                 1500,

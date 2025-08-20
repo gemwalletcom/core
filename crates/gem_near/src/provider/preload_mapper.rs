@@ -1,5 +1,5 @@
 use crate::models::{NearAccountAccessKey, NearBlock};
-use primitives::{TransactionPreload, TransactionPreloadInput};
+use primitives::{TransactionLoadMetadata, TransactionPreloadInput};
 use std::error::Error;
 
 pub fn address_to_public_key(address: &str) -> Result<String, Box<dyn Error + Sync + Send>> {
@@ -13,12 +13,11 @@ pub fn map_transaction_preload(
     access_key: &NearAccountAccessKey,
     block: &NearBlock,
     is_destination_address_exist: bool,
-) -> TransactionPreload {
-    TransactionPreload {
+) -> TransactionLoadMetadata {
+    TransactionLoadMetadata::Near {
         sequence: (access_key.nonce + 1) as u64,
         block_hash: block.header.hash.clone(),
         is_destination_address_exist,
-        ..Default::default()
     }
 }
 
@@ -52,8 +51,13 @@ mod tests {
 
         let result = map_transaction_preload(&input, &access_key, &block, true);
 
-        assert_eq!(result.sequence, 116479371000027);
-        assert_eq!(result.block_hash, "F45xbjXiyHn5noj1692RVqeuNC6X232qhKpvvPrv92iz");
-        assert!(result.is_destination_address_exist);
+        match result {
+            TransactionLoadMetadata::Near { sequence, block_hash, is_destination_address_exist } => {
+                assert_eq!(sequence, 116479371000027);
+                assert_eq!(block_hash, "F45xbjXiyHn5noj1692RVqeuNC6X232qhKpvvPrv92iz");
+                assert!(is_destination_address_exist);
+            },
+            _ => panic!("Expected Near metadata"),
+        }
     }
 }
