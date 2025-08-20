@@ -1,5 +1,5 @@
 use num_bigint::BigInt;
-use primitives::{AssetSubtype, FeePriority, FeePriorityValue, GasPrice, SignerInputToken, SolanaTokenProgramId, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput};
+use primitives::{AssetSubtype, FeePriority, FeeRate, GasPrice, SignerInputToken, SolanaTokenProgramId, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput};
 use primitives::transaction_load::TransactionLoadMetadata;
 use std::collections::HashMap;
 
@@ -80,13 +80,14 @@ fn round_to_nearest(value: i64, multiple: i64, round_up: bool) -> i64 {
 pub fn calculate_fee_rates(
     input_type: &TransactionInputType,
     prioritization_fees: &[SolanaPrioritizationFee],
-) -> Vec<primitives::FeePriorityValue> {
+) -> Vec<FeeRate> {
     let mut fees: Vec<i64> = prioritization_fees.iter().map(|f| f.prioritization_fee).collect();
     fees.sort_by(|a, b| b.cmp(a));
     fees.truncate(5);
 
     let multiple_of = get_multiple_of(input_type);
     let gas_limit = get_gas_limit(input_type);
+    let static_base_fee = BigInt::from(STATIC_BASE_FEE);
     
     let priority_fee_base = if fees.is_empty() {
         BigInt::from(multiple_of)
@@ -97,18 +98,21 @@ pub fn calculate_fee_rates(
     };
 
     vec![
-        FeePriorityValue {
-            priority: FeePriority::Slow,
-            value: ((&priority_fee_base / 2_i64 * BigInt::from(gas_limit)) / BigInt::from(1_000_000u64)).to_string(),
-        },
-        FeePriorityValue {
-            priority: FeePriority::Normal,
-            value: ((&priority_fee_base * BigInt::from(gas_limit)) / BigInt::from(1_000_000u64)).to_string(),
-        },
-        FeePriorityValue {
-            priority: FeePriority::Fast,
-            value: ((&priority_fee_base * 3_i64 * BigInt::from(gas_limit)) / BigInt::from(1_000_000u64)).to_string(),
-        },
+        FeeRate::eip1559(
+            FeePriority::Slow, 
+            static_base_fee.clone(),
+            (&priority_fee_base / 2_i64 * BigInt::from(gas_limit)) / BigInt::from(1_000_000u64)
+        ),
+        FeeRate::eip1559(
+            FeePriority::Normal, 
+            static_base_fee.clone(),
+            (&priority_fee_base * BigInt::from(gas_limit)) / BigInt::from(1_000_000u64)
+        ),
+        FeeRate::eip1559(
+            FeePriority::Fast, 
+            static_base_fee,
+            (&priority_fee_base * 3_i64 * BigInt::from(gas_limit)) / BigInt::from(1_000_000u64)
+        ),
     ]
 }
 

@@ -5,9 +5,11 @@ use chain_traits::ChainState;
 #[cfg(feature = "rpc")]
 use gem_client::Client;
 #[cfg(feature = "rpc")]
-use primitives::FeePriorityValue;
+use primitives::{FeeRate, FeePriority};
 #[cfg(feature = "rpc")]
 use std::error::Error;
+#[cfg(feature = "rpc")]
+use num_bigint::BigInt;
 
 #[cfg(feature = "rpc")]
 use crate::rpc::client::SuiClient;
@@ -23,11 +25,8 @@ impl<C: Client + Clone> ChainState for SuiClient<C> {
         self.get_latest_block().await
     }
 
-    async fn get_fee_rates(&self) -> Result<Vec<FeePriorityValue>, Box<dyn Error + Sync + Send>> {
+    async fn get_fee_rates(&self) -> Result<Vec<FeeRate>, Box<dyn Error + Sync + Send>> {
         let gas_price = self.get_gas_price().await?;
-        Ok(vec![FeePriorityValue {
-            priority: primitives::FeePriority::Normal,
-            value: gas_price.to_string(),
-        }])
+        Ok(vec![FeeRate::regular(FeePriority::Normal, BigInt::from(gas_price))])
     }
 }

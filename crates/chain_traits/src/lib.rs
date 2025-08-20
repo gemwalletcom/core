@@ -4,7 +4,7 @@ use async_trait::async_trait;
 use primitives::chart::ChartCandleStick;
 use primitives::perpetual::{PerpetualData, PerpetualPositionsSummary};
 use primitives::{
-    Asset, AssetBalance, ChartPeriod, DelegationBase, DelegationValidator, FeePriorityValue, TransactionLoadData, TransactionLoadInput,
+    Asset, AssetBalance, ChartPeriod, DelegationBase, DelegationValidator, FeeRate, TransactionLoadData, TransactionLoadInput,
     TransactionPreload, TransactionPreloadInput, TransactionStateRequest, TransactionUpdate, UTXO,
 };
 
@@ -42,7 +42,7 @@ pub trait ChainTransactions: Send + Sync {
 pub trait ChainState: Send + Sync {
     async fn get_chain_id(&self) -> Result<String, Box<dyn Error + Sync + Send>>;
     async fn get_block_number(&self) -> Result<u64, Box<dyn Error + Sync + Send>>;
-    async fn get_fee_rates(&self) -> Result<Vec<FeePriorityValue>, Box<dyn Error + Sync + Send>>;
+    async fn get_fee_rates(&self) -> Result<Vec<FeeRate>, Box<dyn Error + Sync + Send>>;
 }
 
 #[async_trait]

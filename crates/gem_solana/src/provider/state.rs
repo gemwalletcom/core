@@ -3,7 +3,7 @@ use chain_traits::ChainState;
 use std::error::Error;
 
 use gem_client::Client;
-use primitives::FeePriorityValue;
+use primitives::FeeRate;
 
 use crate::rpc::client::SolanaClient;
 
@@ -17,7 +17,7 @@ impl<C: Client + Clone> ChainState for SolanaClient<C> {
         self.get_slot().await
     }
     
-    async fn get_fee_rates(&self) -> Result<Vec<FeePriorityValue>, Box<dyn Error + Sync + Send>> {
+    async fn get_fee_rates(&self) -> Result<Vec<FeeRate>, Box<dyn Error + Sync + Send>> {
         let prioritization_fees = self.get_recent_prioritization_fees().await?;
         let input_type = primitives::TransactionInputType::Transfer(primitives::Asset {
             id: primitives::AssetId::from_chain(self.get_chain()),

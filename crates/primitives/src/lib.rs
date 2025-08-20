@@ -105,7 +105,7 @@ pub use self::solana_token_program::SolanaTokenProgramId;
 pub mod solana_types;
 pub use self::solana_types::{SolanaAccountMeta, SolanaInstruction};
 pub mod fee;
-pub use self::fee::{FeePriority, FeePriorityValue, FeeUnitType};
+pub use self::fee::{FeePriority, FeeUnitType, GasPriceType, FeeRate};
 pub mod response;
 pub use self::response::{ResponseError, ResponseResult};
 pub mod link_type;

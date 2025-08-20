@@ -16,6 +16,7 @@ serde_json = { workspace = true }
 thiserror = { workspace = true }
 url = { workspace = true }
 base64 = { workspace = true }
+num-bigint = { workspace = true }
 
 chrono = { workspace = true, optional = true }
 reqwest-middleware = { workspace = true, features = ["json"], optional = true }

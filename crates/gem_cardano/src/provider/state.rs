@@ -1,9 +1,10 @@
 use async_trait::async_trait;
 use chain_traits::ChainState;
 use std::error::Error;
+use num_bigint::BigInt;
 
 use gem_client::Client;
-use primitives::FeePriorityValue;
+use primitives::{FeeRate, FeePriority};
 
 use crate::rpc::client::CardanoClient;
 
@@ -17,10 +18,7 @@ impl<C: Client> ChainState for CardanoClient<C> {
         Ok(self.get_latest_block().await? as u64)
     }
 
-    async fn get_fee_rates(&self) -> Result<Vec<FeePriorityValue>, Box<dyn Error + Sync + Send>> {
-        Ok(vec![FeePriorityValue {
-            priority: primitives::FeePriority::Normal,
-            value: "1".to_string(),
-        }])
+    async fn get_fee_rates(&self) -> Result<Vec<FeeRate>, Box<dyn Error + Sync + Send>> {
+        Ok(vec![FeeRate::regular(FeePriority::Normal, BigInt::from(1))])
     }
 }

@@ -11,6 +11,7 @@ reqwest = ["gem_client/reqwest"]
 [dependencies]
 serde = { workspace = true, features = ["derive"] }
 primitives = { path = "../primitives" }
+num-bigint = { workspace = true }
 
 # Optional dependencies for the rpc feature
 number_formatter = { path = "../number_formatter", optional = true }

@@ -3,7 +3,7 @@ use chain_traits::ChainState;
 use std::error::Error;
 
 use gem_client::Client;
-use primitives::FeePriorityValue;
+use primitives::FeeRate;
 
 use crate::rpc::client::CosmosClient;
 
@@ -21,7 +21,7 @@ impl<C: Client> ChainState for CosmosClient<C> {
         Ok(block.block.header.height.parse()?)
     }
 
-    async fn get_fee_rates(&self) -> Result<Vec<FeePriorityValue>, Box<dyn Error + Sync + Send>> {
+    async fn get_fee_rates(&self) -> Result<Vec<FeeRate>, Box<dyn Error + Sync + Send>> {
         let base_fee = self.get_base_fee();
         let cosmos_chain = self.get_chain();
 

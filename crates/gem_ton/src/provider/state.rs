@@ -1,9 +1,10 @@
 use async_trait::async_trait;
 use chain_traits::ChainState;
 use std::error::Error;
+use num_bigint::BigInt;
 
 use gem_client::Client;
-use primitives::{FeePriority, FeePriorityValue};
+use primitives::{FeePriority, FeeRate};
 
 use crate::rpc::client::TonClient;
 
@@ -18,9 +19,9 @@ impl<C: Client> ChainState for TonClient<C> {
         Ok(self.get_latest_block().await? as u64)
     }
 
-    async fn get_fee_rates(&self) -> Result<Vec<FeePriorityValue>, Box<dyn Error + Sync + Send>> {
+    async fn get_fee_rates(&self) -> Result<Vec<FeeRate>, Box<dyn Error + Sync + Send>> {
         Ok(vec![
-            FeePriorityValue::new(FeePriority::Normal, "10000000".to_string()), // 0.01 TON
+            FeeRate::regular(FeePriority::Normal, BigInt::from(10000000)), // 0.01 TON
         ])
     }
 }

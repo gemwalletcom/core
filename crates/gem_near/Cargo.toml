@@ -8,6 +8,7 @@ edition = { workspace = true }
 primitives = { path = "../primitives" }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true, optional = true }
+num-bigint = { workspace = true }
 
 # RPC specific dependencies
 gem_jsonrpc = { path = "../gem_jsonrpc", features = ["client"], optional = true }

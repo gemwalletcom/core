@@ -1,9 +1,10 @@
 use async_trait::async_trait;
 use chain_traits::ChainState;
 use std::error::Error;
+use num_bigint::BigInt;
 
 use gem_client::Client;
-use primitives::{FeePriority, FeePriorityValue};
+use primitives::{FeePriority, FeeRate};
 
 use crate::rpc::client::AptosClient;
 
@@ -17,22 +18,13 @@ impl<C: Client> ChainState for AptosClient<C> {
         Ok(self.get_ledger().await?.ledger_version)
     }
 
-    async fn get_fee_rates(&self) -> Result<Vec<FeePriorityValue>, Box<dyn Error + Sync + Send>> {
+    async fn get_fee_rates(&self) -> Result<Vec<FeeRate>, Box<dyn Error + Sync + Send>> {
         let gas_fee = self.get_gas_price().await?;
 
         Ok(vec![
-            FeePriorityValue {
-                priority: FeePriority::Slow,
-                value: gas_fee.deprioritized_gas_estimate.to_string(),
-            },
-            FeePriorityValue {
-                priority: FeePriority::Normal,
-                value: gas_fee.gas_estimate.to_string(),
-            },
-            FeePriorityValue {
-                priority: FeePriority::Fast,
-                value: gas_fee.prioritized_gas_estimate.to_string(),
-            },
+            FeeRate::regular(FeePriority::Slow, BigInt::from(gas_fee.deprioritized_gas_estimate)),
+            FeeRate::regular(FeePriority::Normal, BigInt::from(gas_fee.gas_estimate)),
+            FeeRate::regular(FeePriority::Fast, BigInt::from(gas_fee.prioritized_gas_estimate)),
         ])
     }
 }

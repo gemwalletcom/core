@@ -92,14 +92,9 @@ impl GemGateway {
         Ok(balance.map(|b| b.into()))
     }
 
-    // staking
-    pub async fn get_staking_validators(&self, chain: Chain) -> Result<Vec<GemDelegationValidator>, GatewayError> {
+    pub async fn get_staking_validators(&self, chain: Chain, apy: Option<f64>) -> Result<Vec<GemDelegationValidator>, GatewayError> {
         let provider = self.provider(chain).await?;
 
-        // First get the APY
-        let apy = provider.get_staking_apy().await.map_err(|e| GatewayError::NetworkError(e.to_string()))?;
-
-        // Then get validators with the APY
         let validators = provider
             .get_staking_validators(apy)
             .await
@@ -157,7 +152,7 @@ impl GemGateway {
         Ok(block_number)
     }
 
-    pub async fn get_fee_rates(&self, chain: Chain) -> Result<Vec<GemFeePriorityValue>, GatewayError> {
+    pub async fn get_fee_rates(&self, chain: Chain) -> Result<Vec<GemFeeRate>, GatewayError> {
         let fees = self
             .provider(chain)
             .await?

@@ -1,9 +1,10 @@
 use async_trait::async_trait;
 use chain_traits::ChainState;
 use std::error::Error;
+use num_bigint::BigInt;
 
 use gem_client::Client;
-use primitives::{FeePriority, FeePriorityValue};
+use primitives::{FeePriority, FeeRate};
 
 use crate::rpc::client::PolkadotClient;
 
@@ -17,9 +18,9 @@ impl<C: Client> ChainState for PolkadotClient<C> {
         Ok(self.get_block_header("head").await?.number)
     }
 
-    async fn get_fee_rates(&self) -> Result<Vec<FeePriorityValue>, Box<dyn Error + Sync + Send>> {
+    async fn get_fee_rates(&self) -> Result<Vec<FeeRate>, Box<dyn Error + Sync + Send>> {
         Ok(vec![
-            FeePriorityValue::new(FeePriority::Normal, "1".to_string())
+            FeeRate::regular(FeePriority::Normal, BigInt::from(1))
         ])
     }
 }

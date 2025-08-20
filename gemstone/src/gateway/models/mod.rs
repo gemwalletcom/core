@@ -10,7 +10,7 @@ pub use staking::*;
 pub use transaction::*;
 
 // Re-export simpler models inline
-use primitives::{FeePriorityValue, TransactionPreload, TransactionPreloadInput, UTXO};
+use primitives::{FeeRate, TransactionPreload, TransactionPreloadInput, UTXO};
 
 // ChainAccount models
 #[derive(Debug, Clone, uniffi::Record)]
@@ -21,11 +21,17 @@ pub struct GemUTXO {
     pub address: String,
 }
 
-// ChainState models
+// ChainState models  
 #[derive(Debug, Clone, uniffi::Record)]
-pub struct GemFeePriorityValue {
+pub struct GemGasPriceType {
+    pub gas_price: String,
+    pub priority_fee: Option<String>,
+}
+
+#[derive(Debug, Clone, uniffi::Record)]
+pub struct GemFeeRate {
     pub priority: String,
-    pub value: String,
+    pub gas_price_type: GemGasPriceType,
 }
 
 // ChainPreload models
@@ -68,11 +74,22 @@ impl From<GemUTXO> for UTXO {
     }
 }
 
-impl From<FeePriorityValue> for GemFeePriorityValue {
-    fn from(fee: FeePriorityValue) -> Self {
+impl From<FeeRate> for GemFeeRate {
+    fn from(fee: FeeRate) -> Self {
+        let gas_price_type = match fee.gas_price_type {
+            primitives::GasPriceType::Regular { gas_price } => GemGasPriceType {
+                gas_price: gas_price.to_string(),
+                priority_fee: None,
+            },
+            primitives::GasPriceType::Eip1559 { gas_price, priority_fee } => GemGasPriceType {
+                gas_price: gas_price.to_string(),
+                priority_fee: Some(priority_fee.to_string()),
+            },
+        };
+        
         Self {
             priority: fee.priority.as_ref().to_string(),
-            value: fee.value,
+            gas_price_type,
         }
     }
 }

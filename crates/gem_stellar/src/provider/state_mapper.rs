@@ -1,7 +1,10 @@
 use crate::models::fee::StellarFees;
-use primitives::{FeePriority, FeePriorityValue};
+use primitives::{FeePriority, FeeRate};
 
-pub fn map_fee_stats_to_priorities(fees: &StellarFees) -> Vec<FeePriorityValue> {
+#[cfg(test)]
+use {primitives::GasPriceType, num_bigint::BigInt};
+
+pub fn map_fee_stats_to_priorities(fees: &StellarFees) -> Vec<FeeRate> {
     let min_fee = std::cmp::max(
         fees.fee_charged.min.parse::<u64>().unwrap_or(100),
         fees.last_ledger_base_fee.parse::<u64>().unwrap_or(100),
@@ -10,9 +13,9 @@ pub fn map_fee_stats_to_priorities(fees: &StellarFees) -> Vec<FeePriorityValue> 
     let fast_fee = fees.fee_charged.p95.parse::<u64>().unwrap_or(min_fee) * 2;
 
     vec![
-        FeePriorityValue::new(FeePriority::Slow, min_fee.to_string()),
-        FeePriorityValue::new(FeePriority::Normal, min_fee.to_string()),
-        FeePriorityValue::new(FeePriority::Fast, fast_fee.to_string()),
+        FeeRate::regular(FeePriority::Slow, min_fee),
+        FeeRate::regular(FeePriority::Normal, min_fee),
+        FeeRate::regular(FeePriority::Fast, fast_fee),
     ]
 }
 
@@ -33,7 +36,13 @@ mod tests {
 
         let result = map_fee_stats_to_priorities(&fees);
         assert_eq!(result.len(), 3);
-        assert_eq!(result[0].value, "150"); // max(100, 150)
-        assert_eq!(result[2].value, "1000"); // 500 * 2
+        match &result[0].gas_price_type {
+            GasPriceType::Regular { gas_price } => assert_eq!(gas_price, &BigInt::from(150)), // max(100, 150)
+            _ => panic!("Expected Regular gas price"),
+        }
+        match &result[2].gas_price_type {
+            GasPriceType::Regular { gas_price } => assert_eq!(gas_price, &BigInt::from(1000)), // 500 * 2
+            _ => panic!("Expected Regular gas price"),
+        }
     }
 }
