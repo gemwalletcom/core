@@ -38,13 +38,15 @@ impl<C: Client> ChainToken for StellarClient<C> {
                 .first()
                 .ok_or_else(|| format!("No assets found for issuer: {}", issuer))?
         };
+        let symbol = asset.asset_code.clone();
+        let token_id = AssetId::sub_token_id(&[issuer.to_string(), symbol.clone()]);
 
         Ok(Asset {
             id: AssetId::from(self.chain, Some(token_id.clone())),
             chain: self.chain,
             token_id: Some(token_id),
-            name: asset.asset_code.clone(),
-            symbol: asset.asset_code.clone(),
+            name: symbol.clone(),
+            symbol,
             decimals: STELLAR_TOKEN_DECIMALS,
             asset_type: AssetType::TOKEN,
         })

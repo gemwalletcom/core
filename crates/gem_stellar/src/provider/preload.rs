@@ -1,10 +1,11 @@
 use async_trait::async_trait;
 use chain_traits::ChainPreload;
 use futures;
+use num_bigint::BigInt;
 use std::error::Error;
 
 use gem_client::Client;
-use primitives::{TransactionFee, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput};
+use primitives::{transaction_load::FeeOption, TransactionFee, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput};
 
 use crate::rpc::client::StellarClient;
 
@@ -16,20 +17,18 @@ impl<C: Client> ChainPreload for StellarClient<C> {
             self.get_stellar_account(&input.destination_address)
         );
 
-        let current_sequence: i64 = sender_account?.sequence.parse().unwrap_or(0);
-        let sequence = (current_sequence + 1) as u64;
-        let is_destination_address_exist = destination_result.is_ok();
-
         Ok(TransactionLoadMetadata::Stellar {
-            sequence,
-            is_destination_address_exist,
+            sequence: sender_account?.sequence + 1,
+            is_destination_address_exist: destination_result.is_ok(),
         })
     }
 
     async fn get_transaction_load(&self, input: TransactionLoadInput) -> Result<TransactionLoadData, Box<dyn Error + Sync + Send>> {
-        Ok(TransactionLoadData {
-            fee: TransactionFee::default(),
-            metadata: input.metadata,
-        })
+        let fee = if input.metadata.get_is_destination_address_exist()? {
+            TransactionFee::new_from_fee(input.gas_price.gas_price())
+        } else {
+            TransactionFee::new_from_fee_with_option(input.gas_price.gas_price(), FeeOption::TokenAccountCreation, BigInt::from(0))
+        };
+        Ok(TransactionLoadData { fee, metadata: input.metadata })
     }
 }

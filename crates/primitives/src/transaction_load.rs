@@ -1,4 +1,4 @@
-use crate::{Asset, SolanaTokenProgramId, TransactionPreloadInput, UTXO};
+use crate::{Asset, GasPriceType, SolanaTokenProgramId, TransactionPreloadInput, UTXO};
 use num_bigint::BigInt;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -10,10 +10,10 @@ pub enum FeeOption {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum StakeOperation {
-    Delegate(Asset, String),
-    Undelegate(Asset, String),
-    Redelegate(Asset, String, String),
+pub enum StakeType {
+    Delegate(String),
+    Undelegate(String),
+    Redelegate(String, String),
     WithdrawRewards(Vec<String>),
 }
 
@@ -21,12 +21,7 @@ pub enum StakeOperation {
 pub enum TransactionInputType {
     Transfer(Asset),
     Swap(Asset, Asset),
-    Stake(StakeOperation),
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct GasPrice {
-    pub gas_price: BigInt,
+    Stake(Asset, StakeType),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -35,7 +30,7 @@ pub struct TransactionLoadInput {
     pub sender_address: String,
     pub destination_address: String,
     pub value: String,
-    pub gas_price: GasPrice,
+    pub gas_price: GasPriceType,
     pub memo: Option<String>,
     pub is_max_value: bool,
     pub metadata: TransactionLoadMetadata,
@@ -82,6 +77,14 @@ impl TransactionFee {
             gas_price: BigInt::from(1),
             gas_limit: BigInt::from(1),
             options: HashMap::new(),
+        }
+    }
+    pub fn new_from_fee_with_option(fee: BigInt, option: FeeOption, option_value: BigInt) -> Self {
+        Self {
+            fee,
+            gas_price: BigInt::from(1),
+            gas_limit: BigInt::from(1),
+            options: HashMap::from([(option, option_value.to_string())]),
         }
     }
 }
@@ -148,14 +151,15 @@ impl TransactionLoadMetadata {
 }
 
 impl TransactionFee {
-    pub fn calculate(gas_limit: u64, gas_price: &GasPrice) -> Self {
-        let gas_limit_bigint = BigInt::from(gas_limit);
-        let total_fee = &gas_price.gas_price * &gas_limit_bigint;
+    pub fn calculate(gas_limit: u64, gas_price_type: &GasPriceType) -> Self {
+        let gas_limit = BigInt::from(gas_limit);
+        let gas_price = gas_price_type.gas_price();
+        let total_fee = gas_price.clone() * &gas_limit;
 
         Self {
             fee: total_fee,
-            gas_price: gas_price.gas_price.clone(),
-            gas_limit: gas_limit_bigint,
+            gas_price,
+            gas_limit,
             options: HashMap::new(),
         }
     }
@@ -274,12 +278,10 @@ mod tests {
 
     #[test]
     fn test_transaction_fee_calculate() {
-        let gas_price = GasPrice {
-            gas_price: BigInt::from(100u64),
-        };
+        let gas_price_type = GasPriceType::regular(BigInt::from(100u64));
         let gas_limit = 1000u64;
 
-        let fee = TransactionFee::calculate(gas_limit, &gas_price);
+        let fee = TransactionFee::calculate(gas_limit, &gas_price_type);
 
         assert_eq!(fee.fee, BigInt::from(100000u64)); // 100 * 1000
         assert_eq!(fee.gas_price, BigInt::from(100u64));

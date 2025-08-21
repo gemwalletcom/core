@@ -147,5 +147,5 @@ pub mod transaction_preload;
 pub use self::transaction_preload::TransactionPreloadInput;
 pub mod transaction_load;
 pub use self::transaction_load::{
-    GasPrice, SignerInputToken, StakeOperation, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata,
+    SignerInputToken, StakeType, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata,
 };

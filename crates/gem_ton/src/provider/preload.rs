@@ -135,7 +135,7 @@ impl<C: Client> TonClient<C> {
                     Ok(("".to_string(), true))
                 }
             }
-            TransactionInputType::Stake(_) => Ok(("".to_string(), true)),
+            TransactionInputType::Stake(_, _) => Ok(("".to_string(), true)),
         }
     }
 }

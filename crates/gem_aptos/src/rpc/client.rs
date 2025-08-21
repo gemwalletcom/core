@@ -110,7 +110,7 @@ impl<C: Client> AptosClient<C> {
                                 &input.destination_address,
                                 &sequence.to_string(),
                                 &input.value,
-                                &input.gas_price.gas_price.to_string(),
+                                &input.gas_price.gas_price().to_string(),
                                 1500,
                             )
                             .await?;
@@ -120,7 +120,7 @@ impl<C: Client> AptosClient<C> {
                 }
             }
             TransactionInputType::Swap(_, _) => Ok(1500),
-            TransactionInputType::Stake(_) => Err("Aptos does not support staking".into()),
+            TransactionInputType::Stake(_, _) => Err("Aptos does not support staking".into()),
         }
     }
 

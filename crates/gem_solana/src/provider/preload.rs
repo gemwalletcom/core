@@ -73,7 +73,7 @@ impl<C: Client + Clone> SolanaClient<C> {
         let sender_token_account = sender_accounts.value.first().ok_or("Sender token address is empty")?;
 
         let sender_token_address = sender_token_account.pubkey.clone();
-        let token_program = get_token_program_id(&sender_token_account.account.owner)?;
+        let token_program = get_token_program_id_by_address(&sender_token_account.account.owner).ok_or("Unable to determine token program ID")?;
 
         let recipient_token_address = recipient_accounts.value.first().map(|account| account.pubkey.clone());
 
@@ -82,12 +82,5 @@ impl<C: Client + Clone> SolanaClient<C> {
             recipient_token_address,
             token_program,
         })
-    }
-}
-
-fn get_token_program_id(owner: &str) -> Result<SolanaTokenProgramId, Box<dyn Error + Sync + Send>> {
-    match get_token_program_id_by_address(owner) {
-        Some(token_program_id) => Ok(token_program_id),
-        None => Err("Unknown token program id".into()),
     }
 }

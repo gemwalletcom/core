@@ -28,7 +28,6 @@ pub fn map_token_balances(account: &StellarAccount, token_ids: Vec<String>, chai
     token_ids
         .into_iter()
         .map(|token_id| {
-            // Parse issuer::symbol format only
             if let Some((issuer, symbol)) = token_id.split_once("::") {
                 if let Some(balance) = account
                     .balances

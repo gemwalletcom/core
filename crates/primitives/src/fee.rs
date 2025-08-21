@@ -40,6 +40,13 @@ impl GasPriceType {
             priority_fee: priority_fee.into(),
         }
     }
+
+    pub fn gas_price(&self) -> BigInt {
+        match self {
+            GasPriceType::Regular { gas_price } => gas_price.clone(),
+            GasPriceType::Eip1559 { gas_price, .. } => gas_price.clone(),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

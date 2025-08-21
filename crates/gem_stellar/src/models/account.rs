@@ -1,8 +1,10 @@
 use serde::{Deserialize, Serialize};
+use serde_serializers::deserialize_u64_from_str;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StellarAccount {
-    pub sequence: String,
+    #[serde(deserialize_with = "deserialize_u64_from_str")]
+    pub sequence: u64,
     pub balances: Vec<StellarBalance>,
 }
 
