@@ -6,7 +6,7 @@ use number_formatter::BigNumberFormatter;
 use std::error::Error;
 
 use gem_client::Client;
-use primitives::{FeePriority, FeeRate, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput};
+use primitives::{FeePriority, FeeRate, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput, UTXO};
 
 use crate::provider::preload_mapper::map_transaction_preload;
 use crate::rpc::client::BitcoinClient;
@@ -33,6 +33,19 @@ impl<C: Client> ChainTransactionLoad for BitcoinClient<C> {
             FeeRate::regular(FeePriority::Normal, normal),
             FeeRate::regular(FeePriority::Fast, fast),
         ])
+    }
+
+    async fn get_utxos(&self, address: String) -> Result<Vec<UTXO>, Box<dyn Error + Sync + Send>> {
+        Ok(BitcoinClient::get_utxos(self, &address)
+            .await?
+            .into_iter()
+            .map(|utxo| UTXO {
+                transaction_id: utxo.txid,
+                vout: utxo.vout,
+                value: utxo.value,
+                address: address.clone(),
+            })
+            .collect())
     }
 }
 

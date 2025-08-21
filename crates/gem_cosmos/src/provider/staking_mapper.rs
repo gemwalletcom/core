@@ -71,7 +71,7 @@ pub fn map_staking_delegations(
         })
         .collect();
 
-    let active_delegations_mapped = active_delegations.delegation_responses.into_iter().filter_map(|delegation| {
+    let active_delegations = active_delegations.delegation_responses.into_iter().filter_map(|delegation| {
         let balance_value = BigNumberFormatter::value_from_amount(&delegation.balance.amount, 0).ok()?;
         if balance_value == "0" {
             return None;
@@ -100,7 +100,7 @@ pub fn map_staking_delegations(
             validator_id: delegation.delegation.validator_address,
         })
     });
-    delegations.extend(active_delegations_mapped);
+    delegations.extend(active_delegations);
 
     for unbonding in unbonding_delegations.unbonding_responses {
         for entry in unbonding.entries {

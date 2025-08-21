@@ -48,11 +48,7 @@ pub trait ChainState: Send + Sync {
 }
 
 #[async_trait]
-pub trait ChainAccount: Send + Sync {
-    async fn get_utxos(&self, _address: String) -> Result<Vec<UTXO>, Box<dyn Error + Sync + Send>> {
-        Ok(vec![])
-    }
-}
+pub trait ChainAccount: Send + Sync {}
 
 #[async_trait]
 pub trait ChainPerpetual: Send + Sync {
@@ -96,5 +92,9 @@ pub trait ChainTransactionLoad: Send + Sync {
 
     async fn get_transaction_fee_rates(&self) -> Result<Vec<FeeRate>, Box<dyn Error + Sync + Send>> {
         Err("Chain does not support fee rates".into())
+    }
+
+    async fn get_utxos(&self, _address: String) -> Result<Vec<UTXO>, Box<dyn Error + Sync + Send>> {
+        Ok(vec![])
     }
 }

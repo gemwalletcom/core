@@ -25,14 +25,12 @@ impl<C: Client + Clone> ChainStaking for SuiClient<C> {
 
     async fn get_staking_validators(&self, apy: Option<f64>) -> Result<Vec<DelegationValidator>, Box<dyn Error + Sync + Send>> {
         let validators = self.get_validators().await?;
-        let mapped_validators = staking_mapper::map_validators(validators, apy.unwrap_or(0.0));
-        Ok(mapped_validators)
+        Ok(staking_mapper::map_validators(validators, apy.unwrap_or(0.0)))
     }
 
     async fn get_staking_delegations(&self, address: String) -> Result<Vec<DelegationBase>, Box<dyn Error + Sync + Send>> {
         let system_state = self.get_system_state().await?;
         let delegations = self.get_stake_delegations(address).await?;
-        let mapped_delegations = staking_mapper::map_delegations(delegations, system_state);
-        Ok(mapped_delegations)
+        Ok(staking_mapper::map_delegations(delegations, system_state))
     }
 }
