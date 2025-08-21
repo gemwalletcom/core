@@ -234,8 +234,20 @@ pub struct TonTransactionMessage {
     pub total_fees: String,
     pub description: Option<TransactionDescription>,
     pub out_msgs: Vec<TonOutMessage>,
+    pub in_msg: Option<TonInMessage>,
     #[serde(default)]
     pub account: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TonInMessage {
+    pub hash: String,
+    pub source: Option<String>,
+    pub destination: String,
+    pub value: Option<String>,
+    pub opcode: Option<String>,
+    pub bounce: Option<bool>,
+    pub bounced: Option<bool>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

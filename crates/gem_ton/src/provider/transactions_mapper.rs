@@ -1,4 +1,4 @@
-use crate::constants::JETTON_TRANSFER_OPCODE;
+use crate::constants::FAILED_OPERATION_OPCODES;
 use crate::rpc::model::{TonBroadcastTransaction, TonMessageTransactions, TonTransactionMessage};
 use primitives::{TransactionChange, TransactionState, TransactionStateRequest, TransactionUpdate};
 use std::error::Error;
@@ -47,9 +47,9 @@ fn map_transaction_state(transaction: &TonTransactionMessage) -> TransactionStat
         return TransactionState::Failed;
     }
 
-    for out_msg in &transaction.out_msgs {
-        if let (Some(opcode), Ok(value)) = (&out_msg.opcode, out_msg.value.parse::<u64>()) {
-            if opcode == JETTON_TRANSFER_OPCODE && value > 100_000_000 {
+    if let Some(in_msg) = &transaction.in_msg {
+        if let Some(opcode) = &in_msg.opcode {
+            if FAILED_OPERATION_OPCODES.contains(&opcode.as_str()) {
                 return TransactionState::Failed;
             }
         }
@@ -128,6 +128,18 @@ mod tests {
         assert_eq!(transactions.transactions.len(), 1);
         let transaction = &transactions.transactions[0];
         assert_eq!(transaction.hash, "wsQ2mvEWkMbw3QnyeBl85O+uuUsDNfuWJnc2mBh8lPg=");
+
+        let state = map_transaction_state(transaction);
+        assert_eq!(state, TransactionState::Confirmed);
+    }
+
+    #[test]
+    fn test_swap_jetton_ton_success() {
+        let transactions: TonMessageTransactions = serde_json::from_str(include_str!("../../testdata/transaction_swap_jetton_ton_success.json")).unwrap();
+
+        assert_eq!(transactions.transactions.len(), 1);
+        let transaction = &transactions.transactions[0];
+        assert_eq!(transaction.hash, "psAXHb1HyvR53f9LHmOzQWohJu3tDRWbxvZbHB1B+iY=");
 
         let state = map_transaction_state(transaction);
         assert_eq!(state, TransactionState::Confirmed);
