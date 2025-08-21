@@ -5,3 +5,4 @@ pub mod staking;
 pub mod state;
 pub mod token;
 pub mod transactions;
+pub mod transactions_mapper;

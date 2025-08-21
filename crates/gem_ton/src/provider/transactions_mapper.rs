@@ -1,3 +1,4 @@
+use crate::constants::JETTON_TRANSFER_OPCODE;
 use crate::rpc::model::{TonBroadcastTransaction, TonMessageTransactions, TonTransactionMessage};
 use primitives::{TransactionChange, TransactionState, TransactionStateRequest, TransactionUpdate};
 use std::error::Error;
@@ -42,15 +43,13 @@ fn map_transaction_state(transaction: &TonTransactionMessage) -> TransactionStat
         return TransactionState::Failed;
     }
 
-    // Check for bounced messages which indicate failure
     if transaction.out_msgs.iter().any(|msg| msg.bounce && msg.bounced) {
         return TransactionState::Failed;
     }
 
     for out_msg in &transaction.out_msgs {
-        if let (Some(_opcode), Ok(value)) = (&out_msg.opcode, out_msg.value.parse::<u64>()) {
-            if value >= 100_000_000 {
-                // >= 0.1 TON indicates likely refund
+        if let (Some(opcode), Ok(value)) = (&out_msg.opcode, out_msg.value.parse::<u64>()) {
+            if opcode == JETTON_TRANSFER_OPCODE && value > 100_000_000 {
                 return TransactionState::Failed;
             }
         }
@@ -96,5 +95,41 @@ mod tests {
 
         let state = map_transaction_state(transaction);
         assert_eq!(state, TransactionState::Failed);
+    }
+
+    #[test]
+    fn test_jetton_transfer_success() {
+        let transactions: TonMessageTransactions = serde_json::from_str(include_str!("../../testdata/transaction_transfer_jetton_success.json")).unwrap();
+
+        assert_eq!(transactions.transactions.len(), 1);
+        let transaction = &transactions.transactions[0];
+        assert_eq!(transaction.hash, "X2rQTJQF38kXLWdQL42pP8NKrd2X1YDyp5h7Erq7sBA=");
+
+        let state = map_transaction_state(transaction);
+        assert_eq!(state, TransactionState::Confirmed);
+    }
+
+    #[test]
+    fn test_jetton_transfer_success_2() {
+        let transactions: TonMessageTransactions = serde_json::from_str(include_str!("../../testdata/transaction_transfer_jetton_success_2.json")).unwrap();
+
+        assert_eq!(transactions.transactions.len(), 1);
+        let transaction = &transactions.transactions[0];
+        assert_eq!(transaction.hash, "pI2WtPJ6516pwuNti1h+Hetg0NZ8C/kBOboRkayUKL8=");
+
+        let state = map_transaction_state(transaction);
+        assert_eq!(state, TransactionState::Confirmed);
+    }
+
+    #[test]
+    fn test_swap_ton_jetton_success() {
+        let transactions: TonMessageTransactions = serde_json::from_str(include_str!("../../testdata/transaction_swap_ton_jetton_success.json")).unwrap();
+
+        assert_eq!(transactions.transactions.len(), 1);
+        let transaction = &transactions.transactions[0];
+        assert_eq!(transaction.hash, "wsQ2mvEWkMbw3QnyeBl85O+uuUsDNfuWJnc2mBh8lPg=");
+
+        let state = map_transaction_state(transaction);
+        assert_eq!(state, TransactionState::Confirmed);
     }
 }

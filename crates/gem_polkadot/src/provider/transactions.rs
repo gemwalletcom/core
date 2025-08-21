@@ -3,8 +3,9 @@ use chain_traits::ChainTransactions;
 use std::error::Error;
 
 use gem_client::Client;
-use primitives::{TransactionChange, TransactionState, TransactionStateRequest, TransactionUpdate};
+use primitives::{TransactionStateRequest, TransactionUpdate};
 
+use super::transactions_mapper;
 use crate::rpc::client::PolkadotClient;
 
 #[async_trait]
@@ -30,25 +31,27 @@ impl<C: Client> ChainTransactions for PolkadotClient<C> {
 
         let block_head = self.get_block_head().await?;
         let from_block = block_number as u64;
-        let to_block = std::cmp::min(block_head.number, from_block + 64);
+        let to_block = calculate_to_block(block_head.number, from_block);
+
         let blocks = self.get_blocks(&from_block.to_string(), &to_block.to_string()).await?;
+        Ok(transactions_mapper::map_transaction_status(blocks, &request.id, block_number))
+    }
+}
 
-        for block in blocks {
-            for extrinsic in block.extrinsics {
-                if extrinsic.hash == request.id {
-                    let state = if extrinsic.success {
-                        TransactionState::Confirmed
-                    } else {
-                        TransactionState::Failed
-                    };
-                    return Ok(TransactionUpdate::new_state(state));
-                }
-            }
-        }
+fn calculate_to_block(block_head_number: u64, from_block: u64) -> u64 {
+    let to_block = std::cmp::min(block_head_number, from_block + 64);
+    std::cmp::max(to_block, from_block + 1)
+}
 
-        Ok(TransactionUpdate::new(
-            TransactionState::Pending,
-            vec![TransactionChange::BlockNumber(block_number.to_string())],
-        ))
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_calculate_to_block() {
+        assert_eq!(calculate_to_block(100, 100), 101);
+        assert_eq!(calculate_to_block(200, 100), 164);
+        assert_eq!(calculate_to_block(105, 100), 105);
+        assert_eq!(calculate_to_block(50, 100), 101);
     }
 }

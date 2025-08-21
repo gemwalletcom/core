@@ -150,7 +150,8 @@ impl<C: Client> TonClient<C> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use primitives::{Asset, AssetId, AssetType, Chain, GasPrice};
+    use primitives::{Asset, AssetId, AssetType, Chain, GasPriceType};
+    use num_bigint::BigInt;
 
     fn create_input(asset_type: AssetType, memo: Option<String>) -> TransactionLoadInput {
         let (token_id, name, symbol, decimals) = match asset_type {
@@ -175,9 +176,7 @@ mod tests {
             sender_address: "test".to_string(),
             destination_address: "test".to_string(),
             value: "1000".to_string(),
-            gas_price: GasPrice {
-                gas_price: BigInt::from(10_000_000u64),
-            },
+            gas_price: GasPriceType::regular(BigInt::from(10_000_000u64)),
             memo,
             is_max_value: false,
             metadata: TransactionLoadMetadata::Ton {

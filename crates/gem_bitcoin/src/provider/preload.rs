@@ -62,3 +62,17 @@ fn calculate_fee_rate(fee_sat_per_kb: &str, minimum_byte_fee: u32) -> Result<Big
 
     Ok(BigInt::from(rate.max(minimum_byte_fee) as i64))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_calculate_fee_rate() {
+        assert_eq!(calculate_fee_rate("0.00004131", 1).unwrap(), BigInt::from(4));
+        assert_eq!(calculate_fee_rate("0.00001131", 1).unwrap(), BigInt::from(1));
+        assert_eq!(calculate_fee_rate("0.000001", 5).unwrap(), BigInt::from(5));
+        assert_eq!(calculate_fee_rate("0", 1).unwrap(), BigInt::from(1));
+        assert!(calculate_fee_rate("invalid", 1).is_err());
+    }
+}
