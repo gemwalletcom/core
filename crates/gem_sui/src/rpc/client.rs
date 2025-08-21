@@ -1,23 +1,21 @@
 use std::error::Error;
 
-#[cfg(all(feature = "reqwest", not(feature = "rpc")))]
-use gem_jsonrpc::JsonRpcClient;
+#[cfg(feature = "rpc")]
+use async_trait::async_trait;
+#[cfg(feature = "rpc")]
+use chain_traits::{ChainAccount, ChainPerpetual, ChainPreload, ChainTraits, ChainTransactions};
 #[cfg(feature = "rpc")]
 use gem_client::Client;
 #[cfg(feature = "rpc")]
 use gem_jsonrpc::client::JsonRpcClient as GenericJsonRpcClient;
-#[cfg(feature = "rpc")]
-use async_trait::async_trait;
-#[cfg(feature = "rpc")]
-use chain_traits::{ChainAccount, ChainPerpetual, ChainTraits, ChainTransactions, ChainPreload};
+#[cfg(all(feature = "reqwest", not(feature = "rpc")))]
+use gem_jsonrpc::JsonRpcClient;
 use primitives::{chain::Chain, Asset, TransactionStateRequest, TransactionUpdate};
 
-use super::{
-    model::Balance,
-};
+use super::model::Balance;
 use crate::models::staking::{SuiStakeDelegation, SuiSystemState, SuiValidators};
-use crate::models::SuiCoinMetadata;
 use crate::models::transaction::SuiTransaction;
+use crate::models::SuiCoinMetadata;
 
 #[cfg(all(feature = "reqwest", not(feature = "rpc")))]
 pub struct SuiClient {
@@ -42,7 +40,7 @@ impl<C: Client + Clone> SuiClient<C> {
     pub fn new(client: GenericJsonRpcClient<C>) -> Self {
         Self { client, chain: Chain::Sui }
     }
-    
+
     pub fn get_client(&self) -> &GenericJsonRpcClient<C> {
         &self.client
     }
@@ -69,7 +67,7 @@ impl<C: Client + Clone> SuiClient<C> {
     pub async fn get_token_data(&self, token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
         let metadata = self.get_coin_metadata(token_id.clone()).await?;
         let asset_id = primitives::AssetId::from_token(Chain::Sui, &token_id);
-        
+
         Ok(Asset {
             id: asset_id.clone(),
             name: metadata.name,
@@ -128,7 +126,6 @@ impl<C: Client + Clone> SuiClient<C> {
         ]);
         self.rpc_call("sui_getTransactionBlock", params).await
     }
-
 }
 
 #[cfg(feature = "rpc")]
@@ -139,8 +136,6 @@ impl<C: Client + Clone> ChainAccount for SuiClient<C> {}
 
 #[cfg(feature = "rpc")]
 impl<C: Client + Clone> ChainPerpetual for SuiClient<C> {}
-
-
 
 #[cfg(feature = "rpc")]
 impl<C: Client + Clone> ChainPreload for SuiClient<C> {}

@@ -3,7 +3,7 @@ use chain_traits::ChainPreload;
 use std::error::Error;
 
 use gem_client::Client;
-use primitives::{TransactionLoadMetadata, TransactionPreloadInput, TransactionLoadData, TransactionLoadInput, TransactionFee};
+use primitives::{TransactionFee, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput};
 
 use crate::rpc::client::TronClient;
 
@@ -12,7 +12,7 @@ impl<C: Client> ChainPreload for TronClient<C> {
     async fn get_transaction_preload(&self, _input: TransactionPreloadInput) -> Result<TransactionLoadMetadata, Box<dyn Error + Send + Sync>> {
         let block = self.get_tron_block().await?;
         let block_data = &block.block_header.raw_data;
-        
+
         Ok(TransactionLoadMetadata::Tron {
             block_number: block_data.number,
             block_version: block_data.version as u64,

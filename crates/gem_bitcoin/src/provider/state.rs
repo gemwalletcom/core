@@ -1,9 +1,9 @@
 use async_trait::async_trait;
 use chain_traits::ChainState;
 use gem_client::Client;
+use num_bigint::BigInt;
 use number_formatter::BigNumberFormatter;
 use primitives::fee::{FeePriority, FeeRate};
-use num_bigint::BigInt;
 use std::error::Error;
 
 use crate::rpc::client::BitcoinClient;
@@ -41,7 +41,7 @@ impl<C: Client> BitcoinClient<C> {
 fn calculate_fee_rate(fee_sat_per_kb: &str, minimum_byte_fee: u32) -> Result<BigInt, Box<dyn Error + Sync + Send>> {
     let rate = BigNumberFormatter::value_from_amount(fee_sat_per_kb, 8)?.parse::<f64>()? / 1000.0;
     let minimum_byte_fee = minimum_byte_fee as f64;
-    
+
     Ok(BigInt::from(rate.max(minimum_byte_fee) as i64))
 }
 
@@ -54,10 +54,10 @@ mod tests {
         // Test with specific Bitcoin fee values (BTC amounts converted to sat/vB)
         assert_eq!(calculate_fee_rate("0.00002132", 1).unwrap(), BigInt::from(2));
         assert_eq!(calculate_fee_rate("0.00001083", 1).unwrap(), BigInt::from(1));
-        
+
         // Test minimum enforcement
         assert_eq!(calculate_fee_rate("0.00000500", 10).unwrap(), BigInt::from(10));
-        
+
         // Test higher fee rates
         assert_eq!(calculate_fee_rate("0.00100000", 1).unwrap(), BigInt::from(100));
     }

@@ -15,8 +15,8 @@ pub fn map_gas_price_to_priorities(gas_price: &NearGasPrice) -> Result<Vec<FeeRa
 mod tests {
     use super::*;
     use crate::models::fee::NearGasPrice;
-    use primitives::GasPriceType;
     use num_bigint::BigInt;
+    use primitives::GasPriceType;
 
     #[test]
     fn test_map_gas_price_to_priorities() {

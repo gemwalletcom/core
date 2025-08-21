@@ -105,7 +105,7 @@ pub use self::solana_token_program::SolanaTokenProgramId;
 pub mod solana_types;
 pub use self::solana_types::{SolanaAccountMeta, SolanaInstruction};
 pub mod fee;
-pub use self::fee::{FeePriority, FeeUnitType, GasPriceType, FeeRate};
+pub use self::fee::{FeePriority, FeeRate, FeeUnitType, GasPriceType};
 pub mod response;
 pub use self::response::{ResponseError, ResponseResult};
 pub mod link_type;
@@ -144,6 +144,8 @@ pub use self::delegation::{Delegation, DelegationBase, DelegationState, Delegati
 pub mod transaction_update;
 pub use self::transaction_update::{TransactionChange, TransactionMetadata, TransactionStateRequest, TransactionUpdate};
 pub mod transaction_preload;
-pub use self::transaction_preload::{TransactionPreloadInput};
+pub use self::transaction_preload::TransactionPreloadInput;
 pub mod transaction_load;
-pub use self::transaction_load::{GasPrice, SignerInputToken, StakeOperation, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata};
+pub use self::transaction_load::{
+    GasPrice, SignerInputToken, StakeOperation, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata,
+};

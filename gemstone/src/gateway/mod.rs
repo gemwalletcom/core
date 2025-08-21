@@ -1,5 +1,5 @@
 use crate::gateway::models::asset::GemAsset;
-use crate::network::{AlienClient, AlienProvider, jsonrpc_client_with_chain};
+use crate::network::{jsonrpc_client_with_chain, AlienClient, AlienProvider};
 use chain_traits::ChainTraits;
 use gem_algorand::rpc::client::AlgorandClient;
 use gem_aptos::rpc::client::AptosClient;
@@ -8,10 +8,10 @@ use gem_cardano::rpc::client::CardanoClient;
 use gem_cosmos::rpc::client::CosmosClient;
 use gem_hypercore::rpc::client::HyperCoreClient;
 use gem_near::rpc::client::NearClient;
-use gem_stellar::rpc::client::StellarClient;
-use gem_sui::rpc::client::SuiClient;
 use gem_polkadot::rpc::client::PolkadotClient;
 use gem_solana::rpc::client::SolanaClient;
+use gem_stellar::rpc::client::StellarClient;
+use gem_sui::rpc::client::SuiClient;
 use gem_ton::rpc::client::TonClient;
 use gem_tron::rpc::client::TronClient;
 use gem_xrp::rpc::client::XRPClient;
@@ -65,11 +65,11 @@ impl GemGateway {
 #[async_trait::async_trait]
 impl GemGatewayEstimateFee for GemGateway {
     async fn get_fee(&self, _chain: Chain, _input: GemTransactionLoadInput) -> Result<Option<GemTransactionLoadFee>, GatewayError> {
-       Ok(None)
+        Ok(None)
     }
 
     async fn get_fee_data(&self, _chain: Chain, _input: GemTransactionLoadInput) -> Result<Option<String>, GatewayError> {
-       Ok(None)
+        Ok(None)
     }
 }
 
@@ -200,39 +200,44 @@ impl GemGateway {
         Ok(metadata.into())
     }
 
-    pub async fn get_fee(&self, chain: Chain, input: GemTransactionLoadInput, provider: Arc<dyn GemGatewayEstimateFee>) -> Result<Option<GemTransactionLoadFee>, GatewayError> {
+    pub async fn get_fee(
+        &self,
+        chain: Chain,
+        input: GemTransactionLoadInput,
+        provider: Arc<dyn GemGatewayEstimateFee>,
+    ) -> Result<Option<GemTransactionLoadFee>, GatewayError> {
         let fee = provider.get_fee(chain, input.clone()).await?;
         if let Some(fee) = fee {
             return Ok(Some(fee.into()));
         }
         if let Some(fee_data) = provider.get_fee_data(chain, input.clone()).await? {
             let data = self
-            .provider(chain)
-            .await?
-            .get_transaction_fee(fee_data)
-            .await
-            .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
+                .provider(chain)
+                .await?
+                .get_transaction_fee(fee_data)
+                .await
+                .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
             return Ok(Some(data.into()));
         }
         Ok(None)
     }
 
-
-    pub async fn get_transaction_load(&self, chain: Chain, input: GemTransactionLoadInput, provider: Arc<dyn GemGatewayEstimateFee>) -> Result<GemTransactionData, GatewayError> {
+    pub async fn get_transaction_load(
+        &self,
+        chain: Chain,
+        input: GemTransactionLoadInput,
+        provider: Arc<dyn GemGatewayEstimateFee>,
+    ) -> Result<GemTransactionData, GatewayError> {
         let fee = self.get_fee(chain, input.clone(), provider.clone()).await?;
-        
+
         let load_data = self
             .provider(chain)
             .await?
             .get_transaction_load(input.clone().into())
             .await
             .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
-        
-        let data = if let Some(fee) = fee {
-            load_data.new_from(fee.into())
-        } else {
-            load_data
-        };
+
+        let data = if let Some(fee) = fee { load_data.new_from(fee.into()) } else { load_data };
 
         Ok(models::transaction::map_transaction_load_data(data, &input))
     }

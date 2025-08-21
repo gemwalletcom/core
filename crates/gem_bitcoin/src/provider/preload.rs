@@ -5,8 +5,8 @@ use std::error::Error;
 use gem_client::Client;
 use primitives::{TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput};
 
-use crate::rpc::client::BitcoinClient;
 use crate::provider::preload_mapper::map_transaction_preload;
+use crate::rpc::client::BitcoinClient;
 
 #[async_trait]
 impl<C: Client> ChainPreload for BitcoinClient<C> {

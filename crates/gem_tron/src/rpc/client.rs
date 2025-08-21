@@ -1,16 +1,18 @@
+use async_trait::async_trait;
+use chain_traits::{ChainAccount, ChainPerpetual, ChainStaking, ChainTraits};
 use primitives::{asset_type::AssetType, chain::Chain, Asset, AssetId};
 use std::error::Error;
-use async_trait::async_trait;
-use chain_traits::{ChainTraits, ChainAccount, ChainPerpetual, ChainStaking};
 
 use super::model::{
-    Block, BlockTransactions, BlockTransactionsInfo, ChainParameter, ChainParametersResponse, TriggerConstantContractRequest, TriggerConstantContractResponse,
-    WitnessesList, Transaction, TransactionReceiptData, TronTransactionBroadcast,
+    Block, BlockTransactions, BlockTransactionsInfo, ChainParameter, ChainParametersResponse, Transaction, TransactionReceiptData,
+    TriggerConstantContractRequest, TriggerConstantContractResponse, TronTransactionBroadcast, WitnessesList,
 };
-use crate::models::{TronAccount, TronAccountRequest, TronAccountUsage, TronEmptyAccount, TronReward, TronSmartContractCall, TronSmartContractResult, TronBlock};
+use crate::models::{
+    TronAccount, TronAccountRequest, TronAccountUsage, TronBlock, TronEmptyAccount, TronReward, TronSmartContractCall, TronSmartContractResult,
+};
 use crate::rpc::constants::{DECIMALS_SELECTOR, DEFAULT_OWNER_ADDRESS, NAME_SELECTOR, SYMBOL_SELECTOR};
-use gem_evm::erc20::{decode_abi_string, decode_abi_uint8};
 use gem_client::Client;
+use gem_evm::erc20::{decode_abi_string, decode_abi_uint8};
 
 #[derive(Clone)]
 pub struct TronClient<C: Client> {
@@ -42,7 +44,12 @@ impl<C: Client> TronClient<C> {
         Ok(self.client.get(&format!("/walletsolidity/gettransactioninfobyid?value={}", id)).await?)
     }
 
-    pub async fn trigger_constant_contract(&self, contract_address: &str, function_selector: &str, parameter: &str) -> Result<String, Box<dyn Error + Send + Sync>> {
+    pub async fn trigger_constant_contract(
+        &self,
+        contract_address: &str,
+        function_selector: &str,
+        parameter: &str,
+    ) -> Result<String, Box<dyn Error + Send + Sync>> {
         let request_payload = TriggerConstantContractRequest {
             owner_address: DEFAULT_OWNER_ADDRESS.to_owned(),
             contract_address: contract_address.to_string(),
@@ -52,11 +59,11 @@ impl<C: Client> TronClient<C> {
         };
 
         let response: TriggerConstantContractResponse = self.client.post("/wallet/triggerconstantcontract", &request_payload, None).await?;
-        
+
         if response.constant_result.is_empty() {
             return Err("Empty response from Tron contract call".into());
         }
-        
+
         Ok(response.constant_result[0].clone())
     }
 }
@@ -96,7 +103,7 @@ impl<C: Client> TronClient<C> {
             address: address.to_string(),
             visible: true,
         };
-        
+
         Ok(self.client.post("/wallet/getaccount", &request, None).await?)
     }
 
@@ -105,7 +112,7 @@ impl<C: Client> TronClient<C> {
             address: address.to_string(),
             visible: true,
         };
-        
+
         Ok(self.client.post("/wallet/getaccountresource", &request, None).await?)
     }
 
@@ -114,7 +121,7 @@ impl<C: Client> TronClient<C> {
             address: address.to_string(),
             visible: true,
         };
-        
+
         Ok(self.client.post("/wallet/getReward", &request, None).await?)
     }
 
@@ -127,7 +134,7 @@ impl<C: Client> TronClient<C> {
             address: address.to_string(),
             visible: true,
         };
-        
+
         let account: TronEmptyAccount = self.client.post("/wallet/getaccount", &request, None).await?;
         Ok(account.address.is_none_or(|addr| addr.is_empty()))
     }
@@ -153,8 +160,3 @@ impl<C: Client> ChainPerpetual for TronClient<C> {}
 
 #[async_trait]
 impl<C: Client> ChainStaking for TronClient<C> {}
-
-
-
-
-

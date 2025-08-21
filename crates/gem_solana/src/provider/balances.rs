@@ -30,5 +30,3 @@ impl<C: Client + Clone> ChainBalances for SolanaClient<C> {
         Ok(balances_mapper::map_staking_balance(accounts))
     }
 }
-
-

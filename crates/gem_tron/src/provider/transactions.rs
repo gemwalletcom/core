@@ -3,7 +3,7 @@ use chain_traits::ChainTransactions;
 use std::error::Error;
 
 use gem_client::Client;
-use primitives::{TransactionState, TransactionStateRequest, TransactionUpdate, TransactionChange};
+use primitives::{TransactionChange, TransactionState, TransactionStateRequest, TransactionUpdate};
 
 use super::transactions_mapper::map_transaction_broadcast;
 use crate::rpc::client::TronClient;
@@ -17,19 +17,19 @@ impl<C: Client> ChainTransactions for TronClient<C> {
 
     async fn get_transaction_status(&self, request: TransactionStateRequest) -> Result<TransactionUpdate, Box<dyn Error + Sync + Send>> {
         let receipt = self.get_transaction_reciept(request.id).await?;
-        
+
         if let Some(receipt_result) = &receipt.receipt.result {
             if receipt_result == "OUT_OF_ENERGY" {
                 return Ok(TransactionUpdate::new_state(TransactionState::Reverted));
             }
         }
-        
+
         if let Some(result) = &receipt.receipt.result {
             if result == "FAILED" {
                 return Ok(TransactionUpdate::new_state(TransactionState::Reverted));
             }
         }
-        
+
         if receipt.block_number > 0 {
             let mut changes = vec![];
             if let Some(fee) = receipt.fee {
@@ -37,7 +37,7 @@ impl<C: Client> ChainTransactions for TronClient<C> {
             }
             return Ok(TransactionUpdate::new(TransactionState::Confirmed, changes));
         }
-        
+
         Ok(TransactionUpdate::new_state(TransactionState::Pending))
     }
 }

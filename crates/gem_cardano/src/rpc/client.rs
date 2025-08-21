@@ -1,10 +1,10 @@
 use std::error::Error;
 
+use async_trait::async_trait;
 use chain_traits::{ChainPerpetual, ChainPreload, ChainStaking, ChainTraits};
 use gem_client::Client;
 use primitives::chain::Chain;
 use primitives::{TransactionLoadData, TransactionLoadInput};
-use async_trait::async_trait;
 
 use super::model::{Block, Blocks, Data};
 use crate::models::{CardanoBalanceResponse, CardanoBlockData, CardanoGenesisData, CardanoTransactionBroadcast, CardanoUTXO, CardanoUTXOS};

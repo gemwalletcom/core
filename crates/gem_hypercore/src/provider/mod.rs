@@ -2,6 +2,7 @@ pub mod account;
 pub mod balances;
 pub mod balances_mapper;
 pub mod perpetual;
+pub mod perpetual_mapper;
 pub mod staking;
 pub mod staking_mapper;
 pub mod state;

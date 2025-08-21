@@ -1,14 +1,14 @@
 use std::error::Error;
 
-use primitives::{Asset, Chain};
-use gem_client::Client;
 use chain_traits::{ChainAccount, ChainPerpetual, ChainTraits};
+use gem_client::Client;
+use primitives::{Asset, Chain};
 
 use super::model::{Block, BlockHeader};
 use crate::models::account::PolkadotAccountBalance;
 use crate::models::block::PolkadotNodeVersion;
-use crate::models::transaction::{PolkadotTransactionBroadcastResponse, PolkadotTransactionMaterial};
 use crate::models::fee::PolkadotEstimateFee;
+use crate::models::transaction::{PolkadotTransactionBroadcastResponse, PolkadotTransactionMaterial};
 
 pub struct PolkadotClient<C: Client> {
     pub client: C,

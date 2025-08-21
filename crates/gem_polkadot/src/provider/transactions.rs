@@ -3,7 +3,7 @@ use chain_traits::ChainTransactions;
 use std::error::Error;
 
 use gem_client::Client;
-use primitives::{TransactionState, TransactionStateRequest, TransactionUpdate, TransactionChange};
+use primitives::{TransactionChange, TransactionState, TransactionStateRequest, TransactionUpdate};
 
 use crate::rpc::client::PolkadotClient;
 
@@ -11,7 +11,7 @@ use crate::rpc::client::PolkadotClient;
 impl<C: Client> ChainTransactions for PolkadotClient<C> {
     async fn transaction_broadcast(&self, data: String) -> Result<String, Box<dyn Error + Sync + Send>> {
         let response = self.broadcast_transaction(data).await?;
-        
+
         if let Some(hash) = response.hash {
             Ok(hash)
         } else if let Some(error) = response.error {
@@ -27,12 +27,12 @@ impl<C: Client> ChainTransactions for PolkadotClient<C> {
         if block_number <= 0 {
             return Err("Invalid block number".into());
         }
-        
+
         let block_head = self.get_block_head().await?;
         let from_block = block_number as u64;
         let to_block = std::cmp::min(block_head.number, from_block + 64);
         let blocks = self.get_blocks(&from_block.to_string(), &to_block.to_string()).await?;
-        
+
         for block in blocks {
             for extrinsic in block.extrinsics {
                 if extrinsic.hash == request.id {
@@ -45,10 +45,10 @@ impl<C: Client> ChainTransactions for PolkadotClient<C> {
                 }
             }
         }
-        
+
         Ok(TransactionUpdate::new(
             TransactionState::Pending,
-            vec![TransactionChange::BlockNumber(block_number.to_string())]
+            vec![TransactionChange::BlockNumber(block_number.to_string())],
         ))
     }
 }

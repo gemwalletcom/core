@@ -1,4 +1,4 @@
-use primitives::{BitcoinChain, chain_bitcoin};
+use primitives::{chain_bitcoin, BitcoinChain};
 
 // TODO: Gateway. Delete
 #[derive(uniffi::Record, Debug, Clone, PartialEq)]

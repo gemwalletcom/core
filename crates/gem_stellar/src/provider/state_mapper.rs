@@ -2,7 +2,7 @@ use crate::models::fee::StellarFees;
 use primitives::{FeePriority, FeeRate};
 
 #[cfg(test)]
-use {primitives::GasPriceType, num_bigint::BigInt};
+use {num_bigint::BigInt, primitives::GasPriceType};
 
 pub fn map_fee_stats_to_priorities(fees: &StellarFees) -> Vec<FeeRate> {
     let min_fee = std::cmp::max(

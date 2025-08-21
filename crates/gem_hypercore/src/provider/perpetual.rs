@@ -8,16 +8,19 @@ use primitives::{
     ChartCandleStick, ChartPeriod,
 };
 
+use super::perpetual_mapper;
 use crate::rpc::client::HyperCoreClient;
 
 #[async_trait]
 impl<C: Client> ChainPerpetual for HyperCoreClient<C> {
     async fn get_positions(&self, address: String) -> Result<PerpetualPositionsSummary, Box<dyn Error + Sync + Send>> {
-        Ok(self.get_clearinghouse_state(&address).await?.into())
+        let positions = self.get_clearinghouse_state(&address).await?;
+        Ok(perpetual_mapper::map_positions(positions))
     }
 
     async fn get_perpetuals_data(&self) -> Result<Vec<PerpetualData>, Box<dyn Error + Sync + Send>> {
-        Ok(self.get_metadata().await?.into())
+        let metadata = self.get_metadata().await?;
+        Ok(perpetual_mapper::map_perpetuals_data(metadata))
     }
 
     async fn get_candlesticks(&self, symbol: String, period: ChartPeriod) -> Result<Vec<ChartCandleStick>, Box<dyn Error + Sync + Send>> {
@@ -32,12 +35,12 @@ impl<C: Client> ChainPerpetual for HyperCoreClient<C> {
 
         let end_time = chrono::Utc::now().timestamp() * 1000;
         let start_time = match period {
-            ChartPeriod::Hour => end_time - 60 * 60 * 1000,          
-            ChartPeriod::Day => end_time - 24 * 60 * 60 * 1000,     
-            ChartPeriod::Week => end_time - 7 * 24 * 60 * 60 * 1000,       
-            ChartPeriod::Month => end_time - 30 * 24 * 60 * 60 * 1000,   
+            ChartPeriod::Hour => end_time - 60 * 60 * 1000,
+            ChartPeriod::Day => end_time - 24 * 60 * 60 * 1000,
+            ChartPeriod::Week => end_time - 7 * 24 * 60 * 60 * 1000,
+            ChartPeriod::Month => end_time - 30 * 24 * 60 * 60 * 1000,
             ChartPeriod::Year => end_time - 365 * 24 * 60 * 60 * 1000,
-            ChartPeriod::All => 0,                                       
+            ChartPeriod::All => 0,
         };
 
         let candlesticks = self.get_candlesticks(&symbol, interval, start_time, end_time).await?;

@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use chain_traits::ChainState;
-use std::error::Error;
 use num_bigint::BigInt;
+use std::error::Error;
 
 use crate::rpc::client::XRPClient;
 use gem_client::Client;

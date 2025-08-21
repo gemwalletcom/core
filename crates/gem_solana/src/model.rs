@@ -413,4 +413,3 @@ pub struct ValidatorConfigInfo {
 pub struct InflationRate {
     pub validator: f64,
 }
-

@@ -368,7 +368,7 @@ mod tests {
     #[test]
     fn test_ton_wallet_info_deserialization() {
         let response: TonResult<TonWalletInfo> = serde_json::from_str(include_str!("../../testdata/wallet_information.json")).unwrap();
-        
+
         assert!(response.ok);
         let wallet_info = response.result;
         assert!(wallet_info.wallet);

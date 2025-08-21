@@ -72,10 +72,7 @@ impl<C: Client + Clone> ChainTransactionsProvider for SuiProvider<C> {
 impl<C: Client + Clone> ChainStakeProvider for SuiProvider<C> {
     async fn get_validators(&self) -> Result<Vec<StakeValidator>, Box<dyn Error + Send + Sync>> {
         let validators = self.client.get_validators().await?;
-        let stake_validators = validators.apys
-            .into_iter()
-            .map(|v| StakeValidator::new(v.address.clone(), v.address))
-            .collect();
+        let stake_validators = validators.apys.into_iter().map(|v| StakeValidator::new(v.address.clone(), v.address)).collect();
         Ok(stake_validators)
     }
 

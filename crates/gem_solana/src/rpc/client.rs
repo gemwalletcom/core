@@ -1,15 +1,15 @@
 use crate::{
-    model::{TokenAccountInfo, ValueResult, EpochInfo},
+    model::{EpochInfo, TokenAccountInfo, ValueResult},
     models::balances::SolanaBalance,
 };
+#[cfg(feature = "rpc")]
+use chain_traits::{ChainAccount, ChainPerpetual, ChainTraits};
 #[cfg(feature = "rpc")]
 use gem_client::Client;
 #[cfg(feature = "rpc")]
 use gem_jsonrpc::client::JsonRpcClient as GenericJsonRpcClient;
-#[cfg(feature = "rpc")]
-use chain_traits::{ChainTraits, ChainAccount, ChainPerpetual};
-use std::error::Error;
 use primitives::Chain;
+use std::error::Error;
 
 #[cfg(all(feature = "reqwest", not(feature = "rpc")))]
 pub struct SolanaClient {
@@ -330,7 +330,7 @@ impl<C: Client + Clone> SolanaClient<C> {
                 ]
             }
         ]);
-        
+
         let stake_accounts: Vec<TokenAccountInfo> = self.rpc_call("getProgramAccounts", params).await?;
         Ok(stake_accounts)
     }
@@ -368,45 +368,57 @@ impl<C: Client + Clone> SolanaClient<C> {
         self.rpc_call("sendTransaction", params).await
     }
 
-    pub async fn get_recent_prioritization_fees(&self) -> Result<Vec<crate::models::prioritization_fee::SolanaPrioritizationFee>, Box<dyn Error + Send + Sync>> {
+    pub async fn get_recent_prioritization_fees(
+        &self,
+    ) -> Result<Vec<crate::models::prioritization_fee::SolanaPrioritizationFee>, Box<dyn Error + Send + Sync>> {
         self.rpc_call("getRecentPrioritizationFees", serde_json::json!([])).await
     }
 
     pub async fn get_token_mint_info(&self, token_mint: &str) -> Result<crate::model::ResultTokenInfo, Box<dyn Error + Send + Sync>> {
-        self.rpc_call("getAccountInfo", serde_json::json!([
-            token_mint,
-            {
-                "encoding": "jsonParsed"
-            }
-        ])).await
+        self.rpc_call(
+            "getAccountInfo",
+            serde_json::json!([
+                token_mint,
+                {
+                    "encoding": "jsonParsed"
+                }
+            ]),
+        )
+        .await
     }
 
     pub async fn get_metaplex_metadata(&self, token_mint: &str) -> Result<crate::metaplex::metadata::Metadata, Box<dyn Error + Send + Sync>> {
-        use crate::{pubkey::Pubkey, metaplex::metadata::Metadata, metaplex::decode_metadata, model::{ValueResult, ValueData}};
+        use crate::{
+            metaplex::decode_metadata,
+            metaplex::metadata::Metadata,
+            model::{ValueData, ValueResult},
+            pubkey::Pubkey,
+        };
         use std::str::FromStr;
-        
+
         let pubkey = Pubkey::from_str(token_mint)?;
         let metadata_key = Metadata::find_pda(pubkey)
             .ok_or::<Box<dyn Error + Send + Sync>>("metadata program account not found".into())?
             .0
             .to_string();
 
-        let result: ValueResult<Option<ValueData<Vec<String>>>> = self.rpc_call("getAccountInfo", serde_json::json!([
-            metadata_key,
-            {
-                "encoding": "base64"
-            }
-        ])).await?;
-        
+        let result: ValueResult<Option<ValueData<Vec<String>>>> = self
+            .rpc_call(
+                "getAccountInfo",
+                serde_json::json!([
+                    metadata_key,
+                    {
+                        "encoding": "base64"
+                    }
+                ]),
+            )
+            .await?;
+
         let value = result.value.ok_or("Failed to get metadata")?;
         let meta = decode_metadata(&value.data[0]).map_err(|_| "Failed to decode metadata")?;
         Ok(meta)
     }
-
 }
-
-
-
 
 #[cfg(feature = "rpc")]
 #[async_trait::async_trait]
@@ -415,8 +427,6 @@ impl<C: Client + Clone> ChainAccount for SolanaClient<C> {}
 #[cfg(feature = "rpc")]
 #[async_trait::async_trait]
 impl<C: Client + Clone> ChainPerpetual for SolanaClient<C> {}
-
-
 
 #[cfg(feature = "rpc")]
 impl<C: Client + Clone> ChainTraits for SolanaClient<C> {}

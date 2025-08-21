@@ -1,4 +1,4 @@
-use crate::{Asset, TransactionPreloadInput, UTXO, SolanaTokenProgramId};
+use crate::{Asset, SolanaTokenProgramId, TransactionPreloadInput, UTXO};
 use num_bigint::BigInt;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -136,8 +136,12 @@ impl TransactionLoadMetadata {
 
     pub fn get_is_destination_address_exist(&self) -> Result<bool, Box<dyn std::error::Error + Send + Sync>> {
         match self {
-            TransactionLoadMetadata::Near { is_destination_address_exist, .. } => Ok(*is_destination_address_exist),
-            TransactionLoadMetadata::Stellar { is_destination_address_exist, .. } => Ok(*is_destination_address_exist),
+            TransactionLoadMetadata::Near {
+                is_destination_address_exist, ..
+            } => Ok(*is_destination_address_exist),
+            TransactionLoadMetadata::Stellar {
+                is_destination_address_exist, ..
+            } => Ok(*is_destination_address_exist),
             _ => Err("Destination existence flag not available for this metadata type".into()),
         }
     }
@@ -257,10 +261,12 @@ pub struct TransactionLoadData {
 
 impl TransactionLoadData {
     pub fn new_from(&self, fee: TransactionFee) -> Self {
-        Self { fee, metadata: self.metadata.clone() }
+        Self {
+            fee,
+            metadata: self.metadata.clone(),
+        }
     }
 }
-
 
 #[cfg(test)]
 mod tests {

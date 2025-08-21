@@ -31,6 +31,6 @@ pub struct PolkadotTransactionPayload {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PolkadotTransactionBroadcastResponse {
     pub hash: Option<String>,
-    pub error: Option<String>, 
+    pub error: Option<String>,
     pub cause: Option<String>,
 }

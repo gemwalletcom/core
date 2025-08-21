@@ -52,11 +52,15 @@ mod tests {
         let result = map_transaction_preload(&input, &access_key, &block, true);
 
         match result {
-            TransactionLoadMetadata::Near { sequence, block_hash, is_destination_address_exist } => {
+            TransactionLoadMetadata::Near {
+                sequence,
+                block_hash,
+                is_destination_address_exist,
+            } => {
                 assert_eq!(sequence, 116479371000027);
                 assert_eq!(block_hash, "F45xbjXiyHn5noj1692RVqeuNC6X232qhKpvvPrv92iz");
                 assert!(is_destination_address_exist);
-            },
+            }
             _ => panic!("Expected Near metadata"),
         }
     }

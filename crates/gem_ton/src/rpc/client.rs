@@ -67,7 +67,6 @@ impl<C: Client> TonClient<C> {
         Ok(self.client.get(&format!("/api/v2/getTokenData?address={}", address)).await?)
     }
 
-
     pub async fn run_get_method(&self, address: String, method: String, stack: Vec<String>) -> Result<RunGetMethod, Box<dyn Error + Send + Sync>> {
         let stack_json = serde_json::json!([stack]);
         let body = serde_json::json!({

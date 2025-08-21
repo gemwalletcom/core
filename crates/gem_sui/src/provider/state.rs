@@ -5,7 +5,7 @@ use chain_traits::ChainState;
 #[cfg(feature = "rpc")]
 use gem_client::Client;
 #[cfg(feature = "rpc")]
-use primitives::{FeeRate, FeePriority};
+use primitives::{FeePriority, FeeRate};
 #[cfg(feature = "rpc")]
 use std::error::Error;
 

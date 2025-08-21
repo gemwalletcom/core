@@ -1,12 +1,12 @@
 use crate::gateway::models::asset::GemAsset;
 use crate::gateway::models::transaction_metadata::GemTransactionLoadMetadata;
-use primitives::{
-    GasPrice, TransactionChange, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionMetadata, TransactionPerpetualMetadata,
-    TransactionStateRequest, TransactionUpdate, TransactionFee,
-};
-use primitives::transaction_load::FeeOption;
-use std::collections::HashMap;
 use num_bigint::BigInt;
+use primitives::transaction_load::FeeOption;
+use primitives::{
+    GasPrice, TransactionChange, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionMetadata,
+    TransactionPerpetualMetadata, TransactionStateRequest, TransactionUpdate,
+};
+use std::collections::HashMap;
 
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct GemTransactionUpdate {
@@ -70,7 +70,6 @@ pub struct GemGasPrice {
     pub gas_price: String,
 }
 
-
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct GemTransactionLoadInput {
     pub input_type: GemTransactionInputType,
@@ -107,7 +106,6 @@ pub struct GemSignerInputToken {
     pub recipient_token_address: Option<String>,
     pub token_program: String,
 }
-
 
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct GemTransactionData {
@@ -178,7 +176,6 @@ impl From<GemTransactionLoadInput> for TransactionLoadInput {
     }
 }
 
-
 impl GemStakeOperation {
     pub fn into_primitives(self, asset: primitives::Asset) -> primitives::StakeOperation {
         match self {
@@ -221,20 +218,18 @@ impl From<FeeOption> for GemFeeOption {
 
 impl GemFeeOptions {
     pub fn new() -> Self {
-        GemFeeOptions {
-            options: HashMap::new(),
-        }
+        GemFeeOptions { options: HashMap::new() }
     }
-    
+
     pub fn with_option(mut self, option: GemFeeOption, value: String) -> Self {
         self.options.insert(option, value);
         self
     }
-    
+
     pub fn get(&self, option: &GemFeeOption) -> Option<&String> {
         self.options.get(option)
     }
-    
+
     pub fn is_empty(&self) -> bool {
         self.options.is_empty()
     }
@@ -246,12 +241,17 @@ impl From<GemTransactionLoadFee> for TransactionFee {
             fee: BigInt::parse_bytes(value.fee.as_bytes(), 10).unwrap_or_default(),
             gas_price: BigInt::parse_bytes(value.gas_price.as_bytes(), 10).unwrap_or_default(),
             gas_limit: BigInt::parse_bytes(value.gas_limit.as_bytes(), 10).unwrap_or_default(),
-            options: value.options.options.into_iter().map(|(key, value)| {
-                let fee_option = match key {
-                    GemFeeOption::TokenAccountCreation => FeeOption::TokenAccountCreation,
-                };
-                (fee_option, value)
-            }).collect(),
+            options: value
+                .options
+                .options
+                .into_iter()
+                .map(|(key, value)| {
+                    let fee_option = match key {
+                        GemFeeOption::TokenAccountCreation => FeeOption::TokenAccountCreation,
+                    };
+                    (fee_option, value)
+                })
+                .collect(),
         }
     }
 }

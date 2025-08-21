@@ -1,4 +1,4 @@
-use crate::model::{VoteAccount, TokenAccountInfo, EpochInfo};
+use crate::model::{EpochInfo, TokenAccountInfo, VoteAccount};
 use chrono::Utc;
 use primitives::{AssetId, Chain, DelegationBase, DelegationState, DelegationValidator};
 
@@ -8,11 +8,7 @@ pub fn map_staking_validators(vote_accounts: Vec<VoteAccount>, chain: Chain, net
         .map(|validator| {
             let commission_rate = validator.commission as f64 / 100.0;
             let is_active = true;
-            let validator_apr = if is_active {
-                network_apy - (network_apy * commission_rate)
-            } else {
-                0.0
-            };
+            let validator_apr = if is_active { network_apy - (network_apy * commission_rate) } else { 0.0 };
 
             DelegationValidator {
                 chain,
@@ -26,23 +22,19 @@ pub fn map_staking_validators(vote_accounts: Vec<VoteAccount>, chain: Chain, net
         .collect()
 }
 
-pub fn map_staking_delegations(
-    stake_accounts: Vec<TokenAccountInfo>,
-    epoch: EpochInfo,
-    asset_id: AssetId,
-) -> Vec<DelegationBase> {
+pub fn map_staking_delegations(stake_accounts: Vec<TokenAccountInfo>, epoch: EpochInfo, asset_id: AssetId) -> Vec<DelegationBase> {
     stake_accounts
         .into_iter()
         .filter_map(|account| {
             if let Some(stake_info) = &account.account.data.parsed.info.stake {
                 let balance = account.account.lamports.to_string();
                 let validator_id = stake_info.delegation.voter.clone();
-                
+
                 let activation_epoch = stake_info.delegation.activation_epoch.parse::<u64>().ok()?;
                 let deactivation_epoch = stake_info.delegation.deactivation_epoch.parse::<u64>().ok()?;
-                
+
                 let is_active = deactivation_epoch == u64::MAX;
-                
+
                 let state = if !is_active {
                     if deactivation_epoch == epoch.epoch {
                         DelegationState::Deactivating
@@ -65,7 +57,7 @@ pub fn map_staking_delegations(
                         let completion_seconds = remaining_slots as f64 * 0.420;
                         let completion_time = Utc::now() + chrono::Duration::milliseconds(completion_seconds as i64 * 1000);
                         Some(completion_time)
-                    },
+                    }
                     _ => None,
                 };
 
@@ -90,7 +82,7 @@ pub fn map_staking_delegations(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::model::{VoteAccount, TokenAccountInfo, EpochInfo, TokenAccountData};
+    use crate::model::{EpochInfo, TokenAccountData, TokenAccountInfo, VoteAccount};
     use primitives::{AssetId, Chain, DelegationState};
 
     #[test]
@@ -100,9 +92,9 @@ mod tests {
             node_pubkey: "node1".to_string(),
             commission: 5,
         }];
-        
+
         let result = map_staking_validators(vote_accounts, Chain::Solana, 8.0);
-        
+
         assert_eq!(result.len(), 1);
         assert_eq!(result[0].id, "validator1");
         assert_eq!(result[0].commision, 5.0);
@@ -134,7 +126,7 @@ mod tests {
                 lamports: 1000000,
             },
         }];
-        
+
         let epoch = EpochInfo {
             epoch: 200,
             slot_index: 0,
@@ -142,7 +134,7 @@ mod tests {
         };
 
         let result = map_staking_delegations(stake_accounts, epoch, AssetId::from_chain(Chain::Solana));
-        
+
         assert_eq!(result.len(), 1);
         assert_eq!(result[0].validator_id, "validator1");
         assert_eq!(result[0].balance, "1000000");

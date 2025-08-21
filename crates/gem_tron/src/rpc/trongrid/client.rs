@@ -1,6 +1,6 @@
+use crate::rpc::client::TronClient;
 use crate::rpc::model::{Transaction, TransactionReceiptData};
 use crate::rpc::trongrid::model::{Data, Trc20Transaction, TronGridAccount};
-use crate::rpc::client::TronClient;
 use gem_client::Client;
 use std::error::Error;
 use std::result::Result;
@@ -13,10 +13,7 @@ pub struct TronGridClient<C: Client> {
 
 impl<C: Client> TronGridClient<C> {
     pub fn new(tron_client: TronClient<C>, client: C, _url: String, _key: String) -> Self {
-        Self {
-            tron_client,
-            client,
-        }
+        Self { tron_client, client }
     }
 
     pub async fn get_transactions_by_address(&self, address: &str, limit: i32) -> Result<Data<Vec<Transaction>>, Box<dyn Error + Send + Sync>> {

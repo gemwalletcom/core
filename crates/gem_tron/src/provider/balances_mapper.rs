@@ -5,18 +5,11 @@ use crate::models::TronAccount;
 
 pub fn map_coin_balance(account: &TronAccount) -> Result<AssetBalance, Box<dyn Error + Sync + Send>> {
     let available_balance = account.balance.unwrap_or(0).to_string();
-    
-    Ok(AssetBalance::new(
-        AssetId::from_chain(Chain::Tron),
-        available_balance,
-    ))
+
+    Ok(AssetBalance::new(AssetId::from_chain(Chain::Tron), available_balance))
 }
 
-
-pub fn map_token_balance(
-    balance_hex: &str,
-    asset_id: AssetId,
-) -> Result<AssetBalance, Box<dyn Error + Sync + Send>> {
+pub fn map_token_balance(balance_hex: &str, asset_id: AssetId) -> Result<AssetBalance, Box<dyn Error + Sync + Send>> {
     let balance = if balance_hex.is_empty() || balance_hex == "0x" {
         "0".to_string()
     } else {
@@ -40,7 +33,7 @@ mod tests {
     fn test_map_coin_balance_with_real_payload() {
         let account: TronAccount = serde_json::from_str(include_str!("../../testdata/balance_coin.json")).unwrap();
         let balance = map_coin_balance(&account).unwrap();
-        
+
         assert_eq!(balance.asset_id, AssetId::from_chain(Chain::Tron));
         assert_eq!(balance.balance.available, "2928601454");
     }
@@ -50,7 +43,7 @@ mod tests {
         let response: TronSmartContractResult = serde_json::from_str(include_str!("../../testdata/balance_token.json")).unwrap();
         let asset_id = AssetId::from(Chain::Tron, Some("TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t".to_string()));
         let balance = map_token_balance(&response.constant_result[0], asset_id.clone()).unwrap();
-        
+
         assert_eq!(balance.asset_id, asset_id);
         assert_eq!(balance.balance.available, "136389002");
     }
@@ -58,7 +51,7 @@ mod tests {
     #[test]
     fn test_map_token_balance_edge_cases() {
         let asset_id = AssetId::from(Chain::Tron, Some("TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t".to_string()));
-        
+
         let balance = map_token_balance("", asset_id.clone()).unwrap();
         assert_eq!(balance.balance.available, "0");
 
@@ -82,7 +75,7 @@ mod tests {
             frozen_v2: None,
             unfrozen_v2: None,
         };
-        
+
         let balance = map_coin_balance(&account).unwrap();
         assert_eq!(balance.balance.available, "0");
     }

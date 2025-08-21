@@ -143,7 +143,6 @@ pub struct SuiSystemState {
     pub active_validators: Vec<ValidatorInfo>,
 }
 
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ValidatorInfo {

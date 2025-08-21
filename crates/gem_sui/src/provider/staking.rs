@@ -10,19 +10,16 @@ use primitives::{DelegationBase, DelegationValidator};
 use std::error::Error;
 
 #[cfg(feature = "rpc")]
-use crate::rpc::client::SuiClient;
-#[cfg(feature = "rpc")]
 use super::staking_mapper;
+#[cfg(feature = "rpc")]
+use crate::rpc::client::SuiClient;
 
 #[cfg(feature = "rpc")]
 #[async_trait]
 impl<C: Client + Clone> ChainStaking for SuiClient<C> {
     async fn get_staking_apy(&self) -> Result<Option<f64>, Box<dyn Error + Sync + Send>> {
         let validators = self.get_validators().await?;
-        let max_apy = validators.apys
-            .iter()
-            .map(|v| v.apy)
-            .fold(0.0, f64::max);
+        let max_apy = validators.apys.iter().map(|v| v.apy).fold(0.0, f64::max);
         Ok(Some(max_apy))
     }
 

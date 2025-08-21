@@ -1,20 +1,19 @@
 use async_trait::async_trait;
 use chain_traits::ChainPreload;
-use std::error::Error;
 use num_bigint::BigInt;
+use std::error::Error;
 
 use gem_client::Client;
-use primitives::{TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput, TransactionFee};
+use primitives::{TransactionFee, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput};
 
 use crate::rpc::client::PolkadotClient;
-
 
 #[async_trait]
 impl<C: Client> ChainPreload for PolkadotClient<C> {
     async fn get_transaction_preload(&self, input: TransactionPreloadInput) -> Result<TransactionLoadMetadata, Box<dyn Error + Sync + Send>> {
         let material = self.get_transaction_material().await?;
         let sender_balance = self.get_balance(input.sender_address).await?;
-        
+
         Ok(TransactionLoadMetadata::Polkadot {
             sequence: sender_balance.nonce,
             genesis_hash: material.genesis_hash,
@@ -31,10 +30,10 @@ impl<C: Client> ChainPreload for PolkadotClient<C> {
         Ok(TransactionFee::new_from_fee(BigInt::from(fee.partial_fee)))
     }
 
-    async fn get_transaction_load(&self, input: TransactionLoadInput) -> Result<TransactionLoadData, Box<dyn Error + Sync + Send>> {        
+    async fn get_transaction_load(&self, input: TransactionLoadInput) -> Result<TransactionLoadData, Box<dyn Error + Sync + Send>> {
         Ok(TransactionLoadData {
             fee: TransactionFee::default(), // fee would be calculated from get_transaction_fee
-            metadata: input.metadata
+            metadata: input.metadata,
         })
     }
 }

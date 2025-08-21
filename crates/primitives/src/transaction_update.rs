@@ -12,7 +12,7 @@ impl TransactionUpdate {
     pub fn new(state: TransactionState, changes: Vec<TransactionChange>) -> Self {
         Self { state, changes }
     }
-    
+
     pub fn new_state(state: TransactionState) -> Self {
         Self { state, changes: Vec::new() }
     }

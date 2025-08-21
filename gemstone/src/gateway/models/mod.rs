@@ -23,7 +23,7 @@ pub struct GemUTXO {
     pub address: String,
 }
 
-// ChainState models  
+// ChainState models
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct GemGasPriceType {
     pub gas_price: String,
@@ -42,7 +42,6 @@ pub struct GemTransactionPreloadInput {
     pub sender_address: String,
     pub destination_address: String,
 }
-
 
 // Conversion implementations
 impl From<UTXO> for GemUTXO {
@@ -79,7 +78,7 @@ impl From<FeeRate> for GemFeeRate {
                 priority_fee: Some(priority_fee.to_string()),
             },
         };
-        
+
         Self {
             priority: fee.priority.as_ref().to_string(),
             gas_price_type,
@@ -104,4 +103,3 @@ impl From<GemTransactionPreloadInput> for TransactionPreloadInput {
         }
     }
 }
-

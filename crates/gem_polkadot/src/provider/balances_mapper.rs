@@ -1,9 +1,9 @@
-use primitives::{AssetBalance, Balance, Chain};
 use crate::models::account::PolkadotAccountBalance;
+use primitives::{AssetBalance, Balance, Chain};
 
 pub fn map_coin_balance(balance: PolkadotAccountBalance) -> AssetBalance {
     let available = std::cmp::max(&balance.free - &balance.reserved, num_bigint::BigInt::from(0));
-    
+
     AssetBalance::new_balance(
         Chain::Polkadot.as_asset_id(),
         Balance::with_reserved(available.to_string(), balance.reserved.to_string()),

@@ -10,7 +10,7 @@ mod integration_tests {
         let reqwest_client = ReqwestClient::new("https://example.com".to_string(), reqwest::Client::new());
         let jsonrpc_client = JsonRpcClient::new(reqwest_client);
         let near_client: NearClient<ReqwestClient> = NearClient::new(jsonrpc_client);
-        
+
         // Test that basic properties work
         assert_eq!(near_client.get_chain().to_string(), "near");
     }
@@ -20,10 +20,10 @@ mod integration_tests {
         // Test actual RPC call
         let jsonrpc_client = new_client("https://rpc.mainnet.near.org".to_string())?;
         let near_client: NearClient<gem_client::ReqwestClient> = NearClient::new(jsonrpc_client);
-        
+
         let genesis_config = near_client.get_genesis_config().await?;
         assert_eq!(genesis_config.chain_id, "mainnet");
-        
+
         Ok(())
     }
 }

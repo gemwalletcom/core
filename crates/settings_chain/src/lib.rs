@@ -19,6 +19,7 @@ use gem_cardano::rpc::CardanoClient;
 use gem_cosmos::rpc::client::CosmosClient;
 use gem_evm::rpc::{ankr::AnkrClient, AlchemyClient, EthereumClient};
 use gem_hypercore::rpc::client::HyperCoreClient;
+use gem_jsonrpc::client::JsonRpcClient;
 use gem_near::rpc::client::NearClient;
 use gem_polkadot::rpc::PolkadotClient;
 use gem_solana::rpc::client::SolanaClient;
@@ -27,7 +28,6 @@ use gem_sui::rpc::SuiClient;
 use gem_ton::rpc::TonClient;
 use gem_tron::rpc::client::TronClient;
 use gem_xrp::rpc::XRPClient;
-use gem_jsonrpc::client::JsonRpcClient;
 
 use primitives::{chain_cosmos::CosmosChain, Chain, EVMChain, NodeType};
 use settings::{ChainURLType, Settings};

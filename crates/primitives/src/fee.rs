@@ -13,7 +13,6 @@ pub enum FeePriority {
     Fast,
 }
 
-
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, AsRefStr, EnumString, EnumIter)]
 #[serde(rename_all = "camelCase")]
 #[strum(serialize_all = "camelCase")]
@@ -36,9 +35,9 @@ impl GasPriceType {
     }
 
     pub fn eip1559<T: Into<BigInt>, U: Into<BigInt>>(gas_price: T, priority_fee: U) -> Self {
-        Self::Eip1559 { 
-            gas_price: gas_price.into(), 
-            priority_fee: priority_fee.into() 
+        Self::Eip1559 {
+            gas_price: gas_price.into(),
+            priority_fee: priority_fee.into(),
         }
     }
 }
